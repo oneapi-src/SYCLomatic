@@ -1,4 +1,4 @@
-//==---------------- context_impl.hpp - SYCL context -----------*- C++-*---==//
+//==---------------- context_impl.hpp - SYCL context ------------*- C++-*---==//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -148,7 +148,7 @@ public:
   ///  cl_intel_devicelib_complex -> #<pi_program with complex functions>
   ///  etc.
   ///
-  /// See `doc/extensions/C-CXX-StandardLibrary/DeviceLibExtensions.rst' for
+  /// See `doc/design/DeviceLibExtensions.rst' for
   /// more details.
   ///
   /// \returns a map with device library programs.

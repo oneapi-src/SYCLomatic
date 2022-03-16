@@ -8,33 +8,33 @@
 
 int main() {
 // CHECK: /*
-// CHECK: DPCT1007:0: Migration of nvmlInit_v2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK: DPCT1007:0: Migration of nvmlInit_v2 is not supported.
 // CHECK: */
 // CHECK: nvmlInit();
     nvmlInit();
 
 // CHECK: /*
-// CHECK: DPCT1007:1: Migration of nvmlInit_v2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK: DPCT1007:1: Migration of nvmlInit_v2 is not supported.
 // CHECK: */
 // CHECK: nvmlInit_v2();
     nvmlInit_v2();
 
     char Ver[10];
 // CHECK: /*
-// CHECK: DPCT1007:2: Migration of nvmlSystemGetDriverVersion is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK: DPCT1007:2: Migration of nvmlSystemGetDriverVersion is not supported.
 // CHECK: */
 // CHECK: nvmlSystemGetDriverVersion(Ver, 10);
     nvmlSystemGetDriverVersion(Ver, 10);
 
     unsigned int dc;
 // CHECK: /*
-// CHECK: DPCT1007:3: Migration of nvmlDeviceGetCount_v2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK: DPCT1007:3: Migration of nvmlDeviceGetCount_v2 is not supported.
 // CHECK: */
 // CHECK: nvmlDeviceGetCount_v2(&dc);
     nvmlDeviceGetCount_v2(&dc);
 
 // CHECK: /*
-// CHECK: DPCT1007:4: Migration of nvmlShutdown is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK: DPCT1007:4: Migration of nvmlShutdown is not supported.
 // CHECK: */
 // CHECK: nvmlShutdown();
     nvmlShutdown();

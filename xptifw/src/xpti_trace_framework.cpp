@@ -3,10 +3,14 @@
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-#include "xpti_trace_framework.hpp"
+#include "xpti/xpti_trace_framework.hpp"
 #include "xpti_int64_hash_table.hpp"
+#include "xpti_object_table.hpp"
 #include "xpti_string_table.hpp"
 
+#include <algorithm>
+#include <array>
+#include <atomic>
 #include <cassert>
 #include <cstdio>
 #include <iostream>
@@ -14,6 +18,7 @@
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -36,9 +41,18 @@
 #define XPTI_VENDOR_DEFINED_EVENT_TYPE16(vendor_id, event_type)                \
   ((uint16_t)vendor_id << 8 | XPTI_USER_DEFINED_EVENT_TYPE16(event_type))
 
+static_assert(std::is_trivially_destructible<xpti::utils::SpinLock>::value,
+              "SpinLock is not trivial");
+static_assert(
+    std::is_trivially_destructible<xpti::utils::PlatformHelper>::value,
+    "PlatformHelper is not trivial");
+
+static thread_local uint64_t g_tls_uid = xpti::invalid_uid;
+
 namespace xpti {
 constexpr const char *env_subscribers = "XPTI_SUBSCRIBERS";
 xpti::utils::PlatformHelper g_helper;
+xpti::utils::SpinLock g_framework_mutex;
 // This class is a helper class to load all the listed subscribers provided by
 // the user in XPTI_SUBSCRIBERS environment variable.
 class Subscribers {
@@ -319,6 +333,17 @@ public:
     }
   }
 
+  const xpti::payload_t *payloadDataByUID(uint64_t uid) {
+    if (uid == xpti::invalid_uid)
+      return nullptr;
+    // Scoped lock until the information is retrieved from the map
+    {
+      std::lock_guard<std::mutex> Lock(MEventMutex);
+      // Cache it in case it is not already cached
+      return &MPayloads[uid];
+    }
+  }
+
   const xpti::trace_event_data_t *eventData(uint64_t UId) {
     if (UId == xpti::invalid_uid)
       return nullptr;
@@ -337,18 +362,15 @@ public:
   // data types, we will allow them to add these pairs as strings. Internally,
   // we will store key-value pairs as a map of string ids.
   xpti::result_t addMetadata(xpti::trace_event_data_t *Event, const char *Key,
-                             const char *Value) {
-    if (!Event || !Key || !Value)
+                             object_id_t ValueID) {
+    if (!Event || !Key)
       return xpti::result_t::XPTI_RESULT_INVALIDARG;
 
     string_id_t KeyID = MStringTableRef.add(Key);
     if (KeyID == xpti::invalid_id) {
       return xpti::result_t::XPTI_RESULT_INVALIDARG;
     }
-    string_id_t ValueID = MStringTableRef.add(Value);
-    if (ValueID == xpti::invalid_id) {
-      return xpti::result_t::XPTI_RESULT_INVALIDARG;
-    }
+
     // Protect simultaneous insert operations on the metadata tables
     {
       std::lock_guard<std::mutex> HashLock(MMetadataMutex);
@@ -373,7 +395,21 @@ public:
 #endif
   }
 
-private:
+  uint64_t registerPayload(xpti::payload_t *Payload) {
+    auto HashValue = makeHash(Payload);
+    if (HashValue == xpti::invalid_uid)
+      return xpti::invalid_uid;
+
+    std::lock_guard<std::mutex> Lock(MEventMutex);
+    // We also want to query the payload by universal ID that has been
+    // generated
+    auto &CurrentPayload = MPayloads[HashValue];
+    Payload->flags |= (uint64_t)payload_flag_t::PayloadRegistered;
+    CurrentPayload = *Payload; // when it uses tbb, should be thread-safe
+
+    return HashValue;
+  }
+
   ///  Goals: To create a hash value from payload
   ///  1. Check the payload structure to see if it is valid. If valid, then
   ///  check to see if any strings are provided and add them to the string
@@ -405,6 +441,7 @@ private:
       // Add source file information ot string table
       source_id =
           MStringTableRef.add(Payload->source_file, &Payload->source_file);
+      line_no = Payload->line_no;
     }
     if ((Payload->flags &
          static_cast<uint64_t>(payload_flag_t::StackTraceAvailable))) {
@@ -413,7 +450,7 @@ private:
           MStringTableRef.add(Payload->stack_trace, &Payload->stack_trace);
     }
     // Pack the 1st 64-bit value with string ID from source file name and line
-    // number; pack the 2nd 54-bit value with stack backtrace string ID and the
+    // number; pack the 2nd 64-bit value with stack backtrace string ID and the
     // kernel name string ID
     Payload->uid.p1 = XPTI_PACK32_RET64(source_id, line_no);
     Payload->uid.p2 = XPTI_PACK32_RET64(stack_id, name_id);
@@ -421,7 +458,7 @@ private:
     if ((Payload->flags &
          static_cast<uint64_t>(payload_flag_t::CodePointerAvailable)))
       Payload->uid.p3 = (uint64_t)Payload->code_ptr_va;
-    // Generate the had from the information available and this will be our
+    // Generate the hash from the information available and this will be our
     // unique ID for the trace point.
     HashValue = Payload->uid.hash();
     Payload->flags |= static_cast<uint64_t>(payload_flag_t::HashAvailable);
@@ -430,6 +467,7 @@ private:
     return HashValue;
   }
 
+private:
   // Register the payload and generate a universal ID for it.
   // Once registered, the payload is accessible through the
   // Universal ID that corresponds to the payload.
@@ -476,6 +514,8 @@ private:
       // generated
       auto &CurrentPayload = MPayloads[HashValue];
       CurrentPayload = TempPayload; // when it uses tbb, should be thread-safe
+      CurrentPayload.flags |= (uint64_t)payload_flag_t::PayloadRegistered;
+
       xpti::trace_event_data_t *Event = &MEvents[HashValue];
       // We are seeing this unique ID for the first time, so we will
       // initialize the event structure with defaults and set the unique_id to
@@ -699,6 +739,8 @@ public:
 #endif
   }
 
+  void clear() { MCallbacksByStream.clear(); }
+
 private:
 #ifdef XPTI_STATISTICS
   std::string stringify_trace_type(xpti_trace_point_type_t TraceType) {
@@ -779,6 +821,7 @@ public:
     MUniversalIDs = 1;
     MTracepoints.clear();
     MStringTableRef.clear();
+    MNotifier.clear();
   }
 
   inline void setTraceEnabled(bool yesOrNo = true) { MTraceEnabled = yesOrNo; }
@@ -787,9 +830,13 @@ public:
 
   inline uint64_t makeUniqueID() { return MTracepoints.makeUniqueID(); }
 
+  uint64_t getUniversalID() const noexcept { return g_tls_uid; }
+
+  void setUniversalID(uint64_t uid) noexcept { g_tls_uid = uid; }
+
   xpti::result_t addMetadata(xpti::trace_event_data_t *Event, const char *Key,
-                             const char *Value) {
-    return MTracepoints.addMetadata(Event, Key, Value);
+                             object_id_t ValueID) {
+    return MTracepoints.addMetadata(Event, Key, ValueID);
   }
 
   xpti::trace_event_data_t *
@@ -872,6 +919,25 @@ public:
     return MStringTableRef.query(ID);
   }
 
+  object_id_t registerObject(const char *Object, size_t Size, uint8_t Type) {
+    if (!Object)
+      return xpti::invalid_id;
+
+    return MObjectTable.insert(std::string_view(Object, Size), Type);
+  }
+
+  object_data_t lookupObject(object_id_t ID) {
+    auto [Result, Type] = MObjectTable.lookup(ID);
+    return {Result.size(), Result.data(), Type};
+  }
+
+  uint64_t registerPayload(xpti::payload_t *payload) {
+    if (!payload)
+      return xpti::invalid_id;
+
+    return MTracepoints.registerPayload(payload);
+  }
+
   xpti::result_t registerCallback(uint8_t StreamID, uint16_t TraceType,
                                   xpti::tracepoint_callback_api_t cbFunc) {
     return MNotifier.registerCallback(StreamID, TraceType, cbFunc);
@@ -893,13 +959,25 @@ public:
       // have 'nullptr' for both the Parent and Object only if UserData is
       // provided and the trace_point_type is function_begin/function_end.
       // This allows us to trace function calls without too much effort.
+      std::array<trace_point_type_t, 13> AllowedTypes = {
+          trace_point_type_t::function_begin,
+          trace_point_type_t::function_end,
+          trace_point_type_t::function_with_args_begin,
+          trace_point_type_t::function_with_args_end,
+          trace_point_type_t::mem_alloc_begin,
+          trace_point_type_t::mem_alloc_end,
+          trace_point_type_t::mem_release_begin,
+          trace_point_type_t::mem_release_end,
+          trace_point_type_t::offload_alloc_construct,
+          trace_point_type_t::offload_alloc_associate,
+          trace_point_type_t::offload_alloc_release,
+          trace_point_type_t::offload_alloc_destruct,
+          trace_point_type_t::offload_alloc_accessor};
+      const auto Predicate = [TraceType](trace_point_type_t RHS) {
+        return TraceType == static_cast<uint16_t>(RHS);
+      };
       if (!(UserData &&
-            (TraceType == (uint16_t)trace_point_type_t::function_begin ||
-             TraceType == (uint16_t)trace_point_type_t::function_end ||
-             TraceType ==
-                 (uint16_t)trace_point_type_t::function_with_args_begin ||
-             TraceType ==
-                 (uint16_t)trace_point_type_t::function_with_args_end))) {
+            std::any_of(AllowedTypes.begin(), AllowedTypes.end(), Predicate))) {
         return xpti::result_t::XPTI_RESULT_INVALIDARG;
       }
     }
@@ -923,13 +1001,45 @@ public:
     return MTracepoints.payloadData(Event);
   }
 
+  const xpti::payload_t *queryPayloadByUID(uint64_t uid) {
+    return MTracepoints.payloadDataByUID(uid);
+  }
+
   void printStatistics() {
     MNotifier.printStatistics();
     MStringTableRef.printStatistics();
     MTracepoints.printStatistics();
   }
 
+  static Framework &instance() {
+    Framework *TmpFramework = MInstance.load(std::memory_order_relaxed);
+    std::atomic_thread_fence(std::memory_order_acquire);
+    if (TmpFramework == nullptr) {
+      std::lock_guard<utils::SpinLock> Lock{MSingletoneMutex};
+      TmpFramework = MInstance.load(std::memory_order_relaxed);
+      if (TmpFramework == nullptr) {
+        TmpFramework = new Framework();
+        std::atomic_thread_fence(std::memory_order_release);
+        MInstance.store(TmpFramework, std::memory_order_relaxed);
+      }
+    }
+
+    return *TmpFramework;
+  }
+
 private:
+  friend void ::xptiFrameworkFinalize();
+
+  static void release() {
+    Framework *TmpFramework = MInstance.load(std::memory_order_relaxed);
+    MInstance.store(nullptr, std::memory_order_relaxed);
+    delete TmpFramework;
+  }
+
+  /// Stores singleton instance
+  static std::atomic<Framework *> MInstance;
+  /// Trivially destructible mutex for double-checked lock idiom
+  static utils::SpinLock MSingletoneMutex;
   /// Thread-safe counter used for generating universal IDs
   xpti::safe_uint64_t MUniversalIDs;
   /// Manages loading the subscribers and calling their init() functions
@@ -938,6 +1048,8 @@ private:
   xpti::Notifications MNotifier;
   /// Thread-safe string table
   xpti::StringTable MStringTableRef;
+  /// Thread-safe object table
+  xpti::ObjectTable<object_id_t> MObjectTable;
   /// Thread-safe string table, used for stream IDs
   xpti::StringTable MStreamStringTable;
   /// Thread-safe string table, used for vendor IDs
@@ -948,13 +1060,39 @@ private:
   bool MTraceEnabled;
 };
 
-static Framework GXPTIFramework;
+static int GFrameworkReferenceCounter = 0;
+
+std::atomic<Framework *> Framework::MInstance;
+utils::SpinLock Framework::MSingletoneMutex;
 } // namespace xpti
 
 extern "C" {
+
+XPTI_EXPORT_API void xptiFrameworkInitialize() {
+  std::lock_guard<xpti::utils::SpinLock> guard{xpti::g_framework_mutex};
+  xpti::GFrameworkReferenceCounter++;
+}
+
+XPTI_EXPORT_API void xptiFrameworkFinalize() {
+  std::lock_guard<xpti::utils::SpinLock> guard{xpti::g_framework_mutex};
+
+  xpti::GFrameworkReferenceCounter--;
+  if (xpti::GFrameworkReferenceCounter == 0) {
+    xpti::Framework::release();
+  }
+}
+
+XPTI_EXPORT_API uint64_t xptiGetUniversalId() {
+  return xpti::Framework::instance().getUniversalID();
+}
+
+XPTI_EXPORT_API void xptiSetUniversalId(uint64_t uid) {
+  xpti::Framework::instance().setUniversalID(uid);
+}
+
 XPTI_EXPORT_API uint16_t
 xptiRegisterUserDefinedTracePoint(const char *ToolName, uint8_t UserDefinedTP) {
-  uint8_t ToolID = xpti::GXPTIFramework.registerVendor(ToolName);
+  uint8_t ToolID = xpti::Framework::instance().registerVendor(ToolName);
   UserDefinedTP |= (uint8_t)xpti::trace_point_type_t::user_defined;
   uint16_t UserDefTracepoint = XPTI_PACK08_RET16(ToolID, UserDefinedTP);
 
@@ -963,7 +1101,7 @@ xptiRegisterUserDefinedTracePoint(const char *ToolName, uint8_t UserDefinedTP) {
 
 XPTI_EXPORT_API uint16_t xptiRegisterUserDefinedEventType(
     const char *ToolName, uint8_t UserDefinedEvent) {
-  uint8_t ToolID = xpti::GXPTIFramework.registerVendor(ToolName);
+  uint8_t ToolID = xpti::Framework::instance().registerVendor(ToolName);
   UserDefinedEvent |= (uint8_t)xpti::trace_event_type_t::user_defined;
   uint16_t UserDefEventType = XPTI_PACK08_RET16(ToolID, UserDefinedEvent);
   return UserDefEventType;
@@ -972,60 +1110,81 @@ XPTI_EXPORT_API uint16_t xptiRegisterUserDefinedEventType(
 XPTI_EXPORT_API xpti::result_t xptiInitialize(const char *Stream, uint32_t maj,
                                               uint32_t min,
                                               const char *version) {
-  return xpti::GXPTIFramework.initializeStream(Stream, maj, min, version);
+  return xpti::Framework::instance().initializeStream(Stream, maj, min,
+                                                      version);
 }
 
 XPTI_EXPORT_API void xptiFinalize(const char *Stream) {
-  xpti::GXPTIFramework.finalizeStream(Stream);
+  xpti::Framework::instance().finalizeStream(Stream);
 }
 
 XPTI_EXPORT_API uint64_t xptiGetUniqueId() {
-  return xpti::GXPTIFramework.makeUniqueID();
+  return xpti::Framework::instance().makeUniqueID();
 }
 
 XPTI_EXPORT_API xpti::string_id_t xptiRegisterString(const char *String,
                                                      char **RefTableStr) {
-  return xpti::GXPTIFramework.registerString(String, RefTableStr);
+  return xpti::Framework::instance().registerString(String, RefTableStr);
 }
 
 XPTI_EXPORT_API const char *xptiLookupString(xpti::string_id_t ID) {
-  return xpti::GXPTIFramework.lookupString(ID);
+  return xpti::Framework::instance().lookupString(ID);
+}
+
+XPTI_EXPORT_API xpti::object_id_t
+xptiRegisterObject(const char *Data, size_t Size, uint8_t Type) {
+  return xpti::Framework::instance().registerObject(Data, Size, Type);
+}
+
+XPTI_EXPORT_API xpti::object_data_t xptiLookupObject(xpti::object_id_t ID) {
+  return xpti::Framework::instance().lookupObject(ID);
+}
+
+XPTI_EXPORT_API uint64_t xptiRegisterPayload(xpti::payload_t *payload) {
+  return xpti::Framework::instance().registerPayload(payload);
 }
 
 XPTI_EXPORT_API uint8_t xptiRegisterStream(const char *StreamName) {
-  return xpti::GXPTIFramework.registerStream(StreamName);
+  return xpti::Framework::instance().registerStream(StreamName);
 }
 
 XPTI_EXPORT_API xpti::result_t xptiUnregisterStream(const char *StreamName) {
-  return xpti::GXPTIFramework.unregisterStream(StreamName);
+  return xpti::Framework::instance().unregisterStream(StreamName);
 }
 XPTI_EXPORT_API xpti::trace_event_data_t *
 xptiMakeEvent(const char * /*Name*/, xpti::payload_t *Payload, uint16_t Event,
               xpti::trace_activity_type_t Activity, uint64_t *InstanceNo) {
-  return xpti::GXPTIFramework.createEvent(Payload, Event, Activity, InstanceNo);
+  return xpti::Framework::instance().createEvent(Payload, Event, Activity,
+                                                 InstanceNo);
 }
 
-XPTI_EXPORT_API void xptiReset() { xpti::GXPTIFramework.clear(); }
+XPTI_EXPORT_API void xptiReset() { xpti::Framework::instance().clear(); }
 
 XPTI_EXPORT_API const xpti::trace_event_data_t *xptiFindEvent(uint64_t UId) {
-  return xpti::GXPTIFramework.findEvent(UId);
+  return xpti::Framework::instance().findEvent(UId);
 }
 
 XPTI_EXPORT_API const xpti::payload_t *
 xptiQueryPayload(xpti::trace_event_data_t *LookupObject) {
-  return xpti::GXPTIFramework.queryPayload(LookupObject);
+  return xpti::Framework::instance().queryPayload(LookupObject);
+}
+
+XPTI_EXPORT_API const xpti::payload_t *xptiQueryPayloadByUID(uint64_t uid) {
+  return xpti::Framework::instance().queryPayloadByUID(uid);
 }
 
 XPTI_EXPORT_API xpti::result_t
 xptiRegisterCallback(uint8_t StreamID, uint16_t TraceType,
                      xpti::tracepoint_callback_api_t cbFunc) {
-  return xpti::GXPTIFramework.registerCallback(StreamID, TraceType, cbFunc);
+  return xpti::Framework::instance().registerCallback(StreamID, TraceType,
+                                                      cbFunc);
 }
 
 XPTI_EXPORT_API xpti::result_t
 xptiUnregisterCallback(uint8_t StreamID, uint16_t TraceType,
                        xpti::tracepoint_callback_api_t cbFunc) {
-  return xpti::GXPTIFramework.unregisterCallback(StreamID, TraceType, cbFunc);
+  return xpti::Framework::instance().unregisterCallback(StreamID, TraceType,
+                                                        cbFunc);
 }
 
 XPTI_EXPORT_API xpti::result_t
@@ -1033,18 +1192,18 @@ xptiNotifySubscribers(uint8_t StreamID, uint16_t TraceType,
                       xpti::trace_event_data_t *Parent,
                       xpti::trace_event_data_t *Object, uint64_t InstanceNo,
                       const void *TemporalUserData) {
-  return xpti::GXPTIFramework.notifySubscribers(
+  return xpti::Framework::instance().notifySubscribers(
       StreamID, TraceType, Parent, Object, InstanceNo, TemporalUserData);
 }
 
 XPTI_EXPORT_API bool xptiTraceEnabled() {
-  return xpti::GXPTIFramework.traceEnabled();
+  return xpti::Framework::instance().traceEnabled();
 }
 
 XPTI_EXPORT_API xpti::result_t xptiAddMetadata(xpti::trace_event_data_t *Event,
                                                const char *Key,
-                                               const char *Value) {
-  return xpti::GXPTIFramework.addMetadata(Event, Key, Value);
+                                               xpti::object_id_t ID) {
+  return xpti::Framework::instance().addMetadata(Event, Key, ID);
 }
 
 XPTI_EXPORT_API xpti::metadata_t *
@@ -1053,7 +1212,7 @@ xptiQueryMetadata(xpti::trace_event_data_t *Event) {
 }
 
 XPTI_EXPORT_API void xptiForceSetTraceEnabled(bool YesOrNo) {
-  xpti::GXPTIFramework.setTraceEnabled(YesOrNo);
+  xpti::Framework::instance().setTraceEnabled(YesOrNo);
 }
 } // extern "C"
 

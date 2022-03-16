@@ -70,7 +70,7 @@ add_custom_command(
 add_custom_command(
   DEPENDS ${CONT_FILES} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/HelperFileAndFeatureNames.inc ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/processFiles.py
   OUTPUT  ${PROCESS_FILES_OUTPUT}
-  COMMAND python3 ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/processFiles.py --build-dir ${CMAKE_BINARY_DIR}
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/processFiles.py --build-dir ${CMAKE_BINARY_DIR}
   )
 
 add_custom_target(genconfusable 

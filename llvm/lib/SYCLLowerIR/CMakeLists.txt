@@ -12,15 +12,42 @@ endif()
 # NOTE: could have been added earlier from llvm/projects
 if (NOT TARGET LLVMGenXIntrinsics)
   if (NOT DEFINED LLVMGenXIntrinsics_SOURCE_DIR)
-    set( LLVMGenXIntrinsics_GIT_REPO
-         https://github.com/intel/vc-intrinsics.git )
-    set( LLVMGENXIntrinsics_GIT_TAG 19e6ddafc545bc96ceaacbf7c81cacbff59a39b6)
+    set(LLVMGenXIntrinsics_GIT_REPO https://github.com/intel/vc-intrinsics.git)
+    # commit 8b6e209fe1269a2c6470b36dfbaa0e051d2a100f (master)
+    # Author: Konstantin Vladimirov <konstantin.vladimirov@intel.com>
+    # Date:   Tue Feb 8 10:47:03 2022 +0000
+    # introducing named barrier support in adaptor pass
+    # named barrier required for DPC++ and other customers
+    set(LLVMGenXIntrinsics_GIT_TAG 8b6e209fe1269a2c6470b36dfbaa0e051d2a100f)
+    
     if( INTEL_CUSTOMIZATION )
-      if( DEFINED ENV{ICS_GIT_MIRROR} AND NOT "$ENV{ICS_GIT_MIRROR}" STREQUAL "" )
-        set( LLVMGenXIntrinsics_GIT_REPO
-             $ENV{ICS_GIT_MIRROR}/dpd_icl-vc-intrinsics.git )
-        STRING(REGEX REPLACE "\\\\" "/" LLVMGenXIntrinsics_GIT_REPO "${LLVMGenXIntrinsics_GIT_REPO}")
-      endif()
+      # for dpct builds the LLVMGenXIntrinsics_GIT_REPO is constructed from
+      # GIT_REPO_PATH and GIT_REPO_TAG set independently depending on build
+      # configuration (public/embargo) and condition (building from under ICS
+      # or not)
+
+      # default repo path for public dpct builds, not using ICS
+      set(LLVMGenXIntrinsics_GIT_REPO_PATH https://github.com/intel-innersource)
+      set(LLVMGenXIntrinsics_GIT_REPO_NAME applications.compilers.source.vc-intrinsics.git)
+      # commit a7a3efa116ae165132508f3f9a975fccb196fede
+      # Author: Anatoly Parshintsev <anatoly.parshintsev@intel.com>
+      # Date:   Wed Jan 26 15:11:43 2022 +0000
+      # Fix potential null pointer dereference
+      set(LLVMGenXIntrinsics_GIT_TAG a7a3efa116ae165132508f3f9a975fccb196fede)
+      
+      # Determine if the build is embargo and provide specific settings.
+      set(IS_INTERNAL_ESIMD_BUILD FALSE)
+
+      if (DEFINED ENV{ICS_GIT_MIRROR} AND NOT "$ENV{ICS_GIT_MIRROR}" STREQUAL "")
+        # ICS_GIT_MIRROR, if set, overrides GIT_REPO_PATH.
+        set(LLVMGenXIntrinsics_GIT_REPO_PATH $ENV{ICS_GIT_MIRROR})
+        STRING(REGEX REPLACE "\\\\" "/" LLVMGenXIntrinsics_GIT_REPO_PATH "${LLVMGenXIntrinsics_GIT_REPO_PATH}")
+      endif ()
+
+      # Construct GIT_REPO from from GIT_REPO_PATH and GIT_REPO_NAME.
+      set( LLVMGenXIntrinsics_GIT_REPO
+      ${LLVMGenXIntrinsics_GIT_REPO_PATH}/${LLVMGenXIntrinsics_GIT_REPO_NAME} )
+      
     endif(INTEL_CUSTOMIZATION)
 
     message(STATUS "vc-intrinsics are missing. Will try to download them from ${LLVMGenXIntrinsics_GIT_REPO} ") #INTEL_CUSTOMIZATION
@@ -34,29 +61,33 @@ if (NOT TARGET LLVMGenXIntrinsics)
 
     set(LLVMGenXIntrinsics_SOURCE_DIR ${vc-intrinsics_SOURCE_DIR})
     set(LLVMGenXIntrinsics_BINARY_DIR ${vc-intrinsics_BINARY_DIR})
-  else()
+  else (NOT DEFINED LLVMGenXIntrinsics_SOURCE_DIR)
     # -DLLVMGenXIntrinsics_SOURCE_DIR is provided
     message(STATUS "vc-intrinsics are added manually ${LLVMGenXIntrinsics_SOURCE_DIR}")
 
     set(LLVMGenXIntrinsics_BINARY_DIR ${CMAKE_BINARY_DIR}/vc-intrinsics-build)
     add_subdirectory(${LLVMGenXIntrinsics_SOURCE_DIR} ${LLVMGenXIntrinsics_BINARY_DIR})
-  endif()
+  endif (NOT DEFINED LLVMGenXIntrinsics_SOURCE_DIR)
 
   target_include_directories(LLVMGenXIntrinsics
     PUBLIC $<BUILD_INTERFACE:${LLVMGenXIntrinsics_SOURCE_DIR}/GenXIntrinsics/include>
     PUBLIC $<BUILD_INTERFACE:${LLVMGenXIntrinsics_BINARY_DIR}/GenXIntrinsics/include>
   )
-endif()
+endif (NOT TARGET LLVMGenXIntrinsics)
 
 set_property(GLOBAL PROPERTY LLVMGenXIntrinsics_SOURCE_PROP ${LLVMGenXIntrinsics_SOURCE_DIR})
 set_property(GLOBAL PROPERTY LLVMGenXIntrinsics_BINARY_PROP ${LLVMGenXIntrinsics_BINARY_DIR})
 
 add_llvm_component_library(LLVMSYCLLowerIR
+  ESIMD/LowerESIMD.cpp
+  ESIMD/LowerESIMDVLoadVStore.cpp
+  ESIMD/LowerESIMDVecArg.cpp
+  ESIMD/ESIMDVerifier.cpp
   LowerWGScope.cpp
-  LowerESIMD.cpp
-  LowerESIMDVLoadVStore.cpp
-  LowerESIMDVecArg.cpp
   LowerWGLocalMemory.cpp
+  MutatePrintfAddrspace.cpp
+
+  LocalAccessorToSharedMemory.cpp
 
   ADDITIONAL_HEADER_DIRS
   ${LLVM_MAIN_INCLUDE_DIR}/llvm/SYCLLowerIR
@@ -75,6 +106,7 @@ add_llvm_component_library(LLVMSYCLLowerIR
   LLVMTransformUtils
   
   LINK_COMPONENTS
+  Analysis
   Core
   Support
   )

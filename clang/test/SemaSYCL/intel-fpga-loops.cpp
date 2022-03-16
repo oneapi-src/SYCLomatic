@@ -23,19 +23,19 @@ void foo() {
   // expected-error@+1 {{'nofusion' attribute cannot be applied to a declaration}}
   [[intel::nofusion]] int k[10];
   // expected-error@+1{{'loop_count_avg' attribute cannot be applied to a declaration}}
-  [[intel::loop_count_avg(6)]] int p[10];
+  [[intel::loop_count_avg(6)]] int l[10];
+  // expected-error@+1{{'loop_count' attribute cannot be applied to a declaration}}
+  [[intel::loop_count(8)]] int m[10];
 }
 
 // Test for deprecated spelling of Intel FPGA loop attributes
 void foo_deprecated() {
   int a[10];
-  // expected-warning@+2 {{attribute 'intelfpga::ivdep' is deprecated}}
-  // expected-note@+1 {{did you mean to use 'intel::ivdep' instead?}}
+  // expected-warning@+1 {{unknown attribute 'ivdep' ignored}}
   [[intelfpga::ivdep(2)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 
-  // expected-warning@+2 {{attribute 'intelfpga::ii' is deprecated}}
-  // expected-note@+1 {{did you mean to use 'intel::initiation_interval' instead?}}
+  // expected-warning@+1 {{unknown attribute 'ii' ignored}}
   [[intelfpga::ii(2)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 
@@ -44,28 +44,23 @@ void foo_deprecated() {
   [[intel::ii(2)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 
-  // expected-warning@+2 {{attribute 'intelfpga::max_concurrency' is deprecated}}
-  // expected-note@+1 {{did you mean to use 'intel::max_concurrency' instead?}}
+  // expected-warning@+1 {{unknown attribute 'max_concurrency' ignored}}
   [[intelfpga::max_concurrency(4)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 
-  // expected-warning@+2 {{attribute 'intelfpga::max_interleaving' is deprecated}}
-  // expected-note@+1 {{did you mean to use 'intel::max_interleaving' instead?}}
+  // expected-warning@+1 {{unknown attribute 'max_interleaving' ignored}}
   [[intelfpga::max_interleaving(2)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 
-  // expected-warning@+2 {{attribute 'intelfpga::disable_loop_pipelining' is deprecated}}
-  // expected-note@+1 {{did you mean to use 'intel::disable_loop_pipelining' instead?}}
+  // expected-warning@+1 {{unknown attribute 'disable_loop_pipelining' ignored}}
   [[intelfpga::disable_loop_pipelining]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 
-  // expected-warning@+2 {{attribute 'intelfpga::loop_coalesce' is deprecated}}
-  // expected-note@+1 {{did you mean to use 'intel::loop_coalesce' instead?}}
+  // expected-warning@+1 {{unknown attribute 'loop_coalesce' ignored}}
   [[intelfpga::loop_coalesce(2)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 
-  // expected-warning@+2 {{attribute 'intelfpga::speculated_iterations' is deprecated}}
-  // expected-note@+1 {{did you mean to use 'intel::speculated_iterations' instead?}}
+  // expected-warning@+1 {{unknown attribute 'speculated_iterations' ignored}}
   [[intelfpga::speculated_iterations(6)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 }
@@ -122,7 +117,10 @@ void boo() {
   [[intel::nofusion(0)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
   // expected-error@+1 {{'loop_count_avg' attribute takes one argument}}
-  [[intel::loop_count_avg(3, 6)]]  for (int i = 0; i != 10; ++i)
+  [[intel::loop_count_avg(3, 6)]] for (int i = 0; i != 10; ++i)
+      a[i] = 0;
+  // expected-error@+1 {{'loop_count' attribute takes one argument}}
+  [[intel::loop_count(6, 9)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 }
 
@@ -156,19 +154,19 @@ void goo() {
   // expected-error@+1 {{unknown argument to 'ivdep'; expected integer or array variable}}
   [[intel::ivdep("test123")]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'const char [8]'}}
+  // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'const char[8]'}}
   [[intel::initiation_interval("test123")]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'const char [8]'}}
+  // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'const char[8]'}}
   [[intel::max_concurrency("test123")]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'const char [8]'}}
+  // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'const char[8]'}}
   [[intel::loop_coalesce("test123")]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'const char [8]'}}
+  // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'const char[8]'}}
   [[intel::max_interleaving("test123")]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'const char [8]'}}
+  // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'const char[8]'}}
   [[intel::speculated_iterations("test123")]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
   // expected-error@+1 {{unknown argument to 'ivdep'; expected integer or array variable}}
@@ -207,8 +205,16 @@ void goo() {
   // expected-error@+1 {{'loop_count_avg' attribute requires a non-negative integral compile time constant expression}}
   [[intel::loop_count_avg(-1)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
-  // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'const char [4]'}}
+  // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'const char[4]'}}
   [[intel::loop_count_avg("abc")]] for (int i = 0; i != 10; ++i)
+      a[i] = 0;
+  // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'const char[4]'}}
+  [[intel::loop_count("abc")]] for (int i = 0; i != 10; ++i)
+      a[i] = 0;
+  [[intel::loop_count(0)]] for (int i = 0; i != 10; ++i)
+      a[i] = 0;
+  // expected-error@+1 {{'loop_count' attribute requires a non-negative integral compile time constant expression}}
+  [[intel::loop_count(-1)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 }
 
@@ -323,6 +329,11 @@ void zoo() {
   // expected-error@+1{{duplicate Intel FPGA loop attribute 'loop_count_avg'}}
   [[intel::loop_count_avg(2)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
+
+  [[intel::loop_count(2)]]
+  // expected-error@+1{{duplicate Intel FPGA loop attribute 'loop_count'}}
+  [[intel::loop_count(2)]] for (int i = 0; i != 10; ++i)
+      a[i] = 0;
 }
 
 // Test for Intel FPGA loop attributes compatibility
@@ -371,6 +382,8 @@ void loop_attrs_compatibility() {
       a[i] = 0;
   [[intel::loop_count_max(8)]]
   for (int i = 0; i != 10; ++i)
+      a[i] = 0;
+  [[intel::loop_count(8)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 }
 
@@ -506,6 +519,10 @@ void loop_count_control_dependent() {
   for (int i = 0; i != 10; ++i)
       a[i] = 0;
 
+  // expected-error@+1{{'loop_count' attribute requires a non-negative integral compile time constant expression}}
+  [[intel::loop_count(C)]] for (int i = 0; i != 10; ++i)
+      a[i] = 0;
+
   [[intel::loop_count_avg(A)]]
   //expected-error@+1{{duplicate Intel FPGA loop attribute 'loop_count_avg'}}
   [[intel::loop_count_avg(B)]] for (int i = 0; i != 10; ++i)
@@ -521,6 +538,10 @@ void loop_count_control_dependent() {
   [[intel::loop_count_max(B)]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 
+  [[intel::loop_count(A)]]
+  // expected-error@+1{{duplicate Intel FPGA loop attribute 'loop_count'}}
+  [[intel::loop_count(B)]] for (int i = 0; i != 10; ++i)
+      a[i] = 0;
 }
 
 void check_max_concurrency_expression() {
@@ -654,6 +675,11 @@ void check_loop_attr_template_instantiation() {
   // expected-error@+2 {{integral constant expression must have integral or unscoped enumeration type, not 'S'}}
   // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'float'}}
   [[intel::loop_count_min(Ty{})]] for (int i = 0; i != 10; ++i)
+      a[i] = 0;
+
+  // expected-error@+2 {{integral constant expression must have integral or unscoped enumeration type, not 'S'}}
+  // expected-error@+1 {{integral constant expression must have integral or unscoped enumeration type, not 'float'}}
+  [[intel::loop_count(Ty{})]] for (int i = 0; i != 10; ++i)
       a[i] = 0;
 }
 

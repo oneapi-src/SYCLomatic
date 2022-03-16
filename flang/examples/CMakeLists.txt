@@ -11,4 +11,5 @@ target_link_libraries(external-hello-world
   FortranRuntime
 )
 
-add_subdirectory(HelloWorld)
+add_subdirectory(PrintFlangFunctionNames)
+add_subdirectory(FlangOmpReport)

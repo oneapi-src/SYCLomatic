@@ -87,7 +87,6 @@ class CompilerInstance;
 class CompilerInvocation;
 class DiagnosticConsumer;
 class DiagnosticsEngine;
-class SourceManager;
 
 namespace driver {
 
@@ -150,7 +149,7 @@ public:
 /// T must derive from clang::FrontendAction.
 ///
 /// Example:
-/// FrontendActionFactory *Factory =
+/// std::unique_ptr<FrontendActionFactory> Factory =
 ///   newFrontendActionFactory<clang::SyntaxOnlyAction>();
 template <typename T>
 std::unique_ptr<FrontendActionFactory> newFrontendActionFactory();
@@ -180,7 +179,7 @@ public:
 ///
 /// Example:
 /// struct ProvidesASTConsumers {
-///   clang::ASTConsumer *newASTConsumer();
+///   std::unique_ptr<clang::ASTConsumer> newASTConsumer();
 /// } Factory;
 /// std::unique_ptr<FrontendActionFactory> FactoryAdapter(
 ///   newFrontendActionFactory(&Factory));
@@ -303,9 +302,15 @@ public:
 
   ~ToolInvocation();
 
-  /// Set a \c DiagnosticConsumer to use during parsing.
+  /// Set a \c DiagnosticConsumer to use during driver command-line parsing and
+  /// the action invocation itself.
   void setDiagnosticConsumer(DiagnosticConsumer *DiagConsumer) {
     this->DiagConsumer = DiagConsumer;
+  }
+
+  /// Set a \c DiagnosticOptions to use during driver command-line parsing.
+  void setDiagnosticOptions(DiagnosticOptions *DiagOpts) {
+    this->DiagOpts = DiagOpts;
   }
 
   /// Run the clang invocation.
@@ -328,6 +333,7 @@ public:
   #ifdef INTEL_CUSTOMIZATION
   DiagnosticConsumer *DiagnosticPrinter = nullptr;
   #endif
+  DiagnosticOptions *DiagOpts = nullptr;
 };
 
 /// Utility to run a FrontendAction over a set of files.

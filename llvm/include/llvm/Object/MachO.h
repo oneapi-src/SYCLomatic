@@ -22,6 +22,7 @@
 #include "llvm/ADT/Triple.h"
 #include "llvm/ADT/iterator_range.h"
 #include "llvm/BinaryFormat/MachO.h"
+#include "llvm/BinaryFormat/Swift.h"
 #include "llvm/MC/SubtargetFeature.h"
 #include "llvm/Object/Binary.h"
 #include "llvm/Object/ObjectFile.h"
@@ -311,6 +312,9 @@ public:
   bool isSectionBitcode(DataRefImpl Sec) const override;
   bool isDebugSection(DataRefImpl Sec) const override;
 
+  /// Return the raw contents of an entire segment.
+  ArrayRef<uint8_t> getSegmentContents(StringRef SegmentName) const;
+
   /// When dsymutil generates the companion file, it strips all unnecessary
   /// sections (e.g. everything in the _TEXT segment) by omitting their body
   /// and setting the offset in their corresponding load command to zero.
@@ -559,6 +563,7 @@ public:
   ArrayRef<uint8_t> getDyldInfoWeakBindOpcodes() const;
   ArrayRef<uint8_t> getDyldInfoLazyBindOpcodes() const;
   ArrayRef<uint8_t> getDyldInfoExportsTrie() const;
+  SmallVector<uint64_t> getFunctionStarts() const;
   ArrayRef<uint8_t> getUuid() const;
 
   StringRef getStringTableData() const;
@@ -579,6 +584,9 @@ public:
   bool isRelocatableObject() const override;
 
   StringRef mapDebugSectionName(StringRef Name) const override;
+
+  llvm::binaryformat::Swift5ReflectionSectionKind
+  mapReflectionSectionNameToEnumValue(StringRef SectionName) const override;
 
   bool hasPageZeroSegment() const { return HasPageZeroSegment; }
 
@@ -649,6 +657,13 @@ public:
     return std::string(std::string(Version.str()));
   }
 
+  /// If the input path is a .dSYM bundle (as created by the dsymutil tool),
+  /// return the paths to the object files found in the bundle, otherwise return
+  /// an empty vector. If the path appears to be a .dSYM bundle but no objects
+  /// were found or there was a filesystem error, then return an error.
+  static Expected<std::vector<std::string>>
+  findDsymObjectMembers(StringRef Path);
+
 private:
   MachOObjectFile(MemoryBufferRef Object, bool IsLittleEndian, bool Is64Bits,
                   Error &Err, uint32_t UniversalCputype = 0,
@@ -675,6 +690,7 @@ private:
   const char *DataInCodeLoadCmd = nullptr;
   const char *LinkOptHintsLoadCmd = nullptr;
   const char *DyldInfoLoadCmd = nullptr;
+  const char *FuncStartsLoadCmd = nullptr;
   const char *UuidLoadCmd = nullptr;
   bool HasPageZeroSegment = false;
 };

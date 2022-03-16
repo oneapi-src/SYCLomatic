@@ -302,7 +302,7 @@ __global__ void ScanKernel(int* data) {
   int input = data[threadid];
   int output1 = 0, output2 = 0;
 // CHECK: /*
-// CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cub::WarpScan.Scan is not supported by the Intel(R) DPC++ Compatibility Tool.
+// CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cub::WarpScan.Scan is not supported.
 // CHECK-NEXT: */
 // CHECK-NEXT: WarpScan(temp1).Scan(input, output1, output2, cub::Sum());
   WarpScan(temp1).Scan(input, output1, output2, cub::Sum());

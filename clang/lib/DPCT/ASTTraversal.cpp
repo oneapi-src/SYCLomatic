@@ -2385,15 +2385,18 @@ void ThrustCtorExprRule::registerMatcher(MatchFinder &MF) {
                          hasDeclContext(namespaceDecl(hasName("thrust"))));
   };
   auto hasFunctionalActor = []() {
-    return cxxRecordDecl(hasName("thrust::detail::functional::actor"));
+    return hasType(qualType(hasDeclaration(cxxRecordDecl(hasName("thrust::detail::functional::actor")))));
   };
 
   MF.addMatcher(
       cxxConstructExpr(hasType(hasAnyThrustRecord())).bind("thrustCtorExpr"),
       this);
-  MF.addMatcher(cxxConstructExpr(hasType(hasFunctionalActor()))
-                    .bind("thrustCtorPlaceHolder"),
-                this);
+  MF.addMatcher(
+      cxxConstructExpr(anyOf(hasFunctionalActor(),
+                             hasType(qualType(hasDeclaration(
+                                 typedefNameDecl(hasFunctionalActor()))))))
+          .bind("thrustCtorPlaceHolder"),
+      this);
 }
 
 void ThrustCtorExprRule::replacePlaceHolderExpr(const CXXConstructExpr *CE) {
@@ -2512,7 +2515,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cufftDoubleComplex", "cufftResult_t", "cufftResult",
                   "cufftType_t", "cufftType", "thrust::pair", "CUdeviceptr",
                   "cudaDeviceAttr", "CUmodule", "CUfunction", "cudaMemcpyKind",
-                  "cudaComputeMode"),
+                  "cudaComputeMode", "__nv_bfloat16"),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
@@ -3068,6 +3071,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     auto TypeStr =
         DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
 
+    if (auto FD = DpctGlobalInfo::getParentFunction(TL)) {
+      if (FD->isImplicit())
+        return;
+    }
+
     if (ProcessedTypeLocs.find(*TL) != ProcessedTypeLocs.end())
       return;
 
@@ -3180,6 +3188,10 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     // Add '#include <complex>' directive to the file only once
     if (TypeStr == "cuComplex" || TypeStr == "cuDoubleComplex") {
       DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_Complex);
+    }
+    // Add '#include <oneapi/mkl/bfloat16.hpp>' directive to the file only once
+    if (TypeStr == "__nv_bfloat16") {
+      DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_BFloat16);
     }
 
     if (TypeStr.rfind("identity", 0) == 0) {
@@ -5460,15 +5472,19 @@ void DeviceRandomFunctionCallRule::runRule(
       return;
     }
 
-    std::string Arg0Type = CE->getArg(0)->getType().getAsString();
-    std::string Arg1Type = CE->getArg(1)->getType().getAsString();
-    std::string Arg2Type = CE->getArg(2)->getType().getAsString();
+    std::string Arg0Type = DpctGlobalInfo::getTypeName(
+        CE->getArg(0)->getType().getCanonicalType());
+    std::string Arg1Type = DpctGlobalInfo::getTypeName(
+        CE->getArg(1)->getType().getCanonicalType());
+    std::string Arg2Type = DpctGlobalInfo::getTypeName(
+        CE->getArg(2)->getType().getCanonicalType());
     std::string DRefArg3Type;
 
     if (Arg0Type == "unsigned long long" && Arg1Type == "unsigned long long" &&
         Arg2Type == "unsigned long long" &&
-        CE->getArg(3)->getType()->isPointerType()) {
-      DRefArg3Type = CE->getArg(3)->getType()->getPointeeType().getAsString();
+        CE->getArg(3)->getType().getCanonicalType()->isPointerType()) {
+      DRefArg3Type = DpctGlobalInfo::getTypeName(
+          CE->getArg(3)->getType().getCanonicalType()->getPointeeType());
       if (MapNames::DeviceRandomGeneratorTypeMap.find(DRefArg3Type) ==
           MapNames::DeviceRandomGeneratorTypeMap.end()) {
         report(FuncNameBegin, Diagnostics::NOT_SUPPORTED_PARAMETER, false,
@@ -8591,7 +8607,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       AttributeName = findValueofAttrVar(AttrArg, CE);
       if (AttributeName.empty()) {
         report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
-               false, "recognized by the Intel(R) DPC++ Compatibility Tool");
+               false);
         return;
       }
     }
@@ -10795,11 +10811,9 @@ void MemVarRule::removeHostConstantWarning(Replacement &R) {
   std::string ReplStr = R.getReplacementText().str();
 
   // warning text of Diagnostics::HOST_CONSTANT
-  std::string Warning =
-      "The Intel\\(R\\) DPC\\+\\+ Compatibility Tool did not detect the "
-      "variable "
-      "[_a-zA-Z][_a-zA-Z0-9]+ used in device code. If this variable is also "
-      "used in device code, you need to rewrite the code.";
+  std::string Warning = "The use of variable [_a-zA-Z][_a-zA-Z0-9]+ in device "
+                        "code was not detected. If this variable is also used "
+                        "in device code, you need to rewrite the code.";
   std::string Pattern =
       "/\\*\\s+DPCT" +
       std::to_string(static_cast<int>(Diagnostics::HOST_CONSTANT)) +

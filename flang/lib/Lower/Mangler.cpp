@@ -22,7 +22,7 @@
 // recursively build the vector of module scopes
 static void moduleNames(const Fortran::semantics::Scope &scope,
                         llvm::SmallVector<llvm::StringRef, 2> &result) {
-  if (scope.kind() == Fortran::semantics::Scope::Kind::Global) {
+  if (scope.IsTopLevel()) {
     return;
   }
   moduleNames(scope.parent(), result);
@@ -113,6 +113,12 @@ Fortran::lower::mangle::mangleName(const Fortran::semantics::Symbol &symbol,
               return fir::NameUniquer::doConstant(modNames, optHost,
                                                   symbolName);
             return fir::NameUniquer::doVariable(modNames, optHost, symbolName);
+          },
+          [&](const Fortran::semantics::NamelistDetails &) {
+            auto modNames = moduleNames(ultimateSymbol);
+            auto optHost = hostName(ultimateSymbol);
+            return fir::NameUniquer::doNamelistGroup(modNames, optHost,
+                                                     symbolName);
           },
           [&](const Fortran::semantics::CommonBlockDetails &) {
             return fir::NameUniquer::doCommonBlock(symbolName);

@@ -77,23 +77,23 @@ void k() {
   thrust::binary_search(v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of thrust::binary_search is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of thrust::binary_search is not supported.
   // CHECK-NEXT: */
   // CHECK-NEXT: thrust::binary_search(oneapi::dpl::execution::seq, v.begin(), v.end(), 1);
   thrust::binary_search(thrust::seq, v.begin(), v.end(), 1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of thrust::binary_search is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of thrust::binary_search is not supported.
   // CHECK-NEXT: */
   // CHECK-NEXT:   thrust::binary_search(v.begin(), v.end(), 1);
   thrust::binary_search(v.begin(), v.end(), 1);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of thrust::binary_search is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of thrust::binary_search is not supported.
   // CHECK-NEXT: */
   // CHECK-NEXT:   thrust::binary_search(oneapi::dpl::execution::seq, v.begin(), v.end(), 1, bp);
   thrust::binary_search(thrust::seq, v.begin(), v.end(), 1, bp);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of thrust::binary_search is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of thrust::binary_search is not supported.
   // CHECK-NEXT: */
   // CHECK-NEXT:   thrust::binary_search(v.begin(), v.end(), 1, bp);
   thrust::binary_search(v.begin(), v.end(), 1, bp);

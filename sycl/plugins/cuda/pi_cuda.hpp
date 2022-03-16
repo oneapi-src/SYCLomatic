@@ -47,6 +47,10 @@ pi_result cuda_piMemRetain(pi_mem);
 pi_result cuda_piMemRelease(pi_mem);
 pi_result cuda_piKernelRetain(pi_kernel);
 pi_result cuda_piKernelRelease(pi_kernel);
+pi_result cuda_piKernelGetGroupInfo(pi_kernel kernel, pi_device device,
+                                    pi_kernel_group_info param_name,
+                                    size_t param_value_size, void *param_value,
+                                    size_t *param_value_size_ret);
 /// \endcond
 }
 
@@ -581,6 +585,9 @@ struct _pi_kernel {
   pi_program program_;
   std::atomic_uint32_t refCount_;
 
+  static constexpr pi_uint32 REQD_THREADS_PER_BLOCK_DIMENSIONS = 3u;
+  size_t reqdThreadsPerBlock_[REQD_THREADS_PER_BLOCK_DIMENSIONS];
+
   /// Structure that holds the arguments to the kernel.
   /// Note earch argument size is known, since it comes
   /// from the kernel signature.
@@ -631,7 +638,22 @@ struct _pi_kernel {
 
     void add_local_arg(size_t index, size_t size) {
       size_t localOffset = this->get_local_size();
-      add_arg(index, sizeof(size_t), (const void *)&(localOffset), size);
+
+      // maximum required alignment is the size of the largest vector type
+      const size_t max_alignment = sizeof(double) * 16;
+
+      // for arguments smaller than the maximum alignment simply align to the
+      // size of the argument
+      const size_t alignment = std::min(max_alignment, size);
+
+      // align the argument
+      size_t alignedLocalOffset = localOffset;
+      if (localOffset % alignment != 0) {
+        alignedLocalOffset += alignment - (localOffset % alignment);
+      }
+
+      add_arg(index, sizeof(size_t), (const void *)&(alignedLocalOffset),
+              size + (alignedLocalOffset - localOffset));
     }
 
     void set_implicit_offset(size_t size, std::uint32_t *implicitOffset) {
@@ -657,11 +679,13 @@ struct _pi_kernel {
         name_{name}, context_{ctxt}, program_{program}, refCount_{1} {
     cuda_piProgramRetain(program_);
     cuda_piContextRetain(context_);
+    /// Note: this code assumes that there is only one device per context
+    pi_result retError = cuda_piKernelGetGroupInfo(
+        this, ctxt->get_device(), PI_KERNEL_GROUP_INFO_COMPILE_WORK_GROUP_SIZE,
+        sizeof(reqdThreadsPerBlock_), reqdThreadsPerBlock_, nullptr);
+    (void)retError;
+    assert(retError == PI_SUCCESS);
   }
-
-  _pi_kernel(CUfunction func, const char *name, pi_program program,
-             pi_context ctxt)
-      : _pi_kernel{func, nullptr, name, program, ctxt} {}
 
   ~_pi_kernel()
   {

@@ -1,4 +1,4 @@
-//===------- pi_level_zero.hpp - Level Zero Plugin -------------------===//
+//===--------- pi_level_zero.hpp - Level Zero Plugin ----------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -28,6 +28,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -95,6 +96,10 @@ template <> ze_structure_type_t getZeStructureType<ze_image_desc_t>() {
 template <> ze_structure_type_t getZeStructureType<ze_module_desc_t>() {
   return ZE_STRUCTURE_TYPE_MODULE_DESC;
 }
+template <>
+ze_structure_type_t getZeStructureType<ze_module_program_exp_desc_t>() {
+  return ZE_STRUCTURE_TYPE_MODULE_PROGRAM_EXP_DESC;
+}
 template <> ze_structure_type_t getZeStructureType<ze_kernel_desc_t>() {
   return ZE_STRUCTURE_TYPE_KERNEL_DESC;
 }
@@ -133,6 +138,10 @@ ze_structure_type_t getZeStructureType<ze_device_cache_properties_t>() {
 template <>
 ze_structure_type_t getZeStructureType<ze_device_memory_properties_t>() {
   return ZE_STRUCTURE_TYPE_DEVICE_MEMORY_PROPERTIES;
+}
+template <>
+ze_structure_type_t getZeStructureType<ze_device_memory_access_properties_t>() {
+  return ZE_STRUCTURE_TYPE_DEVICE_MEMORY_ACCESS_PROPERTIES;
 }
 template <> ze_structure_type_t getZeStructureType<ze_module_properties_t>() {
   return ZE_STRUCTURE_TYPE_MODULE_PROPERTIES;
@@ -226,6 +235,7 @@ struct _pi_platform {
   // Cache versions info from zeDriverGetProperties.
   std::string ZeDriverVersion;
   std::string ZeDriverApiVersion;
+  ze_api_version_t ZeApiVersion;
 
   // Cache driver extensions
   std::unordered_map<std::string, uint32_t> zeDriverExtensionMap;
@@ -264,6 +274,7 @@ protected:
   // type
   virtual pi_result allocateImpl(void **ResultPtr, size_t Size,
                                  pi_uint32 Alignment) = 0;
+  virtual MemType getMemTypeImpl() = 0;
 
 public:
   USMMemoryAllocBase(pi_context Ctx, pi_device Dev)
@@ -271,6 +282,7 @@ public:
   void *allocate(size_t Size) override final;
   void *allocate(size_t Size, size_t Alignment) override final;
   void deallocate(void *Ptr) override final;
+  MemType getMemType() override final;
 };
 
 // Allocation routines for shared memory type
@@ -278,6 +290,7 @@ class USMSharedMemoryAlloc : public USMMemoryAllocBase {
 protected:
   pi_result allocateImpl(void **ResultPtr, size_t Size,
                          pi_uint32 Alignment) override;
+  MemType getMemTypeImpl() override;
 
 public:
   USMSharedMemoryAlloc(pi_context Ctx, pi_device Dev)
@@ -289,6 +302,7 @@ class USMDeviceMemoryAlloc : public USMMemoryAllocBase {
 protected:
   pi_result allocateImpl(void **ResultPtr, size_t Size,
                          pi_uint32 Alignment) override;
+  MemType getMemTypeImpl() override;
 
 public:
   USMDeviceMemoryAlloc(pi_context Ctx, pi_device Dev)
@@ -300,6 +314,7 @@ class USMHostMemoryAlloc : public USMMemoryAllocBase {
 protected:
   pi_result allocateImpl(void **ResultPtr, size_t Size,
                          pi_uint32 Alignment) override;
+  MemType getMemTypeImpl() override;
 
 public:
   USMHostMemoryAlloc(pi_context Ctx) : USMMemoryAllocBase(Ctx, nullptr) {}
@@ -314,29 +329,43 @@ struct _pi_device : _pi_object {
     // PI device creation.
   }
 
-  // Keep the ordinal of a "compute" commands group, where we send all
-  // compute commands and some copy commands, and a pair of ordinals for the
-  // main copy commands group and link copy command groups, where we can
-  // send only copy commands.
-  // A value of "-1" means that there is no such queue group available
-  // in the level zero backend.
-  int32_t ZeComputeQueueGroupIndex;
-  int32_t ZeMainCopyQueueGroupIndex;
-  int32_t ZeLinkCopyQueueGroupIndex;
+  // The helper structure that keeps info about a command queue groups of the
+  // device. It is not changed after it is initialized.
+  struct queue_group_info_t {
+    typedef enum {
+      MainCopy,
+      LinkCopy,
+      Compute,
+      Size // must be last
+    } type;
 
-  // Keep the index of the compute engine
-  int32_t ZeComputeEngineIndex = 0;
+    // Keep the ordinal of the commands group as returned by
+    // zeDeviceGetCommandQueueGroupProperties. A value of "-1" means that
+    // there is no such queue group available in the Level Zero runtime.
+    int32_t ZeOrdinal{-1};
 
-  // Cache the properties of the compute/copy queue groups.
-  ZeStruct<ze_command_queue_group_properties_t> ZeComputeQueueGroupProperties;
-  ZeStruct<ze_command_queue_group_properties_t> ZeMainCopyQueueGroupProperties;
-  ZeStruct<ze_command_queue_group_properties_t> ZeLinkCopyQueueGroupProperties;
+    // Keep the index of the specific queue in this queue group where
+    // all the command enqueues of the corresponding type should go to.
+    // The value of "-1" means that no hard binding is defined and
+    // implementation can choose specific queue index on its own.
+    int32_t ZeIndex{-1};
+
+    // Keeps the queue group properties.
+    ZeStruct<ze_command_queue_group_properties_t> ZeProperties;
+  };
+
+  std::vector<queue_group_info_t> QueueGroup =
+      std::vector<queue_group_info_t>(queue_group_info_t::Size);
 
   // This returns "true" if a main copy engine is available for use.
-  bool hasMainCopyEngine() const { return ZeMainCopyQueueGroupIndex >= 0; }
+  bool hasMainCopyEngine() const {
+    return QueueGroup[queue_group_info_t::MainCopy].ZeOrdinal >= 0;
+  }
 
   // This returns "true" if a link copy engine is available for use.
-  bool hasLinkCopyEngine() const { return ZeLinkCopyQueueGroupIndex >= 0; }
+  bool hasLinkCopyEngine() const {
+    return QueueGroup[queue_group_info_t::LinkCopy].ZeOrdinal >= 0;
+  }
 
   // This returns "true" if a main or link copy engine is available for use.
   bool hasCopyEngine() const {
@@ -373,6 +402,8 @@ struct _pi_device : _pi_object {
   ZeCache<ZeStruct<ze_device_module_properties_t>> ZeDeviceModuleProperties;
   ZeCache<std::vector<ZeStruct<ze_device_memory_properties_t>>>
       ZeDeviceMemoryProperties;
+  ZeCache<ZeStruct<ze_device_memory_access_properties_t>>
+      ZeDeviceMemoryAccessProperties;
   ZeCache<ZeStruct<ze_device_cache_properties_t>> ZeDeviceCacheProperties;
 };
 
@@ -389,12 +420,12 @@ struct pi_command_list_info_t {
   // may be still "in-use" due to sporadic delay in HW.
   bool InUse{false};
 
-  // Record the index of copy queue (in the vector of available copy queues)
-  // to which the command list (if any) will be submitted.
-  // If there is no command list, or if the command list is not a copy command
-  // list, the value is set to -1.
-  int CopyQueueIndex{-1};
-  bool isCopy() const { return CopyQueueIndex != -1; }
+  // Record the queue to which the command list will be submitted.
+  ze_command_queue_handle_t ZeQueue{nullptr};
+  // Keeps the ordinal of the ZeQueue queue group. Invalid if ZeQueue==nullptr
+  uint32_t ZeQueueGroupOrdinal{0};
+  // Helper functions to tell if this is a copy command-list.
+  bool isCopy(pi_queue Queue) const;
 
   // Keeps events created by commands submitted into this command-list.
   // TODO: use this for explicit wait/cleanup of events at command-list
@@ -415,10 +446,8 @@ typedef pi_command_list_map_t::iterator pi_command_list_ptr_t;
 struct _pi_context : _pi_object {
   _pi_context(ze_context_handle_t ZeContext, pi_uint32 NumDevices,
               const pi_device *Devs, bool OwnZeContext)
-      : ZeContext{ZeContext},
-        OwnZeContext{OwnZeContext}, Devices{Devs, Devs + NumDevices},
-        ZeCommandListInit{nullptr}, ZeEventPool{nullptr},
-        NumEventsAvailableInEventPool{}, NumEventsUnreleasedInEventPool{} {
+      : ZeContext{ZeContext}, OwnZeContext{OwnZeContext},
+        Devices{Devs, Devs + NumDevices}, ZeCommandListInit{nullptr} {
     // NOTE: one must additionally call initialize() to complete
     // PI context creation.
 
@@ -513,10 +542,18 @@ struct _pi_context : _pi_object {
   // Mutex Lock for the Command List Cache. This lock is used to control both
   // compute and copy command list caches.
   std::mutex ZeCommandListCacheMutex;
-  // Cache of all currently Available Command Lists for use by PI APIs
-  std::list<ze_command_list_handle_t> ZeComputeCommandListCache;
-  // Cache of all currently Available Copy Command Lists for use by PI APIs
-  std::list<ze_command_list_handle_t> ZeCopyCommandListCache;
+  // Cache of all currently available/completed command/copy lists.
+  // Note that command-list can only be re-used on the same device.
+  //
+  // TODO: explore if we should use root-device for creating command-lists
+  // as spec says that in that case any sub-device can re-use it: "The
+  // application must only use the command list for the device, or its
+  // sub-devices, which was provided during creation."
+  //
+  std::unordered_map<ze_device_handle_t, std::list<ze_command_list_handle_t>>
+      ZeComputeCommandListCache;
+  std::unordered_map<ze_device_handle_t, std::list<ze_command_list_handle_t>>
+      ZeCopyCommandListCache;
 
   // Retrieves a command list for executing on this device along with
   // a fence to be used in tracking the execution of this command list.
@@ -527,20 +564,26 @@ struct _pi_context : _pi_object {
   // caller must pass a command queue to create a new fence for the new command
   // list if a command list/fence pair is not available. All Command Lists &
   // associated fences are destroyed at Device Release.
+  // If UseCopyEngine is true, the command will eventually be executed in a
+  // copy engine. Otherwise, the command will be executed in a compute engine.
   // If AllowBatching is true, then the command list returned may already have
   // command in it, if AllowBatching is false, any open command lists that
   // already exist in Queue will be closed and executed.
   pi_result getAvailableCommandList(pi_queue Queue,
                                     pi_command_list_ptr_t &CommandList,
-                                    bool PreferCopyCommandList = false,
+                                    bool UseCopyEngine = false,
                                     bool AllowBatching = false);
 
   // Get index of the free slot in the available pool. If there is no available
-  // pool then create new one.
-  pi_result getFreeSlotInExistingOrNewPool(ze_event_pool_handle_t &, size_t &);
+  // pool then create new one. The HostVisible parameter tells if we need a
+  // slot for a host-visible event. The ProfilingEnabled tells is we need a
+  // slot for an event with profiling capabilities.
+  pi_result getFreeSlotInExistingOrNewPool(ze_event_pool_handle_t &, size_t &,
+                                           bool HostVisible,
+                                           bool ProfilingEnabled);
 
-  // If event is destroyed then decrement number of events living in the pool
-  // and destroy the pool if there are no unreleased events.
+  // Decrement number of events living in the pool upon event destroy
+  // and return the pool to the cache if there are no unreleased events.
   pi_result decrementUnreleasedEventsInPool(pi_event Event);
 
   // Store USM allocator context(internal allocator structures)
@@ -561,11 +604,28 @@ struct _pi_context : _pi_object {
 private:
   // Following member variables are used to manage assignment of events
   // to event pools.
-  // TODO: These variables may be moved to pi_device and pi_platform
-  // if appropriate.
+  //
+  // TODO: Create pi_event_pool class to encapsulate working with pools.
+  // This will avoid needing the use of maps below, and cleanup the
+  // pi_context overall.
+  //
 
-  // Event pool to which events are being added to.
-  ze_event_pool_handle_t ZeEventPool;
+  // The cache of event pools from where new events are allocated from.
+  // The head event pool is where the next event would be added to if there
+  // is still some room there. If there is no room in the head then
+  // the following event pool is taken (guranteed to be empty) and made the
+  // head. In case there is no next pool, a new pool is created and made the
+  // head.
+  //
+  // Cache of event pools to which host-visible events are added to.
+  std::vector<std::list<ze_event_pool_handle_t>> ZeEventPoolCache{4};
+  auto getZeEventPoolCache(bool HostVisible, bool WithProfiling) {
+    if (HostVisible)
+      return WithProfiling ? &ZeEventPoolCache[0] : &ZeEventPoolCache[1];
+    else
+      return WithProfiling ? &ZeEventPoolCache[2] : &ZeEventPoolCache[3];
+  }
+
   // This map will be used to determine if a pool is full or not
   // by storing number of empty slots available in the pool.
   std::unordered_map<ze_event_pool_handle_t, pi_uint32>
@@ -577,53 +637,64 @@ private:
   std::unordered_map<ze_event_pool_handle_t, pi_uint32>
       NumEventsUnreleasedInEventPool;
 
-  // TODO: we'd like to create a thread safe map class instead of mutex + map,
-  // that must be carefully used together.
-
-  // Mutex to control operations on NumEventsAvailableInEventPool map.
-  std::mutex NumEventsAvailableInEventPoolMutex;
-
-  // Mutex to control operations on NumEventsUnreleasedInEventPool.
-  std::mutex NumEventsUnreleasedInEventPoolMutex;
+  // Mutex to control operations on event pool caches and the helper maps
+  // holding the current pool usage counts.
+  std::mutex ZeEventPoolCacheMutex;
 };
-
-// If doing dynamic batching, start batch size at 4.
-const pi_uint32 DynamicBatchStartSize = 4;
 
 struct _pi_queue : _pi_object {
   _pi_queue(ze_command_queue_handle_t Queue,
             std::vector<ze_command_queue_handle_t> &CopyQueues,
-            pi_context Context, pi_device Device, pi_uint32 BatchSize,
-            bool OwnZeCommandQueue, pi_queue_properties PiQueueProperties = 0)
-      : ZeComputeCommandQueue{Queue},
-        ZeCopyCommandQueues{CopyQueues}, Context{Context}, Device{Device},
-        QueueBatchSize{BatchSize > 0 ? BatchSize : DynamicBatchStartSize},
-        OwnZeCommandQueue{OwnZeCommandQueue}, UseDynamicBatching{BatchSize ==
-                                                                 0},
-        PiQueueProperties(PiQueueProperties) {
-    OpenCommandList = CommandListMap.end();
-  }
+            pi_context Context, pi_device Device, bool OwnZeCommandQueue,
+            pi_queue_properties Properties = 0);
 
-  // Level Zero compute command queue handle.
-  ze_command_queue_handle_t ZeComputeCommandQueue;
+  using queue_type = _pi_device::queue_group_info_t::type;
+
+  // PI queue is in general a one to many mapping to L0 native queues.
+  struct pi_queue_group_t {
+    pi_queue Queue;
+    pi_queue_group_t() = delete;
+
+    // The Queue argument captures the enclosing PI queue.
+    // The Type argument specifies the type of this queue group.
+    // The actual ZeQueues are populated at PI queue construction.
+    pi_queue_group_t(pi_queue Queue, queue_type Type)
+        : Queue(Queue), Type(Type) {}
+
+    // The type of the queue group.
+    queue_type Type;
+    bool isCopy() const { return Type != queue_type::Compute; }
+
+    // Level Zero command queue handles.
+    std::vector<ze_command_queue_handle_t> ZeQueues;
+
+    // This function will return one of possibly multiple available native
+    // queues. Currently, a round robin strategy is used. This function also
+    // sends back the value of the queue group ordinal.
+    ze_command_queue_handle_t &getZeQueue(uint32_t *QueueGroupOrdinal);
+
+    // These indices are to filter specific range of the queues to use,
+    // and to organize round-robin across them.
+    uint32_t UpperIndex{0};
+    uint32_t LowerIndex{0};
+    uint32_t NextIndex{0};
+  };
+
+  pi_queue_group_t ComputeQueueGroup{this, queue_type::Compute};
+
   // Vector of Level Zero copy command command queue handles.
-  // Some (or all) of these handles may not be available depending on user
-  // preference and/or target device.
   // In this vector, main copy engine, if available, come first followed by
   // link copy engines, if available.
-  std::vector<ze_command_queue_handle_t> ZeCopyCommandQueues;
+  pi_queue_group_t CopyQueueGroup{this, queue_type::MainCopy};
 
-  // One of the many available copy command queues will be used for
-  // submitting command lists to. This variable stores index of the last used
-  // copy command queue in the ZeCopyCommandQueues vector.
-  int32_t LastUsedCopyCommandQueueIndex = -1;
+  pi_queue_group_t &getQueueGroup(bool UseCopyEngine) {
+    return UseCopyEngine ? CopyQueueGroup : ComputeQueueGroup;
+  }
 
-  // This function will return one of possibly multiple available copy queues.
-  // Currently, a round robin strategy is used.
-  // It will return nullptr if no copy command queues are available for use.
-  ze_command_queue_handle_t
-  getZeCopyCommandQueue(int *CopyQueueIndex,
-                        int *CopyQueueGroupIndex = nullptr);
+  // This function considers multiple factors including copy engine
+  // availability and user preference and returns a boolean that is used to
+  // specify if copy engine will eventually be used for a particular command.
+  bool useCopyEngine(bool PreferCopyEngine = true) const;
 
   // Keeps the PI context to which this queue belongs.
   // This field is only set at _pi_queue creation time, and cannot change.
@@ -656,57 +727,61 @@ struct _pi_queue : _pi_object {
   // for execution.
   std::vector<pi_kernel> KernelsToBeSubmitted;
 
-  // Approximate number of commands that are allowed to be batched for
-  // this queue.
-  // Added this member to the queue rather than using a global variable
-  // so that future implementation could use heuristics to change this on
-  // a queue specific basis. And by putting it in the queue itself, this
-  // is thread safe because of the locking of the queue that occurs.
-  pi_uint32 QueueBatchSize = {0};
-
   // Indicates if we own the ZeCommandQueue or it came from interop that
   // asked to not transfer the ownership to SYCL RT.
   bool OwnZeCommandQueue;
 
-  // specifies whether this queue will be using dynamic batch size adjustment
-  // or not.  This is set only at queue creation time, and is therefore
-  // const for the life of the queue.
-  const bool UseDynamicBatching;
-
-  // These two members are used to keep track of how often the
-  // batching closes and executes a command list before reaching the
-  // QueueBatchSize limit, versus how often we reach the limit.
-  // This info might be used to vary the QueueBatchSize value.
-  pi_uint32 NumTimesClosedEarly = {0};
-  pi_uint32 NumTimesClosedFull = {0};
-
   // Map of all command lists used in this queue.
   pi_command_list_map_t CommandListMap;
 
-  // Open command list field for batching commands into this queue.
-  pi_command_list_ptr_t OpenCommandList{};
-  bool hasOpenCommandList() const {
-    return OpenCommandList != CommandListMap.end();
-  }
+  // Helper data structure to hold all variables related to batching
+  typedef struct CommandBatch {
+    // These two members are used to keep track of how often the
+    // batching closes and executes a command list before reaching the
+    // QueueComputeBatchSize limit, versus how often we reach the limit.
+    // This info might be used to vary the QueueComputeBatchSize value.
+    pi_uint32 NumTimesClosedEarly = {0};
+    pi_uint32 NumTimesClosedFull = {0};
+
+    // Open command list fields for batching commands into this queue.
+    pi_command_list_ptr_t OpenCommandList{};
+
+    // Approximate number of commands that are allowed to be batched for
+    // this queue.
+    // Added this member to the queue rather than using a global variable
+    // so that future implementation could use heuristics to change this on
+    // a queue specific basis. And by putting it in the queue itself, this
+    // is thread safe because of the locking of the queue that occurs.
+    pi_uint32 QueueBatchSize = {0};
+  } command_batch;
+
+  // ComputeCommandBatch holds data related to batching of non-copy commands.
+  // CopyCommandBatch holds data related to batching of copy commands.
+  command_batch ComputeCommandBatch, CopyCommandBatch;
+
+  // Returns true if any commands for this queue are allowed to
+  // be batched together.
+  // For copy commands, IsCopy is set to 'true'.
+  // For non-copy commands, IsCopy is set to 'false'.
+  bool isBatchingAllowed(bool IsCopy) const;
 
   // Keeps the properties of this queue.
-  pi_queue_properties PiQueueProperties;
+  pi_queue_properties Properties;
 
   // Returns true if the queue is a in-order queue.
   bool isInOrderQueue() const;
 
-  // Returns true if any commands for this queue are allowed to
-  // be batched together.
-  bool isBatchingAllowed();
-
   // adjust the queue's batch size, knowing that the current command list
   // is being closed with a full batch.
-  void adjustBatchSizeForFullBatch();
+  // For copy commands, IsCopy is set to 'true'.
+  // For non-copy commands, IsCopy is set to 'false'.
+  void adjustBatchSizeForFullBatch(bool IsCopy);
 
   // adjust the queue's batch size, knowing that the current command list
-  // is being closed with only a partial batch of commands.  How many commands
-  // are in this partial closure is passed as the parameter.
-  void adjustBatchSizeForPartialBatch(pi_uint32 PartialBatchSize);
+  // is being closed with only a partial batch of commands.
+  // For copy commands, IsCopy is set to 'true'.
+  // For non-copy commands, IsCopy is set to 'false'.
+  void adjustBatchSizeForPartialBatch(bool IsCopy);
 
   // Resets the Command List and Associated fence in the ZeCommandListFenceMap.
   // If the reset command list should be made available, then MakeAvailable
@@ -715,6 +790,14 @@ struct _pi_queue : _pi_object {
   pi_result resetCommandList(pi_command_list_ptr_t CommandList,
                              bool MakeAvailable);
 
+  // Returns true if an OpenCommandList has commands that need to be submitted.
+  // If IsCopy is 'true', then the OpenCommandList containing copy commands is
+  // checked. Otherwise, the OpenCommandList containing compute commands is
+  // checked.
+  bool hasOpenCommandList(bool IsCopy) const {
+    auto CommandBatch = (IsCopy) ? CopyCommandBatch : ComputeCommandBatch;
+    return CommandBatch.OpenCommandList != CommandListMap.end();
+  }
   // Attach a command list to this queue, close, and execute it.
   // Note that this command list cannot be appended to after this.
   // The "IsBlocking" tells if the wait for completion is required.
@@ -728,9 +811,36 @@ struct _pi_queue : _pi_object {
                                bool OKToBatchCommand = false);
 
   // If there is an open command list associated with this queue,
-  // close it, execute it, and reset ZeOpenCommandList, ZeCommandListFence,
-  // and ZeOpenCommandListSize.
-  pi_result executeOpenCommandList();
+  // close it, execute it, and reset the corresponding OpenCommandList.
+  // If IsCopy is 'true', then the OpenCommandList containing copy commands is
+  // executed. Otherwise OpenCommandList containing compute commands is
+  // executed.
+  pi_result executeOpenCommandList(bool IsCopy);
+
+  // Execute the open command containing the event.
+  pi_result executeOpenCommandListWithEvent(pi_event Event);
+
+  // Wrapper function to execute both OpenCommandLists (Copy and Compute).
+  // This wrapper is helpful when all 'open' commands need to be executed.
+  // Call-sites instances: piQuueueFinish, piQueueRelease, etc.
+  pi_result executeAllOpenCommandLists() {
+    using IsCopy = bool;
+    if (auto Res = executeOpenCommandList(IsCopy{false}))
+      return Res;
+    if (auto Res = executeOpenCommandList(IsCopy{true}))
+      return Res;
+    return PI_SUCCESS;
+  }
+
+  // Besides each PI object keeping a total reference count in
+  // _pi_object::RefCount we keep special track of the queue *external*
+  // references. This way we are able to tell when the queue is being finished
+  // externally, and can wait for internal references to complete, and do proper
+  // cleanup of the queue.
+  std::atomic<pi_uint32> RefCountExternal{1};
+
+  // Indicates that the queue is healthy and all operations on it are OK.
+  bool Healthy{true};
 };
 
 struct _pi_mem : _pi_object {
@@ -744,6 +854,9 @@ struct _pi_mem : _pi_object {
 
   // Flag to indicate that this memory is allocated in host memory
   bool OnHost;
+
+  // Flag to indicate that the host ptr has been imported into USM
+  bool HostPtrImported;
 
   // Supplementary data to keep track of the mappings of this memory
   // created with piEnqueueMemBufferMap and piEnqueueMemImageMap.
@@ -772,8 +885,10 @@ struct _pi_mem : _pi_object {
   pi_result removeMapping(void *MappedTo, Mapping &MapInfo);
 
 protected:
-  _pi_mem(pi_context Ctx, char *HostPtr, bool MemOnHost = false)
-      : Context{Ctx}, MapHostPtr{HostPtr}, OnHost{MemOnHost}, Mappings{} {}
+  _pi_mem(pi_context Ctx, char *HostPtr, bool MemOnHost = false,
+          bool ImportedHostPtr = false)
+      : Context{Ctx}, MapHostPtr{HostPtr}, OnHost{MemOnHost},
+        HostPtrImported{ImportedHostPtr}, Mappings{} {}
 
 private:
   // The key is the host pointer representing an active mapping.
@@ -790,9 +905,9 @@ struct _pi_buffer final : _pi_mem {
   // Buffer/Sub-buffer constructor
   _pi_buffer(pi_context Ctx, char *Mem, char *HostPtr,
              _pi_mem *Parent = nullptr, size_t Origin = 0, size_t Size = 0,
-             bool MemOnHost = false)
-      : _pi_mem(Ctx, HostPtr, MemOnHost), ZeMem{Mem}, SubBuffer{Parent, Origin,
-                                                                Size} {}
+             bool MemOnHost = false, bool ImportedHostPtr = false)
+      : _pi_mem(Ctx, HostPtr, MemOnHost, ImportedHostPtr), ZeMem{Mem},
+        SubBuffer{Parent, Origin, Size} {}
 
   void *getZeHandle() override { return ZeMem; }
 
@@ -895,6 +1010,28 @@ struct _pi_event : _pi_object {
   // Level Zero event pool handle.
   ze_event_pool_handle_t ZeEventPool;
 
+  // In case we use device-only events this holds their host-visible
+  // counterpart. If this event is itself host-visble then HostVisibleEvent
+  // points to this event. If this event is not host-visible then this field can
+  // be: 1) null, meaning that a host-visible event wasn't yet created 2) a PI
+  // event created internally that host will actually be redirected
+  //    to wait/query instead of this PI event.
+  //
+  // The HostVisibleEvent is a reference counted PI event and can be used more
+  // than by just this one event, depending on the mode (see EventsScope).
+  //
+  pi_event HostVisibleEvent = {nullptr};
+  bool isHostVisible() const { return this == HostVisibleEvent; }
+
+  // Get the host-visible event or create one and enqueue its signal.
+  pi_result getOrCreateHostVisibleEvent(ze_event_handle_t &HostVisibleEvent);
+
+  // Tells if this event is with profiling capabilities.
+  bool isProfilingEnabled() const {
+    return !Queue || // tentatively assume user events are profiling enabled
+           (Queue->Properties & PI_QUEUE_PROFILING_ENABLE) != 0;
+  }
+
   // Level Zero command list where the command signaling this event was appended
   // to. This is currently used to remember/destroy the command list after all
   // commands in it are completed, i.e. this event signaled.
@@ -930,7 +1067,7 @@ struct _pi_event : _pi_object {
 struct _pi_program : _pi_object {
   // Possible states of a program.
   typedef enum {
-    // The program has been created from intermediate language (SPIR-v), but it
+    // The program has been created from intermediate language (SPIR-V), but it
     // is not yet compiled.
     IL,
 
@@ -939,178 +1076,115 @@ struct _pi_program : _pi_object {
     // is loaded via clCreateProgramWithBinary().
     Native,
 
-    // The program consists of native code (typically compiled from SPIR-v),
-    // but it has unresolved external dependencies which need to be resolved
-    // by linking with other Object state program(s).  Programs in this state
-    // have a single Level Zero module.
+    // The program was notionally compiled from SPIR-V form.  However, since we
+    // postpone compilation until the module is linked, the internal state
+    // still represents the module as SPIR-V.
     Object,
 
-    // The program consists of native code with no external dependencies.
-    // Programs in this state have a single Level Zero module, but no linking
-    // is needed in order to run kernels.
+    // The program has been built or linked, and it is represented as a Level
+    // Zero module.
     Exe,
 
-    // The program consists of several Level Zero modules, each of which
-    // contains native code.  Some modules may import external symbols and
-    // other modules may export definitions of those external symbols.  All of
-    // the modules have been linked together, so the imported references are
-    // resolved by the exported definitions.
-    //
-    // Module linking in Level Zero is quite different from program linking in
-    // OpenCL.  OpenCL statically links several program objects together to
-    // form a new program that contains the linked result.  Level Zero is more
-    // similar to shared libraries.  When several Level Zero modules are linked
-    // together, each module is modified "in place" such that external
-    // references from one are linked to external definitions in another.
-    // Linking in Level Zero does not produce a new Level Zero module that
-    // represents the linked result, therefore a program in LinkedExe state
-    // holds a list of all the pi_programs that were linked together.  Queries
-    // about the linked program need to query all the pi_programs in this list.
-    LinkedExe
+    // An error occurred during piProgramLink, but we created a _pi_program
+    // object anyways in order to hold the ZeBuildLog.  Note that the ZeModule
+    // may or may not be nullptr in this state, depending on the error.
+    Invalid
   } state;
 
-  // This is a wrapper class used for programs in LinkedExe state.  Such a
-  // program contains a list of pi_programs in Object state that have been
-  // linked together.  The program in LinkedExe state increments the reference
-  // counter for each of the Object state programs, thus "retaining" a
-  // reference to them, and it may also set the "HasImportsAndIsLinked" flag
-  // in these Object state programs.  The purpose of this wrapper is to
-  // decrement the reference count and clear the flag when the LinkedExe
-  // program is destroyed, so all the interesting code is in the wrapper's
-  // destructor.
-  //
-  // In order to ensure that the reference count is never decremented more
-  // than once, the wrapper has no copy constructor or copy assignment
-  // operator.  Instead, we only allow move semantics for the wrapper.
-  class LinkedReleaser {
+  // A utility class that converts specialization constants into the form
+  // required by the Level Zero driver.
+  class SpecConstantShim {
   public:
-    LinkedReleaser(pi_program Prog) : Prog(Prog) {}
-    LinkedReleaser(LinkedReleaser &&Other) {
-      Prog = Other.Prog;
-      Other.Prog = nullptr;
-    }
-    LinkedReleaser(const LinkedReleaser &Other) = delete;
-    LinkedReleaser &operator=(LinkedReleaser &&Other) {
-      std::swap(Prog, Other.Prog);
-      return *this;
-    }
-    LinkedReleaser &operator=(const LinkedReleaser &Other) = delete;
-    ~LinkedReleaser();
+    SpecConstantShim(pi_program Program) {
+      ZeSpecConstants.numConstants = Program->SpecConstants.size();
+      ZeSpecContantsIds.reserve(ZeSpecConstants.numConstants);
+      ZeSpecContantsValues.reserve(ZeSpecConstants.numConstants);
 
-    pi_program operator->() const { return Prog; }
+      for (auto &SpecConstant : Program->SpecConstants) {
+        ZeSpecContantsIds.push_back(SpecConstant.first);
+        ZeSpecContantsValues.push_back(SpecConstant.second);
+      }
+      ZeSpecConstants.pConstantIds = ZeSpecContantsIds.data();
+      ZeSpecConstants.pConstantValues = ZeSpecContantsValues.data();
+    }
+
+    const ze_module_constants_t *ze() { return &ZeSpecConstants; }
 
   private:
-    pi_program Prog;
-  };
-
-  // A utility class that iterates over the Level Zero modules contained by
-  // the program.  This helps hide the difference between programs in Object
-  // or Exe state (which have one module) and programs in LinkedExe state
-  // (which have several modules).
-  class ModuleIterator {
-  public:
-    ModuleIterator(pi_program Prog)
-        : Prog(Prog), It(Prog->LinkedPrograms.begin()) {
-      if (Prog->State == LinkedExe) {
-        NumMods = Prog->LinkedPrograms.size();
-        IsDone = (It == Prog->LinkedPrograms.end());
-        Mod = IsDone ? nullptr : (*It)->ZeModule;
-      } else if (Prog->State == IL || Prog->State == Native) {
-        NumMods = 0;
-        IsDone = true;
-        Mod = nullptr;
-      } else {
-        NumMods = 1;
-        IsDone = false;
-        Mod = Prog->ZeModule;
-      }
-    }
-
-    bool Done() const { return IsDone; }
-    size_t Count() const { return NumMods; }
-    ze_module_handle_t operator*() const { return Mod; }
-
-    void operator++(int) {
-      if (!IsDone && (Prog->State == LinkedExe) &&
-          (++It != Prog->LinkedPrograms.end())) {
-        Mod = (*It)->ZeModule;
-      } else {
-        Mod = nullptr;
-        IsDone = true;
-      }
-    }
-
-  private:
-    pi_program Prog;
-    ze_module_handle_t Mod;
-    size_t NumMods;
-    bool IsDone;
-    std::vector<LinkedReleaser>::iterator It;
+    std::vector<uint32_t> ZeSpecContantsIds;
+    std::vector<const void *> ZeSpecContantsValues;
+    ze_module_constants_t ZeSpecConstants;
   };
 
   // Construct a program in IL or Native state.
-  _pi_program(pi_context Context, const void *Input, size_t Length, state St)
-      : State(St), Context(Context), Code(new uint8_t[Length]),
-        CodeLength(Length), ZeModule(nullptr), HasImports(false),
-        HasImportsAndIsLinked(false), ZeBuildLog(nullptr) {
-
+  _pi_program(state St, pi_context Context, const void *Input, size_t Length)
+      : Context{Context},
+        OwnZeModule{true}, State{St}, Code{new uint8_t[Length]},
+        CodeLength{Length}, ZeModule{nullptr}, ZeBuildLog{nullptr} {
     std::memcpy(Code.get(), Input, Length);
   }
 
-  // Construct a program in either Object or Exe state.
-  _pi_program(pi_context Context, ze_module_handle_t ZeModule, state St,
-              bool HasImports = false)
-      : State(St), Context(Context), ZeModule(ZeModule), HasImports(HasImports),
-        HasImportsAndIsLinked(false), ZeBuildLog(nullptr) {}
+  // Construct a program in Exe or Invalid state.
+  _pi_program(state St, pi_context Context, ze_module_handle_t ZeModule,
+              ze_module_build_log_handle_t ZeBuildLog)
+      : Context{Context}, OwnZeModule{true}, State{St}, ZeModule{ZeModule},
+        ZeBuildLog{ZeBuildLog} {}
 
-  // Construct a program in LinkedExe state.
-  _pi_program(pi_context Context, std::vector<LinkedReleaser> &&Inputs,
-              ze_module_build_log_handle_t ZeLog)
-      : State(LinkedExe), Context(Context), ZeModule(nullptr),
-        HasImports(false), HasImportsAndIsLinked(false),
-        LinkedPrograms(std::move(Inputs)), ZeBuildLog(ZeLog) {}
+  // Construct a program in Exe state (interop).
+  _pi_program(state St, pi_context Context, ze_module_handle_t ZeModule,
+              bool OwnZeModule)
+      : Context{Context}, OwnZeModule{OwnZeModule}, State{St},
+        ZeModule{ZeModule}, ZeBuildLog{nullptr} {}
+
+  // Construct a program in Invalid state with a custom error message.
+  _pi_program(state St, pi_context Context, const std::string &ErrorMessage)
+      : Context{Context}, OwnZeModule{true}, ErrorMessage{ErrorMessage},
+        State{St}, ZeModule{nullptr}, ZeBuildLog{nullptr} {}
 
   ~_pi_program();
 
-  // Used for programs in all states.
-  state State;
-  pi_context Context; // Context of the program.
+  const pi_context Context; // Context of the program.
 
-  // Used for programs in IL or Native states.
+  // Indicates if we own the ZeModule or it came from interop that
+  // asked to not transfer the ownership to SYCL RT.
+  const bool OwnZeModule;
+
+  // This error message is used only in Invalid state to hold a custom error
+  // message from a call to piProgramLink.
+  const std::string ErrorMessage;
+
+  // Protects accesses to all the non-const member variables.  Exclusive access
+  // is required to modify any of these members.
+  std::shared_mutex Mutex;
+
+  state State;
+
+  // In IL and Object states, this contains the SPIR-V representation of the
+  // module.  In Native state, it contains the native code.
   std::unique_ptr<uint8_t[]> Code; // Array containing raw IL / native code.
   size_t CodeLength;               // Size (bytes) of the array.
 
-  // Level Zero specialization constants, used for programs in IL state.
-  std::unordered_map<uint32_t, uint64_t> ZeSpecConstants;
-  std::mutex MutexZeSpecConstants; // Protects access to this field.
+  // Used only in IL and Object states.  Contains the SPIR-V specialization
+  // constants as a map from the SPIR-V "SpecID" to a buffer that contains the
+  // associated value.  The caller of the PI layer is responsible for
+  // maintaining the storage of this buffer.
+  std::unordered_map<uint32_t, const void *> SpecConstants;
 
-  // Used for programs in Object or Exe state.
-  ze_module_handle_t ZeModule; // Level Zero module handle.
-  bool HasImports;             // Tells if module imports any symbols.
+  // Used only in Object state.  Contains the build flags from the last call to
+  // piProgramCompile().
+  std::string BuildFlags;
 
-  // Used for programs in Object state.  Tells if this module imports any
-  // symbols AND it is linked into some other program that has state LinkedExe.
-  // Such an Object is linked into exactly one other LinkedExe program.  Access
-  // to this field needs to be locked in case there are two threads that try to
-  // simultaneously link with this module.
-  bool HasImportsAndIsLinked;
-  std::mutex MutexHasImportsAndIsLinked; // Protects access to this field.
+  // The Level Zero module handle.  Used primarily in Exe state.
+  ze_module_handle_t ZeModule;
 
-  // Used for programs in LinkedExe state.  This is the set of Object programs
-  // that are linked together.
-  //
-  // Note that the Object programs in this vector might also be linked into
-  // other LinkedExe programs!
-  std::vector<LinkedReleaser> LinkedPrograms;
-
-  // Level Zero build or link log, used for programs in Obj, Exe, or LinkedExe
-  // state.
+  // The Level Zero build log from the last call to zeModuleCreate().
   ze_module_build_log_handle_t ZeBuildLog;
 };
 
 struct _pi_kernel : _pi_object {
-  _pi_kernel(ze_kernel_handle_t Kernel, pi_program Program)
-      : ZeKernel{Kernel}, Program{Program}, MemAllocs{}, SubmissionsCount{0} {}
+  _pi_kernel(ze_kernel_handle_t Kernel, bool OwnZeKernel, pi_program Program)
+      : ZeKernel{Kernel}, OwnZeKernel{OwnZeKernel}, Program{Program},
+        MemAllocs{}, SubmissionsCount{0} {}
 
   // Returns true if kernel has indirect access, false otherwise.
   bool hasIndirectAccess() {
@@ -1121,6 +1195,10 @@ struct _pi_kernel : _pi_object {
 
   // Level Zero function handle.
   ze_kernel_handle_t ZeKernel;
+
+  // Indicates if we own the ZeKernel or it came from interop that
+  // asked to not transfer the ownership to SYCL RT.
+  bool OwnZeKernel;
 
   // Keep the program of the kernel.
   pi_program Program;

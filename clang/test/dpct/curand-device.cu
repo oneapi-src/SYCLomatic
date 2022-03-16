@@ -159,3 +159,40 @@ __global__ void kernel(curandState *state) {
   curand_init(1111, 2222, 0, state);
   float rand = curand_uniform(state);
 }
+
+// Test description:
+// Skip the matched TypeLoc in the implicit assignment method of RNGState.
+// If tool does not skip it, the class name "state_struct_t" will be replaced with dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>>.
+//     CHECK:using state_type = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>>;
+//CHECK-NEXT:struct state_struct_t {
+//CHECK-NEXT:  state_type state;
+//CHECK-NEXT:};
+//CHECK-NEXT:struct TEST {
+//CHECK-NEXT:  state_struct_t rng;
+//CHECK-NEXT:  TEST() {
+//CHECK-NEXT:    state_struct_t rng1;
+//CHECK-NEXT:    rng1 = rng;
+//CHECK-NEXT:  }
+//CHECK-NEXT:};
+using state_type = curandStateMRG32k3a;
+struct state_struct_t {
+  state_type state;
+};
+struct TEST {
+  state_struct_t rng;
+  TEST() {
+    state_struct_t rng1;
+    rng1 = rng;
+  }
+};
+
+// Test description:
+// This test covers the case when the type of the arg has alias.
+__device__ void foo() {
+  unsigned long long seed;
+  unsigned long long sequence;
+  unsigned long long offset;
+  state_struct_t state;
+  // CHECK: state.state = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>>(seed, {static_cast<std::uint64_t>(offset), static_cast<std::uint64_t>(sequence * 8)});
+  curand_init(seed, sequence, offset, &state.state);
+}

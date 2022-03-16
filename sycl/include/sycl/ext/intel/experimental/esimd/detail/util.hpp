@@ -10,10 +10,18 @@
 
 #pragma once
 
+/// @cond ESIMD_DETAIL
+
 #include <CL/sycl/detail/type_traits.hpp>
 #include <sycl/ext/intel/experimental/esimd/detail/types.hpp>
 
 #include <type_traits>
+
+#ifdef __SYCL_DEVICE_ONLY__
+#define __ESIMD_INTRIN SYCL_EXTERNAL SYCL_ESIMD_FUNCTION
+#else
+#define __ESIMD_INTRIN inline
+#endif // __SYCL_DEVICE_ONLY__
 
 __SYCL_INLINE_NAMESPACE(cl) {
 namespace sycl {
@@ -82,10 +90,6 @@ template <typename T> struct is_esimd_vector : public std::false_type {};
 template <typename T, int N>
 struct is_esimd_vector<simd<T, N>> : public std::true_type {};
 
-template <typename T>
-using is_esimd_scalar =
-    typename std::bool_constant<cl::sycl::detail::is_arithmetic<T>::value>;
-
 template <typename T, int N>
 using is_hw_int_type =
     typename std::bool_constant<std::is_integral_v<T> && (sizeof(T) == N)>;
@@ -107,9 +111,39 @@ using is_fp_or_dword_type =
     typename std::bool_constant<is_fp_type<T>::value ||
                                 is_dword_type<T>::value>;
 
+/// Compile-time checks if first template parameter is equal for any other
+template <typename...> struct is_one_of {
+  static constexpr bool value = false;
+};
+
+template <typename Checked, typename First, typename... Other>
+struct is_one_of<Checked, First, Other...> {
+  static constexpr bool value =
+      std::is_same<typename std::remove_const<Checked>::type,
+                   typename std::remove_const<First>::type>::value ||
+      is_one_of<Checked, Other...>::value;
+};
+template <typename Checked, typename... T>
+inline constexpr bool is_one_of_v = is_one_of<Checked, T...>::value;
+
+/// Compile-time checks if compile-time known  element of enum class is equal
+/// for any other compile-time known elements of enum
+template <typename enumClass, enumClass... E> struct is_one_of_enum {
+  static constexpr bool value = false;
+};
+
+template <typename enumClass, enumClass Checked, enumClass First,
+          enumClass... Else>
+struct is_one_of_enum<enumClass, Checked, First, Else...> {
+  static constexpr bool value =
+      (Checked == First) || is_one_of_enum<enumClass, Checked, Else...>::value;
+};
+template <typename enumClass, enumClass... T>
+inline constexpr bool is_one_of_enum_v = is_one_of_enum<enumClass, T...>::value;
+
 /// Convert types into vector types
 template <typename T> struct simd_type { using type = simd<T, 1>; };
-template <typename T, int N> struct simd_type<vector_type<T, N>> {
+template <typename T, int N> struct simd_type<raw_vector_type<T, N>> {
   using type = simd<T, N>;
 };
 
@@ -141,6 +175,21 @@ template <> struct word_type<int> { using type = short; };
 template <> struct word_type<uchar> { using type = ushort; };
 template <> struct word_type<uint> { using type = ushort; };
 
+// Utility for compile time loop unrolling.
+template <unsigned N> class ForHelper {
+  template <unsigned I, typename Action> static inline void repeat(Action A) {
+    if constexpr (I < N)
+      A(I);
+    if constexpr (I + 1 < N)
+      repeat<I + 1, Action>(A);
+  }
+
+public:
+  template <typename Action> static inline void unroll(Action A) {
+    ForHelper::template repeat<0, Action>(A);
+  }
+};
+
 } // namespace detail
 
 } // namespace esimd
@@ -149,3 +198,5 @@ template <> struct word_type<uint> { using type = ushort; };
 } // namespace ext
 } // namespace sycl
 } // __SYCL_INLINE_NAMESPACE(cl)
+
+/// @endcond ESIMD_DETAIL

@@ -81,7 +81,7 @@ int main() {
   void *kernel_func = (void *)&kernel;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaLaunchCooperativeKernel is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaLaunchCooperativeKernel is not supported.
   // CHECK-NEXT: */
   // CHECK-NEXT: cudaLaunchCooperativeKernel(kernel_func, sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16), args, 0, 0);
   cudaLaunchCooperativeKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);

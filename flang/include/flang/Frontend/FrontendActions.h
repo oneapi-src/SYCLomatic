@@ -11,6 +11,8 @@
 
 #include "flang/Frontend/FrontendAction.h"
 #include "flang/Semantics/semantics.h"
+
+#include "mlir/IR/BuiltinOps.h"
 #include <memory>
 
 namespace Fortran::frontend {
@@ -30,15 +32,7 @@ struct MeasurementVisitor {
 // Custom Consumer Actions
 //===----------------------------------------------------------------------===//
 
-class PluginParseTreeAction : public FrontendAction {
-  void ExecuteAction() override;
-};
-
 class InputOutputTestAction : public FrontendAction {
-  void ExecuteAction() override;
-};
-
-class EmitObjAction : public FrontendAction {
   void ExecuteAction() override;
 };
 
@@ -51,7 +45,7 @@ class InitOnlyAction : public FrontendAction {
 //===----------------------------------------------------------------------===//
 class PrescanAction : public FrontendAction {
   void ExecuteAction() override = 0;
-  bool BeginSourceFileAction(CompilerInstance &ci) override;
+  bool BeginSourceFileAction() override;
 };
 
 class PrintPreprocessedAction : public PrescanAction {
@@ -75,7 +69,7 @@ class DebugMeasureParseTreeAction : public PrescanAction {
 //===----------------------------------------------------------------------===//
 class PrescanAndParseAction : public FrontendAction {
   void ExecuteAction() override = 0;
-  bool BeginSourceFileAction(CompilerInstance &ci) override;
+  bool BeginSourceFileAction() override;
 };
 
 class DebugUnparseNoSemaAction : public PrescanAndParseAction {
@@ -88,20 +82,14 @@ class DebugDumpParseTreeNoSemaAction : public PrescanAndParseAction {
 
 //===----------------------------------------------------------------------===//
 // PrescanAndSema Actions
+//
+// These actions will parse the input, run the semantic checks and execute
+// their actions provided that no parsing or semantic errors were found.
 //===----------------------------------------------------------------------===//
 class PrescanAndSemaAction : public FrontendAction {
-  std::unique_ptr<Fortran::semantics::Semantics> semantics_;
 
   void ExecuteAction() override = 0;
-  bool BeginSourceFileAction(CompilerInstance &ci) override;
-
-public:
-  Fortran::semantics::Semantics &semantics() { return *semantics_; }
-  const Fortran::semantics::Semantics &semantics() const { return *semantics_; }
-
-  void setSemantics(std::unique_ptr<Fortran::semantics::Semantics> semantics) {
-    semantics_ = std::move(semantics);
-  }
+  bool BeginSourceFileAction() override;
 };
 
 class DebugUnparseWithSymbolsAction : public PrescanAndSemaAction {
@@ -120,10 +108,6 @@ class DebugDumpParseTreeAction : public PrescanAndSemaAction {
   void ExecuteAction() override;
 };
 
-class DebugDumpAllAction : public PrescanAndSemaAction {
-  void ExecuteAction() override;
-};
-
 class DebugPreFIRTreeAction : public PrescanAndSemaAction {
   void ExecuteAction() override;
 };
@@ -137,6 +121,55 @@ class GetSymbolsSourcesAction : public PrescanAndSemaAction {
 };
 
 class ParseSyntaxOnlyAction : public PrescanAndSemaAction {
+  void ExecuteAction() override;
+};
+
+class PluginParseTreeAction : public PrescanAndSemaAction {
+  void ExecuteAction() override = 0;
+};
+
+//===----------------------------------------------------------------------===//
+// PrescanAndSemaDebug Actions
+//
+// These actions will parse the input, run the semantic checks and execute
+// their actions regardless of whether any semantic errors are found.
+//===----------------------------------------------------------------------===//
+class PrescanAndSemaDebugAction : public FrontendAction {
+
+  void ExecuteAction() override = 0;
+  bool BeginSourceFileAction() override;
+};
+
+class DebugDumpAllAction : public PrescanAndSemaDebugAction {
+  void ExecuteAction() override;
+};
+
+//===----------------------------------------------------------------------===//
+// CodeGen Actions
+//===----------------------------------------------------------------------===//
+/// Abstract base class for actions that generate code (MLIR, LLVM IR, assembly
+/// and machine code). Every action that inherits from this class will at
+/// least run the prescanning, parsing, semantic checks and lower the parse
+/// tree to an MLIR module.
+class CodeGenAction : public FrontendAction {
+
+  void ExecuteAction() override = 0;
+  /// Runs prescan, parsing, sema and lowers to MLIR.
+  bool BeginSourceFileAction() override;
+
+protected:
+  /// @name MLIR
+  /// {
+  std::unique_ptr<mlir::ModuleOp> mlirModule;
+  std::unique_ptr<mlir::MLIRContext> mlirCtx;
+  /// }
+};
+
+class EmitMLIRAction : public CodeGenAction {
+  void ExecuteAction() override;
+};
+
+class EmitObjAction : public CodeGenAction {
   void ExecuteAction() override;
 };
 

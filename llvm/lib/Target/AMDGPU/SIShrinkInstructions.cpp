@@ -188,7 +188,7 @@ static void shrinkScalarCompare(const SIInstrInfo *TII, MachineInstr &MI) {
     return;
 
   // eq/ne is special because the imm16 can be treated as signed or unsigned,
-  // and initially selectd to the unsigned versions.
+  // and initially selected to the unsigned versions.
   if (SOPKOpc == AMDGPU::S_CMPK_EQ_U32 || SOPKOpc == AMDGPU::S_CMPK_LG_U32) {
     bool HasUImm;
     if (isKImmOrKUImmOperand(TII, Src1, HasUImm)) {
@@ -352,12 +352,6 @@ static bool shrinkScalarLogicOp(const GCNSubtarget &ST,
     }
   } else {
     llvm_unreachable("unexpected opcode");
-  }
-
-  if ((Opc == AMDGPU::S_ANDN2_B32 || Opc == AMDGPU::S_ORN2_B32) &&
-      SrcImm == Src0) {
-    if (!TII->commuteInstruction(MI, false, 1, 2))
-      NewImm = 0;
   }
 
   if (NewImm != 0) {
@@ -731,11 +725,6 @@ bool SIShrinkInstructions::runOnMachineFunction(MachineFunction &MF) {
           continue;
       }
 
-      // getVOPe32 could be -1 here if we started with an instruction that had
-      // a 32-bit encoding and then commuted it to an instruction that did not.
-      if (!TII->hasVALU32BitEncoding(MI.getOpcode()))
-        continue;
-
       int Op32 = AMDGPU::getVOPe32(MI.getOpcode());
 
       if (TII->isVOPC(Op32)) {
@@ -776,10 +765,6 @@ bool SIShrinkInstructions::runOnMachineFunction(MachineFunction &MF) {
       const MachineOperand *SDst = TII->getNamedOperand(MI,
                                                         AMDGPU::OpName::sdst);
 
-      // Check the carry-in operand for v_addc_u32_e64.
-      const MachineOperand *Src2 = TII->getNamedOperand(MI,
-                                                        AMDGPU::OpName::src2);
-
       if (SDst) {
         bool Next = false;
 
@@ -791,6 +776,8 @@ bool SIShrinkInstructions::runOnMachineFunction(MachineFunction &MF) {
 
         // All of the instructions with carry outs also have an SGPR input in
         // src2.
+        const MachineOperand *Src2 = TII->getNamedOperand(MI,
+                                                          AMDGPU::OpName::src2);
         if (Src2 && Src2->getReg() != VCCReg) {
           if (Src2->getReg().isVirtual())
             MRI.setRegAllocationHint(Src2->getReg(), 0, VCCReg);
@@ -809,6 +796,10 @@ bool SIShrinkInstructions::runOnMachineFunction(MachineFunction &MF) {
 
       // Copy extra operands not present in the instruction definition.
       copyExtraImplicitOps(*Inst32, MF, MI);
+
+      // Copy deadness from the old explicit vcc def to the new implicit def.
+      if (SDst && SDst->isDead())
+        Inst32->findRegisterDefOperand(VCCReg)->setIsDead();
 
       MI.eraseFromParent();
       foldImmediates(*Inst32, TII, MRI);

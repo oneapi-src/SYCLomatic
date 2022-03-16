@@ -20,7 +20,7 @@ def err_fe_pch_malformed_block : Error<
 def err_fe_ast_file_modified : Error<
     "file '%0' has been modified since the "
     "%select{precompiled header|module file|AST file}1 '%2' was built"
-    ": %select{size|mtime|content}3 changed">,
+    ": %select{size|mtime|content}3 changed%select{| (was %5, now %6)}4">,
     DefaultFatal;
 def err_fe_pch_file_overridden : Error<
     "file '%0' from the precompiled header has been overridden">;
@@ -157,16 +157,15 @@ def err_module_odr_violation_template_parameter : Error <
   "%select{definition in module '%2'|defined here}1 found "
   "%select{"
   "unnamed template parameter|"
-  "template parameter %4|"
+  "template parameter %5|"
   "template parameter with %select{no |}4default argument|"
   "template parameter with default argument}3">;
-
 
 def note_module_odr_violation_template_parameter : Note <
   "but in '%0' found "
   "%select{"
   "unnamed template parameter %2|"
-  "template parameter %2|"
+  "template parameter %3|"
   "template parameter with %select{no |}2default argument|"
   "template parameter with different default argument}1">;
 

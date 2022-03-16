@@ -126,3 +126,19 @@ __global__ void test() {
   //CHECK:state = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>(std::get<0>(seeds), {static_cast<std::uint64_t>(std::get<1>(seeds)), static_cast<std::uint64_t>(idx * 4)});
   curand_init(std::get<0>(seeds), idx, std::get<1>(seeds), &state);
 }
+
+// Test description:
+// This test covers the case when the type of the arg has alias.
+// CHECK: using state_type = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>>;
+using state_type = curandStateMRG32k3a;
+struct state_struct_t {
+  state_type state;
+};
+__device__ void foo() {
+  unsigned long long seed;
+  unsigned long long sequence;
+  unsigned long long offset;
+  state_struct_t state;
+  // CHECK: state.state = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>>(seed, {static_cast<std::uint64_t>(offset), static_cast<std::uint64_t>(sequence * 8)});
+  curand_init(seed, sequence, offset, &state.state);
+}

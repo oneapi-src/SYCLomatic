@@ -1323,19 +1323,19 @@ int main() {
   cublasOperation_t trans3 = CUBLAS_OP_N;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cublasSgemmBatched is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cublasSgemmBatched is not supported.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = cublasSgemmBatched(handle, trans3, trans3, n, n, n, &alpha_S, A_S_array, n, B_S_array, n, &beta_S, C_S_array, n, 10);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cublasSgemmBatched is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cublasSgemmBatched is not supported.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasSgemmBatched(handle, trans3, trans3, n, n, n, &alpha_S, A_S_array, n, B_S_array, n, &beta_S, C_S_array, n, 10);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cublasDgemmBatched is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cublasDgemmBatched is not supported.
   // CHECK-NEXT: */
   // CHECK-NEXT: status = cublasDgemmBatched(handle, trans3, trans3, n, n, n, &alpha_D, A_D_array, n, B_D_array, n, &beta_D, C_D_array, n, 10);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cublasDgemmBatched is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cublasDgemmBatched is not supported.
   // CHECK-NEXT: */
   // CHECK-NEXT: cublasDgemmBatched(handle, trans3, trans3, n, n, n, &alpha_D, A_D_array, n, B_D_array, n, &beta_D, C_D_array, n, 10);
   status = cublasSgemmBatched(handle, trans3, trans3, n, n, n, &alpha_S, A_S_array, n, B_S_array, n, &beta_S, C_S_array, n, 10);

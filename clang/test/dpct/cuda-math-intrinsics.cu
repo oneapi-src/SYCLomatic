@@ -107,31 +107,31 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // Half2 Comparison Functions
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __heq2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __heq2 is not supported.
   // CHECK-NEXT: */
   h2_2 = __heq2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hge2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hge2 is not supported.
   // CHECK-NEXT: */
   h2_2 = __hge2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgt2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgt2 is not supported.
   // CHECK-NEXT: */
   h2_2 = __hgt2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hisnan2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hisnan2 is not supported.
   // CHECK-NEXT: */
   h2_2 = __hisnan2(h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hle2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hle2 is not supported.
   // CHECK-NEXT: */
   h2_2 = __hle2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hlt2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hlt2 is not supported.
   // CHECK-NEXT: */
   h2_2 = __hlt2(h2, h2_1);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hne2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hne2 is not supported.
   // CHECK-NEXT: */
   h2_2 = __hne2(h2, h2_1);
 
@@ -156,7 +156,7 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // CHECK: h_2 = sycl::log2(h);
   h_2 = hlog2(h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of hrcp is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of hrcp is not supported.
   // CHECK-NEXT: */
   h_2 = hrcp(h);
   // CHECK: h_2 = sycl::rint(h);
@@ -191,7 +191,7 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
   // CHECK: h2_2 = sycl::log2(h2);
   h2_2 = h2log2(h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of h2rcp is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of h2rcp is not supported.
   // CHECK-NEXT: */
   h2_2 = h2rcp(h2);
   // CHECK: h2_2 = sycl::rint(h2);
@@ -2072,166 +2072,166 @@ __global__ void testUnsupported() {
   bool b;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hadd_sat is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hadd_sat is not supported.
   // CHECK-NEXT: */
   __hadd_sat(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hfma_sat is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hfma_sat is not supported.
   // CHECK-NEXT: */
   __hfma_sat(h, h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hmul_sat is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hmul_sat is not supported.
   // CHECK-NEXT: */
   __hmul_sat(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hsub_sat is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hsub_sat is not supported.
   // CHECK-NEXT: */
   __hsub_sat(h, h);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hadd2_sat is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hadd2_sat is not supported.
   // CHECK-NEXT: */
   __hadd2_sat(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hfma2_sat is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hfma2_sat is not supported.
   // CHECK-NEXT: */
   __hfma2_sat(h2, h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hmul2_sat is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hmul2_sat is not supported.
   // CHECK-NEXT: */
   __hmul2_sat(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hsub2_sat is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hsub2_sat is not supported.
   // CHECK-NEXT: */
   __hsub2_sat(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hequ is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hequ is not supported.
   // CHECK-NEXT: */
   b = __hequ(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgeu is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgeu is not supported.
   // CHECK-NEXT: */
   b = __hgeu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgtu is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgtu is not supported.
   // CHECK-NEXT: */
   b = __hgtu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hleu is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hleu is not supported.
   // CHECK-NEXT: */
   b = __hleu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hltu is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hltu is not supported.
   // CHECK-NEXT: */
   b = __hltu(h, h);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hneu is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hneu is not supported.
   // CHECK-NEXT: */
   b = __hneu(h, h);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbeq2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbeq2 is not supported.
   // CHECK-NEXT: */
   b = __hbeq2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbequ2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbequ2 is not supported.
   // CHECK-NEXT: */
   b = __hbequ2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbge2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbge2 is not supported.
   // CHECK-NEXT: */
   b = __hbge2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbgeu2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbgeu2 is not supported.
   // CHECK-NEXT: */
   b = __hbgeu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbgt2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbgt2 is not supported.
   // CHECK-NEXT: */
   b = __hbgt2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbgtu2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbgtu2 is not supported.
   // CHECK-NEXT: */
   b = __hbgtu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hble2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hble2 is not supported.
   // CHECK-NEXT: */
   b = __hble2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbleu2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbleu2 is not supported.
   // CHECK-NEXT: */
   b = __hbleu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hblt2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hblt2 is not supported.
   // CHECK-NEXT: */
   b = __hblt2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbltu2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbltu2 is not supported.
   // CHECK-NEXT: */
   b = __hbltu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbne2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbne2 is not supported.
   // CHECK-NEXT: */
   b = __hbne2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbneu2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hbneu2 is not supported.
   // CHECK-NEXT: */
   b = __hbneu2(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hequ2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hequ2 is not supported.
   // CHECK-NEXT: */
   __hequ2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgeu2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgeu2 is not supported.
   // CHECK-NEXT: */
   __hgeu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgtu2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hgtu2 is not supported.
   // CHECK-NEXT: */
   __hgtu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hleu2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hleu2 is not supported.
   // CHECK-NEXT: */
   __hleu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hltu2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hltu2 is not supported.
   // CHECK-NEXT: */
   __hltu2(h2, h2);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hneu2 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hneu2 is not supported.
   // CHECK-NEXT: */
   __hneu2(h2, h2);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cyl_bessel_i0f is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cyl_bessel_i0f is not supported.
   // CHECK-NEXT: */
   f = cyl_bessel_i0f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cyl_bessel_i1f is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cyl_bessel_i1f is not supported.
   // CHECK-NEXT: */
   f = cyl_bessel_i1f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfcinvf is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfcinvf is not supported.
   // CHECK-NEXT: */
   f = erfcinvf(f);
   // CHECK: f = sycl::exp(f*f)*sycl::erfc(f);
   f = erfcxf(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfinvf is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfinvf is not supported.
   // CHECK-NEXT: */
   f = erfinvf(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of j0f is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of j0f is not supported.
   // CHECK-NEXT: */
   f = j0f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of j1f is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of j1f is not supported.
   // CHECK-NEXT: */
   f = j1f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of jnf is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of jnf is not supported.
   // CHECK-NEXT: */
   f = jnf(i, f);
 
@@ -2240,15 +2240,15 @@ __global__ void testUnsupported() {
   // CHECK: f = sycl::fast_length(sycl::float4(f, f, f, f));
   f = norm4df(f, f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdff is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdff is not supported.
   // CHECK-NEXT: */
   f = normcdff(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinvf is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinvf is not supported.
   // CHECK-NEXT: */
   f = normcdfinvf(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normf is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normf is not supported.
   // CHECK-NEXT: */
   f = normf(i, &f);
   // CHECK: f = sycl::native::recip((float)sycl::cbrt(f));
@@ -2258,7 +2258,7 @@ __global__ void testUnsupported() {
   // CHECK: f = sycl::native::recip(sycl::fast_length(sycl::float4(f, f, f, f)));
   f = rnorm4df(f, f, f, f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of rnormf is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of rnormf is not supported.
   // CHECK-NEXT: */
   f = rnormf(i, &f);
   // CHECK: f = f*(2<<l);
@@ -2266,46 +2266,46 @@ __global__ void testUnsupported() {
   // CHECK: f = f*(2<<i);
   f = scalbnf(f, i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of y0f is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of y0f is not supported.
   // CHECK-NEXT: */
   f = y0f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of y1f is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of y1f is not supported.
   // CHECK-NEXT: */
   f = y1f(f);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of ynf is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of ynf is not supported.
   // CHECK-NEXT: */
   f = ynf(i, f);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cyl_bessel_i0 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cyl_bessel_i0 is not supported.
   // CHECK-NEXT: */
   d = cyl_bessel_i0(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cyl_bessel_i1 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cyl_bessel_i1 is not supported.
   // CHECK-NEXT: */
   d = cyl_bessel_i1(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfcinv is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfcinv is not supported.
   // CHECK-NEXT: */
   d = erfcinv(d);
   // CHECK: d = sycl::exp(d*d)*sycl::erfc(d);
   d = erfcx(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfinv is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfinv is not supported.
   // CHECK-NEXT: */
   d = erfinv(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of j0 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of j0 is not supported.
   // CHECK-NEXT: */
   d = j0(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of j1 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of j1 is not supported.
   // CHECK-NEXT: */
   d = j1(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of jn is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of jn is not supported.
   // CHECK-NEXT: */
   d = jn(i, d);
   // CHECK: d = dpct::fast_length((float *)&d, i);
@@ -2315,11 +2315,11 @@ __global__ void testUnsupported() {
   // CHECK: d = sycl::fast_length(sycl::float4(d, d, d, d));
   d = norm4d(d, d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdf is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdf is not supported.
   // CHECK-NEXT: */
   d = normcdf(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinv is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of normcdfinv is not supported.
   // CHECK-NEXT: */
   d = normcdfinv(d);
   // CHECK: d = sycl::native::recip((float)sycl::cbrt(d));
@@ -2329,7 +2329,7 @@ __global__ void testUnsupported() {
   // CHECK: d = sycl::native::recip(sycl::fast_length(sycl::float4(d, d, d, d)));
   d = rnorm4d(d, d, d, d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of rnorm is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of rnorm is not supported.
   // CHECK-NEXT: */
   d = rnorm(i, &d);
   // CHECK: d = d*(2<<l);
@@ -2337,20 +2337,20 @@ __global__ void testUnsupported() {
   // CHECK: d = d*(2<<i);
   d = scalbn(d, i);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of y0 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of y0 is not supported.
   // CHECK-NEXT: */
   d = y0(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of y1 is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of y1 is not supported.
   // CHECK-NEXT: */
   d = y1(d);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of yn is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of yn is not supported.
   // CHECK-NEXT: */
   d = yn(i, d);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __saturatef is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __saturatef is not supported.
   // CHECK-NEXT: */
   f = __saturatef(f);
 
@@ -2369,7 +2369,7 @@ __global__ void testUnsupported() {
   // CHECK: u = dpct::reverse_bits<unsigned int>(u);
   u = __brev(u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __brevll is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __brevll is not supported.
   // CHECK-NEXT: */
   ull = __brevll(ull);
   // CHECK: u = dpct::byte_level_permute(u, u, u);
@@ -2379,19 +2379,19 @@ __global__ void testUnsupported() {
   // CHECK: i = dpct::ffs<long long int>(ll);
   i = __ffsll(ll);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __funnelshift_l is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __funnelshift_l is not supported.
   // CHECK-NEXT: */
   u = __funnelshift_l(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __funnelshift_lc is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __funnelshift_lc is not supported.
   // CHECK-NEXT: */
   u = __funnelshift_lc(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __funnelshift_r is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __funnelshift_r is not supported.
   // CHECK-NEXT: */
   u = __funnelshift_r(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __funnelshift_rc is not supported by the Intel(R) DPC++ Compatibility Tool.
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __funnelshift_rc is not supported.
   // CHECK-NEXT: */
   u = __funnelshift_rc(u, u, u);
   // CHECK: ll = sycl::mul_hi(ll, ll);

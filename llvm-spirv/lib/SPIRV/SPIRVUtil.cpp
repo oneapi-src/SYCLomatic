@@ -52,6 +52,7 @@
 #include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/IntrinsicInst.h"
+#include "llvm/IR/Metadata.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
@@ -78,14 +79,14 @@ cl::opt<bool, true> EnableDbgOutput("spirv-debug",
                                     cl::location(SPIRVDbgEnable));
 #endif
 
-bool isSupportedTriple(Triple T) { return T.isSPIR(); }
+bool isSupportedTriple(Triple T) { return T.isSPIR() || T.isSPIRV(); }
 
 void addFnAttr(CallInst *Call, Attribute::AttrKind Attr) {
-  Call->addAttribute(AttributeList::FunctionIndex, Attr);
+  Call->addFnAttr(Attr);
 }
 
 void removeFnAttr(CallInst *Call, Attribute::AttrKind Attr) {
-  Call->removeAttribute(AttributeList::FunctionIndex, Attr);
+  Call->removeFnAttr(Attr);
 }
 
 Value *removeCast(Value *V) {
@@ -148,7 +149,17 @@ std::string mapLLVMTypeToOCLType(const Type *Ty, bool Signed) {
     Ss << mapLLVMTypeToOCLType(EleTy, Signed) << Size;
     return Ss.str();
   }
-  return "invalid_type";
+  // It is expected that `Ty` can be mapped to `ReturnType` from "Optional
+  // Postfixes for SPIR-V Builtin Function Names" section of
+  // SPIRVRepresentationInLLVM.rst document (aka SPIRV-friendly IR).
+  // If `Ty` is not a scalar or vector type mentioned in the document (return
+  // value of some SPIR-V instructions may be represented as pointer to a struct
+  // in LLVM IR) we can mangle the type.
+  BuiltinFuncMangleInfo MangleInfo;
+  std::string MangledName =
+      mangleBuiltin("", const_cast<Type *>(Ty), &MangleInfo);
+  // Remove "_Z0"(3 characters) from the front of the name
+  return MangledName.erase(0, 3);
 }
 
 std::string mapSPIRVTypeToOCLType(SPIRVType *Ty, bool Signed) {
@@ -233,13 +244,11 @@ void getFunctionTypeParameterTypes(llvm::FunctionType *FT,
   }
 }
 
-bool isVoidFuncTy(FunctionType *FT) {
-  return FT->getReturnType()->isVoidTy() && FT->getNumParams() == 0;
-}
+bool isVoidFuncTy(FunctionType *FT) { return FT->getReturnType()->isVoidTy(); }
 
 bool isPointerToOpaqueStructType(llvm::Type *Ty) {
   if (auto PT = dyn_cast<PointerType>(Ty))
-    if (auto ST = dyn_cast<StructType>(PT->getElementType()))
+    if (auto *ST = dyn_cast<StructType>(PT->getPointerElementType()))
       if (ST->isOpaque())
         return true;
   return false;
@@ -247,15 +256,28 @@ bool isPointerToOpaqueStructType(llvm::Type *Ty) {
 
 bool isPointerToOpaqueStructType(llvm::Type *Ty, const std::string &Name) {
   if (auto PT = dyn_cast<PointerType>(Ty))
-    if (auto ST = dyn_cast<StructType>(PT->getElementType()))
+    if (auto *ST = dyn_cast<StructType>(PT->getPointerElementType()))
       if (ST->isOpaque() && ST->getName() == Name)
         return true;
   return false;
 }
 
+bool isSPIRVSamplerType(llvm::Type *Ty) {
+  if (auto *PT = dyn_cast<PointerType>(Ty))
+    if (auto *ST = dyn_cast<StructType>(PT->getPointerElementType()))
+      if (ST->isOpaque()) {
+        auto Name = ST->getName();
+        if (Name.startswith(std::string(kSPIRVTypeName::PrefixAndDelim) +
+                            kSPIRVTypeName::Sampler)) {
+          return true;
+        }
+      }
+  return false;
+}
+
 bool isOCLImageType(llvm::Type *Ty, StringRef *Name) {
   if (auto PT = dyn_cast<PointerType>(Ty))
-    if (auto ST = dyn_cast<StructType>(PT->getElementType()))
+    if (auto *ST = dyn_cast<StructType>(PT->getPointerElementType()))
       if (ST->isOpaque()) {
         auto FullName = ST->getName();
         if (FullName.find(kSPR2TypeName::ImagePrefix) == 0) {
@@ -272,7 +294,7 @@ bool isOCLImageType(llvm::Type *Ty, StringRef *Name) {
 ///   type Name as spirv.BaseTyName.Postfixes.
 bool isSPIRVType(llvm::Type *Ty, StringRef BaseTyName, StringRef *Postfix) {
   if (auto PT = dyn_cast<PointerType>(Ty))
-    if (auto ST = dyn_cast<StructType>(PT->getElementType()))
+    if (auto *ST = dyn_cast<StructType>(PT->getPointerElementType()))
       if (ST->isOpaque()) {
         auto FullName = ST->getName();
         std::string N =
@@ -285,6 +307,21 @@ bool isSPIRVType(llvm::Type *Ty, StringRef BaseTyName, StringRef *Postfix) {
           return true;
         }
       }
+  return false;
+}
+
+bool isSYCLHalfType(llvm::Type *Ty) {
+  if (auto *ST = dyn_cast<StructType>(Ty)) {
+    if (!ST->hasName())
+      return false;
+    StringRef Name = ST->getName();
+    Name.consume_front("class.");
+    if ((Name.startswith("cl::sycl::") ||
+         Name.startswith("__sycl_internal::")) &&
+        Name.endswith("::half")) {
+      return true;
+    }
+  }
   return false;
 }
 
@@ -306,7 +343,7 @@ Function *getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
     raw_string_ostream SS(S);
     SS << "Error: Attempt to redefine function: " << *F << " => " << *FT
        << '\n';
-    report_fatal_error(SS.str(), false);
+    report_fatal_error(llvm::Twine(SS.str()), false);
   }
   if (!F || F->getFunctionType() != FT) {
     auto NewF =
@@ -322,6 +359,8 @@ Function *getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
     }
     LLVM_DEBUG(dbgs() << "[getOrCreateFunction] ";
                if (F) dbgs() << *F << " => "; dbgs() << *NewF << '\n';);
+    if (F)
+      NewF->setDSOLocal(F->isDSOLocal());
     F = NewF;
     F->setCallingConv(CallingConv::SPIR_FUNC);
     if (Attrs)
@@ -333,7 +372,7 @@ Function *getOrCreateFunction(Module *M, Type *RetTy, ArrayRef<Type *> ArgTypes,
 std::vector<Value *> getArguments(CallInst *CI, unsigned Start, unsigned End) {
   std::vector<Value *> Args;
   if (End == 0)
-    End = CI->getNumArgOperands();
+    End = CI->arg_size();
   for (; Start != End; ++Start) {
     Args.push_back(CI->getArgOperand(Start));
   }
@@ -678,6 +717,21 @@ void mutateFunction(
   for (auto I = F->user_begin(), E = F->user_end(); I != E;) {
     if (auto CI = dyn_cast<CallInst>(*I++))
       mutateCallInst(M, CI, ArgMutate, Mangle, Attrs, TakeFuncName);
+  }
+  if (F->use_empty())
+    F->eraseFromParent();
+}
+
+void mutateFunction(
+    Function *F,
+    std::function<std::string(CallInst *, std::vector<Value *> &, Type *&RetTy)>
+        ArgMutate,
+    std::function<Instruction *(CallInst *)> RetMutate,
+    BuiltinFuncMangleInfo *Mangle, AttributeList *Attrs, bool TakeName) {
+  auto *M = F->getParent();
+  for (auto I = F->user_begin(), E = F->user_end(); I != E;) {
+    if (auto *CI = dyn_cast<CallInst>(*I++))
+      mutateCallInst(M, CI, ArgMutate, RetMutate, Mangle, Attrs, TakeName);
   }
   if (F->use_empty())
     F->eraseFromParent();
@@ -1415,6 +1469,8 @@ std::string mangleBuiltin(StringRef UniqName, ArrayRef<Type *> ArgTypes,
   if (!BtnInfo)
     return std::string(UniqName);
   BtnInfo->init(UniqName);
+  if (BtnInfo->avoidMangling())
+    return std::string(UniqName);
   std::string MangledName;
   LLVM_DEBUG(dbgs() << "[mangle] " << UniqName << " => ");
   SPIR::FunctionDescriptor FD;
@@ -1870,6 +1926,7 @@ bool postProcessBuiltinReturningStruct(Function *F) {
   LLVMContext *Context = &M->getContext();
   std::string Name = F->getName().str();
   F->setName(Name + ".old");
+  SmallVector<Instruction *, 32> InstToRemove;
   for (auto *U : F->users()) {
     if (auto *CI = dyn_cast<CallInst>(U)) {
       auto *ST = cast<StoreInst>(*(CI->user_begin()));
@@ -1887,11 +1944,13 @@ bool postProcessBuiltinReturningStruct(Function *F) {
       Args.insert(Args.begin(), ST->getPointerOperand());
       auto *NewCI = CallInst::Create(NewF, Args, CI->getName(), CI);
       NewCI->setCallingConv(CI->getCallingConv());
-      ST->dropAllReferences();
-      ST->eraseFromParent();
-      CI->dropAllReferences();
-      CI->eraseFromParent();
+      InstToRemove.push_back(ST);
+      InstToRemove.push_back(CI);
     }
+  }
+  for (auto *Inst : InstToRemove) {
+    Inst->dropAllReferences();
+    Inst->eraseFromParent();
   }
   F->dropAllReferences();
   F->eraseFromParent();
@@ -2038,6 +2097,76 @@ public:
       addUnsignedArg(2);
       addUnsignedArg(3);
       break;
+    case OpEnqueueMarker:
+      addUnsignedArg(1);
+      break;
+    case OpSubgroupAvcBmeInitializeINTEL:
+      addUnsignedArgs(0, 7);
+      break;
+    case OpSubgroupAvcFmeInitializeINTEL:
+    case OpSubgroupAvcSicConfigureIpeLumaINTEL:
+      addUnsignedArgs(0, 6);
+      break;
+    case OpSubgroupAvcImeAdjustRefOffsetINTEL:
+      addUnsignedArgs(1, 3);
+      break;
+    case OpSubgroupAvcImeGetBorderReachedINTEL:
+    case OpSubgroupAvcImeRefWindowSizeINTEL:
+    case OpSubgroupAvcImeSetEarlySearchTerminationThresholdINTEL:
+    case OpSubgroupAvcImeSetMaxMotionVectorCountINTEL:
+    case OpSubgroupAvcImeSetWeightedSadINTEL:
+    case OpSubgroupAvcMceSetInterBaseMultiReferencePenaltyINTEL:
+    case OpSubgroupAvcMceSetInterDirectionPenaltyINTEL:
+    case OpSubgroupAvcMceSetInterShapePenaltyINTEL:
+    case OpSubgroupAvcMceSetSingleReferenceInterlacedFieldPolarityINTEL:
+    case OpSubgroupAvcMceSetSourceInterlacedFieldPolarityINTEL:
+    case OpSubgroupAvcSicInitializeINTEL:
+    case OpSubgroupAvcSicSetBlockBasedRawSkipSadINTEL:
+    case OpSubgroupAvcSicSetIntraChromaModeCostFunctionINTEL:
+    case OpSubgroupAvcSicSetIntraLumaShapePenaltyINTEL:
+    case OpSubgroupAvcSicSetSkcForwardTransformEnableINTEL:
+      addUnsignedArg(0);
+      break;
+    case OpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeDistortionsINTEL:
+    case OpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeMotionVectorsINTEL:
+    case OpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeReferenceIdsINTEL:
+    case OpSubgroupAvcRefEvaluateWithMultiReferenceInterlacedINTEL:
+    case OpSubgroupAvcSicEvaluateWithMultiReferenceInterlacedINTEL:
+    case OpSubgroupAvcRefEvaluateWithMultiReferenceINTEL:
+    case OpSubgroupAvcSicEvaluateWithMultiReferenceINTEL:
+      addUnsignedArgs(1, 2);
+      break;
+    case OpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeDistortionsINTEL:
+    case OpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeMotionVectorsINTEL:
+    case OpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeReferenceIdsINTEL:
+    case OpSubgroupAvcImeSetSingleReferenceINTEL:
+      addUnsignedArg(1);
+      break;
+    case OpSubgroupAvcImeInitializeINTEL:
+    case OpSubgroupAvcMceSetMotionVectorCostFunctionINTEL:
+    case OpSubgroupAvcSicSetIntraLumaModeCostFunctionINTEL:
+      addUnsignedArgs(0, 2);
+      break;
+    case OpSubgroupAvcImeSetDualReferenceINTEL:
+      addUnsignedArg(2);
+      break;
+    case OpSubgroupAvcMceGetDefaultInterBaseMultiReferencePenaltyINTEL:
+    case OpSubgroupAvcMceGetDefaultInterDirectionPenaltyINTEL:
+    case OpSubgroupAvcMceGetDefaultInterMotionVectorCostTableINTEL:
+    case OpSubgroupAvcMceGetDefaultInterShapePenaltyINTEL:
+    case OpSubgroupAvcMceGetDefaultIntraLumaModePenaltyINTEL:
+    case OpSubgroupAvcMceGetDefaultIntraLumaShapePenaltyINTEL:
+    case OpSubgroupAvcMceGetInterReferenceInterlacedFieldPolaritiesINTEL:
+    case OpSubgroupAvcMceSetDualReferenceInterlacedFieldPolaritiesINTEL:
+    case OpSubgroupAvcSicGetMotionVectorMaskINTEL:
+      addUnsignedArgs(0, 1);
+      break;
+    case OpSubgroupAvcSicConfigureIpeLumaChromaINTEL:
+      addUnsignedArgs(0, 9);
+      break;
+    case OpSubgroupAvcSicConfigureSkcINTEL:
+      addUnsignedArgs(0, 4);
+      break;
     default:;
       // No special handling is needed
     }
@@ -2120,5 +2249,17 @@ std::string getSPIRVFriendlyIRFunctionName(const std::string &UniqName,
   SPIRVFriendlyIRMangleInfo MangleInfo(OC, ArgTys);
   return mangleBuiltin(UniqName, ArgTys, &MangleInfo);
 }
+
+template <typename T>
+MetadataAsValue *map2MDString(LLVMContext &C, SPIRVValue *V) {
+  if (V->getOpCode() != OpConstant)
+    return nullptr;
+  uint64_t Const = static_cast<SPIRVConstant *>(V)->getZExtIntValue();
+  std::string Str = SPIRVMap<T, std::string>::map(static_cast<T>(Const));
+  return MetadataAsValue::get(C, MDString::get(C, Str));
+}
+template MetadataAsValue *
+map2MDString<internal::InternalJointMatrixLayout>(LLVMContext &, SPIRVValue *);
+template MetadataAsValue *map2MDString<spv::Scope>(LLVMContext &, SPIRVValue *);
 
 } // namespace SPIRV

@@ -34,7 +34,7 @@ PDBFileBuilder::PDBFileBuilder(BumpPtrAllocator &Allocator)
     : Allocator(Allocator), InjectedSourceHashTraits(Strings),
       InjectedSourceTable(2) {}
 
-PDBFileBuilder::~PDBFileBuilder() {}
+PDBFileBuilder::~PDBFileBuilder() = default;
 
 Error PDBFileBuilder::initialize(uint32_t BlockSize) {
   auto ExpectedMsf = MSFBuilder::create(Allocator, BlockSize);
@@ -103,7 +103,7 @@ void PDBFileBuilder::addInjectedSource(StringRef Name,
   // table and the hash value is dependent on the exact contents of the string.
   // link.exe lowercases a path and converts / to \, so we must do the same.
   SmallString<64> VName;
-  sys::path::native(Name.lower(), VName);
+  sys::path::native(Name.lower(), VName, sys::path::Style::windows_backslash);
 
   uint32_t NI = getStringTableBuilder().insert(Name);
   uint32_t VNI = getStringTableBuilder().insert(VName);

@@ -7,8 +7,6 @@
 //===----------------------------------------------------------------------===//
 
 // UNSUPPORTED: c++03, c++11, c++14
-// constexpr destructors are only supported starting with clang 10
-// UNSUPPORTED: clang-5, clang-6, clang-7, clang-8, clang-9
 
 // <memory>
 
@@ -32,13 +30,12 @@ struct VirtualCounted {
     int* counter_;
     TEST_CONSTEXPR VirtualCounted(int* counter) : counter_(counter) { ++*counter_; }
     TEST_CONSTEXPR_CXX20 virtual ~VirtualCounted() { --*counter_; }
-    friend void operator&(VirtualCounted) = delete;
+    void operator&() const = delete;
 };
 
 struct DerivedCounted : VirtualCounted {
     TEST_CONSTEXPR DerivedCounted(int* counter) : VirtualCounted(counter) { }
     TEST_CONSTEXPR_CXX20 ~DerivedCounted() override { }
-    friend void operator&(DerivedCounted) = delete;
 };
 
 #if TEST_STD_VER > 17
@@ -137,7 +134,7 @@ int main(int, char**) {
     test_arrays();
     static_assert(test());
     // TODO: Until std::construct_at has support for arrays, it's impossible to test this
-    //       in a constexpr context.
+    //       in a constexpr context (see https://reviews.llvm.org/D114903).
     // static_assert(test_arrays());
 #endif
     return 0;

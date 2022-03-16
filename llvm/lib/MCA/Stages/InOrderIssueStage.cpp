@@ -47,7 +47,7 @@ InOrderIssueStage::InOrderIssueStage(const MCSubtargetInfo &STI,
                                      RegisterFile &PRF, CustomBehaviour &CB,
                                      LSUnit &LSU)
     : STI(STI), PRF(PRF), RM(STI.getSchedModel()), CB(CB), LSU(LSU),
-      NumIssued(), SI(), CarryOver(), Bandwidth(), LastWriteBackCycle() {}
+      NumIssued(), CarryOver(), Bandwidth(), LastWriteBackCycle() {}
 
 unsigned InOrderIssueStage::getIssueWidth() const {
   return STI.getSchedModel().IssueWidth;
@@ -261,6 +261,7 @@ llvm::Error InOrderIssueStage::tryIssue(InstRef &IR) {
   // the execution and retirement now.
   if (IS.isExecuted()) {
     PRF.onInstructionExecuted(&IS);
+    LSU.onInstructionExecuted(IR);
     notifyEvent<HWInstructionEvent>(
         HWInstructionEvent(HWInstructionEvent::Executed, IR));
     LLVM_DEBUG(dbgs() << "[E] Instruction #" << IR << " is executed\n");

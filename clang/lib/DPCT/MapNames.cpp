@@ -262,6 +262,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaResourceType", getDpctNamespace() + "image_data_type"},
       {"CUtexref", getDpctNamespace() + "image_wrapper_base_p"},
       {"cudaDeviceAttr", "int"},
+      {"__nv_bfloat16", "oneapi::mkl::bfloat16"},
       // ...
   };
 

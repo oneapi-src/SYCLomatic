@@ -82,8 +82,7 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
       return R;
     }
 #else
-    NormalizedReplacement(const IO &)
-        : FilePath(""), Offset(0), Length(0), ReplacementText("") {}
+    NormalizedReplacement(const IO &) : Offset(0), Length(0) {}
 
     NormalizedReplacement(const IO &, const clang::tooling::Replacement &R)
         : FilePath(R.getFilePath()), Offset(R.getOffset()),

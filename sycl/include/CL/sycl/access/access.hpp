@@ -15,13 +15,14 @@ namespace sycl {
 namespace access {
 
 enum class target {
-  global_buffer = 2014,
+  global_buffer __SYCL2020_DEPRECATED("use 'target::device' instead") = 2014,
   constant_buffer = 2015,
   local = 2016,
   image = 2017,
   host_buffer = 2018,
   host_image = 2019,
-  image_array = 2020
+  image_array = 2020,
+  device = global_buffer,
 };
 
 enum class mode {
@@ -46,10 +47,18 @@ enum class address_space : int {
   global_space = 1,
   constant_space = 2,
   local_space = 3,
-  global_device_space = 4,
-  global_host_space = 5
+  ext_intel_global_device_space = 4,
+  ext_intel_host_device_space = 5,
+  global_device_space __SYCL2020_DEPRECATED(
+      "use 'ext_intel_global_device_space' instead") =
+      ext_intel_global_device_space,
+  global_host_space __SYCL2020_DEPRECATED(
+      "use 'ext_intel_host_device_space' instead") =
+      ext_intel_host_device_space,
+  generic_space = 6, // TODO generic_space address space is not supported yet
 };
 
+enum class decorated : int { no = 0, yes = 1, legacy = 2 };
 } // namespace access
 
 using access::target;
@@ -63,7 +72,7 @@ template <access_mode mode, target trgt> struct mode_target_tag_t {
   explicit mode_target_tag_t() = default;
 };
 
-#if __cplusplus > 201402L
+#if __cplusplus >= 201703L
 
 inline constexpr mode_tag_t<access_mode::read> read_only{};
 inline constexpr mode_tag_t<access_mode::read_write> read_write{};
@@ -130,7 +139,7 @@ template <access::target accessTarget> struct TargetToAS {
 };
 
 #ifdef __ENABLE_USM_ADDR_SPACE__
-template <> struct TargetToAS<access::target::global_buffer> {
+template <> struct TargetToAS<access::target::device> {
   constexpr static access::address_space AS =
       access::address_space::global_device_space;
 };
@@ -152,6 +161,11 @@ struct DecoratedType;
 template <typename ElementType>
 struct DecoratedType<ElementType, access::address_space::private_space> {
   using type = __OPENCL_PRIVATE_AS__ ElementType;
+};
+
+template <typename ElementType>
+struct DecoratedType<ElementType, access::address_space::generic_space> {
+  using type = ElementType;
 };
 
 template <typename ElementType>

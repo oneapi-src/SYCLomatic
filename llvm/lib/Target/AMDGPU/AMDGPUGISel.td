@@ -172,6 +172,8 @@ def : GINodeEquiv<G_AMDGPU_CVT_F32_UBYTE3, AMDGPUcvt_f32_ubyte3>;
 def : GINodeEquiv<G_AMDGPU_CVT_PK_I16_I32, AMDGPUpk_i16_i32_impl>;
 def : GINodeEquiv<G_AMDGPU_SMED3, AMDGPUsmed3>;
 def : GINodeEquiv<G_AMDGPU_UMED3, AMDGPUumed3>;
+def : GINodeEquiv<G_AMDGPU_FMED3, AMDGPUfmed3_impl>;
+def : GINodeEquiv<G_AMDGPU_CLAMP, AMDGPUclamp>;
 
 def : GINodeEquiv<G_AMDGPU_ATOMIC_CMPXCHG, AMDGPUatomic_cmp_swap>;
 def : GINodeEquiv<G_AMDGPU_BUFFER_LOAD, SIbuffer_load>;
@@ -219,6 +221,9 @@ def : GINodeEquiv<G_AMDGPU_BUFFER_ATOMIC_FMIN, SIbuffer_atomic_fmin>;
 def : GINodeEquiv<G_AMDGPU_BUFFER_ATOMIC_FMAX, SIbuffer_atomic_fmax>;
 def : GINodeEquiv<G_AMDGPU_BUFFER_ATOMIC_CMPSWAP, SIbuffer_atomic_cmpswap>;
 def : GINodeEquiv<G_AMDGPU_S_BUFFER_LOAD, SIsbuffer_load>;
+
+def : GINodeEquiv<G_FPTRUNC_ROUND_UPWARD, SIfptrunc_round_upward>;
+def : GINodeEquiv<G_FPTRUNC_ROUND_DOWNWARD, SIfptrunc_round_downward>;
 
 class GISelSop2Pat <
   SDPatternOperator node,
