@@ -905,9 +905,9 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
         ProcessingFailed = true;
         if(StopOnParseErrTooling)
             break;
-      } else {
-        CollectProcessedFile(getRealFilePath(File.str(), Files.get()));
       }
+      CollectProcessedFile(getRealFilePath(File.str(), Files.get()));
+
     }
     //collect the errror counter info.
     ErrorCnt[File.str()] =(CurFileSigErrCnt<<32) | CurFileParseErrCnt;
