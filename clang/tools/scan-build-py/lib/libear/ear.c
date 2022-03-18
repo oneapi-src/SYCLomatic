@@ -672,7 +672,7 @@ static int generate_file(char *filename, int ar_binary_used) {
     }
     len--;
   }
-  FILE *fd = fopen(filename, "a+");
+  FILE *fd = fopen(filename, "w+");
   if (0 == fd) {
     perror("bear: generate_file fopen fail.");
     return -1;
