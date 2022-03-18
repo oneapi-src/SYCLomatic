@@ -106,9 +106,9 @@ bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
 std::unordered_map<std::string, FFTExecAPIInfo>
     DpctGlobalInfo::FFTExecAPIInfoMap;
 std::unordered_map<std::string, FFTHandleInfo> DpctGlobalInfo::FFTHandleInfoMap;
-unsigned int DpctGlobalInfo::CudaBuiltinXDFIIndex = 1;
+unsigned int DpctGlobalInfo::CudaKernelDimDFIIndex = 1;
 std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
-    DpctGlobalInfo::CudaBuiltinXDFIMap;
+    DpctGlobalInfo::CudaKernelDimDFIMap;
 unsigned int DpctGlobalInfo::RunRound = 0;
 bool DpctGlobalInfo::NeedRunAgain = false;
 std::set<std::string> DpctGlobalInfo::ModuleFiles;
@@ -3492,13 +3492,21 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   // this_sub_group.
   switch (Method) {
   case 'R':
-    if (auto DFI = getCudaBuiltinXDFI(Index)) {
+    if (auto DFI = getCudaKernelDimDFI(Index)) {
       auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
       if (Ptr && Ptr->Dim == 1) {
         return "0";
       }
     }
     return "2";
+  case 'G':
+    if (auto DFI = getCudaKernelDimDFI(Index)) {
+      auto Ptr = MemVarMap::getHeadWithoutPathCompression(&(DFI->getVarMap()));
+      if (Ptr && Ptr->Dim == 1) {
+        return "1";
+      }
+    }
+    return "3";
   case 'C':
     if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
       return std::to_string(DpctGlobalInfo::getInstance()

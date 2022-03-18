@@ -2077,20 +2077,20 @@ public:
     return FFTHandleInfoMap;
   }
 
-  static unsigned int getCudaBuiltinXDFIIndexThenInc() {
-    unsigned int Res = CudaBuiltinXDFIIndex;
-    ++CudaBuiltinXDFIIndex;
+  static unsigned int getCudaKernelDimDFIIndexThenInc() {
+    unsigned int Res = CudaKernelDimDFIIndex;
+    ++CudaKernelDimDFIIndex;
     return Res;
   }
   static void
-  insertCudaBuiltinXDFIMap(unsigned int Index,
+  insertCudaKernelDimDFIMap(unsigned int Index,
                            std::shared_ptr<DeviceFunctionInfo> Ptr) {
-    CudaBuiltinXDFIMap.insert(std::make_pair(Index, Ptr));
+    CudaKernelDimDFIMap.insert(std::make_pair(Index, Ptr));
   }
   static std::shared_ptr<DeviceFunctionInfo>
-  getCudaBuiltinXDFI(unsigned int Index) {
-    auto Iter = CudaBuiltinXDFIMap.find(Index);
-    if (Iter != CudaBuiltinXDFIMap.end())
+  getCudaKernelDimDFI(unsigned int Index) {
+    auto Iter = CudaKernelDimDFIMap.find(Index);
+    if (Iter != CudaKernelDimDFIMap.end())
       return Iter->second;
     return nullptr;
   }
@@ -2376,9 +2376,9 @@ private:
   // Value: a struct incluing placement and direction
   static std::unordered_map<std::string, FFTExecAPIInfo> FFTExecAPIInfoMap;
   static std::unordered_map<std::string, FFTHandleInfo> FFTHandleInfoMap;
-  static unsigned int CudaBuiltinXDFIIndex;
+  static unsigned int CudaKernelDimDFIIndex;
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
-      CudaBuiltinXDFIMap;
+      CudaKernelDimDFIMap;
   static CudaArchPPMap CAPPInfoMap;
   static HDCallMap HostDeviceFCallIMap;
   static HDDefMap HostDeviceFDefIMap;

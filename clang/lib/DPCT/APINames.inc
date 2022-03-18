@@ -1421,11 +1421,12 @@ ENTRY(cuLaunchCooperativeKernel, cuLaunchCooperativeKernel, false, NO_FLAG, P4, 
 ENTRY(cuLaunchCooperativeKernelMultiDevice, cuLaunchCooperativeKernelMultiDevice, false, NO_FLAG, P4, "comment")
 ENTRY(this_thread_block, this_thread_block, true, NO_FLAG, P4, "Successful")
 ENTRY(this_multi_grid, this_multi_grid, false, NO_FLAG, P4, "comment")
-ENTRY(tiled_partition, tiled_partition, false, NO_FLAG, P4, "comment")
+ENTRY(tiled_partition, tiled_partition, true, NO_FLAG, P4, "If size equals to 32, tool will migrate it, else warning is emitted.")
 ENTRY(thread_block_tile, thread_block_tile, false, NO_FLAG, P4, "comment")
 ENTRY(coalesced_threads, coalesced_threads, false, NO_FLAG, P4, "comment")
 ENTRY(coalesced_group, coalesced_group, false, NO_FLAG, P4, "comment")
 ENTRY(grid_group, grid_group, false, NO_FLAG, P4, "comment")
+ENTRY(thread_rank, thread_rank, true, NO_FLAG, P4, "comment")
 
 // nvrtc APIs
 ENTRY(nvrtcGetErrorString, nvrtcGetErrorString, false, NO_FLAG, P4, "comment")

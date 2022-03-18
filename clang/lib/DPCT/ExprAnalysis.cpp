@@ -501,8 +501,8 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         auto FD = getImmediateOuterFuncDecl(TargetExpr);
         auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
         if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
-          auto Index = DpctGlobalInfo::getCudaBuiltinXDFIIndexThenInc();
-          DpctGlobalInfo::insertCudaBuiltinXDFIMap(Index, DFI);
+          auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+          DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
           addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
                                          ItemItr->second, "({{NEEDREPLACER",
                                          std::to_string(Index), "}})"));

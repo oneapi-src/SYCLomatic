@@ -1696,6 +1696,13 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class CooperativeGroupsFunctionRule
+    : public NamedMigrationRule<CooperativeGroupsFunctionRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 /// Migration rule for replacing __syncthreads() function call.
 ///
 /// This rule replace __syncthreads() with item.barrier()

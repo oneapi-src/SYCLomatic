@@ -116,3 +116,57 @@ int main() {
   cudaDeviceSynchronize();
   return 0;
 }
+
+// CHECK:void foo1(sycl::group<3> &tb,
+// CHECK-NEXT:   sycl::sub_group &tbt32,
+// CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
+__device__ void foo1(cg::thread_block &tb,
+                     cg::thread_block_tile<32> &tbt32) {
+// CHECK: item_ct1.get_local_linear_id();
+// CHECK-NEXT: item_ct1.get_sub_group().get_local_linear_id();
+// CHECK-NEXT: item_ct1.get_local_linear_id();
+// CHECK-NEXT: item_ct1.get_sub_group().get_local_linear_id();
+  tb.thread_rank();
+  tbt32.thread_rank();
+  cg::thread_rank(tb);
+  cg::thread_rank(tbt32);  
+
+// CHECK: /*
+// CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+// CHECK-NEXT: */
+// CHECK-NEXT: item_ct1.barrier();
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::sub_group::barrier() with sycl::sub_group::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+// CHECK-NEXT: */
+// CHECK-NEXT: item_ct1.get_sub_group().barrier();
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+// CHECK-NEXT: */
+// CHECK-NEXT: item_ct1.barrier();
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::sub_group::barrier() with sycl::sub_group::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+// CHECK-NEXT: */
+// CHECK-NEXT: item_ct1.get_sub_group().barrier();
+  tb.sync();
+  tbt32.sync();
+  cg::sync(tb);
+  cg::sync(tbt32);
+}
+
+__global__ void foo2() {
+// CHECK: auto tb = item_ct1.get_group();
+// CHECK-NEXT: sycl::sub_group tbt32 = item_ct1.get_sub_group();
+  cg::thread_block tb = cg::this_thread_block();
+  cg::thread_block_tile<32> tbt32 = cg::tiled_partition<32>(tb);
+  foo1(tb, tbt32);
+}
+
+int foo3() {
+//CHECK: dpct::get_default_queue().parallel_for(
+//CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+//CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+//CHECK-NEXT:     foo2(item_ct1);
+//CHECK-NEXT:   });
+  foo2<<<1,1>>>();
+  return 0;
+}
