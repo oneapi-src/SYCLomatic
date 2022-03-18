@@ -2515,7 +2515,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cufftDoubleComplex", "cufftResult_t", "cufftResult",
                   "cufftType_t", "cufftType", "thrust::pair", "CUdeviceptr",
                   "cudaDeviceAttr", "CUmodule", "CUfunction", "cudaMemcpyKind",
-                  "cudaComputeMode", "__nv_bfloat16"),
+                  "cudaComputeMode", "__nv_bfloat16", "libraryPropertyType_t",
+                  "libraryPropertyType"),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
@@ -4175,11 +4176,12 @@ REGISTER_RULE(DevicePropVarRule)
 
 // Rule for enums constants.
 void EnumConstantRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
-                                "cudaComputeMode", "cudaMemcpyKind",
-                                "cudaMemoryAdvise", "cudaDeviceAttr"))))))
-                    .bind("EnumConstant"),
-                this);
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
+                      "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
+                      "cudaDeviceAttr", "libraryPropertyType_t"))))))
+          .bind("EnumConstant"),
+      this);
 }
 
 void EnumConstantRule::handleComputeMode(std::string EnumName,
@@ -4266,6 +4268,7 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
   }
+
   auto Search = EnumNamesMap.find(EnumName);
   if (Search == EnumNamesMap.end()) {
     // TODO report migration error
@@ -5579,6 +5582,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasSetMatrix", "cublasGetMatrix", "cublasSetMatrixAsync",
         "cublasGetMatrixAsync", "cublasSetStream_v2", "cublasGetStream_v2",
         "cublasGetPointerMode_v2", "cublasSetPointerMode_v2",
+        "cublasGetVersion_v2",
         /*Regular level 1*/
         "cublasIsamax_v2", "cublasIdamax_v2", "cublasIcamax_v2",
         "cublasIzamax_v2", "cublasIsamin_v2", "cublasIdamin_v2",
@@ -5638,7 +5642,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasZgeqrfBatched", "cublasGemmEx", "cublasSgemmEx", "cublasCgemmEx",
         /*Legacy API*/
         "cublasInit", "cublasShutdown", "cublasGetError",
-        "cublasSetKernelStream",
+        "cublasSetKernelStream", "cublasGetVersion",
         /*level 1*/
         "cublasSnrm2", "cublasDnrm2", "cublasScnrm2", "cublasDznrm2",
         "cublasSdot", "cublasDdot", "cublasCdotu", "cublasCdotc", "cublasZdotu",
@@ -7598,7 +7602,18 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       insertAroundStmt(CE, "(", ", 0)");
     }
   } else if (FuncName == "make_cuComplex" ||
-             FuncName == "make_cuDoubleComplex") {
+             FuncName == "make_cuDoubleComplex" ||
+             FuncName == "cublasGetVersion" ||
+             FuncName == "cublasGetVersion_v2") {
+    if (FuncName == "cublasGetVersion" || FuncName == "cublasGetVersion_v2") {
+      if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+              HelperFilesCustomizationLevel::HFCL_None ||
+          DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+              HelperFilesCustomizationLevel::HFCL_All) {
+        DpctGlobalInfo::getInstance().insertHeader(
+            SM->getExpansionLoc(CE->getBeginLoc()), HT_Lib_Common_Utils);
+      }
+    }
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
@@ -15273,7 +15288,8 @@ void FFTFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cufftMakePlan1d", "cufftMakePlan2d", "cufftMakePlan3d",
         "cufftMakePlanMany", "cufftMakePlanMany64", "cufftExecC2C",
         "cufftExecR2C", "cufftExecC2R", "cufftExecZ2Z", "cufftExecZ2D",
-        "cufftExecD2Z", "cufftCreate", "cufftDestroy", "cufftSetStream");
+        "cufftExecD2Z", "cufftCreate", "cufftDestroy", "cufftSetStream",
+        "cufftGetVersion", "cufftGetProperty");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -15443,7 +15459,19 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
   dpct::FFTFunctionCallBuilder FFCB(CE, ReplaceStrs.IndentStr, FuncName,
                                     FuncPtrName, Locations, Flags);
-  if (FuncName == "cufftSetStream") {
+  if (FuncName == "cufftGetVersion" || FuncName == "cufftGetProperty") {
+    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+            HelperFilesCustomizationLevel::HFCL_None ||
+        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+            HelperFilesCustomizationLevel::HFCL_All) {
+      DpctGlobalInfo::getInstance().insertHeader(
+          SM.getExpansionLoc(CE->getBeginLoc()), HT_Lib_Common_Utils);
+    }
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  } else if (FuncName == "cufftSetStream") {
     const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
     if (!DD)
       return;

@@ -263,6 +263,10 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUtexref", getDpctNamespace() + "image_wrapper_base_p"},
       {"cudaDeviceAttr", "int"},
       {"__nv_bfloat16", "oneapi::mkl::bfloat16"},
+      {"libraryPropertyType_t",
+        getDpctNamespace() + "version_field"},
+      {"libraryPropertyType",
+       getDpctNamespace() + "version_field"},
       // ...
   };
 
@@ -293,6 +297,10 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaResourceType", HelperFeatureEnum::Image_image_data_type},
       {"CUtexref", HelperFeatureEnum::Image_image_wrapper_base_p_alias},
       {"CUfunction", HelperFeatureEnum::Kernel_kernel_functor},
+      {"libraryPropertyType_t",
+       HelperFeatureEnum::LibCommonUtils_version_field},
+      {"libraryPropertyType",
+       HelperFeatureEnum::LibCommonUtils_version_field},
   };
 
   // Enum constants name mapping.
@@ -383,6 +391,12 @@ void MapNames::setExplicitNamespaceMap() {
        getDpctNamespace() + "image_data_type::linear"},
       {"CU_RESOURCE_TYPE_PITCH2D",
        getDpctNamespace() + "image_data_type::pitch"},
+      {"MAJOR_VERSION",
+       getDpctNamespace() + "version_field::major"},
+      {"MINOR_VERSION",
+       getDpctNamespace() + "version_field::update"},
+      {"PATCH_LEVEL",
+       getDpctNamespace() + "version_field::patch"},
       // ...
   };
 
@@ -437,6 +451,12 @@ void MapNames::setExplicitNamespaceMap() {
       {"CU_RESOURCE_TYPE_ARRAY", HelperFeatureEnum::Image_image_data_type},
       {"CU_RESOURCE_TYPE_LINEAR", HelperFeatureEnum::Image_image_data_type},
       {"CU_RESOURCE_TYPE_PITCH2D", HelperFeatureEnum::Image_image_data_type},
+      {"MAJOR_VERSION",
+       HelperFeatureEnum::LibCommonUtils_version_field},
+      {"MINOR_VERSION",
+       HelperFeatureEnum::LibCommonUtils_version_field},
+      {"PATCH_LEVEL",
+       HelperFeatureEnum::LibCommonUtils_version_field},
       // ...
   };
 

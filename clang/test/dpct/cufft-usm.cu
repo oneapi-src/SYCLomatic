@@ -1,5 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/cufft-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cufft-usm/cufft-usm.dp.cpp --match-full-lines %s
+// CHECK: #include <dpct/lib_common_utils.hpp>
 #include <cstdio>
 #include <cufft.h>
 #include <cuda_runtime.h>
@@ -2084,3 +2085,18 @@ int main() {
 
   return 0;
 }
+
+void foo() {
+  int prop1, prop2, prop3;
+  //CHECK:dpct::mkl_get_version(dpct::version_field::major, &prop1);
+  //CHECK-NEXT:dpct::mkl_get_version(dpct::version_field::update, &prop2);
+  //CHECK-NEXT:dpct::mkl_get_version(dpct::version_field::patch, &prop3);
+  cufftGetProperty(MAJOR_VERSION, &prop1);
+  cufftGetProperty(MINOR_VERSION, &prop2);
+  cufftGetProperty(PATCH_LEVEL, &prop3);
+
+  int ver;
+  //CHECK:dpct::mkl_get_version(dpct::version_field::major, &ver);
+  cufftGetVersion(&ver);
+}
+

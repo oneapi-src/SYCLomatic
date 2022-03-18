@@ -240,3 +240,9 @@ int foo(){
   return cublasIzamax(n, x_Z, incx);
 }
 
+void foo2() {
+  int ver;
+  //CHECK:dpct::mkl_get_version(dpct::version_field::major, &ver);
+  cublasGetVersion(&ver);
+}
+

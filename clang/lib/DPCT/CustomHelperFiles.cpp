@@ -366,6 +366,7 @@ void generateAllHelperFiles() {
   GENERATE_ALL_FILE_CONTENT(Memory)
   GENERATE_ALL_FILE_CONTENT(Util)
   GENERATE_ALL_FILE_CONTENT(RngUtils)
+  GENERATE_ALL_FILE_CONTENT(LibCommonUtils)
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasAlgorithm)
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasFunctional)
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasIterators)
@@ -458,6 +459,7 @@ void generateHelperFunctions() {
   std::vector<clang::dpct::HelperFunc> MemoryFileContent;
   std::vector<clang::dpct::HelperFunc> UtilFileContent;
   std::vector<clang::dpct::HelperFunc> RngUtilsFileContent;
+  std::vector<clang::dpct::HelperFunc> LibCommonUtilsFileContent;
   std::vector<clang::dpct::HelperFunc> DplExtrasAlgorithmFileContent;
   std::vector<clang::dpct::HelperFunc> DplExtrasFunctionalFileContent;
   std::vector<clang::dpct::HelperFunc> DplExtrasIteratorsFileContent;
@@ -569,6 +571,7 @@ void generateHelperFunctions() {
       UPDATE_FILE(Memory)
       UPDATE_FILE(Util)
       UPDATE_FILE(RngUtils)
+      UPDATE_FILE(LibCommonUtils)
       UPDATE_FILE(DplExtrasAlgorithm)
       UPDATE_FILE(DplExtrasFunctional)
       UPDATE_FILE(DplExtrasIterators)
@@ -664,6 +667,7 @@ void generateHelperFunctions() {
   ADD_INCLUDE_DIRECTIVE(Memory)
   ADD_INCLUDE_DIRECTIVE(Util)
   ADD_INCLUDE_DIRECTIVE(RngUtils)
+  ADD_INCLUDE_DIRECTIVE(LibCommonUtils)
 #undef ADD_INCLUDE_DIRECTIVE
 
   auto Item = HelperNameContentMap.at(std::make_pair(
@@ -706,6 +710,7 @@ void generateHelperFunctions() {
   GENERATE_FILE(Memory)
   GENERATE_FILE(Util)
   GENERATE_FILE(RngUtils)
+  GENERATE_FILE(LibCommonUtils)
   GENERATE_DPL_EXTRAS_FILE(DplExtrasAlgorithm)
   GENERATE_DPL_EXTRAS_FILE(DplExtrasFunctional)
   GENERATE_DPL_EXTRAS_FILE(DplExtrasIterators)
@@ -904,6 +909,7 @@ std::map<HelperFeatureIDTy, clang::dpct::HelperFunc>
 #include "clang/DPCT/memory.inc"
 #include "clang/DPCT/util.inc"
 #include "clang/DPCT/rng_utils.inc"
+#include "clang/DPCT/lib_common_utils.inc"
 #undef DPCT_CONTENT_BEGIN
 #undef DPCT_DEPENDENCY
 #undef DPCT_CONTENT_END
@@ -920,6 +926,7 @@ std::unordered_map<clang::dpct::HelperFileEnum, std::string> HelperFileNameMap{
     {clang::dpct::HelperFileEnum::Memory, "memory.hpp"},
     {clang::dpct::HelperFileEnum::Util, "util.hpp"},
     {clang::dpct::HelperFileEnum::RngUtils, "rng_utils.hpp"},
+    {clang::dpct::HelperFileEnum::LibCommonUtils, "lib_common_utils.hpp"},
     {clang::dpct::HelperFileEnum::DplExtrasAlgorithm, "algorithm.h"},
     {clang::dpct::HelperFileEnum::DplExtrasFunctional, "functional.h"},
     {clang::dpct::HelperFileEnum::DplExtrasIterators, "iterators.h"},
@@ -940,6 +947,7 @@ std::unordered_map<std::string, clang::dpct::HelperFileEnum> HelperFileIDMap{
     {"memory.hpp", clang::dpct::HelperFileEnum::Memory},
     {"util.hpp", clang::dpct::HelperFileEnum::Util},
     {"rng_utils.hpp", clang::dpct::HelperFileEnum::RngUtils},
+    {"lib_common_utils.hpp", clang::dpct::HelperFileEnum::LibCommonUtils},
     {"algorithm.h", clang::dpct::HelperFileEnum::DplExtrasAlgorithm},
     {"functional.h", clang::dpct::HelperFileEnum::DplExtrasFunctional},
     {"iterators.h", clang::dpct::HelperFileEnum::DplExtrasIterators},
@@ -961,6 +969,7 @@ const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
         {clang::dpct::HelperFileEnum::Memory, "__DPCT_MEMORY_HPP__"},
         {clang::dpct::HelperFileEnum::Util, "__DPCT_UTIL_HPP__"},
         {clang::dpct::HelperFileEnum::RngUtils, "__DPCT_RNG_UTILS_HPP__"},
+        {clang::dpct::HelperFileEnum::LibCommonUtils, "__DPCT_LIB_COMMON_UTILS_HPP__"},
         {clang::dpct::HelperFileEnum::DplExtrasAlgorithm,
          "__DPCT_ALGORITHM_H__"},
         {clang::dpct::HelperFileEnum::DplExtrasFunctional,
@@ -1011,6 +1020,9 @@ const std::string UtilAllContentStr =
     ;
 const std::string RngUtilsAllContentStr =
 #include "clang/DPCT/rng_utils.all.inc"
+    ;
+const std::string LibCommonUtilsAllContentStr =
+#include "clang/DPCT/lib_common_utils.all.inc"
     ;
 const std::string DplExtrasAlgorithmAllContentStr =
 #include "clang/DPCT/dpl_extras/algorithm.all.inc"

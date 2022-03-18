@@ -4,6 +4,7 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <cstdio>
 // CHECK: #include <oneapi/mkl.hpp>
+// CHECK: #include <dpct/lib_common_utils.hpp>
 #include <cstdio>
 #include "cublas_v2.h"
 #include <cuda_runtime.h>
@@ -276,5 +277,11 @@ int foo2(cudaDataType DT) {
   status = cublasDestroy(handle);
   cublasDestroy(handle);
   return 0;
+}
+
+void foo3(cublasHandle_t handle) {
+  int ver;
+  //CHECK:dpct::mkl_get_version(dpct::version_field::major, &ver);
+  cublasGetVersion(handle, &ver);
 }
 

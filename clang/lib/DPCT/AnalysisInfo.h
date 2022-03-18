@@ -345,7 +345,8 @@ enum HeaderType {
   HT_DL,
   HT_STD_Numeric_Limits,
   HT_DPL_Utils,
-  HT_BFloat16
+  HT_BFloat16,
+  HT_Lib_Common_Utils
 };
 
 enum UsingType {
@@ -549,6 +550,10 @@ public:
     case HT_BFloat16:
       return insertHeader(HeaderType::HT_BFloat16, LastIncludeOffset,
                           "<oneapi/mkl/bfloat16.hpp>");
+    case HT_Lib_Common_Utils:
+      return insertHeader(HeaderType::HT_Lib_Common_Utils, LastIncludeOffset,
+                          "<" + getCustomMainHelperFileName() +
+                              "/lib_common_utils.hpp>");
     }
   }
 
