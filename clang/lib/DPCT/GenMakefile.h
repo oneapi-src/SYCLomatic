@@ -37,8 +37,9 @@ extern std::map<std::string /*target*/,
                 std::vector<clang::tooling::CompilationInfo>>
     CompileCmdsPerTarget;
 
-extern std::map<std::string /*target*/,
-                std::vector<std::string> /*orginal compile command*/>
+extern std::vector<
+    std::pair<std::string /*target*/,
+              std::vector<std::string> /*orginal compile command*/>>
     CompileTargetsMap;
 
 #endif // DPCT_GEN_MAKEFILE_H

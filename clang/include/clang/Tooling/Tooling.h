@@ -61,7 +61,9 @@ void DoPrintHandle(const std::string &Msg, bool IsPrintOnNormal);
 void SetSDKIncludePath(const std::string &Path);
 void SetDiagnosticOutput(llvm::raw_ostream &OStream);
 void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB);
-void SetCompileTargetsMap(std::map<std::string, std::vector<std::string>> &CompileTargetsMap);
+void SetCompileTargetsMap(
+    std::vector<std::pair<std::string, std::vector<std::string>>>
+        &CompileTargetsMap);
 void SetFileProcessHandle(StringRef InRoot, StringRef OutRoot,
                           FileProcessType FileProcessHandle);
 void SetProcessedFile(std::set<std::string> &ProcessedFile);

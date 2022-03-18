@@ -73,7 +73,8 @@ namespace tooling {
 static PrintType MsgPrintHandle = nullptr;
 static std::string SDKIncludePath = "";
 static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
-static std::map<std::string, std::vector<std::string>> *CompileTargetsMapPtr = nullptr;
+static std::vector<std::pair<std::string, std::vector<std::string>>>
+    *CompileTargetsMapPtr = nullptr;
 static StringRef InRoot;
 static StringRef OutRoot;
 static FileProcessType FileProcessHandle = nullptr;
@@ -94,7 +95,8 @@ void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB) {
 }
 
 void SetCompileTargetsMap(
-    std::map<std::string, std::vector<std::string>> &CompileTargetsMap) {
+    std::vector<std::pair<std::string, std::vector<std::string>>>
+        &CompileTargetsMap) {
   CompileTargetsMapPtr = &CompileTargetsMap;
 }
 
@@ -112,7 +114,7 @@ void CollectFileFromDB(std::string FileName) {
 
 void CollectCompileTarget(std::string Target, std::vector<std::string> Options) {
   if (CompileTargetsMapPtr != nullptr) {
-    (*CompileTargetsMapPtr)[Target] = Options;
+    CompileTargetsMapPtr->push_back(std::make_pair(Target, Options));
   }
 }
 

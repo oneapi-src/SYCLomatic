@@ -37,8 +37,8 @@ std::map<std::string /*migrated file name*/, clang::tooling::CompilationInfo>
 std::map<std::string /*target*/, std::vector<clang::tooling::CompilationInfo>>
     CompileCmdsPerTarget;
 
-std::map<std::string /*original file name or linker entry*/,
-         std::vector<std::string> /*original compile command*/>
+std::vector<std::pair<std::string /*original file name or linker entry*/,
+                      std::vector<std::string> /*original compile command*/>>
     CompileTargetsMap;
 
 static void fillCompileCmds(
@@ -66,8 +66,7 @@ static std::string getCustomBaseName(const std::string &Path) {
 }
 
 static void getCompileInfo(
-    std::unordered_map<std::string, bool> &ObjNamesMap, StringRef InRoot,
-    StringRef OutRoot,
+    StringRef InRoot, StringRef OutRoot,
     std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
         &CompileCmds) {
 
@@ -256,6 +255,7 @@ static void getCompileInfo(
 
   for (const auto &Entry : ObjsInLinkerCmdPerTarget) {
     for (const auto &Obj : Entry.second) {
+
       auto Iter = CmdsMap.find(Obj.first);
       if (Iter != CmdsMap.end()) {
         auto CmpInfo = Iter->second;
@@ -275,9 +275,8 @@ static void getCompileInfo(
 }
 
 static void
-genMakefile(clang::tooling::RefactoringTool &Tool,
-            std::unordered_map<std::string, bool> &ObjNamesMap,
-            StringRef OutRoot, const std::string &BuildScriptName,
+genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
+            const std::string &BuildScriptName,
             std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
                 &CmdsPerTarget) {
   std::string Buf;
@@ -445,18 +444,11 @@ genMakefile(clang::tooling::RefactoringTool &Tool,
 void genBuildScript(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
                     StringRef OutRoot, const std::string &BuildScriptName) {
 
-  // To store obj names with path come from linker command
-  std::unordered_map<std::string /*objname*/, bool /*is in linker command ?*/>
-      ObjNamesMap;
-
-  // TODO: Support of multiple linker entries.  Current implementation only
-  // supports one linker entry that appears in the compilation database.
-
   std::map<std::string /*traget name*/,
            std::vector<clang::tooling::CompilationInfo>>
       NewCompileCmdsMap;
 
-  getCompileInfo(ObjNamesMap, InRoot, OutRoot, NewCompileCmdsMap);
+  getCompileInfo(InRoot, OutRoot, NewCompileCmdsMap);
 
   bool NeedMergetYaml = false;
 
@@ -498,6 +490,5 @@ void genBuildScript(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   if (!NeedMergetYaml)
     CompileCmdsPerTarget = NewCompileCmdsMap;
 
-  genMakefile(Tool, ObjNamesMap, OutRoot, BuildScriptName,
-              CompileCmdsPerTarget);
+  genMakefile(Tool, OutRoot, BuildScriptName, CompileCmdsPerTarget);
 }
