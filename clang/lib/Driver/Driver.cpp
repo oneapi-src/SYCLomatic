@@ -168,7 +168,6 @@ std::string Driver::GetResourcesPath(StringRef BinaryPath,
 
   // Dir is bin/ or lib/, depending on where BinaryPath is.
   std::string Dir = std::string(llvm::sys::path::parent_path(BinaryPath));
-
   SmallString<128> P(Dir);
   if (CustomResourceDir != "") {
     llvm::sys::path::append(P, CustomResourceDir);
@@ -179,6 +178,19 @@ std::string Driver::GetResourcesPath(StringRef BinaryPath,
     // path of the embedding binary, which for LLVM binaries will be in bin/.
     // ../lib gets us to lib/ in both cases.
     P = llvm::sys::path::parent_path(Dir);
+#ifdef INTEL_CUSTOMIZATION
+    SmallString<128> P1(P);
+    llvm::sys::path::append(P, Twine("share/dpct/lib") + CLANG_LIBDIR_SUFFIX,
+                            "clang", CLANG_VERSION_STRING);
+
+    if (llvm::sys::fs::exists(P)) {
+      return std::string(P.str());
+    } else {
+      llvm::sys::path::append(P1, Twine("lib") + CLANG_LIBDIR_SUFFIX, "clang",
+                              CLANG_VERSION_STRING);
+      return std::string(P1.str());
+    }
+#endif // INTEL_CUSTOMIZATION
     llvm::sys::path::append(P, Twine("lib") + CLANG_LIBDIR_SUFFIX, "clang",
                             CLANG_VERSION_STRING);
   }

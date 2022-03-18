@@ -1517,7 +1517,6 @@ ASTUnit *ASTUnit::LoadFromCompilerInvocationAction(
     if (!AST)
       return nullptr;
   }
-
   if (!ResourceFilesPath.empty()) {
     // Override the resources path.
     CI->getHeaderSearchOpts().ResourceDir = std::string(ResourceFilesPath);

@@ -92,9 +92,15 @@ foreach(lib ${LibScanbuild})
           COMPONENT scan-build-py)
   if(INTEL_CUSTOMIZATION)
     list(APPEND dpct-intercept-build-dependends ${CMAKE_BINARY_DIR}/lib/libscanbuild/${lib})
-    install(PROGRAMS lib/libscanbuild/${lib}
-            DESTINATION lib/libscanbuild
-            COMPONENT dpct-intercept-build)
+    if(INTEL_DEPLOY_UNIFIED_LAYOUT)
+      install(PROGRAMS lib/libscanbuild/${lib}
+              DESTINATION share/dpct/lib/libscanbuild
+              COMPONENT dpct-intercept-build)
+    else()
+      install(PROGRAMS lib/libscanbuild/${lib}
+              DESTINATION lib/libscanbuild
+              COMPONENT dpct-intercept-build)
+    endif()
   endif()
 endforeach()
 
@@ -147,31 +153,62 @@ if (INTEL_CUSTOMIZATION)
     target_link_libraries(ear PRIVATE
       "-ldl -lpthread -shared -Wl,-soname,libear.so")
     target_compile_options(ear PRIVATE "-std=c99")
-    install(TARGETS ear
-      LIBRARY
-      DESTINATION lib/libear
-      COMPONENT dpct-intercept-build
-    )    
+    if(INTEL_DEPLOY_UNIFIED_LAYOUT)
+      target_compile_options(ear PRIVATE "-DINTEL_DEPLOY_UNIFIED_LAYOUT")
+      install(TARGETS ear
+              LIBRARY
+              DESTINATION share/dpct/lib/libear
+              COMPONENT dpct-intercept-build
+      )
+    else()
+      install(TARGETS ear
+              LIBRARY
+              DESTINATION lib/libear
+              COMPONENT dpct-intercept-build
+      )
+    endif()
     list(APPEND dpct-intercept-build-dependends ear)
     
     add_executable(intercept-stub
       ${CMAKE_CURRENT_SOURCE_DIR}/lib/libear/intercept-stub.c
     )
-    install(TARGETS intercept-stub
-      DESTINATION lib/libear
-      COMPONENT dpct-intercept-build
-    )
+
+    if(INTEL_DEPLOY_UNIFIED_LAYOUT)
+      install(TARGETS intercept-stub
+              DESTINATION share/dpct/lib/libear
+              COMPONENT dpct-intercept-build
+      )
+    else()
+      install(TARGETS intercept-stub
+              DESTINATION lib/libear
+              COMPONENT dpct-intercept-build
+      )
+    endif()
+
     list(APPEND dpct-intercept-build-dependends intercept-stub)
     
     list(APPEND dpct-intercept-build-dependends ${CMAKE_BINARY_DIR}/lib/libear/__init__.py)
-    install(PROGRAMS lib/libear/__init__.py
-            DESTINATION lib/libear
-            COMPONENT dpct-intercept-build)
+    if(INTEL_DEPLOY_UNIFIED_LAYOUT)
+      install(PROGRAMS lib/libear/__init__.py
+              DESTINATION share/dpct/lib/libear
+              COMPONENT dpct-intercept-build)
+    else()
+      install(PROGRAMS lib/libear/__init__.py
+              DESTINATION lib/libear
+              COMPONENT dpct-intercept-build)
+    endif()
   endif()
 
-  install(PROGRAMS bin/intercept-build
-          DESTINATION bin
-          COMPONENT dpct-intercept-build)
+  if(INTEL_DEPLOY_UNIFIED_LAYOUT)
+    install(PROGRAMS bin/intercept-build-unified-layout
+                     DESTINATION bin
+                     COMPONENT dpct-intercept-build RENAME intercept-build)
+  else()
+    install(PROGRAMS bin/intercept-build
+                     DESTINATION bin
+                     COMPONENT dpct-intercept-build)
+  endif()
+
   list(APPEND dpct-intercept-build-dependends ${CMAKE_BINARY_DIR}/bin/intercept-build)
 
   add_custom_target(dpct-intercept-build ALL DEPENDS ${dpct-intercept-build-dependends})
