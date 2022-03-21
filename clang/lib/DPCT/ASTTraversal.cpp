@@ -11628,18 +11628,22 @@ void MemoryMigrationRule::mallocMigration(
           LocInfo.first + std::to_string(LocInfo.second), Info);
     }
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
-             Name == "cuMemHostAlloc") {
+             Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2") {
     ExprAnalysis EA(C);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
-  } else if (Name == "cudaMallocManaged") {
+  } else if (Name == "cudaMallocManaged" || Name == "cuMemAllocManaged") {
     if (USMLevel == UsmLevel::UL_Restricted) {
-      buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-      mallocMigrationWithTransformation(
-          *Result.SourceManager, C, Name,
-          MapNames::getClNamespace() + "malloc_shared",
-          "{{NEEDREPLACEQ" + std::to_string(Index) + "}}");
-      emplaceTransformation(removeArg(C, 2, *Result.SourceManager));
+      // Leverage CallExprRewriter to migrate the USM verison
+      ExprAnalysis EA(C);
+      auto LocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
+      auto Info = std::make_shared<PriorityReplInfo>();
+      if (auto TM = EA.getReplacement())
+        Info->Repls.push_back(TM->getReplacement(DpctGlobalInfo::getContext()));
+      Info->Repls.insert(Info->Repls.end(), EA.getSubExprRepl().begin(),
+        EA.getSubExprRepl().end());
+      DpctGlobalInfo::addPriorityReplInfo(
+        LocInfo.first + std::to_string(LocInfo.second), Info);
     } else {
       ManagedPointerAnalysis MPA(C, IsAssigned);
       MPA.RecursiveAnalyze();
@@ -12257,17 +12261,17 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
   } else {
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
-
-  if (Name == "cudaHostGetDevicePointer") {
+  if (Name == "cudaHostGetDevicePointer" || Name == "cuMemHostGetDevicePointer_v2") {
     if (USMLevel == UsmLevel::UL_Restricted) {
-      std::ostringstream Repl;
-      ExprAnalysis EA;
-      EA.analyze(C->getArg(0));
-      auto Arg0Str = EA.getReplacedString();
-      EA.analyze(C->getArg(1));
-      auto Arg1Str = EA.getReplacedString();
-      Repl << "*(" << Arg0Str << ") = " << Arg1Str;
-      emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
+      ExprAnalysis EA(C);
+      auto LocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
+      auto Info = std::make_shared<PriorityReplInfo>();
+      if (auto TM = EA.getReplacement())
+        Info->Repls.push_back(TM->getReplacement(DpctGlobalInfo::getContext()));
+      Info->Repls.insert(Info->Repls.end(), EA.getSubExprRepl().begin(),
+        EA.getSubExprRepl().end());
+      DpctGlobalInfo::addPriorityReplInfo(
+        LocInfo.first + std::to_string(LocInfo.second), Info);
     } else {
       report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              MapNames::ITFName.at(Name));
@@ -12452,7 +12456,8 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemFreeHost", "cuMemGetInfo_v2", "cuMemAlloc_v2", "cuMemcpyHtoD_v2",
         "cuMemcpyDtoH_v2", "cuMemcpyHtoDAsync_v2", "cuMemcpyDtoHAsync_v2",
         "cuMemcpy2D_v2", "cuMemcpy2DAsync_v2", "cuMemcpy3D_v2",
-        "cudaMemGetInfo");
+        "cudaMemGetInfo", "cuMemAllocManaged", "cuMemAllocHost_v2",
+        "cuMemHostGetDevicePointer_v2");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -12523,7 +12528,10 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cudaMallocPitch") && Name.compare("cudaMalloc3D") &&
         Name.compare("cublasAlloc") && Name.compare("cuMemGetInfo_v2") &&
         Name.compare("cudaHostAlloc") && Name.compare("cudaMallocHost") &&
-        Name.compare("cuMemHostAlloc") && Name.compare("cudaMemGetInfo")) {
+        Name.compare("cuMemHostAlloc") && Name.compare("cudaMemGetInfo") &&
+        Name.compare("cudaMallocManaged") && Name.compare("cuMemAllocManaged") &&
+        Name.compare("cuMemAllocHost_v2") && Name.compare("cudaHostGetDevicePointer") &&
+        Name.compare("cuMemHostGetDevicePointer_v2")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
@@ -12588,7 +12596,9 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cuMemAlloc_v2", &MemoryMigrationRule::mallocMigration},
           {"cudaHostAlloc", &MemoryMigrationRule::mallocMigration},
           {"cudaMallocHost", &MemoryMigrationRule::mallocMigration},
+          {"cuMemAllocHost_v2", &MemoryMigrationRule::mallocMigration},
           {"cudaMallocManaged", &MemoryMigrationRule::mallocMigration},
+          {"cuMemAllocManaged", &MemoryMigrationRule::mallocMigration},
           {"cublasAlloc", &MemoryMigrationRule::mallocMigration},
           {"cudaMallocPitch", &MemoryMigrationRule::mallocMigration},
           {"cudaMalloc3D", &MemoryMigrationRule::mallocMigration},
@@ -12638,6 +12648,7 @@ MemoryMigrationRule::MemoryMigrationRule() {
            &MemoryMigrationRule::getSymbolAddressMigration},
           {"cudaGetSymbolSize", &MemoryMigrationRule::getSymbolSizeMigration},
           {"cudaHostGetDevicePointer", &MemoryMigrationRule::miscMigration},
+          {"cuMemHostGetDevicePointer_v2", &MemoryMigrationRule::miscMigration},
           {"cudaHostRegister", &MemoryMigrationRule::miscMigration},
           {"cudaHostUnregister", &MemoryMigrationRule::miscMigration},
           {"cudaMemPrefetchAsync", &MemoryMigrationRule::prefetchMigration},

@@ -88,6 +88,13 @@ void foo() {
   // CHECK: d_A = (float *)dpct::dpct_malloc(size);
   cudaMallocManaged((void **)&d_A, size);
 
+  // CHECK: h_A = (float *)malloc(size);
+  cuMemAllocHost((void **)&h_A, size);
+
+  CUdeviceptr* D_ptr;
+  // CHECK: *D_ptr = dpct::dpct_malloc(size);
+  cuMemAllocManaged(D_ptr, size, CU_MEM_ATTACH_HOST);
+
   float* buffer[2];
 #define SIZE_1 (128 * 1024 * 1024)
   // CHECK: *buffer = (float *)malloc(SIZE_1 * sizeof(float));

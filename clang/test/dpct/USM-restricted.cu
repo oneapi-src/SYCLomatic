@@ -77,6 +77,13 @@ void foo() {
   // CHECK: MY_SAFE_CALL((h_A = (float *)sycl::malloc_host(size, q_ct1), 0));
   MY_SAFE_CALL(cudaMallocHost((void **)&h_A, size));
 
+  // CHECK: h_A = (float *)sycl::malloc_host(size, q_ct1);
+  cuMemAllocHost((void **)&h_A, size);
+  // CHECK: errorCode = (h_A = (float *)sycl::malloc_host(size, q_ct1), 0);
+  errorCode = cuMemAllocHost((void **)&h_A, size);
+  // CHECK: MY_SAFE_CALL((h_A = (float *)sycl::malloc_host(size, q_ct1), 0));
+  MY_SAFE_CALL(cuMemAllocHost((void **)&h_A, size));
+
   // CHECK: h_A = (float *)sycl::malloc_host(sizeof(sycl::double2) * size, q_ct1);
   // CHECK-NEXT: h_A = (float *)sycl::malloc_host(sizeof(sycl::uchar4) * size, q_ct1);
   cudaMallocHost((void **)&h_A, sizeof(double2) * size);
@@ -113,6 +120,10 @@ void foo() {
   // CHECK-NEXT: d_A = (float *)sycl::malloc_shared(sizeof(sycl::double2) * size * sizeof(sycl::uchar4), q_ct1);
   cudaMallocManaged((void **)&d_A, sizeof(double2) + size + sizeof(uchar4));
   cudaMallocManaged((void **)&d_A, sizeof(double2) * size * sizeof(uchar4));
+
+  CUdeviceptr* D_ptr;
+  // CHECK: *D_ptr = (void *)sycl::malloc_shared(size, q_ct1);
+  cuMemAllocManaged(D_ptr, size, CU_MEM_ATTACH_HOST);
 
   /// memcpy
 
@@ -359,12 +370,19 @@ void foo() {
   // CHECK: MY_SAFE_CALL((sycl::free(h_A, q_ct1), 0));
   MY_SAFE_CALL(cudaFreeHost(h_A));
 
-  // CHECK: *(&d_A) = h_A;
+  // CHECK: d_A = h_A;
   cudaHostGetDevicePointer(&d_A, h_A, 0);
-  // CHECK: errorCode = (*(&d_A) = h_A, 0);
+  // CHECK: errorCode = (d_A = h_A, 0);
   errorCode = cudaHostGetDevicePointer(&d_A, h_A, 0);
-  // CHECK: MY_SAFE_CALL((*(&d_A) = h_A, 0));
+  // CHECK: MY_SAFE_CALL((d_A = h_A, 0));
   MY_SAFE_CALL(cudaHostGetDevicePointer(&d_A, h_A, 0));
+
+  // CHECK: *D_ptr = h_A;
+  cuMemHostGetDevicePointer(D_ptr, h_A, 0);
+  // CHECK: errorCode = (*D_ptr = h_A, 0);
+  errorCode = cuMemHostGetDevicePointer(D_ptr, h_A, 0);
+  // CHECK: MY_SAFE_CALL((*D_ptr = h_A, 0));
+  MY_SAFE_CALL(cuMemHostGetDevicePointer(D_ptr, h_A, 0));
 
   cudaHostRegister(h_A, size, 0);
   // CHECK: errorCode = 0;
