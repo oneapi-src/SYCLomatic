@@ -10,4 +10,4 @@
   Priority: Takeover
   In: cudaMalloc
   Out: $type_name_of  (  $ 2   ) *aaa = foo($deref ($1), ($deref_type($1))$addr_of($1), $queue, $context, $device)
-  Includes: []
+  Includes: ["ccc.h"]

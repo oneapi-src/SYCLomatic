@@ -16,7 +16,7 @@
 #include "MapNames.h"
 #include "llvm/Support/YAMLTraits.h"
 std::vector<std::string> MetaRuleObject::RuleFiles;
-std::vector<MetaRuleObject> MetaRules;
+std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
 
 void registerMacroRule(MetaRuleObject &R) {
   auto It = MapNames::MacroRuleMap.find(R.In);
@@ -58,12 +58,10 @@ void registerAPIRule(MetaRuleObject &R) {
       clang::dpct::CallExprRewriterFactoryBase::RewriterMap->find(R.In);
   if (It == clang::dpct::CallExprRewriterFactoryBase::RewriterMap->end()) {
     clang::dpct::CallExprRewriterFactoryBase::RewriterMap->emplace(
-        R.In, clang::dpct::createUserDefinedRewriterFactory(
-                  R.In, R.Out, R.Priority, R.RuleId));
+        R.In, clang::dpct::createUserDefinedRewriterFactory(R.In, R));
   } else if (It->second->Priority > R.Priority) {
     (*clang::dpct::CallExprRewriterFactoryBase::RewriterMap)[R.In] =
-        clang::dpct::createUserDefinedRewriterFactory(R.In, R.Out, R.Priority,
-                                                      R.RuleId);
+        clang::dpct::createUserDefinedRewriterFactory(R.In, R);
   }
 }
 
@@ -81,8 +79,11 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
     }
 
     // load rules
+    std::vector<std::shared_ptr<MetaRuleObject>> CurrentRules;
     llvm::yaml::Input YAMLIn(Buffer.get()->getBuffer());
-    YAMLIn >> MetaRules;
+    YAMLIn >> CurrentRules;
+    // store the rules, also prevent MetaRuleObjects from being destructed
+    MetaRules.insert(MetaRules.end(), CurrentRules.begin(), CurrentRules.end());
 
     if (YAMLIn.error()) {
       // yaml parsing fail
@@ -93,13 +94,13 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
     MetaRuleObject::setRuleFiles(RuleFile);
 
     //Register Rules
-    for (MetaRuleObject &r : MetaRules) {
-      switch (r.Kind) {
+    for (std::shared_ptr<MetaRuleObject> &r : CurrentRules) {
+      switch (r->Kind) {
       case (RuleKind::Macro):
-        registerMacroRule(r);
+        registerMacroRule(*r);
         break;
       case (RuleKind::API):
-        registerAPIRule(r);
+        registerAPIRule(*r);
         break;
       default:
         break;

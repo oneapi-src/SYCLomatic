@@ -1128,15 +1128,14 @@ public:
 class UserDefinedRewriterFactory : public CallExprRewriterFactoryBase {
   // Information for building the result string from the original function call
   OutputBuilder OB;
-  std::string &OutStr;
+  std::string OutStr;
 
 public:
-  UserDefinedRewriterFactory(std::string &OutStr, RulePriority Prio,
-                             const std::string &RuleName)
-      : OutStr(OutStr) {
-    Priority = Prio;
+  UserDefinedRewriterFactory(MetaRuleObject& R)
+      : OutStr(R.Out), Includes(R.Includes){
+    Priority = R.Priority;
     OB.Kind = OutputBuilder::Kind::Top;
-    OB.RuleName = RuleName;
+    OB.RuleName = R.RuleId;
     OB.parse(OutStr);
   }
 
@@ -1147,12 +1146,11 @@ public:
 
     return std::make_shared<UserDefinedRewriter>(Call, OB);
   }
+  std::vector<std::string>& Includes;
 };
 
 std::shared_ptr<CallExprRewriterFactoryBase>
-createUserDefinedRewriterFactory(const std::string &Source, std::string &OutStr,
-                                 RulePriority Priority,
-                                 const std::string &RuleName);
+createUserDefinedRewriterFactory(const std::string &, MetaRuleObject &);
 } // namespace dpct
 } // namespace clang
 

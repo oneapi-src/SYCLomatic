@@ -41,12 +41,16 @@ public:
   }
 };
 
-template <> struct llvm::yaml::SequenceTraits<std::vector<MetaRuleObject>> {
-  static size_t size(llvm::yaml::IO &Io, std::vector<MetaRuleObject> &Seq) {
+template <>
+struct llvm::yaml::SequenceTraits<
+    std::vector<std::shared_ptr<MetaRuleObject>>> {
+  static size_t size(llvm::yaml::IO &Io,
+                     std::vector<std::shared_ptr<MetaRuleObject>> &Seq) {
     return Seq.size();
   }
-  static MetaRuleObject &element(IO &, std::vector<MetaRuleObject> &Seq,
-                                 size_t Index) {
+  static std::shared_ptr<MetaRuleObject> &
+  element(IO &, std::vector<std::shared_ptr<MetaRuleObject>> &Seq,
+          size_t Index) {
     if (Index >= Seq.size())
       Seq.resize(Index + 1);
     return Seq[Index];
@@ -69,14 +73,15 @@ template<> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
   }
 };
 
-template <> struct llvm::yaml::MappingTraits<MetaRuleObject> {
-  static void mapping(llvm::yaml::IO &Io, MetaRuleObject &Doc) {
-    Io.mapRequired("Rule", Doc.RuleId);
-    Io.mapRequired("Kind", Doc.Kind);
-    Io.mapRequired("Priority", Doc.Priority);
-    Io.mapRequired("In", Doc.In);
-    Io.mapRequired("Out", Doc.Out);
-    Io.mapRequired("Includes", Doc.Includes);
+template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
+  static void mapping(llvm::yaml::IO &Io, std::shared_ptr<MetaRuleObject> &Doc) {
+    Doc = std::make_shared<MetaRuleObject>();
+    Io.mapRequired("Rule", Doc->RuleId);
+    Io.mapRequired("Kind", Doc->Kind);
+    Io.mapRequired("Priority", Doc->Priority);
+    Io.mapRequired("In", Doc->In);
+    Io.mapRequired("Out", Doc->Out);
+    Io.mapRequired("Includes", Doc->Includes);
   }
 };
 

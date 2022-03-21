@@ -11,6 +11,7 @@
 //CHECK: #include "aaa.h"
 //CHECK: #include "bbb.h"
 //CHECK: #include <vector>
+//CHECK: #include "ccc.h"
 #include<iostream>
 
 #define VECTOR int

@@ -432,7 +432,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     TransformSet.emplace_back(
       new ReplaceToken(Range.getBegin(), std::move(OutStr)));
     requestFeature(ItRule->second.HelperFeature, Range.getBegin());
-    for (auto ItHeader = ItRule->second.Includes.begin(); ItHeader != ItRule->second.Includes.end(); ItHeader++) {
+    for (auto ItHeader = ItRule->second.Includes.begin();
+         ItHeader != ItRule->second.Includes.end(); ItHeader++) {
       DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(), *ItHeader);
     }
   }
