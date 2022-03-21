@@ -293,7 +293,7 @@ macro(intel_add_sdl_flag flag name)
     if(C_SUPPORTS_${name} AND CXX_SUPPORTS_${name})
       # Remove FUTURE option from intel_add_sdl_flag() call
       # to enable this flag. Make sure you do comprehensive
-      # testing (e.g. zperf_checkin_xmain_bt).
+      # testing.
       message(WARNING
         "INTEL: ignoring supported SDL option ${flag}")
     else()
@@ -330,7 +330,7 @@ macro(intel_add_sdl_linker_flag flag name)
     if(LINKER_SUPPORTS_${name})
       # Remove FUTURE option from intel_add_sdl_linker_flag() call
       # to enable this flag. Make sure you do comprehensive
-      # testing (e.g. zperf_checkin_xmain_bt).
+      # testing.
       message(WARNING
         "INTEL: ignoring supported SDL linker option ${flag}")
     else()
@@ -1454,7 +1454,7 @@ if(INTEL_CUSTOMIZATION)
         "/LARGEADDRESSAWARE" LARGEADDRESSAWARE CMAKE_EXE_LINKER_FLAGS)
 
       # Force Integrity (recommended):
-      # Disabled now, because xmain parts (e.g. libraries) may be used
+      # Disabled now, because compiler parts (e.g. libraries) may be used
       # with not signed user parts. Moreover, executables built with this
       # option will not run from U4Win.
       intel_add_sdl_linker_flag(
