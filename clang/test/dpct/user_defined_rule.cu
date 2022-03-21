@@ -7,12 +7,15 @@
 // RUN: dpct -out-root %T/user_defined_rule_output user_defined_rule.cu --cuda-include-path="%cuda-path/include" --rule-file=user_defined_rule.yaml --rule-file=user_defined_rule_2.yaml  -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/user_defined_rule_output/user_defined_rule.dp.cpp --match-full-lines user_defined_rule.cu
 
-
+//CHECK: #include <cmath3>
+//CHECK: #include "cmath2"
 //CHECK: #include "aaa.h"
 //CHECK: #include "bbb.h"
 //CHECK: #include <vector>
 //CHECK: #include "ccc.h"
 #include<iostream>
+
+#include<cmath>
 
 #define VECTOR int
 //CHECK: inline void foo() {

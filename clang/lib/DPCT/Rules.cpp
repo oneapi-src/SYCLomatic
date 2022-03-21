@@ -65,6 +65,18 @@ void registerAPIRule(MetaRuleObject &R) {
   }
 }
 
+void registerHeaderRule(MetaRuleObject &R) {
+  auto It = MapNames::HeaderRuleMap.find(R.In);
+  if (It != MapNames::HeaderRuleMap.end()) {
+    if (It->second.Priority > R.Priority) {
+      It->second = R;
+    }
+  }
+  else {
+    MapNames::HeaderRuleMap.emplace(R.In, R);
+  }
+}
+
 void importRules(llvm::cl::list<std::string> &RuleFiles) {
   for (auto &RuleFile : RuleFiles) {
     makeCanonical(RuleFile);
@@ -101,6 +113,9 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
         break;
       case (RuleKind::API):
         registerAPIRule(*r);
+        break;
+      case (RuleKind::Header):
+        registerHeaderRule(*r);
         break;
       default:
         break;

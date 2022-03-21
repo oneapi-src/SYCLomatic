@@ -3441,6 +3441,8 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
     //...
 };
 
+std::unordered_map<std::string, MetaRuleObject&> MapNames::HeaderRuleMap{};
+
 // Files to not preprocess, i.e. ignore #include <file>
 const MapNames::SetTy MapNames::ThrustFileExcludeSet{
     "thrust/detail/adjacent_difference.inl",

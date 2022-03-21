@@ -430,7 +430,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (ItRule != MapNames::MacroRuleMap.end()) {
     std::string OutStr = ItRule->second.Out;
     TransformSet.emplace_back(
-      new ReplaceToken(Range.getBegin(), std::move(OutStr)));
+        new ReplaceToken(Range.getBegin(), std::move(OutStr)));
     requestFeature(ItRule->second.HelperFeature, Range.getBegin());
     for (auto ItHeader = ItRule->second.Includes.begin();
          ItHeader != ItRule->second.Includes.end(); ItHeader++) {
@@ -843,6 +843,22 @@ void IncludesCallbacks::InclusionDirective(
     DpctGlobalInfo::getInstance().recordIncludingRelationship(IncludingFile,
                                                               FilePath);
 
+  // Apply user-defined rule if needed
+  auto It = MapNames::HeaderRuleMap.find(FileName.str());
+  if (It != MapNames::HeaderRuleMap.end() && It->second.Priority == RulePriority::Takeover) {
+    TransformSet.emplace_back(new ReplaceInclude(
+      CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+        /*IsTokenRange=*/false),
+      ""));
+    for (auto ItHeader = It->second.Includes.begin();
+      ItHeader != It->second.Includes.end(); ItHeader++) {
+      DpctGlobalInfo::getInstance().insertHeader(FilenameRange.getEnd(), *ItHeader);
+    }
+    DpctGlobalInfo::getInstance().insertHeader(FilenameRange.getEnd(), It->second.Out);
+    return;
+  }
+
+
   // Record that math header is included in this file
   if (IsAngled && (FileName.compare(StringRef("math.h")) == 0 ||
                    FileName.compare(StringRef("cmath")) == 0)) {
@@ -1030,6 +1046,20 @@ void IncludesCallbacks::InclusionDirective(
           ""));
       Updater.update(false);
     }
+
+    auto It = MapNames::HeaderRuleMap.find(FileName.str());
+    if (It != MapNames::HeaderRuleMap.end() && It->second.Priority > RulePriority::Takeover) {
+      TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+          /*IsTokenRange=*/false),
+        ""));
+      for (auto ItHeader = It->second.Includes.begin();
+        ItHeader != It->second.Includes.end(); ItHeader++) {
+        DpctGlobalInfo::getInstance().insertHeader(FilenameRange.getEnd(), *ItHeader);
+      }
+      DpctGlobalInfo::getInstance().insertHeader(FilenameRange.getEnd(), It->second.Out);
+    }
+
     return;
   }
 
