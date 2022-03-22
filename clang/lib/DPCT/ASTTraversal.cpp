@@ -3281,6 +3281,16 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (TypeStr == "__nv_bfloat16") {
       DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_BFloat16);
     }
+    // Add '#include <dpct/lib_common_utils.hpp>' directive to the file only once
+    if (TypeStr == "libraryPropertyType" || TypeStr == "libraryPropertyType_t") {
+      if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+              HelperFilesCustomizationLevel::HFCL_None ||
+          DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+              HelperFilesCustomizationLevel::HFCL_All) {
+        DpctGlobalInfo::getInstance().insertHeader(BeginLoc,
+                                                   HT_Lib_Common_Utils);
+      }
+    }
 
     if (TypeStr.rfind("identity", 0) == 0) {
       emplaceTransformation(new ReplaceToken(
@@ -4360,6 +4370,21 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
   if (Search == EnumNamesMap.end()) {
     // TODO report migration error
     return;
+  }
+  if (auto ET = dyn_cast<EnumType>(E->getType())) {
+    if (auto ETD = ET->getDecl()) {
+      if (ETD->getName().str() == "libraryPropertyType_t") {
+        if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+                HelperFilesCustomizationLevel::HFCL_None ||
+            DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+                HelperFilesCustomizationLevel::HFCL_All) {
+          DpctGlobalInfo::getInstance().insertHeader(
+              DpctGlobalInfo::getSourceManager().getExpansionLoc(
+                  E->getBeginLoc()),
+              HT_Lib_Common_Utils);
+        }
+      }
+    }
   }
 
   emplaceTransformation(new ReplaceStmt(E, Search->second));
