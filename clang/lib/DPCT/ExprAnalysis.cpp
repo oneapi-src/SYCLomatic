@@ -476,6 +476,10 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
           SM.getExpansionRange(Ctor->getEndLoc()).getEnd(), ArgsString);
     }
     addReplacement(Ctor, ArgsString);
+    return;
+  }
+  for (auto It = Ctor->arg_begin(); It != Ctor->arg_end();It++) {
+    dispatch(*It);
   }
 }
 
@@ -668,6 +672,26 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // If the callee does not need rewrite, analyze the args
   for (auto Arg : CE->arguments())
     analyzeArgument(Arg);
+}
+
+
+void ExprAnalysis::analyzeExpr(const CXXBindTemporaryExpr *CBTE) {
+  dispatch(CBTE->getSubExpr());
+}
+
+void ExprAnalysis::analyzeExpr(const CompoundStmt *CS) {
+  for (auto It = CS->body_begin(); It != CS->body_end(); It++) {
+    dispatch(*It);
+  }
+}
+
+void ExprAnalysis::analyzeExpr(const ReturnStmt *RS) {
+  dispatch(RS->getRetValue());
+}
+
+void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
+  // FIXME: Need to handle capture if required in the future
+  dispatch(LE->getBody());
 }
 
 void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {

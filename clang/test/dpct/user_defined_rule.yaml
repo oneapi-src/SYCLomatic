@@ -17,3 +17,15 @@
   In: cmath
   Out: cmath2
   Includes: ["<cmath3>"]
+- Rule: min
+  Kind: API
+  Priority: Takeover
+  In: my_min
+  Out: std::min($1, $2)
+  Includes: []
+- Rule: foo3
+  Kind: API
+  Priority: Takeover
+  In: foo3
+  Out: goo($1)
+  Includes: []

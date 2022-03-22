@@ -608,6 +608,10 @@ protected:
   void analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT);
   void analyzeExpr(const ExplicitCastExpr *Cast);
   void analyzeExpr(const CallExpr *CE);
+  void analyzeExpr(const CXXBindTemporaryExpr *CBTE);
+  void analyzeExpr(const CompoundStmt *CS);
+  void analyzeExpr(const ReturnStmt *RS);
+  void analyzeExpr(const LambdaExpr *LE);
 
   inline void analyzeType(const TypeSourceInfo *TSI,
                           const Expr *CSCE = nullptr) {
