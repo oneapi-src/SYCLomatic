@@ -1004,6 +1004,8 @@ public:
     return accessor<T, Memory, 2>(_data + index * sub.size(), sub);
   }
 
+  pointer_t get_ptr() const { return _data; }
+
 private:
   pointer_t _data;
   cl::sycl::range<3> _range;
@@ -1025,6 +1027,8 @@ public:
   pointer_t operator[](size_t index) const {
     return _data + _range.get(1) * index;
   }
+
+  pointer_t get_ptr() const { return _data; }
 
 private:
   pointer_t _data;
