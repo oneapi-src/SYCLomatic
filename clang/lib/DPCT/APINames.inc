@@ -793,7 +793,7 @@ ENTRY(__fma_rz, __fma_rz, true, NO_FLAG, P4, "Successful: DPCT1013")
 
 // Integer Intrinsics
 ENTRY(__brev, __brev, true, NO_FLAG, P0, "Successful")
-ENTRY(__brevll, __brevll, true, NO_FLAG, P4, "Unsupported: [TODO]: explain why unsupported")
+ENTRY(__brevll, __brevll, true, NO_FLAG, P4, "Successful")
 ENTRY(__byte_perm, __byte_perm, true, NO_FLAG, P0, "Successful")
 ENTRY(__clz, __clz, true, NO_FLAG, P0, "Successful")
 ENTRY(__clzll, __clzll, true, NO_FLAG, P4, "Successful")

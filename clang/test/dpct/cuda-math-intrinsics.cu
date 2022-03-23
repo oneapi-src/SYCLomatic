@@ -2368,9 +2368,7 @@ __global__ void testUnsupported() {
 
   // CHECK: u = dpct::reverse_bits<unsigned int>(u);
   u = __brev(u);
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __brevll is not supported.
-  // CHECK-NEXT: */
+  // CHECK: ull = dpct::reverse_bits<unsigned long long>(ull);
   ull = __brevll(ull);
   // CHECK: u = dpct::byte_level_permute(u, u, u);
   u = __byte_perm(u, u, u);
