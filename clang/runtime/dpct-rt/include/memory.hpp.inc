@@ -1553,9 +1553,8 @@ public:
   device_memory() : device_memory(cl::sycl::range<Dimension>(1)) {}
 
   /// Constructor of 1-D array with initializer list
-  template <size_t D = Dimension>
   device_memory(
-      const typename std::enable_if<D == 1, cl::sycl::range<1>>::type &in_range,
+      const cl::sycl::range<Dimension> &in_range,
       std::initializer_list<value_t> &&init_list)
       : device_memory(in_range) {
     assert(init_list.size() <= in_range.size());
