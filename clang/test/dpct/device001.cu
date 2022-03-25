@@ -77,6 +77,11 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:*/
   // CHECK-NEXT:size_t share_mem_size = deviceProp.get_local_mem_size();
   size_t share_mem_size = deviceProp.sharedMemPerBlock;
+  // CHECK:/*
+  // CHECK-NEXT:DPCT1019:{{[0-9]+}}: local_mem_size in SYCL is not a complete equivalent of sharedMemPerMultiprocessor in CUDA. You may need to adjust the code.
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:size_t share_multi_proc_mem_size = deviceProp.get_local_mem_size();
+  size_t share_multi_proc_mem_size = deviceProp.sharedMemPerMultiprocessor;
 
   // CHECK: sycl::range<3> grid(1, 1, deviceProp.get_max_compute_units() * (deviceProp.get_max_work_items_per_compute_unit() / deviceProp.get_max_sub_group_size()));
   dim3 grid(deviceProp.multiProcessorCount * (deviceProp.maxThreadsPerMultiProcessor / deviceProp.warpSize));

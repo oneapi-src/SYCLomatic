@@ -1075,6 +1075,8 @@ const std::unordered_map<std::string, HelperFeatureEnum>
         {"name", HelperFeatureEnum::Device_device_info_get_name},
         {"totalGlobalMem",
          HelperFeatureEnum::Device_device_info_get_global_mem_size},
+        {"sharedMemPerMultiprocessor",
+         HelperFeatureEnum::Device_device_info_get_local_mem_size},
         {"sharedMemPerBlock",
          HelperFeatureEnum::Device_device_info_get_local_mem_size},
         {"maxGridSize",
