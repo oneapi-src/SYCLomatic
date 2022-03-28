@@ -43,7 +43,7 @@ function run() {
 }
 
 function get_metadata() {
-    echo '{"name": "dpcpp_ct_sys_check","type": "Data","tags": "sys_check","descr": "","dataReq": "{}","merit": 0,"timeout": 1,"version": 1,"run": ""}'
+    echo '{"name": "dpcpp_ct_sys_check","type": "Data","tags": "sys_check","descr": "This check verifies if the environment is ready to use the Intel(R) DPC++ Compatibility Tool.","dataReq": "{}","merit": 0,"timeout": 1,"version": 1,"run": ""}'
 }
 
 function get_summary() {
