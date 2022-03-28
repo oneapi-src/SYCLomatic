@@ -23,7 +23,7 @@ enum class version_field : int {
 /// Returns the requested field of Intel(R) oneAPI Math Kernel Library version.
 /// \param field The version information field (major, minor, update or patch).
 /// \param result The result value.
-void mkl_get_version(version_field field, int *result) {
+inline void mkl_get_version(version_field field, int *result) {
   MKLVersion version;
   mkl_get_version(&version);
   if (version_field::major == field) {
