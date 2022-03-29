@@ -136,7 +136,7 @@ bool ActiveUserPersistenceProvider::read(ReaderCallback * callback)
         std::string line;
         while (std::getline(stream, line))
         {
-            int year, month, day;
+            int year = 0, month = 0, day = 0;
             std::istringstream iss(line);
             if (!(iss >> year >> month >> day)) {
                 break; 

@@ -177,19 +177,22 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
 
   size_t i;
   // Record all macro define locations
-  for (i = 0; i < MD->getMacroInfo()->getNumTokens(); i++) {
+  auto MI = MD->getMacroInfo();
+  if (!MI) {
+    return;
+  }
+  for (i = 0; i < MI->getNumTokens(); i++) {
     std::shared_ptr<dpct::DpctGlobalInfo::MacroDefRecord> R =
         std::make_shared<dpct::DpctGlobalInfo::MacroDefRecord>(
             MacroNameTok.getLocation(), IsInRoot);
     dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc()[getHashStrFromLoc(
-        MD->getMacroInfo()->getReplacementToken(i).getLocation())] = R;
+        MI->getReplacementToken(i).getLocation())] = R;
   }
 
   if (!IsInRoot) {
     return;
   }
 
-  auto MI = MD->getMacroInfo();
   for (auto Iter = MI->tokens_begin(); Iter != MI->tokens_end(); ++Iter) {
     auto II = Iter->getIdentifierInfo();
     if (!II)
@@ -251,14 +254,15 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   std::string InFile =
       SM.getFilename(SM.getSpellingLoc(MacroNameTok.getLocation())).str();
   bool IsInRoot = !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
-
-  if (!MD.getMacroInfo())
+  auto MI = MD.getMacroInfo();
+  if (!MI) {
     return;
-  if (MD.getMacroInfo()->getNumTokens() > 0) {
+  }
+  if (MI->getNumTokens() > 0) {
     std::string HashKey = "";
-    if (MD.getMacroInfo()->getReplacementToken(0).getLocation().isValid()) {
+    if (MI->getReplacementToken(0).getLocation().isValid()) {
       HashKey = getCombinedStrFromLoc(
-          MD.getMacroInfo()->getReplacementToken(0).getLocation());
+          MI->getReplacementToken(0).getLocation());
     } else {
       HashKey = "InvalidLoc";
     }
@@ -271,14 +275,14 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
       dpct::DpctGlobalInfo::getMacroDefines()[HashKey] = true;
       size_t i;
       // Record all tokens in the macro definition
-      for (i = 0; i < MD.getMacroInfo()->getNumTokens(); i++) {
+      for (i = 0; i < MI->getNumTokens(); i++) {
         std::shared_ptr<dpct::DpctGlobalInfo::MacroExpansionRecord> R =
             std::make_shared<dpct::DpctGlobalInfo::MacroExpansionRecord>(
-                MacroNameTok.getIdentifierInfo(), MD.getMacroInfo(), Range,
+                MacroNameTok.getIdentifierInfo(), MI, Range,
                 IsInRoot, i);
         dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
             [getCombinedStrFromLoc(
-                MD.getMacroInfo()->getReplacementToken(i).getLocation())] = R;
+                MI->getReplacementToken(i).getLocation())] = R;
       }
     }
 
@@ -318,10 +322,10 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     SourceRange LastRange = Range;
     dpct::DpctGlobalInfo::LastMacroRecord =
         std::make_tuple<unsigned int, std::string, SourceRange>(
-            MD.getMacroInfo()->getNumTokens(),
-            MD.getMacroInfo()->getNumTokens() >= 3
+            MI->getNumTokens(),
+            MI->getNumTokens() >= 3
                 ? std::string(
-                      MD.getMacroInfo()->getReplacementToken(1).getName())
+                      MI->getReplacementToken(1).getName())
                 : "",
             std::move(LastRange));
   } else {
@@ -357,12 +361,12 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   if (MacroNameTok.getKind() == tok::identifier &&
       MacroNameTok.getIdentifierInfo() &&
       MacroNameTok.getIdentifierInfo()->getName() == "__annotate__" &&
-      MD.getMacroInfo() && !MD.getMacroInfo()->param_empty()) {
+      MI && !MI->param_empty()) {
     SourceLocation Loc = SM.getExpansionLoc(Range.getBegin());
 
     if (auto TM = DpctGlobalInfo::getInstance().findConstantMacroTMInfo(Loc)) {
       TM->setLineBeginOffset(getOffsetOfLineBegin(Loc, SM));
-      if (MD.getMacroInfo()->getNumTokens() == 0) {
+      if (MI->getNumTokens() == 0) {
         TM->setConstantFlag(dpct::ConstantFlagType::Host);
       } else {
         TM->setConstantFlag(dpct::ConstantFlagType::Device);
@@ -449,8 +453,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
 
   auto Iter = MapNames::HostAllocSet.find(Name.str());
   if (TKind == tok::identifier && Iter != MapNames::HostAllocSet.end()) {
-    if (MD.getMacroInfo()->getNumTokens() == 1) {
-      auto ReplToken = MD.getMacroInfo()->getReplacementToken(0);
+    if (MI->getNumTokens() == 1) {
+      auto ReplToken = MI->getReplacementToken(0);
       if (ReplToken.getKind() == tok::numeric_constant) {
         TransformSet.emplace_back(new ReplaceToken(Range.getBegin(), "0"));
         DiagnosticsUtils::report(Range.getBegin(),
@@ -461,11 +465,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     }
   }
 
-  if (auto MI = MD.getMacroInfo()) {
-    if (MI->getNumTokens() > 0) {
-      DpctGlobalInfo::getInstance().removeAtomicInfo(
-          getHashStrFromLoc(MI->getReplacementToken(0).getLocation()));
-    }
+  if (MI->getNumTokens() > 0) {
+    DpctGlobalInfo::getInstance().removeAtomicInfo(
+        getHashStrFromLoc(MI->getReplacementToken(0).getLocation()));
   }
 }
 std::shared_ptr<TextModification>
@@ -13375,12 +13377,10 @@ void CooperativeGroupsFunctionRule::runRule(
         if (!DpctGlobalInfo::useNdRangeBarrier()) {
           if (!dyn_cast<DeclRefExpr>(Base))
             EMIT_WARNING_AND_RETURN;
-          report(CE->getBeginLoc(), Diagnostics::ND_RANGE_BARRIER, false,
-                 dyn_cast<DeclRefExpr>(Base)
-                         ->getNameInfo()
-                         .getName()
-                         .getAsString() +
-                     ".sync()");
+          if (auto DRE = dyn_cast<DeclRefExpr>(Base)) {
+            report(CE->getBeginLoc(), Diagnostics::ND_RANGE_BARRIER, false,
+                   DRE->getNameInfo().getName().getAsString() + ".sync()");
+          }
           return;
         }
         requestFeature(HelperFeatureEnum::Util_nd_range_barrier, CE);
