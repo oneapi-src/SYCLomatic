@@ -14,6 +14,8 @@ int main(){
 
     // CHECK: void * f_D = 0;
     CUdeviceptr f_D = 0;
+    // CHECK: void * f_D2 = 0;
+    CUdeviceptr f_D2 = 0;
     // CHECK: f_D = dpct::dpct_malloc(size);
     cuMemAlloc(&f_D, size);
 
@@ -32,6 +34,13 @@ int main(){
     cuMemcpyDtoHAsync(f_A, f_D, size, 0);
     // CHECK: dpct::dpct_memcpy(f_A, f_D, size, dpct::automatic);
     cuMemcpyDtoH(f_A, f_D, size);
+
+    // CHECK: dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic, *stream);
+    cuMemcpyDtoDAsync(f_D, f_D2, size, stream);
+    // CHECK: dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic);
+    cuMemcpyDtoDAsync(f_D, f_D2, size, 0);
+    // CHECK: dpct::dpct_memcpy(f_D, f_D2, size, dpct::automatic);
+    cuMemcpyDtoD(f_D, f_D2, size);
 
     // CHECK: dpct::pitched_data cpy_from_data_ct1, cpy_to_data_ct1;
     // CHECK: sycl::id<3> cpy_from_pos_ct1(0, 0, 0), cpy_to_pos_ct1(0, 0, 0);

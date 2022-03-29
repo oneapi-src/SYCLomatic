@@ -8,12 +8,15 @@ int main(){
     size_t result1, result2;
     int size = 32;
     float* f_A;
+    CUresult r;
     // CHECK: f_A = (float *)sycl::malloc_host(size, q_ct1);
     cuMemHostAlloc((void **)&f_A, size, CU_MEMHOSTALLOC_DEVICEMAP);
 
 
     // CHECK: void * f_D = 0;
     CUdeviceptr f_D = 0;
+    // CHECK: void * f_D2 = 0;
+    CUdeviceptr f_D2 = 0;
     // CHECK: f_D = (void *)sycl::malloc_device(size, q_ct1);
     cuMemAlloc(&f_D, size);
 
@@ -32,6 +35,21 @@ int main(){
     cuMemcpyDtoHAsync(f_A, f_D, size, 0);
     // CHECK: q_ct1.memcpy(f_A, f_D, size).wait();
     cuMemcpyDtoH(f_A, f_D, size);
+
+    // CHECK: stream->memcpy(f_D, f_D2, size);
+    cuMemcpyDtoDAsync(f_D, f_D2, size, stream);
+    // CHECK: r = (stream->memcpy(f_D, f_D2, size), 0);
+    r = cuMemcpyDtoDAsync(f_D, f_D2, size, stream);
+
+    // CHECK: q_ct1.memcpy(f_D, f_D2, size);
+    cuMemcpyDtoDAsync(f_D, f_D2, size, 0);
+    // CHECK: r = (q_ct1.memcpy(f_D, f_D2, size), 0);
+    r = cuMemcpyDtoDAsync(f_D, f_D2, size, 0);
+
+    // CHECK: q_ct1.memcpy(f_D, f_D2, size).wait();
+    cuMemcpyDtoD(f_D, f_D2, size);
+    // CHECK: r = (q_ct1.memcpy(f_D, f_D2, size).wait(), 0);
+    r = cuMemcpyDtoD(f_D, f_D2, size);
 
     // CHECK: dpct::pitched_data cpy_from_data_ct1, cpy_to_data_ct1;
     // CHECK: sycl::id<3> cpy_from_pos_ct1(0, 0, 0), cpy_to_pos_ct1(0, 0, 0);

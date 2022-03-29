@@ -11801,6 +11801,16 @@ void MemoryMigrationRule::memcpyMigration(
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
 
+  if (!CallExprRewriterFactoryBase::RewriterMap)
+    return;
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(Name);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA(C);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
   std::string ReplaceStr;
   // Detect if there is Async in the func name and crop the async substr
   std::string NameRef = Name;
@@ -12512,7 +12522,7 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemcpyDtoH_v2", "cuMemcpyHtoDAsync_v2", "cuMemcpyDtoHAsync_v2",
         "cuMemcpy2D_v2", "cuMemcpy2DAsync_v2", "cuMemcpy3D_v2",
         "cudaMemGetInfo", "cuMemAllocManaged", "cuMemAllocHost_v2",
-        "cuMemHostGetDevicePointer_v2");
+        "cuMemHostGetDevicePointer_v2", "cuMemcpyDtoDAsync_v2", "cuMemcpyDtoD_v2");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -12577,6 +12587,8 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
 
     // if API is removed, then no need to add (*, 0)
     // There are some cases where (*, 0) has already been added.
+    // If the API is processed with rewriter in APINamesMemory.inc,
+    // need to exclude the API from additional processing.
     if (IsAssigned && Name.compare("cudaHostRegister") &&
         Name.compare("cudaHostUnregister") && Name.compare("cudaMemAdvise") &&
         Name.compare("cudaArrayGetInfo") && Name.compare("cudaMalloc") &&
@@ -12586,7 +12598,8 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemHostAlloc") && Name.compare("cudaMemGetInfo") &&
         Name.compare("cudaMallocManaged") && Name.compare("cuMemAllocManaged") &&
         Name.compare("cuMemAllocHost_v2") && Name.compare("cudaHostGetDevicePointer") &&
-        Name.compare("cuMemHostGetDevicePointer_v2")) {
+        Name.compare("cuMemHostGetDevicePointer_v2") && Name.compare("cuMemcpyDtoDAsync_v2") &&
+        Name.compare("cuMemcpyDtoD_v2")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
@@ -12665,6 +12678,8 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaMemcpyAsync", &MemoryMigrationRule::memcpyMigration},
           {"cuMemcpyDtoHAsync_v2", &MemoryMigrationRule::memcpyMigration},
           {"cuMemcpyHtoDAsync_v2", &MemoryMigrationRule::memcpyMigration},
+          {"cuMemcpyDtoDAsync_v2", &MemoryMigrationRule::memcpyMigration},
+          {"cuMemcpyDtoD_v2", &MemoryMigrationRule::memcpyMigration},
           {"cudaMemcpyToSymbol", &MemoryMigrationRule::memcpySymbolMigration},
           {"cudaMemcpyToSymbolAsync",
            &MemoryMigrationRule::memcpySymbolMigration},

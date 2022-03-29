@@ -2469,11 +2469,22 @@ llvm::StringRef getCalleeName(const CallExpr *CE) {
 // Result: Range of "FUNC_NAME ARGS" (in the definition of "ALL")
 SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+
+  // if one of begin/end location is FileID, the only valid range is the expansion location.
+  // e.g.
+  // #define REAL_NAME(x) x
+  // #define FUNC_NAME REAL_NAME(foo)
+  // FUNC_NAME(args);
+  if (Begin.isFileID() || End.isFileID()) {
+    return SourceRange(SM.getExpansionLoc(Begin), SM.getExpansionLoc(End));
+  }
+
   // Remove the outer func-like macro
   // ex. CALL(CALL(CALL(FUNC_NAME ARGS)));
   // the following while will skip the 3 CALL()
   SourceLocation PreBegin = Begin;
   SourceLocation PreEnd = End;
+
   while (SM.isMacroArgExpansion(Begin) && SM.isMacroArgExpansion(End)) {
     PreBegin = Begin;
     PreEnd = End;

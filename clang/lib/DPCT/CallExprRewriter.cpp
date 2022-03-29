@@ -1646,6 +1646,12 @@ std::function<bool(const CallExpr *C)> checkIsUSM() {
   };
 }
 
+std::function<bool(const CallExpr *C)> checkIsArgStream(size_t index) {
+  return [=](const CallExpr *C) -> bool {
+    return !(isPredefinedStreamHandle(C->getArg(index)));
+  };
+}
+
 template <size_t Idx>
 std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createFactoryWithSubGroupSizeRequest(

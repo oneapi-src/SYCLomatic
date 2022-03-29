@@ -90,6 +90,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     ASSIGN_FACTORY_ENTRY("cuMemHostAlloc", DEREF(makeDerefArgCreatorWithCall(0)),
                          CAST(getDerefedType(0), CALL("malloc", ARG(1))))))
 
+
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),
     CONDITIONAL_FACTORY_ENTRY(
@@ -141,3 +142,28 @@ ASSIGNABLE_FACTORY(
 ASSIGNABLE_FACTORY(
     ASSIGN_FACTORY_ENTRY("cuMemHostGetDevicePointer_v2", DEREF(makeDerefArgCreatorWithCall(0)),
                          ARG(1)))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    checkIsUSM(),
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsArgStream(3),
+        MEMBER_CALL_FACTORY_ENTRY(
+            "cuMemcpyDtoDAsync_v2", ARG(3), true, "memcpy", ARG(0), ARG(1), ARG(2)),
+        MEMBER_CALL_FACTORY_ENTRY(
+            "cuMemcpyDtoDAsync_v2", QUEUESTR, false, "memcpy", ARG(0), ARG(1), ARG(2))),
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsArgStream(3),
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyDtoDAsync_v2", CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
+            ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic"), STREAM(3))),
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyDtoDAsync_v2", CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
+            ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic"))))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    checkIsUSM(),
+    MEMBER_CALL_FACTORY_ENTRY(
+        "cuMemcpyDtoD_v2", MEMBER_CALL(QUEUESTR, false, "memcpy", ARG(0), ARG(1), ARG(2)), false, "wait"),
+    CALL_FACTORY_ENTRY(
+        "cuMemcpyDtoD_v2", CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
+        ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic")))))
