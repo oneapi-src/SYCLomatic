@@ -135,12 +135,13 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                                    getSizeForMalloc(0, 1), QUEUESTR)
                              ))))
 
+// use makeCallArgCreatorWithCall instead of makeDerefArgCreatorWithCall to keep the cast information
 ASSIGNABLE_FACTORY(
-    ASSIGN_FACTORY_ENTRY("cudaHostGetDevicePointer", DEREF(makeDerefArgCreatorWithCall(0)),
+    ASSIGN_FACTORY_ENTRY("cudaHostGetDevicePointer", DEREF(makeCallArgCreatorWithCall(0)),
                          ARG(1)))
 
 ASSIGNABLE_FACTORY(
-    ASSIGN_FACTORY_ENTRY("cuMemHostGetDevicePointer_v2", DEREF(makeDerefArgCreatorWithCall(0)),
+    ASSIGN_FACTORY_ENTRY("cuMemHostGetDevicePointer_v2", DEREF(makeCallArgCreatorWithCall(0)),
                          ARG(1)))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(

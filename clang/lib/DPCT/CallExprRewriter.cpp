@@ -1200,6 +1200,9 @@ const Expr *removeCStyleCast(const Expr *E) {
 }
 
 // Prepare the arg for deref by removing the CStyleCast
+// Should be used when the cast information is not relavent.
+// e.g. migrating cudaMallocHost((void**)ptr, size) to
+// *ptr = sycl::malloc_host<float>(size, q_ct1);
 std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
 makeDerefArgCreatorWithCall(unsigned Idx) {
   return [=](const CallExpr *C) -> std::pair<const CallExpr *, const Expr *> {

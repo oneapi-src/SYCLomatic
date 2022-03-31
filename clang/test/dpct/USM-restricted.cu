@@ -370,8 +370,8 @@ void foo() {
   // CHECK: MY_SAFE_CALL((sycl::free(h_A, q_ct1), 0));
   MY_SAFE_CALL(cudaFreeHost(h_A));
 
-  // CHECK: d_A = h_A;
-  cudaHostGetDevicePointer(&d_A, h_A, 0);
+  // CHECK: *(void **)&d_A = h_A;
+  cudaHostGetDevicePointer((void **)&d_A, h_A, 0);
   // CHECK: errorCode = (d_A = h_A, 0);
   errorCode = cudaHostGetDevicePointer(&d_A, h_A, 0);
   // CHECK: MY_SAFE_CALL((d_A = h_A, 0));
