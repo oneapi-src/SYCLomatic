@@ -29,3 +29,9 @@
   In: foo3
   Out: goo($1)
   Includes: []
+- Rule: rule_call_macro
+  Kind: Macro
+  Priority: Takeover
+  In: CALL
+  Out: CALL2
+  Includes: []

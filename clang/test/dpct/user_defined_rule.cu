@@ -15,6 +15,9 @@
 //CHECK: #include "ccc.h"
 #include<iostream>
 #include<functional>
+
+#define CALL(x) x
+
 void foo3(std::function<int(int)> f){}
 int my_min(int a, int b)
 {
@@ -43,4 +46,6 @@ void foo2(){
   foo3([&](int x)->int {
       return my_min(c, d);
   });
+  //CHECK: CALL2(0);
+  CALL(0);
 }
