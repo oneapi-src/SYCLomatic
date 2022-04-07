@@ -1041,12 +1041,6 @@ public:
   inline static bool getCheckUnicodeSecurityFlag() {
     return CheckUnicodeSecurityFlag;
   }
-  inline static void setAggressiveMigrationForShflFunctionFlag(bool AM) {
-    AggressiveMigrationForShflFunctionFlag = AM;
-  }
-  inline static bool getAggressiveMigrationForShflFunctionFlag() {
-    return AggressiveMigrationForShflFunctionFlag;
-  }
   inline static bool getGuessIndentWidthMatcherFlag() {
     return GuessIndentWidthMatcherFlag;
   }
@@ -2330,7 +2324,6 @@ private:
   static bool SyclNamedLambda;
   static bool GuessIndentWidthMatcherFlag;
   static unsigned int IndentWidth;
-  static bool AggressiveMigrationForShflFunctionFlag;
   static std::map<unsigned int, unsigned int> KCIndentWidthMap;
   static std::unordered_map<std::string, int> LocationInitIndexMap;
   static std::unordered_set<std::string> ExpansionRangeBeginSet;

@@ -2112,13 +2112,6 @@ public:
   }
 };
 
-class CheckAggressiveMigrationForShflFunctionFlag {
-public:
-  bool operator()(const CallExpr *C) {
-    return DpctGlobalInfo::getAggressiveMigrationForShflFunctionFlag();
-  }
-};
-
 class CheckArgCount {
   unsigned Count;
 

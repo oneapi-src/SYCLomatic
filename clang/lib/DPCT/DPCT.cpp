@@ -331,13 +331,6 @@ static opt<bool, true> NoUseGenericSpace(
                                          " function's migration. Default: off.\n"),
   cat(DPCTCat), llvm::cl::location(NoUseGenericSpaceFlag), llvm::cl::ReallyHidden);
 
-bool AggressiveMigrationForShflFunctionFlag = false;
-static opt<bool, true> AggressiveMigrationForShflFunction(
-    "aggressive-migration-for-shfl-function",
-    llvm::cl::desc("Migrate shfl function with aggressive assumptions. Default: off.\n"),
-    cat(DPCTCat), llvm::cl::location(AggressiveMigrationForShflFunctionFlag),
-    llvm::cl::ReallyHidden);
-
 bool ProcessAllFlag = false;
 static opt<bool, true>
     ProcessAll("process-all",
@@ -1277,7 +1270,6 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
   DpctGlobalInfo::setUsingGenericSpace(!NoUseGenericSpaceFlag);
   DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
-  DpctGlobalInfo::setAggressiveMigrationForShflFunctionFlag(AggressiveMigrationForShflFunctionFlag);
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
@@ -1346,9 +1338,6 @@ int runDPCT(int argc, const char **argv) {
                      NoDRYPattern.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_NoUseGenericSpace, NoUseGenericSpaceFlag,
                      NoUseGenericSpace.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_AggressiveMigrationForShflFunction,
-                     AggressiveMigrationForShflFunctionFlag,
-                     AggressiveMigrationForShflFunction.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CompilationsDir, CompilationsDir,
                      OptParser->isPSpecified());
 #ifdef _WIN32
