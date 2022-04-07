@@ -14930,22 +14930,19 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "texObj")) {
     if (auto FD = DpctGlobalInfo::getParentFunction(TL)) {
-      if (!FD->hasAttr<CUDAGlobalAttr>() && !FD->hasAttr<CUDADeviceAttr>()) {
-        emplaceTransformation(new ReplaceToken(
-            TL->getBeginLoc(), TL->getEndLoc(),
-            MapNames::getDpctNamespace() + "image_wrapper_base_p"));
-        requestFeature(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
-                       TL->getBeginLoc());
+      if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
+        return;
       }
     } else if (auto VD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
-      if (VD->hasGlobalStorage()) {
-        emplaceTransformation(new ReplaceToken(
-            TL->getBeginLoc(), TL->getEndLoc(),
-            MapNames::getDpctNamespace() + "image_wrapper_base_p"));
-        requestFeature(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
-                       TL->getBeginLoc());
+      if (!VD->hasGlobalStorage()) {
+        return;
       }
     }
+    emplaceTransformation(new ReplaceToken(
+      TL->getBeginLoc(), TL->getEndLoc(),
+      MapNames::getDpctNamespace() + "image_wrapper_base_p"));
+    requestFeature(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
+      TL->getBeginLoc());
   }
 }
 

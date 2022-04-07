@@ -11,6 +11,11 @@
   }                                                  \
 } while(0)
 
+struct texObjWrapper {
+  // CHECK: dpct::image_wrapper_base_p tex;
+  cudaTextureObject_t tex;
+};
+
 void func(int i) {}
 
 template <typename T>
