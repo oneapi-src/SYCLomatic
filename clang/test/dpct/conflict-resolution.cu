@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/conflict-resolution %s -passes "ErrorHandlingIfStmtRule,ErrorConstantsRule" --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/conflict-resolution %s -passes "ErrorHandlingIfStmtRule,ErrorConstantsRule" --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/conflict-resolution/conflict-resolution.dp.cpp
 
 int printf(const char *format, ...);

@@ -1,12 +1,12 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/sharedmem-dim-noUSM %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --usm-level=none -out-root %T/sharedmem-dim-noUSM %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sharedmem-dim-noUSM/sharedmem-dim-noUSM.dp.cpp
-// CHECK: #define DPCT_USM_LEVEL_NONE
+// CHECK: #define C2S_USM_LEVEL_NONE
 #include <cuda_runtime.h>
 
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: dpct::global_memory<int, 4> dev_mem(10, 10, 10, 10);
+// CHECK-NEXT: c2s::global_memory<int, 4> dev_mem(10, 10, 10, 10);
 __device__ int dev_mem[10][10][10][10];
 
 __shared__ int sha1_mem[10][10][10][10];
@@ -14,13 +14,13 @@ __shared__ int sha1_mem[10][10][10][10];
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: dpct::shared_memory<int, 4> man_mem(10, 10, 10, 10);
+// CHECK-NEXT: c2s::shared_memory<int, 4> man_mem(10, 10, 10, 10);
 __managed__ int man_mem[10][10][10][10];
 
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: dpct::constant_memory<int, 4> con_mem(10, 10, 10, 10);
+// CHECK-NEXT: c2s::constant_memory<int, 4> con_mem(10, 10, 10, 10);
 __constant__ int con_mem[10][10][10][10];
 
 __global__ void staticReverse()
@@ -51,7 +51,7 @@ int main(void)
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::accessor<uint8_t, 4, sycl::access_mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<4>(16*sizeof(int), 2, 2, 2), cgh);
+// CHECK-NEXT: sycl::accessor<uint8_t, 4, sycl::access_mode::read_write, sycl::access::target::local> c2s_local_acc_ct1(sycl::range<4>(16*sizeof(int), 2, 2, 2), cgh);
 
   dynamicReverse<<<10,10,16*sizeof(int)>>>();
   return 0;

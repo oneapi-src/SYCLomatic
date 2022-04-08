@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/cuda-event-api %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --usm-level=none -out-root %T/cuda-event-api %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda-event-api/cuda-event-api.dp.cpp --match-full-lines %s
 
 #include <stdio.h>
@@ -27,7 +27,7 @@ __global__ void kernelFunc()
 }
 
 int main(int argc, char* argv[]) {
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: sycl::event start, stop;
   // CHECK: std::chrono::time_point<std::chrono::steady_clock> start_ct1;
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
 
 
   // kernel call without sync
-  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<c2s_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
   cudaEventRecord(start, 0);
 
   // kernel call without sync
-  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<c2s_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
@@ -130,13 +130,13 @@ int main(int argc, char* argv[]) {
     MY_ERROR_CHECKER(cudaEventRecord(start, 0));
 
   // kernel call with sync
-  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<c2s_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   kernelFunc<<<blocks,threads>>>();
-  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<c2s_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
@@ -172,7 +172,7 @@ int main(int argc, char* argv[]) {
     MY_ERROR_CHECKER(cudaEventRecord(stop, 0));
 
   // kernel call without sync
-  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<c2s_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
@@ -213,14 +213,14 @@ int main(int argc, char* argv[]) {
   // kernel call without sync
   // CHECK:  DPCT1049:{{[0-9a-f]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:  q_ct1.parallel_for<c2s_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)), 
   // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:          kernelFunc();
   // CHECK-NEXT:        });
   kernelFunc<<<blocks,threads>>>();
 
-  // CHECK:  dpct::get_current_device().queues_wait_and_throw();
+  // CHECK:  c2s::get_current_device().queues_wait_and_throw();
   // CHECK-NEXT:  stop_ct1 = std::chrono::steady_clock::now();
   // CHECK-NEXT:  elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
   cudaEventRecord(stop, 0);
@@ -234,7 +234,7 @@ int main(int argc, char* argv[]) {
   MY_ERROR_CHECKER(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   // kernel call without sync
-  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<c2s_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, blocks) * sycl::range<3>(1, 1, threads), sycl::range<3>(1, 1, threads)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
@@ -271,14 +271,14 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:     /*
   // CHECK-NEXT:     DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:     */
-  // CHECK-NEXT:     e = (a = (int *)dpct::dpct_malloc(sizeof(int)), 0);
+  // CHECK-NEXT:     e = (a = (int *)c2s::c2s_malloc(sizeof(int)), 0);
   // CHECK-NEXT:   }
   // CHECK-NEXT:   int et1, et2;
   // CHECK-NEXT:   et1 = (int)stop.get_info<sycl::info::event::command_execution_status>();
   // CHECK-NEXT:   /*
   // CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:   */
-  // CHECK-NEXT:   et2 = (a = (int *)dpct::dpct_malloc(sizeof(int)), 0);
+  // CHECK-NEXT:   et2 = (a = (int *)c2s::c2s_malloc(sizeof(int)), 0);
   // CHECK-NEXT: }
 
   cudaError_t e = cudaEventQuery(stop);

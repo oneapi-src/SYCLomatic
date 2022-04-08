@@ -1,4 +1,4 @@
-// RUN: dpct --check-unicode-security --format-range=none -out-root %T/misleading_bidirectional %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --check-unicode-security --format-range=none -out-root %T/misleading_bidirectional %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/misleading_bidirectional/misleading_bidirectional.dp.cpp --match-full-lines %s
 
 #include <iostream>

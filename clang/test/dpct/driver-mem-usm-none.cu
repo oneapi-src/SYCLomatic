@@ -1,4 +1,4 @@
-// RUN: dpct --usm-level=none --format-range=none -out-root %T/driver-mem-usm-none %s --cuda-include-path="%cuda-path/include"
+// RUN: c2s --usm-level=none --format-range=none -out-root %T/driver-mem-usm-none %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --match-full-lines --input-file %T/driver-mem-usm-none/driver-mem-usm-none.dp.cpp %s
 
 #include <cuda.h>
@@ -16,33 +16,33 @@ int main(){
     CUdeviceptr f_D = 0;
     // CHECK: void * f_D2 = 0;
     CUdeviceptr f_D2 = 0;
-    // CHECK: f_D = dpct::dpct_malloc(size);
+    // CHECK: f_D = c2s::c2s_malloc(size);
     cuMemAlloc(&f_D, size);
 
     // CHECK: sycl::queue * stream;
     CUstream stream;
-    // CHECK: dpct::async_dpct_memcpy(f_D, f_A, size, dpct::automatic, *stream);
+    // CHECK: c2s::async_c2s_memcpy(f_D, f_A, size, c2s::automatic, *stream);
     cuMemcpyHtoDAsync(f_D, f_A, size, stream);
-    // CHECK: dpct::async_dpct_memcpy(f_D, f_A, size, dpct::automatic);
+    // CHECK: c2s::async_c2s_memcpy(f_D, f_A, size, c2s::automatic);
     cuMemcpyHtoDAsync(f_D, f_A, size, 0);
-    // CHECK: dpct::dpct_memcpy(f_D, f_A, size, dpct::automatic);
+    // CHECK: c2s::c2s_memcpy(f_D, f_A, size, c2s::automatic);
     cuMemcpyHtoD(f_D, f_A, size);
 
-    // CHECK: dpct::async_dpct_memcpy(f_A, f_D, size, dpct::automatic, *stream);
+    // CHECK: c2s::async_c2s_memcpy(f_A, f_D, size, c2s::automatic, *stream);
     cuMemcpyDtoHAsync(f_A, f_D, size, stream);
-    // CHECK: dpct::async_dpct_memcpy(f_A, f_D, size, dpct::automatic);
+    // CHECK: c2s::async_c2s_memcpy(f_A, f_D, size, c2s::automatic);
     cuMemcpyDtoHAsync(f_A, f_D, size, 0);
-    // CHECK: dpct::dpct_memcpy(f_A, f_D, size, dpct::automatic);
+    // CHECK: c2s::c2s_memcpy(f_A, f_D, size, c2s::automatic);
     cuMemcpyDtoH(f_A, f_D, size);
 
-    // CHECK: dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic, *stream);
+    // CHECK: c2s::async_c2s_memcpy(f_D, f_D2, size, c2s::automatic, *stream);
     cuMemcpyDtoDAsync(f_D, f_D2, size, stream);
-    // CHECK: dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic);
+    // CHECK: c2s::async_c2s_memcpy(f_D, f_D2, size, c2s::automatic);
     cuMemcpyDtoDAsync(f_D, f_D2, size, 0);
-    // CHECK: dpct::dpct_memcpy(f_D, f_D2, size, dpct::automatic);
+    // CHECK: c2s::c2s_memcpy(f_D, f_D2, size, c2s::automatic);
     cuMemcpyDtoD(f_D, f_D2, size);
 
-    // CHECK: dpct::pitched_data cpy_from_data_ct1, cpy_to_data_ct1;
+    // CHECK: c2s::pitched_data cpy_from_data_ct1, cpy_to_data_ct1;
     // CHECK: sycl::id<3> cpy_from_pos_ct1(0, 0, 0), cpy_to_pos_ct1(0, 0, 0);
     // CHECK: sycl::range<3> cpy_size_ct1(1, 1, 1);
     CUDA_MEMCPY2D cpy;
@@ -73,12 +73,12 @@ int main(){
     // CHECK: cpy_size_ct1[1] = 7;
     cpy.Height = 7;
 
-    // CHECK: dpct::dpct_memcpy(cpy_to_data_ct1, cpy_to_pos_ct1, cpy_from_data_ct1, cpy_from_pos_ct1, cpy_size_ct1);
+    // CHECK: c2s::c2s_memcpy(cpy_to_data_ct1, cpy_to_pos_ct1, cpy_from_data_ct1, cpy_from_pos_ct1, cpy_size_ct1);
     cuMemcpy2D(&cpy);
-    // CHECK: dpct::async_dpct_memcpy(cpy_to_data_ct1, cpy_to_pos_ct1, cpy_from_data_ct1, cpy_from_pos_ct1, cpy_size_ct1, dpct::automatic, *stream);
+    // CHECK: c2s::async_c2s_memcpy(cpy_to_data_ct1, cpy_to_pos_ct1, cpy_from_data_ct1, cpy_from_pos_ct1, cpy_size_ct1, c2s::automatic, *stream);
     cuMemcpy2DAsync(&cpy, stream);
 
-    // CHECK: dpct::pitched_data cpy2_from_data_ct1, cpy2_to_data_ct1;
+    // CHECK: c2s::pitched_data cpy2_from_data_ct1, cpy2_to_data_ct1;
     // CHECK: sycl::id<3> cpy2_from_pos_ct1(0, 0, 0), cpy2_to_pos_ct1(0, 0, 0);
     // CHECK: sycl::range<3> cpy2_size_ct1(1, 1, 1);
     CUDA_MEMCPY3D cpy2;
@@ -125,7 +125,7 @@ int main(){
     // CHECK: cpy2_size_ct1[2] = 1;
     cpy2.Depth = 1;
 
-    // CHECK: dpct::dpct_memcpy(cpy2_to_data_ct1, cpy2_to_pos_ct1, cpy2_from_data_ct1, cpy2_from_pos_ct1, cpy2_size_ct1);
+    // CHECK: c2s::c2s_memcpy(cpy2_to_data_ct1, cpy2_to_pos_ct1, cpy2_from_data_ct1, cpy2_from_pos_ct1, cpy2_size_ct1);
     cuMemcpy3D(&cpy2);
 
     return 0;

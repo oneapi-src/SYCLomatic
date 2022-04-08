@@ -78,8 +78,8 @@ struct CompileCommand {
 
 #ifdef INTEL_CUSTOMIZATION
 enum DatabaseStatus {
-  CannotParseDatabase = -101, //map to MigrationErrorCannotParseDatabase in DPCT
-  CannotFindDatabase = -102, //map to MigrationErrorCannotFindDatabase in DPCT
+  CannotParseDatabase = -101, //map to MigrationErrorCannotParseDatabase in C2S
+  CannotFindDatabase = -102, //map to MigrationErrorCannotFindDatabase in C2S
 };
 #endif
 

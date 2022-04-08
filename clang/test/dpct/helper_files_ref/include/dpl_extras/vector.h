@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __DPCT_VECTOR_H__
-#define __DPCT_VECTOR_H__
+#ifndef __C2S_DPL_EXTRAS_VECTOR_H__
+#define __C2S_DPL_EXTRAS_VECTOR_H__
 
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
@@ -22,7 +22,7 @@
 
 #include "../device.hpp"
 
-namespace dpct {
+namespace c2s {
 
 namespace sycl = cl::sycl;
 
@@ -41,7 +41,7 @@ template <typename T> // For pointers
 struct is_iterator<T *> : std::true_type {};
 } // end namespace internal
 
-#ifndef DPCT_USM_LEVEL_NONE
+#ifndef C2S_USM_LEVEL_NONE
 
 template <typename T,
           typename Allocator = sycl::usm_allocator<T, sycl::usm::alloc::shared>>
@@ -721,6 +721,6 @@ public:
 
 #endif
 
-} // end namespace dpct
+} // end namespace c2s
 
 #endif

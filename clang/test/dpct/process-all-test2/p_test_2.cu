@@ -1,6 +1,6 @@
 // RUN: cat %S/readme_2_ref.txt  >%T/readme_2.txt
 
-// RUN: dpct --format-range=none -output-file=output-file.txt -in-root=%S -out-root=%T %s --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -output-file=output-file.txt -in-root=%S -out-root=%T %s --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 
 // RUN: cat %S/readme_2.txt > %T/check_output-file.txt
 // RUN: cat %T/output-file.txt >>%T/check_output-file.txt

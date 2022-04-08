@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/cublasTtrmmLegacy %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --usm-level=none -out-root %T/cublasTtrmmLegacy %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublasTtrmmLegacy/cublasTtrmmLegacy.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas.h>
@@ -27,30 +27,30 @@ int main(){
 
   //Legacy
   // CHECK: {
-  // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
-  // CHECK-NEXT: auto B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(B_S);
-  // CHECK-NEXT:oneapi::mkl::blas::column_major::trmm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, B_S_buf_ct{{[0-9]+}}, ldb);
+  // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(A_S);
+  // CHECK-NEXT: auto B_S_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(B_S);
+  // CHECK-NEXT:oneapi::mkl::blas::column_major::trmm(*c2s::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, B_S_buf_ct{{[0-9]+}}, ldb);
   // CHECK-NEXT:}
   cublasStrmm('L', 'U', 'N', 'N', m, n, alpha_S, A_S, lda, B_S, ldb);
 
   // CHECK: {
-  // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
-  // CHECK-NEXT: auto B_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(B_D);
-  // CHECK-NEXT:oneapi::mkl::blas::column_major::trmm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, B_D_buf_ct{{[0-9]+}}, ldb);
+  // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(A_D);
+  // CHECK-NEXT: auto B_D_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(B_D);
+  // CHECK-NEXT:oneapi::mkl::blas::column_major::trmm(*c2s::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, B_D_buf_ct{{[0-9]+}}, ldb);
   // CHECK-NEXT:}
   cublasDtrmm('L', 'U', 'N', 'N', m, n, alpha_D, A_D, lda, B_D, ldb);
 
   // CHECK: {
-  // CHECK-NEXT: auto A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_C);
-  // CHECK-NEXT: auto B_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(B_C);
-  // CHECK-NEXT:oneapi::mkl::blas::column_major::trmm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), A_C_buf_ct{{[0-9]+}}, lda, B_C_buf_ct{{[0-9]+}}, ldb);
+  // CHECK-NEXT: auto A_C_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(A_C);
+  // CHECK-NEXT: auto B_C_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(B_C);
+  // CHECK-NEXT:oneapi::mkl::blas::column_major::trmm(*c2s::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, std::complex<float>(alpha_C.x(),alpha_C.y()), A_C_buf_ct{{[0-9]+}}, lda, B_C_buf_ct{{[0-9]+}}, ldb);
   // CHECK-NEXT:}
   cublasCtrmm('L', 'U', 'N', 'N', m, n, alpha_C, A_C, lda, B_C, ldb);
 
   // CHECK: {
-  // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
-  // CHECK-NEXT: auto B_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(B_Z);
-  // CHECK-NEXT:oneapi::mkl::blas::column_major::trmm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda, B_Z_buf_ct{{[0-9]+}}, ldb);
+  // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(A_Z);
+  // CHECK-NEXT: auto B_Z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(B_Z);
+  // CHECK-NEXT:oneapi::mkl::blas::column_major::trmm(*c2s::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda, B_Z_buf_ct{{[0-9]+}}, ldb);
   // CHECK-NEXT:}
   cublasZtrmm('L', 'U', 'N', 'N', m, n, alpha_Z, A_Z, lda, B_Z, ldb);
 }

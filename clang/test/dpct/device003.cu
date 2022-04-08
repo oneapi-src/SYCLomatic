@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/device003 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/device003 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/device003/device003.dp.cpp
 
 template <typename T>
@@ -13,22 +13,22 @@ int deviceCount = 0;
 // CHECK:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT: checkErrors((deviceCount = dpct::dev_mgr::instance().device_count(), 0));
+// CHECK-NEXT: checkErrors((deviceCount = c2s::dev_mgr::instance().device_count(), 0));
 checkErrors(cudaGetDeviceCount(&deviceCount));
 
 int dev_id;
-// CHECK: checkErrors(dev_id = dpct::dev_mgr::instance().current_device_id());
+// CHECK: checkErrors(dev_id = c2s::dev_mgr::instance().current_device_id());
 checkErrors(cudaGetDevice(&dev_id));
 
 cudaDeviceProp deviceProp;
 // CHECK:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT:checkErrors((dpct::dev_mgr::instance().get_device(0).get_device_info(deviceProp), 0));
+// CHECK-NEXT:checkErrors((c2s::dev_mgr::instance().get_device(0).get_device_info(deviceProp), 0));
 checkErrors(cudaGetDeviceProperties(&deviceProp, 0));
 
 int atomicSupported;
-// CHECK: checkErrors((atomicSupported = dpct::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported(), 0));
+// CHECK: checkErrors((atomicSupported = c2s::dev_mgr::instance().get_device(dev_id).is_native_atomic_supported(), 0));
 checkErrors(cudaDeviceGetAttribute(&atomicSupported, cudaDevAttrHostNativeAtomicSupported, dev_id));
 
 int device1 = 0;
@@ -59,7 +59,7 @@ checkErrors(cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtom
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT:checkErrors((dpct::dev_mgr::instance().select_device(device2), 0));
+// CHECK-NEXT:checkErrors((c2s::dev_mgr::instance().select_device(device2), 0));
 checkErrors(cudaSetDevice(device2));
 
 return 0;
@@ -71,13 +71,13 @@ void get_version(void) {
     // CHECK: /*
     // CHECK-NEXT:  DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK-NEXT:  */
-    // CHECK-NEXT:  driverVersion = dpct::get_current_device().get_info<sycl::info::device::version>();
+    // CHECK-NEXT:  driverVersion = c2s::get_current_device().get_info<sycl::info::device::version>();
     cudaDriverGetVersion(&driverVersion);
 
     // CHECK:  /*
     // CHECK-NEXT:  DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK-NEXT:  */
-    // CHECK-NEXT:  runtimeVersion = dpct::get_current_device().get_info<sycl::info::device::version>();
+    // CHECK-NEXT:  runtimeVersion = c2s::get_current_device().get_info<sycl::info::device::version>();
     cudaRuntimeGetVersion(&runtimeVersion);
 
     // CHECK:    /*
@@ -86,7 +86,7 @@ void get_version(void) {
     // CHECK-NEXT:    /*
     // CHECK-NEXT:    DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK-NEXT:    */
-    // CHECK-NEXT:    int error_code_1 = (driverVersion = dpct::get_current_device().get_info<sycl::info::device::version>(), 0);
+    // CHECK-NEXT:    int error_code_1 = (driverVersion = c2s::get_current_device().get_info<sycl::info::device::version>(), 0);
     cudaError_t error_code_1 = cudaDriverGetVersion(&driverVersion);
 
     // CHECK:    /*
@@ -95,7 +95,7 @@ void get_version(void) {
     // CHECK-NEXT:    /*
     // CHECK-NEXT:    DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK-NEXT:    */
-    // CHECK-NEXT:    int error_code_2 = (runtimeVersion = dpct::get_current_device().get_info<sycl::info::device::version>(), 0);
+    // CHECK-NEXT:    int error_code_2 = (runtimeVersion = c2s::get_current_device().get_info<sycl::info::device::version>(), 0);
     cudaError_t error_code_2 = cudaRuntimeGetVersion(&runtimeVersion);
 }
 

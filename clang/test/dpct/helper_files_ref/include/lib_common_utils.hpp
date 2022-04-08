@@ -6,13 +6,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __DPCT_LIB_COMMON_UTILS_HPP__
-#define __DPCT_LIB_COMMON_UTILS_HPP__
+#ifndef __C2S_LIB_COMMON_UTILS_HPP__
+#define __C2S_LIB_COMMON_UTILS_HPP__
 
 #include <CL/sycl.hpp>
 #include <oneapi/mkl.hpp>
 
-namespace dpct {
+namespace c2s {
 enum class version_field : int {
   major,
   minor,
@@ -38,6 +38,6 @@ inline void mkl_get_version(version_field field, int *result) {
     throw std::runtime_error("unknown field");
   }
 }
-} // namespace dpct
+} // namespace c2s
 
-#endif // __DPCT_LIB_COMMON_UTILS_HPP__
+#endif // __C2S_LIB_COMMON_UTILS_HPP__

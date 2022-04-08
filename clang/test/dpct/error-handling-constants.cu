@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/error-handling-constants %s -passes "ErrorConstantsRule" --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/error-handling-constants %s -passes "ErrorConstantsRule" --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/error-handling-constants/error-handling-constants.dp.cpp --match-full-lines %s
 
 

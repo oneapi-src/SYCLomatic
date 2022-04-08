@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/template_initialization %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --usm-level=none -out-root %T/template_initialization %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/template_initialization/template_initialization.dp.cpp
 
 #include <cuda_runtime.h>
@@ -49,12 +49,12 @@ void run_test() {
   T* d_out;
   cudaMalloc((void **)&d_out, mem_size);
 
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: c2s::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<T *> d_in_acc_ct0(d_in, cgh);
-  // CHECK-NEXT:     auto d_out_acc_ct1 = dpct::get_access(d_out, cgh);
+  // CHECK-NEXT:     c2s::access_wrapper<T *> d_in_acc_ct0(d_in, cgh);
+  // CHECK-NEXT:     auto d_out_acc_ct1 = c2s::get_access(d_out, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}, T>>(
+  // CHECK-NEXT:     cgh.parallel_for<c2s_kernel_name<class kernel_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, num_threads), sycl::range<3>(1, 1, num_threads)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         kernel<T>(d_in_acc_ct0.get_raw_pointer(), (T *)(&d_out_acc_ct1[0]), item_ct1);

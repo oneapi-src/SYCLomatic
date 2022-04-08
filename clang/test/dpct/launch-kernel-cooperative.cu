@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -usm-level=none -out-root %T/launch-kernel-cooperative %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
+// RUN: c2s --format-range=none -usm-level=none -out-root %T/launch-kernel-cooperative %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck %s --match-full-lines --input-file %T/launch-kernel-cooperative/launch-kernel-cooperative.dp.cpp
 
 // CHECK: void template_device(T *d, T *s) {
@@ -9,7 +9,7 @@ __device__ void template_device(T *d) {
   __shared__ T s[16];
 }
 
-// CHECK: void template_kernel(T *d, sycl::nd_item<3> item_ct1, uint8_t *dpct_local, T *s) {
+// CHECK: void template_kernel(T *d, sycl::nd_item<3> item_ct1, uint8_t *c2s_local, T *s) {
 template<class T>
 __global__ void template_kernel(T *d) {
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -17,7 +17,7 @@ __global__ void template_kernel(T *d) {
   template_device(d);
 }
 
-// CHECK: void kernel(int *d, dpct::image_accessor_ext<int, 1> tex, sycl::nd_item<3> item_ct1) {
+// CHECK: void kernel(int *d, c2s::image_accessor_ext<int, 1> tex, sycl::nd_item<3> item_ct1) {
 __global__ void kernel(int *d, cudaTextureObject_t tex) {
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
   tex1D(d + gtid, tex, gtid);
@@ -45,18 +45,18 @@ int main() {
 
   void *args[2] = { &d_data, &tex };
 
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: c2s::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<int *> d_acc_ct0(*(int **)args[0], cgh);
+  // CHECK-NEXT:     c2s::access_wrapper<int *> d_acc_ct0(*(int **)args[0], cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:     auto tex_acc = static_cast<dpct::image_wrapper<int, 1> *>(*(dpct::image_wrapper_base_p *)args[1])->get_access(cgh);
+  // CHECK-NEXT:     auto tex_acc = static_cast<c2s::image_wrapper<int, 1> *>(*(c2s::image_wrapper_base_p *)args[1])->get_access(cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:     auto tex_smpl = (*(dpct::image_wrapper_base_p *)args[1])->get_sampler();
+  // CHECK-NEXT:     auto tex_smpl = (*(c2s::image_wrapper_base_p *)args[1])->get_sampler();
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         kernel(d_acc_ct0.get_raw_pointer(), dpct::image_accessor_ext<int, 1>(tex_smpl, tex_acc), item_ct1);
+  // CHECK-NEXT:         kernel(d_acc_ct0.get_raw_pointer(), c2s::image_accessor_ext<int, 1>(tex_smpl, tex_acc), item_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   cudaLaunchCooperativeKernel((void *)&kernel, dim3(16), dim3(16), args, 0, 0);
@@ -66,14 +66,14 @@ int main() {
 
   // CHECK: stream->submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     sycl::accessor<uint8_t, 1, sycl::access_mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(32), cgh);
+  // CHECK-NEXT:     sycl::accessor<uint8_t, 1, sycl::access_mode::read_write, sycl::access::target::local> c2s_local_acc_ct1(sycl::range<1>(32), cgh);
   // CHECK-NEXT:     sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(16), cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<int *> d_acc_ct0(*(int **)args[0], cgh);
+  // CHECK-NEXT:     c2s::access_wrapper<int *> d_acc_ct0(*(int **)args[0], cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         template_kernel<int>(d_acc_ct0.get_raw_pointer(), item_ct1, dpct_local_acc_ct1.get_pointer(), s_acc_ct1.get_pointer());
+  // CHECK-NEXT:         template_kernel<int>(d_acc_ct0.get_raw_pointer(), item_ct1, c2s_local_acc_ct1.get_pointer(), s_acc_ct1.get_pointer());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   cudaLaunchCooperativeKernel((const void *)&template_kernel<int>, dim3(16), dim3(16), args, 32, stream);

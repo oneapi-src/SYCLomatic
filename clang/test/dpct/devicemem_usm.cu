@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/devicemem_usm %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/devicemem_usm %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/devicemem_usm/devicemem_usm.dp.cpp
 
 #include <cuda_runtime.h>
@@ -12,7 +12,7 @@ public:
   __device__ void test() {}
 };
 
-// CHECK: dpct::global_memory<TestStruct, 0> t1;
+// CHECK: c2s::global_memory<TestStruct, 0> t1;
 __device__ TestStruct t1;
 
 // CHECK: void member_acc(TestStruct *t1) {
@@ -22,9 +22,9 @@ __global__ void member_acc() {
   t1.test();
 }
 
-// CHECK: dpct::global_memory<float, 1> in(NUM_ELEMENTS);
+// CHECK: c2s::global_memory<float, 1> in(NUM_ELEMENTS);
 __device__ float in[NUM_ELEMENTS];
-// CHECK: dpct::global_memory<int, 1> init(sycl::range<1>(4), {1, 2, 3, 4});
+// CHECK: c2s::global_memory<int, 1> init(sycl::range<1>(4), {1, 2, 3, 4});
 __device__ int init[4] = {1, 2, 3, 4};
 
 // CHECK: void kernel1(float *out, sycl::nd_item<3> [[ITEM:item_ct1]], float *in) {
@@ -34,21 +34,21 @@ __global__ void kernel1(float *out) {
   out[threadIdx.x] = in[threadIdx.x];
 }
 
-// CHECK: dpct::global_memory<int, 0> al;
+// CHECK: c2s::global_memory<int, 0> al;
 __device__ int al;
-// CHECK: dpct::global_memory<int, 0> ainit(NUM_ELEMENTS);
+// CHECK: c2s::global_memory<int, 0> ainit(NUM_ELEMENTS);
 __device__ int ainit = NUM_ELEMENTS;
 
 const int num_elements = 16;
-// CHECK: dpct::global_memory<float, 1> fx(2);
-// CHECK: dpct::global_memory<float, 2> fy(num_elements, 4 * num_elements);
+// CHECK: c2s::global_memory<float, 1> fx(2);
+// CHECK: c2s::global_memory<float, 2> fy(num_elements, 4 * num_elements);
 __device__ float fx[2], fy[num_elements][4 * num_elements];
 
-// CHECK: dpct::global_memory<float, 1> tmp(size);
+// CHECK: c2s::global_memory<float, 1> tmp(size);
 const int size = 64;
 __device__ float tmp[size];
 // CHECK: void kernel2(float *out, sycl::nd_item<3> [[ITEM:item_ct1]], int *al, float *fx,
-// CHECK:              dpct::accessor<float, dpct::global, 2> fy, float *tmp) {
+// CHECK:              c2s::accessor<float, c2s::global, 2> fy, float *tmp) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] += *al;
 // CHECK:   fx[{{.*}}[[ITEM]].get_local_id(2)] = fy[{{.*}}[[ITEM]].get_local_id(2)][{{.*}}[[ITEM]].get_local_id(2)];
 // CHECK:   tmp[1] = 1.0f;
@@ -60,7 +60,7 @@ __global__ void kernel2(float *out) {
 }
 
 int main() {
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   float h_in[NUM_ELEMENTS] = {0};
   float h_out[NUM_ELEMENTS] = {0};
@@ -87,7 +87,7 @@ int main() {
   // CHECK-EMPTY:
   // CHECK-NEXT:       auto t1_ptr_ct1 = t1.get_ptr();
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           member_acc(t1_ptr_ct1);
@@ -100,7 +100,7 @@ int main() {
   // CHECK-EMPTY:
   // CHECK-NEXT:       auto in_ptr_ct1 = in.get_ptr();
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class kernel1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernel1(d_out, item_ct1, in_ptr_ct1);
@@ -121,7 +121,7 @@ int main() {
   // CHECK-EMPTY:
   // CHECK-NEXT:       auto fy_acc_ct1 = fy.get_access(cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernel2(d_out, item_ct1, al_ptr_ct1, fx_ptr_ct1, fy_acc_ct1, tmp_ptr_ct1);

@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/kernel_without_name %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --usm-level=none -out-root %T/kernel_without_name %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel_without_name/kernel_without_name.dp.cpp --match-full-lines %s
 
 __global__ void testKernel(int L, int M, int N);
@@ -29,7 +29,7 @@ __global__ void helloFromGPU2() {
 void testReference(const int &i) {
   dim3 griddim = 2;
   dim3 threaddim = 32;
-  // CHECK: dpct::get_default_queue().parallel_for(
+  // CHECK: c2s::get_default_queue().parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         helloFromGPU(i, item_ct1);
@@ -45,7 +45,7 @@ struct TestThis {
   int arg3;
   dim3 griddim, threaddim;
   void test() {
-    // CHECK: dpct::get_default_queue().submit(
+    // CHECK: c2s::get_default_queue().submit(
     // CHECK-NEXT:   [&](sycl::handler &cgh) {
     // CHECK-NEXT:     auto args_arg1_ct0 = args.arg1;
     // CHECK-NEXT:     auto args_arg2_ct1 = args.arg2;
@@ -62,7 +62,7 @@ struct TestThis {
 };
 
 int main() {
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   dim3 griddim = 2;
   dim3 threaddim = 32;
@@ -84,8 +84,8 @@ int main() {
   } args;
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    dpct::access_wrapper<const int *> args_arg1_acc_ct0(args.arg1, cgh);
-  //CHECK-NEXT:    dpct::access_wrapper<const int *> args_arg2_acc_ct1(args.arg2, cgh);
+  //CHECK-NEXT:    c2s::access_wrapper<const int *> args_arg1_acc_ct0(args.arg1, cgh);
+  //CHECK-NEXT:    c2s::access_wrapper<const int *> args_arg2_acc_ct1(args.arg2, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
   testKernelPtr<<<dim3(1), dim3(1, 2)>>>(args.arg1, args.arg2, karg3int);
@@ -123,7 +123,7 @@ public:
   foo_class(int n) : a(n) {}
 
   int run_foo() {
-    // CHECK: dpct::get_default_queue().submit(
+    // CHECK: c2s::get_default_queue().submit(
     // CHECK-NEXT:   [&](sycl::handler &cgh) {
     // CHECK-NEXT:     auto a_ct0 = a;
     // CHECK-NEXT:     auto aa_b_ct1 = aa.b;
@@ -147,9 +147,9 @@ int *g_a;
 
 __global__ void foo_kernel3(int *d) {
 }
-//CHECK:dpct::get_default_queue().submit(
+//CHECK:c2s::get_default_queue().submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:          dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
+//CHECK-NEXT:          c2s::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
 void run_foo(dim3 c, dim3 d) {
@@ -158,16 +158,16 @@ void run_foo(dim3 c, dim3 d) {
 }
 
 void run_foo2(dim3 c, dim3 d) {
-//CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
 //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK:q_ct1.submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:          dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
+//CHECK-NEXT:          c2s::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
 //CHECK:  q_ct1.submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:          dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
+//CHECK-NEXT:          c2s::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
   if (1)
@@ -175,18 +175,18 @@ void run_foo2(dim3 c, dim3 d) {
   else
     foo_kernel3<<<c, 1>>>(g_a);
 }
-//CHECK:dpct::get_default_queue().submit(
+//CHECK:c2s::get_default_queue().submit(
 //CHECK-NEXT:        [&](sycl::handler &cgh) {
-//CHECK-NEXT:          dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
+//CHECK-NEXT:          c2s::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:          cgh.parallel_for(
 void run_foo3(dim3 c, dim3 d) {
   for (;;)
     foo_kernel3<<<c, d>>>(g_a);
 }
-//CHECK:dpct::get_default_queue().submit(
+//CHECK:c2s::get_default_queue().submit(
 //CHECK-NEXT:       [&](sycl::handler &cgh) {
-//CHECK-NEXT:         dpct::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
+//CHECK-NEXT:         c2s::access_wrapper<int *> g_a_acc_ct0(g_a, cgh);
 //CHECK-EMPTY:
 //CHECK-NEXT:         cgh.parallel_for(
 void run_foo4(dim3 c, dim3 d) {

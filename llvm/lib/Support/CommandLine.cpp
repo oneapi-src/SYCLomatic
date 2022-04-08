@@ -2534,7 +2534,7 @@ struct CommandLineCommonOptions {
           cl::desc("Provides list of Intel(R) DPC++ Compatibility Tool "
                    "specific options."),
           cl::location(WrappedNormalPrinter), cl::ValueDisallowed,
-          cl::cat(cl::getDPCTCategory()), cl::sub(*AllSubCommands)};
+          cl::cat(cl::getC2SCategory()), cl::sub(*AllSubCommands)};
 #else
   cl::opt<HelpPrinterWrapper, true, parser<bool>>
       HOp{"help",
@@ -2582,7 +2582,7 @@ struct CommandLineCommonOptions {
   cl::opt<VersionPrinter, true, parser<bool>>
       VersOp{"version", cl::desc("Shows the version of the tool."),
              cl::location(VersionPrinterInstance), cl::ValueDisallowed,
-             cl::cat(cl::getDPCTCategory())};
+             cl::cat(cl::getC2SCategory())};
 #else
   cl::opt<VersionPrinter, true, parser<bool>>
       VersOp{"version", cl::desc("Display the version of this program"),
@@ -2615,9 +2615,9 @@ OptionCategory &cl::getGeneralCategory() {
   return GeneralCategory;
 }
 #ifdef INTEL_CUSTOMIZATION
-OptionCategory &cl::getDPCTCategory() {
-  static OptionCategory DPCTCat{"Intel(R) DPC++ Compatibility Tool"};
-  return DPCTCat;
+OptionCategory &cl::getC2SCategory() {
+  static OptionCategory C2SCat{"Intel(R) DPC++ Compatibility Tool"};
+  return C2SCat;
 }
 #endif
 

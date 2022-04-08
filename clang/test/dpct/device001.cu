@@ -1,9 +1,9 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/device001 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --usm-level=none -out-root %T/device001 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/device001/device001.dp.cpp
 
 int main(int argc, char **argv) {
 
-  // CHECK: dpct::device_info deviceProp;
+  // CHECK: c2s::device_info deviceProp;
   cudaDeviceProp deviceProp;
 
   // CHECK: /*
@@ -110,9 +110,9 @@ __global__ void foo_kernel(void)
 
 void test()
 {
-  // CHECK: dpct::device_info deviceProp;
+  // CHECK: c2s::device_info deviceProp;
   cudaDeviceProp deviceProp;
-  // CHECK:   dpct::get_default_queue().parallel_for<dpct_kernel_name<class foo_kernel_{{[a-f0-9]+}}>>(
+  // CHECK:   c2s::get_default_queue().parallel_for<c2s_kernel_name<class foo_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, deviceProp.get_max_compute_units()) * sycl::range<3>(1, 1, deviceProp.get_max_work_group_size()), sycl::range<3>(1, 1, deviceProp.get_max_work_group_size())),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           foo_kernel();
@@ -146,7 +146,7 @@ void test2() {
 }
 
 void test3() {
-  //CHECK:dpct::device_info deviceProp;
+  //CHECK:c2s::device_info deviceProp;
   cudaDeviceProp deviceProp;
   //CHECK:int a1 = deviceProp.get_max_work_item_sizes()[2];
   int a1 = deviceProp.maxThreadsDim[2];
@@ -166,21 +166,21 @@ void test3() {
   //CHECK-NEXT:int a4 = deviceProp.regsPerBlock;
   int a4 = deviceProp.regsPerBlock;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with textureAlignment. It was migrated to dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>(). You may need to rewrite the code.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with textureAlignment. It was migrated to c2s::get_current_device().get_info<sycl::info::device::mem_base_addr_align>(). You may need to rewrite the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:int a5 = dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>();
+  //CHECK-NEXT:int a5 = c2s::get_current_device().get_info<sycl::info::device::mem_base_addr_align>();
   int a5 = deviceProp.textureAlignment;
   //CHECK:/*
   //CHECK-NEXT:DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with kernelExecTimeoutEnabled. It was migrated to false. You may need to rewrite the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:int a6 = false;
   int a6 = deviceProp.kernelExecTimeoutEnabled;
-  //CHECK:int a7 = dpct::get_current_device().get_info<sycl::info::device::error_correction_support>();
+  //CHECK:int a7 = c2s::get_current_device().get_info<sycl::info::device::error_correction_support>();
   int a7 = deviceProp.ECCEnabled;
 }
 
-//CHECK:dpct::device_info* getcudaDevicePropPtr() {
-//CHECK-NEXT:  return (dpct::device_info*)0;
+//CHECK:c2s::device_info* getcudaDevicePropPtr() {
+//CHECK-NEXT:  return (c2s::device_info*)0;
 //CHECK-NEXT:}
 cudaDeviceProp* getcudaDevicePropPtr() {
   return (cudaDeviceProp*)0;

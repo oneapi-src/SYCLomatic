@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/cufft-type %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/cufft-type %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cufft-type/cufft-type.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cufft.h>
@@ -61,11 +61,11 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1050:{{[0-9]+}}: The template argument of the FFT precision and domain type could not be deduced. You need to update this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>> ffth;
+  //CHECK-NEXT:std::shared_ptr<oneapi::mkl::dft::descriptor<c2s_placeholder/*Fix the precision and domain type manually*/>> ffth;
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1050:{{[0-9]+}}: The template argument of the FFT precision and domain type could not be deduced. You need to update this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:size = sizeof(std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>>);
+  //CHECK-NEXT:size = sizeof(std::shared_ptr<oneapi::mkl::dft::descriptor<c2s_placeholder/*Fix the precision and domain type manually*/>>);
   cufftHandle ffth;
   size = sizeof(cufftHandle);
 
@@ -128,7 +128,7 @@ int main() {
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1050:2: The template argument of the FFT precision and domain type could not be deduced. You need to update this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:typename I = std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>>,
+//CHECK-NEXT:typename I = std::shared_ptr<oneapi::mkl::dft::descriptor<c2s_placeholder/*Fix the precision and domain type manually*/>>,
 //CHECK-NEXT:typename J = int,
 //CHECK-NEXT:typename K = int>
 //CHECK-NEXT:void foo1(
@@ -143,7 +143,7 @@ int main() {
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1050:3: The template argument of the FFT precision and domain type could not be deduced. You need to update this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>> i,
+//CHECK-NEXT:std::shared_ptr<oneapi::mkl::dft::descriptor<c2s_placeholder/*Fix the precision and domain type manually*/>> i,
 //CHECK-NEXT:int j,
 //CHECK-NEXT:int k
 //CHECK-NEXT:){}
@@ -318,7 +318,7 @@ cufftType foo10(){}
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1050:4: The template argument of the FFT precision and domain type could not be deduced. You need to update this code.
 //CHECK:*/
-//CHECK-NEXT:std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>> foo11(){}
+//CHECK-NEXT:std::shared_ptr<oneapi::mkl::dft::descriptor<c2s_placeholder/*Fix the precision and domain type manually*/>> foo11(){}
 template<typename T>
 cufftHandle foo11(){}
 

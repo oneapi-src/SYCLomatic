@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T/kernel-call-inner-virtual-pointer %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing  -std=c++14
+// RUN: c2s --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T/kernel-call-inner-virtual-pointer %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing  -std=c++14
 
 // RUN: FileCheck --input-file %T/kernel-call-inner-virtual-pointer/kernel-call-inner-virtual-pointer.dp.cpp --match-full-lines %s
 
@@ -51,7 +51,7 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'a' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:q_ct1.parallel_for<dpct_kernel_name<class k1_{{[0-9a-z]+}}>>(
+  //CHECK-NEXT:q_ct1.parallel_for<c2s_kernel_name<class k1_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:      cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](cl::sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k1(a);
@@ -63,9 +63,9 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:  q_ct1.submit(
   //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  //CHECK-NEXT:      dpct::access_wrapper<AAA *> b1_acc_ct0(b1, cgh);
+  //CHECK-NEXT:      c2s::access_wrapper<AAA *> b1_acc_ct0(b1, cgh);
   //CHECK-EMPTY:
-  //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k2_{{[0-9a-z]+}}>>(
+  //CHECK-NEXT:      cgh.parallel_for<c2s_kernel_name<class k2_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:          k2(b1_acc_ct0.get_raw_pointer());
@@ -78,9 +78,9 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:  q_ct1.submit(
   //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  //CHECK-NEXT:      auto b2_acc_ct0 = dpct::get_access(b2, cgh);
+  //CHECK-NEXT:      auto b2_acc_ct0 = c2s::get_access(b2, cgh);
   //CHECK-EMPTY:
-  //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k2_{{[0-9a-z]+}}>>(
+  //CHECK-NEXT:      cgh.parallel_for<c2s_kernel_name<class k2_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:          k2((AAA *)(&b2_acc_ct0[0]));
@@ -93,9 +93,9 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:  q_ct1.submit(
   //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  //CHECK-NEXT:      dpct::access_wrapper<int **> a1_acc_ct0(a1, cgh);
+  //CHECK-NEXT:      c2s::access_wrapper<int **> a1_acc_ct0(a1, cgh);
   //CHECK-EMPTY:
-  //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k3_{{[0-9a-z]+}}>>(
+  //CHECK-NEXT:      cgh.parallel_for<c2s_kernel_name<class k3_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:          k3(a1_acc_ct0.get_raw_pointer());
@@ -108,9 +108,9 @@ int main() {
   //CHECK-NEXT:*/
   //CHECK-NEXT:  q_ct1.submit(
   //CHECK-NEXT:    [&](cl::sycl::handler &cgh) {
-  //CHECK-NEXT:      dpct::access_wrapper<int **> a2_acc_ct0(a2, cgh);
+  //CHECK-NEXT:      c2s::access_wrapper<int **> a2_acc_ct0(a2, cgh);
   //CHECK-EMPTY:
-  //CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class k3_{{[0-9a-z]+}}>>(
+  //CHECK-NEXT:      cgh.parallel_for<c2s_kernel_name<class k3_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:        cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:        [=](cl::sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:          k3(a2_acc_ct0.get_raw_pointer());
@@ -122,7 +122,7 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'b' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:q_ct1.parallel_for<dpct_kernel_name<class k4_{{[0-9a-z]+}}>>(
+  //CHECK-NEXT:q_ct1.parallel_for<c2s_kernel_name<class k4_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:      cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](cl::sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k4(b);
@@ -133,7 +133,7 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1069:{{[0-9]+}}: The argument 'e' of the kernel function contains virtual pointer(s), which cannot be dereferenced. Try to migrate the code with "usm-level=restricted".
   //CHECK-NEXT:*/
-  //CHECK-NEXT:q_ct1.parallel_for<dpct_kernel_name<class k5_{{[0-9a-z]+}}>>(
+  //CHECK-NEXT:q_ct1.parallel_for<c2s_kernel_name<class k5_{{[0-9a-z]+}}>>(
   //CHECK-NEXT:      cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](cl::sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        k5(e);

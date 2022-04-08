@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --assume-nd-range-dim=1  -out-root %T/kernel_1d_range %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --assume-nd-range-dim=1  -out-root %T/kernel_1d_range %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/kernel_1d_range/kernel_1d_range.dp.cpp --match-full-lines %s
 
 
@@ -521,7 +521,7 @@ __global__ void global1() {
 
 
 int foo3() {
-  //CHECK:dpct::get_default_queue().parallel_for(
+  //CHECK:c2s::get_default_queue().parallel_for(
   //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(1), sycl::range<1>(1)),
   //CHECK-NEXT:      [=](sycl::nd_item<1> item_ct1) {
   //CHECK-NEXT:        global1(item_ct1);
@@ -555,7 +555,7 @@ __global__ void global2() {
 }
 
 int foo4() {
-  //CHECK:dpct::get_default_queue().parallel_for(
+  //CHECK:c2s::get_default_queue().parallel_for(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 3) * sycl::range<3>(1, 1, 4), sycl::range<3>(1, 1, 4)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        global2(item_ct1);

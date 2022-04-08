@@ -1,8 +1,8 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/cpp_test %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --usm-level=none -out-root %T/cpp_test %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cpp_test/cpp_test.cpp.dp.cpp --match-full-lines %s
 
 // CHECK: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <dpct/dpct.hpp>
+// CHECK-NEXT: #include <c2s/c2s.hpp>
 // CHECK: #include <stdio.h>
 // CHECK-NOT:#include <CL/sycl.hpp>
 #include <stdio.h>
@@ -13,7 +13,7 @@
 #include <vector>
 int main()
 {
-  // CHECK: dpct::device_info deviceProp;
+  // CHECK: c2s::device_info deviceProp;
   cudaDeviceProp deviceProp;
   // CHECK: /*
   // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
@@ -250,7 +250,7 @@ __global__ void testKernel(int L, int M, int N) {
 }
 
 int kernel_test() {
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   dim3 griddim = 2;
   dim3 threaddim = 32;
@@ -259,10 +259,10 @@ int kernel_test() {
   int karg3 = 80;
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<const int *> karg1_acc_ct0((const int *)karg1, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<const int *> karg2_acc_ct1(karg2, cgh);
+  // CHECK-NEXT:     c2s::access_wrapper<const int *> karg1_acc_ct0((const int *)karg1, cgh);
+  // CHECK-NEXT:     c2s::access_wrapper<const int *> karg2_acc_ct1(karg2, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:     cgh.parallel_for<c2s_kernel_name<class testKernelPtr_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(griddim * threaddim, threaddim),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         testKernelPtr(karg1_acc_ct0.get_raw_pointer(), karg2_acc_ct1.get_raw_pointer(), karg3, item_ct1);
@@ -274,21 +274,21 @@ int kernel_test() {
   int karg2int = 2;
   int karg3int = 3;
   int intvar = 20;
-  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<c2s_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, intvar), sycl::range<3>(1, 1, intvar)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
   testKernel<<<10, intvar>>>(karg1int, karg2int, karg3int);
 
-  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<c2s_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 2, 1), sycl::range<3>(1, 2, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);
   // CHECK-NEXT:         });
   testKernel<<<dim3(1), dim3(1, 2)>>>(karg1int, karg2int, karg3int);
 
-  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<c2s_kernel_name<class testKernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 2, 1) * sycl::range<3>(3, 2, 1), sycl::range<3>(3, 2, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           testKernel(karg1int, karg2int, karg3int, item_ct1);

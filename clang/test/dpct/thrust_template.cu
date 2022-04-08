@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct -out-root %T/thrust_template %s --cuda-include-path="%cuda-path/include" --extra-arg="-fno-delayed-template-parsing"
+// RUN: c2s -out-root %T/thrust_template %s --cuda-include-path="%cuda-path/include" --extra-arg="-fno-delayed-template-parsing"
 // RUN: FileCheck --input-file %T/thrust_template/thrust_template.dp.cpp --match-full-lines %s
 
 #include <thrust/device_vector.h>

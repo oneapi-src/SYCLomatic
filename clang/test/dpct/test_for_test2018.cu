@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/test_for_test2018 %s --cuda-include-path="%cuda-path/include" --report-type=stats -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/test_for_test2018 %s --cuda-include-path="%cuda-path/include" --report-type=stats -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/test_for_test2018/test_for_test2018.dp.cpp --match-full-lines %s
 #include <stdio.h>
 

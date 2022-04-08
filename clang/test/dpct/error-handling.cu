@@ -1,6 +1,6 @@
 // RUN: cat %s > %T/error-handling.cu
 // RUN: cd %T
-// RUN: dpct --usm-level=none -out-root %T/error-handling error-handling.cu --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only -std=c++11
+// RUN: c2s --usm-level=none -out-root %T/error-handling error-handling.cu --cuda-include-path="%cuda-path/include" -- -w -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck error-handling.cu --match-full-lines --input-file %T/error-handling/error-handling.dp.cpp
 
 #include <stdexcept>
@@ -148,7 +148,7 @@ void test_other_enum() {
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 // CHECK-NEXT:may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT:  if (err = (* 0 = dpct::dpct_malloc(0), 0)) {
+// CHECK-NEXT:  if (err = (* 0 = c2s::c2s_malloc(0), 0)) {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
@@ -222,7 +222,7 @@ void test_14(cudaError_t err, int arg) {
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 // CHECK-NEXT:may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT:  if ((* 0 = dpct::dpct_malloc(0), 0)) {
+// CHECK-NEXT:  if ((* 0 = c2s::c2s_malloc(0), 0)) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
 // CHECK-NEXT: catch (sycl::exception const &exc) {
@@ -257,7 +257,7 @@ void test_16(cudaError_t err, int arg) {
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 // CHECK-NEXT:may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT:  if (!(* 0 = dpct::dpct_malloc(0), 0)) {
+// CHECK-NEXT:  if (!(* 0 = c2s::c2s_malloc(0), 0)) {
 // CHECK-NEXT:  } else {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:    exit(1);
@@ -480,7 +480,7 @@ void specialize_ifs_negative() {
 // CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 // CHECK-NEXT:   may need to rewrite this code.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   if ((* 0 = dpct::dpct_malloc(0), 0)) {
+// CHECK-NEXT:   if ((* 0 = c2s::c2s_malloc(0), 0)) {
 // CHECK-NEXT:     printf("efef");
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
@@ -504,7 +504,7 @@ void foo1(){
 // CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 // CHECK-NEXT:   may need to rewrite this code.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   while ((dpct::async_dpct_memcpy(d_A, h_A, size, dpct::host_to_device), 0)) {
+// CHECK-NEXT:   while ((c2s::async_c2s_memcpy(d_A, h_A, size, c2s::host_to_device), 0)) {
 // CHECK-NEXT:     printf("efef");
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
@@ -528,7 +528,7 @@ void foo2(){
 // CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 // CHECK-NEXT:   may need to rewrite this code.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   for (; (* 0 = dpct::dpct_malloc(0), 0);) {
+// CHECK-NEXT:   for (; (* 0 = c2s::c2s_malloc(0), 0);) {
 // CHECK-NEXT:     printf("efef");
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
@@ -552,7 +552,7 @@ void foo3(){
 // CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 // CHECK-NEXT:   may need to rewrite this code.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   } while ((* 0 = dpct::dpct_malloc(0), 0));
+// CHECK-NEXT:   } while ((* 0 = c2s::c2s_malloc(0), 0));
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (sycl::exception const &exc) {
 // CHECK-NEXT:   std::cerr << exc.what() << "Exception caught at file:" << __FILE__
@@ -569,10 +569,10 @@ void foo4(){
 // CHECK: void foo5(){
 // CHECK-NEXT:   int res;
 // CHECK-NEXT:   {
-// CHECK-NEXT:   auto ct_0_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(0);
+// CHECK-NEXT:   auto ct_0_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(0);
 // CHECK-NEXT:   sycl::buffer<int64_t> res_temp_buf_ct{{[0-9]+}}(sycl::range<1>(1));
 // CHECK-NEXT:   oneapi::mkl::blas::column_major::iamax(
-// CHECK-NEXT:       *dpct::get_current_device().get_saved_queue(), 10, ct_0_buf_ct{{[0-9]+}}, 0,
+// CHECK-NEXT:       *c2s::get_current_device().get_saved_queue(), 10, ct_0_buf_ct{{[0-9]+}}, 0,
 // CHECK-NEXT:       res_temp_buf_ct{{[0-9]+}});
 // CHECK-NEXT:   res = res_temp_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::read>()[0];
 // CHECK-NEXT:   }
@@ -587,7 +587,7 @@ void foo5(){
 // CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 // CHECK-NEXT:   may need to rewrite this code.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   a = (* 0 = dpct::dpct_malloc(0), 0);
+// CHECK-NEXT:   a = (* 0 = c2s::c2s_malloc(0), 0);
 // CHECK-NEXT: }
 void foo6(){
   int a;
@@ -595,7 +595,7 @@ void foo6(){
 }
 
 // CHECK: void foo7(){
-// CHECK-NEXT:   *0 = dpct::dpct_malloc(0);
+// CHECK-NEXT:   *0 = c2s::c2s_malloc(0);
 // CHECK-NEXT:   int a = printf("a");
 // CHECK-NEXT:   if(printf("a")){}
 // CHECK-NEXT:   sycl::event start;
@@ -618,7 +618,7 @@ void foo7(){
 // CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 // CHECK-NEXT:   may need to rewrite this code.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   int a = (* 0 = dpct::dpct_malloc(0), 0);
+// CHECK-NEXT:   int a = (* 0 = c2s::c2s_malloc(0), 0);
 // CHECK-NEXT:   if(a) printf("a");
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (sycl::exception const &exc) {
@@ -637,7 +637,7 @@ void foo8(){
 // CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 // CHECK-NEXT:   may need to rewrite this code.
 // CHECK-NEXT:   */
-// CHECK-NEXT:   a = (* 0 = dpct::dpct_malloc(0), 0);
+// CHECK-NEXT:   a = (* 0 = c2s::c2s_malloc(0), 0);
 // CHECK-NEXT:   if(a) printf("a");
 // CHECK-NEXT: }
 // CHECK-NEXT: catch (sycl::exception const &exc) {
@@ -656,7 +656,7 @@ void foo9(){
 //CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 //CHECK-NEXT:   may need to rewrite this code.
 //CHECK-NEXT:   */
-//CHECK-NEXT:   return (*0 = dpct::dpct_malloc(0), 0);
+//CHECK-NEXT:   return (*0 = c2s::c2s_malloc(0), 0);
 //CHECK-NEXT: }
 //CHECK-NEXT: catch (sycl::exception const &exc) {
 //CHECK-NEXT: std::cerr << exc.what() << "Exception caught at file:" << __FILE__
@@ -669,7 +669,7 @@ int foo10(){
 
 //CHECK: int foo11(){
 //CHECK-NEXT: while(true){
-//CHECK-NEXT:   *0 = dpct::dpct_malloc(0);
+//CHECK-NEXT:   *0 = c2s::c2s_malloc(0);
 //CHECK-NEXT: }
 //CHECK-NEXT: }
 int foo11(){
@@ -683,7 +683,7 @@ int foo11(){
 //CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 //CHECK-NEXT:   may need to rewrite this code.
 //CHECK-NEXT:   */
-//CHECK-NEXT:   switch ((* 0 = dpct::dpct_malloc(0), 0)) {
+//CHECK-NEXT:   switch ((* 0 = c2s::c2s_malloc(0), 0)) {
 //CHECK-NEXT:     case 0:
 //CHECK-NEXT:       break;
 //CHECK-NEXT:     case 1:
@@ -719,7 +719,7 @@ void foo12(){
 // CHECK-NEXT:     DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted.
 // CHECK-NEXT:     You may need to rewrite this code.
 // CHECK-NEXT:     */
-// CHECK-NEXT:     int a = (* 0 = dpct::dpct_malloc(0), 0);
+// CHECK-NEXT:     int a = (* 0 = c2s::c2s_malloc(0), 0);
 // CHECK-NEXT:     if(a){printf("a");}
 // CHECK-NEXT:   }
 // CHECK-NEXT:   catch (sycl::exception const &exc) {
@@ -740,7 +740,7 @@ class ClassA
   }
 };
 
-// CHECK: __dpct_inline__ int foo13(int error, const char *filename, int line) {
+// CHECK: __c2s_inline__ int foo13(int error, const char *filename, int line) {
 // CHECK-NEXT:  int error_1 = 0;
 // CHECK-NEXT:  return error_1;
 // CHECK-NEXT: }
@@ -751,7 +751,7 @@ __host__ __device__ __forceinline__ cudaError_t foo13(cudaError_t error,
   return error_1;
 }
 
-// CHECK: __dpct_inline__ int *foo14(int error, const char *filename, int line) {
+// CHECK: __c2s_inline__ int *foo14(int error, const char *filename, int line) {
 // CHECK-NEXT:  return &error;
 // CHECK-NEXT: }
 __host__ __device__ __forceinline__ cudaError_t *foo14(cudaError_t error,
@@ -781,7 +781,7 @@ int foo15(){
 //CHECK-NEXT:     */
 /// FIXME: cudaMalloc is matched here, should be fixed.
 //NOT-CHECK-NEXT:     try {
-//CHECK-NEXT:       return (a = (int *)dpct::dpct_malloc(0), 0);
+//CHECK-NEXT:       return (a = (int *)c2s::c2s_malloc(0), 0);
 //NOT-CHECK-NEXT:     }
 //NOT-CHECK-NEXT:     catch (sycl::exception const &exc) {
 //NOT-CHECK-NEXT:       std::cerr << exc.what() << "Exception caught at file:" << __FILE__

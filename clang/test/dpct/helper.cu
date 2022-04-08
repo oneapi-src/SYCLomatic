@@ -1,4 +1,4 @@
-// RUN: dpct --process-all -in-root %S --format-range=none -out-root %T/helper %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: c2s --process-all -in-root %S --format-range=none -out-root %T/helper %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/helper/helper.dp.cpp %s
 
 // CHECK: #pragma once
@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-// CHECK: typedef struct dpct_type_{{[a-f0-9]+}} {
+// CHECK: typedef struct c2s_type_{{[a-f0-9]+}} {
 // CHECK-NEXT:    int val;
 // CHECK-NEXT: } Pointer;
 typedef struct {

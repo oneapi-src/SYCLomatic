@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/malloc %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/malloc %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/malloc/malloc.dp.cpp
 #include <cuda_runtime.h>
 
@@ -8,7 +8,7 @@ void runTest(int len);
 template<class T>
 void runTest(int len){
     T *d_idata;
-    // CHECK: d_idata = (T *)sycl::malloc_device(sizeof(T), dpct::get_default_queue());
+    // CHECK: d_idata = (T *)sycl::malloc_device(sizeof(T), c2s::get_default_queue());
     cudaMalloc((void **) &d_idata, sizeof(T));
 }
 
@@ -19,7 +19,7 @@ typedef struct {
 } Point;
 
 int main(){
-    //CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+    //CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
     //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
     runTest<float2>(32);
     runTest<int2>(64);

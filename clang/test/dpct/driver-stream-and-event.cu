@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T/driver-stream-and-event %s --cuda-include-path="%cuda-path/include"
+// RUN: c2s -out-root %T/driver-stream-and-event %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --match-full-lines --input-file %T/driver-stream-and-event/driver-stream-and-event.dp.cpp %s
 
 void foo(){
@@ -11,7 +11,7 @@ void foo(){
   //CHECK-NEXT: */
   cuFuncSetCacheConfig(f, CU_FUNC_CACHE_PREFER_NONE);
 
-  //CHECK: s = dpct::get_current_device().create_queue();
+  //CHECK: s = c2s::get_current_device().create_queue();
   //CHECK-NEXT: s->wait();
   cuStreamCreate(&s, CU_STREAM_DEFAULT);
   cuStreamSynchronize(s);
@@ -59,6 +59,6 @@ void foo(){
   cuEventElapsedTime(&result_time, start, end);
 
   int rr;
-  //CHECK: rr = dpct::get_kernel_function_info((const void *)f).max_work_group_size;
+  //CHECK: rr = c2s::get_kernel_function_info((const void *)f).max_work_group_size;
   cuFuncGetAttribute(&rr, CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, f);
 }

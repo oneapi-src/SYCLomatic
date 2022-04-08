@@ -9,7 +9,7 @@
 // RUN: echo "    \"file\": \"%T/foo/use_format_file_with_p2.cu\"" >> %T/foo/compile_commands.json
 // RUN: echo "  }" >> %T/foo/compile_commands.json
 // RUN: echo "]" >> %T/foo/compile_commands.json
-// RUN: dpct -p=./foo ./foo/use_format_file_with_p2.cu --out-root=%T/out --cuda-include-path="%cuda-path/include" -- --cuda-host-only
+// RUN: c2s -p=./foo ./foo/use_format_file_with_p2.cu --out-root=%T/out --cuda-include-path="%cuda-path/include" -- --cuda-host-only
 // RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/out/use_format_file_with_p2.dp.cpp
 // RUN: rm -rf %T/*
 #include "cuda.h"
@@ -29,7 +29,7 @@ float *d_A = NULL;
 //CHECK-NEXT:    rewrite this code.
 //CHECK-NEXT:    */
 //CHECK-NEXT:    int a =
-//CHECK-NEXT:        (dpct::get_default_queue()
+//CHECK-NEXT:        (c2s::get_default_queue()
 //CHECK-NEXT:             .memcpy(d_A, h_A,
 //CHECK-NEXT:                     sizeof(double) * SIZE * SIZE)
 //CHECK-NEXT:             .wait(),

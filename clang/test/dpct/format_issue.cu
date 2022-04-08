@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T/format_issue %s --cuda-include-path="%cuda-path/include" --  -x cuda --cuda-host-only -DCOMPILATION
+// RUN: c2s -out-root %T/format_issue %s --cuda-include-path="%cuda-path/include" --  -x cuda --cuda-host-only -DCOMPILATION
 // RUN: FileCheck %s --match-full-lines --input-file %T/format_issue/format_issue.dp.cpp
 
 #ifdef COMPILATION

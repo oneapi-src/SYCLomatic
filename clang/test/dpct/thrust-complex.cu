@@ -1,12 +1,12 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
-// RUN: dpct --format-range=none -out-root %T/thrust-complex %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
+// RUN: c2s --format-range=none -out-root %T/thrust-complex %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/thrust-complex/thrust-complex.dp.cpp --match-full-lines %s
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <dpct/dpct.hpp>
-// CHECK-NEXT: #include <dpct/dpl_utils.hpp>
+// CHECK-NEXT: #include <c2s/c2s.hpp>
+// CHECK-NEXT: #include <c2s/dpl_utils.hpp>
 // CHECK-NEXT: #include <complex>
 #include <thrust/device_ptr.h>
 #include <thrust/device_malloc.h>
@@ -58,7 +58,7 @@ int main() {
   thrust::complex<float> log = thrust::log(cf);
 // CHECK:   std::complex<double> exp = std::exp(cd);
   thrust::complex<double> exp = thrust::exp(cd);
-// CHECK:   dpct::device_pointer<std::complex<double>> dc_ptr = dpct::malloc_device<std::complex<double>>(1);
+// CHECK:   c2s::device_pointer<std::complex<double>> dc_ptr = c2s::malloc_device<std::complex<double>>(1);
   thrust::device_ptr<thrust::complex<double>> dc_ptr = thrust::device_malloc<thrust::complex<double>>(1);
 
 // CHECK:   C<std::complex<double>> c1 = F<std::complex<double>>();
@@ -103,7 +103,7 @@ int main() {
 // CHECK-NEXT:       sycl::accessor<std::complex<sycl::double2>, 1, sycl::access_mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:       auto static_cast_thrust_complex_double_cdp_ct1 = static_cast<std::complex<double>>(*cdp);
-// CHECK-NEXT:       auto thrust_raw_pointer_cast_dc_ptr_ct2 = dpct::get_raw_pointer(dc_ptr);
+// CHECK-NEXT:       auto thrust_raw_pointer_cast_dc_ptr_ct2 = c2s::get_raw_pointer(dc_ptr);
 // CHECK-EMPTY:
 // CHECK-NEXT:       cgh.parallel_for(
 // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),
@@ -132,8 +132,8 @@ int main() {
 #include <thrust/reduce.h>
 //CHECK: int foo(){
 //CHECK-NEXT:   double *p;
-//CHECK-NEXT:   dpct::device_pointer<double> dp(p);
-//CHECK-NEXT:   double sum = std::reduce(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), dp, dp + 10);
+//CHECK-NEXT:   c2s::device_pointer<double> dp(p);
+//CHECK-NEXT:   double sum = std::reduce(oneapi::dpl::execution::make_device_policy(c2s::get_default_queue()), dp, dp + 10);
 //CHECK-NEXT:   printf("sum = %f\n", sum);
 //CHECK-NEXT:   std::complex<float> c1(1.0);
 //CHECK-NEXT:   std::complex<float> c2(2.0);

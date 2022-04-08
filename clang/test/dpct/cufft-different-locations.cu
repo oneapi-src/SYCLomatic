@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/cufft-different-locations %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --usm-level=none -out-root %T/cufft-different-locations %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cufft-different-locations/cufft-different-locations.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cufft.h>
@@ -57,11 +57,11 @@ int main() {
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan1->commit(q_ct1);
-  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
+  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan1, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
+  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(odata);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
@@ -102,11 +102,11 @@ int main() {
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan2->commit(q_ct1);
-  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
+  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan2, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
+  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(odata);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
@@ -151,11 +151,11 @@ int main() {
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan3->commit(q_ct1);
-  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
+  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan3, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
+  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(odata);
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan3, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:return 0;
@@ -227,11 +227,11 @@ int main() {
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan4->commit(q_ct1);
-  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
+  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan4, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
+  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(odata);
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan4, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:}
@@ -247,11 +247,11 @@ int main() {
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan5->commit(q_ct1);
-  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
+  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan5, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
+  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(odata);
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan5, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:return 0;
@@ -296,11 +296,11 @@ int main() {
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan6->commit(q_ct1);
-  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
+  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan6, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
+  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(odata);
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan6, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:}
@@ -347,11 +347,11 @@ int main() {
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan7->commit(q_ct1);
-  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
+  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan7, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
+  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(odata);
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan7, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:}
@@ -403,11 +403,11 @@ int main() {
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan8->commit(q_ct1);
-  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
+  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan8, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
+  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(odata);
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan8, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:return 0;
@@ -456,11 +456,11 @@ int main() {
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan9->commit(q_ct1);
-  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
+  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan9, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
+  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(odata);
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan9, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:return 0;
@@ -510,11 +510,11 @@ int main() {
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan10->commit(q_ct1);
-  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
+  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan10, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
+  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(odata);
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan10, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:return 0;
@@ -557,11 +557,11 @@ int main() {
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan11->commit(q_ct1);
-  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
+  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan11, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
+  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(odata);
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan11, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:}
@@ -609,12 +609,12 @@ cufftResult foo2(cufftHandle plan) {
   //CHECK:/*
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(dpct::get_default_queue());
-  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
+  //CHECK-NEXT:plan->commit(c2s::get_default_queue());
+  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
+  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(odata);
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:/*
@@ -654,12 +654,12 @@ cufftResult foo4(cufftHandle plan) {
   //CHECK:/*
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(dpct::get_default_queue());
-  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(idata);
+  //CHECK-NEXT:plan->commit(c2s::get_default_queue());
+  //CHECK-NEXT:auto idata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(idata);
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:} else {
-  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(odata);
+  //CHECK-NEXT:  auto odata_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(odata);
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, idata_buf_ct{{[0-9]+}}, odata_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   cufftExecZ2D(plan, idata, odata);

@@ -1,9 +1,9 @@
-// RUN: dpct --format-range=none -out-root %T/elminate_duplicated_comments %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/elminate_duplicated_comments %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/elminate_duplicated_comments/elminate_duplicated_comments.dp.cpp
 
 int main() {
 
-  // CHECK: dpct::device_info deviceProp;
+  // CHECK: c2s::device_info deviceProp;
   cudaDeviceProp deviceProp;
 
   // CHECK:/*

@@ -2,9 +2,9 @@
 // RUN: cat %S/DemoCudaProj.vcxproj > %T/DemoCudaProj.vcxproj
 // RUN: cat %S/d_kernel.cu > %T/d_kernel.cu
 // RUN: cd %T
-// RUN: dpct --format-range=none  --vcxprojfile=%T/DemoCudaProj.vcxproj  -in-root=%T -out-root=%T/out  d_kernel.cu --cuda-include-path="%cuda-path/include"
-// RUN: dpct --format-range=none  -p %T  -in-root=%T -out-root=%T/out  d_kernel.cu --cuda-include-path="%cuda-path/include"
-// RUN: dpct --format-range=none  --vcxprojfile=%T/DemoCudaProj.vcxproj  -in-root=%T -out-root=%T/out  d_kernel.cu --cuda-include-path="%cuda-path/include"
+// RUN: c2s --format-range=none  --vcxprojfile=%T/DemoCudaProj.vcxproj  -in-root=%T -out-root=%T/out  d_kernel.cu --cuda-include-path="%cuda-path/include"
+// RUN: c2s --format-range=none  -p %T  -in-root=%T -out-root=%T/out  d_kernel.cu --cuda-include-path="%cuda-path/include"
+// RUN: c2s --format-range=none  --vcxprojfile=%T/DemoCudaProj.vcxproj  -in-root=%T -out-root=%T/out  d_kernel.cu --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --match-full-lines --input-file %T/out/d_kernel.dp.cpp %T/d_kernel.cu
 
 #include "cuda_runtime.h"

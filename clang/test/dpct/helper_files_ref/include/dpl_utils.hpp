@@ -6,11 +6,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __DPL_UTILS_HPP
-#define __DPL_UTILS_HPP
+#ifndef __C2S_DPL_UTILS_HPP__
+#define __C2S_DPL_UTILS_HPP__
 
 #define ONEDPL_USE_DPCPP_BACKEND 1
-#define __USE_DPCT 1
+#define __USE_C2S 1
 
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/algorithm>
@@ -23,4 +23,4 @@
 #include "dpl_extras/vector.h"
 #include "dpl_extras/dpcpp_extensions.h"
 
-#endif // __DPL_UTILS_HPP
+#endif // __C2S_DPL_UTILS_HPP__

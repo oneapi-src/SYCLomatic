@@ -3,7 +3,7 @@
 // RUN: cd h_constant
 // RUN: cat %s > h_constant.cu
 // RUN: cat %S/constant_header.h > constant_header.h
-// RUN: dpct h_constant.cu --out-root=./out --cuda-include-path="%cuda-path/include" -- -x c --cuda-host-only
+// RUN: c2s h_constant.cu --out-root=./out --cuda-include-path="%cuda-path/include" -- -x c --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/h_constant/out/constant_header.h
 // RUN: cd ..
 // RUN: rm -rf ./h_constant

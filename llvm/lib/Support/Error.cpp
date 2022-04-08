@@ -177,5 +177,5 @@ LLVMErrorRef LLVMCreateStringError(const char *ErrMsg) {
 }
 
 #ifdef INTEL_CUSTOMIZATION
-char DPCTError::ID = 0;
+char C2SError::ID = 0;
 #endif

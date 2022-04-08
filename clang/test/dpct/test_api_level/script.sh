@@ -2,12 +2,12 @@
 
 test_source_dir=$1
 test_dest_dir=$2
-source_files_dir=$test_source_dir/../../../lib/DPCT
+source_files_dir=$test_source_dir/../../../lib/C2S
 
 #From HelperFeatureEnum.inc, extract all feature enum names to all_feature_enums.txt
-#These enum definitions are between line "#ifdef DPCT_FEATURE_ENUM" and line "#endif // DPCT_FEATURE_ENUM"
+#These enum definitions are between line "#ifdef C2S_FEATURE_ENUM" and line "#endif // C2S_FEATURE_ENUM"
 #Finally remove the comma at the end of each line
-awk '/#ifdef DPCT_FEATURE_ENUM\s*$/{flag=1; next} /#endif \/\/ DPCT_FEATURE_ENUM\s*$/{flag=0}  {if(flag==1){print $0}}' $test_dest_dir/../../../../include/clang/DPCT/HelperFeatureEnum.inc | awk -F ',' '{print $1}' > $test_dest_dir/all_feature_enums.txt
+awk '/#ifdef C2S_FEATURE_ENUM\s*$/{flag=1; next} /#endif \/\/ C2S_FEATURE_ENUM\s*$/{flag=0}  {if(flag==1){print $0}}' $test_dest_dir/../../../../include/clang/C2S/HelperFeatureEnum.inc | awk -F ',' '{print $1}' > $test_dest_dir/all_feature_enums.txt
 
 #Grep each feature enum name in source code folder
 #If something is greped, save the feature enum name in feature_used_in_src_code_temp.txt

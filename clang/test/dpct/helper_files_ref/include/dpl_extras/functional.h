@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __DPCT_FUNCTIONAL_H__
-#define __DPCT_FUNCTIONAL_H__
+#ifndef __C2S_DPL_EXTRAS_FUNCTIONAL_H__
+#define __C2S_DPL_EXTRAS_FUNCTIONAL_H__
 
 #include <functional>
 #include <oneapi/dpl/functional>
@@ -20,7 +20,7 @@
 #include <tuple>
 #include <utility>
 
-namespace dpct {
+namespace c2s {
 
 namespace internal {
 
@@ -291,6 +291,6 @@ private:
 };
 } // end namespace internal
 
-} // end namespace dpct
+} // end namespace c2s
 
 #endif

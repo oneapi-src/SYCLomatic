@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-9.0, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
 // UNSUPPORTED: v9.0, v9.2, v10.0, v10.1, v10.2
-// RUN: dpct --format-range=none -out-root %T/types003 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/types003 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/types003/types003.dp.cpp
 
 

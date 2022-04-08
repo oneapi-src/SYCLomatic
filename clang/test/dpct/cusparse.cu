@@ -1,6 +1,6 @@
 // UNSUPPORTED: v11.0, v11.1, v11.2, v11.3, v11.4, v11.5, v11.6
 // UNSUPPORTED: cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6
-// RUN: dpct --format-range=none --usm-level=none --out-root %T/cusparse %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
+// RUN: c2s --format-range=none --usm-level=none --out-root %T/cusparse %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cusparse/cusparse.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cusparse_v2.h>
@@ -81,7 +81,7 @@ int main(){
   base0 = cusparseGetMatIndexBase(descrA);
   type0 = cusparseGetMatType(descrA);
 
-  //CHECK: handle = &dpct::get_default_queue();
+  //CHECK: handle = &c2s::get_default_queue();
   //CHECK-NEXT: handle = s;
   //CHECK-NEXT: s = handle;
   cusparseCreate(&handle);
@@ -94,11 +94,11 @@ int main(){
   //CHECK-NEXT: */
   //CHECK-NEXT: descrA = oneapi::mkl::index_base::zero;
   //CHECK-NEXT: {
-  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
-  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
-  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
+  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(csrValA);
+  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrRowPtrA);
+  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrColIndA);
+  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(x);
+  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(y);
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
@@ -113,11 +113,11 @@ int main(){
   cuComplex alpha_C, beta_C, *csrValA_C, *x_C, *y_C;
 
   //CHECK: {
-  //CHECK-NEXT: auto csrValA_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(csrValA_C);
-  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-  //CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
-  //CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
+  //CHECK-NEXT: auto csrValA_C_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(csrValA_C);
+  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrRowPtrA);
+  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrColIndA);
+  //CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(x_C);
+  //CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(y_C);
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_C_buf_ct{{[0-9]+}});
@@ -127,11 +127,11 @@ int main(){
   cusparseCcsrmv(handle, transA, m, n, nnz, &alpha_C, descrA, csrValA_C, csrRowPtrA, csrColIndA, x_C, &beta_C, y_C);
 
   //CHECK: {
-  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
-  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
-  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
+  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(csrValA);
+  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrRowPtrA);
+  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrColIndA);
+  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(x);
+  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(y);
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, k, descrA, csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
@@ -141,11 +141,11 @@ int main(){
   cusparseScsrmm(handle, transA, m, n, k, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, ldb, &beta, y, ldc);
 
   //CHECK: {
-  //CHECK-NEXT: auto csrValA_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(csrValA_C);
-  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-  //CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
-  //CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
+  //CHECK-NEXT: auto csrValA_C_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(csrValA_C);
+  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrRowPtrA);
+  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrColIndA);
+  //CHECK-NEXT: auto x_C_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(x_C);
+  //CHECK-NEXT: auto y_C_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(y_C);
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, k, descrA, csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_C_buf_ct{{[0-9]+}});
@@ -158,11 +158,11 @@ int main(){
   cusparseStatus_t status;
 
   //CHECK: {
-  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
-  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
-  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
+  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(csrValA);
+  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrRowPtrA);
+  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrColIndA);
+  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(x);
+  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(y);
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
@@ -176,11 +176,11 @@ int main(){
   if(status = cusparseScsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y)){}
 
   //CHECK: {
-  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
-  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
-  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
+  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(csrValA);
+  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrRowPtrA);
+  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrColIndA);
+  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(x);
+  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(y);
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
@@ -194,11 +194,11 @@ int main(){
   for(status = cusparseScsrmv(handle, transA, m, n, nnz, &alpha, descrA, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);;){}
 
   //CHECK: {
-  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
-  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
-  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
+  //CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(csrValA);
+  //CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrRowPtrA);
+  //CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrColIndA);
+  //CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(x);
+  //CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(y);
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
@@ -240,11 +240,11 @@ int main(){
 }
 
 //CHECK: int foo(oneapi::mkl::index_base descrB) try {
-//CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
-//CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-//CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-//CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
-//CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
+//CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(csrValA);
+//CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrRowPtrA);
+//CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrColIndA);
+//CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(x);
+//CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(y);
 //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
 //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
 //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrB, csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});
@@ -260,11 +260,11 @@ int foo(cusparseMatDescr_t descrB){
 }
 
 //CHECK: void foo2(oneapi::mkl::index_base descrB){
-//CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(csrValA);
-//CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrRowPtrA);
-//CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(csrColIndA);
-//CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(x);
-//CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(y);
+//CHECK-NEXT: auto csrValA_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(csrValA);
+//CHECK-NEXT: auto csrRowPtrA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrRowPtrA);
+//CHECK-NEXT: auto csrColIndA_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(csrColIndA);
+//CHECK-NEXT: auto x_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(x);
+//CHECK-NEXT: auto y_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(y);
 //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
 //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
 //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrB, csrRowPtrA_buf_ct{{[0-9]+}}, csrColIndA_buf_ct{{[0-9]+}}, csrValA_buf_ct{{[0-9]+}});

@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1
 // UNSUPPORTED: v8.0, v9.0, v9.1
-// RUN: dpct --format-range=none -out-root %T/cublasHgemmBatched %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/cublasHgemmBatched %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublasHgemmBatched/cublasHgemmBatched.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas_v2.h>

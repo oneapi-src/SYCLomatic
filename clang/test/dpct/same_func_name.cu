@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T/same_func_name %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: c2s -out-root %T/same_func_name %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck --match-full-lines --input-file %T/same_func_name/same_func_name.dp.cpp %s
 
 // device function

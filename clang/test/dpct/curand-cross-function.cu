@@ -1,4 +1,4 @@
-//RUN: dpct -out-root %T/curand-cross-function %s --format-range=none --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+//RUN: c2s -out-root %T/curand-cross-function %s --format-range=none --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 //RUN: FileCheck --input-file %T/curand-cross-function/curand-cross-function.dp.cpp --match-full-lines %s
 
 #include <cuda.h>
@@ -20,7 +20,7 @@ void update(float* randvals, curandGenerator_t rng, long long nx, long long ny) 
 //CHECK-NEXT:   long long ny = 5120;
 //CHECK-NEXT:   unsigned long long seed = 1234ULL;
 //CHECK-NEXT:   std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
-//CHECK-NEXT:   rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(dpct::get_default_queue(), seed);
+//CHECK-NEXT:   rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(c2s::get_default_queue(), seed);
 //CHECK-NEXT:   /*
 //CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because the function call is redundant in DPC++.
 //CHECK-NEXT:   */

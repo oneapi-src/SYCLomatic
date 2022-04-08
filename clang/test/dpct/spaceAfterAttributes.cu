@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/spaceAfterAttributes %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/spaceAfterAttributes %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/spaceAfterAttributes/spaceAfterAttributes.dp.cpp
 
 #include <cuda_runtime.h>

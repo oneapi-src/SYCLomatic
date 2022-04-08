@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --out-root %T/kernel_namespace %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --out-root %T/kernel_namespace %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/kernel_namespace/kernel_namespace.dp.cpp %s
 
 #include "cuda_runtime.h"

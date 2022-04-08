@@ -657,7 +657,7 @@ bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
 #ifdef INTEL_CUSTOMIZATION
       } catch (std::exception &e) {
         std::string FaultMsg =
-            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
+            "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
             "tries to recover and write the migration result.\n";
         llvm::errs() << FaultMsg;
       }

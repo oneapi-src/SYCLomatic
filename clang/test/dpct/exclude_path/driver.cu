@@ -33,7 +33,7 @@
 
 // RUN: sed -i 's/\\/\//g' %T/compile_commands.json
 
-// RUN: dpct -p %T -in-root %S/test_src -out-root %T/test1 --in-root-exclude=%S/test_src/lib_1/inc --cuda-include-path="%cuda-path/include"
+// RUN: c2s -p %T -in-root %S/test_src -out-root %T/test1 --in-root-exclude=%S/test_src/lib_1/inc --cuda-include-path="%cuda-path/include"
 // test/
 // └── lib_1
 // │   └── src
@@ -49,7 +49,7 @@
 // RUN: bash %S/check_script.sh %T/test1/lib_2/src/libsrc_2.cu %T
 // RUN: bash %S/check_script.sh %T/test1/lib_2/src/libsrc_2.dp.cpp %T
 
-// RUN: dpct -p %T -in-root %S/test_src -out-root %T/test2 --in-root-exclude=%S/test_src/lib_1/src --cuda-include-path="%cuda-path/include"
+// RUN: c2s -p %T -in-root %S/test_src -out-root %T/test2 --in-root-exclude=%S/test_src/lib_1/src --cuda-include-path="%cuda-path/include"
 // test/
 // └── lib_1
 // │   └── inc
@@ -66,7 +66,7 @@
 // RUN: bash %S/check_script.sh %T/test2/lib_2/src/libsrc_2.cu %T
 // RUN: bash %S/check_script.sh %T/test2/lib_2/src/libsrc_2.dp.cpp %T
 
-// RUN: dpct -p %T -in-root %S/test_src -out-root %T/test3 --in-root-exclude=%S/test_src/lib_1/inc --process-all --cuda-include-path="%cuda-path/include"
+// RUN: c2s -p %T -in-root %S/test_src -out-root %T/test3 --in-root-exclude=%S/test_src/lib_1/inc --process-all --cuda-include-path="%cuda-path/include"
 // test/
 // └── lib_1
 // │   └── src
@@ -90,7 +90,7 @@
 // RUN: bash %S/check_script.sh %T/test3/lib_2/src/libsrc_2.cu %T
 // RUN: bash %S/check_script.sh %T/test3/lib_2/src/libsrc_2.dp.cpp %T
 
-// RUN: dpct -p %T -in-root %S/test_src -out-root %T/test4 --in-root-exclude=%S/test_src/lib_1/src --process-all --cuda-include-path="%cuda-path/include"
+// RUN: c2s -p %T -in-root %S/test_src -out-root %T/test4 --in-root-exclude=%S/test_src/lib_1/src --process-all --cuda-include-path="%cuda-path/include"
 // test/
 // └── lib_1
 // │   └── inc
@@ -115,7 +115,7 @@
 // RUN: bash %S/check_script.sh %T/test4/lib_2/src/libsrc_2.cu %T
 // RUN: bash %S/check_script.sh %T/test4/lib_2/src/libsrc_2.dp.cpp %T
 
-// RUN: dpct -p %T -in-root %S/test_src -out-root %T/test5 --in-root-exclude=%S/test_src/lib_2/inc --process-all --cuda-include-path="%cuda-path/include"
+// RUN: c2s -p %T -in-root %S/test_src -out-root %T/test5 --in-root-exclude=%S/test_src/lib_2/inc --process-all --cuda-include-path="%cuda-path/include"
 // test/
 // └── lib_1
 // │   └── inc
@@ -139,7 +139,7 @@
 // RUN: bash %S/check_script.sh %T/test5/lib_2/src/libsrc_2.cu %T
 // RUN: bash %S/check_script.sh %T/test5/lib_2/src/libsrc_2.dp.cpp %T
 
-// RUN: dpct -p %T -in-root %S/test_src -out-root %T/test6 --in-root-exclude=%S/test_src/lib_2/src --process-all --cuda-include-path="%cuda-path/include"
+// RUN: c2s -p %T -in-root %S/test_src -out-root %T/test6 --in-root-exclude=%S/test_src/lib_2/src --process-all --cuda-include-path="%cuda-path/include"
 // test/
 // └── lib_1
 // │   └── inc
@@ -164,7 +164,7 @@
 // RUN: bash %S/check_script.sh %T/test6/lib_2/src/libsrc_2.cu %T
 // RUN: bash %S/check_script.sh %T/test6/lib_2/src/libsrc_2.dp.cpp %T
 
-// RUN: dpct -p %T -in-root %S/test_src -out-root %T/test7 --in-root-exclude=%S/test_src/lib_1/src --in-root-exclude=%S/test_src/lib_2/src --process-all --cuda-include-path="%cuda-path/include"
+// RUN: c2s -p %T -in-root %S/test_src -out-root %T/test7 --in-root-exclude=%S/test_src/lib_1/src --in-root-exclude=%S/test_src/lib_2/src --process-all --cuda-include-path="%cuda-path/include"
 // test/
 // └── lib_1
 // │   └── inc
@@ -186,7 +186,7 @@
 // RUN: bash %S/check_script.sh %T/test7/lib_2/src/libsrc_2.cu %T
 // RUN: bash %S/check_script.sh %T/test7/lib_2/src/libsrc_2.dp.cpp %T
 
-// RUN: dpct -p %T -in-root %S/test_src -out-root %T/test8 --in-root-exclude=%S/test_src/README.md --process-all --cuda-include-path="%cuda-path/include"
+// RUN: c2s -p %T -in-root %S/test_src -out-root %T/test8 --in-root-exclude=%S/test_src/README.md --process-all --cuda-include-path="%cuda-path/include"
 // test/
 // └── lib_1
 // │   └── inc

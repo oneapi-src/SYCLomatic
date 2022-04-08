@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
-// RUN: dpct --format-range=none -in-root %S -out-root %T/blocklevel/blockscan_p2 %S/blockscan_p2.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -in-root %S -out-root %T/blocklevel/blockscan_p2 %S/blockscan_p2.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/blocklevel/blockscan_p2/blockscan_p2.dp.cpp --match-full-lines %s
 
 #include <iostream>
@@ -47,7 +47,7 @@ void print_data(T* data, int num) {
 //CHECK:    int output = 0;
 //CHECK:    int agg = 0;
 
-//CHECK:    output = dpct::group::exclusive_scan(item_ct1, input, 0, sycl::ext::oneapi::plus<>(), agg);
+//CHECK:    output = c2s::group::exclusive_scan(item_ct1, input, 0, sycl::ext::oneapi::plus<>(), agg);
 
 //CHECK:    data[threadid] = output;
 //CHECK:    aggregate[threadid] = agg;
@@ -92,7 +92,7 @@ __global__ void ExclusiveSumKernel1(int* data, int* aggregate) {
 //CHECK:      int input = data[threadid];
 //CHECK:      int output = 0;
 
-//CHECK:      output = dpct::group::exclusive_scan(item_ct1, input, sycl::ext::oneapi::plus<>(), CB);
+//CHECK:      output = c2s::group::exclusive_scan(item_ct1, input, sycl::ext::oneapi::plus<>(), CB);
 
 //CHECK:      data[threadid] = output;
 //CHECK:  }
@@ -139,7 +139,7 @@ __global__ void ExclusiveSumKernel2(int* data) {
 //CHECK:    input[3] = data[4 * threadid + 3];
 //CHECK:    int output[4];
 
-//CHECK:    dpct::group::exclusive_scan(item_ct1, input, output, 0, sycl::ext::oneapi::plus<>());
+//CHECK:    c2s::group::exclusive_scan(item_ct1, input, output, 0, sycl::ext::oneapi::plus<>());
 
 //CHECK:    data[4 * threadid] = output[0];
 //CHECK:    data[4 * threadid + 1] = output[1];
@@ -177,7 +177,7 @@ __global__ void ExclusiveSumKernel3(int* data) {
 //CHECK:  int output = 0;
 //CHECK:  int agg = 0;
 
-//CHECK:  output = dpct::group::exclusive_scan(item_ct1, input, 0, sycl::ext::oneapi::plus<>(), agg);
+//CHECK:  output = c2s::group::exclusive_scan(item_ct1, input, 0, sycl::ext::oneapi::plus<>(), agg);
 
 //CHECK:  data[threadid] = output;
 //CHECK:  aggregate[threadid] = agg;
@@ -222,7 +222,7 @@ __global__ void ExclusiveScanKernel1(int* data, int* aggregate) {
 //CHECK:      int input = data[threadid];
 //CHECK:      int output = 0;
 
-//CHECK:      output = dpct::group::exclusive_scan(item_ct1, input, sycl::ext::oneapi::plus<>(), CB);
+//CHECK:      output = c2s::group::exclusive_scan(item_ct1, input, sycl::ext::oneapi::plus<>(), CB);
 
 //CHECK:      data[threadid] = output;
 //CHECK:  }
@@ -268,7 +268,7 @@ __global__ void ExclusiveScanKernel2(int* data) {
 //CHECK:    input[3] = data[4 * threadid + 3];
 //CHECK:    int output[4];
 
-//CHECK:    dpct::group::exclusive_scan(item_ct1, input, output, 0, sycl::ext::oneapi::plus<>());
+//CHECK:    c2s::group::exclusive_scan(item_ct1, input, output, 0, sycl::ext::oneapi::plus<>());
 
 //CHECK:    data[4 * threadid] = output[0];
 //CHECK:    data[4 * threadid + 1] = output[1];
@@ -307,7 +307,7 @@ __global__ void ExclusiveScanKernel3(int* data) {
 //CHECK:  int output = 0;
 //CHECK:  int agg = 0;
 
-//CHECK:  output = dpct::group::inclusive_scan(item_ct1, input, sycl::ext::oneapi::plus<>(), agg);
+//CHECK:  output = c2s::group::inclusive_scan(item_ct1, input, sycl::ext::oneapi::plus<>(), agg);
 
 //CHECK:  data[threadid] = output;
 //CHECK:  aggregate[threadid] = agg;
@@ -354,7 +354,7 @@ __global__ void InclusiveSumKernel1(int* data, int* aggregate) {
 //CHECK:      int input = data[threadid];
 //CHECK:      int output = 0;
 
-//CHECK:      output = dpct::group::inclusive_scan(item_ct1, input, sycl::ext::oneapi::plus<>(), CB);
+//CHECK:      output = c2s::group::inclusive_scan(item_ct1, input, sycl::ext::oneapi::plus<>(), CB);
 
 //CHECK:      data[threadid] = output;
 //CHECK:  }
@@ -402,7 +402,7 @@ __global__ void InclusiveSumKernel2(int* data) {
 //CHECK:    input[3] = data[4 * threadid + 3];
 //CHECK:    int output[4];
 
-//CHECK:    dpct::group::inclusive_scan(item_ct1, input, output, sycl::ext::oneapi::plus<>());
+//CHECK:    c2s::group::inclusive_scan(item_ct1, input, output, sycl::ext::oneapi::plus<>());
 
 //CHECK:    data[4 * threadid] = output[0];
 //CHECK:    data[4 * threadid + 1] = output[1];
@@ -442,7 +442,7 @@ __global__ void InclusiveSumKernel3(int* data) {
 //CHECK:  int output = 0;
 //CHECK:  int agg = 0;
 
-//CHECK:  output = dpct::group::inclusive_scan(item_ct1, input, sycl::ext::oneapi::plus<>(), agg);
+//CHECK:  output = c2s::group::inclusive_scan(item_ct1, input, sycl::ext::oneapi::plus<>(), agg);
 
 //CHECK:  data[threadid] = output;
 //CHECK:  aggregate[threadid] = agg;
@@ -489,7 +489,7 @@ __global__ void InclusiveScanKernel1(int* data, int* aggregate) {
 //CHECK:      int input = data[threadid];
 //CHECK:      int output = 0;
 
-//CHECK:      output = dpct::group::inclusive_scan(item_ct1, input, sycl::ext::oneapi::plus<>(), CB);
+//CHECK:      output = c2s::group::inclusive_scan(item_ct1, input, sycl::ext::oneapi::plus<>(), CB);
 
 //CHECK:      data[threadid] = output;
 //CHECK:  }
@@ -537,7 +537,7 @@ __global__ void InclusiveScanKernel2(int* data) {
 //CHECK:    input[3] = data[4 * threadid + 3];
 //CHECK:    int output[4];
 
-//CHECK:    dpct::group::inclusive_scan(item_ct1, input, output, sycl::ext::oneapi::plus<>());
+//CHECK:    c2s::group::inclusive_scan(item_ct1, input, output, sycl::ext::oneapi::plus<>());
 
 //CHECK:    data[4 * threadid] = output[0];
 //CHECK:    data[4 * threadid + 1] = output[1];

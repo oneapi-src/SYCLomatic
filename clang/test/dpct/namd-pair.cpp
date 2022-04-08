@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/namd-pair %s --cuda-include-path="%cuda-path/include" -- -std=c++14
+// RUN: c2s --format-range=none -out-root %T/namd-pair %s --cuda-include-path="%cuda-path/include" -- -std=c++14
 // RUN: FileCheck --input-file %T/namd-pair/namd-pair.cpp.dp.cpp --match-full-lines %s
 
 

@@ -1,4 +1,4 @@
-// RUN: dpct --check-unicode-security --format-range=none -out-root %T/confusable_identifier %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --check-unicode-security --format-range=none -out-root %T/confusable_identifier %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/confusable_identifier/confusable_identifier.dp.cpp --match-full-lines %s
 
 // CHECK: /*

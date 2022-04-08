@@ -9,12 +9,12 @@
 // RUN: echo "    \"file\": \"%T/compile_by_gcc/compile_by_gcc_lin.c\"" >> %T/compile_by_gcc/compile_commands.json
 // RUN: echo "  }" >> %T/compile_by_gcc/compile_commands.json
 // RUN: echo "]" >> %T/compile_by_gcc/compile_commands.json
-// RUN: dpct --format-range=none --out-root %T/compile_by_gcc -p=./ --cuda-include-path="%cuda-path/include"
+// RUN: c2s --format-range=none --out-root %T/compile_by_gcc -p=./ --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/compile_by_gcc/compile_by_gcc_lin.c.dp.cpp
 // RUN: rm -rf %T/compile_by_gcc
 
 // CHECK: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <dpct/dpct.hpp>
+// CHECK-NEXT: #include <c2s/c2s.hpp>
 #include <cuda_runtime.h>
 
 // CHECK: int a = 0;

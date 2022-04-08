@@ -1,5 +1,5 @@
 // UNSUPPORTED: -linux-
-// RUN: dpct --format-range=none -out-root %T/macro_win %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/macro_win %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/macro_win/macro_win.dp.cpp
 
 #include "cuda.h"

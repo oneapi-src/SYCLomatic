@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.2, cuda-10.0
 // UNSUPPORTED: v8.0, v9.0, v9.2, v10.0
-// RUN: dpct --format-range=none -out-root %T/cusolverDnLn_cuda10-1-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/cusolverDnLn_cuda10-1-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusolverDnLn_cuda10-1-usm/cusolverDnLn_cuda10-1-usm.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas_v2.h>

@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/cufft-different-locations-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/cufft-different-locations-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cufft-different-locations-usm/cufft-different-locations-usm.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cufft.h>
@@ -578,7 +578,7 @@ cufftResult foo2(cufftHandle plan) {
   //CHECK:/*
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(dpct::get_default_queue());
+  //CHECK-NEXT:plan->commit(c2s::get_default_queue());
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, (double*)idata);
   //CHECK-NEXT:} else {
@@ -621,7 +621,7 @@ cufftResult foo4(cufftHandle plan) {
   //CHECK:/*
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(dpct::get_default_queue());
+  //CHECK-NEXT:plan->commit(c2s::get_default_queue());
   //CHECK-NEXT:if ((void *)idata == (void *)odata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan, (double*)idata);
   //CHECK-NEXT:} else {

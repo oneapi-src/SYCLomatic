@@ -4,8 +4,8 @@
 // CHECK-NEXT:      - '{{.+}}header.h'
 // CHECK-NEXT:      - '{{.+}}test.cu'
 
-// CHECK:    dpct_malloc_detail:
+// CHECK:    c2s_malloc_detail:
 // CHECK-NEXT:      IsCalled:        true
 // CHECK-NEXT:      CallerSrcFiles:
 // CHECK-NEXT:        - '{{.+}}test.cu'
-// CHECK-NEXT:      FeatureName:     dpct_malloc
+// CHECK-NEXT:      FeatureName:     c2s_malloc

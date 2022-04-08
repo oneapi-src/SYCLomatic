@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T/cuda_vardecl %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: c2s -out-root %T/cuda_vardecl %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda_vardecl/cuda_vardecl.dp.cpp --match-full-lines %s
 
 #include <vector>
@@ -74,7 +74,7 @@ struct S {
   // CHECK-NEXT: std::list<sycl::queue *> streamlist;
   // CHECK-NEXT: std::list<sycl::event> eventlist;
   // CHECK-NEXT: std::list<int> errors;
-  // CHECK-NEXT: std::list<dpct::device_info> props;
+  // CHECK-NEXT: std::list<c2s::device_info> props;
   cudaStream_t stream, stream0;
   cudaStream_t streams[23], streams0[45];
   cudaEvent_t event, events[23];
@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT: std::list<sycl::queue *> streamlist;
   // CHECK-NEXT: std::list<sycl::event> eventlist;
   // CHECK-NEXT: std::list<int> errors;
-  // CHECK-NEXT: std::list<dpct::device_info> props;
+  // CHECK-NEXT: std::list<c2s::device_info> props;
   cudaStream_t stream, stream0;
   cudaStream_t streams[23], streams0[45];
   cudaEvent_t event, events[23];

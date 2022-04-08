@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/api-name-migrated %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --usm-level=none -out-root %T/api-name-migrated %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/api-name-migrated/api-name-migrated.dp.cpp %s
 
 #include <cuda_runtime.h>
@@ -23,7 +23,7 @@ void fooo() {
   // CHECK: sycl::range<3> extent = sycl::range<3>(size * sizeof(float), size, size);
   struct cudaExtent extent = make_cudaExtent(size * sizeof(float), size, size);
 
-  // CHECK: srcGPU = dpct::dpct_malloc(extent);
+  // CHECK: srcGPU = c2s::c2s_malloc(extent);
   cudaMalloc3D(&srcGPU, extent);
 }
 

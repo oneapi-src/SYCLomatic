@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/accessor-offset %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --usm-level=none -out-root %T/accessor-offset %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/accessor-offset/accessor-offset.dp.cpp --match-full-lines %s
 
 __global__ void hello(int *d) {
@@ -21,7 +21,7 @@ void nonmod(int *p) {
 int *d_a_global;
 
 void foo() {
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   int *d_a;
   int **p = &d_a;
@@ -30,12 +30,12 @@ void foo() {
 
   // No offset: use right after memory allocation
   // CHECK: {
-  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto d_a_acc_ct0 = dpct::get_access(d_a, cgh);
+  // CHECK-NEXT:       auto d_a_acc_ct0 = c2s::get_access(d_a, cgh);
   // CHECK-EMPTY:  
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello((int *)(&d_a_acc_ct0[0]), 23);
@@ -49,13 +49,13 @@ void foo() {
 
   // Offset: compound assign operator (+=)
   // CHECK: {
-  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   d_a += 2;
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       c2s::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello(d_a_acc_ct0.get_raw_pointer(), 23);
@@ -70,13 +70,13 @@ void foo() {
 
   // Offset: compound assign operator (-=)
   // CHECK: {
-  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   d_a -= 2;
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       c2s::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello(d_a_acc_ct0.get_raw_pointer(), 23);
@@ -91,13 +91,13 @@ void foo() {
 
   // Offset: assign operator (=)
   // CHECK: {
-  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   d_a = d_a + 2;
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       c2s::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello(d_a_acc_ct0.get_raw_pointer(), 23);
@@ -112,13 +112,13 @@ void foo() {
 
   // Offset: assign operator (=)
   // CHECK: {
-  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   d_a = d_a - 2;
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       c2s::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello(d_a_acc_ct0.get_raw_pointer(), 23);
@@ -134,12 +134,12 @@ void foo() {
   // Offset: reference doesn't match memory allocation exactly
   // CHECK: {
   // CHECK-NEXT:   d_a = d_a;
-  // CHECK-NEXT:   *(&d_a + 1) = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   *(&d_a + 1) = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       c2s::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello(d_a_acc_ct0.get_raw_pointer(), 23);
@@ -154,12 +154,12 @@ void foo() {
 
   // Offset: reference doesn't match memory allocation exactly
   // CHECK: {
-  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a + 1, cgh);
+  // CHECK-NEXT:       c2s::access_wrapper<int *> d_a_acc_ct0(d_a + 1, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello(d_a_acc_ct0.get_raw_pointer(), 23);
@@ -174,12 +174,12 @@ void foo() {
   // Offset: reference doesn't match memory allocation exactly
   // CHECK: {
   // CHECK-NEXT:   d_a = d_a;
-  // CHECK-NEXT:   *p = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   *p = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       c2s::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello(d_a_acc_ct0.get_raw_pointer(), 23);
@@ -194,12 +194,12 @@ void foo() {
 
   // No offset: ignore parens
   // CHECK: {
-  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto d_a_acc_ct0 = dpct::get_access(d_a, cgh);
+  // CHECK-NEXT:       auto d_a_acc_ct0 = c2s::get_access(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello((int *)(&d_a_acc_ct0[0]), 23);
@@ -215,15 +215,15 @@ void foo() {
   // CHECK: {
   // CHECK-NEXT:   d_a -= 4;
   // CHECK-NEXT:     {
-  // CHECK-NEXT:       d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:       d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:     }
   // CHECK-NEXT:     {
   // CHECK-NEXT:         {
   // CHECK-NEXT:           q_ct1.submit(
   // CHECK-NEXT:             [&](sycl::handler &cgh) {
-  // CHECK-NEXT:               auto d_a_acc_ct0 = dpct::get_access(d_a, cgh);
+  // CHECK-NEXT:               auto d_a_acc_ct0 = c2s::get_access(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:               cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:               cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:                 [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:                   hello((int *)(&d_a_acc_ct0[0]), 23);
@@ -246,13 +246,13 @@ void foo() {
 
   // Offset: d_a is used as lvalue by passing its address to mod
   // CHECK: {
-  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   mod(&d_a);
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       c2s::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello(d_a_acc_ct0.get_raw_pointer(), 23);
@@ -267,13 +267,13 @@ void foo() {
 
   // Offset: d_a is used as lvalue by passing its reference to mod2
   // CHECK: {
-  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   mod2(d_a);
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       c2s::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello(d_a_acc_ct0.get_raw_pointer(), 23);
@@ -288,13 +288,13 @@ void foo() {
 
   // No offset: d_a is used as rvalue by passing its value to nonmod
   // CHECK: {
-  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   nonmod(d_a);
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto d_a_acc_ct0 = dpct::get_access(d_a, cgh);
+  // CHECK-NEXT:       auto d_a_acc_ct0 = c2s::get_access(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello((int *)(&d_a_acc_ct0[0]), 23);
@@ -311,16 +311,16 @@ void foo() {
   // operations, because it is used as lvalue; this is a trade-off between
   // correctness and complexity.
   // CHECK: {
-  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   d_a += 2;
   // CHECK-NEXT:   d_a -= 2;
   // CHECK-NEXT:   d_a = d_a + 2;
   // CHECK-NEXT:   d_a = d_a - 2;
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       c2s::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),  
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello(d_a_acc_ct0.get_raw_pointer(), 23);
@@ -340,19 +340,19 @@ void foo() {
   // cudaMalloc makes d_a point to the beginning of a new piece of memory,
   // which makes the offset unnecessary.
   // CHECK: {
-  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   d_a += 4;
   // CHECK-NEXT:   d_a -= 2;
   // CHECK-NEXT:   d_a = d_a + 8;
   // CHECK-NEXT:   d_a = d_a - 4;
   // CHECK-NEXT:   mod(&d_a);
   // CHECK-NEXT:   mod2(d_a);
-  // CHECK-NEXT:   d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       auto d_a_acc_ct0 = dpct::get_access(d_a, cgh);
+  // CHECK-NEXT:       auto d_a_acc_ct0 = c2s::get_access(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello((int *)(&d_a_acc_ct0[0]), 23);
@@ -374,12 +374,12 @@ void foo() {
   // CHECK: {
   // CHECK-NEXT:   d_a += 2;
   // CHECK-NEXT:   if (n > 23) {
-  // CHECK-NEXT:     d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:     d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
-  // CHECK-NEXT:         auto d_a_acc_ct0 = dpct::get_access(d_a, cgh);
+  // CHECK-NEXT:         auto d_a_acc_ct0 = c2s::get_access(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:             hello((int *)(&d_a_acc_ct0[0]));
@@ -388,9 +388,9 @@ void foo() {
   // CHECK-NEXT:     if (n > 45) {
   // CHECK-NEXT:         q_ct1.submit(
   // CHECK-NEXT:           [&](sycl::handler &cgh) {
-  // CHECK-NEXT:             auto d_a_acc_ct0 = dpct::get_access(d_a, cgh);
+  // CHECK-NEXT:             auto d_a_acc_ct0 = c2s::get_access(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:             cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:             cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:               [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:                 hello((int *)(&d_a_acc_ct0[0]));
@@ -401,9 +401,9 @@ void foo() {
   // CHECK-NEXT:       d_a += 2;
   // CHECK-NEXT:       q_ct1.submit(
   // CHECK-NEXT:         [&](sycl::handler &cgh) {
-  // CHECK-NEXT:           dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:           c2s::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:           cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:           cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:             [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:               hello(d_a_acc_ct0.get_raw_pointer());
@@ -429,12 +429,12 @@ void foo() {
   // CHECK: {
   // CHECK-NEXT:   d_a += 2;
   // CHECK-NEXT:   while (1) {
-  // CHECK-NEXT:     d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:     d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
-  // CHECK-NEXT:         auto d_a_acc_ct0 = dpct::get_access(d_a, cgh);
+  // CHECK-NEXT:         auto d_a_acc_ct0 = c2s::get_access(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:             hello((int *)(&d_a_acc_ct0[0]));
@@ -443,9 +443,9 @@ void foo() {
   // CHECK-NEXT:   }
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       c2s::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello(d_a_acc_ct0.get_raw_pointer());
@@ -463,12 +463,12 @@ void foo() {
   // CHECK: {
   // CHECK-NEXT:   d_a += 2;
   // CHECK-NEXT:   for (; 1;) {
-  // CHECK-NEXT:     d_a = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:     d_a = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:     q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
-  // CHECK-NEXT:         auto d_a_acc_ct0 = dpct::get_access(d_a, cgh);
+  // CHECK-NEXT:         auto d_a_acc_ct0 = c2s::get_access(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:         cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:             hello((int *)(&d_a_acc_ct0[0]), 23);
@@ -477,9 +477,9 @@ void foo() {
   // CHECK-NEXT:   }
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
+  // CHECK-NEXT:       c2s::access_wrapper<int *> d_a_acc_ct0(d_a, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello(d_a_acc_ct0.get_raw_pointer(), 23);
@@ -497,12 +497,12 @@ void foo() {
 
   // Offset: offsets are always there for global variables
   // CHECK: {
-  // CHECK-NEXT:   d_a_global = (int *)dpct::dpct_malloc(n * sizeof(float));
+  // CHECK-NEXT:   d_a_global = (int *)c2s::c2s_malloc(n * sizeof(float));
   // CHECK-NEXT:   q_ct1.submit(
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
-  // CHECK-NEXT:       dpct::access_wrapper<int *> d_a_global_acc_ct0(d_a_global, cgh);
+  // CHECK-NEXT:       c2s::access_wrapper<int *> d_a_global_acc_ct0(d_a_global, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class hello_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class hello_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           hello(d_a_global_acc_ct0.get_raw_pointer(), 23);
@@ -547,13 +547,13 @@ int testVectorAdd(void)
     // CHECK: /*
     // CHECK: DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
     // CHECK: */
-    // CHECK-NEXT: dpct::get_default_queue().submit(
+    // CHECK-NEXT: c2s::get_default_queue().submit(
     // CHECK-NEXT:   [&](sycl::handler &cgh) {
-    // CHECK-NEXT:     auto d_A_acc_ct0 = dpct::get_access(d_A, cgh);
-    // CHECK-NEXT:     auto d_B_acc_ct1 = dpct::get_access(d_B, cgh);
-    // CHECK-NEXT:     auto d_C_acc_ct2 = dpct::get_access(d_C, cgh);
+    // CHECK-NEXT:     auto d_A_acc_ct0 = c2s::get_access(d_A, cgh);
+    // CHECK-NEXT:     auto d_B_acc_ct1 = c2s::get_access(d_B, cgh);
+    // CHECK-NEXT:     auto d_C_acc_ct2 = c2s::get_access(d_C, cgh);
     // CHECK-EMPTY:
-    // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class vectorAdd_{{[a-f0-9]+}}>>(
+    // CHECK-NEXT:     cgh.parallel_for<c2s_kernel_name<class vectorAdd_{{[a-f0-9]+}}>>(
     // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, blocksPerGrid) * sycl::range<3>(1, 1, threadsPerBlock), sycl::range<3>(1, 1, threadsPerBlock)), 
     // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
     // CHECK-NEXT:         vectorAdd((const float *)(&d_A_acc_ct0[0]), (const float *)(&d_B_acc_ct1[0]), (float *)(&d_C_acc_ct2[0]), numElements);

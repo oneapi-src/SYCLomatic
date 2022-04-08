@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/test-attributes %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/test-attributes %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/test-attributes/test-attributes.dp.cpp --match-full-lines %s
 #include "cuda.h"
 

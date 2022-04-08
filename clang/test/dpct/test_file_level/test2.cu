@@ -1,6 +1,6 @@
-// RUN: dpct --use-custom-helper=file  --use-explicit-namespace=none  -out-root %T/out2 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/out2/include/dpct/atomic.hpp --match-full-lines %S/atomic_ref.txt
-// RUN: FileCheck --input-file %T/out2/include/dpct/blas_utils.hpp --match-full-lines %S/blas_utils_ref.txt
+// RUN: c2s --use-custom-helper=file  --use-explicit-namespace=none  -out-root %T/out2 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/out2/include/c2s/atomic.hpp --match-full-lines %S/atomic_ref.txt
+// RUN: FileCheck --input-file %T/out2/include/c2s/blas_utils.hpp --match-full-lines %S/blas_utils_ref.txt
 
 #include "cublas_v2.h"
 

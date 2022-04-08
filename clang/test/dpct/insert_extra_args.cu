@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T/insert_extra_args %s --cuda-include-path="%cuda-path/include" --format-range=none -- -x cuda --cuda-host-only
+// RUN: c2s -out-root %T/insert_extra_args %s --cuda-include-path="%cuda-path/include" --format-range=none -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/insert_extra_args/insert_extra_args.dp.cpp --match-full-lines %s
 
 //CHECK: void deviceFoo(int i, int j, sycl::nd_item<3> item_ct1){
@@ -55,7 +55,7 @@ __global__ void kernelFoo2(int i = 0, int j = 0){
 }
 
 int main(){
-  //CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  //CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
   //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   //CHECK: q_ct1.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)),

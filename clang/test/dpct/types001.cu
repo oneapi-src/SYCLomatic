@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T/types001 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: c2s -out-root %T/types001 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck %s --match-full-lines --input-file %T/types001/types001.dp.cpp
 
 #include <cuda.h>
@@ -10,13 +10,13 @@
 #include <stdio.h>
 #include <vector>
 
-// CHECK: dpct::device_info deviceProp;
+// CHECK: c2s::device_info deviceProp;
 cudaDeviceProp deviceProp;
 
-// CHECK: const dpct::device_info deviceProp1 = {};
+// CHECK: const c2s::device_info deviceProp1 = {};
 const cudaDeviceProp deviceProp1 = {};
 
-// CHECK: volatile dpct::device_info deviceProp2;
+// CHECK: volatile c2s::device_info deviceProp2;
 volatile cudaDeviceProp deviceProp2;
 
 // CHDCK: sycl::event events[23];
@@ -77,7 +77,7 @@ struct s {
   const dim3 **ppdims[23];
 };
 
-// CHECK:  void foo(dpct::device_info p) {
+// CHECK:  void foo(c2s::device_info p) {
 void foo(cudaDeviceProp p) {
   return;
 }
@@ -335,8 +335,8 @@ int main(int argc, char **argv) {
   a = sizeof(randstatus);
   a = sizeof randstatus;
 
-  //CHECK:dpct::device_info dp;
-  //CHECK-NEXT:a = sizeof(dpct::device_info);
+  //CHECK:c2s::device_info dp;
+  //CHECK-NEXT:a = sizeof(c2s::device_info);
   //CHECK-NEXT:a = sizeof(dp);
   //CHECK-NEXT:a = sizeof dp;
   cudaDeviceProp dp;
@@ -416,10 +416,10 @@ __global__ void foo() {
   (cudaError ***)p;
 
   cudaDeviceProp cdp;
-  // CHECK: dpct::device_info cdp2 = (dpct::device_info)cdp;
-  // CHECK-NEXT: (dpct::device_info *)p;
-  // CHECK-NEXT: (dpct::device_info **)p;
-  // CHECK-NEXT: (dpct::device_info ***)p;
+  // CHECK: c2s::device_info cdp2 = (c2s::device_info)cdp;
+  // CHECK-NEXT: (c2s::device_info *)p;
+  // CHECK-NEXT: (c2s::device_info **)p;
+  // CHECK-NEXT: (c2s::device_info ***)p;
   cudaDeviceProp cdp2 = (cudaDeviceProp)cdp;
   (cudaDeviceProp *)p;
   (cudaDeviceProp **)p;
@@ -536,7 +536,7 @@ class BlockRadixRank2 {};
 
 void fun3() {
   char devstr[128] = "";
-  // CHECK: dpct::device_info deviceProp;
+  // CHECK: c2s::device_info deviceProp;
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with pciDomainID. It was migrated to -1. You may need to rewrite the code.
   // CHECK-NEXT: */
@@ -581,8 +581,8 @@ void fun4() {
 }
 
 namespace {
-// CHECK: dpct::memcpy_direction K;
-// CHECK-NEXT: dpct::memcpy_direction fun(dpct::memcpy_direction);
+// CHECK: c2s::memcpy_direction K;
+// CHECK-NEXT: c2s::memcpy_direction fun(c2s::memcpy_direction);
 cudaMemcpyKind K;
 cudaMemcpyKind fun(cudaMemcpyKind);
 }

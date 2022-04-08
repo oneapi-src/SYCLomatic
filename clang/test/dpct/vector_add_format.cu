@@ -1,7 +1,7 @@
 // RUN: mkdir %T/vector_add_format
 // RUN: cat %s > %T/vector_add_format/vector_add_format.cu
 // RUN: cd %T/vector_add_format
-// RUN: dpct -out-root %T/vector_add_format vector_add_format.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
+// RUN: c2s -out-root %T/vector_add_format vector_add_format.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/vector_add_format/vector_add_format.dp.cpp
 // RUN: cd ..
 // RUN: rm -rf ./vector_add_format
@@ -28,7 +28,7 @@ __global__ void VectorAddKernel(float* A, float* B, float* C)
 
 int main()
 {
-//     CHECK:    dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//     CHECK:    c2s::device_ext &dev_ct1 = c2s::get_current_device();
 //CHECK-NEXT:    sycl::queue &q_ct1 = dev_ct1.default_queue();
     float *d_A, *d_B, *d_C;
 

@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none  -in-root=%S -out-root=%T --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none  -in-root=%S -out-root=%T --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 
 // RUN: FileCheck --input-file %T/p_test_1.dp.cpp --match-full-lines %S/p_test_1.cu
 // RUN: FileCheck --match-full-lines --input-file %T/readme_1.txt %T/readme_1.txt

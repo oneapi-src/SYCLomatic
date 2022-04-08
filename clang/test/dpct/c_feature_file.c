@@ -1,8 +1,8 @@
-// RUN: dpct --format-range=none -out-root %T/c_feature_file %s --cuda-include-path="%cuda-path/include" --stop-on-parse-err --extra-arg="-xc"
+// RUN: c2s --format-range=none -out-root %T/c_feature_file %s --cuda-include-path="%cuda-path/include" --stop-on-parse-err --extra-arg="-xc"
 // RUN: FileCheck %s --match-full-lines --input-file %T/c_feature_file/c_feature_file.c.dp.cpp
 
 //CHECK:#include <CL/sycl.hpp>
-//CHECK:#include <dpct/dpct.hpp>
+//CHECK:#include <c2s/c2s.hpp>
 #include "cuda_runtime.h"
 
 void func(int N, double re[][1<<N]) {

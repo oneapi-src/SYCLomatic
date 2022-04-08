@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __DPCT_DEVICE_HPP__
-#define __DPCT_DEVICE_HPP__
+#ifndef __C2S_DEVICE_HPP__
+#define __C2S_DEVICE_HPP__
 
 #include <CL/sycl.hpp>
 #include <algorithm>
@@ -29,7 +29,7 @@
 #endif
 
 
-namespace dpct {
+namespace c2s {
 
 /// DPC++ default exception handler
 auto exception_handler = [](cl::sycl::exception_list exceptions) {
@@ -119,7 +119,7 @@ private:
   size_t _max_nd_range_size[3];
 };
 
-/// dpct device extension
+/// c2s device extension
 class device_ext : public cl::sycl::device {
 public:
   device_ext() : cl::sycl::device(), _ctx(*this) {}
@@ -134,7 +134,7 @@ public:
   }
   device_ext(const cl::sycl::device &base)
       : cl::sycl::device(base), _ctx(*this) {
-#ifdef DPCT_USM_LEVEL_NONE
+#ifdef C2S_USM_LEVEL_NONE
     _queues.push_back(
         std::make_shared<cl::sycl::queue>(_ctx, base, exception_handler));
 #else
@@ -235,7 +235,7 @@ public:
     // destroy a queue immediately. This is a synchronization point in SYCL.
     _queues.clear();
     // create new default queue.
-#ifdef DPCT_USM_LEVEL_NONE
+#ifdef C2S_USM_LEVEL_NONE
     _queues.push_back(
         std::make_shared<cl::sycl::queue>(_ctx, *this, exception_handler));
 #else
@@ -264,7 +264,7 @@ public:
     if (enable_exception_handler) {
       eh = exception_handler;
     }
-#ifdef DPCT_USM_LEVEL_NONE
+#ifdef C2S_USM_LEVEL_NONE
     _queues.push_back(std::make_shared<cl::sycl::queue>(
         _ctx, *this, eh));
 #else
@@ -319,7 +319,7 @@ private:
     std::lock_guard<std::mutex> lock(m_mutex);
     _tasks.push_back(std::move(task));
   }
-  friend void async_dpct_free(std::vector<void *>,
+  friend void async_c2s_free(std::vector<void *>,
                               std::vector<cl::sycl::event>,
                               cl::sycl::queue &);
   cl::sycl::queue *_default_queue;
@@ -423,7 +423,7 @@ private:
 };
 
 /// Util function to get the defualt queue of current device in
-/// dpct device manager.
+/// c2s device manager.
 static inline cl::sycl::queue &get_default_queue() {
   return dev_mgr::instance().current_device().default_queue();
 }
@@ -439,9 +439,9 @@ static inline device_ext &get_device(unsigned int id) {
 }
 
 /// Util function to get the context of the default queue of current
-/// device in dpct device manager.
+/// device in c2s device manager.
 static inline cl::sycl::context get_default_context() {
-  return dpct::get_current_device().get_context();
+  return c2s::get_current_device().get_context();
 }
 
 /// Util function to get a cpu device.
@@ -449,6 +449,6 @@ static inline device_ext &cpu_device() {
   return dev_mgr::instance().cpu_device();
 }
 
-} // namespace dpct
+} // namespace c2s
 
-#endif // __DPCT_DEVICE_HPP__
+#endif // __C2S_DEVICE_HPP__

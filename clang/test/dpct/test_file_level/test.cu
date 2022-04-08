@@ -1,11 +1,11 @@
-// RUN: dpct --format-range=none  --usm-level=none  --use-custom-helper=file -out-root %T/out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none  --usm-level=none  --use-custom-helper=file -out-root %T/out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/out/test.dp.cpp --match-full-lines %s
 // RUN: FileCheck --input-file %T/out/MainSourceFiles.yaml --match-full-lines %S/check_yaml.txt
-// RUN: FileCheck --input-file %T/out/include/dpct/dpct.hpp --match-full-lines %S/check_dpct.txt
+// RUN: FileCheck --input-file %T/out/include/c2s/c2s.hpp --match-full-lines %S/check_c2s.txt
 
 #include "header.h"
 
-// CHECK: void k(dpct::device_info *CDP) {
+// CHECK: void k(c2s::device_info *CDP) {
 __global__ void k() {
   d();
 }

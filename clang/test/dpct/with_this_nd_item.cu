@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-//  RUN: dpct --assume-nd-range-dim=1 --format-range=none -out-root %T/with_this_nd_item %s --cuda-include-path="%cuda-path/include" -use-experimental-features=free-function-queries -- -x cuda --cuda-host-only -fno-delayed-template-parsing -std=c++14
+//  RUN: c2s --assume-nd-range-dim=1 --format-range=none -out-root %T/with_this_nd_item %s --cuda-include-path="%cuda-path/include" -use-experimental-features=free-function-queries -- -x cuda --cuda-host-only -fno-delayed-template-parsing -std=c++14
 //  RUN: FileCheck --input-file %T/with_this_nd_item/with_this_nd_item.dp.cpp --match-full-lines %s
 
 #include "cooperative_groups.h"
@@ -10,7 +10,7 @@
 // CHECK:/*
 // CHECK-NEXT:DPCT1088:{{[0-9]+}}: The macro definition has multiple migration results in the dimension of free queries function that could not be unified. You may need to modify the code.
 // CHECK-NEXT:*/
-// CHECK-NEXT: #define TB1(b) auto b = sycl::ext::oneapi::experimental::this_group<dpct_placeholder /* Fix the dimension manually */>();
+// CHECK-NEXT: #define TB1(b) auto b = sycl::ext::oneapi::experimental::this_group<c2s_placeholder /* Fix the dimension manually */>();
 #define TB1(b) cg::thread_block b = cg::this_thread_block();
 
 namespace cg = cooperative_groups;
@@ -32,7 +32,7 @@ using namespace cooperative_groups;
 // CHECK-NEXT:  */
 // CHECK-NEXT:  a = (item_ct1.barrier(), sycl::all_of_group(sycl::ext::oneapi::experimental::this_group<1>(), a));
 // CHECK-NEXT:  sycl::all_of_group(sycl::ext::oneapi::experimental::this_sub_group(), a);
-// CHECK-NEXT:  dpct::select_from_sub_group(sycl::ext::oneapi::experimental::this_sub_group(), a, a);
+// CHECK-NEXT:  c2s::select_from_sub_group(sycl::ext::oneapi::experimental::this_sub_group(), a, a);
 // CHECK-NEXT:}
 __global__ void test1() {
   int a = blockIdx.x * blockDim.x + threadIdx.x + blockIdx.x +
@@ -58,7 +58,7 @@ __global__ void test1() {
 // CHECK-NEXT:  item_ct1.barrier();
 // CHECK-NEXT:  TB1(b);
 // CHECK-NEXT:  sycl::all_of_group(sycl::ext::oneapi::experimental::this_sub_group(), a);
-// CHECK-NEXT:  dpct::select_from_sub_group(sycl::ext::oneapi::experimental::this_sub_group(), a, a);
+// CHECK-NEXT:  c2s::select_from_sub_group(sycl::ext::oneapi::experimental::this_sub_group(), a, a);
 // CHECK-NEXT:}
 __global__ void test2() {
   int a = blockIdx.x * blockDim.x + threadIdx.x + blockIdx.x +

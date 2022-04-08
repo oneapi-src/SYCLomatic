@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/textureformat %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
+// RUN: c2s --format-range=none --usm-level=none -out-root %T/textureformat %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/textureformat/textureformat.dp.cpp --match-full-lines %s
 #include "cuda_runtime.h"
 __global__ void transformKernel(float* output, cudaTextureObject_t texObj, int width, int height, float theta)
@@ -16,11 +16,11 @@ __global__ void transformKernel(float* output, cudaTextureObject_t texObj, int w
 
   output[y * width + x] = tex2D<float>(texObj, tu, tv);
 }
-// CHECK: dpct::image_wrapper<sycl::float4, 2> tex42;
+// CHECK: c2s::image_wrapper<sycl::float4, 2> tex42;
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1059:{{[0-9]+}}: SYCL only supports 4-channel image format. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: dpct::image_wrapper<sycl::float3, 2> tex32;
+// CHECK-NEXT: c2s::image_wrapper<sycl::float3, 2> tex32;
 static texture<float4, 2> tex42;
 static texture<float3, 2> tex32;
 
@@ -34,13 +34,13 @@ int main()
   // CHECK: /*
   // CHECK-NEXT: DPCT1059:{{[0-9]+}}: SYCL only supports 4-channel image format. Adjust the code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::image_channel channelDesc = dpct::image_channel(32, 32, 0, 0, dpct::image_channel_data_type::fp);
+  // CHECK-NEXT: c2s::image_channel channelDesc = c2s::image_channel(32, 32, 0, 0, c2s::image_channel_data_type::fp);
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 32, 0, 0, cudaChannelFormatKindFloat);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1059:{{[0-9]+}}: SYCL only supports 4-channel image format. Adjust the code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::image_channel channelDesc1 = dpct::image_channel::create<sycl::float3>();
+  // CHECK-NEXT: c2s::image_channel channelDesc1 = c2s::image_channel::create<sycl::float3>();
   cudaChannelFormatDesc channelDesc1 = cudaCreateChannelDesc<float3>();
 
   cudaArray* cuArray;

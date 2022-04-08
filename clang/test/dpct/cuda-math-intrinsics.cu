@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/cuda-math-intrinsics %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
+// RUN: c2s --format-range=none -out-root %T/cuda-math-intrinsics %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cuda-math-intrinsics/cuda-math-intrinsics.dp.cpp --match-full-lines %s
 
 #include <cmath>
@@ -19,8 +19,8 @@ using namespace std;
 // CHECK: using sycl::max;
 using ::max;
 
-// CHECK: dpct::constant_memory<double, 0> d;
-// CHECK-NEXT: dpct::constant_memory<double, 0> d2;
+// CHECK: c2s::constant_memory<double, 0> d;
+// CHECK-NEXT: c2s::constant_memory<double, 0> d2;
 __constant__ double d;
 __constant__ double d2;
 
@@ -45,7 +45,7 @@ __device__ double test3(double d4, double d5) {
   return max(d4, d5);
 }
 
-// CHECK: dpct::constant_memory<float, 0> C;
+// CHECK: c2s::constant_memory<float, 0> C;
 // CHECK-NEXT:  int foo(int n, float C) {
 // CHECK-NEXT:   return n == 1 ? C : 0;
 // CHECK-NEXT: }
@@ -2308,7 +2308,7 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of jn is not supported.
   // CHECK-NEXT: */
   d = jn(i, d);
-  // CHECK: d = dpct::fast_length((float *)&d, i);
+  // CHECK: d = c2s::fast_length((float *)&d, i);
   d = norm(i, &d);
   // CHECK: d = sycl::fast_length(sycl::float3(d, d, d));
   d = norm3d(d, d, d);
@@ -2359,22 +2359,22 @@ __global__ void testUnsupported() {
   // i = __shfl_up_sync(u, h, u, i);
   // i = __shfl_xor_sync(u, h, u, i);
 
-  // CHECK: i = dpct::cast_double_to_int(d);
+  // CHECK: i = c2s::cast_double_to_int(d);
   i = __double2hiint(d);
-  // CHECK: i = dpct::cast_double_to_int(d, false);
+  // CHECK: i = c2s::cast_double_to_int(d, false);
   i = __double2loint(d);
-  // CHECK: d = dpct::cast_ints_to_double(i, i);
+  // CHECK: d = c2s::cast_ints_to_double(i, i);
   d = __hiloint2double(i, i);
 
-  // CHECK: u = dpct::reverse_bits<unsigned int>(u);
+  // CHECK: u = c2s::reverse_bits<unsigned int>(u);
   u = __brev(u);
-  // CHECK: ull = dpct::reverse_bits<unsigned long long>(ull);
+  // CHECK: ull = c2s::reverse_bits<unsigned long long>(ull);
   ull = __brevll(ull);
-  // CHECK: u = dpct::byte_level_permute(u, u, u);
+  // CHECK: u = c2s::byte_level_permute(u, u, u);
   u = __byte_perm(u, u, u);
-  // CHECK: i = dpct::ffs<int>(i);
+  // CHECK: i = c2s::ffs<int>(i);
   i = __ffs(i);
-  // CHECK: i = dpct::ffs<long long int>(ll);
+  // CHECK: i = c2s::ffs<long long int>(ll);
   i = __ffsll(ll);
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __funnelshift_l is not supported.
@@ -2437,13 +2437,13 @@ __global__ void testSimulation() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospif call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: f = sycl::sincos(f * DPCT_PI_F, sycl::make_ptr<float, sycl::access::address_space::private_space>(&f));
+  // CHECK-NEXT: f = sycl::sincos(f * C2S_PI_F, sycl::make_ptr<float, sycl::access::address_space::private_space>(&f));
   sincospif(f, &f, &f);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::sincos call is used instead of the sincospi call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: d = sycl::sincos(d * DPCT_PI, sycl::make_ptr<double, sycl::access::address_space::private_space>(&d));
+  // CHECK-NEXT: d = sycl::sincos(d * C2S_PI, sycl::make_ptr<double, sycl::access::address_space::private_space>(&d));
   sincospi(d, &d, &d);
 }
 
@@ -3245,11 +3245,11 @@ __global__ void k2() {
   scalbn(d0, i);
   // CHECK: f0*(2<<i);
   scalbnf(f0, i);
-  // CHECK: dpct::cast_double_to_int(d0);
+  // CHECK: c2s::cast_double_to_int(d0);
   __double2hiint(d0);
-  // CHECK: dpct::cast_double_to_int(d0, false);
+  // CHECK: c2s::cast_double_to_int(d0, false);
   __double2loint(d0);
-  // CHECK: dpct::cast_ints_to_double(i, i2);
+  // CHECK: c2s::cast_ints_to_double(i, i2);
   __hiloint2double(i, i2);
 
   // CHECK: sycl::abs_diff(i, i2)+u;
@@ -3305,16 +3305,16 @@ __global__ void k2() {
   // CHECK: sycl::rhadd(u, u2);
   __urhadd(u, u2);
 
-  // CHECK: u = dpct::vectorized_max<sycl::char4>(u, u2);
+  // CHECK: u = c2s::vectorized_max<sycl::char4>(u, u2);
   u = __vmaxs4(u, u2);
 
-  // CHECK: u = dpct::vectorized_max<sycl::ushort2>(u, u2);
+  // CHECK: u = c2s::vectorized_max<sycl::ushort2>(u, u2);
   u = __vmaxu2(u, u2);
 
-  // CHECK: u = dpct::vectorized_min<sycl::ushort2>(u, u2);
+  // CHECK: u = c2s::vectorized_min<sycl::ushort2>(u, u2);
   u = __vminu2(u, u2);
 
-  // CHECK: u = dpct::vectorized_isgreater<sycl::ushort2, unsigned>(u, u2);
+  // CHECK: u = c2s::vectorized_isgreater<sycl::ushort2, unsigned>(u, u2);
   u = __vcmpgtu2(u, u2);
 
   double *a_d;
@@ -3328,7 +3328,7 @@ __global__ void k2() {
   norm(3, a_d);
   // CHECK: sycl::fast_length(sycl::float4(a_d[0], a_d[1], a_d[2], a_d[3]));
   norm(4, a_d);
-  // CHECK: dpct::fast_length((float *)a_d, 5);
+  // CHECK: c2s::fast_length((float *)a_d, 5);
   norm(5, a_d);
 }
 

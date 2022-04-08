@@ -81,7 +81,7 @@ list(APPEND CLANG_TEST_DEPS
   clang-pseudo
   diagtool
   hmaptool
-  dpct
+  c2s
   )
 
 if(CLANG_ENABLE_STATIC_ANALYZER)

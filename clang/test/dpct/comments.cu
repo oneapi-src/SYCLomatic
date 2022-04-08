@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/comments %s --cuda-include-path="%cuda-path/include" --comments -- -std=c++14 -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/comments %s --cuda-include-path="%cuda-path/include" --comments -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/comments/comments.dp.cpp
 
 static texture<uint2, 1> tex21;
@@ -22,15 +22,15 @@ __global__ void kernel() {
 
 int main() {
     // CHECK: // These variables are defined for 3d matrix memory copy.
-    // CHECK-NEXT: dpct::pitched_data p_from_data_ct1, p_to_data_ct1;
+    // CHECK-NEXT: c2s::pitched_data p_from_data_ct1, p_to_data_ct1;
     // CHECK-NEXT: sycl::id<3> p_from_pos_ct1(0, 0, 0), p_to_pos_ct1(0, 0, 0);
     // CHECK-NEXT: sycl::range<3> p_size_ct1(1, 1, 1);
-    // CHECK-NEXT: dpct::memcpy_direction p_direction_ct1;
+    // CHECK-NEXT: c2s::memcpy_direction p_direction_ct1;
     cudaMemcpy3DParms p;
     dim3 griddim(1, 2, 3);
     dim3 threaddim(1, 2, 3);
 
-// CHECK:    dpct::get_default_queue().submit(
+// CHECK:    c2s::get_default_queue().submit(
 // CHECK-NEXT:        [&](sycl::handler &cgh) {
 // CHECK-NEXT:          sycl::stream stream_ct1(64 * 1024, 80, cgh);
 // CHECK-EMPTY:
@@ -57,7 +57,7 @@ int main() {
 // CHECK-NEXT:          cgh.parallel_for(
 // CHECK-NEXT:            sycl::nd_range<3>(griddim * threaddim, threaddim),
 // CHECK-NEXT:            [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:              kernel(stream_ct1, *a_ptr_ct1, b_acc_ct1, al_ptr_ct1, cl_acc_ct1.get_pointer(), bl_acc_ct1, dpct::image_accessor_ext<sycl::uint2, 1>(tex21_smpl, tex21_acc));
+// CHECK-NEXT:              kernel(stream_ct1, *a_ptr_ct1, b_acc_ct1, al_ptr_ct1, cl_acc_ct1.get_pointer(), bl_acc_ct1, c2s::image_accessor_ext<sycl::uint2, 1>(tex21_smpl, tex21_acc));
 // CHECK-NEXT:            });
 // CHECK-NEXT:        });
     kernel<<<griddim, threaddim>>>();

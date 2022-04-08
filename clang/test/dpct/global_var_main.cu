@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/global_var_main %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/global_var_main %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/global_var_main/global_var_main.dp.cpp --match-full-lines %s
 // RUN: FileCheck --input-file %T/global_var_main/global_var_definition.dp.hpp --match-full-lines %S/global_var_definition.cuh
 
@@ -12,7 +12,7 @@ __global__ void kernel(){
 }
 
 //CHECK:extern "C" int foo(){
-//CHECK-NEXT:  dpct::get_default_queue().submit(
+//CHECK-NEXT:  c2s::get_default_queue().submit(
 //CHECK-NEXT:    [&](sycl::handler &cgh) {
 //CHECK-NEXT:      c_clusters.init();
 //CHECK-EMPTY:

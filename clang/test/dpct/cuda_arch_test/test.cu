@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -in-root %S -out-root %T/cuda_arch_test %S/test.cu -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --usm-level=none -in-root %S -out-root %T/cuda_arch_test %S/test.cu -extra-arg="-I %S" --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %S/test.cu --match-full-lines --input-file %T/cuda_arch_test/test.dp.cpp
 // RUN: FileCheck %S/test.h --match-full-lines --input-file %T/cuda_arch_test/test.h
 #include "test.h"
@@ -6,7 +6,7 @@
 // CHECK: class aa{
 // CHECK-NEXT: int bb;
 // CHECK-NEXT: int aa1(){
-// CHECK-NEXT:   #ifdef DPCT_COMPATIBILITY_TEMP
+// CHECK-NEXT:   #ifdef C2S_COMPATIBILITY_TEMP
 // CHECK-NEXT:     return 1;
 // CHECK-NEXT:   #endif
 // CHECK-NEXT:   return 0;
@@ -55,7 +55,7 @@ __host__ __device__ aa operator+(aa cc){
 // CHECK-NEXT: }
 // CHECK-NEXT: static int Env_cuda_thread_in_threadblock_host_ct{{[0-9]+}}(int axis)
 // CHECK-NEXT: {
-// CHECK-NEXT: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+// CHECK-NEXT: c2s::device_ext &dev_ct1 = c2s::get_current_device();
 // CHECK-NEXT:   int a = 1;
 // CHECK-EMPTY:
 // CHECK-NEXT:   dev_ct1.queues_wait_and_throw();
@@ -121,7 +121,7 @@ __host__ __device__ static int Env_cuda_thread_in_threadblock(int axis)
 // CHECK-NEXT: {
 // CHECK-NEXT:   int a = 1;
 // CHECK-EMPTY:
-// CHECK-NEXT:   dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:   c2s::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:   return 0;
 // CHECK-EMPTY:
 // CHECK-NEXT:   return a;
@@ -154,7 +154,7 @@ __host__ __device__ static int Env_cuda_thread_in_threadblock1(int axis)
 // CHECK-NEXT: {
 // CHECK-NEXT:   int a = 1;
 // CHECK-EMPTY:
-// CHECK-NEXT:   dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:   c2s::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:   return 0;
 // CHECK-EMPTY:
 // CHECK-NEXT:   return a;
@@ -187,7 +187,7 @@ __host__ __device__ static int Env_cuda_thread_in_threadblock2(int axis)
 // CHECK-NEXT: {
 // CHECK-NEXT:   int a = 1;
 // CHECK-EMPTY:
-// CHECK-NEXT:   dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:   c2s::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:   return 0;
 // CHECK-EMPTY:
 // CHECK-NEXT:   return a;
@@ -220,7 +220,7 @@ __host__ __device__ static int Env_cuda_thread_in_threadblock3(int axis)
 // CHECK-NEXT: {
 // CHECK-NEXT:   int a = 1;
 // CHECK-EMPTY:
-// CHECK-NEXT:   dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:   c2s::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:   return 0;
 // CHECK-EMPTY:
 // CHECK-NEXT:   return a;
@@ -253,7 +253,7 @@ __host__ __device__ static int Env_cuda_thread_in_threadblock4(int axis)
 // CHECK-NEXT: template<typename T>
 // CHECK-NEXT: int test_host_ct{{[0-9]+}}(T a, T b){
 // CHECK-EMPTY:
-// CHECK-NEXT:   dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:   c2s::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:   return a;
 // CHECK-EMPTY:
 // CHECK-NEXT: }
@@ -271,15 +271,15 @@ __host__ __device__ int test(T a, T b){
 }
 
 // CHECK: int test1(sycl::nd_item<3> item_ct1){
-// CHECK-NEXT:   #if DPCT_COMPATIBILITY_TEMP > 800
+// CHECK-NEXT:   #if C2S_COMPATIBILITY_TEMP > 800
 // CHECK-NEXT:     return threadIdx.x > 8;
-// CHECK-NEXT:   #elif DPCT_COMPATIBILITY_TEMP > 700
+// CHECK-NEXT:   #elif C2S_COMPATIBILITY_TEMP > 700
 // CHECK-NEXT:     return threadIdx.x > 7;
-// CHECK-NEXT:   #elif DPCT_COMPATIBILITY_TEMP > 600
+// CHECK-NEXT:   #elif C2S_COMPATIBILITY_TEMP > 600
 // CHECK-NEXT:     return threadIdx.x > 6;
-// CHECK-NEXT:   #elif DPCT_COMPATIBILITY_TEMP > 500
+// CHECK-NEXT:   #elif C2S_COMPATIBILITY_TEMP > 500
 // CHECK-NEXT:     return item_ct1.get_local_id(2) > 5;
-// CHECK-NEXT:   #elif DPCT_COMPATIBILITY_TEMP > 400
+// CHECK-NEXT:   #elif C2S_COMPATIBILITY_TEMP > 400
 // CHECK-NEXT:     return threadIdx.x > 4;
 // CHECK-NEXT:   #elif __CUDA_ARCH__ > 300
 // CHECK-NEXT:     return threadIdx.x > 3;
@@ -291,22 +291,22 @@ __host__ __device__ int test(T a, T b){
 // CHECK-NEXT:   #endif
 // CHECK-NEXT: }
 // CHECK-NEXT: int test1_host_ct{{[0-9]+}}(){
-// CHECK-NEXT:   #if !DPCT_COMPATIBILITY_TEMP > 800
+// CHECK-NEXT:   #if !C2S_COMPATIBILITY_TEMP > 800
 // CHECK-NEXT:     return threadIdx.x > 8;
-// CHECK-NEXT:   #elif !DPCT_COMPATIBILITY_TEMP > 700
+// CHECK-NEXT:   #elif !C2S_COMPATIBILITY_TEMP > 700
 // CHECK-NEXT:     return threadIdx.x > 7;
-// CHECK-NEXT:   #elif !DPCT_COMPATIBILITY_TEMP > 600
+// CHECK-NEXT:   #elif !C2S_COMPATIBILITY_TEMP > 600
 // CHECK-NEXT:     return threadIdx.x > 6;
-// CHECK-NEXT:   #elif !DPCT_COMPATIBILITY_TEMP > 500
+// CHECK-NEXT:   #elif !C2S_COMPATIBILITY_TEMP > 500
 // CHECK-NEXT:     return threadIdx.x > 5;
-// CHECK-NEXT:   #elif !DPCT_COMPATIBILITY_TEMP > 400
+// CHECK-NEXT:   #elif !C2S_COMPATIBILITY_TEMP > 400
 // CHECK-NEXT:     return threadIdx.x > 4;
-// CHECK-NEXT:   #elif !DPCT_COMPATIBILITY_TEMP > 300
+// CHECK-NEXT:   #elif !C2S_COMPATIBILITY_TEMP > 300
 // CHECK-NEXT:     return threadIdx.x > 3;
-// CHECK-NEXT:   #elif !DPCT_COMPATIBILITY_TEMP > 200
+// CHECK-NEXT:   #elif !C2S_COMPATIBILITY_TEMP > 200
 // CHECK-NEXT:     return threadIdx.x > 2;
-// CHECK-NEXT:   #elif defined(DPCT_COMPATIBILITY_TEMP)
-// CHECK-NEXT:     dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:   #elif defined(C2S_COMPATIBILITY_TEMP)
+// CHECK-NEXT:     c2s::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:     return 0;
 // CHECK-NEXT:   #endif
 // CHECK-NEXT: }

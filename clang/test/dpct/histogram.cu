@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/histogram %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/histogram %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/histogram/histogram.dp.cpp %s
 #ifdef _WIN32
 #include <cstdint>
@@ -16,7 +16,7 @@ void foo() {
   // CHECK-NEXT: */
   cudaOccupancyMaxPotentialBlockSize(&grid_size, &block_size, &wg_private_local_kernel, B * sizeof(uint32_t));
 
-  // CHECK: dpct::device_info device_properties;
+  // CHECK: c2s::device_info device_properties;
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1019:{{[0-9a-z]+}}: local_mem_size in SYCL is not a complete equivalent of sharedMemPerBlock in CUDA. You may need to adjust the code.
   // CHECK-NEXT: */

@@ -10,13 +10,13 @@
 // RUN: echo "        \"file\": \"%/T/c_feature_file_db/c_feature_file_db.c\"" >> compile_commands.json
 // RUN: echo "    }" >> compile_commands.json
 // RUN: echo "]" >> compile_commands.json
-// RUN: dpct -p=. --out-root=./out --cuda-include-path="%cuda-path/include"  --stop-on-parse-err --extra-arg="-xc"  --extra-arg="-I%cuda-path/include"
+// RUN: c2s -p=. --out-root=./out --cuda-include-path="%cuda-path/include"  --stop-on-parse-err --extra-arg="-xc"  --extra-arg="-I%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/c_feature_file_db/out/c_feature_file_db.c.dp.cpp
 // RUN: cd ..
 // RUN: rm -rf ./c_feature_file_db
 
 //CHECK:#include <CL/sycl.hpp>
-//CHECK:#include <dpct/dpct.hpp>
+//CHECK:#include <c2s/c2s.hpp>
 #include "cuda_runtime.h"
 
 void func(int N, double re[][1<<N]) {

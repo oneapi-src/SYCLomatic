@@ -1,4 +1,4 @@
-// RUN: dpct -out-root %T %s --cuda-include-path="%cuda-path/include"
+// RUN: c2s -out-root %T %s --cuda-include-path="%cuda-path/include"
 #include "../template_inc/template.cuh"
 
 // Add this cuda syntax stmt to avoid that dpct exits with "dpct exited with code: 1 (Migration not necessary; no CUDA code detected)"

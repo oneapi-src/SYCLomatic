@@ -1,13 +1,13 @@
-// RUN: dpct --format-range=none -out-root %T/withoutexplicitxcuda %s --cuda-include-path="%cuda-path/include"
+// RUN: c2s --format-range=none -out-root %T/withoutexplicitxcuda %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/withoutexplicitxcuda/withoutexplicitxcuda.c.dp.cpp
 
 // This file is migrated as CUDA file as default if compilation db is not used.
 
 // CHECK: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <dpct/dpct.hpp>
+// CHECK-NEXT: #include <c2s/c2s.hpp>
 #include <cuda_runtime.h>
 
-// CHECK: dpct::constant_memory<float, 1> const_angle(360);
+// CHECK: c2s::constant_memory<float, 1> const_angle(360);
 // CHECK-NEXT: void simple_kernel(float *d_array, float *const_angle) {
 // CHECK-NEXT:   d_array[0] = const_angle[0];
 // CHECK-NEXT:   return;
@@ -21,7 +21,7 @@ __global__ void simple_kernel(float *d_array) {
 // CHECK: void k(){}
 // CHECK-NEXT: int main(int argc, char** argv) {
 // CHECK-NEXT:   const int N = 4;
-// CHECK-NEXT:   dpct::get_default_queue().parallel_for(
+// CHECK-NEXT:   c2s::get_default_queue().parallel_for(
 // CHECK-NEXT:     sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:     [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:       k();

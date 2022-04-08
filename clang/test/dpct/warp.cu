@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T/warp %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/warp %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/warp/warp.dp.cpp --match-full-lines %s
 
 #include "cuda.h"
@@ -56,9 +56,9 @@ __global__ void kernel7() {
   int val;
   int srcLane;
   // CHECK: /*
-  // CHECK: DPCT1096:{{[0-9]+}}: The right-most dimension of the work-group used in the SYCL kernel that calls this function may be less than "32". The function "dpct::select_from_sub_group" may return an unexpected result on the CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
+  // CHECK: DPCT1096:{{[0-9]+}}: The right-most dimension of the work-group used in the SYCL kernel that calls this function may be less than "32". The function "c2s::select_from_sub_group" may return an unexpected result on the CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
   // CHECK: */
-  // CHECK: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
+  // CHECK: c2s::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl(val, srcLane);
 }
 
@@ -67,12 +67,12 @@ __global__ void kernel8() {
   int val;
   int srcLane;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::select_from_sub_group.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::select_from_sub_group.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1096:{{[0-9]+}}: The right-most dimension of the work-group used in the SYCL kernel that calls this function may be less than "32". The function "dpct::select_from_sub_group" may return an unexpected result on the CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
+  // CHECK-NEXT: DPCT1096:{{[0-9]+}}: The right-most dimension of the work-group used in the SYCL kernel that calls this function may be less than "32". The function "c2s::select_from_sub_group" may return an unexpected result on the CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
+  // CHECK-NEXT: c2s::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl_sync(mask, val, srcLane);
 }
 
@@ -81,19 +81,19 @@ __global__ void kernel9() {
   int val;
   int srcLane;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::select_from_sub_group.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::select_from_sub_group.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1096:{{[0-9]+}}: The right-most dimension of the work-group used in the SYCL kernel that calls this function may be less than "32". The function "dpct::select_from_sub_group" may return an unexpected result on the CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
+  // CHECK-NEXT: DPCT1096:{{[0-9]+}}: The right-most dimension of the work-group used in the SYCL kernel that calls this function may be less than "32". The function "c2s::select_from_sub_group" may return an unexpected result on the CPU device. Modify the size of the work-group to ensure that the value of the right-most dimension is a multiple of "32".
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
+  // CHECK-NEXT: c2s::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl_sync(mask, val, srcLane, warpSize);
 }
 
 __global__ void kernel10() {
   unsigned delta;
   int val;
-  // CHECK: dpct::shift_sub_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
+  // CHECK: c2s::shift_sub_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
   __shfl_up(val, delta);
 }
 
@@ -102,9 +102,9 @@ __global__ void kernel11() {
   int val;
   unsigned delta;
   // CHECK: /*
-  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::shift_sub_group_right.
+  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::shift_sub_group_right.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::shift_sub_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
+  // CHECK-NEXT: c2s::shift_sub_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
   __shfl_up_sync(mask, val, delta);
 }
 
@@ -113,16 +113,16 @@ __global__ void kernel12() {
   int val;
   unsigned delta;
   // CHECK: /*
-  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::shift_sub_group_right.
+  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::shift_sub_group_right.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::shift_sub_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
+  // CHECK-NEXT: c2s::shift_sub_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
   __shfl_up_sync(mask, val, delta, warpSize);
 }
 
 __global__ void kernel13() {
   int val;
   unsigned delta;
-  // CHECK: dpct::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
+  // CHECK: c2s::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
   __shfl_down(val, delta);
 }
 
@@ -131,9 +131,9 @@ __global__ void kernel14() {
   int val;
   unsigned delta;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::shift_sub_group_left.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::shift_sub_group_left.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
+  // CHECK-NEXT: c2s::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
   __shfl_down_sync(mask, val, delta);
 }
 
@@ -142,16 +142,16 @@ __global__ void kernel15() {
   int val;
   unsigned delta;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::shift_sub_group_left.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::shift_sub_group_left.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
+  // CHECK-NEXT: c2s::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta);
   __shfl_down_sync(mask, val, delta, warpSize);
 }
 
 __global__ void kernel16() {
   int laneMask;
   int val;
-  // CHECK: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
+  // CHECK: c2s::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
   __shfl_xor(val, laneMask);
 }
 
@@ -160,9 +160,9 @@ __global__ void kernel17() {
   int val;
   int laneMask;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::permute_sub_group_by_xor.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::permute_sub_group_by_xor.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
+  // CHECK-NEXT: c2s::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
   __shfl_xor_sync(mask, val, laneMask);
 }
 
@@ -171,9 +171,9 @@ __global__ void kernel18() {
   int val;
   int laneMask;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::permute_sub_group_by_xor.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::permute_sub_group_by_xor.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
+  // CHECK-NEXT: c2s::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask);
   __shfl_xor_sync(mask, val, laneMask, warpSize);
 }
 
@@ -207,7 +207,7 @@ __global__ void kernel22() {
 __global__ void kernel23() {
   int val;
   int srcLane;
-  // CHECK: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane, 16);
+  // CHECK: c2s::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane, 16);
   __shfl(val, srcLane, 16);
 }
 
@@ -216,16 +216,16 @@ __global__ void kernel24() {
   int val;
   int srcLane;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::select_from_sub_group.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::select_from_sub_group.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane, 16);
+  // CHECK-NEXT: c2s::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane, 16);
   __shfl_sync(mask, val, srcLane, 16);
 }
 
 __global__ void kernel25() {
   int val;
   unsigned delta;
-  // CHECK: dpct::shift_sub_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta, 16);
+  // CHECK: c2s::shift_sub_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta, 16);
   __shfl_up(val, delta, 16);
 }
 
@@ -234,16 +234,16 @@ __global__ void kernel26() {
   int val;
   unsigned delta;
   // CHECK: /*
-  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::shift_sub_group_right.
+  // CHECK-NEXT:DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::shift_sub_group_right.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::shift_sub_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta, 16);
+  // CHECK-NEXT: c2s::shift_sub_group_right(item_{{[0-9a-z]+}}.get_sub_group(), val, delta, 16);
   __shfl_up_sync(mask, val, delta, 16);
 }
 
 __global__ void kernel27() {
   int val;
   unsigned delta;
-  // CHECK: dpct::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta, 16);
+  // CHECK: c2s::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta, 16);
   __shfl_down(val, delta, 16);
 }
 
@@ -252,16 +252,16 @@ __global__ void kernel28() {
   int val;
   unsigned delta;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::shift_sub_group_left.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::shift_sub_group_left.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta, 16);
+  // CHECK-NEXT: c2s::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, delta, 16);
   __shfl_down_sync(mask, val, delta, 16);
 }
 
 __global__ void kernel29() {
   int val;
   int laneMask;
-  // CHECK: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, 16);
+  // CHECK: c2s::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, 16);
   __shfl_xor(val, laneMask, 16);
 }
 
@@ -270,9 +270,9 @@ __global__ void kernel30() {
   int val;
   int laneMask;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::permute_sub_group_by_xor.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::permute_sub_group_by_xor.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, 16);
+  // CHECK-NEXT: c2s::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, 16);
   __shfl_xor_sync(mask, val, laneMask, 16);
 }
 
@@ -280,12 +280,12 @@ __global__ void kernel31() {
   unsigned mask;
   int val;
   int srcLane;
-  // CHECK: dpct::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane, 16);
+  // CHECK: c2s::select_from_sub_group(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane, 16);
   __shfl(val, srcLane, 16);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::shift_sub_group_left.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::shift_sub_group_left.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
+  // CHECK-NEXT: c2s::shift_sub_group_left(item_{{[0-9a-z]+}}.get_sub_group(), val, srcLane);
   __shfl_down_sync(mask, val, srcLane, 32);
 }
 
@@ -295,9 +295,9 @@ __global__ void kernel32() {
   int laneMask;
   int warpSize;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::permute_sub_group_by_xor.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::permute_sub_group_by_xor.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, warpSize);
+  // CHECK-NEXT: c2s::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, warpSize);
   __shfl_xor_sync(mask, val, laneMask, warpSize);
 }
 
@@ -307,15 +307,15 @@ __global__ void kernel33() {
   int laneMask;
   int WS;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for dpct::permute_sub_group_by_xor.
+  // CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for c2s::permute_sub_group_by_xor.
   // CHECK-NEXT: */
-  // CHECK-NEXT: dpct::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, WS);
+  // CHECK-NEXT: c2s::permute_sub_group_by_xor(item_{{[0-9a-z]+}}.get_sub_group(), val, laneMask, WS);
   __shfl_xor_sync(mask, val, laneMask, WS);
 }
 
 int main() {
 
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
   // CHECK: sycl::queue &q_ct1 = dev_ct1.default_queue();
 
   // CHECK: q_ct1.parallel_for(

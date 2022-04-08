@@ -1,4 +1,4 @@
-// RUN: dpct  --format-range=none -usm-level=none -out-root %T/test_no-stop-on-err %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
+// RUN: c2s  --format-range=none -usm-level=none -out-root %T/test_no-stop-on-err %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 #include <cuda.h>
 #include <stdio.h>
 #define VECTOR_SIZE 256

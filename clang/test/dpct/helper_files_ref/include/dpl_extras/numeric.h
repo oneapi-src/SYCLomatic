@@ -6,10 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __DPCT_NUMERIC_H__
-#define __DPCT_NUMERIC_H__
+#ifndef __C2S_DPL_EXTRAS_NUMERIC_H__
+#define __C2S_DPL_EXTRAS_NUMERIC_H__
 
-namespace dpct {
+namespace c2s {
 
 template <typename Policy, typename InputIt1, typename InputIt2, typename T>
 T inner_product(Policy &&policy, InputIt1 first1, InputIt1 last1,
@@ -27,6 +27,6 @@ T inner_product(Policy &&policy, InputIt1 first1, InputIt1 last1,
                                first2, init, op1, op2);
 }
 
-} // end namespace dpct
+} // end namespace c2s
 
 #endif

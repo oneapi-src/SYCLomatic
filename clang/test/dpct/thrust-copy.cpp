@@ -1,14 +1,14 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/thrust-copy -in-root=%S %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
+// RUN: c2s --format-range=none --usm-level=none -out-root %T/thrust-copy -in-root=%S %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
 // RUN: FileCheck --input-file %T/thrust-copy/thrust-copy.cpp.dp.cpp --match-full-lines %s
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <dpct/dpct.hpp>
+// CHECK-NEXT: #include <c2s/c2s.hpp>
 // CHECK-NEXT: #include <iostream>
 // CHECK-NEXT: #include <iterator>
-// CHECK-NEXT: #include <dpct/dpl_utils.hpp>
+// CHECK-NEXT: #include <c2s/dpl_utils.hpp>
 
 #include <iostream>
 #include <iterator>
@@ -21,7 +21,7 @@ void copy(T* dst, T* src, int N) {
 }
 
 int main(void) {
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // input data on the host
   const char data[] = "aaabbbbbcddeeeeeeeeeff";
@@ -29,7 +29,7 @@ int main(void) {
   char dst_data[N];
 
   // copy input data to the device
-// CHECK:   dpct::device_vector<char> input(data, data + N);
+// CHECK:   c2s::device_vector<char> input(data, data + N);
   thrust::device_vector<char> input(data, data + N);
 
   std::cout << "input data:" << std::endl;

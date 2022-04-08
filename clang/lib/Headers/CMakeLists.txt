@@ -51,7 +51,7 @@ set(files
   __clang_cuda_libdevice_declares.h
   __clang_cuda_math_forward_declares.h
   __clang_cuda_runtime_wrapper.h
-  __clang_dpct_math.h
+  __clang_c2s_math.h
   __clang_hip_libdevice_declares.h
   __clang_hip_cmath.h
   __clang_hip_math.h
@@ -236,7 +236,7 @@ set_target_properties(clang-resource-headers PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${output_dir}")
 
 if(INTEL_DEPLOY_UNIFIED_LAYOUT)
-  set(header_install_dir share/dpct/lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION}/include)
+  set(header_install_dir share/c2s/lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION}/include)
 else()
   set(header_install_dir lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION}/include)
 endif()

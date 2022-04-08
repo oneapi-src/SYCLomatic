@@ -1,6 +1,6 @@
 // FIXME
 // UNSUPPORTED: -windows-
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/replace-dim3 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --usm-level=none -out-root %T/replace-dim3 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/replace-dim3/replace-dim3.dp.cpp --match-full-lines %s
 
 #include <cstdio>
@@ -35,7 +35,7 @@ void test(const dim3** a, const dim3** b) {
 __global__ void kernel(int dim) {}
 
 int main() {
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // range default constructor does the right thing.
   // CHECK: sycl::range<3> deflt(1, 1, 1);
@@ -170,13 +170,13 @@ int main() {
   dim3 d3_6_3 = dim3(ceil(test.x + NUM), NUM + test.y, NUM + test.z + NUM);
   // CHECK: sycl::range<3> gpu_blocks(1, 1, 1 / (d3_6_3[2] * 200));
   dim3 gpu_blocks(1 / (d3_6_3.x * 200));
-  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<c2s_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernel(d3_6[2]);
   // CHECK-NEXT:         });
   kernel<<<1, 1>>>(d3_6.x);
-  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<c2s_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, NUM) * sycl::range<3>(1, 1, NUM), sycl::range<3>(1, 1, NUM)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernel(d3_6[2]);
@@ -248,7 +248,7 @@ struct wrap {
 // CHECK: void kernel_foo(float *a, wrap *mt, unsigned int N, sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:   const unsigned int i = item_ct1.get_group(2)*item_ct1.get_local_range(2)+item_ct1.get_local_id(2);
 // CHECK-NEXT:   if (i<N) {
-// CHECK-NEXT:     dpct::atomic_fetch_add<float, sycl::access::address_space::generic_space>(&mt[i].f3.x(), a[i]);
+// CHECK-NEXT:     c2s::atomic_fetch_add<float, sycl::access::address_space::generic_space>(&mt[i].f3.x(), a[i]);
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 __global__ void kernel_foo(float *a, wrap *mt, unsigned int N) {

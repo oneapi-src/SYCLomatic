@@ -1405,7 +1405,7 @@ inline Error unwrap(LLVMErrorRef ErrRef) {
 
 
 #ifdef INTEL_CUSTOMIZATION
-class DPCTError : public llvm::ErrorInfo<DPCTError> {
+class C2SError : public llvm::ErrorInfo<C2SError> {
 public:
   std::error_code convertToErrorCode() const override {
     return std::error_code();
@@ -1413,8 +1413,8 @@ public:
   void log(llvm::raw_ostream &OS) const override { return; }
   // Used by ErrorInfo::classID.
   static char ID;
-  DPCTError() = default;
-  DPCTError(int EC) : EC(EC) {}
+  C2SError() = default;
+  C2SError(int EC) : EC(EC) {}
 
   int EC = 0; // MigrationSucceeded
 };

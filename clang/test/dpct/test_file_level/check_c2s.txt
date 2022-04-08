@@ -1,0 +1,14 @@
+//CHECK:#ifndef __C2S_HPP__
+//CHECK-NEXT:#define __C2S_HPP__
+//CHECK-EMPTY:
+//CHECK-NEXT:#include <CL/sycl.hpp>
+//CHECK-NEXT:#include <iostream>
+//CHECK-NEXT:#include <limits.h>
+//CHECK-EMPTY:
+//CHECK-NEXT:template <class... Args> class c2s_kernel_name;
+//CHECK-NEXT:template <int Arg> class c2s_kernel_scalar;
+//CHECK-EMPTY:
+//CHECK-NEXT:#include "device.hpp"
+//CHECK-NEXT:#include "memory.hpp"
+//CHECK-EMPTY:
+//CHECK-NEXT:#if defined(_MSC_VER)

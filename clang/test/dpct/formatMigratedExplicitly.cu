@@ -1,6 +1,6 @@
 // RUN: cat %s > %T/formatMigratedExplicitly.cu
 // RUN: cd %T
-// RUN: dpct --no-cl-namespace-inline -out-root %T/formatMigratedExplicitly formatMigratedExplicitly.cu --cuda-include-path="%cuda-path/include" --format-range=migrated  -- -std=c++14  -x cuda --cuda-host-only
+// RUN: c2s --no-cl-namespace-inline -out-root %T/formatMigratedExplicitly formatMigratedExplicitly.cu --cuda-include-path="%cuda-path/include" --format-range=migrated  -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace formatMigratedExplicitly.cu --match-full-lines --input-file %T/formatMigratedExplicitly/formatMigratedExplicitly.dp.cpp
 
 #include <cuda_runtime.h>
@@ -29,7 +29,7 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 
 
      //CHECK:int main() {
-//CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK-NEXT:  c2s::device_ext &dev_ct1 = c2s::get_current_device();
 //CHECK-NEXT:  cl::sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK-NEXT:  cl::sycl::range<3> griddim = cl::sycl::range<3>(1, 1, 2);
 //CHECK-NEXT:  cl::sycl::range<3> threaddim = cl::sycl::range<3>(1, 1, 32);
@@ -63,9 +63,9 @@ int main() {
 
      //CHECK:struct SharedMemory
 //CHECK-NEXT:{
-//CHECK-NEXT:  unsigned int *getPointer(uint8_t *dpct_local)
+//CHECK-NEXT:  unsigned int *getPointer(uint8_t *c2s_local)
 //CHECK-NEXT:  {
-//CHECK-NEXT:    auto s_uint = (unsigned int *)dpct_local;
+//CHECK-NEXT:    auto s_uint = (unsigned int *)c2s_local;
 //CHECK-NEXT:    return s_uint;
 //CHECK-NEXT:  }
 //CHECK-NEXT:};
@@ -78,7 +78,7 @@ struct SharedMemory
   }
 };
 
-     //CHECK:typedef struct dpct_type_{{[0-9a-z]+}}
+     //CHECK:typedef struct c2s_type_{{[0-9a-z]+}}
 //CHECK-NEXT:{
 //CHECK-NEXT:  int SM;
 //CHECK-NEXT:  int Cores;

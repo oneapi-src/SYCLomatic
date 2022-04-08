@@ -1,7 +1,7 @@
-// RUN: dpct --format-range=none -out-root %T/workaround_trans_math_h_to_cmath %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/workaround_trans_math_h_to_cmath %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/workaround_trans_math_h_to_cmath/workaround_trans_math_h_to_cmath.dp.cpp --match-full-lines %s
 //CHECK:#include <CL/sycl.hpp>
-//CHECK-NEXT:#include <dpct/dpct.hpp>
+//CHECK-NEXT:#include <c2s/c2s.hpp>
 //CHECK://math header
 //CHECK: #include <math.h>
 //CHECK-NEXT: #include <cmath>

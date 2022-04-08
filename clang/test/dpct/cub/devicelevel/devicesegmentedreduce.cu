@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
-// RUN: dpct --format-range=none -in-root %S -out-root %T/devicelevel/devicesegmentedreduce %S/devicesegmentedreduce.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -in-root %S -out-root %T/devicelevel/devicesegmentedreduce %S/devicesegmentedreduce.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp --match-full-lines %s
 
 #include <iostream>
@@ -40,7 +40,7 @@ void print_data(T* data, int num) {
 //CHECK:  struct UserMin
 //CHECK:  {
 //CHECK:    template <typename T>
-//CHECK:    __dpct_inline__
+//CHECK:    __c2s_inline__
 //CHECK:    T operator()(const T &a, const T &b) const {
 //CHECK:        return (b < a) ? b : a;
 //CHECK:    }
@@ -56,7 +56,7 @@ struct UserMin
 };
 
 //CHECK:  bool test_reduce_1(){
-//CHECK:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK:  c2s::device_ext &dev_ct1 = c2s::get_current_device();
 //CHECK:  sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK:    int          num_segments = 10;
 //CHECK:    int          *device_offsets;
@@ -77,12 +77,12 @@ struct UserMin
 
 
 //CHECK:    /*
-//CHECK:    DPCT1091:{{[0-9]+}}: The function dpct::segmented_reduce only supports DPC++ native binary operation. Replace "dpct_placeholder" with a DPC++ native binary operation.
+//CHECK:    DPCT1091:{{[0-9]+}}: The function c2s::segmented_reduce only supports DPC++ native binary operation. Replace "c2s_placeholder" with a DPC++ native binary operation.
 //CHECK:    */
 //CHECK:    /*
 //CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
 //CHECK:    */
-//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), dpct_placeholder, initial_value);
+//CHECK:    c2s::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), c2s_placeholder, initial_value);
 
 
 //CHECK:    dev_ct1.queues_wait_and_throw();
@@ -135,7 +135,7 @@ bool test_reduce_1(){
 }
 
 //CHECK:  bool test_reduce_2(){
-//CHECK:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK:  c2s::device_ext &dev_ct1 = c2s::get_current_device();
 //CHECK:  sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK:    int          num_segments = 10;
 //CHECK:    int          *device_offsets;
@@ -156,7 +156,7 @@ bool test_reduce_1(){
 //CHECK:    /*
 //CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
 //CHECK:    */
-//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::minimum<>(), initial_value);
+//CHECK:    c2s::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::minimum<>(), initial_value);
 
 //CHECK:    dev_ct1.queues_wait_and_throw();
 
@@ -233,7 +233,7 @@ bool test_reduce_3(){
   // CHECK:   /*
   // CHECK:   DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
   // CHECK:   */
-  // CHECK:   dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::minimum<>(), initial_value);
+  // CHECK:   c2s::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::minimum<>(), initial_value);
   // CHECK:   temp_storage = (void *)sycl::malloc_device(temp_storage_size, q_ct1);
   // CHECK: }
   for(int i = 0; i < 10; i++) {
@@ -249,7 +249,7 @@ bool test_reduce_3(){
   // CHECK:    /*
   // CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
   // CHECK:    */
-  // CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::minimum<>(), initial_value);
+  // CHECK:    c2s::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::minimum<>(), initial_value);
   // CHECK:  }
   for(int i = 0; i < 10; i++) {
     temp_storage = nullptr;
@@ -269,12 +269,12 @@ bool test_reduce_3(){
   // CHECK:    /*
   // CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
   // CHECK:    */
-  // CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::minimum<>(), initial_value);
+  // CHECK:    c2s::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::minimum<>(), initial_value);
   // CHECK:    temp_storage = (void *)sycl::malloc_device(temp_storage_size, q_ct1);
   // CHECK:    /*
   // CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
   // CHECK:    */
-  // CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::minimum<>(), initial_value);
+  // CHECK:    c2s::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::minimum<>(), initial_value);
   // CHECK:  }
   for(int i = 0; i < 10; i++) {
     temp_storage = nullptr;
@@ -293,7 +293,7 @@ bool test_reduce_3(){
   // CHECK: /*
   // CHECK: DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
   // CHECK: */
-  // CHECK: dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::minimum<>(), initial_value);
+  // CHECK: c2s::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::minimum<>(), initial_value);
 
   cudaMalloc(&temp_storage, temp_storage_size);
 
@@ -313,7 +313,7 @@ bool test_reduce_3(){
 }
 
 //CHECK:  bool test_sum_1(){
-//CHECK:    dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK:    c2s::device_ext &dev_ct1 = c2s::get_current_device();
 //CHECK:    sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK:      int          num_segments = 10;
 //CHECK:      int          *device_offsets;
@@ -334,7 +334,7 @@ bool test_reduce_3(){
 //CHECK:      /*
 //CHECK:      DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
 //CHECK:      */
-//CHECK:      dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::plus<>(), 0);
+//CHECK:      c2s::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::plus<>(), 0);
 
 //CHECK:      dev_ct1.queues_wait_and_throw();
 
@@ -386,7 +386,7 @@ bool test_sum_1(){
 }
 
 //CHECK:  bool test_sum_2(){
-//CHECK:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK:  c2s::device_ext &dev_ct1 = c2s::get_current_device();
 //CHECK:  sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK:    int          num_segments = 10;
 //CHECK:    int          *device_offsets;
@@ -407,7 +407,7 @@ bool test_sum_1(){
 //CHECK:    /*
 //CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
 //CHECK:    */
-//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::plus<>(), 0);
+//CHECK:    c2s::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::plus<>(), 0);
 
 //CHECK:    dev_ct1.queues_wait_and_throw();
 
@@ -459,7 +459,7 @@ bool test_sum_2(){
 }
 
 //CHECK:  bool test_min(){
-//CHECK:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK:  c2s::device_ext &dev_ct1 = c2s::get_current_device();
 //CHECK:  sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK:    int          num_segments = 10;
 //CHECK:    int          *device_offsets;
@@ -479,7 +479,7 @@ bool test_sum_2(){
 //CHECK:    /*
 //CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
 //CHECK:    */
-//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::minimum<>(), std::numeric_limits<int>::max());
+//CHECK:    c2s::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::minimum<>(), std::numeric_limits<int>::max());
 
 //CHECK:    dev_ct1.queues_wait_and_throw();
 
@@ -531,7 +531,7 @@ bool test_min(){
 }
 
 //CHECK:  bool test_max(){
-//CHECK:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK:  c2s::device_ext &dev_ct1 = c2s::get_current_device();
 //CHECK:  sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK:    int          num_segments = 10;
 //CHECK:    int          *device_offsets;
@@ -551,7 +551,7 @@ bool test_min(){
 //CHECK:    /*
 //CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
 //CHECK:    */
-//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::maximum<>(), std::numeric_limits<int>::lowest());
+//CHECK:    c2s::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::ext::oneapi::maximum<>(), std::numeric_limits<int>::lowest());
 
 //CHECK:    dev_ct1.queues_wait_and_throw();
 

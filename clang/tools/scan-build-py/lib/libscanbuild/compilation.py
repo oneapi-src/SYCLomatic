@@ -47,7 +47,7 @@ IGNORED_FLAGS = {
     '-z': 1,
     '-T': 1,
 
-    # All of the following options are ignored, as they are not related to dpct tool
+    # All of the following options are ignored, as they are not related to c2s tool
     '-march': 1,
     '--cuda': 0,
     '-cuda': 0,

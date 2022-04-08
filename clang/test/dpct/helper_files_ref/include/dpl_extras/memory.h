@@ -6,19 +6,19 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __DPCT_MEMORY_H__
-#define __DPCT_MEMORY_H__
+#ifndef __C2S_DPL_EXTRAS_MEMORY_H__
+#define __C2S_DPL_EXTRAS_MEMORY_H__
 
 #include <CL/sycl.hpp>
 
 // Memory management section:
 // device_pointer, device_reference, swap, device_iterator, malloc_device,
 // device_new, free_device, device_delete
-namespace dpct {
+namespace c2s {
 
 namespace sycl = cl::sycl;
 
-#ifdef DPCT_USM_LEVEL_NONE
+#ifdef C2S_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,
           typename Allocator = sycl::buffer_allocator>
 class device_pointer;
@@ -139,7 +139,7 @@ struct is_hetero_iterator<
     : std::true_type {};
 } // namespace internal
 
-#ifdef DPCT_USM_LEVEL_NONE
+#ifdef C2S_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode, typename Allocator>
 class device_iterator;
 
@@ -155,16 +155,16 @@ public:
 
   device_pointer_base(sycl::buffer<ValueType, 1> in, std::size_t i = 0)
       : buffer(in), idx(i) {}
-#ifdef __USE_DPCT
+#ifdef __USE_C2S
   template <typename OtherT>
   device_pointer_base(OtherT *ptr)
       : buffer(
-            dpct::detail::mem_mgr::instance()
+            c2s::detail::mem_mgr::instance()
                 .translate_ptr(ptr)
                 .buffer.template reinterpret<ValueType, 1>(sycl::range<1>(
-                    dpct::detail::mem_mgr::instance().translate_ptr(ptr).size /
+                    c2s::detail::mem_mgr::instance().translate_ptr(ptr).size /
                     sizeof(ValueType)))),
-        idx(ptr - (ValueType*)dpct::detail::mem_mgr::instance()
+        idx(ptr - (ValueType*)c2s::detail::mem_mgr::instance()
                 .translate_ptr(ptr).alloc_ptr) {}
 #endif
   device_pointer_base(const std::size_t count)
@@ -240,7 +240,7 @@ public:
   static constexpr sycl::access_mode mode = Mode; // required
 
   device_pointer(sycl::buffer<T, 1> in, std::size_t i = 0) : base_type(in, i) {}
-#ifdef __USE_DPCT
+#ifdef __USE_C2S
   template <typename OtherT> device_pointer(OtherT *ptr) : base_type(ptr) {}
 #endif
   // needed for malloc_device, count is number of bytes to allocate
@@ -270,14 +270,14 @@ public:
 
 template <sycl::access_mode Mode, typename Allocator>
 class device_pointer<void, Mode, Allocator>
-    : public device_pointer_base<dpct::byte_t, Allocator,
+    : public device_pointer_base<c2s::byte_t, Allocator,
                                  device_pointer<void, Mode, Allocator>> {
 private:
   using base_type =
-      device_pointer_base<dpct::byte_t, Allocator, device_pointer>;
+      device_pointer_base<c2s::byte_t, Allocator, device_pointer>;
 
 public:
-  using value_type = dpct::byte_t;
+  using value_type = c2s::byte_t;
   using difference_type = std::make_signed<std::size_t>::type;
   using pointer = void *;
   using reference = value_type &;
@@ -288,7 +288,7 @@ public:
 
   device_pointer(sycl::buffer<value_type, 1> in, std::size_t i = 0)
       : base_type(in, i) {}
-#ifdef __USE_DPCT
+#ifdef __USE_C2S
   template <typename OtherT> device_pointer(OtherT *ptr) : base_type(ptr) {}
 #endif
   // needed for malloc_device, count is number of bytes to allocate
@@ -328,7 +328,7 @@ public:
 
   device_pointer_base(ValueType *p) : ptr(p) {}
   device_pointer_base(const std::size_t count) {
-    cl::sycl::queue default_queue = dpct::get_default_queue();
+    cl::sycl::queue default_queue = c2s::get_default_queue();
     ptr = static_cast<ValueType *>(cl::sycl::malloc_device(
         count, default_queue.get_device(), default_queue.get_context()));
   }
@@ -406,12 +406,12 @@ public:
 
 template <>
 class device_pointer<void>
-    : public device_pointer_base<dpct::byte_t, device_pointer<void>> {
+    : public device_pointer_base<c2s::byte_t, device_pointer<void>> {
 private:
-  using base_type = device_pointer_base<dpct::byte_t, device_pointer<void>>;
+  using base_type = device_pointer_base<c2s::byte_t, device_pointer<void>>;
 
 public:
-  using value_type = dpct::byte_t;
+  using value_type = c2s::byte_t;
   using difference_type = std::make_signed<std::size_t>::type;
   using pointer = void *;
   using reference = value_type &;
@@ -450,7 +450,7 @@ public:
 };
 #endif
 
-#ifdef DPCT_USM_LEVEL_NONE
+#ifdef C2S_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,
           typename Allocator = sycl::buffer_allocator>
 class device_iterator : public device_pointer<T, Mode, Allocator> {
@@ -708,6 +708,6 @@ template <typename T> T &get_raw_reference(T &ref) {
   return ref;
 }
 
-} // namespace dpct
+} // namespace c2s
 
 #endif

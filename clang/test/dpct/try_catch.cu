@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/try_catch %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/try_catch %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/try_catch/try_catch.dp.cpp
 
 namespace Test {

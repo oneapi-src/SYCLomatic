@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --report-format=csv --usm-level=none -out-root %T/cusolverDnLn %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none --report-format=csv --usm-level=none -out-root %T/cusolverDnLn %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusolverDnLn/cusolverDnLn.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas_v2.h>
@@ -88,64 +88,64 @@ int main(int argc, char *argv[])
     cusolverDnZgetrf_bufferSize(*cusolverH, m, n, &A_z, lda, &Lwork);
 
     //CHECK: {
-    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
-    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
+    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&A_f);
+    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&workspace_f);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, A_f_buf_ct{{[0-9]+}}, lda, workspace_f_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
-    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
+    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&A_f);
+    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&workspace_f);
     //CHECK-NEXT: oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, A_f_buf_ct{{[0-9]+}}, lda, workspace_f_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnSpotrf(*cusolverH, uplo, n, &A_f, lda, &workspace_f, Lwork, &devInfo);
     cusolverDnSpotrf(*cusolverH, uplo, n, &A_f, lda, &workspace_f, Lwork, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
-    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
+    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&A_d);
+    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&workspace_d);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, A_d_buf_ct{{[0-9]+}}, lda, workspace_d_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
-    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
+    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&A_d);
+    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&workspace_d);
     //CHECK-NEXT: oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, A_d_buf_ct{{[0-9]+}}, lda, workspace_d_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnDpotrf(*cusolverH, uplo, n, &A_d, lda, &workspace_d, Lwork, &devInfo);
     cusolverDnDpotrf(*cusolverH, uplo, n, &A_d, lda, &workspace_d, Lwork, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
-    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&A_c);
+    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&workspace_c);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, A_c_buf_ct{{[0-9]+}}, lda, workspace_c_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
-    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&A_c);
+    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&workspace_c);
     //CHECK-NEXT: oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, A_c_buf_ct{{[0-9]+}}, lda, workspace_c_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnCpotrf(*cusolverH, uplo, n, &A_c, lda, &workspace_c, Lwork, &devInfo);
     cusolverDnCpotrf(*cusolverH, uplo, n, &A_c, lda, &workspace_c, Lwork, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
-    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&A_z);
+    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&workspace_z);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, A_z_buf_ct{{[0-9]+}}, lda, workspace_z_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
-    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&A_z);
+    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&workspace_z);
     //CHECK-NEXT: oneapi::mkl::lapack::potrf(**cusolverH, uplo, n, A_z_buf_ct{{[0-9]+}}, lda, workspace_z_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnZpotrf(*cusolverH, uplo, n, &A_z, lda, &workspace_z, Lwork, &devInfo);
@@ -153,8 +153,8 @@ int main(int argc, char *argv[])
 
 
     //CHECK: {
-    //CHECK-NEXT: auto C_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&C_f);
-    //CHECK-NEXT: auto B_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&B_f);
+    //CHECK-NEXT: auto C_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&C_f);
+    //CHECK-NEXT: auto B_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&B_f);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs_scratchpad_size<float>(**cusolverH ,uplo ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<float, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: /*
@@ -163,8 +163,8 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (oneapi::mkl::lapack::potrs(**cusolverH, uplo, n, nrhs, C_f_buf_ct{{[0-9]+}}, lda, B_f_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto C_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&C_f);
-    //CHECK-NEXT: auto B_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&B_f);
+    //CHECK-NEXT: auto C_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&C_f);
+    //CHECK-NEXT: auto B_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&B_f);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs_scratchpad_size<float>(**cusolverH ,uplo ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<float, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: oneapi::mkl::lapack::potrs(**cusolverH, uplo, n, nrhs, C_f_buf_ct{{[0-9]+}}, lda, B_f_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
@@ -173,8 +173,8 @@ int main(int argc, char *argv[])
     cusolverDnSpotrs(*cusolverH, uplo, n, nrhs, &C_f, lda, &B_f, ldb, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: auto C_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&C_d);
-    //CHECK-NEXT: auto B_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&B_d);
+    //CHECK-NEXT: auto C_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&C_d);
+    //CHECK-NEXT: auto B_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&B_d);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs_scratchpad_size<double>(**cusolverH ,uplo ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<double, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: /*
@@ -183,8 +183,8 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (oneapi::mkl::lapack::potrs(**cusolverH, uplo, n, nrhs, C_d_buf_ct{{[0-9]+}}, lda, B_d_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto C_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&C_d);
-    //CHECK-NEXT: auto B_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&B_d);
+    //CHECK-NEXT: auto C_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&C_d);
+    //CHECK-NEXT: auto B_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&B_d);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs_scratchpad_size<double>(**cusolverH ,uplo ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<double, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: oneapi::mkl::lapack::potrs(**cusolverH, uplo, n, nrhs, C_d_buf_ct{{[0-9]+}}, lda, B_d_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
@@ -193,8 +193,8 @@ int main(int argc, char *argv[])
     cusolverDnDpotrs(*cusolverH, uplo, n, nrhs, &C_d, lda, &B_d, ldb, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: auto C_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&C_c);
-    //CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&B_c);
+    //CHECK-NEXT: auto C_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&C_c);
+    //CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&B_c);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs_scratchpad_size<std::complex<float>>(**cusolverH ,uplo ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<std::complex<float>, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: /*
@@ -203,8 +203,8 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (oneapi::mkl::lapack::potrs(**cusolverH, uplo, n, nrhs, C_c_buf_ct{{[0-9]+}}, lda, B_c_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto C_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&C_c);
-    //CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&B_c);
+    //CHECK-NEXT: auto C_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&C_c);
+    //CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&B_c);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs_scratchpad_size<std::complex<float>>(**cusolverH ,uplo ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<std::complex<float>, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: oneapi::mkl::lapack::potrs(**cusolverH, uplo, n, nrhs, C_c_buf_ct{{[0-9]+}}, lda, B_c_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
@@ -214,8 +214,8 @@ int main(int argc, char *argv[])
 
 
     //CHECK: {
-    //CHECK-NEXT: auto C_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&C_z);
-    //CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&B_z);
+    //CHECK-NEXT: auto C_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&C_z);
+    //CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&B_z);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs_scratchpad_size<std::complex<double>>(**cusolverH ,uplo ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<std::complex<double>, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: /*
@@ -224,8 +224,8 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (oneapi::mkl::lapack::potrs(**cusolverH, uplo, n, nrhs, C_z_buf_ct{{[0-9]+}}, lda, B_z_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}}), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto C_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&C_z);
-    //CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&B_z);
+    //CHECK-NEXT: auto C_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&C_z);
+    //CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&B_z);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::potrs_scratchpad_size<std::complex<double>>(**cusolverH ,uplo ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<std::complex<double>, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: oneapi::mkl::lapack::potrs(**cusolverH, uplo, n, nrhs, C_z_buf_ct{{[0-9]+}}, lda, B_z_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
@@ -234,9 +234,9 @@ int main(int argc, char *argv[])
     cusolverDnZpotrs(*cusolverH, uplo, n, nrhs, &C_z, lda, &B_z, ldb, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
-    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&A_f);
+    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&workspace_f);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrf_scratchpad_size<float>(**cusolverH ,m ,n ,lda);
     //CHECK-NEXT: /*
@@ -249,9 +249,9 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
-    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&A_f);
+    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&workspace_f);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrf_scratchpad_size<float>(**cusolverH ,m ,n ,lda);
     //CHECK-NEXT: /*
@@ -264,9 +264,9 @@ int main(int argc, char *argv[])
     cusolverDnSgetrf(*cusolverH, m, n, &A_f, lda, &workspace_f, &devIpiv, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
-    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&A_d);
+    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&workspace_d);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrf_scratchpad_size<double>(**cusolverH ,m ,n ,lda);
     //CHECK-NEXT: /*
@@ -279,9 +279,9 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
-    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&A_d);
+    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&workspace_d);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrf_scratchpad_size<double>(**cusolverH ,m ,n ,lda);
     //CHECK-NEXT: /*
@@ -294,9 +294,9 @@ int main(int argc, char *argv[])
     cusolverDnDgetrf(*cusolverH, m, n, &A_d, lda, &workspace_d, &devIpiv, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
-    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&A_c);
+    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&workspace_c);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrf_scratchpad_size<std::complex<float>>(**cusolverH ,m ,n ,lda);
     //CHECK-NEXT: /*
@@ -309,9 +309,9 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
-    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&A_c);
+    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&workspace_c);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrf_scratchpad_size<std::complex<float>>(**cusolverH ,m ,n ,lda);
     //CHECK-NEXT: /*
@@ -324,9 +324,9 @@ int main(int argc, char *argv[])
     cusolverDnCgetrf(*cusolverH, m, n, &A_c, lda, &workspace_c, &devIpiv, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
-    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&A_z);
+    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&workspace_z);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrf_scratchpad_size<std::complex<double>>(**cusolverH ,m ,n ,lda);
     //CHECK-NEXT: /*
@@ -339,9 +339,9 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
-    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&A_z);
+    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&workspace_z);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrf_scratchpad_size<std::complex<double>>(**cusolverH ,m ,n ,lda);
     //CHECK-NEXT: /*
@@ -354,10 +354,10 @@ int main(int argc, char *argv[])
     cusolverDnZgetrf(*cusolverH, m, n, &A_z, lda, &workspace_z, &devIpiv, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&A_f);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    //CHECK-NEXT: auto B_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&B_f);
+    //CHECK-NEXT: auto B_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&B_f);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<float>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<float, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: /*
@@ -367,10 +367,10 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&A_f);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    //CHECK-NEXT: auto B_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&B_f);
+    //CHECK-NEXT: auto B_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&B_f);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<float>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<float, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, A_f_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, B_f_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
@@ -380,10 +380,10 @@ int main(int argc, char *argv[])
     cusolverDnSgetrs(*cusolverH, trans, n, nrhs, &A_f, lda, &devIpiv, &B_f, ldb, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&A_d);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    //CHECK-NEXT: auto B_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&B_d);
+    //CHECK-NEXT: auto B_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&B_d);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<double>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<double, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: /*
@@ -393,10 +393,10 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&A_d);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    //CHECK-NEXT: auto B_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&B_d);
+    //CHECK-NEXT: auto B_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&B_d);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<double>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<double, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, A_d_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, B_d_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
@@ -406,10 +406,10 @@ int main(int argc, char *argv[])
     cusolverDnDgetrs(*cusolverH, trans, n, nrhs, &A_d, lda, &devIpiv, &B_d, ldb, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&A_c);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    //CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&B_c);
+    //CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&B_c);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<std::complex<float>>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<std::complex<float>, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: /*
@@ -419,10 +419,10 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&A_c);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    //CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&B_c);
+    //CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&B_c);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<std::complex<float>>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<std::complex<float>, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, A_c_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, B_c_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
@@ -432,10 +432,10 @@ int main(int argc, char *argv[])
     cusolverDnCgetrs(*cusolverH, trans, n, nrhs, &A_c, lda, &devIpiv, &B_c, ldb, &devInfo);
 
     //CHECK: {
-    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&A_z);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    //CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&B_z);
+    //CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&B_z);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<std::complex<double>>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<std::complex<double>, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: /*
@@ -445,10 +445,10 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer6.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&A_z);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer6(sycl::range<1>(1));
-    //CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&B_z);
+    //CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&B_z);
     //CHECK-NEXT: std::int64_t scratchpad_size_ct{{[0-9]+}} = oneapi::mkl::lapack::getrs_scratchpad_size<std::complex<double>>(**cusolverH ,trans ,n ,nrhs ,lda ,ldb);
     //CHECK-NEXT: sycl::buffer<std::complex<double>, 1> scratchpad_ct{{[0-9]+}}{sycl::range<1>(scratchpad_size_ct{{[0-9]+}})};
     //CHECK-NEXT: oneapi::mkl::lapack::getrs(**cusolverH, trans, n, nrhs, A_z_buf_ct{{[0-9]+}}, lda, result_temp_buffer6, B_z_buf_ct{{[0-9]+}}, ldb, scratchpad_ct{{[0-9]+}}, scratchpad_size_ct{{[0-9]+}});
@@ -463,18 +463,18 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<float>(**cusolverH, m, n, lda), 0);
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<float>(**cusolverH, m, n, lda);
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
-    //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&TAU_f);
-    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
+    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&A_f);
+    //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&TAU_f);
+    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&workspace_f);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::geqrf(**cusolverH, m, n, A_f_buf_ct{{[0-9]+}}, lda, TAU_f_buf_ct{{[0-9]+}}, workspace_f_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
-    //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&TAU_f);
-    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
+    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&A_f);
+    //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&TAU_f);
+    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&workspace_f);
     //CHECK-NEXT: oneapi::mkl::lapack::geqrf(**cusolverH, m, n, A_f_buf_ct{{[0-9]+}}, lda, TAU_f_buf_ct{{[0-9]+}}, workspace_f_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnSgeqrf_bufferSize(*cusolverH, m, n, &A_f, lda, &Lwork);
@@ -488,18 +488,18 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<double>(**cusolverH, m, n, lda), 0);
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<double>(**cusolverH, m, n, lda);
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
-    //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&TAU_d);
-    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
+    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&A_d);
+    //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&TAU_d);
+    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&workspace_d);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::geqrf(**cusolverH, m, n, A_d_buf_ct{{[0-9]+}}, lda, TAU_d_buf_ct{{[0-9]+}}, workspace_d_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
-    //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&TAU_d);
-    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
+    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&A_d);
+    //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&TAU_d);
+    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&workspace_d);
     //CHECK-NEXT: oneapi::mkl::lapack::geqrf(**cusolverH, m, n, A_d_buf_ct{{[0-9]+}}, lda, TAU_d_buf_ct{{[0-9]+}}, workspace_d_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnDgeqrf_bufferSize(*cusolverH, m, n, &A_d, lda, &Lwork);
@@ -513,18 +513,18 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<float>>(**cusolverH, m, n, lda), 0);
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<float>>(**cusolverH, m, n, lda);
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
-    //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&TAU_c);
-    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&A_c);
+    //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&TAU_c);
+    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&workspace_c);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::geqrf(**cusolverH, m, n, A_c_buf_ct{{[0-9]+}}, lda, TAU_c_buf_ct{{[0-9]+}}, workspace_c_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
-    //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&TAU_c);
-    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&A_c);
+    //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&TAU_c);
+    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&workspace_c);
     //CHECK-NEXT: oneapi::mkl::lapack::geqrf(**cusolverH, m, n, A_c_buf_ct{{[0-9]+}}, lda, TAU_c_buf_ct{{[0-9]+}}, workspace_c_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnCgeqrf_bufferSize(*cusolverH, m, n, &A_c, lda, &Lwork);
@@ -538,18 +538,18 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<double>>(**cusolverH, m, n, lda), 0);
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::geqrf_scratchpad_size<std::complex<double>>(**cusolverH, m, n, lda);
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
-    //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&TAU_z);
-    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&A_z);
+    //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&TAU_z);
+    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&workspace_z);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::geqrf(**cusolverH, m, n, A_z_buf_ct{{[0-9]+}}, lda, TAU_z_buf_ct{{[0-9]+}}, workspace_z_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
-    //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&TAU_z);
-    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&A_z);
+    //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&TAU_z);
+    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&workspace_z);
     //CHECK-NEXT: oneapi::mkl::lapack::geqrf(**cusolverH, m, n, A_z_buf_ct{{[0-9]+}}, lda, TAU_z_buf_ct{{[0-9]+}}, workspace_z_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnZgeqrf_bufferSize(*cusolverH, m, n, &A_z, lda, &Lwork);
@@ -563,20 +563,20 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::ormqr_scratchpad_size<float>(**cusolverH, side, trans, m, n, k, lda, ldc), 0);
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::ormqr_scratchpad_size<float>(**cusolverH, side, trans, m, n, k, lda, ldc);
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
-    //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&TAU_f);
-    //CHECK-NEXT: auto B_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&B_f);
-    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
+    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&A_f);
+    //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&TAU_f);
+    //CHECK-NEXT: auto B_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&B_f);
+    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&workspace_f);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::ormqr(**cusolverH, side, trans, m, n, k, A_f_buf_ct{{[0-9]+}}, lda, TAU_f_buf_ct{{[0-9]+}}, B_f_buf_ct{{[0-9]+}}, ldb, workspace_f_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
-    //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&TAU_f);
-    //CHECK-NEXT: auto B_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&B_f);
-    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
+    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&A_f);
+    //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&TAU_f);
+    //CHECK-NEXT: auto B_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&B_f);
+    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&workspace_f);
     //CHECK-NEXT: oneapi::mkl::lapack::ormqr(**cusolverH, side, trans, m, n, k, A_f_buf_ct{{[0-9]+}}, lda, TAU_f_buf_ct{{[0-9]+}}, B_f_buf_ct{{[0-9]+}}, ldb, workspace_f_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnSormqr_bufferSize(*cusolverH, side, trans, m, n, k, &A_f, lda, &TAU_f, &C_f, ldc, &Lwork);
@@ -590,20 +590,20 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::ormqr_scratchpad_size<double>(**cusolverH, side, trans, m, n, k, lda, ldc), 0);
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::ormqr_scratchpad_size<double>(**cusolverH, side, trans, m, n, k, lda, ldc);
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
-    //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&TAU_d);
-    //CHECK-NEXT: auto B_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&B_d);
-    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
+    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&A_d);
+    //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&TAU_d);
+    //CHECK-NEXT: auto B_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&B_d);
+    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&workspace_d);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::ormqr(**cusolverH, side, trans, m, n, k, A_d_buf_ct{{[0-9]+}}, lda, TAU_d_buf_ct{{[0-9]+}}, B_d_buf_ct{{[0-9]+}}, ldb, workspace_d_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
-    //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&TAU_d);
-    //CHECK-NEXT: auto B_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&B_d);
-    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
+    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&A_d);
+    //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&TAU_d);
+    //CHECK-NEXT: auto B_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&B_d);
+    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&workspace_d);
     //CHECK-NEXT: oneapi::mkl::lapack::ormqr(**cusolverH, side, trans, m, n, k, A_d_buf_ct{{[0-9]+}}, lda, TAU_d_buf_ct{{[0-9]+}}, B_d_buf_ct{{[0-9]+}}, ldb, workspace_d_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnDormqr_bufferSize(*cusolverH, side, trans, m, n, k, &A_d, lda, &TAU_d, &C_d, ldc, &Lwork);
@@ -618,20 +618,20 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::unmqr_scratchpad_size<std::complex<float>>(**cusolverH, side, trans, m, n, k, lda, ldc), 0);
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::unmqr_scratchpad_size<std::complex<float>>(**cusolverH, side, trans, m, n, k, lda, ldc);
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
-    //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&TAU_c);
-    //CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&B_c);
-    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&A_c);
+    //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&TAU_c);
+    //CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&B_c);
+    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&workspace_c);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::unmqr(**cusolverH, side, trans, m, n, k, A_c_buf_ct{{[0-9]+}}, lda, TAU_c_buf_ct{{[0-9]+}}, B_c_buf_ct{{[0-9]+}}, ldb, workspace_c_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
-    //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&TAU_c);
-    //CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&B_c);
-    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&A_c);
+    //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&TAU_c);
+    //CHECK-NEXT: auto B_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&B_c);
+    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&workspace_c);
     //CHECK-NEXT: oneapi::mkl::lapack::unmqr(**cusolverH, side, trans, m, n, k, A_c_buf_ct{{[0-9]+}}, lda, TAU_c_buf_ct{{[0-9]+}}, B_c_buf_ct{{[0-9]+}}, ldb, workspace_c_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnCunmqr_bufferSize(*cusolverH, side, trans, m, n, k, &A_c, lda, &TAU_c, &C_c, ldc, &Lwork);
@@ -645,20 +645,20 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::unmqr_scratchpad_size<std::complex<double>>(**cusolverH, side, trans, m, n, k, lda, ldc), 0);
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::unmqr_scratchpad_size<std::complex<double>>(**cusolverH, side, trans, m, n, k, lda, ldc);
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
-    //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&TAU_z);
-    //CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&B_z);
-    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&A_z);
+    //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&TAU_z);
+    //CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&B_z);
+    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&workspace_z);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::unmqr(**cusolverH, side, trans, m, n, k, A_z_buf_ct{{[0-9]+}}, lda, TAU_z_buf_ct{{[0-9]+}}, B_z_buf_ct{{[0-9]+}}, ldb, workspace_z_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
-    //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&TAU_z);
-    //CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&B_z);
-    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&A_z);
+    //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&TAU_z);
+    //CHECK-NEXT: auto B_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&B_z);
+    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&workspace_z);
     //CHECK-NEXT: oneapi::mkl::lapack::unmqr(**cusolverH, side, trans, m, n, k, A_z_buf_ct{{[0-9]+}}, lda, TAU_z_buf_ct{{[0-9]+}}, B_z_buf_ct{{[0-9]+}}, ldb, workspace_z_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnZunmqr_bufferSize(*cusolverH, side, trans, m, n, k, &A_z, lda, &TAU_z, &C_z, ldc, &Lwork);
@@ -672,18 +672,18 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::orgqr_scratchpad_size<float>(**cusolverH, m, n, k, lda), 0);
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::orgqr_scratchpad_size<float>(**cusolverH, m, n, k, lda);
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
-    //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&TAU_f);
-    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
+    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&A_f);
+    //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&TAU_f);
+    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&workspace_f);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::orgqr(**cusolverH, m, n, k, A_f_buf_ct{{[0-9]+}}, lda, TAU_f_buf_ct{{[0-9]+}}, workspace_f_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
-    //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&TAU_f);
-    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
+    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&A_f);
+    //CHECK-NEXT: auto TAU_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&TAU_f);
+    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&workspace_f);
     //CHECK-NEXT: oneapi::mkl::lapack::orgqr(**cusolverH, m, n, k, A_f_buf_ct{{[0-9]+}}, lda, TAU_f_buf_ct{{[0-9]+}}, workspace_f_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnSorgqr_bufferSize(*cusolverH, m, n, k, &A_f, lda, &TAU_f, &Lwork);
@@ -697,18 +697,18 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::orgqr_scratchpad_size<double>(**cusolverH, m, n, k, lda), 0);
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::orgqr_scratchpad_size<double>(**cusolverH, m, n, k, lda);
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
-    //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&TAU_d);
-    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
+    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&A_d);
+    //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&TAU_d);
+    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&workspace_d);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::orgqr(**cusolverH, m, n, k, A_d_buf_ct{{[0-9]+}}, lda, TAU_d_buf_ct{{[0-9]+}}, workspace_d_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
-    //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&TAU_d);
-    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
+    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&A_d);
+    //CHECK-NEXT: auto TAU_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&TAU_d);
+    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&workspace_d);
     //CHECK-NEXT: oneapi::mkl::lapack::orgqr(**cusolverH, m, n, k, A_d_buf_ct{{[0-9]+}}, lda, TAU_d_buf_ct{{[0-9]+}}, workspace_d_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnDorgqr_bufferSize(*cusolverH, m, n, k, &A_d, lda, &TAU_d, &Lwork);
@@ -722,18 +722,18 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::ungqr_scratchpad_size<std::complex<float>>(**cusolverH, m, n, k, lda), 0);
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::ungqr_scratchpad_size<std::complex<float>>(**cusolverH, m, n, k, lda);
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
-    //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&TAU_c);
-    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&A_c);
+    //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&TAU_c);
+    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&workspace_c);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::ungqr(**cusolverH, m, n, k, A_c_buf_ct{{[0-9]+}}, lda, TAU_c_buf_ct{{[0-9]+}}, workspace_c_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
-    //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&TAU_c);
-    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&A_c);
+    //CHECK-NEXT: auto TAU_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&TAU_c);
+    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&workspace_c);
     //CHECK-NEXT: oneapi::mkl::lapack::ungqr(**cusolverH, m, n, k, A_c_buf_ct{{[0-9]+}}, lda, TAU_c_buf_ct{{[0-9]+}}, workspace_c_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnCungqr_bufferSize(*cusolverH, m, n, k, &A_c, lda, &TAU_c, &Lwork);
@@ -747,18 +747,18 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: status = (*(&Lwork) = oneapi::mkl::lapack::ungqr_scratchpad_size<std::complex<double>>(**cusolverH, m, n, k, lda), 0);
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::ungqr_scratchpad_size<std::complex<double>>(**cusolverH, m, n, k, lda);
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
-    //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&TAU_z);
-    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&A_z);
+    //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&TAU_z);
+    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&workspace_z);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
     //CHECK-NEXT: status = (oneapi::mkl::lapack::ungqr(**cusolverH, m, n, k, A_z_buf_ct{{[0-9]+}}, lda, TAU_z_buf_ct{{[0-9]+}}, workspace_z_buf_ct{{[0-9]+}}, Lwork), 0);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
-    //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&TAU_z);
-    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&A_z);
+    //CHECK-NEXT: auto TAU_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&TAU_z);
+    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&workspace_z);
     //CHECK-NEXT: oneapi::mkl::lapack::ungqr(**cusolverH, m, n, k, A_z_buf_ct{{[0-9]+}}, lda, TAU_z_buf_ct{{[0-9]+}}, workspace_z_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: }
     status = cusolverDnZungqr_bufferSize(*cusolverH, m, n, k, &A_z, lda, &TAU_z, &Lwork);
@@ -778,10 +778,10 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::sytrf_scratchpad_size<float>(**cusolverH, uplo_ct_mkl_upper_lower, n, lda);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&A_f);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
+    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&workspace_f);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
@@ -789,10 +789,10 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&A_f);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&A_f);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(&workspace_f);
+    //CHECK-NEXT: auto workspace_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(&workspace_f);
     //CHECK-NEXT: oneapi::mkl::lapack::sytrf(**cusolverH, uplo, n, A_f_buf_ct{{[0-9]+}}, lda, result_temp_buffer5, workspace_f_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
@@ -813,10 +813,10 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::sytrf_scratchpad_size<double>(**cusolverH, uplo_ct_mkl_upper_lower, n, lda);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&A_d);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
+    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&workspace_d);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
@@ -824,10 +824,10 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&A_d);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&A_d);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(&workspace_d);
+    //CHECK-NEXT: auto workspace_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(&workspace_d);
     //CHECK-NEXT: oneapi::mkl::lapack::sytrf(**cusolverH, uplo, n, A_d_buf_ct{{[0-9]+}}, lda, result_temp_buffer5, workspace_d_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
@@ -848,10 +848,10 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::sytrf_scratchpad_size<std::complex<float>>(**cusolverH, uplo_ct_mkl_upper_lower, n, lda);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&A_c);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&workspace_c);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
@@ -859,10 +859,10 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&A_c);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&A_c);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(&workspace_c);
+    //CHECK-NEXT: auto workspace_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(&workspace_c);
     //CHECK-NEXT: oneapi::mkl::lapack::sytrf(**cusolverH, uplo, n, A_c_buf_ct{{[0-9]+}}, lda, result_temp_buffer5, workspace_c_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
@@ -883,10 +883,10 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: *(&Lwork) = oneapi::mkl::lapack::sytrf_scratchpad_size<std::complex<double>>(**cusolverH, uplo_ct_mkl_upper_lower, n, lda);
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&A_z);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&workspace_z);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
@@ -894,10 +894,10 @@ int main(int argc, char *argv[])
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }
     //CHECK-NEXT: {
-    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&A_z);
-    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = dpct::get_buffer<int>(&devIpiv);
+    //CHECK-NEXT: auto A_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&A_z);
+    //CHECK-NEXT: auto devIpiv_buf_ct{{[0-9]+}} = c2s::get_buffer<int>(&devIpiv);
     //CHECK-NEXT: sycl::buffer<int64_t> result_temp_buffer5(sycl::range<1>(1));
-    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(&workspace_z);
+    //CHECK-NEXT: auto workspace_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(&workspace_z);
     //CHECK-NEXT: oneapi::mkl::lapack::sytrf(**cusolverH, uplo, n, A_z_buf_ct{{[0-9]+}}, lda, result_temp_buffer5, workspace_z_buf_ct{{[0-9]+}}, Lwork);
     //CHECK-NEXT: devIpiv_buf_ct{{[0-9]+}}.get_access<sycl::access_mode::write>()[0] = (int)result_temp_buffer5.get_access<sycl::access_mode::read>()[0];
     //CHECK-NEXT: }

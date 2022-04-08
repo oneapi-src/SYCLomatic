@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/cufft-reuse-handle %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s --format-range=none -out-root %T/cufft-reuse-handle %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cufft-reuse-handle/cufft-reuse-handle.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cufft.h>
@@ -64,7 +64,7 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1075:{{[0-9+]}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan_mmany64_Z2Z->commit(dpct::get_default_queue());
+  //CHECK-NEXT:plan_mmany64_Z2Z->commit(c2s::get_default_queue());
   //CHECK-NEXT:if ((void *)idata_mmany64_Z2Z == (void *)odata_mmany64_Z2Z) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_backward(*plan_mmany64_Z2Z, (double*)idata_mmany64_Z2Z);
   //CHECK-NEXT:} else {

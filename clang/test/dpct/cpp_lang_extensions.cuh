@@ -1,5 +1,5 @@
 
-// CHECK: #if (DPCT_COMPATIBILITY_TEMP >= 320)
+// CHECK: #if (C2S_COMPATIBILITY_TEMP >= 320)
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to __ldg was removed because there is no correspoinding API in DPC++.
 // CHECK-NEXT: */

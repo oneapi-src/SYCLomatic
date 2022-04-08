@@ -1,6 +1,6 @@
 // FIXME:
 // UNSUPPORTED: -windows-
-// RUN: dpct --usm-level=none -out-root %T/cuda-stream-api %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: c2s --usm-level=none -out-root %T/cuda-stream-api %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda-stream-api/cuda-stream-api.dp.cpp --match-full-lines %s
 
 #include <list>
@@ -29,7 +29,7 @@ void callback(cudaStream_t st, cudaError_t status, void *vp) {
 template<typename FloatN, typename Float>
 static void func()
 {
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
   // CHECK: std::list<sycl::queue *> streams;
   std::list<cudaStream_t> streams;
   for (auto Iter = streams.begin(); Iter != streams.end(); ++Iter)
@@ -69,7 +69,7 @@ static void func()
   for (; 0; )
     cudaStreamCreate(&s0);
 
-  // CHECK:   q_ct1.parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   q_ct1.parallel_for<c2s_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
@@ -82,14 +82,14 @@ static void func()
   // CHECK-NEXT: MY_ERROR_CHECKER((s1 = dev_ct1.create_queue(), 0));
   MY_ERROR_CHECKER(cudaStreamCreate(&s1));
 
-  // CHECK:   s0->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   s0->parallel_for<c2s_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
   // CHECK-NEXT:         });
   kernelFunc<<<16, 32, 0, s0>>>();
 
-  // CHECK:   s1->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+  // CHECK:   s1->parallel_for<c2s_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernelFunc();
@@ -112,14 +112,14 @@ static void func()
     // CHECK-NEXT: MY_ERROR_CHECKER((*(s3) = dev_ct1.create_queue(), 0));
     MY_ERROR_CHECKER(cudaStreamCreateWithFlags(s3, cudaStreamNonBlocking));
 
-    // CHECK:   s2->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+    // CHECK:   s2->parallel_for<c2s_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
     // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
     // CHECK-NEXT:           kernelFunc();
     // CHECK-NEXT:         });
     kernelFunc<<<16, 32, 0, s2>>>();
 
-    // CHECK:   (*s3)->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+    // CHECK:   (*s3)->parallel_for<c2s_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
     // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
     // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
     // CHECK-NEXT:           kernelFunc();
@@ -152,13 +152,13 @@ static void func()
       // CHECK-NEXT: MY_ERROR_CHECKER((s5 = dev_ct1.create_queue(), 0));
       MY_ERROR_CHECKER(cudaStreamCreateWithPriority(&s5, cudaStreamNonBlocking, 3));
 
-      // CHECK:   s4->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+      // CHECK:   s4->parallel_for<c2s_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
       // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
       // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
       // CHECK-NEXT:           kernelFunc();
       // CHECK-NEXT:         });
       kernelFunc<<<16, 32, 0, s4>>>();
-      // CHECK:   s5->parallel_for<dpct_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
+      // CHECK:   s5->parallel_for<c2s_kernel_name<class kernelFunc_{{[a-f0-9]+}}>>(
       // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
       // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
       // CHECK-NEXT:           kernelFunc();

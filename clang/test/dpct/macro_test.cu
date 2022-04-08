@@ -5,7 +5,7 @@
 // RUN: cd %T
 // RUN: rm -rf %T/macro_test_output
 // RUN: mkdir %T/macro_test_output
-// RUN: dpct -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: c2s -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.dp.cpp --match-full-lines macro_test.cu
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.h --match-full-lines macro_test.h
 #include <math.h>
@@ -69,13 +69,13 @@ __global__ void foo2(){
 __global__ void foo3(int x, int y) {}
 
 void foo() {
-  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   DDD d3;
 
-// CHECK: #ifdef DPCT_COMPATIBILITY_TEMP
+// CHECK: #ifdef C2S_COMPATIBILITY_TEMP
 #ifdef __CUDA_ARCH__
-  // CHECK: int CA = DPCT_COMPATIBILITY_TEMP;
+  // CHECK: int CA = C2S_COMPATIBILITY_TEMP;
   int CA = __CUDA_ARCH__;
 #endif
 
@@ -171,7 +171,7 @@ void foo() {
 // CHECK-NEXT:     if (err != 0) \
 // CHECK-NEXT:     { \
 // CHECK-NEXT:         int currentDevice; \
-// CHECK-NEXT:         currentDevice = dpct::dev_mgr::instance().current_device_id(); \
+// CHECK-NEXT:         currentDevice = c2s::dev_mgr::instance().current_device_id(); \
 // CHECK-NEXT:     } \
 // CHECK-NEXT: } while (0)
 #define HANDLE_GPU_ERROR(err) \
@@ -263,9 +263,9 @@ NESTMACRO3(cudaMalloc(&a,100));
 //test if parse error, no check
 int b;
 #if ( __CUDACC_VER_MAJOR__ >= 8 ) && (__CUDA_ARCH__ >= 600 )
-  // DPCT should visit this path
+  // C2S should visit this path
 #else
-  // If DPCT visit this path, b is redeclared.
+  // If C2S visit this path, b is redeclared.
   int b;
 #endif
 
@@ -496,9 +496,9 @@ __global__ void foo7() {
 //CHECK-NEXT:   #define SLOW(X) X
 //CHECK-NEXT:   double* data;
 //CHECK-NEXT:   unsigned long long int tid;
-//CHECK-NEXT:   SLOW(dpct::atomic_fetch_add(&data[0], (double)tid);
-//CHECK-NEXT:         dpct::atomic_fetch_add(&data[1], (double)(tid + 1));
-//CHECK-NEXT:         dpct::atomic_fetch_add(&data[2], (double)(tid + 2)););
+//CHECK-NEXT:   SLOW(c2s::atomic_fetch_add(&data[0], (double)tid);
+//CHECK-NEXT:         c2s::atomic_fetch_add(&data[1], (double)(tid + 1));
+//CHECK-NEXT:         c2s::atomic_fetch_add(&data[2], (double)(tid + 2)););
 //CHECK-NEXT: }
 __global__ void foo8(){
 #define SLOW(X) X
@@ -549,7 +549,7 @@ __global__ void templatefoo(){
 //CHECK: #define AAA 15 + 3
 //CHECK-NEXT: #define CCC <<<1,1>>>()
 //CHECK-NEXT: #define KERNEL(A, B)                                                           \
-//CHECK-NEXT:   dpct::get_default_queue().parallel_for(                                      \
+//CHECK-NEXT:   c2s::get_default_queue().parallel_for(                                      \
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),   \
 //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { templatefoo<A, B>(); });
 //CHECK-NEXT: #define CALL_KERNEL(C, D) KERNEL(C, D); int a = 0;
@@ -582,12 +582,12 @@ __global__ void foo11(){
 //CHECK-NEXT:   struct MyVector : type                                                       \
 //CHECK-NEXT:   {                                                                            \
 //CHECK-NEXT:     typedef type Type;                                                         \
-//CHECK-NEXT:     __dpct_inline__ MyVector operator+(const MyVector &other) const {          \
+//CHECK-NEXT:     __c2s_inline__ MyVector operator+(const MyVector &other) const {          \
 //CHECK-NEXT:       MyVector retval;                                                         \
 //CHECK-NEXT:       retval = *this + other;                                                  \
 //CHECK-NEXT:       return retval;                                                           \
 //CHECK-NEXT:     }                                                                          \
-//CHECK-NEXT:     __dpct_inline__ MyVector operator-(const MyVector &other) const {          \
+//CHECK-NEXT:     __c2s_inline__ MyVector operator-(const MyVector &other) const {          \
 //CHECK-NEXT:       MyVector retval;                                                         \
 //CHECK-NEXT:       retval = *this - other;                                                  \
 //CHECK-NEXT:       return retval;                                                           \
@@ -597,13 +597,13 @@ __global__ void foo11(){
 //CHECK-NEXT:   struct MyVector2 : sycl::type##2                                             \
 //CHECK-NEXT:   {                                                                            \
 //CHECK-NEXT:     typedef sycl::type##2 Type;                                                \
-//CHECK-NEXT:     __dpct_inline__ MyVector2 operator+(const MyVector2 &other) const {        \
+//CHECK-NEXT:     __c2s_inline__ MyVector2 operator+(const MyVector2 &other) const {        \
 //CHECK-NEXT:       MyVector2 retval;                                                        \
 //CHECK-NEXT:       retval.x() = x() + other.x();                                            \
 //CHECK-NEXT:       retval.y() = y() + other.y();                                            \
 //CHECK-NEXT:       return retval;                                                           \
 //CHECK-NEXT:     }                                                                          \
-//CHECK-NEXT:     __dpct_inline__ MyVector2 operator-(const MyVector2 &other) const {        \
+//CHECK-NEXT:     __c2s_inline__ MyVector2 operator-(const MyVector2 &other) const {        \
 //CHECK-NEXT:       MyVector2 retval;                                                        \
 //CHECK-NEXT:       retval.x() = x() - other.x();                                            \
 //CHECK-NEXT:       retval.y() = y() - other.y();                                            \
@@ -684,7 +684,7 @@ real v5 = POW3(vx[id], 2);
 //CHECK-NEXT: #define SIZE 8
 //CHECK-NEXT: void foo13(){
 //CHECK-NEXT:   int *a;
-//CHECK-NEXT:   CALL(a = sycl::malloc_device<int>(SIZE * 10, dpct::get_default_queue()));
+//CHECK-NEXT:   CALL(a = sycl::malloc_device<int>(SIZE * 10, c2s::get_default_queue()));
 //CHECK-NEXT: }
 #define CALL(call) call;
 #define SIZE 8
@@ -743,7 +743,7 @@ int foo14(){
 //CHECK-NEXT:   /*
 //CHECK-NEXT:   DPCT1059:{{[0-9]+}}: SYCL only supports 4-channel image format. Adjust the code.
 //CHECK-NEXT:   */
-//CHECK-NEXT:   dpct::image_wrapper<float, 1> aaa;
+//CHECK-NEXT:   c2s::image_wrapper<float, 1> aaa;
 //CHECK-NEXT:   float *f_a = NULL;
 //CHECK-NEXT:   CALL(aaa.attach(f_a, CUDA_NUM_THREADS * sizeof(int)))
 //CHECK-NEXT: }
@@ -819,7 +819,7 @@ typedef CONCATE(Stream_t) stream_t2;
 typedef CONCATE(Event_t) event_t2;
 
 //CHECK: void foo18() {
-//CHECK-NEXT:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
+//CHECK-NEXT:   c2s::device_ext &dev_ct1 = c2s::get_current_device();
 //CHECK-NEXT:   sycl::event event;
 //CHECK-NEXT:   event.wait_and_throw();
 //CHECK-NEXT:   stream_t2 *stream;
@@ -850,9 +850,9 @@ void foo18(){
   CONCATE(StreamDestroy)(stream2);
 }
 
-// CHECK: static const int streamDefault2 = &dpct::get_default_queue();
-// CHECK-NEXT: static const int streamDefault = CALL(&dpct::get_default_queue());
-// CHECK-NEXT: static const int streamNonBlocking = &dpct::get_default_queue();
+// CHECK: static const int streamDefault2 = &c2s::get_default_queue();
+// CHECK-NEXT: static const int streamDefault = CALL(&c2s::get_default_queue());
+// CHECK-NEXT: static const int streamNonBlocking = &c2s::get_default_queue();
 static const int streamDefault2 = cudaStreamDefault;
 static const int streamDefault = CALL(CONCATE(StreamDefault));
 static const int streamNonBlocking = CONCATE(StreamNonBlocking);
@@ -873,8 +873,8 @@ static const int streamNonBlocking = CONCATE(StreamNonBlocking);
 } while(0)
 
 //CHECK: void foo19(){
-//CHECK-NEXT:   dpct::image_wrapper<sycl::float4, 2> tex42;
-//CHECK-NEXT:   dpct::image_matrix_p a42;
+//CHECK-NEXT:   c2s::image_wrapper<sycl::float4, 2> tex42;
+//CHECK-NEXT:   c2s::image_matrix_p a42;
 //CHECK-NEXT:   CBTTA(tex42,a42);
 //CHECK-NEXT:   CBTTA2(tex42, a42, tex42.get_channel());
 //CHECK-NEXT: }
@@ -945,10 +945,10 @@ void foo20() {
 
 //CHECK: /*
 //CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for
-//CHECK-NEXT: dpct::select_from_sub_group.
+//CHECK-NEXT: c2s::select_from_sub_group.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define CALLSHFLSYNC(x)                                                        \
-//CHECK-NEXT: dpct::select_from_sub_group(item_ct1.get_sub_group(), x, 3 ^ 1);
+//CHECK-NEXT: c2s::select_from_sub_group(item_ct1.get_sub_group(), x, 3 ^ 1);
 #define CALLSHFLSYNC(x) __shfl_sync(0xffffffff, x, 3 ^ 1);
 //CHECK: #define CALLANYSYNC(x)                                                         \
 //CHECK-NEXT:   sycl::any_of_group(                                                          \
@@ -997,7 +997,7 @@ foo23(void)
 }
 
 //CHECK: #define SHFL(x, y, z)                                                          \
-//CHECK-NEXT: dpct::select_from_sub_group(item_ct1.get_sub_group(), (x), (y), (z))
+//CHECK-NEXT: c2s::select_from_sub_group(item_ct1.get_sub_group(), (x), (y), (z))
 #define SHFL(x, y, z) __shfl((x), (y), (z))
 __global__ void foo24(){
   int i;
@@ -1073,7 +1073,7 @@ __global__ void test2() {}
 #undef EEEEE_launch_bounds_test
 }
 
-//     CHECK:#if (defined(DPCT_COMPATIBILITY_TEMP) &&                                       \
+//     CHECK:#if (defined(C2S_COMPATIBILITY_TEMP) &&                                       \
 //CHECK-NEXT:     !(defined(__clang__) && defined(SYCL_LANGUAGE_VERSION)))
 //CHECK-NEXT:__host__ __device__
 //CHECK-NEXT:#endif
@@ -1102,7 +1102,7 @@ MACRO_AA(MACRO_BB)
 
 #define CALL_K(...) __VA_ARGS__
 void foo28(){
-  //CHECK: CALL_K(dpct::get_default_queue().parallel_for(
+  //CHECK: CALL_K(c2s::get_default_queue().parallel_for(
   //CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:     foo_kernel();
