@@ -276,8 +276,11 @@ bool printOptions(
           (1 << static_cast<unsigned>(ExplicitNamespace::EN_SYCL_Math))) {
         Values.emplace_back("sycl-math");
       }
-      if (UValue & (1 << static_cast<unsigned>(ExplicitNamespace::EN_DPCT))) {
+      if (UValue & (1 << static_cast<unsigned>(ExplicitNamespace::EN_C2S))) {
         Values.emplace_back("c2s");
+      }
+      if (UValue & (1 << static_cast<unsigned>(ExplicitNamespace::EN_DPCT))) {
+        Values.emplace_back("dpct");
       }
 
       std::string Str;

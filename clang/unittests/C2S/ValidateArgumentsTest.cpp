@@ -39,7 +39,7 @@ TEST_F(MakeCanonicalOrSetDefaults, getDefaultOutRootEmpty) {
 #if _WIN32
   std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
 #endif
-  ASSERT_EQ(OutRoot, TestRunPath + "/dpct_output");
+  ASSERT_EQ(OutRoot, TestRunPath + "/c2s_output");
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, getDefaultOutRoot) {
@@ -48,7 +48,7 @@ TEST_F(MakeCanonicalOrSetDefaults, getDefaultOutRoot) {
 #if _WIN32
   std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
 #endif
-  ASSERT_EQ(OutRoot, TestRunPath + "/dpct_output");
+  ASSERT_EQ(OutRoot, TestRunPath + "/c2s_output");
 }
 
 TEST(getDefaultInRoot, noInroot) {
@@ -85,7 +85,7 @@ TEST_F(MakeCanonicalOrSetDefaults, empty) {
   std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
 #endif
   ASSERT_EQ(InRoot, TempDirAbsolute + "/a/b/in");
-  ASSERT_EQ(OutRoot, TestRunPath + "/dpct_output");
+  ASSERT_EQ(OutRoot, TestRunPath + "/c2s_output");
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, emptyOnlyOneFileAllowed) {
@@ -187,7 +187,7 @@ TEST_F(MakeCanonicalOrSetDefaults, relativePathsNoRoots) {
   std::replace(OutRoot.begin(), OutRoot.end(), '\\', '/');
 #endif
   ASSERT_EQ(InRoot, TestRunPath);
-  ASSERT_EQ(OutRoot, TestRunPath + "/dpct_output" );
+  ASSERT_EQ(OutRoot, TestRunPath + "/c2s_output" );
 }
 
 TEST_F(MakeCanonicalOrSetDefaults, relativePathsDots) {

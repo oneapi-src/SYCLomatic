@@ -33,7 +33,7 @@ static bool getDefaultOutRoot(std::string &OutRootPar) {
     llvm::errs() << "Could not get current path.\n";
     return false;
   }
-  OutRoot.append("/dpct_output");
+  OutRoot.append("/c2s_output");
   if (fs::is_directory(OutRoot)) {
     std::error_code EC;
     fs::directory_iterator Iter(OutRoot, EC);
@@ -43,21 +43,21 @@ static bool getDefaultOutRoot(std::string &OutRootPar) {
     }
     fs::directory_iterator End;
     if (Iter != End) {
-      llvm::errs() << "dpct_output directory is not empty. Please use option"
+      llvm::errs() << "c2s_output directory is not empty. Please use option"
                       " \"--out-root\" to set output directory.\n";
       return false;
     } else {
       clang::dpct::PrintMsg(
-          "The directory \"dpct_output\" is used as \"out-root\"\n");
+          "The directory \"c2s_output\" is used as \"out-root\"\n");
     }
   } else {
     std::error_code EC = fs::create_directory(OutRoot, false);
     if ((bool)EC) {
-      llvm::errs() << "Could not create dpct_output directory.\n";
+      llvm::errs() << "Could not create c2s_output directory.\n";
       return false;
     }
     clang::dpct::PrintMsg(
-        "The directory \"dpct_output\" is used as \"out-root\"\n");
+        "The directory \"c2s_output\" is used as \"out-root\"\n");
   }
   OutRootPar.assign(begin(OutRoot), end(OutRoot));
   return true;
