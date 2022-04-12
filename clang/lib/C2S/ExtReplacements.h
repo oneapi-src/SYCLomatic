@@ -12,8 +12,8 @@
 // ExtReplacements.h declare class ExtReplacements, which stores ExtReplacement
 // set, with merging pass
 
-#ifndef DPCT_EXTREPLACEMENTS_H
-#define DPCT_EXTREPLACEMENTS_H
+#ifndef C2S_EXTREPLACEMENTS_H
+#define C2S_EXTREPLACEMENTS_H
 
 #include "TextModification.h"
 #include "Utility.h"
@@ -22,8 +22,8 @@
 #include <unordered_set>
 
 namespace clang {
-namespace dpct {
-class DpctFileInfo;
+namespace c2s {
+class C2SFileInfo;
 enum class HelperFuncType;
 
 class ExtReplacements {
@@ -65,10 +65,10 @@ private:
 
 private:
   bool isInvalid(std::shared_ptr<ExtReplacement> Repl,
-                 std::shared_ptr<DpctFileInfo> FileInfo);
+                 std::shared_ptr<C2SFileInfo> FileInfo);
   // Check if the Repl is same as source code
   bool isReplRedundant(std::shared_ptr<ExtReplacement> Repl,
-                       std::shared_ptr<DpctFileInfo> FileInfo);
+                       std::shared_ptr<C2SFileInfo> FileInfo);
   inline bool checkLiveness(std::shared_ptr<ExtReplacement> Repl) {
     if (isAlive(Repl))
       // If a replacement in the same pair is alive, merge it anyway.
@@ -122,20 +122,20 @@ private:
 
   std::vector<std::shared_ptr<ExtReplacement>> mergeReplsAtSameOffset();
 
-  void buildOriginCodeReplacements(std::shared_ptr<DpctFileInfo> FileInfo);
+  void buildOriginCodeReplacements(std::shared_ptr<C2SFileInfo> FileInfo);
 
   // Remove comments in the source code.
   void removeCommentsInSrcCode(StringRef SrcCode, std::string &Result,
                                bool &BlockComment);
 
-  void getLOCStaticFromCodeRepls(std::shared_ptr<DpctFileInfo> FileInfo);
+  void getLOCStaticFromCodeRepls(std::shared_ptr<C2SFileInfo> FileInfo);
 
   std::shared_ptr<ExtReplacement>
   buildOriginCodeReplacement(const SourceLineRange &LineRange,
-                             std::shared_ptr<DpctFileInfo> FileInfo);
+                             std::shared_ptr<C2SFileInfo> FileInfo);
 
   bool isEndWithSlash(unsigned LineNumber,
-                      std::shared_ptr<DpctFileInfo> FileInfo);
+                      std::shared_ptr<C2SFileInfo> FileInfo);
   size_t findCR(StringRef Line);
 
   // Mark a replacement as dead.
@@ -159,7 +159,7 @@ private:
     return false;
   }
 
-  void buildCudaArchHostFunc(std::shared_ptr<DpctFileInfo> FileInfo);
+  void buildCudaArchHostFunc(std::shared_ptr<C2SFileInfo> FileInfo);
   void processCudaArchMacro();
 
   std::string FilePath;
@@ -172,7 +172,7 @@ private:
 
   std::unordered_set<std::string> DuplicateFilter;
 };
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
 
 #endif

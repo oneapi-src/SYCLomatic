@@ -12,11 +12,11 @@
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LibCommonUtils_mkl_get_version,
     CALL_FACTORY_ENTRY("cufftGetVersion",
-                       CALL(MapNames::getDpctNamespace() + "mkl_get_version",
-                            ARG(MapNames::getDpctNamespace() + "version_field::major"), ARG(0))))
+                       CALL(MapNames::getC2SNamespace() + "mkl_get_version",
+                            ARG(MapNames::getC2SNamespace() + "version_field::major"), ARG(0))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LibCommonUtils_mkl_get_version,
     CALL_FACTORY_ENTRY("cufftGetProperty",
-                       CALL(MapNames::getDpctNamespace() + "mkl_get_version",
+                       CALL(MapNames::getC2SNamespace() + "mkl_get_version",
                             ARG(0), ARG(1))))

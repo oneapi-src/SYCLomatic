@@ -39,7 +39,7 @@ class Rewriter;
 class SourceManager;
 
 #ifdef INTEL_CUSTOMIZATION
-namespace dpct {
+namespace c2s {
 enum class ConstantFlagType : int {
   Default = 0,
   Host = 1,
@@ -147,8 +147,8 @@ public:
   bool getBlockLevelFormatFlag() const { return BlockLevelFormatFlag; }
   void setNotFormatFlag() { NotFormatFlag = true; }
   bool getNotFormatFlag() { return NotFormatFlag; }
-  dpct::ConstantFlagType getConstantFlag() const { return ConstantFlag; }
-  void setConstantFlag(dpct::ConstantFlagType F) { ConstantFlag = F; }
+  c2s::ConstantFlagType getConstantFlag() const { return ConstantFlag; }
+  void setConstantFlag(c2s::ConstantFlagType F) { ConstantFlag = F; }
   unsigned int getConstantOffset() const { return ConstantOffset; }
   void setConstantOffset(unsigned int O) { ConstantOffset = O; }
   std::string getInitStr() const { return InitStr; }
@@ -172,7 +172,7 @@ private:
   bool BlockLevelFormatFlag = false;
   bool NotFormatFlag = false;
   // Record the __constant__ variable is used in host, device or hostdevice
-  dpct::ConstantFlagType ConstantFlag = dpct::ConstantFlagType::Default;
+  c2s::ConstantFlagType ConstantFlag = c2s::ConstantFlagType::Default;
   // Record the offset of the begin of token "__constant__"
   unsigned int ConstantOffset = 0;
   // Record the init expression of the __constant__ variable, it is used when
@@ -408,7 +408,7 @@ struct TranslationUnitReplacements {
   std::string MainSourceFile;
 #ifdef INTEL_CUSTOMIZATION
   std::vector<std::pair<std::string, std::string>>  MainSourceFilesDigest;
-  std::string DpctVersion = "";
+  std::string C2SVersion = "";
   std::string MainHelperFileName = "";
   std::string USMLevel = ""; // deprecated
 

@@ -9,8 +9,8 @@
 //
 //===-----------------------------------------------------------------===//
 
-#ifndef DPCT_AST_DIAGNOSTICS_H
-#define DPCT_AST_DIAGNOSTICS_H
+#ifndef C2S_AST_DIAGNOSTICS_H
+#define C2S_AST_DIAGNOSTICS_H
 
 #include "AnalysisInfo.h"
 #include "SaveNewFiles.h"
@@ -33,7 +33,7 @@ extern llvm::cl::opt<OutputVerbosityLevel> OutputVerbosity;
 extern bool SuppressWarningsAllFlag;
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 
 struct DiagnosticsMessage;
 
@@ -51,7 +51,7 @@ struct DiagnosticsMessage {
   DiagnosticsMessage(std::unordered_map<int, DiagnosticsMessage> &Table, int ID,
                      int Category, const char *Msg)
       : ID(ID), Category(Category), Msg(Msg) {
-    assert(Table.find(ID) == Table.end() && "[DPCT Internal error] Two "
+    assert(Table.find(ID) == Table.end() && "[C2S Internal error] Two "
                                             "messages with the same ID "
                                             "are being registered");
     Table[ID] = *this;
@@ -305,7 +305,7 @@ void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
 template <typename IDTy, typename... Ts>
 bool report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
             TransformSetTy *TS, bool UseTextBegin, Ts &&...Vals) {
-  auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+  auto &SM = clang::c2s::C2SGlobalInfo::getSourceManager();
 
   SmallString<4096> FileName(SM.getFilename(SL));
   makeCanonical(FileName);
@@ -313,9 +313,9 @@ bool report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
   // E.g, on Windows all '/' are converted to '\'.
   llvm::sys::path::native(FileName);
 
-  std::string FileAndLine = clang::dpct::buildString(
+  std::string FileAndLine = clang::c2s::buildString(
       FileName.str(), ":", SM.getPresumedLineNumber(SL));
-  std::string WarningIDAndMsg = clang::dpct::buildString(
+  std::string WarningIDAndMsg = clang::c2s::buildString(
       std::to_string(static_cast<int>(MsgID)), ":", std::forward<Ts>(Vals)...);
 
   if (checkDuplicated(FileAndLine, WarningIDAndMsg))
@@ -351,7 +351,7 @@ public:
 private:
   SourceManagerForWarning() {
     DiagOpts = new DiagnosticOptions();
-    DiagOpts->ShowColors = DpctGlobalInfo::getInstance().getColorOption();
+    DiagOpts->ShowColors = C2SGlobalInfo::getInstance().getColorOption();
     DiagnosticPrinter = new TextDiagnosticPrinter(llvm::errs(), &*DiagOpts);
     Diagnostics = new DiagnosticsEngine(
         IntrusiveRefCntPtr<DiagnosticIDs>(new DiagnosticIDs()), &*DiagOpts,
@@ -376,17 +376,17 @@ private:
 template <typename IDTy, typename... Ts>
 bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
             bool IsInsertWarningIntoCode, bool UseTextBegin, Ts &&...Vals) {
-  std::shared_ptr<DpctFileInfo> Fileinfo =
-      dpct::DpctGlobalInfo::getInstance().insertFile(FileAbsPath);
+  std::shared_ptr<C2SFileInfo> Fileinfo =
+      c2s::C2SGlobalInfo::getInstance().insertFile(FileAbsPath);
 
   SmallString<4096> NativeFormPath(FileAbsPath);
   // Convert path to the native form.
   // E.g, on Windows all '/' are converted to '\'.
   llvm::sys::path::native(NativeFormPath);
 
-  std::string FileAndLine = clang::dpct::buildString(
+  std::string FileAndLine = clang::c2s::buildString(
       NativeFormPath, ":", Fileinfo->getLineNumber(Offset));
-  std::string WarningIDAndMsg = clang::dpct::buildString(
+  std::string WarningIDAndMsg = clang::c2s::buildString(
       std::to_string(static_cast<int>(MsgID)), ":", std::forward<Ts>(Vals)...);
 
   if (checkDuplicated(FileAndLine, WarningIDAndMsg))
@@ -418,7 +418,7 @@ bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
         nullptr);
     if (UseTextBegin)
       R->setInsertPosition(InsertPosition::IP_Right);
-    DpctGlobalInfo::getInstance().addReplacement(R);
+    C2SGlobalInfo::getInstance().addReplacement(R);
     UniqueID++;
   }
 
@@ -426,6 +426,6 @@ bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
 }
 
 } // namespace DiagnosticsUtils
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
-#endif // DPCT_AST_DIAGNOSTICS_H
+#endif // C2S_AST_DIAGNOSTICS_H

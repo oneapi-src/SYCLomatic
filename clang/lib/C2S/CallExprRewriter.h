@@ -15,7 +15,7 @@
 #include "Diagnostics.h"
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 
 class CallExprRewriter;
 class FuncCallExprRewriter;
@@ -121,23 +121,23 @@ public:
   inline void report(IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
     TransformSetTy TS;
     auto SL = Call->getBeginLoc();
-    auto &SM = DpctGlobalInfo::getSourceManager();
+    auto &SM = C2SGlobalInfo::getSourceManager();
     if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
-      auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
+      auto ItMatch = c2s::C2SGlobalInfo::getMacroTokenToMacroDefineLoc().find(
           getHashStrFromLoc(SM.getImmediateSpellingLoc(SL)));
       if (ItMatch !=
-          dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
+          c2s::C2SGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
         if (ItMatch->second->IsInRoot) {
           SL = ItMatch->second->NameTokenLoc;
         }
       }
     }
     DiagnosticsUtils::report<IDTy, Ts...>(
-        SL, MsgID, DpctGlobalInfo::getCompilerInstance(), &TS, UseTextBegin,
+        SL, MsgID, C2SGlobalInfo::getCompilerInstance(), &TS, UseTextBegin,
         std::forward<Ts>(Vals)...);
     for (auto &T : TS)
-      DpctGlobalInfo::getInstance().addReplacement(
-          T->getReplacement(DpctGlobalInfo::getContext()));
+      C2SGlobalInfo::getInstance().addReplacement(
+          T->getReplacement(C2SGlobalInfo::getContext()));
   }
   std::string getAddressSpace(const clang::Expr *E, std::string MigratedStr) {
     bool HasAttr = false;
@@ -246,7 +246,7 @@ public:
       : CallExprRewriter(C, ""), Pred(PredCreator->create(C)),
         IfBlock(IfBlockCreator->create(C)),
         ElseBlock(ElseBlockCreator->create(C)) {
-    auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+    auto &SM = c2s::C2SGlobalInfo::getSourceManager();
     NL = getNL(getStmtExpansionSourceRange(C).getBegin(), SM);
     Indent = getIndent(getStmtExpansionSourceRange(C).getBegin(), SM);
   }
@@ -302,7 +302,7 @@ public:
       : Inner(InnerFactory), F(Method), Name(NewFuncName) {}
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     auto FuncInfo =
-        DeviceFunctionDecl::LinkRedecls(DpctGlobalInfo::getParentFunction(C));
+        DeviceFunctionDecl::LinkRedecls(C2SGlobalInfo::getParentFunction(C));
     if (FuncInfo) {
       std::string VarNotEvaluated;
       unsigned int Size = F(C, VarNotEvaluated);
@@ -499,8 +499,8 @@ void print(StreamT &Stream, ArgumentAnalysis &AA,
 
 template <class StreamT, class T1, class T2>
 void print(StreamT &Stream, ArgumentAnalysis &AA, std::pair<T1, T2> P) {
-  dpct::print(Stream, AA, P.first);
-  dpct::print(Stream, AA, P.second);
+  c2s::print(Stream, AA, P.first);
+  c2s::print(Stream, AA, P.second);
 }
 
 template <class StreamT>
@@ -595,19 +595,19 @@ public:
   template <class StreamT> void print(StreamT &) const {}
   template <class StreamT>
   void printArg(std::false_type, StreamT &Stream, const Expr *E) const {
-    dpct::print(Stream, A, E);
+    c2s::print(Stream, A, E);
   }
 
   template <class StreamT>
   void printArg(std::false_type, StreamT &Stream,
                 std::pair<const CallExpr *, const Expr *> P) const {
-    dpct::print(Stream, A, P);
+    c2s::print(Stream, A, P);
   }
 
   template <class StreamT, class T1, class T2>
   void printArg(std::false_type, StreamT &Stream,
     std::pair<T1, T2> P) const {
-    dpct::print(Stream, A, P);
+    c2s::print(Stream, A, P);
   }
 
   template <class StreamT>
@@ -616,7 +616,7 @@ public:
   }
   template <class StreamT, class ArgT>
   void printArg(std::false_type, StreamT &Stream, const ArgT &Arg) const {
-    dpct::print(Stream, Arg);
+    c2s::print(Stream, Arg);
   }
   template <class StreamT, class ArgT>
   void printArg(std::false_type, StreamT &Stream,
@@ -692,7 +692,7 @@ public:
   CallExprPrinter(CalleeT Callee, CallArgsT &&...Args)
       : Callee(Callee), Args(std::forward<CallArgsT>(Args)...) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    dpct::print(Stream, Callee);
+    c2s::print(Stream, Callee);
     ParensPrinter<StreamT> Parens(Stream);
     Args.print(Stream);
   }
@@ -706,7 +706,7 @@ public:
   TemplatedCallee(StringRef Callee, std::vector<TemplateArgumentInfo> &&Args)
       : CalleeName(Callee), TemplateArgs(std::move(Args)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    dpct::print(Stream, CalleeName);
+    c2s::print(Stream, CalleeName);
     Stream << "<";
     TemplateArgs.print(Stream);
     Stream << ">";
@@ -724,7 +724,7 @@ public:
 
   template <class StreamT> void print(StreamT &Stream) const {
     printBase(Stream, Base, IsArrow);
-    dpct::print(Stream, MemberName);
+    c2s::print(Stream, MemberName);
   }
 };
 
@@ -750,9 +750,9 @@ public:
     : TypeInfo(std::forward<TypeInfoT>(T)), SubExpr(std::forward<SubExprT>(S)) {}
   template <class StreamT> void print(StreamT &Stream) const {
     Stream << "(";
-    dpct::print(Stream, TypeInfo);
+    c2s::print(Stream, TypeInfo);
     Stream << ")";
-    dpct::print(Stream, SubExpr);
+    c2s::print(Stream, SubExpr);
   }
 };
 
@@ -767,9 +767,9 @@ public:
   BinaryOperatorPrinter(LValueT &&L, RValueT &&R)
       : LVal(std::forward<LValueT>(L)), RVal(std::forward<RValueT>(R)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    dpct::print(Stream, LVal);
+    c2s::print(Stream, LVal);
     Stream << " " << OpStr << " ";
-    dpct::print(Stream, RVal);
+    c2s::print(Stream, RVal);
   }
 };
 
@@ -848,7 +848,7 @@ template <class LastPrinter> class MultiStmtsPrinter<LastPrinter> {
 protected:
   template <class StreamT, class PrinterT>
   void printStmt(StreamT &Stream, const PrinterT &Printer) const {
-    dpct::print(Stream, Printer);
+    c2s::print(Stream, Printer);
     Stream << ";" << NL << Indent;
   }
 
@@ -858,7 +858,7 @@ public:
       : Last(std::move(Last)), Indent(getIndent(BeginLoc, SM)),
         NL(getNL(BeginLoc, SM)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    dpct::print(Stream, Last);
+    c2s::print(Stream, Last);
   }
 };
 
@@ -871,7 +871,7 @@ public:
   CommaExprPrinter(FirstPrinter &&First, RestPrinter &&...Rest)
       : Base(std::move(Rest)...), First(std::move(First)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    dpct::print(Stream, First);
+    c2s::print(Stream, First);
     Stream << ", ";
     Base::print(Stream);
   }
@@ -883,7 +883,7 @@ template <class LastPrinter> class CommaExprPrinter<LastPrinter> {
 public:
   CommaExprPrinter(LastPrinter &&Last) : Last(std::move(Last)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    dpct::print(Stream, Last);
+    c2s::print(Stream, Last);
   }
 };
 
@@ -913,7 +913,7 @@ class PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>
 public:
   PrinterRewriter(const CallExpr *C, StringRef Source,
                   StmtPrinters &&...Printers)
-      : Base(C->getBeginLoc(), DpctGlobalInfo::getSourceManager(),
+      : Base(C->getBeginLoc(), C2SGlobalInfo::getSourceManager(),
              std::move(Printers)...),
         CallExprRewriter(C, Source) {}
   PrinterRewriter(
@@ -1008,7 +1008,7 @@ public:
   SubGroupPrinter(const CallExpr *C) : Call(C) {}
   static SubGroupPrinter create(const CallExpr*C) { return SubGroupPrinter(C); }
   template <class StreamT> void print(StreamT &Stream) const {
-    DpctGlobalInfo::printSubGroup(Stream, Call);
+    C2SGlobalInfo::printSubGroup(Stream, Call);
   }
 };
 
@@ -1088,7 +1088,7 @@ public:
       break;
     }
     case (OutputBuilder::Kind::Context):
-      OS << MapNames::getDpctNamespace() << "get_default_context()";
+      OS << MapNames::getC2SNamespace() << "get_default_context()";
       break;
     case (OutputBuilder::Kind::Device): {
       OS << makeDeviceStr()(Call);
@@ -1151,7 +1151,7 @@ public:
 
 std::shared_ptr<CallExprRewriterFactoryBase>
 createUserDefinedRewriterFactory(const std::string &, MetaRuleObject &);
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
 
 #endif // !__CALL_EXPR_REWRITER_H__

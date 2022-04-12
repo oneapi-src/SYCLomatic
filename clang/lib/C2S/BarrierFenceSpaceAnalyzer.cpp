@@ -18,7 +18,7 @@
 
 using namespace llvm;
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::ForStmt *FS) {
+bool clang::c2s::BarrierFenceSpaceAnalyzer::Visit(clang::ForStmt *FS) {
   Level Lvl;
   Lvl.CurrentLoc = CurrentLevel.CurrentLoc;
   Lvl.LevelBeginLoc = FS->getBeginLoc();
@@ -26,7 +26,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::ForStmt *FS) {
   CurrentLevel = Lvl;
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::ForStmt *FS) {
+void clang::c2s::BarrierFenceSpaceAnalyzer::PostVisit(clang::ForStmt *FS) {
   if (!CurrentLevel.SyncCallsVec.empty()) {
     CurrentLevel.SyncCallsVec.front().second.Predecessors.push_back(
         clang::SourceRange(CurrentLevel.CurrentLoc, FS->getEndLoc()));
@@ -40,17 +40,17 @@ void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::ForStmt *FS) {
   LevelStack.pop();
   return;
 }
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CallExpr *CE) {
+bool clang::c2s::BarrierFenceSpaceAnalyzer::Visit(clang::CallExpr *CE) {
   const clang::FunctionDecl *FuncDecl = CE->getDirectCallee();
   std::string FuncName;
   if (FuncDecl)
     FuncName = FuncDecl->getNameInfo().getName().getAsString();
 
   if (FuncName == "__syncthreads") {
-    if (!clang::dpct::DpctGlobalInfo::findAncestor<IfStmt>(CE) &&
-        !clang::dpct::DpctGlobalInfo::findAncestor<DoStmt>(CE) &&
-        !clang::dpct::DpctGlobalInfo::findAncestor<WhileStmt>(CE) &&
-        !clang::dpct::DpctGlobalInfo::findAncestor<SwitchStmt>(CE)) {
+    if (!clang::c2s::C2SGlobalInfo::findAncestor<IfStmt>(CE) &&
+        !clang::c2s::C2SGlobalInfo::findAncestor<DoStmt>(CE) &&
+        !clang::c2s::C2SGlobalInfo::findAncestor<WhileStmt>(CE) &&
+        !clang::c2s::C2SGlobalInfo::findAncestor<SwitchStmt>(CE)) {
       if (LevelStack.size() > 1) {
         // We will further refine it if meet real request.
         return false;
@@ -88,53 +88,53 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CallExpr *CE) {
   }
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::CallExpr *) {}
+void clang::c2s::BarrierFenceSpaceAnalyzer::PostVisit(clang::CallExpr *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::DeclRefExpr *DRE) {
+bool clang::c2s::BarrierFenceSpaceAnalyzer::Visit(clang::DeclRefExpr *DRE) {
   // Collect all DREs and its Decl
   DREDeclMap.insert(std::make_pair(DRE, DRE->getDecl()));
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::DeclRefExpr *) {}
+void clang::c2s::BarrierFenceSpaceAnalyzer::PostVisit(clang::DeclRefExpr *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::GotoStmt *) {
+bool clang::c2s::BarrierFenceSpaceAnalyzer::Visit(clang::GotoStmt *) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
   return false;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::GotoStmt *) {}
+void clang::c2s::BarrierFenceSpaceAnalyzer::PostVisit(clang::GotoStmt *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::LabelStmt *) {
+bool clang::c2s::BarrierFenceSpaceAnalyzer::Visit(clang::LabelStmt *) {
   // We will further refine it if meet real request.
   // By default, goto/label stmt is not supported.
   return false;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::LabelStmt *) {}
+void clang::c2s::BarrierFenceSpaceAnalyzer::PostVisit(clang::LabelStmt *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::MemberExpr *ME) {
+bool clang::c2s::BarrierFenceSpaceAnalyzer::Visit(clang::MemberExpr *ME) {
   if (ME->getType()->isPointerType() || ME->getType()->isArrayType()) {
     return false;
   }
   return true;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(clang::MemberExpr *) {}
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
+void clang::c2s::BarrierFenceSpaceAnalyzer::PostVisit(clang::MemberExpr *) {}
+bool clang::c2s::BarrierFenceSpaceAnalyzer::Visit(
     clang::CXXDependentScopeMemberExpr *) {
   return false;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+void clang::c2s::BarrierFenceSpaceAnalyzer::PostVisit(
     clang::CXXDependentScopeMemberExpr *) {}
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CXXConstructExpr *CCE) {
+bool clang::c2s::BarrierFenceSpaceAnalyzer::Visit(clang::CXXConstructExpr *CCE) {
   auto Ctor = CCE->getConstructor();
   std::string CtorName = Ctor->getParent()->getQualifiedNameAsString();
   if (AllowedDeviceFunctions.count(CtorName) && !isUserDefinedFunction(Ctor))
     return true;
   return false;
 }
-void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
+void clang::c2s::BarrierFenceSpaceAnalyzer::PostVisit(
     clang::CXXConstructExpr *) {}
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::traverseFunction(
+bool clang::c2s::BarrierFenceSpaceAnalyzer::traverseFunction(
     const clang::FunctionDecl *FD) {
   CurrentLevel.CurrentLoc = FD->getBody()->getBeginLoc();
   CurrentLevel.LevelBeginLoc = FD->getBody()->getBeginLoc();
@@ -198,11 +198,11 @@ bool isPointerOperationSafe(const clang::Expr *Pointer) {
   return false;
 }
 
-bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
+bool clang::c2s::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
     const clang::CallExpr *CE) {
   if (CE->getBeginLoc().isMacroID() || CE->getEndLoc().isMacroID())
     return false;
-  auto FD = dpct::DpctGlobalInfo::findAncestor<clang::FunctionDecl>(CE);
+  auto FD = c2s::C2SGlobalInfo::findAncestor<clang::FunctionDecl>(CE);
   if (!FD)
     return false;
   if (!FD->hasAttr<clang::CUDAGlobalAttr>())
@@ -271,7 +271,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
 
   auto isInRanges = [](clang::SourceLocation SL,
                        std::vector<clang::SourceRange> Ranges) -> bool {
-    auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+    auto &SM = c2s::C2SGlobalInfo::getSourceManager();
     for (auto &Range : Ranges) {
       if (SM.getFileOffset(Range.getBegin()) < SM.getFileOffset(SL) &&
           SM.getFileOffset(SL) < SM.getFileOffset(Range.getEnd())) {
@@ -329,10 +329,10 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
 }
 
 std::unordered_map<std::string, std::unordered_map<std::string, bool>>
-    clang::dpct::BarrierFenceSpaceAnalyzer::CachedResults;
+    clang::c2s::BarrierFenceSpaceAnalyzer::CachedResults;
 
 // Functions in this set should not create alias name for input pointer
 const std::unordered_set<std::string>
-    clang::dpct::BarrierFenceSpaceAnalyzer::AllowedDeviceFunctions = {
+    clang::c2s::BarrierFenceSpaceAnalyzer::AllowedDeviceFunctions = {
         "__popc", "atomicAdd", "__fetch_builtin_x", "__fetch_builtin_y",
         "__fetch_builtin_z", "uint4"};

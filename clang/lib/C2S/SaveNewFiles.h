@@ -9,8 +9,8 @@
 //
 //===---------------------------------------------------------------===//
 
-#ifndef DPCT_SAVE_NEW_FILES_H
-#define DPCT_SAVE_NEW_FILES_H
+#ifndef C2S_SAVE_NEW_FILES_H
+#define C2S_SAVE_NEW_FILES_H
 
 #include "ValidateArguments.h"
 #include "llvm/Support/Error.h"
@@ -47,8 +47,8 @@ void loadYAMLIntoFileInfo(std::string Path);
 //       true:  the source file has replacement.
 extern std::map<std::string, bool> IncludeFileMap;
 
-// This function is registered by SetFileProcessHandle() called by runDPCT() in
-// DPCT.cpp, and called in Tooling.cpp::DoFileProcessHandle(). It traverses all
+// This function is registered by SetFileProcessHandle() called by runC2S() in
+// C2S.cpp, and called in Tooling.cpp::DoFileProcessHandle(). It traverses all
 // the files in directory \pInRoot, collecting *.cu files not
 // processed by the the first loop of calling proccessFiles() in
 // Tooling.cpp::ClangTool::run()) into \pFilesNotProcessed, and copies the rest
@@ -62,4 +62,4 @@ void rewriteDir(llvm::SmallString<512> &FilePath, const llvm::StringRef InRoot,
 
 // Replace file name \pFileName with new migrated name.
 void rewriteFileName(llvm::SmallString<512> &FileName);
-#endif // DPCT_SAVE_NEW_FILES_H
+#endif // C2S_SAVE_NEW_FILES_H

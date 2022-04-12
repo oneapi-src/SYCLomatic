@@ -51,12 +51,12 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
           ConstantOffset(R.getConstantOffset()), InitStr(R.getInitStr()),
           NewHostVarName(R.getNewHostVarName()),
           BlockLevelFormatFlag(R.getBlockLevelFormatFlag()) {
-      clang::dpct::ConstantFlagType Flag = R.getConstantFlag();
-      if (Flag == clang::dpct::ConstantFlagType::HostDevice) {
+      clang::c2s::ConstantFlagType Flag = R.getConstantFlag();
+      if (Flag == clang::c2s::ConstantFlagType::HostDevice) {
         ConstantFlag = "HostDeviceConstant";
-      } else if (Flag == clang::dpct::ConstantFlagType::Device) {
+      } else if (Flag == clang::c2s::ConstantFlagType::Device) {
         ConstantFlag = "DeviceConstant";
-      } else if (Flag == clang::dpct::ConstantFlagType::Host) {
+      } else if (Flag == clang::c2s::ConstantFlagType::Host) {
         ConstantFlag = "HostConstant";
       } else {
         ConstantFlag = "";
@@ -67,13 +67,13 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
       auto R = clang::tooling::Replacement(FilePath, Offset, Length,
                                            ReplacementText);
       if (ConstantFlag == "HostDeviceConstant") {
-        R.setConstantFlag(clang::dpct::ConstantFlagType::HostDevice);
+        R.setConstantFlag(clang::c2s::ConstantFlagType::HostDevice);
       } else if (ConstantFlag == "DeviceConstant") {
-        R.setConstantFlag(clang::dpct::ConstantFlagType::Device);
+        R.setConstantFlag(clang::c2s::ConstantFlagType::Device);
       } else if (ConstantFlag == "HostConstant") {
-        R.setConstantFlag(clang::dpct::ConstantFlagType::Host);
+        R.setConstantFlag(clang::c2s::ConstantFlagType::Host);
       } else {
-        R.setConstantFlag(clang::dpct::ConstantFlagType::Default);
+        R.setConstantFlag(clang::c2s::ConstantFlagType::Default);
       }
       R.setConstantOffset(ConstantOffset);
       R.setInitStr(InitStr);
@@ -261,7 +261,7 @@ template <> struct MappingTraits<clang::tooling::TranslationUnitReplacements> {
     Io.mapRequired("Replacements", Doc.Replacements);
 #ifdef INTEL_CUSTOMIZATION
     Io.mapOptional("MainSourceFilesDigest", Doc.MainSourceFilesDigest);
-    Io.mapOptional("DpctVersion", Doc.DpctVersion);
+    Io.mapOptional("C2SVersion", Doc.C2SVersion);
     Io.mapOptional("MainHelperFileName", Doc.MainHelperFileName);
     Io.mapOptional("USMLevel", Doc.USMLevel);
     Io.mapOptional("FeatureMap", Doc.FeatureMap);

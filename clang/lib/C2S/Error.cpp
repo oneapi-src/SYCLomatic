@@ -15,7 +15,7 @@
 #include "Statics.h"
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 
 void ShowStatus(int Status, std::string Message) {
 
@@ -69,7 +69,7 @@ void ShowStatus(int Status, std::string Message) {
     break;
   case MigrationOptionParsingError:
     StatusString = "Option parsing error,"
-                   " run 'dpct --help' to see supported options and values";
+                   " run 'c2s --help' to see supported options and values";
     break;
   case MigrationErrorPathTooLong:
 #if defined(_WIN32)
@@ -133,7 +133,7 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorInvalidExplicitNamespace:
     StatusString =
         "Error: The input for option --use-explicit-namespace is not valid. "
-        "Run 'dpct --help' to see supported options and values.";
+        "Run 'c2s --help' to see supported options and values.";
     break;
   case MigrationErrorCustomHelperFileNameContainInvalidChar:
     StatusString =
@@ -152,7 +152,7 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorDifferentOptSet:
     StatusString =
         "Error: Incremental migration requires the same option sets used "
-        "across different dpct invocations. Specify --no-incremental-migration "
+        "across different c2s invocations. Specify --no-incremental-migration "
         "to disable incremental migration or use the same option set as in "
         "previous migration: \"" +
         Message +
@@ -167,16 +167,16 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: Cannot parse rule file";
     break;
   default:
-    DpctLog() << "Unknown error\n";
-    dpctExit(-1);
+    C2SLog() << "Unknown error\n";
+    c2sExit(-1);
   }
 
   if (Status != 0) {
-    DpctLog() << "dpct exited with code: " << Status << " (" << StatusString
+    C2SLog() << "c2s exited with code: " << Status << " (" << StatusString
               << ")\n";
   }
 
-  llvm::dbgs() << getDpctLogStr() << "\n";
+  llvm::dbgs() << getC2SLogStr() << "\n";
   return;
 }
 
@@ -188,12 +188,12 @@ std::string getLoadYamlFailWarning(std::string YamlPath) {
          "details.\n";
 }
 std::string getCheckVersionFailWarning() {
-  return "Warning: Incremental migration requires the same version of dpct. "
+  return "Warning: Incremental migration requires the same version of c2s. "
          "Migration continues with incremental migration disabled. See "
          "https://software.intel.com/content/www/us/en/develop/documentation/"
          "intel-dpcpp-compatibility-tool-user-guide/top.html for more "
          "details.\n";
 }
 
-} // namespace dpct
+} // namespace c2s
 } // namespace clang

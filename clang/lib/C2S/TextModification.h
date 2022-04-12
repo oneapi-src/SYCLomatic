@@ -9,8 +9,8 @@
 //
 //===-----------------------------------------------------------------===//
 
-#ifndef DPCT_TEXT_MODIFICATION_H
-#define DPCT_TEXT_MODIFICATION_H
+#ifndef C2S_TEXT_MODIFICATION_H
+#define C2S_TEXT_MODIFICATION_H
 
 #include "MapNames.h"
 #include "Utility.h"
@@ -20,7 +20,7 @@
 #include <string>
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 
 class KernelCallExpr;
 class TextModification;
@@ -99,25 +99,25 @@ public:
     };
 
     // LHS has highest precedence or RHS has lowest precedence, use LHS directly
-    if (getConstantFlag() == dpct::ConstantFlagType::HostDevice ||
-        RHS->getConstantFlag() == dpct::ConstantFlagType::Default) {
+    if (getConstantFlag() == c2s::ConstantFlagType::HostDevice ||
+        RHS->getConstantFlag() == c2s::ConstantFlagType::Default) {
       return;
     }
 
     // LHS has lowest precedence or RHS has highest precedence, use RHS directly
-    if (RHS->getConstantFlag() == dpct::ConstantFlagType::HostDevice ||
-        getConstantFlag() == dpct::ConstantFlagType::Default) {
+    if (RHS->getConstantFlag() == c2s::ConstantFlagType::HostDevice ||
+        getConstantFlag() == c2s::ConstantFlagType::Default) {
       setConstantInfoUsingRHSInfo();
       return;
     }
 
     // Code at here means it is either "Device" or "Host", use device
-    if (getConstantFlag() == dpct::ConstantFlagType::Device ||
-        RHS->getConstantFlag() == dpct::ConstantFlagType::Host) {
+    if (getConstantFlag() == c2s::ConstantFlagType::Device ||
+        RHS->getConstantFlag() == c2s::ConstantFlagType::Host) {
       return;
     }
-    if (RHS->getConstantFlag() == dpct::ConstantFlagType::Host ||
-        getConstantFlag() == dpct::ConstantFlagType::Device) {
+    if (RHS->getConstantFlag() == c2s::ConstantFlagType::Host ||
+        getConstantFlag() == c2s::ConstantFlagType::Device) {
       setConstantInfoUsingRHSInfo();
       return;
     }
@@ -175,8 +175,8 @@ public:
   void setParentRuleID(const char *RuleID) { ParentRuleID = RuleID; }
   const char *getParentRuleID() const { return ParentRuleID; }
   inline void setPairID(unsigned Pair) { PairID = Pair; }
-  dpct::ConstantFlagType getConstantFlag() const { return ConstantFlag; }
-  void setConstantFlag(dpct::ConstantFlagType F) { ConstantFlag = F; }
+  c2s::ConstantFlagType getConstantFlag() const { return ConstantFlag; }
+  void setConstantFlag(c2s::ConstantFlagType F) { ConstantFlag = F; }
   unsigned int getLineBeginOffset() const { return LineBeginOffset; }
   void setLineBeginOffset(unsigned int O) { LineBeginOffset = O; }
   unsigned int getConstantOffset() const { return ConstantOffset; }
@@ -214,7 +214,7 @@ private:
   // device
   unsigned int LineBeginOffset = 0;
   bool IgnoreTM = false;
-  dpct::ConstantFlagType ConstantFlag = dpct::ConstantFlagType::Default;
+  c2s::ConstantFlagType ConstantFlag = c2s::ConstantFlagType::Default;
   unsigned int ConstantOffset = 0;
   std::string InitStr = "";
   std::string NewHostVarName = "";
@@ -642,7 +642,7 @@ public:
              const bool PrintDetail = true) const override;
 };
 
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
 
-#endif // DPCT_TEXT_MODIFICATION_H
+#endif // C2S_TEXT_MODIFICATION_H

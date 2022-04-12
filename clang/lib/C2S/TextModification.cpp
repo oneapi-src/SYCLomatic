@@ -24,7 +24,7 @@
 #include <sstream>
 
 using namespace clang;
-using namespace clang::dpct;
+using namespace clang::c2s;
 using namespace clang::tooling;
 
 std::shared_ptr<ExtReplacement>
@@ -56,14 +56,14 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
         auto R = std::make_shared<ExtReplacement>(SM, BeginDef, CallExprLength,
                                                   ReplacementString, this);
         R->setInsertPosition(InsertPos);
-        DpctGlobalInfo::getInstance().addReplacement(R);
+        C2SGlobalInfo::getInstance().addReplacement(R);
         // Emit warning message at the Exapnasion Location
-        auto ItMR = DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+        auto ItMR = C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
             getCombinedStrFromLoc(BeginDef));
         std::string MacroName = "";
-        if (ItMR != DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+        if (ItMR != C2SGlobalInfo::getExpansionRangeToMacroRecord().end()) {
           MacroName = ItMR->second->Name;
-          auto LocInfo = DpctGlobalInfo::getLocInfo(
+          auto LocInfo = C2SGlobalInfo::getLocInfo(
               SM.getExpansionLoc(TheStmt->getBeginLoc()));
           DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
                                    Diagnostics::MACRO_REMOVED, true, false,
@@ -94,7 +94,7 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
         ReplacementString.empty() && !IsSingleLineStatement(TheStmt)) {
       return removeStmtWithCleanups(SM);
     }
-    auto &Context = dpct::DpctGlobalInfo::getContext();
+    auto &Context = c2s::C2SGlobalInfo::getContext();
     auto LastTokenLength =
         Lexer::MeasureTokenLength(End, SM, Context.getLangOpts());
     auto CallExprLength = SM.getDecomposedLoc(End).second -
@@ -306,16 +306,16 @@ ReplaceVarDecl *ReplaceVarDecl::getVarDeclReplacement(const VarDecl *VD,
 
 ReplaceVarDecl::ReplaceVarDecl(const VarDecl *D, std::string &&Text)
     : TextModification(TMID::ReplaceVarDecl), D(D),
-      SR(DpctGlobalInfo::getSourceManager().getExpansionRange(
+      SR(C2SGlobalInfo::getSourceManager().getExpansionRange(
           D->getSourceRange())),
       T(std::move(Text)),
-      Indent(getIndent(SR.getBegin(), DpctGlobalInfo::getSourceManager())),
+      Indent(getIndent(SR.getBegin(), C2SGlobalInfo::getSourceManager())),
       NL(getNL()) {}
 
 void ReplaceVarDecl::addVarDecl(const VarDecl *VD, std::string &&Text) {
   if (T.find(Text) != std::string::npos)
     return;
-  SourceManager &SM = DpctGlobalInfo::getSourceManager();
+  SourceManager &SM = C2SGlobalInfo::getSourceManager();
   CharSourceRange Range = SM.getExpansionRange(VD->getSourceRange());
   if (SM.getCharacterData(Range.getEnd()) > SM.getCharacterData(SR.getEnd()))
     SR = Range;
@@ -501,7 +501,7 @@ ReplaceInclude::getReplacement(const ASTContext &Context) const {
   // replacement is empty.
   if (RemoveTrailingSpaces && T.empty()) {
     auto EndLoc = Range.getEnd();
-    auto CharData = DpctGlobalInfo::getSourceManager().getCharacterData(EndLoc);
+    auto CharData = C2SGlobalInfo::getSourceManager().getCharacterData(EndLoc);
     int Len = getLengthOfSpacesToEndl(CharData);
     SourceRange SR{Range.getBegin(), EndLoc.getLocWithOffset(Len)};
     CharSourceRange RealRange{SR, false};
@@ -513,7 +513,7 @@ ReplaceInclude::getReplacement(const ASTContext &Context) const {
 }
 
 void ReplaceDim3Ctor::setRange() {
-  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto &SM = C2SGlobalInfo::getSourceManager();
   if (isDecl) {
     SourceRange SR = Ctor->getParenOrBraceRange();
     if (SR.isInvalid()) {
@@ -525,7 +525,7 @@ void ReplaceDim3Ctor::setRange() {
       // dim3 a;
       // MACRO(... dim3 a; ...)
       auto CtorEndLoc = Lexer::getLocForEndOfToken(
-          CtorLoc, 0, SM, DpctGlobalInfo::getContext().getLangOpts());
+          CtorLoc, 0, SM, C2SGlobalInfo::getContext().getLangOpts());
       CSR = CharSourceRange(SourceRange(CtorEndLoc, CtorEndLoc), false);
     } else {
       SourceRange SR1 =
@@ -549,7 +549,7 @@ void ReplaceDim3Ctor::setRange() {
         End = SM.getImmediateSpellingLoc(S->getEndLoc());
       }
       End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-          End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
+          End, SM, c2s::C2SGlobalInfo::getContext().getLangOpts()));
       CSR = CharSourceRange::getTokenRange(Begin, End);
     } else {
       // Use getStmtExpansionSourceRange(S) to support cases like
@@ -560,7 +560,7 @@ void ReplaceDim3Ctor::setRange() {
       CSR = CharSourceRange::getTokenRange(
           Begin,
           End.getLocWithOffset(Lexer::MeasureTokenLength(
-              End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())));
+              End, SM, c2s::C2SGlobalInfo::getContext().getLangOpts())));
     }
   }
 }
@@ -637,7 +637,7 @@ ReplaceDim3Ctor::getReplacement(const ASTContext &Context) const {
   // Use getDefinitionRange in general cases,
   // For cases like dim3 a = MACRO;
   // CSR is already set to the expansion range.
-  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
   ReplacementString = getReplaceString();
   auto Range = getDefinitionRange(CSR.getBegin(), CSR.getEnd());
   auto Length = SM.getDecomposedLoc(Range.getEnd()).second -
@@ -688,7 +688,7 @@ SourceLocation InsertBeforeCtrInitList::getInsertLoc() const {
     if (InitLoc.isValid() && (*Init)->isWritten()) {
       // Try to insert before ":"
       int i = 0;
-      auto Data = DpctGlobalInfo::getSourceManager().getCharacterData(InitLoc);
+      auto Data = C2SGlobalInfo::getSourceManager().getCharacterData(InitLoc);
       while (Data[i] != ':')
         --i;
       return InitLoc.getLocWithOffset(i);

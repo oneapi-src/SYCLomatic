@@ -155,16 +155,16 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
         checkIsArgStream(3),
         CALL_FACTORY_ENTRY(
-            "cuMemcpyDtoDAsync_v2", CALL(MapNames::getDpctNamespace() + "async_c2s_memcpy",
-            ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic"), STREAM(3))),
+            "cuMemcpyDtoDAsync_v2", CALL(MapNames::getC2SNamespace() + "async_c2s_memcpy",
+            ARG(0), ARG(1), ARG(2), ARG(MapNames::getC2SNamespace() + "automatic"), STREAM(3))),
         CALL_FACTORY_ENTRY(
-            "cuMemcpyDtoDAsync_v2", CALL(MapNames::getDpctNamespace() + "async_c2s_memcpy",
-            ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic"))))))
+            "cuMemcpyDtoDAsync_v2", CALL(MapNames::getC2SNamespace() + "async_c2s_memcpy",
+            ARG(0), ARG(1), ARG(2), ARG(MapNames::getC2SNamespace() + "automatic"))))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),
     MEMBER_CALL_FACTORY_ENTRY(
         "cuMemcpyDtoD_v2", MEMBER_CALL(QUEUESTR, false, "memcpy", ARG(0), ARG(1), ARG(2)), false, "wait"),
     CALL_FACTORY_ENTRY(
-        "cuMemcpyDtoD_v2", CALL(MapNames::getDpctNamespace() + "c2s_memcpy",
-        ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic")))))
+        "cuMemcpyDtoD_v2", CALL(MapNames::getC2SNamespace() + "c2s_memcpy",
+        ARG(0), ARG(1), ARG(2), ARG(MapNames::getC2SNamespace() + "automatic")))))

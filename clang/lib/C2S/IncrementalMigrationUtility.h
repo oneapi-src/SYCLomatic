@@ -9,8 +9,8 @@
 //
 //===---------------------------------------------------------------===//
 
-#ifndef DPCT_INCREMENTAL_MIGRATION_UTILITY_H
-#define DPCT_INCREMENTAL_MIGRATION_UTILITY_H
+#ifndef C2S_INCREMENTAL_MIGRATION_UTILITY_H
+#define C2S_INCREMENTAL_MIGRATION_UTILITY_H
 
 #include "AnalysisInfo.h"
 #include <set>
@@ -19,7 +19,7 @@
 enum class ExplicitNamespace : unsigned int;
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 
 const std::string OPTION_AsyncHandler = "AsyncHandler";
 const std::string OPTION_NDRangeDim = "NDRangeDim";
@@ -59,7 +59,7 @@ inline void setValueToOptMap(std::string Key, T Value, bool Specified) {
 template <>
 inline void setValueToOptMap(std::string Key, std::string Value,
                              bool Specified) {
-  DpctGlobalInfo::getCurrentOptMap()[Key] =
+  C2SGlobalInfo::getCurrentOptMap()[Key] =
       clang::tooling::OptionInfo(Value, Specified);
 }
 template<>
@@ -87,13 +87,13 @@ template <>
 inline void setValueToOptMap(std::string Key, std::vector<std::string> StrVec,
                              bool Specified) {
   std::sort(StrVec.begin(), StrVec.end());
-  DpctGlobalInfo::getCurrentOptMap()[Key] =
+  C2SGlobalInfo::getCurrentOptMap()[Key] =
       clang::tooling::OptionInfo(StrVec, Specified);
 }
 
 
 bool canContinueMigration(std::string &Msg);
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
 
-#endif // DPCT_INCREMENTAL_MIGRATION_UTILITY_H
+#endif // C2S_INCREMENTAL_MIGRATION_UTILITY_H

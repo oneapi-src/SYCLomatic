@@ -9,8 +9,8 @@
 //
 //===-----------------------------------------------------------------===//
 
-#ifndef DPCT_EXPR_ANALYSIS_H
-#define DPCT_EXPR_ANALYSIS_H
+#ifndef C2S_EXPR_ANALYSIS_H
+#define C2S_EXPR_ANALYSIS_H
 
 #include "CustomHelperFiles.h"
 #include "Statics.h"
@@ -22,7 +22,7 @@
 #include <assert.h>
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 
 /// Store replacement info applied on a string
 class StringReplacement {
@@ -33,7 +33,7 @@ public:
   inline void replaceString() {
     if (Offset <= SourceStr.length())
       SourceStr.replace(Offset, Length, Text);
-#ifdef DPCT_DEBUG_BUILD
+#ifdef C2S_DEBUG_BUILD
     else {
       llvm::errs() << "Encounter wrong replacement in ExprAnalysis:\n\""
                    << SourceStr << "\": " << Offset << ": +" << Length << ": \""
@@ -866,7 +866,7 @@ private:
   bool HasSideEffects = false;
 };
 
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
 
-#endif // !DPCT_EXPR_analyze_H
+#endif // !C2S_EXPR_analyze_H

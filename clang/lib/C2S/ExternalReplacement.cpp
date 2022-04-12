@@ -61,16 +61,16 @@ int save2Yaml(
     TUR.CompileTargets[Entry.first] = Entry.second;
   }
 
-  clang::dpct::updateTUR(TUR);
-  TUR.DpctVersion = clang::dpct::getDpctVersionStr();
+  clang::c2s::updateTUR(TUR);
+  TUR.C2SVersion = clang::c2s::getC2SVersionStr();
   TUR.MainHelperFileName =
-      clang::dpct::DpctGlobalInfo::getCustomHelperFileName();
-  TUR.OptionMap = clang::dpct::DpctGlobalInfo::getCurrentOptMap();
+      clang::c2s::C2SGlobalInfo::getCustomHelperFileName();
+  TUR.OptionMap = clang::c2s::C2SGlobalInfo::getCurrentOptMap();
 
   // For really hidden options, do not add it in yaml file if it is not
   // specified.
-  if (TUR.OptionMap[clang::dpct::OPTION_NoUseGenericSpace].Value == "false") {
-    TUR.OptionMap.erase(clang::dpct::OPTION_NoUseGenericSpace);
+  if (TUR.OptionMap[clang::c2s::OPTION_NoUseGenericSpace].Value == "false") {
+    TUR.OptionMap.erase(clang::c2s::OPTION_NoUseGenericSpace);
   }
 
   YAMLOut << TUR;
@@ -104,7 +104,7 @@ int loadFromYaml(StringRef Input,
   }
 
   if (OverwriteHelperFilesInfo) {
-    clang::dpct::updateHelperNameContentMap(TU);
+    clang::c2s::updateHelperNameContentMap(TU);
   }
 
   return 0;
@@ -147,7 +147,7 @@ int mergeExternalReps(std::string InRootSrcFilePath,
                       std::string OutRootSrcFilePath, Replacements &Replaces) {
   std::string YamlFile = OutRootSrcFilePath + ".yaml";
 
-  auto PreTU = clang::dpct::DpctGlobalInfo::getInstance()
+  auto PreTU = clang::c2s::C2SGlobalInfo::getInstance()
                    .getReplInfoFromYAMLSavedInFileInfo(InRootSrcFilePath);
 
   if (PreTU) {

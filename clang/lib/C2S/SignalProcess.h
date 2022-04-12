@@ -9,8 +9,8 @@
 //
 //===---------------------- --------------------------------------===//
 
-#ifndef DPCT_SIGNAL_PROCESS_H
-#define DPCT_SIGNAL_PROCESS_H
+#ifndef C2S_SIGNAL_PROCESS_H
+#define C2S_SIGNAL_PROCESS_H
 
 #if defined(__linux__) || defined(_WIN64)
 void InstallSignalHandle(void);

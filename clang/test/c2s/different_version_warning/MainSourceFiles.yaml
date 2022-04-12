@@ -22,7 +22,7 @@ Replacements:
 MainSourceFilesDigest:
   - MainSourceFile:  '/home/testfolder/test.cu'
     Digest:          b505d6e929a7802b1ec8bf09e83590a8
-DpctVersion:     9999.4.0
+C2SVersion:     9999.4.0
 MainHelperFileName: c2s
 USMLevel:        ''
 FeatureMap:

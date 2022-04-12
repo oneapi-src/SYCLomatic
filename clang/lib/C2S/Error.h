@@ -9,12 +9,12 @@
 //
 //===---------------------------------------------------------------===//
 
-#ifndef DPCT_ERROR_H
-#define DPCT_ERROR_H
+#ifndef C2S_ERROR_H
+#define C2S_ERROR_H
 
 #include <string>
 
-/// ProcessStatus defines various statuses of dpct workflow
+/// ProcessStatus defines various statuses of c2s workflow
 enum ProcessStatus {
   MigrationSucceeded = 0,
   MigrationNoCodeChangeHappen = 1,
@@ -58,12 +58,12 @@ enum ProcessStatus {
 };
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 
 void ShowStatus(int Status, std::string Message = "");
 std::string getLoadYamlFailWarning(std::string YamlPath);
 std::string getCheckVersionFailWarning();
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
 
-#endif // DPCT_ERROR_H
+#endif // C2S_ERROR_H

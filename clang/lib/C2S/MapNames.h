@@ -9,8 +9,8 @@
 //
 //===-----------------------------------------------------------------===//
 
-#ifndef DPCT_MAPNAMES_H
-#define DPCT_MAPNAMES_H
+#ifndef C2S_MAPNAMES_H
+#define C2S_MAPNAMES_H
 
 #include "CustomHelperFiles.h"
 #include "Utility.h"
@@ -20,11 +20,11 @@
 #include <set>
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 enum class KernelArgType;
 enum class HelperFileEnum : unsigned int;
 struct HelperFunc;
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
 
 const std::string StringLiteralUnsupported{"UNSUPPORTED"};
@@ -41,7 +41,7 @@ const std::string StringLiteralUnsupported{"UNSUPPORTED"};
 /// Record mapping between names
 class MapNames {
   static std::vector<std::string> ClNamespace;
-  static std::vector<std::string> DpctNamespace;
+  static std::vector<std::string> C2SNamespace;
 
 public:
   static void setExplicitNamespaceMap();
@@ -51,7 +51,7 @@ public:
   // Example: sycl::exp
   static std::string getClNamespace(bool KeepNamespace = false,
                                     bool IsMathFunc = false);
-  static std::string getDpctNamespace(bool KeepNamespace = false);
+  static std::string getC2SNamespace(bool KeepNamespace = false);
 
   struct SOLVERFuncReplInfo {
     static SOLVERFuncReplInfo migrateBuffer(std::vector<int> bi,
@@ -320,11 +320,11 @@ public:
 
   static const SetTy SupportedVectorTypes;
   static const std::map<std::string, int> VectorTypeMigratedTypeSizeMap;
-  static const std::map<clang::dpct::KernelArgType, int> KernelArgTypeSizeMap;
+  static const std::map<clang::c2s::KernelArgType, int> KernelArgTypeSizeMap;
   static int getArrayTypeSize(const int Dim);
   static const MapTy RemovedAPIWarningMessage;
   static MapTy TypeNamesMap;
-  static std::map<std::string, clang::dpct::HelperFeatureEnum>
+  static std::map<std::string, clang::c2s::HelperFeatureEnum>
       TypeNamesHelperFeaturesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
@@ -337,7 +337,7 @@ public:
       BLASFuncComplexReplInfoMap;
   static const SetTy ThrustFileExcludeSet;
   static ThrustMapTy ThrustFuncNamesMap;
-  static std::map<std::string, clang::dpct::HelperFeatureEnum>
+  static std::map<std::string, clang::c2s::HelperFeatureEnum>
       ThrustFuncNamesHelperFeaturesMap;
   static std::map<std::string, MapNames::BLASFuncReplInfo>
       BLASFuncWrapperReplInfoMap;

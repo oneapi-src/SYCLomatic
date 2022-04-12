@@ -1,7 +1,7 @@
 // RUN: c2s -out-root %T %s --cuda-include-path="%cuda-path/include"
 #include "../template_inc/template.cuh"
 
-// Add this cuda syntax stmt to avoid that dpct exits with "dpct exited with code: 1 (Migration not necessary; no CUDA code detected)"
+// Add this cuda syntax stmt to avoid that c2s exits with "c2s exited with code: 1 (Migration not necessary; no CUDA code detected)"
 __device__ void foo() {}
 
 // This case is for preventing migration crash, no check here.

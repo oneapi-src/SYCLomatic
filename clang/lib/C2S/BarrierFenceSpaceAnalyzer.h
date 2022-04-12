@@ -9,8 +9,8 @@
 //
 //===---------------------------------------------------------------===//
 
-#ifndef DPCT_BARRIER_FENCE_SPACE_ANALYZER_H
-#define DPCT_BARRIER_FENCE_SPACE_ANALYZER_H
+#ifndef C2S_BARRIER_FENCE_SPACE_ANALYZER_H
+#define C2S_BARRIER_FENCE_SPACE_ANALYZER_H
 
 #include "Utility.h"
 
@@ -24,7 +24,7 @@
 #include <vector>
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 
 class BarrierFenceSpaceAnalyzer
     : public clang::RecursiveASTVisitor<BarrierFenceSpaceAnalyzer> {
@@ -95,7 +95,7 @@ private:
       CachedResults;
   static const std::unordered_set<std::string> AllowedDeviceFunctions;
 };
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
 
-#endif // DPCT_BARRIER_FENCE_SPACE_ANALYZER_H
+#endif // C2S_BARRIER_FENCE_SPACE_ANALYZER_H

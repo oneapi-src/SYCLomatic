@@ -9,8 +9,8 @@
 //
 //===-----------------------------------------------------------------===//
 
-#ifndef DPCT_CUSTOM_HELPER_FILES_H
-#define DPCT_CUSTOM_HELPER_FILES_H
+#ifndef C2S_CUSTOM_HELPER_FILES_H
+#define C2S_CUSTOM_HELPER_FILES_H
 
 #include "clang/AST/Decl.h"
 #include "clang/Tooling/Core/Replacement.h"
@@ -22,7 +22,7 @@
 #include <vector>
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 
 enum class HelperFileEnum : unsigned int {
 #define HELPERFILE(PATH, UNIQUE_ENUM) UNIQUE_ENUM,
@@ -72,14 +72,14 @@ void requestFeature(HelperFeatureEnum Feature, clang::SourceLocation SL);
 void requestFeature(HelperFeatureEnum Feature, const clang::Stmt *Stmt);
 void requestFeature(HelperFeatureEnum Feature, const clang::Decl *Decl);
 
-std::string getCopyrightHeader(const clang::dpct::HelperFileEnum File);
+std::string getCopyrightHeader(const clang::c2s::HelperFileEnum File);
 std::pair<std::string, std::string>
-getHeaderGuardPair(const clang::dpct::HelperFileEnum File);
+getHeaderGuardPair(const clang::c2s::HelperFileEnum File);
 std::string
-getHelperFileContent(const clang::dpct::HelperFileEnum File,
-                     std::vector<clang::dpct::HelperFunc> ContentVec);
-std::string getDpctVersionStr();
-void emitDpctVersionWarningIfNeed(const std::string &VersionFromYaml);
+getHelperFileContent(const clang::c2s::HelperFileEnum File,
+                     std::vector<clang::c2s::HelperFunc> ContentVec);
+std::string getC2SVersionStr();
+void emitC2SVersionWarningIfNeed(const std::string &VersionFromYaml);
 void generateHelperFunctions();
 
 void requestHelperFeatureForEnumNames(const std::string Name,
@@ -107,14 +107,14 @@ void updateTUR(clang::tooling::TranslationUnitReplacements &TUR);
 
 void replaceEndOfLine(std::string &StrNeedProcess);
 
-extern std::map<std::pair<clang::dpct::HelperFileEnum, std::string>,
-                clang::dpct::HelperFunc>
+extern std::map<std::pair<clang::c2s::HelperFileEnum, std::string>,
+                clang::c2s::HelperFunc>
     HelperNameContentMap;
-extern std::unordered_map<clang::dpct::HelperFileEnum, std::string>
+extern std::unordered_map<clang::c2s::HelperFileEnum, std::string>
     HelperFileNameMap;
-extern std::unordered_map<std::string, clang::dpct::HelperFileEnum>
+extern std::unordered_map<std::string, clang::c2s::HelperFileEnum>
     HelperFileIDMap;
-extern const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
+extern const std::unordered_map<clang::c2s::HelperFileEnum, std::string>
     HelperFileHeaderGuardMacroMap;
 
 extern const std::string C2SAllContentStr;
@@ -136,26 +136,26 @@ extern const std::string DplExtrasNumericAllContentStr;
 extern const std::string DplExtrasVectorAllContentStr;
 extern const std::string DplExtrasDpcppExtensionsAllContentStr;
 
-extern const std::map<clang::dpct::HelperFeatureIDTy, std::string>
+extern const std::map<clang::c2s::HelperFeatureIDTy, std::string>
     FeatureNameToAPINameMap;
-extern const std::unordered_map<clang::dpct::HelperFeatureEnum,
-                                clang::dpct::HelperFeatureIDTy>
+extern const std::unordered_map<clang::c2s::HelperFeatureEnum,
+                                clang::c2s::HelperFeatureIDTy>
     HelperFeatureEnumPairMap;
 
-extern const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+extern const std::unordered_map<std::string, clang::c2s::HelperFeatureEnum>
     PropToGetFeatureMap;
-extern const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+extern const std::unordered_map<std::string, clang::c2s::HelperFeatureEnum>
     PropToSetFeatureMap;
-extern const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+extern const std::unordered_map<std::string, clang::c2s::HelperFeatureEnum>
     SamplingInfoToSetFeatureMap;
-extern const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+extern const std::unordered_map<std::string, clang::c2s::HelperFeatureEnum>
     SamplingInfoToGetFeatureMap;
-extern const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+extern const std::unordered_map<std::string, clang::c2s::HelperFeatureEnum>
     ImageWrapperBaseToSetFeatureMap;
-extern const std::unordered_map<std::string, clang::dpct::HelperFeatureEnum>
+extern const std::unordered_map<std::string, clang::c2s::HelperFeatureEnum>
     ImageWrapperBaseToGetFeatureMap;
 
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
 
-#endif // DPCT_CUSTOM_HELPER_FILES_H
+#endif // C2S_CUSTOM_HELPER_FILES_H

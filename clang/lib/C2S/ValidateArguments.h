@@ -9,8 +9,8 @@
 //
 //===---------------------------------------------------------------===//
 
-#ifndef DPCT_VALIDATE_ARGUMENTS_H
-#define DPCT_VALIDATE_ARGUMENTS_H
+#ifndef C2S_VALIDATE_ARGUMENTS_H
+#define C2S_VALIDATE_ARGUMENTS_H
 
 #include <string>
 #include <vector>
@@ -25,19 +25,19 @@
 
 /// The enum that specifies the level of Unified Shared Memory, only
 /// two levels are supported currrently.
-/// none:       uses helper functions from DPCT header files for memory
+/// none:       uses helper functions from C2S header files for memory
 ///             management migration
 /// restricted: uses API from DPC++ Explicit and Restricted Unified
 ///             Shared Memory extension for memory management migration
 enum class UsmLevel { UL_None, UL_Restricted };
-/// OutputVerbosityLevel defines various verbosity levels for dpct reports
+/// OutputVerbosityLevel defines various verbosity levels for c2s reports
 enum class OutputVerbosityLevel {
   OVL_Silent,
   OVL_Normal,
   OVL_Detailed,
   OVL_Diagnostics
 };
-enum class DPCTFormatStyle { FS_LLVM, FS_Google, FS_Custom };
+enum class C2SFormatStyle { FS_LLVM, FS_Google, FS_Custom };
 enum class ReportFormatEnum { RFE_NotSetFormat, RFE_CSV, RFE_Formatted };
 enum class HelperFilesCustomizationLevel {
   HFCL_None,
@@ -98,4 +98,4 @@ int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath);
 void validateCustomHelperFileNameArg(HelperFilesCustomizationLevel Level,
                                      std::string &Name,
                                      const std::string &OutRoot);
-#endif // DPCT_VALIDATE_ARGUMENTS_H
+#endif // C2S_VALIDATE_ARGUMENTS_H

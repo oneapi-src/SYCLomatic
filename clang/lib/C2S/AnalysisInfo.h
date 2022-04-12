@@ -9,8 +9,8 @@
 //
 //===-----------------------------------------------------------------===//
 
-#ifndef DPCT_ANALYSIS_INFO_H
-#define DPCT_ANALYSIS_INFO_H
+#ifndef C2S_ANALYSIS_INFO_H
+#define C2S_ANALYSIS_INFO_H
 
 #include "CustomHelperFiles.h"
 #include "Error.h"
@@ -39,7 +39,7 @@
 void setTypeNamesMapPtr(const std::map<std::string, std::string> *Ptr);
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 enum class HelperFuncType : int {
   HFT_InitValue = 0,
   HFT_DefaultQueue = 1,
@@ -353,11 +353,11 @@ enum UsingType {
   UT_Queue_P,
 };
 
-//                             DpctGlobalInfo
+//                             C2SGlobalInfo
 //                                         |
 //              --------------------------------------
 //              |                          |                           |
-//    DpctFileInfo       DpctFileInfo     ...
+//    C2SFileInfo       C2SFileInfo     ...
 //              |
 //           -----------------------------------------------------
 //           |                           |                         | |
@@ -375,9 +375,9 @@ enum UsingType {
 
 // Store analysis info (eg. memory variable info, kernel function info,
 // replacements and so on) of each file
-class DpctFileInfo {
+class C2SFileInfo {
 public:
-  DpctFileInfo(const std::string &FilePathIn)
+  C2SFileInfo(const std::string &FilePathIn)
       : Repls(std::make_shared<ExtReplacements>(FilePathIn)),
         FilePath(FilePathIn) {
     buildLinesInfo();
@@ -581,7 +581,7 @@ public:
 
   inline const SourceLineInfo &getLineInfo(unsigned LineNumber) {
     if (!LineNumber || LineNumber > Lines.size()) {
-      llvm::dbgs() << "[DpctFileInfo::getLineInfo] illegal line number "
+      llvm::dbgs() << "[C2SFileInfo::getLineInfo] illegal line number "
                    << LineNumber;
       static SourceLineInfo InvalidLine;
       return InvalidLine;
@@ -622,7 +622,7 @@ public:
     else
       LineRange.SrcEndLine = EndLine.Number;
   }
-  void insertIncludedFilesInfo(std::shared_ptr<DpctFileInfo> Info) {
+  void insertIncludedFilesInfo(std::shared_ptr<C2SFileInfo> Info) {
     auto Iter = IncludedFilesInfoSet.find(Info);
     if (Iter == IncludedFilesInfoSet.end()) {
       IncludedFilesInfoSet.insert(Info);
@@ -675,7 +675,7 @@ public:
   std::map<unsigned int, BuiltinVarInfo> &getBuiltinVarInfoMap() {
     return BuiltinVarInfoMap;
   }
-  std::unordered_set<std::shared_ptr<DpctFileInfo>> &getIncludedFilesInfoSet() {
+  std::unordered_set<std::shared_ptr<C2SFileInfo>> &getIncludedFilesInfoSet() {
     return IncludedFilesInfoSet;
   }
   std::set<unsigned int> &getSpBLASSet() { return SpBLASSet; }
@@ -712,7 +712,7 @@ public:
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
 
-  std::unordered_set<std::shared_ptr<DpctFileInfo>> IncludedFilesInfoSet;
+  std::unordered_set<std::shared_ptr<C2SFileInfo>> IncludedFilesInfoSet;
 
   std::map<
       unsigned int /*Hash Value*/,
@@ -721,7 +721,7 @@ private:
       EventMallocFreeMap;
 
   template <class Obj> GlobalMap<Obj> &getMap() {
-    llvm::dbgs() << "[DpctFileInfo::getMap] Unknow map type";
+    llvm::dbgs() << "[C2SFileInfo::getMap] Unknow map type";
     static GlobalMap<Obj> NullMap;
     return NullMap;
   }
@@ -800,29 +800,29 @@ private:
   std::bitset<32> UsingInsertedBitMap;
   bool AddOneDplHeaders = false;
 };
-template <> inline GlobalMap<MemVarInfo> &DpctFileInfo::getMap() {
+template <> inline GlobalMap<MemVarInfo> &C2SFileInfo::getMap() {
   return MemVarMap;
 }
-template <> inline GlobalMap<DeviceFunctionDecl> &DpctFileInfo::getMap() {
+template <> inline GlobalMap<DeviceFunctionDecl> &C2SFileInfo::getMap() {
   return FuncMap;
 }
-template <> inline GlobalMap<KernelCallExpr> &DpctFileInfo::getMap() {
+template <> inline GlobalMap<KernelCallExpr> &C2SFileInfo::getMap() {
   return KernelMap;
 }
-template <> inline GlobalMap<CudaMallocInfo> &DpctFileInfo::getMap() {
+template <> inline GlobalMap<CudaMallocInfo> &C2SFileInfo::getMap() {
   return CudaMallocMap;
 }
-template <> inline GlobalMap<RandomEngineInfo> &DpctFileInfo::getMap() {
+template <> inline GlobalMap<RandomEngineInfo> &C2SFileInfo::getMap() {
   return RandomEngineMap;
 }
-template <> inline GlobalMap<TextureInfo> &DpctFileInfo::getMap() {
+template <> inline GlobalMap<TextureInfo> &C2SFileInfo::getMap() {
   return TextureMap;
 }
 
-class DpctGlobalInfo {
+class C2SGlobalInfo {
 public:
-  static DpctGlobalInfo &getInstance() {
-    static DpctGlobalInfo Info;
+  static C2SGlobalInfo &getInstance() {
+    static C2SGlobalInfo Info;
     return Info;
   }
 
@@ -848,8 +848,8 @@ public:
     MacroExpansionRecord(IdentifierInfo *ID, const MacroInfo *MI,
                          SourceRange Range, bool IsInRoot, int TokenIndex) {
       auto LocInfoBegin =
-          DpctGlobalInfo::getLocInfo(MI->getReplacementToken(0).getLocation());
-      auto LocInfoEnd = DpctGlobalInfo::getLocInfo(
+          C2SGlobalInfo::getLocInfo(MI->getReplacementToken(0).getLocation());
+      auto LocInfoEnd = C2SGlobalInfo::getLocInfo(
           MI->getReplacementToken(MI->getNumTokens() - 1).getLocation());
       Name = ID->getName().str();
       NumTokens = MI->getNumTokens();
@@ -923,7 +923,7 @@ public:
   static bool isExcluded(const std::string &FilePath,
                          bool IsRelative = true) {
     static std::map<std::string, bool> Cache;
-    if(FilePath.empty() || DpctGlobalInfo::getExcludePath().empty()) {
+    if(FilePath.empty() || C2SGlobalInfo::getExcludePath().empty()) {
       return false;
     }
     std::string CanonicalPath = FilePath;
@@ -935,7 +935,7 @@ public:
     if(Cache.count(CanonicalPath)) {
       return Cache[CanonicalPath];
     }
-    for(auto &Path : DpctGlobalInfo::getExcludePath()) {
+    for(auto &Path : C2SGlobalInfo::getExcludePath()) {
       if(isChildOrSamePath(Path.first, CanonicalPath)) {
         Cache[CanonicalPath] = true;
         return true;
@@ -1058,7 +1058,7 @@ public:
   }
   inline static unsigned int getKCIndentWidth() {
     if (KCIndentWidthMap.empty())
-      return DpctGlobalInfo::getCodeFormatStyle().IndentWidth;
+      return C2SGlobalInfo::getCodeFormatStyle().IndentWidth;
 
     std::multimap<unsigned int, unsigned int, std::greater<unsigned int>>
         OccuranceIndentWidthMap;
@@ -1108,8 +1108,8 @@ public:
 
   inline static format::FormatRange getFormatRange() { return FmtRng; }
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
-  inline static DPCTFormatStyle getFormatStyle() { return FmtST; }
-  inline static void setFormatStyle(DPCTFormatStyle FS) { FmtST = FS; }
+  inline static C2SFormatStyle getFormatStyle() { return FmtST; }
+  inline static void setFormatStyle(C2SFormatStyle FS) { FmtST = FS; }
 // Processing the folder or file by fowllowing rule:
 // Rule1: For {child path, parent path}, only parent path will be kept.
 // Rule2: Ignore invalid path.
@@ -1126,7 +1126,7 @@ public:
       }
       std::string PathBuf = *Itr;
       if (!makeCanonical(*Itr)) {
-        clang::dpct::PrintMsg("Note: Path " + PathBuf +
+        clang::c2s::PrintMsg("Note: Path " + PathBuf +
                               " is invalid and will be ignored by option "
                               "--in-root-exclude.\n");
         continue;
@@ -1140,7 +1140,7 @@ public:
           llvm::sys::fs::is_regular_file(*Itr) ||
           llvm::sys::fs::is_symlink_file(*Itr)) {
         if (!isChildOrSamePath(InRoot, *Itr)) {
-          clang::dpct::PrintMsg("Note: Path " + PathBuf +
+          clang::c2s::PrintMsg("Note: Path " + PathBuf +
                                 " is not in --in-root directory and will be "
                                 "ignored by --in-root-exclude.\n");
         } else {
@@ -1166,7 +1166,7 @@ public:
           }
         }
       } else {
-        clang::dpct::PrintMsg("Note: Path " + PathBuf +
+        clang::c2s::PrintMsg("Note: Path " + PathBuf +
                               " is invalid and will be ignored by option "
                               "--in-root-exclude.\n");
       }
@@ -1183,7 +1183,7 @@ public:
     size_t NamespaceVecSize = NamespacesVec.size();
     if (!NamespaceVecSize || NamespaceVecSize > 2) {
       ShowStatus(MigrationErrorInvalidExplicitNamespace);
-      dpctExit(MigrationErrorInvalidExplicitNamespace);
+      c2sExit(MigrationErrorInvalidExplicitNamespace);
     }
     for (auto &Namespace : NamespacesVec) {
       // 1.Ensure option none is alone
@@ -1197,9 +1197,9 @@ public:
            (ExplicitNamespaceSet.size() == 1 &&
             (ExplicitNamespaceSet.count(ExplicitNamespace::EN_C2S) == 0 ||
              ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 0)));
-      // 3.Check whether option dpct duplicated
+      // 3.Check whether option c2s duplicated
       bool Check3 =
-          (Namespace == ExplicitNamespace::EN_DPCT &&
+          (Namespace == ExplicitNamespace::EN_C2S &&
            (ExplicitNamespaceSet.count(ExplicitNamespace::EN_C2S) == 1 ||
             ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 1));
       // 4.Check whether option c2s duplicated
@@ -1209,7 +1209,7 @@ public:
             ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 1));
       if (Check1 || Check2 || Check3 || Check4) {
         ShowStatus(MigrationErrorInvalidExplicitNamespace);
-        dpctExit(MigrationErrorInvalidExplicitNamespace);
+        c2sExit(MigrationErrorInvalidExplicitNamespace);
       } else {
         ExplicitNamespaceSet.insert(Namespace);
       }
@@ -1226,11 +1226,11 @@ public:
     EnableComments = Enable;
   }
 
-  inline static bool isDPCTNamespaceTempEnabled() {
-    return TempEnableDPCTNamespace;
+  inline static bool isC2SNamespaceTempEnabled() {
+    return TempEnableC2SNamespace;
   }
-  inline static void setDPCTNamespaceTempEnabled() {
-    TempEnableDPCTNamespace = true;
+  inline static void setC2SNamespaceTempEnabled() {
+    TempEnableC2SNamespace = true;
   }
 
   inline static std::unordered_set<std::string> &getPrecAndDomPairSet() {
@@ -1349,7 +1349,7 @@ public:
     if (!N)
       return nullptr;
 
-    auto &Context = clang::dpct::DpctGlobalInfo::getContext();
+    auto &Context = clang::c2s::C2SGlobalInfo::getContext();
     clang::DynTypedNode PreviousNode = clang::DynTypedNode::create(*N);
     clang::DynTypedNodeList Parents = Context.getParents(*N);
     while (!Parents.empty()) {
@@ -1368,7 +1368,7 @@ public:
   printCtadClass(StreamTy &Stream, size_t CanNotDeducedArgsNum,
                  StringRef ClassName, Args &&... Arguments) {
     Stream << ClassName;
-    if (!DpctGlobalInfo::isCtadEnabled()) {
+    if (!C2SGlobalInfo::isCtadEnabled()) {
       printArguments(Stream << "<", std::forward<Args>(Arguments)...) << ">";
     } else if (CanNotDeducedArgsNum) {
       printPartialArguments(Stream << "<", CanNotDeducedArgsNum,
@@ -1444,14 +1444,14 @@ public:
     return QT.getAsString(Context.getPrintingPolicy());
   }
   static inline std::string getTypeName(QualType QT) {
-    return getTypeName(QT, DpctGlobalInfo::getContext());
+    return getTypeName(QT, C2SGlobalInfo::getContext());
   }
   static inline std::string getUnqualifiedTypeName(QualType QT,
                                                    const ASTContext &Context) {
     return getTypeName(QT.getUnqualifiedType(), Context);
   }
   static inline std::string getUnqualifiedTypeName(QualType QT) {
-    return getUnqualifiedTypeName(QT, DpctGlobalInfo::getContext());
+    return getUnqualifiedTypeName(QT, C2SGlobalInfo::getContext());
   }
 
   /// This function will return the replaced type name with qualifiers.
@@ -1469,14 +1469,14 @@ public:
     setTypeNamesMapPtr(&MapNames::TypeNamesMap);
     llvm::raw_string_ostream OS(MigratedTypeStr);
     clang::PrintingPolicy PP =
-        clang::PrintingPolicy(DpctGlobalInfo::getContext().getLangOpts());
+        clang::PrintingPolicy(C2SGlobalInfo::getContext().getLangOpts());
     QT.print(OS, PP);
     OS.flush();
     setTypeNamesMapPtr(nullptr);
     return getFinalCastTypeNameStr(MigratedTypeStr);
   }
   static inline std::string getReplacedTypeName(QualType QT) {
-    return getReplacedTypeName(QT, DpctGlobalInfo::getContext());
+    return getReplacedTypeName(QT, C2SGlobalInfo::getContext());
   }
   /// This function will return the original type name with qualifiers.
   /// The order of original qualifiers will follow the behavior of
@@ -1487,7 +1487,7 @@ public:
     std::string OriginalTypeStr;
     llvm::raw_string_ostream OS(OriginalTypeStr);
     clang::PrintingPolicy PP =
-        clang::PrintingPolicy(DpctGlobalInfo::getContext().getLangOpts());
+        clang::PrintingPolicy(C2SGlobalInfo::getContext().getLangOpts());
     QT.print(OS, PP);
     OS.flush();
     return OriginalTypeStr;
@@ -1541,7 +1541,7 @@ public:
     for (auto &File : FileMap)
       File.second->buildKernelInfo();
 
-    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+    if (C2SGlobalInfo::getAssumedNDRangeDim() == 1) {
       // Construct a union-find set for all the instances of MemVarMap in
       // DeviceFunctionInfo. During the tranversal of the call-graph, do union
       // operation if caller and callee both need item variable, then after the
@@ -1574,15 +1574,15 @@ public:
     for (auto &File : FileMap) {
       File.second->postProcess();
     }
-    if (DpctGlobalInfo::getRunRound() == 0) {
+    if (C2SGlobalInfo::getRunRound() == 0) {
       for (auto &Info : HostDeviceFDefIMap) {
         if (HostDeviceFCallIMap.count(Info.first)) {
-          DpctGlobalInfo::setNeedRunAgain(true);
+          C2SGlobalInfo::setNeedRunAgain(true);
           break;
         }
       }
       // record file that need parse again
-      if (DpctGlobalInfo::isNeedRunAgain()) {
+      if (C2SGlobalInfo::isNeedRunAgain()) {
         for (auto &Info : HostDeviceFDefIMap) {
           if (HostDeviceFCallIMap.count(Info.first) &&
               ProcessedFile.count(Info.second.first))
@@ -1608,7 +1608,7 @@ public:
   }
   // Emplace stored replacements into replacement set.
   void emplaceReplacements(ReplTy &ReplSets /*out*/) {
-    if (DpctGlobalInfo::isNeedRunAgain())
+    if (C2SGlobalInfo::isNeedRunAgain())
       return;
     for (auto &FileRepl : FileReplCache) {
       FileRepl.second->emplaceIntoReplSet(ReplSets[FileRepl.first]);
@@ -1708,7 +1708,7 @@ public:
   }
 
   void insertEventSyncTypeInfo(
-      const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
+      const std::shared_ptr<clang::c2s::ExtReplacement> Repl,
       bool NeedReport = false, bool IsAssigned = false) {
     std::string FilePath = Repl->getFilePath().str();
     unsigned int Offset = Repl->getOffset();
@@ -1727,7 +1727,7 @@ public:
   }
 
   void updateEventSyncTypeInfo(
-      const std::shared_ptr<clang::dpct::ExtReplacement> Repl) {
+      const std::shared_ptr<clang::c2s::ExtReplacement> Repl) {
     std::string FilePath = Repl->getFilePath().str();
     unsigned int Offset = Repl->getOffset();
     unsigned int Length = Repl->getLength();
@@ -1746,8 +1746,8 @@ public:
   }
 
   void insertTimeStubTypeInfo(
-      const std::shared_ptr<clang::dpct::ExtReplacement> ReplWithSB,
-      const std::shared_ptr<clang::dpct::ExtReplacement> ReplWithoutSB) {
+      const std::shared_ptr<clang::c2s::ExtReplacement> ReplWithSB,
+      const std::shared_ptr<clang::c2s::ExtReplacement> ReplWithoutSB) {
 
     std::string FilePath = ReplWithSB->getFilePath().str();
     unsigned int Offset = ReplWithSB->getOffset();
@@ -1778,7 +1778,7 @@ public:
                             std::string Repl,
                             std::shared_ptr<DeviceFunctionInfo> DFI);
 
-  void insertReplMalloc(const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
+  void insertReplMalloc(const std::shared_ptr<clang::c2s::ExtReplacement> Repl,
                         unsigned int Offset) {
     std::string FilePath = Repl->getFilePath().str();
     auto FileInfo = insertFile(FilePath);
@@ -1786,7 +1786,7 @@ public:
     EventMallocFreeMap[Offset].first.push_back(Repl);
   }
 
-  void insertReplFree(const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
+  void insertReplFree(const std::shared_ptr<clang::c2s::ExtReplacement> Repl,
                       unsigned int Offset) {
     std::string FilePath = Repl->getFilePath().str();
     auto FileInfo = insertFile(FilePath);
@@ -1934,7 +1934,7 @@ public:
     return ExpansionRangeToMacroRecord;
   }
 
-  static std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
+  static std::map<std::string, std::shared_ptr<C2SGlobalInfo::MacroDefRecord>>
       &getMacroTokenToMacroDefineLoc() {
     return MacroTokenToMacroDefineLoc;
   }
@@ -2029,7 +2029,7 @@ public:
     SpBLASUnsupportedMatrixTypeFlag = Flag;
   }
 
-  inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
+  inline std::shared_ptr<C2SFileInfo> insertFile(const std::string &FilePath) {
     return insertObject(FileMap, FilePath);
   }
 
@@ -2113,7 +2113,7 @@ public:
   static inline void
   updateSpellingLocDFIMaps(SourceLocation SL,
                            std::shared_ptr<DeviceFunctionInfo> DFI) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
+    auto &SM = C2SGlobalInfo::getSourceManager();
     std::string Loc = getCombinedStrFromLoc(SM.getSpellingLoc(SL));
 
     auto IterOfL2D = SpellingLocToDFIsMapForAssumeNDRange.find(Loc);
@@ -2200,12 +2200,12 @@ public:
   }
 
 private:
-  DpctGlobalInfo();
+  C2SGlobalInfo();
 
-  DpctGlobalInfo(const DpctGlobalInfo &) = delete;
-  DpctGlobalInfo(DpctGlobalInfo &&) = delete;
-  DpctGlobalInfo &operator=(const DpctGlobalInfo &) = delete;
-  DpctGlobalInfo &operator=(DpctGlobalInfo &&) = delete;
+  C2SGlobalInfo(const C2SGlobalInfo &) = delete;
+  C2SGlobalInfo(C2SGlobalInfo &&) = delete;
+  C2SGlobalInfo &operator=(const C2SGlobalInfo &) = delete;
+  C2SGlobalInfo &operator=(C2SGlobalInfo &&) = delete;
 
   // Wrapper of isInRoot for std::function usage.
   static bool checkInRoot(SourceLocation SL) { return isInRoot(SL); }
@@ -2215,7 +2215,7 @@ private:
     auto It = getExpansionRangeToMacroRecord().find(
         getCombinedStrFromLoc(SM->getSpellingLoc(SL)));
     if (It != getExpansionRangeToMacroRecord().end()) {
-      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
+      c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord()
         [getCombinedStrFromLoc(
           SM->getSpellingLoc(SL).getLocWithOffset(Len))] = It->second;
     }
@@ -2265,10 +2265,10 @@ private:
   // The result will be also stored in KernelCallExpr.BeginLoc
   static inline SourceLocation getLocation(const CUDAKernelCallExpr *CKC) {
     // if the BeginLoc of CKC is in macro define, use getImmediateSpellingLoc.
-    auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+    auto It = c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
         getCombinedStrFromLoc(SM->getSpellingLoc(CKC->getBeginLoc())));
     if (CKC->getBeginLoc().isMacroID() &&
-        It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+        It != c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end()) {
       return SM->getImmediateSpellingLoc(CKC->getBeginLoc());
     }
 
@@ -2294,7 +2294,7 @@ private:
     return CKC->getBeginLoc();
   }
 
-  std::unordered_map<std::string, std::shared_ptr<DpctFileInfo>> FileMap;
+  std::unordered_map<std::string, std::shared_ptr<C2SFileInfo>> FileMap;
   static std::shared_ptr<clang::tooling::TranslationUnitReplacements>
       MainSourceYamlTUR;
   static std::string InRoot;
@@ -2311,7 +2311,7 @@ private:
   static std::unordered_set<FFTTypeEnum> FFTTypeSet;
   static std::unordered_set<std::string> HostRNGEngineTypeSet;
   static format::FormatRange FmtRng;
-  static DPCTFormatStyle FmtST;
+  static C2SFormatStyle FmtST;
   static bool EnableCtad;
   static bool IsMLKHeaderUsed;
   static bool GenBuildScript;
@@ -2321,8 +2321,8 @@ private:
 
   // This variable is only set true when option "--report-type=stats" or option
   // " --report-type=all" is specified to get the migration status report, while
-  // dpct namespace is not enabled.
-  static bool TempEnableDPCTNamespace;
+  // c2s namespace is not enabled.
+  static bool TempEnableC2SNamespace;
   static CompilerInstance *CI;
   static ASTContext *Context;
   static SourceManager *SM;
@@ -2336,11 +2336,11 @@ private:
   static std::unordered_set<std::string> ExpansionRangeBeginSet;
   static bool CheckUnicodeSecurityFlag;
   static std::map<std::string,
-                  std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
+                  std::shared_ptr<C2SGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
   static std::map<std::string, SourceLocation> EndifLocationOfIfdef;
   static std::vector<std::pair<std::string, size_t>> ConditionalCompilationLoc;
-  static std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
+  static std::map<std::string, std::shared_ptr<C2SGlobalInfo::MacroDefRecord>>
       MacroTokenToMacroDefineLoc;
   static std::map<std::string, std::string> FunctionCallInMacroMigrateRecord;
   // key: The hash string of the first non-empty token after the end location of
@@ -2415,7 +2415,7 @@ private:
 /// "QuailifiedName@FunctionType".
 /// e.g.: template<class T> void test(T *int)
 /// -> test@void (type-parameter-0-1 *)
-class DpctNameGenerator {
+class C2SNameGenerator {
   ASTNameGenerator G;
   PrintingPolicy PP;
 
@@ -2428,8 +2428,8 @@ class DpctNameGenerator {
   }
 
 public:
-  DpctNameGenerator() : DpctNameGenerator(DpctGlobalInfo::getContext()) {}
-  explicit DpctNameGenerator(ASTContext &Ctx)
+  C2SNameGenerator() : C2SNameGenerator(C2SGlobalInfo::getContext()) {}
+  explicit C2SNameGenerator(ASTContext &Ctx)
       : G(Ctx), PP(Ctx.getPrintingPolicy()) {
     PP.PrintCanonicalTypes = true;
   }
@@ -2510,11 +2510,11 @@ private:
   /// Get folded array size with original size expression following as comments.
   /// e.g.,
   /// #define SIZE 24
-  /// dpct::global_memory<int, 1>(24 /* SIZE */);
+  /// c2s::global_memory<int, 1>(24 /* SIZE */);
   /// Exception for particular case:
   /// __device__ int a[24];
   /// will be migrated to:
-  /// dpct::global_memory<int, 1> a(24);
+  /// c2s::global_memory<int, 1> a(24);
   inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
     if (TL.getSizeExpr()->getStmtClass() == Stmt::IntegerLiteralClass &&
         TL.getSizeExpr()->getBeginLoc().isFileID())
@@ -2532,7 +2532,7 @@ private:
   /// comments.
   /// e.g.,
   /// #define SIZE 24
-  /// dpct::global_memory<int, 1>(24 /* SIZE */);
+  /// c2s::global_memory<int, 1>(24 /* SIZE */);
   void setArrayInfo(const ConstantArrayTypeLoc &TL, bool NeedFoldSize);
 
   /// Typically C++ array with template depedent size.
@@ -2585,7 +2585,7 @@ public:
   inline std::shared_ptr<CtTypeInfo> &getType() { return Ty; }
 
   inline std::string getDerefName() {
-    return buildString(getName(), "_deref_", DpctGlobalInfo::getInRootHash());
+    return buildString(getName(), "_deref_", C2SGlobalInfo::getInRootHash());
   }
 
   inline void
@@ -2656,10 +2656,10 @@ public:
   // Initialize offset and length for __constant__ variable that needs to be
   // renamed.
   void newConstVarInit(const VarDecl *Var) {
-    CharSourceRange SR(DpctGlobalInfo::getSourceManager().getExpansionRange(
+    CharSourceRange SR(C2SGlobalInfo::getSourceManager().getExpansionRange(
         Var->getSourceRange()));
     auto BeginLoc = SR.getBegin();
-    SourceManager &SM = DpctGlobalInfo::getSourceManager();
+    SourceManager &SM = C2SGlobalInfo::getSourceManager();
     size_t repLength = 0;
     auto Buffer = SM.getCharacterData(BeginLoc);
     auto Data = Buffer[repLength];
@@ -2667,7 +2667,7 @@ public:
       Data = Buffer[++repLength];
 
     NewConstVarLength = ++repLength;
-    NewConstVarOffset = DpctGlobalInfo::getLocInfo(BeginLoc).second;
+    NewConstVarOffset = C2SGlobalInfo::getLocInfo(BeginLoc).second;
   }
 
   std::string getDeclarationReplacement(const VarDecl *);
@@ -2700,7 +2700,7 @@ public:
   inline std::string getRangeClass() {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
-    return DpctGlobalInfo::printCtadClass(OS,
+    return C2SGlobalInfo::printCtadClass(OS,
                                           MapNames::getClNamespace() + "range",
                                           getType()->getDimension())
         .str();
@@ -2722,10 +2722,10 @@ public:
       PS << getAccessorDataType();
       PS << " *";
     } else {
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None || isShared())
+      if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None || isShared())
         PS << getSyclAccessorType() << " ";
       else
-        PS << getDpctAccessorType() << " ";
+        PS << getC2SAccessorType() << " ";
     }
     return PS << getArgName();
   }
@@ -2733,7 +2733,7 @@ public:
     return PS << getArgName();
   }
   ParameterStream &getKernelArg(ParameterStream &PS) {
-    if (isShared() || DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+    if (isShared() || C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       if (AccMode == Pointer) {
         if (!getType()->isWritten())
           PS << "(" << getAccessorDataType() << " *)";
@@ -2796,10 +2796,10 @@ private:
   }
   const std::string &getMemoryAttr();
   std::string getSyclAccessorType();
-  std::string getDpctAccessorType() {
+  std::string getC2SAccessorType() {
     requestFeature(HelperFeatureEnum::Memory_c2s_accessor, getFilePath());
     auto Type = getType();
-    return buildString(MapNames::getDpctNamespace(true), "accessor<",
+    return buildString(MapNames::getC2SNamespace(true), "accessor<",
                        getAccessorDataType(), ", ", getMemoryAttr(), ", ",
                        Type->getDimension(), ">");
   }
@@ -2818,11 +2818,11 @@ private:
   }
 
 private:
-  /// Passing by dpct::accessor, value or pointer when invoking kernel.
+  /// Passing by c2s::accessor, value or pointer when invoking kernel.
   /// Constant scalar variables are passed by value while other 0/1D variables
   /// defined on device memory are passed by pointer in device function calls.
-  /// The rest are passed by dpct::accessor.
-  enum DpctAccessMode {
+  /// The rest are passed by c2s::accessor.
+  enum C2SAccessMode {
     Value,
     Pointer,
     Accessor,
@@ -2831,7 +2831,7 @@ private:
 private:
   VarAttrKind Attr;
   VarScope Scope;
-  DpctAccessMode AccMode;
+  C2SAccessMode AccMode;
   bool PointerAsArray;
   std::string InitList;
   bool IsIgnored = false;
@@ -2871,7 +2871,7 @@ public:
     DataType = std::move(Type);
     IsArray = TexType & 0xF0;
     Dimension = TexType & 0x0F;
-    // The DataType won't use dpct helper feature
+    // The DataType won't use c2s helper feature
     MapNames::replaceName(MapNames::TypeNamesMap, DataType);
   }
 
@@ -2916,11 +2916,11 @@ protected:
       NewVarName.pop_back();
   }
   TextureInfo(const VarDecl *VD)
-      : TextureInfo(DpctGlobalInfo::getLocInfo(
+      : TextureInfo(C2SGlobalInfo::getLocInfo(
                         VD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
                     VD->getName()) {}
   TextureInfo(const VarDecl *VD, std::string Subscript)
-      : TextureInfo(DpctGlobalInfo::getLocInfo(
+      : TextureInfo(C2SGlobalInfo::getLocInfo(
                         VD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
                     VD->getName().str() + "[" + Subscript + "]") {}
   TextureInfo(std::pair<StringRef, unsigned> LocInfo, StringRef Name)
@@ -2928,7 +2928,7 @@ protected:
 
   ParameterStream &getDecl(ParameterStream &PS,
                            const std::string &TemplateDeclName) {
-    return Type->printType(PS, MapNames::getDpctNamespace() + TemplateDeclName)
+    return Type->printType(PS, MapNames::getC2SNamespace() + TemplateDeclName)
            << " " << Name;
   }
 
@@ -2941,7 +2941,7 @@ public:
       auto DataTy = TemplateList[0].getAsType();
       if (auto ET = dyn_cast<ElaboratedType>(DataTy))
         DataTy = ET->getNamedType();
-      setType(DpctGlobalInfo::getUnqualifiedTypeName(DataTy),
+      setType(C2SGlobalInfo::getUnqualifiedTypeName(DataTy),
               TemplateList[1].getAsIntegral().getExtValue());
     } else {
       auto TST = VD->getType()->getAs<TemplateSpecializationType>();
@@ -2956,9 +2956,9 @@ public:
           Expr::EvalResult ER;
           if (!Arg1.getAsExpr()->isValueDependent() &&
               Arg1.getAsExpr()->EvaluateAsInt(ER,
-                                              DpctGlobalInfo::getContext())) {
+                                              C2SGlobalInfo::getContext())) {
             int64_t Value = ER.Val.getInt().getExtValue();
-            setType(DpctGlobalInfo::getUnqualifiedTypeName(DataTy), Value);
+            setType(C2SGlobalInfo::getUnqualifiedTypeName(DataTy), Value);
           }
         }
       }
@@ -3006,7 +3006,7 @@ public:
   inline ParameterStream &getKernelArg(ParameterStream &OS) {
     requestFeature(HelperFeatureEnum::Image_image_accessor_ext, FilePath);
     getType()->printType(OS,
-                         MapNames::getDpctNamespace() + "image_accessor_ext");
+                         MapNames::getC2SNamespace() + "image_accessor_ext");
     OS << "(" << NewVarName << "_smpl, " << NewVarName << "_acc)";
     return OS;
   }
@@ -3044,7 +3044,7 @@ public:
     ParameterStream PS;
 
     PS << "auto " << NewVarName << "_acc = static_cast<";
-    getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
+    getType()->printType(PS, MapNames::getC2SNamespace() + "image_wrapper")
         << " *>(" << Name << ")->get_access(cgh);";
     requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
     requestFeature(HelperFeatureEnum::Image_image_wrapper, FilePath);
@@ -3061,13 +3061,13 @@ public:
   std::string getParamDeclType() {
     requestFeature(HelperFeatureEnum::Image_image_accessor_ext, FilePath);
     ParameterStream PS;
-    Type->printType(PS, MapNames::getDpctNamespace() + "image_accessor_ext");
+    Type->printType(PS, MapNames::getC2SNamespace() + "image_accessor_ext");
     return PS.Str;
   }
 
   void addParamDeclReplacement() {
     if (Type) {
-      DpctGlobalInfo::getInstance().addReplacement(
+      C2SGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(FilePath, Offset, ReplaceTypeLength,
                                            getParamDeclType(), nullptr));
     }
@@ -3075,7 +3075,7 @@ public:
 
   template <class Node> static inline bool isTextureObject(const Node *E) {
     if (E)
-      return DpctGlobalInfo::getUnqualifiedTypeName(E->getType()) ==
+      return C2SGlobalInfo::getUnqualifiedTypeName(E->getType()) ==
              "cudaTextureObject_t";
     return false;
   }
@@ -3092,7 +3092,7 @@ public:
     requestFeature(HelperFeatureEnum::Image_image_wrapper_get_access, FilePath);
     ParameterStream PS;
     PS << "auto " << Name << "_acc = static_cast<";
-    getType()->printType(PS, MapNames::getDpctNamespace() + "image_wrapper")
+    getType()->printType(PS, MapNames::getC2SNamespace() + "image_wrapper")
         << " *>(" << ArgStr << ")->get_access(cgh);";
     return PS.Str;
   }
@@ -3135,7 +3135,7 @@ public:
   void setAsType(QualType QT) {
     if (isPlaceholderType(QT))
       return;
-    setArgStr(DpctGlobalInfo::getReplacedTypeName(QT));
+    setArgStr(C2SGlobalInfo::getReplacedTypeName(QT));
     Kind = TemplateArgument::Type;
   }
   void setAsType(const TypeLoc &TL) {
@@ -3159,7 +3159,7 @@ public:
 
 private:
   template <class T> void setArgFromExprAnalysis(const T &Arg) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
+    auto &SM = C2SGlobalInfo::getSourceManager();
     auto Range = getArgSourceRange(Arg);
     auto Begin = Range.getBegin();
     auto End = Range.getEnd();
@@ -3170,7 +3170,7 @@ private:
       End = SM.getSpellingLoc(SM.getImmediateExpansionRange(End).getEnd());
       auto Length = SM.getCharacterData(End) - SM.getCharacterData(Begin) +
                     Lexer::MeasureTokenLength(
-                        End, SM, DpctGlobalInfo::getContext().getLangOpts());
+                        End, SM, C2SGlobalInfo::getContext().getLangOpts());
       std::string Result = std::string(SM.getCharacterData(Begin), Length);
       setArgStr(std::move(Result));
     } else {
@@ -3232,7 +3232,7 @@ public:
     merge(LocalVarMap, VarMap.LocalVarMap, TemplateArgs);
     merge(GlobalVarMap, VarMap.GlobalVarMap, TemplateArgs);
     merge(ExternVarMap, VarMap.ExternVarMap, TemplateArgs);
-    dpct::merge(TextureMap, VarMap.TextureMap);
+    c2s::merge(TextureMap, VarMap.TextureMap);
   }
   int calculateExtraArgsSize() const {
     int Size = 0;
@@ -3277,11 +3277,11 @@ public:
 
   MemVarInfoMap &getMap(MemVarInfo::VarScope Scope) {
     switch (Scope) {
-    case clang::dpct::MemVarInfo::Local:
+    case clang::c2s::MemVarInfo::Local:
       return LocalVarMap;
-    case clang::dpct::MemVarInfo::Extern:
+    case clang::c2s::MemVarInfo::Extern:
       return ExternVarMap;
-    case clang::dpct::MemVarInfo::Global:
+    case clang::c2s::MemVarInfo::Global:
       return GlobalVarMap;
     default:
       llvm::dbgs() << "[MemVarMap::getMap] Unknow variable scope.";
@@ -3343,7 +3343,7 @@ private:
   static void merge(MemVarInfoMap &Master, const MemVarInfoMap &Branch,
                     const std::vector<TemplateArgumentInfo> &TemplateArgs) {
     if (TemplateArgs.empty())
-      return dpct::merge(Master, Branch);
+      return c2s::merge(Master, Branch);
     for (auto &VarInfoPair : Branch)
       Master
           .insert(
@@ -3367,12 +3367,12 @@ private:
 
   template <CallOrDecl COD>
   inline ParameterStream &getStream(ParameterStream &PS) const {
-    return PS << DpctGlobalInfo::getStreamName();
+    return PS << C2SGlobalInfo::getStreamName();
   }
 
   template <CallOrDecl COD>
   inline ParameterStream &getSync(ParameterStream &PS) const {
-    return PS << buildString("atm_", DpctGlobalInfo::getSyncName());
+    return PS << buildString("atm_", C2SGlobalInfo::getSyncName());
   }
 
   template <CallOrDecl COD>
@@ -3448,7 +3448,7 @@ template <>
 inline ParameterStream &
 MemVarMap::getItem<MemVarMap::DeclParameter>(ParameterStream &PS) const {
   std::string NDItem = "nd_item<3>";
-  if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 &&
+  if (C2SGlobalInfo::getAssumedNDRangeDim() == 1 &&
       MemVarMap::getHeadWithoutPathCompression(this) &&
       MemVarMap::getHeadWithoutPathCompression(this)->Dim == 1) {
     NDItem = "nd_item<1>";
@@ -3464,7 +3464,7 @@ inline ParameterStream &
 MemVarMap::getStream<MemVarMap::DeclParameter>(ParameterStream &PS) const {
   static std::string StreamParamDecl = "const " + MapNames::getClNamespace() +
                                        "stream &" +
-                                       DpctGlobalInfo::getStreamName();
+                                       C2SGlobalInfo::getStreamName();
   return PS << StreamParamDecl;
 }
 
@@ -3476,7 +3476,7 @@ MemVarMap::getSync<MemVarMap::DeclParameter>(ParameterStream &PS) const {
       MapNames::getClNamespace() + "memory_order::seq_cst, " +
       MapNames::getClNamespace() + "memory_scope::device, " +
       MapNames::getClNamespace() + "access::address_space::global_space> &" +
-      DpctGlobalInfo::getSyncName();
+      C2SGlobalInfo::getSyncName();
   return PS << SyncParamDecl;
 }
 
@@ -3516,9 +3516,9 @@ MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
     int PreParams, int PostParams, FormatInfo FormatInformation) const {
 
   ParameterStream PS;
-  if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
+  if (C2SGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
     PS = ParameterStream(FormatInformation,
-                         DpctGlobalInfo::getCodeFormatStyle().ColumnLimit);
+                         C2SGlobalInfo::getCodeFormatStyle().ColumnLimit);
   } else {
     PS = ParameterStream(FormatInformation, 80);
   }
@@ -3679,7 +3679,7 @@ public:
   }
   inline static std::shared_ptr<DeviceFunctionInfo>
   LinkRedecls(const FunctionDecl *FD) {
-    if (auto D = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD))
+    if (auto D = C2SGlobalInfo::getInstance().findDeviceFunctionDecl(FD))
       return D->getFuncInfo();
     if (auto FTD = FD->getPrimaryTemplate())
       return LinkTemplateDecl(FTD);
@@ -3696,7 +3696,7 @@ public:
       const ParsedAttributes &Attrs, const TemplateArgumentListInfo &TAList) {
     auto Info = LinkRedecls(Specialization);
     if (Info) {
-      auto D = DpctGlobalInfo::getInstance().insertDeviceFunctionDecl(
+      auto D = C2SGlobalInfo::getInstance().insertDeviceFunctionDecl(
           Specialization, FTL, Attrs, TAList);
       D->setFuncInfo(Info);
     }
@@ -3753,7 +3753,7 @@ protected:
                              std::shared_ptr<TextureObjectInfo>());
     for (unsigned Idx = 0; Idx < Parms.size(); ++Idx) {
       auto Param = Parms[Idx];
-      if (DpctGlobalInfo::getUnqualifiedTypeName(Param->getType()) ==
+      if (C2SGlobalInfo::getUnqualifiedTypeName(Param->getType()) ==
           "cudaTextureObject_t")
         TextureObjectList[Idx] = std::make_shared<TextureObjectInfo>(Param);
     }
@@ -3856,7 +3856,7 @@ public:
 
   template <class CallT>
   inline std::shared_ptr<CallFunctionExpr> addCallee(const CallT *C) {
-    auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
+    auto CallLocInfo = C2SGlobalInfo::getLocInfo(C);
     auto Call =
         insertObject(CallExprMap, CallLocInfo.second, CallLocInfo.first, C);
     Call->buildCallExprInfo(C);
@@ -3916,7 +3916,7 @@ public:
                               std::string APIName, std::string VarName = "") {
     if (Size == 0 || Loc.isInvalid())
       return;
-    auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
+    auto LocInfo = C2SGlobalInfo::getLocInfo(Loc);
     RequiredSubGroupSize.push_back(
         std::make_tuple(Size, LocInfo.first, LocInfo.second, APIName, VarName));
   }
@@ -4041,7 +4041,7 @@ private:
       TryGetBuffer = Analysis.TryGetBuffer;
       IsRedeclareRequired = Analysis.IsRedeclareRequired;
       IsPointer = Analysis.IsPointer;
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+      if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
         IsDoublePointer = Analysis.IsDoublePointer;
       }
 
@@ -4053,7 +4053,7 @@ private:
         } else {
           PointerType = Arg->getType();
         }
-        TypeString = DpctGlobalInfo::getReplacedTypeName(PointerType);
+        TypeString = C2SGlobalInfo::getReplacedTypeName(PointerType);
         ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
 
         // Currently, all the device RNG state struct are passed to kernel by
@@ -4089,9 +4089,9 @@ private:
             KernelCallExpr *Kernel)
         : IsPointer(PVD->getType()->isPointerType()), IsRedeclareRequired(true),
           IsUsedAsLvalueAfterMalloc(true),
-          TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
+          TryGetBuffer(C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
                        IsPointer),
-          TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
+          TypeString(C2SGlobalInfo::getReplacedTypeName(PVD->getType())),
           IdString(PVD->getName().str() + "_"),
           Index(PVD->getFunctionScopeIndex()) {
       /// For parameter declaration 'float *a' with index = 2 and args array's
@@ -4099,9 +4099,9 @@ private:
       llvm::raw_string_ostream OS(ArgString);
       /// Get pointer type of the parameter declaration's type, e.g. 'float **'.
       auto CastPointerType =
-          DpctGlobalInfo::getContext().getPointerType(PVD->getType());
+          C2SGlobalInfo::getContext().getPointerType(PVD->getType());
       /// Print '*(float **)'.
-      OS << "*(" << DpctGlobalInfo::getReplacedTypeName(CastPointerType) << ")";
+      OS << "*(" << C2SGlobalInfo::getReplacedTypeName(CastPointerType) << ")";
       /// Print args array subscript.
       OS << ArgsArrayName << "[" << Index << "]";
 
@@ -4115,9 +4115,9 @@ private:
     ArgInfo(const ParmVarDecl *PVD, KernelCallExpr *Kernel)
         : IsPointer(PVD->getType()->isPointerType()), IsRedeclareRequired(true),
           IsUsedAsLvalueAfterMalloc(true),
-          TryGetBuffer(DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
+          TryGetBuffer(C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
                        IsPointer),
-          TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
+          TypeString(C2SGlobalInfo::getReplacedTypeName(PVD->getType())),
           IdString(PVD->getName().str() + "_"),
           Index(PVD->getFunctionScopeIndex()) {
       auto ArgName = PVD->getNameAsString();
@@ -4253,7 +4253,7 @@ private:
   void buildExecutionConfig(const ArgsRange &ConfigArgs);
 
   void removeExtraIndent() {
-    DpctGlobalInfo::getInstance().addReplacement(
+    C2SGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(getFilePath(),
                                          getBegin() - LocInfo.Indent.length(),
                                          LocInfo.Indent.length(), "", nullptr));
@@ -4264,27 +4264,27 @@ private:
     if (getVarMap().hasStream())
       SubmitStmtsList.StreamList.emplace_back(buildString(
           MapNames::getClNamespace() + "stream ",
-          DpctGlobalInfo::getStreamName(), "(64 * 1024, 80, cgh);"));
+          C2SGlobalInfo::getStreamName(), "(64 * 1024, 80, cgh);"));
     if (getVarMap().hasSync()) {
-      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+      if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
 
         OuterStmts.emplace_back(
-            buildString(MapNames::getDpctNamespace(), "global_memory<",
-                        MapNames::getDpctNamespace(), "byte_t, 1> d_",
-                        DpctGlobalInfo::getSyncName(), "(4);"));
+            buildString(MapNames::getC2SNamespace(), "global_memory<",
+                        MapNames::getC2SNamespace(), "byte_t, 1> d_",
+                        C2SGlobalInfo::getSyncName(), "(4);"));
 
         OuterStmts.emplace_back(
-            buildString("d_", DpctGlobalInfo::getSyncName(), ".init(",
-                        MapNames::getDpctNamespace(), "get_default_queue());"));
+            buildString("d_", C2SGlobalInfo::getSyncName(), ".init(",
+                        MapNames::getC2SNamespace(), "get_default_queue());"));
 
         SubmitStmtsList.SyncList.emplace_back(
-            buildString("auto ", DpctGlobalInfo::getSyncName(), " = ",
-                        MapNames::getDpctNamespace(), "get_access(d_",
-                        DpctGlobalInfo::getSyncName(), ".get_ptr(), cgh);"));
+            buildString("auto ", C2SGlobalInfo::getSyncName(), " = ",
+                        MapNames::getC2SNamespace(), "get_access(d_",
+                        C2SGlobalInfo::getSyncName(), ".get_ptr(), cgh);"));
 
         OuterStmts.emplace_back(buildString(
-            MapNames::getDpctNamespace(), "c2s_memset(d_",
-            DpctGlobalInfo::getSyncName(), ".get_ptr(), 0, sizeof(int));\n"));
+            MapNames::getC2SNamespace(), "c2s_memset(d_",
+            C2SGlobalInfo::getSyncName(), ".get_ptr(), 0, sizeof(int));\n"));
 
         requestFeature(HelperFeatureEnum::Memory_c2s_memset, getFilePath());
         requestFeature(HelperFeatureEnum::Memory_get_access, getFilePath());
@@ -4297,16 +4297,16 @@ private:
       } else {
 
         OuterStmts.emplace_back(buildString(
-            MapNames::getDpctNamespace(), "global_memory<unsigned int, 0> d_",
-            DpctGlobalInfo::getSyncName(), "(0);"));
+            MapNames::getC2SNamespace(), "global_memory<unsigned int, 0> d_",
+            C2SGlobalInfo::getSyncName(), "(0);"));
         OuterStmts.emplace_back(
-            buildString("unsigned *", DpctGlobalInfo::getSyncName(), " = d_",
-                        DpctGlobalInfo::getSyncName(), ".get_ptr(",
-                        MapNames::getDpctNamespace(), "get_default_queue());"));
+            buildString("unsigned *", C2SGlobalInfo::getSyncName(), " = d_",
+                        C2SGlobalInfo::getSyncName(), ".get_ptr(",
+                        MapNames::getC2SNamespace(), "get_default_queue());"));
 
         OuterStmts.emplace_back(buildString(
-            MapNames::getDpctNamespace(), "get_default_queue().memset(",
-            DpctGlobalInfo::getSyncName(), ", 0, sizeof(int)).wait();"));
+            MapNames::getC2SNamespace(), "get_default_queue().memset(",
+            C2SGlobalInfo::getSyncName(), ", 0, sizeof(int)).wait();"));
 
         requestFeature(HelperFeatureEnum::Memory_global_memory_alias,
                        getFilePath());
@@ -4390,7 +4390,7 @@ private:
                              StringRef Comments = "") {
       if (List.empty())
         return Printer;
-      if (!Comments.empty() && DpctGlobalInfo::isCommentsEnabled())
+      if (!Comments.empty() && C2SGlobalInfo::isCommentsEnabled())
         Printer.line("// ", Comments);
       Printer << List;
       return Printer.newLine();
@@ -4453,10 +4453,10 @@ public:
   RandomEngineInfo(unsigned Offset, const std::string &FilePath,
                    const DeclaratorDecl *DD)
       : SeedExpr("0"), DimExpr("1"), IsQuasiEngine(false) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
+    auto &SM = C2SGlobalInfo::getSourceManager();
     DeclaratorDeclName = DD->getNameAsString();
 
-    auto LocInfo = DpctGlobalInfo::getLocInfo(
+    auto LocInfo = C2SGlobalInfo::getLocInfo(
         DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc());
     DeclFilePath = LocInfo.first;
     DeclaratorDeclTypeBeginOffset = LocInfo.second;
@@ -4464,7 +4464,7 @@ public:
     DeclaratorDeclEndOffset = SM.getDecomposedLoc(DD->getEndLoc()).second;
     TypeLength = Lexer::MeasureTokenLength(
         SM.getExpansionLoc(DD->getTypeSourceInfo()->getTypeLoc().getBeginLoc()),
-        SM, DpctGlobalInfo::getContext().getLangOpts());
+        SM, C2SGlobalInfo::getContext().getLangOpts());
   }
   // Seed is an unsigned long long type value in origin code, if it is not set,
   // use 0 as default.
@@ -4489,8 +4489,8 @@ public:
 
   void setCreateAPIInfo(SourceLocation Begin, SourceLocation End,
                         std::string QueueStr = "") {
-    auto BeginInfo = DpctGlobalInfo::getLocInfo(Begin);
-    auto EndInfo = DpctGlobalInfo::getLocInfo(End);
+    auto BeginInfo = C2SGlobalInfo::getLocInfo(Begin);
+    auto EndInfo = C2SGlobalInfo::getLocInfo(End);
     CreateAPILength.push_back(EndInfo.second - BeginInfo.second);
     CreateAPIBegin.push_back(BeginInfo.second);
     CreateCallFilePath.push_back(BeginInfo.first);
@@ -4507,7 +4507,7 @@ public:
   std::string getDeclaratorDeclName() { return DeclaratorDeclName; }
   void setGeneratorName(std::string Name) { GeneratorName = Name; }
   SourceLocation getDeclaratorDeclTypeBeginLoc() {
-    auto &SM = DpctGlobalInfo::getSourceManager();
+    auto &SM = C2SGlobalInfo::getSourceManager();
     auto FE = SM.getFileManager().getFile(DeclFilePath);
     if (std::error_code ec = FE.getError())
       return SourceLocation();
@@ -4515,7 +4515,7 @@ public:
     return SM.getComposedLoc(FID, DeclaratorDeclTypeBeginOffset);
   }
   SourceLocation getDeclaratorDeclEndLoc() {
-    auto &SM = DpctGlobalInfo::getSourceManager();
+    auto &SM = C2SGlobalInfo::getSourceManager();
     auto FE = SM.getFileManager().getFile(DeclFilePath);
     if (std::error_code ec = FE.getError())
       return SourceLocation();
@@ -4556,7 +4556,7 @@ private:
 };
 
 template <class... T>
-void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
+void C2SFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
   if (!HeaderInsertedBitMap[Type]) {
     HeaderInsertedBitMap[Type] = true;
     std::string ReplStr;
@@ -4565,7 +4565,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
     if (Offset != FirstIncludeOffset) {
       RSO << getNL();
     } else {
-      if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) &&
+      if ((C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None) &&
           (Type == HT_SYCL)) {
         RSO << "#define C2S_USM_LEVEL_NONE" << getNL();
       }
@@ -4575,16 +4575,16 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
       }
     }
     concatHeader(RSO, std::forward<T>(Args)...);
-    if ((!DpctGlobalInfo::getExplicitNamespaceSet().count(
+    if ((!C2SGlobalInfo::getExplicitNamespaceSet().count(
             ExplicitNamespace::EN_C2S) &&
-        !DpctGlobalInfo::getExplicitNamespaceSet().count(
+        !C2SGlobalInfo::getExplicitNamespaceSet().count(
             ExplicitNamespace::EN_DPCT)) ||
-        DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
+        C2SGlobalInfo::isC2SNamespaceTempEnabled()) {
       RSO << "using namespace c2s;" << getNL();
     }
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+    if (!C2SGlobalInfo::getExplicitNamespaceSet().count(
             ExplicitNamespace::EN_SYCL) &&
-        !DpctGlobalInfo::getExplicitNamespaceSet().count(
+        !C2SGlobalInfo::getExplicitNamespaceSet().count(
             ExplicitNamespace::EN_CL)) {
       RSO << "using namespace sycl;" << getNL();
     }
@@ -4598,7 +4598,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
 /// Caller should make sure that /S is not nullptr.
 template <typename T>
 inline const clang::CompoundStmt *findInnerMostBlock(const T *S) {
-  auto &Context = DpctGlobalInfo::getContext();
+  auto &Context = C2SGlobalInfo::getContext();
   auto Parents = Context.getParents(*S);
   std::vector<DynTypedNode> AncestorNodes;
   while (Parents.size() >= 1) {
@@ -4621,9 +4621,9 @@ inline const clang::CompoundStmt *findInnerMostBlock(const T *S) {
 }
 
 template <typename T>
-inline DpctGlobalInfo::HelperFuncReplInfo
+inline C2SGlobalInfo::HelperFuncReplInfo
 generateHelperFuncReplInfo(const T *S) {
-  DpctGlobalInfo::HelperFuncReplInfo Info;
+  C2SGlobalInfo::HelperFuncReplInfo Info;
   if (!S) {
     Info.IsLocationValid = false;
     return Info;
@@ -4643,23 +4643,23 @@ generateHelperFuncReplInfo(const T *S) {
 
   Info.IsLocationValid = true;
   Info.DeclLocFile =
-      DpctGlobalInfo::getSourceManager().getFilename(EndOfLBrace).str();
+      C2SGlobalInfo::getSourceManager().getFilename(EndOfLBrace).str();
   Info.DeclLocOffset =
-      DpctGlobalInfo::getSourceManager().getDecomposedLoc(EndOfLBrace).second;
+      C2SGlobalInfo::getSourceManager().getDecomposedLoc(EndOfLBrace).second;
   return Info;
 }
 
 /// If it is not duplicated, return 0.
 /// If it is duplicated, return the correct Index which is >= 1.
 template <typename T> int getPlaceholderIdx(const T *S) {
-  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto &SM = C2SGlobalInfo::getSourceManager();
   SourceLocation Loc = S->getBeginLoc();
   Loc = SM.getExpansionLoc(Loc);
 
-  auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
+  auto LocInfo = C2SGlobalInfo::getLocInfo(Loc);
   std::string Key = LocInfo.first + ":" + std::to_string(LocInfo.second);
-  auto Iter = DpctGlobalInfo::getTempVariableHandledMap().find(Key);
-  if (Iter != DpctGlobalInfo::getTempVariableHandledMap().end()) {
+  auto Iter = C2SGlobalInfo::getTempVariableHandledMap().find(Key);
+  if (Iter != C2SGlobalInfo::getTempVariableHandledMap().end()) {
     return Iter->second;
   } else {
     return 0;
@@ -4669,17 +4669,17 @@ template <typename T> int getPlaceholderIdx(const T *S) {
 /// return true: upadte success
 /// return false: key already there, map is not changed.
 template <typename T> bool UpdatePlaceholderIdxMap(const T *S, int Index) {
-  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto &SM = C2SGlobalInfo::getSourceManager();
   SourceLocation Loc = S->getBeginLoc();
   Loc = SM.getExpansionLoc(Loc);
 
-  auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
+  auto LocInfo = C2SGlobalInfo::getLocInfo(Loc);
   std::string Key = LocInfo.first + ":" + std::to_string(LocInfo.second);
-  auto Iter = DpctGlobalInfo::getTempVariableHandledMap().find(Key);
-  if (Iter != DpctGlobalInfo::getTempVariableHandledMap().end()) {
+  auto Iter = C2SGlobalInfo::getTempVariableHandledMap().find(Key);
+  if (Iter != C2SGlobalInfo::getTempVariableHandledMap().end()) {
     return true;
   } else {
-    DpctGlobalInfo::getTempVariableHandledMap().insert(
+    C2SGlobalInfo::getTempVariableHandledMap().insert(
         std::make_pair(Key, Index));
     return false;
   }
@@ -4721,27 +4721,27 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
     return;
   }
 
-  DpctGlobalInfo::HelperFuncReplInfo HFInfo = generateHelperFuncReplInfo(S);
+  C2SGlobalInfo::HelperFuncReplInfo HFInfo = generateHelperFuncReplInfo(S);
 
   if (!HFInfo.IsLocationValid)
     return;
 
-  DpctGlobalInfo::getHelperFuncReplInfoMap().insert(
+  C2SGlobalInfo::getHelperFuncReplInfoMap().insert(
       std::make_pair(Index, HFInfo));
   std::string KeyForDeclCounter =
       HFInfo.DeclLocFile + ":" + std::to_string(HFInfo.DeclLocOffset);
 
   auto Iter =
-      DpctGlobalInfo::getTempVariableDeclCounterMap().find(KeyForDeclCounter);
-  if (Iter != DpctGlobalInfo::getTempVariableDeclCounterMap().end()) {
+      C2SGlobalInfo::getTempVariableDeclCounterMap().find(KeyForDeclCounter);
+  if (Iter != C2SGlobalInfo::getTempVariableDeclCounterMap().end()) {
     unsigned int IndentLen = 2;
-    if (clang::dpct::DpctGlobalInfo::getGuessIndentWidthMatcherFlag())
-      IndentLen = clang::dpct::DpctGlobalInfo::getIndentWidth();
+    if (clang::c2s::C2SGlobalInfo::getGuessIndentWidthMatcherFlag())
+      IndentLen = clang::c2s::C2SGlobalInfo::getIndentWidth();
     std::string IndentStr = std::string(IndentLen, ' ');
 
     std::string DevDecl =
-        getNL() + IndentStr + MapNames::getDpctNamespace() +
-        "device_ext &dev_ct1 = " + MapNames::getDpctNamespace() +
+        getNL() + IndentStr + MapNames::getC2SNamespace() +
+        "device_ext &dev_ct1 = " + MapNames::getC2SNamespace() +
         "get_current_device();";
     std::string QDecl = getNL() + IndentStr + MapNames::getClNamespace() +
                         "queue &q_ct1 = dev_ct1.default_queue();";
@@ -4750,9 +4750,9 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
                      HFInfo.DeclLocFile);
       if (Iter->second.DefaultQueueCounter == 1) {
         if (Iter->second.CurrentDeviceCounter <= 1) {
-          if (DpctGlobalInfo::getUsingDRYPattern() &&
-              !DpctGlobalInfo::getDeviceChangedFlag()) {
-            DpctGlobalInfo::getInstance().addReplacement(
+          if (C2SGlobalInfo::getUsingDRYPattern() &&
+              !C2SGlobalInfo::getDeviceChangedFlag()) {
+            C2SGlobalInfo::getInstance().addReplacement(
                 std::make_shared<ExtReplacement>(HFInfo.DeclLocFile,
                                                  HFInfo.DeclLocOffset, 0,
                                                  DevDecl, nullptr));
@@ -4760,9 +4760,9 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
                            HFInfo.DeclLocFile);
           }
         }
-        if (DpctGlobalInfo::getUsingDRYPattern() &&
-            !DpctGlobalInfo::getDeviceChangedFlag()) {
-          DpctGlobalInfo::getInstance().addReplacement(
+        if (C2SGlobalInfo::getUsingDRYPattern() &&
+            !C2SGlobalInfo::getDeviceChangedFlag()) {
+          C2SGlobalInfo::getInstance().addReplacement(
               std::make_shared<ExtReplacement>(
                   HFInfo.DeclLocFile, HFInfo.DeclLocOffset, 0, QDecl, nullptr));
           requestFeature(HelperFeatureEnum::Device_get_current_device,
@@ -4777,9 +4777,9 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
                      HFInfo.DeclLocFile);
       if (Iter->second.CurrentDeviceCounter == 1 &&
           Iter->second.DefaultQueueCounter <= 1) {
-        if (DpctGlobalInfo::getUsingDRYPattern() &&
-            !DpctGlobalInfo::getDeviceChangedFlag()) {
-          DpctGlobalInfo::getInstance().addReplacement(
+        if (C2SGlobalInfo::getUsingDRYPattern() &&
+            !C2SGlobalInfo::getDeviceChangedFlag()) {
+          C2SGlobalInfo::getInstance().addReplacement(
               std::make_shared<ExtReplacement>(HFInfo.DeclLocFile,
                                                HFInfo.DeclLocOffset, 0, DevDecl,
                                                nullptr));
@@ -4788,7 +4788,7 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
       Iter->second.CurrentDeviceCounter = Iter->second.CurrentDeviceCounter + 1;
     }
   } else {
-    DpctGlobalInfo::TempVariableDeclCounter Counter(0, 0);
+    C2SGlobalInfo::TempVariableDeclCounter Counter(0, 0);
     if (HFT == HelperFuncType::HFT_DefaultQueue) {
       requestFeature(HelperFeatureEnum::Device_get_default_queue,
                      HFInfo.DeclLocFile);
@@ -4798,12 +4798,12 @@ inline void buildTempVariableMap(int Index, const T *S, HelperFuncType HFT) {
                      HFInfo.DeclLocFile);
       Counter.CurrentDeviceCounter = Counter.CurrentDeviceCounter + 1;
     }
-    DpctGlobalInfo::getTempVariableDeclCounterMap().insert(
+    C2SGlobalInfo::getTempVariableDeclCounterMap().insert(
         std::make_pair(KeyForDeclCounter, Counter));
   }
 }
 
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
 
 #endif

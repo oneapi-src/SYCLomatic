@@ -18,7 +18,7 @@
 #include "llvm/Support/ConvertUTF.h"
 
 using namespace clang;
-using namespace clang::dpct;
+using namespace clang::c2s;
 using namespace clang::ast_matchers;
 
 static bool containsMisleadingBidi(StringRef Buffer,
@@ -101,14 +101,14 @@ bool MisleadingBidirectionalHandler::HandleComment(Preprocessor &PP,
   if (containsMisleadingBidi(Text, true)) {
     DiagnosticsUtils::report(
         Range.getBegin(), Diagnostics::MISLEADING_BIDIRECTIONAL,
-        dpct::DpctGlobalInfo::getCompilerInstance(), &TransformSet, false);
+        c2s::C2SGlobalInfo::getCompilerInstance(), &TransformSet, false);
   }
   return false;
 }
 
 void MisleadingBidirectionalRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
-  if (DpctGlobalInfo::getCheckUnicodeSecurityFlag()) {
+  if (C2SGlobalInfo::getCheckUnicodeSecurityFlag()) {
     MF.addMatcher(stringLiteral().bind("strlit"), this);
   }
 }

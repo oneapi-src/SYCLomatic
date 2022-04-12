@@ -1,5 +1,5 @@
 // RUN: c2s --format-range=none -out-root %T/template_misc %s --cuda-include-path="%cuda-path/include" > %T/output.txt
-// RUN: grep "dpct internal error" %T/output.txt | wc -l > %T/wc_output.txt || true
+// RUN: grep "c2s internal error" %T/output.txt | wc -l > %T/wc_output.txt || true
 // RUN: FileCheck %s --match-full-lines --input-file %T/wc_output.txt
 
 // CHECK: 0

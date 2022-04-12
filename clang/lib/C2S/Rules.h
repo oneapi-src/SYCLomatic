@@ -9,8 +9,8 @@
 //
 //===---------------------------------------------------------------===//
 
-#ifndef DPCT_RULES_H
-#define DPCT_RULES_H
+#ifndef C2S_RULES_H
+#define C2S_RULES_H
 #include <string>
 #include <vector>
 #include "llvm/Support/YAMLTraits.h"
@@ -93,11 +93,11 @@ public:
   RuleKind Kind;
   std::string In;
   std::string Out;
-  clang::dpct::HelperFeatureEnum HelperFeature;
+  clang::c2s::HelperFeatureEnum HelperFeature;
   std::vector<std::string> Includes;
   RuleBase(
       std::string Id, RulePriority Priority, RuleKind Kind, std::string In,
-      std::string Out, clang::dpct::HelperFeatureEnum HelperFeature,
+      std::string Out, clang::c2s::HelperFeatureEnum HelperFeature,
       const std::vector<std::string> &Includes = std::vector<std::string>())
       : Id(Id), Priority(Priority), Kind(Kind), In(In), Out(Out),
         HelperFeature(HelperFeature), Includes(Includes) {}
@@ -109,8 +109,8 @@ public:
   MacroMigrationRule(
       std::string Id, RulePriority Priority, std::string InStr,
       std::string OutStr,
-      clang::dpct::HelperFeatureEnum Helper =
-          clang::dpct::HelperFeatureEnum::no_feature_helper,
+      clang::c2s::HelperFeatureEnum Helper =
+          clang::c2s::HelperFeatureEnum::no_feature_helper,
       const std::vector<std::string> &Includes = std::vector<std::string>())
       : RuleBase(Id, Priority, RuleKind::Macro, InStr, OutStr, Helper,
                  Includes) {}
@@ -157,4 +157,4 @@ private:
 
 void importRules(llvm::cl::list<std::string> &RuleFiles);
 
-#endif // DPCT_RULES_H
+#endif // C2S_RULES_H

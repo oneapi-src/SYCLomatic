@@ -14,7 +14,7 @@
 #include "clang/Lex/Preprocessor.h"
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 
 class ConfusableIdentifierDetectionRule
     : public NamedMigrationRule<ConfusableIdentifierDetectionRule> {
@@ -25,6 +25,6 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
 #endif // HOMOGLYPH_H

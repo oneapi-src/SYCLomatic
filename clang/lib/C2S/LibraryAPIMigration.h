@@ -9,8 +9,8 @@
 //
 //===-----------------------------------------------------------------===//
 
-#ifndef DPCT_LIBRARY_API_MIGRAION_H
-#define DPCT_LIBRARY_API_MIGRAION_H
+#ifndef C2S_LIBRARY_API_MIGRAION_H
+#define C2S_LIBRARY_API_MIGRAION_H
 
 #include "ExprAnalysis.h"
 #include "MapNames.h"
@@ -27,7 +27,7 @@
 #include <vector>
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 
 enum class FFTDirectionType : int {
   Uninitialized = 0,
@@ -422,7 +422,7 @@ struct FFTExecAPIInfo {
 bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall, int Index,
                                     std::string &StreamStr);
 
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
 
-#endif // !DPCT_LIBRARY_API_MIGRAION_H
+#endif // !C2S_LIBRARY_API_MIGRAION_H

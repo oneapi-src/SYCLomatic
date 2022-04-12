@@ -27,22 +27,22 @@ void registerMacroRule(MetaRuleObject &R) {
       It->second.In = R.In;
       It->second.Out = R.Out;
       It->second.HelperFeature =
-        clang::dpct::HelperFeatureEnum::no_feature_helper;
+        clang::c2s::HelperFeatureEnum::no_feature_helper;
       It->second.Includes = R.Includes;
     }
   } else {
     MapNames::MacroRuleMap.emplace(
         R.In,
         MacroMigrationRule(R.RuleId, R.Priority, R.In, R.Out,
-                           clang::dpct::HelperFeatureEnum::no_feature_helper,
+                           clang::c2s::HelperFeatureEnum::no_feature_helper,
                            R.Includes));
   }
 }
 
 void registerAPIRule(MetaRuleObject &R) {
   // register rule
-  clang::dpct::ASTTraversalMetaInfo::registerRule((char *)&R, R.RuleId, [=] {
-    return new clang::dpct::UserDefinedAPIRule(R.In);
+  clang::c2s::ASTTraversalMetaInfo::registerRule((char *)&R, R.RuleId, [=] {
+    return new clang::c2s::UserDefinedAPIRule(R.In);
   });
   // create and register rewriter
   // RewriterMap contains entries like {"FunctionName", RewriterFactory}
@@ -55,13 +55,13 @@ void registerAPIRule(MetaRuleObject &R) {
   // if there is no existing rule,
   //   add the new rule to the RewriterMap
   auto It =
-      clang::dpct::CallExprRewriterFactoryBase::RewriterMap->find(R.In);
-  if (It == clang::dpct::CallExprRewriterFactoryBase::RewriterMap->end()) {
-    clang::dpct::CallExprRewriterFactoryBase::RewriterMap->emplace(
-        R.In, clang::dpct::createUserDefinedRewriterFactory(R.In, R));
+      clang::c2s::CallExprRewriterFactoryBase::RewriterMap->find(R.In);
+  if (It == clang::c2s::CallExprRewriterFactoryBase::RewriterMap->end()) {
+    clang::c2s::CallExprRewriterFactoryBase::RewriterMap->emplace(
+        R.In, clang::c2s::createUserDefinedRewriterFactory(R.In, R));
   } else if (It->second->Priority > R.Priority) {
-    (*clang::dpct::CallExprRewriterFactoryBase::RewriterMap)[R.In] =
-        clang::dpct::createUserDefinedRewriterFactory(R.In, R);
+    (*clang::c2s::CallExprRewriterFactoryBase::RewriterMap)[R.In] =
+        clang::c2s::createUserDefinedRewriterFactory(R.In, R);
   }
 }
 
@@ -86,8 +86,8 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
     if (!Buffer) {
       llvm::errs() << "error: failed to read " << RuleFile << ": "
                    << Buffer.getError().message() << "\n";
-      clang::dpct::ShowStatus(MigrationErrorInvalidRuleFilePath);
-      dpctExit(MigrationErrorInvalidRuleFilePath);
+      clang::c2s::ShowStatus(MigrationErrorInvalidRuleFilePath);
+      c2sExit(MigrationErrorInvalidRuleFilePath);
     }
 
     // load rules
@@ -99,8 +99,8 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
 
     if (YAMLIn.error()) {
       // yaml parsing fail
-      clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-      dpctExit(MigrationErrorCannotParseRuleFile);
+      clang::c2s::ShowStatus(MigrationErrorCannotParseRuleFile);
+      c2sExit(MigrationErrorCannotParseRuleFile);
     }
 
     MetaRuleObject::setRuleFiles(RuleFile);
@@ -181,16 +181,16 @@ void OutputBuilder::consumeRParen(std::string &OutStr, size_t &Idx) {
   if (Idx >= OutStr.size()) {
     llvm::errs() << "rule parse error: in rule " << RuleName
                  << ", expect an ')' at end of 'Out' option value.\n";
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
+    clang::c2s::ShowStatus(MigrationErrorCannotParseRuleFile);
+    c2sExit(MigrationErrorCannotParseRuleFile);
   }
 
   if (OutStr[Idx] != ')') {
     llvm::errs() << "rule parse error : in rule " << RuleName
                  << ", expect an ')' in 'Out' option value around: "
                  << OutStr.substr(Idx, 10) << "\n";
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
+    clang::c2s::ShowStatus(MigrationErrorCannotParseRuleFile);
+    c2sExit(MigrationErrorCannotParseRuleFile);
   } else {
     Idx++;
   }
@@ -204,16 +204,16 @@ void OutputBuilder::consumeLParen(std::string &OutStr, size_t &Idx) {
   if (Idx >= OutStr.size()) {
     llvm::errs() << "rule parse error: in rule " << RuleName
       << ", expect an '(' at end of 'Out' option value.\n";
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
+    clang::c2s::ShowStatus(MigrationErrorCannotParseRuleFile);
+    c2sExit(MigrationErrorCannotParseRuleFile);
   }
 
   if (OutStr[Idx] != '(') {
     llvm::errs() << "rule parse error : in rule " << RuleName
       << ", expect an '(' in 'Out' option value around: "
       << OutStr.substr(Idx, 10) << "\n";
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
+    clang::c2s::ShowStatus(MigrationErrorCannotParseRuleFile);
+    c2sExit(MigrationErrorCannotParseRuleFile);
   }
   else {
     Idx++;
@@ -228,8 +228,8 @@ int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx) {
     llvm::errs() << "rule parse error: in rule " << RuleName
                  << ", expect \'$\' followed by a positive integer at end of "
                     "'Out' option value.\n";
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
+    clang::c2s::ShowStatus(MigrationErrorCannotParseRuleFile);
+    c2sExit(MigrationErrorCannotParseRuleFile);
   }
 
   if (OutStr[Idx] != '$') {
@@ -237,8 +237,8 @@ int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx) {
                  << ", expect \'$\' followed by a positive integer in 'Out' "
                     "option value around: "
                  << OutStr.substr(Idx, 10) << "\n";
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
+    clang::c2s::ShowStatus(MigrationErrorCannotParseRuleFile);
+    c2sExit(MigrationErrorCannotParseRuleFile);
   }
   // consume $
   Idx++;
@@ -250,8 +250,8 @@ int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx) {
     llvm::errs() << "rule parse error: in rule " << RuleName
                  << ", expect a positive integer at end of "
                     "'Out' option value.\n";
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
+    clang::c2s::ShowStatus(MigrationErrorCannotParseRuleFile);
+    c2sExit(MigrationErrorCannotParseRuleFile);
   }
   unsigned i = Idx;
   for (; i < OutStr.size(); i++) {
@@ -261,8 +261,8 @@ int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx) {
         llvm::errs() << "rule parse error: in rule " << RuleName
                      << ", unknown keyword in 'Out' option value around: "
                      << OutStr.substr(i, 10) << "\n";
-        clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-        dpctExit(MigrationErrorCannotParseRuleFile);
+        clang::c2s::ShowStatus(MigrationErrorCannotParseRuleFile);
+        c2sExit(MigrationErrorCannotParseRuleFile);
       } else {
         break;
       }
@@ -280,8 +280,8 @@ int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx) {
     llvm::errs() << "rule parse error: in rule " << RuleName
                  << ", expect a positive integer in 'Out' option value around: "
                  << OutStr.substr(DollarSignIdx, 10) << "\n";
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
+    clang::c2s::ShowStatus(MigrationErrorCannotParseRuleFile);
+    c2sExit(MigrationErrorCannotParseRuleFile);
   }
   // Adjust the index because the arg index in rules starts from $1,
   // and the arg index starts from 0 in CallExpr.
@@ -334,23 +334,23 @@ OutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
 
 using namespace clang::ast_matchers;
 
-void clang::dpct::UserDefinedAPIRule::registerMatcher(
+void clang::c2s::UserDefinedAPIRule::registerMatcher(
     clang::ast_matchers::MatchFinder &MF) {
   MF.addMatcher(callExpr(callee(functionDecl(hasName(APIName)))).bind("call"),
                 this);
 }
 
-void clang::dpct::UserDefinedAPIRule::runRule(
+void clang::c2s::UserDefinedAPIRule::runRule(
     const clang::ast_matchers::MatchFinder::MatchResult &Result) {
   if (const CallExpr *CE =
     getAssistNodeAsType<CallExpr>(
       Result, "call")) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    dpct::ExprAnalysis EA;
+    auto &SM = C2SGlobalInfo::getSourceManager();
+    c2s::ExprAnalysis EA;
     EA.analyze(CE);
     auto Range = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
     auto Len = Lexer::MeasureTokenLength(
-      Range.getEnd(), SM, DpctGlobalInfo::getContext().getLangOpts());
+      Range.getEnd(), SM, C2SGlobalInfo::getContext().getLangOpts());
     Len += SM.getDecomposedLoc(Range.getEnd()).second -
       SM.getDecomposedLoc(Range.getBegin()).second;
     auto ReplStr = EA.getReplacedString();

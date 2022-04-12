@@ -25,7 +25,7 @@
 #include <fstream>
 #include <unordered_map>
 
-using namespace clang::dpct;
+using namespace clang::c2s;
 using namespace llvm;
 
 // Used to identify compilation commands without target
@@ -397,7 +397,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
     }
 
   } else {
-    std::string MKLOption = DpctGlobalInfo::isMKLHeaderUsed() ? "-qmkl" : "";
+    std::string MKLOption = C2SGlobalInfo::isMKLHeaderUsed() ? "-qmkl" : "";
     OS << buildString("all: $(TARGET)\n");
     TargetIdx = 0;
     for (const auto &Entry : CmdsPerTarget) {

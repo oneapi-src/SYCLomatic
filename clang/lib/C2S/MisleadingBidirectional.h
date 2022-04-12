@@ -14,7 +14,7 @@
 #include "clang/Lex/Preprocessor.h"
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 
 class MisleadingBidirectionalHandler : public CommentHandler {
   TransformSetTy &TransformSet;
@@ -32,6 +32,6 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
 #endif // MISLEADING_BIDIRECTIONAL_H

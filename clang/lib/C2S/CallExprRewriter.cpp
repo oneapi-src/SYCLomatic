@@ -20,7 +20,7 @@
 #include <cstdarg>
 
 namespace clang {
-namespace dpct {
+namespace c2s {
 
 std::string CallExprRewriter::getMigratedArg(unsigned Idx) {
   Analyzer.setCallSpelling(Call);
@@ -70,8 +70,8 @@ void MathCallExprRewriter::reportUnsupportedRoundingMode() {
 bool isTargetMathFunction(const FunctionDecl *FD) {
   if (!FD)
     return false;
-  auto FilePath = DpctGlobalInfo::getLocInfo(FD).first;
-  if (isChildOrSamePath(DpctGlobalInfo::getInRoot(), FilePath))
+  auto FilePath = C2SGlobalInfo::getLocInfo(FD).first;
+  if (isChildOrSamePath(C2SGlobalInfo::getInRoot(), FilePath))
     return false;
   return true;
 }
@@ -126,7 +126,7 @@ bool isTargetPseudoObjectExpr(const Expr *E) {
   } else if (auto DRE = dyn_cast<DeclRefExpr>(E->IgnoreImpCasts())) {
     auto VarDecl = DRE->getDecl();
     if (VarDecl && (VarDecl->getNameAsString() == "warpSize")) {
-      return !DpctGlobalInfo::isInRoot(VarDecl->getLocation());
+      return !C2SGlobalInfo::isInRoot(VarDecl->getLocation());
     }
   }
   return false;
@@ -159,7 +159,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       }
     }
 
-    if (dpct::DpctGlobalInfo::isInRoot(FD->getBeginLoc())) {
+    if (c2s::C2SGlobalInfo::isInRoot(FD->getBeginLoc())) {
       return "";
     }
 
@@ -345,7 +345,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
     // For host functions
     else {
       // Insert "#include <cmath>" to migrated code
-      DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_Math);
+      C2SGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_Math);
       NewFuncName = SourceCalleeName.str();
       if (SourceCalleeName == "abs") {
         auto *BT =
@@ -507,7 +507,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
             }
 
             if (NamespaceStr.empty() && MigrateToStd) {
-              DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(),
+              C2SGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(),
                                                          HT_Algorithm);
               NewFuncName = "std::" + SourceCalleeName.str();
               if (!TypeName.empty())
@@ -668,7 +668,7 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
   if (!FD)
     return Base::rewrite();
 
-  if (dpct::DpctGlobalInfo::isInRoot(FD->getBeginLoc())) {
+  if (c2s::C2SGlobalInfo::isInRoot(FD->getBeginLoc())) {
     return {};
   }
 
@@ -879,7 +879,7 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       TargetCalleeName = SourceCalleeName.str();
       return buildRewriteString();
     }
-    auto &Context = dpct::DpctGlobalInfo::getContext();
+    auto &Context = c2s::C2SGlobalInfo::getContext();
     auto PP = Context.getPrintingPolicy();
     PP.PrintCanonicalTypes = 1;
     auto Arg0 = Call->getArg(0);
@@ -911,7 +911,7 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       if (IL1->getValue().getZExtValue() == 2)
         IsExponentTwo = true;
     } else if (FL1) {
-      auto &SM = DpctGlobalInfo::getSourceManager();
+      auto &SM = C2SGlobalInfo::getSourceManager();
       if (!FL1->getBeginLoc().isMacroID() && !FL1->getEndLoc().isMacroID()) {
         auto B = SM.getCharacterData(FL1->getBeginLoc());
         auto E = SM.getCharacterData(
@@ -976,15 +976,15 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MigratedArg0 << "*(2<<" << getMigratedArg(1) << ")";
   } else if (FuncName == "__double2hiint") {
     requestFeature(HelperFeatureEnum::Util_cast_double_to_int, Call);
-    OS << MapNames::getDpctNamespace() << "cast_double_to_int(" << MigratedArg0
+    OS << MapNames::getC2SNamespace() << "cast_double_to_int(" << MigratedArg0
        << ")";
   } else if (FuncName == "__double2loint") {
     requestFeature(HelperFeatureEnum::Util_cast_double_to_int, Call);
-    OS << MapNames::getDpctNamespace() << "cast_double_to_int(" << MigratedArg0
+    OS << MapNames::getC2SNamespace() << "cast_double_to_int(" << MigratedArg0
        << ", false)";
   } else if (FuncName == "__hiloint2double") {
     requestFeature(HelperFeatureEnum::Util_cast_ints_to_double, Call);
-    OS << MapNames::getDpctNamespace() << "cast_ints_to_double(" << MigratedArg0
+    OS << MapNames::getC2SNamespace() << "cast_ints_to_double(" << MigratedArg0
        << ", " << getMigratedArg(1) << ")";
   } else if (FuncName == "__sad" || FuncName == "__usad") {
     OS << TargetCalleeName << "(" << MigratedArg0 << ", " << getMigratedArg(1)
@@ -1008,7 +1008,7 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     }
   } else if (FuncName == "norm") {
     Expr::EvalResult ER;
-    if (Call->getArg(0)->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
+    if (Call->getArg(0)->EvaluateAsInt(ER, C2SGlobalInfo::getContext())) {
       std::string MigratedArg1 = getMigratedArg(1);
       int64_t Value = ER.Val.getInt().getExtValue();
       switch (Value) {
@@ -1033,12 +1033,12 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
         break;
       default:
         requestFeature(HelperFeatureEnum::Util_fast_length, Call);
-        OS << MapNames::getDpctNamespace() << "fast_length("
+        OS << MapNames::getC2SNamespace() << "fast_length("
            << "(float *)" << getMigratedArg(1) << ", " << MigratedArg0 << ")";
       }
     } else {
       requestFeature(HelperFeatureEnum::Util_fast_length, Call);
-      OS << MapNames::getDpctNamespace() << "fast_length("
+      OS << MapNames::getC2SNamespace() << "fast_length("
          << "(float *)" << getMigratedArg(1) << ", " << MigratedArg0 << ")";
     }
   }
@@ -1112,17 +1112,17 @@ class DerefStreamExpr {
     }
     Expr::EvalResult Result;
     if (!Expression->isValueDependent() &&
-        Expression->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
+        Expression->EvaluateAsInt(Result, C2SGlobalInfo::getContext())) {
       auto Val = Result.Val.getInt().getZExtValue();
       return Val < 3; // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
                       // all migrated to default queue;
     }
-    Expression->dumpPretty(DpctGlobalInfo::getContext());
+    Expression->dumpPretty(C2SGlobalInfo::getContext());
     return false;
   }
 
   template <class StreamT> void printDefaultQueue(StreamT &Stream) const {
-    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    int Index = C2SGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     buildTempVariableMap(Index, E, HelperFuncType::HFT_DefaultQueue);
     Stream << "{{NEEDREPLACEQ" << Index << "}}";
   }
@@ -1253,7 +1253,7 @@ std::function<std::string(const CallExpr *)> makeQueueStr() {
   return [=](const CallExpr *C) -> std::string {
     int Index = getPlaceholderIdx(C);
     if (Index == 0) {
-      Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      Index = C2SGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     }
 
     buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
@@ -1266,7 +1266,7 @@ std::function<std::string(const CallExpr *)> makeDeviceStr() {
   return [=](const CallExpr *C) -> std::string {
     int Index = getPlaceholderIdx(C);
     if (Index == 0) {
-      Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      Index = C2SGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     }
 
     buildTempVariableMap(Index, C, HelperFuncType::HFT_CurrentDevice);
@@ -1463,7 +1463,7 @@ unsigned int getSizeFromCallArg(const CallExpr *C, std::string &Var) {
   auto SizeExpr = C->getArg(Idx);
   Expr::EvalResult Result;
   if (!SizeExpr->isValueDependent() &&
-      SizeExpr->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
+      SizeExpr->EvaluateAsInt(Result, C2SGlobalInfo::getContext())) {
     return Result.Val.getInt().getZExtValue();
   } else {
     ExprAnalysis EA(SizeExpr);
@@ -1492,7 +1492,7 @@ std::function<std::string(const CallExpr *C)> getReplacedType(size_t Idx) {
   return [=](const CallExpr *C) -> std::string {
     if (Idx >= C->getNumArgs())
       return "";
-    return DpctGlobalInfo::getReplacedTypeName(C->getArg(Idx)->getType());
+    return C2SGlobalInfo::getReplacedTypeName(C->getArg(Idx)->getType());
   };
 }
 
@@ -1532,7 +1532,7 @@ std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) {
       DerefQT = TE->getType();
     }
 
-    std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
+    std::string TypeStr = C2SGlobalInfo::getReplacedTypeName(DerefQT);
     if (TypeStr == "<dependent type>") {
       if (NeedDeref) {
         return "typename std::remove_pointer<decltype(" +
@@ -1549,7 +1549,7 @@ std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) {
         return "";
     }
 
-    return DpctGlobalInfo::getReplacedTypeName(DerefQT);
+    return C2SGlobalInfo::getReplacedTypeName(DerefQT);
   };
 }
 
@@ -1570,7 +1570,7 @@ std::function<std::string(const CallExpr *C)> getDoubleDerefedType(size_t Idx) {
     DerefQT = DerefQualType(DerefQT);
     if (DerefQT.isNull())
       return "";
-    std::string ReplType = DpctGlobalInfo::getReplacedTypeName(DerefQT);
+    std::string ReplType = C2SGlobalInfo::getReplacedTypeName(DerefQT);
 
     return ReplType;
   };
@@ -1605,7 +1605,7 @@ std::function<std::string(const CallExpr *C)> getSizeForMalloc(size_t PtrIdx,
     if (DerefQT.isNull())
       return OrginalStr;
 
-    std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
+    std::string TypeStr = C2SGlobalInfo::getReplacedTypeName(DerefQT);
 
     auto BO = dyn_cast<BinaryOperator>(SizeExpr);
     if (BO && BO->getOpcode() == BinaryOperatorKind::BO_Mul) {
@@ -1645,7 +1645,7 @@ std::function<std::string(const CallExpr *C)> getSizeForMalloc(size_t PtrIdx,
 
 std::function<bool(const CallExpr *C)> checkIsUSM() {
   return [](const CallExpr *C) -> bool {
-    return DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted;
+    return C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted;
   };
 }
 
@@ -1900,13 +1900,13 @@ createConditionalFactory(
         &&First,
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         &&Second) {
-#ifdef DPCT_DEBUG_BUILD
+#ifdef C2S_DEBUG_BUILD
   if (First.first != Second.first) {
     llvm::errs() << "Condtional factory has different name: [" << First.first
                  << "] : [" << Second.first << "]\n";
     assert(0 && "Condtional factory has different name");
   }
-#endif // DPCT_DEBUG_BUILD
+#endif // C2S_DEBUG_BUILD
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
       std::move(First.first), std::make_shared<ConditionalRewriterFactory>(
                                   Pred, First.second, Second.second));
@@ -1955,7 +1955,7 @@ createBindTextureRewriterFactory(const std::string &Source) {
   std::function<bool(const CallExpr *)> TypeChecker =
       [=](const CallExpr *C) -> bool {
     if (C->getNumArgs() > StartIdx + 2)
-      return DpctGlobalInfo::getUnqualifiedTypeName(
+      return C2SGlobalInfo::getUnqualifiedTypeName(
                  C->getArg(StartIdx + 2)->getType()) == "cudaChannelFormatDesc";
     return false;
   };
@@ -1981,14 +1981,14 @@ createBindTextureRewriterFactory(const std::string &Source) {
 }
 
 void setTextureInfo(const CallExpr *C, int TexType, int ObjIdx, QualType QT) {
-  if (auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(C)) {
+  if (auto FD = C2SGlobalInfo::findAncestor<FunctionDecl>(C)) {
     if (auto ObjInfo =
             DeviceFunctionDecl::LinkRedecls(FD)
                 ->addCallee(C)
                 ->addTextureObjectArg(
                     ObjIdx, dyn_cast<DeclRefExpr>(
                                 C->getArg(ObjIdx)->IgnoreImpCasts()))) {
-      ObjInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(QT), TexType);
+      ObjInfo->setType(C2SGlobalInfo::getUnqualifiedTypeName(QT), TexType);
     }
   }
 }
@@ -2050,7 +2050,7 @@ createUserDefinedRewriterFactory(const std::string &Source, MetaRuleObject& R) {
 // sycl has 2 overloading of malloc_device
 // 1. sycl::malloc_device(Addr, Size)
 // 2. sycl::malloc_device<type>(Addr, Size)
-// DPCT will use the template version if following constraints hold:
+// C2S will use the template version if following constraints hold:
 // 1. The Addr can be derefed twice. The derefed type is type_1
 // 2. The Size argement contains sizeof(type_2)
 // 3. type_1 and type_2 are the same
@@ -2086,7 +2086,7 @@ public:
       return false;
     auto SizeExpr = C->getArg(SizeArgIdx);
 
-    std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
+    std::string TypeStr = C2SGlobalInfo::getReplacedTypeName(DerefQT);
     auto BO = dyn_cast<BinaryOperator>(SizeExpr);
     if (BO && BO->getOpcode() == BinaryOperatorKind::BO_Mul) {
       std::string Repl;
@@ -2154,7 +2154,7 @@ public:
     auto Arg = C->getArg(index);
     Expr::EvalResult Result;
     if (!Arg->isValueDependent() &&
-        Arg->EvaluateAsInt(Result, DpctGlobalInfo::getContext()) &&
+        Arg->EvaluateAsInt(Result, C2SGlobalInfo::getContext()) &&
         Result.Val.getInt().getSExtValue() == value) {
       return true;
     }
@@ -2453,5 +2453,5 @@ const std::vector<std::string> MathFuncNameRewriter::DoubleFuctions = {
 #undef ENTRY_UNSUPPORTED
 };
 
-} // namespace dpct
+} // namespace c2s
 } // namespace clang

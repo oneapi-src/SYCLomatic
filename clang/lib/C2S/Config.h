@@ -9,11 +9,11 @@
 //
 //===---------------------------------------------------------------===//
 
-#ifndef DPCT_CONFIG_H
-#define DPCT_CONFIG_H
+#ifndef C2S_CONFIG_H
+#define C2S_CONFIG_H
 
-#define DPCT_VERSION_MAJOR "2022"
-#define DPCT_VERSION_MINOR "1"
-#define DPCT_VERSION_PATCH "0"
+#define C2S_VERSION_MAJOR "2022"
+#define C2S_VERSION_MINOR "1"
+#define C2S_VERSION_PATCH "0"
 
 #endif

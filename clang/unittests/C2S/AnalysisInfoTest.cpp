@@ -5,7 +5,7 @@
 #include "llvm/Support/Process.h"
 
 using namespace llvm;
-using namespace clang::dpct;
+using namespace clang::c2s;
 
 class AnalysisInfoTest : public ::testing::Test {
 protected:
@@ -42,7 +42,7 @@ protected:
 TEST_F(AnalysisInfoTest, isInRoot) {
   const std::string InRootPath = TempDirAbsolute;
   const std::string FilePath = TempDir + "/../" + TempDir + "/a/b/in/File.cpp";
-  DpctGlobalInfo::setInRoot(InRootPath);
-  bool ret = DpctGlobalInfo::isInRoot(FilePath);
+  C2SGlobalInfo::setInRoot(InRootPath);
+  bool ret = C2SGlobalInfo::isInRoot(FilePath);
   ASSERT_EQ(true, ret);
 }

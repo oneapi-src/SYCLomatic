@@ -9,8 +9,8 @@
 //
 //===---------------------------------------------------------------===//
 
-#ifndef DPCT_UTILITY_H
-#define DPCT_UTILITY_H
+#ifndef C2S_UTILITY_H
+#define C2S_UTILITY_H
 
 #include <functional>
 #include <ios>
@@ -60,12 +60,12 @@ class Token;
 class LangOptions;
 class DynTypedNode;
 
-namespace dpct {
+namespace c2s {
 enum class FFTTypeEnum;
 class DeviceFunctionInfo;
 enum class HelperFileEnum : unsigned int;
 struct HelperFunc;
-} // namespace dpct
+} // namespace c2s
 
 namespace tooling {
 class Range;
@@ -75,7 +75,7 @@ class Replacements;
 
 extern bool IsUsingDefaultOutRoot;
 void removeDefaultOutRootFolder(const std::string &DefaultOutRoot);
-void dpctExit(int ExitCode, bool NeedCleanUp = true);
+void c2sExit(int ExitCode, bool NeedCleanUp = true);
 
 // classes for keeping track of Stmt->String mappings
 using StmtStringPair = std::pair<const clang::Stmt *, std::string>;
@@ -473,7 +473,7 @@ const clang::DeclaratorDecl *getHandleVar(const clang::Expr *Arg);
 bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE);
 clang::SourceLocation
 getImmSpellingLocRecursive(const clang::SourceLocation Loc);
-clang::dpct::FFTTypeEnum getFFTTypeFromValue(std::int64_t Value);
+clang::c2s::FFTTypeEnum getFFTTypeFromValue(std::int64_t Value);
 std::string getPrecAndDomainStrFromValue(std::int64_t Value);
 std::string getPrecAndDomainStrFromExecFuncName(std::string ExecFuncName);
 bool getTypeRange(const clang::VarDecl *PVD, clang::SourceRange &SR);
@@ -490,7 +490,7 @@ bool isInMacroDefinition(clang::SourceLocation BeginLoc,
 bool isPartOfMacroDef(clang::SourceLocation BeginLoc,
                       clang::SourceLocation EndLoc);
 void constructUnionFindSetRecursively(
-    std::shared_ptr<clang::dpct::DeviceFunctionInfo> DFIPtr);
+    std::shared_ptr<clang::c2s::DeviceFunctionInfo> DFIPtr);
 // Determine if S is a statement inside
 // a if/while/do while/for statement.
 template <typename NodeTy>
@@ -549,4 +549,4 @@ bool isExprUsed(const clang::Expr *E, bool &Result);
 const std::string &getItemName();
 bool isUserDefinedFunction(const clang::ValueDecl *VD);
 
-#endif // DPCT_UTILITY_H
+#endif // C2S_UTILITY_H

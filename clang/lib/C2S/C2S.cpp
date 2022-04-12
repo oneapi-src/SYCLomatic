@@ -65,7 +65,7 @@
 
 using namespace clang;
 using namespace clang::ast_matchers;
-using namespace clang::dpct;
+using namespace clang::c2s;
 using namespace clang::tooling;
 
 using namespace llvm::cl;
@@ -78,10 +78,10 @@ extern std::string ClangToolOutputMessage;
 extern std::string VcxprojFilePath;
 #endif
 } // namespace tooling
-namespace dpct {
+namespace c2s {
 llvm::cl::OptionCategory &C2SCat = llvm::cl::getC2SCategory();
 void initWarningIDs();
-} // namespace dpct
+} // namespace c2s
 } // namespace clang
 
 // clang-format off
@@ -91,23 +91,23 @@ const char *const CtHelpMessage =
     "the compilation database.\n\n"
     "EXAMPLES:\n\n"
     "Migrate single source file:\n\n"
-    "  dpct source.cpp\n\n"
+    "  c2s source.cpp\n\n"
     "Migrate single source file with C++11 features:\n\n"
-    "  dpct --extra-arg=\"-std=c++11\" source.cpp\n\n"
+    "  c2s --extra-arg=\"-std=c++11\" source.cpp\n\n"
     "Migrate all files available in compilation database:\n\n"
-    "  dpct -p=<path to location of compilation database file>\n\n"
+    "  c2s -p=<path to location of compilation database file>\n\n"
     "Migrate one file in compilation database:\n\n"
-    "  dpct -p=<path to location of compilation database file>  source.cpp\n\n"
+    "  c2s -p=<path to location of compilation database file>  source.cpp\n\n"
 #if defined(_WIN32)
     "Migrate all files available in vcxprojfile:\n\n"
-    "  dpct --vcxprojfile=path/to/vcxprojfile.vcxproj\n"
+    "  c2s --vcxprojfile=path/to/vcxprojfile.vcxproj\n"
 #endif
     DiagRef
     ;
 
 const char *const CtHelpHint =
     "  Warning: Please specify file(s) to be migrated.\n"
-    "  Get help on Intel(R) DPC++ Compatibility Tool, run: dpct --help\n"
+    "  Get help on Intel(R) DPC++ Compatibility Tool, run: c2s --help\n"
     "\n";
 
 static extrahelp CommonHelp(CtHelpMessage);
@@ -156,7 +156,7 @@ static opt<ReportTypeEnum> ReportType(
                   "suffix added (default)", false},
         llvm::cl::OptionEnumValue{"all", int(ReportTypeEnum::RTE_All),
                   "All of the reports.", false}
-        #ifdef DPCT_DEBUG_BUILD
+        #ifdef C2S_DEBUG_BUILD
         , llvm::cl::OptionEnumValue{"diags", int(ReportTypeEnum::RTE_Diags),
                   "diags information", true}
         #endif
@@ -206,7 +206,7 @@ static opt<bool, true>
                  llvm::cl::desc("Keeps the original code in comments of "
                                 "generated DPC++ files. Default: off.\n"),
                  cat(C2SCat), llvm::cl::location(KeepOriginalCodeFlag));
-#ifdef DPCT_DEBUG_BUILD
+#ifdef C2S_DEBUG_BUILD
 static opt<std::string>
     DiagsContent("report-diags-content",
                  desc("Diagnostics verbosity level. \"pass\": Basic migration "
@@ -257,7 +257,7 @@ opt<OutputVerbosityLevel> OutputVerbosity(
         llvm::cl::OptionEnumValue{"silent", int(OutputVerbosityLevel::OVL_Silent),
                                   "Only messages from clang.", false},
         llvm::cl::OptionEnumValue{"normal", int(OutputVerbosityLevel::OVL_Normal),
-                                  "\'silent\' and warnings, errors, and notes from dpct.",
+                                  "\'silent\' and warnings, errors, and notes from c2s.",
                                   false},
         llvm::cl::OptionEnumValue{"detailed", int(OutputVerbosityLevel::OVL_Detailed),
                                   "\'normal\' and messages about which file is being processed.",
@@ -286,7 +286,7 @@ opt<UsmLevel> USMLevel(
                      "Shared Memory extension\n"
                      "for memory management migration. (default)", false},
            llvm::cl::OptionEnumValue{"none", int(UsmLevel::UL_None),
-                     "Uses helper functions from DPCT header files for memory "
+                     "Uses helper functions from C2S header files for memory "
                      "management migration.", false}),
     init(UsmLevel::UL_Restricted), value_desc("value"), cat(C2SCat), llvm::cl::Optional);
 
@@ -301,16 +301,16 @@ opt<format::FormatRange>
                      "Do not format any code.", false}),
     init(format::FormatRange::migrated), value_desc("value"), cat(C2SCat), llvm::cl::Optional);
 
-opt<DPCTFormatStyle>
+opt<C2SFormatStyle>
     FormatST("format-style",
                 llvm::cl::desc("Sets the formatting style.\nThe values are:\n"),
-                values(llvm::cl::OptionEnumValue{"llvm", int(DPCTFormatStyle::FS_LLVM),
+                values(llvm::cl::OptionEnumValue{"llvm", int(C2SFormatStyle::FS_LLVM),
                      "Use the LLVM coding style.", false},
-                       llvm::cl::OptionEnumValue{"google", int(DPCTFormatStyle::FS_Google),
+                       llvm::cl::OptionEnumValue{"google", int(C2SFormatStyle::FS_Google),
                      "Use the Google coding style.", false},
-                       llvm::cl::OptionEnumValue{"custom", int(DPCTFormatStyle::FS_Custom),
+                       llvm::cl::OptionEnumValue{"custom", int(C2SFormatStyle::FS_Custom),
                      "Use the coding style defined in the .clang-format file (default).", false}),
-    init(DPCTFormatStyle::FS_Custom), value_desc("value"), cat(C2SCat), llvm::cl::Optional);
+    init(C2SFormatStyle::FS_Custom), value_desc("value"), cat(C2SCat), llvm::cl::Optional);
 
 bool ExplicitClNamespace = false;
 static opt<bool, true> NoClNamespaceInline(
@@ -321,7 +321,7 @@ static opt<bool, true> NoClNamespaceInline(
 
 bool NoDRYPatternFlag = false;
 static opt<bool, true> NoDRYPattern(
-  "no-dry-pattern", llvm::cl::desc("Do not use DRY (do not repeat yourself) pattern when functions from dpct\n"
+  "no-dry-pattern", llvm::cl::desc("Do not use DRY (do not repeat yourself) pattern when functions from c2s\n"
                                    "namespace are inserted. Default: off.\n"),
   cat(C2SCat), llvm::cl::location(NoDRYPatternFlag));
 
@@ -450,7 +450,7 @@ static list<DPCPPExtensions> NoDPCPPExtensions(
                                      "Enqueued barriers DPC++ extension.",
                                      false}),
     value_desc("value"), cat(C2SCat), llvm::cl::ZeroOrMore,
-    llvm::cl::cb<void, DPCPPExtensions>(DpctGlobalInfo::setExtensionUnused));
+    llvm::cl::cb<void, DPCPPExtensions>(C2SGlobalInfo::setExtensionUnused));
 
 static bits<ExperimentalFeatures> Experimentals(
   "use-experimental-features",
@@ -509,7 +509,7 @@ static opt<bool> NoIncrementalMigration(
 
 // TODO: implement one of this for each source language.
 std::string CudaPath;
-std::string DpctInstallPath;
+std::string C2SInstallPath;
 std::unordered_map<std::string, bool> ChildOrSameCache;
 std::unordered_map<std::string, bool> ChildPathCache;
 std::unordered_map<std::string, llvm::SmallString<256>> RealPathCache;
@@ -521,9 +521,9 @@ JMP_BUF CPFileASTMaterEnter;
 JMP_BUF CPRepPostprocessEnter;
 JMP_BUF CPFormatCodeEnter;
 
-class DPCTConsumer : public ASTConsumer {
+class C2SConsumer : public ASTConsumer {
 public:
-  DPCTConsumer(ReplTy &R, CompilerInstance &CI, StringRef InFile)
+  C2SConsumer(ReplTy &R, CompilerInstance &CI, StringRef InFile)
       : ATM(CI, InRoot), Repl(R), PP(CI.getPreprocessor()), CI(CI) {
     if (Passes != "") {
       // Separate string into list by comma
@@ -550,7 +550,7 @@ public:
     // migration rules before applying them.
     ATM.matchAST(Context, TransformSet, SSM);
 
-    auto &Global = DpctGlobalInfo::getInstance();
+    auto &Global = C2SGlobalInfo::getInstance();
     std::unordered_set<std::string> DuplicateFilter;
     for (const auto &I : TransformSet) {
       auto Repl = I->getReplacement(Context);
@@ -582,12 +582,12 @@ public:
 
   void Initialize(ASTContext &Context) override {
     // Set Context for build information
-    DpctGlobalInfo::setCompilerInstance(CI);
+    C2SGlobalInfo::setCompilerInstance(CI);
 
     PP.addPPCallbacks(std::make_unique<IncludesCallbacks>(
         TransformSet, IncludeMapSet, Context.getSourceManager(), ATM));
 
-    if (DpctGlobalInfo::getCheckUnicodeSecurityFlag()) {
+    if (C2SGlobalInfo::getCheckUnicodeSecurityFlag()) {
       CommentHandler =
           std::make_shared<MisleadingBidirectionalHandler>(TransformSet);
       PP.addCommentHandler(CommentHandler.get());
@@ -611,7 +611,7 @@ public:
     }
   }
 
-  ~DPCTConsumer() {
+  ~C2SConsumer() {
     // Clean EmittedTransformations for input file migrated.
     ASTTraversalMetaInfo::getEmittedTransformations().clear();
   }
@@ -627,15 +627,15 @@ private:
   std::shared_ptr<MisleadingBidirectionalHandler> CommentHandler;
 };
 
-class DPCTAction : public ASTFrontendAction {
+class C2SAction : public ASTFrontendAction {
   ReplTy &Repl;
 
 public:
-  DPCTAction(ReplTy &R) : Repl(R) {}
+  C2SAction(ReplTy &R) : Repl(R) {}
 
   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                  StringRef InFile) override {
-    return std::make_unique<DPCTConsumer>(Repl, CI, InFile);
+    return std::make_unique<C2SConsumer>(Repl, CI, InFile);
   }
 
   bool usesPreprocessorOnly() const override { return false; }
@@ -643,13 +643,13 @@ public:
 
 // Object of this class will be handed to RefactoringTool::run and will create
 // the Action.
-class DPCTActionFactory : public FrontendActionFactory {
+class C2SActionFactory : public FrontendActionFactory {
   ReplTy &Repl;
 
 public:
-  DPCTActionFactory(ReplTy &R) : Repl(R) {}
+  C2SActionFactory(ReplTy &R) : Repl(R) {}
   std::unique_ptr<FrontendAction> create() override {
-    return std::make_unique<DPCTAction>(Repl);
+    return std::make_unique<C2SAction>(Repl);
   }
 };
 
@@ -686,16 +686,16 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   if (!CudaIncludePath.empty()) {
     if (!CudaIncludeDetector.isIncludePathValid()) {
       ShowStatus(MigrationErrorInvalidCudaIncludePath);
-      dpctExit(MigrationErrorInvalidCudaIncludePath);
+      c2sExit(MigrationErrorInvalidCudaIncludePath);
     }
 
     if (!CudaIncludeDetector.isVersionSupported()) {
       ShowStatus(MigrationErrorCudaVersionUnsupported);
-      dpctExit(MigrationErrorCudaVersionUnsupported);
+      c2sExit(MigrationErrorCudaVersionUnsupported);
     }
   } else if (!CudaIncludeDetector.isSupportedVersionAvailable()) {
     ShowStatus(MigrationErrorSupportedCudaVersionNotAvailable);
-    dpctExit(MigrationErrorSupportedCudaVersionNotAvailable);
+    c2sExit(MigrationErrorSupportedCudaVersionNotAvailable);
   }
 
   makeCanonical(Path);
@@ -704,7 +704,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   std::error_code EC = llvm::sys::fs::real_path(Path, CudaPathAbs);
   if ((bool)EC) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
-    dpctExit(MigrationErrorInvalidCudaIncludePath);
+    c2sExit(MigrationErrorInvalidCudaIncludePath);
   }
   return CudaPathAbs.str().str();
 }
@@ -730,7 +730,7 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
   std::error_code EC = llvm::sys::fs::real_path(InstallPath, InstallPathAbs);
   if ((bool)EC) {
     ShowStatus(MigrationErrorInvalidInstallPath);
-    dpctExit(MigrationErrorInvalidInstallPath);
+    c2sExit(MigrationErrorInvalidInstallPath);
   }
   return InstallPathAbs.str().str();
 }
@@ -741,17 +741,17 @@ void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
 
   if (isChildOrSamePath(CudaPath, InRoot)) {
     ShowStatus(MigrationErrorRunFromSDKFolder);
-    dpctExit(MigrationErrorRunFromSDKFolder);
+    c2sExit(MigrationErrorRunFromSDKFolder);
   }
 
   if (isChildOrSamePath(InRoot, CudaPath)) {
     ShowStatus(MigrationErrorInRootContainSDKFolder);
-    dpctExit(MigrationErrorInRootContainSDKFolder);
+    c2sExit(MigrationErrorInRootContainSDKFolder);
   }
 
-  if (isChildOrSamePath(InRoot, DpctInstallPath)) {
+  if (isChildOrSamePath(InRoot, C2SInstallPath)) {
     ShowStatus(MigrationErrorInRootContainCTTool);
-    dpctExit(MigrationErrorInRootContainCTTool);
+    c2sExit(MigrationErrorInRootContainCTTool);
   }
 }
 
@@ -772,7 +772,7 @@ unsigned int GetLinesNumber(clang::tooling::RefactoringTool &Tool,
   if (!Entry) {
     std::string ErrMsg = "FilePath Invalid...\n";
     PrintMsg(ErrMsg);
-    dpctExit(MigrationErrorInvalidFilePath);
+    c2sExit(MigrationErrorInvalidFilePath);
   }
 
   FileID FID = SM.getOrCreateFileID(Entry, SrcMgr::C_User);
@@ -795,17 +795,17 @@ static void printMetrics(clang::tooling::RefactoringTool &Tool) {
     unsigned NotTrans = TotalLines - TransToSYCL - TransToAPI;
     unsigned NotSupport = Elem.second[2];
     if (Count == 0) {
-      DpctStats() << "\n";
-      DpctStats() << "File name, LOC migrated to DPC++, LOC migrated to helper "
+      C2SStats() << "\n";
+      C2SStats() << "File name, LOC migrated to DPC++, LOC migrated to helper "
                      "functions, "
                      "LOC not needed to migrate, LOC not able to migrate";
-      DpctStats() << "\n";
+      C2SStats() << "\n";
     }
-    DpctStats() << Elem.first + ", " + std::to_string(TransToSYCL) + ", " +
+    C2SStats() << Elem.first + ", " + std::to_string(TransToSYCL) + ", " +
                        std::to_string(TransToAPI) + ", " +
                        std::to_string(NotTrans) + ", " +
                        std::to_string(NotSupport);
-    DpctStats() << "\n";
+    C2SStats() << "\n";
     Count++;
   }
 }
@@ -861,13 +861,13 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
                             double Duration) {
 
   printMetrics(Tool);
-  DpctStats() << "\nTotal migration time: " + std::to_string(Duration) +
+  C2SStats() << "\nTotal migration time: " + std::to_string(Duration) +
                      " ms\n";
   if (ReportFilePrefix == "stdout") {
     std::string buf;
     llvm::raw_string_ostream OS(buf);
     OS << "----------Stats report---------------\n";
-    OS << getDpctStatsStr() << "\n";
+    OS << getC2SStatsStr() << "\n";
     OS << "-------------------------------------\n";
     PrintMsg(OS.str());
   } else {
@@ -879,18 +879,18 @@ static void saveStatsReport(clang::tooling::RefactoringTool &Tool,
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
     std::ofstream File(RFile, std::ios::binary);
-    File << getDpctStatsStr() << "\n";
+    File << getC2SStatsStr() << "\n";
   }
 }
 
 static void saveDiagsReport() {
 
-  // DpctDiags() << "\n";
+  // C2SDiags() << "\n";
   if (ReportFilePrefix == "stdout") {
     std::string buf;
     llvm::raw_string_ostream OS(buf);
     OS << "--------Diags message----------------\n";
-    OS << getDpctDiagsStr() << "\n";
+    OS << getC2SDiagsStr() << "\n";
     OS << "-------------------------------------\n";
     PrintMsg(OS.str());
   } else {
@@ -899,7 +899,7 @@ static void saveDiagsReport() {
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
     std::ofstream File(RFile, std::ios::binary);
-    File << getDpctDiagsStr() << "\n";
+    File << getC2SDiagsStr() << "\n";
   }
 }
 
@@ -908,8 +908,8 @@ std::string printCTVersion() {
   std::string buf;
   llvm::raw_string_ostream OS(buf);
 
-  OS << "\nIntel(R) DPC++ Compatibility Tool version " << DPCT_VERSION_MAJOR
-     << "." << DPCT_VERSION_MINOR << "." << DPCT_VERSION_PATCH << "."
+  OS << "\nIntel(R) DPC++ Compatibility Tool version " << C2S_VERSION_MAJOR
+     << "." << C2S_VERSION_MINOR << "." << C2S_VERSION_PATCH << "."
      << " Codebase:";
   // getClangRepositoryPath() export the machine name of repo in release build.
   // so skip the repo name.
@@ -939,7 +939,7 @@ static void DumpOutputFile(void) {
     // std::ios::binary prevents ofstream::operator<< from converting \n to \r\n
     // on windows.
     std::ofstream File(FilePath, std::ios::binary);
-    File << getDpctTermStr() << "\n";
+    File << getC2STermStr() << "\n";
   }
 }
 
@@ -972,16 +972,16 @@ void PrintReportOnFault(std::string &FaultMsg) {
 
 void parseFormatStyle() {
   clang::format::FormattingAttemptStatus Status;
-  StringRef StyleStr = "file"; // DPCTFormatStyle::Custom
-  if (clang::dpct::DpctGlobalInfo::getFormatStyle() ==
-      DPCTFormatStyle::FS_Google) {
+  StringRef StyleStr = "file"; // C2SFormatStyle::Custom
+  if (clang::c2s::C2SGlobalInfo::getFormatStyle() ==
+      C2SFormatStyle::FS_Google) {
     StyleStr = "google";
-  } else if (clang::dpct::DpctGlobalInfo::getFormatStyle() ==
-             DPCTFormatStyle::FS_LLVM) {
+  } else if (clang::c2s::C2SGlobalInfo::getFormatStyle() ==
+             C2SFormatStyle::FS_LLVM) {
     StyleStr = "llvm";
   }
   std::string StyleSearchPath = clang::tooling::getFormatSearchPath().empty()
-                                    ? clang::dpct::DpctGlobalInfo::getInRoot()
+                                    ? clang::c2s::C2SGlobalInfo::getInRoot()
                                     : clang::tooling::getFormatSearchPath();
   llvm::Expected<clang::format::FormatStyle> StyleOrErr =
       clang::format::getStyle(StyleStr, StyleSearchPath, "llvm");
@@ -997,10 +997,10 @@ void parseFormatStyle() {
     Style = StyleOrErr.get();
   }
 
-  DpctGlobalInfo::setCodeFormatStyle(Style);
+  C2SGlobalInfo::setCodeFormatStyle(Style);
 }
 
-int runDPCT(int argc, const char **argv) {
+int runC2S(int argc, const char **argv) {
 
   if (argc < 2) {
     std::cout << CtHelpHint;
@@ -1016,14 +1016,14 @@ int runDPCT(int argc, const char **argv) {
   llvm::InitLLVM X(argc, argv);
 #endif
 
-  // Set hangle for libclangTooling to proccess message for dpct
+  // Set hangle for libclangTooling to proccess message for c2s
   clang::tooling::SetPrintHandle(PrintMsg);
   clang::tooling::SetFileSetInCompiationDB(
-      dpct::DpctGlobalInfo::getFileSetInCompiationDB());
+      c2s::C2SGlobalInfo::getFileSetInCompiationDB());
 
   // CommonOptionsParser will adjust argc to the index of "--"
   int OriginalArgc = argc;
-  clang::tooling::SetModuleFiles(dpct::DpctGlobalInfo::getModuleFiles());
+  clang::tooling::SetModuleFiles(c2s::C2SGlobalInfo::getModuleFiles());
 #ifdef _WIN32
   // Set function handle for libclangTooling to parse vcxproj file.
   clang::tooling::SetParserHandle(vcxprojParser);
@@ -1038,98 +1038,98 @@ int runDPCT(int argc, const char **argv) {
           handleErrors(OptParser.takeError(), [](const C2SError &DE) {
             if (DE.EC == -101) {
               ShowStatus(MigrationErrorCannotParseDatabase);
-              dpctExit(MigrationErrorCannotParseDatabase);
+              c2sExit(MigrationErrorCannotParseDatabase);
             } else if (DE.EC == -102) {
               ShowStatus(MigrationErrorCannotFindDatabase);
-              dpctExit(MigrationErrorCannotFindDatabase);
+              c2sExit(MigrationErrorCannotFindDatabase);
             } else {
               ShowStatus(MigrationError);
-              dpctExit(MigrationError);
+              c2sExit(MigrationError);
             }
           });
     }
     // Filter and output error messages emitted by clang
     auto E =
         handleErrors(OptParser.takeError(), [](const llvm::StringError &E) {
-          DpctLog() << E.getMessage();
+          C2SLog() << E.getMessage();
         });
-    dpct::ShowStatus(MigrationOptionParsingError);
-    dpctExit(MigrationOptionParsingError);
+    c2s::ShowStatus(MigrationOptionParsingError);
+    c2sExit(MigrationOptionParsingError);
   }
 
   if (!OutputFile.empty()) {
-    // Set handle for libclangTooling to redirect warning message to DpctTerm
-    clang::tooling::SetDiagnosticOutput(DpctTerm());
+    // Set handle for libclangTooling to redirect warning message to C2STerm
+    clang::tooling::SetDiagnosticOutput(C2STerm());
   }
 
   initWarningIDs();
   if (InRoot.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --in-root '" << InRoot << "' is too long\n";
+    C2SLog() << "Error: --in-root '" << InRoot << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
-    dpctExit(MigrationErrorPathTooLong);
+    c2sExit(MigrationErrorPathTooLong);
   }
   if (OutRoot.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --out-root '" << OutRoot << "' is too long\n";
+    C2SLog() << "Error: --out-root '" << OutRoot << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
-    dpctExit(MigrationErrorPathTooLong);
+    c2sExit(MigrationErrorPathTooLong);
   }
   if (CudaIncludePath.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --cuda-include-path '" << CudaIncludePath
+    C2SLog() << "Error: --cuda-include-path '" << CudaIncludePath
               << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
-    dpctExit(MigrationErrorPathTooLong);
+    c2sExit(MigrationErrorPathTooLong);
   }
   if (OutputFile.size() >= MAX_PATH_LEN - 1) {
-    DpctLog() << "Error: --output-file '" << OutputFile << "' is too long\n";
+    C2SLog() << "Error: --output-file '" << OutputFile << "' is too long\n";
     ShowStatus(MigrationErrorPathTooLong);
-    dpctExit(MigrationErrorPathTooLong);
+    c2sExit(MigrationErrorPathTooLong);
   }
   // Report file prefix is limited to 128, so that <report-type> and
   // <report-format> can be extended later
   if (ReportFilePrefix.size() >= 128) {
-    DpctLog() << "Error: --report-file-prefix '" << ReportFilePrefix
+    C2SLog() << "Error: --report-file-prefix '" << ReportFilePrefix
               << "' is too long\n";
     ShowStatus(MigrationErrorPrefixTooLong);
-    dpctExit(MigrationErrorPrefixTooLong);
+    c2sExit(MigrationErrorPrefixTooLong);
   }
   auto P = std::find_if_not(
       ReportFilePrefix.begin(), ReportFilePrefix.end(),
       [](char C) { return ::isalpha(C) || ::isdigit(C) || C == '_'; });
   if (P != ReportFilePrefix.end()) {
-    DpctLog() << "Error: --report-file-prefix contains special character '"
+    C2SLog() << "Error: --report-file-prefix contains special character '"
               << *P << "' \n";
     ShowStatus(MigrationErrorSpecialCharacter);
-    dpctExit(MigrationErrorSpecialCharacter);
+    c2sExit(MigrationErrorSpecialCharacter);
   }
   clock_t StartTime = clock();
   // just show -- --help information and then exit
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
-    dpctExit(MigrationSucceeded);
+    c2sExit(MigrationSucceeded);
   if (InRoot.empty() && ProcessAllFlag) {
     ShowStatus(MigrationErrorNoExplicitInRoot);
-    dpctExit(MigrationErrorNoExplicitInRoot);
+    c2sExit(MigrationErrorNoExplicitInRoot);
   }
 
   if (!makeInRootCanonicalOrSetDefaults(InRoot,
                                         OptParser->getSourcePathList())) {
     ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
-    dpctExit(MigrationErrorInvalidInRootOrOutRoot);
+    c2sExit(MigrationErrorInvalidInRootOrOutRoot);
   }
 
   int ValidPath = validatePaths(InRoot, OptParser->getSourcePathList());
   if (ValidPath == -1) {
     ShowStatus(MigrationErrorInvalidInRootPath);
-    dpctExit(MigrationErrorInvalidInRootPath);
+    c2sExit(MigrationErrorInvalidInRootPath);
   } else if (ValidPath == -2) {
     ShowStatus(MigrationErrorNoFileTypeAvail);
-    dpctExit(MigrationErrorNoFileTypeAvail);
+    c2sExit(MigrationErrorNoFileTypeAvail);
   }
 
   int SDKIncPathRes =
       checkSDKPathOrIncludePath(CudaIncludePath, RealSDKIncludePath);
   if (SDKIncPathRes == -1) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
-    dpctExit(MigrationErrorInvalidCudaIncludePath);
+    c2sExit(MigrationErrorInvalidCudaIncludePath);
   } else if (SDKIncPathRes == 0) {
     HasSDKIncludeOption = true;
   }
@@ -1137,13 +1137,13 @@ int runDPCT(int argc, const char **argv) {
   int SDKPathRes = checkSDKPathOrIncludePath(SDKPath, RealSDKPath);
   if (SDKPathRes == -1) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
-    dpctExit(MigrationErrorInvalidCudaIncludePath);
+    c2sExit(MigrationErrorInvalidCudaIncludePath);
   } else if (SDKPathRes == 0) {
     HasSDKPathOption = true;
   }
 
   bool GenReport = false;
-#ifdef DPCT_DEBUG_BUILD
+#ifdef C2S_DEBUG_BUILD
   std::string &DVerbose = DiagsContent;
 #else
   std::string DVerbose = "";
@@ -1152,7 +1152,7 @@ int runDPCT(int argc, const char **argv) {
                       ReportFilePrefix, ReportOnlyFlag, GenReport,
                       DVerbose) == false) {
     ShowStatus(MigrationErrorInvalidReportArgs);
-    dpctExit(MigrationErrorInvalidReportArgs);
+    c2sExit(MigrationErrorInvalidReportArgs);
   }
 
   if (GenReport) {
@@ -1177,7 +1177,7 @@ int runDPCT(int argc, const char **argv) {
 
   // TODO: implement one of this for each source language.
   CudaPath = getCudaInstallPath(OriginalArgc, argv);
-  DpctDiags() << "Cuda Include Path found: " << CudaPath << "\n";
+  C2SDiags() << "Cuda Include Path found: " << CudaPath << "\n";
 
   RefactoringTool Tool(OptParser->getCompilations(),
                        OptParser->getSourcePathList());
@@ -1196,20 +1196,20 @@ int runDPCT(int argc, const char **argv) {
   }
 
   Tool.setCompilationDatabaseDir(CompilationsDir);
-  DpctInstallPath = getInstallPath(Tool, argv[0]);
+  C2SInstallPath = getInstallPath(Tool, argv[0]);
 
   ValidateInputDirectory(Tool, InRoot);
 
   IsUsingDefaultOutRoot = OutRoot.empty();
   if (!makeOutRootCanonicalOrSetDefaults(OutRoot)) {
     ShowStatus(MigrationErrorInvalidInRootOrOutRoot);
-    dpctExit(MigrationErrorInvalidInRootOrOutRoot, false);
+    c2sExit(MigrationErrorInvalidInRootOrOutRoot, false);
   }
-  dpct::DpctGlobalInfo::setOutRoot(OutRoot);
+  c2s::C2SGlobalInfo::setOutRoot(OutRoot);
 
   validateCustomHelperFileNameArg(UseCustomHelperFileLevel,
                                   CustomHelperFileName,
-                                  dpct::DpctGlobalInfo::getOutRoot());
+                                  c2s::C2SGlobalInfo::getOutRoot());
 
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-nocudalib", ArgumentInsertPosition::BEGIN));
@@ -1252,61 +1252,61 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-Xclang", ArgumentInsertPosition::BEGIN));
 
-  DpctGlobalInfo::setInRoot(InRoot);
-  DpctGlobalInfo::setOutRoot(OutRoot);
-  DpctGlobalInfo::setCudaPath(CudaPath);
-  DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
-  DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
-  DpctGlobalInfo::setUsmLevel(USMLevel);
-  DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
-  DpctGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
-  DpctGlobalInfo::setCheckUnicodeSecurityFlag(
+  C2SGlobalInfo::setInRoot(InRoot);
+  C2SGlobalInfo::setOutRoot(OutRoot);
+  C2SGlobalInfo::setCudaPath(CudaPath);
+  C2SGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
+  C2SGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);
+  C2SGlobalInfo::setUsmLevel(USMLevel);
+  C2SGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
+  C2SGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
+  C2SGlobalInfo::setCheckUnicodeSecurityFlag(
     CheckUnicodeSecurityFlag);
-  DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
+  C2SGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
   HelperFileNameMap[HelperFileEnum::C2S] =
-      DpctGlobalInfo::getCustomHelperFileName() + ".hpp";
-  DpctGlobalInfo::setFormatRange(FormatRng);
-  DpctGlobalInfo::setFormatStyle(FormatST);
-  DpctGlobalInfo::setCtadEnabled(EnableCTAD);
-  DpctGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
-  DpctGlobalInfo::setCommentsEnabled(EnableComments);
-  DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
-  DpctGlobalInfo::setUsingGenericSpace(!NoUseGenericSpaceFlag);
-  DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
-  DpctGlobalInfo::setAssumedNDRangeDim(
+      C2SGlobalInfo::getCustomHelperFileName() + ".hpp";
+  C2SGlobalInfo::setFormatRange(FormatRng);
+  C2SGlobalInfo::setFormatStyle(FormatST);
+  C2SGlobalInfo::setCtadEnabled(EnableCTAD);
+  C2SGlobalInfo::setGenBuildScriptEnabled(GenBuildScript);
+  C2SGlobalInfo::setCommentsEnabled(EnableComments);
+  C2SGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
+  C2SGlobalInfo::setUsingGenericSpace(!NoUseGenericSpaceFlag);
+  C2SGlobalInfo::setExperimentalFlag(Experimentals.getBits());
+  C2SGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
-  DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
+  C2SGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
 
   if (ExcludePathList.getNumOccurrences()) {
-    DpctGlobalInfo::setExcludePath(ExcludePathList);
+    C2SGlobalInfo::setExcludePath(ExcludePathList);
   }
 
   std::vector<ExplicitNamespace> DefaultExplicitNamespaces = {
       ExplicitNamespace::EN_SYCL, ExplicitNamespace::EN_C2S};
   if (NoClNamespaceInline.getNumOccurrences()) {
     if (UseExplicitNamespace.getNumOccurrences()) {
-      DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
-      clang::dpct::PrintMsg(
+      C2SGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
+      clang::c2s::PrintMsg(
           "Note: Option --no-cl-namespace-inline is deprecated and will be "
           "ignored. Option --use-explicit-namespace is used instead.\n");
     } else {
       if (ExplicitClNamespace) {
-        DpctGlobalInfo::setExplicitNamespace(std::vector<ExplicitNamespace>{
+        C2SGlobalInfo::setExplicitNamespace(std::vector<ExplicitNamespace>{
             ExplicitNamespace::EN_CL, ExplicitNamespace::EN_C2S});
       } else {
-        DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
+        C2SGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
       }
-      clang::dpct::PrintMsg(
+      clang::c2s::PrintMsg(
           "Note: Option --no-cl-namespace-inline is deprecated. Use "
           "--use-explicit-namespace instead.\n");
     }
   } else {
     if (UseExplicitNamespace.getNumOccurrences()) {
-      DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
+      C2SGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
     } else {
-      DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
+      C2SGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
     }
   }
 
@@ -1317,31 +1317,31 @@ int runDPCT(int argc, const char **argv) {
   }
 
   {
-    setValueToOptMap(clang::dpct::OPTION_AsyncHandler, AsyncHandlerFlag,
+    setValueToOptMap(clang::c2s::OPTION_AsyncHandler, AsyncHandlerFlag,
                      AsyncHandler.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_NDRangeDim,
+    setValueToOptMap(clang::c2s::OPTION_NDRangeDim,
                      static_cast<unsigned int>(NDRangeDim.getValue()),
                      NDRangeDim.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_CommentsEnabled,
-                     DpctGlobalInfo::isCommentsEnabled(),
+    setValueToOptMap(clang::c2s::OPTION_CommentsEnabled,
+                     C2SGlobalInfo::isCommentsEnabled(),
                      EnableComments.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_CustomHelperFileName,
-                     DpctGlobalInfo::getCustomHelperFileName(),
+    setValueToOptMap(clang::c2s::OPTION_CustomHelperFileName,
+                     C2SGlobalInfo::getCustomHelperFileName(),
                      CustomHelperFileName.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_CtadEnabled,
-                     DpctGlobalInfo::isCtadEnabled(),
+    setValueToOptMap(clang::c2s::OPTION_CtadEnabled,
+                     C2SGlobalInfo::isCtadEnabled(),
                      EnableCTAD.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_ExplicitClNamespace,
+    setValueToOptMap(clang::c2s::OPTION_ExplicitClNamespace,
                      ExplicitClNamespace,
                      NoClNamespaceInline.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_ExtensionFlag,
-                     DpctGlobalInfo::getExtensionFlag(),
+    setValueToOptMap(clang::c2s::OPTION_ExtensionFlag,
+                     C2SGlobalInfo::getExtensionFlag(),
                      NoDPCPPExtensions.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPatternFlag,
+    setValueToOptMap(clang::c2s::OPTION_NoDRYPattern, NoDRYPatternFlag,
                      NoDRYPattern.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_NoUseGenericSpace, NoUseGenericSpaceFlag,
+    setValueToOptMap(clang::c2s::OPTION_NoUseGenericSpace, NoUseGenericSpaceFlag,
                      NoUseGenericSpace.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_CompilationsDir, CompilationsDir,
+    setValueToOptMap(clang::c2s::OPTION_CompilationsDir, CompilationsDir,
                      OptParser->isPSpecified());
 #ifdef _WIN32
     if (!VcxprojFilePath.empty()) {
@@ -1349,33 +1349,33 @@ int runDPCT(int argc, const char **argv) {
       llvm::SmallString<128> AbsPath(VcxprojFilePath);
       llvm::sys::fs::make_absolute(AbsPath);
       llvm::sys::path::remove_dots(AbsPath, /*remove_dot_dot=*/true);
-      setValueToOptMap(clang::dpct::OPTION_VcxprojFile, AbsPath.str().str(),
+      setValueToOptMap(clang::c2s::OPTION_VcxprojFile, AbsPath.str().str(),
                        OptParser->isVcxprojfileSpecified());
     } else {
-      setValueToOptMap(clang::dpct::OPTION_VcxprojFile, VcxprojFilePath,
+      setValueToOptMap(clang::c2s::OPTION_VcxprojFile, VcxprojFilePath,
                        OptParser->isVcxprojfileSpecified());
     }
 #endif
-    setValueToOptMap(clang::dpct::OPTION_ProcessAll, ProcessAllFlag,
+    setValueToOptMap(clang::c2s::OPTION_ProcessAll, ProcessAllFlag,
                      ProcessAll.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_SyclNamedLambda, SyclNamedLambdaFlag,
+    setValueToOptMap(clang::c2s::OPTION_SyclNamedLambda, SyclNamedLambdaFlag,
                      SyclNamedLambda.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_ExperimentalFlag,
-                     DpctGlobalInfo::getExperimentalFlag(),
+    setValueToOptMap(clang::c2s::OPTION_ExperimentalFlag,
+                     C2SGlobalInfo::getExperimentalFlag(),
                      Experimentals.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_ExplicitNamespace,
-                     DpctGlobalInfo::getExplicitNamespaceSet(),
+    setValueToOptMap(clang::c2s::OPTION_ExplicitNamespace,
+                     C2SGlobalInfo::getExplicitNamespaceSet(),
                      UseExplicitNamespace.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_UsmLevel,
-                     static_cast<unsigned int>(DpctGlobalInfo::getUsmLevel()),
+    setValueToOptMap(clang::c2s::OPTION_UsmLevel,
+                     static_cast<unsigned int>(C2SGlobalInfo::getUsmLevel()),
                      USMLevel.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
+    setValueToOptMap(clang::c2s::OPTION_OptimizeMigration,
                      OptimizeMigration.getValue(),
                      OptimizeMigration.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_RuleFile, MetaRuleObject::RuleFiles,
+    setValueToOptMap(clang::c2s::OPTION_RuleFile, MetaRuleObject::RuleFiles,
                      RuleFile.getNumOccurrences());
 
-    if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
+    if (clang::c2s::C2SGlobalInfo::isIncMigration()) {
       std::string Msg;
       if (!canContinueMigration(Msg)) {
         ShowStatus(MigrationErrorDifferentOptSet, Msg);
@@ -1387,34 +1387,34 @@ int runDPCT(int argc, const char **argv) {
   if (ReportType.getValue() == ReportTypeEnum::RTE_All ||
       ReportType.getValue() == ReportTypeEnum::RTE_Stats) {
     // When option "--report-type=stats" or option " --report-type=all" is
-    // specified to get the migration status report, dpct namespace should be
+    // specified to get the migration status report, c2s namespace should be
     // enabled temporarily to get LOC migrated to helper functions in function
     // getLOCStaticFromCodeRepls() if it is not enabled.
-    auto NamespaceSet = DpctGlobalInfo::getExplicitNamespaceSet();
+    auto NamespaceSet = C2SGlobalInfo::getExplicitNamespaceSet();
     if (!NamespaceSet.count(ExplicitNamespace::EN_C2S) &&
         !NamespaceSet.count(ExplicitNamespace::EN_DPCT)) {
       std::vector<ExplicitNamespace> ENVec;
       ENVec.push_back(ExplicitNamespace::EN_C2S);
-      DpctGlobalInfo::setExplicitNamespace(ENVec);
-      DpctGlobalInfo::setDPCTNamespaceTempEnabled();
+      C2SGlobalInfo::setExplicitNamespace(ENVec);
+      C2SGlobalInfo::setC2SNamespaceTempEnabled();
     }
   }
 
-  if (DpctGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
+  if (C2SGlobalInfo::getFormatRange() != clang::format::FormatRange::none) {
     parseFormatStyle();
   }
 
-  auto &Global = DpctGlobalInfo::getInstance();
+  auto &Global = C2SGlobalInfo::getInstance();
   int RunCount = 0;
   do {
     if (RunCount == 1) {
       // Currently, we just need maximum two parse
-      DpctGlobalInfo::setNeedRunAgain(false);
-      DpctGlobalInfo::getInstance().resetInfo();
+      C2SGlobalInfo::setNeedRunAgain(false);
+      C2SGlobalInfo::getInstance().resetInfo();
       DeviceFunctionDecl::reset();
     }
-    DpctGlobalInfo::setRunRound(RunCount++);
-    DPCTActionFactory Factory(Tool.getReplacements());
+    C2SGlobalInfo::setRunRound(RunCount++);
+    C2SActionFactory Factory(Tool.getReplacements());
 
     if (ProcessAllFlag) {
       clang::tooling::SetFileProcessHandle(InRoot, OutRoot, processAllFiles);
@@ -1453,14 +1453,14 @@ int runDPCT(int argc, const char **argv) {
         Global.emplaceReplacements(Tool.getReplacements());
       } catch (std::exception &e) {
         std::string FaultMsg =
-            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
+            "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
             "tries to recover and write the migration result.\n";
         llvm::errs() << FaultMsg;
       }
     }
 
     CHECKPOINT_ReplacementPostProcess_EXIT();
-  } while (DpctGlobalInfo::isNeedRunAgain());
+  } while (C2SGlobalInfo::isNeedRunAgain());
 
   if (GenReport) {
     // report: apis, stats, all, diags
@@ -1493,7 +1493,7 @@ int runDPCT(int argc, const char **argv) {
 }
 
 int run(int argc, const char **argv) {
-  int Status = runDPCT(argc, argv);
+  int Status = runC2S(argc, argv);
   if (IsUsingDefaultOutRoot) {
     removeDefaultOutRootFolder(OutRoot);
   }
