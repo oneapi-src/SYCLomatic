@@ -50,6 +50,7 @@ ENTRY_BOTH("thrust::sort_by_key", MapNames::getC2SNamespace() + "sort", "oneapi:
 ENTRY_BOTH("thrust::get", "std::get", "")
 ENTRY_BOTH("thrust::make_constant_iterator", MapNames::getC2SNamespace() + "make_constant_iterator", "")
 ENTRY_BOTH("thrust::make_tuple", "std::make_tuple", "")
+ENTRY_BOTH("thrust::tie", "std::tie", "")
 ENTRY_BOTH("thrust::make_zip_iterator", "oneapi::dpl::make_zip_iterator", "")
 ENTRY_BOTH("thrust::exclusive_scan_by_key", "oneapi::dpl::exclusive_scan_by_segment", "oneapi::dpl::execution::sycl")
 ENTRY_BOTH("thrust::inclusive_scan_by_key", "oneapi::dpl::inclusive_scan_by_segment", "oneapi::dpl::execution::sycl")
