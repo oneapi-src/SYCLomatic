@@ -92,15 +92,7 @@ foreach(lib ${LibScanbuild})
           COMPONENT scan-build-py)
   if(INTEL_CUSTOMIZATION)
     list(APPEND c2s-intercept-build-dependends ${CMAKE_BINARY_DIR}/lib/libscanbuild/${lib})
-    if(INTEL_DEPLOY_UNIFIED_LAYOUT)
-      install(PROGRAMS lib/libscanbuild/${lib}
-              DESTINATION share/c2s/lib/libscanbuild
-              COMPONENT c2s-intercept-build)
-    else()
-      install(PROGRAMS lib/libscanbuild/${lib}
-              DESTINATION lib/libscanbuild
-              COMPONENT c2s-intercept-build)
-    endif()
+    install_libscanbuild_libs()
   endif()
 endforeach()
 
@@ -153,61 +145,22 @@ if (INTEL_CUSTOMIZATION)
     target_link_libraries(ear PRIVATE
       "-ldl -lpthread -shared -Wl,-soname,libear.so")
     target_compile_options(ear PRIVATE "-std=c99")
-    if(INTEL_DEPLOY_UNIFIED_LAYOUT)
-      target_compile_options(ear PRIVATE "-DINTEL_DEPLOY_UNIFIED_LAYOUT")
-      install(TARGETS ear
-              LIBRARY
-              DESTINATION share/c2s/lib/libear
-              COMPONENT c2s-intercept-build
-      )
-    else()
-      install(TARGETS ear
-              LIBRARY
-              DESTINATION lib/libear
-              COMPONENT c2s-intercept-build
-      )
-    endif()
+    install_ear()
     list(APPEND c2s-intercept-build-dependends ear)
     
     add_executable(intercept-stub
       ${CMAKE_CURRENT_SOURCE_DIR}/lib/libear/intercept-stub.c
     )
 
-    if(INTEL_DEPLOY_UNIFIED_LAYOUT)
-      install(TARGETS intercept-stub
-              DESTINATION share/c2s/lib/libear
-              COMPONENT c2s-intercept-build
-      )
-    else()
-      install(TARGETS intercept-stub
-              DESTINATION lib/libear
-              COMPONENT c2s-intercept-build
-      )
-    endif()
+    install_intercept_stub()
 
     list(APPEND c2s-intercept-build-dependends intercept-stub)
     
     list(APPEND c2s-intercept-build-dependends ${CMAKE_BINARY_DIR}/lib/libear/__init__.py)
-    if(INTEL_DEPLOY_UNIFIED_LAYOUT)
-      install(PROGRAMS lib/libear/__init__.py
-              DESTINATION share/c2s/lib/libear
-              COMPONENT c2s-intercept-build)
-    else()
-      install(PROGRAMS lib/libear/__init__.py
-              DESTINATION lib/libear
-              COMPONENT c2s-intercept-build)
-    endif()
+    install_init_py()
   endif()
 
-  if(INTEL_DEPLOY_UNIFIED_LAYOUT)
-    install(PROGRAMS bin/intercept-build-unified-layout
-                     DESTINATION bin
-                     COMPONENT c2s-intercept-build RENAME intercept-build)
-  else()
-    install(PROGRAMS bin/intercept-build
-                     DESTINATION bin
-                     COMPONENT c2s-intercept-build)
-  endif()
+  install_intercept_build()
 
   list(APPEND c2s-intercept-build-dependends ${CMAKE_BINARY_DIR}/bin/intercept-build)
 
