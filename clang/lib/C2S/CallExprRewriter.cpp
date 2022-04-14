@@ -1699,13 +1699,13 @@ std::shared_ptr<CallExprRewriterFactoryBase> createMultiStmtsRewriterFactory(
 /// \p SourceName the source callee name of original call expr.
 /// \p LValueCreator use to get lhs from original call expr.
 /// \p RValueCreator use to get rhs from original call expr.
-template <class LValue, class RValue>
-std::shared_ptr<CallExprRewriterFactoryBase> creatAssignExprRewriterFactory(
+template <BinaryOperatorKind BO, class LValue, class RValue>
+std::shared_ptr<CallExprRewriterFactoryBase> creatBinaryOpRewriterFactory(
     const std::string &SourceName,
     std::function<LValue(const CallExpr *)> &&LValueCreator,
     std::function<RValue(const CallExpr *)> &&RValueCreator) {
   return std::make_shared<
-      CallExprRewriterFactory<AssignExprRewriter<LValue, RValue>,
+      CallExprRewriterFactory<BinaryOpRewriter<BO, LValue, RValue>,
                               std::function<LValue(const CallExpr *)>,
                               std::function<RValue(const CallExpr *)>>>(
       SourceName,
@@ -2015,7 +2015,7 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
   };
   return std::make_shared<ConditionalRewriterFactory>(
       Pred,
-      creatAssignExprRewriterFactory(
+      creatBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(
           Source, makeDerefExprCreator(0),
           makeMemberCallCreator(makeCallArgCreator(1), false, "read",
                                 makeCallArgCreator(Idx + 1)...)),
@@ -2271,7 +2271,10 @@ public:
 #define TEMPLATED_CALL_FACTORY_ENTRY(FuncName, ...)                            \
   {FuncName, createTemplatedCallExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define ASSIGN_FACTORY_ENTRY(FuncName, L, R)                                   \
-  {FuncName, creatAssignExprRewriterFactory(FuncName, L, R)},
+  {FuncName, creatBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(      \
+                 FuncName, L, R)},
+#define BINARY_OP_FACTORY_ENTRY(FuncName, OP, L, R)                            \
+  {FuncName, creatBinaryOpRewriterFactory<OP>(FuncName, L, R)},
 #define MEM_EXPR_ENTRY(FuncName, B, IsArrow, M)                                \
   {FuncName, creatMemberExprRewriterFactory(FuncName, B, IsArrow, M)},
 #define CALL_FACTORY_ENTRY(FuncName, C)                                        \
@@ -2297,8 +2300,9 @@ public:
 /// operator default is arrow*/, "attach", ARG(2), ARG(4), DEREF(3))
 ///
 /// tex2DLayered(&data, tex, 2.0f, 2.0f, 10) -> data = tex.read(10, 2.0f, 2.0f)
-/// using: ASSIGN_FACTORY_ENTRY("tex2DLayered", DEREF(0), MEMBER_ALL(ARG(1),
-/// false/* member operator default is dot */, "read", ARG(4), ARG(2), ARG(3))
+/// using: BINARY_OP_FACTORY_ENTRY("tex2DLayered",
+/// BinaryOperatorKind::BO_Assign, DEREF(0), MEMBER_ALL(ARG(1), false/* member
+/// operator default is dot */, "read", ARG(4), ARG(2), ARG(3))
 ///
 /// Macro ASSIGNABLE_FACTORY(x) is used for migration of call expr that has
 /// valid return value.

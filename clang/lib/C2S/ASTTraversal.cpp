@@ -2528,18 +2528,18 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "thrust::tuple", "thrust::maximum", "thrust::multiplies",
                   "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
                   "CUdevice", "cudaEvent_t", "cublasStatus_t", "cuComplex",
-                  "cuDoubleComplex", "CUevent", "cublasFillMode_t",
-                  "cublasDiagType_t", "cublasSideMode_t", "cublasOperation_t",
-                  "cusolverStatus_t", "cusolverEigType_t", "cusolverEigMode_t",
-                  "curandStatus_t", "cudaStream_t", "cusparseStatus_t",
-                  "cusparseDiagType_t", "cusparseFillMode_t",
-                  "cusparseIndexBase_t", "cusparseMatrixType_t",
-                  "cusparseOperation_t", "cusparseMatDescr_t",
-                  "cusparseHandle_t", "CUcontext", "cublasPointerMode_t",
-                  "cusparsePointerMode_t", "cublasGemmAlgo_t",
-                  "cusparseSolveAnalysisInfo_t", "cudaDataType",
-                  "cublasDataType_t", "curandState_t", "curandState",
-                  "curandStateXORWOW_t", "curandStateXORWOW",
+                  "cuFloatComplex", "cuDoubleComplex", "CUevent",
+                  "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
+                  "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
+                  "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
+                  "cusparseStatus_t", "cusparseDiagType_t",
+                  "cusparseFillMode_t", "cusparseIndexBase_t",
+                  "cusparseMatrixType_t", "cusparseOperation_t",
+                  "cusparseMatDescr_t", "cusparseHandle_t", "CUcontext",
+                  "cublasPointerMode_t", "cusparsePointerMode_t",
+                  "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t",
+                  "cudaDataType", "cublasDataType_t", "curandState_t",
+                  "curandState", "curandStateXORWOW_t", "curandStateXORWOW",
                   "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
                   "curandStateMRG32k3a_t", "curandStateMRG32k3a",
                   "thrust::minus", "thrust::negate", "thrust::logical_or",
@@ -3277,7 +3277,8 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
     // Add '#include <complex>' directive to the file only once
-    if (TypeStr == "cuComplex" || TypeStr == "cuDoubleComplex") {
+    if (TypeStr == "cuComplex" || TypeStr == "cuDoubleComplex" ||
+        TypeStr == "cuFloatComplex") {
       C2SGlobalInfo::getInstance().insertHeader(BeginLoc, HT_Complex);
     }
     // Add '#include <oneapi/mkl/bfloat16.hpp>' directive to the file only once
@@ -5690,7 +5691,6 @@ REGISTER_RULE(DeviceRandomFunctionCallRule)
 void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName(
-        "make_cuComplex", "make_cuDoubleComplex",
         /*Regular BLAS API*/
         /*Regular helper*/
         "cublasCreate_v2", "cublasDestroy_v2", "cublasSetVector",
@@ -7029,7 +7029,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       VD = getAncestralVarDecl(CE);
       if (VD) {
         VarType = VD->getType().getAsString();
-        if (VarType == "cuComplex") {
+        if (VarType == "cuComplex" || VarType == "cuFloatComplex") {
           VarType = MapNames::getClNamespace() + "float2";
         }
         if (VarType == "cuDoubleComplex") {
@@ -7717,9 +7717,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(CE, "(", ", 0)");
     }
-  } else if (FuncName == "make_cuComplex" ||
-             FuncName == "make_cuDoubleComplex" ||
-             FuncName == "cublasGetVersion" ||
+  } else if (FuncName == "cublasGetVersion" ||
              FuncName == "cublasGetVersion_v2") {
     if (FuncName == "cublasGetVersion" || FuncName == "cublasGetVersion_v2") {
       if (C2SGlobalInfo::getHelperFilesCustomizationLevel() ==
@@ -7730,6 +7728,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
             SM->getExpansionLoc(CE->getBeginLoc()), HT_Lib_Common_Utils);
       }
     }
+
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
@@ -17617,6 +17616,30 @@ REGISTER_RULE(CubRule)
 REGISTER_RULE(ConfusableIdentifierDetectionRule)
 
 REGISTER_RULE(MisleadingBidirectionalRule)
+
+void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  auto ComplexAPI = [&]() {
+    return hasAnyName("make_cuDoubleComplex", "cuCreal", "cuCrealf", "cuCimag",
+                      "cuCimagf", "cuCadd", "cuCsub", "cuCmul", "cuCdiv",
+                      "cuCabs", "cuConj", "make_cuFloatComplex", "cuCaddf",
+                      "cuCsubf", "cuCmulf", "cuCdivf", "cuCabsf", "cuConjf",
+                      "make_cuComplex");
+  };
+
+  MF.addMatcher(callExpr(callee(functionDecl(ComplexAPI()))).bind("call"),
+                this);
+}
+
+void ComplexAPIRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+  }
+}
+
+REGISTER_RULE(ComplexAPIRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {
