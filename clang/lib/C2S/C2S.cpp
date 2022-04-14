@@ -18,7 +18,6 @@
 #include "Config.h"
 #include "CustomHelperFiles.h"
 #include "ExternalReplacement.h"
-#include "GAnalytics.h"
 #include "GenMakefile.h"
 #include "IncrementalMigrationUtility.h"
 #include "SaveNewFiles.h"
@@ -999,7 +998,6 @@ int runC2S(int argc, const char **argv) {
     std::cout << C2SHelpHint;
     return MigrationErrorShowHelp;
   }
-  GAnalytics("");
 #if defined(__linux__) || defined(_WIN32)
   InstallSignalHandle();
 #endif
