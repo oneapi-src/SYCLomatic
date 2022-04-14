@@ -595,8 +595,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         }
       } catch (std::exception &e) {
         std::string FaultMsg =
-            "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
-            "skips formatting the code and continues migration.\n";
+            "Error: c2s internal error. Formatting of the code skipped. Migration continues.\n";
         llvm::errs() << FaultMsg;
       }
     }

@@ -2616,7 +2616,7 @@ OptionCategory &cl::getGeneralCategory() {
 }
 #ifdef INTEL_CUSTOMIZATION
 OptionCategory &cl::getC2SCategory() {
-  static OptionCategory C2SCat{"Intel(R) DPC++ Compatibility Tool"};
+  static OptionCategory C2SCat{"c2s"};
   return C2SCat;
 }
 #endif

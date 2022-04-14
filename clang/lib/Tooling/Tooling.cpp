@@ -916,8 +916,7 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
 #ifdef INTEL_CUSTOMIZATION
     } catch (std::exception &e) {
       std::string FaultMsg =
-          "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool skips "
-          "the current file and continues migration.\n";
+          "Error: c2s internal error. Current file skipped. Migration continues.\n";
       llvm::errs() << FaultMsg;
     }
 #endif

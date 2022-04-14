@@ -85,7 +85,7 @@ void initWarningIDs();
 } // namespace clang
 
 // clang-format off
-const char *const CtHelpMessage =
+const char *const C2SHelpMessage =
     "\n"
     "<source0> ... Paths of input source files. These paths are looked up in "
     "the compilation database.\n\n"
@@ -105,12 +105,12 @@ const char *const CtHelpMessage =
     DiagRef
     ;
 
-const char *const CtHelpHint =
+const char *const C2SHelpHint =
     "  Warning: Please specify file(s) to be migrated.\n"
-    "  Get help on Intel(R) DPC++ Compatibility Tool, run: c2s --help\n"
+    "  To get help on the tool usage, run: c2s --help\n"
     "\n";
 
-static extrahelp CommonHelp(CtHelpMessage);
+static extrahelp CommonHelp(C2SHelpMessage);
 static opt<std::string> Passes(
     "passes",
     desc("Comma separated list of migration passes, which will be applied.\n"
@@ -908,20 +908,13 @@ std::string printCTVersion() {
   std::string buf;
   llvm::raw_string_ostream OS(buf);
 
-  OS << "\nIntel(R) DPC++ Compatibility Tool version " << C2S_VERSION_MAJOR
+  OS << "\n" << C2S_TOOL_NAME << " version " << C2S_VERSION_MAJOR
      << "." << C2S_VERSION_MINOR << "." << C2S_VERSION_PATCH << "."
      << " Codebase:";
-  // getClangRepositoryPath() export the machine name of repo in release build.
-  // so skip the repo name.
-  std::string Path = "";
   std::string Revision = getClangRevision();
-  if (!Path.empty() || !Revision.empty()) {
+  if (!Revision.empty()) {
     OS << '(';
-    if (!Path.empty())
-      OS << Path;
     if (!Revision.empty()) {
-      if (!Path.empty())
-        OS << ' ';
       OS << Revision;
     }
     OS << ')';
@@ -1003,7 +996,7 @@ void parseFormatStyle() {
 int runC2S(int argc, const char **argv) {
 
   if (argc < 2) {
-    std::cout << CtHelpHint;
+    std::cout << C2SHelpHint;
     return MigrationErrorShowHelp;
   }
   GAnalytics("");
@@ -1453,8 +1446,7 @@ int runC2S(int argc, const char **argv) {
         Global.emplaceReplacements(Tool.getReplacements());
       } catch (std::exception &e) {
         std::string FaultMsg =
-            "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
-            "tries to recover and write the migration result.\n";
+            "Error: c2s internal error. c2s tries to recover and write the migration result.\n";
         llvm::errs() << FaultMsg;
       }
     }
