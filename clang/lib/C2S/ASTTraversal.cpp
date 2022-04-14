@@ -2551,7 +2551,9 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cudaComputeMode", "__nv_bfloat16",
                   "cooperative_groups::__v1::thread_block_tile",
                   "cooperative_groups::__v1::thread_block",
-                  "libraryPropertyType_t", "libraryPropertyType"),
+                  "libraryPropertyType_t", "libraryPropertyType",
+                  "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
+                  "cublasAtomicsMode_t"),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
@@ -3284,8 +3286,10 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (TypeStr == "__nv_bfloat16") {
       C2SGlobalInfo::getInstance().insertHeader(BeginLoc, HT_BFloat16);
     }
-    // Add '#include <c2s/lib_common_utils.hpp>' directive to the file only once
-    if (TypeStr == "libraryPropertyType" || TypeStr == "libraryPropertyType_t") {
+    // Add '#include <dpct/lib_common_utils.hpp>' directive to the file only once
+    if (TypeStr == "libraryPropertyType" ||
+        TypeStr == "libraryPropertyType_t" || TypeStr == "cudaDataType_t" ||
+        TypeStr == "cudaDataType" || TypeStr == "cublasComputeType_t") {
       if (C2SGlobalInfo::getHelperFilesCustomizationLevel() ==
               HelperFilesCustomizationLevel::HFCL_None ||
           C2SGlobalInfo::getHelperFilesCustomizationLevel() ==
@@ -4279,7 +4283,8 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
                       "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
-                      "cudaDeviceAttr", "libraryPropertyType_t"))))))
+                      "cudaDeviceAttr", "libraryPropertyType_t",
+                      "cudaDataType_t", "cublasComputeType_t"))))))
           .bind("EnumConstant"),
       this);
 }
@@ -4376,7 +4381,9 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
   }
   if (auto ET = dyn_cast<EnumType>(E->getType())) {
     if (auto ETD = ET->getDecl()) {
-      if (ETD->getName().str() == "libraryPropertyType_t") {
+      if (ETD->getName().str() == "libraryPropertyType_t" ||
+          ETD->getName().str() == "cudaDataType_t" ||
+          ETD->getName().str() == "cublasComputeType_t") {
         if (C2SGlobalInfo::getHelperFilesCustomizationLevel() ==
                 HelperFilesCustomizationLevel::HFCL_None ||
             C2SGlobalInfo::getHelperFilesCustomizationLevel() ==
@@ -5697,6 +5704,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasSetMatrix", "cublasGetMatrix", "cublasSetMatrixAsync",
         "cublasGetMatrixAsync", "cublasSetStream_v2", "cublasGetStream_v2",
         "cublasGetPointerMode_v2", "cublasSetPointerMode_v2",
+        "cublasGetAtomicsMode", "cublasSetAtomicsMode",
         "cublasGetVersion_v2",
         /*Regular level 1*/
         "cublasIsamax_v2", "cublasIdamax_v2", "cublasIcamax_v2",
@@ -5744,6 +5752,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasStrsm_v2", "cublasDtrsm_v2", "cublasCtrsm_v2", "cublasZtrsm_v2",
         "cublasChemm_v2", "cublasZhemm_v2", "cublasCherk_v2", "cublasZherk_v2",
         "cublasCher2k_v2", "cublasZher2k_v2", "cublasSsyrkx", "cublasDsyrkx",
+        "cublasCsyrkx", "cublasZsyrkx", "cublasCherkx", "cublasZherkx",
         "cublasStrmm_v2", "cublasDtrmm_v2", "cublasCtrmm_v2", "cublasZtrmm_v2",
         "cublasHgemmBatched", "cublasSgemmBatched", "cublasDgemmBatched",
         "cublasCgemmBatched", "cublasZgemmBatched", "cublasStrsmBatched",
@@ -5755,6 +5764,9 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasDgetriBatched", "cublasCgetriBatched", "cublasZgetriBatched",
         "cublasSgeqrfBatched", "cublasDgeqrfBatched", "cublasCgeqrfBatched",
         "cublasZgeqrfBatched", "cublasGemmEx", "cublasSgemmEx", "cublasCgemmEx",
+        "cublasNrm2Ex", "cublasDotEx", "cublasDotcEx", "cublasScalEx", "cublasAxpyEx",
+        "cublasRotEx", "cublasGemmBatchedEx", "cublasGemmStridedBatchedEx",
+        "cublasSdgmm", "cublasDdgmm", "cublasCdgmm", "cublasZdgmm",
         /*Legacy API*/
         "cublasInit", "cublasShutdown", "cublasGetError",
         "cublasSetKernelStream", "cublasGetVersion",
@@ -5932,7 +5944,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
        FuncName == "cublasDgemmBatched" || FuncName == "cublasCgemmBatched" ||
        FuncName == "cublasZgemmBatched" || FuncName == "cublasStrsmBatched" ||
        FuncName == "cublasDtrsmBatched" || FuncName == "cublasCtrsmBatched" ||
-       FuncName == "cublasZtrsmBatched")) {
+       FuncName == "cublasZtrsmBatched" || FuncName == "cublasGemmBatchedEx")) {
     report(FuncNameBegin, Diagnostics::API_NOT_MIGRATED, false, FuncName);
     return;
   }
@@ -5949,8 +5961,114 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   SyncAPIBufferAssignmentInElseBlock.clear();
   // TODO: Need to process the situation when scalar pointers (alpha, beta)
   // are device pointers.
-  if (MapNames::BatchedBLASFuncReplInfoMap.find(FuncName) !=
-      MapNames::BatchedBLASFuncReplInfoMap.end()) {
+  
+  if (MapNames::BLASComputingAPIWithRewriter.find(FuncName) !=
+      MapNames::BLASComputingAPIWithRewriter.end()) {
+    std::string NewFunctionName =
+        MapNames::BLASComputingAPIWithRewriter.find(FuncName)->second;
+    if (HasDeviceAttr) {
+      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
+             MapNames::ITFName.at(FuncName), NewFunctionName);
+      return;
+    }
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  } else if (FuncName == "cublasSdgmm" || FuncName == "cublasDdgmm" ||
+             FuncName == "cublasCdgmm" || FuncName == "cublasZdgmm") {
+    std::string Replacement = "oneapi::mkl::blas::column_major::dgmm_batch";
+    if (HasDeviceAttr) {
+      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
+             MapNames::ITFName.at(FuncName), Replacement);
+      return;
+    }
+    BLASEnumInfo EnumInfo({}, -1, 1, -1);
+    std::string BufferType;
+    if (FuncName == "cublasSdgmm") {
+      BufferType = "float";
+    } else if (FuncName == "cublasDdgmm") {
+      BufferType = "double";
+    } else if (FuncName == "cublasCdgmm") {
+      BufferType = "std::complex<float>";
+    } else {
+      BufferType = "std::complex<double>";
+    }
+
+    // initialize the replacement of each arguments
+    int ArgNum = CE->getNumArgs();
+    for (int i = 0; i < ArgNum; ++i) {
+      ExprAnalysis EA;
+      EA.analyze(CE->getArg(i));
+      CallExprArguReplVec.push_back(EA.getReplacedString());
+    }
+
+    // update the replacement of four enmu arguments
+    if (const CStyleCastExpr *CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(1))) {
+      std::string CurrentArgumentRepl;
+      processParamIntCastToBLASEnum(CE->getArg(1), CSCE, 1, IndentStr, EnumInfo,
+                                    PrefixInsertStr, CurrentArgumentRepl);
+      CallExprArguReplVec[1] = CurrentArgumentRepl;
+    }
+
+    // update the replacement of three buffers
+    if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+      requestFeature(HelperFeatureEnum::Memory_get_buffer_T, CE);
+      std::string BufferDecl;
+      CallExprArguReplVec[4] = getBufferNameAndDeclStr(
+          CE->getArg(4), BufferType, IndentStr, BufferDecl);
+      PrefixInsertStr = PrefixInsertStr + BufferDecl;
+      CallExprArguReplVec[6] = getBufferNameAndDeclStr(
+          CE->getArg(6), BufferType, IndentStr, BufferDecl);
+      PrefixInsertStr = PrefixInsertStr + BufferDecl;
+      CallExprArguReplVec[8] = getBufferNameAndDeclStr(
+          CE->getArg(8), BufferType, IndentStr, BufferDecl);
+      PrefixInsertStr = PrefixInsertStr + BufferDecl;
+    } else {
+      if (FuncName == "cublasCdgmm") {
+        CallExprArguReplVec[4] =
+            "(std::complex<float>*)" + CallExprArguReplVec[4];
+        CallExprArguReplVec[6] =
+            "(std::complex<float>*)" + CallExprArguReplVec[6];
+        CallExprArguReplVec[8] =
+            "(std::complex<float>*)" + CallExprArguReplVec[8];
+      } else if (FuncName == "cublasZdgmm") {
+        CallExprArguReplVec[4] =
+            "(std::complex<double>*)" + CallExprArguReplVec[4];
+        CallExprArguReplVec[6] =
+            "(std::complex<double>*)" + CallExprArguReplVec[6];
+        CallExprArguReplVec[8] =
+            "(std::complex<double>*)" + CallExprArguReplVec[8];
+      }
+    }
+
+    // Insert some arguments since we are now using batch API
+    // If we have new dedicated API for migrating dgmm in the future,
+    // then we can remove the argument insertion.
+    CallExprArguReplVec.push_back("0"); // stride_c
+    CallExprArguReplVec.push_back("1"); // batch_size
+    auto Iter = CallExprArguReplVec.begin();
+    std::advance(Iter, 8);
+    CallExprArguReplVec.insert(Iter, "0"); // stride_b
+    Iter = CallExprArguReplVec.begin();
+    std::advance(Iter, 6);
+    CallExprArguReplVec.insert(Iter, "0"); // stride_a
+
+    CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
+
+    if (NeedUseLambda) {
+      if (PrefixInsertStr.empty() && SuffixInsertStr.empty()) {
+        NeedUseLambda = false;
+      }
+    }
+
+    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
+                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
+                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
+                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
+                       PrefixInsertStr, SuffixInsertStr);
+  } else if (MapNames::BatchedBLASFuncReplInfoMap.find(FuncName) !=
+             MapNames::BatchedBLASFuncReplInfoMap.end()) {
     auto ReplInfoPair = MapNames::BatchedBLASFuncReplInfoMap.find(FuncName);
     auto ReplInfo = ReplInfoPair->second;
     std::string Replacement = ReplInfo.ReplName;
@@ -6096,196 +6214,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         NeedUseLambda = false;
       }
     }
-    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
-                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
-                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
-                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
-                       PrefixInsertStr, SuffixInsertStr);
-  } else if (FuncName == "cublasSsyrkx" || FuncName == "cublasDsyrkx") {
-    auto ReplInfoPair = MapNames::BLASFuncReplInfoMap.find(FuncName);
-    MapNames::BLASFuncReplInfo ReplInfo = ReplInfoPair->second;
-    std::string Replacement = ReplInfo.ReplName;
-    BLASEnumInfo EnumInfo(
-        ReplInfo.OperationIndexInfo, ReplInfo.FillModeIndexInfo,
-        ReplInfo.SideModeIndexInfo, ReplInfo.DiagTypeIndexInfo);
-    if (HasDeviceAttr) {
-      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
-             MapNames::ITFName.at(FuncName), Replacement);
-      return;
-    }
-
-    // initialize the replacement of each arguments
-    int ArgNum = CE->getNumArgs();
-    for (int i = 0; i < ArgNum; ++i) {
-      ExprAnalysis EA;
-      EA.analyze(CE->getArg(i));
-      CallExprArguReplVec.push_back(EA.getReplacedString());
-    }
-
-    // update the replacement of three buffer arguments
-    std::string BufferType = FuncName == "cublasSsyrkx" ? "float" : "double";
-    if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      requestFeature(HelperFeatureEnum::Memory_get_buffer_T, CE);
-      std::string BufferDecl;
-      CallExprArguReplVec[6] = getBufferNameAndDeclStr(
-          CE->getArg(6), BufferType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-      CallExprArguReplVec[8] = getBufferNameAndDeclStr(
-          CE->getArg(8), BufferType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-      CallExprArguReplVec[11] = getBufferNameAndDeclStr(
-          CE->getArg(11), BufferType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-    }
-
-    // update the replacement of two scalar arguments
-    CallExprArguReplVec[5] = getValueStr(CE->getArg(5), CallExprArguReplVec[5],
-                       CallExprArguReplVec[0], BufferType);
-    CallExprArguReplVec[10] = getValueStr(CE->getArg(10), CallExprArguReplVec[10],
-                       CallExprArguReplVec[0], BufferType);
-
-    // update the replacement of the fillmode enmu argument
-    const CStyleCastExpr *CSCE = nullptr;
-    if (CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(1))) {
-      std::string CurrentArgumentRepl;
-      processParamIntCastToBLASEnum(CE->getArg(1), CSCE, 1, IndentStr, EnumInfo,
-                                    PrefixInsertStr, CurrentArgumentRepl);
-      CallExprArguReplVec[1] = CurrentArgumentRepl;
-      CSCE = nullptr;
-    }
-
-    // update the replacement of two transpose operation enmu arguments
-    // original API: C = alpha*t(A, t_1)*t(t(B, t_1), transpose) + beta*C
-    // migrated API: C = alpha*t(A, t_1)*t(B, t_2) + beta*C
-    // So the migated API need insert another transpose state variable which is
-    // decided by the first transpose state variable.
-    // For float and double type, the transpose state variable can only be
-    // transpose or non-transpose, so if t_1 == transpose, then t_2 should be
-    // non-transpose and vice versa.
-
-    // the first transpose operation enmu argument
-    std::string TransTempVarName;
-    if (CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(2))) {
-      // It is a c-style cast expr, process with processParamIntCastToBLASEnum()
-      // If the sub-expr has side-effect, a temp variable will be declared in
-      // processParamIntCastToBLASEnum() function, if not, then we can use this
-      // expr in the inserted argument directly.
-      std::string CurrentArgumentRepl;
-      TransTempVarName = processParamIntCastToBLASEnum(
-          CE->getArg(2), CSCE, 2, IndentStr, EnumInfo, PrefixInsertStr,
-          CurrentArgumentRepl);
-      CallExprArguReplVec[2] = CurrentArgumentRepl;
-      CSCE = nullptr;
-    } else {
-      // if it isn't c-style cast, then the expr type should be an enumeration.
-      // because the another transpose state argument depends on this argument,
-      // if this expr has side-effect, then we need declare a temp variable,
-      // if not, then we can use this expr in the inserted argument directly.
-      if (CE->getArg(2)->HasSideEffects(C2SGlobalInfo::getContext())) {
-        TransTempVarName =
-            getTempNameForExpr(CE->getArg(2), true, true) + "transpose_ct" +
-            std::to_string(C2SGlobalInfo::getSuffixIndexInRuleThenInc());
-
-        PrefixInsertStr = PrefixInsertStr + "auto " + TransTempVarName + " = " +
-                          CallExprArguReplVec[2] + ";" + getNL() + IndentStr;
-        CallExprArguReplVec[2] = TransTempVarName;
-      }
-    }
-
-    // The inserted transpose operation enmu argument (depends on the first one)
-    // Save the replacement in the InsertStr first.
-    std::string InsertStr;
-    if (CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(2))) {
-      // Case1: the first operation enmu argument is a c-style cast expr
-      if (CE->getArg(2)->HasSideEffects(C2SGlobalInfo::getContext())) {
-        // if the expr has side effect, use the temp variable name which returns
-        // from processParamIntCastToBLASEnum()
-        InsertStr = "(int)" + TransTempVarName +
-                    "==0 ? oneapi::mkl::transpose::trans : "
-                    "oneapi::mkl::transpose::nontrans";
-      } else {
-        // if the expr hasn't side effect, use the sub-expr to decide the
-        // inserting argument
-        std::string SubExprStr;
-        bool IsTypeCastInMacro = false;
-        if (CSCE->getSubExpr()->getBeginLoc().isMacroID() &&
-            isOuterMostMacro(CSCE)) {
-          // When type casting syntax is in a macro, analyze the entire CSCE
-          // by ExprAnalysis. Then we need add a type cast to int before the
-          // inserted argument.
-          // Related to BLASFunctionCallRule::processParamIntCastToBLASEnum()
-          IsTypeCastInMacro = true;
-          ExprAnalysis SEA;
-          SEA.analyze(CSCE);
-          SubExprStr = SEA.getReplacedString();
-        } else {
-          SubExprStr = ExprAnalysis::ref(CSCE->getSubExpr());
-        }
-        Expr::EvalResult ER;
-        if (CSCE->getSubExpr()->EvaluateAsInt(ER, *Result.Context) &&
-            !CSCE->getSubExpr()->getBeginLoc().isMacroID()) {
-          // if the sub-expr can be evaluated, then generate the corresponding
-          // replacement directly.
-          int64_t Value = ER.Val.getInt().getExtValue();
-          if (Value == 0) {
-            InsertStr = "oneapi::mkl::transpose::trans";
-          } else if (Value == 1) {
-            InsertStr = "oneapi::mkl::transpose::nontrans";
-          } else {
-            InsertStr = SubExprStr + "==0 ? oneapi::mkl::transpose::trans : "
-                                     "oneapi::mkl::transpose::nontrans";
-          }
-        } else {
-          // if the sub-expr cannot be evaluated, use the conditional operator
-          SubExprStr = IsTypeCastInMacro ? "(int)" + SubExprStr : SubExprStr;
-          InsertStr = SubExprStr + "==0 ? oneapi::mkl::transpose::trans : "
-                                   "oneapi::mkl::transpose::nontrans";
-        }
-      }
-    } else {
-      // Case2: the first operation enmu argument isn't c-style cast expr, then
-      // the expr type should be an enumeration.
-      if (CE->getArg(2)->HasSideEffects(C2SGlobalInfo::getContext())) {
-        // if the expr has side effect, use the temp variable name which
-        // generated in the previous step.
-        InsertStr = TransTempVarName + "==oneapi::mkl::transpose::nontrans ? "
-                                       "oneapi::mkl::transpose::trans : "
-                                       "oneapi::mkl::transpose::nontrans";
-      } else {
-        // The expr hasn't side effect, if the enumeration is literal, then
-        // generate the corresponding replacement directly, if not, use the
-        // conditional operator
-        std::string TransStr = ExprAnalysis::ref(CE->getArg(2));
-        auto TransPair = MapNames::BLASEnumsMap.find(TransStr);
-        if (TransPair != MapNames::BLASEnumsMap.end()) {
-          TransStr = TransPair->second;
-        }
-        if (TransStr == "oneapi::mkl::transpose::nontrans") {
-          InsertStr = "oneapi::mkl::transpose::trans";
-        } else if (TransStr == "oneapi::mkl::transpose::trans") {
-          InsertStr = "oneapi::mkl::transpose::nontrans";
-        } else {
-          InsertStr = TransStr + "==oneapi::mkl::transpose::nontrans ? "
-                                 "oneapi::mkl::transpose::trans : "
-                                 "oneapi::mkl::transpose::nontrans";
-        }
-      }
-    }
-    // insert the InsertStr to CallExprArguReplVec
-    auto InsertIter = CallExprArguReplVec.begin();
-    std::advance(InsertIter, 3);
-    CallExprArguReplVec.insert(InsertIter, InsertStr);
-    // After this line, the old iterators of CallExprArguReplVec may be
-    // invalidation. Need to use new iterators.
-
-    CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
-
-    if (NeedUseLambda) {
-      if (PrefixInsertStr.empty() && SuffixInsertStr.empty()) {
-        NeedUseLambda = false;
-      }
-    }
-
     applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
                        CanAvoidUsingLambda, OriginStmtType, IsAssigned,
                        OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
@@ -6550,155 +6478,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         CE->getArg(13), CallExprArguReplVec[11], CallExprArguReplVec[0],
         FuncName == "cublasCgemmEx" ? "std::complex<float>" : "");
     if (Key == "2:2") {
-      CallExprArguReplVec[6] = MapNames::getClNamespace() + "vec<float, 1>{" +
-                               CallExprArguReplVec[6] + "}.convert<" +
-                               MapNames::getClNamespace() + "half, " +
-                               MapNames::getClNamespace() +
-                               "rounding_mode::automatic>()[0]";
-      CallExprArguReplVec[11] = MapNames::getClNamespace() + "vec<float, 1>{" +
-                                CallExprArguReplVec[11] + "}.convert<" +
-                                MapNames::getClNamespace() + "half, " +
-                                MapNames::getClNamespace() +
-                                "rounding_mode::automatic>()[0]";
-    }
-
-    CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
-
-    if (NeedUseLambda) {
-      if (PrefixInsertStr.empty() && SuffixInsertStr.empty()) {
-        NeedUseLambda = false;
-      }
-    }
-    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
-                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
-                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
-                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
-                       PrefixInsertStr, SuffixInsertStr);
-  } else if (FuncName == "cublasGemmEx") {
-    std::string Replacement = "oneapi::mkl::blas::column_major::gemm";
-    if (HasDeviceAttr) {
-      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
-             MapNames::ITFName.at(FuncName), Replacement);
-      return;
-    }
-
-    // clang-format off
-    // MKL API does not have computeType and algo parameters.
-    // computeType(alpha/beta)               AType/BType     CType IsSupportInMKL
-    // CUDA_R_16F(2)/CUBLAS_COMPUTE_16F(64)  CUDA_R_16F(2)   CUDA_R_16F(2)   yes
-    // CUDA_R_32I(10)                        CUDA_R_8I(3)    CUDA_R_32I(10)  no
-    // CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_16F(2)   CUDA_R_16F(2)   no (can cast alpha/beta to half)
-    // CUDA_R_32F(0)                         CUDA_R_8I(3)    CUDA_R_32I(10)  no
-    // CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_16F(2)   CUDA_R_32F(0)   yes
-    // CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_32F(0)   CUDA_R_32F(0)   yes
-    // CUDA_R_64F(1)/CUBLAS_COMPUTE_64F(70)  CUDA_R_64F(1)   CUDA_R_64F(1)   yes
-    // CUDA_C_32F(4)                         CUDA_C_8I(7)    CUDA_C_32F(4)   no
-    // CUDA_C_32F(4)                         CUDA_C_32F(4)   CUDA_C_32F(4)   yes
-    // CUDA_C_64F(5)                         CUDA_C_64F(5)   CUDA_C_64F(5)   yes
-    // clang-format on
-
-    auto AType = CE->getArg(8);
-    auto BType = CE->getArg(11);
-    auto CType = CE->getArg(15);
-    auto ComputeType = CE->getArg(17);
-
-    Expr::EvalResult ATypeER, BTypeER, CTypeER, ComputeTypeER;
-    bool CanATypeBeEval =
-        AType->EvaluateAsInt(ATypeER, C2SGlobalInfo::getContext());
-    bool CanBTypeBeEval =
-        BType->EvaluateAsInt(BTypeER, C2SGlobalInfo::getContext());
-    bool CanCTypeBeEval =
-        CType->EvaluateAsInt(CTypeER, C2SGlobalInfo::getContext());
-    bool CanComputeTypeBeEval =
-        ComputeType->EvaluateAsInt(ComputeTypeER, C2SGlobalInfo::getContext());
-
-    int64_t ABTypeValue, CTypeValue, ComputeTypeValue;
-    if (CanCTypeBeEval && CanComputeTypeBeEval &&
-        (CanATypeBeEval || CanBTypeBeEval)) {
-      CTypeValue = CTypeER.Val.getInt().getExtValue();
-      ComputeTypeValue = ComputeTypeER.Val.getInt().getExtValue();
-      if (CanATypeBeEval)
-        ABTypeValue = ATypeER.Val.getInt().getExtValue();
-      else
-        ABTypeValue = BTypeER.Val.getInt().getExtValue();
-    } else {
-      report(FuncNameBegin, Diagnostics::UNSUPPORT_PARAM_COMBINATION, false,
-             MapNames::ITFName.at(FuncName),
-             "not all values of parameters could be evaluated in migration");
-      return;
-    }
-
-    MapNames::BLASGemmExTypeInfo TypeInfo;
-    std::string Key = std::to_string(ComputeTypeValue) + ":" +
-                      std::to_string(ABTypeValue) + ":" +
-                      std::to_string(CTypeValue);
-    if (MapNames::BLASGemmExTypeInfoMap.find(Key) !=
-        MapNames::BLASGemmExTypeInfoMap.end()) {
-      TypeInfo = MapNames::BLASGemmExTypeInfoMap.find(Key)->second;
-    } else {
-      report(
-          FuncNameBegin, Diagnostics::UNSUPPORT_PARAM_COMBINATION, false,
-          MapNames::ITFName.at(FuncName),
-          "the combination of matrix data type and scalar type is unsupported");
-      return;
-    }
-
-    std::vector<int> ArgsIndex{0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 12, 13, 14, 16};
-    // initialize the replacement of each arguments
-    for (auto I : ArgsIndex) {
-      ExprAnalysis EA;
-      EA.analyze(CE->getArg(I));
-      CallExprArguReplVec.push_back(EA.getReplacedString());
-    }
-
-    // update the replacement of four enmu arguments
-    BLASEnumInfo EnumInfo = BLASEnumInfo({1, 2}, -1, -1, -1);
-    auto processEnumArgus = [&](const Expr *E, unsigned int Index,
-                                std::string &Argu) {
-      const CStyleCastExpr *CSCE = nullptr;
-      if (CSCE = dyn_cast<CStyleCastExpr>(E)) {
-        std::string CurrentArgumentRepl;
-        processParamIntCastToBLASEnum(E, CSCE, Index, IndentStr, EnumInfo,
-                                      PrefixInsertStr, CurrentArgumentRepl);
-        Argu = CurrentArgumentRepl;
-      }
-    };
-    processEnumArgus(CE->getArg(1), 1, CallExprArguReplVec[1]);
-    processEnumArgus(CE->getArg(2), 2, CallExprArguReplVec[2]);
-
-    // update the replacement of three buffers
-    if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-      requestFeature(HelperFeatureEnum::Memory_get_buffer_T, CE);
-      std::string BufferDecl;
-      CallExprArguReplVec[7] = getBufferNameAndDeclStr(
-          CE->getArg(7), TypeInfo.ABType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-      CallExprArguReplVec[9] = getBufferNameAndDeclStr(
-          CE->getArg(10), TypeInfo.ABType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-      CallExprArguReplVec[12] = getBufferNameAndDeclStr(
-          CE->getArg(14), TypeInfo.CType, IndentStr, BufferDecl);
-      PrefixInsertStr = PrefixInsertStr + BufferDecl;
-    } else {
-      CallExprArguReplVec[7] =
-          "(" + TypeInfo.ABType + "*)" + CallExprArguReplVec[7];
-      CallExprArguReplVec[9] =
-          "(" + TypeInfo.ABType + "*)" + CallExprArguReplVec[9];
-      CallExprArguReplVec[12] =
-          "(" + TypeInfo.CType + "*)" + CallExprArguReplVec[12];
-    }
-
-    // update the replacement of two scalar arguments
-    // requestFeature(HelperFeatureEnum::BlasUtils_get_value, CE);
-    CallExprArguReplVec[6] = getValueStr(CE->getArg(6),
-                                            "(" + TypeInfo.OriginScalarType +
-                                                "*)" + CallExprArguReplVec[6],
-                                            CallExprArguReplVec[0]);
-    CallExprArguReplVec[11] = getValueStr(CE->getArg(11),
-                                             "(" + TypeInfo.OriginScalarType +
-                                                 "*)" + CallExprArguReplVec[11],
-                                             CallExprArguReplVec[0]);
-    if (Key == "0:2:2" || Key == "68:2:2") {
       CallExprArguReplVec[6] = MapNames::getClNamespace() + "vec<float, 1>{" +
                                CallExprArguReplVec[6] + "}.convert<" +
                                MapNames::getClNamespace() + "half, " +
@@ -7551,7 +7330,9 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
   } else if (FuncName == "cublasGetPointerMode_v2" ||
-             FuncName == "cublasSetPointerMode_v2") {
+             FuncName == "cublasSetPointerMode_v2" ||
+             FuncName == "cublasGetAtomicsMode" ||
+             FuncName == "cublasSetAtomicsMode") {
     std::string Msg = "the function call is redundant in DPC++.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
