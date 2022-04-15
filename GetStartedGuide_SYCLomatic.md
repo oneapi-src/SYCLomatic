@@ -10,7 +10,7 @@
   - [Test SYCLomatic](#test-SYCLomatic)
       - [Run in-tree LIT tests](#run-in-tree-lit-tests)
       - [Run E2E test suite](#run-SYCLomatic-e2e-test-suite)
-  - [Run c2s tool](#Run-c2s-tool)
+  - [Run c2s command](#Run-c2s-command)
   - [Known Issues and Limitations](#known-issues-and-limitations)
   - [Find More](#find-more)
 
@@ -125,7 +125,7 @@ Follow instructions from the link below to build and run tests:
 [README](https://github.com/intel/SYCLomatic-test.git)
 
 
-## Run c2s tool
+## Run c2s command
 Get c2s help information by running "c2s --help".
 Note that dpct is an old name of the executable and is alias to c2s, use c2s going forward. 
 
