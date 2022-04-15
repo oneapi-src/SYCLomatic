@@ -6,7 +6,7 @@ SYCLomatic project is licensed under the terms of the Apache
 License v2.0 with LLVM Exceptions license ([LICENSE.txt](llvm/LICENSE.TXT)).
 
 By contributing to this project, you agree to the Apache License v2.0 with LLVM
-Exceptions and copyright terms there in and release your contribution under
+Exceptions and copyright terms therein and release your contribution under
 these terms.
 
 ## Contribution process

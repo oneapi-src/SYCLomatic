@@ -10,6 +10,7 @@
   - [Test SYCLomatic](#test-SYCLomatic)
       - [Run in-tree LIT tests](#run-in-tree-lit-tests)
       - [Run E2E test suite](#run-SYCLomatic-e2e-test-suite)
+  - [Run c2s tool](#Run-c2s-tool)
   - [Known Issues and Limitations](#known-issues-and-limitations)
   - [Find More](#find-more)
 
