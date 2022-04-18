@@ -1,0 +1,1 @@
+// CHECK: Warning: Incremental migration requires the same version of c2s. Migration continues with incremental migration disabled. See https://software.intel.com/content/www/us/en/develop/documentation/intel-dpcpp-compatibility-tool-user-guide/top.html for more details.

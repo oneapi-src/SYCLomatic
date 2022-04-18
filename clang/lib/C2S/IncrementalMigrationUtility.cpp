@@ -332,7 +332,11 @@ bool canContinueMigration(std::string &Msg) {
   }
 
   // check version
-  auto VerCompRes = compareToolVersion(PreTU->C2SVersion);
+  VersionCmpResult VerCompRes = VersionCmpResult::VCR_CMP_FAILED;
+  if (!PreTU->C2SVersion.empty())
+    VerCompRes = compareToolVersion(PreTU->C2SVersion);
+  else
+    VerCompRes = compareToolVersion(PreTU->DpctVersion);
   if (VerCompRes == VersionCmpResult::VCR_CMP_FAILED) {
     llvm::errs() << getLoadYamlFailWarning(YamlFilePath.str().str());
     return true;
@@ -364,6 +368,14 @@ bool canContinueMigration(std::string &Msg) {
 
   C2SGlobalInfo::setMainSourceYamlTUR(PreTU);
   return true;
+}
+
+std::string getC2SVersionStr() {
+  std::string Str;
+  llvm::raw_string_ostream OS(Str);
+  OS << C2S_VERSION_MAJOR << "." << C2S_VERSION_MINOR << "."
+     << C2S_VERSION_PATCH;
+  return OS.str();
 }
 
 }
