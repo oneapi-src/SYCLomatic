@@ -1,0 +1,173 @@
+name: Windows Github Action CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+env:
+  BUILD_CONCURRENCY: 2
+  MACOS_BUILD_CONCURRENCY: 3
+  TEST_TIMEOUT: 3600
+
+jobs:
+  windows-build-lit:
+    name: windows-build-lit
+    runs-on: win_build_sc
+    outputs:
+      build_success: ${{ steps.Echo-Build-Success.outputs.build_success }}
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: c2s.src
+      - name: Checkout Test Repo
+        #uses: actions/checkout@v2
+        #with:
+        #  repository: 
+        #  path: c2s_test_repo
+        run: |
+          if exist c2s_test_repo rd /s /q c2s_test_repo
+          git clone https://github.com/intel/SYCLomatic-test.git c2s_test_repo
+        shell: cmd 
+
+      - name: Cleanup Workspace
+        run: |
+          if exist c2s.obj rd /s /q c2s.obj
+          if exist c2s.src/build rd /s /q c2s.src/build
+        shell: cmd
+
+      - name: Process ENV
+        id: process_env
+        run: |
+          for mask_value in $(C:/jq-win64.exe -r ".[]" $GITHUB_WORKSPACE/../../../mask_env_values.json); do 
+              echo "add mask for $mask_value"; 
+              echo "::add-mask::$mask_value"; 
+          done
+        shell: bash
+
+      - name: Prepare Env
+        uses: ./c2s.src/devops/actions/prepare_env_win
+
+      - name: Configure
+        timeout-minutes: 120
+        run: |
+          cd c2s.src
+          mkdir build
+          cd build
+          cmake \
+            -G Ninja \
+            -DLLVM_ENABLE_PROJECTS="clang"  \
+            -DCMAKE_COLOR_MAKEFILE=0 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" \
+            -DLLVM_ENABLE_TERMINFO=OFF  \
+            -DCMAKE_C_COMPILER="$DPCPP_INSTALL_PREFIX/bin/icx.exe"  \
+            -DCMAKE_CXX_COMPILER="$DPCPP_INSTALL_PREFIX/bin/icx.exe"  \
+            -DCMAKE_INSTALL_PREFIX=$PWD/../../c2s.obj  \
+            ../llvm
+        shell: bash
+
+      - name: Build
+        timeout-minutes: 120
+        run: |
+          cd c2s.src/build
+          ninja install-c2s-tool
+        shell: bash
+
+      - id: Echo-Build-Success
+        run: echo "::set-output name=build_success::true"
+      - name: Pack Build
+        shell: cmd
+        run: |
+          C:\7-Zip\7z.exe a c2s_obj.7z c2s.obj
+      - name: Upload Build
+        uses: actions/upload-artifact@v1
+        with:
+          name: SYCLomatic_Win_${{ github.sha }}
+          path: c2s_obj.7z 
+      - name: Lit
+        run: |
+          cd c2s.src/build
+          ninja check-clang-c2s -j8
+
+  windows-test:
+    name: windows-test-${{ matrix.test_suite }}-cpu
+    runs-on: win_build_sc
+    needs: [windows-build-lit]
+    if: |
+      always() &&
+      needs.windows-build-lit.outputs.build_success == 'true'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - test_suite: user_guide_samples
+          - test_suite: regressions
+          - test_suite: samples
+          - test_suite: help_function
+          - test_suite: features
+          - test_suite: api_coverage
+          - test_suite: behavior_tests
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: c2s.src
+
+      - name: Checkout Test Repo
+        env:
+          FACELESS_TOKEN: ${{ secrets.GH_CI_NSTESTER_TOKEN }}
+        run: |
+          if exist c2s_test_repo rd /s /q c2s_test_repo
+          git clone https://github.com/intel/SYCLomatic-test.git c2s_test_repo
+        shell: cmd 
+
+      - name: Cleanup Workspace
+        run: |
+          if exist c2s.obj rd /s /q c2s.obj
+          if exist c2s.src/build rd /s /q c2s.src/build
+          if exist c2s_obj.7z del /s /q c2s_obj.7z 
+        shell: cmd
+      
+      - name: Download Build
+        uses: actions/download-artifact@v2
+        with:
+          name: SYCLomatic_Win_${{ github.sha }}
+
+      - name: Extract Build
+        shell: cmd
+        run: |
+          C:\7-Zip\7z.exe x -y c2s_obj.7z
+
+      - name: Process ENV
+        id: process_env
+        run: |
+          for mask_value in $(C:/jq-win64.exe -r ".[]" $GITHUB_WORKSPACE/../../../mask_env_values.json); do 
+              echo "add mask for $mask_value"; 
+              echo "::add-mask::$mask_value"; 
+          done
+        shell: bash
+
+      - name: Prepare Env
+        timeout-minutes: 60
+        uses: ./c2s.src/devops/actions/prepare_env_win
+
+      - name: Run testing option_cpu
+        timeout-minutes: 600
+        shell: bash
+        run: |
+          cd c2s_test_repo
+          python run_test.py --suite ${{ matrix.test_suite }} --option option_cpu
+          echo $PWD
+
+      - name: Run testing option_usmnone_cpu
+        timeout-minutes: 600
+        shell: bash
+        run: |
+          cd c2s_test_repo
+          python run_test.py --suite ${{ matrix.test_suite }} --option option_usmnone_cpu
+          echo $PWD
+      

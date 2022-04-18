@@ -1,0 +1,25 @@
+name: 'Prepare Env'
+description: 'Prepare environment for Linux'
+inputs:
+  c2s_obj_dir:
+    description: 'Folder archive DPCT build result files'
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+  - run: |
+       #ENV_DATESTAMP=`date -d "yesterday" +%Y%m%d`_000000
+       ENV_DATESTAMP="latest"
+       echo "DateStamp is $ENV_DATESTAMP"
+       echo "ENV_DATESTAMP=$ENV_DATESTAMP" >> $GITHUB_ENV
+       set -x
+       bash $GITHUB_WORKSPACE/../../../../generate_env_file.sh $ENV_DATESTAMP "$GITHUB_WORKSPACE/../../../../env_public.txt" ${{ inputs.c2s_obj_dir }}
+       set +x
+       if [ ! -f ./envs_tobe_loaded.txt ]; then
+           echo "Environment file not generated."
+           exit -1
+       fi
+       cat ./envs_tobe_loaded.txt >> $GITHUB_ENV
+    shell: bash
+
