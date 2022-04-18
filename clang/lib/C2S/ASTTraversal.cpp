@@ -8503,10 +8503,10 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     emplaceTransformation(new ReplaceStmt(
         CE->getCallee(), Prefix + MapNames::getC2SNamespace() +
-                             "dev_mgr::instance().select_device"));
+                             "select_device"));
     if (IsAssigned)
       emplaceTransformation(new InsertAfterStmt(CE, ", 0)"));
-    requestFeature(HelperFeatureEnum::Device_dev_mgr_select_device, CE);
+    requestFeature(HelperFeatureEnum::Device_select_device, CE);
   } else if (FuncName == "cudaDeviceGetAttribute") {
     std::string ResultVarName = getDrefName(CE->getArg(0));
     auto AttrArg = CE->getArg(1);
@@ -15928,7 +15928,8 @@ REGISTER_RULE(DriverDeviceAPIRule)
 void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto contextAPI = [&]() {
     return hasAnyName("cuInit", "cuCtxCreate_v2", "cuCtxSetCurrent",
-                      "cuCtxGetCurrent", "cuCtxSynchronize", "cuCtxDestroy_v2");
+                      "cuCtxGetCurrent", "cuCtxSynchronize", "cuCtxDestroy_v2",
+                      "cuDevicePrimaryCtxRetain");
   };
 
   MF.addMatcher(
@@ -15960,6 +15961,18 @@ void DriverContextAPIRule::runRule(
   } else {
     return;
   }
+
+  if (!CallExprRewriterFactoryBase::RewriterMap)
+    return;
+
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(APIName);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
   if (IsAssigned) {
     OS << "(";
   }
@@ -15975,7 +15988,7 @@ void DriverContextAPIRule::runRule(
       emplaceTransformation(new ReplaceStmt(CE, ""));
     }
     return;
-  } else if (APIName == "cuCtxCreate_v2" || APIName == "cuCtxDestroy_v2") {
+  } else if (APIName == "cuCtxDestroy_v2") {
     SourceLocation CallBegin(CE->getBeginLoc());
     SourceLocation CallEnd(CE->getEndLoc());
 
@@ -16029,9 +16042,9 @@ void DriverContextAPIRule::runRule(
     auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
     ExprAnalysis EA(Arg);
     EA.analyze();
-    OS << MapNames::getC2SNamespace() + "dev_mgr::instance().select_device("
+    OS << MapNames::getC2SNamespace() + "select_device("
        << EA.getReplacedString() << ")";
-    requestFeature(HelperFeatureEnum::Device_dev_mgr_select_device, CE);
+    requestFeature(HelperFeatureEnum::Device_select_device, CE);
   } else if (APIName == "cuCtxGetCurrent") {
     auto Arg = CE->getArg(0)->IgnoreImplicitAsWritten();
     printDerefOp(OS, Arg);

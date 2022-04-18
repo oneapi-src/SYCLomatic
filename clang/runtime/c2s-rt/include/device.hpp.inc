@@ -1006,6 +1006,17 @@ static inline device_ext &cpu_device() {
 }
 // C2S_LABEL_END
 
+// C2S_LABEL_BEGIN|select_device|c2s
+// C2S_DEPENDENCY_BEGIN
+// Device|dev_mgr_select_device
+// C2S_DEPENDENCY_END
+// C2S_CODE
+static inline unsigned int select_device(unsigned int id){
+  dev_mgr::instance().select_device(id);
+  return id;
+}
+// C2S_LABEL_END
+
 } // namespace c2s
 
 #endif // __C2S_DEVICE_HPP__

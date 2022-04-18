@@ -9,7 +9,7 @@ void bar(){
 // CHECK:/*
 // CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device" may not be the best XPU device. Adjust the selected device if needed.
 // CHECK-NEXT:*/
-//CHECK-NEXT:c2s::dev_mgr::instance().select_device(device);
+//CHECK-NEXT:c2s::select_device(device);
   cudaSetDevice(device);
 }
 

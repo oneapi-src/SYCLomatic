@@ -59,7 +59,7 @@ checkErrors(cudaDeviceGetP2PAttribute(&atomicSupported, cudaDevP2PAttrNativeAtom
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT:checkErrors((c2s::dev_mgr::instance().select_device(device2), 0));
+// CHECK-NEXT:checkErrors((c2s::select_device(device2), 0));
 checkErrors(cudaSetDevice(device2));
 
 return 0;

@@ -1349,7 +1349,7 @@ ENTRY(cuDeviceGetP2PAttribute, cuDeviceGetP2PAttribute, false, NO_FLAG, P4, "com
 ENTRY(cuDevicePrimaryCtxGetState, cuDevicePrimaryCtxGetState, false, NO_FLAG, P4, "comment")
 ENTRY(cuDevicePrimaryCtxRelease, cuDevicePrimaryCtxRelease, false, NO_FLAG, P4, "comment")
 ENTRY(cuDevicePrimaryCtxReset, cuDevicePrimaryCtxReset, false, NO_FLAG, P4, "comment")
-ENTRY(cuDevicePrimaryCtxRetain, cuDevicePrimaryCtxRetain, false, NO_FLAG, P4, "comment")
+ENTRY(cuDevicePrimaryCtxRetain, cuDevicePrimaryCtxRetain, true, NO_FLAG, P4, "comment")
 ENTRY(cuDevicePrimaryCtxSetFlags, cuDevicePrimaryCtxSetFlags, false, NO_FLAG, P4, "comment")
 ENTRY(cuProfilerInitialize, cuProfilerInitialize, false, NO_FLAG, P4, "comment")
 ENTRY(cuProfilerStart, cuProfilerStart, false, NO_FLAG, P4, "comment")
