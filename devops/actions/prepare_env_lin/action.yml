@@ -2,7 +2,7 @@ name: 'Prepare Env'
 description: 'Prepare environment for Linux'
 inputs:
   c2s_obj_dir:
-    description: 'Folder archive DPCT build result files'
+    description: 'Folder archive SYCLomatic build result files'
     default: ''
 
 runs:
