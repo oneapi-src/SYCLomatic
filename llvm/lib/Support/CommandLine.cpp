@@ -2531,8 +2531,7 @@ struct CommandLineCommonOptions {
 #ifdef INTEL_CUSTOMIZATION
   cl::opt<HelpPrinterWrapper, true, parser<bool>>
       HOp{"help",
-          cl::desc("Provides list of Intel(R) DPC++ Compatibility Tool "
-                   "specific options."),
+          cl::desc("Provides list of c2s specific options."),
           cl::location(WrappedNormalPrinter), cl::ValueDisallowed,
           cl::cat(cl::getC2SCategory()), cl::sub(*AllSubCommands)};
 #else

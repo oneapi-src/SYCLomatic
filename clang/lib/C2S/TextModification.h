@@ -142,7 +142,7 @@ enum class TextModificationID : int {
 
 using TMID = TextModificationID;
 
-/// Base class for compatibility tool-related source code modifications.
+/// Base class for c2s-related source code modifications.
 class TextModification {
 public:
   // getReplacement() method will be called according to the grouping:

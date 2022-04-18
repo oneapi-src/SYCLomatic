@@ -3286,7 +3286,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (TypeStr == "__nv_bfloat16") {
       C2SGlobalInfo::getInstance().insertHeader(BeginLoc, HT_BFloat16);
     }
-    // Add '#include <dpct/lib_common_utils.hpp>' directive to the file only once
+    // Add '#include <c2s/lib_common_utils.hpp>' directive to the file only once
     if (TypeStr == "libraryPropertyType" ||
         TypeStr == "libraryPropertyType_t" || TypeStr == "cudaDataType_t" ||
         TypeStr == "cudaDataType" || TypeStr == "cublasComputeType_t") {
