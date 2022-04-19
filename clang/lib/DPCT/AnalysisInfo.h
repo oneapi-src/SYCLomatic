@@ -3647,13 +3647,13 @@ private:
   void mergeTextureObjectTypeInfo();
 
   const std::string FilePath;
-  unsigned BeginLoc;
-  unsigned ExtraArgLoc;
+  unsigned BeginLoc = 0;
+  unsigned ExtraArgLoc = 0;
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
   std::vector<TemplateArgumentInfo> TemplateArgs;
 
   MemVarMap VarMap;
-  bool HasArgs;
+  bool HasArgs = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
 };
 
