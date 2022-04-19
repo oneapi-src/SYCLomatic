@@ -2,9 +2,7 @@
 # DESTDIR environment variable may be unset at configuration time.
 # See PR8397.
 
-# INTEL_CUSTOMIZATION
-# include(GNUInstallDirs)
-# end INTEL_CUSTOMIZATION
+include(GNUInstallDirs)
 
 function(install_symlink name target outdir)
   set(DESTDIR $ENV{DESTDIR})
