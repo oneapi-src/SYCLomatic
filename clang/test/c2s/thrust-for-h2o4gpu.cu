@@ -189,15 +189,6 @@ void foo() {
  }
 
  {
-   // CHECK: int a;
-   // CHECK-NEXT: double b;
-   // CHECK-NEXT: std::tie(a, b) = std::make_tuple(1, 2.0);
-   int a;
-   double b;
-   thrust::tie(a, b) = thrust::make_tuple(1, 2.0);
- }
-
- {
   //CHECK: int x =  137;
   //CHECK-NEXT: int y = -137;
   //CHECK-NEXT: oneapi::dpl::maximum<int> mx;
