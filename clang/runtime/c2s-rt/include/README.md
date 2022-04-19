@@ -64,7 +64,7 @@ Output files:
 ## For c2s developers
 Generally, request the feature before use it:
 ```
-void requestFeature(clang::c2s::HelperFeatureEnum Feature, std::string CallerSrcFilePath);
+void requestFeature(clang::dpct::HelperFeatureEnum Feature, std::string CallerSrcFilePath);
 ```
 
 Feature used in following maps are request implicitly:
@@ -80,7 +80,7 @@ TypeNamesHelperFeaturesMap = {
 }
 ```
 
-Please update files in `test/c2s/helper_files_ref/include` used in LIT test when you modify the impl of the helper files
+Please update files in `test/dpct/helper_files_ref/include` used in LIT test when you modify the impl of the helper files
 
 ## The usage of the processFiles.py script
 ```

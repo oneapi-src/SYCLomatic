@@ -263,7 +263,7 @@ template <typename T> std::string getHashAsString(const T &Val) {
   return Stream.str();
 }
 
-/// Get the fixed suffix of c2s tool
+/// Get the fixed suffix of compatibility tool
 inline std::string getCTFixedSuffix() { return "_ct1"; }
 
 /// Get the declaration of a statement
