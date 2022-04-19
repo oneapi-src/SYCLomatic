@@ -21,7 +21,7 @@ using namespace clang::dpct;
 // KeepNamespace = false/true --> ""/"sycl::"
 std::vector<std::string> MapNames::ClNamespace = {"", "", "sycl::", "sycl::"};
 // Not use dpct:: namespace explicitly
-// KeepNamespace = false/true --> ""/"c2s::"
+// KeepNamespace = false/true --> ""/"dpct::"
 std::vector<std::string> MapNames::DpctNamespace = {"", "c2s::"};
 std::string MapNames::getClNamespace(bool KeepNamespace, bool IsMathFunc) {
   return ClNamespace[(KeepNamespace << 1) + IsMathFunc];
@@ -58,9 +58,8 @@ MapNames::MapTy MapNames::DeviceRandomGeneratorTypeMap;
 void MapNames::setExplicitNamespaceMap() {
 
   auto NamespaceSet = DpctGlobalInfo::getExplicitNamespaceSet();
-  if (NamespaceSet.count(ExplicitNamespace::EN_C2S) ||
-      NamespaceSet.count(ExplicitNamespace::EN_DPCT)) {
-    // Use c2s:: namespace explicitly
+  if (NamespaceSet.count(ExplicitNamespace::EN_DPCT)) {
+    // Use dpct:: namespace explicitly
     DpctNamespace[0] = "c2s::";
   }
   if (NamespaceSet.count(ExplicitNamespace::EN_CL)) {

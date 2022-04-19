@@ -214,7 +214,7 @@ void ExtReplacements ::getLOCStaticFromCodeRepls(
       // When option "--report-type=stats" or option " --report-type=all" is
       // specified to get the migration status report and dpct namespace is
       // enabled temporarily to get LOC migrated to helper functions,
-      // c2s namespace should be removed in the replacements generated.
+      // dpct namespace should be removed in the replacements generated.
       std::string ReplText = Repl->getReplacementText().str();
       auto Pos = ReplText.find("c2s::");
       if (Pos != std::string::npos) {

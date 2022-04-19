@@ -58,8 +58,7 @@ enum class ExplicitNamespace : unsigned int {
   EN_CL = 1,
   EN_SYCL = 2,
   EN_SYCL_Math = 3,
-  EN_C2S = 4,
-  EN_DPCT = 5,
+  EN_DPCT = 4
 };
 enum class DPCPPExtensions : unsigned int {
   Ext_EnqueueBarrier = 0x01,

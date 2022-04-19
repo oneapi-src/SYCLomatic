@@ -662,7 +662,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     }
   }
 
-  std::string ScriptFineName = "Makefile.c2s";
+  std::string ScriptFineName = "Makefile.dpct";
   if (!BuildScriptFile.empty())
     ScriptFineName = BuildScriptFile;
   if (GenBuildScript)

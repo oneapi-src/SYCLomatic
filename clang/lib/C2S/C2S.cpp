@@ -131,7 +131,7 @@ static opt<std::string> OutRoot(
     "out-root",
     desc("The directory path for root of generated files. A directory is "
          "created if it\n"
-         "does not exist. Default: c2s_output."),
+         "does not exist. Default: dpct_output."),
     value_desc("dir"), cat(C2SCat), llvm::cl::Optional);
 
 static opt<std::string> SDKPath("cuda-path", desc("Directory path of SDK.\n"),
@@ -375,7 +375,7 @@ opt<std::string> CustomHelperFileName(
     "custom-helper-name",
     desc(
         "Specifies the helper headers folder name and main helper header file name.\n"
-        "Default: c2s."),
+        "Default: dpct."),
     init("c2s"), value_desc("name"), cat(C2SCat), llvm::cl::Optional);
 
 bool AsyncHandlerFlag = false;
@@ -405,7 +405,7 @@ static list<ExplicitNamespace> UseExplicitNamespace(
     "use-explicit-namespace",
     llvm::cl::desc(
         "Defines the namespaces to use explicitly in generated code. The value is a comma\n"
-        "separated list. Default: c2s, sycl.\n"
+        "separated list. Default: dpct, sycl.\n"
         "Possible values are:"),
     llvm::cl::CommaSeparated,
     values(llvm::cl::OptionEnumValue{"none", int(ExplicitNamespace::EN_None),
@@ -418,10 +418,7 @@ static list<ExplicitNamespace> UseExplicitNamespace(
                "sycl or sycl-math values.",
                false},
            llvm::cl::OptionEnumValue{"dpct", int(ExplicitNamespace::EN_DPCT),
-                                     "DEPRECATED: Generate code with c2s:: namespace. Please use c2s instead.",
-                                     false},
-           llvm::cl::OptionEnumValue{"c2s", int(ExplicitNamespace::EN_C2S),
-                                     "Generate code with c2s:: namespace.",
+                                     "Generate code with dpct:: namespace.",
                                      false},
            llvm::cl::OptionEnumValue{
                "sycl", int(ExplicitNamespace::EN_SYCL),
@@ -484,7 +481,7 @@ opt<bool> GenBuildScript(
 opt<std::string>
     BuildScriptFile("build-script-file",
                desc("Specifies the name of generated makefile for migrated file(s).\n"
-                    "Default name: Makefile.c2s."),
+                    "Default name: Makefile.dpct."),
                value_desc("file"), cat(C2SCat),
                llvm::cl::Optional);
 
@@ -1284,7 +1281,7 @@ int runDPCT(int argc, const char **argv) {
   }
 
   std::vector<ExplicitNamespace> DefaultExplicitNamespaces = {
-      ExplicitNamespace::EN_SYCL, ExplicitNamespace::EN_C2S};
+      ExplicitNamespace::EN_SYCL, ExplicitNamespace::EN_DPCT};
   if (NoClNamespaceInline.getNumOccurrences()) {
     if (UseExplicitNamespace.getNumOccurrences()) {
       DpctGlobalInfo::setExplicitNamespace(UseExplicitNamespace);
@@ -1294,7 +1291,7 @@ int runDPCT(int argc, const char **argv) {
     } else {
       if (ExplicitClNamespace) {
         DpctGlobalInfo::setExplicitNamespace(std::vector<ExplicitNamespace>{
-            ExplicitNamespace::EN_CL, ExplicitNamespace::EN_C2S});
+            ExplicitNamespace::EN_CL, ExplicitNamespace::EN_DPCT});
       } else {
         DpctGlobalInfo::setExplicitNamespace(DefaultExplicitNamespaces);
       }
@@ -1391,10 +1388,9 @@ int runDPCT(int argc, const char **argv) {
     // enabled temporarily to get LOC migrated to helper functions in function
     // getLOCStaticFromCodeRepls() if it is not enabled.
     auto NamespaceSet = DpctGlobalInfo::getExplicitNamespaceSet();
-    if (!NamespaceSet.count(ExplicitNamespace::EN_C2S) &&
-        !NamespaceSet.count(ExplicitNamespace::EN_DPCT)) {
+    if (!NamespaceSet.count(ExplicitNamespace::EN_DPCT)) {
       std::vector<ExplicitNamespace> ENVec;
-      ENVec.push_back(ExplicitNamespace::EN_C2S);
+      ENVec.push_back(ExplicitNamespace::EN_DPCT);
       DpctGlobalInfo::setExplicitNamespace(ENVec);
       DpctGlobalInfo::setDPCTNamespaceTempEnabled();
     }

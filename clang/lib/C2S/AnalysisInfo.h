@@ -1195,19 +1195,12 @@ public:
             Namespace == ExplicitNamespace::EN_SYCL ||
             Namespace == ExplicitNamespace::EN_SYCL_Math) &&
            (ExplicitNamespaceSet.size() == 1 &&
-            (ExplicitNamespaceSet.count(ExplicitNamespace::EN_C2S) == 0 ||
-             ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 0)));
+            ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 0));
       // 3.Check whether option dpct duplicated
       bool Check3 =
           (Namespace == ExplicitNamespace::EN_DPCT &&
-           (ExplicitNamespaceSet.count(ExplicitNamespace::EN_C2S) == 1 ||
-            ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 1));
-      // 4.Check whether option c2s duplicated
-      bool Check4 =
-          (Namespace == ExplicitNamespace::EN_C2S &&
-           (ExplicitNamespaceSet.count(ExplicitNamespace::EN_C2S) == 1 ||
-            ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 1));
-      if (Check1 || Check2 || Check3 || Check4) {
+           ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 1);
+      if (Check1 || Check2 || Check3) {
         ShowStatus(MigrationErrorInvalidExplicitNamespace);
         dpctExit(MigrationErrorInvalidExplicitNamespace);
       } else {
@@ -4575,10 +4568,8 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
       }
     }
     concatHeader(RSO, std::forward<T>(Args)...);
-    if ((!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_C2S) &&
-        !DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_DPCT)) ||
+    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+            ExplicitNamespace::EN_DPCT) ||
         DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
       RSO << "using namespace c2s;" << getNL();
     }
