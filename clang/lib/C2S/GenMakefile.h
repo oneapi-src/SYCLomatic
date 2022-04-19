@@ -9,8 +9,8 @@
 //
 //===---------------------------------------------------------------===//
 
-#ifndef C2S_GEN_MAKEFILE_H
-#define C2S_GEN_MAKEFILE_H
+#ifndef DPCT_GEN_MAKEFILE_H
+#define DPCT_GEN_MAKEFILE_H
 
 #include "clang/Tooling/Core/Replacement.h"
 
@@ -42,4 +42,4 @@ extern std::vector<
               std::vector<std::string> /*orginal compile command*/>>
     CompileTargetsMap;
 
-#endif // C2S_GEN_MAKEFILE_H
+#endif // DPCT_GEN_MAKEFILE_H

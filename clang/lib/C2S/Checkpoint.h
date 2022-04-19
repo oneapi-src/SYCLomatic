@@ -9,8 +9,8 @@
 //
 //===---------------------------------------------------------------===//
 
-#ifndef C2S_CHECKPOINT_H
-#define C2S_CHECKPOINT_H
+#ifndef DPCT_CHECKPOINT_H
+#define DPCT_CHECKPOINT_H
 
 #include "SignalProcess.h"
 #include <setjmp.h>
@@ -109,4 +109,4 @@ public:
       CheckPointStage = CHECKPOINT_UNKNOWN;                                    \
   } while (0);
 
-#endif // C2S_CHECKPOINT_H
+#endif // DPCT_CHECKPOINT_H

@@ -47,7 +47,7 @@ static bool getDefaultOutRoot(std::string &OutRootPar) {
                       " \"--out-root\" to set output directory.\n";
       return false;
     } else {
-      clang::c2s::PrintMsg(
+      clang::dpct::PrintMsg(
           "The directory \"c2s_output\" is used as \"out-root\"\n");
     }
   } else {
@@ -56,7 +56,7 @@ static bool getDefaultOutRoot(std::string &OutRootPar) {
       llvm::errs() << "Could not create c2s_output directory.\n";
       return false;
     }
-    clang::c2s::PrintMsg(
+    clang::dpct::PrintMsg(
         "The directory \"c2s_output\" is used as \"out-root\"\n");
   }
   OutRootPar.assign(begin(OutRoot), end(OutRoot));
@@ -100,8 +100,8 @@ bool makeInRootCanonicalOrSetDefaults(
   SmallString<512> InRootAbs;
   std::error_code EC = llvm::sys::fs::real_path(InRoot, InRootAbs);
   if ((bool)EC) {
-    clang::c2s::ShowStatus(MigrationErrorInvalidInRootPath);
-    c2sExit(MigrationErrorInvalidInRootPath);
+    clang::dpct::ShowStatus(MigrationErrorInvalidInRootPath);
+    dpctExit(MigrationErrorInvalidInRootPath);
   }
   InRoot = InRootAbs.str().str();
   return true;
@@ -203,14 +203,14 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
     if (RFile.empty()) {
       RFile = "stdout";
     }
-#ifdef C2S_DEBUG_BUILD
+#ifdef DPCT_DEBUG_BUILD
     // check the report diags content value.
     if (DVerbose.empty()) {
-      clang::c2s::VerboseLevel = clang::c2s::VL_VerboseLow;
+      clang::dpct::VerboseLevel = clang::dpct::VL_VerboseLow;
     } else if (DVerbose == "pass") {
-      clang::c2s::VerboseLevel = clang::c2s::VL_VerboseLow;
+      clang::dpct::VerboseLevel = clang::dpct::VL_VerboseLow;
     } else if (DVerbose == "transformation") {
-      clang::c2s::VerboseLevel = clang::c2s::VL_VerboseHigh;
+      clang::dpct::VerboseLevel = clang::dpct::VL_VerboseHigh;
     } else {
       Success = false;
       llvm::errs()
@@ -227,7 +227,7 @@ void validateCustomHelperFileNameArg(HelperFilesCustomizationLevel Level,
                                      std::string &Name,
                                      const std::string &OutRoot) {
   if ((Level == HelperFilesCustomizationLevel::HFCL_None) && (Name != "c2s")) {
-    clang::c2s::PrintMsg("Warning: Ignored \"--custom-helper-name\", since "
+    clang::dpct::PrintMsg("Warning: Ignored \"--custom-helper-name\", since "
                           "\"--use-custom-helper\" is not specified or "
                           "has \"none\" value.\n");
     Name = "c2s";
@@ -236,22 +236,22 @@ void validateCustomHelperFileNameArg(HelperFilesCustomizationLevel Level,
 
   std::string FileName = Name + ".hpp";
   if (FileName.size() >= MAX_NAME_LEN) {
-    clang::c2s::ShowStatus(MigrationErrorCustomHelperFileNameTooLong);
-    c2sExit(MigrationErrorCustomHelperFileNameTooLong);
+    clang::dpct::ShowStatus(MigrationErrorCustomHelperFileNameTooLong);
+    dpctExit(MigrationErrorCustomHelperFileNameTooLong);
   }
 
   std::string FilePath = OutRoot + "/include/" + Name + "/" + FileName;
   if (FilePath.size() >= MAX_PATH_LEN) {
-    clang::c2s::ShowStatus(MigrationErrorCustomHelperFileNamePathTooLong,
+    clang::dpct::ShowStatus(MigrationErrorCustomHelperFileNamePathTooLong,
                             FilePath);
-    c2sExit(MigrationErrorCustomHelperFileNamePathTooLong);
+    dpctExit(MigrationErrorCustomHelperFileNamePathTooLong);
   }
 
   for (size_t Idx = 0, End = Name.size(); Idx < End; Idx++) {
     if ((!isdigit(Name[Idx])) && (!isalpha(Name[Idx])) && (Name[Idx] != '_')) {
-      clang::c2s::ShowStatus(
+      clang::dpct::ShowStatus(
           MigrationErrorCustomHelperFileNameContainInvalidChar);
-      c2sExit(MigrationErrorCustomHelperFileNameContainInvalidChar);
+      dpctExit(MigrationErrorCustomHelperFileNameContainInvalidChar);
     }
   }
 }

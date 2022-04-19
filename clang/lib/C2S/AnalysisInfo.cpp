@@ -28,125 +28,125 @@ namespace clang {
 extern std::function<bool(SourceLocation)> IsInRootFunc;
 extern std::function<unsigned int()> GetRunRound;
 extern std::function<void(SourceLocation, unsigned)> RecordTokenSplit;
-namespace c2s {
-std::string C2SGlobalInfo::InRoot = std::string();
-std::string C2SGlobalInfo::OutRoot = std::string();
+namespace dpct {
+std::string DpctGlobalInfo::InRoot = std::string();
+std::string DpctGlobalInfo::OutRoot = std::string();
 // TODO: implement one of this for each source language.
-std::string C2SGlobalInfo::CudaPath = std::string();
-std::string C2SGlobalInfo::RuleFile = std::string();
-UsmLevel C2SGlobalInfo::UsmLvl = UsmLevel::UL_None;
-bool C2SGlobalInfo::IsIncMigration = true;
-unsigned int C2SGlobalInfo::AssumedNDRangeDim = 3;
-HelperFilesCustomizationLevel C2SGlobalInfo::HelperFilesCustomizationLvl =
+std::string DpctGlobalInfo::CudaPath = std::string();
+std::string DpctGlobalInfo::RuleFile = std::string();
+UsmLevel DpctGlobalInfo::UsmLvl = UsmLevel::UL_None;
+bool DpctGlobalInfo::IsIncMigration = true;
+unsigned int DpctGlobalInfo::AssumedNDRangeDim = 3;
+HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
     HelperFilesCustomizationLevel::HFCL_None;
-std::string C2SGlobalInfo::CustomHelperFileName = "c2s";
-std::unordered_set<std::string> C2SGlobalInfo::PrecAndDomPairSet;
-std::unordered_set<FFTTypeEnum> C2SGlobalInfo::FFTTypeSet;
-std::unordered_set<std::string> C2SGlobalInfo::HostRNGEngineTypeSet;
-format::FormatRange C2SGlobalInfo::FmtRng = format::FormatRange::none;
-C2SFormatStyle C2SGlobalInfo::FmtST = C2SFormatStyle::FS_LLVM;
-std::set<ExplicitNamespace> C2SGlobalInfo::ExplicitNamespaceSet;
-bool C2SGlobalInfo::EnableCtad = false;
-bool C2SGlobalInfo::GenBuildScript = false;
-bool C2SGlobalInfo::EnableComments = false;
-bool C2SGlobalInfo::TempEnableC2SNamespace = false;
-bool C2SGlobalInfo::IsMLKHeaderUsed = false;
-CompilerInstance *C2SGlobalInfo::CI = nullptr;
-ASTContext *C2SGlobalInfo::Context = nullptr;
-SourceManager *C2SGlobalInfo::SM = nullptr;
-FileManager *C2SGlobalInfo::FM = nullptr;
-bool C2SGlobalInfo::KeepOriginCode = false;
-bool C2SGlobalInfo::SyclNamedLambda = false;
-bool C2SGlobalInfo::CheckUnicodeSecurityFlag = false;
-std::unordered_set<std::string> C2SGlobalInfo::ExpansionRangeBeginSet;
-std::map<std::string, std::shared_ptr<C2SGlobalInfo::MacroExpansionRecord>>
-    C2SGlobalInfo::ExpansionRangeToMacroRecord;
+std::string DpctGlobalInfo::CustomHelperFileName = "c2s";
+std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
+std::unordered_set<FFTTypeEnum> DpctGlobalInfo::FFTTypeSet;
+std::unordered_set<std::string> DpctGlobalInfo::HostRNGEngineTypeSet;
+format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
+DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
+std::set<ExplicitNamespace> DpctGlobalInfo::ExplicitNamespaceSet;
+bool DpctGlobalInfo::EnableCtad = false;
+bool DpctGlobalInfo::GenBuildScript = false;
+bool DpctGlobalInfo::EnableComments = false;
+bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
+bool DpctGlobalInfo::IsMLKHeaderUsed = false;
+CompilerInstance *DpctGlobalInfo::CI = nullptr;
+ASTContext *DpctGlobalInfo::Context = nullptr;
+SourceManager *DpctGlobalInfo::SM = nullptr;
+FileManager *DpctGlobalInfo::FM = nullptr;
+bool DpctGlobalInfo::KeepOriginCode = false;
+bool DpctGlobalInfo::SyclNamedLambda = false;
+bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
+std::unordered_set<std::string> DpctGlobalInfo::ExpansionRangeBeginSet;
+std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
+    DpctGlobalInfo::ExpansionRangeToMacroRecord;
 std::tuple<unsigned int, std::string, SourceRange>
-    C2SGlobalInfo::LastMacroRecord =
+    DpctGlobalInfo::LastMacroRecord =
         std::make_tuple<unsigned int, std::string, SourceRange>(0, "",
                                                                 SourceRange());
-std::map<std::string, SourceLocation> C2SGlobalInfo::EndifLocationOfIfdef;
+std::map<std::string, SourceLocation> DpctGlobalInfo::EndifLocationOfIfdef;
 std::vector<std::pair<std::string, size_t>>
-    C2SGlobalInfo::ConditionalCompilationLoc;
-std::map<std::string, std::shared_ptr<C2SGlobalInfo::MacroDefRecord>>
-    C2SGlobalInfo::MacroTokenToMacroDefineLoc;
+    DpctGlobalInfo::ConditionalCompilationLoc;
+std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroDefRecord>>
+    DpctGlobalInfo::MacroTokenToMacroDefineLoc;
 std::map<std::string, std::string>
-    C2SGlobalInfo::FunctionCallInMacroMigrateRecord;
-std::map<std::string, SourceLocation> C2SGlobalInfo::EndOfEmptyMacros;
-std::map<std::string, SourceLocation> C2SGlobalInfo::BeginOfEmptyMacros;
-std::map<std::string, bool> C2SGlobalInfo::MacroDefines;
-std::set<std::string> C2SGlobalInfo::IncludingFileSet;
-std::set<std::string> C2SGlobalInfo::FileSetInCompiationDB;
+    DpctGlobalInfo::FunctionCallInMacroMigrateRecord;
+std::map<std::string, SourceLocation> DpctGlobalInfo::EndOfEmptyMacros;
+std::map<std::string, SourceLocation> DpctGlobalInfo::BeginOfEmptyMacros;
+std::map<std::string, bool> DpctGlobalInfo::MacroDefines;
+std::set<std::string> DpctGlobalInfo::IncludingFileSet;
+std::set<std::string> DpctGlobalInfo::FileSetInCompiationDB;
 std::unordered_map<std::string, std::vector<clang::tooling::Replacement>>
-    C2SGlobalInfo::FileRelpsMap;
-std::unordered_map<std::string, std::string> C2SGlobalInfo::DigestMap;
-const std::string C2SGlobalInfo::YamlFileName = "MainSourceFiles.yaml";
-std::set<std::string> C2SGlobalInfo::GlobalVarNameSet;
+    DpctGlobalInfo::FileRelpsMap;
+std::unordered_map<std::string, std::string> DpctGlobalInfo::DigestMap;
+const std::string DpctGlobalInfo::YamlFileName = "MainSourceFiles.yaml";
+std::set<std::string> DpctGlobalInfo::GlobalVarNameSet;
 const std::string MemVarInfo::ExternVariableName = "c2s_local";
 std::unordered_map<const DeclStmt *, int> MemVarInfo::AnonymousTypeDeclStmtMap;
 const int TextureObjectInfo::ReplaceTypeLength = strlen("cudaTextureObject_t");
-bool C2SGlobalInfo::GuessIndentWidthMatcherFlag = false;
-unsigned int C2SGlobalInfo::IndentWidth = 0;
-std::map<unsigned int, unsigned int> C2SGlobalInfo::KCIndentWidthMap;
-std::unordered_map<std::string, int> C2SGlobalInfo::LocationInitIndexMap;
-int C2SGlobalInfo::CurrentMaxIndex = 0;
-int C2SGlobalInfo::CurrentIndexInRule = 0;
-clang::format::FormatStyle C2SGlobalInfo::CodeFormatStyle;
-bool C2SGlobalInfo::HasFoundDeviceChanged = false;
-std::unordered_map<int, C2SGlobalInfo::HelperFuncReplInfo>
-    C2SGlobalInfo::HelperFuncReplInfoMap;
-int C2SGlobalInfo::HelperFuncReplInfoIndex = 1;
-std::unordered_map<std::string, C2SGlobalInfo::TempVariableDeclCounter>
-    C2SGlobalInfo::TempVariableDeclCounterMap;
-std::unordered_map<std::string, int> C2SGlobalInfo::TempVariableHandledMap;
-bool C2SGlobalInfo::UsingDRYPattern = true;
-bool C2SGlobalInfo::UsingGenericSpace = true;
-bool C2SGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
+bool DpctGlobalInfo::GuessIndentWidthMatcherFlag = false;
+unsigned int DpctGlobalInfo::IndentWidth = 0;
+std::map<unsigned int, unsigned int> DpctGlobalInfo::KCIndentWidthMap;
+std::unordered_map<std::string, int> DpctGlobalInfo::LocationInitIndexMap;
+int DpctGlobalInfo::CurrentMaxIndex = 0;
+int DpctGlobalInfo::CurrentIndexInRule = 0;
+clang::format::FormatStyle DpctGlobalInfo::CodeFormatStyle;
+bool DpctGlobalInfo::HasFoundDeviceChanged = false;
+std::unordered_map<int, DpctGlobalInfo::HelperFuncReplInfo>
+    DpctGlobalInfo::HelperFuncReplInfoMap;
+int DpctGlobalInfo::HelperFuncReplInfoIndex = 1;
+std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
+    DpctGlobalInfo::TempVariableDeclCounterMap;
+std::unordered_map<std::string, int> DpctGlobalInfo::TempVariableHandledMap;
+bool DpctGlobalInfo::UsingDRYPattern = true;
+bool DpctGlobalInfo::UsingGenericSpace = true;
+bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
 std::unordered_map<std::string, FFTExecAPIInfo>
-    C2SGlobalInfo::FFTExecAPIInfoMap;
-std::unordered_map<std::string, FFTHandleInfo> C2SGlobalInfo::FFTHandleInfoMap;
-unsigned int C2SGlobalInfo::CudaKernelDimDFIIndex = 1;
+    DpctGlobalInfo::FFTExecAPIInfoMap;
+std::unordered_map<std::string, FFTHandleInfo> DpctGlobalInfo::FFTHandleInfoMap;
+unsigned int DpctGlobalInfo::CudaKernelDimDFIIndex = 1;
 std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
-    C2SGlobalInfo::CudaKernelDimDFIMap;
-unsigned int C2SGlobalInfo::RunRound = 0;
-bool C2SGlobalInfo::NeedRunAgain = false;
-std::set<std::string> C2SGlobalInfo::ModuleFiles;
-bool C2SGlobalInfo::OptimizeMigrationFlag = false;
+    DpctGlobalInfo::CudaKernelDimDFIMap;
+unsigned int DpctGlobalInfo::RunRound = 0;
+bool DpctGlobalInfo::NeedRunAgain = false;
+std::set<std::string> DpctGlobalInfo::ModuleFiles;
+bool DpctGlobalInfo::OptimizeMigrationFlag = false;
 
 std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
     DeviceFunctionDecl::FuncInfoMap;
-CudaArchPPMap C2SGlobalInfo::CAPPInfoMap;
-HDCallMap C2SGlobalInfo::HostDeviceFCallIMap;
-HDDefMap C2SGlobalInfo::HostDeviceFDefIMap;
-HDDeclMap C2SGlobalInfo::HostDeviceFDeclIMap;
+CudaArchPPMap DpctGlobalInfo::CAPPInfoMap;
+HDCallMap DpctGlobalInfo::HostDeviceFCallIMap;
+HDDefMap DpctGlobalInfo::HostDeviceFDefIMap;
+HDDeclMap DpctGlobalInfo::HostDeviceFDeclIMap;
 // __CUDA_ARCH__ Offset -> defined(...) Offset
-CudaArchDefMap C2SGlobalInfo::CudaArchDefinedMap;
-std::set<std::shared_ptr<ExtReplacement>> C2SGlobalInfo::CudaArchMacroRepl;
+CudaArchDefMap DpctGlobalInfo::CudaArchDefinedMap;
+std::set<std::shared_ptr<ExtReplacement>> DpctGlobalInfo::CudaArchMacroRepl;
 std::unordered_map<std::string, std::shared_ptr<ExtReplacements>>
-    C2SGlobalInfo::FileReplCache;
-std::set<std::string> C2SGlobalInfo::ReProcessFile;
-std::set<std::string> C2SGlobalInfo::ProcessedFile;
+    DpctGlobalInfo::FileReplCache;
+std::set<std::string> DpctGlobalInfo::ReProcessFile;
+std::set<std::string> DpctGlobalInfo::ProcessedFile;
 std::unordered_map<std::string,
                    std::unordered_set<std::shared_ptr<DeviceFunctionInfo>>>
-    C2SGlobalInfo::SpellingLocToDFIsMapForAssumeNDRange;
+    DpctGlobalInfo::SpellingLocToDFIsMapForAssumeNDRange;
 std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
                    std::unordered_set<std::string>>
-    C2SGlobalInfo::DFIToSpellingLocsMapForAssumeNDRange;
-unsigned C2SGlobalInfo::ExtensionFlag = static_cast<unsigned>(-1);
-unsigned C2SGlobalInfo::ExperimentalFlag = 0;
-unsigned int C2SGlobalInfo::ColorOption = 1;
+    DpctGlobalInfo::DFIToSpellingLocsMapForAssumeNDRange;
+unsigned DpctGlobalInfo::ExtensionFlag = static_cast<unsigned>(-1);
+unsigned DpctGlobalInfo::ExperimentalFlag = 0;
+unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
-    C2SGlobalInfo::CubPlaceholderIndexMap;
+    DpctGlobalInfo::CubPlaceholderIndexMap;
 std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
-    C2SGlobalInfo::PriorityReplInfoMap;
-std::unordered_map<std::string, bool> C2SGlobalInfo::ExcludePath = {};
-std::map<std::string, clang::tooling::OptionInfo> C2SGlobalInfo::CurrentOptMap;
+    DpctGlobalInfo::PriorityReplInfoMap;
+std::unordered_map<std::string, bool> DpctGlobalInfo::ExcludePath = {};
+std::map<std::string, clang::tooling::OptionInfo> DpctGlobalInfo::CurrentOptMap;
 
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
 /// canContinueMigration() is called.
 std::shared_ptr<clang::tooling::TranslationUnitReplacements>
-    C2SGlobalInfo::MainSourceYamlTUR =
+    DpctGlobalInfo::MainSourceYamlTUR =
         std::make_shared<clang::tooling::TranslationUnitReplacements>();
 
 class FreeQueriesInfo {
@@ -248,7 +248,7 @@ public:
   FreeQueriesInfo() = default;
 };
 
-void C2SGlobalInfo::resetInfo() {
+void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
   PrecAndDomPairSet.clear();
   FFTTypeSet.clear();
@@ -284,19 +284,19 @@ void C2SGlobalInfo::resetInfo() {
   DFIToSpellingLocsMapForAssumeNDRange.clear();
 }
 
-C2SGlobalInfo::C2SGlobalInfo() {
-  IsInRootFunc = C2SGlobalInfo::checkInRoot;
-  GetRunRound = C2SGlobalInfo::getRunRound;
-  RecordTokenSplit = C2SGlobalInfo::recordTokenSplit;
-  tooling::SetGetRunRound(C2SGlobalInfo::getRunRound);
-  tooling::SetReProcessFile(C2SGlobalInfo::ReProcessFile);
-  tooling::SetProcessedFile(C2SGlobalInfo::ProcessedFile);
-  tooling::SetColorOptionPtr(C2SGlobalInfo::ColorOption);
-  tooling::SetIsExcludePathHandler(C2SGlobalInfo::isExcluded);
+DpctGlobalInfo::DpctGlobalInfo() {
+  IsInRootFunc = DpctGlobalInfo::checkInRoot;
+  GetRunRound = DpctGlobalInfo::getRunRound;
+  RecordTokenSplit = DpctGlobalInfo::recordTokenSplit;
+  tooling::SetGetRunRound(DpctGlobalInfo::getRunRound);
+  tooling::SetReProcessFile(DpctGlobalInfo::ReProcessFile);
+  tooling::SetProcessedFile(DpctGlobalInfo::ProcessedFile);
+  tooling::SetColorOptionPtr(DpctGlobalInfo::ColorOption);
+  tooling::SetIsExcludePathHandler(DpctGlobalInfo::isExcluded);
 }
 
 std::shared_ptr<KernelCallExpr>
-C2SGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
+DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
   auto LocInfo = getLocInfo(LaunchKernelCall->getBeginLoc());
   auto FileInfo = insertFile(LocInfo.first);
   if (FileInfo->findNode<KernelCallExpr>(LocInfo.second))
@@ -311,7 +311,7 @@ C2SGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
   return KernelInfo;
 }
 
-void C2SGlobalInfo::insertFFTPlanAPIInfo(SourceLocation SL,
+void DpctGlobalInfo::insertFFTPlanAPIInfo(SourceLocation SL,
                                           FFTPlanAPIInfo Info) {
   auto LocInfo = getLocInfo(SL);
   auto FileInfo = insertFile(LocInfo.first);
@@ -322,7 +322,7 @@ void C2SGlobalInfo::insertFFTPlanAPIInfo(SourceLocation SL,
   }
 }
 
-void C2SGlobalInfo::insertFFTExecAPIInfo(SourceLocation SL,
+void DpctGlobalInfo::insertFFTExecAPIInfo(SourceLocation SL,
                                           FFTExecAPIInfo Info) {
   auto LocInfo = getLocInfo(SL);
   auto FileInfo = insertFile(LocInfo.first);
@@ -333,16 +333,16 @@ void C2SGlobalInfo::insertFFTExecAPIInfo(SourceLocation SL,
   }
 }
 
-bool C2SFileInfo::isInRoot() { return C2SGlobalInfo::isInRoot(FilePath); }
+bool DpctFileInfo::isInRoot() { return DpctGlobalInfo::isInRoot(FilePath); }
 // TODO: implement one of this for each source language.
-bool C2SFileInfo::isInCudaPath() {
-  return C2SGlobalInfo::isInCudaPath(FilePath);
+bool DpctFileInfo::isInCudaPath() {
+  return DpctGlobalInfo::isInCudaPath(FilePath);
 }
 
-void C2SFileInfo::buildLinesInfo() {
+void DpctFileInfo::buildLinesInfo() {
   if (FilePath.empty())
     return;
-  auto &SM = C2SGlobalInfo::getSourceManager();
+  auto &SM = DpctGlobalInfo::getSourceManager();
 
   auto FE = SM.getFileManager().getFile(FilePath);
   if (std::error_code ec = FE.getError())
@@ -371,15 +371,15 @@ void C2SFileInfo::buildLinesInfo() {
   Lines.emplace_back(NumLines, LineCache[NumLines - 1], FileSize, CacheBuffer);
 }
 
-void C2SFileInfo::setKernelCallDim() {
+void DpctFileInfo::setKernelCallDim() {
   for (auto &Kernel : KernelMap)
     Kernel.second->setKernelCallDim();
 }
-void C2SFileInfo::buildUnionFindSet() {
+void DpctFileInfo::buildUnionFindSet() {
   for (auto &Kernel : KernelMap)
     Kernel.second->buildUnionFindSet();
 }
-void C2SFileInfo::buildUnionFindSetForUncalledFunc() {
+void DpctFileInfo::buildUnionFindSetForUncalledFunc() {
   for (auto &DeviceFunc : FuncMap) {
     auto Info = DeviceFunc.second->getFuncInfo();
     Info->buildInfo();
@@ -387,24 +387,24 @@ void C2SFileInfo::buildUnionFindSetForUncalledFunc() {
   }
 }
 
-void C2SFileInfo::buildKernelInfo() {
+void DpctFileInfo::buildKernelInfo() {
   for (auto &Kernel : KernelMap)
     Kernel.second->buildInfo();
 }
-void C2SFileInfo::postProcess() {
+void DpctFileInfo::postProcess() {
   if (!isInRoot())
     return;
   for (auto &D : FuncMap)
     D.second->emplaceReplacement();
   if (!Repls->empty()) {
     Repls->postProcess();
-    if (C2SGlobalInfo::getRunRound() == 0) {
-      C2SGlobalInfo::getInstance().cacheFileRepl(FilePath, Repls);
+    if (DpctGlobalInfo::getRunRound() == 0) {
+      DpctGlobalInfo::getInstance().cacheFileRepl(FilePath, Repls);
     }
   }
 }
 
-void C2SFileInfo::buildReplacements() {
+void DpctFileInfo::buildReplacements() {
   if (!isInRoot())
     return;
 
@@ -419,7 +419,7 @@ void C2SFileInfo::buildReplacements() {
       continue;
 
     auto Name = Entry.second->getName();
-    auto &GlobalVarNameSet = c2s::C2SGlobalInfo::getGlobalVarNameSet();
+    auto &GlobalVarNameSet = dpct::DpctGlobalInfo::getGlobalVarNameSet();
     if (GlobalVarNameSet.find(Name) != end(GlobalVarNameSet)) {
       Entry.second->setName(Name + "_ct");
     }
@@ -454,7 +454,7 @@ void C2SFileInfo::buildReplacements() {
     }
   }
 
-  // C2S need collect the information in curandGenerator_t decl,
+  // DPCT need collect the information in curandGenerator_t decl,
   // curandCreateGenerator API call and curandSetPseudoRandomGeneratorSeed API
   // call, then can migrate them to MKL API.
   for (auto &RandomEngine : RandomEngineMap) {
@@ -471,7 +471,7 @@ void C2SFileInfo::buildReplacements() {
         std::get<2>(DistrInfo.first), std::get<3>(DistrInfo.first));
   }
 
-  if (C2SGlobalInfo::getSpBLASUnsupportedMatrixTypeFlag()) {
+  if (DpctGlobalInfo::getSpBLASUnsupportedMatrixTypeFlag()) {
     for (auto &SpBLASWarningLocOffset : SpBLASSet) {
       DiagnosticsUtils::report(getFilePath(), SpBLASWarningLocOffset,
                                Diagnostics::UNSUPPORT_MATRIX_TYPE, true, false);
@@ -543,7 +543,7 @@ void C2SFileInfo::buildReplacements() {
   FreeQueriesInfo::buildInfo();
 }
 
-bool C2SFileInfo::isReplTxtWithSubmitBarrier(unsigned Offset) {
+bool DpctFileInfo::isReplTxtWithSubmitBarrier(unsigned Offset) {
   bool ReplTxtWithSB = true;
   for (const auto &Entry : TimeStubBounds) {
     size_t Begin = Entry.first;
@@ -556,39 +556,39 @@ bool C2SFileInfo::isReplTxtWithSubmitBarrier(unsigned Offset) {
   return ReplTxtWithSB;
 }
 
-void C2SFileInfo::emplaceReplacements(ReplTy &ReplSet) {
+void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
   if (!Repls->empty())
     Repls->emplaceIntoReplSet(ReplSet[FilePath]);
 }
 
-void C2SGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
+void DpctGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
   if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(0)))
     insertCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(1));
 }
-void C2SGlobalInfo::insertCublasAlloc(const CallExpr *CE) {
+void DpctGlobalInfo::insertCublasAlloc(const CallExpr *CE) {
   if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(2)))
     insertCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(0), CE->getArg(1));
 }
-std::shared_ptr<CudaMallocInfo> C2SGlobalInfo::findCudaMalloc(const Expr *E) {
+std::shared_ptr<CudaMallocInfo> DpctGlobalInfo::findCudaMalloc(const Expr *E) {
   if (auto Src = CudaMallocInfo::getMallocVar(E))
     return findCudaMallocInfo(Src);
   return std::shared_ptr<CudaMallocInfo>();
 }
 
-void C2SGlobalInfo::insertRandomEngine(const Expr *E) {
+void DpctGlobalInfo::insertRandomEngine(const Expr *E) {
   if (auto Src = getHandleVar(E)) {
     insertRandomEngineInfo(Src);
   }
 }
 std::shared_ptr<RandomEngineInfo>
-C2SGlobalInfo::findRandomEngine(const Expr *E) {
+DpctGlobalInfo::findRandomEngine(const Expr *E) {
   if (auto Src = getHandleVar(E)) {
     return findRandomEngineInfo(Src);
   }
   return std::shared_ptr<RandomEngineInfo>();
 }
 
-void C2SGlobalInfo::insertBuiltinVarInfo(
+void DpctGlobalInfo::insertBuiltinVarInfo(
     SourceLocation SL, unsigned int Len, std::string Repl,
     std::shared_ptr<DeviceFunctionInfo> DFI) {
   auto LocInfo = getLocInfo(SL);
@@ -652,7 +652,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
     ++Idx;
   }
 
-  if (C2SGlobalInfo::getAssumedNDRangeDim() == 1) {
+  if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
     Idx = 0;
     for (auto Arg : ConfigArgs) {
       if (Idx > 1)
@@ -672,7 +672,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
   }
 
   if (ExecutionConfig.Stream == "0") {
-    int Index = C2SGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     ExecutionConfig.Stream = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
     buildTempVariableMap(Index, *ConfigArgs.begin(),
                          HelperFuncType::HFT_DefaultQueue);
@@ -689,7 +689,7 @@ void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
 }
 
 void KernelCallExpr::buildLocationInfo(const CallExpr *KernelCall) {
-  auto &SM = C2SGlobalInfo::getSourceManager();
+  auto &SM = DpctGlobalInfo::getSourceManager();
   SourceLocation Begin = KernelCall->getBeginLoc();
   LocInfo.NL = getNL();
   LocInfo.Indent = getIndent(Begin, SM).str();
@@ -698,7 +698,7 @@ void KernelCallExpr::buildLocationInfo(const CallExpr *KernelCall) {
 
 void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
   NeedBraces = true;
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   // if parenet is CompoundStmt, then find if it has more than 1 children.
   // else if parent is ExprWithCleanups, then do futher check.
   // else it must be case like:  if/for/while(1) kernel-call, pair of
@@ -816,7 +816,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
         TypeStr = TypeStr + " *";
       }
 
-      if (C2SGlobalInfo::isOptimizeMigration() && getFuncInfo() &&
+      if (DpctGlobalInfo::isOptimizeMigration() && getFuncInfo() &&
           !(getFuncInfo()->isParameterReferenced(ArgCounter))) {
         // Typecast can be removed only when it is a template function and
         // all template arguments are specified explicitly.
@@ -833,7 +833,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
                            getFilePath());
           }
           SubmitStmtsList.AccessorList.emplace_back(buildString(
-              MapNames::getC2SNamespace() + "access_wrapper<", TypeStr, "> ",
+              MapNames::getDpctNamespace() + "access_wrapper<", TypeStr, "> ",
               Arg.getIdStringWithSuffix("acc"), "(", Arg.getArgString(),
               Arg.IsDefinedOnDevice ? ".get_ptr()" : "", ", cgh);"));
           KernelArgs += buildString(Arg.getIdStringWithSuffix("acc"),
@@ -846,7 +846,7 @@ void KernelCallExpr::buildKernelArgsStmt() {
           }
           SubmitStmtsList.AccessorList.emplace_back(buildString(
               "auto ", Arg.getIdStringWithSuffix("acc"),
-              " = " + MapNames::getC2SNamespace() + "get_access(",
+              " = " + MapNames::getDpctNamespace() + "get_access(",
               Arg.getArgString(), Arg.IsDefinedOnDevice ? ".get_ptr()" : "",
               ", cgh);"));
           KernelArgs += buildString("(", TypeStr, ")(&",
@@ -920,13 +920,13 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
         std::string NewAPIName = std::get<3>(Element);
         unsigned int Size = std::get<0>(Element);
         if (NewAPIName ==
-                (MapNames::getC2SNamespace() + "shift_sub_group_right") ||
+                (MapNames::getDpctNamespace() + "shift_sub_group_right") ||
             NewAPIName ==
-                (MapNames::getC2SNamespace() + "shift_sub_group_left") ||
+                (MapNames::getDpctNamespace() + "shift_sub_group_left") ||
             NewAPIName ==
-                (MapNames::getC2SNamespace() + "select_from_sub_group") ||
+                (MapNames::getDpctNamespace() + "select_from_sub_group") ||
             NewAPIName ==
-                (MapNames::getC2SNamespace() + "permute_sub_group_by_xor")) {
+                (MapNames::getDpctNamespace() + "permute_sub_group_by_xor")) {
           ShflFunctions.push_back(
               {NewAPIName, {std::get<1>(Element), std::get<2>(Element)}});
         }
@@ -1039,10 +1039,10 @@ void KernelCallExpr::printSubmitLamda(KernelPrinter &Printer) {
 
 void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
   if (!SubmitStmtsList.NdRangeList.empty() &&
-      C2SGlobalInfo::isCommentsEnabled())
+      DpctGlobalInfo::isCommentsEnabled())
     Printer.line("// run the kernel within defined ND range");
   Printer << "parallel_for";
-  if (C2SGlobalInfo::isSyclNamedLambda()) {
+  if (DpctGlobalInfo::isSyclNamedLambda()) {
     Printer << "<c2s_kernel_name<class " << getName() << "_"
             << LocInfo.LocHash;
     if (hasTemplateArgs())
@@ -1053,22 +1053,22 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
   (Printer << "(").newLine();
   auto B = Printer.block();
   static std::string CanIgnoreRangeStr3D =
-      C2SGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 3) +
+      DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 3) +
       "(1, 1, 1)";
   static std::string CanIgnoreRangeStr1D =
-      C2SGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 1) +
+      DpctGlobalInfo::getCtadClass(MapNames::getClNamespace() + "range", 1) +
       "(1)";
   if (ExecutionConfig.NdRange != "") {
     Printer.line(ExecutionConfig.NdRange + ",");
     Printer.line("[=](", MapNames::getClNamespace(), "nd_item<3> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
-  } else if (C2SGlobalInfo::getAssumedNDRangeDim() == 1 && getFuncInfo() &&
+  } else if (DpctGlobalInfo::getAssumedNDRangeDim() == 1 && getFuncInfo() &&
              MemVarMap::getHeadWithoutPathCompression(
                  &(getFuncInfo()->getVarMap())) &&
              MemVarMap::getHeadWithoutPathCompression(
                  &(getFuncInfo()->getVarMap()))
                      ->Dim == 1) {
-    C2SGlobalInfo::printCtadClass(Printer.indent(),
+    DpctGlobalInfo::printCtadClass(Printer.indent(),
                                    MapNames::getClNamespace() + "nd_range", 1)
         << "(";
     if (ExecutionConfig.GroupSizeFor1D == CanIgnoreRangeStr1D) {
@@ -1085,7 +1085,7 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
     Printer.line("[=](" + MapNames::getClNamespace() + "nd_item<1> ",
                  getItemName(), ")", ExecutionConfig.SubGroupSize, " {");
   } else {
-    C2SGlobalInfo::printCtadClass(Printer.indent(),
+    DpctGlobalInfo::printCtadClass(Printer.indent(),
                                    MapNames::getClNamespace() + "nd_range", 3)
         << "(";
     if (ExecutionConfig.GroupSize == CanIgnoreRangeStr3D) {
@@ -1105,25 +1105,25 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
 
   if (getVarMap().hasSync()) {
     std::string SyncParamDecl;
-    if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
       SyncParamDecl =
-          "auto atm_" + C2SGlobalInfo::getSyncName() + " = " +
+          "auto atm_" + DpctGlobalInfo::getSyncName() + " = " +
           MapNames::getClNamespace() + "atomic_ref<unsigned int, " +
           MapNames::getClNamespace() + "memory_order::seq_cst, " +
           MapNames::getClNamespace() + "memory_scope::device, " +
           MapNames::getClNamespace() + "access::address_space::global_space>(" +
-          C2SGlobalInfo::getSyncName() + "[0]);";
+          DpctGlobalInfo::getSyncName() + "[0]);";
 
     } else {
       SyncParamDecl =
-          "auto atm_" + C2SGlobalInfo::getSyncName() + " = " +
+          "auto atm_" + DpctGlobalInfo::getSyncName() + " = " +
           MapNames::getClNamespace() + "atomic_ref<unsigned int, " +
           MapNames::getClNamespace() + "memory_order::seq_cst, " +
           MapNames::getClNamespace() + "memory_scope::device, " +
           MapNames::getClNamespace() +
           "access::address_space::global_space>(*(unsigned int "
           "*)&" +
-          C2SGlobalInfo::getSyncName() + "[0]);";
+          DpctGlobalInfo::getSyncName() + "[0]);";
     }
     KernelStmts.emplace_back(SyncParamDecl);
   }
@@ -1229,7 +1229,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
 std::shared_ptr<KernelCallExpr>
 KernelCallExpr::buildForWrapper(std::string FilePath, const FunctionDecl *FD,
                                 std::shared_ptr<DeviceFunctionInfo> FuncInfo) {
-  auto &SM = C2SGlobalInfo::getSourceManager();
+  auto &SM = DpctGlobalInfo::getSourceManager();
   auto Kernel =
       std::shared_ptr<KernelCallExpr>(new KernelCallExpr(0, FilePath));
   Kernel->Name = FD->getNameAsString();
@@ -1286,7 +1286,7 @@ void KernelCallExpr::addReplacements() {
   auto R = std::make_shared<ExtReplacement>(getFilePath(), getBegin(), 0,
                                             getReplacement(), nullptr);
   R->setBlockLevelFormatFlag();
-  C2SGlobalInfo::getInstance().addReplacement(R);
+  DpctGlobalInfo::getInstance().addReplacement(R);
 }
 
 void CallFunctionExpr::buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL) {
@@ -1307,7 +1307,7 @@ void CallFunctionExpr::buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL) {
 }
 
 void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
-  auto &SM = C2SGlobalInfo::getSourceManager();
+  auto &SM = DpctGlobalInfo::getSourceManager();
   // Check if the whole kernel call is in macro arg
   auto CallBegin = KernelCall->getBeginLoc();
   auto CallEnd = KernelCall->getEndLoc();
@@ -1324,9 +1324,9 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   }
   CalleeSpelling = SM.getSpellingLoc(CalleeSpelling);
 
-  auto ItMatch = c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
+  auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
       getCombinedStrFromLoc(CalleeSpelling));
-  if (ItMatch != c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+  if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     IsInMacroDefine = true;
   }
 }
@@ -1441,7 +1441,7 @@ void deduceTemplateArgumentFromTemplateArgs(
       }
       break;
     default:
-      // Currently c2s does not restore enough information
+      // Currently dpct does not restore enough information
       // to deduce from other kinds of template arguments.
       // Stop the deduction.
       return;
@@ -1454,7 +1454,7 @@ void deduceTemplateArgumentFromTemplateArgs(
 bool compareTemplateName(std::string N1, TemplateName N2) {
   std::string NameStr;
   llvm::raw_string_ostream OS(NameStr);
-  N2.print(OS, C2SGlobalInfo::getContext().getPrintingPolicy(),
+  N2.print(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
            TemplateName::Qualified::Fully);
   OS.flush();
   return N1.compare(NameStr);
@@ -1465,7 +1465,7 @@ bool compareTemplateName(std::string N1, TemplateName N2) {
 bool compareTemplateName(TemplateName N1, TemplateName N2) {
   std::string NameStr;
   llvm::raw_string_ostream OS(NameStr);
-  N1.print(OS, C2SGlobalInfo::getContext().getPrintingPolicy(),
+  N1.print(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
     TemplateName::Qualified::Fully);
   OS.flush();
   return compareTemplateName(NameStr, N2);
@@ -1688,7 +1688,7 @@ bool deduceTemplateArguments(const CallT *C, const FunctionTemplateDecl *FTD,
   if (!FTD)
     return false;
 
-  if (!C2SGlobalInfo::isInRoot(FTD->getBeginLoc()))
+  if (!DpctGlobalInfo::isInRoot(FTD->getBeginLoc()))
     return false;
   auto &TemplateParmsList = *FTD->getTemplateParameters();
   if (TAIList.size() == TemplateParmsList.size())
@@ -1753,7 +1753,7 @@ bool deduceTemplateArguments(const CallT *C, const NamedDecl *ND,
 /// 3. the rest sequence of \p FD is the namespace sequence
 std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
                                                    const Expr *Callee) {
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto getNamespaceSeq =
       [&](DynTypedNodeList Parents) -> std::deque<std::string> {
     std::deque<std::string> Seq;
@@ -1848,7 +1848,7 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
       deduceTemplateArguments(Ctor, CtorDecl, TemplateArgs);
 
   SourceLocation InsertLocation;
-  auto &SM = C2SGlobalInfo::getSourceManager();
+  auto &SM = DpctGlobalInfo::getSourceManager();
   if (FuncInfo) {
     if (FuncInfo->NonDefaultParamNum) {
       if (Ctor->getNumArgs() >= FuncInfo->NonDefaultParamNum) {
@@ -1864,8 +1864,8 @@ void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
   }
   ExtraArgLoc = SM.getFileOffset(Lexer::getLocForEndOfToken(
       getActualInsertLocation(InsertLocation, SM,
-                              C2SGlobalInfo::getContext().getLangOpts()),
-      0, SM, C2SGlobalInfo::getContext().getLangOpts()));
+                              DpctGlobalInfo::getContext().getLangOpts()),
+      0, SM, DpctGlobalInfo::getContext().getLangOpts()));
 }
 
 void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
@@ -1898,24 +1898,24 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
   if (FuncInfo) {
     if (FuncInfo->ParamsNum == 0) {
       ExtraArgLoc =
-          C2SGlobalInfo::getSourceManager().getFileOffset(CE->getRParenLoc());
+          DpctGlobalInfo::getSourceManager().getFileOffset(CE->getRParenLoc());
     } else if (FuncInfo->NonDefaultParamNum == 0) {
       // if all params have default value
-      ExtraArgLoc = C2SGlobalInfo::getSourceManager().getFileOffset(
+      ExtraArgLoc = DpctGlobalInfo::getSourceManager().getFileOffset(
           CE->getArg(HasImplicitArg ? 1 : 0)->getBeginLoc());
     } else {
       // if some params have default value, set ExtraArgLoc to the location
       // before the comma
       if (CE->getNumArgs() > FuncInfo->NonDefaultParamNum - 1) {
-        auto &SM = C2SGlobalInfo::getSourceManager();
+        auto &SM = DpctGlobalInfo::getSourceManager();
         auto TokenLoc = Lexer::getLocForEndOfToken(
             getActualInsertLocation(
                 CE->getArg(FuncInfo->NonDefaultParamNum - 1 + HasImplicitArg)
                     ->getEndLoc(),
-                SM, C2SGlobalInfo::getContext().getLangOpts()),
-            0, SM, C2SGlobalInfo::getContext().getLangOpts());
+                SM, DpctGlobalInfo::getContext().getLangOpts()),
+            0, SM, DpctGlobalInfo::getContext().getLangOpts());
         ExtraArgLoc =
-            C2SGlobalInfo::getSourceManager().getFileOffset(TokenLoc);
+            DpctGlobalInfo::getSourceManager().getFileOffset(TokenLoc);
       } else {
         ExtraArgLoc = 0;
       }
@@ -1994,7 +1994,7 @@ void CallFunctionExpr::emplaceReplacement() {
   buildInfo();
 
   if (ExtraArgLoc)
-    C2SGlobalInfo::getInstance().addReplacement(
+    DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, ExtraArgLoc, 0,
                                          getExtraArguments(), nullptr));
 }
@@ -2031,11 +2031,11 @@ void ExplicitInstantiationDecl::initTemplateArgumentList(
     const TemplateArgumentListInfo &TAList,
     const FunctionDecl *Specialization) {
   ExprAnalysis EA;
-  auto &SM = C2SGlobalInfo::getSourceManager();
+  auto &SM = DpctGlobalInfo::getSourceManager();
   for (auto &ArgLoc : TAList.arguments()) {
     EA.analyze(ArgLoc);
     if (EA.hasReplacement()) {
-      C2SGlobalInfo::getInstance().addReplacement(
+      DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(SM, &ArgLoc, EA.getReplacedString(),
                                            nullptr));
     }
@@ -2066,7 +2066,7 @@ void processTypeLoc(const TypeLoc &TL, ExprAnalysis &EA,
                     const SourceManager &SM) {
   EA.analyze(TL);
   if (EA.hasReplacement()) {
-    C2SGlobalInfo::getInstance().addReplacement(
+    DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(SM, &TL, EA.getReplacedString(),
                                          nullptr));
   }
@@ -2074,7 +2074,7 @@ void processTypeLoc(const TypeLoc &TL, ExprAnalysis &EA,
 
 void ExplicitInstantiationDecl::processFunctionTypeLoc(
     const FunctionTypeLoc &FTL) {
-  auto &SM = C2SGlobalInfo::getSourceManager();
+  auto &SM = DpctGlobalInfo::getSourceManager();
   ExprAnalysis EA;
   processTypeLoc(FTL.getReturnLoc(), EA, SM);
   for (auto Parm : FTL.getParams()) {
@@ -2086,7 +2086,7 @@ void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
   if (this == Other.get())
     return;
   VarMap.merge(Other->getVarMap());
-  c2s::merge(CallExprMap, Other->CallExprMap);
+  dpct::merge(CallExprMap, Other->CallExprMap);
   mergeTextureTypeList(Other->TextureObjectTypeList);
 }
 
@@ -2204,7 +2204,7 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
   auto Repl = std::make_shared<ExtReplacement>(FilePath, DeclEnd, 0, WrapperStr,
                                                nullptr);
   Repl->setBlockLevelFormatFlag();
-  C2SGlobalInfo::getInstance().addReplacement(Repl);
+  DpctGlobalInfo::getInstance().addReplacement(Repl);
 }
 
 inline void DeviceFunctionDecl::emplaceReplacement() {
@@ -2212,11 +2212,11 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
   auto Repl = std::make_shared<ExtReplacement>(
       FilePath, ReplaceOffset, ReplaceLength, getExtraParameters(), nullptr);
   Repl->setNotFormatFlag();
-  C2SGlobalInfo::getInstance().addReplacement(Repl);
+  DpctGlobalInfo::getInstance().addReplacement(Repl);
 
   if (FuncInfo->IsSyclExternMacroNeeded()) {
     std::string StrRepl = "SYCL_EXTERNAL ";
-    C2SGlobalInfo::getInstance().addReplacement(
+    DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, Offset, 0, StrRepl,
                                          nullptr));
   }
@@ -2248,7 +2248,7 @@ void DeviceFunctionDeclInModule::buildParameterInfo(const FunctionDecl *FD) {
 }
 
 void DeviceFunctionDeclInModule::buildWrapperInfo(const FunctionDecl *FD) {
-  auto &SM = C2SGlobalInfo::getSourceManager();
+  auto &SM = DpctGlobalInfo::getSourceManager();
   const FunctionDecl *Def;
   HasBody = FD->hasBody(Def);
   if (HasBody && FD != Def) {
@@ -2261,11 +2261,11 @@ void DeviceFunctionDeclInModule::buildWrapperInfo(const FunctionDecl *FD) {
   auto EndLoc =
       SM.getSpellingLoc(SM.getExpansionRange(FD->getEndLoc()).getEnd());
   auto LastTokenLen = Lexer::MeasureTokenLength(
-      EndLoc, SM, c2s::C2SGlobalInfo::getContext().getLangOpts());
+      EndLoc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
   EndLoc = EndLoc.getLocWithOffset(LastTokenLen);
   if (!HasBody) {
     LastTokenLen = Lexer::MeasureTokenLength(
-        EndLoc, SM, c2s::C2SGlobalInfo::getContext().getLangOpts());
+        EndLoc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
     EndLoc = EndLoc.getLocWithOffset(LastTokenLen);
   }
   DeclEnd = SM.getFileOffset(EndLoc);
@@ -2276,10 +2276,10 @@ void DeviceFunctionDeclInModule::buildCallInfo(const FunctionDecl *FD) {
 }
 
 bool isModuleFunction(const FunctionDecl *FD) {
-  auto &SM = C2SGlobalInfo::getSourceManager();
-  if (C2SGlobalInfo::getModuleFiles().find(
-          C2SGlobalInfo::getLocInfo(SM.getExpansionLoc(FD->getBeginLoc()))
-              .first) != C2SGlobalInfo::getModuleFiles().end()) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  if (DpctGlobalInfo::getModuleFiles().find(
+          DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(FD->getBeginLoc()))
+              .first) != DpctGlobalInfo::getModuleFiles().end()) {
     return true;
   }
   return false;
@@ -2509,8 +2509,8 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionTypeLoc &FTL,
     return;
 
   SourceLocation InsertLocation;
-  auto &SM = C2SGlobalInfo::getSourceManager();
-  auto &LO = C2SGlobalInfo::getContext().getLangOpts();
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  auto &LO = DpctGlobalInfo::getContext().getLangOpts();
   if (NonDefaultParamNum) {
     InsertLocation = FTL.getParam(NonDefaultParamNum - 1)->getEndLoc();
   } else {
@@ -2532,15 +2532,15 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionTypeLoc &FTL,
   // Keep skiping #ifdef #endif pair
   Token TokOfHash;
   if (!Lexer::getRawToken(InsertLocation, TokOfHash, SM, LO, true)) {
-    auto ItIf = C2SGlobalInfo::getEndifLocationOfIfdef().find(
+    auto ItIf = DpctGlobalInfo::getEndifLocationOfIfdef().find(
         getHashStrFromLoc(TokOfHash.getEndLoc()));
-    while (ItIf != C2SGlobalInfo::getEndifLocationOfIfdef().end()) {
+    while (ItIf != DpctGlobalInfo::getEndifLocationOfIfdef().end()) {
       InsertLocation = Lexer::getLocForEndOfToken(ItIf->second, 0, SM, LO);
       InsertLocation = Lexer::GetBeginningOfToken(
           Lexer::findNextToken(InsertLocation, SM, LO)->getLocation(), SM, LO);
       if (Lexer::getRawToken(InsertLocation, TokOfHash, SM, LO, true))
         break;
-      ItIf = C2SGlobalInfo::getEndifLocationOfIfdef().find(
+      ItIf = DpctGlobalInfo::getEndifLocationOfIfdef().find(
           getHashStrFromLoc(TokOfHash.getEndLoc()));
     }
   }
@@ -2578,14 +2578,14 @@ void DeviceFunctionDecl::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
 
 void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
                                   std::shared_ptr<DeviceFunctionInfo> &Info) {
-  if (!C2SGlobalInfo::isInRoot(FD->getBeginLoc()))
+  if (!DpctGlobalInfo::isInRoot(FD->getBeginLoc()))
     return;
   if (!FD->hasAttr<CUDADeviceAttr>() && !FD->hasAttr<CUDAGlobalAttr>())
     return;
 
   /// Ignore explicit instantiation definition, as the decl in AST has wrong
   /// location info. And it is processed in
-  /// C2SConsumer::HandleCXXExplicitFunctionInstantiation
+  /// DPCTConsumer::HandleCXXExplicitFunctionInstantiation
   if (FD->getTemplateSpecializationKind() ==
       TSK_ExplicitInstantiationDefinition)
     return;
@@ -2607,9 +2607,9 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
   }
   std::shared_ptr<DeviceFunctionDecl> D;
   if (isModuleFunction(FD)) {
-    D = C2SGlobalInfo::getInstance().insertDeviceFunctionDeclInModule(FD);
+    D = DpctGlobalInfo::getInstance().insertDeviceFunctionDeclInModule(FD);
   } else {
-    D = C2SGlobalInfo::getInstance().insertDeviceFunctionDecl(FD);
+    D = DpctGlobalInfo::getInstance().insertDeviceFunctionDecl(FD);
   }
   if (Info) {
     if (auto FuncInfo = D->getFuncInfo())
@@ -2648,7 +2648,7 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
         Info);
     break;
   default:
-    C2SDiags() << "[DeviceFunctionDecl::LinkDecl] Unexpected decl type: "
+    DpctDiags() << "[DeviceFunctionDecl::LinkDecl] Unexpected decl type: "
                 << ND->getDeclKindName() << "\n";
     return;
   }
@@ -2657,7 +2657,7 @@ void DeviceFunctionDecl::LinkDecl(const NamedDecl *ND, DeclList &List,
 MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
                        const VarDecl *Var)
     : VarInfo(Offset, FilePath, Var,
-              !(C2SGlobalInfo::useGroupLocalMemory() &&
+              !(DpctGlobalInfo::useGroupLocalMemory() &&
                 getAddressAttr(Var) == Shared &&
                 Var->getStorageClass() != SC_Extern) &&
                   isLexicallyInLocalScope(Var)),
@@ -2667,7 +2667,7 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
                 : Global),
       PointerAsArray(false) {
   if (getType()->isPointer() && getScope() == Global &&
-      C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+      DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
     Attr = Device;
     getType()->adjustAsMemType();
     PointerAsArray = true;
@@ -2727,12 +2727,12 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
 
 std::shared_ptr<DeviceFunctionInfo> &
 DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
-  C2SNameGenerator G;
+  DpctNameGenerator G;
   std::string Key;
   // For static functions or functions in anonymous namespace, we
   // need to add filepath as prefix to differentiate them.
   if (FD->isStatic() || FD->isInAnonymousNamespace()) {
-    auto LocInfo = C2SGlobalInfo::getLocInfo(FD);
+    auto LocInfo = DpctGlobalInfo::getLocInfo(FD);
     Key = LocInfo.first + G.getName(FD);
   } else {
     Key = G.getName(FD);
@@ -2741,19 +2741,19 @@ DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
 }
 
 std::shared_ptr<MemVarInfo> MemVarInfo::buildMemVarInfo(const VarDecl *Var) {
-  if (auto Func = C2SGlobalInfo::findAncestor<FunctionDecl>(Var)) {
+  if (auto Func = DpctGlobalInfo::findAncestor<FunctionDecl>(Var)) {
     if (Func->getTemplateSpecializationKind() ==
             TSK_ExplicitInstantiationDefinition ||
         Func->getTemplateSpecializationKind() == TSK_ImplicitInstantiation)
       return std::shared_ptr<MemVarInfo>();
-    auto LocInfo = C2SGlobalInfo::getLocInfo(Var);
+    auto LocInfo = DpctGlobalInfo::getLocInfo(Var);
     auto VI = std::make_shared<MemVarInfo>(LocInfo.second, LocInfo.first, Var);
-    if (!C2SGlobalInfo::useGroupLocalMemory() || !VI->isShared() ||
+    if (!DpctGlobalInfo::useGroupLocalMemory() || !VI->isShared() ||
         VI->isExtern())
       DeviceFunctionDecl::LinkRedecls(Func)->addVar(VI);
     return VI;
   }
-  return C2SGlobalInfo::getInstance().insertMemVarInfo(Var);
+  return DpctGlobalInfo::getInstance().insertMemVarInfo(Var);
 }
 
 MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const AttrVec &Attrs) {
@@ -2774,36 +2774,36 @@ MemVarInfo::VarAttrKind MemVarInfo::getAddressAttr(const AttrVec &Attrs) {
 
 std::string MemVarInfo::getMemoryType() {
   switch (Attr) {
-  case clang::c2s::MemVarInfo::Device: {
+  case clang::dpct::MemVarInfo::Device: {
     requestFeature(HelperFeatureEnum::Memory_global_memory_alias,
                    getFilePath());
     static std::string DeviceMemory =
-        MapNames::getC2SNamespace() + "global_memory";
+        MapNames::getDpctNamespace() + "global_memory";
     return getMemoryType(DeviceMemory, getType());
   }
-  case clang::c2s::MemVarInfo::Constant: {
+  case clang::dpct::MemVarInfo::Constant: {
     requestFeature(HelperFeatureEnum::Memory_constant_memory_alias,
                    getFilePath());
     static std::string ConstantMemory =
-        MapNames::getC2SNamespace() + "constant_memory";
+        MapNames::getDpctNamespace() + "constant_memory";
     return getMemoryType(ConstantMemory, getType());
   }
-  case clang::c2s::MemVarInfo::Shared: {
+  case clang::dpct::MemVarInfo::Shared: {
     static std::string SharedMemory =
-        MapNames::getC2SNamespace() + "local_memory";
+        MapNames::getDpctNamespace() + "local_memory";
     static std::string ExternSharedMemory =
-        MapNames::getC2SNamespace() + "extern_local_memory";
+        MapNames::getDpctNamespace() + "extern_local_memory";
     if (isExtern())
       return ExternSharedMemory;
     return getMemoryType(SharedMemory, getType());
   }
-  case clang::c2s::MemVarInfo::Managed: {
+  case clang::dpct::MemVarInfo::Managed: {
 
     requestFeature(HelperFeatureEnum::Memory_shared_memory_alias,
                    getFilePath());
 
     static std::string ManagedMemory =
-        MapNames::getC2SNamespace() + "shared_memory";
+        MapNames::getDpctNamespace() + "shared_memory";
 
     return getMemoryType(ManagedMemory, getType());
   }
@@ -2816,21 +2816,21 @@ std::string MemVarInfo::getMemoryType() {
 const std::string &MemVarInfo::getMemoryAttr() {
   requestFeature(HelperFeatureEnum::Memory_memory_region, getFilePath());
   switch (Attr) {
-  case clang::c2s::MemVarInfo::Device: {
-    static std::string DeviceMemory = MapNames::getC2SNamespace() + "global";
+  case clang::dpct::MemVarInfo::Device: {
+    static std::string DeviceMemory = MapNames::getDpctNamespace() + "global";
     return DeviceMemory;
   }
-  case clang::c2s::MemVarInfo::Constant: {
+  case clang::dpct::MemVarInfo::Constant: {
     static std::string ConstantMemory =
-        MapNames::getC2SNamespace() + "constant";
+        MapNames::getDpctNamespace() + "constant";
     return ConstantMemory;
   }
-  case clang::c2s::MemVarInfo::Shared: {
-    static std::string SharedMemory = MapNames::getC2SNamespace() + "local";
+  case clang::dpct::MemVarInfo::Shared: {
+    static std::string SharedMemory = MapNames::getDpctNamespace() + "local";
     return SharedMemory;
   }
-  case clang::c2s::MemVarInfo::Managed: {
-    static std::string ManagedMemory = MapNames::getC2SNamespace() + "shared";
+  case clang::dpct::MemVarInfo::Managed: {
+    static std::string ManagedMemory = MapNames::getDpctNamespace() + "shared";
     return ManagedMemory;
   }
   default:
@@ -2842,8 +2842,8 @@ const std::string &MemVarInfo::getMemoryAttr() {
 
 std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
   switch (Scope) {
-  case clang::c2s::MemVarInfo::Local:
-    if (C2SGlobalInfo::useGroupLocalMemory() && VD) {
+  case clang::dpct::MemVarInfo::Local:
+    if (DpctGlobalInfo::useGroupLocalMemory() && VD) {
       std::string Ret;
       llvm::raw_string_ostream OS(Ret);
       OS << "auto &" << getName() << " = "
@@ -2859,13 +2859,13 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
       return OS.str();
     }
     return "";
-  case clang::c2s::MemVarInfo::Extern:
+  case clang::dpct::MemVarInfo::Extern:
     if (isShared() && getType()->getDimension() > 1) {
       // For case like:
       // extern __shared__ int shad_mem[][2][3];
       // int p = shad_mem[0][0][2];
       // will be migrated to:
-      // auto shad_mem = (int(*)[2][3])c2s_local;
+      // auto shad_mem = (int(*)[2][3])dpct_local;
       std::string Dimension;
       size_t Index = 0;
       for (auto &Entry : getType()->getRange()) {
@@ -2880,7 +2880,7 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
 
     return buildString("auto ", getName(), " = (", getType()->getBaseName(),
                        " *)", ExternVariableName, ";");
-  case clang::c2s::MemVarInfo::Global: {
+  case clang::dpct::MemVarInfo::Global: {
     if (isShared())
       return "";
     return getMemoryDecl();
@@ -2956,7 +2956,7 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
       }
     }
     AccList.emplace_back(std::move(AccDecl));
-  } else if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted &&
+  } else if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted &&
              AccMode != Accessor) {
     requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
                    getFilePath());
@@ -2985,11 +2985,11 @@ void removeDuplicateVar(GlobalMap<T> &VarMap,
 }
 void MemVarMap::removeDuplicateVar() {
   std::unordered_set<std::string> VarNames{getItemName(),
-                                           C2SGlobalInfo::getStreamName()};
-  c2s::removeDuplicateVar(GlobalVarMap, VarNames);
-  c2s::removeDuplicateVar(LocalVarMap, VarNames);
-  c2s::removeDuplicateVar(ExternVarMap, VarNames);
-  c2s::removeDuplicateVar(TextureMap, VarNames);
+                                           DpctGlobalInfo::getStreamName()};
+  dpct::removeDuplicateVar(GlobalVarMap, VarNames);
+  dpct::removeDuplicateVar(LocalVarMap, VarNames);
+  dpct::removeDuplicateVar(ExternVarMap, VarNames);
+  dpct::removeDuplicateVar(TextureMap, VarNames);
 }
 
 std::string MemVarMap::getExtraCallArguments(bool HasPreParam,
@@ -3035,7 +3035,7 @@ void CtTypeInfo::setTypeInfo(const TypeLoc &TL, bool NeedSizeFold) {
   switch (TL.getTypeLocClass()) {
   case TypeLoc::Qualified:
     BaseName = TL.getType().getLocalQualifiers().getAsString(
-        C2SGlobalInfo::getContext().getPrintingPolicy());
+        DpctGlobalInfo::getContext().getPrintingPolicy());
     return setTypeInfo(TYPELOC_CAST(QualifiedTypeLoc).getUnqualifiedLoc(),
                        NeedSizeFold);
   case TypeLoc::ConstantArray:
@@ -3140,7 +3140,7 @@ void SizeInfo::setTemplateList(
 // In the type migration rule, only location has been recorded. So in this
 // function, other info from generator creation API is added.
 void RandomEngineInfo::updateEngineType() {
-  auto FileInfo = C2SGlobalInfo::getInstance().insertFile(DeclFilePath);
+  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(DeclFilePath);
   auto &M = FileInfo->getHostRandomEngineTypeMap();
 
   auto Iter = M.find(DeclaratorDeclTypeBeginOffset);
@@ -3177,7 +3177,7 @@ void RandomEngineInfo::buildInfo() {
     if (IsAssigned) {
       Repl = "(" + Repl + ", 0)";
     }
-    C2SGlobalInfo::getInstance().addReplacement(
+    DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(CreateCallFilePath[i],
                                          CreateAPIBegin[i], CreateAPILength[i],
                                          Repl, nullptr));
@@ -3187,11 +3187,11 @@ void RandomEngineInfo::buildInfo() {
 void TimeStubTypeInfo::buildInfo(std::string FilePath, unsigned int Offset,
                                  bool isReplTxtWithSB) {
   if (isReplTxtWithSB)
-    C2SGlobalInfo::getInstance().addReplacement(
+    DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, Offset, Length, StrWithSB,
                                          nullptr));
   else
-    C2SGlobalInfo::getInstance().addReplacement(
+    DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, Offset, Length, StrWithoutSB,
                                          nullptr));
 }
@@ -3204,19 +3204,19 @@ void HostRandomEngineTypeInfo::buildInfo(std::string FilePath,
     return;
 
   if (HasValue && !EngineType.empty()) {
-    C2SGlobalInfo::getInstance().addReplacement(
+    DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, Offset, Length,
                                          "std::shared_ptr<" + EngineType + ">",
                                          nullptr));
-  } else if (C2SGlobalInfo::getHostRNGEngineTypeSet().size() == 1) {
-    C2SGlobalInfo::getInstance().addReplacement(
+  } else if (DpctGlobalInfo::getHostRNGEngineTypeSet().size() == 1) {
+    DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
             FilePath, Offset, Length,
             "std::shared_ptr<" +
-                *C2SGlobalInfo::getHostRNGEngineTypeSet().begin() + ">",
+                *DpctGlobalInfo::getHostRNGEngineTypeSet().begin() + ">",
             nullptr));
   } else {
-    C2SGlobalInfo::getInstance().addReplacement(
+    DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
             FilePath, Offset, Length,
             "std::shared_ptr<c2s_placeholder/*Fix the engine type manually*/>",
@@ -3237,7 +3237,7 @@ void HostRandomDistrInfo::buildInfo(std::string FilePath, unsigned int Offset,
   else
     InsertStr = DistrType + "<" + ValueType + "> " + DistrName + "(" +
                 DistrArg + ");" + getNL() + IndentStr;
-  C2SGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       FilePath, Offset, 0, InsertStr, nullptr));
 }
 
@@ -3250,18 +3250,18 @@ void EventSyncTypeInfo::buildInfo(std::string FilePath, unsigned int Offset) {
     ReplText = "0";
   }
 
-  C2SGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       FilePath, Offset, Length, ReplText, nullptr));
 }
 
 void BuiltinVarInfo::buildInfo(std::string FilePath, unsigned int Offset,
                                unsigned int ID) {
   std::string R = Repl + std::to_string(ID) + ")";
-  C2SGlobalInfo::getInstance().addReplacement(
+  DpctGlobalInfo::getInstance().addReplacement(
       std::make_shared<ExtReplacement>(FilePath, Offset, Len, R, nullptr));
 }
 
-bool isInRoot(SourceLocation SL) { return C2SGlobalInfo::isInRoot(SL); }
+bool isInRoot(SourceLocation SL) { return DpctGlobalInfo::isInRoot(SL); }
 
 std::vector<std::shared_ptr<FreeQueriesInfo>> FreeQueriesInfo::InfoList;
 std::vector<std::shared_ptr<FreeQueriesInfo::MacroInfo>>
@@ -3296,7 +3296,7 @@ FreeQueriesInfo::getInfo(const FunctionDecl *FD) {
       return std::shared_ptr<FreeQueriesInfo>();
 
     auto ExtraDeclLoc = CS->body_front()->getBeginLoc();
-    auto LocInfo = C2SGlobalInfo::getLocInfo(ExtraDeclLoc);
+    auto LocInfo = DpctGlobalInfo::getLocInfo(ExtraDeclLoc);
     auto Iter = std::find_if(InfoList.begin(), InfoList.end(),
                              [&](const std::shared_ptr<FreeQueriesInfo> &Info) {
                                return Info->FilePath == LocInfo.first &&
@@ -3311,7 +3311,7 @@ FreeQueriesInfo::getInfo(const FunctionDecl *FD) {
     Info->Idx = InfoList.size();
     Info->FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
     Info->Indent =
-        getIndent(ExtraDeclLoc, C2SGlobalInfo::getSourceManager()).str();
+        getIndent(ExtraDeclLoc, DpctGlobalInfo::getSourceManager()).str();
     Info->NL = getNL();
     InfoList.push_back(Info);
     return Info;
@@ -3324,23 +3324,23 @@ template<class Node>
 void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Node *S,
                                          const FunctionDecl *FD,
                                          FreeQueriesKind K) {
-#ifdef C2S_DEBUG_BUILD
+#ifdef DPCT_DEBUG_BUILD
   assert(K != FreeQueriesKind::End && "Unexpected FreeQueriesKind::End");
-#endif // C2S_DEBUG_BUILD
+#endif // DPCT_DEBUG_BUILD
 
   if (!FD) {
-    FD = C2SGlobalInfo::getParentFunction(S);
+    FD = DpctGlobalInfo::getParentFunction(S);
   }
 
-  if (C2SGlobalInfo::useFreeQueries()) {
+  if (DpctGlobalInfo::useFreeQueries()) {
     if (auto Info = getInfo(FD)) {
       return Info->printImmediateText(OS, S->getBeginLoc(), K);
     }
 
-#ifdef C2S_DEBUG_BUILD
+#ifdef DPCT_DEBUG_BUILD
     llvm::errs() << "Can not get FreeQueriesInfo for this FunctionDecl\n";
     assert(0);
-#endif // !C2S_DEBUG_BUILD
+#endif // !DPCT_DEBUG_BUILD
 
   } else {
     DeviceFunctionDecl::LinkRedecls(FD)->setItem();
@@ -3356,8 +3356,8 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, SourceLocation S
   unsigned Index = Idx;
   auto IsMacro = SL.isMacroID();
   if (IsMacro && K != SubGroup) {
-    auto MacroLoc = C2SGlobalInfo::getLocInfo(
-        C2SGlobalInfo::getSourceManager().getSpellingLoc(SL));
+    auto MacroLoc = DpctGlobalInfo::getLocInfo(
+        DpctGlobalInfo::getSourceManager().getSpellingLoc(SL));
     auto Iter = std::find_if(MacroInfos.begin(), MacroInfos.end(),
                              [&](std::shared_ptr<MacroInfo> Info) -> bool {
                                return (MacroLoc.first == Info->FilePath) &&
@@ -3372,7 +3372,7 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, SourceLocation S
     (*Iter)->Infos.push_back(Idx);
     Index = Iter - MacroInfos.begin();
   } else {
-    auto SLocInfo = C2SGlobalInfo::getLocInfo(SL);
+    auto SLocInfo = DpctGlobalInfo::getLocInfo(SL);
     if (SLocInfo.first != FilePath)
       return;
 
@@ -3392,7 +3392,7 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, SourceLocation S
 void FreeQueriesInfo::emplaceExtraDecl() {
   std::string Ret;
   llvm::raw_string_ostream OS(Ret);
-  if (C2SGlobalInfo::getAssumedNDRangeDim() == 1) {
+  if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
     if (auto VarMapHead =
             MemVarMap::getHeadWithoutPathCompression(&FuncInfo->getVarMap())) {
       Dimension = VarMapHead->Dim;
@@ -3406,7 +3406,7 @@ void FreeQueriesInfo::emplaceExtraDecl() {
         OS, static_cast<FreeQueriesKind>(FreeQueriesKind::NdItem), Dimension);
     OS << ';' << NL << Indent;
   }
-  C2SGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
+  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       FilePath, ExtraDeclLoc, 0, OS.str(), nullptr));
 }
 
@@ -3427,19 +3427,19 @@ std::string FreeQueriesInfo::getReplaceString(unsigned Num) {
       return buildStringFromPrinter(printFreeQueriesFunctionName, Kind,
                                     MacroInfos[Index]->Dimension);
     }
-#ifdef C2S_DEBUG_BUILD
+#ifdef DPCT_DEBUG_BUILD
     llvm::errs() << "FreeQueriesInfo index[" << Index
                  << "]is larger than list size[" << InfoList.size() << "]\n";
     assert(0);
-#endif // C2S_DEBUG_BUILD
+#endif // DPCT_DEBUG_BUILD
   }
   if (Index < InfoList.size())
     return InfoList[Index]->getReplaceString(getKind(Num));
-#ifdef C2S_DEBUG_BUILD
+#ifdef DPCT_DEBUG_BUILD
   llvm::errs() << "FreeQueriesInfo index[" << Index
                << "]is larger than list size[" << InfoList.size() << "]\n";
   assert(0);
-#endif // C2S_DEBUG_BUILD
+#endif // DPCT_DEBUG_BUILD
   return "";
 }
 
@@ -3450,37 +3450,37 @@ std::string FreeQueriesInfo::getReplaceString(FreeQueriesKind K) {
     return getNames(K).ExtraVariableName;
 }
 
-void C2SGlobalInfo::printItem(llvm::raw_ostream &OS, const Stmt *S,
+void DpctGlobalInfo::printItem(llvm::raw_ostream &OS, const Stmt *S,
                                const FunctionDecl *FD) {
   FreeQueriesInfo::printImmediateText(OS, S, FD,
                                       FreeQueriesInfo::FreeQueriesKind::NdItem);
 }
-std::string C2SGlobalInfo::getItem(const Stmt *S, const FunctionDecl *FD) {
-  return buildStringFromPrinter(C2SGlobalInfo::printItem, S, FD);
+std::string DpctGlobalInfo::getItem(const Stmt *S, const FunctionDecl *FD) {
+  return buildStringFromPrinter(DpctGlobalInfo::printItem, S, FD);
 }
 
-void C2SGlobalInfo::printGroup(llvm::raw_ostream &OS, const Stmt *S,
+void DpctGlobalInfo::printGroup(llvm::raw_ostream &OS, const Stmt *S,
                                 const FunctionDecl *FD) {
   FreeQueriesInfo::printImmediateText(OS, S, FD,
                                       FreeQueriesInfo::FreeQueriesKind::Group);
 }
-std::string C2SGlobalInfo::getGroup(const Stmt *S, const FunctionDecl *FD) {
-  return buildStringFromPrinter(C2SGlobalInfo::printGroup, S, FD);
+std::string DpctGlobalInfo::getGroup(const Stmt *S, const FunctionDecl *FD) {
+  return buildStringFromPrinter(DpctGlobalInfo::printGroup, S, FD);
 }
 
-void C2SGlobalInfo::printSubGroup(llvm::raw_ostream &OS, const Stmt *S,
+void DpctGlobalInfo::printSubGroup(llvm::raw_ostream &OS, const Stmt *S,
                                    const FunctionDecl *FD) {
   FreeQueriesInfo::printImmediateText(
       OS, S, FD, FreeQueriesInfo::FreeQueriesKind::SubGroup);
 }
-std::string C2SGlobalInfo::getSubGroup(const Stmt *S, const FunctionDecl *FD) {
-  return buildStringFromPrinter(C2SGlobalInfo::printSubGroup, S, FD);
+std::string DpctGlobalInfo::getSubGroup(const Stmt *S, const FunctionDecl *FD) {
+  return buildStringFromPrinter(DpctGlobalInfo::printSubGroup, S, FD);
 }
 
 std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
                                                    int Index);
 
-std::string C2SGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
+std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   unsigned Index = 0;
   char Method = MatchedStr[RegexPrefix.length()];
   MatchedStr.substr(RegexPrefix.length() + 1).consumeInteger(10, Index);
@@ -3507,8 +3507,8 @@ std::string C2SGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
     }
     return "3";
   case 'C':
-    if (C2SGlobalInfo::getAssumedNDRangeDim() == 1) {
-      return std::to_string(C2SGlobalInfo::getInstance()
+    if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
+      return std::to_string(DpctGlobalInfo::getInstance()
                                 .getCubPlaceholderIndexMap()[Index]
                                 ->getVarMap()
                                 .getHeadNodeDim());
@@ -3523,27 +3523,27 @@ std::string C2SGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   case FreeQueriesInfo::FreeQueriesRegexCh:
     return FreeQueriesInfo::getReplaceString(Index);
   default:
-#ifdef C2S_DEBUG_BUILD
+#ifdef DPCT_DEBUG_BUILD
     llvm::errs() << "Unexpected method char: " << Method << "\n";
     assert(0);
-#endif // C2S_DEBUG_BUILD
+#endif // DPCT_DEBUG_BUILD
     return MatchedStr.str();
   }
 }
 
 const std::string &getDefaultString(HelperFuncType HFT) {
   switch (HFT) {
-  case clang::c2s::HelperFuncType::HFT_DefaultQueue: {
+  case clang::dpct::HelperFuncType::HFT_DefaultQueue: {
     const static std::string DefaultQueue =
-        MapNames::getC2SNamespace() + "get_default_queue()";
+        MapNames::getDpctNamespace() + "get_default_queue()";
     return DefaultQueue;
   }
-  case clang::c2s::HelperFuncType::HFT_CurrentDevice: {
+  case clang::dpct::HelperFuncType::HFT_CurrentDevice: {
     const static std::string DefaultQueue =
-        MapNames::getC2SNamespace() + "get_current_device()";
+        MapNames::getDpctNamespace() + "get_current_device()";
     return DefaultQueue;
   }
-  case clang::c2s::HelperFuncType::HFT_InitValue:
+  case clang::dpct::HelperFuncType::HFT_InitValue:
   default: {
     const static std::string NullString;
     return NullString;
@@ -3558,15 +3558,15 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
     return "";
   }
 
-  if (C2SGlobalInfo::getDeviceChangedFlag() ||
-      !C2SGlobalInfo::getUsingDRYPattern()) {
+  if (DpctGlobalInfo::getDeviceChangedFlag() ||
+      !DpctGlobalInfo::getUsingDRYPattern()) {
     return getDefaultString(HFT);
   }
 
   auto HelperFuncReplInfoIter =
-      C2SGlobalInfo::getHelperFuncReplInfoMap().find(Index);
+      DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);
   if (HelperFuncReplInfoIter ==
-      C2SGlobalInfo::getHelperFuncReplInfoMap().end())
+      DpctGlobalInfo::getHelperFuncReplInfoMap().end())
     return getDefaultString(HFT);
 
   std::string CounterKey =
@@ -3574,9 +3574,9 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
       std::to_string(HelperFuncReplInfoIter->second.DeclLocOffset);
 
   auto TempVariableDeclCounterIter =
-      C2SGlobalInfo::getTempVariableDeclCounterMap().find(CounterKey);
+      DpctGlobalInfo::getTempVariableDeclCounterMap().find(CounterKey);
   if (TempVariableDeclCounterIter ==
-      C2SGlobalInfo::getTempVariableDeclCounterMap().end()) {
+      DpctGlobalInfo::getTempVariableDeclCounterMap().end()) {
     return getDefaultString(HFT);
   }
 
@@ -3607,5 +3607,5 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
   return "";
 }
 
-} // namespace c2s
+} // namespace dpct
 } // namespace clang

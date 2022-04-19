@@ -16,18 +16,18 @@
 #include <map>
 
 using namespace clang;
-using namespace clang::c2s;
+using namespace clang::dpct;
 // Not use sycl:: namespace explicitly
 // KeepNamespace = false/true --> ""/"sycl::"
 std::vector<std::string> MapNames::ClNamespace = {"", "", "sycl::", "sycl::"};
-// Not use c2s:: namespace explicitly
+// Not use dpct:: namespace explicitly
 // KeepNamespace = false/true --> ""/"c2s::"
-std::vector<std::string> MapNames::C2SNamespace = {"", "c2s::"};
+std::vector<std::string> MapNames::DpctNamespace = {"", "c2s::"};
 std::string MapNames::getClNamespace(bool KeepNamespace, bool IsMathFunc) {
   return ClNamespace[(KeepNamespace << 1) + IsMathFunc];
 }
-std::string MapNames::getC2SNamespace(bool KeepNamespace) {
-  return C2SNamespace[KeepNamespace];
+std::string MapNames::getDpctNamespace(bool KeepNamespace) {
+  return DpctNamespace[KeepNamespace];
 }
 
 MapNames::MapTy MapNames::TypeNamesMap;
@@ -57,11 +57,11 @@ MapNames::MapTy MapNames::DeviceRandomGeneratorTypeMap;
 
 void MapNames::setExplicitNamespaceMap() {
 
-  auto NamespaceSet = C2SGlobalInfo::getExplicitNamespaceSet();
+  auto NamespaceSet = DpctGlobalInfo::getExplicitNamespaceSet();
   if (NamespaceSet.count(ExplicitNamespace::EN_C2S) ||
       NamespaceSet.count(ExplicitNamespace::EN_DPCT)) {
     // Use c2s:: namespace explicitly
-    C2SNamespace[0] = "c2s::";
+    DpctNamespace[0] = "c2s::";
   }
   if (NamespaceSet.count(ExplicitNamespace::EN_CL)) {
     // Use cl::sycl:: namespace explicitly
@@ -92,7 +92,7 @@ void MapNames::setExplicitNamespaceMap() {
 
   // Type names mapping.
   TypeNamesMap = {
-      {"cudaDeviceProp", getC2SNamespace() + "device_info"},
+      {"cudaDeviceProp", getDpctNamespace() + "device_info"},
       {"cudaError_t", "int"},
       {"cudaError", "int"},
       {"CUresult", "int"},
@@ -102,7 +102,7 @@ void MapNames::setExplicitNamespaceMap() {
 #else
       {"CUmodule", "void *"},
 #endif
-      {"CUfunction", getC2SNamespace() + "kernel_functor"},
+      {"CUfunction", getDpctNamespace() + "kernel_functor"},
       {"dim3", getClNamespace() + "range<3>"},
       {"int2", getClNamespace() + "int2"},
       {"struct int2", getClNamespace() + "int2"},
@@ -188,8 +188,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseMatrixType_t", "int"},
       {"cusparseOperation_t", "oneapi::mkl::transpose"},
       {"cusparseSolveAnalysisInfo_t", "int"},
-      {"thrust::device_ptr", getC2SNamespace() + "device_pointer"},
-      {"thrust::device_vector", getC2SNamespace() + "device_vector"},
+      {"thrust::device_ptr", getDpctNamespace() + "device_pointer"},
+      {"thrust::device_vector", getDpctNamespace() + "device_vector"},
       {"thrust::device_malloc_allocator",
        getClNamespace() + "buffer_allocator"},
       {"thrust::maximum", "oneapi::dpl::maximum"},
@@ -217,13 +217,13 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusolverEigType_t", "int64_t"},
       {"cusolverEigMode_t", "oneapi::mkl::job"},
       {"cusolverStatus_t", "int"},
-      {"cudaChannelFormatDesc", getC2SNamespace() + "image_channel"},
-      {"cudaChannelFormatKind", getC2SNamespace() + "image_channel_data_type"},
-      {"cudaArray", getC2SNamespace() + "image_matrix"},
-      {"cudaArray_t", getC2SNamespace() + "image_matrix_p"},
-      {"cudaTextureDesc", getC2SNamespace() + "sampling_info"},
-      {"cudaResourceDesc", getC2SNamespace() + "image_data"},
-      {"cudaTextureObject_t", getC2SNamespace() + "image_wrapper_base_p"},
+      {"cudaChannelFormatDesc", getDpctNamespace() + "image_channel"},
+      {"cudaChannelFormatKind", getDpctNamespace() + "image_channel_data_type"},
+      {"cudaArray", getDpctNamespace() + "image_matrix"},
+      {"cudaArray_t", getDpctNamespace() + "image_matrix_p"},
+      {"cudaTextureDesc", getDpctNamespace() + "sampling_info"},
+      {"cudaResourceDesc", getDpctNamespace() + "image_data"},
+      {"cudaTextureObject_t", getDpctNamespace() + "image_wrapper_base_p"},
       {"cudaTextureAddressMode", getClNamespace() + "addressing_mode"},
       {"cudaTextureFilterMode", getClNamespace() + "filtering_mode"},
       {"curandStatus_t", "int"},
@@ -234,8 +234,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaMemoryAdvise", "int"},
       {"cudaPos", getClNamespace() + "id<3>"},
       {"cudaExtent", getClNamespace() + "range<3>"},
-      {"cudaPitchedPtr", getC2SNamespace() + "pitched_data"},
-      {"cudaMemcpyKind", getC2SNamespace() + "memcpy_direction"},
+      {"cudaPitchedPtr", getDpctNamespace() + "pitched_data"},
+      {"cudaMemcpyKind", getDpctNamespace() + "memcpy_direction"},
       {"cudaComputeMode", "int"},
       {"cudaSharedMemConfig", "int"},
       {"cufftReal", "float"},
@@ -247,28 +247,28 @@ void MapNames::setExplicitNamespaceMap() {
       {"cufftType_t", "int"},
       {"cufftType", "int"},
       {"CUdevice", "int"},
-      {"CUarray_st", getC2SNamespace() + "image_matrix"},
-      {"CUarray", getC2SNamespace() + "image_matrix_p"},
+      {"CUarray_st", getDpctNamespace() + "image_matrix"},
+      {"CUarray", getDpctNamespace() + "image_matrix_p"},
       {"CUarray_format", getClNamespace() + "image_channel_type"},
       {"CUarray_format_enum", getClNamespace() + "image_channel_type"},
-      {"CUtexObject", getC2SNamespace() + "image_wrapper_base_p"},
-      {"CUDA_RESOURCE_DESC", getC2SNamespace() + "image_data"},
-      {"CUDA_TEXTURE_DESC", getC2SNamespace() + "sampling_info"},
+      {"CUtexObject", getDpctNamespace() + "image_wrapper_base_p"},
+      {"CUDA_RESOURCE_DESC", getDpctNamespace() + "image_data"},
+      {"CUDA_TEXTURE_DESC", getDpctNamespace() + "sampling_info"},
       {"CUaddress_mode", getClNamespace() + "addressing_mode"},
       {"CUaddress_mode_enum", getClNamespace() + "addressing_mode"},
       {"CUfilter_mode", getClNamespace() + "filtering_mode"},
       {"CUfilter_mode_enum", getClNamespace() + "filtering_mode"},
       {"CUdeviceptr", "void *"},
-      {"CUresourcetype_enum", getC2SNamespace() + "image_data_type"},
-      {"CUresourcetype", getC2SNamespace() + "image_data_type"},
-      {"cudaResourceType", getC2SNamespace() + "image_data_type"},
-      {"CUtexref", getC2SNamespace() + "image_wrapper_base_p"},
+      {"CUresourcetype_enum", getDpctNamespace() + "image_data_type"},
+      {"CUresourcetype", getDpctNamespace() + "image_data_type"},
+      {"cudaResourceType", getDpctNamespace() + "image_data_type"},
+      {"CUtexref", getDpctNamespace() + "image_wrapper_base_p"},
       {"cudaDeviceAttr", "int"},
       {"__nv_bfloat16", "oneapi::mkl::bfloat16"},
       {"libraryPropertyType_t",
-        getC2SNamespace() + "version_field"},
+        getDpctNamespace() + "version_field"},
       {"libraryPropertyType",
-       getC2SNamespace() + "version_field"},
+       getDpctNamespace() + "version_field"},
       // ...
   };
 
@@ -317,11 +317,11 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaDevAttrClockRate", "get_max_clock_frequency"},
       {"cudaDevAttrIntegrated", "get_integrated"},
       // enum Memcpy Kind
-      {"cudaMemcpyHostToHost", getC2SNamespace() + "host_to_host"},
-      {"cudaMemcpyHostToDevice", getC2SNamespace() + "host_to_device"},
-      {"cudaMemcpyDeviceToHost", getC2SNamespace() + "device_to_host"},
-      {"cudaMemcpyDeviceToDevice", getC2SNamespace() + "device_to_device"},
-      {"cudaMemcpyDefault", getC2SNamespace() + "automatic"},
+      {"cudaMemcpyHostToHost", getDpctNamespace() + "host_to_host"},
+      {"cudaMemcpyHostToDevice", getDpctNamespace() + "host_to_device"},
+      {"cudaMemcpyDeviceToHost", getDpctNamespace() + "device_to_host"},
+      {"cudaMemcpyDeviceToDevice", getDpctNamespace() + "device_to_device"},
+      {"cudaMemcpyDefault", getDpctNamespace() + "automatic"},
       // enum Texture Address Mode
       {"cudaAddressModeWrap", getClNamespace() + "addressing_mode::repeat"},
       {"cudaAddressModeClamp",
@@ -334,17 +334,17 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaFilterModeLinear", getClNamespace() + "filtering_mode::linear"},
       // enum Channel Format Kind
       {"cudaChannelFormatKindSigned",
-       getC2SNamespace() + "image_channel_data_type::signed_int"},
+       getDpctNamespace() + "image_channel_data_type::signed_int"},
       {"cudaChannelFormatKindUnsigned",
-       getC2SNamespace() + "image_channel_data_type::unsigned_int"},
+       getDpctNamespace() + "image_channel_data_type::unsigned_int"},
       {"cudaChannelFormatKindFloat",
-       getC2SNamespace() + "image_channel_data_type::fp"},
+       getDpctNamespace() + "image_channel_data_type::fp"},
       // enum Resource Type
-      {"cudaResourceTypeArray", getC2SNamespace() + "image_data_type::matrix"},
+      {"cudaResourceTypeArray", getDpctNamespace() + "image_data_type::matrix"},
       {"cudaResourceTypeLinear",
-       getC2SNamespace() + "image_data_type::linear"},
+       getDpctNamespace() + "image_data_type::linear"},
       {"cudaResourceTypePitch2D",
-       getC2SNamespace() + "image_data_type::pitch"},
+       getDpctNamespace() + "image_data_type::pitch"},
       // enum cudaMemoryAdvise
       {"cudaMemAdviseSetReadMostly", "0"},
       {"cudaMemAdviseUnsetReadMostly", "0"},
@@ -388,17 +388,17 @@ void MapNames::setExplicitNamespaceMap() {
       {"CU_TR_FILTER_MODE_LINEAR", getClNamespace() + "filtering_mode::linear"},
       // enum CUresourcetype_enum
       {"CU_RESOURCE_TYPE_ARRAY",
-       getC2SNamespace() + "image_data_type::matrix"},
+       getDpctNamespace() + "image_data_type::matrix"},
       {"CU_RESOURCE_TYPE_LINEAR",
-       getC2SNamespace() + "image_data_type::linear"},
+       getDpctNamespace() + "image_data_type::linear"},
       {"CU_RESOURCE_TYPE_PITCH2D",
-       getC2SNamespace() + "image_data_type::pitch"},
+       getDpctNamespace() + "image_data_type::pitch"},
       {"MAJOR_VERSION",
-       getC2SNamespace() + "version_field::major"},
+       getDpctNamespace() + "version_field::major"},
       {"MINOR_VERSION",
-       getC2SNamespace() + "version_field::update"},
+       getDpctNamespace() + "version_field::update"},
       {"PATCH_LEVEL",
-       getC2SNamespace() + "version_field::patch"},
+       getDpctNamespace() + "version_field::patch"},
       // ...
   };
 
@@ -862,67 +862,67 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasSgetrfBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{}, -1, -1, -1,
-        getC2SNamespace() + "getrf_batch_wrapper"}},
+        getDpctNamespace() + "getrf_batch_wrapper"}},
       {"cublasDgetrfBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{}, -1, -1, -1,
-        getC2SNamespace() + "getrf_batch_wrapper"}},
+        getDpctNamespace() + "getrf_batch_wrapper"}},
       {"cublasCgetrfBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{}, -1, -1, -1,
-        getC2SNamespace() + "getrf_batch_wrapper"}},
+        getDpctNamespace() + "getrf_batch_wrapper"}},
       {"cublasZgetrfBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{}, -1, -1, -1,
-        getC2SNamespace() + "getrf_batch_wrapper"}},
+        getDpctNamespace() + "getrf_batch_wrapper"}},
       {"cublasSgetrsBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{1}, -1, -1, -1,
-        getC2SNamespace() + "getrs_batch_wrapper"}},
+        getDpctNamespace() + "getrs_batch_wrapper"}},
       {"cublasDgetrsBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{1}, -1, -1, -1,
-        getC2SNamespace() + "getrs_batch_wrapper"}},
+        getDpctNamespace() + "getrs_batch_wrapper"}},
       {"cublasCgetrsBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{1}, -1, -1, -1,
-        getC2SNamespace() + "getrs_batch_wrapper"}},
+        getDpctNamespace() + "getrs_batch_wrapper"}},
       {"cublasZgetrsBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{1}, -1, -1, -1,
-        getC2SNamespace() + "getrs_batch_wrapper"}},
+        getDpctNamespace() + "getrs_batch_wrapper"}},
       {"cublasSgetriBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{}, -1, -1, -1,
-        getC2SNamespace() + "getri_batch_wrapper"}},
+        getDpctNamespace() + "getri_batch_wrapper"}},
       {"cublasDgetriBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{}, -1, -1, -1,
-        getC2SNamespace() + "getri_batch_wrapper"}},
+        getDpctNamespace() + "getri_batch_wrapper"}},
       {"cublasCgetriBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{}, -1, -1, -1,
-        getC2SNamespace() + "getri_batch_wrapper"}},
+        getDpctNamespace() + "getri_batch_wrapper"}},
       {"cublasZgetriBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{}, -1, -1, -1,
-        getC2SNamespace() + "getri_batch_wrapper"}},
+        getDpctNamespace() + "getri_batch_wrapper"}},
       {"cublasSgeqrfBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{}, -1, -1, -1,
-        getC2SNamespace() + "geqrf_batch_wrapper"}},
+        getDpctNamespace() + "geqrf_batch_wrapper"}},
       {"cublasDgeqrfBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{}, -1, -1, -1,
-        getC2SNamespace() + "geqrf_batch_wrapper"}},
+        getDpctNamespace() + "geqrf_batch_wrapper"}},
       {"cublasCgeqrfBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{}, -1, -1, -1,
-        getC2SNamespace() + "geqrf_batch_wrapper"}},
+        getDpctNamespace() + "geqrf_batch_wrapper"}},
       {"cublasZgeqrfBatched",
        {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
         std::vector<int>{}, -1, -1, -1,
-        getC2SNamespace() + "geqrf_batch_wrapper"}}};
+        getDpctNamespace() + "geqrf_batch_wrapper"}}};
 
   BatchedBLASFuncReplInfoMap = {
       {"cublasHgemmBatched",
@@ -1045,43 +1045,43 @@ void MapNames::setExplicitNamespaceMap() {
         getClNamespace() + "float2", "std::complex<float>"}}};
   // Atomic function names mapping
   AtomicFuncNamesMap = {
-      {"atomicAdd", getC2SNamespace() + "atomic_fetch_add"},
-      {"atomicSub", getC2SNamespace() + "atomic_fetch_sub"},
-      {"atomicAnd", getC2SNamespace() + "atomic_fetch_and"},
-      {"atomicOr", getC2SNamespace() + "atomic_fetch_or"},
-      {"atomicXor", getC2SNamespace() + "atomic_fetch_xor"},
-      {"atomicMin", getC2SNamespace() + "atomic_fetch_min"},
-      {"atomicMax", getC2SNamespace() + "atomic_fetch_max"},
-      {"atomicExch", getC2SNamespace() + "atomic_exchange"},
-      {"atomicCAS", getC2SNamespace() + "atomic_compare_exchange_strong"},
-      {"atomicInc", getC2SNamespace() + "atomic_fetch_compare_inc"},
+      {"atomicAdd", getDpctNamespace() + "atomic_fetch_add"},
+      {"atomicSub", getDpctNamespace() + "atomic_fetch_sub"},
+      {"atomicAnd", getDpctNamespace() + "atomic_fetch_and"},
+      {"atomicOr", getDpctNamespace() + "atomic_fetch_or"},
+      {"atomicXor", getDpctNamespace() + "atomic_fetch_xor"},
+      {"atomicMin", getDpctNamespace() + "atomic_fetch_min"},
+      {"atomicMax", getDpctNamespace() + "atomic_fetch_max"},
+      {"atomicExch", getDpctNamespace() + "atomic_exchange"},
+      {"atomicCAS", getDpctNamespace() + "atomic_compare_exchange_strong"},
+      {"atomicInc", getDpctNamespace() + "atomic_fetch_compare_inc"},
   };
 
   // Device Random Generator Type mapping
   DeviceRandomGeneratorTypeMap = {
       {"curandStateXORWOW_t",
-       getC2SNamespace() + "rng::device::rng_generator<oneapi::mkl::rng::"
+       getDpctNamespace() + "rng::device::rng_generator<oneapi::mkl::rng::"
                             "device::philox4x32x10<4>>"},
       {"curandStateXORWOW",
-       getC2SNamespace() + "rng::device::rng_generator<oneapi::mkl::rng::"
+       getDpctNamespace() + "rng::device::rng_generator<oneapi::mkl::rng::"
                             "device::philox4x32x10<4>>"},
       {"curandState_t",
-       getC2SNamespace() + "rng::device::rng_generator<oneapi::mkl::rng::"
+       getDpctNamespace() + "rng::device::rng_generator<oneapi::mkl::rng::"
                             "device::philox4x32x10<4>>"},
       {"curandState",
-       getC2SNamespace() + "rng::device::rng_generator<oneapi::mkl::rng::"
+       getDpctNamespace() + "rng::device::rng_generator<oneapi::mkl::rng::"
                             "device::philox4x32x10<4>>"},
       {"curandStatePhilox4_32_10_t",
-       getC2SNamespace() + "rng::device::rng_generator<oneapi::mkl::rng::"
+       getDpctNamespace() + "rng::device::rng_generator<oneapi::mkl::rng::"
                             "device::philox4x32x10<4>>"},
       {"curandStatePhilox4_32_10",
-       getC2SNamespace() + "rng::device::rng_generator<oneapi::mkl::rng::"
+       getDpctNamespace() + "rng::device::rng_generator<oneapi::mkl::rng::"
                             "device::philox4x32x10<4>>"},
       {"curandStateMRG32k3a_t",
-       getC2SNamespace() +
+       getDpctNamespace() +
            "rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>>"},
       {"curandStateMRG32k3a",
-       getC2SNamespace() +
+       getDpctNamespace() +
            "rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>>"},
   };
 
@@ -1131,38 +1131,38 @@ const std::map<std::string, int> MapNames::VectorTypeMigratedTypeSizeMap{
     {"float3", 16},     {"float4", 16},     {"double1", 8},
     {"double2", 16},    {"double3", 32},    {"double4", 32}};
 
-const std::map<clang::c2s::KernelArgType, int> MapNames::KernelArgTypeSizeMap{
-    {clang::c2s::KernelArgType::KAT_Stream, 208},
-    {clang::c2s::KernelArgType::KAT_Texture,
+const std::map<clang::dpct::KernelArgType, int> MapNames::KernelArgTypeSizeMap{
+    {clang::dpct::KernelArgType::KAT_Stream, 208},
+    {clang::dpct::KernelArgType::KAT_Texture,
      48 /*32(image accessor) + 16(sampler)*/},
-    {clang::c2s::KernelArgType::KAT_Accessor1D, 32},
-    {clang::c2s::KernelArgType::KAT_Accessor2D, 56},
-    {clang::c2s::KernelArgType::KAT_Accessor3D, 80},
-    {clang::c2s::KernelArgType::KAT_Array1D, 8},
-    {clang::c2s::KernelArgType::KAT_Array2D, 24},
-    {clang::c2s::KernelArgType::KAT_Array3D, 32},
-    {clang::c2s::KernelArgType::KAT_Default, 8},
-    {clang::c2s::KernelArgType::KAT_MaxParameterSize, 1024}};
+    {clang::dpct::KernelArgType::KAT_Accessor1D, 32},
+    {clang::dpct::KernelArgType::KAT_Accessor2D, 56},
+    {clang::dpct::KernelArgType::KAT_Accessor3D, 80},
+    {clang::dpct::KernelArgType::KAT_Array1D, 8},
+    {clang::dpct::KernelArgType::KAT_Array2D, 24},
+    {clang::dpct::KernelArgType::KAT_Array3D, 32},
+    {clang::dpct::KernelArgType::KAT_Default, 8},
+    {clang::dpct::KernelArgType::KAT_MaxParameterSize, 1024}};
 
 int MapNames::getArrayTypeSize(const int Dim) {
-  if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
     if (Dim == 2) {
       return KernelArgTypeSizeMap.at(
-          clang::c2s::KernelArgType::KAT_Accessor2D);
+          clang::dpct::KernelArgType::KAT_Accessor2D);
     } else if (Dim == 3) {
       return KernelArgTypeSizeMap.at(
-          clang::c2s::KernelArgType::KAT_Accessor3D);
+          clang::dpct::KernelArgType::KAT_Accessor3D);
     } else {
       return KernelArgTypeSizeMap.at(
-          clang::c2s::KernelArgType::KAT_Accessor1D);
+          clang::dpct::KernelArgType::KAT_Accessor1D);
     }
   } else {
     if (Dim == 2) {
-      return KernelArgTypeSizeMap.at(clang::c2s::KernelArgType::KAT_Array2D);
+      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::KAT_Array2D);
     } else if (Dim == 3) {
-      return KernelArgTypeSizeMap.at(clang::c2s::KernelArgType::KAT_Array3D);
+      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::KAT_Array3D);
     } else {
-      return KernelArgTypeSizeMap.at(clang::c2s::KernelArgType::KAT_Array1D);
+      return KernelArgTypeSizeMap.at(clang::dpct::KernelArgType::KAT_Array1D);
     }
   }
 }
@@ -3436,15 +3436,15 @@ const MapNames::MapTy MapNames::MacrosMap{
 
 std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
     {"__forceinline__",
-     MacroMigrationRule("c2s_build_in_macro_rule", RulePriority::Fallback,
+     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                         "__forceinline__", "__c2s_inline__",
                         HelperFeatureEnum::C2S_c2s_align_and_inline)},
     {"__align__",
-     MacroMigrationRule("c2s_build_in_macro_rule", RulePriority::Fallback,
+     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                         "__align__", "__c2s_align__",
                         HelperFeatureEnum::C2S_c2s_align_and_inline)},
     {"__noinline__",
-     MacroMigrationRule("c2s_build_in_macro_rule", RulePriority::Fallback,
+     MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                         "__noinline__", "__c2s_noinline__",
                         HelperFeatureEnum::C2S_c2s_noinline)},
     //...
@@ -3558,11 +3558,11 @@ bool MigrationStatistics::IsMigrated(const std::string &APIName) {
   if (Search != MigrationTable.end()) {
     return Search->second;
   } else {
-#ifdef C2S_DEBUG_BUILD
+#ifdef DPCT_DEBUG_BUILD
     llvm::errs() << "[NOTE] Find new API\"" << APIName
                  << "\" , please update migrated API database.\n";
     ShowStatus(MigrationError);
-    c2sExit(MigrationError);
+    dpctExit(MigrationError);
 #endif
     return false;
   }

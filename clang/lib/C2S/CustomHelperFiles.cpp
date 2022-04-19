@@ -22,14 +22,14 @@
 #include <fstream>
 
 namespace clang {
-namespace c2s {
+namespace dpct {
 
 void requestFeature(HelperFeatureEnum Feature, const std::string &UsedFile) {
   if (Feature == HelperFeatureEnum::no_feature_helper) {
     return;
   }
   if (!HelperFeatureEnumPairMap.count(Feature)) {
-#ifdef C2S_DEBUG_BUILD
+#ifdef DPCT_DEBUG_BUILD
     std::cout << "Unknown feature enum:" << (unsigned int)Feature << std::endl;
     assert(0 && "Unknown requested feature.\n");
 #endif
@@ -40,7 +40,7 @@ void requestFeature(HelperFeatureEnum Feature, const std::string &UsedFile) {
     Iter->second.IsCalled = true;
     Iter->second.CallerSrcFiles.insert(UsedFile);
   } else {
-#ifdef C2S_DEBUG_BUILD
+#ifdef DPCT_DEBUG_BUILD
     std::cout << "Unknown feature: File:" << (unsigned int)Key.first
               << ", Feature:" << Key.second << std::endl;
     assert(0 && "Unknown requested feature.\n");
@@ -48,12 +48,12 @@ void requestFeature(HelperFeatureEnum Feature, const std::string &UsedFile) {
   }
 }
 void requestFeature(HelperFeatureEnum Feature, SourceLocation SL) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto ExpansionLoc = SM.getExpansionLoc(SL);
 
   std::string UsedFile = "";
   if (ExpansionLoc.isValid())
-    UsedFile = c2s::C2SGlobalInfo::getLocInfo(ExpansionLoc).first;
+    UsedFile = dpct::DpctGlobalInfo::getLocInfo(ExpansionLoc).first;
   requestFeature(Feature, UsedFile);
 }
 void requestFeature(HelperFeatureEnum Feature, const Stmt *Stmt) {
@@ -67,7 +67,7 @@ void requestFeature(HelperFeatureEnum Feature, const Decl *Decl) {
   requestFeature(Feature, Decl->getBeginLoc());
 }
 
-std::string getCopyrightHeader(const clang::c2s::HelperFileEnum File) {
+std::string getCopyrightHeader(const clang::dpct::HelperFileEnum File) {
   std::string CopyrightHeader =
       HelperNameContentMap.at(std::make_pair(File, "License")).Code;
   if (File == HelperFileEnum::C2S) {
@@ -89,7 +89,7 @@ std::string getCopyrightHeader(const clang::c2s::HelperFileEnum File) {
 }
 
 std::pair<std::string, std::string>
-getHeaderGuardPair(const clang::c2s::HelperFileEnum File) {
+getHeaderGuardPair(const clang::dpct::HelperFileEnum File) {
   std::string MacroName = "";
   if (File == HelperFileEnum::C2S && getCustomMainHelperFileName() != "c2s") {
     MacroName = getCustomMainHelperFileName();
@@ -107,17 +107,17 @@ getHeaderGuardPair(const clang::c2s::HelperFileEnum File) {
 }
 
 void addDependencyIncludeDirectives(
-    const clang::c2s::HelperFileEnum FileID,
-    std::vector<clang::c2s::HelperFunc> &ContentVec) {
+    const clang::dpct::HelperFileEnum FileID,
+    std::vector<clang::dpct::HelperFunc> &ContentVec) {
 
-  auto isDplFile = [](clang::c2s::HelperFileEnum FileID) -> bool {
-    if (FileID == clang::c2s::HelperFileEnum::DplExtrasAlgorithm ||
-        FileID == clang::c2s::HelperFileEnum::DplExtrasFunctional ||
-        FileID == clang::c2s::HelperFileEnum::DplExtrasIterators ||
-        FileID == clang::c2s::HelperFileEnum::DplExtrasMemory ||
-        FileID == clang::c2s::HelperFileEnum::DplExtrasNumeric ||
-        FileID == clang::c2s::HelperFileEnum::DplExtrasVector ||
-        FileID == clang::c2s::HelperFileEnum::DplExtrasDpcppExtensions) {
+  auto isDplFile = [](clang::dpct::HelperFileEnum FileID) -> bool {
+    if (FileID == clang::dpct::HelperFileEnum::DplExtrasAlgorithm ||
+        FileID == clang::dpct::HelperFileEnum::DplExtrasFunctional ||
+        FileID == clang::dpct::HelperFileEnum::DplExtrasIterators ||
+        FileID == clang::dpct::HelperFileEnum::DplExtrasMemory ||
+        FileID == clang::dpct::HelperFileEnum::DplExtrasNumeric ||
+        FileID == clang::dpct::HelperFileEnum::DplExtrasVector ||
+        FileID == clang::dpct::HelperFileEnum::DplExtrasDpcppExtensions) {
       return true;
     }
     return false;
@@ -132,17 +132,17 @@ void addDependencyIncludeDirectives(
 
   auto Content = Iter->second;
 
-  std::set<clang::c2s::HelperFileEnum> FileDependency;
+  std::set<clang::dpct::HelperFileEnum> FileDependency;
   for (const auto &Item : ContentVec) {
     for (const auto &Pair : Item.Dependency) {
-      if (clang::c2s::C2SGlobalInfo::getHelperFilesCustomizationLevel() ==
+      if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
           HelperFilesCustomizationLevel::HFCL_API) {
         if (Pair.second == HelperFeatureDependencyKind::HFDK_UsmNone) {
-          if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
+          if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
             FileDependency.insert(Pair.first.first);
         } else if (Pair.second ==
                    HelperFeatureDependencyKind::HFDK_UsmRestricted) {
-          if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted)
+          if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted)
             FileDependency.insert(Pair.first.first);
         } else {
           FileDependency.insert(Pair.first.first);
@@ -173,12 +173,12 @@ void addDependencyIncludeDirectives(
 }
 
 std::string getCode(const HelperFunc &Item) {
-  if (clang::c2s::C2SGlobalInfo::getHelperFilesCustomizationLevel() ==
+  if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
       HelperFilesCustomizationLevel::HFCL_File) {
     return Item.Code;
   } else {
     // API level
-    if (c2s::C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
+    if (dpct::DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
       if (!Item.USMCode.empty())
         return Item.USMCode;
     } else {
@@ -278,8 +278,8 @@ private:
 };
 
 std::string
-getHelperFileContent(const clang::c2s::HelperFileEnum File,
-                     std::vector<clang::c2s::HelperFunc> ContentVec) {
+getHelperFileContent(const clang::dpct::HelperFileEnum File,
+                     std::vector<clang::dpct::HelperFunc> ContentVec) {
   if (ContentVec.empty())
     return "";
 
@@ -288,14 +288,14 @@ getHelperFileContent(const clang::c2s::HelperFileEnum File,
   ContentStr = ContentStr + getCopyrightHeader(File) + getNL();
   ContentStr = ContentStr + getHeaderGuardPair(File).first + getNL();
 
-  if (File != clang::c2s::HelperFileEnum::C2S &&
-      File != clang::c2s::HelperFileEnum::DplUtils) {
+  if (File != clang::dpct::HelperFileEnum::C2S &&
+      File != clang::dpct::HelperFileEnum::DplUtils) {
     // For C2S and DplUtils, the include directives are determined
     // by other files.
     addDependencyIncludeDirectives(File, ContentVec);
   }
 
-  auto CompareAsc = [](clang::c2s::HelperFunc A, clang::c2s::HelperFunc B) {
+  auto CompareAsc = [](clang::dpct::HelperFunc A, clang::dpct::HelperFunc B) {
     return A.PositionIdx < B.PositionIdx;
   };
   std::sort(ContentVec.begin(), ContentVec.end(), CompareAsc);
@@ -314,16 +314,16 @@ getHelperFileContent(const clang::c2s::HelperFileEnum File,
   return ContentStr;
 }
 
-std::string getC2SVersionStr() {
+std::string getDpctVersionStr() {
   std::string Str;
   llvm::raw_string_ostream OS(Str);
-  OS << C2S_VERSION_MAJOR << "." << C2S_VERSION_MINOR << "."
-     << C2S_VERSION_PATCH;
+  OS << DPCT_VERSION_MAJOR << "." << DPCT_VERSION_MINOR << "."
+     << DPCT_VERSION_PATCH;
   return OS.str();
 }
 
 void generateAllHelperFiles() {
-  std::string ToPath = clang::c2s::C2SGlobalInfo::getOutRoot() + "/include";
+  std::string ToPath = clang::dpct::DpctGlobalInfo::getOutRoot() + "/include";
   if (!llvm::sys::fs::is_directory(ToPath))
     llvm::sys::fs::create_directory(Twine(ToPath));
   ToPath = ToPath + "/" + getCustomMainHelperFileName();
@@ -337,7 +337,7 @@ void generateAllHelperFiles() {
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/" +                                                         \
             HelperFileNameMap.at(                                    \
-                clang::c2s::HelperFileEnum::FILE_NAME),                       \
+                clang::dpct::HelperFileEnum::FILE_NAME),                       \
         std::ios::binary);                                                     \
     std::string Code = FILE_NAME##AllContentStr;                     \
     replaceEndOfLine(Code);                                                    \
@@ -349,7 +349,7 @@ void generateAllHelperFiles() {
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/dpl_extras/" +                                              \
             HelperFileNameMap.at(                                    \
-                clang::c2s::HelperFileEnum::FILE_NAME),                       \
+                clang::dpct::HelperFileEnum::FILE_NAME),                       \
         std::ios::binary);                                                     \
     std::string Code = FILE_NAME##AllContentStr;                     \
     replaceEndOfLine(Code);                                                    \
@@ -388,9 +388,9 @@ void generateHelperFunctions() {
     return Res;
   };
 
-  // c2s.hpp is always exsit, so request its non_local_include_dependency
+  // dpct.hpp is always exsit, so request its non_local_include_dependency
   // feature
-  requestFeature(c2s::HelperFeatureEnum::C2S_non_local_include_dependency,
+  requestFeature(dpct::HelperFeatureEnum::C2S_non_local_include_dependency,
                  "");
   // 1. add dependent APIs
   size_t UsedAPINum = getUsedAPINum();
@@ -400,15 +400,15 @@ void generateHelperFunctions() {
     for (const auto &Item : HelperNameContentMap) {
       if (Item.second.IsCalled) {
         for (const auto &DepItem : Item.second.Dependency) {
-          if (clang::c2s::C2SGlobalInfo::getHelperFilesCustomizationLevel() ==
+          if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
               HelperFilesCustomizationLevel::HFCL_API) {
             if (DepItem.second == HelperFeatureDependencyKind::HFDK_UsmNone) {
-              if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
+              if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
                 NeedInsert.insert(
                     std::make_pair(DepItem.first, Item.second.CallerSrcFiles));
             } else if (DepItem.second ==
                        HelperFeatureDependencyKind::HFDK_UsmRestricted) {
-              if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted)
+              if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted)
                 NeedInsert.insert(
                     std::make_pair(DepItem.first, Item.second.CallerSrcFiles));
             } else {
@@ -429,7 +429,7 @@ void generateHelperFunctions() {
         Iter->second.CallerSrcFiles.insert(Item.second.begin(),
                                            Item.second.end());
       } else {
-#ifdef C2S_DEBUG_BUILD
+#ifdef DPCT_DEBUG_BUILD
         std::cout << "Unknown dependency: File:"
                   << (unsigned int)Item.first.first
                   << ", Feature:" << Item.first.second << std::endl;
@@ -440,37 +440,37 @@ void generateHelperFunctions() {
   } while (getUsedAPINum() > UsedAPINum);
 
   // 2. build info of necessary headers to out-root
-  if (clang::c2s::C2SGlobalInfo::getHelperFilesCustomizationLevel() ==
+  if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
       HelperFilesCustomizationLevel::HFCL_None)
     return;
-  else if (clang::c2s::C2SGlobalInfo::getHelperFilesCustomizationLevel() ==
+  else if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
            HelperFilesCustomizationLevel::HFCL_All) {
     generateAllHelperFiles();
     return;
   }
 
-  std::vector<clang::c2s::HelperFunc> AtomicFileContent;
-  std::vector<clang::c2s::HelperFunc> BlasUtilsFileContent;
-  std::vector<clang::c2s::HelperFunc> DeviceFileContent;
-  std::vector<clang::c2s::HelperFunc> C2SFileContent;
-  std::vector<clang::c2s::HelperFunc> DplUtilsFileContent;
-  std::vector<clang::c2s::HelperFunc> ImageFileContent;
-  std::vector<clang::c2s::HelperFunc> KernelFileContent;
-  std::vector<clang::c2s::HelperFunc> MemoryFileContent;
-  std::vector<clang::c2s::HelperFunc> UtilFileContent;
-  std::vector<clang::c2s::HelperFunc> RngUtilsFileContent;
-  std::vector<clang::c2s::HelperFunc> LibCommonUtilsFileContent;
-  std::vector<clang::c2s::HelperFunc> DplExtrasAlgorithmFileContent;
-  std::vector<clang::c2s::HelperFunc> DplExtrasFunctionalFileContent;
-  std::vector<clang::c2s::HelperFunc> DplExtrasIteratorsFileContent;
-  std::vector<clang::c2s::HelperFunc> DplExtrasMemoryFileContent;
-  std::vector<clang::c2s::HelperFunc> DplExtrasNumericFileContent;
-  std::vector<clang::c2s::HelperFunc> DplExtrasVectorFileContent;
-  std::vector<clang::c2s::HelperFunc> DplExtrasDpcppExtensionsFileContent;
+  std::vector<clang::dpct::HelperFunc> AtomicFileContent;
+  std::vector<clang::dpct::HelperFunc> BlasUtilsFileContent;
+  std::vector<clang::dpct::HelperFunc> DeviceFileContent;
+  std::vector<clang::dpct::HelperFunc> C2SFileContent;
+  std::vector<clang::dpct::HelperFunc> DplUtilsFileContent;
+  std::vector<clang::dpct::HelperFunc> ImageFileContent;
+  std::vector<clang::dpct::HelperFunc> KernelFileContent;
+  std::vector<clang::dpct::HelperFunc> MemoryFileContent;
+  std::vector<clang::dpct::HelperFunc> UtilFileContent;
+  std::vector<clang::dpct::HelperFunc> RngUtilsFileContent;
+  std::vector<clang::dpct::HelperFunc> LibCommonUtilsFileContent;
+  std::vector<clang::dpct::HelperFunc> DplExtrasAlgorithmFileContent;
+  std::vector<clang::dpct::HelperFunc> DplExtrasFunctionalFileContent;
+  std::vector<clang::dpct::HelperFunc> DplExtrasIteratorsFileContent;
+  std::vector<clang::dpct::HelperFunc> DplExtrasMemoryFileContent;
+  std::vector<clang::dpct::HelperFunc> DplExtrasNumericFileContent;
+  std::vector<clang::dpct::HelperFunc> DplExtrasVectorFileContent;
+  std::vector<clang::dpct::HelperFunc> DplExtrasDpcppExtensionsFileContent;
 
   std::vector<bool> FileUsedFlagVec(
-      (unsigned int)clang::c2s::HelperFileEnum::HelperFileEnumTypeSize, false);
-  if (clang::c2s::C2SGlobalInfo::getHelperFilesCustomizationLevel() ==
+      (unsigned int)clang::dpct::HelperFileEnum::HelperFileEnumTypeSize, false);
+  if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
       HelperFilesCustomizationLevel::HFCL_File) {
     // E.g., user code uses API2.
     // HelperFileA: API1(depends on API3), API2
@@ -495,22 +495,22 @@ void generateHelperFunctions() {
     do {
       UsedFileNum = getUsedFileNum();
       for (unsigned int FileID = 0;
-           FileID < (unsigned int)c2s::HelperFileEnum::HelperFileEnumTypeSize;
+           FileID < (unsigned int)dpct::HelperFileEnum::HelperFileEnumTypeSize;
            ++FileID) {
         if (!FileUsedFlagVec[FileID])
           continue;
         for (const auto &Item : HelperNameContentMap) {
-          if (Item.first.first == (c2s::HelperFileEnum)FileID) {
+          if (Item.first.first == (dpct::HelperFileEnum)FileID) {
             for (const auto &Dep : Item.second.Dependency) {
-              if (clang::c2s::C2SGlobalInfo::
+              if (clang::dpct::DpctGlobalInfo::
                       getHelperFilesCustomizationLevel() ==
                   HelperFilesCustomizationLevel::HFCL_API) {
                 if (Dep.second == HelperFeatureDependencyKind::HFDK_UsmNone) {
-                  if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
+                  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
                     FileUsedFlagVec[(unsigned int)Dep.first.first] = true;
                 } else if (Dep.second ==
                            HelperFeatureDependencyKind::HFDK_UsmRestricted) {
-                  if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted)
+                  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted)
                     FileUsedFlagVec[(unsigned int)Dep.first.first] = true;
                 } else {
                   FileUsedFlagVec[(unsigned int)Dep.first.first] = true;
@@ -526,11 +526,11 @@ void generateHelperFunctions() {
   }
 
 #define UPDATE_FILE(FILENAME)                                                  \
-  case clang::c2s::HelperFileEnum::FILENAME:                                  \
-    if (clang::c2s::C2SGlobalInfo::getHelperFilesCustomizationLevel() ==     \
+  case clang::dpct::HelperFileEnum::FILENAME:                                  \
+    if (clang::dpct::DpctGlobalInfo::getHelperFilesCustomizationLevel() ==     \
         HelperFilesCustomizationLevel::HFCL_File) {                            \
       FILENAME##FileContent.push_back(Item.second);                            \
-    } else if (clang::c2s::C2SGlobalInfo::                                   \
+    } else if (clang::dpct::DpctGlobalInfo::                                   \
                    getHelperFilesCustomizationLevel() ==                       \
                HelperFilesCustomizationLevel::HFCL_API) {                      \
       if (Item.second.IsCalled)                                                \
@@ -540,20 +540,20 @@ void generateHelperFunctions() {
 
   for (const auto &Item : HelperNameContentMap) {
     if (Item.first.second == "local_include_dependency") {
-      // local_include_dependency for c2s and dpl_utils is inserted in step3
+      // local_include_dependency for dpct and dpl_utils is inserted in step3
       // local_include_dependency for others are inserted in
       // getHelperFileContent()
       continue;
     } else if (Item.first.second == "non_local_include_dependency") {
-      // non_local_include_dependency for c2s is inserted here
+      // non_local_include_dependency for dpct is inserted here
       // non_local_include_dependency for others is inserted in step3
-      if (Item.first.first == clang::c2s::HelperFileEnum::C2S) {
+      if (Item.first.first == clang::dpct::HelperFileEnum::C2S) {
         C2SFileContent.push_back(Item.second);
       }
       continue;
     } else if (Item.first.second == "License") {
       continue;
-    } else if (clang::c2s::C2SGlobalInfo::
+    } else if (clang::dpct::DpctGlobalInfo::
                    getHelperFilesCustomizationLevel() ==
                HelperFilesCustomizationLevel::HFCL_File) {
       if (!FileUsedFlagVec[size_t(Item.first.first)])
@@ -587,7 +587,7 @@ void generateHelperFunctions() {
 
   // 3. prepare folder and insert
   // non_local_include_dependency/local_include_dependency
-  std::string ToPath = clang::c2s::C2SGlobalInfo::getOutRoot() + "/include";
+  std::string ToPath = clang::dpct::DpctGlobalInfo::getOutRoot() + "/include";
   if (!llvm::sys::fs::is_directory(ToPath))
     llvm::sys::fs::create_directory(Twine(ToPath));
   ToPath = ToPath + "/" + getCustomMainHelperFileName();
@@ -612,11 +612,11 @@ void generateHelperFunctions() {
 #define ADD_INCLUDE_DIRECTIVE_FOR_DPL(FILENAME)                                \
   if (!FILENAME##FileContent.empty()) {                                        \
     FILENAME##FileContent.push_back(HelperNameContentMap.at(         \
-        std::make_pair(clang::c2s::HelperFileEnum::FILENAME,                  \
+        std::make_pair(clang::dpct::HelperFileEnum::FILENAME,                  \
                        "non_local_include_dependency")));                      \
     IDDStr = IDDStr + "#include \"dpl_extras/" +                               \
              HelperFileNameMap.at(                                   \
-                 clang::c2s::HelperFileEnum::FILENAME) +                      \
+                 clang::dpct::HelperFileEnum::FILENAME) +                      \
              "\"\n";                                                           \
   }
     ADD_INCLUDE_DIRECTIVE_FOR_DPL(DplExtrasAlgorithm)
@@ -629,18 +629,18 @@ void generateHelperFunctions() {
 #undef ADD_INCLUDE_DIRECTIVE_FOR_DPL
 
     auto Item = HelperNameContentMap.at(std::make_pair(
-        clang::c2s::HelperFileEnum::DplUtils, "local_include_dependency"));
+        clang::dpct::HelperFileEnum::DplUtils, "local_include_dependency"));
     Item.Code = IDDStr;
     DplUtilsFileContent.push_back(Item);
   }
 
   if (!DplUtilsFileContent.empty() ||
       HelperNameContentMap
-          .at(std::make_pair(clang::c2s::HelperFileEnum::DplUtils,
+          .at(std::make_pair(clang::dpct::HelperFileEnum::DplUtils,
                              "non_local_include_dependency"))
           .IsCalled) {
     DplUtilsFileContent.push_back(HelperNameContentMap.at(
-        std::make_pair(clang::c2s::HelperFileEnum::DplUtils,
+        std::make_pair(clang::dpct::HelperFileEnum::DplUtils,
                        "non_local_include_dependency")));
   }
 
@@ -649,17 +649,17 @@ void generateHelperFunctions() {
 #define ADD_INCLUDE_DIRECTIVE(FILENAME)                                        \
   if (!FILENAME##FileContent.empty()) {                                        \
     FILENAME##FileContent.push_back(HelperNameContentMap.at(         \
-        std::make_pair(clang::c2s::HelperFileEnum::FILENAME,                  \
+        std::make_pair(clang::dpct::HelperFileEnum::FILENAME,                  \
                        "non_local_include_dependency")));                      \
     IDDStr = IDDStr + "#include \"" +                                          \
              HelperFileNameMap.at(                                   \
-                 clang::c2s::HelperFileEnum::FILENAME) +                      \
+                 clang::dpct::HelperFileEnum::FILENAME) +                      \
              "\"\n";                                                           \
   }
   ADD_INCLUDE_DIRECTIVE(Atomic)
   ADD_INCLUDE_DIRECTIVE(BlasUtils)
   ADD_INCLUDE_DIRECTIVE(Device)
-  // Do not include dpl_utils in c2s.hpp, since there is a bug in dpl_extras
+  // Do not include dpl_utils in dpct.hpp, since there is a bug in dpl_extras
   // files. All those functions are without the "inline" specifier, so there
   // will be a multi definition issue. ADD_INCLUDE_DIRECTIVE(DplUtils)
   ADD_INCLUDE_DIRECTIVE(Image)
@@ -671,7 +671,7 @@ void generateHelperFunctions() {
 #undef ADD_INCLUDE_DIRECTIVE
 
   auto Item = HelperNameContentMap.at(std::make_pair(
-      clang::c2s::HelperFileEnum::C2S, "local_include_dependency"));
+      clang::dpct::HelperFileEnum::C2S, "local_include_dependency"));
   Item.Code = IDDStr;
   C2SFileContent.push_back(Item);
 
@@ -679,11 +679,11 @@ void generateHelperFunctions() {
 #define GENERATE_FILE(FILE_NAME)                                               \
   if (!FILE_NAME##FileContent.empty()) {                                       \
     std::string FILE_NAME##FileContentStr = getHelperFileContent(              \
-        clang::c2s::HelperFileEnum::FILE_NAME, FILE_NAME##FileContent);       \
+        clang::dpct::HelperFileEnum::FILE_NAME, FILE_NAME##FileContent);       \
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/" +                                                         \
             HelperFileNameMap.at(                                    \
-                clang::c2s::HelperFileEnum::FILE_NAME),                       \
+                clang::dpct::HelperFileEnum::FILE_NAME),                       \
         std::ios::binary);                                                     \
     FILE_NAME##File << FILE_NAME##FileContentStr;                              \
     FILE_NAME##File.flush();                                                   \
@@ -691,11 +691,11 @@ void generateHelperFunctions() {
 #define GENERATE_DPL_EXTRAS_FILE(FILE_NAME)                                    \
   if (!FILE_NAME##FileContent.empty()) {                                       \
     std::string FILE_NAME##FileContentStr = getHelperFileContent(              \
-        clang::c2s::HelperFileEnum::FILE_NAME, FILE_NAME##FileContent);       \
+        clang::dpct::HelperFileEnum::FILE_NAME, FILE_NAME##FileContent);       \
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/dpl_extras/" +                                              \
             HelperFileNameMap.at(                                    \
-                clang::c2s::HelperFileEnum::FILE_NAME),                       \
+                clang::dpct::HelperFileEnum::FILE_NAME),                       \
         std::ios::binary);                                                     \
     FILE_NAME##File << FILE_NAME##FileContentStr;                              \
     FILE_NAME##File.flush();                                                   \
@@ -725,9 +725,9 @@ void generateHelperFunctions() {
 #define ADD_HELPER_FEATURE_FOR_ENUM_NAMES(TYPE)                                \
   void requestHelperFeatureForEnumNames(const std::string Name, TYPE File) {   \
     auto HelperFeatureIter =                                                   \
-        clang::c2s::EnumConstantRule::EnumNamesHelperFeaturesMap.find(Name);  \
+        clang::dpct::EnumConstantRule::EnumNamesHelperFeaturesMap.find(Name);  \
     if (HelperFeatureIter !=                                                   \
-        clang::c2s::EnumConstantRule::EnumNamesHelperFeaturesMap.end()) {     \
+        clang::dpct::EnumConstantRule::EnumNamesHelperFeaturesMap.end()) {     \
       requestFeature(HelperFeatureIter->second, File);                         \
     }                                                                          \
   }
@@ -750,7 +750,7 @@ ADD_HELPER_FEATURE_FOR_TYPE_NAMES(const Decl *)
 #undef ADD_HELPER_FEATURE_FOR_TYPE_NAMES
 
 std::string getCustomMainHelperFileName() {
-  return c2s::C2SGlobalInfo::getCustomHelperFileName();
+  return dpct::DpctGlobalInfo::getCustomHelperFileName();
 }
 
 void processFeatureMap(
@@ -881,13 +881,13 @@ void replaceEndOfLine(std::string &StrNeedProcess) {
 #endif
 }
 
-std::map<HelperFeatureIDTy, clang::c2s::HelperFunc>
+std::map<HelperFeatureIDTy, clang::dpct::HelperFunc>
     HelperNameContentMap{
 #define C2S_CONTENT_BEGIN(File, Name, Namespace, Idx)                         \
-  {{clang::c2s::HelperFileEnum::File, Name}, {Namespace, Idx, false, {},
+  {{clang::dpct::HelperFileEnum::File, Name}, {Namespace, Idx, false, {},
 #define C2S_DEPENDENCY(...) {__VA_ARGS__},
 #define C2S_PARENT_FEATURE(ParentFeatureFile, ParentFeatureName)              \
-  , { clang::c2s::HelperFileEnum::ParentFeatureFile, ParentFeatureName }
+  , { clang::dpct::HelperFileEnum::ParentFeatureFile, ParentFeatureName }
 #define C2S_CONTENT_END                                                       \
   }                                                                            \
   }                                                                            \
@@ -915,75 +915,75 @@ std::map<HelperFeatureIDTy, clang::c2s::HelperFunc>
 #undef C2S_CONTENT_END
     };
 
-std::unordered_map<clang::c2s::HelperFileEnum, std::string> HelperFileNameMap{
-    {clang::c2s::HelperFileEnum::C2S, "c2s.hpp"},
-    {clang::c2s::HelperFileEnum::Atomic, "atomic.hpp"},
-    {clang::c2s::HelperFileEnum::BlasUtils, "blas_utils.hpp"},
-    {clang::c2s::HelperFileEnum::Device, "device.hpp"},
-    {clang::c2s::HelperFileEnum::DplUtils, "dpl_utils.hpp"},
-    {clang::c2s::HelperFileEnum::Image, "image.hpp"},
-    {clang::c2s::HelperFileEnum::Kernel, "kernel.hpp"},
-    {clang::c2s::HelperFileEnum::Memory, "memory.hpp"},
-    {clang::c2s::HelperFileEnum::Util, "util.hpp"},
-    {clang::c2s::HelperFileEnum::RngUtils, "rng_utils.hpp"},
-    {clang::c2s::HelperFileEnum::LibCommonUtils, "lib_common_utils.hpp"},
-    {clang::c2s::HelperFileEnum::DplExtrasAlgorithm, "algorithm.h"},
-    {clang::c2s::HelperFileEnum::DplExtrasFunctional, "functional.h"},
-    {clang::c2s::HelperFileEnum::DplExtrasIterators, "iterators.h"},
-    {clang::c2s::HelperFileEnum::DplExtrasMemory, "memory.h"},
-    {clang::c2s::HelperFileEnum::DplExtrasNumeric, "numeric.h"},
-    {clang::c2s::HelperFileEnum::DplExtrasVector, "vector.h"},
-    {clang::c2s::HelperFileEnum::DplExtrasDpcppExtensions,
+std::unordered_map<clang::dpct::HelperFileEnum, std::string> HelperFileNameMap{
+    {clang::dpct::HelperFileEnum::C2S, "c2s.hpp"},
+    {clang::dpct::HelperFileEnum::Atomic, "atomic.hpp"},
+    {clang::dpct::HelperFileEnum::BlasUtils, "blas_utils.hpp"},
+    {clang::dpct::HelperFileEnum::Device, "device.hpp"},
+    {clang::dpct::HelperFileEnum::DplUtils, "dpl_utils.hpp"},
+    {clang::dpct::HelperFileEnum::Image, "image.hpp"},
+    {clang::dpct::HelperFileEnum::Kernel, "kernel.hpp"},
+    {clang::dpct::HelperFileEnum::Memory, "memory.hpp"},
+    {clang::dpct::HelperFileEnum::Util, "util.hpp"},
+    {clang::dpct::HelperFileEnum::RngUtils, "rng_utils.hpp"},
+    {clang::dpct::HelperFileEnum::LibCommonUtils, "lib_common_utils.hpp"},
+    {clang::dpct::HelperFileEnum::DplExtrasAlgorithm, "algorithm.h"},
+    {clang::dpct::HelperFileEnum::DplExtrasFunctional, "functional.h"},
+    {clang::dpct::HelperFileEnum::DplExtrasIterators, "iterators.h"},
+    {clang::dpct::HelperFileEnum::DplExtrasMemory, "memory.h"},
+    {clang::dpct::HelperFileEnum::DplExtrasNumeric, "numeric.h"},
+    {clang::dpct::HelperFileEnum::DplExtrasVector, "vector.h"},
+    {clang::dpct::HelperFileEnum::DplExtrasDpcppExtensions,
      "dpcpp_extensions.h"}};
 
-std::unordered_map<std::string, clang::c2s::HelperFileEnum> HelperFileIDMap{
-    {"c2s.hpp", clang::c2s::HelperFileEnum::C2S},
-    {"atomic.hpp", clang::c2s::HelperFileEnum::Atomic},
-    {"blas_utils.hpp", clang::c2s::HelperFileEnum::BlasUtils},
-    {"device.hpp", clang::c2s::HelperFileEnum::Device},
-    {"dpl_utils.hpp", clang::c2s::HelperFileEnum::DplUtils},
-    {"image.hpp", clang::c2s::HelperFileEnum::Image},
-    {"kernel.hpp", clang::c2s::HelperFileEnum::Kernel},
-    {"memory.hpp", clang::c2s::HelperFileEnum::Memory},
-    {"util.hpp", clang::c2s::HelperFileEnum::Util},
-    {"rng_utils.hpp", clang::c2s::HelperFileEnum::RngUtils},
-    {"lib_common_utils.hpp", clang::c2s::HelperFileEnum::LibCommonUtils},
-    {"algorithm.h", clang::c2s::HelperFileEnum::DplExtrasAlgorithm},
-    {"functional.h", clang::c2s::HelperFileEnum::DplExtrasFunctional},
-    {"iterators.h", clang::c2s::HelperFileEnum::DplExtrasIterators},
-    {"memory.h", clang::c2s::HelperFileEnum::DplExtrasMemory},
-    {"numeric.h", clang::c2s::HelperFileEnum::DplExtrasNumeric},
-    {"vector.h", clang::c2s::HelperFileEnum::DplExtrasVector},
+std::unordered_map<std::string, clang::dpct::HelperFileEnum> HelperFileIDMap{
+    {"c2s.hpp", clang::dpct::HelperFileEnum::C2S},
+    {"atomic.hpp", clang::dpct::HelperFileEnum::Atomic},
+    {"blas_utils.hpp", clang::dpct::HelperFileEnum::BlasUtils},
+    {"device.hpp", clang::dpct::HelperFileEnum::Device},
+    {"dpl_utils.hpp", clang::dpct::HelperFileEnum::DplUtils},
+    {"image.hpp", clang::dpct::HelperFileEnum::Image},
+    {"kernel.hpp", clang::dpct::HelperFileEnum::Kernel},
+    {"memory.hpp", clang::dpct::HelperFileEnum::Memory},
+    {"util.hpp", clang::dpct::HelperFileEnum::Util},
+    {"rng_utils.hpp", clang::dpct::HelperFileEnum::RngUtils},
+    {"lib_common_utils.hpp", clang::dpct::HelperFileEnum::LibCommonUtils},
+    {"algorithm.h", clang::dpct::HelperFileEnum::DplExtrasAlgorithm},
+    {"functional.h", clang::dpct::HelperFileEnum::DplExtrasFunctional},
+    {"iterators.h", clang::dpct::HelperFileEnum::DplExtrasIterators},
+    {"memory.h", clang::dpct::HelperFileEnum::DplExtrasMemory},
+    {"numeric.h", clang::dpct::HelperFileEnum::DplExtrasNumeric},
+    {"vector.h", clang::dpct::HelperFileEnum::DplExtrasVector},
     {"dpcpp_extensions.h",
-     clang::c2s::HelperFileEnum::DplExtrasDpcppExtensions}};
+     clang::dpct::HelperFileEnum::DplExtrasDpcppExtensions}};
 
-const std::unordered_map<clang::c2s::HelperFileEnum, std::string>
+const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
     HelperFileHeaderGuardMacroMap{
-        {clang::c2s::HelperFileEnum::C2S, "__C2S_HPP__"},
-        {clang::c2s::HelperFileEnum::Atomic, "__C2S_ATOMIC_HPP__"},
-        {clang::c2s::HelperFileEnum::BlasUtils, "__C2S_BLAS_UTILS_HPP__"},
-        {clang::c2s::HelperFileEnum::Device, "__C2S_DEVICE_HPP__"},
-        {clang::c2s::HelperFileEnum::DplUtils, "__C2S_DPL_UTILS_HPP__"},
-        {clang::c2s::HelperFileEnum::Image, "__C2S_IMAGE_HPP__"},
-        {clang::c2s::HelperFileEnum::Kernel, "__C2S_KERNEL_HPP__"},
-        {clang::c2s::HelperFileEnum::Memory, "__C2S_MEMORY_HPP__"},
-        {clang::c2s::HelperFileEnum::Util, "__C2S_UTIL_HPP__"},
-        {clang::c2s::HelperFileEnum::RngUtils, "__C2S_RNG_UTILS_HPP__"},
-        {clang::c2s::HelperFileEnum::LibCommonUtils, "__C2S_LIB_COMMON_UTILS_HPP__"},
-        {clang::c2s::HelperFileEnum::DplExtrasAlgorithm,
+        {clang::dpct::HelperFileEnum::C2S, "__C2S_HPP__"},
+        {clang::dpct::HelperFileEnum::Atomic, "__C2S_ATOMIC_HPP__"},
+        {clang::dpct::HelperFileEnum::BlasUtils, "__C2S_BLAS_UTILS_HPP__"},
+        {clang::dpct::HelperFileEnum::Device, "__C2S_DEVICE_HPP__"},
+        {clang::dpct::HelperFileEnum::DplUtils, "__C2S_DPL_UTILS_HPP__"},
+        {clang::dpct::HelperFileEnum::Image, "__C2S_IMAGE_HPP__"},
+        {clang::dpct::HelperFileEnum::Kernel, "__C2S_KERNEL_HPP__"},
+        {clang::dpct::HelperFileEnum::Memory, "__C2S_MEMORY_HPP__"},
+        {clang::dpct::HelperFileEnum::Util, "__C2S_UTIL_HPP__"},
+        {clang::dpct::HelperFileEnum::RngUtils, "__C2S_RNG_UTILS_HPP__"},
+        {clang::dpct::HelperFileEnum::LibCommonUtils, "__C2S_LIB_COMMON_UTILS_HPP__"},
+        {clang::dpct::HelperFileEnum::DplExtrasAlgorithm,
          "__C2S_DPL_EXTRAS_ALGORITHM_H__"},
-        {clang::c2s::HelperFileEnum::DplExtrasFunctional,
+        {clang::dpct::HelperFileEnum::DplExtrasFunctional,
          "__C2S_DPL_EXTRAS_FUNCTIONAL_H__"},
-        {clang::c2s::HelperFileEnum::DplExtrasIterators,
+        {clang::dpct::HelperFileEnum::DplExtrasIterators,
          "__C2S_DPL_EXTRAS_ITERATORS_H__"},
-        {clang::c2s::HelperFileEnum::DplExtrasMemory, "__C2S_DPL_EXTRAS_MEMORY_H__"},
-        {clang::c2s::HelperFileEnum::DplExtrasNumeric, "__C2S_DPL_EXTRAS_NUMERIC_H__"},
-        {clang::c2s::HelperFileEnum::DplExtrasVector, "__C2S_DPL_EXTRAS_VECTOR_H__"},
-        {clang::c2s::HelperFileEnum::DplExtrasDpcppExtensions,
+        {clang::dpct::HelperFileEnum::DplExtrasMemory, "__C2S_DPL_EXTRAS_MEMORY_H__"},
+        {clang::dpct::HelperFileEnum::DplExtrasNumeric, "__C2S_DPL_EXTRAS_NUMERIC_H__"},
+        {clang::dpct::HelperFileEnum::DplExtrasVector, "__C2S_DPL_EXTRAS_VECTOR_H__"},
+        {clang::dpct::HelperFileEnum::DplExtrasDpcppExtensions,
          "__C2S_DPL_EXTRAS_DPCPP_EXTENSIONS_H__"}};
 
-const std::unordered_map<clang::c2s::HelperFeatureEnum,
-                         clang::c2s::HelperFeatureIDTy>
+const std::unordered_map<clang::dpct::HelperFeatureEnum,
+                         clang::dpct::HelperFeatureIDTy>
     HelperFeatureEnumPairMap{
 #define C2S_FEATURE_ENUM_FEATURE_PAIR_MAP
 #undef C2S_FEATURE_ENUM
@@ -1046,11 +1046,11 @@ const std::string DplExtrasDpcppExtensionsAllContentStr =
 #include "clang/C2S/dpl_extras/dpcpp_extensions.all.inc"
     ;
 
-const std::map<std::pair<clang::c2s::HelperFileEnum, std::string>, std::string>
+const std::map<std::pair<clang::dpct::HelperFileEnum, std::string>, std::string>
     FeatureNameToAPINameMap = {
 #define HELPERFILE(PATH, UNIQUE_ENUM)
 #define HELPER_FEATURE_MAP_TO_APINAME(File, FeatureName, APIName)              \
-  {{clang::c2s::HelperFileEnum::File, FeatureName}, APIName},
+  {{clang::dpct::HelperFileEnum::File, FeatureName}, APIName},
 #include "../../runtime/c2s-rt/include/HelperFileAndFeatureNames.inc"
 #undef HELPER_FEATURE_MAP_TO_APINAME
 #undef HELPERFILE
@@ -1164,5 +1164,5 @@ const std::unordered_map<std::string, HelperFeatureEnum>
         {"sampler", HelperFeatureEnum::Image_image_wrapper_base_get_sampler},
 };
 
-} // namespace c2s
+} // namespace dpct
 } // namespace clang

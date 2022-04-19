@@ -21,13 +21,13 @@
 #include "clang/Basic/LangOptions.h"
 
 namespace clang {
-namespace c2s {
+namespace dpct {
 
 /// Set the prec and domain in the FFTDescriptorTypeInfo of the declaration of
 /// \p DescIdx
 void FFTFunctionCallBuilder::addDescriptorTypeInfo(
     std::string PrecAndDomainStr) {
-  auto &SM = C2SGlobalInfo::getSourceManager();
+  auto &SM = DpctGlobalInfo::getSourceManager();
   const DeclaratorDecl *HandleVar = getHandleVar(TheCallExpr->getArg(0));
   if (!HandleVar)
     return;
@@ -49,10 +49,10 @@ void FFTFunctionCallBuilder::addDescriptorTypeInfo(
   }
 
   unsigned int TypeLength = Lexer::MeasureTokenLength(
-      TypeBeginLoc, SM, C2SGlobalInfo::getContext().getLangOpts());
+      TypeBeginLoc, SM, DpctGlobalInfo::getContext().getLangOpts());
 
-  auto LocInfo = C2SGlobalInfo::getLocInfo(TypeBeginLoc);
-  auto FileInfo = C2SGlobalInfo::getInstance().insertFile(LocInfo.first);
+  auto LocInfo = DpctGlobalInfo::getLocInfo(TypeBeginLoc);
+  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(LocInfo.first);
   auto &M = FileInfo->getFFTDescriptorTypeMap();
   auto Iter = M.find(LocInfo.second);
   if (Iter == M.end()) {
@@ -75,7 +75,7 @@ FFTFunctionCallBuilder::getPrecAndDomainStr(unsigned int PrecDomainIdx) {
   Expr::EvalResult ER;
   if (!TheCallExpr->getArg(PrecDomainIdx)->isValueDependent() &&
       TheCallExpr->getArg(PrecDomainIdx)
-          ->EvaluateAsInt(ER, C2SGlobalInfo::getContext())) {
+          ->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
     int64_t Value = ER.Val.getInt().getExtValue();
     PrecAndDomain = getPrecAndDomainStrFromValue(Value);
   }
@@ -86,7 +86,7 @@ FFTTypeEnum FFTFunctionCallBuilder::getFFTType(unsigned int PrecDomainIdx) {
   Expr::EvalResult ER;
   if (!TheCallExpr->getArg(PrecDomainIdx)->isValueDependent() &&
       TheCallExpr->getArg(PrecDomainIdx)
-          ->EvaluateAsInt(ER, C2SGlobalInfo::getContext())) {
+          ->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
     int64_t Value = ER.Val.getInt().getExtValue();
     return getFFTTypeFromValue(Value);
   }
@@ -97,17 +97,17 @@ FFTTypeEnum FFTFunctionCallBuilder::getFFTType(unsigned int PrecDomainIdx) {
 void FFTFunctionCallBuilder::updateBufferArgs(unsigned int Idx,
                                               const std::string &TypeStr,
                                               std::string PointerName) {
-  if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
     std::string BufferDecl;
     if (PointerName.empty()) {
-      PointerName = c2s::ExprAnalysis::ref(TheCallExpr->getArg(Idx));
+      PointerName = dpct::ExprAnalysis::ref(TheCallExpr->getArg(Idx));
       ArgsList[Idx] =
           getTempNameForExpr(TheCallExpr->getArg(Idx), true, true) + "buf_ct" +
-          std::to_string(c2s::C2SGlobalInfo::getSuffixIndexInRuleThenInc());
+          std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
     } else {
       ArgsList[Idx] =
           PointerName + "_buf_ct" +
-          std::to_string(c2s::C2SGlobalInfo::getSuffixIndexInRuleThenInc());
+          std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
     }
     if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
       requestFeature(HelperFeatureEnum::Memory_get_buffer_T,
@@ -118,7 +118,7 @@ void FFTFunctionCallBuilder::updateBufferArgs(unsigned int Idx,
     }
 
     BufferDecl = "auto " + ArgsList[Idx] + " = " +
-                 MapNames::getC2SNamespace() + "get_buffer<" + TypeStr + ">(" +
+                 MapNames::getDpctNamespace() + "get_buffer<" + TypeStr + ">(" +
                  PointerName + ");";
     PrefixStmts.emplace_back(BufferDecl);
   } else {
@@ -163,8 +163,8 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
 
   if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
     auto LocInfo =
-        C2SGlobalInfo::getLocInfo(Locations.FuncPtrDeclHandleTypeBegin);
-    auto FileInfo = C2SGlobalInfo::getInstance().insertFile(LocInfo.first);
+        DpctGlobalInfo::getLocInfo(Locations.FuncPtrDeclHandleTypeBegin);
+    auto FileInfo = DpctGlobalInfo::getInstance().insertFile(LocInfo.first);
     auto &M = FileInfo->getFFTDescriptorTypeMap();
     auto Iter = M.find(LocInfo.second);
     if (Iter == M.end()) {
@@ -199,8 +199,8 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
   }
 
   if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
-    auto LocInfo = C2SGlobalInfo::getLocInfo(
-        C2SGlobalInfo::getSourceManager().getExpansionLoc(
+    auto LocInfo = DpctGlobalInfo::getLocInfo(
+        DpctGlobalInfo::getSourceManager().getExpansionLoc(
             Locations.FuncPtrDeclBegin));
     if (DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
                                  Diagnostics::CHECK_RELATED_QUEUE, false,
@@ -209,7 +209,7 @@ void FFTFunctionCallBuilder::assembleExecCallExpr() {
       PrefixStmts.push_back(DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
           Diagnostics::CHECK_RELATED_QUEUE));
       PrefixStmts.push_back("*/");
-      PrefixStmts.push_back("desc->commit(" + MapNames::getC2SNamespace() +
+      PrefixStmts.push_back("desc->commit(" + MapNames::getDpctNamespace() +
                             "get_default_queue());");
       requestFeature(HelperFeatureEnum::Device_get_default_queue,
                      LocInfo.first);
@@ -279,7 +279,7 @@ bool FFTFunctionCallBuilder::moveDeclOutOfBracesIfNeeds(
   if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment)
     return false;
 
-  auto &SM = C2SGlobalInfo::getSourceManager();
+  auto &SM = DpctGlobalInfo::getSourceManager();
   // Now this function only covers this pattern:
   // cufftResult R = cufftAPI();
 
@@ -318,7 +318,7 @@ bool FFTFunctionCallBuilder::moveDeclOutOfBracesIfNeeds(
   SourceLocation TypeEnd = VD->getTypeSourceInfo()->getTypeLoc().getEndLoc();
   TypeEnd = TypeEnd.getLocWithOffset(
       Lexer::MeasureTokenLength(SM.getExpansionLoc(TypeEnd), SM,
-                                C2SGlobalInfo::getContext().getLangOpts()));
+                                DpctGlobalInfo::getContext().getLangOpts()));
 
   auto C = SM.getCharacterData(TypeEnd);
   int Offset = 0;
@@ -330,7 +330,7 @@ bool FFTFunctionCallBuilder::moveDeclOutOfBracesIfNeeds(
   TypeLength = SM.getDecomposedLoc(TypeEnd).second -
                SM.getDecomposedLoc(TypeBegin).second;
 
-  std::string TypeRepl = C2SGlobalInfo::getReplacedTypeName(VD->getType());
+  std::string TypeRepl = DpctGlobalInfo::getReplacedTypeName(VD->getType());
   std::string VarName = VD->getNameAsString();
   PrePrefixStmt = TypeRepl + " " + VarName + " = 0;";
   return true;
@@ -340,7 +340,7 @@ void initVars(const CallExpr *CE, const VarDecl *VD, const BinaryOperator *BO,
               LibraryMigrationFlags &Flags,
               LibraryMigrationStrings &ReplaceStrs,
               LibraryMigrationLocations &Locations) {
-  auto &SM = C2SGlobalInfo::getSourceManager();
+  auto &SM = DpctGlobalInfo::getSourceManager();
   SourceLocation FuncPtrDeclEnd;
   if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
     if (Flags.IsFunctionPointer) {
@@ -352,7 +352,7 @@ void initVars(const CallExpr *CE, const VarDecl *VD, const BinaryOperator *BO,
       FuncPtrDeclEnd = SM.getExpansionLoc(BO->getRHS()->getEndLoc());
     }
     FuncPtrDeclEnd = FuncPtrDeclEnd.getLocWithOffset(Lexer::MeasureTokenLength(
-        FuncPtrDeclEnd, SM, C2SGlobalInfo::getContext().getLangOpts()));
+        FuncPtrDeclEnd, SM, DpctGlobalInfo::getContext().getLangOpts()));
     Locations.FuncPtrDeclLen =
         SM.getDecomposedLoc(FuncPtrDeclEnd).second -
         SM.getDecomposedLoc(Locations.FuncPtrDeclBegin).second;
@@ -474,7 +474,7 @@ void FFTFunctionCallBuilder::updateFFTPlanAPIInfo(
     Expr::EvalResult ER;
     if (!TheCallExpr->getArg(3)->isValueDependent() &&
         TheCallExpr->getArg(3)->EvaluateAsInt(ER,
-                                              C2SGlobalInfo::getContext())) {
+                                              DpctGlobalInfo::getContext())) {
       int64_t Value = ER.Val.getInt().getExtValue();
       if (Value == 1) {
         FPAInfo.NeedBatchFor1D = false;
@@ -495,7 +495,7 @@ void FFTFunctionCallBuilder::updateFFTPlanAPIInfo(
     Expr::EvalResult ER;
     if (!TheCallExpr->getArg(1)->isValueDependent() &&
         TheCallExpr->getArg(1)->EvaluateAsInt(ER,
-                                              C2SGlobalInfo::getContext())) {
+                                              DpctGlobalInfo::getContext())) {
       Rank = ER.Val.getInt().getExtValue();
     }
   }
@@ -504,7 +504,7 @@ void FFTFunctionCallBuilder::updateFFTPlanAPIInfo(
   Flags.MoveOutOfMacro = true;
   addDescriptorTypeInfo(PrecAndDomainStr);
   if (!PrecAndDomainStr.empty())
-    C2SGlobalInfo::getPrecAndDomPairSet().insert(PrecAndDomainStr);
+    DpctGlobalInfo::getPrecAndDomPairSet().insert(PrecAndDomainStr);
 
   FPAInfo.addInfo(PrecAndDomainStr, FFTType, ArgsList, ArgsListAddRequiredParen,
                   IndentStr, FuncName, Flags, Rank, getDescrMemberCallPrefix(),
@@ -524,31 +524,31 @@ void FFTFunctionCallBuilder::updateExecCallExpr(std::string FFTHandleInfoKey) {
     Expr::EvalResult ER;
     if (!TheCallExpr->getArg(3)->isValueDependent() &&
         TheCallExpr->getArg(3)->EvaluateAsInt(ER,
-                                              C2SGlobalInfo::getContext())) {
+                                              DpctGlobalInfo::getContext())) {
       Dir = ER.Val.getInt().getExtValue();
       assembleExecCallExpr();
       if (Dir == -1) {
-        C2SGlobalInfo::insertOrUpdateFFTHandleInfo(
+        DpctGlobalInfo::insertOrUpdateFFTHandleInfo(
             FFTHandleInfoKey, FFTDirectionType::Forward, Placement);
       } else {
-        C2SGlobalInfo::insertOrUpdateFFTHandleInfo(
+        DpctGlobalInfo::insertOrUpdateFFTHandleInfo(
             FFTHandleInfoKey, FFTDirectionType::Backward, Placement);
       }
     } else {
       Dir = 0;
       assembleExecCallExpr();
-      C2SGlobalInfo::insertOrUpdateFFTHandleInfo(
+      DpctGlobalInfo::insertOrUpdateFFTHandleInfo(
           FFTHandleInfoKey, FFTDirectionType::Unknown, Placement);
     }
   } else if (FuncNameRef.endswith("R2C") || FuncNameRef.endswith("D2Z")) {
     Dir = -1;
     assembleExecCallExpr();
-    C2SGlobalInfo::insertOrUpdateFFTHandleInfo(
+    DpctGlobalInfo::insertOrUpdateFFTHandleInfo(
         FFTHandleInfoKey, FFTDirectionType::Forward, Placement);
   } else {
     Dir = 1;
     assembleExecCallExpr();
-    C2SGlobalInfo::insertOrUpdateFFTHandleInfo(
+    DpctGlobalInfo::insertOrUpdateFFTHandleInfo(
         FFTHandleInfoKey, FFTDirectionType::Backward, Placement);
   }
 }
@@ -571,7 +571,7 @@ void FFTFunctionCallBuilder::updateFFTHandleInfoFromPlan(
     std::string FFTHandleInfoKey) {
   if (FuncName == "cufftPlanMany" || FuncName == "cufftMakePlanMany" ||
       FuncName == "cufftMakePlanMany64") {
-    C2SGlobalInfo::insertOrUpdateFFTHandleInfo(FFTHandleInfoKey, true,
+    DpctGlobalInfo::insertOrUpdateFFTHandleInfo(FFTHandleInfoKey, true,
                                                 ArgsList[5], ArgsList[8],
                                                 ArgsList[3], ArgsList[6]);
   }
@@ -636,7 +636,7 @@ void FFTPlanAPIInfo::buildInfo() {
 }
 
 void FFTPlanAPIInfo::linkInfo() {
-  auto &Map = C2SGlobalInfo::getFFTHandleInfoMap();
+  auto &Map = DpctGlobalInfo::getFFTHandleInfoMap();
   auto I = Map.find(HandleDeclFileAndOffset);
   if (I != Map.end()) {
     DirectionFromExec = I->second.Direction;
@@ -644,8 +644,8 @@ void FFTPlanAPIInfo::linkInfo() {
   }
 
   if (FFTType == FFTTypeEnum::Unknown &&
-      C2SGlobalInfo::getFFTTypeSet().size() == 1) {
-    FFTType = *(C2SGlobalInfo::getFFTTypeSet().begin());
+      DpctGlobalInfo::getFFTTypeSet().size() == 1) {
+    FFTType = *(DpctGlobalInfo::getFFTTypeSet().begin());
   }
 
   StringRef FuncNameRef(FuncName);
@@ -829,10 +829,10 @@ void FFTPlanAPIInfo::updateManyCommitCallExpr() {
 
   std::string InputStrideName =
       "input_stride_ct" +
-      std::to_string(C2SGlobalInfo::getSuffixIndexGlobalThenInc());
+      std::to_string(DpctGlobalInfo::getSuffixIndexGlobalThenInc());
   std::string OutputStrideName =
       "output_stride_ct" +
-      std::to_string(C2SGlobalInfo::getSuffixIndexGlobalThenInc());
+      std::to_string(DpctGlobalInfo::getSuffixIndexGlobalThenInc());
 
   if (Rank != -1) {
     // dim = 3:
@@ -994,10 +994,10 @@ FFTPlanAPIInfo::update1D2D3DCommitPrefix(std::vector<std::string> Dims) {
 
   std::string InputStrideName =
       "input_stride_ct" +
-      std::to_string(C2SGlobalInfo::getSuffixIndexGlobalThenInc());
+      std::to_string(DpctGlobalInfo::getSuffixIndexGlobalThenInc());
   std::string OutputStrideName =
       "output_stride_ct" +
-      std::to_string(C2SGlobalInfo::getSuffixIndexGlobalThenInc());
+      std::to_string(DpctGlobalInfo::getSuffixIndexGlobalThenInc());
 
   if (FFTType == FFTTypeEnum::R2C || FFTType == FFTTypeEnum::D2Z) {
     if (Dims.size() == 1) {
@@ -1098,8 +1098,8 @@ void FFTPlanAPIInfo::updateCommitCallExpr(std::vector<std::string> Dims) {
   }
 
   if (PrecAndDomainStr.empty()) {
-    if (C2SGlobalInfo::getPrecAndDomPairSet().size() == 1) {
-      PrecAndDomainStr = *(C2SGlobalInfo::getPrecAndDomPairSet().begin());
+    if (DpctGlobalInfo::getPrecAndDomPairSet().size() == 1) {
+      PrecAndDomainStr = *(DpctGlobalInfo::getPrecAndDomPairSet().begin());
     } else {
       DiagnosticsUtils::report(FilePath, InsertOffsets.first,
                                Diagnostics::UNDEDUCED_TYPE, true, false,
@@ -1142,24 +1142,24 @@ void FFTDescriptorTypeInfo::buildInfo(std::string FilePath,
     return;
 
   if (!PrecAndDom.empty() && IsValid) {
-    C2SGlobalInfo::getInstance().addReplacement(
+    DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
             FilePath, Offset, Length,
             "std::shared_ptr<oneapi::mkl::dft::descriptor<" + PrecAndDom + ">>",
             nullptr));
     return;
   }
-  if (C2SGlobalInfo::getPrecAndDomPairSet().size() == 1) {
-    C2SGlobalInfo::getInstance().addReplacement(
+  if (DpctGlobalInfo::getPrecAndDomPairSet().size() == 1) {
+    DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
             FilePath, Offset, Length,
             "std::shared_ptr<oneapi::mkl::dft::descriptor<" +
-                *C2SGlobalInfo::getPrecAndDomPairSet().begin() + ">>",
+                *DpctGlobalInfo::getPrecAndDomPairSet().begin() + ">>",
             nullptr));
   } else {
     DiagnosticsUtils::report(FilePath, Offset, Diagnostics::UNDEDUCED_TYPE,
                              true, false, "FFT precision and domain type");
-    C2SGlobalInfo::getInstance().addReplacement(
+    DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(
             FilePath, Offset, Length,
             "std::shared_ptr<oneapi::mkl::dft::descriptor<c2s_placeholder/"
@@ -1195,7 +1195,7 @@ void replacementLocation(const LibraryMigrationLocations Locations,
                          std::string &FilePath) {
   if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
     ReplaceOffset =
-        C2SGlobalInfo::getLocInfo(Locations.FuncPtrDeclBegin).second;
+        DpctGlobalInfo::getLocInfo(Locations.FuncPtrDeclBegin).second;
     ReplaceLen = Locations.FuncPtrDeclLen;
     return;
   }
@@ -1222,7 +1222,7 @@ void replacementLocation(const LibraryMigrationLocations Locations,
     InsertLocations =
         SourceRange(Locations.PrefixInsertLoc, Locations.SuffixInsertLoc);
 
-    auto &SM = C2SGlobalInfo::getSourceManager();
+    auto &SM = DpctGlobalInfo::getSourceManager();
     ReplaceLocation = Locations.FuncNameBegin;
     ReplaceLen = SM.getDecomposedLoc(Locations.FuncCallEnd).second -
                  SM.getDecomposedLoc(Locations.FuncNameBegin).second;
@@ -1230,11 +1230,11 @@ void replacementLocation(const LibraryMigrationLocations Locations,
 
   // Assumption: these locations are in the same file
   InsertOffsets.first =
-      C2SGlobalInfo::getLocInfo(InsertLocations.getBegin()).second;
+      DpctGlobalInfo::getLocInfo(InsertLocations.getBegin()).second;
   InsertOffsets.second =
-      C2SGlobalInfo::getLocInfo(InsertLocations.getEnd()).second;
-  ReplaceOffset = C2SGlobalInfo::getLocInfo(ReplaceLocation).second;
-  FilePath = C2SGlobalInfo::getLocInfo(ReplaceLocation).first;
+      DpctGlobalInfo::getLocInfo(InsertLocations.getEnd()).second;
+  ReplaceOffset = DpctGlobalInfo::getLocInfo(ReplaceLocation).second;
+  FilePath = DpctGlobalInfo::getLocInfo(ReplaceLocation).first;
 }
 
 void FFTExecAPIInfo::updateResetAndCommitStmts() {
@@ -1277,7 +1277,7 @@ void FFTExecAPIInfo::updateResetAndCommitStmts() {
         Stream = StreamStr;
       else {
         if (QueueIndex == -1) {
-          Stream = MapNames::getC2SNamespace() + "get_default_queue()";
+          Stream = MapNames::getDpctNamespace() + "get_default_queue()";
           requestFeature(HelperFeatureEnum::Device_get_default_queue, FilePath);
         } else
           Stream = "{{NEEDREPLACEQ" + std::to_string(QueueIndex) + "}}";
@@ -1302,7 +1302,7 @@ void FFTExecAPIInfo::updateResetAndCommitStmts() {
 
 void FFTExecAPIInfo::linkInfo() {
   if (!Flags.IsFunctionPointer && !Flags.IsFunctionPointerAssignment) {
-    auto &Map = C2SGlobalInfo::getFFTHandleInfoMap();
+    auto &Map = DpctGlobalInfo::getFFTHandleInfoMap();
     auto I = Map.find(HandleDeclFileAndOffset);
     if (I != Map.end()) {
       InputDistance = I->second.InputDistance;
@@ -1316,7 +1316,7 @@ void FFTExecAPIInfo::linkInfo() {
 
     if (CompoundStmtBeginOffset && PlanHandleDeclBeginOffset &&
         ExecAPIBeginOffset)
-      StreamStr = C2SGlobalInfo::getInstance().getRelatedFFTStream(
+      StreamStr = DpctGlobalInfo::getInstance().getRelatedFFTStream(
           FilePath, CompoundStmtBeginOffset, PlanHandleDeclBeginOffset,
           ExecAPIBeginOffset);
   } else {
@@ -1356,7 +1356,7 @@ void replacementText(
                                                      ReplaceLen, Text, nullptr);
 
     TextRepl->setBlockLevelFormatFlag();
-    C2SGlobalInfo::getInstance().addReplacement(TextRepl);
+    DpctGlobalInfo::getInstance().addReplacement(TextRepl);
     return;
   }
 
@@ -1372,7 +1372,7 @@ void replacementText(
     if ((Flags.MoveOutOfMacro && Flags.IsMacroArg) ||
         (Flags.CanAvoidUsingLambda && !Flags.IsMacroArg)) {
       std::string InsertString;
-      if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
           !Flags.CanAvoidBrace) {
         OutPrefixStmts << "{" << PrefixStmts;
 
@@ -1411,7 +1411,7 @@ void replacementText(
       OutRepl = CallExprRepl + ";";
     }
   } else {
-    if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
         !Flags.CanAvoidBrace) {
       if (!Flags.IsPrefixEmpty || !Flags.IsSuffixEmpty) {
         OutPrefixStmts << PrePrefixStmt << "{" << PrefixStmts;
@@ -1438,9 +1438,9 @@ void replacementText(
             OutSuffixStmts.getAsString(IndentStr, true) + getNL() + IndentStr,
         nullptr);
     InsertRepl->setBlockLevelFormatFlag(true);
-    C2SGlobalInfo::getInstance().addReplacement(InsertRepl);
+    DpctGlobalInfo::getInstance().addReplacement(InsertRepl);
 
-    C2SGlobalInfo::getInstance().addReplacement(
+    DpctGlobalInfo::getInstance().addReplacement(
         std::make_shared<ExtReplacement>(FilePath, ReplaceOffset, ReplaceLen,
                                          OutRepl, nullptr));
   } else {
@@ -1457,9 +1457,9 @@ void replacementText(
     ReplaceRepl->setBlockLevelFormatFlag(true);
     InsertAfterRepl->setBlockLevelFormatFlag(true);
 
-    C2SGlobalInfo::getInstance().addReplacement(InsertBeforeRepl);
-    C2SGlobalInfo::getInstance().addReplacement(ReplaceRepl);
-    C2SGlobalInfo::getInstance().addReplacement(InsertAfterRepl);
+    DpctGlobalInfo::getInstance().addReplacement(InsertBeforeRepl);
+    DpctGlobalInfo::getInstance().addReplacement(ReplaceRepl);
+    DpctGlobalInfo::getInstance().addReplacement(InsertAfterRepl);
   }
 }
 
@@ -1470,7 +1470,7 @@ void replacementText(
 /// Else, this funcion will return false.
 bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall, int Index,
                                     std::string &StreamStr) {
-  auto &SM = C2SGlobalInfo::getSourceManager();
+  auto &SM = DpctGlobalInfo::getSourceManager();
   const CompoundStmt *CS =
       dyn_cast_or_null<CompoundStmt>(getParentStmt(ExecCall));
   if (!CS)
@@ -1482,7 +1482,7 @@ bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall, int Index,
                                  ast_matchers::hasName("cufftSetStream"))))
           .bind("FunctionCall"));
   auto MatchedResults = ast_matchers::match(SetStreamCallMatcher, *CS,
-                                            C2SGlobalInfo::getContext());
+                                            DpctGlobalInfo::getContext());
   std::vector<const CallExpr *> Calls;
   for (auto &Result : MatchedResults) {
     const CallExpr *Call = Result.getNodeAs<CallExpr>("FunctionCall");
@@ -1520,7 +1520,7 @@ bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall, int Index,
       LastSetStreamCall = Call;
       // If cufftSetStream() is in control flow statements, then need emit
       // warning
-      if (isInCtrlFlowStmt(Call, CS, C2SGlobalInfo::getContext())) {
+      if (isInCtrlFlowStmt(Call, CS, DpctGlobalInfo::getContext())) {
         IsLastSetStreamCallDetermined = false;
       } else {
         bool NewHandleVarAssigned = false;
@@ -1551,7 +1551,7 @@ bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall, int Index,
   // Step4: using the stream which is set in the last cufftSetStream()
   if (isDefaultStream(LastSetStreamCall->getArg(1))) {
     if (Index == -1) {
-      StreamStr = MapNames::getC2SNamespace() + "get_default_queue()";
+      StreamStr = MapNames::getDpctNamespace() + "get_default_queue()";
       requestFeature(HelperFeatureEnum::Device_get_default_queue, ExecCall);
     } else {
       StreamStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
@@ -1563,5 +1563,5 @@ bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall, int Index,
   return true;
 }
 
-} // namespace c2s
+} // namespace dpct
 } // namespace clang

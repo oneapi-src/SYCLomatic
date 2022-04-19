@@ -12,7 +12,7 @@
 #include "clang/Basic/DiagnosticIDs.h"
 
 namespace clang {
-namespace c2s {
+namespace dpct {
 std::set<int> WarningIDs;
 namespace DiagnosticsUtils {
 unsigned int UniqueID = 0;
@@ -67,9 +67,9 @@ std::unordered_map<int, DiagnosticsMessage> MsgIDTable;
 #undef DEF_COMMENT
 
 void reportInvalidWarningID(const std::string &Str) {
-  C2SLog() << "Invalid warning ID or range: " << Str << "\n";
+  DpctLog() << "Invalid warning ID or range: " << Str << "\n";
   ShowStatus(MigrationErrorInvalidWarningID);
-  c2sExit(MigrationErrorInvalidWarningID);
+  dpctExit(MigrationErrorInvalidWarningID);
 }
 
 void initWarningIDs() {
@@ -119,5 +119,5 @@ void initWarningIDs() {
     }
   }
 }
-} // namespace c2s
+} // namespace dpct
 } // namespace clang

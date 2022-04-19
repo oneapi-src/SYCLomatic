@@ -316,7 +316,7 @@ void ProcessDirectoriesIncluded(const std::set<std::string> &DirIncludedSet,
       // be replaced.
       std::string Warning =
           "Cannot evaluate variable in  \"" + DirectoryInclude + "\"\n";
-      clang::c2s::PrintMsg(Warning);
+      clang::dpct::PrintMsg(Warning);
       continue;
     }
     Output += DirectoryInclude;
@@ -352,8 +352,8 @@ void generateCompilationDatabase(const std::string &BuildDir) {
   if (!OutFile) {
     std::string ErrMsg =
         "Cannot create CompilationDatabase \"" + FilePath + "\"\n";
-    clang::c2s::PrintMsg(ErrMsg);
-    c2sExit(VcxprojPaserCreateCompilationDBFail);
+    clang::dpct::PrintMsg(ErrMsg);
+    dpctExit(VcxprojPaserCreateCompilationDBFail);
   }
 
   OutFile << "[\n";
@@ -557,8 +557,8 @@ void parseVaribles(const std::string &VcxprojFile) {
   std::ifstream InFile(VcxprojFile);
   if (!InFile) {
     std::string ErrMsg = "Cannot Open VcxprojFile \"" + VcxprojFile + "\"\n";
-    clang::c2s::PrintMsg(ErrMsg);
-    c2sExit(VcxprojPaserFileNotExist);
+    clang::dpct::PrintMsg(ErrMsg);
+    dpctExit(VcxprojPaserFileNotExist);
   }
 
   std::string Line;
@@ -647,8 +647,8 @@ void parseVcxprojFile(const std::string &VcxprojFile) {
 
   if (!Infile) {
     std::string ErrMsg = "Cannot Open VcxprojFile \"" + VcxprojFile + "\"\n";
-    clang::c2s::PrintMsg(ErrMsg);
-    c2sExit(VcxprojPaserFileNotExist);
+    clang::dpct::PrintMsg(ErrMsg);
+    dpctExit(VcxprojPaserFileNotExist);
   }
 
   std::string Line;

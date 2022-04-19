@@ -47,7 +47,7 @@ void recoverCheckpoint(int Signo) {
   if (EnableErrorRecover && Signo == SIGSEGV) {
     if (CheckPointStage == CHECKPOINT_PROCESSING_FILE) {
       std::string FaultMsg =
-          "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
           "skips the current file and continues migration.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
@@ -57,7 +57,7 @@ void recoverCheckpoint(int Signo) {
       LONGJMP(CPFileEnter, 1);
     } else if (CheckPointStage == CHECKPOINT_PROCESSING_FILE_ASTMATCHER) {
       std::string FaultMsg =
-          "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
           "skips the migration rule causing error and continues migration.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
@@ -68,7 +68,7 @@ void recoverCheckpoint(int Signo) {
     } else if (CheckPointStage ==
                CHECKPOINT_PROCESSING_REPLACEMENT_POSTPROCESS) {
       std::string FaultMsg =
-          "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
           "tries to recover and write the migration result.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
@@ -78,7 +78,7 @@ void recoverCheckpoint(int Signo) {
       LONGJMP(CPRepPostprocessEnter, 1);
     } else if (CheckPointStage == CHECKPOINT_FORMATTING_CODE) {
       std::string FaultMsg =
-          "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
           "skips formatting the code and continues migration.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
@@ -88,7 +88,7 @@ void recoverCheckpoint(int Signo) {
       LONGJMP(CPFormatCodeEnter, 1);
     } else if (CheckPointStageCore == CHECKPOINT_WRITE_OUT) {
       std::string FaultMsg =
-          "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
           "tries to recover and write the migration result.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
@@ -106,7 +106,7 @@ void FaultHandler(int Signo) {
                          " Intel(R) DPC++ Compatibility Tool tries to write "
                          "analysis reports and terminates...\n";
   PrintReportOnFault(FaultMsg);
-  c2sExit(MigrationError);
+  dpctExit(MigrationError);
 }
 
 static void SetSignalHandler(void (*Handler)(int)) {
@@ -148,7 +148,7 @@ static void FaultHandler(int Signo, siginfo_t *Info, void *Extra) {
                          " Intel(R) DPC++ Compatibility Tool tries to write "
                          "analysis reports and terminates...\n";
   PrintReportOnFault(FaultMsg);
-  c2sExit(MigrationError);
+  dpctExit(MigrationError);
 }
 
 static void SetHandler(void (*handler)(int, siginfo_t *, void *)) {
@@ -158,31 +158,31 @@ static void SetHandler(void (*handler)(int, siginfo_t *, void *)) {
 
   if (sigaction(SIGSEGV, &action, NULL) == -1) {
     llvm::errs() << "SIGSEGV: sigaction installation failure\n";
-    c2sExit(-1);
+    dpctExit(-1);
   }
 
   if (sigaction(SIGABRT, &action, NULL) == -1) {
     llvm::errs() << "SIGABRT: sigaction installation failure\n";
-    c2sExit(-1);
+    dpctExit(-1);
   }
 
   if (sigaction(SIGTERM, &action, NULL) == -1) {
     llvm::errs() << "SIGTERM: sigaction installation failure\n";
-    c2sExit(-1);
+    dpctExit(-1);
   }
 
   if (sigaction(SIGFPE, &action, NULL) == -1) {
     llvm::errs() << "SIGFPE: sigaction installation failure\n";
-    c2sExit(-1);
+    dpctExit(-1);
   }
 
   if (sigaction(SIGSTKFLT, &action, NULL) == -1) {
     llvm::errs() << "SIGSTKFLT: sigaction installation failure\n";
-    c2sExit(-1);
+    dpctExit(-1);
   }
   if (sigaction(SIGPIPE, &action, NULL) == -1) {
     llvm::errs() << "SIGPIPE: sigaction installation failure\n";
-    c2sExit(-1);
+    dpctExit(-1);
   }
 }
 #endif

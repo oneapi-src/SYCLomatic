@@ -26,7 +26,7 @@ namespace {
 } // namespace
 
 using namespace clang;
-using namespace clang::c2s;
+using namespace clang::dpct;
 using namespace clang::ast_matchers;
 
 std::string ConfusableIdentifierDetectionRule::skeleton(StringRef Name) {
@@ -77,7 +77,7 @@ std::string ConfusableIdentifierDetectionRule::skeleton(StringRef Name) {
 
 void ConfusableIdentifierDetectionRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
-  if (C2SGlobalInfo::getCheckUnicodeSecurityFlag()) {
+  if (DpctGlobalInfo::getCheckUnicodeSecurityFlag()) {
     MF.addMatcher(namedDecl().bind("confusabledecl"), this);
   }
 }

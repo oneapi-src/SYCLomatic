@@ -9,8 +9,8 @@
 //
 //===---------------------------------------------------------------===//
 
-#ifndef C2S_DEBUG_H
-#define C2S_DEBUG_H
+#ifndef DPCT_DEBUG_H
+#define DPCT_DEBUG_H
 
 #include "TextModification.h"
 
@@ -22,15 +22,15 @@
 #include "llvm/Support/Debug.h"
 
 namespace clang {
-namespace c2s {
+namespace dpct {
 
 class ASTTraversal;
 
 #ifdef NDEBUG
-#undef C2S_DEBUG_BUILD
+#undef DPCT_DEBUG_BUILD
 #else
-#undef C2S_DEBUG_BUILD
-#define C2S_DEBUG_BUILD 1
+#undef DPCT_DEBUG_BUILD
+#define DPCT_DEBUG_BUILD 1
 #endif
 
 class StaticsInfo {
@@ -42,14 +42,14 @@ public:
   static void printReplacements(const TransformSetTy &TS, ASTContext &Context);
 };
 
-llvm::raw_ostream &C2SLog();
-llvm::raw_ostream &C2SStats();
-llvm::raw_ostream &C2SDiags();
-llvm::raw_ostream &C2STerm();
-std::string getC2SStatsStr();
-std::string getC2SDiagsStr();
-std::string getC2STermStr();
-std::string getC2SLogStr();
+llvm::raw_ostream &DpctLog();
+llvm::raw_ostream &DpctStats();
+llvm::raw_ostream &DpctDiags();
+llvm::raw_ostream &DpctTerm();
+std::string getDpctStatsStr();
+std::string getDpctDiagsStr();
+std::string getDpctTermStr();
+std::string getDpctLogStr();
 extern int VerboseLevel;
 
 extern std::unordered_map<std::string, std::array<unsigned int, 3>>
@@ -63,6 +63,6 @@ enum VerboseLevel {
 };
 
 void PrintMsg(const std::string &Msg, bool IsPrintOnNormal = true);
-} // namespace c2s
+} // namespace dpct
 } // namespace clang
-#endif // C2S_DEBUG_H
+#endif // DPCT_DEBUG_H

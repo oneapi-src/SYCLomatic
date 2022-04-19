@@ -38,7 +38,7 @@ using namespace std;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
 
-extern std::string C2SInstallPath; // Installation directory for this tool
+extern std::string DpctInstallPath; // Installation directory for this tool
 bool IsUsingDefaultOutRoot = false;
 
 void removeDefaultOutRootFolder(const std::string &DefaultOutRoot) {
@@ -55,9 +55,9 @@ void removeDefaultOutRootFolder(const std::string &DefaultOutRoot) {
   }
 }
 
-void c2sExit(int ExitCode, bool NeedCleanUp) {
+void dpctExit(int ExitCode, bool NeedCleanUp) {
   if (IsUsingDefaultOutRoot && NeedCleanUp) {
-    removeDefaultOutRootFolder(c2s::C2SGlobalInfo::getOutRoot());
+    removeDefaultOutRootFolder(dpct::DpctGlobalInfo::getOutRoot());
   }
   std::exit(ExitCode);
 }
@@ -143,7 +143,7 @@ StringRef getIndent(SourceLocation Loc, const SourceManager &SM) {
 }
 
 SourceRange getRangeInsideFuncLikeMacro(const Stmt *S) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
   BeginLoc = S->getBeginLoc();
   EndLoc = S->getEndLoc();
@@ -166,7 +166,7 @@ SourceRange getRangeInsideFuncLikeMacro(const Stmt *S) {
     while (BeginLoc.isMacroID() &&
            !SM.isAtStartOfImmediateMacroExpansion(BeginLoc)) {
       auto ISL = SM.getImmediateSpellingLoc(BeginLoc);
-      if (!c2s::C2SGlobalInfo::isInRoot(
+      if (!dpct::DpctGlobalInfo::isInRoot(
               SM.getFilename(SM.getExpansionLoc(ISL)).str()))
         break;
       BeginLoc = SM.getImmediateSpellingLoc(BeginLoc);
@@ -177,7 +177,7 @@ SourceRange getRangeInsideFuncLikeMacro(const Stmt *S) {
 }
 
 SourceRange getStmtExpansionSourceRange(const Stmt *S) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
   auto Range = getRangeInsideFuncLikeMacro(S);
   if (Range.getBegin().isMacroID() && Range.getEnd().isMacroID() &&
@@ -200,7 +200,7 @@ SourceRange getStmtExpansionSourceRange(const Stmt *S) {
 size_t calculateExpansionLevel(const SourceLocation Loc) {
   if (Loc.isFileID())
     return 0;
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto ExpanLoc = Loc;
   size_t Count = 0;
   while (ExpanLoc.isMacroID()) {
@@ -215,7 +215,7 @@ std::string getStmtSpelling(const Stmt *S) {
   std::string Str;
   if (!S)
     return Str;
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
   auto StmtRange = getStmtExpansionSourceRange(S);
   BeginLoc = StmtRange.getBegin();
@@ -235,7 +235,7 @@ std::string getStmtSpelling(const Stmt *S) {
   int Length =
       SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) +
       Lexer::MeasureTokenLength(
-          EndLoc, SM, c2s::C2SGlobalInfo::getContext().getLangOpts());
+          EndLoc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
   Str = std::string(SM.getCharacterData(BeginLoc), Length);
   return Str;
 }
@@ -277,11 +277,11 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
     //    file.
     // C. If both A and B hold, then default to A.
     // clang-format on
-    auto &FileSetInDB = c2s::C2SGlobalInfo::getFileSetInCompiationDB();
+    auto &FileSetInDB = dpct::DpctGlobalInfo::getFileSetInCompiationDB();
     if (FileSetInDB.find(SourcePath.str()) != end(FileSetInDB)) {
       return SPT_CppSource;
     }
-    auto &IncludingFileSet = c2s::C2SGlobalInfo::getIncludingFileSet();
+    auto &IncludingFileSet = dpct::DpctGlobalInfo::getIncludingFileSet();
     if (IncludingFileSet.find(SourcePath.str()) != end(IncludingFileSet)) {
       return SPT_CppHeader;
     }
@@ -328,7 +328,7 @@ const clang::CompoundStmt *findImmediateBlock(const clang::Stmt *S) {
   if (!S)
     return nullptr;
 
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*S);
   while (Parents.size() == 1) {
     auto *Parent = Parents[0].get<Stmt>();
@@ -404,7 +404,7 @@ const clang::FunctionDecl *getImmediateOuterFuncDecl(const clang::Stmt *S) {
   if (!S)
     return nullptr;
 
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*S);
   while (Parents.size() == 1) {
     if (auto *Parent = Parents[0].get<Decl>())
@@ -513,7 +513,7 @@ const clang::Stmt *getParentStmt(const clang::Stmt *S) {
   if (!S)
     return nullptr;
 
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*S);
   assert(Parents.size() >= 1);
   if (Parents.size() >= 1)
@@ -526,7 +526,7 @@ const clang::Stmt *getParentStmt(const clang::Decl *D) {
   if (!D)
     return nullptr;
 
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*D);
   assert(Parents.size() >= 1);
   if (Parents.size() >= 1)
@@ -539,7 +539,7 @@ const clang::Decl *getParentDecl(const clang::Decl *D) {
   if (!D)
     return nullptr;
 
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*D);
   assert(Parents.size() >= 1);
   if (Parents.size() >= 1)
@@ -551,7 +551,7 @@ const clang::Decl *getParentDecl(const clang::Decl *D) {
 // Find the ancestor DeclStmt node
 // Assumes: E != nullptr
 const DynTypedNode getAncestorDeclStmtNode(const clang::Expr *E) {
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
   DynTypedNode ParentNode;
   while (!ParentNodes.empty()) {
@@ -572,7 +572,7 @@ const clang::DeclStmt *getAncestorDeclStmt(const clang::Expr *E) {
 void getTheOuterMostExprOrValueDecl(const clang::Expr *E,
                                     const clang::Expr *&ResultExpr,
                                     const clang::ValueDecl *&ResultDecl) {
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
   DynTypedNode ParentNode;
   ResultExpr = E;
@@ -600,7 +600,7 @@ getParentNode(const std::shared_ptr<clang::DynTypedNode> N) {
   if (!N)
     return nullptr;
 
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*N);
   if (Parents.size() >= 1)
     return std::make_shared<clang::DynTypedNode>(Parents[0]);
@@ -641,7 +641,7 @@ bool IsSingleLineStatement(const clang::Stmt *S) {
 // Find the nearest non-Expr non-Decl ancestor node of Expr E
 // Assumes: E != nullptr
 const DynTypedNode findNearestNonExprNonDeclAncestorNode(const clang::Expr *E) {
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
   DynTypedNode LastNode = DynTypedNode::create(*E), ParentNode;
   while (!ParentNodes.empty()) {
@@ -672,8 +672,8 @@ SourceRange getScopeInsertRange(const Expr *E,
                                 const SourceLocation &FuncNameBegin,
                                 const SourceLocation &FuncCallEnd) {
   SourceLocation StmtBegin, StmtEndAfterSemi;
-  auto &Context = c2s::C2SGlobalInfo::getContext();
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto ParentNode = Context.getParents(*E);
   DynTypedNode AncestorStmt;
   SourceLocation StmtEnd;
@@ -696,17 +696,17 @@ SourceRange getScopeInsertRange(const Expr *E,
   if (AncestorStmt.get<Expr>()) {
     StmtEnd = StmtEnd.getLocWithOffset(Lexer::MeasureTokenLength(
         SM.getExpansionLoc(StmtEnd), SM,
-        c2s::C2SGlobalInfo::getContext().getLangOpts()));
+        dpct::DpctGlobalInfo::getContext().getLangOpts()));
   }
 
   StmtEndAfterSemi = StmtEnd.getLocWithOffset(Lexer::MeasureTokenLength(
       SM.getExpansionLoc(StmtEnd), SM,
-      c2s::C2SGlobalInfo::getContext().getLangOpts()));
+      dpct::DpctGlobalInfo::getContext().getLangOpts()));
   return {StmtBegin, StmtEndAfterSemi};
 }
 
 std::string getCanonicalPath(SourceLocation Loc) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   std::string Path = SM.getFilename(SM.getExpansionLoc(Loc)).str();
   makeCanonical(Path);
   return Path;
@@ -736,7 +736,7 @@ template <typename T> const T *getImmediateAncestor(const Stmt *S) {
   if (!S)
     return nullptr;
 
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*S);
   while (Parents.size() == 1) {
     if (auto *Parent = Parents[0].get<T>()) {
@@ -1048,7 +1048,7 @@ bool isConditionOfFlowControl(const clang::CallExpr *CE,
                               std::string &OriginStmtType,
                               bool &CanAvoidUsingLambda, SourceLocation &SL) {
   CanAvoidUsingLambda = false;
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*CE);
   DynTypedNode ParentNode;
   std::vector<DynTypedNode> AncestorNodes;
@@ -1117,7 +1117,7 @@ bool isConditionOfFlowControl(const clang::CallExpr *CE,
             if (VD->getInitStyle() == VarDecl::InitializationStyle::CInit &&
                 VD->getInit()->IgnoreImplicit() == CE) {
               CanAvoidUsingLambda = true;
-              SL = c2s::C2SGlobalInfo::getSourceManager().getExpansionLoc(
+              SL = dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
                   AncestorNodes[AncestorNodes.size() - 1]
                       .get<Stmt>()
                       ->getBeginLoc());
@@ -1130,7 +1130,7 @@ bool isConditionOfFlowControl(const clang::CallExpr *CE,
               (BO->getOpcode() == BO_Assign &&
                BO->getRHS()->IgnoreImplicit() == CE)) {
             CanAvoidUsingLambda = true;
-            SL = c2s::C2SGlobalInfo::getSourceManager().getExpansionLoc(
+            SL = dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
                 AncestorNodes[AncestorNodes.size() - 1]
                     .get<Stmt>()
                     ->getBeginLoc());
@@ -1138,7 +1138,7 @@ bool isConditionOfFlowControl(const clang::CallExpr *CE,
         } else if (E && E->IgnoreImplicit() == CE) {
           // E.g., if(functionCall()){}
           CanAvoidUsingLambda = true;
-          SL = c2s::C2SGlobalInfo::getSourceManager().getExpansionLoc(
+          SL = dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
               AncestorNodes[AncestorNodes.size() - 1]
                   .get<Stmt>()
                   ->getBeginLoc());
@@ -1149,7 +1149,7 @@ bool isConditionOfFlowControl(const clang::CallExpr *CE,
     }
     if (CE == CondtionNode) {
       CanAvoidUsingLambda = true;
-      SL = c2s::C2SGlobalInfo::getSourceManager().getExpansionLoc(
+      SL = dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
           AncestorNodes[AncestorNodes.size() - 1].get<Stmt>()->getBeginLoc());
       return true;
     }
@@ -1166,7 +1166,7 @@ bool isConditionOfFlowControl(const clang::CallExpr *CE,
 /// \return The result.
 bool isConditionOfFlowControl(const clang::Expr *E,
                               bool OnlyCheckConditionExpr) {
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
   DynTypedNode ParentNode;
   std::vector<DynTypedNode> AncestorNodes;
@@ -1217,9 +1217,9 @@ std::string getBufferNameAndDeclStr(const std::string &PointerName,
                                     std::string &BufferDecl) {
   std::string BufferTempName =
       PointerName + "_buf_ct" +
-      std::to_string(c2s::C2SGlobalInfo::getSuffixIndexInRuleThenInc());
+      std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
   // TODO: reinterpret will copy more data
-  BufferDecl = "auto " + BufferTempName + " = " + MapNames::getC2SNamespace() +
+  BufferDecl = "auto " + BufferTempName + " = " + MapNames::getDpctNamespace() +
                "get_buffer<" + TypeAsStr + ">(" + PointerName + ");" + getNL() +
                IndentStr;
   return BufferTempName;
@@ -1235,12 +1235,12 @@ std::string getBufferNameAndDeclStr(const Expr *Arg,
                                     const std::string &TypeAsStr,
                                     const std::string &IndentStr,
                                     std::string &BufferDecl) {
-  std::string PointerName = c2s::ExprAnalysis::ref(Arg);
+  std::string PointerName = dpct::ExprAnalysis::ref(Arg);
   std::string BufferTempName =
       getTempNameForExpr(Arg, true, true) + "buf_ct" +
-      std::to_string(c2s::C2SGlobalInfo::getSuffixIndexInRuleThenInc());
+      std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
   // TODO: reinterpret will copy more data
-  BufferDecl = "auto " + BufferTempName + " = " + MapNames::getC2SNamespace() +
+  BufferDecl = "auto " + BufferTempName + " = " + MapNames::getDpctNamespace() +
                "get_buffer<" + TypeAsStr + ">(" + PointerName + ");" + getNL() +
                IndentStr;
   return BufferTempName;
@@ -1323,7 +1323,7 @@ bool isInSameLine(clang::SourceLocation A, clang::SourceLocation B,
 /// \param CE A fucntion call in a function-like macro.
 /// \return The source range of \p CE.
 SourceRange getFunctionRange(const CallExpr *CE) {
-  SourceManager &SM = c2s::C2SGlobalInfo::getSourceManager();
+  SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto Begin = CE->getBeginLoc();
   Begin = SM.getImmediateSpellingLoc(Begin);
   Begin = SM.getExpansionLoc(Begin);
@@ -1334,7 +1334,7 @@ SourceRange getFunctionRange(const CallExpr *CE) {
 
   End = End.getLocWithOffset(Lexer::MeasureTokenLength(
       SM.getExpansionLoc(End), SM,
-      c2s::C2SGlobalInfo::getContext().getLangOpts()));
+      dpct::DpctGlobalInfo::getContext().getLangOpts()));
   return SourceRange(Begin, End);
 }
 
@@ -1429,9 +1429,9 @@ bool isAssigned(const Stmt *S) {
 
 std::string getTempNameForExpr(const Expr *E, bool HandleLiteral,
                                bool KeepLastUnderline, bool IsInMacroDefine) {
-  SourceManager &SM = c2s::C2SGlobalInfo::getSourceManager();
+  SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
   E = E->IgnoreCasts();
-  c2s::ArgumentAnalysis EA(E, IsInMacroDefine);
+  dpct::ArgumentAnalysis EA(E, IsInMacroDefine);
   auto TokenBegin = EA.getExprBeginSrcLoc();
   auto ExprEndLoc = EA.getExprEndSrcLoc();
   std::string IdString;
@@ -1439,7 +1439,7 @@ std::string getTempNameForExpr(const Expr *E, bool HandleLiteral,
   Token Tok;
   while (SM.getCharacterData(TokenBegin) <= SM.getCharacterData(ExprEndLoc)) {
     if (Lexer::getRawToken(TokenBegin, Tok, SM,
-                           c2s::C2SGlobalInfo::getContext().getLangOpts(),
+                           dpct::DpctGlobalInfo::getContext().getLangOpts(),
                            true)) {
       break;
     }
@@ -1464,7 +1464,7 @@ std::string getTempNameForExpr(const Expr *E, bool HandleLiteral,
 // E.g. MACRO_A(MACRO_B(x,y),z)
 // Where MACRO_A is outer most and MACRO_B, x, y, z are not.
 bool isOuterMostMacro(const Stmt *E) {
-  auto &CT = c2s::C2SGlobalInfo::getContext();
+  auto &CT = dpct::DpctGlobalInfo::getContext();
   std::string ExpandedExpr, ExpandedParent;
   // Save the preprocessing result of E in ExpandedExpr
   llvm::raw_string_ostream StreamE(ExpandedExpr);
@@ -1490,8 +1490,8 @@ bool isOuterMostMacro(const Stmt *E) {
 }
 
 bool isSameLocation(const SourceLocation L1, const SourceLocation L2) {
-  auto LocInfo1 = c2s::C2SGlobalInfo::getInstance().getLocInfo(L1);
-  auto LocInfo2 = c2s::C2SGlobalInfo::getInstance().getLocInfo(L2);
+  auto LocInfo1 = dpct::DpctGlobalInfo::getInstance().getLocInfo(L1);
+  auto LocInfo2 = dpct::DpctGlobalInfo::getInstance().getLocInfo(L2);
   if (LocInfo1.first.compare(LocInfo2.first) ||
       LocInfo1.second != LocInfo2.second) {
     return false;
@@ -1507,7 +1507,7 @@ bool isInsideFunctionLikeMacro(const SourceLocation BeginLoc,
     return false;
   }
 
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   // If the begin/end location are different macro expansions,
   // the expression is a combination of different macros
   // which makes it outer-most.
@@ -1559,50 +1559,50 @@ bool isInsideFunctionLikeMacro(const SourceLocation BeginLoc,
 
   // Check if one of the 4 combinations of begin&end matches a macro def
   // ExpansionBegin & ExpansionEnd
-  auto It = c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
+  auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
       getCombinedStrFromLoc(ImmediateExpansionBegin));
-  if (It != c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+  if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
       (!It->second->FilePath.compare(
-           c2s::C2SGlobalInfo::getLocInfo(ImmediateExpansionEnd).first) &&
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).first) &&
        It->second->ReplaceTokenEndOffset ==
-           c2s::C2SGlobalInfo::getLocInfo(ImmediateExpansionEnd).second)) {
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).second)) {
     return false;
   }
 
   // ExpansionBegin & SpellingEnd
-  It = c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
+  It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
       getCombinedStrFromLoc(ImmediateExpansionBegin));
-  if (It != c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+  if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
       (!It->second->FilePath.compare(
-           c2s::C2SGlobalInfo::getLocInfo(ImmediateSpellingEnd).first) &&
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).first) &&
        It->second->ReplaceTokenEndOffset ==
-           c2s::C2SGlobalInfo::getLocInfo(ImmediateSpellingEnd).second)) {
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).second)) {
     return false;
   }
 
   // SpellingBegin & ExpansionEnd
-  It = c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
+  It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
       getCombinedStrFromLoc(ImmediateSpellingBegin));
-  if (It != c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+  if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
       (!It->second->FilePath.compare(
-           c2s::C2SGlobalInfo::getLocInfo(ImmediateExpansionEnd).first) &&
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).first) &&
        It->second->ReplaceTokenEndOffset ==
-           c2s::C2SGlobalInfo::getLocInfo(ImmediateExpansionEnd).second)) {
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateExpansionEnd).second)) {
     return false;
   }
 
   // SpellingBegin & SpellingEnd
-  It = c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
+  It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
       getCombinedStrFromLoc(ImmediateSpellingBegin));
-  if (It != c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+  if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       It->second->TokenIndex == 0 &&
       (!It->second->FilePath.compare(
-           c2s::C2SGlobalInfo::getLocInfo(ImmediateSpellingEnd).first) &&
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).first) &&
        It->second->ReplaceTokenEndOffset ==
-           c2s::C2SGlobalInfo::getLocInfo(ImmediateSpellingEnd).second)) {
+           dpct::DpctGlobalInfo::getLocInfo(ImmediateSpellingEnd).second)) {
     return false;
   }
 
@@ -1610,14 +1610,14 @@ bool isInsideFunctionLikeMacro(const SourceLocation BeginLoc,
 }
 
 bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto SpellingBegin = SM.getSpellingLoc(BeginLoc);
   auto SpellingEnd = SM.getSpellingLoc(EndLoc);
   auto ItSpellingBegin =
-      c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
+      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
           getCombinedStrFromLoc(SpellingBegin));
   auto ItSpellingEnd =
-      c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
+      dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
           getCombinedStrFromLoc(SpellingEnd));
 
   if ((BeginLoc.isMacroID() && EndLoc.isFileID()) ||
@@ -1639,17 +1639,17 @@ bool isLocationStraddle(SourceLocation BeginLoc, SourceLocation EndLoc) {
 
   // If begin and end are both not in macro define, not straddle
   if (ItSpellingBegin ==
-          c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
       ItSpellingEnd ==
-          c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     return false;
   }
 
   // If only one of begin and end is in macro define, straddle
   if (ItSpellingBegin ==
-          c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end() ||
+          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() ||
       ItSpellingEnd ==
-          c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     return true;
   }
 
@@ -1674,8 +1674,8 @@ bool isExprStraddle(const Stmt *S) {
 
 // Check if an Expr contains macro
 bool isContainMacro(const Expr *E) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
-  auto &Set = c2s::C2SGlobalInfo::getExpansionRangeBeginSet();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto &Set = dpct::DpctGlobalInfo::getExpansionRangeBeginSet();
   SourceLocation ExprBegin = getStmtExpansionSourceRange(E).getBegin();
   SourceLocation ExprEnd = getStmtExpansionSourceRange(E).getEnd();
 
@@ -1685,7 +1685,7 @@ bool isContainMacro(const Expr *E) {
       return true;
     }
     auto Tok = Lexer::findNextToken(
-        Loc, SM, c2s::C2SGlobalInfo::getContext().getLangOpts());
+        Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
     if (Tok.hasValue())
       Loc = Tok.getValue().getLocation();
     else
@@ -1705,7 +1705,7 @@ const CXXRecordDecl *getParentRecordDecl(const ValueDecl *DD) {
   if (!DD)
     return nullptr;
 
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*DD);
   assert(Parents.size() >= 1);
   if (Parents.size() >= 1)
@@ -1823,17 +1823,17 @@ std::string deducePointerType(const DeclaratorDecl *DD, std::string TypeName) {
 /// Check whether the input expression \p E is a single token which is an
 /// identifier or literal.
 bool isAnIdentifierOrLiteral(const Expr *E) {
-  SourceManager &SM = c2s::C2SGlobalInfo::getSourceManager();
+  SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
   E = E->IgnoreCasts();
-  c2s::ExprAnalysis EA(E);
+  dpct::ExprAnalysis EA(E);
   auto BeginLoc = EA.getExprBeginSrcLoc();
   auto EndLoc = EA.getExprEndSrcLoc();
   Token BeginTok, EndTok;
   if (!Lexer::getRawToken(BeginLoc, BeginTok, SM,
-                          c2s::C2SGlobalInfo::getContext().getLangOpts(),
+                          dpct::DpctGlobalInfo::getContext().getLangOpts(),
                           true) &&
       !Lexer::getRawToken(EndLoc, EndTok, SM,
-                          c2s::C2SGlobalInfo::getContext().getLangOpts(),
+                          dpct::DpctGlobalInfo::getContext().getLangOpts(),
                           true)) {
     if ((BeginTok.getLocation() != EndTok.getLocation()) ||
         (BeginTok.getLength() != EndTok.getLength())) {
@@ -1868,7 +1868,7 @@ bool isSameSizeofTypeWithTypeStr(const Expr *E, const std::string &TypeStr) {
   }
 
   auto ArguQT = UETTE->getArgumentType();
-  if (c2s::C2SGlobalInfo::getReplacedTypeName(ArguQT) == TypeStr) {
+  if (dpct::DpctGlobalInfo::getReplacedTypeName(ArguQT) == TypeStr) {
     return true;
   } else {
     return false;
@@ -1876,7 +1876,7 @@ bool isSameSizeofTypeWithTypeStr(const Expr *E, const std::string &TypeStr) {
 }
 
 bool isInReturnStmt(const Expr *E, SourceLocation &OuterInsertLoc) {
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto ParentNodes = Context.getParents(*E);
   DynTypedNode ParentNode;
   const ReturnStmt *RS = nullptr;
@@ -1884,7 +1884,7 @@ bool isInReturnStmt(const Expr *E, SourceLocation &OuterInsertLoc) {
     ParentNode = ParentNodes[0];
     RS = ParentNode.get<ReturnStmt>();
     if (RS) {
-      OuterInsertLoc = c2s::C2SGlobalInfo::getSourceManager().getExpansionLoc(
+      OuterInsertLoc = dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
           RS->getBeginLoc());
       return true;
     }
@@ -1894,9 +1894,9 @@ bool isInReturnStmt(const Expr *E, SourceLocation &OuterInsertLoc) {
 }
 
 std::string getHashStrFromLoc(SourceLocation Loc) {
-  auto R = c2s::C2SGlobalInfo::getLocInfo(Loc);
+  auto R = dpct::DpctGlobalInfo::getLocInfo(Loc);
   std::string Ret = std::to_string(
-      std::hash<std::string>()(c2s::buildString(R.first, R.second)));
+      std::hash<std::string>()(dpct::buildString(R.first, R.second)));
   return Ret;
 }
 
@@ -1911,7 +1911,7 @@ bool IsTypeChangedToPointer(const DeclRefExpr *DRE) {
 }
 
 SourceLocation getBeginLocOfPreviousEmptyMacro(SourceLocation Loc) {
-  auto &Map = c2s::C2SGlobalInfo::getEndOfEmptyMacros();
+  auto &Map = dpct::DpctGlobalInfo::getEndOfEmptyMacros();
   auto It = Map.find(getHashStrFromLoc(Loc));
   if (It != Map.end()) {
     return It->second;
@@ -1920,20 +1920,20 @@ SourceLocation getBeginLocOfPreviousEmptyMacro(SourceLocation Loc) {
 }
 
 SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
-  auto &Map = c2s::C2SGlobalInfo::getBeginOfEmptyMacros();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto &Map = dpct::DpctGlobalInfo::getBeginOfEmptyMacros();
   Token Tok;
   Lexer::getRawToken(
       Loc.getLocWithOffset(Lexer::MeasureTokenLength(
-          Loc, SM, c2s::C2SGlobalInfo::getContext().getLangOpts())),
-      Tok, SM, c2s::C2SGlobalInfo::getContext().getLangOpts(), true);
+          Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())),
+      Tok, SM, dpct::DpctGlobalInfo::getContext().getLangOpts(), true);
 
   SourceLocation EndOfToken = SM.getExpansionLoc(Tok.getLocation());
   while (Tok.isNot(tok::eof) && Tok.is(tok::comment)) {
     Lexer::getRawToken(
         EndOfToken.getLocWithOffset(Lexer::MeasureTokenLength(
-            EndOfToken, SM, c2s::C2SGlobalInfo::getContext().getLangOpts())),
-        Tok, SM, c2s::C2SGlobalInfo::getContext().getLangOpts(), true);
+            EndOfToken, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())),
+        Tok, SM, dpct::DpctGlobalInfo::getContext().getLangOpts(), true);
     EndOfToken = SM.getExpansionLoc(Tok.getEndLoc());
     ;
   }
@@ -1949,7 +1949,7 @@ std::string
 getNestedNameSpecifierString(const clang::NestedNameSpecifier *NNS) {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
-  NNS->print(OS, c2s::C2SGlobalInfo::getContext().getPrintingPolicy());
+  NNS->print(OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
   OS.flush();
   if (StringRef(Result).startswith("::"))
     Result = Result.substr(2);
@@ -1993,7 +1993,7 @@ bool isPredefinedStreamHandle(const Expr *E) {
     if (auto CSCE = dyn_cast<CStyleCastExpr>(PE->getSubExpr())) {
       if (!CSCE->getSubExpr()->isValueDependent() &&
           CSCE->getSubExpr()->EvaluateAsInt(
-              ER, c2s::C2SGlobalInfo::getContext())) {
+              ER, dpct::DpctGlobalInfo::getContext())) {
         int64_t Value = ER.Val.getInt().getExtValue();
         if (Value == 1 || Value == 2) {
           // cudaStreamLegacy is ((cudaStream_t)0x1)
@@ -2004,7 +2004,7 @@ bool isPredefinedStreamHandle(const Expr *E) {
     }
   } else if (!E->IgnoreImplicit()->isValueDependent() &&
              E->IgnoreImplicit()->EvaluateAsInt(
-                 ER, c2s::C2SGlobalInfo::getContext())) {
+                 ER, dpct::DpctGlobalInfo::getContext())) {
     int64_t Value = ER.Val.getInt().getExtValue();
     if (Value == 0) {
       // cudaStreamDefault is 0x00
@@ -2032,7 +2032,7 @@ bool isPredefinedStreamHandle(const Expr *E) {
 std::pair<clang::SourceLocation, clang::SourceLocation>
 getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
                                        const clang::SourceLocation End) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto ResultBegin = Begin;
   auto ResultEnd = End;
 
@@ -2052,7 +2052,7 @@ getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
                                                                  ResultEnd);
 }
 
-// To remove the correct kernel range, C2S need to find the Begin/End pair in
+// To remove the correct kernel range, DPCT need to find the Begin/End pair in
 // which the Begin/End are at the same macro define. e.g.
 // Line 1: #define CCC <<<1,1>>>()
 // Line 2: #define KERNEL(A, B) templatefoo<A,B>CCC
@@ -2073,16 +2073,16 @@ getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
 std::pair<clang::SourceLocation, clang::SourceLocation>
 getTheLastCompleteImmediateRange(clang::SourceLocation BeginLoc,
                                  clang::SourceLocation EndLoc) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto BeginLevel = calculateExpansionLevel(BeginLoc);
   auto EndLevel = calculateExpansionLevel(EndLoc);
   while ((BeginLevel > 0 || EndLevel > 0) &&
          (isLocationStraddle(BeginLoc, EndLoc) ||
           ((BeginLoc.isMacroID() &&
-            !c2s::C2SGlobalInfo::isInRoot(
+            !dpct::DpctGlobalInfo::isInRoot(
                 SM.getFilename(SM.getSpellingLoc(BeginLoc)).str())) ||
            (EndLoc.isMacroID() &&
-            !c2s::C2SGlobalInfo::isInRoot(
+            !dpct::DpctGlobalInfo::isInRoot(
                 SM.getFilename(SM.getSpellingLoc(EndLoc)).str()))))) {
     if (BeginLevel > EndLevel) {
       BeginLoc = SM.getImmediateExpansionRange(BeginLoc).getBegin();
@@ -2099,7 +2099,7 @@ getTheLastCompleteImmediateRange(clang::SourceLocation BeginLoc,
 }
 
 bool isInRange(SourceLocation PB, SourceLocation PE, SourceLocation Loc) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto PBDC = SM.getDecomposedLoc(PB);
   auto DC = SM.getDecomposedLoc(Loc);
   if (PBDC.first != DC.first || PBDC.second > DC.second) {
@@ -2114,11 +2114,11 @@ bool isInRange(SourceLocation PB, SourceLocation PE, SourceLocation Loc) {
 
 bool isInRange(SourceLocation PB, SourceLocation PE, StringRef FilePath,
                size_t Offset) {
-  auto PBLC = c2s::C2SGlobalInfo::getInstance().getLocInfo(PB);
+  auto PBLC = dpct::DpctGlobalInfo::getInstance().getLocInfo(PB);
   if (PBLC.first != FilePath || PBLC.second > Offset) {
     return false;
   }
-  auto PELC = c2s::C2SGlobalInfo::getInstance().getLocInfo(PE);
+  auto PELC = dpct::DpctGlobalInfo::getInstance().getLocInfo(PE);
   if (PELC.first != FilePath || Offset > PELC.second) {
     return false;
   }
@@ -2126,7 +2126,7 @@ bool isInRange(SourceLocation PB, SourceLocation PE, StringRef FilePath,
 }
 
 SourceLocation getLocInRange(SourceLocation Loc, SourceRange Range) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto BeginCandidate = Loc;
   if (Loc.isMacroID() &&
       !isInRange(Range.getBegin(), Range.getEnd(), BeginCandidate)) {
@@ -2153,15 +2153,15 @@ unsigned int calculateIndentWidth(const CUDAKernelCallExpr *Node,
                                   clang::SourceLocation SL, bool &Flag) {
   Flag = true;
   if (!Node)
-    return c2s::C2SGlobalInfo::getCodeFormatStyle().IndentWidth;
+    return dpct::DpctGlobalInfo::getCodeFormatStyle().IndentWidth;
 
-  auto &Context = c2s::C2SGlobalInfo::getContext();
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   std::string IndentStr = getIndent(SL, SM).str();
   unsigned int Len = 0;
   for (const auto &C : IndentStr) {
     if (C == '\t')
-      Len = Len + c2s::C2SGlobalInfo::getCodeFormatStyle().TabWidth;
+      Len = Len + dpct::DpctGlobalInfo::getCodeFormatStyle().TabWidth;
     else
       Len++;
   }
@@ -2195,22 +2195,22 @@ unsigned int calculateIndentWidth(const CUDAKernelCallExpr *Node,
     Result = Len;
   }
 
-  return Result == 0 ? c2s::C2SGlobalInfo::getCodeFormatStyle().IndentWidth
+  return Result == 0 ? dpct::DpctGlobalInfo::getCodeFormatStyle().IndentWidth
                      : Result;
 }
 
 bool isIncludedFile(const std::string &CurrentFile,
                     const std::string &CheckingFile) {
   auto CurrentFileInfo =
-      c2s::C2SGlobalInfo::getInstance().insertFile(CurrentFile);
+      dpct::DpctGlobalInfo::getInstance().insertFile(CurrentFile);
   auto CheckingFileInfo =
-      c2s::C2SGlobalInfo::getInstance().insertFile(CheckingFile);
+      dpct::DpctGlobalInfo::getInstance().insertFile(CheckingFile);
 
-  std::deque<std::shared_ptr<c2s::C2SFileInfo>> Q(
+  std::deque<std::shared_ptr<dpct::DpctFileInfo>> Q(
       CurrentFileInfo->getIncludedFilesInfoSet().begin(),
       CurrentFileInfo->getIncludedFilesInfoSet().end());
 
-  std::unordered_set<std::shared_ptr<c2s::C2SFileInfo>> InsertedFile;
+  std::unordered_set<std::shared_ptr<dpct::DpctFileInfo>> InsertedFile;
   InsertedFile = CurrentFileInfo->getIncludedFilesInfoSet();
 
   while (!Q.empty()) {
@@ -2233,7 +2233,7 @@ bool isIncludedFile(const std::string &CurrentFile,
 }
 
 std::string getCombinedStrFromLoc(const clang::SourceLocation Loc) {
-  auto LocInfo = c2s::C2SGlobalInfo::getLocInfo(Loc);
+  auto LocInfo = dpct::DpctGlobalInfo::getLocInfo(Loc);
   return LocInfo.first + ":" + std::to_string(LocInfo.second);
 }
 
@@ -2344,7 +2344,7 @@ bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE) {
 }
 
 SourceLocation getImmSpellingLocRecursive(const SourceLocation Loc) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   if (SM.isMacroArgExpansion(Loc) &&
       SM.isMacroArgExpansion(SM.getImmediateSpellingLoc(Loc))) {
     return getImmSpellingLocRecursive(SM.getImmediateSpellingLoc(Loc));
@@ -2352,22 +2352,22 @@ SourceLocation getImmSpellingLocRecursive(const SourceLocation Loc) {
   return Loc;
 }
 
-clang::c2s::FFTTypeEnum getFFTTypeFromValue(std::int64_t Value) {
+clang::dpct::FFTTypeEnum getFFTTypeFromValue(std::int64_t Value) {
   switch (Value) {
   case 0x2a:
-    return clang::c2s::FFTTypeEnum::R2C;
+    return clang::dpct::FFTTypeEnum::R2C;
   case 0x2c:
-    return clang::c2s::FFTTypeEnum::C2R;
+    return clang::dpct::FFTTypeEnum::C2R;
   case 0x29:
-    return clang::c2s::FFTTypeEnum::C2C;
+    return clang::dpct::FFTTypeEnum::C2C;
   case 0x6a:
-    return clang::c2s::FFTTypeEnum::D2Z;
+    return clang::dpct::FFTTypeEnum::D2Z;
   case 0x6c:
-    return clang::c2s::FFTTypeEnum::Z2D;
+    return clang::dpct::FFTTypeEnum::Z2D;
   case 0x69:
-    return clang::c2s::FFTTypeEnum::Z2Z;
+    return clang::dpct::FFTTypeEnum::Z2Z;
   default:
-    return clang::c2s::FFTTypeEnum::Unknown;
+    return clang::dpct::FFTTypeEnum::Unknown;
   }
 }
 
@@ -2412,7 +2412,7 @@ std::string getPrecAndDomainStrFromExecFuncName(std::string ExecFuncName) {
 }
 
 bool getTypeRange(const clang::VarDecl *PVD, clang::SourceRange &SR) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto BeginLoc = SM.getExpansionLoc(PVD->getBeginLoc());
   auto EndLoc = SM.getExpansionLoc(PVD->getEndLoc());
   std::string IdentifyName = PVD->getName().str();
@@ -2421,7 +2421,7 @@ bool getTypeRange(const clang::VarDecl *PVD, clang::SourceRange &SR) {
   Token Tok;
   while (SM.getFileOffset(TokenBegin) <= SM.getFileOffset(EndLoc)) {
     if (Lexer::getRawToken(TokenBegin, Tok, SM,
-                           c2s::C2SGlobalInfo::getContext().getLangOpts(),
+                           dpct::DpctGlobalInfo::getContext().getLangOpts(),
                            true)) {
       break;
     }
@@ -2438,7 +2438,7 @@ bool getTypeRange(const clang::VarDecl *PVD, clang::SourceRange &SR) {
 }
 
 llvm::StringRef getCalleeName(const CallExpr *CE) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   const char *Start = SM.getCharacterData(
       getStmtExpansionSourceRange(CE->getCallee()).getBegin());
   const char *End = Start;
@@ -2468,7 +2468,7 @@ llvm::StringRef getCalleeName(const CallExpr *CE) {
 // ex 3. CALL(ALL)
 // Result: Range of "FUNC_NAME ARGS" (in the definition of "ALL")
 SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
 
   // if one of begin/end location is FileID, the only valid range is the expansion location.
   // e.g.
@@ -2522,7 +2522,7 @@ SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
 }
 
 bool isLocInSameMacroArg(SourceLocation Begin, SourceLocation End) {
-  auto &SM = c2s::C2SGlobalInfo::getSourceManager();
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   // Both Begin/End are not macro arg, treat as they are in same macro arg
   if (!SM.isMacroArgExpansion(Begin) && !SM.isMacroArgExpansion(End)) {
     return true;
@@ -2533,15 +2533,15 @@ bool isLocInSameMacroArg(SourceLocation Begin, SourceLocation End) {
     Begin = SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
     End = SM.getSpellingLoc(SM.getImmediateExpansionRange(End).getBegin());
     auto ItMatchBegin =
-        c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
+        dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
             getCombinedStrFromLoc(Begin));
     auto ItMatchEnd =
-        c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
+        dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
             getCombinedStrFromLoc(End));
     if (ItMatchBegin !=
-            c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+            dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
         ItMatchEnd !=
-            c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+            dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
         ItMatchBegin == ItMatchEnd) {
       // The whole kernel call is in a single macro arg
       return true;
@@ -2556,7 +2556,7 @@ findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
   if (!CE)
     return LatestCS;
 
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*CE);
   const Stmt *LastStmt = dyn_cast<Stmt>(CE);
   while (Parents.size() > 0) {
@@ -2571,7 +2571,7 @@ findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
         const Expr *Cond = DS->getCond();
         Expr::EvalResult ER;
         if (!Cond->isTypeDependent() && !Cond->isValueDependent() &&
-            Cond->EvaluateAsInt(ER, c2s::C2SGlobalInfo::getContext())) {
+            Cond->EvaluateAsInt(ER, dpct::DpctGlobalInfo::getContext())) {
           int64_t Value = ER.Val.getInt().getExtValue();
           // If the Cond is 0, it means this Do-stmt just execute once
           if (Value != 0) {
@@ -2599,23 +2599,23 @@ findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(const CallExpr *CE) {
 
 bool isInMacroDefinition(SourceLocation BeginLoc, SourceLocation EndLoc) {
   auto Range = getDefinitionRange(BeginLoc, EndLoc);
-  auto ItBegin = c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
+  auto ItBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
       getCombinedStrFromLoc(Range.getBegin()));
-  if (ItBegin == c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+  if (ItBegin == dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     return false;
   }
   return true;
 }
 
 bool isPartOfMacroDef(SourceLocation BeginLoc, SourceLocation EndLoc) {
-  auto ItBegin = c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
+  auto ItBegin = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
       getCombinedStrFromLoc(BeginLoc));
-  auto ItEnd = c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
+  auto ItEnd = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
       getCombinedStrFromLoc(EndLoc));
   // If any of begin/end is not in the macro or the begin is not the 1st token
   // or the end is not the last macro
-  if (ItBegin == c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end() ||
-      ItEnd == c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end() ||
+  if (ItBegin == dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() ||
+      ItEnd == dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() ||
       ItBegin->second->TokenIndex != 0 ||
       ItEnd->second->TokenIndex != ItEnd->second->NumTokens - 1) {
     return true;
@@ -2658,7 +2658,7 @@ bool isPartOfMacroDef(SourceLocation BeginLoc, SourceLocation EndLoc) {
 // "Dim" (the value is used in the dimension of nd_item/nd_range).
 // In this example, there is only one head node g1.
 void constructUnionFindSetRecursively(
-    std::shared_ptr<c2s::DeviceFunctionInfo> DFIPtr) {
+    std::shared_ptr<dpct::DeviceFunctionInfo> DFIPtr) {
   if (!DFIPtr)
     return;
 
@@ -2668,11 +2668,11 @@ void constructUnionFindSetRecursively(
   auto CallExprMap = DFIPtr->getCallExprMap();
   DFIPtr->ConstructGraphVisited = true;
 
-  c2s::MemVarMap *CurHead = c2s::MemVarMap::getHead(&(DFIPtr->getVarMap()));
+  dpct::MemVarMap *CurHead = dpct::MemVarMap::getHead(&(DFIPtr->getVarMap()));
   if (!CurHead)
     return;
 
-  std::vector<std::shared_ptr<c2s::DeviceFunctionInfo>> RelatedDFI;
+  std::vector<std::shared_ptr<dpct::DeviceFunctionInfo>> RelatedDFI;
   for (auto &Item : CallExprMap) {
     auto FuncInfoPtr = Item.second->getFuncInfo();
     if (!FuncInfoPtr)
@@ -2680,7 +2680,7 @@ void constructUnionFindSetRecursively(
     RelatedDFI.push_back(FuncInfoPtr);
   }
   auto RelatedDFIFromSpellingLoc =
-      c2s::C2SGlobalInfo::getDFIVecRelatedFromSpellingLoc(DFIPtr);
+      dpct::DpctGlobalInfo::getDFIVecRelatedFromSpellingLoc(DFIPtr);
   RelatedDFI.insert(RelatedDFI.end(), RelatedDFIFromSpellingLoc.begin(),
                     RelatedDFIFromSpellingLoc.end());
 
@@ -2690,8 +2690,8 @@ void constructUnionFindSetRecursively(
     if (FuncInfoPtr == DFIPtr)
       continue;
     if (FuncInfoPtr->getVarMap().hasItem() && DFIPtr->getVarMap().hasItem()) {
-      c2s::MemVarMap *HeadOfTheChild =
-          c2s::MemVarMap::getHead(&(FuncInfoPtr->getVarMap()));
+      dpct::MemVarMap *HeadOfTheChild =
+          dpct::MemVarMap::getHead(&(FuncInfoPtr->getVarMap()));
       if (!HeadOfTheChild)
         continue;
       if (FuncInfoPtr->ConstructGraphVisited) {
@@ -2787,7 +2787,7 @@ void getShareAttrRecursive(const Expr *Expr, bool &HasSharedAttr,
 
           if (auto BO = dyn_cast_or_null<BinaryOperator>(getParentStmt(Ref))) {
             if (BO->getLHS() == Ref && BO->getOpcode() == BO_Assign &&
-                !clang::c2s::C2SGlobalInfo::checkSpecificBO(DRE, BO))
+                !clang::dpct::DpctGlobalInfo::checkSpecificBO(DRE, BO))
               AssignedExpr = BO->getRHS();
           }
         }
@@ -2804,7 +2804,7 @@ void getShareAttrRecursive(const Expr *Expr, bool &HasSharedAttr,
     // if AssignedExpr in a if/while/do while/for statement,
     // it is necessary to report a warning message.
     if (isInCtrlFlowStmt(AssignedExpr, FuncDecl,
-                         c2s::C2SGlobalInfo::getContext())) {
+                         dpct::DpctGlobalInfo::getContext())) {
       NeedReport = true;
     }
     getShareAttrRecursive(AssignedExpr, HasSharedAttr, NeedReport);
@@ -2816,7 +2816,7 @@ findDREInScope(const clang::Stmt *Scope) {
   auto VarReferenceMatcher = clang::ast_matchers::findAll(
       clang::ast_matchers::declRefExpr().bind("VarReference"));
   return clang::ast_matchers::match(VarReferenceMatcher, *Scope,
-                                    clang::c2s::C2SGlobalInfo::getContext());
+                                    clang::dpct::DpctGlobalInfo::getContext());
 }
 
 /// Find all the DRE sub-expression of \p E
@@ -2840,7 +2840,7 @@ void findDREs(const Expr *E, std::set<const clang::DeclRefExpr *> &DRESet,
   auto CallExprMatcher = clang::ast_matchers::findAll(
       clang::ast_matchers::callExpr().bind("CallExpr"));
   auto CEResults = clang::ast_matchers::match(
-      CallExprMatcher, *E, clang::c2s::C2SGlobalInfo::getContext());
+      CallExprMatcher, *E, clang::dpct::DpctGlobalInfo::getContext());
   for (auto &Result : CEResults) {
     const CallExpr *MatchedCE = Result.getNodeAs<CallExpr>("CallExpr");
     if (MatchedCE) {
@@ -2921,9 +2921,9 @@ void checkDREIsPrivate(const DeclRefExpr *DRE, LocalVarAddrSpaceEnum &Result) {
 
     if (auto BO = dyn_cast_or_null<BinaryOperator>(getParentStmt(Ref))) {
       if (BO->getLHS() == Ref && BO->getOpcode() == BO_Assign &&
-          !clang::c2s::C2SGlobalInfo::checkSpecificBO(DRE, BO)) {
+          !clang::dpct::DpctGlobalInfo::checkSpecificBO(DRE, BO)) {
         if (isInCtrlFlowStmt(BO->getRHS(), FuncDecl,
-                             c2s::C2SGlobalInfo::getContext())) {
+                             dpct::DpctGlobalInfo::getContext())) {
           LastAssignmentResult = LocalVarAddrSpaceEnum::AS_CannotDeduce;
           CanLastReferenceBeDeduced = false;
         } else {
@@ -2986,7 +2986,7 @@ void checkIsPrivateVar(const Expr *Expr, LocalVarAddrSpaceEnum &Result) {
 /// \param [in] DRE Input DeclRefExpr
 /// \returns If variable not modified, return false
 bool isModifiedRef(const clang::DeclRefExpr *DRE) {
-  auto &CT = c2s::C2SGlobalInfo::getContext();
+  auto &CT = dpct::DpctGlobalInfo::getContext();
   const clang::Stmt *P = CT.getParents(*DRE)[0].get<ImplicitCastExpr>();
   if (!P) {
     P = DRE;
@@ -3056,8 +3056,8 @@ bool isTypeInRoot(const clang::Type *TypePtr) {
   bool IsInRoot = false;
   if (const auto *ND = getNamedDecl(TypePtr)) {
     auto Loc = ND->getBeginLoc();
-    auto Path = c2s::C2SGlobalInfo::getLocInfo(Loc).first;
-    if (c2s::C2SGlobalInfo::isInRoot(Path, true))
+    auto Path = dpct::DpctGlobalInfo::getLocInfo(Loc).first;
+    if (dpct::DpctGlobalInfo::isInRoot(Path, true))
       IsInRoot = true;
   }
   return IsInRoot;
@@ -3087,11 +3087,11 @@ void findAssignments(const clang::DeclaratorDecl *HandleDecl,
       }
 
       auto FunctionCall =
-          clang::c2s::C2SGlobalInfo::findAncestor<CallExpr>(DRE);
+          clang::dpct::DpctGlobalInfo::findAncestor<CallExpr>(DRE);
       if (!FunctionCall)
         continue;
       auto Expr =
-          clang::c2s::C2SGlobalInfo::getChildExprOfTargetAncestor<CallExpr>(
+          clang::dpct::DpctGlobalInfo::getChildExprOfTargetAncestor<CallExpr>(
               DRE);
       if (!Expr)
         continue;
@@ -3128,7 +3128,7 @@ getAncestorFlowControl(const clang::Stmt *S,
   if (!S)
     return nullptr;
 
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*S);
   while (Parents.size() >= 1) {
     auto *Parent = Parents[0].get<Stmt>();
@@ -3164,7 +3164,7 @@ bool isAncestorOf(const Stmt *Descendant, const Stmt *Ancestor) {
   if (!Descendant)
     return false;
 
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*Descendant);
   while (Parents.size() >= 1) {
     auto *Parent = Parents[0].get<Stmt>();
@@ -3241,7 +3241,7 @@ bool analyzeMemcpyOrder(
   auto CallExprMatcher = clang::ast_matchers::findAll(
       clang::ast_matchers::callExpr().bind("CallExpr"));
   auto MatchedResults = clang::ast_matchers::match(
-      CallExprMatcher, *CS, clang::c2s::C2SGlobalInfo::getContext());
+      CallExprMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
   for (auto &Result : MatchedResults) {
     const CallExpr *CE = Result.getNodeAs<CallExpr>("CallExpr");
     if (!CE)
@@ -3391,7 +3391,7 @@ bool analyzeMemcpyOrder(
                   clang::ast_matchers::declRefExpr().bind("VarReference")));
           Results = clang::ast_matchers::match(
               VarReferenceMatcher, *DeclScope,
-              clang::c2s::C2SGlobalInfo::getContext());
+              clang::dpct::DpctGlobalInfo::getContext());
         }
         for (auto &Result : Results) {
           const DeclRefExpr *MatchedDRE =
@@ -3408,7 +3408,7 @@ bool analyzeMemcpyOrder(
   for (const auto &DRE : DRESet) {
     if (ExcludeDRESet.count(DRE))
       continue;
-    DREOffsetVec.push_back(c2s::C2SGlobalInfo::getSourceManager()
+    DREOffsetVec.push_back(dpct::DpctGlobalInfo::getSourceManager()
                                .getExpansionLoc(DRE->getBeginLoc())
                                .getRawEncoding());
   }
@@ -3465,7 +3465,7 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
 
   const clang::CompoundStmt *CS = getBodyofAncestorFCStmt(CE);
   if (!CS) {
-    auto FD = clang::c2s::C2SGlobalInfo::findAncestor<FunctionDecl>(CE);
+    auto FD = clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(CE);
     if (!FD)
       return false;
     CS = dyn_cast_or_null<CompoundStmt>(FD->getBody());
@@ -3474,11 +3474,11 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
   if (!CS)
     return false;
 
-  auto &SM = clang::c2s::C2SGlobalInfo::getSourceManager();
-  auto CSLocInfo = clang::c2s::C2SGlobalInfo::getLocInfo(
+  auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
+  auto CSLocInfo = clang::dpct::DpctGlobalInfo::getLocInfo(
       SM.getExpansionLoc(CS->getBeginLoc()));
   auto FileInfo =
-      clang::c2s::C2SGlobalInfo::getInstance().insertFile(CSLocInfo.first);
+      clang::dpct::DpctGlobalInfo::getInstance().insertFile(CSLocInfo.first);
   auto &Map = FileInfo->getMemcpyOrderAnalysisResultMap();
   auto Iter = Map.find(CS);
 
@@ -3489,7 +3489,7 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
     if (!analyzeMemcpyOrder(CS, MemcpyOrderVec, DREOffsetVec))
       return false;
     Map.insert(std::make_pair(
-        CS, c2s::MemcpyOrderAnalysisInfo(MemcpyOrderVec, DREOffsetVec)));
+        CS, dpct::MemcpyOrderAnalysisInfo(MemcpyOrderVec, DREOffsetVec)));
   } else {
     MemcpyOrderVec = Iter->second.MemcpyOrderVec;
     DREOffsetVec = Iter->second.DREOffsetVec;
@@ -3542,7 +3542,7 @@ bool containSizeOfType(const Expr *E) {
           clang::ast_matchers::ofKind(UETT_SizeOf))
           .bind("sizeof"));
   auto MatchedResults = clang::ast_matchers::match(
-      SizeOfMatcher, *E, clang::c2s::C2SGlobalInfo::getContext());
+      SizeOfMatcher, *E, clang::dpct::DpctGlobalInfo::getContext());
   for (const auto &Res : MatchedResults) {
     const UnaryExprOrTypeTraitExpr *UETTE =
         Res.getNodeAs<UnaryExprOrTypeTraitExpr>("sizeof");
@@ -3559,7 +3559,7 @@ void findRelatedAssignmentRHS(const clang::DeclRefExpr *DRE,
   auto VD = dyn_cast_or_null<VarDecl>(DRE->getDecl());
   if (!VD)
     return;
-  auto FD = clang::c2s::C2SGlobalInfo::findAncestor<FunctionDecl>(DRE);
+  auto FD = clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(DRE);
   if (!FD)
     return;
   auto CS = dyn_cast_or_null<CompoundStmt>(FD->getBody());
@@ -3569,7 +3569,7 @@ void findRelatedAssignmentRHS(const clang::DeclRefExpr *DRE,
   auto VarReferenceMatcher = clang::ast_matchers::findAll(
       clang::ast_matchers::declRefExpr().bind("VarReference"));
   auto MatchedResults = clang::ast_matchers::match(
-      VarReferenceMatcher, *CS, clang::c2s::C2SGlobalInfo::getContext());
+      VarReferenceMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
   std::vector<const DeclRefExpr *> Refs;
   for (auto &Result : MatchedResults) {
     const DeclRefExpr *MatchedDRE =
@@ -3590,7 +3590,7 @@ void findRelatedAssignmentRHS(const clang::DeclRefExpr *DRE,
   for (auto const &Ref : Refs) {
     if (auto BO = dyn_cast_or_null<BinaryOperator>(getParentStmt(Ref))) {
       if (BO->getLHS() == Ref && BO->getOpcode() == BO_Assign &&
-          !clang::c2s::C2SGlobalInfo::checkSpecificBO(DRE, BO)) {
+          !clang::dpct::DpctGlobalInfo::checkSpecificBO(DRE, BO)) {
         RHSSet.insert(BO->getRHS());
       }
     }
@@ -3663,7 +3663,7 @@ bool isCubVar(const VarDecl *VD) {
       return false;
     }
     auto DeviceFuncDecl =
-        clang::c2s::C2SGlobalInfo::findAncestor<FunctionDecl>(VD);
+        clang::dpct::DpctGlobalInfo::findAncestor<FunctionDecl>(VD);
     if (!DeviceFuncDecl)
       return false;
     std::string DeviceFuncName = DeviceFuncDecl->getNameAsString();
@@ -3711,7 +3711,7 @@ bool isCubVar(const VarDecl *VD) {
                                     ast_matchers::hasName(DeviceFuncName))))
                                 .bind("devcall");
       auto DevCallMatchResult = ast_matchers::match(
-          DevCallMatcher, clang::c2s::C2SGlobalInfo::getContext());
+          DevCallMatcher, clang::dpct::DpctGlobalInfo::getContext());
       // if no MatchResult, then we return false.
       bool Result = DevCallMatchResult.size();
       for (auto &Element : DevCallMatchResult) {
@@ -3728,7 +3728,7 @@ bool isCubVar(const VarDecl *VD) {
                   ast_matchers::hasName(DeviceFuncName))))
               .bind("kernelcall");
       auto KernelMatchResult = ast_matchers::match(
-          KernelCallMatcher, clang::c2s::C2SGlobalInfo::getContext());
+          KernelCallMatcher, clang::dpct::DpctGlobalInfo::getContext());
       bool Result = KernelMatchResult.size();
       for (auto &Element : KernelMatchResult) {
         if (auto CE = Element.getNodeAs<CUDAKernelCallExpr>("kernelcall")) {
@@ -3761,23 +3761,23 @@ void findAllVarRef(const clang::DeclRefExpr *DRE,
   using namespace ast_matchers;
   llvm::SmallVector<clang::ast_matchers::BoundNodes, 1U> RefMatchResult;
   if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-    if (auto Scope = c2s::C2SGlobalInfo::findAncestor<CompoundStmt>(VD)) {
+    if (auto Scope = dpct::DpctGlobalInfo::findAncestor<CompoundStmt>(VD)) {
       auto RefMatcher = compoundStmt(forEachDescendant(
           declRefExpr(to(varDecl(hasName(VD->getNameAsString()))))
               .bind("Reference")));
       RefMatchResult = ast_matchers::match(RefMatcher, *Scope,
-                                           c2s::C2SGlobalInfo::getContext());
+                                           dpct::DpctGlobalInfo::getContext());
     } else {
       if (!IsGlobalVariableAllowed) {
         return;
       } else if (auto Scope =
-                     c2s::C2SGlobalInfo::findAncestor<TranslationUnitDecl>(
+                     dpct::DpctGlobalInfo::findAncestor<TranslationUnitDecl>(
                          VD)) {
         auto RefMatcher = translationUnitDecl(forEachDescendant(
             declRefExpr(to(varDecl(hasName(VD->getNameAsString()))))
                 .bind("Reference")));
         RefMatchResult = ast_matchers::match(
-            RefMatcher, *Scope, c2s::C2SGlobalInfo::getContext());
+            RefMatcher, *Scope, dpct::DpctGlobalInfo::getContext());
       }
     }
 
@@ -3798,7 +3798,7 @@ bool isExprUsed(const clang::Expr *E, bool &Result) {
   if (!E) {
     return false;
   }
-  auto &Context = c2s::C2SGlobalInfo::getContext();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*E);
   if (Parents.size() != 1) {
     return false;
@@ -3808,33 +3808,33 @@ bool isExprUsed(const clang::Expr *E, bool &Result) {
     Result = false;
   } else if (auto P = ParentNode.get<ForStmt>()) {
     if (P->getBody() == E ||
-        c2s::C2SGlobalInfo::isAncestor(P->getBody(), E)) {
+        dpct::DpctGlobalInfo::isAncestor(P->getBody(), E)) {
       Result = false;
     }
   } else if (auto P = ParentNode.get<WhileStmt>()) {
     if (P->getBody() == E ||
-        c2s::C2SGlobalInfo::isAncestor(P->getBody(), E)) {
+        dpct::DpctGlobalInfo::isAncestor(P->getBody(), E)) {
       Result = false;
     }
   } else if (auto P = ParentNode.get<SwitchStmt>()) {
     if (P->getBody() == E ||
-        c2s::C2SGlobalInfo::isAncestor(P->getBody(), E)) {
+        dpct::DpctGlobalInfo::isAncestor(P->getBody(), E)) {
       Result = false;
     }
   } else if (auto P = ParentNode.get<DoStmt>()) {
     if (P->getBody() == E ||
-        c2s::C2SGlobalInfo::isAncestor(P->getBody(), E)) {
+        dpct::DpctGlobalInfo::isAncestor(P->getBody(), E)) {
       Result = false;
     }
   } else if (auto P = ParentNode.get<IfStmt>()) {
     if (P->getCond() == E ||
-        c2s::C2SGlobalInfo::isAncestor(P->getCond(), E)) {
+        dpct::DpctGlobalInfo::isAncestor(P->getCond(), E)) {
       Result = true;
     } else {
       Result = false;
     }
   } else if (auto P = ParentNode.get<CaseStmt>()) {
-    if (P->getRHS() == E || c2s::C2SGlobalInfo::isAncestor(P->getRHS(), E)) {
+    if (P->getRHS() == E || dpct::DpctGlobalInfo::isAncestor(P->getRHS(), E)) {
       Result = false;
     }
   } else {
@@ -3844,9 +3844,9 @@ bool isExprUsed(const clang::Expr *E, bool &Result) {
 }
 
 bool isUserDefinedFunction(const clang::ValueDecl *VD) {
-  std::string InFile = c2s::C2SGlobalInfo::getLocInfo(VD).first;
-  bool InInstallPath = isChildOrSamePath(C2SInstallPath, InFile);
-  bool InCudaPath = c2s::C2SGlobalInfo::isInCudaPath(VD->getLocation());
+  std::string InFile = dpct::DpctGlobalInfo::getLocInfo(VD).first;
+  bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
+  bool InCudaPath = dpct::DpctGlobalInfo::isInCudaPath(VD->getLocation());
   if (InInstallPath || InCudaPath)
     return false;
   return true;

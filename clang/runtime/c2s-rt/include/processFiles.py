@@ -190,7 +190,7 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
     Idx = 0
     # All dependency must into single line.
     # generated code is like:
-    # C2S_DEPENDENCY({clang::c2s::HelperFileEnum::Memory, "c2s_memcpy_detail"},{clang::c2s::HelperFileEnum::Util, "DataType"},)
+    # C2S_DEPENDENCY({clang::dpct::HelperFileEnum::Memory, "c2s_memcpy_detail"},{clang::dpct::HelperFileEnum::Util, "DataType"},)
     dependency_line = bytes("", 'utf-8')
     is_dependency = False
     is_code = False
@@ -210,9 +210,9 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
             inc_file_lines.append(content_begin_line)
             feature_enum_name = bytes(helper_file_enum_name + "_", 'utf-8') + splited[1]
             features_enum_list.append(feature_enum_name)
-            feature_pair_name = bytes("{clang::c2s::HelperFileEnum::" + helper_file_enum_name + ", \"", 'utf-8') +\
+            feature_pair_name = bytes("{clang::dpct::HelperFileEnum::" + helper_file_enum_name + ", \"", 'utf-8') +\
                                 splited[1] + bytes("\"}", 'utf-8')
-            features_enum_pair_list.append(bytes("{clang::c2s::HelperFeatureEnum::", 'utf-8') + feature_enum_name +\
+            features_enum_pair_list.append(bytes("{clang::dpct::HelperFeatureEnum::", 'utf-8') + feature_enum_name +\
                                            bytes(", ", 'utf-8') + feature_pair_name + bytes("}", 'utf-8'))
             Idx = Idx + 1
         elif (line.startswith(bytes("// C2S_LABEL_END", 'utf-8'))):
@@ -272,13 +272,13 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
                 line = line.strip()
                 splited = line.split(bytes('|', 'utf-8'))
                 if ((len(splited) <= 2) or (splited[2] == bytes("", 'utf-8'))):
-                    dependency_line = dependency_line + bytes("{{clang::c2s::HelperFileEnum::", 'utf-8') + \
+                    dependency_line = dependency_line + bytes("{{clang::dpct::HelperFileEnum::", 'utf-8') + \
                                       splited[0] + bytes(", \"", 'utf-8') + splited[1] + \
-                                      bytes("\"}, clang::c2s::HelperFeatureDependencyKind::HFDK_Both},", 'utf-8')
+                                      bytes("\"}, clang::dpct::HelperFeatureDependencyKind::HFDK_Both},", 'utf-8')
                 else:
-                    dependency_line = dependency_line + bytes("{{clang::c2s::HelperFileEnum::", 'utf-8') + \
+                    dependency_line = dependency_line + bytes("{{clang::dpct::HelperFileEnum::", 'utf-8') + \
                                       splited[0] + bytes(", \"", 'utf-8') + splited[1] + \
-                                      bytes("\"}, clang::c2s::HelperFeatureDependencyKind::HFDK_", 'utf-8') +\
+                                      bytes("\"}, clang::dpct::HelperFeatureDependencyKind::HFDK_", 'utf-8') +\
                                       splited[2] + bytes("},", 'utf-8')
                 features_enum_referenced_list.append(splited[0] + bytes("_", 'utf-8')  + splited[1])
             else:

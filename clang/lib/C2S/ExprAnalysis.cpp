@@ -24,9 +24,9 @@
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
 
-extern std::string C2SInstallPath;
+extern std::string DpctInstallPath;
 namespace clang {
-namespace c2s {
+namespace dpct {
 
 #define ANALYZE_EXPR(EXPR)                                                     \
   case Stmt::EXPR##Class:                                                      \
@@ -183,16 +183,16 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
         EndLoc = getImmSpellingLocRecursive(EndLoc);
       }
       auto ItBegin =
-          c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
+          dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
               getCombinedStrFromLoc(SM.getSpellingLoc(BeginLoc)));
-      auto ItEnd = c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().find(
+      auto ItEnd = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
           getCombinedStrFromLoc(SM.getSpellingLoc(EndLoc)));
       if (isSameLocation(SM.getExpansionLoc(BeginLoc),
                          SM.getExpansionLoc(EndLoc)) &&
           ItBegin !=
-              c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+              dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
           ItEnd !=
-              c2s::C2SGlobalInfo::getExpansionRangeToMacroRecord().end() &&
+              dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end() &&
           ItBegin->second->TokenIndex == 0 &&
           ItEnd->second->TokenIndex == ItEnd->second->NumTokens - 1) {
         // Begin/end contain the whole Macro def
@@ -305,9 +305,9 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   EndLocWithoutPostfix =
       EndLocWithoutPostfix.getLocWithOffset(Lexer::MeasureTokenLength(
           EndLocWithoutPostfix, SM,
-          c2s::C2SGlobalInfo::getContext().getLangOpts()));
+          dpct::DpctGlobalInfo::getContext().getLangOpts()));
   EndLoc = EndLoc.getLocWithOffset(Lexer::MeasureTokenLength(
-      EndLoc, SM, c2s::C2SGlobalInfo::getContext().getLangOpts()));
+      EndLoc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
 
   RewritePostfix = std::string(SM.getCharacterData(EndLocWithoutPostfix),
                                RewritePostfixLength);
@@ -358,8 +358,8 @@ void StringReplacements::replaceString() {
 }
 
 ExprAnalysis::ExprAnalysis(const Expr *Expression)
-    : Context(C2SGlobalInfo::getContext()),
-      SM(C2SGlobalInfo::getSourceManager()) {
+    : Context(DpctGlobalInfo::getContext()),
+      SM(DpctGlobalInfo::getSourceManager()) {
   analyze(Expression);
 }
 
@@ -424,8 +424,8 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     }
   } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
     if (RefString == "warpSize" &&
-        !C2SGlobalInfo::isInRoot(VD->getLocation())) {
-      addReplacement(DRE, C2SGlobalInfo::getSubGroup(DRE) +
+        !DpctGlobalInfo::isInRoot(VD->getLocation())) {
+      addReplacement(DRE, DpctGlobalInfo::getSubGroup(DRE) +
                               ".get_local_range().get(0)");
     }
   }
@@ -441,7 +441,7 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
         clang::ast_matchers::cxxTemporaryObjectExpr().bind("CTOE"));
     auto MatchedResults =
         clang::ast_matchers::match(CXXTemporaryObjectExprMatcher, *Ctor,
-                                   clang::c2s::C2SGlobalInfo::getContext());
+                                   clang::dpct::DpctGlobalInfo::getContext());
     if (MatchedResults.size() > 0) {
       addReplacement(Ctor, 8, "std::");
     }
@@ -450,7 +450,7 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string ArgsString;
     llvm::raw_string_ostream OS(ArgsString);
-    C2SGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 3)
+    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 3)
         << "(";
     ArgumentAnalysis A;
     std::string ArgStr = "";
@@ -493,31 +493,31 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       {"__cuda_builtin_blockDim_t", "get_local_range"},
       {"__cuda_builtin_threadIdx_t", "get_local_id"},
   };
-  auto PP = C2SGlobalInfo::getContext().getPrintingPolicy();
+  auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
   PP.PrintCanonicalTypes = true;
   auto BaseType = ME->getBase()->getType().getUnqualifiedType().getAsString(PP);
   auto ItemItr = NdItemMap.find(BaseType);
   if (ItemItr != NdItemMap.end()) {
     std::string FieldName = ME->getMemberDecl()->getName().str();
     if (MapNames::replaceName(NdItemMemberMap, FieldName)) {
-      if (C2SGlobalInfo::getAssumedNDRangeDim() == 1) {
+      if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
         auto TargetExpr = getTargetExpr();
         auto FD = getImmediateOuterFuncDecl(TargetExpr);
         auto DFI = DeviceFunctionDecl::LinkRedecls(FD);
         if (ME->getMemberDecl()->getName().str() == "__fetch_builtin_x") {
-          auto Index = C2SGlobalInfo::getCudaKernelDimDFIIndexThenInc();
-          C2SGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
-          addReplacement(ME, buildString(C2SGlobalInfo::getItem(ME), ".",
+          auto Index = DpctGlobalInfo::getCudaKernelDimDFIIndexThenInc();
+          DpctGlobalInfo::insertCudaKernelDimDFIMap(Index, DFI);
+          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
                                          ItemItr->second, "({{NEEDREPLACER",
                                          std::to_string(Index), "}})"));
-          C2SGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
+          DpctGlobalInfo::updateSpellingLocDFIMaps(ME->getBeginLoc(), DFI);
         } else {
           DFI->getVarMap().Dim = 3;
-          addReplacement(ME, buildString(C2SGlobalInfo::getItem(ME), ".",
+          addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
                                          ItemItr->second, "(", FieldName, ")"));
         }
       } else {
-        addReplacement(ME, buildString(C2SGlobalInfo::getItem(ME), ".",
+        addReplacement(ME, buildString(DpctGlobalInfo::getItem(ME), ".",
                                        ItemItr->second, "(", FieldName, ")"));
       }
     }
@@ -579,15 +579,15 @@ inline void ExprAnalysis::analyzeExpr(const UnresolvedLookupExpr *ULE) {
   RefString.clear();
   llvm::raw_string_ostream OS(RefString);
   if (auto NNS = ULE->getQualifier()) {
-    NNS->print(OS, c2s::C2SGlobalInfo::getContext().getPrintingPolicy());
+    NNS->print(OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
   }
   ULE->getName().print(OS,
-                       c2s::C2SGlobalInfo::getContext().getPrintingPolicy());
+                       dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
 }
 
 void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
   if (Cast->getCastKind() == CastKind::CK_ConstructorConversion) {
-    if (C2SGlobalInfo::getUnqualifiedTypeName(Cast->getTypeAsWritten()) ==
+    if (DpctGlobalInfo::getUnqualifiedTypeName(Cast->getTypeAsWritten()) ==
         "dim3")
       return dispatch(Cast->getSubExpr());
   }
@@ -624,12 +624,12 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         auto LocStr =
             getCombinedStrFromLoc(SM.getSpellingLoc(CE->getBeginLoc()));
         auto &FCIMMR =
-            c2s::C2SGlobalInfo::getFunctionCallInMacroMigrateRecord();
+            dpct::DpctGlobalInfo::getFunctionCallInMacroMigrateRecord();
         if (auto UDRFactory =
           std::dynamic_pointer_cast<UserDefinedRewriterFactory>(Itr->second)) {
           for (auto ItHeader = UDRFactory->Includes.begin();
             ItHeader != UDRFactory->Includes.end(); ItHeader++) {
-            C2SGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), *ItHeader);
+            DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), *ItHeader);
           }
         }
         if (FCIMMR.find(LocStr) != FCIMMR.end() &&
@@ -642,7 +642,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
 
           // When migrating thrust API with usmnone and raw-ptr,
           // the CallExpr will be rewriten into an if-else stmt,
-          // C2S needs to remove the following semicolon.
+          // DPCT needs to remove the following semicolon.
           std::string EndBracket =
               "}" + std::string(
                         getNL(getStmtExpansionSourceRange(CE).getBegin(), SM));
@@ -651,13 +651,13 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
                                EndBracket.length()) == EndBracket) {
             auto EndLoc = Lexer::getLocForEndOfToken(
                 getStmtExpansionSourceRange(CE).getEnd(), 0, SM,
-                C2SGlobalInfo::getContext().getLangOpts());
+                DpctGlobalInfo::getContext().getLangOpts());
             Token Tok;
             Lexer::getRawToken(EndLoc, Tok, SM,
-                               C2SGlobalInfo::getContext().getLangOpts(),
+                               DpctGlobalInfo::getContext().getLangOpts(),
                                true);
             if (Tok.getKind() == tok::semi) {
-              C2SGlobalInfo::getInstance().addReplacement(
+              DpctGlobalInfo::getInstance().addReplacement(
                   std::make_shared<ExtReplacement>(SM, EndLoc, 1, "", nullptr));
             }
           }
@@ -726,7 +726,7 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
     break;
   case TypeLoc::Builtin:
   case TypeLoc::Record:
-    TyName += C2SGlobalInfo::getTypeName(TL.getType());
+    TyName += DpctGlobalInfo::getTypeName(TL.getType());
     break;
   case TypeLoc::TemplateTypeParm:
     if (auto D = TYPELOC_CAST(TemplateTypeParmTypeLoc).getDecl()) {
@@ -784,7 +784,7 @@ void ExprAnalysis::analyzeTemplateArgument(const TemplateArgumentLoc &TAL) {
 
 void ExprAnalysis::applyAllSubExprRepl() {
   for (std::shared_ptr<ExtReplacement> Repl : SubExprRepl) {
-    C2SGlobalInfo::getInstance().addReplacement(Repl);
+    DpctGlobalInfo::getInstance().addReplacement(Repl);
   }
 }
 
@@ -865,7 +865,7 @@ void ManagedPointerAnalysis::initAnalysisScope() {
 void ManagedPointerAnalysis::RecursiveAnalyze() {
   initAnalysisScope();
   buildCallExprRepl();
-  auto LocInfo = C2SGlobalInfo::getLocInfo(Call);
+  auto LocInfo = DpctGlobalInfo::getLocInfo(Call);
   if (Trackable) {
     if (PointerScope)
       dispatch(PointerScope);
@@ -919,9 +919,9 @@ void ManagedPointerAnalysis::buildCallExprRepl() {
     OS << EA.getReplacedString();
 
   PointerName = OS.str();
-  PointerCastType = C2SGlobalInfo::getReplacedTypeName(DerefQT);
+  PointerCastType = DpctGlobalInfo::getReplacedTypeName(DerefQT);
   PointerTempType =
-      C2SGlobalInfo::getReplacedTypeName(DerefQT->getPointeeType());
+      DpctGlobalInfo::getReplacedTypeName(DerefQT->getPointeeType());
   PointerCastType = getFinalCastTypeNameStr(PointerCastType);
   PointerTempType = getFinalCastTypeNameStr(PointerTempType);
   if (PointerCastType != "NULL TYPE" && PointerCastType != "void *") {
@@ -932,13 +932,13 @@ void ManagedPointerAnalysis::buildCallExprRepl() {
   requestFeature(HelperFeatureEnum::Memory_c2s_malloc, Call);
   requestFeature(HelperFeatureEnum::Memory_c2s_malloc_2d, Call);
   requestFeature(HelperFeatureEnum::Memory_c2s_malloc_3d, Call);
-  OS << MapNames::getC2SNamespace() << "c2s_malloc(";
+  OS << MapNames::getDpctNamespace() << "c2s_malloc(";
   ExprAnalysis ArgEA(SecondArg);
   ArgEA.analyze();
   OS << ArgEA.getReplacedString() << ")";
   if (Assigned) {
     OS << ", 0)";
-    auto LocInfo = C2SGlobalInfo::getLocInfo(Call);
+    auto LocInfo = DpctGlobalInfo::getLocInfo(Call);
     DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
                              Diagnostics::NOERROR_RETURN_COMMA_OP, false,
                              false);
@@ -967,11 +967,11 @@ void ManagedPointerAnalysis::dispatch(const Stmt *Expression) {
 }
 bool ManagedPointerAnalysis::isInCudaPath(const Decl *Decleration) {
   bool Result = false;
-  std::string InFile = c2s::C2SGlobalInfo::getSourceManager()
+  std::string InFile = dpct::DpctGlobalInfo::getSourceManager()
                            .getFilename(Decleration->getLocation())
                            .str();
-  bool InInstallPath = isChildOrSamePath(C2SInstallPath, InFile);
-  bool InCudaPath = C2SGlobalInfo::isInCudaPath(Decleration->getLocation());
+  bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
+  bool InCudaPath = DpctGlobalInfo::isInCudaPath(Decleration->getLocation());
   if (InInstallPath || InCudaPath) {
     Result = true;
   }
@@ -1085,12 +1085,12 @@ void ManagedPointerAnalysis::analyzeExpr(const UnaryOperator *UO) {
           Stmt::ParenExprClass) {
         Repl.push_back(
             {{SubE->getBeginLoc(), SubE->getEndLoc()},
-             std::string(MapNames::getC2SNamespace() + "get_host_ptr<" +
+             std::string(MapNames::getDpctNamespace() + "get_host_ptr<" +
                          PointerTempType + ">" + Rep)});
       } else {
         Repl.push_back(
             {{SubE->getBeginLoc(), SubE->getEndLoc()},
-             std::string(MapNames::getC2SNamespace() + "get_host_ptr<" +
+             std::string(MapNames::getDpctNamespace() + "get_host_ptr<" +
                          PointerTempType + ">(" + Rep + ")")});
       }
     }
@@ -1129,7 +1129,7 @@ void ManagedPointerAnalysis::analyzeExpr(const ArraySubscriptExpr *ASE) {
   if (UK == Literal) {
     UK = Reference;
     Repl.push_back({{Base->getBeginLoc(), Base->getEndLoc()},
-                    std::string(MapNames::getC2SNamespace() + "get_host_ptr<" +
+                    std::string(MapNames::getDpctNamespace() + "get_host_ptr<" +
                                 PointerTempType + ">(" + PointerName + ")")});
     requestFeature(HelperFeatureEnum::Memory_get_host_ptr, Call);
   }
@@ -1164,7 +1164,7 @@ KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
 
     Expr::EvalResult ER;
     if (!Ctor->getArg(i)->isValueDependent() &&
-        Ctor->getArg(i)->EvaluateAsInt(ER, C2SGlobalInfo::getContext())) {
+        Ctor->getArg(i)->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
       int64_t Value = ER.Val.getInt().getExtValue();
       if(i == 0) {
         SizeOfHighestDimension = Value;
@@ -1229,20 +1229,20 @@ void KernelArgumentAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   // variables on device. They are migrated to objects, so need add get_ptr() by
   // setting IsDefinedOnDevice flag.
   if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-    if (auto Var = C2SGlobalInfo::getInstance().findMemVarInfo(VD)) {
+    if (auto Var = DpctGlobalInfo::getInstance().findMemVarInfo(VD)) {
       IsDefinedOnDevice = true;
       IsRedeclareRequired = true;
       if (!IsAddrOf && !VD->getType()->isArrayType()) {
         addReplacement(Lexer::getLocForEndOfToken(
                            DRE->getEndLoc(), 0, SM,
-                           C2SGlobalInfo::getContext().getLangOpts()),
+                           DpctGlobalInfo::getContext().getLangOpts()),
                        DRE->getEndLoc(), "[0]");
       } else {
         requestFeature(HelperFeatureEnum::Memory_device_memory_get_ptr,
                        DRE->getEndLoc());
         addReplacement(Lexer::getLocForEndOfToken(
                            DRE->getEndLoc(), 0, SM,
-                           C2SGlobalInfo::getContext().getLangOpts()),
+                           DpctGlobalInfo::getContext().getLangOpts()),
                        DRE->getEndLoc(), ".get_ptr()");
       }
     }
@@ -1299,7 +1299,7 @@ void KernelArgumentAnalysis::analyze(const Expr *Expression) {
     IsDoublePointer = Expression->getType()->getPointeeType()->isPointerType();
   }
   TryGetBuffer = IsPointer &&
-                 C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
+                 DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
                  !isNullPtr(Expression);
   IsRedeclareRequired = false;
   ArgumentAnalysis::analyze(Expression);
@@ -1337,7 +1337,7 @@ void KernelConfigAnalysis::analyzeExpr(
   if (ArgIndex < 2) {
     std::string CDSMEString;
     llvm::raw_string_ostream OS(CDSMEString);
-    C2SGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 3);
+    DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range", 3);
     OS << "(1, 1, " << ExprAnalysis::ref(CDSME) << ")";
     OS.flush();
     addReplacement(CDSME, CDSMEString);
@@ -1354,9 +1354,9 @@ bool KernelConfigAnalysis::isOneDimensionConfigArg(
   if (Ctor->getNumArgs() == 3) {
     Expr::EvalResult ER1, ER2;
     if (!Ctor->getArg(1)->isValueDependent() &&
-        Ctor->getArg(1)->EvaluateAsInt(ER1, C2SGlobalInfo::getContext()) &&
+        Ctor->getArg(1)->EvaluateAsInt(ER1, DpctGlobalInfo::getContext()) &&
         !Ctor->getArg(2)->isValueDependent() &&
-        Ctor->getArg(2)->EvaluateAsInt(ER2, C2SGlobalInfo::getContext())) {
+        Ctor->getArg(2)->EvaluateAsInt(ER2, DpctGlobalInfo::getContext())) {
       if (ER1.Val.getInt().getZExtValue() == 1 &&
           ER2.Val.getInt().getZExtValue() == 1)
         return true;
@@ -1381,7 +1381,7 @@ void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
     std::string CtorString;
     llvm::raw_string_ostream OS(CtorString);
     if (IsTryToUseOneDimension && Dim == 1) {
-      C2SGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
+      DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
                                      1)
           << "(";
       auto Args = getCtorArgs(Ctor);
@@ -1391,7 +1391,7 @@ void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
         llvm_unreachable("Ctor of the kernel config hasn't any argument!");
       }
     } else {
-      C2SGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
+      DpctGlobalInfo::printCtadClass(OS, MapNames::getClNamespace() + "range",
                                      3)
           << "(";
       auto Args = getCtorArgs(Ctor);
@@ -1467,14 +1467,14 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
       getTargetExpr()->IgnoreImpCasts()->getStmtClass() ==
           Stmt::IntegerLiteralClass) {
     if (MustDim3 && getTargetExpr()->getType()->isIntegralType(
-                        C2SGlobalInfo::getContext())) {
+                        DpctGlobalInfo::getContext())) {
       if (IsTryToUseOneDimension) {
         Dim = 1;
-        addReplacement(buildString(C2SGlobalInfo::getCtadClass(
+        addReplacement(buildString(DpctGlobalInfo::getCtadClass(
                                        MapNames::getClNamespace() + "range", 1),
                                    "(", getReplacedString(), ")"));
       } else {
-        addReplacement(buildString(C2SGlobalInfo::getCtadClass(
+        addReplacement(buildString(DpctGlobalInfo::getCtadClass(
                                        MapNames::getClNamespace() + "range", 3),
                                    "(1, 1, ", getReplacedString(), ")"));
       }
@@ -1642,5 +1642,5 @@ void SideEffectsAnalysis::dispatch(const Stmt *Expression) {
   return ExprAnalysis::dispatch(Expression);
 }
 
-} // namespace c2s
+} // namespace dpct
 } // namespace clang

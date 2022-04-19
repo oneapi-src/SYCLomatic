@@ -9,8 +9,8 @@
 //
 //===---------------------------------------------------------------===//
 
-#ifndef C2S_VCXPROJPARSER_H
-#define C2S_VCXPROJPARSER_H
+#ifndef DPCT_VCXPROJPARSER_H
+#define DPCT_VCXPROJPARSER_H
 
 #include <fstream>
 #include <iostream>
@@ -26,4 +26,4 @@
 /// \param VcxprojFile vcxproj file path.
 void vcxprojParser(std::string &BuildPath, std::string &VcxprojFile);
 
-#endif // C2S_VCXPROJPARSER_H
+#endif // DPCT_VCXPROJPARSER_H

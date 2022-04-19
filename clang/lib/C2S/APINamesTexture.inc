@@ -12,17 +12,17 @@ CONDITIONAL_FACTORY_ENTRY(
     [](const CallExpr *C) -> bool { return C->getNumArgs(); },
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_channel,
                             ENTRY_RENAMED("cudaCreateChannelDesc",
-                                          MapNames::getC2SNamespace() +
+                                          MapNames::getDpctNamespace() +
                                               "image_channel")),
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::Image_image_channel_create,
         ENTRY_TEMPLATED("cudaCreateChannelDesc",
-                        TEMPLATED_CALLEE(MapNames::getC2SNamespace() +
+                        TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
                                              "image_channel::create",
                                          {0}))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_channel_create,
                         ENTRY_RENAMED("cudaCreateChannelDescHalf",
-                                      MapNames::getC2SNamespace() +
+                                      MapNames::getDpctNamespace() +
                                           "image_channel::create<" +
                                           MapNames::getClNamespace() +
                                           "half>"))
@@ -86,13 +86,13 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_attach,
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Image_create_image_wrapper,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaCreateTextureObject", DEREF(0),
-                                            CALL(MapNames::getC2SNamespace() +
+                                            CALL(MapNames::getDpctNamespace() +
                                                      "create_image_wrapper",
                                                  DEREF(1), DEREF(2)))))
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Image_create_image_wrapper,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuTexObjectCreate", DEREF(0),
-                                            CALL(MapNames::getC2SNamespace() +
+                                            CALL(MapNames::getDpctNamespace() +
                                                      "create_image_wrapper",
                                                  DEREF(1), DEREF(2)))))
 
@@ -105,7 +105,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HelperFeatureEnum::Image_image_matrix,
         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
             "cuArrayCreate_v2", DEREF(0),
-            NEW(MapNames::getC2SNamespace() + "image_matrix",
+            NEW(MapNames::getDpctNamespace() + "image_matrix",
                 STRUCT_DISMANTLE(1, "channel_type_ct1", "channel_num_ct1",
                                  "x_ct1", "y_ct1"))))),
     UNSUPPORT_FACTORY_ENTRY("cuArrayCreate_v2",
@@ -118,7 +118,7 @@ FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::Image_image_wrapper_attach,
         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
             "cuTexRefSetArray", ARG(0), true, "attach",
-            CALL(MapNames::getC2SNamespace() + "image_data", ARG(1))))))
+            CALL(MapNames::getDpctNamespace() + "image_data", ARG(1))))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Image_image_wrapper_base_set_addressing_mode,

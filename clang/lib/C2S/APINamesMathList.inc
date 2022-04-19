@@ -10,7 +10,7 @@
 //===-----------------------------------------------------------------===//
 
 // TODO: This file will be removed finally when all math functions are
-// implemented with clang::c2s::CallExprRewriter
+// implemented with clang::dpct::CallExprRewriter
 
 // Half Arithmetic Functions
 MATH_API("__hfma")

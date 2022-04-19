@@ -12,11 +12,11 @@
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LibCommonUtils_mkl_get_version,
     CALL_FACTORY_ENTRY("cublasGetVersion_v2",
-                       CALL(MapNames::getC2SNamespace() + "mkl_get_version",
-                            ARG(MapNames::getC2SNamespace() + "version_field::major"), ARG(1))))
+                       CALL(MapNames::getDpctNamespace() + "mkl_get_version",
+                            ARG(MapNames::getDpctNamespace() + "version_field::major"), ARG(1))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LibCommonUtils_mkl_get_version,
     CALL_FACTORY_ENTRY("cublasGetVersion",
-                       CALL(MapNames::getC2SNamespace() + "mkl_get_version",
-                            ARG(MapNames::getC2SNamespace() + "version_field::major"), ARG(0))))
+                       CALL(MapNames::getDpctNamespace() + "mkl_get_version",
+                            ARG(MapNames::getDpctNamespace() + "version_field::major"), ARG(0))))

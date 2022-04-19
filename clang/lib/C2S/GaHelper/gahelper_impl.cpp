@@ -50,7 +50,7 @@ ustring getStatisticDir()
     auto intelRootPath = homePath + "/" + _U("intel");
 #endif
     //TODO: update intelRootPath from env variable just as in cfgmgr in order
-	  //fixme: exception disabled in disabled when build with c2s.
+	  //fixme: exception disabled in disabled when build with dpct.
     //to have this directory sandboxed for testing purposes.
     //try
     //{
@@ -418,9 +418,9 @@ static AnalyticsImpl &getAnalyticsImplInstance() {
   params.flags = ALLOW_COLLECTION_FROM_INTEL_NETWORK;
 
   params.appName = "Intel(R) DPC++ Compatibility Tool";
-  std::string AppVersion = std::string(C2S_VERSION_MAJOR) + "." +
-                           std::string(C2S_VERSION_MINOR) + "." +
-                           std::string(C2S_VERSION_PATCH);
+  std::string AppVersion = std::string(DPCT_VERSION_MAJOR) + "." +
+                           std::string(DPCT_VERSION_MINOR) + "." +
+                           std::string(DPCT_VERSION_PATCH);
   params.appVersion = AppVersion.c_str();
   params.tid = "UA-17808594-22"; // this one is Analyzers GA sandbox
   // params.uuidPersistenceProvider = &uuidProvider;

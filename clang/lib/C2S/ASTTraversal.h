@@ -9,8 +9,8 @@
 //
 //===-----------------------------------------------------------------===//
 
-#ifndef C2S_AST_TRAVERSAL_H
-#define C2S_AST_TRAVERSAL_H
+#ifndef DPCT_AST_TRAVERSAL_H
+#define DPCT_AST_TRAVERSAL_H
 
 #include "AnalysisInfo.h"
 #include "Checkpoint.h"
@@ -29,7 +29,7 @@
 #include <unordered_set>
 
 namespace clang {
-namespace c2s {
+namespace dpct {
 
 class ASTTraversalManager;
 
@@ -217,12 +217,12 @@ protected:
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
   template <typename IDTy, typename... Ts>
   bool report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
-    auto &SM = C2SGlobalInfo::getSourceManager();
+    auto &SM = DpctGlobalInfo::getSourceManager();
     if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
-      auto ItMatch = c2s::C2SGlobalInfo::getMacroTokenToMacroDefineLoc().find(
+      auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
           getHashStrFromLoc(SM.getImmediateSpellingLoc(SL)));
       if (ItMatch !=
-          c2s::C2SGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
+          dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
         if (ItMatch->second->IsInRoot) {
           SL = ItMatch->second->NameTokenLoc;
         }
@@ -239,7 +239,7 @@ protected:
   // ReplaceStmt::getReplacement
   template <typename IDTy, typename... Ts>
   void report(const Stmt *S, IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
-    auto &SM = C2SGlobalInfo::getSourceManager();
+    auto &SM = DpctGlobalInfo::getSourceManager();
     SourceLocation Begin(S->getBeginLoc());
     if (Begin.isMacroID() && !isOuterMostMacro(S)) {
       if (SM.isMacroArgExpansion(Begin)) {
@@ -300,7 +300,7 @@ private:
 
   // Check if the node's host file is in the InRoot path.
   inline bool isInRoot(SourceLocation &&SL) {
-    return C2SGlobalInfo::isInRoot(SL);
+    return DpctGlobalInfo::isInRoot(SL);
   }
 
   // Check if the location has been replaced by the same rule.
@@ -350,7 +350,7 @@ public:
       static_cast<T *>(this)->runRule(Result);
     } catch (std::exception &e) {
       std::string FaultMsg =
-          "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool skips "
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool skips "
           "the migration rule causing error and continues migration.\n";
       llvm::errs() << FaultMsg;
     }
@@ -404,7 +404,7 @@ protected:
       if ((Flags.MoveOutOfMacro && Flags.IsMacroArg) ||
           (Flags.CanAvoidUsingLambda && !Flags.IsMacroArg)) {
         std::string InsertString;
-        if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
             !Flags.CanAvoidBrace)
           InsertString = std::string("{") + getNL() + Strings.IndentStr +
                          Strings.PrefixInsertStr + Strings.Repl + ";" +
@@ -458,7 +458,7 @@ protected:
             Locations.PrefixInsertLoc, Locations.Len, std::move(Strings.Repl)));
       }
     } else {
-      if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
+      if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
           !Flags.CanAvoidBrace) {
         if (!Strings.PrefixInsertStr.empty() ||
             !Strings.SuffixInsertStr.empty()) {
@@ -488,14 +488,14 @@ protected:
 
   std::string makeDevicePolicy(const Stmt *S) {
     auto UniqueName = [](const Stmt *S) {
-      auto &SM = C2SGlobalInfo::getSourceManager();
+      auto &SM = DpctGlobalInfo::getSourceManager();
       SourceLocation Loc = S->getBeginLoc();
       return getHashAsString(Loc.printToString(SM)).substr(0, 6);
     };
-    int Index = C2SGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+    int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     buildTempVariableMap(Index, S, HelperFuncType::HFT_DefaultQueue);
     std::string TemplateArg = "";
-    if (C2SGlobalInfo::isSyclNamedLambda())
+    if (DpctGlobalInfo::isSyclNamedLambda())
       TemplateArg = std::string("<class Policy_") + UniqueName(S) + ">";
     std::string Policy = "oneapi::dpl::execution::make_device_policy" +
                          TemplateArg + "({{NEEDREPLACEQ" +
@@ -592,7 +592,7 @@ private:
 };
 
 class UserDefinedAPIRule
-  : public clang::c2s::NamedMigrationRule<UserDefinedAPIRule> {
+  : public clang::dpct::NamedMigrationRule<UserDefinedAPIRule> {
   std::string APIName;
 public:
   UserDefinedAPIRule(std::string APIName) : APIName(APIName) {};
@@ -833,7 +833,7 @@ public:
                                  const std::string &ArgNamePrefix,
                                  const std::string &Type, const int Idx) {
         Var = ArgNamePrefix +
-              std::to_string(C2SGlobalInfo::getSuffixIndexInRuleThenInc());
+              std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
         Prefix = Prefix + Type + "* " + Var + " = " +
                  ExprAnalysis::ref(CE->getArg(Idx)) + ";" + getNL() + IndentStr;
         if (Type == MapNames::getClNamespace() + "float2")
@@ -850,7 +850,7 @@ public:
                    getDrefName(CE->getArg(Idx)) + " = *" + Var + ";";
         else {
           Suffix = Suffix + getNL() + IndentStr + "  " +
-                   MapNames::getC2SNamespace() +
+                   MapNames::getDpctNamespace() +
                    "get_default_queue().memcpy(" +
                    ExprAnalysis::ref(CE->getArg(Idx)) + ", " + Var +
                    ", sizeof(" + Type + ")*" + Size + ").wait();";
@@ -871,7 +871,7 @@ public:
         Prefix = Prefix + IfStmtStr + getNL() + IndentStr;
         Prefix = Prefix + "  " + D1Ptr + " = " + MapNames::getClNamespace() +
                  "malloc_shared<" + Type + ">(8, " +
-                 MapNames::getC2SNamespace() + "get_default_queue());" +
+                 MapNames::getDpctNamespace() + "get_default_queue());" +
                  getNL() + IndentStr;
         Prefix = Prefix + "  " + D2Ptr + " = " + D1Ptr + " + 1;" + getNL() +
                  IndentStr;
@@ -897,7 +897,7 @@ public:
 
         Suffix = Suffix + getNL() + IndentStr + "  " +
                  MapNames::getClNamespace() + "free(" + D1Ptr + ", " +
-                 MapNames::getC2SNamespace() + "get_default_queue());";
+                 MapNames::getDpctNamespace() + "get_default_queue());";
         Suffix = Suffix + getNL() + IndentStr + "}";
       } else {
         // cublasSrotg_v2, cublasDrotg_v2, cublasCrotg_v2 or cublasZrotg_v2
@@ -927,7 +927,7 @@ public:
         if (FuncName == "cublasSrotg_v2" || FuncName == "cublasDrotg_v2") {
           Prefix = Prefix + "  " + APtr + " = " + MapNames::getClNamespace() +
                    "malloc_shared<" + Type + ">(4, " +
-                   MapNames::getC2SNamespace() + "get_default_queue());" +
+                   MapNames::getDpctNamespace() + "get_default_queue());" +
                    getNL() + IndentStr;
           Prefix = Prefix + "  " + BPtr + " = " + APtr + " + 1;" + getNL() +
                    IndentStr;
@@ -938,11 +938,11 @@ public:
         } else {
           Prefix = Prefix + "  " + APtr + " = " + MapNames::getClNamespace() +
                    "malloc_shared<" + Type + ">(3, " +
-                   MapNames::getC2SNamespace() + "get_default_queue());" +
+                   MapNames::getDpctNamespace() + "get_default_queue());" +
                    getNL() + IndentStr;
           Prefix = Prefix + "  " + CPtr + " = " + MapNames::getClNamespace() +
                    "malloc_shared<" + RealType + ">(1, " +
-                   MapNames::getC2SNamespace() + "get_default_queue());" +
+                   MapNames::getDpctNamespace() + "get_default_queue());" +
                    getNL() + IndentStr;
           Prefix = Prefix + "  " + BPtr + " = " + APtr + " + 1;" + getNL() +
                    IndentStr;
@@ -969,11 +969,11 @@ public:
 
         Suffix = Suffix + getNL() + IndentStr + "  " +
                  MapNames::getClNamespace() + "free(" + APtr + ", " +
-                 MapNames::getC2SNamespace() + "get_default_queue());";
+                 MapNames::getDpctNamespace() + "get_default_queue());";
         if (FuncName == "cublasCrotg_v2" || FuncName == "cublasZrotg_v2") {
           Suffix = Suffix + getNL() + IndentStr + "  " +
                    MapNames::getClNamespace() + "free(" + CPtr + ", " +
-                   MapNames::getC2SNamespace() + "get_default_queue());";
+                   MapNames::getDpctNamespace() + "get_default_queue());";
         }
         Suffix = Suffix + getNL() + IndentStr + "}";
       }
@@ -987,7 +987,7 @@ public:
       ExprAnalysis EA(CE->getArg(ArgIndex));
       std::string ResultTempPtr =
           "res_temp_ptr_ct" +
-          std::to_string(C2SGlobalInfo::getSuffixIndexInRuleThenInc());
+          std::to_string(DpctGlobalInfo::getSuffixIndexInRuleThenInc());
 
       std::string OriginType;
       if (Type == "std::complex<float>") {
@@ -1010,7 +1010,7 @@ public:
                         EA.getReplacedString() + ";" + getNL() + IndentStr +
                         IfStmtStr + getNL() + IndentStr + "  " + ResultTempPtr +
                         " = " + MapNames::getClNamespace() + "malloc_shared<" +
-                        OriginType + ">(1, " + MapNames::getC2SNamespace() +
+                        OriginType + ">(1, " + MapNames::getDpctNamespace() +
                         "get_default_queue());" + getNL() + IndentStr + "}" +
                         getNL() + IndentStr + PrefixInsertStr;
       SuffixInsertStr =
@@ -1018,7 +1018,7 @@ public:
           CallExprArguReplVec[0] + "->wait();" + getNL() + IndentStr + "  " +
           getDrefName(CE->getArg(ArgIndex)) + " = *" + ResultTempPtr + ";" +
           getNL() + IndentStr + "  " + MapNames::getClNamespace() + "free(" +
-          ResultTempPtr + ", " + MapNames::getC2SNamespace() +
+          ResultTempPtr + ", " + MapNames::getDpctNamespace() +
           "get_default_queue());" + getNL() + IndentStr + "}" + SuffixInsertStr;
     }
   }
@@ -1033,7 +1033,7 @@ public:
                                       const int &ArgIndex) {
     std::string BufferName =
         getTempNameForExpr(CE->getArg(ArgIndex), true, true) + "buf_ct" +
-        std::to_string(c2s::C2SGlobalInfo::getSuffixIndexInRuleThenInc());
+        std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
 
     PrefixInsertStr = PrefixInsertStr + "auto " + BufferName + " = " +
                       MapNames::getClNamespace() + "buffer<" + Type + ">(" +
@@ -1047,7 +1047,7 @@ public:
 
     requestFeature(HelperFeatureEnum::Memory_get_buffer_T, CE);
     SyncAPIBufferAssignmentInThenBlock.emplace_back(
-        BufferName + " = " + MapNames::getC2SNamespace() + "get_buffer<" +
+        BufferName + " = " + MapNames::getDpctNamespace() + "get_buffer<" +
         Type + ">(" + PointerStr + ");");
     SyncAPIBufferAssignmentInElseBlock.emplace_back(
         BufferName + " = " + MapNames::getClNamespace() + "buffer<" + Type +
@@ -1074,7 +1074,7 @@ public:
 
     auto assembleIfStmt = [&]() {
       requestFeature(HelperFeatureEnum::Memory_is_device_ptr, CE);
-      std::string IfStmtStr = "if (" + MapNames::getC2SNamespace() +
+      std::string IfStmtStr = "if (" + MapNames::getDpctNamespace() +
                               "is_device_ptr(" + PointerStr + ")) {" + getNL() +
                               IndentStr +
                               getBlockStr(SyncAPIBufferAssignmentInThenBlock) +
@@ -1116,7 +1116,7 @@ public:
     if (NeedUseLambda) {
       if (CanAvoidUsingLambda && !IsMacroArg) {
         std::string InsertStr;
-        if (C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
             !CanAvoidBrace)
           InsertStr = std::string("{") + getNL() + IndentStr + PrefixInsertStr +
                       CallExprReplStr + ";" + SuffixInsertStr + getNL() +
@@ -1155,7 +1155,7 @@ public:
       }
     } else {
       if (!PrefixInsertStr.empty() || !SuffixInsertStr.empty()) {
-        if (c2s::C2SGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
+        if (dpct::DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
             !CanAvoidBrace)
           insertAroundRange(
               PrefixInsertLoc, SuffixInsertLoc,
@@ -1264,7 +1264,7 @@ class EventQueryTraversal {
 
 public:
   EventQueryTraversal(EventAPICallRule *R)
-      : Rule(R), Context(C2SGlobalInfo::getContext()) {}
+      : Rule(R), Context(DpctGlobalInfo::getContext()) {}
   bool startFromQuery(const CallExpr *);
   bool startFromEnumRef(const DeclRefExpr *);
   bool startFromTypeLoc(TypeLoc TL);
@@ -1562,7 +1562,7 @@ private:
   void insertZeroOffset(const CallExpr *C, size_t InsertArgIndex) {
     static std::string InsertedText =
         buildString(MapNames::getClNamespace(),
-                    C2SGlobalInfo::getCtadClass("id", 3), "(0, 0, 0), ");
+                    DpctGlobalInfo::getCtadClass("id", 3), "(0, 0, 0), ");
     if (C->getNumArgs() > InsertArgIndex)
       emplaceTransformation(new InsertBeforeStmt(C->getArg(InsertArgIndex),
                                                  std::string(InsertedText)));
@@ -1571,7 +1571,7 @@ private:
 
 class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
   static inline std::string getCtadType(StringRef BaseTypeName) {
-    return buildString(C2SGlobalInfo::getCtadClass(
+    return buildString(DpctGlobalInfo::getCtadClass(
         buildString(MapNames::getClNamespace(), BaseTypeName), 3));
   }
   template <class... Args>
@@ -1763,7 +1763,7 @@ class TextureRule : public NamedMigrationRule<TextureRule> {
                             SourceManager &SM);
   void replaceResourceDataExpr(const MemberExpr *ME, ASTContext &Context);
   inline const MemberExpr *getParentMemberExpr(const Stmt *S) {
-    return C2SGlobalInfo::findParent<MemberExpr>(S);
+    return DpctGlobalInfo::findParent<MemberExpr>(S);
   }
   std::string getTextureFlagsSetterInfo(const Expr *Flags,
                                         StringRef &SetterName);
@@ -1927,23 +1927,23 @@ private:
     auto Conditon = [&](const DynTypedNode &LoopNode) -> bool {
       if (auto DoLoop = LoopNode.get<clang::DoStmt>()) {
         if (DoLoop->getBody() == Node ||
-            C2SGlobalInfo::isAncestor(DoLoop->getBody(), Node)) {
+            DpctGlobalInfo::isAncestor(DoLoop->getBody(), Node)) {
           return true;
         }
       } else if (auto ForLoop = LoopNode.get<clang::ForStmt>()) {
         if (ForLoop->getBody() == Node ||
-            C2SGlobalInfo::isAncestor(ForLoop->getBody(), Node)) {
+            DpctGlobalInfo::isAncestor(ForLoop->getBody(), Node)) {
           return true;
         }
       } else if (auto WhileLoop = LoopNode.get<clang::WhileStmt>()) {
         if (WhileLoop->getBody() == Node ||
-            C2SGlobalInfo::isAncestor(WhileLoop->getBody(), Node)) {
+            DpctGlobalInfo::isAncestor(WhileLoop->getBody(), Node)) {
           return true;
         }
       }
       return false;
     };
-    if (Loop = C2SGlobalInfo::findAncestor<clang::Stmt>(Node, Conditon)) {
+    if (Loop = DpctGlobalInfo::findAncestor<clang::Stmt>(Node, Conditon)) {
       LoopList.push_back(Loop);
       if (!OnlyFindFirstLevel) {
         findLoop(Loop, LoopList);
@@ -1970,6 +1970,6 @@ private:
 #define REGISTER_RULE(TYPE_NAME)                                               \
   RuleRegister<TYPE_NAME> g_##TYPE_NAME(&TYPE_NAME::ID, #TYPE_NAME);
 
-} // namespace c2s
+} // namespace dpct
 } // namespace clang
-#endif // C2S_AST_TRAVERSAL_H
+#endif // DPCT_AST_TRAVERSAL_H

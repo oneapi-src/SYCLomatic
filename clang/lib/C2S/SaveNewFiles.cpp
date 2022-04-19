@@ -35,7 +35,7 @@
 #include "llvm/Support/raw_os_ostream.h"
 #include <cassert>
 #include <fstream>
-using namespace clang::c2s;
+using namespace clang::dpct;
 using namespace llvm;
 namespace path = llvm::sys::path;
 namespace fs = llvm::sys::fs;
@@ -64,24 +64,24 @@ static bool formatFile(StringRef FileName,
     return false;
 
   clang::format::FormattingAttemptStatus Status;
-  clang::format::FormatStyle Style = C2SGlobalInfo::getCodeFormatStyle();
+  clang::format::FormatStyle Style = DpctGlobalInfo::getCodeFormatStyle();
 
   if (clang::format::BlockLevelFormatFlag) {
-    if (clang::c2s::C2SGlobalInfo::getFormatRange() ==
+    if (clang::dpct::DpctGlobalInfo::getFormatRange() ==
         clang::format::FormatRange::migrated) {
-      Style.IndentWidth = clang::c2s::C2SGlobalInfo::getKCIndentWidth();
+      Style.IndentWidth = clang::dpct::DpctGlobalInfo::getKCIndentWidth();
     }
   } else {
-    if (clang::c2s::C2SGlobalInfo::getFormatRange() ==
+    if (clang::dpct::DpctGlobalInfo::getFormatRange() ==
             clang::format::FormatRange::migrated &&
-        clang::c2s::C2SGlobalInfo::getGuessIndentWidthMatcherFlag()) {
-      Style.IndentWidth = clang::c2s::C2SGlobalInfo::getIndentWidth();
+        clang::dpct::DpctGlobalInfo::getGuessIndentWidthMatcherFlag()) {
+      Style.IndentWidth = clang::dpct::DpctGlobalInfo::getIndentWidth();
     }
   }
 
   // Here need new SourceManager. Because SourceManager caches the file buffer,
   // if we use a common SourceManager, the second time format will still act on
-  // the fisrt input (the original output of c2s without format), then the
+  // the fisrt input (the original output of dpct without format), then the
   // result is wrong.
   clang::LangOptions DefaultLangOptions;
   IntrusiveRefCntPtr<clang::DiagnosticOptions> DiagOpts =
@@ -96,7 +96,7 @@ static bool formatFile(StringRef FileName,
   clang::FileManager FM(FSO, nullptr);
   clang::SourceManager SM(Diagnostics, FM, false);
   clang::Rewriter Rewrite(SM, clang::LangOptions());
-  if (C2SGlobalInfo::getFormatRange() == clang::format::FormatRange::all) {
+  if (DpctGlobalInfo::getFormatRange() == clang::format::FormatRange::all) {
     std::vector<clang::tooling::Range> AllLineRanges;
     AllLineRanges.push_back(clang::tooling::Range(
         /*Offest*/ 0, /*Length*/ FileBuffer.get()->getBufferSize()));
@@ -185,7 +185,7 @@ void processallOptionAction(StringRef InRoot, StringRef OutRoot) {
   for (const auto &File : FilesNotInCompilationDB) {
 
     if (IncludeFileMap.find(File) != IncludeFileMap.end()) {
-      // Skip the files parsed by c2s parser.
+      // Skip the files parsed by dpct parser.
       continue;
     }
 
@@ -256,7 +256,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
         // calling proccessFiles() in Tooling.cpp::ClangTool::run().
         continue;
       } else {
-        if(C2SGlobalInfo::isExcluded(FilePath, false)) {
+        if(DpctGlobalInfo::isExcluded(FilePath, false)) {
           continue;
         }
         if (GetSourceFileType(FilePath) & SPT_CudaSource) {
@@ -294,14 +294,14 @@ extern llvm::cl::opt<bool> GenBuildScript;
 
 static void getMainSrcFilesRepls(
     std::vector<clang::tooling::Replacement> &MainSrcFilesRepls) {
-  auto &FileRelpsMap = C2SGlobalInfo::getFileRelpsMap();
+  auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
   for (const auto &Entry : FileRelpsMap)
     for (const auto &Repl : Entry.second)
       MainSrcFilesRepls.push_back(Repl);
 }
 static void getMainSrcFilesDigest(
     std::vector<std::pair<std::string, std::string>> &MainSrcFilesDigest) {
-  auto &DigestMap = C2SGlobalInfo::getDigestMap();
+  auto &DigestMap = DpctGlobalInfo::getDigestMap();
   for (const auto &Entry : DigestMap)
     MainSrcFilesDigest.push_back(std::make_pair(Entry.first, Entry.second));
 }
@@ -312,7 +312,7 @@ static void saveUpdatedMigrationDataIntoYAML(
     std::string YamlFile, std::string SrcFile,
     std::unordered_map<std::string, bool> &MainSrcFileMap) {
   // Save history repls to yaml file.
-  auto &FileRelpsMap = C2SGlobalInfo::getFileRelpsMap();
+  auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
   for (const auto &Entry : FileRelpsMap) {
     if (MainSrcFileMap[Entry.first])
       continue;
@@ -322,7 +322,7 @@ static void saveUpdatedMigrationDataIntoYAML(
   }
 
   // Save history main src file and its content md5 hash to yaml file.
-  auto &DigestMap = C2SGlobalInfo::getDigestMap();
+  auto &DigestMap = DpctGlobalInfo::getDigestMap();
   for (const auto &Entry : DigestMap) {
     if (!MainSrcFileMap[Entry.first]) {
       MainSrcFilesDigest.push_back(std::make_pair(Entry.first, Entry.second));
@@ -363,17 +363,17 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       MainSrcFileMap;
 
   std::string YamlFile =
-      OutRoot.str() + "/" + C2SGlobalInfo::getYamlFileName();
+      OutRoot.str() + "/" + DpctGlobalInfo::getYamlFileName();
   std::string SrcFile = "MainSrcFiles_placehold";
 
-  if (clang::c2s::C2SGlobalInfo::isIncMigration()) {
-    auto PreTU = clang::c2s::C2SGlobalInfo::getMainSourceYamlTUR();
+  if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
+    auto PreTU = clang::dpct::DpctGlobalInfo::getMainSourceYamlTUR();
     for (const auto &Repl : PreTU->Replacements) {
-      auto &FileRelpsMap = C2SGlobalInfo::getFileRelpsMap();
+      auto &FileRelpsMap = DpctGlobalInfo::getFileRelpsMap();
       FileRelpsMap[Repl.getFilePath().str()].push_back(Repl);
     }
     for (const auto &FileDigest : PreTU->MainSourceFilesDigest) {
-      auto &DigestMap = C2SGlobalInfo::getDigestMap();
+      auto &DigestMap = DpctGlobalInfo::getDigestMap();
       DigestMap[FileDigest.first] = FileDigest.second;
 
       // Mark all the main src files loaded from yaml file are not processed
@@ -391,7 +391,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
 
   if (Tool.getReplacements().empty()) {
     // There are no rules applying on the *.cpp files,
-    // c2s just do nothing with them.
+    // dpct just do nothing with them.
     status = MigrationNoCodeChangeHappen;
 
     getMainSrcFilesRepls(MainSrcFilesRepls);
@@ -406,7 +406,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     auto GroupResult = groupReplacementsByFile(
         Rewrite.getSourceMgr().getFileManager(), Tool.getReplacements());
     for (auto &Entry : GroupResult) {
-      OutPath = StringRef(C2SGlobalInfo::removeSymlinks(
+      OutPath = StringRef(DpctGlobalInfo::removeSymlinks(
           Rewrite.getSourceMgr().getFileManager(), Entry.first));
       makeCanonical(OutPath);
       bool HasRealReplacements = true;
@@ -467,7 +467,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         bool IsMainSrcFileChanged = false;
         std::string FilePath = Entry.first;
 
-        auto &DigestMap = C2SGlobalInfo::getDigestMap();
+        auto &DigestMap = DpctGlobalInfo::getDigestMap();
         auto DigestIter = DigestMap.find(Entry.first);
         if (DigestIter != DigestMap.end()) {
           auto Digest = llvm::sys::fs::md5_contents(Entry.first);
@@ -475,7 +475,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
             IsMainSrcFileChanged = true;
         }
 
-        auto &FileRelpsMap = c2s::C2SGlobalInfo::getFileRelpsMap();
+        auto &FileRelpsMap = dpct::DpctGlobalInfo::getFileRelpsMap();
         auto Iter = FileRelpsMap.find(Entry.first);
         if (Iter != FileRelpsMap.end() && !IsMainSrcFileChanged) {
           const auto &PreRepls = Iter->second;
@@ -556,10 +556,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     CHECKPOINT_FORMATTING_CODE_ENTRY(RetJmp);
     if (RetJmp == 0) {
       try {
-        if (C2SGlobalInfo::getFormatRange() !=
+        if (DpctGlobalInfo::getFormatRange() !=
             clang::format::FormatRange::none) {
           clang::format::setFormatRangeGetterHandler(
-              clang::c2s::C2SGlobalInfo::getFormatRange);
+              clang::dpct::DpctGlobalInfo::getFormatRange);
           bool FormatResult = true;
           for (auto Iter : FileRangesMap) {
             clang::tooling::Replacements FormatChanges;
@@ -567,7 +567,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
                            FormatResult;
 
             // If range is "all", one file only need to be formated once.
-            if (C2SGlobalInfo::getFormatRange() ==
+            if (DpctGlobalInfo::getFormatRange() ==
                 clang::format::FormatRange::all)
               continue;
 
@@ -595,7 +595,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         }
       } catch (std::exception &e) {
         std::string FaultMsg =
-            "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
+            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
             "skips formatting the code and continues migration.\n";
         llvm::errs() << FaultMsg;
       }
@@ -609,7 +609,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     SmallString<512> FilePath = StringRef(Entry.first);
     if (!Entry.second) {
       makeCanonical(FilePath);
-      bool IsExcluded = C2SGlobalInfo::isExcluded(FilePath.str().str(), false);
+      bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath.str().str(), false);
       if (IsExcluded) {
         continue;
       }
@@ -685,20 +685,20 @@ void loadYAMLIntoFileInfo(std::string Path) {
   SmallString<512> SourceFilePath(Path);
 
   SourceFilePath = StringRef(
-      C2SGlobalInfo::removeSymlinks(C2SGlobalInfo::getFileManager(), Path));
+      DpctGlobalInfo::removeSymlinks(DpctGlobalInfo::getFileManager(), Path));
   makeCanonical(SourceFilePath);
 
   std::string OriginPath = SourceFilePath.str().str();
   rewriteFileName(SourceFilePath);
-  rewriteDir(SourceFilePath, C2SGlobalInfo::getInRoot(),
-             C2SGlobalInfo::getOutRoot());
+  rewriteDir(SourceFilePath, DpctGlobalInfo::getInRoot(),
+             DpctGlobalInfo::getOutRoot());
 
   std::string YamlFilePath = SourceFilePath.str().str() + ".yaml";
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   if (fs::exists(YamlFilePath)) {
-    if (clang::c2s::C2SGlobalInfo::isIncMigration()) {
+    if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
       if (loadFromYaml(std::move(YamlFilePath), *PreTU, false) == 0) {
-        C2SGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(
+        DpctGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(
             OriginPath, PreTU);
       } else {
         llvm::errs() << getLoadYamlFailWarning(YamlFilePath);
