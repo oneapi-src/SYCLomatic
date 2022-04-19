@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -in-root=%S -out-root %T/sub_feature_name %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -in-root=%S -out-root %T/sub_feature_name %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/sub_feature_name/MainSourceFiles.yaml
 
 //CHECK:FeatureName:     'dev_mgr::check_id'

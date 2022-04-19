@@ -1,6 +1,6 @@
 // UNSUPPORTED: v11.0, v11.1, v11.2, v11.3, v11.4, v11.5, v11.6
 // UNSUPPORTED: cuda-11.0, cuda-11.1, cuda-11.2, cuda-11.3, cuda-11.4, cuda-11.5, cuda-11.6
-// RUN: c2s --format-range=none --out-root %T/cusparse-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --out-root %T/cusparse-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusparse-usm/cusparse-usm.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cusparse_v2.h>
@@ -78,7 +78,7 @@ int foo(int aaaaa){
   base0 = cusparseGetMatIndexBase(descrA);
   type0 = cusparseGetMatType(descrA);
 
-  //CHECK: handle = &c2s::get_default_queue();
+  //CHECK: handle = &dpct::get_default_queue();
   //CHECK-NEXT: descrA = oneapi::mkl::index_base::zero;
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetMatType was removed because the function call is redundant in DPC++.
@@ -90,7 +90,7 @@ int foo(int aaaaa){
   //CHECK-NEXT: oneapi::mkl::sparse::matrix_handle_t mat_handle_ct{{[0-9]+}};
   //CHECK-NEXT: oneapi::mkl::sparse::init_matrix_handle(&mat_handle_ct{{[0-9]+}});
   //CHECK-NEXT: oneapi::mkl::sparse::set_csr_data(mat_handle_ct{{[0-9]+}}, m, n, descrA, const_cast<int*>(csrRowPtrA), const_cast<int*>(csrColIndA), const_cast<double*>(csrValA));
-  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, c2s::get_transpose(aaaaa), alpha, mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), beta, y);
+  //CHECK-NEXT: oneapi::mkl::sparse::gemv(*handle, dpct::get_transpose(aaaaa), alpha, mat_handle_ct{{[0-9]+}}, const_cast<double*>(x), beta, y);
   //CHECK-NEXT: oneapi::mkl::sparse::release_matrix_handle(&mat_handle_ct{{[0-9]+}});
   cusparseCreate(&handle);
   cusparseCreateMatDescr(&descrA);

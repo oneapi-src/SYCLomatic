@@ -11,17 +11,17 @@
 // RUN: echo "    \"file\": \"%T/compile_by_nvcc/compile_by_nvcc_lin.c\"" >> %T/compile_by_nvcc/compile_commands.json
 // RUN: echo "  }" >> %T/compile_by_nvcc/compile_commands.json
 // RUN: echo "]" >> %T/compile_by_nvcc/compile_commands.json
-// RUN: c2s --format-range=none --out-root %T/compile_by_nvcc -p=./ --cuda-include-path="%cuda-path/include"
+// RUN: dpct --format-range=none --out-root %T/compile_by_nvcc -p=./ --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/compile_by_nvcc/compile_by_nvcc_lin.c.dp.cpp
 // RUN: rm -rf %T/compile_by_nvcc
 
 
 // CHECK: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <c2s/c2s.hpp>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
 
 // CHECK: int a = 0;
-// CHECK-NEXT: c2s::constant_memory<float, 1> const_angle(360);
+// CHECK-NEXT: dpct::constant_memory<float, 1> const_angle(360);
 // CHECK-NEXT: void simple_kernel(float *d_array, float *const_angle) {
 // CHECK-NEXT:   d_array[0] = const_angle[0];
 // CHECK-NEXT:   return;

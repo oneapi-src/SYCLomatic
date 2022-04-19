@@ -16,7 +16,7 @@
 // RUN: echo "        \"file\": \"%/T/hh_constant_db/hh_constant_db.cpp\"" >> compile_commands.json
 // RUN: echo "    }" >> compile_commands.json
 // RUN: echo "]" >> compile_commands.json
-// RUN: c2s -p=. --out-root=./out --cuda-include-path="%cuda-path/include"
+// RUN: dpct -p=. --out-root=./out --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/hh_constant_db/out/constant_header.h
 // RUN: cd ..
 // RUN: rm -rf ./hh_constant_db

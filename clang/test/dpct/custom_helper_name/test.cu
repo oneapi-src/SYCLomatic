@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/out %s --cuda-include-path="%cuda-path/include" --use-custom-helper=file --custom-helper-name=aaa -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/out %s --cuda-include-path="%cuda-path/include" --use-custom-helper=file --custom-helper-name=aaa -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/out/include/aaa/aaa.hpp
 
 //      CHECK: //==---- aaa.hpp ----------------------------------*- C++ -*----------------==//

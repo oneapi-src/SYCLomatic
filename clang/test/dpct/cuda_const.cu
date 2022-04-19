@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none --usm-level=none -out-root %T/cuda_const %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/cuda_const %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda_const/cuda_const.dp.cpp
 
 #include <stdio.h>
@@ -11,7 +11,7 @@ public:
   __device__ void test() {}
 };
 
-// CHECK: c2s::constant_memory<TestStruct, 0> t1;
+// CHECK: dpct::constant_memory<TestStruct, 0> t1;
 __constant__ TestStruct t1;
 
 // CHECK: void member_acc(TestStruct t1) {
@@ -20,18 +20,18 @@ __constant__ TestStruct t1;
 __global__ void member_acc() {
   t1.test();
 }
-// CHECK: c2s::constant_memory<float, 1> const_angle(360);
-// CHECK: c2s::constant_memory<float, 2> const_float(NUM_ELEMENTS, num_elements * 2);
+// CHECK: dpct::constant_memory<float, 1> const_angle(360);
+// CHECK: dpct::constant_memory<float, 2> const_float(NUM_ELEMENTS, num_elements * 2);
 __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2];
-// CHECK: c2s::constant_memory<sycl::double2, 0> vec_d;
+// CHECK: dpct::constant_memory<sycl::double2, 0> vec_d;
 __constant__ double2 vec_d;
 
-// CHECK: c2s::global_memory<int, 1> const_ptr;
+// CHECK: dpct::global_memory<int, 1> const_ptr;
 __constant__ int *const_ptr;
 
-// CHECK: c2s::constant_memory<int, 1> const_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
+// CHECK: dpct::constant_memory<int, 1> const_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
 __constant__ int const_init[5] = {1, 2, 3, 7, 8};
-// CHECK: c2s::constant_memory<int, 2> const_init_2d(sycl::range<2>(5, 5), {{[{][{]}}1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}});
+// CHECK: dpct::constant_memory<int, 2> const_init_2d(sycl::range<2>(5, 5), {{[{][{]}}1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}});
 __constant__ int const_init_2d[5][5] = {{1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}};
 
 // CHECK: struct FuncObj {
@@ -67,7 +67,7 @@ __global__ void simple_kernel(float *d_array) {
   return;
 }
 
-// CHECK: c2s::constant_memory<float, 0> const_one;
+// CHECK: dpct::constant_memory<float, 0> const_one;
 __device__ __constant__ float const_one;
 
 // CHECK:void simple_kernel_one(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]],
@@ -90,19 +90,19 @@ __global__ void simple_kernel_one(float *d_array) {
 }
 
 int main(int argc, char **argv) {
-  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   int size = 3200;
   int *d_int;
   float *d_array;
   float h_array[360];
 
-  // CHECK: d_array = (float *)c2s::c2s_malloc(sizeof(float) * size);
+  // CHECK: d_array = (float *)dpct::dpct_malloc(sizeof(float) * size);
   cudaMalloc((void **)&d_array, sizeof(float) * size);
-  // CHECK: d_int = (int *)c2s::c2s_malloc(sizeof(int) * size);
+  // CHECK: d_int = (int *)dpct::dpct_malloc(sizeof(int) * size);
   cudaMalloc(&d_int, sizeof(int) * size);
 
-  // CHECK: c2s::c2s_memset(d_array, 0, sizeof(float) * size);
+  // CHECK: dpct::dpct_memset(d_array, 0, sizeof(float) * size);
   cudaMemset(d_array, 0, sizeof(float) * size);
 
   for (int loop = 0; loop < 360; loop++)
@@ -113,32 +113,32 @@ int main(int argc, char **argv) {
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   (c2s::c2s_memcpy(const_angle.get_ptr(), &h_array[0], sizeof(float) * 360), 0);
+  // CHECK-NEXT:   (dpct::dpct_memcpy(const_angle.get_ptr(), &h_array[0], sizeof(float) * 360), 0);
   cudaMemcpyToSymbol(&const_angle[0], &h_array[0], sizeof(float) * 360);
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:   (c2s::c2s_memcpy(const_angle.get_ptr() + 3, &h_array[0], sizeof(float) * 357), 0);
+  // CHECK-NEXT:   (dpct::dpct_memcpy(const_angle.get_ptr() + 3, &h_array[0], sizeof(float) * 357), 0);
   cudaMemcpyToSymbol(&const_angle[3], &h_array[0], sizeof(float) * 357);
 
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  (c2s::c2s_memcpy(&h_array[0], const_angle.get_ptr() + 3, sizeof(float) * 357), 0);
+  // CHECK-NEXT:  (dpct::dpct_memcpy(&h_array[0], const_angle.get_ptr() + 3, sizeof(float) * 357), 0);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3], sizeof(float) * 357);
 
   #define NUM 3
   // CHECK:/*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: (c2s::c2s_memcpy(const_angle.get_ptr() + 3+NUM, &h_array[0], sizeof(float) * 354), 0);
+  // CHECK-NEXT: (dpct::dpct_memcpy(const_angle.get_ptr() + 3+NUM, &h_array[0], sizeof(float) * 354), 0);
   cudaMemcpyToSymbol(&const_angle[3+NUM], &h_array[0], sizeof(float) * 354);
 
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  (c2s::c2s_memcpy(&h_array[0], const_angle.get_ptr() + 3+NUM, sizeof(float) * 354), 0);
+  // CHECK-NEXT:  (dpct::dpct_memcpy(&h_array[0], const_angle.get_ptr() + 3+NUM, sizeof(float) * 354), 0);
   cudaMemcpyFromSymbol(&h_array[0], &const_angle[3+NUM], sizeof(float) * 354);
 
   // CHECK:   q_ct1.submit(
@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
   // CHECK-EMPTY:
   // CHECK-NEXT:       auto t1_acc_ct1 = t1.get_access(cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           member_acc(t1_acc_ct1);
@@ -161,9 +161,9 @@ int main(int argc, char **argv) {
   // CHECK-EMPTY:
   // CHECK-NEXT:     auto const_angle_acc_ct1 = const_angle.get_access(cgh);
   // CHECK-NEXT:     auto const_ptr_acc_ct1 = const_ptr.get_access(cgh);
-  // CHECK-NEXT:     auto d_array_acc_ct0 = c2s::get_access(d_array, cgh);
+  // CHECK-NEXT:     auto d_array_acc_ct0 = dpct::get_access(d_array, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:     cgh.parallel_for<c2s_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         simple_kernel((float *)(&d_array_acc_ct0[0]), item_ct1, const_angle_acc_ct1.get_pointer(), const_ptr_acc_ct1.get_pointer());
@@ -172,7 +172,7 @@ int main(int argc, char **argv) {
   simple_kernel<<<size / 64, 64>>>(d_array);
 
   float hangle_h[360];
-  // CHECK:  c2s::c2s_memcpy(hangle_h, d_array, 360 * sizeof(float), c2s::device_to_host);
+  // CHECK:  dpct::dpct_memcpy(hangle_h, d_array, 360 * sizeof(float), dpct::device_to_host);
   cudaMemcpy(hangle_h, d_array, 360 * sizeof(float), cudaMemcpyDeviceToHost);
   for (int i = 0; i < 360; i++) {
     if (fabs(h_array[i] - hangle_h[i]) > 1e-5) {
@@ -184,7 +184,7 @@ int main(int argc, char **argv) {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT:  (c2s::c2s_memcpy(const_one.get_ptr(), &h_array[0], sizeof(float) * 1), 0);
+  // CHECK-NEXT:  (dpct::dpct_memcpy(const_one.get_ptr(), &h_array[0], sizeof(float) * 1), 0);
   cudaMemcpyToSymbol(&const_one, &h_array[0], sizeof(float) * 1);
 
   cudaStream_t stream;
@@ -195,9 +195,9 @@ int main(int argc, char **argv) {
   // CHECK-EMPTY:
   // CHECK-NEXT:     auto const_float_acc_ct1 = const_float.get_access(cgh);
   // CHECK-NEXT:     auto const_one_acc_ct1 = const_one.get_access(cgh);
-  // CHECK-NEXT:     auto d_array_acc_ct0 = c2s::get_access(d_array, cgh);
+  // CHECK-NEXT:     auto d_array_acc_ct0 = dpct::get_access(d_array, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:     cgh.parallel_for<c2s_kernel_name<class simple_kernel_one_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class simple_kernel_one_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         simple_kernel_one((float *)(&d_array_acc_ct0[0]), item_ct1, const_float_acc_ct1, const_one_acc_ct1);
@@ -205,7 +205,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:   });
   simple_kernel_one<<<size / 64, 64, 0, stream>>>(d_array);
 
-  // CHECK:  c2s::c2s_memcpy(hangle_h, d_array, 360 * sizeof(float), c2s::device_to_host);
+  // CHECK:  dpct::dpct_memcpy(hangle_h, d_array, 360 * sizeof(float), dpct::device_to_host);
   cudaMemcpy(hangle_h, d_array, 360 * sizeof(float), cudaMemcpyDeviceToHost);
 
   for (int i = 1; i < 360; i++) {
@@ -221,7 +221,7 @@ int main(int argc, char **argv) {
 }
 
 
-// CHECK: c2s::constant_memory<float, 0> C;
+// CHECK: dpct::constant_memory<float, 0> C;
 __constant__ float C;
 
 // CHECK: void foo(float d, float y, float C){
@@ -233,9 +233,9 @@ __global__ void foo(float d, float y){
   float maxtemp = fmaxf(temp=(y*d)<(y==1?C:0) ? -(3*y) :-10, -10);
 }
 
-// CHECK: c2s::constant_memory<int, 0> d_a0(1);
-// CHECK-NEXT: c2s::constant_memory<int, 0> d_a1(2);
-// CHECK-NEXT: c2s::constant_memory<int, 1> const_array(10);
+// CHECK: dpct::constant_memory<int, 0> d_a0(1);
+// CHECK-NEXT: dpct::constant_memory<int, 0> d_a1(2);
+// CHECK-NEXT: dpct::constant_memory<int, 1> const_array(10);
 __constant__ int d_a0 = 1;
 __constant__ int d_a1 = 2;
 __device__ __constant__ int const_array[10];

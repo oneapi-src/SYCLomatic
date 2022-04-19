@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none --usm-level=none -out-root %T/math-functions %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/math-functions %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/math-functions/math-functions.dp.cpp --match-full-lines %s
 
 #include <cmath>
@@ -74,7 +74,7 @@ void host_1() {
 
 
 void foo() {
-  // CHECK:   c2s::get_default_queue().parallel_for<c2s_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK:   dpct::get_default_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, ceil(2.3)), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_{{[0-9a-z]+}}) {
   // CHECK-NEXT:           kernel();

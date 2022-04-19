@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/api_recognization %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/api_recognization %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/api_recognization/api_recognization.dp.cpp
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"

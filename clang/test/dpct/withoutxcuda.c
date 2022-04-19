@@ -1,13 +1,13 @@
-// RUN: c2s --format-range=none -out-root %T/withoutxcud %s --cuda-include-path="%cuda-path/include"
+// RUN: dpct --format-range=none -out-root %T/withoutxcud %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck %s --match-full-lines --input-file %T/withoutxcud/withoutxcuda.c.dp.cpp
 
 // This file is migrated as CUDA file as defualt if compilation db is not used.
 
 // CHECK: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <c2s/c2s.hpp>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
 
-// CHECK: c2s::constant_memory<float, 1> const_angle(360);
+// CHECK: dpct::constant_memory<float, 1> const_angle(360);
 // CHECK-NEXT: void simple_kernel(float *d_array, float *const_angle) {
 // CHECK-NEXT:   d_array[0] = const_angle[0];
 // CHECK-NEXT:   return;

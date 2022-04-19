@@ -6,15 +6,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __C2S_UTIL_HPP__
-#define __C2S_UTIL_HPP__
+#ifndef __DPCT_UTIL_HPP__
+#define __DPCT_UTIL_HPP__
 
 #include <CL/sycl.hpp>
 #include <complex>
 #include <type_traits>
 #include <cassert>
 
-namespace c2s {
+namespace dpct {
 
 template <int... Ints> struct integer_sequence {};
 template <int Size, int... Ints>
@@ -31,7 +31,7 @@ template <typename T> struct DataType<cl::sycl::vec<T, 2>> {
 inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
                             int from_ld, int rows, int cols, int elem_size,
                             memcpy_direction direction = automatic,
-                            cl::sycl::queue &queue = c2s::get_default_queue(),
+                            cl::sycl::queue &queue = dpct::get_default_queue(),
                             bool async = false) {
   if (to_ptr == from_ptr && to_ld == from_ld) {
     return;
@@ -40,18 +40,18 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
   if (to_ld == from_ld) {
     size_t cpoy_size = elem_size * ((cols - 1) * to_ld + rows);
     if (async)
-      detail::c2s_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
+      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
                           cpoy_size, direction);
     else
-      detail::c2s_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
+      detail::dpct_memcpy(queue, (void *)to_ptr, (void *)from_ptr,
                           cpoy_size, direction).wait();
   } else {
     if (async)
-      detail::c2s_memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
+      detail::dpct_memcpy(queue, to_ptr, from_ptr, elem_size * to_ld,
                           elem_size * from_ld, elem_size * rows, cols,
                           direction);
     else
-      cl::sycl::event::wait(detail::c2s_memcpy(
+      cl::sycl::event::wait(detail::dpct_memcpy(
           queue, to_ptr, from_ptr, elem_size * to_ld, elem_size * from_ld,
           elem_size * rows, cols, direction));
   }
@@ -72,7 +72,7 @@ template <typename T>
 inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
                             int from_ld, int rows, int cols,
                             memcpy_direction direction = automatic,
-                            cl::sycl::queue &queue = c2s::get_default_queue(),
+                            cl::sycl::queue &queue = dpct::get_default_queue(),
                             bool async = false) {
   using Ty = typename DataType<T>::T2;
   matrix_mem_copy((void *)to_ptr, (void *)from_ptr, to_ld, from_ld, rows, cols,
@@ -422,6 +422,6 @@ nd_range_barrier(cl::sycl::nd_item<1> item,
   item.barrier();
 }
 }
-} // namespace c2s
+} // namespace dpct
 
-#endif // __C2S_UTIL_HPP__
+#endif // __DPCT_UTIL_HPP__

@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none --usm-level=none -out-root %T/cuda_cache_config %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/cuda_cache_config %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda_cache_config/cuda_cache_config.dp.cpp
 
 #include <stdio.h>
@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
   float *d_array;
   float h_array[360];
 
-  // CHECK: d_array = (float *)c2s::c2s_malloc(sizeof(float) * size);
+  // CHECK: d_array = (float *)dpct::dpct_malloc(sizeof(float) * size);
   cudaMalloc((void **)&d_array, sizeof(float) * size);
   // CHECK: /*
   // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaDeviceSetCacheConfig was replaced with 0 because DPC++ currently does not support setting cache config on devices.
@@ -61,11 +61,11 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  // CHECK: c2s::get_default_queue().submit(
+  // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     auto d_array_acc_ct0 = c2s::get_access(d_array, cgh);
+  // CHECK-NEXT:     auto d_array_acc_ct0 = dpct::get_access(d_array, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:     cgh.parallel_for<c2s_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         simple_kernel((float *)(&d_array_acc_ct0[0]));
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
   cudaFuncCache pCacheConfig;
   // CHECK: CHKERR(0);
   CHKERR(cudaDeviceGetCacheConfig(&pCacheConfig));
-  // CHECK: c2s::c2s_free(d_array);
+  // CHECK: dpct::dpct_free(d_array);
   cudaFree(d_array);
   return 0;
 }

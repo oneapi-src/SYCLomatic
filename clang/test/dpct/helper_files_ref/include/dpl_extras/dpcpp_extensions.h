@@ -6,13 +6,13 @@
 //
 //===----------------------------------------------------------------===//
 
-#ifndef __C2S_DPL_EXTRAS_DPCPP_EXTENSIONS_H__
-#define __C2S_DPL_EXTRAS_DPCPP_EXTENSIONS_H__
+#ifndef __DPCT_DPCPP_EXTENSIONS_H__
+#define __DPCT_DPCPP_EXTENSIONS_H__
 
 #include <CL/sycl.hpp>
 #include <stdexcept>
 
-namespace c2s {
+namespace dpct {
 namespace group {
 
 namespace detail {
@@ -643,6 +643,6 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
 }
 
 } // namespace device
-} // namespace c2s
+} // namespace dpct
 
 #endif

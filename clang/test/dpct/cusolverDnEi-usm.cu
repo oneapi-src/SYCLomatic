@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/cusolverDnEi-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/cusolverDnEi-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusolverDnEi-usm/cusolverDnEi-usm.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas_v2.h>

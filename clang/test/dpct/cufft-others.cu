@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/cufft-others %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
+// RUN: dpct --format-range=none -out-root %T/cufft-others %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/cufft-others/cufft-others.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cufft.h>
@@ -24,7 +24,7 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(c2s::get_default_queue());
+  //CHECK-NEXT:plan->commit(dpct::get_default_queue());
   //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
   //CHECK-NEXT:} else {

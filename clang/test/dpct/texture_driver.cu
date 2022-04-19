@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none --usm-level=none -out-root %T/texture_driver %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/texture_driver %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/texture_driver/texture_driver.dp.cpp --match-full-lines %s
 
 #include <stdio.h>
@@ -44,10 +44,10 @@ int main() {
   float4Desc.NumChannels = 4;
   float4Desc.Height = 32;
 
-  // CHECK: c2s::image_matrix **a_ptr = new c2s::image_matrix_p;
-  // CHECK-NEXT: c2s::image_matrix_p a42;
-  // CHECK-NEXT: *a_ptr = new c2s::image_matrix(halfDesc_channel_type_ct1, halfDesc_channel_num_ct1, halfDesc_x_ct1, halfDesc_y_ct1);
-  // CHECK-NEXT: a42 = new c2s::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1);
+  // CHECK: dpct::image_matrix **a_ptr = new dpct::image_matrix_p;
+  // CHECK-NEXT: dpct::image_matrix_p a42;
+  // CHECK-NEXT: *a_ptr = new dpct::image_matrix(halfDesc_channel_type_ct1, halfDesc_channel_num_ct1, halfDesc_x_ct1, halfDesc_y_ct1);
+  // CHECK-NEXT: a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1);
   // CHECK-NEXT: delete (*a_ptr);
   // CHECK-NEXT: delete a42;
   // CHECK-NEXT: delete a_ptr;
@@ -63,25 +63,25 @@ int main() {
   {
     int errorCode;
 
-    // CHECK: errorCode = (a42 = new c2s::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1), 0);
+    // CHECK: errorCode = (a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1), 0);
     errorCode = cuArrayCreate(&a42, &float4Desc);
     // CHECK: errorCode = (delete a42, 0);
     errorCode = cuArrayDestroy(a42);
 
 
-    // CHECK: cudaCheck((a42 = new c2s::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1), 0));
+    // CHECK: cudaCheck((a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1), 0));
     cudaCheck(cuArrayCreate(&a42, &float4Desc));
     // CHECK: cudaCheck((delete a42, 0));
     cudaCheck(cuArrayDestroy(a42));
 
 
-    // CHECK: func((a42 = new c2s::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1), 0));
+    // CHECK: func((a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1), 0));
     func(cuArrayCreate(&a42, &float4Desc));
     // CHECK: func((delete a42, 0));
     func(cuArrayDestroy(a42));
 
 
-    // CHECK: funcT((a42 = new c2s::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1), 0));
+    // CHECK: funcT((a42 = new dpct::image_matrix(float4Desc_channel_type_ct1, float4Desc_channel_num_ct1, float4Desc_x_ct1, float4Desc_y_ct1), 0));
     funcT(cuArrayCreate(&a42, &float4Desc));
     // CHECK: funcT((delete a42, 0));
     funcT(cuArrayDestroy(a42));
@@ -121,8 +121,8 @@ void test_texref() {
   // CHECK: sycl::addressing_mode addr_mode;
   // CHECK-NEXT: sycl::filtering_mode filter_mode;
   // CHECK-NEXT: sycl::image_channel_type format;
-  // CHECK-NEXT: c2s::image_matrix_p arr;
-  // CHECK-NEXT: c2s::image_wrapper_base_p tex;
+  // CHECK-NEXT: dpct::image_matrix_p arr;
+  // CHECK-NEXT: dpct::image_wrapper_base_p tex;
   // CHECK-NEXT: int err_code;
   CUaddress_mode addr_mode;
   CUfilter_mode filter_mode;
@@ -231,23 +231,23 @@ void test_texref() {
   func(cuTexRefSetFilterMode(tex,filter_mode));
   funcT(cuTexRefSetFilterMode(tex,filter_mode));
 
-  // CHECK: tex->attach(c2s::image_data(arr));
+  // CHECK: tex->attach(dpct::image_data(arr));
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: err_code = (tex->attach(c2s::image_data(arr)), 0);
+  // CHECK-NEXT: err_code = (tex->attach(dpct::image_data(arr)), 0);
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cudaCheck((tex->attach(c2s::image_data(arr)), 0));
+  // CHECK-NEXT: cudaCheck((tex->attach(dpct::image_data(arr)), 0));
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: func((tex->attach(c2s::image_data(arr)), 0));
+  // CHECK-NEXT: func((tex->attach(dpct::image_data(arr)), 0));
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: funcT((tex->attach(c2s::image_data(arr)), 0));
+  // CHECK-NEXT: funcT((tex->attach(dpct::image_data(arr)), 0));
   cuTexRefSetArray(tex, arr, CU_TRSA_OVERRIDE_FORMAT);
   err_code = cuTexRefSetArray(tex, arr, 0x01);
   cudaCheck(cuTexRefSetArray(tex, arr, CU_TRSA_OVERRIDE_FORMAT));

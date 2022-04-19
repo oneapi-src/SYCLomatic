@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -extra-arg-before=-std=c++14 -out-root %T/curand-device-different-vec-size %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -extra-arg-before=-std=c++14 -out-root %T/curand-device-different-vec-size %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/curand-device-different-vec-size/curand-device-different-vec-size.dp.cpp --match-full-lines %s
 
 #include <cuda.h>
@@ -14,8 +14,8 @@ __global__ void picount(int *totals) {
   __shared__ int counter[WARP_SIZE];
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
-  // CHECK: c2s::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> rng;
-  // CHECK: rng = c2s::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>(clock64(), {1234, static_cast<std::uint64_t>(tid * 8)});
+  // CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> rng;
+  // CHECK: rng = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>(clock64(), {1234, static_cast<std::uint64_t>(tid * 8)});
   curandState_t rng;
   curand_init(clock64(), tid, 1234, &rng);
 
@@ -43,11 +43,11 @@ int main(int argc, char **argv) {
   picount<<<NBLOCKS, WARP_SIZE>>>(dOut);
 
   int size = 10;
-  //CHECK: c2s::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> *RandomStates;
+  //CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> *RandomStates;
   curandState *RandomStates;
-  //CHECK: RandomStates = (c2s::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> *)sycl::malloc_device(size * sizeof(c2s::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>) * 10, q_ct1);
+  //CHECK: RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> *)sycl::malloc_device(size * sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>) * 10, q_ct1);
   cudaMalloc((void**)&RandomStates, size * sizeof(curandState) * 10);
-  //CHECK: RandomStates = sycl::malloc_device<c2s::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>>(size, q_ct1);
+  //CHECK: RandomStates = sycl::malloc_device<dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>>(size, q_ct1);
   cudaMalloc((void**)&RandomStates, size * sizeof(curandState));
 
   return 0;

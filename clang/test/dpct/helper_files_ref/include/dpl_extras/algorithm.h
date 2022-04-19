@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __C2S_DPL_EXTRAS_ALGORITHM_H__
-#define __C2S_DPL_EXTRAS_ALGORITHM_H__
+#ifndef __DPCT_ALGORITHM_H__
+#define __DPCT_ALGORITHM_H__
 
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/algorithm>
@@ -16,7 +16,7 @@
 #include "functional.h"
 #include "iterators.h"
 
-namespace c2s {
+namespace dpct {
 
 template <typename Policy, typename Iter1, typename Iter2, typename Pred,
           typename T>
@@ -1000,6 +1000,6 @@ partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   return stable_partition(std::forward<Policy>(policy), first, last, mask, p);
 }
 
-} // end namespace c2s
+} // end namespace dpct
 
 #endif

@@ -1,18 +1,18 @@
 // CHECKME
 // RUN: cat %s > %T/curand.cu
 // RUN: cd %T
-//RUN: c2s -out-root %T/curand curand.cu --usm-level=none --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
+//RUN: dpct -out-root %T/curand curand.cu --usm-level=none --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
 //RUN: FileCheck --input-file %T/curand/curand.dp.cpp --match-full-lines curand.cu
 //CHECK:// CHECKME
 //CHECK:#include <CL/sycl.hpp>
-//CHECK:#include <c2s/c2s.hpp>
+//CHECK:#include <dpct/dpct.hpp>
 //CHECK:#include <oneapi/mkl.hpp>
 #include <cuda.h>
 #include <stdio.h>
 #include <curand.h>
 
 int main(){
-  //CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
+  //CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   //CHECK:oneapi::mkl::rng::gaussian<double> distr_ct{{[0-9]+}}(123, 456);
   //CHECK-NEXT:oneapi::mkl::rng::gaussian<float> distr_ct{{[0-9]+}}(123, 456);
@@ -40,13 +40,13 @@ int main(){
   float *d_data;
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(d_data);
+  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
   //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100 * 100, d_data_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateUniform(rng, d_data, 100*100);
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(d_data);
+  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
@@ -58,7 +58,7 @@ int main(){
   s1 = curandGenerateUniform(rng, d_data, 100*100);
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(d_data);
+  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
@@ -70,7 +70,7 @@ int main(){
   s1 = curandGenerateLogNormal(rng, d_data, 100*100, 123, 456);
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(d_data);
+  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
@@ -83,19 +83,19 @@ int main(){
 
   double* d_data_d;
   //CHECK:{
-  //CHECK-NEXT:auto d_data_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(d_data_d);
+  //CHECK-NEXT:auto d_data_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(d_data_d);
   //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100 * 100, d_data_d_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateUniformDouble(rng, d_data_d, 100*100);
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(d_data_d);
+  //CHECK-NEXT:auto d_data_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(d_data_d);
   //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100 * 100, d_data_d_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateLogNormalDouble(rng, d_data_d, 100*100, 123, 456);
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(d_data_d);
+  //CHECK-NEXT:auto d_data_d_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(d_data_d);
   //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100 * 100, d_data_d_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateNormalDouble(rng, d_data_d, 100*100, 123, 456);
@@ -103,7 +103,7 @@ int main(){
   unsigned int* d_data_ui;
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_ui_buf_ct{{[0-9]+}} = c2s::get_buffer<uint32_t>(d_data_ui);
+  //CHECK-NEXT:auto d_data_ui_buf_ct{{[0-9]+}} = dpct::get_buffer<uint32_t>(d_data_ui);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
@@ -115,7 +115,7 @@ int main(){
   s1 = curandGenerate(rng, d_data_ui, 100*100);
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_ui_buf_ct{{[0-9]+}} = c2s::get_buffer<int32_t>(d_data_ui);
+  //CHECK-NEXT:auto d_data_ui_buf_ct{{[0-9]+}} = dpct::get_buffer<int32_t>(d_data_ui);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
   //CHECK-NEXT:may need to rewrite this code.
@@ -128,13 +128,13 @@ int main(){
 
   unsigned long long* d_data_ull;
   //CHECK:{
-  //CHECK-NEXT:auto d_data_ull_buf_ct{{[0-9]+}} = c2s::get_buffer<uint64_t>(d_data_ull);
+  //CHECK-NEXT:auto d_data_ull_buf_ct{{[0-9]+}} = dpct::get_buffer<uint64_t>(d_data_ull);
   //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100 * 100, d_data_ull_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerateLongLong(rng, d_data_ull, 100*100);
 
   //CHECK:{
-  //CHECK-NEXT:auto d_data_ull_buf_ct{{[0-9]+}} = c2s::get_buffer<uint64_t>(d_data_ull);
+  //CHECK-NEXT:auto d_data_ull_buf_ct{{[0-9]+}} = dpct::get_buffer<uint64_t>(d_data_ull);
   //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100 * 100, d_data_ull_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:/*
@@ -146,7 +146,7 @@ int main(){
   if(s1 = curandGenerateLongLong(rng, d_data_ull, 100*100)){}
 
   //CHECK:{
-  //CHECK-NEXT:  auto d_data_ull_buf_ct{{[0-9]+}} = c2s::get_buffer<uint64_t>(d_data_ull);
+  //CHECK-NEXT:  auto d_data_ull_buf_ct{{[0-9]+}} = dpct::get_buffer<uint64_t>(d_data_ull);
   //CHECK-NEXT:  oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100 * 100, d_data_ull_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   //CHECK-NEXT:/*
@@ -161,10 +161,10 @@ int main(){
   //CHECK-NEXT:rng2 = std::make_shared<oneapi::mkl::rng::sobol>(q_ct1, 1111);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed
-  //CHECK-NEXT:because the function call is redundant in DPC++.
+  //CHECK-NEXT: because the function call is redundant in DPC++.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
-  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(d_data);
+  //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
   //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng2, 100 * 100, d_data_buf_ct{{[0-9]+}});
   //CHECK-NEXT:}
   curandGenerator_t rng2;
@@ -199,7 +199,7 @@ curandStatus foo2();
 //CHECK:class A{
 //CHECK-NEXT:public:
 //CHECK-NEXT:  A(){
-//CHECK-NEXT:    rng = std::make_shared<oneapi::mkl::rng::sobol>(c2s::get_default_queue(),
+//CHECK-NEXT:    rng = std::make_shared<oneapi::mkl::rng::sobol>(dpct::get_default_queue(),
 //CHECK-NEXT:                                                    1243);
 //CHECK-NEXT:    /*
 //CHECK-NEXT:    DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed
@@ -234,7 +234,7 @@ void bar1(){
 //CHECK-NEXT:*/
 //CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
 //CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(
-//CHECK-NEXT:    c2s::get_default_queue(), 1337ull);
+//CHECK-NEXT:    dpct::get_default_queue(), 1337ull);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed
 //CHECK-NEXT:because the function call is redundant in DPC++.
@@ -251,8 +251,8 @@ void bar2(){
 //CHECK-NEXT:adjust the code.
 //CHECK-NEXT:*/
 //CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::sobol> rng;
-//CHECK-NEXT:rng =
-//CHECK-NEXT:    std::make_shared<oneapi::mkl::rng::sobol>(c2s::get_default_queue(), 1243);
+//CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::sobol>(dpct::get_default_queue(),
+//CHECK-NEXT:                                                1243);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed
 //CHECK-NEXT:because the function call is redundant in DPC++.
@@ -273,7 +273,7 @@ void curandErrCheck_(curandStatus_t stat, const char *file, int line) {
 void bar3(){
 //CHECK:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
 //CHECK-NEXT:curandErrCheck((rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(
-//CHECK-NEXT:                    c2s::get_default_queue(), 1337ull),
+//CHECK-NEXT:                    dpct::get_default_queue(), 1337ull),
 //CHECK-NEXT:                0));
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was replaced with
@@ -286,7 +286,7 @@ void bar3(){
 //CHECK-NEXT:lambda. You may need to rewrite this code.
 //CHECK-NEXT:*/
 //CHECK-NEXT:curandErrCheck([&]() {
-//CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(d_data);
+//CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
 //CHECK-NEXT:oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100 * 100, d_data_buf_ct{{[0-9]+}});
 //CHECK-NEXT:return 0;
 //CHECK-NEXT:}());
@@ -310,8 +310,8 @@ void bar4(){
 //CHECK-NEXT:it as Scrambled Sobol generator.
 //CHECK-NEXT:*/
 //CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::sobol> rng;
-//CHECK-NEXT:rng =
-//CHECK-NEXT:    std::make_shared<oneapi::mkl::rng::sobol>(c2s::get_default_queue(), 1243);
+//CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::sobol>(dpct::get_default_queue(),
+//CHECK-NEXT:                                                1243);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed
 //CHECK-NEXT:because the function call is redundant in DPC++.
@@ -345,14 +345,14 @@ void bar5(){
 //CHECK-NEXT:  oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
 //CHECK-NEXT:  float *d_data;
 //CHECK-NEXT:  std::shared_ptr<oneapi::mkl::rng::sobol> rng2;
-//CHECK-NEXT:  rng2 =
-//CHECK-NEXT:       std::make_shared<oneapi::mkl::rng::sobol>(c2s::get_default_queue(), 1111);
+//CHECK-NEXT:  rng2 = std::make_shared<oneapi::mkl::rng::sobol>(dpct::get_default_queue(),
+//CHECK-NEXT:                                                   1111);
 //CHECK-NEXT:  /*
 //CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed
 //CHECK-NEXT:  because the function call is redundant in DPC++.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  {
-//CHECK-NEXT:    auto d_data_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(d_data);
+//CHECK-NEXT:    auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
 //CHECK-NEXT:    oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng2, 100 * 100, d_data_buf_ct{{[0-9]+}});
 //CHECK-NEXT:  }
 //CHECK-NEXT:  /*
@@ -373,6 +373,6 @@ int bar6(){
 void bar7() {
   curandGenerator_t rng;
   //CHECK:rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(
-  //CHECK-NEXT:  c2s::cpu_device().default_queue(), 0);
+  //CHECK-NEXT:  dpct::cpu_device().default_queue(), 0);
   curandCreateGeneratorHost(&rng, CURAND_RNG_PSEUDO_PHILOX4_32_10);
 }

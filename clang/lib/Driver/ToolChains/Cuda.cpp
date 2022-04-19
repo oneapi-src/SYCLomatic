@@ -30,7 +30,7 @@
 #ifdef INTEL_CUSTOMIZATION
 #include <fstream>
 #include <regex>
-#include "clang/C2S/C2S.h"
+#include "clang/DPCT/DPCT.h"
 #endif
 
 using namespace clang::driver;
@@ -360,7 +360,7 @@ CudaInstallationDetector::CudaInstallationDetector(
 
       IsValid = true;
 
-      // To certain CUDA version that c2s supports is available
+      // To certain CUDA version that dpct supports is available
       IsSupportedVersionAvailable = true;
       break;
     }

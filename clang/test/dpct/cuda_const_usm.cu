@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/cuda_const_usm %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/cuda_const_usm %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda_const_usm/cuda_const_usm.dp.cpp
 
 #include <stdio.h>
@@ -11,7 +11,7 @@ public:
   __device__ void test() {}
 };
 
-// CHECK: c2s::constant_memory<TestStruct, 0> t1;
+// CHECK: dpct::constant_memory<TestStruct, 0> t1;
 __constant__ TestStruct t1;
 
 // CHECK: void member_acc(TestStruct t1) {
@@ -20,18 +20,18 @@ __constant__ TestStruct t1;
 __global__ void member_acc() {
   t1.test();
 }
-// CHECK: c2s::constant_memory<float, 1> const_angle(360);
-// CHECK: c2s::constant_memory<float, 2> const_float(NUM_ELEMENTS, num_elements * 2);
+// CHECK: dpct::constant_memory<float, 1> const_angle(360);
+// CHECK: dpct::constant_memory<float, 2> const_float(NUM_ELEMENTS, num_elements * 2);
 __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2];
-// CHECK: c2s::constant_memory<sycl::double2, 0> vec_d;
+// CHECK: dpct::constant_memory<sycl::double2, 0> vec_d;
 __constant__ double2 vec_d;
 
-// CHECK: c2s::constant_memory<int *, 0> const_ptr;
+// CHECK: dpct::constant_memory<int *, 0> const_ptr;
 __constant__ int *const_ptr;
 
-// CHECK: c2s::constant_memory<int, 1> const_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
+// CHECK: dpct::constant_memory<int, 1> const_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
 __constant__ int const_init[5] = {1, 2, 3, 7, 8};
-// CHECK: c2s::constant_memory<int, 2> const_init_2d(sycl::range<2>(5, 5), {{[{][{]}}1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}});
+// CHECK: dpct::constant_memory<int, 2> const_init_2d(sycl::range<2>(5, 5), {{[{][{]}}1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}});
 __constant__ int const_init_2d[5][5] = {{1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}};
 
 
@@ -68,11 +68,11 @@ __global__ void simple_kernel(float *d_array) {
   return;
 }
 
-// CHECK: c2s::constant_memory<float, 0> const_one;
+// CHECK: dpct::constant_memory<float, 0> const_one;
 __device__ __constant__ float const_one;
 
 // CHECK:void simple_kernel_one(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]],
-// CHECK-NEXT:                  c2s::accessor<float, c2s::constant, 2> const_float,
+// CHECK-NEXT:                  dpct::accessor<float, dpct::constant, 2> const_float,
 // CHECK-NEXT:                  float const_one) {
 // CHECK-NEXT:  int index;
 // CHECK-NEXT:  index = [[ITEM]].get_group(2) * [[ITEM]].get_local_range(2) + [[ITEM]].get_local_id(2);
@@ -91,7 +91,7 @@ __global__ void simple_kernel_one(float *d_array) {
 }
 
 int main(int argc, char **argv) {
-  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   int size = 3200;
   float *d_array;
@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
   // CHECK-EMPTY:
   // CHECK-NEXT:       auto t1_ptr_ct1 = t1.get_ptr();
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           member_acc(*t1_ptr_ct1);
@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
   // CHECK-NEXT:       auto const_angle_ptr_ct1 = const_angle.get_ptr();
   // CHECK-NEXT:       auto const_ptr_ptr_ct1 = const_ptr.get_ptr();
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           simple_kernel(d_array, item_ct1, const_angle_ptr_ct1, *const_ptr_ptr_ct1);
@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
   // CHECK-EMPTY:
   // CHECK-NEXT:       auto const_float_acc_ct1 = const_float.get_access(cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class simple_kernel_one_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class simple_kernel_one_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, size / 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           simple_kernel_one(d_array, item_ct1, const_float_acc_ct1, *const_one_ptr_ct1);

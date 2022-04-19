@@ -1,4 +1,4 @@
-//RUN: c2s --out-root %T/curandEnum --format-range=none --cuda-include-path="%cuda-path/include" %s -- -x cuda --cuda-host-only
+//RUN: dpct --out-root %T/curandEnum --format-range=none --cuda-include-path="%cuda-path/include" %s -- -x cuda --cuda-host-only
 //RUN: FileCheck --input-file %T/curandEnum/curandEnum.dp.cpp --match-full-lines %s
 
 #include <cuda.h>

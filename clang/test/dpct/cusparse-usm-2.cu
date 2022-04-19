@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none --out-root %T/cusparse-usm-2 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --out-root %T/cusparse-usm-2 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cusparse-usm-2/cusparse-usm-2.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cusparse_v2.h>
@@ -76,7 +76,7 @@ int foo(int aaaaa){
   base0 = cusparseGetMatIndexBase(descrA);
   type0 = cusparseGetMatType(descrA);
 
-  //CHECK: handle = &c2s::get_default_queue();
+  //CHECK: handle = &dpct::get_default_queue();
   //CHECK-NEXT: descrA = oneapi::mkl::index_base::zero;
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetMatType was removed because the function call is redundant in DPC++.

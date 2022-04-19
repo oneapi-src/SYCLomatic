@@ -1,5 +1,5 @@
 // UNSUPPORTED: -windows-
-// RUN: c2s --format-range=none -out-root %T/openmp %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fopenmp
+// RUN: dpct --format-range=none -out-root %T/openmp %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -fopenmp
 // RUN: FileCheck %s --match-full-lines --input-file %T/openmp/openmp.dp.cpp
 
 #include "stdio.h"

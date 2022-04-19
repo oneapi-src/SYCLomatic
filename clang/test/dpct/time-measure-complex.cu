@@ -1,4 +1,4 @@
-// RUN: c2s -out-root %T/time-measure-complex %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct -out-root %T/time-measure-complex %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/time-measure-complex/time-measure-complex.dp.cpp --match-full-lines %s
 #include <stdio.h>
 #include <cuda_runtime.h>
@@ -131,31 +131,31 @@ int main(int argc, char **argv)
 
     // record start event
     // CHECK: start_ct1 = std::chrono::steady_clock::now();
-    // CHECK:     start = c2s::get_default_queue().ext_oneapi_submit_barrier();
+    // CHECK:     start = dpct::get_default_queue().ext_oneapi_submit_barrier();
     cudaEventRecord(start, 0);
 
     // dispatch job with depth first ordering
     for (int i = 0; i < n_streams; i++)
     {
-        // CHECK: streams[i]->parallel_for<c2s_kernel_name<class kernel_1_{{[a-z0-9]+}}>>(
+        // CHECK: streams[i]->parallel_for<dpct_kernel_name<class kernel_1_{{[a-z0-9]+}}>>(
         // CHECK-NEXT:             sycl::nd_range<3>(grid * block, block),
         // CHECK-NEXT:             [=](sycl::nd_item<3> item_ct1) {
         // CHECK-NEXT:                 kernel_1();
         // CHECK-NEXT:             });
         kernel_1<<<grid, block, 0, streams[i]>>>();
-        // CHECK: streams[i]->parallel_for<c2s_kernel_name<class kernel_2_{{[a-z0-9]+}}>>(
+        // CHECK: streams[i]->parallel_for<dpct_kernel_name<class kernel_2_{{[a-z0-9]+}}>>(
         // CHECK-NEXT:             sycl::nd_range<3>(grid * block, block),
         // CHECK-NEXT:             [=](sycl::nd_item<3> item_ct1) {
         // CHECK-NEXT:                 kernel_2();
         // CHECK-NEXT:             });
         kernel_2<<<grid, block, 0, streams[i]>>>();
-        // CHECK: streams[i]->parallel_for<c2s_kernel_name<class kernel_3_{{[a-z0-9]+}}>>(
+        // CHECK: streams[i]->parallel_for<dpct_kernel_name<class kernel_3_{{[a-z0-9]+}}>>(
         // CHECK-NEXT:             sycl::nd_range<3>(grid * block, block),
         // CHECK-NEXT:             [=](sycl::nd_item<3> item_ct1) {
         // CHECK-NEXT:                 kernel_3();
         // CHECK-NEXT:             });
         kernel_3<<<grid, block, 0, streams[i]>>>();
-        // CHECK: streams[i]->parallel_for<c2s_kernel_name<class kernel_4_{{[a-z0-9]+}}>>(
+        // CHECK: streams[i]->parallel_for<dpct_kernel_name<class kernel_4_{{[a-z0-9]+}}>>(
         // CHECK-NEXT:             sycl::nd_range<3>(grid * block, block),
         // CHECK-NEXT:             [=](sycl::nd_item<3> item_ct1) {
         // CHECK-NEXT:                 kernel_4();
@@ -170,9 +170,9 @@ int main(int argc, char **argv)
     }
 
     // record stop event
-    // CHECK:    c2s::get_current_device().queues_wait_and_throw();
+    // CHECK:    dpct::get_current_device().queues_wait_and_throw();
     // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-    // CHECK-NEXT:    stop = c2s::get_default_queue().ext_oneapi_submit_barrier();
+    // CHECK-NEXT:    stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
     // CHECK-NEXT:    elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
@@ -220,7 +220,7 @@ void foo_test_1() {
   cudaEventCreate(&start);
   cudaEventCreate(&stop);
   CHECK_FOO(cudaEventRecord(start));
-// CHECK:    stop = c2s::get_default_queue().parallel_for<c2s_kernel_name<class kernel_1_{{[a-z0-9]+}}>>(
+// CHECK:    stop = dpct::get_default_queue().parallel_for<dpct_kernel_name<class kernel_1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                    kernel_1();
@@ -316,7 +316,7 @@ int foo_test_2()
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    CHECK((start = c2s::get_default_queue().ext_oneapi_submit_barrier(), 0));
+// CHECK-NEXT:    CHECK((start = dpct::get_default_queue().ext_oneapi_submit_barrier(), 0));
     CHECK(cudaEventRecord(start, 0));
 
     // dispatch job with depth first ordering
@@ -325,7 +325,7 @@ int foo_test_2()
 // CHECK:        /*
 // CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:        */
-// CHECK-NEXT:        streams[i]->parallel_for<c2s_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:        streams[i]->parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
 // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                        foo_kernel_1();
@@ -335,7 +335,7 @@ int foo_test_2()
 // CHECK:        /*
 // CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:        */
-// CHECK-NEXT:        streams[i]->parallel_for<c2s_kernel_name<class foo_kernel_2_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:        streams[i]->parallel_for<dpct_kernel_name<class foo_kernel_2_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
 // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                        foo_kernel_2();
@@ -345,7 +345,7 @@ int foo_test_2()
 // CHECK:        /*
 // CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:        */
-// CHECK-NEXT:        streams[i]->parallel_for<c2s_kernel_name<class foo_kernel_3_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:        streams[i]->parallel_for<dpct_kernel_name<class foo_kernel_3_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
 // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                        foo_kernel_3();
@@ -355,7 +355,7 @@ int foo_test_2()
 // CHECK:        /*
 // CHECK-NEXT:        DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:        */
-// CHECK-NEXT:        streams[i]->parallel_for<c2s_kernel_name<class foo_kernel_4_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:        streams[i]->parallel_for<dpct_kernel_name<class foo_kernel_4_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(grid * block, block),
 // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                        foo_kernel_4();
@@ -382,9 +382,9 @@ int foo_test_2()
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    c2s::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    CHECK((stop = c2s::get_default_queue().ext_oneapi_submit_barrier(), 0));
+// CHECK-NEXT:    CHECK((stop = dpct::get_default_queue().ext_oneapi_submit_barrier(), 0));
 // CHECK-NEXT:    CHECK(0);
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -410,18 +410,18 @@ void foo_test_3()
 // CHECK:    /*
 // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((h_a = (float *)sycl::malloc_host(nbytes, c2s::get_default_queue()), 0));
+// CHECK-NEXT:    CHECK((h_a = (float *)sycl::malloc_host(nbytes, dpct::get_default_queue()), 0));
     CHECK(cudaMallocHost((void **)&h_a, nbytes));
 
     float *d_a = 0;
 // CHECK:    /*
 // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((d_a = (float *)sycl::malloc_device(nbytes, c2s::get_default_queue()), 0));
+// CHECK-NEXT:    CHECK((d_a = (float *)sycl::malloc_device(nbytes, dpct::get_default_queue()), 0));
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((c2s::get_default_queue().memset(d_a, 255, nbytes).wait(), 0));
+// CHECK-NEXT:    CHECK((dpct::get_default_queue().memset(d_a, 255, nbytes).wait(), 0));
     CHECK(cudaMalloc((void **)&d_a, nbytes));
     CHECK(cudaMemset(d_a, 255, nbytes));
 
@@ -445,11 +445,11 @@ void foo_test_3()
 // CHECK:    /*
 // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((stop_q_ct1_1 = c2s::get_default_queue().memcpy(d_a, h_a, nbytes), 0));
+// CHECK-NEXT:    CHECK((stop_q_ct1_1 = dpct::get_default_queue().memcpy(d_a, h_a, nbytes), 0));
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    stop = c2s::get_default_queue().parallel_for<c2s_kernel_name<class kernel_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:    stop = dpct::get_default_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                sycl::nd_range<3>(grid * block, block),
 // CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                    kernel(d_a, value);
@@ -457,7 +457,7 @@ void foo_test_3()
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((stop_q_ct1_2 = c2s::get_default_queue().memcpy(h_a, d_a, nbytes), 0));
+// CHECK-NEXT:    CHECK((stop_q_ct1_2 = dpct::get_default_queue().memcpy(h_a, d_a, nbytes), 0));
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:    */
@@ -490,11 +490,11 @@ void foo_test_3()
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((sycl::free(h_a, c2s::get_default_queue()), 0));
+// CHECK-NEXT:    CHECK((sycl::free(h_a, dpct::get_default_queue()), 0));
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    CHECK((sycl::free(d_a, c2s::get_default_queue()), 0));
+// CHECK-NEXT:    CHECK((sycl::free(d_a, dpct::get_default_queue()), 0));
     CHECK(cudaEventDestroy(stop));
     CHECK(cudaFreeHost(h_a));
     CHECK(cudaFree(d_a));
@@ -521,7 +521,7 @@ void foo_test_4() {
 // CHECK:  /*
 // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:  */
-// CHECK-NEXT:    c2s::get_default_queue().parallel_for<c2s_kernel_name<class set_array_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:    dpct::get_default_queue().parallel_for<dpct_kernel_name<class set_array_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
 // CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                    set_array(d_a, 2., N);
@@ -546,11 +546,11 @@ void foo_test_4() {
 // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    start = c2s::get_default_queue().ext_oneapi_submit_barrier();
+// CHECK-NEXT:    start = dpct::get_default_queue().ext_oneapi_submit_barrier();
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:    */
-// CHECK-NEXT:        c2s::get_default_queue().parallel_for<c2s_kernel_name<class STREAM_Copy_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:        dpct::get_default_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
 // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                        STREAM_Copy(d_a, d_c, N);
@@ -558,9 +558,9 @@ void foo_test_4() {
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    c2s::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    stop = c2s::get_default_queue().ext_oneapi_submit_barrier();
+// CHECK-NEXT:    stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
 // CHECK-NEXT:    times[0][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
     cudaEventRecord(start, 0);
     STREAM_Copy<<<dimGrid, dimBlock>>>(d_a, d_c, N);
@@ -572,11 +572,11 @@ void foo_test_4() {
 // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    start = c2s::get_default_queue().ext_oneapi_submit_barrier();
+// CHECK-NEXT:    start = dpct::get_default_queue().ext_oneapi_submit_barrier();
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:    */
-// CHECK-NEXT:        c2s::get_default_queue().parallel_for<c2s_kernel_name<class STREAM_Copy_Optimized_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:        dpct::get_default_queue().parallel_for<dpct_kernel_name<class STREAM_Copy_Optimized_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                    sycl::nd_range<3>(dimGrid * dimBlock, dimBlock),
 // CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                        STREAM_Copy_Optimized(d_a, d_c, N);
@@ -584,9 +584,9 @@ void foo_test_4() {
 // CHECK-NEXT:    /*
 // CHECK-NEXT:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:    */
-// CHECK-NEXT:    c2s::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    stop = c2s::get_default_queue().ext_oneapi_submit_barrier();
+// CHECK-NEXT:    stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
 // CHECK-NEXT:    times[1][k] = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
     cudaEventRecord(start, 0);
     STREAM_Copy_Optimized<<<dimGrid, dimBlock>>>(d_a, d_c, N);

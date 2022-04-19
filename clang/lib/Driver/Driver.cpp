@@ -180,7 +180,7 @@ std::string Driver::GetResourcesPath(StringRef BinaryPath,
     P = llvm::sys::path::parent_path(Dir);
 #ifdef INTEL_CUSTOMIZATION
     SmallString<128> P1(P);
-    llvm::sys::path::append(P, Twine("share/c2s/lib") + CLANG_LIBDIR_SUFFIX,
+    llvm::sys::path::append(P, Twine("share/dpct/lib") + CLANG_LIBDIR_SUFFIX,
                             "clang", CLANG_VERSION_STRING);
 
     if (llvm::sys::fs::exists(P)) {

@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/iteration-space %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/iteration-space %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/iteration-space/iteration-space.dp.cpp --match-full-lines %s
 
 // Test that the replacement happens when it should to.

@@ -6,15 +6,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __C2S_IMAGE_HPP__
-#define __C2S_IMAGE_HPP__
+#ifndef __DPCT_IMAGE_HPP__
+#define __DPCT_IMAGE_HPP__
 
 #include <CL/sycl.hpp>
 
 #include "memory.hpp"
 #include "util.hpp"
 
-namespace c2s {
+namespace dpct {
 
 enum class image_channel_data_type {
   signed_int,
@@ -789,7 +789,7 @@ template <> struct image_creator<1> {
           ->create_image<1>(data.get_channel());
     }
     auto ptr = data.get_data_ptr();
-#ifdef C2S_USM_LEVEL_NONE
+#ifdef DPCT_USM_LEVEL_NONE
     if (detail::mem_mgr::instance().is_device_ptr(ptr))
       ptr = get_buffer(ptr)
                 .template get_access<cl::sycl::access_mode::read_write>()
@@ -810,7 +810,7 @@ template <> struct image_creator<2> {
           ->create_image<2>(data.get_channel());
     }
     auto ptr = data.get_data_ptr();
-#ifdef C2S_USM_LEVEL_NONE
+#ifdef DPCT_USM_LEVEL_NONE
     if (detail::mem_mgr::instance().is_device_ptr(ptr))
       ptr = get_buffer(ptr)
                 .template get_access<cl::sycl::access_mode::read_write>()
@@ -887,6 +887,6 @@ static image_wrapper_base *create_image_wrapper(image_channel channel, int dims)
 }
 } // namespace detail
 
-} // namespace c2s
+} // namespace dpct
 
-#endif // !__C2S_IMAGE_HPP__
+#endif // !__DPCT_IMAGE_HPP__

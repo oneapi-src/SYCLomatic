@@ -1138,9 +1138,9 @@ char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
   char replacement[PATH_MAX];
   char file_path[PATH_MAX];
 
-  fp = popen("which c2s", "r");
+  fp = popen("which dpct", "r");
   if (fp == NULL) {
-    perror("bear: failed to run command 'which c2s'\n");
+    perror("bear: failed to run command 'which dpct'\n");
     exit(EXIT_FAILURE);
   }
 
@@ -1150,7 +1150,7 @@ char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
   }
   pclose(fp);
   replacement[strlen(replacement) - 1] =
-      '\0'; // to remove extra '\n' added by "which c2s"
+      '\0'; // to remove extra '\n' added by "which dpct"
 
   char *res = realpath(
       replacement,
@@ -1161,13 +1161,13 @@ char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
     exit(EXIT_FAILURE);
   }
   if ((strlen(file_path) + strlen("lib/libear/intercept-stub") -
-       strlen("bin/c2s")) >= PATH_MAX) {
-    perror("bear: strcpy overflow, path to c2s is too long.\n");
+       strlen("bin/dpct")) >= PATH_MAX) {
+    perror("bear: strcpy overflow, path to dpct is too long.\n");
     exit(EXIT_FAILURE);
   }
 
-  char *dest = file_path + strlen(file_path) - strlen("bin/c2s");
-  strcpy(dest, "share/c2s/lib/libear/intercept-stub");
+  char *dest = file_path + strlen(file_path) - strlen("bin/dpct");
+  strcpy(dest, "share/dpct/lib/libear/intercept-stub");
   if (access(file_path, F_OK) != 0) {
     // file_path does not exists
     strcpy(dest, "lib/libear/intercept-stub");

@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/cublas-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/cublas-usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublas-usm/cublas-usm.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas_v2.h>
@@ -61,13 +61,13 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:int a = (c2s::matrix_mem_copy((void*)d_C_S, (void*)h_a, 11111, 11111, 1, 10, sizeof(float)), 0);
-  //CHECK-NEXT:c2s::matrix_mem_copy((void*)d_C_S, (void*)h_b, 1, 1, 1, 10, sizeof(float));
-  //CHECK-NEXT:c2s::matrix_mem_copy((void*)d_C_S, (void*)h_c, 1, 1, 1, 10, sizeof(float));
+  //CHECK-NEXT:int a = (dpct::matrix_mem_copy((void*)d_C_S, (void*)h_a, 11111, 11111, 1, 10, sizeof(float)), 0);
+  //CHECK-NEXT:dpct::matrix_mem_copy((void*)d_C_S, (void*)h_b, 1, 1, 1, 10, sizeof(float));
+  //CHECK-NEXT:dpct::matrix_mem_copy((void*)d_C_S, (void*)h_c, 1, 1, 1, 10, sizeof(float));
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:a = (c2s::matrix_mem_copy((void*)d_C_S, (void*)h_a, 100, 100, 100, 100, 10000), 0);
+  //CHECK-NEXT:a = (dpct::matrix_mem_copy((void*)d_C_S, (void*)h_a, 100, 100, 100, 100, 10000), 0);
   int a = cublasSetVector(10, sizeof(float), h_a, 11111, d_C_S, 11111);
   cublasSetVector(10, sizeof(float), h_b, 1, d_C_S, 1);
   cublasSetVector(10, sizeof(float), h_c, 1, d_C_S, 1);
@@ -87,66 +87,66 @@ int main() {
 
   //level 1
 
-  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, c2s::get_default_queue());
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:a = (oneapi::mkl::blas::column_major::iamax(*handle, N, x_S, N, res_temp_ptr_ct{{[0-9]+}}).wait(), 0);
   //CHECK-NEXT:int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
-  //CHECK-NEXT:c2s::c2s_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
-  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  //CHECK-NEXT:dpct::dpct_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   a = cublasIsamax(handle, N, x_S, N, result);
-  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, c2s::get_default_queue());
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   //CHECK-NEXT:oneapi::mkl::blas::column_major::iamax(*handle, N, x_D, N, res_temp_ptr_ct{{[0-9]+}}).wait();
   //CHECK-NEXT:int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
-  //CHECK-NEXT:c2s::c2s_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
-  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  //CHECK-NEXT:dpct::dpct_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   cublasIdamax(handle, N, x_D, N, result);
-  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, c2s::get_default_queue());
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:a = (oneapi::mkl::blas::column_major::iamax(*handle, N, (std::complex<float>*)x_C, N, res_temp_ptr_ct{{[0-9]+}}).wait(), 0);
   //CHECK-NEXT:int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
-  //CHECK-NEXT:c2s::c2s_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
-  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  //CHECK-NEXT:dpct::dpct_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   a = cublasIcamax(handle, N, x_C, N, result);
-  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, c2s::get_default_queue());
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   //CHECK-NEXT:oneapi::mkl::blas::column_major::iamax(*handle, N, (std::complex<double>*)x_Z, N, res_temp_ptr_ct{{[0-9]+}}).wait();
   //CHECK-NEXT:int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
-  //CHECK-NEXT:c2s::c2s_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
-  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  //CHECK-NEXT:dpct::dpct_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   cublasIzamax(handle, N, x_Z, N, result);
 
-  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, c2s::get_default_queue());
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:a = (oneapi::mkl::blas::column_major::iamin(*handle, N, x_S, N, res_temp_ptr_ct{{[0-9]+}}).wait(), 0);
   //CHECK-NEXT:int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
-  //CHECK-NEXT:c2s::c2s_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
-  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  //CHECK-NEXT:dpct::dpct_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   a = cublasIsamin(handle, N, x_S, N, result);
-  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, c2s::get_default_queue());
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   //CHECK-NEXT:oneapi::mkl::blas::column_major::iamin(*handle, N, x_D, N, res_temp_ptr_ct{{[0-9]+}}).wait();
   //CHECK-NEXT:int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
-  //CHECK-NEXT:c2s::c2s_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
-  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  //CHECK-NEXT:dpct::dpct_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   cublasIdamin(handle, N, x_D, N, result);
-  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, c2s::get_default_queue());
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:a = (oneapi::mkl::blas::column_major::iamin(*handle, N, (std::complex<float>*)x_C, N, res_temp_ptr_ct{{[0-9]+}}).wait(), 0);
   //CHECK-NEXT:int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
-  //CHECK-NEXT:c2s::c2s_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
-  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  //CHECK-NEXT:dpct::dpct_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   a = cublasIcamin(handle, N, x_C, N, result);
-  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, c2s::get_default_queue());
+  //CHECK:int64_t* res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<int64_t>(1, dpct::get_default_queue());
   //CHECK-NEXT:oneapi::mkl::blas::column_major::iamin(*handle, N, (std::complex<double>*)x_Z, N, res_temp_ptr_ct{{[0-9]+}}).wait();
   //CHECK-NEXT:int res_temp_host_ct{{[0-9]+}} = (int)*res_temp_ptr_ct{{[0-9]+}};
-  //CHECK-NEXT:c2s::c2s_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
-  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  //CHECK-NEXT:dpct::dpct_memcpy(result, &res_temp_host_ct{{[0-9]+}}, sizeof(int));
+  //CHECK-NEXT:sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   cublasIzamin(handle, N, x_Z, N, result);
 
   //CHECK:a = (oneapi::mkl::blas::column_major::rotm(*handle, N, d_C_S, N, d_C_S, N, const_cast<float*>(x_S)), 0);
@@ -202,7 +202,7 @@ int main() {
 
   // CHECK: float* res_temp_ptr_ct{{[0-9]+}} = result_S;
   // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, c2s::get_default_queue());
+  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_default_queue());
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -211,23 +211,23 @@ int main() {
   // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:   handle->wait();
   // CHECK-NEXT:   *result_S = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT: }
   a = cublasSnrm2(handle, N, x_S, incx, result_S);
   // CHECK: double* res_temp_ptr_ct{{[0-9]+}} = result_D;
   // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, c2s::get_default_queue());
+  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, dpct::get_default_queue());
   // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::column_major::nrm2(*handle, N, x_D, incx, res_temp_ptr_ct{{[0-9]+}});
   // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:   handle->wait();
   // CHECK-NEXT:   *result_D = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT: }
   cublasDnrm2(handle, N, x_D, incx, result_D);
   // CHECK: float* res_temp_ptr_ct{{[0-9]+}} = result_S;
   // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, c2s::get_default_queue());
+  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_default_queue());
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -236,24 +236,24 @@ int main() {
   // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:   handle->wait();
   // CHECK-NEXT:   *result_S = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT: }
   a = cublasScnrm2(handle, N, x_C, incx, result_S);
   // CHECK: double* res_temp_ptr_ct{{[0-9]+}} = result_D;
   // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, c2s::get_default_queue());
+  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, dpct::get_default_queue());
   // CHECK-NEXT: }
   // CHECK:oneapi::mkl::blas::column_major::nrm2(*handle, N, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}});
   // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:   handle->wait();
   // CHECK-NEXT:   *result_D = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT: }
   cublasDznrm2(handle, N, x_Z, incx, result_D);
 
   // CHECK: float* res_temp_ptr_ct{{[0-9]+}} = result_S;
   // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, c2s::get_default_queue());
+  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_default_queue());
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -262,23 +262,23 @@ int main() {
   // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:   handle->wait();
   // CHECK-NEXT:   *result_S = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT: }
   a = cublasSasum(handle, N, x_S, incx, result_S);
   // CHECK: double* res_temp_ptr_ct{{[0-9]+}} = result_D;
   // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, c2s::get_default_queue());
+  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, dpct::get_default_queue());
   // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(*handle, N, x_D, incx, res_temp_ptr_ct{{[0-9]+}});
   // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:   handle->wait();
   // CHECK-NEXT:   *result_D = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT: }
   cublasDasum(handle, N, x_D, incx, result_D);
   // CHECK: float* res_temp_ptr_ct{{[0-9]+}} = result_S;
   // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, c2s::get_default_queue());
+  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_default_queue());
   // CHECK-NEXT: }
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -287,18 +287,18 @@ int main() {
   // CHECK-NEXT: if(sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:   handle->wait();
   // CHECK-NEXT:   *result_S = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT: }
   a = cublasScasum(handle, N, x_C, incx, result_S);
   // CHECK: double* res_temp_ptr_ct{{[0-9]+}} = result_D;
   // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, c2s::get_default_queue());
+  // CHECK-NEXT:   res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, dpct::get_default_queue());
   // CHECK-NEXT: }
   // CHECK-NEXT: oneapi::mkl::blas::column_major::asum(*handle, N, (std::complex<double>*)x_Z, incx, res_temp_ptr_ct{{[0-9]+}});
   // CHECK-NEXT: if(sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:   handle->wait();
   // CHECK-NEXT:   *result_D = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:   sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT: }
   cublasDzasum(handle, N, x_Z, incx, result_D);
 
@@ -312,7 +312,7 @@ int main() {
   // CHECK-NEXT: float* c_ct{{[0-9]+}} = c_S;
   // CHECK-NEXT: float* s_ct{{[0-9]+}} = s_S;
   // CHECK-NEXT: if(sycl::get_pointer_type(a_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_S, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   a_ct{{[0-9]+}} = sycl::malloc_shared<float>(4, c2s::get_default_queue());
+  // CHECK-NEXT:   a_ct{{[0-9]+}} = sycl::malloc_shared<float>(4, dpct::get_default_queue());
   // CHECK-NEXT:   b_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 1;
   // CHECK-NEXT:   c_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 2;
   // CHECK-NEXT:   s_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 3;
@@ -331,7 +331,7 @@ int main() {
   // CHECK-NEXT:   *b_S = *b_ct{{[0-9]+}};
   // CHECK-NEXT:   *c_S = *c_ct{{[0-9]+}};
   // CHECK-NEXT:   *s_S = *s_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(a_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:   sycl::free(a_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT: }
   a = cublasSrotg(handle, a_S, b_S, c_S, s_S);
   // CHECK: double* a_ct{{[0-9]+}} = a_D;
@@ -339,7 +339,7 @@ int main() {
   // CHECK-NEXT: double* c_ct{{[0-9]+}} = c_D;
   // CHECK-NEXT: double* s_ct{{[0-9]+}} = s_D;
   // CHECK-NEXT: if(sycl::get_pointer_type(a_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_D, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   a_ct{{[0-9]+}} = sycl::malloc_shared<double>(4, c2s::get_default_queue());
+  // CHECK-NEXT:   a_ct{{[0-9]+}} = sycl::malloc_shared<double>(4, dpct::get_default_queue());
   // CHECK-NEXT:   b_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 1;
   // CHECK-NEXT:   c_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 2;
   // CHECK-NEXT:   s_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 3;
@@ -355,7 +355,7 @@ int main() {
   // CHECK-NEXT:   *b_D = *b_ct{{[0-9]+}};
   // CHECK-NEXT:   *c_D = *c_ct{{[0-9]+}};
   // CHECK-NEXT:   *s_D = *s_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(a_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:   sycl::free(a_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT: }
   cublasDrotg(handle, a_D, b_D, c_D, s_D);
   // CHECK: sycl::float2* a_ct{{[0-9]+}} = a_C;
@@ -363,8 +363,8 @@ int main() {
   // CHECK-NEXT: float* c_ct{{[0-9]+}} = c_S;
   // CHECK-NEXT: sycl::float2* s_ct{{[0-9]+}} = s_C;
   // CHECK-NEXT: if(sycl::get_pointer_type(a_C, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_C, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   a_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(3, c2s::get_default_queue());
-  // CHECK-NEXT:   c_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, c2s::get_default_queue());
+  // CHECK-NEXT:   a_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(3, dpct::get_default_queue());
+  // CHECK-NEXT:   c_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_default_queue());
   // CHECK-NEXT:   b_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 1;
   // CHECK-NEXT:   s_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 2;
   // CHECK-NEXT:   *a_ct{{[0-9]+}} = *a_C;
@@ -382,8 +382,8 @@ int main() {
   // CHECK-NEXT:   *b_C = *b_ct{{[0-9]+}};
   // CHECK-NEXT:   *c_S = *c_ct{{[0-9]+}};
   // CHECK-NEXT:   *s_C = *s_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(a_ct{{[0-9]+}}, c2s::get_default_queue());
-  // CHECK-NEXT:   sycl::free(c_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:   sycl::free(a_ct{{[0-9]+}}, dpct::get_default_queue());
+  // CHECK-NEXT:   sycl::free(c_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT: }
   a = cublasCrotg(handle, a_C, b_C, c_S, s_C);
   // CHECK: sycl::double2* a_ct{{[0-9]+}} = a_Z;
@@ -391,8 +391,8 @@ int main() {
   // CHECK-NEXT: double* c_ct{{[0-9]+}} = c_D;
   // CHECK-NEXT: sycl::double2* s_ct{{[0-9]+}} = s_Z;
   // CHECK-NEXT: if(sycl::get_pointer_type(a_Z, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_Z, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   a_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(3, c2s::get_default_queue());
-  // CHECK-NEXT:   c_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, c2s::get_default_queue());
+  // CHECK-NEXT:   a_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(3, dpct::get_default_queue());
+  // CHECK-NEXT:   c_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, dpct::get_default_queue());
   // CHECK-NEXT:   b_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 1;
   // CHECK-NEXT:   s_ct{{[0-9]+}} = a_ct{{[0-9]+}} + 2;
   // CHECK-NEXT:   *a_ct{{[0-9]+}} = *a_Z;
@@ -407,8 +407,8 @@ int main() {
   // CHECK-NEXT:   *b_Z = *b_ct{{[0-9]+}};
   // CHECK-NEXT:   *c_D = *c_ct{{[0-9]+}};
   // CHECK-NEXT:   *s_Z = *s_ct{{[0-9]+}};
-  // CHECK-NEXT:   sycl::free(a_ct{{[0-9]+}}, c2s::get_default_queue());
-  // CHECK-NEXT:   sycl::free(c_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:   sycl::free(a_ct{{[0-9]+}}, dpct::get_default_queue());
+  // CHECK-NEXT:   sycl::free(c_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT: }
   cublasZrotg(handle, a_Z, b_Z, c_D, s_Z);
 
@@ -419,7 +419,7 @@ int main() {
   // CHECK-NEXT: float* x1_ct{{[0-9]+}} = c_S;
   // CHECK-NEXT: float* param_ct{{[0-9]+}} = s_S;
   // CHECK-NEXT: if(sycl::get_pointer_type(a_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_S, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   d1_ct{{[0-9]+}} = sycl::malloc_shared<float>(8, c2s::get_default_queue());
+  // CHECK-NEXT:   d1_ct{{[0-9]+}} = sycl::malloc_shared<float>(8, dpct::get_default_queue());
   // CHECK-NEXT:   d2_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 1;
   // CHECK-NEXT:   x1_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 2;
   // CHECK-NEXT:   param_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 3;
@@ -430,14 +430,14 @@ int main() {
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: a = (oneapi::mkl::blas::column_major::rotmg(*handle, d1_ct{{[0-9]+}}, d2_ct{{[0-9]+}}, x1_ct{{[0-9]+}}, c2s::get_value(y1_S, *handle), param_ct{{[0-9]+}}), 0);
+  // CHECK-NEXT: a = (oneapi::mkl::blas::column_major::rotmg(*handle, d1_ct{{[0-9]+}}, d2_ct{{[0-9]+}}, x1_ct{{[0-9]+}}, dpct::get_value(y1_S, *handle), param_ct{{[0-9]+}}), 0);
   // CHECK-NEXT: if(sycl::get_pointer_type(a_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_S, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:   handle->wait();
   // CHECK-NEXT:   *a_S = *d1_ct{{[0-9]+}};
   // CHECK-NEXT:   *b_S = *d2_ct{{[0-9]+}};
   // CHECK-NEXT:   *c_S = *x1_ct{{[0-9]+}};
-  // CHECK-NEXT:   c2s::get_default_queue().memcpy(s_S, param_ct{{[0-9]+}}, sizeof(float)*5).wait();
-  // CHECK-NEXT:   sycl::free(d1_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:   dpct::get_default_queue().memcpy(s_S, param_ct{{[0-9]+}}, sizeof(float)*5).wait();
+  // CHECK-NEXT:   sycl::free(d1_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT: }
   a = cublasSrotmg(handle, a_S, b_S, c_S, y1_S, s_S);
   // CHECK: double* d1_ct{{[0-9]+}} = a_D;
@@ -445,7 +445,7 @@ int main() {
   // CHECK-NEXT: double* x1_ct{{[0-9]+}} = c_D;
   // CHECK-NEXT: double* param_ct{{[0-9]+}} = s_D;
   // CHECK-NEXT: if(sycl::get_pointer_type(a_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_D, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:   d1_ct{{[0-9]+}} = sycl::malloc_shared<double>(8, c2s::get_default_queue());
+  // CHECK-NEXT:   d1_ct{{[0-9]+}} = sycl::malloc_shared<double>(8, dpct::get_default_queue());
   // CHECK-NEXT:   d2_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 1;
   // CHECK-NEXT:   x1_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 2;
   // CHECK-NEXT:   param_ct{{[0-9]+}} = d1_ct{{[0-9]+}} + 3;
@@ -453,20 +453,20 @@ int main() {
   // CHECK-NEXT:   *d2_ct{{[0-9]+}} = *b_D;
   // CHECK-NEXT:   *x1_ct{{[0-9]+}} = *c_D;
   // CHECK-NEXT: }
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotmg(*handle, d1_ct{{[0-9]+}}, d2_ct{{[0-9]+}}, x1_ct{{[0-9]+}}, c2s::get_value(y1_D, *handle), param_ct{{[0-9]+}});
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::rotmg(*handle, d1_ct{{[0-9]+}}, d2_ct{{[0-9]+}}, x1_ct{{[0-9]+}}, dpct::get_value(y1_D, *handle), param_ct{{[0-9]+}});
   // CHECK-NEXT: if(sycl::get_pointer_type(a_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(a_D, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:   handle->wait();
   // CHECK-NEXT:   *a_D = *d1_ct{{[0-9]+}};
   // CHECK-NEXT:   *b_D = *d2_ct{{[0-9]+}};
   // CHECK-NEXT:   *c_D = *x1_ct{{[0-9]+}};
-  // CHECK-NEXT:   c2s::get_default_queue().memcpy(s_D, param_ct{{[0-9]+}}, sizeof(double)*5).wait();
-  // CHECK-NEXT:   sycl::free(d1_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:   dpct::get_default_queue().memcpy(s_D, param_ct{{[0-9]+}}, sizeof(double)*5).wait();
+  // CHECK-NEXT:   sycl::free(d1_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT: }
   cublasDrotmg(handle, a_D, b_D, c_D, y1_D, s_D);
 
   // CHECK:float* res_temp_ptr_ct{{[0-9]+}} = result_S;
   // CHECK-NEXT:if(sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, c2s::get_default_queue());
+  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_default_queue());
   // CHECK-NEXT:}
   // CHECK-NEXT:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -475,24 +475,24 @@ int main() {
   // CHECK-NEXT:if(sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:  handle->wait();
   // CHECK-NEXT:  *result_S = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT:}
   a = cublasSdot(handle, N, x_S, incx, y_S, incy, result_S);
   // CHECK:double* res_temp_ptr_ct{{[0-9]+}} = result_D;
   // CHECK-NEXT:if(sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, c2s::get_default_queue());
+  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, dpct::get_default_queue());
   // CHECK-NEXT:}
   // CHECK-NEXT:oneapi::mkl::blas::column_major::dot(*handle, N, x_D, incx, y_D, incy, res_temp_ptr_ct{{[0-9]+}});
   // CHECK-NEXT:if(sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:  handle->wait();
   // CHECK-NEXT:  *result_D = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT:}
   cublasDdot(handle, N, x_D, incx, y_D, incy, result_D);
 
   // CHECK:sycl::float2* res_temp_ptr_ct{{[0-9]+}} = result_C;
   // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(1, c2s::get_default_queue());
+  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(1, dpct::get_default_queue());
   // CHECK-NEXT:}
   // CHECK-NEXT:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -501,24 +501,24 @@ int main() {
   // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:  handle->wait();
   // CHECK-NEXT:  *result_C = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT:}
   a = cublasCdotc(handle, N, x_C, incx, y_C, incy, result_C);
   // CHECK:sycl::double2* res_temp_ptr_ct{{[0-9]+}} = result_Z;
   // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, c2s::get_default_queue());
+  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, dpct::get_default_queue());
   // CHECK-NEXT:}
   // CHECK-NEXT:oneapi::mkl::blas::column_major::dotc(*handle, N, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)res_temp_ptr_ct{{[0-9]+}});
   // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:  handle->wait();
   // CHECK-NEXT:  *result_Z = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT:}
   cublasZdotc(handle, N, x_Z, incx, y_Z, incy, result_Z);
 
   // CHECK:sycl::float2* res_temp_ptr_ct{{[0-9]+}} = result_C;
   // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(1, c2s::get_default_queue());
+  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(1, dpct::get_default_queue());
   // CHECK-NEXT:}
   // CHECK-NEXT:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -527,24 +527,24 @@ int main() {
   // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:  handle->wait();
   // CHECK-NEXT:  *result_C = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT:}
   a = cublasCdotu(handle, N, x_C, incx, y_C, incy, result_C);
   // CHECK:sycl::double2* res_temp_ptr_ct{{[0-9]+}} = result_Z;
   // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, c2s::get_default_queue());
+  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, dpct::get_default_queue());
   // CHECK-NEXT:}
   // CHECK-NEXT:oneapi::mkl::blas::column_major::dotu(*handle, N, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)res_temp_ptr_ct{{[0-9]+}});
   // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:  handle->wait();
   // CHECK-NEXT:  *result_Z = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT:}
   cublasZdotu(handle, N, x_Z, incx, y_Z, incy, result_Z);
 
   // CHECK:float* res_temp_ptr_ct{{[0-9]+}} = result_S;
   // CHECK-NEXT:if(sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, c2s::get_default_queue());
+  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<float>(1, dpct::get_default_queue());
   // CHECK-NEXT:}
   // CHECK-NEXT:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -553,24 +553,24 @@ int main() {
   // CHECK-NEXT:if(sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_S, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:  handle->wait();
   // CHECK-NEXT:  *result_S = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT:}
   a = cublasSdot(handle, N, x_S, incx, y_S, incy, result_S);
   // CHECK:double* res_temp_ptr_ct{{[0-9]+}} = result_D;
   // CHECK-NEXT:if(sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, c2s::get_default_queue());
+  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<double>(1, dpct::get_default_queue());
   // CHECK-NEXT:}
   // CHECK-NEXT:oneapi::mkl::blas::column_major::dot(*handle, N, x_D, incx, y_D, incy, res_temp_ptr_ct{{[0-9]+}});
   // CHECK-NEXT:if(sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_D, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:  handle->wait();
   // CHECK-NEXT:  *result_D = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT:}
   cublasDdot(handle, N, x_D, incx, y_D, incy, result_D);
 
   // CHECK:sycl::float2* res_temp_ptr_ct{{[0-9]+}} = result_C;
   // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(1, c2s::get_default_queue());
+  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(1, dpct::get_default_queue());
   // CHECK-NEXT:}
   // CHECK-NEXT:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -579,24 +579,24 @@ int main() {
   // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:  handle->wait();
   // CHECK-NEXT:  *result_C = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT:}
   a = cublasCdotc(handle, N, x_C, incx, y_C, incy, result_C);
   // CHECK:sycl::double2* res_temp_ptr_ct{{[0-9]+}} = result_Z;
   // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, c2s::get_default_queue());
+  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, dpct::get_default_queue());
   // CHECK-NEXT:}
   // CHECK-NEXT:oneapi::mkl::blas::column_major::dotc(*handle, N, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)res_temp_ptr_ct{{[0-9]+}});
   // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:  handle->wait();
   // CHECK-NEXT:  *result_Z = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT:}
   cublasZdotc(handle, N, x_Z, incx, y_Z, incy, result_Z);
 
   // CHECK:sycl::float2* res_temp_ptr_ct{{[0-9]+}} = result_C;
   // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(1, c2s::get_default_queue());
+  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::float2>(1, dpct::get_default_queue());
   // CHECK-NEXT:}
   // CHECK-NEXT:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -605,18 +605,18 @@ int main() {
   // CHECK-NEXT:if(sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_C, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:  handle->wait();
   // CHECK-NEXT:  *result_C = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT:}
   a = cublasCdotu(handle, N, x_C, incx, y_C, incy, result_C);
   // CHECK:sycl::double2* res_temp_ptr_ct{{[0-9]+}} = result_Z;
   // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::shared) {
-  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, c2s::get_default_queue());
+  // CHECK-NEXT:  res_temp_ptr_ct{{[0-9]+}} = sycl::malloc_shared<sycl::double2>(1, dpct::get_default_queue());
   // CHECK-NEXT:}
   // CHECK-NEXT:oneapi::mkl::blas::column_major::dotu(*handle, N, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, (std::complex<double>*)res_temp_ptr_ct{{[0-9]+}});
   // CHECK-NEXT:if(sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::device && sycl::get_pointer_type(result_Z, handle->get_context())!=sycl::usm::alloc::shared) {
   // CHECK-NEXT:  handle->wait();
   // CHECK-NEXT:  *result_Z = *res_temp_ptr_ct{{[0-9]+}};
-  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, c2s::get_default_queue());
+  // CHECK-NEXT:  sycl::free(res_temp_ptr_ct{{[0-9]+}}, dpct::get_default_queue());
   // CHECK-NEXT:}
   cublasZdotu(handle, N, x_Z, incx, y_Z, incy, result_Z);
 
@@ -717,7 +717,7 @@ int main() {
   // CHECK-NEXT: int algo = 0;
   void *alpha, *beta, *A, *B, *C;
   cublasGemmAlgo_t algo = CUBLAS_GEMM_ALGO0;
-  // CHECK: oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, c2s::get_value((float*)alpha, *handle), (float*)A, N, (float*)B, N, c2s::get_value((float*)beta, *handle), (float*)C, N);
+  // CHECK: oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, dpct::get_value((float*)alpha, *handle), (float*)A, N, (float*)B, N, dpct::get_value((float*)beta, *handle), (float*)C, N);
   cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_32F, N, B, CUDA_R_32F, N, beta, C, CUDA_R_32F, N, CUDA_R_32F, algo);
 
   float2 alpha_C, beta_C;
@@ -798,22 +798,22 @@ int main() {
   cublasCtrsmBatched(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, trans3, CUBLAS_DIAG_UNIT, N, N, &alpha_C, d_A_C_array, N, d_C_C_array, N, 10);
   cublasZtrsmBatched(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, trans3, CUBLAS_DIAG_UNIT, N, N, &alpha_Z, d_A_Z_array, N, d_C_Z_array, N, 10);
 
-  //CHECK:c2s::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, c2s::device_to_device, *handle);
+  //CHECK:dpct::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, dpct::device_to_device, *handle);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:a = (oneapi::mkl::blas::column_major::trmm(*handle, (oneapi::mkl::side)side0, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, N, N, alpha_S, d_A_S, N, d_C_S, N), 0);
   a = cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_S, d_A_S, N, d_B_S, N, d_C_S, N);
-  //CHECK:c2s::matrix_mem_copy(d_C_D, d_B_D, N, N, N, N, c2s::device_to_device, *handle);
+  //CHECK:dpct::matrix_mem_copy(d_C_D, d_B_D, N, N, N, N, dpct::device_to_device, *handle);
   //CHECK-NEXT:oneapi::mkl::blas::column_major::trmm(*handle, (oneapi::mkl::side)side0, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, N, N, alpha_D, d_A_D, N, d_C_D, N);
   cublasDtrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, N, N, &alpha_D, d_A_D, N, d_B_D, N, d_C_D, N);
-  //CHECK:c2s::matrix_mem_copy(d_C_C, d_B_C, N, N, N, N, c2s::device_to_device, *handle);
+  //CHECK:dpct::matrix_mem_copy(d_C_C, d_B_C, N, N, N, N, dpct::device_to_device, *handle);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:a = (oneapi::mkl::blas::column_major::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::unit, N, N, std::complex<float>(alpha_C.x(), alpha_C.y()), (std::complex<float>*)d_A_C, N, (std::complex<float>*)d_C_C, N), 0);
   a = cublasCtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, N, N, &alpha_C, d_A_C, N, d_B_C, N, d_C_C, N);
-  //CHECK:c2s::matrix_mem_copy(d_C_Z, d_B_Z, N, N, N, N, c2s::device_to_device, *handle);
+  //CHECK:dpct::matrix_mem_copy(d_C_Z, d_B_Z, N, N, N, N, dpct::device_to_device, *handle);
   //CHECK-NEXT:oneapi::mkl::blas::column_major::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::unit, N, N, std::complex<double>(alpha_Z.x(), alpha_Z.y()), (std::complex<double>*)d_A_Z, N, (std::complex<double>*)d_C_Z, N);
   cublasZtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT, N, N, &alpha_Z, d_A_Z, N, d_B_Z, N, d_C_Z, N);
 
@@ -825,7 +825,7 @@ int main() {
 
 
 
-  // CHECK: c2s::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, c2s::device_to_device, *handle);
+  // CHECK: dpct::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, dpct::device_to_device, *handle);
   // CHECK-NEXT: oneapi::mkl::blas::column_major::trmm(*handle, (oneapi::mkl::side)side0, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, N, N, alpha_S, d_A_S, N, d_C_S, N);
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in an if statement. You may need to rewrite this code.
@@ -843,7 +843,7 @@ int main() {
 }
 
 // CHECK: int foo1() try {
-// CHECK-NEXT:   c2s::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, c2s::device_to_device, *handle);
+// CHECK-NEXT:   dpct::matrix_mem_copy(d_C_S, d_B_S, N, N, N, N, dpct::device_to_device, *handle);
 // CHECK-NEXT:   oneapi::mkl::blas::column_major::trmm(*handle, (oneapi::mkl::side)side0, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, N, N, alpha_S, d_A_S, N, d_C_S, N);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1041:{{[0-9]+}}: SYCL uses exceptions to report errors, it does not use error codes. 0 is used instead of an error code in a return statement. You may need to rewrite this code.

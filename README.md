@@ -23,7 +23,7 @@ Intel® DPC++ Compatibility Tool is to make it as easy as possible for customers
 
 ## License
 
-See [LICENSE.txt](clang/lib/C2S/LICENSE.TXT) for details.
+See [LICENSE.txt](clang/lib/DPCT/LICENSE.TXT) for details.
 
 
 

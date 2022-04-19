@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none --usm-level=none -out-root %T/printf %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/printf %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/printf/printf.dp.cpp
 
 #include <stdio.h>
@@ -32,11 +32,11 @@ void host_test() {
 }
 
 int main() {
-  // CHECK:  c2s::get_default_queue().submit(
+  // CHECK:  dpct::get_default_queue().submit(
   // CHECK-NEXT:    [&](sycl::handler &cgh) {
   // CHECK-NEXT:      sycl::stream [[STREAM:stream_ct1]](64 * 1024, 80, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class kernel_test_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_test_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:        [=](sycl::nd_item<3> [[ITEM:item_ct1]]) {
   // CHECK-NEXT:           kernel_test([[STREAM]]);

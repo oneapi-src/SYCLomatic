@@ -1,10 +1,10 @@
 // FIXME
 // UNSUPPORTED: -windows-
-// RUN: c2s --format-range=none --usm-level=restricted -out-root %T/USM-restricted %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=restricted -out-root %T/USM-restricted %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/USM-restricted/USM-restricted.dp.cpp %s
 
 // CHECK: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <c2s/c2s.hpp>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
 #include <stdio.h>
 #include <memory>
@@ -20,7 +20,7 @@ int foo_b(int a){
 }
 
 void foo() {
-  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   size_t size = 1234567 * sizeof(float);
   float *h_A = (float *)malloc(size);
@@ -47,9 +47,9 @@ void foo() {
   cudaMalloc((void **)&d_A, sizeof(uchar4) + size);
   cudaMalloc((void **)&d_A, sizeof(d_A[0]));
   
-  // CHECK: d_A = (float *)c2s::c2s_malloc(size, size, size);
+  // CHECK: d_A = (float *)dpct::dpct_malloc(size, size, size);
   cudaMallocPitch((void **)&d_A, &size, size, size);
-  // CHECK: p_A = c2s::c2s_malloc(e);
+  // CHECK: p_A = dpct::dpct_malloc(e);
   cudaMalloc3D(&p_A, e);
 
   // CHECK: h_A = (float *)sycl::malloc_host(size, q_ct1);
@@ -186,36 +186,36 @@ void foo() {
   // CHECK: MY_SAFE_CALL((stream->memcpy(d_A, h_A, size), 0));
   MY_SAFE_CALL(cudaMemcpyAsync(d_A, h_A, size, cudaMemcpyHostToDevice, stream));
 
-  // CHECK: c2s::c2s_memcpy(d_A, size, h_A, size, size, size, c2s::host_to_device);
+  // CHECK: dpct::dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
   cudaMemcpy2D(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice);
-  // CHECK: c2s::c2s_memcpy(h_A, size, d_A, size, size, size, c2s::device_to_host);
+  // CHECK: dpct::dpct_memcpy(h_A, size, d_A, size, size, size, dpct::device_to_host);
   cudaMemcpy2D(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost);
 
-  // CHECK: c2s::c2s_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
+  // CHECK: dpct::dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
   cudaMemcpy3D(&parms);
 
   struct cudaMemcpy3DParms *parms_pointer;
   // Followed call can't be processed.
   cudaMemcpy3D(parms_pointer);
-  // CHECK: c2s::async_c2s_memcpy(d_A, size, h_A, size, size, size, c2s::host_to_device);
+  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
   cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice);
-  // CHECK: c2s::async_c2s_memcpy(d_A, size, h_A, size, size, size, c2s::host_to_device);
+  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
   cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, 0);
-  // CHECK: c2s::async_c2s_memcpy(d_A, size, h_A, size, size, size, c2s::host_to_device, *stream);
+  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device, *stream);
   cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, stream);
 
-  // CHECK: c2s::async_c2s_memcpy(h_A, size, d_A, size, size, size, c2s::device_to_host);
+  // CHECK: dpct::async_dpct_memcpy(h_A, size, d_A, size, size, size, dpct::device_to_host);
   cudaMemcpy2DAsync(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost);
-  // CHECK: c2s::async_c2s_memcpy(h_A, size, d_A, size, size, size, c2s::device_to_host);
+  // CHECK: dpct::async_dpct_memcpy(h_A, size, d_A, size, size, size, dpct::device_to_host);
   cudaMemcpy2DAsync(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost, 0);
-  // CHECK: c2s::async_c2s_memcpy(h_A, size, d_A, size, size, size, c2s::device_to_host, *stream);
+  // CHECK: dpct::async_dpct_memcpy(h_A, size, d_A, size, size, size, dpct::device_to_host, *stream);
   cudaMemcpy2DAsync(h_A, size, d_A, size, size, size, cudaMemcpyDeviceToHost, stream);
 
-  // CHECK: c2s::async_c2s_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
+  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
   cudaMemcpy3DAsync(&parms);
-  // CHECK: c2s::async_c2s_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
+  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
   cudaMemcpy3DAsync(&parms, 0);
-  // CHECK: c2s::async_c2s_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1, *stream);
+  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1, *stream);
   cudaMemcpy3DAsync(&parms, stream);
   /// memcpy from symbol
 
@@ -344,23 +344,23 @@ void foo() {
   // CHECK: MY_SAFE_CALL((stream->memset(d_A, 23, size), 0));
   MY_SAFE_CALL(cudaMemsetAsync(d_A, 23, size, stream));
   
-  // CHECK: c2s::c2s_memset(d_A, size, 0xf, size, size);
+  // CHECK: dpct::dpct_memset(d_A, size, 0xf, size, size);
   cudaMemset2D(d_A, size, 0xf, size, size);
-  // CHECK: c2s::c2s_memset(p_A, 0xf, e);
+  // CHECK: dpct::dpct_memset(p_A, 0xf, e);
   cudaMemset3D(p_A, 0xf, e);
 
-  // CHECK: c2s::async_c2s_memset(d_A, size, 0xf, size, size);
+  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size);
   cudaMemset2DAsync(d_A, size, 0xf, size, size);
-  // CHECK: c2s::async_c2s_memset(d_A, size, 0xf, size, size);
+  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size);
   cudaMemset2DAsync(d_A, size, 0xf, size, size, 0);
-  // CHECK: c2s::async_c2s_memset(d_A, size, 0xf, size, size, *stream);
+  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size, *stream);
   cudaMemset2DAsync(d_A, size, 0xf, size, size, stream);
 
-  // CHECK: c2s::async_c2s_memset(p_A, 0xf, e);
+  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e);
   cudaMemset3DAsync(p_A, 0xf, e);
-  // CHECK: c2s::async_c2s_memset(p_A, 0xf, e);
+  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e);
   cudaMemset3DAsync(p_A, 0xf, e, 0);
-  // CHECK: c2s::async_c2s_memset(p_A, 0xf, e, *stream);
+  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e, *stream);
   cudaMemset3DAsync(p_A, 0xf, e, stream);
 
   // CHECK: sycl::free(h_A, q_ct1);
@@ -400,7 +400,7 @@ void foo() {
 
 template <typename T>
 int foo2() {
-  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   size_t size = 1234567 * sizeof(float);
   float *h_A = (float *)malloc(size);
@@ -628,15 +628,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, cudaStreamLegacy));
   MY_SAFE_CALL(cudaMemcpyFromSymbolAsync(h_A, constData, size, 3, cudaMemcpyDeviceToHost, cudaStreamPerThread));
 
-  // CHECK: c2s::async_c2s_memcpy(d_A, size, h_A, size, size, size, c2s::host_to_device);
-  // CHECK: c2s::async_c2s_memcpy(d_A, size, h_A, size, size, size, c2s::host_to_device);
-  // CHECK: c2s::async_c2s_memcpy(d_A, size, h_A, size, size, size, c2s::host_to_device);
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(d_A, size, h_A, size, size, size, c2s::host_to_device), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(d_A, size, h_A, size, size, size, c2s::host_to_device), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(d_A, size, h_A, size, size, size, c2s::host_to_device), 0);
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(d_A, size, h_A, size, size, size, c2s::host_to_device), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(d_A, size, h_A, size, size, size, c2s::host_to_device), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(d_A, size, h_A, size, size, size, c2s::host_to_device), 0));
+  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
+  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
+  // CHECK: dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device);
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device), 0);
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(d_A, size, h_A, size, size, size, dpct::host_to_device), 0));
   cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, cudaStreamDefault);
   cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, cudaStreamLegacy);
   cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, cudaStreamPerThread);
@@ -647,15 +647,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, cudaStreamLegacy));
   MY_SAFE_CALL(cudaMemcpy2DAsync(d_A, size, h_A, size, size, size, cudaMemcpyHostToDevice, cudaStreamPerThread));
 
-  // CHECK: c2s::async_c2s_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
-  // CHECK: c2s::async_c2s_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
-  // CHECK: c2s::async_c2s_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0);
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0));
+  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
+  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
+  // CHECK: dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1);
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0);
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(parms_to_data_ct1, parms_to_pos_ct1, parms_from_data_ct1, parms_from_pos_ct1, parms_size_ct1, parms_direction_ct1), 0));
   cudaMemcpy3DAsync(&parms, cudaStreamDefault);
   cudaMemcpy3DAsync(&parms, cudaStreamLegacy);
   cudaMemcpy3DAsync(&parms, cudaStreamPerThread);
@@ -667,15 +667,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpy3DAsync(&parms, cudaStreamPerThread));
 
 
-  // CHECK: c2s::async_c2s_memcpy(c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1));
-  // CHECK: c2s::async_c2s_memcpy(c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1));
-  // CHECK: c2s::async_c2s_memcpy(c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1));
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)), 0);
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)), 0));
+  // CHECK: dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1));
+  // CHECK: dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1));
+  // CHECK: dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1));
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)), 0);
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, height, 1)), 0));
   cudaMemcpy2DFromArrayAsync(data, pitch, a1, woffset, hoffset, width, height, cudaMemcpyDeviceToHost, cudaStreamDefault);
   cudaMemcpy2DFromArrayAsync(data, pitch, a1, woffset, hoffset, width, height, cudaMemcpyDeviceToHost, cudaStreamLegacy);
   cudaMemcpy2DFromArrayAsync(data, pitch, a1, woffset, hoffset, width, height, cudaMemcpyDeviceToHost, cudaStreamPerThread);
@@ -687,15 +687,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpy2DFromArrayAsync(data, pitch, a1, woffset, hoffset, width, height, cudaMemcpyDeviceToHost, cudaStreamPerThread));
 
 
-  // CHECK: c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1));
-  // CHECK: c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1));
-  // CHECK: c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1));
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)), 0);
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)), 0));
+  // CHECK: dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1));
+  // CHECK: dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1));
+  // CHECK: dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1));
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)), 0);
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, pitch, pitch, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, height, 1)), 0));
   cudaMemcpy2DToArrayAsync(a1, woffset, hoffset, data, pitch, width, height, cudaMemcpyDeviceToHost, cudaStreamDefault);
   cudaMemcpy2DToArrayAsync(a1, woffset, hoffset, data, pitch, width, height, cudaMemcpyDeviceToHost, cudaStreamLegacy);
   cudaMemcpy2DToArrayAsync(a1, woffset, hoffset, data, pitch, width, height, cudaMemcpyDeviceToHost, cudaStreamPerThread);
@@ -707,15 +707,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpy2DToArrayAsync(a1, woffset, hoffset, data, pitch, width, height, cudaMemcpyDeviceToHost, cudaStreamPerThread));
 
 
-  // CHECK: c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1));
-  // CHECK: c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1));
-  // CHECK: c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1));
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)), 0);
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)), 0));
+  // CHECK: dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1));
+  // CHECK: dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1));
+  // CHECK: dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1));
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)), 0);
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1)), 0));
   cudaMemcpyToArrayAsync(a1, woffset, hoffset, data, width, cudaMemcpyDeviceToHost, cudaStreamDefault);
   cudaMemcpyToArrayAsync(a1, woffset, hoffset, data, width, cudaMemcpyDeviceToHost, cudaStreamLegacy);
   cudaMemcpyToArrayAsync(a1, woffset, hoffset, data, width, cudaMemcpyDeviceToHost, cudaStreamPerThread);
@@ -727,15 +727,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemcpyToArrayAsync(a1, woffset, hoffset, data, width, cudaMemcpyDeviceToHost, cudaStreamPerThread));
 
 
-  // CHECK: c2s::async_c2s_memcpy(c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1));
-  // CHECK: c2s::async_c2s_memcpy(c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1));
-  // CHECK: c2s::async_c2s_memcpy(c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1));
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memcpy(c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)), 0);
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memcpy(c2s::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)), 0));
+  // CHECK: dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1));
+  // CHECK: dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1));
+  // CHECK: dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1));
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)), 0);
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memcpy(dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), sycl::range<3>(width, 1, 1)), 0));
   cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamDefault);
   cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamLegacy);
   cudaMemcpyFromArrayAsync(data, a1, woffset, hoffset, width, cudaMemcpyDeviceToHost, cudaStreamPerThread);
@@ -767,15 +767,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemsetAsync(d_A, 23, size, cudaStreamPerThread));
 
 
-  // CHECK: c2s::async_c2s_memset(d_A, size, 0xf, size, size);
-  // CHECK: c2s::async_c2s_memset(d_A, size, 0xf, size, size);
-  // CHECK: c2s::async_c2s_memset(d_A, size, 0xf, size, size);
-  // CHECK: errorCode = (c2s::async_c2s_memset(d_A, size, 0xf, size, size), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memset(d_A, size, 0xf, size, size), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memset(d_A, size, 0xf, size, size), 0);
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memset(d_A, size, 0xf, size, size), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memset(d_A, size, 0xf, size, size), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memset(d_A, size, 0xf, size, size), 0));
+  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size);
+  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size);
+  // CHECK: dpct::async_dpct_memset(d_A, size, 0xf, size, size);
+  // CHECK: errorCode = (dpct::async_dpct_memset(d_A, size, 0xf, size, size), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memset(d_A, size, 0xf, size, size), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memset(d_A, size, 0xf, size, size), 0);
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memset(d_A, size, 0xf, size, size), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memset(d_A, size, 0xf, size, size), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memset(d_A, size, 0xf, size, size), 0));
   cudaMemset2DAsync(d_A, size, 0xf, size, size, cudaStreamDefault);
   cudaMemset2DAsync(d_A, size, 0xf, size, size, cudaStreamLegacy);
   cudaMemset2DAsync(d_A, size, 0xf, size, size, cudaStreamPerThread);
@@ -787,15 +787,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemset2DAsync(d_A, size, 0xf, size, size, cudaStreamPerThread));
 
 
-  // CHECK: c2s::async_c2s_memset(p_A, 0xf, e);
-  // CHECK: c2s::async_c2s_memset(p_A, 0xf, e);
-  // CHECK: c2s::async_c2s_memset(p_A, 0xf, e);
-  // CHECK: errorCode = (c2s::async_c2s_memset(p_A, 0xf, e), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memset(p_A, 0xf, e), 0);
-  // CHECK: errorCode = (c2s::async_c2s_memset(p_A, 0xf, e), 0);
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memset(p_A, 0xf, e), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memset(p_A, 0xf, e), 0));
-  // CHECK: MY_SAFE_CALL((c2s::async_c2s_memset(p_A, 0xf, e), 0));
+  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e);
+  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e);
+  // CHECK: dpct::async_dpct_memset(p_A, 0xf, e);
+  // CHECK: errorCode = (dpct::async_dpct_memset(p_A, 0xf, e), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memset(p_A, 0xf, e), 0);
+  // CHECK: errorCode = (dpct::async_dpct_memset(p_A, 0xf, e), 0);
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memset(p_A, 0xf, e), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memset(p_A, 0xf, e), 0));
+  // CHECK: MY_SAFE_CALL((dpct::async_dpct_memset(p_A, 0xf, e), 0));
   cudaMemset3DAsync(p_A, 0xf, e, cudaStreamDefault);
   cudaMemset3DAsync(p_A, 0xf, e, cudaStreamLegacy);
   cudaMemset3DAsync(p_A, 0xf, e, cudaStreamPerThread);
@@ -807,15 +807,15 @@ void foo3() {
   MY_SAFE_CALL(cudaMemset3DAsync(p_A, 0xf, e, cudaStreamPerThread));
 
 
-  // CHECK: c2s::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100);
-  // CHECK: c2s::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100);
-  // CHECK: c2s::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100);
-  // CHECK: errorCode = (c2s::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100), 0);
-  // CHECK: errorCode = (c2s::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100), 0);
-  // CHECK: errorCode = (c2s::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100), 0);
-  // CHECK: MY_SAFE_CALL((c2s::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100), 0));
-  // CHECK: MY_SAFE_CALL((c2s::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100), 0));
-  // CHECK: MY_SAFE_CALL((c2s::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100), 0));
+  // CHECK: dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100);
+  // CHECK: dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100);
+  // CHECK: dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100);
+  // CHECK: errorCode = (dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100), 0);
+  // CHECK: errorCode = (dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100), 0);
+  // CHECK: errorCode = (dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100), 0);
+  // CHECK: MY_SAFE_CALL((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100), 0));
+  // CHECK: MY_SAFE_CALL((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100), 0));
+  // CHECK: MY_SAFE_CALL((dpct::dev_mgr::instance().get_device(deviceID).default_queue().prefetch(d_A,100), 0));
   cudaMemPrefetchAsync (d_A, 100, deviceID, cudaStreamDefault);
   cudaMemPrefetchAsync (d_A, 100, deviceID, cudaStreamLegacy);
   cudaMemPrefetchAsync (d_A, 100, deviceID, cudaStreamPerThread);

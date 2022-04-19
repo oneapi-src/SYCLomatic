@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/cpp_lang_extensions %s --cuda-include-path="%cuda-path/include" -extra-arg="-I%S" -- -x cuda --cuda-host-only --std=c++14
+// RUN: dpct --format-range=none -out-root %T/cpp_lang_extensions %s --cuda-include-path="%cuda-path/include" -extra-arg="-I%S" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cpp_lang_extensions/cpp_lang_extensions.dp.cpp --match-full-lines %s
 
 #include "cpp_lang_extensions.cuh"
@@ -34,11 +34,11 @@ __device__ __constant__ uint2 const keccak_round_constants[4] = {
 };
 
 
-// CHECK:namespace c2s_operator_overloading {
+// CHECK:namespace dpct_operator_overloading {
 // CHECK:inline sycl::uint2 &operator^=(sycl::uint2 &v, const sycl::uint2 &v2) {
 // CHECK:  return v;
 // CHECK:}
-// CHECK:}  // namespace c2s_operator_overloading
+// CHECK:}  // namespace dpct_operator_overloading
 __host__ __device__ inline uint2 &operator^=(uint2 &v, const uint2 &v2) {
   return v;
 }
@@ -46,7 +46,7 @@ __host__ __device__ inline uint2 &operator^=(uint2 &v, const uint2 &v2) {
 
 DEV_INLINE void SHA3_512(uint2* s) {
     int i;
-  // CHECK:    c2s_operator_overloading::operator^=(s[0] , LDG(keccak_round_constants[i]));
+  // CHECK:    dpct_operator_overloading::operator^=(s[0] , LDG(keccak_round_constants[i]));
   // CHECK-NEXT:    LDG(keccak_round_constants[23]);
     s[0] ^= LDG(keccak_round_constants[i]);
     LDG(keccak_round_constants[23]);

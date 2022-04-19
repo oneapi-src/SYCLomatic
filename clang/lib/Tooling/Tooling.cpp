@@ -737,7 +737,7 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
 
       std::vector<std::string> CommandLine = CompileCommand.CommandLine;
 
-      /// TODO: When supporting Driver API migration, c2s needs to migrate the
+      /// TODO: When supporting Driver API migration, dpct needs to migrate the
       ///       source file(s) which is built by --cubin/--ptx option as module
       ///       file(s).
 
@@ -916,7 +916,7 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
 #ifdef INTEL_CUSTOMIZATION
     } catch (std::exception &e) {
       std::string FaultMsg =
-          "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool skips "
+          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool skips "
           "the current file and continues migration.\n";
       llvm::errs() << FaultMsg;
     }
@@ -959,7 +959,7 @@ int ClangTool::run(ToolAction *Action) {
     AbsolutePaths.push_back(std::move(*AbsPath));
   }
 #ifdef INTEL_CUSTOMIZATION
-  // If target source file names do not exist in the command line, c2s will
+  // If target source file names do not exist in the command line, dpct will
   // migrate all relevant files it detects in the compilation database.
   if (SourcePaths.size() == 0) {
     std::vector<std::string> SourcePaths = Compilations.getAllFiles();
@@ -1077,7 +1077,7 @@ int ClangTool::run(ToolAction *Action) {
 
 #ifdef  INTEL_CUSTOMIZATION
   // if input file(s) is not specified in command line, and the process-all
-  // option is given in the comomand line, c2s tries to migrate or copy all
+  // option is given in the comomand line, dpct tries to migrate or copy all
   // files from -in-root to the output directory.
   if(SourcePaths.size() == 0 && DoGetRunRound() == 0) {
     std::vector<std::string> FilesNotProcessed;

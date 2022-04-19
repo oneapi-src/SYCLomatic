@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none --usm-level=none -out-root %T/sycl_style_double2 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/sycl_style_double2 %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/sycl_style_double2/sycl_style_double2.dp.cpp --match-full-lines %s
 
 // CHECK: void func3(sycl::double2 a, sycl::double2 b, sycl::double2 c) {
@@ -24,7 +24,7 @@ static __global__ void gpuMain(){
 }
 
 int main() {
-  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // range default constructor does the right thing.
   // CHECK: sycl::double2 deflt;
@@ -76,9 +76,9 @@ int main() {
   // CHECK: sycl::double2* data;
   // CHECK-NEXT: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     c2s::access_wrapper<sycl::double2 *> data_acc_ct0(data, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<sycl::double2 *> data_acc_ct0(data, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:     cgh.parallel_for<c2s_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         kernel(data_acc_ct0.get_raw_pointer());
@@ -91,7 +91,7 @@ int main() {
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       sycl::accessor<sycl::double2, 1, sycl::access_mode::read_write, sycl::access::target::local> ctemp2_acc_ct1(sycl::range<1>(2), cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class gpuMain_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class gpuMain_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 64) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           gpuMain(ctemp2_acc_ct1.get_pointer());

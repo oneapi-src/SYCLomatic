@@ -6,12 +6,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __C2S_ATOMIC_HPP__
-#define __C2S_ATOMIC_HPP__
+#ifndef __DPCT_ATOMIC_HPP__
+#define __DPCT_ATOMIC_HPP__
 
 #include <CL/sycl.hpp>
 
-namespace c2s {
+namespace dpct {
 
 /// Atomically add the value operand to the value at the addr and assign the
 /// result to the value at addr.
@@ -470,5 +470,5 @@ T atomic_compare_exchange_strong(
   return expected;
 }
 
-} // namespace c2s
-#endif // __C2S_ATOMIC_HPP__
+} // namespace dpct
+#endif // __DPCT_ATOMIC_HPP__

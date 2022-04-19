@@ -1,6 +1,6 @@
 // RUN: cat %s > %T/checkKernelFormatMigrated.cu
 // RUN: cd %T
-// RUN: c2s --no-cl-namespace-inline -out-root %T/checkKernelFormatMigrated checkKernelFormatMigrated.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
+// RUN: dpct --no-cl-namespace-inline -out-root %T/checkKernelFormatMigrated checkKernelFormatMigrated.cu --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace checkKernelFormatMigrated.cu --match-full-lines --input-file %T/checkKernelFormatMigrated/checkKernelFormatMigrated.dp.cpp
 
 #include <cuda_runtime.h>
@@ -8,7 +8,7 @@
 __global__ void k() {}
 
 //     CHECK:void foo() {
-//CHECK-NEXT:                c2s::get_default_queue().parallel_for(
+//CHECK-NEXT:                dpct::get_default_queue().parallel_for(
 //CHECK-NEXT:                    cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1),
 //CHECK-NEXT:                                          cl::sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:                    [=](cl::sycl::nd_item<3> item_ct1) {
@@ -21,7 +21,7 @@ void foo() {
 
 //     CHECK:void foo2() {
 //CHECK-NEXT:		if (1)
-//CHECK-NEXT:                                c2s::get_default_queue().parallel_for(
+//CHECK-NEXT:                                dpct::get_default_queue().parallel_for(
 //CHECK-NEXT:                                    cl::sycl::nd_range<3>(
 //CHECK-NEXT:                                        cl::sycl::range<3>(1, 1, 1),
 //CHECK-NEXT:                                        cl::sycl::range<3>(1, 1, 1)),
@@ -36,7 +36,7 @@ void foo2() {
 
 //     CHECK:void foo3() {
 //CHECK-NEXT:		while (1) {
-//CHECK-NEXT:                                c2s::get_default_queue().parallel_for(
+//CHECK-NEXT:                                dpct::get_default_queue().parallel_for(
 //CHECK-NEXT:                                    cl::sycl::nd_range<3>(
 //CHECK-NEXT:                                        cl::sycl::range<3>(1, 1, 1),
 //CHECK-NEXT:                                        cl::sycl::range<3>(1, 1, 1)),
@@ -53,7 +53,7 @@ void foo3() {
 
 //     CHECK:void foo4() {
 //CHECK-NEXT:		for (;;) {
-//CHECK-NEXT:                                c2s::get_default_queue().parallel_for(
+//CHECK-NEXT:                                dpct::get_default_queue().parallel_for(
 //CHECK-NEXT:                                    cl::sycl::nd_range<3>(
 //CHECK-NEXT:                                        cl::sycl::range<3>(1, 1, 1),
 //CHECK-NEXT:                                        cl::sycl::range<3>(1, 1, 1)),

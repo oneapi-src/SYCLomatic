@@ -199,7 +199,7 @@ public:
 // The general Option Category (used as default category).
 OptionCategory &getGeneralCategory();
 #ifdef INTEL_CUSTOMIZATION
-OptionCategory &getC2SCategory();
+OptionCategory &getDPCTCategory();
 #endif
 
 //===----------------------------------------------------------------------===//

@@ -1,5 +1,5 @@
 // RUN: cp %S/MainSourceFiles.yaml %T
-// RUN: c2s --out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only 2> %T/output.txt
+// RUN: dpct --out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only 2> %T/output.txt
 // RUN: FileCheck --input-file %T/output.txt --match-full-lines %S/output_ref.txt
 // RUN: rm -rf %T/*
 

@@ -1,6 +1,6 @@
 // RUN: cat %s > %T/cufft-func-ptr.cu
 // RUN: cd %T
-// RUN: c2s -out-root %T/cufft-func-ptr cufft-func-ptr.cu --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
+// RUN: dpct -out-root %T/cufft-func-ptr cufft-func-ptr.cu --cuda-include-path="%cuda-path/include"  -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cufft-func-ptr/cufft-func-ptr.dp.cpp --match-full-lines cufft-func-ptr.cu
 #include <cufft.h>
 
@@ -12,7 +12,7 @@
 //CHECK-NEXT:      /*
 //CHECK-NEXT:      DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
 //CHECK-NEXT:      */
-//CHECK-NEXT:      desc->commit(c2s::get_default_queue());
+//CHECK-NEXT:      desc->commit(dpct::get_default_queue());
 //CHECK-NEXT:      if ((void *)in_data == (void *)out_data) {
 //CHECK-NEXT:        oneapi::mkl::dft::compute_backward(*desc, (double *)in_data);
 //CHECK-NEXT:      } else {
@@ -66,7 +66,7 @@ int foo1() {
 //CHECK-NEXT:        DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require
 //CHECK-NEXT:        review.
 //CHECK-NEXT:        */
-//CHECK-NEXT:        desc->commit(c2s::get_default_queue());
+//CHECK-NEXT:        desc->commit(dpct::get_default_queue());
 //CHECK-NEXT:        if ((void *)in_data == (void *)out_data) {
 //CHECK-NEXT:          oneapi::mkl::dft::compute_backward(*desc, (double *)in_data);
 //CHECK-NEXT:        } else {
@@ -119,7 +119,7 @@ int foo2() {
 //CHECK-NEXT:        DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require
 //CHECK-NEXT:        review.
 //CHECK-NEXT:        */
-//CHECK-NEXT:        desc->commit(c2s::get_default_queue());
+//CHECK-NEXT:        desc->commit(dpct::get_default_queue());
 //CHECK-NEXT:        if ((void *)in_data == (void *)out_data) {
 //CHECK-NEXT:          oneapi::mkl::dft::compute_backward(*desc, (double *)in_data);
 //CHECK-NEXT:        } else {
@@ -173,7 +173,7 @@ int foo3() {
 //CHECK-NEXT:        DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require
 //CHECK-NEXT:        review.
 //CHECK-NEXT:        */
-//CHECK-NEXT:        desc->commit(c2s::get_default_queue());
+//CHECK-NEXT:        desc->commit(dpct::get_default_queue());
 //CHECK-NEXT:        if ((void *)in_data == (void *)out_data) {
 //CHECK-NEXT:          oneapi::mkl::dft::compute_backward(*desc, (double *)in_data);
 //CHECK-NEXT:        } else {
@@ -227,7 +227,7 @@ int foo4() {
 //CHECK-NEXT:        DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require
 //CHECK-NEXT:        review.
 //CHECK-NEXT:        */
-//CHECK-NEXT:        desc->commit(c2s::get_default_queue());
+//CHECK-NEXT:        desc->commit(dpct::get_default_queue());
 //CHECK-NEXT:        if ((void *)in_data == (void *)out_data) {
 //CHECK-NEXT:          oneapi::mkl::dft::compute_backward(*desc, (double *)in_data);
 //CHECK-NEXT:        } else {

@@ -1,4 +1,4 @@
-// RUN: c2s -out-root %T/kernel_indent_length %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct -out-root %T/kernel_indent_length %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck -strict-whitespace --input-file %T/kernel_indent_length/kernel_indent_length.dp.cpp --match-full-lines %s
 
 #include <cuda.h>
@@ -8,7 +8,7 @@
 __global__ void k() {}
 
 //     CHECK:void foo1(){
-//CHECK-NEXT:    c2s::get_default_queue().parallel_for(
+//CHECK-NEXT:    dpct::get_default_queue().parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:            k();
@@ -20,7 +20,7 @@ void foo1(){
 
 
 //     CHECK:void foo2(){
-//CHECK-NEXT:    c2s::get_default_queue().parallel_for(
+//CHECK-NEXT:    dpct::get_default_queue().parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:            k();
@@ -31,7 +31,7 @@ void foo2(){
 }
 
 //     CHECK:void foo3(){
-//CHECK-NEXT:    c2s::get_default_queue().parallel_for(
+//CHECK-NEXT:    dpct::get_default_queue().parallel_for(
 //CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:            k();

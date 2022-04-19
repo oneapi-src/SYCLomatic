@@ -1,8 +1,8 @@
-// RUN: c2s --format-range=none -in-root %S -out-root %T/explicit_namespace_cl_c2s %S/explicit_namespace_cl_dpct.cu --cuda-include-path="%cuda-path/include" --use-explicit-namespace=cl,dpct --sycl-named-lambda -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/explicit_namespace_cl_c2s/explicit_namespace_cl_dpct.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -in-root %S -out-root %T/explicit_namespace_cl_dpct %S/explicit_namespace_cl_dpct.cu --cuda-include-path="%cuda-path/include" --use-explicit-namespace=cl,dpct --sycl-named-lambda -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/explicit_namespace_cl_dpct/explicit_namespace_cl_dpct.dp.cpp --match-full-lines %s
 
 // CHECK: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <c2s/c2s.hpp>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cmath>
 #include <cuda_runtime.h>
 
@@ -21,7 +21,7 @@ __global__ void kernel() {
 }
 
 void foo() {
-// CHECK:   c2s::get_default_queue().parallel_for<c2s_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+// CHECK:   dpct::get_default_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:         cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, ceil(2.3)), cl::sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:         [=](cl::sycl::nd_item<3> item_{{[0-9a-z]+}}) {
 // CHECK-NEXT:           kernel();

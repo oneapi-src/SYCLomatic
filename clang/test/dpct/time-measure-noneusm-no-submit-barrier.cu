@@ -1,4 +1,4 @@
-// RUN: c2s --no-dpcpp-extensions=enqueued_barriers --format-range=none -usm-level=none -out-root %T/time-measure-noneusm-no-submit-barrier %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=enqueued_barriers --format-range=none -usm-level=none -out-root %T/time-measure-noneusm-no-submit-barrier %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/time-measure-noneusm-no-submit-barrier/time-measure-noneusm-no-submit-barrier.dp.cpp --match-full-lines %s
 #include <stdio.h>
 
@@ -25,7 +25,7 @@ void add(int *a, int *b) {
 }
 
 int main() {
-    // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
+    // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
     // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
     cudaStream_t stream;
 
@@ -52,11 +52,11 @@ int main() {
     // CHECK: start_ct1 = std::chrono::steady_clock::now();
     cudaEventRecord(start, 0);
 
-    // CHECK: c2s::async_c2s_memcpy(da, ha, N*sizeof(int), c2s::host_to_device);
+    // CHECK: dpct::async_dpct_memcpy(da, ha, N*sizeof(int), dpct::host_to_device);
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice);
-    // CHECK: c2s::async_c2s_memcpy(da, ha, N*sizeof(int), c2s::host_to_device);
+    // CHECK: dpct::async_dpct_memcpy(da, ha, N*sizeof(int), dpct::host_to_device);
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, 0);
-    // CHECK: c2s::async_c2s_memcpy(da, ha, N*sizeof(int), c2s::host_to_device, *stream);
+    // CHECK: dpct::async_dpct_memcpy(da, ha, N*sizeof(int), dpct::host_to_device, *stream);
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, stream);
 
     // CHECK: stream->wait();
@@ -69,7 +69,7 @@ int main() {
 
     add<<<N, 1>>>(da, db);
 
-    // CHECK: c2s::async_c2s_memcpy(hb, db, N*sizeof(int), c2s::device_to_host);
+    // CHECK: dpct::async_dpct_memcpy(hb, db, N*sizeof(int), dpct::device_to_host);
     cudaMemcpyAsync(hb, db, N*sizeof(int), cudaMemcpyDeviceToHost);
 
     cudaDeviceSynchronize();
@@ -99,13 +99,13 @@ void foo_test_1() {
 
 // CHECK:    start_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:        for (int i=0; i<4; i++) {
-// CHECK-NEXT:            c2s::get_default_queue().parallel_for<c2s_kernel_name<class kernel_foo_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:            dpct::get_default_queue().parallel_for<dpct_kernel_name<class kernel_foo_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                  sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:                  [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                    kernel_foo();
 // CHECK-NEXT:                  });
 // CHECK-NEXT:        }
-// CHECK-NEXT:    c2s::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
     cudaEventRecord( start, 0 );
         for (int i=0; i<4; i++) {
             kernel_foo<<<1, 1>>>();
@@ -196,7 +196,7 @@ void foo_test_3() {
   cudaStream_t stream[NSTREAM];
 
   for (int i = 0; i < NSTREAM; ++i) {
-    // CHECK:    CHECK((stream[i] = c2s::get_current_device().create_queue(), 0));
+    // CHECK:    CHECK((stream[i] = dpct::get_current_device().create_queue(), 0));
     CHECK(cudaStreamCreate(&stream[i]));
   }
 
@@ -211,13 +211,13 @@ void foo_test_3() {
                           cudaMemcpyHostToDevice, stream[i]));
     sumArrays<<<grid, block, 0, stream[i]>>>(&d_A[ioffset], &d_B[ioffset],
                                              &d_C[ioffset], iElem);
-    // CHECK:    CHECK((c2s::async_c2s_memcpy(&gpuRef[ioffset], &d_C[ioffset], iBytes,
-    // CHECK-NEXT:                          c2s::device_to_host, *(stream[i])), 0));
+    // CHECK:    CHECK((dpct::async_dpct_memcpy(&gpuRef[ioffset], &d_C[ioffset], iBytes,
+    // CHECK-NEXT:                          dpct::device_to_host, *(stream[i])), 0));
     CHECK(cudaMemcpyAsync(&gpuRef[ioffset], &d_C[ioffset], iBytes,
                           cudaMemcpyDeviceToHost, stream[i]));
   }
 
-  // CHECK: c2s::get_current_device().queues_wait_and_throw();
+  // CHECK: dpct::get_current_device().queues_wait_and_throw();
   // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
   // CHECK-NEXT: CHECK(0);
   // CHECK-NEXT: CHECK(0);
@@ -240,7 +240,7 @@ void foo_usm() {
 
   // CHECK:  DPCT1003:32: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  SAFE_CALL((c2s::async_c2s_memcpy(gpu_t, host_t, n * sizeof(int), c2s::host_to_device, *s1), 0));
+  // CHECK-NEXT:  SAFE_CALL((dpct::async_dpct_memcpy(gpu_t, host_t, n * sizeof(int), dpct::host_to_device, *s1), 0));
   SAFE_CALL(cudaMemcpyAsync(gpu_t, host_t, n * sizeof(int), cudaMemcpyHostToDevice, s1));
 
   // CHECK:  s1->wait();
@@ -319,9 +319,9 @@ void foo()
 // CHECK-NEXT:                */
 // CHECK-NEXT:                  q_ct1.submit(
 // CHECK-NEXT:                    [&](sycl::handler &cgh) {
-// CHECK-NEXT:                      auto d_out_acc_ct1 = c2s::get_access(d_out, cgh);
+// CHECK-NEXT:                      auto d_out_acc_ct1 = dpct::get_access(d_out, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:                      cgh.parallel_for<c2s_kernel_name<class readTexels_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                      cgh.parallel_for<dpct_kernel_name<class readTexels_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                        sycl::nd_range<3>(gridSize * blockSize, blockSize), 
 // CHECK-NEXT:                        [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                          readTexels(kernelRepFactor, (float *)(&d_out_acc_ct1[0]), width);
@@ -333,7 +333,7 @@ void foo()
 
 // CHECK:            DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:            */
-// CHECK-NEXT:            c2s::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
@@ -353,9 +353,9 @@ void foo()
 // CHECK-NEXT:                */
 // CHECK-NEXT:                  q_ct1.submit(
 // CHECK-NEXT:                    [&](sycl::handler &cgh) {
-// CHECK-NEXT:                      auto d_out_acc_ct1 = c2s::get_access(d_out, cgh);
+// CHECK-NEXT:                      auto d_out_acc_ct1 = dpct::get_access(d_out, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:                      cgh.parallel_for<c2s_kernel_name<class readTexelsFoo1_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                      cgh.parallel_for<dpct_kernel_name<class readTexelsFoo1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                        sycl::nd_range<3>(gridSize * blockSize, blockSize), 
 // CHECK-NEXT:                        [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                          readTexelsFoo1(kernelRepFactor, (float *)(&d_out_acc_ct1[0]));
@@ -367,7 +367,7 @@ void foo()
 
 // CHECK:            DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:             */
-// CHECK-NEXT:             c2s::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:             dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:             stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:             t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
@@ -388,9 +388,9 @@ void foo()
 // CHECK-NEXT:                */
 // CHECK-NEXT:                  q_ct1.submit(
 // CHECK-NEXT:                    [&](sycl::handler &cgh) {
-// CHECK-NEXT:                      auto d_out_acc_ct1 = c2s::get_access(d_out, cgh);
+// CHECK-NEXT:                      auto d_out_acc_ct1 = dpct::get_access(d_out, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:                      cgh.parallel_for<c2s_kernel_name<class readTexelsFoo2_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                      cgh.parallel_for<dpct_kernel_name<class readTexelsFoo2_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                        sycl::nd_range<3>(gridSize * blockSize, blockSize), 
 // CHECK-NEXT:                        [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                          readTexelsFoo2(kernelRepFactor, (float *)(&d_out_acc_ct1[0]), width, height);
@@ -402,7 +402,7 @@ void foo()
 
 // CHECK:             DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:            */
-// CHECK-NEXT:            c2s::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
@@ -478,7 +478,7 @@ int foo_test_4()
     {
 // CHECK:        DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:        */
-// CHECK-NEXT:        streams[i]->parallel_for<c2s_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:        streams[i]->parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:              sycl::nd_range<3>(grid * block, block), 
 // CHECK-NEXT:              [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                foo_kernel_1();
@@ -495,7 +495,7 @@ int foo_test_4()
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
     }
 
-// CHECK:    c2s::get_current_device().queues_wait_and_throw();
+// CHECK:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now(); 
 // CHECK-NEXT:    CHECK(0);
 // CHECK-NEXT:    CHECK(0);
@@ -544,12 +544,12 @@ void RunTest()
         SAFE_CALL(cudaEventRecord(start, 0));
         for (int j = 0; j < iters; j++)
         {
-// CHECK:          c2s::get_default_queue().submit(
+// CHECK:          dpct::get_default_queue().submit(
 // CHECK-NEXT:            [&](sycl::handler &cgh) {
-// CHECK-NEXT:              c2s::access_wrapper<T *> d_idata_acc_ct0(d_idata, cgh);
-// CHECK-NEXT:              c2s::access_wrapper<T *> d_block_sums_acc_ct1(d_block_sums, cgh);
+// CHECK-NEXT:              dpct::access_wrapper<T *> d_idata_acc_ct0(d_idata, cgh);
+// CHECK-NEXT:              dpct::access_wrapper<T *> d_block_sums_acc_ct1(d_block_sums, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:              cgh.parallel_for<c2s_kernel_name<class reduce_{{[a-z0-9]+}}, T, c2s_kernel_scalar<256>>>(
+// CHECK-NEXT:              cgh.parallel_for<dpct_kernel_name<class reduce_{{[a-z0-9]+}}, T, dpct_kernel_scalar<256>>>(
 // CHECK-NEXT:                sycl::nd_range<3>(sycl::range<3>(1, 1, num_blocks) * sycl::range<3>(1, 1, num_threads), sycl::range<3>(1, 1, num_threads)), 
 // CHECK-NEXT:                [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                  reduce<T, 256>(d_idata_acc_ct0.get_raw_pointer(), d_block_sums_acc_ct1.get_raw_pointer(), size);
@@ -611,11 +611,11 @@ void test_1999(void* ref_image, void* cur_image,
 
 // CHECK:    q_ct1.submit(
 // CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        c2s::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
-// CHECK-NEXT:        c2s::access_wrapper<unsigned short *> d_cur_image_acc_ct1(d_cur_image, cgh);
-// CHECK-NEXT:        c2s::access_wrapper<unsigned short *> imgRef_acc_ct4(imgRef, cgh);
+// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
+// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_cur_image_acc_ct1(d_cur_image, cgh);
+// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> imgRef_acc_ct4(imgRef, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:        cgh.parallel_for<c2s_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_1_blocks_in_grid * foo_kernel_1_threads_in_block, foo_kernel_1_threads_in_block), 
 // CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:            foo_kernel_1(d_sads_acc_ct0.get_raw_pointer(), d_cur_image_acc_ct1.get_raw_pointer(), image_width_macroblocks, image_height_macroblocks, imgRef_acc_ct4.get_raw_pointer());
@@ -627,7 +627,7 @@ void test_1999(void* ref_image, void* cur_image,
                                                   image_height_macroblocks,
                                                   imgRef);
 
-// CHECK:    c2s::get_current_device().queues_wait_and_throw();
+// CHECK:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    sad_calc_stop_ct1 = std::chrono::steady_clock::now();
     cudaEventRecord(sad_calc_stop);
 
@@ -644,9 +644,9 @@ void test_1999(void* ref_image, void* cur_image,
 
 // CHECK:    q_ct1.submit(
 // CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        c2s::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
+// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:        cgh.parallel_for<c2s_kernel_name<class foo_kernel_2_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_2_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_2_blocks_in_grid * foo_kernel_2_threads_in_block, foo_kernel_2_threads_in_block), 
 // CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:            foo_kernel_2(d_sads_acc_ct0.get_raw_pointer(), image_width_macroblocks, image_height_macroblocks);
@@ -656,7 +656,7 @@ void test_1999(void* ref_image, void* cur_image,
       foo_kernel_2_blocks_in_grid,
       foo_kernel_2_threads_in_block>>>(d_sads, image_width_macroblocks,
                                             image_height_macroblocks);
-// CHECK:    c2s::get_current_device().queues_wait_and_throw();
+// CHECK:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    sad_calc_8_stop_ct1 = std::chrono::steady_clock::now();
     cudaEventRecord(sad_calc_8_stop);
 
@@ -673,9 +673,9 @@ void test_1999(void* ref_image, void* cur_image,
 
 // CHECK:    q_ct1.submit(
 // CHECK-NEXT:      [&](sycl::handler &cgh) {
-// CHECK-NEXT:        c2s::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
+// CHECK-NEXT:        dpct::access_wrapper<unsigned short *> d_sads_acc_ct0(d_sads, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:        cgh.parallel_for<c2s_kernel_name<class foo_kernel_3_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:        cgh.parallel_for<dpct_kernel_name<class foo_kernel_3_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_3_blocks_in_grid * foo_kernel_3_threads_in_block, foo_kernel_3_threads_in_block), 
 // CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:            foo_kernel_3(d_sads_acc_ct0.get_raw_pointer(), image_width_macroblocks, image_height_macroblocks);
@@ -685,7 +685,7 @@ void test_1999(void* ref_image, void* cur_image,
       foo_kernel_3_blocks_in_grid,
       foo_kernel_3_threads_in_block>>>(d_sads, image_width_macroblocks,
                                              image_height_macroblocks);
-// CHECK:    c2s::get_current_device().queues_wait_and_throw();
+// CHECK:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    sad_calc_16_stop_ct1 = std::chrono::steady_clock::now();
     cudaEventRecord(sad_calc_16_stop);
 

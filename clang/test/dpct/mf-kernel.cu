@@ -1,7 +1,7 @@
 #include "mf-kernel.cuh"
 // RUN: echo pass
 
-// CHECK: c2s::global_memory<volatile int, 0> g_mutex(0);
+// CHECK: dpct::global_memory<volatile int, 0> g_mutex(0);
 volatile __device__ int g_mutex=0;
 // CHECK: SYCL_EXTERNAL void Reset_kernel_parameters(volatile int *g_mutex)
 __global__ void Reset_kernel_parameters(void)
@@ -31,17 +31,17 @@ __global__ void local_foo_2() { }
 
 
 
-// CHECK: c2s::constant_memory<float, 0> A1_ct;
-// CHECK-NEXT: c2s::constant_memory<float, 0> A2;
+// CHECK: dpct::constant_memory<float, 0> A1_ct;
+// CHECK-NEXT: dpct::constant_memory<float, 0> A2;
 __constant__ float A1, A2;
 
-// CHECK: c2s::constant_memory<float, 0> A4_ct;
-// CHECK-NEXT: c2s::constant_memory<float, 0> A5_ct;
+// CHECK: dpct::constant_memory<float, 0> A4_ct;
+// CHECK-NEXT: dpct::constant_memory<float, 0> A5_ct;
 __constant__ float A4, A5;
 
-// CHECK: c2s::constant_memory<float, 1> A_ct(sycl::range<1>(3 * 3), {0.0625f, 0.125f,  0.0625f, 0.1250f, 0.250f,
+// CHECK: dpct::constant_memory<float, 1> A_ct(sycl::range<1>(3 * 3), {0.0625f, 0.125f,  0.0625f, 0.1250f, 0.250f,
 // CHECK-NEXT:                                0.1250f, 0.0625f, 0.125f,  0.0625f});
-// CHECK-NEXT: c2s::constant_memory<float, 0> A3;
+// CHECK-NEXT: dpct::constant_memory<float, 0> A3;
 __constant__ float A[3 * 3] = {0.0625f, 0.125f,  0.0625f, 0.1250f, 0.250f,
                                0.1250f, 0.0625f, 0.125f,  0.0625f}, A3;
 
@@ -64,14 +64,14 @@ __global__ void constAdd(float *C) {
 
 // CHECK: void call_constAdd(float *h_C, int size) {
 // CHECK-NEXT:  float *d_C = NULL;
-// CHECK-NEXT:  c2s::get_default_queue().submit(
+// CHECK-NEXT:  dpct::get_default_queue().submit(
 // CHECK-NEXT:    [&](sycl::handler &cgh) {
 // CHECK-NEXT:      A_ct.init();
 // CHECK-EMPTY:
 // CHECK-NEXT:      auto A_acc_ct1 = A_ct.get_access(cgh);
-// CHECK-NEXT:      c2s::access_wrapper<float *> d_C_acc_ct0(d_C, cgh);
+// CHECK-NEXT:      dpct::access_wrapper<float *> d_C_acc_ct0(d_C, cgh);
 // CHECK-EMPTY:
-// CHECK-NEXT:      cgh.parallel_for<c2s_kernel_name<class constAdd_{{[a-f0-9]+}}>>(
+// CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class constAdd_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 3) * sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 3)), 
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:          constAdd(d_C_acc_ct0.get_raw_pointer(), item_ct1, A_acc_ct1.get_pointer());

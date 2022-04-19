@@ -4,7 +4,7 @@ Replacements:
   - FilePath:        '/home/testfolder/test.cu'
     Offset:          0
     Length:          26
-    ReplacementText: "#include <CL/sycl.hpp>\n#include <c2s/c2s.hpp>\n"
+    ReplacementText: "#include <CL/sycl.hpp>\n#include <dpct/dpct.hpp>\n"
     ConstantFlag:    ''
     ConstantOffset:  0
     InitStr:         ''
@@ -23,10 +23,10 @@ MainSourceFilesDigest:
   - MainSourceFile:  '/home/testfolder/test.cu'
     Digest:          b505d6e929a7802b1ec8bf09e83590a8
 DpctVersion:     2022.1.0
-MainHelperFileName: c2s
+MainHelperFileName: dpct
 USMLevel:        ''
 FeatureMap:
-  c2s.hpp:
+  dpct.hpp:
     non_local_include_dependency:
       IsCalled:        true
       CallerSrcFiles:
@@ -45,7 +45,7 @@ OptionMap:
     Value:           ''
     Specified:       true
   CustomHelperFileName:
-    Value:           c2s
+    Value:           dpct
     Specified:       false
   ExperimentalFlag:
     Value:           '0'

@@ -6,14 +6,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __C2S_RNG_UTILS_HPP__
-#define __C2S_RNG_UTILS_HPP__
+#ifndef __DPCT_RNG_UTILS_HPP__
+#define __DPCT_RNG_UTILS_HPP__
 
 #include <CL/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include <oneapi/mkl/rng/device.hpp>
 
-namespace c2s {
+namespace dpct {
 namespace rng {
 namespace device {
 /// The random number generator on device.
@@ -148,6 +148,6 @@ private:
 
 } // namespace device
 } // namespace rng
-} // namespace c2s
+} // namespace dpct
 
-#endif // __C2S_RNG_UTILS_HPP__
+#endif // __DPCT_RNG_UTILS_HPP__

@@ -1,4 +1,4 @@
-//RUN: c2s -out-root %T/curand-cross-function-placeholder %s --format-range=none --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+//RUN: dpct -out-root %T/curand-cross-function-placeholder %s --format-range=none --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 //RUN: FileCheck --input-file %T/curand-cross-function-placeholder/curand-cross-function-placeholder.dp.cpp --match-full-lines %s
 
 #include <cuda.h>
@@ -8,7 +8,7 @@
 //CHECK: /*
 //CHECK-NEXT: DPCT1050:{{[0-9]+}}: The template argument of the RNG engine could not be deduced. You need to update this code.
 //CHECK-NEXT: */
-//CHECK-NEXT: void update(float* randvals, std::shared_ptr<c2s_placeholder/*Fix the engine type manually*/> rng, long long nx, long long ny) {
+//CHECK-NEXT: void update(float* randvals, std::shared_ptr<dpct_placeholder/*Fix the engine type manually*/> rng, long long nx, long long ny) {
 //CHECK-NEXT:   oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
 //CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, nx*ny/2, randvals);
 //CHECK-NEXT: }
@@ -18,7 +18,7 @@ void update(float* randvals, curandGenerator_t rng, long long nx, long long ny) 
 
 
 //CHECK: int main(){
-//CHECK-NEXT:   c2s::device_ext &dev_ct1 = c2s::get_current_device();
+//CHECK-NEXT:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
 //CHECK-NEXT:   sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK-NEXT:   oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
 //CHECK-NEXT:   long long nx = 5120;
@@ -58,18 +58,18 @@ int main(){
 }
 
 //CHECK: void foo(){
-//CHECK-NEXT:   c2s::device_ext &dev_ct1 = c2s::get_current_device();
+//CHECK-NEXT:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
 //CHECK-NEXT:   sycl::queue &q_ct1 = dev_ct1.default_queue();
 //CHECK-NEXT:   oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
 //CHECK-NEXT:   float *randvals;
 //CHECK-NEXT:   /*
 //CHECK-NEXT:   DPCT1050:{{[0-9]+}}: The template argument of the RNG engine could not be deduced. You need to update this code.
 //CHECK-NEXT:   */
-//CHECK-NEXT:   std::shared_ptr<c2s_placeholder/*Fix the engine type manually*/> rng;
+//CHECK-NEXT:   std::shared_ptr<dpct_placeholder/*Fix the engine type manually*/> rng;
 //CHECK-NEXT:   /*
 //CHECK-NEXT:   DPCT1050:{{[0-9]+}}: The template argument of the RNG engine could not be deduced. You need to update this code.
 //CHECK-NEXT:   */
-//CHECK-NEXT:   rng = std::make_shared<c2s_placeholder/*Fix the engine type manually*/>(q_ct1, 222);
+//CHECK-NEXT:   rng = std::make_shared<dpct_placeholder/*Fix the engine type manually*/>(q_ct1, 222);
 //CHECK-NEXT:   /*
 //CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because the function call is redundant in DPC++.
 //CHECK-NEXT:   */
@@ -78,7 +78,7 @@ int main(){
 //CHECK-NEXT:   /*
 //CHECK-NEXT:   DPCT1050:{{[0-9]+}}: The template argument of the RNG engine could not be deduced. You need to update this code.
 //CHECK-NEXT:   */
-//CHECK-NEXT:   rng = std::make_shared<c2s_placeholder/*Fix the engine type manually*/>(q_ct1, 222);
+//CHECK-NEXT:   rng = std::make_shared<dpct_placeholder/*Fix the engine type manually*/>(q_ct1, 222);
 //CHECK-NEXT:   /*
 //CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because the function call is redundant in DPC++.
 //CHECK-NEXT:   */

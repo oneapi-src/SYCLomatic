@@ -932,26 +932,26 @@ configure_file(
 
 if (NOT CLANG_BUILT_STANDALONE)
   if(WIN32)
-    list(APPEND C2S_RUN
-      install-c2s-headers
+    list(APPEND DPCT_RUN
+      install-dpct-headers
       install-clang-resource-headers
-      install-c2s
-      install-c2s-vars
-      install-c2s-syscheck
-      install-c2s-opt-rules
+      install-dpct
+      install-dpct-vars
+      install-dpct-syscheck
+      install-dpct-opt-rules
       )
   else()
-    list(APPEND C2S_RUN
-      install-c2s-intercept-build
-      install-c2s-headers
+    list(APPEND DPCT_RUN
+      install-dpct-intercept-build
+      install-dpct-headers
       install-clang-resource-headers
-      install-c2s
-      install-c2s-vars
-      install-c2s-syscheck
-      install-c2s-modulefiles
-      install-c2s-opt-rules
+      install-dpct
+      install-dpct-vars
+      install-dpct-syscheck
+      install-dpct-modulefiles
+      install-dpct-opt-rules
       )
   endif()
 endif()
-add_custom_target(install-dpct-tool DEPENDS ${C2S_RUN})
-set_target_properties(install-dpct-tool PROPERTIES FOLDER "install c2s tool")
+add_custom_target(install-dpct-tool DEPENDS ${DPCT_RUN})
+set_target_properties(install-dpct-tool PROPERTIES FOLDER "install dpct tool")

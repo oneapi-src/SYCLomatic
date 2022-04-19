@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/unnamed-struct %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
+// RUN: dpct --format-range=none -out-root %T/unnamed-struct %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/unnamed-struct/unnamed-struct.dp.cpp --match-full-lines %s
 
 #include <vector>
@@ -13,7 +13,7 @@ int main()
   return 0;
 }
 
-//CHECK: struct __c2s_align__(4)
+//CHECK: struct __dpct_align__(4)
 //CHECK-NEXT: {
 //CHECK-NEXT:     unsigned i;
 //CHECK-NEXT: } A;
@@ -22,13 +22,13 @@ struct __align__(4)
     unsigned i;
 } A;
 
-//CHECK: typedef class c2s_type_{{[a-f0-9]+}}{
+//CHECK: typedef class dpct_type_{{[a-f0-9]+}}{
 typedef class{
     unsigned i;
 } T1;
 
 
-//CHECK: typedef struct c2s_type_{{[a-f0-9]+}}
+//CHECK: typedef struct dpct_type_{{[a-f0-9]+}}
 typedef struct
 	: public T1
 {

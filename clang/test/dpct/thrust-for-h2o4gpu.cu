@@ -1,14 +1,14 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: c2s --format-range=none -out-root %T/thrust-for-h2o4gpu %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct --format-range=none -out-root %T/thrust-for-h2o4gpu %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/thrust-for-h2o4gpu/thrust-for-h2o4gpu.dp.cpp --match-full-lines %s
 
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
 // CHECK-NEXT: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <c2s/c2s.hpp>
-// CHECK-NEXT: #include <c2s/dpl_utils.hpp>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
+// CHECK-NEXT: #include <dpct/dpl_utils.hpp>
 #include <thrust/copy.h>
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
@@ -48,15 +48,15 @@ void copy_if_device(ExecutionPolicy exec)
   size_t n = 1000;
 
   //CHECK: std::vector<int>   h_data (n, 1);
-  //CHECK-NEXT: c2s::device_vector<int> d_data = h_data;
-  //CHECK-NEXT: c2s::device_vector<int> d_result(n);
-  //CHECK-NEXT: c2s::device_vector<typename c2s::device_vector<int>::iterator> dd(1);
+  //CHECK-NEXT: dpct::device_vector<int> d_data = h_data;
+  //CHECK-NEXT: dpct::device_vector<int> d_result(n);
+  //CHECK-NEXT: dpct::device_vector<typename dpct::device_vector<int>::iterator> dd(1);
   thrust::host_vector<int>   h_data (n, 1);
   thrust::device_vector<int> d_data = h_data;
   thrust::device_vector<int> d_result(n);
   thrust::device_vector<typename thrust::device_vector<int>::iterator> dd(1);
 
-  //CHECK: c2s::get_default_queue().submit(
+  //CHECK: dpct::get_default_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
   //CHECK-NEXT:    auto d_data_begin_ct1 = d_data.begin();
   //CHECK-NEXT:    auto d_data_end_ct2 = d_data.end();
@@ -83,9 +83,9 @@ void foo() {
 
   //CHECK: std::vector<int> h_data(10, 1);
   //CHECK-NEXT: std::vector<int> h_result(10);
-  //CHECK-NEXT: c2s::device_vector<int> *data[10];
-  //CHECK-NEXT: c2s::device_vector<int> d_new_potential_centroids(10);
-  //CHECK-NEXT: auto range = c2s::make_counting_iterator(0);
+  //CHECK-NEXT: dpct::device_vector<int> *data[10];
+  //CHECK-NEXT: dpct::device_vector<int> d_new_potential_centroids(10);
+  //CHECK-NEXT: auto range = dpct::make_counting_iterator(0);
   thrust::host_vector<int> h_data(10, 1);
   thrust::host_vector<int> h_result(10);
   thrust::device_vector<int> *data[10];
@@ -94,14 +94,14 @@ void foo() {
 
   //CHECK: std::copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   //CHECK-NEXT: std::copy_if(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
-  //CHECK-NEXT: c2s::copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), (*data[0]).begin(), (*data[0]).end(), range, d_new_potential_centroids.begin(),[=] (int idx) { return true; });
+  //CHECK-NEXT: dpct::copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), (*data[0]).begin(), (*data[0]).end(), range, d_new_potential_centroids.begin(),[=] (int idx) { return true; });
   thrust::copy_if(h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   thrust::copy_if(thrust::seq, h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   thrust::copy_if((*data[0]).begin(), (*data[0]).end(), range, d_new_potential_centroids.begin(),[=] __device__(int idx) { return true; });
 
-  //CHECK: std::vector<c2s::device_vector<int>> d(10);
-  //CHECK-NEXT: auto t = c2s::make_counting_iterator(0);
-  //CHECK-NEXT: auto min_costs_ptr = c2s::get_raw_pointer(d[0].data());
+  //CHECK: std::vector<dpct::device_vector<int>> d(10);
+  //CHECK-NEXT: auto t = dpct::make_counting_iterator(0);
+  //CHECK-NEXT: auto min_costs_ptr = dpct::get_raw_pointer(d[0].data());
   //CHECK-NEXT: int pot_cent_num = std::count_if(oneapi::dpl::execution::make_device_policy(q_ct1), t, t + 10, [=] (int idx) { return true;});
   std::vector<thrust::device_vector<int>> d(10);
   auto t = thrust::make_counting_iterator(0);
@@ -112,10 +112,10 @@ void foo() {
   float *_de = NULL;
   float fill_value = 0.0;
 
-  //CHECK: c2s::device_pointer<float> dev_ptr = c2s::get_device_pointer(static_cast<float *>(&_de[0]));
+  //CHECK: dpct::device_pointer<float> dev_ptr = dpct::get_device_pointer(static_cast<float *>(&_de[0]));
   //CHECK-NEXT: std::fill(oneapi::dpl::execution::make_device_policy(q_ct1), dev_ptr, dev_ptr + 10, fill_value);
   //CHECK-NEXT: std::fill_n(oneapi::dpl::execution::make_device_policy(q_ct1), dev_ptr, 10, fill_value);
-  //CHECK-NEXT: float M_inner = c2s::inner_product(oneapi::dpl::execution::make_device_policy(q_ct1), dev_ptr, dev_ptr + 10, dev_ptr, 0.0f);
+  //CHECK-NEXT: float M_inner = dpct::inner_product(oneapi::dpl::execution::make_device_policy(q_ct1), dev_ptr, dev_ptr + 10, dev_ptr, 0.0f);
   thrust::device_ptr<float> dev_ptr = thrust::device_pointer_cast(static_cast<float *>(&_de[0]));
   thrust::fill(dev_ptr, dev_ptr + 10, fill_value);
   thrust::fill_n(dev_ptr, 10, fill_value);
@@ -123,7 +123,7 @@ void foo() {
   }
 
  {
-  //CHECK: c2s::device_vector<double> t;
+  //CHECK: dpct::device_vector<double> t;
   //CHECK-NEXT: std::for_each( oneapi::dpl::execution::make_device_policy(q_ct1), t.begin(), t.end(), absolute_value<double>());
   thrust::device_vector<double> t;
   thrust::for_each( t.begin(), t.end(), absolute_value<double>());
@@ -137,17 +137,17 @@ void foo() {
  }
 
  {
-  //CHECK: c2s::device_vector<int> a, b, c;
-  //CHECK-NEXT: c2s::sort(oneapi::dpl::execution::make_device_policy(q_ct1), a.begin(), b.end(), c.begin());
+  //CHECK: dpct::device_vector<int> a, b, c;
+  //CHECK-NEXT: dpct::sort(oneapi::dpl::execution::make_device_policy(q_ct1), a.begin(), b.end(), c.begin());
   thrust::device_vector<int> a, b, c;
   thrust::sort_by_key(a.begin(), b.end(), c.begin());
  }
 
  {
   const int N = 1000;
-  //CHECK: c2s::device_vector<float> t1(N);
-  //CHECK-NEXT: c2s::device_vector<float> t2(N);
-  //CHECK-NEXT: c2s::device_vector<float> t3(N);
+  //CHECK: dpct::device_vector<float> t1(N);
+  //CHECK-NEXT: dpct::device_vector<float> t2(N);
+  //CHECK-NEXT: dpct::device_vector<float> t3(N);
   //CHECK-NEXT: std::transform(oneapi::dpl::execution::make_device_policy(q_ct1), t1.begin(), t1.end(), t2.begin(), t3.begin(), std::divides<float>());
   //CHECK-NEXT: std::transform(oneapi::dpl::execution::make_device_policy(q_ct1), t1.begin(), t1.end(), t2.begin(), t3.begin(), std::multiplies<float>());
   //CHECK-NEXT: std::transform(oneapi::dpl::execution::make_device_policy(q_ct1), t1.begin(), t1.end(), t2.begin(), t3.begin(), std::plus<float>());
@@ -160,8 +160,8 @@ void foo() {
  }
 
  {
-    //CHECK: c2s::device_vector<int> data(4);
-    //CHECK-NEXT: std::transform(oneapi::dpl::execution::make_device_policy(q_ct1), data.begin(), data.end(), c2s::make_constant_iterator(10), data.begin(), std::divides<int>());
+    //CHECK: dpct::device_vector<int> data(4);
+    //CHECK-NEXT: std::transform(oneapi::dpl::execution::make_device_policy(q_ct1), data.begin(), data.end(), dpct::make_constant_iterator(10), data.begin(), std::divides<int>());
     thrust::device_vector<int> data(4);
     thrust::transform(data.begin(), data.end(), thrust::make_constant_iterator(10), data.begin(), thrust::divides<int>());
  }
@@ -176,8 +176,8 @@ void foo() {
  }
 
  {
-  //CHECK: c2s::device_vector<int> int_in(3);
-  //CHECK-NEXT: c2s::device_vector<float> float_in(3);
+  //CHECK: dpct::device_vector<int> int_in(3);
+  //CHECK-NEXT: dpct::device_vector<float> float_in(3);
   //CHECK-NEXT: auto ret = oneapi::dpl::make_zip_iterator(int_in.begin(), float_in.begin());
   //CHECK-NEXT: auto arg = std::make_tuple(int_in.begin(), float_in.begin());
   //CHECK-NEXT: auto ret_1 = oneapi::dpl::make_zip_iterator(std::get<0>(arg), std::get<1>(arg));
@@ -201,8 +201,8 @@ void foo() {
 
  {
   int data[10];
-  //CHECK: c2s::device_pointer<int> begin = c2s::get_device_pointer(&data[0]);
-  //CHECK-NEXT: c2s::device_pointer<int> end=begin + 10;
+  //CHECK: dpct::device_pointer<int> begin = dpct::get_device_pointer(&data[0]);
+  //CHECK-NEXT: dpct::device_pointer<int> end=begin + 10;
   //CHECK-NEXT: bool h_result = std::transform_reduce(oneapi::dpl::execution::make_device_policy(q_ct1), begin, end, 0, std::plus<bool>(), isfoo_test<int>());
   //CHECK-NEXT: bool h_result_1 = std::transform_reduce(oneapi::dpl::execution::seq, begin, end, 0, std::plus<bool>(), isfoo_test<int>());
   thrust::device_ptr<int> begin = thrust::device_pointer_cast(&data[0]);
@@ -232,8 +232,8 @@ void foo() {
   int map[10] = {0, 2, 4, 6, 8, 1, 3, 5, 7, 9};
   thrust::device_vector<int> d_map(map, map + 10);
   thrust::device_vector<int> d_output(10);
-  // CHECK: c2s::gather(oneapi::dpl::execution::make_device_policy(q_ct1), d_map.begin(), d_map.end(), d_values.begin(), d_output.begin());
-  // CHECK-NEXT: c2s::gather(oneapi::dpl::execution::make_device_policy(q_ct1), d_map.begin(), d_map.end(), d_values.begin(), d_output.begin());
+  // CHECK: dpct::gather(oneapi::dpl::execution::make_device_policy(q_ct1), d_map.begin(), d_map.end(), d_values.begin(), d_output.begin());
+  // CHECK-NEXT: dpct::gather(oneapi::dpl::execution::make_device_policy(q_ct1), d_map.begin(), d_map.end(), d_values.begin(), d_output.begin());
   thrust::gather(d_map.begin(), d_map.end(), d_values.begin(), d_output.begin());
   thrust::gather(thrust::device, d_map.begin(), d_map.end(), d_values.begin(),d_output.begin());
 }
@@ -245,8 +245,8 @@ void foo() {
   thrust::host_vector<int> h_map(map, map + 10);
   thrust::host_vector<int> h_output(10);
 
-  // CHECK: c2s::gather(oneapi::dpl::execution::seq, h_map.begin(), h_map.end(), h_values.begin(), h_output.begin());
-  // CHECK-NEXT: c2s::gather(oneapi::dpl::execution::seq, h_map.begin(), h_map.end(), h_values.begin(), h_output.begin());
+  // CHECK: dpct::gather(oneapi::dpl::execution::seq, h_map.begin(), h_map.end(), h_values.begin(), h_output.begin());
+  // CHECK-NEXT: dpct::gather(oneapi::dpl::execution::seq, h_map.begin(), h_map.end(), h_values.begin(), h_output.begin());
   thrust::gather(thrust::seq, h_map.begin(), h_map.end(), h_values.begin(),h_output.begin());
   thrust::gather(h_map.begin(), h_map.end(), h_values.begin(),h_output.begin());
 }
@@ -258,8 +258,8 @@ void foo() {
   thrust::device_vector<int> d_map(map, map + 10);
   thrust::device_vector<int> d_output(10);
 
-  // CHECK: c2s::scatter(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
-  // CHECK-NEXT: c2s::scatter(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
+  // CHECK: dpct::scatter(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
+  // CHECK-NEXT: dpct::scatter(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
   thrust::scatter(d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
   thrust::scatter(thrust::device, d_values.begin(), d_values.end(), d_map.begin(), d_output.begin());
 }
@@ -271,8 +271,8 @@ void foo() {
   thrust::host_vector<int> h_map(map, map + 10);
   thrust::host_vector<int> h_output(10);
 
-  // CHECK: c2s::scatter(oneapi::dpl::execution::seq, h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
-  // CHECK-NEXT: c2s::scatter(oneapi::dpl::execution::seq, h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
+  // CHECK: dpct::scatter(oneapi::dpl::execution::seq, h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
+  // CHECK-NEXT: dpct::scatter(oneapi::dpl::execution::seq, h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
   thrust::scatter(thrust::seq, h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
   thrust::scatter(h_values.begin(), h_values.end(), h_map.begin(), h_output.begin());
 }
@@ -296,16 +296,16 @@ void foo() {
 
   thrust::pair<int *, int *> new_end;
 
-  // CHECK: *new_last_vec.begin() = c2s::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin(), binary_pred);
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin(), binary_pred);
   *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::device, d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin(), binary_pred);
 
-  // CHECK: *new_last_vec.begin() = c2s::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin(), binary_pred);
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin(), binary_pred);
   *new_last_vec.begin() = thrust::unique_by_key_copy(d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin(), binary_pred);
 
-  // CHECK: *new_last_vec.begin() = c2s::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin());
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin());
   *new_last_vec.begin() = thrust::unique_by_key_copy(d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin());
 
-  // CHECK: *new_last_vec.begin() = c2s::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin());
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin());
   *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::device, d_keys.begin(), d_keys.end(), d_values.begin(), d_output_keys.begin(), d_output_values.begin());
 }
 
@@ -328,16 +328,16 @@ void foo() {
 
   thrust::pair<int *, int *> new_end;
 
-  // CHECK: *new_last_vec.begin() = c2s::unique_copy(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin(), binary_pred);
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin(), binary_pred);
   *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin(), binary_pred);
 
-  // CHECK: *new_last_vec.begin() = c2s::unique_copy(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin(), binary_pred);
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin(), binary_pred);
   *new_last_vec.begin() = thrust::unique_by_key_copy(h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin(), binary_pred);
 
-  // CHECK: *new_last_vec.begin() = c2s::unique_copy(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin());
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin());
   *new_last_vec.begin() = thrust::unique_by_key_copy(h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin());
 
-  // CHECK: *new_last_vec.begin() = c2s::unique_copy(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin());
+  // CHECK: *new_last_vec.begin() = dpct::unique_copy(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), h_output_keys.begin(), h_output_values.begin());
   *new_last_vec.begin() = thrust::unique_by_key_copy(thrust::seq, h_keys.begin(), h_keys.end(), h_values.begin(),h_output_keys.begin(), h_output_values.begin());
 }
 }
@@ -370,10 +370,10 @@ const thrust::host_vector<float> transformT(
     return result;
 }
 
-// CHECK: const c2s::device_vector<float> transform(
-// CHECK-NEXT:     const c2s::device_vector<int>& src, size_t width, size_t height, size_t pitch)
+// CHECK: const dpct::device_vector<float> transform(
+// CHECK-NEXT:     const dpct::device_vector<int>& src, size_t width, size_t height, size_t pitch)
 // CHECK-NEXT: {
-// CHECK-NEXT:     const c2s::device_vector<float> result(100, 0);
+// CHECK-NEXT:     const dpct::device_vector<float> result(100, 0);
 // CHECK-NEXT:     return result;
 // CHECK-NEXT: }
 const thrust::device_vector<float> transform(
@@ -384,10 +384,10 @@ const thrust::device_vector<float> transform(
 }
 
 // CHECK: template <typename T>
-// CHECK-NEXT: const c2s::device_vector<float> transformT(
-// CHECK-NEXT:     const c2s::device_vector<T>& src, size_t width, size_t height, size_t pitch)
+// CHECK-NEXT: const dpct::device_vector<float> transformT(
+// CHECK-NEXT:     const dpct::device_vector<T>& src, size_t width, size_t height, size_t pitch)
 // CHECK-NEXT: {
-// CHECK-NEXT:     const c2s::device_vector<float> result(100, 0);
+// CHECK-NEXT:     const dpct::device_vector<float> result(100, 0);
 // CHECK-NEXT:     return result;
 // CHECK-NEXT: }
 template <typename T>
@@ -401,7 +401,7 @@ const thrust::device_vector<float> transformT(
 void test(){
     // CHECK: const std::vector<float> d_actual;
     const thrust::host_vector<float> d_actual;
-    // CHECK: const c2s::device_vector<float> d_actual2;
+    // CHECK: const dpct::device_vector<float> d_actual2;
     const thrust::device_vector<float> d_actual2;
 }
 

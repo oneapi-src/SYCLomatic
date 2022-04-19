@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: c2s --format-range=none  --usm-level=none  --use-custom-helper=api -out-root %T/DplExtrasNumeric/api_test1_out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17
+// RUN: dpct --format-range=none  --usm-level=none  --use-custom-helper=api -out-root %T/DplExtrasNumeric/api_test1_out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17
 // RUN: grep "IsCalled" %T/DplExtrasNumeric/api_test1_out/MainSourceFiles.yaml | wc -l > %T/DplExtrasNumeric/api_test1_out/count.txt
 // RUN: FileCheck --input-file %T/DplExtrasNumeric/api_test1_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasNumeric/api_test1_out

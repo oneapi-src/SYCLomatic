@@ -21,7 +21,7 @@
 // RUN: sed -i  '8,10s/\\/\//g'  %T/compile_commands.json 
 // RUN: sed -i  '13,15s/\\/\//g'  %T/compile_commands.json 
 
-// RUN: c2s --format-range=none --cuda-include-path="%cuda-path/include" -in-root=%S -out-root=%T -p=%T %s %S/bar/util.gpu %S/bar/util_bar.cc --sycl-named-lambda -extra-arg="-I%S/bar" -extra-arg="--std=c++14"
+// RUN: dpct --format-range=none --cuda-include-path="%cuda-path/include" -in-root=%S -out-root=%T -p=%T %s %S/bar/util.gpu %S/bar/util_bar.cc --sycl-named-lambda -extra-arg="-I%S/bar" -extra-arg="--std=c++14"
 // RUN: FileCheck %s --match-full-lines --input-file %T/main.dp.cpp
 // RUN: FileCheck %S/bar/util.gpu --match-full-lines --input-file %T/bar/util.gpu.dp.cpp
 // RUN: FileCheck %S/bar/util.gpuhead --match-full-lines --input-file %T/bar/util.gpuhead
@@ -29,7 +29,7 @@
 // RUN: FileCheck %S/bar/macro_def.hh --match-full-lines --input-file %T/bar/macro_def.hh
 // RUN: FileCheck %S/bar/util_bar.cc --match-full-lines --input-file %T/bar/util_bar.cc.dp.cpp
 
-// RUN: c2s --format-range=none --cuda-include-path="%cuda-path/include" -in-root=%S -out-root=%T -p=%T  %S/main.gpu   --sycl-named-lambda 
+// RUN: dpct --format-range=none --cuda-include-path="%cuda-path/include" -in-root=%S -out-root=%T -p=%T  %S/main.gpu   --sycl-named-lambda 
 // RUN: FileCheck %S/main.gpu --match-full-lines --input-file %T/main.gpu.dp.cpp
 
 #include <stdio.h>

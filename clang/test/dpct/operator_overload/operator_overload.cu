@@ -1,4 +1,4 @@
-// RUN: c2s -out-root %T/operator_overload %s --cuda-include-path="%cuda-path/include"
+// RUN: dpct -out-root %T/operator_overload %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/operator_overload/h.h --match-full-lines %S/h.h
 
 #include <iostream>

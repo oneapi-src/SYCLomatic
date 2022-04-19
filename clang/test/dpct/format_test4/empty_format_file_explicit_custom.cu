@@ -1,7 +1,7 @@
 // RUN: cd %T
 // RUN: cat %s > %T/empty_format_file_explicit_custom.cu
 // RUN: echo "" > %T/.clang-format
-// RUN: c2s empty_format_file_explicit_custom.cu --out-root=%T --cuda-include-path="%cuda-path/include" -- --cuda-host-only
+// RUN: dpct empty_format_file_explicit_custom.cu --out-root=%T --cuda-include-path="%cuda-path/include" -- --cuda-host-only
 // RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/empty_format_file_explicit_custom.dp.cpp
 #include "cuda.h"
 
@@ -18,7 +18,7 @@ float *d_A = NULL;
 //CHECK-NEXT:    DPCT1003:0: Migrated API does not return error code. (*, 0) is inserted. You
 //CHECK-NEXT:    may need to rewrite this code.
 //CHECK-NEXT:    */
-//CHECK-NEXT:    int a = (c2s::get_default_queue()
+//CHECK-NEXT:    int a = (dpct::get_default_queue()
 //CHECK-NEXT:                 .memcpy(d_A, h_A, sizeof(double) * SIZE * SIZE)
 //CHECK-NEXT:                 .wait(),
 //CHECK-NEXT:             0);

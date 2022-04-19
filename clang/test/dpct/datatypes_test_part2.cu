@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/datatypes_test_part2 %s --cuda-include-path="%cuda-path/include" --extra-arg="-std=c++14" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/datatypes_test_part2 %s --cuda-include-path="%cuda-path/include" --extra-arg="-std=c++14" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/datatypes_test_part2/datatypes_test_part2.dp.cpp
 
 #include <iostream>
@@ -1871,7 +1871,7 @@ template <> void foo3(cudaStream_t){}
 template <> void foo4(cudaStream_t){}
 
 void foo_struct(void) {
-// CHECK: c2s::device_info d_t;
+// CHECK: dpct::device_info d_t;
 struct cudaDeviceProp d_t;
 }
 

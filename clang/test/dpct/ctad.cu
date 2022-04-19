@@ -1,5 +1,5 @@
 // FIXME
-// RUN: c2s --usm-level=none -out-root %T/ctad %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda --format-range=none --enable-ctad -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --usm-level=none -out-root %T/ctad %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda --format-range=none --enable-ctad -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/ctad/ctad.dp.cpp --match-full-lines %s
 
 #include <cstdio>
@@ -16,7 +16,7 @@ __global__ void kernel(int dim) {
 }
 
 int main() {
-  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // range default constructor does the right thing.
   // CHECK: sycl::range deflt(1, 1, 1);
@@ -88,7 +88,7 @@ int main() {
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> k_acc_ct1(sycl::range(32), cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range(sycl::range(1, 1, 1), sycl::range(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernel(1, k_acc_ct1.get_pointer());
@@ -99,7 +99,7 @@ int main() {
   // CHECK-NEXT:     [&](sycl::handler &cgh) {
   // CHECK-NEXT:       sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> k_acc_ct1(sycl::range(32), cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:       cgh.parallel_for<c2s_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+  // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range(sycl::range(1, 1, NUM) * sycl::range(1, 1, NUM), sycl::range(1, 1, NUM)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:           kernel(1, k_acc_ct1.get_pointer());

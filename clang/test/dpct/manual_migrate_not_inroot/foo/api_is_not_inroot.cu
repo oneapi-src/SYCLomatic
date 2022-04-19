@@ -2,7 +2,7 @@
 // RUN: cat %S/../../nccl_test.h > %T/../nccl_test.h
 // RUN: cat %S/../../cudnn_test.h > %T/../cudnn_test.h
 // RUN: cat %s > %T/api_is_not_inroot.cu
-// RUN: c2s --format-range=none ./api_is_not_inroot.cu --in-root=. --out-root=%T/out --cuda-include-path="%cuda-path/include" -- --cuda-host-only -I..
+// RUN: dpct --format-range=none ./api_is_not_inroot.cu --in-root=. --out-root=%T/out --cuda-include-path="%cuda-path/include" -- --cuda-host-only -I..
 // RUN: FileCheck %s --match-full-lines --input-file %T/out/api_is_not_inroot.dp.cpp
 // RUN: cd ..
 // RUN: rm -rf ./*
@@ -11,7 +11,7 @@
 //cudnn_test.h and nccl_test.h are not in inroot, so emit warnings.
 
 //CHECK:#include <CL/sycl.hpp>
-//CHECK-NEXT:#include <c2s/c2s.hpp>
+//CHECK-NEXT:#include <dpct/dpct.hpp>
 //CHECK-NEXT:#include <cstdio>
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.

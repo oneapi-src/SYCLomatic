@@ -1,5 +1,5 @@
 // RUN: cd %T
-// RUN: c2s --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing -std=c++14 2>err.txt
+// RUN: dpct --format-range=none --no-cl-namespace-inline --usm-level=none -out-root %T %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing -std=c++14 2>err.txt
 // RUN: FileCheck --input-file %T/unique_id.dp.cpp --match-full-lines %s
 // RUN: FileCheck --input-file %T/err.txt --match-full-lines %S/ref.txt
 

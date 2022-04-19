@@ -1,9 +1,9 @@
-// RUN: c2s --format-range=none --usm-level=restricted -out-root %T/constant_pointer_usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=restricted -out-root %T/constant_pointer_usm %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/constant_pointer_usm/constant_pointer_usm.dp.cpp
 
-// CHECK: static c2s::constant_memory<const int *, 0> schsfirst;
+// CHECK: static dpct::constant_memory<const int *, 0> schsfirst;
 static __constant__ const int *schsfirst;
-// CHECK: static c2s::constant_memory<const sycl::double2 *, 0> zm;
+// CHECK: static dpct::constant_memory<const sycl::double2 *, 0> zm;
 static __constant__ const double2 *zm;
 
 static int *schsfirstD;

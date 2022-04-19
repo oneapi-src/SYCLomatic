@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/atomic_user_defined %s --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/atomic_user_defined %s --cuda-include-path="%cuda-path/include" -- -std=c++14  -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/atomic_user_defined/atomic_user_defined.dp.cpp
 #include <stdio.h>
 #include <device_atomic_functions.h>
@@ -52,7 +52,7 @@ __global__ void ker4(char *count)
 __global__ void ker5(unsigned int *count)
 {
   int n = 1, x = 0;
-  // CHECK: x = c2s::atomic_fetch_add<unsigned int, sycl::access::address_space::generic_space>(count, (unsigned int)n);
+  // CHECK: x = dpct::atomic_fetch_add<unsigned int, sycl::access::address_space::generic_space>(count, (unsigned int)n);
   x = atomicAdd(count, n);
 }
 

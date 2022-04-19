@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/pass-filter %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/pass-filter %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/pass-filter/pass-filter.dp.cpp
 
 // Test that only IterationSpaceBuiltinRule is being run

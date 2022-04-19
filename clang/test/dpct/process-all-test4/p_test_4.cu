@@ -1,11 +1,11 @@
 // RUN: cat %S/readme_4.txt > %T/readme_4.txt
 // RUN: cat %S/p_test_4.cu > %T/p_test_4.cu
 
-// RUN: c2s --format-range=none  -in-root=%T -out-root=%T/c2s-output --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: c2s --format-range=none  -in-root=%T -out-root=%T/c2s-output --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none  -in-root=%T -out-root=%T/dpct-output --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none  -in-root=%T -out-root=%T/dpct-output --process-all --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 
-// RUN: FileCheck --input-file %T/c2s-output/p_test_4.dp.cpp --match-full-lines %S/p_test_4.cu
-// RUN: FileCheck --match-full-lines --input-file %T/c2s-output/readme_4.txt %T/c2s-output/readme_4.txt
+// RUN: FileCheck --input-file %T/dpct-output/p_test_4.dp.cpp --match-full-lines %S/p_test_4.cu
+// RUN: FileCheck --match-full-lines --input-file %T/dpct-output/readme_4.txt %T/dpct-output/readme_4.txt
 
 
 #include "cuda_runtime.h"

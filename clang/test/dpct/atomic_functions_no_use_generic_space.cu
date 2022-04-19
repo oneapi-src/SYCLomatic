@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none --usm-level=none --no-use-generic-space=true -out-root %T/atomic_functions_no_use_generic_space %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=none --no-use-generic-space=true -out-root %T/atomic_functions_no_use_generic_space %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/atomic_functions_no_use_generic_space/atomic_functions_no_use_generic_space.dp.cpp --match-full-lines %s
 
 #include <cuda_runtime.h>
@@ -13,22 +13,22 @@ __global__ void test(T *data) {
   // CHECK: T tid = item_ct1.get_local_id(2);
   T tid = threadIdx.x;
 
-  // CHECK: c2s::atomic_fetch_add(&data[0], tid);
+  // CHECK: dpct::atomic_fetch_add(&data[0], tid);
   atomicAdd(&data[0], tid);
 
-  // CHECK: c2s::atomic_fetch_sub(&data[1], tid);
+  // CHECK: dpct::atomic_fetch_sub(&data[1], tid);
   atomicSub(&data[1], tid);
 
-  // CHECK: c2s::atomic_exchange(&data[2], tid);
+  // CHECK: dpct::atomic_exchange(&data[2], tid);
   atomicExch(&data[2], tid);
 
-  // CHECK: c2s::atomic_fetch_max(&data[3], tid);
+  // CHECK: dpct::atomic_fetch_max(&data[3], tid);
   atomicMax(&data[3], tid);
 
-  // CHECK: c2s::atomic_fetch_min(&data[4], tid);
+  // CHECK: dpct::atomic_fetch_min(&data[4], tid);
   atomicMin(&data[4], tid);
 
-  // CHECK:  c2s::atomic_fetch_compare_inc((unsigned int *)&data[5], (unsigned int)tid);
+  // CHECK:  dpct::atomic_fetch_compare_inc((unsigned int *)&data[5], (unsigned int)tid);
   atomicInc((unsigned int *)&data[5], (unsigned int)tid);
 
   // CHECK: /*
@@ -36,24 +36,24 @@ __global__ void test(T *data) {
   // CHECK: */
   atomicDec((unsigned int *)&data[6], (unsigned int)tid);
 
-  // CHECK: c2s::atomic_compare_exchange_strong(&data[7], tid - 1, tid);
+  // CHECK: dpct::atomic_compare_exchange_strong(&data[7], tid - 1, tid);
   atomicCAS(&data[7], tid - 1, tid);
 
   T old, expected, desired;
   old = data[7];
   do {
     expected = old;
-    // CHECK: old = c2s::atomic_compare_exchange_strong(&data[7], expected, desired);
+    // CHECK: old = dpct::atomic_compare_exchange_strong(&data[7], expected, desired);
     old = atomicCAS(&data[7], expected, desired);
   } while  (expected != old);
 
-  // CHECK: c2s::atomic_fetch_and(&data[8], tid);
+  // CHECK: dpct::atomic_fetch_and(&data[8], tid);
   atomicAnd(&data[8], tid);
 
-  // CHECK: c2s::atomic_fetch_or(&data[9], tid);
+  // CHECK: dpct::atomic_fetch_or(&data[9], tid);
   atomicOr(&data[9], tid);
 
-  // CHECK: c2s::atomic_fetch_xor(&data[10], tid);
+  // CHECK: dpct::atomic_fetch_xor(&data[10], tid);
   atomicXor(&data[10], tid);
 }
 
@@ -64,10 +64,10 @@ __global__ void test(unsigned long long int* data) {
   // CHECK: sycl::atomic<unsigned long long>(sycl::global_ptr<unsigned long long>(&data[0])).fetch_add(tid);
   atomicAdd(&data[0], tid);
 
-  // CHECK: c2s::atomic_exchange(&data[2], tid);
+  // CHECK: dpct::atomic_exchange(&data[2], tid);
   atomicExch(&data[2], tid);
 
-  // CHECK: c2s::atomic_compare_exchange_strong(&data[7], tid - 1, tid);
+  // CHECK: dpct::atomic_compare_exchange_strong(&data[7], tid - 1, tid);
   atomicCAS(&data[7], tid - 1, tid);
 }
 
@@ -75,10 +75,10 @@ template <>
 __global__ void test(float* data) {
   float tid = threadIdx.x;
 
-  // CHECK: c2s::atomic_fetch_add(&data[0], tid);
+  // CHECK: dpct::atomic_fetch_add(&data[0], tid);
   atomicAdd(&data[0], tid);
 
-  // CHECK: c2s::atomic_exchange(&data[2], tid);
+  // CHECK: dpct::atomic_exchange(&data[2], tid);
   atomicExch(&data[2], tid);
 }
 
@@ -86,7 +86,7 @@ template <>
 __global__ void test(double* data) {
   double tid = threadIdx.x;
 
-  // CHECK: c2s::atomic_fetch_add(&data[0], tid);
+  // CHECK: dpct::atomic_fetch_add(&data[0], tid);
   atomicAdd(&data[0], tid);
 }
 
@@ -102,11 +102,11 @@ void InvokeKernel() {
   cudaMalloc((void **)&dev_ptr, size);
 
   cudaMemcpy(dev_ptr, host.get(), size, cudaMemcpyHostToDevice);
-  // CHECK: c2s::get_default_queue().submit(
+  // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     c2s::access_wrapper<T *> dev_ptr_acc_ct0(dev_ptr, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<T *> dev_ptr_acc_ct0(dev_ptr, cgh);
   // CHECK-EMPTY:
-  // CHECK-NEXT:     cgh.parallel_for<c2s_kernel_name<class test_{{[a-f0-9]+}}, T>>(
+  // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class test_{{[a-f0-9]+}}, T>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, k_threads_per_block), sycl::range<3>(1, 1, k_threads_per_block)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
   // CHECK-NEXT:         test<T>(dev_ptr_acc_ct0.get_raw_pointer(), item_ct1);
@@ -115,17 +115,17 @@ void InvokeKernel() {
   test<T><<<1, k_threads_per_block>>>(dev_ptr);
 }
 
-// CHECK: static c2s::global_memory<uint32_t, 1> d_error(1);
+// CHECK: static dpct::global_memory<uint32_t, 1> d_error(1);
 static __device__ uint32_t d_error[1];
 
 // CHECK: void fun(uint32_t *d_error){
 __device__ void fun(){
   double *a;
   float b;
-  // CHECK: c2s::atomic_fetch_add(a, (double)1);
+  // CHECK: dpct::atomic_fetch_add(a, (double)1);
   atomicAdd(a, 1);
 
-  // CHECK: c2s::atomic_fetch_add(a, (double)b);
+  // CHECK: dpct::atomic_fetch_add(a, (double)b);
   atomicAdd(a, b);
 
   // CHECK: sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(d_error)).fetch_add(1);
@@ -140,8 +140,8 @@ int main() {
   InvokeKernel<double>();
 }
 
-// CHECK: void foo(sycl::nd_item<3> item_ct1, uint8_t *c2s_local, uint32_t *share_v) {
-// CHECK-NEXT:  auto share_array = (uint32_t *)c2s_local;
+// CHECK: void foo(sycl::nd_item<3> item_ct1, uint8_t *dpct_local, uint32_t *share_v) {
+// CHECK-NEXT:  auto share_array = (uint32_t *)dpct_local;
 // CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range(2)) {
 // CHECK-NEXT:    sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(&share_array[b])).fetch_add(1);
 // CHECK-NEXT:    sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(share_array)).fetch_add(1);
@@ -159,8 +159,8 @@ __shared__ uint32_t share_v;
   atomicAdd(&share_v, 1);
 }
 
-// CHECK:void foo_2(sycl::nd_item<3> item_ct1, uint8_t *c2s_local, uint32_t *share_v) {
-// CHECK-NEXT:  auto share_array = (uint32_t *)c2s_local;
+// CHECK:void foo_2(sycl::nd_item<3> item_ct1, uint8_t *dpct_local, uint32_t *share_v) {
+// CHECK-NEXT:  auto share_array = (uint32_t *)dpct_local;
 // CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range(2)) {
 // CHECK-NEXT:    uint32_t *p_1 = &share_array[b];
 // CHECK-NEXT:    uint32_t *p_2 = share_array;
@@ -219,9 +219,9 @@ __shared__ uint32_t share_v;
   atomicAdd(p_4, 1);
 }
 
-// CHECK:c2s::global_memory<uint32_t, 1> dmem(100);
-// CHECK-NEXT:void foo_4(uint8_t *c2s_local, uint32_t *dmem) {
-// CHECK-NEXT:auto share = (uint32_t *)c2s_local;
+// CHECK:dpct::global_memory<uint32_t, 1> dmem(100);
+// CHECK-NEXT:void foo_4(uint8_t *dpct_local, uint32_t *dmem) {
+// CHECK-NEXT:auto share = (uint32_t *)dpct_local;
 // CHECK-NEXT:  uint32_t *p_1 = NULL;
 // CHECK-NEXT:  uint32_t *p_2 = NULL;
 // CHECK-NEXT:  uint32_t *p_3 = NULL;
@@ -260,8 +260,8 @@ __device__ uint32_t* func(uint32_t *in){
     return in;
 }
 
-// CHECK:void foo_5(uint8_t *c2s_local) {
-// CHECK-NEXT:auto share = (uint32_t *)c2s_local;
+// CHECK:void foo_5(uint8_t *dpct_local) {
+// CHECK-NEXT:auto share = (uint32_t *)dpct_local;
 // CHECK-NEXT:  uint32_t *p_1 = NULL;
 // CHECK-NEXT:  uint32_t *p_2 = NULL;
 // CHECK-NEXT:  uint32_t *p_3 = NULL;
@@ -293,8 +293,8 @@ extern __shared__ uint32_t share[];
 }
 
 #define FUNC(in)  in
-// CHECK:void foo_6(uint8_t *c2s_local) {
-// CHECK-NEXT:auto share = (uint32_t *)c2s_local;
+// CHECK:void foo_6(uint8_t *dpct_local) {
+// CHECK-NEXT:auto share = (uint32_t *)dpct_local;
 // CHECK-NEXT:  uint32_t *p_1 = NULL;
 // CHECK-NEXT:  uint32_t *p_2 = NULL;
 // CHECK-NEXT:  uint32_t *p_3 = NULL;
@@ -320,8 +320,8 @@ extern __shared__ uint32_t share[];
   atomicAdd(p_4, 1);
 }
 
-// CHECK:void foo_7(int a, uint8_t *c2s_local) {
-// CHECK-NEXT:auto share = (uint32_t *)c2s_local;
+// CHECK:void foo_7(int a, uint8_t *dpct_local) {
+// CHECK-NEXT:auto share = (uint32_t *)dpct_local;
 // CHECK-NEXT:  uint32_t *p_1;
 // CHECK-NEXT:  uint32_t *p_2;
 // CHECK-NEXT:  uint32_t *p_3 = NULL;
@@ -350,8 +350,8 @@ extern __shared__ uint32_t share[];
 
 #define OFFSET 1
 
-// CHECK:void kernel(unsigned* data, uint8_t *c2s_local) {
-// CHECK-NEXT:  auto sm = (unsigned int *)c2s_local;
+// CHECK:void kernel(unsigned* data, uint8_t *dpct_local) {
+// CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
 // CHECK-NEXT:  sm[OFFSET] = data[0];
 // CHECK-NEXT:  unsigned* ptr = sm + OFFSET;
 // CHECK-NEXT:  sycl::atomic<unsigned int, sycl::access::address_space::local_space>(sycl::local_ptr<unsigned int>(&ptr[0])).fetch_or(data[1]);
@@ -365,8 +365,8 @@ __global__ void kernel(unsigned* data) {
   data[1] = ptr[0];
 }
 
-// CHECK:void kernel_1(unsigned* data, uint8_t *c2s_local) {
-// CHECK-NEXT:  auto sm = (unsigned int *)c2s_local;
+// CHECK:void kernel_1(unsigned* data, uint8_t *dpct_local) {
+// CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
 // CHECK-NEXT:  sm[OFFSET] = data[0];
 // CHECK-NEXT:  unsigned* ptr = OFFSET + sm;
 // CHECK-NEXT:  sycl::atomic<unsigned int, sycl::access::address_space::local_space>(sycl::local_ptr<unsigned int>(&ptr[0])).fetch_or(data[1]);
@@ -380,8 +380,8 @@ __global__ void kernel_1(unsigned* data) {
   data[1] = ptr[0];
 }
 
-// CHECK:void kernel_2(unsigned* data, uint8_t *c2s_local) {
-// CHECK-NEXT:  auto sm = (unsigned int *)c2s_local;
+// CHECK:void kernel_2(unsigned* data, uint8_t *dpct_local) {
+// CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
 // CHECK-NEXT:  sm[OFFSET] = data[0];
 // CHECK-NEXT:  unsigned* ptr = OFFSET + sm + (3 + 4) + 6;
 // CHECK-NEXT:  sycl::atomic<unsigned int, sycl::access::address_space::local_space>(sycl::local_ptr<unsigned int>(&ptr[0])).fetch_or(data[1]);
@@ -455,12 +455,12 @@ __global__ void k() {
   // CHECK: sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(u32)).fetch_add(*u32);
   atomicAdd(&u32, u32);
 
-  // CHECK: c2s::atomic_fetch_add(&f, f);
+  // CHECK: dpct::atomic_fetch_add(&f, f);
   atomicAdd(&f, f);
 }
 
-// CHECK: void mykernel(unsigned int *dev, sycl::nd_item<3> item_ct1, uint8_t *c2s_local) {
-// CHECK-NEXT:  auto sm = (unsigned int *)c2s_local;
+// CHECK: void mykernel(unsigned int *dev, sycl::nd_item<3> item_ct1, uint8_t *dpct_local) {
+// CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
 // CHECK-NEXT:  unsigned int* as= (unsigned int*)sm;
 // CHECK-NEXT:  const int kc=item_ct1.get_local_id(2);
 // CHECK-NEXT:  const int tid=item_ct1.get_group(2)*item_ct1.get_local_range(2)+item_ct1.get_local_id(2);
@@ -514,10 +514,10 @@ __shared__ unsigned int temp[256];
 
 #define NUM_SYMBOLS 2
 
-// CHECK:static void vlc_encode_kernel_sm64huff(uint8_t *c2s_local) {
+// CHECK:static void vlc_encode_kernel_sm64huff(uint8_t *dpct_local) {
 // CHECK-NEXT:  unsigned int a = 1;
 // CHECK-NEXT:  unsigned int kc = 1;
-// CHECK-NEXT:  auto sm = (unsigned int *)c2s_local;
+// CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
 // CHECK-NEXT:  unsigned int* as			= (unsigned int*)(sm+2*NUM_SYMBOLS);
 // CHECK-NEXT:  sycl::atomic<unsigned int, sycl::access::address_space::local_space>(sycl::local_ptr<unsigned int>(&as[kc])).fetch_or(a);
 // CHECK-NEXT:}
@@ -545,7 +545,7 @@ __shared__ unsigned int s_Hist[100];
   addByte(s_WarpHist, 1000);
 }
 
-//CHECK:c2s::global_memory<volatile int, 0> g_mutex(0);
+//CHECK:dpct::global_memory<volatile int, 0> g_mutex(0);
 volatile __device__ int g_mutex = 0;
 
 //CHECK:void __gpu_sync(int blocks_to_synch, volatile int *g_mutex) {

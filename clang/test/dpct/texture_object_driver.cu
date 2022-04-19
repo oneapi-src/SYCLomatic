@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none --usm-level=none -out-root %T/texture_object_driver %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/texture_object_driver %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14 -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/texture_object_driver/texture_object_driver.dp.cpp --match-full-lines %s
 
 #include <stdio.h>
@@ -16,15 +16,15 @@ void func(int i) {}
 template <typename T>
 void funcT(T t) {}
 
-// CHECK: template <class T> void BindTextureObject(c2s::image_matrix_p &data, c2s::image_wrapper_base_p &tex) {
-// CHECK-NEXT:   c2s::image_data res42;
-// CHECK-NEXT:   c2s::sampling_info texDesc42;
-// CHECK-NEXT:   res42.set_data_type(c2s::image_data_type::matrix);
+// CHECK: template <class T> void BindTextureObject(dpct::image_matrix_p &data, dpct::image_wrapper_base_p &tex) {
+// CHECK-NEXT:   dpct::image_data res42;
+// CHECK-NEXT:   dpct::sampling_info texDesc42;
+// CHECK-NEXT:   res42.set_data_type(dpct::image_data_type::matrix);
 // CHECK-NEXT:   res42.set_data_ptr(data);
 // CHECK-NEXT:   texDesc42.set(sycl::addressing_mode::clamp_to_edge);
 // CHECK-NEXT:   texDesc42.set(sycl::filtering_mode::nearest);
-// CHECK-NEXT:   data = (c2s::image_matrix_p)res42.get_data_ptr();
-// CHECK-NEXT:   tex = c2s::create_image_wrapper(res42, texDesc42);
+// CHECK-NEXT:   data = (dpct::image_matrix_p)res42.get_data_ptr();
+// CHECK-NEXT:   tex = dpct::create_image_wrapper(res42, texDesc42);
 // CHECK-NEXT: }
 template <class T> void BindTextureObject(CUarray &data, CUtexObject &tex) {
   CUDA_RESOURCE_DESC res42;
@@ -42,7 +42,7 @@ template <class T> void BindTextureObject(CUarray &data, CUtexObject &tex) {
 int main() {
 
   // CHECK: sycl::float4 *d_data42;
-  // CHECK-NEXT: c2s::image_matrix_p a42;
+  // CHECK-NEXT: dpct::image_matrix_p a42;
   // CHECK-NEXT: size_t desc42_x_ct1, desc42_y_ct1;
   // CHECK-NEXT: unsigned desc42_channel_num_ct1;
   // CHECK-NEXT: sycl::image_channel_type desc42_channel_type_ct1;
@@ -50,21 +50,21 @@ int main() {
   // CHECK-NEXT: desc42_channel_type_ct1 = sycl::image_channel_type::fp32;
   // CHECK-NEXT: desc42_x_ct1 = 32;
   // CHECK-NEXT: desc42_y_ct1 = 32;
-  // CHECK-NEXT: a42 = new c2s::image_matrix(desc42_channel_type_ct1, desc42_channel_num_ct1, desc42_x_ct1, desc42_y_ct1);
-  // CHECK-NEXT: c2s::image_wrapper_base_p tex42;
-  // CHECK-NEXT: c2s::image_data res42;
-  // CHECK-NEXT: c2s::sampling_info texDesc42;
-  // CHECK-NEXT: res42.set_data_type(c2s::image_data_type::pitch);
+  // CHECK-NEXT: a42 = new dpct::image_matrix(desc42_channel_type_ct1, desc42_channel_num_ct1, desc42_x_ct1, desc42_y_ct1);
+  // CHECK-NEXT: dpct::image_wrapper_base_p tex42;
+  // CHECK-NEXT: dpct::image_data res42;
+  // CHECK-NEXT: dpct::sampling_info texDesc42;
+  // CHECK-NEXT: res42.set_data_type(dpct::image_data_type::pitch);
   // CHECK-NEXT: res42.set_data_ptr((void *)d_data42);
   // CHECK-NEXT: res42.set_x(sizeof(sycl::float4) * 32);
   // CHECK-NEXT: res42.set_y(32);
   // CHECK-NEXT: res42.set_pitch(sizeof(sycl::float4) * 32);
   // CHECK-NEXT: res42.set_channel_num(4);
   // CHECK-NEXT: res42.set_channel_type(sycl::image_channel_type::fp32);
-  // CHECK-NEXT: res42.set_data_type(c2s::image_data_type::matrix);
+  // CHECK-NEXT: res42.set_data_type(dpct::image_data_type::matrix);
   // CHECK-NEXT: res42.set_data_ptr(a42);
   // CHECK-NEXT: texDesc42.set(sycl::addressing_mode::clamp_to_edge, sycl::filtering_mode::nearest, sycl::coordinate_normalization_mode::normalized);
-  // CHECK-NEXT: tex42 = c2s::create_image_wrapper(res42, texDesc42);
+  // CHECK-NEXT: tex42 = dpct::create_image_wrapper(res42, texDesc42);
   float4 *d_data42;
   CUarray a42;
   CUDA_ARRAY_DESCRIPTOR desc42;
@@ -93,11 +93,11 @@ int main() {
   cuTexObjectCreate(&tex42, &res42, &texDesc42, NULL);
 
   // CHECK: sycl::uint2 *d_data21;
-  // CHECK-NEXT: d_data21 = (sycl::uint2 *)c2s::c2s_malloc(sizeof(sycl::uint2) * 32);
-  // CHECK-NEXT: c2s::image_wrapper_base_p tex21;
-  // CHECK-NEXT: c2s::image_data res21;
-  // CHECK-NEXT: c2s::sampling_info texDesc21;
-  // CHECK-NEXT: res21.set_data_type(c2s::image_data_type::linear);
+  // CHECK-NEXT: d_data21 = (sycl::uint2 *)dpct::dpct_malloc(sizeof(sycl::uint2) * 32);
+  // CHECK-NEXT: dpct::image_wrapper_base_p tex21;
+  // CHECK-NEXT: dpct::image_data res21;
+  // CHECK-NEXT: dpct::sampling_info texDesc21;
+  // CHECK-NEXT: res21.set_data_type(dpct::image_data_type::linear);
   // CHECK-NEXT: res21.set_data_ptr((void *)d_data21);
   // CHECK-NEXT: res21.set_channel_num(2);
   // CHECK-NEXT: res21.set_channel_type(sycl::image_channel_type::unsigned_int32);
@@ -105,7 +105,7 @@ int main() {
   // CHECK-NEXT: unsigned chnX = res21.get_channel_num();
   // CHECK-NEXT: sycl::image_channel_type formatKind = res21.get_channel_type();
   // CHECK-NEXT: texDesc21.set(sycl::addressing_mode::clamp_to_edge, sycl::filtering_mode::linear, sycl::coordinate_normalization_mode::normalized);
-  // CHECK-NEXT: tex21 = c2s::create_image_wrapper(res21, texDesc21);
+  // CHECK-NEXT: tex21 = dpct::create_image_wrapper(res21, texDesc21);
   uint2 *d_data21;
   cudaMalloc(&d_data21, sizeof(uint2) * 32);
   CUtexObject tex21;
@@ -138,21 +138,21 @@ int main() {
   // CHECK: delete a42;
   cuArrayDestroy(a42);
 
-  // CHECK: c2s::c2s_free(d_data42);
-  // CHECK-NEXT: c2s::c2s_free(d_data21);
+  // CHECK: dpct::dpct_free(d_data42);
+  // CHECK-NEXT: dpct::dpct_free(d_data21);
   cudaFree(d_data42);
   cudaFree(d_data21);
 
   // Test IsAssigned
   {
     int errorCode;
-    // CHECK: errorCode = (tex21 = c2s::create_image_wrapper(res21, texDesc21), 0);
+    // CHECK: errorCode = (tex21 = dpct::create_image_wrapper(res21, texDesc21), 0);
     errorCode = cuTexObjectCreate(&tex21, &res21, &texDesc21, NULL);
-    // CHECK: cudaCheck((tex21 = c2s::create_image_wrapper(res21, texDesc21), 0));
+    // CHECK: cudaCheck((tex21 = dpct::create_image_wrapper(res21, texDesc21), 0));
     cudaCheck(cuTexObjectCreate(&tex21, &res21, &texDesc21, NULL));
-    // CHECK: func((tex21 = c2s::create_image_wrapper(res21, texDesc21), 0));
+    // CHECK: func((tex21 = dpct::create_image_wrapper(res21, texDesc21), 0));
     func(cuTexObjectCreate(&tex21, &res21, &texDesc21, NULL));
-    // CHECK: funcT((tex21 = c2s::create_image_wrapper(res21, texDesc21), 0));
+    // CHECK: funcT((tex21 = dpct::create_image_wrapper(res21, texDesc21), 0));
     funcT(cuTexObjectCreate(&tex21, &res21, &texDesc21, NULL));
 
     // CHECK: errorCode = (delete tex21, 0);
@@ -169,13 +169,13 @@ int main() {
 void foo(){
   CUarray a42;
   CUDA_RESOURCE_DESC res42;
-  // CHECK: res42.set_data_type(c2s::image_data_type::matrix);
+  // CHECK: res42.set_data_type(dpct::image_data_type::matrix);
   // CHECK-NEXT: res42.set_data_ptr(a42);
   res42.resType = CU_RESOURCE_TYPE_ARRAY;
   res42.res.array.hArray = a42;
 
   float4 *d_data42;
-  // CHECK: res42.set_data_type(c2s::image_data_type::pitch);
+  // CHECK: res42.set_data_type(dpct::image_data_type::pitch);
   // CHECK-NEXT: res42.set_data_ptr((void *)d_data42);
   // CHECK-NEXT: res42.set_channel_num(4);
   // CHECK-NEXT: res42.set_channel_type(sycl::image_channel_type::fp32);
@@ -191,7 +191,7 @@ void foo(){
   res42.res.pitch2D.pitchInBytes = sizeof(float4) * 32;
 
   uint2 *d_data21;
-  // CHECK: res42.set_data_type(c2s::image_data_type::linear);
+  // CHECK: res42.set_data_type(dpct::image_data_type::linear);
   // CHECK-NEXT: res42.set_data_ptr((void *)d_data21);
   // CHECK-NEXT: res42.set_x(sizeof(sycl::float4) * 32);
   // CHECK-NEXT: res42.set_channel_num(4);
@@ -202,7 +202,7 @@ void foo(){
   res42.res.pitch2D.numChannels = 4;
   res42.res.pitch2D.format = CU_AD_FORMAT_FLOAT;
 
-  // CHECK:  c2s::sampling_info tex_tmp;
+  // CHECK:  dpct::sampling_info tex_tmp;
   // CHECK-NEXT:   tex_tmp.set(sycl::addressing_mode::clamp_to_edge, sycl::filtering_mode::nearest, sycl::coordinate_normalization_mode::unnormalized);
   // CHECK-NEXT:   sycl::addressing_mode addr = tex_tmp.get_addressing_mode();
   // CHECK-NEXT:   sycl::filtering_mode filter = tex_tmp.get_filtering_mode();

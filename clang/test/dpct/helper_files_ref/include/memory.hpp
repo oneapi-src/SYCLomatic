@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __C2S_MEMORY_HPP__
-#define __C2S_MEMORY_HPP__
+#ifndef __DPCT_MEMORY_HPP__
+#define __DPCT_MEMORY_HPP__
 
 #include "device.hpp"
 #include <CL/sycl.hpp>
@@ -30,7 +30,7 @@
 #error "Only support Windows and Linux."
 #endif
 
-namespace c2s {
+namespace dpct {
 
 enum memcpy_direction {
   host_to_host,
@@ -125,7 +125,7 @@ public:
       return nullptr;
     std::lock_guard<std::mutex> lock(m_mutex);
     if (next_free + size > mapped_address_space + mapped_region_size) {
-      throw std::runtime_error("c2s_malloc: out of memory for virtual memory pool");
+      throw std::runtime_error("dpct_malloc: out of memory for virtual memory pool");
     }
     // Allocation
     cl::sycl::range<1> r(size);
@@ -223,19 +223,19 @@ public:
   using pointer_t = T *;
 };
 
-static inline void *c2s_malloc(size_t size, cl::sycl::queue &q) {
-#ifdef C2S_USM_LEVEL_NONE
+static inline void *dpct_malloc(size_t size, cl::sycl::queue &q) {
+#ifdef DPCT_USM_LEVEL_NONE
   return mem_mgr::instance().mem_alloc(size * sizeof(byte_t));
 #else
   return cl::sycl::malloc_device(size, q.get_device(), q.get_context());
-#endif // C2S_USM_LEVEL_NONE
+#endif // DPCT_USM_LEVEL_NONE
 }
 
 #define PITCH_DEFAULT_ALIGN(x) (((x) + 31) & ~(0x1F))
-static inline void *c2s_malloc(size_t &pitch, size_t x, size_t y, size_t z,
+static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y, size_t z,
                                 cl::sycl::queue &q) {
   pitch = PITCH_DEFAULT_ALIGN(x);
-  return c2s_malloc(pitch * y * z, q);
+  return dpct_malloc(pitch * y * z, q);
 }
 
 /// Set \p value to the first \p size bytes starting from \p dev_ptr in \p q.
@@ -245,9 +245,9 @@ static inline void *c2s_malloc(size_t &pitch, size_t x, size_t y, size_t z,
 /// \param value Value to be set.
 /// \param size Number of bytes to be set to the value.
 /// \returns An event representing the memset operation.
-static inline cl::sycl::event c2s_memset(cl::sycl::queue &q, void *dev_ptr,
+static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *dev_ptr,
                                           int value, size_t size) {
-#ifdef C2S_USM_LEVEL_NONE
+#ifdef DPCT_USM_LEVEL_NONE
   auto &mm = mem_mgr::instance();
   assert(mm.is_device_ptr(dev_ptr));
   auto alloc = mm.translate_ptr(dev_ptr);
@@ -263,7 +263,7 @@ static inline cl::sycl::event c2s_memset(cl::sycl::queue &q, void *dev_ptr,
   });
 #else
   return q.memset(dev_ptr, value, size);
-#endif // C2S_USM_LEVEL_NONE
+#endif // DPCT_USM_LEVEL_NONE
 }
 
 /// Set \p value to the 3D memory region pointed by \p data in \p q. \p size
@@ -275,7 +275,7 @@ static inline cl::sycl::event c2s_memset(cl::sycl::queue &q, void *dev_ptr,
 /// \param size Memory region size.
 /// \returns An event list representing the memset operations..
 static inline std::vector<cl::sycl::event>
-c2s_memset(cl::sycl::queue &q, pitched_data data, int value,
+dpct_memset(cl::sycl::queue &q, pitched_data data, int value,
             cl::sycl::range<3> size) {
   std::vector<cl::sycl::event> event_list;
   size_t slice = data.get_pitch() * data.get_y();
@@ -283,7 +283,7 @@ c2s_memset(cl::sycl::queue &q, pitched_data data, int value,
   for (size_t z = 0; z < size.get(2); ++z) {
     unsigned char *data_ptr = data_surface;
     for (size_t y = 0; y < size.get(1); ++y) {
-      event_list.push_back(c2s_memset(q, data_ptr, value, size.get(0)));
+      event_list.push_back(dpct_memset(q, data_ptr, value, size.get(0)));
       data_ptr += data.get_pitch();
     }
     data_surface += slice;
@@ -293,9 +293,9 @@ c2s_memset(cl::sycl::queue &q, pitched_data data, int value,
 
 /// memset 2D matrix with pitch.
 static inline std::vector<cl::sycl::event>
-c2s_memset(cl::sycl::queue &q, void *ptr, size_t pitch, int val, size_t x,
+dpct_memset(cl::sycl::queue &q, void *ptr, size_t pitch, int val, size_t x,
             size_t y) {
-  return c2s_memset(q, pitched_data(ptr, pitch, x, 1), val,
+  return dpct_memset(q, pitched_data(ptr, pitch, x, 1), val,
                      cl::sycl::range<3>(x, y, 1));
 }
 
@@ -308,7 +308,7 @@ enum class pointer_access_attribute {
 
 static pointer_access_attribute get_pointer_attribute(cl::sycl::queue &q,
                                                       const void *ptr) {
-#ifdef C2S_USM_LEVEL_NONE
+#ifdef DPCT_USM_LEVEL_NONE
   return mem_mgr::instance().is_device_ptr(ptr)
              ? pointer_access_attribute::device_only
              : pointer_access_attribute::host_only;
@@ -352,17 +352,17 @@ static memcpy_direction deduce_memcpy_direction(cl::sycl::queue &q, void *to_ptr
         q, to_ptr))][static_cast<unsigned>(get_pointer_attribute(q, from_ptr))];
   }
   default:
-    throw std::runtime_error("c2s_memcpy: invalid direction value");
+    throw std::runtime_error("dpct_memcpy: invalid direction value");
   }
 }
 
 static cl::sycl::event
-c2s_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr, size_t size,
+dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr, size_t size,
             memcpy_direction direction,
             const std::vector<cl::sycl::event> &dep_events = {}) {
   if (!size)
     return cl::sycl::event{};
-#ifdef C2S_USM_LEVEL_NONE
+#ifdef DPCT_USM_LEVEL_NONE
   auto &mm = mem_mgr::instance();
   auto real_direction = deduce_memcpy_direction(q, to_ptr, from_ptr, direction);
 
@@ -418,17 +418,17 @@ c2s_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr, size_t size,
     });
   }
   default:
-    throw std::runtime_error("c2s_memcpy: invalid direction value");
+    throw std::runtime_error("dpct_memcpy: invalid direction value");
   }
 #else
   return q.memcpy(to_ptr, from_ptr, size, dep_events);
-#endif // C2S_USM_LEVEL_NONE
+#endif // DPCT_USM_LEVEL_NONE
 }
 
 /// copy 3D matrix specified by \p size from 3D matrix specified by \p from_ptr
 /// and \p from_range to another specified by \p to_ptr and \p to_range.
 static inline std::vector<cl::sycl::event>
-c2s_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
+dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
             cl::sycl::range<3> to_range, cl::sycl::range<3> from_range,
             cl::sycl::id<3> to_id, cl::sycl::id<3> from_id,
             cl::sycl::range<3> size, memcpy_direction direction,
@@ -445,7 +445,7 @@ c2s_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
       from_id.get(1) * from_range.get(0) + from_id.get(0);
 
   if (to_slice == from_slice && to_slice == size.get(1) * size.get(0)) {
-    return {c2s_memcpy(q, to_surface, from_surface, to_slice * size.get(2),
+    return {dpct_memcpy(q, to_surface, from_surface, to_slice * size.get(2),
                         direction, dep_events)};
   }
   direction = deduce_memcpy_direction(q, to_ptr, from_ptr, direction);
@@ -458,11 +458,11 @@ c2s_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
       const unsigned char *from_ptr = from_surface;
       if (to_range.get(0) == from_range.get(0) &&
           to_range.get(0) == size.get(0)) {
-        event_list.push_back(c2s_memcpy(q, to_ptr, from_ptr, size_slice,
+        event_list.push_back(dpct_memcpy(q, to_ptr, from_ptr, size_slice,
                                          direction, dep_events));
       } else {
         for (size_t y = 0; y < size.get(1); ++y) {
-          event_list.push_back(c2s_memcpy(q, to_ptr, from_ptr, size.get(0),
+          event_list.push_back(dpct_memcpy(q, to_ptr, from_ptr, size.get(0),
                                            direction, dep_events));
           to_ptr += to_range.get(0);
           from_ptr += from_range.get(0);
@@ -478,22 +478,22 @@ c2s_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
     if (to_slice == size_slice) {
       // Copy host data to a temp host buffer with the shape of target.
       host_events =
-          c2s_memcpy(q, tmp_host_buf, from_surface, to_range, from_range,
+          dpct_memcpy(q, tmp_host_buf, from_surface, to_range, from_range,
                       sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0), size,
                       host_to_host, dep_events);
     } else {
       // Copy host data to a temp host buffer with the shape of target.
-      host_events = c2s_memcpy(
+      host_events = dpct_memcpy(
           q, tmp_host_buf, from_surface, to_range, from_range,
           sycl::id<3>(0, 0, 0), sycl::id<3>(0, 0, 0), size, host_to_host,
           // If has padding data, not sure whether it is useless. So fill temp
           // buffer with it.
           std::vector<cl::sycl::event>{
-              c2s_memcpy(q, tmp_host_buf, to_surface, to_slice * size.get(2),
+              dpct_memcpy(q, tmp_host_buf, to_surface, to_slice * size.get(2),
                           device_to_host, dep_events)});
     }
     // Copy from temp host buffer to device with only one submit.
-    event_list.push_back(c2s_memcpy(q, to_surface, tmp_host_buf,
+    event_list.push_back(dpct_memcpy(q, to_surface, tmp_host_buf,
                                      to_slice * size.get(2), host_to_device,
                                      host_events));
     break;
@@ -501,17 +501,17 @@ c2s_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
   case device_to_host: {
     tmp_host_buf = std::malloc(from_slice * size.get(2));
     // Copy from host temp buffer to host target with reshaping.
-    event_list = c2s_memcpy(
+    event_list = dpct_memcpy(
         q, to_surface, tmp_host_buf, to_range, from_range, sycl::id<3>(0, 0, 0),
         sycl::id<3>(0, 0, 0), size, host_to_host,
         // Copy from device to temp host buffer with only one submit.
-        std::vector<cl::sycl::event>{c2s_memcpy(q, tmp_host_buf, from_surface,
+        std::vector<cl::sycl::event>{dpct_memcpy(q, tmp_host_buf, from_surface,
                                                  from_slice * size.get(2),
                                                  device_to_host, dep_events)});
     break;
   }
   case device_to_device:
-#ifdef C2S_USM_LEVEL_NONE
+#ifdef DPCT_USM_LEVEL_NONE
   {
     auto &mm = mem_mgr::instance();
     auto to_alloc = mm.translate_ptr(to_surface);
@@ -528,7 +528,7 @@ c2s_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
       cl::sycl::accessor<byte_t, 1, cl::sycl::access_mode::read,
                          cl::sycl::access::target::device>
           from_acc(from_alloc.buffer, cgh, from_slice * size.get(2), from_o);
-      cgh.parallel_for<class c2s_memcpy_3d_detail_usmnone>(
+      cgh.parallel_for<class dpct_memcpy_3d_detail_usmnone>(
           sycl::range<3>(size.get(2), size.get(1), size.get(0)),
           [=](cl::sycl::id<3> id) {
             to_acc[to_slice * id.get(0) + to_range.get(0) * id.get(1) +
@@ -541,7 +541,7 @@ c2s_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
 #else
     event_list.push_back(q.submit([&](cl::sycl::handler &cgh) {
       cgh.depends_on(dep_events);
-      cgh.parallel_for<class c2s_memcpy_3d_detail>(
+      cgh.parallel_for<class dpct_memcpy_3d_detail>(
           sycl::range<3>(size.get(2), size.get(1), size.get(0)),
           [=](cl::sycl::id<3> id) {
             to_surface[to_slice * id.get(0) + to_range.get(0) * id.get(1) +
@@ -553,7 +553,7 @@ c2s_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
 #endif
   break;
   default:
-    throw std::runtime_error("c2s_memcpy: invalid direction value");
+    throw std::runtime_error("dpct_memcpy: invalid direction value");
   }
   if (tmp_host_buf)
     q.submit([&](cl::sycl::handler &cgh) {
@@ -565,10 +565,10 @@ c2s_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
 
 /// memcpy 2D/3D matrix specified by pitched_data.
 static inline std::vector<cl::sycl::event>
-c2s_memcpy(cl::sycl::queue &q, pitched_data to, cl::sycl::id<3> to_id,
+dpct_memcpy(cl::sycl::queue &q, pitched_data to, cl::sycl::id<3> to_id,
             pitched_data from, cl::sycl::id<3> from_id, cl::sycl::range<3> size,
             memcpy_direction direction = automatic) {
-  return c2s_memcpy(q, to.get_data_ptr(), from.get_data_ptr(),
+  return dpct_memcpy(q, to.get_data_ptr(), from.get_data_ptr(),
                      cl::sycl::range<3>(to.get_pitch(), to.get_y(), 1),
                      cl::sycl::range<3>(from.get_pitch(), from.get_y(), 1), to_id, from_id,
                      size, direction);
@@ -576,17 +576,17 @@ c2s_memcpy(cl::sycl::queue &q, pitched_data to, cl::sycl::id<3> to_id,
 
 /// memcpy 2D matrix with pitch.
 static inline std::vector<cl::sycl::event>
-c2s_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
+dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
             size_t to_pitch, size_t from_pitch, size_t x, size_t y,
             memcpy_direction direction = automatic) {
-  return c2s_memcpy(q, to_ptr, from_ptr, cl::sycl::range<3>(to_pitch, y, 1),
+  return dpct_memcpy(q, to_ptr, from_ptr, cl::sycl::range<3>(to_pitch, y, 1),
                      cl::sycl::range<3>(from_pitch, y, 1),
                      cl::sycl::id<3>(0, 0, 0), cl::sycl::id<3>(0, 0, 0),
                      cl::sycl::range<3>(x, y, 1), direction);
 }
 } // namespace detail
 
-#ifdef C2S_USM_LEVEL_NONE
+#ifdef DPCT_USM_LEVEL_NONE
 /// Check if the pointer \p ptr represents device pointer or not.
 ///
 /// \param ptr The pointer to be checked.
@@ -678,9 +678,9 @@ get_access(const void *ptr, cl::sycl::handler &cgh) {
 /// \param q Queue to execute the allocate task.
 /// \returns A pointer to the newly allocated memory.
 template <typename T>
-static inline void *c2s_malloc(T num_bytes,
+static inline void *dpct_malloc(T num_bytes,
                                 cl::sycl::queue &q = get_default_queue()) {
-  return detail::c2s_malloc(static_cast<size_t>(num_bytes), q);
+  return detail::dpct_malloc(static_cast<size_t>(num_bytes), q);
 }
 
 /// Get the host pointer from a buffer that is mapped to virtual pointer ptr.
@@ -699,10 +699,10 @@ template <typename T> static inline T *get_host_ptr(const void *ptr) {
 /// \param q Queue to execute the allocate task.
 /// \returns A pitched_data object which stores the memory info.
 static inline pitched_data
-c2s_malloc(cl::sycl::range<3> size, cl::sycl::queue &q = get_default_queue()) {
+dpct_malloc(cl::sycl::range<3> size, cl::sycl::queue &q = get_default_queue()) {
   pitched_data pitch(nullptr, 0, size.get(0), size.get(1));
   size_t pitch_size;
-  pitch.set_data_ptr(detail::c2s_malloc(pitch_size, size.get(0), size.get(1),
+  pitch.set_data_ptr(detail::dpct_malloc(pitch_size, size.get(0), size.get(1),
                                          size.get(2), q));
   pitch.set_pitch(pitch_size);
   return pitch;
@@ -714,34 +714,34 @@ c2s_malloc(cl::sycl::range<3> size, cl::sycl::queue &q = get_default_queue()) {
 /// \param y Range in dim y.
 /// \param q Queue to execute the allocate task.
 /// \returns A pointer to the newly allocated memory.
-static inline void *c2s_malloc(size_t &pitch, size_t x, size_t y,
+static inline void *dpct_malloc(size_t &pitch, size_t x, size_t y,
                                 cl::sycl::queue &q = get_default_queue()) {
-  return detail::c2s_malloc(pitch, x, y, 1, q);
+  return detail::dpct_malloc(pitch, x, y, 1, q);
 }
 
 /// free
 /// \param ptr Point to free.
 /// \param q Queue to execute the free task.
 /// \returns no return value.
-static inline void c2s_free(void *ptr,
+static inline void dpct_free(void *ptr,
                              cl::sycl::queue &q = get_default_queue()) {
   if (ptr) {
-#ifdef C2S_USM_LEVEL_NONE
+#ifdef DPCT_USM_LEVEL_NONE
     detail::mem_mgr::instance().mem_free(ptr);
 #else
     cl::sycl::free(ptr, q.get_context());
-#endif // C2S_USM_LEVEL_NONE
+#endif // DPCT_USM_LEVEL_NONE
   }
 }
 
-#ifndef C2S_USM_LEVEL_NONE
+#ifndef DPCT_USM_LEVEL_NONE
 /// Free the device memory pointed by a batch of pointers in \p pointers which
 /// are related to \p q after \p events completed.
 ///
 /// \param pointers The pointers point to the device memory requested to be freed.
 /// \param events The events to be waited.
 /// \param q The sycl::queue the memory relates to.
-inline void async_c2s_free(std::vector<void *> pointers,
+inline void async_dpct_free(std::vector<void *> pointers,
                             std::vector<cl::sycl::event> events,
                             cl::sycl::queue &q = get_default_queue()) {
   std::thread t(
@@ -768,10 +768,10 @@ inline void async_c2s_free(std::vector<void *> pointers,
 /// \param direction Direction of the copy.
 /// \param q Queue to execute the copy task.
 /// \returns no return value.
-static void c2s_memcpy(void *to_ptr, const void *from_ptr, size_t size,
+static void dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                         memcpy_direction direction = automatic,
                         cl::sycl::queue &q = get_default_queue()) {
-  detail::c2s_memcpy(q, to_ptr, from_ptr, size, direction).wait();
+  detail::dpct_memcpy(q, to_ptr, from_ptr, size, direction).wait();
 }
 
 /// Asynchronously copies \p size bytes from the address specified by \p
@@ -786,10 +786,10 @@ static void c2s_memcpy(void *to_ptr, const void *from_ptr, size_t size,
 /// \param direction Direction of the copy.
 /// \param q Queue to execute the copy task.
 /// \returns no return value.
-static void async_c2s_memcpy(void *to_ptr, const void *from_ptr, size_t size,
+static void async_dpct_memcpy(void *to_ptr, const void *from_ptr, size_t size,
                               memcpy_direction direction = automatic,
-                              cl::sycl::queue &q = c2s::get_default_queue()) {
-  detail::c2s_memcpy(q, to_ptr, from_ptr, size, direction);
+                              cl::sycl::queue &q = dpct::get_default_queue()) {
+  detail::dpct_memcpy(q, to_ptr, from_ptr, size, direction);
 }
 
 /// Synchronously copies 2D matrix specified by \p x and \p y from the address
@@ -809,12 +809,12 @@ static void async_c2s_memcpy(void *to_ptr, const void *from_ptr, size_t size,
 /// \param direction Direction of the copy.
 /// \param q Queue to execute the copy task.
 /// \returns no return value.
-static inline void c2s_memcpy(void *to_ptr, size_t to_pitch,
+static inline void dpct_memcpy(void *to_ptr, size_t to_pitch,
                                const void *from_ptr, size_t from_pitch,
                                size_t x, size_t y,
                                memcpy_direction direction = automatic,
-                               cl::sycl::queue &q = c2s::get_default_queue()) {
-  cl::sycl::event::wait(detail::c2s_memcpy(q, to_ptr, from_ptr, to_pitch,
+                               cl::sycl::queue &q = dpct::get_default_queue()) {
+  cl::sycl::event::wait(detail::dpct_memcpy(q, to_ptr, from_ptr, to_pitch,
                                             from_pitch, x, y, direction));
 }
 
@@ -836,11 +836,11 @@ static inline void c2s_memcpy(void *to_ptr, size_t to_pitch,
 /// \param q Queue to execute the copy task.
 /// \returns no return value.
 static inline void
-async_c2s_memcpy(void *to_ptr, size_t to_pitch, const void *from_ptr,
+async_dpct_memcpy(void *to_ptr, size_t to_pitch, const void *from_ptr,
                   size_t from_pitch, size_t x, size_t y,
                   memcpy_direction direction = automatic,
                   cl::sycl::queue &q = get_default_queue()) {
-  detail::c2s_memcpy(q, to_ptr, from_ptr, to_pitch, from_pitch, x, y,
+  detail::dpct_memcpy(q, to_ptr, from_ptr, to_pitch, from_pitch, x, y,
                       direction);
 }
 
@@ -859,13 +859,13 @@ async_c2s_memcpy(void *to_ptr, size_t to_pitch, const void *from_ptr,
 /// \param direction Direction of the copy.
 /// \param q Queue to execute the copy task.
 /// \returns no return value.
-static inline void c2s_memcpy(pitched_data to, cl::sycl::id<3> to_pos,
+static inline void dpct_memcpy(pitched_data to, cl::sycl::id<3> to_pos,
                                pitched_data from, cl::sycl::id<3> from_pos,
                                cl::sycl::range<3> size,
                                memcpy_direction direction = automatic,
-                               cl::sycl::queue &q = c2s::get_default_queue()) {
+                               cl::sycl::queue &q = dpct::get_default_queue()) {
   cl::sycl::event::wait(
-      detail::c2s_memcpy(q, to, to_pos, from, from_pos, size, direction));
+      detail::dpct_memcpy(q, to, to_pos, from, from_pos, size, direction));
 }
 
 /// Asynchronously copies a subset of a 3D matrix specified by \p to to another
@@ -885,11 +885,11 @@ static inline void c2s_memcpy(pitched_data to, cl::sycl::id<3> to_pos,
 /// \param q Queue to execute the copy task.
 /// \returns no return value.
 static inline void
-async_c2s_memcpy(pitched_data to, cl::sycl::id<3> to_pos, pitched_data from,
+async_dpct_memcpy(pitched_data to, cl::sycl::id<3> to_pos, pitched_data from,
                   cl::sycl::id<3> from_pos, cl::sycl::range<3> size,
                   memcpy_direction direction = automatic,
                   cl::sycl::queue &q = get_default_queue()) {
-  detail::c2s_memcpy(q, to, to_pos, from, from_pos, size, direction);
+  detail::dpct_memcpy(q, to, to_pos, from, from_pos, size, direction);
 }
 
 /// Synchronously sets \p value to the first \p size bytes starting from \p
@@ -900,9 +900,9 @@ async_c2s_memcpy(pitched_data to, cl::sycl::id<3> to_pos, pitched_data from,
 /// \param size Number of bytes to be set to the value.
 /// \param q The queue in which the operation is done.
 /// \returns no return value.
-static void c2s_memset(void *dev_ptr, int value, size_t size,
+static void dpct_memset(void *dev_ptr, int value, size_t size,
                         cl::sycl::queue &q = get_default_queue()) {
-  detail::c2s_memset(q, dev_ptr, value, size).wait();
+  detail::dpct_memset(q, dev_ptr, value, size).wait();
 }
 
 /// Asynchronously sets \p value to the first \p size bytes starting from \p
@@ -913,9 +913,9 @@ static void c2s_memset(void *dev_ptr, int value, size_t size,
 /// \param value Value to be set.
 /// \param size Number of bytes to be set to the value.
 /// \returns no return value.
-static void async_c2s_memset(void *dev_ptr, int value, size_t size,
-                              cl::sycl::queue &q = c2s::get_default_queue()) {
-  detail::c2s_memset(q, dev_ptr, value, size);
+static void async_dpct_memset(void *dev_ptr, int value, size_t size,
+                              cl::sycl::queue &q = dpct::get_default_queue()) {
+  detail::dpct_memset(q, dev_ptr, value, size);
 }
 
 /// Sets \p value to the 2D memory region pointed by \p ptr in \p q. \p x and
@@ -930,10 +930,10 @@ static void async_c2s_memset(void *dev_ptr, int value, size_t size,
 /// \param y The setted memory size in second dimension.
 /// \param q The queue in which the operation is done.
 /// \returns no return value.
-static inline void c2s_memset(void *ptr, size_t pitch, int val, size_t x,
+static inline void dpct_memset(void *ptr, size_t pitch, int val, size_t x,
                                size_t y,
                                cl::sycl::queue &q = get_default_queue()) {
-  cl::sycl::event::wait(detail::c2s_memset(q, ptr, pitch, val, x, y));
+  cl::sycl::event::wait(detail::dpct_memset(q, ptr, pitch, val, x, y));
 }
 
 /// Sets \p value to the 2D memory region pointed by \p ptr in \p q. \p x and
@@ -948,10 +948,10 @@ static inline void c2s_memset(void *ptr, size_t pitch, int val, size_t x,
 /// \param y The setted memory size in second dimension.
 /// \param q The queue in which the operation is done.
 /// \returns no return value.
-static inline void async_c2s_memset(void *ptr, size_t pitch, int val, size_t x,
+static inline void async_dpct_memset(void *ptr, size_t pitch, int val, size_t x,
                                      size_t y,
                                      cl::sycl::queue &q = get_default_queue()) {
-  detail::c2s_memset(q, ptr, pitch, val, x, y);
+  detail::dpct_memset(q, ptr, pitch, val, x, y);
 }
 
 /// Sets \p value to the 3D memory region specified by \p pitch in \p q. \p size
@@ -963,10 +963,10 @@ static inline void async_c2s_memset(void *ptr, size_t pitch, int val, size_t x,
 /// \param size The setted 3D memory size.
 /// \param q The queue in which the operation is done.
 /// \returns no return value.
-static inline void c2s_memset(pitched_data pitch, int val,
+static inline void dpct_memset(pitched_data pitch, int val,
                                cl::sycl::range<3> size,
                                cl::sycl::queue &q = get_default_queue()) {
-  cl::sycl::event::wait(detail::c2s_memset(q, pitch, val, size));
+  cl::sycl::event::wait(detail::dpct_memset(q, pitch, val, size));
 }
 
 /// Sets \p value to the 3D memory region specified by \p pitch in \p q. \p size
@@ -978,13 +978,13 @@ static inline void c2s_memset(pitched_data pitch, int val,
 /// \param size The setted 3D memory size.
 /// \param q The queue in which the operation is done.
 /// \returns no return value.
-static inline void async_c2s_memset(pitched_data pitch, int val,
+static inline void async_dpct_memset(pitched_data pitch, int val,
                                      cl::sycl::range<3> size,
                                      cl::sycl::queue &q = get_default_queue()) {
-  detail::c2s_memset(q, pitch, val, size);
+  detail::dpct_memset(q, pitch, val, size);
 }
 
-/// c2s accessor used as device function parameter.
+/// dpct accessor used as device function parameter.
 template <class T, memory_region Memory, size_t Dimension> class accessor;
 template <class T, memory_region Memory> class accessor<T, Memory, 3> {
 public:
@@ -1043,7 +1043,7 @@ public:
   using accessor_t =
       typename detail::memory_traits<Memory, T>::template accessor_t<Dimension>;
   using value_t = typename detail::memory_traits<Memory, T>::value_t;
-  using c2s_accessor_t = c2s::accessor<T, Memory, Dimension>;
+  using dpct_accessor_t = dpct::accessor<T, Memory, Dimension>;
 
   device_memory() : device_memory(cl::sycl::range<Dimension>(1)) {}
 
@@ -1095,14 +1095,14 @@ public:
 
   ~device_memory() {
     if (_device_ptr && !_reference)
-      c2s_free(_device_ptr);
+      dpct_free(_device_ptr);
     if (_host_ptr)
       std::free(_host_ptr);
   }
 
   /// Allocate memory with default queue, and init memory if has initial value.
   void init() {
-    init(c2s::get_default_queue());
+    init(dpct::get_default_queue());
   }
   /// Allocate memory with specficed queue, and init memory if has initial value.
   void init(cl::sycl::queue &q) {
@@ -1112,7 +1112,7 @@ public:
       return;
     allocate_device(q);
     if (_host_ptr)
-      detail::c2s_memcpy(q, _device_ptr, _host_ptr, _size, host_to_device);
+      detail::dpct_memcpy(q, _device_ptr, _host_ptr, _size, host_to_device);
   }
 
   /// The variable is assigned to a device pointer.
@@ -1139,16 +1139,16 @@ public:
   template <size_t D = Dimension>
   typename std::enable_if<D == 1, T>::type &operator[](size_t index) {
     init();
-#ifdef C2S_USM_LEVEL_NONE
-    return c2s::get_buffer<typename std::enable_if<D == 1, T>::type>(
+#ifdef DPCT_USM_LEVEL_NONE
+    return dpct::get_buffer<typename std::enable_if<D == 1, T>::type>(
                _device_ptr)
         .template get_access<sycl::access_mode::read_write>()[index];
 #else
     return _device_ptr[index];
-#endif // C2S_USM_LEVEL_NONE
+#endif // DPCT_USM_LEVEL_NONE
   }
 
-#ifdef C2S_USM_LEVEL_NONE
+#ifdef DPCT_USM_LEVEL_NONE
   /// Get cl::sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(cl::sycl::handler &cgh) {
     return get_buffer(_device_ptr)
@@ -1157,14 +1157,14 @@ public:
                              detail::memory_traits<Memory, T>::target>(cgh);
   }
 #else
-  /// Get c2s::accessor with dimension info for the device memory object
+  /// Get dpct::accessor with dimension info for the device memory object
   /// when usm is used and dimension is greater than 1.
   template <size_t D = Dimension>
-  typename std::enable_if<D != 1, c2s_accessor_t>::type
+  typename std::enable_if<D != 1, dpct_accessor_t>::type
   get_access(cl::sycl::handler &cgh) {
-    return c2s_accessor_t((T *)_device_ptr, _range);
+    return dpct_accessor_t((T *)_device_ptr, _range);
   }
-#endif // C2S_USM_LEVEL_NONE
+#endif // DPCT_USM_LEVEL_NONE
 
 private:
   device_memory(value_t *memory_ptr, size_t size)
@@ -1172,14 +1172,14 @@ private:
         _device_ptr(memory_ptr) {}
 
   void allocate_device(cl::sycl::queue &q) {
-#ifndef C2S_USM_LEVEL_NONE
+#ifndef DPCT_USM_LEVEL_NONE
     if (Memory == shared) {
       _device_ptr = (value_t *)cl::sycl::malloc_shared(
           _size, q.get_device(), q.get_context());
       return;
     }
 #endif
-    _device_ptr = (value_t *)detail::c2s_malloc(_size, q);
+    _device_ptr = (value_t *)detail::dpct_malloc(_size, q);
   }
 
   size_t _size;
@@ -1202,14 +1202,14 @@ public:
   /// Default constructor
   device_memory() : base(1) {}
 
-#ifdef C2S_USM_LEVEL_NONE
+#ifdef DPCT_USM_LEVEL_NONE
   /// Get cl::sycl::accessor for the device memory object when usm is not used.
   accessor_t get_access(cl::sycl::handler &cgh) {
     auto buf = get_buffer(base::get_ptr())
                    .template reinterpret<T, 1>(cl::sycl::range<1>(1));
     return accessor_t(buf, cgh);
   }
-#endif // C2S_USM_LEVEL_NONE
+#endif // DPCT_USM_LEVEL_NONE
 };
 }
 
@@ -1219,6 +1219,6 @@ template <class T, size_t Dimension>
 using constant_memory = detail::device_memory<T, constant, Dimension>;
 template <class T, size_t Dimension>
 using shared_memory = detail::device_memory<T, shared, Dimension>;
-} // namespace c2s
+} // namespace dpct
 
-#endif // __C2S_MEMORY_HPP__
+#endif // __DPCT_MEMORY_HPP__

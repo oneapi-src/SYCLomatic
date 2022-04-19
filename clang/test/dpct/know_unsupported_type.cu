@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.2
 // UNSUPPORTED: v8.0, v9.0, v9.2
-// RUN: c2s -out-root %T/know_unsupported_type %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct -out-root %T/know_unsupported_type %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/know_unsupported_type/know_unsupported_type.dp.cpp
 #include "cuda_runtime.h"
 #include "cuda.h"

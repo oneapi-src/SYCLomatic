@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/exceed-kernel-arg-limit-usm %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/exceed-kernel-arg-limit-usm %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/exceed-kernel-arg-limit-usm/exceed-kernel-arg-limit-usm.dp.cpp --match-full-lines %s
 
 #include <stdio.h>

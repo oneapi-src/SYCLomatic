@@ -1,6 +1,6 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: c2s --format-range=none -out-root %T/types002 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
+// RUN: dpct --format-range=none -out-root %T/types002 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++17 -fsized-deallocation
 // RUN: FileCheck %s --match-full-lines --input-file %T/types002/types002.dp.cpp
 
 #include <thrust/device_ptr.h>
@@ -9,8 +9,8 @@
 
 
 int main(int argc, char **argv) {
-  //CHECK:c2s::device_vector<int> device_vec;
-  //CHECK-NEXT:int a = sizeof(c2s::device_vector<int>);
+  //CHECK:dpct::device_vector<int> device_vec;
+  //CHECK-NEXT:int a = sizeof(dpct::device_vector<int>);
   //CHECK-NEXT:a = sizeof(device_vec);
   //CHECK-NEXT:a = sizeof device_vec;
   thrust::device_vector<int> device_vec;
@@ -18,8 +18,8 @@ int main(int argc, char **argv) {
   a = sizeof(device_vec);
   a = sizeof device_vec;
 
-  //CHECK:c2s::device_pointer<int> device_p;
-  //CHECK-NEXT:a = sizeof(c2s::device_pointer<int>);
+  //CHECK:dpct::device_pointer<int> device_p;
+  //CHECK-NEXT:a = sizeof(dpct::device_pointer<int>);
   //CHECK-NEXT:a = sizeof(device_p);
   //CHECK-NEXT:a = sizeof device_p;
   thrust::device_ptr<int> device_p;

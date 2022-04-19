@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/min_cast %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/min_cast %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/min_cast/min_cast.dp.cpp --match-full-lines %s
 
 #include <algorithm>

@@ -6,14 +6,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __C2S_DPL_EXTRAS_ITERATORS_H__
-#define __C2S_DPL_EXTRAS_ITERATORS_H__
+#ifndef __DPCT_ITERATORS_H__
+#define __DPCT_ITERATORS_H__
 
 #include <oneapi/dpl/iterator>
 
 #include "functional.h"
 
-namespace c2s {
+namespace dpct {
 
 using std::advance;
 
@@ -114,6 +114,6 @@ constant_iterator<_Tp> make_constant_iterator(_Tp __value) {
   return constant_iterator<_Tp>(__value);
 }
 
-} // end namespace c2s
+} // end namespace dpct
 
 #endif

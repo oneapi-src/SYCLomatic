@@ -1,4 +1,4 @@
-// RUN: c2s --format-range=none -out-root %T/driver_context %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/driver_context %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/driver_context/driver_context.dp.cpp
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -35,22 +35,22 @@ int main(){
   // CHECK: MY_SAFE_CALL((ctx = device, 0));
   MY_SAFE_CALL(cuCtxCreate(&ctx, CU_CTX_LMEM_RESIZE_TO_MAX, device));
 
-  // CHECK: c2s::dev_mgr::instance().select_device(ctx);
+  // CHECK: dpct::dev_mgr::instance().select_device(ctx);
   cuCtxSetCurrent(ctx);
 
-  // CHECK: MY_SAFE_CALL((c2s::dev_mgr::instance().select_device(ctx), 0));
+  // CHECK: MY_SAFE_CALL((dpct::dev_mgr::instance().select_device(ctx), 0));
   MY_SAFE_CALL(cuCtxSetCurrent(ctx));
 
-  // CHECK: ctx2 = c2s::dev_mgr::instance().current_device_id();
+  // CHECK: ctx2 = dpct::dev_mgr::instance().current_device_id();
   cuCtxGetCurrent(&ctx2);
 
-  // CHECK: MY_SAFE_CALL((ctx2 = c2s::dev_mgr::instance().current_device_id(), 0));
+  // CHECK: MY_SAFE_CALL((ctx2 = dpct::dev_mgr::instance().current_device_id(), 0));
   MY_SAFE_CALL(cuCtxGetCurrent(&ctx2));
 
-  // CHECK: c2s::get_current_device().queues_wait_and_throw();
+  // CHECK: dpct::get_current_device().queues_wait_and_throw();
   cuCtxSynchronize();
 
-  // CHECK: MY_SAFE_CALL((c2s::get_current_device().queues_wait_and_throw(), 0));
+  // CHECK: MY_SAFE_CALL((dpct::get_current_device().queues_wait_and_throw(), 0));
   MY_SAFE_CALL(cuCtxSynchronize());
 
   // CHECK: /*

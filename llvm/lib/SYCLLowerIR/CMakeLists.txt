@@ -21,12 +21,12 @@ if (NOT TARGET LLVMGenXIntrinsics)
     set(LLVMGenXIntrinsics_GIT_TAG 8b6e209fe1269a2c6470b36dfbaa0e051d2a100f)
     
     if( INTEL_CUSTOMIZATION )
-      # for c2s builds the LLVMGenXIntrinsics_GIT_REPO is constructed from
+      # for dpct builds the LLVMGenXIntrinsics_GIT_REPO is constructed from
       # GIT_REPO_PATH and GIT_REPO_TAG set independently depending on build
       # configuration (public/embargo) and condition (building from under ICS
       # or not)
 
-      # default repo path for public c2s builds, not using ICS
+      # default repo path for public dpct builds, not using ICS
       set(LLVMGenXIntrinsics_GIT_REPO_PATH https://github.com/intel-innersource)
       set(LLVMGenXIntrinsics_GIT_REPO_NAME applications.compilers.source.vc-intrinsics.git)
       # commit a7a3efa116ae165132508f3f9a975fccb196fede

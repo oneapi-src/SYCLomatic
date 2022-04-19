@@ -1,6 +1,6 @@
 // RUN: cat %s > %T/cuda-device-api.cu
 // RUN: cd %T
-// RUN: c2s -out-root %T/cuda-device-api cuda-device-api.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct -out-root %T/cuda-device-api cuda-device-api.cu --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cuda-device-api/cuda-device-api.dp.cpp --match-full-lines cuda-device-api.cu
 
 void foo() {

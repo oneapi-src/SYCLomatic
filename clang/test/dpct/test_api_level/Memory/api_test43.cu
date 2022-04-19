@@ -1,11 +1,11 @@
-// RUN: c2s --format-range=none   --use-custom-helper=api -out-root %T/Memory/api_test43_out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none   --use-custom-helper=api -out-root %T/Memory/api_test43_out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: grep "IsCalled" %T/Memory/api_test43_out/MainSourceFiles.yaml | wc -l > %T/Memory/api_test43_out/count.txt
 // RUN: FileCheck --input-file %T/Memory/api_test43_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test43_out
 
 // CHECK: 20
 
-// TEST_FEATURE: Memory_async_c2s_free
+// TEST_FEATURE: Memory_async_dpct_free
 
 #include "cublas_v2.h"
 #include "cusolverDn.h"

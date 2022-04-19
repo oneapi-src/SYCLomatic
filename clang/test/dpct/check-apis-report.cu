@@ -1,37 +1,37 @@
 // UNSUPPORTED: -windows-
-// RUN: c2s -report-type=apis -report-file-prefix=check_apis_report -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct -report-type=apis -report-file-prefix=check_apis_report -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: cat %S/check-apis-report_csv_ref.txt > %T/check-apis-report/check_apis_report_csv_check.txt
 // RUN: cat %T/check-apis-report/check_apis_report.apis.csv >>%T/check-apis-report/check_apis_report_csv_check.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check-apis-report/check_apis_report_csv_check.txt %T/check-apis-report/check_apis_report_csv_check.txt
 
-// RUN: c2s -output-file=output_file_all.txt -report-type=apis -report-file-prefix=stdout -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct -output-file=output_file_all.txt -report-type=apis -report-file-prefix=stdout -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: cat %S/check-apis-report_outputfile_ref_all.txt > %T/check-apis-report/check_output_file_all.txt
 // RUN: cat %T/check-apis-report/output_file_all.txt >>%T/check-apis-report/check_output_file_all.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check-apis-report/check_output_file_all.txt %T/check-apis-report/check_output_file_all.txt
 
-// RUN: c2s -report-file-prefix=report -report-type=apis  -report-format=formatted -report-only  -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct -report-file-prefix=report -report-type=apis  -report-format=formatted -report-only  -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: cat %S/check-apis-report_log_ref.txt > %T/check-apis-report/check_apis_report_check.txt
 // RUN: cat %T/check-apis-report/report.apis.log >>%T/check-apis-report/check_apis_report_check.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check-apis-report/check_apis_report_check.txt %T/check-apis-report/check_apis_report_check.txt
 
-// RUN: c2s -output-file=output-file.txt -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct -output-file=output-file.txt -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: cat %S/check-apis-report_outputfile_ref.txt > %T/check-apis-report/check_output-file.txt
 // RUN: cat %T/check-apis-report/output-file.txt >>%T/check-apis-report/check_output-file.txt
 // RUN: FileCheck --match-full-lines --input-file %T/check-apis-report/check_output-file.txt %T/check-apis-report/check_output-file.txt
 
 // NOMATCH-CHECK-NOT: '{{.}}'
 
-// RUN: c2s -output-verbosity=silent  -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only  2>&1  \
+// RUN: dpct -output-verbosity=silent  -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only  2>&1  \
 // RUN: | FileCheck -check-prefix=NOMATCH-CHECK -allow-empty %s
 
 
 // FAKE-FILE-CHECK-NOT:Processing: {{(.+)/([^/]+)}}
 // FAKE-FILE-STDERR: Processing: {{(.+)/([^/]+)}}
 
-// RUN: c2s -output-verbosity=normal  -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only  2>&1  \
+// RUN: dpct -output-verbosity=normal  -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only  2>&1  \
 // RUN: | FileCheck -check-prefix=FAKE-FILE-CHECK -allow-empty %s
 
-// RUN: c2s -output-verbosity=detailed  -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only  2>&1  \
+// RUN: dpct -output-verbosity=detailed  -out-root %T/check-apis-report %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only  2>&1  \
 // RUN: | FileCheck -check-prefix=FAKE-FILE-STDERR -allow-empty %s
 
 #include <cuda_runtime.h>

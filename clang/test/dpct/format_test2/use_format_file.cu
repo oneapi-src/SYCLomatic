@@ -2,7 +2,7 @@
 // RUN: cat %s > %T/use_format_file.cu
 // RUN: echo "ColumnLimit: 50" > %T/.clang-format
 // RUN: echo "TabWidth: 4" >> %T/.clang-format
-// RUN: c2s use_format_file.cu --out-root=%T --cuda-include-path="%cuda-path/include" -- --cuda-host-only
+// RUN: dpct use_format_file.cu --out-root=%T --cuda-include-path="%cuda-path/include" -- --cuda-host-only
 // RUN: FileCheck -strict-whitespace %s --match-full-lines --input-file %T/use_format_file.dp.cpp
 #include "cuda.h"
 
@@ -21,7 +21,7 @@ float *d_A = NULL;
 //CHECK-NEXT:    rewrite this code.
 //CHECK-NEXT:    */
 //CHECK-NEXT:    int a =
-//CHECK-NEXT:        (c2s::get_default_queue()
+//CHECK-NEXT:        (dpct::get_default_queue()
 //CHECK-NEXT:             .memcpy(d_A, h_A,
 //CHECK-NEXT:                     sizeof(double) * SIZE * SIZE)
 //CHECK-NEXT:             .wait(),

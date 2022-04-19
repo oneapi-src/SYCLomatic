@@ -1,7 +1,7 @@
 // UNSUPPORTED: -linux-
 // RUN: mkdir %T/test_helpapi_stats_with_replacetext_windows
 // RUN: cd %T/test_helpapi_stats_with_replacetext_windows
-// RUN: c2s --format-range=none -out-root %T/test_helpapi_stats_with_replacetext_windows %s --cuda-include-path="%cuda-path/include"  --report-type=stats -- -x cuda --cuda-host-only > stats.txt
+// RUN: dpct --format-range=none -out-root %T/test_helpapi_stats_with_replacetext_windows %s --cuda-include-path="%cuda-path/include"  --report-type=stats -- -x cuda --cuda-host-only > stats.txt
 // RUN: echo "// CHECK: File name, LOC migrated to DPC++, LOC migrated to helper functions, LOC not needed to migrate, LOC not able to migrate" > %T/test_helpapi_stats_with_replacetext_windows/test_helpapi_stats_with_replacetext_ref.txt
 // RUN: echo "// CHECK-NEXT: {{(.+)}}\test_helpapi_stats_with_replacetext_windows.cu, 14, 16, 47, 0" >> %T/test_helpapi_stats_with_replacetext_windows/test_helpapi_stats_with_replacetext_ref.txt
 // RUN: FileCheck --match-full-lines --input-file %T/test_helpapi_stats_with_replacetext_windows/stats.txt %T/test_helpapi_stats_with_replacetext_windows/test_helpapi_stats_with_replacetext_ref.txt

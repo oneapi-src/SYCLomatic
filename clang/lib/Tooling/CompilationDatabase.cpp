@@ -103,7 +103,7 @@ findCompilationDatabaseFromDirectory(StringRef Directory,
         CompilationDatabase::loadFromDirectory(Directory, LoadErrorMessage);
     if (llvm::sys::fs::exists(Directory + "/compile_commands.json") && !DB) {
       ErrCode = CannotParseDatabase; // map to MigrationErrorCannotParseDatabase
-                                     // in C2S
+                                     // in DPCT
       ErrorMessage = LoadErrorMessage;
       return nullptr;
     }
@@ -179,7 +179,7 @@ CompilationDatabase::autoDetectFromDirectory(
 
   if (!DB) {
     if (ErrCode == CannotParseDatabase
-        /*map to MigrationErrorCannotParseDatabase in C2S*/) {
+        /*map to MigrationErrorCannotParseDatabase in DPCT*/) {
       ErrorMessage =
           ErrorMessage +
           "Compilation database compile_commands.json from directory \"" +

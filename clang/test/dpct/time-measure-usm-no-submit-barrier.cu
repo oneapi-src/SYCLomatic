@@ -1,4 +1,4 @@
-// RUN: c2s --no-dpcpp-extensions=enqueued_barriers --format-range=none -out-root %T/time-measure-usm-no-submit-barrier %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --no-dpcpp-extensions=enqueued_barriers --format-range=none -out-root %T/time-measure-usm-no-submit-barrier %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/time-measure-usm-no-submit-barrier/time-measure-usm-no-submit-barrier.dp.cpp --match-full-lines %s
 #include <stdio.h>
 
@@ -167,7 +167,7 @@ void foo()
             {
 // CHECK:                 DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:                 */
-// CHECK-NEXT:                q_ct1.parallel_for<c2s_kernel_name<class readTexels_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                q_ct1.parallel_for<dpct_kernel_name<class readTexels_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                      sycl::nd_range<3>(gridSize * blockSize, blockSize), 
 // CHECK-NEXT:                      [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                        readTexels(kernelRepFactor, d_out, width);
@@ -178,7 +178,7 @@ void foo()
 
 // CHECK:             DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:            */
-// CHECK-NEXT:            c2s::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
@@ -196,7 +196,7 @@ void foo()
 
 // CHECK:                DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:                */
-// CHECK-NEXT:                q_ct1.parallel_for<c2s_kernel_name<class readTexelsFoo1_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                q_ct1.parallel_for<dpct_kernel_name<class readTexelsFoo1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                      sycl::nd_range<3>(gridSize * blockSize, blockSize), 
 // CHECK-NEXT:                      [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                        readTexelsFoo1(kernelRepFactor, d_out);
@@ -207,7 +207,7 @@ void foo()
 
 // CHECK:             DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:            */
-// CHECK-NEXT:            c2s::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
@@ -227,7 +227,7 @@ void foo()
 
 // CHECK:                DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:                */
-// CHECK-NEXT:                q_ct1.parallel_for<c2s_kernel_name<class readTexelsFoo2_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:                q_ct1.parallel_for<dpct_kernel_name<class readTexelsFoo2_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                      sycl::nd_range<3>(gridSize * blockSize, blockSize), 
 // CHECK-NEXT:                      [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                        readTexelsFoo2(kernelRepFactor, d_out, width, height);
@@ -238,7 +238,7 @@ void foo()
 
 // CHECK:             DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
 // CHECK-NEXT:            */
-// CHECK-NEXT:            c2s::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
             cudaEventRecord(stop, 0);
@@ -340,7 +340,7 @@ void RunTest()
         SAFE_CALL(cudaEventRecord(start, 0));
         for (int j = 0; j < iters; j++)
         {
-// CHECK:            q_ct1.parallel_for<c2s_kernel_name<class reduce_{{[a-z0-9]+}}, T, c2s_kernel_scalar<256>>>(
+// CHECK:            q_ct1.parallel_for<dpct_kernel_name<class reduce_{{[a-z0-9]+}}, T, dpct_kernel_scalar<256>>>(
 // CHECK-NEXT:                  sycl::nd_range<3>(sycl::range<3>(1, 1, num_blocks) * sycl::range<3>(1, 1, num_threads), sycl::range<3>(1, 1, num_threads)), 
 // CHECK-NEXT:                  [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                    reduce<T, 256>(d_idata, d_block_sums, size);
@@ -397,7 +397,7 @@ void test_1999(void* ref_image, void* cur_image,
     dim3 foo_kernel_1_threads_in_block;
     dim3 foo_kernel_1_blocks_in_grid;
 
-// CHECK:    sad_calc_stop = q_ct1.parallel_for<c2s_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
+// CHECK:    sad_calc_stop = q_ct1.parallel_for<dpct_kernel_name<class foo_kernel_1_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_1_blocks_in_grid * foo_kernel_1_threads_in_block, foo_kernel_1_threads_in_block), 
 // CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:            foo_kernel_1(d_sads, d_cur_image, image_width_macroblocks, image_height_macroblocks, imgRef);
@@ -423,7 +423,7 @@ void test_1999(void* ref_image, void* cur_image,
     dim3 foo_kernel_2_threads_in_block;
     dim3 foo_kernel_2_blocks_in_grid;
 
-// CHECK:    sad_calc_8_stop = q_ct1.parallel_for<c2s_kernel_name<class foo_kernel_2_{{[a-z0-9]+}}>>(
+// CHECK:    sad_calc_8_stop = q_ct1.parallel_for<dpct_kernel_name<class foo_kernel_2_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_2_blocks_in_grid * foo_kernel_2_threads_in_block, foo_kernel_2_threads_in_block), 
 // CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:            foo_kernel_2(d_sads, image_width_macroblocks, image_height_macroblocks);
@@ -447,7 +447,7 @@ void test_1999(void* ref_image, void* cur_image,
     dim3 foo_kernel_3_threads_in_block;
     dim3 foo_kernel_3_blocks_in_grid;
 
-// CHECK:    sad_calc_16_stop = q_ct1.parallel_for<c2s_kernel_name<class foo_kernel_3_{{[a-z0-9]+}}>>(
+// CHECK:    sad_calc_16_stop = q_ct1.parallel_for<dpct_kernel_name<class foo_kernel_3_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:          sycl::nd_range<3>(foo_kernel_3_blocks_in_grid * foo_kernel_3_threads_in_block, foo_kernel_3_threads_in_block), 
 // CHECK-NEXT:          [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:            foo_kernel_3(d_sads, image_width_macroblocks, image_height_macroblocks);

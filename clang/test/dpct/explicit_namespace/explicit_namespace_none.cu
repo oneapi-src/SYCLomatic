@@ -1,11 +1,11 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: c2s --format-range=none -in-root %S -out-root %T/explicit_namespace_none %S/explicit_namespace_none.cu --cuda-include-path="%cuda-path/include" --use-explicit-namespace=none --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
+// RUN: dpct --format-range=none -in-root %S -out-root %T/explicit_namespace_none %S/explicit_namespace_none.cu --cuda-include-path="%cuda-path/include" --use-explicit-namespace=none --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/explicit_namespace_none/explicit_namespace_none.dp.cpp --match-full-lines %s
 
 // CHECK: #include <CL/sycl.hpp>
-// CHECK-NEXT: #include <c2s/c2s.hpp>
-// CHECK-NEXT: using namespace c2s;
+// CHECK-NEXT: #include <dpct/dpct.hpp>
+// CHECK-NEXT: using namespace dpct;
 // CHECK-NEXT: using namespace sycl;
 #include <cmath>
 #include <cuda_runtime.h>
@@ -30,7 +30,7 @@ __global__ void kernel() {
 }
 
 void foo() {
-// CHECK:   get_default_queue().parallel_for<c2s_kernel_name<class kernel_{{[a-f0-9]+}}>>(
+// CHECK:   get_default_queue().parallel_for<dpct_kernel_name<class kernel_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:         nd_range<3>(range<3>(1, 1, ceil(2.3)), range<3>(1, 1, 1)),
 // CHECK-NEXT:         [=](nd_item<3> item_{{[0-9a-z]+}}) {
 // CHECK-NEXT:           kernel();
@@ -45,7 +45,7 @@ __device__ float fx[2], fy[num_elements][4 * num_elements];
 const int size = 64;
 __device__ float tmp[size];
 // CHECK: void kernel2(float *out, nd_item<3> [[ITEM:item_ct1]], int *al, float *fx,
-// CHECK-NEXT:              c2s::accessor<float, global, 2> fy, float *tmp) {
+// CHECK-NEXT:              dpct::accessor<float, global, 2> fy, float *tmp) {
 // CHECK-NEXT:   out[{{.*}}[[ITEM]].get_local_id(2)] += *al;
 // CHECK-NEXT:   fx[{{.*}}[[ITEM]].get_local_id(2)] = fy[{{.*}}[[ITEM]].get_local_id(2)][{{.*}}[[ITEM]].get_local_id(2)];
 // CHECK-NEXT:   tmp[1] = 1.0f;
@@ -97,6 +97,6 @@ int main() {
   thrust::copy(mapsp1T, mapsp1T + numsH, mapspkeyT);
 // CHECK:  iota(oneapi::dpl::execution::make_device_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), mapspvalT, mapspvalT + numsH);
   thrust::sequence(mapspvalT, mapspvalT + numsH);
-// CHECK:  c2s::stable_sort(oneapi::dpl::execution::make_device_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), mapspkeyT, mapspkeyT + numsH, mapspvalT);
+// CHECK:  dpct::stable_sort(oneapi::dpl::execution::make_device_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), mapspkeyT, mapspkeyT + numsH, mapspvalT);
   thrust::stable_sort_by_key(mapspkeyT, mapspkeyT + numsH, mapspvalT);
 }

@@ -1,7 +1,7 @@
 #include <cublas_v2.h>
 #include <curand.h>
 #include <cuda_runtime.h>
-// CHECK: #define ATOMIC_UPDATE( x ) c2s::atomic_fetch_add( &x, (unsigned int)1 );
+// CHECK: #define ATOMIC_UPDATE( x ) dpct::atomic_fetch_add( &x, (unsigned int)1 );
 #define ATOMIC_UPDATE( x ) atomicAdd( &x, 1 );
 
 // CHECK: int global_id(sycl::nd_item<3> item_ct1);
@@ -29,13 +29,13 @@ void sgemm() {
   float alpha_S = 1.0f;
   float beta_S = 0.0f;
   // CHECK: {
-  // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(d_A_S);
-  // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(d_B_S);
-  // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(d_C_S);
+  // CHECK-NEXT: auto d_A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_A_S);
+  // CHECK-NEXT: auto d_B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_B_S);
+  // CHECK-NEXT: auto d_C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_C_S);
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, c2s::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, c2s::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N), 0);
+  // CHECK-NEXT: status = (oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, N, N, N, dpct::get_value(&alpha_S, *handle), d_A_S_buf_ct{{[0-9]+}}, N, d_B_S_buf_ct{{[0-9]+}}, N, dpct::get_value(&beta_S, *handle), d_C_S_buf_ct{{[0-9]+}}, N), 0);
   // CHECK-NEXT: }
   status = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha_S, d_A_S, N, d_B_S, N, &beta_S, d_C_S, N);
 }
@@ -43,13 +43,13 @@ void sgemm() {
 // CHECK: void randomGen(){
 // CHECK-NEXT:   oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
 // CHECK-NEXT:   oneapi::mkl::rng::philox4x32x10* rng;
-// CHECK-NEXT:   rng = new oneapi::mkl::rng::philox4x32x10(c2s::get_default_queue(), 1337ull);
+// CHECK-NEXT:   rng = new oneapi::mkl::rng::philox4x32x10(dpct::get_default_queue(), 1337ull);
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed, because the function call is redundant in DPC++.
 // CHECK-NEXT:   */
 // CHECK-NEXT:   float *d_data;
 // CHECK-NEXT:   {
-// CHECK-NEXT:   auto d_data_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(d_data);
+// CHECK-NEXT:   auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
 // CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 100*100, d_data_buf_ct4);
 // CHECK-NEXT:   }
 // CHECK-NEXT: }

@@ -1,5 +1,5 @@
 // UNSUPPORTED: -windows-
-// RUN: c2s --format-range=none -out-root %T/template-deduce %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
+// RUN: dpct --format-range=none -out-root %T/template-deduce %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck %s --match-full-lines --input-file %T/template-deduce/template-deduce.dp.cpp
 
 #include <complex>
@@ -131,7 +131,7 @@ __shared__ T2 v2;
 
 template<typename T3, typename T4>
 void foo() {
-  // CHECK: c2s::device_ext &dev_ct1 = c2s::get_current_device();
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
@@ -410,7 +410,7 @@ class MyClass{};
 // std::vector has a default arg class Allocator:
 // template<class T, class Allocator = std::allocator<T>> class vector;
 // When deducing std::vector<MyClass<T, T>, std::allocator<MyClass<T, T>>>
-// from std::vector<T>, C2S should use the #arg of std::vector<T>.
+// from std::vector<T>, DPCT should use the #arg of std::vector<T>.
 template<class T>
 __device__ __host__ void foo2(
   std::vector<MyClass<T, T>> t){}
@@ -428,7 +428,7 @@ __global__ void foo4(){
 // Make sure stop deduction when the template names are different
 // MyClass2 inheritates MyClass, but AST does not show the mapping of
 // template args between MyClass and MyClass2.
-// C2S should stop the deduction to prevent potential issues.
+// DPCT should stop the deduction to prevent potential issues.
 template<class T, T N>
 class MyClass2 : public MyClass<T, float>{};
 
@@ -448,7 +448,7 @@ __global__ void foo7(){
 // Make sure no assert when there are alias template deduction
 // using MakeMyClass3 = MyClass3<T, 5> will create an alias template
 // since MakeMyClass3 takes only 1 arg and MyClass3 takes 2 args,
-// C2S needs to perform getAliasedType() before deduction.
+// DPCT needs to perform getAliasedType() before deduction.
 // Calling foo9<<<1,1,0>>>(m1) will trigger the deduction without typeloc
 // Calling foo8(input) will trigger the deduction with typeloc
 template<class T1, size_t T2>
@@ -467,7 +467,7 @@ __global__ void foo9(MakeMyClass3<scalar_t> input){
 
 //CHECK: int foo10(){
 //CHECK-NEXT:   MakeMyClass3<int> m1;
-//CHECK-NEXT:   c2s::get_default_queue().parallel_for(
+//CHECK-NEXT:   dpct::get_default_queue().parallel_for(
 //CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:         foo9(m1);
@@ -486,7 +486,7 @@ int foo10(){
 // Make sure no assert when the parmType of the deduction has parameter pack
 // template< class... Types > class tuple;
 // In the following case, 5 args cannot used to deduce 1 parmameter,
-// c2s should stop deducing.
+// dpct should stop deducing.
 template<class... T>
 __global__ void foo11(std::tuple<T...> t){}
 
