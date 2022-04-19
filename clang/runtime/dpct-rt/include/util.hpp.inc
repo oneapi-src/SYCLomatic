@@ -462,6 +462,67 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|cmul|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// Computes the multiplication of two complex numbers.
+/// \tparam T Complex element type
+/// \param [in] x The first input complex number
+/// \param [in] y The second input complex number
+/// \returns The result
+template <typename T>
+sycl::vec<T, 2> cmul(sycl::vec<T, 2> x, sycl::vec<T, 2> y) {
+  std::complex<T> t1(x[0], x[1]), t2(y[0], y[1]);
+  t1 = t1 * t2;
+  return sycl::vec<T, 2>(t1.real(), t1.imag());
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|cdiv|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// Computes the division of two complex numbers.
+/// \tparam T Complex element type
+/// \param [in] x The first input complex number
+/// \param [in] y The second input complex number
+/// \returns The result
+template <typename T>
+sycl::vec<T, 2> cdiv(sycl::vec<T, 2> x, sycl::vec<T, 2> y) {
+  std::complex<T> t1(x[0], x[1]), t2(y[0], y[1]);
+  t1 = t1 / t2;
+  return sycl::vec<T, 2>(t1.real(), t1.imag());
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|cabs|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// Computes the magnitude of a complex number.
+/// \tparam T Complex element type
+/// \param [in] x The input complex number
+/// \returns The result
+template <typename T>
+T cabs(sycl::vec<T, 2> x) {
+  std::complex<T> t(x[0], x[1]);
+  return std::abs(t);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|conj|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// Computes the complex conjugate of a complex number.
+/// \tparam T Complex element type
+/// \param [in] x The input complex number
+/// \returns The result
+template <typename T>
+sycl::vec<T, 2> conj(sycl::vec<T, 2> x) {
+  std::complex<T> t(x[0], x[1]);
+  t = std::conj(t);
+  return sycl::vec<T, 2>(t.real(), t.imag());
+}
+// DPCT_LABEL_END
+
 namespace experimental {
 // DPCT_LABEL_BEGIN|nd_range_barrier|dpct::experimental
 // DPCT_DEPENDENCY_EMPTY

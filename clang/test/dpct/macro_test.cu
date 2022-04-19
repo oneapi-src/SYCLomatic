@@ -1022,7 +1022,7 @@ int a = cublasSetVector(10, sizeof(float), h_a, 11111, d_C_S, 11111);
 return 0;
 }
 
-//     CHECK:#define AAAAA_Z_MAKE(r, i) sycl::double2(0.0, 0.0)
+//CHECK:#define AAAAA_Z_MAKE(r, i) sycl::double2(r, i)
 //CHECK-NEXT:#define AAAAA_Z_ZERO AAAAA_Z_MAKE(0.0, 0.0)
 //CHECK-NEXT:void aaaaa_zprint_vector() {
 //CHECK-NEXT:  sycl::double2 z_zero = AAAAA_Z_ZERO;

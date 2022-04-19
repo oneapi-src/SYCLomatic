@@ -489,6 +489,13 @@ void print(StreamT &Stream, ExprAnalysis &EA, const Expr *E) {
 }
 
 template <class StreamT>
+void print(StreamT &Stream,
+           std::pair<const CallExpr *, const Expr *> P) {
+  ArgumentAnalysis AA;
+  print(Stream, AA, P);
+}
+
+template <class StreamT>
 void print(StreamT &Stream, ArgumentAnalysis &AA,
            std::pair<const CallExpr *, const Expr *> P) {
   AA.setCallSpelling(P.first);
@@ -990,14 +997,14 @@ public:
   }
 };
 
-template <class LValueT, class RValueT>
-class AssignExprRewriter
-    : public PrinterRewriter<AssignExprPrinter<LValueT, RValueT>> {
+template <BinaryOperatorKind BO, class LValueT, class RValueT>
+class BinaryOpRewriter
+    : public PrinterRewriter<BinaryOperatorPrinter<BO, LValueT, RValueT>> {
 public:
-  AssignExprRewriter(const CallExpr *C, StringRef Source,
+  BinaryOpRewriter(const CallExpr *C, StringRef Source,
                      const std::function<LValueT(const CallExpr *)> &LCreator,
                      const std::function<RValueT(const CallExpr *)> &RCreator)
-      : PrinterRewriter<AssignExprPrinter<LValueT, RValueT>>(
+      : PrinterRewriter<BinaryOperatorPrinter<BO, LValueT, RValueT>>(
             C, Source, LCreator(C), RCreator(C)) {}
 };
 

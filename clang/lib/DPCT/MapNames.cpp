@@ -172,6 +172,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaDataType", "int"},
       {"cublasDataType_t", "int"},
       {"cuComplex", getClNamespace() + "float2"},
+      {"cuFloatComplex", getClNamespace() + "float2"},
       {"cuDoubleComplex", getClNamespace() + "double2"},
       {"cublasFillMode_t", "oneapi::mkl::uplo"},
       {"cublasDiagType_t", "oneapi::mkl::diag"},

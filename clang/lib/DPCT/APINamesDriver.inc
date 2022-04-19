@@ -86,4 +86,3 @@ FEATURE_REQUEST_FACTORY(
                                     CAST(ARG("const void *"), ARG(2))),
                                 false,
                                 ARG(1)))))
-
