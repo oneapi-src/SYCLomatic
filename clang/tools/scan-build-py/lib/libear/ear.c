@@ -1165,8 +1165,13 @@ char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
     perror("bear: strcpy overflow, path to c2s is too long.\n");
     exit(EXIT_FAILURE);
   }
-  strcpy(file_path + strlen(file_path) - strlen("bin/c2s"),
-         "lib/libear/intercept-stub");
+
+  char *dest = file_path + strlen(file_path) - strlen("bin/c2s");
+  strcpy(dest, "share/c2s/lib/libear/intercept-stub");
+  if (access(file_path, F_OK) != 0) {
+    // file_path does not exists
+    strcpy(dest, "lib/libear/intercept-stub");
+  }
 
   // To malloc required size of physical memory it really needs may fail in
   // some case, so malloc 4K bytes(one physical page) instead.
