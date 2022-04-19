@@ -235,7 +235,11 @@ set_target_properties(clang-resource-headers PROPERTIES
   FOLDER "Misc"
   RUNTIME_OUTPUT_DIRECTORY "${output_dir}")
 
-set_header_install_dir()
+if(INTEL_DEPLOY_UNIFIED_LAYOUT)
+  set(header_install_dir share/c2s/lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION}/include)
+else()
+  set(header_install_dir lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION}/include)
+endif()
 
 install(
   FILES ${files} ${generated_files}

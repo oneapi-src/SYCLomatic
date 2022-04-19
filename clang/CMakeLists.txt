@@ -534,14 +534,7 @@ list(APPEND LLVM_COMMON_DEPENDS clang-tablegen-targets)
 if(LLVM_ENABLE_MODULES)
   list(APPEND LLVM_COMMON_DEPENDS intrinsics_gen)
 endif()
-# INTEL_CUSTOMIZATION
-list(INSERT CMAKE_MODULE_PATH 0
-  "${CMAKE_CURRENT_SOURCE_DIR}/lib/C2S/cmake"
-  "${CMAKE_CURRENT_SOURCE_DIR}/tools/c2s/cmake"
-  )
-include(C2S)
-include(libC2S)
-# end INTEL_CUSTOMIZATION
+
 add_subdirectory(lib)
 add_subdirectory(tools)
 add_subdirectory(runtime)
@@ -937,10 +930,28 @@ configure_file(
   ${CLANG_SOURCE_DIR}/include/clang/Config/config.h.cmake
   ${CLANG_BINARY_DIR}/include/clang/Config/config.h)
 
-# INTEL_CUSTOMIZATION
 if (NOT CLANG_BUILT_STANDALONE)
-  set_c2s_package()
+  if(WIN32)
+    list(APPEND C2S_RUN
+      install-c2s-headers
+      install-clang-resource-headers
+      install-c2s
+      install-c2s-vars
+      install-c2s-syscheck
+      install-c2s-opt-rules
+      )
+  else()
+    list(APPEND C2S_RUN
+      install-c2s-intercept-build
+      install-c2s-headers
+      install-clang-resource-headers
+      install-c2s
+      install-c2s-vars
+      install-c2s-syscheck
+      install-c2s-modulefiles
+      install-c2s-opt-rules
+      )
+  endif()
 endif()
 add_custom_target(install-c2s-tool DEPENDS ${C2S_RUN})
 set_target_properties(install-c2s-tool PROPERTIES FOLDER "install c2s tool")
-# end INTEL_CUSTOMIZATION
