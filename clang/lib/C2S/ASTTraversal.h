@@ -1967,12 +1967,6 @@ private:
   void processWarpLevelMemberCall(const CXXMemberCallExpr *MC);
 };
 
-class ComplexAPIRule : public NamedMigrationRule<ComplexAPIRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
 #define REGISTER_RULE(TYPE_NAME)                                               \
   RuleRegister<TYPE_NAME> g_##TYPE_NAME(&TYPE_NAME::ID, #TYPE_NAME);
 
