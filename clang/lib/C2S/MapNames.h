@@ -355,6 +355,9 @@ public:
       MaySyncBLASFuncWithMultiArgs;
 
   static std::map<std::string, MapNames::BLASGemmExTypeInfo>
+      BLASGemmExTypeInfoMap;
+
+  static std::map<std::string, MapNames::BLASGemmExTypeInfo>
       BLASTGemmExTypeInfoMap;
 
   static const MapTy SOLVEREnumsMap;
@@ -371,8 +374,6 @@ public:
 
   static const std::map<std::string, std::vector<unsigned int>>
       FFTPlanAPINeedParenIdxMap;
-
-  static MapTy BLASComputingAPIWithRewriter;
 
   inline static const std::string &findReplacedName(const MapTy &Map,
                                                     const std::string &Name) {

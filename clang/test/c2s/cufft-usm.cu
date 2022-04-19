@@ -2096,10 +2096,7 @@ void foo() {
   cufftGetProperty(PATCH_LEVEL, &prop3);
 
   int ver;
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: int err = (c2s::mkl_get_version(c2s::version_field::major, &ver), 0);
-  int err = cufftGetVersion(&ver);
+  //CHECK:c2s::mkl_get_version(c2s::version_field::major, &ver);
+  cufftGetVersion(&ver);
 }
 

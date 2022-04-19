@@ -39,17 +39,6 @@ int foo2(cudaDataType DT) {
     return EXIT_FAILURE;
   }
 
-  //CHECK: int Atomicsmode;
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetAtomicsMode was removed because the function call is redundant in DPC++.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetAtomicsMode was removed because the function call is redundant in DPC++.
-  //CHECK-NEXT: */
-  cublasAtomicsMode_t Atomicsmode;
-  cublasGetAtomicsMode(handle, &Atomicsmode);
-  cublasSetAtomicsMode(handle, Atomicsmode);
-
   //CHECK: int mode = 0;
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetPointerMode was removed because the function call is redundant in DPC++.
@@ -129,16 +118,51 @@ int foo2(cudaDataType DT) {
 
   void *alpha, *beta, *A, *B, *C;
 
-  // CHECK: /*
+  // CHECK: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = c2s::get_buffer<sycl::half>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = c2s::get_buffer<sycl::half>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = c2s::get_buffer<sycl::half>(C);
+  // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: status = (c2s::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, c2s::library_data_t::real_half, N, B, c2s::library_data_t::real_half, N, beta, C, c2s::library_data_t::real_half, N, c2s::library_data_t::real_half), 0);
-  // CHECK-NEXT: c2s::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, c2s::library_data_t::real_half, N, B, c2s::library_data_t::real_half, N, beta, C, c2s::library_data_t::real_half, N, c2s::library_data_t::real_float);
-  // CHECK-NEXT: c2s::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, c2s::library_data_t::real_half, N, B, c2s::library_data_t::real_half, N, beta, C, c2s::library_data_t::real_float, N, c2s::library_data_t::real_float);
-  // CHECK-NEXT: c2s::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, c2s::library_data_t::real_float, N, B, c2s::library_data_t::real_float, N, beta, C, c2s::library_data_t::real_float, N, c2s::library_data_t::real_float);
-  // CHECK-NEXT: c2s::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, c2s::library_data_t::real_double, N, B, c2s::library_data_t::real_double, N, beta, C, c2s::library_data_t::real_double, N, c2s::library_data_t::real_double);
-  // CHECK-NEXT: c2s::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, c2s::library_data_t::complex_float, N, B, c2s::library_data_t::complex_float, N, beta, C, c2s::library_data_t::complex_float, N, c2s::library_data_t::complex_float);
-  // CHECK-NEXT: c2s::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, c2s::library_data_t::complex_double, N, B, c2s::library_data_t::complex_double, N, beta, C, c2s::library_data_t::complex_double, N, c2s::library_data_t::complex_double);
+  // CHECK-NEXT: status = (oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, c2s::get_value((sycl::half*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, c2s::get_value((sycl::half*)beta, *handle), C_buf_ct{{[0-9]+}}, N), 0);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = c2s::get_buffer<sycl::half>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = c2s::get_buffer<sycl::half>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = c2s::get_buffer<sycl::half>(C);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, sycl::vec<float, 1>{c2s::get_value((float*)alpha, *handle)}.convert<sycl::half, sycl::rounding_mode::automatic>()[0], A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, sycl::vec<float, 1>{c2s::get_value((float*)beta, *handle)}.convert<sycl::half, sycl::rounding_mode::automatic>()[0], C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = c2s::get_buffer<sycl::half>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = c2s::get_buffer<sycl::half>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(C);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, c2s::get_value((float*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, c2s::get_value((float*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(C);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, c2s::get_value((float*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, c2s::get_value((float*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(C);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, c2s::get_value((double*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, c2s::get_value((double*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(C);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, c2s::get_value((sycl::float2*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, c2s::get_value((sycl::float2*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
+  // CHECK-NEXT: {
+  // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(A);
+  // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(B);
+  // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(C);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, c2s::get_value((sycl::double2*)alpha, *handle), A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, c2s::get_value((sycl::double2*)beta, *handle), C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: }
   status = cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_16F, N, B, CUDA_R_16F, N, beta, C, CUDA_R_16F, N, CUDA_R_16F, CUBLAS_GEMM_ALGO0);
   cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_16F, N, B, CUDA_R_16F, N, beta, C, CUDA_R_16F, N, CUDA_R_32F, CUBLAS_GEMM_ALGO0);
   cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_16F, N, B, CUDA_R_16F, N, beta, C, CUDA_R_32F, N, CUDA_R_32F, CUBLAS_GEMM_ALGO0);
@@ -147,9 +171,15 @@ int foo2(cudaDataType DT) {
   cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_C_32F, N, B, CUDA_C_32F, N, beta, C, CUDA_C_32F, N, CUDA_C_32F, CUBLAS_GEMM_ALGO0);
   cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_C_64F, N, B, CUDA_C_64F, N, beta, C, CUDA_C_64F, N, CUDA_C_64F, CUBLAS_GEMM_ALGO0);
 
-  // CHECK: c2s::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, c2s::library_data_t::real_int8, N, B, c2s::library_data_t::real_int8, N, beta, C, c2s::library_data_t::real_int32, N, c2s::library_data_t::real_int32);
-  // CHECK-NEXT: c2s::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, DT, N, B, DT, N, beta, C, DT, N, DT);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1046:{{[0-9]+}}: The cublasGemmEx was not migrated, because the combination of matrix data type and scalar type is unsupported. You need to adjust the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cublasGemmEx(handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, 3, N, B, 3, N, beta, C, 10, N, 10, 0);
   cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, CUDA_R_8I, N, B, CUDA_R_8I, N, beta, C, CUDA_R_32I, N, CUDA_R_32I, CUBLAS_GEMM_ALGO0);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1046:{{[0-9]+}}: The cublasGemmEx was not migrated, because not all values of parameters could be evaluated in migration. You need to adjust the code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cublasGemmEx(handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha, A, DT, N, B, DT, N, beta, C, DT, N, DT, 0);
   cublasGemmEx(handle, CUBLAS_OP_C, CUBLAS_OP_C, N, N, N, alpha, A, DT, N, B, DT, N, beta, C, DT, N, DT, CUBLAS_GEMM_ALGO0);
 
   float2 alpha_C, beta_C;
@@ -169,7 +199,7 @@ int foo2(cudaDataType DT) {
   // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(A);
   // CHECK-NEXT: auto B_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(B);
   // CHECK-NEXT: auto C_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(C);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha_S, A_buf_ct{{[0-9]+}}, N, B_buf_ct{{[0-9]+}}, N, beta_S, C_buf_ct{{[0-9]+}}, N);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::gemm(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::conjtrans, N, N, N, alpha_S, A_buf_ct34, N, B_buf_ct35, N, beta_S, C_buf_ct36, N);
   // CHECK-NEXT: }
   // CHECK-NEXT: {
   // CHECK-NEXT: auto A_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(A);
@@ -251,46 +281,7 @@ int foo2(cudaDataType DT) {
 
 void foo3(cublasHandle_t handle) {
   int ver;
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: int err = (c2s::mkl_get_version(c2s::version_field::major, &ver), 0);
-  int err = cublasGetVersion(handle, &ver);
+  //CHECK:c2s::mkl_get_version(c2s::version_field::major, &ver);
+  cublasGetVersion(handle, &ver);
 }
 
-void foo4() {
-  cublasHandle_t handle;
-  float   *a_f, *b_f, *x_f, *c_f, *alpha_f, *beta_f;
-  double  *a_d, *b_d, *x_d, *c_d, *alpha_d, *beta_d;
-  float2  *a_c, *b_c, *x_c, *c_c, *alpha_c, *beta_c;
-  double2 *a_z, *b_z, *x_z, *c_z, *alpha_z, *beta_z;
-
-  //CHECK:{
-  //CHECK-NEXT:auto a_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(a_f);
-  //CHECK-NEXT:auto x_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(x_f);
-  //CHECK-NEXT:auto c_f_buf_ct{{[0-9]+}} = c2s::get_buffer<float>(c_f);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, 2, 2, a_f_buf_ct{{[0-9]+}}, 2, 0, x_f_buf_ct{{[0-9]+}}, 1, 0, c_f_buf_ct{{[0-9]+}}, 2, 0, 1);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:{
-  //CHECK-NEXT:auto a_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(a_d);
-  //CHECK-NEXT:auto x_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(x_d);
-  //CHECK-NEXT:auto c_d_buf_ct{{[0-9]+}} = c2s::get_buffer<double>(c_d);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, 2, 2, a_d_buf_ct{{[0-9]+}}, 2, 0, x_d_buf_ct{{[0-9]+}}, 1, 0, c_d_buf_ct{{[0-9]+}}, 2, 0, 1);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:{
-  //CHECK-NEXT:auto a_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(a_c);
-  //CHECK-NEXT:auto x_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(x_c);
-  //CHECK-NEXT:auto c_c_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<float>>(c_c);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, 2, 2, a_c_buf_ct{{[0-9]+}}, 2, 0, x_c_buf_ct{{[0-9]+}}, 1, 0, c_c_buf_ct{{[0-9]+}}, 2, 0, 1);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:{
-  //CHECK-NEXT:auto a_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(a_z);
-  //CHECK-NEXT:auto x_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(x_z);
-  //CHECK-NEXT:auto c_z_buf_ct{{[0-9]+}} = c2s::get_buffer<std::complex<double>>(c_z);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, 2, 2, a_z_buf_ct{{[0-9]+}}, 2, 0, x_z_buf_ct{{[0-9]+}}, 1, 0, c_z_buf_ct{{[0-9]+}}, 2, 0, 1);
-  //CHECK-NEXT:}
-  cublasSdgmm(handle, CUBLAS_SIDE_LEFT, 2, 2, a_f, 2, x_f, 1, c_f, 2);
-  cublasDdgmm(handle, CUBLAS_SIDE_LEFT, 2, 2, a_d, 2, x_d, 1, c_d, 2);
-  cublasCdgmm(handle, CUBLAS_SIDE_LEFT, 2, 2, a_c, 2, x_c, 1, c_c, 2);
-  cublasZdgmm(handle, CUBLAS_SIDE_LEFT, 2, 2, a_z, 2, x_z, 1, c_z, 2);
-}

@@ -14,7 +14,6 @@
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "Utility.h"
-#include "BLASAPIMigration.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
 #include "clang/Basic/LangOptions.h"
@@ -1176,13 +1175,6 @@ std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(
   };
 }
 
-std::function<BLASEnumExpr(const CallExpr *)>
-makeBLASEnumCallArgCreator(unsigned Idx, BLASEnumExpr::BLASEnumType BET) {
-  return [=](const CallExpr *C) -> BLASEnumExpr {
-    return BLASEnumExpr::create(C->getArg(Idx), BET);
-  };
-}
-
 std::function<const Expr *(const CallExpr *)> makeCallArgCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> const Expr * { return C->getArg(Idx); };
 }
@@ -2257,8 +2249,6 @@ public:
 #define DEREF(x) makeDerefExprCreator(x)
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
-#define BLAS_ENUM_ARG(x, BLAS_ENUM_TYPE)                                       \
-  makeBLASEnumCallArgCreator(x, BLAS_ENUM_TYPE)
 #define EXTENDSTR(idx, str) makeExtendStr(idx, str)
 #define QUEUESTR makeQueueStr()
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)

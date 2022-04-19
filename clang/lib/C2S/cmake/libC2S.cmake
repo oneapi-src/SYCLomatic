@@ -32,8 +32,6 @@ macro(build_lib_c2s)
     Homoglyph.cpp
     MisleadingBidirectional.cpp
     BarrierFenceSpaceAnalyzer.cpp
-    BLASAPIMigration.cpp
-    FFTAPIMigration.cpp
 
     DEPENDS
     ClangDriverOptions
