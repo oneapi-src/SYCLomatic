@@ -31,11 +31,51 @@ macro(install_intercept_build)
 endmacro()
 
 macro(install_c2s)
+  if(UNIX)
+    set(LIBCURL ${CMAKE_SOURCE_DIR}/../clang/lib/C2S/libcurl/lib/linux/libcurl.a)
+  else()
+    set(LIBCURL ${CMAKE_SOURCE_DIR}/../clang/lib/C2S/libcurl/lib/win/libcurl_a.lib)
+  endif()
+
   target_link_libraries(c2s
     PRIVATE
-    C2S)
+    C2S
+    ${LIBCURL})
 
   add_clang_symlink(dpct c2s)
+
+  if(UNIX)
+    set(c2s_vars_script vars.sh)
+    set(c2s_syscheck_script sys_check.sh)
+    set(c2s_modulefiles_script dpct)
+  else()
+    set(c2s_vars_script vars.bat)
+  endif()
+
+  install(FILES ${c2s_vars_script}
+          COMPONENT c2s-vars
+          PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+          DESTINATION ./env)
+  if(UNIX)
+    install(FILES ${c2s_syscheck_script}
+            COMPONENT c2s-syscheck
+            PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+            DESTINATION ./sys_check)
+  endif()
+  install(FILES ${c2s_modulefiles_script}
+          COMPONENT c2s-modulefiles
+          PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
+          DESTINATION ./modulefiles)
+
+  if (NOT CMAKE_CONFIGURATION_TYPES)
+    add_llvm_install_targets(install-c2s-vars COMPONENT c2s-vars)
+  endif()
+  if (NOT CMAKE_CONFIGURATION_TYPES)
+    add_llvm_install_targets(install-c2s-syscheck COMPONENT c2s-syscheck)
+  endif()
+  if (NOT CMAKE_CONFIGURATION_TYPES)
+    add_llvm_install_targets(install-c2s-modulefiles COMPONENT c2s-modulefiles)
+  endif()
 endmacro()
 
 macro(install_c2s_rule_files)
@@ -55,6 +95,8 @@ macro(set_c2s_package)
       install-c2s-headers
       install-clang-resource-headers
       install-c2s
+      install-c2s-vars
+      install-c2s-syscheck
       install-c2s-opt-rules
       )
   else()
@@ -63,6 +105,9 @@ macro(set_c2s_package)
       install-c2s-headers
       install-clang-resource-headers
       install-c2s
+      install-c2s-vars
+      install-c2s-syscheck
+      install-c2s-modulefiles
       install-c2s-opt-rules
       )
   endif()
