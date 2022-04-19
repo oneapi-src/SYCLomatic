@@ -48,11 +48,10 @@ std::map<std::string, MapNames::BLASFuncComplexReplInfo>
 std::map<std::string, MapNames::BLASFuncReplInfo>
     MapNames::BLASFuncWrapperReplInfoMap;
 std::map<std::string, MapNames::BLASGemmExTypeInfo>
-    MapNames::BLASGemmExTypeInfoMap;
-std::map<std::string, MapNames::BLASGemmExTypeInfo>
     MapNames::BLASTGemmExTypeInfoMap;
 std::unordered_map<std::string, std::pair<std::string, std::string>>
     MapNames::MathTypeCastingMap;
+MapNames::MapTy MapNames::BLASComputingAPIWithRewriter;
 
 void MapNames::setExplicitNamespaceMap() {
 
@@ -179,6 +178,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasSideMode_t", "oneapi::mkl::side"},
       {"cublasOperation_t", "oneapi::mkl::transpose"},
       {"cublasPointerMode_t", "int"},
+      {"cublasAtomicsMode_t", "int"},
       {"cusparsePointerMode_t", "int"},
       {"cusparseFillMode_t", "oneapi::mkl::uplo"},
       {"cusparseDiagType_t", "oneapi::mkl::diag"},
@@ -391,12 +391,59 @@ void MapNames::setExplicitNamespaceMap() {
        getDpctNamespace() + "image_data_type::linear"},
       {"CU_RESOURCE_TYPE_PITCH2D",
        getDpctNamespace() + "image_data_type::pitch"},
-      {"MAJOR_VERSION",
-       getDpctNamespace() + "version_field::major"},
-      {"MINOR_VERSION",
-       getDpctNamespace() + "version_field::update"},
-      {"PATCH_LEVEL",
-       getDpctNamespace() + "version_field::patch"},
+      // enum libraryPropertyType_t
+      {"MAJOR_VERSION", getDpctNamespace() + "version_field::major"},
+      {"MINOR_VERSION", getDpctNamespace() + "version_field::update"},
+      {"PATCH_LEVEL", getDpctNamespace() + "version_field::patch"},
+      // enum cudaDataType_t
+      {"CUDA_R_16F", getDpctNamespace() + "library_data_t::real_half"},
+      {"CUDA_C_16F", getDpctNamespace() + "library_data_t::complex_half"},
+      {"CUDA_R_16BF", getDpctNamespace() + "library_data_t::real_bfloat16"},
+      {"CUDA_C_16BF", getDpctNamespace() + "library_data_t::complex_bfloat16"},
+      {"CUDA_R_32F", getDpctNamespace() + "library_data_t::real_float"},
+      {"CUDA_C_32F", getDpctNamespace() + "library_data_t::complex_float"},
+      {"CUDA_R_64F", getDpctNamespace() + "library_data_t::real_double"},
+      {"CUDA_C_64F", getDpctNamespace() + "library_data_t::complex_double"},
+      {"CUDA_R_4I", getDpctNamespace() + "library_data_t::real_int4"},
+      {"CUDA_C_4I", getDpctNamespace() + "library_data_t::complex_int4"},
+      {"CUDA_R_4U", getDpctNamespace() + "library_data_t::real_uint4"},
+      {"CUDA_C_4U", getDpctNamespace() + "library_data_t::complex_uint4"},
+      {"CUDA_R_8I", getDpctNamespace() + "library_data_t::real_int8"},
+      {"CUDA_C_8I", getDpctNamespace() + "library_data_t::complex_int8"},
+      {"CUDA_R_8U", getDpctNamespace() + "library_data_t::real_uint8"},
+      {"CUDA_C_8U", getDpctNamespace() + "library_data_t::complex_uint8"},
+      {"CUDA_R_16I", getDpctNamespace() + "library_data_t::real_int16"},
+      {"CUDA_C_16I", getDpctNamespace() + "library_data_t::complex_int16"},
+      {"CUDA_R_16U", getDpctNamespace() + "library_data_t::real_uint16"},
+      {"CUDA_C_16U", getDpctNamespace() + "library_data_t::complex_uint16"},
+      {"CUDA_R_32I", getDpctNamespace() + "library_data_t::real_int32"},
+      {"CUDA_C_32I", getDpctNamespace() + "library_data_t::complex_int32"},
+      {"CUDA_R_32U", getDpctNamespace() + "library_data_t::real_uint32"},
+      {"CUDA_C_32U", getDpctNamespace() + "library_data_t::complex_uint32"},
+      {"CUDA_R_64I", getDpctNamespace() + "library_data_t::real_int64"},
+      {"CUDA_C_64I", getDpctNamespace() + "library_data_t::complex_int64"},
+      {"CUDA_R_64U", getDpctNamespace() + "library_data_t::real_uint64"},
+      {"CUDA_C_64U", getDpctNamespace() + "library_data_t::complex_uint64"},
+      // cublasComputeType_t
+      {"CUBLAS_COMPUTE_16F", getDpctNamespace() + "library_data_t::real_half"},
+      {"CUBLAS_COMPUTE_16F_PEDANTIC",
+       getDpctNamespace() + "library_data_t::real_half"},
+      {"CUBLAS_COMPUTE_32F", getDpctNamespace() + "library_data_t::real_float"},
+      {"CUBLAS_COMPUTE_32F_PEDANTIC",
+       getDpctNamespace() + "library_data_t::real_float"},
+      {"CUBLAS_COMPUTE_32F_FAST_16F",
+       getDpctNamespace() + "library_data_t::real_float"},
+      {"CUBLAS_COMPUTE_32F_FAST_16BF",
+       getDpctNamespace() + "library_data_t::real_float"},
+      {"CUBLAS_COMPUTE_32F_FAST_TF32",
+       getDpctNamespace() + "library_data_t::real_float"},
+      {"CUBLAS_COMPUTE_64F",
+       getDpctNamespace() + "library_data_t::real_double"},
+      {"CUBLAS_COMPUTE_64F_PEDANTIC",
+       getDpctNamespace() + "library_data_t::real_double"},
+      {"CUBLAS_COMPUTE_32I", getDpctNamespace() + "library_data_t::real_int32"},
+      {"CUBLAS_COMPUTE_32I_PEDANTIC",
+       getDpctNamespace() + "library_data_t::real_int32"},
       // ...
   };
 
@@ -832,16 +879,6 @@ void MapNames::setExplicitNamespaceMap() {
        {std::vector<int>{8, 10}, std::vector<int>{7},
         std::vector<std::string>{"double", "double"}, std::vector<int>{3}, 2, 1,
         4, "oneapi::mkl::blas::column_major::trsm"}},
-      {"cublasSsyrkx",
-       {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
-        std::vector<std::string>{"float", "float", "float"},
-        std::vector<int>{2}, 1, -1, -1,
-        "oneapi::mkl::blas::column_major::gemmt"}},
-      {"cublasDsyrkx",
-       {std::vector<int>{6, 8, 11}, std::vector<int>{5, 10},
-        std::vector<std::string>{"double", "double", "double"},
-        std::vector<int>{2}, 1, -1, -1,
-        "oneapi::mkl::blas::column_major::gemmt"}},
       // Needn't declare bufferB ,but need copy the data ptrB points to
       // where ptrC points.
       {"cublasStrmm_v2",
@@ -980,54 +1017,6 @@ void MapNames::setExplicitNamespaceMap() {
         2, 1, 4, "oneapi::mkl::blas::column_major::trsm_batch"}},
   };
 
-  // MKL API does not have computeType and algo parameters.
-  // computeType(alpha/beta)               AType/BType     CType IsSupportInMKL
-  // CUDA_R_16F(2)/CUBLAS_COMPUTE_16F(64)  CUDA_R_16F(2)   CUDA_R_16F(2)   yes
-  // CUDA_R_32I(10)                        CUDA_R_8I(3)    CUDA_R_32I(10)  no
-  // CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_16F(2)   CUDA_R_16F(2)   no
-  // (can cast alpha/beta to half) CUDA_R_32F(0) CUDA_R_8I(3)    CUDA_R_32I(10)
-  // no CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_16F(2)   CUDA_R_32F(0) yes
-  // CUDA_R_32F(0)/CUBLAS_COMPUTE_32F(68)  CUDA_R_32F(0)   CUDA_R_32F(0)   yes
-  // CUDA_R_64F(1)/CUBLAS_COMPUTE_64F(70)  CUDA_R_64F(1)   CUDA_R_64F(1)   yes
-  // CUDA_C_32F(4)                         CUDA_C_8I(7)    CUDA_C_32F(4)   no
-  // CUDA_C_32F(4)                         CUDA_C_32F(4)   CUDA_C_32F(4)   yes
-  // CUDA_C_64F(5)                         CUDA_C_64F(5)   CUDA_C_64F(5)   yes
-  BLASGemmExTypeInfoMap = {
-      {"2:2:2",
-       {getClNamespace() + "half", getClNamespace() + "half",
-        getClNamespace() + "half", getClNamespace() + "half",
-        getClNamespace() + "half", getClNamespace() + "half"}},
-      {"64:2:2",
-       {getClNamespace() + "half", getClNamespace() + "half",
-        getClNamespace() + "half", getClNamespace() + "half",
-        getClNamespace() + "half", getClNamespace() + "half"}},
-      {"0:2:2",
-       {"float", getClNamespace() + "half", getClNamespace() + "half",
-        getClNamespace() + "half", getClNamespace() + "half",
-        getClNamespace() + "half"}},
-      {"68:2:2",
-       {"float", getClNamespace() + "half", getClNamespace() + "half",
-        getClNamespace() + "half", getClNamespace() + "half",
-        getClNamespace() + "half"}},
-      {"0:2:0",
-       {"float", "float", getClNamespace() + "half", getClNamespace() + "half",
-        "float", "float"}},
-      {"68:2:0",
-       {"float", "float", getClNamespace() + "half", getClNamespace() + "half",
-        "float", "float"}},
-      {"0:0:0", {"float", "float", "float", "float", "float", "float"}},
-      {"68:0:0", {"float", "float", "float", "float", "float", "float"}},
-      {"1:1:1", {"double", "double", "double", "double", "double", "double"}},
-      {"70:1:1", {"double", "double", "double", "double", "double", "double"}},
-      {"4:4:4",
-       {getClNamespace() + "float2", "std::complex<float>",
-        getClNamespace() + "float2", "std::complex<float>",
-        getClNamespace() + "float2", "std::complex<float>"}},
-      {"5:5:5",
-       {getClNamespace() + "double2", "std::complex<double>",
-        getClNamespace() + "double2", "std::complex<double>",
-        getClNamespace() + "double2", "std::complex<double>"}}};
-
   BLASTGemmExTypeInfoMap = {
       {"2:2",
        {"float", getClNamespace() + "half", getClNamespace() + "half",
@@ -1054,6 +1043,24 @@ void MapNames::setExplicitNamespaceMap() {
       {"atomicCAS", getDpctNamespace() + "atomic_compare_exchange_strong"},
       {"atomicInc", getDpctNamespace() + "atomic_fetch_compare_inc"},
   };
+
+  BLASComputingAPIWithRewriter = {
+      {"cublasNrm2Ex", getDpctNamespace() + "nrm2_ex"},
+      {"cublasDotEx", getDpctNamespace() + "dot_ex"},
+      {"cublasDotcEx", getDpctNamespace() + "dotc_ex"},
+      {"cublasScalEx", getDpctNamespace() + "scal_ex"},
+      {"cublasAxpyEx", getDpctNamespace() + "axpy_ex"},
+      {"cublasRotEx", getDpctNamespace() + "rot_ex"},
+      {"cublasGemmEx", getDpctNamespace() + "gemm_ex"},
+      {"cublasGemmBatchedEx", getDpctNamespace() + "gemm_batched_ex"},
+      {"cublasGemmStridedBatchedEx",
+       getDpctNamespace() + "gemm_strided_batched_ex"},
+      {"cublasSsyrkx", getDpctNamespace() + "syrkx"},
+      {"cublasDsyrkx", getDpctNamespace() + "syrkx"},
+      {"cublasCsyrkx", getDpctNamespace() + "syrkx"},
+      {"cublasZsyrkx", getDpctNamespace() + "syrkx"},
+      {"cublasCherkx", getDpctNamespace() + "hrkx"},
+      {"cublasZherkx", getDpctNamespace() + "hrkx"}};
 
   MathRewriterMap = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \

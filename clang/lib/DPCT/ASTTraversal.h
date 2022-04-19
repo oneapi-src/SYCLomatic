@@ -15,7 +15,7 @@
 #include "AnalysisInfo.h"
 #include "Checkpoint.h"
 #include "Diagnostics.h"
-#include "LibraryAPIMigration.h"
+#include "FFTAPIMigration.h"
 #include "MapNames.h"
 #include "TextModification.h"
 #include "Utility.h"

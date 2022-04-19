@@ -16,7 +16,7 @@
 #include "Error.h"
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
-#include "LibraryAPIMigration.h"
+#include "FFTAPIMigration.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
 #include "Utility.h"

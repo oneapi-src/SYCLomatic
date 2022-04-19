@@ -134,6 +134,8 @@ add_clang_library(DPCT
   Homoglyph.cpp
   MisleadingBidirectional.cpp
   BarrierFenceSpaceAnalyzer.cpp
+  BLASAPIMigration.cpp
+  FFTAPIMigration.cpp
 
   DEPENDS
   ClangDriverOptions

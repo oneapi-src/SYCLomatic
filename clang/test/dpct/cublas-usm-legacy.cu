@@ -242,7 +242,10 @@ int foo(){
 
 void foo2() {
   int ver;
-  //CHECK:dpct::mkl_get_version(dpct::version_field::major, &ver);
-  cublasGetVersion(&ver);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: int err = (dpct::mkl_get_version(dpct::version_field::major, &ver), 0);
+  int err = cublasGetVersion(&ver);
 }
 
