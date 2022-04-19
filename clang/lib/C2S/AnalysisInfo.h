@@ -36,11 +36,7 @@
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 
-#include "llvm/ADT/Optional.h"
-
-llvm::Optional<std::string> getReplacedName(const clang::NamedDecl *D);
-void setGetReplacedNamePtr(
-    llvm::Optional<std::string> (*Ptr)(const clang::NamedDecl *D));
+void setTypeNamesMapPtr(const std::map<std::string, std::string> *Ptr);
 
 namespace clang {
 namespace c2s {
@@ -1470,13 +1466,13 @@ public:
   static inline std::string getReplacedTypeName(QualType QT,
                                                 const ASTContext &Context) {
     std::string MigratedTypeStr;
-    setGetReplacedNamePtr(&getReplacedName);
+    setTypeNamesMapPtr(&MapNames::TypeNamesMap);
     llvm::raw_string_ostream OS(MigratedTypeStr);
     clang::PrintingPolicy PP =
         clang::PrintingPolicy(C2SGlobalInfo::getContext().getLangOpts());
     QT.print(OS, PP);
     OS.flush();
-    setGetReplacedNamePtr(nullptr);
+    setTypeNamesMapPtr(nullptr);
     return getFinalCastTypeNameStr(MigratedTypeStr);
   }
   static inline std::string getReplacedTypeName(QualType QT) {

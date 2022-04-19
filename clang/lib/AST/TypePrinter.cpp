@@ -139,9 +139,19 @@ namespace {
 } // namespace
 
 #ifdef INTEL_CUSTOMIZATION
-static Optional<std::string> (*getReplacedNamePtr)(const NamedDecl *D) = 0;
-void setGetReplacedNamePtr(Optional<std::string> (*Ptr)(const NamedDecl *D)) {
-  getReplacedNamePtr = Ptr;
+#include <map>
+static const std::map<std::string, std::string>* TypeNamesMapPtr;
+void setTypeNamesMapPtr(const std::map<std::string, std::string> *Ptr) {
+  TypeNamesMapPtr = Ptr;
+}
+Optional<std::string> getReplacedName(const NamedDecl *D) {
+  if (TypeNamesMapPtr) {
+    auto Iter = TypeNamesMapPtr->find(D->getQualifiedNameAsString(false));
+    if (Iter != TypeNamesMapPtr->end()) {
+      return Iter->second;
+    }
+  }
+  return Optional<std::string>();
 }
 #endif
 static void AppendTypeQualList(raw_ostream &OS, unsigned TypeQuals,
@@ -1044,9 +1054,7 @@ void TypePrinter::printFunctionNoProtoAfter(const FunctionNoProtoType *T,
 
 void TypePrinter::printTypeSpec(NamedDecl *D, raw_ostream &OS) {
 #ifdef INTEL_CUSTOMIZATION
-  Optional<std::string> Name;
-  if (getReplacedNamePtr)
-    Name = getReplacedNamePtr(D);
+  auto Name = getReplacedName(D);
   if (Name.hasValue()) {
     OS << Name.getValue();
     spaceBeforePlaceHolder(OS);
@@ -1356,9 +1364,7 @@ void TypePrinter::printTag(TagDecl *D, raw_ostream &OS) {
   }
 
 #ifdef INTEL_CUSTOMIZATION
-  Optional<std::string> Name;
-  if (getReplacedNamePtr)
-    Name = getReplacedNamePtr(D);
+  auto Name = getReplacedName(D);
 
   // Compute the full nested-name-specifier for this type.
   // In C, this will always be empty except when the type
@@ -1526,9 +1532,7 @@ void TypePrinter::printTemplateId(const TemplateSpecializationType *T,
 
   TemplateDecl *TD = T->getTemplateName().getAsTemplateDecl();
 #ifdef INTEL_CUSTOMIZATION
-  Optional<std::string> Name;
-  if (getReplacedNamePtr)
-    Name = getReplacedNamePtr(TD);
+  auto Name = getReplacedName(TD);
   if (Name.hasValue())
     OS << Name.getValue();
   else
@@ -1573,7 +1577,7 @@ void TypePrinter::printInjectedClassNameAfter(const InjectedClassNameType *T,
 void TypePrinter::printElaboratedBefore(const ElaboratedType *T,
                                         raw_ostream &OS) {
 #ifdef INTEL_CUSTOMIZATION
-  if (getReplacedNamePtr) {
+  if (TypeNamesMapPtr) {
     if (auto TT = T->getNamedType()->getAs<TypedefType>()) {
       auto Name = TT->getDecl()->getQualifiedNameAsString(false);
       if (StringRef(Name).startswith("thrust")) {

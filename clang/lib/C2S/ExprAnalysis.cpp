@@ -754,18 +754,16 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
     return;
   }
 
-  auto Iter = MapNames::TypeNamesMap.find(TyName);
-  if (Iter != MapNames::TypeNamesMap.end()) {
-    HelperFeatureSet.insert(Iter->second->RequestFeature);
+  auto Iter = MapNames::TypeNamesHelperFeaturesMap.find(TyName);
+  if (Iter != MapNames::TypeNamesHelperFeaturesMap.end()) {
+    HelperFeatureSet.insert(Iter->second);
     requestHelperFeatureForTypeNames(TyName, SR.getBegin());
-    addReplacement(SR.getBegin(), SR.getEnd(), CSCE, Iter->second->NewName);
-    for (auto ItHeader = Iter->second->Includes.begin();
-      ItHeader != Iter->second->Includes.end(); ItHeader++) {
-      C2SGlobalInfo::getInstance().insertHeader(SR.getBegin(), *ItHeader);
-    }
-  } else if (getFinalCastTypeNameStr(TyName) != TyName) {
-    addReplacement(SR.getBegin(), SR.getEnd(), CSCE,
-                   getFinalCastTypeNameStr(TyName));
+  }
+  if (MapNames::replaceName(MapNames::TypeNamesMap, TyName)) {
+    addReplacement(SR.getBegin(), SR.getEnd(), CSCE, TyName);
+  }
+  else if(getFinalCastTypeNameStr(TyName) != TyName){
+    addReplacement(SR.getBegin(), SR.getEnd(), CSCE, getFinalCastTypeNameStr(TyName));
   }
 }
 

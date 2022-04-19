@@ -13,7 +13,6 @@
 //CHECK: #include "bbb.h"
 //CHECK: #include <vector>
 //CHECK: #include "ccc.h"
-//CHECK: #include "ddd.h"
 #include<iostream>
 #include<functional>
 
@@ -49,6 +48,4 @@ void foo2(){
   });
   //CHECK: CALL2(0);
   CALL(0);
-  //CHECK: mytype *cu_st;
-  CUstream_st *cu_st;
 }

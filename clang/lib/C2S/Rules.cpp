@@ -77,29 +77,6 @@ void registerHeaderRule(MetaRuleObject &R) {
   }
 }
 
-void registerTypeRule(MetaRuleObject &R) {
-  auto It = MapNames::TypeNamesMap.find(R.In);
-  if (It != MapNames::TypeNamesMap.end()) {
-    if (It->second->Priority > R.Priority) {
-      It->second->NewName = R.Out;
-      It->second->Priority = R.Priority;
-      It->second->RequestFeature =
-          clang::c2s::HelperFeatureEnum::no_feature_helper;
-      It->second->Includes.insert(It->second->Includes.end(),
-                                  R.Includes.begin(), R.Includes.end());
-    }
-  } else {
-    clang::c2s::ASTTraversalMetaInfo::registerRule((char *)&R, R.RuleId, [=] {
-      return new clang::c2s::UserDefinedTypeRule(R.In);
-    });
-    auto RulePtr = std::make_shared<TypeNameRule>(
-        R.Out, clang::c2s::HelperFeatureEnum::no_feature_helper, R.Priority);
-    RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
-                             R.Includes.end());
-    MapNames::TypeNamesMap.emplace(R.In, RulePtr);
-  }
-}
-
 void importRules(llvm::cl::list<std::string> &RuleFiles) {
   for (auto &RuleFile : RuleFiles) {
     makeCanonical(RuleFile);
@@ -139,9 +116,6 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
         break;
       case (RuleKind::Header):
         registerHeaderRule(*r);
-        break;
-      case (RuleKind::TypeRule):
-        registerTypeRule(*r);
         break;
       default:
         break;
@@ -382,40 +356,5 @@ void clang::c2s::UserDefinedAPIRule::runRule(
     auto ReplStr = EA.getReplacedString();
     emplaceTransformation(
       new ReplaceText(Range.getBegin(), Len, std::move(ReplStr)));
-  }
-}
-
-void clang::c2s::UserDefinedTypeRule::registerMatcher(
-    clang::ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(
-      typeLoc(loc(qualType(hasDeclaration(namedDecl(hasName(TypeName))))))
-          .bind("typeLoc"),
-      this);
-}
-
-void clang::c2s::UserDefinedTypeRule::runRule(
-    const clang::ast_matchers::MatchFinder::MatchResult &Result) {
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "typeLoc")) {
-    auto TypeStr =
-      C2SGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
-
-    auto It = MapNames::TypeNamesMap.find(TypeStr);
-    if (It == MapNames::TypeNamesMap.end())
-      return;
-
-    auto ReplStr = It->second->NewName;
-
-    auto &SM = C2SGlobalInfo::getSourceManager();
-    auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
-    auto Len = Lexer::MeasureTokenLength(
-        Range.getEnd(), SM, C2SGlobalInfo::getContext().getLangOpts());
-    Len += SM.getDecomposedLoc(Range.getEnd()).second -
-           SM.getDecomposedLoc(Range.getBegin()).second;
-    emplaceTransformation(
-        new ReplaceText(Range.getBegin(), Len, std::move(ReplStr)));
-    for (auto ItHeader = It->second->Includes.begin();
-      ItHeader != It->second->Includes.end(); ItHeader++) {
-      C2SGlobalInfo::getInstance().insertHeader(Range.getBegin(), *ItHeader);
-    }
   }
 }
