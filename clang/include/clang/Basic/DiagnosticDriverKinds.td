@@ -203,7 +203,7 @@ def err_drv_clang_unsupported_opt_pg_darwin: Error<
 
 //INTEL_CUSTOMIZATION begin
 def err_drv_clang_unsupported_opt_faltivec : Error<
-  "option not supported: '%0', please use %1">;
+  "Intel(R) DPC++ Compatibility Tool does not support '%0', %1">;
 //INTEL_CUSTOMIZATION end
 
 def err_drv_command_failed : Error<
@@ -417,7 +417,7 @@ def warn_drv_diagnostics_hotness_requires_pgo : Warning<
 
 //INTEL_CUSTOMIZATION begin
 def warn_drv_clang_unsupported : Warning<
-  "option not supported: '%0'">;
+  "Intel(R) DPC++ Compatibility Tool does not support '%0'">;
 //INTEL_CUSTOMIZATION end
 
 def warn_drv_deprecated_arg : Warning<

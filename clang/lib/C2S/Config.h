@@ -12,9 +12,8 @@
 #ifndef C2S_CONFIG_H
 #define C2S_CONFIG_H
 
-#define C2S_TOOL_NAME "c2s"
-#define C2S_VERSION_MAJOR "1"
-#define C2S_VERSION_MINOR "0"
+#define C2S_VERSION_MAJOR "2022"
+#define C2S_VERSION_MINOR "1"
 #define C2S_VERSION_PATCH "0"
 
 #endif

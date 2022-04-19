@@ -47,7 +47,8 @@ void recoverCheckpoint(int Signo) {
   if (EnableErrorRecover && Signo == SIGSEGV) {
     if (CheckPointStage == CHECKPOINT_PROCESSING_FILE) {
       std::string FaultMsg =
-          "Error: c2s internal error. Current file skipped. Migration continues.\n";
+          "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
+          "skips the current file and continues migration.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
         FatalErrorCnt++;
@@ -56,7 +57,8 @@ void recoverCheckpoint(int Signo) {
       LONGJMP(CPFileEnter, 1);
     } else if (CheckPointStage == CHECKPOINT_PROCESSING_FILE_ASTMATCHER) {
       std::string FaultMsg =
-          "Error: c2s internal error. Migration rule causing the error skipped. Migration continues.\n";
+          "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
+          "skips the migration rule causing error and continues migration.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
         FatalErrorCnt++;
@@ -66,7 +68,8 @@ void recoverCheckpoint(int Signo) {
     } else if (CheckPointStage ==
                CHECKPOINT_PROCESSING_REPLACEMENT_POSTPROCESS) {
       std::string FaultMsg =
-          "Error: c2s internal error. c2s tries to recover and write the migration result.\n";
+          "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
+          "tries to recover and write the migration result.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
         FatalErrorCnt++;
@@ -75,7 +78,8 @@ void recoverCheckpoint(int Signo) {
       LONGJMP(CPRepPostprocessEnter, 1);
     } else if (CheckPointStage == CHECKPOINT_FORMATTING_CODE) {
       std::string FaultMsg =
-          "Error: c2s internal error. Formatting of the code skipped. Migration continues.\n";
+          "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
+          "skips formatting the code and continues migration.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
         FatalErrorCnt++;
@@ -84,7 +88,8 @@ void recoverCheckpoint(int Signo) {
       LONGJMP(CPFormatCodeEnter, 1);
     } else if (CheckPointStageCore == CHECKPOINT_WRITE_OUT) {
       std::string FaultMsg =
-          "Error: c2s internal error. c2s tries to recover and write the migration result.\n";
+          "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool "
+          "tries to recover and write the migration result.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
         FatalErrorCnt++;
@@ -98,7 +103,8 @@ void recoverCheckpoint(int Signo) {
 #if defined(_WIN64)
 void FaultHandler(int Signo) {
   std::string FaultMsg = "\nError:" + SigDescription(Signo) +
-                         " c2s tries to write analysis reports and terminates...\n";
+                         " Intel(R) DPC++ Compatibility Tool tries to write "
+                         "analysis reports and terminates...\n";
   PrintReportOnFault(FaultMsg);
   c2sExit(MigrationError);
 }
@@ -139,7 +145,8 @@ static void SetHandler() {
 static void FaultHandler(int Signo, siginfo_t *Info, void *Extra) {
   recoverCheckpoint(Signo);
   std::string FaultMsg = "\nError: meet signal:" + SigDescription(Signo) +
-                         " c2s tries to write analysis reports and terminates...\n";
+                         " Intel(R) DPC++ Compatibility Tool tries to write "
+                         "analysis reports and terminates...\n";
   PrintReportOnFault(FaultMsg);
   c2sExit(MigrationError);
 }

@@ -47,7 +47,8 @@ void ShowStatus(int Status, std::string Message) {
                    "for supported versions.";
     break;
   case MigrationErrorSupportedCudaVersionNotAvailable:
-    StatusString = "Error: Could not detect path to CUDA header files. Use --cuda-include-path "
+    StatusString = "Error: Intel(R) DPC++ Compatibility Tool was not able to "
+                   "detect path for CUDA header files. Use --cuda-include-path "
                    "to specify the correct path to the header files.";
     break;
   case MigrationErrorInvalidInRootOrOutRoot:
@@ -109,7 +110,7 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorInRootContainCTTool:
     StatusString =
         "Error: Input folder is the parent of, or the same folder as, the "
-        "installation directory of c2s";
+        "installation directory of the Intel(R) DPC++ Compatibility Tool";
     break;
   case MigrationErrorRunFromSDKFolder:
     StatusString = "Error: Input folder specified by --in-root option is "

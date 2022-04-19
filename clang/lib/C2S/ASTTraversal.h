@@ -350,7 +350,8 @@ public:
       static_cast<T *>(this)->runRule(Result);
     } catch (std::exception &e) {
       std::string FaultMsg =
-          "Error: c2s internal error. Migration rule causing the error skipped. Migration continues.\n";
+          "Error: c2s internal error. Intel(R) DPC++ Compatibility Tool skips "
+          "the migration rule causing error and continues migration.\n";
       llvm::errs() << FaultMsg;
     }
     return;
