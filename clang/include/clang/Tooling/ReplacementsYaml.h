@@ -262,9 +262,8 @@ template <> struct MappingTraits<clang::tooling::TranslationUnitReplacements> {
 #ifdef INTEL_CUSTOMIZATION
     Io.mapOptional("MainSourceFilesDigest", Doc.MainSourceFilesDigest);
     Io.mapOptional("C2SVersion", Doc.C2SVersion);
-    Io.mapOptional("DpctVersion", Doc.DpctVersion); // deprecated
     Io.mapOptional("MainHelperFileName", Doc.MainHelperFileName);
-    Io.mapOptional("USMLevel", Doc.USMLevel); // deprecated
+    Io.mapOptional("USMLevel", Doc.USMLevel);
     Io.mapOptional("FeatureMap", Doc.FeatureMap);
     Io.mapOptional("CompileTargets", Doc.CompileTargets);
     Io.mapOptional("OptionMap", Doc.OptionMap);

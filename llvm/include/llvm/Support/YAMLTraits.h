@@ -928,17 +928,10 @@ private:
   void processKey(const char *Key, T &Val, bool Required, Context &Ctx) {
     void *SaveInfo;
     bool UseDefault;
-#ifdef INTEL_CUSTOMIZATION
-    if (!this->outputting() ||
-        (strcmp(Key, "DpctVersion") && strcmp(Key, "USMLevel"))) {
-#endif
-    if (this->preflightKey(Key, Required, false, UseDefault, SaveInfo)) {
+    if ( this->preflightKey(Key, Required, false, UseDefault, SaveInfo) ) {
       yamlize(*this, Val, Required, Ctx);
       this->postflightKey(SaveInfo);
     }
-#ifdef INTEL_CUSTOMIZATION
-    }
-#endif
   }
 
 private:

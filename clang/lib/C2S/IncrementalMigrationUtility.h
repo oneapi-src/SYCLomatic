@@ -93,8 +93,6 @@ inline void setValueToOptMap(std::string Key, std::vector<std::string> StrVec,
 
 
 bool canContinueMigration(std::string &Msg);
-
-std::string getC2SVersionStr();
 } // namespace c2s
 } // namespace clang
 

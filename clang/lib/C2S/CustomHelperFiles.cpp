@@ -314,6 +314,14 @@ getHelperFileContent(const clang::c2s::HelperFileEnum File,
   return ContentStr;
 }
 
+std::string getC2SVersionStr() {
+  std::string Str;
+  llvm::raw_string_ostream OS(Str);
+  OS << C2S_VERSION_MAJOR << "." << C2S_VERSION_MINOR << "."
+     << C2S_VERSION_PATCH;
+  return OS.str();
+}
+
 void generateAllHelperFiles() {
   std::string ToPath = clang::c2s::C2SGlobalInfo::getOutRoot() + "/include";
   if (!llvm::sys::fs::is_directory(ToPath))

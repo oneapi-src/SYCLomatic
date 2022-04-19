@@ -78,6 +78,8 @@ getHeaderGuardPair(const clang::c2s::HelperFileEnum File);
 std::string
 getHelperFileContent(const clang::c2s::HelperFileEnum File,
                      std::vector<clang::c2s::HelperFunc> ContentVec);
+std::string getC2SVersionStr();
+void emitC2SVersionWarningIfNeed(const std::string &VersionFromYaml);
 void generateHelperFunctions();
 
 void requestHelperFeatureForEnumNames(const std::string Name,

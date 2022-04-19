@@ -409,7 +409,6 @@ struct TranslationUnitReplacements {
 #ifdef INTEL_CUSTOMIZATION
   std::vector<std::pair<std::string, std::string>>  MainSourceFilesDigest;
   std::string C2SVersion = "";
-  std::string DpctVersion = ""; // deprecated
   std::string MainHelperFileName = "";
   std::string USMLevel = ""; // deprecated
 
