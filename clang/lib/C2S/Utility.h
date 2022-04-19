@@ -549,4 +549,6 @@ bool isExprUsed(const clang::Expr *E, bool &Result);
 const std::string &getItemName();
 bool isUserDefinedFunction(const clang::ValueDecl *VD);
 
+void insertHeaderForTypeRule(std::string, clang::SourceLocation);
+
 #endif // C2S_UTILITY_H

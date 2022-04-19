@@ -35,3 +35,9 @@
   In: CALL
   Out: CALL2
   Includes: []
+- Rule: custream_rule
+  Kind: Type
+  Priority: Takeover
+  In: CUstream_st
+  Out: mytype
+  Includes: ["ddd.h"]

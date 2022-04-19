@@ -2803,9 +2803,9 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
       }
 
       requestHelperFeatureForTypeNames(RealTypeNameStr, ETBeginLoc);
-
       std::string Replacement =
           MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
+      insertHeaderForTypeRule(RealTypeNameStr, ETBeginLoc);
 
       if (!Replacement.empty()) {
         SrcAPIStaticsMap[RealTypeNameStr]++;
@@ -2839,6 +2839,7 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
   requestHelperFeatureForTypeNames(RealTypeNameStr, BeginLoc);
   std::string Replacement =
       MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
+  insertHeaderForTypeRule(RealTypeNameStr, BeginLoc);
   if (!Replacement.empty()) {
     insertComplexHeader(BeginLoc, Replacement);
     if (RealTypeNameStr == "thrust::identity") {
@@ -2985,6 +2986,7 @@ bool TypeInDeclRule::replaceTransformIterator(SourceManager *SM,
     std::string Replacement =
         MapNames::findReplacedName(MapNames::TypeNamesMap, NameToMap);
     requestHelperFeatureForTypeNames(NameToMap, TL->getBeginLoc());
+    insertHeaderForTypeRule(NameToMap, TL->getBeginLoc());
     if (Replacement.empty())
       return Name;
     else if (Stripped)
@@ -3240,7 +3242,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         std::string Replacement =
             MapNames::findReplacedName(MapNames::TypeNamesMap, TyName);
         requestHelperFeatureForTypeNames(TyName, BeginLoc);
-
+        insertHeaderForTypeRule(TyName, BeginLoc);
         if (!Replacement.empty()) {
           emplaceTransformation(new ReplaceToken(BeginLoc, TSL.getEndLoc(),
                                                  std::move(Replacement)));
@@ -3266,6 +3268,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string Str =
         MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr);
     requestHelperFeatureForTypeNames(TypeStr, BeginLoc);
+    insertHeaderForTypeRule(TypeStr, BeginLoc);
     if (Str.empty()) {
       auto Itr = MapNames::DeviceRandomGeneratorTypeMap.find(TypeStr);
       if (Itr != MapNames::DeviceRandomGeneratorTypeMap.end()) {
@@ -3498,6 +3501,7 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       std::string Str =
           MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr);
       requestHelperFeatureForTypeNames(TypeStr, BeginLoc);
+      insertHeaderForTypeRule(TypeStr, BeginLoc);
       if (!Str.empty()) {
         SrcAPIStaticsMap[TypeStr]++;
         emplaceTransformation(new ReplaceToken(BeginLoc, std::move(Str)));
@@ -4052,6 +4056,7 @@ void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
           std::string Str =
               MapNames::findReplacedName(MapNames::TypeNamesMap, TyName);
           requestHelperFeatureForTypeNames(TyName, BeginLoc);
+          insertHeaderForTypeRule(TyName, BeginLoc);
 
           if (!Str.empty()) {
             emplaceTransformation(
@@ -4065,6 +4070,7 @@ void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
       std::string Str =
           MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName);
       requestHelperFeatureForTypeNames(TypeName, BeginLoc);
+      insertHeaderForTypeRule(TypeName, BeginLoc);
       if (auto VD = C2SGlobalInfo::findAncestor<VarDecl>(TL)) {
         auto TypeStr = VD->getType().getAsString();
         if (VD->getKind() == Decl::Var &&
@@ -7917,10 +7923,10 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       VarName = VD->getNameAsString();
 
       requestHelperFeatureForTypeNames(VarType, VD);
-
+      insertHeaderForTypeRule(VarType, VD->getBeginLoc());
       auto Itr = MapNames::TypeNamesMap.find(VarType);
       if (Itr != MapNames::TypeNamesMap.end())
-        VarType = Itr->second;
+        VarType = Itr->second->NewName;
       PrefixBeforeScope = VarType + " " + VarName + ";" + getNL() + IndentStr +
                           PrefixBeforeScope;
       SourceLocation typeBegin =
@@ -7930,6 +7936,10 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           nameBegin, 0, *SM, Result.Context->getLangOpts());
       auto replLen =
           SM->getCharacterData(nameEnd) - SM->getCharacterData(typeBegin);
+      for (auto ItHeader = Itr->second->Includes.begin();
+        ItHeader != Itr->second->Includes.end(); ItHeader++) {
+        C2SGlobalInfo::getInstance().insertHeader(typeBegin, *ItHeader);
+      }
       emplaceTransformation(
           new ReplaceText(typeBegin, replLen, std::move(VarName)));
     } else {
@@ -14638,7 +14648,9 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
     requestHelperFeatureForTypeNames(
         C2SGlobalInfo::getUnqualifiedTypeName(TL->getType(), *Result.Context),
         TL->getBeginLoc());
-
+    insertHeaderForTypeRule(
+        C2SGlobalInfo::getUnqualifiedTypeName(TL->getType(), *Result.Context),
+        TL->getBeginLoc());
     if (!ReplType.empty())
       emplaceTransformation(new ReplaceToken(TL->getBeginLoc(), TL->getEndLoc(),
                                              std::string(ReplType)));
@@ -15089,7 +15101,7 @@ void CXXNewExprRule::runRule(
           MapNames::TypeNamesMap, Tok.getRawIdentifier().str());
 
       requestHelperFeatureForTypeNames(Tok.getRawIdentifier().str(), BeginLoc);
-
+      insertHeaderForTypeRule(Tok.getRawIdentifier().str(), BeginLoc);
       SourceManager &SM = C2SGlobalInfo::getSourceManager();
       BeginLoc = SM.getExpansionLoc(BeginLoc);
       if (!Str.empty()) {
@@ -15105,7 +15117,7 @@ void CXXNewExprRule::runRule(
         MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName));
 
     requestHelperFeatureForTypeNames(TypeName, BeginLoc);
-
+    insertHeaderForTypeRule(TypeName, BeginLoc);
     if (!ReplName.empty()) {
       auto BeginLoc =
           CNE->getAllocatedTypeSourceInfo()->getTypeLoc().getBeginLoc();
@@ -15296,7 +15308,7 @@ void ThrustVarRule::runRule(const MatchFinder::MatchResult &Result) {
           MapNames::findReplacedName(MapNames::TypeNamesMap, ThrustVarName);
 
       requestHelperFeatureForTypeNames(ThrustVarName, DRE);
-
+      insertHeaderForTypeRule(ThrustVarName, DRE->getBeginLoc());
       if (Replacement == "oneapi::dpl::execution::dpcpp_default")
         Replacement = makeDevicePolicy(DRE);
 

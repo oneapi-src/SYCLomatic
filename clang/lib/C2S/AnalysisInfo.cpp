@@ -24,6 +24,19 @@
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
+llvm::Optional<std::string> getReplacedName(const clang::NamedDecl *D) {
+  auto Iter = MapNames::TypeNamesMap.find(D->getQualifiedNameAsString(false));
+  if (Iter != MapNames::TypeNamesMap.end()) {
+    auto Range = getDefinitionRange(D->getBeginLoc(), D->getEndLoc());
+    for (auto ItHeader = Iter->second->Includes.begin();
+      ItHeader != Iter->second->Includes.end(); ItHeader++) {
+      clang::c2s::C2SGlobalInfo::getInstance().insertHeader(Range.getBegin(), *ItHeader);
+    }
+    return Iter->second->NewName;
+  }
+  return llvm::Optional<std::string>();
+}
+
 namespace clang {
 extern std::function<bool(SourceLocation)> IsInRootFunc;
 extern std::function<unsigned int()> GetRunRound;

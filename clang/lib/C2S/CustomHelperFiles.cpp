@@ -717,17 +717,17 @@ void generateHelperFunctions() {
 #define ADD_HELPER_FEATURE_FOR_ENUM_NAMES(TYPE)                                \
   void requestHelperFeatureForEnumNames(const std::string Name, TYPE File) {   \
     auto HelperFeatureIter =                                                   \
-        clang::c2s::EnumConstantRule::EnumNamesHelperFeaturesMap.find(Name);  \
+        clang::c2s::EnumConstantRule::EnumNamesHelperFeaturesMap.find(Name);   \
     if (HelperFeatureIter !=                                                   \
-        clang::c2s::EnumConstantRule::EnumNamesHelperFeaturesMap.end()) {     \
+        clang::c2s::EnumConstantRule::EnumNamesHelperFeaturesMap.end()) {      \
       requestFeature(HelperFeatureIter->second, File);                         \
     }                                                                          \
   }
 #define ADD_HELPER_FEATURE_FOR_TYPE_NAMES(TYPE)                                \
   void requestHelperFeatureForTypeNames(const std::string Name, TYPE File) {   \
-    auto HelperFeatureIter = MapNames::TypeNamesHelperFeaturesMap.find(Name);  \
-    if (HelperFeatureIter != MapNames::TypeNamesHelperFeaturesMap.end()) {     \
-      requestFeature(HelperFeatureIter->second, File);                         \
+    auto HelperFeatureIter = MapNames::TypeNamesMap.find(Name);                \
+    if (HelperFeatureIter != MapNames::TypeNamesMap.end()) {                   \
+      requestFeature(HelperFeatureIter->second->RequestFeature, File);         \
     }                                                                          \
   }
 ADD_HELPER_FEATURE_FOR_ENUM_NAMES(const std::string)

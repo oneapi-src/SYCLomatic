@@ -26,7 +26,6 @@ void bar(thrust::complex<double> *p);
 // CHECK-NEXT:  std::complex<sycl::double2> *s) {
 __global__ void kernel(thrust::complex<double> *p, thrust::complex<double> c, thrust::complex<double> *d) {
   p[0];
-  c[0];
   d[0];
   __shared__ thrust::complex<struct double2> s[10];
 }

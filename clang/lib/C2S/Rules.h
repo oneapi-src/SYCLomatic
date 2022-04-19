@@ -16,7 +16,7 @@
 #include "llvm/Support/YAMLTraits.h"
 #include "llvm/Support/CommandLine.h"
 #include "CustomHelperFiles.h"
-enum RuleKind { API, DataType, Macro, Header };
+enum RuleKind { API, DataType, Macro, Header, TypeRule };
 
 enum RulePriority { Takeover, Default, Fallback };
 
@@ -71,6 +71,7 @@ template<> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
     Io.enumCase(Value, "DataType", RuleKind::DataType);
     Io.enumCase(Value, "Macro", RuleKind::Macro);
     Io.enumCase(Value, "Header", RuleKind::Header);
+    Io.enumCase(Value, "Type", RuleKind::TypeRule);
   }
 };
 
