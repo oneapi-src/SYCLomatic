@@ -71,7 +71,7 @@ git checkout origin/main -b main
 cd $SYCLOMATIC_HOME
 mkdir build
 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/path/to/install/folder  -DCMAKE_BUILD_TYPE=Release  -DLLVM_ENABLE_PROJECTS="clang"  -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" ../llvm
-ninja install-c2s-tool
+ninja install-c2s
 ```
 
 **Windows (64-bit)**:
@@ -80,7 +80,7 @@ ninja install-c2s-tool
 cd %SYCLOMATIC_HOME%
 mkdir build
 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/path/to/install/folder  -DCMAKE_BUILD_TYPE=Release  -DLLVM_ENABLE_PROJECTS="clang"  -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" ../llvm
-ninja install-c2s-tool
+ninja install-c2s
 ```
 ### Build Doxygen documentation
 
@@ -127,7 +127,7 @@ Follow instructions from the link below to build and run tests:
 
 ## Run c2s command
 Get c2s help information by running "c2s --help".
-Note that dpct is an old name of the executable and is alias to c2s, use c2s going forward. 
+dpct is an alias command for c2s.
 
 ## Known Issues and Limitations
 

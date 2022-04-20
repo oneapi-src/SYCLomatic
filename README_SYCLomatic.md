@@ -10,7 +10,7 @@ Use c2s command to make it as easy as possible to migrate existing CUDA codebase
 The SYCLomatic development branch is the main branch.
 
 ## Useful Links
-* [SYCLomatic getting started] (GetStartedGuide_SYCLomatic.md)
+* [SYCLomatic getting started](GetStartedGuide_SYCLomatic.md)
 * More information about how to use SYCLomatic can be found in Intel(R) DPC++ Compatibility Tool documentation, which is the Intel product version of SYCLomatic:
     * [Get Started](https://software.intel.com/content/www/us/en/develop/documentation/get-started-with-intel-dpcpp-compatibility-tool/top.html)
     * [Developer Guide and Reference](https://software.intel.com/content/www/us/en/develop/documentation/intel-dpcpp-compatibility-tool-user-guide/top.html)
