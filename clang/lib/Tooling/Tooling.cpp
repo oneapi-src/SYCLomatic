@@ -913,8 +913,7 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
     ErrorCnt[File.str()] =(CurFileSigErrCnt<<32) | CurFileParseErrCnt;
     } catch (std::exception &e) {
       std::string FaultMsg =
-          "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool skips "
-          "the current file and continues migration.\n";
+          "Error: dpct internal error. Current file skipped. Migration continues.\n";
       llvm::errs() << FaultMsg;
     }
     return 0;

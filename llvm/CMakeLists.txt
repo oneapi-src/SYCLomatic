@@ -31,12 +31,6 @@ endif()
 set(SYCLomatic_CUSTOMIZATION ON)
 set(LLVM_ENABLE_EH ON)
 set(LLVM_ENABLE_RTTI ON)
-
-set(INTEL_DEPLOY_UNIFIED_LAYOUT OFF CACHE BOOL "Build and deploy for a unified OneAPI directory layout")
-if(INTEL_DEPLOY_UNIFIED_LAYOUT)
-  add_compile_definitions(INTEL_DEPLOY_UNIFIED_LAYOUT=1)
-endif()
-
 # SYCLomatic_CUSTOMIZATION end
 
 if(NOT DEFINED LLVM_SHLIB_SYMBOL_VERSION)

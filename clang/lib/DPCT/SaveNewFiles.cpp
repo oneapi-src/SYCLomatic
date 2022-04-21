@@ -595,8 +595,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         }
       } catch (std::exception &e) {
         std::string FaultMsg =
-            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
-            "skips formatting the code and continues migration.\n";
+            "Error: dpct internal error. Formatting of the code skipped. Migration continues.\n";
         llvm::errs() << FaultMsg;
       }
     }

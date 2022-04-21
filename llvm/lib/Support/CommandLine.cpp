@@ -2531,8 +2531,7 @@ struct CommandLineCommonOptions {
 #ifdef SYCLomatic_CUSTOMIZATION
   cl::opt<HelpPrinterWrapper, true, parser<bool>>
       HOp{"help",
-          cl::desc("Provides list of Intel(R) DPC++ Compatibility Tool "
-                   "specific options."),
+          cl::desc("Provides list of dpct specific options."),
           cl::location(WrappedNormalPrinter), cl::ValueDisallowed,
           cl::cat(cl::getDPCTCategory()), cl::sub(*AllSubCommands)};
 #else
@@ -2616,7 +2615,7 @@ OptionCategory &cl::getGeneralCategory() {
 }
 #ifdef SYCLomatic_CUSTOMIZATION
 OptionCategory &cl::getDPCTCategory() {
-  static OptionCategory DPCTCat{"Intel(R) DPC++ Compatibility Tool"};
+  static OptionCategory DPCTCat{"dpct"};
   return DPCTCat;
 }
 #endif // SYCLomatic_CUSTOMIZATION

@@ -227,7 +227,7 @@ def err_escape_too_large : Error<
 
 // SYCLomatic_CUSTOMIZATION begin
 def ext_string_too_long : Extension<"string literal of length %0 exceeds "
-  "maximum length %1 that Intel(R) DPC++ Compatibility Tool supports per %select{C90|ISO C99|C++}2 "
+  "maximum length %1 that is supported per %select{C90|ISO C99|C++}2 "
   "standard">, InGroup<OverlengthStrings>;
 // SYCLomatic_CUSTOMIZATION end
 

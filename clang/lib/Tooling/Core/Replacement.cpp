@@ -657,8 +657,7 @@ bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
 #ifdef SYCLomatic_CUSTOMIZATION
       } catch (std::exception &e) {
         std::string FaultMsg =
-            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
-            "tries to recover and write the migration result.\n";
+            "Error: dpct internal error. dpct tries to recover and write the migration result.\n";
         llvm::errs() << FaultMsg;
       }
 #endif // SYCLomatic_CUSTOMIZATION

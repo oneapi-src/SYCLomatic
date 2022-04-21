@@ -107,7 +107,7 @@ const char *const CtHelpMessage =
 
 const char *const CtHelpHint =
     "  Warning: Please specify file(s) to be migrated.\n"
-    "  Get help on Intel(R) DPC++ Compatibility Tool, run: dpct --help\n"
+    "  To get help on the tool usage, run: dpct --help\n"
     "\n";
 
 static extrahelp CommonHelp(CtHelpMessage);
@@ -905,7 +905,7 @@ std::string printCTVersion() {
   std::string buf;
   llvm::raw_string_ostream OS(buf);
 
-  OS << "\nIntel(R) DPC++ Compatibility Tool version " << DPCT_VERSION_MAJOR
+  OS << "\n" << TOOL_NAME << " version " << DPCT_VERSION_MAJOR
      << "." << DPCT_VERSION_MINOR << "." << DPCT_VERSION_PATCH << "."
      << " Codebase:";
   // getClangRepositoryPath() export the machine name of repo in release build.
@@ -1449,8 +1449,7 @@ int runDPCT(int argc, const char **argv) {
         Global.emplaceReplacements(Tool.getReplacements());
       } catch (std::exception &e) {
         std::string FaultMsg =
-            "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool "
-            "tries to recover and write the migration result.\n";
+            "Error: dpct internal error. dpct tries to recover and write the migration result.\n";
         llvm::errs() << FaultMsg;
       }
     }

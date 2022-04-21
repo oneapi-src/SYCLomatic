@@ -15905,7 +15905,7 @@ void DriverDeviceAPIRule::runRule(
       SYCLCallName = Search->second;
     } else {
       report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
-             false, "recognized by the Intel(R) DPC++ Compatibility Tool");
+             false);
       return;
     }
     printDerefOp(OS, FirArg);

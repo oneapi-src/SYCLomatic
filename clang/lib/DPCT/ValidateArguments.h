@@ -76,7 +76,7 @@ bool makeInRootCanonicalOrSetDefaults(
     std::string &InRoot, const std::vector<std::string> SourceFiles);
 bool makeOutRootCanonicalOrSetDefaults(std::string &OutRoot);
 
-/// Make sure files passed to Intel(R) DPC++ Compatibility Tool are under the
+/// Make sure files passed to tool are under the
 /// input root directory and have an extension.
 /// return value:
 /// 0: success (InRoot and SourceFiles are valid)

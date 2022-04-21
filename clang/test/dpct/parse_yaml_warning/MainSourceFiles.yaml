@@ -22,7 +22,7 @@ Replacements:
 MainSourceFilesDigest:
   - MainSourceFile:  '/home/testfolder/test.cu'
     Digest:          b505d6e929a7802b1ec8bf09e83590a8
-DpctVersion:     2022.1.0
+DpctVersion:     1.0.0
 MainHelperFileName: dpct
 USMLevel:        ''
 FeatureMap:
