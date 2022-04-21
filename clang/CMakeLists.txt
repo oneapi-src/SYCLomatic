@@ -930,12 +930,13 @@ configure_file(
   ${CLANG_SOURCE_DIR}/include/clang/Config/config.h.cmake
   ${CLANG_BINARY_DIR}/include/clang/Config/config.h)
 
+# SYCLomatic_CUSTOMIZATION end
 if (NOT CLANG_BUILT_STANDALONE)
   if(WIN32)
     list(APPEND DPCT_RUN
       install-dpct-headers
       install-clang-resource-headers
-      install-dpct
+      install-dpct-binary
       install-dpct-vars
       install-dpct-syscheck
       install-dpct-opt-rules
@@ -945,7 +946,7 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-intercept-build
       install-dpct-headers
       install-clang-resource-headers
-      install-dpct
+      install-dpct-binary
       install-dpct-vars
       install-dpct-syscheck
       install-dpct-modulefiles
@@ -954,4 +955,7 @@ if (NOT CLANG_BUILT_STANDALONE)
   endif()
 endif()
 add_custom_target(install-dpct-tool DEPENDS ${DPCT_RUN})
-set_target_properties(install-dpct-tool PROPERTIES FOLDER "install dpct tool")
+set_target_properties(install-dpct-tool PROPERTIES FOLDER "install dpct")
+add_custom_target(install-c2s DEPENDS ${DPCT_RUN})
+set_target_properties(install-c2s PROPERTIES FOLDER "install c2s")
+# SYCLomatic_CUSTOMIZATION end

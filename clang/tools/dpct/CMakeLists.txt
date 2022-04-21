@@ -10,9 +10,10 @@ set(LLVM_LINK_COMPONENTS
   support
   )
 
-add_clang_tool(dpct
+add_clang_tool(dpct-binary
   DPCT.cpp
   )
+set_target_properties(dpct-binary PROPERTIES OUTPUT_NAME "dpct")
 include_directories(
   # For the CUDA-Toolchain and its CudaInstallationDetector
   ../../../clang/lib/Driver/
@@ -23,7 +24,7 @@ else()
   set(LIBCURL ${CMAKE_SOURCE_DIR}/../clang/lib/DPCT/libcurl/lib/win/libcurl_a.lib)
 endif()
 
-target_link_libraries(dpct
+target_link_libraries(dpct-binary
   PRIVATE
   DPCT
   ${LIBCURL}

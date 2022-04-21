@@ -1887,6 +1887,27 @@ function(add_lit_testsuites project directory)
   endif()
 endfunction()
 
+# SYCLomatic_CUSTOMIZATION begin
+function(add_specific_lit_testsuite target lit_suite directory)
+  if (NOT LLVM_ENABLE_IDE)
+    cmake_parse_arguments(ARG "EXCLUDE_FROM_CHECK_ALL" "FOLDER" "PARAMS;DEPENDS;ARGS" ${ARGN})
+
+    if (NOT ARG_FOLDER)
+      set(ARG_FOLDER "Test Subdirectories")
+    endif()
+
+    add_lit_target("${target}" "Running lit suite ${directory}"
+      ${lit_suite}
+      ${EXCLUDE_FROM_CHECK_ALL}
+      PARAMS ${ARG_PARAMS}
+      DEPENDS ${ARG_DEPENDS}
+      ARGS ${ARG_ARGS}
+    )
+    set_target_properties(${target} PROPERTIES FOLDER ${ARG_FOLDER})
+  endif()
+endfunction()
+# SYCLomatic_CUSTOMIZATION end
+
 function(llvm_install_library_symlink name dest type)
   cmake_parse_arguments(ARG "" "COMPONENT" "" ${ARGN})
   foreach(path ${CMAKE_MODULE_PATH})
