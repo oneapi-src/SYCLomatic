@@ -13,9 +13,9 @@
 //===----------------------------------------------------------------------===//
 
 #include "UnwrappedLineParser.h"
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 #include "clang/Basic/SourceManager.h"
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 #include "FormatToken.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/Support/Debug.h"
@@ -27,7 +27,7 @@
 
 namespace clang {
 namespace format {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 static bool isAllSpaceUntilNL(const FormatToken *FormatTok,
                               const SourceManager &SourceMgr) {
   auto Loc = FormatTok->getStartOfNonWhitespace();
@@ -68,7 +68,7 @@ bool isInSameLine(const FormatToken *TokA, const FormatToken *TokB,
   else
     return false;
 }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 class FormatTokenSource {
 public:
   virtual ~FormatTokenSource() {}
@@ -241,11 +241,11 @@ public:
 
   ~ScopedLineState() {
     if (!Parser.Line->Tokens.empty())
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
       Parser.addUnwrappedLine(UnwrappedLineParser::LineLevel::Remove, true);
 #else
       Parser.addUnwrappedLine();
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     assert(Parser.Line->Tokens.empty());
     Parser.Line = std::move(PreBlockLine);
     if (Parser.CurrentLines == &Parser.PreprocessorDirectives)
@@ -358,7 +358,7 @@ private:
 
 } // end anonymous namespace
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 UnwrappedLineParser::UnwrappedLineParser(const FormatStyle &Style,
                                          const AdditionalKeywords &Keywords,
                                          unsigned FirstStartColumn,
@@ -388,7 +388,7 @@ UnwrappedLineParser::UnwrappedLineParser(const FormatStyle &Style,
                        ? IG_Rejected
                        : IG_Inited),
       IncludeGuardToken(nullptr), FirstStartColumn(FirstStartColumn) {}
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 void UnwrappedLineParser::reset() {
   PPBranchLevel = -1;
@@ -1163,11 +1163,11 @@ void UnwrappedLineParser::parsePPDefine() {
     parseParens();
   if (Style.IndentPPDirectives != FormatStyle::PPDIS_None)
     Line->Level += PPBranchLevel + 1;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   addUnwrappedLine(LineLevel::Remove, true);
 #else
   addUnwrappedLine();
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   ++Line->Level;
 
   // Errors during a preprocessor directive can only affect the layout of the
@@ -1184,11 +1184,11 @@ void UnwrappedLineParser::parsePPUnknown() {
   } while (!eof());
   if (Style.IndentPPDirectives != FormatStyle::PPDIS_None)
     Line->Level += PPBranchLevel + 1;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   addUnwrappedLine(LineLevel::Remove, true);
 #else
   addUnwrappedLine();
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 // Here we exclude certain tokens that are not usually the first token in an
@@ -1368,14 +1368,14 @@ void UnwrappedLineParser::readTokenWithJavaScriptASI() {
       return;
   }
   if (Next->is(tok::exclaim) && PreviousMustBeValue)
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   {
     addUnwrappedLine();
     return;
   }
 #else
     return addUnwrappedLine();
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   bool NextMustBeValue = mustBeJSIdentOrValue(Keywords, Next);
   bool NextEndsTemplateExpr =
       Next->is(TT_TemplateString) && Next->TokenText.startswith("}");
@@ -1383,24 +1383,24 @@ void UnwrappedLineParser::readTokenWithJavaScriptASI() {
       (PreviousMustBeValue ||
        Previous->isOneOf(tok::r_square, tok::r_paren, tok::plusplus,
                          tok::minusminus)))
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   {
     addUnwrappedLine();
     return;
   }
 #else
     return addUnwrappedLine();
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   if ((PreviousMustBeValue || Previous->is(tok::r_paren)) &&
       isJSDeclOrStmt(Keywords, Next))
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   {
     addUnwrappedLine();
     return;
   }
 #else
     return addUnwrappedLine();
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 void UnwrappedLineParser::parseStructuralElement(IfStmtKind *IfKind,
@@ -1499,10 +1499,10 @@ void UnwrappedLineParser::parseStructuralElement(IfStmtKind *IfKind,
       nextToken();
       if (FormatTok->Tok.is(tok::l_brace)) {
         if (Style.BraceWrapping.AfterExternBlock)
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
           if (formatRangeGetter() != FormatRange::migrated ||
               isAllSpaceUntilNL(FormatTok, SourceMgr))
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
           addUnwrappedLine();
         // Either we indent or for backwards compatibility we follow the
         // AfterExternBlock style.
@@ -1757,11 +1757,11 @@ void UnwrappedLineParser::parseStructuralElement(IfStmtKind *IfKind,
           if (Style.BraceWrapping.AfterControlStatement ==
               FormatStyle::BWACS_Always)
             addUnwrappedLine();
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
         } else if (formatRangeGetter() == FormatRange::migrated &&
                    isAllSpaceUntilNL(FormatTok, SourceMgr)) {
           addUnwrappedLine();
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
         } else if (Style.BraceWrapping.AfterFunction) {
           addUnwrappedLine();
         }
@@ -2449,12 +2449,12 @@ FormatToken *UnwrappedLineParser::parseIfThenElse(IfStmtKind *IfKind,
   IfStmtKind IfBlockKind = IfStmtKind::NotIf;
 
   if (FormatTok->Tok.is(tok::l_brace)) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     if (formatRangeGetter() == FormatRange::migrated &&
         isAllSpaceUntilNL(FormatTok, SourceMgr)) {
       addUnwrappedLine();
     }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     IfLeftBrace = FormatTok;
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     IfBlockKind = parseBlock();
@@ -2463,7 +2463,7 @@ FormatToken *UnwrappedLineParser::parseIfThenElse(IfStmtKind *IfKind,
     else
       NeedsUnwrappedLine = true;
   } else {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     if (formatRangeGetter() == FormatRange::migrated) {
       if (addUnwrappedLine()) {
         ++Line->Level;
@@ -2473,14 +2473,14 @@ FormatToken *UnwrappedLineParser::parseIfThenElse(IfStmtKind *IfKind,
         parseStructuralElement();
       }
     } else {
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
       addUnwrappedLine();
       ++Line->Level;
       parseStructuralElement();
       --Line->Level;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   }
 
   bool KeepIfBraces = false;
@@ -2609,14 +2609,14 @@ void UnwrappedLineParser::parseTryCatch() {
   if (FormatTok->is(tok::l_brace)) {
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock();
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     if ((formatRangeGetter() == FormatRange::migrated &&
          isAllSpaceUntilNL(FormatTok, SourceMgr)) ||
         (formatRangeGetter() != FormatRange::migrated &&
          Style.BraceWrapping.BeforeCatch))
 #else
     if (Style.BraceWrapping.BeforeCatch)
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
       addUnwrappedLine();
     else
       NeedsUnwrappedLine = true;
@@ -2686,14 +2686,14 @@ void UnwrappedLineParser::parseNamespace() {
         nextToken();
   }
   if (FormatTok->Tok.is(tok::l_brace)) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     if ((formatRangeGetter() == FormatRange::migrated &&
          isAllSpaceUntilNL(FormatTok, SourceMgr)) ||
         (formatRangeGetter() != FormatRange::migrated &&
          ShouldBreakBeforeBrace(Style, InitialToken)))
 #else
     if (ShouldBreakBeforeBrace(Style, InitialToken))
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
       addUnwrappedLine();
 
     unsigned AddLevels =
@@ -2781,12 +2781,12 @@ void UnwrappedLineParser::parseForOrWhileLoop() {
   keepAncestorBraces();
 
   if (FormatTok->Tok.is(tok::l_brace)) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     if (formatRangeGetter() == FormatRange::migrated &&
         isAllSpaceUntilNL(FormatTok, SourceMgr)) {
       addUnwrappedLine();
     }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     FormatToken *LeftBrace = FormatTok;
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock();
@@ -2814,12 +2814,12 @@ void UnwrappedLineParser::parseDoWhile() {
   keepAncestorBraces();
 
   if (FormatTok->Tok.is(tok::l_brace)) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     if (formatRangeGetter() == FormatRange::migrated &&
         isAllSpaceUntilNL(FormatTok, SourceMgr)) {
       addUnwrappedLine();
     }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock();
     if (Style.BraceWrapping.BeforeWhile)
@@ -2906,12 +2906,12 @@ void UnwrappedLineParser::parseSwitch() {
   keepAncestorBraces();
 
   if (FormatTok->Tok.is(tok::l_brace)) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     if (formatRangeGetter() == FormatRange::migrated &&
         isAllSpaceUntilNL(FormatTok, SourceMgr)) {
       addUnwrappedLine();
     }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock();
     addUnwrappedLine();
@@ -3572,14 +3572,14 @@ void UnwrappedLineParser::parseRecord(bool ParseAsExpr) {
     if (ParseAsExpr) {
       parseChildBlock();
     } else {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
       if ((formatRangeGetter() == FormatRange::migrated &&
            isAllSpaceUntilNL(FormatTok, SourceMgr)) ||
           (formatRangeGetter() != FormatRange::migrated &&
            ShouldBreakBeforeBrace(Style, InitialToken)))
 #else
       if (ShouldBreakBeforeBrace(Style, InitialToken))
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
         addUnwrappedLine();
 
       unsigned AddLevels = Style.IndentAccessModifiers ? 2u : 1u;
@@ -3812,23 +3812,23 @@ LLVM_ATTRIBUTE_UNUSED static void printDebugInfo(const UnwrappedLine &Line,
   llvm::dbgs() << "\n";
 }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 bool UnwrappedLineParser::addUnwrappedLine(LineLevel AdjustLevel,
                                            bool MustAdd) {
 #else
 void UnwrappedLineParser::addUnwrappedLine(LineLevel AdjustLevel) {
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   if (Line->Tokens.empty())
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     return false;
 #else
     return;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   LLVM_DEBUG({
     if (CurrentLines == &Lines)
       printDebugInfo(*Line);
   });
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   if ((formatRangeGetter() == FormatRange::migrated) && !MustAdd &&
       FormatTok->Previous &&
       isInSameLine(FormatTok->Previous, FormatTok, SourceMgr)) {
@@ -3846,7 +3846,7 @@ void UnwrappedLineParser::addUnwrappedLine(LineLevel AdjustLevel) {
     }
     return false;
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
   // If this line closes a block when in Whitesmiths mode, remember that
   // information so that the level can be decreased after the line is added.
@@ -3871,11 +3871,11 @@ void UnwrappedLineParser::addUnwrappedLine(LineLevel AdjustLevel) {
   }
   // Disconnect the current token from the last token on the previous line.
   FormatTok->Previous = nullptr;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   return true;
 #else
   return;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 bool UnwrappedLineParser::eof() const { return FormatTok->Tok.is(tok::eof); }

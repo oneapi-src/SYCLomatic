@@ -1404,7 +1404,7 @@ inline Error unwrap(LLVMErrorRef ErrRef) {
 } // end namespace llvm
 
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 class DPCTError : public llvm::ErrorInfo<DPCTError> {
 public:
   std::error_code convertToErrorCode() const override {
@@ -1418,5 +1418,5 @@ public:
 
   int EC = 0; // MigrationSucceeded
 };
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 #endif // LLVM_SUPPORT_ERROR_H

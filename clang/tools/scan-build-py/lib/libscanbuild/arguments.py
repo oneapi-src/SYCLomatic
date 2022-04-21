@@ -30,14 +30,14 @@ def parse_args_for_intercept_build():
 
     parser = create_intercept_parser()
     args = parser.parse_args()
-    #INTEL_CUSTOMIZATION begin
+# SYCLomatic_CUSTOMIZATION begin
     if len(args.cdb)>4095:
         print('intercept-build exited (Error: File name specified by --cdb option is too long)')
         sys.exit(-1)
     if args.no_linker_entry > 0 and args.linker_entry > 1:
         print('intercept-build exited (Error: --linker-entry conflicts with --no-linker-entry)')
         sys.exit(-1)
-    #INTEL_CUSTOMIZATION end
+# SYCLomatic_CUSTOMIZATION end
 
     reconfigure_logging(args.verbose)
     logging.debug('Raw arguments %s', sys.argv)
@@ -475,11 +475,11 @@ def parser_add_prefer_wrapper(parser):
     parser.add_argument(
         '--override-compiler',
         action='store_true',
-        #INTEL_CUSTOMIZATION begin
+# SYCLomatic_CUSTOMIZATION begin
         #help="""Always resort to the compiler wrapper even when better
         #intercept methods are available.""",
         help=argparse.SUPPRESS)
-        #INTEL_CUSTOMIZATION end
+# SYCLomatic_CUSTOMIZATION end
 
 
 def parser_add_compilers(parser):
@@ -488,7 +488,7 @@ def parser_add_compilers(parser):
         metavar='<path>',
         dest='cc',
         default=os.getenv('CC', 'cc'),
-        #INTEL_CUSTOMIZATION begin
+# SYCLomatic_CUSTOMIZATION begin
         #help="""When '%(prog)s' analyzes a project by interposing a compiler
         #wrapper, which executes a real compiler for compilation and do other
         #tasks (record the compiler invocation). Because of this interposing,
@@ -499,16 +499,16 @@ def parser_add_compilers(parser):
         #If you need '%(prog)s' to use a specific compiler for *compilation*
         #then you can use this option to specify a path to that compiler.""",
         help=argparse.SUPPRESS)
-        #INTEL_CUSTOMIZATION end
+# SYCLomatic_CUSTOMIZATION end
     parser.add_argument(
         '--use-c++',
         metavar='<path>',
         dest='cxx',
         default=os.getenv('CXX', 'c++'),
-        #INTEL_CUSTOMIZATION begin
+# SYCLomatic_CUSTOMIZATION begin
         #help="""This is the same as "--use-cc" but for C++ code.""")
         help=argparse.SUPPRESS)
-        #INTEL_CUSTOMIZATION end
+# SYCLomatic_CUSTOMIZATION end
 
 
 class AppendCommaSeparated(argparse.Action):

@@ -1179,9 +1179,9 @@ def : MutualExclusions<[CUDAGlobal, CUDAHost]>;
 def HIPManaged : InheritableAttr {
   let Spellings = [GNU<"managed">, Declspec<"__managed__">];
   let Subjects = SubjectList<[Var]>;
-  //INTEL_CUSTOMIZATION begin
+// SYCLomatic_CUSTOMIZATION begin
   let LangOpts = [HIP, CUDA];
-  //INTEL_CUSTOMIZATION end
+// SYCLomatic_CUSTOMIZATION end
   let Documentation = [HIPManagedAttrDocs];
 }
 

@@ -42,7 +42,7 @@ const char *CudaVersionToString(CudaVersion V) {
     return "11.4";
   case CudaVersion::CUDA_115:
     return "11.5";
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   case CudaVersion::CUDA_116:
     return "11.6";
 #endif
@@ -69,7 +69,7 @@ CudaVersion CudaStringToVersion(const llvm::Twine &S) {
       .Case("11.3", CudaVersion::CUDA_113)
       .Case("11.4", CudaVersion::CUDA_114)
       .Case("11.5", CudaVersion::CUDA_115)
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
       .Case("11.6", CudaVersion::CUDA_116)
 #endif
       .Default(CudaVersion::UNKNOWN);
@@ -254,7 +254,7 @@ CudaVersion ToCudaVersion(llvm::VersionTuple Version) {
     return CudaVersion::CUDA_114;
   case 115:
     return CudaVersion::CUDA_115;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   case 116:
     return CudaVersion::CUDA_116;
 #endif

@@ -39,7 +39,7 @@
 #else
 extern char **environ;
 #endif
-#define INTEL_CUSTOMIZATION
+#define SYCLomatic_CUSTOMIZATION
 
 #define ENV_OUTPUT "INTERCEPT_BUILD_TARGET_DIR"
 #ifdef APPLE
@@ -51,10 +51,10 @@ extern char **environ;
 #define ENV_SIZE 2
 #endif
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 #include <ctype.h>
 #define PATH_MAX 4096
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 #define DLSYM(TYPE_, VAR_, SYMBOL_)                                            \
   union {                                                                      \
@@ -77,11 +77,11 @@ static char const **bear_update_environment(char *const envp[],
 static char const **bear_update_environ(char const **in, char const *key,
                                         char const *value);
 static char **bear_get_environment();
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 static int bear_report_call(char const *fun, char const *argv[]);
 #else
 static void bear_report_call(char const *fun, char const *const argv[]);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 static char const **bear_strings_build(char const *arg, va_list *ap);
 static char const **bear_strings_copy(char const **const in);
 static char const **bear_strings_append(char const **in, char const *e);
@@ -163,13 +163,13 @@ static void on_unload(void) {
 
 #ifdef HAVE_EXECVE
 int execve(const char *path, char *const argv[], char *const envp[]) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   int ret = bear_report_call(__func__, (char const **)argv);
   if (ret)
     path = argv[0];
 #else
   bear_report_call(__func__, (char const *const *)argv);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   return call_execve(path, argv, envp);
 }
 #endif
@@ -179,13 +179,13 @@ int execve(const char *path, char *const argv[], char *const envp[]) {
 #error can not implement execv without execve
 #endif
 int execv(const char *path, char *const argv[]) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   int ret = bear_report_call(__func__, (char const **)argv);
   if (ret)
     path = argv[0];
 #else
   bear_report_call(__func__, (char const *const *)argv);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   char *const *envp = bear_get_environment();
   return call_execve(path, argv, envp);
 }
@@ -193,7 +193,7 @@ int execv(const char *path, char *const argv[]) {
 
 #ifdef HAVE_EXECVPE
 int execvpe(const char *file, char *const argv[], char *const envp[]) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   int ret = bear_report_call(__func__, (char const **)argv);
   // To sync file name with argv[0], in case argv[0] is changed
   // by bear_report_call.
@@ -201,14 +201,14 @@ int execvpe(const char *file, char *const argv[], char *const envp[]) {
     file = argv[0];
 #else
   bear_report_call(__func__, (char const *const *)argv);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   return call_execvpe(file, argv, envp);
 }
 #endif
 
 #ifdef HAVE_EXECVP
 int execvp(const char *file, char *const argv[]) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   int ret = bear_report_call(__func__, (char const **)argv);
   // To sync file name with argv[0], in case argv[0] is changed
   // by bear_report_call.
@@ -216,14 +216,14 @@ int execvp(const char *file, char *const argv[]) {
     file = argv[0];
 #else
   bear_report_call(__func__, (char const *const *)argv);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   return call_execvp(file, argv);
 }
 #endif
 
 #ifdef HAVE_EXECVP2
 int execvP(const char *file, const char *search_path, char *const argv[]) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   int ret = bear_report_call(__func__, (char const **)argv);
   // To sync file name with argv[0], in case argv[0] is changed
   // by bear_report_call.
@@ -231,20 +231,20 @@ int execvP(const char *file, const char *search_path, char *const argv[]) {
     file = argv[0];
 #else
   bear_report_call(__func__, (char const *const *)argv);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   return call_execvP(file, search_path, argv);
 }
 #endif
 
 #ifdef HAVE_EXECT
 int exect(const char *path, char *const argv[], char *const envp[]) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   int ret = bear_report_call(__func__, (char const **)argv);
   if (ret)
     path = argv[0];
 #else
   bear_report_call(__func__, (char const *const *)argv);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   return call_exect(path, argv, envp);
 }
 #endif
@@ -259,13 +259,13 @@ int execl(const char *path, const char *arg, ...) {
   char const **argv = bear_strings_build(arg, &args);
   va_end(args);
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   int ret = bear_report_call(__func__, (char const **)argv);
   if (ret)
     path = argv[0];
 #else
   bear_report_call(__func__, (char const *const *)argv);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   char *const *envp = bear_get_environment();
   int const result = call_execve(path, (char *const *)argv, envp);
 
@@ -284,13 +284,13 @@ int execlp(const char *file, const char *arg, ...) {
   char const **argv = bear_strings_build(arg, &args);
   va_end(args);
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   int ret = bear_report_call(__func__, (char const **)argv);
   if (ret)
     file = argv[0];
 #else
   bear_report_call(__func__, (char const *const *)argv);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   int const result = call_execvp(file, (char *const *)argv);
 
   bear_strings_release(argv);
@@ -310,13 +310,13 @@ int execle(const char *path, const char *arg, ...) {
   char const **envp = va_arg(args, char const **);
   va_end(args);
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   int ret = bear_report_call(__func__, (char const **)argv);
   if (ret)
     path = argv[0];
 #else
   bear_report_call(__func__, (char const *const *)argv);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   int const result =
       call_execve(path, (char *const *)argv, (char *const *)envp);
 
@@ -330,13 +330,13 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path,
                 const posix_spawn_file_actions_t *file_actions,
                 const posix_spawnattr_t *restrict attrp,
                 char *const argv[restrict], char *const envp[restrict]) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   int ret = bear_report_call(__func__, (char const **)argv);
   if (ret)
     path = argv[0];
 #else
   bear_report_call(__func__, (char const *const *)argv);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   return call_posix_spawn(pid, path, file_actions, attrp, argv, envp);
 }
 #endif
@@ -346,11 +346,11 @@ int posix_spawnp(pid_t *restrict pid, const char *restrict file,
                  const posix_spawn_file_actions_t *file_actions,
                  const posix_spawnattr_t *restrict attrp,
                  char *const argv[restrict], char *const envp[restrict]) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   bear_report_call(__func__, (char const **)argv);
 #else
   bear_report_call(__func__, (char const *const *)argv);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   return call_posix_spawnp(pid, file, file_actions, attrp, argv, envp);
 }
 #endif
@@ -477,7 +477,7 @@ static int call_posix_spawnp(pid_t *restrict pid, const char *restrict file,
 }
 #endif
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 
 static int call_eaccess(const char *pathname, int mode) {
   typedef int (*func)(const char *, int);
@@ -1204,11 +1204,11 @@ char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
   return buffer;
 }
 
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 /* this method is to write log about the process creation. */
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 // This method parses the command execution issued by the build tool make to
 // write log for the compile options and fake the expecting outcome for the
 // command. It returns whether intercept-stub is used to take over the command
@@ -1219,17 +1219,17 @@ char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
 static int bear_report_call(char const *fun, char const *argv[]) {
 #else
 static void bear_report_call(char const *fun, char const *const argv[]) {
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   static int const GS = 0x1d;
   static int const RS = 0x1e;
   static int const US = 0x1f;
 
   if (!initialized)
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     initialized = bear_capture_env_t(&initial_env);
 #else
     return;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
   pthread_mutex_lock(&mutex);
   const char *cwd = getcwd(NULL, 0);
@@ -1258,7 +1258,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   fprintf(fd, "%s%c", fun, RS);
   fprintf(fd, "%s%c", cwd, RS);
   size_t const argc = bear_strings_length(argv);
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   // compiler list should be intercepted.
   const char *const compiler_array[] = {"nvcc", "clang++"};
   // Current compiler index intercepted.
@@ -1396,7 +1396,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   for (size_t it = 0; it < argc; ++it) {
     fprintf(fd, "%s%c", argv[it], US);
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   fprintf(fd, "%c", GS);
   if (fclose(fd)) {
     perror("bear: fclose");
@@ -1405,7 +1405,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   }
   free((void *)cwd);
   pthread_mutex_unlock(&mutex);
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   if (is_nvcc_or_ld == 1 && flag_object == 1) {
     ret = 1;
   } else if (is_nvcc_or_ld == 1) {
@@ -1488,7 +1488,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
     exit(0);
   }
   return is_stub_need;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 /* update environment assure that chilren processes will copy the desired

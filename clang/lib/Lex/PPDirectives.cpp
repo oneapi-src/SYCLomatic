@@ -2176,12 +2176,12 @@ Preprocessor::ImportAction Preprocessor::HandleHeaderIncludeOrImport(
     Action = (SuggestedModule && !getLangOpts().CompilingPCH) ? Import : Skip;
   }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   if (Callbacks && Action != Skip &&
     !Callbacks->ShouldEnter(LookupFilename, isAngled)) {
     Action = Skip;
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   // Check for circular inclusion of the main file.
   // We can't generate a consistent preamble with regard to the conditional
   // stack if the main file is included again as due to the preamble bounds
@@ -3054,12 +3054,12 @@ void Preprocessor::HandleUndefDirective() {
 }
 
 
-#if INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 namespace clang{
   extern std::function<bool(SourceLocation)> IsInRootFunc;
   extern std::function<unsigned int()> GetRunRound;
 }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 //===----------------------------------------------------------------------===//
 // Preprocessor Conditional Directive Handling.
 //===----------------------------------------------------------------------===//
@@ -3124,7 +3124,7 @@ void Preprocessor::HandleIfdefDirective(Token &Result,
   bool RetainExcludedCB = PPOpts->RetainExcludedConditionalBlocks &&
     getSourceManager().isInMainFile(DirectiveTok.getLocation());
 
-#if INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   // If macro name is '__CUDA_ARCH__' and is inside in-root folder, handle it as
   // defined.
   if (!MI && MII->getName() == "__CUDA_ARCH__" &&
@@ -3132,7 +3132,7 @@ void Preprocessor::HandleIfdefDirective(Token &Result,
     static MacroInfo CudaArchFaker(SourceLocation::getFromRawEncoding(0));
     MI = &CudaArchFaker;
   }
-#endif // INTEL_CUSTOMIZATION
+#endif // SYCLomatic_CUSTOMIZATION
 
   // Should we include the stuff contained by this directive?
   if (PPOpts->SingleFileParseMode && !MI) {

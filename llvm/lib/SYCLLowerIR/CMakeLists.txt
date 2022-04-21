@@ -19,8 +19,8 @@ if (NOT TARGET LLVMGenXIntrinsics)
     # introducing named barrier support in adaptor pass
     # named barrier required for DPC++ and other customers
     set(LLVMGenXIntrinsics_GIT_TAG 8b6e209fe1269a2c6470b36dfbaa0e051d2a100f)
-    
-    if( INTEL_CUSTOMIZATION )
+
+    if( SYCLomatic_CUSTOMIZATION )
       # for dpct builds the LLVMGenXIntrinsics_GIT_REPO is constructed from
       # GIT_REPO_PATH and GIT_REPO_TAG set independently depending on build
       # configuration (public/embargo) and condition (building from under ICS
@@ -34,7 +34,7 @@ if (NOT TARGET LLVMGenXIntrinsics)
       # Date:   Wed Jan 26 15:11:43 2022 +0000
       # Fix potential null pointer dereference
       set(LLVMGenXIntrinsics_GIT_TAG a7a3efa116ae165132508f3f9a975fccb196fede)
-      
+
       # Determine if the build is embargo and provide specific settings.
       set(IS_INTERNAL_ESIMD_BUILD FALSE)
 
@@ -47,14 +47,14 @@ if (NOT TARGET LLVMGenXIntrinsics)
       # Construct GIT_REPO from from GIT_REPO_PATH and GIT_REPO_NAME.
       set( LLVMGenXIntrinsics_GIT_REPO
       ${LLVMGenXIntrinsics_GIT_REPO_PATH}/${LLVMGenXIntrinsics_GIT_REPO_NAME} )
-      
-    endif(INTEL_CUSTOMIZATION)
 
-    message(STATUS "vc-intrinsics are missing. Will try to download them from ${LLVMGenXIntrinsics_GIT_REPO} ") #INTEL_CUSTOMIZATION
+    endif(SYCLomatic_CUSTOMIZATION)
+
+    message(STATUS "vc-intrinsics are missing. Will try to download them from ${LLVMGenXIntrinsics_GIT_REPO} ") #SYCLomatic_CUSTOMIZATION
     include(FetchContent)
     FetchContent_Declare(vc-intrinsics
-      GIT_REPOSITORY ${LLVMGenXIntrinsics_GIT_REPO} #INTEL_CUSTOMIZATION
-      GIT_TAG        ${LLVMGENXIntrinsics_GIT_TAG}  #INTEL_CUSTOMIZATION
+      GIT_REPOSITORY ${LLVMGenXIntrinsics_GIT_REPO} #SYCLomatic_CUSTOMIZATION
+      GIT_TAG        ${LLVMGENXIntrinsics_GIT_TAG}  #SYCLomatic_CUSTOMIZATION
     )
     FetchContent_MakeAvailable(vc-intrinsics)
     FetchContent_GetProperties(vc-intrinsics)

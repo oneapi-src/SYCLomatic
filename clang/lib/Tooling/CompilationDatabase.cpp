@@ -71,18 +71,18 @@ CompilationDatabase::loadFromDirectory(StringRef BuildDirectory,
     if (std::unique_ptr<CompilationDatabase> DB =
             Plugin->loadFromDirectory(BuildDirectory, DatabaseErrorMessage))
       return DB;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     if (Database.getName() == "json-compilation-database") {
       ErrorStream << DatabaseErrorMessage << "\n";
     }
 #else
     ErrorStream << Database.getName() << ": " << DatabaseErrorMessage << "\n";
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   }
   return nullptr;
 }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 static std::unique_ptr<CompilationDatabase>
 findCompilationDatabaseFromDirectory(StringRef Directory,
                                      std::string &ErrorMessage,
@@ -92,13 +92,13 @@ findCompilationDatabaseFromDirectory(StringRef Directory,
 static std::unique_ptr<CompilationDatabase>
 findCompilationDatabaseFromDirectory(StringRef Directory,
                                      std::string &ErrorMessage) {
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   std::stringstream ErrorStream;
   bool HasErrorMessage = false;
   while (!Directory.empty()) {
     std::string LoadErrorMessage;
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     std::unique_ptr<CompilationDatabase> DB =
         CompilationDatabase::loadFromDirectory(Directory, LoadErrorMessage);
     if (llvm::sys::fs::exists(Directory + "/compile_commands.json") && !DB) {
@@ -126,14 +126,14 @@ findCompilationDatabaseFromDirectory(StringRef Directory,
                   << LoadErrorMessage;
       HasErrorMessage = true;
     }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     Directory = llvm::sys::path::parent_path(Directory);
   }
   ErrorMessage = ErrorStream.str();
   return nullptr;
 }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 std::unique_ptr<CompilationDatabase>
 CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
                                           std::string &ErrorMessage,
@@ -142,11 +142,11 @@ CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
 std::unique_ptr<CompilationDatabase>
 CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
                                           std::string &ErrorMessage) {
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   SmallString<1024> AbsolutePath(getAbsolutePath(SourceFile));
   StringRef Directory = llvm::sys::path::parent_path(AbsolutePath);
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   DatabaseStatus ErrCode;
   std::unique_ptr<CompilationDatabase> DB =
       findCompilationDatabaseFromDirectory(Directory, ErrorMessage,
@@ -163,11 +163,11 @@ CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
   if (!DB)
     ErrorMessage = ("Could not auto-detect compilation database for file \"" +
                    SourceFile + "\"\n" + ErrorMessage).str();
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   return DB;
 }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 std::unique_ptr<CompilationDatabase>
 CompilationDatabase::autoDetectFromDirectory(
     StringRef SourceDir, std::string &ErrorMessage, DatabaseStatus &ErrCode,
@@ -208,7 +208,7 @@ CompilationDatabase::autoDetectFromDirectory(StringRef SourceDir,
             .str();
   return DB;
 }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 std::vector<CompileCommand> CompilationDatabase::getAllCompileCommands() const {
   std::vector<CompileCommand> Result;
@@ -380,9 +380,9 @@ static bool stripPositionalArgs(std::vector<const char *> Args,
   }
 
   if (CompileAnalyzer.Inputs.empty()) {
-#ifndef INTEL_CUSTOMIZATION
+#ifndef SYCLomatic_CUSTOMIZATION
     ErrorMsg = "warning: no compile jobs found\n";
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     return false;
   }
 

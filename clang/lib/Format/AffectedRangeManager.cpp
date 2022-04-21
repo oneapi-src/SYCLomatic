@@ -142,7 +142,7 @@ bool AffectedRangeManager::nonPPLineAffected(
       Line->MatchingOpeningBlockLineIndex != UnwrappedLine::kInvalidIndex &&
       Lines[Line->MatchingOpeningBlockLineIndex]->Affected;
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   if (formatRangeGetter() == FormatRange::migrated) {
     // only format migrated lines
     if (SomeTokenAffected) {
@@ -151,15 +151,15 @@ bool AffectedRangeManager::nonPPLineAffected(
     }
   } else {
     // format all lines
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   if (SomeTokenAffected || SomeFirstChildAffected || LineMoved ||
       IsContinuedComment || IsAffectedClosingBrace) {
     Line->Affected = true;
     SomeLineAffected = true;
   }
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   return SomeLineAffected;
 }
 

@@ -29,7 +29,7 @@ function(append_info name path)
     file(APPEND "${HEADER_FILE}.tmp"
       "#undef ${name}_REVISION\n")
   endif()
-#INTEL_CUSTOMIZATION
+# SYCLomatic_CUSTOMIZATION begin
 #Dont't remove the code but comment out is for: easy fix rebase conflict.
 # if(repository)
 #    file(APPEND "${HEADER_FILE}.tmp"
@@ -38,6 +38,7 @@ function(append_info name path)
 #    file(APPEND "${HEADER_FILE}.tmp"
 #      "#undef ${name}_REPOSITORY\n")
 #  endif()
+# SYCLomatic_CUSTOMIZATION end
 endfunction()
 
 foreach(name IN LISTS NAMES)

@@ -90,7 +90,7 @@ foreach(lib ${LibScanbuild})
   install(PROGRAMS lib/libscanbuild/${lib}
           DESTINATION lib/libscanbuild
           COMPONENT scan-build-py)
-  if(INTEL_CUSTOMIZATION)
+# SYCLomatic_CUSTOMIZATION begin
     list(APPEND dpct-intercept-build-dependends ${CMAKE_BINARY_DIR}/lib/libscanbuild/${lib})
     if(INTEL_DEPLOY_UNIFIED_LAYOUT)
       install(PROGRAMS lib/libscanbuild/${lib}
@@ -101,7 +101,7 @@ foreach(lib ${LibScanbuild})
               DESTINATION lib/libscanbuild
               COMPONENT dpct-intercept-build)
     endif()
-  endif()
+# SYCLomatic_CUSTOMIZATION end
 endforeach()
 
 foreach(resource ${LibScanbuildResources})
@@ -143,7 +143,7 @@ add_llvm_install_targets("install-scan-build-py"
                          DEPENDS scan-build-py
                          COMPONENT scan-build-py)
 
-if (INTEL_CUSTOMIZATION)
+if (SYCLomatic_CUSTOMIZATION)
   if (UNIX)
     add_library(ear SHARED
       ${CMAKE_CURRENT_SOURCE_DIR}/lib/libear/ear.c
@@ -168,7 +168,7 @@ if (INTEL_CUSTOMIZATION)
       )
     endif()
     list(APPEND dpct-intercept-build-dependends ear)
-    
+
     add_executable(intercept-stub
       ${CMAKE_CURRENT_SOURCE_DIR}/lib/libear/intercept-stub.c
     )
@@ -186,7 +186,7 @@ if (INTEL_CUSTOMIZATION)
     endif()
 
     list(APPEND dpct-intercept-build-dependends intercept-stub)
-    
+
     list(APPEND dpct-intercept-build-dependends ${CMAKE_BINARY_DIR}/lib/libear/__init__.py)
     if(INTEL_DEPLOY_UNIFIED_LAYOUT)
       install(PROGRAMS lib/libear/__init__.py

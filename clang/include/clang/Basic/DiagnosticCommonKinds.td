@@ -22,12 +22,12 @@ def select_constexpr_spec_kind : TextSubstitution<
 def fatal_too_many_errors
   : Error<"too many errors emitted, stopping now">, DefaultFatal;
 
-//INTEL_CUSTOMIZATION begin
+// SYCLomatic_CUSTOMIZATION begin
 def warn_stack_exhausted : Warning<
   "stack nearly exhausted; migration time may suffer, and "
   "crashes due to stack overflow are likely">,
   InGroup<DiagGroup<"stack-exhausted">>, NoSFINAE;
-//INTEL_CUSTOMIZATION end
+// SYCLomatic_CUSTOMIZATION end
 
 def note_declared_at : Note<"declared here">;
 def note_previous_definition : Note<"previous definition is here">;
@@ -239,10 +239,10 @@ def ext_clang_diagnose_if : Extension<"'diagnose_if' is a clang extension">,
 def err_too_large_for_fixed_point : Error<
   "this value is too large for this fixed point type">;
 
-//INTEL_CUSTOMIZATION begin
+// SYCLomatic_CUSTOMIZATION begin
 def err_fixed_point_not_enabled : Error<"migrate with "
   "'--extra-arg=\"-ffixed-point\"' to enable fixed point types">;
-//INTEL_CUSTOMIZATION end
+// SYCLomatic_CUSTOMIZATION end
 
 def err_unimplemented_conversion_with_fixed_point_type : Error<
   "conversion between fixed point and %0 is not yet supported">;
@@ -376,7 +376,7 @@ def note_suggest_disabling_all_checkers : Note<
     "use -analyzer-disable-all-checks to disable all static analyzer checkers">;
 
 // Poison system directories.
-//INTEL_CUSTOMIZATION begin
+// SYCLomatic_CUSTOMIZATION begin
 def warn_poison_system_directories : Warning <
   "include location '%0' is unsafe for migration">,
   InGroup<DiagGroup<"poison-system-directories">>, DefaultIgnore;
@@ -390,4 +390,4 @@ def err_opencl_extension_and_feature_differs : Error<
 def err_opencl_feature_requires : Error<
   "feature %0 requires support of %1 feature">;
 }
-//INTEL_CUSTOMIZATION end
+// SYCLomatic_CUSTOMIZATION end

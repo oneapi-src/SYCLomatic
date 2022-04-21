@@ -28,7 +28,7 @@ void expectRewritten(const std::string &Code, const std::string &Expected,
   ASSERT_TRUE(tooling::runToolOnCode(Factory->create(), Code))
       << "Parsing error in \"" << Code << "\"";
   RewriterTestContext Context;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -43,7 +43,7 @@ void expectRewritten(const std::string &Code, const std::string &Expected,
   FileID ID = Context.createInMemoryFile("input.cc", Code);
   EXPECT_TRUE(tooling::applyAllReplacements(FileToReplace["input.cc"],
                                             Context.Rewrite));
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   EXPECT_EQ(Expected, Context.getRewrittenText(ID));
 }
 

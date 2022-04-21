@@ -48,7 +48,7 @@
 #include <utility>
 #include <vector>
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 #include <set>
 namespace clang {
 namespace tooling {
@@ -81,7 +81,7 @@ void SetIsExcludePathHandler(
 bool isExcludePath(const std::string &Path, bool IsRelative);
 } // namespace tooling
 } // namespace clang
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 namespace clang {
 
@@ -332,9 +332,9 @@ public:
   FileManager *Files;
   std::shared_ptr<PCHContainerOperations> PCHContainerOps;
   DiagnosticConsumer *DiagConsumer = nullptr;
-  #ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   DiagnosticConsumer *DiagnosticPrinter = nullptr;
-  #endif
+#endif // SYCLomatic_CUSTOMIZATION
   DiagnosticOptions *DiagOpts = nullptr;
 };
 
@@ -368,10 +368,10 @@ public:
             IntrusiveRefCntPtr<FileManager> Files = nullptr);
 
   ~ClangTool();
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   int proccessFiles(llvm::StringRef File, bool &ProcessingFailed,
                     bool &FileSkipped, int &StaticSymbol, ToolAction *Action);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   /// Set a \c DiagnosticConsumer to use during parsing.
   void setDiagnosticConsumer(DiagnosticConsumer *DiagConsumer) {
     this->DiagConsumer = DiagConsumer;
@@ -419,20 +419,20 @@ public:
   FileManager &getFiles() { return *Files; }
 
   llvm::ArrayRef<std::string> getSourcePaths() const { return SourcePaths; }
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   void setCompilationDatabaseDir(const std::string &Dir){
     CompilationDatabaseDir = Dir;
   }
   bool isInputfileSpecified() {
     return !SourcePaths.empty();
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 private:
   const CompilationDatabase &Compilations;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   std::string CompilationDatabaseDir = "";
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   std::vector<std::string> SourcePaths;
   std::shared_ptr<PCHContainerOperations> PCHContainerOps;
 

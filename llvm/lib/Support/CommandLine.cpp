@@ -1568,22 +1568,22 @@ bool CommandLineParser::ParseCommandLineOptions(int argc,
 
     if (!Handler) {
       if (SinkOpts.empty()) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
         *Errs << "Unknown command line argument '" << argv[i] << "'. ";
 #else
         *Errs << ProgramName << ": Unknown command line argument '" << argv[i]
               << "'.  Try: '" << argv[0] << " --help'\n";
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
         if (NearestHandler) {
           // If we know a near match, report it as well.
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
           *Errs << "Did you mean '"
                 << PrintArg(NearestHandlerString, 0) << "'?\n";
 #else
           *Errs << ProgramName << ": Did you mean '"
                 << PrintArg(NearestHandlerString, 0) << "'?\n";
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 		}
 
         ErrorParsing = true;
@@ -2050,9 +2050,9 @@ void generic_parser_base::printOptionInfo(const Option &O,
                          EqValue.size() +
                              argPlusPrefixesSize(O.ArgStr));
     for (unsigned i = 0, e = getNumOptions(); i != e; ++i) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
       if (getIsHiddenValue(i) == true) { continue; }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
       StringRef OptionName = getOption(i);
       StringRef Description = getDescription(i);
       if (!shouldPrintOption(OptionName, Description, O))
@@ -2383,13 +2383,13 @@ protected:
         continue;
 
       // Print category information.
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
       // outs() << "\n";
       // outs() << Category->getName() << ":\n";
 #else
       outs() << "\n";
       outs() << Category->getName() << ":\n";
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
       // Check if description is set.
       if (!Category->getDescription().empty())
@@ -2528,7 +2528,7 @@ struct CommandLineCommonOptions {
   // Define uncategorized/categorized help printers. These printers change their
   // behaviour at runtime depending on whether one or more Option categories
   // have been declared.
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   cl::opt<HelpPrinterWrapper, true, parser<bool>>
       HOp{"help",
           cl::desc("Provides list of Intel(R) DPC++ Compatibility Tool "
@@ -2541,7 +2541,7 @@ struct CommandLineCommonOptions {
           cl::desc("Display available options (--help-hidden for more)"),
           cl::location(WrappedNormalPrinter), cl::ValueDisallowed,
           cl::cat(GenericCategory), cl::sub(*AllSubCommands)};
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
   cl::alias HOpA{"h", cl::desc("Alias for --help"), cl::aliasopt(HOp),
                  cl::DefaultOption};
@@ -2578,7 +2578,7 @@ struct CommandLineCommonOptions {
   // Define the --version option that prints out the LLVM version for the tool
   VersionPrinter VersionPrinterInstance;
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   cl::opt<VersionPrinter, true, parser<bool>>
       VersOp{"version", cl::desc("Shows the version of the tool."),
              cl::location(VersionPrinterInstance), cl::ValueDisallowed,
@@ -2588,7 +2588,7 @@ struct CommandLineCommonOptions {
       VersOp{"version", cl::desc("Display the version of this program"),
              cl::location(VersionPrinterInstance), cl::ValueDisallowed,
              cl::cat(GenericCategory)};
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 };
 } // End anonymous namespace
 
@@ -2614,12 +2614,12 @@ OptionCategory &cl::getGeneralCategory() {
   static OptionCategory GeneralCategory{"General options"};
   return GeneralCategory;
 }
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 OptionCategory &cl::getDPCTCategory() {
   static OptionCategory DPCTCat{"Intel(R) DPC++ Compatibility Tool"};
   return DPCTCat;
 }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 void VersionPrinter::operator=(bool OptionWasSpecified) {
   if (!OptionWasSpecified)
@@ -2652,11 +2652,11 @@ void HelpPrinterWrapper::operator=(bool Value) {
   if (GlobalParser->RegisteredOptionCategories.size() > 1) {
     // unhide --help-list option so user can have uncategorized output if they
     // want it.
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     CommonOptions->HLOp.setHiddenFlag(Hidden);
 #else
     CommonOptions->HLOp.setHiddenFlag(NotHidden);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
     CategorizedPrinter = true; // Invoke categorized printer
   } else

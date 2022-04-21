@@ -48,15 +48,15 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 #include <functional>
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 #define DEBUG_TYPE "format-formatter"
 
 using clang::format::FormatStyle;
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 namespace clang {
 namespace format {
 std::function<FormatRange()> formatRangeGetter = nullptr;
@@ -66,7 +66,7 @@ void setFormatRangeGetterHandler(std::function<FormatRange()> Getter) {
 bool BlockLevelFormatFlag = false;
 } // namespace format
 } // namespace clang
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::format::FormatStyle::RawStringFormat)
 
 namespace llvm {
@@ -3135,9 +3135,9 @@ reformat(const FormatStyle &Style, StringRef Code,
       AnalyzerPass;
   SmallVector<AnalyzerPass, 4> Passes;
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   if (formatRangeGetter() == FormatRange::all) {
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   if (Style.isCpp() && Style.QualifierAlignment != FormatStyle::QAS_Leave) {
     Passes.emplace_back([&](const Environment &Env) {
       return QualifierAlignmentFixer(Env, Expanded, Code, Ranges,
@@ -3173,9 +3173,9 @@ reformat(const FormatStyle &Style, StringRef Code,
     Passes.emplace_back([&](const Environment &Env) {
       return JavaScriptRequoter(Env, Expanded).process();
     });
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
   Passes.emplace_back([&](const Environment &Env) {
     return Formatter(Env, Expanded, Status).process();
@@ -3389,7 +3389,7 @@ llvm::Expected<FormatStyle> getStyle(StringRef StyleName, StringRef FileName,
                                      bool AllowUnknownOptions) {
   if (!FS)
     FS = llvm::vfs::getRealFileSystem().get();
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   FormatStyle Style = getLLVMStyle(FormatStyle::LanguageKind::LK_Cpp);
   FormatStyle FallbackStyle = getNoStyle();
   // Default fallback style is LLVM
@@ -3400,7 +3400,7 @@ llvm::Expected<FormatStyle> getStyle(StringRef StyleName, StringRef FileName,
   FormatStyle FallbackStyle = getNoStyle();
   if (!getPredefinedStyle(FallbackStyleName, Style.Language, &FallbackStyle))
     return make_string_error("Invalid fallback style \"" + FallbackStyleName);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
   llvm::SmallVector<std::unique_ptr<llvm::MemoryBuffer>, 1>
       ChildFormatTextToApply;
@@ -3446,11 +3446,11 @@ llvm::Expected<FormatStyle> getStyle(StringRef StyleName, StringRef FileName,
   // StyleName.
   if (!Style.InheritsParentConfig && !StyleName.equals_insensitive("file")) {
     if (!getPredefinedStyle(StyleName, Style.Language, &Style))
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
       return make_string_error("Invalid value for --format-style");
 #else
       return make_string_error("Invalid value for -style");
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     if (!Style.InheritsParentConfig)
       return Style;
   }

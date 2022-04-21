@@ -111,7 +111,7 @@ TEST_F(RefactoringActionRulesTest, MyFirstRefactoringRule) {
     ASSERT_EQ(Result.size(), 1u);
     std::string YAMLString =
         const_cast<AtomicChange &>(Result[0]).toYAMLString();
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     SmallString<512> CurrentDir;
     llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -146,7 +146,7 @@ TEST_F(RefactoringActionRulesTest, MyFirstRefactoringRule) {
                  "    ReplacementText: b\n"
                  "...\n",
                  YAMLString.c_str());
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   }
 
   // When one of the requirements is not satisfied, invoke should return a

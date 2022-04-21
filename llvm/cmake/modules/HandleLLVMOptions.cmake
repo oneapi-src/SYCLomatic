@@ -277,8 +277,8 @@ function(add_flag_or_print_warning flag name)
   endif()
 endfunction()
 
-# INTEL_CUSTOMIZATION
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DINTEL_CUSTOMIZATION=1")
+# SYCLomatic_CUSTOMIZATION begin
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCLomatic_CUSTOMIZATION=1")
 macro(intel_add_sdl_flag flag name)
   cmake_parse_arguments(ARG "FUTURE" "" "" ${ARGN})
   if(ARG_FUTURE)
@@ -346,7 +346,7 @@ macro(intel_add_sdl_linker_flag flag name)
     endif()
   endif()
 endmacro()
-# end INTEL_CUSTOMIZATION
+# SYCLomatic_CUSTOMIZATION end
 function(has_msvc_incremental_no_flag flags incr_no_flag_on)
   set(${incr_no_flag_on} OFF PARENT_SCOPE)
   string(FIND "${flags}" "/INCREMENTAL" idx REVERSE)
@@ -797,7 +797,7 @@ if (LLVM_ENABLE_WARNINGS AND (LLVM_COMPILER_IS_GCC_COMPATIBLE OR CLANG_CL))
   append_if(USE_NO_UNINITIALIZED "-Wno-uninitialized" CMAKE_CXX_FLAGS)
   append_if(USE_NO_MAYBE_UNINITIALIZED "-Wno-maybe-uninitialized" CMAKE_CXX_FLAGS)
 
-#if INTEL_CUSTOMIZATION
+# SYCLomatic_CUSTOMIZATION begin
   if ((NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")) OR
       (NOT (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)))
     # -Wno-cast-function-type detection is broken in GCC:
@@ -825,7 +825,7 @@ if (LLVM_ENABLE_WARNINGS AND (LLVM_COMPILER_IS_GCC_COMPATIBLE OR CLANG_CL))
   add_flag_if_supported("-Wno-write-strings" NO_WRITE_STRINGS)
   add_flag_if_supported("-Wno-array-bounds" NO_ARRAY_BOUNDS)
   add_flag_if_supported("-Wno-pessimizing-move" NO_PESSIMIZING_MOVE)
-#endif // INTEL_CUSTOMIZATION
+# SYCLomatic_CUSTOMIZATION end
 
   # Disable -Wclass-memaccess, a C++-only warning from GCC 8 that fires on
   # LLVM's ADT classes.
@@ -1301,7 +1301,7 @@ if(macos_signposts_available)
   endif()
 endif()
 
-if(INTEL_CUSTOMIZATION)
+if(SYCLomatic_CUSTOMIZATION)
   option(INTEL_SDL_BUILD
     "Use SDL compilation flags for the compiler/project build" ON)
 
@@ -1507,7 +1507,7 @@ if(INTEL_CUSTOMIZATION)
 
     message(STATUS "INTEL: setting SDL options - end.")
   endif()
-endif(INTEL_CUSTOMIZATION)
+endif(SYCLomatic_CUSTOMIZATION)
 set(LLVM_SOURCE_PREFIX "" CACHE STRING "Use prefix for sources")
 
 option(LLVM_USE_RELATIVE_PATHS_IN_DEBUG_INFO "Use relative paths in debug info" OFF)

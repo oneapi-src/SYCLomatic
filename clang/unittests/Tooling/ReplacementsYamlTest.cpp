@@ -59,7 +59,7 @@ TEST(ReplacementsYamlTest, serializesNewLines) {
   YAML << Doc;
 
   // NOTE: If this test starts to fail for no obvious reason, check whitespace.
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   ASSERT_STREQ("---\n"
                "MainSourceFile:  '/path/to/source.cpp'\n"
                "Replacements:\n"
@@ -79,7 +79,7 @@ TEST(ReplacementsYamlTest, serializesNewLines) {
                "    ReplacementText: \"#include <utility>\\n\"\n"
                "...\n",
                YamlContentStream.str().c_str());
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 TEST(ReplacementsYamlTest, deserializesReplacements) {

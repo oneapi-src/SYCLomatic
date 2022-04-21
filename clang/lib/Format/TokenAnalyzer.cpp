@@ -107,14 +107,14 @@ std::pair<tooling::Replacements, unsigned> TokenAnalyzer::process() {
                        IdentTable);
   ArrayRef<FormatToken *> Toks(Lex.lex());
   SmallVector<FormatToken *, 10> Tokens(Toks.begin(), Toks.end());
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   UnwrappedLineParser Parser(Style, Lex.getKeywords(),
                              Env.getFirstStartColumn(), Tokens, *this,
                              Env.getSourceManager());
 #else
   UnwrappedLineParser Parser(Style, Lex.getKeywords(),
                              Env.getFirstStartColumn(), Tokens, *this);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   Parser.parse();
   assert(UnwrappedLines.back().empty());
   unsigned Penalty = 0;

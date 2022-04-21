@@ -30,11 +30,11 @@ class CudaInstallationDetector {
 private:
   const Driver &D;
   bool IsValid = false;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   bool IsIncludePathValid = false;
   bool IsVersionSupported = false;
   bool IsSupportedVersionAvailable = false;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   CudaVersion Version = CudaVersion::UNKNOWN;
   std::string InstallPath;
   std::string BinPath;
@@ -62,14 +62,14 @@ public:
 
   /// Check whether we detected a valid Cuda install.
   bool isValid() const { return IsValid; }
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   /// Check whether path for CUDA header files specified by --cuda-include-path is valid.
   bool isIncludePathValid() const { return IsIncludePathValid; }
   /// Check whether version of CUDA header files specified by --cuda-include-path is supported.
   bool isVersionSupported() const { return IsVersionSupported; }
   /// Check whether supported version of CUDA header files is available.
   bool isSupportedVersionAvailable() const { return IsSupportedVersionAvailable; }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   /// Print information about the detected CUDA installation.
   void print(raw_ostream &OS) const;
 
@@ -94,10 +94,10 @@ public:
   }
   void WarnIfUnsupportedVersion();
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 private:
   bool ParseCudaVersionFile(const std::string &FilePath, CudaVersion &CV);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 };
 
 namespace tools {

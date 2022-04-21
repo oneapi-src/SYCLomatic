@@ -71,14 +71,14 @@
 #include <vector>
 
 using namespace clang;
-#if INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 namespace clang {
   inline void recordTokenSplit(SourceLocation, unsigned) {}
   extern std::function<bool(SourceLocation)> IsInRootFunc;
   extern std::function<unsigned int()> GetRunRound;
   std::function<void(SourceLocation, unsigned)> RecordTokenSplit = recordTokenSplit;
 }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 LLVM_INSTANTIATE_REGISTRY(PragmaHandlerRegistry)
 
 ExternalPreprocessorSource::~ExternalPreprocessorSource() = default;
@@ -506,9 +506,9 @@ void Preprocessor::CreateString(StringRef Str, Token &Tok,
 }
 
 SourceLocation Preprocessor::SplitToken(SourceLocation Loc, unsigned Length) {
-#if INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   RecordTokenSplit(Loc, Length);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   auto &SM = getSourceManager();
   SourceLocation SpellingLoc = SM.getSpellingLoc(Loc);
   std::pair<FileID, unsigned> LocInfo = SM.getDecomposedLoc(SpellingLoc);
@@ -854,7 +854,7 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
     }
   }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   if (II.getName() == "__CUDA_ARCH__" && IsInRootFunc(Identifier.getLocation())) {
     // Make a MacroDefinition for __CUDA_ARCH__
     MacroInfo *MI = AllocateMacroInfo(SourceLocation());
@@ -879,7 +879,7 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
       }
     }
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
   // If this identifier is a keyword in a newer Standard or proposed Standard,
   // produce a warning. Don't warn if we're not considering macro expansion,

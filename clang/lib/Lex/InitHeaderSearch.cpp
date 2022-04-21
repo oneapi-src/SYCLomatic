@@ -146,11 +146,11 @@ bool InitHeaderSearch::AddUnmappedPath(const Twine &Path, IncludeDirGroup Group,
   FileManager &FM = Headers.getFileMgr();
   SmallString<256> MappedPathStorage;
   StringRef MappedPathStr = Path.toStringRef(MappedPathStorage);
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   // Remove redundant spaces in the beginning of MappedPathStr to pass the check
   // of FM.getDirectory(). E.g. -extra-arg="-I   /path/to/folder".
   MappedPathStr = MappedPathStr.drop_while(isspace);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
   // If use system headers while cross-compiling, emit the warning.
   if (HasSysroot && (MappedPathStr.startswith("/usr/include") ||
@@ -628,7 +628,7 @@ void InitHeaderSearch::Realize(const LangOptions &Lang) {
   // #include_next.
   unsigned NonSystemRemoved = RemoveDuplicates(SearchList, NumQuoted, Verbose);
   NumAngled -= NonSystemRemoved;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   // keep one /usr/include in last position to WA include_next issue
   // eg. cmath using "include_next math.h"
   for (auto &Entry : SearchList) {
@@ -637,7 +637,7 @@ void InitHeaderSearch::Realize(const LangOptions &Lang) {
       break;
      }
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
   bool DontSearchCurDir = false;  // TODO: set to true if -I- is set?
   Headers.SetSearchPaths(extractLookups(SearchList), NumQuoted, NumAngled,

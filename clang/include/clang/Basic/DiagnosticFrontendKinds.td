@@ -86,10 +86,10 @@ def err_fe_dependency_file_requires_MT : Error<
 def err_fe_invalid_plugin_name : Error<
     "unable to find plugin '%0'">;
 
-//INTEL_CUSTOMIZATION begin
+// SYCLomatic_CUSTOMIZATION begin
 def err_fe_expected_compiler_job : Error<
     "unable to handle migration, expected exactly one migration job in '%0'">;
-//INTEL_CUSTOMIZATION end
+// SYCLomatic_CUSTOMIZATION end
 
 def err_fe_expected_clang_command : Error<
     "expected a clang compiler command">;
@@ -199,7 +199,7 @@ def warn_incompatible_analyzer_plugin_api : Warning<
 def note_incompatible_analyzer_plugin_api : Note<
     "current API version is '%0', but plugin was compiled with version '%1'">;
 
-//INTEL_CUSTOMIZATION begin
+// SYCLomatic_CUSTOMIZATION begin
 def err_module_build_requires_fmodules : Error<
   "migration of code with module requires '--extra-arg=\"-fmodules\"'">;
 def err_module_interface_requires_cpp_modules : Error<
@@ -211,7 +211,7 @@ def err_header_module_requires_modules : Error<
 def warn_module_config_mismatch : Warning<
   "module file %0 cannot be loaded due to a configuration mismatch">,
   InGroup<DiagGroup<"module-file-config-mismatch">>, DefaultError;
-//INTEL_CUSTOMIZATION end
+// SYCLomatic_CUSTOMIZATION end
 
 def err_module_map_not_found : Error<"module map file '%0' not found">,
   DefaultFatal;

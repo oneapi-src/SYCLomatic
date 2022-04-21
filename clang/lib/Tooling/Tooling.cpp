@@ -58,16 +58,16 @@
 #include <system_error>
 #include <utility>
 #include <vector>
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 #include <setjmp.h>
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 #define DEBUG_TYPE "clang-tooling"
 
 using namespace clang;
 using namespace tooling;
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 namespace clang {
 namespace tooling {
 static PrintType MsgPrintHandle = nullptr;
@@ -248,7 +248,7 @@ std::map<std::string, uint64_t> ErrorCnt;
 uint64_t CurFileSigErrCnt=0;
 uint64_t CurFileParseErrCnt=0;
 
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 ToolAction::~ToolAction() = default;
 
@@ -522,10 +522,10 @@ ToolInvocation::ToolInvocation(
 ToolInvocation::~ToolInvocation() {
   if (OwnsAction)
     delete Action;
-  #ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   if(DiagnosticPrinter)
     delete DiagnosticPrinter;
-  #endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 bool ToolInvocation::run() {
@@ -539,11 +539,11 @@ bool ToolInvocation::run() {
     ParsedDiagOpts = CreateAndPopulateDiagOpts(Argv);
     DiagOpts = &*ParsedDiagOpts;
   }
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   SetColorOptionValue(DiagOpts->ShowColors);
   DiagnosticPrinter =new TextDiagnosticPrinter(DiagnosticsOS(), &*DiagOpts);
   DiagConsumer = DiagnosticPrinter;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), DiagOpts);
   IntrusiveRefCntPtr<DiagnosticsEngine> Diagnostics =
       CompilerInstance::createDiagnostics(
@@ -613,9 +613,9 @@ bool FrontendActionFactory::runInvocation(
   Compiler.createSourceManager(*Files);
 
   const bool Success = Compiler.ExecuteAction(*ScopedToolAction);
-  #ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   CurFileParseErrCnt = DiagConsumer -> getNumErrors();
-  #endif
+#endif // SYCLomatic_CUSTOMIZATION
   Files->clearStatCache();
   return Success;
 }
@@ -666,7 +666,7 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
           .c_str())(Args, "");
 }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 // Try to parse and migrate \pFile, and return process result with
 // \pProcessingFailed, \pFileSkipped , \pStaticSymbol and its return value.
 // if return value is -1, means current input file \p File is not processed,
@@ -698,9 +698,7 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
     //
     // FIXME: Make the compilation database interface more explicit about the
     // requirements to the order of invocation of its members.
-#ifdef INTEL_CUSTOMIZATION
     try {
-#endif
     std::vector<CompileCommand> CompileCommandsForFile =
         Compilations.getCompileCommands(File);
     if (CompileCommandsForFile.empty()) {
@@ -913,17 +911,15 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
     }
     //collect the errror counter info.
     ErrorCnt[File.str()] =(CurFileSigErrCnt<<32) | CurFileParseErrCnt;
-#ifdef INTEL_CUSTOMIZATION
     } catch (std::exception &e) {
       std::string FaultMsg =
           "Error: dpct internal error. Intel(R) DPC++ Compatibility Tool skips "
           "the current file and continues migration.\n";
       llvm::errs() << FaultMsg;
     }
-#endif
     return 0;
 }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 int ClangTool::run(ToolAction *Action) {
   // Exists solely for the purpose of lookup of the resource path.
@@ -944,9 +940,9 @@ int ClangTool::run(ToolAction *Action) {
   // Compute all absolute paths before we run any actions, as those will change
   // the working directory.
   std::vector<std::string> AbsolutePaths;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   if(DoGetRunRound() == 0) {
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   AbsolutePaths.reserve(SourcePaths.size());
   for (const auto &SourcePath : SourcePaths) {
     auto AbsPath = getAbsolutePath(*OverlayFileSystem, SourcePath);
@@ -958,7 +954,7 @@ int ClangTool::run(ToolAction *Action) {
     }
     AbsolutePaths.push_back(std::move(*AbsPath));
   }
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   // If target source file names do not exist in the command line, dpct will
   // migrate all relevant files it detects in the compilation database.
   if (SourcePaths.size() == 0) {
@@ -979,7 +975,7 @@ int ClangTool::run(ToolAction *Action) {
      for (auto &File : GetReProcessFile())
        AbsolutePaths.push_back(File);
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   // Remember the working directory in case we need to restore it.
   std::string InitialWorkingDir;
   if (RestoreCWD) {
@@ -993,7 +989,7 @@ int ClangTool::run(ToolAction *Action) {
 
   for (llvm::StringRef File : AbsolutePaths) {
 
-#ifndef  INTEL_CUSTOMIZATION
+#ifndef SYCLomatic_CUSTOMIZATION
     // Currently implementations of CompilationDatabase::getCompileCommands can
     // change the state of the file system (e.g.  prepare generated headers), so
     // this method needs to run right before we invoke the tool, as the next
@@ -1072,10 +1068,10 @@ int ClangTool::run(ToolAction *Action) {
       continue;
     else if (Ret < -1)
       return Ret;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   }
 
-#ifdef  INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   // if input file(s) is not specified in command line, and the process-all
   // option is given in the comomand line, dpct tries to migrate or copy all
   // files from -in-root to the output directory.
@@ -1100,7 +1096,7 @@ int ClangTool::run(ToolAction *Action) {
 
   // exit point for the file processing.
   CheckPointStage = 0 /*CHECKPOINT_UNKNOWN*/;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   if (!InitialWorkingDir.empty()) {
     if (auto EC =
             OverlayFileSystem->setCurrentWorkingDirectory(InitialWorkingDir))

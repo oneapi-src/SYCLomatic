@@ -40,14 +40,14 @@ TEST(JSONCompilationDatabase, ErrsOnInvalidFormat) {
   expectFailure("[{\"a\":\"b\"}]", "Unknown key");
   expectFailure("[{[]:\"\"}]", "Incorrectly typed entry");
   expectFailure("[{}]", "Empty entry");
-#ifndef INTEL_CUSTOMIZATION
+#ifndef SYCLomatic_CUSTOMIZATION
   expectFailure("[{\"directory\":\"\",\"command\":\"\"}]", "Missing file");
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   expectFailure("[{\"directory\":\"\",\"file\":\"\"}]", "Missing command or arguments");
   expectFailure("[{\"command\":\"\",\"file\":\"\"}]", "Missing directory");
-#ifndef INTEL_CUSTOMIZATION
+#ifndef SYCLomatic_CUSTOMIZATION
   expectFailure("[{\"directory\":\"\",\"arguments\":[]}]", "Missing file");
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   expectFailure("[{\"arguments\":\"\",\"file\":\"\"}]", "Missing directory");
   expectFailure("[{\"directory\":\"\",\"arguments\":\"\",\"file\":\"\"}]", "Arguments not array");
   expectFailure("[{\"directory\":\"\",\"command\":[],\"file\":\"\"}]", "Command not string");
