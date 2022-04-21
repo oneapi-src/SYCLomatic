@@ -449,6 +449,11 @@ static inline device_ext &cpu_device() {
   return dev_mgr::instance().cpu_device();
 }
 
+static inline unsigned int select_device(unsigned int id){
+  dev_mgr::instance().select_device(id);
+  return id;
+}
+
 } // namespace dpct
 
 #endif // __DPCT_DEVICE_HPP__

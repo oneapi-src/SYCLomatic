@@ -919,9 +919,9 @@ class PrinterRewriter<MultiStmtsPrinter<StmtPrinters...>>
 
 public:
   PrinterRewriter(const CallExpr *C, StringRef Source,
-                  StmtPrinters &&...Printers)
-      : Base(C->getBeginLoc(), DpctGlobalInfo::getSourceManager(),
-             std::move(Printers)...),
+                  StmtPrinters &&... Printers)
+      : Base(getDefinitionRange(C->getBeginLoc(),C->getEndLoc()).getBegin(),
+        DpctGlobalInfo::getSourceManager(), std::move(Printers)...),
         CallExprRewriter(C, Source) {}
   PrinterRewriter(
       const CallExpr *C, StringRef Source,

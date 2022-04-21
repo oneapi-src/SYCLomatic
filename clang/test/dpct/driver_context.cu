@@ -29,16 +29,19 @@ int main(){
   // CHECK-NEXT: MY_SAFE_CALL(0);
   MY_SAFE_CALL(cuInit(0));
 
-  // CHECK: ctx = device;
+  // CHECK: ctx = dpct::select_device(device);
   cuCtxCreate(&ctx, CU_CTX_LMEM_RESIZE_TO_MAX, device);
 
-  // CHECK: MY_SAFE_CALL((ctx = device, 0));
+  // CHECK: ctx = dpct::select_device(device);
+  cuDevicePrimaryCtxRetain(&ctx, device);
+
+  // CHECK: MY_SAFE_CALL((ctx = dpct::select_device(device), 0));
   MY_SAFE_CALL(cuCtxCreate(&ctx, CU_CTX_LMEM_RESIZE_TO_MAX, device));
 
-  // CHECK: dpct::dev_mgr::instance().select_device(ctx);
+  // CHECK: dpct::select_device(ctx);
   cuCtxSetCurrent(ctx);
 
-  // CHECK: MY_SAFE_CALL((dpct::dev_mgr::instance().select_device(ctx), 0));
+  // CHECK: MY_SAFE_CALL((dpct::select_device(ctx), 0));
   MY_SAFE_CALL(cuCtxSetCurrent(ctx));
 
   // CHECK: ctx2 = dpct::dev_mgr::instance().current_device_id();

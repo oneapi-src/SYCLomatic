@@ -1006,6 +1006,17 @@ static inline device_ext &cpu_device() {
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|select_device|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_select_device
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+static inline unsigned int select_device(unsigned int id){
+  dev_mgr::instance().select_device(id);
+  return id;
+}
+// DPCT_LABEL_END
+
 } // namespace dpct
 
 #endif // __DPCT_DEVICE_HPP__

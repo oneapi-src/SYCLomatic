@@ -187,12 +187,12 @@ error_code = cudaThreadExit();
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT:error_code = (dpct::dev_mgr::instance().select_device(device2), 0);
+// CHECK-NEXT:error_code = (dpct::select_device(device2), 0);
 error_code = cudaSetDevice(device2);
 // CHECK:/*
 // CHECK-NEXT:DPCT1093:{{[0-9]+}}: The "device2" may not be the best XPU device. Adjust the selected device if needed.
 // CHECK-NEXT:*/
-// CHECK-NEXT: dpct::dev_mgr::instance().select_device(device2);
+// CHECK-NEXT: dpct::select_device(device2);
 cudaSetDevice(device2);
 
 // CHECK:dpct::get_current_device().queues_wait_and_throw();

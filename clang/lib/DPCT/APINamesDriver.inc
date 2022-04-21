@@ -86,3 +86,19 @@ FEATURE_REQUEST_FACTORY(
                                     CAST(ARG("const void *"), ARG(2))),
                                 false,
                                 ARG(1)))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Device_select_device,
+    ASSIGNABLE_FACTORY(
+        ASSIGN_FACTORY_ENTRY(
+            "cuCtxCreate_v2",
+            DEREF(0),
+            CALL(MapNames::getDpctNamespace() + "select_device", ARG(2)))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Device_select_device,
+    ASSIGNABLE_FACTORY(
+        ASSIGN_FACTORY_ENTRY(
+            "cuDevicePrimaryCtxRetain",
+            DEREF(0),
+            CALL(MapNames::getDpctNamespace() + "select_device", ARG(1)))))
