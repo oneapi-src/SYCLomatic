@@ -9,32 +9,54 @@
 //
 //===-----------------------------------------------------------------===//
 
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    checkIsUSM(),
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckCanUseTemplateMalloc(0, 1),
+        ASSIGN_FACTORY_ENTRY("cudaMalloc", DEREF(makeDerefArgCreatorWithCall(0)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                MapNames::getClNamespace() + "malloc_device",
+                                getDoubleDerefedType(0)),
+                                getSizeForMalloc(0, 1), QUEUESTR)),
+        ASSIGN_FACTORY_ENTRY("cudaMalloc", DEREF(makeDerefArgCreatorWithCall(0)),
+                            CAST(getDerefedType(0),
+                                CALL(MapNames::getClNamespace() + "malloc_device",
+                                getSizeForMalloc(0, 1), QUEUESTR)
+                             ))),
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckOr(CheckDerefedTypeBeforeCast(0, "NULL TYPE"), CheckDerefedTypeBeforeCast(0, "void *")),
+        ASSIGN_FACTORY_ENTRY("cudaMalloc", DEREF(makeDerefArgCreatorWithCall(0)),
+                             CALL(MapNames::getDpctNamespace() + "dpct_malloc",
+                                  makeCallArgCreatorWithCall(1))),
+        ASSIGN_FACTORY_ENTRY("cudaMalloc", DEREF(makeDerefArgCreatorWithCall(0)),
+                             CAST(getDerefedType(0),
+                                  CALL(MapNames::getDpctNamespace() + "dpct_malloc",
+                                       makeCallArgCreatorWithCall(1)))))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-    CheckCanUseTemplateMalloc(0, 1),
-    ASSIGN_FACTORY_ENTRY("cudaMalloc", DEREF(makeDerefArgCreatorWithCall(0)),
-                         CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                                  MapNames::getClNamespace() + "malloc_device",
-                                  getDoubleDerefedType(0)),
-                              getSizeForMalloc(0, 1), QUEUESTR)),
-    ASSIGN_FACTORY_ENTRY("cudaMalloc", DEREF(makeDerefArgCreatorWithCall(0)),
-                         CAST(getDerefedType(0),
-                              CALL(MapNames::getClNamespace() + "malloc_device",
-                                   getSizeForMalloc(0, 1), QUEUESTR)
-                             ))))
-
-ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-    CheckCanUseTemplateMalloc(0, 1),
-    ASSIGN_FACTORY_ENTRY("cuMemAlloc_v2", DEREF(makeDerefArgCreatorWithCall(0)),
-                         CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                                  MapNames::getClNamespace() + "malloc_device",
-                                  getDoubleDerefedType(0)),
-                              getSizeForMalloc(0, 1), QUEUESTR)),
-    ASSIGN_FACTORY_ENTRY("cuMemAlloc_v2", DEREF(makeDerefArgCreatorWithCall(0)),
-                         CAST(getDerefedType(0),
-                              CALL(MapNames::getClNamespace() + "malloc_device",
-                                   getSizeForMalloc(0, 1), QUEUESTR)
-                             ))))
+    checkIsUSM(),
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckCanUseTemplateMalloc(0, 1),
+        ASSIGN_FACTORY_ENTRY("cuMemAlloc_v2", DEREF(makeDerefArgCreatorWithCall(0)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                MapNames::getClNamespace() + "malloc_device",
+                                getDoubleDerefedType(0)),
+                                getSizeForMalloc(0, 1), QUEUESTR)),
+        ASSIGN_FACTORY_ENTRY("cuMemAlloc_v2", DEREF(makeDerefArgCreatorWithCall(0)),
+                            CAST(getDerefedType(0),
+                                CALL(MapNames::getClNamespace() + "malloc_device",
+                                getSizeForMalloc(0, 1), QUEUESTR)
+                             ))),
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckOr(CheckDerefedTypeBeforeCast(0, "NULL TYPE"),
+                    CheckDerefedTypeBeforeCast(0, "void *")),
+        ASSIGN_FACTORY_ENTRY("cuMemAlloc_v2", DEREF(makeDerefArgCreatorWithCall(0)),
+                             CALL(MapNames::getDpctNamespace() + "dpct_malloc",
+                                  makeCallArgCreatorWithCall(1))),
+        ASSIGN_FACTORY_ENTRY("cuMemAlloc_v2", DEREF(makeDerefArgCreatorWithCall(0)),
+                             CAST(getDerefedType(0),
+                                  CALL(MapNames::getDpctNamespace() + "dpct_malloc",
+                                       makeCallArgCreatorWithCall(1)))))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),

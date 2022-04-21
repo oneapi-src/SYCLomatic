@@ -1072,7 +1072,7 @@ Optional<std::string> MathBinaryOperatorRewriter::rewrite() {
 // In AST, &SubExpr could be recognized as UnaryOperator or CXXOperatorCallExpr.
 // To get the SubExpr from the original Expr, both cases need to be handled.
 const Expr *getDereferencedExpr(const Expr *E) {
-  E = E->IgnoreImplicitAsWritten();
+  E = E->IgnoreImplicitAsWritten()->IgnoreParens();
   if (auto UO = dyn_cast<UnaryOperator>(E)) {
     if (UO->getOpcode() == clang::UO_AddrOf) {
       return UO->getSubExpr()->IgnoreImplicitAsWritten();
@@ -2152,6 +2152,26 @@ public:
   }
 };
 
+
+class CheckDerefedTypeBeforeCast {
+  unsigned Idx;
+  std::string TypeName;
+
+public:
+  CheckDerefedTypeBeforeCast(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
+  bool operator()(const CallExpr *C) {
+    if (C->getNumArgs() > Idx) {
+      std::ostringstream OS;
+      std::string Type;
+      printDerefOp(OS, C->getArg(Idx)->IgnoreCasts()->IgnoreParens(), &Type);
+      if (Type != TypeName) {
+        return false;
+      }
+    }
+    return true;
+  }
+};
+
 class CheckArgIsConstantIntWithValue {
   int value;
   int index;
@@ -2201,8 +2221,21 @@ public:
   bool operator()(const CallExpr *C) { return Fir(C) && Sec(C); }
 };
 
+template <class F, class S> class CheckOr {
+  F Fir;
+  S Sec;
+
+public:
+  CheckOr(F Fir, S Sec) : Fir(Fir), Sec(Sec) {}
+  bool operator()(const CallExpr *C) { return Fir(C) || Sec(C); }
+};
+
 template <class F, class S> CheckAnd<F, S> makeCheckAnd(F Fir, S Sec) {
   return CheckAnd<F, S>(Fir, Sec);
+}
+
+template <class F, class S> CheckOr<F, S> makeCheckOr(F Fir, S Sec) {
+  return CheckOr<F, S>(Fir, Sec);
 }
 
 template <class T> class CheckNot {

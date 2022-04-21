@@ -11429,15 +11429,6 @@ void MemoryMigrationRule::mallocMigration(
           LocInfo.first + std::to_string(LocInfo.second), Info);
     } else {
       DpctGlobalInfo::getInstance().insertCudaMalloc(C);
-      std::ostringstream OS;
-      std::string Type;
-      if (IsAssigned)
-        OS << "(";
-      printDerefOp(OS, C->getArg(0)->IgnoreCasts()->IgnoreParens(), &Type);
-      if (Type != "NULL TYPE" && Type != "void *")
-        OS << " = (" << getFinalCastTypeNameStr(Type) << ")";
-      else
-        OS << " = ";
       auto LocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
       auto Action = [LocInfo, C, IsAssigned]() {
         requestFeature(HelperFeatureEnum::Memory_dpct_malloc, LocInfo.first);
@@ -11449,18 +11440,16 @@ void MemoryMigrationRule::mallocMigration(
       };
       auto Info = std::make_shared<PriorityReplInfo>();
       auto &Context = DpctGlobalInfo::getContext();
+      auto &SM = *Result.SourceManager;
       Info->RelatedAction.emplace_back(Action);
-      Info->Repls.emplace_back(
-          InsertBeforeStmt(C, OS.str()).getReplacement(Context));
-      Info->Repls.emplace_back(
-          ReplaceCalleeName(C, MapNames::getDpctNamespace() + "dpct_malloc")
-              .getReplacement(Context));
-      if (auto TM = removeArg(C, 0, *Result.SourceManager))
+      if (auto TM = removeArg(C, 0, SM))
         Info->Repls.push_back(TM->getReplacement(Context));
-      if (IsAssigned) {
-        Info->Repls.emplace_back(
-            InsertAfterStmt(C, ", 0)").getReplacement(Context));
-      }
+      ExprAnalysis EA(C);
+      if (auto TM = EA.getReplacement())
+        Info->Repls.push_back(TM->getReplacement(DpctGlobalInfo::getContext()));
+      Info->Repls.insert(Info->Repls.end(), EA.getSubExprRepl().begin(),
+        EA.getSubExprRepl().end());
+
       DpctGlobalInfo::addPriorityReplInfo(
           LocInfo.first + std::to_string(LocInfo.second), Info);
     }
