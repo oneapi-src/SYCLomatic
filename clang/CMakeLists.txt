@@ -534,7 +534,14 @@ list(APPEND LLVM_COMMON_DEPENDS clang-tablegen-targets)
 if(LLVM_ENABLE_MODULES)
   list(APPEND LLVM_COMMON_DEPENDS intrinsics_gen)
 endif()
-
+# SYCLomatic_CUSTOMIZATION begin
+list(INSERT CMAKE_MODULE_PATH 0
+  "${CMAKE_CURRENT_SOURCE_DIR}/lib/DPCT/cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/tools/dpct/cmake"
+  )
+include(libDPCT)
+include(dpct)
+# SYCLomatic_CUSTOMIZATION end
 add_subdirectory(lib)
 add_subdirectory(tools)
 add_subdirectory(runtime)
@@ -930,29 +937,9 @@ configure_file(
   ${CLANG_SOURCE_DIR}/include/clang/Config/config.h.cmake
   ${CLANG_BINARY_DIR}/include/clang/Config/config.h)
 
-# SYCLomatic_CUSTOMIZATION end
+# SYCLomatic_CUSTOMIZATION begin
 if (NOT CLANG_BUILT_STANDALONE)
-  if(WIN32)
-    list(APPEND DPCT_RUN
-      install-dpct-headers
-      install-clang-resource-headers
-      install-dpct-binary
-      install-dpct-vars
-      install-dpct-syscheck
-      install-dpct-opt-rules
-      )
-  else()
-    list(APPEND DPCT_RUN
-      install-dpct-intercept-build
-      install-dpct-headers
-      install-clang-resource-headers
-      install-dpct-binary
-      install-dpct-vars
-      install-dpct-syscheck
-      install-dpct-modulefiles
-      install-dpct-opt-rules
-      )
-  endif()
+  set_dpct_package()
 endif()
 add_custom_target(install-dpct-tool DEPENDS ${DPCT_RUN})
 set_target_properties(install-dpct-tool PROPERTIES FOLDER "install dpct")
