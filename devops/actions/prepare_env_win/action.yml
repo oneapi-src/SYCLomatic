@@ -22,9 +22,11 @@ runs:
           exit -1
       fi
       cat ./envs_tobe_loaded.txt >> $GITHUB_ENV
-      #echo "PATH is $PATH"
-      #echo "PATH=$PWD/c2s.obj/bin;$PATH" >> $GITHUB_ENV
-      #echo "LIB=$PWD/c2s.obj/lib;$LIB" >> $GITHUB_ENV
-      #echo "CPATH=$PWD/c2s.obj/include;$CPATH" >> $GITHUB_ENV
+      
     shell: bash
-
+  - run: |
+      echo "PATH is $PATH"
+      echo "PATH=$PWD/c2s.obj/bin;$PATH" >> $GITHUB_ENV
+      echo "LIB=$PWD/c2s.obj/lib;$LIB" >> $GITHUB_ENV
+      echo "CPATH=$PWD/c2s.obj/include;$CPATH" >> $GITHUB_ENV
+    shell: bash
