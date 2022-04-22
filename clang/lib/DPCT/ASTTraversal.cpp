@@ -11465,7 +11465,8 @@ void MemoryMigrationRule::mallocMigration(
           LocInfo.first + std::to_string(LocInfo.second), Info);
     }
   } else if (Name == "cudaHostAlloc" || Name == "cudaMallocHost" ||
-             Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2") {
+             Name == "cuMemHostAlloc" || Name == "cuMemAllocHost_v2" ||
+             Name == "cuMemAllocPitch_v2") {
     ExprAnalysis EA(C);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
@@ -12304,7 +12305,8 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemcpyDtoH_v2", "cuMemcpyHtoDAsync_v2", "cuMemcpyDtoHAsync_v2",
         "cuMemcpy2D_v2", "cuMemcpy2DAsync_v2", "cuMemcpy3D_v2",
         "cudaMemGetInfo", "cuMemAllocManaged", "cuMemAllocHost_v2",
-        "cuMemHostGetDevicePointer_v2", "cuMemcpyDtoDAsync_v2", "cuMemcpyDtoD_v2");
+        "cuMemHostGetDevicePointer_v2", "cuMemcpyDtoDAsync_v2", "cuMemcpyDtoD_v2",
+        "cuMemAllocPitch_v2");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -12509,6 +12511,7 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaMemAdvise", &MemoryMigrationRule::cudaMemAdvise},
           {"cudaGetChannelDesc", &MemoryMigrationRule::miscMigration},
           {"cuMemHostAlloc", &MemoryMigrationRule::mallocMigration},
+          {"cuMemAllocPitch_v2", &MemoryMigrationRule::mallocMigration},
           {"cuMemGetInfo_v2", &MemoryMigrationRule::miscMigration},
           {"cudaMemGetInfo", &MemoryMigrationRule::miscMigration}};
 

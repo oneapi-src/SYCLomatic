@@ -884,6 +884,22 @@ void testCommas_in_global_memory() {
   // CHECK: cuCheckError((result2 = dpct::get_current_device().get_device_info().get_global_mem_size(), 0));
   cuCheckError(cudaMemGetInfo(&result1, &result2));
 
+  CUdeviceptr  devicePtr;
+  size_t size;
+  // CHECK: devicePtr = (void *)dpct::dpct_malloc(size, size, size);
+  cuMemAllocPitch((CUdeviceptr *)&devicePtr, &size, size, size, size);
+
+  // CHECK:/*
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:*/
+  // CHECK-NEXT: cu_err = ((devicePtr = (void *)dpct::dpct_malloc(size, size, size), 0), 0);
+  cu_err = cuMemAllocPitch((CUdeviceptr *)&devicePtr, &size, size, size, size);
+  // CHECK:/*
+  // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:*/
+  // CHECK-NEXT:  cuCheckError(((devicePtr = (void *)dpct::dpct_malloc(size, size, size), 0), 0));
+  cuCheckError(cuMemAllocPitch((CUdeviceptr *)&devicePtr, &size, size, size, size));
+
   int* a;
   cudaStream_t stream;
   int deviceID = 0;

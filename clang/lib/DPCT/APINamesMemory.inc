@@ -190,3 +190,10 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     CALL_FACTORY_ENTRY(
         "cuMemcpyDtoD_v2", CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
         ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic")))))
+
+
+ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY(
+        "cuMemAllocPitch_v2", DEREF(makeDerefArgCreatorWithCall(0)),
+        CAST(getDerefedType(0), CALL(MapNames::getDpctNamespace() + "dpct_malloc", DEREF(makeCallArgCreatorWithCall(1)), ARG(2), ARG(3)))))
+
