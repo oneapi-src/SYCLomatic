@@ -17,7 +17,6 @@
 #include "CallExprRewriter.h"
 #include "CustomHelperFiles.h"
 #include "ExprAnalysis.h"
-#include "GAnalytics.h"
 #include "SaveNewFiles.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -13643,7 +13642,6 @@ void RecognizeAPINameRule::processMemberFuncCall(const CXXMemberCallExpr *MC) {
   SrcAPIStaticsMap[getFunctionSignature(MC->getMethodDecl(), ObjName)]++;
 
   if (!MigrationStatistics::IsMigrated(APIName)) {
-    GAnalytics(getFunctionSignature(MC->getMethodDecl(), ObjName));
     const SourceManager &SM = DpctGlobalInfo::getSourceManager();
     const SourceLocation FileLoc = SM.getFileLoc(MC->getBeginLoc());
 
@@ -13716,7 +13714,6 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
     // branch. If code goes here, we treat the API is user-defined, just return.
     return;
   } else if (!MigrationStatistics::IsMigrated(APIName)) {
-    GAnalytics(getFunctionSignature(CE->getCalleeDecl()->getAsFunction(), ""));
     const SourceManager &SM = DpctGlobalInfo::getSourceManager();
     const SourceLocation FileLoc = SM.getFileLoc(CE->getBeginLoc());
 
