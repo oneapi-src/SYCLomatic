@@ -1,0 +1,31 @@
+name: 'Prepare Env'
+description: 'Prepare environment for Windows'
+
+runs:
+  using: "composite"
+  steps:
+  - run: |
+      #ENV_DATESTAMP=`R:/u4win/bin/x86_win32/date.EXE -d "yesterday" +%Y%m%d`_000000
+      ENV_DATESTAMP="latest"
+      echo "DateStamp is $ENV_DATESTAMP"
+      echo "ENV_DATESTAMP=$ENV_DATESTAMP" >> $GITHUB_ENV
+      if [ -f ./envs_tobe_loaded.txt ]; then
+          echo "Remove environment file firstly."
+          rm ./envs_tobe_loaded.txt
+      fi
+
+      set +x
+      $GITHUB_WORKSPACE/../../../setup_env_gh_runner.bat $ENV_DATESTAMP
+      set -x
+      if [ ! -f ./envs_tobe_loaded.txt ]; then
+          echo "Environment file not generated."
+          exit -1
+      fi
+      cat ./envs_tobe_loaded.txt >> $GITHUB_ENV
+      
+    shell: bash
+  - run: |
+      echo "PATH=$PWD/c2s.obj/bin;$PATH" >> $GITHUB_ENV
+      echo "LIB=$PWD/c2s.obj/lib;$LIB" >> $GITHUB_ENV
+      echo "CPATH=$PWD/c2s.obj/include;$CPATH" >> $GITHUB_ENV
+    shell: bash
