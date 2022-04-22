@@ -599,6 +599,16 @@ public:
   void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class UserDefinedTypeRule
+    : public clang::dpct::NamedMigrationRule<UserDefinedTypeRule> {
+  std::string TypeName;
+
+public:
+  UserDefinedTypeRule(std::string TypeName) : TypeName(TypeName){};
+  void registerMatcher(clang::ast_matchers::MatchFinder &MF) override;
+  void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 /// Migration rule for inserting namespace for vector types
 class VectorTypeNamespaceRule
     : public NamedMigrationRule<VectorTypeNamespaceRule> {

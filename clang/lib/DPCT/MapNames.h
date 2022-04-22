@@ -27,6 +27,20 @@ struct HelperFunc;
 } // namespace dpct
 } // namespace clang
 
+struct TypeNameRule {
+  std::string NewName;
+  clang::dpct::HelperFeatureEnum RequestFeature;
+  RulePriority Priority;
+  std::vector<std::string> Includes;
+  TypeNameRule(std::string Name)
+      : NewName(Name),
+        RequestFeature(clang::dpct::HelperFeatureEnum::no_feature_helper),
+        Priority(RulePriority::Fallback) {}
+  TypeNameRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
+               RulePriority Priority = RulePriority::Fallback)
+      : NewName(Name), RequestFeature(Feature), Priority(Priority) {}
+};
+
 const std::string StringLiteralUnsupported{"UNSUPPORTED"};
 
 #define SUPPORTEDVECTORTYPENAMES                                               \
@@ -323,9 +337,7 @@ public:
   static const std::map<clang::dpct::KernelArgType, int> KernelArgTypeSizeMap;
   static int getArrayTypeSize(const int Dim);
   static const MapTy RemovedAPIWarningMessage;
-  static MapTy TypeNamesMap;
-  static std::map<std::string, clang::dpct::HelperFeatureEnum>
-      TypeNamesHelperFeaturesMap;
+  static std::map<std::string, std::shared_ptr<TypeNameRule>> TypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
   static std::unordered_map<std::string, MacroMigrationRule> MacroRuleMap;
@@ -374,6 +386,16 @@ public:
 
   static MapTy BLASComputingAPIWithRewriter;
 
+  inline static const std::string &findReplacedName(
+      const std::map<std::string, std::shared_ptr<TypeNameRule>> &Map,
+      const std::string &Name) {
+    static const std::string EmptyString;
+
+    auto Itr = Map.find(Name);
+    if (Itr == Map.end())
+      return EmptyString;
+    return Itr->second->NewName;
+  }
   inline static const std::string &findReplacedName(const MapTy &Map,
                                                     const std::string &Name) {
     static const std::string EmptyString;
@@ -382,6 +404,15 @@ public:
     if (Itr == Map.end())
       return EmptyString;
     return Itr->second;
+  }
+  static bool
+  replaceName(const std::map<std::string, std::shared_ptr<TypeNameRule>> &Map,
+              std::string &Name) {
+    auto &Result = findReplacedName(Map, Name);
+    if (Result.empty())
+      return false;
+    Name = Result;
+    return true;
   }
   static bool replaceName(const MapTy &Map, std::string &Name) {
     auto &Result = findReplacedName(Map, Name);

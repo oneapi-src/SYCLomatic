@@ -548,5 +548,5 @@ void findAllVarRef(const clang::DeclRefExpr *DRE,
 bool isExprUsed(const clang::Expr *E, bool &Result);
 const std::string &getItemName();
 bool isUserDefinedFunction(const clang::ValueDecl *VD);
-
+void insertHeaderForTypeRule(std::string, clang::SourceLocation);
 #endif // DPCT_UTILITY_H

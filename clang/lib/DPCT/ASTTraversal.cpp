@@ -2806,6 +2806,7 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
 
       std::string Replacement =
           MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
+      insertHeaderForTypeRule(RealTypeNameStr, ETBeginLoc);
 
       if (!Replacement.empty()) {
         SrcAPIStaticsMap[RealTypeNameStr]++;
@@ -2839,6 +2840,7 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
   requestHelperFeatureForTypeNames(RealTypeNameStr, BeginLoc);
   std::string Replacement =
       MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
+  insertHeaderForTypeRule(RealTypeNameStr, BeginLoc);
   if (!Replacement.empty()) {
     insertComplexHeader(BeginLoc, Replacement);
     if (RealTypeNameStr == "thrust::identity") {
@@ -2984,6 +2986,7 @@ bool TypeInDeclRule::replaceTransformIterator(SourceManager *SM,
     bool Stripped = stripTypename(NameToMap);
     std::string Replacement =
         MapNames::findReplacedName(MapNames::TypeNamesMap, NameToMap);
+    insertHeaderForTypeRule(NameToMap, TL->getBeginLoc());
     requestHelperFeatureForTypeNames(NameToMap, TL->getBeginLoc());
     if (Replacement.empty())
       return Name;
@@ -3265,6 +3268,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
 
     std::string Str =
         MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr);
+    insertHeaderForTypeRule(TypeStr, BeginLoc);
     requestHelperFeatureForTypeNames(TypeStr, BeginLoc);
     if (Str.empty()) {
       auto Itr = MapNames::DeviceRandomGeneratorTypeMap.find(TypeStr);
@@ -3497,6 +3501,7 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       const std::string TypeStr = Tok.getRawIdentifier().str();
       std::string Str =
           MapNames::findReplacedName(MapNames::TypeNamesMap, TypeStr);
+      insertHeaderForTypeRule(TypeStr, BeginLoc);
       requestHelperFeatureForTypeNames(TypeStr, BeginLoc);
       if (!Str.empty()) {
         SrcAPIStaticsMap[TypeStr]++;
@@ -4051,6 +4056,7 @@ void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
               dpct::DpctGlobalInfo::getTypeName(TSL.getType());
           std::string Str =
               MapNames::findReplacedName(MapNames::TypeNamesMap, TyName);
+          insertHeaderForTypeRule(TyName, BeginLoc);
           requestHelperFeatureForTypeNames(TyName, BeginLoc);
 
           if (!Str.empty()) {
@@ -4064,6 +4070,7 @@ void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
       std::string TypeName = Tok.getRawIdentifier().str();
       std::string Str =
           MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName);
+      insertHeaderForTypeRule(TypeName, BeginLoc);
       requestHelperFeatureForTypeNames(TypeName, BeginLoc);
       if (auto VD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
         auto TypeStr = VD->getType().getAsString();
@@ -7916,10 +7923,10 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       VarName = VD->getNameAsString();
 
       requestHelperFeatureForTypeNames(VarType, VD);
-
+      insertHeaderForTypeRule(VarType, VD->getBeginLoc());
       auto Itr = MapNames::TypeNamesMap.find(VarType);
       if (Itr != MapNames::TypeNamesMap.end())
-        VarType = Itr->second;
+        VarType = Itr->second->NewName;
       PrefixBeforeScope = VarType + " " + VarName + ";" + getNL() + IndentStr +
                           PrefixBeforeScope;
       SourceLocation typeBegin =
@@ -7929,6 +7936,10 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           nameBegin, 0, *SM, Result.Context->getLangOpts());
       auto replLen =
           SM->getCharacterData(nameEnd) - SM->getCharacterData(typeBegin);
+      for (auto ItHeader = Itr->second->Includes.begin();
+        ItHeader != Itr->second->Includes.end(); ItHeader++) {
+        DpctGlobalInfo::getInstance().insertHeader(typeBegin, *ItHeader);
+      }
       emplaceTransformation(
           new ReplaceText(typeBegin, replLen, std::move(VarName)));
     } else {
@@ -14628,7 +14639,9 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
     requestHelperFeatureForTypeNames(
         DpctGlobalInfo::getUnqualifiedTypeName(TL->getType(), *Result.Context),
         TL->getBeginLoc());
-
+    insertHeaderForTypeRule(
+        DpctGlobalInfo::getUnqualifiedTypeName(TL->getType(), *Result.Context),
+        TL->getBeginLoc());
     if (!ReplType.empty())
       emplaceTransformation(new ReplaceToken(TL->getBeginLoc(), TL->getEndLoc(),
                                              std::string(ReplType)));
@@ -15077,7 +15090,7 @@ void CXXNewExprRule::runRule(
     if (Tok.isAnyIdentifier()) {
       std::string Str = MapNames::findReplacedName(
           MapNames::TypeNamesMap, Tok.getRawIdentifier().str());
-
+      insertHeaderForTypeRule(Tok.getRawIdentifier().str(), BeginLoc);
       requestHelperFeatureForTypeNames(Tok.getRawIdentifier().str(), BeginLoc);
 
       SourceManager &SM = DpctGlobalInfo::getSourceManager();
@@ -15093,7 +15106,7 @@ void CXXNewExprRule::runRule(
     auto TypeName = CNE->getAllocatedType().getAsString();
     auto ReplName = std::string(
         MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName));
-
+    insertHeaderForTypeRule(TypeName, BeginLoc);
     requestHelperFeatureForTypeNames(TypeName, BeginLoc);
 
     if (!ReplName.empty()) {
@@ -15284,7 +15297,7 @@ void ThrustVarRule::runRule(const MatchFinder::MatchResult &Result) {
 
       std::string Replacement =
           MapNames::findReplacedName(MapNames::TypeNamesMap, ThrustVarName);
-
+      insertHeaderForTypeRule(ThrustVarName, DRE->getBeginLoc());
       requestHelperFeatureForTypeNames(ThrustVarName, DRE);
 
       if (Replacement == "oneapi::dpl::execution::dpcpp_default")

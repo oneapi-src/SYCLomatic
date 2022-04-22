@@ -3852,4 +3852,12 @@ bool isUserDefinedFunction(const clang::ValueDecl *VD) {
   return true;
 }
 
-
+void insertHeaderForTypeRule(std::string Name, clang::SourceLocation Loc) {
+  auto It = MapNames::TypeNamesMap.find(Name);
+  if (It == MapNames::TypeNamesMap.end())
+    return;
+  for (auto ItHeader = It->second->Includes.begin();
+    ItHeader != It->second->Includes.end(); ItHeader++) {
+    dpct::DpctGlobalInfo::getInstance().insertHeader(Loc, *ItHeader);
+  }
+}

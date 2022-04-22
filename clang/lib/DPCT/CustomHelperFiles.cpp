@@ -682,7 +682,7 @@ void generateHelperFunctions() {
         clang::dpct::HelperFileEnum::FILE_NAME, FILE_NAME##FileContent);       \
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/" +                                                         \
-            HelperFileNameMap.at(                                    \
+            HelperFileNameMap.at(                                              \
                 clang::dpct::HelperFileEnum::FILE_NAME),                       \
         std::ios::binary);                                                     \
     FILE_NAME##File << FILE_NAME##FileContentStr;                              \
@@ -694,7 +694,7 @@ void generateHelperFunctions() {
         clang::dpct::HelperFileEnum::FILE_NAME, FILE_NAME##FileContent);       \
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/dpl_extras/" +                                              \
-            HelperFileNameMap.at(                                    \
+            HelperFileNameMap.at(                                              \
                 clang::dpct::HelperFileEnum::FILE_NAME),                       \
         std::ios::binary);                                                     \
     FILE_NAME##File << FILE_NAME##FileContentStr;                              \
@@ -733,9 +733,9 @@ void generateHelperFunctions() {
   }
 #define ADD_HELPER_FEATURE_FOR_TYPE_NAMES(TYPE)                                \
   void requestHelperFeatureForTypeNames(const std::string Name, TYPE File) {   \
-    auto HelperFeatureIter = MapNames::TypeNamesHelperFeaturesMap.find(Name);  \
-    if (HelperFeatureIter != MapNames::TypeNamesHelperFeaturesMap.end()) {     \
-      requestFeature(HelperFeatureIter->second, File);                         \
+    auto HelperFeatureIter = MapNames::TypeNamesMap.find(Name);                \
+    if (HelperFeatureIter != MapNames::TypeNamesMap.end()) {                   \
+      requestFeature(HelperFeatureIter->second->RequestFeature, File);         \
     }                                                                          \
   }
 ADD_HELPER_FEATURE_FOR_ENUM_NAMES(const std::string)
