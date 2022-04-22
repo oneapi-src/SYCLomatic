@@ -123,7 +123,7 @@ jobs:
         env:
           FACELESS_TOKEN: ${{ secrets.GH_CI_NSTESTER_TOKEN }}
         run: |
-          git clone https://$FACELESS_TOKEN@github.com/intel/SYCLomatic-test.git test_repo
+          git clone https://$FACELESS_TOKEN@github.com/oneapi-src/SYCLomatic-test.git test_repo
 
       - uses: actions/download-artifact@v2
         with:

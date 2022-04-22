@@ -122,7 +122,7 @@ jobs:
           FACELESS_TOKEN: ${{ secrets.GH_CI_NSTESTER_TOKEN }}
         run: |
           if exist c2s_test_repo rd /s /q c2s_test_repo
-          git clone https://github.com/intel/SYCLomatic-test.git c2s_test_repo
+          git clone https://github.com/oneapi-src/SYCLomatic-test.git c2s_test_repo
         shell: cmd 
 
       - name: Cleanup Workspace
