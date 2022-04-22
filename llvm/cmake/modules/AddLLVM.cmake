@@ -1956,7 +1956,16 @@ function(llvm_install_symlink name dest)
   endif()
 
   set(full_name ${name}${CMAKE_EXECUTABLE_SUFFIX})
-  set(full_dest ${dest}${CMAKE_EXECUTABLE_SUFFIX})
+# SYCLomatic_CUSTOMIZATION begin
+  get_target_property(DEST_OUTPUT_NAME ${dest} OUTPUT_NAME)
+  if(${DEST_OUTPUT_NAME} STREQUAL "DEST_OUTPUT_NAME-NOTFOUND")
+    set(full_dest ${dest}${CMAKE_EXECUTABLE_SUFFIX})
+  else()
+    set(full_dest ${DEST_OUTPUT_NAME}${CMAKE_EXECUTABLE_SUFFIX})
+  endif()
+# SYCLomatic_CUSTOMIZATION else
+  # set(full_dest ${dest}${CMAKE_EXECUTABLE_SUFFIX})
+# SYCLomatic_CUSTOMIZATION end
 
   install(SCRIPT ${INSTALL_SYMLINK}
           CODE "install_symlink(${full_name} ${full_dest} ${LLVM_TOOLS_INSTALL_DIR})"

@@ -22,4 +22,6 @@ macro(install_dpct)
     PRIVATE
     DPCT
     )
+
+  add_clang_symlink(c2s dpct-binary)
 endmacro()
