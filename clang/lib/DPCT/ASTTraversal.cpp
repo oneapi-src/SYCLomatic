@@ -13051,7 +13051,7 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
     auto FD = CE->getDirectCallee();
     if (FD) {
       std::string Name = FD->getNameInfo().getName().getAsString();
-      if (Name == "__brev") {
+      if (Name == "__brev" || Name == "__brevll") {
         requestFeature(HelperFeatureEnum::Util_reverse_bits, CE);
       } else if (Name == "__vmaxs4" || Name == "__vmaxu2") {
         requestFeature(HelperFeatureEnum::Util_vectorized_max, CE);
