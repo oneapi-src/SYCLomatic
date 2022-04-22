@@ -106,12 +106,12 @@ jobs:
       matrix:
         include:
           - test_suite: user_guide_samples
-            #- test_suite: regressions
-            #- test_suite: samples
-            #- test_suite: help_function
-            #- test_suite: features
-            #- test_suite: api_coverage
-            #- test_suite: behavior_tests
+          - test_suite: regressions
+          - test_suite: samples
+          - test_suite: help_function
+          - test_suite: features
+          - test_suite: api_coverage
+          - test_suite: behavior_tests
     steps:
       - uses: actions/checkout@v2
         with:
