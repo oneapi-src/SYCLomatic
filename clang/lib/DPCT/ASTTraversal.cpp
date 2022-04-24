@@ -13596,7 +13596,8 @@ void RecognizeAPINameRule::processMemberFuncCall(const CXXMemberCallExpr *MC) {
   // 1. assemble api name
   // 2. emit warning for unmigrated api
   QualType ObjType = MC->getObjectType().getCanonicalType();
-  if (isTypeInRoot(ObjType.getTypePtr()) || !MC->getMethodDecl()) {
+  auto MD = MC->getMethodDecl();
+  if (isTypeInRoot(ObjType.getTypePtr()) || !MD) {
     return;
   }
   std::string ObjNameSpace, ObjName;
@@ -13609,13 +13610,12 @@ void RecognizeAPINameRule::processMemberFuncCall(const CXXMemberCallExpr *MC) {
       ObjNameSpace = NSD->getName().str() + "::";
     }
   }
-  if (!MC->getMethodDecl())
-    return;
+
   ObjName = ObjNameSpace + ObjDecl->getNameAsString() + ".";
-  std::string FuncName = MC->getMethodDecl()->getNameAsString();
+  std::string FuncName = MD->getNameAsString();
   std::string APIName = ObjName + FuncName;
 
-  SrcAPIStaticsMap[getFunctionSignature(MC->getMethodDecl(), ObjName)]++;
+  SrcAPIStaticsMap[getFunctionSignature(MD, ObjName)]++;
 
   if (!MigrationStatistics::IsMigrated(APIName)) {
     const SourceManager &SM = DpctGlobalInfo::getSourceManager();
