@@ -920,8 +920,6 @@ void ReplaceInclude::print(llvm::raw_ostream &OS, ASTContext &Context,
                            const bool PrintDetail) const {
   printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
   printLocation(OS, Range.getBegin(), Context, PrintDetail);
-  // TODO: 1. Find a way to show replaced include briefly
-  //       2. ReplaceDim3Ctor uses ReplaceInclude, need to clarification
   printReplacement(OS, T);
 }
 

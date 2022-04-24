@@ -95,11 +95,10 @@ void initVars(const CallExpr *CE, const VarDecl *VD, const BinaryOperator *BO,
 
   Locations.OutOfMacroInsertLoc = SM.getExpansionLoc(CE->getBeginLoc());
 
-  // TODO: For case like:
-  //  #define CHECK_STATUS(x) fun(c)
-  //  CHECK_STATUS(anAPICall());
-  // Below code can distinguish this kind of function like macro, need refine to
-  // cover more cases.
+  // Below code can distinguish this kind of function like macro
+  // For case like:
+  // #define CHECK_STATUS(x) fun(c)
+  // CHECK_STATUS(anAPICall());
   Flags.IsMacroArg = SM.isMacroArgExpansion(CE->getBeginLoc()) &&
                      SM.isMacroArgExpansion(CE->getEndLoc());
 

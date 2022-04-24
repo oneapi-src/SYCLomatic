@@ -125,8 +125,6 @@ bool makeOutRootCanonicalOrSetDefaults(string &OutRoot) {
 }
 
 // Make sure all files have an extension and are under InRoot.
-//
-// TODO: Produce diagnostics with llvm machinery
 int validatePaths(const std::string &InRoot,
                   const std::vector<std::string> &SourceFiles) {
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");

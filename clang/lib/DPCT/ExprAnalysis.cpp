@@ -690,7 +690,7 @@ void ExprAnalysis::analyzeExpr(const ReturnStmt *RS) {
 }
 
 void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
-  // FIXME: Need to handle capture if required in the future
+  // TODO: Need to handle capture([=] in lambda) if required in the future
   dispatch(LE->getBody());
 }
 

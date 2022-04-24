@@ -317,16 +317,6 @@ struct FFTExecAPIInfo {
   // Input info by setstream API
   std::string StreamStr;
 
-  // generate info
-  // code is like:
-  // if (inembed != null && onembed != null) {
-  // desc->set_value(FWD_DISTANCE, ...);
-  // desc->set_value(BWD_DISTANCE, ...);
-  // desc->commit(q);
-  // }
-  // TODO: Here maybe need a warning like:
-  // inembed/onembed/input_dis/output_dis may be not accessable here, you may
-  // need manully fix the code.
   std::vector<std::string> ResetAndCommitStmts; // These stmts should be added
                                                 // at the begin of PrefixStmts
   bool NeedReset =

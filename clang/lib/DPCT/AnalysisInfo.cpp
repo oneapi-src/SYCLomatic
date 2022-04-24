@@ -1295,7 +1295,6 @@ void KernelCallExpr::addReplacements() {
     DiagnosticsUtils::report(getFilePath(), getBegin(),
                              Diagnostics::EXCEED_MAX_PARAMETER_SIZE, true,
                              false);
-  // TODO: Output debug info.
   auto R = std::make_shared<ExtReplacement>(getFilePath(), getBegin(), 0,
                                             getReplacement(), nullptr);
   R->setBlockLevelFormatFlag();
@@ -2221,7 +2220,6 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
 }
 
 inline void DeviceFunctionDecl::emplaceReplacement() {
-  // TODO: Output debug info.
   auto Repl = std::make_shared<ExtReplacement>(
       FilePath, ReplaceOffset, ReplaceLength, getExtraParameters(), nullptr);
   Repl->setNotFormatFlag();

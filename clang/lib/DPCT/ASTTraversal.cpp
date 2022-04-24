@@ -1537,24 +1537,8 @@ void ErrorHandlingIfStmtRule::runRule(const MatchFinder::MatchResult &Result) {
         EmitNotRemoved(S->getSourceRange().getBegin(), S);
         return false;
       }
-#if 0
-    //TODO: enable argument check
-    for (const auto *S : CE->arguments()) {
-      if (!isErrorHandlingSafeToRemove(S->IgnoreImplicit()))
-        return false;
-    }
-#endif
       return true;
     }
-#if 0
-  //TODO: enable argument check
-  else if (isa <DeclRefExpr>(S))
-    return true;
-  else if (isa<IntegerLiteral>(S))
-    return true;
-  else if (isa<StringLiteral>(S))
-    return true;
-#endif
     EmitNotRemoved(S->getSourceRange().getBegin(), S);
     return false;
   };
@@ -1816,7 +1800,6 @@ void AtomicFunctionRule::registerMatcher(MatchFinder &MF) {
   // Support all integer type, float and double
   // Type half and half2 are not supported
   auto supportedTypes = [&]() {
-    // TODO: investigate usage of __half and __half2 types and support it
     return anyOf(hasType(pointsTo(isInteger())),
                  hasType(pointsTo(asString("float"))),
                  hasType(pointsTo(asString("double"))));
@@ -4255,7 +4238,6 @@ void DevicePropVarRule::runRule(const MatchFinder::MatchResult &Result) {
 
   auto Search = PropNamesMap.find(MemberName);
   if (Search == PropNamesMap.end()) {
-    // TODO report migration error
     return;
   }
   if (Parents[0].get<clang::ImplicitCastExpr>()) {
@@ -4382,7 +4364,6 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
 
   auto Search = EnumNamesMap.find(EnumName);
   if (Search == EnumNamesMap.end()) {
-    // TODO report migration error
     return;
   }
   if (auto ET = dyn_cast<EnumType>(E->getType())) {
@@ -5226,11 +5207,9 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
   SourceLocation FuncNameBegin(CE->getBeginLoc());
   SourceLocation FuncCallEnd(CE->getEndLoc());
-  // TODO: For case like:
-  //  #define CHECK_STATUS(x) fun(c)
+  // Below code can distinguish this kind of function like macro
+  //  #define CHECK_STATUS(x) x
   //  CHECK_STATUS(anAPICall());
-  // Below code can distinguish this kind of function like macro, need refine to
-  // cover more cases.
   bool IsMacroArg = SM.isMacroArgExpansion(CE->getBeginLoc()) &&
                     SM.isMacroArgExpansion(CE->getEndLoc());
 
@@ -8289,7 +8268,6 @@ bool SOLVERFunctionCallRule::isReplIndex(int Input, std::vector<int> &IndexInfo,
   return false;
 }
 
-// TODO: Refactoring with BLASFunctionCallRule for removing duplication
 std::string SOLVERFunctionCallRule::getBufferNameAndDeclStr(
     const Expr *Arg, const ASTContext &AC, const std::string &TypeAsStr,
     SourceLocation SL, std::string &BufferDecl, int DistinctionID) {
@@ -8299,7 +8277,6 @@ std::string SOLVERFunctionCallRule::getBufferNameAndDeclStr(
       getTempNameForExpr(Arg, true, true) + "buf_ct" +
       std::to_string(dpct::DpctGlobalInfo::getSuffixIndexInRuleThenInc());
 
-  // TODO: reinterpret will copy more data
   requestFeature(HelperFeatureEnum::Memory_get_buffer_T, Arg);
   BufferDecl = getIndent(SL, AC.getSourceManager()).str() + "auto " +
                BufferTempName + " = " + MapNames::getDpctNamespace() +
@@ -8539,7 +8516,6 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     } else {
       auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
       if (Search == EnumConstantRule::EnumNamesMap.end()) {
-        // TODO report migration error
         return;
       }
       requestHelperFeatureForEnumNames(AttributeName, CE);
@@ -16092,7 +16068,7 @@ void CudaArchMacroRule::runRule(
       FD->getTemplateSpecializationKind() ==
           TemplateSpecializationKind::TSK_Undeclared) {
     auto NameInfo = FD->getNameInfo();
-    /// TODO: add support for macro
+    // TODO: add support for macro
     if (NameInfo.getBeginLoc().isMacroID())
       return;
     auto BeginLoc = SM.getExpansionLoc(FD->getBeginLoc());
@@ -16137,7 +16113,7 @@ void CudaArchMacroRule::runRule(
           DNG.getName(FD), std::make_pair(NameLocInfo.first, HDFI));
   } // address __host__ __device__ function call
   else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "callExpr")) {
-    /// TODO: add support for macro
+    // TODO: add support for macro
     if (CE->getBeginLoc().isMacroID())
       return;
     if (auto *PF = DpctGlobalInfo::getParentFunction(CE)) {

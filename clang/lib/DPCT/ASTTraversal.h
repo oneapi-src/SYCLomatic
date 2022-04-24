@@ -1459,8 +1459,6 @@ private:
 ///     ambiguity, so need to understand how to handle function call arguments,
 ///     which are modified by other rules.
 ///
-/// TODO:
-///   - trigger include of runtime library.
 class MemoryMigrationRule : public NamedMigrationRule<MemoryMigrationRule> {
 
 public:
@@ -1723,7 +1721,6 @@ public:
 
 /// Migrate Function Attributes to Sycl kernel info, defined in
 /// runtime headers.
-// TODO: only maxThreadsPerBlock is supported.
 class KernelFunctionInfoRule
     : public NamedMigrationRule<KernelFunctionInfoRule> {
 public:

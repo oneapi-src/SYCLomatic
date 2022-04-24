@@ -86,8 +86,6 @@ std::shared_ptr<ExtReplacement> ExtReplacements::mergeComparedAtSameOffset(
     return mergeReplacement(Shorter, Longer);
   } else {
     // Shorter is a sub replacement of Longer, just reserve Longer.
-    // TODO: Currently not make sure "keep the longer, remove shorter" is
-    // correct, need to do in the future.
     Longer->mergeConstantInfo(Shorter);
     return Longer;
   }
