@@ -62,7 +62,7 @@ jobs:
         run: |
           mkdir c2s.obj
           cd c2s.src/build
-          ninja install-c2s-tool
+          ninja install-c2s
 
       - id: Echo-Build-Success
         run: echo "::set-output name=build_success::true"
