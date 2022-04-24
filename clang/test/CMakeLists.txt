@@ -81,7 +81,7 @@ list(APPEND CLANG_TEST_DEPS
   clang-pseudo
   diagtool
   hmaptool
-  c2s
+  dpct-binary
   )
 
 if(CLANG_ENABLE_STATIC_ANALYZER)
@@ -181,6 +181,13 @@ add_lit_testsuites(CLANG ${CMAKE_CURRENT_SOURCE_DIR}
   PARAMS ${CLANG_TEST_PARAMS}
   DEPENDS ${CLANG_TEST_DEPS}
 )
+
+# SYCLomatic_CUSTOMIZATION begin
+add_specific_lit_testsuite(check-clang-c2s dpct ${CMAKE_CURRENT_SOURCE_DIR}/dpct
+  PARAMS ${CLANG_TEST_PARAMS}
+  DEPENDS ${CLANG_TEST_DEPS}
+)
+# SYCLomatic_CUSTOMIZATION end
 
 # Add a legacy target spelling: clang-test
 add_custom_target(clang-test)

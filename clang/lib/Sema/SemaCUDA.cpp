@@ -610,14 +610,14 @@ bool HasAllowedCUDADeviceStaticInitializer(Sema &S, VarDecl *VD,
 } // namespace
 
 void Sema::checkAllowedCUDAInitializer(VarDecl *VD) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   // nvcc allows (gives warning though) initializers on __shared__
   // declarations.  So in order to allow migration we're skipping
   // this check
   if (VD->hasAttr<CUDASharedAttr>()) {
     return;
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   // Do not check dependent variables since the ctor/dtor/initializer are not
   // determined. Do it after instantiation.
   if (VD->isInvalidDecl() || !VD->hasInit() || !VD->hasGlobalStorage() ||
@@ -809,13 +809,13 @@ bool Sema::CheckCUDACall(SourceLocation Loc, FunctionDecl *Callee) {
   FunctionDecl *Caller = dyn_cast<FunctionDecl>(CurContext);
   if (!Caller)
     return true;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   CUDAFunctionTarget CallerTarget = IdentifyCUDATarget(Caller);
   CUDAFunctionTarget CalleeTarget = IdentifyCUDATarget(Callee);
   if(CallerTarget == CFT_HostDevice && CalleeTarget == CFT_Device){
     return true;
   }
-#endif // INTEL_CUSTOMIZATION
+#endif // SYCLomatic_CUSTOMIZATION
   // If the caller is known-emitted, mark the callee as known-emitted.
   // Otherwise, mark the call in our call graph so we can traverse it later.
   bool CallerKnownEmitted =

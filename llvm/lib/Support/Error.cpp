@@ -176,6 +176,6 @@ LLVMErrorRef LLVMCreateStringError(const char *ErrMsg) {
   return wrap(make_error<StringError>(ErrMsg, inconvertibleErrorCode()));
 }
 
-#ifdef INTEL_CUSTOMIZATION
-char C2SError::ID = 0;
+#ifdef SYCLomatic_CUSTOMIZATION
+char DPCTError::ID = 0;
 #endif

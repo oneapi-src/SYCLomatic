@@ -96,17 +96,17 @@ def warn_drv_new_cuda_version: Warning<
 def warn_drv_partially_supported_cuda_version: Warning<
   "CUDA version %0 is only partially supported">,
   InGroup<CudaUnknownVersion>;
-//INTEL_CUSTOMIZATION begin
+// SYCLomatic_CUSTOMIZATION begin
 def err_drv_cuda_host_arch : Error<"unsupported option -target '%0'.">;
-//INTEL_CUSTOMIZATION end
+// SYCLomatic_CUSTOMIZATION end
 
 def err_drv_no_sycl_libspirv : Error<
   "cannot find '%0'; provide path to libspirv library via '-fsycl-libspirv-path', or "
   "pass '-fno-sycl-libspirv' to build without linking with libspirv">;
-//INTEL_CUSTOMIZATION begin
+// SYCLomatic_CUSTOMIZATION begin
 def err_drv_mix_cuda_hip : Error<
   "mixed CUDA and HIP migration is not supported">;
-//INTEL_CUSTOMIZATION end
+// SYCLomatic_CUSTOMIZATION end
 def err_drv_bad_target_id : Error<
   "invalid target ID '%0'; format is a processor name followed by an optional "
   "colon-delimited list of features followed by an enable/disable sign (e.g., "
@@ -201,10 +201,10 @@ def err_drv_clang_unsupported_opt_cxx_darwin_i386 : Error<
 def err_drv_clang_unsupported_opt_pg_darwin: Error<
   "the clang compiler does not support -pg option on %select{Darwin|versions of OS X 10.9 and later}0">;
 
-//INTEL_CUSTOMIZATION begin
+// SYCLomatic_CUSTOMIZATION begin
 def err_drv_clang_unsupported_opt_faltivec : Error<
-  "option not supported: '%0', please use %1">;
-//INTEL_CUSTOMIZATION end
+  "option not supported: '%0', %1">;
+// SYCLomatic_CUSTOMIZATION end
 
 def err_drv_command_failed : Error<
   "%0 command failed with exit code %1 (use -v to see invocation)">;
@@ -402,11 +402,11 @@ def warn_drv_preprocessed_input_file_unused : Warning<
   "%0: previously preprocessed input%select{ unused when '%2' is present|}1">,
   InGroup<UnusedCommandLineArgument>;
 
-//INTEL_CUSTOMIZATION begin
+// SYCLomatic_CUSTOMIZATION begin
 def warn_drv_unused_argument : Warning<
   "argument unused during migration: '%0'">,
   InGroup<UnusedCommandLineArgument>;
-//INTEL_CUSTOMIZATION end
+// SYCLomatic_CUSTOMIZATION end
 
 def warn_drv_empty_joined_argument : Warning<
   "joined argument expects additional value: '%0'">,
@@ -415,10 +415,10 @@ def warn_drv_diagnostics_hotness_requires_pgo : Warning<
   "argument '%0' requires profile-guided optimization information">,
   InGroup<UnusedCommandLineArgument>;
 
-//INTEL_CUSTOMIZATION begin
+// SYCLomatic_CUSTOMIZATION begin
 def warn_drv_clang_unsupported : Warning<
   "option not supported: '%0'">;
-//INTEL_CUSTOMIZATION end
+// SYCLomatic_CUSTOMIZATION end
 
 def warn_drv_deprecated_arg : Warning<
   "argument '%0' is deprecated, use '%1' instead">, InGroup<Deprecated>;

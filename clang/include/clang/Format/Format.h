@@ -22,7 +22,7 @@
 #include "llvm/Support/SourceMgr.h"
 #include <system_error>
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 namespace clang {
 namespace format {
 /// The enum that specifies the range of code formatting, only
@@ -36,7 +36,7 @@ void setFormatRangeGetterHandler(std::function<FormatRange()> Getter);
 extern bool BlockLevelFormatFlag;
 } // namespace format
 } // namespace clang
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 namespace llvm {
 namespace vfs {
 class FileSystem;

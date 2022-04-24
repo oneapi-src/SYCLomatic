@@ -51,7 +51,7 @@ set(files
   __clang_cuda_libdevice_declares.h
   __clang_cuda_math_forward_declares.h
   __clang_cuda_runtime_wrapper.h
-  __clang_c2s_math.h
+  __clang_dpct_math.h
   __clang_hip_libdevice_declares.h
   __clang_hip_cmath.h
   __clang_hip_math.h
@@ -235,7 +235,7 @@ set_target_properties(clang-resource-headers PROPERTIES
   FOLDER "Misc"
   RUNTIME_OUTPUT_DIRECTORY "${output_dir}")
 
-set_header_install_dir()
+set(header_install_dir lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION}/include)
 
 install(
   FILES ${files} ${generated_files}

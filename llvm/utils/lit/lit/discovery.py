@@ -52,7 +52,7 @@ def getTestSuite(item, litConfig, cache):
         # configuration to load instead.
         config_map = litConfig.params.get('config_map')
         if config_map:
-            # INTEL_CUSTOMIZATION begin
+# SYCLomatic_CUSTOMIZATION begin
             # Patch 8e62797963875e0cf93fcabda9e18bc0eff5da11 replaced
             # os.path.abspath() with pathlib.resolve() in LLVM_LIT_PATH_FUNCTION
             # variable in llvm/cmake/modules/AddLLVM.cmake file. This change will
@@ -70,9 +70,9 @@ def getTestSuite(item, litConfig, cache):
             # network drive.
             from pathlib import Path
             cfgpath = Path(cfgpath).resolve()
-            # INTEL_CUSTOMIZATION else
+# SYCLomatic_CUSTOMIZATION else
             # cfgpath = os.path.realpath(cfgpath)
-            # INTEL_CUSTOMIZATION end
+# SYCLomatic_CUSTOMIZATION end
             target = config_map.get(os.path.normcase(cfgpath))
             if target:
                 cfgpath = target

@@ -17,7 +17,8 @@ set (LibScanbuild
      "compilation.py"
      "intercept.py"
      "report.py"
-     "shell.py")
+     "shell.py"
+     "parse_buildlog.py")
 
 set (LibScanbuildResources
      "scanview.css"
@@ -90,10 +91,12 @@ foreach(lib ${LibScanbuild})
   install(PROGRAMS lib/libscanbuild/${lib}
           DESTINATION lib/libscanbuild
           COMPONENT scan-build-py)
-  if(INTEL_CUSTOMIZATION)
-    list(APPEND c2s-intercept-build-dependends ${CMAKE_BINARY_DIR}/lib/libscanbuild/${lib})
-    install_libscanbuild_libs()
-  endif()
+# SYCLomatic_CUSTOMIZATION begin
+  list(APPEND dpct-intercept-build-dependends ${CMAKE_BINARY_DIR}/lib/libscanbuild/${lib})
+  install(PROGRAMS lib/libscanbuild/${lib}
+          DESTINATION lib/libscanbuild
+          COMPONENT dpct-intercept-build)
+# SYCLomatic_CUSTOMIZATION end
 endforeach()
 
 foreach(resource ${LibScanbuildResources})
@@ -135,7 +138,7 @@ add_llvm_install_targets("install-scan-build-py"
                          DEPENDS scan-build-py
                          COMPONENT scan-build-py)
 
-if (INTEL_CUSTOMIZATION)
+if (SYCLomatic_CUSTOMIZATION)
   if (UNIX)
     add_library(ear SHARED
       ${CMAKE_CURRENT_SOURCE_DIR}/lib/libear/ear.c
@@ -145,30 +148,41 @@ if (INTEL_CUSTOMIZATION)
     target_link_libraries(ear PRIVATE
       "-ldl -lpthread -shared -Wl,-soname,libear.so")
     target_compile_options(ear PRIVATE "-std=c99")
-    install_ear()
-    list(APPEND c2s-intercept-build-dependends ear)
-    
+    install(TARGETS ear
+            LIBRARY
+            DESTINATION lib/libear
+            COMPONENT dpct-intercept-build
+    )
+    list(APPEND dpct-intercept-build-dependends ear)
+
     add_executable(intercept-stub
       ${CMAKE_CURRENT_SOURCE_DIR}/lib/libear/intercept-stub.c
     )
 
-    install_intercept_stub()
+    install(TARGETS intercept-stub
+            DESTINATION lib/libear
+            COMPONENT dpct-intercept-build
+    )
 
-    list(APPEND c2s-intercept-build-dependends intercept-stub)
-    
-    list(APPEND c2s-intercept-build-dependends ${CMAKE_BINARY_DIR}/lib/libear/__init__.py)
-    install_init_py()
+    list(APPEND dpct-intercept-build-dependends intercept-stub)
+
+    list(APPEND dpct-intercept-build-dependends ${CMAKE_BINARY_DIR}/lib/libear/__init__.py)
+    install(PROGRAMS lib/libear/__init__.py
+            DESTINATION lib/libear
+            COMPONENT dpct-intercept-build)
   endif()
 
-  install_intercept_build()
+  install(PROGRAMS bin/intercept-build
+                   DESTINATION bin
+                   COMPONENT dpct-intercept-build)
 
-  list(APPEND c2s-intercept-build-dependends ${CMAKE_BINARY_DIR}/bin/intercept-build)
+  list(APPEND dpct-intercept-build-dependends ${CMAKE_BINARY_DIR}/bin/intercept-build)
 
-  add_custom_target(c2s-intercept-build ALL DEPENDS ${c2s-intercept-build-dependends})
+  add_custom_target(dpct-intercept-build ALL DEPENDS ${dpct-intercept-build-dependends})
 
   if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
-    add_llvm_install_targets(install-c2s-intercept-build
-                             DEPENDS c2s-intercept-build
-                             COMPONENT c2s-intercept-build)
+    add_llvm_install_targets(install-dpct-intercept-build
+                             DEPENDS dpct-intercept-build
+                             COMPONENT dpct-intercept-build)
   endif()
 endif()

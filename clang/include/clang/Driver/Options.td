@@ -1486,10 +1486,10 @@ defm emulated_tls : BoolFOption<"emulated-tls",
   PosFlag<SetTrue, [CC1Option], "Use emutls functions to access thread_local variables">,
   NegFlag<SetFalse>, BothFlags<[CC1Option]>>;
 def fencoding_EQ : Joined<["-"], "fencoding=">, Group<f_Group>;
-//INTEL_CUSTOMIZATION begin
+// SYCLomatic_CUSTOMIZATION begin
 def ferror_limit_EQ : Joined<["-"], "ferror-limit=">, Group<f_Group>, Flags<[CoreOption]>,
   HelpText<"Set the maximum number of errors to emit before stopping (0 = no limit).">;
-//INTEL_CUSTOMIZATION end
+// SYCLomatic_CUSTOMIZATION end
 defm exceptions : BoolFOption<"exceptions",
   LangOpts<"Exceptions">, DefaultFalse,
   PosFlag<SetTrue, [CC1Option], "Enable">, NegFlag<SetFalse, [], "Disable">,

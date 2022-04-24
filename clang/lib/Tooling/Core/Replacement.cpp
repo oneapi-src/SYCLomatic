@@ -123,7 +123,7 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
   const std::pair<FileID, unsigned> DecomposedLocation =
       Sources.getDecomposedLoc(Start);
   const FileEntry *Entry = Sources.getFileEntryForID(DecomposedLocation.first);
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   if (Entry) {
     // To avoid potential path inconsist issue,
     // using tryGetRealPathName while applicable.
@@ -145,7 +145,7 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
   }
 #else
   this->FilePath = std::string(Entry ? Entry->getName() : InvalidLocation);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   this->ReplacementRange = Range(DecomposedLocation.second, Length);
   this->ReplacementText = std::string(ReplacementText);
 }
@@ -260,7 +260,7 @@ Replacements::mergeIfOrderIndependent(const Replacement &R) const {
   if (MergeShiftedRs.getCanonicalReplacements() ==
       MergeShiftedReplaces.getCanonicalReplacements())
     return MergeShiftedRs;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 #ifndef NDEBUG
   return llvm::make_error<ReplacementError>(replacement_error::overlap_conflict,
                                             R, *Replaces.begin());
@@ -272,7 +272,7 @@ Replacements::mergeIfOrderIndependent(const Replacement &R) const {
 #else
   return llvm::make_error<ReplacementError>(replacement_error::overlap_conflict,
                                             R, *Replaces.begin());
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 llvm::Error Replacements::add(const Replacement &R) {
@@ -307,7 +307,7 @@ llvm::Error Replacements::add(const Replacement &R) {
       // either order produces the same text, they are order-independent.
       if ((R.getReplacementText() + I->getReplacementText()).str() !=
           (I->getReplacementText() + R.getReplacementText()).str())
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 #ifndef NDEBUG
         return llvm::make_error<ReplacementError>(
             replacement_error::insert_conflict, R, *I);
@@ -330,7 +330,7 @@ llvm::Error Replacements::add(const Replacement &R) {
       Replacement NewR(
           R.getFilePath(), R.getOffset(), 0,
           (R.getReplacementText() + I->getReplacementText()).str());
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
       Replaces.erase(I);
       Replaces.insert(std::move(NewR));
       return llvm::Error::success();
@@ -612,7 +612,7 @@ unsigned Replacements::getShiftedCodePosition(unsigned Position) const {
   return Position + Offset;
 }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 #include <setjmp.h>
 
 #if defined(__linux__)
@@ -627,48 +627,48 @@ unsigned Replacements::getShiftedCodePosition(unsigned Position) const {
 
 JMP_BUF CPApplyReps;
 int CheckPointStageCore=0 /*CHECKPOINT_UNKNOWN*/;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 namespace clang {
 namespace tooling {
 
 bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   // Add declared "volatile" to remove warning "variable ‘Result’ might be
   // clobbered by ‘longjmp’ or ‘vfork’ "
   volatile bool Result = true;
 #else
   bool Result = true;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   for (auto I = Replaces.rbegin(), E = Replaces.rend(); I != E; ++I) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     CheckPointStageCore = 5 /*CHECKPOINT_WRITE_OUT*/;
     int Ret=SETJMP(CPApplyReps);
     if(Ret != 0) {
        //skip the a replacement, as meet fatal error when apply the replacement.
        continue;
     }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     if (I->isApplicable()) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
       try {
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
       Result = I->apply(Rewrite) && Result;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
       } catch (std::exception &e) {
         std::string FaultMsg =
-            "Error: c2s internal error. c2s tries to recover and write the migration result.\n";
+            "Error: dpct internal error. dpct tries to recover and write the migration result.\n";
         llvm::errs() << FaultMsg;
       }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     } else {
       Result = false;
     }
   }
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   //tag the checkpoint is invalid now.
   CheckPointStageCore = 0 /*CHECKPOINT_UNKNOWN*/;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   return Result;
 }
 

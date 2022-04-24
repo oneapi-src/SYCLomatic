@@ -1043,9 +1043,9 @@ bool CompilerInstance::ExecuteAction(FrontendAction &Act) {
     }
   }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 // don't show the message "3 errors generated during parsing".
-// it's duplicate with c2s summary in command line msg.
+// it's duplicate with dpct summary in command line msg.
 #else
   if (getDiagnosticOpts().ShowCarets) {
     // We can have multiple diagnostics sharing one diagnostic client.
@@ -1079,7 +1079,7 @@ bool CompilerInstance::ExecuteAction(FrontendAction &Act) {
     }
     llvm::PrintStatistics(OS);
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   StringRef StatsFile = getFrontendOpts().StatsFile;
   if (!StatsFile.empty()) {
     std::error_code EC;

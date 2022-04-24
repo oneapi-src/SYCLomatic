@@ -27,11 +27,11 @@
 #include "llvm/Support/TargetParser.h"
 #include "llvm/Support/VirtualFileSystem.h"
 #include <system_error>
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 #include <fstream>
 #include <regex>
-#include "clang/C2S/C2S.h"
-#endif
+#include "clang/DPCT/DPCT.h"
+#endif // SYCLomatic_CUSTOMIZATION
 
 using namespace clang::driver;
 using namespace clang::driver::toolchains;
@@ -39,7 +39,7 @@ using namespace clang::driver::tools;
 using namespace clang;
 using namespace llvm::opt;
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 bool HasSDKIncludeOption = false;
 bool HasSDKPathOption = false;
 std::string RealSDKIncludePath = "";
@@ -199,7 +199,7 @@ CudaVersion parseCudaHFile(llvm::StringRef Input) {
   return CudaVersion::UNKNOWN;
 }
 } // namespace
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 void CudaInstallationDetector::WarnIfUnsupportedVersion() {
   if (Version > CudaVersion::PARTIALLY_SUPPORTED) {
@@ -229,7 +229,7 @@ CudaInstallationDetector::CudaInstallationDetector(
   SmallVector<Candidate, 4> Candidates;
 
   // In decreasing order so we prefer newer versions to older versions.
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   std::initializer_list<const char *> Versions = {
       "11.6", "11.5", "11.4", "11.3", "11.2", "11.1", "10.2", "10.1",
       "10.0", "9.2",  "9.1",  "9.0",  "8.0",  "7.5",  "7.0"};
@@ -237,9 +237,9 @@ CudaInstallationDetector::CudaInstallationDetector(
   std::initializer_list<const char *> Versions = {
       "11.4", "11.3", "11.2", "11.1", "10.2", "10.1", "10.0",
       "9.2",  "9.1",  "9.0",  "8.0",  "7.5",  "7.0"};
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   auto &FS = D.getVFS();
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   if (HasSDKPathOption) {
     Candidates.emplace_back(RealSDKPath);
   } else if (Args.hasArg(clang::driver::options::OPT_cuda_path_EQ)) {
@@ -253,13 +253,13 @@ CudaInstallationDetector::CudaInstallationDetector(
   if (Args.hasArg(clang::driver::options::OPT_cuda_path_EQ)) {
     Candidates.emplace_back(
         Args.getLastArgValue(clang::driver::options::OPT_cuda_path_EQ).str());
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   } else if (HostTriple.isOSWindows()) {
     // CUDA_PATH is set by the installer, prefer it over other versions that
     // might be present on the system.
     if (const char *CudaPathEnvVar = ::getenv("CUDA_PATH"))
       Candidates.emplace_back(CudaPathEnvVar);
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     // if D.SysRoot empty (no --sysroot) , then default to "c:" in Windows.
     for (const char *Ver : Versions)
       Candidates.emplace_back((D.SysRoot.empty() ? "c:" : D.SysRoot) +
@@ -270,7 +270,7 @@ CudaInstallationDetector::CudaInstallationDetector(
       Candidates.emplace_back(
           D.SysRoot + "/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v" +
           Ver);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   } else {
     if (!Args.hasArg(clang::driver::options::OPT_cuda_path_ignore_env)) {
       // Try to find ptxas binary. If the executable is located in a directory
@@ -305,7 +305,7 @@ CudaInstallationDetector::CudaInstallationDetector(
       Candidates.emplace_back(D.SysRoot + "/usr/lib/cuda");
   }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   Args.hasArg(options::OPT_nogpulib);
   if (HasSDKIncludeOption) {
     if (RealSDKIncludePath.empty() ||
@@ -360,7 +360,7 @@ CudaInstallationDetector::CudaInstallationDetector(
 
       IsValid = true;
 
-      // To certain CUDA version that c2s supports is available
+      // To certain CUDA version that dpct supports is available
       IsSupportedVersionAvailable = true;
       break;
     }
@@ -482,7 +482,7 @@ CudaInstallationDetector::CudaInstallationDetector(
     IsValid = true;
     break;
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 void CudaInstallationDetector::AddCudaIncludeArgs(
@@ -527,14 +527,14 @@ void CudaInstallationDetector::CheckCudaVersionSupportsArch(
 }
 
 void CudaInstallationDetector::print(raw_ostream &OS) const {
-  #ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   if (isValid())
     OS << "Found CUDA include folder: " << InstallPath << ", version "
        << CudaVersionToString(Version) << "\n";
-  #else
+#else
   OS << "Found CUDA installation: " << InstallPath << ", version "
      << CudaVersionToString(Version) << "\n";
-  #endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 namespace {

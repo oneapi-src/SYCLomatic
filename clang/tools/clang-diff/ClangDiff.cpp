@@ -89,14 +89,14 @@ getAST(const std::unique_ptr<CompilationDatabase> &CommonCompilations,
   std::string ErrorMessage;
   std::unique_ptr<CompilationDatabase> Compilations;
   if (!CommonCompilations) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     std::string Dir;
     Compilations = CompilationDatabase::autoDetectFromSource(
         BuildPath.empty() ? Filename : BuildPath, ErrorMessage, Dir);
 #else
     Compilations = CompilationDatabase::autoDetectFromSource(
         BuildPath.empty() ? Filename : BuildPath, ErrorMessage);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     if (!Compilations) {
       llvm::errs()
           << "Error while trying to load a compilation database, running "

@@ -1887,6 +1887,27 @@ function(add_lit_testsuites project directory)
   endif()
 endfunction()
 
+# SYCLomatic_CUSTOMIZATION begin
+function(add_specific_lit_testsuite target lit_suite directory)
+  if (NOT LLVM_ENABLE_IDE)
+    cmake_parse_arguments(ARG "EXCLUDE_FROM_CHECK_ALL" "FOLDER" "PARAMS;DEPENDS;ARGS" ${ARGN})
+
+    if (NOT ARG_FOLDER)
+      set(ARG_FOLDER "Test Subdirectories")
+    endif()
+
+    add_lit_target("${target}" "Running lit suite ${directory}"
+      ${lit_suite}
+      ${EXCLUDE_FROM_CHECK_ALL}
+      PARAMS ${ARG_PARAMS}
+      DEPENDS ${ARG_DEPENDS}
+      ARGS ${ARG_ARGS}
+    )
+    set_target_properties(${target} PROPERTIES FOLDER ${ARG_FOLDER})
+  endif()
+endfunction()
+# SYCLomatic_CUSTOMIZATION end
+
 function(llvm_install_library_symlink name dest type)
   cmake_parse_arguments(ARG "" "COMPONENT" "" ${ARGN})
   foreach(path ${CMAKE_MODULE_PATH})
@@ -1935,7 +1956,16 @@ function(llvm_install_symlink name dest)
   endif()
 
   set(full_name ${name}${CMAKE_EXECUTABLE_SUFFIX})
-  set(full_dest ${dest}${CMAKE_EXECUTABLE_SUFFIX})
+# SYCLomatic_CUSTOMIZATION begin
+  get_target_property(DEST_OUTPUT_NAME ${dest} OUTPUT_NAME)
+  if(${DEST_OUTPUT_NAME} STREQUAL "DEST_OUTPUT_NAME-NOTFOUND")
+    set(full_dest ${dest}${CMAKE_EXECUTABLE_SUFFIX})
+  else()
+    set(full_dest ${DEST_OUTPUT_NAME}${CMAKE_EXECUTABLE_SUFFIX})
+  endif()
+# SYCLomatic_CUSTOMIZATION else
+  # set(full_dest ${dest}${CMAKE_EXECUTABLE_SUFFIX})
+# SYCLomatic_CUSTOMIZATION end
 
   install(SCRIPT ${INSTALL_SYMLINK}
           CODE "install_symlink(${full_name} ${full_dest} ${LLVM_TOOLS_INSTALL_DIR})"

@@ -401,14 +401,14 @@ public:
   virtual void Endif(SourceLocation Loc, SourceLocation IfLoc) {
   }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   /// Hook called before entering a #include <file>.
   /// \param FileName the filename referenced in the #include directive
   /// \param IsAngled
   virtual bool ShouldEnter(StringRef FileName, bool IsAngled) {
     return true;
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 };
 
 /// Simple wrapper class for chaining callbacks.
@@ -669,13 +669,13 @@ public:
     Second->Endif(Loc, IfLoc);
   }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   /// Hook called before entering a #include <file>.
   bool ShouldEnter(StringRef FileName, bool IsAngled) override {
     return First->ShouldEnter(FileName, IsAngled) &&
       Second->ShouldEnter(FileName, IsAngled);
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 };
 
 }  // end namespace clang

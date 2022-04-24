@@ -50,12 +50,12 @@ def err_pch_version_too_old : Error<
 def err_pch_version_too_new : Error<
     "PCH file uses a newer PCH format that cannot be read">;
 
-//INTEL_CUSTOMIZATION begin
+// SYCLomatic_CUSTOMIZATION begin
 def err_pch_different_branch : Error<
     "PCH file is built by (%0), expected (%1).">;
 def err_pch_with_compiler_errors : Error<
     "PCH file contains syntax errors">;
-//INTEL_CUSTOMIZATION end
+// SYCLomatic_CUSTOMIZATION end
 
 def err_module_file_conflict : Error<
   "module '%0' is defined in both '%1' and '%2'">, DefaultFatal;

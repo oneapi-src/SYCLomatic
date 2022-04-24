@@ -87,14 +87,14 @@ public:
          const char *Overview = nullptr);
 
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   static bool hasHelpOption(int argc, const char **argv);
   std::string &getCompilationsDir() { return CompilationsDir; }
   bool isPSpecified() { return IsPSpecified; }
 #ifdef _WIN32
   bool isVcxprojfileSpecified() { return IsVcxprojfileSpecified; }
 #endif
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   /// Returns a reference to the loaded compilations database.
   CompilationDatabase &getCompilations() {
     return *Compilations;
@@ -120,13 +120,13 @@ private:
                    const char *Overview);
 
   std::unique_ptr<CompilationDatabase> Compilations;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   std::string CompilationsDir = "";
   bool IsPSpecified = false;
 #ifdef _WIN32
   bool IsVcxprojfileSpecified = false;
 #endif
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   std::vector<std::string> SourcePathList;
   ArgumentsAdjuster Adjuster;
 };
@@ -154,13 +154,13 @@ private:
   adjustCommands(std::vector<CompileCommand> Commands) const;
 };
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 #ifdef _WIN32
 using FunPtrParserType = void (*)(std::string &, std::string &);
 void SetParserHandle(FunPtrParserType FPParser);
 void DoParserHandle(std::string &BuildDir, std::string &FilePath);
 #endif
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 }  // namespace tooling
 }  // namespace clang

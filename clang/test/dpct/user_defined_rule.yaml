@@ -1,0 +1,43 @@
+---
+- Rule: rule_force_inline
+  Kind: Macro
+  Priority: Takeover
+  In: __forceinline__
+  Out: inline
+  Includes: ["aaa.h", "\"bbb.h\""]
+- Rule: rule_cudaMalloc
+  Kind: API
+  Priority: Takeover
+  In: cudaMalloc
+  Out: $type_name_of  (  $ 2   ) *aaa = foo($deref ($1), ($deref_type($1))$addr_of($1), $queue, $context, $device)
+  Includes: ["ccc.h"]
+- Rule: rule_cmath
+  Kind: Header
+  Priority: Takeover
+  In: cmath
+  Out: cmath2
+  Includes: ["<cmath3>"]
+- Rule: min
+  Kind: API
+  Priority: Takeover
+  In: my_min
+  Out: std::min($1, $2)
+  Includes: []
+- Rule: foo3
+  Kind: API
+  Priority: Takeover
+  In: foo3
+  Out: goo($1)
+  Includes: []
+- Rule: rule_call_macro
+  Kind: Macro
+  Priority: Takeover
+  In: CALL
+  Out: CALL2
+  Includes: []
+- Rule: custream_rule
+  Kind: Type
+  Priority: Takeover
+  In: CUstream_st
+  Out: mytype
+  Includes: ["ddd.h"]

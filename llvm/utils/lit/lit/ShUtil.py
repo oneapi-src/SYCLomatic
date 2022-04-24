@@ -117,10 +117,10 @@ class ShLexer:
                 c = self.eat()
                 if c == '"': # 
                     str += '"'
-                #INTEL_CUSTOMIZATION begin
+# SYCLomatic_CUSTOMIZATION begin
                 #elif c == '\\':
                 #    str += '\\'
-                #INTEL_CUSTOMIZATION end
+# SYCLomatic_CUSTOMIZATION end
                 else:
                     str += '\\' + c
             else:

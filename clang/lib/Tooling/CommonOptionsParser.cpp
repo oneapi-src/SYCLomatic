@@ -56,7 +56,7 @@ const char *const CommonOptionsParser::HelpMessage =
 namespace clang {
 namespace tooling {
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 #ifdef _WIN32
 std::string VcxprojFilePath;
 #endif
@@ -78,7 +78,7 @@ void DoParserHandle(std::string &BuildDir, std::string &FilePath) {
 #endif
 } // namespace tooling
 } // namespace clang
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 
 void ArgumentsAdjustingCompilations::appendArgumentsAdjuster(
@@ -111,7 +111,7 @@ std::vector<CompileCommand> ArgumentsAdjustingCompilations::adjustCommands(
 llvm::Error CommonOptionsParser::init(
     int &argc, const char **argv, cl::OptionCategory &Category,
     llvm::cl::NumOccurrencesFlag OccurrencesFlag, const char *Overview) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   bool IsCudaFile = false;
   int OriArgc = argc;
   static cl::opt<std::string> BuildPath(
@@ -141,14 +141,14 @@ llvm::Error CommonOptionsParser::init(
   static cl::list<std::string> SourcePaths(
       cl::Positional, cl::desc("<source0> [... <sourceN>]"), OccurrencesFlag,
       cl::cat(Category), cl::sub(*cl::AllSubCommands));
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
  static cl::list<std::string> ArgsAfter(
      "extra-arg",
      cl::desc("Additional argument to append to the migration command line, example:\n"
               "--extra-arg=\"-I /path/to/header\". The options that can be passed this way can\n"
-              "be found with the c2s -- -help command."),
+              "be found with the dpct -- -help command."),
      cl::value_desc("string"), cl::cat(Category), cl::sub(*cl::AllSubCommands));
 
   static cl::list<std::string> ArgsBefore(
@@ -166,7 +166,7 @@ llvm::Error CommonOptionsParser::init(
       "extra-arg-before",
       cl::desc("Additional argument to prepend to the compiler command line"),
       cl::cat(Category), cl::sub(*cl::AllSubCommands));
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   cl::ResetAllOptionOccurrences();
 
   cl::HideUnrelatedOptions(Category);
@@ -187,18 +187,18 @@ llvm::Error CommonOptionsParser::init(
   cl::PrintOptionValues();
 
   SourcePathList = SourcePaths;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   if(!SourcePathList.empty()) {
     clang::tooling::FormatSearchPath = SourcePaths[0];
   }
   DatabaseStatus ErrCode =
-      CannotFindDatabase; // map to MigrationErrorCannotFindDatabase in C2S
+      CannotFindDatabase; // map to MigrationErrorCannotFindDatabase in DPCT
   IsPSpecified = BuildPath.getNumOccurrences();
 #if _WIN32
   VcxprojFilePath = VcxprojFile;
   IsVcxprojfileSpecified = VcxprojFile.getNumOccurrences();
   // In Windows, the option "-p" and "-vcxproj" are mutually exclusive, user can
-  // only give one of them. If both of them exist, c2s will exit with
+  // only give one of them. If both of them exist, dpct will exit with
   // -1 (.i.e MigrationError).
   if (!BuildPath.empty() && !VcxprojFile.empty()) {
     ErrorMessage =
@@ -220,24 +220,24 @@ llvm::Error CommonOptionsParser::init(
     clang::tooling::FormatSearchPath = BuildDir;
   }
 #endif
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   if ((OccurrencesFlag == cl::ZeroOrMore || OccurrencesFlag == cl::Optional) &&
       SourcePathList.empty())
     return llvm::Error::success();
   if (!Compilations) {
     if (!BuildPath.empty()) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
       Compilations = CompilationDatabase::autoDetectFromDirectory(
           BuildPath, ErrorMessage, ErrCode, CompilationsDir);
       clang::tooling::FormatSearchPath = BuildPath;
 #else
       Compilations = CompilationDatabase::autoDetectFromDirectory(
           BuildPath, ErrorMessage, ErrCode);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     }
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     // if neither option "-p" or target source file names exist in the
-    // command line, e.g "c2s -in-root=./ -out-root=out", c2s will not
+    // command line, e.g "dpct -in-root=./ -out-root=out", dpct will not
     // continue.
     else if (BuildPath.empty() && SourcePathList.empty()) {
       Compilations = nullptr;
@@ -249,10 +249,10 @@ llvm::Error CommonOptionsParser::init(
     else {
       Compilations = CompilationDatabase::autoDetectFromSource(SourcePaths[0],
                                                                ErrorMessage);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     }
     if (!Compilations) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
       if (SourcePaths.size() == 0 && !BuildPath.getValue().empty()){
         std::string buf;
         llvm::raw_string_ostream OS(buf);
@@ -264,12 +264,12 @@ llvm::Error CommonOptionsParser::init(
         // "CannotParseDatabase" or "CannotFindDatabase".
 
         if (ErrCode == CannotParseDatabase
-          /*map to MigrationErrorCannotParseDatabase in C2S*/) {
+          /*map to MigrationErrorCannotParseDatabase in DPCT*/) {
           OS << ErrorMessage;
           DoPrintHandle(OS.str(), true);
-          return llvm::make_error<C2SError>(
+          return llvm::make_error<DPCTError>(
               CannotParseDatabase
-              /*map to MigrationErrorCannotParseDatabase in C2S*/);
+              /*map to MigrationErrorCannotParseDatabase in DPCT*/);
         } else {
           bool IsProcessAllSet = false;
           for (auto &OM : cl::getRegisteredOptions(*cl::TopLevelSubCommand)) {
@@ -281,7 +281,7 @@ llvm::Error CommonOptionsParser::init(
           }
 
           if (!IsProcessAllSet) {
-            // If no compilation database is found in the dir user specifies, c2s will
+            // If no compilation database is found in the dir user specifies, dpct will
             // exit with "code: -19 (Error: Cannot find compilation database)", so
             // the sub misleading msg below should be removed.
             std::string Sub = "Migration initiated without compilation "
@@ -294,9 +294,9 @@ llvm::Error CommonOptionsParser::init(
             OS << ErrorMessage;
             DoPrintHandle(OS.str(), true);
 
-            return llvm::make_error<C2SError>(
+            return llvm::make_error<DPCTError>(
                 CannotFindDatabase
-                /*map to MigrationErrorCannotFindDatabase in C2S*/);
+                /*map to MigrationErrorCannotFindDatabase in DPCT*/);
           } else {
             // if -process-all specified, emit a warning msg of no compilation
             // database found, and try to migrate or copy all files from
@@ -343,7 +343,7 @@ llvm::Error CommonOptionsParser::init(
 #else
       llvm::errs() << "Error while trying to load a compilation database:\n"
                    << ErrorMessage << "Running without flags.\n";
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
       Compilations.reset(
           new FixedCompilationDatabase(".", std::vector<std::string>()));
     }
@@ -356,7 +356,7 @@ llvm::Error CommonOptionsParser::init(
   Adjuster = combineAdjusters(
       std::move(Adjuster),
       getInsertArgumentAdjuster(ArgsAfter, ArgumentInsertPosition::END));
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   for (auto &I : ArgsAfter) {
     if (I.size() > 2 && I.substr(0, 2) == "-x") {
       IsCudaFile = false;
@@ -370,7 +370,7 @@ llvm::Error CommonOptionsParser::init(
         std::move(Adjuster),
         getInsertArgumentAdjuster("-xcuda", ArgumentInsertPosition::BEGIN));
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   AdjustingCompilations->appendArgumentsAdjuster(Adjuster);
   Compilations = std::move(AdjustingCompilations);
   return llvm::Error::success();
@@ -387,7 +387,7 @@ llvm::Expected<CommonOptionsParser> CommonOptionsParser::create(
   return std::move(Parser);
 }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 bool CommonOptionsParser::hasHelpOption(int argc, const char **argv) {
   for (auto i = 0; i < argc; i++) {
     int Res1 = strcmp(argv[i], "-help");
@@ -398,7 +398,7 @@ bool CommonOptionsParser::hasHelpOption(int argc, const char **argv) {
   }
   return false;
 }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 CommonOptionsParser::CommonOptionsParser(
     int &argc, const char **argv, cl::OptionCategory &Category,

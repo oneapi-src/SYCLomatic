@@ -712,7 +712,7 @@ public:
 TEST(Replacement, CanBeConstructedFromNode) {
   ClassDeclXVisitor ClassDeclX;
   EXPECT_TRUE(ClassDeclX.runOver("     class X;"));
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -723,13 +723,13 @@ TEST(Replacement, CanBeConstructedFromNode) {
   expectReplacementAt(ClassDeclX.Replace, FilePathStr.c_str(), 5, 7);
 #else
   expectReplacementAt(ClassDeclX.Replace, "input.cc", 5, 7);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 TEST(Replacement, ReplacesAtSpellingLocation) {
   ClassDeclXVisitor ClassDeclX;
   EXPECT_TRUE(ClassDeclX.runOver("#define A(Y) Y\nA(class X);"));
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -740,7 +740,7 @@ TEST(Replacement, ReplacesAtSpellingLocation) {
   expectReplacementAt(ClassDeclX.Replace, FilePathStr.c_str(), 17, 7);
 #else
   expectReplacementAt(ClassDeclX.Replace, "input.cc", 17, 7);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 class CallToFVisitor : public TestVisitor<CallToFVisitor> {
@@ -757,7 +757,7 @@ public:
 TEST(Replacement, FunctionCall) {
   CallToFVisitor CallToF;
   EXPECT_TRUE(CallToF.runOver("void F(); void G() { F(); }"));
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -768,14 +768,14 @@ TEST(Replacement, FunctionCall) {
   expectReplacementAt(CallToF.Replace, FilePathStr.c_str(), 21, 3);
 #else
   expectReplacementAt(CallToF.Replace, "input.cc", 21, 3);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 TEST(Replacement, TemplatedFunctionCall) {
   CallToFVisitor CallToF;
   EXPECT_TRUE(CallToF.runOver(
         "template <typename T> void F(); void G() { F<int>(); }"));
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -786,7 +786,7 @@ TEST(Replacement, TemplatedFunctionCall) {
   expectReplacementAt(CallToF.Replace, FilePathStr.c_str(), 43, 8);
 #else
   expectReplacementAt(CallToF.Replace, "input.cc", 43, 8);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 class NestedNameSpecifierAVisitor
@@ -809,7 +809,7 @@ public:
 TEST(Replacement, ColonColon) {
   NestedNameSpecifierAVisitor VisitNNSA;
   EXPECT_TRUE(VisitNNSA.runOver("namespace a { void f() { ::a::f(); } }"));
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -820,7 +820,7 @@ TEST(Replacement, ColonColon) {
   expectReplacementAt(VisitNNSA.Replace, FilePathStr.c_str(), 25, 5);
 #else
   expectReplacementAt(VisitNNSA.Replace, "input.cc", 25, 5);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 TEST(Range, overlaps) {
@@ -1163,7 +1163,7 @@ TEST_F(AtomicChangeTest, AtomicChangeToYAML) {
   Change.removeHeader("b.h");
   std::string YAMLString = Change.toYAMLString();
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -1212,11 +1212,11 @@ TEST_F(AtomicChangeTest, AtomicChangeToYAML) {
                "    ReplacementText: bb\n"
                "...\n",
                YAMLString.c_str());
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 TEST_F(AtomicChangeTest, YAMLToAtomicChange) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   SmallString<512> CurrentDir;
   llvm::sys::fs::current_path(CurrentDir);
 #if _WIN32
@@ -1261,7 +1261,7 @@ TEST_F(AtomicChangeTest, YAMLToAtomicChange) {
                             "    Length:          0\n"
                             "    ReplacementText: bb\n"
                             "...\n";
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   AtomicChange ExpectedChange(Context.Sources, DefaultLoc);
   llvm::Error Err = ExpectedChange.insert(Context.Sources, DefaultLoc, "aa",
                                         /*InsertAfter=*/false);

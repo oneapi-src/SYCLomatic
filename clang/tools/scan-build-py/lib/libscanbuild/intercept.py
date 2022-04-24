@@ -31,6 +31,7 @@ from libear import build_libear, TemporaryDirectory
 from libscanbuild import command_entry_point, compiler_wrapper, \
     wrapper_environment, run_command, run_build
 from libscanbuild import duplicate_check
+from libscanbuild.parse_buildlog import parse_build_log
 from libscanbuild.compilation import split_command
 from libscanbuild.arguments import parse_args_for_intercept_build
 from libscanbuild.shell import encode, decode
@@ -124,20 +125,24 @@ def capture(args):
                     entries_post.append(entry)
 
         entries_post.reverse()
-
         return entries_post
 
-
     with TemporaryDirectory(prefix='intercept-') as tmp_dir:
-        # run the build command
-        environment = setup_environment(args, tmp_dir)
-        exit_code = run_build(args.build, env=environment)
-        # read the intercepted exec calls
-        exec_traces = itertools.chain.from_iterable(
-            parse_exec_trace(os.path.join(tmp_dir, filename))
-            for filename in sorted(glob.iglob(os.path.join(tmp_dir, '*.cmd'))))
-        # do post processing
-        entries = post_processing(exec_traces)
+        exit_code = 0
+        entries = []
+        if args.parse_build_log:
+            entries = parse_build_log(args.parse_build_log)
+        else:
+            # run the build command
+            environment = setup_environment(args, tmp_dir)
+            exit_code = run_build(args.build, env=environment)
+            # read the intercepted exec calls
+            exec_traces = itertools.chain.from_iterable(
+                parse_exec_trace(os.path.join(tmp_dir, filename))
+                for filename in sorted(glob.iglob(os.path.join(tmp_dir, '*.cmd'))))
+            # do post processing
+            entries = post_processing(exec_traces)
+
         # dump the compilation database
         with open(args.cdb, 'w+') as handle:
             json.dump(entries, handle, sort_keys=True, indent=4)
@@ -244,7 +249,6 @@ def parse_exec_trace(filename):
                 'directory': records[3],
                 'command': records[4].split(US)[:-1]
             }
-
 
 def format_entry(exec_trace):
     """ Generate the desired fields for compilation database entries. """

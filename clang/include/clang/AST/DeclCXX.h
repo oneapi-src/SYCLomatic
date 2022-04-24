@@ -195,9 +195,9 @@ public:
     return BaseTypeInfo->getTypeLoc().getBeginLoc();
   }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   TypeSourceInfo* getBaseTypeInfo() const { return BaseTypeInfo; }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
   /// Determines whether the base class is a virtual base class (or not).
   bool isVirtual() const { return Virtual; }

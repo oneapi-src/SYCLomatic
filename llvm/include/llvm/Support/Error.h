@@ -1404,8 +1404,8 @@ inline Error unwrap(LLVMErrorRef ErrRef) {
 } // end namespace llvm
 
 
-#ifdef INTEL_CUSTOMIZATION
-class C2SError : public llvm::ErrorInfo<C2SError> {
+#ifdef SYCLomatic_CUSTOMIZATION
+class DPCTError : public llvm::ErrorInfo<DPCTError> {
 public:
   std::error_code convertToErrorCode() const override {
     return std::error_code();
@@ -1413,10 +1413,10 @@ public:
   void log(llvm::raw_ostream &OS) const override { return; }
   // Used by ErrorInfo::classID.
   static char ID;
-  C2SError() = default;
-  C2SError(int EC) : EC(EC) {}
+  DPCTError() = default;
+  DPCTError(int EC) : EC(EC) {}
 
   int EC = 0; // MigrationSucceeded
 };
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 #endif // LLVM_SUPPORT_ERROR_H

@@ -20,14 +20,14 @@
 #include <string>
 
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::Replacement)
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 LLVM_YAML_IS_STRING_MAP(clang::tooling::HelperFuncForYaml)
 using FeatureOfFileMapTy = std::map<std::string/*feature name*/, clang::tooling::HelperFuncForYaml>;
 LLVM_YAML_IS_STRING_MAP(FeatureOfFileMapTy)
 LLVM_YAML_IS_SEQUENCE_VECTOR(clang::tooling::CompilationInfo)
 LLVM_YAML_IS_STRING_MAP(std::vector<clang::tooling::CompilationInfo>)
 LLVM_YAML_IS_STRING_MAP(clang::tooling::OptionInfo)
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 namespace llvm {
 namespace yaml {
@@ -38,7 +38,7 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
   /// Helper to (de)serialize a Replacement since we don't have direct
   /// access to its data members.
   struct NormalizedReplacement {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     NormalizedReplacement(const IO &)
         : FilePath(""), Offset(0), Length(0), ReplacementText(""),
           ConstantFlag(""), ConstantOffset(0), InitStr(""), NewHostVarName(""),
@@ -51,12 +51,12 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
           ConstantOffset(R.getConstantOffset()), InitStr(R.getInitStr()),
           NewHostVarName(R.getNewHostVarName()),
           BlockLevelFormatFlag(R.getBlockLevelFormatFlag()) {
-      clang::c2s::ConstantFlagType Flag = R.getConstantFlag();
-      if (Flag == clang::c2s::ConstantFlagType::HostDevice) {
+      clang::dpct::ConstantFlagType Flag = R.getConstantFlag();
+      if (Flag == clang::dpct::ConstantFlagType::HostDevice) {
         ConstantFlag = "HostDeviceConstant";
-      } else if (Flag == clang::c2s::ConstantFlagType::Device) {
+      } else if (Flag == clang::dpct::ConstantFlagType::Device) {
         ConstantFlag = "DeviceConstant";
-      } else if (Flag == clang::c2s::ConstantFlagType::Host) {
+      } else if (Flag == clang::dpct::ConstantFlagType::Host) {
         ConstantFlag = "HostConstant";
       } else {
         ConstantFlag = "";
@@ -67,13 +67,13 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
       auto R = clang::tooling::Replacement(FilePath, Offset, Length,
                                            ReplacementText);
       if (ConstantFlag == "HostDeviceConstant") {
-        R.setConstantFlag(clang::c2s::ConstantFlagType::HostDevice);
+        R.setConstantFlag(clang::dpct::ConstantFlagType::HostDevice);
       } else if (ConstantFlag == "DeviceConstant") {
-        R.setConstantFlag(clang::c2s::ConstantFlagType::Device);
+        R.setConstantFlag(clang::dpct::ConstantFlagType::Device);
       } else if (ConstantFlag == "HostConstant") {
-        R.setConstantFlag(clang::c2s::ConstantFlagType::Host);
+        R.setConstantFlag(clang::dpct::ConstantFlagType::Host);
       } else {
-        R.setConstantFlag(clang::c2s::ConstantFlagType::Default);
+        R.setConstantFlag(clang::dpct::ConstantFlagType::Default);
       }
       R.setConstantOffset(ConstantOffset);
       R.setInitStr(InitStr);
@@ -92,19 +92,19 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
       return clang::tooling::Replacement(FilePath, Offset, Length,
                                          ReplacementText);
     }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
     std::string FilePath;
     unsigned int Offset;
     unsigned int Length;
     std::string ReplacementText;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     std::string ConstantFlag = "";
     unsigned int ConstantOffset = 0;
     std::string InitStr = "";
     std::string NewHostVarName = "";
     bool BlockLevelFormatFlag = false;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   };
 
   static void mapping(IO &Io, clang::tooling::Replacement &R) {
@@ -114,17 +114,17 @@ template <> struct MappingTraits<clang::tooling::Replacement> {
     Io.mapRequired("Offset", Keys->Offset);
     Io.mapRequired("Length", Keys->Length);
     Io.mapRequired("ReplacementText", Keys->ReplacementText);
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     Io.mapOptional("ConstantFlag", Keys->ConstantFlag);
     Io.mapOptional("ConstantOffset", Keys->ConstantOffset);
     Io.mapOptional("InitStr", Keys->InitStr);
     Io.mapOptional("NewHostVarName", Keys->NewHostVarName);
     Io.mapOptional("BlockLevelFormatFlag", Keys->BlockLevelFormatFlag);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   }
 };
 
-#if INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 template <> struct MappingTraits<std::pair<std::string, std::string>> {
   struct NormalizedMainSourceFilesDigest {
 
@@ -249,7 +249,7 @@ template <> struct MappingTraits<clang::tooling::HelperFuncForYaml> {
     Io.mapOptional("SubFeatureMap", Keys->SubFeatureMap);
   }
 };
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 
 /// Specialized MappingTraits to describe how a
@@ -259,9 +259,9 @@ template <> struct MappingTraits<clang::tooling::TranslationUnitReplacements> {
                       clang::tooling::TranslationUnitReplacements &Doc) {
     Io.mapRequired("MainSourceFile", Doc.MainSourceFile);
     Io.mapRequired("Replacements", Doc.Replacements);
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     Io.mapOptional("MainSourceFilesDigest", Doc.MainSourceFilesDigest);
-    Io.mapOptional("C2SVersion", Doc.C2SVersion);
+    Io.mapOptional("DpctVersion", Doc.DpctVersion);
     Io.mapOptional("MainHelperFileName", Doc.MainHelperFileName);
     Io.mapOptional("USMLevel", Doc.USMLevel);
     Io.mapOptional("FeatureMap", Doc.FeatureMap);

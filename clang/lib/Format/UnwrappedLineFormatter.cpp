@@ -16,10 +16,10 @@
 
 namespace clang {
 namespace format {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 bool isInSameLine(const FormatToken *TokA, const FormatToken *TokB,
                   const SourceManager &SM);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 namespace {
 
@@ -92,10 +92,10 @@ public:
   /// level to the same indent.
   /// Note that \c nextLine must have been called before this method.
   void adjustToUnmodifiedLine(const AnnotatedLine &Line) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     if (formatRangeGetter() != FormatRange::all)
       return;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     unsigned LevelIndent = Line.First->OriginalColumn;
     if (static_cast<int>(LevelIndent) - Offset >= 0)
       LevelIndent -= Offset;
@@ -200,7 +200,7 @@ StringRef getMatchingNamespaceTokenText(
 
 class LineJoiner {
 public:
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   LineJoiner(const FormatStyle &Style, const AdditionalKeywords &Keywords,
              const SmallVectorImpl<AnnotatedLine *> &Lines,
              const SourceManager &SourceMgr)
@@ -211,7 +211,7 @@ public:
              const SmallVectorImpl<AnnotatedLine *> &Lines)
       : Style(Style), Keywords(Keywords), End(Lines.end()), Next(Lines.begin()),
         AnnotatedLines(Lines) {}
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
   /// Returns the next line, merging multiple lines into one if possible.
   const AnnotatedLine *getNextMergedLine(bool DryRun,
@@ -433,7 +433,7 @@ private:
                    : 0;
       }
     }
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     // Add below code to resolve pulldown failure.
     // Ref: https://reviews.llvm.org/D71512
 
@@ -447,7 +447,7 @@ private:
         return 0;
       }
     }
-#endif 
+#endif // SYCLomatic_CUSTOMIZATION
     if (PreviousLine && TheLine->First->is(tok::l_brace)) {
       switch (PreviousLine->First->Tok.getKind()) {
       case tok::at:
@@ -579,12 +579,12 @@ private:
                             unsigned Limit) {
     if (Limit == 0)
       return 0;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     if (I[1]->First->is(tok::kw_do)) {
       if (isInSameLine(I[0]->Last, I[1]->First, SourceMgr))
         return 1;
     }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     if (I + 2 != E && I[2]->InPPDirective && !I[2]->First->HasUnescapedNewline)
       return 0;
     if (1 + I[1]->Last->TotalLength > Limit)
@@ -882,9 +882,9 @@ private:
 
   SmallVectorImpl<AnnotatedLine *>::const_iterator Next;
   const SmallVectorImpl<AnnotatedLine *> &AnnotatedLines;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   const SourceManager &SourceMgr;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 };
 
 static void markFinalized(FormatToken *Tok) {
@@ -1250,11 +1250,11 @@ unsigned UnwrappedLineFormatter::format(
     const SmallVectorImpl<AnnotatedLine *> &Lines, bool DryRun,
     int AdditionalIndent, bool FixBadIndentation, unsigned FirstStartColumn,
     unsigned NextStartColumn, unsigned LastStartColumn) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   LineJoiner Joiner(Style, Keywords, Lines, SourceMgr);
 #else
   LineJoiner Joiner(Style, Keywords, Lines);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
   // Try to look up already computed penalty in DryRun-mode.
   std::pair<const SmallVectorImpl<AnnotatedLine *> *, unsigned> CacheKey(
@@ -1296,7 +1296,7 @@ unsigned UnwrappedLineFormatter::format(
 
     bool FixIndentation = (FixBadIndentation || ContinueFormatting) &&
                           Indent != TheLine.First->OriginalColumn;
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
     bool ShouldFormat = false;
     if (formatRangeGetter() == FormatRange::all) {
       // foramt all lines
@@ -1307,7 +1307,7 @@ unsigned UnwrappedLineFormatter::format(
     }
 #else
     bool ShouldFormat = TheLine.Affected || FixIndentation;
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
     // We cannot format this line; if the reason is that the line had a
     // parsing error, remember that.
     if (ShouldFormat && TheLine.Type == LT_Invalid && Status) {
@@ -1317,7 +1317,7 @@ unsigned UnwrappedLineFormatter::format(
     }
 
     if (ShouldFormat && TheLine.Type != LT_Invalid) {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
       unsigned NewIndent = 0;
       if ((formatRangeGetter() == FormatRange::all) ||
           clang::format::BlockLevelFormatFlag || TheLine.InPPDirective) {
@@ -1325,17 +1325,17 @@ unsigned UnwrappedLineFormatter::format(
       } else if (TheLine.First) {
         NewIndent = TheLine.First->OriginalColumn;
       }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
       if (!DryRun) {
         bool LastLine = TheLine.First->is(tok::eof);
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
         formatFirstToken(TheLine, PreviousLine, PrevPrevLine, Lines, NewIndent,
                          LastLine ? LastStartColumn
                                   : NextStartColumn + NewIndent);
 #else
         formatFirstToken(TheLine, PreviousLine, PrevPrevLine, Lines, Indent,
                          LastLine ? LastStartColumn : NextStartColumn + Indent);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
       }
 
       NextLine = Joiner.getNextMergedLine(DryRun, IndentTracker);
@@ -1355,7 +1355,7 @@ unsigned UnwrappedLineFormatter::format(
                        .formatLine(TheLine, NextStartColumn + Indent,
                                    FirstLine ? FirstStartColumn : 0, DryRun);
       else
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
         Penalty += OptimizingLineFormatter(Indenter, Whitespaces, Style, this)
                        .formatLine(TheLine, NextStartColumn + NewIndent,
                                    FirstLine ? FirstStartColumn : 0, DryRun);
@@ -1363,7 +1363,7 @@ unsigned UnwrappedLineFormatter::format(
         Penalty += OptimizingLineFormatter(Indenter, Whitespaces, Style, this)
                        .formatLine(TheLine, NextStartColumn + Indent,
                                    FirstLine ? FirstStartColumn : 0, DryRun);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
       RangeMinLevel = std::min(RangeMinLevel, TheLine.Level);
     } else {
       // If no token in the current line is affected, we still need to format

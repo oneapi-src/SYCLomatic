@@ -48,11 +48,11 @@
 #include <utility>
 
 using namespace clang;
-#if INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 namespace clang {
   extern std::function<bool(SourceLocation)> IsInRootFunc;
 }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 //===----------------------------------------------------------------------===//
 // Token Class Implementation
 //===----------------------------------------------------------------------===//
@@ -1836,13 +1836,13 @@ bool Lexer::LexIdentifierContinue(Token &Result, const char *CurPtr) {
     return true;
   }
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
   // if __CUDA_ARCH__ in in-root, perfrom HandleIdentifier anyway
   if (!II->isHandleIdentifierCase() && II->getName() == "__CUDA_ARCH__" &&
       IsInRootFunc(Result.getLocation())) {
     return PP->HandleIdentifier(Result);
   }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
   // Finally, now that we know we have an identifier, pass this off to the
   // preprocessor, which may macro expand it or something.
   if (II->isHandleIdentifierCase())
@@ -3846,7 +3846,7 @@ LexNextToken:
         CurPtr = ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
                              SizeTmp2, Result);
       } else {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
         // Support kernel call with whitespace between "<<" and "<"
         // e.g. foo<< <1, 1, 0>>>()
         if (LangOpts.CUDA && (After == ' ' || After == '\t') && SizeTmp2) {
@@ -3866,7 +3866,7 @@ LexNextToken:
             break;
           }
         }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
         CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
         Kind = tok::lessless;
       }
@@ -3944,7 +3944,7 @@ LexNextToken:
         CurPtr = ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
                              SizeTmp2, Result);
       } else {
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
         // Support kernel call with whitespace between ">>" and ">"
         // e.g. foo<<<1, 1, 0>> >()
         if (LangOpts.CUDA && (After == ' ' || After == '\t') && SizeTmp2) {
@@ -3965,7 +3965,7 @@ LexNextToken:
             break;
           }
         }
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
         CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
         Kind = tok::greatergreater;
       }

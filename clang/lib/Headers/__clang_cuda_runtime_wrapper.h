@@ -25,7 +25,7 @@
 
 #ifndef __CLANG_CUDA_RUNTIME_WRAPPER_H__
 #define __CLANG_CUDA_RUNTIME_WRAPPER_H__
-#define INTEL_CUSTOMIZATION
+#define SYCLomatic_CUSTOMIZATION
 
 #if defined(__CUDA__) && defined(__clang__)
 
@@ -54,7 +54,7 @@
 // CUDA-7.x headers and are not expected to work with any other
 // version of CUDA headers.
 #include "cuda.h"
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 #if !defined(CUDA_VERSION)
 #error "cuda.h did not define CUDA_VERSION"
 #elif CUDA_VERSION < 7000
@@ -66,13 +66,13 @@
 #elif CUDA_VERSION < 7000
 #error "Unsupported CUDA version!"
 #endif
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
-#if defined(INTEL_CUSTOMIZATION) && CUDA_VERSION >= 10000
+#if defined(SYCLomatic_CUSTOMIZATION) && CUDA_VERSION >= 10000
 #pragma push_macro("__clang_major__")
 #undef  __clang_major__
 #define __clang_major__ (7)
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 #pragma push_macro("__CUDA_INCLUDE_COMPILER_INTERNAL_HEADERS__")
 #if CUDA_VERSION >= 10000
@@ -113,14 +113,14 @@
 #include "host_defines.h"
 #undef __CUDACC__
 #include "driver_types.h"
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 // Including "host_config.h”, but left macro __CUDACC__ not defined.
 // But the contents of "host_config.h" is protected by __CUDACC__,
 // if __CUDACC__ not defined, the contents of "host_config.h"
 // would not be included.
 // So here, it needs to define macro __CUDACC__ firstly.
 #define __CUDACC__
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 #include "host_config.h"
 
 // Temporarily replace "nv_weak" with weak, so __attribute__((nv_weak)) in
@@ -130,12 +130,12 @@
 #define nv_weak weak
 #undef __CUDABE__
 #undef __CUDA_LIBDEVICE__
-#ifndef INTEL_CUSTOMIZATION
+#ifndef SYCLomatic_CUSTOMIZATION
 #define __CUDACC__
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 #include "cuda_runtime.h"
 
-#if defined(INTEL_CUSTOMIZATION) && defined(_WIN32) && defined(_MSC_VER)
+#if defined(SYCLomatic_CUSTOMIZATION) && defined(_WIN32) && defined(_MSC_VER)
 #undef va_start
 #undef va_end
 #undef va_arg
@@ -144,7 +144,7 @@
 #define va_end   __crt_va_end
 #include <time.h>
 __device__ void _wassert(const wchar_t *, const wchar_t *, unsigned);
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 #pragma pop_macro("nv_weak")
 #undef __CUDACC__
@@ -509,10 +509,10 @@ __device__ inline __cuda_builtin_gridDim_t::operator uint3() const {
 #include <__clang_cuda_intrinsics.h>
 #include <__clang_cuda_complex_builtins.h>
 
-#ifdef INTEL_CUSTOMIZATION
-#include "__clang_c2s_math.h"
+#ifdef SYCLomatic_CUSTOMIZATION
+#include "__clang_dpct_math.h"
 #include <math.h>
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 // curand_mtgp32_kernel helpfully redeclares blockDim and threadIdx in host
 // mode, giving them their "proper" types of dim3 and uint3.  This is
 // incompatible with the types we give in __clang_cuda_builtin_vars.h.  As as
@@ -539,17 +539,17 @@ extern "C" unsigned __cudaPushCallConfiguration(dim3 gridDim, dim3 blockDim,
                                                 void *stream = 0);
 #endif
 
-#ifdef INTEL_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
 #pragma push_macro("__CUDA_ARCH__")
 #undef __CUDA_ARCH__
 #include <texture_fetch_functions.h>
 #pragma pop_macro("__CUDA_ARCH__")
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 #endif // __CUDA__
 
-#if defined(INTEL_CUSTOMIZATION) && CUDA_VERSION >= 10000
+#if defined(SYCLomatic_CUSTOMIZATION) && CUDA_VERSION >= 10000
 #pragma pop_macro("__clang_major__")
-#endif
+#endif // SYCLomatic_CUSTOMIZATION
 
 #endif // __CLANG_CUDA_RUNTIME_WRAPPER_H__

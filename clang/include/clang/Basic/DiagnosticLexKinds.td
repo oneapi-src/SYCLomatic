@@ -225,11 +225,11 @@ def err_pascal_string_too_long : Error<"Pascal string is too long">;
 def err_escape_too_large : Error<
   "%select{hex|octal}0 escape sequence out of range">;
 
-//INTEL_CUSTOMIZATION begin
+// SYCLomatic_CUSTOMIZATION begin
 def ext_string_too_long : Extension<"string literal of length %0 exceeds "
   "maximum length %1 that is supported per %select{C90|ISO C99|C++}2 "
   "standard">, InGroup<OverlengthStrings>;
-//INTEL_CUSTOMIZATION end
+// SYCLomatic_CUSTOMIZATION end
 
 def err_character_too_large : Error<
   "character too large for enclosing character literal type">;
