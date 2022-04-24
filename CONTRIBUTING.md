@@ -21,12 +21,12 @@ for more information.
 
 **NB**: A change in tool should be accompanied with
 corresponding test changes.
-See [Test SYCLomatic](GetStartedGuide_SYCLomatic.md#test-SYCLomatic)
+See [Test SYCLomatic](GetStartedGuide.md#test-SYCLomatic)
 section of Get Started guide for more information.
 
 - Create a personal fork of the project on GitHub
   - For the SYCLomatic project, use **main** branch as baseline for your
-    changes. See [Get Started Guide](GetStartedGuide_SYCLomatic.md).
+    changes. See [Get Started Guide](GetStartedGuide.md).
 - Prepare your patch
   - follow [LLVM coding standards](https://llvm.org/docs/CodingStandards.html)
   - [clang-format](https://clang.llvm.org/docs/ClangFormat.html) and
@@ -44,9 +44,9 @@ section of Get Started guide for more information.
     - `-f` to also correct unstaged changes
     - `--diff` to only print the diff without applying
 - Build the project following
-[Get Started Guide instructions](GetStartedGuide_SYCLomatic.md#build-SYCLomatic-toolchain).
+[Get Started Guide instructions](GetStartedGuide.md#build-SYCLomatic-toolchain).
 - Run regression tests -
-[instructions](GetStartedGuide_SYCLomatic.md#test-SYCLomatic-toolchain).
+[instructions](GetStartedGuide.md#test-SYCLomatic-toolchain).
 
 ### Tests development
 
@@ -87,7 +87,7 @@ Level Zero or CUDA) should be put to SYCLomatic E2E test suite following
   commit message title. To a reasonable extent, additional tags can be used
   to signify the component changed, e.g.: `[ISSUE-NUM]`, `[DOC]`, `[NFC]`.
 - For product changes which require modification in tests outside of the current repository
-  (see [Test SYCLomatic toolchain](GetStartedGuide_SYCLomatic.md#test-SYCLomatic)).
+  (see [Test SYCLomatic toolchain](GetStartedGuide.md#test-SYCLomatic)).
   the commit message should contain the link to corresponding test PR.
 
 ### Review and acceptance testing
