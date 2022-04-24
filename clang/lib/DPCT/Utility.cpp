@@ -1405,7 +1405,8 @@ calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
     unsigned int BOffset = Repls.getShiftedCodePosition(R.getOffset());
     unsigned int EOffset =
         Repls.getShiftedCodePosition(R.getOffset() + R.getLength());
-    // TODO: maybe need to check if BOffset <= EOffset, if not, then skip
+    if (BOffset > EOffset)
+      continue;
     Result.emplace_back(BOffset, EOffset - BOffset);
   }
   return Result;

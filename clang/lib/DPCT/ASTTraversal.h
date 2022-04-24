@@ -150,7 +150,7 @@ public:
   }
 };
 
-/// Base class for all compatibility tool-related AST traversals.
+/// Base class for all tool-related AST traversals.
 class ASTTraversal : public ast_matchers::MatchFinder::MatchCallback {
 public:
   /// Specify what nodes need to be matched by this ASTTraversal.
