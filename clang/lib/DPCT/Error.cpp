@@ -47,7 +47,7 @@ void ShowStatus(int Status, std::string Message) {
                    "for supported versions.";
     break;
   case MigrationErrorSupportedCudaVersionNotAvailable:
-    StatusString = "Error: Could not detect path for CUDA header files. Use --cuda-include-path "
+    StatusString = "Error: Could not detect path to CUDA header files. Use --cuda-include-path "
                    "to specify the correct path to the header files.";
     break;
   case MigrationErrorInvalidInRootOrOutRoot:

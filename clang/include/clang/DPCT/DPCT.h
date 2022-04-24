@@ -1,6 +1,6 @@
 //===--- DPCT.h ---------------------------------------*- C++ -*---===//
 //
-// Copyright (C) 2018 - 2021 Intel Corporation. All rights reserved.
+// Copyright (C) Intel Corporation. All rights reserved.
 //
 // The information and source code contained herein is the exclusive
 // property of Intel Corporation and may not be disclosed, examined
