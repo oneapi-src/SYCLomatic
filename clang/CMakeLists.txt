@@ -941,8 +941,8 @@ configure_file(
 if (NOT CLANG_BUILT_STANDALONE)
   set_dpct_package()
 endif()
-add_custom_target(install-dpct-tool DEPENDS ${DPCT_RUN})
-set_target_properties(install-dpct-tool PROPERTIES FOLDER "install dpct")
+add_custom_target(install-dpct DEPENDS ${DPCT_RUN})
+set_target_properties(install-dpct PROPERTIES FOLDER "install dpct")
 add_custom_target(install-c2s DEPENDS ${DPCT_RUN})
 set_target_properties(install-c2s PROPERTIES FOLDER "install c2s")
 # SYCLomatic_CUSTOMIZATION end
