@@ -74,7 +74,7 @@ jobs:
         timeout-minutes: 120
         run: |
           cd c2s.src/build
-          ninja install-c2s-tool
+          ninja install-c2s
         shell: bash
 
       - id: Echo-Build-Success
