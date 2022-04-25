@@ -4,6 +4,7 @@
 // RUN: FileCheck --match-full-lines --input-file %T/memory_management/memory_management.dp.cpp %s
 
 #include <cuda_runtime.h>
+#include<cuda.h>
 
 __constant__ float constData[1234567 * 4];
 
@@ -851,7 +852,7 @@ void testCommas_in_global_memory() {
   // CHECK: */
   // CHECK: result2 = dpct::get_current_device().get_device_info().get_global_mem_size();
   cuMemGetInfo(&result1, &result2);
-  
+
   CUresult cu_err;
   // CHECK: /*
   // CHECK: DPCT1072:{{[0-9]+}}: DPC++ currently does not support getting the available memory on the current device. You may need to adjust the code.
@@ -871,7 +872,7 @@ void testCommas_in_global_memory() {
   // CHECK: result2 = dpct::get_current_device().get_device_info().get_global_mem_size();
   cudaMemGetInfo(&result1, &result2);
 
-  CUresult cu_err;
+
   // CHECK: /*
   // CHECK: DPCT1072:{{[0-9]+}}: DPC++ currently does not support getting the available memory on the current device. You may need to adjust the code.
   // CHECK: */
@@ -903,10 +904,17 @@ void testCommas_in_global_memory() {
   int* a;
   cudaStream_t stream;
   int deviceID = 0;
+  CUdevice cudevice =0;
+  CUdeviceptr devPtr;
   // CHECK:/*
   // CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cudaMemPrefetchAsync is not supported.
   // CHECK-NEXT:*/
   cudaMemPrefetchAsync (a, 100, deviceID, stream);
+
+  // CHECK:/*
+  // CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of cuMemPrefetchAsync is not supported.
+  // CHECK-NEXT:*/
+  cuMemPrefetchAsync(devPtr, 100, cudevice, stream);
 
   // CHECK:  free(h_A);
   free(h_A);
@@ -1090,10 +1098,22 @@ void foobar() {
   errorCode = cudaHostGetFlags(&flags, &host);
 
   int *devPtr;
+
+  CUdeviceptr devicePtr;
+
+  CUresult cu_err;
+
+  CUdeviceptr cuDevPtr;
+
+  CUdevice cudevice =0;
+
+  CUmem_advise advise = CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION;
+
   size_t count;
   // CHECK: int advice;
   cudaMemoryAdvise advice;
   int device;
+
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaMemAdvise is not supported.
   // CHECK-NEXT: */
@@ -1138,6 +1158,78 @@ void foobar() {
   // CHECK-NEXT: */
   // CHECK-NEXT: errorCode = cudaMemAdvise(devPtr, count, 0, device);
   errorCode = cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, device);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuMemAdvise is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuMemAdvise(devicePtr, count, advise, cudevice);
+  cuMemAdvise(devicePtr, count, advise, cudevice);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuMemAdvise is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuCheckError(cuMemAdvise(devicePtr, count, advise, cudevice));
+  cuCheckError(cuMemAdvise(devicePtr, count, advise, cudevice));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuMemAdvise is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cu_err = cuMemAdvise(devicePtr, count, advise, cudevice);
+  cu_err = cuMemAdvise(devicePtr, count, advise, cudevice);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuMemAdvise is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuMemAdvise(devicePtr, count, 0, cudevice);
+  cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuMemAdvise is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuCheckError(cuMemAdvise(devicePtr, count, 0, cudevice));
+  cuCheckError(cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuMemAdvise is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuCheckError(cuMemAdvise(devicePtr, count, (int)1, cudevice));
+  cuCheckError(cuMemAdvise(devicePtr, count, (CUmem_advise)1, cudevice));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuMemAdvise is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuCheckError(cuMemAdvise(devicePtr, count, int(1), cudevice));
+  cuCheckError(cuMemAdvise(devicePtr, count, CUmem_advise(1), cudevice));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuMemAdvise is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuCheckError(cuMemAdvise(devicePtr, count, static_cast<int>(1), cudevice));
+  cuCheckError(cuMemAdvise(devicePtr, count, static_cast<CUmem_advise>(1), cudevice));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuMemAdvise is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cu_err = cuMemAdvise(devicePtr, count, 0, cudevice);
+  cu_err = cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuMemAdvise is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuMemAdvise(devicePtr, count, 0, cudevice);
+  cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice);
 }
 
 // CHECK: void copy_dir_1 (dpct::memcpy_direction kind) {}

@@ -2535,7 +2535,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cooperative_groups::__v1::thread_block",
                   "libraryPropertyType_t", "libraryPropertyType",
                   "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
-                  "cublasAtomicsMode_t"),
+                  "cublasAtomicsMode_t", "CUmem_advise_enum",
+                  "CUmem_advise"),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
@@ -4272,7 +4273,8 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
       declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
                       "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
                       "cudaDeviceAttr", "libraryPropertyType_t",
-                      "cudaDataType_t", "cublasComputeType_t"))))))
+                      "cudaDataType_t", "cublasComputeType_t", 
+                      "CUmem_advise_enum"))))))
           .bind("EnumConstant"),
       this);
 }
@@ -4341,7 +4343,8 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (auto ET = dyn_cast<EnumType>(E->getType())) {
     if (auto ETD = ET->getDecl()) {
       auto EnumTypeName = ETD->getName().str();
-      if (EnumTypeName == "cudaMemoryAdvise") {
+      if (EnumTypeName == "cudaMemoryAdvise" ||
+        EnumTypeName == "CUmem_advise_enum") {
         report(E->getBeginLoc(), Diagnostics::DEFAULT_MEM_ADVICE, false,
                " and was set to 0");
       } else if (EnumTypeName == "cudaDeviceAttr") {
@@ -12030,6 +12033,21 @@ void MemoryMigrationRule::getSymbolSizeMigration(
 void MemoryMigrationRule::prefetchMigration(
     const ast_matchers::MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
+  std::string FuncName;
+  if (ULExpr) {
+    FuncName = ULExpr->getName().getAsString();
+  } else {
+    FuncName = C->getCalleeDecl()->getAsFunction()->getNameAsString();
+  }
+
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end() && USMLevel == UsmLevel::UL_Restricted) {
+    ExprAnalysis EA(C);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
   if (USMLevel == UsmLevel::UL_Restricted) {
     const SourceManager *SM = Result.SourceManager;
     std::string Replacement;
@@ -12070,7 +12088,7 @@ void MemoryMigrationRule::prefetchMigration(
     emplaceTransformation(new ReplaceStmt(C, std::move(Replacement)));
   } else {
     report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-           "cudaMemPrefetchAsync");
+           FuncName);
   }
 }
 
@@ -12204,11 +12222,21 @@ void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
                                         const CallExpr *C,
                                         const UnresolvedLookupExpr *ULExpr,
                                         bool IsAssigned) {
+  auto FuncName = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   // Do nothing if USM is disabled
   if (USMLevel == UsmLevel::UL_None) {
-    report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, "cudaMemAdvise");
+    report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, FuncName);
     return;
   }
+
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end() && USMLevel == UsmLevel::UL_Restricted) {
+    ExprAnalysis EA(C);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
   auto Arg2Expr = C->getArg(2);
   if (auto NamedCaster = dyn_cast<ExplicitCastExpr>(Arg2Expr)) {
     if (NamedCaster->getTypeAsWritten()->isIntegerType()) {
@@ -12275,13 +12303,13 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cudaMemcpyToArray", "cudaMemcpyToArrayAsync", "cudaMemcpyFromArray",
         "cudaMemcpyFromArrayAsync", "cudaMallocArray", "cudaMalloc3DArray",
         "cudaFreeArray", "cudaArrayGetInfo", "cudaHostGetFlags",
-        "cudaMemAdvise", "cudaGetChannelDesc", "cuMemHostAlloc",
+        "cudaMemAdvise", "cuMemAdvise", "cudaGetChannelDesc", "cuMemHostAlloc",
         "cuMemFreeHost", "cuMemGetInfo_v2", "cuMemAlloc_v2", "cuMemcpyHtoD_v2",
         "cuMemcpyDtoH_v2", "cuMemcpyHtoDAsync_v2", "cuMemcpyDtoHAsync_v2",
         "cuMemcpy2D_v2", "cuMemcpy2DAsync_v2", "cuMemcpy3D_v2",
         "cudaMemGetInfo", "cuMemAllocManaged", "cuMemAllocHost_v2",
         "cuMemHostGetDevicePointer_v2", "cuMemcpyDtoDAsync_v2", "cuMemcpyDtoD_v2",
-        "cuMemAllocPitch_v2");
+        "cuMemAllocPitch_v2", "cuMemPrefetchAsync");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -12358,7 +12386,8 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cudaMallocManaged") && Name.compare("cuMemAllocManaged") &&
         Name.compare("cuMemAllocHost_v2") && Name.compare("cudaHostGetDevicePointer") &&
         Name.compare("cuMemHostGetDevicePointer_v2") && Name.compare("cuMemcpyDtoDAsync_v2") &&
-        Name.compare("cuMemcpyDtoD_v2")) {
+        Name.compare("cuMemcpyDtoD_v2") && Name.compare("cuMemAdvise") &&
+        Name.compare("cuMemPrefetchAsync")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
@@ -12481,9 +12510,11 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaHostRegister", &MemoryMigrationRule::miscMigration},
           {"cudaHostUnregister", &MemoryMigrationRule::miscMigration},
           {"cudaMemPrefetchAsync", &MemoryMigrationRule::prefetchMigration},
+          {"cuMemPrefetchAsync", &MemoryMigrationRule::prefetchMigration},
           {"cudaArrayGetInfo", &MemoryMigrationRule::cudaArrayGetInfo},
           {"cudaHostGetFlags", &MemoryMigrationRule::cudaHostGetFlags},
           {"cudaMemAdvise", &MemoryMigrationRule::cudaMemAdvise},
+          {"cuMemAdvise", &MemoryMigrationRule::cudaMemAdvise},
           {"cudaGetChannelDesc", &MemoryMigrationRule::miscMigration},
           {"cuMemHostAlloc", &MemoryMigrationRule::mallocMigration},
           {"cuMemAllocPitch_v2", &MemoryMigrationRule::mallocMigration},

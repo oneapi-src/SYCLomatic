@@ -1663,6 +1663,24 @@ std::function<bool(const CallExpr *C)> checkIsArgStream(size_t index) {
   };
 }
 
+std::function<bool(const CallExpr *C)> checkArgSpelling(size_t index, std::string str) {
+  return [=](const CallExpr *C) -> bool {
+    return getStmtSpelling(C->getArg(index)) == str;
+  };
+}
+
+std::function<bool(const CallExpr *C)> checkIsArgIntegerLiteral(size_t index) {
+  return [=](const CallExpr *C) -> bool {
+    auto Arg2Expr = C->getArg(index);
+    if (auto NamedCaster = dyn_cast<ExplicitCastExpr>(Arg2Expr)) {
+      if (NamedCaster->getTypeAsWritten()->isIntegerType()) {
+        Arg2Expr = NamedCaster->getSubExpr();
+      }
+    }
+   return Arg2Expr->getStmtClass() == Stmt::IntegerLiteralClass;
+  };
+}
+
 template <size_t Idx>
 std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createFactoryWithSubGroupSizeRequest(

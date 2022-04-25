@@ -251,6 +251,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseMatDescr_t", std::make_shared<TypeNameRule>("oneapi::mkl::index_base")},
       {"cusparseHandle_t", std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
       {"cudaMemoryAdvise", std::make_shared<TypeNameRule>("int")},
+      {"CUmem_advise", std::make_shared<TypeNameRule>("int")},
       {"cudaPos", std::make_shared<TypeNameRule>(getClNamespace() + "id<3>")},
       {"cudaExtent", std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},
       {"cudaPitchedPtr",
@@ -362,6 +363,13 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaMemAdviseUnsetPreferredLocation", "0"},
       {"cudaMemAdviseSetAccessedBy", "0"},
       {"cudaMemAdviseUnsetAccessedBy", "0"},
+      // enum CUmem_advise_enum
+      {"CU_MEM_ADVISE_SET_READ_MOSTLY", "0"},
+      {"CU_MEM_ADVISE_UNSET_READ_MOSTLY", "0"},
+      {"CU_MEM_ADVISE_SET_PREFERRED_LOCATION", "0"},
+      {"CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION", "0"},
+      {"CU_MEM_ADVISE_SET_ACCESSED_BY", "0"},
+      {"CU_MEM_ADVISE_UNSET_ACCESSED_BY", "0"},
       // enum Driver Device Attribute
       {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR", "get_major_version"},
       {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR", "get_minor_version"},

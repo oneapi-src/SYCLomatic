@@ -191,9 +191,58 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
         "cuMemcpyDtoD_v2", CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
         ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic")))))
 
-
 ASSIGNABLE_FACTORY(
     ASSIGN_FACTORY_ENTRY(
         "cuMemAllocPitch_v2", DEREF(makeDerefArgCreatorWithCall(0)),
         CAST(getDerefedType(0), CALL(MapNames::getDpctNamespace() + "dpct_malloc", DEREF(makeCallArgCreatorWithCall(1)), ARG(2), ARG(3)))))
 
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    checkIsArgStream(3),
+    MEMBER_CALL_FACTORY_ENTRY(
+        "cuMemPrefetchAsync", ARG(3), true, "prefetch", ARG(0), ARG(1)),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_dev_mgr_get_device,
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_device_ext_default_queue,
+            MEMBER_CALL_FACTORY_ENTRY(
+                "cuMemPrefetchAsync", MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"),
+                false, "get_device", ARG(2)), false, "default_queue"), false, "prefetch", ARG(0), ARG(1))))))
+
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    checkArgSpelling(3, "CU_DEVICE_CPU"),
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsArgIntegerLiteral(2),
+            WARNING_FACTORY_ENTRY("cuMemAdvise",
+                FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_cpu_device,
+                    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_device_ext_default_queue,
+                        MEMBER_CALL_FACTORY_ENTRY(
+                        "cuMemAdvise",
+                        MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "cpu_device"), false, "default_queue"),
+                    false, "mem_advise", ARG(0), ARG(1), ARG("0")))),
+                Diagnostics::DEFAULT_MEM_ADVICE,
+                ARG(" and was set to 0")),
+
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_cpu_device,
+                FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_device_ext_default_queue,
+                    MEMBER_CALL_FACTORY_ENTRY(
+                        "cuMemAdvise",
+                        MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "cpu_device"), false, "default_queue"),
+                        false, "mem_advise", ARG(0), ARG(1), ARG(2))))),
+
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsArgIntegerLiteral(2),
+            WARNING_FACTORY_ENTRY("cuMemAdvise",
+                FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_get_device,
+                    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_device_ext_default_queue,
+                        MEMBER_CALL_FACTORY_ENTRY(
+                            "cuMemAdvise",
+                            MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "get_device",  ARG(3)), false, "default_queue"),
+                            false, "mem_advise", ARG(0), ARG(1), ARG("0")))),
+                Diagnostics::DEFAULT_MEM_ADVICE,
+                ARG(" and was set to 0")),
+
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_get_device,
+                FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_device_ext_default_queue,
+                    MEMBER_CALL_FACTORY_ENTRY(
+                        "cuMemAdvise",
+                        MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "get_device",  ARG(3)), false, "default_queue"),
+                        false, "mem_advise", ARG(0), ARG(1), ARG(2)))))))

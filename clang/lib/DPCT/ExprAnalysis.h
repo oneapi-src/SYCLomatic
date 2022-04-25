@@ -499,7 +499,7 @@ protected:
     if (!P)
       return addReplacement(Begin, End, std::move(Text));
     auto LocInfo = getOffsetAndLength(Begin, End, P);
-    if (LocInfo.first > 0 && LocInfo.first + LocInfo.second < SrcLength) {
+    if (LocInfo.first >= 0 && LocInfo.first + LocInfo.second < SrcLength) {
       auto SpellingLocInfo = getSpellingOffsetAndLength(Begin, End);
       if (SM.getDecomposedLoc(SpellingLocInfo.first).first != FileId ||
           SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||

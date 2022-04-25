@@ -4,7 +4,7 @@
 // RUN: FileCheck --match-full-lines --input-file %T/memory_management_restricted/memory_management_restricted.dp.cpp %s
 
 #include <cuda_runtime.h>
-
+#include <cuda.h>
 #define MY_ERROR_CHECKER(CALL) my_error_checker((CALL), #CALL)
 template <typename T>
 void my_error_checker(T ReturnValue, char const *const FuncName) {}
@@ -131,6 +131,51 @@ int main(){
     MY_ERROR_CHECKER(cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamPerThread));
     cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamLegacy);
     MY_ERROR_CHECKER(cudaMemcpyAsync(h_A, d_A, size2, cudaMemcpyDeviceToHost, cudaStreamLegacy));
+
+  CUdevice cudevice =0;
+  CUdeviceptr devPtr;
+  CUresult curesult;
+  // CHECK: stream->prefetch(devPtr, 100);
+  cuMemPrefetchAsync (devPtr, 100, cudevice, stream);
+  // CHECK: (*&stream)->prefetch(devPtr, 100);
+  cuMemPrefetchAsync (devPtr, 100, cudevice, *&stream);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: curesult = (dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100), 0);
+  curesult = cuMemPrefetchAsync (devPtr, 100, cudevice, NULL);
+  // CHECK: dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100);
+  cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamPerThread);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: curesult = (dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100), 0);
+  curesult = cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamDefault);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: curesult = (dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100), 0);
+  curesult = cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamLegacy);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: curesult = (dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100), 0);
+  curesult = cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamPerThread);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100), 0));
+  MY_ERROR_CHECKER(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamDefault));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100), 0));
+  MY_ERROR_CHECKER(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamLegacy));
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100), 0));
+  MY_ERROR_CHECKER(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamPerThread));
 }
 
 
@@ -177,7 +222,8 @@ template int foo<int>();
 
 void checkError(cudaError_t err) {
 }
-
+void cuCheckError(CUresult err) {
+}
 void foobar() {
   int errorCode;
 
@@ -316,7 +362,96 @@ void foobar() {
   // CHECK-NEXT: checkError((dpct::cpu_device().default_queue().mem_advise(devPtr, count, 0), 0));
   checkError(cudaMemAdvise(devPtr, count, cudaMemAdviseSetReadMostly, cudaCpuDeviceId));
 
+  CUdeviceptr devicePtr;
 
+  CUresult cu_err;
+
+  CUdeviceptr cuDevPtr;
+
+  CUdevice cudevice;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: int advise = 0;
+  CUmem_advise advise = CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION;
+
+  // CHECK: dpct::get_device(cudevice).default_queue().mem_advise(devicePtr, count, advise);
+  cuMemAdvise(devicePtr, count, advise, cudevice);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuCheckError((dpct::get_device(cudevice).default_queue().mem_advise(devicePtr, count, advise), 0));
+  cuCheckError(cuMemAdvise(devicePtr, count, advise, cudevice));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cu_err = (dpct::get_device(cudevice).default_queue().mem_advise(devicePtr, count, advise), 0);
+  cu_err = cuMemAdvise(devicePtr, count, advise, cudevice);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::get_device(cudevice).default_queue().mem_advise(devicePtr, count, 0);
+  cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuCheckError((dpct::get_device(cudevice).default_queue().mem_advise(devicePtr, count, 0), 0));
+  cuCheckError(cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuCheckError((dpct::get_device(cudevice).default_queue().mem_advise(devicePtr, count, 0), 0));
+  cuCheckError(cuMemAdvise(devicePtr, count, (CUmem_advise)1, cudevice));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuCheckError((dpct::get_device(cudevice).default_queue().mem_advise(devicePtr, count, 0), 0));
+  cuCheckError(cuMemAdvise(devicePtr, count, CUmem_advise(1), cudevice));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cuCheckError((dpct::get_device(cudevice).default_queue().mem_advise(devicePtr, count, 0), 0));
+  cuCheckError(cuMemAdvise(devicePtr, count, static_cast<CUmem_advise>(1), cudevice));
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cu_err = (dpct::get_device(cudevice).default_queue().mem_advise(devicePtr, count, 0), 0);
+  cu_err = cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::get_device(cudevice).default_queue().mem_advise(devicePtr, count, 0);
+  cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, cudevice);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1063:{{[0-9]+}}: Advice parameter is device-defined and was set to 0. You may need to adjust it.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: dpct::cpu_device().default_queue().mem_advise(devicePtr, count, 0);
+  cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, CU_DEVICE_CPU);
 #define QRNG_DIMENSIONS 3
 #define AAA(x)   (x + 2)
 #define BBB(x)   x * 2
