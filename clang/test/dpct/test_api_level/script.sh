@@ -29,7 +29,7 @@ grep -r "TEST_FEATURE" --include api_test*.cu $test_source_dir | awk '{print $NF
 
 #Compare above two files. The diff result should be empty.
 echo "begin" > $test_dest_dir/result.txt
-diff --new-line-format="" --unchanged-line-format=""  $test_dest_dir/feature_used_in_src_code.txt  $test_dest_dir/feature_in_test.txt >> $test_dest_dir/result.txt
+diff --strip-trailing-cr --new-line-format="" --unchanged-line-format=""  $test_dest_dir/feature_used_in_src_code.txt  $test_dest_dir/feature_in_test.txt >> $test_dest_dir/result.txt
 echo "end" >> $test_dest_dir/result.txt
 
 #Remove the temp file
