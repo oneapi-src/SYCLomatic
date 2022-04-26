@@ -1628,6 +1628,9 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
     channel = matrix->get_channel();
     dims = matrix->get_dims();
   } else {
+    if (data.get_data_type() == image_data_type::pitch) {
+      dims = 2;
+    }
     channel = data.get_channel();
   }
 
