@@ -10268,6 +10268,10 @@ void DeviceFunctionDeclRule::runRule(
     if (FD->isTemplateInstantiation())
       return;
 
+    if (FD->hasAttr<CUDADeviceAttr>() &&
+        FD->getAttr<CUDADeviceAttr>()->isImplicit())
+      return;
+
     const auto &FTL = FD->getFunctionTypeLoc();
     if (!FTL)
       return;
@@ -10299,6 +10303,11 @@ void DeviceFunctionDeclRule::runRule(
   if (!FD || (FD->hasAttr<CUDADeviceAttr>() && FD->hasAttr<CUDAHostAttr>() &&
               DpctGlobalInfo::getRunRound() == 1))
     return;
+
+  if (FD->hasAttr<CUDADeviceAttr>() &&
+      FD->getAttr<CUDADeviceAttr>()->isImplicit())
+    return;
+
   if (FD->isVariadic()) {
     report(FD->getBeginLoc(), Warnings::DEVICE_VARIADIC_FUNCTION, false);
   }
