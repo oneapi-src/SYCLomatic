@@ -1171,7 +1171,6 @@ void MigrationRule::emplaceTransformation(const char *RuleID,
 }
 
 void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
-  // TODO: check that threadIdx is not a local variable.
   MF.addMatcher(
       memberExpr(hasObjectExpression(opaqueValueExpr(hasSourceExpression(
                      declRefExpr(to(varDecl(hasAnyName("threadIdx", "blockDim",
