@@ -705,6 +705,9 @@ void ExprAnalysis::analyzeExpr(const ReturnStmt *RS) {
 
 void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
   // TODO: Need to handle capture([=] in lambda) if required in the future
+  for (const auto &Param : LE->getCallOperator()->parameters()) {
+    analyzeType(Param->getTypeSourceInfo()->getTypeLoc(), LE);
+  }
   dispatch(LE->getBody());
 }
 
@@ -1208,6 +1211,7 @@ void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
       }
     }
   }
+  Base::dispatch(LE);
 }
 
 void KernelArgumentAnalysis::analyzeExpr(

@@ -602,6 +602,9 @@ protected:
     dispatch(ASE->getBase());
     dispatch(ASE->getIdx());
   }
+  inline void analyzeExpr(const ExprWithCleanups *EWC) {
+    dispatch(EWC->getSubExpr());
+  }
 
   void analyzeExpr(const CXXConstructExpr *Ctor);
   void analyzeExpr(const MemberExpr *ME);
