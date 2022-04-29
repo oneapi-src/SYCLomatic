@@ -155,6 +155,9 @@ public:
   void setInitStr(std::string S) { InitStr = S; }
   std::string getNewHostVarName() const { return NewHostVarName; }
   void setNewHostVarName(std::string N) { NewHostVarName = N; }
+  void setOffset(unsigned int Offset) {
+    ReplacementRange = Range(Offset, ReplacementRange.getLength());
+  }
 #endif // SYCLomatic_CUSTOMIZATION
 
 private:

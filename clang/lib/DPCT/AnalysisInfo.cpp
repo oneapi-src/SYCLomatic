@@ -554,6 +554,31 @@ void DpctFileInfo::buildReplacements() {
   insertHeader(std::move(InsertHeaderStr), LastIncludeOffset);
 
   FreeQueriesInfo::buildInfo();
+
+  // This loop need to be put at the end of DpctFileInfo::buildReplacements.
+  // In addReplacement() the insertHeader() may be invoked, so the size of
+  // vector IncludeDirectiveInsertions may increase.
+  // So we cannot use for loop like "for(auto e : vec)" since the iterator may
+  // be invalid due to the allocation of new storage.
+  for (size_t I = 0, End = IncludeDirectiveInsertions.size(); I < End; I++) {
+    auto IncludeDirective = IncludeDirectiveInsertions[I];
+    bool IsInExternC = false;
+    unsigned int NewInsertLocation = 0;
+    for (auto &ExternCRange : ExternCRanges) {
+      if (IncludeDirective->getOffset() >= ExternCRange.first &&
+          IncludeDirective->getOffset() <= ExternCRange.second) {
+        IsInExternC = true;
+        NewInsertLocation = ExternCRange.first;
+        break;
+      }
+    }
+    if (IsInExternC) {
+      IncludeDirective->setOffset(NewInsertLocation);
+    }
+    addReplacement(IncludeDirective);
+    // Update the End since the size may be changed.
+    End = IncludeDirectiveInsertions.size();
+  }
 }
 
 bool DpctFileInfo::isReplTxtWithSubmitBarrier(unsigned Offset) {

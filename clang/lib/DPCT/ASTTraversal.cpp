@@ -4475,6 +4475,34 @@ void ErrorConstantsRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(ErrorConstantsRule)
 
+void LinkageSpecDeclRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(linkageSpecDecl().bind("LinkageSpecDecl"), this);
+}
+
+void LinkageSpecDeclRule::runRule(const MatchFinder::MatchResult &Result) {
+  const LinkageSpecDecl *LSD =
+      getNodeAsType<LinkageSpecDecl>(Result, "LinkageSpecDecl");
+  if (!LSD)
+    return;
+  if (LSD->getLanguage() != clang::LinkageSpecDecl::LanguageIDs::lang_c)
+    return;
+  if (!LSD->hasBraces())
+    return;
+
+  SourceLocation Begin =
+      DpctGlobalInfo::getSourceManager().getExpansionLoc(LSD->getExternLoc());
+  SourceLocation End =
+      DpctGlobalInfo::getSourceManager().getExpansionLoc(LSD->getRBraceLoc());
+  auto BeginLocInfo = DpctGlobalInfo::getLocInfo(Begin);
+  auto EndLocInfo = DpctGlobalInfo::getLocInfo(End);
+  auto FileInfo = DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
+
+  FileInfo->getExternCRanges().push_back(
+      std::make_pair(BeginLocInfo.second, EndLocInfo.second));
+}
+
+REGISTER_RULE(LinkageSpecDeclRule)
+
 void ManualMigrateEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("NCCL_.*"))))
                     .bind("NCCLConstants"),

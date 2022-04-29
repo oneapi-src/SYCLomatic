@@ -467,9 +467,11 @@ public:
   }
 
   // Insert one or more header inclusion directives at a specified offset
-  void insertHeader(std::string &&Repl, unsigned Offset) {
-    addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, 0, Repl, nullptr));
+  void insertHeader(std::string &&Repl, unsigned Offset,
+                    InsertPosition InsertPos = IP_Left) {
+    auto R = std::make_shared<ExtReplacement>(FilePath, Offset, 0, Repl, nullptr);
+    R->setInsertPosition(InsertPos);
+    IncludeDirectiveInsertions.push_back(R);
   }
 
   void insertCustomizedHeader(std::string &&Repl) {
@@ -712,6 +714,9 @@ public:
   std::vector<std::pair<unsigned int, unsigned int>> &getTimeStubBounds() {
     return TimeStubBounds;
   }
+  std::vector<std::pair<unsigned int, unsigned int>> &getExternCRanges() {
+    return ExternCRanges;
+  }
 
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
@@ -798,11 +803,12 @@ private:
   unsigned FirstIncludeOffset = 0;
   unsigned LastIncludeOffset = 0;
   bool HasInclusionDirective = false;
-
   std::vector<std::string> InsertedHeaders;
   std::bitset<32> HeaderInsertedBitMap;
   std::bitset<32> UsingInsertedBitMap;
   bool AddOneDplHeaders = false;
+  std::vector<std::shared_ptr<ExtReplacement>> IncludeDirectiveInsertions;
+  std::vector<std::pair<unsigned int, unsigned int>> ExternCRanges;
 };
 template <> inline GlobalMap<MemVarInfo> &DpctFileInfo::getMap() {
   return MemVarMap;
@@ -4581,7 +4587,10 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
             ExplicitNamespace::EN_CL)) {
       RSO << "using namespace sycl;" << getNL();
     }
-    insertHeader(std::move(RSO.str()), Offset);
+    if (Type == HT_SYCL)
+      insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_AlwaysLeft);
+    else
+      insertHeader(std::move(RSO.str()), Offset);
   }
 }
 
