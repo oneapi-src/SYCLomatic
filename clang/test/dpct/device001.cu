@@ -69,8 +69,14 @@ int main(int argc, char **argv) {
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1022:{{[0-9]+}}: There is no exact match between the maxGridSize and the max_nd_range size. Verify the correctness of the code.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  int *maxGridSize = deviceProp.get_max_nd_range_size();
-  int *maxGridSize = deviceProp.maxGridSize;
+  // CHECK-NEXT:  int maxGridSizeX = deviceProp.get_max_nd_range_size()[0];
+  int maxGridSizeX = deviceProp.maxGridSize[0];
+
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1022:{{[0-9]+}}: There is no exact match between the maxGridSize and the max_nd_range size. Verify the correctness of the code.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  int *maxGridSize_ptr = deviceProp.get_max_nd_range_size<int *>();
+  int *maxGridSize_ptr = deviceProp.maxGridSize;
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1019:{{[0-9]+}}: local_mem_size in SYCL is not a complete equivalent of sharedMemPerBlock in CUDA. You may need to adjust the code.
@@ -150,6 +156,8 @@ void test3() {
   cudaDeviceProp deviceProp;
   //CHECK:int a1 = deviceProp.get_max_work_item_sizes()[2];
   int a1 = deviceProp.maxThreadsDim[2];
+  //CHECK:int *a1_ptr = deviceProp.get_max_work_item_sizes<int *>();
+  int *a1_ptr = deviceProp.maxThreadsDim;
   //CHECK:/*
   //CHECK-NEXT:DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with memPitch. It was migrated to INT_MAX. You may need to rewrite the code.
   //CHECK-NEXT:*/

@@ -4240,11 +4240,23 @@ void DevicePropVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (Search == PropNamesMap.end()) {
     return;
   }
-  if (Parents[0].get<clang::ImplicitCastExpr>()) {
+  if (auto *ICE = Parents[0].get<clang::ImplicitCastExpr>()) {
     // migrate to get_XXX() eg. "b=a.minor" to "b=a.get_minor_version()"
     requestFeature(PropToGetFeatureMap.at(MemberName), ME);
+    std::string TmplArg = "";
+    if (MemberName == "maxGridSize" || MemberName == "maxThreadsDim") {
+      auto GradParents = Result.Context->getParents(*ICE);
+      if (GradParents.size() > 0 &&
+          !GradParents[0].get<clang::ArraySubscriptExpr>()) {
+        // migrate to get_XXX<int *>() if it's not used in array subscripting expr
+        // e.g.
+        // "int *ptr=b.maxGridSize" to "int *ptr=get_get_max_nd_range_size<int *>()"
+        // "int *ptr=b.maxThreadsDim" to "int *ptr=get_max_work_item_sizes<int *>()"
+        TmplArg = "<int *>";
+      }
+    }
     emplaceTransformation(
-        new RenameFieldInMemberExpr(ME, "get_" + Search->second + "()"));
+        new RenameFieldInMemberExpr(ME, "get_" + Search->second + TmplArg + "()"));
   } else if (auto *BO = Parents[0].get<clang::BinaryOperator>()) {
     // migrate to set_XXX() eg. "a.minor = 1" to "a.set_minor_version(1)"
     if (BO->getOpcode() == clang::BO_Assign) {

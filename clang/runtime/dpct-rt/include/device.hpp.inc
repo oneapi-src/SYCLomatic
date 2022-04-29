@@ -107,7 +107,26 @@ public:
 // Device|device_info
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  cl::sycl::id<3> get_max_work_item_sizes() const { return _max_work_item_sizes; }
+  template <typename WorkItemSizesTy = cl::sycl::id<3>,
+            std::enable_if_t<std::is_same_v<WorkItemSizesTy, cl::sycl::id<3>> ||
+                                 std::is_same_v<WorkItemSizesTy, int *>,
+                             int> = 0>
+  auto get_max_work_item_sizes() const {
+    if constexpr (std::is_same_v<WorkItemSizesTy, cl::sycl::id<3>>)
+      return _max_work_item_sizes;
+    else
+      return _max_work_item_sizes_i;
+  }
+  template <typename WorkItemSizesTy = cl::sycl::id<3>,
+            std::enable_if_t<std::is_same_v<WorkItemSizesTy, cl::sycl::id<3>> ||
+                                 std::is_same_v<WorkItemSizesTy, int *>,
+                             int> = 0>
+  auto get_max_work_item_sizes() {
+    if constexpr (std::is_same_v<WorkItemSizesTy, cl::sycl::id<3>>)
+      return _max_work_item_sizes;
+    else
+      return _max_work_item_sizes_i;
+  }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_get_host_unified_memory|dpct
 // DPCT_PARENT_FEATURE|device_info
@@ -189,8 +208,26 @@ public:
 // Device|device_info
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  const size_t *get_max_nd_range_size() const { return _max_nd_range_size; }
-  size_t *get_max_nd_range_size() { return _max_nd_range_size; }
+  template <typename NDRangeSizeTy = size_t *,
+            std::enable_if_t<std::is_same_v<NDRangeSizeTy, size_t *> ||
+                                 std::is_same_v<NDRangeSizeTy, int *>,
+                             int> = 0>
+  auto get_max_nd_range_size() const {
+    if constexpr (std::is_same_v<NDRangeSizeTy, size_t *>)
+      return _max_nd_range_size;
+    else
+      return _max_nd_range_size_i;
+  }
+  template <typename NDRangeSizeTy = size_t *,
+            std::enable_if_t<std::is_same_v<NDRangeSizeTy, size_t *> ||
+                                 std::is_same_v<NDRangeSizeTy, int *>,
+                             int> = 0>
+  auto get_max_nd_range_size() {
+    if constexpr (std::is_same_v<NDRangeSizeTy, size_t *>)
+      return _max_nd_range_size;
+    else
+      return _max_nd_range_size_i;
+  }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_get_global_mem_size|dpct
 // DPCT_PARENT_FEATURE|device_info
@@ -225,6 +262,8 @@ public:
 // DPCT_CODE
   void set_max_work_item_sizes(const cl::sycl::id<3> max_work_item_sizes) {
     _max_work_item_sizes = max_work_item_sizes;
+    for (int i = 0; i < 3; ++i)
+      _max_work_item_sizes_i[i] = max_work_item_sizes[i];
   }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_set_host_unified_memory|dpct
@@ -337,8 +376,10 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void set_max_nd_range_size(int max_nd_range_size[]) {
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++) {
       _max_nd_range_size[i] = max_nd_range_size[i];
+      _max_nd_range_size_i[i] = max_nd_range_size[i];
+    }
   }
 // DPCT_LABEL_END
 
@@ -351,6 +392,7 @@ public:
 private:
   char _name[256];
   cl::sycl::id<3> _max_work_item_sizes;
+  int _max_work_item_sizes_i[3];
   bool _host_unified_memory = false;
   int _major;
   int _minor;
@@ -363,6 +405,7 @@ private:
   size_t _global_mem_size;
   size_t _local_mem_size;
   size_t _max_nd_range_size[3];
+  int _max_nd_range_size_i[3];
 };
 // DPCT_LABEL_END
 

@@ -50,7 +50,26 @@ public:
   // get interface
   const char *get_name() const { return _name; }
   char *get_name() { return _name; }
-  cl::sycl::id<3> get_max_work_item_sizes() const { return _max_work_item_sizes; }
+  template <typename WorkItemSizesTy = cl::sycl::id<3>,
+            std::enable_if_t<std::is_same_v<WorkItemSizesTy, cl::sycl::id<3>> ||
+                                 std::is_same_v<WorkItemSizesTy, int *>,
+                             int> = 0>
+  auto get_max_work_item_sizes() const {
+    if constexpr (std::is_same_v<WorkItemSizesTy, cl::sycl::id<3>>)
+      return _max_work_item_sizes;
+    else
+      return _max_work_item_sizes_i;
+  }
+  template <typename WorkItemSizesTy = cl::sycl::id<3>,
+            std::enable_if_t<std::is_same_v<WorkItemSizesTy, cl::sycl::id<3>> ||
+                                 std::is_same_v<WorkItemSizesTy, int *>,
+                             int> = 0>
+  auto get_max_work_item_sizes() {
+    if constexpr (std::is_same_v<WorkItemSizesTy, cl::sycl::id<3>>)
+      return _max_work_item_sizes;
+    else
+      return _max_work_item_sizes_i;
+  }
   bool get_host_unified_memory() const { return _host_unified_memory; }
   int get_major_version() const { return _major; }
   int get_minor_version() const { return _minor; }
@@ -62,14 +81,34 @@ public:
   int get_max_work_items_per_compute_unit() const {
     return _max_work_items_per_compute_unit;
   }
-  const size_t *get_max_nd_range_size() const { return _max_nd_range_size; }
-  size_t *get_max_nd_range_size() { return _max_nd_range_size; }
+  template <typename NDRangeSizeTy = size_t *,
+            std::enable_if_t<std::is_same_v<NDRangeSizeTy, size_t *> ||
+                                 std::is_same_v<NDRangeSizeTy, int *>,
+                             int> = 0>
+  auto get_max_nd_range_size() const {
+    if constexpr (std::is_same_v<NDRangeSizeTy, size_t *>)
+      return _max_nd_range_size;
+    else
+      return _max_nd_range_size_i;
+  }
+  template <typename NDRangeSizeTy = size_t *,
+            std::enable_if_t<std::is_same_v<NDRangeSizeTy, size_t *> ||
+                                 std::is_same_v<NDRangeSizeTy, int *>,
+                             int> = 0>
+  auto get_max_nd_range_size() {
+    if constexpr (std::is_same_v<NDRangeSizeTy, size_t *>)
+      return _max_nd_range_size;
+    else
+      return _max_nd_range_size_i;
+  }
   size_t get_global_mem_size() const { return _global_mem_size; }
   size_t get_local_mem_size() const { return _local_mem_size; }
   // set interface
   void set_name(const char *name) { std::strncpy(_name, name, 256); }
   void set_max_work_item_sizes(const cl::sycl::id<3> max_work_item_sizes) {
     _max_work_item_sizes = max_work_item_sizes;
+    for (int i = 0; i < 3; ++i)
+      _max_work_item_sizes_i[i] = max_work_item_sizes[i];
   }
   void set_host_unified_memory(bool host_unified_memory) {
     _host_unified_memory = host_unified_memory;
@@ -98,13 +137,16 @@ public:
     _max_work_items_per_compute_unit = max_work_items_per_compute_unit;
   }
   void set_max_nd_range_size(int max_nd_range_size[]) {
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++) {
       _max_nd_range_size[i] = max_nd_range_size[i];
+      _max_nd_range_size_i[i] = max_nd_range_size[i];
+    }
   }
 
 private:
   char _name[256];
   cl::sycl::id<3> _max_work_item_sizes;
+  int _max_work_item_sizes_i[3];
   bool _host_unified_memory = false;
   int _major;
   int _minor;
@@ -117,6 +159,7 @@ private:
   size_t _global_mem_size;
   size_t _local_mem_size;
   size_t _max_nd_range_size[3];
+  int _max_nd_range_size_i[3];
 };
 
 /// dpct device extension
