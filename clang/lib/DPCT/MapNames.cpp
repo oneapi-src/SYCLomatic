@@ -30,7 +30,8 @@ std::string MapNames::getDpctNamespace(bool KeepNamespace) {
   return DpctNamespace[KeepNamespace];
 }
 
-std::map<std::string, std::shared_ptr<TypeNameRule>> MapNames::TypeNamesMap;
+std::unordered_map<std::string, std::shared_ptr<TypeNameRule>> MapNames::TypeNamesMap;
+std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>> MapNames::ClassFieldMap;
 MapNames::MapTy EnumConstantRule::EnumNamesMap;
 std::map<std::string /*Original API*/, HelperFeatureEnum>
     EnumConstantRule::EnumNamesHelperFeaturesMap;
@@ -466,6 +467,8 @@ void MapNames::setExplicitNamespaceMap() {
        getDpctNamespace() + "library_data_t::real_int32"},
       // ...
   };
+
+  ClassFieldMap = {};
 
   // Enum constants name to helper feature mapping.
   EnumConstantRule::EnumNamesHelperFeaturesMap = {

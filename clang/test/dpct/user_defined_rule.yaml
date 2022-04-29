@@ -41,3 +41,19 @@
   In: CUstream_st
   Out: mytype
   Includes: ["ddd.h"]
+- Rule: rule_classA
+  Kind: Class
+  Priority: Takeover
+  In: ClassA
+  Out: ClassB
+  Includes: []
+  Fields:
+    - In: fieldA
+      Out: fieldB
+    - In: fieldC
+      Out: fieldD
+  Methods:
+    - In: methodA
+      Out: a.methodB($2)
+    - In: methodC
+      Out: methodD

@@ -498,6 +498,21 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
+  auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
+  PP.PrintCanonicalTypes = true;
+  auto BaseType = ME->getBase()->getType().getUnqualifiedType().getAsString(PP);
+  if (!ME->getMemberDecl()->getIdentifier())
+    return;
+  std::string FieldName = ME->getMemberDecl()->getName().str();
+
+  auto ItFieldRule = MapNames::ClassFieldMap.find(BaseType + "." + FieldName);
+  if (ItFieldRule != MapNames::ClassFieldMap.end()) {
+    addReplacement(
+      ME->getMemberLoc(), ME->getMemberLoc(),
+      ItFieldRule->second->NewName);
+    return;
+  }
+
   static MapNames::MapTy NdItemMemberMap{{"__fetch_builtin_x", "2"},
                                          {"__fetch_builtin_y", "1"},
                                          {"__fetch_builtin_z", "0"}};
@@ -507,12 +522,9 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       {"__cuda_builtin_blockDim_t", "get_local_range"},
       {"__cuda_builtin_threadIdx_t", "get_local_id"},
   };
-  auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
-  PP.PrintCanonicalTypes = true;
-  auto BaseType = ME->getBase()->getType().getUnqualifiedType().getAsString(PP);
+
   auto ItemItr = NdItemMap.find(BaseType);
   if (ItemItr != NdItemMap.end()) {
-    std::string FieldName = ME->getMemberDecl()->getName().str();
     if (MapNames::replaceName(NdItemMemberMap, FieldName)) {
       if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
         auto TargetExpr = getTargetExpr();
@@ -688,6 +700,29 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
     analyzeArgument(Arg);
 }
 
+
+void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
+  auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
+  PP.PrintCanonicalTypes = true;
+  auto BaseType = CMCE->getObjectType().getUnqualifiedType().getAsString(PP);
+
+  if (!CMCE->getMethodDecl()->getIdentifier())
+    return;
+  auto MethodName = CMCE->getMethodDecl()->getNameAsString();
+
+  if (!CallExprRewriterFactoryBase::MethodRewriterMap)
+    return;
+  auto Itr = CallExprRewriterFactoryBase::MethodRewriterMap->find(BaseType + "." + MethodName);
+  if (Itr != CallExprRewriterFactoryBase::MethodRewriterMap->end()) {
+    auto Rewriter = Itr->second->create(CMCE);
+    auto Result = Rewriter->rewrite();
+    if (Result.hasValue()) {
+      auto ResultStr = Result.getValue();
+      addReplacement(CMCE, ResultStr);
+      Rewriter->Analyzer.applyAllSubExprRepl();
+    }
+  }
+}
 
 void ExprAnalysis::analyzeExpr(const CXXBindTemporaryExpr *CBTE) {
   dispatch(CBTE->getSubExpr());

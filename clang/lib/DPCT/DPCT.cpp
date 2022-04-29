@@ -1307,6 +1307,7 @@ int runDPCT(int argc, const char **argv) {
 
   MapNames::setExplicitNamespaceMap();
   CallExprRewriterFactoryBase::initRewriterMap();
+  CallExprRewriterFactoryBase::initMethodRewriterMap();
   if (!RuleFile.empty()) {
     importRules(RuleFile);
   }

@@ -16,13 +16,49 @@
 #include "llvm/Support/YAMLTraits.h"
 #include "llvm/Support/CommandLine.h"
 #include "CustomHelperFiles.h"
-enum RuleKind { API, DataType, Macro, Header, TypeRule };
+enum RuleKind { API, DataType, Macro, Header, TypeRule, Class };
 
 enum RulePriority { Takeover, Default, Fallback };
+
+struct TypeNameRule {
+  std::string NewName;
+  clang::dpct::HelperFeatureEnum RequestFeature;
+  RulePriority Priority;
+  std::vector<std::string> Includes;
+  TypeNameRule(std::string Name)
+    : NewName(Name),
+    RequestFeature(clang::dpct::HelperFeatureEnum::no_feature_helper),
+    Priority(RulePriority::Fallback) {}
+  TypeNameRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
+    RulePriority Priority = RulePriority::Fallback)
+    : NewName(Name), RequestFeature(Feature), Priority(Priority) {}
+};
+
+struct ClassFieldRule : public TypeNameRule {
+  ClassFieldRule(std::string Name)
+    : TypeNameRule(Name) {}
+  ClassFieldRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
+    RulePriority Priority = RulePriority::Fallback)
+    : TypeNameRule(Name, Feature) {}
+};
 
 // Record all information of imported rules
 class MetaRuleObject {
 public:
+  class ClassField {
+  public:
+    std::string In;
+    std::string Out;
+    std::string OutGetter;
+    std::string OutSetter;
+    ClassField(){}
+  };
+  class ClassMethod {
+  public:
+    std::string In;
+    std::string Out;
+    ClassMethod() {}
+  };
   static std::vector<std::string> RuleFiles;
   std::string RuleId;
   RulePriority Priority;
@@ -30,6 +66,8 @@ public:
   std::string In;
   std::string Out;
   std::vector<std::string> Includes;
+  std::vector<std::shared_ptr<ClassField>> Fields;
+  std::vector<std::shared_ptr<ClassMethod>> Methods;
   bool ReturnErrorCode;
   MetaRuleObject() {}
   MetaRuleObject(std::string id,
@@ -41,15 +79,15 @@ public:
   }
 };
 
-template <>
+template <class T>
 struct llvm::yaml::SequenceTraits<
-    std::vector<std::shared_ptr<MetaRuleObject>>> {
+    std::vector<std::shared_ptr<T>>> {
   static size_t size(llvm::yaml::IO &Io,
-                     std::vector<std::shared_ptr<MetaRuleObject>> &Seq) {
+                     std::vector<std::shared_ptr<T>> &Seq) {
     return Seq.size();
   }
-  static std::shared_ptr<MetaRuleObject> &
-  element(IO &, std::vector<std::shared_ptr<MetaRuleObject>> &Seq,
+  static std::shared_ptr<T> &
+  element(IO &, std::vector<std::shared_ptr<T>> &Seq,
           size_t Index) {
     if (Index >= Seq.size())
       Seq.resize(Index + 1);
@@ -72,6 +110,7 @@ template<> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
     Io.enumCase(Value, "Macro", RuleKind::Macro);
     Io.enumCase(Value, "Header", RuleKind::Header);
     Io.enumCase(Value, "Type", RuleKind::TypeRule);
+    Io.enumCase(Value, "Class", RuleKind::Class);
   }
 };
 
@@ -84,6 +123,26 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapRequired("In", Doc->In);
     Io.mapRequired("Out", Doc->Out);
     Io.mapRequired("Includes", Doc->Includes);
+    Io.mapOptional("Fields", Doc->Fields);
+    Io.mapOptional("Methods", Doc->Methods);
+  }
+};
+
+template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::ClassField>> {
+  static void mapping(llvm::yaml::IO &Io, std::shared_ptr<MetaRuleObject::ClassField> &Doc) {
+    Doc = std::make_shared<MetaRuleObject::ClassField>();
+    Io.mapRequired("In", Doc->In);
+    Io.mapOptional("Out", Doc->Out);
+    Io.mapOptional("OutGetter", Doc->OutGetter);
+    Io.mapOptional("OutSetter", Doc->OutSetter);
+  }
+};
+
+template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::ClassMethod>> {
+  static void mapping(llvm::yaml::IO &Io, std::shared_ptr<MetaRuleObject::ClassMethod> &Doc) {
+    Doc = std::make_shared<MetaRuleObject::ClassMethod>();
+    Io.mapRequired("In", Doc->In);
+    Io.mapRequired("Out", Doc->Out);
   }
 };
 

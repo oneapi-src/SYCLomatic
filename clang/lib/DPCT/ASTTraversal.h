@@ -609,6 +609,29 @@ public:
   void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class UserDefinedClassFieldRule
+    : public clang::dpct::NamedMigrationRule<UserDefinedClassFieldRule> {
+  std::string BaseName;
+  std::string FieldName;
+
+public:
+  UserDefinedClassFieldRule(std::string BaseName, std::string FieldName)
+      : BaseName(BaseName), FieldName(FieldName){};
+  void registerMatcher(clang::ast_matchers::MatchFinder &MF) override;
+  void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class UserDefinedClassMethodRule
+  : public clang::dpct::NamedMigrationRule<UserDefinedClassMethodRule> {
+  std::string BaseName;
+  std::string MethodName;
+public:
+  UserDefinedClassMethodRule(std::string BaseName, std::string MethodName)
+      : BaseName(BaseName), MethodName(MethodName){};
+  void registerMatcher(clang::ast_matchers::MatchFinder &MF) override;
+  void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 /// Migration rule for inserting namespace for vector types
 class VectorTypeNamespaceRule
     : public NamedMigrationRule<VectorTypeNamespaceRule> {

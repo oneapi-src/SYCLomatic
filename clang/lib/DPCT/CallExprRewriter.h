@@ -43,7 +43,11 @@ public:
   static std::unique_ptr<std::unordered_map<
       std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
       RewriterMap;
+  static std::unique_ptr<std::unordered_map<
+    std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
+    MethodRewriterMap;
   static void initRewriterMap();
+  static void initMethodRewriterMap();
   RulePriority Priority = RulePriority::Fallback;
 };
 
@@ -1146,6 +1150,15 @@ public:
     OB.parse(OutStr);
   }
 
+  UserDefinedRewriterFactory(
+      MetaRuleObject &R, std::shared_ptr<MetaRuleObject::ClassMethod> MethodPtr)
+      : OutStr(MethodPtr->Out), Includes(R.Includes) {
+    Priority = R.Priority;
+    OB.Kind = OutputBuilder::Kind::Top;
+    OB.RuleName = R.RuleId;
+    OB.parse(OutStr);
+  }
+
   std::shared_ptr<CallExprRewriter>
   create(const CallExpr *Call) const override {
     if (!Call)
@@ -1158,6 +1171,10 @@ public:
 
 std::shared_ptr<CallExprRewriterFactoryBase>
 createUserDefinedRewriterFactory(const std::string &, MetaRuleObject &);
+std::shared_ptr<CallExprRewriterFactoryBase>
+createUserDefinedMethodRewriterFactory(
+    const std::string &, MetaRuleObject &,
+    std::shared_ptr<MetaRuleObject::ClassMethod>);
 } // namespace dpct
 } // namespace clang
 

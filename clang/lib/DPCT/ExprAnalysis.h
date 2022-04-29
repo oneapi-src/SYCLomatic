@@ -611,6 +611,7 @@ protected:
   void analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT);
   void analyzeExpr(const ExplicitCastExpr *Cast);
   void analyzeExpr(const CallExpr *CE);
+  void analyzeExpr(const CXXMemberCallExpr *CMCE);
   void analyzeExpr(const CXXBindTemporaryExpr *CBTE);
   void analyzeExpr(const CompoundStmt *CS);
   void analyzeExpr(const ReturnStmt *RS);

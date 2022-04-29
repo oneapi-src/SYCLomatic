@@ -38,6 +38,17 @@ __forceinline__ __global__ void foo(){
   cudaMalloc(&ptr, 50);
 }
 
+class ClassA{
+public:
+    int fieldA;
+    int methodA(int i, int j){return 0;};
+};
+class ClassB{
+public:
+  int fieldB;
+  int methodB(int i){return 0;};
+};
+
 void foo2(){
   int c = 10;
   int d = 1;
@@ -51,4 +62,11 @@ void foo2(){
   CALL(0);
   //CHECK: mytype *cu_st;
   CUstream_st *cu_st;
+
+  //CHECK: ClassB a;
+  //CHECK-NEXT: a.fieldB = 3;
+  //CHECK-NEXT: a.methodB(2);
+  ClassA a;
+  a.fieldA = 3;
+  a.methodA(1,2);
 }

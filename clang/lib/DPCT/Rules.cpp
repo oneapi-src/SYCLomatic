@@ -100,6 +100,60 @@ void registerTypeRule(MetaRuleObject &R) {
   }
 }
 
+void registerClassRule(MetaRuleObject &R) {
+  // register class name migration rule
+  registerTypeRule(R);
+  // register all field rules
+  for (auto ItField = R.Fields.begin(); ItField != R.Fields.end(); ItField++) {
+    std::string BaseAndFieldName = R.In + "." + (*ItField)->In;
+    auto ItFieldRule = MapNames::ClassFieldMap.find(BaseAndFieldName);
+    if (ItFieldRule != MapNames::ClassFieldMap.end()) {
+      if (ItFieldRule->second->Priority > R.Priority) {
+        ItFieldRule->second->NewName = (*ItField)->Out;
+        ItFieldRule->second->Priority = R.Priority;
+        ItFieldRule->second->RequestFeature =
+          clang::dpct::HelperFeatureEnum::no_feature_helper;
+        ItFieldRule->second->Includes.clear();
+        ItFieldRule->second->Includes.insert(ItFieldRule->second->Includes.end(),
+          R.Includes.begin(), R.Includes.end());
+      }
+    }
+    else {
+      clang::dpct::ASTTraversalMetaInfo::registerRule(
+          (char *)&(**ItField), BaseAndFieldName, [=] {
+            return new clang::dpct::UserDefinedClassFieldRule(R.In,
+                                                              (*ItField)->In);
+          });
+      auto RulePtr = std::make_shared<ClassFieldRule>(
+          (*ItField)->Out, clang::dpct::HelperFeatureEnum::no_feature_helper,
+          R.Priority);
+      RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
+                               R.Includes.end());
+      MapNames::ClassFieldMap.emplace(BaseAndFieldName, RulePtr);
+    }
+  }
+  // register all method rules
+  for (auto ItMethod = R.Methods.begin(); ItMethod != R.Methods.end(); ItMethod++) {
+    std::string BaseAndMethodName = R.In + "." + (*ItMethod)->In;
+    clang::dpct::ASTTraversalMetaInfo::registerRule(
+        (char *)&(**ItMethod), BaseAndMethodName, [=] {
+          return new clang::dpct::UserDefinedClassMethodRule(R.In,
+                                                             (*ItMethod)->In);
+        });
+
+    auto ItMethodRule =
+        clang::dpct::CallExprRewriterFactoryBase::MethodRewriterMap->find(
+            BaseAndMethodName);
+    if (ItMethodRule == clang::dpct::CallExprRewriterFactoryBase::MethodRewriterMap->end()) {
+      clang::dpct::CallExprRewriterFactoryBase::MethodRewriterMap->emplace(
+        BaseAndMethodName, clang::dpct::createUserDefinedMethodRewriterFactory(R.In, R, *ItMethod));
+    } else if (ItMethodRule->second->Priority > R.Priority) {
+      (*clang::dpct::CallExprRewriterFactoryBase::MethodRewriterMap)[BaseAndMethodName] =
+        clang::dpct::createUserDefinedMethodRewriterFactory(R.In, R, *ItMethod);
+    }
+  }
+}
+
 void importRules(llvm::cl::list<std::string> &RuleFiles) {
   for (auto &RuleFile : RuleFiles) {
     makeCanonical(RuleFile);
@@ -142,6 +196,9 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
         break;
       case (RuleKind::TypeRule):
         registerTypeRule(*r);
+        break;
+      case (RuleKind::Class):
+        registerClassRule(*r);
         break;
       default:
         break;
@@ -374,14 +431,8 @@ void clang::dpct::UserDefinedAPIRule::runRule(
     auto &SM = DpctGlobalInfo::getSourceManager();
     dpct::ExprAnalysis EA;
     EA.analyze(CE);
-    auto Range = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
-    auto Len = Lexer::MeasureTokenLength(
-      Range.getEnd(), SM, DpctGlobalInfo::getContext().getLangOpts());
-    Len += SM.getDecomposedLoc(Range.getEnd()).second -
-      SM.getDecomposedLoc(Range.getBegin()).second;
-    auto ReplStr = EA.getReplacedString();
-    emplaceTransformation(
-      new ReplaceText(Range.getBegin(), Len, std::move(ReplStr)));
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }
 
@@ -417,5 +468,47 @@ void clang::dpct::UserDefinedTypeRule::runRule(
       ItHeader != It->second->Includes.end(); ItHeader++) {
       DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(), *ItHeader);
     }
+  }
+}
+
+void clang::dpct::UserDefinedClassFieldRule::registerMatcher(
+    clang::ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(memberExpr(allOf(hasObjectExpression(hasType(qualType(
+                                     hasCanonicalType(recordType(hasDeclaration(
+                                         cxxRecordDecl(hasName(BaseName)))))))),
+                                 member(hasName(FieldName))))
+                    .bind("memberExpr"),
+                this);
+}
+
+void clang::dpct::UserDefinedClassFieldRule::runRule(
+  const clang::ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto ME = getNodeAsType<MemberExpr>(Result, "memberExpr")) {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    dpct::ExprAnalysis EA;
+    EA.analyze(ME);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+  }
+}
+
+void clang::dpct::UserDefinedClassMethodRule::registerMatcher(
+  clang::ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(
+      cxxMemberCallExpr(allOf(on(hasType(hasCanonicalType(
+        qualType(hasDeclaration(namedDecl(hasName(BaseName))))))),
+                              callee(cxxMethodDecl(hasName(MethodName)))))
+          .bind("memberCallExpr"),
+      this);
+}
+
+void clang::dpct::UserDefinedClassMethodRule::runRule(
+  const clang::ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto CMCE = getNodeAsType<CXXMemberCallExpr>(Result, "memberCallExpr")) {
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    dpct::ExprAnalysis EA;
+    EA.analyze(CMCE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }

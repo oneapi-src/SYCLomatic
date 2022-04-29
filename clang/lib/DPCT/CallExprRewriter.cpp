@@ -2073,6 +2073,13 @@ createUserDefinedRewriterFactory(const std::string &Source, MetaRuleObject& R) {
   return std::make_shared<UserDefinedRewriterFactory>(R);
 }
 
+std::shared_ptr<CallExprRewriterFactoryBase>
+createUserDefinedMethodRewriterFactory(
+    const std::string &Source, MetaRuleObject &R,
+    std::shared_ptr<MetaRuleObject::ClassMethod> MethodPtr) {
+  return std::make_shared<UserDefinedRewriterFactory>(R, MethodPtr);
+}
+
 // sycl has 2 overloading of malloc_device
 // 1. sycl::malloc_device(Addr, Size)
 // 2. sycl::malloc_device<type>(Addr, Size)
@@ -2407,6 +2414,10 @@ std::unique_ptr<std::unordered_map<
     std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
     CallExprRewriterFactoryBase::RewriterMap;
 
+std::unique_ptr<std::unordered_map<
+  std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
+  CallExprRewriterFactoryBase::MethodRewriterMap;
+
 void CallExprRewriterFactoryBase::initRewriterMap() {
   RewriterMap = std::make_unique<std::unordered_map<
     std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>(
@@ -2476,6 +2487,11 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #undef ENTRY_DEVICE
 #undef ENTRY_BOTH
         }));
+}
+
+void CallExprRewriterFactoryBase::initMethodRewriterMap() {
+  MethodRewriterMap = std::make_unique<std::unordered_map<
+    std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>();
 }
 
 const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
