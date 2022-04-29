@@ -16085,7 +16085,56 @@ void DriverContextAPIRule::runRule(
 }
 
 REGISTER_RULE(DriverContextAPIRule)
-
+// In host device function, macro __CUDA_ARCH__ is used to differentiate
+// different code blocks. And migration of the two code blocks will result in
+// different requirement on parameter of the function signature, device code
+// block requires sycl::nd_item. Current design does two round parses and
+// generates an extra host version function. The first-round parse dpct defines
+// macro __CUDA_ARCH__ and the second-round parse dpct undefines macro
+// __CUDA_ARCH__ to generate replacement for different code blocks.
+// Implementation steps as follow:
+//   1.Match all host device function's declaration and caller.
+//   2.Check if macro CUDA_ARCH used to differentiate different
+//   code blocks and called in host side, then record relative information.
+//   3.Record host device function call expression.
+//   4.All these information will be used in post-process stage and generate final replacements.
+// Condition to trigger the rule:
+//   1.The function has host and device attribute.
+//   2.The function uses macro CUDA_ARCH used to differentiate different code blocks.
+//   3.The function has been called in host side.
+// Example code:
+// __host__ __device__ int foo() {
+//    #ifdef __CUDA_ARCH__
+//      return threadIdx.x;
+//    #else
+//      return -1;
+//    #endif
+// }
+//
+// __global__ void kernel() {
+//   foo(); 
+// }
+//
+// int main() {
+//   foo();  
+// }
+//  
+// After migration:
+// int foo(sycl::nd_item<3> item) {
+//   return item.get_local_id(2);
+// }
+//
+// int foo_host_ct1() {
+//   return -1;
+// }
+//
+// void kernel(sycl::nd_item<3> item) {
+//   foo(item); 
+// }
+// 
+// int main() {
+//   foo_host_ct1();
+// }
 void CudaArchMacroRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto HostDeviceFunctionMatcher =
       functionDecl(allOf(hasAttr(attr::CUDADevice), hasAttr(attr::CUDAHost),
