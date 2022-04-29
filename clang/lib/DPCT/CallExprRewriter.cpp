@@ -1200,7 +1200,7 @@ makeCallArgCreatorWithCall(unsigned Idx) {
 }
 
 const Expr *removeCStyleCast(const Expr *E) {
-  if (auto CSCE = dyn_cast<CStyleCastExpr>(E)) {
+  if (auto CSCE = dyn_cast<ExplicitCastExpr>(E)) {
     return CSCE->getSubExpr()->IgnoreImplicitAsWritten();
   } else {
     return E;

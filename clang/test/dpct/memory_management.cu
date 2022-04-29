@@ -37,6 +37,8 @@ void fooo() {
   cudaMemcpy3DParms parms;
   // CHECK: d_A = (float *)dpct::dpct_malloc(size);
   cudaMalloc((void **)&d_A, size);
+  // CHECK: d_A = (float *)dpct::dpct_malloc(size);
+  cudaMalloc(reinterpret_cast<void **>(&d_A), size);
   // CHECK: d_A = (float *)dpct::dpct_malloc(size, size, size);
   cudaMallocPitch((void **)&d_A, &size, size, size);
   // CHECK: p_A = dpct::dpct_malloc(e);
