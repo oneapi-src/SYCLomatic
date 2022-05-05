@@ -231,18 +231,35 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     CONDITIONAL_FACTORY_ENTRY(
         checkIsArgIntegerLiteral(2),
             WARNING_FACTORY_ENTRY("cuMemAdvise",
-                FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_get_device,
+                FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_dev_mgr_get_device,
                     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_device_ext_default_queue,
                         MEMBER_CALL_FACTORY_ENTRY(
                             "cuMemAdvise",
-                            MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "get_device",  ARG(3)), false, "default_queue"),
+                            MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"),
+                            false, "get_device", ARG(3)), false, "default_queue"),
                             false, "mem_advise", ARG(0), ARG(1), ARG("0")))),
                 Diagnostics::DEFAULT_MEM_ADVICE,
                 ARG(" and was set to 0")),
 
-            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_get_device,
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_dev_mgr_get_device,
                 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_device_ext_default_queue,
                     MEMBER_CALL_FACTORY_ENTRY(
                         "cuMemAdvise",
-                        MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "get_device",  ARG(3)), false, "default_queue"),
+                        MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"),
+                        false, "get_device", ARG(3)), false, "default_queue"),
                         false, "mem_advise", ARG(0), ARG(1), ARG(2)))))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    checkIsUSM(),
+    CALL_FACTORY_ENTRY("cuMemFree_v2", CALL(MapNames::getClNamespace() + "free", ARG(0), QUEUESTR)),
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_dpct_free,
+        CALL_FACTORY_ENTRY("cuMemFree_v2", CALL(MapNames::getDpctNamespace() + "dpct_free", ARG(0))))))
+
+ ASSIGNABLE_FACTORY(
+    FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_dev_mgr_get_device,
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_device_ext_get_device_info_return_info,
+            FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_device_info_get_global_mem_size,
+                ASSIGN_FACTORY_ENTRY("cuDeviceTotalMem_v2", DEREF(makeDerefArgCreatorWithCall(0)),
+                    MEMBER_CALL(MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"),
+                        false, "get_device", ARG(1)),
+                        false, "get_device_info"), false, "get_global_mem_size"))))))

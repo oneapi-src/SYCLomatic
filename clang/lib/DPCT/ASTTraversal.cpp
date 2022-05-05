@@ -11962,6 +11962,14 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
   }
   if (isPlaceholderIdxDuplicated(C))
     return;
+
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(Name);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA(C);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
   int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
   if (Name == "cudaFree" || Name == "cublasFree") {
     if (USMLevel == UsmLevel::UL_Restricted) {
@@ -12150,6 +12158,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
   } else {
     Name = C->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
+
   if (Name == "cudaHostGetDevicePointer" || Name == "cuMemHostGetDevicePointer_v2") {
     if (USMLevel == UsmLevel::UL_Restricted) {
       ExprAnalysis EA(C);
@@ -12233,6 +12242,14 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
 
     emplaceTransformation(replaceText(CallBegin, CallEnd, OS.str(), SM));
     report(C->getBeginLoc(), Diagnostics::UNSUPPORT_FREE_MEMORY_SIZE, false);
+  } else {
+    auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(Name);
+    if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+      ExprAnalysis EA(C);
+      emplaceTransformation(EA.getReplacement());
+      EA.applyAllSubExprRepl();
+      return;
+    }
   }
 }
 
@@ -12357,7 +12374,7 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemcpy2D_v2", "cuMemcpy2DAsync_v2", "cuMemcpy3D_v2",
         "cudaMemGetInfo", "cuMemAllocManaged", "cuMemAllocHost_v2",
         "cuMemHostGetDevicePointer_v2", "cuMemcpyDtoDAsync_v2", "cuMemcpyDtoD_v2",
-        "cuMemAllocPitch_v2", "cuMemPrefetchAsync");
+        "cuMemAllocPitch_v2", "cuMemPrefetchAsync", "cuMemFree_v2", "cuDeviceTotalMem_v2");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -12540,6 +12557,7 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cudaMemcpyFromArray", &MemoryMigrationRule::arrayMigration},
           {"cudaMemcpyFromArrayAsync", &MemoryMigrationRule::arrayMigration},
           {"cudaFree", &MemoryMigrationRule::freeMigration},
+          {"cuMemFree_v2", &MemoryMigrationRule::freeMigration},
           {"cudaFreeArray", &MemoryMigrationRule::freeMigration},
           {"cudaFreeHost", &MemoryMigrationRule::freeMigration},
           {"cuMemFreeHost", &MemoryMigrationRule::freeMigration},
@@ -12567,7 +12585,8 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cuMemHostAlloc", &MemoryMigrationRule::mallocMigration},
           {"cuMemAllocPitch_v2", &MemoryMigrationRule::mallocMigration},
           {"cuMemGetInfo_v2", &MemoryMigrationRule::miscMigration},
-          {"cudaMemGetInfo", &MemoryMigrationRule::miscMigration}};
+          {"cudaMemGetInfo", &MemoryMigrationRule::miscMigration},
+          {"cuDeviceTotalMem_v2", &MemoryMigrationRule::miscMigration}};
 
   for (auto &P : Dispatcher)
     MigrationDispatcher[P.first] =

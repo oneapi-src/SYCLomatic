@@ -11,6 +11,7 @@ int main(){
   int result1, result2;
 
   int *presult1 = &result1, *presult2 = &result2;
+  size_t size;
   // CHECK: int device;
   CUdevice device;
 
@@ -98,6 +99,8 @@ int main(){
 
   // CHECK: MY_SAFE_CALL((memcpy(name, dpct::dev_mgr::instance().get_device(device).get_info<sycl::info::device::name>().c_str(), 90), 0));
   MY_SAFE_CALL(cuDeviceGetName(name, 90, device));
+  // CHECK: size = dpct::dev_mgr::instance().get_device(device).get_device_info().get_global_mem_size();
+  cuDeviceTotalMem(&size, device);
 
   return 0;
 }
