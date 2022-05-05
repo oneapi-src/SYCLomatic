@@ -53,10 +53,9 @@ const char *const CommonOptionsParser::HelpMessage =
     "\n";
 
 
+#ifdef SYCLomatic_CUSTOMIZATION
 namespace clang {
 namespace tooling {
-
-#ifdef SYCLomatic_CUSTOMIZATION
 #ifdef _WIN32
 std::string VcxprojFilePath;
 #endif
