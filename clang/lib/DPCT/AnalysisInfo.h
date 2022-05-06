@@ -63,7 +63,7 @@ enum class KernelArgType : int {
   KAT_MaxParameterSize
 };
 // This struct defines a set of Repls with priority.
-// The priority designated by a unsigned number, the
+// The priority is designated by a unsigned number, the
 // higher the number, the higher the priority.
 struct PriorityReplInfo {
   std::vector<std::shared_ptr<ExtReplacement>> Repls;
@@ -214,7 +214,7 @@ using HDDeclMap =
                             std::pair<std::string, HostDeviceFuncInfo>>;
 using HDCallMap =
     std::unordered_multimap<std::string, std::pair<std::string, unsigned int>>;
-// filt path, <Ofset, Info>
+// filt path, <Offset, Info>
 using CudaArchPPMap =
     std::unordered_map<std::string,
                        std::unordered_map<unsigned int, CudaArchPPInfo>>;
@@ -361,8 +361,8 @@ enum UsingType {
 //                                         |
 //              --------------------------------------
 //              |                          |                           |
-//    DpctFileInfo       DpctFileInfo     ...
-//              |
+//    DpctFileInfo       DpctFileInfo     ... (other info)
+//                            |
 //           -----------------------------------------------------
 //           |                           |                         | |
 //  MemVarInfo  DeviceFunctionDecl  KernelCallExpr  CudaMallocInfo
@@ -1120,7 +1120,7 @@ public:
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
   inline static DPCTFormatStyle getFormatStyle() { return FmtST; }
   inline static void setFormatStyle(DPCTFormatStyle FS) { FmtST = FS; }
-// Processing the folder or file by fowllowing rule:
+// Processing the folder or file by following rules:
 // Rule1: For {child path, parent path}, only parent path will be kept.
 // Rule2: Ignore invalid path.
 // Rule3: If path is not in --in-root, then ignore it.
@@ -1249,7 +1249,7 @@ public:
   }
 
   // This set collects all the host RNG engine type from the generator create
-  // API. If the size of this set is 1, then we can use this engine type in all
+  // API. If the size of this set is 1, then can use this engine type in all
   // generator types. Otherwise, a placeholder will be inserted.
   inline static std::unordered_set<std::string> &getHostRNGEngineTypeSet() {
     return HostRNGEngineTypeSet;
@@ -1584,7 +1584,7 @@ public:
           break;
         }
       }
-      // record file that need parse again
+      // record file that needs to be parsed again
       if (DpctGlobalInfo::isNeedRunAgain()) {
         for (auto &Info : HostDeviceFDefIMap) {
           if (HostDeviceFCallIMap.count(Info.first) &&
@@ -2003,8 +2003,8 @@ public:
   getTempVariableDeclCounterMap() {
     return TempVariableDeclCounterMap;
   }
-  /// Key: string: file:offset for a replacement.
-  /// Value: int: index of the placeholder in a replacement.
+  // Key: string: file:offset for a replacement.
+  // Value: int: index of the placeholder in a replacement.
   static std::unordered_map<std::string, int> &getTempVariableHandledMap() {
     return TempVariableHandledMap;
   }
@@ -2493,8 +2493,8 @@ public:
     removeQualifier();
   }
 
-  /// Get instantiated type name with given template arguments.
-  /// e.g. X<T>, with T = int, result type will be X<int>.
+  // Get instantiated type name with given template arguments.
+  // e.g. X<T>, with T = int, result type will be X<int>.
   std::shared_ptr<CtTypeInfo>
   applyTemplateArguments(const std::vector<TemplateArgumentInfo> &TA);
 
@@ -2505,19 +2505,19 @@ public:
   inline bool containSizeofType() { return ContainSizeofType; }
 
 private:
-  /// For ConstantArrayType, size in generated code is folded as an integer.
-  /// If \p NeedSizeFold is true, original size expression will followed as
-  /// comments.
+  // For ConstantArrayType, size in generated code is folded as an integer.
+  // If \p NeedSizeFold is true, original size expression will followed as
+  // comments.
   void setTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
 
-  /// Get folded array size with original size expression following as comments.
-  /// e.g.,
-  /// #define SIZE 24
-  /// dpct::global_memory<int, 1>(24 /* SIZE */);
-  /// Exception for particular case:
-  /// __device__ int a[24];
-  /// will be migrated to:
-  /// dpct::global_memory<int, 1> a(24);
+  // Get folded array size with original size expression following as comments.
+  // e.g.,
+  // #define SIZE 24
+  // dpct::global_memory<int, 1>(24 /* SIZE */);
+  // Exception for particular case:
+  // __device__ int a[24];
+  // will be migrated to:
+  // dpct::global_memory<int, 1> a(24);
   inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
     if (TL.getSizeExpr()->getStmtClass() == Stmt::IntegerLiteralClass &&
         TL.getSizeExpr()->getBeginLoc().isFileID())
@@ -2529,23 +2529,23 @@ private:
   // Get original array size expression.
   std::string getUnfoldedArraySize(const ConstantArrayTypeLoc &TL);
 
-  /// Typically C++ array with constant size.
-  /// e.g.: __device__ int a[20];
-  /// If \p NeedSizeFold is true, original size expression will followed as
-  /// comments.
-  /// e.g.,
-  /// #define SIZE 24
-  /// dpct::global_memory<int, 1>(24 /* SIZE */);
+  // Typically C++ array with constant size.
+  // e.g.: __device__ int a[20];
+  // If \p NeedSizeFold is true, original size expression will followed as
+  // comments.
+  // e.g.,
+  // #define SIZE 24
+  // dpct::global_memory<int, 1>(24 /* SIZE */);
   void setArrayInfo(const ConstantArrayTypeLoc &TL, bool NeedFoldSize);
 
-  /// Typically C++ array with template depedent size.
-  /// e.g.: template<size_t S>
-  /// ...
-  /// __device__ int a[S];
+  // Typically C++ array with template depedent size.
+  // e.g.: template<size_t S>
+  // ...
+  // __device__ int a[S];
   void setArrayInfo(const DependentSizedArrayTypeLoc &TL, bool NeedSizeFold);
 
-  /// IncompleteArray is an array defined without size.
-  /// e.g.: extern __shared__ int a[];
+  // IncompleteArray is an array defined without size.
+  // e.g.: extern __shared__ int a[];
   void setArrayInfo(const IncompleteArrayTypeLoc &TL, bool NeedSizeFold);
   void setName(const TypeLoc &TL);
   void updateName();
@@ -2821,10 +2821,10 @@ private:
   }
 
 private:
-  /// Passing by dpct::accessor, value or pointer when invoking kernel.
-  /// Constant scalar variables are passed by value while other 0/1D variables
-  /// defined on device memory are passed by pointer in device function calls.
-  /// The rest are passed by dpct::accessor.
+  // Passing by accessor, value or pointer when invoking kernel.
+  // Constant scalar variables are passed by value while other 0/1D variables
+  // defined on device memory are passed by pointer in device function calls.
+  // The rest are passed by accessor.
   enum DpctAccessMode {
     Value,
     Pointer,
@@ -2897,8 +2897,7 @@ public:
   }
 };
 
-// Texture info.
-class TextureInfo {
+ class TextureInfo {
 protected:
   const std::string FilePath;
   const unsigned Offset;
@@ -3023,8 +3022,8 @@ public:
 class TextureObjectInfo : public TextureInfo {
   static const int ReplaceTypeLength;
 
-  /// If it is a parameter in the function, it is the parameter index,either it
-  /// is 0.
+  // If it is a parameter in the function, it is the parameter index,either it
+  // is 0.
   unsigned ParamIdx;
 
   TextureObjectInfo(const VarDecl *VD, unsigned ParamIdx)
@@ -3263,7 +3262,7 @@ public:
     }
   }
 
-  // If want adding the ExtraParam with new line, the second argument should be
+  // When adding the ExtraParam with new line, the second argument should be
   // true, and the third argument is the string of indent, which will occur
   // before each ExtraParam.
   std::string
@@ -3531,7 +3530,7 @@ MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
   if (Result.empty())
     return Result;
 
-  // Remove pre spiliter
+  // Remove pre splitter
   unsigned int RemoveLength = 0;
   if (FormatInformation.IsFirstArg) {
     if (FormatInformation.IsAllParamsOneLine) {
@@ -3550,7 +3549,7 @@ MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
     Result = Result.substr(RemoveLength, Result.size() - RemoveLength);
   }
 
-  // Add post spiliter
+  // Add post splitter
   RemoveLength = 0;
   if (PostParams != 0 && PreParams == 0) {
     Result = Result + ", ";
@@ -4026,8 +4025,6 @@ public:
   }
 };
 
-// kernel call info is specific CallFunctionExpr, which include info of kernel
-// call.
 class KernelCallExpr : public CallFunctionExpr {
 public:
   bool IsInMacroDefine = false;
@@ -4059,7 +4056,7 @@ private:
         TypeString = DpctGlobalInfo::getReplacedTypeName(PointerType);
         ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
 
-        // Currently, all the device RNG state struct are passed to kernel by
+        // Currently, all the device RNG state structs are passed to kernel by
         // pointer. So we check the pointee type, if it is in the type map, we
         // replace the TypeString with the MKL generator type.
         std::string PointeeTypeStr =
@@ -4097,15 +4094,15 @@ private:
           TypeString(DpctGlobalInfo::getReplacedTypeName(PVD->getType())),
           IdString(PVD->getName().str() + "_"),
           Index(PVD->getFunctionScopeIndex()) {
-      /// For parameter declaration 'float *a' with index = 2 and args array's
-      /// name is 'args', the arg string will be '*(float **)args[2]'.
+      // For parameter declaration 'float *a' with index = 2 and args array's
+      // name is 'args', the arg string will be '*(float **)args[2]'.
       llvm::raw_string_ostream OS(ArgString);
-      /// Get pointer type of the parameter declaration's type, e.g. 'float **'.
+      // Get pointer type of the parameter declaration's type, e.g. 'float **'.
       auto CastPointerType =
           DpctGlobalInfo::getContext().getPointerType(PVD->getType());
-      /// Print '*(float **)'.
+      // Print '*(float **)'.
       OS << "*(" << DpctGlobalInfo::getReplacedTypeName(CastPointerType) << ")";
-      /// Print args array subscript.
+      // Print args array subscript.
       OS << ArgsArrayName << "[" << Index << "]";
 
       if (TextureObjectInfo::isTextureObject(PVD)) {
@@ -4668,7 +4665,7 @@ template <typename T> int getPlaceholderIdx(const T *S) {
   }
 }
 
-/// return true: upadte success
+/// return true: update success
 /// return false: key already there, map is not changed.
 template <typename T> bool UpdatePlaceholderIdxMap(const T *S, int Index) {
   auto &SM = DpctGlobalInfo::getSourceManager();

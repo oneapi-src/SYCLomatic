@@ -423,9 +423,9 @@ void DpctFileInfo::buildReplacements() {
 
   if (FilePath.empty())
     return;
-  // Traver all the global variables stored one by one to check if its name is
-  // same with normal global variable's name in host side, if the one is found,
-  // postfix "_ct" is added to this __constant__ symbol's name.
+  // Traverse all the global variables stored one by one to check if its name
+  // is same with normal global variable's name in host side, if the one is
+  // found, postfix "_ct" is added to this __constant__ symbol's name.
   std::unordered_map<unsigned int, std::string> ReplUpdated;
   for (auto Entry : MemVarMap) {
     if (Entry.second->isIgnore())
@@ -467,9 +467,9 @@ void DpctFileInfo::buildReplacements() {
     }
   }
 
-  // DPCT need collect the information in curandGenerator_t decl,
+  // DPCT needs collect the information of curandGenerator_t decl,
   // curandCreateGenerator API call and curandSetPseudoRandomGeneratorSeed API
-  // call, then can migrate them to MKL API.
+  // call before migrating to MKL API.
   for (auto &RandomEngine : RandomEngineMap) {
     RandomEngine.second->updateEngineType();
     RandomEngine.second->buildInfo();
@@ -558,7 +558,7 @@ void DpctFileInfo::buildReplacements() {
   // This loop need to be put at the end of DpctFileInfo::buildReplacements.
   // In addReplacement() the insertHeader() may be invoked, so the size of
   // vector IncludeDirectiveInsertions may increase.
-  // So we cannot use for loop like "for(auto e : vec)" since the iterator may
+  // So here cannot use for loop like "for(auto e : vec)" since the iterator may
   // be invalid due to the allocation of new storage.
   for (size_t I = 0, End = IncludeDirectiveInsertions.size(); I < End; I++) {
     auto IncludeDirective = IncludeDirectiveInsertions[I];
@@ -737,7 +737,7 @@ void KernelCallExpr::buildLocationInfo(const CallExpr *KernelCall) {
 void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
   NeedBraces = true;
   auto &Context = dpct::DpctGlobalInfo::getContext();
-  // if parenet is CompoundStmt, then find if it has more than 1 children.
+  // if parent is CompoundStmt, then find if it has more than 1 children.
   // else if parent is ExprWithCleanups, then do futher check.
   // else it must be case like:  if/for/while(1) kernel-call, pair of
   // braces are needed.
@@ -747,7 +747,7 @@ void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
       NeedBraces = (Parent->size() > 1);
       return;
     } else if (Parents[0].get<ExprWithCleanups>()) {
-      // treat ExprWithCleanups same as CUDAKernelCallExpr when they shows
+      // treat ExprWithCleanups same as CUDAKernelCallExpr when they show
       // up together
       Parents = Context.getParents(Parents[0]);
     } else {
@@ -1368,7 +1368,7 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   }
 }
 
-// If the kernel call is in a ParenExpr
+// Check if the kernel call is in a ParenExpr
 void KernelCallExpr::setNeedAddLambda(const CUDAKernelCallExpr *KernelCall) {
   if (dyn_cast<ParenExpr>(getParentStmt(KernelCall))) {
     NeedLambda = true;
@@ -1402,7 +1402,6 @@ void setNonTypeTemplateArgument(std::vector<TemplateArgumentInfo> &TAILis,
     TA.setAsNonType(Ty);
 }
 
-/// Return true if Ty is TypedefType.
 bool getInnerType(QualType &Ty, TypeLoc &TL) {
   if (auto TypedefTy = dyn_cast<TypedefType>(Ty)) {
     if (!TemplateArgumentInfo::isPlaceholderType(TypedefTy->desugar())) {
@@ -1478,7 +1477,7 @@ void deduceTemplateArgumentFromTemplateArgs(
       }
       break;
     default:
-      // Currently dpct does not restore enough information
+      // Currently dpct does not collect enough information
       // to deduce from other kinds of template arguments.
       // Stop the deduction.
       return;
@@ -1497,8 +1496,6 @@ bool compareTemplateName(std::string N1, TemplateName N2) {
   return N1.compare(NameStr);
 }
 
-// If the name of 2 template classes are different
-// the following deduction will be incorrect.
 bool compareTemplateName(TemplateName N1, TemplateName N2) {
   std::string NameStr;
   llvm::raw_string_ostream OS(NameStr);
@@ -1518,6 +1515,8 @@ void deduceTemplateArgumentFromTemplateSpecialization(
     if (auto CTSD = dyn_cast<ClassTemplateSpecializationDecl>(
             ARG_TYPE_CAST(RecordType)->getDecl())) {
       if (compareTemplateName(CTSD->getName().data(), ParmTST->getTemplateName())) {
+		// If the name of 2 template classes are different
+		// DPCT should stop the deduction.
         return;
       }
       if (CTSD->getTypeAsWritten() &&
@@ -1547,6 +1546,8 @@ void deduceTemplateArgumentFromTemplateSpecialization(
         TST->getAliasedType());
     } else if (compareTemplateName(TST->getTemplateName(),
       ParmTST->getTemplateName())) {
+	  // If the name of 2 template classes are different
+	  // DPCT should stop the deduction.
       return;
     } else {
       if (TL) {
@@ -1782,7 +1783,7 @@ bool deduceTemplateArguments(const CallT *C, const NamedDecl *ND,
 
 /// This function gets the \p FD name with the necessary qualified namespace at
 /// \p Callee position.
-/// Method:
+/// Algorithm:
 /// 1. record all NamespaceDecl nodes of the ancestors \p FD and \p Callee, get
 /// two namespace sequences. E.g.,
 ///   decl: aaa,bbb,ccc; callee: aaa,eee;
@@ -2455,7 +2456,7 @@ bool isEachParamEachLine(const ArrayRef<ParmVarDecl *> Parms,
   return true;
 }
 
-// PARAMETER INSERTING LOCATION RULES:
+// PARAMETER INSERT LOCATION RULES:
 // 1. Origin parameters number <= 1
 //    Do not add new line until longer than 80. The new line begin is aligned
 //    with the end location of "("
@@ -2516,21 +2517,21 @@ SourceLocation getActualInsertLocation(SourceLocation InsertLoc,
 
     if (SM.isAtEndOfImmediateMacroExpansion(InsertLoc.getLocWithOffset(
             Lexer::MeasureTokenLength(SM.getSpellingLoc(InsertLoc), SM, LO)))) {
-      /// If InsertLoc is at the end of macro definition, continue find
-      /// immediate expansion. example: #define BBB int bbb #define CALL foo(int
-      /// aaa, BBB) The insert location should be at the end of BBB instead of
-      /// the end of bbb.
+      // If InsertLoc is at the end of macro definition, continue to find
+      // immediate expansion. example: #define BBB int bbb #define CALL foo(int
+      // aaa, BBB) The insert location should be at the end of BBB instead of
+      // the end of bbb.
       InsertLoc = SM.getImmediateExpansionRange(InsertLoc).getBegin();
     } else if (SM.isMacroArgExpansion(InsertLoc)) {
-      /// If is macro argument, continue find if argument is macro or written
-      /// code.
-      /// example:
-      /// #define BBB int b, int c = 0
-      /// #define CALL(x) foo(int aaa, x)
-      /// CALL(BBB)
+      // If is macro argument, continue to find if argument is macro or written
+      // code.
+      // example:
+      // #define BBB int b, int c = 0
+      // #define CALL(x) foo(int aaa, x)
+      // CALL(BBB)
       InsertLoc = SM.getImmediateSpellingLoc(InsertLoc);
     } else {
-      /// Else return insert location directly,
+      // Else return insert location directly,
       return InsertLoc;
     }
   } while (true);
@@ -2565,7 +2566,7 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionTypeLoc &FTL,
   }
   FormatInformation.IsFirstArg = (NonDefaultParamNum == 0);
 
-  // Keep skiping #ifdef #endif pair
+  // Skiping #ifdef #endif pair
   Token TokOfHash;
   if (!Lexer::getRawToken(InsertLocation, TokOfHash, SM, LO, true)) {
     auto ItIf = DpctGlobalInfo::getEndifLocationOfIfdef().find(
@@ -2619,9 +2620,9 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
   if (!FD->hasAttr<CUDADeviceAttr>() && !FD->hasAttr<CUDAGlobalAttr>())
     return;
 
-  /// Ignore explicit instantiation definition, as the decl in AST has wrong
-  /// location info. And it is processed in
-  /// DPCTConsumer::HandleCXXExplicitFunctionInstantiation
+  // Ignore explicit instantiation definition, as the decl in AST has wrong
+  // location info. And it is processed in
+  // DPCTConsumer::HandleCXXExplicitFunctionInstantiation
   if (FD->getTemplateSpecializationKind() ==
       TSK_ExplicitInstantiationDefinition)
     return;
@@ -2765,7 +2766,7 @@ std::shared_ptr<DeviceFunctionInfo> &
 DeviceFunctionDecl::getFuncInfo(const FunctionDecl *FD) {
   DpctNameGenerator G;
   std::string Key;
-  // For static functions or functions in anonymous namespace, we
+  // For static functions or functions in anonymous namespace,
   // need to add filepath as prefix to differentiate them.
   if (FD->isStatic() || FD->isInAnonymousNamespace()) {
     auto LocInfo = DpctGlobalInfo::getLocInfo(FD);
@@ -3376,7 +3377,7 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Node *S,
 #ifdef DPCT_DEBUG_BUILD
     llvm::errs() << "Can not get FreeQueriesInfo for this FunctionDecl\n";
     assert(0);
-#endif // !DPCT_DEBUG_BUILD
+#endif // DPCT_DEBUG_BUILD
 
   } else {
     DeviceFunctionDecl::LinkRedecls(FD)->setItem();
@@ -3524,7 +3525,7 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   // Q: queue, used for pretty code
   // R: range dim, used for built-in variables(threadIdx.x,...) migration
   // F: free queries function migration, such as this_nd_item, this_group,
-  // this_sub_group.
+  //    this_sub_group.
   switch (Method) {
   case 'R':
     if (auto DFI = getCudaKernelDimDFI(Index)) {
