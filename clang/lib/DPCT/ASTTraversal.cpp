@@ -11661,8 +11661,7 @@ void MemoryMigrationRule::memcpyMigration(
       }
     }
   } else if (!NameRef.compare("cudaMemcpy") ||
-             NameRef.rfind("cuMemcpyDtoH", 0) == 0 ||
-             NameRef.rfind("cuMemcpyHtoD", 0) == 0) {
+             NameRef.rfind("cuMemcpyDtoH", 0) == 0) {
     if (!NameRef.compare("cudaMemcpy")) {
       handleDirection(C, 3);
     }
@@ -12452,7 +12451,8 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemAllocHost_v2") && Name.compare("cudaHostGetDevicePointer") &&
         Name.compare("cuMemHostGetDevicePointer_v2") && Name.compare("cuMemcpyDtoDAsync_v2") &&
         Name.compare("cuMemcpyDtoD_v2") && Name.compare("cuMemAdvise") &&
-        Name.compare("cuMemPrefetchAsync")) {
+        Name.compare("cuMemPrefetchAsync") && Name.compare("cuMemcpyHtoDAsync_v2") &&
+        Name.compare("cuMemcpyDtoD_v2")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&

@@ -255,7 +255,7 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_dpct_free,
         CALL_FACTORY_ENTRY("cuMemFree_v2", CALL(MapNames::getDpctNamespace() + "dpct_free", ARG(0))))))
 
- ASSIGNABLE_FACTORY(
+ASSIGNABLE_FACTORY(
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_dev_mgr_get_device,
         FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_device_ext_get_device_info_return_info,
             FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_device_info_get_global_mem_size,
@@ -263,3 +263,28 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                     MEMBER_CALL(MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"),
                         false, "get_device", ARG(1)),
                         false, "get_device_info"), false, "get_global_mem_size"))))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    checkIsUSM(),
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsArgStream(3),
+        MEMBER_CALL_FACTORY_ENTRY(
+            "cuMemcpyHtoDAsync_v2", ARG(3), true, "memcpy", ARG(0), ARG(1), ARG(2)),
+        MEMBER_CALL_FACTORY_ENTRY(
+            "cuMemcpyHtoDAsync_v2", QUEUESTR, false, "memcpy", ARG(0), ARG(1), ARG(2))),
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsArgStream(3),
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyHtoDAsync_v2", CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
+            ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic"), STREAM(3))),
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyHtoDAsync_v2", CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
+            ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic"))))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    checkIsUSM(),
+    MEMBER_CALL_FACTORY_ENTRY(
+        "cuMemcpyHtoD_v2", MEMBER_CALL(QUEUESTR, false, "memcpy", ARG(0), ARG(1), ARG(2)), false, "wait"),
+    CALL_FACTORY_ENTRY(
+        "cuMemcpyHtoD_v2", CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
+        ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic")))))

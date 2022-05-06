@@ -2493,6 +2493,28 @@ SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
 
   // if there is still either one of begin/end is macro arg expansion
   if (SM.isMacroArgExpansion(Begin) || SM.isMacroArgExpansion(End)) {
+
+    // In cases like CALL(FUNC_NAME CALL(ARGS))
+    // If the Begin location is always the 1st token of macro defines,
+    // it's safe to use the expansion location as the begin location.
+    // ex.
+    // #define FOO foo
+    // #define FUNC_NAME FOO
+    bool BeginIsAlwaysTheFirstToken = true;
+    if (SM.isMacroArgExpansion(Begin)) {
+      auto NextBegin = Begin;
+      while (NextBegin.isMacroID()) {
+        NextBegin = SM.getImmediateExpansionRange(NextBegin).getBegin();
+        auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+            getCombinedStrFromLoc(SM.getSpellingLoc(NextBegin)));
+        if (It !=
+            dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+          auto TokenIndex = It->second->TokenIndex;
+          if (TokenIndex != 0)
+            BeginIsAlwaysTheFirstToken = false;
+        }
+      }
+    }
     // No precise range available which can be removed without delete extra
     // syntax.
     // ex. CALL(FUNC_NAME CALL(ARGS))
@@ -2505,7 +2527,8 @@ SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
     // The "a =" and ";" will be removed if we use the range "FUNC_NAME
     // CALL(ARGS)" therefore, return a range with length 0 for the caller of
     // getDefinitionRange() to handle the exception.
-    return SourceRange(SM.getSpellingLoc(Begin), SM.getSpellingLoc(Begin));
+    if(!BeginIsAlwaysTheFirstToken)
+      return SourceRange(SM.getSpellingLoc(Begin), SM.getSpellingLoc(Begin));
   }
 
   // If the begin/end are not in the same macro arg, no precise range available.

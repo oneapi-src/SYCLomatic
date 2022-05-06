@@ -5,6 +5,8 @@
 #include <cuda_runtime_api.h>
 #include <iostream>
 
+#define CALL(x) x
+
 void cuCheckError(CUresult err) {
 }
 
@@ -28,8 +30,8 @@ int main(){
     cuMemcpyHtoDAsync(f_D, f_A, size, stream);
     // CHECK: dpct::async_dpct_memcpy(f_D, f_A, size, dpct::automatic);
     cuMemcpyHtoDAsync(f_D, f_A, size, 0);
-    // CHECK: dpct::dpct_memcpy(f_D, f_A, size, dpct::automatic);
-    cuMemcpyHtoD(f_D, f_A, size);
+    // CHECK: CALL(dpct::dpct_memcpy(f_D, f_A, size, dpct::automatic));
+    CALL(cuMemcpyHtoD(f_D, f_A, size));
 
     // CHECK: dpct::async_dpct_memcpy(f_A, f_D, size, dpct::automatic, *stream);
     cuMemcpyDtoHAsync(f_A, f_D, size, stream);
