@@ -19,7 +19,7 @@ The SYCLomatic development branch is the main branch.
 
 ## License
 
-See [LICENSE.txt](clang/lib/C2S/LICENSE.TXT) for details.
+See [LICENSE](LICENSE) for details.
 
 ## Contributing
 
