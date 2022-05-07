@@ -46,6 +46,7 @@ llvm::raw_ostream &DpctLog();
 llvm::raw_ostream &DpctStats();
 llvm::raw_ostream &DpctDiags();
 llvm::raw_ostream &DpctTerm();
+llvm::raw_ostream &DpctDebugs();
 std::string getDpctStatsStr();
 std::string getDpctDiagsStr();
 std::string getDpctTermStr();

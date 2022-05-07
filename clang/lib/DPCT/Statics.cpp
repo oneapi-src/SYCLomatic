@@ -143,14 +143,20 @@ static llvm::SmallVector<char, /* default buffer size */ 4096> DpctStatsBuffer;
 static llvm::raw_svector_ostream DpctStatsStream(DpctStatsBuffer);
 static llvm::SmallVector<char, /* default buffer size */ 4096> DpctDiagsBuffer;
 static llvm::raw_svector_ostream DpctDiagsStream(DpctDiagsBuffer);
-
 static llvm::SmallVector<char, /* default buffer size */ 4096> DpctTermBuffer;
 static llvm::raw_svector_ostream DpctTermStream(DpctTermBuffer);
 
-llvm::raw_ostream &DpctLog() { return DpctLogStream; }
 llvm::raw_ostream &DpctStats() { return DpctStatsStream; }
 llvm::raw_ostream &DpctDiags() { return DpctDiagsStream; }
 llvm::raw_ostream &DpctTerm() { return DpctTermStream; }
+llvm::raw_ostream &DpctLog() { return DpctLogStream; }
+llvm::raw_ostream &DpctDebugs() {
+#ifdef DPCT_DEBUG_BUILD
+  return llvm::errs();
+#else
+  return llvm::nulls();
+#endif
+}
 std::string getDpctStatsStr() { return DpctStatsStream.str().str(); }
 std::string getDpctDiagsStr() { return DpctDiagsStream.str().str(); }
 std::string getDpctTermStr() { return DpctTermStream.str().str(); }
@@ -169,16 +175,20 @@ void PrintMsg(const std::string &Msg, bool IsPrintOnNormal) {
   case OutputVerbosityLevel::OVL_Detailed:
   case OutputVerbosityLevel::OVL_Diagnostics:
     llvm::outs() << Msg;
-    break;
+    return;
   case OutputVerbosityLevel::OVL_Normal:
     if (IsPrintOnNormal) {
       llvm::outs() << Msg;
     }
-    break;
+    return;
   case OutputVerbosityLevel::OVL_Silent:
-  default:
-    break;
+    return;
   }
+  DpctDebugs() << "[OutputVerbosityLevel] Unexpected value: "
+               << static_cast<std::underlying_type_t<OutputVerbosityLevel>>(
+                      OutputVerbosity.getValue())
+               << "\n";
+  assert(0);
 }
 
 } // namespace dpct

@@ -1482,6 +1482,7 @@ void deduceTemplateArgumentFromTemplateArgs(
       // Stop the deduction.
       return;
     }
+    break;
   default:
     break;
   }
@@ -2922,10 +2923,11 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
       return "";
     return getMemoryDecl();
   }
-  default:
-    llvm::dbgs() << "[MemVarInfo::getMemoryType] Unexpected scope.";
-    return "";
   }
+  clang::dpct::DpctDebugs() << "[MemVarInfo::VarAttrKind] Unexpected value: "
+                            << Scope << "\n";
+  assert(0);
+  return "";
 }
 
 std::string MemVarInfo::getSyclAccessorType() {
@@ -3560,15 +3562,14 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   case FreeQueriesInfo::FreeQueriesRegexCh:
     return FreeQueriesInfo::getReplaceString(Index);
   default:
-#ifdef DPCT_DEBUG_BUILD
-    llvm::errs() << "Unexpected method char: " << Method << "\n";
+    clang::dpct::DpctDebugs() << "[char] Unexpected value: " << Method << "\n";
     assert(0);
-#endif // DPCT_DEBUG_BUILD
     return MatchedStr.str();
   }
 }
 
 const std::string &getDefaultString(HelperFuncType HFT) {
+  const static std::string NullString;
   switch (HFT) {
   case clang::dpct::HelperFuncType::HFT_DefaultQueue: {
     const static std::string DefaultQueue =
@@ -3580,12 +3581,15 @@ const std::string &getDefaultString(HelperFuncType HFT) {
         MapNames::getDpctNamespace() + "get_current_device()";
     return DefaultQueue;
   }
-  case clang::dpct::HelperFuncType::HFT_InitValue:
-  default: {
-    const static std::string NullString;
+  case clang::dpct::HelperFuncType::HFT_InitValue: {
     return NullString;
   }
   }
+  clang::dpct::DpctDebugs()
+      << "[HelperFuncType] Unexpected value: "
+      << static_cast<std::underlying_type_t<HelperFuncType>>(HFT) << "\n";
+  assert(0);
+  return NullString;
 }
 
 std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,

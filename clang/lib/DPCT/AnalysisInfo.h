@@ -295,9 +295,12 @@ template <class T> inline void merge(T &Master, const T &Branch) {
   Master.insert(Branch.begin(), Branch.end());
 }
 
-template <class... Arguments>
-inline void appendString(llvm::raw_string_ostream &OS, Arguments &&... Args) {
-  std::initializer_list<int>{(OS << std::forward<Arguments>(Args), 0)...};
+inline void appendString(llvm::raw_string_ostream &OS) {}
+template <class FirstArgT, class... ArgsT>
+inline void appendString(llvm::raw_string_ostream &OS, FirstArgT &&First,
+                         ArgsT &&...Args) {
+  OS << std::forward<FirstArgT>(First);
+  appendString(OS, std::forward<ArgsT>(Args)...);
 }
 
 template <class... Arguments>
@@ -458,12 +461,12 @@ public:
     HeaderInsertedBitMap[HeaderType::HT_Time] = B;
   }
 
-  template <class... Args>
-  void concatHeader(llvm::raw_string_ostream &OS, Args... Arguments) {
-    std::initializer_list<int>{
-        (appendString(OS, "#include ", std::move(std::forward<Args>(Arguments)),
-                      getNL()),
-         0)...};
+  void concatHeader(llvm::raw_string_ostream &OS) {}
+  template <class FirstT, class... Args>
+  void concatHeader(llvm::raw_string_ostream &OS, FirstT &&First,
+                    Args &&...Arguments) {
+    appendString(OS, "#include ", std::forward<FirstT>(First), getNL());
+    concatHeader(OS, std::forward<Args>(Arguments)...);
   }
 
   // Insert one or more header inclusion directives at a specified offset
@@ -3197,7 +3200,6 @@ private:
   std::shared_ptr<TemplateDependentStringInfo> DependentStr;
   TemplateArgument::ArgKind Kind;
   bool IsWritten = true;
-  bool IsTemplateDependent = false;
 };
 
 // memory variable map includes memory variable used in __global__/__device__
@@ -3285,11 +3287,12 @@ public:
       return ExternVarMap;
     case clang::dpct::MemVarInfo::Global:
       return GlobalVarMap;
-    default:
-      llvm::dbgs() << "[MemVarMap::getMap] Unknow variable scope.";
-      static MemVarInfoMap InvalidMap;
-      return InvalidMap;
     }
+    clang::dpct::DpctDebugs()
+        << "[MemVarInfo::VarScope] Unexpected value: " << Scope << "\n";
+    assert(0);
+    static MemVarInfoMap InvalidMap;
+    return InvalidMap;
   }
 
   enum CallOrDecl {
@@ -3609,6 +3612,8 @@ public:
   std::shared_ptr<DeviceFunctionInfo> getFuncInfo() { return FuncInfo; }
   bool IsAllTemplateArgsSpecified = false;
 
+  virtual ~CallFunctionExpr() = default;
+
 protected:
   void setFuncInfo(std::shared_ptr<DeviceFunctionInfo>);
   std::string Name;
@@ -3747,6 +3752,8 @@ public:
   }
   void setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info);
   void buildReplaceLocInfo(const FunctionDecl *FD);
+
+  virtual ~DeviceFunctionDecl() = default;
 
 protected:
   const FormatInfo &getFormatInfo() { return FormatInformation; }

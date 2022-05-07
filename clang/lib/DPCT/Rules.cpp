@@ -428,7 +428,6 @@ void clang::dpct::UserDefinedAPIRule::runRule(
   if (const CallExpr *CE =
     getAssistNodeAsType<CallExpr>(
       Result, "call")) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
     dpct::ExprAnalysis EA;
     EA.analyze(CE);
     emplaceTransformation(EA.getReplacement());
@@ -484,7 +483,6 @@ void clang::dpct::UserDefinedClassFieldRule::registerMatcher(
 void clang::dpct::UserDefinedClassFieldRule::runRule(
   const clang::ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto ME = getNodeAsType<MemberExpr>(Result, "memberExpr")) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
     dpct::ExprAnalysis EA;
     EA.analyze(ME);
     emplaceTransformation(EA.getReplacement());
@@ -505,7 +503,6 @@ void clang::dpct::UserDefinedClassMethodRule::registerMatcher(
 void clang::dpct::UserDefinedClassMethodRule::runRule(
   const clang::ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto CMCE = getNodeAsType<CXXMemberCallExpr>(Result, "memberCallExpr")) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
     dpct::ExprAnalysis EA;
     EA.analyze(CMCE);
     emplaceTransformation(EA.getReplacement());

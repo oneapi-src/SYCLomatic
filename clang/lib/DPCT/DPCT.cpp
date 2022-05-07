@@ -519,8 +519,8 @@ JMP_BUF CPFormatCodeEnter;
 
 class DPCTConsumer : public ASTConsumer {
 public:
-  DPCTConsumer(ReplTy &R, CompilerInstance &CI, StringRef InFile)
-      : ATM(CI, InRoot), Repl(R), PP(CI.getPreprocessor()), CI(CI) {
+  DPCTConsumer(CompilerInstance &CI, StringRef InFile)
+      : ATM(CI, InRoot), PP(CI.getPreprocessor()), CI(CI) {
     if (Passes != "") {
       // Separate string into list by comma
       auto Names = split(Passes, ',');
@@ -617,21 +617,18 @@ private:
   TransformSetTy TransformSet;
   IncludeMapSetTy IncludeMapSet;
   StmtStringMap SSM;
-  ReplTy &Repl;
   Preprocessor &PP;
   CompilerInstance &CI;
   std::shared_ptr<MisleadingBidirectionalHandler> CommentHandler;
 };
 
 class DPCTAction : public ASTFrontendAction {
-  ReplTy &Repl;
-
 public:
-  DPCTAction(ReplTy &R) : Repl(R) {}
+  DPCTAction() = default;
 
   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                  StringRef InFile) override {
-    return std::make_unique<DPCTConsumer>(Repl, CI, InFile);
+    return std::make_unique<DPCTConsumer>(CI, InFile);
   }
 
   bool usesPreprocessorOnly() const override { return false; }
@@ -640,12 +637,10 @@ public:
 // Object of this class will be handed to RefactoringTool::run and will create
 // the Action.
 class DPCTActionFactory : public FrontendActionFactory {
-  ReplTy &Repl;
-
 public:
-  DPCTActionFactory(ReplTy &R) : Repl(R) {}
+  DPCTActionFactory() = default;
   std::unique_ptr<FrontendAction> create() override {
-    return std::make_unique<DPCTAction>(Repl);
+    return std::make_unique<DPCTAction>();
   }
 };
 
@@ -967,7 +962,6 @@ void PrintReportOnFault(std::string &FaultMsg) {
 }
 
 void parseFormatStyle() {
-  clang::format::FormattingAttemptStatus Status;
   StringRef StyleStr = "file"; // DPCTFormatStyle::Custom
   if (clang::dpct::DpctGlobalInfo::getFormatStyle() ==
       DPCTFormatStyle::FS_Google) {
@@ -1400,7 +1394,7 @@ int runDPCT(int argc, const char **argv) {
   }
 
   auto &Global = DpctGlobalInfo::getInstance();
-  int RunCount = 0;
+  volatile int RunCount = 0;
   do {
     if (RunCount == 1) {
       // Currently, we just need maximum two parse
@@ -1409,7 +1403,7 @@ int runDPCT(int argc, const char **argv) {
       DeviceFunctionDecl::reset();
     }
     DpctGlobalInfo::setRunRound(RunCount++);
-    DPCTActionFactory Factory(Tool.getReplacements());
+    DPCTActionFactory Factory;
 
     if (ProcessAllFlag) {
       clang::tooling::SetFileProcessHandle(InRoot, OutRoot, processAllFiles);

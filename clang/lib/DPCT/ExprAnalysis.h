@@ -372,6 +372,8 @@ public:
   }
   std::set<HelperFeatureEnum> getHelperFeatureSet() { return HelperFeatureSet; }
 
+  virtual ~ExprAnalysis() = default;
+
 private:
   SourceLocation getExprLocation(SourceLocation Loc);
   size_t getOffset(SourceLocation Loc) {
@@ -860,6 +862,7 @@ private:
     case BO_XorAssign:
     case BO_OrAssign:
       HasSideEffects = true;
+      break;
     default:
       break;
     }

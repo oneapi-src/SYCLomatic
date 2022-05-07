@@ -1130,9 +1130,10 @@ public:
       OS << getDerefedType(OB.ArgIndex)(Call);
       break;
     }
-    default:
-      break;
     }
+    DpctDebugs() << "[OutputBuilder::Kind] Unexpected value: " << OB.Kind
+                 << "\n";
+    assert(0);
   }
 };
 

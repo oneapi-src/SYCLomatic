@@ -19,7 +19,7 @@ CONDITIONAL_FACTORY_ENTRY(
         ENTRY_TEMPLATED("cudaCreateChannelDesc",
                         TEMPLATED_CALLEE(MapNames::getDpctNamespace() +
                                              "image_channel::create",
-                                         {0}))))
+                                         std::vector<size_t>(1, 0)))))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_channel_create,
                         ENTRY_RENAMED("cudaCreateChannelDescHalf",
                                       MapNames::getDpctNamespace() +

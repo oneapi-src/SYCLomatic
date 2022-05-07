@@ -128,7 +128,6 @@ public:
 
 private:
   InsertPosition InsertPos = IP_Left;
-  unsigned BeginLine = 0, EndLine = 0;
   const TextModification *TM;
   unsigned PairID = 0;
   bool SYCLHeaderNeeded = true;

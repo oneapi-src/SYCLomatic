@@ -1618,10 +1618,8 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
     llvm::raw_string_ostream OS(ParamDecl);
     OS << ParamType << " ";
     unsigned Index = 0;
-    std::initializer_list<int>{
-        (printParamNameWithInitArgs(OS, VD->getName(), HasInitialZeroCtor,
-                                    ParamNames, Index, InitValue),
-         0)...};
+    printParamNameWithInitArgs(OS, VD->getName(), HasInitialZeroCtor, Index,
+                               InitValue, std::forward<Args>(ParamNames)...);
     OS << ";";
     emplaceTransformation(
         ReplaceVarDecl::getVarDeclReplacement(VD, std::move(OS.str())));
@@ -1633,14 +1631,24 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
   }
   static inline llvm::raw_ostream &
   printParamNameWithInitArgs(llvm::raw_ostream &OS, StringRef BaseName,
-                             bool HasInitialZeroCtor, StringRef ParamName,
-                             unsigned &Index, std::string InitValue = "0") {
+                             bool HasInitialZeroCtor, unsigned &Index,
+                             StringRef InitValue) {
+    return OS;
+  }
+  template <class... RestNamesT>
+  static inline llvm::raw_ostream &
+  printParamNameWithInitArgs(llvm::raw_ostream &OS, StringRef BaseName,
+                             bool HasInitialZeroCtor, unsigned &Index,
+                             StringRef InitValue, StringRef FirstName,
+                             RestNamesT &&...Rest) {
     if (Index++)
       OS << ", ";
-    printParamName(OS, BaseName, ParamName);
+    printParamName(OS, BaseName, FirstName);
     if (HasInitialZeroCtor)
       OS << "(" << InitValue << ", " << InitValue << ", " << InitValue << ")";
-    return OS;
+    return printParamNameWithInitArgs(OS, BaseName, HasInitialZeroCtor, Index,
+                                      InitValue,
+                                      std::forward<RestNamesT>(Rest)...);
   }
 
   const static MapNames::MapTy MemberNames;

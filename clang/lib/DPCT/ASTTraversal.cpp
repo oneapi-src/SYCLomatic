@@ -4433,7 +4433,6 @@ void ErrorConstantsRule::runRule(const MatchFinder::MatchResult &Result) {
     auto ParentNodes = Context.getParents(*DE);
     DynTypedNode ParentNode;
     bool MatchFunction = false;
-    SourceLocation OperatorLoc;
     const BinaryOperator *BO = nullptr;
     while (!ParentNodes.empty()) {
       ParentNode = ParentNodes[0];
@@ -11467,7 +11466,7 @@ void MemoryMigrationRule::mallocMigration(
     } else {
       DpctGlobalInfo::getInstance().insertCudaMalloc(C);
       auto LocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
-      auto Action = [LocInfo, C, IsAssigned]() {
+      auto Action = [LocInfo, IsAssigned]() {
         requestFeature(HelperFeatureEnum::Memory_dpct_malloc, LocInfo.first);
         if (IsAssigned) {
           DiagnosticsUtils::report(LocInfo.first, LocInfo.second,
@@ -13198,7 +13197,6 @@ void CooperativeGroupsFunctionRule::registerMatcher(MatchFinder &MF) {
 
 void CooperativeGroupsFunctionRule::runRule(
     const MatchFinder::MatchResult &Result) {
-  bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall");
   const FunctionDecl *FD =
       getAssistNodeAsType<FunctionDecl>(Result, "FuncDecl");
@@ -13206,7 +13204,6 @@ void CooperativeGroupsFunctionRule::runRule(
     if (!(CE = getNodeAsType<CallExpr>(Result, "FuncCallUsed")))
       return;
     FD = getAssistNodeAsType<FunctionDecl>(Result, "FuncDeclUsed");
-    IsAssigned = true;
   }
   if (!FD)
     return;
@@ -16761,7 +16758,6 @@ void CubRule::removeRedundantTempVar(const CallExpr *CE) {
   auto FuncArgs = CE->getArgs();
   auto TempStorage = FuncArgs[0]->IgnoreImplicitAsWritten();
   auto TempStorageSize = FuncArgs[1]->IgnoreImplicitAsWritten();
-  SourceLocation InitLoc;
   std::vector<const DeclRefExpr *> TempStorageMatchResult;
   std::vector<const DeclRefExpr *> TempStorageSizeMatchResult;
   std::vector<const CallExpr *> TempStorageRelatedMalloc;
