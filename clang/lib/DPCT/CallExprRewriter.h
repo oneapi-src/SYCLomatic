@@ -1079,44 +1079,44 @@ public:
       for (auto &ob : OB.SubBuilders) {
         buildRewriterStr(Call, OS, *ob);
       }
-      break;
+      return;
     case(OutputBuilder::Kind::String):
       OS << OB.Str;
-      break;
+      return;
     case (OutputBuilder::Kind::Arg): {
       if (OB.ArgIndex >= Call->getNumArgs()) {
         OS << "";
-        break;
+        return;
       }
       ArgumentAnalysis AA;
       AA.setCallSpelling(Call);
       AA.analyze(Call->getArg(OB.ArgIndex));
       OS << AA.getRewriteString();
-      break;
+      return;
     }
     case (OutputBuilder::Kind::Queue): {
       OS << makeQueueStr()(Call);
-      break;
+      return;
     }
     case (OutputBuilder::Kind::Context):
       OS << MapNames::getDpctNamespace() << "get_default_context()";
-      break;
+      return;
     case (OutputBuilder::Kind::Device): {
       OS << makeDeviceStr()(Call);
-      break;
+      return;
     }
     case (OutputBuilder::Kind::Deref): {
       makeDerefExprCreator(OB.ArgIndex)(Call).print(OS);
-      break;
+      return;
     }
     case (OutputBuilder::Kind::TypeName): {
       OS << getReplacedType(OB.ArgIndex)(Call);
-      break;
+      return;
     }
     case (OutputBuilder::Kind::AddrOf): {
       if (OB.ArgIndex >= Call->getNumArgs()) {
         OS << "";
-        break;
+        return;
       }
       OS << "&(";
       ArgumentAnalysis AA;
@@ -1124,11 +1124,11 @@ public:
       AA.analyze(Call->getArg(OB.ArgIndex));
       OS << AA.getRewriteString();
       OS << ")";
-      break;
+      return;
     }
     case (OutputBuilder::Kind::DerefedTypeName): {
       OS << getDerefedType(OB.ArgIndex)(Call);
-      break;
+      return;
     }
     }
     DpctDebugs() << "[OutputBuilder::Kind] Unexpected value: " << OB.Kind
