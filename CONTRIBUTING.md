@@ -54,7 +54,7 @@ Every product change should be accompanied with corresponding test modification
 (adding new test(s), extending, removing or modifying existing test(s)).
 
 There are 2 types of tests which are used for SYCLomatic validation:
-* SYCLomatic in-tree LIT tests including [check-clang-c2s](../../clang/test/C2S)
+* SYCLomatic in-tree LIT tests including [check-clang-c2s](../../clang/test/dpct)
  targets stored in this repository. These tests
 should not have hardware (e.g. GPU, FPGA, etc.) or external software
 dependencies (e.g. OpenCL, Level Zero, CUDA runtimes). These tests only have dependencies

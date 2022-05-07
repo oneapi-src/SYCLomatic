@@ -5,7 +5,6 @@
   - [Prerequisites](#prerequisites)
     - [Create SYCLomatic workspace](#create-SYCLomatic-workspace)
   - [Build SYCLomatic](#build-SYCLomatic)
-    - [Build Doxygen documentation](#build-doxygen-documentation)
     - [Deployment](#deployment)
   - [Test SYCLomatic](#test-SYCLomatic)
       - [Run in-tree LIT tests](#run-in-tree-lit-tests)
@@ -82,24 +81,6 @@ mkdir build
 cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/path/to/install/folder  -DCMAKE_BUILD_TYPE=Release  -DLLVM_ENABLE_PROJECTS="clang"  -DLLVM_TARGETS_TO_BUILD="X86;NVPTX" ../llvm
 ninja install-c2s
 ```
-### Build Doxygen documentation
-
-Building Doxygen documentation is similar to building the product itself. First,
-the following tools need to be installed:
-
-* doxygen
-* graphviz
-
-Then you'll need to add the following options to your CMake configuration
-command:
-
-```
--DLLVM_ENABLE_DOXYGEN=ON
-```
-
-After CMake cache is generated, build the documentation with `doxygen-c2s and doxygen-c2s-runtime`
-target. It will be put to `$SYCLOMATIC_HOME/build/tools/sycl/doc/html`
-directory.
 
 ### Deployment
 
