@@ -1347,7 +1347,7 @@ ENTRY(cuCtxEnablePeerAccess, cuCtxEnablePeerAccess, false, NO_FLAG, P4, "comment
 ENTRY(cuDeviceCanAccessPeer, cuDeviceCanAccessPeer, false, NO_FLAG, P4, "comment")
 ENTRY(cuDeviceGetP2PAttribute, cuDeviceGetP2PAttribute, false, NO_FLAG, P4, "comment")
 ENTRY(cuDevicePrimaryCtxGetState, cuDevicePrimaryCtxGetState, false, NO_FLAG, P4, "comment")
-ENTRY(cuDevicePrimaryCtxRelease, cuDevicePrimaryCtxRelease, false, NO_FLAG, P4, "comment")
+ENTRY(cuDevicePrimaryCtxRelease, cuDevicePrimaryCtxRelease, true, NO_FLAG, P4, "comment")
 ENTRY(cuDevicePrimaryCtxReset, cuDevicePrimaryCtxReset, false, NO_FLAG, P4, "comment")
 ENTRY(cuDevicePrimaryCtxRetain, cuDevicePrimaryCtxRetain, true, NO_FLAG, P4, "comment")
 ENTRY(cuDevicePrimaryCtxSetFlags, cuDevicePrimaryCtxSetFlags, false, NO_FLAG, P4, "comment")
