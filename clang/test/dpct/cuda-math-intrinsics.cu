@@ -2479,6 +2479,13 @@ __global__ void testIntegerFunctions() {
   __hadd(u, u);
   __mul24(u, u);
   __mulhi(u, u);
+
+  // CHECK: i = sycl::abs(i);
+  // CHECK-NEXT: l = sycl::abs(l);
+  // CHECK-NEXT: ll = sycl::abs(ll);
+  i = abs(i);
+  l = labs(l);
+  ll = llabs(ll);
 }
 
 void testTypecasts() {

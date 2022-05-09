@@ -978,6 +978,8 @@ ENTRY(__vsubus4, __vsubus4, false, NO_FLAG, P4, "comment")
 ENTRY(max, max, true, NO_FLAG, P0, "Successful")
 ENTRY(min, min, true, NO_FLAG, P0, "Successful")
 ENTRY(abs, abs, true, NO_FLAG, P0, "Successful")
+ENTRY(labs, abs, true, NO_FLAG, P0, "Successful")
+ENTRY(llabs, abs, true, NO_FLAG, P0, "Successful")
 ENTRY(acospi, acospi, true, NO_FLAG, P4, "Successful")
 ENTRY(tanpi, tanpi, true, NO_FLAG, P0, "Successful")
 
