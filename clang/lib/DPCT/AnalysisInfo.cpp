@@ -3526,6 +3526,8 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   // D: deivce, used for pretty code
   // Q: queue, used for pretty code
   // R: range dim, used for built-in variables(threadIdx.x,...) migration
+  // G: range dim, used for cg::thread_block migration
+  // C: range dim, used for cub block migration
   // F: free queries function migration, such as this_nd_item, this_group,
   //    this_sub_group.
   switch (Method) {
