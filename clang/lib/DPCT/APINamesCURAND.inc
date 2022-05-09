@@ -149,7 +149,7 @@ FEATURE_REQUEST_FACTORY(
     MEMBER_CALL_FACTORY_ENTRY("curand_uniform_double",
                               DEREF(makeDerefArgCreatorWithCall(0)), false,
                               "generate<oneapi::mkl::rng::device::uniform<double>, 1>"))
-// poisson
+// Poisson
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
     MEMBER_CALL_FACTORY_ENTRY("curand_poisson",

@@ -9,9 +9,9 @@
 //
 //===-----------------------------------------------------------------===//
 //  This file target to process replacement based operation:
-//   -save replacement to external(disk file)
-//   -load replacement from external(disk file)
-//   -merage replacement in current migration with previous migration.
+//   -Save replacement to external (disk file)
+//   -Load replacement from external (disk file)
+//   -Merage replacement in current migration with previous migration.
 
 #include "AnalysisInfo.h"
 #include "Utility.h"

@@ -63,7 +63,7 @@ enum class KernelArgType : int {
   KAT_MaxParameterSize
 };
 // This struct defines a set of Repls with priority.
-// The priority is designated by a unsigned number, the
+// The priority is designated by an unsigned number, the
 // higher the number, the higher the priority.
 struct PriorityReplInfo {
   std::vector<std::shared_ptr<ExtReplacement>> Repls;
@@ -87,10 +87,10 @@ class KernelPrinter;
 // This struct saves the engine's type.
 // These rules determine the engine's type:
 //   1. Tool can detect the related info, then using that engine type.
-//   2. Tool cannot detect the related info, but there is only one gerentate
+//   2. Tool cannot detect the related info, but there is only one generate
 //       API used, then use that info.
 //   3. Tool cannot detect the related info, and there are more than one
-//       gerentate APIs used, then use placeholder and emit warning.
+//       generate APIs used, then use placeholder and emit warning.
 struct HostRandomEngineTypeInfo {
   HostRandomEngineTypeInfo(unsigned int Length) : Length(Length) {}
   HostRandomEngineTypeInfo(unsigned int Length, std::string EngineType,
@@ -205,7 +205,7 @@ struct MemcpyOrderAnalysisInfo {
   std::vector<unsigned int> DREOffsetVec;
 };
 
-// functin name, <file path, Info>
+// function name, <file path, Info>
 using HDDefMap =
     std::unordered_multimap<std::string,
                             std::pair<std::string, HostDeviceFuncInfo>>;
@@ -214,7 +214,7 @@ using HDDeclMap =
                             std::pair<std::string, HostDeviceFuncInfo>>;
 using HDCallMap =
     std::unordered_multimap<std::string, std::pair<std::string, unsigned int>>;
-// filt path, <Offset, Info>
+// file path, <Offset, Info>
 using CudaArchPPMap =
     std::unordered_map<std::string,
                        std::unordered_map<unsigned int, CudaArchPPInfo>>;
@@ -369,7 +369,7 @@ enum UsingType {
 //           -----------------------------------------------------
 //           |                           |                         | |
 //  MemVarInfo  DeviceFunctionDecl  KernelCallExpr  CudaMallocInfo
-// Global Variable)                |   (inherite from CallFunctionExpr)
+// Global Variable)                |   (inherit from CallFunctionExpr)
 //                           DeviceFunctionInfo
 //                                          |
 //                        --------------------------
@@ -1162,13 +1162,13 @@ public:
                EP_Itr != ExcludePath.end();) {
             if ((EP_Itr->first == *Itr) ||
                 (EP_Itr->second && isChildOrSamePath(EP_Itr->first, *Itr))) {
-              // 1.If current path is child or same path of previous path, then
-              // we skip it.
+              // 1. If current path is child or same path of previous path,
+              //    then we skip it.
               IsNeedInsert = false;
               break;
             } else if (IsDirectory && isChildOrSamePath(*Itr, EP_Itr->first)) {
-              // 2.If previous path is child of current path, then
-              // we delete previous path.
+              // 2. If previous path is child of current path, then
+              //    we delete previous path.
               EP_Itr = ExcludePath.erase(EP_Itr);
             } else {
               EP_Itr++;
@@ -1199,17 +1199,17 @@ public:
       dpctExit(MigrationErrorInvalidExplicitNamespace);
     }
     for (auto &Namespace : NamespacesVec) {
-      // 1.Ensure option none is alone
+      // 1. Ensure option none is alone
       bool Check1 =
           (Namespace == ExplicitNamespace::EN_None && NamespaceVecSize == 2);
-      // 2.Ensuere option cl, sycl, sycl-math only enabled one
+      // 2. Ensuere option cl, sycl, sycl-math only enabled one
       bool Check2 =
           ((Namespace == ExplicitNamespace::EN_CL ||
             Namespace == ExplicitNamespace::EN_SYCL ||
             Namespace == ExplicitNamespace::EN_SYCL_Math) &&
            (ExplicitNamespaceSet.size() == 1 &&
             ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 0));
-      // 3.Check whether option dpct duplicated
+      // 3. Check whether option dpct duplicated
       bool Check3 =
           (Namespace == ExplicitNamespace::EN_DPCT &&
            ExplicitNamespaceSet.count(ExplicitNamespace::EN_DPCT) == 1);
@@ -1415,7 +1415,7 @@ public:
         SM->getDecomposedLoc(SM->getExpansionLoc(Loc));
 
     if (auto FileEntry = SM->getFileEntryForID(LocInfo.first)) {
-      // To avoid potential path inconsist issue,
+      // To avoid potential path inconsistent issue,
       // using tryGetRealPathName while applicable.
       std::string FileName;
       if (!FileEntry->tryGetRealPathName().empty()) {
@@ -1549,15 +1549,15 @@ public:
 
     if (DpctGlobalInfo::getAssumedNDRangeDim() == 1) {
       // Construct a union-find set for all the instances of MemVarMap in
-      // DeviceFunctionInfo. During the tranversal of the call-graph, do union
+      // DeviceFunctionInfo. During the traversal of the call-graph, do union
       // operation if caller and callee both need item variable, then after the
-      // tranversal, all MemVarMap instance which need item are devided into
+      // traversal, all MemVarMap instance which need item are divided into
       // some groups. Among different groups, there is no call relationship. If
       // kernel-call is 3D, then set its head's dim to 3D. When generating
       // replacements, find current nodes' head to decide to use which dim.
 
       // Below three for-loop cannot be merged.
-      // The later loop depends on the info gererated by the previous loop.
+      // The later loop depends on the info generated by the previous loop.
       // Now we consider two links: the call-chain and the macro spelling loc
       // link Since the macro spelling loc may link a global func from a device
       // func, we cannot merge set dim into the second loop. Because global func
@@ -2378,8 +2378,8 @@ private:
   static bool UsingGenericSpace;
   static bool UsingThisItem;
   static bool SpBLASUnsupportedMatrixTypeFlag;
-  // Key: the fft handle declaration "FilePath:Offset"
-  // Value: a struct incluing placement and direction
+  // Key: the FFT handle declaration "FilePath:Offset"
+  // Value: a struct including placement and direction
   static std::unordered_map<std::string, FFTExecAPIInfo> FFTExecAPIInfoMap;
   static std::unordered_map<std::string, FFTHandleInfo> FFTHandleInfoMap;
   static unsigned int CudaKernelDimDFIIndex;
@@ -2474,7 +2474,7 @@ public:
 // get from type.
 class CtTypeInfo {
 public:
-  // If NeedSizeFold is true, array size will be folded, but orginal expression
+  // If NeedSizeFold is true, array size will be folded, but original expression
   // will follow as comments. If NeedSizeFold is false, original size expression
   // will be the size string.
   CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
@@ -2509,7 +2509,7 @@ public:
 
 private:
   // For ConstantArrayType, size in generated code is folded as an integer.
-  // If \p NeedSizeFold is true, original size expression will followed as
+  // If \p NeedSizeFold is true, original size expression will be appended as
   // comments.
   void setTypeInfo(const TypeLoc &TL, bool NeedSizeFold = false);
 
@@ -2534,14 +2534,14 @@ private:
 
   // Typically C++ array with constant size.
   // e.g.: __device__ int a[20];
-  // If \p NeedSizeFold is true, original size expression will followed as
+  // If \p NeedSizeFold is true, original size expression will be appended as
   // comments.
   // e.g.,
   // #define SIZE 24
   // dpct::global_memory<int, 1>(24 /* SIZE */);
   void setArrayInfo(const ConstantArrayTypeLoc &TL, bool NeedFoldSize);
 
-  // Typically C++ array with template depedent size.
+  // Typically C++ array with template dependent size.
   // e.g.: template<size_t S>
   // ...
   // __device__ int a[S];
@@ -2613,7 +2613,7 @@ private:
   std::shared_ptr<CtTypeInfo> Ty;
 };
 
-// memory variable info includs basic variable info and memory attributes.
+// memory variable info includes basic variable info and memory attributes.
 class MemVarInfo : public VarInfo {
 public:
   enum VarAttrKind {
@@ -3025,7 +3025,7 @@ public:
 class TextureObjectInfo : public TextureInfo {
   static const int ReplaceTypeLength;
 
-  // If it is a parameter in the function, it is the parameter index,either it
+  // If it is a parameter in the function, it is the parameter index, either it
   // is 0.
   unsigned ParamIdx;
 
@@ -3540,8 +3540,8 @@ MemVarMap::getArgumentsOrParameters<MemVarMap::DeclParameter>(
       // comma and space
       RemoveLength = 2;
     } else {
-      // calculate length from the first charactor "," to the next nospace
-      // charactor
+      // calculate length from the first character "," to the next none space
+      // character
       RemoveLength = 1;
       while (RemoveLength < Result.size()) {
         if (!isspace(Result[RemoveLength]))
@@ -3956,7 +3956,7 @@ private:
   bool IsBuilt;
   std::string DefinitionFilePath;
   bool NeedSyclExternMacro = false;
-  // subgroup size, filepath, offset, api name, var name
+  // subgroup size, filepath, offset, API name, var name
   std::vector<std::tuple<unsigned int, std::string, unsigned int, std::string,
                          std::string>>
       RequiredSubGroupSize;
@@ -4598,8 +4598,8 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
   }
 }
 
-/// Find the innermost FunctionDecl's child node(CompoundStmt node) where \S is
-/// located. If there is no CompoundStmt of FunctionDecl out of \S, return
+/// Find the innermost FunctionDecl's child node (CompoundStmt node) where \S
+/// is located. If there is no CompoundStmt of FunctionDecl out of \S, return
 /// nullptr.
 /// Caller should make sure that /S is not nullptr.
 template <typename T>
@@ -4704,17 +4704,17 @@ template <typename T> int isPlaceholderIdxDuplicated(const T *S) {
 // unordered_map<string, int> TempVariableHandledMap.
 //
 // 1. HelperFuncReplInfoMap's key is the Index of each placeholder, its value is
-// a HelperFuncReplInfo struct which saved the decalaration insert location of
+// a HelperFuncReplInfo struct which saved the declaration insert location of
 // this placeholder and a boolean represent whether this location is valid.
-// 2. TempVariableDeclCounterMap's key is the decalaration insert location, it's
+// 2. TempVariableDeclCounterMap's key is the declaration insert location, it's
 // value is a TempVariableDeclCounter which counts how many device declaration
 // and queue declaration need be inserted here respectively.
-// 3. TempVariableHandledMap's key is the begin location of the decalaration or
-// statement of ecah placeholder. This map is to avoid one placeholder to be
+// 3. TempVariableHandledMap's key is the begin location of the declaration or
+// statement of each placeholder. This map is to avoid one placeholder to be
 // counted more than once. Its value is Index.
 //
 // The rule of inserting declaration:
-// If pair (m,n) means device counter value is n and queue counter value is n,
+// If pair (m, n) means device counter value is n and queue counter value is n,
 // using (0,0), (0,1), (1,0), (1,1), (>=2,0), (0,>=2), (>=2,1), (1,>=2) and
 // (>=2,>=2) can construct a graph.
 // Then there are 5 edges will need insert declaration:

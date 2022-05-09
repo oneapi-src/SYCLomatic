@@ -1122,12 +1122,12 @@ public:
   }
 
   /// Get memory pointer of the memory object, which is virtual pointer when
-  /// usm is not used, and device pointer when usm is used .
+  /// usm is not used, and device pointer when usm is used.
   value_t *get_ptr() {
     return get_ptr(get_default_queue());
   }
   /// Get memory pointer of the memory object, which is virtual pointer when
-  /// usm is not used, and device pointer when usm is used .
+  /// usm is not used, and device pointer when usm is used.
   value_t *get_ptr(cl::sycl::queue &q) {
     init(q);
     return _device_ptr;

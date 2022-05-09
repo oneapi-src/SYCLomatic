@@ -86,7 +86,7 @@ static void printMatchedRulesStaticsImpl(
 
 static void printReplacementsStaticsImpl(const TransformSetTy &TS,
                                          ASTContext &Context) {
-  // Verbos level lower than "High" doesn't show detailed replacements'
+  // Verbose level lower than "High" doesn't show detailed replacements'
   // information
   if (VerboseLevel < VL_VerboseHigh) {
     return;

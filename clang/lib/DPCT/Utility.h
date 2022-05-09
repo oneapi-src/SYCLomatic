@@ -234,7 +234,7 @@ inline bool isChildOrSamePath(const std::string &RootAbs,
   return Ret;
 }
 
-/// Returns character sequence ("\n") on Linux, return  ("\r\n") on Windows.
+/// Returns character sequence ("\n") on Linux, return ("\r\n") on Windows.
 const char *getNL(void);
 
 /// Returns the character sequence ("\n" or "\r\n") used to represent new line
@@ -293,7 +293,7 @@ const std::string &getFmtEndArg(void);
 const std::string &getFmtArgIndent(std::string &BaseIndent);
 
 /// Split a string into a vector of strings with a specific delimiter
-/// \param [in] Str The string to be splited
+/// \param [in] Str The string to be splitted
 /// \param [in] Delim The delimiter
 std::vector<std::string> split(const std::string &Str, char Delim);
 

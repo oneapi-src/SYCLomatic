@@ -371,7 +371,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         auto Arg1 = Call->getArg(1)->IgnoreImpCasts();
         auto *BT0 = dyn_cast<BuiltinType>(Arg0->getType());
         auto *BT1 = dyn_cast<BuiltinType>(Arg1->getType());
-        // Deal with cases where types of arguements are typedefs, e.g.,
+        // Deal with cases where types of arguments are typedefs, e.g.,
         // 1) typdef int INT;
         // 2) using int_t = int;
         const TypedefType *TT0 = nullptr, *TT1 = nullptr;
@@ -1208,7 +1208,7 @@ const Expr *removeCStyleCast(const Expr *E) {
 }
 
 // Prepare the arg for deref by removing the CStyleCast
-// Should be used when the cast information is not relavent.
+// Should be used when the cast information is not relevant.
 // e.g. migrating cudaMallocHost((void**)ptr, size) to
 // *ptr = sycl::malloc_host<float>(size, q_ct1);
 std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
@@ -1482,7 +1482,7 @@ unsigned int getSizeFromCallArg(const CallExpr *C, std::string &Var) {
 
 /// If the input \p QT is a pointer type or an array type, this function will
 /// return the deref-ed type. Otherwise an empty QualType object will be
-/// returned. The caller need to check if the return value is null using
+/// returned. The caller needs to check if the return value is null using
 /// isNull().
 QualType DerefQualType(QualType QT) {
   QualType DerefQT;
@@ -1721,7 +1721,7 @@ std::shared_ptr<CallExprRewriterFactoryBase> createMultiStmtsRewriterFactory(
                                                              Creators...));
 }
 
-/// Create AssignExprRewriterFactory with given argumens.
+/// Create AssignExprRewriterFactory with given arguments.
 /// \p SourceName the source callee name of original call expr.
 /// \p LValueCreator use to get lhs from original call expr.
 /// \p RValueCreator use to get rhs from original call expr.
@@ -1770,7 +1770,7 @@ std::shared_ptr<CallExprRewriterFactoryBase> creatIfElseRewriterFactory(
       SourceName, PredCreator.second, IfCreator.second, ElseCreator.second);
 }
 
-/// Create CallExprRewriterFactory with given argumens.
+/// Create CallExprRewriterFactory with given arguments.
 /// \p SourceName the source callee name of original call expr.
 /// \p ArgsCreator use to get call args from original call expr.
 template <class CalleeT, class... CallArgsT>
@@ -1784,7 +1784,7 @@ std::shared_ptr<CallExprRewriterFactoryBase> creatCallExprRewriterFactory(
       SourceName, Args);
 }
 
-/// Create TemplatedCallExprRewriterFactory with given argumens.
+/// Create TemplatedCallExprRewriterFactory with given arguments.
 /// \p SourceName the source callee name of original call expr.
 /// \p CalleeCreator use to get templated callee from original call expr.
 /// \p ArgsCreator use to get call args from original call expr.
@@ -1804,7 +1804,7 @@ createTemplatedCallExprRewriterFactory(
       std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
 }
 
-/// Create MemberCallExprRewriterFactory with given argumens.
+/// Create MemberCallExprRewriterFactory with given arguments.
 /// \p SourceName the source callee name of original call expr.
 /// \p BaseCreator use to get base expr from original call expr.
 /// \p IsArrow the member operator is arrow or dot as default.
@@ -1963,7 +1963,7 @@ std::function<bool(const CallExpr *)> makePointerChecker(unsigned Idx) {
 }
 
 /// Create rewriter factory for migration of cudaBindTexture APIs.
-/// \p StartIdx is represent the first availbe argument's index.
+/// \p StartIdx is represent the first available argument's index.
 /// For cudaBindTexture and cudaBindTexture2D, it is 1.
 /// For  cudaBindTextureToArray, it is 0.
 /// The first predicate will check the \p StartIdx 'th argument whether is
@@ -2085,9 +2085,9 @@ createUserDefinedMethodRewriterFactory(
 // 2. sycl::malloc_device<type>(Addr, Size)
 // DPCT will use the template version if following constraints hold:
 // 1. The Addr can be derefed twice. The derefed type is type_1
-// 2. The Size argement contains sizeof(type_2)
+// 2. The Size argument contains sizeof(type_2)
 // 3. type_1 and type_2 are the same
-// 4. The Size argement does not contain macro
+// 4. The Size argument does not contain macro
 class CheckCanUseTemplateMalloc {
   unsigned AddrArgIdx;
   unsigned SizeArgIdx;

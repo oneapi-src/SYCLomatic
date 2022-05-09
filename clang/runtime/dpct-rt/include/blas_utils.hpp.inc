@@ -33,7 +33,7 @@
 // DPCT_COMMENT
 // DPCT_COMMENT For header file including dependency, please use predefined feature name:
 // DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other headler files
+// DPCT_COMMENT   non_local_include_dependency: other header files
 
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
@@ -459,7 +459,7 @@ inline void rk_impl(cl::sycl::queue &q, oneapi::mkl::uplo uplo,
   if ((is_hermitian && trans == oneapi::mkl::transpose::trans) ||
       (!is_hermitian && !std::is_floating_point_v<Ty> && trans == oneapi::mkl::transpose::conjtrans)) {
     // In this case, OPB need be a conjugate operation,
-    // but only notrans, conjtrans and trans are avaliable.
+    // but only notrans, conjtrans and trans are available.
     // So we need do a conjtrans operation first, then do a trans operation.
     trans_B = oneapi::mkl::transpose::trans;
     auto data_a = get_memory(reinterpret_cast<const Ty *>(a));

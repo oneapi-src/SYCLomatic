@@ -465,7 +465,7 @@ private:
   int _cpu_device = -1;
 };
 
-/// Util function to get the defualt queue of current device in
+/// Util function to get the default queue of current device in
 /// dpct device manager.
 static inline cl::sycl::queue &get_default_queue() {
   return dev_mgr::instance().current_device().default_queue();
@@ -487,7 +487,7 @@ static inline cl::sycl::context get_default_context() {
   return dpct::get_current_device().get_context();
 }
 
-/// Util function to get a cpu device.
+/// Util function to get a CPU device.
 static inline device_ext &cpu_device() {
   return dev_mgr::instance().cpu_device();
 }

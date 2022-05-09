@@ -63,7 +63,7 @@ static bool getDefaultOutRoot(std::string &OutRootPar) {
   return true;
 }
 
-// If input source files exist in the commandline,
+// If input source files exist in the command line,
 // set InRoot to the directory of the first input source file.
 // If input source file does not exist,
 // set InRoot to ".".

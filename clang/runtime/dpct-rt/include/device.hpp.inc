@@ -33,7 +33,7 @@
 // DPCT_COMMENT
 // DPCT_COMMENT For header file including dependency, please use predefined feature name:
 // DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other headler files
+// DPCT_COMMENT   non_local_include_dependency: other header files
 
 // DPCT_LABEL_BEGIN|non_local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
@@ -996,7 +996,7 @@ private:
 // Device|device_ext_default_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Util function to get the defualt queue of current device in
+/// Util function to get the default queue of current device in
 /// dpct device manager.
 static inline cl::sycl::queue &get_default_queue() {
   return dev_mgr::instance().current_device().default_queue();
@@ -1043,7 +1043,7 @@ static inline cl::sycl::context get_default_context() {
 // Device|dev_mgr_cpu_device
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Util function to get a cpu device.
+/// Util function to get a CPU device.
 static inline device_ext &cpu_device() {
   return dev_mgr::instance().cpu_device();
 }

@@ -33,7 +33,7 @@
 // DPCT_COMMENT
 // DPCT_COMMENT For header file including dependency, please use predefined feature name:
 // DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other headler files
+// DPCT_COMMENT   non_local_include_dependency: other header files
 
 // DPCT_LABEL_BEGIN|non_local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
@@ -80,7 +80,7 @@ public:
   /// Default constructor of rng_generator
   rng_generator() { _engine = engine_t(default_seed); }
   /// Constructor of rng_generator
-  /// \param [in] seed The seed to initialiaze the engine state.
+  /// \param [in] seed The seed to initialize the engine state.
   /// \param [in] num_to_skip Set the number of elements need to be skipped.
   /// The number is calculated as: num_to_skip[0] + num_to_skip[1] * 2^64 +
   /// num_to_skip[2] * 2^128 + ... + num_to_skip[n-1] * 2^(64*(n-1))
@@ -97,7 +97,7 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /// Generate random number(s) obeys distribution \tparam distr_t.
-  /// \tparam T The distrubution of the random number. It can only be
+  /// \tparam T The distribution of the random number. It can only be
   /// oneapi::mkl::rng::device::bits<std::uint32_t>,
   /// oneapi::mkl::rng::device::gaussian<float>,
   /// oneapi::mkl::rng::device::gaussian<double>,

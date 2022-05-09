@@ -45,7 +45,7 @@ class MapNames {
 
 public:
   static void setExplicitNamespaceMap();
-  // KeepNamespace = true for funtion or type that need avoid ambiguous.
+  // KeepNamespace = true for function or type that need avoid ambiguous.
   // Example: sycl::exception <--> std::exception
   // IsMathFunc = true for namespace before math functions.
   // Example: sycl::exp

@@ -43,7 +43,7 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
 
     if (TheStmt->getStmtClass() == Stmt::StmtClass::CallExprClass &&
         ReplacementString.empty()) {
-      // Remove the callexpr spelling in macro define if it is outermost
+      // Remove the callExpr spelling in macro define if it is outermost
       if (isOuterMostMacro(TheStmt)) {
         IsMacroRemoved = true;
         auto RangeDef =
@@ -57,7 +57,7 @@ ReplaceStmt::getReplacement(const ASTContext &Context) const {
                                                   ReplacementString, this);
         R->setInsertPosition(InsertPos);
         DpctGlobalInfo::getInstance().addReplacement(R);
-        // Emit warning message at the Exapnasion Location
+        // Emit warning message at the Expansion Location
         auto ItMR = DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
             getCombinedStrFromLoc(BeginDef));
         std::string MacroName = "";
@@ -276,7 +276,7 @@ ReplaceTypeInDecl::getReplacement(const ASTContext &Context) const {
   if (!B.isMacroID() && E.isMacroID()) {
     // For some reason the EndLoc for type names that are using template
     // parameters, e.g. thrust::complex<double> are encoded as being macro IDs,
-    // so to get the 'real' loc, getExpansionLoc is called.  Because, the last
+    // so to get the 'real' loc, getExpansionLoc is called.  Because the last
     // character is '>' for such typenames, we can't use getTokenRange, since
     // the immediately following character might be another '>', and '>>' is a
     // token, so the range would be too long.

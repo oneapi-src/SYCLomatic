@@ -144,7 +144,7 @@ static void getCompileInfo(
         IncPath = IncPath.substr(Begin);
 
         if (!llvm::sys::fs::exists(IncPath)) {
-          // Skip including path that not exists.
+          // Skip including path that does not exist.
           continue;
         }
 
@@ -217,8 +217,8 @@ static void getCompileInfo(
     }
     if (!IsObjSpecified) {
       // For the case that "-o" is not specified in the compile command, the
-      // default obj file is generated in the directory where the compile comand
-      // runs
+      // default obj file is generated in the directory where the compile
+      // command runs.
       Orig2ObjMap[FileName] =
           Directory + "/" + getCustomBaseName(FileName) + ".o";
     }
@@ -368,7 +368,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
     OS << buildString("OBJS := ", AllObjs, "\n\n");
 
   if (Tool.isInputfileSpecified() || TargetName == EmptyTarget) {
-    // For the case that target name is not availabe or input file(s) only
+    // For the case that target name is not available or input file(s) only
     // specified in command line, only compile command(s) generated in Makefile.
     OS << buildString("all: $(OBJS)\n\n");
     TargetIdx = 0;

@@ -56,7 +56,7 @@ void initVars(const CallExpr *CE, const VarDecl *VD, const BinaryOperator *BO,
     // *); Func_t ptr2cufftExec = &cufftExecZ2D; We need the "cufftHandle" in
     // the typedef be migrated, so here just return. And the SkipGeneration of
     // the FFTDescriptorTypeInfo whose SourceLocation ID is 0 will be set.
-    // Otherwise, an assert will be hitten.
+    // Otherwise, an assert will be hit.
     if (QT->getAs<TypedefType>())
       return;
 
@@ -145,7 +145,7 @@ void initVars(const CallExpr *CE, const VarDecl *VD, const BinaryOperator *BO,
                   SM.getDecomposedLoc(Locations.PrefixInsertLoc).second;
 }
 
-// Need be called in asttraversal and add the location info to FileInfo
+// Need be called in AST traversal and add the location info to FileInfo
 void replacementLocation(const LibraryMigrationLocations Locations,
                          const LibraryMigrationFlags Flags,
                          unsigned int &ReplaceOffset, unsigned int &ReplaceLen,
@@ -225,7 +225,7 @@ void replacementText(
 
   if (Flags.NeedUseLambda) {
     if (Flags.IsPrefixEmpty && Flags.IsSuffixEmpty) {
-      // If there is one API call in the migrted code, it is unnecessary to
+      // If there is one API call in the migrated code, it is unnecessary to
       // use a lambda expression
       Flags.NeedUseLambda = false;
     }

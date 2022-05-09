@@ -79,7 +79,7 @@ void initWarningIDs() {
     for (const auto &Str : WarningStrs) {
       auto Range = split(Str, '-');
       if (Range.size() == 1) {
-        // Invalid number foramt: 100e
+        // Invalid number format: 100e
         if (!containOnlyDigits(Str))
           reportInvalidWarningID(Str);
         size_t ID = std::stoi(Str);
@@ -91,10 +91,10 @@ void initWarningIDs() {
         // Invalid hyphen-separated range: -1000 or 1000-
         if (startsWith(Str, '-') || endsWith(Str, '-'))
           reportInvalidWarningID(Str);
-        // Invalid number foramt for begin: 100e
+        // Invalid number format for begin: 100e
         if (!containOnlyDigits(Range[0]))
           reportInvalidWarningID(Range[0]);
-        // Invalid number foramt for end: 100e
+        // Invalid number format for end: 100e
         if (!containOnlyDigits(Range[1]))
           reportInvalidWarningID(Range[1]);
         size_t RangeBegin = std::stoi(Range[0]);

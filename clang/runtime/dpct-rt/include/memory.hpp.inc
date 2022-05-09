@@ -33,7 +33,7 @@
 // DPCT_COMMENT
 // DPCT_COMMENT For header file including dependency, please use predefined feature name:
 // DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other headler files
+// DPCT_COMMENT   non_local_include_dependency: other header files
 
 #include "device.hpp"
 // DPCT_LABEL_BEGIN|non_local_include_dependency|
@@ -1662,7 +1662,7 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /// Get memory pointer of the memory object, which is virtual pointer when
-  /// usm is not used, and device pointer when usm is used .
+  /// usm is not used, and device pointer when usm is used.
   value_t *get_ptr() {
     return get_ptr(get_default_queue());
   }
@@ -1675,7 +1675,7 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /// Get memory pointer of the memory object, which is virtual pointer when
-  /// usm is not used, and device pointer when usm is used .
+  /// usm is not used, and device pointer when usm is used.
   value_t *get_ptr(cl::sycl::queue &q) {
     init(q);
     return _device_ptr;

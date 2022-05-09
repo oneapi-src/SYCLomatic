@@ -36,10 +36,10 @@ enum InsertPosition {
   IP_Right,
 };
 
-/// Extend Replacemnt to contain more meta info of Replament inserted by
+/// Extend Replacement to contain more meta info of Replacement inserted by
 /// AST Rule. Further Analysis Pass like Merge Pass can happen based
-/// on these meta info of Replament.
-///  eg. Replament happen at same position may be merged to avoid conflict.
+/// on this meta info of Replacement.
+///  eg. Replacement happen at same position may be merged to avoid conflict.
 class ExtReplacement : public tooling::Replacement {
 public:
   /// Creates an invalid (not applicable) replacement.
@@ -197,7 +197,7 @@ public:
   // the indent may be strange. So we do a second time format for these
   // replacement, using unified IndentWidth to do the format. Currently, the
   // replacement need second format are: kernel calls, warnings and some library
-  // APIs migraion.
+  // APIs migration.
   void setBlockLevelFormatFlag(bool Flag = true) {
     BlockLevelFormatFlag = Flag;
   }
@@ -269,9 +269,9 @@ class ReplaceStmt : public TextModification {
   bool IsCleanup = true;
 
   // Since getReplacement() is a const function and IsMacroRemoved is assigned
-  // in it, IsMacroRemoved is declaraed as "mutable".
+  // in it, IsMacroRemoved is declared as "mutable".
   // In getReplacement(), if the callexpr spelling is in macro define and it is
-  // outermost, this callexpr will be removed in macro definitation and this
+  // outermost, this callexpr will be removed in macro definition and this
   // flag will be true. Then in removeStmtWithCleanups() function, the call of
   // this macro will be removed also.
   mutable bool IsMacroRemoved = false;
@@ -500,7 +500,7 @@ public:
              const bool PrintDetail = true) const override;
 };
 
-/// Replace including diretives
+/// Replace including directives
 class ReplaceInclude : public TextModification {
   CharSourceRange Range;
   std::string T;

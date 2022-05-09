@@ -193,12 +193,12 @@ public:
   ExprAnalysis() : ExprAnalysis(nullptr) {}
   explicit ExprAnalysis(const Expr *Expression);
 
-  // Start ananlysis the expression passed in when inited.
+  // Start analysis of the expression passed in when init-ed.
   inline void analyze() {
     if (E)
       dispatch(E);
   }
-  // Start analyze the argument expression
+  // Analyze the argument expression
   inline void analyze(const Expr *Expression) {
     initExpression(Expression);
     analyze();
@@ -284,8 +284,8 @@ public:
       addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
     } else {
       // If the spelling location is inside the parent range, add string
-      // replacement. The String replacement will be add to ExtReplacement other
-      // where.
+      // replacement. The String replacement will be added to ExtReplacement
+      // other where.
       auto LocInfo = getOffsetAndLength(E);
       addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
     }
@@ -314,8 +314,8 @@ public:
       addReplacement(LocInfo.first, length, std::move(Text));
     } else {
       // If the spelling location is inside the parent range, add string
-      // replacement. The String replacement will be add to ExtReplacement other
-      // where.
+      // replacement. The String replacement will be added to ExtReplacement
+      // other where.
       auto LocInfo = getOffsetAndLength(E);
       addReplacement(LocInfo.first, length, std::move(Text));
     }
@@ -354,8 +354,8 @@ public:
       addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
     } else {
       // If the spelling location is inside the parent range, add string
-      // replacement. The String replacement will be add to ExtReplacement other
-      // where.
+      // replacement. The String replacement will be added to ExtReplacement
+      // other where.
       auto LocInfo = getOffsetAndLength(SR.getBegin(), SR.getEnd(), ParentExpr);
       addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
     }
@@ -479,8 +479,8 @@ protected:
       addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
     } else {
       // If the spelling location is inside the parent range, add string
-      // replacement. The String replacement will be add to ExtReplacement other
-      // where.
+      // replacement. The String replacement will be added to ExtReplacement
+      // other where.
       // addExtReplacement(std::make_shared<ExtReplacement>(
       //  SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
       auto LocInfo = getOffsetAndLength(Begin, End);
@@ -524,7 +524,7 @@ protected:
         addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
       } else {
         // If the spelling location is inside the parent range, add string
-        // replacement. The String replacement will be add to ExtReplacement
+        // replacement. The String replacement will be added to ExtReplacement
         // other where.
         // addExtReplacement(std::make_shared<ExtReplacement>(
         //  SM, SpellingLocInfo.first, SpellingLocInfo.second, Text, nullptr));
@@ -562,7 +562,7 @@ protected:
     ReplSet.addTemplateDependentReplacement(Offset, Length, TemplateIndex);
   }
 
-  // Analyze the expression, jump to corresponding anlysis function according
+  // Analyze the expression, jump to corresponding analysis function according
   // to its class
   // Precondition: Expression != nullptr
   virtual void dispatch(const Stmt *Expression);
@@ -640,7 +640,7 @@ protected:
   bool IsInMacroDefine = false;
 
 private:
-  // E is analyze target expression, while ExprString is the source text of E.
+  // E is analyzed target expression, while ExprString is the source text of E.
   // Replacements contains all the replacements happened in E.
   const Expr *E;
   SourceLocation ExprBeginLoc;
@@ -739,7 +739,7 @@ public:
 
 protected:
   // Ignore the constructor when it's argument expression, it is copy/move
-  // constructor and no migration for it. Start analyze its argument.
+  // constructor and no migration for it. Start analyzing its argument.
   // Replace total string when it is default argument expression.
   void initArgumentExpr(const Expr *Expression) {
     if (!Expression)

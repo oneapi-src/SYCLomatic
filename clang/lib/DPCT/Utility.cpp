@@ -437,7 +437,7 @@ bool isInSameScope(const Stmt *S, const ValueDecl *D) {
   return CS1 == CS2;
 }
 
-// Iteratively get the inner ValueDecl of a potetionally nested expression
+// Iteratively get the inner ValueDecl of a potentially nested expression
 // with implicit casts
 const DeclRefExpr *getInnerValueDecl(const Expr *Arg) {
   auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts());
@@ -1472,7 +1472,7 @@ bool isOuterMostMacro(const Stmt *E) {
   std::shared_ptr<DynTypedNode> P =
       std::make_shared<DynTypedNode>(DynTypedNode::create(*E));
   // Find a parent stmt whose preprocessing result is different from
-  // ExpandedExpr Since some parent is not writable.(is not shown in the
+  // ExpandedExpr Since some parent is not writable. (is not shown in the
   // preprocessing result), a while loop is required to find the first writable
   // ancestor.
   do {
@@ -1521,7 +1521,7 @@ bool isInsideFunctionLikeMacro(const SourceLocation BeginLoc,
   // inside a function-like macro.
   // E.g. MACRO_A(MACRO_B(x,y),z) where E is the PP
   // result of MACRO_B and Parent is the PP result of MACRO_A,
-  // SM.getExpansionLoc(E) is at the begining of MACRO_A, same as
+  // SM.getExpansionLoc(E) is at the beginning of MACRO_A, same as
   // SM.getExpansionLoc(Parent), in the source code. E is not outer-most.
   if (Parent->getSourceRange().getBegin().isValid() &&
       Parent->getSourceRange().getBegin().isMacroID()) {
@@ -1538,7 +1538,7 @@ bool isInsideFunctionLikeMacro(const SourceLocation BeginLoc,
     }
   }
 
-  // Another case which should to return true is
+  // Another case which should return true is
   // #define MacroA(x) = x
   // When MacroA is used for default arguments in function definition
   // like foo(int x MacroA(0)) and the ASTMatcher matches the "0" in the
@@ -2017,11 +2017,11 @@ bool isPredefinedStreamHandle(const Expr *E) {
   return false;
 }
 
-// Get the range of an Expr in the largest(the outermost) macro definition
+// Get the range of an Expr in the largest (the outermost) macro definition
 // e.g.
-// line 1:#define MACRO_A 3
-// line 2:#define MACRO_B 2 + MACRO_A
-// line 3:MACRO_B
+// line 1: #define MACRO_A 3
+// line 2: #define MACRO_B 2 + MACRO_A
+// line 3: MACRO_B
 // The result of PP: 2 + 3
 // The search path of Beginloc "2": line 2 --> line 3
 // Since line 3 is not MacroID, stops at line 2.
@@ -2532,7 +2532,7 @@ SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
   }
 
   // If the begin/end are not in the same macro arg, no precise range available.
-  // Using PreBegin/PreEnd because they contains the info of the last func-like
+  // Using PreBegin/PreEnd because they contain the info of the last func-like
   // macro.
   if (!isLocInSameMacroArg(PreBegin, PreEnd)) {
     return SourceRange(SM.getSpellingLoc(Begin), SM.getSpellingLoc(Begin));
@@ -2645,13 +2645,13 @@ bool isPartOfMacroDef(SourceLocation BeginLoc, SourceLocation EndLoc) {
   return false;
 }
 
-// This function will construct some union-find sets when tranverse the
-// call-graph of device/global funtions.
+// This function will construct some union-find sets when traverse the
+// call-graph of device/global functions.
 // E.g.,
 // g1->d1->d2
 // g2->d3->d2
 //
-// This function will be called for each gloabl function.
+// This function will be called for each global function.
 // 1st, visit g1, check its child d1, d1 is not visited, so set d1's parent ptr
 // value to g1's head (current is g1 itself).
 // Now the set becomes to:
@@ -2736,9 +2736,9 @@ void constructUnionFindSetRecursively(
 
 // To find if device variable \pExpr has __share__ attribute,
 // if it has, HasSharedAttr is set true.
-// if \pExpr is in a if/while/do while/for statement
+// if \pExpr is in an if/while/do while/for statement
 // \pNeedReport is set true.
-// To handle six kind of cases:
+// To handle six kinds of cases:
 // case1: extern __shared__ uint32_t share_array[];
 //        atomicAdd(&share_array[0], 1);
 // case2: extern __shared__ uint32_t share_array[];
@@ -2892,7 +2892,7 @@ void checkDREIsPrivate(const DeclRefExpr *DRE, LocalVarAddrSpaceEnum &Result) {
     return;
 
   if (!VD->getType()->isReferenceType() && !VD->getType()->isPointerType()) {
-    // If the type is neither a referecnce nor a pointer, treat it as a local
+    // If the type is neither a reference nor a pointer, treat it as a local
     // variable, its address space is private.
     Result = LocalVarAddrSpaceEnum::AS_IsPrivate;
     return;
@@ -2973,7 +2973,7 @@ void checkDREIsPrivate(const DeclRefExpr *DRE, LocalVarAddrSpaceEnum &Result) {
 // This function will check the address space of the input argument "Expr"
 // Step1: find all DeclRefExpr in the "Expr"
 // Step2: get each DeclRefExpr's address space
-// Step3: merge the resutls
+// Step3: merge the results
 void checkIsPrivateVar(const Expr *Expr, LocalVarAddrSpaceEnum &Result) {
   Result = LocalVarAddrSpaceEnum::AS_CannotDeduce;
   bool HasCallExpr = false;
@@ -3004,7 +3004,7 @@ void checkIsPrivateVar(const Expr *Expr, LocalVarAddrSpaceEnum &Result) {
 /// 3. { ...
 ///      Val;
 ///      ...}
-/// The varibale is unmodified in above cases
+/// The variable is unmodified in above cases
 /// \param [in] DRE Input DeclRefExpr
 /// \returns If variable not modified, return false
 bool isModifiedRef(const clang::DeclRefExpr *DRE) {
@@ -3141,8 +3141,8 @@ void findAssignments(const clang::DeclaratorDecl *HandleDecl,
 /// Find the flow control ancestor node for \p S
 /// If \p RangeLimit is not nullptr, find flow control node in the sub-tree of
 /// \p RangeLimit
-/// If \p RangeLimit is nullptr, find flow control node in all ancestor of \p S
-/// Retrun nullptr if no flow control found in the range.
+/// If \p RangeLimit is nullptr, find flow control node in all ancestors of
+/// \p S Return nullptr if no flow control found in the range.
 /// Otherwise it will return the flow control node.
 const clang::Stmt *
 getAncestorFlowControl(const clang::Stmt *S,
@@ -3349,9 +3349,9 @@ bool analyzeMemcpyOrder(
   // Find DREs in the scope, if the DRE's declaration is not a local variable,
   // insert the declaration into VD set.
   // do {
-  //   1.Add the declarations of DREs in the DRE set into VD set.
-  //   2.Find all DREs in this scope related to the declarations in VD set.
-  //   3.Add the DRE which is related to the DRE in step2 into DRE set.
+  //   1. Add the declarations of DREs in the DRE set into VD set.
+  //   2. Find all DREs in this scope related to the declarations in VD set.
+  //   3. Add the DRE which is related to the DRE in step2 into DRE set.
   // } while (DRE set is changed or VD set is changed);
   std::set<const clang::DeclRefExpr *> DRESet;
   std::set<const clang::DeclRefExpr *> ExcludeDRESet;

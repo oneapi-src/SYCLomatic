@@ -312,7 +312,7 @@ inline void rk_impl(cl::sycl::queue &q, oneapi::mkl::uplo uplo,
   if ((is_hermitian && trans == oneapi::mkl::transpose::trans) ||
       (!is_hermitian && !std::is_floating_point_v<Ty> && trans == oneapi::mkl::transpose::conjtrans)) {
     // In this case, OPB need be a conjugate operation,
-    // but only notrans, conjtrans and trans are avaliable.
+    // but only notrans, conjtrans and trans are available.
     // So we need do a conjtrans operation first, then do a trans operation.
     trans_B = oneapi::mkl::transpose::trans;
     auto data_a = get_memory(reinterpret_cast<const Ty *>(a));

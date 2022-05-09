@@ -449,7 +449,7 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   std::string CtorClassName =
       Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
   if (CtorClassName.find("thrust::") == 0) {
-    // Distinguish CXXTemporaryObjectExpr from other copy ctor before migrate
+    // Distinguish CXXTemporaryObjectExpr from other copy ctor before migrating
     // the ctor. Ex. foo(thrust::minus<int>());
     auto CXXTemporaryObjectExprMatcher = clang::ast_matchers::findAll(
         clang::ast_matchers::cxxTemporaryObjectExpr().bind("CTOE"));
@@ -667,7 +667,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
           FCIMMR[LocStr] = ResultStr;
 
           // When migrating thrust API with usmnone and raw-ptr,
-          // the CallExpr will be rewriten into an if-else stmt,
+          // the CallExpr will be rewritten into an if-else stmt,
           // DPCT needs to remove the following semicolon.
           std::string EndBracket =
               "}" + std::string(
@@ -739,7 +739,7 @@ void ExprAnalysis::analyzeExpr(const ReturnStmt *RS) {
 }
 
 void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
-  // TODO: Need to handle capture([=] in lambda) if required in the future
+  // TODO: Need to handle capture ([=] in lambda) if required in the future
   for (const auto &Param : LE->getCallOperator()->parameters()) {
     analyzeType(Param->getTypeSourceInfo()->getTypeLoc(), LE);
   }

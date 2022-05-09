@@ -738,8 +738,8 @@ void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
   NeedBraces = true;
   auto &Context = dpct::DpctGlobalInfo::getContext();
   // if parent is CompoundStmt, then find if it has more than 1 children.
-  // else if parent is ExprWithCleanups, then do futher check.
-  // else it must be case like:  if/for/while(1) kernel-call, pair of
+  // else if parent is ExprWithCleanups, then do further check.
+  // else it must be case like:  if/for/while() kernel-call, pair of
   // braces are needed.
   auto Parents = Context.getParents(*KernelCall);
   while (Parents.size() == 1) {
@@ -802,7 +802,7 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
     } else if (getFilePath() != VI->getFilePath() &&
                !isIncludedFile(getFilePath(), VI->getFilePath())) {
       // Global variable definition and global variable reference are not in the
-      // same file, and are not a share varible, insert extern variable
+      // same file, and are not a share variable, insert extern variable
       // declaration.
       SubmitStmtsList.ExternList.emplace_back(VI->getExternGlobalVarDecl());
     }
@@ -1516,7 +1516,7 @@ void deduceTemplateArgumentFromTemplateSpecialization(
     if (auto CTSD = dyn_cast<ClassTemplateSpecializationDecl>(
             ARG_TYPE_CAST(RecordType)->getDecl())) {
       if (compareTemplateName(CTSD->getName().data(), ParmTST->getTemplateName())) {
-		// If the name of 2 template classes are different
+		// If the names of 2 template classes are different
 		// DPCT should stop the deduction.
         return;
       }
@@ -2294,7 +2294,7 @@ void DeviceFunctionDeclInModule::buildWrapperInfo(const FunctionDecl *FD) {
   }
 
   FuncName = FD->getNameAsString();
-  // FD has relative large range, which is likely to be straddle,
+  // FD has relatively large range, which is likely to be straddle,
   // getDefinitionRange may not work as good as getExpansionRange
   auto EndLoc =
       SM.getSpellingLoc(SM.getExpansionRange(FD->getEndLoc()).getEnd());
@@ -2567,7 +2567,7 @@ void DeviceFunctionDecl::buildReplaceLocInfo(const FunctionTypeLoc &FTL,
   }
   FormatInformation.IsFirstArg = (NonDefaultParamNum == 0);
 
-  // Skiping #ifdef #endif pair
+  // Skipping #ifdef #endif pair
   Token TokOfHash;
   if (!Lexer::getRawToken(InsertLocation, TokOfHash, SM, LO, true)) {
     auto ItIf = DpctGlobalInfo::getEndifLocationOfIfdef().find(
@@ -3237,8 +3237,8 @@ void TimeStubTypeInfo::buildInfo(std::string FilePath, unsigned int Offset,
 
 void HostRandomEngineTypeInfo::buildInfo(std::string FilePath,
                                          unsigned int Offset) {
-  // The warning of unsupported engine type is emitted in the genreator creation
-  // API migration rule. So do not emit undeduced type warning again.
+  // The warning of unsupported engine type is emitted in the generator
+  // creation API migration rule. So do not emit undeduced type warning again.
   if (IsUnsupportEngine)
     return;
 
@@ -3523,9 +3523,9 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   unsigned Index = 0;
   char Method = MatchedStr[RegexPrefix.length()];
   MatchedStr.substr(RegexPrefix.length() + 1).consumeInteger(10, Index);
-  // D: deivce, used for pretty code
+  // D: device, used for pretty code
   // Q: queue, used for pretty code
-  // R: range dim, used for built-in variables(threadIdx.x,...) migration
+  // R: range dim, used for built-in variables (threadIdx.x,...) migration
   // G: range dim, used for cg::thread_block migration
   // C: range dim, used for cub block migration
   // F: free queries function migration, such as this_nd_item, this_group,

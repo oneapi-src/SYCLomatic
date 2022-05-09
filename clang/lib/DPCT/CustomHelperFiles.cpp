@@ -388,7 +388,7 @@ void generateHelperFunctions() {
     return Res;
   };
 
-  // dpct.hpp is always exsit, so request its non_local_include_dependency
+  // dpct.hpp is always exist, so request its non_local_include_dependency
   // feature
   requestFeature(dpct::HelperFeatureEnum::Dpct_non_local_include_dependency,
                  "");
@@ -541,7 +541,7 @@ void generateHelperFunctions() {
   for (const auto &Item : HelperNameContentMap) {
     if (Item.first.second == "local_include_dependency") {
       // local_include_dependency for dpct and dpl_utils is inserted in step3
-      // local_include_dependency for others are inserted in
+      // local_include_dependency for others is inserted in
       // getHelperFileContent()
       continue;
     } else if (Item.first.second == "non_local_include_dependency") {
@@ -606,7 +606,7 @@ void generateHelperFunctions() {
     std::string IDDStr;
 
     // There is an extra function replaceEndOfLine() to convert "\n" to
-    // platform speicific EOL for "#include ..." statement. Generally speaking,
+    // platform specific EOL for "#include ..." statement. Generally speaking,
     // for new added "#include ..." statement, developer should use "\n" instead
     // of getNL().
 #define ADD_INCLUDE_DIRECTIVE_FOR_DPL(FILENAME)                                \

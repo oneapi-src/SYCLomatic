@@ -33,7 +33,7 @@ namespace dpct {
 
 class ASTTraversalManager;
 
-/// Migraiton rules at the pre-processing stages, e.g. macro rewriting and
+/// Migration rules at the pre-processing stages, e.g. macro rewriting and
 /// including directives rewriting.
 class IncludesCallbacks : public PPCallbacks {
   TransformSetTy &TransformSet;
@@ -393,7 +393,7 @@ protected:
                                    std::string FuncName, const CallExpr *CE) {
     if (Flags.NeedUseLambda) {
       if (Strings.PrefixInsertStr.empty() && Strings.SuffixInsertStr.empty()) {
-        // If there is one API call in the migrted code, it is unnecessary to
+        // If there is one API call in the migrated code, it is unnecessary to
         // use a lambda expression
         Flags.NeedUseLambda = false;
       }
@@ -506,11 +506,11 @@ protected:
 template <typename T> const char NamedMigrationRule<T>::ID(0);
 
 /// As follow define the migration rules which target to migration source
-/// lanuage features to DPC++. The rules inherit from NamedMigrationRule
+/// language features to DPC++. The rules inherit from NamedMigrationRule
 /// TODO: implement similar rules for each source language.
 ///
 
-/// Migration rule for iteration space builtin variables (threadIdx, etc).
+/// Migration rule for iteration space built-in variables (threadIdx, etc).
 class IterationSpaceBuiltinRule
     : public NamedMigrationRule<IterationSpaceBuiltinRule> {
 public:
@@ -708,7 +708,7 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-/// Migration rule for removing of error hanlding if-stmt
+/// Migration rule for removing of error handling if-stmt
 class ErrorHandlingIfStmtRule
     : public NamedMigrationRule<ErrorHandlingIfStmtRule> {
 public:
@@ -1343,9 +1343,9 @@ private:
   void findThreadSyncLocation(const Stmt *Node);
   const clang::Stmt *getRedundantParenExpr(const CallExpr *Call);
   bool isEventElapsedTimeFollowed(const CallExpr *Expr);
-  // Since the state of a rule is shared between multiple matches, it iss
+  // Since the state of a rule is shared between multiple matches, it is
   // necessary to clear the previous migration status.
-  // The call is supposed to be called whenever a migrtion on time measurement
+  // The call is supposed to be called whenever a migration on time measurement
   // is triggered.
   void reset() {
     RecordBegin = nullptr;
@@ -1375,11 +1375,11 @@ private:
   std::vector<std::pair<std::string, const CallExpr *>> Queues2Wait;
   bool DefaultQueueAdded = false;
 
-  // To check whether kernel calll is in loop stmt between RecordBeginLoc and
+  // To check whether kernel call is in loop stmt between RecordBeginLoc and
   // RecordEndLoc
   bool IsKernelInLoopStmt = false;
 
-  // To check whether kernel calll needs wait between RecordBeginLoc and
+  // To check whether kernel call needs wait between RecordBeginLoc and
   // RecordEndLoc
   bool IsKernelSync = false;
 
@@ -1432,10 +1432,10 @@ public:
 // ...
 // free(kernelEvent);
 // ...
-// Then, the contructor of the object sycl::event will not be called to
-// initilize this memory alloced.
+// Then, the contractor of the object sycl::event will not be called to
+// initialize this memory allocated.
 //
-// So GlibcMemoryAPIRule is used to migrate malloc/free to C++ new/delele
+// So GlibcMemoryAPIRule is used to migrate malloc/free to C++ new/delete
 // instead in the following:
 // ...
 // sycl::event *kernelEvent = new sycl::event[n_streams];
@@ -1481,7 +1481,7 @@ private:
 ///   - SYCL memory buffers are typed. Using a "char" type is definitely a
 ///   hack.
 ///     Using better type information requires some kind of global analysis and
-///     heuristics, as well as a mechnism for user hint (like "treat all
+///     heuristics, as well as a mechanism for user hint (like "treat all
 ///     buffers as float-typed")'
 ///   - interplay with streams need to be designed.
 ///   - transformation rules are currently unordered, which create potential
@@ -1767,7 +1767,7 @@ public:
   static const std::map<std::string, std::string> AttributesNamesMap;
 };
 
-/// RecognizeAPINameRule to give comments for the api not in the record table
+/// RecognizeAPINameRule to give comments for the API not in the record table
 class RecognizeAPINameRule : public NamedMigrationRule<RecognizeAPINameRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -1798,7 +1798,7 @@ public:
 
 /// Texture migration rule
 class TextureRule : public NamedMigrationRule<TextureRule> {
-  // Get the binary operator if E is lhs of an assign experssion.
+  // Get the binary operator if E is lhs of an assign expression.
   const Expr *getAssignedBO(const Expr *E, ASTContext &Context);
   const Expr *getParentAsAssignedBO(const Expr *E, ASTContext &Context);
   bool removeExtraMemberAccess(const MemberExpr *ME);

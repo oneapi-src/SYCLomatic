@@ -23,8 +23,8 @@
 namespace clang {
 namespace dpct {
 
-/// Set the prec and domain in the FFTDescriptorTypeInfo of the declaration of
-/// \p DescIdx
+/// Set the precision and domain in the FFTDescriptorTypeInfo of the
+/// declaration of \p DescIdx
 void FFTFunctionCallBuilder::addDescriptorTypeInfo(
     std::string PrecAndDomainStr) {
   auto &SM = DpctGlobalInfo::getSourceManager();
@@ -41,7 +41,7 @@ void FFTFunctionCallBuilder::addDescriptorTypeInfo(
           HandleVar->getTypeSourceInfo()->getTypeLoc().getBeginLoc(),
           HandleVar->getTypeSourceInfo()->getTypeLoc().getEndLoc())
           .getBegin();
-  // WA for concatinated macro token
+  // WA for concatenated macro token
   if (SM.isWrittenInScratchSpace(SM.getSpellingLoc(
           HandleVar->getTypeSourceInfo()->getTypeLoc().getBeginLoc()))) {
     TypeBeginLoc = SM.getExpansionLoc(
@@ -1161,11 +1161,11 @@ void FFTExecAPIInfo::buildInfo() {
                   InsertOffsets);
 }
 
-/// This function will check the statemates before \p ExecCall.
+/// This function will check the statements before \p ExecCall.
 /// If there is no flow control statements between previous cufftSetStream()
-/// call and current cufftExec() call, this funcion will return true and
+/// call and current cufftExec() call, this function will return true and
 /// \p StreamStr will be set as the value in cufftSetStream().
-/// Else, this funcion will return false.
+/// Else, this function will return false.
 bool isPreviousStmtRelatedSetStream(const CallExpr *ExecCall, int Index,
                                     std::string &StreamStr) {
   auto &SM = DpctGlobalInfo::getSourceManager();

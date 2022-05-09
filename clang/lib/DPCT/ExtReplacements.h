@@ -95,7 +95,7 @@ private:
 
   /// Do merge for Short replacement and Longer replacement.
   ///
-  /// Return the merged replacemtent.
+  /// Return the merged replacement.
   /// Prerequisite: Shorter replacement's length should be not more than Longer
   /// replacement's.
   std::shared_ptr<ExtReplacement>

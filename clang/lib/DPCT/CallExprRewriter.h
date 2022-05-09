@@ -117,7 +117,8 @@ public:
   ArgumentAnalysis Analyzer;
   virtual ~CallExprRewriter() {}
 
-  /// This function should be overwrited to implement call expression rewriting.
+  /// This function should be overwritten to implement call expression
+  /// rewriting.
   virtual Optional<std::string> rewrite() = 0;
   // Emits a warning/error/note and/or comment depending on MsgID. For details
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
@@ -345,7 +346,7 @@ protected:
     RewriteArgList.emplace_back(std::forward<Args...>(Arguments)...);
   }
 
-  // Build string which is used to replace original expession.
+  // Build string which is used to replace original expression.
   Optional<std::string> buildRewriteString();
 
   void setTargetCalleeName(const std::string &Str) { TargetCalleeName = Str; }
@@ -454,7 +455,7 @@ protected:
   void setLHS(std::string L) { LHS = L; }
   void setRHS(std::string R) { RHS = R; }
 
-  // Build string which is used to replace original expession.
+  // Build string which is used to replace original expression.
   inline Optional<std::string> buildRewriteString() {
     if (LHS == "")
       return buildString(BinaryOperator::getOpcodeStr(Op), RHS);

@@ -195,7 +195,7 @@ ENTRY_RENAMED_DOUBLE("__fma_rn", MapNames::getClNamespace(false, true) + "fma")
 ENTRY_RENAMED_DOUBLE("__fma_ru", MapNames::getClNamespace(false, true) + "fma")
 ENTRY_RENAMED_DOUBLE("__fma_rz", MapNames::getClNamespace(false, true) + "fma")
 
-//  Half Precision Conversion And Data Movement
+// Half Precision Conversion And Data Movement
 ENTRY_RENAMED("__half_as_short", MapNames::getClNamespace(false, true) + "bit_cast")
 ENTRY_RENAMED("__half_as_ushort", MapNames::getClNamespace(false, true) + "bit_cast")
 ENTRY_RENAMED("__short_as_half", MapNames::getClNamespace(false, true) + "bit_cast")
@@ -366,7 +366,7 @@ ENTRY_OPERATOR("__ddiv_ru", BinaryOperatorKind::BO_Div)
 ENTRY_OPERATOR("__ddiv_rz", BinaryOperatorKind::BO_Div)
 
 
-//  Half Precision Conversion And Data Movement
+// Half Precision Conversion And Data Movement
 ENTRY_TYPECAST("__float22half2_rn")
 ENTRY_TYPECAST("__float2half")
 ENTRY_TYPECAST("__float2half2_rn")

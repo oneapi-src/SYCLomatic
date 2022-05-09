@@ -647,7 +647,7 @@ public:
 std::string getCudaInstallPath(int argc, const char **argv) {
   std::vector<const char *> Argv;
   Argv.reserve(argc);
-  // do not copy "--" so the driver sees a possible sdk include path option
+  // do not copy "--" so the driver sees a possible SDK include path option
   std::copy_if(argv, argv + argc, back_inserter(Argv),
                [](const char *s) { return std::strcmp(s, "--"); });
   // Remove the redundant prefix "--extra-arg=" so that
@@ -1005,7 +1005,7 @@ int runDPCT(int argc, const char **argv) {
   llvm::InitLLVM X(argc, argv);
 #endif
 
-  // Set hangle for libclangTooling to proccess message for dpct
+  // Set hangle for libclangTooling to process message for dpct
   clang::tooling::SetPrintHandle(PrintMsg);
   clang::tooling::SetFileSetInCompiationDB(
       dpct::DpctGlobalInfo::getFileSetInCompiationDB());
@@ -1426,7 +1426,7 @@ int runDPCT(int argc, const char **argv) {
         ShowStatus(MigrationErrorFileParseError);
         return MigrationErrorFileParseError;
       } else {
-        // When RunResult equals to 2, it means no error but some files are
+        // When RunResult equals to 2, it means no error, but some files are
         // skipped due to missing compile commands.
         // And clang::tooling::ReFactoryTool will emit error message.
         return MigrationSKIPForMissingCompileCommand;

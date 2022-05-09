@@ -60,7 +60,7 @@ inline T atomic_fetch_add(T *addr, T operand,
 /// Atomically subtract the value operand from the value at the addr and assign
 /// the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
-/// \param operand The value to substract from the value at \p addr
+/// \param operand The value to subtract from the value at \p addr
 /// \param memoryOrder The memory ordering used.
 /// \returns The value at the \p addr before the call.
 template <typename T,
@@ -77,7 +77,7 @@ inline T atomic_fetch_sub(T *addr, T operand) {
 /// Atomically subtract the value operand from the value at the addr and assign
 /// the result to the value at addr.
 /// \param [in, out] addr The pointer to the data.
-/// \param operand The value to substract from the value at \p addr
+/// \param operand The value to subtract from the value at \p addr
 /// \param memoryOrder The memory ordering used.
 /// \returns The value at the \p addr before the call.
 template <typename T, cl::sycl::access::address_space addressSpace =

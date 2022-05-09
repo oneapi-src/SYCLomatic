@@ -30,7 +30,7 @@
 *
 *
 ****************************************************************************/
-// This is tempalte for API/lib in the source language.
+// This is template for API/lib in the source language.
 // Please copy this template file when enabling more source language and API.
 //
 // ENTRY(exampleAPI, false, 0 ,P4, "not support yet.")

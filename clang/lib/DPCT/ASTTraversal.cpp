@@ -285,8 +285,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
       }
     }
 
-    // If PredefinedStreamName is used with concatinated macro token,
-    // detect the previous macro expansion and
+    // If PredefinedStreamName is used with concatenated macro token,
+    // detect the previous macro expansion
     std::string MacroNameStr;
     if (auto Identifier = MacroNameTok.getIdentifierInfo())
       MacroNameStr = Identifier->getName().str();
@@ -294,7 +294,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
         MapNames::PredefinedStreamName.end()) {
       // Currently, only support examples like,
       // #define CONCATE(name) cuda##name
-      // which contains 3 tokens and the 2nd token is ##.
+      // which contains 3 tokens, and the 2nd token is ##.
       // To support more complicated cases like,
       // #define CONCATE(name1, name2) cuda##name1##name2
       // will need to calculate the complete replaced string of the previous
@@ -353,10 +353,9 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   // macro, if the expansion locations are same and the content is empty, then
   // it means this __constant__ variable is used in host.
   // In this case, we need add "host_constant" flag in the replacement of
-  // removing
-  // "__constant__"; and record the offset of the begining of this line for
-  // finding this replacement in MemVarRule. Since the varible name is difficult
-  // to get here, the warning is also emitted in MemVarRule.
+  // removing "__constant__"; and record the offset of the beginning of this
+  // line for finding this replacement in MemVarRule. Since the variable name
+  // is difficult to get here, the warning is also emitted in MemVarRule.
   if (MacroNameTok.getKind() == tok::identifier &&
       MacroNameTok.getIdentifierInfo() &&
       MacroNameTok.getIdentifierInfo()->getName() == "__annotate__" &&
@@ -396,7 +395,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   // For the un-specialized struct, there is no AST for the extern function
   // declaration in its member function body in Windows. e.g: template <typename
   // T> struct foo
-  //{
+  // {
   //    __device__ T *getPointer()
   //    {
   //        extern __device__ void error(void); // No AST for this line
@@ -801,7 +800,7 @@ void IncludesCallbacks::InclusionDirective(
   bool IsIncludingFileInInRoot =
       !isDirectory(IncludingFile) && isChildOrSamePath(InRoot, Directory.str());
 
-  // If the header file included can not be found, just return.
+  // If the header file included cannot be found, just return.
   if (!File) {
     return;
   }
@@ -1224,7 +1223,7 @@ void IterationSpaceBuiltinRule::runRule(
     //}
     // On Linux platform, .x(MemberExpr, __cuda_builtin_threadIdx_t) in
     // static_cast statement is not available in AST, while 'threadIdx' is
-    // available,  so dpct migrates it by 'threadIdx' matcher to identify the
+    // available, so dpct migrates it by 'threadIdx' matcher to identify the
     // SourceLocation of 'threadIdx', then look forward 2 tokens to check
     // whether .x appears.
     auto FD = getAssistNodeAsType<FunctionDecl>(Result, "funcDecl");
@@ -1447,8 +1446,8 @@ REGISTER_RULE(IterationSpaceBuiltinRule)
 
 void ErrorHandlingIfStmtRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
-      // Match if-statement that has no else and has a condition of either an
-      // operator!= or a variable of type enum.
+      // Match if-statement that does not have else and has a condition of
+      // either an operator!= or a variable of type enum.
       ifStmt(unless(hasElse(anything())),
              hasCondition(
                  anyOf(binaryOperator(hasOperatorName("!=")).bind("op!="),
@@ -1458,7 +1457,7 @@ void ErrorHandlingIfStmtRule::registerMatcher(MatchFinder &MF) {
           .bind("errIf"),
       this);
   MF.addMatcher(
-      // Match if-statement that has no else and has a condition of
+      // Match if-statement that does not have else and has a condition of
       // operator==.
       ifStmt(unless(hasElse(anything())),
              hasCondition(binaryOperator(hasOperatorName("==")).bind("op==")))
@@ -1620,7 +1619,7 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
         anyOf(unless(hasAttr(attr::CUDADevice)), hasAttr(attr::CUDAHost)));
   };
 
-  // Match host api call in the condition session of flow control
+  // Match host API call in the condition session of flow control
   MF.addMatcher(
       functionDecl(
           allOf(
@@ -1642,7 +1641,7 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
           .bind("inConditionHostAPI"),
       this);
 
-  // Match host api call whose return value used inside flow control or return
+  // Match host API call whose return value used inside flow control or return
   MF.addMatcher(
       functionDecl(
           allOf(unless(hasDescendant(functionDecl())),
@@ -1669,7 +1668,7 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
           .bind("inReturnHostAPI"),
       this);
 
-  // Match host api call whose return value captured and used
+  // Match host API call whose return value captured and used
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(isMigratedHostAPI())),
                      anyOf(hasAncestor(binaryOperator(
@@ -1686,8 +1685,8 @@ void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
 }
 
 void ErrorHandlingHostAPIRule::runRule(const MatchFinder::MatchResult &Result) {
-  // if host api call in the condition session of flow control
-  // or host api call whose return value used inside flow control or return
+  // if host API call in the condition session of flow control
+  // or host API call whose return value used inside flow control or return
   // then add try catch.
   auto FD = getNodeAsType<FunctionDecl>(Result, "inConditionHostAPI");
   if (!FD) {
@@ -1701,7 +1700,7 @@ void ErrorHandlingHostAPIRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   }
 
-  // Check if the return value is saved in an variable,
+  // Check if the return value is saved in a variable,
   // if yes, get the varDecl as the target varDecl TD.
   FD = getAssistNodeAsType<FunctionDecl>(Result, "savedHostAPI");
   if (!FD)
@@ -1900,7 +1899,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     TypeName = PointeeType.getAsString();
   }
 
-  // add exceptions for atomic tranlastion:
+  // add exceptions for atomic translation:
   // eg. source code: atomicMin(double), don't migrate it, its user code.
   //     also: atomic_fetch_min<double> is not available in compute++.
   if ((TypeName == "double" && AtomicFuncName != "atomicAdd") ||
@@ -1935,7 +1934,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     bool NeedReport = false;
     getShareAttrRecursive(CE->getArg(0), HasSharedAttr, NeedReport);
 
-    // Inline the code for ingeter types
+    // Inline the code for integer types
     static std::unordered_map<std::string, std::string> AtomicMap = {
         {"atomicAdd", "fetch_add"}, {"atomicSub", "fetch_sub"},
         {"atomicAnd", "fetch_and"}, {"atomicOr", "fetch_or"},
@@ -2107,7 +2106,7 @@ void ThrustFunctionRule::thrustFuncMigration(
 
   auto &SM = DpctGlobalInfo::getSourceManager();
 
-  // handle the a regular call expr
+  // handle the regular call expr
   std::string ThrustFuncName;
   if (ULExpr) {
     std::string Namespace;
@@ -2293,8 +2292,8 @@ void ThrustFunctionRule::thrustFuncMigration(
     return;
   } else if (ThrustFuncName == "sort") {
     // Rule of thrust::sort migration
-    //#. thrust api
-    //   dpcpp api
+    //#. thrust API
+    //   dpcpp API
     // 1. thurst::sort(policy, h_vec.begin(), h_vec.end())
     //   std::sort(oneapi::dpl::exection::par_unseq, h_vec.begin(), h_vec.end())
     //
@@ -2490,7 +2489,7 @@ void ThrustCtorExprRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(ThrustCtorExprRule)
 
-// Rule for types replacements in var declarations and field declarations
+// Rule for types migration in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       typeLoc(
@@ -3596,7 +3595,7 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
 
       if (Begin.isMacroID()) {
         // Macro concatenate --> use immediateExpansion
-        // Make Begin be the begin of "MACROARG##1"
+        // Make Begin being the begin of "MACROARG##1"
         if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin))) {
           Begin = SM->getImmediateExpansionRange(Begin).getBegin();
         }
@@ -3783,8 +3782,8 @@ void VectorTypeOperatorRule::MigrateOverloadedOperatorDecl(
   if (!FD)
     return;
 
-  // Helper function to get the scope of function declartion
-  // Eg:
+  // Helper function to get the scope of function declaration
+  // Eg.:
   //
   //    void test();
   //   ^            ^
@@ -3908,7 +3907,7 @@ void VectorTypeCtorRule::registerMatcher(MatchFinder &MF) {
         new internal::HasNameMatcher(MakeVectorFuncNames));
   };
 
-  // migrate utility for vector type: eg: make_int2
+  // migrate utility for vector type: eg. make_int2
   MF.addMatcher(
       callExpr(callee(functionDecl(makeVectorFunc()))).bind("VecUtilFunc"),
       this);
@@ -4016,7 +4015,7 @@ void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
         getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc()).getBegin();
     SourceManager *SM = Result.SourceManager;
 
-    // WA for concatinated macro token
+    // WA for concatenated macro token
     if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(TL->getBeginLoc()))) {
       BeginLoc = SM->getExpansionLoc(TL->getBeginLoc());
     }
@@ -4278,7 +4277,7 @@ void DevicePropVarRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(DevicePropVarRule)
 
-// Rule for enums constants.
+// Rule for Enums constants.
 void EnumConstantRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
@@ -5903,7 +5902,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
   SourceLocation FuncNameBegin(CE->getBeginLoc());
   SourceLocation FuncCallEnd(CE->getEndLoc());
-  // There are some macroes like "#define API API_v2"
+  // There are some macros like "#define API API_v2"
   // so the function names we match should have the
   // suffix "_v2".
   bool IsMacroArg = SM->isMacroArgExpansion(CE->getBeginLoc()) &&
@@ -6020,7 +6019,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       BufferType = "std::complex<double>";
     }
 
-    // initialize the replacement of each arguments
+    // initialize the replacement of each argument
     int ArgNum = CE->getNumArgs();
     for (int i = 0; i < ArgNum; ++i) {
       ExprAnalysis EA;
@@ -6273,7 +6272,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     }
 
-    // initialize the replacement of each arguments
+    // initialize the replacement of each argument
     int ArgNum = CE->getNumArgs();
     for (int i = 0; i < ArgNum; ++i) {
       ExprAnalysis EA;
@@ -6287,7 +6286,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     // dimension and data) to C, then remove all arguments relative to C in the
     // original call.
     // In order to call the memcpy API, if an expression will be used more than
-    // twice and have side effect, it need be redecalred. In this API migration,
+    // twice and have side effect, it need be redeclared. In this API migration,
     // the ptrC, m, n and ldc may need redeclaration.
 
     // declare a temp variable for ptrC if it has side effect
@@ -6335,7 +6334,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         MapNames::getDpctNamespace() + "device_to_device, *" +
         CallExprArguReplVec[0] + ");" + getNL() + IndentStr;
 
-    // update the replacement of four enmu arguments
+    // update the replacement of four enum arguments
     auto processEnumArgus = [&](const Expr *E, unsigned int Index,
                                 std::string &Argu) {
       const CStyleCastExpr *CSCE = nullptr;
@@ -6352,7 +6351,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     processEnumArgus(CE->getArg(4), 4, CallExprArguReplVec[4]);
 
     // update the replacement of two buffers
-    // the second buffer is constrcuted with PtrCName
+    // the second buffer is constructed with PtrCName
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       requestFeature(HelperFeatureEnum::Memory_get_buffer_T, CE);
       std::string BufferDecl;
@@ -6450,14 +6449,14 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     std::vector<int> ArgsIndex{0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 12, 13, 14, 16};
-    // initialize the replacement of each arguments
+    // initialize the replacement of each argument
     for (auto I : ArgsIndex) {
       ExprAnalysis EA;
       EA.analyze(CE->getArg(I));
       CallExprArguReplVec.push_back(EA.getReplacedString());
     }
 
-    // update the replacement of four enmu arguments
+    // update the replacement of four enum arguments
     BLASEnumInfo EnumInfo = BLASEnumInfo({1, 2}, -1, -1, -1);
     auto processEnumArgus = [&](const Expr *E, unsigned int Index,
                                 std::string &Argu) {
@@ -6656,7 +6655,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
     if (NeedUseLambda) {
       if (PrefixInsertStr.empty() && SuffixInsertStr.empty()) {
-        // If there is one API call in the migrted code, it is unnecessary to
+        // If there is one API call in the migrated code, it is unnecessary to
         // use a lambda expression
         NeedUseLambda = false;
       }
@@ -6801,7 +6800,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
     if (NeedUseLambda) {
       if (PrefixInsertStr.empty() && SuffixInsertStr.empty()) {
-        // If there is one API call in the migrted code, it is unnecessary to
+        // If there is one API call in the migrated code, it is unnecessary to
         // use a lambda expression
         NeedUseLambda = false;
       }
@@ -7254,7 +7253,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
     if (NeedUseLambda) {
       if (PrefixInsertStr == "") {
-        // If there is one API call in the migrted code, it is unnecessary to
+        // If there is one API call in the migrated code, it is unnecessary to
         // use a lambda expression
         NeedUseLambda = false;
       }
@@ -7985,7 +7984,7 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       //                 buffer/variable and copy the value back
       //                 after the function call.
       // Some API migration requires MoveFrom and MoveTo.
-      // e.g. move arg#1 to arg#0
+      // e.g., move arg#1 to arg#0
       // MyFunction(float* a, float* b);
       // ---> MyFunction(float* b, float*a);
       if (isReplIndex(i, ReplInfo.BufferIndexInfo, IndexTemp)) {
@@ -8444,7 +8443,7 @@ std::string FunctionCallRule::findValueofAttrVar(const Expr *AttrArg,
     }
   }
   // if there is a non-recognized reference closer than recognized reference,
-  // then we need to clear current attributename
+  // then we need to clear current attribute name
   if (RecognizedMinDistance > MinDistance)
     AttributeName.clear();
   return AttributeName;
@@ -10470,7 +10469,7 @@ template <typename T> const T *GlibcMemoryAPIRule::getAncestor(const Stmt *CE) {
 // Take a case for example:
 // "cudaEvent_t *kernelEvent = (cudaEvent_t *) malloc(*sizeof(cudaEvent_t));".
 // ReplStmt stands for "(cudaEvent_t *) malloc(*sizeof(cudaEvent_t))",
-// DD is variable "kernelEvent", and  CE is CallExpr "malloc".
+// DD is variable "kernelEvent", and CE is CallExpr "malloc".
 void GlibcMemoryAPIRule::processMalloc(const Stmt *ReplStmt,
                                        const DeclaratorDecl *DD,
                                        const CallExpr *CE) {
@@ -10645,7 +10644,7 @@ void MemVarRule::previousHCurrentD(const VarDecl *VD, tooling::Replacement &R) {
   // 1. emit DPCT1055 warning
   // 2. add a new variable for host
   // 3. insert dpct::constant_memory and add the info from that replacment into
-  //    current replacemrnt.
+  //    current replacement.
   // 4. remove the replacement of removing "__constant__". In yaml case, clang
   //    replacement merging mechanism will occur error due to overlapping.
   //    The reason of setting offset as 0 is to avoid doing merge.
@@ -10658,7 +10657,7 @@ void MemVarRule::previousHCurrentD(const VarDecl *VD, tooling::Replacement &R) {
   //        due to overlapping.
   //    4.2 About setting the offset equals to 0,
   //        if we keep the original offset, in clang's merging, a new merged
-  //        replacement will be saved and it will not contain the addational
+  //        replacement will be saved and it will not contain the additional
   //        info we added. So we need to avoid this merge.
   // 5. remove previous DPCT1056 warning (will be handled in
   // removeHostConstantWarning)
@@ -10930,7 +10929,7 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
         if (R.second->getConstantFlag() == dpct::ConstantFlagType::Device &&
             R.second->getConstantOffset() == TM->getConstantOffset()) {
           // using flag and the offset of __constant__ to link previous
-          // exection previous is device, current is host:
+          // execution of previous is device, current is host:
           previousDCurrentH(VD, *(R.second));
           dpct::DpctGlobalInfo::removeVarNameInGlobalVarNameSet(VarName);
           TM->setIgnoreTM(true);
@@ -10954,8 +10953,8 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
           if (R.getConstantFlag() == dpct::ConstantFlagType::Device &&
               R.getConstantOffset() == TM->getConstantOffset()) {
             // using flag and the offset of __constant__ to link here and
-            // R(reomving __constant__) from previous exection previous is
-            // device, current is host:
+            // R(reomving __constant__) from previous execution, previous is
+            // device, current is host.
             previousDCurrentH(VD, R);
             dpct::DpctGlobalInfo::removeVarNameInGlobalVarNameSet(VarName);
             TM->setIgnoreTM(true);
@@ -11103,8 +11102,8 @@ std::string MemoryMigrationRule::getTypeStrRemovedAddrOf(const Expr *E,
 }
 
 /// Get the assigned part of the malloc function call.
-/// \param [in] E The expression need to be analyzed.
-/// \param [in] Arg0Str The original string of the first argument of the malloc.
+/// \param [in] E The expression needs to be analyzed.
+/// \param [in] Arg0Str The original string of the first arg of the malloc.
 /// e.g.:
 /// origin code:
 ///   int2 const * d_data;
@@ -11244,7 +11243,7 @@ bool MemoryMigrationRule::canUseTemplateStyleMigration(
   }
 
   std::string TypeStr = DpctGlobalInfo::getReplacedTypeName(DerefQT);
-  // ReplType will be used as the template arguement in memory API.
+  // ReplType will be used as the template argument in memory API.
   ReplType = getFinalCastTypeNameStr(TypeStr);
 
   auto BO = dyn_cast<BinaryOperator>(SizeExpr);
@@ -11453,7 +11452,7 @@ void MemoryMigrationRule::mallocMigration(
 
   if (Name == "cudaMalloc" || Name == "cuMemAlloc_v2") {
     if (USMLevel == UsmLevel::UL_Restricted) {
-      // Leverage CallExprRewritter to migrate the USM verison
+      // Leverage CallExprRewritter to migrate the USM version
       ExprAnalysis EA(C);
       auto LocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
       auto Info = std::make_shared<PriorityReplInfo>();
@@ -11497,7 +11496,7 @@ void MemoryMigrationRule::mallocMigration(
     EA.applyAllSubExprRepl();
   } else if (Name == "cudaMallocManaged" || Name == "cuMemAllocManaged") {
     if (USMLevel == UsmLevel::UL_Restricted) {
-      // Leverage CallExprRewriter to migrate the USM verison
+      // Leverage CallExprRewriter to migrate the USM version
       ExprAnalysis EA(C);
       auto LocInfo = DpctGlobalInfo::getLocInfo(C->getBeginLoc());
       auto Info = std::make_shared<PriorityReplInfo>();
@@ -12594,8 +12593,8 @@ MemoryMigrationRule::MemoryMigrationRule() {
 }
 
 /// Convert a raw pointer argument and a pitch argument to a dpct::pitched_data
-/// constructor. If \p ExcludeSizeArg is true, the argument represent the pitch
-/// size will not be included in the constructor.
+/// constructor. If \p ExcludeSizeArg is true, the argument represents the
+/// pitch size will not be included in the constructor.
 /// e.g. (...data, pitch, ...) => (...dpct::pitched_data(data, pitch, pitch, 1),
 /// ...).
 /// If \p ExcludeSizeArg is true, e.g. (...data, ..., pitch, ...) =>
@@ -13688,8 +13687,8 @@ RecognizeAPINameRule::getFunctionSignature(const FunctionDecl *Func,
 }
 
 void RecognizeAPINameRule::processMemberFuncCall(const CXXMemberCallExpr *MC) {
-  // 1. assemble api name
-  // 2. emit warning for unmigrated api
+  // 1. assemble API name
+  // 2. emit warning for unmigrated API
   QualType ObjType = MC->getObjectType().getCanonicalType();
   auto MD = MC->getMethodDecl();
   if (isTypeInRoot(ObjType.getTypePtr()) || !MD) {
@@ -14511,7 +14510,7 @@ const Expr *TextureRule::getParentAsAssignedBO(const Expr *E,
   return nullptr;
 }
 
-// Return the binary operator if E is the lhs of an assign experssion, otherwise
+// Return the binary operator if E is the lhs of an assign expression, otherwise
 // nullptr.
 const Expr *TextureRule::getAssignedBO(const Expr *E, ASTContext &Context) {
   if (dyn_cast<MemberExpr>(E)) {
@@ -15151,7 +15150,7 @@ void CXXNewExprRule::registerMatcher(MatchFinder &MF) {
 void CXXNewExprRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto CNE = getAssistNodeAsType<CXXNewExpr>(Result, "newExpr")) {
-    // E.g. new cudaEvent_t *()
+    // E.g., new cudaEvent_t *()
     Token Tok;
     auto LOpts = Result.Context->getLangOpts();
     SourceManager *SM = Result.SourceManager;
@@ -15172,7 +15171,7 @@ void CXXNewExprRule::runRule(
       }
     }
 
-    // E.g. #define NEW_STREAM new cudaStream_t
+    // E.g., #define NEW_STREAM new cudaStream_t
     //      stream = NEW_STREAM;
     auto TypeName = CNE->getAllocatedType().getAsString();
     auto ReplName = std::string(
@@ -16136,15 +16135,15 @@ REGISTER_RULE(DriverContextAPIRule)
 // macro __CUDA_ARCH__ and the second-round parse dpct undefines macro
 // __CUDA_ARCH__ to generate replacement for different code blocks.
 // Implementation steps as follow:
-//   1.Match all host device function's declaration and caller.
-//   2.Check if macro CUDA_ARCH used to differentiate different
+//   1. Match all host device function's declaration and caller.
+//   2. Check if macro CUDA_ARCH used to differentiate different
 //   code blocks and called in host side, then record relative information.
-//   3.Record host device function call expression.
-//   4.All these information will be used in post-process stage and generate final replacements.
+//   3. Record host device function call expression.
+//   4. All these information will be used in post-process stage and generate final replacements.
 // Condition to trigger the rule:
-//   1.The function has host and device attribute.
-//   2.The function uses macro CUDA_ARCH used to differentiate different code blocks.
-//   3.The function has been called in host side.
+//   1. The function has host and device attribute.
+//   2. The function uses macro CUDA_ARCH used to differentiate different code blocks.
+//   3. The function has been called in host side.
 // Example code:
 // __host__ __device__ int foo() {
 //    #ifdef __CUDA_ARCH__
@@ -16417,10 +16416,10 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
   auto TypeLocMatchResult =
       ast_matchers::match(MyMatcher, *MatcherScope, Context);
   bool DeleteFlag = true;
-  // Currently, typedef decl can be deteled in following cases
+  // Currently, typedef decl can be deleted in following cases
   for (auto &Element : TypeLocMatchResult) {
     if (auto TL = Element.getNodeAs<TypeLoc>("typeLoc")) {
-      // 1.Used in TempStorage variable declaration
+      // 1. Used in TempStorage variable declaration
       if (auto AncestorVD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
         auto VarType = AncestorVD->getType().getCanonicalType();
         std::string VarTypeStr =
@@ -16431,7 +16430,7 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
           DeleteFlag = false;
           break;
         }
-      } // 2.Used in temporary class constructor
+      } // 2. Used in temporary class constructor
       else if (auto AncestorMTE =
                    DpctGlobalInfo::findAncestor<MaterializeTemporaryExpr>(TL)) {
         auto MC = DpctGlobalInfo::findAncestor<CXXMemberCallExpr>(AncestorMTE);
@@ -16447,7 +16446,7 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
             break;
           }
         }
-      } // 3.Used in self typedef decl
+      } // 3. Used in self typedef decl
       else if (auto AncestorTD =
                    DpctGlobalInfo::findAncestor<TypedefDecl>(TL)) {
         if (AncestorTD != TD) {
@@ -16605,7 +16604,7 @@ void CubRule::removeVarDecl(const VarDecl *VD) {
   }
 }
 
-/// Pesudo code:
+/// Pseudo code:
 /// loop_1 {
 ///   ...
 ///   tempstorage = nullptr;
@@ -16735,7 +16734,7 @@ bool CubRule::isRedundantCallExpr(const CallExpr *CE) {
   return false;
 }
 
-// Analyze temp_storage and temp_storage_size argument to determing
+// Analyze temp_storage and temp_storage_size argument to determine
 // whether these two argument and related decl or cudaMalloc can be
 // removed.
 // If the d_temp_storage and temp_storage_bytes only used in

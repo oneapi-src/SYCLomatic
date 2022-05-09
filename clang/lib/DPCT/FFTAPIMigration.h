@@ -75,11 +75,11 @@ struct FFTExecAPIInfo;
 struct FFTHandleInfo {
   FFTDirectionType Direction = FFTDirectionType::Uninitialized;
   FFTPlacementType Placement = FFTPlacementType::Uninitialized;
-  // Below 5 members do not cover the case that one handle is resued
+  // Below 5 members do not cover the case that one handle is reused
   // in different plan APIs. If the related plan API is "many", the flag
   // will be true. The checking of C2C/Z2Z will be done in Exec API
   // migration.
-  // Since handle resuing is not covered, these 5 members are just rewrited if
+  // Since handle reusing is not covered, these 5 members are just rewrite if
   // they are updated multi times.
   bool MayNeedReset = false;
   std::string InputDistance;
@@ -269,7 +269,7 @@ struct FFTDescriptorTypeInfo {
   std::string PrecAndDom;
   bool IsValid = true;
   // E.g., if cufftExec API is declared as a function pointer, then all
-  // declaration will be rewrite to a lambda, the paramter type can be deduced
+  // declaration will be rewrite to a lambda, the parameter type can be deduced
   // from function name. So this type replacement and warning can be skipped.
   bool SkipGeneration = false;
 };

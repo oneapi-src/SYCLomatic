@@ -34,7 +34,7 @@
 *    Comment:      extra comment on the migration.
 *
 ****************************************************************************/
-// thrust api
+// thrust API
 ENTRY(thrust::abs, thrust::abs, false, NO_FLAG, P4, "comment")
 ENTRY(thrust::acos, thrust::acos, false, NO_FLAG, P4, "comment")
 ENTRY(thrust::acosh, thrust::acosh, false, NO_FLAG, P4, "comment")

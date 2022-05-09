@@ -81,7 +81,7 @@ static bool formatFile(StringRef FileName,
 
   // Here need new SourceManager. Because SourceManager caches the file buffer,
   // if we use a common SourceManager, the second time format will still act on
-  // the fisrt input (the original output of dpct without format), then the
+  // the first input (the original output of dpct without format), then the
   // result is wrong.
   clang::LangOptions DefaultLangOptions;
   IntrusiveRefCntPtr<clang::DiagnosticOptions> DiagOpts =
@@ -113,7 +113,7 @@ static bool formatFile(StringRef FileName,
   return true;
 }
 
-// TODO: it's global variable,  refine in future.
+// TODO: it's global variable, refine in future
 std::map<std::string, bool> IncludeFileMap;
 
 void rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
@@ -243,7 +243,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
       }
     }
 
-    // Skip hiddlen folder or file whose name begins with ".".
+    // Skip hidden folder or file whose name begins with ".".
     if (IsHidden) {
       continue;
     }
@@ -252,7 +252,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
       SmallString<512> OutputFile = llvm::StringRef(FilePath);
       rewriteDir(OutputFile, InRoot, OutRoot);
       if (IncludeFileMap.find(FilePath) != IncludeFileMap.end()) {
-        // Skip the files processed by the the first loop of
+        // Skip the files processed by the first loop of
         // calling proccessFiles() in Tooling.cpp::ClangTool::run().
         continue;
       } else {
@@ -264,7 +264,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
           FilesNotProcessed.push_back(FilePath);
         } else {
           // Collect the rest files which are not in the compilation database or
-          // included by main source file in the complation databcase.
+          // included by main source file in the compilation database.
           FilesNotInCompilationDB.push_back(FilePath);
         }
       }
@@ -357,7 +357,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   extern bool ProcessAllFlag;
   SmallString<512> OutPath;
 
-  // The variable defined here is assist to merge history records.
+  // The variable defined here assists to merge history records.
   std::unordered_map<std::string /*FileName*/,
                      bool /*false:Not processed in current migration*/>
       MainSrcFileMap;
@@ -401,7 +401,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         FileRangesMap;
     std::unordered_map<std::string, std::vector<clang::tooling::Range>>
         FileBlockLevelFormatRangesMap;
-    // There are matching rules for *.cpp files ,*.cu files, also header files
+    // There are matching rules for *.cpp files, *.cu files, also header files
     // included, migrate these files into *.dp.cpp files.
     auto GroupResult = groupReplacementsByFile(
         Rewrite.getSourceMgr().getFileManager(), Tool.getReplacements());
@@ -450,10 +450,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         return status;
       }
 
-      // For headfile, as it can be included from differnt file, it need
+      // For header file, as it can be included from different file, it needs
       // merge the migration triggered by each including.
-      // For mainfile, as it can be compiled or preprocessed with different
-      // macro defined, it aslo need merge the migration triggered by each
+      // For main file, as it can be compiled or preprocessed with different
+      // macro defined, it also needs merge the migration triggered by each
       // command.
       SourceProcessType FileType = GetSourceFileType(Entry.first);
       if (FileType & (SPT_CppHeader | SPT_CudaHeader)) {
@@ -566,7 +566,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
             FormatResult = formatFile(Iter.first, Iter.second, FormatChanges) &&
                            FormatResult;
 
-            // If range is "all", one file only need to be formated once.
+            // If range is "all", one file only need to be formatted once.
             if (DpctGlobalInfo::getFormatRange() ==
                 clang::format::FormatRange::all)
               continue;
@@ -602,7 +602,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
     CHECKPOINT_FORMATTING_CODE_EXIT();
   }
 
-  // The necessary header files which have no no replacements will be copied to
+  // The necessary header files which have no replacements will be copied to
   // "-out-root" directory.
   for (const auto &Entry : IncludeFileMap) {
     SmallString<512> FilePath = StringRef(Entry.first);
@@ -612,8 +612,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       if (IsExcluded) {
         continue;
       }
-      // Awalys migrate *.cuh files to *.dp.hpp files,
-      // Awalys migrate *.cu files to *.dp.cpp files.
+      // Always migrate *.cuh files to *.dp.hpp files,
+      // Always migrate *.cu files to *.dp.cpp files.
       SourceProcessType FileType = GetSourceFileType(FilePath.str());
       if (FileType & SPT_CudaHeader) {
         path::replace_extension(FilePath, "dp.hpp");

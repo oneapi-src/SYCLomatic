@@ -260,7 +260,7 @@ void processOptions(std::string &Output) {
   for (const auto &Entry : OptionsMap) {
     std::string Option = Entry.first;
     if (OptionsIgnored.find(Option) != OptionsIgnored.end()) {
-      // Ingore option in OptionsIgnored
+      // Ignore option in OptionsIgnored
       continue;
     }
 
@@ -622,7 +622,7 @@ void processCompileNode(const std::string &&CompileNodeName,
     collectCompileNodeInfo(CompileNodeName, CompileNode);
   } else if (Line.find(WholeCompileNode) != std::string::npos &&
              Line.find(WholeCompileNodeEnd) == std::string::npos) {
-    // To handle node in multible lines like
+    // To handle node in multiple lines like
     // <CudaCompile Include="kernel.cu">
     //  <Include
     //  Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">path/to/header;%(Include)</Include>

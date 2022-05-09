@@ -126,9 +126,9 @@ static LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo) {
 }
 
 // Here set both exception handler and signal handler.
-// The reason use exception handler: in windows there is no function have
+// The reason uses exception handler: in windows there is no function have
 //    siglongjmp/sigprocmask.
-// The reason use singal hander: keep same output msg in both win and linux.
+// The reason uses signal hander: keep same output msg in both win and linux.
 static void SetHandler() {
   ::AddVectoredExceptionHandler(1, ExceptionHandler);
   SetSignalHandler(FaultHandler);

@@ -184,7 +184,7 @@ bool isPointerOperationSafe(const clang::Expr *Pointer) {
     return false;
   }
 
-  // Specical case for atomicAdd.
+  // Special case for atomicAdd.
   // If the Pointer is the first arg of atomicAdd function, return true.
   if (auto CE = dyn_cast<clang::CallExpr>(P)) {
     if (auto FD = CE->getDirectCallee()) {
@@ -227,7 +227,7 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::canSetLocalFenceSpace(
   }
 
   // analyze this FD
-  // Traverse AST,  analysis the context info of kernel calling sycthreads()
+  // Traverse AST, analysis the context info of kernel calling sycthreads()
   //   1. Find each syncthreads call's predecessor parts and successor parts.
   //   2. When meet __device__ function is called, if the device function is not
   //      in allow list, exit.

@@ -89,7 +89,7 @@ VersionCmpResult compareToolVersion(std::string VersionInYaml) {
 ///
 /// return 0, pass
 /// return -1, some option's value is different
-/// return -2, cannot found some option from yaml, pasring error
+/// return -2, cannot found some option from yaml, parsing error
 int checkDpctOptionSet(
     const std::map<std::string, clang::tooling::OptionInfo> &CurrentOpts,
     const std::map<std::string, clang::tooling::OptionInfo> &PreviousOpts) {
@@ -313,7 +313,7 @@ bool printOptions(
 }
 
 
-// return ture: dpct do migration continuely
+// return true: dpct do migration continually
 // return false: dpct should exit
 bool canContinueMigration(std::string &Msg) {
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();

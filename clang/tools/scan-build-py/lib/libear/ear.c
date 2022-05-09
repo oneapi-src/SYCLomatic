@@ -700,7 +700,7 @@ int find_create_object(const char *str) {
   char *p = strstr(str, "-o");
   if (p && is_option_end(p + 2)) {
     p += 2;
-    // skip emtpy
+    // skip empty
     while ((*p != '\0') && isblank(*p)) {
       p++;
     }
@@ -723,7 +723,7 @@ int find_create_object(const char *str) {
   return -1;
 }
 
-// check if 1st field of str contins =
+// check if 1st field of str contains =
 int is_contain_eq(char *working) {
   while (*working != '\0') {
     if (isblank(*working))
@@ -734,7 +734,7 @@ int is_contain_eq(char *working) {
   }
   return 0;
 }
-// skip emtpy space.
+// skip empty space.
 char *skip_empty(char *working) {
   if (working == NULL)
     return NULL;
@@ -991,7 +991,7 @@ int parse_input_file(char *command, int *c_found, char *inputfile) {
 }
 
 // dump the command and options to the trace file which
-// will be parsed by scprits in scan-build-py.
+// will be parsed by scripts in scan-build-py.
 // '<option>' | 'file' are expected to write out to the fd.
 // while for 'file ' and 'file )' need to remove the space and ).
 void dump_US_field(const char *str, FILE *fd, int US, int has_parenthesis) {
@@ -1021,7 +1021,7 @@ void dump_US_field(const char *str, FILE *fd, int US, int has_parenthesis) {
         }
       }
       fprintf(fd, "%s%c", tmpbuf, US);
-      // skip the emtpy
+      // skip the empty
       while (isblank(*working)) {
         working++;
       }
@@ -1123,8 +1123,8 @@ const char *find_intercept_compiler(const char *str, int compiler_idx) {
   return ret;
 }
 
-// Repalce the command compiler with path to command "intercept-stub" with path.
-// src It could be:"/path/to/clang++",
+// Replace the command compiler with path to command "intercept-stub" with path.
+// src could be:"/path/to/clang++",
 //                 "/path/to/clang++ -Xcompiler ...",
 //                 "CPATH=...;/path/to/clang++",
 //                 "cd /path/to/dir && /path/to/clang++".
@@ -1169,7 +1169,7 @@ char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
          "lib/libear/intercept-stub");
 
   // To malloc required size of physical memory it really needs may fail in
-  // some case, so malloc 4K bytes(one physical page) instead.
+  // some case, so malloc 4K bytes (one physical page) instead.
   char *buffer = (char *)malloc(4096);
   if (buffer == NULL) {
     perror("bear: malloc memory fail.");
@@ -1268,11 +1268,11 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   int flag_object = 0;
 
   // flag_optval is use for case: for options "-o xxx.o", "-o" and "xxx.o" is in
-  // argv[i] and argv[i+1],  if "-o" is found in argv[i], then flag_optval
+  // argv[i] and argv[i+1], if "-o" is found in argv[i], then flag_optval
   // is set to show argv[i+1] contains the xxx.o
   int flag_optval = 0;
 
-  // value 1: means current command line is a compiler comand, and the fake obj
+  // value 1: means current command line is a compiler command, and the fake obj
   // file has been created, else ret is set to 0.
   int ret = 0;
 
@@ -1404,7 +1404,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   if (is_nvcc_or_ld == 1 && flag_object == 1) {
     ret = 1;
   } else if (is_nvcc_or_ld == 1) {
-    // object is not give by -o. Need figure out the default output for cmd "gcc
+    // object is not gaven by -o. Need figure out the default output for cmd "gcc
     // -c xx.c"
     char *tmp = malloc(4096);
     if (tmp == NULL) {
@@ -1537,7 +1537,7 @@ static char const **bear_update_environ(char const *envs[], char const *key,
         ('=' == (*it)[key_length]))
       break;
   }
-  // allocate a environment entry
+  // allocate an environment entry
   size_t const value_length = strlen(value);
   size_t const env_length = key_length + value_length + 2;
   char *env = malloc(env_length);

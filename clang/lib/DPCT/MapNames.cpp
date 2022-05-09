@@ -902,7 +902,7 @@ void MapNames::setExplicitNamespaceMap() {
        {std::vector<int>{8, 10}, std::vector<int>{7},
         std::vector<std::string>{"double", "double"}, std::vector<int>{3}, 2, 1,
         4, "oneapi::mkl::blas::column_major::trsm"}},
-      // Needn't declare bufferB ,but need copy the data ptrB points to
+      // Needn't declare bufferB, but need copy the data ptrB points to
       // where ptrC points.
       {"cublasStrmm_v2",
        {std::vector<int>{8, 12}, std::vector<int>{7},
@@ -1751,7 +1751,7 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
           std::vector<std::string>{"std::complex<double>", "double"},
           std::vector<int>{2}, 1, -1, -1,
           "oneapi::mkl::blas::column_major::her2k"}},
-        // Needn't declare bufferB ,but need copy the data ptrB points to
+        // Needn't declare bufferB, but need copy the data ptrB points to
         // where ptrC points.
         {"cublasCtrmm_v2",
          {std::vector<int>{8, 12}, std::vector<int>{7},

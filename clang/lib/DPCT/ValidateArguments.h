@@ -24,7 +24,7 @@
 #endif
 
 /// The enum that specifies the level of Unified Shared Memory, only
-/// two levels are supported currrently.
+/// two levels are supported currently.
 /// none:       uses helper functions from DPCT header files for memory
 ///             management migration
 /// restricted: uses API from DPC++ Explicit and Restricted Unified
@@ -88,10 +88,10 @@ bool checkReportArgs(ReportTypeEnum &RType, ReportFormatEnum &RFormat,
                      std::string &RFile, bool &ROnly, bool &GenReport,
                      std::string &DVerbose);
 
-/// Retrun value:
+/// Return value:
 ///  0: Path is valid
 ///  1: Path is empty, option SDK include path is not used
-/// -1: Path is invaild
+/// -1: Path is invalid
 int checkSDKPathOrIncludePath(const std::string &Path, std::string &RealPath);
 
 void validateCustomHelperFileNameArg(HelperFilesCustomizationLevel Level,

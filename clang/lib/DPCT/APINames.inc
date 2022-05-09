@@ -434,7 +434,7 @@ ENTRY(__hltu2, __hltu2, true, NO_FLAG, P4, "no direct mapping yet")
 ENTRY(__hne2, __hne2, true, NO_FLAG, P4, "Unsupported: Return types not compatible")
 ENTRY(__hneu2, __hneu2, true, NO_FLAG, P4, "no direct mapping yet")
 
-//  Half Precision Conversion And Data Movement
+// Half Precision Conversion And Data Movement
 ENTRY(__float22half2_rn, __float22half2_rn, true, NO_FLAG, P4, "Successful")
 ENTRY(__float2half, __float2half, true, NO_FLAG, P0, "Successful")
 ENTRY(__float2half2_rn, __float2half2_rn, true, NO_FLAG, P0, "Successful")
@@ -1445,7 +1445,7 @@ ENTRY(nvrtcGetTypeName, nvrtcGetTypeName, false, NO_FLAG, P4, "comment")
 // crt wrapper API
 ENTRY(mul24, mul24, true, NO_FLAG, P0, "Successful")
 
-//add the 8  missing ones
+//add the 8 missing ones
 ENTRY(cudaDeviceGetNvSciSyncAttributes, cudaDeviceGetNvSciSyncAttributes, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphExecHostNodeSetParams, cudaGraphExecHostNodeSetParams,false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphExecKernelNodeSetParams, cudaGraphExecKernelNodeSetParams, false, NO_FLAG, P4, "comment")

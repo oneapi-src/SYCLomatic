@@ -33,7 +33,7 @@
 // DPCT_COMMENT
 // DPCT_COMMENT For header file including dependency, please use predefined feature name:
 // DPCT_COMMENT   local_include_dependency: dpct helper files
-// DPCT_COMMENT   non_local_include_dependency: other headler files
+// DPCT_COMMENT   non_local_include_dependency: other header files
 
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
