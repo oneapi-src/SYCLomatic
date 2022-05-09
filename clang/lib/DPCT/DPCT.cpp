@@ -1005,7 +1005,7 @@ int runDPCT(int argc, const char **argv) {
   llvm::InitLLVM X(argc, argv);
 #endif
 
-  // Set hangle for libclangTooling to process message for dpct
+  // Set handle for libclangTooling to process message for dpct
   clang::tooling::SetPrintHandle(PrintMsg);
   clang::tooling::SetFileSetInCompiationDB(
       dpct::DpctGlobalInfo::getFileSetInCompiationDB());

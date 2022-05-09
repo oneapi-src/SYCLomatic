@@ -5482,7 +5482,7 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
     if (NeedUseLambda) {
       if (PrefixInsertStr.empty()) {
-        // If there is one API call in the migrted code, it is unnecessary to
+        // If there is one API call in the migrated code, it is unnecessary to
         // use a lambda expression
         NeedUseLambda = false;
       }
@@ -5701,7 +5701,7 @@ void DeviceRandomFunctionCallRule::runRule(
       if (Arg1Type != "curandStateMRG32k3a_t *" &&
           Arg1Type != "curandStatePhilox4_32_10_t *" &&
           Arg1Type != "curandStateXORWOW_t *") {
-        // Unsupport Sobol32 state and Sobol64 state
+        // Do not support Sobol32 state and Sobol64 state
         report(FuncNameBegin, Diagnostics::API_NOT_MIGRATED, false, FuncName);
         return;
       }
@@ -9824,7 +9824,7 @@ void EventAPICallRule::handleKernelCalls(const Stmt *Node,
 
   if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
     bool NeedWait = false;
-    // In usmnone mode, if cudaThreadSynchronize apears after kernel call,
+    // In usm none mode, if cudaThreadSynchronize apears after kernel call,
     // kernel wait is not needed.
     NeedWait = ThreadSyncLoc > KCallLoc;
 
@@ -10643,8 +10643,8 @@ void MemVarRule::processDeref(const Stmt *S, ASTContext &Context) {
 void MemVarRule::previousHCurrentD(const VarDecl *VD, tooling::Replacement &R) {
   // 1. emit DPCT1055 warning
   // 2. add a new variable for host
-  // 3. insert dpct::constant_memory and add the info from that replacment into
-  //    current replacement.
+  // 3. insert dpct::constant_memory and add the info from that replacement
+  //     into current replacement.
   // 4. remove the replacement of removing "__constant__". In yaml case, clang
   //    replacement merging mechanism will occur error due to overlapping.
   //    The reason of setting offset as 0 is to avoid doing merge.
@@ -10657,7 +10657,7 @@ void MemVarRule::previousHCurrentD(const VarDecl *VD, tooling::Replacement &R) {
   //        due to overlapping.
   //    4.2 About setting the offset equals to 0,
   //        if we keep the original offset, in clang's merging, a new merged
-  //        replacement will be saved and it will not contain the additional
+  //        replacement will be saved, and it will not contain the additional
   //        info we added. So we need to avoid this merge.
   // 5. remove previous DPCT1056 warning (will be handled in
   // removeHostConstantWarning)
@@ -10820,7 +10820,7 @@ bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
             R.second->getConstantOffset() == TM->getConstantOffset()) {
           // using flag and the offset of __constant__ to link
           // R(dcpt::constant_memery)  and R(reomving __constant__) from
-          // previous exection previous is host, current is device:
+          // previous execution, previous is host, current is device:
           previousHCurrentD(MemVar, *(R.second));
           dpct::DpctGlobalInfo::removeVarNameInGlobalVarNameSet(
               MemVar->getNameAsString());
@@ -10973,8 +10973,8 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
 
       // Code here means this is the first migration, only emit a warning
       // Add the constant offset in the replacement
-      // The constant offset will be used in previousHCurrentD to distingush
-      // uncecessary warnings.
+      // The constant offset will be used in previousHCurrentD to distinguish
+      // unnecessary warnings.
       if (report(VD->getBeginLoc(), Diagnostics::HOST_CONSTANT, false,
                  VD->getNameAsString())) {
         TransformSet->back()->setConstantOffset(TM->getConstantOffset());

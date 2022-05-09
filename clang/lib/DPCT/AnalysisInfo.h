@@ -1202,7 +1202,7 @@ public:
       // 1. Ensure option none is alone
       bool Check1 =
           (Namespace == ExplicitNamespace::EN_None && NamespaceVecSize == 2);
-      // 2. Ensuere option cl, sycl, sycl-math only enabled one
+      // 2. Ensure option cl, sycl, sycl-math only enabled one
       bool Check2 =
           ((Namespace == ExplicitNamespace::EN_CL ||
             Namespace == ExplicitNamespace::EN_SYCL ||
@@ -1563,7 +1563,7 @@ public:
       // func, we cannot merge set dim into the second loop. Because global func
       // is the first level function in the buildUnionFindSet(), if it is
       // visited from previous device func, there is no chance to propagate its
-      // correct dim value (there is no upper level func call to gloabl func and
+      // correct dim value (there is no upper level func call to global func and
       // then it will be skipped).
       for (auto &File : FileMap)
         File.second->setKernelCallDim();

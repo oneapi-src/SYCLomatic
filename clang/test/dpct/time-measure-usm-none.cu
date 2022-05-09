@@ -454,7 +454,7 @@ int foo_test_4()
     dim3 block (iblock);
     dim3 grid  (isize / iblock);
 
-    // creat events
+    // create events
 // CHECK:    sycl::event start, stop;
 // CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> start_ct1;
 // CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> stop_ct1;

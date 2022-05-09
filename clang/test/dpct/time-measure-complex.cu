@@ -61,7 +61,7 @@ int main(int argc, char **argv)
 
     float elapsed_time;
 
-    // set up max connectioin
+    // set up max connection
     char * iname = "CUDA_DEVICE_MAX_CONNECTIONS";
     setenv (iname, "32", 1);
     char *ivalue =  getenv (iname);

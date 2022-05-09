@@ -1404,7 +1404,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
   if (is_nvcc_or_ld == 1 && flag_object == 1) {
     ret = 1;
   } else if (is_nvcc_or_ld == 1) {
-    // object is not gaven by -o. Need figure out the default output for cmd "gcc
+    // object is not given by -o. Need figure out the default output for cmd "gcc
     // -c xx.c"
     char *tmp = malloc(4096);
     if (tmp == NULL) {

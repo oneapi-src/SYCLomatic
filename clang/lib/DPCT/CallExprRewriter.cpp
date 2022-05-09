@@ -430,7 +430,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
                 TypeName = BT0->getNameAsCString(PP);
               }
             } else {
-              // Convert signed types to unsigned types if the bitwidth of
+              // Convert signed types to unsigned types if the bit width of
               // the signed is equal or smaller than that of the unsigned;
               // otherwise, do not migrate them. Overflow is not considered.
               const BuiltinType *UnsignedType;
@@ -1494,7 +1494,7 @@ QualType DerefQualType(QualType QT) {
   return DerefQT;
 }
 
-// Get the replaced type of an function call argument
+// Get the replaced type of a function call argument
 // For example, foo(x) where x is an int2, this function will return sycl::int2
 std::function<std::string(const CallExpr *C)> getReplacedType(size_t Idx) {
   return [=](const CallExpr *C) -> std::string {
@@ -2377,7 +2377,7 @@ public:
 ///
 /// Macro CONDITIONAL_FACTORY_ENTRY(pred, first, second) is used for conditonal
 /// migration. \p pred is expr that can convert to std::function<bool(const
-/// CallExpr *)>. \p first and \p second is two candidates factory. If \p pred
+/// CallExpr *)>. \p first and \p second is two candidate factories. If \p pred
 /// result is true, \p first will be used to create rewrite, else \p second will
 /// be used.
 ///***************************************************************

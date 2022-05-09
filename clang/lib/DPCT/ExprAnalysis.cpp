@@ -1598,7 +1598,7 @@ ArgumentAnalysis::getLocInCallSpelling(const Expr *E) {
         BeginCandidate = SM.getSpellingLoc(
             SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
         if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
-          // Multi-Level funclike special process
+          // multi-Level funclike special process
           // e.g.
           // #define M1(x) call1(x)
           // #define M2(y) call2(y)

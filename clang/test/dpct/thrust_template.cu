@@ -22,7 +22,7 @@ struct greater_than_zero
 // Test description:
 // This test is to cover thrust functions in template function.
 // The direct callee of those thrust functions cannot be found when comparing the arg type.
-// So check argument number first to avoid accessing un-exsisting arg.
+// So check argument number first to avoid accessing un-existing arg.
 template <class T>
 void foo() {
   greater_than_zero pred;

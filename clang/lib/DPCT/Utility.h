@@ -293,7 +293,7 @@ const std::string &getFmtEndArg(void);
 const std::string &getFmtArgIndent(std::string &BaseIndent);
 
 /// Split a string into a vector of strings with a specific delimiter
-/// \param [in] Str The string to be splitted
+/// \param [in] Str The string to be split
 /// \param [in] Delim The delimiter
 std::vector<std::string> split(const std::string &Str, char Delim);
 

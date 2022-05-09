@@ -121,7 +121,7 @@ public:
   }
 };
 
-/// Store a expr source string which may need replaced and its replacements
+/// Store an expr source string which may need replaced and its replacements
 class StringReplacements {
 public:
   StringReplacements() : ShiftLength(0) {}
@@ -437,8 +437,8 @@ protected:
       addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
     } else {
       // If the spelling location is inside the parent range, add string
-      // replacement. The String replacement will be add to ExtReplacement other
-      // where.
+      // replacement. The String replacement will be added to ExtReplacement
+      // other where.
       auto LocInfo = getOffsetAndLength(SL);
       addReplacement(LocInfo.first, LocInfo.second, std::move(Text));
     }

@@ -161,7 +161,7 @@ void foo() {
   foo_kernel<<<GET_BLOCKS4(outputThreadCount, CUDA_NUM_THREADS), 2, 0>>>();
 
   // Test if SIGABRT.
-  // No check here because the generated code need further fine tune.
+  // No check here because the generated code needs further fine tune.
   #define MACRO_CALL(a, b) foo_kernel<<<a, b, 0>>>();
   MACRO_CALL(0,0)
 

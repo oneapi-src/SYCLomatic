@@ -406,7 +406,7 @@ template<class T1, class T2, size_t S> void implicit_host() {
 template<class T1, class T2>
 class MyClass{};
 
-// Make sure no assert when there are default template arg.
+// Make sure no assert when there is default template arg.
 // std::vector has a default arg class Allocator:
 // template<class T, class Allocator = std::allocator<T>> class vector;
 // When deducing std::vector<MyClass<T, T>, std::allocator<MyClass<T, T>>>
@@ -445,7 +445,7 @@ __global__ void foo7(){
   foo6<int>();
 }
 
-// Make sure no assert when there are alias template deduction
+// Make sure no assert when there is alias template deduction
 // using MakeMyClass3 = MyClass3<T, 5> will create an alias template
 // since MakeMyClass3 takes only 1 arg and MyClass3 takes 2 args,
 // DPCT needs to perform getAliasedType() before deduction.

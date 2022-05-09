@@ -1479,7 +1479,7 @@ private:
 ///     signature as close to original as possible, so return error codes when
 ///     original functions return them);
 ///   - SYCL memory buffers are typed. Using a "char" type is definitely a
-///   hack.
+///   tradeoff.
 ///     Using better type information requires some kind of global analysis and
 ///     heuristics, as well as a mechanism for user hint (like "treat all
 ///     buffers as float-typed")'

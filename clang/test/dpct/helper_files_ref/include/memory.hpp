@@ -273,7 +273,7 @@ static inline cl::sycl::event dpct_memset(cl::sycl::queue &q, void *dev_ptr,
 /// \param data Pointer to the device memory region.
 /// \param value Value to be set.
 /// \param size Memory region size.
-/// \returns An event list representing the memset operations..
+/// \returns An event list representing the memset operations.
 static inline std::vector<cl::sycl::event>
 dpct_memset(cl::sycl::queue &q, pitched_data data, int value,
             cl::sycl::range<3> size) {
@@ -695,7 +695,7 @@ template <typename T> static inline T *get_host_ptr(const void *ptr) {
 }
 
 /// Allocate memory block for 3D array on the device.
-/// \param size Size of of the memory block, in bytes.
+/// \param size Size of the memory block, in bytes.
 /// \param q Queue to execute the allocate task.
 /// \returns A pitched_data object which stores the memory info.
 static inline pitched_data
@@ -846,7 +846,7 @@ async_dpct_memcpy(void *to_ptr, size_t to_pitch, const void *from_ptr,
 
 /// Synchronously copies a subset of a 3D matrix specified by \p to to another
 /// 3D matrix specified by \p from. The from and to position info are specified
-/// by \p from_pos and \p to_pos The copied matrix size is specfied by \p size.
+/// by \p from_pos and \p to_pos The copied matrix size is specified by \p size.
 /// The value of \p direction is used to set the copy direction, it can be \a
 /// host_to_host, \a host_to_device, \a device_to_host, \a device_to_device or
 /// \a automatic. The function will return after the copy is completed.
@@ -870,7 +870,7 @@ static inline void dpct_memcpy(pitched_data to, cl::sycl::id<3> to_pos,
 
 /// Asynchronously copies a subset of a 3D matrix specified by \p to to another
 /// 3D matrix specified by \p from. The from and to position info are specified
-/// by \p from_pos and \p to_pos The copied matrix size is specfied by \p size.
+/// by \p from_pos and \p to_pos The copied matrix size is specified by \p size.
 /// The value of \p direction is used to set the copy direction, it can be \a
 /// host_to_host, \a host_to_device, \a device_to_host, \a device_to_device or
 /// \a automatic. The return of the function does NOT guarantee the copy is
@@ -1104,7 +1104,7 @@ public:
   void init() {
     init(dpct::get_default_queue());
   }
-  /// Allocate memory with specficed queue, and init memory if has initial value.
+  /// Allocate memory with specified queue, and init memory if has initial value.
   void init(cl::sycl::queue &q) {
     if (_device_ptr)
       return;

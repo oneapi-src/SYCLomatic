@@ -58,8 +58,8 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
 }
 
 /// Copy matrix data. The default leading dimension is column.
-/// \param [out] to_ptr A poniter points to the destination location.
-/// \param [in] from_ptr A poniter points to the source location.
+/// \param [out] to_ptr A pointer points to the destination location.
+/// \param [in] from_ptr A pointer points to the source location.
 /// \param [in] to_ld The leading dimension the destination matrix.
 /// \param [in] from_ld The leading dimension the source matrix.
 /// \param [in] rows The number of rows of the source matrix.

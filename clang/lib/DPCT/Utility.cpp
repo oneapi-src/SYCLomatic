@@ -894,7 +894,7 @@ void findUsedAsLvalue(const DeclRefExpr *Arg, const Stmt *Root,
       return;
     CurrentScope.pop_back();
   } else if (auto FS = dyn_cast<ForStmt>(Root)) {
-    // Initilization
+    // Initialization
     findUsedAsLvalue(Arg, FS->getInit(), Sentinal, CurrentScope, UsedInScope,
                      Done);
     if (Done)
@@ -1035,8 +1035,8 @@ std::vector<const Stmt *> getConditionExpr(DynTypedNode Node) {
 ///
 /// If the original CallExpr is in if, switch, return or the init part of for
 /// statement, and meet one of the following cases, then \p CanAvoidUsingLambda
-/// will be true and \p SL will be set as the begin location of the FlowControl
-/// statement:
+/// will be true and \p SL will be set as the begin location of the Flow
+/// Control statement:
 /// 1. The CallExpr is the statement;
 /// 2. The statement is a var decl using C init style and the CallExpr is the
 ///    init expression;
@@ -1849,7 +1849,7 @@ bool isAnIdentifierOrLiteral(const Expr *E) {
 }
 
 /// Check whether the \p E meets the conditions 1, 2 and 3
-/// 1. an sizeof operator
+/// 1. a sizeof operator
 /// 2. the operand is type
 /// 3. The type is same as \p TypeStr
 bool isSameSizeofTypeWithTypeStr(const Expr *E, const std::string &TypeStr) {

@@ -4,7 +4,7 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/types003/types003.dp.cpp
 
 
-// __half  and __half2 has differnt definition between SDK 8.0 and >=9.2.
+// __half  and __half2 has different definition between SDK 8.0 and >=9.2.
 // In 8.0, it is a typedef of an anonymous struct, after 9.2 they are the names of struct.
 
 #include "cuda_fp16.h"

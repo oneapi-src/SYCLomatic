@@ -11,7 +11,7 @@
 //  This file target to process replacement based operation:
 //   -Save replacement to external (disk file)
 //   -Load replacement from external (disk file)
-//   -Merage replacement in current migration with previous migration.
+//   -Merge replacement in current migration with previous migration.
 
 #include "AnalysisInfo.h"
 #include "Utility.h"

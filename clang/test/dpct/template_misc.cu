@@ -7,7 +7,7 @@
 // Test description:
 // This test is to cover un-instantiate member call.
 // The 1st instantiated will construct a DeviceFunctionInfo instance.
-// When analyze foo in the template decl, tool cannot found the default parameter.
+// When analyze foo in the template decl, tool cannot find the default parameter.
 // The analysis is skipped to avoid internal error.
 template<class T>
 struct TEST {

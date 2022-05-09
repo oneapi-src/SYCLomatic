@@ -283,7 +283,7 @@ void foo9() {
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
 }
 
-// This case need manual fix
+// This case needs manual fix
 void foo10(bool flag) {
   cufftHandle plan;
   float2* iodata;

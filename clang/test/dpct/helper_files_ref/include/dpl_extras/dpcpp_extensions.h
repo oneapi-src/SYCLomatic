@@ -596,7 +596,7 @@ template <typename... _Args> constexpr auto __joint_reduce(_Args... __args) {
 
 } // namespace detail
 
-/// Perform an reduce on each of the segments specified within data stored on
+/// Perform a reduce on each of the segments specified within data stored on
 /// the device.
 ///
 /// \param queue Command queue used to access device used for reduction
