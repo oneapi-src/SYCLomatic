@@ -71,63 +71,144 @@ CompilationDatabase::loadFromDirectory(StringRef BuildDirectory,
     if (std::unique_ptr<CompilationDatabase> DB =
             Plugin->loadFromDirectory(BuildDirectory, DatabaseErrorMessage))
       return DB;
+#ifdef SYCLomatic_CUSTOMIZATION
+    if (Database.getName() == "json-compilation-database") {
+      ErrorStream << DatabaseErrorMessage << "\n";
+    }
+#else
     ErrorStream << Database.getName() << ": " << DatabaseErrorMessage << "\n";
+#endif // SYCLomatic_CUSTOMIZATION
   }
   return nullptr;
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+static std::unique_ptr<CompilationDatabase>
+findCompilationDatabaseFromDirectory(StringRef Directory,
+                                     std::string &ErrorMessage,
+                                     DatabaseStatus &ErrCode,
+                                     std::string &CompilationDatabaseDir) {
+#else
 static std::unique_ptr<CompilationDatabase>
 findCompilationDatabaseFromDirectory(StringRef Directory,
                                      std::string &ErrorMessage) {
+#endif // SYCLomatic_CUSTOMIZATION
   std::stringstream ErrorStream;
   bool HasErrorMessage = false;
   while (!Directory.empty()) {
     std::string LoadErrorMessage;
 
+#ifdef SYCLomatic_CUSTOMIZATION
+    std::unique_ptr<CompilationDatabase> DB =
+        CompilationDatabase::loadFromDirectory(Directory, LoadErrorMessage);
+    if (llvm::sys::fs::exists(Directory + "/compile_commands.json") && !DB) {
+      ErrCode = CannotParseDatabase; // map to MigrationErrorCannotParseDatabase
+                                     // in DPCT
+      ErrorMessage = LoadErrorMessage;
+      return nullptr;
+    }
+    if (DB) {
+      CompilationDatabaseDir = Directory.str();
+      return DB;
+    }
+    if (!HasErrorMessage) {
+      ErrorStream << "No compilation database found in " << Directory.str()
+                  << " or any parent directory\n";
+      HasErrorMessage = true;
+    }
+#else
     if (std::unique_ptr<CompilationDatabase> DB =
             CompilationDatabase::loadFromDirectory(Directory, LoadErrorMessage))
       return DB;
-
     if (!HasErrorMessage) {
       ErrorStream << "No compilation database found in " << Directory.str()
-                  << " or any parent directory\n" << LoadErrorMessage;
+                  << " or any parent directory\n"
+                  << LoadErrorMessage;
       HasErrorMessage = true;
     }
-
+#endif // SYCLomatic_CUSTOMIZATION
     Directory = llvm::sys::path::parent_path(Directory);
   }
   ErrorMessage = ErrorStream.str();
   return nullptr;
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+std::unique_ptr<CompilationDatabase>
+CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
+                                          std::string &ErrorMessage,
+                                          std::string &CompilationDatabaseDir) {
+#else
 std::unique_ptr<CompilationDatabase>
 CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
                                           std::string &ErrorMessage) {
+#endif // SYCLomatic_CUSTOMIZATION
   SmallString<1024> AbsolutePath(getAbsolutePath(SourceFile));
   StringRef Directory = llvm::sys::path::parent_path(AbsolutePath);
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  DatabaseStatus ErrCode;
+  std::unique_ptr<CompilationDatabase> DB =
+      findCompilationDatabaseFromDirectory(Directory, ErrorMessage,
+                                           ErrCode, CompilationDatabaseDir);
+  if (!DB)
+    ErrorMessage =
+        (ErrorMessage +
+         "Migration initiated without compilation database for file \"" +
+         SourceFile + "\"\n")
+            .str();
+#else
   std::unique_ptr<CompilationDatabase> DB =
       findCompilationDatabaseFromDirectory(Directory, ErrorMessage);
-
   if (!DB)
     ErrorMessage = ("Could not auto-detect compilation database for file \"" +
                    SourceFile + "\"\n" + ErrorMessage).str();
+#endif // SYCLomatic_CUSTOMIZATION
   return DB;
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+std::unique_ptr<CompilationDatabase>
+CompilationDatabase::autoDetectFromDirectory(
+    StringRef SourceDir, std::string &ErrorMessage, DatabaseStatus &ErrCode,
+    std::string &CompilationDatabaseDir) {
+  SmallString<1024> AbsolutePath(getAbsolutePath(SourceDir));
+  std::unique_ptr<CompilationDatabase> DB =
+      findCompilationDatabaseFromDirectory(AbsolutePath, ErrorMessage, ErrCode,
+                                           CompilationDatabaseDir);
+
+  if (!DB) {
+    if (ErrCode == CannotParseDatabase
+        /*map to MigrationErrorCannotParseDatabase in DPCT*/) {
+      ErrorMessage =
+          ErrorMessage +
+          "Compilation database compile_commands.json from directory \"" +
+          SourceDir.str() + "\" or its parent directories cannot be parsed.\n";
+    } else {
+      ErrorMessage = (ErrorMessage +
+                      "Migration initiated without compilation "
+                      "database from directory \"" +
+                      SourceDir + "\"\n")
+                         .str();
+    }
+  }
+  return DB;
+}
+#else
 std::unique_ptr<CompilationDatabase>
 CompilationDatabase::autoDetectFromDirectory(StringRef SourceDir,
                                              std::string &ErrorMessage) {
   SmallString<1024> AbsolutePath(getAbsolutePath(SourceDir));
-
   std::unique_ptr<CompilationDatabase> DB =
       findCompilationDatabaseFromDirectory(AbsolutePath, ErrorMessage);
-
   if (!DB)
-    ErrorMessage = ("Could not auto-detect compilation database from directory \"" +
-                   SourceDir + "\"\n" + ErrorMessage).str();
+    ErrorMessage =
+        ("Could not auto-detect compilation database from directory \"" +
+         SourceDir + "\"\n" + ErrorMessage)
+            .str();
   return DB;
 }
+#endif // SYCLomatic_CUSTOMIZATION
 
 std::vector<CompileCommand> CompilationDatabase::getAllCompileCommands() const {
   std::vector<CompileCommand> Result;
@@ -299,7 +380,9 @@ static bool stripPositionalArgs(std::vector<const char *> Args,
   }
 
   if (CompileAnalyzer.Inputs.empty()) {
+#ifndef SYCLomatic_CUSTOMIZATION
     ErrorMsg = "warning: no compile jobs found\n";
+#endif // SYCLomatic_CUSTOMIZATION
     return false;
   }
 

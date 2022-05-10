@@ -1,30 +1,28 @@
-# Intel Project for LLVM\* technology
 
-Intel staging area for llvm.org contribution. Home for Intel LLVM-based projects:
+# SYCLomatic
 
-## oneAPI Data Parallel C++ compiler
+## Introduction
 
-[![](https://spec.oneapi.io/oneapi-logo-white-scaled.jpg)](https://www.oneapi.io/)
+SYCLomatic is a project to assist developers in migrating their existing code written in different programming languages to the SYCL C++ heterogeneous programming model. Final code editing and verification is a manual process done by the developer.
 
-See [sycl](https://github.com/intel/llvm/tree/sycl) branch and
-[DPC++ Documentation](https://intel.github.io/llvm-docs/).
+Use c2s command to make it as easy as possible to migrate existing CUDA codebases to SYCL, which is an industry standard. Once code is migrated to SYCL, it can be compiled and executed by any compiler that implements the SYCL specification as shown here:  https://www.khronos.org/sycl/
 
-[![Linux Post Commit Checks](https://github.com/intel/llvm/workflows/Linux%20Post%20Commit%20Checks/badge.svg)](https://github.com/intel/llvm/actions?query=workflow%3A%22Linux+Post+Commit+Checks%22)
-[![Generate Doxygen documentation](https://github.com/intel/llvm/workflows/Generate%20Doxygen%20documentation/badge.svg)](https://github.com/intel/llvm/actions?query=workflow%3A%22Generate+Doxygen+documentation%22)
+The SYCLomatic development branch is the SYCLomatic branch.
 
-DPC++ is an open, cross-architecture language built upon the ISO C++ and Khronos
-SYCL\* standards. DPC++ extends these standards with a number of extensions,
-which can be found in [sycl/doc/extensions](sycl/doc/extensions) directory.
+## Useful Links
+* [SYCLomatic getting started](GetStartedGuide.md)
+* More information about how to use SYCLomatic can be found in Intel(R) DPC++ Compatibility Tool documentation, which is the Intel product version of SYCLomatic:
+    * [Get Started](https://software.intel.com/content/www/us/en/develop/documentation/get-started-with-intel-dpcpp-compatibility-tool/top.html)
+    * [Developer Guide and Reference](https://software.intel.com/content/www/us/en/develop/documentation/intel-dpcpp-compatibility-tool-user-guide/top.html)
+* [oneAPI DPC++ Compiler documentation](https://intel.github.io/llvm-docs/)
+* More information on oneAPI and DPC++ is available at [https://www.oneapi.com/](https://www.oneapi.com/)
 
-## Late-outline OpenMP\* and OpenMP\* Offload
-See [openmp](https://github.com/intel/llvm/tree/openmp) branch.
+## License
 
-# License
+See [LICENSE](LICENSE) for details.
 
-See [LICENSE.txt](sycl/LICENSE.TXT) for details.
-
-# Contributing
+## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-*\*Other names and brands may be claimed as the property of others.*
+## [Legal information](legal_information.md)

@@ -138,6 +138,12 @@ namespace {
 
 } // namespace
 
+#ifdef SYCLomatic_CUSTOMIZATION
+static Optional<std::string> (*getReplacedNamePtr)(const NamedDecl *D) = 0;
+void setGetReplacedNamePtr(Optional<std::string> (*Ptr)(const NamedDecl *D)) {
+  getReplacedNamePtr = Ptr;
+}
+#endif // SYCLomatic_CUSTOMIZATION
 static void AppendTypeQualList(raw_ostream &OS, unsigned TypeQuals,
                                bool HasRestrictKeyword) {
   bool appendSpace = false;
@@ -1037,6 +1043,16 @@ void TypePrinter::printFunctionNoProtoAfter(const FunctionNoProtoType *T,
 }
 
 void TypePrinter::printTypeSpec(NamedDecl *D, raw_ostream &OS) {
+#ifdef SYCLomatic_CUSTOMIZATION
+  Optional<std::string> Name;
+  if (getReplacedNamePtr)
+    Name = getReplacedNamePtr(D);
+  if (Name.hasValue()) {
+    OS << Name.getValue();
+    spaceBeforePlaceHolder(OS);
+    return;
+  }
+#endif // SYCLomatic_CUSTOMIZATION
   // Compute the full nested-name-specifier for this type.
   // In C, this will always be empty except when the type
   // being printed is anonymous within other Record.
@@ -1289,9 +1305,31 @@ void TypePrinter::AppendScope(DeclContext *DC, raw_ostream &OS,
     AppendScope(DC->getParent(), OS, Tag->getDeclName());
     if (TypedefNameDecl *Typedef = Tag->getTypedefNameForAnonDecl())
       OS << Typedef->getIdentifier()->getName() << "::";
+#ifdef SYCLomatic_CUSTOMIZATION
+    else if (Tag->getIdentifier()) {
+      OS << Tag->getIdentifier()->getName();
+      const TemplateDecl *TD = Tag->getDescribedTemplate();
+      if (TD) {
+        const TemplateParameterList *TPL = TD->getTemplateParameters();
+        if (TPL && !TPL->asArray().empty()) {
+          auto Array = TPL->asArray();
+          OS << "<";
+          std::string Params;
+          for (auto &ND : Array) {
+            Params = Params + ", " + ND->getName().str();
+          }
+          Params = Params.substr(2);
+          OS << Params << ">";
+        }
+      }
+
+      OS << "::";
+    } else
+#else
     else if (Tag->getIdentifier())
       OS << Tag->getIdentifier()->getName() << "::";
     else
+#endif // SYCLomatic_CUSTOMIZATION
       return;
   } else {
     AppendScope(DC->getParent(), OS, NameInScope);
@@ -1317,12 +1355,28 @@ void TypePrinter::printTag(TagDecl *D, raw_ostream &OS) {
     OS << ' ';
   }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  Optional<std::string> Name;
+  if (getReplacedNamePtr)
+    Name = getReplacedNamePtr(D);
+
+  // Compute the full nested-name-specifier for this type.
+  // In C, this will always be empty except when the type
+  // being printed is anonymous within other Record.
+  if (!Name.hasValue() && !Policy.SuppressScope)
+    AppendScope(D->getDeclContext(), OS, D->getDeclName());
+
+  if (Name.hasValue())
+    OS << Name.getValue();
+  else
+#else
   // Compute the full nested-name-specifier for this type.
   // In C, this will always be empty except when the type
   // being printed is anonymous within other Record.
   if (!Policy.SuppressScope)
     AppendScope(D->getDeclContext(), OS, D->getDeclName());
 
+#endif // SYCLomatic_CUSTOMIZATION
   if (const IdentifierInfo *II = D->getIdentifier())
     OS << II->getName();
   else if (TypedefNameDecl *Typedef = D->getTypedefNameForAnonDecl()) {
@@ -1471,6 +1525,14 @@ void TypePrinter::printTemplateId(const TemplateSpecializationType *T,
   IncludeStrongLifetimeRAII Strong(Policy);
 
   TemplateDecl *TD = T->getTemplateName().getAsTemplateDecl();
+#ifdef SYCLomatic_CUSTOMIZATION
+  Optional<std::string> Name;
+  if (getReplacedNamePtr)
+    Name = getReplacedNamePtr(TD);
+  if (Name.hasValue())
+    OS << Name.getValue();
+  else
+#endif // SYCLomatic_CUSTOMIZATION
   if (FullyQualify && TD) {
     if (!Policy.SuppressScope)
       AppendScope(TD->getDeclContext(), OS, TD->getDeclName());
@@ -1510,6 +1572,26 @@ void TypePrinter::printInjectedClassNameAfter(const InjectedClassNameType *T,
 
 void TypePrinter::printElaboratedBefore(const ElaboratedType *T,
                                         raw_ostream &OS) {
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (getReplacedNamePtr) {
+    if (auto TT = T->getNamedType()->getAs<TypedefType>()) {
+      auto Name = TT->getDecl()->getQualifiedNameAsString(false);
+      if (StringRef(Name).startswith("thrust")) {
+        return printBefore(TT->getDecl()->getUnderlyingType(), OS);
+      }
+    }
+    if (T->getQualifier()) {
+      std::string QualifiedName;
+      llvm::raw_string_ostream InternalOS(QualifiedName);
+      T->getQualifier()->print(InternalOS, Policy);
+      if (StringRef(InternalOS.str()).startswith("thrust")) {
+        printBefore(T->getNamedType(), OS);
+        return;
+      }
+    }
+  }
+#endif // SYCLomatic_CUSTOMIZATION
+
   if (Policy.IncludeTagDefinition && T->getOwnedTagDecl()) {
     TagDecl *OwnedTagDecl = T->getOwnedTagDecl();
     assert(OwnedTagDecl->getTypeForDecl() == T->getNamedType().getTypePtr() &&
@@ -1524,6 +1606,7 @@ void TypePrinter::printElaboratedBefore(const ElaboratedType *T,
   // The tag definition will take care of these.
   if (!Policy.IncludeTagDefinition)
   {
+
     // When removing aliases don't print keywords to avoid having things
     // like 'typename int'
     if (!Policy.SuppressTypedefs)

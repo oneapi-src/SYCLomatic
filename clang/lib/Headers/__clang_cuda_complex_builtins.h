@@ -16,12 +16,23 @@
 // to work with CUDA and OpenMP target offloading [in C and C++ mode].)
 
 #pragma push_macro("__DEVICE__")
+#ifdef SYCLomatic_CUSTOMIZATION
+#pragma push_macro("__OPENMP_NVPTX__")
+#undef __OPENMP_NVPTX__
+#pragma push_macro("__OPENMP_AMDGCN__")
+#undef __OPENMP_AMDGCN__
+#endif // SYCLomatic_CUSTOMIZATION
 #if defined(__OPENMP_NVPTX__) || defined(__OPENMP_AMDGCN__)
 #pragma omp declare target
 #define __DEVICE__ __attribute__((noinline, nothrow, cold, weak))
 #else
 #define __DEVICE__ __device__ inline
 #endif
+#ifdef SYCLomatic_CUSTOMIZATION
+#pragma pop_macro("__OPENMP_NVPTX__")
+#pragma pop_macro("__OPENMP_AMDGCN__")
+#endif // SYCLomatic_CUSTOMIZATION
+
 
 // To make the algorithms available for C and C++ in CUDA and OpenMP we select
 // different but equivalent function versions. TODO: For OpenMP we currently
@@ -276,9 +287,19 @@ __DEVICE__ float _Complex __divsc3(float __a, float __b, float __c, float __d) {
 #undef _fmaxd
 #undef _fmaxf
 
+#ifdef SYCLomatic_CUSTOMIZATION
+#pragma push_macro("__OPENMP_NVPTX__")
+#undef __OPENMP_NVPTX__
+#pragma push_macro("__OPENMP_AMDGCN__")
+#undef __OPENMP_AMDGCN__
+#endif // SYCLomatic_CUSTOMIZATION
 #if defined(__OPENMP_NVPTX__) || defined(__OPENMP_AMDGCN__)
 #pragma omp end declare target
 #endif
+#ifdef SYCLomatic_CUSTOMIZATION
+#pragma pop_macro("__OPENMP_NVPTX__")
+#pragma pop_macro("__OPENMP_AMDGCN__")
+#endif // SYCLomatic_CUSTOMIZATION
 
 #pragma pop_macro("__DEVICE__")
 

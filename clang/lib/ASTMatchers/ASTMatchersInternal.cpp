@@ -529,42 +529,83 @@ public:
   PatternSet(ArrayRef<std::string> Names) {
     Patterns.reserve(Names.size());
     for (StringRef Name : Names)
+#ifdef SYCLomatic_CUSTOMIZATION
+      Patterns.push_back({Name, Name.startswith("::"), true});
+#else
       Patterns.push_back({Name, Name.startswith("::")});
+#endif // SYCLomatic_CUSTOMIZATION
   }
 
   /// Consumes the name suffix from each pattern in the set and removes the ones
   /// that didn't match.
   /// Return true if there are still any patterns left.
   bool consumeNameSuffix(StringRef NodeName, bool CanSkip) {
+#ifdef SYCLomatic_CUSTOMIZATION
+    bool IsEmpty=true;
+#endif // SYCLomatic_CUSTOMIZATION
     for (size_t I = 0; I < Patterns.size();) {
+#ifdef SYCLomatic_CUSTOMIZATION
+      if (!Patterns[I].IsValid) {
+        I++;
+        continue;
+      }
+#endif // SYCLomatic_CUSTOMIZATION
       if (::clang::ast_matchers::internal::consumeNameSuffix(Patterns[I].P,
                                                              NodeName) ||
           CanSkip) {
         ++I;
+#ifdef SYCLomatic_CUSTOMIZATION
+        IsEmpty = false;
+#endif // SYCLomatic_CUSTOMIZATION
       } else {
+#ifdef SYCLomatic_CUSTOMIZATION
+        Patterns[I].IsValid = false;
+        I++;
+#else
         Patterns.erase(Patterns.begin() + I);
+#endif // SYCLomatic_CUSTOMIZATION
       }
     }
+#ifdef SYCLomatic_CUSTOMIZATION
+    return !IsEmpty;
+#else
     return !Patterns.empty();
+#endif // SYCLomatic_CUSTOMIZATION
   }
 
   /// Check if any of the patterns are a match.
   /// A match will be a pattern that was fully consumed, that also matches the
   /// 'fully qualified' requirement.
   bool foundMatch(bool AllowFullyQualified) const {
+#ifdef SYCLomatic_CUSTOMIZATION
+    return llvm::any_of(Patterns, [&](const Pattern &Pattern) {
+      return Pattern.IsValid && Pattern.P.empty() &&
+             (AllowFullyQualified || !Pattern.IsFullyQualified);
+    });
+#else
     return llvm::any_of(Patterns, [&](const Pattern &Pattern) {
       return Pattern.P.empty() &&
              (AllowFullyQualified || !Pattern.IsFullyQualified);
     });
+#endif // SYCLomatic_CUSTOMIZATION
   }
 
 private:
   struct Pattern {
     StringRef P;
     bool IsFullyQualified;
+#ifdef SYCLomatic_CUSTOMIZATION
+    bool IsValid;
+#endif // SYCLomatic_CUSTOMIZATION
   };
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  // Enlarge the pre-alloced size of memory to reduce the overhead of
+  // temporarily expanding memory.
+  llvm::SmallVector<Pattern, 8192> Patterns;
+#else
   llvm::SmallVector<Pattern, 8> Patterns;
+#endif // SYCLomatic_CUSTOMIZATION
 };
 
 } // namespace

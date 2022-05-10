@@ -168,7 +168,6 @@ std::string Driver::GetResourcesPath(StringRef BinaryPath,
 
   // Dir is bin/ or lib/, depending on where BinaryPath is.
   std::string Dir = std::string(llvm::sys::path::parent_path(BinaryPath));
-
   SmallString<128> P(Dir);
   if (CustomResourceDir != "") {
     llvm::sys::path::append(P, CustomResourceDir);

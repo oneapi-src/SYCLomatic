@@ -51,6 +51,7 @@ set(files
   __clang_cuda_libdevice_declares.h
   __clang_cuda_math_forward_declares.h
   __clang_cuda_runtime_wrapper.h
+  __clang_dpct_math.h
   __clang_hip_libdevice_declares.h
   __clang_hip_cmath.h
   __clang_hip_math.h

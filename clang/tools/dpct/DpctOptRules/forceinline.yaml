@@ -1,0 +1,19 @@
+# Copyright (C) Intel Corporation
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# See https://llvm.org/LICENSE.txt for license information.
+
+# This file is an example of user defined migration rules.
+# Applying this rule will make DPCT migrate __forceinline__ to inline
+# instead of __dpct_inline__.
+# This file will be installed to folder:
+# {dpct_install_folder}/extensions/opt_rules.
+# The rule specified in this file can be imported with commandline option:
+# --rule-file={dpct_install_folder}/extensions/opt_rules/forceinline.yaml
+---
+- Rule: rule_forceinline          # specify an unique name(ID) of the rule
+  Kind: Macro                     # specify the kind of the rule
+  Priority: Takeover              # select the priority if the rule conflicts with another one. value = Fallback/Default/Takeover
+  In: __forceinline__             # the target macro need to be migrate
+  Out: inline                     # the new macro name
+  Includes: []                    # if the new macro depends on header files, specify it here as a list
+                                  # e.g.["header_1.h", "<vector>"]

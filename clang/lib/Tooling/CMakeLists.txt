@@ -133,3 +133,5 @@ add_clang_library(clangTooling
   clangSerialization
   clangToolingCore
   )
+
+

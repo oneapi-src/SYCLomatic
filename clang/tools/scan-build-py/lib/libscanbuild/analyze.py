@@ -698,7 +698,7 @@ def language_check(opts, continuation=filter_debug_flags):
     extension. The decision also influenced by the compiler invocation. """
 
     accepted = frozenset({
-        'c', 'c++', 'objective-c', 'objective-c++', 'c-cpp-output',
+        'c', 'c++', 'cuda', 'objective-c', 'objective-c++', 'c-cpp-output',
         'c++-cpp-output', 'objective-c-cpp-output'
     })
 
@@ -784,7 +784,7 @@ def classify_parameters(command):
         'flags': [],  # the filtered compiler flags
         'arch_list': [],  # list of architecture flags
         'language': None,  # compilation language, None, if not specified
-        'compiler': compiler_language(command)  # 'c' or 'c++'
+        'compiler': compiler_language(command)  # 'c', 'c++', or 'cuda'
     }
 
     # iterate on the compile options

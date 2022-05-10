@@ -26,6 +26,11 @@ namespace clang {
   class VarDecl;
   class FunctionDecl;
   class ImportDecl;
+#ifdef SYCLomatic_CUSTOMIZATION
+  class FunctionTypeLoc;
+  class ParsedAttributes;
+  class TemplateArgumentListInfo;
+#endif // SYCLomatic_CUSTOMIZATION
 
 /// ASTConsumer - This is an abstract interface that should be implemented by
 /// clients that read ASTs.  This abstraction layer allows the client to be
@@ -143,6 +148,12 @@ public:
   /// body may be parsed anyway if it is needed (for instance, if it contains
   /// the code completion point or is constexpr).
   virtual bool shouldSkipFunctionBody(Decl *D) { return true; }
+
+#ifdef SYCLomatic_CUSTOMIZATION
+  virtual void HandleCXXExplicitFunctionInstantiation(
+      const FunctionDecl *Specialization, const FunctionTypeLoc &FTL,
+      const ParsedAttributes &Attrs, const TemplateArgumentListInfo &) {}
+#endif // SYCLomatic_CUSTOMIZATION
 };
 
 } // end namespace clang.

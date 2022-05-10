@@ -1,0 +1,7 @@
+---
+- Rule: rule_vector2
+  Kind: Macro
+  Priority: Takeover
+  In: VECTOR
+  Out: std::vector<int>
+  Includes: ["<vector>"]

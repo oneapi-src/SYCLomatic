@@ -198,6 +198,9 @@ public:
 
 // The general Option Category (used as default category).
 OptionCategory &getGeneralCategory();
+#ifdef SYCLomatic_CUSTOMIZATION
+OptionCategory &getDPCTCategory();
+#endif // SYCLomatic_CUSTOMIZATION
 
 //===----------------------------------------------------------------------===//
 //
@@ -653,12 +656,22 @@ struct OptionEnumValue {
   StringRef Name;
   int Value;
   StringRef Description;
+#ifdef SYCLomatic_CUSTOMIZATION
+  bool IsHidden;
+#endif // SYCLomatic_CUSTOMIZATION
 };
 
+#ifdef SYCLomatic_CUSTOMIZATION
+#define clEnumVal(ENUMVAL, DESC)                                               \
+  llvm::cl::OptionEnumValue { #ENUMVAL, int(ENUMVAL), DESC, false }
+#define clEnumValN(ENUMVAL, FLAGNAME, DESC)                                    \
+  llvm::cl::OptionEnumValue { FLAGNAME, int(ENUMVAL), DESC, false }
+#else
 #define clEnumVal(ENUMVAL, DESC)                                               \
   llvm::cl::OptionEnumValue { #ENUMVAL, int(ENUMVAL), DESC }
 #define clEnumValN(ENUMVAL, FLAGNAME, DESC)                                    \
   llvm::cl::OptionEnumValue { FLAGNAME, int(ENUMVAL), DESC }
+#endif // SYCLomatic_CUSTOMIZATION
 
 // For custom data types, allow specifying a group of values together as the
 // values that go into the mapping that the option handler uses.
@@ -675,8 +688,13 @@ public:
 
   template <class Opt> void apply(Opt &O) const {
     for (const auto &Value : Values)
+#ifdef SYCLomatic_CUSTOMIZATION
+      O.getParser().addLiteralOption(Value.Name, Value.Value, Value.Description,
+                                     Value.IsHidden);
+#else
       O.getParser().addLiteralOption(Value.Name, Value.Value,
                                      Value.Description);
+#endif // SYCLomatic_CUSTOMIZATION
   }
 };
 
@@ -729,6 +747,9 @@ public:
   virtual size_t getOptionWidth(const Option &O) const;
 
   virtual const GenericOptionValue &getOptionValue(unsigned N) const = 0;
+#ifdef SYCLomatic_CUSTOMIZATION
+  virtual bool getIsHiddenValue(unsigned N) const = 0;
+#endif // SYCLomatic_CUSTOMIZATION
 
   // Print out information about this option. The to-be-maintained width is
   // specified.
@@ -798,9 +819,14 @@ template <class DataType> class parser : public generic_parser_base {
 protected:
   class OptionInfo : public GenericOptionInfo {
   public:
+#ifdef SYCLomatic_CUSTOMIZATION
+    OptionInfo(StringRef name, DataType v, StringRef helpStr, bool IsHidden)
+        : GenericOptionInfo(name, helpStr), IsHidden(IsHidden), V(v) {}
+    bool IsHidden;
+#else
     OptionInfo(StringRef name, DataType v, StringRef helpStr)
         : GenericOptionInfo(name, helpStr), V(v) {}
-
+#endif // SYCLomatic_CUSTOMIZATION
     OptionValue<DataType> V;
   };
   SmallVector<OptionInfo, 8> Values;
@@ -822,6 +848,11 @@ public:
     return Values[N].V;
   }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  bool getIsHiddenValue(unsigned N) const override {
+    return Values[N].IsHidden;
+  }
+#endif // SYCLomatic_CUSTOMIZATION
   // Return true on error.
   bool parse(Option &O, StringRef ArgName, StringRef Arg, DataType &V) {
     StringRef ArgVal;
@@ -842,9 +873,16 @@ public:
   /// Add an entry to the mapping table.
   ///
   template <class DT>
+#ifdef SYCLomatic_CUSTOMIZATION
+  void addLiteralOption(StringRef Name, const DT &V, StringRef HelpStr,
+                        bool IsHidden=false) {
+    assert(findOption(Name) == Values.size() && "Option already exists!");
+    OptionInfo X(Name, static_cast<DataType>(V), HelpStr, IsHidden);
+#else
   void addLiteralOption(StringRef Name, const DT &V, StringRef HelpStr) {
     assert(findOption(Name) == Values.size() && "Option already exists!");
     OptionInfo X(Name, static_cast<DataType>(V), HelpStr);
+#endif // SYCLomatic_CUSTOMIZATION
     Values.push_back(X);
     AddLiteralOption(Owner, Name);
   }

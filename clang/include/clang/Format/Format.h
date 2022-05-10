@@ -22,6 +22,21 @@
 #include "llvm/Support/SourceMgr.h"
 #include <system_error>
 
+#ifdef SYCLomatic_CUSTOMIZATION
+namespace clang {
+namespace format {
+/// The enum that specifies the range of code formatting, only
+/// three levels are supported currrently.
+/// migrated: Only format the migrated code
+/// all:      Format all code
+/// none:     Not format any code
+enum class FormatRange { migrated, all, none };
+extern std::function<FormatRange()> formatRangeGetter;
+void setFormatRangeGetterHandler(std::function<FormatRange()> Getter);
+extern bool BlockLevelFormatFlag;
+} // namespace format
+} // namespace clang
+#endif // SYCLomatic_CUSTOMIZATION
 namespace llvm {
 namespace vfs {
 class FileSystem;

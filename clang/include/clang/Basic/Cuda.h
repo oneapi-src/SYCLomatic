@@ -34,10 +34,18 @@ enum class CudaVersion {
   CUDA_113,
   CUDA_114,
   CUDA_115,
+#ifdef SYCLomatic_CUSTOMIZATION
+  CUDA_116,
+  FULLY_SUPPORTED = CUDA_116,
+  PARTIALLY_SUPPORTED =
+      CUDA_116, // Partially supported. Proceed with a warning.
+  NEW = 10000,  // Too new. Issue a warning, but allow using it.
+#else
   FULLY_SUPPORTED = CUDA_115,
   PARTIALLY_SUPPORTED =
       CUDA_115, // Partially supported. Proceed with a warning.
   NEW = 10000,  // Too new. Issue a warning, but allow using it.
+#endif // SYCLomatic_CUSTOMIZATION
 };
 const char *CudaVersionToString(CudaVersion V);
 // Input is "Major.Minor"
