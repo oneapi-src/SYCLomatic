@@ -58,11 +58,197 @@
 #include <system_error>
 #include <utility>
 #include <vector>
+#ifdef SYCLomatic_CUSTOMIZATION
+#include <setjmp.h>
+#endif // SYCLomatic_CUSTOMIZATION
 
 #define DEBUG_TYPE "clang-tooling"
 
 using namespace clang;
 using namespace tooling;
+
+#ifdef SYCLomatic_CUSTOMIZATION
+namespace clang {
+namespace tooling {
+static PrintType MsgPrintHandle = nullptr;
+static std::string SDKIncludePath = "";
+static std::set<std::string> *FileSetInCompiationDBPtr = nullptr;
+static std::vector<std::pair<std::string, std::vector<std::string>>>
+    *CompileTargetsMapPtr = nullptr;
+static StringRef InRoot;
+static StringRef OutRoot;
+static FileProcessType FileProcessHandle = nullptr;
+static std::set<std::string> *ReProcessFilePtr = nullptr;
+static std::set<std::string> *ProcessedFilePtr = nullptr;
+static std::function<unsigned int()> GetRunRoundPtr;
+static std::set<std::string> *ModuleFiles = nullptr;
+static unsigned int *ColorOptionPtr = nullptr;
+static std::function<bool(const std::string &, bool)> IsExcludePathPtr;
+extern std::string VcxprojFilePath;
+
+void SetPrintHandle(PrintType Handle) {
+  MsgPrintHandle = Handle;
+}
+
+void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB) {
+  FileSetInCompiationDBPtr = &FileSetInCompiationDB;
+}
+
+void SetCompileTargetsMap(
+    std::vector<std::pair<std::string, std::vector<std::string>>>
+        &CompileTargetsMap) {
+  CompileTargetsMapPtr = &CompileTargetsMap;
+}
+
+void SetFileProcessHandle(StringRef In, StringRef Out, FileProcessType Handle) {
+  FileProcessHandle = Handle;
+  InRoot = In;
+  OutRoot = Out;
+}
+
+void CollectFileFromDB(std::string FileName) {
+  if (FileSetInCompiationDBPtr != nullptr) {
+    (*FileSetInCompiationDBPtr).insert(FileName);
+  }
+}
+
+void CollectCompileTarget(std::string Target, std::vector<std::string> Options) {
+  if (CompileTargetsMapPtr != nullptr) {
+    CompileTargetsMapPtr->push_back(std::make_pair(Target, Options));
+  }
+}
+
+void DoPrintHandle(const std::string &Msg, bool IsPrintOnNormal) {
+  if (MsgPrintHandle != nullptr) {
+    (*MsgPrintHandle)(Msg, IsPrintOnNormal);
+  }
+}
+
+void DoFileProcessHandle(std::vector<std::string> &FilesNotProcessed) {
+  if (FileProcessHandle != nullptr) {
+    (*FileProcessHandle)(InRoot, OutRoot, FilesNotProcessed);
+  }
+}
+
+bool isFileProcessAllSet() {
+  return FileProcessHandle != nullptr;
+}
+
+void SetProcessedFile(std::set<std::string> &ProcessedFile){
+  ProcessedFilePtr = &ProcessedFile;
+}
+
+void SetReProcessFile(std::set<std::string> &ReProcessFile){
+  ReProcessFilePtr = &ReProcessFile;
+}
+
+void SetGetRunRound(std::function<unsigned int()> Func){
+  GetRunRoundPtr = Func;
+}
+
+unsigned int DoGetRunRound(){
+  if(GetRunRoundPtr){
+    return GetRunRoundPtr();
+  }
+  return 0;
+}
+
+void CollectProcessedFile(std::string File){
+  if(ProcessedFilePtr){
+    (*ProcessedFilePtr).insert(File);
+  }
+}
+
+std::set<std::string> GetReProcessFile(){
+  if(ReProcessFilePtr){
+    return *ReProcessFilePtr;
+  }
+  return std::set<std::string>();
+}
+
+void SetSDKIncludePath(const std::string &Path) { SDKIncludePath = Path; }
+
+static llvm::raw_ostream *OSTerm = nullptr;
+void SetDiagnosticOutput(llvm::raw_ostream &OStream) { OSTerm = &OStream; }
+void SetModuleFiles(std::set<std::string> &MF) { ModuleFiles = &MF; }
+llvm::raw_ostream &DiagnosticsOS() {
+  if (OSTerm != nullptr) {
+    return *OSTerm;
+  } else {
+    return llvm::errs();
+  }
+}
+
+std::string ClangToolOutputMessage = "";
+
+std::string getRealFilePath(std::string File, clang::FileManager *FM){
+#ifdef _WIN64
+  std::string RealFilePath;
+  llvm::SmallString<512> FilePathAbs(File);
+  llvm::sys::path::native(FilePathAbs);
+  llvm::sys::path::remove_dots(FilePathAbs, true);
+  RealFilePath = FilePathAbs.str().str();
+  auto FE = FM->getFile(File);
+  std::error_code EC = FE.getError();
+  if(!(bool)EC && !FE.get()->tryGetRealPathName().empty()) {
+    RealFilePath = FE.get()->tryGetRealPathName().str();
+  }
+  return RealFilePath;
+#else
+  return File;
+#endif
+}
+
+void SetColorOptionPtr(unsigned int &ColorOption) {
+  ColorOptionPtr = &ColorOption;
+}
+
+void SetColorOptionValue(unsigned int ColorOption) {
+  if(ColorOptionPtr) {
+    *ColorOptionPtr = ColorOption;
+  }
+}
+
+void SetIsExcludePathHandler(std::function<bool(const std::string &, bool)> Func){
+  IsExcludePathPtr = Func;
+}
+
+bool isExcludePath(const std::string &Path, bool IsRelative) {
+  if(IsExcludePathPtr) {
+    return IsExcludePathPtr(Path, IsRelative);
+  } else {
+    return false;
+  }
+}
+
+} // namespace tooling
+} // namespace clang
+#if defined(__linux__)
+#define JMP_BUF sigjmp_buf
+#define SETJMP(x) sigsetjmp(x, 1)
+#define LONGJMP siglongjmp
+
+#else
+#define JMP_BUF   jmp_buf
+#define SETJMP(x)       _setjmp(x)
+#define LONGJMP      longjmp
+#endif
+
+
+JMP_BUF CPFileEnter;
+bool EnableErrorRecover=true;
+int CheckPointStage = 0 /*CHECKPOINT_UNKNOWN*/;
+bool CurFileMeetErr=false;
+bool StopOnParseErrTooling=false;
+std::string InRootTooling;
+
+// filename, error#
+//  error: high32:processed sig error, low32: parse error
+std::map<std::string, uint64_t> ErrorCnt;
+uint64_t CurFileSigErrCnt=0;
+uint64_t CurFileParseErrCnt=0;
+
+#endif // SYCLomatic_CUSTOMIZATION
 
 ToolAction::~ToolAction() = default;
 
@@ -336,6 +522,10 @@ ToolInvocation::ToolInvocation(
 ToolInvocation::~ToolInvocation() {
   if (OwnsAction)
     delete Action;
+#ifdef SYCLomatic_CUSTOMIZATION
+  if(DiagnosticPrinter)
+    delete DiagnosticPrinter;
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 bool ToolInvocation::run() {
@@ -343,20 +533,22 @@ bool ToolInvocation::run() {
   for (const std::string &Str : CommandLine)
     Argv.push_back(Str.c_str());
   const char *const BinaryName = Argv[0];
-
-  // Parse diagnostic options from the driver command-line only if none were
-  // explicitly set.
   IntrusiveRefCntPtr<DiagnosticOptions> ParsedDiagOpts;
   DiagnosticOptions *DiagOpts = this->DiagOpts;
   if (!DiagOpts) {
     ParsedDiagOpts = CreateAndPopulateDiagOpts(Argv);
     DiagOpts = &*ParsedDiagOpts;
   }
-
+#ifdef SYCLomatic_CUSTOMIZATION
+  SetColorOptionValue(DiagOpts->ShowColors);
+  DiagnosticPrinter =new TextDiagnosticPrinter(DiagnosticsOS(), &*DiagOpts);
+  DiagConsumer = DiagnosticPrinter;
+#endif // SYCLomatic_CUSTOMIZATION
   TextDiagnosticPrinter DiagnosticPrinter(llvm::errs(), DiagOpts);
   IntrusiveRefCntPtr<DiagnosticsEngine> Diagnostics =
       CompilerInstance::createDiagnostics(
           &*DiagOpts, DiagConsumer ? DiagConsumer : &DiagnosticPrinter, false);
+
   // Although `Diagnostics` are used only for command-line parsing, the custom
   // `DiagConsumer` might expect a `SourceManager` to be present.
   SourceManager SrcMgr(*Diagnostics, *Files);
@@ -421,7 +613,9 @@ bool FrontendActionFactory::runInvocation(
   Compiler.createSourceManager(*Files);
 
   const bool Success = Compiler.ExecuteAction(*ScopedToolAction);
-
+#ifdef SYCLomatic_CUSTOMIZATION
+  CurFileParseErrCnt = DiagConsumer -> getNumErrors();
+#endif // SYCLomatic_CUSTOMIZATION
   Files->clearStatCache();
   return Success;
 }
@@ -472,6 +666,260 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
           .c_str())(Args, "");
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+// Try to parse and migrate \pFile, and return process result with
+// \pProcessingFailed, \pFileSkipped , \pStaticSymbol and its return value.
+// if return value is -1, means current input file \p File is not processed,
+// if return value < -1, report return value to upper caller,
+// other values are ignored.
+int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
+                     bool &FileSkipped, int &StaticSymbol, ToolAction *Action) {
+    //enter point for the file processing.
+    CheckPointStage = 1 /*CHECKPOINT_PROCESSING_FILE*/;
+    CurFileMeetErr= false;
+    //clear error# counter
+    CurFileParseErrCnt=0;
+    CurFileSigErrCnt=0;
+    int Ret=SETJMP(CPFileEnter);
+    if(File != "LinkerEntry") {
+      if(Ret == 0) {
+        const std::string Msg = "Processing: " + File.str()  +  "\n";
+        DoPrintHandle(Msg, false);
+      } else {
+        const std::string Msg = "Skipping: " + File.str()  +  "\n";
+        DoPrintHandle(Msg, false);
+        return -1;
+      }
+    }
+    // Currently implementations of CompilationDatabase::getCompileCommands can
+    // change the state of the file system (e.g.  prepare generated headers), so
+    // this method needs to run right before we invoke the tool, as the next
+    // file may require a different (incompatible) state of the file system.
+    //
+    // FIXME: Make the compilation database interface more explicit about the
+    // requirements to the order of invocation of its members.
+    try {
+    std::vector<CompileCommand> CompileCommandsForFile =
+        Compilations.getCompileCommands(File);
+    if (CompileCommandsForFile.empty()) {
+      llvm::errs() << "Skipping " << File
+                   << ". Compile command for this file not found in "
+                      "compile_commands.json.\n";
+      FileSkipped = true;
+      return -1;
+    }
+    for (CompileCommand &CompileCommand : CompileCommandsForFile) {
+      // FIXME: chdir is thread hostile; on the other hand, creating the same
+      // behavior as chdir is complex: chdir resolves the path once, thus
+      // guaranteeing that all subsequent relative path operations work
+      // on the same path the original chdir resulted in. This makes a
+      // difference for example on network filesystems, where symlinks might be
+      // switched during runtime of the tool. Fixing this depends on having a
+      // file system abstraction that allows openat() style interactions.
+      if (OverlayFileSystem->setCurrentWorkingDirectory(
+              CompileCommand.Directory))
+      {
+        ClangToolOutputMessage = CompileCommand.Directory;
+        return -29 /*MigrationErrorCannotAccessDirInDatabase*/;
+      }
+
+      // Now fill the in-memory VFS with the relative file mappings so it will
+      // have the correct relative paths. We never remove mappings but that
+      // should be fine.
+      if (SeenWorkingDirectories.insert(CompileCommand.Directory).second)
+        for (const auto &MappedFile : MappedFileContents)
+          if (!llvm::sys::path::is_absolute(MappedFile.first))
+            InMemoryFileSystem->addFile(
+                MappedFile.first, 0,
+                llvm::MemoryBuffer::getMemBuffer(MappedFile.second));
+
+      std::vector<std::string> CommandLine = CompileCommand.CommandLine;
+
+      /// TODO: When supporting Driver API migration, dpct needs to migrate the
+      ///       source file(s) which is built by --cubin/--ptx option as module
+      ///       file(s).
+
+      // To remove --cubin/--ptx option from command line is to
+      // avoid parsing error msgs like: "error: unknown argument: '-ptx'" or
+      // "error: unknown argument: '-cubin'".
+      bool IsModuleFile = false;
+      for (size_t Index = 0; Index < CommandLine.size(); Index++) {
+        if (CommandLine[Index] == "-ptx" || CommandLine[Index] == "--ptx" ||
+            CommandLine[Index] == "-cubin" || CommandLine[Index] == "--cubin") {
+          CommandLine.erase(CommandLine.begin() + Index--);
+          IsModuleFile = true;
+        }
+      }
+      if(IsModuleFile)
+        ModuleFiles->insert(getRealFilePath(File.str(), Files.get()));
+
+      std::string Filename = CompileCommand.Filename;
+      if(!llvm::sys::path::is_absolute(Filename)) {
+          // To convert the relative path to absolute path.
+          llvm::SmallString<128> AbsPath(Filename);
+          llvm::sys::fs::make_absolute(AbsPath);
+          llvm::sys::path::remove_dots(AbsPath, /*remove_dot_dot=*/true);
+          Filename = std::string(AbsPath.str());
+      }
+
+      std::vector<std::string> Options;
+      // The first place is used to store the directory where the compile command runs
+      Options.push_back(CompileCommand.Directory.c_str());
+      for (size_t Index = 0; Index < CommandLine.size(); Index++)
+        Options.push_back(CommandLine[Index]);
+
+      // Skip parsing Linker command
+      if (CompileCommand.Filename == "LinkerEntry") {
+        static size_t Idx = 0;
+        auto NewKey = CompileCommand.Filename + std::to_string(Idx++);
+        CollectCompileTarget(NewKey, Options);
+        continue;
+      }
+      CollectCompileTarget(CompileCommand.Filename.c_str(), Options);
+
+      if (!llvm::sys::path::has_filename(CompileCommand.Filename)) {
+        std::string CommandField = "";
+        for (size_t Index = 0; Index < CommandLine.size(); Index++) {
+          CommandField = CommandField + CommandLine[Index] + " ";
+        }
+        if (!CommandField.empty())
+          CommandField.pop_back();
+
+        ClangToolOutputMessage = std::string(35, ' ') + CompilationDatabaseDir +
+                                 "/compile_commands.json:\n" +
+                                 std::string(35, ' ') +
+                                 "  -  \"command\" field: \"" + CommandField +
+                                 "\", \"file\" field: \"\"";
+        return -30 /*MigrationErrorInconsistentFileInDatabase*/;
+      }
+
+      StringRef BaseNameRef = llvm::sys::path::filename(Filename);
+      std::string BaseNameStr = BaseNameRef.str();
+      std::string ItemNameStr = "";
+      bool Matched = false;
+      for (size_t Index = 0; Index < CommandLine.size(); Index++) {
+        if (!llvm::sys::path::has_filename(CommandLine[Index]))
+          return -1;
+        StringRef ItemNameRef = llvm::sys::path::filename(CommandLine[Index]);
+        ItemNameStr = ItemNameRef.str();
+        if (ItemNameStr == BaseNameStr) {
+          Matched = true;
+          // Try to convert the path of input source file into absolute path, as
+          // relative path has the potential risk to change the working
+          // directory of in-memory VFS, which may result in an unexpected
+          // behavior.
+          CommandLine[Index] = Filename;
+          break;
+        }
+      }
+
+      if (!Matched) {
+        ClangToolOutputMessage = std::string(35, ' ') + CompilationDatabaseDir +
+                                 "/compile_commands.json:\n" +
+                                 std::string(35, ' ') +
+                                 "  -  \"command\" field: \"" + ItemNameStr +
+                                 "\", \"file\" field: \"" +
+                                 BaseNameStr + "\"";
+        return -30 /*MigrationErrorInconsistentFileInDatabase*/;
+      }
+
+      for (size_t index = 0; index < SDKIncludePath.size(); index++) {
+        if (SDKIncludePath[index] == '\\') {
+          SDKIncludePath[index] = '/';
+        }
+      }
+      ArgumentsAdjuster CudaArgsAdjuster{ArgsAdjuster};
+#ifdef _WIN32
+      // In Microsoft Visual Studio Project, CUDA file in <None> is not part of
+      // the build project, So if "*.cu" files is found in <None> node, just
+      // skip it and give a warning message.
+      if ((!CommandLine.empty() && CommandLine[0] == "None") &&
+          llvm::sys::path::extension(File) == ".cu") {
+        const std::string Msg =
+            "warning: " + File.str() +
+            " was found in <None> node in " + VcxprojFilePath + " and skipped; to "
+            "migrate specify CUDA* Item Type for this file in project and try "
+            "again.\n";
+        DoPrintHandle(Msg, false);
+        return -1;
+      }
+
+      if ((!CommandLine.empty() && CommandLine[0] == "CudaCompile") ||
+          (!CommandLine.empty() && CommandLine[0] == "CustomBuild" &&
+           llvm::sys::path::extension(File)==".cu")) {
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
+      } else {
+        std::string IncludeOptionStr = std::string("-I") + SDKIncludePath;
+        CommandLine.push_back(IncludeOptionStr);
+      }
+#else
+      if (!CommandLine.empty() && CommandLine[0].size() >= 4 &&
+          CommandLine[0].substr(CommandLine[0].size() - 4) == "nvcc") {
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster("cuda", ArgumentInsertPosition::BEGIN));
+        CudaArgsAdjuster = combineAdjusters(
+            std::move(CudaArgsAdjuster),
+            getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
+      } else {
+        std::string IncludeOptionStr = std::string("-I") + SDKIncludePath;
+        CommandLine.push_back(IncludeOptionStr);
+      }
+#endif
+      if (CudaArgsAdjuster)
+        CommandLine = CudaArgsAdjuster(CommandLine, CompileCommand.Filename);
+
+      assert(!CommandLine.empty());
+
+      // Add the resource dir based on the binary of this tool. argv[0] in the
+      // compilation database may refer to a different compiler and we want to
+      // pick up the very same standard library that compiler is using. The
+      // builtin headers in the resource dir need to match the exact clang
+      // version the tool is using.
+      // FIXME: On linux, GetMainExecutable is independent of the value of the
+      // first argument, thus allowing ClangTool and runToolOnCode to just
+      // pass in made-up names here. Make sure this works on other platforms.
+      injectResourceDir(CommandLine, "clang_tool", &StaticSymbol);
+
+      // FIXME: We need a callback mechanism for the tool writer to output a
+      // customized message for each file.
+      LLVM_DEBUG({ llvm::dbgs() << "Processing: " << File << ".\n"; });
+      ToolInvocation Invocation(std::move(CommandLine), Action, Files.get(),
+                                PCHContainerOps);
+      Invocation.setDiagnosticConsumer(DiagConsumer);
+
+      if (!Invocation.run()) {
+        // FIXME: Diagnostics should be used instead.
+        if (PrintErrorMessage && StopOnParseErrTooling) {
+          std::string ErrMsg="Did not process 1 file(s) in -in-root folder \""
+                   + InRootTooling + "\":\n"
+                   "    " + File.str() + ": " + std::to_string(CurFileParseErrCnt)
+                   + " parsing error(s)\n";
+          llvm::errs() << ErrMsg;
+        }
+        ProcessingFailed = true;
+        if(StopOnParseErrTooling)
+            break;
+      }
+      CollectProcessedFile(getRealFilePath(File.str(), Files.get()));
+
+    }
+    //collect the errror counter info.
+    ErrorCnt[File.str()] =(CurFileSigErrCnt<<32) | CurFileParseErrCnt;
+    } catch (std::exception &e) {
+      std::string FaultMsg =
+          "Error: dpct internal error. Current file skipped. Migration continues.\n";
+      llvm::errs() << FaultMsg;
+    }
+    return 0;
+}
+#endif // SYCLomatic_CUSTOMIZATION
+
 int ClangTool::run(ToolAction *Action) {
   // Exists solely for the purpose of lookup of the resource path.
   // This just needs to be some symbol in the binary.
@@ -491,6 +939,9 @@ int ClangTool::run(ToolAction *Action) {
   // Compute all absolute paths before we run any actions, as those will change
   // the working directory.
   std::vector<std::string> AbsolutePaths;
+#ifdef SYCLomatic_CUSTOMIZATION
+  if(DoGetRunRound() == 0) {
+#endif // SYCLomatic_CUSTOMIZATION
   AbsolutePaths.reserve(SourcePaths.size());
   for (const auto &SourcePath : SourcePaths) {
     auto AbsPath = getAbsolutePath(*OverlayFileSystem, SourcePath);
@@ -502,7 +953,28 @@ int ClangTool::run(ToolAction *Action) {
     }
     AbsolutePaths.push_back(std::move(*AbsPath));
   }
-
+#ifdef SYCLomatic_CUSTOMIZATION
+  // If target source file names do not exist in the command line, dpct will
+  // migrate all relevant files it detects in the compilation database.
+  if (SourcePaths.size() == 0) {
+    std::vector<std::string> SourcePaths = Compilations.getAllFiles();
+    for (const auto &SourcePath : SourcePaths) {
+      AbsolutePaths.push_back(SourcePath);
+      CollectFileFromDB(SourcePath);
+    }
+  } else {
+    if (isFileProcessAllSet()) {
+      const std::string Msg =
+          "Warning: --process-all option was ignored, since input files were "
+          "provided in command line.\n";
+      DoPrintHandle(Msg, false);
+    }
+  }
+  } else {
+     for (auto &File : GetReProcessFile())
+       AbsolutePaths.push_back(File);
+  }
+#endif // SYCLomatic_CUSTOMIZATION
   // Remember the working directory in case we need to restore it.
   std::string InitialWorkingDir;
   if (RestoreCWD) {
@@ -515,6 +987,8 @@ int ClangTool::run(ToolAction *Action) {
   }
 
   for (llvm::StringRef File : AbsolutePaths) {
+
+#ifndef SYCLomatic_CUSTOMIZATION
     // Currently implementations of CompilationDatabase::getCompileCommands can
     // change the state of the file system (e.g.  prepare generated headers), so
     // this method needs to run right before we invoke the tool, as the next
@@ -553,8 +1027,10 @@ int ClangTool::run(ToolAction *Action) {
                 llvm::MemoryBuffer::getMemBuffer(MappedFile.second));
 
       std::vector<std::string> CommandLine = CompileCommand.CommandLine;
+
       if (ArgsAdjuster)
         CommandLine = ArgsAdjuster(CommandLine, CompileCommand.Filename);
+
       assert(!CommandLine.empty());
 
       // Add the resource dir based on the binary of this tool. argv[0] in the
@@ -581,8 +1057,45 @@ int ClangTool::run(ToolAction *Action) {
         ProcessingFailed = true;
       }
     }
+#else
+    if(isExcludePath(File.str(), true)) {
+      continue;
+    }
+    int Ret = proccessFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
+                            Action);
+    if (Ret == -1)
+      continue;
+    else if (Ret < -1)
+      return Ret;
+#endif // SYCLomatic_CUSTOMIZATION
   }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  // if input file(s) is not specified in command line, and the process-all
+  // option is given in the comomand line, dpct tries to migrate or copy all
+  // files from -in-root to the output directory.
+  if(SourcePaths.size() == 0 && DoGetRunRound() == 0) {
+    std::vector<std::string> FilesNotProcessed;
+
+    // To traverse all the files in the directory specified by
+    // -in-root, collecting *.cu files not processed by the first loop of
+    // calling proccessFiles() into FilesNotProcessed, and copies the rest
+    // files to the output directory.
+    DoFileProcessHandle(FilesNotProcessed);
+    for (auto &Entry : FilesNotProcessed) {
+      auto File = llvm::StringRef(Entry);
+      int Ret = proccessFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
+                              Action);
+      if (Ret == -1)
+        continue;
+      else if (Ret < -1)
+        return Ret;
+    }
+  }
+
+  // exit point for the file processing.
+  CheckPointStage = 0 /*CHECKPOINT_UNKNOWN*/;
+#endif // SYCLomatic_CUSTOMIZATION
   if (!InitialWorkingDir.empty()) {
     if (auto EC =
             OverlayFileSystem->setCurrentWorkingDirectory(InitialWorkingDir))

@@ -534,7 +534,14 @@ list(APPEND LLVM_COMMON_DEPENDS clang-tablegen-targets)
 if(LLVM_ENABLE_MODULES)
   list(APPEND LLVM_COMMON_DEPENDS intrinsics_gen)
 endif()
-
+# SYCLomatic_CUSTOMIZATION begin
+list(INSERT CMAKE_MODULE_PATH 0
+  "${CMAKE_CURRENT_SOURCE_DIR}/lib/DPCT/cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/tools/dpct/cmake"
+  )
+include(libDPCT)
+include(dpct)
+# SYCLomatic_CUSTOMIZATION end
 add_subdirectory(lib)
 add_subdirectory(tools)
 add_subdirectory(runtime)
@@ -929,3 +936,13 @@ endif()
 configure_file(
   ${CLANG_SOURCE_DIR}/include/clang/Config/config.h.cmake
   ${CLANG_BINARY_DIR}/include/clang/Config/config.h)
+
+# SYCLomatic_CUSTOMIZATION begin
+if (NOT CLANG_BUILT_STANDALONE)
+  set_dpct_package()
+endif()
+add_custom_target(install-dpct DEPENDS ${DPCT_RUN})
+set_target_properties(install-dpct PROPERTIES FOLDER "install dpct")
+add_custom_target(install-c2s DEPENDS ${DPCT_RUN})
+set_target_properties(install-c2s PROPERTIES FOLDER "install c2s")
+# SYCLomatic_CUSTOMIZATION end

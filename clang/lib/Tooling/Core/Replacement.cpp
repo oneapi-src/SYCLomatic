@@ -123,7 +123,29 @@ void Replacement::setFromSourceLocation(const SourceManager &Sources,
   const std::pair<FileID, unsigned> DecomposedLocation =
       Sources.getDecomposedLoc(Start);
   const FileEntry *Entry = Sources.getFileEntryForID(DecomposedLocation.first);
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (Entry) {
+    // To avoid potential path inconsist issue,
+    // using tryGetRealPathName while applicable.
+    if (!Entry->tryGetRealPathName().empty()) {
+      this->FilePath = Entry->tryGetRealPathName().str();
+    }
+    else {
+      llvm::SmallString<512> FilePathAbs(Entry->getName());
+      Sources.getFileManager().makeAbsolutePath(FilePathAbs);
+      llvm::sys::path::native(FilePathAbs);
+      // Need to remove dot to keep the file path
+      // added by ASTMatcher and added by
+      // AnalysisInfo::getLocInfo() consistent.
+      llvm::sys::path::remove_dots(FilePathAbs, true);
+      this->FilePath = std::string(FilePathAbs.str());
+    }
+  } else {
+    this->FilePath = std::string(InvalidLocation);
+  }
+#else
   this->FilePath = std::string(Entry ? Entry->getName() : InvalidLocation);
+#endif // SYCLomatic_CUSTOMIZATION
   this->ReplacementRange = Range(DecomposedLocation.second, Length);
   this->ReplacementText = std::string(ReplacementText);
 }
@@ -238,8 +260,19 @@ Replacements::mergeIfOrderIndependent(const Replacement &R) const {
   if (MergeShiftedRs.getCanonicalReplacements() ==
       MergeShiftedReplaces.getCanonicalReplacements())
     return MergeShiftedRs;
+#ifdef SYCLomatic_CUSTOMIZATION
+#ifndef NDEBUG
   return llvm::make_error<ReplacementError>(replacement_error::overlap_conflict,
                                             R, *Replaces.begin());
+#else
+  // `Rs` is from yaml file (previous migration), `Replaces` is from current migration.
+  // To avoid SIGABRT, ignore previous replacement `Rs`, keep current migration result.
+  return *this;
+#endif
+#else
+  return llvm::make_error<ReplacementError>(replacement_error::overlap_conflict,
+                                            R, *Replaces.begin());
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 llvm::Error Replacements::add(const Replacement &R) {
@@ -274,12 +307,30 @@ llvm::Error Replacements::add(const Replacement &R) {
       // either order produces the same text, they are order-independent.
       if ((R.getReplacementText() + I->getReplacementText()).str() !=
           (I->getReplacementText() + R.getReplacementText()).str())
+#ifdef SYCLomatic_CUSTOMIZATION
+#ifndef NDEBUG
         return llvm::make_error<ReplacementError>(
             replacement_error::insert_conflict, R, *I);
       // If insertions are order-independent, we can merge them.
       Replacement NewR(
           R.getFilePath(), R.getOffset(), 0,
           (R.getReplacementText() + I->getReplacementText()).str());
+#else
+        ;
+      // `R` is from yaml file (previous migration), `I` is from current
+      // migration. To avoid SIGABRT, ignore previous replacement `R`, keep
+      // current migration result.
+      Replacement NewR(R.getFilePath(), R.getOffset(), 0,
+                       I->getReplacementText().str());
+#endif
+#else
+        return llvm::make_error<ReplacementError>(
+            replacement_error::insert_conflict, R, *I);
+      // If insertions are order-independent, we can merge them.
+      Replacement NewR(
+          R.getFilePath(), R.getOffset(), 0,
+          (R.getReplacementText() + I->getReplacementText()).str());
+#endif // SYCLomatic_CUSTOMIZATION
       Replaces.erase(I);
       Replaces.insert(std::move(NewR));
       return llvm::Error::success();
@@ -561,18 +612,63 @@ unsigned Replacements::getShiftedCodePosition(unsigned Position) const {
   return Position + Offset;
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+#include <setjmp.h>
+
+#if defined(__linux__)
+#define JMP_BUF   sigjmp_buf
+#define SETJMP(x)       sigsetjmp(x, 1)
+#define LONGJMP      siglongjmp
+#else
+#define JMP_BUF   jmp_buf
+#define SETJMP(x)       setjmp(x)
+#define LONGJMP      longjmp
+#endif
+
+JMP_BUF CPApplyReps;
+int CheckPointStageCore=0 /*CHECKPOINT_UNKNOWN*/;
+#endif // SYCLomatic_CUSTOMIZATION
+
 namespace clang {
 namespace tooling {
 
 bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
+#ifdef SYCLomatic_CUSTOMIZATION
+  // Add declared "volatile" to remove warning "variable ‘Result’ might be
+  // clobbered by ‘longjmp’ or ‘vfork’ "
+  volatile bool Result = true;
+#else
   bool Result = true;
+#endif // SYCLomatic_CUSTOMIZATION
   for (auto I = Replaces.rbegin(), E = Replaces.rend(); I != E; ++I) {
+#ifdef SYCLomatic_CUSTOMIZATION
+    CheckPointStageCore = 5 /*CHECKPOINT_WRITE_OUT*/;
+    int Ret=SETJMP(CPApplyReps);
+    if(Ret != 0) {
+       //skip the a replacement, as meet fatal error when apply the replacement.
+       continue;
+    }
+#endif // SYCLomatic_CUSTOMIZATION
     if (I->isApplicable()) {
+#ifdef SYCLomatic_CUSTOMIZATION
+      try {
+#endif // SYCLomatic_CUSTOMIZATION
       Result = I->apply(Rewrite) && Result;
+#ifdef SYCLomatic_CUSTOMIZATION
+      } catch (std::exception &e) {
+        std::string FaultMsg =
+            "Error: dpct internal error. dpct tries to recover and write the migration result.\n";
+        llvm::errs() << FaultMsg;
+      }
+#endif // SYCLomatic_CUSTOMIZATION
     } else {
       Result = false;
     }
   }
+#ifdef SYCLomatic_CUSTOMIZATION
+  //tag the checkpoint is invalid now.
+  CheckPointStageCore = 0 /*CHECKPOINT_UNKNOWN*/;
+#endif // SYCLomatic_CUSTOMIZATION
   return Result;
 }
 

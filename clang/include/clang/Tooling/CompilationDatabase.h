@@ -76,6 +76,13 @@ struct CompileCommand {
   }
 };
 
+#ifdef SYCLomatic_CUSTOMIZATION
+enum DatabaseStatus {
+  CannotParseDatabase = -101, //map to MigrationErrorCannotParseDatabase in DPCT
+  CannotFindDatabase = -102, //map to MigrationErrorCannotFindDatabase in DPCT
+};
+#endif // SYCLomatic_CUSTOMIZATION
+
 /// Interface for compilation databases.
 ///
 /// A compilation database allows the user to retrieve compile command lines
@@ -107,15 +114,28 @@ public:
   ///
   /// Looks for a compilation database in all parent paths of file 'SourceFile'
   /// by calling loadFromDirectory.
+#ifdef SYCLomatic_CUSTOMIZATION
+  static std::unique_ptr<CompilationDatabase>
+  autoDetectFromSource(StringRef SourceFile, std::string &ErrorMessage,
+                       std::string &CompilationDatabaseDir);
+#else
   static std::unique_ptr<CompilationDatabase>
   autoDetectFromSource(StringRef SourceFile, std::string &ErrorMessage);
+#endif // SYCLomatic_CUSTOMIZATION
 
   /// Tries to detect a compilation database location and load it.
   ///
   /// Looks for a compilation database in directory 'SourceDir' and all
   /// its parent paths by calling loadFromDirectory.
+#ifdef SYCLomatic_CUSTOMIZATION
+  static std::unique_ptr<CompilationDatabase>
+  autoDetectFromDirectory(StringRef SourceDir, std::string &ErrorMessage,
+                          DatabaseStatus &ErrCode,
+                          std::string &CompilationDatabaseDir);
+#else
   static std::unique_ptr<CompilationDatabase>
   autoDetectFromDirectory(StringRef SourceDir, std::string &ErrorMessage);
+#endif // SYCLomatic_CUSTOMIZATION
 
   /// Returns all compile commands in which the specified file was
   /// compiled.

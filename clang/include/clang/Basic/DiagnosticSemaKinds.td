@@ -1947,8 +1947,11 @@ def err_missing_default_ctor : Error<
   "cannot use constructor inherited from base class %4;}0 "
   "%select{base class|member}2 %3 %select{which|which|of %1}0 "
   "does not have a default constructor">;
+
+// SYCLomatic_CUSTOMIZATION begin
 def note_due_to_dllexported_class : Note<
-  "due to %0 being dllexported%select{|; try compiling in C++11 mode}1">;
+  "due to %0 being dllexported%select{|; try migrating in C++11 mode}1">;
+// SYCLomatic_CUSTOMIZATION end
 
 def err_illegal_union_or_anon_struct_member : Error<
   "%select{anonymous struct|union}0 member %1 has a non-trivial "
@@ -9617,9 +9620,11 @@ def err_generic_sel_multi_match : Error<
 
 
 // Blocks
-def err_blocks_disable : Error<"blocks support disabled - compile with -fblocks"
-  " or %select{pick a deployment target that supports them|for OpenCL C 2.0"
-  " or OpenCL C 3.0 with __opencl_c_device_enqueue feature}0">;
+// SYCLomatic_CUSTOMIZATION begin
+def err_blocks_disable : Error<"blocks support disabled - try to migrate with"
+  " '--extra-arg=\"-fblocks\"'%select{|}0">;
+// SYCLomatic_CUSTOMIZATION end
+
 def err_block_returning_array_function : Error<
   "block cannot return %select{array|function}0 type %1">;
 

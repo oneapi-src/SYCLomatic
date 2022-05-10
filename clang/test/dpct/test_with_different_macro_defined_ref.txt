@@ -1,0 +1,20 @@
+__global__ void foo_1() {}
+__global__ void foo_2() {}
+
+int main() {
+// CHECK:#ifdef FOO_1
+// CHECK-NEXT:  foo_1<<<1, 1>>>();
+// CHECK-NEXT:#elif  defined(FOO_2)
+// CHECK-NEXT:  dpct::get_default_queue().parallel_for(
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 2) * sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)), 
+// CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:          foo_2();
+// CHECK-NEXT:        });
+// CHECK-NEXT:#endif
+#ifdef FOO_1
+  foo_1<<<1, 1>>>();
+#elif  defined(FOO_2)
+  foo_2<<<2, 2>>>();
+#endif
+  return 0;
+}

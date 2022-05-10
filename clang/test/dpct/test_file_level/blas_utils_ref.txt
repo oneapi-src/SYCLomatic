@@ -1,0 +1,10 @@
+//     CHECK:inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
+//CHECK-NEXT:                                int lda, int *ipiv, int *info, int batch_size) {
+//CHECK-NEXT:  using Ty = typename DataType<T>::T2;
+//CHECK-NEXT:  // Set the info array value to 0
+//CHECK-NEXT:  detail::dpct_memset(exec_queue, info, 0, sizeof(int) * batch_size);
+//CHECK-NEXT:#ifdef DPCT_USM_LEVEL_NONE
+//CHECK-NEXT:  std::int64_t stride_a = n * lda;
+//CHECK-NEXT:  std::int64_t stride_ipiv = n;
+//CHECK-NEXT:  std::int64_t scratchpad_size = oneapi::mkl::lapack::getrf_batch_scratchpad_size<Ty>(
+//CHECK-NEXT:      exec_queue, n, n, lda, stride_a, stride_ipiv, batch_size);

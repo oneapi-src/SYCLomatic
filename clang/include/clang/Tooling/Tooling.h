@@ -48,6 +48,41 @@
 #include <utility>
 #include <vector>
 
+#ifdef SYCLomatic_CUSTOMIZATION
+#include <set>
+namespace clang {
+namespace tooling {
+using PrintType = void (*)(const std::string &, bool);
+using FileProcessType = void (*)(StringRef, StringRef,
+                                 std::vector<std::string> &);
+
+void SetPrintHandle(PrintType Handle);
+void DoPrintHandle(const std::string &Msg, bool IsPrintOnNormal);
+void SetSDKIncludePath(const std::string &Path);
+void SetDiagnosticOutput(llvm::raw_ostream &OStream);
+void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB);
+void SetCompileTargetsMap(
+    std::vector<std::pair<std::string, std::vector<std::string>>>
+        &CompileTargetsMap);
+void SetFileProcessHandle(StringRef InRoot, StringRef OutRoot,
+                          FileProcessType FileProcessHandle);
+void SetProcessedFile(std::set<std::string> &ProcessedFile);
+void SetReProcessFile(std::set<std::string> &ReProcessFile);
+void CollectProcessedFile(std::string File);
+std::set<std::string> GetReProcessFile();
+void SetGetRunRound(std::function<unsigned int()> Func);
+unsigned int DoGetRunRound();
+void SetModuleFiles(std::set<std::string> &MF);
+std::string getRealFilePath(std::string File, clang::FileManager *FM);
+void SetColorOptionPtr(unsigned int &ColorOption);
+void SetColorOptionValue(unsigned int ColorOption);
+void SetIsExcludePathHandler(
+    std::function<bool(const std::string &, bool)> Func);
+bool isExcludePath(const std::string &Path, bool IsRelative);
+} // namespace tooling
+} // namespace clang
+#endif // SYCLomatic_CUSTOMIZATION
+
 namespace clang {
 
 class CompilerInstance;
@@ -62,6 +97,8 @@ class Compilation;
 } // namespace driver
 
 namespace tooling {
+
+
 
 class CompilationDatabase;
 
@@ -295,6 +332,9 @@ public:
   FileManager *Files;
   std::shared_ptr<PCHContainerOperations> PCHContainerOps;
   DiagnosticConsumer *DiagConsumer = nullptr;
+#ifdef SYCLomatic_CUSTOMIZATION
+  DiagnosticConsumer *DiagnosticPrinter = nullptr;
+#endif // SYCLomatic_CUSTOMIZATION
   DiagnosticOptions *DiagOpts = nullptr;
 };
 
@@ -328,7 +368,10 @@ public:
             IntrusiveRefCntPtr<FileManager> Files = nullptr);
 
   ~ClangTool();
-
+#ifdef SYCLomatic_CUSTOMIZATION
+  int proccessFiles(llvm::StringRef File, bool &ProcessingFailed,
+                    bool &FileSkipped, int &StaticSymbol, ToolAction *Action);
+#endif // SYCLomatic_CUSTOMIZATION
   /// Set a \c DiagnosticConsumer to use during parsing.
   void setDiagnosticConsumer(DiagnosticConsumer *DiagConsumer) {
     this->DiagConsumer = DiagConsumer;
@@ -376,9 +419,20 @@ public:
   FileManager &getFiles() { return *Files; }
 
   llvm::ArrayRef<std::string> getSourcePaths() const { return SourcePaths; }
+#ifdef SYCLomatic_CUSTOMIZATION
+  void setCompilationDatabaseDir(const std::string &Dir){
+    CompilationDatabaseDir = Dir;
+  }
+  bool isInputfileSpecified() {
+    return !SourcePaths.empty();
+  }
+#endif // SYCLomatic_CUSTOMIZATION
 
 private:
   const CompilationDatabase &Compilations;
+#ifdef SYCLomatic_CUSTOMIZATION
+  std::string CompilationDatabaseDir = "";
+#endif // SYCLomatic_CUSTOMIZATION
   std::vector<std::string> SourcePaths;
   std::shared_ptr<PCHContainerOperations> PCHContainerOps;
 

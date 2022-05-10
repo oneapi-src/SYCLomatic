@@ -71,7 +71,14 @@
 #include <vector>
 
 using namespace clang;
-
+#ifdef SYCLomatic_CUSTOMIZATION
+namespace clang {
+  inline void recordTokenSplit(SourceLocation, unsigned) {}
+  extern std::function<bool(SourceLocation)> IsInRootFunc;
+  extern std::function<unsigned int()> GetRunRound;
+  std::function<void(SourceLocation, unsigned)> RecordTokenSplit = recordTokenSplit;
+}
+#endif // SYCLomatic_CUSTOMIZATION
 LLVM_INSTANTIATE_REGISTRY(PragmaHandlerRegistry)
 
 ExternalPreprocessorSource::~ExternalPreprocessorSource() = default;
@@ -499,6 +506,9 @@ void Preprocessor::CreateString(StringRef Str, Token &Tok,
 }
 
 SourceLocation Preprocessor::SplitToken(SourceLocation Loc, unsigned Length) {
+#ifdef SYCLomatic_CUSTOMIZATION
+  RecordTokenSplit(Loc, Length);
+#endif // SYCLomatic_CUSTOMIZATION
   auto &SM = getSourceManager();
   SourceLocation SpellingLoc = SM.getSpellingLoc(Loc);
   std::pair<FileID, unsigned> LocInfo = SM.getDecomposedLoc(SpellingLoc);
@@ -844,6 +854,33 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
     }
   }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (II.getName() == "__CUDA_ARCH__" && IsInRootFunc(Identifier.getLocation())) {
+    // Make a MacroDefinition for __CUDA_ARCH__
+    MacroInfo *MI = AllocateMacroInfo(SourceLocation());
+    MI->setIsBuiltinMacro();
+    DefMacroDirective DMD(MI, SourceLocation());
+    ArrayRef<ModuleMacro *> MMs;
+    MacroDefinition MD(&DMD, MMs, false);
+    if (!DisableMacroExpansion) {
+      if (!Identifier.isExpandDisabled() && MI->isEnabled()) {
+        // C99 6.10.3p10: If the preprocessing token immediately after the
+        // macro name isn't a '(', this macro should not be expanded.
+        if (!MI->isFunctionLike() || isNextPPTokenLParen())
+          return HandleMacroExpandedIdentifier(Identifier, MD);
+      }
+      else {
+        // C99 6.10.3.4p2 says that a disabled macro may never again be
+        // expanded, even if it's in a context where it could be expanded in the
+        // future.
+        Identifier.setFlag(Token::DisableExpand);
+        if (MI->isObjectLike() || isNextPPTokenLParen())
+          Diag(Identifier, diag::pp_disabled_macro_expansion);
+      }
+    }
+  }
+#endif // SYCLomatic_CUSTOMIZATION
+
   // If this identifier is a keyword in a newer Standard or proposed Standard,
   // produce a warning. Don't warn if we're not considering macro expansion,
   // since this identifier might be the name of a macro.
@@ -909,7 +946,6 @@ void Preprocessor::Lex(Token &Result) {
 
   if (Result.is(tok::unknown) && TheModuleLoader.HadFatalFailure)
     return;
-
   if (Result.is(tok::code_completion) && Result.getIdentifierInfo()) {
     // Remember the identifier before code completion token.
     setCodeCompletionIdentifierInfo(Result.getIdentifierInfo());
