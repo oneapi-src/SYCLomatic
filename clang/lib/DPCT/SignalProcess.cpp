@@ -46,8 +46,8 @@ void recoverCheckpoint(int Signo) {
   CurFileSigErrCnt++;
   if (EnableErrorRecover && Signo == SIGSEGV) {
     if (CheckPointStage == CHECKPOINT_PROCESSING_FILE) {
-      std::string FaultMsg =
-          "Error: dpct internal error. Current file skipped. Migration continues.\n";
+      std::string FaultMsg = "Error: dpct internal error. Current file "
+                             "skipped. Migration continues.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
         FatalErrorCnt++;
@@ -56,7 +56,8 @@ void recoverCheckpoint(int Signo) {
       LONGJMP(CPFileEnter, 1);
     } else if (CheckPointStage == CHECKPOINT_PROCESSING_FILE_ASTMATCHER) {
       std::string FaultMsg =
-          "Error: dpct internal error. Migration rule causing the error skipped. Migration continues.\n";
+          "Error: dpct internal error. Migration rule causing the error "
+          "skipped. Migration continues.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
         FatalErrorCnt++;
@@ -65,8 +66,8 @@ void recoverCheckpoint(int Signo) {
       LONGJMP(CPFileASTMaterEnter, 1);
     } else if (CheckPointStage ==
                CHECKPOINT_PROCESSING_REPLACEMENT_POSTPROCESS) {
-      std::string FaultMsg =
-          "Error: dpct internal error. dpct tries to recover and write the migration result.\n";
+      std::string FaultMsg = "Error: dpct internal error. dpct tries to "
+                             "recover and write the migration result.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
         FatalErrorCnt++;
@@ -74,8 +75,8 @@ void recoverCheckpoint(int Signo) {
       }
       LONGJMP(CPRepPostprocessEnter, 1);
     } else if (CheckPointStage == CHECKPOINT_FORMATTING_CODE) {
-      std::string FaultMsg =
-          "Error: dpct internal error. Formatting of the code skipped. Migration continues.\n";
+      std::string FaultMsg = "Error: dpct internal error. Formatting of the "
+                             "code skipped. Migration continues.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
         FatalErrorCnt++;
@@ -83,8 +84,8 @@ void recoverCheckpoint(int Signo) {
       }
       LONGJMP(CPFormatCodeEnter, 1);
     } else if (CheckPointStageCore == CHECKPOINT_WRITE_OUT) {
-      std::string FaultMsg =
-          "Error: dpct internal error. dpct tries to recover and write the migration result.\n";
+      std::string FaultMsg = "Error: dpct internal error. dpct tries to "
+                             "recover and write the migration result.\n";
       PrintReportOnFault(FaultMsg);
       if (!CurFileMeetErr) {
         FatalErrorCnt++;

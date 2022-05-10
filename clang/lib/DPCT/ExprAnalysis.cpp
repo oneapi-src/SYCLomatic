@@ -339,7 +339,8 @@ void ExprAnalysis::initSourceRange(const SourceRange &Range) {
     std::tie(SrcBegin, SrcLength) =
         getOffsetAndLength(Range.getBegin(), Range.getEnd());
     if (auto FileBuffer = SM.getBufferOrNone(FileId)) {
-      ReplSet.init(std::string(FileBuffer.getValue().getBuffer().data() + SrcBegin, SrcLength));
+      ReplSet.init(std::string(
+          FileBuffer.getValue().getBuffer().data() + SrcBegin, SrcLength));
       return;
     }
   }
@@ -430,8 +431,8 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       if (!ReplBLASEnum.empty())
         addReplacement(DRE, ReplBLASEnum);
       else {
-        auto &ReplFuncAttrEnum = MapNames::findReplacedName(MapNames::FunctionAttrMap,
-          ECD->getName().str());
+        auto &ReplFuncAttrEnum = MapNames::findReplacedName(
+            MapNames::FunctionAttrMap, ECD->getName().str());
         if (!ReplFuncAttrEnum.empty())
           addReplacement(DRE, ReplFuncAttrEnum);
       }
@@ -492,7 +493,7 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
     addReplacement(Ctor, ArgsString);
     return;
   }
-  for (auto It = Ctor->arg_begin(); It != Ctor->arg_end();It++) {
+  for (auto It = Ctor->arg_begin(); It != Ctor->arg_end(); It++) {
     dispatch(*It);
   }
 }
@@ -507,9 +508,8 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
 
   auto ItFieldRule = MapNames::ClassFieldMap.find(BaseType + "." + FieldName);
   if (ItFieldRule != MapNames::ClassFieldMap.end()) {
-    addReplacement(
-      ME->getMemberLoc(), ME->getMemberLoc(),
-      ItFieldRule->second->NewName);
+    addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
+                   ItFieldRule->second->NewName);
     return;
   }
 
@@ -557,16 +557,14 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         DevicePropVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
     if (!ReplacementStr.empty()) {
       addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + "()");
-      requestFeature(PropToGetFeatureMap.at(
-                         ME->getMemberNameInfo().getAsString()),
-                     ME);
+      requestFeature(
+          PropToGetFeatureMap.at(ME->getMemberNameInfo().getAsString()), ME);
     }
   } else if (BaseType == "textureReference") {
     std::string FieldName = ME->getMemberDecl()->getName().str();
     if (MapNames::replaceName(TextureRule::TextureMemberNames, FieldName)) {
       addReplacement(ME->getMemberLoc(), buildString("get_", FieldName, "()"));
-      requestFeature(ImageWrapperBaseToGetFeatureMap.at(FieldName),
-                     ME);
+      requestFeature(ImageWrapperBaseToGetFeatureMap.at(FieldName), ME);
     }
   } else if (MapNames::SupportedVectorTypes.find(BaseType) !=
              MapNames::SupportedVectorTypes.end()) {
@@ -652,10 +650,12 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         auto &FCIMMR =
             dpct::DpctGlobalInfo::getFunctionCallInMacroMigrateRecord();
         if (auto UDRFactory =
-          std::dynamic_pointer_cast<UserDefinedRewriterFactory>(Itr->second)) {
+                std::dynamic_pointer_cast<UserDefinedRewriterFactory>(
+                    Itr->second)) {
           for (auto ItHeader = UDRFactory->Includes.begin();
-            ItHeader != UDRFactory->Includes.end(); ItHeader++) {
-            DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), *ItHeader);
+               ItHeader != UDRFactory->Includes.end(); ItHeader++) {
+            DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(),
+                                                       *ItHeader);
           }
         }
         if (FCIMMR.find(LocStr) != FCIMMR.end() &&
@@ -700,7 +700,6 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
     analyzeArgument(Arg);
 }
 
-
 void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
   auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
   PP.PrintCanonicalTypes = true;
@@ -712,7 +711,8 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
 
   if (!CallExprRewriterFactoryBase::MethodRewriterMap)
     return;
-  auto Itr = CallExprRewriterFactoryBase::MethodRewriterMap->find(BaseType + "." + MethodName);
+  auto Itr = CallExprRewriterFactoryBase::MethodRewriterMap->find(
+      BaseType + "." + MethodName);
   if (Itr != CallExprRewriterFactoryBase::MethodRewriterMap->end()) {
     auto Rewriter = Itr->second->create(CMCE);
     auto Result = Rewriter->rewrite();
@@ -813,9 +813,9 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   }
   if (MapNames::replaceName(MapNames::TypeNamesMap, TyName)) {
     addReplacement(SR.getBegin(), SR.getEnd(), CSCE, TyName);
-  }
-  else if(getFinalCastTypeNameStr(TyName) != TyName){
-    addReplacement(SR.getBegin(), SR.getEnd(), CSCE, getFinalCastTypeNameStr(TyName));
+  } else if (getFinalCastTypeNameStr(TyName) != TyName) {
+    addReplacement(SR.getBegin(), SR.getEnd(), CSCE,
+                   getFinalCastTypeNameStr(TyName));
   }
 }
 
@@ -1208,7 +1208,7 @@ KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
   auto Num = Ctor->getNumArgs();
   for (size_t i = 0; i < Num; ++i) {
     if (Ctor->getArg(i)->isDefaultArgument()) {
-      if(i == 0) {
+      if (i == 0) {
         SizeOfHighestDimension = 1;
       }
       return Size;
@@ -1218,7 +1218,7 @@ KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
     if (!Ctor->getArg(i)->isValueDependent() &&
         Ctor->getArg(i)->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
       int64_t Value = ER.Val.getInt().getExtValue();
-      if(i == 0) {
+      if (i == 0) {
         SizeOfHighestDimension = Value;
       }
       Size = Size * Value;
@@ -1239,8 +1239,8 @@ void KernelArgumentAnalysis::analyzeExpr(const MaterializeTemporaryExpr *MTE) {
 // my_kernel<<<1, 1>>>([=] __device__(int idx) { idx++; });
 // The "__device__" attribute need to be removed.
 void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
-  if (const CXXRecordDecl* CRD = LE->getLambdaClass()) {
-    if (const CXXMethodDecl* CMD = CRD->getLambdaCallOperator()) {
+  if (const CXXRecordDecl *CRD = LE->getLambdaClass()) {
+    if (const CXXMethodDecl *CMD = CRD->getLambdaCallOperator()) {
       if (CMD->hasAttr<CUDADeviceAttr>()) {
         addReplacement(CMD->getAttr<CUDADeviceAttr>()->getRange(), LE, "");
       }

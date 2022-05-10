@@ -216,7 +216,7 @@ protected:
   // Emits a warning/error/note and/or comment depending on MsgID. For details
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
   template <typename IDTy, typename... Ts>
-  bool report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
+  bool report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
       auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
@@ -238,7 +238,7 @@ protected:
   // The location should be consistent with the result of
   // ReplaceStmt::getReplacement
   template <typename IDTy, typename... Ts>
-  void report(const Stmt *S, IDTy MsgID, bool UseTextBegin, Ts &&... Vals) {
+  void report(const Stmt *S, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     SourceLocation Begin(S->getBeginLoc());
     if (Begin.isMacroID() && !isOuterMostMacro(S)) {
@@ -350,7 +350,8 @@ public:
       static_cast<T *>(this)->runRule(Result);
     } catch (std::exception &e) {
       std::string FaultMsg =
-          "Error: dpct internal error. Migration rule causing the error skipped. Migration continues.\n";
+          "Error: dpct internal error. Migration rule causing the error "
+          "skipped. Migration continues.\n";
       llvm::errs() << FaultMsg;
     }
     return;
@@ -591,10 +592,11 @@ private:
 };
 
 class UserDefinedAPIRule
-  : public clang::dpct::NamedMigrationRule<UserDefinedAPIRule> {
+    : public clang::dpct::NamedMigrationRule<UserDefinedAPIRule> {
   std::string APIName;
+
 public:
-  UserDefinedAPIRule(std::string APIName) : APIName(APIName) {};
+  UserDefinedAPIRule(std::string APIName) : APIName(APIName){};
   void registerMatcher(clang::ast_matchers::MatchFinder &MF) override;
   void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
 };
@@ -622,9 +624,10 @@ public:
 };
 
 class UserDefinedClassMethodRule
-  : public clang::dpct::NamedMigrationRule<UserDefinedClassMethodRule> {
+    : public clang::dpct::NamedMigrationRule<UserDefinedClassMethodRule> {
   std::string BaseName;
   std::string MethodName;
+
 public:
   UserDefinedClassMethodRule(std::string BaseName, std::string MethodName)
       : BaseName(BaseName), MethodName(MethodName){};
@@ -1310,9 +1313,7 @@ public:
 /// Migration rule for event API calls
 class EventAPICallRule : public NamedMigrationRule<EventAPICallRule> {
 public:
-  EventAPICallRule() {
-    CurrentRule = this;
-  }
+  EventAPICallRule() { CurrentRule = this; }
   ~EventAPICallRule() {
     if (CurrentRule == this)
       CurrentRule = nullptr;
@@ -1613,7 +1614,7 @@ class MemoryDataTypeRule : public NamedMigrationRule<MemoryDataTypeRule> {
   template <class... Args>
   void emplaceParamDecl(const VarDecl *VD, StringRef ParamType,
                         bool HasInitialZeroCtor, std::string InitValue = "0",
-                        Args &&... ParamNames) {
+                        Args &&...ParamNames) {
     std::string ParamDecl;
     llvm::raw_string_ostream OS(ParamDecl);
     OS << ParamType << " ";

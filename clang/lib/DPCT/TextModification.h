@@ -278,25 +278,25 @@ class ReplaceStmt : public TextModification {
 
 public:
   template <class... Args>
-  ReplaceStmt(const Stmt *E, Args &&... S)
+  ReplaceStmt(const Stmt *E, Args &&...S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E), IsProcessMacro(false),
         ReplacementString(std::forward<Args>(S)...) {}
 
   template <class... Args>
-  ReplaceStmt(const Stmt *E, bool IsNeedProcessMacro, Args &&... S)
+  ReplaceStmt(const Stmt *E, bool IsNeedProcessMacro, Args &&...S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E),
         IsProcessMacro(IsNeedProcessMacro),
         ReplacementString(std::forward<Args>(S)...) {}
 
   template <class... Args>
   ReplaceStmt(const Stmt *E, bool IsNeedProcessMacro, bool IsNeedCleanup,
-              Args &&... S)
+              Args &&...S)
       : TextModification(TMID::ReplaceStmt), TheStmt(E),
         IsProcessMacro(IsNeedProcessMacro),
         ReplacementString(std::forward<Args>(S)...), IsCleanup(IsNeedCleanup) {}
 
   template <class... Args>
-  ReplaceStmt(const CUDAKernelCallExpr *E, Args &&... S)
+  ReplaceStmt(const CUDAKernelCallExpr *E, Args &&...S)
       : ReplaceStmt((const Stmt *)E, std::forward<Args>(S)...) {
     // Don't clean up for CUDAKernelCallExpr to avoid overlapping problems
     IsCleanup = false;
@@ -318,7 +318,7 @@ class ReplaceDecl : public TextModification {
 
 public:
   template <class... Args>
-  ReplaceDecl(const Decl *E, Args &&... S)
+  ReplaceDecl(const Decl *E, Args &&...S)
       : TextModification(TMID::ReplaceDecl), TheDecl(E),
         ReplacementString(std::forward<Args>(S)...) {}
 

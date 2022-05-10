@@ -10,7 +10,6 @@
 //===-----------------------------------------------------------------===//
 
 #include "clang/DPCT/DPCT.h"
-#include "MisleadingBidirectional.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
@@ -20,11 +19,12 @@
 #include "ExternalReplacement.h"
 #include "GenMakefile.h"
 #include "IncrementalMigrationUtility.h"
+#include "MisleadingBidirectional.h"
+#include "Rules.h"
 #include "SaveNewFiles.h"
 #include "SignalProcess.h"
 #include "Statics.h"
 #include "Utility.h"
-#include "Rules.h"
 #include "ValidateArguments.h"
 #include "VcxprojParser.h"
 #include "clang/AST/ASTConsumer.h"
@@ -899,8 +899,9 @@ std::string printCTVersion() {
   std::string buf;
   llvm::raw_string_ostream OS(buf);
 
-  OS << "\n" << TOOL_NAME << " version " << DPCT_VERSION_MAJOR
-     << "." << DPCT_VERSION_MINOR << "." << DPCT_VERSION_PATCH << "."
+  OS << "\n"
+     << TOOL_NAME << " version " << DPCT_VERSION_MAJOR << "."
+     << DPCT_VERSION_MINOR << "." << DPCT_VERSION_PATCH << "."
      << " Codebase:";
   // getClangRepositoryPath() export the machine name of repo in release build.
   // so skip the repo name.
@@ -1249,8 +1250,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
   DpctGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
-  DpctGlobalInfo::setCheckUnicodeSecurityFlag(
-    CheckUnicodeSecurityFlag);
+  DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
   DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
   HelperFileNameMap[HelperFileEnum::Dpct] =
       DpctGlobalInfo::getCustomHelperFileName() + ".hpp";
@@ -1329,7 +1329,8 @@ int runDPCT(int argc, const char **argv) {
                      NoDPCPPExtensions.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPatternFlag,
                      NoDRYPattern.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_NoUseGenericSpace, NoUseGenericSpaceFlag,
+    setValueToOptMap(clang::dpct::OPTION_NoUseGenericSpace,
+                     NoUseGenericSpaceFlag,
                      NoUseGenericSpace.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_CompilationsDir, CompilationsDir,
                      OptParser->isPSpecified());
@@ -1441,8 +1442,8 @@ int runDPCT(int argc, const char **argv) {
         Global.postProcess();
         Global.emplaceReplacements(Tool.getReplacements());
       } catch (std::exception &e) {
-        std::string FaultMsg =
-            "Error: dpct internal error. dpct tries to recover and write the migration result.\n";
+        std::string FaultMsg = "Error: dpct internal error. dpct tries to "
+                               "recover and write the migration result.\n";
         llvm::errs() << FaultMsg;
       }
     }

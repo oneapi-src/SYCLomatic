@@ -124,7 +124,8 @@ bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
 }
 void clang::dpct::BarrierFenceSpaceAnalyzer::PostVisit(
     clang::CXXDependentScopeMemberExpr *) {}
-bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(clang::CXXConstructExpr *CCE) {
+bool clang::dpct::BarrierFenceSpaceAnalyzer::Visit(
+    clang::CXXConstructExpr *CCE) {
   auto Ctor = CCE->getConstructor();
   std::string CtorName = Ctor->getParent()->getQualifiedNameAsString();
   if (AllowedDeviceFunctions.count(CtorName) && !isUserDefinedFunction(Ctor))
@@ -334,5 +335,9 @@ std::unordered_map<std::string, std::unordered_map<std::string, bool>>
 // Functions in this set should not create alias name for input pointer
 const std::unordered_set<std::string>
     clang::dpct::BarrierFenceSpaceAnalyzer::AllowedDeviceFunctions = {
-        "__popc", "atomicAdd", "__fetch_builtin_x", "__fetch_builtin_y",
-        "__fetch_builtin_z", "uint4"};
+        "__popc",
+        "atomicAdd",
+        "__fetch_builtin_x",
+        "__fetch_builtin_y",
+        "__fetch_builtin_z",
+        "uint4"};

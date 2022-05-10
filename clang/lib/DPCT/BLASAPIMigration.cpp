@@ -14,7 +14,8 @@
 namespace clang {
 namespace dpct {
 
-BLASEnumExpr BLASEnumExpr::create(const Expr *E, BLASEnumExpr::BLASEnumType BET) {
+BLASEnumExpr BLASEnumExpr::create(const Expr *E,
+                                  BLASEnumExpr::BLASEnumType BET) {
   BLASEnumExpr BEE;
   BEE.E = E;
   BEE.BET = BET;

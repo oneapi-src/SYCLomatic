@@ -158,14 +158,14 @@ void addDependencyIncludeDirectives(
       continue;
     if (IsCurrentFileInDplExtra) {
       if (isDplFile(Item))
-        Directives = Directives + "#include \"" +
-                     HelperFileNameMap.at(Item) + "\"" + getNL();
+        Directives = Directives + "#include \"" + HelperFileNameMap.at(Item) +
+                     "\"" + getNL();
       else
         Directives = Directives + "#include \"../" +
                      HelperFileNameMap.at(Item) + "\"" + getNL();
     } else {
-      Directives = Directives + "#include \"" +
-                   HelperFileNameMap.at(Item) + "\"" + getNL();
+      Directives = Directives + "#include \"" + HelperFileNameMap.at(Item) +
+                   "\"" + getNL();
     }
   }
   Content.Code = Directives;
@@ -221,6 +221,7 @@ public:
     PreviousNamespace = CurrentNamespace;
     return Result;
   }
+
 private:
   bool findStr(const std::string &Str,
                const std::string::size_type &StartPosition,
@@ -336,10 +337,9 @@ void generateAllHelperFiles() {
   {                                                                            \
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/" +                                                         \
-            HelperFileNameMap.at(                                    \
-                clang::dpct::HelperFileEnum::FILE_NAME),                       \
+            HelperFileNameMap.at(clang::dpct::HelperFileEnum::FILE_NAME),      \
         std::ios::binary);                                                     \
-    std::string Code = FILE_NAME##AllContentStr;                     \
+    std::string Code = FILE_NAME##AllContentStr;                               \
     replaceEndOfLine(Code);                                                    \
     FILE_NAME##File << Code;                                                   \
     FILE_NAME##File.flush();                                                   \
@@ -348,10 +348,9 @@ void generateAllHelperFiles() {
   {                                                                            \
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/dpl_extras/" +                                              \
-            HelperFileNameMap.at(                                    \
-                clang::dpct::HelperFileEnum::FILE_NAME),                       \
+            HelperFileNameMap.at(clang::dpct::HelperFileEnum::FILE_NAME),      \
         std::ios::binary);                                                     \
-    std::string Code = FILE_NAME##AllContentStr;                     \
+    std::string Code = FILE_NAME##AllContentStr;                               \
     replaceEndOfLine(Code);                                                    \
     FILE_NAME##File << Code;                                                   \
     FILE_NAME##File.flush();                                                   \
@@ -611,12 +610,11 @@ void generateHelperFunctions() {
     // of getNL().
 #define ADD_INCLUDE_DIRECTIVE_FOR_DPL(FILENAME)                                \
   if (!FILENAME##FileContent.empty()) {                                        \
-    FILENAME##FileContent.push_back(HelperNameContentMap.at(         \
+    FILENAME##FileContent.push_back(HelperNameContentMap.at(                   \
         std::make_pair(clang::dpct::HelperFileEnum::FILENAME,                  \
                        "non_local_include_dependency")));                      \
     IDDStr = IDDStr + "#include \"dpl_extras/" +                               \
-             HelperFileNameMap.at(                                   \
-                 clang::dpct::HelperFileEnum::FILENAME) +                      \
+             HelperFileNameMap.at(clang::dpct::HelperFileEnum::FILENAME) +     \
              "\"\n";                                                           \
   }
     ADD_INCLUDE_DIRECTIVE_FOR_DPL(DplExtrasAlgorithm)
@@ -648,12 +646,11 @@ void generateHelperFunctions() {
 
 #define ADD_INCLUDE_DIRECTIVE(FILENAME)                                        \
   if (!FILENAME##FileContent.empty()) {                                        \
-    FILENAME##FileContent.push_back(HelperNameContentMap.at(         \
+    FILENAME##FileContent.push_back(HelperNameContentMap.at(                   \
         std::make_pair(clang::dpct::HelperFileEnum::FILENAME,                  \
                        "non_local_include_dependency")));                      \
     IDDStr = IDDStr + "#include \"" +                                          \
-             HelperFileNameMap.at(                                   \
-                 clang::dpct::HelperFileEnum::FILENAME) +                      \
+             HelperFileNameMap.at(clang::dpct::HelperFileEnum::FILENAME) +     \
              "\"\n";                                                           \
   }
   ADD_INCLUDE_DIRECTIVE(Atomic)
@@ -682,8 +679,7 @@ void generateHelperFunctions() {
         clang::dpct::HelperFileEnum::FILE_NAME, FILE_NAME##FileContent);       \
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/" +                                                         \
-            HelperFileNameMap.at(                                              \
-                clang::dpct::HelperFileEnum::FILE_NAME),                       \
+            HelperFileNameMap.at(clang::dpct::HelperFileEnum::FILE_NAME),      \
         std::ios::binary);                                                     \
     FILE_NAME##File << FILE_NAME##FileContentStr;                              \
     FILE_NAME##File.flush();                                                   \
@@ -694,8 +690,7 @@ void generateHelperFunctions() {
         clang::dpct::HelperFileEnum::FILE_NAME, FILE_NAME##FileContent);       \
     std::ofstream FILE_NAME##File(                                             \
         ToPath + "/dpl_extras/" +                                              \
-            HelperFileNameMap.at(                                              \
-                clang::dpct::HelperFileEnum::FILE_NAME),                       \
+            HelperFileNameMap.at(clang::dpct::HelperFileEnum::FILE_NAME),      \
         std::ios::binary);                                                     \
     FILE_NAME##File << FILE_NAME##FileContentStr;                              \
     FILE_NAME##File.flush();                                                   \
@@ -881,10 +876,10 @@ void replaceEndOfLine(std::string &StrNeedProcess) {
 #endif
 }
 
-std::map<HelperFeatureIDTy, clang::dpct::HelperFunc>
-    HelperNameContentMap{
+std::map<HelperFeatureIDTy, clang::dpct::HelperFunc> HelperNameContentMap {
 #define DPCT_CONTENT_BEGIN(File, Name, Namespace, Idx)                         \
-  {{clang::dpct::HelperFileEnum::File, Name}, {Namespace, Idx, false, {},
+  {                                                                            \
+    {clang::dpct::HelperFileEnum::File, Name}, {Namespace, Idx, false, {},
 #define DPCT_DEPENDENCY(...) {__VA_ARGS__},
 #define DPCT_PARENT_FEATURE(ParentFeatureFile, ParentFeatureName)              \
   , { clang::dpct::HelperFileEnum::ParentFeatureFile, ParentFeatureName }
@@ -897,23 +892,23 @@ std::map<HelperFeatureIDTy, clang::dpct::HelperFunc>
 #include "clang/DPCT/device.inc"
 #include "clang/DPCT/dpct.inc"
 #include "clang/DPCT/dpl_extras/algorithm.inc"
+#include "clang/DPCT/dpl_extras/dpcpp_extensions.inc"
 #include "clang/DPCT/dpl_extras/functional.inc"
 #include "clang/DPCT/dpl_extras/iterators.inc"
 #include "clang/DPCT/dpl_extras/memory.inc"
 #include "clang/DPCT/dpl_extras/numeric.inc"
 #include "clang/DPCT/dpl_extras/vector.inc"
-#include "clang/DPCT/dpl_extras/dpcpp_extensions.inc"
 #include "clang/DPCT/dpl_utils.inc"
 #include "clang/DPCT/image.inc"
 #include "clang/DPCT/kernel.inc"
-#include "clang/DPCT/memory.inc"
-#include "clang/DPCT/util.inc"
-#include "clang/DPCT/rng_utils.inc"
 #include "clang/DPCT/lib_common_utils.inc"
+#include "clang/DPCT/memory.inc"
+#include "clang/DPCT/rng_utils.inc"
+#include "clang/DPCT/util.inc"
 #undef DPCT_CONTENT_BEGIN
 #undef DPCT_DEPENDENCY
 #undef DPCT_CONTENT_END
-    };
+};
 
 std::unordered_map<clang::dpct::HelperFileEnum, std::string> HelperFileNameMap{
     {clang::dpct::HelperFileEnum::Dpct, "dpct.hpp"},
@@ -969,7 +964,8 @@ const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
         {clang::dpct::HelperFileEnum::Memory, "__DPCT_MEMORY_HPP__"},
         {clang::dpct::HelperFileEnum::Util, "__DPCT_UTIL_HPP__"},
         {clang::dpct::HelperFileEnum::RngUtils, "__DPCT_RNG_UTILS_HPP__"},
-        {clang::dpct::HelperFileEnum::LibCommonUtils, "__DPCT_LIB_COMMON_UTILS_HPP__"},
+        {clang::dpct::HelperFileEnum::LibCommonUtils,
+         "__DPCT_LIB_COMMON_UTILS_HPP__"},
         {clang::dpct::HelperFileEnum::DplExtrasAlgorithm,
          "__DPCT_ALGORITHM_H__"},
         {clang::dpct::HelperFileEnum::DplExtrasFunctional,
@@ -1054,62 +1050,56 @@ const std::map<std::pair<clang::dpct::HelperFileEnum, std::string>, std::string>
 #include "../../runtime/dpct-rt/include/HelperFileAndFeatureNames.inc"
 #undef HELPER_FEATURE_MAP_TO_APINAME
 #undef HELPERFILE
+    };
+
+const std::unordered_map<std::string, HelperFeatureEnum> PropToGetFeatureMap = {
+    {"clockRate",
+     HelperFeatureEnum::Device_device_info_get_max_clock_frequency},
+    {"major", HelperFeatureEnum::Device_device_info_get_major_version},
+    {"minor", HelperFeatureEnum::Device_device_info_get_minor_version},
+    {"integrated", HelperFeatureEnum::Device_device_info_get_integrated},
+    {"warpSize", HelperFeatureEnum::Device_device_info_get_max_sub_group_size},
+    {"multiProcessorCount",
+     HelperFeatureEnum::Device_device_info_get_max_compute_units},
+    {"maxThreadsPerBlock",
+     HelperFeatureEnum::Device_device_info_get_max_work_group_size},
+    {"maxThreadsPerMultiProcessor",
+     HelperFeatureEnum::Device_device_info_get_max_work_items_per_compute_unit},
+    {"name", HelperFeatureEnum::Device_device_info_get_name},
+    {"totalGlobalMem",
+     HelperFeatureEnum::Device_device_info_get_global_mem_size},
+    {"sharedMemPerMultiprocessor",
+     HelperFeatureEnum::Device_device_info_get_local_mem_size},
+    {"sharedMemPerBlock",
+     HelperFeatureEnum::Device_device_info_get_local_mem_size},
+    {"maxGridSize",
+     HelperFeatureEnum::Device_device_info_get_max_nd_range_size},
+    {"maxThreadsDim",
+     HelperFeatureEnum::Device_device_info_get_max_work_item_sizes},
 };
 
-const std::unordered_map<std::string, HelperFeatureEnum>
-    PropToGetFeatureMap = {
-        {"clockRate",
-         HelperFeatureEnum::Device_device_info_get_max_clock_frequency},
-        {"major", HelperFeatureEnum::Device_device_info_get_major_version},
-        {"minor", HelperFeatureEnum::Device_device_info_get_minor_version},
-        {"integrated", HelperFeatureEnum::Device_device_info_get_integrated},
-        {"warpSize",
-         HelperFeatureEnum::Device_device_info_get_max_sub_group_size},
-        {"multiProcessorCount",
-         HelperFeatureEnum::Device_device_info_get_max_compute_units},
-        {"maxThreadsPerBlock",
-         HelperFeatureEnum::Device_device_info_get_max_work_group_size},
-        {"maxThreadsPerMultiProcessor",
-         HelperFeatureEnum::
-             Device_device_info_get_max_work_items_per_compute_unit},
-        {"name", HelperFeatureEnum::Device_device_info_get_name},
-        {"totalGlobalMem",
-         HelperFeatureEnum::Device_device_info_get_global_mem_size},
-        {"sharedMemPerMultiprocessor",
-         HelperFeatureEnum::Device_device_info_get_local_mem_size},
-        {"sharedMemPerBlock",
-         HelperFeatureEnum::Device_device_info_get_local_mem_size},
-        {"maxGridSize",
-         HelperFeatureEnum::Device_device_info_get_max_nd_range_size},
-        {"maxThreadsDim",
-         HelperFeatureEnum::Device_device_info_get_max_work_item_sizes},
-};
-
-const std::unordered_map<std::string, HelperFeatureEnum>
-    PropToSetFeatureMap = {
-        {"clockRate",
-         HelperFeatureEnum::Device_device_info_set_max_clock_frequency},
-        {"major", HelperFeatureEnum::Device_device_info_set_major_version},
-        {"minor", HelperFeatureEnum::Device_device_info_set_minor_version},
-        {"integrated", HelperFeatureEnum::Device_device_info_set_integrated},
-        {"warpSize",
-         HelperFeatureEnum::Device_device_info_set_max_sub_group_size},
-        {"multiProcessorCount",
-         HelperFeatureEnum::Device_device_info_set_max_compute_units},
-        {"maxThreadsPerBlock",
-         HelperFeatureEnum::Device_device_info_set_max_work_group_size},
-        {"maxThreadsPerMultiProcessor",
-         HelperFeatureEnum::
-             Device_device_info_set_max_work_items_per_compute_unit},
-        {"name", HelperFeatureEnum::Device_device_info_set_name},
-        {"totalGlobalMem",
-         HelperFeatureEnum::Device_device_info_set_global_mem_size},
-        {"sharedMemPerBlock",
-         HelperFeatureEnum::Device_device_info_set_local_mem_size},
-        {"maxGridSize",
-         HelperFeatureEnum::Device_device_info_set_max_nd_range_size},
-        {"maxThreadsDim",
-         HelperFeatureEnum::Device_device_info_set_max_work_item_sizes},
+const std::unordered_map<std::string, HelperFeatureEnum> PropToSetFeatureMap = {
+    {"clockRate",
+     HelperFeatureEnum::Device_device_info_set_max_clock_frequency},
+    {"major", HelperFeatureEnum::Device_device_info_set_major_version},
+    {"minor", HelperFeatureEnum::Device_device_info_set_minor_version},
+    {"integrated", HelperFeatureEnum::Device_device_info_set_integrated},
+    {"warpSize", HelperFeatureEnum::Device_device_info_set_max_sub_group_size},
+    {"multiProcessorCount",
+     HelperFeatureEnum::Device_device_info_set_max_compute_units},
+    {"maxThreadsPerBlock",
+     HelperFeatureEnum::Device_device_info_set_max_work_group_size},
+    {"maxThreadsPerMultiProcessor",
+     HelperFeatureEnum::Device_device_info_set_max_work_items_per_compute_unit},
+    {"name", HelperFeatureEnum::Device_device_info_set_name},
+    {"totalGlobalMem",
+     HelperFeatureEnum::Device_device_info_set_global_mem_size},
+    {"sharedMemPerBlock",
+     HelperFeatureEnum::Device_device_info_set_local_mem_size},
+    {"maxGridSize",
+     HelperFeatureEnum::Device_device_info_set_max_nd_range_size},
+    {"maxThreadsDim",
+     HelperFeatureEnum::Device_device_info_set_max_work_item_sizes},
 };
 
 const std::unordered_map<std::string, HelperFeatureEnum>
@@ -1162,7 +1152,7 @@ const std::unordered_map<std::string, HelperFeatureEnum>
         {"channel_type",
          HelperFeatureEnum::Image_image_wrapper_base_get_channel_type},
         {"sampler", HelperFeatureEnum::Image_image_wrapper_base_get_sampler},
-};
+    };
 
 } // namespace dpct
 } // namespace clang

@@ -30,8 +30,10 @@ std::string MapNames::getDpctNamespace(bool KeepNamespace) {
   return DpctNamespace[KeepNamespace];
 }
 
-std::unordered_map<std::string, std::shared_ptr<TypeNameRule>> MapNames::TypeNamesMap;
-std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>> MapNames::ClassFieldMap;
+std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
+    MapNames::TypeNamesMap;
+std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
+    MapNames::ClassFieldMap;
 MapNames::MapTy EnumConstantRule::EnumNamesMap;
 std::map<std::string /*Original API*/, HelperFeatureEnum>
     EnumConstantRule::EnumNamesHelperFeaturesMap;
@@ -105,20 +107,27 @@ void MapNames::setExplicitNamespaceMap() {
                          HelperFeatureEnum::Kernel_kernel_functor)},
       {"dim3", std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},
       {"int2", std::make_shared<TypeNameRule>(getClNamespace() + "int2")},
-      {"struct int2", std::make_shared<TypeNameRule>(getClNamespace() + "int2")},
+      {"struct int2",
+       std::make_shared<TypeNameRule>(getClNamespace() + "int2")},
       {"double2", std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
-      {"struct double2", std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
+      {"struct double2",
+       std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
       {"__half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
       {"__half2", std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
       {"half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
       {"half2", std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
-      {"cudaEvent_t", std::make_shared<TypeNameRule>(getClNamespace() + "event")},
+      {"cudaEvent_t",
+       std::make_shared<TypeNameRule>(getClNamespace() + "event")},
       {"CUevent", std::make_shared<TypeNameRule>(getClNamespace() + "event")},
-      {"CUevent_st", std::make_shared<TypeNameRule>(getClNamespace() + "event")},
+      {"CUevent_st",
+       std::make_shared<TypeNameRule>(getClNamespace() + "event")},
       {"CUfunc_cache", std::make_shared<TypeNameRule>("int")},
-      {"cudaStream_t", std::make_shared<TypeNameRule>(getClNamespace() + "queue *")},
-      {"CUstream", std::make_shared<TypeNameRule>(getClNamespace() + "queue *")},
-      {"CUstream_st", std::make_shared<TypeNameRule>(getClNamespace() + "queue")},
+      {"cudaStream_t",
+       std::make_shared<TypeNameRule>(getClNamespace() + "queue *")},
+      {"CUstream",
+       std::make_shared<TypeNameRule>(getClNamespace() + "queue *")},
+      {"CUstream_st",
+       std::make_shared<TypeNameRule>(getClNamespace() + "queue")},
       {"char1", std::make_shared<TypeNameRule>("char")},
       {"char2", std::make_shared<TypeNameRule>(getClNamespace() + "char2")},
       {"char3", std::make_shared<TypeNameRule>(getClNamespace() + "char3")},
@@ -140,9 +149,12 @@ void MapNames::setExplicitNamespaceMap() {
       {"long3", std::make_shared<TypeNameRule>(getClNamespace() + "long3")},
       {"long4", std::make_shared<TypeNameRule>(getClNamespace() + "long4")},
       {"longlong1", std::make_shared<TypeNameRule>("long long")},
-      {"longlong2", std::make_shared<TypeNameRule>(getClNamespace() + "longlong2")},
-      {"longlong3", std::make_shared<TypeNameRule>(getClNamespace() + "longlong3")},
-      {"longlong4", std::make_shared<TypeNameRule>(getClNamespace() + "longlong4")},
+      {"longlong2",
+       std::make_shared<TypeNameRule>(getClNamespace() + "longlong2")},
+      {"longlong3",
+       std::make_shared<TypeNameRule>(getClNamespace() + "longlong3")},
+      {"longlong4",
+       std::make_shared<TypeNameRule>(getClNamespace() + "longlong4")},
       {"short1", std::make_shared<TypeNameRule>("short")},
       {"short2", std::make_shared<TypeNameRule>(getClNamespace() + "short2")},
       {"short3", std::make_shared<TypeNameRule>(getClNamespace() + "short3")},
@@ -160,73 +172,99 @@ void MapNames::setExplicitNamespaceMap() {
       {"ulong3", std::make_shared<TypeNameRule>(getClNamespace() + "ulong3")},
       {"ulong4", std::make_shared<TypeNameRule>(getClNamespace() + "ulong4")},
       {"ulonglong1", std::make_shared<TypeNameRule>("unsigned long long")},
-      {"ulonglong2", std::make_shared<TypeNameRule>(getClNamespace() + "ulonglong2")},
-      {"ulonglong3", std::make_shared<TypeNameRule>(getClNamespace() + "ulonglong3")},
-      {"ulonglong4", std::make_shared<TypeNameRule>(getClNamespace() + "ulonglong4")},
+      {"ulonglong2",
+       std::make_shared<TypeNameRule>(getClNamespace() + "ulonglong2")},
+      {"ulonglong3",
+       std::make_shared<TypeNameRule>(getClNamespace() + "ulonglong3")},
+      {"ulonglong4",
+       std::make_shared<TypeNameRule>(getClNamespace() + "ulonglong4")},
       {"ushort1", std::make_shared<TypeNameRule>("unsigned short")},
       {"ushort2", std::make_shared<TypeNameRule>(getClNamespace() + "ushort2")},
       {"ushort3", std::make_shared<TypeNameRule>(getClNamespace() + "ushort3")},
       {"ushort4", std::make_shared<TypeNameRule>(getClNamespace() + "ushort4")},
-      {"cublasHandle_t", std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
+      {"cublasHandle_t",
+       std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
       {"cublasStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cublasStatus", std::make_shared<TypeNameRule>("int")},
       {"cublasGemmAlgo_t", std::make_shared<TypeNameRule>("int")},
       {"cudaDataType_t", std::make_shared<TypeNameRule>("int")},
       {"cudaDataType", std::make_shared<TypeNameRule>("int")},
       {"cublasDataType_t", std::make_shared<TypeNameRule>("int")},
-      {"cuComplex", std::make_shared<TypeNameRule>(getClNamespace() + "float2")},
-      {"cuFloatComplex", std::make_shared<TypeNameRule>(getClNamespace() + "float2")},
-      {"cuDoubleComplex", std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
+      {"cuComplex",
+       std::make_shared<TypeNameRule>(getClNamespace() + "float2")},
+      {"cuFloatComplex",
+       std::make_shared<TypeNameRule>(getClNamespace() + "float2")},
+      {"cuDoubleComplex",
+       std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
       {"cublasFillMode_t", std::make_shared<TypeNameRule>("oneapi::mkl::uplo")},
       {"cublasDiagType_t", std::make_shared<TypeNameRule>("oneapi::mkl::diag")},
       {"cublasSideMode_t", std::make_shared<TypeNameRule>("oneapi::mkl::side")},
-      {"cublasOperation_t", std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
+      {"cublasOperation_t",
+       std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
       {"cublasPointerMode_t", std::make_shared<TypeNameRule>("int")},
       {"cublasAtomicsMode_t", std::make_shared<TypeNameRule>("int")},
       {"cusparsePointerMode_t", std::make_shared<TypeNameRule>("int")},
-      {"cusparseFillMode_t", std::make_shared<TypeNameRule>("oneapi::mkl::uplo")},
-      {"cusparseDiagType_t", std::make_shared<TypeNameRule>("oneapi::mkl::diag")},
-      {"cusparseIndexBase_t", std::make_shared<TypeNameRule>("oneapi::mkl::index_base")},
+      {"cusparseFillMode_t",
+       std::make_shared<TypeNameRule>("oneapi::mkl::uplo")},
+      {"cusparseDiagType_t",
+       std::make_shared<TypeNameRule>("oneapi::mkl::diag")},
+      {"cusparseIndexBase_t",
+       std::make_shared<TypeNameRule>("oneapi::mkl::index_base")},
       {"cusparseMatrixType_t", std::make_shared<TypeNameRule>("int")},
-      {"cusparseOperation_t", std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
+      {"cusparseOperation_t",
+       std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
       {"cusparseSolveAnalysisInfo_t", std::make_shared<TypeNameRule>("int")},
-      {"thrust::device_ptr", std::make_shared<TypeNameRule>(
+      {"thrust::device_ptr",
+       std::make_shared<TypeNameRule>(
            getDpctNamespace() + "device_pointer",
            HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl)},
-      {"thrust::device_vector", std::make_shared<TypeNameRule>(
+      {"thrust::device_vector",
+       std::make_shared<TypeNameRule>(
            getDpctNamespace() + "device_vector",
            HelperFeatureEnum::DplExtrasVector_device_vector)},
       {"thrust::device_malloc_allocator",
        std::make_shared<TypeNameRule>(getClNamespace() + "buffer_allocator")},
-      {"thrust::maximum", std::make_shared<TypeNameRule>("oneapi::dpl::maximum")},
+      {"thrust::maximum",
+       std::make_shared<TypeNameRule>("oneapi::dpl::maximum")},
       {"thrust::multiplies", std::make_shared<TypeNameRule>("std::multiplies")},
       {"thrust::plus", std::make_shared<TypeNameRule>("std::plus")},
-      {"thrust::seq", std::make_shared<TypeNameRule>("oneapi::dpl::execution::seq")},
-      {"thrust::device", std::make_shared<TypeNameRule>("oneapi::dpl::execution::dpcpp_default")},
-      {"thrust::host", std::make_shared<TypeNameRule>("oneapi::dpl::execution::seq")},
+      {"thrust::seq",
+       std::make_shared<TypeNameRule>("oneapi::dpl::execution::seq")},
+      {"thrust::device",
+       std::make_shared<TypeNameRule>("oneapi::dpl::execution::dpcpp_default")},
+      {"thrust::host",
+       std::make_shared<TypeNameRule>("oneapi::dpl::execution::seq")},
       {"thrust::minus", std::make_shared<TypeNameRule>("std::minus")},
-      {"thrust::equal_to", std::make_shared<TypeNameRule>("oneapi::dpl::equal_to")},
+      {"thrust::equal_to",
+       std::make_shared<TypeNameRule>("oneapi::dpl::equal_to")},
       {"thrust::less", std::make_shared<TypeNameRule>("oneapi::dpl::less")},
       {"thrust::negate", std::make_shared<TypeNameRule>("std::negate")},
-      {"thrust::identity", std::make_shared<TypeNameRule>("oneapi::dpl::identity")},
+      {"thrust::identity",
+       std::make_shared<TypeNameRule>("oneapi::dpl::identity")},
       {"thrust::logical_or", std::make_shared<TypeNameRule>("std::logical_or")},
       {"thrust::divides", std::make_shared<TypeNameRule>("std::divides")},
       {"thrust::tuple", std::make_shared<TypeNameRule>("std::tuple")},
       {"thrust::pair", std::make_shared<TypeNameRule>("std::pair")},
       {"thrust::host_vector", std::make_shared<TypeNameRule>("std::vector")},
       {"thrust::complex", std::make_shared<TypeNameRule>("std::complex")},
-      {"thrust::counting_iterator", std::make_shared<TypeNameRule>("oneapi::dpl::counting_iterator")},
-      {"thrust::permutation_iterator", std::make_shared<TypeNameRule>("oneapi::dpl::permutation_iterator")},
-      {"thrust::transform_iterator", std::make_shared<TypeNameRule>("oneapi::dpl::transform_iterator")},
-      {"thrust::iterator_difference", std::make_shared<TypeNameRule>("std::iterator_traits")},
-      {"cusolverDnHandle_t", std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
+      {"thrust::counting_iterator",
+       std::make_shared<TypeNameRule>("oneapi::dpl::counting_iterator")},
+      {"thrust::permutation_iterator",
+       std::make_shared<TypeNameRule>("oneapi::dpl::permutation_iterator")},
+      {"thrust::transform_iterator",
+       std::make_shared<TypeNameRule>("oneapi::dpl::transform_iterator")},
+      {"thrust::iterator_difference",
+       std::make_shared<TypeNameRule>("std::iterator_traits")},
+      {"cusolverDnHandle_t",
+       std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
       {"cusolverEigType_t", std::make_shared<TypeNameRule>("int64_t")},
       {"cusolverEigMode_t", std::make_shared<TypeNameRule>("oneapi::mkl::job")},
       {"cusolverStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cudaChannelFormatDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_channel",
                                       HelperFeatureEnum::Image_image_channel)},
-      {"cudaChannelFormatKind",       std::make_shared<TypeNameRule>(
+      {"cudaChannelFormatKind",
+       std::make_shared<TypeNameRule>(
            getDpctNamespace() + "image_channel_data_type",
            HelperFeatureEnum::Image_image_channel_data_type)},
       {"cudaArray",
@@ -241,20 +279,26 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaResourceDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_data",
                                       HelperFeatureEnum::Image_image_data)},
-      {"cudaTextureObject_t",       std::make_shared<TypeNameRule>(
+      {"cudaTextureObject_t",
+       std::make_shared<TypeNameRule>(
            getDpctNamespace() + "image_wrapper_base_p",
            HelperFeatureEnum::Image_image_wrapper_base_p_alias)},
-      {"cudaTextureAddressMode", std::make_shared<TypeNameRule>(getClNamespace() + "addressing_mode")},
-      {"cudaTextureFilterMode", std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
+      {"cudaTextureAddressMode",
+       std::make_shared<TypeNameRule>(getClNamespace() + "addressing_mode")},
+      {"cudaTextureFilterMode",
+       std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
       {"curandStatus_t", std::make_shared<TypeNameRule>("int")},
       {"curandStatus", std::make_shared<TypeNameRule>("int")},
       {"cusparseStatus_t", std::make_shared<TypeNameRule>("int")},
-      {"cusparseMatDescr_t", std::make_shared<TypeNameRule>("oneapi::mkl::index_base")},
-      {"cusparseHandle_t", std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
+      {"cusparseMatDescr_t",
+       std::make_shared<TypeNameRule>("oneapi::mkl::index_base")},
+      {"cusparseHandle_t",
+       std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
       {"cudaMemoryAdvise", std::make_shared<TypeNameRule>("int")},
       {"CUmem_advise", std::make_shared<TypeNameRule>("int")},
       {"cudaPos", std::make_shared<TypeNameRule>(getClNamespace() + "id<3>")},
-      {"cudaExtent", std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},
+      {"cudaExtent",
+       std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},
       {"cudaPitchedPtr",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "pitched_data",
                                       HelperFeatureEnum::Memory_pitched_data)},
@@ -265,8 +309,10 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaSharedMemConfig", std::make_shared<TypeNameRule>("int")},
       {"cufftReal", std::make_shared<TypeNameRule>("float")},
       {"cufftDoubleReal", std::make_shared<TypeNameRule>("double")},
-      {"cufftComplex", std::make_shared<TypeNameRule>(getClNamespace() + "float2")},
-      {"cufftDoubleComplex", std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
+      {"cufftComplex",
+       std::make_shared<TypeNameRule>(getClNamespace() + "float2")},
+      {"cufftDoubleComplex",
+       std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
       {"cufftResult_t", std::make_shared<TypeNameRule>("int")},
       {"cufftResult", std::make_shared<TypeNameRule>("int")},
       {"cufftType_t", std::make_shared<TypeNameRule>("int")},
@@ -278,8 +324,10 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUarray", std::make_shared<TypeNameRule>(
                       getDpctNamespace() + "image_matrix_p",
                       HelperFeatureEnum::Image_image_matrix_p_alias)},
-      {"CUarray_format", std::make_shared<TypeNameRule>(getClNamespace() + "image_channel_type")},
-      {"CUarray_format_enum", std::make_shared<TypeNameRule>(getClNamespace() + "image_channel_type")},
+      {"CUarray_format",
+       std::make_shared<TypeNameRule>(getClNamespace() + "image_channel_type")},
+      {"CUarray_format_enum",
+       std::make_shared<TypeNameRule>(getClNamespace() + "image_channel_type")},
       {"CUtexObject", std::make_shared<TypeNameRule>(
                           getDpctNamespace() + "image_wrapper_base_p",
                           HelperFeatureEnum::Image_image_wrapper_base_p_alias)},
@@ -289,10 +337,14 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUDA_TEXTURE_DESC",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "sampling_info",
                                       HelperFeatureEnum::Image_sampling_info)},
-      {"CUaddress_mode", std::make_shared<TypeNameRule>(getClNamespace() + "addressing_mode")},
-      {"CUaddress_mode_enum", std::make_shared<TypeNameRule>(getClNamespace() + "addressing_mode")},
-      {"CUfilter_mode", std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
-      {"CUfilter_mode_enum", std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
+      {"CUaddress_mode",
+       std::make_shared<TypeNameRule>(getClNamespace() + "addressing_mode")},
+      {"CUaddress_mode_enum",
+       std::make_shared<TypeNameRule>(getClNamespace() + "addressing_mode")},
+      {"CUfilter_mode",
+       std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
+      {"CUfilter_mode_enum",
+       std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
       {"CUdeviceptr", std::make_shared<TypeNameRule>("void *")},
       {"CUresourcetype_enum", std::make_shared<TypeNameRule>(
                                   getDpctNamespace() + "image_data_type",
@@ -307,11 +359,14 @@ void MapNames::setExplicitNamespaceMap() {
                        getDpctNamespace() + "image_wrapper_base_p",
                        HelperFeatureEnum::Image_image_wrapper_base_p_alias)},
       {"cudaDeviceAttr", std::make_shared<TypeNameRule>("int")},
-      {"__nv_bfloat16", std::make_shared<TypeNameRule>("oneapi::mkl::bfloat16")},
-      {"libraryPropertyType_t", std::make_shared<TypeNameRule>(
+      {"__nv_bfloat16",
+       std::make_shared<TypeNameRule>("oneapi::mkl::bfloat16")},
+      {"libraryPropertyType_t",
+       std::make_shared<TypeNameRule>(
            getDpctNamespace() + "version_field",
            HelperFeatureEnum::LibCommonUtils_version_field)},
-      {"libraryPropertyType", std::make_shared<TypeNameRule>(
+      {"libraryPropertyType",
+       std::make_shared<TypeNameRule>(
            getDpctNamespace() + "version_field",
            HelperFeatureEnum::LibCommonUtils_version_field)},
       // ...
@@ -521,12 +576,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"CU_RESOURCE_TYPE_ARRAY", HelperFeatureEnum::Image_image_data_type},
       {"CU_RESOURCE_TYPE_LINEAR", HelperFeatureEnum::Image_image_data_type},
       {"CU_RESOURCE_TYPE_PITCH2D", HelperFeatureEnum::Image_image_data_type},
-      {"MAJOR_VERSION",
-       HelperFeatureEnum::LibCommonUtils_version_field},
-      {"MINOR_VERSION",
-       HelperFeatureEnum::LibCommonUtils_version_field},
-      {"PATCH_LEVEL",
-       HelperFeatureEnum::LibCommonUtils_version_field},
+      {"MAJOR_VERSION", HelperFeatureEnum::LibCommonUtils_version_field},
+      {"MINOR_VERSION", HelperFeatureEnum::LibCommonUtils_version_field},
+      {"PATCH_LEVEL", HelperFeatureEnum::LibCommonUtils_version_field},
       // ...
   };
 
@@ -545,16 +597,21 @@ void MapNames::setExplicitNamespaceMap() {
 
   ThrustFuncNamesHelperFeaturesMap = {
       {"thrust::sequence", HelperFeatureEnum::DplExtrasAlgorithm_iota},
-      {"thrust::stable_sort_by_key", HelperFeatureEnum::DplExtrasAlgorithm_stable_sort},
-      {"thrust::transform_if", HelperFeatureEnum::DplExtrasAlgorithm_transform_if},
+      {"thrust::stable_sort_by_key",
+       HelperFeatureEnum::DplExtrasAlgorithm_stable_sort},
+      {"thrust::transform_if",
+       HelperFeatureEnum::DplExtrasAlgorithm_transform_if},
       {"thrust::device_free", HelperFeatureEnum::DplExtrasMemory_free_device},
-      {"thrust::device_malloc", HelperFeatureEnum::DplExtrasMemory_malloc_device},
-      {"thrust::raw_pointer_cast", HelperFeatureEnum::DplExtrasMemory_get_raw_pointer},
+      {"thrust::device_malloc",
+       HelperFeatureEnum::DplExtrasMemory_malloc_device},
+      {"thrust::raw_pointer_cast",
+       HelperFeatureEnum::DplExtrasMemory_get_raw_pointer},
       {"thrust::make_counting_iterator",
        HelperFeatureEnum::DplExtrasIterators_make_counting_iterator},
       {"thrust::device_pointer_cast",
        HelperFeatureEnum::DplExtrasMemory_get_device_pointer},
-      {"thrust::inner_product", HelperFeatureEnum::DplExtrasNumeric_inner_product},
+      {"thrust::inner_product",
+       HelperFeatureEnum::DplExtrasNumeric_inner_product},
       {"thrust::sort_by_key", HelperFeatureEnum::DplExtrasAlgorithm_sort},
       {"thrust::make_constant_iterator",
        HelperFeatureEnum::DplExtrasIterators_make_constant_iterator},
@@ -3471,7 +3528,7 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
     //...
 };
 
-std::unordered_map<std::string, MetaRuleObject&> MapNames::HeaderRuleMap{};
+std::unordered_map<std::string, MetaRuleObject &> MapNames::HeaderRuleMap{};
 
 // Files to not preprocess, i.e. ignore #include <file>
 const MapNames::SetTy MapNames::ThrustFileExcludeSet{
@@ -3554,6 +3611,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
   {#OBJNAME "." #APINAME, VALUE},
 #include "APINames.inc"
 #include "APINames_CUB.inc"
+#include "APINames_NVML.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
 #include "APINames_cuGRAPH.inc"
@@ -3562,14 +3620,12 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_cuSPARSE.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
-#include "APINames_NVML.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };
 
 std::map<std::string, bool> MigrationStatistics::TypeMigrationTable{
-#define ENTRY_TYPE(TYPENAME, VALUE, FLAG, TARGET, COMMENT)            \
-  {#TYPENAME, VALUE},
+#define ENTRY_TYPE(TYPENAME, VALUE, FLAG, TARGET, COMMENT) {#TYPENAME, VALUE},
 #include "TypeNames.inc"
 #undef ENTRY_TYPE
 };
@@ -3598,7 +3654,7 @@ std::vector<std::string> MigrationStatistics::GetAllAPINames(void) {
   return AllAPINames;
 }
 std::map<std::string, bool> &MigrationStatistics::GetTypeTable(void) {
- return TypeMigrationTable;
+  return TypeMigrationTable;
 }
 
 MapNames::MapTy TextureRule::ResourceTypeNames{{"devPtr", "data_ptr"},

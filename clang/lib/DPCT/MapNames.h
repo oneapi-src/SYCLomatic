@@ -13,9 +13,9 @@
 #define DPCT_MAPNAMES_H
 
 #include "CustomHelperFiles.h"
+#include "Rules.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
-#include "Rules.h"
 #include <map>
 #include <set>
 
@@ -323,12 +323,14 @@ public:
   static const std::map<clang::dpct::KernelArgType, int> KernelArgTypeSizeMap;
   static int getArrayTypeSize(const int Dim);
   static const MapTy RemovedAPIWarningMessage;
-  static std::unordered_map<std::string, std::shared_ptr<TypeNameRule>> TypeNamesMap;
-  static std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>> ClassFieldMap;
+  static std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
+      TypeNamesMap;
+  static std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
+      ClassFieldMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
   static std::unordered_map<std::string, MacroMigrationRule> MacroRuleMap;
-  static std::unordered_map<std::string, MetaRuleObject&> HeaderRuleMap;
+  static std::unordered_map<std::string, MetaRuleObject &> HeaderRuleMap;
   static const MapTy SPBLASEnumsMap;
   static const MapTy BLASEnumsMap;
   static std::map<std::string, MapNames::BLASFuncReplInfo> BLASFuncReplInfoMap;
@@ -392,9 +394,9 @@ public:
       return EmptyString;
     return Itr->second;
   }
-  static bool
-  replaceName(const std::unordered_map<std::string, std::shared_ptr<TypeNameRule>> &Map,
-              std::string &Name) {
+  static bool replaceName(
+      const std::unordered_map<std::string, std::shared_ptr<TypeNameRule>> &Map,
+      std::string &Name) {
     auto &Result = findReplacedName(Map, Name);
     if (Result.empty())
       return false;

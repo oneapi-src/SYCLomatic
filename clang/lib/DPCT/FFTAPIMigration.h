@@ -12,8 +12,8 @@
 #ifndef DPCT_FFT_API_MIGRAION_H
 #define DPCT_FFT_API_MIGRAION_H
 
-#include "LibraryAPIMigration.h"
 #include "ExprAnalysis.h"
+#include "LibraryAPIMigration.h"
 #include "MapNames.h"
 
 #include "clang/AST/Attr.h"

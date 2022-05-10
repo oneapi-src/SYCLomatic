@@ -11,10 +11,10 @@
 
 #include "CallExprRewriter.h"
 #include "AnalysisInfo.h"
+#include "BLASAPIMigration.h"
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "Utility.h"
-#include "BLASAPIMigration.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
 #include "clang/Basic/LangOptions.h"
@@ -1504,7 +1504,6 @@ std::function<std::string(const CallExpr *C)> getReplacedType(size_t Idx) {
   };
 }
 
-
 // Get the derefed type name of an arg while getDereferencedExpr is get the
 // derefed expr.
 std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) {
@@ -1663,7 +1662,8 @@ std::function<bool(const CallExpr *C)> checkIsArgStream(size_t index) {
   };
 }
 
-std::function<bool(const CallExpr *C)> checkArgSpelling(size_t index, std::string str) {
+std::function<bool(const CallExpr *C)> checkArgSpelling(size_t index,
+                                                        std::string str) {
   return [=](const CallExpr *C) -> bool {
     return getStmtSpelling(C->getArg(index)) == str;
   };
@@ -1677,7 +1677,7 @@ std::function<bool(const CallExpr *C)> checkIsArgIntegerLiteral(size_t index) {
         Arg2Expr = NamedCaster->getSubExpr();
       }
     }
-   return Arg2Expr->getStmtClass() == Stmt::IntegerLiteralClass;
+    return Arg2Expr->getStmtClass() == Stmt::IntegerLiteralClass;
   };
 }
 
@@ -1707,7 +1707,7 @@ createFactoryWithSubGroupSizeRequest(
 template <class... StmtPrinters>
 std::shared_ptr<CallExprRewriterFactoryBase> createMultiStmtsRewriterFactory(
     const std::string &SourceName,
-    std::function<StmtPrinters(const CallExpr *)> &&... Creators) {
+    std::function<StmtPrinters(const CallExpr *)> &&...Creators) {
   return std::make_shared<ConditionalRewriterFactory>(
       isCallAssigned,
       std::make_shared<AssignableRewriterFactory>(
@@ -2052,7 +2052,7 @@ createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
 template <class... MsgArgs>
 std::shared_ptr<CallExprRewriterFactoryBase>
 createUnsupportRewriterFactory(const std::string &Source, Diagnostics MsgID,
-                               MsgArgs &&... Args) {
+                               MsgArgs &&...Args) {
   return std::make_shared<UnsupportFunctionRewriterFactory<MsgArgs...>>(
       Source, MsgID, std::forward<MsgArgs>(Args)...);
 }
@@ -2069,7 +2069,7 @@ public:
 };
 
 std::shared_ptr<CallExprRewriterFactoryBase>
-createUserDefinedRewriterFactory(const std::string &Source, MetaRuleObject& R) {
+createUserDefinedRewriterFactory(const std::string &Source, MetaRuleObject &R) {
   return std::make_shared<UserDefinedRewriterFactory>(R);
 }
 
@@ -2177,13 +2177,13 @@ public:
   }
 };
 
-
 class CheckDerefedTypeBeforeCast {
   unsigned Idx;
   std::string TypeName;
 
 public:
-  CheckDerefedTypeBeforeCast(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
+  CheckDerefedTypeBeforeCast(unsigned I, std::string Name)
+      : Idx(I), TypeName(Name) {}
   bool operator()(const CallExpr *C) {
     if (C->getNumArgs() > Idx) {
       std::ostringstream OS;
@@ -2415,14 +2415,14 @@ std::unique_ptr<std::unordered_map<
     CallExprRewriterFactoryBase::RewriterMap;
 
 std::unique_ptr<std::unordered_map<
-  std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
-  CallExprRewriterFactoryBase::MethodRewriterMap;
+    std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
+    CallExprRewriterFactoryBase::MethodRewriterMap;
 
 void CallExprRewriterFactoryBase::initRewriterMap() {
   RewriterMap = std::make_unique<std::unordered_map<
-    std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>(
+      std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>(
       std::unordered_map<std::string,
-      std::shared_ptr<CallExprRewriterFactoryBase>>({
+                         std::shared_ptr<CallExprRewriterFactoryBase>>({
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   MATH_FUNCNAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)                 \
@@ -2461,16 +2461,15 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   BIND_TEXTURE_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
 #define ENTRY_TEMPLATED(SOURCEAPINAME, ...)                                    \
   TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
+#include "APINamesCUBLAS.inc"
+#include "APINamesCUFFT.inc"
+#include "APINamesCURAND.inc"
 #include "APINamesComplex.inc"
 #include "APINamesDriver.inc"
 #include "APINamesMemory.inc"
 #include "APINamesTexture.inc"
 #include "APINamesThrust.inc"
 #include "APINamesWarp.inc"
-#include "APINamesComplex.inc"
-#include "APINamesCURAND.inc"
-#include "APINamesCUBLAS.inc"
-#include "APINamesCUFFT.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED
@@ -2486,12 +2485,12 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #undef ENTRY_HOST
 #undef ENTRY_DEVICE
 #undef ENTRY_BOTH
-        }));
+      }));
 }
 
 void CallExprRewriterFactoryBase::initMethodRewriterMap() {
   MethodRewriterMap = std::make_unique<std::unordered_map<
-    std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>();
+      std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>();
 }
 
 const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {

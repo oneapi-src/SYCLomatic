@@ -52,7 +52,7 @@ enum class VersionCmpResult {
 };
 VersionCmpResult compareToolVersion(std::string VersionInYaml);
 
-template<typename T>
+template <typename T>
 inline void setValueToOptMap(std::string Key, T Value, bool Specified) {
   assert(0 && "Unknown value type");
 }
@@ -62,7 +62,7 @@ inline void setValueToOptMap(std::string Key, std::string Value,
   DpctGlobalInfo::getCurrentOptMap()[Key] =
       clang::tooling::OptionInfo(Value, Specified);
 }
-template<>
+template <>
 inline void setValueToOptMap(std::string Key, bool Value, bool Specified) {
   if (Value)
     setValueToOptMap(Key, std::string("true"), Specified);
@@ -90,7 +90,6 @@ inline void setValueToOptMap(std::string Key, std::vector<std::string> StrVec,
   DpctGlobalInfo::getCurrentOptMap()[Key] =
       clang::tooling::OptionInfo(StrVec, Specified);
 }
-
 
 bool canContinueMigration(std::string &Msg);
 } // namespace dpct

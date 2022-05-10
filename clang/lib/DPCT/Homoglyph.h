@@ -20,6 +20,7 @@ class ConfusableIdentifierDetectionRule
     : public NamedMigrationRule<ConfusableIdentifierDetectionRule> {
   llvm::StringMap<llvm::SmallVector<NamedDecl const *>> Mapper;
   std::string skeleton(StringRef Name);
+
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

@@ -29,8 +29,9 @@ llvm::Optional<std::string> getReplacedName(const clang::NamedDecl *D) {
   if (Iter != MapNames::TypeNamesMap.end()) {
     auto Range = getDefinitionRange(D->getBeginLoc(), D->getEndLoc());
     for (auto ItHeader = Iter->second->Includes.begin();
-      ItHeader != Iter->second->Includes.end(); ItHeader++) {
-      clang::dpct::DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(), *ItHeader);
+         ItHeader != Iter->second->Includes.end(); ItHeader++) {
+      clang::dpct::DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(),
+                                                              *ItHeader);
     }
     return Iter->second->NewName;
   }
@@ -237,7 +238,7 @@ private:
   std::string getReplaceString(FreeQueriesKind K);
 
 public:
-  template<class Node>
+  template <class Node>
   static void printImmediateText(llvm::raw_ostream &, const Node *,
                                  const FunctionDecl *, FreeQueriesKind);
   static void buildInfo() {
@@ -951,7 +952,8 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     ProcessRequireQueue.push_back(DeviceFuncInfo);
     ProcessedSet.insert(DeviceFuncInfo);
     // New function name, LocInfo
-    std::vector<std::pair<std::string, std::pair<std::string, unsigned>>> ShflFunctions;
+    std::vector<std::pair<std::string, std::pair<std::string, unsigned>>>
+        ShflFunctions;
     while (!ProcessRequireQueue.empty()) {
       auto SGSize = ProcessRequireQueue.front()->getSubGroupSize();
       for (auto &Element : SGSize) {
@@ -1144,24 +1146,23 @@ void KernelCallExpr::printParallelFor(KernelPrinter &Printer, bool IsInSubmit) {
   if (getVarMap().hasSync()) {
     std::string SyncParamDecl;
     if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_Restricted) {
-      SyncParamDecl =
-          "auto atm_" + DpctGlobalInfo::getSyncName() + " = " +
-          MapNames::getClNamespace() + "atomic_ref<unsigned int, " +
-          MapNames::getClNamespace() + "memory_order::seq_cst, " +
-          MapNames::getClNamespace() + "memory_scope::device, " +
-          MapNames::getClNamespace() + "access::address_space::global_space>(" +
-          DpctGlobalInfo::getSyncName() + "[0]);";
+      SyncParamDecl = "auto atm_" + DpctGlobalInfo::getSyncName() + " = " +
+                      MapNames::getClNamespace() + "atomic_ref<unsigned int, " +
+                      MapNames::getClNamespace() + "memory_order::seq_cst, " +
+                      MapNames::getClNamespace() + "memory_scope::device, " +
+                      MapNames::getClNamespace() +
+                      "access::address_space::global_space>(" +
+                      DpctGlobalInfo::getSyncName() + "[0]);";
 
     } else {
-      SyncParamDecl =
-          "auto atm_" + DpctGlobalInfo::getSyncName() + " = " +
-          MapNames::getClNamespace() + "atomic_ref<unsigned int, " +
-          MapNames::getClNamespace() + "memory_order::seq_cst, " +
-          MapNames::getClNamespace() + "memory_scope::device, " +
-          MapNames::getClNamespace() +
-          "access::address_space::global_space>(*(unsigned int "
-          "*)&" +
-          DpctGlobalInfo::getSyncName() + "[0]);";
+      SyncParamDecl = "auto atm_" + DpctGlobalInfo::getSyncName() + " = " +
+                      MapNames::getClNamespace() + "atomic_ref<unsigned int, " +
+                      MapNames::getClNamespace() + "memory_order::seq_cst, " +
+                      MapNames::getClNamespace() + "memory_scope::device, " +
+                      MapNames::getClNamespace() +
+                      "access::address_space::global_space>(*(unsigned int "
+                      "*)&" +
+                      DpctGlobalInfo::getSyncName() + "[0]);";
     }
     KernelStmts.emplace_back(SyncParamDecl);
   }
@@ -1469,11 +1470,11 @@ void deduceTemplateArgumentFromTemplateArgs(
     case TemplateArgument::Type:
       if (ArgLoc.getArgument().isNull()) {
         deduceTemplateArgumentFromType(TAIList, Parm.getAsType(),
-          Arg.getAsType());
+                                       Arg.getAsType());
       } else {
-        deduceTemplateArgumentFromType(TAIList, Parm.getAsType(),
-          ArgLoc.getTypeSourceInfo()->getType(),
-          ArgLoc.getTypeSourceInfo()->getTypeLoc());
+        deduceTemplateArgumentFromType(
+            TAIList, Parm.getAsType(), ArgLoc.getTypeSourceInfo()->getType(),
+            ArgLoc.getTypeSourceInfo()->getTypeLoc());
       }
       break;
     default:
@@ -1501,23 +1502,23 @@ bool compareTemplateName(TemplateName N1, TemplateName N2) {
   std::string NameStr;
   llvm::raw_string_ostream OS(NameStr);
   N1.print(OS, DpctGlobalInfo::getContext().getPrintingPolicy(),
-    TemplateName::Qualified::Fully);
+           TemplateName::Qualified::Fully);
   OS.flush();
   return compareTemplateName(NameStr, N2);
 }
 
 void deduceTemplateArgumentFromTemplateSpecialization(
-    std::vector<TemplateArgumentInfo> &TAIList,
-    QualType ParmType, QualType ArgType,
-    TypeLoc TL = TypeLoc()) {
+    std::vector<TemplateArgumentInfo> &TAIList, QualType ParmType,
+    QualType ArgType, TypeLoc TL = TypeLoc()) {
   auto ParmTST = dyn_cast<TemplateSpecializationType>(ParmType);
   switch (ArgType->getTypeClass()) {
   case Type::Record:
     if (auto CTSD = dyn_cast<ClassTemplateSpecializationDecl>(
             ARG_TYPE_CAST(RecordType)->getDecl())) {
-      if (compareTemplateName(CTSD->getName().data(), ParmTST->getTemplateName())) {
-		// If the names of 2 template classes are different
-		// DPCT should stop the deduction.
+      if (compareTemplateName(CTSD->getName().data(),
+                              ParmTST->getTemplateName())) {
+        // If the names of 2 template classes are different
+        // DPCT should stop the deduction.
         return;
       }
       if (CTSD->getTypeAsWritten() &&
@@ -1533,8 +1534,7 @@ void deduceTemplateArgumentFromTemplateSpecialization(
       }
     }
     break;
-  case Type::TemplateSpecialization:
-  {
+  case Type::TemplateSpecialization: {
     // To support following alias template cases:
     // template<size_t N>
     // using new_type = old_type<size_t, N>
@@ -1543,12 +1543,11 @@ void deduceTemplateArgumentFromTemplateSpecialization(
     // call deduceTemplateArgumentFromType
     auto TST = ARG_TYPE_CAST(TemplateSpecializationType);
     if (TST->isTypeAlias()) {
-      deduceTemplateArgumentFromType(TAIList, ParmType,
-        TST->getAliasedType());
+      deduceTemplateArgumentFromType(TAIList, ParmType, TST->getAliasedType());
     } else if (compareTemplateName(TST->getTemplateName(),
-      ParmTST->getTemplateName())) {
-	  // If the name of 2 template classes are different
-	  // DPCT should stop the deduction.
+                                   ParmTST->getTemplateName())) {
+      // If the name of 2 template classes are different
+      // DPCT should stop the deduction.
       return;
     } else {
       if (TL) {
@@ -1560,18 +1559,17 @@ void deduceTemplateArgumentFromTemplateSpecialization(
         }
         for (i = 0; i < TSTL.getNumArgs(); ++i) {
           deduceTemplateArgumentFromTemplateArgs(
-            TAIList, ParmTST->getArg(i), TSTL.getArgLoc(i).getArgument(),
-            TSTL.getArgLoc(i));
+              TAIList, ParmTST->getArg(i), TSTL.getArgLoc(i).getArgument(),
+              TSTL.getArgLoc(i));
         }
-      }
-      else {
+      } else {
         // Parm uses template parameter pack, return
         if (TST->getNumArgs() > ParmTST->getNumArgs()) {
           return;
         }
         for (unsigned i = 0; i < TST->getNumArgs(); ++i) {
           deduceTemplateArgumentFromTemplateArgs(TAIList, ParmTST->getArg(i),
-            TST->getArg(i));
+                                                 TST->getArg(i));
         }
       }
     }
@@ -1636,8 +1634,8 @@ void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
     }
     break;
   case Type::TemplateSpecialization:
-    deduceTemplateArgumentFromTemplateSpecialization(
-        TAIList, ParmType, ArgType, TL);
+    deduceTemplateArgumentFromTemplateSpecialization(TAIList, ParmType, ArgType,
+                                                     TL);
     break;
   case Type::Pointer:
     if (auto ArgPointer = ARG_TYPE_CAST(PointerType)) {
@@ -2885,9 +2883,9 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
       std::string Ret;
       llvm::raw_string_ostream OS(Ret);
       OS << "auto &" << getName() << " = "
-         << "*" << MapNames::getClNamespace() << "ext::oneapi::group_local_memory<"
-         << getType()->getBaseName();
-      for (auto&ArraySize : getType()->getRange()) {
+         << "*" << MapNames::getClNamespace()
+         << "ext::oneapi::group_local_memory<" << getType()->getBaseName();
+      for (auto &ArraySize : getType()->getRange()) {
         OS << "[" << ArraySize.getSize() << "]";
       }
       OS << ">(";
@@ -2924,8 +2922,8 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
     return getMemoryDecl();
   }
   }
-  clang::dpct::DpctDebugs() << "[MemVarInfo::VarAttrKind] Unexpected value: "
-                            << Scope << "\n";
+  clang::dpct::DpctDebugs()
+      << "[MemVarInfo::VarAttrKind] Unexpected value: " << Scope << "\n";
   assert(0);
   return "";
 }
@@ -3359,7 +3357,7 @@ FreeQueriesInfo::getInfo(const FunctionDecl *FD) {
   return std::shared_ptr<FreeQueriesInfo>();
 }
 
-template<class Node>
+template <class Node>
 void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Node *S,
                                          const FunctionDecl *FD,
                                          FreeQueriesKind K) {
@@ -3390,8 +3388,8 @@ void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, const Node *S,
 static const std::string RegexPrefix = "{{NEEDREPLACE", RegexSuffix = "}}";
 
 /// Generate regex replacement as placeholder.
-void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS, SourceLocation SL,
-                                         FreeQueriesKind K) {
+void FreeQueriesInfo::printImmediateText(llvm::raw_ostream &OS,
+                                         SourceLocation SL, FreeQueriesKind K) {
   unsigned Index = Idx;
   auto IsMacro = SL.isMacroID();
   if (IsMacro && K != SubGroup) {
@@ -3450,7 +3448,7 @@ void FreeQueriesInfo::emplaceExtraDecl() {
 }
 
 template <class F, class... Ts>
-std::string buildStringFromPrinter(F Func, Ts &&... Args) {
+std::string buildStringFromPrinter(F Func, Ts &&...Args) {
   std::string Ret;
   llvm::raw_string_ostream OS(Ret);
   Func(OS, std::forward<Ts>(Args)...);

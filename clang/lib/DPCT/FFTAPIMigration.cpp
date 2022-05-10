@@ -286,7 +286,7 @@ bool FFTFunctionCallBuilder::moveDeclOutOfBracesIfNeeds(
   std::shared_ptr<DynTypedNode> P =
       std::make_shared<DynTypedNode>(DynTypedNode::create(*TheCallExpr));
   auto PN = getNonImplicitCastParentNode(P);
-  if(!PN)
+  if (!PN)
     return false;
 
   const VarDecl *VD = getNonImplicitCastParentNode(P)->get<VarDecl>();

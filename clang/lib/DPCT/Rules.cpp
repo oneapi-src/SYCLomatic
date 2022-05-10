@@ -8,12 +8,12 @@
 // from the company.
 //
 //===---------------------------------------------------------------===//
+#include "Rules.h"
 #include "ASTTraversal.h"
 #include "CallExprRewriter.h"
-#include "Rules.h"
-#include "Utility.h"
 #include "Error.h"
 #include "MapNames.h"
+#include "Utility.h"
 #include "llvm/Support/YAMLTraits.h"
 std::vector<std::string> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
@@ -27,7 +27,7 @@ void registerMacroRule(MetaRuleObject &R) {
       It->second.In = R.In;
       It->second.Out = R.Out;
       It->second.HelperFeature =
-        clang::dpct::HelperFeatureEnum::no_feature_helper;
+          clang::dpct::HelperFeatureEnum::no_feature_helper;
       It->second.Includes = R.Includes;
     }
   } else {
@@ -54,8 +54,7 @@ void registerAPIRule(MetaRuleObject &R) {
   //   RewriterMap
   // if there is no existing rule,
   //   add the new rule to the RewriterMap
-  auto It =
-      clang::dpct::CallExprRewriterFactoryBase::RewriterMap->find(R.In);
+  auto It = clang::dpct::CallExprRewriterFactoryBase::RewriterMap->find(R.In);
   if (It == clang::dpct::CallExprRewriterFactoryBase::RewriterMap->end()) {
     clang::dpct::CallExprRewriterFactoryBase::RewriterMap->emplace(
         R.In, clang::dpct::createUserDefinedRewriterFactory(R.In, R));
@@ -71,8 +70,7 @@ void registerHeaderRule(MetaRuleObject &R) {
     if (It->second.Priority > R.Priority) {
       It->second = R;
     }
-  }
-  else {
+  } else {
     MapNames::HeaderRuleMap.emplace(R.In, R);
   }
 }
@@ -112,13 +110,13 @@ void registerClassRule(MetaRuleObject &R) {
         ItFieldRule->second->NewName = (*ItField)->Out;
         ItFieldRule->second->Priority = R.Priority;
         ItFieldRule->second->RequestFeature =
-          clang::dpct::HelperFeatureEnum::no_feature_helper;
+            clang::dpct::HelperFeatureEnum::no_feature_helper;
         ItFieldRule->second->Includes.clear();
-        ItFieldRule->second->Includes.insert(ItFieldRule->second->Includes.end(),
-          R.Includes.begin(), R.Includes.end());
+        ItFieldRule->second->Includes.insert(
+            ItFieldRule->second->Includes.end(), R.Includes.begin(),
+            R.Includes.end());
       }
-    }
-    else {
+    } else {
       clang::dpct::ASTTraversalMetaInfo::registerRule(
           (char *)&(**ItField), BaseAndFieldName, [=] {
             return new clang::dpct::UserDefinedClassFieldRule(R.In,
@@ -133,7 +131,8 @@ void registerClassRule(MetaRuleObject &R) {
     }
   }
   // register all method rules
-  for (auto ItMethod = R.Methods.begin(); ItMethod != R.Methods.end(); ItMethod++) {
+  for (auto ItMethod = R.Methods.begin(); ItMethod != R.Methods.end();
+       ItMethod++) {
     std::string BaseAndMethodName = R.In + "." + (*ItMethod)->In;
     clang::dpct::ASTTraversalMetaInfo::registerRule(
         (char *)&(**ItMethod), BaseAndMethodName, [=] {
@@ -144,12 +143,17 @@ void registerClassRule(MetaRuleObject &R) {
     auto ItMethodRule =
         clang::dpct::CallExprRewriterFactoryBase::MethodRewriterMap->find(
             BaseAndMethodName);
-    if (ItMethodRule == clang::dpct::CallExprRewriterFactoryBase::MethodRewriterMap->end()) {
+    if (ItMethodRule ==
+        clang::dpct::CallExprRewriterFactoryBase::MethodRewriterMap->end()) {
       clang::dpct::CallExprRewriterFactoryBase::MethodRewriterMap->emplace(
-        BaseAndMethodName, clang::dpct::createUserDefinedMethodRewriterFactory(R.In, R, *ItMethod));
+          BaseAndMethodName,
+          clang::dpct::createUserDefinedMethodRewriterFactory(R.In, R,
+                                                              *ItMethod));
     } else if (ItMethodRule->second->Priority > R.Priority) {
-      (*clang::dpct::CallExprRewriterFactoryBase::MethodRewriterMap)[BaseAndMethodName] =
-        clang::dpct::createUserDefinedMethodRewriterFactory(R.In, R, *ItMethod);
+      (*clang::dpct::CallExprRewriterFactoryBase::MethodRewriterMap)
+          [BaseAndMethodName] =
+              clang::dpct::createUserDefinedMethodRewriterFactory(R.In, R,
+                                                                  *ItMethod);
     }
   }
 }
@@ -182,7 +186,7 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
 
     MetaRuleObject::setRuleFiles(RuleFile);
 
-    //Register Rules
+    // Register Rules
     for (std::shared_ptr<MetaRuleObject> &r : CurrentRules) {
       switch (r->Kind) {
       case (RuleKind::Macro):
@@ -224,8 +228,7 @@ void OutputBuilder::parse(std::string &RuleOutputString) {
       StrStartIdx = i;
       break;
     }
-    case '$':
-    {
+    case '$': {
       // save previous string
       auto StringBuilder = std::make_shared<OutputBuilder>();
       StringBuilder->Kind = Kind::String;
@@ -234,8 +237,7 @@ void OutputBuilder::parse(std::string &RuleOutputString) {
       SubBuilders.push_back(StringBuilder);
       SubBuilders.push_back(consumeKeyword(RuleOutputString, i));
       StrStartIdx = i;
-    }
-    break;
+    } break;
     default:
       break;
     }
@@ -252,7 +254,7 @@ void OutputBuilder::parse(std::string &RuleOutputString) {
 void OutputBuilder::ignoreWhitespaces(std::string &OutStr, size_t &Idx) {
   for (; Idx < OutStr.size(); Idx++) {
     if (OutStr[Idx] != ' ' && OutStr[Idx] != '\r' && OutStr[Idx] != '\n' &&
-      OutStr[Idx] != '\t') {
+        OutStr[Idx] != '\t') {
       return;
     }
   }
@@ -279,26 +281,23 @@ void OutputBuilder::consumeRParen(std::string &OutStr, size_t &Idx) {
   }
 }
 
-
-
 // /OutStr is the string specified in rule's "Out" session
 void OutputBuilder::consumeLParen(std::string &OutStr, size_t &Idx) {
   ignoreWhitespaces(OutStr, Idx);
   if (Idx >= OutStr.size()) {
     llvm::errs() << "rule parse error: in rule " << RuleName
-      << ", expect an '(' at end of 'Out' option value.\n";
+                 << ", expect an '(' at end of 'Out' option value.\n";
     clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
     dpctExit(MigrationErrorCannotParseRuleFile);
   }
 
   if (OutStr[Idx] != '(') {
     llvm::errs() << "rule parse error : in rule " << RuleName
-      << ", expect an '(' in 'Out' option value around: "
-      << OutStr.substr(Idx, 10) << "\n";
+                 << ", expect an '(' in 'Out' option value around: "
+                 << OutStr.substr(Idx, 10) << "\n";
     clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
     dpctExit(MigrationErrorCannotParseRuleFile);
-  }
-  else {
+  } else {
     Idx++;
   }
 }
@@ -356,7 +355,6 @@ int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx) {
   std::string ArgNumStr = OutStr.substr(Idx, i - Idx);
   Idx = i;
   ArgIndex = std::stoi(ArgNumStr);
-
 
   if (ArgIndex <= 0) {
     // report invalid ArgIndex
@@ -425,9 +423,7 @@ void clang::dpct::UserDefinedAPIRule::registerMatcher(
 
 void clang::dpct::UserDefinedAPIRule::runRule(
     const clang::ast_matchers::MatchFinder::MatchResult &Result) {
-  if (const CallExpr *CE =
-    getAssistNodeAsType<CallExpr>(
-      Result, "call")) {
+  if (const CallExpr *CE = getAssistNodeAsType<CallExpr>(Result, "call")) {
     dpct::ExprAnalysis EA;
     EA.analyze(CE);
     emplaceTransformation(EA.getReplacement());
@@ -447,7 +443,7 @@ void clang::dpct::UserDefinedTypeRule::runRule(
     const clang::ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto TL = getNodeAsType<TypeLoc>(Result, "typeLoc")) {
     auto TypeStr =
-      DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
+        DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
 
     auto It = MapNames::TypeNamesMap.find(TypeStr);
     if (It == MapNames::TypeNamesMap.end())
@@ -464,7 +460,7 @@ void clang::dpct::UserDefinedTypeRule::runRule(
     emplaceTransformation(
         new ReplaceText(Range.getBegin(), Len, std::move(ReplStr)));
     for (auto ItHeader = It->second->Includes.begin();
-      ItHeader != It->second->Includes.end(); ItHeader++) {
+         ItHeader != It->second->Includes.end(); ItHeader++) {
       DpctGlobalInfo::getInstance().insertHeader(Range.getBegin(), *ItHeader);
     }
   }
@@ -481,7 +477,7 @@ void clang::dpct::UserDefinedClassFieldRule::registerMatcher(
 }
 
 void clang::dpct::UserDefinedClassFieldRule::runRule(
-  const clang::ast_matchers::MatchFinder::MatchResult &Result) {
+    const clang::ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto ME = getNodeAsType<MemberExpr>(Result, "memberExpr")) {
     dpct::ExprAnalysis EA;
     EA.analyze(ME);
@@ -491,17 +487,17 @@ void clang::dpct::UserDefinedClassFieldRule::runRule(
 }
 
 void clang::dpct::UserDefinedClassMethodRule::registerMatcher(
-  clang::ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(
-      cxxMemberCallExpr(allOf(on(hasType(hasCanonicalType(
-        qualType(hasDeclaration(namedDecl(hasName(BaseName))))))),
-                              callee(cxxMethodDecl(hasName(MethodName)))))
-          .bind("memberCallExpr"),
-      this);
+    clang::ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(cxxMemberCallExpr(
+                    allOf(on(hasType(hasCanonicalType(qualType(
+                              hasDeclaration(namedDecl(hasName(BaseName))))))),
+                          callee(cxxMethodDecl(hasName(MethodName)))))
+                    .bind("memberCallExpr"),
+                this);
 }
 
 void clang::dpct::UserDefinedClassMethodRule::runRule(
-  const clang::ast_matchers::MatchFinder::MatchResult &Result) {
+    const clang::ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto CMCE = getNodeAsType<CXXMemberCallExpr>(Result, "memberCallExpr")) {
     dpct::ExprAnalysis EA;
     EA.analyze(CMCE);

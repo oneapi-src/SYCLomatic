@@ -2469,11 +2469,11 @@ llvm::StringRef getCalleeName(const CallExpr *CE) {
 SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
 
-  // if one of begin/end location is FileID, the only valid range is the expansion location.
+  // if one of begin/end location is FileID, the only valid range is the
+  // expansion location.
   // e.g.
   // #define REAL_NAME(x) x
-  // #define FUNC_NAME REAL_NAME(foo)
-  // FUNC_NAME(args);
+  // #define FUNC_NAME REAL_NAME(foo) FUNC_NAME(args);
   if (Begin.isFileID() || End.isFileID()) {
     return SourceRange(SM.getExpansionLoc(Begin), SM.getExpansionLoc(End));
   }
@@ -2527,7 +2527,7 @@ SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
     // The "a =" and ";" will be removed if we use the range "FUNC_NAME
     // CALL(ARGS)" therefore, return a range with length 0 for the caller of
     // getDefinitionRange() to handle the exception.
-    if(!BeginIsAlwaysTheFirstToken)
+    if (!BeginIsAlwaysTheFirstToken)
       return SourceRange(SM.getSpellingLoc(Begin), SM.getSpellingLoc(Begin));
   }
 
@@ -3879,7 +3879,7 @@ void insertHeaderForTypeRule(std::string Name, clang::SourceLocation Loc) {
   if (It == MapNames::TypeNamesMap.end())
     return;
   for (auto ItHeader = It->second->Includes.begin();
-    ItHeader != It->second->Includes.end(); ItHeader++) {
+       ItHeader != It->second->Includes.end(); ItHeader++) {
     dpct::DpctGlobalInfo::getInstance().insertHeader(Loc, *ItHeader);
   }
 }

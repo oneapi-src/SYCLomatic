@@ -30,8 +30,9 @@ public:
     if (SubExpr) {
       Expr::EvalResult ER;
       bool Evaluated = false;
-      int64_t Value = -1; 
-      if (!SubExpr->isValueDependent() && SubExpr->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
+      int64_t Value = -1;
+      if (!SubExpr->isValueDependent() &&
+          SubExpr->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
         Evaluated = true;
         Value = ER.Val.getInt().getExtValue();
       }

@@ -17,11 +17,11 @@
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
 #include "FFTAPIMigration.h"
+#include "Rules.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
 #include "Utility.h"
 #include "ValidateArguments.h"
-#include "Rules.h"
 #include <bitset>
 #include <unordered_set>
 #include <vector>
@@ -304,7 +304,7 @@ inline void appendString(llvm::raw_string_ostream &OS, FirstArgT &&First,
 }
 
 template <class... Arguments>
-inline std::string buildString(Arguments &&... Args) {
+inline std::string buildString(Arguments &&...Args) {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   appendString(OS, std::forward<Arguments>(Args)...);
@@ -325,7 +325,7 @@ template <class MapType,
           class... Args>
 inline typename MapType::mapped_type
 insertObject(MapType &Map, const typename MapType::key_type &Key,
-             Args &&... InitArgs) {
+             Args &&...InitArgs) {
   auto &Obj = Map[Key];
   if (!Obj)
     Obj = std::make_shared<ObjectType>(Key, std::forward<Args>(InitArgs)...);
@@ -397,7 +397,7 @@ public:
     return insertObject(getMap<Obj>(), Offset, FilePath, N);
   }
   template <class Obj, class MappedT, class... Args>
-  std::shared_ptr<MappedT> insertNode(unsigned Offset, Args &&... Arguments) {
+  std::shared_ptr<MappedT> insertNode(unsigned Offset, Args &&...Arguments) {
     return insertObject<GlobalMap<MappedT>, Obj>(
         getMap<MappedT>(), Offset, FilePath, std::forward<Args>(Arguments)...);
   }
@@ -472,7 +472,8 @@ public:
   // Insert one or more header inclusion directives at a specified offset
   void insertHeader(std::string &&Repl, unsigned Offset,
                     InsertPosition InsertPos = IP_Left) {
-    auto R = std::make_shared<ExtReplacement>(FilePath, Offset, 0, Repl, nullptr);
+    auto R =
+        std::make_shared<ExtReplacement>(FilePath, Offset, 0, Repl, nullptr);
     R->setInsertPosition(InsertPos);
     IncludeDirectiveInsertions.push_back(R);
   }
@@ -919,7 +920,7 @@ public:
     if (IsChildRelative) {
       std::string Path = removeSymlinks(getFileManager(), FilePath);
       makeCanonical(Path);
-      if(isChildPath(InRoot, Path)) {
+      if (isChildPath(InRoot, Path)) {
         return !isExcluded(Path);
       } else {
         return false;
@@ -933,10 +934,9 @@ public:
     }
   }
 
-  static bool isExcluded(const std::string &FilePath,
-                         bool IsRelative = true) {
+  static bool isExcluded(const std::string &FilePath, bool IsRelative = true) {
     static std::map<std::string, bool> Cache;
-    if(FilePath.empty() || DpctGlobalInfo::getExcludePath().empty()) {
+    if (FilePath.empty() || DpctGlobalInfo::getExcludePath().empty()) {
       return false;
     }
     std::string CanonicalPath = FilePath;
@@ -945,11 +945,11 @@ public:
         return false;
       }
     }
-    if(Cache.count(CanonicalPath)) {
+    if (Cache.count(CanonicalPath)) {
       return Cache[CanonicalPath];
     }
-    for(auto &Path : DpctGlobalInfo::getExcludePath()) {
-      if(isChildOrSamePath(Path.first, CanonicalPath)) {
+    for (auto &Path : DpctGlobalInfo::getExcludePath()) {
+      if (isChildOrSamePath(Path.first, CanonicalPath)) {
         Cache[CanonicalPath] = true;
         return true;
       }
@@ -1123,10 +1123,10 @@ public:
   inline static void setFormatRange(format::FormatRange FR) { FmtRng = FR; }
   inline static DPCTFormatStyle getFormatStyle() { return FmtST; }
   inline static void setFormatStyle(DPCTFormatStyle FS) { FmtST = FS; }
-// Processing the folder or file by following rules:
-// Rule1: For {child path, parent path}, only parent path will be kept.
-// Rule2: Ignore invalid path.
-// Rule3: If path is not in --in-root, then ignore it.
+  // Processing the folder or file by following rules:
+  // Rule1: For {child path, parent path}, only parent path will be kept.
+  // Rule2: Ignore invalid path.
+  // Rule3: If path is not in --in-root, then ignore it.
   inline static void setExcludePath(std::vector<std::string> ExcludePathVec) {
     if (ExcludePathVec.empty()) {
       return;
@@ -1372,7 +1372,7 @@ public:
   template <class StreamTy, class... Args>
   static inline StreamTy &
   printCtadClass(StreamTy &Stream, size_t CanNotDeducedArgsNum,
-                 StringRef ClassName, Args &&... Arguments) {
+                 StringRef ClassName, Args &&...Arguments) {
     Stream << ClassName;
     if (!DpctGlobalInfo::isCtadEnabled()) {
       printArguments(Stream << "<", std::forward<Args>(Arguments)...) << ">";
@@ -1385,12 +1385,12 @@ public:
   }
   template <class StreamTy, class... Args>
   static inline StreamTy &printCtadClass(StreamTy &Stream, StringRef ClassName,
-                                         Args &&... Arguments) {
+                                         Args &&...Arguments) {
     return printCtadClass(Stream, 0, ClassName,
                           std::forward<Args>(Arguments)...);
   }
   template <class... Args>
-  static inline std::string getCtadClass(Args &&... Arguments) {
+  static inline std::string getCtadClass(Args &&...Arguments) {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     return printCtadClass(OS, std::forward<Args>(Arguments)...).str();
@@ -1411,8 +1411,7 @@ public:
     if (SM->isMacroArgExpansion(Loc)) {
       Loc = SM->getSpellingLoc(Loc);
     }
-    auto LocInfo =
-        SM->getDecomposedLoc(SM->getExpansionLoc(Loc));
+    auto LocInfo = SM->getDecomposedLoc(SM->getExpansionLoc(Loc));
 
     if (auto FileEntry = SM->getFileEntryForID(LocInfo.first)) {
       // To avoid potential path inconsistent issue,
@@ -2091,7 +2090,7 @@ public:
   }
   static void
   insertCudaKernelDimDFIMap(unsigned int Index,
-                           std::shared_ptr<DeviceFunctionInfo> Ptr) {
+                            std::shared_ptr<DeviceFunctionInfo> Ptr) {
     CudaKernelDimDFIMap.insert(std::make_pair(Index, Ptr));
   }
   static std::shared_ptr<DeviceFunctionInfo>
@@ -2222,8 +2221,8 @@ private:
         getCombinedStrFromLoc(SM->getSpellingLoc(SL)));
     if (It != getExpansionRangeToMacroRecord().end()) {
       dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
-        [getCombinedStrFromLoc(
-          SM->getSpellingLoc(SL).getLocWithOffset(Len))] = It->second;
+          [getCombinedStrFromLoc(
+              SM->getSpellingLoc(SL).getLocWithOffset(Len))] = It->second;
     }
   }
 
@@ -2900,7 +2899,7 @@ public:
   }
 };
 
- class TextureInfo {
+class TextureInfo {
 protected:
   const std::string FilePath;
   const unsigned Offset;
@@ -4005,7 +4004,7 @@ public:
     Stream << S;
     return *this;
   }
-  template <class... Args> KernelPrinter &line(Args &&... Arguments) {
+  template <class... Args> KernelPrinter &line(Args &&...Arguments) {
     appendString(Stream, Indent, std::forward<Args>(Arguments)..., NL);
     return *this;
   }

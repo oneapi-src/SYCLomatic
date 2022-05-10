@@ -9,10 +9,10 @@
 //
 //===---------------------------------------------------------------===//
 
+#include "IncrementalMigrationUtility.h"
 #include "Config.h"
 #include "Error.h"
 #include "ExternalReplacement.h"
-#include "IncrementalMigrationUtility.h"
 
 namespace clang {
 namespace dpct {
@@ -131,7 +131,8 @@ int checkDpctOptionSet(
         }
       }
 #else
-      else if (PreviousOpts.at(CurrentOpt.first).Value != CurrentOpt.second.Value) {
+      else if (PreviousOpts.at(CurrentOpt.first).Value !=
+               CurrentOpt.second.Value) {
         return -1;
       }
 #endif
@@ -151,7 +152,7 @@ int checkDpctOptionSet(
 /// return false, print failed due to parsing error, \p Msg is invalid
 bool printOptions(
     const std::map<std::string, clang::tooling::OptionInfo> &OptsMap,
-                  std::string &Msg) {
+    std::string &Msg) {
   std::vector<std::string> Opts;
   for (const auto &Item : OptsMap) {
     const std::string Key = Item.first;
@@ -312,7 +313,6 @@ bool printOptions(
   return true;
 }
 
-
 // return true: dpct do migration continually
 // return false: dpct should exit
 bool canContinueMigration(std::string &Msg) {
@@ -333,12 +333,12 @@ bool canContinueMigration(std::string &Msg) {
   if (VerCompRes == VersionCmpResult::VCR_CMP_FAILED) {
     llvm::errs() << getLoadYamlFailWarning(YamlFilePath.str().str());
     return true;
-  } 
+  }
   if (VerCompRes == VersionCmpResult::VCR_CURRENT_IS_NEWER ||
-             VerCompRes == VersionCmpResult::VCR_CURRENT_IS_OLDER) {
+      VerCompRes == VersionCmpResult::VCR_CURRENT_IS_OLDER) {
     llvm::errs() << getCheckVersionFailWarning();
     return true;
-  } 
+  }
 
   // check option set
   int Res =
@@ -363,5 +363,5 @@ bool canContinueMigration(std::string &Msg) {
   return true;
 }
 
-}
-}
+} // namespace dpct
+} // namespace clang

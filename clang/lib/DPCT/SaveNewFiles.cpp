@@ -256,7 +256,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
         // calling proccessFiles() in Tooling.cpp::ClangTool::run().
         continue;
       } else {
-        if(DpctGlobalInfo::isExcluded(FilePath, false)) {
+        if (DpctGlobalInfo::isExcluded(FilePath, false)) {
           continue;
         }
         if (GetSourceFileType(FilePath) & SPT_CudaSource) {
@@ -594,8 +594,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           }
         }
       } catch (std::exception &e) {
-        std::string FaultMsg =
-            "Error: dpct internal error. Formatting of the code skipped. Migration continues.\n";
+        std::string FaultMsg = "Error: dpct internal error. Formatting of the "
+                               "code skipped. Migration continues.\n";
         llvm::errs() << FaultMsg;
       }
     }

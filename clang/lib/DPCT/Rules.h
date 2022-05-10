@@ -11,11 +11,11 @@
 
 #ifndef DPCT_RULES_H
 #define DPCT_RULES_H
+#include "CustomHelperFiles.h"
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/YAMLTraits.h"
 #include <string>
 #include <vector>
-#include "llvm/Support/YAMLTraits.h"
-#include "llvm/Support/CommandLine.h"
-#include "CustomHelperFiles.h"
 enum RuleKind { API, DataType, Macro, Header, TypeRule, Class };
 
 enum RulePriority { Takeover, Default, Fallback };
@@ -26,20 +26,19 @@ struct TypeNameRule {
   RulePriority Priority;
   std::vector<std::string> Includes;
   TypeNameRule(std::string Name)
-    : NewName(Name),
-    RequestFeature(clang::dpct::HelperFeatureEnum::no_feature_helper),
-    Priority(RulePriority::Fallback) {}
+      : NewName(Name),
+        RequestFeature(clang::dpct::HelperFeatureEnum::no_feature_helper),
+        Priority(RulePriority::Fallback) {}
   TypeNameRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
-    RulePriority Priority = RulePriority::Fallback)
-    : NewName(Name), RequestFeature(Feature), Priority(Priority) {}
+               RulePriority Priority = RulePriority::Fallback)
+      : NewName(Name), RequestFeature(Feature), Priority(Priority) {}
 };
 
 struct ClassFieldRule : public TypeNameRule {
-  ClassFieldRule(std::string Name)
-    : TypeNameRule(Name) {}
+  ClassFieldRule(std::string Name) : TypeNameRule(Name) {}
   ClassFieldRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
-    RulePriority Priority = RulePriority::Fallback)
-    : TypeNameRule(Name, Feature) {}
+                 RulePriority Priority = RulePriority::Fallback)
+      : TypeNameRule(Name, Feature) {}
 };
 
 // Record all information of imported rules
@@ -51,7 +50,7 @@ public:
     std::string Out;
     std::string OutGetter;
     std::string OutSetter;
-    ClassField(){}
+    ClassField() {}
   };
   class ClassMethod {
   public:
@@ -70,32 +69,25 @@ public:
   std::vector<std::shared_ptr<ClassMethod>> Methods;
   bool ReturnErrorCode;
   MetaRuleObject() {}
-  MetaRuleObject(std::string id,
-    RulePriority priority, RuleKind kind)
-      : RuleId(id), 
-    Priority(priority), Kind(kind) {}
-  static void setRuleFiles(std::string File) {
-    RuleFiles.push_back(File);
-  }
+  MetaRuleObject(std::string id, RulePriority priority, RuleKind kind)
+      : RuleId(id), Priority(priority), Kind(kind) {}
+  static void setRuleFiles(std::string File) { RuleFiles.push_back(File); }
 };
 
 template <class T>
-struct llvm::yaml::SequenceTraits<
-    std::vector<std::shared_ptr<T>>> {
-  static size_t size(llvm::yaml::IO &Io,
-                     std::vector<std::shared_ptr<T>> &Seq) {
+struct llvm::yaml::SequenceTraits<std::vector<std::shared_ptr<T>>> {
+  static size_t size(llvm::yaml::IO &Io, std::vector<std::shared_ptr<T>> &Seq) {
     return Seq.size();
   }
-  static std::shared_ptr<T> &
-  element(IO &, std::vector<std::shared_ptr<T>> &Seq,
-          size_t Index) {
+  static std::shared_ptr<T> &element(IO &, std::vector<std::shared_ptr<T>> &Seq,
+                                     size_t Index) {
     if (Index >= Seq.size())
       Seq.resize(Index + 1);
     return Seq[Index];
   }
 };
 
-template<> struct llvm::yaml::ScalarEnumerationTraits<RulePriority> {
+template <> struct llvm::yaml::ScalarEnumerationTraits<RulePriority> {
   static void enumeration(llvm::yaml::IO &Io, RulePriority &Value) {
     Io.enumCase(Value, "Takeover", RulePriority::Takeover);
     Io.enumCase(Value, "Default", RulePriority::Default);
@@ -103,7 +95,7 @@ template<> struct llvm::yaml::ScalarEnumerationTraits<RulePriority> {
   }
 };
 
-template<> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
+template <> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
   static void enumeration(llvm::yaml::IO &Io, RuleKind &Value) {
     Io.enumCase(Value, "API", RuleKind::API);
     Io.enumCase(Value, "DataType", RuleKind::DataType);
@@ -115,7 +107,8 @@ template<> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
 };
 
 template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
-  static void mapping(llvm::yaml::IO &Io, std::shared_ptr<MetaRuleObject> &Doc) {
+  static void mapping(llvm::yaml::IO &Io,
+                      std::shared_ptr<MetaRuleObject> &Doc) {
     Doc = std::make_shared<MetaRuleObject>();
     Io.mapRequired("Rule", Doc->RuleId);
     Io.mapRequired("Kind", Doc->Kind);
@@ -128,8 +121,10 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
   }
 };
 
-template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::ClassField>> {
-  static void mapping(llvm::yaml::IO &Io, std::shared_ptr<MetaRuleObject::ClassField> &Doc) {
+template <>
+struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::ClassField>> {
+  static void mapping(llvm::yaml::IO &Io,
+                      std::shared_ptr<MetaRuleObject::ClassField> &Doc) {
     Doc = std::make_shared<MetaRuleObject::ClassField>();
     Io.mapRequired("In", Doc->In);
     Io.mapOptional("Out", Doc->Out);
@@ -138,8 +133,10 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::Cla
   }
 };
 
-template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::ClassMethod>> {
-  static void mapping(llvm::yaml::IO &Io, std::shared_ptr<MetaRuleObject::ClassMethod> &Doc) {
+template <>
+struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::ClassMethod>> {
+  static void mapping(llvm::yaml::IO &Io,
+                      std::shared_ptr<MetaRuleObject::ClassMethod> &Doc) {
     Doc = std::make_shared<MetaRuleObject::ClassMethod>();
     Io.mapRequired("In", Doc->In);
     Io.mapRequired("Out", Doc->Out);
@@ -162,7 +159,6 @@ public:
       : Id(Id), Priority(Priority), Kind(Kind), In(In), Out(Out),
         HelperFeature(HelperFeature), Includes(Includes) {}
 };
-
 
 class MacroMigrationRule : public RuleBase {
 public:
@@ -204,7 +200,8 @@ public:
   size_t ArgIndex;
   std::string Str;
   std::vector<std::shared_ptr<OutputBuilder>> SubBuilders;
-  void parse(std::string&);
+  void parse(std::string &);
+
 private:
   // /OutStr is the string specified in rule's "Out" session
   std::shared_ptr<OutputBuilder> consumeKeyword(std::string &OutStr,
