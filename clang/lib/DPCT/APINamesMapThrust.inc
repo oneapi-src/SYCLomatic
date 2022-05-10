@@ -1,0 +1,74 @@
+//===---APINamesMapThrust.inc-------------------------------------------===//
+//
+// Copyright (C) Intel Corporation. All rights reserved.
+//
+// The information and source code contained herein is the exclusive
+// property of Intel Corporation and may not be disclosed, examined
+// or reproduced in whole or in part without explicit written authorization
+// from the company.
+//
+//===-----------------------------------------------------------------===//
+/****************************************************************************
+* ENTRY_HOST(thrustAPIName, targetAPIName, ExececutionPolicy)
+*   Specifies the mapping for 'thrustAPIName'.
+*   Only expected in host code
+*
+* ENTRY_DEVICE(thrustAPIName, targetAPIName, ExececutionPolicy)
+*   Specifies the mapping for 'thrustAPIName'.
+*   Expected in device code
+*
+* ENTRY_BOTH(thrustAPIName, targetAPIName, ExececutionPolicy)
+*   Specifies the mapping for 'thrustAPIName'.
+*   Expected in both host and device code
+*
+****************************************************************************/
+ENTRY_HOST("thrust::copy", "std::copy", "oneapi::dpl::execution::sycl")
+ENTRY_HOST("thrust::copy_n", "std::copy_n", "oneapi::dpl::execution::sycl")
+ENTRY_HOST("thrust::sequence", MapNames::getDpctNamespace() + "iota", "oneapi::dpl::execution::sycl")
+ENTRY_HOST("thrust::stable_sort_by_key", MapNames::getDpctNamespace(true) + "stable_sort", "oneapi::dpl::execution::sycl")
+ENTRY_HOST("thrust::sort", "oneapi::dpl::sort", "oneapi::dpl::execution::sycl")
+ENTRY_HOST("thrust::transform", "std::transform", "oneapi::dpl::execution::sycl")
+ENTRY_HOST("thrust::transform_if", MapNames::getDpctNamespace() + "transform_if", "oneapi::dpl::execution::sycl")
+ENTRY_HOST("thrust::reduce", "std::reduce", "oneapi::dpl::execution::sycl")
+ENTRY_HOST("thrust::device_free", MapNames::getDpctNamespace() + "free_device", "")
+ENTRY_HOST("thrust::device_malloc", MapNames::getDpctNamespace() + "malloc_device", "")
+ENTRY_BOTH("thrust::raw_pointer_cast", MapNames::getDpctNamespace() + "get_raw_pointer", "")
+ENTRY_BOTH("thrust::complex", "std::complex", "")
+ENTRY_BOTH("thrust::exp", "std::exp", "")
+ENTRY_BOTH("thrust::log", "std::log", "")
+ENTRY_BOTH("thrust::copy_if", "std::copy_if", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::make_counting_iterator", MapNames::getDpctNamespace() + "make_counting_iterator", "")
+ENTRY_BOTH("thrust::count_if", "std::count_if", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::fill", "std::fill", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::fill_n", "std::fill_n", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::device_pointer_cast", MapNames::getDpctNamespace() + "get_device_pointer", "")
+ENTRY_BOTH("thrust::for_each", "std::for_each", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::max", "std::max", "")
+ENTRY_BOTH("thrust::min", "std::min", "")
+ENTRY_BOTH("thrust::inner_product", MapNames::getDpctNamespace() + "inner_product", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::sort_by_key", MapNames::getDpctNamespace() + "sort", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::get", "std::get", "")
+ENTRY_BOTH("thrust::make_constant_iterator", MapNames::getDpctNamespace() + "make_constant_iterator", "")
+ENTRY_BOTH("thrust::make_tuple", "std::make_tuple", "")
+ENTRY_BOTH("thrust::tie", "std::tie", "")
+ENTRY_BOTH("thrust::make_zip_iterator", "oneapi::dpl::make_zip_iterator", "")
+ENTRY_BOTH("thrust::exclusive_scan_by_key", "oneapi::dpl::exclusive_scan_by_segment", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::inclusive_scan_by_key", "oneapi::dpl::inclusive_scan_by_segment", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::partition_point", MapNames::getDpctNamespace() + "partition_point", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::binary_search", "oneapi::dpl::binary_search", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::lower_bound", "oneapi::dpl::lower_bound", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::upper_bound", "oneapi::dpl::upper_bound", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::equal_range", "oneapi::dpl::equal_range", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::count", "std::count", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::generate", "std::generate", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::generate_n", "std::generate_n", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::merge", "std::merge", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::uninitialized_fill", "std::uninitialized_fill", "")
+ENTRY_BOTH("thrust::unique", "std::unique", "")
+ENTRY_BOTH("thrust::exclusive_scan", "std::exclusive_scan", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::reduce_by_key", "oneapi::dpl::reduce_by_segment", "oneapi::dpl::execution::sycl")
+ENTRY_BOTH("thrust::max_element", "std::max_element", "")
+ENTRY_BOTH("thrust::min_element", "std::min_element", "")
+ENTRY_BOTH("thrust::make_permutation_iterator", "oneapi::dpl::make_permutation_iterator", "")
+ENTRY_BOTH("thrust::make_transform_iterator", "oneapi::dpl::make_transform_iterator", "")
+ENTRY_BOTH("thrust::make_discard_iterator", "oneapi::dpl::discard_iterator", "")

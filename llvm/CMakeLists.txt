@@ -27,6 +27,11 @@ if (NOT PACKAGE_VERSION)
   set(PACKAGE_VERSION
     "${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}${LLVM_VERSION_SUFFIX}")
 endif()
+# SYCLomatic_CUSTOMIZATION begin
+set(SYCLomatic_CUSTOMIZATION ON)
+set(LLVM_ENABLE_EH ON)
+set(LLVM_ENABLE_RTTI ON)
+# SYCLomatic_CUSTOMIZATION end
 
 if(NOT DEFINED LLVM_SHLIB_SYMBOL_VERSION)
   # "Symbol version prefix for libLLVM.so"
@@ -561,6 +566,11 @@ endif()
 # Define the default arguments to use with 'lit', and an option for the user to
 # override.
 set(LIT_ARGS_DEFAULT "-sv")
+# SYCLomatic_CUSTOMIZATION begin
+if (NOT LOCAL_LIT_TEST)
+  set(LIT_ARGS_DEFAULT "-vv -a")
+endif()
+# SYCLomatic_CUSTOMIZATION end
 if (MSVC_IDE OR XCODE)
   set(LIT_ARGS_DEFAULT "${LIT_ARGS_DEFAULT} --no-progress-bar")
 endif()
@@ -644,6 +654,12 @@ if(NOT DEFINED LLVM_DYLIB_COMPONENTS)
   set(LLVM_DYLIB_COMPONENTS "all" CACHE STRING
     "Semicolon-separated list of components to include in libLLVM, or \"all\".")
 endif()
+
+# SYCLomatic_CUSTOMIZATION begin
+if(WIN32)
+    add_compile_options(/MT)
+endif()
+# SYCLomatic_CUSTOMIZATION end
 
 if(MSVC)
   option(LLVM_BUILD_LLVM_C_DYLIB "Build LLVM-C.dll (Windows only)" ON)

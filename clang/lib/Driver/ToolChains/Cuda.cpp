@@ -27,6 +27,11 @@
 #include "llvm/Support/TargetParser.h"
 #include "llvm/Support/VirtualFileSystem.h"
 #include <system_error>
+#ifdef SYCLomatic_CUSTOMIZATION
+#include <fstream>
+#include <regex>
+#include "clang/DPCT/DPCT.h"
+#endif // SYCLomatic_CUSTOMIZATION
 
 using namespace clang::driver;
 using namespace clang::driver::toolchains;
@@ -34,6 +39,102 @@ using namespace clang::driver::tools;
 using namespace clang;
 using namespace llvm::opt;
 
+#ifdef SYCLomatic_CUSTOMIZATION
+bool HasSDKIncludeOption = false;
+bool HasSDKPathOption = false;
+std::string RealSDKIncludePath = "";
+std::string RealSDKPath = "";
+int SDKVersionMajor=0;
+int SDKVersionMinor=0;
+
+bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath, CudaVersion& CV) {
+  CV = CudaVersion::UNKNOWN;
+  std::ifstream CudaFile(FilePath, std::ios::in);
+  if (!CudaFile.is_open()) {
+    return false;
+  }
+  std::string Line;
+  std::string Res;
+  while (std::getline(CudaFile, Line)) {
+    std::regex RE("^#define CUDA_VERSION [0-9]{4,5}", std::regex::extended);
+    std::smatch M;
+    std::regex_search(Line, M, RE);
+    if (!M.empty()) {
+      Res = M[0];
+      break;
+    }
+  }
+  if (Res == "") {
+    return false;
+  }
+  Res = Res.substr(21);
+  int DefineVersion = std::stoi(Res);
+  int Major = DefineVersion / 1000;
+  int Minor = (DefineVersion % 100) / 10;
+
+  SDKVersionMajor = Major;
+  SDKVersionMinor = Minor;
+
+  if (Major == 8 && Minor == 0) {
+    CV = CudaVersion::CUDA_80;
+    IsVersionSupported = true;
+    return true;
+  } else if (Major == 9 && Minor == 0) {
+    CV = CudaVersion::CUDA_90;
+    IsVersionSupported = true;
+    return true;
+  } else if (Major == 9 && Minor == 1){
+    CV = CudaVersion::CUDA_91;
+    IsVersionSupported = true;
+    return true;
+  } else if (Major == 9 && Minor == 2) {
+    CV = CudaVersion::CUDA_92;
+    IsVersionSupported = true;
+    return true;
+  } else if (Major == 10 && Minor == 0) {
+    CV = CudaVersion::CUDA_100;
+    IsVersionSupported = true;
+    return true;
+  } else if (Major == 10 && Minor == 1) {
+    CV = CudaVersion::CUDA_101;
+    IsVersionSupported = true;
+    return true;
+  } else if (Major == 10 && Minor == 2) {
+    CV = CudaVersion::CUDA_102;
+    IsVersionSupported = true;
+    return true;
+  } else if (Major == 11 && Minor == 0) {
+    CV = CudaVersion::CUDA_110;
+    IsVersionSupported = true;
+    return true;
+  } else if (Major == 11 && Minor == 1) {
+    CV = CudaVersion::CUDA_111;
+    IsVersionSupported = true;
+    return true;
+  } else if (Major == 11 && Minor == 2) {
+    CV = CudaVersion::CUDA_112;
+    IsVersionSupported = true;
+    return true;
+  } else if (Major == 11 && Minor == 3) {
+    CV = CudaVersion::CUDA_113;
+    IsVersionSupported = true;
+    return true;
+  } else if (Major == 11 && Minor == 4) {
+    CV = CudaVersion::CUDA_114;
+    IsVersionSupported = true;
+    return true;
+  } else if (Major == 11 && Minor == 5) {
+    CV = CudaVersion::CUDA_115;
+    IsVersionSupported = true;
+    return true;
+  } else if (Major == 11 && Minor == 6) {
+    CV = CudaVersion::CUDA_116;
+    IsVersionSupported = true;
+    return true;
+  }
+  return false;
+}
+#else
 namespace {
 
 CudaVersion getCudaVersion(uint32_t raw_version) {
@@ -98,6 +199,7 @@ CudaVersion parseCudaHFile(llvm::StringRef Input) {
   return CudaVersion::UNKNOWN;
 }
 } // namespace
+#endif // SYCLomatic_CUSTOMIZATION
 
 void CudaInstallationDetector::WarnIfUnsupportedVersion() {
   if (Version > CudaVersion::PARTIALLY_SUPPORTED) {
@@ -127,24 +229,48 @@ CudaInstallationDetector::CudaInstallationDetector(
   SmallVector<Candidate, 4> Candidates;
 
   // In decreasing order so we prefer newer versions to older versions.
+#ifdef SYCLomatic_CUSTOMIZATION
+  std::initializer_list<const char *> Versions = {
+      "11.6", "11.5", "11.4", "11.3", "11.2", "11.1", "10.2", "10.1",
+      "10.0", "9.2",  "9.1",  "9.0",  "8.0",  "7.5",  "7.0"};
+#else
   std::initializer_list<const char *> Versions = {
       "11.4", "11.3", "11.2", "11.1", "10.2", "10.1", "10.0",
       "9.2",  "9.1",  "9.0",  "8.0",  "7.5",  "7.0"};
+#endif // SYCLomatic_CUSTOMIZATION
   auto &FS = D.getVFS();
-
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (HasSDKPathOption) {
+    Candidates.emplace_back(RealSDKPath);
+  } else if (Args.hasArg(clang::driver::options::OPT_cuda_path_EQ)) {
+    std::string TempCandidate =
+        Args.getLastArgValue(clang::driver::options::OPT_cuda_path_EQ).str();
+    if (TempCandidate[0] == '"') {
+      TempCandidate = TempCandidate.substr(1, TempCandidate.size() - 2);
+    }
+    Candidates.emplace_back(TempCandidate);
+#else
   if (Args.hasArg(clang::driver::options::OPT_cuda_path_EQ)) {
     Candidates.emplace_back(
         Args.getLastArgValue(clang::driver::options::OPT_cuda_path_EQ).str());
+#endif // SYCLomatic_CUSTOMIZATION
   } else if (HostTriple.isOSWindows()) {
     // CUDA_PATH is set by the installer, prefer it over other versions that
     // might be present on the system.
     if (const char *CudaPathEnvVar = ::getenv("CUDA_PATH"))
       Candidates.emplace_back(CudaPathEnvVar);
-
+#ifdef SYCLomatic_CUSTOMIZATION
+    // if D.SysRoot empty (no --sysroot) , then default to "c:" in Windows.
+    for (const char *Ver : Versions)
+      Candidates.emplace_back((D.SysRoot.empty() ? "c:" : D.SysRoot) +
+          "/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v" +
+          Ver);
+#else
     for (const char *Ver : Versions)
       Candidates.emplace_back(
           D.SysRoot + "/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v" +
           Ver);
+#endif // SYCLomatic_CUSTOMIZATION
   } else {
     if (!Args.hasArg(clang::driver::options::OPT_cuda_path_ignore_env)) {
       // Try to find ptxas binary. If the executable is located in a directory
@@ -179,13 +305,73 @@ CudaInstallationDetector::CudaInstallationDetector(
       Candidates.emplace_back(D.SysRoot + "/usr/lib/cuda");
   }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  Args.hasArg(options::OPT_nogpulib);
+  if (HasSDKIncludeOption) {
+    if (RealSDKIncludePath.empty() ||
+        !D.getVFS().exists(RealSDKIncludePath))
+      return;
+    if (!(FS.exists(RealSDKIncludePath + "/cuda_runtime.h") &&
+          FS.exists(RealSDKIncludePath + "/cuda.h")))
+      return;
+    InstallPath = RealSDKIncludePath;
+    IncludePath = RealSDKIncludePath;
+
+    // To certain include path specified by --cuda-include-path is valid
+    IsIncludePathValid = true;
+
+    bool IsFound =
+        ParseCudaVersionFile(RealSDKIncludePath + "/cuda.h", Version);
+    if (!IsFound)
+      return;
+    IsValid = true;
+
+    // To certain CUDA version specified by --cuda-include-path is supported
+    IsVersionSupported = true;
+  } else {
+    for (const auto &Candidate : Candidates) {
+      InstallPath = Candidate.Path;
+      if (InstallPath.empty() || !D.getVFS().exists(InstallPath))
+        continue;
+
+      bool IsFound = false;
+      if (FS.exists(InstallPath + "/include/cuda_runtime.h") &&
+          FS.exists(InstallPath + "/include/cuda.h")) {
+        IsFound = ParseCudaVersionFile(InstallPath + "/include/cuda.h", Version);
+        if (!IsFound)
+          continue;
+        InstallPath = InstallPath + "/include/";
+        IncludePath = InstallPath;
+
+        // To certain include path detected is valid
+        IsIncludePathValid = true;
+      } else if (FS.exists(InstallPath + "/cuda_runtime.h") &&
+                 FS.exists(InstallPath + "/cuda.h")) {
+        IsFound = ParseCudaVersionFile(InstallPath + "/cuda.h", Version);
+        if (!IsFound)
+          continue;
+        IncludePath = InstallPath;
+
+        // To certain include path detected is valid
+        IsIncludePathValid = true;
+      } else {
+        continue;
+      }
+
+      IsValid = true;
+
+      // To certain CUDA version that dpct supports is available
+      IsSupportedVersionAvailable = true;
+      break;
+    }
+  }
+#else
   bool NoCudaLib = Args.hasArg(options::OPT_nogpulib);
 
   for (const auto &Candidate : Candidates) {
     InstallPath = Candidate.Path;
     if (InstallPath.empty() || !FS.exists(InstallPath))
       continue;
-
     BinPath = InstallPath + "/bin";
     IncludePath = InstallPath + "/include";
     LibDevicePath = InstallPath + "/nvvm/libdevice";
@@ -293,10 +479,10 @@ CudaInstallationDetector::CudaInstallationDetector(
     // -nocudalib hasn't been specified.
     if (LibDeviceMap.empty() && !NoCudaLib)
       continue;
-
     IsValid = true;
     break;
   }
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 void CudaInstallationDetector::AddCudaIncludeArgs(
@@ -341,9 +527,14 @@ void CudaInstallationDetector::CheckCudaVersionSupportsArch(
 }
 
 void CudaInstallationDetector::print(raw_ostream &OS) const {
+#ifdef SYCLomatic_CUSTOMIZATION
   if (isValid())
-    OS << "Found CUDA installation: " << InstallPath << ", version "
+    OS << "Found CUDA include folder: " << InstallPath << ", version "
        << CudaVersionToString(Version) << "\n";
+#else
+  OS << "Found CUDA installation: " << InstallPath << ", version "
+     << CudaVersionToString(Version) << "\n";
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 namespace {

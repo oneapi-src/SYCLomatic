@@ -142,11 +142,24 @@ bool AffectedRangeManager::nonPPLineAffected(
       Line->MatchingOpeningBlockLineIndex != UnwrappedLine::kInvalidIndex &&
       Lines[Line->MatchingOpeningBlockLineIndex]->Affected;
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (formatRangeGetter() == FormatRange::migrated) {
+    // only format migrated lines
+    if (SomeTokenAffected) {
+      Line->Affected = true;
+      SomeLineAffected = true;
+    }
+  } else {
+    // format all lines
+#endif // SYCLomatic_CUSTOMIZATION
   if (SomeTokenAffected || SomeFirstChildAffected || LineMoved ||
       IsContinuedComment || IsAffectedClosingBrace) {
     Line->Affected = true;
     SomeLineAffected = true;
   }
+#ifdef SYCLomatic_CUSTOMIZATION
+  }
+#endif // SYCLomatic_CUSTOMIZATION
   return SomeLineAffected;
 }
 

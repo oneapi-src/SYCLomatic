@@ -2608,6 +2608,12 @@ void TokenAnnotator::calculateFormattingInformation(AnnotatedLine &Line) {
   for (AnnotatedLine *ChildLine : Line.Children)
     calculateFormattingInformation(*ChildLine);
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (formatRangeGetter() == FormatRange::migrated) {
+    if (Line.First && !Line.InPPDirective)
+      Line.First->MustBreakBefore = true;
+  }
+#endif // SYCLomatic_CUSTOMIZATION
   Line.First->TotalLength =
       Line.First->IsMultiline ? Style.ColumnLimit
                               : Line.FirstStartColumn + Line.First->ColumnWidth;

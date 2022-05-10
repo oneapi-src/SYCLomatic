@@ -74,10 +74,18 @@ class FormatTokenSource;
 
 class UnwrappedLineParser {
 public:
+#ifdef SYCLomatic_CUSTOMIZATION
+  UnwrappedLineParser(const FormatStyle &Style,
+                      const AdditionalKeywords &Keywords,
+                      unsigned FirstStartColumn, ArrayRef<FormatToken *> Tokens,
+                      UnwrappedLineConsumer &Callback,
+                      const SourceManager &SourceMgr);
+#else
   UnwrappedLineParser(const FormatStyle &Style,
                       const AdditionalKeywords &Keywords,
                       unsigned FirstStartColumn, ArrayRef<FormatToken *> Tokens,
                       UnwrappedLineConsumer &Callback);
+#endif // SYCLomatic_CUSTOMIZATION
 
   void parse();
 
@@ -166,7 +174,13 @@ private:
   // when resetting the line state.
   enum class LineLevel { Remove, Keep };
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  bool addUnwrappedLine(LineLevel AdjustLevel = LineLevel::Remove,
+                        bool MustAdd = false);
+#else
   void addUnwrappedLine(LineLevel AdjustLevel = LineLevel::Remove);
+#endif // SYCLomatic_CUSTOMIZATION
+
   bool eof() const;
   // LevelDifference is the difference of levels after and before the current
   // token. For example:
@@ -315,6 +329,9 @@ private:
   // normal source code and may be nonzero when formatting a code fragment that
   // does not start at the beginning of the file.
   unsigned FirstStartColumn;
+#ifdef SYCLomatic_CUSTOMIZATION
+  const SourceManager &SourceMgr;
+#endif // SYCLomatic_CUSTOMIZATION
 
   friend class ScopedLineState;
   friend class CompoundStatementIndenter;

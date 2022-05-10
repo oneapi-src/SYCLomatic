@@ -1,0 +1,7 @@
+
+#include <stdio.h>
+#include <cuda_runtime.h>
+
+// CHECK: void foo(){
+__global__ void foo(){
+}

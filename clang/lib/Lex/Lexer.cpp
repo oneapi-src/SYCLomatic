@@ -48,7 +48,11 @@
 #include <utility>
 
 using namespace clang;
-
+#ifdef SYCLomatic_CUSTOMIZATION
+namespace clang {
+  extern std::function<bool(SourceLocation)> IsInRootFunc;
+}
+#endif // SYCLomatic_CUSTOMIZATION
 //===----------------------------------------------------------------------===//
 // Token Class Implementation
 //===----------------------------------------------------------------------===//
@@ -1832,6 +1836,13 @@ bool Lexer::LexIdentifierContinue(Token &Result, const char *CurPtr) {
     return true;
   }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  // if __CUDA_ARCH__ in in-root, perfrom HandleIdentifier anyway
+  if (!II->isHandleIdentifierCase() && II->getName() == "__CUDA_ARCH__" &&
+      IsInRootFunc(Result.getLocation())) {
+    return PP->HandleIdentifier(Result);
+  }
+#endif // SYCLomatic_CUSTOMIZATION
   // Finally, now that we know we have an identifier, pass this off to the
   // preprocessor, which may macro expand it or something.
   if (II->isHandleIdentifierCase())
@@ -3835,6 +3846,27 @@ LexNextToken:
         CurPtr = ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
                              SizeTmp2, Result);
       } else {
+#ifdef SYCLomatic_CUSTOMIZATION
+        // Support kernel call with whitespace between "<<" and "<"
+        // e.g. foo<< <1, 1, 0>>>()
+        if (LangOpts.CUDA && (After == ' ' || After == '\t') && SizeTmp2) {
+          // Set LookingForwardPtr to the end of "<<"
+          const char *LookingForwardPtr = CurPtr + SizeTmp + SizeTmp2;
+          After = getCharAndSize(LookingForwardPtr, SizeTmp2);
+          while (After == ' ' || After == '\t') {
+            LookingForwardPtr++;
+            After = getCharAndSize(LookingForwardPtr, SizeTmp2);
+          }
+          // LookingForwardPtr is at the begin of the last whitespace and
+          // thus need to cunsume the last whitespace.
+          if (After == '<') {
+            CurPtr = LookingForwardPtr;
+            CurPtr = ConsumeChar(CurPtr, 1, Result);
+            Kind = tok::lesslessless;
+            break;
+          }
+        }
+#endif // SYCLomatic_CUSTOMIZATION
         CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
         Kind = tok::lessless;
       }
@@ -3912,6 +3944,28 @@ LexNextToken:
         CurPtr = ConsumeChar(ConsumeChar(CurPtr, SizeTmp, Result),
                              SizeTmp2, Result);
       } else {
+#ifdef SYCLomatic_CUSTOMIZATION
+        // Support kernel call with whitespace between ">>" and ">"
+        // e.g. foo<<<1, 1, 0>> >()
+        if (LangOpts.CUDA && (After == ' ' || After == '\t') && SizeTmp2) {
+          // Set LookingForwardPtr to the end of ">>"
+          const char *LookingForwardPtr = CurPtr + SizeTmp + SizeTmp2;
+          After = getCharAndSize(LookingForwardPtr, SizeTmp2);
+          // Skipping all whitespaces
+          while (After == ' ' || After == '\t') {
+            LookingForwardPtr++;
+            After = getCharAndSize(LookingForwardPtr, SizeTmp2);
+          }
+          // LookingForwardPtr is at the begin of the last whitespace
+          // and thus need to cunsume the last whitespace.
+          if (After == '>') {
+            CurPtr = LookingForwardPtr;
+            CurPtr = ConsumeChar(CurPtr, 1, Result);
+            Kind = tok::greatergreatergreater;
+            break;
+          }
+        }
+#endif // SYCLomatic_CUSTOMIZATION
         CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
         Kind = tok::greatergreater;
       }

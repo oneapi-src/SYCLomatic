@@ -58,7 +58,9 @@
 #include <utility>
 
 using namespace clang;
-
+namespace clang {
+  extern std::function<unsigned int()> GetRunRound;
+}
 MacroDirective *
 Preprocessor::getLocalMacroDirectiveHistory(const IdentifierInfo *II) const {
   if (!II->hadMacroDefinition())
@@ -1840,6 +1842,15 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
               Tok, *this, diag::err_feature_check_malformed);
           return II && isTargetEnvironment(getTargetInfo(), II);
         });
+#ifdef SYCLomatic_CUSTOMIZATION
+  // Treat __CUDA_ARCH__ as 600 in code
+  } else if (II->getName() == "__CUDA_ARCH__") {
+    if(GetRunRound() == 0)
+      OS << 600;
+    else
+      OS << 0;
+    Tok.setKind(tok::numeric_constant);
+#endif // SYCLomatic_CUSTOMIZATION
   } else {
     llvm_unreachable("Unknown identifier!");
   }

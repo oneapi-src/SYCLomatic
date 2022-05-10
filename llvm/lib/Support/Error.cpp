@@ -175,3 +175,7 @@ LLVMErrorTypeId LLVMGetStringErrorTypeId() {
 LLVMErrorRef LLVMCreateStringError(const char *ErrMsg) {
   return wrap(make_error<StringError>(ErrMsg, inconvertibleErrorCode()));
 }
+
+#ifdef SYCLomatic_CUSTOMIZATION
+char DPCTError::ID = 0;
+#endif

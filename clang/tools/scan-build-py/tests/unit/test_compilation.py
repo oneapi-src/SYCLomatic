@@ -21,6 +21,8 @@ class CompilerTest(unittest.TestCase):
         self.assertIsNotNone(sut.compiler_language(['/usr/local/bin/gcc']))
         self.assertIsNotNone(sut.compiler_language(['/usr/local/bin/g++']))
         self.assertIsNotNone(sut.compiler_language(['/usr/local/bin/clang']))
+        self.assertIsNotNone(sut.compiler_language(['nvcc']))
+        self.assertIsNotNone(sut.compiler_language(['/usr/local/cuda/bin/nvcc']))
         self.assertIsNotNone(
             sut.compiler_language(['armv7_neno-linux-gnueabi-g++']))
 
@@ -50,6 +52,14 @@ class SplitTest(unittest.TestCase):
         self.assertTrue(test('clang++-3.7.1'))
         self.assertTrue(test('armv7_neno-linux-gnueabi-g++'))
 
+    def test_detect_cuda_from_compiler_name(self):
+        def test(cmd):
+            result = sut.split_command([cmd, '-c', 'src.cu'])
+            self.assertIsNotNone(result, "wrong input for test")
+            return result.compiler == 'cuda'
+
+        self.assertTrue(test('nvcc'))
+
     def test_action(self):
         self.assertIsNotNone(sut.split_command(['clang', 'source.c']))
         self.assertIsNotNone(sut.split_command(['clang', '-c', 'source.c']))
@@ -75,15 +85,22 @@ class SplitTest(unittest.TestCase):
         test(['src.c'], ['clang', '-c', '-I', './include', 'src.c'])
         test(['src.c'], ['clang', '-c', '-I', '/opt/me/include', 'src.c'])
         test(['src.c'], ['clang', '-c', '-D', 'config=file.c', 'src.c'])
+        test(['src.cu'], ['nvcc', 'src.cu'])
+        test(['src.cu'], ['nvcc', '-c', 'src.cu'])
+        test(['src.cu'], ['nvcc', '-c', '-I', './include', 'src.cu'])
 
         self.assertIsNone(
             sut.split_command(['cc', 'this.o', 'that.o', '-o', 'a.out']))
         self.assertIsNone(
             sut.split_command(['cc', 'this.o', '-lthat', '-o', 'a.out']))
+        self.assertIsNotNone(
+            sut.split_command(['nvcc', 'this.o', 'that.o', '-o', 'a.out']))
 
     def test_filter_flags(self):
         def test(expected, flags):
             command = ['clang', '-c', 'src.c'] + flags
+            print("command: ", command)
+            print("return ", sut.split_command(command).flags)
             self.assertEqual(expected, sut.split_command(command).flags)
 
         def same(expected):
@@ -103,6 +120,45 @@ class SplitTest(unittest.TestCase):
         filtered(['-static'])
         filtered(['-MD', '-MT', 'something'])
         filtered(['-MMD', '-MF', 'something'])
+        filtered(['-gencode','something'])
+        filtered(['-ccbin','something'])
+        filtered(['-ptx'])
+        filtered(['-cuda'])
+        filtered(['-Xcompiler'])
+        filtered(['-cubin'])
+        filtered(['-fatbin'])
+        filtered(['-gpu'])
+        filtered(['-dc'])
+        filtered(['-dw'])
+        filtered(['-dlink'])
+        filtered(['-link'])
+        filtered(['-lib'])
+        filtered(['-run'])
+        filtered(['-Xarchive'])
+        filtered(['-Xptxas'])
+        filtered(['-Xnvlink'])
+        filtered(['-noprof'])
+        filtered(['-dryrun'])
+        filtered(['-keep'])
+        filtered(['-keep-dir'])
+        filtered(['-clean'])
+        filtered(['-code','something'])
+        filtered(['-rdc','something'])
+        filtered(['-e','something'])
+        filtered(['-maxrregcount','something'])
+        filtered(['-use_fast_math'])
+        filtered(['-ftz','something'])
+        filtered(['-prec-div','something'])
+        filtered(['-prec-sqrt','something'])
+        filtered(['-fmad','something'])
+        filtered(['-default-stream','something'])
+        filtered(['-keep-device-functions'])
+        filtered(['-src-in-ptx'])
+        filtered(['-restrict'])
+        filtered(['-Wno-deprecated-gpu-targets'])
+        filtered(['-res-usage'])
+        filtered(['-V'])
+        filtered(['-optf'])
 
 
 class SourceClassifierTest(unittest.TestCase):
@@ -119,3 +175,6 @@ class SourceClassifierTest(unittest.TestCase):
         self.assertEqual('c++', sut.classify_source('file.c', False))
         self.assertEqual('c++', sut.classify_source('./file.c', False))
         self.assertEqual('c++', sut.classify_source('/path/file.c', False))
+        self.assertEqual('cuda', sut.classify_source('file.cu'))
+        self.assertEqual('cuda', sut.classify_source('./file.cu'))
+        self.assertEqual('cuda', sut.classify_source('/path/file.cu'))

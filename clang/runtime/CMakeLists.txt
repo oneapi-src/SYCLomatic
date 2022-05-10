@@ -168,3 +168,5 @@ if(LLVM_BUILD_EXTERNAL_COMPILER_RT AND EXISTS ${COMPILER_RT_SRC_ROOT}/)
     set_property(GLOBAL APPEND PROPERTY LLVM_ADDITIONAL_TEST_TARGETS check-compiler-rt)
   endif()
 endif()
+
+add_subdirectory(dpct-rt)

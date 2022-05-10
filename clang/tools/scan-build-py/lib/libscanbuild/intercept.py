@@ -31,6 +31,7 @@ from libear import build_libear, TemporaryDirectory
 from libscanbuild import command_entry_point, compiler_wrapper, \
     wrapper_environment, run_command, run_build
 from libscanbuild import duplicate_check
+from libscanbuild.parse_buildlog import parse_build_log
 from libscanbuild.compilation import split_command
 from libscanbuild.arguments import parse_args_for_intercept_build
 from libscanbuild.shell import encode, decode
@@ -40,6 +41,9 @@ __all__ = ['capture', 'intercept_build', 'intercept_compiler_wrapper']
 GS = chr(0x1d)
 RS = chr(0x1e)
 US = chr(0x1f)
+
+# This global set variable is used to record all the preprocess output files
+preproess_output_files = set()
 
 COMPILER_WRAPPER_CC = 'intercept-cc'
 COMPILER_WRAPPER_CXX = 'intercept-c++'
@@ -54,6 +58,20 @@ def intercept_build():
     args = parse_args_for_intercept_build()
     return capture(args)
 
+def get_outfile(command):
+    """ Get output filepath from compilation command. """
+    pos = command.find("-o")
+    pos = pos + 2
+    while(command[pos] == ' ' or command[pos] == '\t'):
+        pos = pos + 1
+    start = pos
+    while(command[pos] != ' ' and command[pos] != '\t' and pos < len(command)-1):
+        pos = pos + 1
+    end = pos
+    if(pos == len(command)-1):
+        end = len(command)
+    outfile = command[start:end]
+    return outfile
 
 def capture(args):
     """ The entry point of build command interception. """
@@ -79,23 +97,55 @@ def capture(args):
             previous = iter([])
         # filter out duplicate entries from both
         duplicate = duplicate_check(entry_hash)
-        return (entry
-                for entry in itertools.chain(previous, current)
-                if os.path.exists(entry['file']) and not duplicate(entry))
+        entries = []
+        for entry in itertools.chain(previous, current):
+            # add linker entry information into compilation database
+            if  (not ('file' in entry)) and (args.no_linker_entry == 0):
+                entries.append(entry)
+            elif 'file' in entry and os.path.exists(entry['file']) and not duplicate(entry):
+                entries.append(entry)
+
+        entries.reverse()
+        entries_post = []
+        occur_set = set()
+        for entry in entries:
+            if not ('file' in entry):
+                key = entry['directory'] + entry['command']
+                if key not in occur_set:
+                    occur_set.add(key)
+                    entries_post.append(entry)
+            elif entry['file'] not in preproess_output_files:
+                if "-o" in entry['command']:
+                    outfile = get_outfile(entry['command'])
+                    key = entry['file'] + entry['directory'] + outfile
+                else:
+                    key = entry['file'] + entry['directory']
+                if key not in occur_set:
+                    occur_set.add(key)
+                    entries_post.append(entry)
+
+        entries_post.reverse()
+        return entries_post
 
     with TemporaryDirectory(prefix='intercept-') as tmp_dir:
-        # run the build command
-        environment = setup_environment(args, tmp_dir)
-        exit_code = run_build(args.build, env=environment)
-        # read the intercepted exec calls
-        exec_traces = itertools.chain.from_iterable(
-            parse_exec_trace(os.path.join(tmp_dir, filename))
-            for filename in sorted(glob.iglob(os.path.join(tmp_dir, '*.cmd'))))
-        # do post processing
-        entries = post_processing(exec_traces)
+        exit_code = 0
+        entries = []
+        if args.parse_build_log:
+            entries = parse_build_log(args.parse_build_log)
+        else:
+            # run the build command
+            environment = setup_environment(args, tmp_dir)
+            exit_code = run_build(args.build, env=environment)
+            # read the intercepted exec calls
+            exec_traces = itertools.chain.from_iterable(
+                parse_exec_trace(os.path.join(tmp_dir, filename))
+                for filename in sorted(glob.iglob(os.path.join(tmp_dir, '*.cmd'))))
+            # do post processing
+            entries = post_processing(exec_traces)
+
         # dump the compilation database
         with open(args.cdb, 'w+') as handle:
-            json.dump(list(entries), handle, sort_keys=True, indent=4)
+            json.dump(entries, handle, sort_keys=True, indent=4)
         return exit_code
 
 
@@ -200,7 +250,6 @@ def parse_exec_trace(filename):
                 'command': records[4].split(US)[:-1]
             }
 
-
 def format_entry(exec_trace):
     """ Generate the desired fields for compilation database entries. """
 
@@ -211,9 +260,31 @@ def format_entry(exec_trace):
 
     logging.debug('format this command: %s', exec_trace['command'])
     compilation = split_command(exec_trace['command'])
+
     if compilation:
+        compiler = {
+            'c' : 'cc',
+            'c++' : 'c++',
+            'cuda' : 'nvcc',
+            'mpich' : 'c++',
+            'ar' : 'ar',
+            'ld' : 'ld'
+        }[compilation.compiler]
+
+        if len(compilation.files) == 0:
+            command = [compiler] + compilation.flags
+            logging.debug('linker entry formated as: %s', command)
+            yield {
+                'directory': exec_trace['directory'],
+                'command': encode(command),
+            }
+
+        for preprocess_source in compilation.preprocess_output_files:
+            file_path = abspath(exec_trace['directory'], preprocess_source)
+            logging.debug('preprocess_file: %s,', file_path)
+            preproess_output_files.add(file_path)
+
         for source in compilation.files:
-            compiler = 'c++' if compilation.compiler == 'c++' else 'cc'
             command = [compiler, '-c'] + compilation.flags + [source]
             logging.debug('formated as: %s', command)
             yield {

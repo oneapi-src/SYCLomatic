@@ -38,6 +38,17 @@ class FileManager;
 class Rewriter;
 class SourceManager;
 
+#ifdef SYCLomatic_CUSTOMIZATION
+namespace dpct {
+enum class ConstantFlagType : int {
+  Default = 0,
+  Host = 1,
+  Device = 2,
+  HostDevice = 3
+};
+enum class HelperFileEnum : unsigned int;
+}
+#endif // SYCLomatic_CUSTOMIZATION
 namespace tooling {
 
 /// A source range independent of the \c SourceManager.
@@ -121,6 +132,9 @@ public:
   unsigned getOffset() const { return ReplacementRange.getOffset(); }
   unsigned getLength() const { return ReplacementRange.getLength(); }
   StringRef getReplacementText() const { return ReplacementText; }
+#ifdef SYCLomatic_CUSTOMIZATION
+  void setReplacementText(const std::string Str) { ReplacementText = Str; }
+#endif // SYCLomatic_CUSTOMIZATION
   /// @}
 
   /// Applies the replacement on the Rewriter.
@@ -128,6 +142,23 @@ public:
 
   /// Returns a human readable string representation.
   std::string toString() const;
+#ifdef SYCLomatic_CUSTOMIZATION
+  void setBlockLevelFormatFlag(bool Flag = true) { BlockLevelFormatFlag = Flag; }
+  bool getBlockLevelFormatFlag() const { return BlockLevelFormatFlag; }
+  void setNotFormatFlag() { NotFormatFlag = true; }
+  bool getNotFormatFlag() { return NotFormatFlag; }
+  dpct::ConstantFlagType getConstantFlag() const { return ConstantFlag; }
+  void setConstantFlag(dpct::ConstantFlagType F) { ConstantFlag = F; }
+  unsigned int getConstantOffset() const { return ConstantOffset; }
+  void setConstantOffset(unsigned int O) { ConstantOffset = O; }
+  std::string getInitStr() const { return InitStr; }
+  void setInitStr(std::string S) { InitStr = S; }
+  std::string getNewHostVarName() const { return NewHostVarName; }
+  void setNewHostVarName(std::string N) { NewHostVarName = N; }
+  void setOffset(unsigned int Offset) {
+    ReplacementRange = Range(Offset, ReplacementRange.getLength());
+  }
+#endif // SYCLomatic_CUSTOMIZATION
 
 private:
   void setFromSourceLocation(const SourceManager &Sources, SourceLocation Start,
@@ -140,6 +171,22 @@ private:
   std::string FilePath;
   Range ReplacementRange;
   std::string ReplacementText;
+#ifdef SYCLomatic_CUSTOMIZATION
+  bool BlockLevelFormatFlag = false;
+  bool NotFormatFlag = false;
+  // Record the __constant__ variable is used in host, device or hostdevice
+  dpct::ConstantFlagType ConstantFlag = dpct::ConstantFlagType::Default;
+  // Record the offset of the begin of token "__constant__"
+  unsigned int ConstantOffset = 0;
+  // Record the init expression of the __constant__ variable, it is used when
+  // adding a new host variable declaration. Since these information can be
+  // collected only when it used in device code.
+  std::string InitStr = "";
+  // Record the new host variable name. The new name is the original name
+  // appending "_host_ct1". Since the original name can only be collected when
+  // it used in device code, so we need record it.
+  std::string NewHostVarName = "";
+#endif // SYCLomatic_CUSTOMIZATION
 };
 
 enum class replacement_error {
@@ -328,11 +375,50 @@ bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite);
 llvm::Expected<std::string> applyAllReplacements(StringRef Code,
                                                  const Replacements &Replaces);
 
+#ifdef SYCLomatic_CUSTOMIZATION
+struct HelperFuncForYaml {
+  HelperFuncForYaml() : IsCalled(false), CallerSrcFiles({}) {}
+  HelperFuncForYaml(bool IsCalled, std::vector<std::string> CallerSrcFiles,
+                    std::map<std::string, HelperFuncForYaml> SubFeatureMap)
+      : IsCalled(IsCalled), CallerSrcFiles(CallerSrcFiles),
+        SubFeatureMap(SubFeatureMap) {}
+  bool IsCalled = false;
+  std::vector<std::string> CallerSrcFiles;
+  std::string APIName;
+  std::map<std::string, HelperFuncForYaml> SubFeatureMap;
+};
+struct CompilationInfo {
+    CompilationInfo(){}
+    std::string MigratedFileName;
+    std::string CompileOptions;
+    std::string Compiler;
+};
+struct OptionInfo {
+  OptionInfo() {}
+  OptionInfo(std::string Value, bool Specified)
+      : Value(Value), Specified(Specified) {}
+  OptionInfo(std::vector<std::string> ValueVec, bool Specified)
+      : ValueVec(ValueVec), Specified(Specified) {}
+  std::string Value;
+  // ValueVec is used for option which have list value. E.g., --rule-file
+  std::vector<std::string> ValueVec;
+  bool Specified = true;
+};
+#endif // SYCLomatic_CUSTOMIZATION
 /// Collection of Replacements generated from a single translation unit.
 struct TranslationUnitReplacements {
   /// Name of the main source for the translation unit.
   std::string MainSourceFile;
+#ifdef SYCLomatic_CUSTOMIZATION
+  std::vector<std::pair<std::string, std::string>>  MainSourceFilesDigest;
+  std::string DpctVersion = "";
+  std::string MainHelperFileName = "";
+  std::string USMLevel = ""; // deprecated
 
+  std::map<std::string, std::map<std::string, HelperFuncForYaml>> FeatureMap;
+  std::map<std::string, std::vector<CompilationInfo>> CompileTargets;
+  std::map<std::string, OptionInfo> OptionMap;
+#endif // SYCLomatic_CUSTOMIZATION
   std::vector<Replacement> Replacements;
 };
 

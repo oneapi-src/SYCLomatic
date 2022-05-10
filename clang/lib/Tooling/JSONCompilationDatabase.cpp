@@ -224,6 +224,16 @@ JSONCompilationDatabase::loadFromBuffer(StringRef DatabaseString,
 
 std::vector<CompileCommand>
 JSONCompilationDatabase::getCompileCommands(StringRef FilePath) const {
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (FilePath == "LinkerEntry") {
+    const auto CommandsRefI = IndexByFile.find(FilePath);
+    if (CommandsRefI == IndexByFile.end())
+      return {};
+    std::vector<CompileCommand> Commands;
+    getCommands(CommandsRefI->getValue(), Commands);
+    return Commands;
+  }
+#endif // SYCLomatic_CUSTOMIZATION
   SmallString<128> NativeFilePath;
   llvm::sys::path::native(FilePath, NativeFilePath);
 
@@ -320,7 +330,13 @@ void JSONCompilationDatabase::getCommands(
     auto Output = std::get<3>(CommandRef);
     Commands.emplace_back(
         std::get<0>(CommandRef)->getValue(DirectoryStorage),
+#ifdef SYCLomatic_CUSTOMIZATION
+        std::get<1>(CommandRef)
+            ? std::get<1>(CommandRef)->getValue(FilenameStorage)
+            : "LinkerEntry",
+#else
         std::get<1>(CommandRef)->getValue(FilenameStorage),
+#endif // SYCLomatic_CUSTOMIZATION
         nodeToCommandLine(Syntax, std::get<2>(CommandRef)),
         Output ? Output->getValue(OutputStorage) : "");
   }
@@ -372,6 +388,11 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
           ErrorMessage = "Expected sequence as value.";
           return false;
         }
+#ifdef SYCLomatic_CUSTOMIZATION
+        ErrorMessage =
+          ("Unknown key: \"" + KeyString->getRawValue() + "\"").str();
+        return false;
+#else
         Command = std::vector<llvm::yaml::ScalarNode *>();
         for (auto &Argument : *SequenceString) {
           auto *Scalar = dyn_cast<llvm::yaml::ScalarNode>(&Argument);
@@ -381,6 +402,7 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
           }
           Command->push_back(Scalar);
         }
+#endif // SYCLomatic_CUSTOMIZATION
       } else {
         if (!ValueString) {
           ErrorMessage = "Expected string as value.";
@@ -389,12 +411,18 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
         if (KeyValue == "directory") {
           Directory = ValueString;
         } else if (KeyValue == "command") {
+#ifdef SYCLomatic_CUSTOMIZATION
+          Command = std::vector<llvm::yaml::ScalarNode *>(1, ValueString);
+#else
           if (!Command)
             Command = std::vector<llvm::yaml::ScalarNode *>(1, ValueString);
+#endif // SYCLomatic_CUSTOMIZATION
         } else if (KeyValue == "file") {
           File = ValueString;
+#ifndef SYCLomatic_CUSTOMIZATION
         } else if (KeyValue == "output") {
           Output = ValueString;
+#endif // SYCLomatic_CUSTOMIZATION
         } else {
           ErrorMessage =
               ("Unknown key: \"" + KeyString->getRawValue() + "\"").str();
@@ -402,6 +430,19 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
         }
       }
     }
+
+#ifdef SYCLomatic_CUSTOMIZATION
+    if (!File && Command && Directory) {
+      // Parse linker entry
+      SmallString<128> NativeFilePath = llvm::StringRef("LinkerEntry");
+      auto Cmd = CompileCommandRef(Directory, nullptr, *Command, Output);
+      IndexByFile[NativeFilePath].push_back(Cmd);
+      AllCommands.push_back(Cmd);
+      MatchTrie.insert(NativeFilePath);
+      continue;
+    }
+#endif // SYCLomatic_CUSTOMIZATION
+
     if (!File) {
       ErrorMessage = "Missing key: \"file\".";
       return false;
@@ -422,6 +463,9 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
       SmallString<128> AbsolutePath(
           Directory->getValue(DirectoryStorage));
       llvm::sys::path::append(AbsolutePath, FileName);
+#ifdef SYCLomatic_CUSTOMIZATION
+      llvm::sys::fs::make_absolute(AbsolutePath);
+#endif // SYCLomatic_CUSTOMIZATION
       llvm::sys::path::remove_dots(AbsolutePath, /*remove_dot_dot=*/ true);
       llvm::sys::path::native(AbsolutePath, NativeFilePath);
     } else {
