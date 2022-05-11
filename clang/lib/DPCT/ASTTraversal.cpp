@@ -2236,11 +2236,15 @@ void ThrustFunctionRule::thrustFuncMigration(
     NewName = MapNames::getDpctNamespace() + ThrustFuncName;
     requestFeature(HelperFeatureEnum::DplExtrasAlgorithm_copy_if, CE);
 
-    if (ULExpr)
-      emplaceTransformation(new ReplaceToken(
-          ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(NewName)));
-    else
+    if (ULExpr) {
+      auto BeginLoc = ULExpr->getBeginLoc();
+      auto EndLoc = ULExpr->hasExplicitTemplateArgs()
+                   ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                   : ULExpr->getEndLoc();
+      emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(NewName)));
+    } else {
       emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
+    }
   } else if (ThrustFuncName == "make_zip_iterator") {
     // oneapi::dpl::make_zip_iterator expects the component iterators to be
     // passed directly instead of being wrapped in a tuple as
@@ -2312,8 +2316,11 @@ void ThrustFunctionRule::thrustFuncMigration(
     auto IteratorType = IteratorArg->getType().getAsString();
     if (ULExpr) {
       if (PolicyProcessed) {
-        emplaceTransformation(new ReplaceToken(
-            ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(NewName)));
+        auto BeginLoc = ULExpr->getBeginLoc();
+        auto EndLoc = ULExpr->hasExplicitTemplateArgs()
+                     ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                     : ULExpr->getEndLoc();
+        emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(NewName)));
         return;
       } else if (hasExecutionPolicy) {
         emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
@@ -2343,11 +2350,15 @@ void ThrustFunctionRule::thrustFuncMigration(
     emplaceTransformation(new InsertText(CE->getEndLoc(), ", 0"));
   }
 
-  if (ULExpr)
-    emplaceTransformation(new ReplaceToken(
-        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(NewName)));
-  else
+  if (ULExpr) {
+    auto BeginLoc = ULExpr->getBeginLoc();
+    auto EndLoc = ULExpr->hasExplicitTemplateArgs()
+                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                 : ULExpr->getEndLoc();
+    emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(NewName)));
+  } else {
     emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
+  }
   if (CE->getNumArgs() <= 0)
     return;
   auto ExtraParam = ReplInfo->second.ExtraParam;
@@ -2531,7 +2542,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cooperative_groups::__v1::thread_block",
                   "libraryPropertyType_t", "libraryPropertyType",
                   "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
-                  "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise"),
+                  "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
+                  "thrust::tuple_element"),
               matchesName("cudnn.*|nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
@@ -2847,6 +2859,8 @@ bool TypeInDeclRule::replaceDependentNameTypeLoc(SourceManager *SM,
     TSI = VD->getTypeSourceInfo();
   else if (auto FD = dyn_cast<FieldDecl>(D))
     TSI = FD->getTypeSourceInfo();
+  else if (auto TAD = dyn_cast<TypeAliasDecl>(D))
+    TSI = TAD->getTypeSourceInfo();
   else
     return false;
 
@@ -2860,7 +2874,8 @@ bool TypeInDeclRule::replaceDependentNameTypeLoc(SourceManager *SM,
   auto NNTL = NNSL.getTypeLoc();
 
   auto BeginLoc = SR.getBegin();
-  if (NNTL.getTypeLocClass() == clang::TypeLoc::TemplateSpecialization) {
+  if (NNTL.getTypeLocClass() == clang::TypeLoc::TemplateSpecialization &&
+      NNTL.getBeginLoc() == TL->getBeginLoc()) {
     auto TSL = NNTL.getUnqualifiedLoc().getAs<TemplateSpecializationTypeLoc>();
     if (replaceTemplateSpecialization(SM, LOpts, BeginLoc, TSL)) {
       // Check if "::type" needs replacement (only needed for
@@ -11708,11 +11723,15 @@ void MemoryMigrationRule::memcpyMigration(
     }
   }
 
-  if (ULExpr)
-    emplaceTransformation(new ReplaceToken(
-        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(ReplaceStr)));
-  else
+  if (ULExpr) {
+    auto BeginLoc = ULExpr->getBeginLoc();
+    auto EndLoc = ULExpr->hasExplicitTemplateArgs()
+                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                 : ULExpr->getEndLoc();
+    emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(ReplaceStr)));
+  } else {
     emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
+  }
 }
 
 void MemoryMigrationRule::arrayMigration(
@@ -11790,11 +11809,15 @@ void MemoryMigrationRule::arrayMigration(
     aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
   }
 
-  if (ULExpr)
-    emplaceTransformation(new ReplaceToken(
-        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(ReplaceStr)));
-  else
+  if (ULExpr) {
+    auto BeginLoc = ULExpr->getBeginLoc();
+    auto EndLoc = ULExpr->hasExplicitTemplateArgs()
+                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                 : ULExpr->getEndLoc();
+    emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(ReplaceStr)));
+  } else {
     emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
+  }
 }
 
 void MemoryMigrationRule::memcpySymbolMigration(
@@ -11876,8 +11899,11 @@ void MemoryMigrationRule::memcpySymbolMigration(
   }
 
   if (ULExpr) {
-    emplaceTransformation(new ReplaceToken(
-        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(ReplaceStr)));
+    auto BeginLoc = ULExpr->getBeginLoc();
+    auto EndLoc = ULExpr->hasExplicitTemplateArgs()
+                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                 : ULExpr->getEndLoc();
+    emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(ReplaceStr)));
   } else {
     emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
   }
