@@ -7,7 +7,7 @@ SYCLomatic is a project to assist developers in migrating their existing code wr
 
 Use c2s command to make it as easy as possible to migrate existing CUDA codebases to SYCL, which is an industry standard. Once code is migrated to SYCL, it can be compiled and executed by any compiler that implements the SYCL specification as shown here:  https://www.khronos.org/sycl/
 
-The SYCLomatic development branch is the main branch.
+The SYCLomatic development branch is the SYCLomatic branch.
 
 ## Useful Links
 * [SYCLomatic getting started](GetStartedGuide.md)

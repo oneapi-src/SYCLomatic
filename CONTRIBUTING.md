@@ -25,7 +25,7 @@ See [Test SYCLomatic](GetStartedGuide.md#test-SYCLomatic)
 section of Get Started guide for more information.
 
 - Create a personal fork of the project on GitHub
-  - For the SYCLomatic project, use **main** branch as baseline for your
+  - For the SYCLomatic project, use **SYCLomatic** branch as baseline for your
     changes. See [Get Started Guide](GetStartedGuide.md).
 - Prepare your patch
   - follow [LLVM coding standards](https://llvm.org/docs/CodingStandards.html)
@@ -36,10 +36,10 @@ section of Get Started guide for more information.
   - use
 
     ```bash
-    ./clang/tools/clang-format/git-clang-format `git merge-base origin/main HEAD`
+    ./clang/tools/clang-format/git-clang-format `git merge-base origin/SYCLomatic HEAD`
     ```
 
-    to check the format of your current changes against the `origin/main`
+    to check the format of your current changes against the `origin/SYCLomatic`
     branch.
     - `-f` to also correct unstaged changes
     - `--diff` to only print the diff without applying
@@ -54,7 +54,7 @@ Every product change should be accompanied with corresponding test modification
 (adding new test(s), extending, removing or modifying existing test(s)).
 
 There are 2 types of tests which are used for SYCLomatic validation:
-* SYCLomatic in-tree LIT tests including [check-clang-c2s](../../tree/main/clang/test/dpct)
+* SYCLomatic in-tree LIT tests including [check-clang-c2s](../../tree/SYCLomatic/clang/test/dpct)
  targets stored in this repository. These tests
 should not have hardware (e.g. GPU, FPGA, etc.) or external software
 dependencies (e.g. OpenCL, Level Zero, CUDA runtimes). These tests only have dependencies
@@ -76,7 +76,7 @@ this approach should be moved to SYCLomatic end-to-end test repo.
 * [SYCLomatic end-to-end (E2E) tests](https://github.com/intel/SYCLomatic-test.git).
 A test which requires full stack including backend runtimes (e.g. OpenCL,
 Level Zero or CUDA) should be put to SYCLomatic E2E test suite following
-[CONTRIBUTING](https://github.com/intel/SYCLomatic-test/blob/main/CONTRIBUTING.md).
+[CONTRIBUTING](https://github.com/intel/SYCLomatic-test/blob/SYCLomatic/CONTRIBUTING.md).
 
 ### Commit message
 

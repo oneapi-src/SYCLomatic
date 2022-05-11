@@ -39,8 +39,8 @@ export SYCLOMATIC_HOME=~/workspace
 mkdir $SYCLOMATIC_HOME
 cd $SYCLOMATIC_HOME
 
-git clone https://fixme/URL/to/main
-git checkout origin/main -b main
+git clone https://github.com/oneapi-src/SYCLomatic.git
+git checkout origin/SYCLomatic -b SYCLomatic
 ```
 
 **Windows (64-bit)**:
@@ -57,8 +57,8 @@ set SYCLOMATIC_HOME=%USERPROFILE%\workspace
 mkdir %SYCLOMATIC_HOME%
 cd %SYCLOMATIC_HOME%
 
-git clone https//fixme/URL/to/main 
-git checkout origin/main -b main
+git clone https://github.com/oneapi-src/SYCLomatic.git
+git checkout origin/SYCLomatic -b SYCLomatic
 ```
 
 ## Build SYCLomatic
