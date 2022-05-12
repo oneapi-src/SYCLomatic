@@ -27,10 +27,10 @@ jobs:
         #uses: actions/checkout@v2
         #with:
         #  repository: 
-        #  path: c2s_test_repo
+        #  path: test_repo
         run: |
-          if exist c2s_test_repo rd /s /q c2s_test_repo
-          git clone https://github.com/intel/SYCLomatic-test.git c2s_test_repo -b SYCLomatic
+          if exist test_repo rd /s /q test_repo
+          git clone https://$FACELESS_TOKEN@github.com/oneapi-src/SYCLomatic-test.git test_repo -b SYCLomatic
         shell: cmd 
 
       - name: Cleanup Workspace
@@ -121,8 +121,8 @@ jobs:
         env:
           FACELESS_TOKEN: ${{ secrets.GH_CI_NSTESTER_TOKEN }}
         run: |
-          if exist c2s_test_repo rd /s /q c2s_test_repo
-          git clone https://github.com/oneapi-src/SYCLomatic-test.git c2s_test_repo -b SYCLomatic
+          if exist test_repo rd /s /q test_repo
+          git clone https://github.com/oneapi-src/SYCLomatic-test.git test_repo -b SYCLomatic
         shell: cmd 
 
       - name: Cleanup Workspace
@@ -159,7 +159,7 @@ jobs:
         timeout-minutes: 600
         shell: bash
         run: |
-          cd c2s_test_repo
+          cd test_repo
           python run_test.py --suite ${{ matrix.test_suite }} --option option_cpu
           echo $PWD
 
@@ -167,7 +167,7 @@ jobs:
         timeout-minutes: 600
         shell: bash
         run: |
-          cd c2s_test_repo
+          cd test_repo
           python run_test.py --suite ${{ matrix.test_suite }} --option option_usmnone_cpu
           echo $PWD
       
