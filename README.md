@@ -15,6 +15,8 @@ The SYCLomatic development branch is the SYCLomatic branch.
     * [Get Started](https://software.intel.com/content/www/us/en/develop/documentation/get-started-with-intel-dpcpp-compatibility-tool/top.html)
     * [Developer Guide and Reference](https://software.intel.com/content/www/us/en/develop/documentation/intel-dpcpp-compatibility-tool-user-guide/top.html)
 * [oneAPI DPC++ Compiler documentation](https://intel.github.io/llvm-docs/)
+* [Book: Mastering Programming of Heterogeneous Systems using C++ & SYCL](https://protect-eu.mimecast.com/s/P9FyCjvlRipPPWgT5ya8e?domain=link.springer.com)
+* [Essentials of SYCL training](https://www.intel.com/content/www/us/en/developer/tools/oneapi/training/dpc-essentials.html)
 * More information on oneAPI and DPC++ is available at [https://www.oneapi.com/](https://www.oneapi.com/)
 
 ## License
