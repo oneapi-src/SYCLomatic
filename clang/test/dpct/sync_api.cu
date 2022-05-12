@@ -117,6 +117,8 @@ int main() {
   return 0;
 }
 
+#define LOGICAL_SIZE 8
+
 // CHECK:void foo1(sycl::group<3> &tb,
 // CHECK-NEXT:   sycl::sub_group &tbt32,
 // CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
@@ -129,7 +131,7 @@ __device__ void foo1(cg::thread_block &tb,
   tb.thread_rank();
   tbt32.thread_rank();
   cg::thread_rank(tb);
-  cg::thread_rank(tbt32);  
+  cg::thread_rank(tbt32);
 
 // CHECK: /*
 // CHECK-NEXT: DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
@@ -151,6 +153,19 @@ __device__ void foo1(cg::thread_block &tb,
   tbt32.sync();
   cg::sync(tb);
   cg::sync(tbt32);
+
+// CHECK: dpct::logical_group tbt8 = dpct::logical_group(item_ct1.get_group(), LOGICAL_SIZE);
+// CHECK-NEXT: int size = tbt8.get_local_linear_range();
+// CHECK-NEXT: int rank = tbt8.get_local_linear_id();
+// CHECK-NEXT: double temp = 0;
+// CHECK-NEXT: int offset = 4;
+// CHECK-NEXT: temp = dpct::shift_sub_group_left(item_ct1.get_sub_group(), temp, offset, 8);
+  cg::thread_block_tile<LOGICAL_SIZE> tbt8 = cg::tiled_partition<LOGICAL_SIZE>(tb);
+  int size = tbt8.size();
+  int rank = tbt8.thread_rank();
+  double temp = 0;
+  int offset = 4;
+  temp = tbt8.shfl_down(temp, offset);
 }
 
 __global__ void foo2() {

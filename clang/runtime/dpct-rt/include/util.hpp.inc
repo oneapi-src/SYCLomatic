@@ -462,6 +462,92 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|logical_group|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Util|logical_group_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// The logical-group is the group of some work-items.
+/// Currently only cl::sycl::group<3> is supported to be the parent group of
+/// the logical-group.
+class logical_group {
+  cl::sycl::group<3> _g;
+  uint32_t _logical_group_size;
+  uint32_t _group_linear_range_in_parent;
+public:
+  /// Dividing \p parent_group into several logical-groups.
+  /// \param [in] parent_group The group to be divided.
+  /// \param [in] size The logical-group size.
+  logical_group(cl::sycl::group<3> parent_group, uint32_t size)
+      : _g(parent_group), _logical_group_size(size) {
+    _group_linear_range_in_parent =
+        (_g.get_local_linear_range() - 1) / _logical_group_size + 1;
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|logical_group_get_local_linear_id|dpct
+// DPCT_PARENT_FEATURE|logical_group
+// DPCT_DEPENDENCY_BEGIN
+// Util|logical_group
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Returns the index of the work-item within the logical-group.
+  uint32_t get_local_linear_id() const {
+    return _g.get_local_linear_id() % _logical_group_size;
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|logical_group_get_group_linear_id|dpct
+// DPCT_PARENT_FEATURE|logical_group
+// DPCT_DEPENDENCY_BEGIN
+// Util|logical_group
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Returns the index of the logical-group in the parent group.
+  uint32_t get_group_linear_id() const {
+    return _g.get_local_linear_id() / _logical_group_size;
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|logical_group_get_local_linear_range|dpct
+// DPCT_PARENT_FEATURE|logical_group
+// DPCT_DEPENDENCY_BEGIN
+// Util|logical_group
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Returns the number of work-items in the logical-group.
+  uint32_t get_local_linear_range() const {
+    if (_g.get_local_linear_range() % _logical_group_size == 0) {
+      return _logical_group_size;
+    }
+    uint32_t last_item_group_id =
+        _g.get_local_linear_range() / _logical_group_size;
+    if (_g.get_local_linear_id() >=
+        last_item_group_id * _logical_group_size) {
+      return _g.get_local_linear_range() -
+             last_item_group_id * _logical_group_size;
+    } else {
+      return _logical_group_size;
+    }
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|logical_group_get_group_linear_range|dpct
+// DPCT_PARENT_FEATURE|logical_group
+// DPCT_DEPENDENCY_BEGIN
+// Util|logical_group
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Returns the number of logical-group in the parent group.
+  uint32_t get_group_linear_range() const {
+    return _group_linear_range_in_parent;
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|logical_group_1|dpct
+// DPCT_PARENT_FEATURE|logical_group
+// DPCT_DEPENDENCY_BEGIN
+// Util|logical_group
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+};
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|cmul|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
