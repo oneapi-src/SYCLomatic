@@ -1,6 +1,7 @@
 
 # SYCLomatic
 
+
 ## Introduction
 
 SYCLomatic is a project to assist developers in migrating their existing code written in different programming languages to the SYCL\* C++ heterogeneous programming model. Final code editing and verification is a manual process done by the developer.
