@@ -180,14 +180,16 @@ std::string MathFuncNameRewriter::getNewFuncName() {
 
       if (SourceCalleeName == "min" || SourceCalleeName == "max") {
         LangOptions LO;
-        std::string FT = Call->getType().getAsString(PrintingPolicy(LO));
+        std::string FT =
+            Call->getType().getCanonicalType().getAsString(PrintingPolicy(LO));
         for (unsigned i = 0; i < Call->getNumArgs(); i++) {
           auto Arg = Call->getArg(i);
           auto ArgExprClass = Arg->getStmtClass();
           if (isTargetPseudoObjectExpr(Arg)) {
             RewriteArgList[i] = "(" + FT + ")" + RewriteArgList[i];
           } else {
-            std::string ArgT = Arg->getType().getAsString(PrintingPolicy(LO));
+            std::string ArgT = Arg->getType().getCanonicalType().getAsString(
+                PrintingPolicy(LO));
             auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
             if (ArgT != FT || ArgExprClass == Stmt::BinaryOperatorClass) {
               if (DRE)
