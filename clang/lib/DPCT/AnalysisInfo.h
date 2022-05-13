@@ -351,7 +351,8 @@ enum HeaderType {
   HT_DPL_Utils,
   HT_BFloat16,
   HT_Lib_Common_Utils,
-  HT_Dnnl
+  HT_Dnnl,
+  HT_CCL,
 };
 
 enum UsingType {
@@ -566,6 +567,10 @@ public:
       return insertHeader(HeaderType::HT_Lib_Common_Utils, LastIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
                               "/lib_common_utils.hpp>");
+    case HT_CCL:
+      return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
+                          "<" + getCustomMainHelperFileName() +
+                              "/ccl_utils.hpp>");
     }
   }
 
