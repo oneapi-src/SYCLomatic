@@ -2464,6 +2464,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesComplex.inc"
 #include "APINamesDriver.inc"
 #include "APINamesMemory.inc"
+#include "APINamesNccl.inc"
 #include "APINamesTexture.inc"
 #include "APINamesThrust.inc"
 #include "APINamesWarp.inc"

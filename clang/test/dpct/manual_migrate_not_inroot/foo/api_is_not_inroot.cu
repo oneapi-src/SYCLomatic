@@ -17,13 +17,8 @@
 //CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:#include <cudnn_test.h>
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
-//CHECK-NEXT:*/
-//CHECK-NEXT:#include <nccl_test.h>
 #include <cstdio>
 #include <cudnn_test.h>
-#include <nccl_test.h>
 #include <cuda_runtime.h>
 
 int main() {
@@ -52,31 +47,6 @@ int main() {
 //CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Deep Neural Network Library (oneDNN) with DPC++.
 //CHECK-NEXT:*/
 //CHECK-NEXT:cudnnTemplateCLASS<double> e1;
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
-//CHECK-NEXT:*/
-//CHECK-NEXT:ncclAAA();
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
-//CHECK-NEXT:*/
-//CHECK-NEXT:ncclFooType b2;
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
-//CHECK-NEXT:*/
-//CHECK-NEXT:ncclFooEnum c2;
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
-//CHECK-NEXT:*/
-//CHECK-NEXT:if(b2 == NCCL_FOO_VAL){
-//CHECK-NEXT:}
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
-//CHECK-NEXT:*/
-//CHECK-NEXT:ncclCLASS d2;
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.
-//CHECK-NEXT:*/
-//CHECK-NEXT:ncclTemplateCLASS<float> e2;
 
 int a1 = cudnnAAA();
 cudnnFooType b1;
@@ -85,11 +55,4 @@ if(b1 == CUDNN_FOO_VAL){
 }
 cudnnCLASS d1;
 cudnnTemplateCLASS<double> e1;
-ncclAAA();
-ncclFooType b2;
-ncclFooEnum c2;
-if(b2 == NCCL_FOO_VAL){
-}
-ncclCLASS d2;
-ncclTemplateCLASS<float> e2;
 }

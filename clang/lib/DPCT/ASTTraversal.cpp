@@ -949,14 +949,13 @@ void IncludesCallbacks::InclusionDirective(
     Updater.update(false);
   }
 
-  if (FileName.startswith(StringRef("nccl"))) {
-    if (isChildOrSamePath(InRoot, DirPath)) {
-      return;
-    }
-    DiagnosticsUtils::report(
-        HashLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY,
-        dpct::DpctGlobalInfo::getCompilerInstance(), &TransformSet, false,
-        "Intel(R) oneAPI Collective Communications Library");
+  if (FileName.compare(StringRef("nccl.h")) == 0) {
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_CCL);
+    requestFeature(HelperFeatureEnum::CclUtils_create_kvs_address, HashLoc);
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
     Updater.update(false);
   }
   if (FileName.startswith(StringRef("cudnn"))) {
@@ -2717,14 +2716,13 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
   }
 }
 
-void TypeInDeclRule::reportForNcclAndCudnn(const TypeLoc *TL,
-                                           const SourceLocation BeginLoc) {
+void TypeInDeclRule::reportForCudnn(const TypeLoc *TL,
+                                    const SourceLocation BeginLoc) {
   auto QT = TL->getType();
   std::string TypeStrRemovePrefix = TL->getType().getAsString();
 
-  auto IsNCCLMatched = TypeStrRemovePrefix.find("nccl") != std::string::npos;
   auto IsCUDNNMatched = TypeStrRemovePrefix.find("cudnn") != std::string::npos;
-  if (IsNCCLMatched || IsCUDNNMatched) {
+  if (IsCUDNNMatched) {
     auto TP = QT.getTypePtr();
     if (TP) {
       SourceLocation SL;
@@ -2732,10 +2730,7 @@ void TypeInDeclRule::reportForNcclAndCudnn(const TypeLoc *TL,
         std::string FilePath =
             DpctGlobalInfo::getSourceManager().getFilename(SL).str();
         if (!DpctGlobalInfo::isInRoot(FilePath)) {
-          if (IsNCCLMatched)
-            report(BeginLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
-                   "Intel(R) oneAPI Collective Communications Library");
-          else if (IsCUDNNMatched)
+          if (IsCUDNNMatched)
             report(BeginLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
                    "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
         }
@@ -3193,7 +3188,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     }
 
-    reportForNcclAndCudnn(TL, BeginLoc);
+    reportForCudnn(TL, BeginLoc);
 
     if (replaceDependentNameTypeLoc(SM, LOpts, TL)) {
       return;
@@ -13624,7 +13619,7 @@ void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
         this);
     MF.addMatcher(
         callExpr(
-            allOf(callee(functionDecl(matchesName("(nccl.*)|(cudnn.*)"))),
+            allOf(callee(functionDecl(matchesName("cudnn.*"))),
                   unless(callee(functionDecl(internal::Matcher<NamedDecl>(
                       new internal::HasNameMatcher(AllAPIComponent[0]))))),
                   unless(hasAncestor(cudaKernelCallExpr())),
@@ -13763,19 +13758,7 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
 
   SrcAPIStaticsMap[getFunctionSignature(CE->getCalleeDecl()->getAsFunction(),
                                         "")]++;
-  if (APIName.size() >= 4 && APIName.substr(0, 4) == "nccl") {
-    auto D = CE->getCalleeDecl();
-    if (D) {
-      auto FilePath = DpctGlobalInfo::getSourceManager()
-                          .getFilename(D->getBeginLoc())
-                          .str();
-      if (DpctGlobalInfo::isInRoot(FilePath)) {
-        return;
-      }
-    }
-    report(CE->getBeginLoc(), Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
-           "Intel(R) oneAPI Collective Communications Library");
-  } else if (APIName.size() >= 5 && APIName.substr(0, 5) == "cudnn") {
+  if (APIName.size() >= 5 && APIName.substr(0, 5) == "cudnn") {
     auto D = CE->getCalleeDecl();
     if (D) {
       auto FilePath = DpctGlobalInfo::getSourceManager()
@@ -17551,6 +17534,26 @@ void ComplexAPIRule::runRule(
 }
 
 REGISTER_RULE(ComplexAPIRule)
+
+void NcclAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(
+      callExpr(callee(functionDecl(hasAnyName(
+                   "ncclGetVersion", "ncclGetUniqueId", "ncclCommInitRank"))))
+          .bind("call"),
+      this);
+}
+
+void NcclAPIRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
+    DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), HT_CCL);
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+  }
+}
+
+REGISTER_RULE(NcclAPIRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {

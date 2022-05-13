@@ -578,7 +578,7 @@ private:
 
   void processCudaStreamType(const DeclaratorDecl *DD, const SourceManager *SM,
                              bool &SpecialCaseHappened);
-  void reportForNcclAndCudnn(const TypeLoc *TL, const SourceLocation BeginLoc);
+  void reportForCudnn(const TypeLoc *TL, const SourceLocation BeginLoc);
   bool replaceTemplateSpecialization(SourceManager *SM, LangOptions &LOpts,
                                      SourceLocation BeginLoc,
                                      const TemplateSpecializationTypeLoc TSL);
@@ -2009,6 +2009,12 @@ private:
 };
 
 class ComplexAPIRule : public NamedMigrationRule<ComplexAPIRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class NcclAPIRule : public NamedMigrationRule<NcclAPIRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
