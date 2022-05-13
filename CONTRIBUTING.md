@@ -73,10 +73,10 @@ this approach should be moved to SYCLomatic end-to-end test repo.
     - Try to follow descriptive naming convention for variables, functions as much as possible.
     Please refer [LLVM naming convention](https://llvm.org/docs/CodingStandards.html#name-types-functions-variables-and-enumerators-properly)
 
-* [SYCLomatic end-to-end (E2E) tests](https://github.com/intel/SYCLomatic-test.git).
+* [SYCLomatic end-to-end (E2E) tests](https://github.com/oneapi-src/SYCLomatic-test).
 A test which requires full stack including backend runtimes (e.g. OpenCL,
 Level Zero or CUDA) should be put to SYCLomatic E2E test suite following
-[CONTRIBUTING](https://github.com/intel/SYCLomatic-test/blob/SYCLomatic/CONTRIBUTING.md).
+[CONTRIBUTING](https://github.com/oneapi-src/SYCLomatic-test/blob/SYCLomatic/CONTRIBUTING.md).
 
 ### Commit message
 
@@ -97,7 +97,7 @@ instructions](https://help.github.com/articles/creating-a-pull-request/).
 - CI will run a signed-off check as soon as your PR is created - see the
 **check_pr** CI action results.
 - CI will run several build and functional testing checks as soon as the PR is
-approved by an Intel representative.
+approved.
   - A new approval is needed if the PR was updated (e.g. during code review).
 - Once the PR is approved and all checks have passed, the pull request is
 ready for merge.
