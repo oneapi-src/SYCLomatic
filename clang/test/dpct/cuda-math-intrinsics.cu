@@ -1067,7 +1067,7 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
 
   // CHECK: i = sycl::isinf(f0);
   i = isinf(f0);
-  // CHECK: i = sycl::isinf((float)i);
+  // CHECK: i = sycl::isinf((double)i);
   i = isinf(i);
 
   // CHECK: i = sycl::isnan(f0);
