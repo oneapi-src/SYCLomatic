@@ -109,7 +109,7 @@ ninja check-clang-c2s
 #### Run E2E test suite
 
 Follow instructions from the link below to build and run tests:
-[README](https://github.com/intel/SYCLomatic-test.git)
+[README](https://github.com/oneapi-src/SYCLomatic-test)
 
 
 ## Run c2s command
