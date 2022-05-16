@@ -386,20 +386,49 @@ inline void gemm_impl(cl::sycl::queue &q, oneapi::mkl::transpose a_trans,
 // DPCT_CODE
 template <class Ta, class Tb, class Tc, class Ts>
 inline void gemm_batch_impl(cl::sycl::queue &q, oneapi::mkl::transpose a_trans,
-                                oneapi::mkl::transpose b_trans, int m, int n,
-                                int k, const void *alpha, const void **a, int lda,
-                                const void **b, int ldb, const void *beta, void **c,
-                                int ldc, int batch_size) {
+                            oneapi::mkl::transpose b_trans, int m, int n,
+                            int k, const void *alpha, const void **a, int lda,
+                            const void **b, int ldb, const void *beta, void **c,
+                            int ldc, int batch_size) {
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
-  std::int64_t m_int64 = m, n_int64 = n, k_int64 = k;
-  std::int64_t lda_int64 = lda, ldb_int64 = ldb, ldc_int64 = ldc;
-  std::int64_t groupsize = batch_size;
-  oneapi::mkl::blas::column_major::gemm_batch(
-      q, &a_trans, &b_trans, &m_int64, &n_int64, &k_int64, &alpha_value,
-      reinterpret_cast<const Ta **>(a), &lda_int64,
-      reinterpret_cast<const Tb **>(b), &ldb_int64, &beta_value,
-      reinterpret_cast<Tc **>(c), &ldc_int64, 1, &groupsize);
+
+  oneapi::mkl::transpose *transpose_info =
+      (oneapi::mkl::transpose *)std::malloc(2 * sizeof(oneapi::mkl::transpose));
+  transpose_info[0] = a_trans;
+  transpose_info[1] = b_trans;
+  Ts *value_info = (Ts *)std::malloc(2 * sizeof(Ts));
+  value_info[0] = alpha_value;
+  value_info[1] = beta_value;
+  std::int64_t *size_info =
+      (std::int64_t *)std::malloc(3 * sizeof(std::int64_t));
+  size_info[0] = m;
+  size_info[1] = n;
+  size_info[2] = k;
+  std::int64_t *ld_info = (std::int64_t *)std::malloc(3 * sizeof(std::int64_t));
+  ld_info[0] = lda;
+  ld_info[1] = ldb;
+  ld_info[2] = ldc;
+  std::int64_t *groupsize_info =
+      (std::int64_t *)std::malloc(1 * sizeof(std::int64_t));
+  groupsize_info[0] = batch_size;
+
+  cl::sycl::event e = oneapi::mkl::blas::column_major::gemm_batch(
+      q, transpose_info, transpose_info + 1, size_info, size_info + 1,
+      size_info + 2, value_info, reinterpret_cast<const Ta **>(a), ld_info,
+      reinterpret_cast<const Tb **>(b), ld_info + 1, value_info + 1,
+      reinterpret_cast<Tc **>(c), ld_info + 2, 1, groupsize_info);
+
+  q.submit([&](cl::sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] {
+      std::free(transpose_info);
+      std::free(value_info);
+      std::free(size_info);
+      std::free(ld_info);
+      std::free(groupsize_info);
+    });
+  });
 }
 // DPCT_LABEL_END
 
