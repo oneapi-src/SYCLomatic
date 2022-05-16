@@ -1,13 +1,10 @@
-//===--- Utility.cpp -----------------------------------*- C++ -*---===//
+//===--------------- Utility.cpp ------------------------------------------===//
 //
-// Copyright (C) Intel Corporation. All rights reserved.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// The information and source code contained herein is the exclusive
-// property of Intel Corporation and may not be disclosed, examined
-// or reproduced in whole or in part without explicit written authorization
-// from the company.
-//
-//===---------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
 
 #include "Utility.h"
 #include "ASTTraversal.h"
@@ -1804,7 +1801,11 @@ std::string deducePointerType(const DeclaratorDecl *DD, std::string TypeName) {
   }
   // cudaStream_t [] and cudaStream_t *[]
   else if (auto CAT = dyn_cast<clang::ArrayType>(DDT)) {
-    auto PT = CAT->getElementType()->getPointeeType();
+    QualType FinalET = CAT->getElementType();
+    while(dyn_cast<clang::ArrayType>(FinalET)) {
+      FinalET = dyn_cast<clang::ArrayType>(FinalET)->getElementType();
+    }
+    auto PT = FinalET->getPointeeType();
     // cudaStream_t []
     Result = deducePointerType(PT, TypeName, DDT.getQualifiers().hasConst());
     // cudaStream_t *[]

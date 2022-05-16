@@ -109,7 +109,7 @@ ninja check-clang-c2s
 #### Run E2E test suite
 
 Follow instructions from the link below to build and run tests:
-[README](https://github.com/intel/SYCLomatic-test.git)
+[README](https://github.com/oneapi-src/SYCLomatic-test)
 
 
 ## Run c2s command
@@ -118,7 +118,7 @@ dpct is an alias command for c2s.
 
 ## Known Issues and Limitations
 
-* SYCL 2020 support work is in progress.
+* SYCL\* 2020 support work is in progress.
 * 32-bit host/target is not supported.
 
 ## Find More
@@ -128,5 +128,7 @@ dpct is an alias command for c2s.
 * SYCL\* 2020 specification:
 [https://www.khronos.org/registry/SYCL/](https://www.khronos.org/registry/SYCL/)
 
-## [Legal information](legal_information.md)
 
+## Trademarks information
+Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries.
+*Other names and brands may be claimed as the property of others. SYCL is a trademark of the Khronos Group Inc.
