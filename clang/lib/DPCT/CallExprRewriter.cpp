@@ -1866,6 +1866,11 @@ std::shared_ptr<CallExprRewriterFactoryBase> createToStringExprRewriterFactory(
       std::forward<std::function<ArgT(const CallExpr *)>>(ArgCreator));
 }
 
+std::shared_ptr<CallExprRewriterFactoryBase>
+createRemoveAPIRewriterFactory(const std::string &SourceName) {
+  return std::make_shared<CallExprRewriterFactory<RemoveAPIRewriter>>(SourceName);
+}
+
 /// Create AssignableRewriterFactory key-value pair with inner key-value.
 /// If the call expr's return value is used, will insert around "(" and ", 0)".
 std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -2312,6 +2317,7 @@ public:
 #define DEREF(x) makeDerefExprCreator(x)
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
+#define ARG_WC(x) makeDerefArgCreatorWithCall(x)
 #define BLAS_ENUM_ARG(x, BLAS_ENUM_TYPE)                                       \
   makeBLASEnumCallArgCreator(x, BLAS_ENUM_TYPE)
 #define EXTENDSTR(idx, str) makeExtendStr(idx, str)
@@ -2356,6 +2362,8 @@ public:
   {FuncName, createReportWarningRewriterFactory(Factory FuncName, __VA_ARGS__)},
 #define TOSTRING_FACTORY_ENTRY(FuncName, ...)                                  \
   {FuncName, createToStringExprRewriterFactory(FuncName, __VA_ARGS__)},
+#define REMOVE_API_FACTORY_ENTRY(FuncName)                                  \
+  {FuncName, createRemoveAPIRewriterFactory(FuncName)},
 
 ///***************************************************************
 /// Examples:
@@ -2467,6 +2475,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesTexture.inc"
 #include "APINamesThrust.inc"
 #include "APINamesWarp.inc"
+#include "APINamesCUDNN.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED

@@ -324,6 +324,8 @@ public:
       TypeNamesMap;
   static std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
       ClassFieldMap;
+  static std::unordered_map<std::string, std::shared_ptr<TypeNameRule>> 
+      CuDNNTypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
   static std::unordered_map<std::string, MacroMigrationRule> MacroRuleMap;
