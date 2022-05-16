@@ -17,6 +17,7 @@
 #include "Config.h"
 #include "CustomHelperFiles.h"
 #include "ExternalReplacement.h"
+#include "GAnalytics.h"
 #include "GenMakefile.h"
 #include "IncrementalMigrationUtility.h"
 #include "MisleadingBidirectional.h"
@@ -997,6 +998,7 @@ int runDPCT(int argc, const char **argv) {
     std::cout << CtHelpHint;
     return MigrationErrorShowHelp;
   }
+  GAnalytics("");
 #if defined(__linux__) || defined(_WIN32)
   InstallSignalHandle();
 #endif

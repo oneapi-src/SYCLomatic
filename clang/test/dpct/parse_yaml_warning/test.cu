@@ -1,3 +1,6 @@
+// Disable this case but not remove it to avoid pull down conflict
+// UNSUPPORTED: -linux-
+// UNSUPPORTED: -windows-
 // RUN: cp %S/MainSourceFiles.yaml %T
 // RUN: dpct --out-root %T %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only 2> %T/output.txt
 // RUN: FileCheck --input-file %T/output.txt --match-full-lines %S/output_ref.txt
