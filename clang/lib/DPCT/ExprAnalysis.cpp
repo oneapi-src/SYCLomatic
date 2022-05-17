@@ -498,7 +498,10 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
   PP.PrintCanonicalTypes = true;
-  auto BaseType = ME->getBase()->getType().getUnqualifiedType().getAsString(PP);
+  auto QT = ME->getBase()->getType();
+  auto BaseType = (QT->isPointerType() ? QT->getPointeeType() : QT)
+                      .getUnqualifiedType()
+                      .getAsString(PP);
   if (!ME->getMemberDecl()->getIdentifier())
     return;
   std::string FieldName = ME->getMemberDecl()->getName().str();
