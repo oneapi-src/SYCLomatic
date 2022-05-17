@@ -69,6 +69,8 @@ struct S {
 
   // CHECK: sycl::queue *stream, *stream0;
   // CHECK-NEXT: sycl::queue *streams[23], *streams0[45];
+  // CHECK-NEXT: sycl::queue *streams1[10][10][10], *streams2[2][2][2][2];
+  // CHECK-NEXT: sycl::queue **streams3[10][10][10], *streams4[2][2][2][2];
   // CHECK-NEXT: sycl::event event, events[23];
   // CHECK-NEXT: C<sycl::queue *, sycl::event> se, se2;
   // CHECK-NEXT: std::list<sycl::queue *> streamlist;
@@ -77,6 +79,8 @@ struct S {
   // CHECK-NEXT: std::list<dpct::device_info> props;
   cudaStream_t stream, stream0;
   cudaStream_t streams[23], streams0[45];
+  cudaStream_t streams1[10][10][10], streams2[2][2][2][2];
+  cudaStream_t *streams3[10][10][10], streams4[2][2][2][2];
   cudaEvent_t event, events[23];
   C<cudaStream_t, cudaEvent_t> se, se2;
   std::list<cudaStream_t> streamlist;
