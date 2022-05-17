@@ -346,9 +346,8 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
                                      : id);
 }
 
-/// The logical-group is the group of some work-items.
-/// Currently only cl::sycl::group<3> is supported to be the parent group of
-/// the logical-group.
+/// The logical-group is a logical collection of some work-items within a
+/// work-group. The size of a logical-group can be 2, 4, 8, 16 or 32.
 class logical_group {
   cl::sycl::group<3> _g;
   uint32_t _logical_group_size;
