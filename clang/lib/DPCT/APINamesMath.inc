@@ -305,6 +305,11 @@ ENTRY_EMULATED("__drcp_rz", MapNames::getClNamespace(false, true) + "native::rec
 
 
 // Half/Half2 Arithmetic Functions
+ENTRY_RENAMED("__habs", MapNames::getClNamespace(false, true) + "fabs")
+ENTRY_RENAMED("__habs2", MapNames::getClNamespace(false, true) + "fabs")
+
+ENTRY_OPERATOR("__hadd2", BinaryOperatorKind::BO_Add)
+
 ENTRY_OPERATOR("__h2div", BinaryOperatorKind::BO_Div)
 ENTRY_OPERATOR("__hdiv", BinaryOperatorKind::BO_Div)
 

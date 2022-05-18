@@ -367,6 +367,7 @@ ENTRY(atomicOr, atomicOr, true, NO_FLAG, P0, "Successful")
 ENTRY(atomicXor, atomicXor, true, NO_FLAG, P0, "Successful")
 
 // Half Arithmetic Functions
+ENTRY(__habs, __habs, true, NO_FLAG, P4, "Successful")
 ENTRY(__h2div, __h2div, true, NO_FLAG, P4, "Successful")
 ENTRY(__hadd_sat, __hadd_sat, true, NO_FLAG, P4, "no direct mapping yet")
 ENTRY(__hdiv, __hdiv, true, NO_FLAG, P4, "Successful")
@@ -379,6 +380,8 @@ ENTRY(__hsub, __hsub, true, NO_FLAG, P4, "Successful")
 ENTRY(__hsub_sat, __hsub_sat, true, NO_FLAG, P4, "no direct mapping yet")
 
 // Half2 Arithmetic Functions
+ENTRY(__habs2, __habs2, true, NO_FLAG, P4, "Successful")
+ENTRY(__hadd2, __hadd2, true, NO_FLAG, P0, "Successful")
 ENTRY(__hadd2_sat, __hadd2_sat, true, NO_FLAG, P4, "no direct mapping yet")
 ENTRY(__hfma2, __hfma2, true, NO_FLAG, P0, "Successful")
 ENTRY(__hfma2_sat, __hfma2_sat, true, NO_FLAG, P4, "no direct mapping yet")
@@ -1007,7 +1010,6 @@ ENTRY(__cudaRegisterSurface, __cudaRegisterSurface, false, NO_FLAG, P4, "comment
 ENTRY(__cudaRegisterTexture, __cudaRegisterTexture, false, NO_FLAG, P4, "comment")
 ENTRY(__cudaRegisterVar, __cudaRegisterVar, false, NO_FLAG, P4, "comment")
 ENTRY(__cudaUnregisterFatBinary, __cudaUnregisterFatBinary, false, NO_FLAG, P0, "comment")
-ENTRY(__hadd2, __hadd2, false, NO_FLAG, P0, "comment")
 ENTRY(h2div, h2div, false, NO_FLAG, P4, "comment")
 ENTRY(hdiv, hdiv, false, NO_FLAG, P0, "comment")
 ENTRY(make_char1, make_char1, true, NO_FLAG, P4, "Successful")
