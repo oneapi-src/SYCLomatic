@@ -41,6 +41,7 @@ __forceinline__ __global__ void foo(){
 class ClassA{
 public:
     int fieldA;
+    int fieldC;
     int methodA(int i, int j){return 0;};
 };
 class ClassB{
@@ -64,9 +65,13 @@ void foo2(){
   CUstream_st *cu_st;
 
   //CHECK: ClassB a;
-  //CHECK-NEXT: a.fieldB = 3;
+  //CHECK-NEXT: a.fieldD = 3;
   //CHECK-NEXT: a.methodB(2);
+  //CHECK-NEXT: a.set_a(3);
+  //CHECK-NEXT: int k = a.get_a();
   ClassA a;
-  a.fieldA = 3;
+  a.fieldC = 3;
   a.methodA(1,2);
+  a.fieldA = 3;
+  int k = a.fieldA;
 }

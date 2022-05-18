@@ -505,9 +505,33 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
 
   auto ItFieldRule = MapNames::ClassFieldMap.find(BaseType + "." + FieldName);
   if (ItFieldRule != MapNames::ClassFieldMap.end()) {
-    addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
-                   ItFieldRule->second->NewName);
-    return;
+    if (ItFieldRule->second->GetterName == "") {
+      addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
+                     ItFieldRule->second->NewName);
+      return;
+    } else {
+      if (auto BO = DpctGlobalInfo::findAncestor<BinaryOperator>(ME)) {
+        if (BO->getOpcode() == BinaryOperatorKind::BO_Assign &&
+            ME == BO->getLHS()) {
+          ExprAnalysis EA;
+          EA.analyze(BO->getRHS());
+          std::string RHSStr = EA.getReplacedString();
+          addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
+                         ItFieldRule->second->SetterName + "(" + RHSStr + ")");
+          auto SpellingLocInfo = getSpellingOffsetAndLength(
+              BO->getOperatorLoc(), BO->getOperatorLoc());
+          addExtReplacement(std::make_shared<ExtReplacement>(
+              SM, SpellingLocInfo.first, SpellingLocInfo.second, "", nullptr));
+          SpellingLocInfo = getSpellingOffsetAndLength(
+              BO->getRHS()->getBeginLoc(), BO->getRHS()->getEndLoc());
+          addExtReplacement(std::make_shared<ExtReplacement>(
+              SM, SpellingLocInfo.first, SpellingLocInfo.second, "", nullptr));
+        }
+      } else {
+        addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
+                       ItFieldRule->second->GetterName + "()");
+      }
+    }
   }
 
   static MapNames::MapTy NdItemMemberMap{{"__fetch_builtin_x", "2"},
