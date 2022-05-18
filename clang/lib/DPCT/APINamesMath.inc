@@ -25,6 +25,7 @@ ENTRY_RENAMED("hfloor", MapNames::getClNamespace(false, true) + "floor")
 ENTRY_RENAMED("hlog", MapNames::getClNamespace(false, true) + "log")
 ENTRY_RENAMED("hlog10", MapNames::getClNamespace(false, true) + "log10")
 ENTRY_RENAMED("hlog2", MapNames::getClNamespace(false, true) + "log2")
+ENTRY_RENAMED("hrcp", MapNames::getClNamespace(false, true) + "half_precision::recip<float>")
 ENTRY_RENAMED("hrint", MapNames::getClNamespace(false, true) + "rint")
 ENTRY_RENAMED("hrsqrt", MapNames::getClNamespace(false, true) + "rsqrt")
 ENTRY_RENAMED("hsin", MapNames::getClNamespace(false, true) + "sin")
@@ -547,9 +548,6 @@ ENTRY_UNSUPPORTED("__hlt2")
 ENTRY_UNSUPPORTED("__hltu2")
 ENTRY_UNSUPPORTED("__hne2")
 ENTRY_UNSUPPORTED("__hneu2")
-
-// Half Math Functions
-ENTRY_UNSUPPORTED("hrcp")
 
 // Half2 Math Functions
 ENTRY_UNSUPPORTED("h2rcp")
