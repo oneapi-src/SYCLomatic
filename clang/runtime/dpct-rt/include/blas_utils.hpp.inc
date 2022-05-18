@@ -386,48 +386,45 @@ inline void gemm_impl(cl::sycl::queue &q, oneapi::mkl::transpose a_trans,
 // DPCT_CODE
 template <class Ta, class Tb, class Tc, class Ts>
 inline void gemm_batch_impl(cl::sycl::queue &q, oneapi::mkl::transpose a_trans,
-                            oneapi::mkl::transpose b_trans, int m, int n,
-                            int k, const void *alpha, const void **a, int lda,
+                            oneapi::mkl::transpose b_trans, int m, int n, int k,
+                            const void *alpha, const void **a, int lda,
                             const void **b, int ldb, const void *beta, void **c,
                             int ldc, int batch_size) {
+  struct mat_info_t {
+    oneapi::mkl::transpose transpose_info[2];
+    Ts value_info[2];
+    std::int64_t size_info[3];
+    std::int64_t ld_info[3];
+    std::int64_t groupsize_info;
+  };
+
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
 
-  oneapi::mkl::transpose *transpose_info =
-      (oneapi::mkl::transpose *)std::malloc(2 * sizeof(oneapi::mkl::transpose));
-  transpose_info[0] = a_trans;
-  transpose_info[1] = b_trans;
-  Ts *value_info = (Ts *)std::malloc(2 * sizeof(Ts));
-  value_info[0] = alpha_value;
-  value_info[1] = beta_value;
-  std::int64_t *size_info =
-      (std::int64_t *)std::malloc(3 * sizeof(std::int64_t));
-  size_info[0] = m;
-  size_info[1] = n;
-  size_info[2] = k;
-  std::int64_t *ld_info = (std::int64_t *)std::malloc(3 * sizeof(std::int64_t));
-  ld_info[0] = lda;
-  ld_info[1] = ldb;
-  ld_info[2] = ldc;
-  std::int64_t *groupsize_info =
-      (std::int64_t *)std::malloc(1 * sizeof(std::int64_t));
-  groupsize_info[0] = batch_size;
+  mat_info_t *mat_info = (mat_info_t *)std::malloc(sizeof(mat_info_t));
+  mat_info->transpose_info[0] = a_trans;
+  mat_info->transpose_info[1] = b_trans;
+  mat_info->value_info[0] = alpha_value;
+  mat_info->value_info[1] = beta_value;
+  mat_info->size_info[0] = m;
+  mat_info->size_info[1] = n;
+  mat_info->size_info[2] = k;
+  mat_info->ld_info[0] = lda;
+  mat_info->ld_info[1] = ldb;
+  mat_info->ld_info[2] = ldc;
+  mat_info->groupsize_info = batch_size;
 
   cl::sycl::event e = oneapi::mkl::blas::column_major::gemm_batch(
-      q, transpose_info, transpose_info + 1, size_info, size_info + 1,
-      size_info + 2, value_info, reinterpret_cast<const Ta **>(a), ld_info,
-      reinterpret_cast<const Tb **>(b), ld_info + 1, value_info + 1,
-      reinterpret_cast<Tc **>(c), ld_info + 2, 1, groupsize_info);
+      q, mat_info->transpose_info, mat_info->transpose_info + 1,
+      mat_info->size_info, mat_info->size_info + 1, mat_info->size_info + 2,
+      mat_info->value_info, reinterpret_cast<const Ta **>(a), mat_info->ld_info,
+      reinterpret_cast<const Tb **>(b), mat_info->ld_info + 1,
+      mat_info->value_info + 1, reinterpret_cast<Tc **>(c),
+      mat_info->ld_info + 2, 1, &(mat_info->groupsize_info));
 
   q.submit([&](cl::sycl::handler &cgh) {
     cgh.depends_on(e);
-    cgh.host_task([=] {
-      std::free(transpose_info);
-      std::free(value_info);
-      std::free(size_info);
-      std::free(ld_info);
-      std::free(groupsize_info);
-    });
+    cgh.host_task([=] { std::free(mat_info); });
   });
 }
 // DPCT_LABEL_END
