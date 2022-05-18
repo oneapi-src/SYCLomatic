@@ -233,6 +233,10 @@ ENTRY_RENAMED("__brevll", MapNames::getDpctNamespace() + "reverse_bits<unsigned 
 ENTRY_RENAMED("__byte_perm", MapNames::getDpctNamespace() + "byte_level_permute")
 ENTRY_RENAMED("__ffs", MapNames::getDpctNamespace() + "ffs<int>")
 ENTRY_RENAMED("__ffsll", MapNames::getDpctNamespace() + "ffs<long long int>")
+ENTRY_EMULATED("__funnelshift_l", "")
+ENTRY_EMULATED("__funnelshift_lc", "")
+ENTRY_EMULATED("__funnelshift_r", "")
+ENTRY_EMULATED("__funnelshift_rc", "")
 // Used to add header file "<cmath>" into the file that calls "fabs".
 ENTRY_RENAMED("fabs", "::fabs")
 
@@ -587,12 +591,6 @@ ENTRY_UNSUPPORTED("yn")
 
 // Single precision intrinisics
 ENTRY_UNSUPPORTED("__saturatef")
-
-// Integer Intrinsics
-ENTRY_UNSUPPORTED("__funnelshift_l")
-ENTRY_UNSUPPORTED("__funnelshift_lc")
-ENTRY_UNSUPPORTED("__funnelshift_r")
-ENTRY_UNSUPPORTED("__funnelshift_rc")
 
 // crt wrapper API
 ENTRY_RENAMED("mul24", MapNames::getClNamespace(false, true) + "mul24")

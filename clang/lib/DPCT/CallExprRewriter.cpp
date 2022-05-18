@@ -1039,6 +1039,27 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       OS << MapNames::getDpctNamespace() << "fast_length("
          << "(float *)" << getMigratedArg(1) << ", " << MigratedArg0 << ")";
     }
+  } else if (FuncName == "__funnelshift_l" || FuncName == "__funnelshift_lc" ||
+             FuncName == "__funnelshift_r" || FuncName == "__funnelshift_rc") {
+    auto Namespace = MapNames::getClNamespace();
+    auto High = getMigratedArg(0);
+    auto Low = getMigratedArg(1);
+    auto Shift = getMigratedArg(2);
+    if (FuncName == "__funnelshift_l") {
+      OS << "((" << Namespace << "upsample(" << High
+         << ", " << Low << ") << (" << Shift << " & 31)) >> 32)";
+    } else if (FuncName == "__funnelshift_lc") {
+      OS << "((" << Namespace << "upsample(" << High
+         << ", " << Low << ") << " << Namespace << "min(" << Shift
+         << ", 32)) >> 32)";
+    } else if (FuncName == "__funnelshift_r") {
+      OS << "((" << Namespace << "upsample(" << High
+         << ", " << Low << ") >> (" << Shift << " & 31)) & 0xFFFFFFFF)";
+    } else if (FuncName == "__funnelshift_rc") {
+      OS << "((" << Namespace << "upsample(" << High
+         << ", " << Low << ") >> " << Namespace << "min(" << Shift
+         << ", 32)) & 0xFFFFFFFF)";
+    }
   }
 
   OS.flush();
