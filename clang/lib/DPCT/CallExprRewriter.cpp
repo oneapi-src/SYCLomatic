@@ -313,12 +313,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
           if (SourceCalleeName == "ldexp" && i == 1)
             continue;
           auto Arg = Call->getArg(i);
-          if (SourceCalleeName == "isinf" && Arg->IgnoreImplicit()
-                                                 ->getType()
-                                                 .getCanonicalType()
-                                                 ->isFloatingType()) {
-            continue;
-          }
           std::string ArgT =
               Arg->IgnoreImplicit()->getType().getCanonicalType().getAsString(
                   PrintingPolicy(LO));
