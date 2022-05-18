@@ -27,6 +27,7 @@ macro(build_lib_dpct)
     BarrierFenceSpaceAnalyzer.cpp
     BLASAPIMigration.cpp
     FFTAPIMigration.cpp
+    DNNAPIMigration.cpp
 
     DEPENDS
     ClangDriverOptions

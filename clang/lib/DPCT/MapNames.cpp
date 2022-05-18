@@ -8,6 +8,7 @@
 
 #include "MapNames.h"
 #include "ASTTraversal.h"
+#include "DNNAPIMigration.h"
 #include "CallExprRewriter.h"
 #include "SaveNewFiles.h"
 #include <map>
@@ -31,9 +32,14 @@ std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::TypeNamesMap;
 std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
     MapNames::ClassFieldMap;
+std::unordered_map<std::string, std::shared_ptr<TypeNameRule>> 
+    MapNames::CuDNNTypeNamesMap;
 MapNames::MapTy EnumConstantRule::EnumNamesMap;
 std::map<std::string /*Original API*/, HelperFeatureEnum>
     EnumConstantRule::EnumNamesHelperFeaturesMap;
+MapNames::MapTy CuDNNTypeRule::CuDNNEnumNamesMap;
+std::map<std::string /*Original API*/, HelperFeatureEnum>
+    CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap;
 MapNames::ThrustMapTy MapNames::ThrustFuncNamesMap;
 std::map<std::string /*Original API*/, HelperFeatureEnum>
     MapNames::ThrustFuncNamesHelperFeaturesMap;
@@ -367,6 +373,109 @@ void MapNames::setExplicitNamespaceMap() {
            getDpctNamespace() + "version_field",
            HelperFeatureEnum::LibCommonUtils_version_field)},
       // ...
+  };
+
+  // CuDNN Type names mapping.
+  CuDNNTypeNamesMap = {
+      {"cudnnHandle_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::engine_ext",
+                                      HelperFeatureEnum::DnnlUtils_engine_ext)},
+      {"cudnnTensorDescriptor_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::memory_desc_ext",
+           HelperFeatureEnum::DnnlUtils_memory_desc_ext)},
+      {"cudnnTensorFormat_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::memory_format_tag",
+           HelperFeatureEnum::DnnlUtils_memory_format_tag)},
+      {"cudnnDataType_t", std::make_shared<TypeNameRule>(
+                              getDpctNamespace() + "library_data_t",
+                              HelperFeatureEnum::LibCommonUtils_library_data_t)},
+      {"cudnnActivationDescriptor_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::activation_desc",
+           HelperFeatureEnum::DnnlUtils_activation_desc)},
+      {"cudnnActivationMode_t",
+       std::make_shared<TypeNameRule>("dnnl::algorithm")},
+      {"cudnnLRNDescriptor_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::lrn_desc",
+                                      HelperFeatureEnum::DnnlUtils_lrn_desc)},
+      {"cudnnLRNMode_t", std::make_shared<TypeNameRule>("dnnl::algorithm")},
+      {"cudnnPoolingDescriptor_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::pooling_desc",
+           HelperFeatureEnum::DnnlUtils_pooling_desc)},
+      {"cudnnPoolingMode_t", std::make_shared<TypeNameRule>("dnnl::algorithm")},
+      {"cudnnSoftmaxAlgorithm_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::softmax_algorithm",
+           HelperFeatureEnum::DnnlUtils_softmax_algorithm)},
+      {"cudnnSoftmaxMode_t", std::make_shared<TypeNameRule>(
+                                 getDpctNamespace() + "dnnl::softmax_mode",
+                                 HelperFeatureEnum::DnnlUtils_softmax_mode)},
+  };
+
+  // CuDNN Enum constants name mapping.
+  CuDNNTypeRule::CuDNNEnumNamesMap = {
+      {"CUDNN_TENSOR_NCHW", getDpctNamespace() + "dnnl::memory_format_tag::nchw"},
+      {"CUDNN_TENSOR_NHWC", getDpctNamespace() + "dnnl::memory_format_tag::nhwc"},
+      {"CUDNN_TENSOR_NCHW_VECT_C",
+       getDpctNamespace() + "dnnl::memory_format_tag::nchw_blocked"},
+      {"CUDNN_DATA_FLOAT", getDpctNamespace() + "library_data_t::real_float"},
+      {"CUDNN_DATA_HALF", getDpctNamespace() + "library_data_t::real_half"},
+      {"CUDNN_DATA_INT8", getDpctNamespace() + "library_data_t::real_int8"},
+      {"CUDNN_DATA_UINT8", getDpctNamespace() + "library_data_t::real_uint8"},
+      {"CUDNN_DATA_INT32", getDpctNamespace() + "library_data_t::real_int32"},
+      {"CUDNN_DATA_INT8x4", getDpctNamespace() + "library_data_t::real_int8_4"},
+      {"CUDNN_DATA_INT8x32", getDpctNamespace() + "library_data_t::real_int8_32"},
+      {"CUDNN_DATA_UINT8x4", getDpctNamespace() + "library_data_t::real_uint8_4"},
+      {"CUDNN_DATA_BFLOAT16", getDpctNamespace() + "library_data_t::real_bfloat16"},
+      {"CUDNN_ACTIVATION_SIGMOID", "dnnl::algorithm::eltwise_logistic"},
+      {"CUDNN_ACTIVATION_RELU", "dnnl::algorithm::eltwise_bounded_relu"},
+      {"CUDNN_ACTIVATION_TANH", "dnnl::algorithm::eltwise_tanh"},
+      {"CUDNN_ACTIVATION_CLIPPED_RELU",
+       "dnnl::algorithm::eltwise_bounded_relu"},
+      {"CUDNN_ACTIVATION_ELU", "dnnl::algorithm::eltwise_elu"},
+      {"CUDNN_ACTIVATION_IDENTITY", "dnnl::algorithm::eltwise_linear"},
+      {"CUDNN_ACTIVATION_SWISH", "dnnl::algorithm::eltwise_swish"},
+      {"CUDNN_LRN_CROSS_CHANNEL_DIM1", "dnnl::algorithm::lrn_across_channels"},
+      {"CUDNN_POOLING_MAX", "dnnl::algorithm::pooling_max"},
+      {"CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING",
+       "dnnl::algorithm::pooling_avg_include_padding"},
+      {"CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING",
+       "dnnl::algorithm::pooling_avg_exclude_padding"},
+      {"CUDNN_POOLING_MAX_DETERMINISTIC", "dnnl::algorithm::pooling_max"},
+      {"CUDNN_SOFTMAX_FAST", getDpctNamespace() + "dnnl::softmax_algorithm::normal"},
+      {"CUDNN_SOFTMAX_ACCURATE",
+       getDpctNamespace() + "dnnl::softmax_algorithm::normal"},
+      {"CUDNN_SOFTMAX_LOG", getDpctNamespace() + "dnnl::softmax_algorithm::log"},
+      {"CUDNN_SOFTMAX_MODE_INSTANCE",
+       getDpctNamespace() + "dnnl::softmax_mode::instance"},
+      {"CUDNN_SOFTMAX_MODE_CHANNEL",
+       getDpctNamespace() + "dnnl::softmax_mode::channel"}};
+
+  // CuDNN Enum constants name to helper feature mapping.
+  CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap = {
+      {"CUDNN_TENSOR_NCHW", HelperFeatureEnum::DnnlUtils_memory_format_tag},
+      {"CUDNN_TENSOR_NHWC", HelperFeatureEnum::DnnlUtils_memory_format_tag},
+      {"CUDNN_TENSOR_NCHW_VECT_C",
+       HelperFeatureEnum::DnnlUtils_memory_format_tag},
+      {"CUDNN_DATA_FLOAT", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_HALF", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_INT8", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_UINT8", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_INT32", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_INT8x4", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_INT8x32", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_UINT8x4", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_BFLOAT16", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_SOFTMAX_FAST", HelperFeatureEnum::DnnlUtils_softmax_algorithm},
+      {"CUDNN_SOFTMAX_ACCURATE",
+       HelperFeatureEnum::DnnlUtils_softmax_algorithm},
+      {"CUDNN_SOFTMAX_LOG", HelperFeatureEnum::DnnlUtils_softmax_algorithm},
+      {"CUDNN_SOFTMAX_MODE_INSTANCE",
+       HelperFeatureEnum::DnnlUtils_softmax_mode},
+      {"CUDNN_SOFTMAX_MODE_CHANNEL", HelperFeatureEnum::DnnlUtils_softmax_mode},
   };
 
   // Enum constants name mapping.
@@ -3617,6 +3726,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_cuSPARSE.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
+#include "APINames_cuDNN.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };
