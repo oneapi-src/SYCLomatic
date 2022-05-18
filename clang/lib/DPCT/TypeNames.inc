@@ -47,6 +47,9 @@ ENTRY_TYPE(CUgraphicsResource, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(cudaMemcpy3DParms*, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(CUDA_ARRAY_DESCRIPTOR*, false, NO_FLAG, P4, "comment")
 
+// cuDNN Library
+ENTRY_TYPE(cudnnNanPropagation_t, false, NO_FLAG, P4, "comment")
+
 // NVML (NVIDIA Management Library)
 ENTRY_TYPE(nvmlReturn_t, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(nvmlDevice_t, false, NO_FLAG, P4, "comment")

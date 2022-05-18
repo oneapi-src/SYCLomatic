@@ -117,6 +117,7 @@ extern const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
 extern const std::string DpctAllContentStr;
 extern const std::string AtomicAllContentStr;
 extern const std::string BlasUtilsAllContentStr;
+extern const std::string DnnlUtilsAllContentStr;
 extern const std::string DeviceAllContentStr;
 extern const std::string DplUtilsAllContentStr;
 extern const std::string ImageAllContentStr;

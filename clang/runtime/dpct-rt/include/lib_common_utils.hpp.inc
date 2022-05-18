@@ -115,6 +115,9 @@ enum class library_data_t : unsigned char {
   complex_int64,
   real_uint64,
   complex_uint64,
+  real_int8_4,
+  real_int8_32,
+  real_uint8_4,
   library_data_t_size
 };
 // DPCT_LABEL_END

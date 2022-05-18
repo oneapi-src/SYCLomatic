@@ -2379,7 +2379,11 @@ protected:
       // Hide empty categories for --help, but show for --help-hidden.
       const auto &CategoryOptions = CategorizedOptions[Category];
       bool IsEmptyCategory = CategoryOptions.empty();
+#ifdef SYCLomatic_CUSTOMIZATION
+      if (IsEmptyCategory)
+#else
       if (!ShowHidden && IsEmptyCategory)
+#endif // SYCLomatic_CUSTOMIZATION
         continue;
 
       // Print category information.
