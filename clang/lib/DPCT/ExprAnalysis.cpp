@@ -9,6 +9,7 @@
 #include "ExprAnalysis.h"
 
 #include "ASTTraversal.h"
+#include "DNNAPIMigration.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "clang/AST/DeclTemplate.h"
@@ -432,6 +433,12 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
             MapNames::FunctionAttrMap, ECD->getName().str());
         if (!ReplFuncAttrEnum.empty())
           addReplacement(DRE, ReplFuncAttrEnum);
+        else {
+          auto &CuDNNEnum = MapNames::findReplacedName(
+              CuDNNTypeRule::CuDNNEnumNamesMap, ECD->getName().str());
+          if (!CuDNNEnum.empty())
+            addReplacement(DRE, CuDNNEnum);
+        }
       }
     }
   } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
@@ -807,8 +814,16 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   if (Iter != MapNames::TypeNamesMap.end()) {
     HelperFeatureSet.insert(Iter->second->RequestFeature);
     requestHelperFeatureForTypeNames(TyName, SR.getBegin());
+  } else {
+    Iter = MapNames::CuDNNTypeNamesMap.find(TyName);
+    if (Iter != MapNames::CuDNNTypeNamesMap.end()) {
+      HelperFeatureSet.insert(Iter->second->RequestFeature);
+      requestHelperFeatureForTypeNames(TyName, SR.getBegin());
+    }
   }
   if (MapNames::replaceName(MapNames::TypeNamesMap, TyName)) {
+    addReplacement(SR.getBegin(), SR.getEnd(), CSCE, TyName);
+  } else if (MapNames::replaceName(MapNames::CuDNNTypeNamesMap, TyName)) {
     addReplacement(SR.getBegin(), SR.getEnd(), CSCE, TyName);
   } else if (getFinalCastTypeNameStr(TyName) != TyName) {
     addReplacement(SR.getBegin(), SR.getEnd(), CSCE,
