@@ -14849,6 +14849,10 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
                    ME);
     emplaceTransformation(new RenameFieldInMemberExpr(
         TopMember, buildString("get_", FieldName, "()")));
+    if(TopMember->getMemberNameInfo().getAsString() == "devPtr"){
+        emplaceTransformation(new InsertBeforeStmt(
+        ME, buildString("(char *)")));
+    }
   }
 }
 
