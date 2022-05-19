@@ -233,6 +233,27 @@ public:
   }
 };
 
+class RemoveAPIRewriter : public CallExprRewriter {
+  bool IsAssigned = false;
+  std::string CalleeName;
+
+public:
+  RemoveAPIRewriter(const CallExpr *C, std::string CalleeName)
+      : CallExprRewriter(C, CalleeName), IsAssigned(isAssigned(C)), CalleeName(CalleeName) {}
+
+  Optional<std::string> rewrite() override {
+    std::string Msg = "the function call is redundant in DPC++.";
+    if (IsAssigned) {
+      report(Diagnostics::FUNC_CALL_REMOVED_0, false,
+             CalleeName, Msg);
+      return Optional<std::string>("0");
+    }
+    report(Diagnostics::FUNC_CALL_REMOVED, false,
+           CalleeName, Msg);
+    return Optional<std::string>("");
+  }
+};
+
 class IfElseRewriter : public CallExprRewriter {
   std::shared_ptr<CallExprRewriter> Pred;
   std::shared_ptr<CallExprRewriter> IfBlock;

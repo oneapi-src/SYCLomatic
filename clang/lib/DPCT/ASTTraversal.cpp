@@ -14,6 +14,7 @@
 #include "ExprAnalysis.h"
 #include "Homoglyph.h"
 #include "MisleadingBidirectional.h"
+#include "DNNAPIMigration.h"
 #include "SaveNewFiles.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -963,10 +964,7 @@ void IncludesCallbacks::InclusionDirective(
     if (isChildOrSamePath(InRoot, DirPath)) {
       return;
     }
-    DiagnosticsUtils::report(
-        HashLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY,
-        dpct::DpctGlobalInfo::getCompilerInstance(), &TransformSet, false,
-        "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Dnnl);
     Updater.update(false);
   }
 
@@ -2544,7 +2542,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
                   "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
                   "thrust::tuple_element"),
-              matchesName("cudnn.*|nccl.*")))))))
+              matchesName("nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasTypeLoc(typeLoc(loc(templateSpecializationType(
@@ -2735,8 +2733,7 @@ void TypeInDeclRule::reportForNcclAndCudnn(const TypeLoc *TL,
   std::string TypeStrRemovePrefix = TL->getType().getAsString();
 
   auto IsNCCLMatched = TypeStrRemovePrefix.find("nccl") != std::string::npos;
-  auto IsCUDNNMatched = TypeStrRemovePrefix.find("cudnn") != std::string::npos;
-  if (IsNCCLMatched || IsCUDNNMatched) {
+  if (IsNCCLMatched) {
     auto TP = QT.getTypePtr();
     if (TP) {
       SourceLocation SL;
@@ -2747,9 +2744,6 @@ void TypeInDeclRule::reportForNcclAndCudnn(const TypeLoc *TL,
           if (IsNCCLMatched)
             report(BeginLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
                    "Intel(R) oneAPI Collective Communications Library");
-          else if (IsCUDNNMatched)
-            report(BeginLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
-                   "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
         }
       }
     }
@@ -4299,13 +4293,16 @@ REGISTER_RULE(DevicePropVarRule)
 
 // Rule for Enums constants.
 void EnumConstantRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
-                                "cudaComputeMode", "cudaMemcpyKind",
-                                "cudaMemoryAdvise", "cudaDeviceAttr",
-                                "libraryPropertyType_t", "cudaDataType_t",
-                                "cublasComputeType_t", "CUmem_advise_enum"))))))
-                    .bind("EnumConstant"),
-                this);
+  MF.addMatcher(
+      declRefExpr(
+          to(enumConstantDecl(anyOf(
+              hasType(enumDecl(hasAnyName(
+                  "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
+                  "cudaDeviceAttr", "libraryPropertyType_t", "cudaDataType_t",
+                  "cublasComputeType_t", "CUmem_advise_enum"))),
+              matchesName("CUDNN_.*")))))
+          .bind("EnumConstant"),
+      this);
 }
 
 void EnumConstantRule::handleComputeMode(std::string EnumName,
@@ -4368,6 +4365,10 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
       EnumName == "cudaComputeModeProhibited" ||
       EnumName == "cudaComputeModeExclusiveProcess") {
     handleComputeMode(EnumName, E);
+    return;
+  } else if(EnumName == "CUDNN_DATA_DOUBLE") {
+    report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+               "data type double");
     return;
   } else if (auto ET = dyn_cast<EnumType>(E->getType())) {
     if (auto ETD = ET->getDecl()) {
@@ -4536,9 +4537,6 @@ void ManualMigrateEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("NCCL_.*"))))
                     .bind("NCCLConstants"),
                 this);
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CUDNN_.*"))))
-                    .bind("CUDNNConstants"),
-                this);
 }
 
 void ManualMigrateEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -4555,19 +4553,6 @@ void ManualMigrateEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
                DE->getBeginLoc()),
            Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
            "Intel(R) oneAPI Collective Communications Library");
-  } else if (const DeclRefExpr *DE =
-                 getNodeAsType<DeclRefExpr>(Result, "CUDNNConstants")) {
-    auto *ECD = cast<EnumConstantDecl>(DE->getDecl());
-    std::string FilePath = DpctGlobalInfo::getSourceManager()
-                               .getFilename(ECD->getBeginLoc())
-                               .str();
-    if (DpctGlobalInfo::isInRoot(FilePath)) {
-      return;
-    }
-    report(dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
-               DE->getBeginLoc()),
-           Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
-           "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
   }
 }
 
@@ -13650,7 +13635,7 @@ void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
         this);
     MF.addMatcher(
         callExpr(
-            allOf(callee(functionDecl(matchesName("(nccl.*)|(cudnn.*)"))),
+            allOf(callee(functionDecl(matchesName("nccl.*"))),
                   unless(callee(functionDecl(internal::Matcher<NamedDecl>(
                       new internal::HasNameMatcher(AllAPIComponent[0]))))),
                   unless(hasAncestor(cudaKernelCallExpr())),
@@ -13801,18 +13786,6 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
     }
     report(CE->getBeginLoc(), Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
            "Intel(R) oneAPI Collective Communications Library");
-  } else if (APIName.size() >= 5 && APIName.substr(0, 5) == "cudnn") {
-    auto D = CE->getCalleeDecl();
-    if (D) {
-      auto FilePath = DpctGlobalInfo::getSourceManager()
-                          .getFilename(D->getBeginLoc())
-                          .str();
-      if (DpctGlobalInfo::isInRoot(FilePath)) {
-        return;
-      }
-    }
-    report(CE->getBeginLoc(), Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
-           "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
   } else if (HaveKeywordInAPIName) {
     // In the AST matcher, it will match function call whose name contains
     // keyword. If the keyword is at name begin, code will go in to previous two
@@ -14902,6 +14875,10 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
                    ME);
     emplaceTransformation(new RenameFieldInMemberExpr(
         TopMember, buildString("get_", FieldName, "()")));
+    if(TopMember->getMemberNameInfo().getAsString() == "devPtr"){
+        emplaceTransformation(new InsertBeforeStmt(
+        ME, buildString("(char *)")));
+    }
   }
 }
 
@@ -17553,6 +17530,10 @@ REGISTER_RULE(CubRule)
 REGISTER_RULE(ConfusableIdentifierDetectionRule)
 
 REGISTER_RULE(MisleadingBidirectionalRule)
+
+REGISTER_RULE(CuDNNTypeRule)
+
+REGISTER_RULE(CuDNNAPIRule)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {

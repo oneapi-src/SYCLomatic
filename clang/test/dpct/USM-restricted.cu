@@ -123,7 +123,7 @@ void foo() {
   cudaMallocManaged((void **)&d_A, sizeof(double2) * size * sizeof(uchar4));
 
   CUdeviceptr* D_ptr;
-  // CHECK: *D_ptr = (void *)sycl::malloc_shared(size, q_ct1);
+  // CHECK: *D_ptr = (char *)sycl::malloc_shared(size, q_ct1);
   cuMemAllocManaged(D_ptr, size, CU_MEM_ATTACH_HOST);
 
   /// memcpy
@@ -371,18 +371,18 @@ void foo() {
   // CHECK: MY_SAFE_CALL((sycl::free(h_A, q_ct1), 0));
   MY_SAFE_CALL(cudaFreeHost(h_A));
 
-  // CHECK: *(void **)&d_A = h_A;
+  // CHECK: *(void **)&d_A = (char *)h_A;
   cudaHostGetDevicePointer((void **)&d_A, h_A, 0);
-  // CHECK: errorCode = (d_A = h_A, 0);
+  // CHECK: errorCode = (d_A = (char *)h_A, 0);
   errorCode = cudaHostGetDevicePointer(&d_A, h_A, 0);
-  // CHECK: MY_SAFE_CALL((d_A = h_A, 0));
+  // CHECK: MY_SAFE_CALL((d_A = (char *)h_A, 0));
   MY_SAFE_CALL(cudaHostGetDevicePointer(&d_A, h_A, 0));
 
-  // CHECK: *D_ptr = h_A;
+  // CHECK: *D_ptr = (char *)h_A;
   cuMemHostGetDevicePointer(D_ptr, h_A, 0);
-  // CHECK: errorCode = (*D_ptr = h_A, 0);
+  // CHECK: errorCode = (*D_ptr = (char *)h_A, 0);
   errorCode = cuMemHostGetDevicePointer(D_ptr, h_A, 0);
-  // CHECK: MY_SAFE_CALL((*D_ptr = h_A, 0));
+  // CHECK: MY_SAFE_CALL((*D_ptr = (char *)h_A, 0));
   MY_SAFE_CALL(cuMemHostGetDevicePointer(D_ptr, h_A, 0));
 
   cudaHostRegister(h_A, size, 0);
@@ -828,7 +828,7 @@ void foo3() {
   MY_SAFE_CALL(cudaMemPrefetchAsync (d_A, 100, deviceID, cudaStreamPerThread));
   // CHECK: int cudevice = 0;
   CUdevice cudevice = 0;
-  // CHECK: void * devPtr;
+  // CHECK: char * devPtr;
   CUdeviceptr devPtr;
   // CHECK: dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100);
   // CHECK: dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100);
