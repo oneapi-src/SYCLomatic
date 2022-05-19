@@ -94,11 +94,6 @@ static void getCompileInfo(
           llvm::sys::path::native(FilePathAbs);
           llvm::sys::fs::make_absolute(FilePathAbs);
           llvm::sys::path::remove_dots(FilePathAbs, true);
-          if (!isChildPath(InRoot.str(), std::string(FilePathAbs.c_str()),
-                           false)) {
-            // Skip object files not in InRoot directory.
-            continue;
-          }
           ObjsInLinkerCmd[std::string(FilePathAbs.str())] = true;
           ObjsInLinker[std::string(FilePathAbs.str())] = true;
           ObjName = std::string(FilePathAbs.str());
