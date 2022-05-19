@@ -1930,6 +1930,31 @@ createFeatureRequestFactory(
   return createFeatureRequestFactory(Feature, std::move(Input));
 }
 
+
+/// Create RewriterFactoryWithHeaderFile key-value pair with inner
+/// key-value. Will call insertHeader when used to create CallExprRewriter.
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createInsertHeaderFactory(
+    HeaderType Header,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input) {
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      std::move(Input.first),
+      std::make_shared<RewriterFactoryWithHeaderFile>(Header,
+                                                          Input.second));
+}
+/// Create RewriterFactoryWithHeaderFile key-value pair with inner
+/// key-value. Will call insertHeader when used to create CallExprRewriter.
+template <class T>
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createInsertHeaderFactory(
+    HeaderType Header,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input,
+    T) {
+  return createInsertHeaderFactory(Header, std::move(Input));
+}
+
 /// Create ConditonalRewriterFactory key-value pair with two key-value
 /// candidates and predicate.
 /// If predicate result is true, \p First will be used, else \p Second will be
@@ -2325,6 +2350,8 @@ public:
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
 #define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
   createFeatureRequestFactory(FEATURE, x 0),
+#define HEADER_INSERT_FACTORY(HEADER, x)                                       \
+  createInsertHeaderFactory(HEADER, x 0),
 #define SUBGROUPSIZE_FACTORY(IDX, NEWFUNCNAME, x)                              \
   createFactoryWithSubGroupSizeRequest<IDX>(NEWFUNCNAME, x 0),
 #define STREAM(x) makeDerefStreamExprCreator(x)

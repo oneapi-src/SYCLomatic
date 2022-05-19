@@ -16,15 +16,16 @@ CONDITIONAL_FACTORY_ENTRY(
     checkIsCallExprOnly(),
     WARNING_FACTORY_ENTRY("cuStreamAttachMemAsync",
         TOSTRING_FACTORY_ENTRY("cuStreamAttachMemAsync", LITERAL("")),
-         Diagnostics::FUNC_CALL_REMOVED,
-         ARG("cuStreamAttachMemAsync"), ARG(getRemovedAPIWarningMessage("cuStreamAttachMemAsync"))),
-
+        Diagnostics::FUNC_CALL_REMOVED,
+        ARG("cuStreamAttachMemAsync"), ARG(getRemovedAPIWarningMessage("cuStreamAttachMemAsync"))),
     WARNING_FACTORY_ENTRY("cuStreamAttachMemAsync",
         TOSTRING_FACTORY_ENTRY("cuStreamAttachMemAsync", LITERAL("0")),
         Diagnostics::FUNC_CALL_REMOVED_0,
         ARG("cuStreamAttachMemAsync"), ARG(getRemovedAPIWarningMessage("cuStreamAttachMemAsync"))))
 
-CALL_FACTORY_ENTRY(
-    "cuStreamAddCallback",
-    CALL("std::async", LAMBDA(true, MEMBER_CALL(ARG(0), true, "wait"), CALL(ARG(1), ARG(0), ARG("0"), ARG(2))))
-)
+ASSIGNABLE_FACTORY(
+    HEADER_INSERT_FACTORY(HeaderType::HT_Future,
+    CALL_FACTORY_ENTRY(
+        "cuStreamAddCallback",
+        CALL("std::async", LAMBDA(true, MEMBER_CALL(ARG(0), true, "wait"),
+             CALL(ARG(1), ARG(0), ARG("0"), ARG(2)))))))

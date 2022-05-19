@@ -291,6 +291,21 @@ public:
   }
 };
 
+class RewriterFactoryWithHeaderFile: public CallExprRewriterFactoryBase {
+  std::shared_ptr<CallExprRewriterFactoryBase> Inner;
+  HeaderType Header;
+
+public:
+  RewriterFactoryWithHeaderFile(
+      HeaderType Header,
+      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
+      : Inner(InnerFactory), Header(Header) {}
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(), Header);
+    return Inner->create(C);
+  }
+};
+
 class RewriterFactoryWithSubGroupSize : public CallExprRewriterFactoryBase {
   std::shared_ptr<CallExprRewriterFactoryBase> Inner;
   std::function<size_t(const CallExpr *, std::string &)> F;
