@@ -889,18 +889,18 @@ void testCommas_in_global_memory() {
 
   CUdeviceptr  devicePtr;
   size_t size;
-  // CHECK: devicePtr = (int *)dpct::dpct_malloc(size, size, size);
+  // CHECK: devicePtr = (char *)dpct::dpct_malloc(size, size, size);
   cuMemAllocPitch((CUdeviceptr *)&devicePtr, &size, size, size, size);
 
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT: cu_err = ((devicePtr = (int *)dpct::dpct_malloc(size, size, size), 0), 0);
+  // CHECK-NEXT: cu_err = ((devicePtr = (char *)dpct::dpct_malloc(size, size, size), 0), 0);
   cu_err = cuMemAllocPitch((CUdeviceptr *)&devicePtr, &size, size, size, size);
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  cuCheckError(((devicePtr = (int *)dpct::dpct_malloc(size, size, size), 0), 0));
+  // CHECK-NEXT:  cuCheckError(((devicePtr = (char *)dpct::dpct_malloc(size, size, size), 0), 0));
   cuCheckError(cuMemAllocPitch((CUdeviceptr *)&devicePtr, &size, size, size, size));
 
   int* a;

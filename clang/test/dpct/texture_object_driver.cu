@@ -55,7 +55,7 @@ int main() {
   // CHECK-NEXT: dpct::image_data res42;
   // CHECK-NEXT: dpct::sampling_info texDesc42;
   // CHECK-NEXT: res42.set_data_type(dpct::image_data_type::pitch);
-  // CHECK-NEXT: res42.set_data_ptr((int *)d_data42);
+  // CHECK-NEXT: res42.set_data_ptr((char *)d_data42);
   // CHECK-NEXT: res42.set_x(sizeof(sycl::float4) * 32);
   // CHECK-NEXT: res42.set_y(32);
   // CHECK-NEXT: res42.set_pitch(sizeof(sycl::float4) * 32);
@@ -98,7 +98,7 @@ int main() {
   // CHECK-NEXT: dpct::image_data res21;
   // CHECK-NEXT: dpct::sampling_info texDesc21;
   // CHECK-NEXT: res21.set_data_type(dpct::image_data_type::linear);
-  // CHECK-NEXT: res21.set_data_ptr((int *)d_data21);
+  // CHECK-NEXT: res21.set_data_ptr((char *)d_data21);
   // CHECK-NEXT: res21.set_channel_num(2);
   // CHECK-NEXT: res21.set_channel_type(sycl::image_channel_type::unsigned_int32);
   // CHECK-NEXT: res21.set_x(32*sizeof(sycl::uint2));
@@ -176,7 +176,7 @@ void foo(){
 
   float4 *d_data42;
   // CHECK: res42.set_data_type(dpct::image_data_type::pitch);
-  // CHECK-NEXT: res42.set_data_ptr((int *)d_data42);
+  // CHECK-NEXT: res42.set_data_ptr((char *)d_data42);
   // CHECK-NEXT: res42.set_channel_num(4);
   // CHECK-NEXT: res42.set_channel_type(sycl::image_channel_type::fp32);
   // CHECK-NEXT: res42.set_x(sizeof(sycl::float4) * 32);
@@ -192,7 +192,7 @@ void foo(){
 
   uint2 *d_data21;
   // CHECK: res42.set_data_type(dpct::image_data_type::linear);
-  // CHECK-NEXT: res42.set_data_ptr((int *)d_data21);
+  // CHECK-NEXT: res42.set_data_ptr((char *)d_data21);
   // CHECK-NEXT: res42.set_x(sizeof(sycl::float4) * 32);
   // CHECK-NEXT: res42.set_channel_num(4);
   // CHECK-NEXT: res42.set_channel_type(sycl::image_channel_type::fp32);

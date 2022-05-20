@@ -92,7 +92,7 @@ void foo() {
   cuMemAllocHost((void **)&h_A, size);
 
   CUdeviceptr* D_ptr;
-  // CHECK: *D_ptr = (int *)dpct::dpct_malloc(size);
+  // CHECK: *D_ptr = (char *)dpct::dpct_malloc(size);
   cuMemAllocManaged(D_ptr, size, CU_MEM_ATTACH_HOST);
 
   float* buffer[2];

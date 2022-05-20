@@ -14878,7 +14878,7 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
         TopMember, buildString("get_", FieldName, "()")));
     if(TopMember->getMemberNameInfo().getAsString() == "devPtr"){
         emplaceTransformation(new InsertBeforeStmt(
-        ME, buildString("(int *)")));
+        ME, buildString("(char *)")));
     }
   }
 }
