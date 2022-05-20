@@ -548,6 +548,14 @@ template <class StreamT> void printMemberOp(StreamT &Stream, bool IsArrow) {
     Stream << ".";
 }
 
+template <class StreamT>
+void printCapture(StreamT &Stream, bool IsCaptureRef) {
+  if (IsCaptureRef)
+    Stream << "[&]";
+  else
+    Stream << "[=]";
+}
+
 class DerefExpr {
   bool AddrOfRemoved = false, NeedParens = false;
   const Expr *E = nullptr;
@@ -841,6 +849,10 @@ public:
   MultiStmtsPrinter(SourceLocation BeginLoc, SourceManager &SM,
                     FirstPrinter &&First, RestPrinter &&...Rest)
       : Base(BeginLoc, SM, std::move(Rest)...), First(std::move(First)) {}
+
+  MultiStmtsPrinter(FirstPrinter &&First, RestPrinter &&...Rest)
+      : Base(std::move(Rest)...), First(std::move(First)) {}
+
   template <class StreamT> void print(StreamT &Stream) const {
     Base::printStmt(Stream, First);
     Base::print(Stream);
@@ -864,8 +876,31 @@ public:
                     LastPrinter &&Last)
       : Last(std::move(Last)), Indent(getIndent(BeginLoc, SM)),
         NL(getNL(BeginLoc, SM)) {}
+
+  MultiStmtsPrinter(LastPrinter &&Last)
+      : Last(std::move(Last)), Indent(" "), NL("") {}
+
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Last);
+  }
+};
+
+
+template <class... StmtPrinter>
+class LambdaPrinter {
+  bool IsCaptureRef;
+  MultiStmtsPrinter<StmtPrinter...> MultiStmts;
+
+public:
+  LambdaPrinter(bool IsCaptureRef, StmtPrinter &&...Printer)
+      : IsCaptureRef(IsCaptureRef), MultiStmts(std::move(Printer)...) {}
+
+  template <class StreamT> void print(StreamT &Stream) const {
+    printCapture(Stream, IsCaptureRef);
+    Stream << "()";
+    CurlyBracketsPrinter<StreamT> CurlyBracket(Stream);
+    MultiStmts.print(Stream);
+    Stream << ";";
   }
 };
 

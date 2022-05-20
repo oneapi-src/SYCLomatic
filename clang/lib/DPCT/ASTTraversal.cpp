@@ -9953,7 +9953,9 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
                       "cudaStreamEndCapture", "cudaStreamIsCapturing",
                       "cudaStreamQuery", "cudaStreamWaitEvent",
                       "cudaStreamAddCallback", "cuStreamCreate",
-                      "cuStreamSynchronize", "cuStreamWaitEvent");
+                      "cuStreamSynchronize", "cuStreamWaitEvent",
+                      "cuStreamDestroy_v2", "cuStreamAttachMemAsync",
+                      "cuStreamAddCallback");
   };
 
   MF.addMatcher(
@@ -9990,6 +9992,16 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
+
+  if (!CallExprRewriterFactoryBase::RewriterMap)
+    return;
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
 
   if (FuncName == "cudaStreamCreate" || FuncName == "cuStreamCreate" ||
       FuncName == "cudaStreamCreateWithFlags" ||

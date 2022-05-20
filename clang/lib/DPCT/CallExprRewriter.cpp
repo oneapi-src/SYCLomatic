@@ -1337,6 +1337,16 @@ makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                                                        Member, Args...);
 }
 
+template <class... StmtT>
+std::function<
+    LambdaPrinter<StmtT...>(const CallExpr *)>
+makeLambdaCreator(bool IsCaptureRef,
+                      std::function<StmtT(const CallExpr *)>... Stmts) {
+  return PrinterCreator<LambdaPrinter<StmtT...>, bool,
+                        std::function<StmtT(const CallExpr *)>...>(
+                        IsCaptureRef, Stmts...);
+}
+
 std::function<TemplatedCallee(const CallExpr *)>
 makeTemplatedCalleeCreator(std::string CalleeName,
                            std::vector<size_t> Indexes) {
@@ -1664,6 +1674,15 @@ std::function<bool(const CallExpr *C)> checkArgSpelling(size_t index,
   return [=](const CallExpr *C) -> bool {
     return getStmtSpelling(C->getArg(index)) == str;
   };
+}
+
+std::function<bool(const CallExpr *C)> checkIsCallExprOnly() {
+  return [=](const CallExpr *C) -> bool {
+    auto parentStmt = getParentStmt(C);
+    if (parentStmt != nullptr && dyn_cast<CompoundStmt>(parentStmt))
+      return true;
+    return false;
+    };
 }
 
 std::function<bool(const CallExpr *C)> checkIsArgIntegerLiteral(size_t index) {
@@ -2318,6 +2337,7 @@ public:
 #define QUEUESTR makeQueueStr()
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
+#define LAMBDA(...) makeLambdaCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define CAST(T, S) makeCastExprCreator(T, S)
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
@@ -2464,6 +2484,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesComplex.inc"
 #include "APINamesDriver.inc"
 #include "APINamesMemory.inc"
+#include "APINamesStream.inc"
 #include "APINamesTexture.inc"
 #include "APINamesThrust.inc"
 #include "APINamesWarp.inc"

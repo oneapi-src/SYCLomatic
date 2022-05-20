@@ -3866,6 +3866,14 @@ bool isExprUsed(const clang::Expr *E, bool &Result) {
   return true;
 }
 
+std::string getRemovedAPIWarningMessage(std::string FuncName) {
+    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
+    if (Msg != MapNames::RemovedAPIWarningMessage.end()) {
+      return Msg->second;
+    }
+    return "";
+}
+
 bool isUserDefinedFunction(const clang::ValueDecl *VD) {
   std::string InFile = dpct::DpctGlobalInfo::getLocInfo(VD).first;
   bool InInstallPath = isChildOrSamePath(DpctInstallPath, InFile);
