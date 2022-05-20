@@ -723,17 +723,17 @@ void generateHelperFunctions() {
 #define ADD_HELPER_FEATURE_FOR_ENUM_NAMES(TYPE)                                \
   void requestHelperFeatureForEnumNames(const std::string Name, TYPE File) {   \
     auto HelperFeatureIter =                                                   \
-        clang::dpct::EnumConstantRule::EnumNamesHelperFeaturesMap.find(Name);  \
+        clang::dpct::EnumConstantRule::EnumNamesMap.find(Name);                \
     if (HelperFeatureIter !=                                                   \
-        clang::dpct::EnumConstantRule::EnumNamesHelperFeaturesMap.end()) {     \
-      requestFeature(HelperFeatureIter->second, File);                         \
+        clang::dpct::EnumConstantRule::EnumNamesMap.end()) {                   \
+      requestFeature(HelperFeatureIter->second->RequestFeature, File);         \
       return;                                                                  \
     }                                                                          \
-    HelperFeatureIter =                                                        \
+    auto CuDNNHelperFeatureIter =                                              \
         clang::dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.find(Name);\
-    if (HelperFeatureIter !=                                                   \
+    if (CuDNNHelperFeatureIter !=                                              \
         clang::dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.end()) {   \
-      requestFeature(HelperFeatureIter->second, File);                         \
+      requestFeature(CuDNNHelperFeatureIter->second, File);                    \
     }                                                                          \
   }
 #define ADD_HELPER_FEATURE_FOR_TYPE_NAMES(TYPE)                                \
@@ -743,9 +743,9 @@ void generateHelperFunctions() {
       requestFeature(HelperFeatureIter->second->RequestFeature, File);         \
       return;                                                                  \
     }                                                                          \
-    HelperFeatureIter = MapNames::CuDNNTypeNamesMap.find(Name);                \
-    if (HelperFeatureIter != MapNames::CuDNNTypeNamesMap.end()) {              \
-      requestFeature(HelperFeatureIter->second->RequestFeature, File);         \
+    auto CuDNNHelperFeatureIter = MapNames::CuDNNTypeNamesMap.find(Name);      \
+    if (CuDNNHelperFeatureIter != MapNames::CuDNNTypeNamesMap.end()) {         \
+      requestFeature(CuDNNHelperFeatureIter->second->RequestFeature, File);    \
     }                                                                          \
   }
 ADD_HELPER_FEATURE_FOR_ENUM_NAMES(const std::string)
