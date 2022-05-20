@@ -49,7 +49,8 @@
   Includes: []
   Fields:
     - In: fieldA
-      Out: fieldB
+      OutGetter: get_a
+      OutSetter: set_a
     - In: fieldC
       Out: fieldD
   Methods:

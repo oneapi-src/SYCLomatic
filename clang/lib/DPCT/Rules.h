@@ -32,10 +32,17 @@ struct TypeNameRule {
 };
 
 struct ClassFieldRule : public TypeNameRule {
+  std::string SetterName;
+  std::string GetterName;
   ClassFieldRule(std::string Name) : TypeNameRule(Name) {}
   ClassFieldRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
                  RulePriority Priority = RulePriority::Fallback)
       : TypeNameRule(Name, Feature) {}
+  ClassFieldRule(std::string SetterName, std::string GetterName,
+                 clang::dpct::HelperFeatureEnum Feature,
+                 RulePriority Priority = RulePriority::Fallback)
+      : TypeNameRule(SetterName, Feature), SetterName(SetterName),
+        GetterName(GetterName) {}
 };
 
 // Record all information of imported rules

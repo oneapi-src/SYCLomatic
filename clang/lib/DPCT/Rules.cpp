@@ -104,7 +104,15 @@ void registerClassRule(MetaRuleObject &R) {
     auto ItFieldRule = MapNames::ClassFieldMap.find(BaseAndFieldName);
     if (ItFieldRule != MapNames::ClassFieldMap.end()) {
       if (ItFieldRule->second->Priority > R.Priority) {
-        ItFieldRule->second->NewName = (*ItField)->Out;
+        if((*ItField)->OutGetter != ""){
+          ItFieldRule->second->SetterName = (*ItField)->OutSetter;
+          ItFieldRule->second->GetterName = (*ItField)->OutGetter;
+          ItFieldRule->second->NewName = "";
+        } else {
+          ItFieldRule->second->SetterName = "";
+          ItFieldRule->second->GetterName = "";
+          ItFieldRule->second->NewName = (*ItField)->Out;
+        }
         ItFieldRule->second->Priority = R.Priority;
         ItFieldRule->second->RequestFeature =
             clang::dpct::HelperFeatureEnum::no_feature_helper;
@@ -119,9 +127,16 @@ void registerClassRule(MetaRuleObject &R) {
             return new clang::dpct::UserDefinedClassFieldRule(R.In,
                                                               (*ItField)->In);
           });
-      auto RulePtr = std::make_shared<ClassFieldRule>(
-          (*ItField)->Out, clang::dpct::HelperFeatureEnum::no_feature_helper,
-          R.Priority);
+      std::shared_ptr<ClassFieldRule> RulePtr;
+      if ((*ItField)->OutGetter != "") {
+        RulePtr = std::make_shared<ClassFieldRule>(
+            (*ItField)->OutSetter, (*ItField)->OutGetter,
+            clang::dpct::HelperFeatureEnum::no_feature_helper, R.Priority);
+      } else {
+        RulePtr = std::make_shared<ClassFieldRule>(
+            (*ItField)->Out, clang::dpct::HelperFeatureEnum::no_feature_helper,
+            R.Priority);
+      }
       RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
                                R.Includes.end());
       MapNames::ClassFieldMap.emplace(BaseAndFieldName, RulePtr);
