@@ -202,6 +202,7 @@ void test4() {
 }
 
 __device__ void test5() {
+  //CHECK:dpct::device_info *pDeviceProp = nullptr;
   cudaDeviceProp *pDeviceProp = nullptr;
   [=]() {
     int a;
