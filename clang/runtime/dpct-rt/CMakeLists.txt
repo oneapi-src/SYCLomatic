@@ -7,6 +7,7 @@ set(dpct_rt_files
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/image.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/util.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/blas_utils.hpp
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dnnl_utils.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/dpl_utils.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/rng_utils.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/lib_common_utils.hpp
