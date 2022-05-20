@@ -8,6 +8,10 @@
 #include <thrust/scan.h>
 #include <thrust/adjacent_difference.h>
 #include <thrust/remove.h>
+#include <thrust/tuple.h>
+#include <thrust/device_malloc.h>
+#include <thrust/device_ptr.h>
+#include <thrust/complex.h>
 
 struct greater_than_zero
 {
@@ -37,3 +41,35 @@ void foo() {
   //CHECK:oneapi::dpl::remove_if(oneapi::dpl::execution::make_device_policy(q_ct1), A.begin(), A.end(), pred);
   thrust::remove_if(A.begin(), A.end(), pred);
 }
+
+// Test description:
+// This test is to check migration of thust API template arguments in non-instantiated class template
+template <int current, typename I, typename F> struct misc_helper {
+  template <int num, typename... Args>
+  __host__ __device__ static void bar(thrust::tuple<Args...> ret) {
+    {
+      //CHECK:auto to = std::get<current>(ret);
+      auto to = thrust::get<current>(ret);
+      //CHECK:to = std::get<0>(ret);
+      to = thrust::get<0>(ret);
+    }
+
+    {
+      //CHECK:auto less = oneapi::dpl::less<int>();
+      auto less = thrust::less<int>();
+      //CHECK:oneapi::dpl::equal_to<float> pred_eq;
+      thrust::equal_to<float> pred_eq;
+      //CHECK: dpct::device_vector<F> vec(4);
+      thrust::device_vector<F> vec(4);
+      //CHECK:auto d_ptr = dpct::malloc_device<std::complex<double>>(1);
+      auto d_ptr = thrust::device_malloc<thrust::complex<double>>(1);
+      float *a;
+      //CHECK:dpct::get_device_pointer<float>(a);
+      thrust::device_pointer_cast<float>(a);
+      //CHECK:oneapi::dpl::identity();
+      thrust::identity<int>();
+      //CHECK:oneapi::dpl::permutation_iterator<I, F> pIt;
+      thrust::permutation_iterator<I, F> pIt;
+    }
+  }
+};
