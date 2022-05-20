@@ -430,7 +430,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUDNN_DATA_INT8x32", getDpctNamespace() + "library_data_t::real_int8_32"},
       {"CUDNN_DATA_UINT8x4", getDpctNamespace() + "library_data_t::real_uint8_4"},
       {"CUDNN_DATA_BFLOAT16", getDpctNamespace() + "library_data_t::real_bfloat16"},
-      {"CUDNN_ACTIVATION_SIGMOID", "dnnl::algorithm::eltwise_logistic"},
+      {"CUDNN_ACTIVATION_SIGMOID", "dnnl::algorithm::eltwise_logistic_use_dst_for_bwd"},
       {"CUDNN_ACTIVATION_RELU", "dnnl::algorithm::eltwise_bounded_relu"},
       {"CUDNN_ACTIVATION_TANH", "dnnl::algorithm::eltwise_tanh"},
       {"CUDNN_ACTIVATION_CLIPPED_RELU",
