@@ -2540,8 +2540,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cooperative_groups::__v1::thread_block",
                   "libraryPropertyType_t", "libraryPropertyType",
                   "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
-                  "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
-                  "thrust::tuple_element"),
+                  "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise"),
               matchesName("nccl.*")))))))
           .bind("cudaTypeDef"),
       this);

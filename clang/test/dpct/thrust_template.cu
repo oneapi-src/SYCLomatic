@@ -48,13 +48,10 @@ template <int current, typename I, typename F> struct misc_helper {
   template <int num, typename... Args>
   __host__ __device__ static void bar(thrust::tuple<Args...> ret) {
     {
-      //CHECK:using CurrentT = typename std::tuple_element<current, std::tuple<Args...>>::type;
-      using CurrentT = typename thrust::tuple_element<current, thrust::tuple<Args...>>::type;
-      CurrentT *to = NULL;
-      //CHECK:*to = std::get<current>(ret);
-      *to = thrust::get<current>(ret);
-      //CHECK:*to = std::get<0>(ret);
-      *to = thrust::get<0>(ret);
+      //CHECK:auto to = std::get<current>(ret);
+      auto to = thrust::get<current>(ret);
+      //CHECK:to = std::get<0>(ret);
+      to = thrust::get<0>(ret);
     }
 
     {
@@ -73,15 +70,6 @@ template <int current, typename I, typename F> struct misc_helper {
       thrust::identity<int>();
       //CHECK:oneapi::dpl::permutation_iterator<I, F> pIt;
       thrust::permutation_iterator<I, F> pIt;
-    }
-
-    {
-      //CHECK:using RetTy_0 = typename std::tuple_element<0, std::tuple<Args...>>::type;
-      using RetTy_0 = typename thrust::tuple_element<0, thrust::tuple<Args...>>::type;
-      //CHECK:typename std::tuple_element<1, std::tuple<Args...>>::type RetTy_1;
-      typename thrust::tuple_element<1, thrust::tuple<Args...>>::type RetTy_1;
-      //CHECK:typedef typename std::tuple_element<2, std::tuple<Args...>>::type RetTy_2;
-      typedef typename thrust::tuple_element<2, thrust::tuple<Args...>>::type RetTy_2;
     }
   }
 };

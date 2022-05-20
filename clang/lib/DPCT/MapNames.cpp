@@ -258,8 +258,6 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::dpl::transform_iterator")},
       {"thrust::iterator_difference",
        std::make_shared<TypeNameRule>("std::iterator_traits")},
-      {"thrust::tuple_element",
-       std::make_shared<TypeNameRule>("std::tuple_element")},
       {"cusolverDnHandle_t",
        std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
       {"cusolverEigType_t", std::make_shared<TypeNameRule>("int64_t")},
