@@ -280,7 +280,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
             continue;
           auto Arg = Call->getArg(i);
           std::string ArgT =
-              Arg->IgnoreImplicit()->getType().getAsString(PrintingPolicy(LO));
+              Arg->IgnoreImplicit()->getType().getCanonicalType().getAsString(
+                  PrintingPolicy(LO));
           std::string ArgExpr = Arg->getStmtClassName();
           auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
           auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());
@@ -315,7 +316,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
             continue;
           auto Arg = Call->getArg(i);
           std::string ArgT =
-              Arg->IgnoreImplicit()->getType().getAsString(PrintingPolicy(LO));
+              Arg->IgnoreImplicit()->getType().getCanonicalType().getAsString(
+                  PrintingPolicy(LO));
           std::string ArgExpr = Arg->getStmtClassName();
           auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreCasts());
           auto IL = dyn_cast<IntegerLiteral>(Arg->IgnoreCasts());

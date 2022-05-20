@@ -237,7 +237,7 @@ __device__ void d10() {
 //CHECK-NEXT:  /*
 //CHECK-NEXT:  DPCT1064:{{[0-9]+}}: Migrated acos call is used in a macro definition and is not valid for all macro uses. Adjust the code.
 //CHECK-NEXT:  */
-//CHECK-NEXT:  double c = sycl::atan2((double)(sycl::acos((double)(item_ct1.get_local_id(0)))), (double)(sycl::acos((double)(item_ct1.get_local_id(0)))));
+//CHECK-NEXT:  double c = sycl::atan2(sycl::acos((double)(item_ct1.get_local_id(0))), sycl::acos((double)(item_ct1.get_local_id(0))));
 //CHECK-NEXT:}
 __device__ void d11() {
   int a = threadIdx.x;
@@ -266,7 +266,7 @@ __device__ void d13() {
 //CHECK:void d14(sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:  int a = item_ct1.get_local_id(2);
 //CHECK-NEXT:  double b = sycl::sqrt((double)(item_ct1.get_local_id(2)));
-//CHECK-NEXT:  double c = sycl::atan2((double)(sycl::acos((double)(item_ct1.get_local_id(0)))), (double)(sycl::acos((double)(item_ct1.get_local_id(1)))));
+//CHECK-NEXT:  double c = sycl::atan2(sycl::acos((double)(item_ct1.get_local_id(0))), sycl::acos((double)(item_ct1.get_local_id(1))));
 //CHECK-NEXT:}
 __device__ void d14() {
   int a = threadIdx.x;
