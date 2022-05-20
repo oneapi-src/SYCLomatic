@@ -344,8 +344,6 @@ public:
 
   static const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
       LegacyBLASFuncReplInfoMap;
-  static std::map<std::string, MapNames::BLASFuncComplexReplInfo>
-      BatchedBLASFuncReplInfoMap;
 
   static const std::set<std::string> MustSyncBLASFunc;
   static const std::map<std::string, std::pair<std::string, int>>

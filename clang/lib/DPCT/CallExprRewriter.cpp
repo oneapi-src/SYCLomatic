@@ -1625,6 +1625,12 @@ std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) {
   };
 }
 
+std::function<std::string(const CallExpr *C)> getTypeStr(std::string TypeStr) {
+  return [=](const CallExpr *C) -> std::string {
+    return TypeStr;
+  };
+}
+
 // Can only be used if CheckCanUseTemplateMalloc is true.
 std::function<std::string(const CallExpr *C)> getDoubleDerefedType(size_t Idx) {
   return [=](const CallExpr *C) -> std::string {

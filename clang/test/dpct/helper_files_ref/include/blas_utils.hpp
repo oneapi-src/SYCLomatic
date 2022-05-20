@@ -385,6 +385,56 @@ inline void rk_impl(cl::sycl::queue &q, oneapi::mkl::uplo uplo,
   }
 }
 
+template <class Ta, class Tb, class Ts>
+inline void
+trsm_batch_impl(cl::sycl::queue &q, oneapi::mkl::side left_right,
+                oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
+                oneapi::mkl::diag unit_diag, int m, int n, const void *alpha,
+                const void **a, int lda, void **b, int ldb, int batch_size) {
+  struct mat_info_t {
+    mat_info_t(oneapi::mkl::side side_info, oneapi::mkl::uplo uplo_info,
+               oneapi::mkl::transpose transpose_info,
+               oneapi::mkl::diag diag_info, Ts value_info, std::int64_t m,
+               std::int64_t n, std::int64_t lda, std::int64_t ldb,
+               std::int64_t groupsize_info)
+        : side_info(side_info), uplo_info(uplo_info),
+          transpose_info(transpose_info), diag_info(diag_info),
+          value_info(value_info), groupsize_info(groupsize_info) {
+      size_info[0] = m;
+      size_info[1] = n;
+      ld_info[0] = lda;
+      ld_info[1] = ldb;
+    }
+    oneapi::mkl::side side_info;
+    oneapi::mkl::uplo uplo_info;
+    oneapi::mkl::transpose transpose_info;
+    oneapi::mkl::diag diag_info;
+    Ts value_info;
+    std::int64_t size_info[2];
+    std::int64_t ld_info[2];
+    std::int64_t groupsize_info;
+  };
+
+  Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
+
+  mat_info_t *mat_info =
+      new mat_info_t(left_right, upper_lower, trans, unit_diag, alpha_value, m,
+                     n, lda, ldb, batch_size);
+
+  cl::sycl::event e = oneapi::mkl::blas::column_major::trsm_batch(
+      q, &(mat_info->side_info), &(mat_info->uplo_info),
+      &(mat_info->transpose_info), &(mat_info->diag_info), mat_info->size_info,
+      mat_info->size_info + 1, &(mat_info->value_info),
+      reinterpret_cast<const Ta **>(a), mat_info->ld_info,
+      reinterpret_cast<Tb **>(b), mat_info->ld_info + 1, 1,
+      &(mat_info->groupsize_info));
+
+  q.submit([&](cl::sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] { delete mat_info; });
+  });
+}
+
 }
 
 inline oneapi::mkl::transpose get_transpose(int t) {
@@ -1365,6 +1415,110 @@ inline void herk(cl::sycl::queue &q, oneapi::mkl::uplo uplo,
                  T *c, int ldc) {
   detail::rk_impl<true, T, Tbeta>(q, uplo, trans, n, k, alpha, a, lda, b,
                                         ldb, beta, c, ldc);
+}
+
+/// This routines perform a group of trsm operations. Each trsm solves an
+/// equation of the form op(A) * X = alpha * B or X * op(A) = alpha * B.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] left_right Specifies A multiplies X on the left or on the right.
+/// \param [in] upper_lower Specifies A is upper or lower triangular.
+/// \param [in] trans Specifies the operation applied to A.
+/// \param [in] unit_diag Specifies whether A is unit triangular.
+/// \param [in] m Number of rows of the B matrices.
+/// \param [in] n Number of columns of the B matrices.
+/// \param [in] alpha Scaling factor for the solutions.
+/// \param [in] a Input matrices A.
+/// \param [in] a_type Data type of the matrices A.
+/// \param [in] lda Leading dimension of the matrices A.
+/// \param [in, out] b Input and output matrices B.
+/// \param [in] b_type Data type of the matrices B.
+/// \param [in] ldb Leading dimension of the matrices B.
+/// \param [in] batch_size Specifies the number of trsm operations to perform.
+/// \param [in] scaling_type Data type of the scaling factors.
+inline void trsm_batch(cl::sycl::queue &q, oneapi::mkl::side left_right,
+                       oneapi::mkl::uplo upper_lower,
+                       oneapi::mkl::transpose trans,
+                       oneapi::mkl::diag unit_diag, int m, int n,
+                       const void *alpha, const void **a, library_data_t a_type,
+                       int lda, void **b, library_data_t b_type, int ldb,
+                       int batch_size, library_data_t scaling_type) {
+#ifdef DPCT_USM_LEVEL_NONE
+  throw std::runtime_error("this API is unsupported when USM level is none");
+#else
+  std::uint64_t key =
+      detail::get_type_combination_id(a_type, b_type, scaling_type);
+  switch (key) {
+  case detail::get_type_combination_id(library_data_t::real_float,
+                                       library_data_t::real_float,
+                                       library_data_t::real_float): {
+    detail::trsm_batch_impl<float, float, float>(q, left_right, upper_lower,
+                                                 trans, unit_diag, m, n, alpha,
+                                                 a, lda, b, ldb, batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::real_double,
+                                       library_data_t::real_double,
+                                       library_data_t::real_double): {
+    detail::trsm_batch_impl<double, double, double>(
+        q, left_right, upper_lower, trans, unit_diag, m, n, alpha, a, lda, b,
+        ldb, batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_float,
+                                       library_data_t::complex_float,
+                                       library_data_t::complex_float): {
+    detail::trsm_batch_impl<std::complex<float>, std::complex<float>,
+                            std::complex<float>>(q, left_right, upper_lower,
+                                                 trans, unit_diag, m, n, alpha,
+                                                 a, lda, b, ldb, batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_double,
+                                       library_data_t::complex_double,
+                                       library_data_t::complex_double): {
+    detail::trsm_batch_impl<std::complex<double>, std::complex<double>,
+                            std::complex<double>>(q, left_right, upper_lower,
+                                                  trans, unit_diag, m, n, alpha,
+                                                  a, lda, b, ldb, batch_size);
+    break;
+  }
+  default:
+    throw std::runtime_error("the combination of data type is unsupported");
+  }
+#endif
+}
+
+/// Computes a triangular matrix-general matrix product.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] left_right Specifies A is on the left or right side of the
+/// multiplication.
+/// \param [in] upper_lower Specifies A is upper or lower triangular.
+/// \param [in] trans Specifies the operation applied to A.
+/// \param [in] unit_diag Specifies whether A is unit triangular.
+/// \param [in] m Number of rows of B.
+/// \param [in] n Number of columns of B.
+/// \param [in] alpha Scaling factor for the matrix-matrix product.
+/// \param [in] a Input matrices A.
+/// \param [in] lda Leading dimension of the matrices A.
+/// \param [in] b Input matrices B.
+/// \param [in] ldb Leading dimension of the matrices B.
+/// \param [out] c Output matrices C.
+/// \param [in] ldc Leading dimension of the matrices C.
+template <class T>
+inline void trmm(cl::sycl::queue &q, oneapi::mkl::side left_right,
+                 oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
+                 oneapi::mkl::diag unit_diag, int m, int n, const T *alpha,
+                 const T *a, int lda, const T *b, int ldb, T *c, int ldc) {
+  using Ty = typename DataType<T>::T2;
+  auto alpha_val = dpct::get_value(alpha, q);
+  if (b != c) {
+    dpct::matrix_mem_copy(c, b, ldc, ldb, m, n, dpct::device_to_device, q);
+  }
+  auto data_a = detail::get_memory(reinterpret_cast<const Ty *>(a));
+  auto data_c = detail::get_memory(reinterpret_cast<Ty *>(c));
+  oneapi::mkl::blas::column_major::trmm(q, left_right, upper_lower, trans,
+                                        unit_diag, m, n, alpha_val, data_a, lda,
+                                        data_c, ldc);
 }
 
 } // namespace dpct
