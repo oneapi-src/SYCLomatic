@@ -129,7 +129,7 @@ void test1() {
     // CHECK: /*
     // CHECK: DPCT1007:{{[0-9]+}}: Migration of Nan numbers propagation option is not supported.
     // CHECK: */
-    // CHECK: desc.set(dnnl::algorithm::eltwise_logistic, 0.f);
+    // CHECK: desc.set(dnnl::algorithm::eltwise_logistic_use_dst_for_bwd, 0.f);
 
     // CHECK: float alpha = 1.5f, beta = 0.f;
     // CHECK: handle.activation_forward(desc, alpha, dataTensor, data, beta, outTensor, out);
