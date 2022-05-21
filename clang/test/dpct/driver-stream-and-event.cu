@@ -1,6 +1,7 @@
 // RUN: dpct -out-root %T/driver-stream-and-event %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --match-full-lines --input-file %T/driver-stream-and-event/driver-stream-and-event.dp.cpp %s
 
+#include<vector>
 // CHECK: #include <future>
 template <typename T>
 // CHECK: void my_error_checker(T ReturnValue, char const *const FuncName) {
@@ -111,6 +112,7 @@ void test_stream() {
   //CHECK-NEXT: */
   //CHECK-NEXT: MY_ERROR_CHECKER(0);
   MY_ERROR_CHECKER(cuStreamAttachMemAsync(hStream, cuPtr, length, flag));
+  cuStreamAttachMemAsync(hStream, cuPtr, std::vector<int>(1,1).front(), flag);
   // CHECK: dpct::get_current_device().destroy_queue(hStream);
   cuStreamDestroy(hStream);
 }
