@@ -17,11 +17,11 @@ CONDITIONAL_FACTORY_ENTRY(
     WARNING_FACTORY_ENTRY("cuStreamAttachMemAsync",
         TOSTRING_FACTORY_ENTRY("cuStreamAttachMemAsync", LITERAL("")),
         Diagnostics::FUNC_CALL_REMOVED,
-        ARG("cuStreamAttachMemAsync"), ARG(getRemovedAPIWarningMessage("cuStreamAttachMemAsync"))),
+        std::string("cuStreamAttachMemAsync"), getRemovedAPIWarningMessage("cuStreamAttachMemAsync")),
     WARNING_FACTORY_ENTRY("cuStreamAttachMemAsync",
         TOSTRING_FACTORY_ENTRY("cuStreamAttachMemAsync", LITERAL("0")),
         Diagnostics::FUNC_CALL_REMOVED_0,
-        ARG("cuStreamAttachMemAsync"), ARG(getRemovedAPIWarningMessage("cuStreamAttachMemAsync"))))
+        std::string("cuStreamAttachMemAsync"), getRemovedAPIWarningMessage("cuStreamAttachMemAsync")))
 
 ASSIGNABLE_FACTORY(
     HEADER_INSERT_FACTORY(HeaderType::HT_Future,

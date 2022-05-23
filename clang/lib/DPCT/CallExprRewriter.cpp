@@ -1679,7 +1679,8 @@ std::function<bool(const CallExpr *C)> checkArgSpelling(size_t index,
 std::function<bool(const CallExpr *C)> checkIsCallExprOnly() {
   return [=](const CallExpr *C) -> bool {
     auto parentStmt = getParentStmt(C);
-    if (parentStmt != nullptr && dyn_cast<CompoundStmt>(parentStmt))
+    if (parentStmt != nullptr && (dyn_cast<CompoundStmt>(parentStmt) ||
+                          dyn_cast<ExprWithCleanups>(parentStmt)))
       return true;
     return false;
     };

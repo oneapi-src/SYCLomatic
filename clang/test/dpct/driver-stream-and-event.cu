@@ -112,7 +112,12 @@ void test_stream() {
   //CHECK-NEXT: */
   //CHECK-NEXT: MY_ERROR_CHECKER(0);
   MY_ERROR_CHECKER(cuStreamAttachMemAsync(hStream, cuPtr, length, flag));
+
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuStreamAttachMemAsync was removed because DPC++ currently does not support associating USM with a specific queue.
+  //CHECK-NEXT: */
   cuStreamAttachMemAsync(hStream, cuPtr, std::vector<int>(1,1).front(), flag);
+
   // CHECK: dpct::get_current_device().destroy_queue(hStream);
   cuStreamDestroy(hStream);
 }
