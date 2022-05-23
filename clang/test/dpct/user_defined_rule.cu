@@ -14,6 +14,7 @@
 //CHECK: #include <vector>
 //CHECK: #include "ccc.h"
 //CHECK: #include "ddd.h"
+//CHECK: #include "fruit.h"
 #include<iostream>
 #include<functional>
 
@@ -50,6 +51,11 @@ public:
   int methodB(int i){return 0;};
 };
 
+enum Fruit{
+  apple,
+  banana
+};
+
 void foo2(){
   int c = 10;
   int d = 1;
@@ -69,9 +75,11 @@ void foo2(){
   //CHECK-NEXT: a.methodB(2);
   //CHECK-NEXT: a.set_a(3);
   //CHECK-NEXT: int k = a.get_a();
+  //CHECK-NEXT: Fruit f = pineapple;
   ClassA a;
   a.fieldC = 3;
   a.methodA(1,2);
   a.fieldA = 3;
   int k = a.fieldA;
+  Fruit f = Fruit::apple;
 }

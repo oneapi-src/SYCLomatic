@@ -4416,7 +4416,7 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   }
 
-  emplaceTransformation(new ReplaceStmt(E, Search->second));
+  emplaceTransformation(new ReplaceStmt(E, Search->second->NewName));
   requestHelperFeatureForEnumNames(EnumName, E);
 }
 
@@ -8565,7 +8565,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                  "dev_mgr::instance().get_device(";
       ReplStr += StmtStrArg2;
       ReplStr += ").";
-      ReplStr += Search->second;
+      ReplStr += Search->second->NewName;
       ReplStr += "()";
       requestFeature(HelperFeatureEnum::Device_dev_mgr_get_device, CE);
     }
@@ -11825,7 +11825,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
         return;
       requestHelperFeatureForEnumNames(DirectionName, C);
       Direction = nullptr;
-      DirectionName = Search->second;
+      DirectionName = Search->second->NewName;
     }
   }
 
@@ -15986,7 +15986,7 @@ void DriverDeviceAPIRule::runRule(
         return;
       }
       requestHelperFeatureForEnumNames(AttributeName, CE);
-      SYCLCallName = Search->second;
+      SYCLCallName = Search->second->NewName;
     } else {
       report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
              false);

@@ -632,6 +632,17 @@ public:
   void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class UserDefinedEnumRule
+    : public clang::dpct::NamedMigrationRule<UserDefinedEnumRule> {
+  std::string EnumName;
+
+public:
+  UserDefinedEnumRule(std::string EnumName) : EnumName(EnumName){};
+  void registerMatcher(clang::ast_matchers::MatchFinder &MF) override;
+  void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+
 /// Migration rule for inserting namespace for vector types
 class VectorTypeNamespaceRule
     : public NamedMigrationRule<VectorTypeNamespaceRule> {
@@ -742,8 +753,8 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
   void handleComputeMode(std::string EnumName, const DeclRefExpr *E);
 
-  static std::map<std::string, std::string> EnumNamesMap;
-  static std::map<std::string, HelperFeatureEnum> EnumNamesHelperFeaturesMap;
+  static std::unordered_map<std::string, std::shared_ptr<EnumNameRule>>
+      EnumNamesMap;
 };
 
 /// Migration rule for Error enums constants.

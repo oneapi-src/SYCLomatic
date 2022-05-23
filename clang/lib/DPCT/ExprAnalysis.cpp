@@ -421,6 +421,14 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     auto &ReplEnum = MapNames::findReplacedName(EnumConstantRule::EnumNamesMap,
                                                 ECD->getName().str());
     requestHelperFeatureForEnumNames(ECD->getName().str(), DRE);
+    auto ItEnum = EnumConstantRule::EnumNamesMap.find(ECD->getName().str());
+    if (ItEnum != EnumConstantRule::EnumNamesMap.end()) {
+      for (auto ItHeader = ItEnum->second->Includes.begin();
+           ItHeader != ItEnum->second->Includes.end(); ItHeader++) {
+        DpctGlobalInfo::getInstance().insertHeader(DRE->getBeginLoc(),
+                                                   *ItHeader);
+      }
+    }
     if (!ReplEnum.empty())
       addReplacement(DRE, ReplEnum);
     else {
