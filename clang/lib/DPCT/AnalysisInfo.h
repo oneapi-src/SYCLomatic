@@ -2020,6 +2020,9 @@ public:
   static bool useGroupLocalMemory() {
     return getUsingExperimental<ExperimentalFeatures::Exp_GroupSharedMemory>();
   }
+  static bool useLogicalGroup() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_LogicalGroup>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtension(DPCPPExtensions::Ext_EnqueueBarrier);
   }

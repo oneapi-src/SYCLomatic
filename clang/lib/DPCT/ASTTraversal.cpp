@@ -3142,7 +3142,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           emplaceTransformation(new ReplaceText(
               Begin, End.getRawEncoding() - Begin.getRawEncoding(),
               MapNames::getClNamespace() + "sub_group"));
-        } else {
+        } else if (DpctGlobalInfo::useLogicalGroup()) {
           emplaceTransformation(new ReplaceText(
               Begin, End.getRawEncoding() - Begin.getRawEncoding(),
               MapNames::getDpctNamespace() + "experimental::logical_group"));
@@ -13335,6 +13335,8 @@ void CooperativeGroupsFunctionRule::runRule(
             DpctGlobalInfo::getSubGroup(CE) + ".get_local_linear_id()";
       } else if (BaseTypeRef.startswith(
                      "cooperative_groups::__v1::thread_block_tile<")) {
+        if (!DpctGlobalInfo::useLogicalGroup())
+          EMIT_WARNING_AND_RETURN;
         Replacement = ExprAnalysis::ref(Base) + ".get_local_linear_id()";
         requestFeature(
             HelperFeatureEnum::Util_logical_group_get_local_linear_id, ME);
@@ -13354,6 +13356,8 @@ void CooperativeGroupsFunctionRule::runRule(
             DpctGlobalInfo::getSubGroup(CE) + ".get_local_linear_id()";
       } else if (ArgTypeRef.startswith(
               "const cooperative_groups::__v1::thread_block_tile<")) {
+        if (!DpctGlobalInfo::useLogicalGroup())
+          EMIT_WARNING_AND_RETURN;
         Replacement = ExprAnalysis::ref(CE->getArg(0)) +
                       ".get_local_linear_id()";
         requestFeature(
@@ -13390,9 +13394,6 @@ void CooperativeGroupsFunctionRule::runRule(
     auto FuncInfo =
         DeviceFunctionDecl::LinkRedecls(DpctGlobalInfo::getParentFunction(CE));
     if (FuncInfo) {
-      FuncInfo->addSubGroupSizeRequest(32, CE->getBeginLoc(),
-                                       MapNames::getDpctNamespace() +
-                                           "experimental::logical_group");
       FuncInfo->getVarMap().Dim = 3;
     } else {
       EMIT_WARNING_AND_RETURN;
@@ -13418,6 +13419,8 @@ void CooperativeGroupsFunctionRule::runRule(
                                 clang::TemplateArgument::ArgKind::Integral)) {
               auto I = TSA->get(0).getAsIntegral();
               if (I.getMinSignedBits() <= 64 && I.getExtValue() == 32) {
+                FuncInfo->addSubGroupSizeRequest(
+                    32, CE->getBeginLoc(), DpctGlobalInfo::getSubGroup(CE));
                 emplaceTransformation(
                     new ReplaceStmt(CE, DpctGlobalInfo::getSubGroup(CE)));
                 return;
@@ -13425,11 +13428,16 @@ void CooperativeGroupsFunctionRule::runRule(
             }
           }
 
-          std::string Replacement =
-              MapNames::getDpctNamespace() + "experimental::logical_group(" +
-              DpctGlobalInfo::getItem(CE) + ", " +
-              DpctGlobalInfo::getGroup(CE) + ", " + PartitionSize + ")";
-          emplaceTransformation(new ReplaceStmt(CE, Replacement));
+          if (DpctGlobalInfo::useLogicalGroup()) {
+            FuncInfo->addSubGroupSizeRequest(32, CE->getBeginLoc(),
+                                             MapNames::getDpctNamespace() +
+                                                 "experimental::logical_group");
+            std::string Replacement =
+                MapNames::getDpctNamespace() + "experimental::logical_group(" +
+                DpctGlobalInfo::getItem(CE) + ", " +
+                DpctGlobalInfo::getGroup(CE) + ", " + PartitionSize + ")";
+            emplaceTransformation(new ReplaceStmt(CE, Replacement));
+          }
           return;
         }
       }
@@ -13451,6 +13459,8 @@ void CooperativeGroupsFunctionRule::runRule(
           DpctGlobalInfo::getSubGroup(CE) + ".get_local_linear_range()";
     } else if (BaseTypeRef.startswith(
                    "cooperative_groups::__v1::thread_block_tile<")) {
+      if (!DpctGlobalInfo::useLogicalGroup())
+        EMIT_WARNING_AND_RETURN;
       Replacement =
           ExprAnalysis::ref(Base) + ".get_local_linear_range()";
       requestFeature(
