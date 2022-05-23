@@ -462,91 +462,6 @@ T permute_sub_group_by_xor(sycl::sub_group g, T x, unsigned int mask,
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|logical_group|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Util|logical_group_1
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-/// The logical-group is a logical collection of some work-items within a
-/// work-group. The size of a logical-group can be 2, 4, 8, 16 or 32.
-class logical_group {
-  cl::sycl::group<3> _g;
-  uint32_t _logical_group_size;
-  uint32_t _group_linear_range_in_parent;
-public:
-  /// Dividing \p parent_group into several logical-groups.
-  /// \param [in] parent_group The group to be divided.
-  /// \param [in] size The logical-group size.
-  logical_group(cl::sycl::group<3> parent_group, uint32_t size)
-      : _g(parent_group), _logical_group_size(size) {
-    _group_linear_range_in_parent =
-        (_g.get_local_linear_range() - 1) / _logical_group_size + 1;
-  }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|logical_group_get_local_linear_id|dpct
-// DPCT_PARENT_FEATURE|logical_group
-// DPCT_DEPENDENCY_BEGIN
-// Util|logical_group
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-  /// Returns the index of the work-item within the logical-group.
-  uint32_t get_local_linear_id() const {
-    return _g.get_local_linear_id() % _logical_group_size;
-  }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|logical_group_get_group_linear_id|dpct
-// DPCT_PARENT_FEATURE|logical_group
-// DPCT_DEPENDENCY_BEGIN
-// Util|logical_group
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-  /// Returns the index of the logical-group in the parent group.
-  uint32_t get_group_linear_id() const {
-    return _g.get_local_linear_id() / _logical_group_size;
-  }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|logical_group_get_local_linear_range|dpct
-// DPCT_PARENT_FEATURE|logical_group
-// DPCT_DEPENDENCY_BEGIN
-// Util|logical_group
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-  /// Returns the number of work-items in the logical-group.
-  uint32_t get_local_linear_range() const {
-    if (_g.get_local_linear_range() % _logical_group_size == 0) {
-      return _logical_group_size;
-    }
-    uint32_t last_item_group_id =
-        _g.get_local_linear_range() / _logical_group_size;
-    if (_g.get_local_linear_id() >=
-        last_item_group_id * _logical_group_size) {
-      return _g.get_local_linear_range() -
-             last_item_group_id * _logical_group_size;
-    } else {
-      return _logical_group_size;
-    }
-  }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|logical_group_get_group_linear_range|dpct
-// DPCT_PARENT_FEATURE|logical_group
-// DPCT_DEPENDENCY_BEGIN
-// Util|logical_group
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-  /// Returns the number of logical-group in the parent group.
-  uint32_t get_group_linear_range() const {
-    return _group_linear_range_in_parent;
-  }
-// DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|logical_group_1|dpct
-// DPCT_PARENT_FEATURE|logical_group
-// DPCT_DEPENDENCY_BEGIN
-// Util|logical_group
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-};
-// DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|cmul|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
@@ -686,6 +601,100 @@ nd_range_barrier(cl::sycl::nd_item<1> item,
 
   item.barrier();
 }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|logical_group|dpct::experimental
+// DPCT_DEPENDENCY_BEGIN
+// Util|logical_group_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// The logical-group is a logical collection of some work-items within a
+/// work-group. Each logical-group size is a power of 2 in the range
+/// [1, current_sub_group_size].
+class logical_group {
+  cl::sycl::nd_item<3> _item;
+  cl::sycl::group<3> _g;
+  uint32_t _logical_group_size;
+  uint32_t _group_linear_range_in_parent;
+
+public:
+  /// Dividing \p parent_group into several logical-groups.
+  /// \param [in] parent_group The group to be divided.
+  /// \param [in] size The logical-group size.
+  logical_group(cl::sycl::nd_item<3> item, cl::sycl::group<3> parent_group,
+                uint32_t size)
+      : _item(item), _g(parent_group), _logical_group_size(size) {
+    if (size <= _item.get_sub_group().get_local_linear_range() &&
+        (size % 2 == 0)) {
+      _group_linear_range_in_parent =
+          (_g.get_local_linear_range() - 1) / _logical_group_size + 1;
+    } else {
+      throw std::runtime_error("size is invalid");
+    }
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|logical_group_get_local_linear_id|dpct::experimental
+// DPCT_PARENT_FEATURE|logical_group
+// DPCT_DEPENDENCY_BEGIN
+// Util|logical_group
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Returns the index of the work-item within the logical-group.
+  uint32_t get_local_linear_id() const {
+    return _item.get_local_linear_id() % _logical_group_size;
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|logical_group_get_group_linear_id|dpct::experimental
+// DPCT_PARENT_FEATURE|logical_group
+// DPCT_DEPENDENCY_BEGIN
+// Util|logical_group
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Returns the index of the logical-group in the parent group.
+  uint32_t get_group_linear_id() const {
+    return _item.get_local_linear_id() / _logical_group_size;
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|logical_group_get_local_linear_range|dpct::experimental
+// DPCT_PARENT_FEATURE|logical_group
+// DPCT_DEPENDENCY_BEGIN
+// Util|logical_group
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Returns the number of work-items in the logical-group.
+  uint32_t get_local_linear_range() const {
+    if (_item.get_local_linear_range() % _logical_group_size == 0) {
+      return _logical_group_size;
+    }
+    uint32_t last_item_group_id =
+        _item.get_local_linear_range() / _logical_group_size;
+    if (_item.get_local_linear_id() >=
+        last_item_group_id * _logical_group_size) {
+      return _item.get_local_linear_range() -
+             last_item_group_id * _logical_group_size;
+    } else {
+      return _logical_group_size;
+    }
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|logical_group_get_group_linear_range|dpct::experimental
+// DPCT_PARENT_FEATURE|logical_group
+// DPCT_DEPENDENCY_BEGIN
+// Util|logical_group
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Returns the number of logical-group in the parent group.
+  uint32_t get_group_linear_range() const {
+    return _group_linear_range_in_parent;
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|logical_group_1|dpct::experimental
+// DPCT_PARENT_FEATURE|logical_group
+// DPCT_DEPENDENCY_BEGIN
+// Util|logical_group
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+};
 // DPCT_LABEL_END
 }
 } // namespace dpct
