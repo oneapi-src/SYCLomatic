@@ -3145,7 +3145,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         } else {
           emplaceTransformation(new ReplaceText(
               Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-              MapNames::getDpctNamespace() + "logical_group"));
+              MapNames::getDpctNamespace() + "experimental::logical_group"));
           requestFeature(HelperFeatureEnum::Util_logical_group, Begin);
         }
         return;
@@ -13392,7 +13392,7 @@ void CooperativeGroupsFunctionRule::runRule(
     if (FuncInfo) {
       FuncInfo->addSubGroupSizeRequest(32, CE->getBeginLoc(),
                                        MapNames::getDpctNamespace() +
-                                           "logical_group");
+                                           "experimental::logical_group");
       FuncInfo->getVarMap().Dim = 3;
     } else {
       EMIT_WARNING_AND_RETURN;
@@ -13426,7 +13426,8 @@ void CooperativeGroupsFunctionRule::runRule(
           }
 
           std::string Replacement =
-              MapNames::getDpctNamespace() + "logical_group(" +
+              MapNames::getDpctNamespace() + "experimental::logical_group(" +
+              DpctGlobalInfo::getItem(CE) + ", " +
               DpctGlobalInfo::getGroup(CE) + ", " + PartitionSize + ")";
           emplaceTransformation(new ReplaceStmt(CE, Replacement));
           return;

@@ -154,7 +154,7 @@ __device__ void foo1(cg::thread_block &tb,
   cg::sync(tb);
   cg::sync(tbt32);
 
-// CHECK: dpct::logical_group tbt8 = dpct::logical_group(item_ct1.get_group(), LOGICAL_SIZE);
+// CHECK: dpct::experimental::logical_group tbt8 = dpct::experimental::logical_group(item_ct1, item_ct1.get_group(), LOGICAL_SIZE);
 // CHECK-NEXT: int size = tbt8.get_local_linear_range();
 // CHECK-NEXT: int rank = tbt8.get_local_linear_id();
 // CHECK-NEXT: double temp = 0;
