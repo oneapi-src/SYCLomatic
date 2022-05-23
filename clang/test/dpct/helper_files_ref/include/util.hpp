@@ -469,7 +469,8 @@ nd_range_barrier(cl::sycl::nd_item<1> item,
 
 /// The logical-group is a logical collection of some work-items within a
 /// work-group. Each logical-group size is a power of 2 in the range
-/// [1, current_sub_group_size].
+/// [1, current_sub_group_size]. If the logical-group size is illegal,
+/// it will be treated as 1.
 class logical_group {
   cl::sycl::nd_item<3> _item;
   cl::sycl::group<3> _g;
@@ -484,13 +485,12 @@ public:
   logical_group(cl::sycl::nd_item<3> item, cl::sycl::group<3> parent_group,
                 uint32_t size)
       : _item(item), _g(parent_group), _logical_group_size(size) {
-    if (size <= _item.get_sub_group().get_local_linear_range() &&
-        (size % 2 == 0)) {
-      _group_linear_range_in_parent =
-          (_g.get_local_linear_range() - 1) / _logical_group_size + 1;
-    } else {
-      throw std::runtime_error("size is invalid");
+    if (size > _item.get_sub_group().get_local_linear_range() ||
+        (size % 2 != 0)) {
+      _logical_group_size = 1;
     }
+    _group_linear_range_in_parent =
+        (_g.get_local_linear_range() - 1) / _logical_group_size + 1;
   }
   /// Returns the index of the work-item within the logical-group.
   uint32_t get_local_linear_id() const {
@@ -502,14 +502,14 @@ public:
   }
   /// Returns the number of work-items in the logical-group.
   uint32_t get_local_linear_range() const {
-    if (_item.get_local_linear_range() % _logical_group_size == 0) {
+    if (_g.get_local_linear_range() % _logical_group_size == 0) {
       return _logical_group_size;
     }
     uint32_t last_item_group_id =
-        _item.get_local_linear_range() / _logical_group_size;
+        _g.get_local_linear_range() / _logical_group_size;
     if (_item.get_local_linear_id() >=
         last_item_group_id * _logical_group_size) {
-      return _item.get_local_linear_range() -
+      return _g.get_local_linear_range() -
              last_item_group_id * _logical_group_size;
     } else {
       return _logical_group_size;
