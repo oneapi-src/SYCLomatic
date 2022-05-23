@@ -8749,7 +8749,8 @@ void EventAPICallRule::registerMatcher(MatchFinder &MF) {
         "cudaEventCreate", "cudaEventCreateWithFlags", "cudaEventDestroy",
         "cudaEventRecord", "cudaEventElapsedTime", "cudaEventSynchronize",
         "cudaEventQuery", "cuEventCreate", "cuEventRecord",
-        "cuEventSynchronize", "cuEventQuery", "cuEventElapsedTime");
+        "cuEventSynchronize", "cuEventQuery", "cuEventElapsedTime",
+        "cuEventDestroy_v2");
   };
 
   MF.addMatcher(
@@ -9083,7 +9084,8 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
   if (FuncName == "cudaEventCreate" || FuncName == "cudaEventCreateWithFlags" ||
-      FuncName == "cudaEventDestroy" || FuncName == "cuEventCreate") {
+      FuncName == "cudaEventDestroy" || FuncName == "cuEventCreate" ||
+      FuncName == "cuEventDestroy_v2") {
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
