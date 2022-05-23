@@ -478,6 +478,7 @@ class logical_group {
 
 public:
   /// Dividing \p parent_group into several logical-groups.
+  /// \param [in] item Current work-item.
   /// \param [in] parent_group The group to be divided.
   /// \param [in] size The logical-group size.
   logical_group(cl::sycl::nd_item<3> item, cl::sycl::group<3> parent_group,
