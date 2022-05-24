@@ -3,13 +3,13 @@
 // RUN: FileCheck --input-file %T/Util/api_test18_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Util/api_test18_out
 
-// CHECK: 1
+// CHECK: 2
 // TEST_FEATURE: Util_cdiv
 
 #include <cuComplex.h>
 
 __device__ void foo1() {
-    float2 a, b;
+    double2 a, b;
 
     auto c = cuCdiv(a, b);
 
