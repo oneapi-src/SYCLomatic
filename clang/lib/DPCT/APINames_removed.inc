@@ -38,6 +38,7 @@ ENTRY(cudaEventDestroy,                "this call is redundant in DPC++.")
 ENTRY(cuEventCreate,                 "this call is redundant in DPC++.")
 
 ENTRY(cudaStreamAttachMemAsync,        "DPC++ currently does not support associating USM with a specific queue.")
+ENTRY(cuStreamAttachMemAsync,          "DPC++ currently does not support associating USM with a specific queue.")
 ENTRY(cudaStreamQuery,                 "DPC++ currently does not support query operations on queues.")
 ENTRY(cudaStreamBeginCapture,          "DPC++ currently does not support capture operations on queues.")
 ENTRY(cudaStreamEndCapture,            "DPC++ currently does not support capture operations on queues.")

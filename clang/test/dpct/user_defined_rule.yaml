@@ -49,7 +49,8 @@
   Includes: []
   Fields:
     - In: fieldA
-      Out: fieldB
+      OutGetter: get_a
+      OutSetter: set_a
     - In: fieldC
       Out: fieldD
   Methods:
@@ -57,3 +58,10 @@
       Out: a.methodB($2)
     - In: methodC
       Out: methodD
+- Rule: rule_Fruit
+  Kind: Enum
+  Priority: Takeover
+  EnumName: Fruit
+  In: apple
+  Out: pineapple
+  Includes: ["fruit.h"]

@@ -74,8 +74,8 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_reorder,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnTransformTensor", ARG_WC(0), false, "reorder",
-                            ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4),
-                            ARG_WC(4), ARG_WC(5), ARG_WC(6))))
+                            DEREF(ARG_WC(1)), ARG_WC(2), ARG_WC(3),
+                            DEREF(ARG_WC(4)), ARG_WC(5), ARG_WC(6))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_fill,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
@@ -85,13 +85,13 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_fill,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_scale,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnScaleTensor", ARG_WC(0), false, "scale",
-                            ARG_WC(1), ARG_WC(2), ARG_WC(3))))
+                            DEREF(ARG_WC(3)), ARG_WC(1), ARG_WC(2))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_sum,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnAddTensor", ARG_WC(0), false, "sum",
-                            ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4),
-                            ARG_WC(5), ARG_WC(6))))
+                            DEREF(ARG_WC(1)), ARG_WC(2), ARG_WC(3),
+                            DEREF(ARG_WC(4)), ARG_WC(5), ARG_WC(6))))
 
 // Activation Layer
 REMOVE_API_FACTORY_ENTRY("cudnnCreateActivationDescriptor")
@@ -130,16 +130,16 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_activation_desc,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_activation_forward,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnActivationForward", ARG_WC(0), false,
-                            "activation_forward", ARG_WC(1), ARG_WC(2),
-                            ARG_WC(3), ARG_WC(4), ARG_WC(5), ARG_WC(6),
+                            "activation_forward", ARG_WC(1), DEREF(ARG_WC(2)),
+                            ARG_WC(3), ARG_WC(4), DEREF(ARG_WC(5)), ARG_WC(6),
                             ARG_WC(7))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_activation_backward,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnActivationBackward", ARG_WC(0), false, "activation_backward",
-        ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4), ARG_WC(5), ARG_WC(6),
-        ARG_WC(7), ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(11))))
+        ARG_WC(1), DEREF(ARG_WC(2)), ARG_WC(3), ARG_WC(4), ARG_WC(5), ARG_WC(6),
+        ARG_WC(7), ARG_WC(8), DEREF(ARG_WC(9)), ARG_WC(10), ARG_WC(11))))
 
 // LRN Layer
 REMOVE_API_FACTORY_ENTRY("cudnnCreateLRNDescriptor")
@@ -159,17 +159,17 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_lrn_desc,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_lrn_forward,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnLRNCrossChannelForward", ARG_WC(0), false,
-                            "lrn_forward", ARG_WC(1), ARG_WC(3), ARG_WC(4),
-                            ARG_WC(5), ARG_WC(6), ARG_WC(7), ARG_WC(8))))
+                            "lrn_forward", ARG_WC(1), DEREF(ARG_WC(3)), ARG_WC(4),
+                            ARG_WC(5), DEREF(ARG_WC(6)), ARG_WC(7), ARG_WC(8))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_lrn_backward,
     WARNING_FACTORY_ENTRY("cudnnLRNCrossChannelBackward",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnLRNCrossChannelBackward", ARG_WC(0), false,
-                              "lrn_backward", ARG_WC(1), ARG_WC(3), ARG_WC(4),
+                              "lrn_backward", ARG_WC(1), DEREF(ARG_WC(3)), ARG_WC(4),
                               ARG_WC(5), ARG_WC(6), ARG_WC(7), ARG_WC(8),
-                              ARG_WC(9), ARG_WC(10), ARG_WC(11), ARG_WC(12))),
+                              ARG_WC(9), DEREF(ARG_WC(10)), ARG_WC(11), ARG_WC(12))),
                           Diagnostics::PRIMITIVE_WORKSPACE, ARG("lrn_backward"),
                           ARG("lrn_forward")))
 
@@ -233,8 +233,8 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_pooling_desc,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_pooling_forward,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnPoolingForward", ARG_WC(0), false,
-                            "pooling_forward", ARG_WC(1), ARG_WC(2), ARG_WC(3),
-                            ARG_WC(4), ARG_WC(5), ARG_WC(6), ARG_WC(7))))
+                            "pooling_forward", ARG_WC(1), DEREF(ARG_WC(2)), ARG_WC(3),
+                            ARG_WC(4), DEREF(ARG_WC(5)), ARG_WC(6), ARG_WC(7))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_pooling_backward,
@@ -242,8 +242,8 @@ FEATURE_REQUEST_FACTORY(
         "cudnnPoolingBackward",
         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
             "cudnnPoolingBackward", ARG_WC(0), false, "pooling_backward",
-            ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4), ARG_WC(5), ARG_WC(6),
-            ARG_WC(7), ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(11))),
+            ARG_WC(1), DEREF(ARG_WC(2)), ARG_WC(3), ARG_WC(4), ARG_WC(5), ARG_WC(6),
+            ARG_WC(7), ARG_WC(8), DEREF(ARG_WC(9)), ARG_WC(10), ARG_WC(11))),
         Diagnostics::PRIMITIVE_WORKSPACE, ARG("pooling_backward"),
         ARG("pooling_forward")))
 
@@ -251,13 +251,13 @@ FEATURE_REQUEST_FACTORY(
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_softmax_forward,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSoftmaxForward", ARG_WC(0), false,
-                            "softmax_forward", ARG_WC(1), ARG_WC(2), ARG_WC(3),
-                            ARG_WC(4), ARG_WC(5), ARG_WC(6), ARG_WC(7),
+                            "softmax_forward", ARG_WC(1), ARG_WC(2), DEREF(ARG_WC(3)),
+                            ARG_WC(4), ARG_WC(5), DEREF(ARG_WC(6)), ARG_WC(7),
                             ARG_WC(8))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_softmax_backward,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSoftmaxBackward", ARG_WC(0), false,
-                            "softmax_backward", ARG_WC(1), ARG_WC(2), ARG_WC(3),
+                            "softmax_backward", ARG_WC(1), ARG_WC(2), DEREF(ARG_WC(3)),
                             ARG_WC(4), ARG_WC(5), ARG_WC(6), ARG_WC(7),
-                            ARG_WC(8), ARG_WC(9), ARG_WC(10))))
+                            DEREF(ARG_WC(8)), ARG_WC(9), ARG_WC(10))))

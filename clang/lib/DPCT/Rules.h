@@ -13,7 +13,8 @@
 #include "llvm/Support/YAMLTraits.h"
 #include <string>
 #include <vector>
-enum RuleKind { API, DataType, Macro, Header, TypeRule, Class };
+
+enum RuleKind { API, DataType, Macro, Header, TypeRule, Class, Enum };
 
 enum RulePriority { Takeover, Default, Fallback };
 
@@ -32,8 +33,22 @@ struct TypeNameRule {
 };
 
 struct ClassFieldRule : public TypeNameRule {
+  std::string SetterName;
+  std::string GetterName;
   ClassFieldRule(std::string Name) : TypeNameRule(Name) {}
   ClassFieldRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
+                 RulePriority Priority = RulePriority::Fallback)
+      : TypeNameRule(Name, Feature) {}
+  ClassFieldRule(std::string SetterName, std::string GetterName,
+                 clang::dpct::HelperFeatureEnum Feature,
+                 RulePriority Priority = RulePriority::Fallback)
+      : TypeNameRule(SetterName, Feature), SetterName(SetterName),
+        GetterName(GetterName) {}
+};
+
+struct EnumNameRule : public TypeNameRule {
+  EnumNameRule(std::string Name) : TypeNameRule(Name) {}
+  EnumNameRule(std::string Name, clang::dpct::HelperFeatureEnum Feature,
                  RulePriority Priority = RulePriority::Fallback)
       : TypeNameRule(Name, Feature) {}
 };
@@ -61,6 +76,7 @@ public:
   RuleKind Kind;
   std::string In;
   std::string Out;
+  std::string EnumName;
   std::vector<std::string> Includes;
   std::vector<std::shared_ptr<ClassField>> Fields;
   std::vector<std::shared_ptr<ClassMethod>> Methods;
@@ -100,6 +116,7 @@ template <> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
     Io.enumCase(Value, "Header", RuleKind::Header);
     Io.enumCase(Value, "Type", RuleKind::TypeRule);
     Io.enumCase(Value, "Class", RuleKind::Class);
+    Io.enumCase(Value, "Enum", RuleKind::Enum);
   }
 };
 
@@ -115,6 +132,7 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapRequired("Includes", Doc->Includes);
     Io.mapOptional("Fields", Doc->Fields);
     Io.mapOptional("Methods", Doc->Methods);
+    Io.mapOptional("EnumName", Doc->EnumName);
   }
 };
 

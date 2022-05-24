@@ -13,8 +13,6 @@
 //CHECK:#include <CL/sycl.hpp>
 //CHECK-NEXT:#include <dpct/dpct.hpp>
 //CHECK-NEXT:#include <cstdio>
-//CHECK-NEXT:#include <dpct/dnnl_utils.hpp>
-//CHECK-EMPTY:
 //CHECK-NEXT:#include <cudnn_test.h>
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1037:{{[0-9]+}}: Rewrite this code using Intel(R) oneAPI Collective Communications Library with DPC++.

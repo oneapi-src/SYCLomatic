@@ -1,6 +1,15 @@
 // RUN: dpct -out-root %T/driver-stream-and-event %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --match-full-lines --input-file %T/driver-stream-and-event/driver-stream-and-event.dp.cpp %s
 
+#include<vector>
+// CHECK: #include <future>
+template <typename T>
+// CHECK: void my_error_checker(T ReturnValue, char const *const FuncName) {
+void my_error_checker(T ReturnValue, char const *const FuncName) {
+}
+
+#define MY_ERROR_CHECKER(CALL) my_error_checker((CALL), #CALL)
+
 void foo(){
   CUfunction f;
   CUstream s;
@@ -61,4 +70,54 @@ void foo(){
   int rr;
   //CHECK: rr = dpct::get_kernel_function_info((const void *)f).max_work_group_size;
   cuFuncGetAttribute(&rr, CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, f);
+
+}
+
+
+// CHECK: void process(sycl::queue *st, char *data, int status) {}
+void process(CUstream st, char *data, CUresult status) {}
+
+template<typename T>
+// CHECK: void callback(sycl::queue *hStream, int status, void *userData) {
+void callback(CUstream hStream, CUresult status, void* userData) {
+  T *data = static_cast<T *>(userData);
+  process(hStream, data, status);
+}
+
+void test_stream() {
+  CUstream hStream;
+  void* data;
+  unsigned int flag;
+  size_t length;
+  CUdeviceptr  cuPtr;
+  // CHECK: std::async([&]() {hStream->wait(); callback<char>(hStream, 0, data); });
+  cuStreamAddCallback(hStream, callback<char>, data, flag);
+
+  // CHECK: int result = (std::async([&]() {hStream->wait(); callback<char>(hStream, 0, data); }), 0);
+  CUresult result = cuStreamAddCallback(hStream, callback<char>, data, flag);
+
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuStreamAttachMemAsync was removed because DPC++ currently does not support associating USM with a specific queue.
+  //CHECK-NEXT: */
+  cuStreamAttachMemAsync(hStream, cuPtr, length, flag);
+
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuStreamAttachMemAsync was replaced with 0 because DPC++ currently does not support associating USM with a specific queue.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: result = 0;
+  result = cuStreamAttachMemAsync(hStream, cuPtr, length, flag);
+
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuStreamAttachMemAsync was replaced with 0 because DPC++ currently does not support associating USM with a specific queue.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: MY_ERROR_CHECKER(0);
+  MY_ERROR_CHECKER(cuStreamAttachMemAsync(hStream, cuPtr, length, flag));
+
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuStreamAttachMemAsync was removed because DPC++ currently does not support associating USM with a specific queue.
+  //CHECK-NEXT: */
+  cuStreamAttachMemAsync(hStream, cuPtr, std::vector<int>(1,1).front(), flag);
+
+  // CHECK: dpct::get_current_device().destroy_queue(hStream);
+  cuStreamDestroy(hStream);
 }

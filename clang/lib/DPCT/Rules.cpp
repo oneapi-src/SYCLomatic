@@ -104,7 +104,15 @@ void registerClassRule(MetaRuleObject &R) {
     auto ItFieldRule = MapNames::ClassFieldMap.find(BaseAndFieldName);
     if (ItFieldRule != MapNames::ClassFieldMap.end()) {
       if (ItFieldRule->second->Priority > R.Priority) {
-        ItFieldRule->second->NewName = (*ItField)->Out;
+        if((*ItField)->OutGetter != ""){
+          ItFieldRule->second->SetterName = (*ItField)->OutSetter;
+          ItFieldRule->second->GetterName = (*ItField)->OutGetter;
+          ItFieldRule->second->NewName = "";
+        } else {
+          ItFieldRule->second->SetterName = "";
+          ItFieldRule->second->GetterName = "";
+          ItFieldRule->second->NewName = (*ItField)->Out;
+        }
         ItFieldRule->second->Priority = R.Priority;
         ItFieldRule->second->RequestFeature =
             clang::dpct::HelperFeatureEnum::no_feature_helper;
@@ -119,9 +127,16 @@ void registerClassRule(MetaRuleObject &R) {
             return new clang::dpct::UserDefinedClassFieldRule(R.In,
                                                               (*ItField)->In);
           });
-      auto RulePtr = std::make_shared<ClassFieldRule>(
-          (*ItField)->Out, clang::dpct::HelperFeatureEnum::no_feature_helper,
-          R.Priority);
+      std::shared_ptr<ClassFieldRule> RulePtr;
+      if ((*ItField)->OutGetter != "") {
+        RulePtr = std::make_shared<ClassFieldRule>(
+            (*ItField)->OutSetter, (*ItField)->OutGetter,
+            clang::dpct::HelperFeatureEnum::no_feature_helper, R.Priority);
+      } else {
+        RulePtr = std::make_shared<ClassFieldRule>(
+            (*ItField)->Out, clang::dpct::HelperFeatureEnum::no_feature_helper,
+            R.Priority);
+      }
       RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
                                R.Includes.end());
       MapNames::ClassFieldMap.emplace(BaseAndFieldName, RulePtr);
@@ -152,6 +167,32 @@ void registerClassRule(MetaRuleObject &R) {
               clang::dpct::createUserDefinedMethodRewriterFactory(R.In, R,
                                                                   *ItMethod);
     }
+  }
+}
+
+void registerEnumRule(MetaRuleObject &R) {
+  auto It = clang::dpct::EnumConstantRule::EnumNamesMap.find(R.In);
+  if (It != clang::dpct::EnumConstantRule::EnumNamesMap.end()) {
+    if (It->second->Priority > R.Priority) {
+      It->second->Priority = R.Priority;
+      It->second->NewName = R.Out;
+      It->second->RequestFeature =
+          clang::dpct::HelperFeatureEnum::no_feature_helper;
+      It->second->Includes.insert(It->second->Includes.end(),
+                                 R.Includes.begin(), R.Includes.end());
+    }
+  } else {
+    if(R.EnumName == ""){
+      return;
+    }
+    clang::dpct::ASTTraversalMetaInfo::registerRule((char *)&R, R.RuleId, [=] {
+      return new clang::dpct::UserDefinedEnumRule(R.EnumName);
+    });
+    auto RulePtr = std::make_shared<EnumNameRule>(
+        R.Out, clang::dpct::HelperFeatureEnum::no_feature_helper, R.Priority);
+    RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
+                             R.Includes.end());
+    clang::dpct::EnumConstantRule::EnumNamesMap.emplace(R.In, RulePtr);
   }
 }
 
@@ -200,6 +241,9 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
         break;
       case (RuleKind::Class):
         registerClassRule(*r);
+        break;
+      case (RuleKind::Enum):
+        registerEnumRule(*r);
         break;
       default:
         break;
@@ -498,6 +542,25 @@ void clang::dpct::UserDefinedClassMethodRule::runRule(
   if (auto CMCE = getNodeAsType<CXXMemberCallExpr>(Result, "memberCallExpr")) {
     dpct::ExprAnalysis EA;
     EA.analyze(CMCE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+  }
+}
+
+void clang::dpct::UserDefinedEnumRule::registerMatcher(
+    clang::ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(
+      declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasName(EnumName))))))
+          .bind("EnumConstant"),
+      this);
+}
+
+void clang::dpct::UserDefinedEnumRule::runRule(
+    const clang::ast_matchers::MatchFinder::MatchResult &Result) {
+  if (const DeclRefExpr *E =
+          getNodeAsType<DeclRefExpr>(Result, "EnumConstant")) {
+    dpct::ExprAnalysis EA;
+    EA.analyze(E);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   }

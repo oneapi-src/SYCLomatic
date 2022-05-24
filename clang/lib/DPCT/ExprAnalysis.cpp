@@ -421,6 +421,14 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     auto &ReplEnum = MapNames::findReplacedName(EnumConstantRule::EnumNamesMap,
                                                 ECD->getName().str());
     requestHelperFeatureForEnumNames(ECD->getName().str(), DRE);
+    auto ItEnum = EnumConstantRule::EnumNamesMap.find(ECD->getName().str());
+    if (ItEnum != EnumConstantRule::EnumNamesMap.end()) {
+      for (auto ItHeader = ItEnum->second->Includes.begin();
+           ItHeader != ItEnum->second->Includes.end(); ItHeader++) {
+        DpctGlobalInfo::getInstance().insertHeader(DRE->getBeginLoc(),
+                                                   *ItHeader);
+      }
+    }
     if (!ReplEnum.empty())
       addReplacement(DRE, ReplEnum);
     else {
@@ -505,16 +513,43 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
   PP.PrintCanonicalTypes = true;
-  auto BaseType = ME->getBase()->getType().getUnqualifiedType().getAsString(PP);
+  auto QT = ME->getBase()->getType();
+  auto BaseType = (QT->isPointerType() ? QT->getPointeeType() : QT)
+                      .getUnqualifiedType()
+                      .getAsString(PP);
   if (!ME->getMemberDecl()->getIdentifier())
     return;
   std::string FieldName = ME->getMemberDecl()->getName().str();
 
   auto ItFieldRule = MapNames::ClassFieldMap.find(BaseType + "." + FieldName);
   if (ItFieldRule != MapNames::ClassFieldMap.end()) {
-    addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
-                   ItFieldRule->second->NewName);
-    return;
+    if (ItFieldRule->second->GetterName == "") {
+      addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
+                     ItFieldRule->second->NewName);
+      return;
+    } else {
+      if (auto BO = DpctGlobalInfo::findAncestor<BinaryOperator>(ME)) {
+        if (BO->getOpcode() == BinaryOperatorKind::BO_Assign &&
+            ME == BO->getLHS()) {
+          ExprAnalysis EA;
+          EA.analyze(BO->getRHS());
+          std::string RHSStr = EA.getReplacedString();
+          addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
+                         ItFieldRule->second->SetterName + "(" + RHSStr + ")");
+          auto SpellingLocInfo = getSpellingOffsetAndLength(
+              BO->getOperatorLoc(), BO->getOperatorLoc());
+          addExtReplacement(std::make_shared<ExtReplacement>(
+              SM, SpellingLocInfo.first, SpellingLocInfo.second, "", nullptr));
+          SpellingLocInfo = getSpellingOffsetAndLength(
+              BO->getRHS()->getBeginLoc(), BO->getRHS()->getEndLoc());
+          addExtReplacement(std::make_shared<ExtReplacement>(
+              SM, SpellingLocInfo.first, SpellingLocInfo.second, "", nullptr));
+        }
+      } else {
+        addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
+                       ItFieldRule->second->GetterName + "()");
+      }
+    }
   }
 
   static MapNames::MapTy NdItemMemberMap{{"__fetch_builtin_x", "2"},

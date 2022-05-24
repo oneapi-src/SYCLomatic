@@ -12,13 +12,24 @@ function(install_symlink name target outdir)
 
   message(STATUS "Creating ${name}")
 
-  execute_process(
-    COMMAND "${CMAKE_COMMAND}" -E create_symlink "${target}" "${name}"
-    WORKING_DIRECTORY "${bindir}" ERROR_VARIABLE has_err)
-  if(CMAKE_HOST_WIN32 AND has_err)
-    execute_process(
-      COMMAND "${CMAKE_COMMAND}" -E copy "${target}" "${name}"
-      WORKING_DIRECTORY "${bindir}")
+# SYCLomatic_CUSTOMIZATION begin
+  if(CMAKE_HOST_UNIX)
+    set(LLVM_LINK_OR_COPY create_symlink)
+  else()
+    set(LLVM_LINK_OR_COPY copy)
   endif()
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E ${LLVM_LINK_OR_COPY} "${target}" "${name}"
+    WORKING_DIRECTORY "${bindir}" ERROR_VARIABLE has_err)
+# SYCLomatic_CUSTOMIZATION else
+  #execute_process(
+  #  COMMAND "${CMAKE_COMMAND}" -E create_symlink "${target}" "${name}"
+  #  WORKING_DIRECTORY "${bindir}" ERROR_VARIABLE has_err)
+  #if(CMAKE_HOST_WIN32 AND has_err)
+  #  execute_process(
+  #    COMMAND "${CMAKE_COMMAND}" -E copy "${target}" "${name}"
+  #    WORKING_DIRECTORY "${bindir}")
+  #endif()
+# SYCLomatic_CUSTOMIZATION end
 
 endfunction()

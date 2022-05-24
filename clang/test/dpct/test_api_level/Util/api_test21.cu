@@ -3,13 +3,13 @@
 // RUN: FileCheck --input-file %T/Util/api_test21_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Util/api_test21_out
 
-// CHECK: 1
+// CHECK: 2
 // TEST_FEATURE: Util_conj
 
 #include <cuComplex.h>
 
 __device__ void foo1() {
-    float2 a;
+    double2 a;
 
     auto c = cuConj(a);
 
