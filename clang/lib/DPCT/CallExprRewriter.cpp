@@ -1341,6 +1341,16 @@ makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                                                        Member, Args...);
 }
 
+template <class... StmtT>
+std::function<
+    LambdaPrinter<StmtT...>(const CallExpr *)>
+makeLambdaCreator(bool IsCaptureRef,
+                      std::function<StmtT(const CallExpr *)>... Stmts) {
+  return PrinterCreator<LambdaPrinter<StmtT...>, bool,
+                        std::function<StmtT(const CallExpr *)>...>(
+                        IsCaptureRef, Stmts...);
+}
+
 std::function<TemplatedCallee(const CallExpr *)>
 makeTemplatedCalleeCreator(std::string CalleeName,
                            std::vector<size_t> Indexes) {
@@ -1670,6 +1680,16 @@ std::function<bool(const CallExpr *C)> checkArgSpelling(size_t index,
   };
 }
 
+std::function<bool(const CallExpr *C)> checkIsCallExprOnly() {
+  return [=](const CallExpr *C) -> bool {
+    auto parentStmt = getParentStmt(C);
+    if (parentStmt != nullptr && (dyn_cast<CompoundStmt>(parentStmt) ||
+                          dyn_cast<ExprWithCleanups>(parentStmt)))
+      return true;
+    return false;
+    };
+}
+
 std::function<bool(const CallExpr *C)> checkIsArgIntegerLiteral(size_t index) {
   return [=](const CallExpr *C) -> bool {
     auto Arg2Expr = C->getArg(index);
@@ -1918,6 +1938,31 @@ createFeatureRequestFactory(
         &&Input,
     T) {
   return createFeatureRequestFactory(Feature, std::move(Input));
+}
+
+
+/// Create RewriterFactoryWithHeaderFile key-value pair with inner
+/// key-value. Will call insertHeader when used to create CallExprRewriter.
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createInsertHeaderFactory(
+    HeaderType Header,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input) {
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      std::move(Input.first),
+      std::make_shared<RewriterFactoryWithHeaderFile>(Header,
+                                                          Input.second));
+}
+/// Create RewriterFactoryWithHeaderFile key-value pair with inner
+/// key-value. Will call insertHeader when used to create CallExprRewriter.
+template <class T>
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createInsertHeaderFactory(
+    HeaderType Header,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input,
+    T) {
+  return createInsertHeaderFactory(Header, std::move(Input));
 }
 
 /// Create ConditonalRewriterFactory key-value pair with two key-value
@@ -2315,6 +2360,8 @@ public:
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
 #define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
   createFeatureRequestFactory(FEATURE, x 0),
+#define HEADER_INSERT_FACTORY(HEADER, x)                                       \
+  createInsertHeaderFactory(HEADER, x 0),
 #define SUBGROUPSIZE_FACTORY(IDX, NEWFUNCNAME, x)                              \
   createFactoryWithSubGroupSizeRequest<IDX>(NEWFUNCNAME, x 0),
 #define STREAM(x) makeDerefStreamExprCreator(x)
@@ -2328,6 +2375,7 @@ public:
 #define QUEUESTR makeQueueStr()
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
+#define LAMBDA(...) makeLambdaCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define CAST(T, S) makeCastExprCreator(T, S)
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
@@ -2476,6 +2524,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesComplex.inc"
 #include "APINamesDriver.inc"
 #include "APINamesMemory.inc"
+#include "APINamesStream.inc"
 #include "APINamesTexture.inc"
 #include "APINamesThrust.inc"
 #include "APINamesWarp.inc"

@@ -312,6 +312,21 @@ public:
   }
 };
 
+class RewriterFactoryWithHeaderFile: public CallExprRewriterFactoryBase {
+  std::shared_ptr<CallExprRewriterFactoryBase> Inner;
+  HeaderType Header;
+
+public:
+  RewriterFactoryWithHeaderFile(
+      HeaderType Header,
+      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
+      : Inner(InnerFactory), Header(Header) {}
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(), Header);
+    return Inner->create(C);
+  }
+};
+
 class RewriterFactoryWithSubGroupSize : public CallExprRewriterFactoryBase {
   std::shared_ptr<CallExprRewriterFactoryBase> Inner;
   std::function<size_t(const CallExpr *, std::string &)> F;
@@ -567,6 +582,14 @@ template <class StreamT> void printMemberOp(StreamT &Stream, bool IsArrow) {
     Stream << "->";
   else
     Stream << ".";
+}
+
+template <class StreamT>
+void printCapture(StreamT &Stream, bool IsCaptureRef) {
+  if (IsCaptureRef)
+    Stream << "[&]";
+  else
+    Stream << "[=]";
 }
 
 class DerefExpr {
@@ -862,6 +885,10 @@ public:
   MultiStmtsPrinter(SourceLocation BeginLoc, SourceManager &SM,
                     FirstPrinter &&First, RestPrinter &&...Rest)
       : Base(BeginLoc, SM, std::move(Rest)...), First(std::move(First)) {}
+
+  MultiStmtsPrinter(FirstPrinter &&First, RestPrinter &&...Rest)
+      : Base(std::move(Rest)...), First(std::move(First)) {}
+
   template <class StreamT> void print(StreamT &Stream) const {
     Base::printStmt(Stream, First);
     Base::print(Stream);
@@ -885,8 +912,31 @@ public:
                     LastPrinter &&Last)
       : Last(std::move(Last)), Indent(getIndent(BeginLoc, SM)),
         NL(getNL(BeginLoc, SM)) {}
+
+  MultiStmtsPrinter(LastPrinter &&Last)
+      : Last(std::move(Last)), Indent(" "), NL("") {}
+
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Last);
+  }
+};
+
+
+template <class... StmtPrinter>
+class LambdaPrinter {
+  bool IsCaptureRef;
+  MultiStmtsPrinter<StmtPrinter...> MultiStmts;
+
+public:
+  LambdaPrinter(bool IsCaptureRef, StmtPrinter &&...Printer)
+      : IsCaptureRef(IsCaptureRef), MultiStmts(std::move(Printer)...) {}
+
+  template <class StreamT> void print(StreamT &Stream) const {
+    printCapture(Stream, IsCaptureRef);
+    Stream << "()";
+    CurlyBracketsPrinter<StreamT> CurlyBracket(Stream);
+    MultiStmts.print(Stream);
+    Stream << ";";
   }
 };
 
