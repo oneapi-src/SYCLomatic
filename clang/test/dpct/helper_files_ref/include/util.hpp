@@ -507,10 +507,9 @@ public:
     }
     uint32_t last_item_group_id =
         _g.get_local_linear_range() / _logical_group_size;
-    if (_item.get_local_linear_id() >=
-        last_item_group_id * _logical_group_size) {
-      return _g.get_local_linear_range() -
-             last_item_group_id * _logical_group_size;
+    uint32_t first_of_last_group = last_item_group_id * _logical_group_size;
+    if (_item.get_local_linear_id() >= first_of_last_group) {
+      return _g.get_local_linear_range() - first_of_last_group;
     } else {
       return _logical_group_size;
     }
