@@ -960,11 +960,15 @@ void IncludesCallbacks::InclusionDirective(
         "Intel(R) oneAPI Collective Communications Library");
     Updater.update(false);
   }
-  if (FileName.startswith(StringRef("cudnn"))) {
+  if (FileName.startswith(StringRef("cudnn.h"))) {
     if (isChildOrSamePath(InRoot, DirPath)) {
       return;
     }
     DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Dnnl);
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
     Updater.update(false);
   }
 

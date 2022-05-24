@@ -821,7 +821,7 @@ void memory_desc_ext::get(dpct::library_data_t *dt, int *n, int *c, int *h, int 
     block_size = _desc.data.format_desc.blocking.inner_blks[0];
   }
 
-  *dt = from_dnn(_desc.data_type(), block_size);
+  *dt = to_dpct_library_data_t(_desc.data_type(), block_size);
   *n = _desc.data.dims[0];
   *c = _desc.data.dims[1];
   *h = _desc.data.dims[2];
@@ -838,7 +838,7 @@ void memory_desc_ext::get(int requested_ndims, dpct::library_data_t *dt, int *nd
   if (_desc.data.format_desc.blocking.inner_blks[0]) {
     block_size = _desc.data.format_desc.blocking.inner_blks[0];
   }
-  *dt = from_dnn(_desc.data_type(), block_size);
+  *dt = to_dpct_library_data_t(_desc.data_type(), block_size);
   *ndims = _desc.data.ndims;
   for (int index = 0; index < requested_ndims; index++) {
     dims[index] = _desc.data.dims[index];

@@ -120,7 +120,7 @@ void test1() {
     // CHECK: desc.set(local_size, lrn_alpha, lrn_beta, lrn_k);
 
     // CHECK: float alpha = 1.5f, beta = 0.f;
-    // CHECK: handle.lrn_forward(desc, &alpha, dataTensor, data, &beta, outTensor, out);
+    // CHECK: handle.lrn_forward(desc, alpha, dataTensor, data, beta, outTensor, out);
 
     // CHECK: alpha = 2.f, beta = 0.f;
     // CHECK: dpct::get_current_device().queues_wait_and_throw();
@@ -130,7 +130,7 @@ void test1() {
     // CHECK: /*
     // CHECK: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK: */
-    // CHECK: auto s = (handle.lrn_backward(desc, &alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, &beta, diffdataTensor, diffdata), 0);
+    // CHECK: auto s = (handle.lrn_backward(desc, alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, beta, diffdataTensor, diffdata), 0);
     cudnnLRNDescriptor_t desc;
     cudnnCreateLRNDescriptor(&desc);
     cudnnSetLRNDescriptor(desc, local_size, lrn_alpha, lrn_beta, lrn_k);

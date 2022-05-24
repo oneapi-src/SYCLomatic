@@ -510,7 +510,7 @@ public:
     case HT_Time:
       return insertHeader(HeaderType::HT_Time, LastIncludeOffset, "<time.h>");
     case HT_Dnnl:
-      return insertHeader(HeaderType::HT_Time, LastIncludeOffset,
+      return insertHeader(HeaderType::HT_Dnnl, LastIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
                               "/dnnl_utils.hpp>");
     case HT_MKL_BLAS_Solver:
