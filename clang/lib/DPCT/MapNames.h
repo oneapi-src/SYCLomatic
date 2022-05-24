@@ -324,6 +324,8 @@ public:
       TypeNamesMap;
   static std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
       ClassFieldMap;
+  static std::unordered_map<std::string, std::shared_ptr<TypeNameRule>> 
+      CuDNNTypeNamesMap;
   static const MapTy Dim3MemberNamesMap;
   static const MapTy MacrosMap;
   static std::unordered_map<std::string, MacroMigrationRule> MacroRuleMap;
@@ -371,9 +373,9 @@ public:
       FFTPlanAPINeedParenIdxMap;
 
   static MapTy BLASComputingAPIWithRewriter;
-
+  template<class T>
   inline static const std::string &findReplacedName(
-      const std::unordered_map<std::string, std::shared_ptr<TypeNameRule>> &Map,
+      const std::unordered_map<std::string, std::shared_ptr<T>> &Map,
       const std::string &Name) {
     static const std::string EmptyString;
 
@@ -391,8 +393,9 @@ public:
       return EmptyString;
     return Itr->second;
   }
+  template<class T>
   static bool replaceName(
-      const std::unordered_map<std::string, std::shared_ptr<TypeNameRule>> &Map,
+      const std::unordered_map<std::string, std::shared_ptr<T>> &Map,
       std::string &Name) {
     auto &Result = findReplacedName(Map, Name);
     if (Result.empty())

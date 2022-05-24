@@ -102,6 +102,14 @@ public:
   ~ParensPrinter() { OS << ")"; }
 };
 
+template <class StreamT> class CurlyBracketsPrinter {
+  StreamT &OS;
+
+public:
+  CurlyBracketsPrinter(StreamT &OS) : OS(OS) { OS << "{"; }
+  ~CurlyBracketsPrinter() { OS << "}"; }
+};
+
 bool makeCanonical(llvm::SmallVectorImpl<char> &Path);
 bool makeCanonical(std::string &Path);
 bool isCanonical(llvm::StringRef Path);
@@ -546,4 +554,5 @@ bool isExprUsed(const clang::Expr *E, bool &Result);
 const std::string &getItemName();
 bool isUserDefinedFunction(const clang::ValueDecl *VD);
 void insertHeaderForTypeRule(std::string, clang::SourceLocation);
+std::string getRemovedAPIWarningMessage(std::string FuncName);
 #endif // DPCT_UTILITY_H

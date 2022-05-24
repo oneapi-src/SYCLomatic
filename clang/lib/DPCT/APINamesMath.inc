@@ -25,6 +25,7 @@ ENTRY_RENAMED("hfloor", MapNames::getClNamespace(false, true) + "floor")
 ENTRY_RENAMED("hlog", MapNames::getClNamespace(false, true) + "log")
 ENTRY_RENAMED("hlog10", MapNames::getClNamespace(false, true) + "log10")
 ENTRY_RENAMED("hlog2", MapNames::getClNamespace(false, true) + "log2")
+ENTRY_RENAMED("hrcp", MapNames::getClNamespace(false, true) + "half_precision::recip<float>")
 ENTRY_RENAMED("hrint", MapNames::getClNamespace(false, true) + "rint")
 ENTRY_RENAMED("hrsqrt", MapNames::getClNamespace(false, true) + "rsqrt")
 ENTRY_RENAMED("hsin", MapNames::getClNamespace(false, true) + "sin")
@@ -305,6 +306,11 @@ ENTRY_EMULATED("__drcp_rz", MapNames::getClNamespace(false, true) + "native::rec
 
 
 // Half/Half2 Arithmetic Functions
+ENTRY_RENAMED("__habs", MapNames::getClNamespace(false, true) + "fabs")
+ENTRY_RENAMED("__habs2", MapNames::getClNamespace(false, true) + "fabs")
+
+ENTRY_OPERATOR("__hadd2", BinaryOperatorKind::BO_Add)
+
 ENTRY_OPERATOR("__h2div", BinaryOperatorKind::BO_Div)
 ENTRY_OPERATOR("__hdiv", BinaryOperatorKind::BO_Div)
 
@@ -547,9 +553,6 @@ ENTRY_UNSUPPORTED("__hlt2")
 ENTRY_UNSUPPORTED("__hltu2")
 ENTRY_UNSUPPORTED("__hne2")
 ENTRY_UNSUPPORTED("__hneu2")
-
-// Half Math Functions
-ENTRY_UNSUPPORTED("hrcp")
 
 // Half2 Math Functions
 ENTRY_UNSUPPORTED("h2rcp")

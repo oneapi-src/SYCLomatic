@@ -350,7 +350,8 @@ enum HeaderType {
   HT_STD_Numeric_Limits,
   HT_DPL_Utils,
   HT_BFloat16,
-  HT_Lib_Common_Utils
+  HT_Lib_Common_Utils,
+  HT_Dnnl
 };
 
 enum UsingType {
@@ -508,6 +509,10 @@ public:
       return insertHeader(HeaderType::HT_Future, LastIncludeOffset, "<future>");
     case HT_Time:
       return insertHeader(HeaderType::HT_Time, LastIncludeOffset, "<time.h>");
+    case HT_Dnnl:
+      return insertHeader(HeaderType::HT_Time, LastIncludeOffset,
+                          "<" + getCustomMainHelperFileName() +
+                              "/dnnl_utils.hpp>");
     case HT_MKL_BLAS_Solver:
       return insertHeader(
           HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",

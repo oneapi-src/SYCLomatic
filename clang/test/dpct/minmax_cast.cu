@@ -1,5 +1,5 @@
-// RUN: dpct --format-range=none -out-root %T/min_cast %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/min_cast/min_cast.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none -out-root %T/minmax_cast %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/minmax_cast/minmax_cast.dp.cpp --match-full-lines %s
 
 #include <algorithm>
 #include <cmath>
@@ -35,5 +35,11 @@ __global__ void func() {
   //CHECK: const int zlength1 = sycl::min(CHUNK_SIZE1, (unsigned int)(numz1 - item_ct1.get_group(2) * CHUNK_SIZE1));
   const int zlength1 = min(CHUNK_SIZE1, numz1 - blockIdx.x * CHUNK_SIZE1);
 
+  // case5: compare return type and argument tpye using canonical type to avoid unexpected type-cast
+  using T = float;
+  T x;
+  const T y(1.0f);
+  //CHECK: sycl::min(sycl::max(x + y, y), y);
+  std::min(std::max(x + y, y), y);
 }
 

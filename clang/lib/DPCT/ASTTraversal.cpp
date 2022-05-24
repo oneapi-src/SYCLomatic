@@ -14,6 +14,7 @@
 #include "ExprAnalysis.h"
 #include "Homoglyph.h"
 #include "MisleadingBidirectional.h"
+#include "DNNAPIMigration.h"
 #include "SaveNewFiles.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -963,10 +964,7 @@ void IncludesCallbacks::InclusionDirective(
     if (isChildOrSamePath(InRoot, DirPath)) {
       return;
     }
-    DiagnosticsUtils::report(
-        HashLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY,
-        dpct::DpctGlobalInfo::getCompilerInstance(), &TransformSet, false,
-        "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Dnnl);
     Updater.update(false);
   }
 
@@ -2236,11 +2234,15 @@ void ThrustFunctionRule::thrustFuncMigration(
     NewName = MapNames::getDpctNamespace() + ThrustFuncName;
     requestFeature(HelperFeatureEnum::DplExtrasAlgorithm_copy_if, CE);
 
-    if (ULExpr)
-      emplaceTransformation(new ReplaceToken(
-          ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(NewName)));
-    else
+    if (ULExpr) {
+      auto BeginLoc = ULExpr->getBeginLoc();
+      auto EndLoc = ULExpr->hasExplicitTemplateArgs()
+                   ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                   : ULExpr->getEndLoc();
+      emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(NewName)));
+    } else {
       emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
+    }
   } else if (ThrustFuncName == "make_zip_iterator") {
     // oneapi::dpl::make_zip_iterator expects the component iterators to be
     // passed directly instead of being wrapped in a tuple as
@@ -2312,8 +2314,11 @@ void ThrustFunctionRule::thrustFuncMigration(
     auto IteratorType = IteratorArg->getType().getAsString();
     if (ULExpr) {
       if (PolicyProcessed) {
-        emplaceTransformation(new ReplaceToken(
-            ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(NewName)));
+        auto BeginLoc = ULExpr->getBeginLoc();
+        auto EndLoc = ULExpr->hasExplicitTemplateArgs()
+                     ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                     : ULExpr->getEndLoc();
+        emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(NewName)));
         return;
       } else if (hasExecutionPolicy) {
         emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
@@ -2343,11 +2348,15 @@ void ThrustFunctionRule::thrustFuncMigration(
     emplaceTransformation(new InsertText(CE->getEndLoc(), ", 0"));
   }
 
-  if (ULExpr)
-    emplaceTransformation(new ReplaceToken(
-        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(NewName)));
-  else
+  if (ULExpr) {
+    auto BeginLoc = ULExpr->getBeginLoc();
+    auto EndLoc = ULExpr->hasExplicitTemplateArgs()
+                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                 : ULExpr->getEndLoc();
+    emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(NewName)));
+  } else {
     emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
+  }
   if (CE->getNumArgs() <= 0)
     return;
   auto ExtraParam = ReplInfo->second.ExtraParam;
@@ -2532,7 +2541,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "libraryPropertyType_t", "libraryPropertyType",
                   "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
                   "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise"),
-              matchesName("cudnn.*|nccl.*")))))))
+              matchesName("nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasTypeLoc(typeLoc(loc(templateSpecializationType(
@@ -2723,8 +2732,7 @@ void TypeInDeclRule::reportForNcclAndCudnn(const TypeLoc *TL,
   std::string TypeStrRemovePrefix = TL->getType().getAsString();
 
   auto IsNCCLMatched = TypeStrRemovePrefix.find("nccl") != std::string::npos;
-  auto IsCUDNNMatched = TypeStrRemovePrefix.find("cudnn") != std::string::npos;
-  if (IsNCCLMatched || IsCUDNNMatched) {
+  if (IsNCCLMatched) {
     auto TP = QT.getTypePtr();
     if (TP) {
       SourceLocation SL;
@@ -2735,9 +2743,6 @@ void TypeInDeclRule::reportForNcclAndCudnn(const TypeLoc *TL,
           if (IsNCCLMatched)
             report(BeginLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
                    "Intel(R) oneAPI Collective Communications Library");
-          else if (IsCUDNNMatched)
-            report(BeginLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
-                   "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
         }
       }
     }
@@ -2847,6 +2852,8 @@ bool TypeInDeclRule::replaceDependentNameTypeLoc(SourceManager *SM,
     TSI = VD->getTypeSourceInfo();
   else if (auto FD = dyn_cast<FieldDecl>(D))
     TSI = FD->getTypeSourceInfo();
+  else if (auto TAD = dyn_cast<TypeAliasDecl>(D))
+    TSI = TAD->getTypeSourceInfo();
   else
     return false;
 
@@ -2860,7 +2867,8 @@ bool TypeInDeclRule::replaceDependentNameTypeLoc(SourceManager *SM,
   auto NNTL = NNSL.getTypeLoc();
 
   auto BeginLoc = SR.getBegin();
-  if (NNTL.getTypeLocClass() == clang::TypeLoc::TemplateSpecialization) {
+  if (NNTL.getTypeLocClass() == clang::TypeLoc::TemplateSpecialization &&
+      NNTL.getBeginLoc() == TL->getBeginLoc()) {
     auto TSL = NNTL.getUnqualifiedLoc().getAs<TemplateSpecializationTypeLoc>();
     if (replaceTemplateSpecialization(SM, LOpts, BeginLoc, TSL)) {
       // Check if "::type" needs replacement (only needed for
@@ -4295,13 +4303,16 @@ REGISTER_RULE(DevicePropVarRule)
 
 // Rule for Enums constants.
 void EnumConstantRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(hasAnyName(
-                                "cudaComputeMode", "cudaMemcpyKind",
-                                "cudaMemoryAdvise", "cudaDeviceAttr",
-                                "libraryPropertyType_t", "cudaDataType_t",
-                                "cublasComputeType_t", "CUmem_advise_enum"))))))
-                    .bind("EnumConstant"),
-                this);
+  MF.addMatcher(
+      declRefExpr(
+          to(enumConstantDecl(anyOf(
+              hasType(enumDecl(hasAnyName(
+                  "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
+                  "cudaDeviceAttr", "libraryPropertyType_t", "cudaDataType_t",
+                  "cublasComputeType_t", "CUmem_advise_enum"))),
+              matchesName("CUDNN_.*")))))
+          .bind("EnumConstant"),
+      this);
 }
 
 void EnumConstantRule::handleComputeMode(std::string EnumName,
@@ -4365,6 +4376,10 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
       EnumName == "cudaComputeModeExclusiveProcess") {
     handleComputeMode(EnumName, E);
     return;
+  } else if(EnumName == "CUDNN_DATA_DOUBLE") {
+    report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+               "data type double");
+    return;
   } else if (auto ET = dyn_cast<EnumType>(E->getType())) {
     if (auto ETD = ET->getDecl()) {
       auto EnumTypeName = ETD->getName().str();
@@ -4412,7 +4427,7 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   }
 
-  emplaceTransformation(new ReplaceStmt(E, Search->second));
+  emplaceTransformation(new ReplaceStmt(E, Search->second->NewName));
   requestHelperFeatureForEnumNames(EnumName, E);
 }
 
@@ -4532,9 +4547,6 @@ void ManualMigrateEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("NCCL_.*"))))
                     .bind("NCCLConstants"),
                 this);
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CUDNN_.*"))))
-                    .bind("CUDNNConstants"),
-                this);
 }
 
 void ManualMigrateEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -4551,19 +4563,6 @@ void ManualMigrateEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
                DE->getBeginLoc()),
            Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
            "Intel(R) oneAPI Collective Communications Library");
-  } else if (const DeclRefExpr *DE =
-                 getNodeAsType<DeclRefExpr>(Result, "CUDNNConstants")) {
-    auto *ECD = cast<EnumConstantDecl>(DE->getDecl());
-    std::string FilePath = DpctGlobalInfo::getSourceManager()
-                               .getFilename(ECD->getBeginLoc())
-                               .str();
-    if (DpctGlobalInfo::isInRoot(FilePath)) {
-      return;
-    }
-    report(dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
-               DE->getBeginLoc()),
-           Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
-           "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
   }
 }
 
@@ -8577,7 +8576,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                  "dev_mgr::instance().get_device(";
       ReplStr += StmtStrArg2;
       ReplStr += ").";
-      ReplStr += Search->second;
+      ReplStr += Search->second->NewName;
       ReplStr += "()";
       requestFeature(HelperFeatureEnum::Device_dev_mgr_get_device, CE);
     }
@@ -9964,7 +9963,9 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
                       "cudaStreamEndCapture", "cudaStreamIsCapturing",
                       "cudaStreamQuery", "cudaStreamWaitEvent",
                       "cudaStreamAddCallback", "cuStreamCreate",
-                      "cuStreamSynchronize", "cuStreamWaitEvent");
+                      "cuStreamSynchronize", "cuStreamWaitEvent",
+                      "cuStreamDestroy_v2", "cuStreamAttachMemAsync",
+                      "cuStreamAddCallback");
   };
 
   MF.addMatcher(
@@ -10001,6 +10002,16 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
+
+  if (!CallExprRewriterFactoryBase::RewriterMap)
+    return;
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
 
   if (FuncName == "cudaStreamCreate" || FuncName == "cuStreamCreate" ||
       FuncName == "cudaStreamCreateWithFlags" ||
@@ -11719,11 +11730,15 @@ void MemoryMigrationRule::memcpyMigration(
     }
   }
 
-  if (ULExpr)
-    emplaceTransformation(new ReplaceToken(
-        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(ReplaceStr)));
-  else
+  if (ULExpr) {
+    auto BeginLoc = ULExpr->getBeginLoc();
+    auto EndLoc = ULExpr->hasExplicitTemplateArgs()
+                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                 : ULExpr->getEndLoc();
+    emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(ReplaceStr)));
+  } else {
     emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
+  }
 }
 
 void MemoryMigrationRule::arrayMigration(
@@ -11801,11 +11816,15 @@ void MemoryMigrationRule::arrayMigration(
     aggregate3DVectorClassCtor(C, "range", 4, "1", SM, 1);
   }
 
-  if (ULExpr)
-    emplaceTransformation(new ReplaceToken(
-        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(ReplaceStr)));
-  else
+  if (ULExpr) {
+    auto BeginLoc = ULExpr->getBeginLoc();
+    auto EndLoc = ULExpr->hasExplicitTemplateArgs()
+                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                 : ULExpr->getEndLoc();
+    emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(ReplaceStr)));
+  } else {
     emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
+  }
 }
 
 void MemoryMigrationRule::memcpySymbolMigration(
@@ -11829,7 +11848,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
         return;
       requestHelperFeatureForEnumNames(DirectionName, C);
       Direction = nullptr;
-      DirectionName = Search->second;
+      DirectionName = Search->second->NewName;
     }
   }
 
@@ -11887,8 +11906,11 @@ void MemoryMigrationRule::memcpySymbolMigration(
   }
 
   if (ULExpr) {
-    emplaceTransformation(new ReplaceToken(
-        ULExpr->getBeginLoc(), ULExpr->getEndLoc(), std::move(ReplaceStr)));
+    auto BeginLoc = ULExpr->getBeginLoc();
+    auto EndLoc = ULExpr->hasExplicitTemplateArgs()
+                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                 : ULExpr->getEndLoc();
+    emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(ReplaceStr)));
   } else {
     emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
   }
@@ -13756,7 +13778,7 @@ void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
         this);
     MF.addMatcher(
         callExpr(
-            allOf(callee(functionDecl(matchesName("(nccl.*)|(cudnn.*)"))),
+            allOf(callee(functionDecl(matchesName("nccl.*"))),
                   unless(callee(functionDecl(internal::Matcher<NamedDecl>(
                       new internal::HasNameMatcher(AllAPIComponent[0]))))),
                   unless(hasAncestor(cudaKernelCallExpr())),
@@ -13907,18 +13929,6 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
     }
     report(CE->getBeginLoc(), Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
            "Intel(R) oneAPI Collective Communications Library");
-  } else if (APIName.size() >= 5 && APIName.substr(0, 5) == "cudnn") {
-    auto D = CE->getCalleeDecl();
-    if (D) {
-      auto FilePath = DpctGlobalInfo::getSourceManager()
-                          .getFilename(D->getBeginLoc())
-                          .str();
-      if (DpctGlobalInfo::isInRoot(FilePath)) {
-        return;
-      }
-    }
-    report(CE->getBeginLoc(), Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
-           "Intel(R) oneAPI Deep Neural Network Library (oneDNN)");
   } else if (HaveKeywordInAPIName) {
     // In the AST matcher, it will match function call whose name contains
     // keyword. If the keyword is at name begin, code will go in to previous two
@@ -15008,6 +15018,10 @@ void TextureRule::replaceResourceDataExpr(const MemberExpr *ME,
                    ME);
     emplaceTransformation(new RenameFieldInMemberExpr(
         TopMember, buildString("get_", FieldName, "()")));
+    if(TopMember->getMemberNameInfo().getAsString() == "devPtr"){
+        emplaceTransformation(new InsertBeforeStmt(
+        ME, buildString("(char *)")));
+    }
   }
 }
 
@@ -16116,7 +16130,7 @@ void DriverDeviceAPIRule::runRule(
         return;
       }
       requestHelperFeatureForEnumNames(AttributeName, CE);
-      SYCLCallName = Search->second;
+      SYCLCallName = Search->second->NewName;
     } else {
       report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
              false);
@@ -17659,6 +17673,10 @@ REGISTER_RULE(CubRule)
 REGISTER_RULE(ConfusableIdentifierDetectionRule)
 
 REGISTER_RULE(MisleadingBidirectionalRule)
+
+REGISTER_RULE(CuDNNTypeRule)
+
+REGISTER_RULE(CuDNNAPIRule)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {

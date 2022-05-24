@@ -9,6 +9,7 @@
 #include "CustomHelperFiles.h"
 
 #include "ASTTraversal.h"
+#include "DNNAPIMigration.h"
 #include "AnalysisInfo.h"
 #include "Config.h"
 
@@ -357,6 +358,7 @@ void generateAllHelperFiles() {
   GENERATE_ALL_FILE_CONTENT(Device)
   GENERATE_ALL_FILE_CONTENT(Dpct)
   GENERATE_ALL_FILE_CONTENT(DplUtils)
+  GENERATE_ALL_FILE_CONTENT(DnnlUtils)
   GENERATE_ALL_FILE_CONTENT(Image)
   GENERATE_ALL_FILE_CONTENT(Kernel)
   GENERATE_ALL_FILE_CONTENT(Memory)
@@ -447,6 +449,7 @@ void generateHelperFunctions() {
 
   std::vector<clang::dpct::HelperFunc> AtomicFileContent;
   std::vector<clang::dpct::HelperFunc> BlasUtilsFileContent;
+  std::vector<clang::dpct::HelperFunc> DnnlUtilsFileContent;
   std::vector<clang::dpct::HelperFunc> DeviceFileContent;
   std::vector<clang::dpct::HelperFunc> DpctFileContent;
   std::vector<clang::dpct::HelperFunc> DplUtilsFileContent;
@@ -559,6 +562,7 @@ void generateHelperFunctions() {
     switch (Item.first.first) {
       UPDATE_FILE(Atomic)
       UPDATE_FILE(BlasUtils)
+      UPDATE_FILE(DnnlUtils)
       UPDATE_FILE(Device)
       UPDATE_FILE(Dpct)
       UPDATE_FILE(DplUtils)
@@ -652,6 +656,7 @@ void generateHelperFunctions() {
   }
   ADD_INCLUDE_DIRECTIVE(Atomic)
   ADD_INCLUDE_DIRECTIVE(BlasUtils)
+  ADD_INCLUDE_DIRECTIVE(DnnlUtils)
   ADD_INCLUDE_DIRECTIVE(Device)
   // Do not include dpl_utils in dpct.hpp, since there is a bug in dpl_extras
   // files. All those functions are without the "inline" specifier, so there
@@ -694,6 +699,7 @@ void generateHelperFunctions() {
   }
   GENERATE_FILE(Atomic)
   GENERATE_FILE(BlasUtils)
+  GENERATE_FILE(DnnlUtils)
   GENERATE_FILE(Device)
   GENERATE_FILE(Dpct)
   GENERATE_FILE(DplUtils)
@@ -717,10 +723,17 @@ void generateHelperFunctions() {
 #define ADD_HELPER_FEATURE_FOR_ENUM_NAMES(TYPE)                                \
   void requestHelperFeatureForEnumNames(const std::string Name, TYPE File) {   \
     auto HelperFeatureIter =                                                   \
-        clang::dpct::EnumConstantRule::EnumNamesHelperFeaturesMap.find(Name);  \
+        clang::dpct::EnumConstantRule::EnumNamesMap.find(Name);                \
     if (HelperFeatureIter !=                                                   \
-        clang::dpct::EnumConstantRule::EnumNamesHelperFeaturesMap.end()) {     \
-      requestFeature(HelperFeatureIter->second, File);                         \
+        clang::dpct::EnumConstantRule::EnumNamesMap.end()) {                   \
+      requestFeature(HelperFeatureIter->second->RequestFeature, File);         \
+      return;                                                                  \
+    }                                                                          \
+    auto CuDNNHelperFeatureIter =                                              \
+        clang::dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.find(Name);\
+    if (CuDNNHelperFeatureIter !=                                              \
+        clang::dpct::CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap.end()) {   \
+      requestFeature(CuDNNHelperFeatureIter->second, File);                    \
     }                                                                          \
   }
 #define ADD_HELPER_FEATURE_FOR_TYPE_NAMES(TYPE)                                \
@@ -728,6 +741,11 @@ void generateHelperFunctions() {
     auto HelperFeatureIter = MapNames::TypeNamesMap.find(Name);                \
     if (HelperFeatureIter != MapNames::TypeNamesMap.end()) {                   \
       requestFeature(HelperFeatureIter->second->RequestFeature, File);         \
+      return;                                                                  \
+    }                                                                          \
+    auto CuDNNHelperFeatureIter = MapNames::CuDNNTypeNamesMap.find(Name);      \
+    if (CuDNNHelperFeatureIter != MapNames::CuDNNTypeNamesMap.end()) {         \
+      requestFeature(CuDNNHelperFeatureIter->second->RequestFeature, File);    \
     }                                                                          \
   }
 ADD_HELPER_FEATURE_FOR_ENUM_NAMES(const std::string)
@@ -886,6 +904,7 @@ std::map<HelperFeatureIDTy, clang::dpct::HelperFunc> HelperNameContentMap {
   ,
 #include "clang/DPCT/atomic.inc"
 #include "clang/DPCT/blas_utils.inc"
+#include "clang/DPCT/dnnl_utils.inc"
 #include "clang/DPCT/device.inc"
 #include "clang/DPCT/dpct.inc"
 #include "clang/DPCT/dpl_extras/algorithm.inc"
@@ -911,6 +930,7 @@ std::unordered_map<clang::dpct::HelperFileEnum, std::string> HelperFileNameMap{
     {clang::dpct::HelperFileEnum::Dpct, "dpct.hpp"},
     {clang::dpct::HelperFileEnum::Atomic, "atomic.hpp"},
     {clang::dpct::HelperFileEnum::BlasUtils, "blas_utils.hpp"},
+    {clang::dpct::HelperFileEnum::DnnlUtils, "dnnl_utils.hpp"},
     {clang::dpct::HelperFileEnum::Device, "device.hpp"},
     {clang::dpct::HelperFileEnum::DplUtils, "dpl_utils.hpp"},
     {clang::dpct::HelperFileEnum::Image, "image.hpp"},
@@ -932,6 +952,7 @@ std::unordered_map<std::string, clang::dpct::HelperFileEnum> HelperFileIDMap{
     {"dpct.hpp", clang::dpct::HelperFileEnum::Dpct},
     {"atomic.hpp", clang::dpct::HelperFileEnum::Atomic},
     {"blas_utils.hpp", clang::dpct::HelperFileEnum::BlasUtils},
+    {"dnnl_utils.hpp", clang::dpct::HelperFileEnum::DnnlUtils},
     {"device.hpp", clang::dpct::HelperFileEnum::Device},
     {"dpl_utils.hpp", clang::dpct::HelperFileEnum::DplUtils},
     {"image.hpp", clang::dpct::HelperFileEnum::Image},
@@ -954,6 +975,7 @@ const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
         {clang::dpct::HelperFileEnum::Dpct, "__DPCT_HPP__"},
         {clang::dpct::HelperFileEnum::Atomic, "__DPCT_ATOMIC_HPP__"},
         {clang::dpct::HelperFileEnum::BlasUtils, "__DPCT_BLAS_HPP__"},
+        {clang::dpct::HelperFileEnum::DnnlUtils, "__DPCT_DNNL_HPP__"},
         {clang::dpct::HelperFileEnum::Device, "__DPCT_DEVICE_HPP__"},
         {clang::dpct::HelperFileEnum::DplUtils, "__DPL_UTILS_HPP"},
         {clang::dpct::HelperFileEnum::Image, "__DPCT_IMAGE_HPP__"},
@@ -992,6 +1014,9 @@ const std::string AtomicAllContentStr =
     ;
 const std::string BlasUtilsAllContentStr =
 #include "clang/DPCT/blas_utils.all.inc"
+    ;
+const std::string DnnlUtilsAllContentStr =
+#include "clang/DPCT/dnnl_utils.all.inc"
     ;
 const std::string DeviceAllContentStr =
 #include "clang/DPCT/device.all.inc"

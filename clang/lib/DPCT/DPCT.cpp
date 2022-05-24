@@ -375,11 +375,12 @@ opt<std::string> CustomHelperFileName(
     init("dpct"), value_desc("name"), cat(DPCTCat), llvm::cl::Optional);
 
 bool AsyncHandlerFlag = false;
-static opt<bool, true>
-    AsyncHandler("always-use-async-handler",
-                 llvm::cl::desc("Always create the cl::sycl::queue with an async "
-                                "exception handler. Default: off."),
-                 cat(DPCTCat), llvm::cl::location(AsyncHandlerFlag));
+static opt<bool, true> AsyncHandler(
+    "always-use-async-handler",
+    llvm::cl::desc("Use async exception handler when creating new sycl::queue "
+                   "with dpct::create_queue\nin addition to default "
+                   "dpct::get_default_queue. Default: off."),
+    cat(DPCTCat), llvm::cl::location(AsyncHandlerFlag));
 
 static opt<AssumedNDRangeDimEnum> NDRangeDim(
     "assume-nd-range-dim",

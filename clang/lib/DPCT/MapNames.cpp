@@ -8,6 +8,7 @@
 
 #include "MapNames.h"
 #include "ASTTraversal.h"
+#include "DNNAPIMigration.h"
 #include "CallExprRewriter.h"
 #include "SaveNewFiles.h"
 #include <map>
@@ -31,9 +32,13 @@ std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::TypeNamesMap;
 std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
     MapNames::ClassFieldMap;
-MapNames::MapTy EnumConstantRule::EnumNamesMap;
+std::unordered_map<std::string, std::shared_ptr<TypeNameRule>> 
+    MapNames::CuDNNTypeNamesMap;
+std::unordered_map<std::string, std::shared_ptr<EnumNameRule>>
+    EnumConstantRule::EnumNamesMap;
+MapNames::MapTy CuDNNTypeRule::CuDNNEnumNamesMap;
 std::map<std::string /*Original API*/, HelperFeatureEnum>
-    EnumConstantRule::EnumNamesHelperFeaturesMap;
+    CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap;
 MapNames::ThrustMapTy MapNames::ThrustFuncNamesMap;
 std::map<std::string /*Original API*/, HelperFeatureEnum>
     MapNames::ThrustFuncNamesHelperFeaturesMap;
@@ -342,7 +347,7 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
       {"CUfilter_mode_enum",
        std::make_shared<TypeNameRule>(getClNamespace() + "filtering_mode")},
-      {"CUdeviceptr", std::make_shared<TypeNameRule>("void *")},
+      {"CUdeviceptr", std::make_shared<TypeNameRule>("char *")},
       {"CUresourcetype_enum", std::make_shared<TypeNameRule>(
                                   getDpctNamespace() + "image_data_type",
                                   HelperFeatureEnum::Image_image_data_type)},
@@ -369,215 +374,414 @@ void MapNames::setExplicitNamespaceMap() {
       // ...
   };
 
+  // CuDNN Type names mapping.
+  CuDNNTypeNamesMap = {
+      {"cudnnHandle_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::engine_ext",
+                                      HelperFeatureEnum::DnnlUtils_engine_ext)},
+      {"cudnnTensorDescriptor_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::memory_desc_ext",
+           HelperFeatureEnum::DnnlUtils_memory_desc_ext)},
+      {"cudnnTensorFormat_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::memory_format_tag",
+           HelperFeatureEnum::DnnlUtils_memory_format_tag)},
+      {"cudnnDataType_t", std::make_shared<TypeNameRule>(
+                              getDpctNamespace() + "library_data_t",
+                              HelperFeatureEnum::LibCommonUtils_library_data_t)},
+      {"cudnnActivationDescriptor_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::activation_desc",
+           HelperFeatureEnum::DnnlUtils_activation_desc)},
+      {"cudnnActivationMode_t",
+       std::make_shared<TypeNameRule>("dnnl::algorithm")},
+      {"cudnnLRNDescriptor_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::lrn_desc",
+                                      HelperFeatureEnum::DnnlUtils_lrn_desc)},
+      {"cudnnLRNMode_t", std::make_shared<TypeNameRule>("dnnl::algorithm")},
+      {"cudnnPoolingDescriptor_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::pooling_desc",
+           HelperFeatureEnum::DnnlUtils_pooling_desc)},
+      {"cudnnPoolingMode_t", std::make_shared<TypeNameRule>("dnnl::algorithm")},
+      {"cudnnSoftmaxAlgorithm_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::softmax_algorithm",
+           HelperFeatureEnum::DnnlUtils_softmax_algorithm)},
+      {"cudnnSoftmaxMode_t", std::make_shared<TypeNameRule>(
+                                 getDpctNamespace() + "dnnl::softmax_mode",
+                                 HelperFeatureEnum::DnnlUtils_softmax_mode)},
+  };
+
+  // CuDNN Enum constants name mapping.
+  CuDNNTypeRule::CuDNNEnumNamesMap = {
+      {"CUDNN_TENSOR_NCHW", getDpctNamespace() + "dnnl::memory_format_tag::nchw"},
+      {"CUDNN_TENSOR_NHWC", getDpctNamespace() + "dnnl::memory_format_tag::nhwc"},
+      {"CUDNN_TENSOR_NCHW_VECT_C",
+       getDpctNamespace() + "dnnl::memory_format_tag::nchw_blocked"},
+      {"CUDNN_DATA_FLOAT", getDpctNamespace() + "library_data_t::real_float"},
+      {"CUDNN_DATA_HALF", getDpctNamespace() + "library_data_t::real_half"},
+      {"CUDNN_DATA_INT8", getDpctNamespace() + "library_data_t::real_int8"},
+      {"CUDNN_DATA_UINT8", getDpctNamespace() + "library_data_t::real_uint8"},
+      {"CUDNN_DATA_INT32", getDpctNamespace() + "library_data_t::real_int32"},
+      {"CUDNN_DATA_INT8x4", getDpctNamespace() + "library_data_t::real_int8_4"},
+      {"CUDNN_DATA_INT8x32", getDpctNamespace() + "library_data_t::real_int8_32"},
+      {"CUDNN_DATA_UINT8x4", getDpctNamespace() + "library_data_t::real_uint8_4"},
+      {"CUDNN_DATA_BFLOAT16", getDpctNamespace() + "library_data_t::real_bfloat16"},
+      {"CUDNN_ACTIVATION_SIGMOID", "dnnl::algorithm::eltwise_logistic"},
+      {"CUDNN_ACTIVATION_RELU", "dnnl::algorithm::eltwise_bounded_relu"},
+      {"CUDNN_ACTIVATION_TANH", "dnnl::algorithm::eltwise_tanh"},
+      {"CUDNN_ACTIVATION_CLIPPED_RELU",
+       "dnnl::algorithm::eltwise_bounded_relu"},
+      {"CUDNN_ACTIVATION_ELU", "dnnl::algorithm::eltwise_elu"},
+      {"CUDNN_ACTIVATION_IDENTITY", "dnnl::algorithm::eltwise_linear"},
+      {"CUDNN_ACTIVATION_SWISH", "dnnl::algorithm::eltwise_swish"},
+      {"CUDNN_LRN_CROSS_CHANNEL_DIM1", "dnnl::algorithm::lrn_across_channels"},
+      {"CUDNN_POOLING_MAX", "dnnl::algorithm::pooling_max"},
+      {"CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING",
+       "dnnl::algorithm::pooling_avg_include_padding"},
+      {"CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING",
+       "dnnl::algorithm::pooling_avg_exclude_padding"},
+      {"CUDNN_POOLING_MAX_DETERMINISTIC", "dnnl::algorithm::pooling_max"},
+      {"CUDNN_SOFTMAX_FAST", getDpctNamespace() + "dnnl::softmax_algorithm::normal"},
+      {"CUDNN_SOFTMAX_ACCURATE",
+       getDpctNamespace() + "dnnl::softmax_algorithm::normal"},
+      {"CUDNN_SOFTMAX_LOG", getDpctNamespace() + "dnnl::softmax_algorithm::log"},
+      {"CUDNN_SOFTMAX_MODE_INSTANCE",
+       getDpctNamespace() + "dnnl::softmax_mode::instance"},
+      {"CUDNN_SOFTMAX_MODE_CHANNEL",
+       getDpctNamespace() + "dnnl::softmax_mode::channel"}};
+
+  // CuDNN Enum constants name to helper feature mapping.
+  CuDNNTypeRule::CuDNNEnumNamesHelperFeaturesMap = {
+      {"CUDNN_TENSOR_NCHW", HelperFeatureEnum::DnnlUtils_memory_format_tag},
+      {"CUDNN_TENSOR_NHWC", HelperFeatureEnum::DnnlUtils_memory_format_tag},
+      {"CUDNN_TENSOR_NCHW_VECT_C",
+       HelperFeatureEnum::DnnlUtils_memory_format_tag},
+      {"CUDNN_DATA_FLOAT", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_HALF", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_INT8", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_UINT8", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_INT32", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_INT8x4", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_INT8x32", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_UINT8x4", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_DATA_BFLOAT16", HelperFeatureEnum::LibCommonUtils_library_data_t},
+      {"CUDNN_SOFTMAX_FAST", HelperFeatureEnum::DnnlUtils_softmax_algorithm},
+      {"CUDNN_SOFTMAX_ACCURATE",
+       HelperFeatureEnum::DnnlUtils_softmax_algorithm},
+      {"CUDNN_SOFTMAX_LOG", HelperFeatureEnum::DnnlUtils_softmax_algorithm},
+      {"CUDNN_SOFTMAX_MODE_INSTANCE",
+       HelperFeatureEnum::DnnlUtils_softmax_mode},
+      {"CUDNN_SOFTMAX_MODE_CHANNEL", HelperFeatureEnum::DnnlUtils_softmax_mode},
+  };
+
   // Enum constants name mapping.
   EnumConstantRule::EnumNamesMap = {
       // ...
       // enum Device Attribute
       // ...
-      {"cudaDevAttrHostNativeAtomicSupported", "is_native_atomic_supported"},
-      {"cudaDevAttrComputeCapabilityMajor", "get_major_version"},
-      {"cudaDevAttrComputeCapabilityMinor", "get_minor_version"},
-      {"cudaDevAttrMultiProcessorCount", "get_max_compute_units"},
-      {"cudaDevAttrClockRate", "get_max_clock_frequency"},
-      {"cudaDevAttrIntegrated", "get_integrated"},
+      {"cudaDevAttrHostNativeAtomicSupported",
+       std::make_shared<EnumNameRule>(
+           "is_native_atomic_supported",
+           HelperFeatureEnum::Device_device_ext_is_native_atomic_supported)},
+      {"cudaDevAttrComputeCapabilityMajor",
+       std::make_shared<EnumNameRule>(
+           "get_major_version",
+           HelperFeatureEnum::Device_device_ext_get_major_version)},
+      {"cudaDevAttrComputeCapabilityMinor",
+       std::make_shared<EnumNameRule>(
+           "get_minor_version",
+           HelperFeatureEnum::Device_device_ext_get_minor_version)},
+      {"cudaDevAttrMultiProcessorCount",
+       std::make_shared<EnumNameRule>(
+           "get_max_compute_units",
+           HelperFeatureEnum::Device_device_ext_get_max_compute_units)},
+      {"cudaDevAttrClockRate",
+       std::make_shared<EnumNameRule>(
+           "get_max_clock_frequency",
+           HelperFeatureEnum::Device_device_ext_get_max_clock_frequency)},
+      {"cudaDevAttrIntegrated",
+       std::make_shared<EnumNameRule>(
+           "get_integrated",
+           HelperFeatureEnum::Device_device_ext_get_integrated)},
       // enum Memcpy Kind
-      {"cudaMemcpyHostToHost", getDpctNamespace() + "host_to_host"},
-      {"cudaMemcpyHostToDevice", getDpctNamespace() + "host_to_device"},
-      {"cudaMemcpyDeviceToHost", getDpctNamespace() + "device_to_host"},
-      {"cudaMemcpyDeviceToDevice", getDpctNamespace() + "device_to_device"},
-      {"cudaMemcpyDefault", getDpctNamespace() + "automatic"},
+      {"cudaMemcpyHostToHost", std::make_shared<EnumNameRule>(
+                                   getDpctNamespace() + "host_to_host",
+                                   HelperFeatureEnum::Memory_memcpy_direction)},
+      {"cudaMemcpyHostToDevice",
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "host_to_device",
+           HelperFeatureEnum::Memory_memcpy_direction)},
+      {"cudaMemcpyDeviceToHost",
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "device_to_host",
+           HelperFeatureEnum::Memory_memcpy_direction)},
+      {"cudaMemcpyDeviceToDevice",
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "device_to_device",
+           HelperFeatureEnum::Memory_memcpy_direction)},
+      {"cudaMemcpyDefault", std::make_shared<EnumNameRule>(
+                                getDpctNamespace() + "automatic",
+                                HelperFeatureEnum::Memory_memcpy_direction)},
       // enum Texture Address Mode
-      {"cudaAddressModeWrap", getClNamespace() + "addressing_mode::repeat"},
+      {"cudaAddressModeWrap",
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "addressing_mode::repeat")},
       {"cudaAddressModeClamp",
-       getClNamespace() + "addressing_mode::clamp_to_edge"},
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "addressing_mode::clamp_to_edge")},
       {"cudaAddressModeMirror",
-       getClNamespace() + "addressing_mode::mirrored_repeat"},
-      {"cudaAddressModeBorder", getClNamespace() + "addressing_mode::clamp"},
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "addressing_mode::mirrored_repeat")},
+      {"cudaAddressModeBorder",
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "addressing_mode::clamp")},
       // enum Texture Filter Mode
-      {"cudaFilterModePoint", getClNamespace() + "filtering_mode::nearest"},
-      {"cudaFilterModeLinear", getClNamespace() + "filtering_mode::linear"},
+      {"cudaFilterModePoint",
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "filtering_mode::nearest")},
+      {"cudaFilterModeLinear",
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "filtering_mode::linear")},
       // enum Channel Format Kind
       {"cudaChannelFormatKindSigned",
-       getDpctNamespace() + "image_channel_data_type::signed_int"},
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "image_channel_data_type::signed_int",
+           HelperFeatureEnum::Image_image_channel_data_type)},
       {"cudaChannelFormatKindUnsigned",
-       getDpctNamespace() + "image_channel_data_type::unsigned_int"},
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "image_channel_data_type::unsigned_int",
+           HelperFeatureEnum::Image_image_channel_data_type)},
       {"cudaChannelFormatKindFloat",
-       getDpctNamespace() + "image_channel_data_type::fp"},
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "image_channel_data_type::fp",
+           HelperFeatureEnum::Image_image_channel_data_type)},
       // enum Resource Type
-      {"cudaResourceTypeArray", getDpctNamespace() + "image_data_type::matrix"},
+      {"cudaResourceTypeArray",
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "image_data_type::matrix",
+           HelperFeatureEnum::Image_image_data_type)},
       {"cudaResourceTypeLinear",
-       getDpctNamespace() + "image_data_type::linear"},
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "image_data_type::linear",
+           HelperFeatureEnum::Image_image_data_type)},
       {"cudaResourceTypePitch2D",
-       getDpctNamespace() + "image_data_type::pitch"},
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "image_data_type::pitch",
+           HelperFeatureEnum::Image_image_data_type)},
       // enum cudaMemoryAdvise
-      {"cudaMemAdviseSetReadMostly", "0"},
-      {"cudaMemAdviseUnsetReadMostly", "0"},
-      {"cudaMemAdviseSetPreferredLocation", "0"},
-      {"cudaMemAdviseUnsetPreferredLocation", "0"},
-      {"cudaMemAdviseSetAccessedBy", "0"},
-      {"cudaMemAdviseUnsetAccessedBy", "0"},
+      {"cudaMemAdviseSetReadMostly", std::make_shared<EnumNameRule>("0")},
+      {"cudaMemAdviseUnsetReadMostly", std::make_shared<EnumNameRule>("0")},
+      {"cudaMemAdviseSetPreferredLocation",
+       std::make_shared<EnumNameRule>("0")},
+      {"cudaMemAdviseUnsetPreferredLocation",
+       std::make_shared<EnumNameRule>("0")},
+      {"cudaMemAdviseSetAccessedBy", std::make_shared<EnumNameRule>("0")},
+      {"cudaMemAdviseUnsetAccessedBy", std::make_shared<EnumNameRule>("0")},
       // enum CUmem_advise_enum
-      {"CU_MEM_ADVISE_SET_READ_MOSTLY", "0"},
-      {"CU_MEM_ADVISE_UNSET_READ_MOSTLY", "0"},
-      {"CU_MEM_ADVISE_SET_PREFERRED_LOCATION", "0"},
-      {"CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION", "0"},
-      {"CU_MEM_ADVISE_SET_ACCESSED_BY", "0"},
-      {"CU_MEM_ADVISE_UNSET_ACCESSED_BY", "0"},
+      {"CU_MEM_ADVISE_SET_READ_MOSTLY", std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_ADVISE_UNSET_READ_MOSTLY", std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_ADVISE_SET_PREFERRED_LOCATION",
+       std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION",
+       std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_ADVISE_SET_ACCESSED_BY", std::make_shared<EnumNameRule>("0")},
+      {"CU_MEM_ADVISE_UNSET_ACCESSED_BY", std::make_shared<EnumNameRule>("0")},
       // enum Driver Device Attribute
-      {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR", "get_major_version"},
-      {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR", "get_minor_version"},
-      {"CU_DEVICE_ATTRIBUTE_INTEGRATED", "get_integrated"},
-      {"CU_DEVICE_ATTRIBUTE_CLOCK_RATE", "get_max_clock_frequency"},
-      {"CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT", "get_max_compute_units"},
+      {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR",
+       std::make_shared<EnumNameRule>(
+           "get_major_version",
+           HelperFeatureEnum::Device_device_ext_get_major_version)},
+      {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR",
+       std::make_shared<EnumNameRule>(
+           "get_minor_version",
+           HelperFeatureEnum::Device_device_ext_get_minor_version)},
+      {"CU_DEVICE_ATTRIBUTE_INTEGRATED",
+       std::make_shared<EnumNameRule>(
+           "get_integrated",
+           HelperFeatureEnum::Device_device_ext_get_integrated)},
+      {"CU_DEVICE_ATTRIBUTE_CLOCK_RATE",
+       std::make_shared<EnumNameRule>(
+           "get_max_clock_frequency",
+           HelperFeatureEnum::Device_device_ext_get_max_clock_frequency)},
+      {"CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT",
+       std::make_shared<EnumNameRule>(
+           "get_max_compute_units",
+           HelperFeatureEnum::Device_device_ext_get_max_compute_units)},
       {"CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED",
-       "is_native_atomic_supported"},
+       std::make_shared<EnumNameRule>(
+           "is_native_atomic_supported",
+           HelperFeatureEnum::Device_device_ext_is_native_atomic_supported)},
       // enum CUarray_format
       {"CU_AD_FORMAT_UNSIGNED_INT8",
-       getClNamespace() + "image_channel_type::unsigned_int8"},
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "image_channel_type::unsigned_int8")},
       {"CU_AD_FORMAT_UNSIGNED_INT16",
-       getClNamespace() + "image_channel_type::unsigned_int16"},
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "image_channel_type::unsigned_int16")},
       {"CU_AD_FORMAT_UNSIGNED_INT32",
-       getClNamespace() + "image_channel_type::unsigned_int32"},
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "image_channel_type::unsigned_int32")},
       {"CU_AD_FORMAT_SIGNED_INT8",
-       getClNamespace() + "image_channel_type::signed_int8"},
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "image_channel_type::signed_int8")},
       {"CU_AD_FORMAT_SIGNED_INT16",
-       getClNamespace() + "image_channel_type::unsigned_int16"},
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "image_channel_type::unsigned_int16")},
       {"CU_AD_FORMAT_SIGNED_INT32",
-       getClNamespace() + "image_channel_type::unsigned_int32"},
-      {"CU_AD_FORMAT_HALF", getClNamespace() + "image_channel_type::fp16"},
-      {"CU_AD_FORMAT_FLOAT", getClNamespace() + "image_channel_type::fp32"},
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "image_channel_type::unsigned_int32")},
+      {"CU_AD_FORMAT_HALF", std::make_shared<EnumNameRule>(
+                                getClNamespace() + "image_channel_type::fp16")},
+      {"CU_AD_FORMAT_FLOAT",
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "image_channel_type::fp32")},
       // enum CUaddress_mode_enum
-      {"CU_TR_ADDRESS_MODE_WRAP", getClNamespace() + "addressing_mode::repeat"},
+      {"CU_TR_ADDRESS_MODE_WRAP",
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "addressing_mode::repeat")},
       {"CU_TR_ADDRESS_MODE_CLAMP",
-       getClNamespace() + "addressing_mode::clamp_to_edge"},
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "addressing_mode::clamp_to_edge")},
       {"CU_TR_ADDRESS_MODE_MIRROR",
-       getClNamespace() + "addressing_mode::mirrored_repeat"},
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "addressing_mode::mirrored_repeat")},
       {"CU_TR_ADDRESS_MODE_BORDER",
-       getClNamespace() + "addressing_mode::clamp"},
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "addressing_mode::clamp")},
       // enum CUfilter_mode_enum
-      {"CU_TR_FILTER_MODE_POINT", getClNamespace() + "filtering_mode::nearest"},
-      {"CU_TR_FILTER_MODE_LINEAR", getClNamespace() + "filtering_mode::linear"},
+      {"CU_TR_FILTER_MODE_POINT",
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "filtering_mode::nearest")},
+      {"CU_TR_FILTER_MODE_LINEAR",
+       std::make_shared<EnumNameRule>(getClNamespace() +
+                                      "filtering_mode::linear")},
       // enum CUresourcetype_enum
       {"CU_RESOURCE_TYPE_ARRAY",
-       getDpctNamespace() + "image_data_type::matrix"},
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "image_data_type::matrix",
+           HelperFeatureEnum::Image_image_data_type)},
       {"CU_RESOURCE_TYPE_LINEAR",
-       getDpctNamespace() + "image_data_type::linear"},
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "image_data_type::linear",
+           HelperFeatureEnum::Image_image_data_type)},
       {"CU_RESOURCE_TYPE_PITCH2D",
-       getDpctNamespace() + "image_data_type::pitch"},
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "image_data_type::pitch",
+           HelperFeatureEnum::Image_image_data_type)},
       // enum libraryPropertyType_t
-      {"MAJOR_VERSION", getDpctNamespace() + "version_field::major"},
-      {"MINOR_VERSION", getDpctNamespace() + "version_field::update"},
-      {"PATCH_LEVEL", getDpctNamespace() + "version_field::patch"},
+      {"MAJOR_VERSION", std::make_shared<EnumNameRule>(
+                            getDpctNamespace() + "version_field::major",
+                            HelperFeatureEnum::LibCommonUtils_version_field)},
+      {"MINOR_VERSION", std::make_shared<EnumNameRule>(
+                            getDpctNamespace() + "version_field::update",
+                            HelperFeatureEnum::LibCommonUtils_version_field)},
+      {"PATCH_LEVEL", std::make_shared<EnumNameRule>(
+                          getDpctNamespace() + "version_field::patch",
+                          HelperFeatureEnum::LibCommonUtils_version_field)},
       // enum cudaDataType_t
-      {"CUDA_R_16F", getDpctNamespace() + "library_data_t::real_half"},
-      {"CUDA_C_16F", getDpctNamespace() + "library_data_t::complex_half"},
-      {"CUDA_R_16BF", getDpctNamespace() + "library_data_t::real_bfloat16"},
-      {"CUDA_C_16BF", getDpctNamespace() + "library_data_t::complex_bfloat16"},
-      {"CUDA_R_32F", getDpctNamespace() + "library_data_t::real_float"},
-      {"CUDA_C_32F", getDpctNamespace() + "library_data_t::complex_float"},
-      {"CUDA_R_64F", getDpctNamespace() + "library_data_t::real_double"},
-      {"CUDA_C_64F", getDpctNamespace() + "library_data_t::complex_double"},
-      {"CUDA_R_4I", getDpctNamespace() + "library_data_t::real_int4"},
-      {"CUDA_C_4I", getDpctNamespace() + "library_data_t::complex_int4"},
-      {"CUDA_R_4U", getDpctNamespace() + "library_data_t::real_uint4"},
-      {"CUDA_C_4U", getDpctNamespace() + "library_data_t::complex_uint4"},
-      {"CUDA_R_8I", getDpctNamespace() + "library_data_t::real_int8"},
-      {"CUDA_C_8I", getDpctNamespace() + "library_data_t::complex_int8"},
-      {"CUDA_R_8U", getDpctNamespace() + "library_data_t::real_uint8"},
-      {"CUDA_C_8U", getDpctNamespace() + "library_data_t::complex_uint8"},
-      {"CUDA_R_16I", getDpctNamespace() + "library_data_t::real_int16"},
-      {"CUDA_C_16I", getDpctNamespace() + "library_data_t::complex_int16"},
-      {"CUDA_R_16U", getDpctNamespace() + "library_data_t::real_uint16"},
-      {"CUDA_C_16U", getDpctNamespace() + "library_data_t::complex_uint16"},
-      {"CUDA_R_32I", getDpctNamespace() + "library_data_t::real_int32"},
-      {"CUDA_C_32I", getDpctNamespace() + "library_data_t::complex_int32"},
-      {"CUDA_R_32U", getDpctNamespace() + "library_data_t::real_uint32"},
-      {"CUDA_C_32U", getDpctNamespace() + "library_data_t::complex_uint32"},
-      {"CUDA_R_64I", getDpctNamespace() + "library_data_t::real_int64"},
-      {"CUDA_C_64I", getDpctNamespace() + "library_data_t::complex_int64"},
-      {"CUDA_R_64U", getDpctNamespace() + "library_data_t::real_uint64"},
-      {"CUDA_C_64U", getDpctNamespace() + "library_data_t::complex_uint64"},
+      {"CUDA_R_16F", std::make_shared<EnumNameRule>(
+                         getDpctNamespace() + "library_data_t::real_half")},
+      {"CUDA_C_16F", std::make_shared<EnumNameRule>(
+                         getDpctNamespace() + "library_data_t::complex_half")},
+      {"CUDA_R_16BF",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::real_bfloat16")},
+      {"CUDA_C_16BF",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::complex_bfloat16")},
+      {"CUDA_R_32F", std::make_shared<EnumNameRule>(
+                         getDpctNamespace() + "library_data_t::real_float")},
+      {"CUDA_C_32F", std::make_shared<EnumNameRule>(
+                         getDpctNamespace() + "library_data_t::complex_float")},
+      {"CUDA_R_64F", std::make_shared<EnumNameRule>(
+                         getDpctNamespace() + "library_data_t::real_double")},
+      {"CUDA_C_64F",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::complex_double")},
+      {"CUDA_R_4I", std::make_shared<EnumNameRule>(
+                        getDpctNamespace() + "library_data_t::real_int4")},
+      {"CUDA_C_4I", std::make_shared<EnumNameRule>(
+                        getDpctNamespace() + "library_data_t::complex_int4")},
+      {"CUDA_R_4U", std::make_shared<EnumNameRule>(
+                        getDpctNamespace() + "library_data_t::real_uint4")},
+      {"CUDA_C_4U", std::make_shared<EnumNameRule>(
+                        getDpctNamespace() + "library_data_t::complex_uint4")},
+      {"CUDA_R_8I", std::make_shared<EnumNameRule>(
+                        getDpctNamespace() + "library_data_t::real_int8")},
+      {"CUDA_C_8I", std::make_shared<EnumNameRule>(
+                        getDpctNamespace() + "library_data_t::complex_int8")},
+      {"CUDA_R_8U", std::make_shared<EnumNameRule>(
+                        getDpctNamespace() + "library_data_t::real_uint8")},
+      {"CUDA_C_8U", std::make_shared<EnumNameRule>(
+                        getDpctNamespace() + "library_data_t::complex_uint8")},
+      {"CUDA_R_16I", std::make_shared<EnumNameRule>(
+                         getDpctNamespace() + "library_data_t::real_int16")},
+      {"CUDA_C_16I", std::make_shared<EnumNameRule>(
+                         getDpctNamespace() + "library_data_t::complex_int16")},
+      {"CUDA_R_16U", std::make_shared<EnumNameRule>(
+                         getDpctNamespace() + "library_data_t::real_uint16")},
+      {"CUDA_C_16U",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::complex_uint16")},
+      {"CUDA_R_32I", std::make_shared<EnumNameRule>(
+                         getDpctNamespace() + "library_data_t::real_int32")},
+      {"CUDA_C_32I", std::make_shared<EnumNameRule>(
+                         getDpctNamespace() + "library_data_t::complex_int32")},
+      {"CUDA_R_32U", std::make_shared<EnumNameRule>(
+                         getDpctNamespace() + "library_data_t::real_uint32")},
+      {"CUDA_C_32U",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::complex_uint32")},
+      {"CUDA_R_64I", std::make_shared<EnumNameRule>(
+                         getDpctNamespace() + "library_data_t::real_int64")},
+      {"CUDA_C_64I", std::make_shared<EnumNameRule>(
+                         getDpctNamespace() + "library_data_t::complex_int64")},
+      {"CUDA_R_64U", std::make_shared<EnumNameRule>(
+                         getDpctNamespace() + "library_data_t::real_uint64")},
+      {"CUDA_C_64U",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::complex_uint64")},
       // cublasComputeType_t
-      {"CUBLAS_COMPUTE_16F", getDpctNamespace() + "library_data_t::real_half"},
+      {"CUBLAS_COMPUTE_16F",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::real_half")},
       {"CUBLAS_COMPUTE_16F_PEDANTIC",
-       getDpctNamespace() + "library_data_t::real_half"},
-      {"CUBLAS_COMPUTE_32F", getDpctNamespace() + "library_data_t::real_float"},
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::real_half")},
+      {"CUBLAS_COMPUTE_32F",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::real_float")},
       {"CUBLAS_COMPUTE_32F_PEDANTIC",
-       getDpctNamespace() + "library_data_t::real_float"},
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::real_float")},
       {"CUBLAS_COMPUTE_32F_FAST_16F",
-       getDpctNamespace() + "library_data_t::real_float"},
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::real_float")},
       {"CUBLAS_COMPUTE_32F_FAST_16BF",
-       getDpctNamespace() + "library_data_t::real_float"},
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::real_float")},
       {"CUBLAS_COMPUTE_32F_FAST_TF32",
-       getDpctNamespace() + "library_data_t::real_float"},
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::real_float")},
       {"CUBLAS_COMPUTE_64F",
-       getDpctNamespace() + "library_data_t::real_double"},
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::real_double")},
       {"CUBLAS_COMPUTE_64F_PEDANTIC",
-       getDpctNamespace() + "library_data_t::real_double"},
-      {"CUBLAS_COMPUTE_32I", getDpctNamespace() + "library_data_t::real_int32"},
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::real_double")},
+      {"CUBLAS_COMPUTE_32I",
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::real_int32")},
       {"CUBLAS_COMPUTE_32I_PEDANTIC",
-       getDpctNamespace() + "library_data_t::real_int32"},
+       std::make_shared<EnumNameRule>(getDpctNamespace() +
+                                      "library_data_t::real_int32")},
       // ...
   };
 
   ClassFieldMap = {};
-
-  // Enum constants name to helper feature mapping.
-  EnumConstantRule::EnumNamesHelperFeaturesMap = {
-      // ...
-      // enum Device Attribute
-      // ...
-      {"cudaDevAttrHostNativeAtomicSupported",
-       HelperFeatureEnum::Device_device_ext_is_native_atomic_supported},
-      {"cudaDevAttrComputeCapabilityMajor",
-       HelperFeatureEnum::Device_device_ext_get_major_version},
-      {"cudaDevAttrComputeCapabilityMinor",
-       HelperFeatureEnum::Device_device_ext_get_minor_version},
-      {"cudaDevAttrMultiProcessorCount",
-       HelperFeatureEnum::Device_device_ext_get_max_compute_units},
-      {"cudaDevAttrClockRate",
-       HelperFeatureEnum::Device_device_ext_get_max_clock_frequency},
-      {"cudaDevAttrIntegrated",
-       HelperFeatureEnum::Device_device_ext_get_integrated},
-      // enum Memcpy Kind
-      {"cudaMemcpyHostToHost", HelperFeatureEnum::Memory_memcpy_direction},
-      {"cudaMemcpyHostToDevice", HelperFeatureEnum::Memory_memcpy_direction},
-      {"cudaMemcpyDeviceToHost", HelperFeatureEnum::Memory_memcpy_direction},
-      {"cudaMemcpyDeviceToDevice", HelperFeatureEnum::Memory_memcpy_direction},
-      {"cudaMemcpyDefault", HelperFeatureEnum::Memory_memcpy_direction},
-      // enum Channel Format Kind
-      {"cudaChannelFormatKindSigned",
-       HelperFeatureEnum::Image_image_channel_data_type},
-      {"cudaChannelFormatKindUnsigned",
-       HelperFeatureEnum::Image_image_channel_data_type},
-      {"cudaChannelFormatKindFloat",
-       HelperFeatureEnum::Image_image_channel_data_type},
-      // enum Resource Type
-      {"cudaResourceTypeArray", HelperFeatureEnum::Image_image_data_type},
-      {"cudaResourceTypeLinear", HelperFeatureEnum::Image_image_data_type},
-      {"cudaResourceTypePitch2D", HelperFeatureEnum::Image_image_data_type},
-      // enum Driver Device Attribute
-      {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR",
-       HelperFeatureEnum::Device_device_ext_get_major_version},
-      {"CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR",
-       HelperFeatureEnum::Device_device_ext_get_minor_version},
-      {"CU_DEVICE_ATTRIBUTE_INTEGRATED",
-       HelperFeatureEnum::Device_device_ext_get_integrated},
-      {"CU_DEVICE_ATTRIBUTE_CLOCK_RATE",
-       HelperFeatureEnum::Device_device_ext_get_max_clock_frequency},
-      {"CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT",
-       HelperFeatureEnum::Device_device_ext_get_max_compute_units},
-      {"CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED",
-       HelperFeatureEnum::Device_device_ext_is_native_atomic_supported},
-      // enum CUresourcetype_enum
-      {"CU_RESOURCE_TYPE_ARRAY", HelperFeatureEnum::Image_image_data_type},
-      {"CU_RESOURCE_TYPE_LINEAR", HelperFeatureEnum::Image_image_data_type},
-      {"CU_RESOURCE_TYPE_PITCH2D", HelperFeatureEnum::Image_image_data_type},
-      {"MAJOR_VERSION", HelperFeatureEnum::LibCommonUtils_version_field},
-      {"MINOR_VERSION", HelperFeatureEnum::LibCommonUtils_version_field},
-      {"PATCH_LEVEL", HelperFeatureEnum::LibCommonUtils_version_field},
-      // ...
-  };
 
   // Thrust function name mapping
   ThrustFuncNamesMap = {
@@ -3617,6 +3821,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #include "APINames_cuSPARSE.inc"
 #include "APINames_nvJPEG.inc"
 #include "APINames_thrust.inc"
+#include "APINames_cuDNN.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };
