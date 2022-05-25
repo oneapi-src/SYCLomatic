@@ -3251,6 +3251,20 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           }
         }
       }
+    } else if (TL->getTypeLocClass() ==
+               clang::TypeLoc::TemplateSpecialization) {
+      // To process cases like "tuple_element<0, TupleTy>" in
+      // "typename thrust::tuple_element<0, TupleTy>::type"
+      auto TSL = TL->getAs<TemplateSpecializationTypeLoc>();
+      auto Parents = Result.Context->getParents(TSL);
+      if (!Parents.empty()) {
+        if (auto NNSL = Parents[0].get<NestedNameSpecifierLoc>()) {
+          if (replaceTemplateSpecialization(SM, LOpts, NNSL->getBeginLoc(),
+                                            TSL)) {
+            return;
+          }
+        }
+      }
     }
 
     std::string Str =
