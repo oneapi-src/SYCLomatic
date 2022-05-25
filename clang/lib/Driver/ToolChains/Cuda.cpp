@@ -131,6 +131,10 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
     CV = CudaVersion::CUDA_116;
     IsVersionSupported = true;
     return true;
+  } else if (Major == 11 && Minor == 7) {
+    CV = CudaVersion::CUDA_117;
+    IsVersionSupported = true;
+    return true;
   }
   return false;
 }
@@ -168,6 +172,12 @@ CudaVersion getCudaVersion(uint32_t raw_version) {
     return CudaVersion::CUDA_114;
   if (raw_version < 11060)
     return CudaVersion::CUDA_115;
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (raw_version < 11070)
+    return CudaVersion::CUDA_116;
+  if (raw_version < 11080)
+    return CudaVersion::CUDA_117;
+#endif
   return CudaVersion::NEW;
 }
 
