@@ -13396,6 +13396,9 @@ void CooperativeGroupsFunctionRule::runRule(
     }
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   } else if (FuncName == "this_thread_block") {
+    if (CE->getNumArgs()) {
+      EMIT_WARNING_AND_RETURN;
+    }
     if (auto P = getAncestorDeclStmt(CE)) {
       if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
         emplaceTransformation(new ReplaceTypeInDecl(VD, "auto"));
@@ -13408,8 +13411,9 @@ void CooperativeGroupsFunctionRule::runRule(
     llvm::raw_string_ostream OS(FullName);
     CE->getDirectCallee()->printQualifiedName(OS);
     OS.flush();
+
     if (FullName != "cooperative_groups::__v1::tiled_partition")
-      return;
+      EMIT_WARNING_AND_RETURN;
     if (CE->getNumArgs() < 1)
       EMIT_WARNING_AND_RETURN;
     std::string ArgType = DpctGlobalInfo::getTypeName(

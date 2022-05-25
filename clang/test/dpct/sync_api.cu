@@ -1,10 +1,11 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none -out-root %T/sync_api %s --cuda-include-path="%cuda-path/include" --use-experimental-features=nd_range_barrier,logical-group -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/sync_api %s --cuda-include-path="%cuda-path/include" --use-experimental-features=nd_range_barrier,logical-group -- -x cuda --cuda-host-only -std=c++11
 // RUN: FileCheck %s --match-full-lines --input-file %T/sync_api/sync_api.dp.cpp
 
 // CHECK: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
+#define _CG_ABI_EXPERIMENTAL
 #include "cooperative_groups.h"
 namespace cg = cooperative_groups;
 using namespace cooperative_groups;
@@ -184,4 +185,26 @@ int foo3() {
 //CHECK-NEXT:   });
   foo2<<<1,1>>>();
   return 0;
+}
+
+// un-migrated cases:
+__global__ void foo4() {
+//CHECK:/*
+//CHECK-NEXT:DPCT1082:{{[0-9]+}}: Migration of cg::experimental::block_tile_memory<1, 1> type is not supported.
+//CHECK-NEXT:*/
+//CHECK:cg::experimental::block_tile_memory<1, 1> mem;
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of this_thread_block is not supported.
+//CHECK-NEXT:*/
+//CHECK-NEXT:cg::thread_block tb = cg::experimental::this_thread_block(mem);
+  cg::experimental::block_tile_memory<1, 1> mem;
+  cg::thread_block tb = cg::experimental::this_thread_block(mem);
+}
+
+__global__ void foo5(cg::thread_block tb) {
+//CHECK:/*
+//CHECK-NEXT:DPCT1007:{{[0-9]+}}: Migration of tiled_partition is not supported.
+//CHECK-NEXT:*/
+//CHECK-NEXT:dpct::experimental::logical_group tbt64 = cg::experimental::tiled_partition<64>(tb);
+  cg::thread_block_tile<64> tbt64 = cg::experimental::tiled_partition<64>(tb);
 }
