@@ -615,6 +615,7 @@ protected:
   void analyzeExpr(const CompoundStmt *CS);
   void analyzeExpr(const ReturnStmt *RS);
   void analyzeExpr(const LambdaExpr *LE);
+  void analyzeExpr(const IfStmt *IS);
 
   inline void analyzeType(const TypeSourceInfo *TSI,
                           const Expr *CSCE = nullptr) {

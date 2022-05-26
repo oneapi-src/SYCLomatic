@@ -82,4 +82,22 @@ void foo2(){
   a.fieldA = 3;
   int k = a.fieldA;
   Fruit f = Fruit::apple;
+
+  // CHECK: goo([=](int v) {
+  // CHECK-NEXT:   if (std::min(std::max(v, 10), 100)) {
+  // CHECK-NEXT:     return std::min(std::max(v, 10), 100);
+  // CHECK-NEXT:   } else if (std::min(std::max(v, 10), 100)) {
+  // CHECK-NEXT:     return std::min(std::max(v, 10), 100);
+  // CHECK-NEXT:   } else {
+  // CHECK-NEXT:     return std::min(std::max(v, 10), 100);
+  // CHECK-NEXT:   }
+  // CHECK-NEXT: });
+  foo3([=](int v){
+    if(::min(::max(v, 10), 100)){
+      return ::min(::max(v, 10), 100);
+    } else if(::min(::max(v, 10), 100)){
+      return ::min(::max(v, 10), 100);
+    } else {
+      return ::min(::max(v, 10), 100);
+    }});
 }
