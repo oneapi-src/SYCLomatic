@@ -19,7 +19,7 @@
 
 #define TOOL_NAME "Intel(R) DPC++ Compatibility Tool"
 #define DPCT_VERSION_MAJOR "2022"
-#define DPCT_VERSION_MINOR "1"
+#define DPCT_VERSION_MINOR "2"
 #define DPCT_VERSION_PATCH "0"
 
 #endif
