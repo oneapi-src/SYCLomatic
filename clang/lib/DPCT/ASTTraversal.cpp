@@ -3135,8 +3135,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       EndLoc = SM->getExpansionRange(TL->getBeginLoc()).getEnd();
     }
 
-    if (DpctGlobalInfo::getTypeName(TL->getType().getCanonicalType()) ==
-        "cooperative_groups::__v1::thread_block_tile<32>") {
+    std::string CanonicalTypeStr =
+        DpctGlobalInfo::getTypeName(TL->getType().getCanonicalType());
+    StringRef CanonicalTypeStrRef(CanonicalTypeStr);
+    if (CanonicalTypeStrRef.startswith(
+            "cooperative_groups::__v1::thread_block_tile<")) {
       if (auto ETL = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>()) {
         SourceLocation Begin = ETL.getBeginLoc();
         SourceLocation End = ETL.getEndLoc();
@@ -3146,9 +3149,17 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
             End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
         if (End.isMacroID())
           return;
-        emplaceTransformation(new ReplaceText(
-            Begin, End.getRawEncoding() - Begin.getRawEncoding(),
-            MapNames::getClNamespace() + "sub_group"));
+        if (CanonicalTypeStrRef.equals(
+                "cooperative_groups::__v1::thread_block_tile<32>")) {
+          emplaceTransformation(new ReplaceText(
+              Begin, End.getRawEncoding() - Begin.getRawEncoding(),
+              MapNames::getClNamespace() + "sub_group"));
+        } else if (DpctGlobalInfo::useLogicalGroup()) {
+          emplaceTransformation(new ReplaceText(
+              Begin, End.getRawEncoding() - Begin.getRawEncoding(),
+              MapNames::getDpctNamespace() + "experimental::logical_group"));
+          requestFeature(HelperFeatureEnum::Util_logical_group, Begin);
+        }
         return;
       }
     }
@@ -13205,20 +13216,26 @@ REGISTER_RULE(WarpFunctionsRule)
 void CooperativeGroupsFunctionRule::registerMatcher(MatchFinder &MF) {
   auto CGAPI = [&]() {
     return hasAnyName("this_thread_block", "sync", "tiled_partition",
-                      "thread_rank");
+                      "thread_rank", "size", "shfl_down");
   };
   MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(CGAPI())), parentStmt(),
-                     hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
-                                                    hasAttr(attr::CUDAGlobal)))
-                                     .bind("FuncDecl"))))
+      callExpr(
+          allOf(callee(functionDecl(CGAPI(), hasAncestor(namespaceDecl(hasName(
+                                                 "cooperative_groups"))))),
+                parentStmt(),
+                hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
+                                               hasAttr(attr::CUDAGlobal)))
+                                .bind("FuncDecl"))))
           .bind("FuncCall"),
       this);
   MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(CGAPI())), unless(parentStmt()),
-                     hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
-                                                    hasAttr(attr::CUDAGlobal)))
-                                     .bind("FuncDeclUsed"))))
+      callExpr(
+          allOf(callee(functionDecl(CGAPI(), hasAncestor(namespaceDecl(hasName(
+                                                 "cooperative_groups"))))),
+                unless(parentStmt()),
+                hasAncestor(functionDecl(anyOf(hasAttr(attr::CUDADevice),
+                                               hasAttr(attr::CUDAGlobal)))
+                                .bind("FuncDeclUsed"))))
           .bind("FuncCallUsed"),
       this);
 }
@@ -13337,9 +13354,18 @@ void CooperativeGroupsFunctionRule::runRule(
         return;
       auto BaseType =
           DpctGlobalInfo::getTypeName(Base->getType().getCanonicalType());
-      if (BaseType == "cooperative_groups::__v1::thread_block_tile<32>") {
+      StringRef BaseTypeRef(BaseType);
+      if (BaseTypeRef.equals(
+              "cooperative_groups::__v1::thread_block_tile<32>")) {
         Replacement =
             DpctGlobalInfo::getSubGroup(CE) + ".get_local_linear_id()";
+      } else if (BaseTypeRef.startswith(
+                     "cooperative_groups::__v1::thread_block_tile<")) {
+        if (!DpctGlobalInfo::useLogicalGroup())
+          EMIT_WARNING_AND_RETURN;
+        Replacement = ExprAnalysis::ref(Base) + ".get_local_linear_id()";
+        requestFeature(
+            HelperFeatureEnum::Util_logical_group_get_local_linear_id, ME);
       } else if (BaseType == "cooperative_groups::__v1::thread_block") {
         Replacement = DpctGlobalInfo::getItem(CE) + ".get_local_linear_id()";
       } else {
@@ -13349,9 +13375,19 @@ void CooperativeGroupsFunctionRule::runRule(
       // Usage 2
       std::string ArgType = DpctGlobalInfo::getTypeName(
           CE->getArg(0)->getType().getCanonicalType());
-      if (ArgType == "const cooperative_groups::__v1::thread_block_tile<32>") {
+      StringRef ArgTypeRef(ArgType);
+      if (ArgTypeRef.equals(
+                "const cooperative_groups::__v1::thread_block_tile<32>")) {
         Replacement =
             DpctGlobalInfo::getSubGroup(CE) + ".get_local_linear_id()";
+      } else if (ArgTypeRef.startswith(
+              "const cooperative_groups::__v1::thread_block_tile<")) {
+        if (!DpctGlobalInfo::useLogicalGroup())
+          EMIT_WARNING_AND_RETURN;
+        Replacement = ExprAnalysis::ref(CE->getArg(0)) +
+                      ".get_local_linear_id()";
+        requestFeature(
+            HelperFeatureEnum::Util_logical_group_get_local_linear_id, CE);
       } else if (ArgType == "const cooperative_groups::__v1::thread_block") {
         Replacement = DpctGlobalInfo::getItem(CE) + ".get_local_linear_id()";
       } else {
@@ -13360,6 +13396,9 @@ void CooperativeGroupsFunctionRule::runRule(
     }
     emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
   } else if (FuncName == "this_thread_block") {
+    if (CE->getNumArgs()) {
+      EMIT_WARNING_AND_RETURN;
+    }
     if (auto P = getAncestorDeclStmt(CE)) {
       if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
         emplaceTransformation(new ReplaceTypeInDecl(VD, "auto"));
@@ -13372,24 +13411,121 @@ void CooperativeGroupsFunctionRule::runRule(
     llvm::raw_string_ostream OS(FullName);
     CE->getDirectCallee()->printQualifiedName(OS);
     OS.flush();
-    if (FullName != "cooperative_groups::__v1::tiled_partition")
-      return;
 
-    if (auto TAL = CE->getDirectCallee()->getTemplateSpecializationArgs()) {
-      if (TAL->size() && (TAL->get(0).getAsIntegral().getExtValue() == 32)) {
-        auto FuncInfo = DeviceFunctionDecl::LinkRedecls(
-            DpctGlobalInfo::getParentFunction(CE));
-        if (FuncInfo) {
-          if (DpctGlobalInfo::useFreeQueries())
+    if (FullName != "cooperative_groups::__v1::tiled_partition")
+      EMIT_WARNING_AND_RETURN;
+    if (CE->getNumArgs() < 1)
+      EMIT_WARNING_AND_RETURN;
+    std::string ArgType = DpctGlobalInfo::getTypeName(
+        CE->getArg(0)->getType().getCanonicalType());
+    if (ArgType != "const cooperative_groups::__v1::thread_block")
+      EMIT_WARNING_AND_RETURN;
+
+    auto FuncInfo =
+        DeviceFunctionDecl::LinkRedecls(DpctGlobalInfo::getParentFunction(CE));
+    if (FuncInfo) {
+      FuncInfo->getVarMap().Dim = 3;
+    } else {
+      EMIT_WARNING_AND_RETURN;
+    }
+
+    const Expr *Callee = CE->getCallee()->IgnoreParenImpCasts();
+    if (dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee())) {
+      if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
+        auto TA = DRE->template_arguments();
+        if (TA.size()) {
+          auto &SM = DpctGlobalInfo::getSourceManager();
+          auto Begin = SM.getExpansionLoc(TA[0].getSourceRange().getBegin());
+          auto End = SM.getExpansionLoc(TA[0].getSourceRange().getEnd());
+          End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+              End, SM, DpctGlobalInfo::getContext().getLangOpts()));
+          auto Len = End.getRawEncoding() - Begin.getRawEncoding();
+          auto C = SM.getCharacterData(Begin);
+          std::string PartitionSize = std::string(C, Len);
+
+          if (auto TSA =
+                  CE->getDirectCallee()->getTemplateSpecializationArgs()) {
+            if (TSA->size() && (TSA->get(0).getKind() ==
+                                clang::TemplateArgument::ArgKind::Integral)) {
+              auto I = TSA->get(0).getAsIntegral();
+              if (I.getMinSignedBits() <= 64 && I.getExtValue() == 32) {
+                FuncInfo->addSubGroupSizeRequest(
+                    32, CE->getBeginLoc(), DpctGlobalInfo::getSubGroup(CE));
+                emplaceTransformation(
+                    new ReplaceStmt(CE, DpctGlobalInfo::getSubGroup(CE)));
+                return;
+              }
+            }
+          }
+
+          if (DpctGlobalInfo::useLogicalGroup()) {
             FuncInfo->addSubGroupSizeRequest(32, CE->getBeginLoc(),
-                                             "this_sub_group");
-          else
-            FuncInfo->addSubGroupSizeRequest(32, CE->getBeginLoc(),
-                                             "get_sub_group");
-          emplaceTransformation(
-              new ReplaceStmt(CE, DpctGlobalInfo::getSubGroup(CE, FD)));
+                                             MapNames::getDpctNamespace() +
+                                                 "experimental::logical_group");
+            std::string Replacement =
+                MapNames::getDpctNamespace() + "experimental::logical_group(" +
+                DpctGlobalInfo::getItem(CE) + ", " +
+                DpctGlobalInfo::getGroup(CE) + ", " + PartitionSize + ")";
+            emplaceTransformation(new ReplaceStmt(CE, Replacement));
+          }
+          return;
         }
       }
+    }
+    EMIT_WARNING_AND_RETURN;
+  } else if (FuncName == "size") {
+    auto ME = dyn_cast<MemberExpr>(CE->getCallee()->IgnoreImpCasts());
+    if (!ME)
+      EMIT_WARNING_AND_RETURN;
+    auto Base = ME->getBase()->IgnoreImpCasts();
+    if (!Base)
+      EMIT_WARNING_AND_RETURN;
+    auto BaseType =
+        DpctGlobalInfo::getTypeName(Base->getType().getCanonicalType());
+    StringRef BaseTypeRef(BaseType);
+    std::string Replacement;
+    if (BaseTypeRef.equals("cooperative_groups::__v1::thread_block_tile<32>")) {
+      Replacement =
+          DpctGlobalInfo::getSubGroup(CE) + ".get_local_linear_range()";
+    } else if (BaseTypeRef.startswith(
+                   "cooperative_groups::__v1::thread_block_tile<")) {
+      if (!DpctGlobalInfo::useLogicalGroup())
+        EMIT_WARNING_AND_RETURN;
+      Replacement =
+          ExprAnalysis::ref(Base) + ".get_local_linear_range()";
+      requestFeature(
+          HelperFeatureEnum::Util_logical_group_get_local_linear_range, ME);
+    } else {
+      EMIT_WARNING_AND_RETURN;
+    }
+    emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+  } else if (FuncName == "shfl_down") {
+    auto ME = dyn_cast<MemberExpr>(CE->getCallee()->IgnoreImpCasts());
+    if (!ME)
+      EMIT_WARNING_AND_RETURN;
+    auto Base = ME->getBase()->IgnoreImpCasts();
+    if (!Base)
+      EMIT_WARNING_AND_RETURN;
+    auto BaseType =
+        DpctGlobalInfo::getTypeName(Base->getType().getCanonicalType());
+    StringRef BaseTypeRef(BaseType);
+    if (BaseTypeRef.startswith(
+            "cooperative_groups::__v1::thread_block_tile<")) {
+      auto TST = Base->getType()->getAs<TemplateSpecializationType>();
+      std::string SizeStr;
+      llvm::raw_string_ostream OS(SizeStr);
+      TST->getArg(0).print(
+          DpctGlobalInfo::getContext().getPrintingPolicy(), OS, false);
+      OS.flush();
+      std::string Repl =
+          MapNames::getDpctNamespace() + "shift_sub_group_left(" +
+          DpctGlobalInfo::getSubGroup(CE) + ", " +
+          ExprAnalysis::ref(CE->getArg(0)) + ", " +
+          ExprAnalysis::ref(CE->getArg(1)) + ", " + SizeStr + ")";
+      emplaceTransformation(new ReplaceStmt(CE, Repl));
+      requestFeature(HelperFeatureEnum::Util_shift_sub_group_left, CE);
+    } else {
+      EMIT_WARNING_AND_RETURN;
     }
   }
 }

@@ -467,6 +467,10 @@ static bits<ExperimentalFeatures> Experimentals(
         "local-memory-kernel-scope-allocation", int(ExperimentalFeatures::Exp_GroupSharedMemory),
         "Experimental extension that allows allocation of local memory objects at the kernel\n"
         "functor scope",
+        false },
+    llvm::cl::OptionEnumValue{
+        "logical-group", int(ExperimentalFeatures::Exp_LogicalGroup),
+        "Experimental helper function used to group some work-items logically.",
         false }),
   value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 

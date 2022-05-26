@@ -466,6 +466,55 @@ nd_range_barrier(cl::sycl::nd_item<1> item,
 
   item.barrier();
 }
+
+/// The logical-group is a logical collection of some work-items within a
+/// work-group.
+/// Note: Please make sure that the logical-group size is a power of 2 in the
+/// range [1, current_sub_group_size].
+class logical_group {
+  cl::sycl::nd_item<3> _item;
+  cl::sycl::group<3> _g;
+  uint32_t _logical_group_size;
+  uint32_t _group_linear_range_in_parent;
+
+public:
+  /// Dividing \p parent_group into several logical-groups.
+  /// \param [in] item Current work-item.
+  /// \param [in] parent_group The group to be divided.
+  /// \param [in] size The logical-group size.
+  logical_group(cl::sycl::nd_item<3> item, cl::sycl::group<3> parent_group,
+                uint32_t size)
+      : _item(item), _g(parent_group), _logical_group_size(size) {
+    _group_linear_range_in_parent =
+        (_g.get_local_linear_range() - 1) / _logical_group_size + 1;
+  }
+  /// Returns the index of the work-item within the logical-group.
+  uint32_t get_local_linear_id() const {
+    return _item.get_local_linear_id() % _logical_group_size;
+  }
+  /// Returns the index of the logical-group in the parent group.
+  uint32_t get_group_linear_id() const {
+    return _item.get_local_linear_id() / _logical_group_size;
+  }
+  /// Returns the number of work-items in the logical-group.
+  uint32_t get_local_linear_range() const {
+    if (_g.get_local_linear_range() % _logical_group_size == 0) {
+      return _logical_group_size;
+    }
+    uint32_t last_item_group_id =
+        _g.get_local_linear_range() / _logical_group_size;
+    uint32_t first_of_last_group = last_item_group_id * _logical_group_size;
+    if (_item.get_local_linear_id() >= first_of_last_group) {
+      return _g.get_local_linear_range() - first_of_last_group;
+    } else {
+      return _logical_group_size;
+    }
+  }
+  /// Returns the number of logical-group in the parent group.
+  uint32_t get_group_linear_range() const {
+    return _group_linear_range_in_parent;
+  }
+};
 }
 } // namespace dpct
 

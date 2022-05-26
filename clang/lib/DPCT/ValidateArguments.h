@@ -66,6 +66,7 @@ enum class ExperimentalFeatures : unsigned int {
   Exp_FreeQueries = 2,    // Using free queries functions, like this_nd_item,
                           // this_group, this_subgroup.
   Exp_GroupSharedMemory = 3,
+  Exp_LogicalGroup = 4,
   Exp_ExperimentalFeaturesEnumSize
 };
 
