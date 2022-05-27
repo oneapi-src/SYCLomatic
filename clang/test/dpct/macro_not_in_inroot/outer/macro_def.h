@@ -1,0 +1,1 @@
+#define MACRO(X) X

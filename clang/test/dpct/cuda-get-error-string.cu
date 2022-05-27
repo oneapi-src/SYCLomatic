@@ -54,9 +54,6 @@ int printf(const char *format, ...);
 // CHECK: /*
 // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 // CHECK-NEXT: */
-// CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
-// CHECK-NEXT: */
 // CHECK-NEXT: #define PRINT_ERROR_STR_NAME(X)\
 // CHECK-NEXT:   printf("%s\
 // CHECK-NEXT:          %s\
@@ -121,19 +118,19 @@ const char *test_function() {
 //CHECK:/*
 //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:  printf("%s\n", "cudaGetErrorString not supported"/*cudaGetErrorString(0)*/);
+//CHECK-NEXT:  printf("%s\n", "cudaGetErrorString not supported"/*cudaGetErrorString(cudaSuccess)*/);
   printf("%s\n", cudaGetErrorString(cudaSuccess));
 
 //CHECK:/*
 //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:printf("%s\n", "cudaGetErrorName not supported"/*cudaGetErrorName(0)*/);
+//CHECK-NEXT:printf("%s\n", "cudaGetErrorName not supported"/*cudaGetErrorName(cudaSuccess)*/);
   printf("%s\n", cudaGetErrorName(cudaSuccess));
 
 //CHECK:/*
 //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:  return "cudaGetErrorName not supported"/*cudaGetErrorName(0)*/;
+//CHECK-NEXT:  return "cudaGetErrorName not supported"/*cudaGetErrorName(cudaSuccess)*/;
   return cudaGetErrorName(cudaSuccess);
 }
 
