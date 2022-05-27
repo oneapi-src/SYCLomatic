@@ -6,12 +6,18 @@ int printf(const char *format, ...);
 // CHECK: /*
 // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 // CHECK-NEXT: */
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated cudaGetErrorString call is used in a macro definition and is not valid for all macro uses. Adjust the code.
+// CHECK-NEXT: */
 // CHECK-NEXT: #define PRINT_ERROR_STR(X) printf("%s\n", "cudaGetErrorString not supported"/*cudaGetErrorString(X)*/)
 #define PRINT_ERROR_STR(X) printf("%s\n", cudaGetErrorString(X))
 
 // CHECK:  /*
 // CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 // CHECK-NEXT:  */
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated cudaGetErrorString call is used in a macro definition and is not valid for all macro uses. Adjust the code.
+// CHECK-NEXT: */
 // CHECK-NEXT: #define PRINT_ERROR_STR2(X)\
 // CHECK-NEXT:  printf("%s\n", "cudaGetErrorString not supported"/*cudaGetErrorString(X)*/)
 #define PRINT_ERROR_STR2(X)\
@@ -19,6 +25,9 @@ int printf(const char *format, ...);
 
 // CHECK: /*
 // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
+// CHECK-NEXT: */
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated cudaGetErrorString call is used in a macro definition and is not valid for all macro uses. Adjust the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: #define PRINT_ERROR_STR3(X)\
 // CHECK-NEXT:   printf("%s\
@@ -30,12 +39,18 @@ int printf(const char *format, ...);
 // CHECK: /*
 // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 // CHECK-NEXT: */
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated cudaGetErrorName call is used in a macro definition and is not valid for all macro uses. Adjust the code.
+// CHECK-NEXT: */
 // CHECK-NEXT: #define PRINT_ERROR_NAME(X) printf("%s\n", "cudaGetErrorName not supported"/*cudaGetErrorName(X)*/)
 #define PRINT_ERROR_NAME(X) printf("%s\n", cudaGetErrorName(X))
 
 // CHECK:   /*
 // CHECK-NEXT:   DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 // CHECK-NEXT:   */
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated cudaGetErrorName call is used in a macro definition and is not valid for all macro uses. Adjust the code.
+// CHECK-NEXT: */
 // CHECK-NEXT: #define PRINT_ERROR_NAME2(X)\
 // CHECK-NEXT:   printf("%s\n", "cudaGetErrorName not supported"/*cudaGetErrorName(X)*/)
 #define PRINT_ERROR_NAME2(X)\
@@ -43,6 +58,9 @@ int printf(const char *format, ...);
 
 // CHECK: /*
 // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
+// CHECK-NEXT: */
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated cudaGetErrorName call is used in a macro definition and is not valid for all macro uses. Adjust the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: #define PRINT_ERROR_NAME3(X)\
 // CHECK-NEXT:   printf("%s\
@@ -55,7 +73,10 @@ int printf(const char *format, ...);
 // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 // CHECK-NEXT: */
 // CHECK-NEXT: /*
-// CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
+// CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated cudaGetErrorString call is used in a macro definition and is not valid for all macro uses. Adjust the code.
+// CHECK-NEXT: */
+// CHECK-NEXT: /*
+// CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated cudaGetErrorName call is used in a macro definition and is not valid for all macro uses. Adjust the code.
 // CHECK-NEXT: */
 // CHECK-NEXT: #define PRINT_ERROR_STR_NAME(X)\
 // CHECK-NEXT:   printf("%s\
