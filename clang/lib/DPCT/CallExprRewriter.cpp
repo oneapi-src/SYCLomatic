@@ -682,9 +682,12 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       !ContextFD->hasAttr<CUDAGlobalAttr>())
     return Base::rewrite();
 
-  // Do need to report warnings for pow migration
+  // Do need to report warnings for pow or funnelshift migrations
   if (SourceCalleeName != "pow" && SourceCalleeName != "powf" &&
-      SourceCalleeName != "__powf")
+      SourceCalleeName != "__powf" && SourceCalleeName != "__funnelshift_l" &&
+      SourceCalleeName != "__funnelshift_lc" &&
+      SourceCalleeName != "__funnelshift_r" &&
+      SourceCalleeName != "__funnelshift_rc")
     report(Diagnostics::MATH_EMULATION, false,
            MapNames::ITFName.at(SourceCalleeName.str()), TargetCalleeName);
 
@@ -1041,22 +1044,24 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     }
   } else if (FuncName == "__funnelshift_l" || FuncName == "__funnelshift_lc" ||
              FuncName == "__funnelshift_r" || FuncName == "__funnelshift_rc") {
+    report(Diagnostics::MATH_EMULATION_EXPRESSION, false,
+           MapNames::ITFName.at(SourceCalleeName.str()), TargetCalleeName);
     auto Namespace = MapNames::getClNamespace();
-    auto High = getMigratedArg(0);
-    auto Low = getMigratedArg(1);
+    auto Low = getMigratedArg(0);
+    auto High = getMigratedArg(1);
     auto Shift = getMigratedArg(2);
     if (FuncName == "__funnelshift_l") {
-      OS << "((" << Namespace << "upsample(" << High
+      OS << "((" << Namespace << "upsample<unsigned>(" << High
          << ", " << Low << ") << (" << Shift << " & 31)) >> 32)";
     } else if (FuncName == "__funnelshift_lc") {
-      OS << "((" << Namespace << "upsample(" << High
+      OS << "((" << Namespace << "upsample<unsigned>(" << High
          << ", " << Low << ") << " << Namespace << "min(" << Shift
          << ", 32)) >> 32)";
     } else if (FuncName == "__funnelshift_r") {
-      OS << "((" << Namespace << "upsample(" << High
+      OS << "((" << Namespace << "upsample<unsigned>(" << High
          << ", " << Low << ") >> (" << Shift << " & 31)) & 0xFFFFFFFF)";
     } else if (FuncName == "__funnelshift_rc") {
-      OS << "((" << Namespace << "upsample(" << High
+      OS << "((" << Namespace << "upsample<unsigned>(" << High
          << ", " << Low << ") >> " << Namespace << "min(" << Shift
          << ", 32)) & 0xFFFFFFFF)";
     }
