@@ -65,3 +65,15 @@
   In: apple
   Out: pineapple
   Includes: ["fruit.h"]
+- Rule: min_to_std_min
+  Kind: API
+  Priority: Takeover
+  In: min
+  Out: std::min($1, $2)
+  Includes: []
+- Rule: max_to_std_max
+  Kind: API
+  Priority: Takeover
+  In: max
+  Out: std::max($1, $2)
+  Includes: []
