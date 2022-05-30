@@ -2,20 +2,19 @@
 // RUN: FileCheck --input-file %T/test.dp.cpp --match-full-lines %s
 
 #include "outer/macro_def.h"
+#include "cuda_runtime.h"
 
-void bar() {
-  // some work
-}
+void foo() {}
 
-//      CHECK: #define BAR(X)         \
-// CHECK-NEXT:   bar();               \
-// CHECK-NEXT:   CHECK("cudaGetErrorString not supported"/*cudaGetErrorString(cudaErrorInvalidValue)*/);
+// CHECK: #define MACRO_B \
+// CHECK-NEXT: foo();\
+// CHECK-NEXT: MACRO("cudaGetErrorString not supported"/*cudaGetErrorString(cudaErrorInvalidValue)*/);
+#define MACRO_B \
+foo();\
+MACRO(cudaGetErrorString(cudaErrorInvalidValue));
 
-#define BAR(X)         \
-  bar();               \
-  CHECK(cudaGetErrorString(cudaErrorInvalidValue));
-
-void foo() {
-  // CHECK: BAR(0)
-  BAR(0)
+int main() {
+  // CHECK: MACRO_B
+  MACRO_B
+  return 0;
 }
