@@ -944,7 +944,7 @@ void foo20() {
 }
 
 //CHECK: /*
-//CHECK-NEXT: DPCT1023:{{[0-9]+}}: The DPC++ sub-group does not support mask options for
+//CHECK-NEXT: DPCT1023:{{[0-9]+}}: The SYCL sub-group does not support mask options for
 //CHECK-NEXT: dpct::select_from_sub_group.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define CALLSHFLSYNC(x)                                                        \

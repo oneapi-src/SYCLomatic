@@ -11,22 +11,22 @@
 __global__ static void timedReduction(const float *input, float *output, clock_t *timer)
 {
     // CHECK: /*
-    // CHECK-NEXT: DPCT1008:{{[0-9]+}}: clock function is not defined in the DPC++. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.
+    // CHECK-NEXT: DPCT1008:{{[0-9]+}}: clock function is not defined in the SYCL. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.
     // CHECK-NEXT: */
     *timer = clock();
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1008:{{[0-9]+}}: clock function is not defined in the DPC++. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.
+    // CHECK-NEXT: DPCT1008:{{[0-9]+}}: clock function is not defined in the SYCL. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.
     // CHECK-NEXT: */
     clock();
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1008:{{[0-9]+}}: clock64 function is not defined in the DPC++. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.
+    // CHECK-NEXT: DPCT1008:{{[0-9]+}}: clock64 function is not defined in the SYCL. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.
     // CHECK-NEXT: */
     *timer = clock64();
 
     // CHECK: /*
-    // CHECK-NEXT: DPCT1008:{{[0-9]+}}: clock64 function is not defined in the DPC++. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.
+    // CHECK-NEXT: DPCT1008:{{[0-9]+}}: clock64 function is not defined in the SYCL. This is a hardware-specific feature. Consult with your hardware vendor to find a replacement.
     // CHECK-NEXT: */
     clock64();
 }
