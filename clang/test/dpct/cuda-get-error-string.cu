@@ -6,14 +6,14 @@ int printf(const char *format, ...);
 // CHECK: /*
 // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 // CHECK-NEXT: */
-// CHECK-NEXT: #define PRINT_ERROR_STR(X) printf("%s\n", "cudaGetErrorString not supported"/*cudaGetErrorString(X)*/)
+// CHECK-NEXT: #define PRINT_ERROR_STR(X) printf("%s\n", "cudaGetErrorString is not supported"/*cudaGetErrorString(X)*/)
 #define PRINT_ERROR_STR(X) printf("%s\n", cudaGetErrorString(X))
 
 // CHECK:  /*
 // CHECK-NEXT:  DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 // CHECK-NEXT:  */
 // CHECK-NEXT: #define PRINT_ERROR_STR2(X)\
-// CHECK-NEXT:  printf("%s\n", "cudaGetErrorString not supported"/*cudaGetErrorString(X)*/)
+// CHECK-NEXT:  printf("%s\n", "cudaGetErrorString is not supported"/*cudaGetErrorString(X)*/)
 #define PRINT_ERROR_STR2(X)\
   printf("%s\n", cudaGetErrorString(X))
 
@@ -22,7 +22,7 @@ int printf(const char *format, ...);
 // CHECK-NEXT: */
 // CHECK-NEXT: #define PRINT_ERROR_STR3(X)\
 // CHECK-NEXT:   printf("%s\
-// CHECK-NEXT:          \n", "cudaGetErrorString not supported"/*cudaGetErrorString(X)*/)
+// CHECK-NEXT:          \n", "cudaGetErrorString is not supported"/*cudaGetErrorString(X)*/)
 #define PRINT_ERROR_STR3(X)\
   printf("%s\
          \n", cudaGetErrorString(X))
@@ -30,14 +30,14 @@ int printf(const char *format, ...);
 // CHECK: /*
 // CHECK-NEXT: DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 // CHECK-NEXT: */
-// CHECK-NEXT: #define PRINT_ERROR_NAME(X) printf("%s\n", "cudaGetErrorName not supported"/*cudaGetErrorName(X)*/)
+// CHECK-NEXT: #define PRINT_ERROR_NAME(X) printf("%s\n", "cudaGetErrorName is not supported"/*cudaGetErrorName(X)*/)
 #define PRINT_ERROR_NAME(X) printf("%s\n", cudaGetErrorName(X))
 
 // CHECK:   /*
 // CHECK-NEXT:   DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 // CHECK-NEXT:   */
 // CHECK-NEXT: #define PRINT_ERROR_NAME2(X)\
-// CHECK-NEXT:   printf("%s\n", "cudaGetErrorName not supported"/*cudaGetErrorName(X)*/)
+// CHECK-NEXT:   printf("%s\n", "cudaGetErrorName is not supported"/*cudaGetErrorName(X)*/)
 #define PRINT_ERROR_NAME2(X)\
   printf("%s\n", cudaGetErrorName(X))
 
@@ -46,7 +46,7 @@ int printf(const char *format, ...);
 // CHECK-NEXT: */
 // CHECK-NEXT: #define PRINT_ERROR_NAME3(X)\
 // CHECK-NEXT:   printf("%s\
-// CHECK-NEXT:          \n", "cudaGetErrorName not supported"/*cudaGetErrorName(X)*/)
+// CHECK-NEXT:          \n", "cudaGetErrorName is not supported"/*cudaGetErrorName(X)*/)
 #define PRINT_ERROR_NAME3(X)\
   printf("%s\
          \n", cudaGetErrorName(X))
@@ -57,8 +57,8 @@ int printf(const char *format, ...);
 // CHECK-NEXT: #define PRINT_ERROR_STR_NAME(X)\
 // CHECK-NEXT:   printf("%s\
 // CHECK-NEXT:          %s\
-// CHECK-NEXT:          \n", "cudaGetErrorString not supported"/*cudaGetErrorString(X)*/,\
-// CHECK-NEXT:          "cudaGetErrorName not supported"/*cudaGetErrorName(X)*/)
+// CHECK-NEXT:          \n", "cudaGetErrorString is not supported"/*cudaGetErrorString(X)*/,\
+// CHECK-NEXT:          "cudaGetErrorName is not supported"/*cudaGetErrorName(X)*/)
 #define PRINT_ERROR_STR_NAME(X)\
   printf("%s\
          %s\
@@ -111,26 +111,26 @@ const char *test_function() {
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:  printf("%s\n", "cudaGetErrorString not supported"/*cudaGetErrorString(0)*/);
+//CHECK-NEXT:  printf("%s\n", "cudaGetErrorString is not supported"/*cudaGetErrorString(0)*/);
   printf("%s\n", cudaGetErrorString(cudaGetLastError()));
 
 
 //CHECK:/*
 //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:  printf("%s\n", "cudaGetErrorString not supported"/*cudaGetErrorString(cudaSuccess)*/);
+//CHECK-NEXT:  printf("%s\n", "cudaGetErrorString is not supported"/*cudaGetErrorString(cudaSuccess)*/);
   printf("%s\n", cudaGetErrorString(cudaSuccess));
 
 //CHECK:/*
 //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:printf("%s\n", "cudaGetErrorName not supported"/*cudaGetErrorName(cudaSuccess)*/);
+//CHECK-NEXT:printf("%s\n", "cudaGetErrorName is not supported"/*cudaGetErrorName(cudaSuccess)*/);
   printf("%s\n", cudaGetErrorName(cudaSuccess));
 
 //CHECK:/*
 //CHECK-NEXT:DPCT1009:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The original code was commented out and a warning string was inserted. You need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:  return "cudaGetErrorName not supported"/*cudaGetErrorName(cudaSuccess)*/;
+//CHECK-NEXT:  return "cudaGetErrorName is not supported"/*cudaGetErrorName(cudaSuccess)*/;
   return cudaGetErrorName(cudaSuccess);
 }
 

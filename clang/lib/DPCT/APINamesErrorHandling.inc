@@ -11,7 +11,7 @@ WARNING_FACTORY_ENTRY(
     INSERT_AROUND_FACTORY(CALL_FACTORY_ENTRY("cudaGetErrorString",
                                              CALL("cudaGetErrorString",
                                                   ARG_WC(0))),
-                          "\"cudaGetErrorString not supported\"/*", "*/"),
+                          "\"cudaGetErrorString is not supported\"/*", "*/"),
     Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
 
 WARNING_FACTORY_ENTRY(
@@ -19,7 +19,7 @@ WARNING_FACTORY_ENTRY(
     INSERT_AROUND_FACTORY(CALL_FACTORY_ENTRY("cudaGetErrorName",
                                              CALL("cudaGetErrorName",
                                                   ARG_WC(0))),
-                          "\"cudaGetErrorName not supported\"/*", "*/"),
+                          "\"cudaGetErrorName is not supported\"/*", "*/"),
     Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
 
 CONDITIONAL_FACTORY_ENTRY(

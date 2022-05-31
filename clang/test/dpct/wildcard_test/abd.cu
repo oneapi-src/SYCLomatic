@@ -12,6 +12,6 @@ const char *test_function() {
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1010:{{[0-9]+}}: SYCL uses exceptions to report errors and does not use the error codes. The call was replaced with 0. You need to rewrite this code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:  printf("%s\n", "cudaGetErrorString not supported"/*cudaGetErrorString(0)*/);
+//CHECK-NEXT:  printf("%s\n", "cudaGetErrorString is not supported"/*cudaGetErrorString(0)*/);
   printf("%s\n", cudaGetErrorString(cudaGetLastError()));
 }
