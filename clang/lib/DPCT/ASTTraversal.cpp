@@ -2544,7 +2544,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cooperative_groups::__v1::thread_block",
                   "libraryPropertyType_t", "libraryPropertyType",
                   "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
-                  "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise"),
+                  "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
+                  "thrust::tuple_element"),
               matchesName("nccl.*")))))))
           .bind("cudaTypeDef"),
       this);
@@ -3261,6 +3262,20 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           auto TSL =
               NTL.getUnqualifiedLoc().getAs<TemplateSpecializationTypeLoc>();
           if (replaceTemplateSpecialization(SM, LOpts, BeginLoc, TSL)) {
+            return;
+          }
+        }
+      }
+    } else if (TL->getTypeLocClass() ==
+               clang::TypeLoc::TemplateSpecialization) {
+      // To process cases like "tuple_element<0, TupleTy>" in
+      // "typename thrust::tuple_element<0, TupleTy>::type"
+      auto TSL = TL->getAs<TemplateSpecializationTypeLoc>();
+      auto Parents = Result.Context->getParents(TSL);
+      if (!Parents.empty()) {
+        if (auto NNSL = Parents[0].get<NestedNameSpecifierLoc>()) {
+          if (replaceTemplateSpecialization(SM, LOpts, NNSL->getBeginLoc(),
+                                            TSL)) {
             return;
           }
         }
