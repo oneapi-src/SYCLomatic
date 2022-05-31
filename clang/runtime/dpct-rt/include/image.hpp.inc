@@ -329,16 +329,16 @@ public:
   image_channel(int r, int g, int b, int a, image_channel_data_type data_type) {
     _type = data_type;
     if (a) {
-      assert(r == a && "DPC++ doesn't support different channel size");
-      assert(r == b && "DPC++ doesn't support different channel size");
-      assert(r == g && "DPC++ doesn't support different channel size");
+      assert(r == a && "SYCL doesn't support different channel size");
+      assert(r == b && "SYCL doesn't support different channel size");
+      assert(r == g && "SYCL doesn't support different channel size");
       set_channel_size(4, a);
     } else if (b) {
-      assert(r == b && "DPC++ doesn't support different channel size");
-      assert(r == g && "DPC++ doesn't support different channel size");
+      assert(r == b && "SYCL doesn't support different channel size");
+      assert(r == g && "SYCL doesn't support different channel size");
       set_channel_size(3, b);
     } else if (g) {
-      assert(r == g && "DPC++ doesn't support different channel size");
+      assert(r == g && "SYCL doesn't support different channel size");
       set_channel_size(2, g);
     } else {
       set_channel_size(1, r);

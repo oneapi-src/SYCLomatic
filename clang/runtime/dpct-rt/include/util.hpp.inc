@@ -527,13 +527,13 @@ namespace experimental {
 // DPCT_LABEL_BEGIN|nd_range_barrier|dpct::experimental
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-/// Synchronize work items from all work groups within a DPC++ kernel.
+/// Synchronize work items from all work groups within a SYCL kernel.
 /// \param [in] item:  Represents a work group.
 /// \param [in] counter: An atomic object defined on a device memory which can
 /// be accessed by work items in all work groups. The initial value of the
 /// counter should be zero.
 /// Note: Please make sure that all the work items of all work groups within
-/// a DPC++ kernel can be scheduled actively at the same time on a device.
+/// a SYCL kernel can be scheduled actively at the same time on a device.
 template <int dimensions = 3>
 inline void
 nd_range_barrier(cl::sycl::nd_item<dimensions> item,
@@ -567,13 +567,13 @@ nd_range_barrier(cl::sycl::nd_item<dimensions> item,
   item.barrier();
 }
 
-/// Synchronize work items from all work groups within a DPC++ kernel.
+/// Synchronize work items from all work groups within a SYCL kernel.
 /// \param [in] item:  Represents a work group.
 /// \param [in] counter: An atomic object defined on a device memory which can
 /// be accessed by work items in all work groups. The initial value of the
 /// counter should be zero.
 /// Note: Please make sure that all the work items of all work groups within
-/// a DPC++ kernel can be scheduled actively at the same time on a device.
+/// a SYCL kernel can be scheduled actively at the same time on a device.
 template <>
 inline void
 nd_range_barrier(cl::sycl::nd_item<1> item,

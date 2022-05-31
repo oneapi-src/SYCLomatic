@@ -448,11 +448,11 @@ int foo_test_4()
 // CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> start_ct1;
 // CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
 // CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0 because this call is redundant in DPC++.
+// CHECK-NEXT:    DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0 because this call is redundant in SYCL.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    CHECK(0);
 // CHECK-NEXT:    /*
-// CHECK-NEXT:    DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0 because this call is redundant in DPC++.
+// CHECK-NEXT:    DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0 because this call is redundant in SYCL.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    CHECK(0);
     cudaEvent_t start, stop;

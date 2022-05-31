@@ -17,72 +17,72 @@ void foo() {
   void *devPtr;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1029:0: DPC++ currently does not support getting device resource limits.
+  // CHECK-NEXT: DPCT1029:0: SYCL currently does not support getting device resource limits.
   // CHECK-NEXT: The output parameter(s) are set to 0.
   // CHECK-NEXT: */
   // CHECK-NEXT: *pValue = 0;
   cudaDeviceGetLimit(pValue, limit);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceSetSharedMemConfig was removed because DPC++
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceSetSharedMemConfig was removed because SYCL
   // CHECK-NEXT: currently does not support configuring shared memory on devices.
   // CHECK-NEXT:*/
   cudaDeviceSetSharedMemConfig(config);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaSetDeviceFlags was removed because DPC++ currently
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaSetDeviceFlags was removed because SYCL currently
   // CHECK-NEXT: does not support setting flags for devices.
   // CHECK-NEXT: */
   cudaSetDeviceFlags(flags);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceEnablePeerAccess was removed because DPC++
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceEnablePeerAccess was removed because SYCL
   // CHECK-NEXT: currently does not support memory access across peer devices.
   // CHECK-NEXT: */
   cudaDeviceEnablePeerAccess(peerDevice, flags);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceDisablePeerAccess was removed because DPC++
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceDisablePeerAccess was removed because SYCL
   // CHECK-NEXT: currently does not support memory access across peer devices.
   // CHECK-NEXT: */
   cudaDeviceDisablePeerAccess(peerDevice);
 
   // CHECK:      /*
-  // CHECK-NEXT: DPCT1031:{{[0-9]+}}: DPC++ currently does not support memory access across peer
-  // CHECK-NEXT: devices. The output parameter(s) are set to 0.
+  // CHECK-NEXT: DPCT1031:{{[0-9]+}}: SYCL currently does not support memory access across peer devices.
+  // CHECK-NEXT: The output parameter(s) are set to 0.
   // CHECK-NEXT: */
 
   // CHECK-NEXT: *canAccessPeer = 0;
   cudaDeviceCanAccessPeer(canAccessPeer, device, peerDevice);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently does not support inter-process communication (IPC)
+  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: SYCL currently does not support inter-process communication (IPC)
   // CHECK-NEXT: operations. You may need to rewrite the code.
   // CHECK-NEXT: */
 
   cudaIpcGetEventHandle(handleEvent, event);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently does not support inter-process communication (IPC)
+  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: SYCL currently does not support inter-process communication (IPC)
   // CHECK-NEXT: operations. You may need to rewrite the code.
   // CHECK-NEXT: */
   cudaIpcOpenEventHandle(&event, *handleEvent);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently does not support inter-process communication (IPC)
+  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: SYCL currently does not support inter-process communication (IPC)
   // CHECK-NEXT: operations. You may need to rewrite the code.
   // CHECK-NEXT: */
   cudaIpcGetMemHandle(handleMem, devPtr);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently does not support inter-process communication (IPC)
+  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: SYCL currently does not support inter-process communication (IPC)
   // CHECK-NEXT: operations. You may need to rewrite the code.
   // CHECK-NEXT: */
   cudaIpcOpenMemHandle(&devPtr, *handleMem, flags);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: DPC++ currently does not support inter-process communication
-  // CHECK-NEXT: (IPC) operations. You may need to rewrite the code.
+  // CHECK-NEXT: DPCT1030:{{[0-9]+}}: SYCL currently does not support inter-process communication (IPC)
+  // CHECK-NEXT: operations. You may need to rewrite the code.
   // CHECK-NEXT: */
   cudaIpcCloseMemHandle(devPtr);
 
@@ -90,12 +90,12 @@ void foo() {
   cudaFuncCache fconfig;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetSharedMemConfig was removed because DPC++
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetSharedMemConfig was removed because SYCL
   // CHECK-NEXT: currently does not support configuring shared memory on devices.
   cudaFuncSetSharedMemConfig(NULL, config );
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetCacheConfig was removed because DPC++
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaFuncSetCacheConfig was removed because SYCL
   // CHECK-NEXT: currently does not support configuring shared memory on devices.
   cudaFuncSetCacheConfig(NULL, fconfig);
 

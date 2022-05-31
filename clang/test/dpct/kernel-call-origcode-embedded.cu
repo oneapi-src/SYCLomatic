@@ -168,7 +168,7 @@ int main() {
 
   // CHECK: /* DPCT_ORIG   cudaEventCreate(NULL);MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed because this call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed because this call is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT:  /*
   // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.

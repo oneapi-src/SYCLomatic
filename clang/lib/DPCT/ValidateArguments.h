@@ -24,7 +24,7 @@
 /// two levels are supported currently.
 /// none:       uses helper functions from DPCT header files for memory
 ///             management migration
-/// restricted: uses API from DPC++ Explicit and Restricted Unified
+/// restricted: uses API from SYCL Explicit and Restricted Unified
 ///             Shared Memory extension for memory management migration
 enum class UsmLevel { UL_None, UL_Restricted };
 /// OutputVerbosityLevel defines various verbosity levels for dpct reports
