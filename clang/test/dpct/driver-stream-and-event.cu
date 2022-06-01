@@ -71,6 +71,14 @@ void foo(){
   //CHECK: rr = dpct::get_kernel_function_info((const void *)f).max_work_group_size;
   cuFuncGetAttribute(&rr, CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, f);
 
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuEventDestroy was removed because this call is redundant in DPC++.
+  //CHECK-NEXT: */
+  cuEventDestroy(start);
+  //CHECK: /*
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuEventDestroy was removed because this call is redundant in DPC++.
+  //CHECK-NEXT: */
+  cuEventDestroy(end);
 }
 
 

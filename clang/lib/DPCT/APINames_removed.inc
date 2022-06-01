@@ -35,7 +35,8 @@ ENTRY(cudaDeviceGetCacheConfig,        "DPC++ currently does not support setting
 ENTRY(cudaEventCreate,                 "this call is redundant in DPC++.")
 ENTRY(cudaEventCreateWithFlags,        "this call is redundant in DPC++.")
 ENTRY(cudaEventDestroy,                "this call is redundant in DPC++.")
-ENTRY(cuEventCreate,                 "this call is redundant in DPC++.")
+ENTRY(cuEventDestroy_v2,               "this call is redundant in DPC++.")
+ENTRY(cuEventCreate,                   "this call is redundant in DPC++.")
 
 ENTRY(cudaStreamAttachMemAsync,        "DPC++ currently does not support associating USM with a specific queue.")
 ENTRY(cuStreamAttachMemAsync,          "DPC++ currently does not support associating USM with a specific queue.")

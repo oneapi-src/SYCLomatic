@@ -71,5 +71,14 @@ template <int current, typename I, typename F> struct misc_helper {
       //CHECK:oneapi::dpl::permutation_iterator<I, F> pIt;
       thrust::permutation_iterator<I, F> pIt;
     }
+
+    {
+      //CHECK:using RetTy_0 = typename std::tuple_element<0, std::tuple<Args...>>::type;
+      using RetTy_0 = typename thrust::tuple_element<0, thrust::tuple<Args...>>::type;
+      //CHECK:typename std::tuple_element<1, std::tuple<Args...>>::type RetTy_1;
+      typename thrust::tuple_element<1, thrust::tuple<Args...>>::type RetTy_1;
+      //CHECK:typedef typename std::tuple_element<2, std::tuple<Args...>>::type RetTy_2;
+      typedef typename thrust::tuple_element<2, thrust::tuple<Args...>>::type RetTy_2;
+    }
   }
 };

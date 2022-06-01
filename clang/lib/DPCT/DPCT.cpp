@@ -468,6 +468,10 @@ static bits<ExperimentalFeatures> Experimentals(
         "local-memory-kernel-scope-allocation", int(ExperimentalFeatures::Exp_GroupSharedMemory),
         "Experimental extension that allows allocation of local memory objects at the kernel\n"
         "functor scope",
+        false },
+    llvm::cl::OptionEnumValue{
+        "logical-group", int(ExperimentalFeatures::Exp_LogicalGroup),
+        "Experimental helper function used to group some work-items logically.",
         false }),
   value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 
@@ -1226,7 +1230,8 @@ int runDPCT(int argc, const char **argv) {
       (SDKVersionMajor == 11 && SDKVersionMinor == 3) ||
       (SDKVersionMajor == 11 && SDKVersionMinor == 4) ||
       (SDKVersionMajor == 11 && SDKVersionMinor == 5) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 6)) {
+      (SDKVersionMajor == 11 && SDKVersionMinor == 6) ||
+      (SDKVersionMajor == 11 && SDKVersionMinor == 7)) {
     Tool.appendArgumentsAdjuster(
         getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
                                   ArgumentInsertPosition::BEGIN));

@@ -785,6 +785,14 @@ void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
   dispatch(LE->getBody());
 }
 
+void ExprAnalysis::analyzeExpr(const IfStmt *IS) {
+  dispatch(IS->getCond());
+  dispatch(IS->getThen());
+  // "else if" will also be handled here as another ifstmt
+  dispatch(IS->getElse());
+}
+
+
 void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   SourceRange SR = TL.getSourceRange();
   std::string TyName;
