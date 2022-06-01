@@ -8634,28 +8634,12 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
 
   } else if (FuncName == "cudaGetLastError" ||
-             FuncName == "cudaPeekAtLastError") {
-    if (IsAssigned) {
-      report(CE->getBeginLoc(),
-             Comments::TRNA_WARNING_ERROR_HANDLING_API_REPLACED_0, false,
-             MapNames::ITFName.at(FuncName));
-      emplaceTransformation(new ReplaceStmt(CE, "0"));
-    } else {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-             MapNames::ITFName.at(FuncName),
-             "the function call is redundant in DPC++.");
-      emplaceTransformation(new ReplaceStmt(CE, true, ""));
-    }
-  } else if (FuncName == "cudaGetErrorString" ||
+             FuncName == "cudaPeekAtLastError" ||
+             FuncName == "cudaGetErrorString" ||
              FuncName == "cudaGetErrorName") {
-    // Insert warning messages into the spelling locations in case
-    // that these functions are contained in macro definitions
-    auto Loc = Result.SourceManager->getSpellingLoc(CE->getBeginLoc());
-    report(Loc, Comments::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED, false,
-           MapNames::ITFName.at(FuncName));
-    emplaceTransformation(
-        new InsertBeforeStmt(CE, "\"" + FuncName + " not supported\"/*"));
-    emplaceTransformation(new InsertAfterStmt(CE, "*/"));
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   } else if (FuncName == "clock" || FuncName == "clock64") {
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED_SYCL_UNDEF, false,
            FuncName);

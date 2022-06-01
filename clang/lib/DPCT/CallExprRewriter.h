@@ -233,6 +233,26 @@ public:
   }
 };
 
+class InsertAroundRewriter : public CallExprRewriter {
+  std::string Prefix;
+  std::string Suffix;
+  std::shared_ptr<CallExprRewriter> Inner;
+
+public:
+  InsertAroundRewriter(const CallExpr *C, std::string Prefix,
+                       std::string Suffix,
+                       std::shared_ptr<CallExprRewriter> InnerRewriter)
+      : CallExprRewriter(C, ""), Prefix(Prefix), Suffix(Suffix),
+        Inner(InnerRewriter) {}
+
+  Optional<std::string> rewrite() override {
+    Optional<std::string> &&Result = Inner->rewrite();
+    if (Result.hasValue())
+      return Prefix + Result.getValue() + Suffix;
+    return Result;
+  }
+};
+
 class RemoveAPIRewriter : public CallExprRewriter {
   bool IsAssigned = false;
   std::string CalleeName;
@@ -294,6 +314,22 @@ public:
       : Inner(InnerFactory) {}
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     return std::make_shared<AssignableRewriter>(C, Inner->create(C));
+  }
+};
+
+class InsertAroundRewriterFactory : public CallExprRewriterFactoryBase {
+  std::string Prefix;
+  std::string Suffix;
+  std::shared_ptr<CallExprRewriterFactoryBase> Inner;
+
+public:
+  InsertAroundRewriterFactory(
+      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory,
+      std::string Prefix, std::string Suffix)
+      : Prefix(Prefix), Suffix(Suffix), Inner(InnerFactory) {}
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    return std::make_shared<InsertAroundRewriter>(C, Prefix, Suffix,
+                                                  Inner->create(C));
   }
 };
 
