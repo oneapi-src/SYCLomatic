@@ -1916,7 +1916,6 @@ createAssignableFactory(
   return createAssignableFactory(std::move(Input));
 }
 
-
 std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createInsertAroundFactory(
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -1927,17 +1926,6 @@ createInsertAroundFactory(
       std::make_shared<InsertAroundRewriterFactory>(
           Input.second, std::move(Prefix), std::move(Suffix)));
 }
-
-template <class T>
-std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-createInsertAroundFactory(
-    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-        &&Input,
-    std::string &&Prefix, std::string &&Suffix, T) {
-  return createInsertAroundFactory(std::move(Input), std::move(Prefix),
-                                   std::move(Suffix));
-}
-
 
 /// Create RewriterFactoryWithFeatureRequest key-value pair with inner
 /// key-value. Will call requestFeature when used to create CallExprRewriter.
@@ -2382,7 +2370,7 @@ public:
 
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
 #define INSERT_AROUND_FACTORY(x, PREFIX, SUFFIX)                               \
-  createInsertAroundFactory(x PREFIX, SUFFIX, 0),
+  createInsertAroundFactory(x PREFIX, SUFFIX),
 #define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
   createFeatureRequestFactory(FEATURE, x 0),
 #define HEADER_INSERT_FACTORY(HEADER, x)                                       \
