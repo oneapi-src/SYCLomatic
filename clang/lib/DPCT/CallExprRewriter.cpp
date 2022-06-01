@@ -697,6 +697,14 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
   llvm::raw_string_ostream OS(ReplStr);
   auto MigratedArg0 = getMigratedArg(0);
 
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*Call);
+  bool IsInReturnStmt = false;
+  if (Parents.size())
+    if (auto ParentStmt = getParentStmt(Call))
+      if (ParentStmt->getStmtClass() == Stmt::StmtClass::ReturnStmtClass)
+          IsInReturnStmt = true;
+
   if (FuncName == "frexp" || FuncName == "frexpf") {
     auto Arg = Call->getArg(0);
     std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
@@ -756,6 +764,9 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MapNames::getClNamespace(false, true) + "nan(0u)";
   } else if (FuncName == "sincos" || FuncName == "sincosf" ||
              FuncName == "__sincosf") {
+    std::string Buf;
+    llvm::raw_string_ostream RSO(Buf);
+
     auto Arg = Call->getArg(0);
     std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
         PrintingPolicy(LangOptions()));
@@ -777,47 +788,64 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArg(1);
     auto MigratedArg2 = getMigratedArg(2);
     if (MigratedArg1[0] == '&')
-      OS << MigratedArg1.substr(1);
+      RSO << MigratedArg1.substr(1);
     else
-      OS << "*(" + MigratedArg1 + ")";
-    OS << " = " + MapNames::getClNamespace(false, true) + "sincos("
+      RSO << "*(" + MigratedArg1 + ")";
+    RSO << " = " + MapNames::getClNamespace(false, true) + "sincos("
        << MigratedArg0;
 
     if (FuncName == "sincos")
-      OS << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
+      RSO << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
                 MapNames::getClNamespace() + "access::address_space::" +
                 getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
     else
-      OS << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
+      RSO << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
                 MapNames::getClNamespace() + "access::address_space::" +
                 getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
-    OS << MigratedArg2 << "))";
+    RSO << MigratedArg2 << "))";
+
+    if(IsInReturnStmt) {
+      OS << "[&](){ " << Buf << ";"<< " }()";
+      BlockLevelFormatFlag = true;
+    } else {
+      OS << Buf;
+    }
+
   } else if (FuncName == "sincospi" || FuncName == "sincospif") {
+    std::string Buf;
+    llvm::raw_string_ostream RSO(Buf);
+
     auto MigratedArg1 = getMigratedArg(1);
     auto MigratedArg2 = getMigratedArg(2);
     if (MigratedArg1[0] == '&')
-      OS << MigratedArg1.substr(1);
+      RSO << MigratedArg1.substr(1);
     else
-      OS << "*(" + MigratedArg1 + ")";
-    OS << " = " + MapNames::getClNamespace(false, true) + "sincos("
+      RSO << "*(" + MigratedArg1 + ")";
+    RSO << " = " + MapNames::getClNamespace(false, true) + "sincos("
        << MigratedArg0;
     if (FuncName == "sincospi") {
-      OS << " * DPCT_PI";
+      RSO << " * DPCT_PI";
       requestFeature(HelperFeatureEnum::Dpct_dpct_pi, Call);
     } else {
-      OS << " * DPCT_PI_F";
+      RSO << " * DPCT_PI_F";
       requestFeature(HelperFeatureEnum::Dpct_dpct_pi_f, Call);
     }
 
     if (FuncName == "sincospi")
-      OS << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
+      RSO << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
                 MapNames::getClNamespace() + "access::address_space::" +
                 getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
     else
-      OS << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
+      RSO << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
                 MapNames::getClNamespace() + "access::address_space::" +
                 getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
-    OS << MigratedArg2 << "))";
+    RSO << MigratedArg2 << "))";
+    if(IsInReturnStmt) {
+      OS << "[&](){ " << Buf << ";"<< " }()";
+      BlockLevelFormatFlag = true;
+    } else {
+      OS << Buf;
+    }
   } else if (FuncName == "remquo" || FuncName == "remquof") {
     {
       auto Arg = Call->getArg(0);

@@ -163,7 +163,12 @@ public:
 
   bool isNoRewrite() { return NoRewrite; }
 
+  bool getBlockLevelFormatFlag() const {
+    return BlockLevelFormatFlag;
+  }
+
 protected:
+  bool BlockLevelFormatFlag = false;
   std::vector<std::string> getMigratedArgs();
   std::string getMigratedArg(unsigned Index);
 
