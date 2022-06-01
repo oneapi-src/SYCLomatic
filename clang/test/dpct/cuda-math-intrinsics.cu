@@ -61,8 +61,6 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
 
   // Half Arithmetic Functions
 
-  // CHECK: h_2 = sycl::fabs(h);
-  h_2 = __habs(h);
   // TODO:1CHECK: h2_2 = h2 / h2_1;
   //h2_2 = __h2div(h2, h2_1);
   // TODO:1CHECK: h_2 = h / h_1;
@@ -78,8 +76,6 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
 
   // Half2 Arithmetic Functions
 
-  // CHECK: h2_2 = sycl::fabs(h2);
-  h2_2 = __habs2(h2);
   // CHECK: h2_2 = h2 + h2_1;
   h2_2 = __hadd2(h2, h2_1);
   // CHECK: h2_2 = sycl::fma(h2, h2_1, h2_2);
