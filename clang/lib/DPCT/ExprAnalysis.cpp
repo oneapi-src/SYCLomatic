@@ -520,7 +520,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
 
   std::string FieldName = "";
   if (ME->getMemberDecl()->getIdentifier()) {
-    std::string FieldName = ME->getMemberDecl()->getName().str();
+    FieldName = ME->getMemberDecl()->getName().str();
     auto ItFieldRule = MapNames::ClassFieldMap.find(BaseType + "." + FieldName);
     if (ItFieldRule != MapNames::ClassFieldMap.end()) {
       if (ItFieldRule->second->GetterName == "") {
