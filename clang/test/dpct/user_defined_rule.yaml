@@ -77,3 +77,9 @@
   In: max
   Out: std::max($1, $2)
   Includes: []
+- Rule: A1B1
+  Kind: API
+  Priority: Takeover
+  In: A2::B2::A1B1
+  Out: A2B2()
+  Includes: []
