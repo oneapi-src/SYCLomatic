@@ -831,7 +831,7 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
           from_acc(from_alloc.buffer, cgh,
                    get_copy_range(size, from_slice, from_range.get(0)), from_o);
       cgh.parallel_for<class dpct_memcpy_3d_detail_usmnone>(
-          sycl::range<3>(size.get(2), size.get(1), size.get(0)),
+          size,
           [=](cl::sycl::id<3> id) {
             to_acc[get_offset(id, to_slice, to_range.get(0))] =
                 from_acc[get_offset(id, from_slice, from_range.get(0))];
@@ -842,7 +842,7 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
     event_list.push_back(q.submit([&](cl::sycl::handler &cgh) {
       cgh.depends_on(dep_events);
       cgh.parallel_for<class dpct_memcpy_3d_detail>(
-          sycl::range<3>(size.get(2), size.get(1), size.get(0)),
+          size,
           [=](cl::sycl::id<3> id) {
             to_surface[get_offset(id, to_slice, to_range.get(0))] =
                 from_surface[get_offset(id, from_slice, from_range.get(0))];
