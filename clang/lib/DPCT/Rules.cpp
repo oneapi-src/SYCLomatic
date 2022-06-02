@@ -506,7 +506,11 @@ void clang::dpct::UserDefinedTypeRule::runRule(
   if (auto TL = getNodeAsType<TypeLoc>(Result, "typeLoc")) {
     auto TypeStr =
         DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
-
+    // if the TypeLoc is a TemplateSpecializationTypeLoc
+    // the TypeStr should be the substr before the "<"
+    if(auto TSTL = TL->getAs<TemplateSpecializationTypeLoc>()){
+      TypeStr = TypeStr.substr(0, TypeStr.find("<"));
+    }
     auto It = MapNames::TypeNamesMap.find(TypeStr);
     if (It == MapNames::TypeNamesMap.end())
       return;
@@ -517,6 +521,10 @@ void clang::dpct::UserDefinedTypeRule::runRule(
     auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
     auto Len = Lexer::MeasureTokenLength(
         Range.getEnd(), SM, DpctGlobalInfo::getContext().getLangOpts());
+    if (auto TSTL = TL->getAs<TemplateSpecializationTypeLoc>()) {
+      Range = getDefinitionRange(TSTL.getBeginLoc(), TSTL.getLAngleLoc());
+      Len = 0;
+    }
     Len += SM.getDecomposedLoc(Range.getEnd()).second -
            SM.getDecomposedLoc(Range.getBegin()).second;
     emplaceTransformation(

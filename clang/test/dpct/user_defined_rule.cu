@@ -102,7 +102,6 @@ void foo2(){
     }});
 }
 
-
 struct MyStruct {
   operator void *() { return NULL; }
 };
@@ -121,3 +120,6 @@ void foo4(){
   // CHECK: A2B2();
   A2::B2::A1B1();
 }
+template<typename T>struct OldType{};
+// CHECK: void foo5() { NewType<int> *cu_st; }
+__device__ void foo5(){ OldType<int> *cu_st;}
