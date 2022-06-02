@@ -16,70 +16,70 @@ int main()
   // CHECK: dpct::device_info deviceProp;
   cudaDeviceProp deviceProp;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (true) {
   if (deviceProp.computeMode == cudaComputeModeDefault) {
     return 0;
   }
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (true) {
   if (cudaComputeModeDefault == deviceProp.computeMode) {
     return 0;
   }
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (false) {
   if (deviceProp.computeMode != cudaComputeModeDefault) {
     return 0;
   }
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (false) {
   if (cudaComputeModeDefault != deviceProp.computeMode) {
     return 0;
   }
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (false) {
   if (deviceProp.computeMode == cudaComputeModeExclusive) {
     return 0;
   }
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (true) {
   if (deviceProp.computeMode != cudaComputeModeExclusive) {
     return 0;
   }
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (false) {
   if (deviceProp.computeMode == cudaComputeModeProhibited) {
     return 0;
   }
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (true) {
   if (deviceProp.computeMode != cudaComputeModeProhibited) {
     return 0;
   }
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (false) {
   if (deviceProp.computeMode == cudaComputeModeExclusiveProcess) {
     return 0;
   }
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (true) {
   if (deviceProp.computeMode != cudaComputeModeExclusiveProcess) {
@@ -88,7 +88,7 @@ int main()
   std::vector<cudaDeviceProp> deviceProps;
   int i;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (true) {
   if (deviceProps[i].computeMode != cudaComputeModeExclusiveProcess) {
@@ -97,28 +97,28 @@ int main()
 
   int cm = 0;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (cm == 1) {
   if (cm == cudaComputeModeDefault) {
     return 0;
   }
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (cm == 0) {
   if (cm == cudaComputeModeExclusive) {
     return 0;
   }
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (cm == 0) {
   if (cm == cudaComputeModeProhibited) {
     return 0;
   }
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (cm == 0) {
   if (cm == cudaComputeModeExclusiveProcess) {

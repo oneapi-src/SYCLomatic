@@ -8681,7 +8681,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaFuncSetSharedMemConfig" ||
              FuncName == "cudaFuncSetCacheConfig" ||
              FuncName == "cuFuncSetCacheConfig") {
-    std::string Msg = "DPC++ currently does not support configuring shared "
+    std::string Msg = "SYCL currently does not support configuring shared "
                       "memory on devices.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
