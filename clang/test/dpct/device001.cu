@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
   cudaDeviceProp deviceProp;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+  // CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
   // CHECK-NEXT: */
   // CHECK-NEXT: if (false) {
   if (deviceProp.computeMode == cudaComputeModeProhibited) {
@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 // CHECK-NEXT:int major = deviceProp.get_major_version();
   int major = deviceProp.major;
 // CHECK:/*
-// CHECK-NEXT:DPCT1006:{{[0-9]+}}: DPC++ does not provide a standard API to differentiate between integrated and discrete GPU devices.
+// CHECK-NEXT:DPCT1006:{{[0-9]+}}: SYCL does not provide a standard API to differentiate between integrated and discrete GPU devices.
 // CHECK-NEXT:*/
 // CHECK-NEXT:int integrated = deviceProp.get_integrated();
   int integrated = deviceProp.integrated;
@@ -131,23 +131,23 @@ void test()
 void test2() {
   cudaLimit limit;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceSetLimit was removed because DPC++ currently does not support setting resource limits on devices.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceSetLimit was removed because SYCL currently does not support setting resource limits on devices.
   // CHECK-NEXT: */
   cudaDeviceSetLimit(limit, 0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaDeviceSetLimit was replaced with 0 because DPC++ currently does not support setting resource limits on devices.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaDeviceSetLimit was replaced with 0 because SYCL currently does not support setting resource limits on devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: int i = 0;
   int i = cudaDeviceSetLimit(limit, 0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaThreadSetLimit was removed because DPC++ currently does not support setting resource limits on devices.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaThreadSetLimit was removed because SYCL currently does not support setting resource limits on devices.
   // CHECK-NEXT: */
   cudaThreadSetLimit(limit, 0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaThreadSetLimit was replaced with 0 because DPC++ currently does not support setting resource limits on devices.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaThreadSetLimit was replaced with 0 because SYCL currently does not support setting resource limits on devices.
   // CHECK-NEXT: */
   // CHECK-NEXT: int j = 0;
   int j = cudaThreadSetLimit(limit, 0);
@@ -161,27 +161,27 @@ void test3() {
   //CHECK:int *a1_ptr = deviceProp.get_max_work_item_sizes<int *>();
   int *a1_ptr = deviceProp.maxThreadsDim;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with memPitch. It was migrated to INT_MAX. You may need to rewrite the code.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with memPitch. It was migrated to INT_MAX. You may need to rewrite the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:int a2 = INT_MAX;
   int a2 = deviceProp.memPitch;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with totalConstMem. It was migrated to 0. You may need to rewrite the code.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with totalConstMem. It was migrated to 0. You may need to rewrite the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:int a3 = 0;
   int a3 = deviceProp.totalConstMem;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1090:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with regsPerBlock. It was not migrated. You need to rewrite the code.
+  //CHECK-NEXT:DPCT1090:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with regsPerBlock. It was not migrated. You need to rewrite the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:int a4 = deviceProp.regsPerBlock;
   int a4 = deviceProp.regsPerBlock;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with textureAlignment. It was migrated to dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>(). You may need to rewrite the code.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with textureAlignment. It was migrated to dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>(). You may need to rewrite the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:int a5 = dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>();
   int a5 = deviceProp.textureAlignment;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: DPC++ does not support the device property that would be functionally compatible with kernelExecTimeoutEnabled. It was migrated to false. You may need to rewrite the code.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with kernelExecTimeoutEnabled. It was migrated to false. You may need to rewrite the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:int a6 = false;
   int a6 = deviceProp.kernelExecTimeoutEnabled;
@@ -209,7 +209,7 @@ __device__ void test5() {
     //CHECK:a = sycl::min((int)pDeviceProp->get_global_mem_size(), 1000);
     a = std::min((int)pDeviceProp->totalGlobalMem, 1000);
     // CHECK:/*
-    // CHECK-NEXT:DPCT1006:{{[0-9]+}}: DPC++ does not provide a standard API to differentiate between integrated and discrete GPU devices.
+    // CHECK-NEXT:DPCT1006:{{[0-9]+}}: SYCL does not provide a standard API to differentiate between integrated and discrete GPU devices.
     // CHECK-NEXT:*/
     // CHECK-NEXT: a = sycl::min(pDeviceProp->get_integrated(), 1000);
     a = std::min(pDeviceProp->integrated, 1000);

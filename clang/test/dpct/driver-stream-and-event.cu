@@ -16,7 +16,7 @@ void foo(){
   CUevent e;
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuFuncSetCacheConfig was removed because DPC++ currently does not support configuring shared memory on devices.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuFuncSetCacheConfig was removed because SYCL currently does not support configuring shared memory on devices.
   //CHECK-NEXT: */
   cuFuncSetCacheConfig(f, CU_FUNC_CACHE_PREFER_NONE);
 
@@ -105,24 +105,24 @@ void test_stream() {
   CUresult result = cuStreamAddCallback(hStream, callback<char>, data, flag);
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuStreamAttachMemAsync was removed because DPC++ currently does not support associating USM with a specific queue.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuStreamAttachMemAsync was removed because SYCL currently does not support associating USM with a specific queue.
   //CHECK-NEXT: */
   cuStreamAttachMemAsync(hStream, cuPtr, length, flag);
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuStreamAttachMemAsync was replaced with 0 because DPC++ currently does not support associating USM with a specific queue.
+  //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuStreamAttachMemAsync was replaced with 0 because SYCL currently does not support associating USM with a specific queue.
   //CHECK-NEXT: */
   //CHECK-NEXT: result = 0;
   result = cuStreamAttachMemAsync(hStream, cuPtr, length, flag);
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuStreamAttachMemAsync was replaced with 0 because DPC++ currently does not support associating USM with a specific queue.
+  //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuStreamAttachMemAsync was replaced with 0 because SYCL currently does not support associating USM with a specific queue.
   //CHECK-NEXT: */
   //CHECK-NEXT: MY_ERROR_CHECKER(0);
   MY_ERROR_CHECKER(cuStreamAttachMemAsync(hStream, cuPtr, length, flag));
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuStreamAttachMemAsync was removed because DPC++ currently does not support associating USM with a specific queue.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuStreamAttachMemAsync was removed because SYCL currently does not support associating USM with a specific queue.
   //CHECK-NEXT: */
   cuStreamAttachMemAsync(hStream, cuPtr, std::vector<int>(1,1).front(), flag);
 

@@ -147,7 +147,7 @@ static opt<ReportTypeEnum> ReportType(
             "they were encountered. The report file name will have .apis suffix added.", false},
         llvm::cl::OptionEnumValue{"stats", int(ReportTypeEnum::RTE_Stats),
                   "High level migration statistics: Lines Of Code (LOC) that are migrated to\n"
-                  "DPC++, LOC migrated to DPC++ with helper functions, LOC not needing migration,\n"
+                  "SYCL, LOC migrated to SYCL with helper functions, LOC not needing migration,\n"
                   "LOC needing migration but are not migrated. The report file name has the .stats\n"
                   "suffix added (default)", false},
         llvm::cl::OptionEnumValue{"all", int(ReportTypeEnum::RTE_All),
@@ -191,7 +191,7 @@ static opt<std::string> ReportFilePrefix(
 bool ReportOnlyFlag = false;
 static opt<bool, true>
     ReportOnly("report-only",
-               llvm::cl::desc("Only reports are generated. No DPC++ code is "
+               llvm::cl::desc("Only reports are generated. No SYCL code is "
                               "generated. Default: off."),
                cat(DPCTCat), llvm::cl::location(ReportOnlyFlag));
 
@@ -278,7 +278,7 @@ list<std::string> RuleFile("rule-file", desc("Specifies the rule file path that 
 opt<UsmLevel> USMLevel(
     "usm-level", desc("Sets the USM level to use in source code generation.\n"),
     values(llvm::cl::OptionEnumValue{"restricted", int(UsmLevel::UL_Restricted),
-                     "Uses API from DPC++ Explicit and Restricted Unified "
+                     "Uses API from SYCL Explicit and Restricted Unified "
                      "Shared Memory extension\n"
                      "for memory management migration. (default)", false},
            llvm::cl::OptionEnumValue{"none", int(UsmLevel::UL_None),
@@ -435,13 +435,13 @@ static list<ExplicitNamespace> UseExplicitNamespace(
 static list<DPCPPExtensions> NoDPCPPExtensions(
     "no-dpcpp-extensions",
     llvm::cl::desc(
-        "Comma separated list of DPC++ extensions not to be used in migrated "
+        "Comma separated list of extensions not to be used in migrated "
         "code.\n"
         "By default, these extensions will be used in migrated code."),
     llvm::cl::CommaSeparated,
     values(llvm::cl::OptionEnumValue{"enqueued_barriers",
                                      int(DPCPPExtensions::Ext_EnqueueBarrier),
-                                     "Enqueued barriers DPC++ extension.",
+                                     "Enqueued barriers extension.",
                                      false}),
     value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore,
     llvm::cl::cb<void, DPCPPExtensions>(DpctGlobalInfo::setExtensionUnused));
@@ -494,7 +494,7 @@ static list<std::string> ExcludePathList(
 
 static opt<bool> OptimizeMigration(
     "optimize-migration",
-    llvm::cl::desc("Generates DPC++ code applying more aggressive assumptions that potentially\n"
+    llvm::cl::desc("Generates SYCL code applying more aggressive assumptions that potentially\n"
                    "may alter the semantics of your program. Default: off."),
     cat(DPCTCat), init(false));
 

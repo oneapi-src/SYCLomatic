@@ -24,7 +24,7 @@ if (error_code == cudaSuccess) {
 // CHECK-NEXT:  DPCT1005:{{[0-9]+}}: The SYCL device version is different from CUDA Compute Compatibility. You may need to rewrite this code.
 // CHECK-NEXT: */
 // CHECK-NEXT: /*
-// CHECK-NEXT:  DPCT1006:{{[0-9]+}}: DPC++ does not provide a standard API to differentiate between integrated and discrete GPU devices.
+// CHECK-NEXT:  DPCT1006:{{[0-9]+}}: SYCL does not provide a standard API to differentiate between integrated and discrete GPU devices.
 // CHECK-NEXT: */
 // CHECK-NEXT:if (cdp.get_major_version() < 3 && cdp.get_integrated() != 1) {
     if (cdp.major < 3 && cdp.integrated != 1) {
@@ -115,7 +115,7 @@ cudaDeviceGetAttribute(&val, attr6, dev_id);
 
 int computeMode = -1, minor = 0;
 // CHECK: /*
-// CHECK-NEXT: DPCT1035:{{[0-9]+}}: All DPC++ devices can be used by host to submit tasks. You may need to adjust this code.
+// CHECK-NEXT: DPCT1035:{{[0-9]+}}: All SYCL devices can be used by host to submit tasks. You may need to adjust this code.
 // CHECK-NEXT: */
 // CHECK-NEXT: checkError((computeMode = 1, 0));
 checkError(cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, dev_id));
