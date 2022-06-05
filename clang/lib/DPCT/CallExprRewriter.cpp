@@ -1247,6 +1247,31 @@ makeCallArgCreator(std::string Str) {
   return [=](const CallExpr *C) -> const StringRef { return StringRef(Str); };
 }
 
+std::function<std::string(const CallExpr *)>
+makeCallArgCreatorFromTemplateArg(unsigned Idx) {
+  return [=](const CallExpr *CE) -> std::string {
+    const Expr *Callee = CE->getCallee()->IgnoreParenImpCasts();
+    const FunctionDecl *FD = CE->getDirectCallee();
+    if (!FD)
+      return "";
+    auto DRE = dyn_cast_or_null<DeclRefExpr>(Callee);
+    if (!DRE)
+      return "";
+    auto TA = DRE->template_arguments();
+    if (TA.size() <= Idx)
+      return "";
+
+    auto &SM = DpctGlobalInfo::getSourceManager();
+    auto Begin = SM.getExpansionLoc(TA[Idx].getSourceRange().getBegin());
+    auto End = SM.getExpansionLoc(TA[Idx].getSourceRange().getEnd());
+    End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+        End, SM, DpctGlobalInfo::getContext().getLangOpts()));
+    auto Len = End.getRawEncoding() - Begin.getRawEncoding();
+    auto C = SM.getCharacterData(Begin);
+    return std::string(C, Len);
+  };
+}
+
 std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
 makeCallArgCreatorWithCall(unsigned Idx) {
   return [=](const CallExpr *C) -> std::pair<const CallExpr *, const Expr *> {
@@ -2269,28 +2294,29 @@ public:
   bool operator()(const CallExpr *C) { return C->getNumArgs() == Count; }
 };
 
-class CheckArgType {
-  unsigned Idx;
+class CheckBaseType {
   std::string TypeName;
 
 public:
-  CheckArgType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
+  CheckBaseType(std::string Name) : TypeName(Name) {}
   bool operator()(const CallExpr *C) {
-    if (C->getNumArgs() > Idx) {
-      if (!C->getDirectCallee())
-        return true;
-      if (!C->getDirectCallee()->getParamDecl(Idx))
-        return true;
-      std::string ArgType = C->getDirectCallee()
-                                ->getParamDecl(Idx)
-                                ->getType()
-                                .getCanonicalType()
-                                .getUnqualifiedType()
-                                .getAsString();
-      return ArgType.find(TypeName) != std::string::npos;
-    }
-    return true;
+    auto ME = dyn_cast<MemberExpr>(C->getCallee()->IgnoreImpCasts());
+    if (!ME)
+      return false;
+    auto Base = ME->getBase()->IgnoreImpCasts();
+    if (!Base)
+      return false;
+    auto BaseType =
+        DpctGlobalInfo::getTypeName(Base->getType().getCanonicalType());
+    return TypeName == BaseType;
   }
+};
+
+auto UseNDRangeBarrier = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useNdRangeBarrier();
+};
+auto UseLogicalGroup = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useLogicalGroup();
 };
 
 class CheckDerefedTypeBeforeCast {
@@ -2422,6 +2448,28 @@ public:
   }
 };
 
+template <class T>
+std::function<std::string(const CallExpr *)> ConcatStr(T Functor,
+                                                       std::string Str) {
+  return [=](const CallExpr *C) -> std::string {
+    return Functor(C) + Str; };
+}
+
+std::function<std::string(const CallExpr *)> MemberExprBase() {
+  return [=](const CallExpr *C) -> std::string {
+    auto ME = dyn_cast<MemberExpr>(C->getCallee()->IgnoreImpCasts());
+    if (!ME)
+      return "";
+    auto Base = ME->getBase()->IgnoreImpCasts();
+    if (!Base)
+      return "";
+    auto DRE = dyn_cast<DeclRefExpr>(Base);
+    if (!DRE)
+      return "";
+    return DRE->getNameInfo().getName().getAsString();
+  };
+}
+
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
 #define INSERT_AROUND_FACTORY(x, PREFIX, SUFFIX)                               \
   createInsertAroundFactory(x PREFIX, SUFFIX),
@@ -2448,6 +2496,9 @@ public:
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
 #define SUBGROUP                                                               \
   std::function<SubGroupPrinter(const CallExpr *)>(SubGroupPrinter::create)
+#define NDITEM std::function<ItemPrinter(const CallExpr *)>(ItemPrinter::create)
+#define GROUP                                                                  \
+  std::function<GroupPrinter(const CallExpr *)>(GroupPrinter::create)
 #define POINTER_CHECKER(x) makePointerChecker(x)
 #define LITERAL(x) makeLiteral(x)
 #define TEMPLATED_CALLEE(FuncName, ...)                                        \
@@ -2598,6 +2649,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesWarp.inc"
 #include "APINamesCUDNN.inc"
 #include "APINamesErrorHandling.inc"
+#include "APINamesCooperativeGroups.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED

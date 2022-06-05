@@ -1121,7 +1121,6 @@ public:
 
 class SubGroupPrinter {
   const CallExpr *Call;
-
 public:
   SubGroupPrinter(const CallExpr *C) : Call(C) {}
   static SubGroupPrinter create(const CallExpr *C) {
@@ -1129,6 +1128,27 @@ public:
   }
   template <class StreamT> void print(StreamT &Stream) const {
     DpctGlobalInfo::printSubGroup(Stream, Call);
+  }
+};
+
+class ItemPrinter {
+  const CallExpr *Call;
+public:
+  ItemPrinter(const CallExpr *C) : Call(C) {}
+  static ItemPrinter create(const CallExpr *C) { return ItemPrinter(C);
+  }
+  template <class StreamT> void print(StreamT &Stream) const {
+    DpctGlobalInfo::printItem(Stream, Call);
+  }
+};
+
+class GroupPrinter {
+  const CallExpr *Call;
+public:
+  GroupPrinter(const CallExpr *C) : Call(C) {}
+  static GroupPrinter create(const CallExpr *C) { return GroupPrinter(C); }
+  template <class StreamT> void print(StreamT &Stream) const {
+    DpctGlobalInfo::printGroup(Stream, Call);
   }
 };
 
@@ -1286,6 +1306,89 @@ std::shared_ptr<CallExprRewriterFactoryBase>
 createUserDefinedMethodRewriterFactory(
     const std::string &, MetaRuleObject &,
     std::shared_ptr<MetaRuleObject::ClassMethod>);
+
+class CheckArgType {
+  unsigned Idx;
+  std::string TypeName;
+
+public:
+  CheckArgType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
+  bool operator()(const CallExpr *C) {
+    if (C->getNumArgs() > Idx) {
+      if (!C->getDirectCallee())
+        return true;
+      if (!C->getDirectCallee()->getParamDecl(Idx))
+        return true;
+      std::string ArgType = C->getDirectCallee()
+                                ->getParamDecl(Idx)
+                                ->getType()
+                                .getCanonicalType()
+                                .getUnqualifiedType()
+                                .getAsString();
+      return ArgType.find(TypeName) != std::string::npos;
+    }
+    return true;
+  }
+};
+
+class CheckIntergerTemplateArgValueBase {
+  unsigned Idx;
+
+protected:
+  bool getTemplateArgAsInt64(const CallExpr *C, std::int64_t &Val) {
+    const FunctionDecl *FD = C->getDirectCallee();
+    if (!FD)
+      return false;
+    auto DRE = dyn_cast<DeclRefExpr>(C->getCallee()->IgnoreParenImpCasts());
+    if (!DRE)
+      return false;
+    auto TA = DRE->template_arguments();
+    if (TA.size() <= Idx)
+      return false;
+    auto TSA = FD->getTemplateSpecializationArgs();
+    if (!TSA)
+      return false;
+    if (TSA->get(Idx).getKind() != clang::TemplateArgument::ArgKind::Integral)
+      return false;
+    auto I = TSA->get(Idx).getAsIntegral();
+    if (I.getMinSignedBits() > 64)
+      return false;
+    Val = I.getExtValue();
+    return true;
+  }
+  CheckIntergerTemplateArgValueBase(unsigned int Idx) : Idx(Idx) {}
+};
+
+class CheckIntergerTemplateArgValueNE : CheckIntergerTemplateArgValueBase {
+  std::int64_t CompareValue;
+
+public:
+  CheckIntergerTemplateArgValueNE(unsigned int Idx, std::int64_t CompareValue)
+      : CheckIntergerTemplateArgValueBase(Idx), CompareValue(CompareValue) {}
+  bool operator()(const CallExpr *C) {
+    std::int64_t Val = 0;
+    bool Res = getTemplateArgAsInt64(C, Val);
+    if (Res && (Val != CompareValue))
+      return true;
+    return false;
+  }
+};
+
+class CheckIntergerTemplateArgValueLE : CheckIntergerTemplateArgValueBase {
+  std::int64_t CompareValue;
+
+public:
+  CheckIntergerTemplateArgValueLE(unsigned int Idx, std::int64_t CompareValue)
+      : CheckIntergerTemplateArgValueBase(Idx), CompareValue(CompareValue) {}
+  bool operator()(const CallExpr *C) {
+    std::int64_t Val = 0;
+    bool Res = getTemplateArgAsInt64(C, Val);
+    if (Res && (Val <= CompareValue))
+      return true;
+    return false;
+  }
+};
+
 } // namespace dpct
 } // namespace clang
 
