@@ -289,7 +289,7 @@ public:
     cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
     return atm.fetch_xor(operand, memoryOrder, memoryScope);
   }
-  
+
 };
 // DPCT_LABEL_END
 

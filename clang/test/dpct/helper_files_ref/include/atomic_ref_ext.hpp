@@ -6,9 +6,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-
 #ifndef __DPCT_ATOMIC_REF_EXT_HPP__
 #define __DPCT_ATOMIC_REF_EXT_HPP__
+
 
 #include <CL/sycl.hpp>
 #include <cassert>
@@ -39,6 +39,7 @@ public:
   atomic_ref_ext() = default;
   /// default constructor
   atomic_ref_ext(T __d) : __d(__d){};
+
 
   /// atomically replaces the value of the referenced object with a non-atomic argument
   /// \param [in]  replaces the value of the referenced object
@@ -182,7 +183,6 @@ public:
     return atm.fetch_xor(operand, memoryOrder, memoryScope);
   }
 
-  
 };
 
 
