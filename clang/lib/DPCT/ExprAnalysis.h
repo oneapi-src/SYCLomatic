@@ -714,6 +714,7 @@ public:
   }
 
   inline void analyze() { Base::analyze(); }
+
   // Special init is needed for argument expression.
   void analyze(const Expr *Expression) {
     initArgumentExpr(Expression);

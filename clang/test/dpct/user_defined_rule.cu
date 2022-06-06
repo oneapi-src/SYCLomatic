@@ -101,3 +101,23 @@ void foo2(){
       return ::min(::max(v, 10), 100);
     }});
 }
+
+
+struct MyStruct {
+  operator void *() { return NULL; }
+};
+
+namespace A1 {
+  namespace B1 {
+    MyStruct A1B1() { return MyStruct(); }
+  }
+}
+
+namespace A2 {
+  namespace B2 = A1::B1;
+}
+
+void foo4(){
+  // CHECK: A2B2();
+  A2::B2::A1B1();
+}

@@ -453,13 +453,34 @@ OutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
   }
   return ResultBuilder;
 }
-
+namespace clang {
+namespace ast_matchers {
+AST_MATCHER_P(DeclRefExpr, hasRefName, std::string, NameToMatch) {
+  auto Qualifier = Node.getQualifier();
+  if(!Qualifier)
+    return false;
+  std::string RefName = getNestedNameSpecifierString(Qualifier).c_str() +
+                        Node.getNameInfo().getAsString();
+  return !RefName.compare(NameToMatch);
+}
+} // namespace ast_matchers
+} // namespace clang
 using namespace clang::ast_matchers;
 
 void clang::dpct::UserDefinedAPIRule::registerMatcher(
     clang::ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(callExpr(callee(functionDecl(hasName(APIName)))).bind("call"),
-                this);
+  auto Pos = APIName.rfind("::");
+  if (Pos == std::string::npos || Pos == 0) {
+    MF.addMatcher(callExpr(callee(functionDecl(hasName(
+                               Pos == 0 ? APIName.substr(2) : APIName))))
+                      .bind("call"),
+                  this);
+  } else {
+    MF.addMatcher(callExpr(callee(expr(ignoringImpCasts(
+                               declRefExpr(hasRefName(APIName))))))
+                      .bind("call"),
+                  this);
+  }
 }
 
 void clang::dpct::UserDefinedAPIRule::runRule(
