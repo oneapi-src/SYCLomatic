@@ -67,8 +67,7 @@ static void getCompileInfo(
     std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
         &CompileCmds) {
 
-  std::unordered_map<std::string, bool> ObjsInLinkerCmd;
-  std::unordered_map<std::string, std::unordered_map<std::string, bool>>
+  std::unordered_map<std::string, std::vector<std::string>>
       ObjsInLinkerCmdPerTarget;
 
   std::map<std::string, clang::tooling::CompilationInfo> CmdsMap;
@@ -77,9 +76,12 @@ static void getCompileInfo(
     std::string FileName = Entry.first;
     if (llvm::StringRef(FileName).startswith("LinkerEntry")) {
       // Parse linker cmd to get target name and objfile names
-      std::unordered_map<std::string, bool> ObjsInLinker;
+      std::vector<std::string> ObjsInLKOrARCmd;
 
       bool IsTargetName = false;
+      bool IsArCommand = false;
+      bool SkipArOptions = false;
+
       std::string ObjName;
       std::string TargetName;
       for (const auto &Obj : Entry.second) {
@@ -94,9 +96,16 @@ static void getCompileInfo(
           llvm::sys::path::native(FilePathAbs);
           llvm::sys::fs::make_absolute(FilePathAbs);
           llvm::sys::path::remove_dots(FilePathAbs, true);
-          ObjsInLinkerCmd[std::string(FilePathAbs.str())] = true;
-          ObjsInLinker[std::string(FilePathAbs.str())] = true;
+          ObjsInLKOrARCmd.push_back(std::string(FilePathAbs.str()));
           ObjName = std::string(FilePathAbs.str());
+        } else if (Obj == "ar") {
+          IsArCommand = true;
+        } else if (IsArCommand) {
+          SkipArOptions = true;
+          IsArCommand = false;
+        } else if (SkipArOptions) {
+          TargetName = Obj;
+          SkipArOptions = false;
         }
       }
 
@@ -107,7 +116,16 @@ static void getCompileInfo(
         continue;
       }
 
-      ObjsInLinkerCmdPerTarget[TargetName] = ObjsInLinker;
+      // Make target file relative to out-root directory
+      SmallString<512> OutTargetName = llvm::StringRef(TargetName);
+      makeCanonical(OutTargetName);
+      rewriteDir(OutTargetName, InRoot, OutRoot);
+      llvm::sys::path::replace_path_prefix(OutTargetName, OutRoot, ".");
+
+      for (auto &Obj : ObjsInLKOrARCmd) {
+        ObjsInLinkerCmdPerTarget[OutTargetName.c_str()].push_back(Obj);
+      }
+
     } else {
       continue;
     }
@@ -248,7 +266,7 @@ static void getCompileInfo(
   for (const auto &Entry : ObjsInLinkerCmdPerTarget) {
     for (const auto &Obj : Entry.second) {
 
-      auto Iter = CmdsMap.find(Obj.first);
+      auto Iter = CmdsMap.find(Obj);
       if (Iter != CmdsMap.end()) {
         auto CmpInfo = Iter->second;
         fillCompileCmds(CompileCmds, CmpInfo.MigratedFileName,
