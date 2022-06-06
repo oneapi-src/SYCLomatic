@@ -517,37 +517,41 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   auto BaseType = (QT->isPointerType() ? QT->getPointeeType() : QT)
                       .getUnqualifiedType()
                       .getAsString(PP);
-  if (!ME->getMemberDecl()->getIdentifier())
-    return;
-  std::string FieldName = ME->getMemberDecl()->getName().str();
 
-  auto ItFieldRule = MapNames::ClassFieldMap.find(BaseType + "." + FieldName);
-  if (ItFieldRule != MapNames::ClassFieldMap.end()) {
-    if (ItFieldRule->second->GetterName == "") {
-      addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
-                     ItFieldRule->second->NewName);
-      return;
-    } else {
-      if (auto BO = DpctGlobalInfo::findAncestor<BinaryOperator>(ME)) {
-        if (BO->getOpcode() == BinaryOperatorKind::BO_Assign &&
-            ME == BO->getLHS()) {
-          ExprAnalysis EA;
-          EA.analyze(BO->getRHS());
-          std::string RHSStr = EA.getReplacedString();
-          addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
-                         ItFieldRule->second->SetterName + "(" + RHSStr + ")");
-          auto SpellingLocInfo = getSpellingOffsetAndLength(
-              BO->getOperatorLoc(), BO->getOperatorLoc());
-          addExtReplacement(std::make_shared<ExtReplacement>(
-              SM, SpellingLocInfo.first, SpellingLocInfo.second, "", nullptr));
-          SpellingLocInfo = getSpellingOffsetAndLength(
-              BO->getRHS()->getBeginLoc(), BO->getRHS()->getEndLoc());
-          addExtReplacement(std::make_shared<ExtReplacement>(
-              SM, SpellingLocInfo.first, SpellingLocInfo.second, "", nullptr));
-        }
-      } else {
+  std::string FieldName = "";
+  if (ME->getMemberDecl()->getIdentifier()) {
+    FieldName = ME->getMemberDecl()->getName().str();
+    auto ItFieldRule = MapNames::ClassFieldMap.find(BaseType + "." + FieldName);
+    if (ItFieldRule != MapNames::ClassFieldMap.end()) {
+      if (ItFieldRule->second->GetterName == "") {
         addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
-                       ItFieldRule->second->GetterName + "()");
+                       ItFieldRule->second->NewName);
+        return;
+      } else {
+        if (auto BO = DpctGlobalInfo::findAncestor<BinaryOperator>(ME)) {
+          if (BO->getOpcode() == BinaryOperatorKind::BO_Assign &&
+              ME == BO->getLHS()) {
+            ExprAnalysis EA;
+            EA.analyze(BO->getRHS());
+            std::string RHSStr = EA.getReplacedString();
+            addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
+                           ItFieldRule->second->SetterName + "(" + RHSStr +
+                               ")");
+            auto SpellingLocInfo = getSpellingOffsetAndLength(
+                BO->getOperatorLoc(), BO->getOperatorLoc());
+            addExtReplacement(std::make_shared<ExtReplacement>(
+                SM, SpellingLocInfo.first, SpellingLocInfo.second, "",
+                nullptr));
+            SpellingLocInfo = getSpellingOffsetAndLength(
+                BO->getRHS()->getBeginLoc(), BO->getRHS()->getEndLoc());
+            addExtReplacement(std::make_shared<ExtReplacement>(
+                SM, SpellingLocInfo.first, SpellingLocInfo.second, "",
+                nullptr));
+          }
+        } else {
+          addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
+                         ItFieldRule->second->GetterName + "()");
+        }
       }
     }
   }
@@ -670,6 +674,8 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     auto Rewriter = Itr->second->create(CE);
     auto Result = Rewriter->rewrite();
+    BlockLevelFormatFlag = Rewriter->getBlockLevelFormatFlag();
+
     if (Rewriter->isNoRewrite()) {
       // if the function is NoRewrite
       // Only change the function name in the spelling loc and
@@ -744,23 +750,27 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
   PP.PrintCanonicalTypes = true;
   auto BaseType = CMCE->getObjectType().getUnqualifiedType().getAsString(PP);
 
-  if (!CMCE->getMethodDecl()->getIdentifier())
-    return;
-  auto MethodName = CMCE->getMethodDecl()->getNameAsString();
+  if (CMCE->getMethodDecl()->getIdentifier()) {
+    auto MethodName = CMCE->getMethodDecl()->getNameAsString();
 
-  if (!CallExprRewriterFactoryBase::MethodRewriterMap)
-    return;
-  auto Itr = CallExprRewriterFactoryBase::MethodRewriterMap->find(
-      BaseType + "." + MethodName);
-  if (Itr != CallExprRewriterFactoryBase::MethodRewriterMap->end()) {
-    auto Rewriter = Itr->second->create(CMCE);
-    auto Result = Rewriter->rewrite();
-    if (Result.hasValue()) {
-      auto ResultStr = Result.getValue();
-      addReplacement(CMCE, ResultStr);
-      Rewriter->Analyzer.applyAllSubExprRepl();
+    if (CallExprRewriterFactoryBase::MethodRewriterMap) {
+      auto Itr = CallExprRewriterFactoryBase::MethodRewriterMap->find(
+          BaseType + "." + MethodName);
+      if (Itr != CallExprRewriterFactoryBase::MethodRewriterMap->end()) {
+        auto Rewriter = Itr->second->create(CMCE);
+        auto Result = Rewriter->rewrite();
+        if (Result.hasValue()) {
+          auto ResultStr = Result.getValue();
+          addReplacement(CMCE, ResultStr);
+          Rewriter->Analyzer.applyAllSubExprRepl();
+          return;
+        }
+      }
     }
   }
+  dispatch(CMCE->getCallee());
+  for (auto Arg : CMCE->arguments())
+    analyzeArgument(Arg);
 }
 
 void ExprAnalysis::analyzeExpr(const CXXBindTemporaryExpr *CBTE) {
@@ -891,6 +901,9 @@ void ExprAnalysis::analyzeTemplateArgument(const TemplateArgumentLoc &TAL) {
 
 void ExprAnalysis::applyAllSubExprRepl() {
   for (std::shared_ptr<ExtReplacement> Repl : SubExprRepl) {
+    if (BlockLevelFormatFlag)
+      Repl->setBlockLevelFormatFlag();
+
     DpctGlobalInfo::getInstance().addReplacement(Repl);
   }
 }

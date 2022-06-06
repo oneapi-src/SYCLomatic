@@ -61,8 +61,6 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
 
   // Half Arithmetic Functions
 
-  // CHECK: h_2 = sycl::fabs(h);
-  h_2 = __habs(h);
   // TODO:1CHECK: h2_2 = h2 / h2_1;
   //h2_2 = __h2div(h2, h2_1);
   // TODO:1CHECK: h_2 = h / h_1;
@@ -78,8 +76,6 @@ __global__ void kernelFuncHalf(double *deviceArrayDouble) {
 
   // Half2 Arithmetic Functions
 
-  // CHECK: h2_2 = sycl::fabs(h2);
-  h2_2 = __habs2(h2);
   // CHECK: h2_2 = h2 + h2_1;
   h2_2 = __hadd2(h2, h2_1);
   // CHECK: h2_2 = sycl::fma(h2, h2_1, h2_2);
@@ -2381,20 +2377,24 @@ __global__ void testUnsupported() {
   // CHECK: i = dpct::ffs<long long int>(ll);
   i = __ffsll(ll);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __funnelshift_l is not supported.
+  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) << (shift & 31)) >> 32) expression is used instead of the __funnelshift_l call. These two expressions do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: u = ((sycl::upsample<unsigned>(u, u) << (u & 31)) >> 32);
   u = __funnelshift_l(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __funnelshift_lc is not supported.
+  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) << min(shift, 32)) >> 32) expression is used instead of the __funnelshift_lc call. These two expressions do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: u = ((sycl::upsample<unsigned>(u, u) << sycl::min(u, 32)) >> 32);
   u = __funnelshift_lc(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __funnelshift_r is not supported.
+  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) >> (shift & 31)) & 0xFFFFFFFF) expression is used instead of the __funnelshift_r call. These two expressions do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: u = ((sycl::upsample<unsigned>(u, u) >> (u & 31)) & 0xFFFFFFFF);
   u = __funnelshift_r(u, u, u);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __funnelshift_rc is not supported.
+  // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) >> min(shift, 32)) & 0xFFFFFFFF) expression is used instead of the __funnelshift_rc call. These two expressions do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   // CHECK-NEXT: */
+  // CHECK-NEXT: u = ((sycl::upsample<unsigned>(u, u) >> sycl::min(u, 32)) & 0xFFFFFFFF); 
   u = __funnelshift_rc(u, u, u);
   // CHECK: ll = sycl::mul_hi(ll, ll);
   ll = __mul64hi(ll, ll);

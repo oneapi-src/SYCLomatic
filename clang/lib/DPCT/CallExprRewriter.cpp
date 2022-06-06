@@ -686,9 +686,12 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       !ContextFD->hasAttr<CUDAGlobalAttr>())
     return Base::rewrite();
 
-  // Do need to report warnings for pow migration
+  // Do need to report warnings for pow or funnelshift migrations
   if (SourceCalleeName != "pow" && SourceCalleeName != "powf" &&
-      SourceCalleeName != "__powf")
+      SourceCalleeName != "__powf" && SourceCalleeName != "__funnelshift_l" &&
+      SourceCalleeName != "__funnelshift_lc" &&
+      SourceCalleeName != "__funnelshift_r" &&
+      SourceCalleeName != "__funnelshift_rc")
     report(Diagnostics::MATH_EMULATION, false,
            MapNames::ITFName.at(SourceCalleeName.str()), TargetCalleeName);
 
@@ -696,6 +699,14 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
   std::string ReplStr;
   llvm::raw_string_ostream OS(ReplStr);
   auto MigratedArg0 = getMigratedArg(0);
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*Call);
+  bool IsInReturnStmt = false;
+  if (Parents.size())
+    if (auto ParentStmt = getParentStmt(Call))
+      if (ParentStmt->getStmtClass() == Stmt::StmtClass::ReturnStmtClass)
+          IsInReturnStmt = true;
 
   if (FuncName == "frexp" || FuncName == "frexpf") {
     auto Arg = Call->getArg(0);
@@ -756,6 +767,9 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << MapNames::getClNamespace(false, true) + "nan(0u)";
   } else if (FuncName == "sincos" || FuncName == "sincosf" ||
              FuncName == "__sincosf") {
+    std::string Buf;
+    llvm::raw_string_ostream RSO(Buf);
+
     auto Arg = Call->getArg(0);
     std::string ArgT = Arg->IgnoreImplicit()->getType().getAsString(
         PrintingPolicy(LangOptions()));
@@ -777,47 +791,64 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArg(1);
     auto MigratedArg2 = getMigratedArg(2);
     if (MigratedArg1[0] == '&')
-      OS << MigratedArg1.substr(1);
+      RSO << MigratedArg1.substr(1);
     else
-      OS << "*(" + MigratedArg1 + ")";
-    OS << " = " + MapNames::getClNamespace(false, true) + "sincos("
+      RSO << "*(" + MigratedArg1 + ")";
+    RSO << " = " + MapNames::getClNamespace(false, true) + "sincos("
        << MigratedArg0;
 
     if (FuncName == "sincos")
-      OS << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
+      RSO << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
                 MapNames::getClNamespace() + "access::address_space::" +
                 getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
     else
-      OS << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
+      RSO << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
                 MapNames::getClNamespace() + "access::address_space::" +
                 getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
-    OS << MigratedArg2 << "))";
+    RSO << MigratedArg2 << "))";
+
+    if(IsInReturnStmt) {
+      OS << "[&](){ " << Buf << ";"<< " }()";
+      BlockLevelFormatFlag = true;
+    } else {
+      OS << Buf;
+    }
+
   } else if (FuncName == "sincospi" || FuncName == "sincospif") {
+    std::string Buf;
+    llvm::raw_string_ostream RSO(Buf);
+
     auto MigratedArg1 = getMigratedArg(1);
     auto MigratedArg2 = getMigratedArg(2);
     if (MigratedArg1[0] == '&')
-      OS << MigratedArg1.substr(1);
+      RSO << MigratedArg1.substr(1);
     else
-      OS << "*(" + MigratedArg1 + ")";
-    OS << " = " + MapNames::getClNamespace(false, true) + "sincos("
+      RSO << "*(" + MigratedArg1 + ")";
+    RSO << " = " + MapNames::getClNamespace(false, true) + "sincos("
        << MigratedArg0;
     if (FuncName == "sincospi") {
-      OS << " * DPCT_PI";
+      RSO << " * DPCT_PI";
       requestFeature(HelperFeatureEnum::Dpct_dpct_pi, Call);
     } else {
-      OS << " * DPCT_PI_F";
+      RSO << " * DPCT_PI_F";
       requestFeature(HelperFeatureEnum::Dpct_dpct_pi_f, Call);
     }
 
     if (FuncName == "sincospi")
-      OS << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
+      RSO << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
                 MapNames::getClNamespace() + "access::address_space::" +
                 getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
     else
-      OS << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
+      RSO << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
                 MapNames::getClNamespace() + "access::address_space::" +
                 getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
-    OS << MigratedArg2 << "))";
+    RSO << MigratedArg2 << "))";
+    if(IsInReturnStmt) {
+      OS << "[&](){ " << Buf << ";"<< " }()";
+      BlockLevelFormatFlag = true;
+    } else {
+      OS << Buf;
+    }
   } else if (FuncName == "remquo" || FuncName == "remquof") {
     {
       auto Arg = Call->getArg(0);
@@ -1042,6 +1073,29 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       requestFeature(HelperFeatureEnum::Util_fast_length, Call);
       OS << MapNames::getDpctNamespace() << "fast_length("
          << "(float *)" << getMigratedArg(1) << ", " << MigratedArg0 << ")";
+    }
+  } else if (FuncName == "__funnelshift_l" || FuncName == "__funnelshift_lc" ||
+             FuncName == "__funnelshift_r" || FuncName == "__funnelshift_rc") {
+    report(Diagnostics::MATH_EMULATION_EXPRESSION, false,
+           MapNames::ITFName.at(SourceCalleeName.str()), TargetCalleeName);
+    auto Namespace = MapNames::getClNamespace();
+    auto Low = getMigratedArg(0);
+    auto High = getMigratedArg(1);
+    auto Shift = getMigratedArg(2);
+    if (FuncName == "__funnelshift_l") {
+      OS << "((" << Namespace << "upsample<unsigned>(" << High
+         << ", " << Low << ") << (" << Shift << " & 31)) >> 32)";
+    } else if (FuncName == "__funnelshift_lc") {
+      OS << "((" << Namespace << "upsample<unsigned>(" << High
+         << ", " << Low << ") << " << Namespace << "min(" << Shift
+         << ", 32)) >> 32)";
+    } else if (FuncName == "__funnelshift_r") {
+      OS << "((" << Namespace << "upsample<unsigned>(" << High
+         << ", " << Low << ") >> (" << Shift << " & 31)) & 0xFFFFFFFF)";
+    } else if (FuncName == "__funnelshift_rc") {
+      OS << "((" << Namespace << "upsample<unsigned>(" << High
+         << ", " << Low << ") >> " << Namespace << "min(" << Shift
+         << ", 32)) & 0xFFFFFFFF)";
     }
   }
 

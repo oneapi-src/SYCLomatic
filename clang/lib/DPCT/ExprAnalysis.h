@@ -637,6 +637,8 @@ protected:
   std::vector<std::shared_ptr<ExtReplacement>> SubExprRepl;
   bool IsInMacroDefine = false;
 
+  bool BlockLevelFormatFlag = false;
+
 private:
   // E is analyzed target expression, while ExprString is the source text of E.
   // Replacements contains all the replacements happened in E.
@@ -712,6 +714,7 @@ public:
   }
 
   inline void analyze() { Base::analyze(); }
+
   // Special init is needed for argument expression.
   void analyze(const Expr *Expression) {
     initArgumentExpr(Expression);
