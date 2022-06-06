@@ -670,6 +670,8 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     auto Rewriter = Itr->second->create(CE);
     auto Result = Rewriter->rewrite();
+    BlockLevelFormatFlag = Rewriter->getBlockLevelFormatFlag();
+
     if (Rewriter->isNoRewrite()) {
       // if the function is NoRewrite
       // Only change the function name in the spelling loc and
@@ -891,6 +893,9 @@ void ExprAnalysis::analyzeTemplateArgument(const TemplateArgumentLoc &TAL) {
 
 void ExprAnalysis::applyAllSubExprRepl() {
   for (std::shared_ptr<ExtReplacement> Repl : SubExprRepl) {
+    if (BlockLevelFormatFlag)
+      Repl->setBlockLevelFormatFlag();
+
     DpctGlobalInfo::getInstance().addReplacement(Repl);
   }
 }

@@ -618,3 +618,14 @@ __device__ static void multiply(int block_size, AccPtr<T> &ptr, T value) {
   int BSZ = ((int)ceilf((float)ptr.getSize() / (float)block_size));
 }
 
+__device__ void sincos_1(double x, double* sptr, double* cptr) {
+  // CHECK:  return [&](){ *(sptr) = sycl::sincos(x, sycl::make_ptr<double, sycl::access::address_space::global_space>(cptr)); }();
+  return ::sincos(x, sptr, cptr);
+}
+
+__device__ void sincospi_1(double x, double* sptr, double* cptr) {
+  // CHECK:  return [&](){ *(sptr) = sycl::sincos(x * DPCT_PI, sycl::make_ptr<double, sycl::access::address_space::global_space>(cptr)); }();
+  return ::sincospi (x, sptr, cptr);
+}
+
+

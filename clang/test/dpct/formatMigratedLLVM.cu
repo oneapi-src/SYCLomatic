@@ -150,3 +150,24 @@ void test() {
                                    0,
                                    0);
 }
+
+__device__ void sincos_1(double x, double* sptr, double* cptr) {
+     //CHECK:  return [&]() {
+//CHECK-NEXT:    *(sptr) = cl::sycl::sincos(
+//CHECK-NEXT:        x, cl::sycl::make_ptr<double,
+//CHECK-NEXT:                              cl::sycl::access::address_space::global_space>(
+//CHECK-NEXT:               cptr));
+//CHECK-NEXT:  }();
+  return ::sincos(x, sptr, cptr);
+}
+
+__device__ void sincospi_1(double x, double* sptr, double* cptr) {
+     //CHECK:  return [&]() {
+//CHECK-NEXT:    *(sptr) = cl::sycl::sincos(
+//CHECK-NEXT:        x * DPCT_PI,
+//CHECK-NEXT:        cl::sycl::make_ptr<double,
+//CHECK-NEXT:                           cl::sycl::access::address_space::global_space>(
+//CHECK-NEXT:            cptr));
+//CHECK-NEXT:  }();
+  return ::sincospi (x, sptr, cptr);
+}
