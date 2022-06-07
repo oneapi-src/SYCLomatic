@@ -10,8 +10,8 @@
 //===----------------------------------------------------------------------===//
 // DPCT_LABEL_END
 
-#ifndef __DPL_UTILS_HPP
-#define __DPL_UTILS_HPP
+#ifndef __DPCT_DPL_UTILS_HPP__
+#define __DPCT_DPL_UTILS_HPP__
 // DPCT_COMMENT
 // DPCT_COMMENT Example1:
 // DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
@@ -57,4 +57,4 @@
 #include "dpl_extras/vector.h"
 #include "dpl_extras/dpcpp_extensions.h"
 
-#endif // __DPL_UTILS_HPP
+#endif // __DPCT_DPL_UTILS_HPP__
