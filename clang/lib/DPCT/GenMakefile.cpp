@@ -65,7 +65,8 @@ static std::string getCustomBaseName(const std::string &Path) {
 static void getCompileInfo(
     StringRef InRoot, StringRef OutRoot,
     std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
-        &CompileCmds) {
+        &CompileCmds,
+    std::unordered_map<std::string, std::string> &ToolPerTarget) {
 
   std::unordered_map<std::string, std::vector<std::string>>
       ObjsInLinkerCmdPerTarget;
@@ -84,6 +85,7 @@ static void getCompileInfo(
 
       std::string ObjName;
       std::string TargetName;
+      std::string Tool;
       for (const auto &Obj : Entry.second) {
         if (Obj == "-o") {
           IsTargetName = true;
@@ -91,6 +93,7 @@ static void getCompileInfo(
           // Set the target name
           TargetName = Obj;
           IsTargetName = false;
+          Tool = "ld -o";
         } else if (llvm::StringRef(Obj).endswith(".o")) {
           llvm::SmallString<512> FilePathAbs(Obj);
           llvm::sys::path::native(FilePathAbs);
@@ -106,6 +109,7 @@ static void getCompileInfo(
         } else if (SkipArOptions) {
           TargetName = Obj;
           SkipArOptions = false;
+          Tool = "ar -r";
         }
       }
 
@@ -125,6 +129,7 @@ static void getCompileInfo(
       for (auto &Obj : ObjsInLKOrARCmd) {
         ObjsInLinkerCmdPerTarget[OutTargetName.c_str()].push_back(Obj);
       }
+      ToolPerTarget[OutTargetName.c_str()] = Tool;
 
     } else {
       continue;
@@ -288,7 +293,8 @@ static void
 genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
             const std::string &BuildScriptName,
             std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
-                &CmdsPerTarget) {
+                &CmdsPerTarget,
+            std::unordered_map<std::string, std::string> &ToolPerTarget) {
   std::string Buf;
   llvm::raw_string_ostream OS(Buf);
   std::string TargetName;
@@ -350,12 +356,18 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
   std::string Target;
   std::string ObjStr;
   TargetIdx = 0;
+
+  std::unordered_map<std::string /*TARGET*/, std::string /*ar or ld*/>
+      ToolPerTargetVariable;
   for (const auto &Entry : CmdsPerTarget) {
     if (TargetName == EmptyTarget)
       continue;
 
-    OS << buildString("TARGET_", std::to_string(TargetIdx), " := ", Entry.first,
-                      "\n");
+    const std::string VarTarget =
+        buildString("TARGET_", std::to_string(TargetIdx));
+
+    OS << buildString(VarTarget, " := ", Entry.first, "\n");
+    ToolPerTargetVariable[VarTarget] = ToolPerTarget[Entry.first];
     Target += " " + buildString("${TARGET_", std::to_string(TargetIdx), "}");
     TargetIdx++;
   }
@@ -413,7 +425,11 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
     for (const auto &Entry : CmdsPerTarget) {
       OS << buildString("$(TARGET_", std::to_string(TargetIdx), "): $(OBJS_",
                         std::to_string(TargetIdx), ")\n");
-      OS << buildString("\t$(LD) -o $@ $^ $(LIB) ", MKLOption, "\n\n");
+
+      std::string Tool = ToolPerTargetVariable[buildString(
+          "TARGET_", std::to_string(TargetIdx))];
+
+      OS << buildString("\t", Tool, " $@ $^ $(LIB) ", MKLOption, "\n\n");
 
       for (unsigned Idx = 0; Idx < Entry.second.size(); Idx++) {
         std::string SrcStrName = "TARGET_" + std::to_string(TargetIdx) +
@@ -458,7 +474,10 @@ void genBuildScript(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
            std::vector<clang::tooling::CompilationInfo>>
       NewCompileCmdsMap;
 
-  getCompileInfo(InRoot, OutRoot, NewCompileCmdsMap);
+  std::unordered_map<std::string /*target*/, std::string /*ar or ld*/>
+      ToolPerTarget;
+
+  getCompileInfo(InRoot, OutRoot, NewCompileCmdsMap, ToolPerTarget);
 
   bool NeedMergetYaml = false;
 
@@ -500,5 +519,6 @@ void genBuildScript(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
   if (!NeedMergetYaml)
     CompileCmdsPerTarget = NewCompileCmdsMap;
 
-  genMakefile(Tool, OutRoot, BuildScriptName, CompileCmdsPerTarget);
+  genMakefile(Tool, OutRoot, BuildScriptName, CompileCmdsPerTarget,
+              ToolPerTarget);
 }
