@@ -802,6 +802,11 @@ void ExprAnalysis::analyzeExpr(const IfStmt *IS) {
   dispatch(IS->getElse());
 }
 
+void ExprAnalysis::analyzeExpr(const DeclStmt *DS) {
+  for (const auto *Child : DS->children()) {
+    dispatch(Child);
+  }
+}
 
 void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   SourceRange SR = TL.getSourceRange();
