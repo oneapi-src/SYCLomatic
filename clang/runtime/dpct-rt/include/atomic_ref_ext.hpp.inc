@@ -61,7 +61,7 @@ namespace dpct {
 template <typename T,
           cl::sycl::memory_order DefaultOrder = cl::sycl::memory_order::seq_cst,
           cl::sycl::memory_scope DefaultScope = cl::sycl::memory_scope::system,
-          cl::sycl::access ::address_space Space =
+          cl::sycl::access::address_space Space =
               cl::sycl::access::address_space::generic_space>
 class atomic_ref_ext {
   T __d;
@@ -82,9 +82,9 @@ public:
 // AtomicRefExt|atomic_ref_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  /// Default constructor.
+  /// Default constructor is constructor with no args.
   constexpr atomic_ref_ext() noexcept = default;
-  /// Constructor with initialize value.
+  /// Default constructor.
   constexpr atomic_ref_ext(T d) noexcept : __d(d){};
 // DPCT_LABEL_END
 

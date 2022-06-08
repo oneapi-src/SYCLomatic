@@ -20,7 +20,7 @@ namespace dpct {
 template <typename T,
           cl::sycl::memory_order DefaultOrder = cl::sycl::memory_order::seq_cst,
           cl::sycl::memory_scope DefaultScope = cl::sycl::memory_scope::system,
-          cl::sycl::access ::address_space Space =
+          cl::sycl::access::address_space Space =
               cl::sycl::access::address_space::generic_space>
 class atomic_ref_ext {
   T __d;
