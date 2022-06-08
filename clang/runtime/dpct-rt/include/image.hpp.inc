@@ -1457,22 +1457,22 @@ public:
     image_wrapper_base::set_channel(channel);
   }
   /// Attach linear data to this class.
-  void attach(void *ptr, size_t count) {
+  void attach(const void *ptr, size_t count) {
     attach(ptr, count, get_channel());
   }
   /// Attach linear data to this class.
-  void attach(void *ptr, size_t count, image_channel channel) {
+  void attach(const void *ptr, size_t count, image_channel channel) {
     detach();
-    image_wrapper_base::set_data(image_data(ptr, count, channel));
+    image_wrapper_base::set_data(image_data(const_cast<void *>(ptr), count, channel));
   }
   /// Attach 2D data to this class.
-  void attach(void *data, size_t x, size_t y, size_t pitch) {
+  void attach(const void *data, size_t x, size_t y, size_t pitch) {
     attach(data, x, y, pitch, get_channel());
   }
   /// Attach 2D data to this class.
-  void attach(void *data, size_t x, size_t y, size_t pitch, image_channel channel) {
+  void attach(const void *data, size_t x, size_t y, size_t pitch, image_channel channel) {
     detach();
-    image_wrapper_base::set_data(image_data(data, x * sizeof(T), y, pitch, channel));
+    image_wrapper_base::set_data(image_data(const_cast<void *>(data), x * sizeof(T), y, pitch, channel));
   }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|image_wrapper_1|dpct
