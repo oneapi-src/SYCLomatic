@@ -365,6 +365,7 @@ void generateAllHelperFiles() {
   GENERATE_ALL_FILE_CONTENT(Util)
   GENERATE_ALL_FILE_CONTENT(RngUtils)
   GENERATE_ALL_FILE_CONTENT(LibCommonUtils)
+  GENERATE_ALL_FILE_CONTENT(CclUtils)
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasAlgorithm)
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasFunctional)
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasIterators)
@@ -459,6 +460,7 @@ void generateHelperFunctions() {
   std::vector<clang::dpct::HelperFunc> UtilFileContent;
   std::vector<clang::dpct::HelperFunc> RngUtilsFileContent;
   std::vector<clang::dpct::HelperFunc> LibCommonUtilsFileContent;
+  std::vector<clang::dpct::HelperFunc> CclUtilsFileContent;
   std::vector<clang::dpct::HelperFunc> DplExtrasAlgorithmFileContent;
   std::vector<clang::dpct::HelperFunc> DplExtrasFunctionalFileContent;
   std::vector<clang::dpct::HelperFunc> DplExtrasIteratorsFileContent;
@@ -572,6 +574,7 @@ void generateHelperFunctions() {
       UPDATE_FILE(Util)
       UPDATE_FILE(RngUtils)
       UPDATE_FILE(LibCommonUtils)
+      UPDATE_FILE(CclUtils)
       UPDATE_FILE(DplExtrasAlgorithm)
       UPDATE_FILE(DplExtrasFunctional)
       UPDATE_FILE(DplExtrasIterators)
@@ -667,6 +670,7 @@ void generateHelperFunctions() {
   ADD_INCLUDE_DIRECTIVE(Util)
   ADD_INCLUDE_DIRECTIVE(RngUtils)
   ADD_INCLUDE_DIRECTIVE(LibCommonUtils)
+  ADD_INCLUDE_DIRECTIVE(CclUtils)
 #undef ADD_INCLUDE_DIRECTIVE
 
   auto Item = HelperNameContentMap.at(std::make_pair(
@@ -709,6 +713,7 @@ void generateHelperFunctions() {
   GENERATE_FILE(Util)
   GENERATE_FILE(RngUtils)
   GENERATE_FILE(LibCommonUtils)
+  GENERATE_FILE(CclUtils)
   GENERATE_DPL_EXTRAS_FILE(DplExtrasAlgorithm)
   GENERATE_DPL_EXTRAS_FILE(DplExtrasFunctional)
   GENERATE_DPL_EXTRAS_FILE(DplExtrasIterators)
@@ -904,6 +909,7 @@ std::map<HelperFeatureIDTy, clang::dpct::HelperFunc> HelperNameContentMap {
   ,
 #include "clang/DPCT/atomic.inc"
 #include "clang/DPCT/blas_utils.inc"
+#include "clang/DPCT/ccl_utils.inc"
 #include "clang/DPCT/dnnl_utils.inc"
 #include "clang/DPCT/device.inc"
 #include "clang/DPCT/dpct.inc"
@@ -939,6 +945,7 @@ std::unordered_map<clang::dpct::HelperFileEnum, std::string> HelperFileNameMap{
     {clang::dpct::HelperFileEnum::Util, "util.hpp"},
     {clang::dpct::HelperFileEnum::RngUtils, "rng_utils.hpp"},
     {clang::dpct::HelperFileEnum::LibCommonUtils, "lib_common_utils.hpp"},
+    {clang::dpct::HelperFileEnum::CclUtils, "ccl_utils.hpp"},
     {clang::dpct::HelperFileEnum::DplExtrasAlgorithm, "algorithm.h"},
     {clang::dpct::HelperFileEnum::DplExtrasFunctional, "functional.h"},
     {clang::dpct::HelperFileEnum::DplExtrasIterators, "iterators.h"},
@@ -961,6 +968,7 @@ std::unordered_map<std::string, clang::dpct::HelperFileEnum> HelperFileIDMap{
     {"util.hpp", clang::dpct::HelperFileEnum::Util},
     {"rng_utils.hpp", clang::dpct::HelperFileEnum::RngUtils},
     {"lib_common_utils.hpp", clang::dpct::HelperFileEnum::LibCommonUtils},
+    {"ccl_utils.hpp", clang::dpct::HelperFileEnum::CclUtils},
     {"algorithm.h", clang::dpct::HelperFileEnum::DplExtrasAlgorithm},
     {"functional.h", clang::dpct::HelperFileEnum::DplExtrasFunctional},
     {"iterators.h", clang::dpct::HelperFileEnum::DplExtrasIterators},
@@ -985,6 +993,7 @@ const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
         {clang::dpct::HelperFileEnum::RngUtils, "__DPCT_RNG_UTILS_HPP__"},
         {clang::dpct::HelperFileEnum::LibCommonUtils,
          "__DPCT_LIB_COMMON_UTILS_HPP__"},
+        {clang::dpct::HelperFileEnum::CclUtils, "__DPCT_CCL_HPP__"},
         {clang::dpct::HelperFileEnum::DplExtrasAlgorithm,
          "__DPCT_ALGORITHM_H__"},
         {clang::dpct::HelperFileEnum::DplExtrasFunctional,
@@ -1041,6 +1050,9 @@ const std::string RngUtilsAllContentStr =
     ;
 const std::string LibCommonUtilsAllContentStr =
 #include "clang/DPCT/lib_common_utils.all.inc"
+    ;
+const std::string CclUtilsAllContentStr =
+#include "clang/DPCT/ccl_utils.all.inc"
     ;
 const std::string DplExtrasAlgorithmAllContentStr =
 #include "clang/DPCT/dpl_extras/algorithm.all.inc"

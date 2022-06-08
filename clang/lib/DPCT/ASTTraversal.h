@@ -578,7 +578,6 @@ private:
 
   void processCudaStreamType(const DeclaratorDecl *DD, const SourceManager *SM,
                              bool &SpecialCaseHappened);
-  void reportForNcclAndCudnn(const TypeLoc *TL, const SourceLocation BeginLoc);
   bool replaceTemplateSpecialization(SourceManager *SM, LangOptions &LOpts,
                                      SourceLocation BeginLoc,
                                      const TemplateSpecializationTypeLoc TSL);

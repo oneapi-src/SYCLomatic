@@ -12,6 +12,7 @@
 #include "MapNames.h"
 #include "Utility.h"
 #include "llvm/Support/YAMLTraits.h"
+#include "NCCLAPIMigration.h"
 std::vector<std::string> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
 
