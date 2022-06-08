@@ -82,9 +82,9 @@ public:
 // AtomicRefExt|atomic_ref_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  /// Default constructor is constructor with no args.
-  constexpr atomic_ref_ext() noexcept = default;
   /// Default constructor.
+  constexpr atomic_ref_ext() noexcept = default;
+  /// Constructor with initialize value.
   constexpr atomic_ref_ext(T d) noexcept : __d(d){};
 // DPCT_LABEL_END
 
