@@ -158,7 +158,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-             ARG(5), ARG(6), ARG(7), CAST(getTypeStr("const void**"), ARG(8)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"), ARG(9), CAST(getTypeStr("void**"), ARG(10)),
+             ARG(5), ARG(6), ARG(7), CAST(makeLiteral("const void**"), ARG(8)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"), ARG(9), CAST(makeLiteral("void**"), ARG(10)),
              ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"), ARG(11), ARG(12), ARG(MapNames::getDpctNamespace() + "library_data_t::real_float")))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::BlasUtils_trsm_batch,
@@ -169,7 +169,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-             ARG(5), ARG(6), ARG(7), CAST(getTypeStr("const void**"), ARG(8)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"), ARG(9), CAST(getTypeStr("void**"), ARG(10)),
+             ARG(5), ARG(6), ARG(7), CAST(makeLiteral("const void**"), ARG(8)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"), ARG(9), CAST(makeLiteral("void**"), ARG(10)),
              ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"), ARG(11), ARG(12), ARG(MapNames::getDpctNamespace() + "library_data_t::real_double")))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::BlasUtils_trsm_batch,
@@ -180,7 +180,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-             ARG(5), ARG(6), ARG(7), CAST(getTypeStr("const void**"), ARG(8)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"), ARG(9), CAST(getTypeStr("void**"), ARG(10)),
+             ARG(5), ARG(6), ARG(7), CAST(makeLiteral("const void**"), ARG(8)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"), ARG(9), CAST(makeLiteral("void**"), ARG(10)),
              ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"), ARG(11), ARG(12), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float")))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::BlasUtils_trsm_batch,
@@ -191,7 +191,7 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Uplo),
              BLAS_ENUM_ARG(3, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(4, clang::dpct::BLASEnumExpr::BLASEnumType::Diag),
-             ARG(5), ARG(6), ARG(7), CAST(getTypeStr("const void**"), ARG(8)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"), ARG(9), CAST(getTypeStr("void**"), ARG(10)),
+             ARG(5), ARG(6), ARG(7), CAST(makeLiteral("const void**"), ARG(8)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"), ARG(9), CAST(makeLiteral("void**"), ARG(10)),
              ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"), ARG(11), ARG(12), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double")))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
@@ -246,8 +246,8 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
         CALL(MapNames::getDpctNamespace() + "gemm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), CAST(getTypeStr("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_half"), ARG(8), CAST(getTypeStr("const void**"), ARG(9)),
-             ARG(MapNames::getDpctNamespace() + "library_data_t::real_half"), ARG(10), ARG(11), CAST(getTypeStr("void**"), ARG(12)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_half"),
+             ARG(3), ARG(4), ARG(5), ARG(6), CAST(makeLiteral("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_half"), ARG(8), CAST(makeLiteral("const void**"), ARG(9)),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_half"), ARG(10), ARG(11), CAST(makeLiteral("void**"), ARG(12)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_half"),
              ARG(13), ARG(14), ARG(MapNames::getDpctNamespace() + "library_data_t::real_half")))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::BlasUtils_gemm_batch,
@@ -256,8 +256,8 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
         CALL(MapNames::getDpctNamespace() + "gemm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), CAST(getTypeStr("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"), ARG(8), CAST(getTypeStr("const void**"), ARG(9)),
-             ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"), ARG(10), ARG(11), CAST(getTypeStr("void**"), ARG(12)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
+             ARG(3), ARG(4), ARG(5), ARG(6), CAST(makeLiteral("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"), ARG(8), CAST(makeLiteral("const void**"), ARG(9)),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"), ARG(10), ARG(11), CAST(makeLiteral("void**"), ARG(12)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
              ARG(13), ARG(14), ARG(MapNames::getDpctNamespace() + "library_data_t::real_float")))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::BlasUtils_gemm_batch,
@@ -266,8 +266,8 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
         CALL(MapNames::getDpctNamespace() + "gemm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), CAST(getTypeStr("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"), ARG(8), CAST(getTypeStr("const void**"), ARG(9)),
-             ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"), ARG(10), ARG(11), CAST(getTypeStr("void**"), ARG(12)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
+             ARG(3), ARG(4), ARG(5), ARG(6), CAST(makeLiteral("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"), ARG(8), CAST(makeLiteral("const void**"), ARG(9)),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"), ARG(10), ARG(11), CAST(makeLiteral("void**"), ARG(12)), ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
              ARG(13), ARG(14), ARG(MapNames::getDpctNamespace() + "library_data_t::real_double")))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::BlasUtils_gemm_batch,
@@ -276,8 +276,8 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
         CALL(MapNames::getDpctNamespace() + "gemm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), CAST(getTypeStr("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"), ARG(8), CAST(getTypeStr("const void**"), ARG(9)),
-             ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"), ARG(10), ARG(11), CAST(getTypeStr("void**"), ARG(12)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
+             ARG(3), ARG(4), ARG(5), ARG(6), CAST(makeLiteral("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"), ARG(8), CAST(makeLiteral("const void**"), ARG(9)),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"), ARG(10), ARG(11), CAST(makeLiteral("void**"), ARG(12)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
              ARG(13), ARG(14), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float")))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::BlasUtils_gemm_batch,
@@ -286,6 +286,6 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
         CALL(MapNames::getDpctNamespace() + "gemm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), CAST(getTypeStr("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"), ARG(8), CAST(getTypeStr("const void**"), ARG(9)),
-             ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"), ARG(10), ARG(11), CAST(getTypeStr("void**"), ARG(12)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"),
+             ARG(3), ARG(4), ARG(5), ARG(6), CAST(makeLiteral("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"), ARG(8), CAST(makeLiteral("const void**"), ARG(9)),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"), ARG(10), ARG(11), CAST(makeLiteral("void**"), ARG(12)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"),
              ARG(13), ARG(14), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double")))))

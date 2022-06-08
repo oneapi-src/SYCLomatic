@@ -848,20 +848,6 @@ public:
   }
 };
 
-template <class SubExprT> class CastExprPrinter<std::string, SubExprT> {
-  std::string TypeInfo;
-  SubExprT SubExpr;
-
-public:
-  CastExprPrinter(std::string &&T, SubExprT &&S)
-      : TypeInfo(std::forward<std::string>(T)),
-        SubExpr(std::forward<SubExprT>(S)) {}
-  template <class StreamT> void print(StreamT &Stream) const {
-    Stream << "(" << TypeInfo << ")";
-    dpct::print(Stream, SubExpr);
-  }
-};
-
 template <BinaryOperatorKind Op, class LValueT, class RValueT>
 class BinaryOperatorPrinter {
   LValueT LVal;
