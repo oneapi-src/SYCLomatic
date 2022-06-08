@@ -82,10 +82,10 @@ public:
 // AtomicRefExt|atomic_ref_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  /// Default constructor is constructor with no args.
-  atomic_ref_ext() = default;
   /// Default constructor.
-  atomic_ref_ext(T d) : __d(d){};
+  constexpr atomic_ref_ext() noexcept = default;
+  /// Constructor with initialize value.
+  constexpr atomic_ref_ext(T d) noexcept : __d(d){};
 // DPCT_LABEL_END
 
 
@@ -100,7 +100,7 @@ public:
   /// \param memoryOrder The memory ordering used.
   /// \param memoryScope The memory scope used.
   void store(T operand, cl::sycl::memory_order memoryOrder = default_write_order,
-             cl::sycl::memory_scope memoryScope = default_scope) const noexcept {
+             cl::sycl::memory_scope memoryScope = default_scope) noexcept {
     cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(
         const_cast<T &>(__d));
     atm.store(operand, memoryOrder, memoryScope);
