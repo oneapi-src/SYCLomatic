@@ -10,8 +10,8 @@
 //===----------------------------------------------------------------------===//
 // DPCT_LABEL_END
 
-#ifndef __DPCT_DNNL_HPP__
-#define __DPCT_DNNL_HPP__
+#ifndef __DPCT_DNNL_UTILS_HPP__
+#define __DPCT_DNNL_UTILS_HPP__
 
 // DPCT_LABEL_BEGIN|non_local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
@@ -791,7 +791,7 @@ dpct::library_data_t memory_desc_ext::to_dpct_library_data_t(::dnnl::memory::dat
 
 void memory_desc_ext::set(memory_format_tag tag, dpct::library_data_t dt, int n, int c,
                           int h, int w) {
-  _desc = ::dnnl::memory::desc({n, c, h, w}, to_dnnl_data_type(dt), 
+  _desc = ::dnnl::memory::desc({n, c, h, w}, to_dnnl_data_type(dt),
                             to_dnnl_format_tag(dt, tag));
 }
 
@@ -1332,4 +1332,4 @@ void engine_ext::lrn_backward(lrn_desc &desc, float alpha,
 } // namespace dnnl
 } // namespace dpct
 
-#endif
+#endif  // __DPCT_DNNL_UTILS_HPP__

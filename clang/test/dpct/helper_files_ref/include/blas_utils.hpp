@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __DPCT_BLAS_HPP__
-#define __DPCT_BLAS_HPP__
+#ifndef __DPCT_BLAS_UTILS_HPP__
+#define __DPCT_BLAS_UTILS_HPP__
 
 #include "memory.hpp"
 #include "util.hpp"
@@ -1368,4 +1368,4 @@ inline void herk(cl::sycl::queue &q, oneapi::mkl::uplo uplo,
 }
 
 } // namespace dpct
-#endif // __DPCT_BLAS_HPP__
+#endif // __DPCT_BLAS_UTILS_HPP__

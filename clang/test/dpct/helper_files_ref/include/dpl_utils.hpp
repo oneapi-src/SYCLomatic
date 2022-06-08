@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef __DPL_UTILS_HPP
-#define __DPL_UTILS_HPP
+#ifndef __DPCT_DPL_UTILS_HPP__
+#define __DPCT_DPL_UTILS_HPP__
 
 #define ONEDPL_USE_DPCPP_BACKEND 1
 #define __USE_DPCT 1
@@ -23,4 +23,4 @@
 #include "dpl_extras/vector.h"
 #include "dpl_extras/dpcpp_extensions.h"
 
-#endif // __DPL_UTILS_HPP
+#endif // __DPCT_DPL_UTILS_HPP__
