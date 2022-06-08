@@ -1,0 +1,29 @@
+[
+    {
+        "command": "nvcc -c  -o one.o -D__CUDACC__=1 one.cu",
+        "directory": "./",
+        "file": "./one.cu"
+    },
+    {
+        "command": "ar r full.a one.o",
+        "directory": "./"
+    },
+    {
+        "command": "c++ -c -o two.o two.cpp",
+        "directory": "./",
+        "file": "./two.cpp"
+    },
+    {
+        "command": "ar r full.a two.o",
+        "directory": "./"
+    },
+    {
+        "command": "c++ -c -o three.o three.cpp",
+        "directory": "./",
+        "file": "./three.cpp"
+    },
+    {
+        "command": "ar r full.a three.o",
+        "directory": "./"
+    }
+]
