@@ -16,6 +16,7 @@
 #include "Homoglyph.h"
 #include "MisleadingBidirectional.h"
 #include "DNNAPIMigration.h"
+#include "NCCLAPIMigration.h"
 #include "SaveNewFiles.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -951,14 +952,13 @@ void IncludesCallbacks::InclusionDirective(
     Updater.update(false);
   }
 
-  if (FileName.startswith(StringRef("nccl"))) {
-    if (isChildOrSamePath(InRoot, DirPath)) {
-      return;
-    }
-    DiagnosticsUtils::report(
-        HashLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY,
-        dpct::DpctGlobalInfo::getCompilerInstance(), &TransformSet, false,
-        "Intel(R) oneAPI Collective Communications Library");
+  if (FileName.compare(StringRef("nccl.h")) == 0) {
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_CCL);
+    requestFeature(HelperFeatureEnum::CclUtils_create_kvs_address, HashLoc);
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
     Updater.update(false);
   }
   if (FileName.startswith(StringRef("cudnn.h"))) {
@@ -2505,7 +2505,7 @@ REGISTER_RULE(ThrustCtorExprRule)
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       typeLoc(
-          loc(qualType(hasDeclaration(namedDecl(anyOf(
+          loc(qualType(hasDeclaration(namedDecl(
               hasAnyName(
                   "cudaError", "curandStatus", "cublasStatus", "CUstream",
                   "CUstream_st", "thrust::complex", "thrust::device_vector",
@@ -2546,8 +2546,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "libraryPropertyType_t", "libraryPropertyType",
                   "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
                   "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
-                  "thrust::tuple_element"),
-              matchesName("nccl.*")))))))
+                  "thrust::tuple_element")
+              )))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasTypeLoc(typeLoc(loc(templateSpecializationType(
@@ -2729,29 +2729,6 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
     auto InsertLoc = L2.getLocWithOffset(P - SM->getCharacterData(L2));
     auto PointerType = deducePointerType(DD2, "CUstream_st");
     emplaceTransformation(new InsertText(InsertLoc, std::move(PointerType)));
-  }
-}
-
-void TypeInDeclRule::reportForNcclAndCudnn(const TypeLoc *TL,
-                                           const SourceLocation BeginLoc) {
-  auto QT = TL->getType();
-  std::string TypeStrRemovePrefix = TL->getType().getAsString();
-
-  auto IsNCCLMatched = TypeStrRemovePrefix.find("nccl") != std::string::npos;
-  if (IsNCCLMatched) {
-    auto TP = QT.getTypePtr();
-    if (TP) {
-      SourceLocation SL;
-      if (getTypeDeclLocation(TP, SL)) {
-        std::string FilePath =
-            DpctGlobalInfo::getSourceManager().getFilename(SL).str();
-        if (!DpctGlobalInfo::isInRoot(FilePath)) {
-          if (IsNCCLMatched)
-            report(BeginLoc, Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
-                   "Intel(R) oneAPI Collective Communications Library");
-        }
-      }
-    }
   }
 }
 
@@ -3217,8 +3194,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
               BeginLoc, *SM, DpctGlobalInfo::getContext().getLangOpts()));
       return;
     }
-
-    reportForNcclAndCudnn(TL, BeginLoc);
 
     if (replaceDependentNameTypeLoc(SM, LOpts, TL)) {
       return;
@@ -13786,15 +13761,6 @@ void RecognizeAPINameRule::registerMatcher(MatchFinder &MF) {
                   unless(callee(hasDeclContext(namedDecl(hasName("std")))))))
             .bind("APINamesUsed"),
         this);
-    MF.addMatcher(
-        callExpr(
-            allOf(callee(functionDecl(matchesName("nccl.*"))),
-                  unless(callee(functionDecl(internal::Matcher<NamedDecl>(
-                      new internal::HasNameMatcher(AllAPIComponent[0]))))),
-                  unless(hasAncestor(cudaKernelCallExpr())),
-                  unless(callee(hasDeclContext(namedDecl(hasName("std")))))))
-            .bind("ManualMigrateAPI"),
-        this);
   }
 
   if (!AllAPIComponent[1].empty() && !AllAPIComponent[2].empty()) {
@@ -13928,19 +13894,7 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
 
   SrcAPIStaticsMap[getFunctionSignature(CE->getCalleeDecl()->getAsFunction(),
                                         "")]++;
-  if (APIName.size() >= 4 && APIName.substr(0, 4) == "nccl") {
-    auto D = CE->getCalleeDecl();
-    if (D) {
-      auto FilePath = DpctGlobalInfo::getSourceManager()
-                          .getFilename(D->getBeginLoc())
-                          .str();
-      if (DpctGlobalInfo::isInRoot(FilePath)) {
-        return;
-      }
-    }
-    report(CE->getBeginLoc(), Diagnostics::MANUAL_MIGRATION_LIBRARY, false,
-           "Intel(R) oneAPI Collective Communications Library");
-  } else if (HaveKeywordInAPIName) {
+  if (HaveKeywordInAPIName) {
     // In the AST matcher, it will match function call whose name contains
     // keyword. If the keyword is at name begin, code will go in to previous two
     // branch. If code goes here, we treat the API is user-defined, just return.
@@ -13971,8 +13925,6 @@ void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
   if ((CE = getNodeAsType<CallExpr>(Result, "APINamesUsed")) ||
       (CE = getNodeAsType<CallExpr>(Result, "APINamesHasNSUsed"))) {
     processFuncCall(CE, false);
-  } else if (CE = getNodeAsType<CallExpr>(Result, "ManualMigrateAPI")) {
-    processFuncCall(CE, true);
   } else if ((MC =
                   getNodeAsType<CXXMemberCallExpr>(Result, "MFAPINamesUsed")) ||
              (MC = getNodeAsType<CXXMemberCallExpr>(Result,
@@ -17689,6 +17641,8 @@ REGISTER_RULE(MisleadingBidirectionalRule)
 REGISTER_RULE(CuDNNTypeRule)
 
 REGISTER_RULE(CuDNNAPIRule)
+
+REGISTER_RULE(NCCLRule)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {

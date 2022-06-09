@@ -10,8 +10,8 @@
 //===----------------------------------------------------------------------===//
 // DPCT_LABEL_END
 
-#ifndef __DPCT_BLAS_HPP__
-#define __DPCT_BLAS_HPP__
+#ifndef __DPCT_BLAS_UTILS_HPP__
+#define __DPCT_BLAS_UTILS_HPP__
 // DPCT_COMMENT
 // DPCT_COMMENT Example1:
 // DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
@@ -1652,4 +1652,4 @@ inline void herk(cl::sycl::queue &q, oneapi::mkl::uplo uplo,
 // DPCT_LABEL_END
 
 } // namespace dpct
-#endif // __DPCT_BLAS_HPP__
+#endif // __DPCT_BLAS_UTILS_HPP__

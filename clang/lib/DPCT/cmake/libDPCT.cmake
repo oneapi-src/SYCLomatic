@@ -47,6 +47,7 @@ macro(build_lib_dpct)
     BLASAPIMigration.cpp
     FFTAPIMigration.cpp
     DNNAPIMigration.cpp
+    NCCLAPIMigration.cpp
 
     DEPENDS
     ClangDriverOptions

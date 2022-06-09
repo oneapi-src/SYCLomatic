@@ -373,6 +373,12 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "version_field",
            HelperFeatureEnum::LibCommonUtils_version_field)},
+      {"ncclUniqueId", std::make_shared<TypeNameRule>(
+                           "oneapi::ccl::kvs::address_type",
+                           HelperFeatureEnum::CclUtils_create_kvs_address)},
+      {"ncclComm_t",
+       std::make_shared<TypeNameRule>("oneapi::ccl::communicator",
+                                      HelperFeatureEnum::CclUtils_create_kvs)},
       // ...
   };
 
@@ -829,6 +835,7 @@ void MapNames::setExplicitNamespaceMap() {
   {#OBJNAME "." #APINAME, #OBJNAME "." #INTERFACENAME},
 #include "APINames.inc"
 #include "APINames_CUB.inc"
+#include "APINames_NCCL.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"
 #include "APINames_cuGRAPH.inc"
@@ -3814,6 +3821,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
   {#OBJNAME "." #APINAME, VALUE},
 #include "APINames.inc"
 #include "APINames_CUB.inc"
+#include "APINames_NCCL.inc"
 #include "APINames_NVML.inc"
 #include "APINames_cuBLAS.inc"
 #include "APINames_cuFFT.inc"

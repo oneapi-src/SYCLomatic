@@ -60,9 +60,11 @@ void foo2(){
   int c = 10;
   int d = 1;
   //CHECK: goo([&](int x) -> int {
+  //CHECK-NEXT:   int y = std::min(c, d);
   //CHECK-NEXT:   return std::min(c, d);
   //CHECK-NEXT: });
   foo3([&](int x)->int {
+      int y = my_min(c, d);
       return my_min(c, d);
   });
   //CHECK: CALL2(0);
@@ -84,6 +86,8 @@ void foo2(){
   Fruit f = Fruit::apple;
 
   // CHECK: goo([=](int v) {
+  // CHECK-NEXT:   int a = std::min(v, 10);
+  // CHECK-NEXT:   int b = std::min(v, 100), c = std::min(std::max(v, 10), 100);
   // CHECK-NEXT:   if (std::min(std::max(v, 10), 100)) {
   // CHECK-NEXT:     return std::min(std::max(v, 10), 100);
   // CHECK-NEXT:   } else if (std::min(std::max(v, 10), 100)) {
@@ -93,6 +97,8 @@ void foo2(){
   // CHECK-NEXT:   }
   // CHECK-NEXT: });
   foo3([=](int v){
+    int a = ::min(v, 10);
+    int b = ::min(v, 100), c = std::min(std::max(v, 10), 100);
     if(::min(::max(v, 10), 100)){
       return ::min(::max(v, 10), 100);
     } else if(::min(::max(v, 10), 100)){
@@ -101,7 +107,6 @@ void foo2(){
       return ::min(::max(v, 10), 100);
     }});
 }
-
 
 struct MyStruct {
   operator void *() { return NULL; }
@@ -121,3 +126,6 @@ void foo4(){
   // CHECK: A2B2();
   A2::B2::A1B1();
 }
+template<typename T>struct OldType{};
+// CHECK: void foo5() { NewType<int> *cu_st; }
+__device__ void foo5(){ OldType<int> *cu_st;}
