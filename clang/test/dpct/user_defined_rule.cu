@@ -88,6 +88,8 @@ void foo2(){
   // CHECK: goo([=](int v) {
   // CHECK-NEXT:   int a = std::min(v, 10);
   // CHECK-NEXT:   int b = std::min(v, 100), c = std::min(std::max(v, 10), 100);
+  // CHECK-NEXT:   if (v <= 0);
+  // CHECK-NEXT:   if (v > 0) return std::min(v, 10);
   // CHECK-NEXT:   if (std::min(std::max(v, 10), 100)) {
   // CHECK-NEXT:     return std::min(std::max(v, 10), 100);
   // CHECK-NEXT:   } else if (std::min(std::max(v, 10), 100)) {
@@ -98,7 +100,9 @@ void foo2(){
   // CHECK-NEXT: });
   foo3([=](int v){
     int a = ::min(v, 10);
-    int b = ::min(v, 100), c = std::min(std::max(v, 10), 100);
+    int b = ::min(v, 100), c = ::min(::max(v, 10), 100);
+    if(v <= 0);
+    if(v > 0) return ::min(v, 10);
     if(::min(::max(v, 10), 100)){
       return ::min(::max(v, 10), 100);
     } else if(::min(::max(v, 10), 100)){

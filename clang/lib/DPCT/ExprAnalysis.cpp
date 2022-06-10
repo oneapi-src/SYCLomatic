@@ -363,6 +363,8 @@ ExprAnalysis::ExprAnalysis(const Expr *Expression)
 }
 
 void ExprAnalysis::dispatch(const Stmt *Expression) {
+  if (!Expression)
+    return;
   switch (Expression->getStmtClass()) {
 #define STMT(CLASS, PARENT) ANALYZE_EXPR(CLASS)
 #define STMT_RANGE(BASE, FIRST, LAST)
