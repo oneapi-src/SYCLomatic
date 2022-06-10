@@ -27,40 +27,13 @@ int main(){
 
   int side0 = 0; int side1 = 1; int fill0 = 0; int fill1 = 1;
   int trans0 = 0; int trans1 = 1; int trans2 = 2; int diag0 = 0; int diag1 = 1;
-  // CHECK: {
-  // CHECK-NEXT: dpct::matrix_mem_copy(C_S, B_S, ldc, ldb, m, n, dpct::device_to_device, *handle);
-  // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
-  // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:0: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: status = (oneapi::mkl::blas::column_major::trmm(*handle, (oneapi::mkl::side)side0, fill0==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans0==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans0, (oneapi::mkl::diag)diag0, m, n, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, C_S_buf_ct{{[0-9]+}}, ldc), 0);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: dpct::matrix_mem_copy(C_S, B_S, ldc, ldb, m, n, dpct::device_to_device, *handle);
-  // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
-  // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, C_S_buf_ct{{[0-9]+}}, ldc);
-  // CHECK-NEXT: }
+  // CHECK: status = (dpct::trmm(*handle, (oneapi::mkl::side)side0, fill0 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans0), (oneapi::mkl::diag)diag0, m, n, &alpha_S, A_S, lda, B_S, ldb, C_S, ldc), 0);
+  // CHECK-NEXT: dpct::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, &alpha_S, A_S, lda, B_S, ldb, C_S, ldc);
   status = cublasStrmm(handle, (cublasSideMode_t)side0, (cublasFillMode_t)fill0, (cublasOperation_t)trans0, (cublasDiagType_t)diag0, m, n, &alpha_S, A_S, lda, B_S, ldb, C_S, ldc);
   cublasStrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, n, &alpha_S, A_S, lda, B_S, ldb, C_S, ldc);
 
-
-  // CHECK: {
-  // CHECK-NEXT: dpct::matrix_mem_copy(C_D, B_D, ldc, ldb, m, n, dpct::device_to_device, *handle);
-  // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
-  // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:1: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: status = (oneapi::mkl::blas::column_major::trmm(*handle, (oneapi::mkl::side)side1, fill1==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, trans1==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans1, (oneapi::mkl::diag)diag1, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, C_D_buf_ct{{[0-9]+}}, ldc), 0);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: dpct::matrix_mem_copy(C_D, B_D, ldc, ldb, m, n, dpct::device_to_device, *handle);
-  // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
-  // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, C_D_buf_ct{{[0-9]+}}, ldc);
-  // CHECK-NEXT: }
+  // CHECK: status = (dpct::trmm(*handle, (oneapi::mkl::side)side1, fill1 == 0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, dpct::get_transpose(trans1), (oneapi::mkl::diag)diag1, m, n, &alpha_D, A_D, lda, B_D, ldb, C_D, ldc), 0);
+  // CHECK-NEXT: dpct::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, &alpha_D, A_D, lda, B_D, ldb, C_D, ldc);
   status = cublasDtrmm(handle, (cublasSideMode_t)side1, (cublasFillMode_t)fill1, (cublasOperation_t)trans1, (cublasDiagType_t)diag1, m, n, &alpha_D, A_D, lda, B_D, ldb, C_D, ldc);
   cublasDtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, n, &alpha_D, A_D, lda, B_D, ldb, C_D, ldc);
 
@@ -75,52 +48,19 @@ int main(){
   cuDoubleComplex alpha_Z = make_cuDoubleComplex(1.0,0.0);
 
 
-  // CHECK: {
-  // CHECK-NEXT: dpct::matrix_mem_copy(C_C, B_C, ldc, ldb, m, n, dpct::device_to_device, *handle);
-  // CHECK-NEXT: auto A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_C);
-  // CHECK-NEXT: auto C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:2: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: status = (oneapi::mkl::blas::column_major::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::lower, trans2==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)trans2, oneapi::mkl::diag::nonunit, m, n, std::complex<float>(alpha_C.x(), alpha_C.y()), A_C_buf_ct{{[0-9]+}}, lda, C_C_buf_ct{{[0-9]+}}, ldc), 0);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: dpct::matrix_mem_copy(C_C, B_C, ldc, ldb, m, n, dpct::device_to_device, *handle);
-  // CHECK-NEXT: auto A_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(A_C);
-  // CHECK-NEXT: auto C_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(C_C);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, std::complex<float>(alpha_C.x(), alpha_C.y()), A_C_buf_ct{{[0-9]+}}, lda, C_C_buf_ct{{[0-9]+}}, ldc);
-  // CHECK-NEXT: }
+  // CHECK: status = (dpct::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::lower, dpct::get_transpose(trans2), oneapi::mkl::diag::nonunit, m, n, &alpha_C, A_C, lda, B_C, ldb, C_C, ldc), 0);
+  // CHECK-NEXT: dpct::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, &alpha_C, A_C, lda, B_C, ldb, C_C, ldc);
   status = cublasCtrmm(handle, (cublasSideMode_t)0, (cublasFillMode_t)0, (cublasOperation_t)trans2, (cublasDiagType_t)0, m, n, &alpha_C, A_C, lda, B_C, ldb, C_C, ldc);
   cublasCtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, n, &alpha_C, A_C, lda, B_C, ldb, C_C, ldc);
 
 
-  // CHECK: {
-  // CHECK-NEXT: dpct::matrix_mem_copy(C_Z, B_Z, ldc, ldb, m, n, dpct::device_to_device, *handle);
-  // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
-  // CHECK-NEXT: auto C_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1003:3: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: status = (oneapi::mkl::blas::column_major::trmm(*handle, oneapi::mkl::side::right, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, oneapi::mkl::diag::unit, m, n, std::complex<double>(alpha_Z.x(), alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda, C_Z_buf_ct{{[0-9]+}}, ldc), 0);
-  // CHECK-NEXT: }
-  // CHECK-NEXT: {
-  // CHECK-NEXT: dpct::matrix_mem_copy(C_Z, B_Z, ldc, ldb, m, n, dpct::device_to_device, *handle);
-  // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
-  // CHECK-NEXT: auto C_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(C_Z);
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, std::complex<double>(alpha_Z.x(), alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda, C_Z_buf_ct{{[0-9]+}}, ldc);
-  // CHECK-NEXT: }
+  // CHECK: status = (dpct::trmm(*handle, oneapi::mkl::side::right, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::conjtrans, oneapi::mkl::diag::unit, m, n, &alpha_Z, A_Z, lda, B_Z, ldb, C_Z, ldc), 0);
+  // CHECK-NEXT: dpct::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, m, n, &alpha_Z, A_Z, lda, B_Z, ldb, C_Z, ldc);
   status = cublasZtrmm(handle, (cublasSideMode_t)1, (cublasFillMode_t)1, (cublasOperation_t)2, (cublasDiagType_t)1, m, n, &alpha_Z, A_Z, lda, B_Z, ldb, C_Z, ldc);
   cublasZtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, n, &alpha_Z, A_Z, lda, B_Z, ldb, C_Z, ldc);
 
 
-  // CHECK: {
-  // CHECK-NEXT: auto foo2_ptr_ct{{[0-9]+}} = foo2();
-  // CHECK-NEXT: dpct::matrix_mem_copy(foo2_ptr_ct{{[0-9]+}}, B_Z, ldc, ldb, m, n, dpct::device_to_device, *handle);
-  // CHECK-NEXT: auto transpose_ct{{[0-9]+}} = foo1();
-  // CHECK-NEXT: auto A_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(A_Z);
-  // CHECK-NEXT: auto foo2_ptr_ct{{[0-9]+}}_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(foo2_ptr_ct{{[0-9]+}});
-  // CHECK-NEXT: oneapi::mkl::blas::column_major::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, (int)transpose_ct{{[0-9]+}}==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)transpose_ct{{[0-9]+}}, oneapi::mkl::diag::nonunit, m, n, std::complex<double>(alpha_Z.x(), alpha_Z.y()), A_Z_buf_ct{{[0-9]+}}, lda,  foo2_ptr_ct{{[0-9]+}}_buf_ct{{[0-9]+}}, ldc);
-  // CHECK-NEXT: }
+  // CHECK: dpct::trmm(*handle, oneapi::mkl::side::left, oneapi::mkl::uplo::upper, dpct::get_transpose(foo1()), oneapi::mkl::diag::nonunit, m, n, &alpha_Z, A_Z, lda, B_Z, ldb, foo2(), ldc);
   cublasZtrmm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, (cublasOperation_t)foo1(), CUBLAS_DIAG_NON_UNIT, m, n, &alpha_Z, A_Z, lda, B_Z, ldb, foo2(), ldc);
 }
 
