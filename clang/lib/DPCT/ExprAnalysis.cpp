@@ -363,6 +363,8 @@ ExprAnalysis::ExprAnalysis(const Expr *Expression)
 }
 
 void ExprAnalysis::dispatch(const Stmt *Expression) {
+  if (!Expression)
+    return;
   switch (Expression->getStmtClass()) {
 #define STMT(CLASS, PARENT) ANALYZE_EXPR(CLASS)
 #define STMT_RANGE(BASE, FIRST, LAST)
@@ -814,6 +816,11 @@ void ExprAnalysis::analyzeExpr(const IfStmt *IS) {
   dispatch(IS->getElse());
 }
 
+void ExprAnalysis::analyzeExpr(const DeclStmt *DS) {
+  for (const auto *Child : DS->children()) {
+    dispatch(Child);
+  }
+}
 
 void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   SourceRange SR = TL.getSourceRange();

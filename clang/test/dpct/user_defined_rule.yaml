@@ -83,3 +83,9 @@
   In: A2::B2::A1B1
   Out: A2B2()
   Includes: []
+- Rule: type_rule
+  Kind: Type
+  Priority: Takeover
+  In: OldType
+  Out: NewType
+  Includes: []
