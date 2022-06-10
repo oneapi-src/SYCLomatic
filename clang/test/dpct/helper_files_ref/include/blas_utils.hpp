@@ -261,7 +261,7 @@ inline void gemm_batch_impl(cl::sycl::queue &q, oneapi::mkl::transpose a_trans,
                             const void *alpha, const void **a, int lda,
                             const void **b, int ldb, const void *beta, void **c,
                             int ldc, int batch_size) {
-  struct mat_info_t {
+  struct matrix_info_t {
     oneapi::mkl::transpose transpose_info[2];
     Ts value_info[2];
     std::int64_t size_info[3];
@@ -272,30 +272,32 @@ inline void gemm_batch_impl(cl::sycl::queue &q, oneapi::mkl::transpose a_trans,
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
   Ts beta_value = dpct::get_value(reinterpret_cast<const Ts *>(beta), q);
 
-  mat_info_t *mat_info = (mat_info_t *)std::malloc(sizeof(mat_info_t));
-  mat_info->transpose_info[0] = a_trans;
-  mat_info->transpose_info[1] = b_trans;
-  mat_info->value_info[0] = alpha_value;
-  mat_info->value_info[1] = beta_value;
-  mat_info->size_info[0] = m;
-  mat_info->size_info[1] = n;
-  mat_info->size_info[2] = k;
-  mat_info->ld_info[0] = lda;
-  mat_info->ld_info[1] = ldb;
-  mat_info->ld_info[2] = ldc;
-  mat_info->groupsize_info = batch_size;
+  matrix_info_t *matrix_info =
+      (matrix_info_t *)std::malloc(sizeof(matrix_info_t));
+  matrix_info->transpose_info[0] = a_trans;
+  matrix_info->transpose_info[1] = b_trans;
+  matrix_info->value_info[0] = alpha_value;
+  matrix_info->value_info[1] = beta_value;
+  matrix_info->size_info[0] = m;
+  matrix_info->size_info[1] = n;
+  matrix_info->size_info[2] = k;
+  matrix_info->ld_info[0] = lda;
+  matrix_info->ld_info[1] = ldb;
+  matrix_info->ld_info[2] = ldc;
+  matrix_info->groupsize_info = batch_size;
 
   cl::sycl::event e = oneapi::mkl::blas::column_major::gemm_batch(
-      q, mat_info->transpose_info, mat_info->transpose_info + 1,
-      mat_info->size_info, mat_info->size_info + 1, mat_info->size_info + 2,
-      mat_info->value_info, reinterpret_cast<const Ta **>(a), mat_info->ld_info,
-      reinterpret_cast<const Tb **>(b), mat_info->ld_info + 1,
-      mat_info->value_info + 1, reinterpret_cast<Tc **>(c),
-      mat_info->ld_info + 2, 1, &(mat_info->groupsize_info));
+      q, matrix_info->transpose_info, matrix_info->transpose_info + 1,
+      matrix_info->size_info, matrix_info->size_info + 1,
+      matrix_info->size_info + 2, matrix_info->value_info,
+      reinterpret_cast<const Ta **>(a), matrix_info->ld_info,
+      reinterpret_cast<const Tb **>(b), matrix_info->ld_info + 1,
+      matrix_info->value_info + 1, reinterpret_cast<Tc **>(c),
+      matrix_info->ld_info + 2, 1, &(matrix_info->groupsize_info));
 
   q.submit([&](cl::sycl::handler &cgh) {
     cgh.depends_on(e);
-    cgh.host_task([=] { std::free(mat_info); });
+    cgh.host_task([=] { std::free(matrix_info); });
   });
 }
 
@@ -391,12 +393,12 @@ trsm_batch_impl(cl::sycl::queue &q, oneapi::mkl::side left_right,
                 oneapi::mkl::uplo upper_lower, oneapi::mkl::transpose trans,
                 oneapi::mkl::diag unit_diag, int m, int n, const void *alpha,
                 const void **a, int lda, void **b, int ldb, int batch_size) {
-  struct mat_info_t {
-    mat_info_t(oneapi::mkl::side side_info, oneapi::mkl::uplo uplo_info,
-               oneapi::mkl::transpose transpose_info,
-               oneapi::mkl::diag diag_info, Ts value_info, std::int64_t m,
-               std::int64_t n, std::int64_t lda, std::int64_t ldb,
-               std::int64_t groupsize_info)
+  struct matrix_info_t {
+    matrix_info_t(oneapi::mkl::side side_info, oneapi::mkl::uplo uplo_info,
+                  oneapi::mkl::transpose transpose_info,
+                  oneapi::mkl::diag diag_info, Ts value_info, std::int64_t m,
+                  std::int64_t n, std::int64_t lda, std::int64_t ldb,
+                  std::int64_t groupsize_info)
         : side_info(side_info), uplo_info(uplo_info),
           transpose_info(transpose_info), diag_info(diag_info),
           value_info(value_info), groupsize_info(groupsize_info) {
@@ -417,25 +419,25 @@ trsm_batch_impl(cl::sycl::queue &q, oneapi::mkl::side left_right,
 
   Ts alpha_value = dpct::get_value(reinterpret_cast<const Ts *>(alpha), q);
 
-  mat_info_t *mat_info =
-      new mat_info_t(left_right, upper_lower, trans, unit_diag, alpha_value, m,
-                     n, lda, ldb, batch_size);
+  matrix_info_t *matrix_info =
+      new matrix_info_t(left_right, upper_lower, trans, unit_diag, alpha_value,
+                        m, n, lda, ldb, batch_size);
 
   cl::sycl::event e = oneapi::mkl::blas::column_major::trsm_batch(
-      q, &(mat_info->side_info), &(mat_info->uplo_info),
-      &(mat_info->transpose_info), &(mat_info->diag_info), mat_info->size_info,
-      mat_info->size_info + 1, &(mat_info->value_info),
-      reinterpret_cast<const Ta **>(a), mat_info->ld_info,
-      reinterpret_cast<Tb **>(b), mat_info->ld_info + 1, 1,
-      &(mat_info->groupsize_info));
+      q, &(matrix_info->side_info), &(matrix_info->uplo_info),
+      &(matrix_info->transpose_info), &(matrix_info->diag_info),
+      matrix_info->size_info, matrix_info->size_info + 1,
+      &(matrix_info->value_info), reinterpret_cast<const Ta **>(a),
+      matrix_info->ld_info, reinterpret_cast<Tb **>(b),
+      matrix_info->ld_info + 1, 1, &(matrix_info->groupsize_info));
 
   q.submit([&](cl::sycl::handler &cgh) {
     cgh.depends_on(e);
-    cgh.host_task([=] { delete mat_info; });
+    cgh.host_task([=] { delete matrix_info; });
   });
 }
 
-}
+} // namespace detail
 
 inline oneapi::mkl::transpose get_transpose(int t) {
   if (t == 0) {
@@ -1417,7 +1419,7 @@ inline void herk(cl::sycl::queue &q, oneapi::mkl::uplo uplo,
                                         ldb, beta, c, ldc);
 }
 
-/// This routines perform a group of trsm operations. Each trsm solves an
+/// This routine performs a group of trsm operations. Each trsm solves an
 /// equation of the form op(A) * X = alpha * B or X * op(A) = alpha * B.
 /// \param [in] q The queue where the routine should be executed.
 /// \param [in] left_right Specifies A multiplies X on the left or on the right.
