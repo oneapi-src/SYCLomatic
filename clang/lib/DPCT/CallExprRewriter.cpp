@@ -1358,27 +1358,6 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
   };
 }
 
-template <class Printer, class... Ts> class PrinterCreator {
-  std::tuple<Ts...> Creators;
-
-  template <class T> T create(T Val, const CallExpr *) { return Val; }
-  StringRef create(const std::string &Val, const CallExpr *) { return Val; }
-  template <class T>
-  T create(std::function<T(const CallExpr *)> &Func, const CallExpr *C) {
-    return Func(C);
-  }
-  template <size_t... Idx>
-  Printer createPrinter(const CallExpr *C, std::index_sequence<Idx...>) {
-    return Printer(create(std::get<Idx>(Creators), C)...);
-  }
-
-public:
-  PrinterCreator(Ts... Args) : Creators(Args...) {}
-  Printer operator()(const CallExpr *C) {
-    return createPrinter(C, std::index_sequence_for<Ts...>());
-  }
-};
-
 template <class BaseT, class... CallArgsT>
 using MemberCallPrinterCreator =
     PrinterCreator<MemberCallPrinter<BaseT, StringRef, CallArgsT...>,

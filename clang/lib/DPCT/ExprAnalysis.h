@@ -204,6 +204,10 @@ public:
     initSourceRange(TL.getSourceRange());
     analyzeType(TL);
   }
+  inline void analyze(const TemplateSpecializationTypeLoc &TSTL) {
+    initSourceRange(TSTL.getSourceRange());
+    analyzeType(TSTL);
+  }
   inline void analyze(const TemplateArgumentLoc &TAL) {
     initSourceRange(TAL.getSourceRange());
     analyzeTemplateArgument(TAL);
@@ -223,7 +227,7 @@ public:
   // nullptr, caller need to use temp variable to save the return value, then
   // check. Don't call twice for same Replacement.
   inline TextModification *getReplacement() {
-    return hasReplacement() ? new ReplaceStmt(E, true, getReplacedString())
+    return hasReplacement() ? new ReplaceText(ExprBeginLoc, SrcLength, std::string(getReplacedString()))
                             : nullptr;
   }
 

@@ -12,6 +12,7 @@
 #include "DNNAPIMigration.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
+#include "TypeLocRewriters.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprConcepts.h"
@@ -867,6 +868,24 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
     llvm::raw_string_ostream OS(TyName);
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
     TSTL.getTypePtr()->getTemplateName().print(OS, Context.getPrintingPolicy());
+    printf("OS.str(): %s\n", OS.str().c_str());
+    // auto ETL = TL.getAs<ElaboratedTypeLoc>();
+    // printf("ET!!!!!%s\n", ETL.getBeginLoc().printToString(SM).c_str());
+    // if(!Qualifier)
+    //   return false;
+    // std::string RefName = getNestedNameSpecifierString(Qualifier);
+    if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
+      return;
+    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());
+    if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
+      auto Rewriter = Itr->second->create(&TSTL);
+      auto Result = Rewriter->rewrite();
+      if (Result.hasValue()) {
+        auto ResultStr = Result.getValue();
+        addReplacement(TSTL.getBeginLoc(), TSTL.getEndLoc(), CSCE, ResultStr);
+        break;
+      }
+    }
     if (OS.str() != "cub::WarpScan" && OS.str() != "cub::WarpReduce" &&
         OS.str() != "cub::BlockReduce" && OS.str() != "cub::BlockScan") {
       SR.setEnd(TSTL.getTemplateNameLoc());

@@ -95,6 +95,29 @@ using UnsupportFunctionRewriterFactory =
     CallExprRewriterFactory<UnsupportFunctionRewriter<MsgArgs...>, Diagnostics,
                             MsgArgs...>;
 
+template <class Printer, class... Ts> class PrinterCreator {
+  std::tuple<Ts...> Creators;
+
+  template <class T, class Node> T create(T Val, const Node *) { return Val; }
+  template <class Node>
+  StringRef create(const std::string &Val, const Node *) { return Val; }
+  template <class T, class Node>
+  T create(std::function<T(const Node *)> &Func, const Node *C) {
+    return Func(C);
+  }
+  template <class Node, size_t... Idx>
+  Printer createPrinter(const Node *C, std::index_sequence<Idx...>) {
+    return Printer(create(std::get<Idx>(Creators), C)...);
+  }
+
+public:
+  PrinterCreator(Ts... Args) : Creators(Args...) {}
+  template <class Node>
+  Printer operator()(const Node *C) {
+    return createPrinter(C, std::index_sequence_for<Ts...>());
+  }
+};
+
 /// Base class for rewriting call expressions
 class CallExprRewriter {
 protected:
@@ -587,6 +610,14 @@ void print(StreamT &Stream, ArgumentAnalysis &AA,
          << AA.getRewritePostfix();
 }
 
+template <class StreamT>
+void print(StreamT &Stream, ArgumentAnalysis &AA,
+           TypeLoc TL) {
+  ExprAnalysis EA;
+  EA.analyze(TL);
+  Stream << EA.getReplacedString();
+}
+
 template <class StreamT, class T1, class T2>
 void print(StreamT &Stream, ArgumentAnalysis &AA, std::pair<T1, T2> P) {
   dpct::print(Stream, AA, P.first);
@@ -700,6 +731,12 @@ public:
   void printArg(std::false_type, StreamT &Stream,
                 std::pair<const CallExpr *, const Expr *> P) const {
     dpct::print(Stream, A, P);
+  }
+
+  template <class StreamT>
+  void printArg(std::false_type, StreamT &Stream,
+                TypeLoc TL) const {
+    dpct::print(Stream, A, TL);
   }
 
   template <class StreamT, class T1, class T2>
