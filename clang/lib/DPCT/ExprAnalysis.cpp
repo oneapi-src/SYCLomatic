@@ -639,7 +639,9 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   }
   dispatch(ME->getBase());
   RefString.clear();
-  RefString += ME->getMemberDecl()->getDeclName().getAsString();
+  RefString +=
+      DpctGlobalInfo::getTypeName(ME->getBase()->getType().getCanonicalType()) +
+      "." + ME->getMemberDecl()->getDeclName().getAsString();
 }
 
 void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {
@@ -676,7 +678,6 @@ void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
 void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // To set the RefString
   dispatch(CE->getCallee());
-
   // If the callee requires rewrite, get the rewriter
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
@@ -764,7 +765,6 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
   std::string MethodName = "";
   if (CMCE->getMethodDecl()->getIdentifier()) {
     MethodName = CMCE->getMethodDecl()->getNameAsString();
-
     if (CallExprRewriterFactoryBase::MethodRewriterMap) {
       auto Itr = CallExprRewriterFactoryBase::MethodRewriterMap->find(
           BaseType + "." + MethodName);
@@ -783,10 +783,6 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
   dispatch(CMCE->getCallee());
   for (auto Arg : CMCE->arguments())
     analyzeArgument(Arg);
-
-  RefString.clear();
-  RefString += MethodName;
-  analyzeExpr(dyn_cast<CallExpr>(CMCE));
 }
 
 void ExprAnalysis::analyzeExpr(const CXXBindTemporaryExpr *CBTE) {

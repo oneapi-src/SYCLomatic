@@ -13210,28 +13210,153 @@ void CooperativeGroupsFunctionRule::runRule(
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall");
   if (!CE)
     return;
-
-  // There are 3 usages of cooperative groups APIs.
-  // 1. cg::thread_block tb; tb.sync();
-  // 2. cg::thread_block tb; cg::sync(tb);
-  // 3. cg::thread_block::sync();
-
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
+
+  auto GetBaseTypeStr = [](const CallExpr *CE) -> std::string {
+    auto ME = dyn_cast<MemberExpr>(CE->getCallee()->IgnoreImpCasts());
+    if (!ME)
+      return "";
+    auto Base = ME->getBase()->IgnoreImpCasts();
+    if (!Base)
+      return "";
+    return DpctGlobalInfo::getTypeName(Base->getType().getCanonicalType());
+  };
+  auto GetArgTypeStr = [](const CallExpr *CE, unsigned int Idx) -> std::string {
+    if (CE->getNumArgs() <= Idx)
+      return "";
+    if (!CE->getDirectCallee())
+      return "";
+    if (!CE->getDirectCallee()->getParamDecl(Idx))
+      return "";
+    return CE->getDirectCallee()
+        ->getParamDecl(Idx)
+        ->getType()
+        .getCanonicalType()
+        .getUnqualifiedType()
+        .getAsString();
+  };
+
+  struct ReportUnsupportedWarning {
+    ReportUnsupportedWarning(SourceLocation SL, std::string FunctionName,
+                             CooperativeGroupsFunctionRule *ThisPtrOfRule)
+        : SL(SL), FunctionName(FunctionName), ThisPtrOfRule(ThisPtrOfRule) {}
+    ~ReportUnsupportedWarning() {
+      if (NeedReport) {
+        ThisPtrOfRule->report(SL, Diagnostics::API_NOT_MIGRATED, true,
+                              FunctionName);
+      }
+    }
+    bool NeedReport = true;
+  private:
+    SourceLocation SL;
+    std::string FunctionName;
+    CooperativeGroupsFunctionRule *ThisPtrOfRule = nullptr;
+  };
+
+  ReportUnsupportedWarning RUW(CE->getBeginLoc(), FuncName, this);
+
   if (FuncName == "sync" || FuncName == "thread_rank" || FuncName == "size" ||
       FuncName == "shfl_down") {
-    // case 3, unsupport, emit warning and return
-    if (CE->getCallee()->IgnoreImpCasts()->getStmtClass() ==
-        clang::Stmt::StmtClass::CallExprClass) {
-      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, true, FuncName);
+    // There are 3 usages of cooperative groups APIs.
+    // 1. cg::thread_block tb; tb.sync(); // member function
+    // 2. cg::thread_block tb; cg::sync(tb); // free function
+    // 3. cg::thread_block::sync(); // static function
+    // Value meaning: is_migration_support/is_original_code_support
+    // FunctionName  Case1 Case2 Case3
+    // sync          1/1   1/1   0/1
+    // thread_rank   1/1   1/1   0/1
+    // size          1/1   0/0   0/1
+    // shfl_down     1/1   0/0   0/0
+
+    // unsupported case 3, emit warning and return
+    if ((!CE->getNumArgs()) &&
+        CE->getCallee()->IgnoreImpCasts()->getStmtClass() ==
+            clang::Stmt::StmtClass::CallExprClass) {
       return;
     }
+
+    // unsupported case for shfl_down
+    if (FuncName == "shfl_down") {
+      // support thread_block_tile<1,2,4,8,16> in case 1
+      static const std::set<std::string> SupportedBaseType = {
+          "cooperative_groups::__v1::thread_block_tile<1>",
+          "cooperative_groups::__v1::thread_block_tile<2>",
+          "cooperative_groups::__v1::thread_block_tile<4>",
+          "cooperative_groups::__v1::thread_block_tile<8>",
+          "cooperative_groups::__v1::thread_block_tile<16>"};
+      if (!SupportedBaseType.count(GetBaseTypeStr(CE))) {
+        return;
+      }
+    }
+
+    // unsupported case for size
+    if (FuncName == "size") {
+      // support thread_block_tile<1,2,4,8,16,32> in case 1
+      static const std::set<std::string> SupportedBaseType = {
+          "cooperative_groups::__v1::thread_block_tile<1>",
+          "cooperative_groups::__v1::thread_block_tile<2>",
+          "cooperative_groups::__v1::thread_block_tile<4>",
+          "cooperative_groups::__v1::thread_block_tile<8>",
+          "cooperative_groups::__v1::thread_block_tile<16>",
+          "cooperative_groups::__v1::thread_block_tile<32>"};
+      if (!SupportedBaseType.count(GetBaseTypeStr(CE))) {
+        return;
+      }
+    }
+
+    // unsupported case for thread_rank
+    if (FuncName == "thread_rank") {
+      // support thread_block_tile<1,2,4,8,16,32> and thread_block in case 1 and 2
+      static const std::set<std::string> SupportedBaseType = {
+          "cooperative_groups::__v1::thread_block_tile<1>",
+          "cooperative_groups::__v1::thread_block_tile<2>",
+          "cooperative_groups::__v1::thread_block_tile<4>",
+          "cooperative_groups::__v1::thread_block_tile<8>",
+          "cooperative_groups::__v1::thread_block_tile<16>",
+          "cooperative_groups::__v1::thread_block_tile<32>",
+          "cooperative_groups::__v1::thread_block"};
+      static const std::set<std::string> SupportedArgType = {
+          "const class cooperative_groups::__v1::thread_block_tile<1> &",
+          "const class cooperative_groups::__v1::thread_block_tile<2> &",
+          "const class cooperative_groups::__v1::thread_block_tile<4> &",
+          "const class cooperative_groups::__v1::thread_block_tile<8> &",
+          "const class cooperative_groups::__v1::thread_block_tile<16> &",
+          "const class cooperative_groups::__v1::thread_block_tile<32> &",
+          "const class cooperative_groups::__v1::thread_block &"};
+
+      if ((!CE->getNumArgs() && !SupportedBaseType.count(GetBaseTypeStr(CE))) ||
+          (CE->getNumArgs() && !SupportedArgType.count(GetArgTypeStr(CE, 0)))) {
+        return;
+      }
+    }
+
+    // unsupported case for sync
+    if (FuncName == "sync") {
+      // support thread_block_tile<32>, thread_block, coalesced_group and
+      // grid_group in case 1 and 2
+      static const std::set<std::string> SupportedBaseType = {
+          "cooperative_groups::__v1::grid_group",
+          "cooperative_groups::__v1::coalesced_group",
+          "cooperative_groups::__v1::thread_block_tile<32>",
+          "cooperative_groups::__v1::thread_block"};
+      static const std::set<std::string> SupportedArgType = {
+          "const class cooperative_groups::__v1::grid_group &",
+          "const class cooperative_groups::__v1::coalesced_group &",
+          "const class cooperative_groups::__v1::thread_block_tile<32> &",
+          "const class cooperative_groups::__v1::thread_block &"};
+      if ((!CE->getNumArgs() && !SupportedBaseType.count(GetBaseTypeStr(CE))) ||
+          (CE->getNumArgs() && !SupportedArgType.count(GetArgTypeStr(CE, 0)))) {
+        return;
+      }
+    }
+
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
+    RUW.NeedReport = false;
   } else if (FuncName == "this_thread_block") {
     if (CE->getNumArgs()) {
-      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, true, FuncName);
       return;
     }
     if (auto P = getAncestorDeclStmt(CE)) {
@@ -13239,9 +13364,11 @@ void CooperativeGroupsFunctionRule::runRule(
         emplaceTransformation(new ReplaceTypeInDecl(VD, "auto"));
       }
     }
+    RUW.NeedReport = false;
     emplaceTransformation(
         new ReplaceStmt(CE, DpctGlobalInfo::getGroup(CE)));
   } else if (FuncName == "tiled_partition") {
+    RUW.NeedReport = false;
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();

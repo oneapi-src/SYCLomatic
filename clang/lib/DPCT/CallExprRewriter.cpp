@@ -1247,31 +1247,6 @@ makeCallArgCreator(std::string Str) {
   return [=](const CallExpr *C) -> const StringRef { return StringRef(Str); };
 }
 
-std::function<std::string(const CallExpr *)>
-makeCallArgCreatorFromTemplateArg(unsigned Idx) {
-  return [=](const CallExpr *CE) -> std::string {
-    const Expr *Callee = CE->getCallee()->IgnoreParenImpCasts();
-    const FunctionDecl *FD = CE->getDirectCallee();
-    if (!FD)
-      return "";
-    auto DRE = dyn_cast_or_null<DeclRefExpr>(Callee);
-    if (!DRE)
-      return "";
-    auto TA = DRE->template_arguments();
-    if (TA.size() <= Idx)
-      return "";
-
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    auto Begin = SM.getExpansionLoc(TA[Idx].getSourceRange().getBegin());
-    auto End = SM.getExpansionLoc(TA[Idx].getSourceRange().getEnd());
-    End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-        End, SM, DpctGlobalInfo::getContext().getLangOpts()));
-    auto Len = End.getRawEncoding() - Begin.getRawEncoding();
-    auto C = SM.getCharacterData(Begin);
-    return std::string(C, Len);
-  };
-}
-
 std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
 makeCallArgCreatorWithCall(unsigned Idx) {
   return [=](const CallExpr *C) -> std::pair<const CallExpr *, const Expr *> {
@@ -1430,6 +1405,22 @@ makeLambdaCreator(bool IsCaptureRef,
                         IsCaptureRef, Stmts...);
 }
 
+auto getTemplateArgsList =
+    [](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
+  ArrayRef<TemplateArgumentLoc> TemplateArgsList;
+  std::vector<TemplateArgumentInfo> Ret;
+  auto Callee = C->getCallee()->IgnoreImplicitAsWritten();
+  if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
+    TemplateArgsList = DRE->template_arguments();
+  } else if (auto ULE = dyn_cast<UnresolvedLookupExpr>(Callee)) {
+    TemplateArgsList = ULE->template_arguments();
+  }
+  for (auto Arg : TemplateArgsList) {
+    Ret.emplace_back(Arg);
+  }
+  return Ret;
+};
+
 std::function<TemplatedCallee(const CallExpr *)>
 makeTemplatedCalleeCreator(std::string CalleeName,
                            std::vector<size_t> Indexes) {
@@ -1437,21 +1428,22 @@ makeTemplatedCalleeCreator(std::string CalleeName,
       TemplatedCallee, std::string,
       std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>(
       CalleeName, [=](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
-        ArrayRef<TemplateArgumentLoc> TemplateArgsList;
         std::vector<TemplateArgumentInfo> Ret;
-        auto Callee = C->getCallee()->IgnoreImplicitAsWritten();
-        if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
-          TemplateArgsList = DRE->template_arguments();
-        } else if (auto ULE = dyn_cast<UnresolvedLookupExpr>(Callee)) {
-          TemplateArgsList = ULE->template_arguments();
-        }
+        auto List = getTemplateArgsList(C);
         for (auto Idx : Indexes) {
-          if (Idx < TemplateArgsList.size()) {
-            Ret.emplace_back(TemplateArgsList[Idx]);
+          if (Idx < List.size()) {
+            Ret.emplace_back(List[Idx]);
           }
         }
         return Ret;
       });
+}
+
+std::function<std::string(const CallExpr *)>
+makeCallArgCreatorFromTemplateArg(unsigned Idx) {
+  return [=](const CallExpr *CE) -> std::string {
+    return getTemplateArgsList(CE)[Idx].getString();
+  };
 }
 
 template <class First>
@@ -2448,13 +2440,6 @@ public:
   }
 };
 
-template <class T>
-std::function<std::string(const CallExpr *)> ConcatStr(T Functor,
-                                                       std::string Str) {
-  return [=](const CallExpr *C) -> std::string {
-    return Functor(C) + Str; };
-}
-
 std::function<std::string(const CallExpr *)> MemberExprBase() {
   return [=](const CallExpr *C) -> std::string {
     auto ME = dyn_cast<MemberExpr>(C->getCallee()->IgnoreImpCasts());
@@ -2463,10 +2448,7 @@ std::function<std::string(const CallExpr *)> MemberExprBase() {
     auto Base = ME->getBase()->IgnoreImpCasts();
     if (!Base)
       return "";
-    auto DRE = dyn_cast<DeclRefExpr>(Base);
-    if (!DRE)
-      return "";
-    return DRE->getNameInfo().getName().getAsString();
+    return getStmtSpelling(Base);
   };
 }
 
@@ -2649,12 +2631,16 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesWarp.inc"
 #include "APINamesCUDNN.inc"
 #include "APINamesErrorHandling.inc"
+#define FUNCTION_CALL
+#define CLASS_METHOD_CALL
 #include "APINamesCooperativeGroups.inc"
+#undef FUNCTION_CALL
+#undef CLASS_METHOD_CALL
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED
 #undef ENTRY_TEMPLATED
-#undef UNSUPPORTED_FACTORY_ENTRY
+#undef ENTRY_BIND
 
 #define ENTRY_HOST(from, to, policy)
 #define ENTRY_DEVICE(SOURCEAPINAME, TARGETAPINAME, EXTR)                       \
@@ -2670,7 +2656,13 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 
 void CallExprRewriterFactoryBase::initMethodRewriterMap() {
   MethodRewriterMap = std::make_unique<std::unordered_map<
-      std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>();
+      std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>(
+      std::unordered_map<std::string,
+                         std::shared_ptr<CallExprRewriterFactoryBase>>({
+#define CLASS_METHOD_CALL
+#include "APINamesCooperativeGroups.inc"
+#undef CLASS_METHOD_CALL
+      }));
 }
 
 const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {

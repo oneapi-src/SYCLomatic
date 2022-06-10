@@ -549,6 +549,11 @@ template <class StreamT> void print(StreamT &Stream, const Expr *E) {
 template <class StreamT> void print(StreamT &Stream, StringRef Str) {
   Stream << Str;
 }
+template <class StreamT>
+void print(StreamT &Stream,
+           const std::pair<std::string, const StringRef> &Pair) {
+  Stream << Pair.first << Pair.second;
+}
 template <class StreamT, class T>
 void print(StreamT &Stream, ExprAnalysis &EA, const T &Val) {
   print(Stream, Val);
@@ -1331,21 +1336,21 @@ public:
   }
 };
 
-class CheckIntergerTemplateArgValueBase {
+template<class BO>
+class CheckIntergerTemplateArgValue {
   unsigned Idx;
+  std::int64_t CompareValue;
 
-protected:
+public:
+  CheckIntergerTemplateArgValue(unsigned int Idx, std::int64_t CompareValue)
+      : Idx(Idx), CompareValue(CompareValue) {}
   bool getTemplateArgAsInt64(const CallExpr *C, std::int64_t &Val) {
     const FunctionDecl *FD = C->getDirectCallee();
     if (!FD)
       return false;
-    auto DRE = dyn_cast<DeclRefExpr>(C->getCallee()->IgnoreParenImpCasts());
-    if (!DRE)
-      return false;
-    auto TA = DRE->template_arguments();
-    if (TA.size() <= Idx)
-      return false;
     auto TSA = FD->getTemplateSpecializationArgs();
+    if (Idx >= TSA->size())
+      return false;
     if (!TSA)
       return false;
     if (TSA->get(Idx).getKind() != clang::TemplateArgument::ArgKind::Integral)
@@ -1356,38 +1361,15 @@ protected:
     Val = I.getExtValue();
     return true;
   }
-  CheckIntergerTemplateArgValueBase(unsigned int Idx) : Idx(Idx) {}
-};
-
-class CheckIntergerTemplateArgValueNE : CheckIntergerTemplateArgValueBase {
-  std::int64_t CompareValue;
-
-public:
-  CheckIntergerTemplateArgValueNE(unsigned int Idx, std::int64_t CompareValue)
-      : CheckIntergerTemplateArgValueBase(Idx), CompareValue(CompareValue) {}
   bool operator()(const CallExpr *C) {
     std::int64_t Val = 0;
     bool Res = getTemplateArgAsInt64(C, Val);
-    if (Res && (Val != CompareValue))
-      return true;
-    return false;
+    return Res && BO()(Val, CompareValue);
   }
 };
 
-class CheckIntergerTemplateArgValueLE : CheckIntergerTemplateArgValueBase {
-  std::int64_t CompareValue;
-
-public:
-  CheckIntergerTemplateArgValueLE(unsigned int Idx, std::int64_t CompareValue)
-      : CheckIntergerTemplateArgValueBase(Idx), CompareValue(CompareValue) {}
-  bool operator()(const CallExpr *C) {
-    std::int64_t Val = 0;
-    bool Res = getTemplateArgAsInt64(C, Val);
-    if (Res && (Val <= CompareValue))
-      return true;
-    return false;
-  }
-};
+using CheckIntergerTemplateArgValueNE = CheckIntergerTemplateArgValue<std::not_equal_to<std::int64_t>>;
+using CheckIntergerTemplateArgValueLE = CheckIntergerTemplateArgValue<std::less_equal<std::int64_t>>;
 
 } // namespace dpct
 } // namespace clang
