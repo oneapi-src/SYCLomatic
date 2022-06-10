@@ -17339,7 +17339,7 @@ void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "cuCimagf", "cuCadd", "cuCsub", "cuCmul", "cuCdiv",
                       "cuCabs", "cuConj", "make_cuFloatComplex", "cuCaddf",
                       "cuCsubf", "cuCmulf", "cuCdivf", "cuCabsf", "cuConjf",
-                      "make_cuComplex");
+                      "make_cuComplex", "__saturatef");
   };
 
   MF.addMatcher(callExpr(callee(functionDecl(ComplexAPI()))).bind("call"),

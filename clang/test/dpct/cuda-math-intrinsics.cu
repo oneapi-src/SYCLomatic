@@ -2349,9 +2349,7 @@ __global__ void testUnsupported() {
   // CHECK-NEXT: */
   d = yn(i, d);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __saturatef is not supported.
-  // CHECK-NEXT: */
+  // CHECK: f = sycl::clamp<float>(f, 0.0f, 1.0f);
   f = __saturatef(f);
 
   // i = __shfl_down_sync(u, h, u, i);

@@ -17,6 +17,11 @@ CALL_FACTORY_ENTRY("make_cuDoubleComplex",
                    CALL(MapNames::getClNamespace() + "double2",
                         makeCallArgCreatorWithCall(0),
                         makeCallArgCreatorWithCall(1)))
+CALL_FACTORY_ENTRY("__saturatef",
+                   CALL(MapNames::getClNamespace() + "clamp<float>",
+                        makeCallArgCreatorWithCall(0),
+                        makeCallArgCreator("0.0f"),
+                        makeCallArgCreator("1.0f")))
 MEMBER_CALL_FACTORY_ENTRY("cuCreal", makeDerefArgCreatorWithCall(0), false, "x")
 MEMBER_CALL_FACTORY_ENTRY("cuCimag", makeDerefArgCreatorWithCall(0), false, "y")
 MEMBER_CALL_FACTORY_ENTRY("cuCrealf", makeDerefArgCreatorWithCall(0), false,
