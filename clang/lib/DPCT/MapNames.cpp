@@ -46,8 +46,6 @@ MapNames::MapTy MapNames::MathRewriterMap;
 std::unordered_map<std::string, std::string> MapNames::AtomicFuncNamesMap;
 MapNames::MapTy MapNames::ITFName;
 std::map<std::string, MapNames::BLASFuncReplInfo> MapNames::BLASFuncReplInfoMap;
-std::map<std::string, MapNames::BLASFuncComplexReplInfo>
-    MapNames::BatchedBLASFuncReplInfoMap;
 std::map<std::string, MapNames::BLASFuncReplInfo>
     MapNames::BLASFuncWrapperReplInfoMap;
 std::map<std::string, MapNames::BLASGemmExTypeInfo>
@@ -1168,18 +1166,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDtrsm_v2",
        {std::vector<int>{8, 10}, std::vector<int>{7},
         std::vector<std::string>{"double", "double"}, std::vector<int>{3}, 2, 1,
-        4, "oneapi::mkl::blas::column_major::trsm"}},
-      // Needn't declare bufferB, but need copy the data ptrB points to
-      // where ptrC points.
-      {"cublasStrmm_v2",
-       {std::vector<int>{8, 12}, std::vector<int>{7},
-        std::vector<std::string>{"float", "float"}, std::vector<int>{3}, 2, 1,
-        4, "oneapi::mkl::blas::column_major::trmm"}},
-      {"cublasDtrmm_v2",
-       {std::vector<int>{8, 12}, std::vector<int>{7},
-        std::vector<std::string>{"double", "double"}, std::vector<int>{3}, 2, 1,
-        4, "oneapi::mkl::blas::column_major::trmm"}},
-      // ...
+        4, "oneapi::mkl::blas::column_major::trsm"}}
   };
 
   BLASFuncWrapperReplInfoMap = {
@@ -1249,64 +1236,6 @@ void MapNames::setExplicitNamespaceMap() {
         std::vector<int>{}, -1, -1, -1,
         getDpctNamespace() + "geqrf_batch_wrapper"}}};
 
-  BatchedBLASFuncReplInfoMap = {
-      {"cublasHgemmBatched",
-       {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-        std::vector<std::string>{getClNamespace() + "half",
-                                 getClNamespace() + "half",
-                                 getClNamespace() + "half"},
-        std::vector<std::string>{getClNamespace() + "half",
-                                 getClNamespace() + "half"},
-        std::vector<int>{1, 2}, -1, -1, -1,
-        "oneapi::mkl::blas::column_major::gemm_batch"}},
-      {"cublasSgemmBatched",
-       {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-        std::vector<std::string>{"float", "float", "float"},
-        std::vector<std::string>{"float", "float"}, std::vector<int>{1, 2}, -1,
-        -1, -1, "oneapi::mkl::blas::column_major::gemm_batch"}},
-      {"cublasDgemmBatched",
-       {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-        std::vector<std::string>{"double", "double", "double"},
-        std::vector<std::string>{"double", "double"}, std::vector<int>{1, 2},
-        -1, -1, -1, "oneapi::mkl::blas::column_major::gemm_batch"}},
-      {"cublasCgemmBatched",
-       {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-        std::vector<std::string>{"std::complex<float>", "std::complex<float>",
-                                 "std::complex<float>"},
-        std::vector<std::string>{"std::complex<float>", "std::complex<float>"},
-        std::vector<int>{1, 2}, -1, -1, -1,
-        "oneapi::mkl::blas::column_major::gemm_batch"}},
-      {"cublasZgemmBatched",
-       {std::vector<int>{7, 9, 12}, std::vector<int>{6, 11},
-        std::vector<std::string>{"std::complex<double>", "std::complex<double>",
-                                 "std::complex<double>"},
-        std::vector<std::string>{"std::complex<double>",
-                                 "std::complex<double>"},
-        std::vector<int>{1, 2}, -1, -1, -1,
-        "oneapi::mkl::blas::column_major::gemm_batch"}},
-      {"cublasStrsmBatched",
-       {std::vector<int>{8, 10}, std::vector<int>{7},
-        std::vector<std::string>{"float", "float"},
-        std::vector<std::string>{"float"}, std::vector<int>{3}, 2, 1, 4,
-        "oneapi::mkl::blas::column_major::trsm_batch"}},
-      {"cublasDtrsmBatched",
-       {std::vector<int>{8, 10}, std::vector<int>{7},
-        std::vector<std::string>{"double", "double"},
-        std::vector<std::string>{"double"}, std::vector<int>{3}, 2, 1, 4,
-        "oneapi::mkl::blas::column_major::trsm_batch"}},
-      {"cublasCtrsmBatched",
-       {std::vector<int>{8, 10}, std::vector<int>{7},
-        std::vector<std::string>{"std::complex<float>", "std::complex<float>"},
-        std::vector<std::string>{"std::complex<float>"}, std::vector<int>{3}, 2,
-        1, 4, "oneapi::mkl::blas::column_major::trsm_batch"}},
-      {"cublasZtrsmBatched",
-       {std::vector<int>{8, 10}, std::vector<int>{7},
-        std::vector<std::string>{"std::complex<double>",
-                                 "std::complex<double>"},
-        std::vector<std::string>{"std::complex<double>"}, std::vector<int>{3},
-        2, 1, 4, "oneapi::mkl::blas::column_major::trsm_batch"}},
-  };
-
   BLASTGemmExTypeInfoMap = {
       {"2:2",
        {"float", getClNamespace() + "half", getClNamespace() + "half",
@@ -1350,7 +1279,20 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCsyrkx", getDpctNamespace() + "syrkx"},
       {"cublasZsyrkx", getDpctNamespace() + "syrkx"},
       {"cublasCherkx", getDpctNamespace() + "hrkx"},
-      {"cublasZherkx", getDpctNamespace() + "hrkx"}};
+      {"cublasZherkx", getDpctNamespace() + "hrkx"},
+      {"cublasHgemmBatched", getDpctNamespace() + "gemm_batch"},
+      {"cublasSgemmBatched", getDpctNamespace() + "gemm_batch"},
+      {"cublasDgemmBatched", getDpctNamespace() + "gemm_batch"},
+      {"cublasCgemmBatched", getDpctNamespace() + "gemm_batch"},
+      {"cublasZgemmBatched", getDpctNamespace() + "gemm_batch"},
+      {"cublasStrsmBatched", getDpctNamespace() + "trsm_batch"},
+      {"cublasDtrsmBatched", getDpctNamespace() + "trsm_batch"},
+      {"cublasCtrsmBatched", getDpctNamespace() + "trsm_batch"},
+      {"cublasZtrsmBatched", getDpctNamespace() + "trsm_batch"},
+      {"cublasStrmm_v2", getDpctNamespace() + "trmm"},
+      {"cublasDtrmm_v2", getDpctNamespace() + "trmm"},
+      {"cublasCtrmm_v2", getDpctNamespace() + "trmm"},
+      {"cublasZtrmm_v2", getDpctNamespace() + "trmm"}};
 
   MathRewriterMap = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
@@ -2017,21 +1959,7 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>", "double"},
           std::vector<int>{2}, 1, -1, -1,
-          "oneapi::mkl::blas::column_major::her2k"}},
-        // Needn't declare bufferB, but need copy the data ptrB points to
-        // where ptrC points.
-        {"cublasCtrmm_v2",
-         {std::vector<int>{8, 12}, std::vector<int>{7},
-          std::vector<std::string>{"std::complex<float>",
-                                   "std::complex<float>"},
-          std::vector<std::string>{"std::complex<float>"}, std::vector<int>{3},
-          2, 1, 4, "oneapi::mkl::blas::column_major::trmm"}},
-        {"cublasZtrmm_v2",
-         {std::vector<int>{8, 12}, std::vector<int>{7},
-          std::vector<std::string>{"std::complex<double>",
-                                   "std::complex<double>"},
-          std::vector<std::string>{"std::complex<double>"}, std::vector<int>{3},
-          2, 1, 4, "oneapi::mkl::blas::column_major::trmm"}},
+          "oneapi::mkl::blas::column_major::her2k"}}
     };
 
 const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
