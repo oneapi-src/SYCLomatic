@@ -88,11 +88,65 @@ jobs:
         with:
           name: SYCLomatic_Win_${{ github.sha }}
           path: c2s_obj.7z 
+
       - name: Lit
+        if: |
+          always() &&
+          steps.Echo-Build-Success.outputs.build_success == 'true'
         run: |
           cd c2s.src/build
           ninja check-clang-c2s -j8
+        shell: bash
 
+      - name: Set_CUDA_Env8.0
+        if: |
+          always() &&
+          steps.Echo-Build-Success.outputs.build_success == 'true'
+        run: |
+          echo "CUDA_PATH=$CUDAROOT/v8.0" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Lit_CUDA8.0
+        if: |
+          always() &&
+          steps.Echo-Build-Success.outputs.build_success == 'true'
+        run: |
+          cd c2s.src/build
+          ninja check-clang-c2s -j8
+        shell: bash
+
+      - name: Set_CUDA_Env9.2
+        if: |
+          always() &&
+          steps.Echo-Build-Success.outputs.build_success == 'true'
+        run: |
+          echo "CUDA_PATH=$CUDAROOT/v9.2" >> $GITHUB_ENV
+        shell: bash
+          
+      - name: Lit_CUDA9.2
+        if: |
+          always() &&
+          steps.Echo-Build-Success.outputs.build_success == 'true'
+        run: |
+          cd c2s.src/build
+          ninja check-clang-c2s -j8
+      
+      - name: Set_CUDA_Env10.2
+        if: |
+          always() &&
+          steps.Echo-Build-Success.outputs.build_success == 'true'
+        run: |
+          echo "CUDA_PATH=$CUDAROOT/v10.2" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Lit_CUDA10.2
+        if: |
+          always() &&
+          steps.Echo-Build-Success.outputs.build_success == 'true'
+        run: |
+          cd c2s.src/build
+          ninja check-clang-c2s -j8
+     
   windows-test:
     name: windows-test-${{ matrix.test_suite }}-cpu
     runs-on: win_build_sc
