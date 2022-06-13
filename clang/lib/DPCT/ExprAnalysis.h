@@ -227,6 +227,11 @@ public:
   // nullptr, caller need to use temp variable to save the return value, then
   // check. Don't call twice for same Replacement.
   inline TextModification *getReplacement() {
+    if (E) {
+      return hasReplacement() ? new ReplaceStmt(E, true, getReplacedString())
+                              : nullptr;
+    }
+
     return hasReplacement() ? new ReplaceText(ExprBeginLoc, SrcLength,
                                               std::string(getReplacedString()))
                             : nullptr;
@@ -265,7 +270,6 @@ public:
 
   // Replace a sub expr
   inline void addReplacement(const Expr *E, std::string Text) {
-    printf("ZZZZZ %ld, %ld\n",SrcBegin,SrcLength);
     auto SpellingLocInfo = getSpellingOffsetAndLength(E);
     if (SM.getDecomposedLoc(SpellingLocInfo.first).first != FileId ||
         SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||

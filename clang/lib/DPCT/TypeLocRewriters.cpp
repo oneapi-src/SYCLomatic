@@ -11,6 +11,13 @@ makeTypeNameCreator(std::string TypeName) {
   };
 }
 
+std::function<std::string(const TypeLoc *)>
+makeTemplateArgCreator(std::string ArgStr) {
+  return [=](const TypeLoc *TL) -> std::string {
+    return ArgStr;
+  };
+}
+
 std::function<TemplateArgumentInfo(const TypeLoc *)>
 makeTemplateArgCreator(unsigned Idx) {
   return [=](const TypeLoc *TL) -> TemplateArgumentInfo {
@@ -23,15 +30,6 @@ makeTemplateArgCreator(unsigned Idx) {
     return TemplateArgumentInfo("");
   };
 }
-
-// template <class... TemplateArgsT>
-// std::function<TypeLocPrinter<StringRef, TemplateArgsT...>(const TypeLoc *)>
-// makeTemplateTypeCreator(std::string TypeName,
-//                         std::function<TemplateArgsT(const TypeLoc *)>... TAs) {
-//   return PrinterCreator<TypeLocPrinter<StringRef, TemplateArgsT...>, std::string,
-//                         std::function<TemplateArgsT(const TypeLoc *)>...>(
-//       TypeName, TAs...);
-// }
 
 class CheckTemplateArgCount {
   unsigned Count;
@@ -82,6 +80,7 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
                          creatTypeLocRewriterFactory(
                              "cuda::atomic", makeTypeNameCreator("atomic_ext"),
                              makeTemplateArgCreator(0),
+                             makeTemplateArgCreator(MapNames::getClNamespace() + "memory_order::relaxed"),
                              makeTemplateArgCreator(1)),
                          creatTypeLocRewriterFactory(
                              "cuda::atomic", makeTypeNameCreator("atomic_ext"),

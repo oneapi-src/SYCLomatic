@@ -17248,12 +17248,9 @@ void TemplateSpecializationTypeLocRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto TL = getNodeAsType<TypeLoc>(Result, "loc")) {
     // Only need to apply the migration to ElaboratedType
-    auto &SM = dpct::DpctGlobalInfo::getSourceManager();
     if (auto ETL = TL->getAs<ElaboratedTypeLoc>()) {
-      printf("aaaaaaaaaa\n");
       ExprAnalysis EA;
       EA.analyze(*TL);
-      printf("TL begin %s\n", TL->getBeginLoc().printToString(SM).c_str());
       emplaceTransformation(EA.getReplacement());
       EA.applyAllSubExprRepl();
     }
