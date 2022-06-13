@@ -784,6 +784,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUBLAS_COMPUTE_32I_PEDANTIC",
        std::make_shared<EnumNameRule>(getDpctNamespace() +
                                       "library_data_t::real_int32")},
+      {"cuda::thread_scope_system",
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_scope::system")},
       // ...
   };
 

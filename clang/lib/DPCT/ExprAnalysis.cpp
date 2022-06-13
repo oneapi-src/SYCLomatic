@@ -212,7 +212,10 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
-
+    if(ExprBeginLoc.isInvalid() && ExprEndLoc.isInvalid()){
+      ExprBeginLoc = BeginLoc;
+      ExprEndLoc = EndLoc;
+    }
     // Avoid illegal range which will cause SIGABRT
     if (End.first + End.second < Begin) {
       return std::pair<size_t, size_t>(Begin, 0);
@@ -431,9 +434,9 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     addReplacement(DRE, TemplateDecl->getIndex());
   else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
     auto &ReplEnum = MapNames::findReplacedName(EnumConstantRule::EnumNamesMap,
-                                                ECD->getName().str());
-    requestHelperFeatureForEnumNames(ECD->getName().str(), DRE);
-    auto ItEnum = EnumConstantRule::EnumNamesMap.find(ECD->getName().str());
+                                                RefString);
+    requestHelperFeatureForEnumNames(RefString, DRE);
+    auto ItEnum = EnumConstantRule::EnumNamesMap.find(RefString);
     if (ItEnum != EnumConstantRule::EnumNamesMap.end()) {
       for (auto ItHeader = ItEnum->second->Includes.begin();
            ItHeader != ItEnum->second->Includes.end(); ItHeader++) {
@@ -468,6 +471,10 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
                               ".get_local_range().get(0)");
     }
   }
+}
+
+void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
+  dispatch(CE->getSubExpr());
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
@@ -868,12 +875,6 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
     llvm::raw_string_ostream OS(TyName);
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
     TSTL.getTypePtr()->getTemplateName().print(OS, Context.getPrintingPolicy());
-    printf("OS.str(): %s\n", OS.str().c_str());
-    // auto ETL = TL.getAs<ElaboratedTypeLoc>();
-    // printf("ET!!!!!%s\n", ETL.getBeginLoc().printToString(SM).c_str());
-    // if(!Qualifier)
-    //   return false;
-    // std::string RefName = getNestedNameSpecifierString(Qualifier);
     if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
       return;
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());
@@ -882,8 +883,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
       auto Result = Rewriter->rewrite();
       if (Result.hasValue()) {
         auto ResultStr = Result.getValue();
-        addReplacement(TSTL.getBeginLoc(), TSTL.getEndLoc(), CSCE, ResultStr);
-        break;
+        addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE, ResultStr);
+        return;
       }
     }
     if (OS.str() != "cub::WarpScan" && OS.str() != "cub::WarpReduce" &&

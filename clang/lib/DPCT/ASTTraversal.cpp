@@ -17238,7 +17238,7 @@ void TemplateSpecializationTypeLocRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() { return hasAnyName("cuda::atomic"); };
 
-  MF.addMatcher(templateSpecializationTypeLoc(
+  MF.addMatcher(typeLoc(
                     loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
                     .bind("loc"),
                 this);
@@ -17246,11 +17246,17 @@ void TemplateSpecializationTypeLocRule::registerMatcher(
 
 void TemplateSpecializationTypeLocRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (auto TSTL = getNodeAsType<TypeLoc>(Result, "loc")) {
-    ExprAnalysis EA;
-    EA.analyze(*TSTL);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
+  if (auto TL = getNodeAsType<TypeLoc>(Result, "loc")) {
+    // Only need to apply the migration to ElaboratedType
+    auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+    if (auto ETL = TL->getAs<ElaboratedTypeLoc>()) {
+      printf("aaaaaaaaaa\n");
+      ExprAnalysis EA;
+      EA.analyze(*TL);
+      printf("TL begin %s\n", TL->getBeginLoc().printToString(SM).c_str());
+      emplaceTransformation(EA.getReplacement());
+      EA.applyAllSubExprRepl();
+    }
   }
 }
 

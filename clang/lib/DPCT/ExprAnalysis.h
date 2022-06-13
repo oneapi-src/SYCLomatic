@@ -227,7 +227,8 @@ public:
   // nullptr, caller need to use temp variable to save the return value, then
   // check. Don't call twice for same Replacement.
   inline TextModification *getReplacement() {
-    return hasReplacement() ? new ReplaceText(ExprBeginLoc, SrcLength, std::string(getReplacedString()))
+    return hasReplacement() ? new ReplaceText(ExprBeginLoc, SrcLength,
+                                              std::string(getReplacedString()))
                             : nullptr;
   }
 
@@ -264,6 +265,7 @@ public:
 
   // Replace a sub expr
   inline void addReplacement(const Expr *E, std::string Text) {
+    printf("ZZZZZ %ld, %ld\n",SrcBegin,SrcLength);
     auto SpellingLocInfo = getSpellingOffsetAndLength(E);
     if (SM.getDecomposedLoc(SpellingLocInfo.first).first != FileId ||
         SM.getDecomposedLoc(SpellingLocInfo.first).second < SrcBegin ||
@@ -392,8 +394,9 @@ protected:
   }
 
   template <class T> void analyzeTemplateSpecializationType(const T &TL) {
-    for (size_t i = 0; i < TL.getNumArgs(); ++i)
+    for (size_t i = 0; i < TL.getNumArgs(); ++i){
       analyzeTemplateArgument(TL.getArgLoc(i));
+    }
   }
 
   // Prepare for analyze.
@@ -621,6 +624,7 @@ protected:
   void analyzeExpr(const LambdaExpr *LE);
   void analyzeExpr(const IfStmt *IS);
   void analyzeExpr(const DeclStmt *DS);
+  void analyzeExpr(const ConstantExpr *CE);
 
   inline void analyzeType(const TypeSourceInfo *TSI,
                           const Expr *CSCE = nullptr) {
