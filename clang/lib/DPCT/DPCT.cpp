@@ -19,6 +19,7 @@
 #include "ExternalReplacement.h"
 #include "GenMakefile.h"
 #include "IncrementalMigrationUtility.h"
+#include "MigrationAction.h"
 #include "MisleadingBidirectional.h"
 #include "Rules.h"
 #include "QueryApiMapping.h"
@@ -192,141 +193,6 @@ extern std::string InRootTooling;
 JMP_BUF CPFileASTMaterEnter;
 JMP_BUF CPRepPostprocessEnter;
 JMP_BUF CPFormatCodeEnter;
-
-class DPCTConsumer : public ASTConsumer {
-public:
-  DPCTConsumer(CompilerInstance &CI, StringRef InFile)
-      : ATM(CI, AnalysisScope), PP(CI.getPreprocessor()), CI(CI) {
-    if (Passes != "") {
-      // Separate string into list by comma
-      auto Names = split(Passes, ',');
-
-      for (auto const &Name : Names) {
-        auto *ID = ASTTraversalMetaInfo::getID(Name);
-        ATM.emplaceMigrationRule(ID);
-      }
-    } else {
-      ATM.emplaceAllRules();
-    }
-  }
-
-  void HandleTranslationUnit(ASTContext &Context) override {
-    if (StopOnParseErr && Context.getDiagnostics().getClient() &&
-        Context.getDiagnostics().getClient()->getNumErrors() > 0) {
-      return;
-    }
-    Context.getParentMapContext().clear();
-    // The migration process is separated into two stages:
-    // 1) Analysis of AST and identification of applicable migration rules
-    // 2) Generation of actual textual Replacements
-    // Such separation makes it possible to post-process the list of identified
-    // migration rules before applying them.
-    ATM.matchAST(Context, TransformSet, SSM);
-
-    auto &Global = DpctGlobalInfo::getInstance();
-    std::unordered_set<std::string> DuplicateFilter;
-    for (const auto &I : TransformSet) {
-      auto Repl = I->getReplacement(Context);
-
-      // When processing __constant__ between two executions, tool may set the
-      // replacement from TextModification as nullptr to ignore this
-      // replacement.
-      if (Repl == nullptr)
-        continue;
-
-      // For file path got in AST may be different with the one in preprocessing
-      // stage, here only the file name is used to retrieve IncludeMapSet.
-      const std::string FileName =
-          llvm::sys::path::filename(Repl->getFilePath()).str();
-      if (DuplicateFilter.find(FileName) == end(DuplicateFilter)) {
-        DuplicateFilter.insert(FileName);
-        auto Find = IncludeMapSet.find(FileName);
-        if (Find != IncludeMapSet.end()) {
-          for (const auto &Entry : Find->second) {
-            Global.addReplacement(Entry->getReplacement(Context));
-          }
-        }
-      }
-      Global.addReplacement(Repl);
-    }
-
-    StaticsInfo::printReplacements(TransformSet, Context);
-  }
-
-  void Initialize(ASTContext &Context) override {
-    // Set Context for build information
-    DpctGlobalInfo::setCompilerInstance(CI);
-
-    PP.addPPCallbacks(std::make_unique<IncludesCallbacks>(
-        TransformSet, IncludeMapSet, Context.getSourceManager(), ATM));
-
-    if (DpctGlobalInfo::getCheckUnicodeSecurityFlag()) {
-      CommentHandler =
-          std::make_shared<MisleadingBidirectionalHandler>(TransformSet);
-      PP.addCommentHandler(CommentHandler.get());
-    }
-
-    auto MainFileID =
-        DpctGlobalInfo::getInstance().getSourceManager().getMainFileID();
-    auto Path = DpctGlobalInfo::getInstance().getAbsolutePath(MainFileID);
-    assert(Path && "Can not find absolute path");
-    auto MainFile = DpctGlobalInfo::getInstance().insertFile(Path.getValue());
-    DpctGlobalInfo::getInstance().setMainFile(MainFile);
-  }
-
-  void HandleCXXExplicitFunctionInstantiation(
-      const FunctionDecl *Specialization, const FunctionTypeLoc &FTL,
-      const ParsedAttributes &Attrs,
-      const TemplateArgumentListInfo &TAList) override {
-    if (!FTL || !Specialization)
-      return;
-    ExplicitInstantiationDecl::processFunctionTypeLoc(FTL);
-    if (Specialization->getTemplateSpecializationKind() !=
-        TSK_ExplicitInstantiationDefinition)
-      return;
-    if (Specialization->hasAttr<CUDADeviceAttr>() ||
-        Specialization->hasAttr<CUDAGlobalAttr>()) {
-      DeviceFunctionDecl::LinkExplicitInstantiation(Specialization, FTL, Attrs,
-                                                    TAList);
-    }
-  }
-
-  ~DPCTConsumer() {
-    // Clean EmittedTransformations for input file migrated.
-    ASTTraversalMetaInfo::getEmittedTransformations().clear();
-  }
-
-private:
-  ASTTraversalManager ATM;
-  TransformSetTy TransformSet;
-  IncludeMapSetTy IncludeMapSet;
-  StmtStringMap SSM;
-  Preprocessor &PP;
-  CompilerInstance &CI;
-  std::shared_ptr<MisleadingBidirectionalHandler> CommentHandler;
-};
-
-class DPCTAction : public ASTFrontendAction {
-public:
-  DPCTAction() = default;
-
-  std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
-                                                 StringRef InFile) override {
-    return std::make_unique<DPCTConsumer>(CI, InFile);
-  }
-
-  bool usesPreprocessorOnly() const override { return false; }
-};
-
-// Object of this class will be handed to RefactoringTool::run and will create
-// the Action.
-class DPCTActionFactory : public FrontendActionFactory {
-public:
-  DPCTActionFactory() = default;
-  std::unique_ptr<FrontendAction> create() override {
-    return std::make_unique<DPCTAction>();
-  }
-};
 
 std::string getCudaInstallPath(int argc, const char **argv) {
   std::vector<const char *> Argv;
@@ -1113,7 +979,6 @@ int runDPCT(int argc, const char **argv) {
     parseFormatStyle();
   }
 
-  auto &Global = DpctGlobalInfo::getInstance();
   volatile int RunCount = 0;
   do {
     if (RunCount == 1) {
@@ -1123,13 +988,14 @@ int runDPCT(int argc, const char **argv) {
       DeviceFunctionDecl::reset();
     }
     DpctGlobalInfo::setRunRound(RunCount++);
-    DPCTActionFactory Factory;
+    DpctToolAction Action(Tool.getReplacements(), Passes,
+                          {PassKind::PK_Analysis, PassKind::PK_Migration});
 
     if (ProcessAllFlag) {
       clang::tooling::SetFileProcessHandle(InRoot, OutRoot, processAllFiles);
     }
 
-    int RunResult = Tool.run(&Factory);
+    int RunResult = Tool.run(&Action);
     if (RunResult == MigrationErrorCannotAccessDirInDatabase) {
       ShowStatus(MigrationErrorCannotAccessDirInDatabase,
                  ClangToolOutputMessage);
@@ -1153,21 +1019,7 @@ int runDPCT(int argc, const char **argv) {
       }
     }
 
-    int RetJmp = 0;
-    CHECKPOINT_ReplacementPostProcess_ENTRY(RetJmp);
-    if (RetJmp == 0) {
-      try {
-        Global.buildReplacements();
-        Global.postProcess();
-        Global.emplaceReplacements(Tool.getReplacements());
-      } catch (std::exception &e) {
-        std::string FaultMsg = "Error: dpct internal error. dpct tries to "
-                               "recover and write the migration result.\n";
-        llvm::errs() << FaultMsg;
-      }
-    }
-
-    CHECKPOINT_ReplacementPostProcess_EXIT();
+    Action.runPasses();
   } while (DpctGlobalInfo::isNeedRunAgain());
 
   if (GenReport) {

@@ -881,6 +881,17 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // If the callee does not need rewrite, analyze the args
   for (auto Arg : CE->arguments())
     analyzeArgument(Arg);
+
+  if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
+    if (auto F = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD)) {
+      if (auto C = F->getFuncInfo()->findCallee(CE)) {
+        auto Extra = C->getExtraArguments();
+        if (Extra.empty())
+          return;
+        addReplacement(CE->getRParenLoc(), Extra);
+      }
+    }
+  }
 }
 
 void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {

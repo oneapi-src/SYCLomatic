@@ -9,6 +9,8 @@
 #include "CUBAPIMigration.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
+#include "MigrationRuleManager.h"
+
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/Expr.h"
@@ -1358,4 +1360,4 @@ void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
     processTypeLoc(TL);
   }
 }
-REGISTER_RULE(CubRule)
+REGISTER_RULE(CubRule, PassKind::PK_Analysis)

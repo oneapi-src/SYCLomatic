@@ -14,6 +14,7 @@
 #include "ExprAnalysis.h"
 #include "FFTAPIMigration.h"
 #include "Homoglyph.h"
+#include "MigrationRuleManager.h"
 #include "MisleadingBidirectional.h"
 #include "DNNAPIMigration.h"
 #include "NCCLAPIMigration.h"
@@ -111,9 +112,7 @@ static internal::Matcher<NamedDecl> vectorTypeName() {
 
 unsigned MigrationRule::PairID = 0;
 bool IncludesCallbacks::isInAnalysisScope(SourceLocation Loc) {
-  std::string AnalysisScope = ATM.AnalysisScope;
-  std::string InFile = SM.getFilename(Loc).str();
-  return !isDirectory(InFile) && isChildOrSamePath(AnalysisScope, InFile);
+  return DpctGlobalInfo::isInAnalysisScope(Loc);
 }
 
 int IncludesCallbacks::findPoundSign(SourceLocation DirectiveStart) {
@@ -171,9 +170,7 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
 
 void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
                                      const MacroDirective *MD) {
-  std::string AnalysisScope = ATM.AnalysisScope;
-  std::string InFile = SM.getFilename(MacroNameTok.getLocation()).str();
-  bool IsInAnalysisScope = !isDirectory(InFile) && isChildOrSamePath(AnalysisScope, InFile);
+  bool IsInAnalysisScope = isInAnalysisScope(MacroNameTok.getLocation());
 
   size_t i;
   // Record all macro define locations
@@ -241,7 +238,7 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
                    MapNames::VectorTypeMigratedTypeSizeMap.end()) {
       DiagnosticsUtils::report(
           MacroNameTok.getLocation(), Diagnostics::MACRO_SAME_AS_SYCL_TYPE,
-          dpct::DpctGlobalInfo::getCompilerInstance(), &TransformSet, false,
+          dpct::DpctGlobalInfo::getSourceManager(), &TransformSet, false,
           MacroNameTok.getIdentifierInfo()->getName().str());
     }
   }
@@ -250,10 +247,7 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
 void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                                      const MacroDefinition &MD,
                                      SourceRange Range, const MacroArgs *Args) {
-  std::string AnalysisScope = ATM.AnalysisScope;
-  std::string InFile =
-      SM.getFilename(SM.getSpellingLoc(MacroNameTok.getLocation())).str();
-  bool IsInAnalysisScope = !isDirectory(InFile) && isChildOrSamePath(AnalysisScope, InFile);
+  bool IsInAnalysisScope = isInAnalysisScope(SM.getSpellingLoc(MacroNameTok.getLocation()));
   auto MI = MD.getMacroInfo();
   if (!MI) {
     return;
@@ -461,7 +455,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
         TransformSet.emplace_back(new ReplaceToken(Range.getBegin(), "0"));
         DiagnosticsUtils::report(Range.getBegin(),
                                  Diagnostics::HOSTALLOCMACRO_NO_MEANING,
-                                 dpct::DpctGlobalInfo::getCompilerInstance(),
+                                 dpct::DpctGlobalInfo::getSourceManager(),
                                  &TransformSet, false, Name.str());
       }
     }
@@ -594,9 +588,7 @@ void IncludesCallbacks::Defined(const Token &MacroNameTok,
 }
 
 void IncludesCallbacks::Endif(SourceLocation Loc, SourceLocation IfLoc) {
-  std::string AnalysisScope = ATM.AnalysisScope;
-  std::string InFile = SM.getFilename(Loc).str();
-  bool IsInAnalysisScope = !isDirectory(InFile) && isChildOrSamePath(AnalysisScope, InFile);
+  bool IsInAnalysisScope = isInAnalysisScope(Loc);
   if (IsInAnalysisScope) {
     dpct::DpctGlobalInfo::getEndifLocationOfIfdef()[getHashStrFromLoc(IfLoc)] =
         Loc;
@@ -735,9 +727,7 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
 }
 void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
                            ConditionValueKind ConditionValue) {
-  std::string AnalysisScope = ATM.AnalysisScope;
-  std::string InFile = SM.getFilename(Loc).str();
-  bool IsInAnalysisScope = !isDirectory(InFile) && isChildOrSamePath(AnalysisScope, InFile);
+  bool IsInAnalysisScope = isInAnalysisScope(Loc);
 
   if (!IsInAnalysisScope) {
     return;
@@ -747,9 +737,7 @@ void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
 void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
                              ConditionValueKind ConditionValue,
                              SourceLocation IfLoc) {
-  std::string AnalysisScope = ATM.AnalysisScope;
-  std::string InFile = SM.getFilename(Loc).str();
-  bool IsInAnalysisScope = !isDirectory(InFile) && isChildOrSamePath(AnalysisScope, InFile);
+  bool IsInAnalysisScope = isInAnalysisScope(Loc);
 
   if (!IsInAnalysisScope) {
     return;
@@ -799,7 +787,7 @@ void IncludesCallbacks::InclusionDirective(
 
   // eg. '/home/path/util.h' -> '/home/path'
   StringRef Directory = llvm::sys::path::parent_path(IncludingFile);
-  std::string AnalysisScope = ATM.AnalysisScope;
+  std::string AnalysisScope = DpctGlobalInfo::getAnalysisScope();
 
   bool IsIncludingFileInAnalysisScope =
       !isDirectory(IncludingFile) && isChildOrSamePath(AnalysisScope, Directory.str());
@@ -1105,14 +1093,13 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
   if (Reason == clang::PPCallbacks::EnterFile) {
     DpctGlobalInfo::getInstance().setFileEnterLocation(Loc);
 
-    std::string AnalysisScope = ATM.AnalysisScope;
-    std::string InFile = SM.getFilename(Loc).str();
-    bool IsInAnalysisScope = !isDirectory(InFile) && isChildOrSamePath(AnalysisScope, InFile);
+    bool IsInAnalysisScope = isInAnalysisScope(Loc);
 
     if (!IsInAnalysisScope) {
       return;
     }
 
+    std::string InFile = SM.getFilename(Loc).str();
     InFile = getAbsolutePath(InFile);
     makeCanonical(InFile);
     if (IsFileInCmd || ProcessAllFlag ||
@@ -1134,9 +1121,9 @@ void MigrationRule::print(llvm::raw_ostream &OS) {
 
   OS << "[" << getName() << "]" << getNL();
   constexpr char Indent[] = "  ";
-  for (const TextModification *TM : EmittedTransformations) {
+  for (auto TM : EmittedTransformations) {
     OS << Indent;
-    TM->print(OS, getCompilerInstance().getASTContext(),
+    TM->print(OS, DpctGlobalInfo::getContext(),
               /* Print parent */ false);
   }
 }
@@ -1149,7 +1136,7 @@ void MigrationRule::printStatistics(llvm::raw_ostream &OS) {
 
   OS << "<Statistics of " << getName() << ">" << getNL();
   std::unordered_map<std::string, size_t> TMNameCountMap;
-  for (const TextModification *TM : EmittedTransformations) {
+  for (auto TM : EmittedTransformations) {
     const std::string Name = TM->getName();
     if (TMNameCountMap.count(Name) == 0) {
       TMNameCountMap.emplace(std::make_pair(Name, 1));
@@ -1167,10 +1154,10 @@ void MigrationRule::printStatistics(llvm::raw_ostream &OS) {
   }
 }
 
-void MigrationRule::emplaceTransformation(const char *RuleID,
-                                          TextModification *TM) {
-  ASTTraversalMetaInfo::getEmittedTransformations()[RuleID].emplace_back(TM);
-  TransformSet->emplace_back(TM);
+void MigrationRule::emplaceTransformation(TextModification *TM) {
+  auto T = std::shared_ptr<TextModification>(TM);
+  Transformations.emplace_back(T);
+  TransformSet->emplace_back(T);
 }
 
 void IterationSpaceBuiltinRule::registerMatcher(MatchFinder &MF) {
@@ -1446,7 +1433,7 @@ void IterationSpaceBuiltinRule::runRule(
   }
 }
 
-REGISTER_RULE(IterationSpaceBuiltinRule)
+REGISTER_RULE(IterationSpaceBuiltinRule, PassKind::PK_Analysis)
 
 void ErrorHandlingIfStmtRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
@@ -1606,7 +1593,7 @@ void ErrorHandlingIfStmtRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(ErrorHandlingIfStmtRule)
+REGISTER_RULE(ErrorHandlingIfStmtRule, PassKind::PK_Migration)
 
 void ErrorHandlingHostAPIRule::registerMatcher(MatchFinder &MF) {
   auto isMigratedHostAPI = [&]() {
@@ -1783,7 +1770,7 @@ void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl *FD) {
       new InsertAfterStmt(FD->getBody(), std::move(ReplaceStr)));
 }
 
-REGISTER_RULE(ErrorHandlingHostAPIRule)
+REGISTER_RULE(ErrorHandlingHostAPIRule, PassKind::PK_Migration)
 
 void AtomicFunctionRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> AtomicFuncNames(MapNames::AtomicFuncNamesMap.size());
@@ -2040,7 +2027,7 @@ void AtomicFunctionRule::runRule(const MatchFinder::MatchResult &Result) {
                     Result);
 }
 
-REGISTER_RULE(AtomicFunctionRule)
+REGISTER_RULE(AtomicFunctionRule, PassKind::PK_Migration)
 
 void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() { return hasAnyName("on"); };
@@ -2325,7 +2312,7 @@ void ThrustFunctionRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(ThrustFunctionRule)
+REGISTER_RULE(ThrustFunctionRule, PassKind::PK_Migration)
 
 void ThrustCtorExprRule::registerMatcher(MatchFinder &MF) {
 
@@ -2424,7 +2411,7 @@ void ThrustCtorExprRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(ThrustCtorExprRule)
+REGISTER_RULE(ThrustCtorExprRule, PassKind::PK_Migration)
 
 // Rule for types migration in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
@@ -3211,7 +3198,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(TypeInDeclRule)
+REGISTER_RULE(TypeInDeclRule, PassKind::PK_Migration)
 
 // Rule for types replacements in var. declarations.
 void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
@@ -3399,7 +3386,7 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(VectorTypeNamespaceRule)
+REGISTER_RULE(VectorTypeNamespaceRule, PassKind::PK_Migration)
 
 void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
   auto memberAccess = [&]() {
@@ -3503,7 +3490,7 @@ void VectorTypeMemberAccessRule::runRule(
   }
 }
 
-REGISTER_RULE(VectorTypeMemberAccessRule)
+REGISTER_RULE(VectorTypeMemberAccessRule, PassKind::PK_Migration)
 
 namespace clang {
 namespace ast_matchers {
@@ -3685,7 +3672,7 @@ void VectorTypeOperatorRule::runRule(const MatchFinder::MatchResult &Result) {
                                             Result, "callOverloadedOperator"));
 }
 
-REGISTER_RULE(VectorTypeOperatorRule)
+REGISTER_RULE(VectorTypeOperatorRule, PassKind::PK_Migration)
 
 void VectorTypeCtorRule::registerMatcher(MatchFinder &MF) {
 
@@ -3728,7 +3715,7 @@ void VectorTypeCtorRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(VectorTypeCtorRule)
+REGISTER_RULE(VectorTypeCtorRule, PassKind::PK_Migration)
 
 void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
   // Find dim3 constructors which are part of different casts (representing
@@ -3875,7 +3862,7 @@ void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(ReplaceDim3CtorRule)
+REGISTER_RULE(ReplaceDim3CtorRule, PassKind::PK_Migration)
 
 void Dim3MemberFieldsRule::FieldsRename(const MatchFinder::MatchResult &Result,
                                         std::string Str, const MemberExpr *ME) {
@@ -3937,7 +3924,7 @@ void Dim3MemberFieldsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(Dim3MemberFieldsRule)
+REGISTER_RULE(Dim3MemberFieldsRule, PassKind::PK_Migration)
 
 void DeviceInfoVarRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
@@ -4082,7 +4069,7 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(DeviceInfoVarRule)
+REGISTER_RULE(DeviceInfoVarRule, PassKind::PK_Migration)
 
 // Rule for Enums constants.
 void EnumConstantRule::registerMatcher(MatchFinder &MF) {
@@ -4215,7 +4202,7 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
   requestHelperFeatureForEnumNames(EnumName, E);
 }
 
-REGISTER_RULE(EnumConstantRule)
+REGISTER_RULE(EnumConstantRule, PassKind::PK_Migration)
 
 void ErrorConstantsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(
@@ -4298,7 +4285,7 @@ void ErrorConstantsRule::runRule(const MatchFinder::MatchResult &Result) {
   emplaceTransformation(new ReplaceStmt(DE, Repl));
 }
 
-REGISTER_RULE(ErrorConstantsRule)
+REGISTER_RULE(ErrorConstantsRule, PassKind::PK_Migration)
 
 void LinkageSpecDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(linkageSpecDecl().bind("LinkageSpecDecl"), this);
@@ -4326,7 +4313,7 @@ void LinkageSpecDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       std::make_pair(BeginLocInfo.second, EndLocInfo.second));
 }
 
-REGISTER_RULE(LinkageSpecDeclRule)
+REGISTER_RULE(LinkageSpecDeclRule, PassKind::PK_Migration)
 
 void ManualMigrateEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("NCCL_.*"))))
@@ -4351,7 +4338,7 @@ void ManualMigrateEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(ManualMigrateEnumsRule)
+REGISTER_RULE(ManualMigrateEnumsRule, PassKind::PK_Migration)
 
 // Rule for FFT enums.
 void FFTEnumsRule::registerMatcher(MatchFinder &MF) {
@@ -4377,7 +4364,7 @@ void FFTEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(FFTEnumsRule)
+REGISTER_RULE(FFTEnumsRule, PassKind::PK_Migration)
 
 // Rule for BLAS enums.
 // Migrate BLAS status values to corresponding int values
@@ -4417,7 +4404,7 @@ void BLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(BLASEnumsRule)
+REGISTER_RULE(BLASEnumsRule, PassKind::PK_Migration)
 
 // Rule for RANDOM enums.
 // Migrate RANDOM status values to corresponding int values
@@ -4436,7 +4423,7 @@ void RandomEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(RandomEnumsRule)
+REGISTER_RULE(RandomEnumsRule, PassKind::PK_Migration)
 
 // Rule for spBLAS enums.
 // Migrate spBLAS status values to corresponding int values
@@ -4478,7 +4465,7 @@ void SPBLASEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(SPBLASEnumsRule)
+REGISTER_RULE(SPBLASEnumsRule, PassKind::PK_Migration)
 
 /// The function returns the migrated arguments of the scalar parameters.
 /// In the original code, the type of this parameter is pointer.
@@ -4979,7 +4966,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   addReplacementForLibraryAPI(Flags, ReplaceStrs, Locations, FuncName, CE);
 }
 
-REGISTER_RULE(SPBLASFunctionCallRule)
+REGISTER_RULE(SPBLASFunctionCallRule, PassKind::PK_Migration)
 
 // Rule for Random function calls. Currently only support host APIs.
 void RandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
@@ -5352,7 +5339,7 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(RandomFunctionCallRule)
+REGISTER_RULE(RandomFunctionCallRule, PassKind::PK_Migration)
 
 // Rule for device Random function calls.
 void DeviceRandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
@@ -5500,7 +5487,7 @@ void DeviceRandomFunctionCallRule::runRule(
   }
 }
 
-REGISTER_RULE(DeviceRandomFunctionCallRule)
+REGISTER_RULE(DeviceRandomFunctionCallRule, PassKind::PK_Migration)
 
 void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
@@ -5678,9 +5665,9 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
   const SourceManager *SM = Result.SourceManager;
-  auto SL = SM->getExpansionLoc(CE->getBeginLoc());
-  std::string Key = SM->getFilename(SL).str() +
-                    std::to_string(SM->getDecomposedLoc(SL).second);
+  // auto SL = SM->getExpansionLoc(CE->getBeginLoc());
+  auto Loc = DpctGlobalInfo::getLocInfo(SM->getExpansionLoc(CE->getBeginLoc()));
+  std::string Key = Loc.first + std::to_string(Loc.second);
   DpctGlobalInfo::updateInitSuffixIndexInRule(
       DpctGlobalInfo::getSuffixIndexInitValue(Key));
 
@@ -7128,7 +7115,7 @@ std::string BLASFunctionCallRule::processParamIntCastToBLASEnum(
   return DpctTempVarName;
 }
 
-REGISTER_RULE(BLASFunctionCallRule)
+REGISTER_RULE(BLASFunctionCallRule, PassKind::PK_Migration)
 
 // Rule for SOLVER enums.
 // Migrate SOLVER status values to corresponding int values
@@ -7167,7 +7154,7 @@ void SOLVEREnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(SOLVEREnumsRule)
+REGISTER_RULE(SOLVEREnumsRule, PassKind::PK_Migration)
 
 void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
@@ -7733,7 +7720,7 @@ SOLVERFunctionCallRule::getAncestralVarDecl(const clang::CallExpr *CE) {
   return nullptr;
 }
 
-REGISTER_RULE(SOLVERFunctionCallRule)
+REGISTER_RULE(SOLVERFunctionCallRule, PassKind::PK_Migration)
 
 void FunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
@@ -8124,7 +8111,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(FunctionCallRule)
+REGISTER_RULE(FunctionCallRule, PassKind::PK_Migration)
 
 EventAPICallRule *EventAPICallRule::CurrentRule = nullptr;
 void EventAPICallRule::registerMatcher(MatchFinder &MF) {
@@ -9324,7 +9311,7 @@ void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
   }
 }
 
-REGISTER_RULE(EventAPICallRule)
+REGISTER_RULE(EventAPICallRule, PassKind::PK_Migration)
 
 void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
   auto streamFunctionName = [&]() {
@@ -9554,7 +9541,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(StreamAPICallRule)
+REGISTER_RULE(StreamAPICallRule, PassKind::PK_Migration)
 
 // kernel call information collection
 void KernelCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -9667,7 +9654,7 @@ void KernelCallRule::removeTrailingSemicolon(
     emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
 }
 
-REGISTER_RULE(KernelCallRule)
+REGISTER_RULE(KernelCallRule, PassKind::PK_Analysis)
 
 // __device__ function call information collection
 void DeviceFunctionDeclRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -9834,7 +9821,7 @@ void DeviceFunctionDeclRule::runRule(
   }
 }
 
-REGISTER_RULE(DeviceFunctionDeclRule)
+REGISTER_RULE(DeviceFunctionDeclRule, PassKind::PK_Analysis)
 
 /// __constant__/__shared__/__device__ var information collection
 void MemVarRule::registerMatcher(MatchFinder &MF) {
@@ -10302,7 +10289,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(MemVarRule)
+REGISTER_RULE(MemVarRule, PassKind::PK_Analysis)
 
 std::string MemoryMigrationRule::getTypeStrRemovedAddrOf(const Expr *E,
                                                          bool isCOCE) {
@@ -11939,7 +11926,7 @@ void MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
   }
 }
 
-REGISTER_RULE(MemoryMigrationRule)
+REGISTER_RULE(MemoryMigrationRule, PassKind::PK_Migration)
 
 const Expr *getRhs(const Stmt *);
 TextModification *ReplaceMemberAssignAsSetMethod(SourceLocation EndLoc,
@@ -12213,7 +12200,7 @@ void MemoryDataTypeRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(MemoryDataTypeRule)
+REGISTER_RULE(MemoryDataTypeRule, PassKind::PK_Migration)
 
 void UnnamedTypesRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(typedefDecl(hasDescendant(loc(recordType(hasDeclaration(
@@ -12230,7 +12217,7 @@ void UnnamedTypesRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new InsertClassName(D));
 }
 
-REGISTER_RULE(UnnamedTypesRule)
+REGISTER_RULE(UnnamedTypesRule, PassKind::PK_Migration)
 
 void CMemoryAPIRule::registerMatcher(MatchFinder &MF) {
   auto cMemoryAPI = [&]() { return hasAnyName("calloc", "realloc", "malloc"); };
@@ -12251,7 +12238,7 @@ void CMemoryAPIRule::runRule(const MatchFinder::MatchResult &Result) {
       "(" + DpctGlobalInfo::getReplacedTypeName(ICE->getType()) + ")"));
 }
 
-REGISTER_RULE(CMemoryAPIRule)
+REGISTER_RULE(CMemoryAPIRule, PassKind::PK_Migration)
 
 void GuessIndentWidthRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
@@ -12327,7 +12314,7 @@ void GuessIndentWidthRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(GuessIndentWidthRule)
+REGISTER_RULE(GuessIndentWidthRule, PassKind::PK_Migration)
 
 void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> MathFunctionsCallExpr = {
@@ -12424,7 +12411,7 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(MathFunctionsRule)
+REGISTER_RULE(MathFunctionsRule, PassKind::PK_Migration)
 
 void WarpFunctionsRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> WarpFunctions = {
@@ -12455,7 +12442,7 @@ void WarpFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
   emplaceTransformation(EA.getReplacement());
   EA.applyAllSubExprRepl();
 }
-REGISTER_RULE(WarpFunctionsRule)
+REGISTER_RULE(WarpFunctionsRule, PassKind::PK_Analysis)
 
 void CooperativeGroupsFunctionRule::registerMatcher(MatchFinder &MF) {
   std::vector<std::string> CGAPI;
@@ -12640,7 +12627,7 @@ void CooperativeGroupsFunctionRule::runRule(
 }
 
 #undef EMIT_WARNING_AND_RETURN
-REGISTER_RULE(CooperativeGroupsFunctionRule)
+REGISTER_RULE(CooperativeGroupsFunctionRule, PassKind::PK_Analysis)
 
 void SyncThreadsRule::registerMatcher(MatchFinder &MF) {
   auto SyncAPI = [&]() {
@@ -12765,7 +12752,7 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(SyncThreadsRule)
+REGISTER_RULE(SyncThreadsRule, PassKind::PK_Analysis)
 
 void KernelFunctionInfoRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
@@ -12810,7 +12797,7 @@ void KernelFunctionInfoRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(KernelFunctionInfoRule)
+REGISTER_RULE(KernelFunctionInfoRule, PassKind::PK_Migration)
 
 // split api name
 std::vector<std::vector<std::string>>
@@ -13064,7 +13051,7 @@ void RecognizeAPINameRule::runRule(const MatchFinder::MatchResult &Result) {
   return;
 }
 
-REGISTER_RULE(RecognizeAPINameRule)
+REGISTER_RULE(RecognizeAPINameRule, PassKind::PK_Migration)
 
 void RecognizeTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TypeTable = MigrationStatistics::GetTypeTable();
@@ -13113,7 +13100,7 @@ void RecognizeTypeRule::runRule(
          TypeName);
 }
 
-REGISTER_RULE(RecognizeTypeRule)
+REGISTER_RULE(RecognizeTypeRule, PassKind::PK_Migration)
 
 void TextureMemberSetRule::registerMatcher(MatchFinder &MF) {
   auto ObjectType =
@@ -13543,7 +13530,7 @@ void TextureMemberSetRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(TextureMemberSetRule)
+REGISTER_RULE(TextureMemberSetRule, PassKind::PK_Migration)
 
 void TextureRule::registerMatcher(MatchFinder &MF) {
   auto DeclMatcher = varDecl(hasType(templateSpecializationType(
@@ -14396,7 +14383,7 @@ bool TextureRule::SettersMerger::tryMerge(const Stmt *BO) {
   }
 }
 
-REGISTER_RULE(TextureRule)
+REGISTER_RULE(TextureRule, PassKind::PK_Analysis)
 
 void CXXNewExprRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(cxxNewExpr().bind("newExpr"), this);
@@ -14442,7 +14429,7 @@ void CXXNewExprRule::runRule(
   }
 }
 
-REGISTER_RULE(CXXNewExprRule)
+REGISTER_RULE(CXXNewExprRule, PassKind::PK_Migration)
 
 void NamespaceRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(usingDirectiveDecl().bind("usingDirective"), this);
@@ -14528,7 +14515,7 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(NamespaceRule)
+REGISTER_RULE(NamespaceRule, PassKind::PK_Migration)
 
 void RemoveBaseClassRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(
@@ -14594,7 +14581,7 @@ void RemoveBaseClassRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(RemoveBaseClassRule)
+REGISTER_RULE(RemoveBaseClassRule, PassKind::PK_Migration)
 
 void ThrustVarRule::registerMatcher(MatchFinder &MF) {
   auto hasPolicyName = [&]() { return hasAnyName("seq", "host", "device"); };
@@ -14636,7 +14623,7 @@ void ThrustVarRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(ThrustVarRule)
+REGISTER_RULE(ThrustVarRule, PassKind::PK_Migration)
 
 void PreDefinedStreamHandleRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(integerLiteral(equals(0)).bind("stream"), this);
@@ -14666,7 +14653,7 @@ void PreDefinedStreamHandleRule::runRule(
   }
 }
 
-REGISTER_RULE(PreDefinedStreamHandleRule)
+REGISTER_RULE(PreDefinedStreamHandleRule, PassKind::PK_Migration)
 
 void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
@@ -14683,7 +14670,7 @@ void AsmRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   return;
 }
 
-REGISTER_RULE(AsmRule)
+REGISTER_RULE(AsmRule, PassKind::PK_Migration)
 
 // Rule for FFT function calls.
 void FFTFunctionCallRule::registerMatcher(MatchFinder &MF) {
@@ -14760,7 +14747,7 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(FFTFunctionCallRule)
+REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration)
 
 void DriverModuleAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DriverModuleAPI = [&]() {
@@ -14810,7 +14797,7 @@ void DriverModuleAPIRule::runRule(
   emplaceTransformation(EA.getReplacement());
 }
 
-REGISTER_RULE(DriverModuleAPIRule)
+REGISTER_RULE(DriverModuleAPIRule, PassKind::PK_Migration)
 
 void DriverDeviceAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
@@ -14991,7 +14978,7 @@ void DriverDeviceAPIRule::runRule(
   }
 }
 
-REGISTER_RULE(DriverDeviceAPIRule)
+REGISTER_RULE(DriverDeviceAPIRule, PassKind::PK_Migration)
 
 void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto contextAPI = [&]() {
@@ -15122,7 +15109,7 @@ void DriverContextAPIRule::runRule(
   emplaceTransformation(new ReplaceStmt(CE, OS.str()));
 }
 
-REGISTER_RULE(DriverContextAPIRule)
+REGISTER_RULE(DriverContextAPIRule, PassKind::PK_Migration)
 // In host device function, macro __CUDA_ARCH__ is used to differentiate
 // different code blocks. And migration of the two code blocks will result in
 // different requirement on parameter of the function signature, device code
@@ -15269,20 +15256,19 @@ void CudaArchMacroRule::runRule(
     }
   }
 }
-REGISTER_RULE(CudaArchMacroRule)
+REGISTER_RULE(CudaArchMacroRule, PassKind::PK_Migration)
 
+REGISTER_RULE(ConfusableIdentifierDetectionRule, PassKind::PK_Migration)
 
-REGISTER_RULE(ConfusableIdentifierDetectionRule)
+REGISTER_RULE(MisleadingBidirectionalRule, PassKind::PK_Migration)
 
-REGISTER_RULE(MisleadingBidirectionalRule)
+REGISTER_RULE(CuDNNTypeRule, PassKind::PK_Migration)
 
-REGISTER_RULE(CuDNNTypeRule)
+REGISTER_RULE(CuDNNAPIRule, PassKind::PK_Migration)
 
-REGISTER_RULE(CuDNNAPIRule)
+REGISTER_RULE(NCCLRule, PassKind::PK_Migration)
 
-REGISTER_RULE(NCCLRule)
-
-REGISTER_RULE(LIBCURule)
+REGISTER_RULE(LIBCURule, PassKind::PK_Migration)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {
@@ -15306,7 +15292,7 @@ void ComplexAPIRule::runRule(
   }
 }
 
-REGISTER_RULE(ComplexAPIRule)
+REGISTER_RULE(ComplexAPIRule, PassKind::PK_Migration)
 
 void TemplateSpecializationTypeLocRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
@@ -15332,33 +15318,4 @@ void TemplateSpecializationTypeLocRule::runRule(
   }
 }
 
-REGISTER_RULE(TemplateSpecializationTypeLocRule)
-
-void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
-                                   StmtStringMap &SSM) {
-  this->Context = &Context;
-  for (auto &I : Storage) {
-    I->registerMatcher(Matchers);
-    if (auto TR = dyn_cast<MigrationRule>(&*I)) {
-      TR->TM = this;
-      TR->setTransformSet(TS);
-    }
-  }
-
-  StaticsInfo::printMigrationRules(Storage);
-
-  Matchers.matchAST(Context);
-
-  StaticsInfo::printMatchedRules(Storage);
-  CHECKPOINT_ASTMATCHER_RUN_EXIT();
-}
-
-void ASTTraversalManager::emplaceAllRules() {
-  for (auto &F : ASTTraversalMetaInfo::getConstructorTable()) {
-    std::string CurrentRuleName = ASTTraversalMetaInfo::getName(F.first);
-    auto *ID = ASTTraversalMetaInfo::getID(CurrentRuleName);
-    emplaceMigrationRule(ID);
-  }
-}
-
-const CompilerInstance &MigrationRule::getCompilerInstance() { return TM->CI; }
+REGISTER_RULE(TemplateSpecializationTypeLocRule, PassKind::PK_Migration)
