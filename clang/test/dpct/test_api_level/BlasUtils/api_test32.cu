@@ -12,7 +12,8 @@
 int main() {
   cublasHandle_t handle;
   float * alpha;
-  float **a, **b;
+  const float **a
+  float **b;
 
   cublasStrsmBatched(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, 4, 4, alpha, a, 4, b, 4, 2);
   return 0;
