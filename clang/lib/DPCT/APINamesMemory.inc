@@ -285,3 +285,26 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     CALL_FACTORY_ENTRY(
         "cuMemcpyHtoD_v2", CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
         ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic")))))
+
+
+CONDITIONAL_FACTORY_ENTRY(
+    checkIsCallExprOnly(),
+    WARNING_FACTORY_ENTRY("cudaHostUnregister",
+        TOSTRING_FACTORY_ENTRY("cudaHostUnregister", LITERAL("")),
+         Diagnostics::FUNC_CALL_REMOVED,
+        std::string("cudaHostUnregister"), getRemovedAPIWarningMessage("cudaHostUnregister")),
+    WARNING_FACTORY_ENTRY("cudaHostUnregister",
+        TOSTRING_FACTORY_ENTRY("cudaHostUnregister", LITERAL("0")),
+        Diagnostics::FUNC_CALL_REMOVED_0,
+        std::string("cudaHostUnregister"), getRemovedAPIWarningMessage("cudaHostUnregister")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    checkIsCallExprOnly(),
+    WARNING_FACTORY_ENTRY("cudaHostRegister",
+        TOSTRING_FACTORY_ENTRY("cudaHostRegister", LITERAL("")),
+         Diagnostics::FUNC_CALL_REMOVED,
+        std::string("cudaHostRegister"), getRemovedAPIWarningMessage("cudaHostRegister")),
+    WARNING_FACTORY_ENTRY("cudaHostRegister",
+        TOSTRING_FACTORY_ENTRY("cudaHostRegister", LITERAL("0")),
+        Diagnostics::FUNC_CALL_REMOVED_0,
+        std::string("cudaHostRegister"), getRemovedAPIWarningMessage("cudaHostRegister")))
