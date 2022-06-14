@@ -30,6 +30,8 @@ macro(build_lib_dpct)
     DNNAPIMigration.cpp
     NCCLAPIMigration.cpp
     TypeLocRewriters.cpp
+    MigrationRuleManager.cpp
+    MigrationAction.cpp
 
     DEPENDS
     ClangDriverOptions
