@@ -1400,11 +1400,11 @@ auto getTemplateArgsList =
   return Ret;
 };
 
-std::function<TemplatedCallee(const CallExpr *)>
+std::function<TemplatedName(const CallExpr *)>
 makeTemplatedCalleeCreator(std::string CalleeName,
                            std::vector<size_t> Indexes) {
   return PrinterCreator<
-      TemplatedCallee, std::string,
+      TemplatedName, std::string,
       std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>(
       CalleeName, [=](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
         std::vector<TemplateArgumentInfo> Ret;
@@ -1446,11 +1446,11 @@ void setTemplateArgumentInfo(const CallExpr *C,
 }
 
 template <class... CallArgsT>
-std::function<TemplatedCallee(const CallExpr *)>
+std::function<TemplatedName(const CallExpr *)>
 makeTemplatedCalleeWithArgsCreator(
     std::string Callee, std::function<CallArgsT(const CallExpr *)>... Args) {
   return PrinterCreator<
-      TemplatedCallee, std::string,
+      TemplatedName, std::string,
       std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>(
       Callee, [=](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
         std::vector<TemplateArgumentInfo> Ret;
@@ -1863,14 +1863,14 @@ template <class... ArgsT>
 std::shared_ptr<CallExprRewriterFactoryBase>
 createTemplatedCallExprRewriterFactory(
     const std::string &SourceName,
-    std::function<TemplatedCallee(const CallExpr *)> CalleeCreator,
+    std::function<TemplatedName(const CallExpr *)> CalleeCreator,
     std::function<ArgsT(const CallExpr *)>... ArgsCreator) {
   return std::make_shared<
       CallExprRewriterFactory<TemplatedCallExprRewriter<ArgsT...>,
-                              std::function<TemplatedCallee(const CallExpr *)>,
+                              std::function<TemplatedName(const CallExpr *)>,
                               std::function<ArgsT(const CallExpr *)>...>>(
       SourceName,
-      std::forward<std::function<TemplatedCallee(const CallExpr *)>>(
+      std::forward<std::function<TemplatedName(const CallExpr *)>>(
           CalleeCreator),
       std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
 }

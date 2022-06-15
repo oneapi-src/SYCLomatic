@@ -17247,13 +17247,10 @@ void TemplateSpecializationTypeLocRule::registerMatcher(
 void TemplateSpecializationTypeLocRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   if (auto TL = getNodeAsType<TypeLoc>(Result, "loc")) {
-    // Only need to apply the migration to ElaboratedType
-    if (auto ETL = TL->getAs<ElaboratedTypeLoc>()) {
-      ExprAnalysis EA;
-      EA.analyze(*TL);
-      emplaceTransformation(EA.getReplacement());
-      EA.applyAllSubExprRepl();
-    }
+    ExprAnalysis EA;
+    EA.analyze(*TL);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }
 

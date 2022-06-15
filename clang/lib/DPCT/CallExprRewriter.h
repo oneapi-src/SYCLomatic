@@ -832,15 +832,30 @@ public:
   }
 };
 
-class TemplatedCallee {
-  StringRef CalleeName;
+template <class NameT, class... TemplateArgsT> class TemplatedNamePrinter {
+  NameT Name;
+  ArgsPrinter<false, TemplateArgsT...> TAs;
+
+public:
+  TemplatedNamePrinter(NameT Name, TemplateArgsT &&...TAs)
+      : Name(Name), TAs(std::forward<TemplateArgsT>(TAs)...) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Name);
+    Stream << "<";
+    TAs.print(Stream);
+    Stream << ">";
+  }
+};
+
+class TemplatedName {
+  StringRef Name;
   ArgsPrinter<false, std::vector<TemplateArgumentInfo>> TemplateArgs;
 
 public:
-  TemplatedCallee(StringRef Callee, std::vector<TemplateArgumentInfo> &&Args)
-      : CalleeName(Callee), TemplateArgs(std::move(Args)) {}
+  TemplatedName(StringRef Name, std::vector<TemplateArgumentInfo> &&Args)
+      : Name(Name), TemplateArgs(std::move(Args)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    dpct::print(Stream, CalleeName);
+    dpct::print(Stream, Name);
     Stream << "<";
     TemplateArgs.print(Stream);
     Stream << ">";
@@ -1091,13 +1106,13 @@ public:
 
 template <class... ArgsT>
 class TemplatedCallExprRewriter
-    : public PrinterRewriter<CallExprPrinter<TemplatedCallee, ArgsT...>> {
+    : public PrinterRewriter<CallExprPrinter<TemplatedName, ArgsT...>> {
 public:
   TemplatedCallExprRewriter(
       const CallExpr *C, StringRef Source,
-      const std::function<TemplatedCallee(const CallExpr *)> &CalleeCreator,
+      const std::function<TemplatedName(const CallExpr *)> &CalleeCreator,
       const std::function<ArgsT(const CallExpr *)> &...ArgsCreator)
-      : PrinterRewriter<CallExprPrinter<TemplatedCallee, ArgsT...>>(
+      : PrinterRewriter<CallExprPrinter<TemplatedName, ArgsT...>>(
             C, Source, CalleeCreator(C), ArgsCreator(C)...) {}
 };
 

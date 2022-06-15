@@ -204,10 +204,7 @@ public:
     initSourceRange(TL.getSourceRange());
     analyzeType(TL);
   }
-  inline void analyze(const TemplateSpecializationTypeLoc &TSTL) {
-    initSourceRange(TSTL.getSourceRange());
-    analyzeType(TSTL);
-  }
+
   inline void analyze(const TemplateArgumentLoc &TAL) {
     initSourceRange(TAL.getSourceRange());
     analyzeTemplateArgument(TAL);
@@ -232,7 +229,7 @@ public:
                               : nullptr;
     }
 
-    return hasReplacement() ? new ReplaceText(ExprBeginLoc, SrcLength,
+    return hasReplacement() ? new ReplaceText(TypeLocBegin, SrcLength,
                                               std::string(getReplacedString()))
                             : nullptr;
   }
@@ -658,6 +655,7 @@ private:
   const Expr *E;
   SourceLocation ExprBeginLoc;
   SourceLocation ExprEndLoc;
+  SourceLocation TypeLocBegin;
   size_t SrcBegin;
   size_t SrcLength;
   FileID FileId;

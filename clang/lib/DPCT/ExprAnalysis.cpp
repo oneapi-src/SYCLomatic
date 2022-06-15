@@ -212,10 +212,9 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
-    if(ExprBeginLoc.isInvalid() && ExprEndLoc.isInvalid()){
-      ExprBeginLoc = BeginLoc;
-      ExprEndLoc = EndLoc;
-    }
+    if(TypeLocBegin.isInvalid())
+      TypeLocBegin = BeginLoc;
+
     // Avoid illegal range which will cause SIGABRT
     if (End.first + End.second < Begin) {
       return std::pair<size_t, size_t>(Begin, 0);
@@ -299,6 +298,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
 
   ExprBeginLoc = BeginLoc;
   ExprEndLoc = EndLoc;
+
   RewritePrefix =
       std::string(SM.getCharacterData(BeginLoc), RewritePrefixLength);
 
@@ -879,11 +879,11 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
       return;
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());
     if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
-      auto Rewriter = Itr->second->create(&TSTL);
+      auto Rewriter = Itr->second->create(TSTL);
       auto Result = Rewriter->rewrite();
       if (Result.hasValue()) {
         auto ResultStr = Result.getValue();
-        addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE, ResultStr);
+        addReplacement(SR.getBegin(), SR.getEnd(), CSCE, ResultStr);
         return;
       }
     }
