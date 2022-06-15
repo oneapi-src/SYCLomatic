@@ -65,17 +65,20 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
   TypeLocRewriterMap = std::make_unique<std::unordered_map<
       std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>>(
       std::unordered_map<std::string,
-                         std::shared_ptr<TypeLocRewriterFactoryBase>>(
-          {{"cuda::atomic", createTypeLocConditionalFactory(
-                         CheckTemplateArgCount(2),
-                         creatTypeLocRewriterFactory(
-                             makeStringCreator("atomic_ext"),
-                             makeTemplateArgCreator(0),
-                             makeStringCreator(MapNames::getClNamespace() + "memory_order::relaxed"),
-                             makeTemplateArgCreator(1)),
-                         creatTypeLocRewriterFactory(
-                             makeStringCreator("atomic_ext"),
-                             makeTemplateArgCreator(0)))}}));
+                         std::shared_ptr<TypeLocRewriterFactoryBase>>({
+#define STR(Str) makeStringCreator(Str)
+#define TEMPLATE_ARG(Idx) makeTemplateArgCreator(Idx)
+#define TYPE_REWRITE_ENTRY(Name, Factory) {Name, Factory},
+#define TYPE_CONDITIONAL_FACTORY(Pred, First, Second)                          \
+  createTypeLocConditionalFactory(Pred, First, Second)
+#define TYPE_FACTORY(...) creatTypeLocRewriterFactory(__VA_ARGS__)
+#include "APINamesTemplateType.inc"
+#undef TYPE_FACTORY
+#undef TYPE_CONDITIONAL_FACTORY
+#undef TYPE_REWRITE_ENTRY
+#undef TEMPLATE_ARG
+#undef STR
+      }));
 }
 } // namespace dpct
 } // namespace clang
