@@ -390,6 +390,7 @@ public:
         dpct::get_current_device(), dpct::get_current_device().get_context());
     _s = ::dnnl::sycl_interop::make_stream(
         _eng, dpct::get_current_device().default_queue());
+    _q = &dpct::get_current_device().default_queue();
   }
 /// Setting the user's SYCL queue for an oneDNN engine.
 /// \param [in] q Pointer to the SYCL queue.
@@ -738,12 +739,12 @@ void engine_ext::execute_primitive(float alpha, float beta,
     auto cache = allocate(mem_desc);
     args.insert({is_forward ? DNNL_ARG_DST : DNNL_ARG_DIFF_SRC,
                  ::dnnl::memory(mem_desc.get_desc(), _eng, cache.get())});
-    primitive.execute(_s, args);
+    ::dnnl::sycl_interop::execute(primitive, _s, args);
     sum(alpha, mem_desc, cache.get(), beta, mem_desc, mem);
   } else {
     args.insert({is_forward ? DNNL_ARG_DST : DNNL_ARG_DIFF_SRC,
                  ::dnnl::memory(mem_desc.get_desc(), _eng, mem)});
-    primitive.execute(_s, args);
+    ::dnnl::sycl_interop::execute(primitive, _s, args);
     scale(alpha, mem_desc, mem);
   }
 }
