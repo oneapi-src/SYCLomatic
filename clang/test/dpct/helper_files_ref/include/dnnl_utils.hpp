@@ -745,7 +745,11 @@ void engine_ext::execute_primitive(float alpha, float beta,
     args.insert({is_forward ? DNNL_ARG_DST : DNNL_ARG_DIFF_SRC,
                  ::dnnl::memory(mem_desc.get_desc(), _eng, mem)});
     ::dnnl::sycl_interop::execute(primitive, _s, args);
-    scale(alpha, mem_desc, mem);
+    if(alpha == 1.f) {
+      _s.wait();
+    } else {
+      scale(alpha, mem_desc, mem);
+    }
   }
 }
 
