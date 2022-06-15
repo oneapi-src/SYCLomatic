@@ -257,6 +257,8 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("std::iterator_traits")},
       {"thrust::tuple_element",
        std::make_shared<TypeNameRule>("std::tuple_element")},
+       {"thrust::tuple_size",
+       std::make_shared<TypeNameRule>("std::tuple_size")},
       {"cusolverDnHandle_t",
        std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
       {"cusolverEigType_t", std::make_shared<TypeNameRule>("int64_t")},

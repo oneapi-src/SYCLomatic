@@ -2545,7 +2545,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "libraryPropertyType_t", "libraryPropertyType",
                   "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
                   "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
-                  "thrust::tuple_element")
+                  "thrust::tuple_element", "thrust::tuple_size")
               )))))
           .bind("cudaTypeDef"),
       this);
