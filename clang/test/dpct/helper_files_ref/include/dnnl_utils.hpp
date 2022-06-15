@@ -837,12 +837,12 @@ void engine_ext::sum(float alpha, const memory_desc_ext &src_desc, void *src,
     return;
   }
   ::dnnl::sum::primitive_desc sum_primitive_desc(
-      {alpha, beta}, {src_desc.get_desc(), dst_desc.get_desc()}, _eng);
+      {beta, alpha}, {src_desc.get_desc(), dst_desc.get_desc()}, _eng);
 
   std::unordered_map<int, ::dnnl::memory> args = {
       {DNNL_ARG_DST, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)},
-      {DNNL_ARG_MULTIPLE_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, src)},
-      {DNNL_ARG_MULTIPLE_SRC + 1,
+      {DNNL_ARG_MULTIPLE_SRC + 1, ::dnnl::memory(src_desc.get_desc(), _eng, src)},
+      {DNNL_ARG_MULTIPLE_SRC,
        ::dnnl::memory(dst_desc.get_desc(), _eng, dst)}};
 
   ::dnnl::sycl_interop::execute(::dnnl::sum(sum_primitive_desc), _s, args);
