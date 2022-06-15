@@ -76,9 +76,36 @@ jobs:
           path: c2s_obj.tar.xz
 
       - name: Lit
+        if: |
+          always() &&
+          steps.Echo-Build-Success.outputs.build_success == 'true'
         run: |
           cd c2s.src/build
           ninja check-clang-c2s
+
+      - name: Lit_CUDA8.0
+        if: |
+          always() &&
+          steps.Echo-Build-Success.outputs.build_success == 'true'
+        run: |
+          cd c2s.src/build
+          CUDA_PATH=$CUDAROOT/cuda-8.0 ninja check-clang-c2s
+
+      - name: Lit_CUDA9.2
+        if: |
+          always() &&
+          steps.Echo-Build-Success.outputs.build_success == 'true'
+        run: |
+          cd c2s.src/build
+          CUDA_PATH=$CUDAROOT/cuda-9.2 ninja check-clang-c2s
+
+      - name: Lit_CUDA10.2
+        if: |
+          always() &&
+          steps.Echo-Build-Success.outputs.build_success == 'true'
+        run: |
+          cd c2s.src/build
+          CUDA_PATH=$CUDAROOT/cuda-10.2 ninja check-clang-c2s
 
   linux-test:
     name: linux-test-${{ matrix.test_suite }}-cpu
