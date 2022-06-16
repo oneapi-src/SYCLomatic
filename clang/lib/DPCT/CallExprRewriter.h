@@ -847,21 +847,6 @@ public:
   }
 };
 
-class TemplatedName {
-  StringRef Name;
-  ArgsPrinter<false, std::vector<TemplateArgumentInfo>> TemplateArgs;
-
-public:
-  TemplatedName(StringRef Name, std::vector<TemplateArgumentInfo> &&Args)
-      : Name(Name), TemplateArgs(std::move(Args)) {}
-  template <class StreamT> void print(StreamT &Stream) const {
-    dpct::print(Stream, Name);
-    Stream << "<";
-    TemplateArgs.print(Stream);
-    Stream << ">";
-  }
-};
-
 template <class BaseT, class MemberT> class MemberExprPrinter {
   BaseT Base;
   bool IsArrow;
@@ -1106,14 +1091,19 @@ public:
 
 template <class... ArgsT>
 class TemplatedCallExprRewriter
-    : public PrinterRewriter<CallExprPrinter<TemplatedName, ArgsT...>> {
+    : public PrinterRewriter<CallExprPrinter<
+          TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>,
+          ArgsT...>> {
 public:
   TemplatedCallExprRewriter(
       const CallExpr *C, StringRef Source,
-      const std::function<TemplatedName(const CallExpr *)> &CalleeCreator,
+      const std::function<
+          TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>(
+              const CallExpr *)> &CalleeCreator,
       const std::function<ArgsT(const CallExpr *)> &...ArgsCreator)
-      : PrinterRewriter<CallExprPrinter<TemplatedName, ArgsT...>>(
-            C, Source, CalleeCreator(C), ArgsCreator(C)...) {}
+      : PrinterRewriter<CallExprPrinter<
+            TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>,
+            ArgsT...>>(C, Source, CalleeCreator(C), ArgsCreator(C)...) {}
 };
 
 template <class BaseT, class MemberT>

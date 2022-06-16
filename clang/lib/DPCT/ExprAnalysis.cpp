@@ -212,8 +212,8 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
-    if(TypeLocBegin.isInvalid())
-      TypeLocBegin = BeginLoc;
+    if(SrcBeginLoc.isInvalid())
+      SrcBeginLoc = BeginLoc;
 
     // Avoid illegal range which will cause SIGABRT
     if (End.first + End.second < Begin) {

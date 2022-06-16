@@ -229,7 +229,7 @@ public:
                               : nullptr;
     }
 
-    return hasReplacement() ? new ReplaceText(TypeLocBegin, SrcLength,
+    return hasReplacement() ? new ReplaceText(SrcBeginLoc, SrcLength,
                                               std::string(getReplacedString()))
                             : nullptr;
   }
@@ -655,7 +655,7 @@ private:
   const Expr *E;
   SourceLocation ExprBeginLoc;
   SourceLocation ExprEndLoc;
-  SourceLocation TypeLocBegin;
+  SourceLocation SrcBeginLoc;
   size_t SrcBegin;
   size_t SrcLength;
   FileID FileId;
