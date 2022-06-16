@@ -390,6 +390,7 @@ public:
         dpct::get_current_device(), dpct::get_current_device().get_context());
     _s = ::dnnl::sycl_interop::make_stream(
         _eng, dpct::get_current_device().default_queue());
+    _q = &dpct::get_current_device().default_queue();
   }
 /// Setting the user's SYCL queue for an oneDNN engine.
 /// \param [in] q Pointer to the SYCL queue.
@@ -738,13 +739,17 @@ void engine_ext::execute_primitive(float alpha, float beta,
     auto cache = allocate(mem_desc);
     args.insert({is_forward ? DNNL_ARG_DST : DNNL_ARG_DIFF_SRC,
                  ::dnnl::memory(mem_desc.get_desc(), _eng, cache.get())});
-    primitive.execute(_s, args);
+    ::dnnl::sycl_interop::execute(primitive, _s, args);
     sum(alpha, mem_desc, cache.get(), beta, mem_desc, mem);
   } else {
     args.insert({is_forward ? DNNL_ARG_DST : DNNL_ARG_DIFF_SRC,
                  ::dnnl::memory(mem_desc.get_desc(), _eng, mem)});
-    primitive.execute(_s, args);
-    scale(alpha, mem_desc, mem);
+    ::dnnl::sycl_interop::execute(primitive, _s, args);
+    if(alpha == 1.f) {
+      _s.wait();
+    } else {
+      scale(alpha, mem_desc, mem);
+    }
   }
 }
 
@@ -837,12 +842,12 @@ void engine_ext::sum(float alpha, const memory_desc_ext &src_desc, void *src,
     return;
   }
   ::dnnl::sum::primitive_desc sum_primitive_desc(
-      {alpha, beta}, {src_desc.get_desc(), dst_desc.get_desc()}, _eng);
+      {beta, alpha}, {src_desc.get_desc(), dst_desc.get_desc()}, _eng);
 
   std::unordered_map<int, ::dnnl::memory> args = {
       {DNNL_ARG_DST, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)},
-      {DNNL_ARG_MULTIPLE_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, src)},
-      {DNNL_ARG_MULTIPLE_SRC + 1,
+      {DNNL_ARG_MULTIPLE_SRC + 1, ::dnnl::memory(src_desc.get_desc(), _eng, src)},
+      {DNNL_ARG_MULTIPLE_SRC,
        ::dnnl::memory(dst_desc.get_desc(), _eng, dst)}};
 
   ::dnnl::sycl_interop::execute(::dnnl::sum(sum_primitive_desc), _s, args);
