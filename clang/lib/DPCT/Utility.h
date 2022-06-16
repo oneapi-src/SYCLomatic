@@ -555,4 +555,6 @@ const std::string &getItemName();
 bool isUserDefinedFunction(const clang::ValueDecl *VD);
 void insertHeaderForTypeRule(std::string, clang::SourceLocation);
 std::string getRemovedAPIWarningMessage(std::string FuncName);
+std::string getBaseTypeStr(const clang::CallExpr *CE);
+std::string getArgTypeStr(const clang::CallExpr *CE, unsigned int Idx);
 #endif // DPCT_UTILITY_H

@@ -1439,10 +1439,10 @@ makeTemplatedCalleeCreator(std::string CalleeName,
       });
 }
 
-std::function<std::string(const CallExpr *)>
+std::function<TemplateArgumentInfo(const CallExpr *)>
 makeCallArgCreatorFromTemplateArg(unsigned Idx) {
-  return [=](const CallExpr *CE) -> std::string {
-    return getTemplateArgsList(CE)[Idx].getString();
+  return [=](const CallExpr *CE) -> TemplateArgumentInfo {
+    return getTemplateArgsList(CE)[Idx];
   };
 }
 
@@ -2292,14 +2292,9 @@ class CheckBaseType {
 public:
   CheckBaseType(std::string Name) : TypeName(Name) {}
   bool operator()(const CallExpr *C) {
-    auto ME = dyn_cast<MemberExpr>(C->getCallee()->IgnoreImpCasts());
-    if (!ME)
+    auto BaseType = getBaseTypeStr(C);
+    if (BaseType.empty())
       return false;
-    auto Base = ME->getBase()->IgnoreImpCasts();
-    if (!Base)
-      return false;
-    auto BaseType =
-        DpctGlobalInfo::getTypeName(Base->getType().getCanonicalType());
     return TypeName == BaseType;
   }
 };

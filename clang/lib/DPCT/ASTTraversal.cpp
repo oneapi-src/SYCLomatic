@@ -12905,30 +12905,6 @@ void CooperativeGroupsFunctionRule::runRule(
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
-  auto GetBaseTypeStr = [](const CallExpr *CE) -> std::string {
-    auto ME = dyn_cast<MemberExpr>(CE->getCallee()->IgnoreImpCasts());
-    if (!ME)
-      return "";
-    auto Base = ME->getBase()->IgnoreImpCasts();
-    if (!Base)
-      return "";
-    return DpctGlobalInfo::getTypeName(Base->getType().getCanonicalType());
-  };
-  auto GetArgTypeStr = [](const CallExpr *CE, unsigned int Idx) -> std::string {
-    if (CE->getNumArgs() <= Idx)
-      return "";
-    if (!CE->getDirectCallee())
-      return "";
-    if (!CE->getDirectCallee()->getParamDecl(Idx))
-      return "";
-    return CE->getDirectCallee()
-        ->getParamDecl(Idx)
-        ->getType()
-        .getCanonicalType()
-        .getUnqualifiedType()
-        .getAsString();
-  };
-
   struct ReportUnsupportedWarning {
     ReportUnsupportedWarning(SourceLocation SL, std::string FunctionName,
                              CooperativeGroupsFunctionRule *ThisPtrOfRule)
@@ -12977,7 +12953,7 @@ void CooperativeGroupsFunctionRule::runRule(
           "cooperative_groups::__v1::thread_block_tile<4>",
           "cooperative_groups::__v1::thread_block_tile<8>",
           "cooperative_groups::__v1::thread_block_tile<16>"};
-      if (!SupportedBaseType.count(GetBaseTypeStr(CE))) {
+      if (!SupportedBaseType.count(getBaseTypeStr(CE))) {
         return;
       }
     }
@@ -12992,7 +12968,7 @@ void CooperativeGroupsFunctionRule::runRule(
           "cooperative_groups::__v1::thread_block_tile<8>",
           "cooperative_groups::__v1::thread_block_tile<16>",
           "cooperative_groups::__v1::thread_block_tile<32>"};
-      if (!SupportedBaseType.count(GetBaseTypeStr(CE))) {
+      if (!SupportedBaseType.count(getBaseTypeStr(CE))) {
         return;
       }
     }
@@ -13017,8 +12993,8 @@ void CooperativeGroupsFunctionRule::runRule(
           "const class cooperative_groups::__v1::thread_block_tile<32> &",
           "const class cooperative_groups::__v1::thread_block &"};
 
-      if ((!CE->getNumArgs() && !SupportedBaseType.count(GetBaseTypeStr(CE))) ||
-          (CE->getNumArgs() && !SupportedArgType.count(GetArgTypeStr(CE, 0)))) {
+      if ((!CE->getNumArgs() && !SupportedBaseType.count(getBaseTypeStr(CE))) ||
+          (CE->getNumArgs() && !SupportedArgType.count(getArgTypeStr(CE, 0)))) {
         return;
       }
     }
@@ -13037,8 +13013,8 @@ void CooperativeGroupsFunctionRule::runRule(
           "const class cooperative_groups::__v1::coalesced_group &",
           "const class cooperative_groups::__v1::thread_block_tile<32> &",
           "const class cooperative_groups::__v1::thread_block &"};
-      if ((!CE->getNumArgs() && !SupportedBaseType.count(GetBaseTypeStr(CE))) ||
-          (CE->getNumArgs() && !SupportedArgType.count(GetArgTypeStr(CE, 0)))) {
+      if ((!CE->getNumArgs() && !SupportedBaseType.count(getBaseTypeStr(CE))) ||
+          (CE->getNumArgs() && !SupportedArgType.count(getArgTypeStr(CE, 0)))) {
         return;
       }
     }

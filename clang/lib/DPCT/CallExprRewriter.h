@@ -1319,20 +1319,10 @@ class CheckArgType {
 public:
   CheckArgType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
   bool operator()(const CallExpr *C) {
-    if (C->getNumArgs() > Idx) {
-      if (!C->getDirectCallee())
-        return true;
-      if (!C->getDirectCallee()->getParamDecl(Idx))
-        return true;
-      std::string ArgType = C->getDirectCallee()
-                                ->getParamDecl(Idx)
-                                ->getType()
-                                .getCanonicalType()
-                                .getUnqualifiedType()
-                                .getAsString();
-      return ArgType.find(TypeName) != std::string::npos;
-    }
-    return true;
+    std::string ArgType = getArgTypeStr(C, Idx);
+    if (ArgType.empty())
+      return true;
+    return ArgType.find(TypeName) != std::string::npos;
   }
 };
 

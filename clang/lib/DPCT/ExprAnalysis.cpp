@@ -680,10 +680,10 @@ void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
 void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // To set the RefString
   dispatch(CE->getCallee());
+
   // If the callee requires rewrite, get the rewriter
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
-
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(RefString);
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     auto Rewriter = Itr->second->create(CE);
@@ -764,9 +764,9 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
   PP.PrintCanonicalTypes = true;
   auto BaseType = CMCE->getObjectType().getUnqualifiedType().getAsString(PP);
 
-  std::string MethodName = "";
   if (CMCE->getMethodDecl()->getIdentifier()) {
-    MethodName = CMCE->getMethodDecl()->getNameAsString();
+    auto MethodName = CMCE->getMethodDecl()->getNameAsString();
+
     if (CallExprRewriterFactoryBase::MethodRewriterMap) {
       auto Itr = CallExprRewriterFactoryBase::MethodRewriterMap->find(
           BaseType + "." + MethodName);
