@@ -32,7 +32,7 @@ std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::TypeNamesMap;
 std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
     MapNames::ClassFieldMap;
-std::unordered_map<std::string, std::shared_ptr<TypeNameRule>> 
+std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::CuDNNTypeNamesMap;
 std::unordered_map<std::string, std::shared_ptr<EnumNameRule>>
     EnumConstantRule::EnumNamesMap;
