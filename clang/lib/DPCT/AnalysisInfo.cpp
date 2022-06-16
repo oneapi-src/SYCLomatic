@@ -235,6 +235,10 @@ private:
   std::string getReplaceString(FreeQueriesKind K);
 
 public:
+  static void reset() {
+    InfoList.clear();
+    MacroInfos.clear();
+  }
   template <class Node>
   static void printImmediateText(llvm::raw_ostream &, const Node *,
                                  const FunctionDecl *, FreeQueriesKind);
@@ -293,6 +297,7 @@ void DpctGlobalInfo::resetInfo() {
   NeedRunAgain = false;
   SpellingLocToDFIsMapForAssumeNDRange.clear();
   DFIToSpellingLocsMapForAssumeNDRange.clear();
+  FreeQueriesInfo::reset();
 }
 
 DpctGlobalInfo::DpctGlobalInfo() {
