@@ -3065,6 +3065,21 @@ bool TypeInDeclRule::replaceTransformIterator(SourceManager *SM,
   return true;
 }
 
+bool TypeInDeclRule::isCapturedByLambda(const TypeLoc *TL) {
+  const FieldDecl *FD = DpctGlobalInfo::findAncestor<FieldDecl>(TL);
+  if (!FD)
+    return false;
+  const LambdaExpr *LE = DpctGlobalInfo::findAncestor<LambdaExpr>(TL);
+  if (!LE)
+    return false;
+  for (const auto &D : LE->getLambdaClass()->decls()) {
+    const FieldDecl *FieldDeclItem = dyn_cast<FieldDecl>(D);
+    if (FieldDeclItem && (FieldDeclItem == FD))
+      return true;
+  }
+  return false;
+}
+
 void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
   SourceManager *SM = Result.SourceManager;
   auto LOpts = Result.Context->getLangOpts();
@@ -3102,6 +3117,9 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
                          SM->getSpellingLoc(TL->getBeginLoc()))) {
       return;
     }
+
+    if (isCapturedByLambda(TL))
+      return;
 
     auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
     auto BeginLoc = Range.getBegin();
