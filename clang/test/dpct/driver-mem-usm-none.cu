@@ -213,5 +213,35 @@ int main(){
     cuMemcpy3D(&cpy2);
     // CHECK: dpct::dpct_free(f_D);
     cuMemFree(f_D);
+    unsigned int flags;
+    int host;
+    float *h_A = (float *)malloc(100);
+
+    // CHECK: flags = 0;
+    cuMemHostGetFlags(&flags, &host);
+    // CHECK: cuCheckError((flags = 0, 0));
+    cuCheckError(cuMemHostGetFlags(&flags, &host));
+
+    // CHECK:  /*
+    // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuMemHostRegister was removed because DPC++ currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.
+    // CHECK-NEXT: */
+    cuMemHostRegister(h_A, count, flags);
+    // CHECK:  /*
+    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuMemHostRegister was replaced with 0 because DPC++ currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: cuCheckError(0);
+    cuCheckError(cuMemHostRegister(h_A, count, flags));
+
+
+    // CHECK:  /*
+    // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuMemHostUnregister was removed because DPC++ currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.
+    // CHECK-NEXT: */
+    cuMemHostUnregister(h_A);
+
+    // CHECK:  /*
+    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuMemHostUnregister was replaced with 0 because DPC++ currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.
+    // CHECK-NEXT: */
+    // CHECK-NEXT:cuCheckError(0);
+    cuCheckError(cuMemHostUnregister(h_A));
     return 0;
 }

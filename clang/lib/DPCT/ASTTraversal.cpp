@@ -11892,17 +11892,6 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
       report(C->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
              MapNames::ITFName.at(Name));
     }
-  } else if (Name == "cudaHostRegister" || Name == "cudaHostUnregister") {
-    auto Msg = MapNames::RemovedAPIWarningMessage.find(Name);
-    if (IsAssigned) {
-      report(C->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
-             MapNames::ITFName.at(Name), Msg->second);
-      emplaceTransformation(new ReplaceStmt(C, "0"));
-    } else {
-      report(C->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-             MapNames::ITFName.at(Name), Msg->second);
-      emplaceTransformation(new ReplaceStmt(C, ""));
-    }
   } else if (Name == "make_cudaExtent" || Name == "make_cudaPos") {
     std::string CtorName;
     llvm::raw_string_ostream OS(CtorName);
@@ -11990,15 +11979,6 @@ void MemoryMigrationRule::cudaArrayGetInfo(
   requestFeature(HelperFeatureEnum::Image_image_matrix_get_channel, C);
   requestFeature(HelperFeatureEnum::Image_image_matrix_get_range, C);
   requestFeature(HelperFeatureEnum::Image_image_matrix_get_range_T, C);
-}
-
-void MemoryMigrationRule::cudaHostGetFlags(
-    const MatchFinder::MatchResult &Result, const CallExpr *C,
-    const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
-  std::ostringstream OS;
-  printDerefOp(OS, C->getArg(0));
-  OS << " = 0";
-  emplaceTransformation(new ReplaceStmt(C, OS.str()));
 }
 
 void MemoryMigrationRule::cudaMemAdvise(const MatchFinder::MatchResult &Result,
@@ -12094,7 +12074,8 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cudaMemGetInfo", "cuMemAllocManaged", "cuMemAllocHost_v2",
         "cuMemHostGetDevicePointer_v2", "cuMemcpyDtoDAsync_v2",
         "cuMemcpyDtoD_v2", "cuMemAllocPitch_v2", "cuMemPrefetchAsync",
-        "cuMemFree_v2", "cuDeviceTotalMem_v2");
+        "cuMemFree_v2", "cuDeviceTotalMem_v2", "cuMemHostGetFlags",
+        "cuMemHostRegister_v2", "cuMemHostUnregister");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -12177,7 +12158,11 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemcpyDtoD_v2") && Name.compare("cuMemAdvise") &&
         Name.compare("cuMemPrefetchAsync") &&
         Name.compare("cuMemcpyHtoDAsync_v2") &&
-        Name.compare("cuMemcpyDtoD_v2")) {
+        Name.compare("cuMemcpyDtoD_v2") &&
+        Name.compare("cuMemHostUnregister") &&
+        Name.compare("cuMemHostRegister_v2") &&
+        Name.compare("cudaHostGetFlags") &&
+        Name.compare("cuMemHostGetFlags")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
@@ -12300,10 +12285,13 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cuMemHostGetDevicePointer_v2", &MemoryMigrationRule::miscMigration},
           {"cudaHostRegister", &MemoryMigrationRule::miscMigration},
           {"cudaHostUnregister", &MemoryMigrationRule::miscMigration},
+          {"cuMemHostRegister_v2", &MemoryMigrationRule::miscMigration},
+          {"cuMemHostUnregister", &MemoryMigrationRule::miscMigration},
+          {"cuMemHostGetFlags", &MemoryMigrationRule::miscMigration},
           {"cudaMemPrefetchAsync", &MemoryMigrationRule::prefetchMigration},
           {"cuMemPrefetchAsync", &MemoryMigrationRule::prefetchMigration},
           {"cudaArrayGetInfo", &MemoryMigrationRule::cudaArrayGetInfo},
-          {"cudaHostGetFlags", &MemoryMigrationRule::cudaHostGetFlags},
+          {"cudaHostGetFlags", &MemoryMigrationRule::miscMigration},
           {"cudaMemAdvise", &MemoryMigrationRule::cudaMemAdvise},
           {"cuMemAdvise", &MemoryMigrationRule::cudaMemAdvise},
           {"cudaGetChannelDesc", &MemoryMigrationRule::miscMigration},
