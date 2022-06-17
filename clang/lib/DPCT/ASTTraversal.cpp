@@ -843,17 +843,27 @@ void IncludesCallbacks::InclusionDirective(
   auto It = MapNames::HeaderRuleMap.find(FileName.str());
   if (It != MapNames::HeaderRuleMap.end() &&
       It->second.Priority == RulePriority::Takeover) {
+    std::string ReplHeaderStr = It->second.Prefix;
+    for (auto ItHeader = It->second.Includes.begin();
+         ItHeader != It->second.Includes.end(); ItHeader++) {
+      ReplHeaderStr += "#include ";
+      if ((*ItHeader)[0] != '<' && (*ItHeader)[0] != '"') {
+        ReplHeaderStr += "\"" + (*ItHeader) + "\"" + getNL();
+      } else {
+        ReplHeaderStr += (*ItHeader) + getNL();
+      }
+    }
+    ReplHeaderStr += "#include ";
+    if (It->second.Out[0] != '<' && It->second.Out[0] != '"') {
+      ReplHeaderStr += "\"" + It->second.Out + "\"" + getNL();
+    } else {
+      ReplHeaderStr += It->second.Out + getNL();
+    }
+    ReplHeaderStr += It->second.Postfix;
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
-        ""));
-    for (auto ItHeader = It->second.Includes.begin();
-         ItHeader != It->second.Includes.end(); ItHeader++) {
-      DpctGlobalInfo::getInstance().insertHeader(FilenameRange.getEnd(),
-                                                 *ItHeader);
-    }
-    DpctGlobalInfo::getInstance().insertHeader(FilenameRange.getEnd(),
-                                               It->second.Out);
+        std::move(ReplHeaderStr)));
     return;
   }
 
@@ -1043,22 +1053,6 @@ void IncludesCallbacks::InclusionDirective(
                           /*IsTokenRange=*/false),
           ""));
       Updater.update(false);
-    }
-
-    auto It = MapNames::HeaderRuleMap.find(FileName.str());
-    if (It != MapNames::HeaderRuleMap.end() &&
-        It->second.Priority > RulePriority::Takeover) {
-      TransformSet.emplace_back(new ReplaceInclude(
-          CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                          /*IsTokenRange=*/false),
-          ""));
-      for (auto ItHeader = It->second.Includes.begin();
-           ItHeader != It->second.Includes.end(); ItHeader++) {
-        DpctGlobalInfo::getInstance().insertHeader(FilenameRange.getEnd(),
-                                                   *ItHeader);
-      }
-      DpctGlobalInfo::getInstance().insertHeader(FilenameRange.getEnd(),
-                                                 It->second.Out);
     }
 
     return;
