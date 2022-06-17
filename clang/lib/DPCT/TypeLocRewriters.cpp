@@ -38,7 +38,7 @@ public:
 };
 
 template <class TypeNameT, class... TemplateArgsT>
-std::shared_ptr<TypeLocRewriterFactoryBase> creatTypeLocRewriterFactory(
+std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocRewriterFactory(
     std::function<TypeNameT(const TypeLoc)> TypeNameCreator,
     std::function<TemplateArgsT(const TypeLoc)>... TAsCreator) {
   return std::make_shared<
@@ -71,7 +71,7 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
 #define TYPE_REWRITE_ENTRY(Name, Factory) {Name, Factory},
 #define TYPE_CONDITIONAL_FACTORY(Pred, First, Second)                          \
   createTypeLocConditionalFactory(Pred, First, Second)
-#define TYPE_FACTORY(...) creatTypeLocRewriterFactory(__VA_ARGS__)
+#define TYPE_FACTORY(...) createTypeLocRewriterFactory(__VA_ARGS__)
 #include "APINamesTemplateType.inc"
 #undef TYPE_FACTORY
 #undef TYPE_CONDITIONAL_FACTORY
