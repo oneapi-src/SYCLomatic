@@ -1,7 +1,7 @@
 ====================================================================================================================
-Current libcurl version: curl-7.81.0
+Current libcurl version: curl-7.83.1
 ====================================================================================================================
-*Steps to update libcurl
+* Steps to update libcurl
 ********************************************************************************************************************
 1. Download the target version of the libcurl from  https://curl.se/download.html
 2  Linux build
@@ -10,16 +10,18 @@ Current libcurl version: curl-7.81.0
    $ make install
 3  Windows build
    a. start Visual Studio X64 command line
-   b. cd curl-7.81.0\windows-build\curl-7.81.0\winbuild
-   c. change /MD to /MT and /MDd to /MTd in file winbuild\MakefileBuild.vc in line361 and line362
+   b. cd curl-7.83.1\windows-build\curl-7.83.1\winbuild
+   c. change /MD to /MT and /MDd to /MTd in file winbuild\MakefileBuild.vc in line402 and line403
    e. nmake /f Makefile.vc mode=static ENABLE_SSPI=no ENABLE_IPV6=no ENABLE_IDN=no  ENABLE_SCHANNEL=no
-   f. check the result in curl-7.81.0\windows-build\curl-7.81.0\builds folder
+   f. check the result in curl-7.83.1\windows-build\curl-7.83.1\builds folder
 
-4. Update header file
-   a. Copy header files from curl-7.81.0\windows-build\curl-7.81.0\builds\libcurl-vc-x64-release-static\include to  clang/lib/DPCT/libcurl/include folder
+4. Update header files
+   a. Copy header files from curl-7.83.1\windows-build\curl-7.83.1\builds\libcurl-vc-x64-release-static\include to clang/lib/DPCT/libcurl/include folder
 5. Update static library
    a. Copy libcurl.a to clang/lib/DPCT/libcurl/lib/linux
    b. Copy libcurl_a.lib to clang/lib/DPCT/libcurl/lib/win
+
+Note: Make sure the build folder path doesn't include any senstive info. Build the libraries in the root fodler, such as D:\lib_curl.
 =====================================================================================================================
 
 
