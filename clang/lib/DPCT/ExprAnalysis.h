@@ -395,7 +395,7 @@ protected:
   }
 
   template <class T> void analyzeTemplateSpecializationType(const T &TL) {
-    for (size_t i = 0; i < TL.getNumArgs(); ++i){
+    for (size_t i = 0; i < TL.getNumArgs(); ++i) {
       analyzeTemplateArgument(TL.getArgLoc(i));
     }
   }
