@@ -1405,6 +1405,22 @@ makeLambdaCreator(bool IsCaptureRef,
                         IsCaptureRef, Stmts...);
 }
 
+auto getTemplateArgsList =
+    [](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
+  ArrayRef<TemplateArgumentLoc> TemplateArgsList;
+  std::vector<TemplateArgumentInfo> Ret;
+  auto Callee = C->getCallee()->IgnoreImplicitAsWritten();
+  if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
+    TemplateArgsList = DRE->template_arguments();
+  } else if (auto ULE = dyn_cast<UnresolvedLookupExpr>(Callee)) {
+    TemplateArgsList = ULE->template_arguments();
+  }
+  for (auto Arg : TemplateArgsList) {
+    Ret.emplace_back(Arg);
+  }
+  return Ret;
+};
+
 std::function<TemplatedCallee(const CallExpr *)>
 makeTemplatedCalleeCreator(std::string CalleeName,
                            std::vector<size_t> Indexes) {
@@ -1412,21 +1428,22 @@ makeTemplatedCalleeCreator(std::string CalleeName,
       TemplatedCallee, std::string,
       std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>(
       CalleeName, [=](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
-        ArrayRef<TemplateArgumentLoc> TemplateArgsList;
         std::vector<TemplateArgumentInfo> Ret;
-        auto Callee = C->getCallee()->IgnoreImplicitAsWritten();
-        if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
-          TemplateArgsList = DRE->template_arguments();
-        } else if (auto ULE = dyn_cast<UnresolvedLookupExpr>(Callee)) {
-          TemplateArgsList = ULE->template_arguments();
-        }
+        auto List = getTemplateArgsList(C);
         for (auto Idx : Indexes) {
-          if (Idx < TemplateArgsList.size()) {
-            Ret.emplace_back(TemplateArgsList[Idx]);
+          if (Idx < List.size()) {
+            Ret.emplace_back(List[Idx]);
           }
         }
         return Ret;
       });
+}
+
+std::function<TemplateArgumentInfo(const CallExpr *)>
+makeCallArgCreatorFromTemplateArg(unsigned Idx) {
+  return [=](const CallExpr *CE) -> TemplateArgumentInfo {
+    return getTemplateArgsList(CE)[Idx];
+  };
 }
 
 template <class First>
@@ -2269,28 +2286,24 @@ public:
   bool operator()(const CallExpr *C) { return C->getNumArgs() == Count; }
 };
 
-class CheckArgType {
-  unsigned Idx;
+class CheckBaseType {
   std::string TypeName;
 
 public:
-  CheckArgType(unsigned I, std::string Name) : Idx(I), TypeName(Name) {}
+  CheckBaseType(std::string Name) : TypeName(Name) {}
   bool operator()(const CallExpr *C) {
-    if (C->getNumArgs() > Idx) {
-      if (!C->getDirectCallee())
-        return true;
-      if (!C->getDirectCallee()->getParamDecl(Idx))
-        return true;
-      std::string ArgType = C->getDirectCallee()
-                                ->getParamDecl(Idx)
-                                ->getType()
-                                .getCanonicalType()
-                                .getUnqualifiedType()
-                                .getAsString();
-      return ArgType.find(TypeName) != std::string::npos;
-    }
-    return true;
+    auto BaseType = getBaseTypeStr(C);
+    if (BaseType.empty())
+      return false;
+    return TypeName == BaseType;
   }
+};
+
+auto UseNDRangeBarrier = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useNdRangeBarrier();
+};
+auto UseLogicalGroup = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useLogicalGroup();
 };
 
 class CheckDerefedTypeBeforeCast {
@@ -2422,6 +2435,18 @@ public:
   }
 };
 
+std::function<std::string(const CallExpr *)> MemberExprBase() {
+  return [=](const CallExpr *C) -> std::string {
+    auto ME = dyn_cast<MemberExpr>(C->getCallee()->IgnoreImpCasts());
+    if (!ME)
+      return "";
+    auto Base = ME->getBase()->IgnoreImpCasts();
+    if (!Base)
+      return "";
+    return getStmtSpelling(Base);
+  };
+}
+
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
 #define INSERT_AROUND_FACTORY(x, PREFIX, SUFFIX)                               \
   createInsertAroundFactory(x PREFIX, SUFFIX),
@@ -2448,6 +2473,9 @@ public:
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
 #define SUBGROUP                                                               \
   std::function<SubGroupPrinter(const CallExpr *)>(SubGroupPrinter::create)
+#define NDITEM std::function<ItemPrinter(const CallExpr *)>(ItemPrinter::create)
+#define GROUP                                                                  \
+  std::function<GroupPrinter(const CallExpr *)>(GroupPrinter::create)
 #define POINTER_CHECKER(x) makePointerChecker(x)
 #define LITERAL(x) makeLiteral(x)
 #define TEMPLATED_CALLEE(FuncName, ...)                                        \
@@ -2598,11 +2626,16 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesWarp.inc"
 #include "APINamesCUDNN.inc"
 #include "APINamesErrorHandling.inc"
+#define FUNCTION_CALL
+#define CLASS_METHOD_CALL
+#include "APINamesCooperativeGroups.inc"
+#undef FUNCTION_CALL
+#undef CLASS_METHOD_CALL
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED
 #undef ENTRY_TEMPLATED
-#undef UNSUPPORTED_FACTORY_ENTRY
+#undef ENTRY_BIND
 
 #define ENTRY_HOST(from, to, policy)
 #define ENTRY_DEVICE(SOURCEAPINAME, TARGETAPINAME, EXTR)                       \
@@ -2618,7 +2651,13 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 
 void CallExprRewriterFactoryBase::initMethodRewriterMap() {
   MethodRewriterMap = std::make_unique<std::unordered_map<
-      std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>();
+      std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>(
+      std::unordered_map<std::string,
+                         std::shared_ptr<CallExprRewriterFactoryBase>>({
+#define CLASS_METHOD_CALL
+#include "APINamesCooperativeGroups.inc"
+#undef CLASS_METHOD_CALL
+      }));
 }
 
 const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {

@@ -99,3 +99,37 @@ FEATURE_REQUEST_FACTORY(
             "cuDevicePrimaryCtxRetain",
             DEREF(0),
             CALL(MapNames::getDpctNamespace() + "select_device", ARG(1)))))
+
+
+ ASSIGNABLE_FACTORY(
+        ASSIGN_FACTORY_ENTRY("cudaHostGetFlags",
+        DEREF(0),
+        ARG("0")))
+
+ ASSIGNABLE_FACTORY(
+        ASSIGN_FACTORY_ENTRY("cuMemHostGetFlags",
+        DEREF(0),
+        ARG("0")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    checkIsCallExprOnly(),
+    WARNING_FACTORY_ENTRY("cuMemHostRegister_v2",
+        TOSTRING_FACTORY_ENTRY("cuMemHostRegister_v2", LITERAL("")),
+         Diagnostics::FUNC_CALL_REMOVED,
+        std::string("cuMemHostRegister"), getRemovedAPIWarningMessage("cuMemHostRegister_v2")),
+    WARNING_FACTORY_ENTRY("cuMemHostRegister_v2",
+        TOSTRING_FACTORY_ENTRY("cuMemHostRegister_v2", LITERAL("0")),
+        Diagnostics::FUNC_CALL_REMOVED_0,
+        std::string("cuMemHostRegister"), getRemovedAPIWarningMessage("cuMemHostRegister_v2")))
+
+
+CONDITIONAL_FACTORY_ENTRY(
+    checkIsCallExprOnly(),
+    WARNING_FACTORY_ENTRY("cuMemHostUnregister",
+        TOSTRING_FACTORY_ENTRY("cuMemHostUnregister", LITERAL("")),
+         Diagnostics::FUNC_CALL_REMOVED,
+        std::string("cuMemHostUnregister"), getRemovedAPIWarningMessage("cuMemHostUnregister")),
+    WARNING_FACTORY_ENTRY("cuMemHostUnregister",
+        TOSTRING_FACTORY_ENTRY("cuMemHostUnregister", LITERAL("0")),
+        Diagnostics::FUNC_CALL_REMOVED_0,
+        std::string("cuMemHostUnregister"), getRemovedAPIWarningMessage("cuMemHostUnregister")))

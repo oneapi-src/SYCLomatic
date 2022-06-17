@@ -3892,3 +3892,28 @@ void insertHeaderForTypeRule(std::string Name, clang::SourceLocation Loc) {
     dpct::DpctGlobalInfo::getInstance().insertHeader(Loc, *ItHeader);
   }
 }
+
+std::string getBaseTypeStr(const CallExpr *CE) {
+  auto ME = dyn_cast<MemberExpr>(CE->getCallee()->IgnoreImpCasts());
+  if (!ME)
+    return "";
+  auto Base = ME->getBase()->IgnoreImpCasts();
+  if (!Base)
+    return "";
+  return dpct::DpctGlobalInfo::getTypeName(Base->getType().getCanonicalType());
+}
+
+std::string getArgTypeStr(const CallExpr *CE, unsigned int Idx) {
+  if (CE->getNumArgs() <= Idx)
+    return "";
+  if (!CE->getDirectCallee())
+    return "";
+  if (!CE->getDirectCallee()->getParamDecl(Idx))
+    return "";
+  return CE->getDirectCallee()
+      ->getParamDecl(Idx)
+      ->getType()
+      .getCanonicalType()
+      .getUnqualifiedType()
+      .getAsString();
+}

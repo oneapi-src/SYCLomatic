@@ -185,8 +185,7 @@ int main(){
     // CHECK-NEXT: dpct::cpu_device().default_queue().mem_advise(devicePtr, count, 0);
     cuMemAdvise(devicePtr, count, CU_MEM_ADVISE_UNSET_PREFERRED_LOCATION, CU_DEVICE_CPU);
 
-    
-    CUdevice cudevice =0;
+
     CUdeviceptr devPtr;
     CUresult curesult;
     // CHECK: stream->prefetch(devPtr, 100);
@@ -218,19 +217,19 @@ int main(){
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100), 0));
-    MY_ERROR_CHECKER(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamDefault));
+    // CHECK-NEXT: cuCheckError((dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100), 0));
+    cuCheckError(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamDefault));
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100), 0));
-    MY_ERROR_CHECKER(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamLegacy));
+    // CHECK-NEXT: cuCheckError((dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100), 0));
+    cuCheckError(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamLegacy));
     // CHECK: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT: */
-    // CHECK-NEXT: MY_ERROR_CHECKER((dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100), 0));
-    MY_ERROR_CHECKER(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamPerThread));
-    
+    // CHECK-NEXT: cuCheckError((dpct::dev_mgr::instance().get_device(cudevice).default_queue().prefetch(devPtr, 100), 0));
+    cuCheckError(cuMemPrefetchAsync (devPtr, 100, cudevice, cudaStreamPerThread));
+
     // CHECK: dpct::pitched_data cpy2_from_data_ct1, cpy2_to_data_ct1;
     // CHECK: sycl::id<3> cpy2_from_pos_ct1(0, 0, 0), cpy2_to_pos_ct1(0, 0, 0);
     // CHECK: sycl::range<3> cpy2_size_ct1(1, 1, 1);
@@ -286,5 +285,36 @@ int main(){
     cuMemFreeHost(h_A);
     // CHECK:sycl::free(f_D, q_ct1);
     cuMemFree(f_D);
+
+    unsigned int flags;
+    int host;
+
+
+    // CHECK: flags = 0;
+    cuMemHostGetFlags(&flags, &host);
+    // CHECK: cuCheckError((flags = 0, 0));
+    cuCheckError(cuMemHostGetFlags(&flags, &host));
+
+    // CHECK:  /*
+    // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuMemHostRegister was removed because DPC++ currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.
+    // CHECK-NEXT: */
+    cuMemHostRegister(h_A, count, flags);
+    // CHECK:  /*
+    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuMemHostRegister was replaced with 0 because DPC++ currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.
+    // CHECK-NEXT: */
+    // CHECK-NEXT: cuCheckError(0);
+    cuCheckError(cuMemHostRegister(h_A, count, flags));
+
+
+    // CHECK:  /*
+    // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuMemHostUnregister was removed because DPC++ currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.
+    // CHECK-NEXT: */
+    cuMemHostUnregister(h_A);
+
+    // CHECK:  /*
+    // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuMemHostUnregister was replaced with 0 because DPC++ currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.
+    // CHECK-NEXT: */
+    // CHECK-NEXT:cuCheckError(0);
+    cuCheckError(cuMemHostUnregister(h_A));
     return 0;
 }

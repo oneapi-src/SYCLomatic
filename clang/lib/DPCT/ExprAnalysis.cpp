@@ -399,13 +399,22 @@ bool isMathFunction(std::string Name) {
   return MathFunctions.count(Name);
 }
 
+bool isCGAPI(std::string Name) {
+  return MapNames::CooperativeGroupsAPISet.count(Name);
+}
+
 void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   std::string CTSName;
   auto Qualifier = DRE->getQualifier();
   if (Qualifier) {
-    if (!(Qualifier->getKind() ==
-              clang::NestedNameSpecifier::SpecifierKind::Namespace &&
-          isMathFunction(DRE->getNameInfo().getAsString()))) {
+    bool IsNamespaceOrAlias =
+        Qualifier->getKind() ==
+            clang::NestedNameSpecifier::SpecifierKind::Namespace ||
+        Qualifier->getKind() ==
+            clang::NestedNameSpecifier::SpecifierKind::NamespaceAlias;
+    bool IsSpecicalAPI = isMathFunction(DRE->getNameInfo().getAsString()) ||
+                         isCGAPI(DRE->getNameInfo().getAsString());
+    if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
     }
@@ -632,6 +641,9 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   }
   dispatch(ME->getBase());
   RefString.clear();
+  RefString +=
+      DpctGlobalInfo::getTypeName(ME->getBase()->getType().getCanonicalType()) +
+      "." + ME->getMemberDecl()->getDeclName().getAsString();
 }
 
 void ExprAnalysis::analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT) {

@@ -371,6 +371,9 @@ public:
       FFTPlanAPINeedParenIdxMap;
 
   static MapTy BLASComputingAPIWithRewriter;
+
+  static const std::unordered_set<std::string> CooperativeGroupsAPISet;
+
   template<class T>
   inline static const std::string &findReplacedName(
       const std::unordered_map<std::string, std::shared_ptr<T>> &Map,
