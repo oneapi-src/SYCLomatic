@@ -16,7 +16,9 @@
   Priority: Takeover
   In: cmath
   Out: cmath2
+  Prefix: "#ifdef MACRO_A\n"
   Includes: ["<cmath3>"]
+  Postfix: "#endif"
 - Rule: min
   Kind: API
   Priority: Takeover

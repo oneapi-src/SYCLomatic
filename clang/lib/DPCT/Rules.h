@@ -78,6 +78,8 @@ public:
   std::string In;
   std::string Out;
   std::string EnumName;
+  std::string Prefix;
+  std::string Postfix;
   std::vector<std::string> Includes;
   std::vector<std::shared_ptr<ClassField>> Fields;
   std::vector<std::shared_ptr<ClassMethod>> Methods;
@@ -134,6 +136,8 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapOptional("Fields", Doc->Fields);
     Io.mapOptional("Methods", Doc->Methods);
     Io.mapOptional("EnumName", Doc->EnumName);
+    Io.mapOptional("Prefix", Doc->Prefix);
+    Io.mapOptional("Postfix", Doc->Postfix);
   }
 };
 

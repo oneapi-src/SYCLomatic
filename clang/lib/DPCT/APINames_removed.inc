@@ -47,3 +47,5 @@ ENTRY(cudaStreamIsCapturing,           "SYCL currently does not support capture 
 
 ENTRY(cudaHostRegister,                "DPC++ currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.")
 ENTRY(cudaHostUnregister,              "DPC++ currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.")
+ENTRY(cuMemHostRegister_v2,            "DPC++ currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.")
+ENTRY(cuMemHostUnregister,             "DPC++ currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.")
