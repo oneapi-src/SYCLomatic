@@ -592,8 +592,5 @@ ENTRY_UNSUPPORTED("y0")
 ENTRY_UNSUPPORTED("y1")
 ENTRY_UNSUPPORTED("yn")
 
-// Single precision intrinisics
-ENTRY_UNSUPPORTED("__saturatef")
-
 // crt wrapper API
 ENTRY_RENAMED("mul24", MapNames::getClNamespace(false, true) + "mul24")
