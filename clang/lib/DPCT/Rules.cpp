@@ -193,7 +193,8 @@ void registerEnumRule(MetaRuleObject &R) {
         R.Out, clang::dpct::HelperFeatureEnum::no_feature_helper, R.Priority);
     RulePtr->Includes.insert(RulePtr->Includes.end(), R.Includes.begin(),
                              R.Includes.end());
-    clang::dpct::EnumConstantRule::EnumNamesMap.emplace(R.In, RulePtr);
+    clang::dpct::EnumConstantRule::EnumNamesMap.emplace(
+        R.EnumName + "::" + R.In, RulePtr);
   }
 }
 

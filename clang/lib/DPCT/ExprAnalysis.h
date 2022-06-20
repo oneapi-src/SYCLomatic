@@ -204,6 +204,7 @@ public:
     initSourceRange(TL.getSourceRange());
     analyzeType(TL);
   }
+
   inline void analyze(const TemplateArgumentLoc &TAL) {
     initSourceRange(TAL.getSourceRange());
     analyzeTemplateArgument(TAL);
@@ -223,7 +224,13 @@ public:
   // nullptr, caller need to use temp variable to save the return value, then
   // check. Don't call twice for same Replacement.
   inline TextModification *getReplacement() {
-    return hasReplacement() ? new ReplaceStmt(E, true, getReplacedString())
+    if (E) {
+      return hasReplacement() ? new ReplaceStmt(E, true, getReplacedString())
+                              : nullptr;
+    }
+
+    return hasReplacement() ? new ReplaceText(SrcBeginLoc, SrcLength,
+                                              std::string(getReplacedString()))
                             : nullptr;
   }
 
@@ -388,8 +395,9 @@ protected:
   }
 
   template <class T> void analyzeTemplateSpecializationType(const T &TL) {
-    for (size_t i = 0; i < TL.getNumArgs(); ++i)
+    for (size_t i = 0; i < TL.getNumArgs(); ++i) {
       analyzeTemplateArgument(TL.getArgLoc(i));
+    }
   }
 
   // Prepare for analyze.
@@ -617,6 +625,7 @@ protected:
   void analyzeExpr(const LambdaExpr *LE);
   void analyzeExpr(const IfStmt *IS);
   void analyzeExpr(const DeclStmt *DS);
+  void analyzeExpr(const ConstantExpr *CE);
 
   inline void analyzeType(const TypeSourceInfo *TSI,
                           const Expr *CSCE = nullptr) {
@@ -646,6 +655,7 @@ private:
   const Expr *E;
   SourceLocation ExprBeginLoc;
   SourceLocation ExprEndLoc;
+  SourceLocation SrcBeginLoc;
   size_t SrcBegin;
   size_t SrcLength;
   FileID FileId;

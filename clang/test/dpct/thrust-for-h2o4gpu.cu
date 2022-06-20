@@ -227,6 +227,14 @@ void foo() {
  }
 
  {
+   // CHECK: using TupleTy = std::tuple<int, double, const char *>;
+   using TupleTy = thrust::tuple<int, double, const char *>;
+   // CHECK: const int size = std::tuple_size<TupleTy>::value;
+   const int size = thrust::tuple_size<TupleTy>::value;
+   static_assert(size == 3, "TupleTy size shoud be 3");
+ }
+
+ {
   //CHECK: int x =  137;
   //CHECK-NEXT: int y = -137;
   //CHECK-NEXT: oneapi::dpl::maximum<int> mx;

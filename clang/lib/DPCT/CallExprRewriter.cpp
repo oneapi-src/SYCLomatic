@@ -1358,27 +1358,6 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
   };
 }
 
-template <class Printer, class... Ts> class PrinterCreator {
-  std::tuple<Ts...> Creators;
-
-  template <class T> T create(T Val, const CallExpr *) { return Val; }
-  StringRef create(const std::string &Val, const CallExpr *) { return Val; }
-  template <class T>
-  T create(std::function<T(const CallExpr *)> &Func, const CallExpr *C) {
-    return Func(C);
-  }
-  template <size_t... Idx>
-  Printer createPrinter(const CallExpr *C, std::index_sequence<Idx...>) {
-    return Printer(create(std::get<Idx>(Creators), C)...);
-  }
-
-public:
-  PrinterCreator(Ts... Args) : Creators(Args...) {}
-  Printer operator()(const CallExpr *C) {
-    return createPrinter(C, std::index_sequence_for<Ts...>());
-  }
-};
-
 template <class BaseT, class... CallArgsT>
 using MemberCallPrinterCreator =
     PrinterCreator<MemberCallPrinter<BaseT, StringRef, CallArgsT...>,
@@ -1421,11 +1400,13 @@ auto getTemplateArgsList =
   return Ret;
 };
 
-std::function<TemplatedCallee(const CallExpr *)>
+std::function<TemplatedNamePrinter<
+    StringRef, std::vector<TemplateArgumentInfo>>(const CallExpr *)>
 makeTemplatedCalleeCreator(std::string CalleeName,
                            std::vector<size_t> Indexes) {
   return PrinterCreator<
-      TemplatedCallee, std::string,
+      TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>,
+      std::string,
       std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>(
       CalleeName, [=](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
         std::vector<TemplateArgumentInfo> Ret;
@@ -1467,11 +1448,13 @@ void setTemplateArgumentInfo(const CallExpr *C,
 }
 
 template <class... CallArgsT>
-std::function<TemplatedCallee(const CallExpr *)>
+std::function<TemplatedNamePrinter<
+    StringRef, std::vector<TemplateArgumentInfo>>(const CallExpr *)>
 makeTemplatedCalleeWithArgsCreator(
     std::string Callee, std::function<CallArgsT(const CallExpr *)>... Args) {
   return PrinterCreator<
-      TemplatedCallee, std::string,
+      TemplatedNamePrinter<StringRef, std::vector<TemplateArgumentInfo>>,
+      std::string,
       std::function<std::vector<TemplateArgumentInfo>(const CallExpr *)>>(
       Callee, [=](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
         std::vector<TemplateArgumentInfo> Ret;
@@ -1884,14 +1867,18 @@ template <class... ArgsT>
 std::shared_ptr<CallExprRewriterFactoryBase>
 createTemplatedCallExprRewriterFactory(
     const std::string &SourceName,
-    std::function<TemplatedCallee(const CallExpr *)> CalleeCreator,
+    std::function<TemplatedNamePrinter<
+        StringRef, std::vector<TemplateArgumentInfo>>(const CallExpr *)>
+        CalleeCreator,
     std::function<ArgsT(const CallExpr *)>... ArgsCreator) {
-  return std::make_shared<
-      CallExprRewriterFactory<TemplatedCallExprRewriter<ArgsT...>,
-                              std::function<TemplatedCallee(const CallExpr *)>,
-                              std::function<ArgsT(const CallExpr *)>...>>(
+  return std::make_shared<CallExprRewriterFactory<
+      TemplatedCallExprRewriter<ArgsT...>,
+      std::function<TemplatedNamePrinter<
+          StringRef, std::vector<TemplateArgumentInfo>>(const CallExpr *)>,
+      std::function<ArgsT(const CallExpr *)>...>>(
       SourceName,
-      std::forward<std::function<TemplatedCallee(const CallExpr *)>>(
+      std::forward<std::function<TemplatedNamePrinter<
+          StringRef, std::vector<TemplateArgumentInfo>>(const CallExpr *)>>(
           CalleeCreator),
       std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
 }
