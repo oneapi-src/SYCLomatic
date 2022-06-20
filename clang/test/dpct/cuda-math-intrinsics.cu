@@ -212,9 +212,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
 
   // Double Precision Mathematical Functions
 
-  // CHECK: d2 = sycl::acos(d0);
+  // CHECK: d2 = acos(d0);
   d2 = acos(d0);
-  // CHECK: d2 = sycl::acos((double)i);
+  // CHECK: d2 = acos(i);
   d2 = acos(i);
 
   // CHECK: d2 = sycl::acosh(d0);
@@ -222,9 +222,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::acosh((double)i);
   d2 = acosh(i);
 
-  // CHECK: d2 = sycl::asin(d0);
+  // CHECK: d2 = asin(d0);
   d2 = asin(d0);
-  // CHECK: d2 = sycl::asin((double)i);
+  // CHECK: d2 = asin(i);
   d2 = asin(i);
 
   // CHECK: d2 = sycl::asinh(d0);
@@ -241,9 +241,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::atan2((double)i, d1);
   d2 = atan2(i, d1);
 
-  // CHECK: d2 = sycl::atan(d0);
+  // CHECK: d2 = atan(d0);
   d2 = atan(d0);
-  // CHECK: d2 = sycl::atan((double)i);
+  // CHECK: d2 = atan(i);
   d2 = atan(i);
 
   // CHECK: d2 = sycl::atanh(d0);
@@ -256,9 +256,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::cbrt((double)i);
   d2 = cbrt(i);
 
-  // CHECK: d2 = sycl::ceil(d0);
+  // CHECK: d2 = ceil(d0);
   d2 = ceil(d0);
-  // CHECK: d2 = sycl::ceil((double)i);
+  // CHECK: d2 = ceil(i);
   d2 = ceil(i);
 
   // CHECK: d2 = sycl::copysign(d0, d1);
@@ -270,14 +270,14 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::copysign((double)i, d1);
   d2 = copysign(i, d1);
 
-  // CHECK: d2 = sycl::cos(d0);
+  // CHECK: d2 = cos(d0);
   d2 = cos(d0);
-  // CHECK: d2 = sycl::cos((double)i);
+  // CHECK: d2 = cos(i);
   d2 = cos(i);
 
-  // CHECK: d2 = sycl::cosh(d0);
+  // CHECK: d2 = cosh(d0);
   d2 = cosh(d0);
-  // CHECK: d2 = sycl::cosh((double)i);
+  // CHECK: d2 = cosh(i);
   d2 = cosh(i);
 
   // CHECK: d2 = sycl::cospi(d0);
@@ -290,9 +290,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = erfc(i);
   d2 = erfc(i);
 
-  // CHECK: d2 = sycl::erf(d0);
+  // CHECK: d2 = erf(d0);
   d2 = erf(d0);
-  // CHECK: d2 = sycl::erf((double)i);
+  // CHECK: d2 = erf(i);
   d2 = erf(i);
 
   // CHECK: d2 = sycl::exp10(d0);
@@ -305,24 +305,24 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::exp2((double)i);
   d2 = exp2(i);
 
-  // CHECK: d2 = sycl::exp(d0);
+  // CHECK: d2 = exp(d0);
   d2 = exp(d0);
-  // CHECK: d2 = sycl::exp((double)i);
+  // CHECK: d2 = exp(i);
   d2 = exp(i);
 
-  // CHECK: d2 = sycl::expm1(d0);
+  // CHECK: d2 = expm1(d0);
   d2 = expm1(d0);
-  // CHECK: d2 = sycl::expm1((double)i);
+  // CHECK: d2 = expm1(i);
   d2 = expm1(i);
 
-  // CHECK: d2 = sycl::cos(d0);
+  // CHECK: d2 = cos(d0);
   d2 = cos(d0);
-  // CHECK: d2 = sycl::cos((double)i);
+  // CHECK: d2 = cos(i);
   d2 = cos(i);
 
-  // CHECK: d2 = sycl::cosh(d0);
+  // CHECK: d2 = cosh(d0);
   d2 = cosh(d0);
-  // CHECK: d2 = sycl::cosh((double)i);
+  // CHECK: d2 = cosh(i);
   d2 = cosh(i);
 
   // CHECK: d2 = sycl::cospi(d0);
@@ -335,9 +335,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = erfc(i);
   d2 = erfc(i);
 
-  // CHECK: d2 = sycl::erf(d0);
+  // CHECK: d2 = erf(d0);
   d2 = erf(d0);
-  // CHECK: d2 = sycl::erf((double)i);
+  // CHECK: d2 = erf(i);
   d2 = erf(i);
 
   // CHECK: d2 = sycl::exp10(d0);
@@ -350,14 +350,14 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::exp2((double)i);
   d2 = exp2(i);
 
-  // CHECK: d2 = sycl::exp(d0);
+  // CHECK: d2 = exp(d0);
   d2 = exp(d0);
-  // CHECK: d2 = sycl::exp((double)i);
+  // CHECK: d2 = exp(i);
   d2 = exp(i);
 
-  // CHECK: d2 = sycl::expm1(d0);
+  // CHECK: d2 = expm1(d0);
   d2 = expm1(d0);
-  // CHECK: d2 = sycl::expm1((double)i);
+  // CHECK: d2 = expm1(i);
   d2 = expm1(i);
 
   // CHECK: d2 = sycl::fabs(d0);
@@ -379,9 +379,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::fdim((double)i, d1);
   d2 = fdim(i, d1);
 
-  // CHECK: d2 = sycl::floor(d0);
+  // CHECK: d2 = floor(d0);
   d2 = floor(d0);
-  // CHECK: d2 = sycl::floor((double)i);
+  // CHECK: d2 = floor(i);
   d2 = floor(i);
 
   // CHECK: d2 = sycl::fma(d0, d1, d2);
@@ -452,9 +452,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::ldexp((double)i, i);
   d2 = ldexp(i, i);
 
-  // CHECK: d2 = sycl::lgamma(d0);
+  // CHECK: d2 = lgamma(d0);
   d2 = lgamma(d0);
-  // CHECK: d2 = sycl::lgamma((double)i);
+  // CHECK: d2 = lgamma(i);
   d2 = lgamma(i);
 
   // CHECK: d2 = sycl::rint(d0);
@@ -467,19 +467,19 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::round((double)i);
   d2 = llround(i);
 
-  // CHECK: d2 = sycl::log10(d0);
+  // CHECK: d2 = log10(d0);
   d2 = log10(d0);
-  // CHECK: d2 = sycl::log10((double)i);
+  // CHECK: d2 = log10(i);
   d2 = log10(i);
 
-  // CHECK: d2 = sycl::log1p(d0);
+  // CHECK: d2 = log1p(d0);
   d2 = log1p(d0);
-  // CHECK: d2 = sycl::log1p((double)i);
+  // CHECK: d2 = log1p(i);
   d2 = log1p(i);
 
-  // CHECK: d2 = sycl::log2(d0);
+  // CHECK: d2 = log2(d0);
   d2 = log2(d0);
-  // CHECK: d2 = sycl::log2((double)i);
+  // CHECK: d2 = log2(i);
   d2 = log2(i);
 
   // CHECK: d2 = sycl::logb(d0);
@@ -556,14 +556,14 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d1 = sycl::sincos((double)i, sycl::make_ptr<double, sycl::access::address_space::global_space>(&d2));
   sincos(i, &d1, &d2);
 
-  // CHECK: d2 = sycl::sin(d0);
+  // CHECK: d2 = sin(d0);
   d2 = sin(d0);
-  // CHECK: d2 = sycl::sin((double)i);
+  // CHECK: d2 = sin(i);
   d2 = sin(i);
 
-  // CHECK: d2 = sycl::sinh(d0);
+  // CHECK: d2 = sinh(d0);
   d2 = sinh(d0);
-  // CHECK: d2 = sycl::sinh((double)i);
+  // CHECK: d2 = sinh(i);
   d2 = sinh(i);
 
   // CHECK: d2 = sycl::sinpi(d0);
@@ -571,19 +571,19 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::sinpi((double)i);
   d2 = sinpi((double)i);
 
-  // CHECK: d2 = sycl::sqrt(d0);
+  // CHECK: d2 = sqrt(d0);
   d2 = sqrt(d0);
-  // CHECK: d2 = sycl::sqrt((double)i);
+  // CHECK: d2 = sqrt(i);
   d2 = sqrt(i);
 
-  // CHECK: d2 = sycl::tan(d0);
+  // CHECK: d2 = tan(d0);
   d2 = tan(d0);
-  // CHECK: d2 = sycl::tan((double)i);
+  // CHECK: d2 = tan(i);
   d2 = tan(i);
 
-  // CHECK: d2 = sycl::tanh(d0);
+  // CHECK: d2 = tanh(d0);
   d2 = tanh(d0);
-  // CHECK: d2 = sycl::tanh((double)i);
+  // CHECK: d2 = tanh(i);
   d2 = tanh(i);
 
   // CHECK: d2 = sycl::tgamma(d0);
@@ -591,9 +591,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::tgamma((double)i);
   d2 = tgamma(i);
 
-  // CHECK: d2 = sycl::trunc(d0);
+  // CHECK: d2 = trunc(d0);
   d2 = trunc(d0);
-  // CHECK: d2 = sycl::trunc((double)i);
+  // CHECK: d2 = trunc(i);
   d2 = trunc(i);
 
   // CHECK: /*
@@ -815,14 +815,14 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d0 = sycl::fmax((double)i, d1);
   d0 = fmax(i, d1);
 
-  // CHECK: d1 = sycl::floor(d1);
+  // CHECK: d1 = floor(d1);
   d1 = floor(d1);
-  // CHECK: d1 = sycl::floor((double)i);
+  // CHECK: d1 = floor(i);
   d1 = floor(i);
 
-  // CHECK: d2 = sycl::ceil(d2);
+  // CHECK: d2 = ceil(d2);
   d2 = ceil(d2);
-  // CHECK: d2 = sycl::ceil((double)i);
+  // CHECK: d2 = ceil(i);
   d2 = ceil(i);
 
   // CHECK: d2 = sycl::fma(d0, d1, d2);
@@ -861,14 +861,14 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
 
   // Single Precision Mathematical Functions
 
-  // CHECK: f2 = sycl::log(f0);
+  // CHECK: f2 = logf(f0);
   f2 = logf(f0);
-  // CHECK: f2 = sycl::log((float)i);
+  // CHECK: f2 = logf(i);
   f2 = logf(i);
 
-  // CHECK: f2 = sycl::acos(f0);
+  // CHECK: f2 = acosf(f0);
   f2 = acosf(f0);
-  // CHECK: f2 = sycl::acos((float)i);
+  // CHECK: f2 = acosf(i);
   f2 = acosf(i);
 
   // CHECK: f2 = sycl::acosh(f0);
@@ -876,9 +876,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::acosh((float)i);
   f2 = acoshf(i);
 
-  // CHECK: f2 = sycl::asin(f0);
+  // CHECK: f2 = asinf(f0);
   f2 = asinf(f0);
-  // CHECK: f2 = sycl::asin((float)i);
+  // CHECK: f2 = asinf(i);
   f2 = asinf(i);
 
   // CHECK: f2 = sycl::asinh(f0);
@@ -895,9 +895,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::atan2((float)i, f1);
   f2 = atan2f(i, f1);
 
-  // CHECK: f2 = sycl::atan(f0);
+  // CHECK: f2 = atanf(f0);
   f2 = atanf(f0);
-  // CHECK: f2 = sycl::atan((float)i);
+  // CHECK: f2 = atanf(i);
   f2 = atanf(i);
 
   // CHECK: f2 = sycl::atanh(f0);
@@ -910,9 +910,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::cbrt((float)i);
   f2 = cbrtf(i);
 
-  // CHECK: f2 = sycl::ceil(f0);
+  // CHECK: f2 = ceilf(f0);
   f2 = ceilf(f0);
-  // CHECK: f2 = sycl::ceil((float)i);
+  // CHECK: f2 = ceilf(i);
   f2 = ceilf(i);
 
   // CHECK: f2 = sycl::copysign(f0, f1);
@@ -924,14 +924,14 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::copysign((float)i, f1);
   f2 = copysignf(i, f1);
 
-  // CHECK: f2 = sycl::cos(f0);
+  // CHECK: f2 = cosf(f0);
   f2 = cosf(f0);
-  // CHECK: f2 = sycl::cos((float)i);
+  // CHECK: f2 = cosf(i);
   f2 = cosf(i);
 
-  // CHECK: f2 = sycl::cosh(f0);
+  // CHECK: f2 = coshf(f0);
   f2 = coshf(f0);
-  // CHECK: f2 = sycl::cosh((float)i);
+  // CHECK: f2 = coshf(i);
   f2 = coshf(i);
 
   // CHECK: f2 = sycl::cospi(f0);
@@ -944,9 +944,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = erfcf(i);
   f2 = erfcf(i);
 
-  // CHECK: f2 = sycl::erf(f0);
+  // CHECK: f2 = erff(f0);
   f2 = erff(f0);
-  // CHECK: f2 = sycl::erf((float)i);
+  // CHECK: f2 = erff(i);
   f2 = erff(i);
 
   // CHECK: f2 = sycl::exp10(f0);
@@ -959,14 +959,14 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::exp2((float)i);
   f2 = exp2f(i);
 
-  // CHECK: f2 = sycl::exp(f0);
+  // CHECK: f2 = expf(f0);
   f2 = expf(f0);
-  // CHECK: f2 = sycl::exp((float)i);
+  // CHECK: f2 = expf(i);
   f2 = expf(i);
 
-  // CHECK: f2 = sycl::expm1(f0);
+  // CHECK: f2 = expm1f(f0);
   f2 = expm1f(f0);
-  // CHECK: f2 = sycl::expm1((float)i);
+  // CHECK: f2 = expm1f(i);
   f2 = expm1f(i);
 
   // CHECK: f2 = sycl::fabs(f0);
@@ -992,9 +992,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = i / f1;
   f2 = fdividef(i, f1);
 
-  // CHECK: f2 = sycl::floor(f0);
+  // CHECK: f2 = floorf(f0);
   f2 = floorf(f0);
-  // CHECK: f2 = sycl::floor((float)i);
+  // CHECK: f2 = floorf(i);
   f2 = floorf(i);
 
   // CHECK: f2 = sycl::fma(f0, f1, f2);
@@ -1080,9 +1080,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::ldexp((float)i, i);
   f2 = ldexpf(i, i);
 
-  // CHECK: f2 = sycl::lgamma(f0);
+  // CHECK: f2 = lgammaf(f0);
   f2 = lgammaf(f0);
-  // CHECK: f2 = sycl::lgamma((float)i);
+  // CHECK: f2 = lgammaf(i);
   f2 = lgammaf(i);
 
   // CHECK: f2 = sycl::rint(f0);
@@ -1095,19 +1095,19 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::round((float)i);
   f2 = llroundf(i);
 
-  // CHECK: f2 = sycl::log10(f0);
+  // CHECK: f2 = log10f(f0);
   f2 = log10f(f0);
-  // CHECK: f2 = sycl::log10((float)i);
+  // CHECK: f2 = log10f(i);
   f2 = log10f(i);
 
-  // CHECK: f2 = sycl::log1p(f0);
+  // CHECK: f2 = log1pf(f0);
   f2 = log1pf(f0);
-  // CHECK: f2 = sycl::log1p((float)i);
+  // CHECK: f2 = log1pf(i);
   f2 = log1pf(i);
 
-  // CHECK: f2 = sycl::log2(f0);
+  // CHECK: f2 = log2f(f0);
   f2 = log2f(f0);
-  // CHECK: f2 = sycl::log2((float)i);
+  // CHECK: f2 = log2f(i);
   f2 = log2f(i);
 
   // CHECK: f2 = sycl::logb(f0);
@@ -1185,14 +1185,14 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f1 = sycl::sincos((float)i, sycl::make_ptr<float, sycl::access::address_space::global_space>(&f2));
   sincosf(i, &f1, &f2);
 
-  // CHECK: f2 = sycl::sin(f0);
+  // CHECK: f2 = sinf(f0);
   f2 = sinf(f0);
-  // CHECK: f2 = sycl::sin((float)i);
+  // CHECK: f2 = sinf(i);
   f2 = sinf(i);
 
-  // CHECK: f2 = sycl::sinh(f0);
+  // CHECK: f2 = sinhf(f0);
   f2 = sinhf(f0);
-  // CHECK: f2 = sycl::sinh((float)i);
+  // CHECK: f2 = sinhf(i);
   f2 = sinhf(i);
 
   // CHECK: f2 = sycl::sinpi(f0);
@@ -1200,19 +1200,19 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::sinpi((float)i);
   f2 = sinpif(i);
 
-  // CHECK: f2 = sycl::sqrt(f0);
+  // CHECK: f2 = sqrtf(f0);
   f2 = sqrtf(f0);
-  // CHECK: f2 = sycl::sqrt((float)i);
+  // CHECK: f2 = sqrtf(i);
   f2 = sqrtf(i);
 
-  // CHECK: f2 = sycl::tan(f0);
+  // CHECK: f2 = tanf(f0);
   f2 = tanf(f0);
-  // CHECK: f2 = sycl::tan((float)i);
+  // CHECK: f2 = tanf(i);
   f2 = tanf(i);
 
-  // CHECK: f2 = sycl::tanh(f0);
+  // CHECK: f2 = tanhf(f0);
   f2 = tanhf(f0);
-  // CHECK: f2 = sycl::tanh((float)i);
+  // CHECK: f2 = tanhf(i);
   f2 = tanhf(i);
 
   // CHECK: f2 = sycl::tgamma(f0);
@@ -1220,9 +1220,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::tgamma((float)i);
   f2 = tgammaf(i);
 
-  // CHECK: f2 = sycl::trunc(f0);
+  // CHECK: f2 = truncf(f0);
   f2 = truncf(f0);
-  // CHECK: f2 = sycl::trunc((float)i);
+  // CHECK: f2 = truncf(i);
   f2 = truncf(i);
 
   // CHECK: f0 = sycl::cos(f0);
@@ -1516,14 +1516,14 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::fmax((float)i, f1);
   f2 = fmaxf(i, f1);
 
-  // CHECK: f1 = sycl::floor(f1);
+  // CHECK: f1 = floorf(f1);
   f1 = floorf(f1);
-  // CHECK: f1 = sycl::floor((float)i);
+  // CHECK: f1 = floorf(i);
   f1 = floorf(i);
 
-  // CHECK: f2 = sycl::ceil(f2);
+  // CHECK: f2 = ceilf(f2);
   f2 = ceilf(f2);
-  // CHECK: f2 = sycl::ceil((float)i);
+  // CHECK: f2 = ceilf(i);
   f2 = ceilf(i);
 
   // CHECK: f2 = sycl::fma(f0, f1, f2);
@@ -2877,9 +2877,9 @@ __device__ void do_migration5() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
-  //CHECK-NEXT: sycl::acos(f);
+  //CHECK-NEXT: std::acosf(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
+  //CHECK-NEXT: std::asinf(f);
   //CHECK-NEXT: sycl::asinh(f);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
@@ -2898,9 +2898,9 @@ __device__ void do_migration5() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
-  //CHECK-NEXT: sycl::acos(f);
+  //CHECK-NEXT: std::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
+  //CHECK-NEXT: std::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
   std::max(i, i);
   std::min(i, i);
@@ -2947,9 +2947,9 @@ __global__ void do_migration6() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
-  //CHECK-NEXT: sycl::acos(f);
+  //CHECK-NEXT: std::acosf(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
+  //CHECK-NEXT: std::asinf(f);
   //CHECK-NEXT: sycl::asinh(f);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
@@ -2968,9 +2968,9 @@ __global__ void do_migration6() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
-  //CHECK-NEXT: sycl::acos(f);
+  //CHECK-NEXT: std::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
+  //CHECK-NEXT: std::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
   std::max(i, i);
   std::min(i, i);
@@ -3017,9 +3017,9 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquof call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
-  //CHECK-NEXT: sycl::acos(f);
+  //CHECK-NEXT: std::acosf(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
+  //CHECK-NEXT: std::asinf(f);
   //CHECK-NEXT: sycl::asinh(f);
   //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
@@ -3038,9 +3038,9 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::remquo call is used instead of the remquo call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
   //CHECK-NEXT: sycl::remquo(f, f, sycl::make_ptr<int, sycl::access::address_space::private_space>(&i));
-  //CHECK-NEXT: sycl::acos(f);
+  //CHECK-NEXT: std::acos(f);
   //CHECK-NEXT: sycl::acosh(f);
-  //CHECK-NEXT: sycl::asin(f);
+  //CHECK-NEXT: std::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
   std::max(i, i);
   std::min(i, i);
@@ -3083,41 +3083,41 @@ __device__ void test_recursive_unary() {
 }
 
 __device__ void do_math(int i, int j) {
-  // CHECK: sycl::sqrt((float)i);
+  // CHECK: sqrtf(i);
   sqrtf(i);
-  // CHECK: sycl::sqrt((double)i);
+  // CHECK: sqrt(i);
   sqrt(i);
   // CHECK: sycl::fmod((double)i, (double)j);
   fmod(i, j);
-  // CHECK: sycl::sin((double)i);
+  // CHECK: sin(i);
   sin(i);
-  // CHECK: sycl::cos((double)i);
+  // CHECK: cos(i);
   cos(i);
 }
 
 __device__ void do_math(float i, float j) {
-  // CHECK: sycl::sqrt(i);
+  // CHECK: sqrtf(i);
   sqrtf(i);
-  // CHECK: sycl::sqrt(i);
+  // CHECK: sqrt(i);
   sqrt(i);
   // CHECK: sycl::fmod(i, j);
   fmod(i, j);
-  // CHECK: sycl::sin(i);
+  // CHECK: sin(i);
   sin(i);
-  // CHECK: sycl::cos(i);
+  // CHECK: cos(i);
   cos(i);
 }
 
 __device__ void do_math(double i, double j) {
-  // CHECK: sycl::sqrt((float)i);
+  // CHECK: sqrtf(i);
   sqrtf(i);
-  // CHECK: sycl::sqrt(i);
+  // CHECK: sqrt(i);
   sqrt(i);
   // CHECK: sycl::fmod(i, j);
   fmod(i, j);
-  // CHECK: sycl::sin(i);
+  // CHECK: sin(i);
   sin(i);
-  // CHECK: sycl::cos(i);
+  // CHECK: cos(i);
   cos(i);
 }
 

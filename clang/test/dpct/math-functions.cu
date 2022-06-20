@@ -614,7 +614,7 @@ public:
 
 template <typename T>
 __device__ static void multiply(int block_size, AccPtr<T> &ptr, T value) {
-  // CHECK:int BSZ = ((int)sycl::ceil((float)ptr.getSize() / (float)block_size));
+  // CHECK:int BSZ = ((int)ceilf((float)ptr.getSize() / (float)block_size));
   int BSZ = ((int)ceilf((float)ptr.getSize() / (float)block_size));
 }
 
