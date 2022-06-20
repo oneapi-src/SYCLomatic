@@ -285,9 +285,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::cospi((double)i);
   d2 = cospi((double)i);
 
-  // CHECK: d2 = sycl::erfc(d0);
+  // CHECK: d2 = erfc(d0);
   d2 = erfc(d0);
-  // CHECK: d2 = sycl::erfc((double)i);
+  // CHECK: d2 = erfc(i);
   d2 = erfc(i);
 
   // CHECK: d2 = sycl::erf(d0);
@@ -330,9 +330,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::cospi((double)i);
   d2 = cospi((double)i);
 
-  // CHECK: d2 = sycl::erfc(d0);
+  // CHECK: d2 = erfc(d0);
   d2 = erfc(d0);
-  // CHECK: d2 = sycl::erfc((double)i);
+  // CHECK: d2 = erfc(i);
   d2 = erfc(i);
 
   // CHECK: d2 = sycl::erf(d0);
@@ -939,9 +939,9 @@ __global__ void kernelFuncFloat(float *deviceArrayFloat) {
   // CHECK: f2 = sycl::cospi((float)i);
   f2 = cospif(i);
 
-  // CHECK: f2 = sycl::erfc(f0);
+  // CHECK: f2 = erfcf(f0);
   f2 = erfcf(f0);
-  // CHECK: f2 = sycl::erfc((float)i);
+  // CHECK: f2 = erfcf(i);
   f2 = erfcf(i);
 
   // CHECK: f2 = sycl::erf(f0);
