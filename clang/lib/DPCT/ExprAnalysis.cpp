@@ -12,6 +12,7 @@
 #include "DNNAPIMigration.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
+#include "TypeLocRewriters.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprConcepts.h"
@@ -211,6 +212,8 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
+    if(SrcBeginLoc.isInvalid())
+      SrcBeginLoc = BeginLoc;
 
     // Avoid illegal range which will cause SIGABRT
     if (End.first + End.second < Begin) {
@@ -295,6 +298,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
 
   ExprBeginLoc = BeginLoc;
   ExprEndLoc = EndLoc;
+
   RewritePrefix =
       std::string(SM.getCharacterData(BeginLoc), RewritePrefixLength);
 
@@ -430,9 +434,9 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     addReplacement(DRE, TemplateDecl->getIndex());
   else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
     auto &ReplEnum = MapNames::findReplacedName(EnumConstantRule::EnumNamesMap,
-                                                ECD->getName().str());
-    requestHelperFeatureForEnumNames(ECD->getName().str(), DRE);
-    auto ItEnum = EnumConstantRule::EnumNamesMap.find(ECD->getName().str());
+                                                RefString);
+    requestHelperFeatureForEnumNames(RefString, DRE);
+    auto ItEnum = EnumConstantRule::EnumNamesMap.find(RefString);
     if (ItEnum != EnumConstantRule::EnumNamesMap.end()) {
       for (auto ItHeader = ItEnum->second->Includes.begin();
            ItHeader != ItEnum->second->Includes.end(); ItHeader++) {
@@ -467,6 +471,10 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
                               ".get_local_range().get(0)");
     }
   }
+}
+
+void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
+  dispatch(CE->getSubExpr());
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
@@ -867,6 +875,18 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
     llvm::raw_string_ostream OS(TyName);
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
     TSTL.getTypePtr()->getTemplateName().print(OS, Context.getPrintingPolicy());
+    if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
+      return;
+    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(OS.str());
+    if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
+      auto Rewriter = Itr->second->create(TSTL);
+      auto Result = Rewriter->rewrite();
+      if (Result.hasValue()) {
+        auto ResultStr = Result.getValue();
+        addReplacement(SR.getBegin(), SR.getEnd(), CSCE, ResultStr);
+        return;
+      }
+    }
     if (OS.str() != "cub::WarpScan" && OS.str() != "cub::WarpReduce" &&
         OS.str() != "cub::BlockReduce" && OS.str() != "cub::BlockScan") {
       SR.setEnd(TSTL.getTemplateNameLoc());

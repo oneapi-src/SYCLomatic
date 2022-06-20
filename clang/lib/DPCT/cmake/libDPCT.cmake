@@ -48,6 +48,7 @@ macro(build_lib_dpct)
     FFTAPIMigration.cpp
     DNNAPIMigration.cpp
     NCCLAPIMigration.cpp
+    TypeLocRewriters.cpp
 
     DEPENDS
     ClangDriverOptions
