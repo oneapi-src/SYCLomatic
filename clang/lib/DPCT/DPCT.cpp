@@ -10,6 +10,7 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
+#include "TypeLocRewriters.h"
 #include "Checkpoint.h"
 #include "Config.h"
 #include "CustomHelperFiles.h"
@@ -1305,6 +1306,7 @@ int runDPCT(int argc, const char **argv) {
   MapNames::setExplicitNamespaceMap();
   CallExprRewriterFactoryBase::initRewriterMap();
   CallExprRewriterFactoryBase::initMethodRewriterMap();
+  TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   if (!RuleFile.empty()) {
     importRules(RuleFile);
   }
