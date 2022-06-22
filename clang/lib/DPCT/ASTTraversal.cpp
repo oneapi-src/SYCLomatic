@@ -4180,12 +4180,7 @@ void DevicePropVarRule::registerMatcher(MatchFinder &MF) {
                   hasDeclaration(cxxRecordDecl(hasName("cudaDeviceProp"))))))),
               hasType(
                   pointsTo(qualType(hasCanonicalType(recordType(hasDeclaration(
-                      cxxRecordDecl(hasName("cudaDeviceProp")))))))),
-              hasType(qualType(hasCanonicalType(recordType(
-                  hasDeclaration(recordDecl(hasName("cudaDeviceProp"))))))),
-              hasType(
-                  pointsTo(qualType(hasCanonicalType(recordType(hasDeclaration(
-                      recordDecl(hasName("cudaDeviceProp")))))))))))
+                      cxxRecordDecl(hasName("cudaDeviceProp")))))))))))
           .bind("DevicePropVar"),
       this);
 }
