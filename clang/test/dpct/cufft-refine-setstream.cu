@@ -401,7 +401,7 @@ void foo14() {
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
 
   cufftSetStream(plan, s);
-  //CHECK: DPCT1026:{{[0-9]+}}: The call to cufftCreate was removed because the function call is redundant in DPC++.
+  //CHECK: DPCT1026:{{[0-9]+}}: The call to cufftCreate was removed because this call is redundant in SYCL.
   cufftCreate(&plan);
 
   //CHECK:/*
@@ -414,6 +414,6 @@ void foo14() {
   //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
   //CHECK-NEXT:}
   cufftExecR2C(plan, (float*)iodata, iodata);
-  //CHECK: DPCT1026:{{[0-9]+}}: The call to cufftDestroy was removed because the function call is redundant in DPC++.
+  //CHECK: DPCT1026:{{[0-9]+}}: The call to cufftDestroy was removed because this call is redundant in SYCL.
   cufftDestroy(plan);
 }

@@ -4820,7 +4820,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   initVars(CE, nullptr, nullptr, Flags, ReplaceStrs, Locations);
   Flags.IsAssigned = IsAssigned;
 
-  std::string Msg = "the function call is redundant in DPC++.";
+  std::string Msg = "this call is redundant in SYCL.";
   if (FuncName == "cusparseCreate" || FuncName == "cusparseDestroy" ||
       FuncName == "cusparseSetStream" || FuncName == "cusparseGetStream") {
     Flags.NeedUseLambda = false;
@@ -5319,7 +5319,7 @@ void RandomFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string IndentStr = getIndent(PrefixInsertLoc, SM).str();
   std::string PrefixInsertStr;
 
-  std::string Msg = "the function call is redundant in DPC++.";
+  std::string Msg = "this call is redundant in SYCL.";
   if (FuncName == "curandSetPseudoRandomGeneratorSeed" ||
       FuncName == "curandSetQuasiRandomGeneratorDimensions") {
     if (IsAssigned) {
@@ -7067,7 +7067,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cublasSetPointerMode_v2" ||
              FuncName == "cublasGetAtomicsMode" ||
              FuncName == "cublasSetAtomicsMode") {
-    std::string Msg = "the function call is redundant in DPC++.";
+    std::string Msg = "this call is redundant in SYCL.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
              MapNames::ITFName.at(FuncName), Msg);
@@ -8372,7 +8372,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   } else if (FuncName == "cudaSetDeviceFlags") {
     std::string Msg =
-        "DPC++ currently does not support setting flags for devices.";
+        "SYCL currently does not support setting flags for devices.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
              MapNames::ITFName.at(FuncName), Msg);
@@ -8385,7 +8385,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaDeviceEnablePeerAccess" ||
              FuncName == "cudaDeviceDisablePeerAccess") {
     std::string Msg =
-        "DPC++ currently does not support memory access across peer devices.";
+        "SYCL currently does not support memory access across peer devices.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
              MapNames::ITFName.at(FuncName), Msg);
@@ -8421,7 +8421,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     printDerefOp(OS, CE->getArg(0));
     emplaceTransformation(new ReplaceStmt(CE, OS.str()));
     report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false, FuncName,
-           "there is no correspoinding API in DPC++.");
+           "there is no correspoinding API in SYCL.");
   } else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected function name: " << FuncName;
@@ -15328,11 +15328,11 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cufftCreate" || FuncName == "cufftDestroy") {
     if (IsAssigned) {
       report(Locations.PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false,
-             FuncName, "the function call is redundant in DPC++.");
+             FuncName, "this call is redundant in SYCL.");
       emplaceTransformation(new ReplaceStmt(CE, false, "0"));
     } else {
       report(Locations.PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED, false,
-             FuncName, "the function call is redundant in DPC++.");
+             FuncName, "this call is redundant in SYCL.");
       emplaceTransformation(new ReplaceStmt(CE, false, ""));
     }
     return;
@@ -15725,7 +15725,7 @@ void DriverContextAPIRule::runRule(
     OS << "(";
   }
   if (APIName == "cuInit") {
-    std::string Msg = "the function call is redundant in DPC++.";
+    std::string Msg = "this call is redundant in SYCL.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
              APIName, Msg);
@@ -15760,7 +15760,7 @@ void DriverContextAPIRule::runRule(
     }
     CallEnd = CallEnd.getLocWithOffset(1);
 
-    std::string Msg = "the function call is redundant in DPC++.";
+    std::string Msg = "this call is redundant in SYCL.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
              APIName, Msg);

@@ -222,7 +222,7 @@ int e = cudaGetLastError();
 // CHECK-NEXT:*/
 // CHECK-NEXT: int e1 = 0;
 // CHECK-NEXT:/*
-// CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cudaPeekAtLastError was removed because the function call is redundant in DPC++.
+// CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to cudaPeekAtLastError was removed because this call is redundant in SYCL.
 // CHECK-NEXT:*/
 // CHECK-NEXT:dpct::get_current_device().queues_wait_and_throw();
 int e1 = cudaPeekAtLastError();

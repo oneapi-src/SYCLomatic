@@ -22,7 +22,7 @@ void update(float* randvals, curandGenerator_t rng, long long nx, long long ny) 
 //CHECK-NEXT:   std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
 //CHECK-NEXT:   rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(dpct::get_default_queue(), seed);
 //CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because the function call is redundant in DPC++.
+//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
 //CHECK-NEXT:   */
 //CHECK-NEXT:   float *randvals;
 //CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, nx*ny/2, randvals);

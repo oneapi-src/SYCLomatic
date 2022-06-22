@@ -28,7 +28,7 @@ CONDITIONAL_FACTORY_ENTRY(
         "cudaGetLastError",
         TOSTRING_FACTORY_ENTRY("cudaGetLastError", LITERAL("")),
         Diagnostics::FUNC_CALL_REMOVED, std::string("cudaGetLastError"),
-        std::string("the function call is redundant in DPC++.")),
+        std::string("this call is redundant in SYCL.")),
     WARNING_FACTORY_ENTRY(
         "cudaGetLastError",
         TOSTRING_FACTORY_ENTRY("cudaGetLastError", LITERAL("0")),
@@ -40,7 +40,7 @@ CONDITIONAL_FACTORY_ENTRY(
         "cudaPeekAtLastError",
         TOSTRING_FACTORY_ENTRY("cudaPeekAtLastError", LITERAL("")),
         Diagnostics::FUNC_CALL_REMOVED, std::string("cudaPeekAtLastError"),
-        std::string("the function call is redundant in DPC++.")),
+        std::string("this call is redundant in SYCL.")),
     WARNING_FACTORY_ENTRY(
         "cudaPeekAtLastError",
         TOSTRING_FACTORY_ENTRY("cudaPeekAtLastError", LITERAL("0")),

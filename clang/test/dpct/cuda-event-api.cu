@@ -11,7 +11,7 @@ void my_error_checker(T ReturnValue, char const *const FuncName) {
 #define MY_ERROR_CHECKER(CALL) my_error_checker((CALL), #CALL)
 
 //CHECK: /*
-//CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed because this call is redundant in DPC++.
+//CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed because this call is redundant in SYCL.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define CudaEvent(X)
 #define CudaEvent(X) cudaEventCreate(&X)
@@ -34,10 +34,10 @@ int main(int argc, char* argv[]) {
   // CHECK: std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
   // CHECK-EMPTY:
   // CHECK: /*
-  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed because this call is redundant in DPC++.
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed because this call is redundant in SYCL.
   // CHECK: */
   // CHECK: /*
-  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed because this call is redundant in DPC++.
+  // CHECK: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed because this call is redundant in SYCL.
   // CHECK: */
   // CHECK-EMPTY:
   // CHECK-NEXT: float elapsed_time;
@@ -67,11 +67,11 @@ int main(int argc, char* argv[]) {
   printf(">>>\n");
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0 because this call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0 because this call is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: MY_ERROR_CHECKER(0);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0 because this call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0 because this call is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: int et = 0;
   MY_ERROR_CHECKER(cudaEventCreate(&start));
@@ -242,7 +242,7 @@ int main(int argc, char* argv[]) {
   kernelFunc<<<blocks,threads>>>();
 
   // CHECK:/*
-  // CHECK-NEXT:  DPCT1026:{{[0-9a-z]+}}: The call to cudaEventCreate was removed because this call is redundant in DPC++.
+  // CHECK-NEXT:  DPCT1026:{{[0-9a-z]+}}: The call to cudaEventCreate was removed because this call is redundant in SYCL.
   // CHECK-NEXT:  */
   cudaEventCreate(&stop);
 
@@ -313,17 +313,17 @@ int main(int argc, char* argv[]) {
   // CHECK: dev_ct1.queues_wait_and_throw();
   // CHECK-EMPTY:
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventDestroy was removed because this call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventDestroy was removed because this call is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventDestroy was removed because this call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventDestroy was removed because this call is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventDestroy was replaced with 0 because this call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventDestroy was replaced with 0 because this call is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: MY_ERROR_CHECKER(0);
   // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventDestroy was replaced with 0 because this call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cudaEventDestroy was replaced with 0 because this call is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: et = 0;
   // CHECK-NEXT: }
