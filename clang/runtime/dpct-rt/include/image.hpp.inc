@@ -1087,9 +1087,45 @@ public:
 // DPCT_DEPENDENCY_BEGIN
 // Image|image_wrapper_base
 // Image|image_wrapper_base_set_data
+// Image|image_matrix
+// Image|image_data
+// Image|image_channel
+// Image|image_wrapper_base_set_channel
+// Image|image_wrapper_base_get_channel
+// Image|image_wrapper_base_attach
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void attach(image_data data) { set_data(data); }
+  /// Attach matrix data to this class.
+  void attach(image_matrix *matrix) {
+    detach();
+    image_wrapper_base::set_data(image_data(matrix));
+  }
+  /// Attach matrix data to this class.
+  void attach(image_matrix *matrix, image_channel channel) {
+    attach(matrix);
+    image_wrapper_base::set_channel(channel);
+  }
+  /// Attach linear data to this class.
+  void attach(const void *ptr, size_t count) {
+    attach(ptr, count, get_channel());
+  }
+  /// Attach linear data to this class.
+  void attach(const void *ptr, size_t count, image_channel channel) {
+    detach();
+    image_wrapper_base::set_data(image_data(const_cast<void *>(ptr), count, channel));
+  }
+  /// Attach 2D data to this class.
+  void attach(const void *data, size_t x, size_t y, size_t pitch) {
+    attach(data, x, y, pitch, get_channel());
+  }
+  /// Attach 2D data to this class.
+  void attach(const void *data, size_t x, size_t y, size_t pitch, image_channel channel) {
+    detach();
+    image_wrapper_base::set_data(image_data(const_cast<void *>(data), x * sizeof(T), y, pitch, channel));
+  }
+  /// Detach data.
+  virtual void detach() {}
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|image_wrapper_base_get_sampling_info|dpct
@@ -1433,56 +1469,16 @@ public:
     return accessor_t(*_image, cgh);
   }
 // DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|image_wrapper_attach|dpct
-// DPCT_PARENT_FEATURE|image_wrapper
-// DPCT_DEPENDENCY_BEGIN
-// Image|image_wrapper
-// Image|image_matrix
-// Image|image_data
-// Image|image_wrapper_base_set_data
-// Image|image_channel
-// Image|image_wrapper_base_set_channel
-// Image|image_wrapper_base_get_channel
-// Image|image_wrapper_base_attach
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-  /// Attach matrix data to this class.
-  void attach(image_matrix *matrix) {
-    detach();
-    image_wrapper_base::set_data(image_data(matrix));
-  }
-  /// Attach matrix data to this class.
-  void attach(image_matrix *matrix, image_channel channel) {
-    attach(matrix);
-    image_wrapper_base::set_channel(channel);
-  }
-  /// Attach linear data to this class.
-  void attach(const void *ptr, size_t count) {
-    attach(ptr, count, get_channel());
-  }
-  /// Attach linear data to this class.
-  void attach(const void *ptr, size_t count, image_channel channel) {
-    detach();
-    image_wrapper_base::set_data(image_data(const_cast<void *>(ptr), count, channel));
-  }
-  /// Attach 2D data to this class.
-  void attach(const void *data, size_t x, size_t y, size_t pitch) {
-    attach(data, x, y, pitch, get_channel());
-  }
-  /// Attach 2D data to this class.
-  void attach(const void *data, size_t x, size_t y, size_t pitch, image_channel channel) {
-    detach();
-    image_wrapper_base::set_data(image_data(const_cast<void *>(data), x * sizeof(T), y, pitch, channel));
-  }
-// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|image_wrapper_1|dpct
 // DPCT_PARENT_FEATURE|image_wrapper
 // DPCT_DEPENDENCY_BEGIN
 // Image|image_wrapper
+// Image|image_wrapper_base_attach
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /// Detach data.
-  void detach() {
+  void detach() override {
     if (_image)
       delete _image;
     _image = nullptr;
