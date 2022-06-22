@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Image/api_test12_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Image/api_test12_out
 
-// CHECK: 72
+// CHECK: 74
 // TEST_FEATURE: Image_image_wrapper_base_get_sampling_info
 // TEST_FEATURE: Image_image_wrapper_base_get_addressing_mode
 // TEST_FEATURE: Image_image_wrapper_base_get_channel
