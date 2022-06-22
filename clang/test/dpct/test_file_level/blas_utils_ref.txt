@@ -1,5 +1,9 @@
 //     CHECK:inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
 //CHECK-NEXT:                                int lda, int *ipiv, int *info, int batch_size) {
+//CHECK-NEXT:  if (ipiv == nullptr) {
+//CHECK-NEXT:    detail::getrfnp_batch_wrapper(exec_queue, n, a, lda, info, batch_size);
+//CHECK-NEXT:    return;
+//CHECK-NEXT:  }
 //CHECK-NEXT:  using Ty = typename DataType<T>::T2;
 //CHECK-NEXT:  // Set the info array value to 0
 //CHECK-NEXT:  detail::dpct_memset(exec_queue, info, 0, sizeof(int) * batch_size);

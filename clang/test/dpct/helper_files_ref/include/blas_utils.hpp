@@ -437,6 +437,92 @@ trsm_batch_impl(cl::sycl::queue &q, oneapi::mkl::side left_right,
   });
 }
 
+template <typename T>
+inline void getrfnp_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
+                                  int lda, int *info, int batch_size) {
+  using Ty = typename DataType<T>::T2;
+  // Set the info array value to 0
+  detail::dpct_memset(exec_queue, info, 0, sizeof(int) * batch_size);
+#ifdef DPCT_USM_LEVEL_NONE
+  std::int64_t stride_a = n * lda;
+  std::int64_t scratchpad_size =
+      oneapi::mkl::lapack::getrfnp_batch_scratchpad_size<Ty>(
+          exec_queue, n, n, lda, stride_a, batch_size);
+
+  T *a_buffer_ptr;
+  a_buffer_ptr = (T *)dpct::dpct_malloc(stride_a * batch_size * sizeof(T));
+
+  T **host_a = (T **)malloc(batch_size * sizeof(T *));
+  dpct::dpct_memcpy(host_a, a, batch_size * sizeof(T *));
+  for (std::int64_t i = 0; i < batch_size; ++i)
+    dpct::dpct_memcpy(a_buffer_ptr + i * stride_a, host_a[i],
+                      n * lda * sizeof(T));
+
+  {
+    cl::sycl::buffer<Ty, 1> scratchpad{cl::sycl::range<1>(scratchpad_size)};
+    auto a_buffer = get_buffer<Ty>(a_buffer_ptr);
+    oneapi::mkl::lapack::getrfnp_batch(exec_queue, n, n, a_buffer, lda,
+                                       stride_a, batch_size, scratchpad,
+                                       scratchpad_size);
+  }
+
+  // Copy back to the original buffers
+  std::vector<cl::sycl::event> events;
+  for (std::int64_t i = 0; i < batch_size; ++i)
+    events.push_back(detail::dpct_memcpy(exec_queue, host_a[i],
+                                         a_buffer_ptr + i * stride_a,
+                                         n * lda * sizeof(T), automatic));
+
+  std::vector<void *> ptrs{host_a};
+  std::thread mem_free_thread(
+      [=](std::vector<void *> pointers_array,
+          std::vector<cl::sycl::event> events_array) {
+        cl::sycl::event::wait(events_array);
+        for (auto p : pointers_array)
+          free(p);
+      },
+      ptrs, events);
+  mem_free_thread.detach();
+#else
+  std::int64_t stride_a = n * lda;
+  std::int64_t scratchpad_size =
+      oneapi::mkl::lapack::getrfnp_batch_scratchpad_size<Ty>(
+          exec_queue, n, n, lda, stride_a, batch_size);
+
+  Ty *scratchpad = cl::sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
+  Ty *a_strided_mem =
+      cl::sycl::malloc_device<Ty>(stride_a * batch_size, exec_queue);
+
+  T **host_a = (T **)malloc(batch_size * sizeof(T *));
+  dpct::dpct_memcpy(host_a, a, batch_size * sizeof(T *));
+  for (std::int64_t i = 0; i < batch_size; ++i)
+    dpct::dpct_memcpy(a_strided_mem + i * stride_a, host_a[i],
+                      n * lda * sizeof(T));
+
+  cl::sycl::event e = oneapi::mkl::lapack::getrfnp_batch(
+      exec_queue, n, n, a_strided_mem, lda, stride_a, batch_size, scratchpad,
+      scratchpad_size);
+
+  // Copy back to the original memory
+  std::vector<cl::sycl::event> events;
+  for (std::int64_t i = 0; i < batch_size; ++i)
+    events.push_back(detail::dpct_memcpy(exec_queue, host_a[i],
+                                         a_strided_mem + i * stride_a,
+                                         n * lda * sizeof(T), automatic, {e}));
+
+  std::vector<void *> ptrs{scratchpad, a_strided_mem};
+  dpct::async_dpct_free(ptrs, events, exec_queue);
+
+  std::thread mem_free_thread(
+      [=](void *pointer, std::vector<cl::sycl::event> events_array) {
+        cl::sycl::event::wait(events_array);
+        free(pointer);
+      },
+      host_a, events);
+  mem_free_thread.detach();
+#endif
+}
+
 } // namespace detail
 
 inline oneapi::mkl::transpose get_transpose(int t) {
@@ -456,12 +542,17 @@ inline oneapi::mkl::transpose get_transpose(int t) {
 /// overwritten by lower triangulars with unit diagonal elements and upper
 /// triangulars.
 /// \param [in] lda The leading dimension of the matrices.
-/// \param [out] ipiv An array stores the pivot indices.
+/// \param [out] ipiv An array stores the pivot indices. If \p ipiv is nullptr,
+/// non-pivoting LU factorization is computed.
 /// \param [out] info An array stores the error information.
 /// \param [in] batch_size The size of the batch.
 template <typename T>
 inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
                                 int lda, int *ipiv, int *info, int batch_size) {
+  if (ipiv == nullptr) {
+    detail::getrfnp_batch_wrapper(exec_queue, n, a, lda, info, batch_size);
+    return;
+  }
   using Ty = typename DataType<T>::T2;
   // Set the info array value to 0
   detail::dpct_memset(exec_queue, info, 0, sizeof(int) * batch_size);
