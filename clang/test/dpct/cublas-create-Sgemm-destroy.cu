@@ -18,7 +18,7 @@ cublasStatus_t bar (cublasStatus_t s){
 // CHECK: extern sycl::queue* handle2;
 extern cublasHandle_t handle2;
 
-// CHECK: int foo2(int DT)  try {
+// CHECK: int foo2(dpct::library_data_t DT)  try {
 int foo2(cudaDataType DT) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
@@ -57,8 +57,8 @@ int foo2(cudaDataType DT) {
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetPointerMode was removed because the function call is redundant in DPC++.
   //CHECK-NEXT: */
-  //CHECK-NEXT: int cdt;
-  //CHECK-NEXT: int cbdt;
+  //CHECK-NEXT: dpct::library_data_t cdt;
+  //CHECK-NEXT: dpct::library_data_t cbdt;
   cublasPointerMode_t mode = CUBLAS_POINTER_MODE_HOST;
   cublasGetPointerMode(handle, &mode);
   cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
