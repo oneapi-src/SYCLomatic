@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Image/api_test15_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Image/api_test15_out
 
-// CHECK: 69
+// CHECK: 71
 // TEST_FEATURE: Image_create_image_wrapper
 // TEST_FEATURE: Image_image_wrapper_base_set_sampling_info
 

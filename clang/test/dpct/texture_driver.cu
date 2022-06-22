@@ -253,4 +253,17 @@ void test_texref() {
   cudaCheck(cuTexRefSetArray(tex, arr, CU_TRSA_OVERRIDE_FORMAT));
   func(cuTexRefSetArray(tex,arr, CU_TRSA_OVERRIDE_FORMAT));
   funcT(cuTexRefSetArray(tex,arr, CU_TRSA_OVERRIDE_FORMAT));
+
+  // CHECK: char * dptr;
+  // CHECK-Next: size_t s, b;
+  // CHECK-Next: tex->attach(dptr, b);
+  // CHECK-Next: size_t desc_x_ct1, desc_y_ct1;
+  // CHECK-Next: unsigned desc_channel_num_ct1;
+  // CHECK-Next: sycl::image_channel_type desc_channel_type_ct1;
+  // CHECK-Next: tex->attach(dptr, desc_x_ct1, desc_y_ct1, b);
+  CUdeviceptr dptr;
+  size_t s, b;
+  cuTexRefSetAddress(&s, tex, dptr, b);
+  CUDA_ARRAY_DESCRIPTOR desc;
+  cuTexRefSetAddress2D(tex, &desc, dptr, b);
 }
