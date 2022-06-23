@@ -15,6 +15,43 @@ FEATURE_REQUEST_FACTORY(
                             ARG(0))))
 
 CONDITIONAL_FACTORY_ENTRY(
+NeedExtraParens(0),
+CONDITIONAL_FACTORY_ENTRY(
+    CheckArgType(1, "struct curandStateMRG32k3a *"),
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::RngUtils_rng_generator_get_engine,
+        CALL_FACTORY_ENTRY(
+            "skipahead_sequence",
+            CALL("oneapi::mkl::rng::device::skip_ahead",
+                 MEMBER_CALL(DEREF(makeDerefArgCreatorWithCall(1)),
+                                        false, "get_engine"),
+                 makeCombinedArg(makeCombinedArg(ARG("{0, ("), ARG(0)),
+                                 ARG(") * (std::uint64_t(1) << 63)}"))))),
+    CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "struct curandStatePhilox4_32_10 *"),
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::RngUtils_rng_generator_get_engine,
+            CALL_FACTORY_ENTRY(
+                "skipahead_sequence",
+                CALL("oneapi::mkl::rng::device::skip_ahead",
+                     MEMBER_CALL(DEREF(makeDerefArgCreatorWithCall(1)),
+                                        false, "get_engine"),
+                     makeCombinedArg(
+                         makeCombinedArg(ARG("{0, static_cast<std::uint64_t>(("),
+                                         ARG(0)),
+                         ARG(") * 4)}"))))),
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::RngUtils_rng_generator_get_engine,
+            CALL_FACTORY_ENTRY(
+                "skipahead_sequence",
+                CALL("oneapi::mkl::rng::device::skip_ahead",
+                     MEMBER_CALL(DEREF(makeDerefArgCreatorWithCall(1)),
+                                        false, "get_engine"),
+                     makeCombinedArg(
+                         makeCombinedArg(ARG("{0, static_cast<std::uint64_t>(("),
+                                         ARG(0)),
+                         ARG(") * 8)}"))))))),
+CONDITIONAL_FACTORY_ENTRY(
     CheckArgType(1, "struct curandStateMRG32k3a *"),
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::RngUtils_rng_generator_get_engine,
@@ -49,7 +86,21 @@ CONDITIONAL_FACTORY_ENTRY(
                          makeCombinedArg(ARG("{0, static_cast<std::uint64_t>("),
                                          ARG(0)),
                          ARG(" * 8)}")))))))
+)
 
+CONDITIONAL_FACTORY_ENTRY(
+NeedExtraParens(0),
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::RngUtils_rng_generator_get_engine,
+    CALL_FACTORY_ENTRY(
+        "skipahead_subsequence",
+        CALL("oneapi::mkl::rng::device::skip_ahead",
+             MEMBER_CALL(DEREF(makeDerefArgCreatorWithCall(1)),
+                                        false, "get_engine"),
+             makeCombinedArg(
+                 makeCombinedArg(ARG("{0, static_cast<std::uint64_t>(("),
+                                 ARG(0)),
+                 ARG(") * 8)}"))))),
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_get_engine,
     CALL_FACTORY_ENTRY(
@@ -61,6 +112,7 @@ FEATURE_REQUEST_FACTORY(
                  makeCombinedArg(ARG("{0, static_cast<std::uint64_t>("),
                                  ARG(0)),
                  ARG(" * 8)}")))))
+)
 
 // bits
 FEATURE_REQUEST_FACTORY(

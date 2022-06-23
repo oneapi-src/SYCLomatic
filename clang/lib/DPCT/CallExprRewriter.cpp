@@ -2434,6 +2434,13 @@ std::function<std::string(const CallExpr *)> MemberExprBase() {
   };
 }
 
+class NeedExtraParens {
+  unsigned Idx;
+public:
+  NeedExtraParens(unsigned I) : Idx(I) {}
+  bool operator()(const CallExpr *C) { return needExtraParens(C->getArg(Idx)); }
+};
+
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
 #define INSERT_AROUND_FACTORY(x, PREFIX, SUFFIX)                               \
   createInsertAroundFactory(x PREFIX, SUFFIX),

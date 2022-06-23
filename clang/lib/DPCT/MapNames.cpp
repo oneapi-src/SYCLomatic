@@ -187,9 +187,20 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cublasStatus", std::make_shared<TypeNameRule>("int")},
       {"cublasGemmAlgo_t", std::make_shared<TypeNameRule>("int")},
-      {"cudaDataType_t", std::make_shared<TypeNameRule>("int")},
-      {"cudaDataType", std::make_shared<TypeNameRule>("int")},
-      {"cublasDataType_t", std::make_shared<TypeNameRule>("int")},
+      {"cudaDataType_t", std::make_shared<TypeNameRule>(
+                             getDpctNamespace() + "library_data_t",
+                             HelperFeatureEnum::LibCommonUtils_library_data_t)},
+      {"cudaDataType", std::make_shared<TypeNameRule>(
+                           getDpctNamespace() + "library_data_t",
+                           HelperFeatureEnum::LibCommonUtils_library_data_t)},
+      {"cublasDataType_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "library_data_t",
+           HelperFeatureEnum::LibCommonUtils_library_data_t)},
+      {"cublasComputeType_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "library_data_t",
+           HelperFeatureEnum::LibCommonUtils_library_data_t)},
       {"cuComplex",
        std::make_shared<TypeNameRule>(getClNamespace() + "float2")},
       {"cuFloatComplex",

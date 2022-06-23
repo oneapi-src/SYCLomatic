@@ -5701,6 +5701,9 @@ void DeviceRandomFunctionCallRule::runRule(
       Factor = "4";
     }
 
+    if (needExtraParens(CE->getArg(1))) {
+      RNGSubseq = "(" + RNGSubseq + ")";
+    }
     if (IsRNGSubseqLiteral) {
       SecondOffsetArg = RNGSubseq + " * " + Factor;
     } else {
