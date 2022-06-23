@@ -75,8 +75,9 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
         CALL(MapNames::getDpctNamespace() + "gemm_batch", DEREF(makeDerefArgCreatorWithCall(0)),
              BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
              BLAS_ENUM_ARG(2, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
-             ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
-             ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(17), ARG(18)))))
+             ARG(3), ARG(4), ARG(5), ARG(6), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("void"), ARG(7), BOOL(true), BOOL(false)), ARG(8), ARG(9),
+             ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("void"), ARG(10), BOOL(true), BOOL(false)),
+             ARG(11), ARG(12), ARG(13), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("void"), ARG(14), BOOL(false), BOOL(false)), ARG(15), ARG(16), ARG(17), ARG(18)))))
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::BlasUtils_gemm_batch_stride,
@@ -289,3 +290,131 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
              ARG(3), ARG(4), ARG(5), ARG(6), CAST(makeLiteral("const void**"), ARG(7)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"), ARG(8), CAST(makeLiteral("const void**"), ARG(9)),
              ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"), ARG(10), ARG(11), CAST(makeLiteral("void**"), ARG(12)), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"),
              ARG(13), ARG(14), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double")))))
+
+// getrf
+WARNING_FACTORY_ENTRY("cublasSgetrfBatched",
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_getrf_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasSgetrfBatched",
+        CALL(MapNames::getDpctNamespace() + "getrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             ARG(1), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("float"), ARG(2), BOOL(false), BOOL(false)), ARG(3), ARG(4), ARG(5), ARG(6))))),
+Diagnostics::DIFFERENT_LU_FACTORIZATION, ARG(4), ARG(MapNames::getDpctNamespace() + "getrf_batch_wrapper"), ARG("cublasSgetrfBatched"))
+WARNING_FACTORY_ENTRY("cublasDgetrfBatched",
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_getrf_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasDgetrfBatched",
+        CALL(MapNames::getDpctNamespace() + "getrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             ARG(1), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("double"), ARG(2), BOOL(false), BOOL(false)), ARG(3), ARG(4), ARG(5), ARG(6))))),
+Diagnostics::DIFFERENT_LU_FACTORIZATION, ARG(4), ARG(MapNames::getDpctNamespace() + "getrf_batch_wrapper"), ARG("cublasDgetrfBatched"))
+WARNING_FACTORY_ENTRY("cublasCgetrfBatched",
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_getrf_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasCgetrfBatched",
+        CALL(MapNames::getDpctNamespace() + "getrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             ARG(1), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral(MapNames::getClNamespace() + "float2"), ARG(2), BOOL(false), BOOL(false)), ARG(3), ARG(4), ARG(5), ARG(6))))),
+Diagnostics::DIFFERENT_LU_FACTORIZATION, ARG(4), ARG(MapNames::getDpctNamespace() + "getrf_batch_wrapper"), ARG("cublasCgetrfBatched"))
+WARNING_FACTORY_ENTRY("cublasZgetrfBatched",
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_getrf_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasZgetrfBatched",
+        CALL(MapNames::getDpctNamespace() + "getrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             ARG(1), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(2), BOOL(false), BOOL(false)), ARG(3), ARG(4), ARG(5), ARG(6))))),
+Diagnostics::DIFFERENT_LU_FACTORIZATION, ARG(4), ARG(MapNames::getDpctNamespace() + "getrf_batch_wrapper"), ARG("cublasZgetrfBatched"))
+
+// getrs
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_getrs_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasSgetrsBatched",
+        CALL(MapNames::getDpctNamespace() + "getrs_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             ARG(2), ARG(3), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("float"), ARG(4), BOOL(true), BOOL(false)),
+             ARG(5), ARG(6), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("float"), ARG(7), BOOL(false), BOOL(false)), ARG(8), ARG(9), ARG(10)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_getrs_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasDgetrsBatched",
+        CALL(MapNames::getDpctNamespace() + "getrs_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             ARG(2), ARG(3), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("double"), ARG(4), BOOL(true), BOOL(false)),
+             ARG(5), ARG(6), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("double"), ARG(7), BOOL(false), BOOL(false)), ARG(8), ARG(9), ARG(10)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_getrs_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasCgetrsBatched",
+        CALL(MapNames::getDpctNamespace() + "getrs_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             ARG(2), ARG(3), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral(MapNames::getClNamespace() + "float2"), ARG(4), BOOL(true), BOOL(false)),
+             ARG(5), ARG(6), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral(MapNames::getClNamespace() + "float2"), ARG(7), BOOL(false), BOOL(false)), ARG(8), ARG(9), ARG(10)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_getrs_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasZgetrsBatched",
+        CALL(MapNames::getDpctNamespace() + "getrs_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             BLAS_ENUM_ARG(1, clang::dpct::BLASEnumExpr::BLASEnumType::Trans),
+             ARG(2), ARG(3), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(4), BOOL(true), BOOL(false)),
+             ARG(5), ARG(6), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(7), BOOL(false), BOOL(false)), ARG(8), ARG(9), ARG(10)))))
+
+// getri
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_getri_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasSgetriBatched",
+        CALL(MapNames::getDpctNamespace() + "getri_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             ARG(1), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("float"), ARG(2), BOOL(true), BOOL(false)),
+             ARG(3), ARG(4), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("float"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7), ARG(8)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_getri_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasDgetriBatched",
+        CALL(MapNames::getDpctNamespace() + "getri_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             ARG(1), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("double"), ARG(2), BOOL(true), BOOL(false)),
+             ARG(3), ARG(4), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("double"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7), ARG(8)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_getri_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasCgetriBatched",
+        CALL(MapNames::getDpctNamespace() + "getri_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             ARG(1), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral(MapNames::getClNamespace() + "float2"), ARG(2), BOOL(true), BOOL(false)),
+             ARG(3), ARG(4), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral(MapNames::getClNamespace() + "float2"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7), ARG(8)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_getri_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasZgetriBatched",
+        CALL(MapNames::getDpctNamespace() + "getri_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             ARG(1), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(2), BOOL(true), BOOL(false)),
+             ARG(3), ARG(4), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7), ARG(8)))))
+
+// geqrf
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_geqrf_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasSgeqrfBatched",
+        CALL(MapNames::getDpctNamespace() + "geqrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             ARG(1), ARG(2), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("float"), ARG(3), BOOL(false), BOOL(false)), ARG(4),
+             ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("float"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_geqrf_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasDgeqrfBatched",
+        CALL(MapNames::getDpctNamespace() + "geqrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             ARG(1), ARG(2), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("double"), ARG(3), BOOL(false), BOOL(false)), ARG(4),
+             ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral("double"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_geqrf_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasCgeqrfBatched",
+        CALL(MapNames::getDpctNamespace() + "geqrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             ARG(1), ARG(2), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral(MapNames::getClNamespace() + "float2"), ARG(3), BOOL(false), BOOL(false)), ARG(4),
+             ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral(MapNames::getClNamespace() + "float2"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7)))))
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_geqrf_batch_wrapper,
+    CALL_FACTORY_ENTRY(
+        "cublasZgeqrfBatched",
+        CALL(MapNames::getDpctNamespace() + "geqrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
+             ARG(1), ARG(2), ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(3), BOOL(false), BOOL(false)), ARG(4),
+             ADD_CONST_TYPE_CAST_IF_NEED(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7)))))

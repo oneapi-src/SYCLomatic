@@ -22,5 +22,40 @@ BLASEnumExpr BLASEnumExpr::create(const Expr *E,
   return BEE;
 }
 
+std::string getPotentialConstTypeCast(const Expr *E,
+                                      const std::string &ElemetTypeStr,
+                                      bool ElementConst, bool PtrConst) {
+  const Expr *InputArg = E->IgnoreImpCasts();
+  QualType PtrPtrType = InputArg->getType();
+  QualType PtrType;
+  if (PtrPtrType->isPointerType()) {
+    PtrType = PtrPtrType->getPointeeType();
+  } else if (PtrPtrType->isArrayType()) {
+    const ArrayType *AT = dyn_cast<ArrayType>(PtrPtrType.getTypePtr());
+    PtrType = AT->getElementType();
+  } else {
+    return "";
+  }
+  bool IsPtrConst = PtrType.isConstQualified();
+
+  QualType ElementType;
+  if (PtrType->isPointerType()) {
+    ElementType = PtrType->getPointeeType();
+  } else if (PtrType->isArrayType()) {
+    const ArrayType *AT = dyn_cast<ArrayType>(PtrType.getTypePtr());
+    ElementType = AT->getElementType();
+  } else {
+    return "";
+  }
+  bool IsElementConst = ElementType.isConstQualified();
+
+  if ((PtrConst == IsPtrConst) && (ElementConst == IsElementConst)) {
+    return "";
+  }
+
+  return "(" + ElemetTypeStr + " " + (ElementConst ? "const *" : "*") +
+         (PtrConst ? "const *" : "*") + ")";
+}
+
 } // namespace dpct
 } // namespace clang

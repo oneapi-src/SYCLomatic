@@ -104,6 +104,15 @@ public:
   static BLASEnumExpr create(const Expr *E, BLASEnumType BET);
 };
 
+// Some batch APIs, the input data parameter has type "T const * const *",
+// but in Intel(R) oneAPI Math Kernel Library (oneMKL), the parameter type
+// should be "T const **".
+// So we need figure out whether the input argument is match the type,
+// "T const **", if not, explicit type-cast is needed.
+std::string getPotentialConstTypeCast(const Expr *E,
+                                      const std::string &ElemetTypeStr,
+                                      bool ElementConst, bool PtrConst);
+
 } // namespace dpct
 } // namespace clang
 
