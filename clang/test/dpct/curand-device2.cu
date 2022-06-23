@@ -211,3 +211,14 @@ int main() {
   kernel3<<<1,1>>>();
   return 0;
 }
+
+__global__ void kernel4() {
+  curandStateMRG32k3a_t rng;
+  //CHECK:rng = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mrg32k3a<4>>(1, {4, static_cast<std::uint64_t>((2 + 3) * 8)});
+  //CHECK-NEXT:oneapi::mkl::rng::device::skip_ahead(rng.get_engine(), {0, (2 + 3) * (std::uint64_t(1) << 63)});
+  //CHECK-NEXT:oneapi::mkl::rng::device::skip_ahead(rng.get_engine(), {0, static_cast<std::uint64_t>((2 + 3) * 8)});
+  curand_init(1, 2 + 3, 4, &rng);
+  skipahead_sequence(2 + 3, &rng);
+  skipahead_subsequence(2 + 3, &rng);
+}
+

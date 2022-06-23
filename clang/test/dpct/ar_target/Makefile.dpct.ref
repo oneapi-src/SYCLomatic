@@ -9,21 +9,35 @@
 // CHECK:TARGET_0_SRC_1 = ./two.cpp
 // CHECK:TARGET_0_OBJ_1 = ./two.o
 // CHECK:TARGET_0_FLAG_1 = ${FLAGS}
-// CHECK:TARGET_0_SRC_2 = ./three.cpp
-// CHECK:TARGET_0_OBJ_2 = ./three.o
-// CHECK:TARGET_0_FLAG_2 = ${FLAGS}
-// CHECK:TARGET_0 := ./full.a
-// CHECK:TARGET :=  ${TARGET_0}
+// CHECK:TARGET_1_SRC_0 = ./one.dp.cpp
+// CHECK:TARGET_1_OBJ_0 = ./one.dp.o
+// CHECK:TARGET_1_FLAG_0 = ${FLAGS}
+// CHECK:TARGET_1_SRC_1 = ./two.cpp
+// CHECK:TARGET_1_OBJ_1 = ./two.o
+// CHECK:TARGET_1_FLAG_1 = ${FLAGS}
+// CHECK:TARGET_1_SRC_2 = ./three.cpp
+// CHECK:TARGET_1_OBJ_2 = ./three.o
+// CHECK:TARGET_1_FLAG_2 = ${FLAGS}
+// CHECK:TARGET_0 := ./foo
+// CHECK:TARGET_1 := ./full.a
+// CHECK:TARGET :=  ${TARGET_0} ${TARGET_1}
 // CHECK:.PHONY:all clean
-// CHECK:OBJS_0 :=  ${TARGET_0_OBJ_0} ${TARGET_0_OBJ_1} ${TARGET_0_OBJ_2}
+// CHECK:OBJS_0 :=  ${TARGET_0_OBJ_0} ${TARGET_0_OBJ_1}
+// CHECK:OBJS_1 :=  ${TARGET_1_OBJ_0} ${TARGET_1_OBJ_1} ${TARGET_1_OBJ_2}
 // CHECK:all: $(TARGET)
 // CHECK:$(TARGET_0): $(OBJS_0)
-// CHECK:	ar -r $@ $^ $(LIB) 
+// CHECK:	dpcpp -o $@ $^ $(LIB) 
 // CHECK:$(TARGET_0_OBJ_0):$(TARGET_0_SRC_0)
 // CHECK:	$(CC) -c ${TARGET_0_SRC_0} -o ${TARGET_0_OBJ_0} $(TARGET_0_FLAG_0)
 // CHECK:$(TARGET_0_OBJ_1):$(TARGET_0_SRC_1)
 // CHECK:	c++ -c ${TARGET_0_SRC_1} -o ${TARGET_0_OBJ_1} $(TARGET_0_FLAG_1)
-// CHECK:$(TARGET_0_OBJ_2):$(TARGET_0_SRC_2)
-// CHECK:	c++ -c ${TARGET_0_SRC_2} -o ${TARGET_0_OBJ_2} $(TARGET_0_FLAG_2)
+// CHECK:$(TARGET_1): $(OBJS_1)
+// CHECK:	ar -r $@ $^ $(LIB) 
+// CHECK:$(TARGET_1_OBJ_0):$(TARGET_1_SRC_0)
+// CHECK:	$(CC) -c ${TARGET_1_SRC_0} -o ${TARGET_1_OBJ_0} $(TARGET_1_FLAG_0)
+// CHECK:$(TARGET_1_OBJ_1):$(TARGET_1_SRC_1)
+// CHECK:	c++ -c ${TARGET_1_SRC_1} -o ${TARGET_1_OBJ_1} $(TARGET_1_FLAG_1)
+// CHECK:$(TARGET_1_OBJ_2):$(TARGET_1_SRC_2)
+// CHECK:	c++ -c ${TARGET_1_SRC_2} -o ${TARGET_1_OBJ_2} $(TARGET_1_FLAG_2)
 // CHECK:clean:
-// CHECK:	rm -f  ${OBJS_0} $(TARGET)
+// CHECK:	rm -f  ${OBJS_0} ${OBJS_1} $(TARGET)
