@@ -594,3 +594,16 @@ namespace {
 cudaComputeMode M;
 cudaComputeMode fun(cudaComputeMode);
 }
+
+// CHECK: void foo_2(dpct::library_data_t a1, dpct::library_data_t a2, dpct::library_data_t a3, dpct::library_data_t a4) {
+// CHECK-NEXT:   dpct::library_data_t b1 = a1;
+// CHECK-NEXT:   dpct::library_data_t b2 = a2;
+// CHECK-NEXT:   dpct::library_data_t b3 = a3;
+// CHECK-NEXT:   dpct::library_data_t b4 = a4;
+// CHECK-NEXT: }
+void foo_2(cudaDataType_t a1, cudaDataType a2, cublasDataType_t a3, cublasComputeType_t a4) {
+  cudaDataType_t b1 = a1;
+  cudaDataType b2 = a2;
+  cublasDataType_t b3 = a3;
+  cublasComputeType_t b4 = a4;
+}
