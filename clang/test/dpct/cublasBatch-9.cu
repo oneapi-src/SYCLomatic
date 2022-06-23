@@ -1,7 +1,7 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/cublasBatch %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/cublasBatch/cublasBatch.dp.cpp --match-full-lines %s
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/cublasBatch-9 %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/cublasBatch-9/cublasBatch-9.dp.cpp --match-full-lines %s
 #include <cstdio>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
