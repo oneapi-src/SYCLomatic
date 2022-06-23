@@ -388,7 +388,7 @@ void MapNames::setExplicitNamespaceMap() {
                            "oneapi::ccl::kvs::address_type",
                            HelperFeatureEnum::CclUtils_create_kvs_address)},
       {"ncclComm_t",
-       std::make_shared<TypeNameRule>("oneapi::ccl::communicator",
+       std::make_shared<TypeNameRule>("oneapi::ccl::communicator *",
                                       HelperFeatureEnum::CclUtils_create_kvs)},
       // ...
   };

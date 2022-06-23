@@ -10,7 +10,7 @@ int main() {
     int version, nranks, rank;
     // CHECK: oneapi::ccl::kvs::address_type id;
     ncclUniqueId id;
-    // CHECK: oneapi::ccl::communicator comm;
+    // CHECK: oneapi::ccl::communicator * comm;
     ncclComm_t comm;
 
     // CHECK: version = dpct::ccl::get_version();
@@ -25,10 +25,10 @@ int main() {
     // CHECK: check((id = dpct::ccl::create_kvs_address(), 0));
     check(ncclGetUniqueId(&id));
 
-    // CHECK: comm = oneapi::ccl::create_communicator(nranks, rank, dpct::ccl::create_kvs(id));
+    // CHECK: comm = new oneapi::ccl::communicator(oneapi::ccl::create_communicator(nranks, rank, dpct::ccl::create_kvs(id)));
     ncclCommInitRank(&comm, nranks, id, rank);
 
-    // CHECK: check((comm = oneapi::ccl::create_communicator(nranks, rank, dpct::ccl::create_kvs(id)), 0));    
+    // CHECK: check((comm = new oneapi::ccl::communicator(oneapi::ccl::create_communicator(nranks, rank, dpct::ccl::create_kvs(id))), 0));    
     check(ncclCommInitRank(&comm, nranks, id, rank));
 
     void *buff;
