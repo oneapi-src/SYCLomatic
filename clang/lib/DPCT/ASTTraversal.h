@@ -1434,43 +1434,6 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-// clang-format off
-// For case like:
-// ...
-// cudaEvent_t *kernelEvent = (cudaEvent_t *) malloc(n_streams * sizeof(cudaEvent_t));
-// ...
-// free(kernelEvent);
-// ...
-// As cudaEvent_t in CUDA side is a pointer, while sycl::event is a object
-// in SYCL side, if the code piece is migrated to:
-// ...
-// sycl::event *kernelEvent;
-// kernelEvent = (sycl::event *)malloc(n_streams * sizeof(sycl::event));
-// ...
-// free(kernelEvent);
-// ...
-// Then, the contractor of the object sycl::event will not be called to
-// initialize this memory allocated.
-//
-// So GlibcMemoryAPIRule is used to migrate malloc/free to C++ new/delete
-// instead in the following:
-// ...
-// sycl::event *kernelEvent = new sycl::event[n_streams];
-// ...
-// delete[] kernelEvent
-// clang-format on
-class GlibcMemoryAPIRule : public NamedMigrationRule<GlibcMemoryAPIRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-
-private:
-  template <typename T> const T *getAncestor(const Stmt *CE);
-  void processMalloc(const Stmt *ReplStmt, const DeclaratorDecl *VD,
-                     const CallExpr *CE);
-  void processFree(const CallExpr *CE);
-};
-
 /// Migration rule for __constant__/__shared__/__device__ memory variables.
 class MemVarRule : public NamedMigrationRule<MemVarRule> {
 public:

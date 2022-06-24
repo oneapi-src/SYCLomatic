@@ -45,6 +45,16 @@ auto exception_handler = [](cl::sycl::exception_list exceptions) {
   }
 };
 
+typedef cl::sycl::event *event_ptr;
+
+
+static void destroy_event(event_ptr &event) {
+  if (event != nullptr) {
+    delete event;
+    event = nullptr;
+  }
+}
+
 class device_info {
 public:
   // get interface
