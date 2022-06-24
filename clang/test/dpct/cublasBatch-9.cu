@@ -33,19 +33,19 @@ void foo1() {
   const cuComplex *const *Aarray_Cc = 0;
   const cuDoubleComplex *const *Aarray_Zc = 0;
 
-  //CHECK:dpct::getrs_batch_wrapper(*handle, oneapi::mkl::transpose::nontrans, n, nrhs, (float const **)Aarray_Sc, lda, PivotArray, Barray_S, ldb, infoArray, batchSize);
-  //CHECK-NEXT:dpct::getrs_batch_wrapper(*handle, oneapi::mkl::transpose::nontrans, n, nrhs, (double const **)Aarray_Dc, lda, PivotArray, Barray_D, ldb, infoArray, batchSize);
-  //CHECK-NEXT:dpct::getrs_batch_wrapper(*handle, oneapi::mkl::transpose::nontrans, n, nrhs, (sycl::float2 const **)Aarray_Cc, lda, PivotArray, Barray_C, ldb, infoArray, batchSize);
-  //CHECK-NEXT:dpct::getrs_batch_wrapper(*handle, oneapi::mkl::transpose::nontrans, n, nrhs, (sycl::double2 const **)Aarray_Zc, lda, PivotArray, Barray_Z, ldb, infoArray, batchSize);
+  //CHECK:dpct::getrs_batch_wrapper(*handle, oneapi::mkl::transpose::nontrans, n, nrhs, const_cast<float const **>(Aarray_Sc), lda, PivotArray, Barray_S, ldb, infoArray, batchSize);
+  //CHECK-NEXT:dpct::getrs_batch_wrapper(*handle, oneapi::mkl::transpose::nontrans, n, nrhs, const_cast<double const **>(Aarray_Dc), lda, PivotArray, Barray_D, ldb, infoArray, batchSize);
+  //CHECK-NEXT:dpct::getrs_batch_wrapper(*handle, oneapi::mkl::transpose::nontrans, n, nrhs, const_cast<sycl::float2 const **>(Aarray_Cc), lda, PivotArray, Barray_C, ldb, infoArray, batchSize);
+  //CHECK-NEXT:dpct::getrs_batch_wrapper(*handle, oneapi::mkl::transpose::nontrans, n, nrhs, const_cast<sycl::double2 const **>(Aarray_Zc), lda, PivotArray, Barray_Z, ldb, infoArray, batchSize);
   cublasSgetrsBatched(handle, CUBLAS_OP_N, n, nrhs, Aarray_Sc, lda, PivotArray, Barray_S, ldb, infoArray, batchSize);
   cublasDgetrsBatched(handle, CUBLAS_OP_N, n, nrhs, Aarray_Dc, lda, PivotArray, Barray_D, ldb, infoArray, batchSize);
   cublasCgetrsBatched(handle, CUBLAS_OP_N, n, nrhs, Aarray_Cc, lda, PivotArray, Barray_C, ldb, infoArray, batchSize);
   cublasZgetrsBatched(handle, CUBLAS_OP_N, n, nrhs, Aarray_Zc, lda, PivotArray, Barray_Z, ldb, infoArray, batchSize);
 
-  //CHECK:dpct::getri_batch_wrapper(*handle, n, (float const **)Aarray_Sc, lda, PivotArray, Carray_S, ldc, infoArray, batchSize);
-  //CHECK-NEXT:dpct::getri_batch_wrapper(*handle, n, (double const **)Aarray_Dc, lda, PivotArray, Carray_D, ldc, infoArray, batchSize);
-  //CHECK-NEXT:dpct::getri_batch_wrapper(*handle, n, (sycl::float2 const **)Aarray_Cc, lda, PivotArray, Carray_C, ldc, infoArray, batchSize);
-  //CHECK-NEXT:dpct::getri_batch_wrapper(*handle, n, (sycl::double2 const **)Aarray_Zc, lda, PivotArray, Carray_Z, ldc, infoArray, batchSize);
+  //CHECK:dpct::getri_batch_wrapper(*handle, n, const_cast<float const **>(Aarray_Sc), lda, PivotArray, Carray_S, ldc, infoArray, batchSize);
+  //CHECK-NEXT:dpct::getri_batch_wrapper(*handle, n, const_cast<double const **>(Aarray_Dc), lda, PivotArray, Carray_D, ldc, infoArray, batchSize);
+  //CHECK-NEXT:dpct::getri_batch_wrapper(*handle, n, const_cast<sycl::float2 const **>(Aarray_Cc), lda, PivotArray, Carray_C, ldc, infoArray, batchSize);
+  //CHECK-NEXT:dpct::getri_batch_wrapper(*handle, n, const_cast<sycl::double2 const **>(Aarray_Zc), lda, PivotArray, Carray_Z, ldc, infoArray, batchSize);
   cublasSgetriBatched(handle, n, Aarray_Sc, lda, PivotArray, Carray_S, ldc, infoArray, batchSize);
   cublasDgetriBatched(handle, n, Aarray_Dc, lda, PivotArray, Carray_D, ldc, infoArray, batchSize);
   cublasCgetriBatched(handle, n, Aarray_Cc, lda, PivotArray, Carray_C, ldc, infoArray, batchSize);

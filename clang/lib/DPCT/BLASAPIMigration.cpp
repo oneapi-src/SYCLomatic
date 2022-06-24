@@ -22,39 +22,38 @@ BLASEnumExpr BLASEnumExpr::create(const Expr *E,
   return BEE;
 }
 
-std::string getPotentialConstTypeCast(const Expr *E,
-                                      const std::string &ElemetTypeStr,
-                                      bool ElementConst, bool PtrConst) {
+bool checkConstQualifierInDoublePointerType(
+    const Expr *E, bool IsBaseValueNeedConst /* <T [DoesHereHasConst] * *> */,
+    bool IsFirstLevelPointerNeedConst /* <T * [DoesHereHasConst] *> */) {
   const Expr *InputArg = E->IgnoreImpCasts();
-  QualType PtrPtrType = InputArg->getType();
-  QualType PtrType;
-  if (PtrPtrType->isPointerType()) {
-    PtrType = PtrPtrType->getPointeeType();
-  } else if (PtrPtrType->isArrayType()) {
-    const ArrayType *AT = dyn_cast<ArrayType>(PtrPtrType.getTypePtr());
-    PtrType = AT->getElementType();
+  QualType InputArgPtrPtrType = InputArg->getType();
+  QualType InputArgPtrType;
+  if (InputArgPtrPtrType->isPointerType()) {
+    InputArgPtrType = InputArgPtrPtrType->getPointeeType();
+  } else if (InputArgPtrPtrType->isArrayType()) {
+    const ArrayType *AT = dyn_cast<ArrayType>(InputArgPtrPtrType.getTypePtr());
+    InputArgPtrType = AT->getElementType();
   } else {
-    return "";
+    return false;
   }
-  bool IsPtrConst = PtrType.isConstQualified();
+  bool IsInputArgPtrConst = InputArgPtrType.isConstQualified();
 
-  QualType ElementType;
-  if (PtrType->isPointerType()) {
-    ElementType = PtrType->getPointeeType();
-  } else if (PtrType->isArrayType()) {
-    const ArrayType *AT = dyn_cast<ArrayType>(PtrType.getTypePtr());
-    ElementType = AT->getElementType();
+  QualType InputArgBaseValueType;
+  if (InputArgPtrType->isPointerType()) {
+    InputArgBaseValueType = InputArgPtrType->getPointeeType();
+  } else if (InputArgPtrType->isArrayType()) {
+    const ArrayType *AT = dyn_cast<ArrayType>(InputArgPtrType.getTypePtr());
+    InputArgBaseValueType = AT->getElementType();
   } else {
-    return "";
+    return false;
   }
-  bool IsElementConst = ElementType.isConstQualified();
+  bool IsInputArgBaseValueConst = InputArgBaseValueType.isConstQualified();
 
-  if ((PtrConst == IsPtrConst) && (ElementConst == IsElementConst)) {
-    return "";
+  if ((IsFirstLevelPointerNeedConst == IsInputArgPtrConst) &&
+      (IsBaseValueNeedConst == IsInputArgBaseValueConst)) {
+    return true;
   }
-
-  return "(" + ElemetTypeStr + " " + (ElementConst ? "const *" : "*") +
-         (PtrConst ? "const *" : "*") + ")";
+  return false;
 }
 
 } // namespace dpct

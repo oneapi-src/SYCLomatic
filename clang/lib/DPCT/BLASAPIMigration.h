@@ -107,11 +107,12 @@ public:
 // Some batch APIs, the input data parameter has type "T const * const *",
 // but in Intel(R) oneAPI Math Kernel Library (oneMKL), the parameter type
 // should be "T const **".
-// So we need figure out whether the input argument is match the type,
-// "T const **", if not, explicit type-cast is needed.
-std::string getPotentialConstTypeCast(const Expr *E,
-                                      const std::string &ElemetTypeStr,
-                                      bool ElementConst, bool PtrConst);
+// So we need figure out whether the input argument type is desired.
+// This funtion will check the if the base value type and the first level
+// pointer meet the requirement of const qualifier.
+bool checkConstQualifierInDoublePointerType(
+    const Expr *E, bool IsBaseValueNeedConst /* <T [DoesHereHasConst] * *> */,
+    bool IsFirstLevelPointerNeedConst /* <T * [DoesHereHasConst] *> */);
 
 } // namespace dpct
 } // namespace clang

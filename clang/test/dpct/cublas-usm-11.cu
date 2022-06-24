@@ -39,6 +39,6 @@ void foo2() {
   void **b_array;
   void **c_array;
 
-  //CHECK:dpct::gemm_batch(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 4, 4, alpha, (void const **)a_array, dpct::library_data_t::real_half, 4, (void const **)b_array, dpct::library_data_t::real_half, 4, beta, c_array, dpct::library_data_t::real_half, 4, 2, dpct::library_data_t::real_half);
+  //CHECK:dpct::gemm_batch(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 4, 4, alpha, const_cast<void const **>(a_array), dpct::library_data_t::real_half, 4, const_cast<void const **>(b_array), dpct::library_data_t::real_half, 4, beta, c_array, dpct::library_data_t::real_half, 4, 2, dpct::library_data_t::real_half);
   cublasGemmBatchedEx(handle, CUBLAS_OP_N, CUBLAS_OP_N, 4, 4, 4, alpha, a_array, CUDA_R_16F, 4, b_array, CUDA_R_16F, 4, beta, c_array, CUDA_R_16F, 4, 2, CUBLAS_COMPUTE_16F, CUBLAS_GEMM_DEFAULT);
 }
