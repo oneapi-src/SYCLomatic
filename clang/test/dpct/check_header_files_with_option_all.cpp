@@ -56,6 +56,11 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files_with_option_all/diff_res.txt
 
 // RUN: echo "begin" > %T/check_header_files_with_option_all/diff_res.txt
+// RUN: diff %S/helper_files_ref/include/atomic_helper.hpp  %T/check_header_files_with_option_all/include/dpct/atomic_helper.hpp >> %T/check_header_files_with_option_all/diff_res.txt
+// RUN: echo "end" >> %T/check_header_files_with_option_all/diff_res.txt
+// RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files_with_option_all/diff_res.txt
+
+// RUN: echo "begin" > %T/check_header_files_with_option_all/diff_res.txt
 // RUN: diff %S/helper_files_ref/include/dpl_extras/algorithm.h  %T/check_header_files_with_option_all/include/dpct/dpl_extras/algorithm.h >> %T/check_header_files_with_option_all/diff_res.txt
 // RUN: echo "end" >> %T/check_header_files_with_option_all/diff_res.txt
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files_with_option_all/diff_res.txt
