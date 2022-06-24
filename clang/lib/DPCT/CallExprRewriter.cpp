@@ -1140,8 +1140,9 @@ const Expr *getDereferencedExpr(const Expr *E) {
   return nullptr;
 }
 
-DerefExpr DerefExpr::create(const Expr *E) {
+DerefExpr DerefExpr::create(const Expr *E, const CallExpr * C = nullptr) {
   DerefExpr D;
+  D.C = C;
   // If E is UnaryOperator or CXXOperatorCallExpr D.E will has value
   D.E = getDereferencedExpr(E);
   if (D.E) {
@@ -1154,6 +1155,8 @@ DerefExpr DerefExpr::create(const Expr *E) {
   D.NeedParens = needExtraParens(E);
   return D;
 }
+
+
 
 class DerefStreamExpr {
   const Expr *E;
@@ -1276,7 +1279,7 @@ std::function<DerefExpr(const CallExpr *)> makeDerefExprCreator(
     std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
         F) {
   return [=](const CallExpr *C) -> DerefExpr {
-    return DerefExpr::create(F(C).second);
+    return DerefExpr::create(F(C).second, F(C).first);
   };
 }
 
@@ -2740,6 +2743,8 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesCUDNN.inc"
 #include "APINamesErrorHandling.inc"
 #include "APINamesMathRewrite.inc"
+#include "APINamesEvent.inc"
+
 #define FUNCTION_CALL
 #define CLASS_METHOD_CALL
 #include "APINamesCooperativeGroups.inc"

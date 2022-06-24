@@ -87,7 +87,7 @@ int main() {
   int karg2int = 2;
   int karg3int = 3;
   int intvar = 20;
-  // CHECK: /* DPCT_ORIG   testKernel<<<10, intvar>>>(karg1int, karg2int, 
+  // CHECK: /* DPCT_ORIG   testKernel<<<10, intvar>>>(karg1int, karg2int,
   // CHECK:  karg3int);*/
   // CHECK:   /*
   // CHECK-NEXT:   DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
@@ -167,9 +167,6 @@ int main() {
   cudaThreadGetCacheConfig(NULL);cudaMalloc((void **)&deviceOutputData, 10 * sizeof(float));
 
   // CHECK: /* DPCT_ORIG   cudaEventCreate(NULL);MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));MY_ERROR_CHECKER(cudaMemcpy(h_odata, d_odata, sizeof(float) * 4, cudaMemcpyDeviceToHost));*/
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaEventCreate was removed because this call is redundant in SYCL.
-  // CHECK-NEXT: */
   // CHECK-NEXT:  /*
   // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */

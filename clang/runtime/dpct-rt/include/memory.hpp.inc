@@ -101,6 +101,7 @@ typedef uint8_t byte_t;
 typedef cl::sycl::buffer<byte_t> buffer_t;
 // DPCT_LABEL_END
 
+
 // DPCT_LABEL_BEGIN|pitched_data|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Memory|pitched_data_1

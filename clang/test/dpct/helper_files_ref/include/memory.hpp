@@ -51,6 +51,7 @@ typedef uint8_t byte_t;
 /// Buffer type to be used in Memory Management runtime.
 typedef cl::sycl::buffer<byte_t> buffer_t;
 
+
 /// Pitched 2D/3D memory data.
 class pitched_data {
 public:
