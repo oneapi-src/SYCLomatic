@@ -172,6 +172,11 @@ def append_lines(dist_list, src_list):
     for item in src_list:
         dist_list.append(item)
 
+def convert_to_cxx_code(line_code, use_string_connect):
+    if (use_string_connect):
+        return bytes("+std::string(R\"Delimiter(", 'utf-8') + line_code + bytes(")Delimiter\")\n", 'utf-8')
+    else:
+        return bytes("R\"Delimiter(", 'utf-8') + line_code + bytes(")Delimiter\"\n", 'utf-8')
 
 def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, file_dict):
     file_names = get_file_pathes(
@@ -285,28 +290,22 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
                 features_enum_referenced_list.append(splited[0] + bytes("_", 'utf-8')  + splited[1])
             else:
                 runtime_file_lines.append(line)
-                inc_all_file_lines.append(
-                    bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
+                inc_all_file_lines.append(convert_to_cxx_code(line, True))
                 if (is_code):
                     has_code = True
-                    inc_file_lines.append(
-                        bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
+                    inc_file_lines.append(convert_to_cxx_code(line, False))
                     usm_status, need_skip = update_usm_status(line)
                     if (need_skip):
                         continue
                     if (usm_status == Usm_status_enum.COMMON):
-                        usm_line.append(
-                            bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
-                        non_usm_line.append(
-                            bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
+                        usm_line.append(convert_to_cxx_code(line, False))
+                        non_usm_line.append(convert_to_cxx_code(line, False))
                     elif (usm_status == Usm_status_enum.NON_USM):
                         have_usm_code = True
-                        non_usm_line.append(
-                            bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
+                        non_usm_line.append(convert_to_cxx_code(line, False))
                     elif (usm_status == Usm_status_enum.USM):
                         have_usm_code = True
-                        usm_line.append(
-                            bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
+                        usm_line.append(convert_to_cxx_code(line, False))
 
     inc_file_str = bytes("", 'utf-8')
     inc_all_file_str = bytes("", 'utf-8')
@@ -317,6 +316,9 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
         runtime_file_str = runtime_file_str + line
     for line in inc_all_file_lines:
         inc_all_file_str = inc_all_file_str + line
+
+    if(inc_all_file_str[0] == ord('+')):
+        inc_all_file_str = inc_all_file_str[1:]
 
     runtime_file_handle.write(runtime_file_str)
     inc_file_handle.write(inc_file_str)
