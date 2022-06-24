@@ -1449,7 +1449,7 @@ public:
       QT = Context.getElaboratedType(ETK_None, ET->getQualifier(),
                               ET->getNamedType(),
                               ET->getOwnedTagDecl());
-      }
+    }
     return QT.getAsString(Context.getPrintingPolicy());
   }
   static inline std::string getTypeName(QualType QT) {
