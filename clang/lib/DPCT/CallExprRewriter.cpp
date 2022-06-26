@@ -1213,23 +1213,23 @@ public:
 template <class SubExprT> class DoublePointerConstCastExprPrinter {
   std::string TypeInfo;
   SubExprT SubExpr;
-  bool IsBaseValueNeedConst;
-  bool IsFirstLevelPointerNeedConst;
+  bool DoesBaseValueNeedConst;
+  bool DoesFirstLevelPointerNeedConst;
 
 public:
   DoublePointerConstCastExprPrinter(std::string &&T, SubExprT &&S,
-                                    bool IsBaseValueNeedConst,
-                                    bool IsFirstLevelPointerNeedConst)
+                                    bool DoesBaseValueNeedConst,
+                                    bool DoesFirstLevelPointerNeedConst)
       : TypeInfo(std::forward<std::string>(T)),
         SubExpr(std::forward<SubExprT>(S)),
-        IsBaseValueNeedConst(IsBaseValueNeedConst),
-        IsFirstLevelPointerNeedConst(IsFirstLevelPointerNeedConst) {}
+        DoesBaseValueNeedConst(DoesBaseValueNeedConst),
+        DoesFirstLevelPointerNeedConst(DoesFirstLevelPointerNeedConst) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    if (!checkConstQualifierInDoublePointerType(SubExpr, IsBaseValueNeedConst,
-                                                IsFirstLevelPointerNeedConst)) {
+    if (!checkConstQualifierInDoublePointerType(
+            SubExpr, DoesBaseValueNeedConst, DoesFirstLevelPointerNeedConst)) {
       std::string CastType = TypeInfo + " " +
-                             (IsBaseValueNeedConst ? "const *" : "*") +
-                             (IsFirstLevelPointerNeedConst ? "const *" : "*");
+                             (DoesBaseValueNeedConst ? "const *" : "*") +
+                             (DoesFirstLevelPointerNeedConst ? "const *" : "*");
       Stream << "const_cast<" << CastType << ">(";
       dpct::print(Stream, SubExpr);
       Stream << ")";
@@ -1555,14 +1555,14 @@ std::function<DoublePointerConstCastExprPrinter<SubExprT>(const CallExpr *)>
 makeDoublePointerConstCastExprCreator(
     std::function<std::string(const CallExpr *)> TypeInfo,
     std::function<SubExprT(const CallExpr *)> Sub,
-    std::function<bool(const CallExpr *)> IsBaseValueNeedConst,
-    std::function<bool(const CallExpr *)> IsFirstLevelPointerNeedConst) {
+    std::function<bool(const CallExpr *)> DoesBaseValueNeedConst,
+    std::function<bool(const CallExpr *)> DoesFirstLevelPointerNeedConst) {
   return PrinterCreator<DoublePointerConstCastExprPrinter<SubExprT>,
                         std::function<std::string(const CallExpr *)>,
                         std::function<SubExprT(const CallExpr *)>,
                         std::function<bool(const CallExpr *)>,
                         std::function<bool(const CallExpr *)>>(
-      TypeInfo, Sub, IsBaseValueNeedConst, IsFirstLevelPointerNeedConst);
+      TypeInfo, Sub, DoesBaseValueNeedConst, DoesFirstLevelPointerNeedConst);
 }
 
 template <class... ArgsT>
@@ -2515,11 +2515,11 @@ public:
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define CAST(T, S) makeCastExprCreator(T, S)
 #define DOUBLE_POINTER_CONST_CAST(BASE_VALUE_TYPE, EXPR,                       \
-                                  IS_BASE_VALUE_NEED_CONST,                    \
-                                  IS_FIRST_LEVEL_POINTER_NEED_CONST)           \
+                                  DOES_BASE_VALUE_NEED_CONST,                  \
+                                  DOES_FIRST_LEVEL_POINTER_NEED_CONST)         \
   makeDoublePointerConstCastExprCreator(BASE_VALUE_TYPE, EXPR,                 \
-                                        IS_BASE_VALUE_NEED_CONST,              \
-                                        IS_FIRST_LEVEL_POINTER_NEED_CONST)
+                                        DOES_BASE_VALUE_NEED_CONST,            \
+                                        DOES_FIRST_LEVEL_POINTER_NEED_CONST)
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
 #define SUBGROUP                                                               \
   std::function<SubGroupPrinter(const CallExpr *)>(SubGroupPrinter::create)

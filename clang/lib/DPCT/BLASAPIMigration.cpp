@@ -23,8 +23,8 @@ BLASEnumExpr BLASEnumExpr::create(const Expr *E,
 }
 
 bool checkConstQualifierInDoublePointerType(
-    const Expr *E, bool IsBaseValueNeedConst /* <T [DoesHereHasConst] * *> */,
-    bool IsFirstLevelPointerNeedConst /* <T * [DoesHereHasConst] *> */) {
+    const Expr *E, bool IsBaseValueNeedConst /* <T [DoesHereHaveConst] * *> */,
+    bool IsFirstLevelPointerNeedConst /* <T * [DoesHereHaveConst] *> */) {
   const Expr *InputArg = E->IgnoreImpCasts();
   QualType InputArgPtrPtrType = InputArg->getType();
   QualType InputArgPtrType;
