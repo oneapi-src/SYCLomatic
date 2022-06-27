@@ -16,6 +16,7 @@
 #include "MisleadingBidirectional.h"
 #include "DNNAPIMigration.h"
 #include "NCCLAPIMigration.h"
+#include "LIBCUAPIMigration.h"
 #include "SaveNewFiles.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -975,6 +976,18 @@ void IncludesCallbacks::InclusionDirective(
       return;
     }
     DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Dnnl);
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
+    Updater.update(false);
+  }
+
+  if (FileName.compare(StringRef("cuda/atomic")) == 0) {
+
+    DpctGlobalInfo::setMKLHeaderUsed(true);
+
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_AtomicHelper);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -17112,6 +17125,8 @@ REGISTER_RULE(CuDNNTypeRule)
 REGISTER_RULE(CuDNNAPIRule)
 
 REGISTER_RULE(NCCLRule)
+
+REGISTER_RULE(LIBCUAPIRule)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {
