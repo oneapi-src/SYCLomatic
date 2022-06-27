@@ -12876,11 +12876,19 @@ void WarpFunctionsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void WarpFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (auto CE = getNodeAsType<CallExpr>(Result, "warp")) {
-    ExprAnalysis EA(CE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
+  auto CE = getNodeAsType<CallExpr>(Result, "warp");
+  if (!CE)
+    return;
+
+  if (auto *CalleeDecl = CE->getDirectCallee()) {
+    if (isUserDefinedFunction(CalleeDecl)) {
+      return;
+    }
   }
+
+  ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 REGISTER_RULE(WarpFunctionsRule)
 
