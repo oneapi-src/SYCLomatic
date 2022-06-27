@@ -104,6 +104,16 @@ public:
   static BLASEnumExpr create(const Expr *E, BLASEnumType BET);
 };
 
+// Some batch APIs, the input data parameter has type "T const * const *",
+// but in Intel(R) oneAPI Math Kernel Library (oneMKL), the parameter type
+// should be "T const **".
+// So we need figure out whether the input argument type is desired.
+// This function will check the if the base value type and the first level
+// pointer meet the requirement of const qualifier.
+bool checkConstQualifierInDoublePointerType(
+    const Expr *E, bool IsBaseValueNeedConst /* <T [DoesHereHaveConst] * *> */,
+    bool IsFirstLevelPointerNeedConst /* <T * [DoesHereHaveConst] *> */);
+
 } // namespace dpct
 } // namespace clang
 

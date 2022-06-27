@@ -1,0 +1,8 @@
+[
+    {
+    "command": "cc -c  test.c",
+    "directory": ".",
+    "file": "./test.c"
+    }
+]
+
