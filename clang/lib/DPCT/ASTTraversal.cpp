@@ -17154,7 +17154,9 @@ REGISTER_RULE(ComplexAPIRule)
 
 void TemplateSpecializationTypeLocRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
-  auto TargetTypeName = [&]() { return hasAnyName("cuda::atomic"); };
+  auto TargetTypeName = [&]() { return hasAnyName(
+    "cuda::atomic","cuda::std::atomic"); 
+    };
 
   MF.addMatcher(typeLoc(
                     loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))

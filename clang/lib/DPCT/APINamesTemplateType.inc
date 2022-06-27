@@ -16,3 +16,14 @@ TYPE_REWRITE_ENTRY(
                      TEMPLATE_ARG(1)),
         TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "atomic"),
                      TEMPLATE_ARG(0))))
+
+TYPE_REWRITE_ENTRY(
+    "cuda::std::atomic",
+    TYPE_CONDITIONAL_FACTORY(
+        CheckTemplateArgCount(2),
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "atomic"),
+                     TEMPLATE_ARG(0),
+                     STR(MapNames::getClNamespace() + "memory_order::relaxed"),
+                     TEMPLATE_ARG(1)),
+        TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "atomic"),
+                     TEMPLATE_ARG(0))))
