@@ -1446,12 +1446,9 @@ public:
   static inline std::string getTypeName(QualType QT,
                                         const ASTContext &Context) {
     if (auto ET = QT->getAs<ElaboratedType>()) {
-      if (ET->getQualifier())
-        QT = Context.getElaboratedType(ETK_None, ET->getQualifier(),
-                                       ET->getNamedType(),
-                                       ET->getOwnedTagDecl());
-      else
-        QT = ET->getNamedType();
+      QT = Context.getElaboratedType(ETK_None, ET->getQualifier(),
+                              ET->getNamedType(),
+                              ET->getOwnedTagDecl());
     }
     return QT.getAsString(Context.getPrintingPolicy());
   }

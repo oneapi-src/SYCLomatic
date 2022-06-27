@@ -32,7 +32,7 @@ std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::TypeNamesMap;
 std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
     MapNames::ClassFieldMap;
-std::unordered_map<std::string, std::shared_ptr<TypeNameRule>> 
+std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::CuDNNTypeNamesMap;
 std::unordered_map<std::string, std::shared_ptr<EnumNameRule>>
     EnumConstantRule::EnumNamesMap;
@@ -105,11 +105,7 @@ void MapNames::setExplicitNamespaceMap() {
                          HelperFeatureEnum::Kernel_kernel_functor)},
       {"dim3", std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},
       {"int2", std::make_shared<TypeNameRule>(getClNamespace() + "int2")},
-      {"struct int2",
-       std::make_shared<TypeNameRule>(getClNamespace() + "int2")},
       {"double2", std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
-      {"struct double2",
-       std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
       {"__half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
       {"__half2", std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
       {"half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},

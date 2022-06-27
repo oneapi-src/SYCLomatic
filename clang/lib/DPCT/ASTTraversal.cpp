@@ -4440,7 +4440,8 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(EnumConstantRule)
 
 void ErrorConstantsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(anyOf(
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(
+                              hasDeclContext(enumDecl(anyOf(
                                 hasName("cudaError"), hasName("cufftResult_t"),
                                 hasName("cudaError_enum"),
                                 hasName("cudaSharedMemConfig")))))))
