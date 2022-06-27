@@ -22,7 +22,7 @@ class LIBCUAPIRule : public NamedMigrationRule<LIBCUAPIRule>{
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-}
+};
 
 
 

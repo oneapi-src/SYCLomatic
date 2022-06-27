@@ -572,7 +572,6 @@ public:
       return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
                               "/ccl_utils.hpp>");
-    }
     case HT_AtomicHelper:
       return insertHeader(HeaderType::HT_AtomicHelper, LastIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
