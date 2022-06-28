@@ -2214,7 +2214,7 @@ void ThrustFunctionRule::thrustFuncMigration(
 
   // All the thrust APIs (such as thrust::copy_if, thrust::copy, thrust::fill,
   // thrust::count, thrust::equal) called in device function , should be
-  // migrated to oneapi::dpl APIs without a policy on the DPC++ side
+  // migrated to oneapi::dpl APIs without a policy on the SYCL side
   if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
     if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
       if (ThrustFuncName == "sort") {
