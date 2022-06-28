@@ -390,6 +390,7 @@ bool isMathFunction(std::string Name) {
 #define ENTRY_OPERATOR(APINAME, OPKIND) APINAME,
 #define ENTRY_TYPECAST(APINAME) APINAME,
 #define ENTRY_UNSUPPORTED(APINAME) APINAME,
+#define MATH_API_IMPL_WITH_NEW_REWRITER(APINAME)
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
@@ -399,6 +400,7 @@ bool isMathFunction(std::string Name) {
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
+#undef MATH_API_IMPL_WITH_NEW_REWRITER
   };
   return MathFunctions.count(Name);
 }
@@ -668,7 +670,9 @@ inline void ExprAnalysis::analyzeExpr(const UnresolvedLookupExpr *ULE) {
   RefString.clear();
   llvm::raw_string_ostream OS(RefString);
   if (auto NNS = ULE->getQualifier()) {
-    NNS->print(OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
+    if (NNS->getKind() != clang::NestedNameSpecifier::SpecifierKind::Global) {
+      NNS->print(OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
+    }
   }
   ULE->getName().print(OS,
                        dpct::DpctGlobalInfo::getContext().getPrintingPolicy());

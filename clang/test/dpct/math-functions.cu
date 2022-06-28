@@ -628,4 +628,8 @@ __device__ void sincospi_1(double x, double* sptr, double* cptr) {
   return ::sincospi (x, sptr, cptr);
 }
 
-
+template <typename T>
+__device__  T foo2(T a) {
+  // CHECK: return sycl::rsqrt((double)a);
+  return ::rsqrt(a);
+}
