@@ -31,7 +31,7 @@
 
 namespace dpct {
 
-/// DPC++ default exception handler
+/// SYCL default exception handler
 auto exception_handler = [](cl::sycl::exception_list exceptions) {
   for (std::exception_ptr const &e : exceptions) {
     try {

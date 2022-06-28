@@ -209,7 +209,7 @@ static void getCompileInfo(
         }
         auto Version = Option.substr(Idx, Option.length() - Idx);
         int Val = std::atoi(Version.c_str());
-        // DPC++ support c++17 as default.
+        // SYCL support c++17 as default.
         if (llvm::StringRef(Entry.second[1]).endswith("nvcc") && Val <= 17)
           continue;
 
