@@ -36,7 +36,7 @@ public:
       DefaultOrder;
 
   /// Default constructor.
-  constexpr atomict() noexcept = default;
+  constexpr atomic() noexcept = default;
   /// Constructor with initialize value.
   constexpr atomic(T d) noexcept : __d(d){};
 

@@ -28,28 +28,59 @@ namespace dpct {
 using namespace clang;
 using namespace clang::dpct;
 using namespace clang::ast_matchers;
-  
+
 void LIBCUAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  auto LIBCUAPI = [&]() {
-    return hasAnyName("load","store");
+  auto LIBCUAPIHasNames = [&]() {
+    return hasAnyName("cuda::std::atomic_thread_fence");
   };
-  MF.addMatcher(cxxMemberCallExpr(
-                    allOf(on(hasType(hasCanonicalType(qualType(
-                              hasDeclaration(namedDecl(hasName("cuda::atomic"))))))),
-                          callee(cxxMethodDecl(LIBCUAPI()))))
-                    .bind("memberCallExpr"),
-                this);
+  MF.addMatcher(callExpr(callee(functionDecl(LIBCUAPIHasNames()))).bind("call"), this);
 }
+
 
 void LIBCUAPIRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
+  std::string APIName;
+  std::ostringstream OS;
+  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
+    auto DC = CE->getDirectCallee();
+    APIName = DC->getNameAsString();
+    if(APIName == "atomic_thread_fence"){
+      auto FirArg = CE->getArg(0);
+      ExprAnalysis FirEA(FirArg);
+      FirEA.analyze();
+      OS << MapNames::getClNamespace()<<"atomic_fence"<<"("<< FirEA.getReplacedString()<< ")";
+      emplaceTransformation(new ReplaceStmt(CE, OS.str()));
+    }
+    
+  }
+}
+  
+void LIBCUMemberFuncRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  auto LIBCUMemberFuncHasNamses = [&]() {
+    return hasAnyName("load","store","exchange","compare_exchange_weak","compare_exchange_strong",
+                      "fetch_add", "fetch_sub", "fetch_and", "fetch_or", "fetch_xor");
+  };
+  auto LIBCUTypesHasNamses = [&]() {
+    return hasAnyName("cuda::atomic","cuda::std::atomic");
+  };
+  MF.addMatcher(cxxMemberCallExpr(
+                    allOf(on(hasType(hasCanonicalType(qualType(
+                              hasDeclaration(namedDecl(LIBCUTypesHasNamses())))))),
+                          callee(cxxMethodDecl(LIBCUMemberFuncHasNamses()))))
+                    .bind("memberCallExpr"),
+                this);  
+}
+
+void LIBCUMemberFuncRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+
   if (auto CMCE = getNodeAsType<CXXMemberCallExpr>(Result, "memberCallExpr")) {
     dpct::ExprAnalysis EA;
     EA.analyze(CMCE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   }
-} 
+}
 
 } // dpct
 } // clang
