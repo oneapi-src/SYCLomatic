@@ -905,10 +905,6 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArg(1);
     OS << "1 / " + MapNames::getClNamespace(false, true) + "hypot("
        << MigratedArg0 << ", " << MigratedArg1 << ")";
-  } else if (FuncName == "erfinvf") {
-    OS <<"__imf_erfinvf(" << getMigratedArg(0) + ")";
-  } else if (FuncName == "erfinv") {
-    OS <<"__imf_erfinv(" << getMigratedArg(0) + ")";
   } else if (SourceCalleeName == "pow" || SourceCalleeName == "powf" ||
              SourceCalleeName == "__powf") {
     RewriteArgList = getMigratedArgs();
