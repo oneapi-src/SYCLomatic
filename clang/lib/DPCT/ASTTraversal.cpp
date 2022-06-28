@@ -983,7 +983,8 @@ void IncludesCallbacks::InclusionDirective(
     Updater.update(false);
   }
 
-  if (FileName.compare(StringRef("cuda/atomic")) == 0) {
+  if (FileName.compare(StringRef("cuda/atomic")) == 0||
+      FileName.compare(StringRef("cuda/std/atomic")) == 0) {
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
 
@@ -17127,6 +17128,8 @@ REGISTER_RULE(CuDNNAPIRule)
 REGISTER_RULE(NCCLRule)
 
 REGISTER_RULE(LIBCUAPIRule)
+
+REGISTER_RULE(LIBCUMemberFuncRule)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {
