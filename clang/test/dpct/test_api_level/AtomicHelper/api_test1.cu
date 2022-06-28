@@ -3,6 +3,8 @@
 // RUN: FileCheck --input-file %T/AtomicHelper/api_test1_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/AtomicHelper/api_test1_out
 
+// CHECK: 1
+
 #include <cuda/atomic>
 
 // TEST_FEATURE: AtomicHelper_atomic_helper
