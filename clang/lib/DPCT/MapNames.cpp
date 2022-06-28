@@ -32,7 +32,7 @@ std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::TypeNamesMap;
 std::unordered_map<std::string, std::shared_ptr<ClassFieldRule>>
     MapNames::ClassFieldMap;
-std::unordered_map<std::string, std::shared_ptr<TypeNameRule>> 
+std::unordered_map<std::string, std::shared_ptr<TypeNameRule>>
     MapNames::CuDNNTypeNamesMap;
 std::unordered_map<std::string, std::shared_ptr<EnumNameRule>>
     EnumConstantRule::EnumNamesMap;
@@ -46,8 +46,6 @@ MapNames::MapTy MapNames::MathRewriterMap;
 std::unordered_map<std::string, std::string> MapNames::AtomicFuncNamesMap;
 MapNames::MapTy MapNames::ITFName;
 std::map<std::string, MapNames::BLASFuncReplInfo> MapNames::BLASFuncReplInfoMap;
-std::map<std::string, MapNames::BLASFuncReplInfo>
-    MapNames::BLASFuncWrapperReplInfoMap;
 std::map<std::string, MapNames::BLASGemmExTypeInfo>
     MapNames::BLASTGemmExTypeInfoMap;
 std::unordered_map<std::string, std::pair<std::string, std::string>>
@@ -107,11 +105,7 @@ void MapNames::setExplicitNamespaceMap() {
                          HelperFeatureEnum::Kernel_kernel_functor)},
       {"dim3", std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},
       {"int2", std::make_shared<TypeNameRule>(getClNamespace() + "int2")},
-      {"struct int2",
-       std::make_shared<TypeNameRule>(getClNamespace() + "int2")},
       {"double2", std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
-      {"struct double2",
-       std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
       {"__half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
       {"__half2", std::make_shared<TypeNameRule>(getClNamespace() + "half2")},
       {"half", std::make_shared<TypeNameRule>(getClNamespace() + "half")},
@@ -1184,73 +1178,6 @@ void MapNames::setExplicitNamespaceMap() {
         4, "oneapi::mkl::blas::column_major::trsm"}}
   };
 
-  BLASFuncWrapperReplInfoMap = {
-      /*Extensions*/
-      {"cublasSgetrfBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{}, -1, -1, -1,
-        getDpctNamespace() + "getrf_batch_wrapper"}},
-      {"cublasDgetrfBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{}, -1, -1, -1,
-        getDpctNamespace() + "getrf_batch_wrapper"}},
-      {"cublasCgetrfBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{}, -1, -1, -1,
-        getDpctNamespace() + "getrf_batch_wrapper"}},
-      {"cublasZgetrfBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{}, -1, -1, -1,
-        getDpctNamespace() + "getrf_batch_wrapper"}},
-      {"cublasSgetrsBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{1}, -1, -1, -1,
-        getDpctNamespace() + "getrs_batch_wrapper"}},
-      {"cublasDgetrsBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{1}, -1, -1, -1,
-        getDpctNamespace() + "getrs_batch_wrapper"}},
-      {"cublasCgetrsBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{1}, -1, -1, -1,
-        getDpctNamespace() + "getrs_batch_wrapper"}},
-      {"cublasZgetrsBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{1}, -1, -1, -1,
-        getDpctNamespace() + "getrs_batch_wrapper"}},
-      {"cublasSgetriBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{}, -1, -1, -1,
-        getDpctNamespace() + "getri_batch_wrapper"}},
-      {"cublasDgetriBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{}, -1, -1, -1,
-        getDpctNamespace() + "getri_batch_wrapper"}},
-      {"cublasCgetriBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{}, -1, -1, -1,
-        getDpctNamespace() + "getri_batch_wrapper"}},
-      {"cublasZgetriBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{}, -1, -1, -1,
-        getDpctNamespace() + "getri_batch_wrapper"}},
-      {"cublasSgeqrfBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{}, -1, -1, -1,
-        getDpctNamespace() + "geqrf_batch_wrapper"}},
-      {"cublasDgeqrfBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{}, -1, -1, -1,
-        getDpctNamespace() + "geqrf_batch_wrapper"}},
-      {"cublasCgeqrfBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{}, -1, -1, -1,
-        getDpctNamespace() + "geqrf_batch_wrapper"}},
-      {"cublasZgeqrfBatched",
-       {std::vector<int>{}, std::vector<int>{}, std::vector<std::string>{},
-        std::vector<int>{}, -1, -1, -1,
-        getDpctNamespace() + "geqrf_batch_wrapper"}}};
-
   BLASTGemmExTypeInfoMap = {
       {"2:2",
        {"float", getClNamespace() + "half", getClNamespace() + "half",
@@ -1307,7 +1234,24 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasStrmm_v2", getDpctNamespace() + "trmm"},
       {"cublasDtrmm_v2", getDpctNamespace() + "trmm"},
       {"cublasCtrmm_v2", getDpctNamespace() + "trmm"},
-      {"cublasZtrmm_v2", getDpctNamespace() + "trmm"}};
+      {"cublasZtrmm_v2", getDpctNamespace() + "trmm"},
+      {"cublasSgetrfBatched", getDpctNamespace() + "getrf_batch_wrapper"},
+      {"cublasDgetrfBatched", getDpctNamespace() + "getrf_batch_wrapper"},
+      {"cublasCgetrfBatched", getDpctNamespace() + "getrf_batch_wrapper"},
+      {"cublasZgetrfBatched", getDpctNamespace() + "getrf_batch_wrapper"},
+      {"cublasSgetrsBatched", getDpctNamespace() + "getrs_batch_wrapper"},
+      {"cublasDgetrsBatched", getDpctNamespace() + "getrs_batch_wrapper"},
+      {"cublasCgetrsBatched", getDpctNamespace() + "getrs_batch_wrapper"},
+      {"cublasZgetrsBatched", getDpctNamespace() + "getrs_batch_wrapper"},
+      {"cublasSgetriBatched", getDpctNamespace() + "getri_batch_wrapper"},
+      {"cublasDgetriBatched", getDpctNamespace() + "getri_batch_wrapper"},
+      {"cublasCgetriBatched", getDpctNamespace() + "getri_batch_wrapper"},
+      {"cublasZgetriBatched", getDpctNamespace() + "getri_batch_wrapper"},
+      {"cublasSgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
+      {"cublasDgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
+      {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
+      {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"}};
+
 
   MathRewriterMap = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \

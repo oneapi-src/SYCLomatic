@@ -68,7 +68,7 @@ namespace dpct {
 // DPCT_LABEL_BEGIN|exception_handler|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-/// DPC++ default exception handler
+/// SYCL default exception handler
 auto exception_handler = [](cl::sycl::exception_list exceptions) {
   for (std::exception_ptr const &e : exceptions) {
     try {

@@ -172,6 +172,8 @@ def append_lines(dist_list, src_list):
     for item in src_list:
         dist_list.append(item)
 
+def convert_to_cxx_code(line_code):
+    return bytes("R\"Delimiter(", 'utf-8') + line_code + bytes(")Delimiter\"\n", 'utf-8')
 
 def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, file_dict):
     file_names = get_file_pathes(
@@ -285,38 +287,58 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
                 features_enum_referenced_list.append(splited[0] + bytes("_", 'utf-8')  + splited[1])
             else:
                 runtime_file_lines.append(line)
-                inc_all_file_lines.append(
-                    bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
+                inc_all_file_lines.append(convert_to_cxx_code(line))
                 if (is_code):
                     has_code = True
-                    inc_file_lines.append(
-                        bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
+                    inc_file_lines.append(convert_to_cxx_code(line))
                     usm_status, need_skip = update_usm_status(line)
                     if (need_skip):
                         continue
                     if (usm_status == Usm_status_enum.COMMON):
-                        usm_line.append(
-                            bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
-                        non_usm_line.append(
-                            bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
+                        usm_line.append(convert_to_cxx_code(line))
+                        non_usm_line.append(convert_to_cxx_code(line))
                     elif (usm_status == Usm_status_enum.NON_USM):
                         have_usm_code = True
-                        non_usm_line.append(
-                            bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
+                        non_usm_line.append(convert_to_cxx_code(line))
                     elif (usm_status == Usm_status_enum.USM):
                         have_usm_code = True
-                        usm_line.append(
-                            bytes("R\"Delimiter(", 'utf-8') + line + bytes(")Delimiter\"\n", 'utf-8'))
+                        usm_line.append(convert_to_cxx_code(line))
 
     inc_file_str = bytes("", 'utf-8')
-    inc_all_file_str = bytes("", 'utf-8')
     runtime_file_str = bytes("", 'utf-8')
     for line in inc_file_lines:
         inc_file_str = inc_file_str + line
     for line in runtime_file_lines:
         runtime_file_str = runtime_file_str + line
+
+    # cl.exe will emit error if a literal string length >= 65535
+    # so we need convert the generated code from style
+    # {code}
+    # std::string code = "a very very long string";
+    # {code}
+    # to style
+    # {code}
+    # std::string code = std::string("a long string") + ... + std::string("a long string");
+    # {code}
+    # The simplest way is treat one line a std::string instance and then use
+    # "+" to connect them, but if the number of std::string instances is too large (like 7000),
+    # clang will crash.
+    # So we should generate code like
+    # {code}
+    # std::string code = std::string("as long as possible but < 65535") + ... + std::string("as long as possible but < 65535");
+    # {code}
+    string_literal_length_limit = 65535
+    string_literal_length_counter = 0
+    inc_all_file_str = bytes("std::string(", 'utf-8')
     for line in inc_all_file_lines:
-        inc_all_file_str = inc_all_file_str + line
+        if (string_literal_length_counter + len(line) < string_literal_length_limit):
+            inc_all_file_str = inc_all_file_str + line
+            string_literal_length_counter = string_literal_length_counter + len(line)
+        else:
+            inc_all_file_str = inc_all_file_str + bytes(")+std::string(", 'utf-8')
+            inc_all_file_str = inc_all_file_str + line
+            string_literal_length_counter = len(line)
+    inc_all_file_str = inc_all_file_str + bytes(")", 'utf-8')
 
     runtime_file_handle.write(runtime_file_str)
     inc_file_handle.write(inc_file_str)

@@ -1210,6 +1210,36 @@ public:
   DerefStreamExpr(const Expr *Expression) : E(Expression) {}
 };
 
+template <class SubExprT> class DoublePointerConstCastExprPrinter {
+  std::string TypeInfo;
+  SubExprT SubExpr;
+  bool DoesBaseValueNeedConst;
+  bool DoesFirstLevelPointerNeedConst;
+
+public:
+  DoublePointerConstCastExprPrinter(std::string &&T, SubExprT &&S,
+                                    bool DoesBaseValueNeedConst,
+                                    bool DoesFirstLevelPointerNeedConst)
+      : TypeInfo(std::forward<std::string>(T)),
+        SubExpr(std::forward<SubExprT>(S)),
+        DoesBaseValueNeedConst(DoesBaseValueNeedConst),
+        DoesFirstLevelPointerNeedConst(DoesFirstLevelPointerNeedConst) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    if (!checkConstQualifierInDoublePointerType(
+            SubExpr, DoesBaseValueNeedConst, DoesFirstLevelPointerNeedConst)) {
+      std::string CastType = TypeInfo + " " +
+                             (DoesBaseValueNeedConst ? "const *" : "*") +
+                             (DoesFirstLevelPointerNeedConst ? "const *" : "*");
+      Stream << "const_cast<" << CastType << ">(";
+      dpct::print(Stream, SubExpr);
+      Stream << ")";
+    } else {
+      dpct::print(Stream, SubExpr);
+    }
+  }
+};
+
+
 std::function<DerefStreamExpr(const CallExpr *)>
 makeDerefStreamExprCreator(unsigned Idx) {
   return [=](const CallExpr *C) -> DerefStreamExpr {
@@ -1245,6 +1275,10 @@ std::function<const Expr *(const CallExpr *)> makeCallArgCreator(unsigned Idx) {
 std::function<const StringRef(const CallExpr *)>
 makeCallArgCreator(std::string Str) {
   return [=](const CallExpr *C) -> const StringRef { return StringRef(Str); };
+}
+
+std::function<bool(const CallExpr *)> makeBooleanCreator(bool B) {
+  return [=](const CallExpr *C) -> bool { return B; };
 }
 
 std::function<std::pair<const CallExpr *, const Expr *>(const CallExpr *)>
@@ -1514,6 +1548,21 @@ makeCastExprCreator(std::function<TypeInfoT(const CallExpr *)> TypeInfo,
                         std::function<TypeInfoT(const CallExpr *)>,
                         std::function<SubExprT(const CallExpr *)>>(TypeInfo,
                                                                    Sub);
+}
+
+template <class SubExprT>
+std::function<DoublePointerConstCastExprPrinter<SubExprT>(const CallExpr *)>
+makeDoublePointerConstCastExprCreator(
+    std::function<std::string(const CallExpr *)> TypeInfo,
+    std::function<SubExprT(const CallExpr *)> Sub,
+    std::function<bool(const CallExpr *)> DoesBaseValueNeedConst,
+    std::function<bool(const CallExpr *)> DoesFirstLevelPointerNeedConst) {
+  return PrinterCreator<DoublePointerConstCastExprPrinter<SubExprT>,
+                        std::function<std::string(const CallExpr *)>,
+                        std::function<SubExprT(const CallExpr *)>,
+                        std::function<bool(const CallExpr *)>,
+                        std::function<bool(const CallExpr *)>>(
+      TypeInfo, Sub, DoesBaseValueNeedConst, DoesFirstLevelPointerNeedConst);
 }
 
 template <class... ArgsT>
@@ -2455,6 +2504,7 @@ public:
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
 #define ARG_WC(x) makeDerefArgCreatorWithCall(x)
+#define BOOL(x) makeBooleanCreator(x)
 #define BLAS_ENUM_ARG(x, BLAS_ENUM_TYPE)                                       \
   makeBLASEnumCallArgCreator(x, BLAS_ENUM_TYPE)
 #define EXTENDSTR(idx, str) makeExtendStr(idx, str)
@@ -2464,6 +2514,12 @@ public:
 #define LAMBDA(...) makeLambdaCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define CAST(T, S) makeCastExprCreator(T, S)
+#define DOUBLE_POINTER_CONST_CAST(BASE_VALUE_TYPE, EXPR,                       \
+                                  DOES_BASE_VALUE_NEED_CONST,                  \
+                                  DOES_FIRST_LEVEL_POINTER_NEED_CONST)         \
+  makeDoublePointerConstCastExprCreator(BASE_VALUE_TYPE, EXPR,                 \
+                                        DOES_BASE_VALUE_NEED_CONST,            \
+                                        DOES_FIRST_LEVEL_POINTER_NEED_CONST)
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
 #define SUBGROUP                                                               \
   std::function<SubGroupPrinter(const CallExpr *)>(SubGroupPrinter::create)
