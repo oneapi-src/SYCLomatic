@@ -594,6 +594,7 @@ trsm_batch_impl(cl::sycl::queue &q, oneapi::mkl::side left_right,
 // DPCT_LABEL_BEGIN|getrfnp_batch_wrapper|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // Memory|dpct_malloc
+// Memory|dpct_memcpy
 // Memory|dpct_memcpy_detail
 // Memory|async_dpct_free|UsmRestricted
 // Util|DataType
@@ -616,10 +617,10 @@ inline void getrfnp_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
   Ty *a_strided_mem =
       (Ty *)dpct::dpct_malloc(stride_a * batch_size * sizeof(Ty), exec_queue);
   T **host_a = (T **)malloc(batch_size * sizeof(T *));
-  detail::dpct_memcpy(exec_queue, host_a, a, batch_size * sizeof(T *));
+  dpct::dpct_memcpy(host_a, a, batch_size * sizeof(T *));
   for (std::int64_t i = 0; i < batch_size; ++i)
-    detail::dpct_memcpy(exec_queue, a_strided_mem + i * stride_a, host_a[i],
-                        n * lda * sizeof(T));
+    dpct::dpct_memcpy(a_strided_mem + i * stride_a, host_a[i],
+                      n * lda * sizeof(T));
 
 #ifdef DPCT_USM_LEVEL_NONE
   {
