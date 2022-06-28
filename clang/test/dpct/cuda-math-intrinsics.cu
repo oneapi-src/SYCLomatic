@@ -2219,6 +2219,10 @@ __global__ void testUnsupported() {
   // CHECK: f = sycl::exp(f*f)*sycl::erfc(f);
   f = erfcxf(f);
   // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfinvf is not supported.
+  // CHECK-NEXT: */
+  f = erfinvf(f);
+  // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of j0f is not supported.
   // CHECK-NEXT: */
   f = j0f(f);
@@ -2288,6 +2292,10 @@ __global__ void testUnsupported() {
   d = erfcinv(d);
   // CHECK: d = sycl::exp(d*d)*sycl::erfc(d);
   d = erfcx(d);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of erfinv is not supported.
+  // CHECK-NEXT: */
+  d = erfinv(d);
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of j0 is not supported.
   // CHECK-NEXT: */
