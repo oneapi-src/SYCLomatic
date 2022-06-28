@@ -2215,7 +2215,7 @@ void ThrustFunctionRule::thrustFuncMigration(
 
   // All the thrust APIs (such as thrust::copy_if, thrust::copy, thrust::fill,
   // thrust::count, thrust::equal) called in device function , should be
-  // migrated to oneapi::dpl APIs without a policy on the DPC++ side
+  // migrated to oneapi::dpl APIs without a policy on the SYCL side
   if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
     if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
       if (ThrustFuncName == "sort") {
@@ -12790,11 +12790,19 @@ void WarpFunctionsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void WarpFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (auto CE = getNodeAsType<CallExpr>(Result, "warp")) {
-    ExprAnalysis EA(CE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
+  auto CE = getNodeAsType<CallExpr>(Result, "warp");
+  if (!CE)
+    return;
+
+  if (auto *CalleeDecl = CE->getDirectCallee()) {
+    if (isUserDefinedFunction(CalleeDecl)) {
+      return;
+    }
   }
+
+  ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 REGISTER_RULE(WarpFunctionsRule)
 

@@ -4334,7 +4334,7 @@ private:
     std::string NL;
     std::string Indent;
   } LocInfo;
-  // true, if migrated DPC++ code block need extra { }
+  // true, if migrated SYCL code block need extra { }
   bool NeedBraces = true;
   struct {
     std::string Config[6] = {"", "", "", "0", "", ""};

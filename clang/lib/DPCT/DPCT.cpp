@@ -791,7 +791,7 @@ static void printMetrics(clang::tooling::RefactoringTool &Tool) {
     unsigned NotSupport = Elem.second[2];
     if (Count == 0) {
       DpctStats() << "\n";
-      DpctStats() << "File name, LOC migrated to DPC++, LOC migrated to helper "
+      DpctStats() << "File name, LOC migrated to SYCL, LOC migrated to helper "
                      "functions, "
                      "LOC not needed to migrate, LOC not able to migrate";
       DpctStats() << "\n";
