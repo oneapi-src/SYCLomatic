@@ -96,7 +96,9 @@ static void getCompileInfo(
           // Set the target name
           TargetName = Obj;
           IsTargetName = false;
-          Tool = "ld -o"; // Record the tool that generates the target file.
+          Tool = "dpcpp -o"; // Record the tool that generates the target file
+                             // and use dpcpp as the linker tool in the
+                             // generated Makefile.
         } else if (llvm::StringRef(Obj).endswith(".o")) {
           llvm::SmallString<512> FilePathAbs(Obj);
           llvm::sys::path::native(FilePathAbs);

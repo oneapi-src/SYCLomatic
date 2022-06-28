@@ -10,7 +10,7 @@ __device__ void test0_with_item(int a) {
 
 // CHECK: void test0(int a) {
 __device__ void test0(int a) {
-  // CHECK: sycl::sqrt(10.0);
+  // CHECK: sqrt(10.0);
   sqrt(10.0);
 }
 

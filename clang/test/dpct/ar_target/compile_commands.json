@@ -18,6 +18,10 @@
         "directory": "./"
     },
     {
+        "command": "ld -o foo one.o two.o",
+        "directory": "./"
+    },
+    {
         "command": "c++ -c -o three.o three.cpp",
         "directory": "./",
         "file": "./three.cpp"

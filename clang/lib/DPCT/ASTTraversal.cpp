@@ -4440,7 +4440,8 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(EnumConstantRule)
 
 void ErrorConstantsRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(hasType(enumDecl(anyOf(
+  MF.addMatcher(declRefExpr(to(enumConstantDecl(
+                              hasDeclContext(enumDecl(anyOf(
                                 hasName("cudaError"), hasName("cufftResult_t"),
                                 hasName("cudaError_enum"),
                                 hasName("cudaSharedMemConfig")))))))
@@ -5700,6 +5701,9 @@ void DeviceRandomFunctionCallRule::runRule(
       Factor = "4";
     }
 
+    if (needExtraParens(CE->getArg(1))) {
+      RNGSubseq = "(" + RNGSubseq + ")";
+    }
     if (IsRNGSubseqLiteral) {
       SecondOffsetArg = RNGSubseq + " * " + Factor;
     } else {
@@ -6886,94 +6890,6 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       }
     }
-  } else if (MapNames::BLASFuncWrapperReplInfoMap.find(FuncName) !=
-             MapNames::BLASFuncWrapperReplInfoMap.end()) {
-    auto ReplInfoPair = MapNames::BLASFuncWrapperReplInfoMap.find(FuncName);
-    MapNames::BLASFuncReplInfo ReplInfo = ReplInfoPair->second;
-    std::string Replacement = ReplInfo.ReplName;
-
-    static const std::unordered_map<std::string, HelperFeatureEnum>
-        FuncNameToFeatureMap = {
-            {"cublasSgetrfBatched",
-             HelperFeatureEnum::BlasUtils_getrf_batch_wrapper},
-            {"cublasDgetrfBatched",
-             HelperFeatureEnum::BlasUtils_getrf_batch_wrapper},
-            {"cublasCgetrfBatched",
-             HelperFeatureEnum::BlasUtils_getrf_batch_wrapper},
-            {"cublasZgetrfBatched",
-             HelperFeatureEnum::BlasUtils_getrf_batch_wrapper},
-            {"cublasSgetrsBatched",
-             HelperFeatureEnum::BlasUtils_getrs_batch_wrapper},
-            {"cublasDgetrsBatched",
-             HelperFeatureEnum::BlasUtils_getrs_batch_wrapper},
-            {"cublasCgetrsBatched",
-             HelperFeatureEnum::BlasUtils_getrs_batch_wrapper},
-            {"cublasZgetrsBatched",
-             HelperFeatureEnum::BlasUtils_getrs_batch_wrapper},
-            {"cublasSgetriBatched",
-             HelperFeatureEnum::BlasUtils_getri_batch_wrapper},
-            {"cublasDgetriBatched",
-             HelperFeatureEnum::BlasUtils_getri_batch_wrapper},
-            {"cublasCgetriBatched",
-             HelperFeatureEnum::BlasUtils_getri_batch_wrapper},
-            {"cublasZgetriBatched",
-             HelperFeatureEnum::BlasUtils_getri_batch_wrapper},
-            {"cublasSgeqrfBatched",
-             HelperFeatureEnum::BlasUtils_geqrf_batch_wrapper},
-            {"cublasDgeqrfBatched",
-             HelperFeatureEnum::BlasUtils_geqrf_batch_wrapper},
-            {"cublasCgeqrfBatched",
-             HelperFeatureEnum::BlasUtils_geqrf_batch_wrapper},
-            {"cublasZgeqrfBatched",
-             HelperFeatureEnum::BlasUtils_geqrf_batch_wrapper}};
-    requestFeature(FuncNameToFeatureMap.at(FuncName), CE);
-
-    BLASEnumInfo EnumInfo(
-        ReplInfo.OperationIndexInfo, ReplInfo.FillModeIndexInfo,
-        ReplInfo.SideModeIndexInfo, ReplInfo.DiagTypeIndexInfo);
-    if (HasDeviceAttr) {
-      report(FuncNameBegin, Diagnostics::FUNCTION_CALL_IN_DEVICE, false,
-             MapNames::ITFName.at(FuncName), Replacement);
-      return;
-    }
-
-    StringRef FuncNameRef(FuncName);
-    if (FuncNameRef.endswith("getrfBatched")) {
-      report(FuncNameBegin, Diagnostics::DIFFERENT_LU_FACTORIZATION, false,
-             getStmtSpelling(CE->getArg(4)), Replacement,
-             MapNames::ITFName.at(FuncName));
-    }
-
-    int ArgNum = CE->getNumArgs();
-    for (int i = 0; i < ArgNum; ++i) {
-      const CStyleCastExpr *CSCE = nullptr;
-      std::string CurrentArgumentRepl;
-      if ((CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(i)))) {
-        processParamIntCastToBLASEnum(CE->getArg(i), CSCE, i, IndentStr,
-                                      EnumInfo, PrefixInsertStr,
-                                      CurrentArgumentRepl);
-      } else {
-        ExprAnalysis EA;
-        EA.analyze(CE->getArg(i));
-        CurrentArgumentRepl = EA.getReplacedString();
-      }
-      CallExprArguReplVec.push_back(CurrentArgumentRepl);
-    }
-    CallExprReplStr = getFinalCallExprStr(Replacement) + CallExprReplStr;
-
-    if (NeedUseLambda) {
-      if (PrefixInsertStr == "") {
-        // If there is one API call in the migrated code, it is unnecessary to
-        // use a lambda expression
-        NeedUseLambda = false;
-      }
-    }
-
-    applyMigrationText(NeedUseLambda, IsMacroArg, CanAvoidBrace,
-                       CanAvoidUsingLambda, OriginStmtType, IsAssigned,
-                       OuterInsertLoc, PrefixInsertLoc, SuffixInsertLoc,
-                       FuncNameBegin, FuncCallEnd, FuncCallLength, IndentStr,
-                       PrefixInsertStr, SuffixInsertStr);
   } else if (FuncName == "cublasCreate_v2" || FuncName == "cublasDestroy_v2" ||
              FuncName == "cublasSetStream_v2" ||
              FuncName == "cublasGetStream_v2" ||
@@ -12873,11 +12789,19 @@ void WarpFunctionsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void WarpFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (auto CE = getNodeAsType<CallExpr>(Result, "warp")) {
-    ExprAnalysis EA(CE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
+  auto CE = getNodeAsType<CallExpr>(Result, "warp");
+  if (!CE)
+    return;
+
+  if (auto *CalleeDecl = CE->getDirectCallee()) {
+    if (isUserDefinedFunction(CalleeDecl)) {
+      return;
+    }
   }
+
+  ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 REGISTER_RULE(WarpFunctionsRule)
 

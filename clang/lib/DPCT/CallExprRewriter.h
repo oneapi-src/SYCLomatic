@@ -1381,9 +1381,9 @@ public:
     if (!FD)
       return false;
     auto TSA = FD->getTemplateSpecializationArgs();
-    if (Idx >= TSA->size())
-      return false;
     if (!TSA)
+      return false;
+    if (Idx >= TSA->size())
       return false;
     if (TSA->get(Idx).getKind() != clang::TemplateArgument::ArgKind::Integral)
       return false;

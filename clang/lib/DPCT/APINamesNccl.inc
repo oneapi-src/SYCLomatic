@@ -19,6 +19,8 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::CclUtils_create_kvs_address,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::CclUtils_create_kvs,
                         ASSIGNABLE_FACTORY(
                                   ASSIGN_FACTORY_ENTRY("ncclCommInitRank",DEREF(0),
-                                                        CALL("oneapi::ccl::create_communicator",
-                                                        ARG(1), ARG(3),
-                                                        CALL(MapNames::getDpctNamespace() + "ccl::create_kvs", ARG(2))))))
+                                                        NEW("oneapi::ccl::communicator",
+                                                            CALL("oneapi::ccl::create_communicator",
+                                                                 ARG(1), ARG(3),
+                                                                 CALL(MapNames::getDpctNamespace() + "ccl::create_kvs",
+                                                                      ARG(2)))))))
