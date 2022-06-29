@@ -21,7 +21,7 @@
 namespace clang {
 namespace dpct {
 
-class ASTTraversal;
+class MigrationRule;
 
 #ifdef NDEBUG
 #undef DPCT_DEBUG_BUILD
@@ -33,9 +33,9 @@ class ASTTraversal;
 class StaticsInfo {
 public:
   static void
-  printMigrationRules(const std::vector<std::unique_ptr<ASTTraversal>> &TRs);
+  printMigrationRules(const std::vector<std::unique_ptr<MigrationRule>> &TRs);
   static void printMatchedRules(
-      const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules);
+      const std::vector<std::unique_ptr<MigrationRule>> &MatchedRules);
   static void printReplacements(const TransformSetTy &TS, ASTContext &Context);
 };
 

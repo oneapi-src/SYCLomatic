@@ -1,3 +1,4 @@
+// UNSUPPORTED: -linux-
 // UNSUPPORTED: -windows-
 // RUN: cd %T
 // RUN: mkdir hdh_constant_db

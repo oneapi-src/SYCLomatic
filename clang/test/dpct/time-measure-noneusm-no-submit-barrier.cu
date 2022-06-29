@@ -238,9 +238,9 @@ void foo_usm() {
   cudaEvent_t start, stop;
   SAFE_CALL(cudaEventRecord(start, 0));
 
-  // CHECK:  DPCT1003:32: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  SAFE_CALL((dpct::async_dpct_memcpy(gpu_t, host_t, n * sizeof(int), dpct::host_to_device, *s1), 0));
+  // CHECK:  SAFE_CALL((dpct::async_dpct_memcpy(gpu_t, host_t, n * sizeof(int), dpct::host_to_device, *s1), 0));
   SAFE_CALL(cudaMemcpyAsync(gpu_t, host_t, n * sizeof(int), cudaMemcpyHostToDevice, s1));
 
   // CHECK:  s1->wait();

@@ -1020,10 +1020,6 @@ public:
     const static std::string Hash = getHashAsString(getInRoot()).substr(0, 6);
     return Hash;
   }
-  static void setCompilerInstance(CompilerInstance &C) {
-    CI = &C;
-    setContext(C.getASTContext());
-  }
   static void setContext(ASTContext &C) {
     Context = &C;
     SM = &(Context->getSourceManager());
@@ -1031,10 +1027,6 @@ public:
     Context->getParentMapContext().setTraversalKind(TK_AsIs);
   }
   static void setRuleFile(const std::string &Path) { RuleFile = Path; }
-  static CompilerInstance &getCompilerInstance() {
-    assert(CI);
-    return *CI;
-  }
   static ASTContext &getContext() {
     assert(Context);
     return *Context;
@@ -1536,17 +1528,7 @@ public:
 
   // Build kernel and device function declaration replacements and store
   // them.
-  void buildReplacements() {
-    // add PriorityRepl into ReplMap and execute related action, e.g.,
-    // request feature or emit warning.
-    for (auto &ReplInfo : PriorityReplInfoMap) {
-      for (auto &Repl : ReplInfo.second->Repls) {
-        addReplacement(Repl);
-      }
-      for (auto &Action : ReplInfo.second->RelatedAction) {
-        Action();
-      }
-    }
+  void buildKernelInfo() {
     for (auto &File : FileMap)
       File.second->buildKernelInfo();
 
@@ -1574,6 +1556,19 @@ public:
         File.second->buildUnionFindSet();
       for (auto &File : FileMap)
         File.second->buildUnionFindSetForUncalledFunc();
+    }
+  }
+
+  void buildReplacements() {
+    // add PriorityRepl into ReplMap and execute related action, e.g.,
+    // request feature or emit warning.
+    for (auto &ReplInfo : PriorityReplInfoMap) {
+      for (auto &Repl : ReplInfo.second->Repls) {
+        addReplacement(Repl);
+      }
+      for (auto &Action : ReplInfo.second->RelatedAction) {
+        Action();
+      }
     }
 
     for (auto &File : FileMap)
@@ -2163,7 +2158,8 @@ public:
     }
     return Res;
   }
-  unsigned int getColorOption() { return ColorOption; }
+  static unsigned int getColorOption() { return ColorOption; }
+  static void setColorOption(unsigned Color)  { ColorOption = Color; }
   std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>> &
   getCubPlaceholderIndexMap() {
     return CubPlaceholderIndexMap;
@@ -2335,7 +2331,6 @@ private:
   // " --report-type=all" is specified to get the migration status report, while
   // dpct namespace is not enabled.
   static bool TempEnableDPCTNamespace;
-  static CompilerInstance *CI;
   static ASTContext *Context;
   static SourceManager *SM;
   static FileManager *FM;
@@ -3599,7 +3594,7 @@ public:
   std::string getTemplateArguments(bool WrittenArgsOnly = true,
                                    bool WithScalarWrapped = false);
 
-  inline virtual std::string getExtraArguments();
+  virtual std::string getExtraArguments();
 
   std::shared_ptr<TextureObjectInfo>
   addTextureObjectArgInfo(unsigned ArgIdx,
@@ -3869,6 +3864,10 @@ public:
 
   bool ConstructGraphVisited = false;
 
+  std::shared_ptr<CallFunctionExpr> findCallee(const CallExpr *C) {
+    auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
+    return findObject(CallExprMap, CallLocInfo.second);
+  }
   template <class CallT>
   inline std::shared_ptr<CallFunctionExpr> addCallee(const CallT *C) {
     auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);

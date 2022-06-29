@@ -368,3 +368,14 @@ void MultiplexConsumer::ForgetSema() {
     if (SemaConsumer *SC = dyn_cast<SemaConsumer>(Consumer.get()))
       SC->ForgetSema();
 }
+
+#ifdef SYCLomatic_CUSTOMIZATION
+void MultiplexConsumer::HandleCXXExplicitFunctionInstantiation(
+    const FunctionDecl *Specialization, const FunctionTypeLoc &FTL,
+    const ParsedAttributes &Attrs, const TemplateArgumentListInfo &TAList) {
+  for (auto &Consumer : Consumers)
+    Consumer->HandleCXXExplicitFunctionInstantiation(Specialization, FTL, Attrs,
+                                                     TAList);
+}
+#endif // SYCLomatic_CUSTOMIZATION
+
