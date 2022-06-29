@@ -551,5 +551,4 @@ ENTRY_UNSUPPORTED("yn")
 ENTRY_RENAMED("mul24", MapNames::getClNamespace(false, true) + "mul24")
 
 // impl with new rewriter
-// ENTRY_RENAMED_DOUBLE("rsqrt", MapNames::getClNamespace(false, true) + "rsqrt")
 MATH_API_IMPL_WITH_NEW_REWRITER("rsqrt")
