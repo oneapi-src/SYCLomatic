@@ -8337,7 +8337,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     printDerefOp(OS, CE->getArg(0));
     emplaceTransformation(new ReplaceStmt(CE, OS.str()));
     report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false, FuncName,
-           "there is no correspoinding API in SYCL.");
+           "there is no corresponding API in SYCL.");
   } else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected function name: " << FuncName;
