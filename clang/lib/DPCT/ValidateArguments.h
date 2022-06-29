@@ -20,12 +20,10 @@
 #define MAX_NAME_LEN NAME_MAX
 #endif
 
-/// The enum that specifies the level of Unified Shared Memory, only
-/// two levels are supported currently.
+/// The enum that specifies whether Unified Shared Memory is enabled.
 /// none:       uses helper functions from DPCT header files for memory
 ///             management migration
-/// restricted: uses API from SYCL Explicit and Restricted Unified
-///             Shared Memory extension for memory management migration
+/// restricted: uses USM API for memory management migration
 enum class UsmLevel { UL_None, UL_Restricted };
 /// OutputVerbosityLevel defines various verbosity levels for dpct reports
 enum class OutputVerbosityLevel {
