@@ -185,7 +185,7 @@ void foobar() {
   int errorCode;
 
   cudaChannelFormatDesc desc;
-  cudaExtent extent;
+  cudaExtent extent = make_cudaExtent(1, 1, 1);
   unsigned int flags;
   cudaArray_t array;
 
