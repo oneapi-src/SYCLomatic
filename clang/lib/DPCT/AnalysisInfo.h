@@ -2785,12 +2785,12 @@ public:
 private:
   static VarAttrKind getAddressAttr(const AttrVec &Attrs);
 
-  void setInitList(const Expr *E) {
+  void setInitList(const Expr *E, const VarDecl *V) {
     if (auto Ctor = dyn_cast<CXXConstructExpr>(E)) {
       if (!Ctor->getNumArgs() || Ctor->getArg(0)->isDefaultArgument())
         return;
     }
-    InitList = getStmtSpelling(E);
+    InitList = getStmtSpelling(E, V->getSourceRange());
   }
 
   std::string getMemoryType();
