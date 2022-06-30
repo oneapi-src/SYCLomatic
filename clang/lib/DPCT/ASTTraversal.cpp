@@ -15447,6 +15447,14 @@ void DriverDeviceAPIRule::runRule(
   }
   std::ostringstream OS;
 
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(APIName);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
   if (APIName == "cuDeviceGet") {
     if (IsAssigned)
       OS << "(";
@@ -15526,22 +15534,6 @@ void DriverDeviceAPIRule::runRule(
       OS << Indent << "}()";
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_LAMBDA, false);
     }
-    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
-  } else if (APIName == "cuDriverGetVersion") {
-    if (IsAssigned)
-      OS << "(";
-    auto FirArg = CE->getArg(0)->IgnoreImplicitAsWritten();
-    printDerefOp(OS, FirArg);
-    OS << " = " << MapNames::getDpctNamespace()
-       << "get_current_device()"
-          ".get_info<" +
-              MapNames::getClNamespace() + "info::device::version>()";
-    requestFeature(HelperFeatureEnum::Device_get_current_device, CE);
-    if (IsAssigned) {
-      OS << ", 0)";
-      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
-    }
-    report(CE->getBeginLoc(), Diagnostics::TYPE_MISMATCH, false);
     emplaceTransformation(new ReplaceStmt(CE, OS.str()));
   } else if (APIName == "cuDeviceGetCount") {
     if (IsAssigned)
