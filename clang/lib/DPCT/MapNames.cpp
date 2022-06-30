@@ -800,7 +800,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cuda::thread_scope_device",
        std::make_shared<EnumNameRule>(getClNamespace() + "memory_scope::device")},
       {"cuda::thread_scope_block",
-       std::make_shared<EnumNameRule>(getClNamespace() + "memory_scope::workgroup")},
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_scope::work_group")},
       {"cuda::std::memory_order_relaxed",
        std::make_shared<EnumNameRule>(getClNamespace() + "memory_order::relaxed")},
       {"cuda::std::memory_order_acq_rel",
