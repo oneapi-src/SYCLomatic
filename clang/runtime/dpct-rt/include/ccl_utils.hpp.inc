@@ -55,8 +55,13 @@ namespace detail {
 /// Get stored kvs with specified kvs address.
 inline std::shared_ptr<oneapi::ccl::kvs> &
 get_kvs(const oneapi::ccl::kvs::address_type &addr) {
+  struct hash {
+    std::size_t operator()(const oneapi::ccl::kvs::address_type &in) const {
+      return std::hash<std::string_view>()(std::string_view(in.data(), in.size()));
+    }
+  };
   static std::unordered_map<oneapi::ccl::kvs::address_type,
-                            std::shared_ptr<oneapi::ccl::kvs>>
+                            std::shared_ptr<oneapi::ccl::kvs>, hash>
       kvs_map;
   return kvs_map[addr];
 }
