@@ -80,7 +80,7 @@ int main(){
   // CHECK: /*
   // CHECK-NEXT: DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
   // CHECK-NEXT: */
-  // CHECK-NEXT: result1 = dpct::get_current_device().get_info<sycl::info::device::version>();
+  // CHECK-NEXT: result1 = std::stoi(dpct::get_current_device().get_info<sycl::info::device::version>());
   cuDriverGetVersion(&result1);
 
   // CHECK: MY_SAFE_CALL((result1 = dpct::dev_mgr::instance().device_count(), 0));
