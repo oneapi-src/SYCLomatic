@@ -364,8 +364,8 @@ texture<unsigned char, 2, cudaReadModeNormalizedFloat> tex;
 // CHECK-NEXT:    DPCT1059:{{[0-9]+}}: SYCL only supports 4-channel image format. Adjust the code.
 // CHECK-NEXT:    */
 // CHECK-NEXT:    dpct::image_accessor_ext<T, 2> tex, float x, float y) {
-// CHECK-NEXT:  float px = floor(x - 2) + 1.0f;
-// CHECK-NEXT:  float py = floor(y - 2) + 1.0f;
+// CHECK-NEXT:  float px = sycl::floor(x - 2) + 1.0f;
+// CHECK-NEXT:  float py = sycl::floor(y - 2) + 1.0f;
 // CHECK-NEXT:  float fx = x - px;
 // CHECK-NEXT:  float fy = y - py;
 // CHECK-NEXT:  float w0x = 0; // w0_2(fx);
