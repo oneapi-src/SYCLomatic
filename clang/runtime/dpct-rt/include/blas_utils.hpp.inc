@@ -591,6 +591,72 @@ trsm_batch_impl(cl::sycl::queue &q, oneapi::mkl::side left_right,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|getrfnp_batch_wrapper|dpct::detail
+// DPCT_DEPENDENCY_BEGIN
+// Memory|dpct_malloc
+// Memory|dpct_memcpy
+// Memory|dpct_memcpy_detail
+// Memory|async_dpct_free|UsmRestricted
+// Util|DataType
+// Memory|dpct_memset_detail
+// Memory|get_buffer_T|UsmNone
+// Dpct|dpct_named_lambda
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T>
+inline void getrfnp_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
+                                  int lda, int *info, int batch_size) {
+  using Ty = typename DataType<T>::T2;
+  // Set the info array value to 0
+  detail::dpct_memset(exec_queue, info, 0, sizeof(int) * batch_size);
+  std::int64_t stride_a = n * lda;
+  std::int64_t scratchpad_size =
+      oneapi::mkl::lapack::getrfnp_batch_scratchpad_size<Ty>(
+          exec_queue, n, n, lda, stride_a, batch_size);
+
+  Ty *a_strided_mem =
+      (Ty *)dpct::dpct_malloc(stride_a * batch_size * sizeof(Ty), exec_queue);
+  T **host_a = (T **)malloc(batch_size * sizeof(T *));
+  dpct::dpct_memcpy(host_a, a, batch_size * sizeof(T *));
+  for (std::int64_t i = 0; i < batch_size; ++i)
+    dpct::dpct_memcpy(a_strided_mem + i * stride_a, host_a[i],
+                      n * lda * sizeof(T));
+
+#ifdef DPCT_USM_LEVEL_NONE
+  {
+    cl::sycl::buffer<Ty, 1> scratchpad{cl::sycl::range<1>(scratchpad_size)};
+    auto a_buffer = get_buffer<Ty>(a_strided_mem);
+    oneapi::mkl::lapack::getrfnp_batch(exec_queue, n, n, a_buffer, lda,
+                                       stride_a, batch_size, scratchpad,
+                                       scratchpad_size);
+  }
+  std::vector<cl::sycl::event> events;
+  for (std::int64_t i = 0; i < batch_size; ++i)
+    events.push_back(detail::dpct_memcpy(exec_queue, host_a[i],
+                                         a_strided_mem + i * stride_a,
+                                         n * lda * sizeof(T), automatic));
+#else
+  Ty *scratchpad = cl::sycl::malloc_device<Ty>(scratchpad_size, exec_queue);
+  cl::sycl::event e = oneapi::mkl::lapack::getrfnp_batch(
+      exec_queue, n, n, a_strided_mem, lda, stride_a, batch_size, scratchpad,
+      scratchpad_size);
+  std::vector<cl::sycl::event> events;
+  for (std::int64_t i = 0; i < batch_size; ++i)
+    events.push_back(detail::dpct_memcpy(exec_queue, host_a[i],
+                                         a_strided_mem + i * stride_a,
+                                         n * lda * sizeof(T), automatic, {e}));
+
+  std::vector<void *> ptrs{scratchpad, a_strided_mem};
+  dpct::async_dpct_free(ptrs, events, exec_queue);
+#endif
+
+  exec_queue.submit([&](cl::sycl::handler &cgh) {
+    cgh.depends_on(events);
+    cgh.host_task([=] { free(host_a); });
+  });
+}
+// DPCT_LABEL_END
+
 } // namespace detail
 
 // DPCT_LABEL_BEGIN|get_transpose|dpct
@@ -617,6 +683,7 @@ inline oneapi::mkl::transpose get_transpose(int t) {
 // Memory|dpct_memset_detail
 // Memory|get_buffer_T|UsmNone
 // Dpct|dpct_named_lambda
+// BlasUtils|getrfnp_batch_wrapper
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the LU factorizations of a batch of general matrices.
@@ -626,12 +693,17 @@ inline oneapi::mkl::transpose get_transpose(int t) {
 /// overwritten by lower triangulars with unit diagonal elements and upper
 /// triangulars.
 /// \param [in] lda The leading dimension of the matrices.
-/// \param [out] ipiv An array stores the pivot indices.
+/// \param [out] ipiv An array stores the pivot indices. If \p ipiv is nullptr,
+/// non-pivoting LU factorization is computed.
 /// \param [out] info An array stores the error information.
 /// \param [in] batch_size The size of the batch.
 template <typename T>
 inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
                                 int lda, int *ipiv, int *info, int batch_size) {
+  if (ipiv == nullptr) {
+    detail::getrfnp_batch_wrapper(exec_queue, n, a, lda, info, batch_size);
+    return;
+  }
   using Ty = typename DataType<T>::T2;
   // Set the info array value to 0
   detail::dpct_memset(exec_queue, info, 0, sizeof(int) * batch_size);
