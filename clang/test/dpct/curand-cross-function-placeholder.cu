@@ -29,10 +29,10 @@ void update(float* randvals, curandGenerator_t rng, long long nx, long long ny) 
 //CHECK-NEXT:   rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(q_ct1, seed);
 //CHECK-NEXT:   rng1 = std::make_shared<oneapi::mkl::rng::mrg32k3a>(q_ct1, seed);
 //CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because the function call is redundant in DPC++.
+//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
 //CHECK-NEXT:   */
 //CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because the function call is redundant in DPC++.
+//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
 //CHECK-NEXT:   */
 //CHECK-NEXT:   float *randvals;
 //CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, nx*ny/2, randvals);
@@ -71,7 +71,7 @@ int main(){
 //CHECK-NEXT:   */
 //CHECK-NEXT:   rng = std::make_shared<dpct_placeholder/*Fix the engine type manually*/>(q_ct1, 222);
 //CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because the function call is redundant in DPC++.
+//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
 //CHECK-NEXT:   */
 //CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 0, randvals);
 //CHECK-EMPTY:
@@ -80,7 +80,7 @@ int main(){
 //CHECK-NEXT:   */
 //CHECK-NEXT:   rng = std::make_shared<dpct_placeholder/*Fix the engine type manually*/>(q_ct1, 222);
 //CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because the function call is redundant in DPC++.
+//CHECK-NEXT:   DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
 //CHECK-NEXT:   */
 //CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, 0, randvals);
 //CHECK-NEXT:   rng.reset();

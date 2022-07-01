@@ -27,10 +27,10 @@ int foo(int aaaaa){
 
   //CHECK: int mode = 1;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseGetPointerMode was removed because the function call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseGetPointerMode was removed because this call is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetPointerMode was removed because the function call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetPointerMode was removed because this call is redundant in SYCL.
   //CHECK-NEXT: */
   cusparsePointerMode_t mode = CUSPARSE_POINTER_MODE_DEVICE;
   cusparseGetPointerMode(handle, &mode);
@@ -41,26 +41,26 @@ int foo(int aaaaa){
   //CHECK-NEXT: oneapi::mkl::index_base base0 = oneapi::mkl::index_base::zero;
   //CHECK-NEXT: int type0 = 0;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetMatDiagType was removed because the function call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetMatDiagType was removed because this call is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetMatFillMode was removed because the function call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetMatFillMode was removed because this call is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: descrA = (oneapi::mkl::index_base)aaaaa;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetMatType was removed because the function call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetMatType was removed because this call is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusparseGetMatDiagType was replaced with 0 because the function call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusparseGetMatDiagType was replaced with 0 because this call is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: diag0 = (oneapi::mkl::diag)0;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusparseGetMatFillMode was replaced with 0 because the function call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusparseGetMatFillMode was replaced with 0 because this call is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: fill0 = (oneapi::mkl::uplo)0;
   //CHECK-NEXT: base0 = descrA;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusparseGetMatType was replaced with 0 because the function call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cusparseGetMatType was replaced with 0 because this call is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: type0 = 0;
   cusparseDiagType_t diag0 = CUSPARSE_DIAG_TYPE_NON_UNIT;
@@ -79,7 +79,7 @@ int foo(int aaaaa){
   //CHECK: handle = &dpct::get_default_queue();
   //CHECK-NEXT: descrA = oneapi::mkl::index_base::zero;
   //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetMatType was removed because the function call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseSetMatType was removed because this call is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: descrA = oneapi::mkl::index_base::zero;
   cusparseCreate(&handle);
@@ -93,7 +93,7 @@ int foo(int aaaaa){
   cusparseStatus_t status;
 
  //CHECK: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseDestroyMatDescr was removed because the function call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cusparseDestroyMatDescr was removed because this call is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: handle = nullptr;
   cusparseDestroyMatDescr(descrA);

@@ -30,19 +30,19 @@ void foo() {
   cudaDeviceSetSharedMemConfig(config);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaSetDeviceFlags was removed because DPC++ currently
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaSetDeviceFlags was removed because SYCL currently
   // CHECK-NEXT: does not support setting flags for devices.
   // CHECK-NEXT: */
   cudaSetDeviceFlags(flags);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceEnablePeerAccess was removed because DPC++
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceEnablePeerAccess was removed because SYCL
   // CHECK-NEXT: currently does not support memory access across peer devices.
   // CHECK-NEXT: */
   cudaDeviceEnablePeerAccess(peerDevice, flags);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceDisablePeerAccess was removed because DPC++
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cudaDeviceDisablePeerAccess was removed because SYCL
   // CHECK-NEXT: currently does not support memory access across peer devices.
   // CHECK-NEXT: */
   cudaDeviceDisablePeerAccess(peerDevice);

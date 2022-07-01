@@ -26,7 +26,7 @@ void foo(){
   cuStreamSynchronize(s);
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuEventCreate was removed because this call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuEventCreate was removed because this call is redundant in SYCL.
   //CHECK-NEXT: */
   //CHECK-NEXT: e = s->ext_oneapi_submit_barrier({e});
   cuEventCreate(&e, CU_EVENT_DEFAULT);
@@ -72,11 +72,11 @@ void foo(){
   cuFuncGetAttribute(&rr, CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, f);
 
   //CHECK: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuEventDestroy was removed because this call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuEventDestroy was removed because this call is redundant in SYCL.
   //CHECK-NEXT: */
   cuEventDestroy(start);
   //CHECK: /*
-  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuEventDestroy was removed because this call is redundant in DPC++.
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuEventDestroy was removed because this call is redundant in SYCL.
   //CHECK-NEXT: */
   cuEventDestroy(end);
 }
