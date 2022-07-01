@@ -19,6 +19,7 @@
 #include "IncrementalMigrationUtility.h"
 #include "MisleadingBidirectional.h"
 #include "Rules.h"
+#include "QueryApiMapping.h"
 #include "SaveNewFiles.h"
 #include "SignalProcess.h"
 #include "Statics.h"
@@ -201,7 +202,7 @@ bool KeepOriginalCodeFlag = false;
 static opt<bool, true>
     ShowOrigCode("keep-original-code",
                  llvm::cl::desc("Keeps the original code in comments of "
-                                "generated DPC++ files. Default: off.\n"),
+                                "generated SYCL files. Default: off.\n"),
                  cat(DPCTCat), llvm::cl::location(KeepOriginalCodeFlag));
 #ifdef DPCT_DEBUG_BUILD
 static opt<std::string>
@@ -504,6 +505,10 @@ static opt<bool> NoIncrementalMigration(
     llvm::cl::desc("Tells the tool to not perform an incremental migration.\n"
                    "Default: off (incremental migration happens)."),
     cat(DPCTCat), init(false));
+
+static opt<std::string> QueryApiMapping("query-api-mapping",
+    llvm::cl::desc("Query mapped SYCL API from CUDA API."),
+    value_desc("api"), cat(DPCTCat), llvm::cl::Optional);
 // clang-format on
 
 // TODO: implement one of this for each source language.
@@ -1098,6 +1103,12 @@ int runDPCT(int argc, const char **argv) {
   // just show -- --help information and then exit
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
     dpctExit(MigrationSucceeded);
+
+  if (QueryApiMapping.getNumOccurrences()) {
+    ApiMappingEntry::initEntryMap();
+    ApiMappingEntry::printMappingDesc(llvm::outs(), QueryApiMapping);
+    dpctExit(MigrationSucceeded);
+  }
   if (InRoot.empty() && ProcessAllFlag) {
     ShowStatus(MigrationErrorNoExplicitInRoot);
     dpctExit(MigrationErrorNoExplicitInRoot);

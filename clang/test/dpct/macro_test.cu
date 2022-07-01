@@ -514,7 +514,7 @@ __global__ void foo8(){
 //CHECK-NEXT: #define MAX(x, y) sycl::max(x, y)
 //CHECK-NEXT: void foo9(){
 //CHECK-NEXT:   double a,b,c;
-//CHECK-NEXT:   MAX(a, sqrt(DFABS(b)));
+//CHECK-NEXT:   MAX(a, sycl::sqrt(DFABS(b)));
 //CHECK-NEXT: }
 #define DFABS(x) (double) fabs((x))
 #define MAX(x, y) max(x, y)
@@ -567,10 +567,10 @@ void templatefoo2(){
 }
 
 //CHECK: void foo11(sycl::nd_item<3> item_ct1){
-//CHECK-NEXT:   sycl::exp2((double)(THREAD_IDX_X));
+//CHECK-NEXT:   sycl::exp((double)(THREAD_IDX_X));
 //CHECK-NEXT: }
 __global__ void foo11(){
-  exp2(THREAD_IDX_X);
+  exp(THREAD_IDX_X);
 }
 
 //CHECK: /*
@@ -655,7 +655,7 @@ VECTOR_TYPE_DEF(int)
 //CHECK-NEXT: for all macro uses. Adjust the code.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define POW3(x, y) sycl::pow<double>(x, y)
-//CHECK-NEXT: #define SQRT(x) sqrtf(x)
+//CHECK-NEXT: #define SQRT(x) sycl::sqrt(x)
 //CHECK-NEXT: void foo12(){
 //CHECK-NEXT: real *vx;
 //CHECK-NEXT: real *vy;

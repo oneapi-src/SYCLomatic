@@ -162,7 +162,7 @@ int main() {
     //CHECK:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
     //CHECK-NEXT:curandErrCheck((rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(dpct::get_default_queue(), 1337ull), 0));
     //CHECK-NEXT:/*
-    //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was replaced with 0 because the function call is redundant in DPC++.
+    //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was replaced with 0 because this call is redundant in SYCL.
     //CHECK-NEXT:*/
     //CHECK-NEXT:curandErrCheck(0);
     //CHECK-NEXT:/*

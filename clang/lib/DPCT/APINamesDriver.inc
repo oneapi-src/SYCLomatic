@@ -133,3 +133,13 @@ CONDITIONAL_FACTORY_ENTRY(
         TOSTRING_FACTORY_ENTRY("cuMemHostUnregister", LITERAL("0")),
         Diagnostics::FUNC_CALL_REMOVED_0,
         std::string("cuMemHostUnregister"), getRemovedAPIWarningMessage("cuMemHostUnregister")))
+
+WARNING_FACTORY_ENTRY("cuDriverGetVersion",
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::Device_get_current_device,
+        ASSIGNABLE_FACTORY(
+            ASSIGN_FACTORY_ENTRY("cuDriverGetVersion",
+                DEREF(0), CALL("std::stoi", CALL(MapNames::getDpctNamespace() +
+                    "get_current_device().get_info<" + MapNames::getClNamespace() +
+                    "info::device::version>"))))),
+    Diagnostics::TYPE_MISMATCH)
