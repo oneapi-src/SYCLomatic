@@ -203,7 +203,7 @@ bool KeepOriginalCodeFlag = false;
 static opt<bool, true>
     ShowOrigCode("keep-original-code",
                  llvm::cl::desc("Keeps the original code in comments of "
-                                "generated DPC++ files. Default: off.\n"),
+                                "generated SYCL files. Default: off.\n"),
                  cat(DPCTCat), llvm::cl::location(KeepOriginalCodeFlag));
 #ifdef DPCT_DEBUG_BUILD
 static opt<std::string>

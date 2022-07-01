@@ -290,7 +290,7 @@ public:
       : CallExprRewriter(C, CalleeName), IsAssigned(isAssigned(C)), CalleeName(CalleeName) {}
 
   Optional<std::string> rewrite() override {
-    std::string Msg = "the function call is redundant in DPC++.";
+    std::string Msg = "this call is redundant in SYCL.";
     if (IsAssigned) {
       report(Diagnostics::FUNC_CALL_REMOVED_0, false,
              CalleeName, Msg);
