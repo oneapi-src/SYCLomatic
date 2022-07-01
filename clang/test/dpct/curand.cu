@@ -29,7 +29,7 @@ int main(){
   //CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(q_ct1, 1337ull);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because
-  //CHECK-NEXT:the function call is redundant in DPC++.
+  //CHECK-NEXT:this call is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:float *d_data;
   curandStatus_t s1;
@@ -161,7 +161,7 @@ int main(){
   //CHECK-NEXT:rng2 = std::make_shared<oneapi::mkl::rng::sobol>(q_ct1, 1111);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed
-  //CHECK-NEXT: because the function call is redundant in DPC++.
+  //CHECK-NEXT: because this call is redundant in SYCL.
   //CHECK-NEXT:*/
   //CHECK-NEXT:{
   //CHECK-NEXT:auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);
@@ -203,7 +203,7 @@ curandStatus foo2();
 //CHECK-NEXT:                                                    1243);
 //CHECK-NEXT:    /*
 //CHECK-NEXT:    DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed
-//CHECK-NEXT:    because the function call is redundant in DPC++.
+//CHECK-NEXT:    because this call is redundant in SYCL.
 //CHECK-NEXT:    */
 //CHECK-NEXT:  }
 //CHECK-NEXT:  ~A(){
@@ -237,7 +237,7 @@ void bar1(){
 //CHECK-NEXT:    dpct::get_default_queue(), 1337ull);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed
-//CHECK-NEXT:because the function call is redundant in DPC++.
+//CHECK-NEXT:because this call is redundant in SYCL.
 //CHECK-NEXT:*/
   curandGenerator_t rng;
   curandCreateGenerator(&rng, CURAND_RNG_PSEUDO_XORWOW);
@@ -255,7 +255,7 @@ void bar2(){
 //CHECK-NEXT:                                                1243);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed
-//CHECK-NEXT:because the function call is redundant in DPC++.
+//CHECK-NEXT:because this call is redundant in SYCL.
 //CHECK-NEXT:*/
   curandGenerator_t rng;
   curandCreateGenerator(&rng, CURAND_RNG_QUASI_SCRAMBLED_SOBOL64);
@@ -277,7 +277,7 @@ void bar3(){
 //CHECK-NEXT:                0));
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was replaced with
-//CHECK-NEXT:0 because the function call is redundant in DPC++.
+//CHECK-NEXT:0 because this call is redundant in SYCL.
 //CHECK-NEXT:*/
 //CHECK-NEXT:curandErrCheck(0);
 //CHECK-NEXT:float *d_data;
@@ -314,7 +314,7 @@ void bar4(){
 //CHECK-NEXT:                                                1243);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed
-//CHECK-NEXT:because the function call is redundant in DPC++.
+//CHECK-NEXT:because this call is redundant in SYCL.
 //CHECK-NEXT:*/
   curandGenerator_t rng;
   curandCreateGenerator(&rng, CURAND_RNG_QUASI_SCRAMBLED_SOBOL32);
@@ -334,7 +334,7 @@ void bar5(){
 //CHECK-NEXT:curandCreateGenerator(&rng, (curandRngType)101);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed
-//CHECK-NEXT:because the function call is redundant in DPC++.
+//CHECK-NEXT:because this call is redundant in SYCL.
 //CHECK-NEXT:*/
   curandGenerator_t rng;
   curandCreateGenerator(&rng, (curandRngType)101);
@@ -349,7 +349,7 @@ void bar5(){
 //CHECK-NEXT:                                                   1111);
 //CHECK-NEXT:  /*
 //CHECK-NEXT:  DPCT1026:{{[0-9]+}}: The call to curandSetQuasiRandomGeneratorDimensions was removed
-//CHECK-NEXT:  because the function call is redundant in DPC++.
+//CHECK-NEXT:  because this call is redundant in SYCL.
 //CHECK-NEXT:  */
 //CHECK-NEXT:  {
 //CHECK-NEXT:    auto d_data_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(d_data);

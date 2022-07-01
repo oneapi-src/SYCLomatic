@@ -21,12 +21,12 @@ int main(){
   CUcontext ctx2;
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuInit was removed because the function call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuInit was removed because this call is redundant in SYCL.
   // CHECK-NEXT: */
   cuInit(0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuInit was replaced with 0 because the function call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuInit was replaced with 0 because this call is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: MY_SAFE_CALL(0);
   MY_SAFE_CALL(cuInit(0));
@@ -38,7 +38,7 @@ int main(){
   cuDevicePrimaryCtxRetain(&ctx, device);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuDevicePrimaryCtxRelease_v2 was removed because the function call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuDevicePrimaryCtxRelease_v2 was removed because this call is redundant in SYCL.
   // CHECK-NEXT: */
   cuDevicePrimaryCtxRelease(device);
 
@@ -64,12 +64,12 @@ int main(){
   MY_SAFE_CALL(cuCtxSynchronize());
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxDestroy_v2 was removed because the function call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxDestroy_v2 was removed because this call is redundant in SYCL.
   // CHECK-NEXT: */
   cuCtxDestroy(ctx);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuCtxDestroy_v2 was replaced with 0 because the function call is redundant in DPC++.
+  // CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuCtxDestroy_v2 was replaced with 0 because this call is redundant in SYCL.
   // CHECK-NEXT: */
   // CHECK-NEXT: MY_SAFE_CALL(0);
   MY_SAFE_CALL(cuCtxDestroy(ctx2));
