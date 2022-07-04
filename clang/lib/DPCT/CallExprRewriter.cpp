@@ -2699,7 +2699,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #define ENTRY_OPERATOR(APINAME, OPKIND) MATH_BO_FACTORY_ENTRY(APINAME, OPKIND)
 #define ENTRY_TYPECAST(APINAME) MATH_TYPECAST_FACTORY_ENTRY(APINAME)
 #define ENTRY_UNSUPPORTED(APINAME) MATH_UNSUPPORTED_FUNC_FACTORY_ENTRY(APINAME)
-#define MATH_API_IMPL_WITH_NEW_REWRITER(APINAME)
+#define ENTRY_REWRITE(APINAME)
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
@@ -2709,7 +2709,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
-#undef MATH_API_IMPL_WITH_NEW_REWRITER
+#undef ENTRY_REWRITE
 
 #define ENTRY_WARP(SOURCEAPINAME, TARGETAPINAME)                               \
   WARP_FUNC_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
@@ -2739,7 +2739,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesWarp.inc"
 #include "APINamesCUDNN.inc"
 #include "APINamesErrorHandling.inc"
-#include "APINamesMathRewriter.inc"
+#include "APINamesMathRewrite.inc"
 #define FUNCTION_CALL
 #define CLASS_METHOD_CALL
 #include "APINamesCooperativeGroups.inc"
@@ -2783,7 +2783,7 @@ const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
 #define ENTRY_OPERATOR(APINAME, OPKIND)
 #define ENTRY_TYPECAST(APINAME)
 #define ENTRY_UNSUPPORTED(APINAME)
-#define MATH_API_IMPL_WITH_NEW_REWRITER(APINAME)
+#define ENTRY_REWRITE(APINAME)
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
@@ -2793,7 +2793,7 @@ const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
-#undef MATH_API_IMPL_WITH_NEW_REWRITER
+#undef ENTRY_REWRITE
 };
 
 const std::vector<std::string> MathFuncNameRewriter::DoubleFuctions = {
@@ -2805,7 +2805,7 @@ const std::vector<std::string> MathFuncNameRewriter::DoubleFuctions = {
 #define ENTRY_OPERATOR(APINAME, OPKIND)
 #define ENTRY_TYPECAST(APINAME)
 #define ENTRY_UNSUPPORTED(APINAME)
-#define MATH_API_IMPL_WITH_NEW_REWRITER(APINAME)
+#define ENTRY_REWRITE(APINAME)
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED
@@ -2815,7 +2815,7 @@ const std::vector<std::string> MathFuncNameRewriter::DoubleFuctions = {
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
-#undef MATH_API_IMPL_WITH_NEW_REWRITER
+#undef ENTRY_REWRITE
 };
 
 } // namespace dpct

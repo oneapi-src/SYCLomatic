@@ -390,7 +390,7 @@ bool isMathFunction(std::string Name) {
 #define ENTRY_OPERATOR(APINAME, OPKIND) APINAME,
 #define ENTRY_TYPECAST(APINAME) APINAME,
 #define ENTRY_UNSUPPORTED(APINAME) APINAME,
-#define MATH_API_IMPL_WITH_NEW_REWRITER(APINAME)
+#define ENTRY_REWRITE(APINAME)
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
@@ -400,7 +400,7 @@ bool isMathFunction(std::string Name) {
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
-#undef MATH_API_IMPL_WITH_NEW_REWRITER
+#undef ENTRY_REWRITE
   };
   return MathFunctions.count(Name);
 }
