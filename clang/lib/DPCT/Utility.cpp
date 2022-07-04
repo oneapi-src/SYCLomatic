@@ -244,7 +244,8 @@ std::string getStmtSpelling(const Stmt *S, SourceRange ParentRange) {
     Length = SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc);
   }
 
-
+  if (Length <= 0)
+    return "";
   Str = std::string(SM.getCharacterData(BeginLoc), Length);
   return Str;
 }
