@@ -2711,7 +2711,7 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
     PointerAsArray = true;
   }
   if (Var->hasInit())
-    setInitList(Var->getInit());
+    setInitList(Var->getInit(), Var);
   if (getType()->getDimension() == 0 && Attr == Constant) {
     AccMode = Value;
   } else if (getType()->getDimension() <= 1) {
