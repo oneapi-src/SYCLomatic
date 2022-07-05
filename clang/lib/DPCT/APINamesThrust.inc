@@ -1004,3 +1004,10 @@ CONDITIONAL_FACTORY_ENTRY(
                            CALL("std::transform_reduce",
                                 ARG("oneapi::dpl::execution::seq"), ARG(1),
                                 ARG(2), ARG(4), ARG(5), ARG(3)))))
+
+
+// thrust::swap
+CALL_FACTORY_ENTRY("thrust::swap",  CALL("std::swap",  ARG(0), ARG(1)))
+
+// thrust::make_pair
+CALL_FACTORY_ENTRY("thrust::make_pair",  CALL("std::make_pair",  ARG(0), ARG(1)))
