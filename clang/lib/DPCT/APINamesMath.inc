@@ -173,7 +173,6 @@ ENTRY_RENAMED_DOUBLE("nextafter", MapNames::getClNamespace(false, true) + "nexta
 ENTRY_RENAMED_DOUBLE("remainder", MapNames::getClNamespace(false, true) + "remainder")
 ENTRY_RENAMED_DOUBLE("rint", MapNames::getClNamespace(false, true) + "rint")
 ENTRY_RENAMED_DOUBLE("round", MapNames::getClNamespace(false, true) + "round")
-ENTRY_RENAMED_DOUBLE("rsqrt", MapNames::getClNamespace(false, true) + "rsqrt")
 ENTRY_RENAMED_DOUBLE("sin", MapNames::getClNamespace(false, true) + "sin")
 ENTRY_RENAMED_DOUBLE("sinh", MapNames::getClNamespace(false, true) + "sinh")
 ENTRY_RENAMED_DOUBLE("sinpi", MapNames::getClNamespace(false, true) + "sinpi")
@@ -594,3 +593,6 @@ ENTRY_UNSUPPORTED("yn")
 
 // crt wrapper API
 ENTRY_RENAMED("mul24", MapNames::getClNamespace(false, true) + "mul24")
+
+// impl with new rewriter
+ENTRY_REWRITE("rsqrt")

@@ -12723,6 +12723,7 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 #define ENTRY_OPERATOR(APINAME, OPKIND) APINAME,
 #define ENTRY_TYPECAST(APINAME) APINAME,
 #define ENTRY_UNSUPPORTED(APINAME) APINAME,
+#define ENTRY_REWRITE(APINAME) APINAME,
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
@@ -12732,6 +12733,7 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
+#undef ENTRY_REWRITE
   };
 
   MF.addMatcher(
@@ -12744,31 +12746,41 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
                    cxxConstructExpr(hasType(typedefDecl(hasName("dim3")))))))
           .bind("math"),
       this);
+
+  MF.addMatcher(callExpr(callee(unresolvedLookupExpr(
+                  hasAnyDeclaration(namedDecl(internal::Matcher<NamedDecl>(
+                      new internal::HasNameMatcher(MathFunctions)))))))
+                  .bind("unresolved"),
+              this);
 }
 
 void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (auto CE = getNodeAsType<CallExpr>(Result, "math")) {
-    ExprAnalysis EA(CE);
-    EA.applyAllSubExprRepl();
+   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "math");
+   if (!CE)
+     CE = getNodeAsType<CallExpr>(Result, "unresolved");
+   if (!CE)
+     return;
 
-    auto FD = CE->getDirectCallee();
-    if (FD) {
-      std::string Name = FD->getNameInfo().getName().getAsString();
-      if (Name == "__brev" || Name == "__brevll") {
-        requestFeature(HelperFeatureEnum::Util_reverse_bits, CE);
-      } else if (Name == "__vmaxs4" || Name == "__vmaxu2") {
-        requestFeature(HelperFeatureEnum::Util_vectorized_max, CE);
-      } else if (Name == "__vminu2") {
-        requestFeature(HelperFeatureEnum::Util_vectorized_min, CE);
-      } else if (Name == "__vcmpgtu2") {
-        requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_T, CE);
-        requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_unsigned,
-                       CE);
-      } else if (Name == "__byte_perm") {
-        requestFeature(HelperFeatureEnum::Util_byte_level_permute, CE);
-      } else if (Name == "__ffs" || Name == "__ffsll") {
-        requestFeature(HelperFeatureEnum::Util_ffs, CE);
-      }
+  ExprAnalysis EA(CE);
+  EA.applyAllSubExprRepl();
+
+  auto FD = CE->getDirectCallee();
+  if (FD) {
+    std::string Name = FD->getNameInfo().getName().getAsString();
+    if (Name == "__brev" || Name == "__brevll") {
+      requestFeature(HelperFeatureEnum::Util_reverse_bits, CE);
+    } else if (Name == "__vmaxs4" || Name == "__vmaxu2") {
+      requestFeature(HelperFeatureEnum::Util_vectorized_max, CE);
+    } else if (Name == "__vminu2") {
+      requestFeature(HelperFeatureEnum::Util_vectorized_min, CE);
+    } else if (Name == "__vcmpgtu2") {
+      requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_T, CE);
+      requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_unsigned,
+                     CE);
+    } else if (Name == "__byte_perm") {
+      requestFeature(HelperFeatureEnum::Util_byte_level_permute, CE);
+    } else if (Name == "__ffs" || Name == "__ffsll") {
+      requestFeature(HelperFeatureEnum::Util_ffs, CE);
     }
   }
 }

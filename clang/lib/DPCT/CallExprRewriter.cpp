@@ -1210,6 +1210,25 @@ public:
   DerefStreamExpr(const Expr *Expression) : E(Expression) {}
 };
 
+template <class SubExprT> class CastIfNeedExprPrinter {
+  std::string TypeInfo;
+  SubExprT SubExpr;
+
+public:
+  CastIfNeedExprPrinter(std::string &&T, SubExprT &&S)
+      : TypeInfo(std::forward<std::string>(T)),
+        SubExpr(std::forward<SubExprT>(S)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    const Expr *InputArg = SubExpr->IgnoreImpCasts();
+    clang::QualType ArgType = InputArg->getType().getCanonicalType();
+    ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
+    if (ArgType.getAsString() != TypeInfo) {
+      Stream << "(" << TypeInfo << ")";
+    }
+    dpct::print(Stream, SubExpr);
+  }
+};
+
 template <class SubExprT> class DoublePointerConstCastExprPrinter {
   std::string TypeInfo;
   SubExprT SubExpr;
@@ -1546,6 +1565,16 @@ makeCastExprCreator(std::function<TypeInfoT(const CallExpr *)> TypeInfo,
                     std::function<SubExprT(const CallExpr *)> Sub) {
   return PrinterCreator<CastExprPrinter<TypeInfoT, SubExprT>,
                         std::function<TypeInfoT(const CallExpr *)>,
+                        std::function<SubExprT(const CallExpr *)>>(TypeInfo,
+                                                                   Sub);
+}
+
+template <class SubExprT>
+std::function<CastIfNeedExprPrinter<SubExprT>(const CallExpr *)>
+makeCastIfNeedExprCreator(std::function<std::string(const CallExpr *)> TypeInfo,
+                          std::function<SubExprT(const CallExpr *)> Sub) {
+  return PrinterCreator<CastIfNeedExprPrinter<SubExprT>,
+                        std::function<std::string(const CallExpr *)>,
                         std::function<SubExprT(const CallExpr *)>>(TypeInfo,
                                                                    Sub);
 }
@@ -2471,6 +2500,37 @@ public:
   }
 };
 
+class HasDirectCallee {
+public:
+  HasDirectCallee() {}
+  bool operator()(const CallExpr *C) {
+    const FunctionDecl *FD = C->getDirectCallee();
+    return FD;
+  }
+};
+
+template<class Attr> class IsDirectCalleeHasAttribute {
+public:
+  IsDirectCalleeHasAttribute() {}
+  bool operator()(const CallExpr *C) {
+    const FunctionDecl *FD = C->getDirectCallee();
+    if (!FD)
+      return false;
+    return FD->hasAttr<Attr>();
+  }
+};
+
+template <class Attr> class IsContextCallHasAttribute {
+public:
+  IsContextCallHasAttribute() {}
+  bool operator()(const CallExpr *C) {
+    const FunctionDecl *ContextFD = getImmediateOuterFuncDecl(C);
+    if (!ContextFD)
+      return false;
+    return ContextFD->hasAttr<Attr>();
+  }
+};
+
 std::function<std::string(const CallExpr *)> MemberExprBase() {
   return [=](const CallExpr *C) -> std::string {
     auto ME = dyn_cast<MemberExpr>(C->getCallee()->IgnoreImpCasts());
@@ -2514,6 +2574,7 @@ public:
 #define LAMBDA(...) makeLambdaCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define CAST(T, S) makeCastExprCreator(T, S)
+#define CAST_IF_NEED(T, S) makeCastIfNeedExprCreator(T, S)
 #define DOUBLE_POINTER_CONST_CAST(BASE_VALUE_TYPE, EXPR,                       \
                                   DOES_BASE_VALUE_NEED_CONST,                  \
                                   DOES_FIRST_LEVEL_POINTER_NEED_CONST)         \
@@ -2638,6 +2699,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #define ENTRY_OPERATOR(APINAME, OPKIND) MATH_BO_FACTORY_ENTRY(APINAME, OPKIND)
 #define ENTRY_TYPECAST(APINAME) MATH_TYPECAST_FACTORY_ENTRY(APINAME)
 #define ENTRY_UNSUPPORTED(APINAME) MATH_UNSUPPORTED_FUNC_FACTORY_ENTRY(APINAME)
+#define ENTRY_REWRITE(APINAME)
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
@@ -2647,6 +2709,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
+#undef ENTRY_REWRITE
 
 #define ENTRY_WARP(SOURCEAPINAME, TARGETAPINAME)                               \
   WARP_FUNC_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
@@ -2676,6 +2739,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesWarp.inc"
 #include "APINamesCUDNN.inc"
 #include "APINamesErrorHandling.inc"
+#include "APINamesMathRewrite.inc"
 #define FUNCTION_CALL
 #define CLASS_METHOD_CALL
 #include "APINamesCooperativeGroups.inc"
@@ -2719,6 +2783,7 @@ const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
 #define ENTRY_OPERATOR(APINAME, OPKIND)
 #define ENTRY_TYPECAST(APINAME)
 #define ENTRY_UNSUPPORTED(APINAME)
+#define ENTRY_REWRITE(APINAME)
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
@@ -2728,6 +2793,7 @@ const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
+#undef ENTRY_REWRITE
 };
 
 const std::vector<std::string> MathFuncNameRewriter::DoubleFuctions = {
@@ -2739,6 +2805,7 @@ const std::vector<std::string> MathFuncNameRewriter::DoubleFuctions = {
 #define ENTRY_OPERATOR(APINAME, OPKIND)
 #define ENTRY_TYPECAST(APINAME)
 #define ENTRY_UNSUPPORTED(APINAME)
+#define ENTRY_REWRITE(APINAME)
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED
@@ -2748,6 +2815,7 @@ const std::vector<std::string> MathFuncNameRewriter::DoubleFuctions = {
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
+#undef ENTRY_REWRITE
 };
 
 } // namespace dpct

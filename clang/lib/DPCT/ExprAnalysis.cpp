@@ -390,6 +390,7 @@ bool isMathFunction(std::string Name) {
 #define ENTRY_OPERATOR(APINAME, OPKIND) APINAME,
 #define ENTRY_TYPECAST(APINAME) APINAME,
 #define ENTRY_UNSUPPORTED(APINAME) APINAME,
+#define ENTRY_REWRITE(APINAME)
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
@@ -399,6 +400,7 @@ bool isMathFunction(std::string Name) {
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
+#undef ENTRY_REWRITE
   };
   return MathFunctions.count(Name);
 }
@@ -668,7 +670,9 @@ inline void ExprAnalysis::analyzeExpr(const UnresolvedLookupExpr *ULE) {
   RefString.clear();
   llvm::raw_string_ostream OS(RefString);
   if (auto NNS = ULE->getQualifier()) {
-    NNS->print(OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
+    if (NNS->getKind() != clang::NestedNameSpecifier::SpecifierKind::Global) {
+      NNS->print(OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
+    }
   }
   ULE->getName().print(OS,
                        dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
@@ -1678,106 +1682,7 @@ std::string ArgumentAnalysis::getRewriteString() {
 
 std::pair<SourceLocation, SourceLocation>
 ArgumentAnalysis::getLocInCallSpelling(const Expr *E) {
-  auto BeginCandidate = SM.getExpansionRange(E->getSourceRange()).getBegin();
-  auto EndCandidate = SM.getExpansionRange(E->getSourceRange()).getEnd();
-  auto LastTokenLength =
-      Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
-  EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
-  if (E->getBeginLoc().isMacroID() &&
-      !isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
-    // Try getImmediateSpellingLoc
-    // e.g. M1(call(M2))
-    BeginCandidate = SM.getImmediateSpellingLoc(E->getBeginLoc());
-    if (BeginCandidate.isMacroID()) {
-      BeginCandidate = SM.getExpansionLoc(BeginCandidate);
-    }
-    if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
-      // Try getImmediateExpansionRange
-      // e.g. #define M1(x) call(x)
-      BeginCandidate = E->getBeginLoc();
-      while (
-          SM.isMacroArgExpansion(SM.getImmediateSpellingLoc(BeginCandidate))) {
-        BeginCandidate = SM.getImmediateSpellingLoc(BeginCandidate);
-      }
-      BeginCandidate = SM.getSpellingLoc(
-          SM.getImmediateExpansionRange(BeginCandidate).getBegin());
-      if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
-        BeginCandidate = SM.getSpellingLoc(
-            SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
-        if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
-          // multi-Level funclike special process
-          // e.g.
-          // #define M1(x) call1(x)
-          // #define M2(y) call2(y)
-          // M1(M2(3))
-          BeginCandidate =
-              getDefinitionRange(E->getBeginLoc(), E->getEndLoc()).getBegin();
-          if (!isInRange(CallSpellingBegin, CallSpellingEnd, BeginCandidate)) {
-            if (!isExprStraddle(E)) {
-              // Default use SpellingLoc
-              // e.g. M1(call(targetExpr))
-              BeginCandidate = SM.getSpellingLoc(E->getBeginLoc());
-            } else {
-              BeginCandidate =
-                  SM.getExpansionRange(E->getSourceRange()).getBegin();
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // Similar to get begin loc, but need to add last token length
-  if (E->getEndLoc().isMacroID() &&
-      !isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
-    // Try ImmediateSpelling
-    EndCandidate = SM.getImmediateSpellingLoc(E->getEndLoc());
-    if (EndCandidate.isMacroID()) {
-      EndCandidate = SM.getImmediateExpansionRange(EndCandidate).getEnd();
-    }
-    auto LastTokenLength =
-        Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
-    EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
-    if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
-      // Try ImmediateExpansion
-      EndCandidate = E->getEndLoc();
-      while (SM.isMacroArgExpansion(SM.getImmediateSpellingLoc(EndCandidate))) {
-        EndCandidate = SM.getImmediateSpellingLoc(EndCandidate);
-      }
-      EndCandidate = SM.getSpellingLoc(
-          SM.getImmediateExpansionRange(EndCandidate).getEnd());
-      auto LastTokenLength =
-          Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
-      EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
-      if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
-        EndCandidate = SM.getSpellingLoc(
-            SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
-        auto LastTokenLength =
-            Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
-        EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
-        if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
-          EndCandidate =
-              getDefinitionRange(E->getBeginLoc(), E->getEndLoc()).getEnd();
-          auto LastTokenLength = Lexer::MeasureTokenLength(
-              EndCandidate, SM, Context.getLangOpts());
-          EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
-          if (!isInRange(CallSpellingBegin, CallSpellingEnd, EndCandidate)) {
-            if (!isExprStraddle(E)) {
-              // Default use SpellingLoc
-              EndCandidate = SM.getSpellingLoc(E->getEndLoc());
-              auto LastTokenLength = Lexer::MeasureTokenLength(
-                  EndCandidate, SM, Context.getLangOpts());
-              EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
-            } else {
-              EndCandidate = SM.getExpansionRange(E->getSourceRange()).getEnd();
-            }
-          }
-        }
-      }
-    }
-  }
-  return std::pair<SourceLocation, SourceLocation>(BeginCandidate,
-                                                   EndCandidate);
+  return getRangeInRange(E, CallSpellingBegin, CallSpellingEnd);
 }
 
 void SideEffectsAnalysis::dispatch(const Stmt *Expression) {
