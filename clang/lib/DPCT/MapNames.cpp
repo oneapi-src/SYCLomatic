@@ -1266,6 +1266,7 @@ void MapNames::setExplicitNamespaceMap() {
 #define ENTRY_OPERATOR(SOURCEAPINAME, TARGETAPINAME)
 #define ENTRY_TYPECAST(SOURCEAPINAME)
 #define ENTRY_UNSUPPORTED(SOURCEAPINAME)
+#define ENTRY_REWRITE(APINAME)
 #include "APINamesMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
@@ -1275,6 +1276,7 @@ void MapNames::setExplicitNamespaceMap() {
 #undef ENTRY_OPERATOR
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
+#undef ENTRY_REWRITE
   };
 }
 
