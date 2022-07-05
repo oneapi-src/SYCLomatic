@@ -260,7 +260,8 @@ clang::SourceRange getSpellingSourceRange(clang::SourceLocation L1,
                                           clang::SourceLocation L2);
 size_t calculateExpansionLevel(clang::SourceLocation Loc);
 /// Get the Stmt spelling
-std::string getStmtSpelling(const clang::Stmt *E);
+std::string getStmtSpelling(const clang::Stmt *E,
+                            clang::SourceRange Parent = clang::SourceRange());
 
 template <typename T> std::string getHashAsString(const T &Val) {
   std::stringstream Stream;
@@ -461,6 +462,9 @@ bool isInRange(clang::SourceLocation PB, clang::SourceLocation PE,
                clang::StringRef FilePath, size_t Offset);
 clang::SourceLocation getLocInRange(clang::SourceLocation Loc,
                                     clang::SourceRange Range);
+std::pair<clang::SourceLocation, clang::SourceLocation>
+getRangeInRange(const clang::Stmt *E, clang::SourceLocation RangeBegin,
+                clang::SourceLocation RangeEnd);
 unsigned int calculateIndentWidth(const clang::CUDAKernelCallExpr *Node,
                                   clang::SourceLocation SL, bool &Flag);
 bool isIncludedFile(const std::string &CurrentFile,

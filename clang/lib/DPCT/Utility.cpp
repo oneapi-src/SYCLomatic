@@ -208,45 +208,46 @@ size_t calculateExpansionLevel(const SourceLocation Loc) {
 }
 
 // Get textual representation of the Stmt.
-std::string getStmtSpelling(const Stmt *S) {
+std::string getStmtSpelling(const Stmt *S, SourceRange ParentRange) {
   std::string Str;
   if (!S)
     return Str;
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   SourceLocation BeginLoc, EndLoc;
-  auto StmtRange = getStmtExpansionSourceRange(S);
-  BeginLoc = StmtRange.getBegin();
-  EndLoc = StmtRange.getEnd();
 
-  // getDefinitionRange generally get more precise location.
-  // However, in some case, we prefer to use the macro expansion location.
-  // e.g. #define BLOCKDIM 8 + 8
-  // when migrating BLOCKDIM in kernel call like foo<<<BLOCKDIM,1,0>>>()
-  // we prefer BLOCKDIM then "8 + 8"
-  if (SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) != 0) {
+  // Get the definition range of the parent
+  ParentRange =
+      getDefinitionRange(ParentRange.getBegin(), ParentRange.getEnd());
+  ParentRange.setEnd(
+      ParentRange.getEnd().getLocWithOffset(Lexer::MeasureTokenLength(
+          ParentRange.getEnd(), SM,
+          dpct::DpctGlobalInfo::getContext().getLangOpts())));
+
+  int Length = 0;
+
+  auto ParentRangeSize = SM.getFileOffset(ParentRange.getEnd()) -
+                         SM.getFileOffset(ParentRange.getBegin());
+  if (ParentRangeSize <= 0) {
+    // if ParentRange is invalid, getDefinitionRange is the best we can have
     auto DRange = getDefinitionRange(S->getBeginLoc(), S->getEndLoc());
     BeginLoc = DRange.getBegin();
     EndLoc = DRange.getEnd();
+    Length = SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) +
+             Lexer::MeasureTokenLength(
+                 EndLoc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+  } else {
+    // if ParentRange is valid, find the expansion location in the ParentRange
+    auto Range =
+        getRangeInRange(S, ParentRange.getBegin(), ParentRange.getEnd());
+    BeginLoc = Range.first;
+    EndLoc = Range.second;
+    Length = SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc);
   }
 
-  int Length =
-      SM.getFileOffset(EndLoc) - SM.getFileOffset(BeginLoc) +
-      Lexer::MeasureTokenLength(
-          EndLoc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+  if (Length <= 0)
+    return "";
   Str = std::string(SM.getCharacterData(BeginLoc), Length);
   return Str;
-}
-
-std::string getStmtExpansion(const Stmt *S, const ASTContext &Context) {
-  const SourceManager &SM = Context.getSourceManager();
-  SourceLocation Begin(S->getBeginLoc()), _End(S->getEndLoc());
-  SourceLocation End(Lexer::getLocForEndOfToken(_End, 0, SM, LangOptions()));
-  if (Begin.isMacroID())
-    Begin = SM.getExpansionLoc(Begin);
-  if (End.isMacroID())
-    End = SM.getExpansionLoc(End);
-  return std::string(SM.getCharacterData(Begin),
-                     SM.getCharacterData(End) - SM.getCharacterData(Begin));
 }
 
 SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
@@ -2147,6 +2148,112 @@ SourceLocation getLocInRange(SourceLocation Loc, SourceRange Range) {
     }
   }
   return BeginCandidate;
+}
+
+std::pair<SourceLocation, SourceLocation>
+getRangeInRange(const Stmt *E, SourceLocation RangeBegin, SourceLocation RangeEnd) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto BeginCandidate = SM.getExpansionRange(E->getSourceRange()).getBegin();
+  auto EndCandidate = SM.getExpansionRange(E->getSourceRange()).getEnd();
+  auto LastTokenLength =
+      Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
+  EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
+  if (E->getBeginLoc().isMacroID() &&
+      !isInRange(RangeBegin, RangeEnd, BeginCandidate)) {
+    // Try getImmediateSpellingLoc
+    // e.g. M1(call(M2))
+    BeginCandidate = SM.getImmediateSpellingLoc(E->getBeginLoc());
+    if (BeginCandidate.isMacroID()) {
+      BeginCandidate = SM.getExpansionLoc(BeginCandidate);
+    }
+    if (!isInRange(RangeBegin, RangeEnd, BeginCandidate)) {
+      // Try getImmediateExpansionRange
+      // e.g. #define M1(x) call(x)
+      BeginCandidate = E->getBeginLoc();
+      while (
+          SM.isMacroArgExpansion(SM.getImmediateSpellingLoc(BeginCandidate))) {
+        BeginCandidate = SM.getImmediateSpellingLoc(BeginCandidate);
+      }
+      BeginCandidate = SM.getSpellingLoc(
+          SM.getImmediateExpansionRange(BeginCandidate).getBegin());
+      if (!isInRange(RangeBegin, RangeEnd, BeginCandidate)) {
+        BeginCandidate = SM.getSpellingLoc(
+            SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
+        if (!isInRange(RangeBegin, RangeEnd, BeginCandidate)) {
+          // multi-Level funclike special process
+          // e.g.
+          // #define M1(x) call1(x)
+          // #define M2(y) call2(y)
+          // M1(M2(3))
+          BeginCandidate =
+              getDefinitionRange(E->getBeginLoc(), E->getEndLoc()).getBegin();
+          if (!isInRange(RangeBegin, RangeEnd, BeginCandidate)) {
+            if (!isExprStraddle(E)) {
+              // Default use SpellingLoc
+              // e.g. M1(call(targetExpr))
+              BeginCandidate = SM.getSpellingLoc(E->getBeginLoc());
+            } else {
+              BeginCandidate =
+                  SM.getExpansionRange(E->getSourceRange()).getBegin();
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Similar to get begin loc, but need to add last token length
+  if (E->getEndLoc().isMacroID() &&
+      !isInRange(RangeBegin, RangeEnd, EndCandidate)) {
+    // Try ImmediateSpelling
+    EndCandidate = SM.getImmediateSpellingLoc(E->getEndLoc());
+    if (EndCandidate.isMacroID()) {
+      EndCandidate = SM.getImmediateExpansionRange(EndCandidate).getEnd();
+    }
+    auto LastTokenLength =
+        Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
+    EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
+    if (!isInRange(RangeBegin, RangeEnd, EndCandidate)) {
+      // Try ImmediateExpansion
+      EndCandidate = E->getEndLoc();
+      while (SM.isMacroArgExpansion(SM.getImmediateSpellingLoc(EndCandidate))) {
+        EndCandidate = SM.getImmediateSpellingLoc(EndCandidate);
+      }
+      EndCandidate = SM.getSpellingLoc(
+          SM.getImmediateExpansionRange(EndCandidate).getEnd());
+      auto LastTokenLength =
+          Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
+      EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
+      if (!isInRange(RangeBegin, RangeEnd, EndCandidate)) {
+        EndCandidate = SM.getSpellingLoc(
+            SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
+        auto LastTokenLength =
+            Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
+        EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
+        if (!isInRange(RangeBegin, RangeEnd, EndCandidate)) {
+          EndCandidate =
+              getDefinitionRange(E->getBeginLoc(), E->getEndLoc()).getEnd();
+          auto LastTokenLength = Lexer::MeasureTokenLength(
+              EndCandidate, SM, Context.getLangOpts());
+          EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
+          if (!isInRange(RangeBegin, RangeEnd, EndCandidate)) {
+            if (!isExprStraddle(E)) {
+              // Default use SpellingLoc
+              EndCandidate = SM.getSpellingLoc(E->getEndLoc());
+              auto LastTokenLength = Lexer::MeasureTokenLength(
+                  EndCandidate, SM, Context.getLangOpts());
+              EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
+            } else {
+              EndCandidate = SM.getExpansionRange(E->getSourceRange()).getEnd();
+            }
+          }
+        }
+      }
+    }
+  }
+  return std::pair<SourceLocation, SourceLocation>(BeginCandidate,
+                                                   EndCandidate);
 }
 
 unsigned int calculateIndentWidth(const CUDAKernelCallExpr *Node,
