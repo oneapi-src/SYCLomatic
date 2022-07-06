@@ -7,10 +7,10 @@
 //===----------------------------------------------------------------------===//
 
 
-ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaEventCreate", DEREF(makeDerefArgCreatorWithCall(0)), CALL("new sycl::event")))
-ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuEventCreate", DEREF(makeDerefArgCreatorWithCall(0)), CALL("new sycl::event")))
-ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaEventCreateWithFlags", DEREF(0), CALL("new sycl::event")))
-ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaEventCreateWithFlags", DEREF(0), CALL("new sycl::event")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaEventCreate", DEREF(makeDerefArgCreatorWithCall(0)), NEW("sycl::event")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuEventCreate", DEREF(makeDerefArgCreatorWithCall(0)), NEW("sycl::event")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaEventCreateWithFlags", DEREF(makeDerefArgCreatorWithCall(0)), NEW("sycl::event")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaEventCreateWithFlags", DEREF(makeDerefArgCreatorWithCall(0)), NEW("sycl::event")))
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cudaEventDestroy", CALL(MapNames::getDpctNamespace() + "destroy_event", ARG(0))))
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY("cuEventDestroy_v2", CALL(MapNames::getDpctNamespace() + "destroy_event", ARG(0))))
