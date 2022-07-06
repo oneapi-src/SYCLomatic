@@ -97,6 +97,6 @@ int main() {
   thrust::copy(mapsp1T, mapsp1T + numsH, mapspkeyT);
 // CHECK:  iota(oneapi::dpl::execution::make_device_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), mapspvalT, mapspvalT + numsH);
   thrust::sequence(mapspvalT, mapspvalT + numsH);
-// CHECK:  dpct::stable_sort(oneapi::dpl::execution::make_device_policy<class Policy_{{[0-9a-f]+}}>(q_ct1), mapspkeyT, mapspkeyT + numsH, mapspvalT);
+// CHECK:  stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), mapspkeyT, mapspkeyT + numsH, mapspvalT);
   thrust::stable_sort_by_key(mapspkeyT, mapspkeyT + numsH, mapspvalT);
 }

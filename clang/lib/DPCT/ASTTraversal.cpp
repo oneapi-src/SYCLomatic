@@ -2114,12 +2114,8 @@ void ThrustFunctionRule::thrustFuncMigration(
   } else {
     ThrustFuncName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
-  std::string ThrustFuncNameWithNamespace = "thrust::" + ThrustFuncName;
 
-  const unsigned NumArgs = CE->getNumArgs();
-  auto QT = CE->getArg(0)->getType();
-  LangOptions LO;
-  std::string ArgT = QT.getAsString(PrintingPolicy(LO));
+  std::string ThrustFuncNameWithNamespace = "thrust::" + ThrustFuncName;
 
   auto ReplInfo =
       MapNames::ThrustFuncNamesMap.find(ThrustFuncNameWithNamespace);
@@ -2138,6 +2134,11 @@ void ThrustFunctionRule::thrustFuncMigration(
         new ReplaceText(Range.getBegin(), Len, std::move(ReplStr)));
     return;
   }
+
+  const unsigned NumArgs = CE->getNumArgs();
+  auto QT = CE->getArg(0)->getType();
+  LangOptions LO;
+  std::string ArgT = QT.getAsString(PrintingPolicy(LO));
 
   // For the API migration defined in APINamesMapThrust.inc
   auto HelperFeatureIter = MapNames::ThrustFuncNamesHelperFeaturesMap.find(

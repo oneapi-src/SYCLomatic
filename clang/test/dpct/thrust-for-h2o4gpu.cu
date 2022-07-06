@@ -570,5 +570,12 @@ int main(void){
   thrust::sort(thrust::cuda::par, d_vec.begin(), d_vec.end());
   thrust::sort(thrust::host, d_vec.begin(), d_vec.end());
 
+  int x = 1;
+  int y = 2;
+  // CHECK: std::swap(x, y);
+  thrust::swap(x, y);
+  // CHECK: auto c = std::make_pair(1, 2);
+  auto c = thrust::make_pair(1, 2);
+
   return 0;
 }
