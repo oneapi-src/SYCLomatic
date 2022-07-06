@@ -22,7 +22,6 @@
 ENTRY_HOST("thrust::copy", "std::copy", "oneapi::dpl::execution::sycl")
 ENTRY_HOST("thrust::copy_n", "std::copy_n", "oneapi::dpl::execution::sycl")
 ENTRY_HOST("thrust::sequence", MapNames::getDpctNamespace() + "iota", "oneapi::dpl::execution::sycl")
-ENTRY_HOST("thrust::stable_sort_by_key", MapNames::getDpctNamespace(true) + "stable_sort", "oneapi::dpl::execution::sycl")
 ENTRY_HOST("thrust::sort", "oneapi::dpl::sort", "oneapi::dpl::execution::sycl")
 ENTRY_HOST("thrust::transform", "std::transform", "oneapi::dpl::execution::sycl")
 ENTRY_HOST("thrust::transform_if", MapNames::getDpctNamespace() + "transform_if", "oneapi::dpl::execution::sycl")

@@ -679,3 +679,35 @@ int main(){
   thrust::unique_by_key_copy(host_ptr_K, host_ptr_K+10, host_ptr_A, host_ptr_R, host_ptr_S);
   return 0;
 }
+
+void foo()
+{
+  const int N = 6;
+  int keys[N] = {1, 4, 2, 8, 5, 7};
+  char values[N] = {'a', 'b', 'c', 'd', 'e', 'f'};
+
+  //CHECK: if (dpct::is_device_ptr(keys)) {
+  //CHECK-NEXT:    dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(keys), dpct::device_pointer<int>(keys + N), dpct::device_pointer<char>(values));
+  //CHECK-NEXT:  } else {
+  //CHECK-NEXT:    dpct::stable_sort(oneapi::dpl::execution::seq, keys, keys + N, values);
+  //CHECK-NEXT:  };
+  //CHECK-NEXT:  if (dpct::is_device_ptr(keys + N)) {
+  //CHECK-NEXT:    dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(keys), dpct::device_pointer<int>(keys + N), dpct::device_pointer<char>(values));
+  //CHECK-NEXT:  } else {
+  //CHECK-NEXT:    dpct::stable_sort(oneapi::dpl::execution::seq, keys, keys + N, values);
+  //CHECK-NEXT:  };
+  //CHECK-NEXT:  if (dpct::is_device_ptr(keys)) {
+  //CHECK-NEXT:    dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(keys), dpct::device_pointer<int>(keys + N), dpct::device_pointer<char>(values), std::greater<int>());
+  //CHECK-NEXT:  } else {
+  //CHECK-NEXT:    dpct::stable_sort(oneapi::dpl::execution::seq, keys, keys + N, values, std::greater<int>());
+  //CHECK-NEXT:  };
+  //CHECK-NEXT:  if (dpct::is_device_ptr(keys + N)) {
+  //CHECK-NEXT:    dpct::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(keys), dpct::device_pointer<int>(keys + N), dpct::device_pointer<char>(values), std::greater<int>());
+  //CHECK-NEXT:  } else {
+  //CHECK-NEXT:    dpct::stable_sort(oneapi::dpl::execution::seq, keys, keys + N, values, std::greater<int>());
+  //CHECK-NEXT:  };
+  thrust::stable_sort_by_key(thrust::host, keys, keys + N, values);
+  thrust::stable_sort_by_key(keys, keys + N, values);
+  thrust::stable_sort_by_key(thrust::host, keys, keys + N, values,thrust::greater<int>());
+  thrust::stable_sort_by_key(keys, keys + N, values, thrust::greater<int>());
+}
