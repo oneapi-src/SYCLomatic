@@ -465,6 +465,9 @@ clang::SourceLocation getLocInRange(clang::SourceLocation Loc,
 std::pair<clang::SourceLocation, clang::SourceLocation>
 getRangeInRange(const clang::Stmt *E, clang::SourceLocation RangeBegin,
                 clang::SourceLocation RangeEnd);
+std::pair<clang::SourceLocation, clang::SourceLocation>
+getRangeInRange(clang::SourceRange Range, clang::SourceLocation RangeBegin,
+                clang::SourceLocation RangeEnd);
 unsigned int calculateIndentWidth(const clang::CUDAKernelCallExpr *Node,
                                   clang::SourceLocation SL, bool &Flag);
 bool isIncludedFile(const std::string &CurrentFile,
