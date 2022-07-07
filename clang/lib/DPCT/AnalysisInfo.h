@@ -1451,12 +1451,9 @@ public:
   static inline std::string getTypeName(QualType QT,
                                         const ASTContext &Context) {
     if (auto ET = QT->getAs<ElaboratedType>()) {
-      if (ET->getQualifier())
-        QT = Context.getElaboratedType(ETK_None, ET->getQualifier(),
-                                       ET->getNamedType(),
-                                       ET->getOwnedTagDecl());
-      else
-        QT = ET->getNamedType();
+      QT = Context.getElaboratedType(ETK_None, ET->getQualifier(),
+                              ET->getNamedType(),
+                              ET->getOwnedTagDecl());
     }
     return QT.getAsString(Context.getPrintingPolicy());
   }
@@ -4342,7 +4339,7 @@ private:
     std::string NL;
     std::string Indent;
   } LocInfo;
-  // true, if migrated DPC++ code block need extra { }
+  // true, if migrated SYCL code block need extra { }
   bool NeedBraces = true;
   struct {
     std::string Config[6] = {"", "", "", "0", "", ""};

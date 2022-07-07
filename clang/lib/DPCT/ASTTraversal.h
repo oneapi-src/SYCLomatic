@@ -504,7 +504,7 @@ protected:
 template <typename T> const char NamedMigrationRule<T>::ID(0);
 
 /// As follow define the migration rules which target to migration source
-/// language features to DPC++. The rules inherit from NamedMigrationRule
+/// language features to SYCL. The rules inherit from NamedMigrationRule
 /// TODO: implement similar rules for each source language.
 ///
 
@@ -1435,7 +1435,7 @@ public:
 // free(kernelEvent);
 // ...
 // As cudaEvent_t in CUDA side is a pointer, while sycl::event is a object
-// in DPC++ side, if the code piece is migrated to:
+// in SYCL side, if the code piece is migrated to:
 // ...
 // sycl::event *kernelEvent;
 // kernelEvent = (sycl::event *)malloc(n_streams * sizeof(sycl::event));
