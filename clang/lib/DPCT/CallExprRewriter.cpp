@@ -2770,6 +2770,7 @@ void CallExprRewriterFactoryBase::initMethodRewriterMap() {
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
 #define CLASS_METHOD_CALL
 #include "APINamesCooperativeGroups.inc"
+//#include "APINamesThrust.inc"
 #undef CLASS_METHOD_CALL
       }));
 }

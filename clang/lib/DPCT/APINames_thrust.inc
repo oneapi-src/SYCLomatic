@@ -66,7 +66,7 @@ ENTRY(thrust::exclusive_scan_by_key, thrust::exclusive_scan_by_key, true, NO_FLA
 ENTRY(thrust::exp, thrust::exp, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::fill, thrust::fill, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::fill_n, thrust::fill_n, true, NO_FLAG, P4, "Successful")
-ENTRY(thrust::find, thrust::find, false, NO_FLAG, P4, "comment")
+ENTRY(thrust::find, thrust::find, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::find_if, thrust::find_if, false, NO_FLAG, P4, "comment")
 ENTRY(thrust::find_if_not, thrust::find_if_not, false, NO_FLAG, P4, "comment")
 ENTRY(thrust::for_each, thrust::for_each, true, NO_FLAG, P4, "Successful")
