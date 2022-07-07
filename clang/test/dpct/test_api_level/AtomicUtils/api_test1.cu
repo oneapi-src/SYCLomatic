@@ -9,9 +9,9 @@
 
 #include <cuda/atomic>
 
-// TEST_FEATURE: AtomicUtils_atomic_helper
-// TEST_FEATURE: AtomicUtils_atomic_helper_store
-// TEST_FEATURE: AtomicUtils_atomic_helper_load
+// TEST_FEATURE: AtomicUtils_atomic_utils
+// TEST_FEATURE: AtomicUtils_atomic_utils_store
+// TEST_FEATURE: AtomicUtils_atomic_utils_load
 
 
 int main(){

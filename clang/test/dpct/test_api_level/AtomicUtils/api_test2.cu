@@ -9,9 +9,9 @@
 
 #include <cuda/std/atomic>
 
-// TEST_FEATURE: AtomicUtils_atomic_helper_exchange
-// TEST_FEATURE: AtomicUtils_atomic_helper_compare_exchange_weak
-// TEST_FEATURE: AtomicUtils_atomic_helper_compare_exchange_strong
+// TEST_FEATURE: AtomicUtils_atomic_utils_exchange
+// TEST_FEATURE: AtomicUtils_atomic_utils_compare_exchange_weak
+// TEST_FEATURE: AtomicUtils_atomic_utils_compare_exchange_strong
 
 
 int main(){

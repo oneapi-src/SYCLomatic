@@ -9,11 +9,11 @@
 
 #include <cuda/atomic>
 
-// TEST_FEATURE: AtomicUtils_atomic_helper_fetch_add
-// TEST_FEATURE: AtomicUtils_atomic_helper_fetch_sub
-// TEST_FEATURE: AtomicUtils_atomic_helper_fetch_and
-// TEST_FEATURE: AtomicUtils_atomic_helper_fetch_or
-// TEST_FEATURE: AtomicUtils_atomic_helper_fetch_xor
+// TEST_FEATURE: AtomicUtils_atomic_utils_fetch_add
+// TEST_FEATURE: AtomicUtils_atomic_utils_fetch_sub
+// TEST_FEATURE: AtomicUtils_atomic_utils_fetch_and
+// TEST_FEATURE: AtomicUtils_atomic_utils_fetch_or
+// TEST_FEATURE: AtomicUtils_atomic_utils_fetch_xor
 
 
 int main(){
