@@ -2059,18 +2059,10 @@ void AtomicFunctionRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(AtomicFunctionRule)
 
 void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
-  std::vector<std::string> ThrustFuncNames(MapNames::ThrustFuncNamesMap.size());
-  std::transform(
-      MapNames::ThrustFuncNamesMap.begin(), MapNames::ThrustFuncNamesMap.end(),
-      ThrustFuncNames.begin(),
-      [](const std::pair<std::string, MapNames::ThrustFuncReplInfo> &p) {
-        return p.first;
-      });
-
   MF.addMatcher(callExpr(callee(functionDecl(
                              hasDeclContext(namespaceDecl(hasName("thrust"))))))
-                    .bind("thrustFuncCall"),
-                this);
+                     .bind("thrustFuncCall"),
+                 this);
 
   MF.addMatcher(
       unresolvedLookupExpr(hasAnyDeclaration(namedDecl(hasDeclContext(
@@ -17166,7 +17158,10 @@ REGISTER_RULE(ComplexAPIRule)
 
 void TemplateSpecializationTypeLocRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
-  auto TargetTypeName = [&]() { return hasAnyName("cuda::atomic"); };
+  auto TargetTypeName = [&]() {
+    return hasAnyName("cuda::atomic", "thrust::not_equal_to",
+                      "thrust::constant_iterator");
+  };
 
   MF.addMatcher(typeLoc(
                     loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))

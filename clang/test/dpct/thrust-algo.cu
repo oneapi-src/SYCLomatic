@@ -14,6 +14,12 @@
 #include <thrust/gather.h>
 #include <thrust/binary_search.h>
 
+
+#include <thrust/find.h>
+#include <thrust/sort.h>
+#include <thrust/host_vector.h>
+#include <memory>
+
 void k() {
   std::vector<int> v, v2, v3, v4;
 
@@ -159,3 +165,45 @@ void k() {
   thrust::merge(v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
 }
 
+
+void foo(cudaStream_t stream) {
+  thrust::host_vector<int> h;
+  thrust::device_vector<int> d;
+
+  // thrust::find
+  thrust::find(thrust::seq, h.begin(), h.end(), 1);
+  thrust::find(h.begin(), h.end(), 1);
+  thrust::find(d.begin(), d.end(), 1);
+
+  // thrust::sort_by_key
+  thrust::sort_by_key(thrust::seq, h.begin(), h.end(), h.begin(), thrust::greater<int>());
+  thrust::sort_by_key(h.begin(), h.end(), h.begin());
+  thrust::sort_by_key(d.begin(), d.end(), h.begin());
+  thrust::sort_by_key(thrust::device, d.begin(), d.end(), d.begin());
+  thrust::sort_by_key(h.begin(), h.end(), h.begin(), thrust::greater<int>());
+  thrust::sort_by_key(d.begin(), d.end(), d.begin(), thrust::greater<int>());
+
+  thrust::multiplies<int> bo1;
+  thrust::multiplies<int> bo2;
+  // thrust::inner_product
+  thrust::inner_product(thrust::host, h.begin(), h.end(), h.begin(), 1);
+  thrust::inner_product(thrust::device, d.begin(), d.end(), d.begin(), 1, bo1, bo2);
+  thrust::inner_product(h.begin(), h.end(), h.begin(), 1);
+  thrust::inner_product(d.begin(), d.end(), d.begin(), 1);
+  thrust::inner_product(h.begin(), h.end(), h.begin(), 1, bo1, bo2);
+  thrust::inner_product(d.begin(), d.end(), d.begin(), 1, bo1, bo2);
+
+  //thrust::not_equal_to<int> bp;
+  //std::allocator<int> alloc;
+  //auto policy = thrust::cuda::par(alloc).on(stream);
+  // thrust::reduce_by_key
+  thrust::reduce_by_key(thrust::host, h.begin(), h.end(), h.begin(), h.end(), h.begin(), bp, bo1);
+  thrust::reduce_by_key(thrust::device, d.begin(), d.end(), d.begin(), d.end(), d.begin(), bp);
+  thrust::reduce_by_key(h.begin(), h.end(), h.begin(), h.end(), h.begin(), bp, bo1);
+  thrust::reduce_by_key(d.begin(), d.end(), d.begin(), d.end(), d.begin(), bp, bo1);
+  thrust::reduce_by_key(thrust::host, h.begin(), h.end(), thrust::constant_iterator<int>(1), h.end(), h.begin());
+  thrust::reduce_by_key(h.begin(), h.end(), h.begin(), h.end(), h.begin(), bp);
+  thrust::reduce_by_key(d.begin(), d.end(), d.begin(), d.end(), d.begin(), bp);
+  thrust::reduce_by_key(h.begin(), h.end(), h.begin(), h.end(), h.begin());
+  thrust::reduce_by_key(d.begin(), d.end(), d.begin(), d.end(), d.begin());
+}

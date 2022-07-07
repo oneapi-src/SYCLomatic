@@ -56,7 +56,7 @@ void foo_host(){
     thrust::uninitialized_fill(h_input.begin(), h_input.end(), 10);
     //CHECK: std::unique(h_input.begin(), h_input.end());
     thrust::unique(h_input.begin(), h_input.end());
-    //CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), h_input.begin(), h_input.end(), h_output.begin(), 0);
+    //CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), h_input.begin(), h_input.end(), h_output.begin(), 0);
     thrust::exclusive_scan(h_input.begin(), h_input.end(), h_output.begin());
     //CHECK: std::max_element(h_input.begin(), h_input.end());
     thrust::max_element(h_input.begin(), h_input.end());
@@ -65,19 +65,8 @@ void foo_host(){
 
     //CHECK: oneapi::dpl::discard_iterator();
     thrust::make_discard_iterator();
-    //CHECK: oneapi::dpl::reduce_by_segment(
-    //CHECK-NEXT:     oneapi::dpl::execution::make_device_policy(q_ct1), h_input.begin(),
-    //CHECK-NEXT:     h_input.end(),
-    //CHECK-NEXT:     h_input2.begin(),
-    //CHECK-NEXT:     h_output.begin(),
-    //CHECK-NEXT:     h_output2.begin());
-    thrust::reduce_by_key
-    (
-        h_input.begin(),
-        h_input.end(),
-        h_input2.begin(),
-        h_output.begin(),
-        h_output2.begin()
+    //CHECK: oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::seq, h_input.begin(), h_input.end(), h_input2.begin(), h_output.begin(), h_output2.begin());
+    thrust::reduce_by_key(h_input.begin(), h_input.end(), h_input2.begin(), h_output.begin(), h_output2.begin()
     );
 }
 
