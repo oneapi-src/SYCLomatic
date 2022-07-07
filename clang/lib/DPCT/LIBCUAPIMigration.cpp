@@ -42,16 +42,30 @@ void LIBCUAPIRule::runRule(
   std::string APIName;
   std::ostringstream OS;
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
-    auto DC = CE->getDirectCallee();
-    APIName = DC->getNameAsString();
-    if(APIName == "atomic_thread_fence"){
-      auto FirArg = CE->getArg(0);
-      ExprAnalysis FirEA(FirArg);
-      FirEA.analyze();
-      OS << MapNames::getClNamespace()<<"atomic_fence"<<"("<< FirEA.getReplacedString()<< ")";
-      emplaceTransformation(new ReplaceStmt(CE, OS.str()));
-    }
-    
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+  }
+}
+
+void LIBCUTypeRule::registerMatcher(ast_matchers::MatchFinder &MF){
+  auto TargetTypeName = [&]() { return hasAnyName(
+    "cuda::atomic","cuda::std::atomic"); 
+    };
+
+  MF.addMatcher(typeLoc(
+                    loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
+                    .bind("loc"),
+                this);
+}
+
+void LIBCUTypeRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto TL = getNodeAsType<TypeLoc>(Result, "loc")) {
+    ExprAnalysis EA;
+    EA.analyze(*TL);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }
   

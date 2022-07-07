@@ -588,14 +588,6 @@ private:
   bool isCapturedByLambda(const TypeLoc *TL);
 };
 
-class TemplateSpecializationTypeLocRule
-    : public clang::dpct::NamedMigrationRule<
-          TemplateSpecializationTypeLocRule> {
-
-public:
-  void registerMatcher(clang::ast_matchers::MatchFinder &MF) override;
-  void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
-};
 
 class UserDefinedAPIRule
     : public clang::dpct::NamedMigrationRule<UserDefinedAPIRule> {

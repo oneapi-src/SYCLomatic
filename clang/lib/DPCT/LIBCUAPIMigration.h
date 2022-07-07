@@ -1,4 +1,4 @@
-//===---DNNAPIMigration.h -------------------------------*- C++ -*---===//
+//===---LIBCUAPIMigration.h -------------------------------*- C++ -*---===//
 //
 // Copyright (C) Intel Corporation. All rights reserved.
 //
@@ -19,6 +19,12 @@ namespace clang{
 namespace dpct{
 
 class LIBCUAPIRule : public NamedMigrationRule<LIBCUAPIRule>{
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class LIBCUTypeRule : public NamedMigrationRule<LIBCUTypeRule>{
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
