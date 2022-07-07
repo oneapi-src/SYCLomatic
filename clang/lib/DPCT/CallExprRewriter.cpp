@@ -2740,6 +2740,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesCUDNN.inc"
 #include "APINamesErrorHandling.inc"
 #include "APINamesMathRewrite.inc"
+#include "APINamesLIBCU.inc"
 #define FUNCTION_CALL
 #define CLASS_METHOD_CALL
 #include "APINamesCooperativeGroups.inc"

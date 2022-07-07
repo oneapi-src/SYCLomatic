@@ -128,6 +128,7 @@ extern const std::string RngUtilsAllContentStr;
 extern const std::string LibCommonUtilsAllContentStr;
 extern const std::string CclUtilsAllContentStr;
 extern const std::string DplExtrasAlgorithmAllContentStr;
+extern const std::string AtomicUtilsAllContentStr;
 extern const std::string DplExtrasFunctionalAllContentStr;
 extern const std::string DplExtrasIteratorsAllContentStr;
 extern const std::string DplExtrasMemoryAllContentStr;

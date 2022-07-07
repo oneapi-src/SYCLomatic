@@ -796,6 +796,20 @@ void MapNames::setExplicitNamespaceMap() {
                                       "library_data_t::real_int32")},
       {"cuda::thread_scope_system",
        std::make_shared<EnumNameRule>(getClNamespace() + "memory_scope::system")},
+      {"cuda::thread_scope_device",
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_scope::device")},
+      {"cuda::thread_scope_block",
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_scope::work_group")},
+      {"cuda::std::memory_order_relaxed",
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_order::relaxed")},
+      {"cuda::std::memory_order_acq_rel",
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_order::acq_rel")},
+      {"cuda::std::memory_order_release",
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_order::release")},
+      {"cuda::std::memory_order_acquire",
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_order::acquire")},
+      {"cuda::std::memory_order_seq_cst",
+       std::make_shared<EnumNameRule>(getClNamespace() + "memory_order::seq_cst")},
       // ...
   };
 

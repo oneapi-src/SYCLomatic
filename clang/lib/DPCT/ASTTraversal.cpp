@@ -16,6 +16,7 @@
 #include "MisleadingBidirectional.h"
 #include "DNNAPIMigration.h"
 #include "NCCLAPIMigration.h"
+#include "LIBCUAPIMigration.h"
 #include "SaveNewFiles.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -975,6 +976,19 @@ void IncludesCallbacks::InclusionDirective(
       return;
     }
     DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Dnnl);
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
+    Updater.update(false);
+  }
+
+  if (FileName.compare(StringRef("cuda/atomic")) == 0||
+      FileName.compare(StringRef("cuda/std/atomic")) == 0) {
+
+    DpctGlobalInfo::setMKLHeaderUsed(true);
+
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_AtomicUtils);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -17127,6 +17141,12 @@ REGISTER_RULE(CuDNNAPIRule)
 
 REGISTER_RULE(NCCLRule)
 
+REGISTER_RULE(LIBCUAPIRule)
+
+REGISTER_RULE(LIBCUMemberFuncRule)
+
+REGISTER_RULE(LIBCUTypeRule)
+
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {
     return hasAnyName("make_cuDoubleComplex", "cuCreal", "cuCrealf", "cuCimag",
@@ -17150,28 +17170,6 @@ void ComplexAPIRule::runRule(
 }
 
 REGISTER_RULE(ComplexAPIRule)
-
-void TemplateSpecializationTypeLocRule::registerMatcher(
-    ast_matchers::MatchFinder &MF) {
-  auto TargetTypeName = [&]() { return hasAnyName("cuda::atomic"); };
-
-  MF.addMatcher(typeLoc(
-                    loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
-                    .bind("loc"),
-                this);
-}
-
-void TemplateSpecializationTypeLocRule::runRule(
-    const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "loc")) {
-    ExprAnalysis EA;
-    EA.analyze(*TL);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-  }
-}
-
-REGISTER_RULE(TemplateSpecializationTypeLocRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {
