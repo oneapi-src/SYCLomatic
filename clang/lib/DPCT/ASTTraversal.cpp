@@ -3082,11 +3082,10 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
 
     // if TL is the T in
     // template<typename T> void foo(T a);
-    if (TL->getTypeLocClass() == clang::TypeLoc::SubstTemplateTypeParm ||
+    if (TL->getType()->getTypeClass() == clang::TypeLoc::SubstTemplateTypeParm ||
         TL->getBeginLoc().isInvalid()) {
       return;
     }
-
     auto TypeStr =
         DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
 
@@ -3115,7 +3114,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
 
     if (isCapturedByLambda(TL))
       return;
-
     auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
     auto BeginLoc = Range.getBegin();
     auto EndLoc = Range.getEnd();
@@ -3214,7 +3212,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (replaceTransformIterator(SM, LOpts, TL)) {
       return;
     }
-
     if (TL->getTypeLocClass() == clang::TypeLoc::Elaborated) {
       auto ETC = TL->getAs<ElaboratedTypeLoc>();
       auto NTL = ETC.getNamedTypeLoc();
@@ -3348,7 +3345,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       }
     }
-
     const DeclaratorDecl *DD = nullptr;
     const VarDecl *VarD = DpctGlobalInfo::findAncestor<VarDecl>(TL);
     const FieldDecl *FieldD = DpctGlobalInfo::findAncestor<FieldDecl>(TL);
@@ -3359,9 +3355,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           std::string::npos)
         report(BeginLoc, Diagnostics::HANDLE_IN_DEVICE, false, TypeStr);
     }
-
     const Expr *Init = nullptr;
-
     if (VarD) {
       DD = VarD;
       if (VarD->hasInit())
