@@ -3123,10 +3123,9 @@ class TemplateArgumentInfo {
 public:
   explicit TemplateArgumentInfo(const TemplateArgumentLoc &TAL,
                                 SourceRange Range)
-      : Kind(TAL.getArgument().getKind()),
-        ParentRange(
-            getDefinitionRange(Range.getBegin(), Range.getEnd())) {
-    setArgFromExprAnalysis(TAL);
+      : Kind(TAL.getArgument().getKind()) {
+    setArgFromExprAnalysis(
+        TAL, getDefinitionRange(Range.getBegin(), Range.getEnd()));
   }
 
   explicit TemplateArgumentInfo(std::string &&Str)
@@ -3177,7 +3176,8 @@ public:
   static bool isPlaceholderType(clang::QualType QT);
 
 private:
-  template <class T> void setArgFromExprAnalysis(const T &Arg) {
+  template <class T>
+  void setArgFromExprAnalysis(const T &Arg, SourceRange ParentRange = SourceRange()) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     auto Range = getArgSourceRange(Arg);
     auto Begin = Range.getBegin();
@@ -3224,7 +3224,6 @@ private:
   }
   std::shared_ptr<TemplateDependentStringInfo> DependentStr;
   TemplateArgument::ArgKind Kind;
-  SourceRange ParentRange;
   bool IsWritten = true;
 };
 
