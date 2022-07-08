@@ -280,9 +280,7 @@ list<std::string> RuleFile("rule-file", desc("Specifies the rule file path that 
 opt<UsmLevel> USMLevel(
     "usm-level", desc("Sets the USM level to use in source code generation.\n"),
     values(llvm::cl::OptionEnumValue{"restricted", int(UsmLevel::UL_Restricted),
-                     "Uses API from SYCL Explicit and Restricted Unified "
-                     "Shared Memory extension\n"
-                     "for memory management migration. (default)", false},
+                     "Uses USM API for memory management migration. (default)", false},
            llvm::cl::OptionEnumValue{"none", int(UsmLevel::UL_None),
                      "Uses helper functions from DPCT header files for memory "
                      "management migration.", false}),
