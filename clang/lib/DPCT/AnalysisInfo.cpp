@@ -1854,16 +1854,16 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
     }
     setFuncInfo(DeviceFunctionDecl::LinkRedecls(CallDecl));
     if (auto DRE = dyn_cast<DeclRefExpr>(Callee)) {
-      buildTemplateArguments(DRE->template_arguments());
+      buildTemplateArguments(DRE->template_arguments(), Callee->getSourceRange());
     }
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
     Name = Unresolved->getName().getAsString();
     setFuncInfo(DeviceFunctionDecl::LinkUnresolved(Unresolved));
-    buildTemplateArguments(Unresolved->template_arguments());
+    buildTemplateArguments(Unresolved->template_arguments(), Callee->getSourceRange());
   } else if (auto DependentScope =
                  dyn_cast<CXXDependentScopeMemberExpr>(Callee)) {
     Name = DependentScope->getMember().getAsString();
-    buildTemplateArguments(DependentScope->template_arguments());
+    buildTemplateArguments(DependentScope->template_arguments(), Callee->getSourceRange());
   } else if (auto DSDRE = dyn_cast<DependentScopeDeclRefExpr>(Callee)) {
     Name = DSDRE->getDeclName().getAsString();
     buildTemplateArgumentsFromTypeLoc(DSDRE->getQualifierLoc().getTypeLoc());
@@ -3133,7 +3133,6 @@ void CtTypeInfo::setName(const TypeLoc &TL) {
   ExprAnalysis EA;
   EA.analyze(TL);
   TDSI = EA.getTemplateDependentStringInfo();
-
   auto SetFromTL = EA.getHelperFeatureSet();
   HelperFeatureSet.insert(SetFromTL.begin(), SetFromTL.end());
 
@@ -3142,7 +3141,6 @@ void CtTypeInfo::setName(const TypeLoc &TL) {
 }
 
 void CtTypeInfo::updateName() {
-
   BaseNameWithoutQualifiers = TDSI->getSourceString();
   auto SetFromTTDSI = TDSI->getHelperFeatureSet();
   HelperFeatureSet.insert(SetFromTTDSI.begin(), SetFromTTDSI.end());

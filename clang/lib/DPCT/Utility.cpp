@@ -2152,25 +2152,30 @@ SourceLocation getLocInRange(SourceLocation Loc, SourceRange Range) {
 
 std::pair<SourceLocation, SourceLocation>
 getRangeInRange(const Stmt *E, SourceLocation RangeBegin, SourceLocation RangeEnd) {
+  return getRangeInRange(E->getSourceRange(), RangeBegin, RangeEnd);
+}
+
+std::pair<SourceLocation, SourceLocation>
+getRangeInRange(SourceRange Range, SourceLocation RangeBegin, SourceLocation RangeEnd) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto &Context = dpct::DpctGlobalInfo::getContext();
-  auto BeginCandidate = SM.getExpansionRange(E->getSourceRange()).getBegin();
-  auto EndCandidate = SM.getExpansionRange(E->getSourceRange()).getEnd();
+  auto BeginCandidate = SM.getExpansionRange(Range).getBegin();
+  auto EndCandidate = SM.getExpansionRange(Range).getEnd();
   auto LastTokenLength =
       Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
   EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
-  if (E->getBeginLoc().isMacroID() &&
+  if (Range.getBegin().isMacroID() &&
       !isInRange(RangeBegin, RangeEnd, BeginCandidate)) {
     // Try getImmediateSpellingLoc
     // e.g. M1(call(M2))
-    BeginCandidate = SM.getImmediateSpellingLoc(E->getBeginLoc());
+    BeginCandidate = SM.getImmediateSpellingLoc(Range.getBegin());
     if (BeginCandidate.isMacroID()) {
       BeginCandidate = SM.getExpansionLoc(BeginCandidate);
     }
     if (!isInRange(RangeBegin, RangeEnd, BeginCandidate)) {
       // Try getImmediateExpansionRange
       // e.g. #define M1(x) call(x)
-      BeginCandidate = E->getBeginLoc();
+      BeginCandidate = Range.getBegin();
       while (
           SM.isMacroArgExpansion(SM.getImmediateSpellingLoc(BeginCandidate))) {
         BeginCandidate = SM.getImmediateSpellingLoc(BeginCandidate);
@@ -2179,7 +2184,7 @@ getRangeInRange(const Stmt *E, SourceLocation RangeBegin, SourceLocation RangeEn
           SM.getImmediateExpansionRange(BeginCandidate).getBegin());
       if (!isInRange(RangeBegin, RangeEnd, BeginCandidate)) {
         BeginCandidate = SM.getSpellingLoc(
-            SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
+            SM.getImmediateExpansionRange(Range.getBegin()).getBegin());
         if (!isInRange(RangeBegin, RangeEnd, BeginCandidate)) {
           // multi-Level funclike special process
           // e.g.
@@ -2187,15 +2192,15 @@ getRangeInRange(const Stmt *E, SourceLocation RangeBegin, SourceLocation RangeEn
           // #define M2(y) call2(y)
           // M1(M2(3))
           BeginCandidate =
-              getDefinitionRange(E->getBeginLoc(), E->getEndLoc()).getBegin();
+              getDefinitionRange(Range.getBegin(), Range.getEnd()).getBegin();
           if (!isInRange(RangeBegin, RangeEnd, BeginCandidate)) {
-            if (!isExprStraddle(E)) {
+            if (!isLocationStraddle(Range.getBegin(), Range.getEnd())) {
               // Default use SpellingLoc
               // e.g. M1(call(targetExpr))
-              BeginCandidate = SM.getSpellingLoc(E->getBeginLoc());
+              BeginCandidate = SM.getSpellingLoc(Range.getBegin());
             } else {
               BeginCandidate =
-                  SM.getExpansionRange(E->getSourceRange()).getBegin();
+                  SM.getExpansionRange(Range).getBegin();
             }
           }
         }
@@ -2204,10 +2209,10 @@ getRangeInRange(const Stmt *E, SourceLocation RangeBegin, SourceLocation RangeEn
   }
 
   // Similar to get begin loc, but need to add last token length
-  if (E->getEndLoc().isMacroID() &&
+  if (Range.getEnd().isMacroID() &&
       !isInRange(RangeBegin, RangeEnd, EndCandidate)) {
     // Try ImmediateSpelling
-    EndCandidate = SM.getImmediateSpellingLoc(E->getEndLoc());
+    EndCandidate = SM.getImmediateSpellingLoc(Range.getEnd());
     if (EndCandidate.isMacroID()) {
       EndCandidate = SM.getImmediateExpansionRange(EndCandidate).getEnd();
     }
@@ -2216,7 +2221,7 @@ getRangeInRange(const Stmt *E, SourceLocation RangeBegin, SourceLocation RangeEn
     EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
     if (!isInRange(RangeBegin, RangeEnd, EndCandidate)) {
       // Try ImmediateExpansion
-      EndCandidate = E->getEndLoc();
+      EndCandidate = Range.getEnd();
       while (SM.isMacroArgExpansion(SM.getImmediateSpellingLoc(EndCandidate))) {
         EndCandidate = SM.getImmediateSpellingLoc(EndCandidate);
       }
@@ -2227,25 +2232,25 @@ getRangeInRange(const Stmt *E, SourceLocation RangeBegin, SourceLocation RangeEn
       EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
       if (!isInRange(RangeBegin, RangeEnd, EndCandidate)) {
         EndCandidate = SM.getSpellingLoc(
-            SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
+            SM.getImmediateExpansionRange(Range.getEnd()).getEnd());
         auto LastTokenLength =
             Lexer::MeasureTokenLength(EndCandidate, SM, Context.getLangOpts());
         EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
         if (!isInRange(RangeBegin, RangeEnd, EndCandidate)) {
           EndCandidate =
-              getDefinitionRange(E->getBeginLoc(), E->getEndLoc()).getEnd();
+              getDefinitionRange(Range.getBegin(), Range.getEnd()).getEnd();
           auto LastTokenLength = Lexer::MeasureTokenLength(
               EndCandidate, SM, Context.getLangOpts());
           EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
           if (!isInRange(RangeBegin, RangeEnd, EndCandidate)) {
-            if (!isExprStraddle(E)) {
+            if (!isLocationStraddle(Range.getBegin(), Range.getEnd())) {
               // Default use SpellingLoc
-              EndCandidate = SM.getSpellingLoc(E->getEndLoc());
+              EndCandidate = SM.getSpellingLoc(Range.getEnd());
               auto LastTokenLength = Lexer::MeasureTokenLength(
                   EndCandidate, SM, Context.getLangOpts());
               EndCandidate = EndCandidate.getLocWithOffset(LastTokenLength);
             } else {
-              EndCandidate = SM.getExpansionRange(E->getSourceRange()).getEnd();
+              EndCandidate = SM.getExpansionRange(Range).getEnd();
             }
           }
         }
