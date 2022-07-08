@@ -12714,7 +12714,7 @@ void GuessIndentWidthRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(GuessIndentWidthRule)
 
 void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
-  std::vector<std::string> MathFunctions = {
+  std::vector<std::string> MathFunctionsCallExpr = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
@@ -12736,10 +12736,32 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 #undef ENTRY_REWRITE
   };
 
+  std::vector<std::string> MathFunctionsUnresolvedLookupExpr = {
+#define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_OPERATOR(APINAME, OPKIND)
+#define ENTRY_TYPECAST(APINAME)
+#define ENTRY_UNSUPPORTED(APINAME)
+#define ENTRY_REWRITE(APINAME) APINAME,
+#include "APINamesMath.inc"
+#undef ENTRY_RENAMED
+#undef ENTRY_RENAMED_NO_REWRITE
+#undef ENTRY_RENAMED_SINGLE
+#undef ENTRY_RENAMED_DOUBLE
+#undef ENTRY_EMULATED
+#undef ENTRY_OPERATOR
+#undef ENTRY_TYPECAST
+#undef ENTRY_UNSUPPORTED
+#undef ENTRY_REWRITE
+  };
+
   MF.addMatcher(
       callExpr(callee(functionDecl(
                    internal::Matcher<NamedDecl>(
-                       new internal::HasNameMatcher(MathFunctions)),
+                       new internal::HasNameMatcher(MathFunctionsCallExpr)),
                    anyOf(unless(hasDeclContext(namespaceDecl(anything()))),
                          hasDeclContext(namespaceDecl(hasName("std")))))),
                unless(hasAncestor(
@@ -12747,11 +12769,12 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
           .bind("math"),
       this);
 
-  MF.addMatcher(callExpr(callee(unresolvedLookupExpr(
-                  hasAnyDeclaration(namedDecl(internal::Matcher<NamedDecl>(
-                      new internal::HasNameMatcher(MathFunctions)))))))
-                  .bind("unresolved"),
-              this);
+  MF.addMatcher(
+      callExpr(callee(unresolvedLookupExpr(hasAnyDeclaration(namedDecl(
+                   internal::Matcher<NamedDecl>(new internal::HasNameMatcher(
+                       MathFunctionsUnresolvedLookupExpr)))))))
+          .bind("unresolved"),
+      this);
 }
 
 void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
