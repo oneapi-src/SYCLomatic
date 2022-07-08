@@ -104,6 +104,13 @@
 #undef __CUDACC__
 #if CUDA_VERSION < 9000
 #define __CUDABE__
+#ifdef SYCLomatic_CUSTOMIZATION
+// Define macro __CUDA_LIBDEVICE__ here makes "__device__" attribute can be
+// expanded to __attribute__((...)) instead of __declspec(...) on windows when
+// CUDA_VERSION < 9000.
+// This can make clang to parse __device__ lambda correctly.
+#define __CUDA_LIBDEVICE__
+#endif // SYCLomatic_CUSTOMIZATION
 #else
 #define __CUDACC__
 #define __CUDA_LIBDEVICE__
