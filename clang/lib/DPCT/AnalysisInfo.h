@@ -3121,9 +3121,11 @@ public:
 
 class TemplateArgumentInfo {
 public:
-  explicit TemplateArgumentInfo(const TemplateArgumentLoc &TAL)
+  explicit TemplateArgumentInfo(const TemplateArgumentLoc &TAL,
+                                SourceRange Range)
       : Kind(TAL.getArgument().getKind()) {
-    setArgFromExprAnalysis(TAL);
+    setArgFromExprAnalysis(
+        TAL, getDefinitionRange(Range.getBegin(), Range.getEnd()));
   }
 
   explicit TemplateArgumentInfo(std::string &&Str)
@@ -3174,19 +3176,31 @@ public:
   static bool isPlaceholderType(clang::QualType QT);
 
 private:
-  template <class T> void setArgFromExprAnalysis(const T &Arg) {
+  template <class T>
+  void setArgFromExprAnalysis(const T &Arg, SourceRange ParentRange = SourceRange()) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     auto Range = getArgSourceRange(Arg);
     auto Begin = Range.getBegin();
     auto End = Range.getEnd();
     if (Begin.isMacroID() && SM.isMacroArgExpansion(Begin) && End.isMacroID() &&
         SM.isMacroArgExpansion(End)) {
-      Begin =
-          SM.getSpellingLoc(SM.getImmediateExpansionRange(Begin).getBegin());
-      End = SM.getSpellingLoc(SM.getImmediateExpansionRange(End).getEnd());
-      auto Length = SM.getCharacterData(End) - SM.getCharacterData(Begin) +
-                    Lexer::MeasureTokenLength(
-                        End, SM, DpctGlobalInfo::getContext().getLangOpts());
+
+      size_t Length;
+      if (ParentRange.isValid()) {
+        auto RR = getRangeInRange(Range, ParentRange.getBegin(),
+                                  ParentRange.getEnd());
+        Begin = RR.first;
+        End = RR.second;
+        Length = SM.getCharacterData(End) - SM.getCharacterData(Begin);
+      } else {
+        auto RR = getDefinitionRange(Range.getBegin(), Range.getEnd());
+        Begin = RR.getBegin();
+        End = RR.getEnd();
+        Length = SM.getCharacterData(End) - SM.getCharacterData(Begin) +
+                 Lexer::MeasureTokenLength(
+                     End, SM, DpctGlobalInfo::getContext().getLangOpts());
+      }
+
       std::string Result = std::string(SM.getCharacterData(Begin), Length);
       setArgStr(std::move(Result));
     } else {
@@ -3637,17 +3651,18 @@ protected:
 private:
   static std::string getName(const NamedDecl *D);
   void
-  buildTemplateArguments(const llvm::ArrayRef<TemplateArgumentLoc> &ArgsList) {
+  buildTemplateArguments(const llvm::ArrayRef<TemplateArgumentLoc> &ArgsList,
+                         SourceRange Range) {
     if (TemplateArgs.empty())
       for (auto &Arg : ArgsList)
-        TemplateArgs.emplace_back(Arg);
+        TemplateArgs.emplace_back(Arg, Range);
   }
 
   void buildTemplateArgumentsFromTypeLoc(const TypeLoc &TL);
   template <class TyLoc>
   void buildTemplateArgumentsFromSpecializationType(const TyLoc &TL) {
     for (size_t i = 0; i < TL.getNumArgs(); ++i) {
-      TemplateArgs.emplace_back(TL.getArgLoc(i));
+      TemplateArgs.emplace_back(TL.getArgLoc(i), TL.getSourceRange() );
     }
   }
 

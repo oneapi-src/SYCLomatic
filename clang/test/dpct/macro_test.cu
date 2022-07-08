@@ -1152,3 +1152,29 @@ void foo30(){
   foo29<<<1,1,0>>>();
   FOO31(1)
 }
+
+
+
+#define VA_CALL2(...) __VA_ARGS__()
+#define VA_CALL(...) VA_CALL2(__VA_ARGS__)
+
+template<class T>
+__global__ void template_kernel(T t){
+    __shared__ T t2;
+}
+
+int foo31(){
+  //CHECK: VA_CALL(([&] {
+  //CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+  //CHECK-NEXT:     sycl::accessor<int, 0, sycl::access_mode::read_write,
+  //CHECK-NEXT:                    sycl::access::target::local>
+  //CHECK-NEXT:         t2_acc_ct1(cgh);
+  //CHECK:     cgh.parallel_for(
+  //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+  //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:           template_kernel<int>(10, t2_acc_ct1.get_pointer());
+  //CHECK-NEXT:         });
+  //CHECK-NEXT:   });
+  //CHECK-NEXT: }));
+  VA_CALL( ([&]{ template_kernel<int><<<1,1,0>>>(10); }) );
+}
