@@ -1448,7 +1448,7 @@ auto getTemplateArgsList =
     TemplateArgsList = ULE->template_arguments();
   }
   for (auto Arg : TemplateArgsList) {
-    Ret.emplace_back(Arg);
+    Ret.emplace_back(Arg, C->getSourceRange());
   }
   return Ret;
 };

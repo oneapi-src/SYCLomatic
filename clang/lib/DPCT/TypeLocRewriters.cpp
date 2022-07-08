@@ -25,7 +25,7 @@ makeTemplateArgCreator(unsigned Idx) {
     if (auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
       if (TSTL.getNumArgs() > Idx) {
         auto TAL = TSTL.getArgLoc(Idx);
-        return TemplateArgumentInfo(TAL);
+        return TemplateArgumentInfo(TAL, TL.getSourceRange());
       }
     }
     return TemplateArgumentInfo("");
