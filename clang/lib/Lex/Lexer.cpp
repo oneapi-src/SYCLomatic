@@ -50,7 +50,7 @@
 using namespace clang;
 #ifdef SYCLomatic_CUSTOMIZATION
 namespace clang {
-  extern std::function<bool(SourceLocation)> IsInRootFunc;
+  extern std::function<bool(SourceLocation)> IsInAnalysisScopeFunc;
 }
 #endif // SYCLomatic_CUSTOMIZATION
 //===----------------------------------------------------------------------===//
@@ -1839,7 +1839,7 @@ bool Lexer::LexIdentifierContinue(Token &Result, const char *CurPtr) {
 #ifdef SYCLomatic_CUSTOMIZATION
   // if __CUDA_ARCH__ in in-root, perfrom HandleIdentifier anyway
   if (!II->isHandleIdentifierCase() && II->getName() == "__CUDA_ARCH__" &&
-      IsInRootFunc(Result.getLocation())) {
+      IsInAnalysisScopeFunc(Result.getLocation())) {
     return PP->HandleIdentifier(Result);
   }
 #endif // SYCLomatic_CUSTOMIZATION

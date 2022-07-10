@@ -152,7 +152,7 @@ public:
           getHashStrFromLoc(SM.getImmediateSpellingLoc(SL)));
       if (ItMatch !=
           dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
-        if (ItMatch->second->IsInRoot) {
+        if (ItMatch->second->IsInAnalysisScope) {
           SL = ItMatch->second->NameTokenLoc;
         }
       }

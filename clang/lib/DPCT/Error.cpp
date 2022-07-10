@@ -163,6 +163,9 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorCannotParseRuleFile:
     StatusString = "Error: Cannot parse rule file";
     break;
+  case MigrationErrorInvalidAnalysisScope:
+    StatusString = "Error: The path for --analysis-scope-path is not valid";
+    break;
   default:
     DpctLog() << "Unknown error\n";
     dpctExit(-1);

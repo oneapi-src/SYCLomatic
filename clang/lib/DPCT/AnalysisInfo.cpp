@@ -36,12 +36,13 @@ llvm::Optional<std::string> getReplacedName(const clang::NamedDecl *D) {
 }
 
 namespace clang {
-extern std::function<bool(SourceLocation)> IsInRootFunc;
+extern std::function<bool(SourceLocation)> IsInAnalysisScopeFunc;
 extern std::function<unsigned int()> GetRunRound;
 extern std::function<void(SourceLocation, unsigned)> RecordTokenSplit;
 namespace dpct {
 std::string DpctGlobalInfo::InRoot = std::string();
 std::string DpctGlobalInfo::OutRoot = std::string();
+std::string DpctGlobalInfo::AnalysisScope = std::string();
 // TODO: implement one of this for each source language.
 std::string DpctGlobalInfo::CudaPath = std::string();
 std::string DpctGlobalInfo::RuleFile = std::string();
@@ -301,7 +302,7 @@ void DpctGlobalInfo::resetInfo() {
 }
 
 DpctGlobalInfo::DpctGlobalInfo() {
-  IsInRootFunc = DpctGlobalInfo::checkInRoot;
+  IsInAnalysisScopeFunc = DpctGlobalInfo::checkInAnalysisScope;
   GetRunRound = DpctGlobalInfo::getRunRound;
   RecordTokenSplit = DpctGlobalInfo::recordTokenSplit;
   tooling::SetGetRunRound(DpctGlobalInfo::getRunRound);
@@ -349,7 +350,7 @@ void DpctGlobalInfo::insertFFTExecAPIInfo(SourceLocation SL,
   }
 }
 
-bool DpctFileInfo::isInRoot() { return DpctGlobalInfo::isInRoot(FilePath); }
+bool DpctFileInfo::isInAnalysisScope() { return DpctGlobalInfo::isInAnalysisScope(FilePath); }
 // TODO: implement one of this for each source language.
 bool DpctFileInfo::isInCudaPath() {
   return DpctGlobalInfo::isInCudaPath(FilePath);
@@ -408,7 +409,7 @@ void DpctFileInfo::buildKernelInfo() {
     Kernel.second->buildInfo();
 }
 void DpctFileInfo::postProcess() {
-  if (!isInRoot())
+  if (!isInAnalysisScope())
     return;
   for (auto &D : FuncMap)
     D.second->emplaceReplacement();
@@ -421,7 +422,7 @@ void DpctFileInfo::postProcess() {
 }
 
 void DpctFileInfo::buildReplacements() {
-  if (!isInRoot())
+  if (!isInAnalysisScope())
     return;
 
   if (FilePath.empty())
@@ -1727,7 +1728,7 @@ bool deduceTemplateArguments(const CallT *C, const FunctionTemplateDecl *FTD,
   if (!FTD)
     return false;
 
-  if (!DpctGlobalInfo::isInRoot(FTD->getBeginLoc()))
+  if (!DpctGlobalInfo::isInAnalysisScope(FTD->getBeginLoc()))
     return false;
   auto &TemplateParmsList = *FTD->getTemplateParameters();
   if (TAIList.size() == TemplateParmsList.size())
@@ -2616,7 +2617,7 @@ void DeviceFunctionDecl::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
 
 void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
                                   std::shared_ptr<DeviceFunctionInfo> &Info) {
-  if (!DpctGlobalInfo::isInRoot(FD->getBeginLoc()))
+  if (!DpctGlobalInfo::isInAnalysisScope(FD->getBeginLoc()))
     return;
   if (!FD->hasAttr<CUDADeviceAttr>() && !FD->hasAttr<CUDAGlobalAttr>())
     return;
@@ -3298,7 +3299,7 @@ void BuiltinVarInfo::buildInfo(std::string FilePath, unsigned int Offset,
       std::make_shared<ExtReplacement>(FilePath, Offset, Len, R, nullptr));
 }
 
-bool isInRoot(SourceLocation SL) { return DpctGlobalInfo::isInRoot(SL); }
+bool isInAnalysisScope(SourceLocation SL) { return DpctGlobalInfo::isInAnalysisScope(SL); }
 
 std::vector<std::shared_ptr<FreeQueriesInfo>> FreeQueriesInfo::InfoList;
 std::vector<std::shared_ptr<FreeQueriesInfo::MacroInfo>>
