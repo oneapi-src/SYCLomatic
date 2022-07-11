@@ -633,3 +633,16 @@ __device__  T foo2(T a) {
   // CHECK: return sycl::rsqrt((double)a);
   return ::rsqrt(a);
 }
+
+// CHECK: template <class T>
+// CHECK-NEXT: T foo3(T a) {
+// CHECK-NEXT:   return sycl::cos((float)a);
+// CHECK-NEXT: }
+template <class T> 
+__device__ T foo3(T a) {
+  return __cosf(a);
+}
+__global__ void foo4() {
+  double d1, d2;
+  d2 = foo3(d1);
+}
