@@ -479,6 +479,30 @@ void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
   dispatch(CE->getSubExpr());
 }
 
+void ExprAnalysis::analyzeExpr(const IntegerLiteral *IL) {
+  auto DefinitionRange = getDefinitionRange(IL->getBeginLoc(), IL->getEndLoc());
+  auto TokBeginLoc = DefinitionRange.getBegin();
+  auto TokenLength = Lexer::MeasureTokenLength(
+      TokBeginLoc, DpctGlobalInfo::getSourceManager(), Context.getLangOpts());
+  std::string TokStr(SM.getCharacterData(TokBeginLoc), TokenLength);
+
+  // TODO: cannot handle case like:
+  // #define CHECK(ARG) ARG
+  // #define MACRO CHECK(cufftExecC2C(plan, idata, odata, CUFFT_FORWARD))
+  // void foo(cufftHandle plan, cufftComplex *idata, cufftComplex *odata) {
+  //   MACRO;
+  // }
+  const Expr *ParentExpr = DpctGlobalInfo::findParent<Expr>(IL);
+  if ((IL->getValue() == 1) && (TokStr == "CUFFT_FORWARD") && ParentExpr) {
+    addReplacement(DefinitionRange, ParentExpr,
+                   MapNames::getDpctNamespace() + "fft::fft_dir::forward");
+  } else if ((IL->getValue() == -1) && (TokStr == "CUFFT_INVERSE") &&
+             ParentExpr) {
+    addReplacement(DefinitionRange, ParentExpr,
+                   MapNames::getDpctNamespace() + "fft::fft_dir::backward");
+  }
+}
+
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   std::string CtorClassName =
       Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
