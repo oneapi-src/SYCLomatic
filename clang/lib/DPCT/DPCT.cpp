@@ -12,6 +12,7 @@
 #include "AutoComplete.h"
 #include "CallExprRewriter.h"
 #include "TypeLocRewriters.h"
+#include "MemberExprRewriter.h"
 #include "Checkpoint.h"
 #include "Config.h"
 #include "CustomHelperFiles.h"
@@ -1016,6 +1017,7 @@ int runDPCT(int argc, const char **argv) {
   CallExprRewriterFactoryBase::initRewriterMap();
   CallExprRewriterFactoryBase::initMethodRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
+  MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
   if (!RuleFile.empty()) {
     importRules(RuleFile);
   }

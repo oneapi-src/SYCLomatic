@@ -103,6 +103,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUfunction", std::make_shared<TypeNameRule>(
                          getDpctNamespace() + "kernel_functor",
                          HelperFeatureEnum::Kernel_kernel_functor)},
+      {"cudaPointerAttributes",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes")},
       {"dim3", std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},
       {"int2", std::make_shared<TypeNameRule>(getClNamespace() + "int2")},
       {"double2", std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
@@ -3710,7 +3712,7 @@ const MapNames::MapTy TextureRule::TextureMemberNames{
 };
 
 // DeviceProp names mapping.
-const MapNames::MapTy DevicePropVarRule::PropNamesMap{
+const MapNames::MapTy FieldVarRule::PropNamesMap{
     {"clockRate", "max_clock_frequency"},
     {"major", "major_version"},
     {"minor", "minor_version"},

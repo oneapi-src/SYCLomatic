@@ -1125,7 +1125,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
     loadYAMLIntoFileInfo(InFile);
   }
 }
-
+//Call the migration rule to print the result?
 void MigrationRule::print(llvm::raw_ostream &OS) {
   const auto &EmittedTransformations = getEmittedTransformations();
   if (EmittedTransformations.empty()) {
@@ -2471,7 +2471,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "libraryPropertyType_t", "libraryPropertyType",
                   "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
                   "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
-                  "thrust::tuple_element", "thrust::tuple_size")
+                  "thrust::tuple_element", "thrust::tuple_size", "cudaPointerAttributes")
               )))))
           .bind("cudaTypeDef"),
       this);
@@ -3939,28 +3939,39 @@ void Dim3MemberFieldsRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(Dim3MemberFieldsRule)
 
-void DevicePropVarRule::registerMatcher(MatchFinder &MF) {
+void FieldVarRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       memberExpr(
           hasObjectExpression(anyOf(
               hasType(qualType(hasCanonicalType(recordType(
-                  hasDeclaration(cxxRecordDecl(hasName("cudaDeviceProp"))))))),
+                  hasDeclaration(cxxRecordDecl(hasAnyName(
+                    "cudaDeviceProp", "cudaPointerAttributes"))))))),
               hasType(
                   pointsTo(qualType(hasCanonicalType(recordType(hasDeclaration(
-                      cxxRecordDecl(hasName("cudaDeviceProp")))))))))))
-          .bind("DevicePropVar"),
+                    cxxRecordDecl(hasAnyName(
+                      "cudaDeviceProp", "cudaPointerAttributes")))))))))))
+          .bind("FieldVar"),
       this);
 }
 
-void DevicePropVarRule::runRule(const MatchFinder::MatchResult &Result) {
-  const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "DevicePropVar");
+void FieldVarRule::runRule(const MatchFinder::MatchResult &Result) {
+  const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "FieldVar");
   if (!ME)
     return;
   auto Parents = Result.Context->getParents(*ME);
   if (Parents.size() < 1)
     return;
   auto MemberName = ME->getMemberNameInfo().getAsString();
+  if (DpctGlobalInfo::getUnqualifiedTypeName(ME->getBase()->getType()).find("cudaPointerAttributes") != std::string::npos) {
+    SourceRange range = ME->getSourceRange();
+    llvm::StringRef ref = Lexer::getSourceText(CharSourceRange::getCharRange(range), DpctGlobalInfo::getSourceManager(), LangOptions());
 
+    ExprAnalysis EA;
+    EA.analyze(ME);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
   // unmigrated properties
   if (MemberName == "regsPerBlock") {
     report(ME->getBeginLoc(), Diagnostics::UNMIGRATED_DEVICE_PROP, false,
@@ -4072,7 +4083,7 @@ void DevicePropVarRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(DevicePropVarRule)
+REGISTER_RULE(FieldVarRule)
 
 // Rule for Enums constants.
 void EnumConstantRule::registerMatcher(MatchFinder &MF) {
@@ -7741,7 +7752,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaDeviceCanAccessPeer", "cudaDeviceDisablePeerAccess",
         "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion",
         "cudaRuntimeGetVersion", "clock64", "__ldg",
-        "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig");
+        "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig", "cudaPointerGetAttributes");
   };
 
   MF.addMatcher(
@@ -7844,6 +7855,17 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
+
+  if (!CallExprRewriterFactoryBase::RewriterMap)
+    return;
+  auto Iter = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
+  if (Iter != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
   std::string Prefix, Suffix;
   if (IsAssigned) {
     Prefix = "(";
@@ -14768,7 +14790,6 @@ void DriverModuleAPIRule::runRule(
     }
     IsAssigned = true;
   }
-  (void)IsAssigned;
 
   std::string APIName = "";
   if (auto DC = CE->getDirectCallee()) {

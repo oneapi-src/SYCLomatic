@@ -1140,6 +1140,15 @@ public:
   PrinterRewriter(const CallExpr *C, StringRef Source,
                   const std::function<ArgsT(const CallExpr *)> &...ArgCreators)
       : PrinterRewriter(C, Source, ArgCreators(C)...) {}
+
+  template <class... ArgsT>
+  PrinterRewriter(const MemberExpr *C, StringRef Source, ArgsT &&...Args)
+      : Printer(std::forward<ArgsT>(Args)...), CallExprRewriter(C, Source) {}
+  template <class... ArgsT>
+  PrinterRewriter(const MemberExpr *C, StringRef Source,
+                  const std::function<ArgsT(const CallExpr *)> &...ArgCreators)
+      : PrinterRewriter(C, Source, ArgCreators(C)...) {}
+
   Optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);

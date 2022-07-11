@@ -22,6 +22,7 @@
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
+#include "MemberExprRewriter.h"
 
 extern std::string DpctInstallPath;
 namespace clang {
@@ -640,7 +641,20 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   std::string FieldName = "";
   if (ME->getMemberDecl()->getIdentifier()) {
     FieldName = ME->getMemberDecl()->getName().str();
-    auto ItFieldRule = MapNames::ClassFieldMap.find(BaseType + "." + FieldName);
+    auto MemberExprName = BaseType + "." + FieldName;
+    auto ItFieldRule = MapNames::ClassFieldMap.find(MemberExprName);
+    if (!MemberExprRewriterFactoryBase::MemberExprRewriterMap)
+      return;
+    auto Itr = MemberExprRewriterFactoryBase::MemberExprRewriterMap->find(MemberExprName);
+    if (Itr != MemberExprRewriterFactoryBase::MemberExprRewriterMap->end()) {
+      auto Rewriter = Itr->second->create(ME);
+      auto Result = Rewriter->rewrite();
+      if (Result.hasValue()) {
+        auto ResultStr = Result.getValue();
+        addReplacement(ME->getBeginLoc(), ME->getEndLoc(), Result.getValue());
+      }
+      return;
+    }
     if (ItFieldRule != MapNames::ClassFieldMap.end()) {
       if (ItFieldRule->second->GetterName == "") {
         addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
@@ -716,7 +730,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
                                    ME->getMemberNameInfo().getAsString()));
   } else if (BaseType == "cudaDeviceProp") {
     std::string ReplacementStr = MapNames::findReplacedName(
-        DevicePropVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
+        FieldVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
     if (!ReplacementStr.empty()) {
       addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + "()");
       requestFeature(
