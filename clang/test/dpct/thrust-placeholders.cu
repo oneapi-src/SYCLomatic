@@ -13,11 +13,14 @@
 #include <thrust/functional.h>
 #include <cuda_runtime.h>
 
+// CHECK: // COMMENT_A
 // CHECK-EMPTY:
+// CHECK-EMPTY:
+// CHECK-NEXT: // COMMENT_B
+// COMMENT_A
 using namespace thrust::placeholders;
-
-// CHECK-EMPTY:
 namespace ph = thrust::placeholders;
+// COMMENT_B
 
 __device__ void dev_fct(float *src, float *dst) {
   auto tmp1 = logf(2.0);
