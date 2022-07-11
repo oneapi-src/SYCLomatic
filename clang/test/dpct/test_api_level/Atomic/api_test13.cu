@@ -17,8 +17,5 @@ int main(){
   cuda::atomic<int> a(0);
   int ans = a.fetch_add(1);
   ans = a.fetch_sub(-1);
-  ans = a.fetch_and(2);
-  ans = a.fetch_or(1);
-  ans = a.fetch_xor(2);
   return 0;
 }
