@@ -6,7 +6,7 @@
 
 // CHECK: #include <CL/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>
-// CHECK: #include <dpct/atomic_utils.hpp>
+// CHECK: #include <dpct/atomic.hpp>
 #include <cuda/std/atomic>
 
 int main(){
@@ -34,14 +34,7 @@ int main(){
 
   //CHECK: ans = a.fetch_add(1);
   //CHECK: ans = a.fetch_sub(-1);
-  //CHECK: ans = a.fetch_and(2);
-  //CHECK: ans = a.fetch_or(1);
-  //CHECK: ans = a.fetch_xor(2);
   ans = a.fetch_add(1);
   ans = a.fetch_sub(-1);
-  ans = a.fetch_and(2);
-  ans = a.fetch_or(1);
-  ans = a.fetch_xor(2);
-
   return 0;
 }

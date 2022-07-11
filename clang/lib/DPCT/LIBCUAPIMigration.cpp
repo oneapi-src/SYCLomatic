@@ -1,13 +1,10 @@
-//===---LIBCUAPIMigration.cpp -----------------------------*- C++ -*---===//
+//===------------------ LIBCUAPIMigration.cpp -----------------------------===//
 //
-// Copyright (C) Intel Corporation. All rights reserved.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// The information and source code contained herein is the exclusive
-// property of Intel Corporation and may not be disclosed, examined
-// or reproduced in whole or in part without explicit written authorization
-// from the company.
-//
-//===-----------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
 
 #include "LIBCUAPIMigration.h"
 #include "ASTTraversal.h"
@@ -39,8 +36,6 @@ void LIBCUAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void LIBCUAPIRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  std::string APIName;
-  std::ostringstream OS;
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
@@ -72,7 +67,7 @@ void LIBCUTypeRule::runRule(
 void LIBCUMemberFuncRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto LIBCUMemberFuncHasNamses = [&]() {
     return hasAnyName("load","store","exchange","compare_exchange_weak","compare_exchange_strong",
-                      "fetch_add", "fetch_sub", "fetch_and", "fetch_or", "fetch_xor");
+                      "fetch_add", "fetch_sub");
   };
   auto LIBCUTypesHasNamses = [&]() {
     return hasAnyName("cuda::atomic","cuda::std::atomic");

@@ -6,7 +6,7 @@
 
 // CHECK: #include <CL/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>
-// CHECK: #include <dpct/atomic_utils.hpp>
+// CHECK: #include <dpct/atomic.hpp>
 #include <cuda/atomic>
 
 int main(){
@@ -14,7 +14,7 @@ int main(){
   cuda::std::atomic_thread_fence(cuda::std::memory_order_release);
   // CHECK: dpct::atomic<int> a;
   // CHECK: dpct::atomic<int> b(0);
-  // CHECK: dpct::atomic<int, sycl::memory_order::relaxed, sycl::memory_scope::work_group> c(0);
+  // CHECK: dpct::atomic<int, sycl::memory_scope::work_group, sycl::memory_order::relaxed> c(0);
   // CHECK: int ans = c.load(sycl::memory_order::relaxed);
   // CHECK: a.store(0, sycl::memory_order::relaxed);
   // CHECK: int ans2 = a.load();
@@ -36,14 +36,8 @@ int main(){
 
   //CHECK: ans = a.fetch_add(1);
   //CHECK: ans = a.fetch_sub(-1);
-  //CHECK: ans = a.fetch_and(2);
-  //CHECK: ans = a.fetch_or(1);
-  //CHECK: ans = a.fetch_xor(2);
   ans = a.fetch_add(1);
   ans = a.fetch_sub(-1);
-  ans = a.fetch_and(2);
-  ans = a.fetch_or(1);
-  ans = a.fetch_xor(2);
 
   return 0;
 }

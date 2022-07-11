@@ -985,10 +985,7 @@ void IncludesCallbacks::InclusionDirective(
 
   if (FileName.compare(StringRef("cuda/atomic")) == 0||
       FileName.compare(StringRef("cuda/std/atomic")) == 0) {
-
-    DpctGlobalInfo::setMKLHeaderUsed(true);
-
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_AtomicUtils);
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Atomic);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),

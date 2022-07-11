@@ -12,8 +12,8 @@ TYPE_REWRITE_ENTRY(
         CheckTemplateArgCount(2),
         TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "atomic"),
                      TEMPLATE_ARG(0),
-                     STR(MapNames::getClNamespace() + "memory_order::relaxed"),
-                     TEMPLATE_ARG(1)),
+                     TEMPLATE_ARG(1),
+                     STR(MapNames::getClNamespace() + "memory_order::relaxed")),
         TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "atomic"),
                      TEMPLATE_ARG(0))))
 
@@ -23,7 +23,7 @@ TYPE_REWRITE_ENTRY(
         CheckTemplateArgCount(2),
         TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "atomic"),
                      TEMPLATE_ARG(0),
-                     STR(MapNames::getClNamespace() + "memory_order::relaxed"),
-                     TEMPLATE_ARG(1)),
+                     TEMPLATE_ARG(1),
+                     STR(MapNames::getClNamespace() + "memory_order::relaxed")),
         TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "atomic"),
                      TEMPLATE_ARG(0))))
