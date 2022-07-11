@@ -1026,36 +1026,26 @@ void IncludesCallbacks::InclusionDirective(
   // Extra process thrust headers, map to PSTL mapping headers in runtime.
   // For multi thrust header files, only insert once for PSTL mapping header.
   if (IsAngled && (FileName.find("thrust/") != std::string::npos)) {
-    if (!DplHeaderInserted) {
-      std::string Replacement =
-          std::string("<" + getCustomMainHelperFileName() + "/dpl_utils.hpp>");
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DplUtils);
+    requestFeature(HelperFeatureEnum::DplUtils_non_local_include_dependency,
+                   HashLoc);
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
+    Updater.update(false);
 
-      // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
-      // previously added here.  However, due to some unfortunate include
-      // dependencies introduced with the PSTL/TBB headers from the
-      // gcc-9.3.0 include files, those two headers must now be included
-      // before the CL/sycl.hpp are included, so the FileInfo is set
-      // to hold a boolean that'll indicate whether to insert them when
-      // the #include CL/sycl.cpp is added later
-      DplHeaderInserted = true;
-      auto BeginLocInfo = DpctGlobalInfo::getLocInfo(FilenameRange.getBegin());
-      auto FileInfo =
-          DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
-      FileInfo->setAddOneDplHeaders(true);
-      TransformSet.emplace_back(
-          new ReplaceInclude(FilenameRange, std::move(Replacement)));
-      requestFeature(HelperFeatureEnum::DplUtils_non_local_include_dependency,
-                     "");
-    } else {
-      // Replace the complete include directive with an empty string.
-      TransformSet.emplace_back(new ReplaceInclude(
-          CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                          /*IsTokenRange=*/false),
-          ""));
-      Updater.update(false);
-    }
-
-    return;
+    // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
+    // previously added here.  However, due to some unfortunate include
+    // dependencies introduced with the PSTL/TBB headers from the
+    // gcc-9.3.0 include files, those two headers must now be included
+    // before the CL/sycl.hpp are included, so the FileInfo is set
+    // to hold a boolean that'll indicate whether to insert them when
+    // the #include CL/sycl.cpp is added later
+    auto BeginLocInfo = DpctGlobalInfo::getLocInfo(FilenameRange.getBegin());
+    auto FileInfo =
+        DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
+    FileInfo->setAddOneDplHeaders(true);
   }
 
   //  TODO: implement one of this for each source language.
