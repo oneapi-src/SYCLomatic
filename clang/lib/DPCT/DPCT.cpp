@@ -278,7 +278,7 @@ list<std::string> RuleFile("rule-file", desc("Specifies the rule file path that 
                            value_desc("file"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 
 opt<UsmLevel> USMLevel(
-    "usm-level", desc("Sets the USM level to use in source code generation.\n"),
+    "usm-level", desc("Sets the Unified Shared Memory (USM) level to use in source code generation.\n"),
     values(llvm::cl::OptionEnumValue{"restricted", int(UsmLevel::UL_Restricted),
                      "Uses USM API for memory management migration. (default)", false},
            llvm::cl::OptionEnumValue{"none", int(UsmLevel::UL_None),
