@@ -10,8 +10,8 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "Diagnostics.h"
-#include "Statics.h"
 #include "MapNames.h"
+#include "Statics.h"
 #include "clang/AST/Expr.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Lex/Preprocessor.h"
@@ -28,11 +28,12 @@ using namespace clang::ast_matchers;
 
 void LIBCUAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto LIBCUAPIHasNames = [&]() {
-    return hasAnyName("cuda::std::atomic_thread_fence");
+    return hasAnyName("cuda::std::atomic_thread_fence",
+                      "cuda::atomic_thread_fence");
   };
-  MF.addMatcher(callExpr(callee(functionDecl(LIBCUAPIHasNames()))).bind("call"), this);
+  MF.addMatcher(callExpr(callee(functionDecl(LIBCUAPIHasNames()))).bind("call"),
+                this);
 }
-
 
 void LIBCUAPIRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
@@ -43,15 +44,15 @@ void LIBCUAPIRule::runRule(
   }
 }
 
-void LIBCUTypeRule::registerMatcher(ast_matchers::MatchFinder &MF){
-  auto TargetTypeName = [&]() { return hasAnyName(
-    "cuda::atomic","cuda::std::atomic"); 
-    };
+void LIBCUTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  auto TargetTypeName = [&]() {
+    return hasAnyName("cuda::atomic", "cuda::std::atomic");
+  };
 
-  MF.addMatcher(typeLoc(
-                    loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
-                    .bind("loc"),
-                this);
+  MF.addMatcher(
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
+          .bind("loc"),
+      this);
 }
 
 void LIBCUTypeRule::runRule(
@@ -66,18 +67,18 @@ void LIBCUTypeRule::runRule(
 
 void LIBCUMemberFuncRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto LIBCUMemberFuncHasNamses = [&]() {
-    return hasAnyName("load","store","exchange","compare_exchange_weak","compare_exchange_strong",
-                      "fetch_add", "fetch_sub");
+    return hasAnyName("load", "store", "exchange", "compare_exchange_weak",
+                      "compare_exchange_strong", "fetch_add", "fetch_sub");
   };
   auto LIBCUTypesHasNamses = [&]() {
-    return hasAnyName("cuda::atomic","cuda::std::atomic");
+    return hasAnyName("cuda::atomic", "cuda::std::atomic");
   };
   MF.addMatcher(cxxMemberCallExpr(
-                    allOf(on(hasType(hasCanonicalType(qualType(
-                              hasDeclaration(namedDecl(LIBCUTypesHasNamses())))))),
+                    allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(
+                              namedDecl(LIBCUTypesHasNamses())))))),
                           callee(cxxMethodDecl(LIBCUMemberFuncHasNamses()))))
                     .bind("memberCallExpr"),
-                this);  
+                this);
 }
 
 void LIBCUMemberFuncRule::runRule(
@@ -91,5 +92,5 @@ void LIBCUMemberFuncRule::runRule(
   }
 }
 
-} // dpct
-} // clang 
+} // namespace dpct
+} // namespace clang

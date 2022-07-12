@@ -471,6 +471,7 @@ T atomic_compare_exchange_strong(
 }
 
 /// Atomic extension to implement standard APIs in std::atomic
+namespace detail{
 template <typename T> struct IsValidAtomicType {
   static constexpr bool value =
       (std::is_same<T, int>::value || std::is_same<T, unsigned int>::value ||
@@ -480,6 +481,7 @@ template <typename T> struct IsValidAtomicType {
        std::is_same<T, float>::value || std::is_same<T, double>::value ||
        std::is_pointer<T>::value);
 };
+} // namespace detail
 
 template <typename T,
           cl::sycl::memory_scope DefaultScope = cl::sycl::memory_scope::system,
@@ -488,7 +490,7 @@ template <typename T,
               cl::sycl::access::address_space::generic_space>
 class atomic{
   static_assert(
-    IsValidAtomicType<T>::value,
+    detail::IsValidAtomicType<T>::value,
     "Invalid atomic type.  Valid types are int, unsigned int, long, "
       "unsigned long, long long, unsigned long long, float, double "
       "and pointer types");
@@ -621,8 +623,6 @@ public:
     return atm.fetch_sub(operand, memoryOrder, memoryScope);
   }
 };
-
-
 
 } // namespace dpct
 #endif // __DPCT_ATOMIC_HPP__

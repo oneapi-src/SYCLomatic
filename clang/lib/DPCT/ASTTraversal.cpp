@@ -17168,6 +17168,16 @@ void ComplexAPIRule::runRule(
 
 REGISTER_RULE(ComplexAPIRule)
 
+void TemplateSpecializationTypeLocRule::registerMatcher(
+   ast_matchers::MatchFinder &MF) {
+}
+
+void TemplateSpecializationTypeLocRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+}
+
+REGISTER_RULE(TemplateSpecializationTypeLocRule)
+
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {
   this->Context = &Context;

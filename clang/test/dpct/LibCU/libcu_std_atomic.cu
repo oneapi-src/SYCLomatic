@@ -10,6 +10,8 @@
 #include <cuda/std/atomic>
 
 int main(){
+  // CHECK: sycl::atomic_fence(sycl::memory_order::release);
+  cuda::std::atomic_thread_fence(cuda::std::memory_order_release);
   // CHECK: dpct::atomic<int> a;
   // CHECK: dpct::atomic<int> b(0);
   // CHECK: dpct::atomic<int> c(0);
