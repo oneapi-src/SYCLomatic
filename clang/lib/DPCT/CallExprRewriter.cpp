@@ -1378,6 +1378,12 @@ std::function<std::string(const CallExpr *)> makeQueueStr() {
   };
 }
 
+std::function<std::string(const CallExpr *)> makeItemStr() {
+  return [=](const CallExpr *C) -> std::string {
+    return DpctGlobalInfo::getItem(C);
+  };
+}
+
 std::function<std::string(const CallExpr *)> makeDeviceStr() {
   return [=](const CallExpr *C) -> std::string {
     int Index = getPlaceholderIdx(C);
