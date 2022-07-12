@@ -470,7 +470,7 @@ static bits<ExperimentalFeatures> Experimentals(
         false },
     llvm::cl::OptionEnumValue{
         "logical-group", int(ExperimentalFeatures::Exp_LogicalGroup),
-        "Experimental helper function used to group some work-items logically.",
+        "Experimental helper function used to logically group work-items.",
         false }),
   value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 
@@ -505,7 +505,7 @@ static opt<bool> NoIncrementalMigration(
     cat(DPCTCat), init(false));
 
 static opt<std::string> QueryApiMapping("query-api-mapping",
-    llvm::cl::desc("Query mapped SYCL API from CUDA API."),
+    llvm::cl::desc("Provides functionally compatible SYCL API mapping for CUDA API."),
     value_desc("api"), cat(DPCTCat), llvm::cl::Optional);
 // clang-format on
 
