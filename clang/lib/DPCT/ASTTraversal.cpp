@@ -17169,7 +17169,7 @@ void ComplexAPIRule::runRule(
 REGISTER_RULE(ComplexAPIRule)
 
 void TemplateSpecializationTypeLocRule::registerMatcher(
-   ast_matchers::MatchFinder &MF) {
+    ast_matchers::MatchFinder &MF) {
 }
 
 void TemplateSpecializationTypeLocRule::runRule(
