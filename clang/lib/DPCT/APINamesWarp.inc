@@ -314,5 +314,4 @@ SUBGROUPSIZE_FACTORY(
 
 // __syncthreads
 CALL_FACTORY_ENTRY("__syncthreads",
-                   CALL(MapNames::getClNamespace() + "group_barrier",
-                        MEMBER_CALL(makeItemStr(), false, "get_group")))
+                   CALL(MapNames::getClNamespace() + "group_barrier", GROUP))

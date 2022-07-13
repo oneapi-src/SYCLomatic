@@ -8,7 +8,6 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "BarrierFenceSpaceAnalyzer.h"
 #include "CallExprRewriter.h"
 #include "CustomHelperFiles.h"
 #include "ExprAnalysis.h"
