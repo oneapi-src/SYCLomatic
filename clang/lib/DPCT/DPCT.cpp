@@ -455,10 +455,6 @@ static bits<ExperimentalFeatures> Experimentals(
   llvm::cl::CommaSeparated,
   values(
     llvm::cl::OptionEnumValue{
-        "nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
-        "Experimental helper function used to help cross group synchronization during migration.\n",
-        false },
-    llvm::cl::OptionEnumValue{
         "free-function-queries", int(ExperimentalFeatures::Exp_FreeQueries),
         "Experimental extension that allows getting `id`, `item`, `nd_item`, `group`, and\n"
         "`sub_group` instances globally.",
@@ -471,6 +467,10 @@ static bits<ExperimentalFeatures> Experimentals(
     llvm::cl::OptionEnumValue{
         "logical-group", int(ExperimentalFeatures::Exp_LogicalGroup),
         "Experimental helper function used to logically group work-items.",
+        false },
+    llvm::cl::OptionEnumValue{
+        "nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
+        "Experimental helper function used to help cross group synchronization during migration.\n",
         false }),
   value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 
