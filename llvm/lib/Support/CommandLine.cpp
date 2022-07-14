@@ -2535,7 +2535,7 @@ struct CommandLineCommonOptions {
 #ifdef SYCLomatic_CUSTOMIZATION
   cl::opt<HelpPrinterWrapper, true, parser<bool>>
       HOp{"help",
-          cl::desc("Provides list of dpct specific options."),
+          cl::desc("Provides a list of dpct specific options."),
           cl::location(WrappedNormalPrinter), cl::ValueDisallowed,
           cl::cat(cl::getDPCTCategory()), cl::sub(*AllSubCommands)};
 #else
