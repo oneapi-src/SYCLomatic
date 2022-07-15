@@ -3,7 +3,7 @@
 
 // CHECK: void test_syncthreads(int *arr, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
 __global__ void test_syncthreads(int *arr) {
-  // CHECK: [[ITEMNAME]].barrier(sycl::access::fence_space::local_space);
+  // CHECK: sycl::group_barrier([[ITEMNAME]].get_group());
   __syncthreads();
   arr[threadIdx.x] = threadIdx.x;
 }
@@ -58,9 +58,9 @@ __global__ void test1(unsigned int *ptr1, unsigned int *ptr2, unsigned int *ptr3
       nnn += __popc(mmm.x) + __popc(mmm.y) + __popc(mmm.z) + __popc(mmm.w);
     }
   }
-//     CHECK:  item_ct1.barrier(sycl::access::fence_space::local_space);
+//     CHECK:  sycl::group_barrier(item_ct1.get_group());
 //CHECK-NEXT:  for (;;) {
-//CHECK-NEXT:    item_ct1.barrier(sycl::access::fence_space::local_space);
+//CHECK-NEXT:    sycl::group_barrier(item_ct1.get_group());
   __syncthreads();
   for (;;) {
     __syncthreads();
@@ -77,11 +77,11 @@ __global__ void test2(float *ptr1, float *ptr2) {
   const int aaa(threadIdx.z);
   for (;;) {
     ptr1[aaa];
-    // CHECK:item_ct1.barrier(sycl::access::fence_space::local_space);
+    // CHECK: sycl::group_barrier(item_ct1.get_group());
     __syncthreads();
 #pragma unroll
     for (;;) {}
-    // CHECK:item_ct1.barrier(sycl::access::fence_space::local_space);
+    // CHECK: sycl::group_barrier(item_ct1.get_group());
     __syncthreads();
   }
   ptr2[aaa];
@@ -92,7 +92,7 @@ __global__ void test3() {
   int a;
   int b;
   goto label;
-  //CHECK:item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   __syncthreads();
   a++;
 label:
@@ -105,7 +105,7 @@ struct S1 {
 };
 __global__ void test4(S1 s1) {
   s1.data;
-  // CHECK:item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   __syncthreads();
 }
 
@@ -114,7 +114,7 @@ struct S2 {
 };
 __global__ void test5(S2 s2) {
   s2.data;
-  // CHECK:item_ct1.barrier(sycl::access::fence_space::local_space);
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   __syncthreads();
 }
 
@@ -124,14 +124,14 @@ struct S3 {
 };
 __global__ void test7(S3 s3) {
   s3.data;
-  // CHECK:item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   __syncthreads();
 }
 
 __global__ void test8(S3 *s3) {
   int a = 1;
   s3[a].data;
-  // CHECK:item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   __syncthreads();
 }
 
@@ -147,6 +147,6 @@ struct S4 {
 
 __global__ void test9(S4 a) {
   S4 b(a);
-  // CHECK:item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   __syncthreads();
 }
