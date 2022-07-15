@@ -43,7 +43,6 @@ macro(build_lib_dpct)
     Rules.cpp
     Homoglyph.cpp
     MisleadingBidirectional.cpp
-    BarrierFenceSpaceAnalyzer.cpp
     BLASAPIMigration.cpp
     FFTAPIMigration.cpp
     DNNAPIMigration.cpp
