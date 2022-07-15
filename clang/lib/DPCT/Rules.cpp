@@ -205,7 +205,7 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
     llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
         llvm::MemoryBuffer::getFile(RuleFile);
     if (!Buffer) {
-      llvm::errs() << "error: failed to read " << RuleFile << ": "
+      llvm::errs() << "Error: failed to read " << RuleFile << ": "
                    << Buffer.getError().message() << "\n";
       clang::dpct::ShowStatus(MigrationErrorInvalidRuleFilePath);
       dpctExit(MigrationErrorInvalidRuleFilePath);
@@ -347,28 +347,6 @@ int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx,
   Idx++;
   ignoreWhitespaces(OutStr, Idx);
   int ArgIndex = 0;
-
-  // if (Idx >= OutStr.size()) {
-  //   llvm::errs() << RuleFile << ":Error: in rule " << RuleName
-  //                << ", a positive integer is expected after $\n";
-  //   clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-  //   dpctExit(MigrationErrorCannotParseRuleFile);
-  // }
-  // unsigned i = Idx;
-  // for (; i < OutStr.size(); i++) {
-  //   if (!std::isdigit(OutStr[i])) {
-  //     if (i == Idx) {
-  //       // report unknown KW
-  //       llvm::errs() << RuleFile << ":Error: in rule " << RuleName
-  //                    << ", unknown keyword: $"
-  //                    << OutStr.substr(i, 10) << "\n";
-  //       clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-  //       dpctExit(MigrationErrorCannotParseRuleFile);
-  //     } else {
-  //       break;
-  //     }
-  //   }
-  // }
 
   // process arg number
   std::string ArgNumStr = OutStr.substr(Idx);
