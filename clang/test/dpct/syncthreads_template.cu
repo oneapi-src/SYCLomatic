@@ -10,12 +10,12 @@ struct S1 {
 template<class Q>
 __global__ void test1(S1<Q> s1) {
   s1.data;
-  // CHECK:item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   __syncthreads();
 }
 
 template<class Q>
 __global__ void test2() {
-  // CHECK:item_ct1.barrier();
+  // CHECK: sycl::group_barrier(item_ct1.get_group());
   __syncthreads();
 }

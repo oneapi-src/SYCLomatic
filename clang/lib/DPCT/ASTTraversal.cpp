@@ -8,7 +8,6 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "BarrierFenceSpaceAnalyzer.h"
 #include "CallExprRewriter.h"
 #include "CustomHelperFiles.h"
 #include "ExprAnalysis.h"
@@ -13054,20 +13053,19 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
 
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
-  if (FuncName == "__syncthreads") {
-    BarrierFenceSpaceAnalyzer A;
-    if (A.canSetLocalFenceSpace(CE)) {
-      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
-                                MapNames::getClNamespace() +
-                                "access::fence_space::local_space)";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-    } else {
-      report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
-             "nd_item");
-      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier()";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-    }
-  } else if (FuncName == "this_thread_block") {
+  
+  if (!CallExprRewriterFactoryBase::RewriterMap)
+    return;
+  
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA;
+    EA.analyze(CE);
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
+ if (FuncName == "this_thread_block") {
     if (auto P = getAncestorDeclStmt(CE)) {
       if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
         emplaceTransformation(new ReplaceTypeInDecl(VD, "auto"));
