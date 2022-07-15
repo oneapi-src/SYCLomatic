@@ -369,17 +369,9 @@ int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx,
 
   if (ArgIndex <= 0) {
     // report invalid ArgIndex
-    if (Keyword != "") {
-      llvm::errs() << RuleFile << ":Error: in rule " << RuleName
-                   << ", expect a positive integer, found " << ArgIndex
-                   << " after " << Keyword << "\n";
-    } else {
-      // keyword is empty means it's a pure ArgIndex which is
-      // not in $deref or $addr_of...
-      llvm::errs() << RuleFile << ":Error: in rule " << RuleName
-                   << ", expect a positive integer, found " << ArgIndex
-                   << " after $\n";
-    }
+    llvm::errs() << RuleFile << ":Error: in rule " << RuleName
+                 << ", expect a positive integer, found " << ArgIndex
+                 << " after " << Keyword << "\n";
     clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
     dpctExit(MigrationErrorCannotParseRuleFile);
   }
@@ -427,7 +419,7 @@ OutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
     consumeRParen(OutStr, Idx, "$deref");
   } else {
     ResultBuilder->Kind = Kind::Arg;
-    ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "");
+    ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "$");
   }
   return ResultBuilder;
 }
