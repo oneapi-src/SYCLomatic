@@ -131,7 +131,7 @@ void test1() {
     // CHECK: dpct::get_default_queue().memcpy(host_out.data(), out, ele_num2 * sizeof(HT)).wait();
     // CHECK: dpct::get_current_device().queues_wait_and_throw();
     // CHECK: /*
-    // CHECK: DPCT1097:{{[0-9]+}}: The function "pooling_backward" may require the workspace which is used to save intermediate results from the "pooling_forward". By default, a workspace from engine_ext is selected according to pointer of source data, but this may be error for workspace data race. You may need to rewrite this code.
+    // CHECK: DPCT1097:{{[0-9]+}}: The function "pooling_backward" may require the workspace used to save intermediate results from function "pooling_forward". By default, a workspace from engine_ext is selected according to the source data pointer, but this may be incorrect and cause a workspace data race. You may need to rewrite this code.
     // CHECK: */
     // CHECK: /*
     // CHECK: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.

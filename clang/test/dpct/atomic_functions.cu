@@ -475,14 +475,14 @@ __global__ void mykernel(unsigned int *dev) {
 // CHECK-NEXT:                             unsigned int *temp) {
 // CHECK-EMPTY:
 // CHECK-NEXT:  temp[item_ct1.get_local_id(2)] = 0;
-// CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+// CHECK-NEXT:  sycl::group_barrier(item_ct1.get_group());
 // CHECK-NEXT:  int i = item_ct1.get_local_id(2) + item_ct1.get_group(2) * item_ct1.get_local_range(2);
 // CHECK-NEXT:  int offset = item_ct1.get_local_range(2) * item_ct1.get_group_range(2);
 // CHECK-NEXT:  while (i < size) {
 // CHECK-NEXT:    dpct::atomic_fetch_add<unsigned int, sycl::access::address_space::generic_space>(&temp[buffer[i]], (unsigned int)1);
 // CHECK-NEXT:    i += offset;
 // CHECK-NEXT:  }
-// CHECK-NEXT:  item_ct1.barrier(sycl::access::fence_space::local_space);
+// CHECK-NEXT:  sycl::group_barrier(item_ct1.get_group());
 // CHECK-NEXT:  dpct::atomic_fetch_add<unsigned int, sycl::access::address_space::generic_space>(&(histo[item_ct1.get_local_id(2)]), temp[item_ct1.get_local_id(2)]);
 // CHECK-NEXT:}
 __global__ void mykernel_1(unsigned char *buffer, long size,

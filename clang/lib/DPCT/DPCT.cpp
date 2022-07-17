@@ -278,11 +278,9 @@ list<std::string> RuleFile("rule-file", desc("Specifies the rule file path that 
                            value_desc("file"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 
 opt<UsmLevel> USMLevel(
-    "usm-level", desc("Sets the USM level to use in source code generation.\n"),
+    "usm-level", desc("Sets the Unified Shared Memory (USM) level to use in source code generation.\n"),
     values(llvm::cl::OptionEnumValue{"restricted", int(UsmLevel::UL_Restricted),
-                     "Uses API from SYCL Explicit and Restricted Unified "
-                     "Shared Memory extension\n"
-                     "for memory management migration. (default)", false},
+                     "Uses USM API for memory management migration. (default)", false},
            llvm::cl::OptionEnumValue{"none", int(UsmLevel::UL_None),
                      "Uses helper functions from DPCT header files for memory "
                      "management migration.", false}),
@@ -457,10 +455,6 @@ static bits<ExperimentalFeatures> Experimentals(
   llvm::cl::CommaSeparated,
   values(
     llvm::cl::OptionEnumValue{
-        "nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
-        "Experimental helper function used to help cross group synchronization during migration.\n",
-        false },
-    llvm::cl::OptionEnumValue{
         "free-function-queries", int(ExperimentalFeatures::Exp_FreeQueries),
         "Experimental extension that allows getting `id`, `item`, `nd_item`, `group`, and\n"
         "`sub_group` instances globally.",
@@ -472,7 +466,11 @@ static bits<ExperimentalFeatures> Experimentals(
         false },
     llvm::cl::OptionEnumValue{
         "logical-group", int(ExperimentalFeatures::Exp_LogicalGroup),
-        "Experimental helper function used to group some work-items logically.",
+        "Experimental helper function used to logically group work-items.",
+        false },
+    llvm::cl::OptionEnumValue{
+        "nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
+        "Experimental helper function used to help cross group synchronization during migration.\n",
         false }),
   value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
 
@@ -507,7 +505,7 @@ static opt<bool> NoIncrementalMigration(
     cat(DPCTCat), init(false));
 
 static opt<std::string> QueryApiMapping("query-api-mapping",
-    llvm::cl::desc("Query mapped SYCL API from CUDA API."),
+    llvm::cl::desc("Provides functionally compatible SYCL API mapping for CUDA API."),
     value_desc("api"), cat(DPCTCat), llvm::cl::Optional);
 // clang-format on
 

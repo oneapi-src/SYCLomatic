@@ -8,7 +8,6 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "BarrierFenceSpaceAnalyzer.h"
 #include "CallExprRewriter.h"
 #include "CustomHelperFiles.h"
 #include "ExprAnalysis.h"
@@ -1037,36 +1036,26 @@ void IncludesCallbacks::InclusionDirective(
   // Extra process thrust headers, map to PSTL mapping headers in runtime.
   // For multi thrust header files, only insert once for PSTL mapping header.
   if (IsAngled && (FileName.find("thrust/") != std::string::npos)) {
-    if (!DplHeaderInserted) {
-      std::string Replacement =
-          std::string("<" + getCustomMainHelperFileName() + "/dpl_utils.hpp>");
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DplUtils);
+    requestFeature(HelperFeatureEnum::DplUtils_non_local_include_dependency,
+                   HashLoc);
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
+    Updater.update(false);
 
-      // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
-      // previously added here.  However, due to some unfortunate include
-      // dependencies introduced with the PSTL/TBB headers from the
-      // gcc-9.3.0 include files, those two headers must now be included
-      // before the CL/sycl.hpp are included, so the FileInfo is set
-      // to hold a boolean that'll indicate whether to insert them when
-      // the #include CL/sycl.cpp is added later
-      DplHeaderInserted = true;
-      auto BeginLocInfo = DpctGlobalInfo::getLocInfo(FilenameRange.getBegin());
-      auto FileInfo =
-          DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
-      FileInfo->setAddOneDplHeaders(true);
-      TransformSet.emplace_back(
-          new ReplaceInclude(FilenameRange, std::move(Replacement)));
-      requestFeature(HelperFeatureEnum::DplUtils_non_local_include_dependency,
-                     "");
-    } else {
-      // Replace the complete include directive with an empty string.
-      TransformSet.emplace_back(new ReplaceInclude(
-          CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                          /*IsTokenRange=*/false),
-          ""));
-      Updater.update(false);
-    }
-
-    return;
+    // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
+    // previously added here.  However, due to some unfortunate include
+    // dependencies introduced with the PSTL/TBB headers from the
+    // gcc-9.3.0 include files, those two headers must now be included
+    // before the CL/sycl.hpp are included, so the FileInfo is set
+    // to hold a boolean that'll indicate whether to insert them when
+    // the #include CL/sycl.cpp is added later
+    auto BeginLocInfo = DpctGlobalInfo::getLocInfo(FilenameRange.getBegin());
+    auto FileInfo =
+        DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
+    FileInfo->setAddOneDplHeaders(true);
   }
 
   //  TODO: implement one of this for each source language.
@@ -12725,7 +12714,7 @@ void GuessIndentWidthRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(GuessIndentWidthRule)
 
 void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
-  std::vector<std::string> MathFunctions = {
+  std::vector<std::string> MathFunctionsCallExpr = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
 #define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME) SOURCEAPINAME,
@@ -12747,10 +12736,32 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 #undef ENTRY_REWRITE
   };
 
+  std::vector<std::string> MathFunctionsUnresolvedLookupExpr = {
+#define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_SINGLE(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_RENAMED_DOUBLE(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_EMULATED(SOURCEAPINAME, TARGETAPINAME)
+#define ENTRY_OPERATOR(APINAME, OPKIND)
+#define ENTRY_TYPECAST(APINAME)
+#define ENTRY_UNSUPPORTED(APINAME)
+#define ENTRY_REWRITE(APINAME) APINAME,
+#include "APINamesMath.inc"
+#undef ENTRY_RENAMED
+#undef ENTRY_RENAMED_NO_REWRITE
+#undef ENTRY_RENAMED_SINGLE
+#undef ENTRY_RENAMED_DOUBLE
+#undef ENTRY_EMULATED
+#undef ENTRY_OPERATOR
+#undef ENTRY_TYPECAST
+#undef ENTRY_UNSUPPORTED
+#undef ENTRY_REWRITE
+  };
+
   MF.addMatcher(
       callExpr(callee(functionDecl(
                    internal::Matcher<NamedDecl>(
-                       new internal::HasNameMatcher(MathFunctions)),
+                       new internal::HasNameMatcher(MathFunctionsCallExpr)),
                    anyOf(unless(hasDeclContext(namespaceDecl(anything()))),
                          hasDeclContext(namespaceDecl(hasName("std")))))),
                unless(hasAncestor(
@@ -12758,11 +12769,12 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
           .bind("math"),
       this);
 
-  MF.addMatcher(callExpr(callee(unresolvedLookupExpr(
-                  hasAnyDeclaration(namedDecl(internal::Matcher<NamedDecl>(
-                      new internal::HasNameMatcher(MathFunctions)))))))
-                  .bind("unresolved"),
-              this);
+  MF.addMatcher(
+      callExpr(callee(unresolvedLookupExpr(hasAnyDeclaration(namedDecl(
+                   internal::Matcher<NamedDecl>(new internal::HasNameMatcher(
+                       MathFunctionsUnresolvedLookupExpr)))))))
+          .bind("unresolved"),
+      this);
 }
 
 void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -13052,20 +13064,19 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
 
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
-  if (FuncName == "__syncthreads") {
-    BarrierFenceSpaceAnalyzer A;
-    if (A.canSetLocalFenceSpace(CE)) {
-      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
-                                MapNames::getClNamespace() +
-                                "access::fence_space::local_space)";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-    } else {
-      report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
-             "nd_item");
-      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier()";
-      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
-    }
-  } else if (FuncName == "this_thread_block") {
+  
+  if (!CallExprRewriterFactoryBase::RewriterMap)
+    return;
+  
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA;
+    EA.analyze(CE);
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
+ if (FuncName == "this_thread_block") {
     if (auto P = getAncestorDeclStmt(CE)) {
       if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
         emplaceTransformation(new ReplaceTypeInDecl(VD, "auto"));

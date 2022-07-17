@@ -32,6 +32,8 @@ void test(){
   cudaMalloc(&array[i], 10 * sizeof(T));
 }
 
+__device__ float d_A_static[10];
+
 int main(){
     //CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
     //CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
@@ -62,20 +64,20 @@ int main(){
     cudaMalloc(data, sizeof(float)*10*10);
 
     size_t size2;
-    // CHECK: size2 = d_A.get_size();
-    cudaGetSymbolSize(&size2, d_A);
+    // CHECK: size2 = d_A_static.get_size();
+    cudaGetSymbolSize(&size2, d_A_static);
 
     // CHECK: /*
     // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT:  */
-    // CHECK-NEXT:  err = (size2 = d_A.get_size(), 0);
-    err = cudaGetSymbolSize(&size2, d_A);
+    // CHECK-NEXT:  err = (size2 = d_A_static.get_size(), 0);
+    err = cudaGetSymbolSize(&size2, d_A_static);
 
     // CHECK: /*
     // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK-NEXT:*/
-    // CHECK-NEXT:MY_ERROR_CHECKER((size2 = d_A.get_size(), 0));
-    MY_ERROR_CHECKER(cudaGetSymbolSize(&size2, d_A));
+    // CHECK-NEXT:MY_ERROR_CHECKER((size2 = d_A_static.get_size(), 0));
+    MY_ERROR_CHECKER(cudaGetSymbolSize(&size2, d_A_static));
 
     // CHECK: stream->prefetch(a,100);
     cudaMemPrefetchAsync (a, 100, deviceID, stream);
@@ -183,7 +185,7 @@ void foobar() {
   int errorCode;
 
   cudaChannelFormatDesc desc;
-  cudaExtent extent;
+  cudaExtent extent = make_cudaExtent(1, 1, 1);
   unsigned int flags;
   cudaArray_t array;
 
