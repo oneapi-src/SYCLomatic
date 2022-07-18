@@ -848,12 +848,13 @@ void foo3() {
   cublasCherkx(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_T, 2, 3, alpha_c, a_c, 3, b_c, 3, beta_f, c_c, 2);
   cublasZherkx(handle, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_T, 2, 3, alpha_z, a_z, 3, b_z, 3, beta_d, c_z, 2);
 
-  //CHECK:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, 2, 2, a_f, 2, 0, x_f, 1, 0, c_f, 2, 0, 1);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, 2, 2, a_d, 2, 0, x_d, 1, 0, c_d, 2, 0, 1);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, 2, 2, (std::complex<float>*)a_c, 2, 0, (std::complex<float>*)x_c, 1, 0, (std::complex<float>*)c_c, 2, 0, 1);
-  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, 2, 2, (std::complex<double>*)a_z, 2, 0, (std::complex<double>*)x_z, 1, 0, (std::complex<double>*)c_z, 2, 0, 1);
-  cublasSdgmm(handle, CUBLAS_SIDE_LEFT, 2, 2, a_f, 2, x_f, 1, c_f, 2);
-  cublasDdgmm(handle, CUBLAS_SIDE_LEFT, 2, 2, a_d, 2, x_d, 1, c_d, 2);
-  cublasCdgmm(handle, CUBLAS_SIDE_LEFT, 2, 2, a_c, 2, x_c, 1, c_c, 2);
-  cublasZdgmm(handle, CUBLAS_SIDE_LEFT, 2, 2, a_z, 2, x_z, 1, c_z, 2);
+  int m, n, lda, incx, ldc;
+  //CHECK:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, m, n, a_f, lda, 0, x_f, incx, 0, c_f, ldc, ldc * n, 1);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, m, n, a_d, lda, 0, x_d, incx, 0, c_d, ldc, ldc * n, 1);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, m, n, (std::complex<float>*)a_c, lda, 0, (std::complex<float>*)x_c, incx, 0, (std::complex<float>*)c_c, ldc, ldc * n, 1);
+  //CHECK-NEXT:oneapi::mkl::blas::column_major::dgmm_batch(*handle, oneapi::mkl::side::left, m, n, (std::complex<double>*)a_z, lda, 0, (std::complex<double>*)x_z, incx, 0, (std::complex<double>*)c_z, ldc, ldc * n, 1);
+  cublasSdgmm(handle, CUBLAS_SIDE_LEFT, m, n, a_f, lda, x_f, incx, c_f, ldc);
+  cublasDdgmm(handle, CUBLAS_SIDE_LEFT, m, n, a_d, lda, x_d, incx, c_d, ldc);
+  cublasCdgmm(handle, CUBLAS_SIDE_LEFT, m, n, a_c, lda, x_c, incx, c_c, ldc);
+  cublasZdgmm(handle, CUBLAS_SIDE_LEFT, m, n, a_z, lda, x_z, incx, c_z, ldc);
 }
