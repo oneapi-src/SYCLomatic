@@ -6041,6 +6041,13 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CallExprArguReplVec.push_back(EA.getReplacedString());
     }
 
+    std::string LdcTimesN =
+        (needExtraParens(CE->getArg(9)) ? ("(" + CallExprArguReplVec[9] + ")")
+                                        : CallExprArguReplVec[9]) +
+        " * " +
+        (needExtraParens(CE->getArg(3)) ? ("(" + CallExprArguReplVec[3] + ")")
+                                        : CallExprArguReplVec[3]);
+
     // update the replacement of four enmu arguments
     if (const CStyleCastExpr *CSCE = dyn_cast<CStyleCastExpr>(CE->getArg(1))) {
       std::string CurrentArgumentRepl;
@@ -6083,7 +6090,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     // Insert some arguments since we are now using batch API
     // If we have new dedicated API for migrating dgmm in the future,
     // then we can remove the argument insertion.
-    CallExprArguReplVec.push_back("0"); // stride_c
+    CallExprArguReplVec.push_back(LdcTimesN); // stride_c
     CallExprArguReplVec.push_back("1"); // batch_size
     auto Iter = CallExprArguReplVec.begin();
     std::advance(Iter, 8);
