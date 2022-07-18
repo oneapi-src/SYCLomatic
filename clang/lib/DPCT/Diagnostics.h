@@ -24,7 +24,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-extern llvm::cl::opt<std::string> SuppressWarnings;
 extern llvm::cl::opt<std::string> OutputFile;
 extern llvm::cl::opt<OutputVerbosityLevel> OutputVerbosity;
 extern bool SuppressWarningsAllFlag;

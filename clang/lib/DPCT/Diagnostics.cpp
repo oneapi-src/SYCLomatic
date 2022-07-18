@@ -8,6 +8,8 @@
 #include "Diagnostics.h"
 #include "clang/Basic/DiagnosticIDs.h"
 
+extern llvm::cl::opt<std::string> SuppressWarnings;
+
 namespace clang {
 namespace dpct {
 std::set<int> WarningIDs;

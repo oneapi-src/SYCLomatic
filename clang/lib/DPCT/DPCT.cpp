@@ -9,6 +9,7 @@
 #include "clang/DPCT/DPCT.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
+#include "AutoComplete.h"
 #include "CallExprRewriter.h"
 #include "TypeLocRewriters.h"
 #include "Checkpoint.h"
@@ -109,404 +110,71 @@ const char *const CtHelpHint =
     "\n";
 
 static extrahelp CommonHelp(CtHelpMessage);
-static opt<std::string> Passes(
-    "passes",
-    desc("Comma separated list of migration passes, which will be applied.\n"
-         "Only the specified passes are applied."),
-    value_desc("IterationSpaceBuiltinRule,..."), cat(DPCTCat),
-               llvm::cl::Hidden);
-static opt<std::string>
-    InRoot("in-root",
-           desc("The directory path for the root of the source tree that needs "
-                "to be migrated.\n"
-                "Only files under this root are migrated. Default: Current"
-                " directory, if input\nsource files are not provided. "
-                "If input source files are provided, the directory\n"
-                "of the first input source file is used."),
-           value_desc("dir"), cat(DPCTCat),
-           llvm::cl::Optional);
-static opt<std::string> OutRoot(
-    "out-root",
-    desc("The directory path for root of generated files. A directory is "
-         "created if it\n"
-         "does not exist. Default: dpct_output."),
-    value_desc("dir"), cat(DPCTCat), llvm::cl::Optional);
 
-static opt<std::string> SDKPath("cuda-path", desc("Directory path of SDK.\n"),
-                                value_desc("dir"), cat(DPCTCat),
-                                llvm::cl::Optional, llvm::cl::Hidden);
 
-static opt<std::string>
-    CudaIncludePath("cuda-include-path",
-                   desc("The directory path of the CUDA header files."),
-                   value_desc("dir"), cat(DPCTCat), llvm::cl::Optional);
-
-static opt<ReportTypeEnum> ReportType(
-    "report-type", desc("Specifies the type of report. Values are:\n"),
-    llvm::cl::values(
-        llvm::cl::OptionEnumValue{"apis", int(ReportTypeEnum::RTE_APIs),
-            "Information about API signatures that need migration and the number of times\n"
-            "they were encountered. The report file name will have .apis suffix added.", false},
-        llvm::cl::OptionEnumValue{"stats", int(ReportTypeEnum::RTE_Stats),
-                  "High level migration statistics: Lines Of Code (LOC) that are migrated to\n"
-                  "SYCL, LOC migrated to SYCL with helper functions, LOC not needing migration,\n"
-                  "LOC needing migration but are not migrated. The report file name has the .stats\n"
-                  "suffix added (default)", false},
-        llvm::cl::OptionEnumValue{"all", int(ReportTypeEnum::RTE_All),
-                  "All of the reports.", false}
-        #ifdef DPCT_DEBUG_BUILD
-        , llvm::cl::OptionEnumValue{"diags", int(ReportTypeEnum::RTE_Diags),
-                  "diags information", true}
-        #endif
-        ),
-    llvm::cl::init(ReportTypeEnum::RTE_NotSetType), value_desc("value"), cat(DPCTCat),
-    llvm::cl::Optional);
-
-static opt<ReportFormatEnum> ReportFormat(
-    "report-format", desc("Format of the reports:\n"),
-    llvm::cl::values(
-        llvm::cl::OptionEnumValue{"csv", int(ReportFormatEnum::RFE_CSV),
-                  "Output is lines of comma separated values. The report file "
-                  "name extension will\n"
-                  "be .csv. (default)", false},
-        llvm::cl::OptionEnumValue{"formatted", int(ReportFormatEnum::RFE_Formatted),
-                  "Output is formatted to be easier to read for "
-                  "human eyes. Report file name\n"
-                  "extension will be log.",
-                  false}),
-    llvm::cl::init(ReportFormatEnum::RFE_NotSetFormat), value_desc("value"), cat(DPCTCat),
-    llvm::cl::Optional);
-
-static opt<std::string> ReportFilePrefix(
-    "report-file-prefix",
-    desc(
-        "Prefix for the report file names. The full file name will have a "
-        "suffix derived\n"
-        "from the report-type and an extension derived from the report-format. "
-        "For\n"
-        "example: <prefix>.apis.csv or <prefix>.stats.log. If this option is "
-        "not\n"
-        "specified, the report will go to stdout. The report files are created "
-        "in the\n"
-        "directory, specified by -out-root."),
-    value_desc("prefix"), cat(DPCTCat), llvm::cl::Optional);
 bool ReportOnlyFlag = false;
-static opt<bool, true>
-    ReportOnly("report-only",
-               llvm::cl::desc("Only reports are generated. No SYCL code is "
-                              "generated. Default: off."),
-               cat(DPCTCat), llvm::cl::location(ReportOnlyFlag));
-
 bool KeepOriginalCodeFlag = false;
-
-static opt<bool, true>
-    ShowOrigCode("keep-original-code",
-                 llvm::cl::desc("Keeps the original code in comments of "
-                                "generated SYCL files. Default: off.\n"),
-                 cat(DPCTCat), llvm::cl::location(KeepOriginalCodeFlag));
-#ifdef DPCT_DEBUG_BUILD
-static opt<std::string>
-    DiagsContent("report-diags-content",
-                 desc("Diagnostics verbosity level. \"pass\": Basic migration "
-                      "pass information. "
-                      "\"transformation\": Detailed migration pass "
-                      "transformation information."),
-                 value_desc("[pass|transformation]"), cat(DPCTCat),
-                 llvm::cl::Optional, llvm::cl::Hidden);
-#endif
-static std::string
-    WarningDesc("Comma separated list of migration warnings to suppress. Valid "
+bool SuppressWarningsAllFlag = false;
+bool StopOnParseErr = false;
+bool CheckUnicodeSecurityFlag = false;
+bool SyclNamedLambdaFlag = false;
+bool ExplicitClNamespace = false;
+bool NoDRYPatternFlag = false;
+bool NoUseGenericSpaceFlag = false;
+bool ProcessAllFlag = false;
+bool AsyncHandlerFlag = false;
+static std::string SuppressWarningsMessage = "Comma separated list of migration warnings to suppress. Valid "
                 "warning IDs range\n"
                 "from " + std::to_string((size_t)Warnings::BEGIN) + " to " +
                 std::to_string((size_t)Warnings::END - 1) +
                 ". Hyphen separated ranges are also allowed. For example:\n"
-                "--suppress-warnings=1000-1010,1011.");
-opt<std::string> SuppressWarnings("suppress-warnings", desc(WarningDesc),
-                                  value_desc("value"), cat(DPCTCat));
+                "--suppress-warnings=1000-1010,1011.";
 
-bool SuppressWarningsAllFlag = false;
-static std::string WarningAllDesc("Suppresses all migration warnings. Default: off.");
-opt<bool, true> SuppressWarningsAll("suppress-warnings-all",
-                                    desc(WarningAllDesc), cat(DPCTCat),
-                                    location(SuppressWarningsAllFlag));
-bool StopOnParseErr = false;
-static opt<bool, true>
-    StopOnParseErrOption("stop-on-parse-err",
-                llvm::cl::desc("Stop migration and generation of reports if "
-                               "parsing errors happened. Default: off. \n"),
-                cat(DPCTCat), llvm::cl::location(StopOnParseErr));
+#define DPCT_OPTIONS_IN_CLANG_DPCT
+#define DPCT_OPT_TYPE(...) __VA_ARGS__
+#define DPCT_OPT_ENUM(NAME, ...)                                   \
+llvm::cl::OptionEnumValue{NAME, __VA_ARGS__}
+#define DPCT_OPTION_VALUES(...)                                    \
+llvm::cl::values(__VA_ARGS__)
+#define DPCT_NON_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)  \
+OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
+#define DPCT_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)      \
+OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
+#include "llvm/DPCT/DPCTOptions.inc"
+#undef DPCT_ENUM_OPTION
+#undef DPCT_NON_ENUM_OPTION
+#undef DPCT_OPTION_VALUES
+#undef DPCT_OPT_ENUM
+#undef DPCT_OPT_TYPE
+#undef DPCT_OPTIONS_IN_CLANG_DPCT
 
-bool CheckUnicodeSecurityFlag = false;
-static opt<bool, true> CheckUnicodeSecurity(
-    "check-unicode-security",
-    llvm::cl::desc("Enable detection and warnings about Unicode constructs that can be exploited by using\n"
-                   "bi-directional formatting codes and homoglyphs in identifiers. Default: off.\n"),
-    cat(DPCTCat), llvm::cl::location(CheckUnicodeSecurityFlag));
-
-bool SyclNamedLambdaFlag = false;
-static opt<bool, true>
-    SyclNamedLambda("sycl-named-lambda",
-                llvm::cl::desc("Generates kernels with the kernel name. Default: off.\n"),
-                cat(DPCTCat), llvm::cl::location(SyclNamedLambdaFlag));
-
-opt<OutputVerbosityLevel> OutputVerbosity(
-    "output-verbosity", llvm::cl::desc("Sets the output verbosity level:"),
-    llvm::cl::values(
-        llvm::cl::OptionEnumValue{"silent", int(OutputVerbosityLevel::OVL_Silent),
-                                  "Only messages from clang.", false},
-        llvm::cl::OptionEnumValue{"normal", int(OutputVerbosityLevel::OVL_Normal),
-                                  "\'silent\' and warnings, errors, and notes from dpct.",
-                                  false},
-        llvm::cl::OptionEnumValue{"detailed", int(OutputVerbosityLevel::OVL_Detailed),
-                                  "\'normal\' and messages about which file is being processed.",
-                                  false},
-        llvm::cl::OptionEnumValue{"diagnostics", int(OutputVerbosityLevel::OVL_Diagnostics),
-                                  "\'detailed\' and information about the detected "
-                                  "conflicts and crashes. (default)", false}),
-    llvm::cl::init(OutputVerbosityLevel::OVL_Diagnostics), value_desc("value"), cat(DPCTCat),
-    llvm::cl::Optional);
-
-opt<std::string>
-    OutputFile("output-file",
-               desc("Redirects the stdout/stderr output to <file> in the output"
-                    " directory specified\n"
-                    "by the --out-root option."),
-               value_desc("file"), cat(DPCTCat),
-               llvm::cl::Optional);
-
-list<std::string> RuleFile("rule-file", desc("Specifies the rule file path that contains rules used for migration.\n"),
-                           value_desc("file"), cat(DPCTCat), llvm::cl::ZeroOrMore);
-
-opt<UsmLevel> USMLevel(
-    "usm-level", desc("Sets the Unified Shared Memory (USM) level to use in source code generation.\n"),
-    values(llvm::cl::OptionEnumValue{"restricted", int(UsmLevel::UL_Restricted),
-                     "Uses USM API for memory management migration. (default)", false},
-           llvm::cl::OptionEnumValue{"none", int(UsmLevel::UL_None),
-                     "Uses helper functions from DPCT header files for memory "
-                     "management migration.", false}),
-    init(UsmLevel::UL_Restricted), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
-
-opt<format::FormatRange>
-    FormatRng("format-range",
-                llvm::cl::desc("Sets the range of formatting.\nThe values are:\n"),
-                values(llvm::cl::OptionEnumValue{"migrated", int(format::FormatRange::migrated),
-                     "Only formats the migrated code (default).", false},
-                       llvm::cl::OptionEnumValue{"all", int(format::FormatRange::all),
-                     "Formats all code.", false},
-                       llvm::cl::OptionEnumValue{"none", int(format::FormatRange::none),
-                     "Do not format any code.", false}),
-    init(format::FormatRange::migrated), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
-
-opt<DPCTFormatStyle>
-    FormatST("format-style",
-                llvm::cl::desc("Sets the formatting style.\nThe values are:\n"),
-                values(llvm::cl::OptionEnumValue{"llvm", int(DPCTFormatStyle::FS_LLVM),
-                     "Use the LLVM coding style.", false},
-                       llvm::cl::OptionEnumValue{"google", int(DPCTFormatStyle::FS_Google),
-                     "Use the Google coding style.", false},
-                       llvm::cl::OptionEnumValue{"custom", int(DPCTFormatStyle::FS_Custom),
-                     "Use the coding style defined in the .clang-format file (default).", false}),
-    init(DPCTFormatStyle::FS_Custom), value_desc("value"), cat(DPCTCat), llvm::cl::Optional);
-
-bool ExplicitClNamespace = false;
-static opt<bool, true> NoClNamespaceInline(
-    "no-cl-namespace-inline",
-    llvm::cl::desc("DEPRECATED: Do not use cl:: namespace inline. Default: off. This option will be\n"
-                   "ignored if the replacement option --use-explicit-namespace is used.\n"),
-    cat(DPCTCat), llvm::cl::location(ExplicitClNamespace));
-
-bool NoDRYPatternFlag = false;
-static opt<bool, true> NoDRYPattern(
-  "no-dry-pattern", llvm::cl::desc("Do not use DRY (do not repeat yourself) pattern when functions from dpct\n"
-                                   "namespace are inserted. Default: off.\n"),
-  cat(DPCTCat), llvm::cl::location(NoDRYPatternFlag));
-
-bool NoUseGenericSpaceFlag = false;
-static opt<bool, true> NoUseGenericSpace(
+static llvm::cl::opt<std::string> SDKPath("cuda-path", desc("Directory path of SDK.\n"),
+                                llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat),
+                                llvm::cl::Optional, llvm::cl::Hidden);
+static llvm::cl::opt<std::string> Passes(
+    "passes",
+    llvm::cl::desc("Comma separated list of migration passes, which will be applied.\n"
+         "Only the specified passes are applied."),
+    llvm::cl::value_desc("IterationSpaceBuiltinRule,..."), llvm::cl::cat(DPCTCat),
+               llvm::cl::Hidden);
+#ifdef DPCT_DEBUG_BUILD
+static llvm::cl::opt<std::string>
+    DiagsContent("report-diags-content",
+                 llvm::cl::desc("Diagnostics verbosity level. \"pass\": Basic migration "
+                      "pass information. "
+                      "\"transformation\": Detailed migration pass "
+                      "transformation information."),
+                 llvm::cl::value_desc("[pass|transformation]"), llvm::cl::cat(DPCTCat),
+                 llvm::cl::Optional, llvm::cl::Hidden);
+#endif
+static llvm::cl::opt<bool, true> NoUseGenericSpace(
   "no-use-generic-space", llvm::cl::desc("sycl::access::address_space::generic_space is not used during atomic\n"
                                          " function's migration. Default: off.\n"),
-  cat(DPCTCat), llvm::cl::location(NoUseGenericSpaceFlag), llvm::cl::ReallyHidden);
-
-bool ProcessAllFlag = false;
-static opt<bool, true>
-    ProcessAll("process-all",
-                 llvm::cl::desc("Migrates or copies all files, except hidden, from the --in-root directory\n"
-                 "to the --out-root directory. The --in-root option should be explicitly specified.\n"
-                 "Default: off."),
-                 cat(DPCTCat), llvm::cl::location(ProcessAllFlag));
-
-static opt<bool> EnableCTAD(
-    "enable-ctad",
-    llvm::cl::desc("Use a C++17 class template argument deduction (CTAD) in "
-                   "your generated code.\n"
-                   "Default: off."),
-    cat(DPCTCat), init(false));
-
-static opt<bool> EnableComments(
-    "comments", llvm::cl::desc("Insert comments explaining the generated code. Default: off."),
-    cat(DPCTCat), init(false));
-
-static opt<HelperFilesCustomizationLevel> UseCustomHelperFileLevel(
-    "use-custom-helper", desc("Customize the helper header files for migrated code. The values are:\n"),
-    values(
-        llvm::cl::OptionEnumValue{
-            "none", int(HelperFilesCustomizationLevel::HFCL_None),
-            "No customization (default).", false},
-        llvm::cl::OptionEnumValue{
-            "file", int(HelperFilesCustomizationLevel::HFCL_File),
-            "Limit helper header files to only the necessary files for the migrated code and\n"
-            "place them in the --out-root directory.", false},
-        llvm::cl::OptionEnumValue{
-            "api", int(HelperFilesCustomizationLevel::HFCL_API),
-            "Limit helper header files to only the necessary APIs for the migrated code and\n"
-            "place them in the --out-root directory.", false},
-        llvm::cl::OptionEnumValue{
-            "all", int(HelperFilesCustomizationLevel::HFCL_All),
-            "Generate a complete set of helper header files and place them in the --out-root\n"
-            "directory.", false}),
-    init(HelperFilesCustomizationLevel::HFCL_None), value_desc("value"),
-    cat(DPCTCat), llvm::cl::Optional);
-
-opt<std::string> CustomHelperFileName(
-    "custom-helper-name",
-    desc(
-        "Specifies the helper headers folder name and main helper header file name.\n"
-        "Default: dpct."),
-    init("dpct"), value_desc("name"), cat(DPCTCat), llvm::cl::Optional);
-
-bool AsyncHandlerFlag = false;
-static opt<bool, true> AsyncHandler(
-    "always-use-async-handler",
-    llvm::cl::desc("Use async exception handler when creating new sycl::queue "
-                   "with dpct::create_queue\nin addition to default "
-                   "dpct::get_default_queue. Default: off."),
-    cat(DPCTCat), llvm::cl::location(AsyncHandlerFlag));
-
-static opt<AssumedNDRangeDimEnum> NDRangeDim(
-    "assume-nd-range-dim",
-    desc("Provides a hint to the tool on the dimensionality of nd_range to use in generated code.\n"
-         "The values are:\n"),
-    values(
-        llvm::cl::OptionEnumValue{"1", 1,
-                                  "Generate kernel code assuming 1D nd_range "
-                                  "where possible, and 3D in other cases.",
-                                  false},
-        llvm::cl::OptionEnumValue{
-            "3", 3,
-            "Generate kernel code assuming 3D nd_range (default).",
-            false}),
-    init(AssumedNDRangeDimEnum::ARE_Dim3), value_desc("value"), cat(DPCTCat),
-    llvm::cl::Optional);
-
-static list<ExplicitNamespace> UseExplicitNamespace(
-    "use-explicit-namespace",
-    llvm::cl::desc(
-        "Defines the namespaces to use explicitly in generated code. The value is a comma\n"
-        "separated list. Default: dpct, sycl.\n"
-        "Possible values are:"),
-    llvm::cl::CommaSeparated,
-    values(llvm::cl::OptionEnumValue{"none", int(ExplicitNamespace::EN_None),
-                                     "Generate code without namespaces. Cannot "
-                                     "be used with other values.",
-                                     false},
-           llvm::cl::OptionEnumValue{
-               "cl", int(ExplicitNamespace::EN_CL),
-               "Generate code with cl::sycl:: namespace. Cannot be used with "
-               "sycl or sycl-math values.",
-               false},
-           llvm::cl::OptionEnumValue{"dpct", int(ExplicitNamespace::EN_DPCT),
-                                     "Generate code with dpct:: namespace.",
-                                     false},
-           llvm::cl::OptionEnumValue{
-               "sycl", int(ExplicitNamespace::EN_SYCL),
-               "Generate code with sycl:: namespace. Cannot be used with cl or "
-               "sycl-math values.",
-               false},
-           llvm::cl::OptionEnumValue{
-               "sycl-math", int(ExplicitNamespace::EN_SYCL_Math),
-               "Generate code with sycl:: namespace, applied only for SYCL math functions.\n"
-               "Cannot be used with cl or sycl values.",
-               false}),
-    value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
-
-// When more dpcpp extensions are implemented, more extension names will be
-// added into the value of option --no-dpcpp-extensions, currently only
-// Enqueued barriers is supported.
-static list<DPCPPExtensions> NoDPCPPExtensions(
-    "no-dpcpp-extensions",
-    llvm::cl::desc(
-        "Comma separated list of extensions not to be used in migrated "
-        "code.\n"
-        "By default, these extensions will be used in migrated code."),
-    llvm::cl::CommaSeparated,
-    values(llvm::cl::OptionEnumValue{"enqueued_barriers",
-                                     int(DPCPPExtensions::Ext_EnqueueBarrier),
-                                     "Enqueued barriers extension.",
-                                     false}),
-    value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore,
-    llvm::cl::cb<void, DPCPPExtensions>(DpctGlobalInfo::setExtensionUnused));
-
-static bits<ExperimentalFeatures> Experimentals(
-  "use-experimental-features",
-  llvm::cl::desc(
-    "Comma separated list of experimental features to be used in migrated "
-    "code.\n"
-    "By default, experimental features will not be used in migrated code.\nThe values are:\n"),
-  llvm::cl::CommaSeparated,
-  values(
-    llvm::cl::OptionEnumValue{
-        "free-function-queries", int(ExperimentalFeatures::Exp_FreeQueries),
-        "Experimental extension that allows getting `id`, `item`, `nd_item`, `group`, and\n"
-        "`sub_group` instances globally.",
-        false },
-    llvm::cl::OptionEnumValue{
-        "local-memory-kernel-scope-allocation", int(ExperimentalFeatures::Exp_GroupSharedMemory),
-        "Experimental extension that allows allocation of local memory objects at the kernel\n"
-        "functor scope",
-        false },
-    llvm::cl::OptionEnumValue{
-        "logical-group", int(ExperimentalFeatures::Exp_LogicalGroup),
-        "Experimental helper function used to logically group work-items.",
-        false },
-    llvm::cl::OptionEnumValue{
-        "nd_range_barrier", int(ExperimentalFeatures::Exp_NdRangeBarrier),
-        "Experimental helper function used to help cross group synchronization during migration.\n",
-        false }),
-  value_desc("value"), cat(DPCTCat), llvm::cl::ZeroOrMore);
-
-opt<bool> GenBuildScript(
-    "gen-build-script",
-    llvm::cl::desc("Generates makefile for migrated file(s) in -out-root directory. Default: off."),
-    cat(DPCTCat), init(false));
-
-opt<std::string>
-    BuildScriptFile("build-script-file",
-               desc("Specifies the name of generated makefile for migrated file(s).\n"
-                    "Default name: Makefile.dpct."),
-               value_desc("file"), cat(DPCTCat),
-               llvm::cl::Optional);
-
-static list<std::string> ExcludePathList(
-    "in-root-exclude",
-    llvm::cl::desc(
-        "Excludes the specified directory or file from processing."),
-    value_desc("dir|file"), cat(DPCTCat), llvm::cl::ZeroOrMore);
-
-static opt<bool> OptimizeMigration(
-    "optimize-migration",
-    llvm::cl::desc("Generates SYCL code applying more aggressive assumptions that potentially\n"
-                   "may alter the semantics of your program. Default: off."),
-    cat(DPCTCat), init(false));
-
-static opt<bool> NoIncrementalMigration(
-    "no-incremental-migration",
-    llvm::cl::desc("Tells the tool to not perform an incremental migration.\n"
-                   "Default: off (incremental migration happens)."),
-    cat(DPCTCat), init(false));
-
-static opt<std::string> QueryApiMapping("query-api-mapping",
-    llvm::cl::desc("Provides functionally compatible SYCL API mapping for CUDA API."),
-    value_desc("api"), cat(DPCTCat), llvm::cl::Optional);
+  llvm::cl::cat(DPCTCat), llvm::cl::location(NoUseGenericSpaceFlag), llvm::cl::ReallyHidden);
+static AutoCompletePrinter AutoCompletePrinterInstance;
+static llvm::cl::opt<AutoCompletePrinter, true, llvm::cl::parser<std::string>> AutoComplete(
+  "autocomplete", llvm::cl::desc("List all options or enums which have the specified prefix.\n"),
+  llvm::cl::cat(DPCTCat), llvm::cl::ReallyHidden, llvm::cl::location(AutoCompletePrinterInstance));
 // clang-format on
 
 // TODO: implement one of this for each source language.
