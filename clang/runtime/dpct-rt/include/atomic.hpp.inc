@@ -576,12 +576,13 @@ class atomic{
 public:
   /// default memory synchronization order
   static constexpr cl::sycl::memory_order default_read_order =
-      cl::sycl::detail::memory_order_traits<DefaultOrder>::read_order;
+      cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space>::default_read_order;
   static constexpr cl::sycl::memory_order default_write_order =
-      cl::sycl::detail::memory_order_traits<DefaultOrder>::write_order;
+      cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space>::write_order;
   static constexpr cl::sycl::memory_scope default_scope = DefaultScope;
   static constexpr cl::sycl::memory_order default_read_modify_write_order =
       DefaultOrder;
+  
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|atomic_class_construct|dpct
@@ -671,6 +672,12 @@ public:
     cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
     return atm.compare_exchange_weak(expected, desired, success, failure, scope);
   }
+  /// \param [in, out]  replaces the value of the referenced object
+  /// \param except The value expected to be found in the object referenced by the atomic_ref object
+  /// \param desired  The value to store in the referenced object if it is as expected
+  /// \param order 	The memory synchronization ordering for operations
+  /// \param scope The memory scope used.
+  /// \returns true if the referenced object was successfully changed, false otherwise.
   bool compare_exchange_weak(T &expected, T desired,
                   cl::sycl::memory_order order = default_read_modify_write_order,
                   cl::sycl::memory_scope scope = default_scope) noexcept {
@@ -701,6 +708,12 @@ public:
     cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
     return atm.compare_exchange_strong(expected, desired, success, failure, scope);
   }
+  /// \param [in, out]  replaces the value of the referenced object
+  /// \param except The value expected to be found in the object referenced by the atomic_ref object
+  /// \param desired  The value to store in the referenced object if it is as expected
+  /// \param order 	The memory synchronization ordering for operations
+  /// \param scope The memory scope used.
+  /// \returns true if the referenced object was successfully changed, false otherwise.
   bool compare_exchange_strong(T &expected, T desired,
                     cl::sycl::memory_order order = default_read_modify_write_order,
                     cl::sycl::memory_scope scope = default_scope) noexcept {
