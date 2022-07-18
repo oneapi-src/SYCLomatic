@@ -505,9 +505,11 @@ static opt<bool> NoIncrementalMigration(
                    "Default: off (incremental migration happens)."),
     cat(DPCTCat), init(false));
 
+/*
 static opt<std::string> QueryApiMapping("query-api-mapping",
     llvm::cl::desc("Provides functionally compatible SYCL API mapping for CUDA API."),
     value_desc("api"), cat(DPCTCat), llvm::cl::Optional);
+*/
 // clang-format on
 
 // TODO: implement one of this for each source language.
@@ -1103,12 +1105,13 @@ int runDPCT(int argc, const char **argv) {
   // just show -- --help information and then exit
   if (CommonOptionsParser::hasHelpOption(OriginalArgc, argv))
     dpctExit(MigrationSucceeded);
-
+  /*
   if (QueryApiMapping.getNumOccurrences()) {
     ApiMappingEntry::initEntryMap();
     ApiMappingEntry::printMappingDesc(llvm::outs(), QueryApiMapping);
     dpctExit(MigrationSucceeded);
   }
+  */
   if (InRoot.empty() && ProcessAllFlag) {
     ShowStatus(MigrationErrorNoExplicitInRoot);
     dpctExit(MigrationErrorNoExplicitInRoot);
