@@ -15857,7 +15857,7 @@ void CudaArchMacroRule::runRule(
     bool NeedInsert = false;
     for (auto &Info : Global.getCudaArchPPInfoMap()[FileInfo->getFilePath()]) {
       if ((Info.first > Beg.second) && (Info.first < End.second) &&
-          (!Info.second.ElInfo.empty() || !Info.second.IfInfo.DirectiveLoc)) {
+          (!Info.second.ElInfo.empty() || Info.second.IfInfo.DirectiveLoc)) {
         Info.second.isInHDFunc = true;
         NeedInsert = true;
       }
