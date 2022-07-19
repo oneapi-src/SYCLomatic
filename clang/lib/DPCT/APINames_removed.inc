@@ -31,6 +31,9 @@ ENTRY(cudaDeviceSetLimit,              "SYCL currently does not support setting 
 ENTRY(cudaThreadSetLimit,              "SYCL currently does not support setting resource limits on devices.")
 ENTRY(cudaDeviceSetCacheConfig,        "SYCL currently does not support setting cache config on devices.")
 ENTRY(cudaDeviceGetCacheConfig,        "SYCL currently does not support setting cache config on devices.")
+ENTRY(cuCtxSetLimit,                   "SYCL currently does not support setting resource limits on devices.")
+ENTRY(cuCtxGetLimit,                   "SYCL currently does not support getting resource limits on devices.")
+ENTRY(cuCtxSetCacheConfig,             "SYCL currently does not support setting cache config on devices.")
 
 ENTRY(cudaEventCreate,                 "this call is redundant in SYCL.")
 ENTRY(cudaEventCreateWithFlags,        "this call is redundant in SYCL.")
