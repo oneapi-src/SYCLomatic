@@ -72,6 +72,7 @@ public:
     ClassMethod() {}
   };
   static std::vector<std::string> RuleFiles;
+  std::string RuleFile;
   std::string RuleId;
   RulePriority Priority;
   RuleKind Kind;
@@ -216,6 +217,7 @@ public:
     DerefedTypeName
   };
   std::string RuleName;
+  std::string RuleFile;
   Kind Kind;
   size_t ArgIndex;
   std::string Str;
@@ -226,10 +228,10 @@ private:
   // /OutStr is the string specified in rule's "Out" session
   std::shared_ptr<OutputBuilder> consumeKeyword(std::string &OutStr,
                                                 size_t &Idx);
-  int consumeArgIndex(std::string &OutStr, size_t &Idx);
+  int consumeArgIndex(std::string &OutStr, size_t &Idx, std::string &&Keyword);
   void ignoreWhitespaces(std::string &OutStr, size_t &Idx);
-  void consumeRParen(std::string &OutStr, size_t &Idx);
-  void consumeLParen(std::string &OutStr, size_t &Idx);
+  void consumeRParen(std::string &OutStr, size_t &Idx, std::string &&Keyword);
+  void consumeLParen(std::string &OutStr, size_t &Idx, std::string &&Keyword);
 };
 
 void importRules(llvm::cl::list<std::string> &RuleFiles);
