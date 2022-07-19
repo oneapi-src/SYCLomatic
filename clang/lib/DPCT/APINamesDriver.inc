@@ -149,3 +149,8 @@ FEATURE_REQUEST_FACTORY(
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxGetApiVersion", DEREF(1),
                                             CALL(MapNames::getDpctNamespace() +
                                                  "get_sycl_language_version"))))
+ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY("cuDeviceGetAttribute", DEREF(0),
+                    makeMemberCallCreator(CALL(MapNames::getDpctNamespace() +
+                    "dev_mgr::instance().get_device", ARG(2)), false,
+                    makeFuncNameCreator(1))))

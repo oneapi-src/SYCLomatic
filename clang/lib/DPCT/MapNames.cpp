@@ -660,6 +660,31 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<EnumNameRule>(
            "is_native_atomic_supported",
            HelperFeatureEnum::Device_device_ext_is_native_atomic_supported)},
+      {"CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X",
+        std::make_shared<EnumNameRule>(
+          "get_work_item_max_dim_x_size",
+          HelperFeatureEnum::Device_device_ext_get_work_item_max_dim_x_size)},
+      {"CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y",
+        std::make_shared<EnumNameRule>(
+          "get_work_item_max_dim_y_size",
+          HelperFeatureEnum::Device_device_ext_get_work_item_max_dim_y_size)},
+      {"CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z",
+        std::make_shared<EnumNameRule>(
+          "get_work_item_max_dim_z_size",
+          HelperFeatureEnum::Device_device_ext_get_work_item_max_dim_z_size)},
+      {"CU_CTX_MAP_HOST",
+        std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_SCHED_BLOCKING_SYNC",
+        std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_SCHED_SPIN",
+        std::make_shared<EnumNameRule>("0")},
+      {"CU_CTX_SCHED_SPIN",
+        std::make_shared<EnumNameRule>("0")},
+      {"CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK",
+      std::make_shared<EnumNameRule>(
+          "get_local_mem_size",
+          HelperFeatureEnum::Device_device_info_get_local_mem_size)},
+
       // enum CUarray_format
       {"CU_AD_FORMAT_UNSIGNED_INT8",
        std::make_shared<EnumNameRule>(getClNamespace() +

@@ -528,6 +528,48 @@ public:
   }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_get_local_mem_size|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  size_t get_local_mem_size() const { return get_device_info().get_local_mem_size(); }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_get_work_item_max_dim_x_size|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+int get_work_item_max_dim_x_size() const {
+  return get_device_info().get_max_work_item_sizes()[0];
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_get_work_item_max_dim_y_size|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+int get_work_item_max_dim_y_size() {
+  return get_device_info().get_max_work_item_sizes()[1];
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_get_work_item_max_dim_z_size|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+int get_work_item_max_dim_z_size() {
+  return get_device_info().get_max_work_item_sizes()[2];
+}
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|device_ext_get_integrated|dpct
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
