@@ -515,6 +515,36 @@ public:
   virtual ~image_wrapper_base() = 0;
 
   void attach(image_data data) { set_data(data); }
+  /// Attach matrix data to this class.
+  void attach(image_matrix *matrix) {
+    detach();
+    image_wrapper_base::set_data(image_data(matrix));
+  }
+  /// Attach matrix data to this class.
+  void attach(image_matrix *matrix, image_channel channel) {
+    attach(matrix);
+    image_wrapper_base::set_channel(channel);
+  }
+  /// Attach linear data to this class.
+  void attach(const void *ptr, size_t count) {
+    attach(ptr, count, get_channel());
+  }
+  /// Attach linear data to this class.
+  void attach(const void *ptr, size_t count, image_channel channel) {
+    detach();
+    image_wrapper_base::set_data(image_data(const_cast<void *>(ptr), count, channel));
+  }
+  /// Attach 2D data to this class.
+  void attach(const void *data, size_t x, size_t y, size_t pitch) {
+    attach(data, x, y, pitch, get_channel());
+  }
+  /// Attach 2D data to this class.
+  void attach(const void *data, size_t x, size_t y, size_t pitch, image_channel channel) {
+    detach();
+    image_wrapper_base::set_data(image_data(const_cast<void *>(data), x * sizeof(T), y, pitch, channel));
+  }
+  /// Detach data.
+  virtual void detach() {}
 
   sampling_info get_sampling_info() { return _sampling_info; }
   void set_sampling_info(sampling_info info) {
@@ -618,36 +648,9 @@ public:
       _image = detail::image_creator<dimensions>()(get_data());
     return accessor_t(*_image, cgh);
   }
-  /// Attach matrix data to this class.
-  void attach(image_matrix *matrix) {
-    detach();
-    image_wrapper_base::set_data(image_data(matrix));
-  }
-  /// Attach matrix data to this class.
-  void attach(image_matrix *matrix, image_channel channel) {
-    attach(matrix);
-    image_wrapper_base::set_channel(channel);
-  }
-  /// Attach linear data to this class.
-  void attach(const void *ptr, size_t count) {
-    attach(ptr, count, get_channel());
-  }
-  /// Attach linear data to this class.
-  void attach(const void *ptr, size_t count, image_channel channel) {
-    detach();
-    image_wrapper_base::set_data(image_data(const_cast<void *>(ptr), count, channel));
-  }
-  /// Attach 2D data to this class.
-  void attach(const void *data, size_t x, size_t y, size_t pitch) {
-    attach(data, x, y, pitch, get_channel());
-  }
-  /// Attach 2D data to this class.
-  void attach(const void *data, size_t x, size_t y, size_t pitch, image_channel channel) {
-    detach();
-    image_wrapper_base::set_data(image_data(const_cast<void *>(data), x * sizeof(T), y, pitch, channel));
-  }
+
   /// Detach data.
-  void detach() {
+  void detach() override {
     if (_image)
       delete _image;
     _image = nullptr;
