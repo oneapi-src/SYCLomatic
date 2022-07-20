@@ -4,7 +4,7 @@
 // RUN: rm -rf %T/Image/api_test14_out
 
 // CHECK: 60
-// TEST_FEATURE: Image_image_wrapper_attach
+// TEST_FEATURE: Image_image_wrapper_base_attach
 // TEST_FEATURE: Image_image_wrapper_base_set_data
 
 int main() {
