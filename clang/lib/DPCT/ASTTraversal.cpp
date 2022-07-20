@@ -17172,27 +17172,6 @@ void ComplexAPIRule::runRule(
 
 REGISTER_RULE(ComplexAPIRule)
 
-void TemplateSpecializationTypeLocRule::registerMatcher(
-    ast_matchers::MatchFinder &MF) {
-  auto TargetTypeName = [&]() { return hasAnyName("cuda::atomic"); };
-
-  MF.addMatcher(typeLoc(
-                    loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
-                    .bind("loc"),
-                this);
-}
-
-void TemplateSpecializationTypeLocRule::runRule(
-    const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (auto TL = getNodeAsType<TypeLoc>(Result, "loc")) {
-    ExprAnalysis EA;
-    EA.analyze(*TL);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-  }
-}
-
-REGISTER_RULE(TemplateSpecializationTypeLocRule)
 
 void ASTTraversalManager::matchAST(ASTContext &Context, TransformSetTy &TS,
                                    StmtStringMap &SSM) {
