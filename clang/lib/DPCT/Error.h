@@ -52,6 +52,7 @@ enum ProcessStatus {
   MigrationErrorDifferentOptSet = -37,
   MigrationErrorInvalidRuleFilePath = -38,
   MigrationErrorCannotParseRuleFile = -39,
+  MigrationErrorInvalidAnalysisScope = -40,
 };
 
 namespace clang {

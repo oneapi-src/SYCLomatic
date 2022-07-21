@@ -422,6 +422,8 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       // This operation won't fail; it already succeeded once during argument
       // validation.
       makeCanonical(OutPath);
+      // inhibit generating migrated files outside --in-root
+      if(!DpctGlobalInfo::isInRoot(OutPath.c_str())) continue;
       rewriteFileName(OutPath);
       rewriteDir(OutPath, InRoot, OutRoot);
 

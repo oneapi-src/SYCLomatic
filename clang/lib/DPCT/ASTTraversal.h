@@ -78,7 +78,7 @@ public:
   void Elif(SourceLocation Loc, SourceRange ConditionRange,
             ConditionValueKind ConditionValue, SourceLocation IfLoc) override;
   bool ShouldEnter(StringRef FileName, bool IsAngled) override;
-  bool isInRoot(SourceLocation Loc);
+  bool isInAnalysisScope(SourceLocation Loc);
   // Find the "#" before a preprocessing directive, return -1 if have some false
   int findPoundSign(SourceLocation DirectiveStart);
 
@@ -165,11 +165,11 @@ class ASTTraversalManager {
 
 public:
   const CompilerInstance &CI;
-  const std::string InRoot;
+  const std::string AnalysisScope;
   // Set per matchAST invocation
   ASTContext *Context = nullptr;
-  ASTTraversalManager(const CompilerInstance &CI, const std::string &IR)
-      : CI(CI), InRoot(IR) {}
+  ASTTraversalManager(const CompilerInstance &CI, const std::string &ASP)
+      : CI(CI), AnalysisScope(ASP) {}
   /// Add \a TR to the manager.
   ///
   /// The ownership of the TR is transferred to the ASTTraversalManager.
@@ -219,7 +219,7 @@ protected:
           getHashStrFromLoc(SM.getImmediateSpellingLoc(SL)));
       if (ItMatch !=
           dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
-        if (ItMatch->second->IsInRoot) {
+        if (ItMatch->second->IsInAnalysisScope) {
           SL = ItMatch->second->NameTokenLoc;
         }
       }
@@ -264,8 +264,8 @@ protected:
   template <typename NodeType>
   inline const NodeType *
   getAssistNodeAsType(const ast_matchers::MatchFinder::MatchResult &Result,
-                      const char *Name, bool CheckInRoot = true) {
-    return getNode<NodeType>(Result, Name, false, CheckInRoot);
+                      const char *Name, bool CheckInAnalysisScope = true) {
+    return getNode<NodeType>(Result, Name, false, CheckInAnalysisScope);
   }
 
   const VarDecl *getVarDecl(const Expr *E) {
@@ -280,14 +280,14 @@ private:
   template <typename NodeType>
   const NodeType *getNode(const ast_matchers::MatchFinder::MatchResult &Result,
                           const char *Name, bool CheckReplaced,
-                          bool CheckInRoot) {
+                          bool CheckInAnalysisScope) {
     if (auto Node = Result.Nodes.getNodeAs<NodeType>(Name))
-      if (checkNode(Node->getSourceRange(), CheckReplaced, CheckInRoot))
+      if (checkNode(Node->getSourceRange(), CheckReplaced, CheckInAnalysisScope))
         return Node;
     return nullptr;
   }
-  bool checkNode(SourceRange &&SR, bool CheckReplaced, bool CheckInRoot) {
-    if (CheckInRoot && !isInRoot(SR.getBegin()))
+  bool checkNode(SourceRange &&SR, bool CheckReplaced, bool CheckInAnalysisScope) {
+    if (CheckInAnalysisScope && !isInAnalysisScope(SR.getBegin()))
       return false;
     if (CheckReplaced && isReplaced(SR))
       return false;
@@ -295,8 +295,8 @@ private:
   }
 
   // Check if the node's host file is in the InRoot path.
-  inline bool isInRoot(SourceLocation &&SL) {
-    return DpctGlobalInfo::isInRoot(SL);
+  inline bool isInAnalysisScope(SourceLocation &&SL) {
+    return DpctGlobalInfo::isInAnalysisScope(SL);
   }
 
   // Check if the location has been replaced by the same rule.

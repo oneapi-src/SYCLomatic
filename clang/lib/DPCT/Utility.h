@@ -536,7 +536,7 @@ void checkIsPrivateVar(const clang::Expr *Expr, LocalVarAddrSpaceEnum &Result);
 bool isModifiedRef(const clang::DeclRefExpr *DRE);
 bool isDefaultStream(const clang::Expr *StreamArg);
 const clang::NamedDecl *getNamedDecl(const clang::Type *TypePtr);
-bool isTypeInRoot(const clang::Type *TypePtr);
+bool isTypeInAnalysisScope(const clang::Type *TypePtr);
 void findAssignments(const clang::DeclaratorDecl *HandleDecl,
                      const clang::CompoundStmt *CS,
                      std::vector<const clang::DeclRefExpr *> &Refs);

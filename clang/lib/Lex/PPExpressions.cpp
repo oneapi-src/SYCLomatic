@@ -40,9 +40,9 @@ using namespace clang;
 
 #ifdef SYCLomatic_CUSTOMIZATION
 namespace clang {
-inline bool isInRootNull(SourceLocation) { return false; }
+inline bool isInAnalysisScopeNull(SourceLocation) { return false; }
 inline unsigned int getRunRound() { return 0; }
-std::function<bool(SourceLocation)> IsInRootFunc = isInRootNull;
+std::function<bool(SourceLocation)> IsInAnalysisScopeFunc = isInAnalysisScopeNull;
 std::function<unsigned int()> GetRunRound = getRunRound;
 } // namespace clang
 #endif // SYCLomatic_CUSTOMIZATION
@@ -152,7 +152,7 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
   // If macro name is '__CUDA_ARCH__' and is inside in-root folder, handle is as
   // defined.
   if (!Result.Val && II->getName() == "__CUDA_ARCH__" &&
-      IsInRootFunc(PeekTok.getLocation()) && GetRunRound() == 0) {
+      IsInAnalysisScopeFunc(PeekTok.getLocation()) && GetRunRound() == 0) {
     Result.Val = true;
   }
 #endif // SYCLomatic_CUSTOMIZATION
@@ -295,7 +295,7 @@ static bool EvaluateValue(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
         // If macro name is '__CUDA_ARCH__' and is inside in-root folder, handle
         // it as defined '600'
         if (II->getName() == "__CUDA_ARCH__" &&
-            IsInRootFunc(PeekTok.getLocation())) {
+            IsInAnalysisScopeFunc(PeekTok.getLocation())) {
           Result.Val = 600;
         }
 #endif // SYCLomatic_CUSTOMIZATION

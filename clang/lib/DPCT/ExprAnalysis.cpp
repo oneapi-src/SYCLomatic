@@ -468,7 +468,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     }
   } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
     if (RefString == "warpSize" &&
-        !DpctGlobalInfo::isInRoot(VD->getLocation())) {
+        !DpctGlobalInfo::isInAnalysisScope(VD->getLocation())) {
       addReplacement(DRE, DpctGlobalInfo::getSubGroup(DRE) +
                               ".get_local_range().get(0)");
     }
@@ -634,7 +634,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
              MapNames::SupportedVectorTypes.end()) {
 
     // Skip user-defined type.
-    if (isTypeInRoot(ME->getBase()->getType().getTypePtr()))
+    if (isTypeInAnalysisScope(ME->getBase()->getType().getTypePtr()))
       return;
 
     if (*BaseType.rbegin() == '1') {

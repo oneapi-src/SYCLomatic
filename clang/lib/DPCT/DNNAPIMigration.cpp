@@ -50,7 +50,7 @@ void CuDNNTypeRule::runRule(const MatchFinder::MatchResult &Result) {
     auto TypeStr =
         DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
 
-    if (!DpctGlobalInfo::isInRoot(SM->getSpellingLoc(TL->getBeginLoc()))) {
+    if (!DpctGlobalInfo::isInAnalysisScope(SM->getSpellingLoc(TL->getBeginLoc()))) {
       return;
     }
 

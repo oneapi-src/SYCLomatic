@@ -69,7 +69,7 @@ bool isTargetMathFunction(const FunctionDecl *FD) {
   if (!FD)
     return false;
   auto FilePath = DpctGlobalInfo::getLocInfo(FD).first;
-  if (isChildOrSamePath(DpctGlobalInfo::getInRoot(), FilePath))
+  if (isChildOrSamePath(DpctGlobalInfo::getAnalysisScope(), FilePath))
     return false;
   return true;
 }
@@ -124,7 +124,7 @@ bool isTargetPseudoObjectExpr(const Expr *E) {
   } else if (auto DRE = dyn_cast<DeclRefExpr>(E->IgnoreImpCasts())) {
     auto VarDecl = DRE->getDecl();
     if (VarDecl && (VarDecl->getNameAsString() == "warpSize")) {
-      return !DpctGlobalInfo::isInRoot(VarDecl->getLocation());
+      return !DpctGlobalInfo::isInAnalysisScope(VarDecl->getLocation());
     }
   }
   return false;
@@ -157,7 +157,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       }
     }
 
-    if (dpct::DpctGlobalInfo::isInRoot(FD->getBeginLoc())) {
+    if (dpct::DpctGlobalInfo::isInAnalysisScope(FD->getBeginLoc())) {
       return "";
     }
 
@@ -670,7 +670,7 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
   if (!FD)
     return Base::rewrite();
 
-  if (dpct::DpctGlobalInfo::isInRoot(FD->getBeginLoc())) {
+  if (dpct::DpctGlobalInfo::isInAnalysisScope(FD->getBeginLoc())) {
     return {};
   }
 

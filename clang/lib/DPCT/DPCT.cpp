@@ -125,6 +125,12 @@ static opt<std::string>
                 "of the first input source file is used."),
            value_desc("dir"), cat(DPCTCat),
            llvm::cl::Optional);
+static opt<std::string>
+    AnalysisScope("analysis-scope-path",
+        desc("The directory path for the analysis scope of the source tree that "
+             "needs to be migrated.\n"
+             "Default: the value of --in-root"),
+        value_desc("dir"), cat(DPCTCat));
 static opt<std::string> OutRoot(
     "out-root",
     desc("The directory path for root of generated files. A directory is "
@@ -526,7 +532,7 @@ JMP_BUF CPFormatCodeEnter;
 class DPCTConsumer : public ASTConsumer {
 public:
   DPCTConsumer(CompilerInstance &CI, StringRef InFile)
-      : ATM(CI, InRoot), PP(CI.getPreprocessor()), CI(CI) {
+      : ATM(CI, AnalysisScope), PP(CI.getPreprocessor()), CI(CI) {
     if (Passes != "") {
       // Separate string into list by comma
       auto Names = split(Passes, ',');
@@ -1069,6 +1075,11 @@ int runDPCT(int argc, const char **argv) {
     ShowStatus(MigrationErrorPathTooLong);
     dpctExit(MigrationErrorPathTooLong);
   }
+  if (AnalysisScope.size() >= MAX_PATH_LEN - 1) {
+    DpctLog() << "Error: --analysis-scope-path '" << AnalysisScope << "' is too long\n";
+    ShowStatus(MigrationErrorPathTooLong);
+    dpctExit(MigrationErrorPathTooLong);
+  }
   if (CudaIncludePath.size() >= MAX_PATH_LEN - 1) {
     DpctLog() << "Error: --cuda-include-path '" << CudaIncludePath
               << "' is too long\n";
@@ -1209,6 +1220,20 @@ int runDPCT(int argc, const char **argv) {
   }
   dpct::DpctGlobalInfo::setOutRoot(OutRoot);
 
+  if (AnalysisScope.empty()) {
+    // /p AnalysisScope defaults to the value of /p InRoot
+    AnalysisScope.setValue(InRoot.getValue(), true);
+  } else {
+    bool validAnalysisScope =
+        makeCanonical(AnalysisScope) &&
+        isChildOrSamePath(AnalysisScope, InRoot);
+    // /p AnalysisScope must be the same as or parent of /p InRoot
+    if (!validAnalysisScope) {
+      ShowStatus(MigrationErrorInvalidAnalysisScope);
+      dpctExit(MigrationErrorInvalidAnalysisScope);
+    }
+  }
+
   validateCustomHelperFileNameArg(UseCustomHelperFileLevel,
                                   CustomHelperFileName,
                                   dpct::DpctGlobalInfo::getOutRoot());
@@ -1257,6 +1282,7 @@ int runDPCT(int argc, const char **argv) {
 
   DpctGlobalInfo::setInRoot(InRoot);
   DpctGlobalInfo::setOutRoot(OutRoot);
+  DpctGlobalInfo::setAnalysisScope(AnalysisScope);
   DpctGlobalInfo::setCudaPath(CudaPath);
   DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);
   DpctGlobalInfo::setSyclNamedLambda(SyclNamedLambdaFlag);

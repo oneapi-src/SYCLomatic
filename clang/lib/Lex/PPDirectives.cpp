@@ -3056,7 +3056,7 @@ void Preprocessor::HandleUndefDirective() {
 
 #ifdef SYCLomatic_CUSTOMIZATION
 namespace clang{
-  extern std::function<bool(SourceLocation)> IsInRootFunc;
+  extern std::function<bool(SourceLocation)> IsInAnalysisScopeFunc;
   extern std::function<unsigned int()> GetRunRound;
 }
 #endif // SYCLomatic_CUSTOMIZATION
@@ -3128,7 +3128,7 @@ void Preprocessor::HandleIfdefDirective(Token &Result,
   // If macro name is '__CUDA_ARCH__' and is inside in-root folder, handle it as
   // defined.
   if (!MI && MII->getName() == "__CUDA_ARCH__" &&
-      IsInRootFunc(MacroNameTok.getLocation()) && GetRunRound() == 0) {
+      IsInAnalysisScopeFunc(MacroNameTok.getLocation()) && GetRunRound() == 0) {
     static MacroInfo CudaArchFaker(SourceLocation::getFromRawEncoding(0));
     MI = &CudaArchFaker;
   }

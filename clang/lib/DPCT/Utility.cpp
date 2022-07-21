@@ -163,7 +163,7 @@ SourceRange getRangeInsideFuncLikeMacro(const Stmt *S) {
     while (BeginLoc.isMacroID() &&
            !SM.isAtStartOfImmediateMacroExpansion(BeginLoc)) {
       auto ISL = SM.getImmediateSpellingLoc(BeginLoc);
-      if (!dpct::DpctGlobalInfo::isInRoot(
+      if (!dpct::DpctGlobalInfo::isInAnalysisScope(
               SM.getFilename(SM.getExpansionLoc(ISL)).str()))
         break;
       BeginLoc = SM.getImmediateSpellingLoc(BeginLoc);
@@ -2080,10 +2080,10 @@ getTheLastCompleteImmediateRange(clang::SourceLocation BeginLoc,
   while ((BeginLevel > 0 || EndLevel > 0) &&
          (isLocationStraddle(BeginLoc, EndLoc) ||
           ((BeginLoc.isMacroID() &&
-            !dpct::DpctGlobalInfo::isInRoot(
+            !dpct::DpctGlobalInfo::isInAnalysisScope(
                 SM.getFilename(SM.getSpellingLoc(BeginLoc)).str())) ||
            (EndLoc.isMacroID() &&
-            !dpct::DpctGlobalInfo::isInRoot(
+            !dpct::DpctGlobalInfo::isInAnalysisScope(
                 SM.getFilename(SM.getSpellingLoc(EndLoc)).str()))))) {
     if (BeginLevel > EndLevel) {
       BeginLoc = SM.getImmediateExpansionRange(BeginLoc).getBegin();
@@ -3187,15 +3187,15 @@ const NamedDecl *getNamedDecl(const clang::Type *TypePtr) {
   }
   return ND;
 }
-bool isTypeInRoot(const clang::Type *TypePtr) {
-  bool IsInRoot = false;
+bool isTypeInAnalysisScope(const clang::Type *TypePtr) {
+  bool IsInAnalysisScope = false;
   if (const auto *ND = getNamedDecl(TypePtr)) {
     auto Loc = ND->getBeginLoc();
     auto Path = dpct::DpctGlobalInfo::getLocInfo(Loc).first;
-    if (dpct::DpctGlobalInfo::isInRoot(Path, true))
-      IsInRoot = true;
+    if (dpct::DpctGlobalInfo::isInAnalysisScope(Path, true))
+      IsInAnalysisScope = true;
   }
-  return IsInRoot;
+  return IsInAnalysisScope;
 }
 
 /// This function will find all assignments to the DRE of \p HandleDecl in
@@ -3765,7 +3765,7 @@ bool checkIfContainSizeofTypeRecursively(
 bool isCubVar(const VarDecl *VD) {
   std::string CanonicalType = VD->getType().getCanonicalType().getAsString();
   // 1.process non-template case
-  if (!isTypeInRoot(VD->getType().getCanonicalType().getTypePtr()) &&
+  if (!isTypeInAnalysisScope(VD->getType().getCanonicalType().getTypePtr()) &&
       (CanonicalType.find("struct cub::") == 0 ||
        CanonicalType.find("class cub::") == 0)) {
     return true;
@@ -3833,7 +3833,7 @@ bool isCubVar(const VarDecl *VD) {
                                  .getAsType()
                                  .getCanonicalType();
         std::string ArgTy = CanonicalType.getAsString();
-        if (!isTypeInRoot(CanonicalType.getTypePtr()) &&
+        if (!isTypeInAnalysisScope(CanonicalType.getTypePtr()) &&
             ArgTy.find("class cub::") == 0) {
           return true;
         }
