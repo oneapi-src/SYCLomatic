@@ -599,6 +599,12 @@ Optional<std::string> MathTypeCastRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArg(1);
     OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[1], "
        << MigratedArg1 << "[1]}";
+  } else if (FuncName == "__float2bfloat16") {
+    DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_BFloat16);
+    OS << "oneapi::mkl::bfloat16(" << MigratedArg0 << ")";
+  } else if (FuncName == "__bfloat162float") {
+    DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_BFloat16);
+    OS << "static_cast<float>(" << MigratedArg0 << ")";
   } else {
     //__half2short_rd and __half2float
     static SSMap TypeMap{{"ll", "long long"},

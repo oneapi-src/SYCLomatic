@@ -543,6 +543,10 @@ ENTRY(h2sin, h2sin, true, NO_FLAG, P4, "Successful")
 ENTRY(h2sqrt, h2sqrt, true, NO_FLAG, P4, "Successful")
 ENTRY(h2trunc, h2trunc, true, NO_FLAG, P4, "Successful")
 
+// Bfloat16 Precision Conversion and Data Movement
+ENTRY(__bfloat162float, __bfloat162float, true, NO_FLAG, P4, "Successful")
+ENTRY(__float2bfloat16, __bfloat162float, true, NO_FLAG, P4, "Successful")
+
 // Single Precision Mathematical Functions
 ENTRY(log, log, true, NO_FLAG, P0, "Successful")
 ENTRY(logf, logf, true, NO_FLAG, P0, "Successful")
