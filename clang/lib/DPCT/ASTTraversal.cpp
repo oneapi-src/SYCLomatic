@@ -3939,7 +3939,7 @@ void Dim3MemberFieldsRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(Dim3MemberFieldsRule)
 
-void FieldVarRule::registerMatcher(MatchFinder &MF) {
+void DeviceInfoVarRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       memberExpr(
           hasObjectExpression(anyOf(
@@ -3954,7 +3954,7 @@ void FieldVarRule::registerMatcher(MatchFinder &MF) {
       this);
 }
 
-void FieldVarRule::runRule(const MatchFinder::MatchResult &Result) {
+void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "FieldVar");
   if (!ME)
     return;
@@ -4082,7 +4082,7 @@ void FieldVarRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-REGISTER_RULE(FieldVarRule)
+REGISTER_RULE(DeviceInfoVarRule)
 
 // Rule for Enums constants.
 void EnumConstantRule::registerMatcher(MatchFinder &MF) {

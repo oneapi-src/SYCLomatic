@@ -730,7 +730,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
                                    ME->getMemberNameInfo().getAsString()));
   } else if (BaseType == "cudaDeviceProp") {
     std::string ReplacementStr = MapNames::findReplacedName(
-        FieldVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
+        DeviceInfoVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
     if (!ReplacementStr.empty()) {
       addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + "()");
       requestFeature(

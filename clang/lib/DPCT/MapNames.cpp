@@ -3712,7 +3712,7 @@ const MapNames::MapTy TextureRule::TextureMemberNames{
 };
 
 // DeviceProp names mapping.
-const MapNames::MapTy FieldVarRule::PropNamesMap{
+const MapNames::MapTy DeviceInfoVarRule::PropNamesMap{
     {"clockRate", "max_clock_frequency"},
     {"major", "major_version"},
     {"minor", "minor_version"},
