@@ -744,7 +744,7 @@ public:
   void insertTryCatch(const FunctionDecl *FD);
 };
 
-/// Migration rule for Proptery and Attribute for the CUDA struct.
+/// Migration rule for CUDA device property and attribute.
 /// E.g. cudaDeviceProp, cudaPointerAttributes.
 class DeviceInfoVarRule : public NamedMigrationRule<DeviceInfoVarRule> {
 public:
