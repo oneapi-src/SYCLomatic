@@ -13,23 +13,23 @@
 namespace clang {
 namespace dpct {
 
-class MemberExprFeildRewriter {
+class MemberExprBaseRewriter {
 protected:
   const MemberExpr *ME;
 
 protected:
-  MemberExprFeildRewriter(const MemberExpr *ME) : ME(ME) {}
+  MemberExprBaseRewriter(const MemberExpr *ME) : ME(ME) {}
 public:
-  virtual ~MemberExprFeildRewriter() {}
+  virtual ~MemberExprBaseRewriter() {}
   virtual Optional<std::string> rewrite() = 0;
 };
 
 template <class Printer>
-class MemberExprPrinterRewriter: Printer,  public MemberExprFeildRewriter {
+class MemberExprPrinterRewriter: Printer,  public MemberExprBaseRewriter {
 public:
   template<class... ArgsT>
   MemberExprPrinterRewriter(const MemberExpr *ME, ArgsT &&...Args):
-    Printer(std::forward<ArgsT>(Args)...), MemberExprFeildRewriter(ME) {}
+    Printer(std::forward<ArgsT>(Args)...), MemberExprBaseRewriter(ME) {}
 
   Optional<std::string> rewrite() override {
     std::string Result;
@@ -40,10 +40,10 @@ public:
 };
 
 template <class BaseNameT, class MemberNameT>
-class MemberExprFiledRewriter
+class MemberExprFieldRewriter
     : public MemberExprPrinterRewriter<MemberExprPrinter<BaseNameT, MemberNameT>> {
 public:
-    MemberExprFiledRewriter(
+    MemberExprFieldRewriter(
       const MemberExpr *ME,
       const std::function<BaseNameT(const MemberExpr *)> &BaseNameCreator,
       const std::function<bool(const MemberExpr *)> &IsArrowCreator,
@@ -54,7 +54,7 @@ public:
 
 class MemberExprRewriterFactoryBase {
   public:
-  virtual std::shared_ptr<MemberExprFeildRewriter> create(const MemberExpr *ME) const = 0;
+  virtual std::shared_ptr<MemberExprBaseRewriter> create(const MemberExpr *ME) const = 0;
   virtual ~MemberExprRewriterFactoryBase() {}
 
   static std::unique_ptr<std::unordered_map<
@@ -73,7 +73,7 @@ class MemberExprRewriterFactory : public MemberExprRewriterFactoryBase {
 
 private:
   template <size_t... Idx>
-  inline std::shared_ptr<MemberExprFeildRewriter>
+  inline std::shared_ptr<MemberExprBaseRewriter>
   createRewriter(const MemberExpr *ME, std::index_sequence<Idx...>) const {
     return std::shared_ptr<RewriterTy>(new RewriterTy(ME, std::get<Idx>(Initializer)...));
   }
@@ -82,7 +82,7 @@ public:
   MemberExprRewriterFactory(TAs... TemplateArgs)
       : Initializer(std::forward<TAs>(TemplateArgs)...) {}
 
-  std::shared_ptr<MemberExprFeildRewriter> create(const MemberExpr *ME) const override{
+  std::shared_ptr<MemberExprBaseRewriter> create(const MemberExpr *ME) const override{
     return createRewriter(ME, std::index_sequence_for<TAs...>());
   }
 

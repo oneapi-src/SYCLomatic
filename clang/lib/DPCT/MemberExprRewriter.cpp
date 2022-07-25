@@ -18,7 +18,7 @@ std::shared_ptr<MemberExprRewriterFactoryBase> createMemberRewriterFactory(
     std::function<MemberArgsT(const MemberExpr *)> MemCreator)
 {
   return std::make_shared<MemberExprRewriterFactory<
-                          MemberExprFiledRewriter<BaseT, MemberArgsT>,
+                          MemberExprFieldRewriter<BaseT, MemberArgsT>,
                           std::function<BaseT(const MemberExpr *)>,
                           std::function<bool(const MemberExpr *)>,
                           std::function<MemberArgsT(const MemberExpr *)>>
