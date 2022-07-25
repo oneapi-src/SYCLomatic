@@ -746,7 +746,7 @@ public:
 
 /// Migration rule for Proptery and Attribute for the CUDA struct.
 /// E.g. cudaDeviceProp, cudaPointerAttributes.
-class FieldVarRule : public NamedMigrationRule<FieldVarRule> {
+class DeviceInfoVarRule : public NamedMigrationRule<DeviceInfoVarRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
