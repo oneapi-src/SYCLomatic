@@ -15,7 +15,7 @@
 #include <vector>
 
 
-enum RuleKind { API, DataType, Macro, Header, TypeRule, Class, Enum};
+enum RuleKind { API, DataType, Macro, Header, TypeRule, Class, Enum };
 
 enum RulePriority { Takeover, Default, Fallback };
 

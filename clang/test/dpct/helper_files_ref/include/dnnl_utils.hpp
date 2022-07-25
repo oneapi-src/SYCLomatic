@@ -26,7 +26,6 @@ enum class memory_format_tag { nchw, nhwc, nchw_blocked };
 /// A class holding the description of an N-dimensions memory.
 class memory_desc_ext {
   ::dnnl::memory::desc _desc;
-
   /// Convert dpct::library_data_t to dnnl::memory::data_type.
   static ::dnnl::memory::data_type to_dnnl_data_type(dpct::library_data_t dt);
   /// Convert dnnl::memory::data_type to dpct::library_data_t.
@@ -103,6 +102,7 @@ public:
            int strides[]) const;
 };
 
+/// A class holding description for an activation operation.
 class activation_desc {
   ::dnnl::algorithm _alg;
   float _alpha;
@@ -143,6 +143,7 @@ public:
   ::dnnl::algorithm get_algorithm() const { return _alg; }
 };
 
+/// A class holding description for a local response normalization operation.
 class lrn_desc {
   unsigned int _local_size;
   float _alpha;
@@ -199,12 +200,12 @@ public:
   float get_k() const { return _k; }
 };
 
-/// An enum class used to select softmax algorithm.
+/// An enum class representing softmax algorithm.
 enum class softmax_algorithm { normal, log };
-
-/// An enum class used to select softmax mode.
+/// An enum class representing softmax mode.
 enum class softmax_mode { instance, channel };
 
+/// A class holding description for a pooling operation.
 class pooling_desc {
   ::dnnl::algorithm _alg;
   std::vector<int64_t> _stride;
@@ -339,10 +340,11 @@ public:
   }
 };
 
+/// A class holding the oneDNN engine.
 class engine_ext {
   ::dnnl::engine _eng;
   ::dnnl::stream _s;
-  sycl::queue* _q;
+  sycl::queue *_q;
   std::map<void *, ::dnnl::memory> workspace_map;
   struct device_pointer_deleter {
     sycl::queue _que;
@@ -353,21 +355,15 @@ class engine_ext {
     }
   };
   ::dnnl::memory &get_workspace(void *key) { return workspace_map[key]; }
-
   void insert_workspace(void *key, ::dnnl::memory workspace) {
     workspace_map[key] = workspace;
   }
-
   const ::dnnl::stream &get_stream() const { return _s; }
-
   const ::dnnl::engine &get_engine() const { return _eng; }
-
   std::unique_ptr<void, device_pointer_deleter>
   allocate(const memory_desc_ext &desc) const;
-
   std::vector<int64_t>
   compress_spatial_dimensions_to_channel(::dnnl::memory::desc desc);
-
   template <typename primitive_type, typename... args_type>
   primitive_type create_forward_primitive(args_type &&...args);
 
@@ -384,7 +380,6 @@ class engine_ext {
   void execute_primitive(float alpha, float beta, primitive_type &&primitive,
                          args_type &&args, const memory_desc_ext &mem_desc,
                          void *mem);
-
   static ::dnnl::primitive_attr generate_scaling_attr(float alpha, float beta);
 
 public:
@@ -416,13 +411,11 @@ public:
 /// Retrieving the user's SYCL queue set in the oneDNN engine.
 /// \returns Pointer to the SYCL queue.
   sycl::queue* get_queue() const { return _q; }
-
 /// Setting all elements of a memory to a given value.
 /// \param [in] src_desc Source memory descriptor.
 /// \param [in] src Pointer to source data.
 /// \param [in] valuePtr Pointer to a signle value.
   void fill(const memory_desc_ext &src_desc, void *src, const void *valuePtr);
-
 /// Coping the scaled data from a memory to another memory with a different description.
 /// \param [in] alpha Pointer to scaling factors used to scale the computed value.
 /// \param [in] src_desc Source memory descriptor.
@@ -432,13 +425,11 @@ public:
 /// \param [out] dst Pointer to destination data.
   void reorder(float alpha, const memory_desc_ext &src_desc, void *src, float beta,
                const memory_desc_ext &dst_desc, void *dst);
-
 /// Scaling all the elements of a memory by a given factor.
 /// \param [in] alpha Pointer to scaling factors.
 /// \param [in] src_desc Source memory descriptor.
 /// \param [out] src Pointer to source data.
   void scale(float alpha, const memory_desc_ext &src_desc, void *src);
-
 /// Adding the scaled values of a memory to another memory.
 /// \param [in] alpha Pointer to scaling factors used to scale the computed value.
 /// \param [in] src_desc Source memory descriptor.
@@ -448,7 +439,6 @@ public:
 /// \param [out] dst Pointer to destination data.
   void sum(float alpha, const memory_desc_ext &src_desc, void *src, float beta,
            const memory_desc_ext &dst_desc, void *dst);
-
 /// Computing a specified activation function value.
 /// \param [in] desc Activation descriptor.
 /// \param [in] alpha Pointer to scaling factors used to scale the computed value.
@@ -460,7 +450,6 @@ public:
   void activation_forward(activation_desc &desc, float alpha,
                           const memory_desc_ext &src_desc, void *src, float beta,
                           const memory_desc_ext &dst_desc, void *dst);
-
 /// Computing the gradient of a specified activation function.
 /// \param [in] desc Activation descriptor.
 /// \param [in] alpha Pointer to scaling factors used to scale the computed value.
@@ -478,7 +467,6 @@ public:
                            const memory_desc_ext &diff_dst_desc, void *diff_dst,
                            const memory_desc_ext &src_desc, void *src, float beta,
                            const memory_desc_ext &diff_src_desc, void *diff_src);
-
 /// Computing a specified pooling function value.
 /// \param [in] desc Pooling descriptor.
 /// \param [in] alpha Pointer to scaling factors used to scale the computed value.
@@ -492,7 +480,6 @@ public:
                        const memory_desc_ext &src_desc, void *src, float beta,
                        const memory_desc_ext &dst_desc, void *dst,
                        ::dnnl::memory *workspace = nullptr);
-
 /// Computing the gradient of a specified pooling function.
 /// \param [in] desc Activation descriptor.
 /// \param [in] alpha Pointer to scaling factors used to scale the computed value.
@@ -512,7 +499,6 @@ public:
                         const memory_desc_ext &src_desc, void *src, float beta,
                         const memory_desc_ext &diff_src_desc, void *diff_src,
                         ::dnnl::memory *workspace = nullptr);
-
 /// Computing a specified softmax function value.
 /// \param [in] alg Softmax algorithm.
 /// \param [in] mode Softmax mode.
@@ -525,7 +511,6 @@ public:
   void softmax_forward(softmax_algorithm alg, softmax_mode mode, float alpha,
                        const memory_desc_ext &src_desc, void *src, float beta,
                        const memory_desc_ext &dst_desc, void *dst);
-
 /// Computing the gradient of a specified softmax function.
 /// \param [in] alg Softmax algorithm.
 /// \param [in] mode Softmax mode.
@@ -542,7 +527,6 @@ public:
                         const memory_desc_ext &diff_dst_desc, void *diff_dst,
                         float beta, const memory_desc_ext &diff_src_desc,
                         void *diff_src);
-
 /// Computing a specified local response normalization function value.
 /// \param [in] desc Local response normalization descriptor.
 /// \param [in] alpha Pointer to scaling factors used to scale the computed value.
@@ -555,7 +539,6 @@ public:
   void lrn_forward(lrn_desc &desc, float alpha, const memory_desc_ext &src_desc,
                    void *src, float beta, const memory_desc_ext &dst_desc,
                    void *dst, ::dnnl::memory *workspace = nullptr);
-
 /// Computing the gradient of a specified local response normalization function.
 /// \param [in] desc Local response normalization descriptor.
 /// \param [in] alpha Pointer to scaling factors used to scale the computed value.
@@ -574,7 +557,6 @@ public:
                     void *diff_dst, const memory_desc_ext &src_desc, void *src,
                     float beta, const memory_desc_ext &diff_src_desc,
                     void *diff_src, ::dnnl::memory *workspace = nullptr);
-
 };
 
 ::dnnl::memory::data_type memory_desc_ext::to_dnnl_data_type(dpct::library_data_t dt) {
@@ -1121,4 +1103,4 @@ void engine_ext::lrn_backward(lrn_desc &desc, float alpha,
 } // namespace dnnl
 } // namespace dpct
 
-#endif  // __DPCT_DNNL_UTILS_HPP__
+#endif // __DPCT_DNNL_UTILS_HPP__

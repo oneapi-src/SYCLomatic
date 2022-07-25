@@ -1125,7 +1125,7 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
     loadYAMLIntoFileInfo(InFile);
   }
 }
-//Call the migration rule to print the result?
+
 void MigrationRule::print(llvm::raw_ostream &OS) {
   const auto &EmittedTransformations = getEmittedTransformations();
   if (EmittedTransformations.empty()) {
@@ -3962,10 +3962,9 @@ void FieldVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (Parents.size() < 1)
     return;
   auto MemberName = ME->getMemberNameInfo().getAsString();
-  if (DpctGlobalInfo::getUnqualifiedTypeName(ME->getBase()->getType()).find("cudaPointerAttributes") != std::string::npos) {
-    SourceRange range = ME->getSourceRange();
-    llvm::StringRef ref = Lexer::getSourceText(CharSourceRange::getCharRange(range), DpctGlobalInfo::getSourceManager(), LangOptions());
-
+  if (DpctGlobalInfo::getUnqualifiedTypeName(
+        ME->getBase()->getType()).find("cudaPointerAttributes") !=
+          std::string::npos) {
     ExprAnalysis EA;
     EA.analyze(ME);
     emplaceTransformation(EA.getReplacement());
