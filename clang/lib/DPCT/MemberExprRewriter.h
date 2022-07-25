@@ -1,4 +1,4 @@
-//===--------------- TypeLocRewriters.h -----------------------------------===//
+//===--------------- MemberExprRewriter.h -----------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -10,28 +10,26 @@
 
 #include "CallExprRewriter.h"
 
-
 namespace clang {
 namespace dpct {
 
-class MemberExprRewriterTEMP {
+class MemberExprFeildRewriter {
 protected:
   const MemberExpr *ME;
 
 protected:
-  MemberExprRewriterTEMP(const MemberExpr *ME) : ME(ME) {}
-
+  MemberExprFeildRewriter(const MemberExpr *ME) : ME(ME) {}
 public:
-  virtual ~MemberExprRewriterTEMP() {}
+  virtual ~MemberExprFeildRewriter() {}
   virtual Optional<std::string> rewrite() = 0;
 };
 
 template <class Printer>
-class MemberExprPrinterRewriter:  Printer,  public MemberExprRewriterTEMP {
+class MemberExprPrinterRewriter: Printer,  public MemberExprFeildRewriter {
 public:
   template<class... ArgsT>
   MemberExprPrinterRewriter(const MemberExpr *ME, ArgsT &&...Args):
-    Printer(std::forward<ArgsT>(Args)...), MemberExprRewriterTEMP(ME) {}
+    Printer(std::forward<ArgsT>(Args)...), MemberExprFeildRewriter(ME) {}
 
   Optional<std::string> rewrite() override {
     std::string Result;
@@ -39,7 +37,6 @@ public:
     Printer::print(OS);
     return OS.str();
   }
-
 };
 
 template <class BaseNameT, class MemberNameT>
@@ -57,7 +54,7 @@ public:
 
 class MemberExprRewriterFactoryBase {
   public:
-  virtual std::shared_ptr<MemberExprRewriterTEMP> create(const MemberExpr *ME) const = 0;
+  virtual std::shared_ptr<MemberExprFeildRewriter> create(const MemberExpr *ME) const = 0;
   virtual ~MemberExprRewriterFactoryBase() {}
 
   static std::unique_ptr<std::unordered_map<
@@ -76,7 +73,7 @@ class MemberExprRewriterFactory : public MemberExprRewriterFactoryBase {
 
 private:
   template <size_t... Idx>
-  inline std::shared_ptr<MemberExprRewriterTEMP>
+  inline std::shared_ptr<MemberExprFeildRewriter>
   createRewriter(const MemberExpr *ME, std::index_sequence<Idx...>) const {
     return std::shared_ptr<RewriterTy>(new RewriterTy(ME, std::get<Idx>(Initializer)...));
   }
@@ -85,7 +82,7 @@ public:
   MemberExprRewriterFactory(TAs... TemplateArgs)
       : Initializer(std::forward<TAs>(TemplateArgs)...) {}
 
-  std::shared_ptr<MemberExprRewriterTEMP> create(const MemberExpr *ME) const override{
+  std::shared_ptr<MemberExprFeildRewriter> create(const MemberExpr *ME) const override{
     return createRewriter(ME, std::index_sequence_for<TAs...>());
   }
 

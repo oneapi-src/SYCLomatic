@@ -398,9 +398,7 @@ RenameFieldInMemberExpr::getReplacement(const ASTContext &Context) const {
   if (this->isIgnoreTM())
     return nullptr;
   SourceLocation SL = ME->getEndLoc();
-  std::cout << "End location " << SL.printToString(DpctGlobalInfo::getSourceManager()) <<std::endl;
   SourceLocation Begin = SL;
-  std::cout << "Start location " << ME->getBeginLoc().printToString(Context.getSourceManager()) << std::endl;
   if (PositionOfDot != 0) {
     // Cover dot position when migrate dim3.x/y/z to
     // sycl::range<3>[0]/[1]/[2].
