@@ -3082,7 +3082,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
 
     // if TL is the T in
     // template<typename T> void foo(T a);
-    if (TL->getType()->getTypeClass() == clang::TypeLoc::SubstTemplateTypeParm ||
+    if (TL->getType()->getTypeClass() == clang::Type::SubstTemplateTypeParm ||
         TL->getBeginLoc().isInvalid()) {
       return;
     }
