@@ -579,10 +579,12 @@ void ExtReplacements::buildCudaArchHostFunc(
   // process call
   for (auto &Call : HDFCIMap) {
     if (!PostfixMap.count(Call.first)) {
-      PostfixMap[Call.first] = "_host_ct" + std::to_string(id++);
+      PostfixMap[Call.first] = "_host_ct" + std::to_string(id);
     }
-    if (Call.second.first != FilePath || !HDFDIMap.count(Call.first))
+    if (Call.second.first != FilePath || !HDFDIMap.count(Call.first)) {
       continue;
+    }
+    id++;
     unsigned Offset = Call.second.second;
     auto R = std::make_shared<ExtReplacement>(FilePath, Offset, 0,
                                               PostfixMap[Call.first], nullptr);
