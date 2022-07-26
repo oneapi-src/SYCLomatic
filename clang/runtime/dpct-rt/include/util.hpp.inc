@@ -95,7 +95,7 @@ public:
 
 };
 
-void get_pointer_attributes(pointer_attributes &attributes, void *ptr) {
+inline void get_pointer_attributes(pointer_attributes &attributes, void *ptr) {
   attributes.init_attributes(ptr);
 }
 // DPCT_LABEL_END
