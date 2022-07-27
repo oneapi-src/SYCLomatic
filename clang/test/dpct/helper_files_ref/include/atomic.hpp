@@ -513,7 +513,6 @@ public:
   constexpr atomic(T d) noexcept : __d(d){};
 
   /// atomically replaces the value of the referenced object with a non-atomic argument
-  /// \param [in]  replaces the value of the referenced object
   /// \param operand The value to replace the pointed value.
   /// \param memoryOrder The memory ordering used.
   /// \param memoryScope The memory scope used.
@@ -524,7 +523,6 @@ public:
   }
 
   /// atomically obtains the value of the referenced object
-  /// \param [in, out]  replaces the value of the referenced object
   /// \param memoryOrder The memory ordering used.
   /// \param memoryScope The memory scope used.
   /// \returns The value of the referenced object
@@ -536,7 +534,6 @@ public:
   }
 
   /// atomically replaces the value of the referenced object and obtains the value held previously
-  /// \param [in, out]  replaces the value of the referenced object
   /// \param operand The value to replace the pointed value.
   /// \param memoryOrder The memory ordering used.
   /// \param memoryScope The memory scope used.
@@ -551,8 +548,7 @@ public:
 
   /// atomically compares the value of the referenced object with non-atomic argument 
   /// and performs atomic exchange if equal or atomic load if not
-  /// \param [in, out]  replaces the value of the referenced object
-  /// \param except The value expected to be found in the object referenced by the atomic_ref object
+  /// \param excepted The value expected to be found in the object referenced by the atomic_ref object
   /// \param desired  The value to store in the referenced object if it is as expected
   /// \param success The memory models for the read-modify-write
   /// \param failure The memory models for load operations
@@ -565,8 +561,7 @@ public:
     cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
     return atm.compare_exchange_weak(expected, desired, success, failure, scope);
   }
-  /// \param [in, out]  replaces the value of the referenced object
-  /// \param except The value expected to be found in the object referenced by the atomic_ref object
+  /// \param excepted The value expected to be found in the object referenced by the atomic_ref object
   /// \param desired  The value to store in the referenced object if it is as expected
   /// \param order 	The memory synchronization ordering for operations
   /// \param scope The memory scope used.
@@ -580,8 +575,7 @@ public:
 
   /// atomically compares the value of the referenced object with non-atomic argument 
   /// and performs atomic exchange if equal or atomic load if not
-  /// \param [in, out]  replaces the value of the referenced object
-  /// \param except The value expected to be found in the object referenced by the atomic_ref object
+  /// \param excepted The value expected to be found in the object referenced by the atomic_ref object
   /// \param desired  The value to store in the referenced object if it is as expected
   /// \param success The memory models for the read-modify-write
   /// \param failure The memory models for load operations
@@ -595,8 +589,7 @@ public:
     cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
     return atm.compare_exchange_strong(expected, desired, success, failure, scope);
   }
-  /// \param [in, out]  replaces the value of the referenced object
-  /// \param except The value expected to be found in the object referenced by the atomic_ref object
+  /// \param excepted The value expected to be found in the object referenced by the atomic_ref object
   /// \param desired  The value to store in the referenced object if it is as expected
   /// \param order 	The memory synchronization ordering for operations
   /// \param scope The memory scope used.
@@ -608,8 +601,7 @@ public:
     return atm.compare_exchange_strong(expected, desired, order, scope);
   }
 
-  /// atomically replaces the value of the referenced object and obtains the value held previously
-  /// \param [in, out]  replaces the value of the referenced object
+  /// atomically adds the argument to the value stored in the atomic object and obtains the value held previously
   /// \param operand 	The other argument of arithmetic addition
   /// \param memoryOrder The memory ordering used.
   /// \param memoryScope The memory scope used.
@@ -622,8 +614,7 @@ public:
     return atm.fetch_add(operand, memoryOrder,  memoryScope);
   }
 
-  /// atomically replaces the value of the referenced object and obtains the value held previously
-  /// \param [in, out]  replaces the value of the referenced object
+  /// atomically subtracts the argument from the value stored in the atomic object and obtains the value held previously
   /// \param operand 	The other argument of arithmetic subtraction
   /// \param memoryOrder The memory ordering used.
   /// \param memoryScope The memory scope used.
