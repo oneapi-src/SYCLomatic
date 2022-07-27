@@ -501,7 +501,7 @@ public:
   static constexpr cl::sycl::memory_order default_read_order =
       cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space>::default_read_order;
   static constexpr cl::sycl::memory_order default_write_order =
-      cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space>::write_order;
+      cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space>::default_write_order;
   static constexpr cl::sycl::memory_scope default_scope = DefaultScope;
   static constexpr cl::sycl::memory_order default_read_modify_write_order =
       DefaultOrder;
@@ -557,20 +557,20 @@ public:
   bool compare_exchange_weak(
       T &expected, T desired,
       cl::sycl::memory_order success, cl::sycl::memory_order failure,
-      cl::sycl::memory_scope scope = default_scope) noexcept {
+      cl::sycl::memory_scope memoryScope = default_scope) noexcept {
     cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
-    return atm.compare_exchange_weak(expected, desired, success, failure, scope);
+    return atm.compare_exchange_weak(expected, desired, success, failure, memoryScope);
   }
   /// \param excepted The value expected to be found in the object referenced by the atomic_ref object
   /// \param desired  The value to store in the referenced object if it is as expected
-  /// \param order 	The memory synchronization ordering for operations
-  /// \param scope The memory scope used.
+  /// \param memoryOrder 	The memory synchronization ordering for operations
+  /// \param memoryScope The memory scope used.
   /// \returns true if the referenced object was successfully changed, false otherwise.
   bool compare_exchange_weak(T &expected, T desired,
-                  cl::sycl::memory_order order = default_read_modify_write_order,
-                  cl::sycl::memory_scope scope = default_scope) noexcept {
+                  cl::sycl::memory_order memoryOrder = default_read_modify_write_order,
+                  cl::sycl::memory_scope memoryScope = default_scope) noexcept {
     cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
-    return atm.compare_exchange_weak(expected, desired, order, scope);
+    return atm.compare_exchange_weak(expected, desired, memoryOrder, memoryScope);
   }
 
   /// atomically compares the value of the referenced object with non-atomic argument 
@@ -584,21 +584,21 @@ public:
   bool compare_exchange_strong(
       T &expected, T desired,
       cl::sycl::memory_order success, cl::sycl::memory_order failure,
-      cl::sycl::memory_scope scope = default_scope) noexcept {
+      cl::sycl::memory_scope memoryScope = default_scope) noexcept {
 
     cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
-    return atm.compare_exchange_strong(expected, desired, success, failure, scope);
+    return atm.compare_exchange_strong(expected, desired, success, failure, memoryScope);
   }
   /// \param excepted The value expected to be found in the object referenced by the atomic_ref object
   /// \param desired  The value to store in the referenced object if it is as expected
-  /// \param order 	The memory synchronization ordering for operations
-  /// \param scope The memory scope used.
+  /// \param memoryOrder 	The memory synchronization ordering for operations
+  /// \param memoryScope The memory scope used.
   /// \returns true if the referenced object was successfully changed, false otherwise.
   bool compare_exchange_strong(T &expected, T desired,
-                    cl::sycl::memory_order order = default_read_modify_write_order,
-                    cl::sycl::memory_scope scope = default_scope) noexcept {
+                    cl::sycl::memory_order memoryOrder = default_read_modify_write_order,
+                    cl::sycl::memory_scope memoryScope = default_scope) noexcept {
     cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
-    return atm.compare_exchange_strong(expected, desired, order, scope);
+    return atm.compare_exchange_strong(expected, desired, memoryOrder, memoryScope);
   }
 
   /// atomically adds the argument to the value stored in the atomic object and obtains the value held previously
