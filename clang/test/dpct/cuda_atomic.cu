@@ -6,6 +6,6 @@
 #include <cuda/atomic>
 
 int main(){
-    // CHECK: dpct::atomic<int, sycl::memory_order::relaxed, sycl::memory_scope::system> a;
+    // CHECK: dpct::atomic<int, sycl::memory_scope::system, sycl::memory_order::relaxed> a;
     cuda::atomic<int, cuda::thread_scope_system> a;
 }

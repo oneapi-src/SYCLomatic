@@ -31,6 +31,7 @@ macro(build_lib_dpct)
     NCCLAPIMigration.cpp
     TypeLocRewriters.cpp
     QueryApiMapping.cpp
+    LIBCUAPIMigration.cpp
 
     DEPENDS
     ClangDriverOptions
