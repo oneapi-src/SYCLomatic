@@ -331,6 +331,21 @@ __host__ __device__ int test1(){
   #endif
 }
 
+// CHECK: int test2(){
+// CHECK-NEXT:   #ifdef TEST_MACRO
+// CHECK-NEXT:     return 0;
+// CHECK-NEXT:   #else
+// CHECK-NEXT:     return 1;
+// CHECK-NEXT:   #endif
+// CHECK-NEXT: }
+__host__ __device__ int test2(){
+  #ifdef TEST_MACRO
+    return 0;
+  #else
+    return 1;
+  #endif
+}
+
 // CHECK: void kernel(sycl::nd_item<3> item_ct1){
 // CHECK-NEXT:   float a, b;
 // CHECK-NEXT:   Env_cuda_thread_in_threadblock(0, item_ct1);
@@ -341,6 +356,7 @@ __host__ __device__ int test1(){
 // CHECK-NEXT:   test(0, 0, item_ct1);
 // CHECK-NEXT:   test<float>(a, b, item_ct1);
 // CHECK-NEXT:   test1(item_ct1);
+// CHECK-NEXT:   test2();
 // CHECK-NEXT: }
 __global__ void kernel(){
   float a, b;
@@ -352,6 +368,7 @@ __global__ void kernel(){
   test(0, 0);
   test<float>(a, b);
   test1();
+  test2();
 }
 
 int main(){
@@ -364,6 +381,7 @@ float a, b;
 // CHECK-NEXT: Env_cuda_thread_in_threadblock3_host_ct{{[0-9]+}}(0);
 // CHECK-NEXT: Env_cuda_thread_in_threadblock4_host_ct{{[0-9]+}}(0);
 // CHECK-NEXT: test1_host_ct{{[0-9]+}}();
+// CHECK-NEXT: test2();
 test(a, b);
 test<int>(1, 1);
 Env_cuda_thread_in_threadblock(0);
@@ -372,6 +390,7 @@ Env_cuda_thread_in_threadblock2(0);
 Env_cuda_thread_in_threadblock3(0);
 Env_cuda_thread_in_threadblock4(0);
 test1();
+test2();
 kernel<<<1,1>>>();
 cudaDeviceSynchronize();
 
