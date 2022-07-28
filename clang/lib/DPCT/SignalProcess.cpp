@@ -118,7 +118,7 @@ static LONG CALLBACK ExceptionHandler(PEXCEPTION_POINTERS ExceptionInfo) {
   case STATUS_ACCESS_VIOLATION:
     recoverCheckpoint(SIGSEGV);
   default:
-    return EXCEPTION_CONTINUE_EXECUTION;
+    return EXCEPTION_CONTINUE_SEARCH;
   }
   llvm_unreachable("Handled the crash, should have longjmp'ed out of here");
 }
