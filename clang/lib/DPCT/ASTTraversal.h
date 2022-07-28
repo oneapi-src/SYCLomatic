@@ -744,8 +744,9 @@ public:
   void insertTryCatch(const FunctionDecl *FD);
 };
 
-/// Migration rule for Device Property variables.
-class DevicePropVarRule : public NamedMigrationRule<DevicePropVarRule> {
+/// Migration rule for CUDA device property and attribute.
+/// E.g. cudaDeviceProp, cudaPointerAttributes.
+class DeviceInfoVarRule : public NamedMigrationRule<DeviceInfoVarRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

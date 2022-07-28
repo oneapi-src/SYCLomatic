@@ -31,12 +31,13 @@ macro(build_lib_dpct)
     NCCLAPIMigration.cpp
     TypeLocRewriters.cpp
     QueryApiMapping.cpp
+    MemberExprRewriter.cpp
 
     DEPENDS
     ClangDriverOptions
     dpct_helper_headers_and_inc
     genconfusable
-  
+
     LINK_LIBS
     clangBasic
     clangLex
