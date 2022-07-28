@@ -5,14 +5,14 @@
 
 #include "event_malloc.h"
 
-// CHECK:C::~C(void) { delete[] kernelEvent; }
+// CHECK:C::~C(void) { free(kernelEvent); }
 C::~C(void) { free(kernelEvent); }
 
 void foo_1() {
   int n_streams = 4;
 
-  // CHECK:  sycl::event *kernelEvent = new sycl::event[n_streams];
-  // CHECK-NEXT:  delete[] kernelEvent;
+  // CHECK:  dpct::event_ptr *kernelEvent = (dpct::event_ptr *)malloc(n_streams * sizeof(dpct::event_ptr));
+  // CHECK-NEXT:  free(kernelEvent);
   cudaEvent_t *kernelEvent = (cudaEvent_t *)malloc(n_streams * sizeof(cudaEvent_t));
   free(kernelEvent);
 }
@@ -20,9 +20,9 @@ void foo_1() {
 void foo_2() {
   int n_streams = 4;
 
-  // CHECK:  sycl::event *kernelEvent;
-  // CHECK-NEXT:  kernelEvent = new sycl::event[n_streams];
-  // CHECK-NEXT:  delete[] kernelEvent;
+  // CHECK:  dpct::event_ptr *kernelEvent;
+  // CHECK-NEXT:  kernelEvent = (dpct::event_ptr *)malloc(n_streams * sizeof(dpct::event_ptr));
+  // CHECK-NEXT:  free(kernelEvent);
   cudaEvent_t *kernelEvent;
   kernelEvent = (cudaEvent_t *)malloc(n_streams * sizeof(cudaEvent_t));
   free(kernelEvent);
@@ -31,10 +31,10 @@ void foo_2() {
 void foo_3() {
   int n_streams = 4;
 
-  // CHECK:  sycl::event *kernelEvent;
-  // CHECK-NEXT:  int size = n_streams * sizeof(sycl::event);
-  // CHECK-NEXT:  kernelEvent = new sycl::event[(size + sizeof(sycl::event)) / sizeof(sycl::event)];
-  // CHECK-NEXT:  delete[] kernelEvent;
+  // CHECK:  dpct::event_ptr *kernelEvent;
+  // CHECK-NEXT:  int size = n_streams * sizeof(dpct::event_ptr);
+  // CHECK-NEXT:  kernelEvent = (dpct::event_ptr *)malloc(size + sizeof(dpct::event_ptr));
+  // CHECK-NEXT:  free(kernelEvent);
   cudaEvent_t *kernelEvent;
   int size = n_streams * sizeof(cudaEvent_t);
   kernelEvent = (cudaEvent_t *)malloc(size + sizeof(cudaEvent_t));
@@ -46,14 +46,14 @@ cudaEvent_t *kernelEvent = NULL;
 
 void foo_4() {
   int n_streams = 4;
-  // CHECK:  sycl::event *kernelEvent = new sycl::event[n_streams];
+  // CHECK:  dpct::event_ptr *kernelEvent = (dpct::event_ptr *)malloc(n_streams * sizeof(dpct::event_ptr));
   cudaEvent_t *kernelEvent = (cudaEvent_t *)malloc(n_streams * sizeof(cudaEvent_t));
 }
 
 inline void free(){}
 
 void foo_5() {
-  // CHECK:   delete[] kernelEvent;
+  // CHECK:   free(kernelEvent);
    free(kernelEvent);
    free();
 }

@@ -19,11 +19,11 @@ const cudaDeviceProp deviceProp1 = {};
 // CHECK: volatile dpct::device_info deviceProp2;
 volatile cudaDeviceProp deviceProp2;
 
-// CHDCK: sycl::event events[23];
+// CHDCK: dpct::event_ptr events[23];
 cudaEvent_t events[23];
-// CHECK: const sycl::event *pevents[23];
+// CHECK: const dpct::event_ptr *pevents[23];
 const cudaEvent_t *pevents[23];
-// CHECK: const sycl::event **ppevents[23];
+// CHECK: const dpct::event_ptr **ppevents[23];
 const cudaEvent_t **ppevents[23];
 
 // CHECK: int errors[23];
@@ -48,11 +48,11 @@ const dim3 *pdims[23];
 const dim3 **ppdims[23];
 
 struct s {
-  // CHECK: sycl::event events[23];
+  // CHECK: dpct::event_ptr events[23];
   cudaEvent_t events[23];
-  // CHECK: const sycl::event *pevents[23];
+  // CHECK: const dpct::event_ptr *pevents[23];
   const cudaEvent_t *pevents[23];
-  // CHECK: const sycl::event **ppevents[23];
+  // CHECK: const dpct::event_ptr **ppevents[23];
   const cudaEvent_t **ppevents[23];
 
   // CHECK: int errors[23];
@@ -146,8 +146,8 @@ int main(int argc, char **argv) {
   a = sizeof(context);
   a = sizeof context;
 
-  //CHECK:sycl::event event;
-  //CHECK-NEXT:a = sizeof(sycl::event);
+  //CHECK:dpct::event_ptr event;
+  //CHECK-NEXT:a = sizeof(dpct::event_ptr);
   //CHECK-NEXT:a = sizeof(event);
   //CHECK-NEXT:a = sizeof event;
   cudaEvent_t event;

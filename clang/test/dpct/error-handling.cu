@@ -598,12 +598,8 @@ void foo6(){
 // CHECK-NEXT:   *0 = dpct::dpct_malloc(0);
 // CHECK-NEXT:   int a = printf("a");
 // CHECK-NEXT:   if(printf("a")){}
-// CHECK-NEXT:   sycl::event start;
-// CHECK-NEXT:   /*
-// CHECK-NEXT:   DPCT1027:{{[0-9]+}}: The call to cudaEventCreate was replaced with 0 because this call
-// CHECK-NEXT:   is redundant in SYCL.
-// CHECK-NEXT:   */
-// CHECK-NEXT:   int b = 0;
+// CHECK-NEXT:   dpct::event_ptr start;
+// CHECK:   int b = (start = new sycl::event(), 0); 
 // CHECK-NEXT: }
 void foo7(){
   cudaMalloc(0, 0);
