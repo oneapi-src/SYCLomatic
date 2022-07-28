@@ -1979,41 +1979,7 @@ private:
     };
   };
   static int PlaceholderIndex;
-  template <typename NodeType>
-  void findLoop(const NodeType *Node,
-                std::vector<const clang::Stmt *> &LoopList,
-                bool OnlyFindFirstLevel = false) {
-    const Stmt *Loop = nullptr;
-    auto Conditon = [&](const DynTypedNode &LoopNode) -> bool {
-      if (auto DoLoop = LoopNode.get<clang::DoStmt>()) {
-        if (DoLoop->getBody() == Node ||
-            DpctGlobalInfo::isAncestor(DoLoop->getBody(), Node)) {
-          return true;
-        }
-      } else if (auto ForLoop = LoopNode.get<clang::ForStmt>()) {
-        if (ForLoop->getBody() == Node ||
-            DpctGlobalInfo::isAncestor(ForLoop->getBody(), Node)) {
-          return true;
-        }
-      } else if (auto WhileLoop = LoopNode.get<clang::WhileStmt>()) {
-        if (WhileLoop->getBody() == Node ||
-            DpctGlobalInfo::isAncestor(WhileLoop->getBody(), Node)) {
-          return true;
-        }
-      }
-      return false;
-    };
-    if (Loop = DpctGlobalInfo::findAncestor<clang::Stmt>(Node, Conditon)) {
-      LoopList.push_back(Loop);
-      if (!OnlyFindFirstLevel) {
-        findLoop(Loop, LoopList);
-      }
-    }
-  }
-  void removeVarDecl(const VarDecl *VD);
   std::string getOpRepl(const Expr *Operator);
-  bool isRedundantCallExpr(const CallExpr *CE);
-  void removeRedundantTempVar(const CallExpr *CE);
   void processCubDeclStmt(const DeclStmt *DS);
   void processCubTypeDef(const TypedefDecl *TD);
   void processCubFuncCall(const CallExpr *CE, bool FuncCallUsed = false);

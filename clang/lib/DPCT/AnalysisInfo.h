@@ -355,6 +355,7 @@ enum HeaderType {
   HT_CCL,
   HT_DplUtils,
   HT_Atomic,
+  HT_DPL_Algorithm_Execution,
 };
 
 enum UsingType {
@@ -582,6 +583,10 @@ public:
                           "<" + getCustomMainHelperFileName() +
                               "/atomic.hpp>");
 
+    case HT_DPL_Algorithm_Execution:
+      setAddOneDplHeaders(true);
+      insertHeader(HeaderType::HT_DPL_Algorithm_Execution, FirstIncludeOffset);
+      setAddOneDplHeaders(false);
     }
   }
 
@@ -1476,8 +1481,8 @@ public:
     if (auto ET = QT->getAs<ElaboratedType>()) {
       if (ET->getQualifier())
         QT = Context.getElaboratedType(ETK_None, ET->getQualifier(),
-                              ET->getNamedType(),
-                              ET->getOwnedTagDecl());
+                                       ET->getNamedType(),
+                                       ET->getOwnedTagDecl());
       else
         QT = ET->getNamedType();
     }
@@ -4629,7 +4634,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
           (Type == HT_SYCL)) {
         RSO << "#define DPCT_USM_LEVEL_NONE" << getNL();
       }
-      if (AddOneDplHeaders && Type == HT_SYCL) {
+      if (AddOneDplHeaders && (Type == HT_SYCL || Type == HT_DPL_Algorithm_Execution)) {
         RSO << "#include <oneapi/dpl/execution>" << getNL()
             << "#include <oneapi/dpl/algorithm>" << getNL();
       }
@@ -4646,10 +4651,13 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
             ExplicitNamespace::EN_CL)) {
       RSO << "using namespace sycl;" << getNL();
     }
-    if (Type == HT_SYCL)
+
+    if (Type == HT_DPL_Algorithm_Execution)
       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_AlwaysLeft);
+    else if (Type == HT_SYCL) 
+      insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Left);
     else
-      insertHeader(std::move(RSO.str()), Offset);
+      insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Right);
   }
 }
 

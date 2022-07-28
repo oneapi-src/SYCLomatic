@@ -25,6 +25,7 @@ macro(build_lib_dpct)
     Homoglyph.cpp
     MisleadingBidirectional.cpp
     BarrierFenceSpaceAnalyzer.cpp
+    CubCallExprAnalyzer.cpp
     BLASAPIMigration.cpp
     FFTAPIMigration.cpp
     DNNAPIMigration.cpp

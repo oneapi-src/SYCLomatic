@@ -9,6 +9,7 @@
 #include "CallExprRewriter.h"
 #include "AnalysisInfo.h"
 #include "BLASAPIMigration.h"
+#include "CubCallExprAnalyzer.h"
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "Utility.h"
@@ -712,7 +713,7 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
   if (Parents.size())
     if (auto ParentStmt = getParentStmt(Call))
       if (ParentStmt->getStmtClass() == Stmt::StmtClass::ReturnStmtClass)
-          IsInReturnStmt = true;
+        IsInReturnStmt = true;
 
   if (FuncName == "frexp" || FuncName == "frexpf") {
     auto Arg = Call->getArg(0);
@@ -801,16 +802,16 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     else
       RSO << "*(" + MigratedArg1 + ")";
     RSO << " = " + MapNames::getClNamespace(false, true) + "sincos("
-       << MigratedArg0;
+        << MigratedArg0;
 
     if (FuncName == "sincos")
       RSO << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
-                MapNames::getClNamespace() + "access::address_space::" +
-                getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
+                 MapNames::getClNamespace() + "access::address_space::" +
+                 getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
     else
       RSO << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
-                MapNames::getClNamespace() + "access::address_space::" +
-                getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
+                 MapNames::getClNamespace() + "access::address_space::" +
+                 getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
     RSO << MigratedArg2 << "))";
 
     if(IsInReturnStmt) {
@@ -831,7 +832,7 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     else
       RSO << "*(" + MigratedArg1 + ")";
     RSO << " = " + MapNames::getClNamespace(false, true) + "sincos("
-       << MigratedArg0;
+        << MigratedArg0;
     if (FuncName == "sincospi") {
       RSO << " * DPCT_PI";
       requestFeature(HelperFeatureEnum::Dpct_dpct_pi, Call);
@@ -842,12 +843,12 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
 
     if (FuncName == "sincospi")
       RSO << ", " + MapNames::getClNamespace() + "make_ptr<double, " +
-                MapNames::getClNamespace() + "access::address_space::" +
-                getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
+                 MapNames::getClNamespace() + "access::address_space::" +
+                 getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
     else
       RSO << ", " + MapNames::getClNamespace() + "make_ptr<float, " +
-                MapNames::getClNamespace() + "access::address_space::" +
-                getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
+                 MapNames::getClNamespace() + "access::address_space::" +
+                 getAddressSpace(Call->getArg(2), MigratedArg2) + ">(";
     RSO << MigratedArg2 << "))";
     if(IsInReturnStmt) {
       OS << "[&](){ " << Buf << ";"<< " }()";
@@ -1437,7 +1438,7 @@ template <class... StmtT>
 std::function<
     LambdaPrinter<StmtT...>(const CallExpr *)>
 makeLambdaCreator(bool IsCaptureRef,
-                      std::function<StmtT(const CallExpr *)>... Stmts) {
+                  std::function<StmtT(const CallExpr *)>... Stmts) {
   return PrinterCreator<LambdaPrinter<StmtT...>, bool,
                         std::function<StmtT(const CallExpr *)>...>(
                         IsCaptureRef, Stmts...);
@@ -1822,10 +1823,10 @@ std::function<bool(const CallExpr *C)> checkIsCallExprOnly() {
   return [=](const CallExpr *C) -> bool {
     auto parentStmt = getParentStmt(C);
     if (parentStmt != nullptr && (dyn_cast<CompoundStmt>(parentStmt) ||
-                          dyn_cast<ExprWithCleanups>(parentStmt)))
+                                  dyn_cast<ExprWithCleanups>(parentStmt)))
       return true;
     return false;
-    };
+  };
 }
 
 std::function<bool(const CallExpr *C)> checkIsArgIntegerLiteral(size_t index) {
@@ -2116,6 +2117,24 @@ createInsertHeaderFactory(
         &&Input,
     T) {
   return createInsertHeaderFactory(Header, std::move(Input));
+}
+
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createRemoveCubTempStorageFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input) {
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      std::move(Input.first),
+      std::make_shared<RemoveCubTempStorageFactory>(Input.second));
+}
+
+template <class T>
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createRemoveCubTempStorageFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input,
+    T) {
+  return createRemoveCubTempStorageFactory(std::move(Input));
 }
 
 /// Create ConditonalRewriterFactory key-value pair with two key-value
@@ -2556,6 +2575,38 @@ public:
   bool operator()(const CallExpr *C) { return needExtraParens(C->getArg(Idx)); }
 };
 
+/// Pseudo code:
+/// loop_1 {
+///   ...
+///   tempstorage = nullptr;
+///   ...
+///   loop_j {
+///     ...
+///     loop_N {
+///       func(tempstorage, ...);
+///       tempstorage = ...
+///     }
+///   }
+/// }
+/// The callexpr is redundant if following two conditions are meet:
+/// (1) No modified reference between tempstorage initialization and callexpr.
+/// (2) No modified reference in loop_j or deeper loop.
+/// The redundant callexpr can be remove safely.
+class CheckCubRedundantFunctionCall {
+public:
+  bool operator()(const CallExpr *C) {
+    return CubRedundantCallAnalyzer::isRedundantCallExpr(C);
+  }
+};
+
+std::shared_ptr<CallExprRewriter>
+RemoveCubTempStorageFactory::create(const CallExpr *C) const {
+  CubRedundantTempStorageAnalyzer::removeRedundantTempVar(C);
+  return Inner->create(C);
+}
+
+#define REMOVE_CUB_TEMP_STORAGE_FACTORY(INNER)                                 \
+  createRemoveCubTempStorageFactory(INNER 0),
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
 #define INSERT_AROUND_FACTORY(x, PREFIX, SUFFIX)                               \
   createInsertAroundFactory(x PREFIX, SUFFIX),
@@ -2732,6 +2783,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   BIND_TEXTURE_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
 #define ENTRY_TEMPLATED(SOURCEAPINAME, ...)                                    \
   TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
+#include "APINamesCUB.inc"
 #include "APINamesCUBLAS.inc"
 #include "APINamesCUFFT.inc"
 #include "APINamesCURAND.inc"

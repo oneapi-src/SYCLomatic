@@ -10,6 +10,7 @@
 #include "AnalysisInfo.h"
 #include "BarrierFenceSpaceAnalyzer.h"
 #include "CallExprRewriter.h"
+#include "CubCallExprAnalyzer.h"
 #include "CustomHelperFiles.h"
 #include "ExprAnalysis.h"
 #include "Homoglyph.h"
@@ -16116,360 +16117,6 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
   }
 }
 
-// function to remove a temp storage vardecl
-void CubRule::removeVarDecl(const VarDecl *VD) {
-  static std::unordered_map<std::string, std::vector<bool>> DeclStmtBitMap;
-  if (!VD) {
-    return;
-  }
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  auto &Context = DpctGlobalInfo::getContext();
-  if (auto DS = Context.getParents(*VD)[0].get<DeclStmt>()) {
-    auto LocInfo = DpctGlobalInfo::getLocInfo(DS->getBeginLoc());
-    std::string Key = LocInfo.first + std::to_string(LocInfo.second);
-    auto Decls = DS->decls();
-    unsigned int DeclNum = DS->decls().end() - DS->decls().begin();
-    // if this declstmt has one sub decl, then we just need to remove whole
-    // declstmt simply.
-    if (DeclNum == 1) {
-      emplaceTransformation(new ReplaceStmt(DS, ""));
-      return;
-    }
-    if (!DeclStmtBitMap.count(Key)) {
-      DeclStmtBitMap[Key] =
-          std::vector<bool>(DS->decls().end() - DS->decls().begin(), true);
-    }
-    auto NameLength = VD->getNameAsString().length();
-    auto DeclBegPtr = SM.getCharacterData(VD->getBeginLoc());
-    for (auto decl_itr = Decls.begin(); decl_itr != Decls.end(); decl_itr++) {
-      if (auto SubDecl = dyn_cast<VarDecl>(*decl_itr)) {
-        if (SubDecl == VD) {
-          int InitLength = 0;
-          if (SubDecl->hasInit()) {
-            ExprAnalysis InitEA(SubDecl->getInit());
-            InitLength = InitEA.getReplacedString().length();
-          }
-          /// Example1(for non first decl):              Example2(for first
-          /// decl): Step 1: Init Beg and End                   Step 1: Init Beg
-          /// and End int *a = nullptr, b = 100;                 int *a =
-          /// nullptr, b = 100;
-          ///                   ^     ^                       ^         ^
-          ///                  Beg   End                     Beg       End
-          ///
-          /// Step 2: Adjust the Beg to previous comma   Stemp2: Adjust the Beg
-          /// to the
-          ///                                            begin of
-          ///                                            prt-declarator, the End
-          ///                                            to the behind comma.
-          /// int **a = nullptr, b = 100;                int **a = nullptr, b =
-          /// 100;
-          ///                  ^       ^                     ^            ^
-          ///                 Beg     End                   Beg          End
-          ///
-          /// Step 3: Remove code from Beg to End
-          SourceLocation Beg = SM.getExpansionLoc(SubDecl->getEndLoc());
-          SourceLocation End =
-              SubDecl->hasInit()
-                  ? SM.getExpansionLoc(SubDecl->getInit()->getBeginLoc())
-                        .getLocWithOffset(InitLength - 1)
-                  : SubDecl->getEndLoc().getLocWithOffset(NameLength - 1);
-          if (decl_itr != Decls.begin()) {
-            auto BegPtr = SM.getCharacterData(Beg);
-            auto CommaPtr = BegPtr;
-            while (CommaPtr && (CommaPtr > DeclBegPtr) && *(CommaPtr) != ',') {
-              CommaPtr--;
-            };
-            if (CommaPtr == DeclBegPtr) {
-              return;
-            } else {
-              if (decl_itr - Decls.begin() == 1 && !DeclStmtBitMap[Key][0]) {
-                CommaPtr++;
-              }
-              Beg = Beg.getLocWithOffset(CommaPtr - BegPtr);
-            }
-          } else {
-            QualType TypeTemp = VD->getType();
-            while (TypeTemp->isPointerType()) {
-              auto BegPtr = SM.getCharacterData(Beg);
-              auto StarPtr = BegPtr;
-              while (StarPtr && (StarPtr > DeclBegPtr) &&
-                     (*(StarPtr) != '*' || StarPtr == BegPtr)) {
-                StarPtr--;
-              };
-              if (StarPtr == DeclBegPtr) {
-                return;
-              }
-              Beg = Beg.getLocWithOffset(StarPtr - BegPtr);
-              TypeTemp = TypeTemp->getPointeeType();
-            };
-            auto tok = Lexer::findNextToken(End, SM, Context.getLangOpts());
-            if (tok.hasValue() && tok.getValue().is(tok::comma)) {
-              End = tok.getValue().getLocation();
-            } else {
-              return;
-            }
-          }
-          DeclStmtBitMap[Key][decl_itr - Decls.begin()] = false;
-          // if all sub decls are removed, we need to remove this declstmt
-          if (std::find(DeclStmtBitMap[Key].begin(), DeclStmtBitMap[Key].end(),
-                        true) == DeclStmtBitMap[Key].end()) {
-            auto DeclPRInfo = std::make_shared<PriorityReplInfo>();
-            DeclPRInfo->Repls.emplace_back(
-                (new ReplaceStmt(DS, ""))->getReplacement(Context));
-            DeclPRInfo->Priority = 1;
-            DpctGlobalInfo::addPriorityReplInfo(Key, DeclPRInfo);
-          } else {
-            auto SubDeclPRInfo = std::make_shared<PriorityReplInfo>();
-            SubDeclPRInfo->Repls.emplace_back(
-                replaceText(Beg, End.getLocWithOffset(1), "", SM)
-                    ->getReplacement(Context));
-            DpctGlobalInfo::addPriorityReplInfo(Key, SubDeclPRInfo);
-          }
-          break;
-        }
-      }
-    }
-  }
-}
-
-/// Pseudo code:
-/// loop_1 {
-///   ...
-///   tempstorage = nullptr;
-///   ...
-///   loop_j {
-///     ...
-///     loop_N {
-///       func(tempstorage, ...);
-///       tempstorage = ...
-///     }
-///   }
-/// }
-/// The callexpr is redundant if following two conditions are meet:
-/// (1) No modified reference between tempstorage initialization and callexpr.
-/// (2) No modified reference in loop_j or deeper loop.
-/// The redundant callexpr can be remove safely.
-bool CubRule::isRedundantCallExpr(const CallExpr *CE) {
-  auto FuncArgs = CE->getArgs();
-  auto TempStorage = FuncArgs[0]->IgnoreImplicitAsWritten();
-  SourceLocation InitLoc;
-  std::vector<const DeclRefExpr *> TempStorageMatchResult;
-  std::vector<const DeclRefExpr *> TempStorageSizeMatchResult;
-  auto isNullptrOrZero = [](const Expr *E) {
-    if (!E) {
-      return false;
-    } else if (E->getStmtClass() == Stmt::StmtClass::GNUNullExprClass ||
-               E->getStmtClass() ==
-                   Stmt::StmtClass::CXXNullPtrLiteralExprClass) {
-      return true;
-    } else if (E->isEvaluatable(DpctGlobalInfo::getContext())) {
-      Expr::EvalResult Result;
-      E->EvaluateAsRValue(Result, DpctGlobalInfo::getContext());
-      if (Result.Val.isInt() && Result.Val.getInt() == 0) {
-        return true;
-      }
-    }
-    return false;
-  };
-  auto DRE = dyn_cast<DeclRefExpr>(TempStorage);
-  if (!DRE) {
-    return false;
-  }
-  auto VD = dyn_cast<VarDecl>(DRE->getDecl());
-  if (!VD) {
-    return false;
-  }
-
-  const Expr *Init = nullptr;
-  SourceLocation SearchEndLoc =
-      DpctGlobalInfo::getSourceManager().getExpansionLoc(DRE->getBeginLoc());
-  SourceLocation LastModifiedLoc;
-  std::vector<const Stmt *> DRELoopList;
-  std::vector<const Stmt *> CELoopList;
-  findAllVarRef(DRE, TempStorageMatchResult);
-  findLoop(CE, CELoopList);
-  if (VD->hasInit()) {
-    // tempstorage = nullptr/NULL/0/...
-    if (VD->getInitStyle() == VarDecl::InitializationStyle::CInit) {
-      Init = VD->getInit()->IgnoreImplicitAsWritten();
-      if (isNullptrOrZero(Init)) {
-        InitLoc = DpctGlobalInfo::getSourceManager().getExpansionLoc(
-            VD->getBeginLoc());
-      }
-      // tempstorage = { nullptr/NULL/0/... }
-    } else if (VD->getInitStyle() == VarDecl::InitializationStyle::ListInit) {
-      if (auto InitList = dyn_cast<InitListExpr>(VD->getInit())) {
-        if (auto Init0 = InitList->getInit(0)) {
-          Init = Init0->IgnoreImplicitAsWritten();
-          if (isNullptrOrZero(Init)) {
-            InitLoc = DpctGlobalInfo::getSourceManager().getExpansionLoc(
-                VD->getBeginLoc());
-          }
-        }
-      }
-    }
-  }
-  for (auto &Element : TempStorageMatchResult) {
-    if (Element == DRE) {
-      continue;
-    }
-    SourceLocation CurLoc = DpctGlobalInfo::getSourceManager().getExpansionLoc(
-        Element->getBeginLoc());
-    bool IsModified = isModifiedRef(Element);
-    bool IsAssignedWithNull = false;
-    if (IsModified) {
-      if (auto BO = DpctGlobalInfo::findAncestor<BinaryOperator>(Element)) {
-        if (BO->getLHS() == Element &&
-            isNullptrOrZero(BO->getRHS()->IgnoreImplicitAsWritten())) {
-          IsAssignedWithNull = true;
-        }
-      }
-    }
-    if (IsAssignedWithNull && (CurLoc < SearchEndLoc) &&
-        (InitLoc.isInvalid() || CurLoc > InitLoc)) {
-      InitLoc = CurLoc;
-      Init = Element;
-    }
-    if (IsModified && !IsAssignedWithNull) {
-      if (CurLoc < SearchEndLoc) {
-        LastModifiedLoc = CurLoc;
-      } else {
-        findLoop(Element, DRELoopList);
-      }
-    }
-  }
-  bool IsSafeToRemoveCallExpr = true;
-  if (!CELoopList.empty()) {
-    int CELoopListSize = CELoopList.size();
-    for (int i = 0; i < CELoopListSize; i++) {
-      if (DpctGlobalInfo::isAncestor(CELoopList[i], Init)) {
-        break;
-      } else {
-        if (!DRELoopList.empty() &&
-            std::find(DRELoopList.begin(), DRELoopList.end(), CELoopList[i]) !=
-                DRELoopList.end()) {
-          IsSafeToRemoveCallExpr = false;
-          break;
-        }
-      }
-    }
-  }
-  if (!InitLoc.isInvalid() &&
-      (LastModifiedLoc.isInvalid() || InitLoc > LastModifiedLoc) &&
-      IsSafeToRemoveCallExpr) {
-    return true;
-  }
-  return false;
-}
-
-// Analyze temp_storage and temp_storage_size argument to determine
-// whether these two argument and related decl or cudaMalloc can be
-// removed.
-// If the d_temp_storage and temp_storage_bytes only used in
-// Reduce/Min/Max/Sum and cudaMalloc, then we can remove related decl
-// and cudaMalloc*.
-void CubRule::removeRedundantTempVar(const CallExpr *CE) {
-  auto FuncArgs = CE->getArgs();
-  auto TempStorage = FuncArgs[0]->IgnoreImplicitAsWritten();
-  auto TempStorageSize = FuncArgs[1]->IgnoreImplicitAsWritten();
-  std::vector<const DeclRefExpr *> TempStorageMatchResult;
-  std::vector<const DeclRefExpr *> TempStorageSizeMatchResult;
-  std::vector<const CallExpr *> TempStorageRelatedMalloc;
-  std::vector<const CallExpr *> TempStorageSizeRelatedMalloc;
-  bool IsSafeToRemoveTempStorage = true;
-  bool IsSafeToRemoveTempStorageSize = true;
-  auto TempVarAnalysis = [](const DeclRefExpr *DRE, bool &IsSafeToRemove,
-                            std::vector<const CallExpr *> &RelatedMalloc) {
-    if (auto CE = dpct::DpctGlobalInfo::findAncestor<CallExpr>(DRE)) {
-      if (auto FuncDecl = CE->getDirectCallee()) {
-        std::string FuncName = FuncDecl->getNameAsString();
-        if (FuncName == "Reduce" || FuncName == "Min" || FuncName == "Max" ||
-            FuncName == "Sum") {
-          const DeclContext *FuncDeclContext = FuncDecl->getDeclContext();
-          if (auto CXXRD = dyn_cast<CXXRecordDecl>(FuncDeclContext)) {
-            if (CXXRD->getNameAsString() == "DeviceSegmentedReduce") {
-              return;
-            }
-          }
-        } else if (FuncName == "cudaMalloc" || FuncName == "cuMemAlloc_v2") {
-          RelatedMalloc.push_back(CE);
-          return;
-        }
-      }
-    };
-    IsSafeToRemove = false;
-    return;
-  };
-  if (auto DRE = dyn_cast<DeclRefExpr>(TempStorage)) {
-    if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-      findAllVarRef(DRE, TempStorageMatchResult);
-      for (auto &Element : TempStorageMatchResult) {
-        if (Element == DRE) {
-          continue;
-        }
-        if (IsSafeToRemoveTempStorage) {
-          TempVarAnalysis(Element, IsSafeToRemoveTempStorage,
-                          TempStorageRelatedMalloc);
-        } else {
-          break;
-        }
-      }
-      if (IsSafeToRemoveTempStorage) {
-        removeVarDecl(VD);
-        for (auto Itr = TempStorageRelatedMalloc.begin();
-             Itr != TempStorageRelatedMalloc.end();) {
-          bool IsUsed = false;
-          if (!isExprUsed(*Itr, IsUsed)) {
-            Itr = TempStorageRelatedMalloc.erase(Itr);
-            continue;
-          }
-          auto LocInfo = DpctGlobalInfo::getLocInfo((*Itr)->getBeginLoc());
-          auto Info = std::make_shared<PriorityReplInfo>();
-          Info->Priority = 1;
-          if (IsUsed) {
-            Info->Repls.emplace_back(ReplaceStmt(*Itr, "0").getReplacement(
-                DpctGlobalInfo::getContext()));
-          } else {
-            Info->Repls.emplace_back(ReplaceStmt(*Itr, "").getReplacement(
-                DpctGlobalInfo::getContext()));
-          }
-          DpctGlobalInfo::addPriorityReplInfo(
-              LocInfo.first + std::to_string(LocInfo.second), Info);
-          Itr++;
-        }
-      } else {
-        return;
-      }
-    }
-  }
-  if (auto DRE = dyn_cast<DeclRefExpr>(TempStorageSize)) {
-    if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-      findAllVarRef(DRE, TempStorageSizeMatchResult);
-      for (auto &Element : TempStorageSizeMatchResult) {
-        if (Element == DRE) {
-          continue;
-        }
-        if (IsSafeToRemoveTempStorageSize) {
-          TempVarAnalysis(Element, IsSafeToRemoveTempStorageSize,
-                          TempStorageSizeRelatedMalloc);
-        } else {
-          break;
-        }
-      }
-      for (auto Element : TempStorageSizeRelatedMalloc) {
-        if (std::find(TempStorageRelatedMalloc.begin(),
-                      TempStorageRelatedMalloc.end(),
-                      Element) == TempStorageRelatedMalloc.end()) {
-          IsSafeToRemoveTempStorageSize = false;
-        }
-      }
-      if (IsSafeToRemoveTempStorageSize) {
-        removeVarDecl(VD);
-      }
-    }
-  }
-}
-
 void CubRule::processDeviceLevelFuncCall(const CallExpr *CE,
                                          bool FuncCallUsed) {
   auto DC = CE->getDirectCallee();
@@ -16491,7 +16138,7 @@ void CubRule::processDeviceLevelFuncCall(const CallExpr *CE,
       FuncCallUsed = OldFuncCallUsed;
     }
   }
-  if (isRedundantCallExpr(CE)) {
+  if (CubRedundantCallAnalyzer::isRedundantCallExpr(CE)) {
     if (FuncCallUsed) {
       emplaceTransformation(new ReplaceStmt(CE, "0"));
     } else {
@@ -16566,7 +16213,7 @@ void CubRule::processDeviceLevelFuncCall(const CallExpr *CE,
   }
   report(CE->getBeginLoc(), Diagnostics::REDUCE_PERFORMANCE_TUNE, false);
   emplaceTransformation(new ReplaceStmt(CE, Repl));
-  removeRedundantTempVar(CE);
+  CubRedundantTempStorageAnalyzer::removeRedundantTempVar(CE);
   requestFeature(HelperFeatureEnum::DplExtrasDpcppExtensions_segmented_reduce,
                  DpctGlobalInfo::getLocInfo(CE->getBeginLoc()).first);
   DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), HT_DPL_Utils);
@@ -16633,32 +16280,53 @@ void CubRule::processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed) {
 }
 
 void CubRule::processCubFuncCall(const CallExpr *CE, bool FuncCallUsed) {
-  std::string Repl;
-  if (auto DC = CE->getDirectCallee()) {
-    const DeclContext *MaybeFirstNS = DC->getDeclContext();
-    // Namespace::Object.Function()
-    if (auto CXXRD = dyn_cast<CXXRecordDecl>(MaybeFirstNS)) {
-      if (CXXRD->getNameAsString() != "DeviceSegmentedReduce") {
-        return;
-      }
-      MaybeFirstNS = CXXRD->getDeclContext();
-    }
-    if (auto ND = dyn_cast<NamespaceDecl>(MaybeFirstNS)) {
-      if (ND->getNameAsString() != "cub") {
-        return;
-      }
-    } else {
+  auto DC = CE->getDirectCallee();
+  if (!DC)
+    return;
+  
+  const DeclContext *MaybeFirstNS = DC->getDeclContext();
+  llvm::StringRef FuncName = DC->getName();
+  std::string FullFuncName = DC->getNameAsString();
+
+  // Check if there have a CXX Record Name between the 'cub' namespace and the function name.
+  // Such as Namespace::Object.Function() or Namespace::Object::Function()
+  if (auto CXXRD = dyn_cast<CXXRecordDecl>(MaybeFirstNS)) {
+    llvm::StringRef CXXRDName = CXXRD->getName();
+    if (CXXRDName != "DeviceSegmentedReduce" && CXXRDName != "DeviceReduce")
       return;
-    }
-    std::string FuncName = DC->getNameAsString();
-    if (FuncName == "ShuffleIndex") {
-      processWarpLevelFuncCall(CE, FuncCallUsed);
-    } else if (FuncName == "ThreadLoad" || FuncName == "ThreadStore") {
-      processThreadLevelFuncCall(CE, FuncCallUsed);
-    } else if (FuncName == "Reduce" || FuncName == "Min" || FuncName == "Max" ||
-               FuncName == "Sum") {
-      processDeviceLevelFuncCall(CE, FuncCallUsed);
-    }
+    FullFuncName = llvm::Twine(CXXRD->getName()).concat("::").concat(FullFuncName).str();
+    MaybeFirstNS = CXXRD->getDeclContext();
+  }
+
+  auto ND = dyn_cast<NamespaceDecl>(MaybeFirstNS);
+
+  // The top level namespace must be 'cub'
+  if (!ND || ND->getName() != "cub") 
+    return;
+
+  FullFuncName = llvm::Twine("cub::").concat(FullFuncName).str();
+
+  // Check if the RewriteMap has initialized
+  if (!CallExprRewriterFactoryBase::RewriterMap)
+    return;
+  
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(FullFuncName);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA;
+    EA.analyze(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    // CubRedundantTempStorageAnalyzer::removeRedundantTempVar(CE);
+    return;
+  }
+  
+  if (FuncName == "ShuffleIndex") {
+    processWarpLevelFuncCall(CE, FuncCallUsed);
+  } else if (FuncName == "ThreadLoad" || FuncName == "ThreadStore") {
+    processThreadLevelFuncCall(CE, FuncCallUsed);
+  } else if (FuncName == "Reduce" || FuncName == "Min" || FuncName == "Max" ||
+              FuncName == "Sum") {
+    processDeviceLevelFuncCall(CE, FuncCallUsed);
   }
 }
 

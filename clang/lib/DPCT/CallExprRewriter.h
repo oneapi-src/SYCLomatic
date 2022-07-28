@@ -291,13 +291,13 @@ public:
 
   Optional<std::string> rewrite() override {
     std::string Msg = "this call is redundant in SYCL.";
+    report(Diagnostics::FUNC_CALL_REMOVED, false,
+           CalleeName, Msg);
     if (IsAssigned) {
       report(Diagnostics::FUNC_CALL_REMOVED_0, false,
              CalleeName, Msg);
       return Optional<std::string>("0");
     }
-    report(Diagnostics::FUNC_CALL_REMOVED, false,
-           CalleeName, Msg);
     return Optional<std::string>("");
   }
 };
@@ -389,6 +389,15 @@ public:
     DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(), Header);
     return Inner->create(C);
   }
+};
+
+class RemoveCubTempStorageFactory : public CallExprRewriterFactoryBase {
+  std::shared_ptr<CallExprRewriterFactoryBase> Inner;
+public:
+  RemoveCubTempStorageFactory(std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
+    : Inner(InnerFactory) {}
+  
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override;
 };
 
 class RewriterFactoryWithSubGroupSize : public CallExprRewriterFactoryBase {
