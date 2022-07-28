@@ -143,3 +143,9 @@ WARNING_FACTORY_ENTRY("cuDriverGetVersion",
                     "get_current_device().get_info<" + MapNames::getClNamespace() +
                     "info::device::version>"))))),
     Diagnostics::TYPE_MISMATCH)
+
+ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY("cuDeviceGetAttribute", DEREF(0),
+                    makeMemberCallCreator(CALL(MapNames::getDpctNamespace() +
+                    "dev_mgr::instance().get_device", ARG(2)), false,
+                    makeFuncNameCreator(1))))
