@@ -1,7 +1,8 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
-// RUN: dpct --format-range=none -in-root %S -out-root %T/devicelevel/device_reduce_sum %S/device_reduce_sum.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/devicelevel/device_reduce_sum/device_reduce_sum.dp.cpp --match-full-lines %s
+// UNSUPPORTED: windows
+// RUN: dpct --format-range=none -in-root %S -out-root %T/devicelevel/device_reduce_sum %S/device_reduce_sum_gnu_ext.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/devicelevel/device_reduce_sum/device_reduce_sum_gnu_ext.dp.cpp --match-full-lines %s
 
 // CHECK:#include <oneapi/dpl/execution>
 // CHECK:#include <oneapi/dpl/algorithm>
@@ -62,6 +63,7 @@ void test_1() {
 // CHECK:DPCT1026:{{.*}}
 // CHECK:DPCT1026:{{.*}}
 // CHECK:DPCT1026:{{.*}}
+// CHECK:DPCT1026:{{.*}}
 // CHECK:q_ct1.fill(device_out, oneapi::dpl::reduce(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n), 1);
 // CHECK:q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out)).wait();
 // CHECK:sycl::free(device_in, q_ct1);
@@ -81,6 +83,7 @@ void test_2() {
   cudaMemcpy(device_in, (void *)host_in, sizeof(host_in), cudaMemcpyHostToDevice);
   cub::DeviceReduce::Sum(0, n_device_tmp, device_in, device_out, n);
   cub::DeviceReduce::Sum(NULL, n_device_tmp, device_in, device_out, n);
+  cub::DeviceReduce::Sum(__null, n_device_tmp, device_in, device_out, n);
   cub::DeviceReduce::Sum(nullptr, n_device_tmp, device_in, device_out, n);
   cudaMalloc((void **)&device_tmp, n_device_tmp);
   cub::DeviceReduce::Sum((void *)device_tmp, n_device_tmp, device_in, device_out, n);
