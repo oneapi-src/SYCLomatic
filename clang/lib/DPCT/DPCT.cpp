@@ -545,6 +545,7 @@ public:
         Context.getDiagnostics().getClient()->getNumErrors() > 0) {
       return;
     }
+    Context.getParentMapContext().clear();
     // The migration process is separated into two stages:
     // 1) Analysis of AST and identification of applicable migration rules
     // 2) Generation of actual textual Replacements
