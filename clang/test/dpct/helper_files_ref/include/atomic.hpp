@@ -548,7 +548,7 @@ public:
 
   /// atomically compares the value of the referenced object with non-atomic argument 
   /// and performs atomic exchange if equal or atomic load if not
-  /// \param excepted The value expected to be found in the object referenced by the atomic_ref object
+  /// \param expected The value expected to be found in the object referenced by the atomic_ref object
   /// \param desired  The value to store in the referenced object if it is as expected
   /// \param success The memory models for the read-modify-write
   /// \param failure The memory models for load operations
@@ -561,7 +561,7 @@ public:
     cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
     return atm.compare_exchange_weak(expected, desired, success, failure, memoryScope);
   }
-  /// \param excepted The value expected to be found in the object referenced by the atomic_ref object
+  /// \param expected The value expected to be found in the object referenced by the atomic_ref object
   /// \param desired  The value to store in the referenced object if it is as expected
   /// \param memoryOrder 	The memory synchronization ordering for operations
   /// \param memoryScope The memory scope used.
@@ -575,7 +575,7 @@ public:
 
   /// atomically compares the value of the referenced object with non-atomic argument 
   /// and performs atomic exchange if equal or atomic load if not
-  /// \param excepted The value expected to be found in the object referenced by the atomic_ref object
+  /// \param expected The value expected to be found in the object referenced by the atomic_ref object
   /// \param desired  The value to store in the referenced object if it is as expected
   /// \param success The memory models for the read-modify-write
   /// \param failure The memory models for load operations
@@ -589,7 +589,7 @@ public:
     cl::sycl::atomic_ref<T, DefaultOrder, DefaultScope, Space> atm(__d);
     return atm.compare_exchange_strong(expected, desired, success, failure, memoryScope);
   }
-  /// \param excepted The value expected to be found in the object referenced by the atomic_ref object
+  /// \param expected The value expected to be found in the object referenced by the atomic_ref object
   /// \param desired  The value to store in the referenced object if it is as expected
   /// \param memoryOrder 	The memory synchronization ordering for operations
   /// \param memoryScope The memory scope used.
