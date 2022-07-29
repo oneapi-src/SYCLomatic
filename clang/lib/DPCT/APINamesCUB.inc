@@ -18,3 +18,29 @@ CONDITIONAL_FACTORY_ENTRY(
                  CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
                  ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4))),
             LITERAL("1")))))
+
+// cub::DeviceScan::ExclusiveSum
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceScan::ExclusiveSum"),
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_DPL_Algorithm_Execution,
+        REMOVE_CUB_TEMP_STORAGE_FACTORY(CALL_FACTORY_ENTRY(
+            "cub::DeviceScan::ExclusiveSum",
+            CALL("oneapi::dpl::exclusive_scan",
+                 CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
+                 ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)), ARG(3),
+                 LITERAL("0"))))))
+
+// cub::DeviceScan::InclusiveSum
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceScan::InclusiveSum"),
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_DPL_Algorithm_Execution,
+        REMOVE_CUB_TEMP_STORAGE_FACTORY(CALL_FACTORY_ENTRY(
+            "cub::DeviceScan::InclusiveSum",
+            CALL("oneapi::dpl::inclusive_scan",
+                 CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
+                 ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
+                 ARG(3))))))

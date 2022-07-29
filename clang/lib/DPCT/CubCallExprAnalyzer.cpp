@@ -318,13 +318,14 @@ TempVarAnalysis(const clang::DeclRefExpr *DRE, bool &IsSafeToRemove,
     if (const auto *FuncDecl = CE->getDirectCallee()) {
       llvm::StringRef FuncName = FuncDecl->getName();
       if (FuncName == "Reduce" || FuncName == "Min" || FuncName == "Max" ||
-          FuncName == "Sum") {
+          FuncName == "Sum" || FuncName == "ExclusiveSum" || FuncName == "InclusiveSum") {
         const clang::DeclContext *FuncDeclContext = FuncDecl->getDeclContext();
         if (const auto *CXXRD =
                 llvm::dyn_cast<clang::CXXRecordDecl>(FuncDeclContext)) {
           llvm::StringRef CXXRDName = CXXRD->getName();
           if (CXXRDName == "DeviceSegmentedReduce" ||
-              CXXRDName == "DeviceReduce") {
+              CXXRDName == "DeviceReduce" || 
+              CXXRDName == "DeviceScan") {
             return;
           }
         }

@@ -15932,14 +15932,14 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(hasAnyName(
                                    "ShuffleIndex", "ThreadLoad", "ThreadStore",
-                                   "Sum", "Min", "Max", "Reduce"))),
+                                   "Sum", "Min", "Max", "Reduce", "ExclusiveSum", "InclusiveSum"))),
                                parentStmt()))
                     .bind("FuncCall"),
                 this);
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(
                                    hasAnyName("Sum", "Min", "Max", "Reduce",
-                                              "ThreadLoad", "ShuffleIndex"))),
+                                              "ThreadLoad", "ShuffleIndex", "ExclusiveSum", "InclusiveSum"))),
                                unless(parentStmt())))
                     .bind("FuncCallUsed"),
                 this);
@@ -16280,7 +16280,7 @@ void CubRule::processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed) {
 }
 
 void CubRule::processCubFuncCall(const CallExpr *CE, bool FuncCallUsed) {
-  auto DC = CE->getDirectCallee();
+  const auto *DC = CE->getDirectCallee();
   if (!DC)
     return;
   
@@ -16290,15 +16290,15 @@ void CubRule::processCubFuncCall(const CallExpr *CE, bool FuncCallUsed) {
 
   // Check if there have a CXX Record Name between the 'cub' namespace and the function name.
   // Such as Namespace::Object.Function() or Namespace::Object::Function()
-  if (auto CXXRD = dyn_cast<CXXRecordDecl>(MaybeFirstNS)) {
+  if (const auto *CXXRD = dyn_cast<CXXRecordDecl>(MaybeFirstNS)) {
     llvm::StringRef CXXRDName = CXXRD->getName();
-    if (CXXRDName != "DeviceSegmentedReduce" && CXXRDName != "DeviceReduce")
+    if (CXXRDName != "DeviceSegmentedReduce" && CXXRDName != "DeviceReduce" && CXXRDName != "DeviceScan")
       return;
     FullFuncName = llvm::Twine(CXXRD->getName()).concat("::").concat(FullFuncName).str();
     MaybeFirstNS = CXXRD->getDeclContext();
   }
 
-  auto ND = dyn_cast<NamespaceDecl>(MaybeFirstNS);
+  const auto *ND = dyn_cast<NamespaceDecl>(MaybeFirstNS);
 
   // The top level namespace must be 'cub'
   if (!ND || ND->getName() != "cub") 
