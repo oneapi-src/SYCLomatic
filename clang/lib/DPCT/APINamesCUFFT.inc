@@ -58,6 +58,8 @@ ASSIGNABLE_FACTORY(
     MEMBER_CALL_FACTORY_ENTRY("cufftExecC2C", ARG(0), true, "compute", ARG(1), ARG(2), ARG(3)))
 ASSIGNABLE_FACTORY(
     MEMBER_CALL_FACTORY_ENTRY("cufftExecZ2Z", ARG(0), true, "compute", ARG(1), ARG(2), ARG(3)))
+ASSIGNABLE_FACTORY(
+    MEMBER_CALL_FACTORY_ENTRY("cufftXtExec", ARG(0), true, "compute", ARG(1), ARG(2), ARG(3)))
 
 ASSIGNABLE_FACTORY(
     MEMBER_CALL_FACTORY_ENTRY("cufftSetStream", ARG(0), true, "set_queue", ARG(1)))

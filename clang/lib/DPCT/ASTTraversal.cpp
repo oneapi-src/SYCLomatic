@@ -3193,14 +3193,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     }
 
-    //if (TypeStr == "cufftHandle") {
-    //  DpctGlobalInfo::getInstance().insertFFTDescriptorTypeInfo(
-    //      BeginLoc,
-    //      Lexer::MeasureTokenLength(
-    //          BeginLoc, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-    //  return;
-    //}
-
     if (replaceDependentNameTypeLoc(SM, LOpts, TL)) {
       return;
     }
@@ -4583,12 +4575,6 @@ void FFTEnumsRule::registerMatcher(MatchFinder &MF) {
               "IMPLEMENTED|CUFFT_LICENSE_ERROR|CUFFT_NOT_SUPPORTED)"))))
           .bind("FFTConstants"),
       this);
-
-//  MF.addMatcher(declRefExpr(to(enumConstantDecl(
-//                                matchesName("(CUFFT_R2C|CUFFT_C2R|CUFFT_C2C|"
-//                                            "CUFFT_D2Z|CUFFT_Z2D|CUFFT_Z2Z)"))))
-//                    .bind("FFTTypeConstants"),
-//                this);
 }
 
 void FFTEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -4598,18 +4584,6 @@ void FFTEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
     return;
   }
-
-  //if (const DeclRefExpr *DE =
-  //        getNodeAsType<DeclRefExpr>(Result, "FFTTypeConstants")) {
-  //  auto *EC = cast<EnumConstantDecl>(DE->getDecl());
-  //  emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
-  //
-  //  auto Value = EC->getInitVal().getExtValue();
-  //  DpctGlobalInfo::getFFTTypeSet().insert(getFFTTypeFromValue(Value));
-  //  DpctGlobalInfo::getPrecAndDomPairSet().insert(
-  //      getPrecAndDomainStrFromValue(Value));
-  //  return;
-  //}
 }
 
 REGISTER_RULE(FFTEnumsRule)
@@ -15074,7 +15048,8 @@ void FFTFunctionCallRule::registerMatcher(MatchFinder &MF) {
                       "cufftMakePlanMany64", "cufftExecC2C", "cufftExecR2C",
                       "cufftExecC2R", "cufftExecZ2Z", "cufftExecZ2D",
                       "cufftExecD2Z", "cufftCreate", "cufftDestroy",
-                      "cufftSetStream", "cufftGetVersion", "cufftGetProperty");
+                      "cufftSetStream", "cufftGetVersion", "cufftGetProperty",
+                      "cufftXtMakePlanMany", "cufftXtExec");
   };
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
@@ -15256,148 +15231,21 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
-  } else if (FuncName == "cufftSetStream") {
-    ExprAnalysis EA(CE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-    return;
-    //const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
-    //if (!DD)
-    //  return;
-    //
-    //SourceLocation SL = SM.getExpansionLoc(DD->getBeginLoc());
-    //std::string HandleInfoKey =
-    //    DpctGlobalInfo::getLocInfo(SL).first + ":" +
-    //    std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
-    //
-    //std::string StreamStr = getDrefName(CE->getArg(1));
-    //
-    //if (IsAssigned) {
-    //  emplaceTransformation(new ReplaceStmt(CE, false, "0"));
-    //} else {
-    //  emplaceTransformation(new ReplaceStmt(CE, false, ""));
-    //}
-    //
-    //const CompoundStmt *CS =
-    //    findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(CE);
-    //if (!CS)
-    //  return;
-    //SourceLocation CompoundStmtBeginSL = SM.getExpansionLoc(CS->getBeginLoc());
-    //SourceLocation PlanHandleDeclBeginSL =
-    //    SM.getExpansionLoc(DD->getBeginLoc());
-    //SourceLocation SetStreamAPIBeginSL = SM.getExpansionLoc(CE->getBeginLoc());
-    //DpctGlobalInfo::getInstance().updateFFTSetStreamAPIInfoMap(
-    //    CompoundStmtBeginSL, PlanHandleDeclBeginSL, SetStreamAPIBeginSL,
-    //    StreamStr);
-    //return;
-  } else if (FuncName == "cufftCreate" || FuncName == "cufftDestroy") {
-    ExprAnalysis EA(CE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-    return;
-  } else if (FuncName == "cufftPlan1d" || FuncName == "cufftMakePlan1d" ||
+  } else if (FuncName == "cufftSetStream" ||
+             FuncName == "cufftCreate" || FuncName == "cufftDestroy" ||
+             FuncName == "cufftPlan1d" || FuncName == "cufftMakePlan1d" ||
              FuncName == "cufftPlan2d" || FuncName == "cufftMakePlan2d" ||
              FuncName == "cufftPlan3d" || FuncName == "cufftMakePlan3d" ||
              FuncName == "cufftPlanMany" || FuncName == "cufftMakePlanMany" ||
-             FuncName == "cufftMakePlanMany64") {
-    if (FuncName == "cufftPlan1d" || FuncName == "cufftMakePlan1d" ||
-        FuncName == "cufftPlan2d" || FuncName == "cufftMakePlan2d" ||
-        FuncName == "cufftPlan3d" || FuncName == "cufftMakePlan3d") {
-      ExprAnalysis EA(CE);
-      emplaceTransformation(EA.getReplacement());
-      EA.applyAllSubExprRepl();
-      return;
-    } else {
-      const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
-      if (!DD)
-        return;
-      SourceLocation SL = SM.getExpansionLoc(DD->getBeginLoc());
-      std::string HandleDeclFileAndOffset =
-          DpctGlobalInfo::getLocInfo(SL).first + ":" +
-          std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
-
-      FFTPlanAPIInfo FPAInfo;
-      FFCB.updateFFTPlanAPIInfo(FPAInfo, Flags);
-      FFCB.updateFFTHandleInfoFromPlan(HandleDeclFileAndOffset);
-      replacementLocation(Locations, Flags, FPAInfo.ReplaceOffset,
-                          FPAInfo.ReplaceLen, FPAInfo.InsertOffsets,
-                          FPAInfo.FilePath);
-      FPAInfo.HandleDeclFileAndOffset = HandleDeclFileAndOffset;
-      if (FuncNameRef.startswith("cufftMake")) {
-        FPAInfo.UnsupportedArg =
-            ExprAnalysis::ref(CE->getArg(CE->getNumArgs() - 1));
-      }
-
-      DpctGlobalInfo::getInstance().insertFFTPlanAPIInfo(
-          SM.getExpansionLoc(CE->getBeginLoc()), FPAInfo);
-      return;
-    }
-  } else if (FuncName == "cufftExecC2C" || FuncName == "cufftExecZ2Z" ||
+             FuncName == "cufftMakePlanMany64" || FuncName == "cufftXtMakePlanMany" ||
+             FuncName == "cufftExecC2C" || FuncName == "cufftExecZ2Z" ||
              FuncName == "cufftExecC2R" || FuncName == "cufftExecR2C" ||
-             FuncName == "cufftExecZ2D" || FuncName == "cufftExecD2Z") {
+             FuncName == "cufftExecZ2D" || FuncName == "cufftExecD2Z" ||
+             FuncName == "cufftXtExec") {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
-    //std::string FFTHandleInfoKey;
-    //int Index = -1;
-    //unsigned int CompoundStmtBeginOffset = 0;
-    //unsigned int PlanHandleDeclBeginOffset = 0;
-    //unsigned int ExecAPIBeginOffset = 0;
-    //
-    //const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
-    //if (!DD)
-    //  return;
-    //if (isPlaceholderIdxDuplicated(CE))
-    //  return;
-    //
-    //Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    //buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
-    //
-    //SourceLocation SL = SM.getExpansionLoc(DD->getBeginLoc());
-    //FFTHandleInfoKey = DpctGlobalInfo::getLocInfo(SL).first + ":" +
-    //                   std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
-    //
-    //FFCB.updateExecCallExpr(FFTHandleInfoKey);
-    //
-    //const CompoundStmt *CS =
-    //    findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(CE);
-    //if (CS) {
-    //  CompoundStmtBeginOffset =
-    //      DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(CS->getBeginLoc()))
-    //          .second;
-    //  PlanHandleDeclBeginOffset =
-    //      DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(DD->getBeginLoc()))
-    //          .second;
-    //  ExecAPIBeginOffset =
-    //      DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(CE->getBeginLoc()))
-    //          .second;
-    //}
-    //
-    //SourceLocation TypeBegin;
-    //int TypeLength = 0;
-    //if (FFCB.moveDeclOutOfBracesIfNeeds(Flags, TypeBegin, TypeLength)) {
-    //  emplaceTransformation(new ReplaceText(TypeBegin, TypeLength, ""));
-    //}
-    //
-    //FFTExecAPIInfo FEAInfo;
-    //FFCB.updateFFTExecAPIInfo(FEAInfo);
-    //FEAInfo.HandleDeclFileAndOffset = FFTHandleInfoKey;
-    //FEAInfo.QueueIndex = Index;
-    //FEAInfo.CompoundStmtBeginOffset = CompoundStmtBeginOffset;
-    //FEAInfo.PlanHandleDeclBeginOffset = PlanHandleDeclBeginOffset;
-    //FEAInfo.ExecAPIBeginOffset = ExecAPIBeginOffset;
-    //
-    //// If previous stat is setStream(plan, s), then using "s" as queue and
-    //// not emit warning.
-    //std::string DefiniteStream;
-    //if (isPreviousStmtRelatedSetStream(CE, Index, DefiniteStream)) {
-    //  FEAInfo.DefiniteStream = DefiniteStream;
-    //}
-    //
-    //DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(
-    //    SM.getExpansionLoc(CE->getBeginLoc()), FEAInfo);
-    //return;
   }
 }
 
