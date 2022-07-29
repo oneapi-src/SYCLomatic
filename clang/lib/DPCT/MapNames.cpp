@@ -327,8 +327,13 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
       {"cufftResult_t", std::make_shared<TypeNameRule>("int")},
       {"cufftResult", std::make_shared<TypeNameRule>("int")},
-      {"cufftType_t", std::make_shared<TypeNameRule>("int")},
-      {"cufftType", std::make_shared<TypeNameRule>("int")},
+      {"cufftType_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "fft::fft_type")},
+      {"cufftType",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "fft::fft_type")},
+      {"cufftHandle",
+       std::make_shared<TypeNameRule>("std::shared_ptr<" + getDpctNamespace() +
+                                      "fft::fft_solver>")},
       {"CUdevice", std::make_shared<TypeNameRule>("int")},
       {"CUarray_st",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_matrix",
@@ -796,6 +801,24 @@ void MapNames::setExplicitNamespaceMap() {
                                       "library_data_t::real_int32")},
       {"cuda::thread_scope_system",
        std::make_shared<EnumNameRule>(getClNamespace() + "memory_scope::system")},
+      {"CUFFT_R2C",
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "fft::fft_type::real_float_to_complex_float")},
+      {"CUFFT_C2R",
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "fft::fft_type::complex_float_to_real_float")},
+      {"CUFFT_D2Z", std::make_shared<EnumNameRule>(
+                        getDpctNamespace() +
+                        "fft::fft_type::real_double_to_complex_double")},
+      {"CUFFT_Z2D", std::make_shared<EnumNameRule>(
+                        getDpctNamespace() +
+                        "fft::fft_type::complex_double_to_real_double")},
+      {"CUFFT_C2C", std::make_shared<EnumNameRule>(
+                        getDpctNamespace() +
+                        "fft::fft_type::complex_float_to_complex_float")},
+      {"CUFFT_Z2Z", std::make_shared<EnumNameRule>(
+                        getDpctNamespace() +
+                        "fft::fft_type::complex_double_to_complex_double")},
       // ...
   };
 

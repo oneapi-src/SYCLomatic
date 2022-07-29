@@ -538,8 +538,9 @@ public:
       return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
                           "<oneapi/mkl.hpp>");
     case HT_MKL_FFT:
-      return insertHeader(HeaderType::HT_MKL_FFT, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>");
+      return insertHeader(
+          HeaderType::HT_MKL_FFT, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          "<" + getCustomMainHelperFileName() + "/fft_utils.hpp>");
     case HT_Numeric:
       return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
                           "<numeric>");
