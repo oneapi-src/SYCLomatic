@@ -42,6 +42,22 @@ ASSIGNABLE_FACTORY(
     ASSIGN_FACTORY_ENTRY("cufftMakePlan3d", ARG(0),
                        CALL("std::make_shared<" + MapNames::getDpctNamespace() + "fft::fft_solver>",
                             ARG(1), ARG(2), ARG(3), ARG(4))))
+ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY("cufftPlanMany", DEREF(0),
+                       CALL("std::make_shared<" + MapNames::getDpctNamespace() + "fft::fft_solver>",
+                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10))))
+ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY("cufftMakePlanMany", ARG(0),
+                       CALL("std::make_shared<" + MapNames::getDpctNamespace() + "fft::fft_solver>",
+                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10))))
+ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY("cufftMakePlanMany64", ARG(0),
+                       CALL("std::make_shared<" + MapNames::getDpctNamespace() + "fft::fft_solver>",
+                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10))))
+ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY("cufftXtMakePlanMany", ARG(0),
+                       CALL("std::make_shared<" + MapNames::getDpctNamespace() + "fft::fft_solver>",
+                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10), ARG(11))))
 
 REMOVE_API_FACTORY_ENTRY("cufftCreate")
 REMOVE_API_FACTORY_ENTRY("cufftDestroy")

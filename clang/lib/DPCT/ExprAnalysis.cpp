@@ -483,7 +483,7 @@ void ExprAnalysis::analyzeExpr(const IntegerLiteral *IL) {
   auto DefinitionRange = getDefinitionRange(IL->getBeginLoc(), IL->getEndLoc());
   auto TokBeginLoc = DefinitionRange.getBegin();
   auto TokenLength = Lexer::MeasureTokenLength(
-      TokBeginLoc, DpctGlobalInfo::getSourceManager(), Context.getLangOpts());
+      TokBeginLoc, SM, Context.getLangOpts());
   std::string TokStr(SM.getCharacterData(TokBeginLoc), TokenLength);
 
   // TODO: cannot handle case like:
@@ -493,11 +493,12 @@ void ExprAnalysis::analyzeExpr(const IntegerLiteral *IL) {
   //   MACRO;
   // }
   const Expr *ParentExpr = DpctGlobalInfo::findParent<Expr>(IL);
-  if ((IL->getValue() == 1) && (TokStr == "CUFFT_FORWARD") && ParentExpr) {
+  bool IsInCudaPath = DpctGlobalInfo::isInCudaPath(
+      DpctGlobalInfo::getLocInfo(SM.getSpellingLoc(IL->getBeginLoc())).first);
+  if (TokStr == "CUFFT_FORWARD" && ParentExpr && IsInCudaPath) {
     addReplacement(DefinitionRange, ParentExpr,
                    MapNames::getDpctNamespace() + "fft::fft_dir::forward");
-  } else if ((IL->getValue() == -1) && (TokStr == "CUFFT_INVERSE") &&
-             ParentExpr) {
+  } else if ((TokStr == "CUFFT_INVERSE") && ParentExpr && IsInCudaPath) {
     addReplacement(DefinitionRange, ParentExpr,
                    MapNames::getDpctNamespace() + "fft::fft_dir::backward");
   }
