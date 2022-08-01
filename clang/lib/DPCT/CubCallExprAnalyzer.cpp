@@ -189,7 +189,8 @@ static TextModification *replaceText(clang::SourceLocation Begin,
   return nullptr;
 }
 
-/// Remove cub device level api temp_storage/temp_storage_size variable declaration
+/// Remove cub device level api temp_storage/temp_storage_size variable
+/// declaration
 void removeVarDecl(const clang::VarDecl *VD) {
   static std::unordered_map<std::string, std::vector<bool>> DeclStmtBitMap;
   if (!VD)
@@ -218,8 +219,7 @@ void removeVarDecl(const clang::VarDecl *VD) {
     }
     auto NameLength = VD->getNameAsString().length();
     const auto *DeclBegPtr = SM.getCharacterData(VD->getBeginLoc());
-    for (const auto *Iter = Decls.begin(); Iter != Decls.end();
-         Iter++) {
+    for (const auto *Iter = Decls.begin(); Iter != Decls.end(); Iter++) {
       if (auto *SubDecl = llvm::dyn_cast<clang::VarDecl>(*Iter)) {
         if (SubDecl == VD) {
           int InitLength = 0;
@@ -318,14 +318,15 @@ TempVarAnalysis(const clang::DeclRefExpr *DRE, bool &IsSafeToRemove,
     if (const auto *FuncDecl = CE->getDirectCallee()) {
       llvm::StringRef FuncName = FuncDecl->getName();
       if (FuncName == "Reduce" || FuncName == "Min" || FuncName == "Max" ||
-          FuncName == "Sum" || FuncName == "ExclusiveSum" || FuncName == "InclusiveSum") {
+          FuncName == "Sum" || FuncName == "ExclusiveSum" ||
+          FuncName == "InclusiveSum" || FuncName == "Flagged") {
         const clang::DeclContext *FuncDeclContext = FuncDecl->getDeclContext();
         if (const auto *CXXRD =
                 llvm::dyn_cast<clang::CXXRecordDecl>(FuncDeclContext)) {
           llvm::StringRef CXXRDName = CXXRD->getName();
           if (CXXRDName == "DeviceSegmentedReduce" ||
-              CXXRDName == "DeviceReduce" || 
-              CXXRDName == "DeviceScan") {
+              CXXRDName == "DeviceReduce" || CXXRDName == "DeviceScan" ||
+              CXXRDName == "DeviceSelect") {
             return;
           }
         }
@@ -364,11 +365,11 @@ void CubRedundantTempStorageAnalyzer::removeRedundantTempVar(
         TempVarAnalysis(Element, IsSafeToRemoveTempStorage,
                         TempStorageRelatedMalloc);
       }
-      if(!IsSafeToRemoveTempStorage)
+      if (!IsSafeToRemoveTempStorage)
         return;
       removeVarDecl(VD);
       for (auto Itr = TempStorageRelatedMalloc.begin();
-            Itr != TempStorageRelatedMalloc.end();) {
+           Itr != TempStorageRelatedMalloc.end();) {
         bool IsUsed = false;
         if (!isExprUsed(*Itr, IsUsed)) {
           Itr = TempStorageRelatedMalloc.erase(Itr);

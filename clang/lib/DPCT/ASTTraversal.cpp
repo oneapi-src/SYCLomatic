@@ -2230,8 +2230,8 @@ void ThrustFunctionRule::thrustFuncMigration(
     if (ULExpr) {
       auto BeginLoc = ULExpr->getBeginLoc();
       auto EndLoc = ULExpr->hasExplicitTemplateArgs()
-                   ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
-                   : ULExpr->getEndLoc();
+                        ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                        : ULExpr->getEndLoc();
       emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(NewName)));
     } else {
       emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
@@ -2309,8 +2309,8 @@ void ThrustFunctionRule::thrustFuncMigration(
       if (PolicyProcessed) {
         auto BeginLoc = ULExpr->getBeginLoc();
         auto EndLoc = ULExpr->hasExplicitTemplateArgs()
-                     ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
-                     : ULExpr->getEndLoc();
+                          ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                          : ULExpr->getEndLoc();
         emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(NewName)));
         return;
       } else if (hasExecutionPolicy) {
@@ -2344,8 +2344,8 @@ void ThrustFunctionRule::thrustFuncMigration(
   if (ULExpr) {
     auto BeginLoc = ULExpr->getBeginLoc();
     auto EndLoc = ULExpr->hasExplicitTemplateArgs()
-                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
-                 : ULExpr->getEndLoc();
+                      ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                      : ULExpr->getEndLoc();
     emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(NewName)));
   } else {
     emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
@@ -2495,22 +2495,22 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
       typeLoc(
           loc(qualType(hasDeclaration(namedDecl(
               hasAnyName(
-                  "cudaError", "curandStatus", "cublasStatus", "CUstream",
-                  "CUstream_st", "thrust::complex", "thrust::device_vector",
-                  "thrust::device_ptr", "thrust::host_vector", "cublasHandle_t",
-                  "CUevent_st", "__half", "half", "__half2", "half2",
-                  "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",
-                  "cudaPitchedPtr", "thrust::counting_iterator",
-                  "thrust::transform_iterator", "thrust::permutation_iterator",
-                  "thrust::iterator_difference", "cusolverDnHandle_t",
-                  "thrust::device_malloc_allocator", "thrust::divides",
-                  "thrust::tuple", "thrust::maximum", "thrust::multiplies",
-                  "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
-                  "CUdevice", "cudaEvent_t", "cublasStatus_t", "cuComplex",
-                  "cuFloatComplex", "cuDoubleComplex", "CUevent",
-                  "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
-                  "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
-                  "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
+              "cudaError", "curandStatus", "cublasStatus", "CUstream",
+              "CUstream_st", "thrust::complex", "thrust::device_vector",
+              "thrust::device_ptr", "thrust::host_vector", "cublasHandle_t",
+              "CUevent_st", "__half", "half", "__half2", "half2",
+              "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",
+              "cudaPitchedPtr", "thrust::counting_iterator",
+              "thrust::transform_iterator", "thrust::permutation_iterator",
+              "thrust::iterator_difference", "cusolverDnHandle_t",
+              "thrust::device_malloc_allocator", "thrust::divides",
+              "thrust::tuple", "thrust::maximum", "thrust::multiplies",
+              "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
+              "CUdevice", "cudaEvent_t", "cublasStatus_t", "cuComplex",
+              "cuFloatComplex", "cuDoubleComplex", "CUevent",
+              "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
+              "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
+              "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
                   "cusparseStatus_t", "cusparseDiagType_t",
                   "cusparseFillMode_t", "cusparseIndexBase_t",
                   "cusparseMatrixType_t", "cusparseOperation_t",
@@ -2519,7 +2519,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t",
                   "cudaDataType", "cublasDataType_t", "curandState_t",
                   "curandState", "curandStateXORWOW_t", "curandStateXORWOW",
-                  "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
+              "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
                   "curandStateMRG32k3a_t", "curandStateMRG32k3a",
                   "thrust::minus", "thrust::negate", "thrust::logical_or",
                   "thrust::identity", "thrust::equal_to", "thrust::less",
@@ -4376,7 +4376,7 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   } else if(EnumName == "CUDNN_DATA_DOUBLE") {
     report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-               "data type double");
+           "data type double");
     return;
   } else if (auto ET = dyn_cast<EnumType>(E->getType())) {
     if (auto ETD = ET->getDecl()) {
@@ -8352,7 +8352,7 @@ void EventAPICallRule::registerMatcher(MatchFinder &MF) {
     return hasAnyName(
         "cudaEventCreate", "cudaEventCreateWithFlags", "cudaEventDestroy",
         "cudaEventRecord", "cudaEventElapsedTime", "cudaEventSynchronize",
-        "cudaEventQuery", "cuEventCreate", "cuEventRecord",
+                      "cudaEventQuery", "cuEventCreate", "cuEventRecord",
         "cuEventSynchronize", "cuEventQuery", "cuEventElapsedTime",
         "cuEventDestroy_v2");
   };
@@ -9555,7 +9555,7 @@ REGISTER_RULE(EventAPICallRule)
 void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
   auto streamFunctionName = [&]() {
     return hasAnyName("cudaStreamCreate", "cudaStreamCreateWithFlags",
-                      "cudaStreamCreateWithPriority", "cudaStreamDestroy",
+        "cudaStreamCreateWithPriority", "cudaStreamDestroy",
                       "cudaStreamSynchronize", "cudaStreamGetPriority",
                       "cudaStreamGetFlags", "cudaDeviceGetStreamPriorityRange",
                       "cudaStreamAttachMemAsync", "cudaStreamBeginCapture",
@@ -9564,7 +9564,7 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
                       "cudaStreamAddCallback", "cuStreamCreate",
                       "cuStreamSynchronize", "cuStreamWaitEvent",
                       "cuStreamDestroy_v2", "cuStreamAttachMemAsync",
-                      "cuStreamAddCallback");
+        "cuStreamAddCallback");
   };
 
   MF.addMatcher(
@@ -11332,8 +11332,8 @@ void MemoryMigrationRule::memcpyMigration(
   if (ULExpr) {
     auto BeginLoc = ULExpr->getBeginLoc();
     auto EndLoc = ULExpr->hasExplicitTemplateArgs()
-                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
-                 : ULExpr->getEndLoc();
+                      ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                      : ULExpr->getEndLoc();
     emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(ReplaceStr)));
   } else {
     emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
@@ -11418,8 +11418,8 @@ void MemoryMigrationRule::arrayMigration(
   if (ULExpr) {
     auto BeginLoc = ULExpr->getBeginLoc();
     auto EndLoc = ULExpr->hasExplicitTemplateArgs()
-                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
-                 : ULExpr->getEndLoc();
+                      ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                      : ULExpr->getEndLoc();
     emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(ReplaceStr)));
   } else {
     emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
@@ -11507,8 +11507,8 @@ void MemoryMigrationRule::memcpySymbolMigration(
   if (ULExpr) {
     auto BeginLoc = ULExpr->getBeginLoc();
     auto EndLoc = ULExpr->hasExplicitTemplateArgs()
-                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
-                 : ULExpr->getEndLoc();
+                      ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                      : ULExpr->getEndLoc();
     emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(ReplaceStr)));
   } else {
     emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
@@ -12776,11 +12776,11 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
-   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "math");
-   if (!CE)
-     CE = getNodeAsType<CallExpr>(Result, "unresolved");
-   if (!CE)
-     return;
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "math");
+  if (!CE)
+    CE = getNodeAsType<CallExpr>(Result, "unresolved");
+  if (!CE)
+    return;
 
   ExprAnalysis EA(CE);
   EA.applyAllSubExprRepl();
@@ -15932,14 +15932,16 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(hasAnyName(
                                    "ShuffleIndex", "ThreadLoad", "ThreadStore",
-                                   "Sum", "Min", "Max", "Reduce", "ExclusiveSum", "InclusiveSum"))),
+                                   "Sum", "Min", "Max", "Reduce",
+                                   "ExclusiveSum", "InclusiveSum", "Flagged"))),
                                parentStmt()))
                     .bind("FuncCall"),
                 this);
 
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(
-                                   hasAnyName("Sum", "Min", "Max", "Reduce",
-                                              "ThreadLoad", "ShuffleIndex", "ExclusiveSum", "InclusiveSum"))),
+  MF.addMatcher(callExpr(allOf(callee(functionDecl(hasAnyName(
+                                   "Sum", "Min", "Max", "Reduce", "ThreadLoad",
+                                   "ShuffleIndex", "ExclusiveSum",
+                                   "InclusiveSum", "Flagged"))),
                                unless(parentStmt())))
                     .bind("FuncCallUsed"),
                 this);
@@ -16283,25 +16285,28 @@ void CubRule::processCubFuncCall(const CallExpr *CE, bool FuncCallUsed) {
   const auto *DC = CE->getDirectCallee();
   if (!DC)
     return;
-  
+
   const DeclContext *MaybeFirstNS = DC->getDeclContext();
   llvm::StringRef FuncName = DC->getName();
   std::string FullFuncName = DC->getNameAsString();
 
-  // Check if there have a CXX Record Name between the 'cub' namespace and the function name.
-  // Such as Namespace::Object.Function() or Namespace::Object::Function()
+  // Check if there have a CXX Record Name between the 'cub' namespace and the
+  // function name. Such as Namespace::Object.Function() or
+  // Namespace::Object::Function()
   if (const auto *CXXRD = dyn_cast<CXXRecordDecl>(MaybeFirstNS)) {
     llvm::StringRef CXXRDName = CXXRD->getName();
-    if (CXXRDName != "DeviceSegmentedReduce" && CXXRDName != "DeviceReduce" && CXXRDName != "DeviceScan")
+    if (CXXRDName != "DeviceSegmentedReduce" && CXXRDName != "DeviceReduce" &&
+        CXXRDName != "DeviceScan" && CXXRDName != "DeviceSelect")
       return;
-    FullFuncName = llvm::Twine(CXXRD->getName()).concat("::").concat(FullFuncName).str();
+    FullFuncName =
+        llvm::Twine(CXXRD->getName()).concat("::").concat(FullFuncName).str();
     MaybeFirstNS = CXXRD->getDeclContext();
   }
 
   const auto *ND = dyn_cast<NamespaceDecl>(MaybeFirstNS);
 
   // The top level namespace must be 'cub'
-  if (!ND || ND->getName() != "cub") 
+  if (!ND || ND->getName() != "cub")
     return;
 
   FullFuncName = llvm::Twine("cub::").concat(FullFuncName).str();
@@ -16309,7 +16314,7 @@ void CubRule::processCubFuncCall(const CallExpr *CE, bool FuncCallUsed) {
   // Check if the RewriteMap has initialized
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
-  
+
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(FullFuncName);
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     ExprAnalysis EA;
@@ -16319,13 +16324,13 @@ void CubRule::processCubFuncCall(const CallExpr *CE, bool FuncCallUsed) {
     // CubRedundantTempStorageAnalyzer::removeRedundantTempVar(CE);
     return;
   }
-  
+
   if (FuncName == "ShuffleIndex") {
     processWarpLevelFuncCall(CE, FuncCallUsed);
   } else if (FuncName == "ThreadLoad" || FuncName == "ThreadStore") {
     processThreadLevelFuncCall(CE, FuncCallUsed);
   } else if (FuncName == "Reduce" || FuncName == "Min" || FuncName == "Max" ||
-              FuncName == "Sum") {
+             FuncName == "Sum") {
     processDeviceLevelFuncCall(CE, FuncCallUsed);
   }
 }
@@ -16857,8 +16862,8 @@ void TemplateSpecializationTypeLocRule::registerMatcher(
 
   MF.addMatcher(typeLoc(
                     loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
-                    .bind("loc"),
-                this);
+          .bind("loc"),
+      this);
 }
 
 void TemplateSpecializationTypeLocRule::runRule(
