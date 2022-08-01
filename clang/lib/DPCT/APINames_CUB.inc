@@ -128,7 +128,7 @@ ENTRY_MEMBER_FUNCTION(cub::DeviceRunLengthEncode, Encode, Encode, false, NO_FLAG
 ENTRY_MEMBER_FUNCTION(cub::DeviceRunLengthEncode, NonTrivialRuns, NonTrivialRuns, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceScan, ExclusiveSum, ExclusiveSum, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cub::DeviceScan, ExclusiveScan, ExclusiveScan, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::DeviceScan, InclusiveSum, InclusiveSum, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::DeviceScan, InclusiveSum, InclusiveSum, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cub::DeviceScan, InclusiveScan, InclusiveScan, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSelect, Flagged, Flagged, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSelect, If, If, false, NO_FLAG, P4, "Comment")

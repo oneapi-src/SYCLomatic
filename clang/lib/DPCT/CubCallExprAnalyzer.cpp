@@ -353,8 +353,8 @@ void CubRedundantTempStorageAnalyzer::removeRedundantTempVar(
   bool IsSafeToRemoveTempStorage = true;
   bool IsSafeToRemoveTempStorageSize = true;
 
-  if (const auto *DRE = dyn_cast<DeclRefExpr>(TempStorage)) {
-    if (const auto *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+  if (const auto *DRE = llvm::dyn_cast<DeclRefExpr>(TempStorage)) {
+    if (const auto *VD = llvm::dyn_cast<VarDecl>(DRE->getDecl())) {
       findAllVarRef(DRE, TempStorageMatchResult);
       for (auto &Element : TempStorageMatchResult) {
         if (Element == DRE)
@@ -391,8 +391,8 @@ void CubRedundantTempStorageAnalyzer::removeRedundantTempVar(
     }
   }
 
-  if (const auto *DRE = dyn_cast<DeclRefExpr>(TempStorageSize)) {
-    if (const auto *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+  if (const auto *DRE = llvm::dyn_cast<DeclRefExpr>(TempStorageSize)) {
+    if (const auto *VD = llvm::dyn_cast<VarDecl>(DRE->getDecl())) {
       findAllVarRef(DRE, TempStorageSizeMatchResult);
       for (auto &Element : TempStorageSizeMatchResult) {
         if (Element == DRE) {
