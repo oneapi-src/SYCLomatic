@@ -104,16 +104,16 @@ void ShowStatus(int Status, std::string Message) {
   case MigrationErrorNoFileTypeAvail:
     StatusString = "Error: File Type not available for input file";
     break;
-  case MigrationErrorInRootContainCTTool:
+  case MigrationErrorInputDirContainCTTool:
     StatusString =
         "Error: Input folder is the parent of, or the same folder as, the "
         "installation directory of the dpct";
     break;
   case MigrationErrorRunFromSDKFolder:
-    StatusString = "Error: Input folder specified by --in-root option is "
-                   "in the CUDA_PATH folder";
+    StatusString = "Error: Input folder specified by --in-root or "
+                   "--analysis-scope-path option is in the CUDA_PATH folder";
     break;
-  case MigrationErrorInRootContainSDKFolder:
+  case MigrationErrorInputDirContainSDKFolder:
     StatusString = "Error: Input folder is the parent of, or the same folder "
                    "as, the CUDA_PATH folder";
     break;

@@ -748,13 +748,13 @@ void ValidateInputDirectory(clang::tooling::RefactoringTool &Tool,
   }
 
   if (isChildOrSamePath(InRoot, CudaPath)) {
-    ShowStatus(MigrationErrorInRootContainSDKFolder);
-    dpctExit(MigrationErrorInRootContainSDKFolder);
+    ShowStatus(MigrationErrorInputDirContainSDKFolder);
+    dpctExit(MigrationErrorInputDirContainSDKFolder);
   }
 
   if (isChildOrSamePath(InRoot, DpctInstallPath)) {
-    ShowStatus(MigrationErrorInRootContainCTTool);
-    dpctExit(MigrationErrorInRootContainCTTool);
+    ShowStatus(MigrationErrorInputDirContainCTTool);
+    dpctExit(MigrationErrorInputDirContainCTTool);
   }
 }
 
@@ -1224,14 +1224,13 @@ int runDPCT(int argc, const char **argv) {
     // /p AnalysisScope defaults to the value of /p InRoot
     AnalysisScope.setValue(InRoot.getValue(), true);
   } else {
-    bool validAnalysisScope =
-        makeCanonical(AnalysisScope) &&
-        isChildOrSamePath(AnalysisScope, InRoot);
-    // /p AnalysisScope must be the same as or parent of /p InRoot
-    if (!validAnalysisScope) {
+    // /p InRoot must be the same as or child of /p AnalysisScope
+    if (!makeCanonical(AnalysisScope) ||
+        !isChildOrSamePath(AnalysisScope, InRoot)) {
       ShowStatus(MigrationErrorInvalidAnalysisScope);
       dpctExit(MigrationErrorInvalidAnalysisScope);
     }
+    ValidateInputDirectory(Tool, AnalysisScope);
   }
 
   validateCustomHelperFileNameArg(UseCustomHelperFileLevel,

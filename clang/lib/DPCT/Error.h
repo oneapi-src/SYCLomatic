@@ -19,7 +19,7 @@ enum ProcessStatus {
   MigrationError = -1,
   MigrationSaveOutFail = -2, /*eg. have no write permission*/
   MigrationErrorRunFromSDKFolder = -3,
-  MigrationErrorInRootContainCTTool = -4,
+  MigrationErrorInputDirContainCTTool = -4,
   MigrationErrorInvalidCudaIncludePath = -5,
   MigrationErrorInvalidInRootOrOutRoot = -6,
   MigrationErrorInvalidInRootPath = -7,
@@ -40,7 +40,7 @@ enum ProcessStatus {
   MigrationErrorSpecialCharacter = -23,
   MigrationErrorPrefixTooLong = -25,
   MigrationErrorNoFileTypeAvail = -27,
-  MigrationErrorInRootContainSDKFolder = -28,
+  MigrationErrorInputDirContainSDKFolder = -28,
   MigrationErrorCannotAccessDirInDatabase = -29,
   MigrationErrorInconsistentFileInDatabase = -30,
   MigrationErrorCudaVersionUnsupported = -31,
