@@ -325,8 +325,10 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     ReplMap.insert(std::make_pair(Repl->getOffset(), Repl));
     // If Repl is insert replacement, check whether it is alive or dead.
   } else if (checkLiveness(Repl)) {
-    if (Repl->IsSYCLHeaderNeeded())
-      FileInfo->insertHeader(HT_SYCL);
+    if (Repl->getReplacementText().find("#include") == std::string::npos) {
+      if (Repl->IsSYCLHeaderNeeded())
+        FileInfo->insertHeader(HT_SYCL);
+    }
     markAsAlive(Repl);
   } else {
     markAsDead(Repl);
