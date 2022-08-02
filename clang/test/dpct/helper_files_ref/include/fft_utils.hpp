@@ -11,6 +11,7 @@
 
 #include <CL/sycl.hpp>
 #include <oneapi/mkl.hpp>
+#include "memory.hpp"
 #include "lib_common_utils.hpp"
 
 namespace dpct {
@@ -169,17 +170,36 @@ private:
     }
     plan.commit(*_q);
     if (_is_inplace) {
+#ifdef DPCT_USM_LEVEL_NONE
+      auto input_buffer = dpct::get_buffer<T>(input);
+      if (_direction == fft_dir::forward) {
+        oneapi::mkl::dft::compute_forward(plan, input_buffer);
+      } else {
+        oneapi::mkl::dft::compute_backward(plan, input_buffer);
+      }
+#else
       if (_direction == fft_dir::forward) {
         oneapi::mkl::dft::compute_forward(plan, input);
       } else {
         oneapi::mkl::dft::compute_backward(plan, input);
       }
+#endif
     } else {
+#ifdef DPCT_USM_LEVEL_NONE
+      auto input_buffer = dpct::get_buffer<T>(input);
+      auto output_buffer = dpct::get_buffer<T>(output);
+      if (_direction == fft_dir::forward) {
+        oneapi::mkl::dft::compute_forward(plan, input_buffer, output_buffer);
+      } else {
+        oneapi::mkl::dft::compute_backward(plan, input_buffer, output_buffer);
+      }
+#else
       if (_direction == fft_dir::forward) {
         oneapi::mkl::dft::compute_forward(plan, input, output);
       } else {
         oneapi::mkl::dft::compute_backward(plan, input, output);
       }
+#endif
     }
   }
 
@@ -286,17 +306,36 @@ private:
     }
     plan.commit(*_q);
     if (_is_inplace) {
+#ifdef DPCT_USM_LEVEL_NONE
+      auto input_buffer = dpct::get_buffer<T>(input);
+      if (_direction == fft_dir::forward) {
+        oneapi::mkl::dft::compute_forward(plan, input_buffer);
+      } else {
+        oneapi::mkl::dft::compute_backward(plan, input_buffer);
+      }
+#else
       if (_direction == fft_dir::forward) {
         oneapi::mkl::dft::compute_forward(plan, input);
       } else {
         oneapi::mkl::dft::compute_backward(plan, input);
       }
+#endif
     } else {
+#ifdef DPCT_USM_LEVEL_NONE
+      auto input_buffer = dpct::get_buffer<T>(input);
+      auto output_buffer = dpct::get_buffer<T>(output);
+      if (_direction == fft_dir::forward) {
+        oneapi::mkl::dft::compute_forward(plan, input_buffer, output_buffer);
+      } else {
+        oneapi::mkl::dft::compute_backward(plan, input_buffer, output_buffer);
+      }
+#else
       if (_direction == fft_dir::forward) {
         oneapi::mkl::dft::compute_forward(plan, input, output);
       } else {
         oneapi::mkl::dft::compute_backward(plan, input, output);
       }
+#endif
     }
   }
 
