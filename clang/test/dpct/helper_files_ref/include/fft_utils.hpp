@@ -130,8 +130,8 @@ private:
       plan.set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,
                      output_stride);
     } else if (_rank == 2) {
-      std::int64_t input_stride[3] = {0, _inembed[2] * _istride, _istride};
-      std::int64_t output_stride[3] = {0, _onembed[2] * _ostride, _ostride};
+      std::int64_t input_stride[3] = {0, _inembed[1] * _istride, _istride};
+      std::int64_t output_stride[3] = {0, _onembed[1] * _ostride, _ostride};
       plan.set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,
                      input_stride);
       plan.set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,
