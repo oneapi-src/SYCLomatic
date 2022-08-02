@@ -1052,10 +1052,10 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   } else {
     Printer << ExecutionConfig.Stream;
   }
-  if (isDefaultStream())
-    Printer << ".";
-  else
+  if (isQueuePtr())
     Printer << "->";
+  else
+    Printer << ".";
   if (SubmitStmtsList.empty()) {
     printParallelFor(Printer, false);
   } else {
@@ -1280,7 +1280,8 @@ KernelCallExpr::buildForWrapper(std::string FilePath, const FunctionDecl *FD,
   Kernel->ExecutionConfig.Config[2] = "localMemSize";
   Kernel->ExecutionConfig.Config[3] = "queue";
   Kernel->ExecutionConfig.Config[4] = "nr";
-  Kernel->ExecutionConfig.IsDefaultStream = true;
+  Kernel->ExecutionConfig.IsDefaultStream = false;
+  Kernel->ExecutionConfig.IsQueuePtr = false;
   Kernel->NeedBraces = false;
   Kernel->getFuncInfo()->getVarMap().Dim = 3;
   for (auto &Parm : FD->parameters()) {

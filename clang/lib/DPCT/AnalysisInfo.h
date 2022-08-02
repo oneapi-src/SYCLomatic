@@ -4282,6 +4282,11 @@ private:
            ExecutionConfig.IsDefaultStream;
   }
 
+  bool isQueuePtr() {
+    return !StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ") &&
+           ExecutionConfig.IsQueuePtr;
+  }
+
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
   void setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall);
   void setNeedAddLambda(const CUDAKernelCallExpr *KernelCall);
@@ -4373,6 +4378,7 @@ private:
     std::string &NdRange = Config[4];
     std::string &SubGroupSize = Config[5];
     bool IsDefaultStream = false;
+    bool IsQueuePtr = true;
   } ExecutionConfig;
 
   std::vector<ArgInfo> ArgsInfo;
