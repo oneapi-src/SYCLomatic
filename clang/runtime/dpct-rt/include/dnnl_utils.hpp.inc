@@ -1951,11 +1951,11 @@ sycl::event engine_ext::batch_normalization_backward(
     std::vector<int64_t> help_dims_0 =
         compress_spatial_dimensions_to_channel(help_src_desc);
     std::vector<int64_t> help_dims_1 =
-        compress_spatial_dimensions_to_channel(help_scale_bias_mean_var_desc);
+        compress_spatial_dimensions_to_channel(help_diff_scale_bias_desc);
     help_src_desc = help_src_desc.reshape(help_dims_0);
     help_diff_src_desc = help_diff_src_desc.reshape(help_dims_0);
     help_diff_dst_desc = help_diff_dst_desc.reshape(help_dims_0);
-    help_scale_bias_desc = help_scale_bias_desc.reshape(help_dims_1);
+    help_diff_scale_bias_desc = help_diff_scale_bias_desc.reshape(help_dims_1);
   }
   auto forward_primitive =
       create_forward_primitive<::dnnl::batch_normalization_forward>(
@@ -2042,7 +2042,7 @@ sycl::event engine_ext::batch_normalization_forward_training_ex(
        {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, bias)}},
       {DNNL_ARG_MEAN,
        {::dnnl::memory(help_scale_bias_mean_var_desc, _eng,
-                       svaed_mean)}},
+                       saved_mean)}},
       {DNNL_ARG_VARIANCE,
        {::dnnl::memory(help_scale_bias_mean_var_desc, _eng,
                        saved_var)}}};
@@ -2106,17 +2106,17 @@ sycl::event engine_ext::batch_normalization_backward_ex(
     std::vector<int64_t> help_dims_0 =
         compress_spatial_dimensions_to_channel(help_src_desc);
     std::vector<int64_t> help_dims_1 =
-        compress_spatial_dimensions_to_channel(help_scale_bias_mean_var_desc);
+        compress_spatial_dimensions_to_channel(help_diff_scale_bias_desc);
     help_src_desc = help_src_desc.reshape(help_dims_0);
     help_dst_desc = help_dst_desc.reshape(help_dims_0);
     help_diff_addition_desc = help_diff_addition_desc.reshape(help_dims_0);
     help_diff_src_desc = help_diff_src_desc.reshape(help_dims_0);
     help_diff_dst_desc = help_diff_dst_desc.reshape(help_dims_0);
-    help_scale_bias_desc = help_scale_bias_desc.reshape(help_dims_1);
+    help_diff_scale_bias_desc = help_diff_scale_bias_desc.reshape(help_dims_1);
   }
 
   activation_backward(adesc, alpha_data, help_dst_desc, dst, help_diff_dst_desc,
-                      diff_dst, help_src_desc, reserve_space,
+                      diff_dst, help_src_desc, reserve_space, beta_data,
                       help_diff_addition_desc, diff_addition);
 
   auto forward_primitive =
