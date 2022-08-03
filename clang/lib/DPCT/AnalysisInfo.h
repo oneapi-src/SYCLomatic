@@ -4283,8 +4283,7 @@ private:
   }
 
   bool isQueuePtr() {
-    return !StringRef(ExecutionConfig.Stream).startswith("{{NEEDREPLACEQ") &&
-           ExecutionConfig.IsQueuePtr;
+    return ExecutionConfig.IsQueuePtr;
   }
 
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);

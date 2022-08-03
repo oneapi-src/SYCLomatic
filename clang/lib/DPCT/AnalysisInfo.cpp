@@ -715,6 +715,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
   if (ExecutionConfig.Stream == "0") {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     ExecutionConfig.Stream = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+    ExecutionConfig.IsQueuePtr = false;
     buildTempVariableMap(Index, *ConfigArgs.begin(),
                          HelperFuncType::HFT_DefaultQueue);
   } else if (NeedTypeCast) {
