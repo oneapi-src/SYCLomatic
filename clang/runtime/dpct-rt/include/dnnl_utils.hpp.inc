@@ -401,6 +401,8 @@ public:
 // DPCT_CODE
 class reduction_desc {
   ::dnnl::algorithm _alg;
+
+public:
   void set(::dnnl::algorithm alg) { _alg = alg; }
   void get(::dnnl::algorithm *alg) { *alg = _alg; }
   ::dnnl::algorithm get_algorithm() { return _alg; }
@@ -425,6 +427,8 @@ enum class batch_normalization_ops { none, activation, add_activation };
 class binary_desc {
   ::dnnl::algorithm _alg;
   dpct::library_data_t _dt;
+
+public:
   void set(::dnnl::algorithm alg, dpct::library_data_t dt) {
     _alg = alg;
     _dt = dt;
@@ -996,7 +1000,7 @@ public:
       convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
       const memory_desc_ext &weight_desc, void *weight,
       const memory_desc_ext &diff_dst_decs, void *diff_dst, float beta,
-      const memory_desc_ext &diff_src_desc, void *diff_dst);
+      const memory_desc_ext &diff_src_desc, void *diff_src);
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|convolution_backward_weight_decl|dpct::dnnl
@@ -1231,7 +1235,7 @@ sycl::event engine_ext::execute_primitive(
     void *mem = std::get<4>(extra_arg);
     if (beta != 0.f) {
       auto cache = allocate(desc);
-      caches_map.emplace({mem, cache});
+      caches_map.insert({mem, cache});
       args.insert({arg_index, ::dnnl::memory(desc.get_desc(), _eng, cache)});
     } else {
       args.insert({arg_index, ::dnnl::memory(desc.get_desc(), _eng, mem)});
@@ -1249,7 +1253,7 @@ sycl::event engine_ext::execute_primitive(
     void *mem = std::get<4>(extra_arg);
     if (beta != 0.f) {
       final_event = final_cache_event =
-          sum(alpha, desc, caches_map[mem], beta, mem_desc, mem);
+          sum(alpha, mem_desc, caches_map[mem], beta, mem_desc, mem);
     } else {
       if (alpha != 1.f) {
         final_event = scale(alpha, mem_desc, mem);
@@ -1416,8 +1420,8 @@ sycl::event engine_ext::binary(binary_desc &desc, float alpha_0,
                                float alpha_1, const memory_desc_ext &src_desc_1,
                                void *src_1, float beta,
                                const memory_desc_ext &dst_desc, void *dst) {
-  if (desc.get_algorithm() == ::dnnl::algorithm::sqrt ||
-      desc.get_algorithm() == ::dnnl::algorithm::linear) {
+  if (desc.get_algorithm() == ::dnnl::algorithm::eltwise_sqrt ||
+      desc.get_algorithm() == ::dnnl::algorithm::eltwise_linear) {
     if (alpha_0 != 1.f) {
       scale(alpha_0, src_desc_0, src_0);
     }
@@ -1440,7 +1444,7 @@ sycl::event engine_ext::binary(binary_desc &desc, float alpha_0,
       attr, desc.get_algorithm(), src_desc_0.get_desc(), src_desc_1.get_desc(),
       dst_desc.get_desc());
 
-  std::unordered_map<int, ::dnnl::memory> args = {
+  std::unordered_map<int, ::dnnl::memory> execution_args = {
       {DNNL_ARG_SRC_0, ::dnnl::memory(src_desc_0.get_desc(), _eng, src_0)},
       {DNNL_ARG_SRC_1, ::dnnl::memory(src_desc_1.get_desc(), _eng, src_1)}};
 
@@ -1565,7 +1569,7 @@ sycl::event engine_ext::pooling_forward(pooling_desc &desc, float alpha,
     insert_workspace(src, ws_mem);
   }
 
-  return execute_primitive(::dnnl::pooling_forward(primitive_desc),
+  return execute_primitive(::dnnl::pooling_forward(primitive_desc), execution_args,
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
 // DPCT_LABEL_END
@@ -1641,15 +1645,15 @@ sycl::event engine_ext::softmax_forward(softmax_algorithm alg,
     auto primitive = create_forward_primitive<::dnnl::softmax_forward>(
         ::dnnl::prop_kind::forward, help_src_desc, 1);
 
-    return execute_primitive(alpha, beta, primitive, execution_args,
-                             memory_desc_ext(help_dst_desc), dst);
+    return execute_primitive(primitive, execution_args,
+                             {{alpha, beta, DNNL_ARG_DST, memory_desc_ext(help_dst_desc), dst}});
   } else {
     auto primitive = create_forward_primitive<::dnnl::logsoftmax_forward>(
         ::dnnl::prop_kind::forward, help_src_desc, 1);
 
     return execute_primitive(
         primitive, execution_args,
-        {{alpha, beta, DNN_ARG_DST, memory_desc_ext(help_dst_desc), dst}});
+        {{alpha, beta, DNNL_ARG_DST, memory_desc_ext(help_dst_desc), dst}});
   }
 }
 // DPCT_LABEL_END
@@ -1789,12 +1793,12 @@ engine_ext::lrn_backward(lrn_desc &desc, float alpha,
 void engine_ext::derive_batch_normalization_memory_desc(
     memory_desc_ext &desc, const memory_desc_ext &src_desc,
     batch_normalization_mode mode) {
+      /*
   if (src_desc.get_desc().data.ndims != 4 ||
       src_desc.get_desc().data.ndims != 5) {
     throw std::runtime_error("only 4d and 5d memory descriptor supported.");
   }
-  auto &desc_ref = desc.get_desc();
-  desc_ref = src_desc.get_desc();
+  desc_ref = ::dnnl::memory::desc(src_desc.get_desc().data);
   desc_ref.data.dims[0] = 1;
   if (mode == batch_normalization_mode::spatial) {
     desc_ref.data.dims[2] = 1;
@@ -1803,6 +1807,8 @@ void engine_ext::derive_batch_normalization_memory_desc(
       desc_ref.data.dims[4] = 1;
     }
   }
+  desc = dpct::dnnl::memory_desc_ext(desc_ref);
+  */
 }
 // DPCT_LABEL_END
 
