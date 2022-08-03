@@ -441,7 +441,6 @@ class binary_desc {
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 class convolution_desc {
-  size_t _group_count = 1;
   std::vector<int64_t> _strides;
   std::vector<int64_t> _dilates;
   std::vector<int64_t> _paddings;
@@ -478,8 +477,6 @@ public:
       stride[i] = _strides[i];
     }
   }
-  void set_group_count(int group_count) { _group_count = group_count; }
-  void get_group_count(int *group_count) { *group_count = _group_count; }
   const std::vector<int64_t> &get_stride() const { return _strides; }
   std::vector<int64_t> &get_stride() { return _strides; }
   const std::vector<int64_t> &get_dilate() const { return _dilates; }
@@ -572,10 +569,11 @@ class engine_ext {
   bool engine_ext::scale_parameter_preprocess(
       std::vector<std::tuple<float, float, memory_desc_ext, void *>> args);
 
-  template <bool is_forward, typename primitive_type, typename args_type>
-  void execute_primitive(float alpha, float beta, primitive_type &&primitive,
-                         args_type &&args, const memory_desc_ext &mem_desc,
-                         void *mem);
+  template <typename primitive_type, typename args_type>
+  sycl::event engine_ext::execute_primitive(
+    primitive_type &&primitive, args_type &&args,
+    std::vector<std::tuple<float, float, int, memory_desc_ext, void *>>
+        extra_args);
   static ::dnnl::primitive_attr generate_scaling_attr(float alpha, float beta);
 
 public:
