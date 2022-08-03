@@ -1843,21 +1843,21 @@ sycl::event engine_ext::batch_normalization_forward_inference(
 
   auto primitive =
       create_forward_primitive<::dnnl::batch_normalization_forward>(
-          ::dnnl::prop_kind::forward_inference, help_src_desc.get_desc(),
+          ::dnnl::prop_kind::forward_inference, help_src_desc,
           epsilon,
           ::dnnl::normalization_flags::use_scale |
               ::dnnl::normalization_flags::use_shift);
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
-      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc.get_desc(), _eng, src)}},
+      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc, _eng, src)}},
       {DNNL_ARG_SCALE,
-       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, scale)}},
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, scale)}},
       {DNNL_ARG_SHIFT,
-       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, bias)}},
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, bias)}},
       {DNNL_ARG_MEAN,
-       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, mean)}},
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, mean)}},
       {DNNL_ARG_VARIANCE,
-       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, var)}}};
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, var)}}};
 
   return execute_primitive(
       primitive, execution_args,
@@ -1896,22 +1896,22 @@ sycl::event engine_ext::batch_normalization_forward_training(
 
   auto primitive =
       create_forward_primitive<::dnnl::batch_normalization_forward>(
-          ::dnnl::prop_kind::forward_training, help_src_desc.get_desc(),
+          ::dnnl::prop_kind::forward_training, help_src_desc,
           epsilon,
           ::dnnl::normalization_flags::use_scale |
               ::dnnl::normalization_flags::use_shift);
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
-      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc.get_desc(), _eng, src)}},
+      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc, _eng, src)}},
       {DNNL_ARG_SCALE,
-       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, scale)}},
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, scale)}},
       {DNNL_ARG_SHIFT,
-       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, bias)}},
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, bias)}},
       {DNNL_ARG_MEAN,
-       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng,
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng,
                        saved_mean)}},
       {DNNL_ARG_VARIANCE,
-       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng,
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng,
                        saved_var)}}};
 
   execute_primitive(primitive, execution_args,
@@ -1959,30 +1959,30 @@ sycl::event engine_ext::batch_normalization_backward(
   }
   auto forward_primitive =
       create_forward_primitive<::dnnl::batch_normalization_forward>(
-          ::dnnl::prop_kind::forward_training, help_src_desc.get_desc(),
+          ::dnnl::prop_kind::forward_training, help_src_desc,
           epsilon,
           ::dnnl::normalization_flags::use_scale |
               ::dnnl::normalization_flags::use_shift);
   auto primitive =
       create_backward_primitive<::dnnl::batch_normalization_backward>(
           forward_primitive, ::dnnl::prop_kind::backward,
-          help_diff_src_desc.get_desc(), help_src_desc.get_desc(), epsilon,
+          help_diff_src_desc, help_src_desc, epsilon,
           ::dnnl::normalization_flags::use_scale |
               ::dnnl::normalization_flags::use_shift);
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
-      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc.get_desc(), _eng, src)}},
+      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc, _eng, src)}},
       {DNNL_ARG_SCALE,
-       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng, scale)}},
+       {::dnnl::memory(help_diff_scale_bias_desc, _eng, scale)}},
       {DNNL_ARG_SHIFT,
-       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng, nullptr)}},
+       {::dnnl::memory(help_diff_scale_bias_desc, _eng, nullptr)}},
       {DNNL_ARG_MEAN,
-       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng,
+       {::dnnl::memory(help_diff_scale_bias_desc, _eng,
                        saved_mean)}},
       {DNNL_ARG_VARIANCE,
-       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng, saved_var)}},
+       {::dnnl::memory(help_diff_scale_bias_desc, _eng, saved_var)}},
       {DNNL_ARG_DIFF_DST,
-       {::dnnl::memory(help_diff_src_desc.get_desc(), _eng, diff_dst)}}};
+       {::dnnl::memory(help_diff_src_desc, _eng, diff_dst)}}};
 
   return execute_primitive(
       primitive, execution_args,
@@ -2030,21 +2030,21 @@ sycl::event engine_ext::batch_normalization_forward_training_ex(
 
   auto primitive =
       create_forward_primitive<::dnnl::batch_normalization_forward>(
-          ::dnnl::prop_kind::forward_training, help_src_desc.get_desc(),
+          ::dnnl::prop_kind::forward_training, help_src_desc,
           epsilon,
           ::dnnl::normalization_flags::use_scale |
               ::dnnl::normalization_flags::use_shift);
   std::unordered_map<int, ::dnnl::memory> execution_args = {
-      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc.get_desc(), _eng, src)}},
+      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc, _eng, src)}},
       {DNNL_ARG_SCALE,
-       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, scale)}},
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, scale)}},
       {DNNL_ARG_SHIFT,
-       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, bias)}},
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, bias)}},
       {DNNL_ARG_MEAN,
-       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng,
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng,
                        svaed_mean)}},
       {DNNL_ARG_VARIANCE,
-       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng,
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng,
                        saved_var)}}};
 
   if (ops != batch_normalization_ops::none) {
@@ -2054,7 +2054,7 @@ sycl::event engine_ext::batch_normalization_forward_training_ex(
     }
     execution_args.insert(
         {DNNL_ARG_DST,
-         {::dnnl::memory(help_dst_desc.get_desc(), _eng, reserve_space)}});
+         {::dnnl::memory(help_dst_desc, _eng, reserve_space)}});
     ::dnnl::sycl_interop::execute(primitive, _s, execution_args);
     if (ops == batch_normalization_ops::add_activation) {
       sum(1.f, help_addition_desc, addition, 1.f, help_dst_desc, reserve_space);
@@ -2121,31 +2121,31 @@ sycl::event engine_ext::batch_normalization_backward_ex(
 
   auto forward_primitive =
       create_forward_primitive<::dnnl::batch_normalization_forward>(
-          ::dnnl::prop_kind::forward_training, help_src_desc.get_desc(),
+          ::dnnl::prop_kind::forward_training, help_src_desc,
           epsilon,
           ::dnnl::normalization_flags::use_scale |
               ::dnnl::normalization_flags::use_shift);
   auto primitive =
       create_backward_primitive<::dnnl::batch_normalization_backward>(
           forward_primitive, ::dnnl::prop_kind::backward,
-          help_diff_src_desc.get_desc(), help_src_desc.get_desc(), epsilon,
+          help_diff_src_desc, help_src_desc, epsilon,
           ::dnnl::normalization_flags::use_scale |
               ::dnnl::normalization_flags::use_shift);
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
-      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc.get_desc(), _eng, src)}},
-      {DNNL_ARG_DST, {::dnnl::memory(help_dst_desc.get_desc(), _eng, dst)}},
+      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc, _eng, src)}},
+      {DNNL_ARG_DST, {::dnnl::memory(help_dst_desc, _eng, dst)}},
       {DNNL_ARG_SCALE,
-       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng, scale)}},
+       {::dnnl::memory(help_diff_scale_bias_desc, _eng, scale)}},
       {DNNL_ARG_SHIFT,
-       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng, bias)}},
+       {::dnnl::memory(help_diff_scale_bias_desc, _eng, bias)}},
       {DNNL_ARG_MEAN,
-       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng,
+       {::dnnl::memory(help_diff_scale_bias_desc, _eng,
                        saved_mean)}},
       {DNNL_ARG_VARIANCE,
-       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng, saved_var)}},
+       {::dnnl::memory(help_diff_scale_bias_desc, _eng, saved_var)}},
       {DNNL_ARG_DIFF_DST,
-       {::dnnl::memory(help_diff_src_desc.get_desc(), _eng, diff_addition)}}};
+       {::dnnl::memory(help_diff_src_desc, _eng, diff_addition)}}};
 
   return execute_primitive(
       primitive, execution_args,
