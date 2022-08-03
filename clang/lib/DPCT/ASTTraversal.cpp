@@ -16,6 +16,7 @@
 #include "MisleadingBidirectional.h"
 #include "DNNAPIMigration.h"
 #include "NCCLAPIMigration.h"
+#include "LIBCUAPIMigration.h"
 #include "SaveNewFiles.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -975,6 +976,16 @@ void IncludesCallbacks::InclusionDirective(
       return;
     }
     DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Dnnl);
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
+    Updater.update(false);
+  }
+
+  if (FileName.compare(StringRef("cuda/atomic")) == 0||
+      FileName.compare(StringRef("cuda/std/atomic")) == 0) {
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Atomic);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -17142,6 +17153,12 @@ REGISTER_RULE(CuDNNAPIRule)
 
 REGISTER_RULE(NCCLRule)
 
+REGISTER_RULE(LIBCUAPIRule)
+
+REGISTER_RULE(LIBCUMemberFuncRule)
+
+REGISTER_RULE(LIBCUTypeRule)
+
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {
     return hasAnyName("make_cuDoubleComplex", "cuCreal", "cuCrealf", "cuCimag",
@@ -17169,7 +17186,7 @@ REGISTER_RULE(ComplexAPIRule)
 void TemplateSpecializationTypeLocRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
-    return hasAnyName("cuda::atomic", "thrust::not_equal_to",
+    return hasAnyName("thrust::not_equal_to",
                       "thrust::constant_iterator");
   };
 
