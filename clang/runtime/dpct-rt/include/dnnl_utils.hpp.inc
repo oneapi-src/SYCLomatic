@@ -1425,13 +1425,14 @@ sycl::event engine_ext::binary(binary_desc &desc, float alpha_0,
     if (alpha_0 != 1.f) {
       scale(alpha_0, src_desc_0, src_0);
     }
+    alpha_1 = 1.f;
     auto primitive = create_forward_primitive<::dnnl::eltwise_forward>(
         ::dnnl::prop_kind::forward_inference, desc.get_algorithm(),
         src_desc_0.get_desc(), -1.f, 1.f);
     std::unordered_map<int, ::dnnl::memory> execution_args = {
         {DNNL_ARG_SRC, {::dnnl::memory(src_desc_0.get_desc(), _eng, src_0)}}};
     return execute_primitive(primitive, execution_args,
-                             {{1.f, beta, DNNL_ARG_DST, dst_desc, dst}});
+                             {{alpha_1, beta, DNNL_ARG_DST, dst_desc, dst}});
   }
   ::dnnl::primitive_attr attr;
   if (alpha_0 != 1.f) {
@@ -2240,7 +2241,15 @@ sycl::event engine_ext::convolution_backward_data(
   if (scale_parameter_preprocess({{alpha, beta, diff_dst_desc, diff_dst}})) {
     return sycl::event();
   }
-  auto primitive = create_backward_primitive<::dnnl::convolution_backward_data>(
+
+  auto forward_primitive = create_forward_primitive<::dnnl::convolution_forward>(
+      ::dnnl::prop_kind::forward_training,
+      ::dnnl::algorithm::convolution_auto, diff_src_desc.get_desc(),
+      weight_desc.get_desc(), diff_dst_desc.get_desc(), diff_dst_desc.get_desc(),
+      desc.get_stride(), desc.get_dilate(), desc.get_padding(),
+      desc.get_padding());
+
+  auto primitive = create_backward_primitive<::dnnl::convolution_backward_data>(forward_primitive,
       ::dnnl::algorithm::convolution_auto, diff_src_desc.get_desc(),
       weight_desc.get_desc(), diff_dst_desc.get_desc(), desc.get_stride(),
       desc.get_dilate(), desc.get_padding(), desc.get_padding());
@@ -2272,7 +2281,15 @@ sycl::event engine_ext::convolution_backward_weight(
           {{alpha, beta, diff_weight_desc, diff_weight}})) {
     return sycl::event();
   }
-  auto primitive = create_backward_primitive<::dnnl::convolution_backward_data>(
+
+  auto forward_primitive = create_forward_primitive<::dnnl::convolution_forward>(
+      ::dnnl::prop_kind::forward_training,
+      ::dnnl::algorithm::convolution_auto, src_desc.get_desc(),
+      diff_weight_desc.get_desc(), diff_dst_desc.get_desc(), diff_dst_desc.get_desc(),
+      desc.get_stride(), desc.get_dilate(), desc.get_padding(),
+      desc.get_padding());
+
+  auto primitive = create_backward_primitive<::dnnl::convolution_backward_data>(forward_primitive,
       ::dnnl::algorithm::convolution_auto, src_desc.get_desc(),
       diff_weight_desc.get_desc(), diff_dst_desc.get_desc(), desc.get_stride(),
       desc.get_dilate(), desc.get_padding(), desc.get_padding());
