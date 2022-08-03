@@ -1,0 +1,8 @@
+[
+    {
+    "command": "c++ -c  test.cu",
+    "directory": ".",
+    "file": "./test.cu"
+    }
+]
+
