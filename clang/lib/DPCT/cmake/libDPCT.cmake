@@ -32,6 +32,7 @@ macro(build_lib_dpct)
     TypeLocRewriters.cpp
     QueryApiMapping.cpp
     AutoComplete.cpp
+    LIBCUAPIMigration.cpp
 
     DEPENDS
     ClangDriverOptions
