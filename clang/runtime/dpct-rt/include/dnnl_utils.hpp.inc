@@ -999,7 +999,7 @@ public:
   sycl::event engine_ext::convolution_backward_data(
       convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
       const memory_desc_ext &weight_desc, void *weight,
-      const memory_desc_ext &diff_dst_decs, void *diff_dst, float beta,
+      const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta,
       const memory_desc_ext &diff_src_desc, void *diff_src);
 // DPCT_LABEL_END
 
@@ -1011,7 +1011,7 @@ public:
   sycl::event engine_ext::convolution_backward_weight(
       convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
       const memory_desc_ext &src_desc, void *src,
-      const memory_desc_ext &diff_dst_decs, void *diff_dst, float beta,
+      const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta,
       const memory_desc_ext &diff_weight_desc, void *diff_weight);
 // DPCT_LABEL_END
 
@@ -1861,7 +1861,7 @@ sycl::event engine_ext::batch_normalization_forward_inference(
 
   return execute_primitive(
       primitive, execution_args,
-      {{alpha, beta, DNNL_ARG_DIFF_DST, help_diff_src_desc, diff_src}});
+      {{alpha, beta, DNNL_ARG_DST, help_dst_desc, dst}});
 }
 // DPCT_LABEL_END
 
@@ -1937,8 +1937,8 @@ sycl::event engine_ext::batch_normalization_backward(
     void *diff_scale, void *diff_bias, void *saved_mean, void *saved_var) {
   if (scale_parameter_preprocess(
           {{alpha_data, beta_data, diff_src_desc, diff_src},
-           {alpha_param, beta_param, diff_scale_bias_desc, scale},
-           {alpha_param, beta_param, diff_scale_bias_desc, bias}})) {
+           {alpha_param, beta_param, diff_scale_bias_desc, diff_scale},
+           {alpha_param, beta_param, diff_scale_bias_desc, diff_bias}})) {
     return sycl::event();
   }
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
@@ -2090,8 +2090,8 @@ sycl::event engine_ext::batch_normalization_backward_ex(
   if (scale_parameter_preprocess(
           {{alpha_data, beta_data, diff_src_desc, diff_src},
            {alpha_data, beta_data, diff_addition_desc, diff_addition},
-           {alpha_param, beta_param, diff_scale_bias_desc, scale},
-           {alpha_param, beta_param, diff_scale_bias_desc, bias}})) {
+           {alpha_param, beta_param, diff_scale_bias_desc, diff_scale},
+           {alpha_param, beta_param, diff_scale_bias_desc, diff_bias}})) {
     return sycl::event();
   }
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
@@ -2220,7 +2220,7 @@ sycl::event engine_ext::convolution_forward_ex(
       {DNNL_ARG_BIAS, {::dnnl::memory(bias_desc.get_desc(), _eng, bias)}}};
 
   execute_primitive(primitive, execution_args,
-                    {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
+                    {{alpha_0, 0.f, DNNL_ARG_DST, dst_desc, dst}});
   sum(alpha_1, addition_desc, addition, 1.f, dst_desc, dst);
   return activation_forward(adesc, 1.f, dst_desc, dst, 0.f, dst_desc, dst);
 }
@@ -2234,8 +2234,8 @@ sycl::event engine_ext::convolution_forward_ex(
 sycl::event engine_ext::convolution_backward_data(
     convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
     const memory_desc_ext &weight_desc, void *weight,
-    const memory_desc_ext &diff_dst_decs, void *diff_dst, float beta,
-    const memory_desc_ext &diff_src_desc, void *diff_dst) {
+    const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta,
+    const memory_desc_ext &diff_src_desc, void *diff_src) {
 
   if (scale_parameter_preprocess({{alpha, beta, diff_dst_desc, diff_dst}})) {
     return sycl::event();
@@ -2265,7 +2265,7 @@ sycl::event engine_ext::convolution_backward_data(
 sycl::event engine_ext::convolution_backward_weight(
     convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
     const memory_desc_ext &src_desc, void *src,
-    const memory_desc_ext &diff_dst_decs, void *diff_dst, float beta,
+    const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta,
     const memory_desc_ext &diff_weight_desc, void *diff_weight) {
 
   if (scale_parameter_preprocess(
