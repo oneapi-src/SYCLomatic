@@ -53,77 +53,80 @@ class memory_desc_ext {
   /// Convert dpct::library_data_t to dnnl::memory::data_type.
   static ::dnnl::memory::data_type to_dnnl_data_type(dpct::library_data_t dt);
   /// Convert dnnl::memory::data_type to dpct::library_data_t.
-  static dpct::library_data_t to_dpct_library_data_t(::dnnl::memory::data_type dt,
-                                   unsigned block_size);
+  static dpct::library_data_t
+  to_dpct_library_data_t(::dnnl::memory::data_type dt, unsigned block_size);
   /// Convert dpct::dnnl::memory_format_tag to dnnl::memory::format_tag.
   static ::dnnl::memory::format_tag to_dnnl_format_tag(dpct::library_data_t dt,
-                                         memory_format_tag tag);
+                                                       memory_format_tag tag);
 
 public:
   memory_desc_ext() = default;
   memory_desc_ext(::dnnl::memory::desc &desc) : _desc(desc) {}
   memory_desc_ext(::dnnl::memory::desc &&desc) : _desc(std::move(desc)) {}
-/// Setting a 4D memory with given parameters.
-/// \param [in] tag Format tag.
-/// \param [in] dt Data type.
-/// \param [in] n Number of images.
-/// \param [in] c Number of channels.
-/// \param [in] h Height of images.
-/// \param [in] w Width of images.
+  /// Setting a 4D memory with given parameters.
+  /// \param [in] tag Format tag.
+  /// \param [in] dt Data type.
+  /// \param [in] n Number of images.
+  /// \param [in] c Number of channels.
+  /// \param [in] h Height of images.
+  /// \param [in] w Width of images.
   void set(memory_format_tag tag, dpct::library_data_t dt, int n, int c, int h,
            int w);
-/// Setting a 4D memory with given parameters.
-/// \param [in] dt Data type.
-/// \param [in] n Number of images.
-/// \param [in] c Number of channels.
-/// \param [in] h Height of images.
-/// \param [in] w Width of images.
-/// \param [in] n_stride Stride between two continuous images.
-/// \param [in] c_stride Stride between two continuous channels.
-/// \param [in] h_stride Stride between two continuous rows.
-/// \param [in] w_stride Stride between two continuous columns.
+  /// Setting a 4D memory with given parameters.
+  /// \param [in] dt Data type.
+  /// \param [in] n Number of images.
+  /// \param [in] c Number of channels.
+  /// \param [in] h Height of images.
+  /// \param [in] w Width of images.
+  /// \param [in] n_stride Stride between two continuous images.
+  /// \param [in] c_stride Stride between two continuous channels.
+  /// \param [in] h_stride Stride between two continuous rows.
+  /// \param [in] w_stride Stride between two continuous columns.
   void set(dpct::library_data_t dt, int n, int c, int h, int w, int n_stride,
            int c_stride, int h_stride, int w_stride);
-/// Setting a ND memory with given parameters.
-/// \param [in] dt Data type.
-/// \param [in] ndims Dimension of the memory.
-/// \param [in] dims  Array of dimension ndims that contain the size of each memory dimension.
-/// \param [in] strides Array of dimension ndims that contain the stride of each memory dimension.
+  /// Setting a ND memory with given parameters.
+  /// \param [in] dt Data type.
+  /// \param [in] ndims Dimension of the memory.
+  /// \param [in] dims  Array of dimension ndims that contain the size of each
+  /// memory dimension. \param [in] strides Array of dimension ndims that
+  /// contain the stride of each memory dimension.
   void set(dpct::library_data_t dt, int ndims, const int dims[],
            const int strides[]);
-/// Setting a ND memory with given parameters.
-/// \param [in] tag Format tag.
-/// \param [in] dt Data type.
-/// \param [in] ndims Dimension of the memory.
-/// \param [in] dims  Array of dimension ndims that contain the size of each memory dimension.
+  /// Setting a ND memory with given parameters.
+  /// \param [in] tag Format tag.
+  /// \param [in] dt Data type.
+  /// \param [in] ndims Dimension of the memory.
+  /// \param [in] dims  Array of dimension ndims that contain the size of each
+  /// memory dimension.
   void set(memory_format_tag tag, dpct::library_data_t dt, int ndims,
            const int dims[]);
-/// Getting a ::dnnl::memory::desc from a memory_desc_ext.
-/// \returns The ::dnnl::memory::desc.
+  /// Getting a ::dnnl::memory::desc from a memory_desc_ext.
+  /// \returns The ::dnnl::memory::desc.
   const ::dnnl::memory::desc &get_desc() const { return _desc; }
-/// Getting a size of a memory_desc_ext in bytes.
-/// \returns The size.
+  /// Getting a size of a memory_desc_ext in bytes.
+  /// \returns The size.
   size_t get_size() const { return _desc.get_size(); }
-/// Getting parameters from a 4D memory.
-/// \param [out] dt Data type.
-/// \param [out] n Number of images.
-/// \param [out] c Number of channels.
-/// \param [out] h Height of images.
-/// \param [out] w Width of images.
-/// \param [out] n_stride Stride between two continuous images.
-/// \param [out] c_stride Stride between two continuous channels.
-/// \param [out] h_stride Stride between two continuous rows.
-/// \param [out] w_stride Stride between two continuous columns.
-  void get(dpct::library_data_t *dt, int *n, int *c, int *h, int *w, int *n_stride,
-           int *c_stride, int *h_stride, int *w_stride) const;
-/// Getting parameters from a ND memory.
-/// \param [in] requested_ndims Requested number of dimensions to get from a given memory descriptor.
-/// \param [out] dt Data type.
-/// \param [out] ndims Dimension of the memory.
-/// \param [out] dims  Array of dimension requested_ndims that contain the size of each memory dimension.
-/// \param [out] strides Array of dimension requested_ndims that contain the stride of each memory dimension.
-  void get(int requested_ndims, dpct::library_data_t *dt, int *ndims, int dims[],
-           int strides[]) const;
+  /// Getting parameters from a 4D memory.
+  /// \param [out] dt Data type.
+  /// \param [out] n Number of images.
+  /// \param [out] c Number of channels.
+  /// \param [out] h Height of images.
+  /// \param [out] w Width of images.
+  /// \param [out] n_stride Stride between two continuous images.
+  /// \param [out] c_stride Stride between two continuous channels.
+  /// \param [out] h_stride Stride between two continuous rows.
+  /// \param [out] w_stride Stride between two continuous columns.
+  void get(dpct::library_data_t *dt, int *n, int *c, int *h, int *w,
+           int *n_stride, int *c_stride, int *h_stride, int *w_stride) const;
+  /// Getting parameters from a ND memory.
+  /// \param [in] requested_ndims Requested number of dimensions to get from a
+  /// given memory descriptor. \param [out] dt Data type. \param [out] ndims
+  /// Dimension of the memory. \param [out] dims  Array of dimension
+  /// requested_ndims that contain the size of each memory dimension. \param
+  /// [out] strides Array of dimension requested_ndims that contain the stride
+  /// of each memory dimension.
+  void get(int requested_ndims, dpct::library_data_t *dt, int *ndims,
+           int dims[], int strides[]) const;
 };
 // DPCT_LABEL_END
 
@@ -136,37 +139,37 @@ class activation_desc {
   float _beta;
 
 public:
-/// Setting an activation descriptor with given parameters.
-/// \param [in] alg Activation algorithm.
-/// \param [in] alpha Value of alpha parameter.
+  /// Setting an activation descriptor with given parameters.
+  /// \param [in] alg Activation algorithm.
+  /// \param [in] alpha Value of alpha parameter.
   void set(::dnnl::algorithm alg, float alpha) {
     _alg = alg;
     _alpha = alpha;
   }
-/// Getting parameters form an activation descriptor.
-/// \param [out] alg Activation algorithm.
-/// \param [out] alpha Value of alpha parameter.
+  /// Getting parameters form an activation descriptor.
+  /// \param [out] alg Activation algorithm.
+  /// \param [out] alpha Value of alpha parameter.
   void get(::dnnl::algorithm *alg, float *alpha) const {
     *alg = _alg;
     *alpha = _alpha;
   }
-/// Setting the alpha parameter of an activation descriptor.
-/// \param [in] alpha Value of alpha parameter.
+  /// Setting the alpha parameter of an activation descriptor.
+  /// \param [in] alpha Value of alpha parameter.
   void set_alpha(float alpha) { _alpha = alpha; }
-/// Setting the beta parameter of an activation descriptor.
-/// \param [in] beta Value of beta parameter.
+  /// Setting the beta parameter of an activation descriptor.
+  /// \param [in] beta Value of beta parameter.
   void set_beta(float beta) { _beta = beta; }
-/// Setting the algorithm parameter of an activation descriptor.
-/// \param [in] alg Activation algorithm.
+  /// Setting the algorithm parameter of an activation descriptor.
+  /// \param [in] alg Activation algorithm.
   void set_algorithm(::dnnl::algorithm alg) { _alg = alg; }
-/// Getting the alpha parameter from an activation descriptor.
-/// \param [out] alpha Value of alpha parameter.
+  /// Getting the alpha parameter from an activation descriptor.
+  /// \param [out] alpha Value of alpha parameter.
   float get_alpha() const { return _alpha; }
-/// Getting the beta parameter from an activation descriptor.
-/// \param [out] beta Value of beta parameter.
+  /// Getting the beta parameter from an activation descriptor.
+  /// \param [out] beta Value of beta parameter.
   float get_beta() const { return _beta; }
-/// Getting the algorithm parameter from an activation descriptor.
-/// \param [out] alg Activation algorithm.
+  /// Getting the algorithm parameter from an activation descriptor.
+  /// \param [out] alg Activation algorithm.
   ::dnnl::algorithm get_algorithm() const { return _alg; }
 };
 // DPCT_LABEL_END
@@ -181,22 +184,22 @@ class lrn_desc {
   float _k;
 
 public:
-/// Setting a local response normalization descriptor with given parameters.
-/// \param [in] local_size Value of local_size parameter.
-/// \param [in] alpha Value of alpha parameter.
-/// \param [in] beta Value of beta parameter.
-/// \param [in] k Value of k parameter.
+  /// Setting a local response normalization descriptor with given parameters.
+  /// \param [in] local_size Value of local_size parameter.
+  /// \param [in] alpha Value of alpha parameter.
+  /// \param [in] beta Value of beta parameter.
+  /// \param [in] k Value of k parameter.
   void set(unsigned int local_size, float alpha, float beta, float k) {
     _local_size = local_size;
     _alpha = alpha;
     _beta = beta;
     _k = k;
   }
-/// Getting parameters form a local response normalization descriptor.
-/// \param [out] local_size Value of local_size parameter.
-/// \param [out] alpha Value of alpha parameter.
-/// \param [out] beta Value of beta parameter.
-/// \param [out] k Value of k parameter.
+  /// Getting parameters form a local response normalization descriptor.
+  /// \param [out] local_size Value of local_size parameter.
+  /// \param [out] alpha Value of alpha parameter.
+  /// \param [out] beta Value of beta parameter.
+  /// \param [out] k Value of k parameter.
   void get(unsigned int *local_size, float *alpha, float *beta,
            float *k) const {
     *local_size = _local_size;
@@ -204,29 +207,29 @@ public:
     *beta = _beta;
     *k = _k;
   }
-/// Setting the local size parameter of a local response normalization descriptor.
-/// \param [in] local_size Value of local_size parameter.
+  /// Setting the local size parameter of a local response normalization
+  /// descriptor. \param [in] local_size Value of local_size parameter.
   void set_local_size(unsigned int local_size) { _local_size = local_size; }
-/// Setting the alpha parameter of a local response normalization descriptor.
-/// \param [in] alpha Value of alpha parameter.
+  /// Setting the alpha parameter of a local response normalization descriptor.
+  /// \param [in] alpha Value of alpha parameter.
   void set_alpha(float alpha) { _alpha = alpha; }
-/// Setting the beta parameter of a local response normalization descriptor.
-/// \param [in] beta Value of beta parameter.
+  /// Setting the beta parameter of a local response normalization descriptor.
+  /// \param [in] beta Value of beta parameter.
   void set_beta(float beta) { _beta = beta; }
-/// Setting the k parameter of a local response normalization descriptor.
-/// \param [in] k Value of k parameter.
+  /// Setting the k parameter of a local response normalization descriptor.
+  /// \param [in] k Value of k parameter.
   void set_k(float k) { _k = k; }
-/// Getting the local size parameter from a local response normalization descriptor.
-/// \param [out] local_size Value of local_size parameter.
+  /// Getting the local size parameter from a local response normalization
+  /// descriptor. \param [out] local_size Value of local_size parameter.
   unsigned int get_local_size() const { return _local_size; }
-/// Getting the alpha parameter from a local response normalization descriptor.
-/// \param [out] alpha Value of alpha parameter.
+  /// Getting the alpha parameter from a local response normalization
+  /// descriptor. \param [out] alpha Value of alpha parameter.
   float get_alpha() const { return _alpha; }
-/// Getting the beta parameter from a local response normalization descriptor.
-/// \param [out] beta Value of beta parameter.
+  /// Getting the beta parameter from a local response normalization descriptor.
+  /// \param [out] beta Value of beta parameter.
   float get_beta() const { return _beta; }
-/// Getting the k parameter from a local response normalization descriptor.
-/// \param [out] k Value of k parameter.
+  /// Getting the k parameter from a local response normalization descriptor.
+  /// \param [out] k Value of k parameter.
   float get_k() const { return _k; }
 };
 // DPCT_LABEL_END
@@ -255,14 +258,14 @@ class pooling_desc {
   std::vector<int64_t> _padding;
 
 public:
-/// Setting a 2D pooling descriptor with given parameters.
-/// \param [in] alg Pooling algorithm.
-/// \param [in] kernel_h Value of height of kernel.
-/// \param [in] kernel_w Value of width of kernel.
-/// \param [in] padding_h Value of height of padding.
-/// \param [in] padding_w Value of width of padding.
-/// \param [in] stride_h Value of height of stride.
-/// \param [in] stride_w Value of width of stride.
+  /// Setting a 2D pooling descriptor with given parameters.
+  /// \param [in] alg Pooling algorithm.
+  /// \param [in] kernel_h Value of height of kernel.
+  /// \param [in] kernel_w Value of width of kernel.
+  /// \param [in] padding_h Value of height of padding.
+  /// \param [in] padding_w Value of width of padding.
+  /// \param [in] stride_h Value of height of stride.
+  /// \param [in] stride_w Value of width of stride.
   void set(::dnnl::algorithm alg, int kernel_h, int kernel_w, int padding_h,
            int padding_w, int stride_h, int stride_w) {
     _alg = alg;
@@ -270,12 +273,13 @@ public:
     _kernel = {kernel_h, kernel_w};
     _padding = {padding_h, padding_w};
   }
-/// Setting a ND pooling descriptor with given parameters.
-/// \param [in] alg Pooling algorithm.
-/// \param [in] ndims Dimension of the pooling operation.
-/// \param [in] kernel Array of dimension ndims containing the kernel size of each dimension.
-/// \param [in] padding Array of dimension ndims containing the padding size of each dimension.
-/// \param [in] stride Array of dimension ndims containing the stride size of each dimension.
+  /// Setting a ND pooling descriptor with given parameters.
+  /// \param [in] alg Pooling algorithm.
+  /// \param [in] ndims Dimension of the pooling operation.
+  /// \param [in] kernel Array of dimension ndims containing the kernel size of
+  /// each dimension. \param [in] padding Array of dimension ndims containing
+  /// the padding size of each dimension. \param [in] stride Array of dimension
+  /// ndims containing the stride size of each dimension.
   void set(::dnnl::algorithm alg, int ndims, int kernel[], int padding[],
            int stride[]) {
     _alg = alg;
@@ -283,14 +287,14 @@ public:
     _kernel = std::vector<int64_t>(kernel, kernel + ndims);
     _padding = std::vector<int64_t>(padding, padding + ndims);
   }
-/// Getting parameters from a 2D pooling descriptor.
-/// \param [out] alg Pooling algorithm.
-/// \param [out] kernel_h Value of height of kernel.
-/// \param [out] kernel_w Value of width of kernel.
-/// \param [out] padding_h Value of height of padding.
-/// \param [out] padding_w Value of width of padding.
-/// \param [out] stride_h Value of height of stride.
-/// \param [out] stride_w Value of width of stride.
+  /// Getting parameters from a 2D pooling descriptor.
+  /// \param [out] alg Pooling algorithm.
+  /// \param [out] kernel_h Value of height of kernel.
+  /// \param [out] kernel_w Value of width of kernel.
+  /// \param [out] padding_h Value of height of padding.
+  /// \param [out] padding_w Value of width of padding.
+  /// \param [out] stride_h Value of height of stride.
+  /// \param [out] stride_w Value of width of stride.
   void get(::dnnl::algorithm *alg, int *kernel_h, int *kernel_w, int *padding_h,
            int *padding_w, int *stride_h, int *stride_w) const {
     *alg = _alg;
@@ -301,74 +305,83 @@ public:
     *stride_h = _stride[0];
     *stride_w = _stride[1];
   }
-/// Getting parameters from a ND pooling descriptor.
-/// \param [in] requested_ndims Requested number of dimensions to get from a given pooling descriptor.
-/// \param [out] alg Pooling algorithm.
-/// \param [out] ndims Dimension of the pooling operation.
-/// \param [out] kernel Array of dimension ndims containing the kernel size of each dimension.
-/// \param [out] padding Array of dimension ndims containing the padding size of each dimension.
-/// \param [out] stride Array of dimension ndims containing the stride size of each dimension.
-  void get(int requested_ndims, ::dnnl::algorithm *alg, int *ndims, int kernel[],
-           int padding[], int stride[]) const {
+  /// Getting parameters from a ND pooling descriptor.
+  /// \param [in] requested_ndims Requested number of dimensions to get from a
+  /// given pooling descriptor. \param [out] alg Pooling algorithm. \param [out]
+  /// ndims Dimension of the pooling operation. \param [out] kernel Array of
+  /// dimension ndims containing the kernel size of each dimension. \param [out]
+  /// padding Array of dimension ndims containing the padding size of each
+  /// dimension. \param [out] stride Array of dimension ndims containing the
+  /// stride size of each dimension.
+  void get(int requested_ndims, ::dnnl::algorithm *alg, int *ndims,
+           int kernel[], int padding[], int stride[]) const {
     *alg = _alg;
+    *ndims = _stride.size();
     for (int i = 0; i < requested_ndims; i++) {
       kernel[i] = _kernel[i];
       padding[i] = _padding[i];
       stride[i] = _stride[i];
     }
   }
-/// Setting the algorithm parameter of a pooling descriptor.
-/// \param [in] alg Pooling algorithm.
+  /// Setting the algorithm parameter of a pooling descriptor.
+  /// \param [in] alg Pooling algorithm.
   void set_algorithm(::dnnl::algorithm alg) { _alg = alg; }
-/// Setting the stride parameter of a pooling descriptor.
-/// \param [in] stride Array of dimension ndims containing the stride size of each dimension.
+  /// Setting the stride parameter of a pooling descriptor.
+  /// \param [in] stride Array of dimension ndims containing the stride size of
+  /// each dimension.
   void set_stride(std::vector<int64_t> stride) { _stride = stride; }
-/// Setting the kernel parameter of a pooling descriptor.
-/// \param [in] kernel Array of dimension ndims containing the kernel size of each dimension.
+  /// Setting the kernel parameter of a pooling descriptor.
+  /// \param [in] kernel Array of dimension ndims containing the kernel size of
+  /// each dimension.
   void set_kernel(std::vector<int64_t> kernel) { _kernel = kernel; }
-/// Setting the padding parameter of a pooling descriptor.
-/// \param [in] padding Array of dimension ndims containing the padding size of each dimension.
+  /// Setting the padding parameter of a pooling descriptor.
+  /// \param [in] padding Array of dimension ndims containing the padding size
+  /// of each dimension.
   void set_padding(std::vector<int64_t> padding) { _padding = padding; }
 
-/// Getting the algorithm parameter from a pooling descriptor.
-/// \param [out] alg Pooling algorithm.
+  /// Getting the algorithm parameter from a pooling descriptor.
+  /// \param [out] alg Pooling algorithm.
   ::dnnl::algorithm get_algorithm() const { return _alg; }
-/// Getting the stride parameter from a pooling descriptor.
-/// \returns Array of dimension ndims containing the stride size of each dimension.
+  /// Getting the stride parameter from a pooling descriptor.
+  /// \returns Array of dimension ndims containing the stride size of each
+  /// dimension.
   const std::vector<int64_t> &get_stride() const { return _stride; }
-/// Getting the stride parameter from a pooling descriptor.
-/// \returns Array of dimension ndims containing the stride size of each dimension.
+  /// Getting the stride parameter from a pooling descriptor.
+  /// \returns Array of dimension ndims containing the stride size of each
+  /// dimension.
   std::vector<int64_t> &get_stride() { return _stride; }
-/// Getting the kernel parameter from a pooling descriptor.
-/// \returns Array of dimension ndims containing the kernel size of each dimension.
+  /// Getting the kernel parameter from a pooling descriptor.
+  /// \returns Array of dimension ndims containing the kernel size of each
+  /// dimension.
   const std::vector<int64_t> &get_kernel() const { return _kernel; }
-/// Getting the kernel parameter from a pooling descriptor.
-/// \returns Array of dimension ndims containing the kernel size of each dimension.
+  /// Getting the kernel parameter from a pooling descriptor.
+  /// \returns Array of dimension ndims containing the kernel size of each
+  /// dimension.
   std::vector<int64_t> &get_kernel() { return _kernel; }
-/// Getting the padding parameter from a pooling descriptor.
-/// \returns Array of dimension ndims containing the padding size of each dimension.
+  /// Getting the padding parameter from a pooling descriptor.
+  /// \returns Array of dimension ndims containing the padding size of each
+  /// dimension.
   const std::vector<int64_t> &get_padding() const { return _padding; }
-/// Getting the padding parameter from a pooling descriptor.
-/// \returns Array of dimension ndims containing the padding size of each dimension.
+  /// Getting the padding parameter from a pooling descriptor.
+  /// \returns Array of dimension ndims containing the padding size of each
+  /// dimension.
   std::vector<int64_t> &get_padding() { return _padding; }
-/// Getting the output dimensions of a memory after 2D pooling has been applied.
-/// \param [in] desc Input memory descriptor.
-/// \param [out] out_n Number of images.
-/// \param [out] out_c Number of channels.
-/// \param [out] out_h Height of images.
-/// \param [out] out_w Width of images.
-  void get_forward_output_dim(const memory_desc_ext &desc, int *out_n, int *out_c,
-                              int *out_h, int *out_w) const {
+  /// Getting the output dimensions of a memory after 2D pooling has been
+  /// applied. \param [in] desc Input memory descriptor. \param [out] out_n
+  /// Number of images. \param [out] out_c Number of channels. \param [out]
+  /// out_h Height of images. \param [out] out_w Width of images.
+  void get_forward_output_dim(const memory_desc_ext &desc, int *out_n,
+                              int *out_c, int *out_h, int *out_w) const {
     auto dims = desc.get_desc().data.dims;
     *out_n = dims[0];
     *out_c = dims[1];
     *out_h = 1 + (dims[2] + 2 * _padding[0] - _kernel[0]) / _stride[0];
     *out_w = 1 + (dims[3] + 2 * _padding[1] - _kernel[1]) / _stride[1];
   }
-/// Getting the output dimensions of a memory after ND pooling has been applied.
-/// \param [in] desc Input memory descriptor.
-/// \param [out] ndims Dimension of the memory.
-/// \param [out] out_dims  Array of dimension requested_ndims that contain the size of each memory dimension.
+  /// Getting the output dimensions of a memory after ND pooling has been
+  /// applied. \param [in] desc Input memory descriptor. \param [out] ndims
+  /// Dimension of the memory. \param [out] out_dims  Array of dimension
+  /// requested_ndims that contain the size of each memory dimension.
   void get_forward_output_dim(const memory_desc_ext &desc, int ndims,
                               int out_dims[]) const {
     assert(ndims >= 4 && "ndims is at least 4.");
@@ -383,28 +396,141 @@ public:
 };
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|reduction_desc|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+class reduction_desc {
+  ::dnnl::algorithm _alg;
+  void set(::dnnl::algorithm alg) { _alg = alg; }
+  void get(::dnnl::algorithm *alg) { *alg = _alg; }
+  ::dnnl::algorithm get_algorithm() { return _alg; }
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|batch_normalization_mode|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+enum class batch_normalization_mode { per_activation, spatial };
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|batch_normalization_ops|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+enum class batch_normalization_ops { none, activation, add_activation };
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|binary_desc|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+class binary_desc {
+  ::dnnl::algorithm _alg;
+  dpct::library_data_t _dt;
+  void set(::dnnl::algorithm alg, dpct::library_data_t dt) {
+    _alg = alg;
+    _dt = dt;
+  }
+  void get(::dnnl::algorithm *alg, dpct::library_data_t *dt) {
+    *alg = _alg;
+    *dt = dt;
+  }
+  ::dnnl::algorithm get_algorithm() { return _alg; }
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|convolution_desc|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+class convolution_desc {
+  size_t _group_count = 1;
+  std::vector<int64_t> _strides;
+  std::vector<int64_t> _dilates;
+  std::vector<int64_t> _paddings;
+
+public:
+  void set(int padding_h, int padding_w, int stride_h, int stride_w,
+           int dilate_h, int dilate_w) {
+    _strides = {stride_h, stride_w};
+    _dilates = {dilate_h, dilate_w};
+    _paddings = {padding_h, padding_w};
+  }
+  void set(int ndims, int padding[], int stride[], int dilate[]) {
+    _strides = std::vector<int64_t>(stride, stride + ndims);
+    _paddings = std::vector<int64_t>(padding, padding + ndims);
+    _dilates = std::vector<int64_t>(dilate, dilate + ndims);
+  }
+  void get(int *padding_h, int *padding_w, int *stride_h, int *stride_w,
+           int *dilate_h, int *dilate_w) const {
+    *dilate_h = _dilates[0];
+    *dilate_w = _dilates[1];
+    *padding_h = _paddings[0];
+    *padding_w = _paddings[1];
+    *stride_h = _strides[0];
+    *stride_w = _strides[1];
+  }
+
+  void get(int requested_ndims, ::dnnl::algorithm *alg, int *ndims,
+           int kernel[], int padding[], int stride[]) const {
+    *alg = _alg;
+    *ndims = _strides.size();
+    for (int i = 0; i < requested_ndims; i++) {
+      dilate[i] = _dilates[i];
+      padding[i] = _paddings[i];
+      stride[i] = _strides[i];
+    }
+  }
+  void set_group_count(int group_count) { _group_count = group_count; }
+  void get_group_count(int *group_count) { *group_count = _group_count; }
+  const std::vector<int64_t> &get_stride() const { return _strides; }
+  std::vector<int64_t> &get_stride() { return _strides; }
+  const std::vector<int64_t> &get_dilate() const { return _dilates; }
+  std::vector<int64_t> &get_dilate() { return _dilates; }
+  const std::vector<int64_t> &get_padding() const { return _paddings; }
+  std::vector<int64_t> &get_padding() { return _paddings; }
+  void get_forward_output_dim(const memory_desc_ext &desc,
+                              const memory_desc_ext &filter_desc, int *out_n,
+                              int *out_c, int *out_h, int *out_w) const {
+    auto dims = desc.get_desc().data.dims;
+    auto filter_dims = filter_desc.get_desc().data.dims;
+    *out_n = dims[0];
+    *out_c = filter_dims[0];
+    *out_h = 1 + (dims[2] + 2 * _paddings[0] -
+                  (1 + (_dilates[0] * (filter_dims[2] - 1)))) /
+                     _strides[0];
+    *out_w = 1 + (dims[3] + 2 * _paddings[1] -
+                  (1 + (_dilates[1] * (filter_dims[3] - 1)))) /
+                     _strides[1];
+  }
+  void get_forward_output_dim(const memory_desc_ext &desc,
+                              const memory_desc_ext &filter_desc, int ndims,
+                              int out_dims[]) const {
+    assert(ndims >= 4 && "ndims is at least 4.");
+    auto dims = desc.get_desc().data.dims;
+    auto filter_dims = filter_desc.get_desc().data.dims;
+    out_dims[0] = dims[0];
+    out_dims[1] = filter_dims[1];
+    for (int i = 2; i < ndims; i++) {
+      out_dims[i] = 1 + (dims[i] + 2 * _paddings[i - 2] -
+                         (1 + (_dilates[i - 2] * (filter_dims[i] - 1)))) /
+                            _strides[i - 2];
+    }
+  }
+};
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|engine_ext|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext_1
 // DnnlUtils|engine_ext_2
 // DnnlUtils|memory_format_tag
 // LibCommonUtils|library_data_t
-// DnnlUtils|SCALE_PARAMETER_PREPROCESS
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 class engine_ext {
   ::dnnl::engine _eng;
   ::dnnl::stream _s;
-  sycl::queue* _q;
+  sycl::queue *_q;
   std::map<void *, ::dnnl::memory> workspace_map;
-  struct device_pointer_deleter {
-    sycl::queue _que;
-    explicit device_pointer_deleter(sycl::queue q) : _que(q) {}
-    void operator()(void *ptr) const noexcept {
-      if (ptr)
-        sycl::free(ptr, _que);
-    }
-  };
+
   ::dnnl::memory &get_workspace(void *key) { return workspace_map[key]; }
 
   void insert_workspace(void *key, ::dnnl::memory workspace) {
@@ -415,34 +541,46 @@ class engine_ext {
 
   const ::dnnl::engine &get_engine() const { return _eng; }
 
-  std::unique_ptr<void, device_pointer_deleter>
-  allocate(const memory_desc_ext &desc) const;
+  void *allocate(const memory_desc_ext &desc) const;
 
   std::vector<int64_t>
   compress_spatial_dimensions_to_channel(::dnnl::memory::desc desc);
-
   template <typename primitive_type, typename... args_type>
   primitive_type create_forward_primitive(args_type &&...args);
+
+  template <typename primitive_type, typename... args_type>
+  primitive_type
+  engine_ext::create_forward_primitive(::dnnl::primitive_attr &attr,
+                                       args_type &&...args);
 
   template <typename primitive_type, typename... args_type>
   typename primitive_type::primitive_desc
   create_forward_primitive_desc(args_type &&...args);
 
+  template <typename primitive_type, typename... args_type>
+  typename primitive_type::primitive_desc
+  engine_ext::create_forward_primitive_desc(::dnnl::primitive_attr &attr,
+                                            args_type &&...args);
+
   template <typename primitive_type, typename forward_primitive_type,
             typename... args_type>
   primitive_type create_backward_primitive(forward_primitive_type &&fp,
                                            args_type &&...args);
+  template <typename primitive_type, typename... args_type>
+  primitive_type create_backward_primitive(args_type &&...args);
+
+  bool engine_ext::scale_parameter_preprocess(
+      std::vector<std::tuple<float, float, memory_desc_ext, void *>> args);
 
   template <bool is_forward, typename primitive_type, typename args_type>
   void execute_primitive(float alpha, float beta, primitive_type &&primitive,
                          args_type &&args, const memory_desc_ext &mem_desc,
                          void *mem);
-
   static ::dnnl::primitive_attr generate_scaling_attr(float alpha, float beta);
 
 public:
   engine_ext() {}
-/// Creating oneDNN engine.
+  /// Creating oneDNN engine.
   void create_engine() {
     _eng = ::dnnl::sycl_interop::make_engine(
         dpct::get_current_device(), dpct::get_current_device().get_context());
@@ -450,10 +588,10 @@ public:
         _eng, dpct::get_current_device().default_queue());
     _q = &dpct::get_current_device().default_queue();
   }
-/// Setting the user's SYCL queue for an oneDNN engine.
-/// \param [in] q Pointer to the SYCL queue.
-  void set_queue(sycl::queue* q) {
-    if(!q) {
+  /// Setting the user's SYCL queue for an oneDNN engine.
+  /// \param [in] q Pointer to the SYCL queue.
+  void set_queue(sycl::queue *q) {
+    if (!q) {
       throw std::runtime_error("set_queue: pointer must not be nullptr.");
     }
     if (!_eng) {
@@ -466,9 +604,9 @@ public:
     _q = q;
     _s = ::dnnl::sycl_interop::make_stream(_eng, *q);
   }
-/// Retrieving the user's SYCL queue set in the oneDNN engine.
-/// \returns Pointer to the SYCL queue.
-  sycl::queue* get_queue() const { return _q; }
+  /// Retrieving the user's SYCL queue set in the oneDNN engine.
+  /// \returns Pointer to the SYCL queue.
+  sycl::queue *get_queue() const { return _q; }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|fill_decl|dpct::dnnl
@@ -476,10 +614,10 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Setting all elements of a memory to a given value.
-/// \param [in] src_desc Source memory descriptor.
-/// \param [in] src Pointer to source data.
-/// \param [in] valuePtr Pointer to a signle value.
+  /// Setting all elements of a memory to a given value.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data.
+  /// \param [in] valuePtr Pointer to a signle value.
   void fill(const memory_desc_ext &src_desc, void *src, const void *valuePtr);
 // DPCT_LABEL_END
 
@@ -488,15 +626,15 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Coping the scaled data from a memory to another memory with a different description.
-/// \param [in] alpha Pointer to scaling factors used to scale the computed value.
-/// \param [in] src_desc Source memory descriptor.
-/// \param [in] src Pointer to source data.
-/// \param [in] beta Pointer to scaling factors used to scale the prior value in the destination memory.
-/// \param [in] dst_desc Destination memory descriptor.
-/// \param [out] dst Pointer to destination data.
-  void reorder(float alpha, const memory_desc_ext &src_desc, void *src, float beta,
-               const memory_desc_ext &dst_desc, void *dst);
+  /// Coping the scaled data from a memory to another memory with a different
+  /// description. \param [in] alpha Pointer to scaling factors used to scale
+  /// the computed value. \param [in] src_desc Source memory descriptor. \param
+  /// [in] src Pointer to source data. \param [in] beta Pointer to scaling
+  /// factors used to scale the prior value in the destination memory. \param
+  /// [in] dst_desc Destination memory descriptor. \param [out] dst Pointer to
+  /// destination data.
+  void reorder(float alpha, const memory_desc_ext &src_desc, void *src,
+               float beta, const memory_desc_ext &dst_desc, void *dst);
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|scale_decl|dpct::dnnl
@@ -504,10 +642,10 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Scaling all the elements of a memory by a given factor.
-/// \param [in] alpha Pointer to scaling factors.
-/// \param [in] src_desc Source memory descriptor.
-/// \param [out] src Pointer to source data.
+  /// Scaling all the elements of a memory by a given factor.
+  /// \param [in] alpha Pointer to scaling factors.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [out] src Pointer to source data.
   void scale(float alpha, const memory_desc_ext &src_desc, void *src);
 // DPCT_LABEL_END
 
@@ -516,15 +654,38 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Adding the scaled values of a memory to another memory.
-/// \param [in] alpha Pointer to scaling factors used to scale the computed value.
-/// \param [in] src_desc Source memory descriptor.
-/// \param [in] src Pointer to source data.
-/// \param [in] beta Pointer to scaling factors used to scale the prior value in the destination memory.
-/// \param [in] dst_desc Destination memory descriptor.
-/// \param [out] dst Pointer to destination data.
+  /// Adding the scaled values of a memory to another memory.
+  /// \param [in] alpha Pointer to scaling factors used to scale the computed
+  /// value. \param [in] src_desc Source memory descriptor. \param [in] src
+  /// Pointer to source data. \param [in] beta Pointer to scaling factors used
+  /// to scale the prior value in the destination memory. \param [in] dst_desc
+  /// Destination memory descriptor. \param [out] dst Pointer to destination
+  /// data.
   void sum(float alpha, const memory_desc_ext &src_desc, void *src, float beta,
            const memory_desc_ext &dst_desc, void *dst);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|binary_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::event engine_ext::binary(binary_desc &desc, float alpha_0,
+                                 const memory_desc_ext &src_desc_0, void *src_0,
+                                 float alpha_1,
+                                 const memory_desc_ext &src_desc_1, void *src_1,
+                                 float beta, const memory_desc_ext &dst_desc,
+                                 void *dst);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|reduction_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  void reduction(reduction_desc &desc, float alpha,
+                 const memory_desc_ext &src_desc, void *src, float beta,
+                 const memory_desc_ext &dst_desc, void *dst);
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|activation_forward_decl|dpct::dnnl
@@ -532,17 +693,18 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Computing a specified activation function value.
-/// \param [in] desc Activation descriptor.
-/// \param [in] alpha Pointer to scaling factors used to scale the computed value.
-/// \param [in] src_desc Source memory descriptor.
-/// \param [in] src Pointer to source data.
-/// \param [in] beta Pointer to scaling factors used to scale the prior value in the destination memory.
-/// \param [in] dst_desc Destination memory descriptor.
-/// \param [out] dst Pointer to destination data.
+  /// Computing a specified activation function value.
+  /// \param [in] desc Activation descriptor.
+  /// \param [in] alpha Pointer to scaling factors used to scale the computed
+  /// value. \param [in] src_desc Source memory descriptor. \param [in] src
+  /// Pointer to source data. \param [in] beta Pointer to scaling factors used
+  /// to scale the prior value in the destination memory. \param [in] dst_desc
+  /// Destination memory descriptor. \param [out] dst Pointer to destination
+  /// data.
   void activation_forward(activation_desc &desc, float alpha,
-                          const memory_desc_ext &src_desc, void *src, float beta,
-                          const memory_desc_ext &dst_desc, void *dst);
+                          const memory_desc_ext &src_desc, void *src,
+                          float beta, const memory_desc_ext &dst_desc,
+                          void *dst);
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|activation_backward_decl|dpct::dnnl
@@ -550,23 +712,24 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Computing the gradient of a specified activation function.
-/// \param [in] desc Activation descriptor.
-/// \param [in] alpha Pointer to scaling factors used to scale the computed value.
-/// \param [in] dst_desc Destination memory descriptor.
-/// \param [in] dst Pointer to destination data.
-/// \param [in] diff_dst_desc Differential destination memory descriptor.
-/// \param [in] diff_dst Pointer to differential destination data.
-/// \param [in] src_desc Source memory descriptor.
-/// \param [in] src Pointer to source data.
-/// \param [in] beta Pointer to scaling factors used to scale the prior value in the differential destination memory.
-/// \param [in] diff_src_desc Differential source memory descriptor.
-/// \param [out] diff_src Pointer to differential source data.
+  /// Computing the gradient of a specified activation function.
+  /// \param [in] desc Activation descriptor.
+  /// \param [in] alpha Pointer to scaling factors used to scale the computed
+  /// value. \param [in] dst_desc Destination memory descriptor. \param [in] dst
+  /// Pointer to destination data. \param [in] diff_dst_desc Differential
+  /// destination memory descriptor. \param [in] diff_dst Pointer to
+  /// differential destination data. \param [in] src_desc Source memory
+  /// descriptor. \param [in] src Pointer to source data. \param [in] beta
+  /// Pointer to scaling factors used to scale the prior value in the
+  /// differential destination memory. \param [in] diff_src_desc Differential
+  /// source memory descriptor. \param [out] diff_src Pointer to differential
+  /// source data.
   void activation_backward(activation_desc &desc, float alpha,
                            const memory_desc_ext &dst_desc, void *dst,
                            const memory_desc_ext &diff_dst_desc, void *diff_dst,
-                           const memory_desc_ext &src_desc, void *src, float beta,
-                           const memory_desc_ext &diff_src_desc, void *diff_src);
+                           const memory_desc_ext &src_desc, void *src,
+                           float beta, const memory_desc_ext &diff_src_desc,
+                           void *diff_src);
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|pooling_forward_decl|dpct::dnnl
@@ -574,15 +737,15 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Computing a specified pooling function value.
-/// \param [in] desc Pooling descriptor.
-/// \param [in] alpha Pointer to scaling factors used to scale the computed value.
-/// \param [in] src_desc Source memory descriptor.
-/// \param [in] src Pointer to source data.
-/// \param [in] beta Pointer to scaling factors used to scale the prior value in the destination memory.
-/// \param [in] dst_desc Destination memory descriptor.
-/// \param [out] dst Pointer to destination data.
-/// \param [out] workspace Pointer to workspace generated from forward propagation.
+  /// Computing a specified pooling function value.
+  /// \param [in] desc Pooling descriptor.
+  /// \param [in] alpha Pointer to scaling factors used to scale the computed
+  /// value. \param [in] src_desc Source memory descriptor. \param [in] src
+  /// Pointer to source data. \param [in] beta Pointer to scaling factors used
+  /// to scale the prior value in the destination memory. \param [in] dst_desc
+  /// Destination memory descriptor. \param [out] dst Pointer to destination
+  /// data. \param [out] workspace Pointer to workspace generated from forward
+  /// propagation.
   void pooling_forward(pooling_desc &desc, float alpha,
                        const memory_desc_ext &src_desc, void *src, float beta,
                        const memory_desc_ext &dst_desc, void *dst,
@@ -594,19 +757,19 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Computing the gradient of a specified pooling function.
-/// \param [in] desc Activation descriptor.
-/// \param [in] alpha Pointer to scaling factors used to scale the computed value.
-/// \param [in] dst_desc Destination memory descriptor.
-/// \param [in] dst Pointer to destination data.
-/// \param [in] diff_dst_desc Differential destination memory descriptor.
-/// \param [in] diff_dst Pointer to differential destination data.
-/// \param [in] src_desc Source memory descriptor.
-/// \param [in] src Pointer to source data.
-/// \param [in] beta Pointer to scaling factors used to scale the prior value in the differential destination memory.
-/// \param [in] diff_src_desc Differential source memory descriptor.
-/// \param [out] diff_src Pointer to differential source data.
-/// \param [in] workspace Pointer to workspace used for backward propagation.
+  /// Computing the gradient of a specified pooling function.
+  /// \param [in] desc Activation descriptor.
+  /// \param [in] alpha Pointer to scaling factors used to scale the computed
+  /// value. \param [in] dst_desc Destination memory descriptor. \param [in] dst
+  /// Pointer to destination data. \param [in] diff_dst_desc Differential
+  /// destination memory descriptor. \param [in] diff_dst Pointer to
+  /// differential destination data. \param [in] src_desc Source memory
+  /// descriptor. \param [in] src Pointer to source data. \param [in] beta
+  /// Pointer to scaling factors used to scale the prior value in the
+  /// differential destination memory. \param [in] diff_src_desc Differential
+  /// source memory descriptor. \param [out] diff_src Pointer to differential
+  /// source data. \param [in] workspace Pointer to workspace used for backward
+  /// propagation.
   void pooling_backward(pooling_desc &desc, float alpha,
                         const memory_desc_ext &dst_desc, void *dst,
                         const memory_desc_ext &diff_dst_desc, void *diff_dst,
@@ -620,15 +783,15 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Computing a specified softmax function value.
-/// \param [in] alg Softmax algorithm.
-/// \param [in] mode Softmax mode.
-/// \param [in] alpha Pointer to scaling factors used to scale the computed value.
-/// \param [in] src_desc Source memory descriptor.
-/// \param [in] src Pointer to source data.
-/// \param [in] beta Pointer to scaling factors used to scale the prior value in the destination memory.
-/// \param [in] dst_desc Destination memory descriptor.
-/// \param [out] dst Pointer to destination data.
+  /// Computing a specified softmax function value.
+  /// \param [in] alg Softmax algorithm.
+  /// \param [in] mode Softmax mode.
+  /// \param [in] alpha Pointer to scaling factors used to scale the computed
+  /// value. \param [in] src_desc Source memory descriptor. \param [in] src
+  /// Pointer to source data. \param [in] beta Pointer to scaling factors used
+  /// to scale the prior value in the destination memory. \param [in] dst_desc
+  /// Destination memory descriptor. \param [out] dst Pointer to destination
+  /// data.
   void softmax_forward(softmax_algorithm alg, softmax_mode mode, float alpha,
                        const memory_desc_ext &src_desc, void *src, float beta,
                        const memory_desc_ext &dst_desc, void *dst);
@@ -639,17 +802,17 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Computing the gradient of a specified softmax function.
-/// \param [in] alg Softmax algorithm.
-/// \param [in] mode Softmax mode.
-/// \param [in] alpha Pointer to scaling factors used to scale the computed value.
-/// \param [in] dst_desc Destination memory descriptor.
-/// \param [in] dst Pointer to destination data.
-/// \param [in] diff_dst_desc Differential destination memory descriptor.
-/// \param [in] diff_dst Pointer to differential destination data.
-/// \param [in] beta Pointer to scaling factors used to scale the prior value in the differential destination memory.
-/// \param [in] diff_src_desc Differential source memory descriptor.
-/// \param [out] diff_src Pointer to differential source data.
+  /// Computing the gradient of a specified softmax function.
+  /// \param [in] alg Softmax algorithm.
+  /// \param [in] mode Softmax mode.
+  /// \param [in] alpha Pointer to scaling factors used to scale the computed
+  /// value. \param [in] dst_desc Destination memory descriptor. \param [in] dst
+  /// Pointer to destination data. \param [in] diff_dst_desc Differential
+  /// destination memory descriptor. \param [in] diff_dst Pointer to
+  /// differential destination data. \param [in] beta Pointer to scaling factors
+  /// used to scale the prior value in the differential destination memory.
+  /// \param [in] diff_src_desc Differential source memory descriptor.
+  /// \param [out] diff_src Pointer to differential source data.
   void softmax_backward(softmax_algorithm alg, softmax_mode mode, float alpha,
                         const memory_desc_ext &dst_desc, void *dst,
                         const memory_desc_ext &diff_dst_desc, void *diff_dst,
@@ -662,15 +825,15 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Computing a specified local response normalization function value.
-/// \param [in] desc Local response normalization descriptor.
-/// \param [in] alpha Pointer to scaling factors used to scale the computed value.
-/// \param [in] src_desc Source memory descriptor.
-/// \param [in] src Pointer to source data.
-/// \param [in] beta Pointer to scaling factors used to scale the prior value in the destination memory.
-/// \param [in] dst_desc Destination memory descriptor.
-/// \param [out] dst Pointer to destination data.
-/// \param [out] workspace Pointer to workspace generated from forward propagation.
+  /// Computing a specified local response normalization function value.
+  /// \param [in] desc Local response normalization descriptor.
+  /// \param [in] alpha Pointer to scaling factors used to scale the computed
+  /// value. \param [in] src_desc Source memory descriptor. \param [in] src
+  /// Pointer to source data. \param [in] beta Pointer to scaling factors used
+  /// to scale the prior value in the destination memory. \param [in] dst_desc
+  /// Destination memory descriptor. \param [out] dst Pointer to destination
+  /// data. \param [out] workspace Pointer to workspace generated from forward
+  /// propagation.
   void lrn_forward(lrn_desc &desc, float alpha, const memory_desc_ext &src_desc,
                    void *src, float beta, const memory_desc_ext &dst_desc,
                    void *dst, ::dnnl::memory *workspace = nullptr);
@@ -681,24 +844,176 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// Computing the gradient of a specified local response normalization function.
-/// \param [in] desc Local response normalization descriptor.
-/// \param [in] alpha Pointer to scaling factors used to scale the computed value.
-/// \param [in] dst_desc Destination memory descriptor.
-/// \param [in] dst Pointer to destination data.
-/// \param [in] diff_dst_desc Differential destination memory descriptor.
-/// \param [in] diff_dst Pointer to differential destination data.
-/// \param [in] src_desc Source memory descriptor.
-/// \param [in] src Pointer to source data.
-/// \param [in] beta Pointer to scaling factors used to scale the prior value in the differential destination memory.
-/// \param [in] diff_src_desc Differential source memory descriptor.
-/// \param [out] diff_src Pointer to differential source data.
-/// \param [in] workspace Pointer to workspace used for backward propagation.
-  void lrn_backward(lrn_desc &desc, float alpha, const memory_desc_ext &dst_desc,
-                    void *dst, const memory_desc_ext &diff_dst_desc,
-                    void *diff_dst, const memory_desc_ext &src_desc, void *src,
-                    float beta, const memory_desc_ext &diff_src_desc,
-                    void *diff_src, ::dnnl::memory *workspace = nullptr);
+  /// Computing the gradient of a specified local response normalization
+  /// function. \param [in] desc Local response normalization descriptor. \param
+  /// [in] alpha Pointer to scaling factors used to scale the computed value.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [in] dst Pointer to destination data.
+  /// \param [in] diff_dst_desc Differential destination memory descriptor.
+  /// \param [in] diff_dst Pointer to differential destination data.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data.
+  /// \param [in] beta Pointer to scaling factors used to scale the prior value
+  /// in the differential destination memory. \param [in] diff_src_desc
+  /// Differential source memory descriptor. \param [out] diff_src Pointer to
+  /// differential source data. \param [in] workspace Pointer to workspace used
+  /// for backward propagation.
+  void lrn_backward(lrn_desc &desc, float alpha,
+                    const memory_desc_ext &dst_desc, void *dst,
+                    const memory_desc_ext &diff_dst_desc, void *diff_dst,
+                    const memory_desc_ext &src_desc, void *src, float beta,
+                    const memory_desc_ext &diff_src_desc, void *diff_src,
+                    ::dnnl::memory *workspace = nullptr);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|derive_batch_normalization_memory_desc_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|batch_normalization_mode
+// DnnlUtils|batch_normalization_ops
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  void engine_ext::derive_batch_normalization_memory_desc(
+      memory_desc_ext &desc, const memory_desc_ext &src_desc,
+      batch_normalization_mode mode);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|batch_normalization_forward_inference_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|batch_normalization_mode
+// DnnlUtils|batch_normalization_ops
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::event engine_ext::batch_normalization_forward_inference(
+      batch_normalization_mode mode, float epsilon, float alpha,
+      const memory_desc_ext &src_desc, void *src, float beta,
+      const memory_desc_ext &dst_desc, void *dst,
+      const memory_desc_ext &scale_bias_mean_var_desc, void *scale, void *bias,
+      void *mean, void *var);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|batch_normalization_forward_training_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|batch_normalization_mode
+// DnnlUtils|batch_normalization_ops
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::event engine_ext::batch_normalization_forward_training(
+      batch_normalization_mode mode, float epsilon, float factor, float alpha,
+      const memory_desc_ext &src_desc, void *src, float beta,
+      const memory_desc_ext &dst_desc, void *dst,
+      const memory_desc_ext &scale_bias_mean_var_desc, void *scale, void *bias,
+      void *running_mean, void *running_var, void *saved_mean, void *saved_var);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|batch_normalization_backward_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|batch_normalization_mode
+// DnnlUtils|batch_normalization_ops
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::event engine_ext::batch_normalization_backward(
+      batch_normalization_mode mode, float epsilon, float alpha_data,
+      const memory_desc_ext &src_desc, void *src,
+      const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta_data,
+      const memory_desc_ext &diff_src_desc, void *diff_src, float alpha_param,
+      const memory_desc_ext &diff_scale_bias_desc, void *scale,
+      float beta_param, void *diff_scale, void *diff_bias, void *saved_mean,
+      void *saved_var);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|batch_normalization_forward_training_ex_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|batch_normalization_mode
+// DnnlUtils|batch_normalization_ops
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::event engine_ext::batch_normalization_forward_training_ex(
+      batch_normalization_mode mode, batch_normalization_ops ops,
+      activation_desc &adesc, float epsilon, float factor, float alpha,
+      const memory_desc_ext &src_desc, void *src, float beta,
+      const memory_desc_ext &dst_desc, void *dst,
+      const memory_desc_ext &addition_desc, void *addition,
+      const memory_desc_ext &scale_bias_mean_var_desc, void *scale, void *bias,
+      void *running_mean, void *running_var, void *saved_mean, void *saved_var,
+      void *reserve_space, size_t reserve_space_size);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|batch_normalization_backward_ex_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|batch_normalization_mode
+// DnnlUtils|batch_normalization_ops
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::event engine_ext::batch_normalization_backward_ex(
+      batch_normalization_mode mode, batch_normalization_ops ops,
+      activation_desc &adesc, float epsilon, float alpha_data,
+      const memory_desc_ext &src_desc, void *src,
+      const memory_desc_ext &dst_desc, void *dst,
+      const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta_data,
+      const memory_desc_ext &diff_src_desc, void *diff_src,
+      const memory_desc_ext &diff_addition_desc, void *diff_addition,
+      float alpha_param, const memory_desc_ext &scale_bias_desc, void *scale,
+      void *bias, void *diff_scale, void *diff_bias,
+      const memory_desc_ext &diff_scale_bias_desc, void *scale,
+      float beta_param, void *diff_scale, void *diff_bias, void *saved_mean,
+      void *saved_var, void *reserve_space, size_t reserve_space_size);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|convolution_forward_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::event
+  engine_ext::convolution_forward(convolution_desc &desc, ::dnnl::algorithm alg,
+                                  float alpha, const memory_desc_ext &src_desc,
+                                  void *src, const memory_desc_ext &weight_desc,
+                                  void *weight, float beta,
+                                  const memory_desc_ext &dst_desc, void *dst);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|convolution_forward_ex_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::event engine_ext::convolution_forward_ex(
+      convolution_desc &desc, ::dnnl::algorithm alg, activation_desc &adesc,
+      float alpha_0, const memory_desc_ext &src_desc, void *src,
+      const memory_desc_ext &weight_desc, void *weight, float alpha_1,
+      const memory_desc_ext &addition_desc, void *addition,
+      const memory_desc_ext &bias_desc, void *bias,
+      const memory_desc_ext &dst_desc, void *dst);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|convolution_backward_data_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::event engine_ext::convolution_backward_data(
+      convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
+      const memory_desc_ext &weight_desc, void *weight,
+      const memory_desc_ext &diff_dst_decs, void *diff_dst, float beta,
+      const memory_desc_ext &diff_src_desc, void *diff_dst);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|convolution_backward_weight_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::event engine_ext::convolution_backward_weight(
+      convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
+      const memory_desc_ext &src_desc, void *src,
+      const memory_desc_ext &diff_dst_decs, void *diff_dst, float beta,
+      const memory_desc_ext &diff_weight_desc, void *diff_weight);
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|engine_ext_1|dpct::dnnl
@@ -712,7 +1027,8 @@ public:
 // DPCT_LABEL_BEGIN|memory_desc_ext_def|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-::dnnl::memory::data_type memory_desc_ext::to_dnnl_data_type(dpct::library_data_t dt) {
+::dnnl::memory::data_type
+memory_desc_ext::to_dnnl_data_type(dpct::library_data_t dt) {
   using dnnl_dt = ::dnnl::memory::data_type;
   switch (dt) {
   case dpct::library_data_t::real_half:
@@ -738,7 +1054,8 @@ public:
   }
 }
 
-dpct::library_data_t memory_desc_ext::to_dpct_library_data_t(::dnnl::memory::data_type dt,
+dpct::library_data_t
+memory_desc_ext::to_dpct_library_data_t(::dnnl::memory::data_type dt,
                                         unsigned block_size) {
   using dpct_dt = dpct::library_data_t;
   using dnnl_dt = ::dnnl::memory::data_type;
@@ -766,13 +1083,14 @@ dpct::library_data_t memory_desc_ext::to_dpct_library_data_t(::dnnl::memory::dat
       return dpct_dt::real_uint8;
     }
   default:
-    throw std::runtime_error(
-        "to_dpct_library_data_t: unsupported data type dnnl::memory::data_type::undef.");
+    throw std::runtime_error("to_dpct_library_data_t: unsupported data type "
+                             "dnnl::memory::data_type::undef.");
   }
 }
 
-::dnnl::memory::format_tag memory_desc_ext::to_dnnl_format_tag(dpct::library_data_t dt,
-                                              memory_format_tag tag) {
+::dnnl::memory::format_tag
+memory_desc_ext::to_dnnl_format_tag(dpct::library_data_t dt,
+                                    memory_format_tag tag) {
   using dpct_dt = dpct::library_data_t;
   using dpct_tag = memory_format_tag;
   using dnnl_tag = ::dnnl::memory::format_tag;
@@ -790,33 +1108,34 @@ dpct::library_data_t memory_desc_ext::to_dpct_library_data_t(::dnnl::memory::dat
   }
 }
 
-void memory_desc_ext::set(memory_format_tag tag, dpct::library_data_t dt, int n, int c,
-                          int h, int w) {
+void memory_desc_ext::set(memory_format_tag tag, dpct::library_data_t dt, int n,
+                          int c, int h, int w) {
   _desc = ::dnnl::memory::desc({n, c, h, w}, to_dnnl_data_type(dt),
-                            to_dnnl_format_tag(dt, tag));
+                               to_dnnl_format_tag(dt, tag));
 }
 
 void memory_desc_ext::set(dpct::library_data_t dt, int n, int c, int h, int w,
-                       int n_stride, int c_stride, int h_stride, int w_stride) {
+                          int n_stride, int c_stride, int h_stride,
+                          int w_stride) {
   _desc = ::dnnl::memory::desc({n, c, h, w}, to_dnnl_data_type(dt),
-                             {n_stride, c_stride, h_stride, w_stride});
+                               {n_stride, c_stride, h_stride, w_stride});
 }
 
 void memory_desc_ext::set(dpct::library_data_t dt, int ndims, const int dims[],
-                       const int strides[]) {
+                          const int strides[]) {
   _desc = ::dnnl::memory::desc({dims, dims + ndims}, to_dnnl_data_type(dt),
-                             {strides, strides + ndims});
+                               {strides, strides + ndims});
 }
 
-void memory_desc_ext::set(memory_format_tag tag, dpct::library_data_t dt, int ndims,
-                       const int dims[]) {
+void memory_desc_ext::set(memory_format_tag tag, dpct::library_data_t dt,
+                          int ndims, const int dims[]) {
   _desc = ::dnnl::memory::desc({dims, dims + ndims}, to_dnnl_data_type(dt),
-                             to_dnnl_format_tag(dt, tag));
+                               to_dnnl_format_tag(dt, tag));
 }
 
-void memory_desc_ext::get(dpct::library_data_t *dt, int *n, int *c, int *h, int *w,
-                       int *n_stride, int *c_stride, int *h_stride,
-                       int *w_stride) const {
+void memory_desc_ext::get(dpct::library_data_t *dt, int *n, int *c, int *h,
+                          int *w, int *n_stride, int *c_stride, int *h_stride,
+                          int *w_stride) const {
   unsigned block_size = 1;
   if (_desc.data.format_desc.blocking.inner_blks[0]) {
     block_size = _desc.data.format_desc.blocking.inner_blks[0];
@@ -833,8 +1152,8 @@ void memory_desc_ext::get(dpct::library_data_t *dt, int *n, int *c, int *h, int 
   *w_stride = _desc.data.format_desc.blocking.strides[3] / block_size;
 }
 
-void memory_desc_ext::get(int requested_ndims, dpct::library_data_t *dt, int *ndims,
-                       int dims[], int strides[]) const {
+void memory_desc_ext::get(int requested_ndims, dpct::library_data_t *dt,
+                          int *ndims, int dims[], int strides[]) const {
   unsigned block_size = 1;
   if (_desc.data.format_desc.blocking.inner_blks[0]) {
     block_size = _desc.data.format_desc.blocking.inner_blks[0];
@@ -852,12 +1171,10 @@ void memory_desc_ext::get(int requested_ndims, dpct::library_data_t *dt, int *nd
 // DPCT_LABEL_BEGIN|engine_ext_2|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-std::unique_ptr<void, engine_ext::device_pointer_deleter>
-engine_ext::allocate(const memory_desc_ext &data_desc) const {
+void *engine_ext::allocate(const memory_desc_ext &data_desc) const {
   size_t mem_size = data_desc.get_size();
   void *mem = cl::sycl::malloc_device(mem_size, *_q);
-  return std::unique_ptr<void, device_pointer_deleter>(
-      mem, device_pointer_deleter(*_q));
+  return mem;
 }
 
 std::vector<int64_t>
@@ -874,8 +1191,23 @@ engine_ext::compress_spatial_dimensions_to_channel(::dnnl::memory::desc desc) {
   return compressed_dims;
 }
 
+bool engine_ext::scale_parameter_preprocess(
+    std::vector<std::tuple<float, float, memory_desc_ext, void *>> args) {
+  bool direct_exit = true;
+  for (auto &arg : args) {
+    if (std::get<0>(arg) == 0.f) {
+      if (std::get<1>(arg) != 1.f) {
+        scale(std::get<1>(arg), std::get<2>(arg), std::get<3>(arg));
+      }
+    } else {
+      direct_exit = false;
+    }
+  }
+  return direct_exit;
+}
+
 ::dnnl::primitive_attr engine_ext::generate_scaling_attr(float alpha,
-                                                       float beta) {
+                                                         float beta) {
   ::dnnl::primitive_attr attr;
   if (alpha != 1.f) {
     attr.set_output_scales(0, {alpha});
@@ -888,26 +1220,51 @@ engine_ext::compress_spatial_dimensions_to_channel(::dnnl::memory::desc desc) {
   return attr;
 }
 
-template <bool is_forward = true, typename primitive_type, typename args_type>
-void engine_ext::execute_primitive(float alpha, float beta,
-                                   primitive_type &&primitive, args_type &&args,
-                                   const memory_desc_ext &mem_desc, void *mem) {
-  if (beta != 0.f) {
-    auto cache = allocate(mem_desc);
-    args.insert({is_forward ? DNNL_ARG_DST : DNNL_ARG_DIFF_SRC,
-                 ::dnnl::memory(mem_desc.get_desc(), _eng, cache.get())});
-    ::dnnl::sycl_interop::execute(primitive, _s, args);
-    sum(alpha, mem_desc, cache.get(), beta, mem_desc, mem);
-  } else {
-    args.insert({is_forward ? DNNL_ARG_DST : DNNL_ARG_DIFF_SRC,
-                 ::dnnl::memory(mem_desc.get_desc(), _eng, mem)});
-    ::dnnl::sycl_interop::execute(primitive, _s, args);
-    if(alpha == 1.f) {
-      _s.wait();
+template <typename primitive_type, typename args_type>
+sycl::event engine_ext::execute_primitive(
+    primitive_type &&primitive, args_type &&args,
+    std::vector<std::tuple<float, float, int, memory_desc_ext, void *>>
+        extra_args) {
+  std::map<void *, void *> caches_map;
+  sycl::event final_event, final_cache_event;
+
+  for (auto &extra_arg : extra_args) {
+    float alpha = std::get<0>(extra_arg);
+    float beta = std::get<1>(extra_arg);
+    int arg_index = std::get<2>(extra_arg);
+    memory_desc_ext desc = std::get<3>(extra_arg);
+    void *mem = std::get<4>(extra_arg);
+    if (beta != 0.f) {
+      auto cache = allocate(desc);
+      caches_map.emplace_back({mem, cache});
+      args.insert({arg_index, ::dnnl::memory(desc.get_desc(), _eng, cache)});
     } else {
-      scale(alpha, mem_desc, mem);
+      args.insert({arg_index, ::dnnl::memory(desc.get_desc(), _eng, mem)});
     }
   }
+
+  final_event = final_cache_event =
+      ::dnnl::sycl_interop::execute(primitive, _s, args);
+
+  for (auto &extra_arg : extra_args) {
+    float alpha = std::get<0>(extra_arg);
+    float beta = std::get<1>(extra_arg);
+    int arg_index = std::get<2>(extra_arg);
+    memory_desc_ext desc = std::get<3>(extra_arg);
+    void *mem = std::get<4>(extra_arg);
+    if (beta != 0.f) {
+      final_event = final_cache_event =
+          sum(alpha, desc, caches_map[mem], beta, mem_desc, mem);
+    } else {
+      if (alpha != 1.f) {
+        final_event = scale(alpha, mem_desc, mem);
+      }
+    }
+  }
+  if (!caches_map.empty()) {
+    async_dpct_free({caches.begin(), caches.end()}, {final_cache_event}, *_q);
+  }
+  return final_event;
 }
 
 template <typename primitive_type, typename... args_type>
@@ -917,10 +1274,26 @@ primitive_type engine_ext::create_forward_primitive(args_type &&...args) {
 }
 
 template <typename primitive_type, typename... args_type>
+primitive_type
+engine_ext::create_forward_primitive(::dnnl::primitive_attr &attr,
+                                     args_type &&...args) {
+  return primitive_type(create_forward_primitive_desc<primitive_type>(
+      attr, std::forward<args_type>(args)...));
+}
+
+template <typename primitive_type, typename... args_type>
 typename primitive_type::primitive_desc
 engine_ext::create_forward_primitive_desc(args_type &&...args) {
   return typename primitive_type::primitive_desc(
       {std::forward<args_type>(args)...}, _eng);
+}
+
+template <typename primitive_type, typename... args_type>
+typename primitive_type::primitive_desc
+engine_ext::create_forward_primitive_desc(::dnnl::primitive_attr &attr,
+                                          args_type &&...args) {
+  return typename primitive_type::primitive_desc(
+      {std::forward<args_type>(args)...}, attr, _eng);
 }
 
 template <typename primitive_type, typename forward_primitive_type,
@@ -932,6 +1305,12 @@ engine_ext::create_backward_primitive(forward_primitive_type &&fp,
       {std::forward<args_type>(args)...}, _eng,
       std::forward<forward_primitive_type>(fp)));
 }
+
+template <typename primitive_type, typename... args_type>
+primitive_type engine_ext::create_backward_primitive(args_type &&...args) {
+  return primitive_type(typename primitive_type::primitive_desc(
+      {std::forward<args_type>(args)...}, _eng));
+}
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|fill|dpct::dnnl
@@ -939,35 +1318,30 @@ engine_ext::create_backward_primitive(forward_primitive_type &&fp,
 // DnnlUtils|fill_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-void engine_ext::fill(const memory_desc_ext &src_desc, void *src,
-                      const void *valuePtr) {
+sycl::event engine_ext::fill(const memory_desc_ext &src_desc, void *src,
+                             const void *valuePtr) {
   ::dnnl::memory::data_type dt = src_desc.get_desc().data_type();
   unsigned mem_size = src_desc.get_size();
   switch (dt) {
   case ::dnnl::memory::data_type::f32:
-    _q->fill<float>(src, *reinterpret_cast<const float *>(valuePtr),
-                  mem_size / sizeof(float));
-    break;
+    return _q->fill<float>(src, *reinterpret_cast<const float *>(valuePtr),
+                           mem_size / sizeof(float));
   case ::dnnl::memory::data_type::f16:
-    _q->fill<sycl::half>(src, *reinterpret_cast<const sycl::half *>(valuePtr),
-                       mem_size / sizeof(sycl::half));
-    break;
+    return _q->fill<sycl::half>(src,
+                                *reinterpret_cast<const sycl::half *>(valuePtr),
+                                mem_size / sizeof(sycl::half));
   case ::dnnl::memory::data_type::s32:
-    _q->fill<int32_t>(src, *reinterpret_cast<const int32_t *>(valuePtr),
-                    mem_size / sizeof(int32_t));
-    break;
+    return _q->fill<int32_t>(src, *reinterpret_cast<const int32_t *>(valuePtr),
+                             mem_size / sizeof(int32_t));
   case ::dnnl::memory::data_type::s8:
-    _q->fill<int8_t>(src, *reinterpret_cast<const int8_t *>(valuePtr),
-                   mem_size / sizeof(int8_t));
-    break;
+    return _q->fill<int8_t>(src, *reinterpret_cast<const int8_t *>(valuePtr),
+                            mem_size / sizeof(int8_t));
   case ::dnnl::memory::data_type::u8:
-    _q->fill<uint8_t>(src, *reinterpret_cast<const uint8_t *>(valuePtr),
-                    mem_size / sizeof(uint8_t));
-    break;
+    return _q->fill<uint8_t>(src, *reinterpret_cast<const uint8_t *>(valuePtr),
+                             mem_size / sizeof(uint8_t));
   default:
     throw std::runtime_error("fill: unsupported data type sycl::bfloat16.");
   }
-  _q->wait();
 }
 // DPCT_LABEL_END
 
@@ -976,17 +1350,17 @@ void engine_ext::fill(const memory_desc_ext &src_desc, void *src,
 // DnnlUtils|reorder_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-void engine_ext::reorder(float alpha, const memory_desc_ext &src_desc, void *src,
-                         float beta, const memory_desc_ext &dst_desc, void *dst) {
+sycl::event engine_ext::reorder(float alpha, const memory_desc_ext &src_desc,
+                                void *src, float beta,
+                                const memory_desc_ext &dst_desc, void *dst) {
   ::dnnl::reorder reorder_primitive({_eng, src_desc.get_desc(), _eng,
-                                   dst_desc.get_desc(),
-                                   generate_scaling_attr(alpha, beta)});
+                                     dst_desc.get_desc(),
+                                     generate_scaling_attr(alpha, beta)});
   std::unordered_map<int, ::dnnl::memory> args = {
       {DNNL_ARG_DST, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)},
       {DNNL_ARG_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, src)}};
 
-  ::dnnl::sycl_interop::execute(reorder_primitive, _s, args);
-  _s.wait();
+  return ::dnnl::sycl_interop::execute(reorder_primitive, _s, args);
 }
 // DPCT_LABEL_END
 
@@ -995,9 +1369,10 @@ void engine_ext::reorder(float alpha, const memory_desc_ext &src_desc, void *src
 // DnnlUtils|scale_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-void engine_ext::scale(float alpha, const memory_desc_ext &src_desc, void *src) {
+sycl::event engine_ext::scale(float alpha, const memory_desc_ext &src_desc,
+                              void *src) {
   if (alpha == 1.f) {
-    return;
+    return sycl::event();
   }
   auto primitive = create_forward_primitive<::dnnl::eltwise_forward>(
       ::dnnl::prop_kind::forward_inference, ::dnnl::algorithm::eltwise_linear,
@@ -1007,8 +1382,7 @@ void engine_ext::scale(float alpha, const memory_desc_ext &src_desc, void *src) 
       {DNNL_ARG_DST, ::dnnl::memory(src_desc.get_desc(), _eng, src)},
       {DNNL_ARG_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, src)}};
 
-  ::dnnl::sycl_interop::execute(primitive, _s, args);
-  _s.wait();
+  return ::dnnl::sycl_interop::execute(primitive, _s, args);
 }
 // DPCT_LABEL_END
 
@@ -1017,36 +1391,96 @@ void engine_ext::scale(float alpha, const memory_desc_ext &src_desc, void *src) 
 // DnnlUtils|sum_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-void engine_ext::sum(float alpha, const memory_desc_ext &src_desc, void *src,
-                     float beta, const memory_desc_ext &dst_desc, void *dst) {
+sycl::event engine_ext::sum(float alpha, const memory_desc_ext &src_desc,
+                            void *src, float beta,
+                            const memory_desc_ext &dst_desc, void *dst) {
   if (alpha == 0.f && beta == 1.f) {
-    return;
+    return sycl::event();
   }
   ::dnnl::sum::primitive_desc sum_primitive_desc(
       {beta, alpha}, {src_desc.get_desc(), dst_desc.get_desc()}, _eng);
 
   std::unordered_map<int, ::dnnl::memory> args = {
       {DNNL_ARG_DST, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)},
-      {DNNL_ARG_MULTIPLE_SRC + 1, ::dnnl::memory(src_desc.get_desc(), _eng, src)},
-      {DNNL_ARG_MULTIPLE_SRC,
-       ::dnnl::memory(dst_desc.get_desc(), _eng, dst)}};
+      {DNNL_ARG_MULTIPLE_SRC + 1,
+       ::dnnl::memory(src_desc.get_desc(), _eng, src)},
+      {DNNL_ARG_MULTIPLE_SRC, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)}};
 
-  ::dnnl::sycl_interop::execute(::dnnl::sum(sum_primitive_desc), _s, args);
-  _s.wait();
+  return ::dnnl::sycl_interop::execute(::dnnl::sum(sum_primitive_desc), _s,
+                                       args);
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|SCALE_PARAMETER_PREPROCESS|dpct::dnnl
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_LABEL_BEGIN|binary|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|binary_decl
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
-#define SCALE_PARAMETER_PREPROCESS(alpha, beta, mem_desc, mem)            \
-  if (alpha == 0.f) {                                                          \
-    if (beta == 1.f) {                                                         \
-      return;                                                                  \
-    }                                                                          \
-    scale(beta, mem_desc, mem);                                                \
-    return;                                                                    \
+sycl::event engine_ext::binary(binary_desc &desc, float alpha_0,
+                               const memory_desc_ext &src_desc_0, void *src_0,
+                               float alpha_1, const memory_desc_ext &src_desc_1,
+                               void *src_1, float beta,
+                               const memory_desc_ext &dst_desc, void *dst) {
+  if (desc.get_algorithm() == ::dnnl::algorithm::sqrt ||
+      desc.get_algorithm() == ::dnnl::algorithm::linear) {
+    if (alpha_0 != 1.f) {
+      scale(alpha_0, src_desc_0, src_0);
+    }
+    auto primitive = create_forward_primitive<::dnnl::eltwise_forward>(
+        ::dnnl::prop_kind::forward_inference, desc.get_algorithm(),
+        src_desc_0.get_desc(), -1.f, 1.f);
+    std::unordered_map<int, ::dnnl::memory> execution_args = {
+        {DNNL_ARG_SRC, {::dnnl::memory(src_desc_0.get_desc(), _eng, src_0)}}};
+    return execute_primitive(primitive, execution_args,
+                             {{1.f, beta, DNNL_ARG_DST, dst_desc, dst}});
   }
+  ::dnnl::primitive_attr attr;
+  if (alpha_0 != 1.f) {
+    attr.set_scales(DNNL_ARG_SRC_0, 0, {alpha_0});
+  }
+  if (alpha_1 != 1.f) {
+    attr.set_scales(DNNL_ARG_SRC_1, 0, {alpha_1});
+  }
+  auto primitive = create_forward_primitive<::dnnl::binary>(
+      attr, desc.get_algorithm(), src_desc_0.get_desc(), src_desc_1.get_desc(),
+      dst_desc.get_desc());
+
+  std::unordered_map<int, ::dnnl::memory> args = {
+      {DNNL_ARG_SRC_0, ::dnnl::memory(src_desc_0.get_desc(), _eng, src_0)},
+      {DNNL_ARG_SRC_1, ::dnnl::memory(src_desc_1.get_desc(), _eng, src_1)}};
+
+  return execute_primitive(primitive, execution_args,
+                           {{1.f, beta, DNNL_ARG_DST, dst_desc, dst}});
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|reduction|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|reduction_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+sycl::event engine_ext::reduction(reduction_desc &desc, float alpha,
+                                  const memory_desc_ext &src_desc, void *src,
+                                  float beta, const memory_desc_ext &dst_desc,
+                                  void *dst) {
+  if (alpha == 0.f && beta == 1.f) {
+    return sycl::event();
+  }
+  float p = 2.f;
+  if (desc.get_algorithm() ==
+      ::dnnl::algorithm::reduction_norm_lp_power_p_sum) {
+    p = 1.f;
+  }
+  auto primitive = create_forward_primitive<::dnnl::reduction>(
+      generate_scaling_attr(alpha, beta), desc.get_algorithm(),
+      src_desc.get_desc(), dst_desc.get_desc(), p, 0.f);
+
+  std::unordered_map<int, ::dnnl::memory> args = {
+      {DNNL_ARG_DST, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)},
+      {DNNL_ARG_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, src)}};
+
+  return ::dnnl::sycl_interop::execute(primitive, _s, args);
+}
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|activation_forward|dpct::dnnl
@@ -1054,12 +1488,14 @@ void engine_ext::sum(float alpha, const memory_desc_ext &src_desc, void *src,
 // DnnlUtils|activation_forward_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-void engine_ext::activation_forward(activation_desc &desc, float alpha,
-                                    const memory_desc_ext &src_desc, void *src,
-                                    float beta, const memory_desc_ext &dst_desc,
-                                    void *dst) {
-  SCALE_PARAMETER_PREPROCESS(alpha, beta, dst_desc, dst)
-
+sycl::event engine_ext::activation_forward(activation_desc &desc, float alpha,
+                                           const memory_desc_ext &src_desc,
+                                           void *src, float beta,
+                                           const memory_desc_ext &dst_desc,
+                                           void *dst) {
+  if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
+    return sycl::event();
+  }
   auto primitive = create_forward_primitive<::dnnl::eltwise_forward>(
       ::dnnl::prop_kind::forward, desc.get_algorithm(), src_desc.get_desc(),
       desc.get_alpha(), desc.get_beta());
@@ -1067,7 +1503,8 @@ void engine_ext::activation_forward(activation_desc &desc, float alpha,
   std::unordered_map<int, ::dnnl::memory> execution_args = {
       {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}}};
 
-  execute_primitive(alpha, beta, primitive, execution_args, dst_desc, dst);
+  return execute_primitive(primitive, execution_args,
+                           {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
 // DPCT_LABEL_END
 
@@ -1076,14 +1513,15 @@ void engine_ext::activation_forward(activation_desc &desc, float alpha,
 // DnnlUtils|activation_backward_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-void engine_ext::activation_backward(
-    activation_desc &desc, float alpha, const memory_desc_ext &dst_desc, void *dst,
-    const memory_desc_ext &diff_dst_desc, void *diff_dst,
+sycl::event engine_ext::activation_backward(
+    activation_desc &desc, float alpha, const memory_desc_ext &dst_desc,
+    void *dst, const memory_desc_ext &diff_dst_desc, void *diff_dst,
     const memory_desc_ext &src_desc, void *src, float beta,
     const memory_desc_ext &diff_src_desc, void *diff_src) {
 
-  SCALE_PARAMETER_PREPROCESS(alpha, beta, diff_src_desc, diff_src)
-
+  if (scale_parameter_preprocess({{alpha, beta, diff_src_desc, diff_src}})) {
+    return sycl::event();
+  }
   auto primitive = create_backward_primitive<::dnnl::eltwise_backward>(
       create_forward_primitive_desc<::dnnl::eltwise_forward>(
           ::dnnl::prop_kind::forward, desc.get_algorithm(), src_desc.get_desc(),
@@ -1097,8 +1535,9 @@ void engine_ext::activation_backward(
       {DNNL_ARG_DIFF_DST,
        {::dnnl::memory(diff_dst_desc.get_desc(), _eng, diff_dst)}}};
 
-  execute_primitive<false>(alpha, beta, primitive, execution_args,
-                           diff_src_desc, diff_src);
+  return execute_primitive(
+      primitive, execution_args,
+      {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_src_desc, diff_src}});
 }
 // DPCT_LABEL_END
 
@@ -1107,12 +1546,14 @@ void engine_ext::activation_backward(
 // DnnlUtils|pooling_forward_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-void engine_ext::pooling_forward(pooling_desc &desc, float alpha,
-                                 const memory_desc_ext &src_desc, void *src,
-                                 float beta, const memory_desc_ext &dst_desc,
-                                 void *dst, ::dnnl::memory *workspace) {
-  SCALE_PARAMETER_PREPROCESS(alpha, beta, dst_desc, dst)
-
+sycl::event engine_ext::pooling_forward(pooling_desc &desc, float alpha,
+                                        const memory_desc_ext &src_desc,
+                                        void *src, float beta,
+                                        const memory_desc_ext &dst_desc,
+                                        void *dst, ::dnnl::memory *workspace) {
+  if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
+    return sycl::event();
+  }
   auto primitive_desc = create_forward_primitive_desc<::dnnl::pooling_forward>(
       ::dnnl::prop_kind::forward_training, desc.get_algorithm(),
       src_desc.get_desc(), dst_desc.get_desc(), desc.get_stride(),
@@ -1129,8 +1570,8 @@ void engine_ext::pooling_forward(pooling_desc &desc, float alpha,
     insert_workspace(src, ws_mem);
   }
 
-  execute_primitive(alpha, beta, ::dnnl::pooling_forward(primitive_desc),
-                    execution_args, dst_desc, dst);
+  return execute_primitive(::dnnl::pooling_forward(primitive_desc),
+                           {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
 // DPCT_LABEL_END
 
@@ -1139,15 +1580,15 @@ void engine_ext::pooling_forward(pooling_desc &desc, float alpha,
 // DnnlUtils|pooling_backward_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-void engine_ext::pooling_backward(pooling_desc &desc, float alpha,
-                                  const memory_desc_ext &dst_desc, void *dst,
-                                  const memory_desc_ext &diff_dst_desc,
-                                  void *diff_dst, const memory_desc_ext &src_desc,
-                                  void *src, float beta,
-                                  const memory_desc_ext &diff_src_desc,
-                                  void *diff_src, ::dnnl::memory *workspace) {
-  SCALE_PARAMETER_PREPROCESS(alpha, beta, diff_src_desc, diff_src)
-
+sycl::event engine_ext::pooling_backward(
+    pooling_desc &desc, float alpha, const memory_desc_ext &dst_desc, void *dst,
+    const memory_desc_ext &diff_dst_desc, void *diff_dst,
+    const memory_desc_ext &src_desc, void *src, float beta,
+    const memory_desc_ext &diff_src_desc, void *diff_src,
+    ::dnnl::memory *workspace) {
+  if (scale_parameter_preprocess({{alpha, beta, diff_src_desc, diff_src}})) {
+    return sycl::event();
+  }
   auto primitive = create_backward_primitive<::dnnl::pooling_backward>(
       create_forward_primitive_desc<::dnnl::pooling_forward>(
           ::dnnl::prop_kind::forward_training, desc.get_algorithm(),
@@ -1169,8 +1610,9 @@ void engine_ext::pooling_backward(pooling_desc &desc, float alpha,
     execution_args.insert({DNNL_ARG_WORKSPACE, get_workspace(src)});
   }
 
-  execute_primitive<false>(alpha, beta, primitive, execution_args,
-                           diff_src_desc, diff_src);
+  return execute_primitive(
+      primitive, execution_args,
+      {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_src_desc, diff_src}});
 }
 // DPCT_LABEL_END
 
@@ -1179,12 +1621,15 @@ void engine_ext::pooling_backward(pooling_desc &desc, float alpha,
 // DnnlUtils|softmax_forward_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-void engine_ext::softmax_forward(softmax_algorithm alg, softmax_mode mode,
-                                 float alpha, const memory_desc_ext &src_desc,
-                                 void *src, float beta,
-                                 const memory_desc_ext &dst_desc, void *dst) {
-  SCALE_PARAMETER_PREPROCESS(alpha, beta, dst_desc, dst)
-
+sycl::event engine_ext::softmax_forward(softmax_algorithm alg,
+                                        softmax_mode mode, float alpha,
+                                        const memory_desc_ext &src_desc,
+                                        void *src, float beta,
+                                        const memory_desc_ext &dst_desc,
+                                        void *dst) {
+  if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
+    return sycl::event();
+  }
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
   ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
   if (mode == softmax_mode::instance) {
@@ -1201,14 +1646,15 @@ void engine_ext::softmax_forward(softmax_algorithm alg, softmax_mode mode,
     auto primitive = create_forward_primitive<::dnnl::softmax_forward>(
         ::dnnl::prop_kind::forward, help_src_desc, 1);
 
-    execute_primitive(alpha, beta, primitive, execution_args,
-                      memory_desc_ext(help_dst_desc), dst);
+    return execute_primitive(alpha, beta, primitive, execution_args,
+                             memory_desc_ext(help_dst_desc), dst);
   } else {
     auto primitive = create_forward_primitive<::dnnl::logsoftmax_forward>(
         ::dnnl::prop_kind::forward, help_src_desc, 1);
 
-    execute_primitive(alpha, beta, primitive, execution_args,
-                      memory_desc_ext(help_dst_desc), dst);
+    return execute_primitive(
+        primitive, execution_args,
+        {{alpha, beta, DNN_ARG_DST, memory_desc_ext(help_dst_desc), dst}});
   }
 }
 // DPCT_LABEL_END
@@ -1218,14 +1664,14 @@ void engine_ext::softmax_forward(softmax_algorithm alg, softmax_mode mode,
 // DnnlUtils|softmax_backward_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-void engine_ext::softmax_backward(softmax_algorithm alg, softmax_mode mode,
-                                  float alpha, const memory_desc_ext &dst_desc,
-                                  void *dst, const memory_desc_ext &diff_dst_desc,
-                                  void *diff_dst, float beta,
-                                  const memory_desc_ext &diff_src_desc,
-                                  void *diff_src) {
-  SCALE_PARAMETER_PREPROCESS(alpha, beta, diff_src_desc, diff_src)
-
+sycl::event engine_ext::softmax_backward(
+    softmax_algorithm alg, softmax_mode mode, float alpha,
+    const memory_desc_ext &dst_desc, void *dst,
+    const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta,
+    const memory_desc_ext &diff_src_desc, void *diff_src) {
+  if (scale_parameter_preprocess({{alpha, beta, diff_src_desc, diff_src}})) {
+    return sycl::event();
+  }
   ::dnnl::memory::desc help_diff_src_desc = diff_src_desc.get_desc();
   ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
   ::dnnl::memory::desc help_diff_dst_desc = diff_dst_desc.get_desc();
@@ -1239,23 +1685,25 @@ void engine_ext::softmax_backward(softmax_algorithm alg, softmax_mode mode,
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
       {DNNL_ARG_DST, {::dnnl::memory(help_dst_desc, _eng, dst)}},
-      {DNNL_ARG_DIFF_DST, {::dnnl::memory(help_diff_dst_desc, _eng, diff_dst)}}};
+      {DNNL_ARG_DIFF_DST,
+       {::dnnl::memory(help_diff_dst_desc, _eng, diff_dst)}}};
 
   if (alg == softmax_algorithm::normal) {
     auto primitive = create_backward_primitive<::dnnl::softmax_backward>(
         create_forward_primitive_desc<::dnnl::softmax_forward>(
             ::dnnl::prop_kind::forward, help_diff_src_desc, 1),
         help_diff_src_desc, help_diff_src_desc, 1);
-    execute_primitive<false>(alpha, beta, primitive, execution_args,
-                             memory_desc_ext(help_diff_src_desc), diff_src);
-
+    return execute_primitive(primitive, execution_args,
+                             {{alpha, beta, DNNL_ARG_DIFF_SRC,
+                               memory_desc_ext(help_diff_src_desc), diff_src}});
   } else {
     auto primitive = create_backward_primitive<::dnnl::logsoftmax_backward>(
         create_forward_primitive_desc<::dnnl::logsoftmax_forward>(
             ::dnnl::prop_kind::forward, help_diff_src_desc, 1),
         help_diff_src_desc, help_diff_src_desc, 1);
-    execute_primitive<false>(alpha, beta, primitive, execution_args,
-                             memory_desc_ext(help_diff_src_desc), diff_src);
+    execute_primitive(primitive, execution_args,
+                      {{alpha, beta, DNNL_ARG_DIFF_SRC,
+                        memory_desc_ext(help_diff_src_desc), diff_src}});
   }
 }
 // DPCT_LABEL_END
@@ -1265,17 +1713,18 @@ void engine_ext::softmax_backward(softmax_algorithm alg, softmax_mode mode,
 // DnnlUtils|lrn_forward_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-void engine_ext::lrn_forward(lrn_desc &desc, float alpha,
-                             const memory_desc_ext &src_desc, void *src,
-                             float beta, const memory_desc_ext &dst_desc,
-                             void *dst, ::dnnl::memory *workspace) {
+sycl::event engine_ext::lrn_forward(lrn_desc &desc, float alpha,
+                                    const memory_desc_ext &src_desc, void *src,
+                                    float beta, const memory_desc_ext &dst_desc,
+                                    void *dst, ::dnnl::memory *workspace) {
 
-  SCALE_PARAMETER_PREPROCESS(alpha, beta, dst_desc, dst)
-
+  if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
+    return sycl::event();
+  }
   auto primitive_desc = create_forward_primitive_desc<::dnnl::lrn_forward>(
-      ::dnnl::prop_kind::forward_training, ::dnnl::algorithm::lrn_across_channels,
-      src_desc.get_desc(), desc.get_local_size(), desc.get_alpha(),
-      desc.get_beta(), desc.get_k());
+      ::dnnl::prop_kind::forward_training,
+      ::dnnl::algorithm::lrn_across_channels, src_desc.get_desc(),
+      desc.get_local_size(), desc.get_alpha(), desc.get_beta(), desc.get_k());
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
       {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}}};
@@ -1288,8 +1737,8 @@ void engine_ext::lrn_forward(lrn_desc &desc, float alpha,
     insert_workspace(src, ws_mem);
   }
 
-  execute_primitive(alpha, beta, ::dnnl::lrn_forward(primitive_desc),
-                    execution_args, dst_desc, dst);
+  return execute_primitive(::dnnl::lrn_forward(primitive_desc), execution_args,
+                           {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
 // DPCT_LABEL_END
 
@@ -1298,16 +1747,17 @@ void engine_ext::lrn_forward(lrn_desc &desc, float alpha,
 // DnnlUtils|lrn_backward_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-void engine_ext::lrn_backward(lrn_desc &desc, float alpha,
-                              const memory_desc_ext &dst_desc, void *dst,
-                              const memory_desc_ext &diff_dst_desc, void *diff_dst,
-                              const memory_desc_ext &src_desc, void *src,
-                              float beta, const memory_desc_ext &diff_src_desc,
-                              void *diff_src,
-                              ::dnnl::memory *workspace) {
+sycl::event
+engine_ext::lrn_backward(lrn_desc &desc, float alpha,
+                         const memory_desc_ext &dst_desc, void *dst,
+                         const memory_desc_ext &diff_dst_desc, void *diff_dst,
+                         const memory_desc_ext &src_desc, void *src, float beta,
+                         const memory_desc_ext &diff_src_desc, void *diff_src,
+                         ::dnnl::memory *workspace) {
 
-  SCALE_PARAMETER_PREPROCESS(alpha, beta, diff_src_desc, diff_src)
-
+  if (scale_parameter_preprocess({{alpha, beta, diff_src_desc, diff_src}})) {
+    return sycl::event();
+  }
   auto primitive = create_backward_primitive<::dnnl::lrn_backward>(
       create_forward_primitive_desc<::dnnl::lrn_forward>(
           ::dnnl::prop_kind::forward_training,
@@ -1330,11 +1780,515 @@ void engine_ext::lrn_backward(lrn_desc &desc, float alpha,
     execution_args.insert({DNNL_ARG_WORKSPACE, get_workspace(src)});
   }
 
-  execute_primitive<false>(alpha, beta, primitive, execution_args,
-                           diff_src_desc, diff_src);
+  return execute_primitive(
+      primitive, execution_args,
+      {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_src_desc, diff_src}});
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|derive_batch_normalization_memory_desc|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|derive_batch_normalization_memory_desc_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+void engine_ext::derive_batch_normalization_memory_desc(
+    memory_desc_ext &desc, const memory_desc_ext &src_desc,
+    batch_normalization_mode mode) {
+  if (src_desc.get_desc().data.ndims != 4 ||
+      src_desc.get_desc().data.ndims != 5) {
+    throw std::runtime_error("only 4d and 5d memory descriptor supported.");
+  }
+  auto &desc_ref = desc.get_desc();
+  desc_ref = src_desc.get_desc();
+  desc_ref.data.dims[0] = 1;
+  if (mode == batch_normalization_mode::spatial) {
+    desc_ref.data.dims[2] = 1;
+    desc_ref.data.dims[3] = 1;
+    if (desc_ref.data.ndims == 5) {
+      desc_ref.data.dims[4] = 1;
+    }
+  }
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|batch_normalization_forward_inference|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|batch_normalization_forward_inference_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+sycl::event engine_ext::batch_normalization_forward_inference(
+    batch_normalization_mode mode, float epsilon, float alpha,
+    const memory_desc_ext &src_desc, void *src, float beta,
+    const memory_desc_ext &dst_desc, void *dst,
+    const memory_desc_ext &scale_bias_mean_var_desc, void *scale, void *bias,
+    void *mean, void *var) {
+  if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
+    return sycl::event();
+  }
+  ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
+  ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
+  ::dnnl::memory::desc help_scale_bias_mean_var_desc =
+      scale_bias_mean_var_desc.get_desc();
+  if (mode == batch_normalization_mode::per_activation) {
+    std::vector<int64_t> help_dims_0 =
+        compress_spatial_dimensions_to_channel(help_src_desc);
+    std::vector<int64_t> help_dims_1 =
+        compress_spatial_dimensions_to_channel(help_scale_bias_mean_var_desc);
+    help_src_desc = help_src_desc.reshape(help_dims_0);
+    help_dst_desc = help_dst_desc.reshape(help_dims_0);
+    help_scale_bias_mean_var_desc =
+        help_scale_bias_mean_var_desc.reshape(help_dims_1);
+  }
+
+  auto primitive =
+      create_forward_primitive<::dnnl::batch_normalization_forward>(
+          ::dnnl::prop_kind::forward_inference, help_src_desc.get_desc(),
+          epsilon,
+          ::dnnl::normalization_flags::use_scale |
+              ::dnnl::normalization_flags::use_shift);
+
+  std::unordered_map<int, ::dnnl::memory> execution_args = {
+      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc.get_desc(), _eng, src)}},
+      {DNNL_ARG_SCALE,
+       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, scale)}},
+      {DNNL_ARG_SHIFT,
+       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, bias)}},
+      {DNNL_ARG_MEAN,
+       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, mean)}},
+      {DNNL_ARG_VARIANCE,
+       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, var)}}};
+
+  return execute_primitive(
+      primitive, execution_args,
+      {{alpha, beta, DNNL_ARG_DIFF_DST, help_diff_src_desc, diff_src}});
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|batch_normalization_forward_training|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|batch_normalization_forward_training_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+sycl::event engine_ext::batch_normalization_forward_training(
+    batch_normalization_mode mode, float epsilon, float factor, float alpha,
+    const memory_desc_ext &src_desc, void *src, float beta,
+    const memory_desc_ext &dst_desc, void *dst,
+    const memory_desc_ext &scale_bias_mean_var_desc, void *scale, void *bias,
+    void *running_mean, void *running_var, void *saved_mean, void *saved_var) {
+  if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
+    return sycl::event();
+  }
+  ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
+  ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
+  ::dnnl::memory::desc help_scale_bias_mean_var_desc =
+      scale_bias_mean_var_desc.get_desc();
+  if (mode == batch_normalization_mode::per_activation) {
+    std::vector<int64_t> help_dims_0 =
+        compress_spatial_dimensions_to_channel(help_src_desc);
+    std::vector<int64_t> help_dims_1 =
+        compress_spatial_dimensions_to_channel(help_scale_bias_mean_var_desc);
+    help_src_desc = help_src_desc.reshape(help_dims_0);
+    help_dst_desc = help_dst_desc.reshape(help_dims_0);
+    help_scale_bias_mean_var_desc =
+        help_scale_bias_mean_var_desc.reshape(help_dims_1);
+  }
+
+  auto primitive =
+      create_forward_primitive<::dnnl::batch_normalization_forward>(
+          ::dnnl::prop_kind::forward_training, help_src_desc.get_desc(),
+          epsilon,
+          ::dnnl::normalization_flags::use_scale |
+              ::dnnl::normalization_flags::use_shift);
+
+  std::unordered_map<int, ::dnnl::memory> execution_args = {
+      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc.get_desc(), _eng, src)}},
+      {DNNL_ARG_SCALE,
+       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, scale)}},
+      {DNNL_ARG_SHIFT,
+       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, bias)}},
+      {DNNL_ARG_MEAN,
+       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng,
+                       saved_mean)}},
+      {DNNL_ARG_VARIANCE,
+       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng,
+                       saved_var)}}};
+
+  execute_primitive(primitive, execution_args,
+                    {{alpha, beta, DNNL_ARG_DST, help_dst_desc, dst}});
+  sum(1.f - factor, help_scale_bias_mean_var_desc, saved_mean, factor,
+      help_scale_bias_mean_var_desc, running_mean);
+  return sum(1.f - factor, help_scale_bias_mean_var_desc, saved_var, factor,
+             help_scale_bias_mean_var_desc, running_var);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|batch_normalization_backward|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|batch_normalization_backward_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+sycl::event engine_ext::batch_normalization_backward(
+    batch_normalization_mode mode, float epsilon, float alpha_data,
+    const memory_desc_ext &src_desc, void *src,
+    const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta_data,
+    const memory_desc_ext &diff_src_desc, void *diff_src, float alpha_param,
+    const memory_desc_ext &diff_scale_bias_desc, void *scale, float beta_param,
+    void *diff_scale, void *diff_bias, void *saved_mean, void *saved_var) {
+  if (scale_parameter_preprocess(
+          {{alpha_data, beta_data, diff_src_desc, diff_src},
+           {alpha_param, beta_param, diff_scale_bias_desc, scale},
+           {alpha_param, beta_param, diff_scale_bias_desc, bias}})) {
+    return sycl::event();
+  }
+  ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
+  ::dnnl::memory::desc help_diff_dst_desc = diff_dst_desc.get_desc();
+  ::dnnl::memory::desc help_diff_src_desc = diff_src_desc.get_desc();
+  ::dnnl::memory::desc help_diff_scale_bias_desc =
+      diff_scale_bias_desc.get_desc();
+
+  if (mode == batch_normalization_mode::per_activation) {
+    std::vector<int64_t> help_dims_0 =
+        compress_spatial_dimensions_to_channel(help_src_desc);
+    std::vector<int64_t> help_dims_1 =
+        compress_spatial_dimensions_to_channel(help_scale_bias_mean_var_desc);
+    help_src_desc = help_src_desc.reshape(help_dims_0);
+    help_diff_src_desc = help_diff_src_desc.reshape(help_dims_0);
+    help_diff_dst_desc = help_diff_dst_desc.reshape(help_dims_0);
+    help_scale_bias_desc = help_scale_bias_desc.reshape(help_dims_1);
+  }
+  auto forward_primitive =
+      create_forward_primitive<::dnnl::batch_normalization_forward>(
+          ::dnnl::prop_kind::forward_training, help_src_desc.get_desc(),
+          epsilon,
+          ::dnnl::normalization_flags::use_scale |
+              ::dnnl::normalization_flags::use_shift);
+  auto primitive =
+      create_backward_primitive<::dnnl::batch_normalization_backward>(
+          forward_primitive, ::dnnl::prop_kind::backward,
+          help_diff_src_desc.get_desc(), help_src_desc.get_desc(), epsilon,
+          ::dnnl::normalization_flags::use_scale |
+              ::dnnl::normalization_flags::use_shift);
+
+  std::unordered_map<int, ::dnnl::memory> execution_args = {
+      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc.get_desc(), _eng, src)}},
+      {DNNL_ARG_SCALE,
+       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng, scale)}},
+      {DNNL_ARG_SHIFT,
+       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng, nullptr)}},
+      {DNNL_ARG_MEAN,
+       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng,
+                       saved_mean)}},
+      {DNNL_ARG_VARIANCE,
+       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng, saved_var)}},
+      {DNNL_ARG_DIFF_DST,
+       {::dnnl::memory(help_diff_src_desc.get_desc(), _eng, diff_dst)}}};
+
+  return execute_primitive(
+      primitive, execution_args,
+      {{alpha_data, beta_data, DNNL_ARG_DIFF_SRC, help_diff_src_desc, diff_src},
+       {alpha_param, beta_param, DNNL_ARG_DIFF_SCALE, help_diff_scale_bias_desc,
+        diff_scale},
+       {alpha_param, beta_param, DNNL_ARG_DIFF_SHIFT, help_diff_scale_bias_desc,
+        diff_bias}});
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|batch_normalization_forward_training_ex|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|batch_normalization_forward_training_ex_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+sycl::event engine_ext::batch_normalization_forward_training_ex(
+    batch_normalization_mode mode, batch_normalization_ops ops,
+    activation_desc &adesc, float epsilon, float factor, float alpha,
+    const memory_desc_ext &src_desc, void *src, float beta,
+    const memory_desc_ext &dst_desc, void *dst,
+    const memory_desc_ext &addition_desc, void *addition,
+    const memory_desc_ext &scale_bias_mean_var_desc, void *scale, void *bias,
+    void *running_mean, void *running_var, void *saved_mean, void *saved_var,
+    void *reserve_space, size_t reserve_space_size) {
+  if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
+    return sycl::event();
+  }
+  ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
+  ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
+  ::dnnl::memory::desc help_addition_desc = addition_desc.get_desc();
+  ::dnnl::memory::desc help_scale_bias_mean_var_desc =
+      scale_bias_mean_var_desc.get_desc();
+  if (mode == batch_normalization_mode::per_activation) {
+    std::vector<int64_t> help_dims_0 =
+        compress_spatial_dimensions_to_channel(help_src_desc);
+    std::vector<int64_t> help_dims_1 =
+        compress_spatial_dimensions_to_channel(help_scale_bias_mean_var_desc);
+    help_src_desc = help_src_desc.reshape(help_dims_0);
+    help_dst_desc = help_dst_desc.reshape(help_dims_0);
+    help_addition_desc = help_addition_desc.reshape(help_dims_0);
+    help_scale_bias_mean_var_desc =
+        help_scale_bias_mean_var_desc.reshape(help_dims_1);
+  }
+
+  auto primitive =
+      create_forward_primitive<::dnnl::batch_normalization_forward>(
+          ::dnnl::prop_kind::forward_training, help_src_desc.get_desc(),
+          epsilon,
+          ::dnnl::normalization_flags::use_scale |
+              ::dnnl::normalization_flags::use_shift);
+  std::unordered_map<int, ::dnnl::memory> execution_args = {
+      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc.get_desc(), _eng, src)}},
+      {DNNL_ARG_SCALE,
+       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, scale)}},
+      {DNNL_ARG_SHIFT,
+       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng, bias)}},
+      {DNNL_ARG_MEAN,
+       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng,
+                       svaed_mean)}},
+      {DNNL_ARG_VARIANCE,
+       {::dnnl::memory(help_scale_bias_mean_var_desc.get_desc(), _eng,
+                       saved_var)}}};
+
+  if (ops != batch_normalization_ops::none) {
+    if (reserve_space_size < help_dst_desc.get_size()) {
+      throw std::runtime_error(
+          "batch_normalization_forward_training_ex: reservespace not enough.");
+    }
+    execution_args.insert(
+        {DNNL_ARG_DST,
+         {::dnnl::memory(help_dst_desc.get_desc(), _eng, reserve_space)}});
+    ::dnnl::sycl_interop::execute(primitive, _s, execution_args);
+    if (ops == batch_normalization_ops::add_activation) {
+      sum(1.f, help_addition_desc, addition, 1.f, help_dst_desc, reserve_space);
+    }
+    activation_forward(adesc, alpha, help_dst_desc, reserve_space, beta,
+                       help_dst_desc, dst);
+  } else {
+    execute_primitive(primitive, execution_args,
+                      {{alpha, beta, DNNL_ARG_DST, help_dst_desc, dst}});
+  }
+  sum(1.f - factor, help_scale_bias_mean_var_desc, saved_mean, factor,
+      help_scale_bias_mean_var_desc, running_mean);
+  return sum(1.f - factor, help_scale_bias_mean_var_desc, saved_var, factor,
+             help_scale_bias_mean_var_desc, running_var);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|batch_normalization_backward_ex|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|batch_normalization_backward_ex_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+sycl::event engine_ext::batch_normalization_backward_ex(
+    batch_normalization_mode mode, batch_normalization_ops ops,
+    activation_desc &adesc, float epsilon, float alpha_data,
+    const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
+    void *dst, const memory_desc_ext &diff_dst_desc, void *diff_dst,
+    float beta_data, const memory_desc_ext &diff_src_desc, void *diff_src,
+    const memory_desc_ext &diff_addition_desc, void *diff_addition,
+    float alpha_param, const memory_desc_ext &scale_bias_desc, void *scale,
+    void *bias, void *diff_scale, void *diff_bias,
+    const memory_desc_ext &diff_scale_bias_desc, void *scale, float beta_param,
+    void *diff_scale, void *diff_bias, void *saved_mean, void *saved_var,
+    void *reserve_space, size_t reserve_space_size) {
+  if (scale_parameter_preprocess(
+          {{alpha_data, beta_data, diff_src_desc, diff_src},
+           {alpha_data, beta_data, diff_addition_desc, diff_addition},
+           {alpha_param, beta_param, diff_scale_bias_desc, scale},
+           {alpha_param, beta_param, diff_scale_bias_desc, bias}})) {
+    return sycl::event();
+  }
+  ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
+  ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
+  ::dnnl::memory::desc help_diff_addition_desc = diff_addition_desc.get_desc();
+  ::dnnl::memory::desc help_diff_dst_desc = diff_dst_desc.get_desc();
+  ::dnnl::memory::desc help_diff_src_desc = diff_src_desc.get_desc();
+  ::dnnl::memory::desc help_diff_scale_bias_desc =
+      diff_scale_bias_desc.get_desc();
+
+  if (mode == batch_normalization_mode::per_activation) {
+    std::vector<int64_t> help_dims_0 =
+        compress_spatial_dimensions_to_channel(help_src_desc);
+    std::vector<int64_t> help_dims_1 =
+        compress_spatial_dimensions_to_channel(help_scale_bias_mean_var_desc);
+    help_src_desc = help_src_desc.reshape(help_dims_0);
+    help_dst_desc = help_dst_desc.reshape(help_dims_0);
+    help_diff_addition_desc = help_diff_addition_desc.reshape(help_dims_0);
+    help_diff_src_desc = help_diff_src_desc.reshape(help_dims_0);
+    help_diff_dst_desc = help_diff_dst_desc.reshape(help_dims_0);
+    help_scale_bias_desc = help_scale_bias_desc.reshape(help_dims_1);
+  }
+
+  activation_backward(adesc, alpha_data, help_dst_desc, dst, help_diff_dst_desc,
+                      diff_dst, help_src_desc, reserve_space,
+                      help_diff_addition_desc, diff_addition);
+
+  auto forward_primitive =
+      create_forward_primitive<::dnnl::batch_normalization_forward>(
+          ::dnnl::prop_kind::forward_training, help_src_desc.get_desc(),
+          epsilon,
+          ::dnnl::normalization_flags::use_scale |
+              ::dnnl::normalization_flags::use_shift);
+  auto primitive =
+      create_backward_primitive<::dnnl::batch_normalization_backward>(
+          forward_primitive, ::dnnl::prop_kind::backward,
+          help_diff_src_desc.get_desc(), help_src_desc.get_desc(), epsilon,
+          ::dnnl::normalization_flags::use_scale |
+              ::dnnl::normalization_flags::use_shift);
+
+  std::unordered_map<int, ::dnnl::memory> execution_args = {
+      {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc.get_desc(), _eng, src)}},
+      {DNNL_ARG_DST, {::dnnl::memory(help_dst_desc.get_desc(), _eng, dst)}},
+      {DNNL_ARG_SCALE,
+       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng, scale)}},
+      {DNNL_ARG_SHIFT,
+       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng, bias)}},
+      {DNNL_ARG_MEAN,
+       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng,
+                       saved_mean)}},
+      {DNNL_ARG_VARIANCE,
+       {::dnnl::memory(help_diff_scale_bias_desc.get_desc(), _eng, saved_var)}},
+      {DNNL_ARG_DIFF_DST,
+       {::dnnl::memory(help_diff_src_desc.get_desc(), _eng, diff_addition)}}};
+
+  return execute_primitive(
+      primitive, execution_args,
+      {{alpha_data, beta_data, DNNL_ARG_DIFF_SRC, help_diff_src_desc, diff_src},
+       {alpha_param, beta_param, DNNL_ARG_DIFF_SCALE, help_diff_scale_bias_desc,
+        diff_scale},
+       {alpha_param, beta_param, DNNL_ARG_DIFF_SHIFT, help_diff_scale_bias_desc,
+        diff_bias}});
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|convolution_forward|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|convolution_forward_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+sycl::event
+engine_ext::convolution_forward(convolution_desc &desc, ::dnnl::algorithm alg,
+                                float alpha, const memory_desc_ext &src_desc,
+                                void *src, const memory_desc_ext &weight_desc,
+                                void *weight, float beta,
+                                const memory_desc_ext &dst_desc, void *dst) {
+
+  if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
+    return sycl::event();
+  }
+  auto primitive = create_forward_primitive<::dnnl::convolution_forward>(
+      ::dnnl::prop_kind::forward_training, ::dnnl::algorithm::convolution_auto,
+      src_desc.get_desc(), weight_desc.get_desc(), dst_desc.get_desc(),
+      desc.get_stride(), desc.get_dilate(), desc.get_padding(),
+      desc.get_padding());
+
+  std::unordered_map<int, ::dnnl::memory> execution_args = {
+      {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}},
+      {DNNL_ARG_WEIGHTS,
+       {::dnnl::memory(weight_desc.get_desc(), _eng, weight)}}};
+
+  return execute_primitive(primitive, execution_args,
+                           {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|convolution_forward_ex|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|convolution_forward_ex_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+sycl::event engine_ext::convolution_forward_ex(
+    convolution_desc &desc, ::dnnl::algorithm alg, activation_desc &adesc,
+    float alpha_0, const memory_desc_ext &src_desc, void *src,
+    const memory_desc_ext &weight_desc, void *weight, float alpha_1,
+    const memory_desc_ext &addition_desc, void *addition,
+    const memory_desc_ext &bias_desc, void *bias,
+    const memory_desc_ext &dst_desc, void *dst) {
+
+  ::dnnl::primitive_attr attr;
+  if (alpha_0 != 1.f) {
+    attr.set_scales(DNNL_ARG_SRC, 0, {alpha_0});
+  }
+
+  auto primitive = create_forward_primitive<::dnnl::convolution_forward>(
+      attr, ::dnnl::prop_kind::forward_training,
+      ::dnnl::algorithm::convolution_auto, src_desc.get_desc(),
+      weight_desc.get_desc(), bias_desc.get_desc(), dst_desc.get_desc(),
+      desc.get_stride(), desc.get_dilate(), desc.get_padding(),
+      desc.get_padding());
+
+  std::unordered_map<int, ::dnnl::memory> execution_args = {
+      {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}},
+      {DNNL_ARG_WEIGHTS,
+       {::dnnl::memory(weight_desc.get_desc(), _eng, weight)}},
+      {DNNL_ARG_BIAS, {::dnnl::memory(bias_desc.get_desc(), _eng, bias)}}};
+
+  execute_primitive(primitive, execution_args,
+                    {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
+  sum(alpha_1, addition_desc, addition, 1.f, dst_desc, dst);
+  return activation_forward(adesc, 1.f, dst_desc, dst, 0.f, dst_desc, dst);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|convolution_backward_data|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|convolution_backward_data_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+sycl::event engine_ext::convolution_backward_data(
+    convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
+    const memory_desc_ext &weight_desc, void *weight,
+    const memory_desc_ext &diff_dst_decs, void *diff_dst, float beta,
+    const memory_desc_ext &diff_src_desc, void *diff_dst) {
+
+  if (scale_parameter_preprocess({{alpha, beta, diff_dst_desc, diff_dst}})) {
+    return sycl::event();
+  }
+  auto primitive = create_backward_primitive<::dnnl::convolution_backward_data>(
+      ::dnnl::algorithm::convolution_auto, diff_src_desc.get_desc(),
+      weight_desc.get_desc(), diff_dst_desc.get_desc(), desc.get_stride(),
+      desc.get_dilate(), desc.get_padding(), desc.get_padding());
+
+  std::unordered_map<int, ::dnnl::memory> execution_args = {
+      {DNNL_ARG_DIFF_DST,
+       {::dnnl::memory(diff_dst_desc.get_desc(), _eng, diff_dst)}},
+      {DNNL_ARG_WEIGHTS,
+       {::dnnl::memory(weight_desc.get_desc(), _eng, weight)}}};
+
+  return execute_primitive(
+      primitive, execution_args,
+      {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_src_desc, diff_src}});
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|convolution_backward_weight|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|convolution_backward_weight_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+sycl::event engine_ext::convolution_backward_weight(
+    convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
+    const memory_desc_ext &src_desc, void *src,
+    const memory_desc_ext &diff_dst_decs, void *diff_dst, float beta,
+    const memory_desc_ext &diff_weight_desc, void *diff_weight) {
+
+  if (scale_parameter_preprocess(
+          {{alpha, beta, diff_weight_desc, diff_weight}})) {
+    return sycl::event();
+  }
+  auto primitive = create_backward_primitive<::dnnl::convolution_backward_data>(
+      ::dnnl::algorithm::convolution_auto, src_desc.get_desc(),
+      diff_weight_desc.get_desc(), diff_dst_desc.get_desc(), desc.get_stride(),
+      desc.get_dilate(), desc.get_padding(), desc.get_padding());
+
+  std::unordered_map<int, ::dnnl::memory> execution_args = {
+      {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, diff_dst)}},
+      {DNNL_ARG_DIFF_DST,
+       {::dnnl::memory(diff_dst_desc.get_desc(), _eng, diff_dst)}}};
+
+  return execute_primitive(
+      primitive, execution_args,
+      {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_weight_desc, diff_weight}});
 }
 // DPCT_LABEL_END
 } // namespace dnnl
 } // namespace dpct
 
-#endif  // __DPCT_DNNL_UTILS_HPP__
+#endif // __DPCT_DNNL_UTILS_HPP__
