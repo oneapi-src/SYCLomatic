@@ -431,7 +431,7 @@ class binary_desc {
   }
   void get(::dnnl::algorithm *alg, dpct::library_data_t *dt) {
     *alg = _alg;
-    *dt = dt;
+    *dt = _dt;
   }
   ::dnnl::algorithm get_algorithm() { return _alg; }
 };
@@ -452,10 +452,10 @@ public:
     _dilates = {dilate_h, dilate_w};
     _paddings = {padding_h, padding_w};
   }
-  void set(int ndims, int padding[], int stride[], int dilate[]) {
-    _strides = std::vector<int64_t>(stride, stride + ndims);
-    _paddings = std::vector<int64_t>(padding, padding + ndims);
-    _dilates = std::vector<int64_t>(dilate, dilate + ndims);
+  void set(int ndims, int paddings[], int strides[], int dilates[]) {
+    _strides = std::vector<int64_t>(strides, strides + ndims);
+    _paddings = std::vector<int64_t>(paddings, paddings + ndims);
+    _dilates = std::vector<int64_t>(dilates, dilates + ndims);
   }
   void get(int *padding_h, int *padding_w, int *stride_h, int *stride_w,
            int *dilate_h, int *dilate_w) const {
@@ -467,14 +467,13 @@ public:
     *stride_w = _strides[1];
   }
 
-  void get(int requested_ndims, ::dnnl::algorithm *alg, int *ndims,
-           int kernel[], int padding[], int stride[]) const {
-    *alg = _alg;
+  void get(int requested_ndims, int *ndims,
+           int paddings[], int strides[], int dilates[]) const {
     *ndims = _strides.size();
     for (int i = 0; i < requested_ndims; i++) {
-      dilate[i] = _dilates[i];
-      padding[i] = _paddings[i];
-      stride[i] = _strides[i];
+      dilates[i] = _dilates[i];
+      paddings[i] = _paddings[i];
+      strides[i] = _strides[i];
     }
   }
   const std::vector<int64_t> &get_stride() const { return _strides; }
@@ -616,7 +615,7 @@ public:
   /// \param [in] src_desc Source memory descriptor.
   /// \param [in] src Pointer to source data.
   /// \param [in] valuePtr Pointer to a signle value.
-  void fill(const memory_desc_ext &src_desc, void *src, const void *valuePtr);
+  sycl::event fill(const memory_desc_ext &src_desc, void *src, const void *valuePtr);
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|reorder_decl|dpct::dnnl
@@ -631,7 +630,7 @@ public:
   /// factors used to scale the prior value in the destination memory. \param
   /// [in] dst_desc Destination memory descriptor. \param [out] dst Pointer to
   /// destination data.
-  void reorder(float alpha, const memory_desc_ext &src_desc, void *src,
+  sycl::event reorder(float alpha, const memory_desc_ext &src_desc, void *src,
                float beta, const memory_desc_ext &dst_desc, void *dst);
 // DPCT_LABEL_END
 
@@ -644,7 +643,7 @@ public:
   /// \param [in] alpha Pointer to scaling factors.
   /// \param [in] src_desc Source memory descriptor.
   /// \param [out] src Pointer to source data.
-  void scale(float alpha, const memory_desc_ext &src_desc, void *src);
+  sycl::event scale(float alpha, const memory_desc_ext &src_desc, void *src);
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|sum_decl|dpct::dnnl
@@ -659,7 +658,7 @@ public:
   /// to scale the prior value in the destination memory. \param [in] dst_desc
   /// Destination memory descriptor. \param [out] dst Pointer to destination
   /// data.
-  void sum(float alpha, const memory_desc_ext &src_desc, void *src, float beta,
+  sycl::event sum(float alpha, const memory_desc_ext &src_desc, void *src, float beta,
            const memory_desc_ext &dst_desc, void *dst);
 // DPCT_LABEL_END
 
@@ -681,7 +680,7 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  void reduction(reduction_desc &desc, float alpha,
+  sycl::event reduction(reduction_desc &desc, float alpha,
                  const memory_desc_ext &src_desc, void *src, float beta,
                  const memory_desc_ext &dst_desc, void *dst);
 // DPCT_LABEL_END
@@ -699,7 +698,7 @@ public:
   /// to scale the prior value in the destination memory. \param [in] dst_desc
   /// Destination memory descriptor. \param [out] dst Pointer to destination
   /// data.
-  void activation_forward(activation_desc &desc, float alpha,
+  sycl::event activation_forward(activation_desc &desc, float alpha,
                           const memory_desc_ext &src_desc, void *src,
                           float beta, const memory_desc_ext &dst_desc,
                           void *dst);
@@ -722,7 +721,7 @@ public:
   /// differential destination memory. \param [in] diff_src_desc Differential
   /// source memory descriptor. \param [out] diff_src Pointer to differential
   /// source data.
-  void activation_backward(activation_desc &desc, float alpha,
+  sycl::event activation_backward(activation_desc &desc, float alpha,
                            const memory_desc_ext &dst_desc, void *dst,
                            const memory_desc_ext &diff_dst_desc, void *diff_dst,
                            const memory_desc_ext &src_desc, void *src,
@@ -744,7 +743,7 @@ public:
   /// Destination memory descriptor. \param [out] dst Pointer to destination
   /// data. \param [out] workspace Pointer to workspace generated from forward
   /// propagation.
-  void pooling_forward(pooling_desc &desc, float alpha,
+  sycl::event pooling_forward(pooling_desc &desc, float alpha,
                        const memory_desc_ext &src_desc, void *src, float beta,
                        const memory_desc_ext &dst_desc, void *dst,
                        ::dnnl::memory *workspace = nullptr);
@@ -768,7 +767,7 @@ public:
   /// source memory descriptor. \param [out] diff_src Pointer to differential
   /// source data. \param [in] workspace Pointer to workspace used for backward
   /// propagation.
-  void pooling_backward(pooling_desc &desc, float alpha,
+  sycl::event pooling_backward(pooling_desc &desc, float alpha,
                         const memory_desc_ext &dst_desc, void *dst,
                         const memory_desc_ext &diff_dst_desc, void *diff_dst,
                         const memory_desc_ext &src_desc, void *src, float beta,
@@ -790,7 +789,7 @@ public:
   /// to scale the prior value in the destination memory. \param [in] dst_desc
   /// Destination memory descriptor. \param [out] dst Pointer to destination
   /// data.
-  void softmax_forward(softmax_algorithm alg, softmax_mode mode, float alpha,
+  sycl::event softmax_forward(softmax_algorithm alg, softmax_mode mode, float alpha,
                        const memory_desc_ext &src_desc, void *src, float beta,
                        const memory_desc_ext &dst_desc, void *dst);
 // DPCT_LABEL_END
@@ -811,7 +810,7 @@ public:
   /// used to scale the prior value in the differential destination memory.
   /// \param [in] diff_src_desc Differential source memory descriptor.
   /// \param [out] diff_src Pointer to differential source data.
-  void softmax_backward(softmax_algorithm alg, softmax_mode mode, float alpha,
+  sycl::event softmax_backward(softmax_algorithm alg, softmax_mode mode, float alpha,
                         const memory_desc_ext &dst_desc, void *dst,
                         const memory_desc_ext &diff_dst_desc, void *diff_dst,
                         float beta, const memory_desc_ext &diff_src_desc,
@@ -832,7 +831,7 @@ public:
   /// Destination memory descriptor. \param [out] dst Pointer to destination
   /// data. \param [out] workspace Pointer to workspace generated from forward
   /// propagation.
-  void lrn_forward(lrn_desc &desc, float alpha, const memory_desc_ext &src_desc,
+  sycl::event lrn_forward(lrn_desc &desc, float alpha, const memory_desc_ext &src_desc,
                    void *src, float beta, const memory_desc_ext &dst_desc,
                    void *dst, ::dnnl::memory *workspace = nullptr);
 // DPCT_LABEL_END
@@ -856,7 +855,7 @@ public:
   /// Differential source memory descriptor. \param [out] diff_src Pointer to
   /// differential source data. \param [in] workspace Pointer to workspace used
   /// for backward propagation.
-  void lrn_backward(lrn_desc &desc, float alpha,
+  sycl::event lrn_backward(lrn_desc &desc, float alpha,
                     const memory_desc_ext &dst_desc, void *dst,
                     const memory_desc_ext &diff_dst_desc, void *diff_dst,
                     const memory_desc_ext &src_desc, void *src, float beta,
@@ -956,10 +955,8 @@ public:
       const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta_data,
       const memory_desc_ext &diff_src_desc, void *diff_src,
       const memory_desc_ext &diff_addition_desc, void *diff_addition,
-      float alpha_param, const memory_desc_ext &scale_bias_desc, void *scale,
-      void *bias, void *diff_scale, void *diff_bias,
-      const memory_desc_ext &diff_scale_bias_desc, void *scale,
-      float beta_param, void *diff_scale, void *diff_bias, void *saved_mean,
+      float alpha_param, const memory_desc_ext &diff_scale_bias_desc, void *scale,
+      void *bias, float beta_param, void *diff_scale, void *diff_bias, void *saved_mean,
       void *saved_var, void *reserve_space, size_t reserve_space_size);
 // DPCT_LABEL_END
 
@@ -1234,7 +1231,7 @@ sycl::event engine_ext::execute_primitive(
     void *mem = std::get<4>(extra_arg);
     if (beta != 0.f) {
       auto cache = allocate(desc);
-      caches_map.emplace_back({mem, cache});
+      caches_map.emplace({mem, cache});
       args.insert({arg_index, ::dnnl::memory(desc.get_desc(), _eng, cache)});
     } else {
       args.insert({arg_index, ::dnnl::memory(desc.get_desc(), _eng, mem)});
@@ -1248,7 +1245,7 @@ sycl::event engine_ext::execute_primitive(
     float alpha = std::get<0>(extra_arg);
     float beta = std::get<1>(extra_arg);
     int arg_index = std::get<2>(extra_arg);
-    memory_desc_ext desc = std::get<3>(extra_arg);
+    memory_desc_ext mem_desc = std::get<3>(extra_arg);
     void *mem = std::get<4>(extra_arg);
     if (beta != 0.f) {
       final_event = final_cache_event =
@@ -1260,7 +1257,7 @@ sycl::event engine_ext::execute_primitive(
     }
   }
   if (!caches_map.empty()) {
-    async_dpct_free({caches.begin(), caches.end()}, {final_cache_event}, *_q);
+    async_dpct_free({caches_map.begin(), caches_map.end()}, {final_cache_event}, *_q);
   }
   return final_event;
 }
@@ -2081,10 +2078,8 @@ sycl::event engine_ext::batch_normalization_backward_ex(
     void *dst, const memory_desc_ext &diff_dst_desc, void *diff_dst,
     float beta_data, const memory_desc_ext &diff_src_desc, void *diff_src,
     const memory_desc_ext &diff_addition_desc, void *diff_addition,
-    float alpha_param, const memory_desc_ext &scale_bias_desc, void *scale,
-    void *bias, void *diff_scale, void *diff_bias,
-    const memory_desc_ext &diff_scale_bias_desc, void *scale, float beta_param,
-    void *diff_scale, void *diff_bias, void *saved_mean, void *saved_var,
+    float alpha_param, const memory_desc_ext &diff_scale_bias_desc, void *scale,
+    void *bias, float beta_param, void *diff_scale, void *diff_bias, void *saved_mean, void *saved_var,
     void *reserve_space, size_t reserve_space_size) {
   if (scale_parameter_preprocess(
           {{alpha_data, beta_data, diff_src_desc, diff_src},
