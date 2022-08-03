@@ -1325,6 +1325,7 @@ public:
     Priority = R.Priority;
     OB.Kind = OutputBuilder::Kind::Top;
     OB.RuleName = R.RuleId;
+    OB.RuleFile = R.RuleFile;
     OB.parse(OutStr);
   }
 

@@ -247,8 +247,12 @@ __device__ static void foo_1(unsigned int* g_odata,
                               int bankOffsetA, int bankOffsetB)
 {
 // CHECK: /* DPCT_ORIG     __syncthreads();*/
-// CHECK-NEXT:    sycl::group_barrier(item_ct1.get_group());
+// CHECK-NEXT:    /*
+// CHECK-NEXT:    DPCT1065:{{[0-9]+}}: Consider replacing sycl::nd_item::barrier() with sycl::nd_item::barrier(sycl::access::fence_space::local_space) for better performance if there is no access to global memory.
+// CHECK-NEXT:    */
+// CHECK-NEXT:    item_ct1.barrier();
     __syncthreads();
+
 }
 
 // CHECK:/* DPCT_ORIG template <bool storeSum, bool isNP2>

@@ -205,7 +205,7 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
     llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> Buffer =
         llvm::MemoryBuffer::getFile(RuleFile);
     if (!Buffer) {
-      llvm::errs() << "error: failed to read " << RuleFile << ": "
+      llvm::errs() << "Error: failed to read " << RuleFile << ": "
                    << Buffer.getError().message() << "\n";
       clang::dpct::ShowStatus(MigrationErrorInvalidRuleFilePath);
       dpctExit(MigrationErrorInvalidRuleFilePath);
@@ -228,6 +228,7 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
 
     // Register Rules
     for (std::shared_ptr<MetaRuleObject> &r : CurrentRules) {
+      r->RuleFile = RuleFile;
       switch (r->Kind) {
       case (RuleKind::Macro):
         registerMacroRule(*r);
@@ -304,109 +305,91 @@ void OutputBuilder::ignoreWhitespaces(std::string &OutStr, size_t &Idx) {
 }
 
 // /OutStr is the string specified in rule's "Out" session
-void OutputBuilder::consumeRParen(std::string &OutStr, size_t &Idx) {
+void OutputBuilder::consumeRParen(std::string &OutStr, size_t &Idx,
+                                  std::string &&Keyword) {
   ignoreWhitespaces(OutStr, Idx);
-  if (Idx >= OutStr.size()) {
-    llvm::errs() << "rule parse error: in rule " << RuleName
-                 << ", expect an ')' at end of 'Out' option value.\n";
+  if (Idx >= OutStr.size() || OutStr[Idx] != ')') {
+    llvm::errs() << RuleFile << ":Error: in rule " << RuleName
+                 << ", ')' is expected after " << Keyword << "\n";
     clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
     dpctExit(MigrationErrorCannotParseRuleFile);
   }
-
-  if (OutStr[Idx] != ')') {
-    llvm::errs() << "rule parse error : in rule " << RuleName
-                 << ", expect an ')' in 'Out' option value around: "
-                 << OutStr.substr(Idx, 10) << "\n";
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
-  } else {
-    Idx++;
-  }
+  Idx++;
 }
 
 // /OutStr is the string specified in rule's "Out" session
-void OutputBuilder::consumeLParen(std::string &OutStr, size_t &Idx) {
+void OutputBuilder::consumeLParen(std::string &OutStr, size_t &Idx,
+                                  std::string &&Keyword) {
   ignoreWhitespaces(OutStr, Idx);
-  if (Idx >= OutStr.size()) {
-    llvm::errs() << "rule parse error: in rule " << RuleName
-                 << ", expect an '(' at end of 'Out' option value.\n";
+  if (Idx >= OutStr.size() || OutStr[Idx] != '(') {
+    llvm::errs() << RuleFile << ":Error: in rule " << RuleName
+      << ", '(' is expected after " << Keyword << "\n";
     clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
     dpctExit(MigrationErrorCannotParseRuleFile);
   }
-
-  if (OutStr[Idx] != '(') {
-    llvm::errs() << "rule parse error : in rule " << RuleName
-                 << ", expect an '(' in 'Out' option value around: "
-                 << OutStr.substr(Idx, 10) << "\n";
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
-  } else {
-    Idx++;
-  }
+  Idx++;
 }
 
 // /OutStr is the string specified in rule's "Out" session
-int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx) {
+int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx,
+                                   std::string &&Keyword) {
   ignoreWhitespaces(OutStr, Idx);
 
-  if (Idx >= OutStr.size()) {
-    llvm::errs() << "rule parse error: in rule " << RuleName
-                 << ", expect \'$\' followed by a positive integer at end of "
-                    "'Out' option value.\n";
+  if (Idx >= OutStr.size() || OutStr[Idx] != '$') {
+    llvm::errs() << RuleFile << ":Error: in rule " << RuleName
+                 << ", a positive integer is expected after "
+                 << Keyword << "\n";
     clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
     dpctExit(MigrationErrorCannotParseRuleFile);
   }
 
-  if (OutStr[Idx] != '$') {
-    llvm::errs() << "rule parse error: in rule " << RuleName
-                 << ", expect \'$\' followed by a positive integer in 'Out' "
-                    "option value around: "
-                 << OutStr.substr(Idx, 10) << "\n";
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
-  }
   // consume $
   Idx++;
-  auto DollarSignIdx = Idx;
+  if (Idx >= OutStr.size()) {
+    llvm::errs() << RuleFile << ":Error: in rule " << RuleName
+                 << ", a positive integer is expected after "
+                 << Keyword << "\n";
+    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
+    dpctExit(MigrationErrorCannotParseRuleFile);
+  }
+
   ignoreWhitespaces(OutStr, Idx);
   int ArgIndex = 0;
 
-  if (Idx >= OutStr.size()) {
-    llvm::errs() << "rule parse error: in rule " << RuleName
-                 << ", expect a positive integer at end of "
-                    "'Out' option value.\n";
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
-  }
+  // process arg number
   unsigned i = Idx;
   for (; i < OutStr.size(); i++) {
     if (!std::isdigit(OutStr[i])) {
       if (i == Idx) {
         // report unknown KW
-        llvm::errs() << "rule parse error: in rule " << RuleName
-                     << ", unknown keyword in 'Out' option value around: "
-                     << OutStr.substr(i, 10) << "\n";
+        llvm::errs() << RuleFile << ":Error: in rule " << RuleName
+                     << ", unknown keyword: $" << OutStr.substr(Idx, 10)
+                     << "\n";
         clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
         dpctExit(MigrationErrorCannotParseRuleFile);
       } else {
         break;
       }
+    } else {
+      ArgIndex = ArgIndex * 10 + (int)OutStr[i] - 48;
+      if (ArgIndex < 0) {
+        llvm::errs() << RuleFile << ":Error: in rule " << RuleName
+                     << ", argument index out of range.\n";
+        clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
+        dpctExit(MigrationErrorCannotParseRuleFile);
+      }
     }
   }
-
-  // process arg number
-  std::string ArgNumStr = OutStr.substr(Idx, i - Idx);
   Idx = i;
-  ArgIndex = std::stoi(ArgNumStr);
 
-  if (ArgIndex <= 0) {
-    // report invalid ArgIndex
-    llvm::errs() << "rule parse error: in rule " << RuleName
-                 << ", expect a positive integer in 'Out' option value around: "
-                 << OutStr.substr(DollarSignIdx, 10) << "\n";
+  if (Idx >= OutStr.size()) {
+    llvm::errs() << RuleFile << ":Error: in rule " << RuleName
+                 << ", a positive integer is expected after " << Keyword
+                 << "\n";
     clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
     dpctExit(MigrationErrorCannotParseRuleFile);
   }
+
   // Adjust the index because the arg index in rules starts from $1,
   // and the arg index starts from 0 in CallExpr.
   return ArgIndex - 1;
@@ -427,31 +410,31 @@ OutputBuilder::consumeKeyword(std::string &OutStr, size_t &Idx) {
     ResultBuilder->Kind = Kind::Device;
   } else if (OutStr.substr(Idx, 13) == "$type_name_of") {
     Idx += 13;
-    consumeLParen(OutStr, Idx);
+    consumeLParen(OutStr, Idx, "$type_name_of");
     ResultBuilder->Kind = Kind::TypeName;
-    ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx);
-    consumeRParen(OutStr, Idx);
+    ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "$type_name_of");
+    consumeRParen(OutStr, Idx, "$type_name_of");
   } else if (OutStr.substr(Idx, 8) == "$addr_of") {
     Idx += 8;
-    consumeLParen(OutStr, Idx);
+    consumeLParen(OutStr, Idx, "$addr_of");
     ResultBuilder->Kind = Kind::AddrOf;
-    ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx);
-    consumeRParen(OutStr, Idx);
+    ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "$addr_of");
+    consumeRParen(OutStr, Idx, "$addr_of");
   } else if (OutStr.substr(Idx, 11) == "$deref_type") {
     Idx += 11;
-    consumeLParen(OutStr, Idx);
+    consumeLParen(OutStr, Idx, "$deref_type");
     ResultBuilder->Kind = Kind::DerefedTypeName;
-    ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx);
-    consumeRParen(OutStr, Idx);
+    ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "$deref_type");
+    consumeRParen(OutStr, Idx, "$deref_type");
   } else if (OutStr.substr(Idx, 6) == "$deref") {
     Idx += 6;
-    consumeLParen(OutStr, Idx);
+    consumeLParen(OutStr, Idx, "$deref");
     ResultBuilder->Kind = Kind::Deref;
-    ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx);
-    consumeRParen(OutStr, Idx);
+    ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "$deref");
+    consumeRParen(OutStr, Idx, "$deref");
   } else {
     ResultBuilder->Kind = Kind::Arg;
-    ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx);
+    ResultBuilder->ArgIndex = consumeArgIndex(OutStr, Idx, "$");
   }
   return ResultBuilder;
 }

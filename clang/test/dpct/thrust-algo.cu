@@ -14,6 +14,10 @@
 #include <thrust/gather.h>
 #include <thrust/binary_search.h>
 
+#include <thrust/find.h>
+#include <thrust/sort.h>
+#include <thrust/host_vector.h>
+
 void k() {
   std::vector<int> v, v2, v3, v4;
 
@@ -159,3 +163,72 @@ void k() {
   thrust::merge(v.begin(), v.end(), v2.begin(), v2.end(), v3.begin(), bp);
 }
 
+
+void foo(cudaStream_t stream) {
+  //CHECK:std::vector<int> h;
+  //CHECK-NEXT:dpct::device_vector<int> d;
+  thrust::host_vector<int> h;
+  thrust::device_vector<int> d;
+
+  //thrust::find
+  //CHECK:oneapi::dpl::find(oneapi::dpl::execution::seq, h.begin(), h.end(), 1);
+  //CHECK-NEXT:oneapi::dpl::find(oneapi::dpl::execution::seq, h.begin(), h.end(), 1);
+  //CHECK-NEXT:oneapi::dpl::find(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), 1);
+  thrust::find(thrust::seq, h.begin(), h.end(), 1);
+  thrust::find(h.begin(), h.end(), 1);
+  thrust::find(d.begin(), d.end(), 1);
+
+  //thrust::sort_by_key
+  //CHECK:dpct::sort(oneapi::dpl::execution::seq, h.begin(), h.end(), h.begin(), std::greater<int>());
+  //CHECK-NEXT:dpct::sort(oneapi::dpl::execution::seq, h.begin(), h.end(), h.begin());
+  //CHECK-NEXT:dpct::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), h.begin());
+  //CHECK-NEXT:dpct::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin());
+  //CHECK-NEXT:dpct::sort(oneapi::dpl::execution::seq, h.begin(), h.end(), h.begin(), std::greater<int>());
+  //CHECK-NEXT:dpct::sort(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), std::greater<int>());
+  thrust::sort_by_key(thrust::seq, h.begin(), h.end(), h.begin(), thrust::greater<int>());
+  thrust::sort_by_key(h.begin(), h.end(), h.begin());
+  thrust::sort_by_key(d.begin(), d.end(), h.begin());
+  thrust::sort_by_key(thrust::device, d.begin(), d.end(), d.begin());
+  thrust::sort_by_key(h.begin(), h.end(), h.begin(), thrust::greater<int>());
+  thrust::sort_by_key(d.begin(), d.end(), d.begin(), thrust::greater<int>());
+
+  //CHECK:std::multiplies<int> bo1;
+  //CHECK-NEXT:std::multiplies<int> bo2;
+  thrust::multiplies<int> bo1;
+  thrust::multiplies<int> bo2;
+  //thrust::inner_product
+  //CHECK:dpct::inner_product(oneapi::dpl::execution::make_device_policy(q_ct1), h.begin(), h.end(), h.begin(), 1);
+  //CHECK-NEXT:dpct::inner_product(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), 1, bo1, bo2);
+  //CHECK-NEXT:dpct::inner_product(oneapi::dpl::execution::seq, h.begin(), h.end(), h.begin(), 1);
+  //CHECK-NEXT:dpct::inner_product(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), 1);
+  //CHECK-NEXT:dpct::inner_product(oneapi::dpl::execution::seq, h.begin(), h.end(), h.begin(), 1, bo1, bo2);
+  //CHECK-NEXT:dpct::inner_product(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), 1, bo1, bo2);
+  thrust::inner_product(thrust::host, h.begin(), h.end(), h.begin(), 1);
+  thrust::inner_product(thrust::device, d.begin(), d.end(), d.begin(), 1, bo1, bo2);
+  thrust::inner_product(h.begin(), h.end(), h.begin(), 1);
+  thrust::inner_product(d.begin(), d.end(), d.begin(), 1);
+  thrust::inner_product(h.begin(), h.end(), h.begin(), 1, bo1, bo2);
+  thrust::inner_product(d.begin(), d.end(), d.begin(), 1, bo1, bo2);
+
+  //CHECK:std::not_equal_to<int> bp;
+  thrust::not_equal_to<int> bp;
+  //thrust::reduce_by_key
+  //CHECK:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), h.begin(), h.end(), h.begin(), h.end(), h.begin(), bp, bo1);
+  //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), d.end(), d.begin(), bp);
+  //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::seq, h.begin(), h.end(), h.begin(), h.end(), h.begin(), bp, bo1);
+  //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), d.end(), d.begin(), bp, bo1);
+  //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), h.begin(), h.end(), dpct::constant_iterator<int>(1), h.end(), h.begin());
+  //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::seq, h.begin(), h.end(), h.begin(), h.end(), h.begin(), bp);
+  //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), d.end(), d.begin(), bp);
+  //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::seq, h.begin(), h.end(), h.begin(), h.end(), h.begin());
+  //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), d.end(), d.begin());
+  thrust::reduce_by_key(thrust::host, h.begin(), h.end(), h.begin(), h.end(), h.begin(), bp, bo1);
+  thrust::reduce_by_key(thrust::device, d.begin(), d.end(), d.begin(), d.end(), d.begin(), bp);
+  thrust::reduce_by_key(h.begin(), h.end(), h.begin(), h.end(), h.begin(), bp, bo1);
+  thrust::reduce_by_key(d.begin(), d.end(), d.begin(), d.end(), d.begin(), bp, bo1);
+  thrust::reduce_by_key(thrust::host, h.begin(), h.end(), thrust::constant_iterator<int>(1), h.end(), h.begin());
+  thrust::reduce_by_key(h.begin(), h.end(), h.begin(), h.end(), h.begin(), bp);
+  thrust::reduce_by_key(d.begin(), d.end(), d.begin(), d.end(), d.begin(), bp);
+  thrust::reduce_by_key(h.begin(), h.end(), h.begin(), h.end(), h.begin());
+  thrust::reduce_by_key(d.begin(), d.end(), d.begin(), d.end(), d.begin());
+}

@@ -12,7 +12,6 @@
 
 #ifndef __DPCT_CCL_UTILS_HPP__
 #define __DPCT_CCL_UTILS_HPP__
-
 // DPCT_COMMENT
 // DPCT_COMMENT Example1:
 // DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
