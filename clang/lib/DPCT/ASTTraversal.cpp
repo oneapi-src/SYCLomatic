@@ -3883,10 +3883,7 @@ void VectorTypeOperatorRule::MigrateOverloadedOperatorCall(
   // dpct_operator_overloading::operator+=(a, b)
 
   const std::string OperatorName =
-      BinaryOperator::getOpcodeStr(
-          BinaryOperator::getOverloadedOpcode(CE->getOperator()))
-          .str();
-
+      std::string(clang::getOperatorSpelling(CE->getOperator()));
   std::ostringstream FuncCall;
 
   FuncCall << NamespaceName << "::operator" << OperatorName;
