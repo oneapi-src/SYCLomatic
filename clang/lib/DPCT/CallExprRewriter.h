@@ -291,13 +291,13 @@ public:
 
   Optional<std::string> rewrite() override {
     std::string Msg = "this call is redundant in SYCL.";
-    report(Diagnostics::FUNC_CALL_REMOVED, false,
-           CalleeName, Msg);
     if (IsAssigned) {
       report(Diagnostics::FUNC_CALL_REMOVED_0, false,
              CalleeName, Msg);
       return Optional<std::string>("0");
     }
+    report(Diagnostics::FUNC_CALL_REMOVED, false,
+           CalleeName, Msg);
     return Optional<std::string>("");
   }
 };

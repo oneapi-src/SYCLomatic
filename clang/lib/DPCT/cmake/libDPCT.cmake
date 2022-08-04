@@ -25,7 +25,6 @@ macro(build_lib_dpct)
     Homoglyph.cpp
     MisleadingBidirectional.cpp
     BarrierFenceSpaceAnalyzer.cpp
-    CubCallExprAnalyzer.cpp
     BLASAPIMigration.cpp
     FFTAPIMigration.cpp
     DNNAPIMigration.cpp
@@ -33,6 +32,7 @@ macro(build_lib_dpct)
     TypeLocRewriters.cpp
     QueryApiMapping.cpp
     LIBCUAPIMigration.cpp
+    CubRule.cpp
 
     DEPENDS
     ClangDriverOptions

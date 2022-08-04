@@ -9,10 +9,10 @@
 #include "CallExprRewriter.h"
 #include "AnalysisInfo.h"
 #include "BLASAPIMigration.h"
-#include "CubCallExprAnalyzer.h"
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "Utility.h"
+#include "CubRule.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
 #include "clang/Basic/LangOptions.h"
@@ -2595,13 +2595,13 @@ public:
 class CheckCubRedundantFunctionCall {
 public:
   bool operator()(const CallExpr *C) {
-    return CubRedundantCallAnalyzer::isRedundantCallExpr(C);
+    return CubRule::isRedundantCallExpr(C);
   }
 };
 
 std::shared_ptr<CallExprRewriter>
 RemoveCubTempStorageFactory::create(const CallExpr *C) const {
-  CubRedundantTempStorageAnalyzer::removeRedundantTempVar(C);
+  CubRule::removeRedundantTempVar(C);
   return Inner->create(C);
 }
 

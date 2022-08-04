@@ -102,7 +102,6 @@ void test_2() {
 // CHECK:device_in = sycl::malloc_device<int>(n, q_ct1);
 // CHECK:device_out = sycl::malloc_device<int>(n, q_ct1);
 // CHECK:q_ct1.memcpy(device_in, (void *)host_in, sizeof(host_in)).wait();
-// CHECK:DPCT1026{{.*}}
 // CHECK:DPCT1027{{.*}}
 // CHECK:q_ct1.fill(device_out, oneapi::dpl::reduce(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n), 1);
 // CHECK:q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out)).wait();

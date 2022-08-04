@@ -57,8 +57,7 @@ void test_1() {
 // device_in = sycl::malloc_device<int>(n, q_ct1);
 // device_out = sycl::malloc_device<int>(n, q_ct1);
 // q_ct1.memcpy(device_in, (void *)host_in, sizeof(host_in)).wait();
-// DPCT1026:{{.*}}
-// DPCT1027:1:{{.*}}
+// DPCT1027:{{.*}}
 // 0, 0;
 // oneapi::dpl::inclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_out);
 // q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out)).wait();
