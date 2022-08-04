@@ -584,9 +584,11 @@ public:
                           "<" + getCustomMainHelperFileName() +
                               "/atomic.hpp>");
     case HT_DPL_Algorithm:
-      return insertHeader(HeaderType::HT_DPL_Algorithm, FirstIncludeOffset, "<oneapi/dpl/algorithm>");
+      return insertHeader(HeaderType::HT_DPL_Algorithm, FirstIncludeOffset,
+                          "<oneapi/dpl/algorithm>");
     case HT_DPL_Execution:
-      return insertHeader(HeaderType::HT_DPL_Execution, FirstIncludeOffset, "<oneapi/dpl/execution>");
+      return insertHeader(HeaderType::HT_DPL_Execution, FirstIncludeOffset,
+                          "<oneapi/dpl/execution>");
     }
   }
 
