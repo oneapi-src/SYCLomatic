@@ -539,9 +539,12 @@ public:
     attach(data, x, y, pitch, get_channel());
   }
   /// Attach 2D data to this class.
-  void attach(const void *data, size_t x, size_t y, size_t pitch, image_channel channel) {
+  void attach(const void *data, size_t x, size_t y, size_t pitch,
+              image_channel channel) {
     detach();
-    image_wrapper_base::set_data(image_data(const_cast<void *>(data), x * sizeof(T), y, pitch, channel));
+    image_wrapper_base::set_data(image_data(const_cast<void *>(data),
+                                            x * channel.get_total_size(), y,
+                                            pitch, channel));
   }
   /// Detach data.
   virtual void detach() {}
