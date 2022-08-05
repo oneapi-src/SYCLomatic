@@ -2230,8 +2230,8 @@ void ThrustFunctionRule::thrustFuncMigration(
     if (ULExpr) {
       auto BeginLoc = ULExpr->getBeginLoc();
       auto EndLoc = ULExpr->hasExplicitTemplateArgs()
-                        ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
-                        : ULExpr->getEndLoc();
+                   ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                   : ULExpr->getEndLoc();
       emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(NewName)));
     } else {
       emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
@@ -2309,8 +2309,8 @@ void ThrustFunctionRule::thrustFuncMigration(
       if (PolicyProcessed) {
         auto BeginLoc = ULExpr->getBeginLoc();
         auto EndLoc = ULExpr->hasExplicitTemplateArgs()
-                          ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
-                          : ULExpr->getEndLoc();
+                     ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                     : ULExpr->getEndLoc();
         emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(NewName)));
         return;
       } else if (hasExecutionPolicy) {
@@ -2344,8 +2344,8 @@ void ThrustFunctionRule::thrustFuncMigration(
   if (ULExpr) {
     auto BeginLoc = ULExpr->getBeginLoc();
     auto EndLoc = ULExpr->hasExplicitTemplateArgs()
-                      ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
-                      : ULExpr->getEndLoc();
+                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                 : ULExpr->getEndLoc();
     emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(NewName)));
   } else {
     emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
@@ -2495,22 +2495,22 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
       typeLoc(
           loc(qualType(hasDeclaration(namedDecl(
               hasAnyName(
-              "cudaError", "curandStatus", "cublasStatus", "CUstream",
-              "CUstream_st", "thrust::complex", "thrust::device_vector",
-              "thrust::device_ptr", "thrust::host_vector", "cublasHandle_t",
-              "CUevent_st", "__half", "half", "__half2", "half2",
-              "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",
-              "cudaPitchedPtr", "thrust::counting_iterator",
-              "thrust::transform_iterator", "thrust::permutation_iterator",
-              "thrust::iterator_difference", "cusolverDnHandle_t",
-              "thrust::device_malloc_allocator", "thrust::divides",
-              "thrust::tuple", "thrust::maximum", "thrust::multiplies",
-              "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
-              "CUdevice", "cudaEvent_t", "cublasStatus_t", "cuComplex",
-              "cuFloatComplex", "cuDoubleComplex", "CUevent",
-              "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
-              "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
-              "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
+                  "cudaError", "curandStatus", "cublasStatus", "CUstream",
+                  "CUstream_st", "thrust::complex", "thrust::device_vector",
+                  "thrust::device_ptr", "thrust::host_vector", "cublasHandle_t",
+                  "CUevent_st", "__half", "half", "__half2", "half2",
+                  "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",
+                  "cudaPitchedPtr", "thrust::counting_iterator",
+                  "thrust::transform_iterator", "thrust::permutation_iterator",
+                  "thrust::iterator_difference", "cusolverDnHandle_t",
+                  "thrust::device_malloc_allocator", "thrust::divides",
+                  "thrust::tuple", "thrust::maximum", "thrust::multiplies",
+                  "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
+                  "CUdevice", "cudaEvent_t", "cublasStatus_t", "cuComplex",
+                  "cuFloatComplex", "cuDoubleComplex", "CUevent",
+                  "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
+                  "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
+                  "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
                   "cusparseStatus_t", "cusparseDiagType_t",
                   "cusparseFillMode_t", "cusparseIndexBase_t",
                   "cusparseMatrixType_t", "cusparseOperation_t",
@@ -2519,7 +2519,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t",
                   "cudaDataType", "cublasDataType_t", "curandState_t",
                   "curandState", "curandStateXORWOW_t", "curandStateXORWOW",
-              "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
+                  "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
                   "curandStateMRG32k3a_t", "curandStateMRG32k3a",
                   "thrust::minus", "thrust::negate", "thrust::logical_or",
                   "thrust::identity", "thrust::equal_to", "thrust::less",
@@ -4376,7 +4376,7 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   } else if(EnumName == "CUDNN_DATA_DOUBLE") {
     report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-           "data type double");
+               "data type double");
     return;
   } else if (auto ET = dyn_cast<EnumType>(E->getType())) {
     if (auto ETD = ET->getDecl()) {
@@ -9555,7 +9555,7 @@ REGISTER_RULE(EventAPICallRule)
 void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
   auto streamFunctionName = [&]() {
     return hasAnyName("cudaStreamCreate", "cudaStreamCreateWithFlags",
-        "cudaStreamCreateWithPriority", "cudaStreamDestroy",
+                      "cudaStreamCreateWithPriority", "cudaStreamDestroy",
                       "cudaStreamSynchronize", "cudaStreamGetPriority",
                       "cudaStreamGetFlags", "cudaDeviceGetStreamPriorityRange",
                       "cudaStreamAttachMemAsync", "cudaStreamBeginCapture",
@@ -9564,7 +9564,7 @@ void StreamAPICallRule::registerMatcher(MatchFinder &MF) {
                       "cudaStreamAddCallback", "cuStreamCreate",
                       "cuStreamSynchronize", "cuStreamWaitEvent",
                       "cuStreamDestroy_v2", "cuStreamAttachMemAsync",
-        "cuStreamAddCallback");
+                      "cuStreamAddCallback");
   };
 
   MF.addMatcher(
@@ -11332,8 +11332,8 @@ void MemoryMigrationRule::memcpyMigration(
   if (ULExpr) {
     auto BeginLoc = ULExpr->getBeginLoc();
     auto EndLoc = ULExpr->hasExplicitTemplateArgs()
-                      ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
-                      : ULExpr->getEndLoc();
+                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                 : ULExpr->getEndLoc();
     emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(ReplaceStr)));
   } else {
     emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
@@ -11507,8 +11507,8 @@ void MemoryMigrationRule::memcpySymbolMigration(
   if (ULExpr) {
     auto BeginLoc = ULExpr->getBeginLoc();
     auto EndLoc = ULExpr->hasExplicitTemplateArgs()
-                      ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
-                      : ULExpr->getEndLoc();
+                 ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
+                 : ULExpr->getEndLoc();
     emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(ReplaceStr)));
   } else {
     emplaceTransformation(new ReplaceCalleeName(C, std::move(ReplaceStr)));
@@ -12776,11 +12776,11 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
-  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "math");
-  if (!CE)
-    CE = getNodeAsType<CallExpr>(Result, "unresolved");
-  if (!CE)
-    return;
+   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "math");
+   if (!CE)
+     CE = getNodeAsType<CallExpr>(Result, "unresolved");
+   if (!CE)
+     return;
 
   ExprAnalysis EA(CE);
   EA.applyAllSubExprRepl();
@@ -15949,8 +15949,8 @@ void TemplateSpecializationTypeLocRule::registerMatcher(
 
   MF.addMatcher(typeLoc(
                     loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
-          .bind("loc"),
-      this);
+                    .bind("loc"),
+                this);
 }
 
 void TemplateSpecializationTypeLocRule::runRule(

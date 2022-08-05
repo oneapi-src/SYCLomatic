@@ -1483,8 +1483,8 @@ public:
     if (auto ET = QT->getAs<ElaboratedType>()) {
       if (ET->getQualifier())
         QT = Context.getElaboratedType(ETK_None, ET->getQualifier(),
-                                       ET->getNamedType(),
-                                       ET->getOwnedTagDecl());
+                              ET->getNamedType(),
+                              ET->getOwnedTagDecl());
       else
         QT = ET->getNamedType();
     }
