@@ -1404,6 +1404,9 @@ int runDPCT(int argc, const char **argv) {
                      OptimizeMigration.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_RuleFile, MetaRuleObject::RuleFiles,
                      RuleFile.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
+                     DpctGlobalInfo::getAnalysisScope(),
+                     AnalysisScope.getNumOccurrences());
 
     if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;
