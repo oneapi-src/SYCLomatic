@@ -19,6 +19,9 @@
 #include <CL/sycl.hpp>
 #include <oneapi/dnnl/dnnl.hpp>
 #include <oneapi/dnnl/dnnl_sycl.hpp>
+#include <oneapi/dpl/execution>
+#include <oneapi/dpl/algorithm>
+#include <oneapi/dpl/numeric>
 #include <unordered_map>
 // DPCT_LABEL_END
 
@@ -47,6 +50,26 @@ enum class memory_format_tag { nchw, nhwc, nchw_blocked };
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// A class holding the description of an N-dimensions memory.
+namespace detail {
+template <::dnnl::memory::data_type T> struct type_trait {
+  typedef void type;
+} template <> struct type_trait<::dnnl::memory::data_type::f16> {
+  typedef sycl::float type;
+};
+template <> struct type_trait<::dnnl::memory::data_type::f32> {
+  typedef float type;
+};
+template <> struct type_trait<::dnnl::memory::data_type::s32> {
+  typedef int32_t type;
+};
+template <> struct type_trait<::dnnl::memory::data_type::s8> {
+  typedef int8_t type;
+};
+template <> struct type_trait<::dnnl::memory::data_type::u8> {
+  typedef uint8_t type;
+};
+} // namespace detail
+
 class memory_desc_ext {
   ::dnnl::memory::desc _desc;
   /// Convert dpct::library_data_t to dnnl::memory::data_type.
@@ -105,6 +128,17 @@ public:
   /// Getting a size of a memory_desc_ext in bytes.
   /// \returns The size.
   size_t get_size() const { return _desc.get_size(); }
+  size_t get_element_num() const {
+    auto &dims = _desc.dims();
+    if(!dims.size()) {
+      return 0;
+    }
+    size_t result = 1;
+    for(auto &dim : dims) {
+      result = result * dim;
+    }
+    return result;
+  }
   /// Getting parameters from a 4D memory.
   /// \param [out] dt Data type.
   /// \param [out] n Number of images.
@@ -400,7 +434,17 @@ public:
 // DPCT_LABEL_BEGIN|reduction_desc|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-enum class reduction_op {max, min, sum, mul, mean, amax, norm1, norm2};
+enum class reduction_op {
+  max,
+  min,
+  sum,
+  mul,
+  mean,
+  amax,
+  mul_no_zero,
+  norm1,
+  norm2
+};
 
 class reduction_desc {
   reduction_op _op;
@@ -1488,6 +1532,9 @@ sycl::event engine_ext::reduction(reduction_desc &desc, float alpha,
   case reduction_op::mul:
     onednn_algorithm = ::dnnl::algorithm::reduction_mul;
     break;
+  case reduction_op::mul_no_zero:
+    onednn_algorithm = ::dnnl::algorithm::reduction_mul;
+    break;
   case reduction_op::norm1:
     p = 1.f;
     onednn_algorithm = ::dnnl::algorithm::reduction_norm_lp_power_p_sum;
@@ -1504,6 +1551,29 @@ sycl::event engine_ext::reduction(reduction_desc &desc, float alpha,
     activation_desc adesc;
     adesc.set_algorithm(::dnnl::algorithm::eltwise_abs);
     activation_forward(adesc, 1.f, src_desc, src, 0.f, src_desc, cache);
+    std::unordered_map<int, ::dnnl::memory> execution_args = {
+        {DNNL_ARG_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, cache)}};
+
+    auto event =
+        execute_primitive(primitive, execution_args,
+                          {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
+    async_dpct_free({cache}, {event}, *_q);
+    return event;
+  } else if (op == reduction_op::mul_no_zero) {
+    auto cache = allocate(src_desc);
+    activation_desc adesc;
+    adesc.set_algorithm(::dnnl::algorithm::eltwise_abs);
+    typedef detail::type_trait<src_desc.get_desc().data_type()>::type
+        element_type;
+    std::transform(oneapi::dpl::execution::make_device_policy(*_q),
+                   (element_type *)src,
+                   (element_type *)src + src_desc.get_element_num(),
+                   (element_type *)cache, [](element_type element) {
+                     if (!element) {
+                       return 1;
+                     }
+                     return element;
+                   });
     std::unordered_map<int, ::dnnl::memory> execution_args = {
         {DNNL_ARG_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, cache)}};
 
