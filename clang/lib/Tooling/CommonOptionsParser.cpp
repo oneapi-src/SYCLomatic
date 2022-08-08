@@ -126,13 +126,6 @@ static OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
       llvm::cl::Positional, llvm::cl::desc("[<source0> ... <sourceN>]"), llvm::cl::ZeroOrMore,
       llvm::cl::cat(Category), llvm::cl::sub(*llvm::cl::AllSubCommands));
 
-  static cl::list<std::string> ArgsAfter(
-     "extra-arg",
-     cl::desc("Additional argument to append to the migration command line, example:\n"
-              "--extra-arg=\"-I /path/to/header\". The options that can be passed this way can\n"
-              "be found with the dpct -- -help command."),
-     cl::value_desc("string"), cl::cat(Category), cl::sub(*cl::AllSubCommands));
-
   static cl::list<std::string> ArgsBefore(
      "extra-arg-before",
      cl::desc("Additional argument to prepend to the compiler command line.\n"
