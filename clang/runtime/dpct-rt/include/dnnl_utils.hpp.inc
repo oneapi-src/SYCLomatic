@@ -602,35 +602,45 @@ class engine_ext {
       primitive_type &&primitive, args_type &&args,
       std::vector<std::tuple<float, float, int, memory_desc_ext, void *>>
           extra_args);
-
+  template<typename T>
+  struct no_zero_op {
+    T operator()(T e) {
+      if(!e) {
+        return 1;
+      }
+      return e;
+    }
+  };
+  struct 
   template <typename UnaryOperation>
-  void transform(memory_desc_ext desc, void *src, void *dst, UnaryOperation unary_op) {
+  void transform_no_zero(memory_desc_ext desc, void *src, void *dst) {
     ::dnnl::memory::data_type dt = desc.get_desc().data_type();
+    size_t element_num = desc.get_element_num();
     switch (dt) {
     case ::dnnl::memory::data_type::f32:
       std::transform(oneapi::dpl::execution::make_device_policy(*_q),
-                     (float *)src, (float *)src + src_desc.get_element_num(),
-                     (float *)dst, unary_op);
+                     (float *)src, (float *)src + element_num,
+                     (float *)dst, no_zero_op<float>());
       break;
     case ::dnnl::memory::data_type::f16:
       std::transform(oneapi::dpl::execution::make_device_policy(*_q),
-                     (sycl::half *)src, (sycl::half *)src + src_desc.get_element_num(),
-                     (sycl::half *)dst, unary_op);
+                     (sycl::half *)src, (sycl::half *)src + element_num,
+                     (sycl::half *)dst, no_zero_op<sycl::half>());
       break;
     case ::dnnl::memory::data_type::s32:
       std::transform(oneapi::dpl::execution::make_device_policy(*_q),
-                     (int32_t *)src, (int32_t *)src + src_desc.get_element_num(),
-                     (int32_t *)dst, unary_op);
+                     (int32_t *)src, (int32_t *)src + element_num,
+                     (int32_t *)dst, no_zero_op<int32_t>());
       break;
     case ::dnnl::memory::data_type::s8:
       std::transform(oneapi::dpl::execution::make_device_policy(*_q),
-                     (int8_t *)src, (int8_t *)src + src_desc.get_element_num(),
-                     (int8_t *)dst, unary_op);
+                     (int8_t *)src, (int8_t *)src + element_num,
+                     (int8_t *)dst, no_zero_op<int8_t>());
       break;
     case ::dnnl::memory::data_type::u8:
       std::transform(oneapi::dpl::execution::make_device_policy(*_q),
-                     (uint8_t *)src, (uint8_t *)src + src_desc.get_element_num(),
-                     (uint8_t *)dst, unary_op);
+                     (uint8_t *)src, (uint8_t *)src + element_num,
+                     (uint8_t *)dst, no_zero_op<uint8_t>());
       break;
     default:
       throw std::runtime_error("fill: unsupported data type sycl::bfloat16.");
@@ -1576,12 +1586,7 @@ sycl::event engine_ext::reduction(reduction_desc &desc, float alpha,
     return event;
   } else if (op == reduction_op::mul_no_zero) {
     auto cache = allocate(src_desc);
-    transform(src_desc, src, cache, [](auto element) {
-      if (!element) {
-        return 1;
-      }
-      return element;
-    });
+    transform_no_zero(src_desc, src, cache);
     std::unordered_map<int, ::dnnl::memory> execution_args = {
         {DNNL_ARG_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, cache)}};
 
