@@ -400,13 +400,15 @@ public:
 // DPCT_LABEL_BEGIN|reduction_desc|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
+enum class reduction_op {max, min, sum, mul, mean, amax, norm1, norm2};
+
 class reduction_desc {
-  ::dnnl::algorithm _alg;
+  reduction_op _op;
 
 public:
-  void set(::dnnl::algorithm alg) { _alg = alg; }
-  void get(::dnnl::algorithm *alg) { *alg = _alg; }
-  ::dnnl::algorithm get_algorithm() { return _alg; }
+  void set(reduction_op op) { _op = op; }
+  void get(reduction_op *op) { *op = _op; }
+  reduction_op get_reduction_op() { return _op; }
 };
 // DPCT_LABEL_END
 
@@ -1467,13 +1469,50 @@ sycl::event engine_ext::reduction(reduction_desc &desc, float alpha,
     return sycl::event();
   }
   float p = 2.f;
-  if (desc.get_algorithm() ==
-      ::dnnl::algorithm::reduction_norm_lp_power_p_sum) {
+  reduction_op op = desc.get_reduction_op();
+  ::dnnl::algorithm onednn_algorithm;
+  switch (op) {
+  case reduction_op::amax:
+  case reduction_op::max:
+    onednn_algorithm = ::dnnl::algorithm::reduction_max;
+    break;
+  case reduction_op::min:
+    onednn_algorithm = ::dnnl::algorithm::reduction_min;
+    break;
+  case reduction_op::sum:
+    onednn_algorithm = ::dnnl::algorithm::reduction_sum;
+    break;
+  case reduction_op::mean:
+    onednn_algorithm = ::dnnl::algorithm::reduction_mean;
+    break;
+  case reduction_op::mul:
+    onednn_algorithm = ::dnnl::algorithm::reduction_mul;
+    break;
+  case reduction_op::norm1:
     p = 1.f;
+    onednn_algorithm = ::dnnl::algorithm::reduction_norm_lp_power_p_sum;
+    break;
+  case reduction_op::norm2:
+    onednn_algorithm = ::dnnl::algorithm::reduction_norm_lp_sum;
+    break;
   }
   auto primitive = create_forward_primitive<::dnnl::reduction>(
-      desc.get_algorithm(), src_desc.get_desc(), dst_desc.get_desc(), p, 0.f);
+      onednn_algorithm, src_desc.get_desc(), dst_desc.get_desc(), p, 0.f);
 
+  if (op == reduction_op::amax) {
+    auto cache = allocate(src_desc);
+    activation_desc adesc;
+    adesc.set_algorithm(::dnnl::algorithm::eltwise_abs);
+    activation_forward(adesc, 1.f, src_desc, src, 0.f, src_desc, cache);
+    std::unordered_map<int, ::dnnl::memory> execution_args = {
+        {DNNL_ARG_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, cache)}};
+
+    auto event =
+        execute_primitive(primitive, execution_args,
+                          {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
+    async_dpct_free({cache}, {event}, *_q);
+    return event;
+  }
   std::unordered_map<int, ::dnnl::memory> execution_args = {
       {DNNL_ARG_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, src)}};
 
