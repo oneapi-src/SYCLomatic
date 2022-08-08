@@ -1485,15 +1485,14 @@ sycl::event engine_ext::reduction(reduction_desc &desc, float alpha,
       ::dnnl::algorithm::reduction_norm_lp_power_p_sum) {
     p = 1.f;
   }
-  auto primitive = create_forward_primitive<true, ::dnnl::reduction>(
-      generate_scaling_attr(alpha, beta), desc.get_algorithm(),
-      src_desc.get_desc(), dst_desc.get_desc(), p, 0.f);
+  auto primitive = create_forward_primitive<::dnnl::reduction>(
+      desc.get_algorithm(), src_desc.get_desc(), dst_desc.get_desc(), p, 0.f);
 
   std::unordered_map<int, ::dnnl::memory> args = {
-      {DNNL_ARG_DST, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)},
       {DNNL_ARG_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, src)}};
 
-  return ::dnnl::sycl_interop::execute(primitive, _s, args);
+  return execute_primitive(primitive, execution_args,
+                           {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
 // DPCT_LABEL_END
 
@@ -1971,7 +1970,7 @@ sycl::event engine_ext::batch_normalization_backward(
     help_diff_scale_bias_desc = help_diff_scale_bias_desc.reshape(help_dims_1);
   }
   auto forward_primitive =
-      create_forward_primitive<::dnnl::batch_normalization_forward>(
+      create_forward_primitive_desc<::dnnl::batch_normalization_forward>(
           ::dnnl::prop_kind::forward_training, help_src_desc, epsilon,
           ::dnnl::normalization_flags::use_scale |
               ::dnnl::normalization_flags::use_shift);
@@ -2128,7 +2127,7 @@ sycl::event engine_ext::batch_normalization_backward_ex(
                       help_diff_addition_desc, diff_addition);
 
   auto forward_primitive =
-      create_forward_primitive<::dnnl::batch_normalization_forward>(
+      create_forward_primitive_desc<::dnnl::batch_normalization_forward>(
           ::dnnl::prop_kind::forward_training, help_src_desc, epsilon,
           ::dnnl::normalization_flags::use_scale |
               ::dnnl::normalization_flags::use_shift);
