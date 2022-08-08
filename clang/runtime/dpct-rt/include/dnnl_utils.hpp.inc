@@ -563,12 +563,11 @@ class engine_ext {
   engine_ext::create_forward_primitive_desc(attr_type &&attr,
                                             args_type &&...args);
 
-  template <bool use_hint, typename primitive_type, typename forward_primitive_type,
+  template <typename primitive_type, typename forward_primitive_type,
             typename... args_type>
-  primitive_type create_backward_primitive(forward_primitive_type &&fp,
-                                           args_type &&...args);
-  template <typename primitive_type, typename... args_type>
-  primitive_type create_backward_primitive(args_type &&...args);
+  primitive_type
+  engine_ext::create_backward_primitive(forward_primitive_type &&fp,
+                                        args_type &&...args);
 
   bool engine_ext::scale_parameter_preprocess(
       std::vector<std::tuple<float, float, memory_desc_ext, void *>> args);
@@ -1316,24 +1315,14 @@ engine_ext::create_forward_primitive_desc(attr_type &&attr,
       {std::forward<args_type>(args)...}, _eng);
 }
 
-template <bool use_hint, typename primitive_type,
-          typename forward_primitive_type, typename... args_type>
+template <typename primitive_type, typename forward_primitive_type,
+          typename... args_type>
 primitive_type
 engine_ext::create_backward_primitive(forward_primitive_type &&fp,
                                       args_type &&...args) {
-  if (use_hint) {
-    return primitive_type(typename primitive_type::primitive_desc(
-        {std::forward<args_type>(args)...}, _eng,
-        std::forward<forward_primitive_type>(fp)));
-  }
   return primitive_type(typename primitive_type::primitive_desc(
-      {std::forward<args_type>(args)...}, _eng));
-}
-
-template <typename primitive_type, typename... args_type>
-primitive_type engine_ext::create_backward_primitive(args_type &&...args) {
-  return primitive_type(typename primitive_type::primitive_desc(
-      {std::forward<args_type>(args)...}, _eng));
+      {std::forward<args_type>(args)...}, _eng,
+      std::forward<forward_primitive_type>(fp)));
 }
 // DPCT_LABEL_END
 
@@ -1615,7 +1604,7 @@ sycl::event engine_ext::pooling_backward(
   if (scale_parameter_preprocess({{alpha, beta, diff_src_desc, diff_src}})) {
     return sycl::event();
   }
-  auto primitive = create_backward_primitive<true, ::dnnl::pooling_backward>(
+  auto primitive = create_backward_primitive<::dnnl::pooling_backward>(
       create_forward_primitive_desc<::dnnl::pooling_forward>(
           ::dnnl::prop_kind::forward_training, desc.get_algorithm(),
           src_desc.get_desc(), dst_desc.get_desc(), desc.get_stride(),
@@ -1716,7 +1705,7 @@ sycl::event engine_ext::softmax_backward(
        {::dnnl::memory(help_diff_dst_desc, _eng, diff_dst)}}};
 
   if (alg == softmax_algorithm::normal) {
-    auto primitive = create_backward_primitive<true, ::dnnl::softmax_backward>(
+    auto primitive = create_backward_primitive<::dnnl::softmax_backward>(
         create_forward_primitive_desc<::dnnl::softmax_forward>(
             ::dnnl::prop_kind::forward, help_diff_src_desc, 1),
         help_diff_src_desc, help_diff_src_desc, 1);
@@ -1725,7 +1714,7 @@ sycl::event engine_ext::softmax_backward(
                                memory_desc_ext(help_diff_src_desc), diff_src}});
   } else {
     auto primitive =
-        create_backward_primitive<true, ::dnnl::logsoftmax_backward>(
+        create_backward_primitive<::dnnl::logsoftmax_backward>(
             create_forward_primitive_desc<::dnnl::logsoftmax_forward>(
                 ::dnnl::prop_kind::forward, help_diff_src_desc, 1),
             help_diff_src_desc, help_diff_src_desc, 1);
@@ -1786,7 +1775,7 @@ engine_ext::lrn_backward(lrn_desc &desc, float alpha,
   if (scale_parameter_preprocess({{alpha, beta, diff_src_desc, diff_src}})) {
     return sycl::event();
   }
-  auto primitive = create_backward_primitive<true, ::dnnl::lrn_backward>(
+  auto primitive = create_backward_primitive<::dnnl::lrn_backward>(
       create_forward_primitive_desc<::dnnl::lrn_forward>(
           ::dnnl::prop_kind::forward_training,
           ::dnnl::algorithm::lrn_across_channels, src_desc.get_desc(),
@@ -1987,7 +1976,7 @@ sycl::event engine_ext::batch_normalization_backward(
           ::dnnl::normalization_flags::use_scale |
               ::dnnl::normalization_flags::use_shift);
   auto primitive =
-      create_backward_primitive<true, ::dnnl::batch_normalization_backward>(
+      create_backward_primitive<::dnnl::batch_normalization_backward>(
           forward_primitive, ::dnnl::prop_kind::backward, help_diff_src_desc,
           help_src_desc, epsilon,
           ::dnnl::normalization_flags::use_scale |
@@ -2144,7 +2133,7 @@ sycl::event engine_ext::batch_normalization_backward_ex(
           ::dnnl::normalization_flags::use_scale |
               ::dnnl::normalization_flags::use_shift);
   auto primitive =
-      create_backward_primitive<true, ::dnnl::batch_normalization_backward>(
+      create_backward_primitive<::dnnl::batch_normalization_backward>(
           forward_primitive, ::dnnl::prop_kind::backward, help_diff_src_desc,
           help_src_desc, epsilon,
           ::dnnl::normalization_flags::use_scale |
@@ -2266,7 +2255,7 @@ sycl::event engine_ext::convolution_backward_data(
           desc.get_padding(), desc.get_padding());
 
   auto primitive =
-      create_backward_primitive<true, ::dnnl::convolution_backward_data>(
+      create_backward_primitive<::dnnl::convolution_backward_data>(
           forward_primitive, ::dnnl::algorithm::convolution_auto,
           diff_src_desc.get_desc(), weight_desc.get_desc(),
           diff_dst_desc.get_desc(), desc.get_stride(), desc.get_dilate(),
@@ -2309,7 +2298,7 @@ sycl::event engine_ext::convolution_backward_weight(
           desc.get_padding(), desc.get_padding());
 
   auto primitive =
-      create_backward_primitive<true, ::dnnl::convolution_backward_data>(
+      create_backward_primitive<::dnnl::convolution_backward_data>(
           forward_primitive, ::dnnl::algorithm::convolution_auto,
           src_desc.get_desc(), diff_weight_desc.get_desc(),
           diff_dst_desc.get_desc(), desc.get_stride(), desc.get_dilate(),
