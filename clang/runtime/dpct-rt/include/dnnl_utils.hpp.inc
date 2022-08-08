@@ -1488,7 +1488,7 @@ sycl::event engine_ext::reduction(reduction_desc &desc, float alpha,
   auto primitive = create_forward_primitive<::dnnl::reduction>(
       desc.get_algorithm(), src_desc.get_desc(), dst_desc.get_desc(), p, 0.f);
 
-  std::unordered_map<int, ::dnnl::memory> args = {
+  std::unordered_map<int, ::dnnl::memory> execution_args = {
       {DNNL_ARG_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, src)}};
 
   return execute_primitive(primitive, execution_args,
