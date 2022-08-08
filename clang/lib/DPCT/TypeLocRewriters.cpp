@@ -65,6 +65,26 @@ std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocConditionalFactory(
                                                              Second);
 }
 
+std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
+createFeatureRequestFactory(
+    HelperFeatureEnum Feature,
+    std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
+        &&Input) {
+  return std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>(
+      std::move(Input.first),
+      std::make_shared<TypeLocRewriterFactoryWithFeatureRequest>(Feature,
+                                                          Input.second));
+}
+template <class T>
+std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
+createFeatureRequestFactory(
+    HelperFeatureEnum Feature,
+    std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
+        &&Input,
+    T) {
+  return createFeatureRequestFactory(Feature, std::move(Input));
+}
+
 std::unique_ptr<std::unordered_map<
     std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>>
     TypeLocRewriterFactoryBase::TypeLocRewriterMap;
@@ -80,6 +100,8 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
 #define TYPE_CONDITIONAL_FACTORY(Pred, First, Second)                          \
   createTypeLocConditionalFactory(Pred, First, Second)
 #define TYPE_FACTORY(...) createTypeLocRewriterFactory(__VA_ARGS__)
+#define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
+  createFeatureRequestFactory(FEATURE, x 0),
 #include "APINamesTemplateType.inc"
 #undef TYPE_FACTORY
 #undef TYPE_CONDITIONAL_FACTORY

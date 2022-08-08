@@ -49,7 +49,6 @@ enum class memory_format_tag { nchw, nhwc, nchw_blocked };
 /// A class holding the description of an N-dimensions memory.
 class memory_desc_ext {
   ::dnnl::memory::desc _desc;
-
   /// Convert dpct::library_data_t to dnnl::memory::data_type.
   static ::dnnl::memory::data_type to_dnnl_data_type(dpct::library_data_t dt);
   /// Convert dnnl::memory::data_type to dpct::library_data_t.
@@ -133,6 +132,7 @@ public:
 // DPCT_LABEL_BEGIN|activation_desc|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
+/// A class holding description for an activation operation.
 class activation_desc {
   ::dnnl::algorithm _alg;
   float _alpha;
@@ -177,6 +177,7 @@ public:
 // DPCT_LABEL_BEGIN|lrn_desc|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
+/// A class holding description for a local response normalization operation.
 class lrn_desc {
   unsigned int _local_size;
   float _alpha;
@@ -237,20 +238,20 @@ public:
 // DPCT_LABEL_BEGIN|softmax_algorithm|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-/// An enum class used to select softmax algorithm.
+/// An enum class representing softmax algorithm.
 enum class softmax_algorithm { normal, log };
 // DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|softmax_mode|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-/// An enum class used to select softmax mode.
+/// An enum class representing softmax mode.
 enum class softmax_mode { instance, channel };
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|pooling_desc|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
+/// A class holding description for a pooling operation.
 class pooling_desc {
   ::dnnl::algorithm _alg;
   std::vector<int64_t> _stride;
@@ -525,6 +526,7 @@ public:
 // LibCommonUtils|library_data_t
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// A class holding the oneDNN engine.
 class engine_ext {
   ::dnnl::engine _eng;
   ::dnnl::stream _s;
@@ -532,13 +534,10 @@ class engine_ext {
   std::map<void *, ::dnnl::memory> workspace_map;
 
   ::dnnl::memory &get_workspace(void *key) { return workspace_map[key]; }
-
   void insert_workspace(void *key, ::dnnl::memory workspace) {
     workspace_map[key] = workspace;
   }
-
   const ::dnnl::stream &get_stream() const { return _s; }
-
   const ::dnnl::engine &get_engine() const { return _eng; }
 
   void *allocate(const memory_desc_ext &desc) const;
@@ -609,7 +608,6 @@ public:
   /// \returns Pointer to the SYCL queue.
   sycl::queue *get_queue() const { return _q; }
 // DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|fill_decl|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -622,7 +620,6 @@ public:
   sycl::event fill(const memory_desc_ext &src_desc, void *src,
                    const void *valuePtr);
 // DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|reorder_decl|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -638,7 +635,6 @@ public:
   sycl::event reorder(float alpha, const memory_desc_ext &src_desc, void *src,
                       float beta, const memory_desc_ext &dst_desc, void *dst);
 // DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|scale_decl|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -650,7 +646,6 @@ public:
   /// \param [out] src Pointer to source data.
   sycl::event scale(float alpha, const memory_desc_ext &src_desc, void *src);
 // DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|sum_decl|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -689,7 +684,6 @@ public:
                         const memory_desc_ext &src_desc, void *src, float beta,
                         const memory_desc_ext &dst_desc, void *dst);
 // DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|activation_forward_decl|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -708,7 +702,6 @@ public:
                                  float beta, const memory_desc_ext &dst_desc,
                                  void *dst);
 // DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|activation_backward_decl|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -733,7 +726,6 @@ public:
                       const memory_desc_ext &src_desc, void *src, float beta,
                       const memory_desc_ext &diff_src_desc, void *diff_src);
 // DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|pooling_forward_decl|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -753,7 +745,6 @@ public:
                               float beta, const memory_desc_ext &dst_desc,
                               void *dst, ::dnnl::memory *workspace = nullptr);
 // DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|pooling_backward_decl|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -781,7 +772,6 @@ public:
                                void *diff_src,
                                ::dnnl::memory *workspace = nullptr);
 // DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|softmax_forward_decl|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -801,7 +791,6 @@ public:
                               void *src, float beta,
                               const memory_desc_ext &dst_desc, void *dst);
 // DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|softmax_backward_decl|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -825,7 +814,6 @@ public:
                                const memory_desc_ext &diff_src_desc,
                                void *diff_src);
 // DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|lrn_forward_decl|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -845,7 +833,6 @@ public:
                           float beta, const memory_desc_ext &dst_desc,
                           void *dst, ::dnnl::memory *workspace = nullptr);
 // DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|lrn_backward_decl|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -1021,7 +1008,6 @@ public:
       const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta,
       const memory_desc_ext &diff_weight_desc, void *diff_weight);
 // DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|engine_ext_1|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext

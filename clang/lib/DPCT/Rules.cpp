@@ -337,7 +337,7 @@ int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx,
 
   if (Idx >= OutStr.size() || OutStr[Idx] != '$') {
     llvm::errs() << RuleFile << ":Error: in rule " << RuleName
-                 << ", $ followed by a positive integer is expected after "
+                 << ", a positive integer is expected after "
                  << Keyword << "\n";
     clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
     dpctExit(MigrationErrorCannotParseRuleFile);
@@ -345,36 +345,51 @@ int OutputBuilder::consumeArgIndex(std::string &OutStr, size_t &Idx,
 
   // consume $
   Idx++;
+  if (Idx >= OutStr.size()) {
+    llvm::errs() << RuleFile << ":Error: in rule " << RuleName
+                 << ", a positive integer is expected after "
+                 << Keyword << "\n";
+    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
+    dpctExit(MigrationErrorCannotParseRuleFile);
+  }
+
   ignoreWhitespaces(OutStr, Idx);
   int ArgIndex = 0;
 
   // process arg number
-  std::string ArgNumStr = OutStr.substr(Idx);
-  std::size_t pos = 0;
+  unsigned i = Idx;
+  for (; i < OutStr.size(); i++) {
+    if (!std::isdigit(OutStr[i])) {
+      if (i == Idx) {
+        // report unknown KW
+        llvm::errs() << RuleFile << ":Error: in rule " << RuleName
+                     << ", unknown keyword: $" << OutStr.substr(Idx, 10)
+                     << "\n";
+        clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
+        dpctExit(MigrationErrorCannotParseRuleFile);
+      } else {
+        break;
+      }
+    } else {
+      ArgIndex = ArgIndex * 10 + (int)OutStr[i] - 48;
+      if (ArgIndex < 0) {
+        llvm::errs() << RuleFile << ":Error: in rule " << RuleName
+                     << ", argument index out of range.\n";
+        clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
+        dpctExit(MigrationErrorCannotParseRuleFile);
+      }
+    }
+  }
+  Idx = i;
 
-  try{
-    ArgIndex = std::stoi(ArgNumStr, &pos);
-  } catch(std::invalid_argument const& Ex){
+  if (Idx >= OutStr.size()) {
     llvm::errs() << RuleFile << ":Error: in rule " << RuleName
-                 << ", unknown keyword: $" << ArgNumStr.substr(0, 10) << "\n";
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
-  } catch(std::out_of_range const& Ex) {
-    llvm::errs() << RuleFile << ":Error: in rule " << RuleName
-                 << ", argument index out of range.\n";
+                 << ", a positive integer is expected after " << Keyword
+                 << "\n";
     clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
     dpctExit(MigrationErrorCannotParseRuleFile);
   }
-  Idx = Idx + pos;
 
-  if (ArgIndex <= 0) {
-    // report invalid ArgIndex
-    llvm::errs() << RuleFile << ":Error: in rule " << RuleName
-                 << ", expect a positive integer, found " << ArgIndex
-                 << " after " << Keyword << "\n";
-    clang::dpct::ShowStatus(MigrationErrorCannotParseRuleFile);
-    dpctExit(MigrationErrorCannotParseRuleFile);
-  }
   // Adjust the index because the arg index in rules starts from $1,
   // and the arg index starts from 0 in CallExpr.
   return ArgIndex - 1;

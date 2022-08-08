@@ -445,6 +445,10 @@ ENTRY_TYPECAST("__ushort2half_rn")
 ENTRY_TYPECAST("__ushort2half_ru")
 ENTRY_TYPECAST("__ushort2half_rz")
 
+// Bfloat16 Precision Conversion and Data Movement
+ENTRY_TYPECAST("__bfloat162float")
+ENTRY_TYPECAST("__float2bfloat16")
+
 // Type Casting Intrinsics
 ENTRY_TYPECAST("__double2float_rd")
 ENTRY_TYPECAST("__double2float_rn")

@@ -8,6 +8,7 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
+#include "BarrierFenceSpaceAnalyzer.h"
 #include "CallExprRewriter.h"
 #include "CustomHelperFiles.h"
 #include "ExprAnalysis.h"
@@ -15,6 +16,7 @@
 #include "MisleadingBidirectional.h"
 #include "DNNAPIMigration.h"
 #include "NCCLAPIMigration.h"
+#include "LIBCUAPIMigration.h"
 #include "SaveNewFiles.h"
 #include "TextModification.h"
 #include "Utility.h"
@@ -974,6 +976,16 @@ void IncludesCallbacks::InclusionDirective(
       return;
     }
     DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Dnnl);
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
+    Updater.update(false);
+  }
+
+  if (FileName.compare(StringRef("cuda/atomic")) == 0||
+      FileName.compare(StringRef("cuda/std/atomic")) == 0) {
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Atomic);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -2058,18 +2070,10 @@ void AtomicFunctionRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(AtomicFunctionRule)
 
 void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
-  std::vector<std::string> ThrustFuncNames(MapNames::ThrustFuncNamesMap.size());
-  std::transform(
-      MapNames::ThrustFuncNamesMap.begin(), MapNames::ThrustFuncNamesMap.end(),
-      ThrustFuncNames.begin(),
-      [](const std::pair<std::string, MapNames::ThrustFuncReplInfo> &p) {
-        return p.first;
-      });
-
   MF.addMatcher(callExpr(callee(functionDecl(
                              hasDeclContext(namespaceDecl(hasName("thrust"))))))
-                    .bind("thrustFuncCall"),
-                this);
+                     .bind("thrustFuncCall"),
+                 this);
 
   MF.addMatcher(
       unresolvedLookupExpr(hasAnyDeclaration(namedDecl(hasDeclContext(
@@ -3071,7 +3075,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
 
     // if TL is the T in
     // template<typename T> void foo(T a);
-    if (TL->getTypeLocClass() == clang::TypeLoc::SubstTemplateTypeParm ||
+    if (TL->getType()->getTypeClass() == clang::Type::SubstTemplateTypeParm ||
         TL->getBeginLoc().isInvalid()) {
       return;
     }
@@ -13060,19 +13064,20 @@ void SyncThreadsRule::runRule(const MatchFinder::MatchResult &Result) {
 
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
-  
-  if (!CallExprRewriterFactoryBase::RewriterMap)
-    return;
-  
-  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
-  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
-    ExprAnalysis EA;
-    EA.analyze(CE);
-    EA.applyAllSubExprRepl();
-    return;
-  }
-
- if (FuncName == "this_thread_block") {
+  if (FuncName == "__syncthreads") {
+    BarrierFenceSpaceAnalyzer A;
+    if (A.canSetLocalFenceSpace(CE)) {
+      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier(" +
+                                MapNames::getClNamespace() +
+                                "access::fence_space::local_space)";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::BARRIER_PERFORMANCE_TUNNING, true,
+             "nd_item");
+      std::string Replacement = DpctGlobalInfo::getItem(CE) + ".barrier()";
+      emplaceTransformation(new ReplaceStmt(CE, std::move(Replacement)));
+    }
+  } else if (FuncName == "this_thread_block") {
     if (auto P = getAncestorDeclStmt(CE)) {
       if (auto VD = dyn_cast<VarDecl>(*P->decl_begin())) {
         emplaceTransformation(new ReplaceTypeInDecl(VD, "auto"));
@@ -15856,7 +15861,10 @@ void CudaArchMacroRule::runRule(
     }
     bool NeedInsert = false;
     for (auto &Info : Global.getCudaArchPPInfoMap()[FileInfo->getFilePath()]) {
-      if ((Info.first > Beg.second) && (Info.first < End.second)) {
+      if ((Info.first > Beg.second) && (Info.first < End.second) &&
+          (!Info.second.ElInfo.empty() ||
+           (Info.second.IfInfo.DirectiveLoc &&
+            (Info.second.DT != IfType::IT_Unknow)))) {
         Info.second.isInHDFunc = true;
         NeedInsert = true;
       }
@@ -17145,6 +17153,12 @@ REGISTER_RULE(CuDNNAPIRule)
 
 REGISTER_RULE(NCCLRule)
 
+REGISTER_RULE(LIBCUAPIRule)
+
+REGISTER_RULE(LIBCUMemberFuncRule)
+
+REGISTER_RULE(LIBCUTypeRule)
+
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {
     return hasAnyName("make_cuDoubleComplex", "cuCreal", "cuCrealf", "cuCimag",
@@ -17171,7 +17185,10 @@ REGISTER_RULE(ComplexAPIRule)
 
 void TemplateSpecializationTypeLocRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
-  auto TargetTypeName = [&]() { return hasAnyName("cuda::atomic"); };
+  auto TargetTypeName = [&]() {
+    return hasAnyName("thrust::not_equal_to",
+                      "thrust::constant_iterator");
+  };
 
   MF.addMatcher(typeLoc(
                     loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))

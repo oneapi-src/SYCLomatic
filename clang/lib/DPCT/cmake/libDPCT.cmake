@@ -24,12 +24,14 @@ macro(build_lib_dpct)
     Rules.cpp
     Homoglyph.cpp
     MisleadingBidirectional.cpp
+    BarrierFenceSpaceAnalyzer.cpp
     BLASAPIMigration.cpp
     FFTAPIMigration.cpp
     DNNAPIMigration.cpp
     NCCLAPIMigration.cpp
     TypeLocRewriters.cpp
     QueryApiMapping.cpp
+    LIBCUAPIMigration.cpp
 
     DEPENDS
     ClangDriverOptions
