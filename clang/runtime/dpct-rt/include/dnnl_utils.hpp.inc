@@ -50,26 +50,6 @@ enum class memory_format_tag { nchw, nhwc, nchw_blocked };
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// A class holding the description of an N-dimensions memory.
-namespace detail {
-template <::dnnl::memory::data_type T> struct type_trait {
-  typedef void type;
-} template <> struct type_trait<::dnnl::memory::data_type::f16> {
-  typedef sycl::float type;
-};
-template <> struct type_trait<::dnnl::memory::data_type::f32> {
-  typedef float type;
-};
-template <> struct type_trait<::dnnl::memory::data_type::s32> {
-  typedef int32_t type;
-};
-template <> struct type_trait<::dnnl::memory::data_type::s8> {
-  typedef int8_t type;
-};
-template <> struct type_trait<::dnnl::memory::data_type::u8> {
-  typedef uint8_t type;
-};
-} // namespace detail
-
 class memory_desc_ext {
   ::dnnl::memory::desc _desc;
   /// Convert dpct::library_data_t to dnnl::memory::data_type.
@@ -129,7 +109,7 @@ public:
   /// \returns The size.
   size_t get_size() const { return _desc.get_size(); }
   size_t get_element_num() const {
-    auto &dims = _desc.dims();
+    auto dims = _desc.dims();
     if(!dims.size()) {
       return 0;
     }
@@ -622,6 +602,41 @@ class engine_ext {
       primitive_type &&primitive, args_type &&args,
       std::vector<std::tuple<float, float, int, memory_desc_ext, void *>>
           extra_args);
+
+  template <typename UnaryOperation>
+  void transform(memory_desc_ext desc, void *src, void *dst, UnaryOperation unary_op) {
+    ::dnnl::memory::data_type dt = desc.get_desc().data_type();
+    switch (dt) {
+    case ::dnnl::memory::data_type::f32:
+      std::transform(oneapi::dpl::execution::make_device_policy(*_q),
+                     (float *)src, (float *)src + src_desc.get_element_num(),
+                     (float *)dst, unary_op);
+      break;
+    case ::dnnl::memory::data_type::f16:
+      std::transform(oneapi::dpl::execution::make_device_policy(*_q),
+                     (sycl::half *)src, (sycl::half *)src + src_desc.get_element_num(),
+                     (sycl::half *)dst, unary_op);
+      break;
+    case ::dnnl::memory::data_type::s32:
+      std::transform(oneapi::dpl::execution::make_device_policy(*_q),
+                     (int32_t *)src, (int32_t *)src + src_desc.get_element_num(),
+                     (int32_t *)dst, unary_op);
+      break;
+    case ::dnnl::memory::data_type::s8:
+      std::transform(oneapi::dpl::execution::make_device_policy(*_q),
+                     (int8_t *)src, (int8_t *)src + src_desc.get_element_num(),
+                     (int8_t *)dst, unary_op);
+      break;
+    case ::dnnl::memory::data_type::u8:
+      std::transform(oneapi::dpl::execution::make_device_policy(*_q),
+                     (uint8_t *)src, (uint8_t *)src + src_desc.get_element_num(),
+                     (uint8_t *)dst, unary_op);
+      break;
+    default:
+      throw std::runtime_error("fill: unsupported data type sycl::bfloat16.");
+    }
+
+  }
   static ::dnnl::primitive_attr generate_scaling_attr(float alpha, float beta);
 
 public:
@@ -1561,19 +1576,12 @@ sycl::event engine_ext::reduction(reduction_desc &desc, float alpha,
     return event;
   } else if (op == reduction_op::mul_no_zero) {
     auto cache = allocate(src_desc);
-    activation_desc adesc;
-    adesc.set_algorithm(::dnnl::algorithm::eltwise_abs);
-    typedef detail::type_trait<src_desc.get_desc().data_type()>::type
-        element_type;
-    std::transform(oneapi::dpl::execution::make_device_policy(*_q),
-                   (element_type *)src,
-                   (element_type *)src + src_desc.get_element_num(),
-                   (element_type *)cache, [](element_type element) {
-                     if (!element) {
-                       return 1;
-                     }
-                     return element;
-                   });
+    transform(src_desc, src, cache, [](auto element) {
+      if (!element) {
+        return 1;
+      }
+      return element;
+    });
     std::unordered_map<int, ::dnnl::memory> execution_args = {
         {DNNL_ARG_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, cache)}};
 
