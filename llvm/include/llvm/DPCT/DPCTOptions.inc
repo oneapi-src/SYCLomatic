@@ -1,5 +1,18 @@
-
-
+#ifndef DPCT_OPT_TYPE
+#define DPCT_OPT_TYPE(...)
+#endif
+#ifndef DPCT_OPT_ENUM
+#define DPCT_OPT_ENUM(NAME, ...)
+#endif
+#ifndef DPCT_OPTION_VALUES
+#define DPCT_OPTION_VALUES(...)
+#endif
+#ifndef DPCT_NON_ENUM_OPTION
+#define DPCT_NON_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)
+#endif
+#ifndef DPCT_ENUM_OPTION
+#define DPCT_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)
+#endif
 
 #ifdef DPCT_OPTIONS_IN_LLVM_SUPPORT
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<HelpPrinterWrapper, true, parser<bool>>), HOp, "help",

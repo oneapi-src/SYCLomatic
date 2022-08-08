@@ -6,18 +6,28 @@
 // RUN: dpct --autocomplete=##
 // RUN: dpct --autocomplete=#
 
-// RUN: dpct --autocomplete=--gen-build | FileCheck %s -check-prefix=GENBUILD
-// GENBUILD: --gen-build-script
+// RUN: dpct --autocomplete=--gen-build | FileCheck %s -check-prefix=DASHDASHGENBUILD
+// DASHDASHGENBUILD: --gen-build-script
+// RUN: dpct --autocomplete=-gen-build | FileCheck %s -check-prefix=DASHGENBUILD
+// DASHGENBUILD: -gen-build-script
 // RUN: dpct --autocomplete=foo | FileCheck %s -check-prefix=FOO
 // FOO-NOT: foo
-// RUN: dpct --autocomplete=--output-verbosity=#d | FileCheck %s -check-prefix=OUTPUTVEBD
-// OUTPUTVEBD: detailed
-// OUTPUTVEBD-NEXT: diagnostics
-// RUN: dpct --autocomplete=--output-verbosity= | FileCheck %s -check-prefix=OUTPUTVEBALL
-// OUTPUTVEBALL: detailed
-// OUTPUTVEBALL-NEXT: diagnostics
-// OUTPUTVEBALL-NEXT: normal
-// OUTPUTVEBALL-NEXT: silent
+// RUN: dpct --autocomplete=--output-verbosity=#d | FileCheck %s -check-prefix=DASHDASHOUTPUTVEBD
+// DASHDASHOUTPUTVEBD: detailed
+// DASHDASHOUTPUTVEBD-NEXT: diagnostics
+// RUN: dpct --autocomplete=-output-verbosity=#d | FileCheck %s -check-prefix=DASHOUTPUTVEBD
+// DASHOUTPUTVEBD: detailed
+// DASHOUTPUTVEBD-NEXT: diagnostics
+// RUN: dpct --autocomplete=--output-verbosity= | FileCheck %s -check-prefix=DASHDASHOUTPUTVEBALL
+// DASHDASHOUTPUTVEBALL: detailed
+// DASHDASHOUTPUTVEBALL-NEXT: diagnostics
+// DASHDASHOUTPUTVEBALL-NEXT: normal
+// DASHDASHOUTPUTVEBALL-NEXT: silent
+// RUN: dpct --autocomplete=-output-verbosity= | FileCheck %s -check-prefix=DASHOUTPUTVEBALL
+// DASHOUTPUTVEBALL: detailed
+// DASHOUTPUTVEBALL-NEXT: diagnostics
+// DASHOUTPUTVEBALL-NEXT: normal
+// DASHOUTPUTVEBALL-NEXT: silent
 
 // RUN: dpct --autocomplete=foo#bar##--enable | FileCheck %s -check-prefix=ENABLECTAD
 // ENABLECTAD: --enable-ctad

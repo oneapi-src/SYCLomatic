@@ -171,10 +171,12 @@ static llvm::cl::opt<bool, true> NoUseGenericSpace(
   "no-use-generic-space", llvm::cl::desc("sycl::access::address_space::generic_space is not used during atomic\n"
                                          " function's migration. Default: off.\n"),
   llvm::cl::cat(DPCTCat), llvm::cl::location(NoUseGenericSpaceFlag), llvm::cl::ReallyHidden);
+#ifdef __linux__
 static AutoCompletePrinter AutoCompletePrinterInstance;
 static llvm::cl::opt<AutoCompletePrinter, true, llvm::cl::parser<std::string>> AutoComplete(
   "autocomplete", llvm::cl::desc("List all options or enums which have the specified prefix.\n"),
   llvm::cl::cat(DPCTCat), llvm::cl::ReallyHidden, llvm::cl::location(AutoCompletePrinterInstance));
+#endif
 // clang-format on
 
 // TODO: implement one of this for each source language.

@@ -10,7 +10,6 @@
 #include "Error.h"
 #include "Utility.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/ADT/StringRef.h"
 #include <algorithm>
 
 namespace clang {
@@ -22,12 +21,13 @@ static std::map<std::string, std::set<std::string>> DPCTOptionInfoMap = {
 #define DPCT_OPTIONS_IN_CLANG_DPCT
 
 #define DPCT_OPT_TYPE(...) 0
-#define DPCT_OPT_ENUM(NAME, ...)  NAME
-#define DPCT_OPTION_VALUES(...)   {__VA_ARGS__}
-#define DPCT_NON_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)                 \
-{OPTION_NAME, {}},
-#define DPCT_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, OPTION_VALUES, ...)      \
-{OPTION_NAME, OPTION_VALUES},
+#define DPCT_OPT_ENUM(NAME, ...) NAME
+#define DPCT_OPTION_VALUES(...)                                                \
+  { __VA_ARGS__ }
+#define DPCT_NON_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)              \
+  {OPTION_NAME, {}},
+#define DPCT_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, OPTION_VALUES, ...)   \
+  {OPTION_NAME, OPTION_VALUES},
 
 #include "llvm/DPCT/DPCTOptions.inc"
 
@@ -42,94 +42,106 @@ static std::map<std::string, std::set<std::string>> DPCTOptionInfoMap = {
 };
 
 void AutoCompletePrinter::process() {
-  LastSharpPos = Input.find_last_of('#');
-  if (LastSharpPos == (Input.size() - 1)) {
+  llvm::StringRef InputRef(Input);
+  LastSharpPos = InputRef.find_last_of('#');
+  if (LastSharpPos == (InputRef.size() - 1)) {
     // No char after last '#', it means user press tab after a space,
     // return empty line to show files/folders
     printAndExit();
   }
 
-  bool SuggestEnumValue = (Input.find("=", LastSharpPos) != std::string::npos) || (LastSharpPos >= 1 && Input[LastSharpPos - 1] == '=');
+  bool SuggestEnumValue =
+      (InputRef.find("=", LastSharpPos) != llvm::StringRef::npos) ||
+      (LastSharpPos >= 1 && InputRef[LastSharpPos - 1] == '=');
   if (!SuggestEnumValue) {
     // suggest option names
-    std::string OptionPrefix = Input.substr(LastSharpPos + 1);
-    for (auto Opt : OptionList) {
-      llvm::StringRef OptRef(Opt);
-      if (OptRef.startswith(OptionPrefix)) {
-        Suggestions.insert(Opt);
-      }
+    llvm::StringRef OptionPrefixRef = InputRef.substr(LastSharpPos + 1);
+
+    // Case1: "-" : suggest all options. All candidates have "--" prefix except "-p".
+    // Case2: "--" : suggest all options except -p. All candidates have "--" prefix.
+    // Case3: "-abc" : suggest options have abc prefix. All candidates have "-" prefix.
+    // Case4: "--abc" : suggest options have abc prefix. All candidates have "--" prefix.
+
+    // Case1
+    if (OptionPrefixRef.size() == 1 && OptionPrefixRef[0] == '-') {
+      addSuggestions(OptionSet, false);
+      printAndExit();
+    }
+
+    // Case2
+    if (OptionPrefixRef.size() == 2 && OptionPrefixRef[0] == '-' &&
+        OptionPrefixRef[1] == '-') {
+      addSuggestions(OptionSet, true);
+      printAndExit();
+    }
+
+    // Case3
+    if (OptionPrefixRef.size() >= 2 && OptionPrefixRef[0] == '-' &&
+        OptionPrefixRef[1] != '-') {
+      addSuggestions(OptionSet, OptionPrefixRef.substr(1), "-");
+      printAndExit();
+    }
+
+    // Case4
+    if (OptionPrefixRef.size() >= 3 && OptionPrefixRef[0] == '-' &&
+        OptionPrefixRef[1] == '-') {
+      addSuggestions(OptionSet, OptionPrefixRef.substr(2), "--");
+      printAndExit();
     }
     printAndExit();
   }
 
   // suggest enum values
   // E.g., "--foobar=abc,def,g"
-  // CurOptionName is "--foobar="
-  // EnumPrefix is "g"
-  // ResultPrefix is "abc,def,"
-  std::string CurOptionName;
-  std::string EnumPrefix;
-  std::string ResultPrefix;
+  // CurOptionNameRef is "foobar="
+  // EnumPrefixRef is "g"
+  // ResultPrefixRef is "abc,def,"
+  llvm::StringRef CurOptionNameRef;
+  llvm::StringRef EnumPrefixRef;
+  llvm::StringRef ResultPrefixRef;
 
-  auto EqualPos = Input.find("=", LastSharpPos);
-  if (EqualPos != std::string::npos) {
-    // Input: #--foo=
-    CurOptionName = Input.substr(LastSharpPos + 1);
-    EnumPrefix = "";
-    for (auto Enum : OptionEnumsMap[CurOptionName]) {
-      llvm::StringRef EnumRef(Enum);
-      if (EnumRef.startswith(EnumPrefix)) {
-        Suggestions.insert(Enum);
-      }
-    }
+  auto EqualPos = InputRef.find("=", LastSharpPos);
+  if (EqualPos != llvm::StringRef::npos) {
+    // InputRef: #--foo=
+    auto OptionNameStartPos = InputRef.find_first_not_of('-', LastSharpPos + 1);
+    CurOptionNameRef = InputRef.substr(OptionNameStartPos,
+                                       InputRef.size() - OptionNameStartPos);
+    addSuggestions(OptionEnumsMap[CurOptionNameRef.str()], "", "");
     printAndExit();
   }
-  // Input: #--foo=#...
-  auto SharpPosBeforeLastSharp = Input.substr(0, LastSharpPos).find_last_of('#');
-  std::string CurOpt = Input.substr(SharpPosBeforeLastSharp + 1, LastSharpPos - SharpPosBeforeLastSharp - 1);
-  auto StrAfterLastSharp = Input.substr(LastSharpPos + 1);
+  // InputRef: #--foo=#...
+  auto SharpPosBeforeLastSharp =
+      InputRef.substr(0, LastSharpPos).find_last_of('#');
+  auto OptionNameStartPos =
+      InputRef.find_first_not_of('-', SharpPosBeforeLastSharp + 1);
+  CurOptionNameRef =
+      InputRef.substr(OptionNameStartPos, LastSharpPos - OptionNameStartPos);
+  auto StrAfterLastSharp = InputRef.substr(LastSharpPos + 1);
   auto LastCommaPosAfterLastSharp = StrAfterLastSharp.find_last_of(',');
-  if (LastCommaPosAfterLastSharp != std::string::npos) {
-    // Input: #--foo=#abc,def,g
-    CurOptionName = CurOpt;
-    EnumPrefix = StrAfterLastSharp.substr(LastCommaPosAfterLastSharp + 1);
-    ResultPrefix = StrAfterLastSharp.substr(0, LastCommaPosAfterLastSharp + 1);
-    for (auto Enum : OptionEnumsMap[CurOptionName]) {
-      llvm::StringRef EnumRef(Enum);
-      if (EnumRef.startswith(EnumPrefix)) {
-        Suggestions.insert(ResultPrefix + Enum);
-      }
-    }
+  if (LastCommaPosAfterLastSharp != llvm::StringRef::npos) {
+    // InputRef: #--foo=#abc,def,g
+    EnumPrefixRef = StrAfterLastSharp.substr(LastCommaPosAfterLastSharp + 1);
+    ResultPrefixRef =
+        StrAfterLastSharp.substr(0, LastCommaPosAfterLastSharp + 1);
+    addSuggestions(OptionEnumsMap[CurOptionNameRef.str()], EnumPrefixRef, ResultPrefixRef);
     printAndExit();
   } else {
-    // Input: #--foo=#ab
-    CurOptionName = CurOpt;
-    EnumPrefix = StrAfterLastSharp;
-    for (auto Enum : OptionEnumsMap[CurOptionName]) {
-      llvm::StringRef EnumRef(Enum);
-      if (EnumRef.startswith(EnumPrefix)) {
-        Suggestions.insert(Enum);
-      }
-    }
+    // InputRef: #--foo=#ab
+    EnumPrefixRef = StrAfterLastSharp;
+    addSuggestions(OptionEnumsMap[CurOptionNameRef.str()], EnumPrefixRef, "");
     printAndExit();
   }
 }
 
 void AutoCompletePrinter::operator=(std::string RawInput) {
-  for (const auto& I : DPCTOptionInfoMap) {
-    std::string OptStr;
-    if (I.first.size() == 1) {
-      OptStr = "-" + I.first;
-    } else {
-      OptStr = "--" + I.first;
-    }
-
+  for (const auto &I : DPCTOptionInfoMap) {
     if (I.second.empty()) {
-      OptionList.push_back(OptStr);
+      OptionSet.insert(I.first);
     } else {
-      for (const auto& Enum : I.second) {
-        OptionEnumsMap[OptStr + "="].insert(Enum);
-        OptionList.push_back(OptStr + "=");
+      const std::string Key = I.first + "=";
+      OptionSet.insert(Key);
+      for (const auto &Enum : I.second) {
+        OptionEnumsMap[Key].insert(Enum);
       }
     }
   }
@@ -143,11 +155,11 @@ void AutoCompletePrinter::printAndExit() {
     dpctExit(MigrationSucceeded);
   }
 
-  for (auto Opt : Suggestions) {
+  for (const auto &Opt : Suggestions) {
     llvm::outs() << Opt << "\n";
   }
   dpctExit(MigrationSucceeded);
 }
 
-}
+} // namespace dpct
 }
