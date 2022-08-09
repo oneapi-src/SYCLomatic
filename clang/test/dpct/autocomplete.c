@@ -1,3 +1,5 @@
+// UNSUPPORTED: -windows-
+
 // RUN: dpct --autocomplete=
 // RUN: dpct --autocomplete=,
 // RUN: dpct --autocomplete==
