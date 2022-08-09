@@ -421,7 +421,7 @@ enum class reduction_op {
   mul,
   mean,
   amax,
-  mul_no_zero,
+  mul_no_zeros,
   norm1,
   norm2
 };
@@ -451,20 +451,28 @@ enum class batch_normalization_ops { none, activation, add_activation };
 // DPCT_LABEL_BEGIN|binary_desc|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
+enum class binary_op {
+  add,
+  sub,
+  mul,
+  div,
+  min,
+  max,
+  sqrt,
+  not
+};
+
 class binary_desc {
-  ::dnnl::algorithm _alg;
-  dpct::library_data_t _dt;
+  binary_op _op;
 
 public:
-  void set(::dnnl::algorithm alg, dpct::library_data_t dt) {
-    _alg = alg;
-    _dt = dt;
+  void set(binary_op op) {
+    _op = op;
   }
-  void get(::dnnl::algorithm *alg, dpct::library_data_t *dt) {
-    *alg = _alg;
-    *dt = _dt;
+  void get(binary_op *op) {
+    *op = _op;
   }
-  ::dnnl::algorithm get_algorithm() { return _alg; }
+  binary_op get_binary_op() { return _op; }
 };
 // DPCT_LABEL_END
 
@@ -611,8 +619,6 @@ class engine_ext {
       return e;
     }
   };
-  struct 
-  template <typename UnaryOperation>
   void transform_no_zero(memory_desc_ext desc, void *src, void *dst) {
     ::dnnl::memory::data_type dt = desc.get_desc().data_type();
     size_t element_num = desc.get_element_num();
@@ -1491,14 +1497,42 @@ sycl::event engine_ext::binary(binary_desc &desc, float alpha_0,
                                float alpha_1, const memory_desc_ext &src_desc_1,
                                void *src_1, float beta,
                                const memory_desc_ext &dst_desc, void *dst) {
-  if (desc.get_algorithm() == ::dnnl::algorithm::eltwise_sqrt ||
-      desc.get_algorithm() == ::dnnl::algorithm::eltwise_linear) {
+  binary_op op = desc.get_binary_op();
+  ::dnnl::algorithm onednn_algorithm;
+  switch (op) {
+  case binary_op::max:
+    onednn_algorithm = ::dnnl::algorithm::binary_max;
+    break;
+  case binary_op::min:
+    onednn_algorithm = ::dnnl::algorithm::binary_min;
+    break;
+  case binary_op::add:
+    onednn_algorithm = ::dnnl::algorithm::binary_add;
+    break;
+  case binary_op::sub:
+    onednn_algorithm = ::dnnl::algorithm::binary_sub;
+    break;
+  case binary_op::mul:
+    onednn_algorithm = ::dnnl::algorithm::binary_mul;
+    break;
+  case binary_op::div:
+    onednn_algorithm = ::dnnl::algorithm::binary_div;
+    break;
+  case binary_op::sqrt:
+    onednn_algorithm = ::dnnl::algorithm::eltwise_sqrt;
+    break;
+  case binary_op::not:
+    onednn_algorithm = ::dnnl::algorithm::eltwise_linear;
+    break;
+  }
+  if (onednn_algorithm == ::dnnl::algorithm::eltwise_sqrt ||
+      onednn_algorithm == ::dnnl::algorithm::eltwise_linear) {
     if (alpha_0 != 1.f) {
       scale(alpha_0, src_desc_0, src_0);
     }
     alpha_1 = 1.f;
     auto primitive = create_forward_primitive<::dnnl::eltwise_forward>(
-        ::dnnl::prop_kind::forward_inference, desc.get_algorithm(),
+        ::dnnl::prop_kind::forward_inference, onednn_algorithm,
         src_desc_0.get_desc(), -1.f, 1.f);
     std::unordered_map<int, ::dnnl::memory> execution_args = {
         {DNNL_ARG_SRC, {::dnnl::memory(src_desc_0.get_desc(), _eng, src_0)}}};
@@ -1513,7 +1547,7 @@ sycl::event engine_ext::binary(binary_desc &desc, float alpha_0,
     attr.set_scales(DNNL_ARG_SRC_1, 0, {alpha_1});
   }
   auto primitive = create_forward_primitive<true, ::dnnl::binary>(
-      attr, desc.get_algorithm(), src_desc_0.get_desc(), src_desc_1.get_desc(),
+      attr, onednn_algorithm, src_desc_0.get_desc(), src_desc_1.get_desc(),
       dst_desc.get_desc());
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
@@ -1557,7 +1591,7 @@ sycl::event engine_ext::reduction(reduction_desc &desc, float alpha,
   case reduction_op::mul:
     onednn_algorithm = ::dnnl::algorithm::reduction_mul;
     break;
-  case reduction_op::mul_no_zero:
+  case reduction_op::mul_no_zeros:
     onednn_algorithm = ::dnnl::algorithm::reduction_mul;
     break;
   case reduction_op::norm1:
@@ -1584,7 +1618,7 @@ sycl::event engine_ext::reduction(reduction_desc &desc, float alpha,
                           {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
     async_dpct_free({cache}, {event}, *_q);
     return event;
-  } else if (op == reduction_op::mul_no_zero) {
+  } else if (op == reduction_op::mul_no_zeros) {
     auto cache = allocate(src_desc);
     transform_no_zero(src_desc, src, cache);
     std::unordered_map<int, ::dnnl::memory> execution_args = {
