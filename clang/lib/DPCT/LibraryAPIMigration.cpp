@@ -25,67 +25,6 @@ void initVars(const CallExpr *CE, const VarDecl *VD, const BinaryOperator *BO,
               LibraryMigrationStrings &ReplaceStrs,
               LibraryMigrationLocations &Locations) {
   auto &SM = DpctGlobalInfo::getSourceManager();
-  SourceLocation FuncPtrDeclEnd;
-  if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
-    if (Flags.IsFunctionPointer) {
-      Locations.FuncPtrDeclBegin = SM.getExpansionLoc(VD->getBeginLoc());
-      FuncPtrDeclEnd = SM.getExpansionLoc(VD->getEndLoc());
-    } else if (Flags.IsFunctionPointerAssignment) {
-      Locations.FuncPtrDeclBegin =
-          SM.getExpansionLoc(BO->getRHS()->getBeginLoc());
-      FuncPtrDeclEnd = SM.getExpansionLoc(BO->getRHS()->getEndLoc());
-    }
-    FuncPtrDeclEnd = FuncPtrDeclEnd.getLocWithOffset(Lexer::MeasureTokenLength(
-        FuncPtrDeclEnd, SM, DpctGlobalInfo::getContext().getLangOpts()));
-    Locations.FuncPtrDeclLen =
-        SM.getDecomposedLoc(FuncPtrDeclEnd).second -
-        SM.getDecomposedLoc(Locations.FuncPtrDeclBegin).second;
-    ReplaceStrs.IndentStr = getIndent(Locations.FuncPtrDeclBegin, SM).str();
-
-    if (Flags.IsFunctionPointerAssignment)
-      return;
-
-    TypeLoc TL = VD->getTypeSourceInfo()->getTypeLoc();
-    QualType QT = VD->getType();
-
-    // For typedef/using case like:
-    // typedef cufftResult (*Func_t)(cufftHandle, cufftDoubleComplex *, double
-    // *); Func_t ptr2cufftExec = &cufftExecZ2D; We need the "cufftHandle" in
-    // the typedef be migrated, so here just return. And the SkipGeneration of
-    // the FFTDescriptorTypeInfo whose SourceLocation ID is 0 will be set.
-    // Otherwise, an assert will be hit.
-    if (QT->getAs<TypedefType>())
-      return;
-
-    if (QT->isPointerType()) {
-      QT = QT->getPointeeType();
-      TL = TL.getAs<PointerTypeLoc>().getPointeeLoc();
-    } else {
-      Locations.FuncPtrDeclHandleTypeBegin = Locations.FuncPtrDeclBegin;
-      return;
-    }
-
-    if (QT->getAs<ParenType>()) {
-      QT = QT->getAs<ParenType>()->getInnerType();
-      TL = TL.getAs<ParenTypeLoc>().getInnerLoc();
-    } else {
-      Locations.FuncPtrDeclHandleTypeBegin = Locations.FuncPtrDeclBegin;
-      return;
-    }
-
-    if (QT->getAs<FunctionProtoType>()) {
-      TL = TL.getAs<FunctionProtoTypeLoc>()
-               .getParam(0)
-               ->getTypeSourceInfo()
-               ->getTypeLoc();
-      Locations.FuncPtrDeclHandleTypeBegin =
-          SM.getExpansionLoc(TL.getBeginLoc());
-    } else {
-      Locations.FuncPtrDeclHandleTypeBegin = Locations.FuncPtrDeclBegin;
-      return;
-    }
-    return;
-  }
 
   Locations.FuncNameBegin = CE->getBeginLoc();
   Locations.FuncCallEnd = CE->getEndLoc();
@@ -148,13 +87,6 @@ void replacementLocation(const LibraryMigrationLocations Locations,
                          unsigned int &ReplaceOffset, unsigned int &ReplaceLen,
                          std::pair<unsigned int, unsigned int> &InsertOffsets,
                          std::string &FilePath) {
-  if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
-    ReplaceOffset =
-        DpctGlobalInfo::getLocInfo(Locations.FuncPtrDeclBegin).second;
-    ReplaceLen = Locations.FuncPtrDeclLen;
-    return;
-  }
-
   SourceRange InsertLocations;
   SourceLocation ReplaceLocation;
   if (Flags.NeedUseLambda) {
@@ -203,22 +135,6 @@ void replacementText(
   LibraryAPIStmts OutPrefixStmts;
   LibraryAPIStmts OutSuffixStmts;
   std::string OutRepl;
-
-  if (Flags.IsFunctionPointer || Flags.IsFunctionPointerAssignment) {
-    OutPrefixStmts << PrefixStmts;
-    OutRepl = CallExprRepl + ";";
-    OutSuffixStmts << SuffixStmts;
-
-    std::string Text = OutPrefixStmts.getAsString(IndentStr, false) + OutRepl +
-                       OutSuffixStmts.getAsString(IndentStr, true);
-
-    auto TextRepl = std::make_shared<ExtReplacement>(FilePath, ReplaceOffset,
-                                                     ReplaceLen, Text, nullptr);
-
-    TextRepl->setBlockLevelFormatFlag();
-    DpctGlobalInfo::getInstance().addReplacement(TextRepl);
-    return;
-  }
 
   if (Flags.NeedUseLambda) {
     if (Flags.IsPrefixEmpty && Flags.IsSuffixEmpty) {

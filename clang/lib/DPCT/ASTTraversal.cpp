@@ -12,6 +12,7 @@
 #include "CallExprRewriter.h"
 #include "CustomHelperFiles.h"
 #include "ExprAnalysis.h"
+#include "FFTAPIMigration.h"
 #include "Homoglyph.h"
 #include "MisleadingBidirectional.h"
 #include "DNNAPIMigration.h"
@@ -15069,66 +15070,15 @@ void FFTFunctionCallRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
-void FFTFunctionCallRule::processFunctionPointer(const UnaryOperator *UO) {
-  if (!UO)
-    return;
-  const DeclRefExpr *DRE = dyn_cast_or_null<DeclRefExpr>(UO->getSubExpr());
-  if (!DRE)
-    return;
-  const FunctionDecl *FD = dyn_cast_or_null<FunctionDecl>(DRE->getDecl());
-  if (!FD)
-    return;
-  StringRef FuncNameRef = FD->getName();
-  std::string ParameterTypes = "std::shared_ptr<" +
-                               MapNames::getDpctNamespace() +
-                               "fft::fft_solver> solver";
-  std::string Dir;
-  if (FuncNameRef == "cufftExecC2C") {
-    ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
-                     "float2 in, " + MapNames::getClNamespace() +
-                     "float2 out, " + MapNames::getDpctNamespace() +
-                     "fft::fft_dir dir";
-    Dir = "dir";
-  } else if (FuncNameRef == "cufftExecZ2Z") {
-    ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
-                     "double2 in, " + MapNames::getClNamespace() +
-                     "double2 out, " + MapNames::getDpctNamespace() +
-                     "fft::fft_dir dir";
-    Dir = "dir";
-  } else if (FuncNameRef == "cufftExecR2C") {
-    ParameterTypes = ParameterTypes + ", float in, " +
-                     MapNames::getClNamespace() + "float2 out";
-    Dir = MapNames::getDpctNamespace() + "fft::fft_dir::forward";
-  } else if (FuncNameRef == "cufftExecC2R") {
-    ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
-                     "float2 in, float out";
-    Dir = MapNames::getDpctNamespace() + "fft::fft_dir::backward";
-  } else if (FuncNameRef == "cufftExecD2Z") {
-    ParameterTypes = ParameterTypes + ", double in, " +
-                     MapNames::getClNamespace() + "double2 out";
-    Dir = MapNames::getDpctNamespace() + "fft::fft_dir::forward";
-  } else if (FuncNameRef == "cufftExecZ2D") {
-    ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
-                     "double2 in, double out";
-    Dir = MapNames::getDpctNamespace() + "fft::fft_dir::backward";
-  } else {
-    return;
-  }
-  std::string ReplStr = "[](" + ParameterTypes + "){" + getNL() +
-                        "  desc->compute(in, out, " + Dir + ");" + getNL() +
-                        "  return 0;" + getNL() +
-                        "}";
-  ReplaceStmt* TM = new ReplaceStmt(UO, ReplStr);
-  TM->setBlockLevelFormatFlag(true);
-  emplaceTransformation(TM);
-}
-
 void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall");
   const UnaryOperator *UO = getNodeAsType<UnaryOperator>(Result, "FuncPtr");
 
   if (!CE) {
-    processFunctionPointer(UO);
+    auto TM = processFunctionPointer(UO);
+    if (TM) {
+      emplaceTransformation(TM);
+    }
     return;
   }
 

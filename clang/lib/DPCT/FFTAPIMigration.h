@@ -9,11 +9,14 @@
 #ifndef DPCT_FFT_API_MIGRAION_H
 #define DPCT_FFT_API_MIGRAION_H
 
+#include "MapNames.h"
+#include "TextModification.h"
+#include "clang/AST/Decl.h"
+#include "clang/AST/Stmt.h"
 
 namespace clang {
 namespace dpct {
-
-
+TextModification *processFunctionPointer(const UnaryOperator *UO);
 } // namespace dpct
 } // namespace clang
 

@@ -1914,9 +1914,6 @@ class FFTFunctionCallRule : public NamedMigrationRule<FFTFunctionCallRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-
-private:
-  void processFunctionPointer(const UnaryOperator *UO);
 };
 
 class AsmRule : public NamedMigrationRule<AsmRule> {
