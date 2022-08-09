@@ -3125,8 +3125,8 @@ void Preprocessor::HandleIfdefDirective(Token &Result,
     getSourceManager().isInMainFile(DirectiveTok.getLocation());
 
 #ifdef SYCLomatic_CUSTOMIZATION
-  // If macro name is '__CUDA_ARCH__' and is inside in-root folder, handle it as
-  // defined.
+  // If macro name is '__CUDA_ARCH__' and is inside analysis-scope-path folder,
+  // handle it as defined.
   if (!MI && MII->getName() == "__CUDA_ARCH__" &&
       IsInAnalysisScopeFunc(MacroNameTok.getLocation()) && GetRunRound() == 0) {
     static MacroInfo CudaArchFaker(SourceLocation::getFromRawEncoding(0));
