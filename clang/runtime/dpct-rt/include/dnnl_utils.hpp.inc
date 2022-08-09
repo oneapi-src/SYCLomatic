@@ -459,7 +459,7 @@ enum class binary_op {
   min,
   max,
   sqrt,
-  not
+  neg
 };
 
 class binary_desc {
@@ -575,9 +575,8 @@ class engine_ext {
   const ::dnnl::engine &get_engine() const { return _eng; }
 
   void *allocate(const memory_desc_ext &desc) const;
-
-  std::vector<int64_t>
-  compress_spatial_dimensions_to_channel(::dnnl::memory::desc desc);
+  ::dnnl::memory::desc compress_spatial_dimensions_to_channel(
+    ::dnnl::memory::desc desc);
   template <typename primitive_type, typename... args_type>
   primitive_type create_forward_primitive(args_type &&...args);
 
@@ -1246,7 +1245,7 @@ void *engine_ext::allocate(const memory_desc_ext &data_desc) const {
   return mem;
 }
 
-std::vector<int64_t>
+::dnnl::memory::desc
 engine_ext::compress_spatial_dimensions_to_channel(::dnnl::memory::desc desc) {
   int ndims = desc.data.ndims;
   assert(ndims >= 4 && "ndims is at least 4.");
@@ -1257,7 +1256,12 @@ engine_ext::compress_spatial_dimensions_to_channel(::dnnl::memory::desc desc) {
     compressed_dims[1] = compressed_dims[1] * desc.data.dims[index];
     compressed_dims[index] = 1;
   }
-  return compressed_dims;
+  if (ndims == 5) {
+    return ::dnnl::memory::desc(compressed_dims, desc.data_type(),
+                                ::dnnl::memory::format_tag::ncdhw);
+  }
+  return ::dnnl::memory::desc(compressed_dims, desc.data_type(),
+                              ::dnnl::memory::format_tag::nchw);
 }
 
 bool engine_ext::scale_parameter_preprocess(
@@ -1521,7 +1525,7 @@ sycl::event engine_ext::binary(binary_desc &desc, float alpha_0,
   case binary_op::sqrt:
     onednn_algorithm = ::dnnl::algorithm::eltwise_sqrt;
     break;
-  case binary_op::not:
+  case binary_op::neg:
     onednn_algorithm = ::dnnl::algorithm::eltwise_linear;
     break;
   }
@@ -1789,10 +1793,8 @@ sycl::event engine_ext::softmax_forward(softmax_algorithm alg,
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
   ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
   if (mode == softmax_mode::instance) {
-    std::vector<int64_t> help_dims =
-        compress_spatial_dimensions_to_channel(help_src_desc);
-    help_src_desc = help_src_desc.reshape(help_dims);
-    help_dst_desc = help_dst_desc.reshape(help_dims);
+    help_src_desc = compress_spatial_dimensions_to_channel(help_src_desc);
+    help_dst_desc = compress_spatial_dimensions_to_channel(help_dst_desc);
   }
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
@@ -1833,11 +1835,11 @@ sycl::event engine_ext::softmax_backward(
   ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
   ::dnnl::memory::desc help_diff_dst_desc = diff_dst_desc.get_desc();
   if (mode == softmax_mode::instance) {
-    std::vector<int64_t> help_dims =
+    help_diff_src_desc =
         compress_spatial_dimensions_to_channel(help_diff_src_desc);
-    help_diff_src_desc = help_diff_src_desc.reshape(help_dims);
-    help_dst_desc = help_dst_desc.reshape(help_dims);
-    help_diff_dst_desc = help_diff_dst_desc.reshape(help_dims);
+    help_dst_desc = compress_spatial_dimensions_to_channel(help_dst_desc);
+    help_diff_dst_desc =
+        compress_spatial_dimensions_to_channel(help_diff_dst_desc);
   }
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
@@ -1987,17 +1989,10 @@ sycl::event engine_ext::batch_normalization_forward_inference(
   }
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
   ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
-  ::dnnl::memory::desc help_scale_bias_mean_var_desc =
-      scale_bias_mean_var_desc.get_desc();
+
   if (mode == batch_normalization_mode::per_activation) {
-    std::vector<int64_t> help_dims_0 =
-        compress_spatial_dimensions_to_channel(help_src_desc);
-    std::vector<int64_t> help_dims_1 =
-        compress_spatial_dimensions_to_channel(help_scale_bias_mean_var_desc);
-    help_src_desc = help_src_desc.reshape(help_dims_0);
-    help_dst_desc = help_dst_desc.reshape(help_dims_0);
-    help_scale_bias_mean_var_desc =
-        help_scale_bias_mean_var_desc.reshape(help_dims_1);
+    help_src_desc = compress_spatial_dimensions_to_channel(help_src_desc);
+    help_dst_desc = compress_spatial_dimensions_to_channel(help_dst_desc);
   }
 
   auto primitive =
@@ -2009,13 +2004,13 @@ sycl::event engine_ext::batch_normalization_forward_inference(
   std::unordered_map<int, ::dnnl::memory> execution_args = {
       {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc, _eng, src)}},
       {DNNL_ARG_SCALE,
-       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, scale)}},
+       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, scale)}},
       {DNNL_ARG_SHIFT,
-       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, bias)}},
+       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, bias)}},
       {DNNL_ARG_MEAN,
-       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, mean)}},
+       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, mean)}},
       {DNNL_ARG_VARIANCE,
-       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, var)}}};
+       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, var)}}};
 
   return execute_primitive(primitive, execution_args,
                            {{alpha, beta, DNNL_ARG_DST, help_dst_desc, dst}});
@@ -2038,17 +2033,10 @@ sycl::event engine_ext::batch_normalization_forward_training(
   }
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
   ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
-  ::dnnl::memory::desc help_scale_bias_mean_var_desc =
-      scale_bias_mean_var_desc.get_desc();
+
   if (mode == batch_normalization_mode::per_activation) {
-    std::vector<int64_t> help_dims_0 =
-        compress_spatial_dimensions_to_channel(help_src_desc);
-    std::vector<int64_t> help_dims_1 =
-        compress_spatial_dimensions_to_channel(help_scale_bias_mean_var_desc);
-    help_src_desc = help_src_desc.reshape(help_dims_0);
-    help_dst_desc = help_dst_desc.reshape(help_dims_0);
-    help_scale_bias_mean_var_desc =
-        help_scale_bias_mean_var_desc.reshape(help_dims_1);
+    help_src_desc = compress_spatial_dimensions_to_channel(help_src_desc);
+    help_dst_desc = compress_spatial_dimensions_to_channel(help_dst_desc);
   }
 
   auto primitive =
@@ -2060,20 +2048,20 @@ sycl::event engine_ext::batch_normalization_forward_training(
   std::unordered_map<int, ::dnnl::memory> execution_args = {
       {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc, _eng, src)}},
       {DNNL_ARG_SCALE,
-       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, scale)}},
+       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, scale)}},
       {DNNL_ARG_SHIFT,
-       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, bias)}},
+       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, bias)}},
       {DNNL_ARG_MEAN,
-       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, saved_mean)}},
+       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, saved_mean)}},
       {DNNL_ARG_VARIANCE,
-       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, saved_var)}}};
+       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, saved_var)}}};
 
   execute_primitive(primitive, execution_args,
                     {{alpha, beta, DNNL_ARG_DST, help_dst_desc, dst}});
-  sum(1.f - factor, help_scale_bias_mean_var_desc, saved_mean, factor,
-      help_scale_bias_mean_var_desc, running_mean);
+  sum(1.f - factor, scale_bias_mean_var_desc, saved_mean, factor,
+      scale_bias_mean_var_desc, running_mean);
   return sum(1.f - factor, help_scale_bias_mean_var_desc, saved_var, factor,
-             help_scale_bias_mean_var_desc, running_var);
+             scale_bias_mean_var_desc, running_var);
 }
 // DPCT_LABEL_END
 
@@ -2098,18 +2086,13 @@ sycl::event engine_ext::batch_normalization_backward(
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
   ::dnnl::memory::desc help_diff_dst_desc = diff_dst_desc.get_desc();
   ::dnnl::memory::desc help_diff_src_desc = diff_src_desc.get_desc();
-  ::dnnl::memory::desc help_diff_scale_bias_desc =
-      diff_scale_bias_desc.get_desc();
 
   if (mode == batch_normalization_mode::per_activation) {
-    std::vector<int64_t> help_dims_0 =
-        compress_spatial_dimensions_to_channel(help_src_desc);
-    std::vector<int64_t> help_dims_1 =
-        compress_spatial_dimensions_to_channel(help_diff_scale_bias_desc);
-    help_src_desc = help_src_desc.reshape(help_dims_0);
-    help_diff_src_desc = help_diff_src_desc.reshape(help_dims_0);
-    help_diff_dst_desc = help_diff_dst_desc.reshape(help_dims_0);
-    help_diff_scale_bias_desc = help_diff_scale_bias_desc.reshape(help_dims_1);
+    help_src_desc = compress_spatial_dimensions_to_channel(help_src_desc);
+    help_diff_src_desc =
+        compress_spatial_dimensions_to_channel(help_diff_src_desc);
+    help_diff_dst_desc =
+        compress_spatial_dimensions_to_channel(help_diff_dst_desc);
   }
   auto forward_primitive =
       create_forward_primitive_desc<::dnnl::batch_normalization_forward>(
@@ -2126,22 +2109,22 @@ sycl::event engine_ext::batch_normalization_backward(
   std::unordered_map<int, ::dnnl::memory> execution_args = {
       {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc, _eng, src)}},
       {DNNL_ARG_SCALE,
-       {::dnnl::memory(help_diff_scale_bias_desc, _eng, scale)}},
+       {::dnnl::memory(diff_scale_bias_desc.get_desc(), _eng, scale)}},
       {DNNL_ARG_SHIFT,
-       {::dnnl::memory(help_diff_scale_bias_desc, _eng, nullptr)}},
+       {::dnnl::memory(diff_scale_bias_desc.get_desc(), _eng, nullptr)}},
       {DNNL_ARG_MEAN,
-       {::dnnl::memory(help_diff_scale_bias_desc, _eng, saved_mean)}},
+       {::dnnl::memory(diff_scale_bias_desc.get_desc(), _eng, saved_mean)}},
       {DNNL_ARG_VARIANCE,
-       {::dnnl::memory(help_diff_scale_bias_desc, _eng, saved_var)}},
+       {::dnnl::memory(diff_scale_bias_desc.get_desc(), _eng, saved_var)}},
       {DNNL_ARG_DIFF_DST,
        {::dnnl::memory(help_diff_src_desc, _eng, diff_dst)}}};
 
   return execute_primitive(
       primitive, execution_args,
       {{alpha_data, beta_data, DNNL_ARG_DIFF_SRC, help_diff_src_desc, diff_src},
-       {alpha_param, beta_param, DNNL_ARG_DIFF_SCALE, help_diff_scale_bias_desc,
+       {alpha_param, beta_param, DNNL_ARG_DIFF_SCALE, diff_scale_bias_desc,
         diff_scale},
-       {alpha_param, beta_param, DNNL_ARG_DIFF_SHIFT, help_diff_scale_bias_desc,
+       {alpha_param, beta_param, DNNL_ARG_DIFF_SHIFT, diff_scale_bias_desc,
         diff_bias}});
 }
 // DPCT_LABEL_END
@@ -2166,18 +2149,11 @@ sycl::event engine_ext::batch_normalization_forward_training_ex(
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
   ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
   ::dnnl::memory::desc help_addition_desc = addition_desc.get_desc();
-  ::dnnl::memory::desc help_scale_bias_mean_var_desc =
-      scale_bias_mean_var_desc.get_desc();
   if (mode == batch_normalization_mode::per_activation) {
-    std::vector<int64_t> help_dims_0 =
-        compress_spatial_dimensions_to_channel(help_src_desc);
-    std::vector<int64_t> help_dims_1 =
-        compress_spatial_dimensions_to_channel(help_scale_bias_mean_var_desc);
-    help_src_desc = help_src_desc.reshape(help_dims_0);
-    help_dst_desc = help_dst_desc.reshape(help_dims_0);
-    help_addition_desc = help_addition_desc.reshape(help_dims_0);
-    help_scale_bias_mean_var_desc =
-        help_scale_bias_mean_var_desc.reshape(help_dims_1);
+    help_src_desc = compress_spatial_dimensions_to_channel(help_src_desc);
+    help_dst_desc = compress_spatial_dimensions_to_channel(help_dst_desc);
+    help_addition_desc =
+        compress_spatial_dimensions_to_channel(help_addition_desc);
   }
 
   auto primitive =
@@ -2188,13 +2164,13 @@ sycl::event engine_ext::batch_normalization_forward_training_ex(
   std::unordered_map<int, ::dnnl::memory> execution_args = {
       {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc, _eng, src)}},
       {DNNL_ARG_SCALE,
-       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, scale)}},
+       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, scale)}},
       {DNNL_ARG_SHIFT,
-       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, bias)}},
+       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, bias)}},
       {DNNL_ARG_MEAN,
-       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, saved_mean)}},
+       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, saved_mean)}},
       {DNNL_ARG_VARIANCE,
-       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, saved_var)}}};
+       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, saved_var)}}};
 
   if (ops != batch_normalization_ops::none) {
     if (reserve_space_size < help_dst_desc.get_size()) {
@@ -2213,10 +2189,10 @@ sycl::event engine_ext::batch_normalization_forward_training_ex(
     execute_primitive(primitive, execution_args,
                       {{alpha, beta, DNNL_ARG_DST, help_dst_desc, dst}});
   }
-  sum(1.f - factor, help_scale_bias_mean_var_desc, saved_mean, factor,
-      help_scale_bias_mean_var_desc, running_mean);
-  return sum(1.f - factor, help_scale_bias_mean_var_desc, saved_var, factor,
-             help_scale_bias_mean_var_desc, running_var);
+  sum(1.f - factor, scale_bias_mean_var_desc, saved_mean, factor,
+      scale_bias_mean_var_desc, running_mean);
+  return sum(1.f - factor, scale_bias_mean_var_desc, saved_var, factor,
+             scale_bias_mean_var_desc, running_var);
 }
 // DPCT_LABEL_END
 
@@ -2248,20 +2224,14 @@ sycl::event engine_ext::batch_normalization_backward_ex(
   ::dnnl::memory::desc help_diff_addition_desc = diff_addition_desc.get_desc();
   ::dnnl::memory::desc help_diff_dst_desc = diff_dst_desc.get_desc();
   ::dnnl::memory::desc help_diff_src_desc = diff_src_desc.get_desc();
-  ::dnnl::memory::desc help_diff_scale_bias_desc =
-      diff_scale_bias_desc.get_desc();
 
   if (mode == batch_normalization_mode::per_activation) {
-    std::vector<int64_t> help_dims_0 =
-        compress_spatial_dimensions_to_channel(help_src_desc);
-    std::vector<int64_t> help_dims_1 =
-        compress_spatial_dimensions_to_channel(help_diff_scale_bias_desc);
-    help_src_desc = help_src_desc.reshape(help_dims_0);
-    help_dst_desc = help_dst_desc.reshape(help_dims_0);
-    help_diff_addition_desc = help_diff_addition_desc.reshape(help_dims_0);
-    help_diff_src_desc = help_diff_src_desc.reshape(help_dims_0);
-    help_diff_dst_desc = help_diff_dst_desc.reshape(help_dims_0);
-    help_diff_scale_bias_desc = help_diff_scale_bias_desc.reshape(help_dims_1);
+    help_src_desc = compress_spatial_dimensions_to_channel(help_src_desc);
+    help_dst_desc = compress_spatial_dimensions_to_channel(help_dst_desc);
+    help_diff_addition_desc =
+        compress_spatial_dimensions_to_channel(help_diff_addition_desc);
+    help_diff_src_desc = compress_spatial_dimensions_to_channel(help_diff_src_desc);
+    help_diff_dst_desc = compress_spatial_dimensions_to_channel(help_diff_dst_desc);
   }
 
   activation_backward(adesc, alpha_data, help_dst_desc, dst, help_diff_dst_desc,
@@ -2284,21 +2254,21 @@ sycl::event engine_ext::batch_normalization_backward_ex(
       {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc, _eng, src)}},
       {DNNL_ARG_DST, {::dnnl::memory(help_dst_desc, _eng, dst)}},
       {DNNL_ARG_SCALE,
-       {::dnnl::memory(help_diff_scale_bias_desc, _eng, scale)}},
-      {DNNL_ARG_SHIFT, {::dnnl::memory(help_diff_scale_bias_desc, _eng, bias)}},
+       {::dnnl::memory(diff_scale_bias_desc.get_desc(), _eng, scale)}},
+      {DNNL_ARG_SHIFT, {::dnnl::memory(diff_scale_bias_desc.get_desc(), _eng, bias)}},
       {DNNL_ARG_MEAN,
-       {::dnnl::memory(help_diff_scale_bias_desc, _eng, saved_mean)}},
+       {::dnnl::memory(diff_scale_bias_desc.get_desc(), _eng, saved_mean)}},
       {DNNL_ARG_VARIANCE,
-       {::dnnl::memory(help_diff_scale_bias_desc, _eng, saved_var)}},
+       {::dnnl::memory(diff_scale_bias_desc.get_desc(), _eng, saved_var)}},
       {DNNL_ARG_DIFF_DST,
        {::dnnl::memory(help_diff_src_desc, _eng, diff_addition)}}};
 
   return execute_primitive(
       primitive, execution_args,
       {{alpha_data, beta_data, DNNL_ARG_DIFF_SRC, help_diff_src_desc, diff_src},
-       {alpha_param, beta_param, DNNL_ARG_DIFF_SCALE, help_diff_scale_bias_desc,
+       {alpha_param, beta_param, DNNL_ARG_DIFF_SCALE, diff_scale_bias_desc,
         diff_scale},
-       {alpha_param, beta_param, DNNL_ARG_DIFF_SHIFT, help_diff_scale_bias_desc,
+       {alpha_param, beta_param, DNNL_ARG_DIFF_SHIFT, diff_scale_bias_desc,
         diff_bias}});
 }
 // DPCT_LABEL_END
