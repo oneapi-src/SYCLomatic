@@ -11,6 +11,7 @@
 #include "ASTTraversal.h"
 #include "DNNAPIMigration.h"
 #include "AnalysisInfo.h"
+#include "LIBCUAPIMigration.h"
 #include "Config.h"
 
 #include "llvm/Support/FileSystem.h"
