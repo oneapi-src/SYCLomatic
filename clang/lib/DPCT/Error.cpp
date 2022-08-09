@@ -106,15 +106,17 @@ void ShowStatus(int Status, std::string Message) {
     break;
   case MigrationErrorInputDirContainCTTool:
     StatusString =
-        "Error: Input folder is the parent of, or the same folder as, the "
-        "installation directory of the dpct";
+        "Error: Input folder specified by --in-root or --analysis-scope-path "
+        "option is the parent of, or the same folder as, the installation "
+        "directory of the dpct";
     break;
   case MigrationErrorRunFromSDKFolder:
     StatusString = "Error: Input folder specified by --in-root or "
                    "--analysis-scope-path option is in the CUDA_PATH folder";
     break;
   case MigrationErrorInputDirContainSDKFolder:
-    StatusString = "Error: Input folder is the parent of, or the same folder "
+    StatusString = "Error: Input folder specified by --in-root or "
+                   "--analysis-scope-path is the parent of, or the same folder "
                    "as, the CUDA_PATH folder";
     break;
   case MigrationErrorCannotAccessDirInDatabase:
@@ -164,7 +166,8 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: Cannot parse rule file";
     break;
   case MigrationErrorInvalidAnalysisScope:
-    StatusString = "Error: The path for --analysis-scope-path is not valid";
+    StatusString = "Error: The path for --analysis-scope-path is not the same "
+                   "as or a parent directory of --in-root";
     break;
   default:
     DpctLog() << "Unknown error\n";
