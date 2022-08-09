@@ -53,9 +53,12 @@ namespace fft {
 // DPCT_LABEL_BEGIN|fft_dir|dpct::fft
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-enum class fft_dir { forward, backward };
-enum class fft_type {
-  real_float_to_complex_float,
+enum fft_dir : int {
+  forward = 0,
+  backward
+};
+enum fft_type : int {
+  real_float_to_complex_float = 0,
   complex_float_to_real_float,
   real_double_to_complex_double,
   complex_double_to_real_double,

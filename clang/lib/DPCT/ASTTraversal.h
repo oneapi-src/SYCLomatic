@@ -1916,15 +1916,7 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
-  void processFunctionPointer(const VarDecl *VD);
-  void processFunctionPointerAssignment(const BinaryOperator *BO);
-  void prepareFEAInfo(std::string IndentStr, std::string FuncName,
-                      std::string FuncPtrName,
-                      LibraryMigrationLocations Locations,
-                      LibraryMigrationFlags Flags, SourceLocation SL);
-  std::vector<std::string> PrefixStmts;
-  std::string IndentStr;
-  std::string CallExprRepl;
+  void processFunctionPointer(const UnaryOperator *UO);
 };
 
 class AsmRule : public NamedMigrationRule<AsmRule> {

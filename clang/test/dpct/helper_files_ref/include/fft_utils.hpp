@@ -16,9 +16,12 @@
 
 namespace dpct {
 namespace fft {
-enum class fft_dir { forward, backward };
-enum class fft_type {
-  real_float_to_complex_float,
+enum fft_dir : int {
+  forward = 0,
+  backward
+};
+enum fft_type : int {
+  real_float_to_complex_float = 0,
   complex_float_to_real_float,
   real_double_to_complex_double,
   complex_double_to_real_double,
@@ -57,11 +60,11 @@ class fft_solver {
     }
   }
 
-public:
-  fft_solver(int rank, long long *n, long long *inembed, long long istride,
-             long long idist, library_data_t inputtype, long long *onembed,
-             long long ostride, long long odist, library_data_t outputtype,
-             long long batch) {
+  template<typename T>
+  void init(int rank, T *n, T *inembed, T istride,
+            T idist, library_data_t inputtype, T *onembed,
+            T ostride, T odist, library_data_t outputtype,
+            T batch) {
     _n.resize(rank);
     _inembed.resize(rank);
     _onembed.resize(rank);
@@ -85,9 +88,30 @@ public:
     _batch = batch;
     _rank = rank;
   }
+public:
+  fft_solver(int rank, long long *n, long long *inembed, long long istride,
+             long long idist, library_data_t inputtype, long long *onembed,
+             long long ostride, long long odist, library_data_t outputtype,
+             long long batch) {
+    init<long long>(rank, n, inembed, istride, idist, inputtype, onembed,
+                    ostride, odist, outputtype, batch);
+  }
+  fft_solver(int rank, int *n, int *inembed, int istride,
+             int idist, library_data_t inputtype, int *onembed,
+             int ostride, int odist, library_data_t outputtype,
+             int batch) {
+    init<int>(rank, n, inembed, istride, idist, inputtype, onembed,
+              ostride, odist, outputtype, batch);
+  }
   fft_solver(int rank, long long *n, long long *inembed, long long istride,
              long long idist, long long *onembed, long long ostride,
              long long odist, fft_type type, long long batch)
+      : fft_solver(rank, n, inembed, istride, idist,
+                   fft_type_to_data_type(type).first, onembed, ostride, odist,
+                   fft_type_to_data_type(type).second, batch) {}
+  fft_solver(int rank, int *n, int *inembed, int istride,
+             int idist, int *onembed, int ostride,
+             int odist, fft_type type, int batch)
       : fft_solver(rank, n, inembed, istride, idist,
                    fft_type_to_data_type(type).first, onembed, ostride, odist,
                    fft_type_to_data_type(type).second, batch) {}

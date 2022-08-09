@@ -52,7 +52,6 @@ HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
     HelperFilesCustomizationLevel::HFCL_None;
 std::string DpctGlobalInfo::CustomHelperFileName = "dpct";
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
-std::unordered_set<FFTTypeEnum> DpctGlobalInfo::FFTTypeSet;
 std::unordered_set<std::string> DpctGlobalInfo::HostRNGEngineTypeSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
@@ -113,9 +112,6 @@ std::unordered_map<std::string, int> DpctGlobalInfo::TempVariableHandledMap;
 bool DpctGlobalInfo::UsingDRYPattern = true;
 bool DpctGlobalInfo::UsingGenericSpace = true;
 bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
-std::unordered_map<std::string, FFTExecAPIInfo>
-    DpctGlobalInfo::FFTExecAPIInfoMap;
-std::unordered_map<std::string, FFTHandleInfo> DpctGlobalInfo::FFTHandleInfoMap;
 unsigned int DpctGlobalInfo::CudaKernelDimDFIIndex = 1;
 std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CudaKernelDimDFIMap;
@@ -266,7 +262,6 @@ public:
 void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
   PrecAndDomPairSet.clear();
-  FFTTypeSet.clear();
   HostRNGEngineTypeSet.clear();
   KCIndentWidthMap.clear();
   LocationInitIndexMap.clear();
@@ -292,8 +287,6 @@ void DpctGlobalInfo::resetInfo() {
   TempVariableHandledMap.clear();
   UsingDRYPattern = true;
   SpBLASUnsupportedMatrixTypeFlag = false;
-  FFTExecAPIInfoMap.clear();
-  FFTHandleInfoMap.clear();
   NeedRunAgain = false;
   SpellingLocToDFIsMapForAssumeNDRange.clear();
   DFIToSpellingLocsMapForAssumeNDRange.clear();
@@ -325,28 +318,6 @@ DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
   }
 
   return KernelInfo;
-}
-
-void DpctGlobalInfo::insertFFTPlanAPIInfo(SourceLocation SL,
-                                          FFTPlanAPIInfo Info) {
-  auto LocInfo = getLocInfo(SL);
-  auto FileInfo = insertFile(LocInfo.first);
-  auto &M = FileInfo->getFFTPlanAPIInfoMap();
-  if (M.find(LocInfo.second) == M.end()) {
-    Info.FilePath = LocInfo.first;
-    M.insert(std::make_pair(LocInfo.second, Info));
-  }
-}
-
-void DpctGlobalInfo::insertFFTExecAPIInfo(SourceLocation SL,
-                                          FFTExecAPIInfo Info) {
-  auto LocInfo = getLocInfo(SL);
-  auto FileInfo = insertFile(LocInfo.first);
-  auto &M = FileInfo->getFFTExecAPIInfoMap();
-  if (M.find(LocInfo.second) == M.end()) {
-    Info.FilePath = LocInfo.first;
-    M.insert(std::make_pair(LocInfo.second, Info));
-  }
 }
 
 bool DpctFileInfo::isInRoot() { return DpctGlobalInfo::isInRoot(FilePath); }
@@ -501,20 +472,8 @@ void DpctFileInfo::buildReplacements() {
                                false, std::get<1>(AtomicInfo.second));
   }
 
-  for (auto &DescInfo : FFTDescriptorTypeMap) {
-    DescInfo.second.buildInfo(FilePath, DescInfo.first);
-  }
-
   for (auto &DescInfo : EventSyncTypeMap) {
     DescInfo.second.buildInfo(FilePath, DescInfo.first);
-  }
-
-  for (auto &PlanInfo : FFTPlanAPIInfoMap) {
-    PlanInfo.second.buildInfo();
-  }
-
-  for (auto &ExecInfo : FFTExecAPIInfoMap) {
-    ExecInfo.second.buildInfo();
   }
 
   const auto &EventMallocFreeMap = getEventMallocFreeMap();
