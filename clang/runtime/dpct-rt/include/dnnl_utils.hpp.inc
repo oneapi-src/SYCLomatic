@@ -538,6 +538,19 @@ public:
                             _strides[i - 2];
     }
   }
+  static size_t get_element_num(memory_desc_ext desc) {
+    return get_element_num(desc.get_desc());
+  }
+  static size_t get_element_num(::dnnl::memory::desc desc) {
+    if(!desc.dims().size()) {
+      return 0;
+    }
+    size_t result = 1;
+    for(auto &dim : desc.dims()) {
+      result *= dim;
+    }
+    return result;
+  }
 };
 // DPCT_LABEL_END
 
@@ -611,7 +624,7 @@ class engine_ext {
   };
   void transform_no_zero(memory_desc_ext desc, void *src, void *dst) {
     ::dnnl::memory::data_type dt = desc.get_desc().data_type();
-    size_t element_num = desc.get_element_num();
+    size_t element_num = memory_desc_ext::get_element_num(desc);
     switch (dt) {
     case ::dnnl::memory::data_type::f32:
       std::transform(oneapi::dpl::execution::make_device_policy(*_q),
@@ -2070,13 +2083,10 @@ sycl::event engine_ext::batch_normalization_forward_training(
 
   execute_primitive(primitive, execution_args,
                     {{alpha, beta, DNNL_ARG_DST, help_dst_desc, dst}});
-  int element_num = 1;
-  for(auto &dim : scale_bias_mean_var_desc.dims()) {
-    element_num = element_num * dim;
-  }
+  int element_num = memory_desc_ext::get_element_num(help_scale_bias_mean_var_desc);
   float unbias_factor = element_num / (element_num - 1.f);
   sum((1.f - factor) * unbias_factor, scale_bias_mean_var_desc, saved_mean,
-      facto * unbias_factorr, scale_bias_mean_var_desc, running_mean);
+      facto * unbias_factor, scale_bias_mean_var_desc, running_mean);
   return sum((1.f - factor) * unbias_factor, scale_bias_mean_var_desc,
              saved_var, factor * unbias_factor, scale_bias_mean_var_desc,
              running_var);
