@@ -8,15 +8,13 @@
 
 // Base API
 
-CONDITIONAL_FACTORY_ENTRY(CheckArgCount(1),
-     CALL_FACTORY_ENTRY("cuda::std::atomic_thread_fence",CALL(MapNames::getClNamespace() + "atomic_fence",
-                                   ARG(0), LITERAL(MapNames::getClNamespace()+"memory_scope::system"))),
-     CALL_FACTORY_ENTRY("cuda::std::atomic_thread_fence",CALL(MapNames::getClNamespace() + "atomic_fence",
-                                   ARG(0), ARG(1))))
+CALL_FACTORY_ENTRY("cuda::std::atomic_thread_fence",CALL(MapNames::getClNamespace() + "atomic_fence",
+                                   ARG(0), ARG(MapNames::getClNamespace()+"memory_scope::system")))
+     
 
-CONDITIONAL_FACTORY_ENTRY(CheckArgCount(1),
+CONDITIONAL_FACTORY_ENTRY(CheckArgIsDefault(1),
      CALL_FACTORY_ENTRY("cuda::atomic_thread_fence",CALL(MapNames::getClNamespace() + "atomic_fence",
-                                   ARG(0), LITERAL(MapNames::getClNamespace()+"memory_scope::system"))),
+                                   ARG(0),  ARG(MapNames::getClNamespace()+"memory_scope::system"))),
      CALL_FACTORY_ENTRY("cuda::atomic_thread_fence",CALL(MapNames::getClNamespace() + "atomic_fence",
                                    ARG(0), ARG(1))))
 

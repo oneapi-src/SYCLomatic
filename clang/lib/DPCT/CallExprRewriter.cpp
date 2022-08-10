@@ -2357,6 +2357,14 @@ public:
   bool operator()(const CallExpr *C) { return C->getNumArgs() == Count; }
 };
 
+class CheckArgIsDefault{
+  unsigned Loc;
+
+public:
+  CheckArgIsDefault(unsigned I) : Loc(I) {}
+  bool operator()(const CallExpr *C) { return C->getArg(Loc)->isDefaultArgument(); }
+};
+
 class CheckBaseType {
   std::string TypeName;
 
