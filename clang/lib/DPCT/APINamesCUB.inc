@@ -56,7 +56,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
     REMOVE_API_FACTORY_ENTRY("cub::DeviceSelect::Flagged"),
     HEADER_INSERT_FACTORY(
-        HeaderType::HT_DplUtils,
+        HeaderType::HT_DPL_Utils,
         REMOVE_CUB_TEMP_STORAGE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
             "cub::DeviceSelect::Flagged", QUEUESTR, false, "fill", ARG(5),
             BO(BinaryOperatorKind::BO_Sub, CALL("dpct::copy_if",
