@@ -1998,6 +1998,7 @@ sycl::event engine_ext::batch_normalization_forward_inference(
   auto primitive =
       create_forward_primitive<::dnnl::batch_normalization_forward>(
           ::dnnl::prop_kind::forward_inference, help_src_desc, epsilon,
+          ::dnnl::normalization_flags::use_global_stats |
           ::dnnl::normalization_flags::use_scale |
               ::dnnl::normalization_flags::use_shift);
 
@@ -2033,10 +2034,14 @@ sycl::event engine_ext::batch_normalization_forward_training(
   }
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
   ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
+  ::dnnl::memory::desc help_scale_bias_mean_var_desc =
+      scale_bias_mean_var_desc.get_desc();
 
   if (mode == batch_normalization_mode::per_activation) {
     help_src_desc = compress_spatial_dimensions_to_channel(help_src_desc);
     help_dst_desc = compress_spatial_dimensions_to_channel(help_dst_desc);
+    help_scale_bias_mean_var_desc =
+        compress_spatial_dimensions_to_channel(help_scale_bias_mean_var_desc);
   }
 
   auto primitive =
@@ -2048,19 +2053,19 @@ sycl::event engine_ext::batch_normalization_forward_training(
   std::unordered_map<int, ::dnnl::memory> execution_args = {
       {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc, _eng, src)}},
       {DNNL_ARG_SCALE,
-       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, scale)}},
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, scale)}},
       {DNNL_ARG_SHIFT,
-       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, bias)}},
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, bias)}},
       {DNNL_ARG_MEAN,
-       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, saved_mean)}},
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, saved_mean)}},
       {DNNL_ARG_VARIANCE,
-       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, saved_var)}}};
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, saved_var)}}};
 
   execute_primitive(primitive, execution_args,
                     {{alpha, beta, DNNL_ARG_DST, help_dst_desc, dst}});
   sum(1.f - factor, scale_bias_mean_var_desc, saved_mean, factor,
       scale_bias_mean_var_desc, running_mean);
-  return sum(1.f - factor, help_scale_bias_mean_var_desc, saved_var, factor,
+  return sum(1.f - factor, scale_bias_mean_var_desc, saved_var, factor,
              scale_bias_mean_var_desc, running_var);
 }
 // DPCT_LABEL_END
