@@ -108,17 +108,6 @@ public:
   /// Getting a size of a memory_desc_ext in bytes.
   /// \returns The size.
   size_t get_size() const { return _desc.get_size(); }
-  size_t get_element_num() const {
-    auto dims = _desc.dims();
-    if(!dims.size()) {
-      return 0;
-    }
-    size_t result = 1;
-    for(auto &dim : dims) {
-      result = result * dim;
-    }
-    return result;
-  }
   /// Getting parameters from a 4D memory.
   /// \param [out] dt Data type.
   /// \param [out] n Number of images.
@@ -577,7 +566,7 @@ class engine_ext {
   void *allocate(const memory_desc_ext &desc) const;
   ::dnnl::memory::desc compress_spatial_dimensions_to_channel(
     ::dnnl::memory::desc desc);
-  ::dnnl::memory::desc get_bn_sclae_bias_desc(
+  ::dnnl::memory::desc get_bn_scale_bias_desc(
     ::dnnl::memory::desc desc, batch_normalization_mode mode);
   template <typename primitive_type, typename... args_type>
   primitive_type create_forward_primitive(args_type &&...args);
@@ -1266,12 +1255,13 @@ engine_ext::compress_spatial_dimensions_to_channel(::dnnl::memory::desc desc) {
                               ::dnnl::memory::format_tag::nchw);
 }
 
-::dnnl::memory::desc get_bn_sclae_bias_desc(::dnnl::memory::desc desc
-  , batch_normalization_mode mode){
+::dnnl::memory::desc
+engine_ext::get_bn_scale_bias_desc(::dnnl::memory::desc desc,
+                                   batch_normalization_mode mode) {
   int ndims = desc.data.ndims;
   assert(ndims >= 4 && "ndims is at least 4.");
   int channel_number = 1;
-  if(mode == batch_normalization_mode::spatial) {
+  if (mode == batch_normalization_mode::spatial) {
     channel_number = desc.data.dims[1];
   } else {
     for (int index = 1; index < ndims; index++) {
@@ -2013,7 +2003,7 @@ sycl::event engine_ext::batch_normalization_forward_inference(
     help_dst_desc = compress_spatial_dimensions_to_channel(help_dst_desc);
   }
   ::dnnl::memory::desc help_scale_bias_mean_var_desc =
-    get_bn_scale_bias_desc(scale_bias_mean_var_desc, mode);
+    get_bn_scale_bias_desc(scale_bias_mean_var_desc.get_desc(), mode);
   auto primitive =
       create_forward_primitive<::dnnl::batch_normalization_forward>(
           ::dnnl::prop_kind::forward_inference, help_src_desc, epsilon,
@@ -2054,7 +2044,7 @@ sycl::event engine_ext::batch_normalization_forward_training(
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
   ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
   ::dnnl::memory::desc help_scale_bias_mean_var_desc =
-      get_bn_scale_bias_desc(scale_bias_mean_var_desc, mode);
+      get_bn_scale_bias_desc(scale_bias_mean_var_desc.get_desc(), mode);
 
   if (mode == batch_normalization_mode::per_activation) {
     help_src_desc = compress_spatial_dimensions_to_channel(help_src_desc);
@@ -2080,10 +2070,16 @@ sycl::event engine_ext::batch_normalization_forward_training(
 
   execute_primitive(primitive, execution_args,
                     {{alpha, beta, DNNL_ARG_DST, help_dst_desc, dst}});
-  sum(1.f - factor, scale_bias_mean_var_desc, saved_mean, factor,
-      scale_bias_mean_var_desc, running_mean);
-  return sum(1.f - factor, scale_bias_mean_var_desc, saved_var, factor,
-             scale_bias_mean_var_desc, running_var);
+  int element_num = 1;
+  for(auto &dim : scale_bias_mean_var_desc.dims()) {
+    element_num = element_num * dim;
+  }
+  float unbias_factor = element_num / (element_num - 1.f);
+  sum((1.f - factor) * unbias_factor, scale_bias_mean_var_desc, saved_mean,
+      facto * unbias_factorr, scale_bias_mean_var_desc, running_mean);
+  return sum((1.f - factor) * unbias_factor, scale_bias_mean_var_desc,
+             saved_var, factor * unbias_factor, scale_bias_mean_var_desc,
+             running_var);
 }
 // DPCT_LABEL_END
 
