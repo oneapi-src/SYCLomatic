@@ -73,7 +73,7 @@ enum fft_type : int {
 };
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|rng_generator|dpct::fft
+// DPCT_LABEL_BEGIN|fft_solver|dpct::fft
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
 // FftUtils|fft_dir

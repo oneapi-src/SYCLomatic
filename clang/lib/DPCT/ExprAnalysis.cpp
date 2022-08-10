@@ -498,9 +498,11 @@ void ExprAnalysis::analyzeExpr(const IntegerLiteral *IL) {
   if (TokStr == "CUFFT_FORWARD" && ParentExpr && IsInCudaPath) {
     addReplacement(DefinitionRange, ParentExpr,
                    MapNames::getDpctNamespace() + "fft::fft_dir::forward");
+    requestFeature(HelperFeatureEnum::FftUtils_fft_dir, TokBeginLoc);
   } else if ((TokStr == "CUFFT_INVERSE") && ParentExpr && IsInCudaPath) {
     addReplacement(DefinitionRange, ParentExpr,
                    MapNames::getDpctNamespace() + "fft::fft_dir::backward");
+    requestFeature(HelperFeatureEnum::FftUtils_fft_dir, TokBeginLoc);
   }
 }
 

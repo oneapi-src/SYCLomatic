@@ -24,6 +24,7 @@ TextModification* processFunctionPointer(const UnaryOperator *UO) {
   std::string ParameterTypes = "std::shared_ptr<" +
                                MapNames::getDpctNamespace() +
                                "fft::fft_solver> solver";
+  requestFeature(HelperFeatureEnum::FftUtils_fft_solver, UO->getBeginLoc());
   std::string Dir;
   if (FuncNameRef == "cufftExecC2C") {
     ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
