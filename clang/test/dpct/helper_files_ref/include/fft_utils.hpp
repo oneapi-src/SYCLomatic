@@ -160,25 +160,13 @@ public:
       _is_inplace = true;
     }
     if (_input_type == library_data_t::complex_float &&
-        _output_type == library_data_t::complex_float &&
-        _direction == fft_dir::forward) {
+        _output_type == library_data_t::complex_float) {
       compute_complex<float, oneapi::mkl::dft::precision::SINGLE>(
           _idist, _odist, (float *)input, (float *)output);
-    } else if (_input_type == library_data_t::complex_float &&
-               _output_type == library_data_t::complex_float &&
-               _direction == fft_dir::backward) {
-      compute_complex<float, oneapi::mkl::dft::precision::SINGLE>(
-          _odist, _idist, (float *)input, (float *)output);
     } else if (_input_type == library_data_t::complex_double &&
-               _output_type == library_data_t::complex_double &&
-               _direction == fft_dir::forward) {
+               _output_type == library_data_t::complex_double) {
       compute_complex<double, oneapi::mkl::dft::precision::DOUBLE>(
           _idist, _odist, (double *)input, (double *)output);
-    } else if (_input_type == library_data_t::complex_double &&
-               _output_type == library_data_t::complex_double &&
-               _direction == fft_dir::backward) {
-      compute_complex<double, oneapi::mkl::dft::precision::DOUBLE>(
-          _odist, _idist, (double *)input, (double *)output);
     } else if (_input_type == library_data_t::real_float &&
                _output_type == library_data_t::complex_float) {
       compute_real<float, oneapi::mkl::dft::precision::SINGLE>(
@@ -260,8 +248,7 @@ private:
     _dim = dim;
   }
   template <class Desc_t>
-  void set_stride_and_distance_advance(Desc_t &desc, int fwd_dist,
-                                       int bwd_dist) {
+  void set_stride_advance(Desc_t &desc) {
     if (_dim == 1) {
       std::int64_t input_stride[2] = {0, _istride};
       std::int64_t output_stride[2] = {0, _ostride};
@@ -286,12 +273,16 @@ private:
       desc.set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,
                      output_stride);
     }
-    desc.set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, fwd_dist);
-    desc.set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, bwd_dist);
   }
 
   template <class T, oneapi::mkl::dft::precision Precision>
-  void compute_complex(int fwd_dist, int bwd_dist, T *input, T *output) {
+  void compute_complex(long long idist, long long odist, T *input, T *output) {
+    long long fwd_dist = idist;
+    long long bwd_dist = odist;
+    if (_direction == fft_dir::backward) {
+      fwd_dist = odist;
+      bwd_dist = idist;
+    }
     oneapi::mkl::dft::descriptor<Precision, oneapi::mkl::dft::domain::COMPLEX>
         desc(_n);
     if (!_is_inplace)
@@ -300,46 +291,32 @@ private:
     desc.set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                    _batch);
     if (!_is_basic) {
-      set_stride_and_distance_advance(desc, fwd_dist, bwd_dist);
+      set_stride_advance(desc);
+      desc.set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, fwd_dist);
+      desc.set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, bwd_dist);
     } else {
       std::int64_t distance = 1;
-      for (const auto &i : _n)
+      for (auto i : _n)
         distance = distance * i;
       desc.set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, distance);
       desc.set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, distance);
     }
     desc.commit(*_q);
     if (_is_inplace) {
-#ifdef DPCT_USM_LEVEL_NONE
-      auto input_buffer = dpct::get_buffer<T>(input);
+      auto data_input = get_memory(reinterpret_cast<T *>(input));
       if (_direction == fft_dir::forward) {
-        oneapi::mkl::dft::compute_forward(desc, input_buffer);
+        oneapi::mkl::dft::compute_forward(desc, data_input);
       } else {
-        oneapi::mkl::dft::compute_backward(desc, input_buffer);
+        oneapi::mkl::dft::compute_backward(desc, data_input);
       }
-#else
-      if (_direction == fft_dir::forward) {
-        oneapi::mkl::dft::compute_forward(desc, input);
-      } else {
-        oneapi::mkl::dft::compute_backward(desc, input);
-      }
-#endif
     } else {
-#ifdef DPCT_USM_LEVEL_NONE
-      auto input_buffer = dpct::get_buffer<T>(input);
-      auto output_buffer = dpct::get_buffer<T>(output);
+      auto data_input = get_memory(reinterpret_cast<T *>(input));
+      auto data_output = get_memory(reinterpret_cast<T *>(output));
       if (_direction == fft_dir::forward) {
-        oneapi::mkl::dft::compute_forward(desc, input_buffer, output_buffer);
+        oneapi::mkl::dft::compute_forward(desc, data_input, data_output);
       } else {
-        oneapi::mkl::dft::compute_backward(desc, input_buffer, output_buffer);
+        oneapi::mkl::dft::compute_backward(desc, data_input, data_output);
       }
-#else
-      if (_direction == fft_dir::forward) {
-        oneapi::mkl::dft::compute_forward(desc, input, output);
-      } else {
-        oneapi::mkl::dft::compute_backward(desc, input, output);
-      }
-#endif
     }
   }
 
@@ -440,42 +417,28 @@ private:
     desc.set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                    _batch);
     if (!_is_basic) {
-      set_stride_and_distance_advance(desc, fwd_dist, bwd_dist);
+      set_stride_advance(desc);
+      desc.set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, fwd_dist);
+      desc.set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, bwd_dist);
     } else {
       set_stride_and_distance_basic(desc);
     }
     desc.commit(*_q);
     if (_is_inplace) {
-#ifdef DPCT_USM_LEVEL_NONE
-      auto input_buffer = dpct::get_buffer<T>(input);
+      auto data_input = get_memory(reinterpret_cast<T *>(input));
       if (_direction == fft_dir::forward) {
-        oneapi::mkl::dft::compute_forward(desc, input_buffer);
+        oneapi::mkl::dft::compute_forward(desc, data_input);
       } else {
-        oneapi::mkl::dft::compute_backward(desc, input_buffer);
+        oneapi::mkl::dft::compute_backward(desc, data_input);
       }
-#else
-      if (_direction == fft_dir::forward) {
-        oneapi::mkl::dft::compute_forward(desc, input);
-      } else {
-        oneapi::mkl::dft::compute_backward(desc, input);
-      }
-#endif
     } else {
-#ifdef DPCT_USM_LEVEL_NONE
-      auto input_buffer = dpct::get_buffer<T>(input);
-      auto output_buffer = dpct::get_buffer<T>(output);
+      auto data_input = get_memory(reinterpret_cast<T *>(input));
+      auto data_output = get_memory(reinterpret_cast<T *>(output));
       if (_direction == fft_dir::forward) {
-        oneapi::mkl::dft::compute_forward(desc, input_buffer, output_buffer);
+        oneapi::mkl::dft::compute_forward(desc, data_input, data_output);
       } else {
-        oneapi::mkl::dft::compute_backward(desc, input_buffer, output_buffer);
+        oneapi::mkl::dft::compute_backward(desc, data_input, data_output);
       }
-#else
-      if (_direction == fft_dir::forward) {
-        oneapi::mkl::dft::compute_forward(desc, input, output);
-      } else {
-        oneapi::mkl::dft::compute_backward(desc, input, output);
-      }
-#endif
     }
   }
 

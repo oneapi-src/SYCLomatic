@@ -62,14 +62,6 @@ inline constexpr std::uint64_t get_type_combination_id(FirstT FirstVal, RestT...
   return get_type_combination_id(RestVal...) << 8 | ((std::uint64_t)FirstVal);
 }
 
-template <typename T> inline auto get_memory(T *x) {
-#ifdef DPCT_USM_LEVEL_NONE
-  return dpct::get_buffer<std::remove_cv_t<T>>(x);
-#else
-  return x;
-#endif
-}
-
 #ifndef DPCT_USM_LEVEL_NONE
 template<typename T>
 class working_memory {

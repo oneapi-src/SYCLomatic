@@ -47,6 +47,21 @@
 // DPCT_LABEL_END
 
 namespace dpct {
+namespace detail {
+// DPCT_LABEL_BEGIN|get_memory|dpct::detail
+// DPCT_DEPENDENCY_BEGIN
+// Memory|get_buffer_T|UsmNone
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> inline auto get_memory(T *x) {
+#ifdef DPCT_USM_LEVEL_NONE
+  return dpct::get_buffer<std::remove_cv_t<T>>(x);
+#else
+  return x;
+#endif
+}
+}
+// DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|version_field|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE

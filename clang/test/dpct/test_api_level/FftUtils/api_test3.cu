@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/FftUtils/api_test3_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/FftUtils/api_test3_out
 
-// CHECK: 20
+// CHECK: 21
 // TEST_FEATURE: FftUtils_fft_solver
 
 #include "cufft.h"
