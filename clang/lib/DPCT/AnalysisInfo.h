@@ -425,7 +425,7 @@ public:
       return;
     Repls->addReplacement(Repl);
   }
-  bool isInRoot();
+  bool isInAnalysisScope();
   std::shared_ptr<ExtReplacements> getRepls() { return Repls; }
 
   size_t getFileSize() const { return FileSize; }
@@ -861,9 +861,9 @@ public:
   class MacroDefRecord {
   public:
     SourceLocation NameTokenLoc;
-    bool IsInRoot;
-    MacroDefRecord(SourceLocation NTL, bool IIR)
-        : NameTokenLoc(NTL), IsInRoot(IIR) {}
+    bool IsInAnalysisScope;
+    MacroDefRecord(SourceLocation NTL, bool IIAS)
+        : NameTokenLoc(NTL), IsInAnalysisScope(IIAS) {}
   };
 
   class MacroExpansionRecord {
@@ -874,11 +874,11 @@ public:
     unsigned ReplaceTokenBeginOffset;
     unsigned ReplaceTokenEndOffset;
     SourceRange Range;
-    bool IsInRoot;
+    bool IsInAnalysisScope;
     bool IsFunctionLike;
     int TokenIndex;
     MacroExpansionRecord(IdentifierInfo *ID, const MacroInfo *MI,
-                         SourceRange Range, bool IsInRoot, int TokenIndex) {
+                         SourceRange Range, bool IsInAnalysisScope, int TokenIndex) {
       auto LocInfoBegin =
           DpctGlobalInfo::getLocInfo(MI->getReplacementToken(0).getLocation());
       auto LocInfoEnd = DpctGlobalInfo::getLocInfo(
@@ -889,7 +889,7 @@ public:
       ReplaceTokenBeginOffset = LocInfoBegin.second;
       ReplaceTokenEndOffset = LocInfoEnd.second;
       this->Range = Range;
-      this->IsInRoot = IsInRoot;
+      this->IsInAnalysisScope = IsInAnalysisScope;
       this->IsFunctionLike = MI->getNumParams() > 0;
       this->TokenIndex = TokenIndex;
     }
@@ -951,6 +951,15 @@ public:
       }
     }
   }
+  inline static bool isInAnalysisScope(SourceLocation SL) {
+    return isInAnalysisScope(getSourceManager()
+                        .getFilename(getSourceManager().getExpansionLoc(SL))
+                        .str());
+  }
+  static bool isInAnalysisScope(const std::string &FilePath,
+                                bool IsChildRelative = true) {
+    return isChildPath(AnalysisScope, FilePath, IsChildRelative);
+  }
 
   static bool isExcluded(const std::string &FilePath, bool IsRelative = true) {
     static std::map<std::string, bool> Cache;
@@ -998,6 +1007,14 @@ public:
   static const std::string &getOutRoot() {
     assert(!OutRoot.empty());
     return OutRoot;
+  }
+  static void setAnalysisScope(const std::string &InputAnalysisScope) {
+    assert(!InputAnalysisScope.empty());
+    AnalysisScope = InputAnalysisScope;
+  }
+  static const std::string &getAnalysisScope() {
+    assert(!AnalysisScope.empty());
+    return AnalysisScope;
   }
   // TODO: implement one of this for each source language.
   static void setCudaPath(const std::string &InputCudaPath) {
@@ -2235,8 +2252,8 @@ private:
   DpctGlobalInfo &operator=(const DpctGlobalInfo &) = delete;
   DpctGlobalInfo &operator=(DpctGlobalInfo &&) = delete;
 
-  // Wrapper of isInRoot for std::function usage.
-  static bool checkInRoot(SourceLocation SL) { return isInRoot(SL); }
+  // Wrapper of isInAnalysisScope for std::function usage.
+  static bool checkInAnalysisScope(SourceLocation SL) { return isInAnalysisScope(SL); }
 
   // Record token split when it's in macro
   static void recordTokenSplit(SourceLocation SL, unsigned Len) {
@@ -2260,7 +2277,7 @@ private:
     if (!N)
       return std::shared_ptr<Info>();
     auto LocInfo = getLocInfo(N);
-    if (isInRoot(LocInfo.first))
+    if (isInAnalysisScope(LocInfo.first))
       return insertFile(LocInfo.first)->template findNode<Info>(LocInfo.second);
     return std::shared_ptr<Info>();
   }
@@ -2327,6 +2344,7 @@ private:
       MainSourceYamlTUR;
   static std::string InRoot;
   static std::string OutRoot;
+  static std::string AnalysisScope;
   // TODO: implement one of this for each source language.
   static std::string CudaPath;
   static std::string RuleFile;
