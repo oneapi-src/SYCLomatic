@@ -129,6 +129,19 @@ public:
   /// of each memory dimension.
   void get(int requested_ndims, dpct::library_data_t *dt, int *ndims,
            int dims[], int strides[]) const;
+    static size_t get_element_num(memory_desc_ext desc) {
+    return get_element_num(desc.get_desc());
+  }
+  static size_t get_element_num(::dnnl::memory::desc desc) {
+    if(!desc.dims().size()) {
+      return 0;
+    }
+    size_t result = 1;
+    for(auto &dim : desc.dims()) {
+      result *= dim;
+    }
+    return result;
+  }
 };
 // DPCT_LABEL_END
 
@@ -537,19 +550,6 @@ public:
                          (1 + (_dilates[i - 2] * (filter_dims[i] - 1)))) /
                             _strides[i - 2];
     }
-  }
-  static size_t get_element_num(memory_desc_ext desc) {
-    return get_element_num(desc.get_desc());
-  }
-  static size_t get_element_num(::dnnl::memory::desc desc) {
-    if(!desc.dims().size()) {
-      return 0;
-    }
-    size_t result = 1;
-    for(auto &dim : desc.dims()) {
-      result *= dim;
-    }
-    return result;
   }
 };
 // DPCT_LABEL_END
@@ -2086,7 +2086,7 @@ sycl::event engine_ext::batch_normalization_forward_training(
   int element_num = memory_desc_ext::get_element_num(help_scale_bias_mean_var_desc);
   float unbias_factor = element_num / (element_num - 1.f);
   sum((1.f - factor) * unbias_factor, scale_bias_mean_var_desc, saved_mean,
-      facto * unbias_factor, scale_bias_mean_var_desc, running_mean);
+      factor * unbias_factor, scale_bias_mean_var_desc, running_mean);
   return sum((1.f - factor) * unbias_factor, scale_bias_mean_var_desc,
              saved_var, factor * unbias_factor, scale_bias_mean_var_desc,
              running_var);
