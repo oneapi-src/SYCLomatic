@@ -57,34 +57,32 @@ void AutoCompletePrinter::process() {
     // suggest option names
     llvm::StringRef OptionPrefixRef = InputRef.substr(LastSharpPos + 1);
 
+    // Case0: "" : return empty.
     // Case1: "-" : suggest all options. All candidates have "--" prefix except "-p".
     // Case2: "--" : suggest all options except -p. All candidates have "--" prefix.
     // Case3: "-abc" : suggest options have abc prefix. All candidates have "-" prefix.
     // Case4: "--abc" : suggest options have abc prefix. All candidates have "--" prefix.
 
-    // Case1
-    if (OptionPrefixRef.size() == 1 && OptionPrefixRef[0] == '-') {
+    if (OptionPrefixRef.size() == 0) {
+      // Case0
+      printAndExit();
+    } else if (OptionPrefixRef.size() == 1 && OptionPrefixRef[0] == '-') {
+      // Case1
       addSuggestions(OptionSet, false);
       printAndExit();
-    }
-
-    // Case2
-    if (OptionPrefixRef.size() == 2 && OptionPrefixRef[0] == '-' &&
+    } else if (OptionPrefixRef.size() == 2 && OptionPrefixRef[0] == '-' &&
         OptionPrefixRef[1] == '-') {
+      // Case2
       addSuggestions(OptionSet, true);
       printAndExit();
-    }
-
-    // Case3
-    if (OptionPrefixRef.size() >= 2 && OptionPrefixRef[0] == '-' &&
+    } else if (OptionPrefixRef.size() >= 2 && OptionPrefixRef[0] == '-' &&
         OptionPrefixRef[1] != '-') {
+      // Case3
       addSuggestions(OptionSet, OptionPrefixRef.substr(1), "-");
       printAndExit();
-    }
-
-    // Case4
-    if (OptionPrefixRef.size() >= 3 && OptionPrefixRef[0] == '-' &&
+    } else if (OptionPrefixRef.size() >= 3 && OptionPrefixRef[0] == '-' &&
         OptionPrefixRef[1] == '-') {
+      // Case4
       addSuggestions(OptionSet, OptionPrefixRef.substr(2), "--");
       printAndExit();
     }
