@@ -4633,6 +4633,11 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
       RSO << getNL();
     }
 
+    if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) &&
+        (Type == HT_SYCL)) {
+      RSO << "#define DPCT_USM_LEVEL_NONE" << getNL();
+    }
+
     concatHeader(RSO, std::forward<T>(Args)...);
 
     // We only add these things when inserting HT_SYCL, because we have to make

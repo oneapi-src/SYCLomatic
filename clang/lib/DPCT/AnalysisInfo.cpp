@@ -559,12 +559,6 @@ void DpctFileInfo::buildReplacements() {
 
   FreeQueriesInfo::buildInfo();
 
-  // In order to make DPCT_USM_LEVEL_NONE appear at the front, we need insert it
-  // after inserting all header files.
-  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
-    insertHeader(std::string("#define DPCT_USM_LEVEL_NONE") + getNL(),
-                 FirstIncludeOffset, InsertPosition::IP_AlwaysLeft);
-
   // This loop need to be put at the end of DpctFileInfo::buildReplacements.
   // In addReplacement() the insertHeader() may be invoked, so the size of
   // vector IncludeDirectiveInsertions may increase.
