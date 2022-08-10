@@ -2083,12 +2083,19 @@ sycl::event engine_ext::batch_normalization_forward_training(
 
   execute_primitive(primitive, execution_args,
                     {{alpha, beta, DNNL_ARG_DST, help_dst_desc, dst}});
-  int element_num = memory_desc_ext::get_element_num(help_scale_bias_mean_var_desc);
+  auto src_ndim = src_desc.get_desc().data.ndims;
+  auto src_dims = src_desc.get_desc().dims();
+  int element_num = src_dims[0];
+  if(mode == batch_normalization_mode::spatial) {
+    for(int index = 2; index < src_ndim; index++) {
+      element_num *= src_dims[index];
+    }
+  }
   float unbias_factor = element_num / (element_num - 1.f);
-  sum((1.f - factor) * unbias_factor, scale_bias_mean_var_desc, saved_mean,
-      factor * unbias_factor, scale_bias_mean_var_desc, running_mean);
-  return sum((1.f - factor) * unbias_factor, scale_bias_mean_var_desc,
-             saved_var, factor * unbias_factor, scale_bias_mean_var_desc,
+  sum((factor * unbias_factor, scale_bias_mean_var_desc, saved_mean,
+      (1.f - factor) * unbias_factor, scale_bias_mean_var_desc, running_mean);
+  return sum(factor * unbias_factor, scale_bias_mean_var_desc,
+             saved_var, (1.f - factor) * unbias_factor, scale_bias_mean_var_desc,
              running_var);
 }
 // DPCT_LABEL_END
