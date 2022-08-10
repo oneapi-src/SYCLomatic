@@ -109,10 +109,10 @@ static internal::Matcher<NamedDecl> vectorTypeName() {
 }
 
 unsigned MigrationRule::PairID = 0;
-bool IncludesCallbacks::isInRoot(SourceLocation Loc) {
-  std::string InRoot = ATM.InRoot;
+bool IncludesCallbacks::isInAnalysisScope(SourceLocation Loc) {
+  std::string AnalysisScope = ATM.AnalysisScope;
   std::string InFile = SM.getFilename(Loc).str();
-  return !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
+  return !isDirectory(InFile) && isChildOrSamePath(AnalysisScope, InFile);
 }
 
 int IncludesCallbacks::findPoundSign(SourceLocation DirectiveStart) {
@@ -141,8 +141,8 @@ int IncludesCallbacks::findPoundSign(SourceLocation DirectiveStart) {
   return -1;
 }
 void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
-  bool IsInRoot = isInRoot(MacroNameTok.getLocation());
-  if (!IsInRoot) {
+  bool IsInAnalysisScope = isInAnalysisScope(MacroNameTok.getLocation());
+  if (!IsInAnalysisScope) {
     return;
   }
   if (!MacroNameTok.getIdentifierInfo()) {
@@ -170,9 +170,9 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
 
 void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
                                      const MacroDirective *MD) {
-  std::string InRoot = ATM.InRoot;
+  std::string AnalysisScope = ATM.AnalysisScope;
   std::string InFile = SM.getFilename(MacroNameTok.getLocation()).str();
-  bool IsInRoot = !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
+  bool IsInAnalysisScope = !isDirectory(InFile) && isChildOrSamePath(AnalysisScope, InFile);
 
   size_t i;
   // Record all macro define locations
@@ -183,12 +183,12 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
   for (i = 0; i < MI->getNumTokens(); i++) {
     std::shared_ptr<dpct::DpctGlobalInfo::MacroDefRecord> R =
         std::make_shared<dpct::DpctGlobalInfo::MacroDefRecord>(
-            MacroNameTok.getLocation(), IsInRoot);
+            MacroNameTok.getLocation(), IsInAnalysisScope);
     dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc()[getHashStrFromLoc(
         MI->getReplacementToken(i).getLocation())] = R;
   }
 
-  if (!IsInRoot) {
+  if (!IsInAnalysisScope) {
     return;
   }
 
@@ -249,10 +249,10 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
 void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                                      const MacroDefinition &MD,
                                      SourceRange Range, const MacroArgs *Args) {
-  std::string InRoot = ATM.InRoot;
+  std::string AnalysisScope = ATM.AnalysisScope;
   std::string InFile =
       SM.getFilename(SM.getSpellingLoc(MacroNameTok.getLocation())).str();
-  bool IsInRoot = !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
+  bool IsInAnalysisScope = !isDirectory(InFile) && isChildOrSamePath(AnalysisScope, InFile);
   auto MI = MD.getMacroInfo();
   if (!MI) {
     return;
@@ -276,7 +276,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
       for (i = 0; i < MI->getNumTokens(); i++) {
         std::shared_ptr<dpct::DpctGlobalInfo::MacroExpansionRecord> R =
             std::make_shared<dpct::DpctGlobalInfo::MacroExpansionRecord>(
-                MacroNameTok.getIdentifierInfo(), MI, Range, IsInRoot, i);
+                MacroNameTok.getIdentifierInfo(), MI, Range, IsInAnalysisScope, i);
         dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord()
             [getCombinedStrFromLoc(MI->getReplacementToken(i).getLocation())] =
                 R;
@@ -369,7 +369,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     }
   }
 
-  if (!IsInRoot) {
+  if (!IsInAnalysisScope) {
     return;
   }
 
@@ -480,7 +480,7 @@ IncludesCallbacks::removeMacroInvocationAndTrailingSpaces(SourceRange Range) {
       Range.getBegin(), getLenIncludingTrailingSpaces(Range, SM), "", true);
 }
 void IncludesCallbacks::Else(SourceLocation Loc, SourceLocation IfLoc) {
-  if (isInRoot(Loc)) {
+  if (isInAnalysisScope(Loc)) {
     auto &Map = DpctGlobalInfo::getInstance()
                     .getCudaArchPPInfoMap()[SM.getFilename(Loc).str()];
     unsigned Offset = SM.getFileOffset(IfLoc);
@@ -505,7 +505,7 @@ void IncludesCallbacks::Else(SourceLocation Loc, SourceLocation IfLoc) {
 }
 void IncludesCallbacks::Ifdef(SourceLocation Loc, const Token &MacroNameTok,
                               const MacroDefinition &MD) {
-  if (!isInRoot(Loc))
+  if (!isInAnalysisScope(Loc))
     return;
   SourceLocation MacroLoc = MacroNameTok.getLocation();
   if (!MacroNameTok.getIdentifierInfo()) {
@@ -534,7 +534,7 @@ void IncludesCallbacks::Ifdef(SourceLocation Loc, const Token &MacroNameTok,
 }
 void IncludesCallbacks::Ifndef(SourceLocation Loc, const Token &MacroNameTok,
                                const MacroDefinition &MD) {
-  if (!isInRoot(Loc))
+  if (!isInAnalysisScope(Loc))
     return;
   SourceLocation MacroLoc = MacroNameTok.getLocation();
   if (!MacroNameTok.getIdentifierInfo()) {
@@ -569,7 +569,7 @@ void IncludesCallbacks::Defined(const Token &MacroNameTok,
     return;
   }
   std::string MacroName = MacroNameTok.getIdentifierInfo()->getName().str();
-  if (!isInRoot(MacroLoc))
+  if (!isInAnalysisScope(MacroLoc))
     return;
   if (MacroName == "__CUDA_ARCH__") {
     requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp, MacroLoc);
@@ -587,10 +587,10 @@ void IncludesCallbacks::Defined(const Token &MacroNameTok,
 }
 
 void IncludesCallbacks::Endif(SourceLocation Loc, SourceLocation IfLoc) {
-  std::string InRoot = ATM.InRoot;
+  std::string AnalysisScope = ATM.AnalysisScope;
   std::string InFile = SM.getFilename(Loc).str();
-  bool IsInRoot = !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
-  if (IsInRoot) {
+  bool IsInAnalysisScope = !isDirectory(InFile) && isChildOrSamePath(AnalysisScope, InFile);
+  if (IsInAnalysisScope) {
     dpct::DpctGlobalInfo::getEndifLocationOfIfdef()[getHashStrFromLoc(IfLoc)] =
         Loc;
     dpct::DpctGlobalInfo::getConditionalCompilationLoc().emplace_back(
@@ -728,11 +728,11 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
 }
 void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
                            ConditionValueKind ConditionValue) {
-  std::string InRoot = ATM.InRoot;
+  std::string AnalysisScope = ATM.AnalysisScope;
   std::string InFile = SM.getFilename(Loc).str();
-  bool IsInRoot = !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
+  bool IsInAnalysisScope = !isDirectory(InFile) && isChildOrSamePath(AnalysisScope, InFile);
 
-  if (!IsInRoot) {
+  if (!IsInAnalysisScope) {
     return;
   }
   ReplaceCuMacro(ConditionRange, IfType::IT_If, Loc, Loc);
@@ -740,11 +740,11 @@ void IncludesCallbacks::If(SourceLocation Loc, SourceRange ConditionRange,
 void IncludesCallbacks::Elif(SourceLocation Loc, SourceRange ConditionRange,
                              ConditionValueKind ConditionValue,
                              SourceLocation IfLoc) {
-  std::string InRoot = ATM.InRoot;
+  std::string AnalysisScope = ATM.AnalysisScope;
   std::string InFile = SM.getFilename(Loc).str();
-  bool IsInRoot = !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
+  bool IsInAnalysisScope = !isDirectory(InFile) && isChildOrSamePath(AnalysisScope, InFile);
 
-  if (!IsInRoot) {
+  if (!IsInAnalysisScope) {
     return;
   }
 
@@ -792,10 +792,10 @@ void IncludesCallbacks::InclusionDirective(
 
   // eg. '/home/path/util.h' -> '/home/path'
   StringRef Directory = llvm::sys::path::parent_path(IncludingFile);
-  std::string InRoot = ATM.InRoot;
+  std::string AnalysisScope = ATM.AnalysisScope;
 
-  bool IsIncludingFileInInRoot =
-      !isDirectory(IncludingFile) && isChildOrSamePath(InRoot, Directory.str());
+  bool IsIncludingFileInAnalysisScope =
+      !isDirectory(IncludingFile) && isChildOrSamePath(AnalysisScope, Directory.str());
 
   // If the header file included cannot be found, just return.
   if (!File) {
@@ -815,28 +815,28 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   std::string DirPath = llvm::sys::path::parent_path(FilePath).str();
-  bool IsFileInInRoot = !isChildPath(DpctInstallPath, DirPath) &&
-                        (isChildOrSamePath(InRoot, DirPath));
+  bool IsFileInAnalysisScope = !isChildPath(DpctInstallPath, DirPath) &&
+                        (isChildOrSamePath(AnalysisScope, DirPath));
   bool IsExcluded = DpctGlobalInfo::isExcluded(FilePath);
 
-  bool NeedMigrate = !IsExcluded && IsFileInInRoot;
+  bool NeedMigrate = !IsExcluded && IsFileInAnalysisScope;
 
-  if (IsFileInInRoot) {
+  if (IsFileInAnalysisScope) {
     auto FilePathWithoutSymlinks =
         DpctGlobalInfo::removeSymlinks(SM.getFileManager(), FilePath);
     IncludeFileMap[FilePathWithoutSymlinks] = false;
     dpct::DpctGlobalInfo::getIncludingFileSet().insert(FilePathWithoutSymlinks);
   }
 
-  if ((!SM.isWrittenInMainFile(HashLoc) && !IsIncludingFileInInRoot) ||
+  if ((!SM.isWrittenInMainFile(HashLoc) && !IsIncludingFileInAnalysisScope) ||
       IsExcluded) {
     return;
   }
 
   // The "FilePath" is included by the "IncludingFile".
-  // If "FilePath" is not under the Inroot folder, do not record the including
+  // If "FilePath" is not under the AnalysisScope folder, do not record the including
   // relationship information.
-  if (DpctGlobalInfo::isInRoot(FilePath, false))
+  if (DpctGlobalInfo::isInAnalysisScope(FilePath, false))
     DpctGlobalInfo::getInstance().recordIncludingRelationship(IncludingFile,
                                                               FilePath);
 
@@ -972,7 +972,7 @@ void IncludesCallbacks::InclusionDirective(
     Updater.update(false);
   }
   if (FileName.startswith(StringRef("cudnn.h"))) {
-    if (isChildOrSamePath(InRoot, DirPath)) {
+    if (isChildOrSamePath(AnalysisScope, DirPath)) {
       return;
     }
     DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Dnnl);
@@ -1097,11 +1097,11 @@ void IncludesCallbacks::FileChanged(SourceLocation Loc, FileChangeReason Reason,
   if (Reason == clang::PPCallbacks::EnterFile) {
     DpctGlobalInfo::getInstance().setFileEnterLocation(Loc);
 
-    std::string InRoot = ATM.InRoot;
+    std::string AnalysisScope = ATM.AnalysisScope;
     std::string InFile = SM.getFilename(Loc).str();
-    bool IsInRoot = !isDirectory(InFile) && isChildOrSamePath(InRoot, InFile);
+    bool IsInAnalysisScope = !isDirectory(InFile) && isChildOrSamePath(AnalysisScope, InFile);
 
-    if (!IsInRoot) {
+    if (!IsInAnalysisScope) {
       return;
     }
 
@@ -3096,11 +3096,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (EventAPICallRule::getEventQueryTraversal().startFromTypeLoc(*TL))
       return;
 
-    // when the following code is not in inroot
+    // when the following code is not in AnalysisScope
     // #define MACRO_SHOULD_NOT_BE_MIGRATED (MatchedType)3
-    // Even if MACRO_SHOULD_NOT_BE_MIGRATED used in inroot, DPCT should not
+    // Even if MACRO_SHOULD_NOT_BE_MIGRATED used in AnalysisScope, DPCT should not
     // migrate MatchedType.
-    if (!DpctGlobalInfo::isInRoot(SM->getSpellingLoc(TL->getBeginLoc())) &&
+    if (!DpctGlobalInfo::isInAnalysisScope(SM->getSpellingLoc(TL->getBeginLoc())) &&
         isPartOfMacroDef(SM->getSpellingLoc(TL->getBeginLoc()),
                          SM->getSpellingLoc(TL->getBeginLoc()))) {
       return;
@@ -3462,7 +3462,7 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     if (const auto *ND = getNamedDecl(TL->getTypePtr())) {
       auto Loc = ND->getBeginLoc();
       auto Path = dpct::DpctGlobalInfo::getLocInfo(Loc).first;
-      if (DpctGlobalInfo::isInRoot(Path, true))
+      if (DpctGlobalInfo::isInAnalysisScope(Path, true))
         return;
     }
 
@@ -3665,7 +3665,7 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
 
 void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
   // To skip user-defined type.
-  if (!ME || isTypeInRoot(ME->getBase()->getType().getTypePtr()))
+  if (!ME || isTypeInAnalysisScope(ME->getBase()->getType().getTypePtr()))
     return;
 
   auto BaseTy = ME->getBase()->getType().getAsString();
@@ -3734,7 +3734,7 @@ namespace clang {
 namespace ast_matchers {
 
 AST_MATCHER(FunctionDecl, overloadedVectorOperator) {
-  if (!DpctGlobalInfo::isInRoot(Node.getBeginLoc()))
+  if (!DpctGlobalInfo::isInAnalysisScope(Node.getBeginLoc()))
     return false;
 
   switch (Node.getOverloadedOperator()) {
@@ -4554,7 +4554,7 @@ void ManualMigrateEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string FilePath = DpctGlobalInfo::getSourceManager()
                                .getFilename(ECD->getBeginLoc())
                                .str();
-    if (DpctGlobalInfo::isInRoot(FilePath)) {
+    if (DpctGlobalInfo::isInAnalysisScope(FilePath)) {
       return;
     }
     report(dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
@@ -13343,7 +13343,7 @@ void RecognizeAPINameRule::processMemberFuncCall(const CXXMemberCallExpr *MC) {
   // 2. emit warning for unmigrated API
   QualType ObjType = MC->getObjectType().getCanonicalType();
   auto MD = MC->getMethodDecl();
-  if (isTypeInRoot(ObjType.getTypePtr()) || !MD) {
+  if (isTypeInAnalysisScope(ObjType.getTypePtr()) || !MD) {
     return;
   }
   std::string ObjNameSpace, ObjName;
@@ -16006,7 +16006,7 @@ void CubRule::processCubDeclStmt(const DeclStmt *DS) {
       auto ArrayOfDRE = DpctGlobalInfo::findAncestor<ArraySubscriptExpr>(DRE);
       auto ObjCanonicalType = ObjDecl->getType().getCanonicalType();
       std::string ObjTypeStr = ObjCanonicalType.getAsString();
-      if (isTypeInRoot(ObjCanonicalType.getTypePtr())) {
+      if (isTypeInAnalysisScope(ObjCanonicalType.getTypePtr())) {
         continue;
       } else if (ObjTypeStr.find("class cub::WarpScan") == 0 ||
                  ObjTypeStr.find("class cub::WarpReduce") == 0) {
@@ -16029,7 +16029,7 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
   auto CanonicalType = TD->getUnderlyingType().getCanonicalType();
   std::string CanonicalTypeStr = CanonicalType.getAsString();
   std::string TypeName = TD->getNameAsString();
-  if (isTypeInRoot(CanonicalType.getTypePtr()) ||
+  if (isTypeInAnalysisScope(CanonicalType.getTypePtr()) ||
       CanonicalTypeStr.find("class cub::") != 0) {
     return;
   }
@@ -16052,7 +16052,7 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
         auto VarType = AncestorVD->getType().getCanonicalType();
         std::string VarTypeStr =
             AncestorVD->getType().getCanonicalType().getAsString();
-        if (isTypeInRoot(VarType.getTypePtr()) ||
+        if (isTypeInAnalysisScope(VarType.getTypePtr()) ||
             !(VarTypeStr.find("TempStorage") != std::string::npos &&
               VarTypeStr.find("struct cub::") == 0)) {
           DeleteFlag = false;
@@ -16065,7 +16065,7 @@ void CubRule::processCubTypeDef(const TypedefDecl *TD) {
         if (MC) {
           auto ObjType = MC->getObjectType().getCanonicalType();
           std::string ObjTypeStr = ObjType.getAsString();
-          if (isTypeInRoot(ObjType.getTypePtr()) ||
+          if (isTypeInAnalysisScope(ObjType.getTypePtr()) ||
               !(ObjTypeStr.find("class cub::WarpScan") == 0 ||
                 ObjTypeStr.find("class cub::WarpReduce") == 0 ||
                 ObjTypeStr.find("class cub::BlockScan") == 0 ||
@@ -17072,7 +17072,7 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
   auto ObjType = MC->getObjectType().getCanonicalType();
   std::string ObjTypeStr = ObjType.getAsString();
 
-  if (isTypeInRoot(ObjType.getTypePtr())) {
+  if (isTypeInAnalysisScope(ObjType.getTypePtr())) {
     return;
   } else if (ObjTypeStr.find("class cub::WarpScan") == 0 ||
              ObjTypeStr.find("class cub::WarpReduce") == 0) {
@@ -17088,7 +17088,7 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
 
 void CubRule::processTypeLoc(const TypeLoc *TL) {
   auto TD = DpctGlobalInfo::findAncestor<TypedefDecl>(TL);
-  if (TD || isTypeInRoot(TL->getType().getCanonicalType().getTypePtr()))
+  if (TD || isTypeInAnalysisScope(TL->getType().getCanonicalType().getTypePtr()))
     return;
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
