@@ -1975,22 +1975,28 @@ engine_ext::lrn_backward(lrn_desc &desc, float alpha,
 void engine_ext::derive_batch_normalization_memory_desc(
     memory_desc_ext &desc, const memory_desc_ext &src_desc,
     batch_normalization_mode mode) {
-  /*
-if (src_desc.get_desc().data.ndims != 4 ||
-  src_desc.get_desc().data.ndims != 5) {
-throw std::runtime_error("only 4d and 5d memory descriptor supported.");
-}
-desc_ref = ::dnnl::memory::desc(src_desc.get_desc().data);
-desc_ref.data.dims[0] = 1;
-if (mode == batch_normalization_mode::spatial) {
-desc_ref.data.dims[2] = 1;
-desc_ref.data.dims[3] = 1;
-if (desc_ref.data.ndims == 5) {
-  desc_ref.data.dims[4] = 1;
-}
-}
-desc = dpct::dnnl::memory_desc_ext(desc_ref);
-*/
+  int src_ndims = src_desc.get_desc().data.ndims;
+  if (src_desc.get_desc().data.ndims != 4 ||
+      src_desc.get_desc().data.ndims != 5) {
+    throw std::runtime_error("only 4d and 5d memory descriptor supported.");
+  }
+  std::vector<int64_t> dims = src_desc.get_desc().dims();
+  dims[0] = 1;
+  if (mode == batch_normalization_mode::spatial) {
+    desc_ref.data.dims[2] = 1;
+    desc_ref.data.dims[3] = 1;
+    if (desc_ref.data.ndims == 5) {
+      desc_ref.data.dims[4] = 1;
+    }
+  }
+  auto &desc_ref = desc.get_desc();
+  if (src_ndims == 4) {
+    desc_ref = ::dnnl::memory::desc(dims, src_desc.get_desc().data_type(),
+                                    ::dnnl::memory::format_tag::nchw);
+  } else {
+    desc_ref = ::dnnl::memory::desc(dims, src_desc.get_desc().data_type(),
+                                    ::dnnl::memory::format_tag::ncdhw);
+  }
 }
 // DPCT_LABEL_END
 
@@ -2092,10 +2098,10 @@ sycl::event engine_ext::batch_normalization_forward_training(
     }
   }
   float unbias_factor = element_num / (element_num - 1.f);
-  sum((factor * unbias_factor, scale_bias_mean_var_desc, saved_mean,
-      (1.f - factor) * unbias_factor, scale_bias_mean_var_desc, running_mean);
+  sum(factor, scale_bias_mean_var_desc, saved_mean,
+      (1.f - factor), scale_bias_mean_var_desc, running_mean);
   return sum(factor * unbias_factor, scale_bias_mean_var_desc,
-             saved_var, (1.f - factor) * unbias_factor, scale_bias_mean_var_desc,
+             saved_var, (1.f - factor), scale_bias_mean_var_desc,
              running_var);
 }
 // DPCT_LABEL_END
@@ -2184,6 +2190,9 @@ sycl::event engine_ext::batch_normalization_forward_training_ex(
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
   ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
   ::dnnl::memory::desc help_addition_desc = addition_desc.get_desc();
+  ::dnnl::memory::desc help_scale_bias_mean_var_desc =
+      get_bn_scale_bias_desc(scale_bias_mean_var_desc.get_desc(), mode);
+
   if (mode == batch_normalization_mode::per_activation) {
     help_src_desc = compress_spatial_dimensions_to_channel(help_src_desc);
     help_dst_desc = compress_spatial_dimensions_to_channel(help_dst_desc);
@@ -2199,13 +2208,13 @@ sycl::event engine_ext::batch_normalization_forward_training_ex(
   std::unordered_map<int, ::dnnl::memory> execution_args = {
       {DNNL_ARG_SRC, {::dnnl::memory(help_src_desc, _eng, src)}},
       {DNNL_ARG_SCALE,
-       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, scale)}},
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, scale)}},
       {DNNL_ARG_SHIFT,
-       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, bias)}},
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, bias)}},
       {DNNL_ARG_MEAN,
-       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, saved_mean)}},
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, saved_mean)}},
       {DNNL_ARG_VARIANCE,
-       {::dnnl::memory(scale_bias_mean_var_desc.get_desc(), _eng, saved_var)}}};
+       {::dnnl::memory(help_scale_bias_mean_var_desc, _eng, saved_var)}}};
 
   if (ops != batch_normalization_ops::none) {
     if (reserve_space_size < help_dst_desc.get_size()) {
@@ -2224,10 +2233,20 @@ sycl::event engine_ext::batch_normalization_forward_training_ex(
     execute_primitive(primitive, execution_args,
                       {{alpha, beta, DNNL_ARG_DST, help_dst_desc, dst}});
   }
-  sum(1.f - factor, scale_bias_mean_var_desc, saved_mean, factor,
-      scale_bias_mean_var_desc, running_mean);
-  return sum(1.f - factor, scale_bias_mean_var_desc, saved_var, factor,
-             scale_bias_mean_var_desc, running_var);
+  auto src_ndim = src_desc.get_desc().data.ndims;
+  auto src_dims = src_desc.get_desc().dims();
+  int element_num = src_dims[0];
+  if(mode == batch_normalization_mode::spatial) {
+    for(int index = 2; index < src_ndim; index++) {
+      element_num *= src_dims[index];
+    }
+  }
+  float unbias_factor = element_num / (element_num - 1.f);
+  sum(factor, scale_bias_mean_var_desc, saved_mean,
+      (1.f - factor), scale_bias_mean_var_desc, running_mean);
+  return sum(factor * unbias_factor, scale_bias_mean_var_desc,
+             saved_var, (1.f - factor), scale_bias_mean_var_desc,
+             running_var);
 }
 // DPCT_LABEL_END
 
