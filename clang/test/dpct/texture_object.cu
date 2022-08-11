@@ -289,3 +289,46 @@ void foo(){
   tex_tmp.normalizedCoords = 1;
 }
 
+struct TexList {
+  cudaTextureObject_t tex1;  
+  cudaTextureObject_t tex2;
+  cudaTextureObject_t tex3;
+};
+
+// CHECK: void texlist_device(TexList list, dpct::image_accessor_ext<int, 1> list_tex1) {
+__device__ void texlist_device(TexList list) {
+  int a;
+  tex1Dfetch(&a, list.tex1, 1);
+}
+
+// CHECK: void texlist_kernel(TexList list, dpct::image_accessor_ext<int, 1> list_tex1,
+// CHECK-NEXT:                     dpct::image_accessor_ext<float, 2> list_tex2,
+// CHECK-NEXT:                    dpct::image_accessor_ext<float, 2> list_tex3) {
+__global__ void texlist_kernel(TexList list) {
+  float b;
+  texlist_device(list);
+  tex2D(&b, list.tex2, 0.5f, 0.5f);
+  tex2D(&b, list.tex3, 0.5f, 0.5f);
+}
+
+// CHECK: dpct::get_default_queue().submit(
+// CHECK-NEXT:     [&](sycl::handler &cgh) {
+// CHECK-NEXT:       auto list_tex1_acc = static_cast<dpct::image_wrapper<int, 1> *>(list.tex1)->get_access(cgh);
+// CHECK-NEXT:       auto list_tex2_acc = static_cast<dpct::image_wrapper<float, 2> *>(list.tex2)->get_access(cgh);
+// CHECK-NEXT:       auto list_tex3_acc = static_cast<dpct::image_wrapper<float, 2> *>(list.tex3)->get_access(cgh);
+// CHECK-EMPTY: 
+// CHECK-NEXT:       auto list_tex1_smpl = list.tex1->get_sampler();
+// CHECK-NEXT:       auto list_tex2_smpl = list.tex2->get_sampler();
+// CHECK-NEXT:       auto list_tex3_smpl = list.tex3->get_sampler();
+// CHECK-EMPTY: 
+// CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class texlist_kernel_{{[a-f0-9]+}}>>(
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:           texlist_kernel(list, dpct::image_accessor_ext<int, 1>(list_tex1_smpl, list_tex1_acc), dpct::image_accessor_ext<float, 2>(list_tex2_smpl, list_tex2_acc), dpct::image_accessor_ext<float, 2>(list_tex3_smpl, list_tex3_acc));
+// CHECK-NEXT:         });
+// CHECK-NEXT:     });
+
+void texlist(TexList list) {
+  texlist_kernel<<<1, 1>>>(list);
+}
+
