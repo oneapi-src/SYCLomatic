@@ -102,6 +102,9 @@ public:
   /// memory dimension.
   void set(memory_format_tag tag, dpct::library_data_t dt, int ndims,
            const int dims[]);
+  void set(::dnnl::memory desc) {
+    _desc = desc;
+  }
   /// Getting a ::dnnl::memory::desc from a memory_desc_ext.
   /// \returns The ::dnnl::memory::desc.
   const ::dnnl::memory::desc &get_desc() const { return _desc; }
@@ -1989,13 +1992,12 @@ void engine_ext::derive_batch_normalization_memory_desc(
       desc_ref.data.dims[4] = 1;
     }
   }
-  auto &desc_ref = desc.get_desc();
   if (src_ndims == 4) {
-    desc_ref = ::dnnl::memory::desc(dims, src_desc.get_desc().data_type(),
-                                    ::dnnl::memory::format_tag::nchw);
+    desc.set(::dnnl::memory::desc(dims, src_desc.get_desc().data_type(),
+                                    ::dnnl::memory::format_tag::nchw));
   } else {
-    desc_ref = ::dnnl::memory::desc(dims, src_desc.get_desc().data_type(),
-                                    ::dnnl::memory::format_tag::ncdhw);
+    desc.set(::dnnl::memory::desc(dims, src_desc.get_desc().data_type(),
+                                    ::dnnl::memory::format_tag::ncdhw));
   }
 }
 // DPCT_LABEL_END
