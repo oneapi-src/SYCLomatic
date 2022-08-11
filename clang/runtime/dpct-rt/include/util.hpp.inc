@@ -70,36 +70,6 @@ template <typename T> struct DataType<sycl::vec<T, 2>> {
 };
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|pointer_attributes|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_context
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-class pointer_attributes {
-public:
-  void init_attributes(void *ptr) {
-    memory_type = cl::sycl::get_pointer_type(ptr, dpct::get_default_context());
-    device_pointer = (cl::sycl::get_pointer_type(ptr,
-                      dpct::get_default_context()) !=
-                        sycl::usm::alloc::unknown) ? ptr : nullptr;
-    host_pointer = (cl::sycl::get_pointer_type(ptr,
-                    dpct::get_default_context()) !=
-                      sycl::usm::alloc::unknown) ? nullptr : ptr;
-    device = cl::sycl::get_pointer_device(ptr, dpct::get_default_context());
-  }
-
-  cl::sycl::usm::alloc memory_type;
-  void *device_pointer;
-  void *host_pointer;
-  cl::sycl::device device;
-
-};
-
-inline void get_pointer_attributes(pointer_attributes &attributes, void *ptr) {
-  attributes.init_attributes(ptr);
-}
-// DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|matrix_mem_copy|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|get_default_queue

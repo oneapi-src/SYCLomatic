@@ -553,6 +553,19 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaMemcpyDefault", std::make_shared<EnumNameRule>(
                                 getDpctNamespace() + "automatic",
                                 HelperFeatureEnum::Memory_memcpy_direction)},
+      // enum cudaMemory Type
+      {"cudaMemoryTypeHost",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() + "usm::alloc::host")},
+      {"cudaMemoryTypeDevice",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() + "usm::alloc::device")},
+      {"cudaMemoryTypeUnregistered",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() + "usm::alloc::unknown")},
+      {"cudaMemoryTypeManaged",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() + "usm::alloc::unknown")},
       // enum Texture Address Mode
       {"cudaAddressModeWrap",
        std::make_shared<EnumNameRule>(getClNamespace() +

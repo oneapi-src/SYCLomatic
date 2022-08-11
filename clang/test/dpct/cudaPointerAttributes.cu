@@ -40,5 +40,17 @@ int main() {
   // CHECK: std::cout << attributes2->memory_type << std::endl;
   std::cout << attributes2->device << std::endl;
   std::cout << attributes2->type << std::endl;
-
+  // CHECK: if (attributes2->memory_type == sycl::usm::alloc::host) {
+  // CHECK: } else if (attributes2->memory_type == sycl::usm::alloc::device) {
+  // CHECK: } else if (attributes2->memory_type == sycl::usm::alloc::unknown) {
+  // CHECK: } else if (attributes2->memory_type == sycl::usm::alloc::unknown) {
+  if (attributes2->type == cudaMemoryTypeHost) {
+    return -1;
+  } else if (attributes2->type == cudaMemoryTypeDevice) {
+    return -1;
+  } else if (attributes2->type == cudaMemoryTypeManaged) {
+    return -1;
+  } else if (attributes2->type == cudaMemoryTypeUnregistered) {
+    return -1;
+  }
 }

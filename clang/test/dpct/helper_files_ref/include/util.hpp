@@ -28,30 +28,6 @@ template <typename T> struct DataType<sycl::vec<T, 2>> {
   using T2 = std::complex<T>;
 };
 
-class pointer_attributes {
-public:
-  void init_attributes(void *ptr) {
-    memory_type = cl::sycl::get_pointer_type(ptr, dpct::get_default_context());
-    device_pointer = (cl::sycl::get_pointer_type(ptr,
-                      dpct::get_default_context()) !=
-                        sycl::usm::alloc::unknown) ? ptr : nullptr;
-    host_pointer = (cl::sycl::get_pointer_type(ptr,
-                    dpct::get_default_context()) !=
-                      sycl::usm::alloc::unknown) ? nullptr : ptr;
-    device = cl::sycl::get_pointer_device(ptr, dpct::get_default_context());
-  }
-
-  cl::sycl::usm::alloc memory_type;
-  void *device_pointer;
-  void *host_pointer;
-  cl::sycl::device device;
-
-};
-
-inline void get_pointer_attributes(pointer_attributes &attributes, void *ptr) {
-  attributes.init_attributes(ptr);
-}
-
 inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
                             int from_ld, int rows, int cols, int elem_size,
                             memcpy_direction direction = automatic,

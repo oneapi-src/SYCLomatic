@@ -4092,7 +4092,8 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
               hasType(enumDecl(hasAnyName(
                   "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
                   "cudaDeviceAttr", "libraryPropertyType_t", "cudaDataType_t",
-                  "cublasComputeType_t", "CUmem_advise_enum", "cufftType_t", "cufftType"))),
+                  "cublasComputeType_t", "CUmem_advise_enum", "cufftType_t",
+                  "cufftType", "cudaMemoryType"))),
               matchesName("CUDNN_.*")))))
           .bind("EnumConstant"),
       this);

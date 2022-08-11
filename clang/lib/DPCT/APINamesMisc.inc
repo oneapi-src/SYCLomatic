@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 ASSIGNABLE_FACTORY(
     FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::Util_pointer_attributes,
+        HelperFeatureEnum::Device_pointer_attributes,
         CALL_FACTORY_ENTRY(
                 "cudaPointerGetAttributes",
                 CALL(MapNames::getDpctNamespace() + "get_pointer_attributes", DEREF(0), ARG(1))
