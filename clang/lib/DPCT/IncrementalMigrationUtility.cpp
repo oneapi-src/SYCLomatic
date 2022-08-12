@@ -303,6 +303,9 @@ bool printOptions(
       for (const auto &Item : ValueVec)
         Opts.emplace_back("--rule-file=\"" + Item + "\"");
     }
+    if (Key == clang::dpct::OPTION_AnalysisScopePath && Specified) {
+      Opts.emplace_back("--analysis-scope-path=\"" + Value + "\"");
+    }
   }
 
   Msg = "";

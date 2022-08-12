@@ -74,7 +74,7 @@ using namespace clang;
 #ifdef SYCLomatic_CUSTOMIZATION
 namespace clang {
   inline void recordTokenSplit(SourceLocation, unsigned) {}
-  extern std::function<bool(SourceLocation)> IsInRootFunc;
+  extern std::function<bool(SourceLocation)> IsInAnalysisScopeFunc;
   extern std::function<unsigned int()> GetRunRound;
   std::function<void(SourceLocation, unsigned)> RecordTokenSplit = recordTokenSplit;
 }
@@ -855,7 +855,7 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
   }
 
 #ifdef SYCLomatic_CUSTOMIZATION
-  if (II.getName() == "__CUDA_ARCH__" && IsInRootFunc(Identifier.getLocation())) {
+  if (II.getName() == "__CUDA_ARCH__" && IsInAnalysisScopeFunc(Identifier.getLocation())) {
     // Make a MacroDefinition for __CUDA_ARCH__
     MacroInfo *MI = AllocateMacroInfo(SourceLocation());
     MI->setIsBuiltinMacro();
