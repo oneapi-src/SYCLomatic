@@ -4,5 +4,5 @@
 #include "test.h"
 #include <cuda.h>
 void test(const char* value) {
-    GOOGLE_DCHECK(value != NULL);
+    TEST_DCHECK(value != NULL);
 }
