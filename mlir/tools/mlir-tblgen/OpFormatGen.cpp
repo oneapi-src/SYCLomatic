@@ -153,18 +153,6 @@ private:
   FormatElement *inputs, *results;
 };
 
-/// This class represents the `ref` directive.
-class RefDirective : public DirectiveElementBase<DirectiveElement::Ref> {
-public:
-  RefDirective(FormatElement *arg) : arg(arg) {}
-
-  FormatElement *getArg() const { return arg; }
-
-private:
-  /// The argument that is used to format the directive.
-  FormatElement *arg;
-};
-
 /// This class represents the `type` directive.
 class TypeDirective : public DirectiveElementBase<DirectiveElement::Type> {
 public:
@@ -184,6 +172,74 @@ private:
   FormatElement *arg;
 
   bool shouldBeQualifiedFlag = false;
+};
+
+/// This class represents a group of order-independent optional clauses. Each
+/// clause starts with a literal element and has a coressponding parsing
+/// element. A parsing element is a continous sequence of format elements.
+/// Each clause can appear 0 or 1 time.
+class OIListElement : public DirectiveElementBase<DirectiveElement::OIList> {
+public:
+  OIListElement(std::vector<FormatElement *> &&literalElements,
+                std::vector<std::vector<FormatElement *>> &&parsingElements)
+      : literalElements(std::move(literalElements)),
+        parsingElements(std::move(parsingElements)) {}
+
+  /// Returns a range to iterate over the LiteralElements.
+  auto getLiteralElements() const {
+    // The use of std::function is unfortunate but necessary here. Lambda
+    // functions cannot be copied but std::function can be copied. This copy
+    // constructor is used in llvm::zip.
+    std::function<LiteralElement *(FormatElement * el)>
+        literalElementCastConverter =
+            [](FormatElement *el) { return cast<LiteralElement>(el); };
+    return llvm::map_range(literalElements, literalElementCastConverter);
+  }
+
+  /// Returns a range to iterate over the parsing elements corresponding to the
+  /// clauses.
+  ArrayRef<std::vector<FormatElement *>> getParsingElements() const {
+    return parsingElements;
+  }
+
+  /// Returns a range to iterate over tuples of parsing and literal elements.
+  auto getClauses() const {
+    return llvm::zip(getLiteralElements(), getParsingElements());
+  }
+
+  /// If the parsing element is a single UnitAttr element, then it returns the
+  /// attribute variable. Otherwise, returns nullptr.
+  AttributeVariable *
+  getUnitAttrParsingElement(ArrayRef<FormatElement *> pelement) {
+    if (pelement.size() == 1) {
+      auto attrElem = dyn_cast<AttributeVariable>(pelement[0]);
+      if (attrElem && attrElem->isUnitAttr())
+        return attrElem;
+    }
+    return nullptr;
+  }
+
+private:
+  /// A vector of `LiteralElement` objects. Each element stores the keyword
+  /// for one case of oilist element. For example, an oilist element along with
+  /// the `literalElements` vector:
+  /// ```
+  ///  oilist [ `keyword` `=` `(` $arg0 `)` | `otherKeyword` `<` $arg1 `>`]
+  ///  literalElements = { `keyword`, `otherKeyword` }
+  /// ```
+  std::vector<FormatElement *> literalElements;
+
+  /// A vector of valid declarative assembly format vectors. Each object in
+  /// parsing elements is a vector of elements in assembly format syntax.
+  /// For example, an oilist element along with the parsingElements vector:
+  /// ```
+  ///  oilist [ `keyword` `=` `(` $arg0 `)` | `otherKeyword` `<` $arg1 `>`]
+  ///  parsingElements = {
+  ///    { `=`, `(`, $arg0, `)` },
+  ///    { `<`, $arg1, `>` }
+  ///  }
+  /// ```
+  std::vector<std::vector<FormatElement *>> parsingElements;
 };
 } // namespace
 
@@ -245,8 +301,8 @@ struct OperationFormat {
   };
 
   OperationFormat(const Operator &op)
-      : allOperands(false), allOperandTypes(false), allResultTypes(false),
-        infersResultTypes(false) {
+
+  {
     operandTypes.resize(op.getNumOperands(), TypeResolution());
     resultTypes.resize(op.getNumResults(), TypeResolution());
 
@@ -290,10 +346,10 @@ struct OperationFormat {
 
   /// A flag indicating if all operand/result types were seen. If the format
   /// contains these, it can not contain individual type resolvers.
-  bool allOperands, allOperandTypes, allResultTypes;
+  bool allOperands = false, allOperandTypes = false, allResultTypes = false;
 
   /// A flag indicating if this operation infers its result types
-  bool infersResultTypes;
+  bool infersResultTypes = false;
 
   /// A flag indicating if this operation has the SingleBlockImplicitTerminator
   /// trait.
@@ -427,7 +483,7 @@ const char *const variadicOperandParserCode = R"(
 const char *const optionalOperandParserCode = R"(
   {
     {0}OperandsLoc = parser.getCurrentLocation();
-    ::mlir::OpAsmParser::OperandType operand;
+    ::mlir::OpAsmParser::UnresolvedOperand operand;
     ::mlir::OptionalParseResult parseResult =
                                     parser.parseOptionalOperand(operand);
     if (parseResult.hasValue()) {
@@ -630,6 +686,18 @@ const char *successorParserCode = R"(
     return ::mlir::failure();
 )";
 
+/// The code snippet used to generate a parser for OIList
+///
+/// {0}: literal keyword corresponding to a case for oilist
+const char *oilistParserCode = R"(
+  if ({0}Clause) {
+    return parser.emitError(parser.getNameLoc())
+          << "`{0}` clause can appear at most once in the expansion of the "
+             "oilist directive";
+  }
+  {0}Clause = true;
+)";
+
 namespace {
 /// The type of length for a given parse argument.
 enum class ArgumentLengthKind {
@@ -720,12 +788,19 @@ static void genElementParserStorage(FormatElement *element, const Operator &op,
     for (FormatElement *childElement : optional->getElseElements())
       genElementParserStorage(childElement, op, body);
 
+  } else if (auto *oilist = dyn_cast<OIListElement>(element)) {
+    for (ArrayRef<FormatElement *> pelement : oilist->getParsingElements()) {
+      if (!oilist->getUnitAttrParsingElement(pelement))
+        for (FormatElement *element : pelement)
+          genElementParserStorage(element, op, body);
+    }
+
   } else if (auto *custom = dyn_cast<CustomDirective>(element)) {
     for (FormatElement *paramElement : custom->getArguments())
       genElementParserStorage(paramElement, op, body);
 
   } else if (isa<OperandsDirective>(element)) {
-    body << "  ::mlir::SmallVector<::mlir::OpAsmParser::OperandType, 4> "
+    body << "  ::mlir::SmallVector<::mlir::OpAsmParser::UnresolvedOperand, 4> "
             "allOperands;\n";
 
   } else if (isa<RegionsDirective>(element)) {
@@ -743,17 +818,18 @@ static void genElementParserStorage(FormatElement *element, const Operator &op,
   } else if (auto *operand = dyn_cast<OperandVariable>(element)) {
     StringRef name = operand->getVar()->name;
     if (operand->getVar()->isVariableLength()) {
-      body << "  ::mlir::SmallVector<::mlir::OpAsmParser::OperandType, 4> "
-           << name << "Operands;\n";
+      body
+          << "  ::mlir::SmallVector<::mlir::OpAsmParser::UnresolvedOperand, 4> "
+          << name << "Operands;\n";
       if (operand->getVar()->isVariadicOfVariadic()) {
         body << "    llvm::SmallVector<int32_t> " << name
              << "OperandGroupSizes;\n";
       }
     } else {
-      body << "  ::mlir::OpAsmParser::OperandType " << name
+      body << "  ::mlir::OpAsmParser::UnresolvedOperand " << name
            << "RawOperands[1];\n"
-           << "  ::llvm::ArrayRef<::mlir::OpAsmParser::OperandType> " << name
-           << "Operands(" << name << "RawOperands);";
+           << "  ::llvm::ArrayRef<::mlir::OpAsmParser::UnresolvedOperand> "
+           << name << "Operands(" << name << "RawOperands);";
     }
     body << llvm::formatv("  ::llvm::SMLoc {0}OperandsLoc;\n"
                           "  (void){0}OperandsLoc;\n",
@@ -867,13 +943,13 @@ static void genCustomDirectiveParser(CustomDirective *dir, MethodBody &body) {
            << "OperandsLoc = parser.getCurrentLocation();\n";
       if (var->isOptional()) {
         body << llvm::formatv(
-            "    ::llvm::Optional<::mlir::OpAsmParser::OperandType> "
+            "    ::llvm::Optional<::mlir::OpAsmParser::UnresolvedOperand> "
             "{0}Operand;\n",
             var->name);
       } else if (var->isVariadicOfVariadic()) {
         body << llvm::formatv("    "
                               "::llvm::SmallVector<::llvm::SmallVector<::mlir::"
-                              "OpAsmParser::OperandType>> "
+                              "OpAsmParser::UnresolvedOperand>> "
                               "{0}OperandGroups;\n",
                               var->name);
       }
@@ -896,7 +972,7 @@ static void genCustomDirectiveParser(CustomDirective *dir, MethodBody &body) {
         body << llvm::formatv(
             "    {0} {1}Operand = {1}Operands.empty() ? {0}() : "
             "{1}Operands[0];\n",
-            "::llvm::Optional<::mlir::OpAsmParser::OperandType>",
+            "::llvm::Optional<::mlir::OpAsmParser::UnresolvedOperand>",
             operand->getVar()->name);
 
       } else if (auto *type = dyn_cast<TypeDirective>(input)) {
@@ -1103,6 +1179,36 @@ void OperationFormat::genElementParser(FormatElement *element, MethodBody &body,
       body << "  }";
     }
     body << "\n";
+
+    /// OIList Directive
+  } else if (OIListElement *oilist = dyn_cast<OIListElement>(element)) {
+    for (LiteralElement *le : oilist->getLiteralElements())
+      body << "  bool " << le->getSpelling() << "Clause = false;\n";
+
+    // Generate the parsing loop
+    body << "  while(true) {\n";
+    for (auto clause : oilist->getClauses()) {
+      LiteralElement *lelement = std::get<0>(clause);
+      ArrayRef<FormatElement *> pelement = std::get<1>(clause);
+      body << "if (succeeded(parser.parseOptional";
+      genLiteralParser(lelement->getSpelling(), body);
+      body << ")) {\n";
+      StringRef lelementName = lelement->getSpelling();
+      body << formatv(oilistParserCode, lelementName);
+      if (AttributeVariable *unitAttrElem =
+              oilist->getUnitAttrParsingElement(pelement)) {
+        body << "  result.addAttribute(\"" << unitAttrElem->getVar()->name
+             << "\", UnitAttr::get(parser.getContext()));\n";
+      } else {
+        for (FormatElement *el : pelement)
+          genElementParser(el, body, attrTypeCtx);
+      }
+      body << "    } else ";
+    }
+    body << " {\n";
+    body << "    break;\n";
+    body << "  }\n";
+    body << "}\n";
 
     /// Literals.
   } else if (LiteralElement *literal = dyn_cast<LiteralElement>(element)) {
@@ -1345,7 +1451,7 @@ void OperationFormat::genParserOperandTypeResolution(
     // llvm::concat does not allow the case of a single range, so guard it here.
     body << "  if (parser.resolveOperands(";
     if (op.getNumOperands() > 1) {
-      body << "::llvm::concat<const ::mlir::OpAsmParser::OperandType>(";
+      body << "::llvm::concat<const ::mlir::OpAsmParser::UnresolvedOperand>(";
       llvm::interleaveComma(op.getOperands(), body, [&](auto &operand) {
         body << operand.name << "Operands";
       });
@@ -1785,6 +1891,31 @@ static void genOptionalGroupPrinterAnchor(FormatElement *anchor,
       });
 }
 
+void collect(FormatElement *element,
+             SmallVectorImpl<VariableElement *> &variables) {
+  TypeSwitch<FormatElement *>(element)
+      .Case([&](VariableElement *var) { variables.emplace_back(var); })
+      .Case([&](CustomDirective *ele) {
+        for (FormatElement *arg : ele->getArguments())
+          collect(arg, variables);
+      })
+      .Case([&](OptionalElement *ele) {
+        for (FormatElement *arg : ele->getThenElements())
+          collect(arg, variables);
+        for (FormatElement *arg : ele->getElseElements())
+          collect(arg, variables);
+      })
+      .Case([&](FunctionalTypeDirective *funcType) {
+        collect(funcType->getInputs(), variables);
+        collect(funcType->getResults(), variables);
+      })
+      .Case([&](OIListElement *oilist) {
+        for (ArrayRef<FormatElement *> arg : oilist->getParsingElements())
+          for (FormatElement *arg_ : arg)
+            collect(arg_, variables);
+      });
+}
+
 void OperationFormat::genElementPrinter(FormatElement *element,
                                         MethodBody &body, Operator &op,
                                         bool &shouldEmitSpace,
@@ -1841,6 +1972,57 @@ void OperationFormat::genElementPrinter(FormatElement *element,
     }
 
     body << "\n";
+    return;
+  }
+
+  // Emit the OIList
+  if (auto *oilist = dyn_cast<OIListElement>(element)) {
+    genLiteralPrinter(" ", body, shouldEmitSpace, lastWasPunctuation);
+    for (auto clause : oilist->getClauses()) {
+      LiteralElement *lelement = std::get<0>(clause);
+      ArrayRef<FormatElement *> pelement = std::get<1>(clause);
+
+      SmallVector<VariableElement *> vars;
+      for (FormatElement *el : pelement)
+        collect(el, vars);
+      body << "  if (false";
+      for (VariableElement *var : vars) {
+        TypeSwitch<FormatElement *>(var)
+            .Case([&](AttributeVariable *attrEle) {
+              body << " || " << op.getGetterName(attrEle->getVar()->name)
+                   << "Attr()";
+            })
+            .Case([&](OperandVariable *ele) {
+              if (ele->getVar()->isVariadic()) {
+                body << " || " << op.getGetterName(ele->getVar()->name)
+                     << "().size()";
+              } else {
+                body << " || " << op.getGetterName(ele->getVar()->name) << "()";
+              }
+            })
+            .Case([&](ResultVariable *ele) {
+              if (ele->getVar()->isVariadic()) {
+                body << " || " << op.getGetterName(ele->getVar()->name)
+                     << "().size()";
+              } else {
+                body << " || " << op.getGetterName(ele->getVar()->name) << "()";
+              }
+            })
+            .Case([&](RegionVariable *reg) {
+              body << " || " << op.getGetterName(reg->getVar()->name) << "()";
+            });
+      }
+
+      body << ") {\n";
+      genLiteralPrinter(lelement->getSpelling(), body, shouldEmitSpace,
+                        lastWasPunctuation);
+      if (oilist->getUnitAttrParsingElement(pelement) == nullptr) {
+        for (FormatElement *element : pelement)
+          genElementPrinter(element, body, op, shouldEmitSpace,
+                            lastWasPunctuation);
+      }
+      body << "  }\n";
+    }
     return;
   }
 
@@ -2061,6 +2243,9 @@ private:
   /// Verify the state of operation successors within the format.
   LogicalResult verifySuccessors(SMLoc loc);
 
+  LogicalResult verifyOIListElements(SMLoc loc,
+                                     ArrayRef<FormatElement *> elements);
+
   /// Given the values of an `AllTypesMatch` trait, check for inferable type
   /// resolution.
   void handleAllTypesMatchConstraint(
@@ -2087,6 +2272,8 @@ private:
                                                     bool withKeyword);
   FailureOr<FormatElement *> parseFunctionalTypeDirective(SMLoc loc,
                                                           Context context);
+  FailureOr<FormatElement *> parseOIListDirective(SMLoc loc, Context context);
+  LogicalResult verifyOIListParsingElement(FormatElement *element, SMLoc loc);
   FailureOr<FormatElement *> parseOperandsDirective(SMLoc loc, Context context);
   FailureOr<FormatElement *> parseQualifiedDirective(SMLoc loc,
                                                      Context context);
@@ -2157,7 +2344,8 @@ LogicalResult OpFormatParser::verify(SMLoc loc,
   if (failed(verifyAttributes(loc, elements)) ||
       failed(verifyResults(loc, variableTyResolver)) ||
       failed(verifyOperands(loc, variableTyResolver)) ||
-      failed(verifyRegions(loc)) || failed(verifySuccessors(loc)))
+      failed(verifyRegions(loc)) || failed(verifySuccessors(loc)) ||
+      failed(verifyOIListElements(loc, elements)))
     return failure();
 
   // Collect the set of used attributes in the format.
@@ -2377,6 +2565,43 @@ LogicalResult OpFormatParser::verifySuccessors(SMLoc loc) {
   return success();
 }
 
+LogicalResult
+OpFormatParser::verifyOIListElements(SMLoc loc,
+                                     ArrayRef<FormatElement *> elements) {
+  // Check that all of the successors are within the format.
+  SmallVector<StringRef> prohibitedLiterals;
+  for (FormatElement *it : elements) {
+    if (auto *oilist = dyn_cast<OIListElement>(it)) {
+      if (!prohibitedLiterals.empty()) {
+        // We just saw an oilist element in last iteration. Literals should not
+        // match.
+        for (LiteralElement *literal : oilist->getLiteralElements()) {
+          if (find(prohibitedLiterals, literal->getSpelling()) !=
+              prohibitedLiterals.end()) {
+            return emitError(
+                loc, "format ambiguity because " + literal->getSpelling() +
+                         " is used in two adjacent oilist elements.");
+          }
+        }
+      }
+      for (LiteralElement *literal : oilist->getLiteralElements())
+        prohibitedLiterals.push_back(literal->getSpelling());
+    } else if (auto *literal = dyn_cast<LiteralElement>(it)) {
+      if (find(prohibitedLiterals, literal->getSpelling()) !=
+          prohibitedLiterals.end()) {
+        return emitError(
+            loc,
+            "format ambiguity because " + literal->getSpelling() +
+                " is used both in oilist element and the adjacent literal.");
+      }
+      prohibitedLiterals.clear();
+    } else {
+      prohibitedLiterals.clear();
+    }
+  }
+  return success();
+}
+
 void OpFormatParser::handleAllTypesMatchConstraint(
     ArrayRef<StringRef> values,
     llvm::StringMap<TypeResolutionInstance> &variableTyResolver) {
@@ -2532,6 +2757,8 @@ OpFormatParser::parseDirectiveImpl(SMLoc loc, FormatToken::Kind kind,
     return parseReferenceDirective(loc, ctx);
   case FormatToken::kw_type:
     return parseTypeDirective(loc, ctx);
+  case FormatToken::kw_oilist:
+    return parseOIListDirective(loc, ctx);
 
   default:
     return emitError(loc, "unsupported directive kind");
@@ -2673,6 +2900,85 @@ OpFormatParser::parseSuccessorsDirective(SMLoc loc, Context context) {
     hasAllSuccessors = true;
   }
   return create<SuccessorsDirective>();
+}
+
+FailureOr<FormatElement *>
+OpFormatParser::parseOIListDirective(SMLoc loc, Context context) {
+  if (failed(parseToken(FormatToken::l_paren,
+                        "expected '(' before oilist argument list")))
+    return failure();
+  std::vector<FormatElement *> literalElements;
+  std::vector<std::vector<FormatElement *>> parsingElements;
+  do {
+    FailureOr<FormatElement *> lelement = parseLiteral(context);
+    if (failed(lelement))
+      return failure();
+    literalElements.push_back(*lelement);
+    parsingElements.emplace_back();
+    std::vector<FormatElement *> &currParsingElements = parsingElements.back();
+    while (peekToken().getKind() != FormatToken::pipe &&
+           peekToken().getKind() != FormatToken::r_paren) {
+      FailureOr<FormatElement *> pelement = parseElement(context);
+      if (failed(pelement) ||
+          failed(verifyOIListParsingElement(*pelement, loc)))
+        return failure();
+      currParsingElements.push_back(*pelement);
+    }
+    if (peekToken().getKind() == FormatToken::pipe) {
+      consumeToken();
+      continue;
+    }
+    if (peekToken().getKind() == FormatToken::r_paren) {
+      consumeToken();
+      break;
+    }
+  } while (true);
+
+  return create<OIListElement>(std::move(literalElements),
+                               std::move(parsingElements));
+}
+
+LogicalResult OpFormatParser::verifyOIListParsingElement(FormatElement *element,
+                                                         SMLoc loc) {
+  SmallVector<VariableElement *> vars;
+  collect(element, vars);
+  for (VariableElement *elem : vars) {
+    LogicalResult res =
+        TypeSwitch<FormatElement *, LogicalResult>(elem)
+            // Only optional attributes can be within an oilist parsing group.
+            .Case([&](AttributeVariable *attrEle) {
+              if (!attrEle->getVar()->attr.isOptional() &&
+                  !attrEle->getVar()->attr.hasDefaultValue())
+                return emitError(loc, "only optional attributes can be used in "
+                                      "an oilist parsing group");
+              return success();
+            })
+            // Only optional-like(i.e. variadic) operands can be within an
+            // oilist parsing group.
+            .Case([&](OperandVariable *ele) {
+              if (!ele->getVar()->isVariableLength())
+                return emitError(loc, "only variable length operands can be "
+                                      "used within an oilist parsing group");
+              return success();
+            })
+            // Only optional-like(i.e. variadic) results can be within an oilist
+            // parsing group.
+            .Case([&](ResultVariable *ele) {
+              if (!ele->getVar()->isVariableLength())
+                return emitError(loc, "only variable length results can be "
+                                      "used within an oilist parsing group");
+              return success();
+            })
+            .Case([&](RegionVariable *) { return success(); })
+            .Default([&](FormatElement *) {
+              return emitError(loc,
+                               "only literals, types, and variables can be "
+                               "used within an oilist group");
+            });
+    if (failed(res))
+      return failure();
+  }
+  return success();
 }
 
 FailureOr<FormatElement *> OpFormatParser::parseTypeDirective(SMLoc loc,

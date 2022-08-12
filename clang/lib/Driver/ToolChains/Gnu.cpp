@@ -2814,6 +2814,9 @@ bool Generic_GCC::IsIntegratedAssemblerDefault() const {
   case llvm::Triple::ppc64le:
   case llvm::Triple::riscv32:
   case llvm::Triple::riscv64:
+  case llvm::Triple::sparc:
+  case llvm::Triple::sparcel:
+  case llvm::Triple::sparcv9:
   case llvm::Triple::systemz:
   case llvm::Triple::mips:
   case llvm::Triple::mipsel:
@@ -2822,13 +2825,6 @@ bool Generic_GCC::IsIntegratedAssemblerDefault() const {
   case llvm::Triple::msp430:
   case llvm::Triple::m68k:
     return true;
-  case llvm::Triple::sparc:
-  case llvm::Triple::sparcel:
-  case llvm::Triple::sparcv9:
-    if (getTriple().isOSFreeBSD() || getTriple().isOSOpenBSD() ||
-        getTriple().isOSSolaris())
-      return true;
-    return false;
   default:
     return false;
   }
@@ -2870,6 +2866,11 @@ void Generic_GCC::AddMultilibPaths(const Driver &D,
     addPathIfExists(
         D, GCCInstallation.getInstallPath() + SelectedMultilib.gccSuffix(),
         Paths);
+
+    // Add lib/gcc/$triple/$libdir
+    // For GCC built with --enable-version-specific-runtime-libs.
+    addPathIfExists(D, GCCInstallation.getInstallPath() + "/../" + OSLibDir,
+                    Paths);
 
     // GCC cross compiling toolchains will install target libraries which ship
     // as part of the toolchain under <prefix>/<triple>/<libdir> rather than as
@@ -3047,6 +3048,15 @@ bool Generic_GCC::addGCCLibStdCxxIncludePaths(
   if (addLibStdCXXIncludePaths(
           LibDir.str() + "/../" + TripleStr + "/include/c++/" + Version.Text,
           TripleStr, Multilib.includeSuffix(), DriverArgs, CC1Args))
+    return true;
+
+  // Try /gcc/$triple/$version/include/c++/ (gcc --print-multiarch is not
+  // empty). Like above but for GCC built with
+  // --enable-version-specific-runtime-libs.
+  if (addLibStdCXXIncludePaths(LibDir.str() + "/gcc/" + TripleStr + "/" +
+                                   Version.Text + "/include/c++/",
+                               TripleStr, Multilib.includeSuffix(), DriverArgs,
+                               CC1Args))
     return true;
 
   // Detect Debian g++-multiarch-incdir.diff.

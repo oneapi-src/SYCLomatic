@@ -20,34 +20,33 @@
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
-#if !defined(_LIBCPP_HAS_NO_CONCEPTS) && !defined(_LIBCPP_HAS_NO_INCOMPLETE_RANGES)
+#if _LIBCPP_STD_VER > 17 && !defined(_LIBCPP_HAS_NO_INCOMPLETE_RANGES)
 
 namespace ranges {
 
-template<class _InputIterator, class _OutputIterator>
+template<class _I1, class _O1>
 struct in_out_result {
-  _LIBCPP_NO_UNIQUE_ADDRESS _InputIterator in;
-  _LIBCPP_NO_UNIQUE_ADDRESS _OutputIterator out;
+  _LIBCPP_NO_UNIQUE_ADDRESS _I1 in;
+  _LIBCPP_NO_UNIQUE_ADDRESS _O1 out;
 
-  template <class _InputIterator2, class _OutputIterator2>
-    requires convertible_to<const _InputIterator&, _InputIterator2> && convertible_to<const _OutputIterator&,
-                           _OutputIterator2>
+  template <class _I2, class _O2>
+    requires convertible_to<const _I1&, _I2> && convertible_to<const _O1&, _O2>
   _LIBCPP_HIDE_FROM_ABI
-  constexpr operator in_out_result<_InputIterator2, _OutputIterator2>() const & {
+  constexpr operator in_out_result<_I2, _O2>() const & {
     return {in, out};
   }
 
-  template <class _InputIterator2, class _OutputIterator2>
-    requires convertible_to<_InputIterator, _InputIterator2> && convertible_to<_OutputIterator, _OutputIterator2>
+  template <class _I2, class _O2>
+    requires convertible_to<_I1, _I2> && convertible_to<_O1, _O2>
   _LIBCPP_HIDE_FROM_ABI
-  constexpr operator in_out_result<_InputIterator2, _OutputIterator2>() && {
-    return {_VSTD::move(in), _VSTD::move(out)};
+  constexpr operator in_out_result<_I2, _O2>() && {
+    return {std::move(in), std::move(out)};
   }
 };
 
 } // namespace ranges
 
-#endif // !defined(_LIBCPP_HAS_NO_CONCEPTS) && !defined(_LIBCPP_HAS_NO_INCOMPLETE_RANGES)
+#endif // _LIBCPP_STD_VER > 17 && !defined(_LIBCPP_HAS_NO_INCOMPLETE_RANGES)
 
 _LIBCPP_END_NAMESPACE_STD
 

@@ -10,13 +10,13 @@
 
 #include "mlir/Analysis/SliceAnalysis.h"
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/Linalg/Passes.h"
 #include "mlir/Dialect/Linalg/Transforms/Transforms.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/SCF/SCF.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/Dialect/Vector/Transforms/VectorTransforms.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Pass/PassManager.h"
@@ -86,7 +86,7 @@ private:
                                      dstVec.getShape().end());
     }
     if (auto writeOp = dyn_cast<vector::TransferWriteOp>(op)) {
-      auto insert = writeOp.vector().getDefiningOp<InsertStridedSliceOp>();
+      auto insert = writeOp.getVector().getDefiningOp<InsertStridedSliceOp>();
       if (!insert)
         return llvm::None;
       ArrayRef<int64_t> shape = insert.getSourceVectorType().getShape();
@@ -239,7 +239,7 @@ struct TestVectorTransposeLowering
                   .lower8x8xf32()));
     }
 
-    OpPassManager dynamicPM("builtin.func");
+    OpPassManager dynamicPM("func.func");
     dynamicPM.addPass(createLinalgStrategyLowerVectorsPass(options));
     if (failed(runPipeline(dynamicPM, getOperation())))
       return signalPassFailure();
@@ -265,7 +265,14 @@ struct TestVectorUnrollingPatterns
         patterns, UnrollVectorOptions()
                       .setNativeShape(ArrayRef<int64_t>{2, 2})
                       .setFilterConstraint([](Operation *op) {
-                        return success(isa<arith::AddFOp, vector::FMAOp>(op));
+                        return success(isa<arith::AddFOp, vector::FMAOp,
+                                           vector::MultiDimReductionOp>(op));
+                      }));
+    populateVectorUnrollPatterns(
+        patterns, UnrollVectorOptions()
+                      .setNativeShape(ArrayRef<int64_t>{2})
+                      .setFilterConstraint([](Operation *op) {
+                        return success(isa<vector::ReductionOp>(op));
                       }));
 
     if (unrollBasedOnType) {
@@ -323,7 +330,7 @@ struct TestVectorDistributePatterns
     registry.insert<AffineDialect>();
   }
   ListOption<int32_t> multiplicity{
-      *this, "distribution-multiplicity", llvm::cl::MiscFlags::CommaSeparated,
+      *this, "distribution-multiplicity",
       llvm::cl::desc("Set the multiplicity used for distributing vector")};
 
   void runOnOperation() override {
@@ -391,7 +398,7 @@ struct TestVectorToLoopPatterns
           type.getNumElements() % multiplicity != 0)
         return mlir::WalkResult::advance();
       auto filterAlloc = [](Operation *op) {
-        return !isa<arith::ConstantOp, memref::AllocOp, CallOp>(op);
+        return !isa<arith::ConstantOp, memref::AllocOp, func::CallOp>(op);
       };
       auto dependentOps = getSlice(op, filterAlloc);
       // Create a loop and move instructions from the Op slice into the loop.

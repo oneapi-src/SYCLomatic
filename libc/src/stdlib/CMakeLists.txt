@@ -46,7 +46,6 @@ add_entrypoint_object(
     getenv.h
   DEPENDS
     libc.config.linux.app_h
-    libc.src.string.strncmp
 )
 
 add_entrypoint_object(
@@ -236,6 +235,11 @@ if(LLVM_LIBC_INCLUDE_SCUDO)
       ${SCUDO_DEPS}
   )
   add_entrypoint_external(
+    aligned_alloc
+    DEPENDS
+      ${SCUDO_DEPS}
+  )
+  add_entrypoint_external(
     free
     DEPENDS
       ${SCUDO_DEPS}
@@ -249,6 +253,9 @@ else()
   )
   add_entrypoint_external(
     realloc
+  )
+  add_entrypoint_external(
+    aligned_alloc
   )
   add_entrypoint_external(
     free
@@ -268,6 +275,30 @@ add_entrypoint_object(
   ALIAS
   DEPENDS
     .${LIBC_TARGET_OS}._Exit
+)
+
+add_entrypoint_object(
+  atexit
+  SRCS
+    atexit.cpp
+  HDRS
+    atexit.h
+  CXX_STANDARD
+    20 # For constinit of the atexit callback list.
+  DEPENDS
+    libc.src.__support.CPP.blockstore
+    libc.src.__support.threads.mutex
+)
+
+add_entrypoint_object(
+  exit
+  SRCS
+    exit.cpp
+  HDRS
+    exit.h
+  DEPENDS
+    ._Exit
+    .atexit
 )
 
 # add_entrypoint_object(

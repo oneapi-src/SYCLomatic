@@ -1,9 +1,4 @@
-// RUN:   mlir-opt %s -test-math-polynomial-approximation                      \
-// RUN:               -convert-arith-to-llvm                                   \
-// RUN:               -convert-vector-to-llvm                                  \
-// RUN:               -convert-math-to-llvm                                    \
-// RUN:               -convert-std-to-llvm                                     \
-// RUN:               -reconcile-unrealized-casts                              \
+// RUN:   mlir-opt %s -pass-pipeline="func.func(test-math-polynomial-approximation,convert-arith-to-llvm),convert-vector-to-llvm,func.func(convert-math-to-llvm),convert-func-to-llvm,reconcile-unrealized-casts" \
 // RUN: | mlir-cpu-runner                                                      \
 // RUN:     -e main -entry-point-result=void -O0                               \
 // RUN:     -shared-libs=%linalg_test_lib_dir/libmlir_c_runner_utils%shlibext  \
@@ -28,6 +23,11 @@ func @tanh() {
   %4 = arith.constant dense<[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]> : vector<8xf32>
   %5 = math.tanh %4 : vector<8xf32>
   vector.print %5 : vector<8xf32>
+
+  // CHECK-NEXT: nan
+  %nan = arith.constant 0x7fc00000 : f32
+  %6 = math.tanh %nan : f32
+  vector.print %6 : f32
 
   return
 }
