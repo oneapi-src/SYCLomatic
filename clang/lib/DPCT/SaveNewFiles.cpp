@@ -113,7 +113,7 @@ static bool formatFile(StringRef FileName,
 // TODO: it's global variable, refine in future
 std::map<std::string, bool> IncludeFileMap;
 
-void rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
+bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
                 const StringRef OutRoot) {
   assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
   assert(isCanonical(FilePath) && "FilePath must be a canonical path.");
@@ -154,12 +154,22 @@ void rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
 #error Only support windows and Linux.
 #endif
 
+  if (!isChildPath(LocalInRoot, LocalFilePath, false)) {
+    // Skip rewriting file path if LocalFilePath is not child of LocalInRoot
+    // E.g,
+    //  LocalFilePath : /path/to/inc/util.cuh
+    //    LocalInRoot : /path/to/inroot
+    //   LocalOutRoot : /path/to/outroot
+    //  AnalysisScope : /path/to
+    return false;
+  }
   auto PathDiff =
       std::mismatch(path::begin(LocalFilePath), path::end(LocalFilePath),
                     path::begin(LocalInRoot));
   SmallString<512> NewFilePath = StringRef(LocalOutRoot);
   path::append(NewFilePath, PathDiff.first, path::end(LocalFilePath));
   FilePath = NewFilePath;
+  return true;
 }
 
 void rewriteFileName(SmallString<512> &FileName) {
@@ -188,7 +198,9 @@ void processallOptionAction(StringRef InRoot, StringRef OutRoot) {
 
     std::ifstream In(File);
     SmallString<512> OutputFile = llvm::StringRef(File);
-    rewriteDir(OutputFile, InRoot, OutRoot);
+    if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
+      continue;
+    }
     auto Parent = path::parent_path(OutputFile);
     std::error_code EC;
     EC = fs::create_directories(Parent);
@@ -247,7 +259,9 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
 
     if (Iter->type() == fs::file_type::regular_file) {
       SmallString<512> OutputFile = llvm::StringRef(FilePath);
-      rewriteDir(OutputFile, InRoot, OutRoot);
+      if (!rewriteDir(OutputFile, InRoot, OutRoot)) {
+        continue;
+      }
       if (IncludeFileMap.find(FilePath) != IncludeFileMap.end()) {
         // Skip the files processed by the first loop of
         // calling proccessFiles() in Tooling.cpp::ClangTool::run().
@@ -269,7 +283,9 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
     } else if (Iter->type() == fs::file_type::directory_file) {
       const auto Path = Iter->path();
       SmallString<512> OutDirectory = llvm::StringRef(Path);
-      rewriteDir(OutDirectory, InRoot, OutRoot);
+      if (!rewriteDir(OutDirectory, InRoot, OutRoot)) {
+        continue;
+      }
 
       if (fs::exists(OutDirectory))
         continue;
@@ -422,10 +438,10 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
       // This operation won't fail; it already succeeded once during argument
       // validation.
       makeCanonical(OutPath);
-      // inhibit generating migrated files outside --in-root
-      if(!DpctGlobalInfo::isInRoot(OutPath.c_str())) continue;
       rewriteFileName(OutPath);
-      rewriteDir(OutPath, InRoot, OutRoot);
+      if (!rewriteDir(OutPath, InRoot, OutRoot)) {
+        continue;
+      }
 
       std::error_code EC;
       EC = fs::create_directories(path::parent_path(OutPath));
@@ -620,7 +636,9 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
         path::replace_extension(FilePath, "dp.cpp");
       }
 
-      rewriteDir(FilePath, InRoot, OutRoot);
+      if (!rewriteDir(FilePath, InRoot, OutRoot)) {
+        continue;
+      }
       if (fs::exists(FilePath)) {
         // A header file with this name already exists.
         llvm::errs() << "File '" << FilePath
@@ -688,8 +706,10 @@ void loadYAMLIntoFileInfo(std::string Path) {
 
   std::string OriginPath = SourceFilePath.str().str();
   rewriteFileName(SourceFilePath);
-  rewriteDir(SourceFilePath, DpctGlobalInfo::getInRoot(),
-             DpctGlobalInfo::getOutRoot());
+  if (!rewriteDir(SourceFilePath, DpctGlobalInfo::getInRoot(),
+                  DpctGlobalInfo::getOutRoot())) {
+    return;
+  }
 
   std::string YamlFilePath = SourceFilePath.str().str() + ".yaml";
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
