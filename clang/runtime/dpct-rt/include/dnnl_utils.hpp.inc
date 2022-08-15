@@ -493,13 +493,16 @@ public:
   void set(int padding_h, int padding_w, int stride_h, int stride_w,
            int dilate_h, int dilate_w) {
     _strides = {stride_h, stride_w};
-    _dilates = {dilate_h, dilate_w};
+    _dilates = {dilate_h - 1, dilate_w - 1};
     _paddings = {padding_h, padding_w};
   }
   void set(int ndims, int paddings[], int strides[], int dilates[]) {
     _strides = std::vector<int64_t>(strides, strides + ndims);
     _paddings = std::vector<int64_t>(paddings, paddings + ndims);
     _dilates = std::vector<int64_t>(dilates, dilates + ndims);
+    for(auto &dilate : _dilates) {
+      dilate--;
+    }
   }
   void get(int *padding_h, int *padding_w, int *stride_h, int *stride_w,
            int *dilate_h, int *dilate_w) const {
