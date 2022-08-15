@@ -1036,7 +1036,7 @@ void IncludesCallbacks::InclusionDirective(
 
   // Extra process thrust headers, map to PSTL mapping headers in runtime.
   // For multi thrust header files, only insert once for PSTL mapping header.
-  if (IsAngled && (FileName.find("thrust/") != std::string::npos)) {
+  if (FileName.find("thrust/") != std::string::npos) {
     DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DplUtils);
     requestFeature(HelperFeatureEnum::DplUtils_non_local_include_dependency,
                    HashLoc);
