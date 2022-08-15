@@ -36,7 +36,7 @@ __constant__ unsigned int const_data[3] = {1, 2, 3};
 //CHECK-NEXT: }
 //CHECK-NEXT: queue.submit(
 //CHECK-NEXT:  [&](sycl::handler &cgh) {
-//CHECK-NEXT:    const_data.init(*queue);
+//CHECK-NEXT:    const_data.init(queue);
 //CHECK:    auto const_data_ptr_ct1 = const_data.get_ptr();
 //CHECK:    sycl::accessor<uint8_t, 1, sycl::access_mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(localMemSize), cgh);
 //CHECK:    cgh.parallel_for(

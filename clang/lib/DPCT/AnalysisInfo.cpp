@@ -798,8 +798,8 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
                        ? HelperFeatureEnum::Memory_device_memory_init
                        : HelperFeatureEnum::Memory_device_memory_init_q,
                    getFilePath());
-    SubmitStmtsList.InitList.emplace_back(
-        VI->getInitStmt(isDefaultStream() ? "" : ExecutionConfig.Stream));
+    SubmitStmtsList.InitList.emplace_back(VI->getInitStmt(
+        isDefaultStream() ? "" : ExecutionConfig.Stream, isQueuePtr()));
     if (VI->isLocal()) {
       SubmitStmtsList.MemoryList.emplace_back(
           VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
