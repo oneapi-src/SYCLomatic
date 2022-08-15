@@ -2397,26 +2397,38 @@ sycl::event engine_ext::convolution_forward_ex(
     const memory_desc_ext &bias_desc, void *bias,
     const memory_desc_ext &dst_desc, void *dst) {
 
-  ::dnnl::primitive_attr attr;
-  if (alpha_0 != 1.f) {
-    attr.set_scales(DNNL_ARG_SRC, 0, {alpha_0});
-  }
-
-  auto primitive = create_forward_primitive<true, ::dnnl::convolution_forward>(
-      attr, ::dnnl::prop_kind::forward_training,
-      ::dnnl::algorithm::convolution_auto, src_desc.get_desc(),
+  ::dnnl::memory::desc help_bias_desc = {
+      {memory_desc_ext::get_element_num(bias_desc)},
+      bias_desc.get_desc().data_type(),
+      ::dnnl::memory::format_tag::a};
+  auto primitive = create_forward_primitive<::dnnl::convolution_forward>(
+      ::dnnl::prop_kind::forward_training,
+      alg, src_desc.get_desc(),
       weight_desc.get_desc(), bias_desc.get_desc(), dst_desc.get_desc(),
       desc.get_stride(), desc.get_dilate(), desc.get_padding(),
       desc.get_padding());
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
       {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}},
-      {DNNL_ARG_WEIGHTS,
-       {::dnnl::memory(weight_desc.get_desc(), _eng, weight)}},
-      {DNNL_ARG_BIAS, {::dnnl::memory(bias_desc.get_desc(), _eng, bias)}}};
+      {DNNL_ARG_BIAS, {::dnnl::memory(help_bias_desc, _eng, bias)}}};
+  
+  void *cache = nullptr;
+  if(alpha_0 != 1.f) {
+    cache = allocate(weight_desc);
+    //_q->memcpy(cache, weight, weight_desc.get_size());
+    reorder(alpha_0, weight_desc, weight, 0.f, weight_desc, cache);
+    execution_args.insert({DNNL_ARG_WEIGHTS,
+       {::dnnl::memory(weight_desc.get_desc(), _eng, cache)}});
+  } else {
+    execution_args.insert({DNNL_ARG_WEIGHTS,
+       {::dnnl::memory(weight_desc.get_desc(), _eng, weight)}});
+  }
 
-  execute_primitive(primitive, execution_args,
+  auto e = execute_primitive(primitive, execution_args,
                     {{alpha_0, 0.f, DNNL_ARG_DST, dst_desc, dst}});
+  if(cache != nullptr) {
+    async_dpct_free({cache}, {e}, *_q);
+  }
   sum(alpha_1, addition_desc, addition, 1.f, dst_desc, dst);
   return activation_forward(adesc, 1.f, dst_desc, dst, 0.f, dst_desc, dst);
 }
