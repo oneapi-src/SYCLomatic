@@ -1303,6 +1303,13 @@ makeCallArgCreator(std::string Str) {
   return [=](const CallExpr *C) -> const StringRef { return StringRef(Str); };
 }
 
+std::function<ThrustFunctor(const CallExpr *)>
+makeFunctorArgCreator(unsigned Idx) {
+  return [=](const CallExpr *C) -> ThrustFunctor {
+    return ThrustFunctor(C->getArg(Idx));
+  };
+}
+
 std::function<bool(const CallExpr *)> makeBooleanCreator(bool B) {
   return [=](const CallExpr *C) -> bool { return B; };
 }
@@ -1402,14 +1409,45 @@ std::function<std::string(const CallExpr *)>
 makeMappedThrustPolicyEnum(unsigned Idx) {
   return [=](const CallExpr *C) -> std::string {
     auto E = C->getArg(Idx);
-    if (auto ICE = dyn_cast<ImplicitCastExpr>(E)) {
-      if (auto DRE = dyn_cast<DeclRefExpr>(ICE->getSubExpr())) {
-        std::string EnumName = DRE->getNameInfo().getName().getAsString();
-        if (EnumName == "device") {
-          return "oneapi::dpl::execution::make_device_policy(" +
-                 makeQueueStr()(C) + ")";
-        } else if (EnumName == "seq") {
-          return "oneapi::dpl::execution::seq";
+    E = E->IgnoreImpCasts();
+    E->dump();
+    if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
+      std::string EnumName = DRE->getNameInfo().getName().getAsString();
+      if (EnumName == "device") {
+        return "oneapi::dpl::execution::make_device_policy(" +
+               makeQueueStr()(C) + ")";
+      } else if (EnumName == "seq" || EnumName == "host") {
+        return "oneapi::dpl::execution::seq";
+      } else {
+        return DRE->getNameInfo().getAsString();
+      }
+    } else if (auto MTE = dyn_cast<MaterializeTemporaryExpr>(E)) {
+      if (auto CMCE = dyn_cast_or_null<CXXMemberCallExpr>(
+              MTE->getSubExpr()->IgnoreImpCasts())) {
+        auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
+        PP.PrintCanonicalTypes = true;
+        auto BaseType =
+            CMCE->getObjectType().getUnqualifiedType().getAsString(PP);
+        if (CMCE->getMethodDecl()->getIdentifier()) {
+          if (BaseType == "thrust::cuda_cub::par_t" &&
+              CMCE->getMethodDecl()->getNameAsString() == "on") {
+            return "oneapi::dpl::execution::make_device_policy(" +
+                   getDrefName(CMCE->getArg(0)) + ")";
+          }
+        }
+      }
+    } else if (auto CE = dyn_cast<CallExpr>(E)) {
+      if (auto ME = dyn_cast_or_null<MemberExpr>(CE->getCallee())) {
+        auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
+        PP.PrintCanonicalTypes = true;
+        auto BaseType =
+            ME->getBase()->getType().getUnqualifiedType().getAsString(PP);
+        if (ME->getMemberDecl()->getIdentifier()) {
+          if (BaseType == "thrust::cuda_cub::par_t" &&
+              ME->getMemberDecl()->getNameAsString() == "on") {
+            return "oneapi::dpl::execution::make_device_policy(" +
+                   getDrefName(CE->getArg(0)) + ")";
+          }
         }
       }
     }
@@ -2620,6 +2658,7 @@ RemoveCubTempStorageFactory::create(const CallExpr *C) const {
 #define DEREF(x) makeDerefExprCreator(x)
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
+#define FUNCTOR(x) makeFunctorArgCreator(x)
 #define ARG_WC(x) makeDerefArgCreatorWithCall(x)
 #define BOOL(x) makeBooleanCreator(x)
 #define BLAS_ENUM_ARG(x, BLAS_ENUM_TYPE)                                       \

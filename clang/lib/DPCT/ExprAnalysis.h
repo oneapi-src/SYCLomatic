@@ -800,7 +800,6 @@ private:
   }
   inline void analyzeExpr(const UnaryOperator *Arg);
   inline void analyzeExpr(const CXXDependentScopeMemberExpr *Arg);
-  inline void analyzeExpr(const LambdaExpr *LE);
   inline void analyzeExpr(const MaterializeTemporaryExpr *MTE);
 
   bool isNullPtr(const Expr *);
@@ -844,6 +843,19 @@ public:
   unsigned int getSizeOfHighestDimension() { return SizeOfHighestDimension; }
   unsigned int Dim = 3;
   bool IsTryToUseOneDimension = false;
+};
+
+class FunctorAnalysis : public ArgumentAnalysis {
+private:
+  void analyzeExpr(const CXXTemporaryObjectExpr* CTOE);
+  void analyzeExpr(const DeclRefExpr* DRE);
+  void addConstQuailfier(const CXXRecordDecl *CRD);
+  unsigned PlaceholderCount = 0;
+protected:
+  void dispatch(const Stmt *S) override;
+public:
+  void analyze(const Expr *E);
+  FunctorAnalysis() : ArgumentAnalysis() {}
 };
 
 /// Analyzes the side effects of an expression while doing basic expression

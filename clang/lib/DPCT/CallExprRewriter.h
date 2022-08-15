@@ -571,6 +571,11 @@ protected:
   friend MathBinaryOperatorRewriterFactory;
 };
 
+struct ThrustFunctor {
+  ThrustFunctor(const clang::Expr *E) : E(E) {}
+  const clang::Expr *E;
+};
+
 template <class StreamT, class T> void print(StreamT &Stream, const T &Val) {
   Val.print(Stream);
 }
@@ -596,6 +601,13 @@ template <class StreamT> void print(StreamT &Stream, const std::string &Str) {
 template <class StreamT>
 void print(StreamT &Stream, const TemplateArgumentInfo &Arg) {
   print(Stream, Arg.getString());
+}
+template <class StreamT>
+void print(StreamT &Stream, const ThrustFunctor &Functor) {
+  FunctorAnalysis FA;
+  FA.analyze(Functor.E);
+  Stream << FA.getRewritePrefix() << FA.getReplacedString()
+         << FA.getRewritePostfix();
 }
 template <class StreamT>
 void print(StreamT &Stream, ExprAnalysis &EA, const Expr *E) {

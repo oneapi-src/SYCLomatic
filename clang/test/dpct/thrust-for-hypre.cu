@@ -21,7 +21,7 @@ struct greater_than_zero
 template<class T1, class T2>
 void foo2(T1 policy, T2 vec){
   thrust::device_vector<int> R(4);
-  //CHECK: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), vec.begin(), vec.end(), R.begin(), std::minus<int>());
+  //CHECK: oneapi::dpl::inclusive_scan(policy, vec.begin(), vec.end(), R.begin(), std::minus<int>());
   thrust::inclusive_scan(policy, vec.begin(), vec.end(), R.begin(), thrust::minus<int>());
 }
 
