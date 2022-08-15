@@ -354,15 +354,15 @@ private:
     }
     desc.commit(*_q);
     if (_is_inplace) {
-      auto data_input = dpct::get_memory(reinterpret_cast<T *>(input));
+      auto data_input = dpct::detail::get_memory(reinterpret_cast<T *>(input));
       if (_direction == fft_dir::forward) {
         oneapi::mkl::dft::compute_forward(desc, data_input);
       } else {
         oneapi::mkl::dft::compute_backward(desc, data_input);
       }
     } else {
-      auto data_input = dpct::get_memory(reinterpret_cast<T *>(input));
-      auto data_output = dpct::get_memory(reinterpret_cast<T *>(output));
+      auto data_input = dpct::detail::get_memory(reinterpret_cast<T *>(input));
+      auto data_output = dpct::detail::get_memory(reinterpret_cast<T *>(output));
       if (_direction == fft_dir::forward) {
         oneapi::mkl::dft::compute_forward(desc, data_input, data_output);
       } else {
@@ -476,15 +476,15 @@ private:
     }
     desc.commit(*_q);
     if (_is_inplace) {
-      auto data_input = dpct::get_memory(reinterpret_cast<T *>(input));
+      auto data_input = dpct::detail::get_memory(reinterpret_cast<T *>(input));
       if (_direction == fft_dir::forward) {
         oneapi::mkl::dft::compute_forward(desc, data_input);
       } else {
         oneapi::mkl::dft::compute_backward(desc, data_input);
       }
     } else {
-      auto data_input = dpct::get_memory(reinterpret_cast<T *>(input));
-      auto data_output = dpct::get_memory(reinterpret_cast<T *>(output));
+      auto data_input = dpct::detail::get_memory(reinterpret_cast<T *>(input));
+      auto data_output = dpct::detail::get_memory(reinterpret_cast<T *>(output));
       if (_direction == fft_dir::forward) {
         oneapi::mkl::dft::compute_forward(desc, data_input, data_output);
       } else {
