@@ -1093,6 +1093,7 @@ public:
 // Image|image_wrapper_base_set_channel
 // Image|image_wrapper_base_get_channel
 // Image|image_wrapper_base_attach
+// Image|image_channel_get_total_size
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void attach(image_data data) { set_data(data); }
