@@ -2366,7 +2366,7 @@ engine_ext::convolution_forward(convolution_desc &desc, ::dnnl::algorithm alg,
     return sycl::event();
   }
   auto primitive = create_forward_primitive<::dnnl::convolution_forward>(
-      ::dnnl::prop_kind::forward_training, ::dnnl::algorithm::convolution_auto,
+      ::dnnl::prop_kind::forward_training, alg,
       src_desc.get_desc(), weight_desc.get_desc(), dst_desc.get_desc(),
       desc.get_stride(), desc.get_dilate(), desc.get_padding(),
       desc.get_padding());
