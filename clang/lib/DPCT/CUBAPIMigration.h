@@ -1,4 +1,4 @@
-//===--------------- CubRule.h --------------------------------------------===//
+//===--------------- CUBAPIMigration.h --------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef CLANG_DPCT_CUB_RULE_H
-#define CLANG_DPCT_CUB_RULE_H
+#ifndef CLANG_DPCT_CUBAPIMIGRATION_H
+#define CLANG_DPCT_CUBAPIMIGRATION_H
 
 #include "ASTTraversal.h"
 
@@ -98,4 +98,4 @@ public:
 } // namespace dpct
 } // namespace clang
 
-#endif // CLANG_DPCT_CUB_RULE_H
+#endif // CLANG_DPCT_CUBAPIMIGRATION_H

@@ -12,7 +12,7 @@
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "Utility.h"
-#include "CubRule.h"
+#include "CUBAPIMigration.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
 #include "clang/Basic/LangOptions.h"

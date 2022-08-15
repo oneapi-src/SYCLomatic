@@ -1,4 +1,4 @@
-//===--------------- CubRule.cpp ------------------------------------------===//
+//===--------------- CUBAPIMigration.cpp ------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "CubRule.h"
+#include "CUBAPIMigration.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "clang/AST/Decl.h"

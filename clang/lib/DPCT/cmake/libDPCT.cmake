@@ -32,7 +32,7 @@ macro(build_lib_dpct)
     TypeLocRewriters.cpp
     QueryApiMapping.cpp
     LIBCUAPIMigration.cpp
-    CubRule.cpp
+    CUBAPIMigration.cpp
 
     DEPENDS
     ClangDriverOptions
