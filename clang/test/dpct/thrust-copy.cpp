@@ -4,6 +4,7 @@
 // RUN: FileCheck --input-file %T/thrust-copy/thrust-copy.cpp.dp.cpp --match-full-lines %s
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
+// CHECK-NEXT: #define DPCT_USM_LEVEL_NONE
 // CHECK-NEXT: #include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <iostream>

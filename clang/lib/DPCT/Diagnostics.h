@@ -121,6 +121,9 @@ static inline std::string getMessagePrefix(int ID) {
 template <typename... Ts>
 void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
                    const CompilerInstance &CI, Ts &&...Vals) {
+  // Do not emit diagnostic message for source location outside --in-root
+  if (!DpctGlobalInfo::isInRoot(SL))
+    return;
   DiagnosticsEngine &DiagEngine = CI.getDiagnostics();
   std::string Message = getMessagePrefix(Msg.ID) + Msg.Msg;
 
