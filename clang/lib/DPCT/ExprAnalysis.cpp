@@ -906,7 +906,6 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
       auto Result = Rewriter->rewrite();
       if (Result.hasValue()) {
         auto ResultStr = Result.getValue();
-        printf("SR %s\n", SR.getEnd().printToString(SM).c_str());
         // Since Parser splits ">>" or ">>>" to ">" when parse template
         // the SR.getEnd location might be a "scratch space" location.
         // Therfore, need to apply SM.getExpansionLoc before call addReplacement.
