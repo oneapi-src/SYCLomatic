@@ -16,6 +16,9 @@ namespace clang {
 namespace dpct {
 
 static std::map<std::string, std::set<std::string>> DPCTOptionInfoMap = {
+  // To avoid make llvm library depends on this file, hard code 2 options here.
+  {"help", {}},
+  {"version", {}},
 #define DPCT_OPTIONS_IN_LLVM_SUPPORT
 #define DPCT_OPTIONS_IN_CLANG_TOOLING
 #define DPCT_OPTIONS_IN_CLANG_DPCT
@@ -29,7 +32,7 @@ static std::map<std::string, std::set<std::string>> DPCTOptionInfoMap = {
 #define DPCT_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, OPTION_VALUES, ...)   \
   {OPTION_NAME, OPTION_VALUES},
 
-#include "llvm/DPCT/DPCTOptions.inc"
+#include "clang/DPCT/DPCTOptions.inc"
 
 #undef DPCT_ENUM_OPTION
 #undef DPCT_NON_ENUM_OPTION

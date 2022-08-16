@@ -2533,14 +2533,11 @@ struct CommandLineCommonOptions {
   // behaviour at runtime depending on whether one or more Option categories
   // have been declared.
 #ifdef SYCLomatic_CUSTOMIZATION
-#define DPCT_OPTIONS_IN_LLVM_SUPPORT
-#define DPCT_OPT_TYPE(...) __VA_ARGS__
-#define DPCT_NON_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)  \
-OPT_TYPE OPT_VAR{OPTION_NAME, __VA_ARGS__};
-#include "llvm/DPCT/DPCTOptions.inc"
-#undef DPCT_NON_ENUM_OPTION
-#undef DPCT_OPT_TYPE
-#undef DPCT_OPTIONS_IN_LLVM_SUPPORT
+  cl::opt<HelpPrinterWrapper, true, parser<bool>>
+      HOp{"help",
+          cl::desc("Provides a list of dpct specific options."),
+          cl::location(WrappedNormalPrinter), cl::ValueDisallowed,
+          cl::cat(cl::getDPCTCategory()), cl::sub(*AllSubCommands)};
 #else
   cl::opt<HelpPrinterWrapper, true, parser<bool>>
       HOp{"help",
@@ -2584,7 +2581,12 @@ OPT_TYPE OPT_VAR{OPTION_NAME, __VA_ARGS__};
   // Define the --version option that prints out the LLVM version for the tool
   VersionPrinter VersionPrinterInstance;
 
-#ifndef SYCLomatic_CUSTOMIZATION
+#ifdef SYCLomatic_CUSTOMIZATION
+  cl::opt<VersionPrinter, true, parser<bool>>
+      VersOp{"version", cl::desc("Shows the version of the tool."),
+             cl::location(VersionPrinterInstance), cl::ValueDisallowed,
+             cl::cat(cl::getDPCTCategory())};
+#else
   cl::opt<VersionPrinter, true, parser<bool>>
       VersOp{"version", cl::desc("Display the version of this program"),
              cl::location(VersionPrinterInstance), cl::ValueDisallowed,

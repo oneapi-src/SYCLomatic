@@ -139,7 +139,7 @@ llvm::cl::values(__VA_ARGS__)
 OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 #define DPCT_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)      \
 OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
-#include "llvm/DPCT/DPCTOptions.inc"
+#include "clang/DPCT/DPCTOptions.inc"
 #undef DPCT_ENUM_OPTION
 #undef DPCT_NON_ENUM_OPTION
 #undef DPCT_OPTION_VALUES

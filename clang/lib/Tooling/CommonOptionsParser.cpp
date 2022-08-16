@@ -116,8 +116,8 @@ llvm::Error CommonOptionsParser::init(
 #define DPCT_OPTIONS_IN_CLANG_TOOLING
 #define DPCT_OPT_TYPE(...) __VA_ARGS__
 #define DPCT_NON_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)  \
-static OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
-#include "llvm/DPCT/DPCTOptions.inc"
+OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
+#include "clang/DPCT/DPCTOptions.inc"
 #undef DPCT_NON_ENUM_OPTION
 #undef DPCT_OPT_TYPE
 #undef DPCT_OPTIONS_IN_CLANG_TOOLING
