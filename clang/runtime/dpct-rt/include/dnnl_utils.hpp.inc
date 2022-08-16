@@ -667,7 +667,30 @@ class engine_ext {
     default:
       throw std::runtime_error("fill: unsupported data type sycl::bfloat16.");
     }
-
+  }
+  ::dnnl::memory::desc get_group_weight_desc(int group_count,
+                                             memory_desc_ext &weight_desc) {
+    if (group_count == 1) {
+      return desc.get_desc();
+    }
+    auto help_weight_desc = weight_desc.get_desc();
+    std::vector<int64_t> new_size;
+    auto old_size = weight_desc.get_desc().dims();
+    new_size.push_back(group_count);
+    new_size.push_back(old_size[0] / group_count);
+    for (int index = 1; index < old_size.size(); index++) {
+      new_size.push_back(old_size[index]);
+    }
+    if (old_size.size() == 4) {
+      help_weight_desc =
+          ::dnnl::memory::desc(new_size, weight_desc.get_desc().data_type(),
+                               ::dnnl::memory::format_tag::goihw);
+    } else {
+      help_weight_desc =
+          ::dnnl::memory::desc(new_size, weight_desc.get_desc().data_type(),
+                               ::dnnl::memory::format_tag::goidhw);
+    }
+    return help_weight_desc;
   }
   static ::dnnl::primitive_attr generate_scaling_attr(float alpha, float beta);
 
@@ -2375,32 +2398,17 @@ engine_ext::convolution_forward(convolution_desc &desc, ::dnnl::algorithm alg,
   if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
     return sycl::event();
   }
-  int group_count = desc.get_group_count();
+  auto help_weight_desc =
+      get_group_weight_desc(desc.get_group_count(), weight_desc);
+
   auto primitive = create_forward_primitive<::dnnl::convolution_forward>(
-      ::dnnl::prop_kind::forward_training, alg,
-      src_desc.get_desc(), weight_desc.get_desc(), dst_desc.get_desc(),
-      desc.get_stride(), desc.get_dilate(), desc.get_padding(),
-      desc.get_padding());
+      ::dnnl::prop_kind::forward_training, alg, src_desc.get_desc(),
+      weight_desc.get_desc(), dst_desc.get_desc(), desc.get_stride(),
+      desc.get_dilate(), desc.get_padding(), desc.get_padding());
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
-      {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}}};
-  void *cache = nullptr;
-  if(group_count != 1) {
-    std::vector<size_t> new_size;
-    new_size[0] = group_count;
-    for(auto dim: weight_desc.get_desc().dims()) {
-      new_size.push_back(dim);
-    }
-    ::dnnl::memory::desc help_weight(new_size, weight_desc.get_desc().data_type(), ::dnnl::memory::format_tag::goihw);
-    hel_weight.data.blocking.strides[0] = 0;
-    //_q->memcpy(cache, weight, weight_desc.get_size());
-    //reorder(alpha_0, weight_desc, weight, 0.f, weight_desc, cache);
-    execution_args.insert({DNNL_ARG_WEIGHTS,
-       {::dnnl::memory(help_weight, _eng, weight)}});
-  } else {
-    execution_args.insert({DNNL_ARG_WEIGHTS,
-       {::dnnl::memory(weight_desc.get_desc(), _eng, weight)}});
-  }
+      {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}},
+      {DNNL_ARG_WEIGHTS, {::dnnl::memory(help_weight_desc, _eng, weight)}}};
   return execute_primitive(primitive, execution_args,
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
@@ -2420,6 +2428,8 @@ sycl::event engine_ext::convolution_forward_ex(
     const memory_desc_ext &dst_desc, void *dst) {
   
   int channel_num = memory_desc_ext::get_element_num(bias_desc);
+  auto help_weight_desc =
+      get_group_weight_desc(desc.get_group_count(), weight_desc);
   ::dnnl::memory::desc help_bias_desc = {
       {channel_num},
       bias_desc.get_desc().data_type(),
@@ -2427,7 +2437,7 @@ sycl::event engine_ext::convolution_forward_ex(
   auto primitive = create_forward_primitive<::dnnl::convolution_forward>(
       ::dnnl::prop_kind::forward_training,
       alg, src_desc.get_desc(),
-      weight_desc.get_desc(), bias_desc.get_desc(), dst_desc.get_desc(),
+      help_weight_desc, bias_desc.get_desc(), dst_desc.get_desc(),
       desc.get_stride(), desc.get_dilate(), desc.get_padding(),
       desc.get_padding());
 
@@ -2437,14 +2447,14 @@ sycl::event engine_ext::convolution_forward_ex(
   
   void *cache = nullptr;
   if(alpha_0 != 1.f) {
-    cache = allocate(weight_desc);
+    cache = allocate(help_weight_desc);
     //_q->memcpy(cache, weight, weight_desc.get_size());
-    reorder(alpha_0, weight_desc, weight, 0.f, weight_desc, cache);
+    reorder(alpha_0, help_weight_desc, weight, 0.f, help_weight_desc, cache);
     execution_args.insert({DNNL_ARG_WEIGHTS,
-       {::dnnl::memory(weight_desc.get_desc(), _eng, cache)}});
+       {::dnnl::memory(help_weight_desc, _eng, cache)}});
   } else {
     execution_args.insert({DNNL_ARG_WEIGHTS,
-       {::dnnl::memory(weight_desc.get_desc(), _eng, weight)}});
+       {::dnnl::memory(help_weight_desc, _eng, weight)}});
   }
 
   auto e = execute_primitive(primitive, execution_args,
