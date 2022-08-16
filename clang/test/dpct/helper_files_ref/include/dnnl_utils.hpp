@@ -100,11 +100,13 @@ public:
            int *n_stride, int *c_stride, int *h_stride, int *w_stride) const;
   /// Getting parameters from a ND memory.
   /// \param [in] requested_ndims Requested number of dimensions to get from a
-  /// given memory descriptor. \param [out] dt Data type. \param [out] ndims
-  /// Dimension of the memory. \param [out] dims  Array of dimension
-  /// requested_ndims that contain the size of each memory dimension. \param
-  /// [out] strides Array of dimension requested_ndims that contain the stride
-  /// of each memory dimension.
+  /// given memory descriptor.
+  /// \param [out] dt Data type.
+  /// \param [out] ndims Dimension of the memory.
+  /// \param [out] dims  Array of dimension requested_ndims that contain the 
+  /// size of each memory dimension.
+  /// \param [out] strides Array of dimension requested_ndims that contain the
+  /// stride of each memory dimension.
   void get(int requested_ndims, dpct::library_data_t *dt, int *ndims,
            int dims[], int strides[]) const;
   static size_t get_element_num(memory_desc_ext desc) {
@@ -195,7 +197,8 @@ public:
     *k = _k;
   }
   /// Setting the local size parameter of a local response normalization
-  /// descriptor. \param [in] local_size Value of local_size parameter.
+  /// descriptor.
+  /// \param [in] local_size Value of local_size parameter.
   void set_local_size(unsigned int local_size) { _local_size = local_size; }
   /// Setting the alpha parameter of a local response normalization descriptor.
   /// \param [in] alpha Value of alpha parameter.
@@ -207,10 +210,12 @@ public:
   /// \param [in] k Value of k parameter.
   void set_k(float k) { _k = k; }
   /// Getting the local size parameter from a local response normalization
-  /// descriptor. \param [out] local_size Value of local_size parameter.
+  /// descriptor.
+  /// \param [out] local_size Value of local_size parameter.
   unsigned int get_local_size() const { return _local_size; }
   /// Getting the alpha parameter from a local response normalization
-  /// descriptor. \param [out] alpha Value of alpha parameter.
+  /// descriptor.
+  /// \param [out] alpha Value of alpha parameter.
   float get_alpha() const { return _alpha; }
   /// Getting the beta parameter from a local response normalization descriptor.
   /// \param [out] beta Value of beta parameter.
@@ -252,9 +257,11 @@ public:
   /// \param [in] alg Pooling algorithm.
   /// \param [in] ndims Dimension of the pooling operation.
   /// \param [in] kernel Array of dimension ndims containing the kernel size of
-  /// each dimension. \param [in] padding Array of dimension ndims containing
-  /// the padding size of each dimension. \param [in] stride Array of dimension
-  /// ndims containing the stride size of each dimension.
+  /// each dimension.
+  /// \param [in] padding Array of dimension ndims containing the padding size of
+  /// each dimension.
+  /// \param [in] stride Array of dimension ndims containing the stride size of
+  /// each dimension.
   void set(::dnnl::algorithm alg, int ndims, int kernel[], int padding[],
            int stride[]) {
     _alg = alg;
@@ -282,12 +289,15 @@ public:
   }
   /// Getting parameters from a ND pooling descriptor.
   /// \param [in] requested_ndims Requested number of dimensions to get from a
-  /// given pooling descriptor. \param [out] alg Pooling algorithm. \param [out]
-  /// ndims Dimension of the pooling operation. \param [out] kernel Array of
-  /// dimension ndims containing the kernel size of each dimension. \param [out]
-  /// padding Array of dimension ndims containing the padding size of each
-  /// dimension. \param [out] stride Array of dimension ndims containing the
-  /// stride size of each dimension.
+  /// given pooling descriptor.
+  /// \param [out] alg Pooling algorithm.
+  /// \param [out] ndims Dimension of the pooling operation.
+  /// \param [out] kernel Array of dimension ndims containing the kernel size of
+  /// each dimension.
+  /// \param [out] padding Array of dimension ndims containing the padding size
+  /// of each dimension.
+  /// \param [out] stride Array of dimension ndims containing the stride size of
+  /// each dimension.
   void get(int requested_ndims, ::dnnl::algorithm *alg, int *ndims,
            int kernel[], int padding[], int stride[]) const {
     *alg = _alg;
@@ -342,9 +352,12 @@ public:
   /// dimension.
   std::vector<int64_t> &get_padding() { return _padding; }
   /// Getting the output dimensions of a memory after 2D pooling has been
-  /// applied. \param [in] desc Input memory descriptor. \param [out] out_n
-  /// Number of images. \param [out] out_c Number of channels. \param [out]
-  /// out_h Height of images. \param [out] out_w Width of images.
+  /// applied.
+  /// \param [in] desc Input memory descriptor.
+  /// \param [out] out_n Number of images.
+  /// \param [out] out_c Number of channels.
+  /// \param [out] out_h Height of images.
+  /// \param [out] out_w Width of images.
   void get_forward_output_dim(const memory_desc_ext &desc, int *out_n,
                               int *out_c, int *out_h, int *out_w) const {
     auto dims = desc.get_desc().data.dims;
@@ -354,9 +367,11 @@ public:
     *out_w = 1 + (dims[3] + 2 * _padding[1] - _kernel[1]) / _stride[1];
   }
   /// Getting the output dimensions of a memory after ND pooling has been
-  /// applied. \param [in] desc Input memory descriptor. \param [out] ndims
-  /// Dimension of the memory. \param [out] out_dims  Array of dimension
-  /// requested_ndims that contain the size of each memory dimension.
+  /// applied.
+  /// \param [in] desc Input memory descriptor.
+  /// \param [out] ndims Dimension of the memory.
+  /// \param [out] out_dims  Array of dimension requested_ndims that contain
+  /// the size of each memory dimension.
   void get_forward_output_dim(const memory_desc_ext &desc, int ndims,
                               int out_dims[]) const {
     assert(ndims >= 4 && "ndims is at least 4.");
@@ -638,12 +653,15 @@ public:
   sycl::event fill(const memory_desc_ext &src_desc, void *src,
                    const void *valuePtr);
   /// Coping the scaled data from a memory to another memory with a different
-  /// description. \param [in] alpha Pointer to scaling factors used to scale
-  /// the computed value. \param [in] src_desc Source memory descriptor. \param
-  /// [in] src Pointer to source data. \param [in] beta Pointer to scaling
-  /// factors used to scale the prior value in the destination memory. \param
-  /// [in] dst_desc Destination memory descriptor. \param [out] dst Pointer to
-  /// destination data.
+  /// description.
+  /// \param [in] alpha Pointer to scaling factors used to scale the computed
+  /// value.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data.
+  /// \param [in] beta Pointer to scaling factors used to scale the prior value
+  /// in the destination memory.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [out] dst Pointer to destination data.
   sycl::event reorder(float alpha, const memory_desc_ext &src_desc, void *src,
                       float beta, const memory_desc_ext &dst_desc, void *dst);
   /// Scaling all the elements of a memory by a given factor.
@@ -653,11 +671,13 @@ public:
   sycl::event scale(float alpha, const memory_desc_ext &src_desc, void *src);
   /// Adding the scaled values of a memory to another memory.
   /// \param [in] alpha Pointer to scaling factors used to scale the computed
-  /// value. \param [in] src_desc Source memory descriptor. \param [in] src
-  /// Pointer to source data. \param [in] beta Pointer to scaling factors used
-  /// to scale the prior value in the destination memory. \param [in] dst_desc
-  /// Destination memory descriptor. \param [out] dst Pointer to destination
-  /// data.
+  /// value.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data.
+  /// \param [in] beta Pointer to scaling factors used to scale the prior value
+  /// in the destination memory.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [out] dst Pointer to destination data.
   sycl::event sum(float alpha, const memory_desc_ext &src_desc, void *src,
                   float beta, const memory_desc_ext &dst_desc, void *dst);
 
@@ -673,11 +693,13 @@ public:
   /// Computing a specified activation function value.
   /// \param [in] desc Activation descriptor.
   /// \param [in] alpha Pointer to scaling factors used to scale the computed
-  /// value. \param [in] src_desc Source memory descriptor. \param [in] src
-  /// Pointer to source data. \param [in] beta Pointer to scaling factors used
-  /// to scale the prior value in the destination memory. \param [in] dst_desc
-  /// Destination memory descriptor. \param [out] dst Pointer to destination
-  /// data.
+  /// value.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data.
+  /// \param [in] beta Pointer to scaling factors used to scale the prior value
+  /// in the destination memory.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [out] dst Pointer to destination data.
   sycl::event activation_forward(activation_desc &desc, float alpha,
                                  const memory_desc_ext &src_desc, void *src,
                                  float beta, const memory_desc_ext &dst_desc,
@@ -685,15 +707,17 @@ public:
   /// Computing the gradient of a specified activation function.
   /// \param [in] desc Activation descriptor.
   /// \param [in] alpha Pointer to scaling factors used to scale the computed
-  /// value. \param [in] dst_desc Destination memory descriptor. \param [in] dst
-  /// Pointer to destination data. \param [in] diff_dst_desc Differential
-  /// destination memory descriptor. \param [in] diff_dst Pointer to
-  /// differential destination data. \param [in] src_desc Source memory
-  /// descriptor. \param [in] src Pointer to source data. \param [in] beta
-  /// Pointer to scaling factors used to scale the prior value in the
-  /// differential destination memory. \param [in] diff_src_desc Differential
-  /// source memory descriptor. \param [out] diff_src Pointer to differential
-  /// source data.
+  /// value.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [in] dst Pointer to destination data.
+  /// \param [in] diff_dst_desc Differential destination memory descriptor.
+  /// \param [in] diff_dst Pointer to differential destination data.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data.
+  /// \param [in] beta Pointer to scaling factors used to scale the prior value
+  /// in the differential destination memory.
+  /// \param [in] diff_src_desc Differential source memory descriptor.
+  /// \param [out] diff_src Pointer to differential source data.
   sycl::event
   activation_backward(activation_desc &desc, float alpha,
                       const memory_desc_ext &dst_desc, void *dst,
@@ -703,12 +727,14 @@ public:
   /// Computing a specified pooling function value.
   /// \param [in] desc Pooling descriptor.
   /// \param [in] alpha Pointer to scaling factors used to scale the computed
-  /// value. \param [in] src_desc Source memory descriptor. \param [in] src
-  /// Pointer to source data. \param [in] beta Pointer to scaling factors used
-  /// to scale the prior value in the destination memory. \param [in] dst_desc
-  /// Destination memory descriptor. \param [out] dst Pointer to destination
-  /// data. \param [out] workspace Pointer to workspace generated from forward
-  /// propagation.
+  /// value.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data.
+  /// \param [in] beta Pointer to scaling factors used to scale the prior value
+  /// in the destination memory.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [out] dst Pointer to destination data.
+  /// \param [out] workspace Pointer to workspace generated from forward propagation.
   sycl::event pooling_forward(pooling_desc &desc, float alpha,
                               const memory_desc_ext &src_desc, void *src,
                               float beta, const memory_desc_ext &dst_desc,
@@ -716,14 +742,17 @@ public:
   /// Computing the gradient of a specified pooling function.
   /// \param [in] desc Activation descriptor.
   /// \param [in] alpha Pointer to scaling factors used to scale the computed
-  /// value. \param [in] dst_desc Destination memory descriptor. \param [in] dst
-  /// Pointer to destination data. \param [in] diff_dst_desc Differential
-  /// destination memory descriptor. \param [in] diff_dst Pointer to
-  /// differential destination data. \param [in] src_desc Source memory
-  /// descriptor. \param [in] src Pointer to source data. \param [in] beta
-  /// Pointer to scaling factors used to scale the prior value in the
-  /// differential destination memory. \param [in] diff_src_desc Differential
-  /// source memory descriptor. \param [out] diff_src Pointer to differential
+  /// value.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [in] dst Pointer to destination data.
+  /// \param [in] diff_dst_desc Differential destination memory descriptor.
+  /// \param [in] diff_dst Pointer to differential destination data.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data.
+  /// \param [in] beta Pointer to scaling factors used to scale the prior value
+  /// in the differential destination memory.
+  /// \param [in] diff_src_desc Differential source memory descriptor.
+  /// \param [out] diff_src Pointer to differential
   /// source data. \param [in] workspace Pointer to workspace used for backward
   /// propagation.
   sycl::event pooling_backward(pooling_desc &desc, float alpha,
@@ -738,11 +767,13 @@ public:
   /// \param [in] alg Softmax algorithm.
   /// \param [in] mode Softmax mode.
   /// \param [in] alpha Pointer to scaling factors used to scale the computed
-  /// value. \param [in] src_desc Source memory descriptor. \param [in] src
-  /// Pointer to source data. \param [in] beta Pointer to scaling factors used
-  /// to scale the prior value in the destination memory. \param [in] dst_desc
-  /// Destination memory descriptor. \param [out] dst Pointer to destination
-  /// data.
+  /// value. 
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data. 
+  /// \param [in] beta Pointer to scaling factors used to scale the prior value
+  /// in the destination memory.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [out] dst Pointer to destination data.
   sycl::event softmax_forward(softmax_algorithm alg, softmax_mode mode,
                               float alpha, const memory_desc_ext &src_desc,
                               void *src, float beta,
@@ -751,11 +782,13 @@ public:
   /// \param [in] alg Softmax algorithm.
   /// \param [in] mode Softmax mode.
   /// \param [in] alpha Pointer to scaling factors used to scale the computed
-  /// value. \param [in] dst_desc Destination memory descriptor. \param [in] dst
-  /// Pointer to destination data. \param [in] diff_dst_desc Differential
-  /// destination memory descriptor. \param [in] diff_dst Pointer to
-  /// differential destination data. \param [in] beta Pointer to scaling factors
-  /// used to scale the prior value in the differential destination memory.
+  /// value. 
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [in] dst Pointer to destination data.
+  /// \param [in] diff_dst_desc Differential destination memory descriptor.
+  /// \param [in] diff_dst Pointer to differential destination data.
+  /// \param [in] beta Pointer to scaling factors used to scale the prior value
+  /// in the differential destination memory.
   /// \param [in] diff_src_desc Differential source memory descriptor.
   /// \param [out] diff_src Pointer to differential source data.
   sycl::event softmax_backward(softmax_algorithm alg, softmax_mode mode,
@@ -767,19 +800,23 @@ public:
   /// Computing a specified local response normalization function value.
   /// \param [in] desc Local response normalization descriptor.
   /// \param [in] alpha Pointer to scaling factors used to scale the computed
-  /// value. \param [in] src_desc Source memory descriptor. \param [in] src
-  /// Pointer to source data. \param [in] beta Pointer to scaling factors used
-  /// to scale the prior value in the destination memory. \param [in] dst_desc
-  /// Destination memory descriptor. \param [out] dst Pointer to destination
-  /// data. \param [out] workspace Pointer to workspace generated from forward
+  /// value.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data.
+  /// \param [in] beta Pointer to scaling factors used to scale the prior value
+  /// in the destination memory.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [out] dst Pointer to destination data.
+  /// \param [out] workspace Pointer to workspace generated from forward
   /// propagation.
   sycl::event lrn_forward(lrn_desc &desc, float alpha,
                           const memory_desc_ext &src_desc, void *src,
                           float beta, const memory_desc_ext &dst_desc,
                           void *dst, ::dnnl::memory *workspace = nullptr);
   /// Computing the gradient of a specified local response normalization
-  /// function. \param [in] desc Local response normalization descriptor. \param
-  /// [in] alpha Pointer to scaling factors used to scale the computed value.
+  /// function.
+  /// \param [in] desc Local response normalization descriptor.
+  /// \param [in] alpha Pointer to scaling factors used to scale the computed value.
   /// \param [in] dst_desc Destination memory descriptor.
   /// \param [in] dst Pointer to destination data.
   /// \param [in] diff_dst_desc Differential destination memory descriptor.
@@ -787,10 +824,10 @@ public:
   /// \param [in] src_desc Source memory descriptor.
   /// \param [in] src Pointer to source data.
   /// \param [in] beta Pointer to scaling factors used to scale the prior value
-  /// in the differential destination memory. \param [in] diff_src_desc
-  /// Differential source memory descriptor. \param [out] diff_src Pointer to
-  /// differential source data. \param [in] workspace Pointer to workspace used
-  /// for backward propagation.
+  /// in the differential destination memory.
+  /// \param [in] diff_src_desc Differential source memory descriptor.
+  /// \param [out] diff_src Pointer to differential source data.
+  /// \param [in] workspace Pointer to workspace used for backward propagation.
   sycl::event lrn_backward(lrn_desc &desc, float alpha,
                            const memory_desc_ext &dst_desc, void *dst,
                            const memory_desc_ext &diff_dst_desc, void *diff_dst,
