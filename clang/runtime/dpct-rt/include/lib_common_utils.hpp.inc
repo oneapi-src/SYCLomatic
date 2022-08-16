@@ -45,6 +45,7 @@
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 // DPCT_LABEL_END
+#include "memory.hpp"
 
 namespace dpct {
 namespace detail {

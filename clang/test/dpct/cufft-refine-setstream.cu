@@ -7,9 +7,9 @@ void foo1() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:plan->set_queue(s);
-  //CHECK-NEXT:plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward);
+  //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftSetStream(plan, s);
   cufftExecR2C(plan, (float*)iodata, iodata);
@@ -27,7 +27,7 @@ void foo2() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
@@ -35,7 +35,7 @@ void foo2() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:cufftCheck((plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward), 0));
+  //CHECK-NEXT:cufftCheck((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftCheck(cufftSetStream(plan, s));
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
@@ -58,7 +58,7 @@ void foo3() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
@@ -66,7 +66,7 @@ void foo3() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:HANDLE_CUFFT_ERROR((plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward), 0));
+  //CHECK-NEXT:HANDLE_CUFFT_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   HANDLE_CUFFT_ERROR(cufftSetStream(plan, s));
   HANDLE_CUFFT_ERROR(cufftExecR2C(plan, (float*)iodata, iodata));
@@ -79,7 +79,7 @@ void foo4() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
@@ -87,7 +87,7 @@ void foo4() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:err = (plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward), 0);
+  //CHECK-NEXT:err = (plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftResult err = cufftSetStream(plan, s);
   err = cufftExecR2C(plan, (float*)iodata, iodata);
@@ -105,7 +105,7 @@ void foo5() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
@@ -113,7 +113,7 @@ void foo5() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:CUFFT_CHECK((plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward), 0));
+  //CHECK-NEXT:CUFFT_CHECK((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   CUFFT_CHECK(cufftSetStream(plan, s));
   CUFFT_CHECK(cufftExecR2C(plan, (float*)iodata, iodata));
@@ -129,7 +129,7 @@ void foo6() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
@@ -137,7 +137,7 @@ void foo6() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:MY_ERROR_CHECKER((plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward), 0));
+  //CHECK-NEXT:MY_ERROR_CHECKER((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   MY_ERROR_CHECKER(cufftSetStream(plan, s));
   MY_ERROR_CHECKER(cufftExecR2C(plan, (float*)iodata, iodata));
@@ -157,7 +157,7 @@ void foo7() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
@@ -165,7 +165,7 @@ void foo7() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:CHECK_CUFFT((plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward), 0));
+  //CHECK-NEXT:CHECK_CUFFT((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   CHECK_CUFFT(cufftSetStream(plan, s));
   CHECK_CUFFT(cufftExecR2C(plan, (float*)iodata, iodata));
@@ -183,7 +183,7 @@ void foo8() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
@@ -191,7 +191,7 @@ void foo8() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:cufftCheck((plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward), 0));
+  //CHECK-NEXT:cufftCheck((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftCheck(cufftSetStream(plan, s));
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
@@ -203,11 +203,11 @@ void foo9() {
   float2* iodata;
   cudaStream_t s1, s2;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:cufftCheck((plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward), 0));
+  //CHECK-NEXT:cufftCheck((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
@@ -215,7 +215,7 @@ void foo9() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:cufftCheck((plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward), 0));
+  //CHECK-NEXT:cufftCheck((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
@@ -223,7 +223,7 @@ void foo9() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:cufftCheck((plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward), 0));
+  //CHECK-NEXT:cufftCheck((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
   cufftCheck(cufftSetStream(plan, s1));
@@ -238,11 +238,11 @@ void foo10(bool flag) {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:cufftCheck((plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward), 0));
+  //CHECK-NEXT:cufftCheck((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   //CHECK-NEXT:if (flag) {
   //CHECK-NEXT:  /*
   //CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -252,7 +252,7 @@ void foo10(bool flag) {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:cufftCheck((plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward), 0));
+  //CHECK-NEXT:cufftCheck((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
   if (flag) {
@@ -267,10 +267,10 @@ void foo11(bool flag) {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:if (flag)
   //CHECK-NEXT:  plan->set_queue(s);
-  //CHECK-NEXT:plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward);
+  //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   if (flag)
     cufftSetStream(plan, s);
@@ -282,10 +282,10 @@ void foo12(cufftHandle plan2) {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:plan->set_queue(s);
   //CHECK-NEXT:plan = plan2;
-  //CHECK-NEXT:plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward);
+  //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftSetStream(plan, s);
   plan = plan2;
@@ -299,10 +299,10 @@ void foo13() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:plan->set_queue(s);
   //CHECK-NEXT:changeHandle(plan);
-  //CHECK-NEXT:plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward);
+  //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftSetStream(plan, s);
   changeHandle(plan);
@@ -314,12 +314,12 @@ void foo14() {
   float2* iodata;
   cudaStream_t s;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:plan->set_queue(s);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:22: The call to cufftCreate was removed because this call is redundant in SYCL.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward);
+  //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1026:23: The call to cufftDestroy was removed because this call is redundant in SYCL.
   //CHECK-NEXT:*/

@@ -6,15 +6,15 @@
 
 
 int main() {
-  //CHECK:std::shared_ptr<dpct::fft::fft_solver> plan;
+  //CHECK:std::shared_ptr<dpct::fft::fft_engine> plan;
   //CHECK-NEXT:sycl::float2* iodata;
   cufftHandle plan;
   float2* iodata;
 
-  //CHECK:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
 
-  //CHECK:plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward);
+  //CHECK:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
   cufftExecR2C(plan, (float*)iodata, iodata);
 
   return 0;
@@ -34,30 +34,30 @@ int foo2() {
   double2* idata_mmany64_Z2Z;
 
 
-  //CHECK:plan_mmany64_Z2Z = std::make_shared<dpct::fft::fft_solver>(3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, dpct::fft::fft_type::complex_double_to_complex_double, 12);
+  //CHECK:plan_mmany64_Z2Z = std::make_shared<dpct::fft::fft_engine>(3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, dpct::fft::fft_type::complex_double_to_complex_double, 12);
   cufftMakePlanMany64(plan_mmany64_Z2Z, 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, CUFFT_Z2Z, 12, work_size_mmany64_Z2Z);
 
-  //CHECK:plan_mmany64_Z2Z->compute(idata_mmany64_Z2Z, odata_mmany64_Z2Z, dpct::fft::fft_dir::forward);
+  //CHECK:plan_mmany64_Z2Z->compute<sycl::double2, sycl::double2>(idata_mmany64_Z2Z, odata_mmany64_Z2Z, dpct::fft::fft_direction::forward);
   cufftExecZ2Z(plan_mmany64_Z2Z, idata_mmany64_Z2Z, odata_mmany64_Z2Z, CUFFT_FORWARD);
 
-  //CHECK:plan_mmany64_Z2Z->compute(idata_mmany64_Z2Z, odata_mmany64_Z2Z, dpct::fft::fft_dir::backward);
+  //CHECK:plan_mmany64_Z2Z->compute<sycl::double2, sycl::double2>(idata_mmany64_Z2Z, odata_mmany64_Z2Z, dpct::fft::fft_direction::backward);
   cufftExecZ2Z(plan_mmany64_Z2Z, idata_mmany64_Z2Z, odata_mmany64_Z2Z, CUFFT_INVERSE);
 
   return 0;
 }
 
 int foo3(cudaStream_t stream) {
-  //CHECK:std::shared_ptr<dpct::fft::fft_solver> plan;
+  //CHECK:std::shared_ptr<dpct::fft::fft_engine> plan;
   //CHECK-NEXT:sycl::float2* iodata;
   cufftHandle plan;
   float2* iodata;
 
   //CHECK:plan->set_queue(stream);
-  //CHECK-NEXT:plan = std::make_shared<dpct::fft::fft_solver>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK-NEXT:plan = std::make_shared<dpct::fft::fft_engine>(10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   cufftSetStream(plan, stream);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
 
-  //CHECK:plan->compute((float*)iodata, iodata, dpct::fft::fft_dir::forward);
+  //CHECK:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
   cufftExecR2C(plan, (float*)iodata, iodata);
 
   return 0;

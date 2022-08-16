@@ -11,6 +11,7 @@
 
 #include <CL/sycl.hpp>
 #include <oneapi/mkl.hpp>
+#include "memory.hpp"
 
 namespace dpct {
 namespace detail {

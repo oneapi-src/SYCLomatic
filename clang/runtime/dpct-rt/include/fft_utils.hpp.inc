@@ -45,16 +45,15 @@
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 // DPCT_LABEL_END
-#include "memory.hpp"
 #include "lib_common_utils.hpp"
 
 namespace dpct {
 namespace fft {
-// DPCT_LABEL_BEGIN|fft_dir|dpct::fft
+// DPCT_LABEL_BEGIN|fft_direction|dpct::fft
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 /// An enumeration type to describe the FFT direction is forward or backward.
-enum fft_dir : int {
+enum fft_direction : int {
   forward = 0,
   backward
 };
@@ -73,17 +72,17 @@ enum fft_type : int {
 };
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|fft_solver|dpct::fft
+// DPCT_LABEL_BEGIN|fft_engine|dpct::fft
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// FftUtils|fft_dir
+// FftUtils|fft_direction
 // FftUtils|fft_type
 // LibCommonUtils|get_memory
 // Device|get_default_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// A class to perform FFT calculation.
-class fft_solver {
+class fft_engine {
 public:
   /// Construct the class for calculate n-D FFT.
   /// \param [in] dim Dimension number of the data.
@@ -99,7 +98,7 @@ public:
   /// \param [in] odist Distance between the two batches of the output data.
   /// \param [in] output_type Output data type.
   /// \param [in] batch The number of FFT operations to perform.
-  fft_solver(int dim, long long *n, long long *inembed, long long istride,
+  fft_engine(int dim, long long *n, long long *inembed, long long istride,
              long long idist, library_data_t input_type, long long *onembed,
              long long ostride, long long odist, library_data_t output_type,
              long long batch) {
@@ -120,7 +119,7 @@ public:
   /// \param [in] odist Distance between the two batches of the output data.
   /// \param [in] output_type Output data type.
   /// \param [in] batch The number of FFT operations to perform.
-  fft_solver(int dim, int *n, int *inembed, int istride, int idist,
+  fft_engine(int dim, int *n, int *inembed, int istride, int idist,
              library_data_t input_type, int *onembed, int ostride, int odist,
              library_data_t output_type, int batch) {
     init<int>(dim, n, inembed, istride, idist, input_type, onembed, ostride,
@@ -139,10 +138,10 @@ public:
   /// \param [in] odist Distance between the two batches of the output data.
   /// \param [in] type The FFT type.
   /// \param [in] batch The number of FFT operations to perform.
-  fft_solver(int dim, long long *n, long long *inembed, long long istride,
+  fft_engine(int dim, long long *n, long long *inembed, long long istride,
              long long idist, long long *onembed, long long ostride,
              long long odist, fft_type type, long long batch)
-      : fft_solver(dim, n, inembed, istride, idist,
+      : fft_engine(dim, n, inembed, istride, idist,
                    fft_type_to_data_type(type).first, onembed, ostride, odist,
                    fft_type_to_data_type(type).second, batch) {}
   /// Construct the class for calculate n-D FFT.
@@ -158,16 +157,16 @@ public:
   /// \param [in] odist Distance between the two batches of the output data.
   /// \param [in] type The FFT type.
   /// \param [in] batch The number of FFT operations to perform.
-  fft_solver(int dim, int *n, int *inembed, int istride, int idist,
+  fft_engine(int dim, int *n, int *inembed, int istride, int idist,
              int *onembed, int ostride, int odist, fft_type type, int batch)
-      : fft_solver(dim, n, inembed, istride, idist,
+      : fft_engine(dim, n, inembed, istride, idist,
                    fft_type_to_data_type(type).first, onembed, ostride, odist,
                    fft_type_to_data_type(type).second, batch) {}
   /// Construct the class for calculate 1-D FFT.
   /// \param [in] n1 The size of the dimension of the data.
   /// \param [in] type The FFT type.
   /// \param [in] batch The number of FFT operations to perform.
-  fft_solver(long long n1, fft_type type, long long batch) {
+  fft_engine(long long n1, fft_type type, long long batch) {
     _n.resize(1);
     _n[0] = n1;
     std::tie(_input_type, _output_type) = fft_type_to_data_type(type);
@@ -179,7 +178,7 @@ public:
   /// \param [in] n2 The size of the 2nd dimension (outermost) of the data.
   /// \param [in] n1 The size of the 1st dimension (innermost) of the data.
   /// \param [in] type The FFT type.
-  fft_solver(long long n2, long long n1, fft_type type) {
+  fft_engine(long long n2, long long n1, fft_type type) {
     _n.resize(2);
     _n[0] = n2;
     _n[1] = n1;
@@ -192,7 +191,7 @@ public:
   /// \param [in] n2 The size of the 2nd dimension of the data.
   /// \param [in] n1 The size of the 1st dimension (innermost) of the data.
   /// \param [in] type The FFT type.
-  fft_solver(long long n3, long long n2, long long n1, fft_type type) {
+  fft_engine(long long n3, long long n2, long long n1, fft_type type) {
     _n.resize(3);
     _n[0] = n3;
     _n[1] = n2;
@@ -205,11 +204,9 @@ public:
   /// \param [in] input Pointer to the input data.
   /// \param [out] output Pointer to the output data.
   /// \param [in] direction The FFT direction.
-  void compute(void *input, void *output, fft_dir direction) {
+  template<typename input_t, typename output_t>
+  void compute(input_t *input, output_t *output, fft_direction direction) {
     _direction = direction;
-    if (input == output) {
-      _is_inplace = true;
-    }
     if (_input_type == library_data_t::complex_float &&
         _output_type == library_data_t::complex_float) {
       compute_complex<float, oneapi::mkl::dft::precision::SINGLE>(
@@ -235,6 +232,42 @@ public:
       compute_real<double, oneapi::mkl::dft::precision::DOUBLE>(
           _odist, _idist, (double *)input, (double *)output);
     }
+  }
+  template<>
+  void compute(float *input, cl::sycl::float2 *output, fft_direction direction) {
+    _direction = direction;
+    compute_real<float, oneapi::mkl::dft::precision::SINGLE>(
+        _idist, _odist, (float *)input, (float *)output);
+  }
+  template<>
+  void compute(cl::sycl::float2 *input, float *output, fft_direction direction) {
+    _direction = direction;
+    compute_real<float, oneapi::mkl::dft::precision::SINGLE>(
+        _odist, _idist, (float *)input, (float *)output);
+  }
+  template<>
+  void compute(double *input, cl::sycl::double2 *output, fft_direction direction) {
+    _direction = direction;
+    compute_real<double, oneapi::mkl::dft::precision::DOUBLE>(
+        _idist, _odist, (double *)input, (double *)output);
+  }
+  template<>
+  void compute(cl::sycl::double2 *input, double *output, fft_direction direction) {
+    _direction = direction;
+    compute_real<double, oneapi::mkl::dft::precision::DOUBLE>(
+        _odist, _idist, (double *)input, (double *)output);
+  }
+  template<>
+  void compute(cl::sycl::float2 *input, cl::sycl::float2 *output, fft_direction direction) {
+    _direction = direction;
+    compute_complex<float, oneapi::mkl::dft::precision::SINGLE>(
+        _idist, _odist, (float *)input, (float *)output);
+  }
+  template<>
+  void compute(cl::sycl::double2 *input, cl::sycl::double2 *output, fft_direction direction) {
+    _direction = direction;
+    compute_complex<double, oneapi::mkl::dft::precision::DOUBLE>(
+        _idist, _odist, (double *)input, (double *)output);
   }
   /// Setting the user's SYCL queue for calculation.
   /// \param [in] q Pointer to the SYCL queue.
@@ -328,9 +361,12 @@ private:
 
   template <class T, oneapi::mkl::dft::precision Precision>
   void compute_complex(long long idist, long long odist, T *input, T *output) {
+    if (input == output) {
+      _is_inplace = true;
+    }
     long long fwd_dist = idist;
     long long bwd_dist = odist;
-    if (_direction == fft_dir::backward) {
+    if (_direction == fft_direction::backward) {
       fwd_dist = odist;
       bwd_dist = idist;
     }
@@ -355,7 +391,7 @@ private:
     desc.commit(*_q);
     if (_is_inplace) {
       auto data_input = dpct::detail::get_memory(reinterpret_cast<T *>(input));
-      if (_direction == fft_dir::forward) {
+      if (_direction == fft_direction::forward) {
         oneapi::mkl::dft::compute_forward(desc, data_input);
       } else {
         oneapi::mkl::dft::compute_backward(desc, data_input);
@@ -363,7 +399,7 @@ private:
     } else {
       auto data_input = dpct::detail::get_memory(reinterpret_cast<T *>(input));
       auto data_output = dpct::detail::get_memory(reinterpret_cast<T *>(output));
-      if (_direction == fft_dir::forward) {
+      if (_direction == fft_direction::forward) {
         oneapi::mkl::dft::compute_forward(desc, data_input, data_output);
       } else {
         oneapi::mkl::dft::compute_backward(desc, data_input, data_output);
@@ -383,7 +419,7 @@ private:
         backward_distance = _n[0] / 2 + 1;
       } else {
         std::int64_t stride[2] = {0, 1};
-        if (_direction == fft_dir::forward) {
+        if (_direction == fft_direction::forward) {
           desc.set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,
                          stride);
         } else {
@@ -396,7 +432,7 @@ private:
       if (_is_inplace) {
         std::int64_t complex_stride[3] = {0, _n[1] / 2 + 1, 1};
         std::int64_t real_stride[3] = {0, 2 * (_n[1] / 2 + 1), 1};
-        if (_direction == fft_dir::forward) {
+        if (_direction == fft_direction::forward) {
           desc.set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,
                          real_stride);
           desc.set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,
@@ -411,7 +447,7 @@ private:
         backward_distance = _n[0] * (_n[1] / 2 + 1);
       } else {
         std::int64_t stride[3] = {0, _n[1] / 2 + 1, 1};
-        if (_direction == fft_dir::forward) {
+        if (_direction == fft_direction::forward) {
           desc.set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,
                          stride);
         } else {
@@ -427,7 +463,7 @@ private:
         std::int64_t real_stride[4] = {0, _n[1] * 2 * (_n[2] / 2 + 1),
                                        2 * (_n[2] / 2 + 1), 1};
 
-        if (_direction == fft_dir::forward) {
+        if (_direction == fft_direction::forward) {
           desc.set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,
                          real_stride);
           desc.set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,
@@ -442,7 +478,7 @@ private:
         backward_distance = _n[0] * _n[1] * (_n[2] / 2 + 1);
       } else {
         std::int64_t stride[4] = {0, _n[1] * (_n[2] / 2 + 1), _n[2] / 2 + 1, 1};
-        if (_direction == fft_dir::forward) {
+        if (_direction == fft_direction::forward) {
           desc.set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,
                          stride);
         } else {
@@ -460,6 +496,9 @@ private:
 
   template <class T, oneapi::mkl::dft::precision Precision>
   void compute_real(int fwd_dist, int bwd_dist, T *input, T *output) {
+    if (input == output) {
+      _is_inplace = true;
+    }
     oneapi::mkl::dft::descriptor<Precision, oneapi::mkl::dft::domain::REAL>
         desc(_n);
     if (!_is_inplace)
@@ -477,7 +516,7 @@ private:
     desc.commit(*_q);
     if (_is_inplace) {
       auto data_input = dpct::detail::get_memory(reinterpret_cast<T *>(input));
-      if (_direction == fft_dir::forward) {
+      if (_direction == fft_direction::forward) {
         oneapi::mkl::dft::compute_forward(desc, data_input);
       } else {
         oneapi::mkl::dft::compute_backward(desc, data_input);
@@ -485,7 +524,7 @@ private:
     } else {
       auto data_input = dpct::detail::get_memory(reinterpret_cast<T *>(input));
       auto data_output = dpct::detail::get_memory(reinterpret_cast<T *>(output));
-      if (_direction == fft_dir::forward) {
+      if (_direction == fft_direction::forward) {
         oneapi::mkl::dft::compute_forward(desc, data_input, data_output);
       } else {
         oneapi::mkl::dft::compute_backward(desc, data_input, data_output);
@@ -508,7 +547,7 @@ private:
   std::int64_t _batch = 1;
   bool _is_basic = false;
   bool _is_inplace = false;
-  fft_dir _direction;
+  fft_direction _direction;
 };
 // DPCT_LABEL_END
 } // namespace fft

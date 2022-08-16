@@ -32,8 +32,8 @@ int main() {
   size = sizeof(cuComplex);
   size = sizeof(cuDoubleComplex);
 
-  //CHECK:int forward = dpct::fft::fft_dir::forward;
-  //CHECK-NEXT:int inverse = dpct::fft::fft_dir::backward;
+  //CHECK:int forward = dpct::fft::fft_direction::forward;
+  //CHECK-NEXT:int inverse = dpct::fft::fft_direction::backward;
   int forward = CUFFT_FORWARD;
   int inverse = CUFFT_INVERSE;
 
@@ -58,8 +58,8 @@ int main() {
   fftt = CUFFT_Z2D;
   fftt = CUFFT_Z2Z;
 
-  //CHECK:std::shared_ptr<dpct::fft::fft_solver> ffth;
-  //CHECK-NEXT:size = sizeof(std::shared_ptr<dpct::fft::fft_solver>);
+  //CHECK:std::shared_ptr<dpct::fft::fft_engine> ffth;
+  //CHECK-NEXT:size = sizeof(std::shared_ptr<dpct::fft::fft_engine>);
   cufftHandle ffth;
   size = sizeof(cufftHandle);
 
@@ -119,7 +119,7 @@ int main() {
 //CHECK-NEXT:typename F = sycl::double2,
 //CHECK-NEXT:typename G = dpct::fft::fft_type,
 //CHECK-NEXT:typename H = dpct::fft::fft_type,
-//CHECK-NEXT:typename I = std::shared_ptr<dpct::fft::fft_solver>,
+//CHECK-NEXT:typename I = std::shared_ptr<dpct::fft::fft_engine>,
 //CHECK-NEXT:typename J = int,
 //CHECK-NEXT:typename K = int>
 //CHECK-NEXT:void foo1(
@@ -131,7 +131,7 @@ int main() {
 //CHECK-NEXT:sycl::double2 f,
 //CHECK-NEXT:dpct::fft::fft_type g,
 //CHECK-NEXT:dpct::fft::fft_type h,
-//CHECK-NEXT:std::shared_ptr<dpct::fft::fft_solver> i,
+//CHECK-NEXT:std::shared_ptr<dpct::fft::fft_engine> i,
 //CHECK-NEXT:int j,
 //CHECK-NEXT:int k
 //CHECK-NEXT:){}
@@ -303,7 +303,7 @@ template<typename T>
 cufftType foo10(){}
 
 //CHECK:template<typename T>
-//CHECK-NEXT:std::shared_ptr<dpct::fft::fft_solver> foo11(){}
+//CHECK-NEXT:std::shared_ptr<dpct::fft::fft_engine> foo11(){}
 template<typename T>
 cufftHandle foo11(){}
 

@@ -4,7 +4,7 @@
 // RUN: rm -rf %T/FftUtils/api_test3_out
 
 // CHECK: 21
-// TEST_FEATURE: FftUtils_fft_solver
+// TEST_FEATURE: FftUtils_fft_engine
 
 #include "cufft.h"
 

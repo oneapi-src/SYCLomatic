@@ -4,7 +4,7 @@
 // RUN: rm -rf %T/FftUtils/api_test1_out
 
 // CHECK: 2
-// TEST_FEATURE: FftUtils_fft_dir
+// TEST_FEATURE: FftUtils_fft_direction
 
 #include "cufft.h"
 

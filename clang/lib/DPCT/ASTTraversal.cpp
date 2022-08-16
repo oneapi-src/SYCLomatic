@@ -386,14 +386,14 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
              MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_FORWARD") {
     TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13,
                                               MapNames::getDpctNamespace() +
-                                                  "fft::fft_dir::forward"));
-    requestFeature(HelperFeatureEnum::FftUtils_fft_dir, Range.getBegin());
+                                                  "fft::fft_direction::forward"));
+    requestFeature(HelperFeatureEnum::FftUtils_fft_direction, Range.getBegin());
   } else if (MacroNameTok.getIdentifierInfo() &&
              MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_INVERSE") {
     TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13,
                                               MapNames::getDpctNamespace() +
-                                                  "fft::fft_dir::backward"));
-    requestFeature(HelperFeatureEnum::FftUtils_fft_dir, Range.getBegin());
+                                                  "fft::fft_direction::backward"));
+    requestFeature(HelperFeatureEnum::FftUtils_fft_direction, Range.getBegin());
   }
 
   // For the un-specialized struct, there is no AST for the extern function

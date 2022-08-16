@@ -335,8 +335,8 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::FftUtils_fft_type)},
       {"cufftHandle",
        std::make_shared<TypeNameRule>("std::shared_ptr<" + getDpctNamespace() +
-                                          "fft::fft_solver>",
-                                      HelperFeatureEnum::FftUtils_fft_solver)},
+                                          "fft::fft_engine>",
+                                      HelperFeatureEnum::FftUtils_fft_engine)},
       {"CUdevice", std::make_shared<TypeNameRule>("int")},
       {"CUarray_st",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_matrix",

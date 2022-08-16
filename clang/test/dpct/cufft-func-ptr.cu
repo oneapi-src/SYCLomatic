@@ -4,19 +4,20 @@
 // RUN: FileCheck --input-file %T/cufft-func-ptr/cufft-func-ptr.dp.cpp --match-full-lines cufft-func-ptr.cu
 #include <cufft.h>
 
-//CHECK:static int (*pt2CufftExec)(std::shared_ptr<dpct::fft::fft_solver>,
+//CHECK:static int (*pt2CufftExec)(std::shared_ptr<dpct::fft::fft_engine>,
 //CHECK-NEXT:                           sycl::double2 *, double *) =
-//CHECK-NEXT:    [](std::shared_ptr<dpct::fft::fft_solver> solver, sycl::double2 in,
+//CHECK-NEXT:    [](std::shared_ptr<dpct::fft::fft_engine> engine, sycl::double2 in,
 //CHECK-NEXT:       double out) {
-//CHECK-NEXT:      desc->compute(in, out, dpct::fft::fft_dir::backward);
+//CHECK-NEXT:      engine->compute<sycl::double2, double>(
+//CHECK-NEXT:        in, out, dpct::fft::fft_direction::backward);
 //CHECK-NEXT:      return 0;
 //CHECK-NEXT:    };
 static cufftResult (*pt2CufftExec)(cufftHandle, cufftDoubleComplex *,
                                     double *) = &cufftExecZ2D;
 
 int main() {
-//CHECK:  std::shared_ptr<dpct::fft::fft_solver> plan1;
-//CHECK-NEXT:  plan1 = std::make_shared<dpct::fft::fft_solver>(
+//CHECK:  std::shared_ptr<dpct::fft::fft_engine> plan1;
+//CHECK-NEXT:  plan1 = std::make_shared<dpct::fft::fft_engine>(
 //CHECK-NEXT:      10, dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
 //CHECK-NEXT:  sycl::double2 *idata;
@@ -31,19 +32,20 @@ int main() {
 }
 
 int foo1() {
-//CHECK:  typedef int (*Func_t)(std::shared_ptr<dpct::fft::fft_solver>, sycl::double2 *,
+//CHECK:  typedef int (*Func_t)(std::shared_ptr<dpct::fft::fft_engine>, sycl::double2 *,
 //CHECK-NEXT:                        double *);
   typedef cufftResult (*Func_t)(cufftHandle, cufftDoubleComplex *, double *);
 
-//CHECK:  static Func_t FuncPtr = [](std::shared_ptr<dpct::fft::fft_solver> solver,
+//CHECK:  static Func_t FuncPtr = [](std::shared_ptr<dpct::fft::fft_engine> engine,
 //CHECK-NEXT:                             sycl::double2 in, double out) {
-//CHECK-NEXT:    desc->compute(in, out, dpct::fft::fft_dir::backward);
+//CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
+//CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
 //CHECK-NEXT:  };
   static Func_t FuncPtr  = &cufftExecZ2D;
 
-//CHECK:  std::shared_ptr<dpct::fft::fft_solver> plan1;
-//CHECK-NEXT:  plan1 = std::make_shared<dpct::fft::fft_solver>(
+//CHECK:  std::shared_ptr<dpct::fft::fft_engine> plan1;
+//CHECK-NEXT:  plan1 = std::make_shared<dpct::fft::fft_engine>(
 //CHECK-NEXT:      10, dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
 //CHECK-NEXT:  sycl::double2 *idata;
@@ -58,19 +60,20 @@ int foo1() {
 }
 
 int foo2() {
-//CHECK:  using Func_t = int (*)(std::shared_ptr<dpct::fft::fft_solver>,
+//CHECK:  using Func_t = int (*)(std::shared_ptr<dpct::fft::fft_engine>,
 //CHECK-NEXT:    sycl::double2 *, double *);
   using Func_t = cufftResult (*)(cufftHandle, cufftDoubleComplex *, double *);
 
-//CHECK:  Func_t FuncPtr2 = [](std::shared_ptr<dpct::fft::fft_solver> solver,
+//CHECK:  Func_t FuncPtr2 = [](std::shared_ptr<dpct::fft::fft_engine> engine,
 //CHECK-NEXT:                       sycl::double2 in, double out) {
-//CHECK-NEXT:    desc->compute(in, out, dpct::fft::fft_dir::backward);
+//CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
+//CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
 //CHECK-NEXT:  };
   Func_t FuncPtr2  = &cufftExecZ2D;
 
-//CHECK:  std::shared_ptr<dpct::fft::fft_solver> plan1;
-//CHECK-NEXT:  plan1 = std::make_shared<dpct::fft::fft_solver>(
+//CHECK:  std::shared_ptr<dpct::fft::fft_engine> plan1;
+//CHECK-NEXT:  plan1 = std::make_shared<dpct::fft::fft_engine>(
 //CHECK-NEXT:      10, dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
 //CHECK-NEXT:  sycl::double2 *idata;
@@ -85,21 +88,22 @@ int foo2() {
 }
 
 int foo3() {
-//CHECK:  using Func_t = int (*)(std::shared_ptr<dpct::fft::fft_solver>,
+//CHECK:  using Func_t = int (*)(std::shared_ptr<dpct::fft::fft_engine>,
 //CHECK-NEXT:                         sycl::double2 *, double *);
   using Func_t = cufftResult (*)(cufftHandle, cufftDoubleComplex *, double *);
 
 //CHECK:  Func_t FuncPtr3;
-//CHECK-NEXT:  FuncPtr3 = [](std::shared_ptr<dpct::fft::fft_solver> solver, sycl::double2 in,
+//CHECK-NEXT:  FuncPtr3 = [](std::shared_ptr<dpct::fft::fft_engine> engine, sycl::double2 in,
 //CHECK-NEXT:                double out) {
-//CHECK-NEXT:    desc->compute(in, out, dpct::fft::fft_dir::backward);
+//CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
+//CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
 //CHECK-NEXT:  };
   Func_t FuncPtr3;
   FuncPtr3 = &cufftExecZ2D;
 
-//CHECK:  std::shared_ptr<dpct::fft::fft_solver> plan1;
-//CHECK-NEXT:  plan1 = std::make_shared<dpct::fft::fft_solver>(
+//CHECK:  std::shared_ptr<dpct::fft::fft_engine> plan1;
+//CHECK-NEXT:  plan1 = std::make_shared<dpct::fft::fft_engine>(
 //CHECK-NEXT:      10, dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
 //CHECK-NEXT:  sycl::double2 *idata;
@@ -114,19 +118,20 @@ int foo3() {
 }
 
 int foo4() {
-//CHECK:  int (*FuncPtr4)(std::shared_ptr<dpct::fft::fft_solver>, sycl::double2 *,
+//CHECK:  int (*FuncPtr4)(std::shared_ptr<dpct::fft::fft_engine>, sycl::double2 *,
 //CHECK-NEXT:                  double *);
   cufftResult (*FuncPtr4)(cufftHandle, cufftDoubleComplex *, double *);
 
-//CHECK:  FuncPtr4 = [](std::shared_ptr<dpct::fft::fft_solver> solver, sycl::double2 in,
+//CHECK:  FuncPtr4 = [](std::shared_ptr<dpct::fft::fft_engine> engine, sycl::double2 in,
 //CHECK-NEXT:                double out) {
-//CHECK-NEXT:    desc->compute(in, out, dpct::fft::fft_dir::backward);
+//CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
+//CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
 //CHECK-NEXT:  };
   FuncPtr4 = &cufftExecZ2D;
 
-//CHECK:  std::shared_ptr<dpct::fft::fft_solver> plan1;
-//CHECK-NEXT:  plan1 = std::make_shared<dpct::fft::fft_solver>(
+//CHECK:  std::shared_ptr<dpct::fft::fft_engine> plan1;
+//CHECK-NEXT:  plan1 = std::make_shared<dpct::fft::fft_engine>(
 //CHECK-NEXT:      10, dpct::fft::fft_type::complex_double_to_real_double, 1);
 //CHECK-NEXT:  double* odata;
 //CHECK-NEXT:  sycl::double2 *idata;
