@@ -669,9 +669,9 @@ class engine_ext {
     }
   }
   ::dnnl::memory::desc get_group_weight_desc(int group_count,
-                                             memory_desc_ext &weight_desc) {
+                                             memory_desc_ext weight_desc) {
     if (group_count == 1) {
-      return desc.get_desc();
+      return weight_desc.get_desc();
     }
     auto help_weight_desc = weight_desc.get_desc();
     std::vector<int64_t> new_size;
@@ -2403,7 +2403,7 @@ engine_ext::convolution_forward(convolution_desc &desc, ::dnnl::algorithm alg,
 
   auto primitive = create_forward_primitive<::dnnl::convolution_forward>(
       ::dnnl::prop_kind::forward_training, alg, src_desc.get_desc(),
-      weight_desc.get_desc(), dst_desc.get_desc(), desc.get_stride(),
+      help_weight_desc, dst_desc.get_desc(), desc.get_stride(),
       desc.get_dilate(), desc.get_padding(), desc.get_padding());
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
@@ -2437,7 +2437,7 @@ sycl::event engine_ext::convolution_forward_ex(
   auto primitive = create_forward_primitive<::dnnl::convolution_forward>(
       ::dnnl::prop_kind::forward_training,
       alg, src_desc.get_desc(),
-      help_weight_desc, bias_desc.get_desc(), dst_desc.get_desc(),
+      help_weight_desc, help_bias_desc, dst_desc.get_desc(),
       desc.get_stride(), desc.get_dilate(), desc.get_padding(),
       desc.get_padding());
 
@@ -2458,7 +2458,7 @@ sycl::event engine_ext::convolution_forward_ex(
   }
 
   auto e = execute_primitive(primitive, execution_args,
-                    {{alpha_0, 0.f, DNNL_ARG_DST, dst_desc, dst}});
+                    {{1.f, 0.f, DNNL_ARG_DST, dst_desc, dst}});
   if(cache != nullptr) {
     async_dpct_free({cache}, {e}, *_q);
   }
@@ -2481,19 +2481,20 @@ sycl::event engine_ext::convolution_backward_data(
   if (scale_parameter_preprocess({{alpha, beta, diff_dst_desc, diff_dst}})) {
     return sycl::event();
   }
-
+  auto help_weight_desc =
+      get_group_weight_desc(desc.get_group_count(), weight_desc);
   auto forward_primitive =
       create_forward_primitive_desc<::dnnl::convolution_forward>(
           ::dnnl::prop_kind::forward_training,
           ::dnnl::algorithm::convolution_auto, diff_src_desc.get_desc(),
-          weight_desc.get_desc(), diff_dst_desc.get_desc(),
-          diff_dst_desc.get_desc(), desc.get_stride(), desc.get_dilate(),
+          help_weight_desc, diff_dst_desc.get_desc(),
+          desc.get_stride(), desc.get_dilate(),
           desc.get_padding(), desc.get_padding());
 
   auto primitive =
       create_backward_primitive<::dnnl::convolution_backward_data>(
           forward_primitive, ::dnnl::algorithm::convolution_auto,
-          diff_src_desc.get_desc(), weight_desc.get_desc(),
+          diff_src_desc.get_desc(), help_weight_desc,
           diff_dst_desc.get_desc(), desc.get_stride(), desc.get_dilate(),
           desc.get_padding(), desc.get_padding());
 
@@ -2501,7 +2502,7 @@ sycl::event engine_ext::convolution_backward_data(
       {DNNL_ARG_DIFF_DST,
        {::dnnl::memory(diff_dst_desc.get_desc(), _eng, diff_dst)}},
       {DNNL_ARG_WEIGHTS,
-       {::dnnl::memory(weight_desc.get_desc(), _eng, weight)}}};
+       {::dnnl::memory(help_weight_desc, _eng, weight)}}};
 
   return execute_primitive(
       primitive, execution_args,
@@ -2524,19 +2525,20 @@ sycl::event engine_ext::convolution_backward_weight(
           {{alpha, beta, diff_weight_desc, diff_weight}})) {
     return sycl::event();
   }
-
+  auto help_diff_weight_desc =
+      get_group_weight_desc(desc.get_group_count(), diff_weight_desc);
   auto forward_primitive =
       create_forward_primitive_desc<::dnnl::convolution_forward>(
           ::dnnl::prop_kind::forward_training,
           ::dnnl::algorithm::convolution_auto, src_desc.get_desc(),
-          diff_weight_desc.get_desc(), diff_dst_desc.get_desc(),
-          diff_dst_desc.get_desc(), desc.get_stride(), desc.get_dilate(),
+          help_diff_weight_desc, diff_dst_desc.get_desc(),
+          desc.get_stride(), desc.get_dilate(),
           desc.get_padding(), desc.get_padding());
 
   auto primitive =
       create_backward_primitive<::dnnl::convolution_backward_data>(
           forward_primitive, ::dnnl::algorithm::convolution_auto,
-          src_desc.get_desc(), diff_weight_desc.get_desc(),
+          src_desc.get_desc(), help_diff_weight_desc,
           diff_dst_desc.get_desc(), desc.get_stride(), desc.get_dilate(),
           desc.get_padding(), desc.get_padding());
 
@@ -2547,7 +2549,7 @@ sycl::event engine_ext::convolution_backward_weight(
 
   return execute_primitive(
       primitive, execution_args,
-      {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_weight_desc, diff_weight}});
+      {{alpha, beta, DNNL_ARG_DIFF_SRC, help_diff_weight_desc, diff_weight}});
 }
 // DPCT_LABEL_END
 } // namespace dnnl
