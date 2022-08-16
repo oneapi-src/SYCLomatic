@@ -783,7 +783,7 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  sycl::event engine_ext::binary(binary_desc &desc, float alpha_0,
+  sycl::event binary(binary_desc &desc, float alpha_0,
                                  const memory_desc_ext &src_desc_0, void *src_0,
                                  float alpha_1,
                                  const memory_desc_ext &src_desc_1, void *src_1,
@@ -983,7 +983,7 @@ public:
 // DnnlUtils|batch_normalization_ops
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  void engine_ext::derive_batch_normalization_memory_desc(
+  void derive_batch_normalization_memory_desc(
       memory_desc_ext &desc, const memory_desc_ext &src_desc,
       batch_normalization_mode mode);
 // DPCT_LABEL_END
@@ -995,7 +995,7 @@ public:
 // DnnlUtils|batch_normalization_ops
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  sycl::event engine_ext::batch_normalization_forward_inference(
+  sycl::event batch_normalization_forward_inference(
       batch_normalization_mode mode, float epsilon, float alpha,
       const memory_desc_ext &src_desc, void *src, float beta,
       const memory_desc_ext &dst_desc, void *dst,
@@ -1010,7 +1010,7 @@ public:
 // DnnlUtils|batch_normalization_ops
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  sycl::event engine_ext::batch_normalization_forward_training(
+  sycl::event batch_normalization_forward_training(
       batch_normalization_mode mode, float epsilon, float factor, float alpha,
       const memory_desc_ext &src_desc, void *src, float beta,
       const memory_desc_ext &dst_desc, void *dst,
@@ -1025,7 +1025,7 @@ public:
 // DnnlUtils|batch_normalization_ops
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  sycl::event engine_ext::batch_normalization_backward(
+  sycl::event batch_normalization_backward(
       batch_normalization_mode mode, float epsilon, float alpha_data,
       const memory_desc_ext &src_desc, void *src,
       const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta_data,
@@ -1042,7 +1042,7 @@ public:
 // DnnlUtils|batch_normalization_ops
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  sycl::event engine_ext::batch_normalization_forward_training_ex(
+  sycl::event batch_normalization_forward_training_ex(
       batch_normalization_mode mode, batch_normalization_ops ops,
       activation_desc &adesc, float epsilon, float factor, float alpha,
       const memory_desc_ext &src_desc, void *src, float beta,
@@ -1060,7 +1060,7 @@ public:
 // DnnlUtils|batch_normalization_ops
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  sycl::event engine_ext::batch_normalization_backward_ex(
+  sycl::event batch_normalization_backward_ex(
       batch_normalization_mode mode, batch_normalization_ops ops,
       activation_desc &adesc, float epsilon, float alpha_data,
       const memory_desc_ext &src_desc, void *src,
@@ -1080,7 +1080,7 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   sycl::event
-  engine_ext::convolution_forward(convolution_desc &desc, ::dnnl::algorithm alg,
+  convolution_forward(convolution_desc &desc, ::dnnl::algorithm alg,
                                   float alpha, const memory_desc_ext &src_desc,
                                   void *src, const memory_desc_ext &weight_desc,
                                   void *weight, float beta,
@@ -1092,7 +1092,7 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  sycl::event engine_ext::convolution_forward_ex(
+  sycl::event convolution_forward_ex(
       convolution_desc &desc, ::dnnl::algorithm alg, activation_desc &adesc,
       float alpha_0, const memory_desc_ext &src_desc, void *src,
       const memory_desc_ext &weight_desc, void *weight, float alpha_1,
@@ -1106,7 +1106,7 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  sycl::event engine_ext::convolution_backward_data(
+  sycl::event convolution_backward_data(
       convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
       const memory_desc_ext &weight_desc, void *weight,
       const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta,
@@ -1118,7 +1118,7 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  sycl::event engine_ext::convolution_backward_weight(
+  sycl::event convolution_backward_weight(
       convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
       const memory_desc_ext &src_desc, void *src,
       const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta,
@@ -1129,6 +1129,24 @@ public:
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+
+// DPCT_LABEL_BEGIN|convolution_backward_bias_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::event convolution_backward_bias(
+      float alpha,
+      const memory_desc_ext &diff_dst_desc, void *diff_dst,
+      float beta,
+      const memory_desc_ext &diff_bias_desc, void *diff_bias);
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|engine_ext_1|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+
 };
 // DPCT_LABEL_END
 
@@ -2536,22 +2554,40 @@ sycl::event engine_ext::convolution_backward_weight(
           desc.get_padding(), desc.get_padding());
 
   auto primitive =
-      create_backward_primitive<::dnnl::convolution_backward_data>(
+      create_backward_primitive<::dnnl::convolution_backward_weights>(
           forward_primitive, ::dnnl::algorithm::convolution_auto,
           src_desc.get_desc(), help_diff_weight_desc,
           diff_dst_desc.get_desc(), desc.get_stride(), desc.get_dilate(),
           desc.get_padding(), desc.get_padding());
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
-      {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, diff_dst)}},
+      {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}},
       {DNNL_ARG_DIFF_DST,
        {::dnnl::memory(diff_dst_desc.get_desc(), _eng, diff_dst)}}};
 
   return execute_primitive(
       primitive, execution_args,
-      {{alpha, beta, DNNL_ARG_DIFF_SRC, help_diff_weight_desc, diff_weight}});
+      {{alpha, beta, DNNL_ARG_DIFF_WEIGHTS, help_diff_weight_desc, diff_weight}});
 }
 // DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|convolution_backward_bias|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|convolution_backward_bias_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+sycl::event convolution_backward_bias(float alpha,
+                                      const memory_desc_ext &diff_dst_desc,
+                                      void *diff_dst, float beta,
+                                      const memory_desc_ext &diff_bias_desc,
+                                      void *diff_bias) {
+  reduction_desc rdesc;
+  rdesc.set(reduction_op::sum);
+  reduction(rdesc, alpha, diff_dst_desc, diff_dst, beta, diff_bias_desc,
+            diff_bias);
+}
+// DPCT_LABEL_END
+
 } // namespace dnnl
 } // namespace dpct
 
