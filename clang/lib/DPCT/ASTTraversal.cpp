@@ -15943,8 +15943,9 @@ REGISTER_RULE(ComplexAPIRule)
 void TemplateSpecializationTypeLocRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
-    return hasAnyName("thrust::not_equal_to",
-                      "thrust::constant_iterator");
+    return hasAnyName("thrust::not_equal_to", "thrust::constant_iterator",
+                      "cub::CountingInputIterator",
+                      "cub::TransformInputIterator");
   };
 
   MF.addMatcher(typeLoc(

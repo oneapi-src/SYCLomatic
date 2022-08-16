@@ -37,3 +37,15 @@ TYPE_REWRITE_ENTRY(
     "thrust::constant_iterator",
     TYPE_FACTORY(STR(MapNames::getDpctNamespace() + "constant_iterator"),
                      TEMPLATE_ARG(0))))
+
+TYPE_REWRITE_ENTRY(
+    "cub::CountingInputIterator",
+    HEADER_INSERTION_FACTORY(HeaderType::HT_DPL_Iterator,
+                             TYPE_FACTORY(STR("oneapi::dpl::counting_iterator"),
+                                          TEMPLATE_ARG(0))))
+
+TYPE_REWRITE_ENTRY("cub::TransformInputIterator",
+                   HEADER_INSERTION_FACTORY(
+                       HeaderType::HT_DPL_Iterator,
+                       TYPE_FACTORY(STR("oneapi::dpl::transform_iterator"),
+                                    TEMPLATE_ARG(2), TEMPLATE_ARG(1))))

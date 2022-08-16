@@ -85,6 +85,13 @@ createFeatureRequestFactory(
   return createFeatureRequestFactory(Feature, std::move(Input));
 }
 
+std::shared_ptr<TypeLocRewriterFactoryBase> createHeaderInsertionFactory(
+    HeaderType Header,
+    std::shared_ptr<TypeLocRewriterFactoryBase> &&SubRewriterFactory) {
+  return std::make_shared<HeaderInsertionRewriterFactory>(Header,
+                                                          SubRewriterFactory);
+}
+
 std::unique_ptr<std::unordered_map<
     std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>>
     TypeLocRewriterFactoryBase::TypeLocRewriterMap;
@@ -102,7 +109,11 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
 #define TYPE_FACTORY(...) createTypeLocRewriterFactory(__VA_ARGS__)
 #define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
   createFeatureRequestFactory(FEATURE, x 0),
+#define HEADER_INSERTION_FACTORY(HEADER, SUB)                                  \
+  createHeaderInsertionFactory(HEADER, SUB)
 #include "APINamesTemplateType.inc"
+#undef HEADER_INSERTION_FACTORY
+#undef FEATURE_REQUEST_FACTORY
 #undef TYPE_FACTORY
 #undef TYPE_CONDITIONAL_FACTORY
 #undef TYPE_REWRITE_ENTRY
