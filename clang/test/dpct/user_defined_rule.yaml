@@ -91,3 +91,9 @@
   In: OldType
   Out: NewType
   Includes: []
+- Rule: atomicAdd_rule
+  Kind: API
+  Priority: Takeover
+  In: atomicAdd
+  Out: cl::sycl::atomic<$deref_type($1)>(cl::sycl::global_ptr<$deref_type($1)>($1)).fetch_add($2)
+  Includes: []

@@ -1841,13 +1841,24 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     return;
   };
 
+  const std::string AtomicFuncName = CE->getDirectCallee()->getName().str();
+
+  if (!CallExprRewriterFactoryBase::RewriterMap)
+    return;
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(AtomicFuncName);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
   // TODO: 1. Investigate are there usages of atomic functions on local address
   //          space
   //       2. If item 1. shows atomic functions on local address space is
   //          significant, detect whether this atomic operation operates in
   //          global space or local space (currently, all in global space,
   //          see dpct_atomic.hpp for more details)
-  const std::string AtomicFuncName = CE->getDirectCallee()->getName().str();
   if (MapNames::AtomicFuncNamesMap.find(AtomicFuncName) ==
       MapNames::AtomicFuncNamesMap.end())
     return;

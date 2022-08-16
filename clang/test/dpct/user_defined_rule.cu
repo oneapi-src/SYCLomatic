@@ -137,3 +137,10 @@ void foo4(){
 template<typename T>struct OldType{};
 // CHECK: void foo5() { NewType<int> *cu_st; }
 __device__ void foo5(){ OldType<int> *cu_st;}
+
+
+__global__ void foo6(){
+  int a;
+  //CHECK: cl::sycl::atomic<int>(cl::sycl::global_ptr<int>(&a)).fetch_add(1);
+  atomicAdd(&a, 1);
+}
