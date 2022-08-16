@@ -121,6 +121,27 @@ bool makeOutRootCanonicalOrSetDefaults(string &OutRoot) {
   return true;
 }
 
+bool makeAnalysisScopeCanonicalOrSetDefaults(string &AnalysisScope,
+                                             const string &InRoot) {
+  assert(isCanonical(InRoot) && "InRoot must be a canonical path.");
+  if (AnalysisScope.empty()) {
+    // AnalysisScope defaults to the value of InRoot
+    AnalysisScope = InRoot;
+    return true;
+  }
+  if (!makeCanonical(AnalysisScope)) {
+    return false;
+  }
+  SmallString<512> AnalysisScopeAbs;
+  std::error_code EC =
+      llvm::sys::fs::real_path(AnalysisScope, AnalysisScopeAbs);
+  if ((bool)EC) {
+    return false;
+  }
+  AnalysisScope = AnalysisScopeAbs.str().str();
+  return true;
+}
+
 // Make sure all files have an extension and are under InRoot.
 int validatePaths(const std::string &InRoot,
                   const std::vector<std::string> &SourceFiles) {

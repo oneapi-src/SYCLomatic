@@ -1220,18 +1220,14 @@ int runDPCT(int argc, const char **argv) {
   }
   dpct::DpctGlobalInfo::setOutRoot(OutRoot);
 
-  if (AnalysisScope.empty()) {
-    // /p AnalysisScope defaults to the value of /p InRoot
-    AnalysisScope.setValue(InRoot.getValue(), true);
-  } else {
-    // /p InRoot must be the same as or child of /p AnalysisScope
-    if (!makeCanonical(AnalysisScope) ||
-        !isChildOrSamePath(AnalysisScope, InRoot)) {
-      ShowStatus(MigrationErrorInvalidAnalysisScope);
-      dpctExit(MigrationErrorInvalidAnalysisScope);
-    }
-    ValidateInputDirectory(Tool, AnalysisScope);
+  // AnalysisScope defaults to the value of InRoot
+  // InRoot must be the same as or child of AnalysisScope
+  if (!makeAnalysisScopeCanonicalOrSetDefaults(AnalysisScope, InRoot) ||
+      (!InRoot.empty() && !isChildOrSamePath(AnalysisScope, InRoot))) {
+    ShowStatus(MigrationErrorInvalidAnalysisScope);
+    dpctExit(MigrationErrorInvalidAnalysisScope);
   }
+  ValidateInputDirectory(Tool, AnalysisScope);
 
   validateCustomHelperFileNameArg(UseCustomHelperFileLevel,
                                   CustomHelperFileName,
