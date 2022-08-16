@@ -6,8 +6,8 @@
 
 //CHECK:static int (*pt2CufftExec)(std::shared_ptr<dpct::fft::fft_engine>,
 //CHECK-NEXT:                           sycl::double2 *, double *) =
-//CHECK-NEXT:    [](std::shared_ptr<dpct::fft::fft_engine> engine, sycl::double2 in,
-//CHECK-NEXT:       double out) {
+//CHECK-NEXT:    [](std::shared_ptr<dpct::fft::fft_engine> engine, sycl::double2 *in,
+//CHECK-NEXT:       double *out) {
 //CHECK-NEXT:      engine->compute<sycl::double2, double>(
 //CHECK-NEXT:        in, out, dpct::fft::fft_direction::backward);
 //CHECK-NEXT:      return 0;
@@ -37,7 +37,7 @@ int foo1() {
   typedef cufftResult (*Func_t)(cufftHandle, cufftDoubleComplex *, double *);
 
 //CHECK:  static Func_t FuncPtr = [](std::shared_ptr<dpct::fft::fft_engine> engine,
-//CHECK-NEXT:                             sycl::double2 in, double out) {
+//CHECK-NEXT:                             sycl::double2 *in, double *out) {
 //CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
 //CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
@@ -65,7 +65,7 @@ int foo2() {
   using Func_t = cufftResult (*)(cufftHandle, cufftDoubleComplex *, double *);
 
 //CHECK:  Func_t FuncPtr2 = [](std::shared_ptr<dpct::fft::fft_engine> engine,
-//CHECK-NEXT:                       sycl::double2 in, double out) {
+//CHECK-NEXT:                       sycl::double2 *in, double *out) {
 //CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
 //CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
@@ -93,8 +93,8 @@ int foo3() {
   using Func_t = cufftResult (*)(cufftHandle, cufftDoubleComplex *, double *);
 
 //CHECK:  Func_t FuncPtr3;
-//CHECK-NEXT:  FuncPtr3 = [](std::shared_ptr<dpct::fft::fft_engine> engine, sycl::double2 in,
-//CHECK-NEXT:                double out) {
+//CHECK-NEXT:  FuncPtr3 = [](std::shared_ptr<dpct::fft::fft_engine> engine,
+//CHECK-NEXT:                sycl::double2 *in, double *out) {
 //CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
 //CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
@@ -122,8 +122,8 @@ int foo4() {
 //CHECK-NEXT:                  double *);
   cufftResult (*FuncPtr4)(cufftHandle, cufftDoubleComplex *, double *);
 
-//CHECK:  FuncPtr4 = [](std::shared_ptr<dpct::fft::fft_engine> engine, sycl::double2 in,
-//CHECK-NEXT:                double out) {
+//CHECK:  FuncPtr4 = [](std::shared_ptr<dpct::fft::fft_engine> engine,
+//CHECK-NEXT:                sycl::double2 *in, double *out) {
 //CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
 //CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
