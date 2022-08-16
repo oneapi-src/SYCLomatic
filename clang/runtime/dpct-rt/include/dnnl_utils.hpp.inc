@@ -1124,11 +1124,6 @@ public:
       const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta,
       const memory_desc_ext &diff_weight_desc, void *diff_weight);
 // DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|engine_ext_1|dpct::dnnl
-// DPCT_DEPENDENCY_BEGIN
-// DnnlUtils|engine_ext
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 
 // DPCT_LABEL_BEGIN|convolution_backward_bias_decl|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
@@ -1141,12 +1136,12 @@ public:
       float beta,
       const memory_desc_ext &diff_bias_desc, void *diff_bias);
 // DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|engine_ext_1|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-
 };
 // DPCT_LABEL_END
 
