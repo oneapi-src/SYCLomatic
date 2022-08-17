@@ -48,9 +48,10 @@ section of Get Started guide for more information.
 - Run regression tests -
 [instructions](GetStartedGuide.md#test-SYCLomatic-toolchain).
 
-#### Project-specific contribution guidelines
+### Tests development
 
-- [Contribute to DPC++](/../sycl/sycl/doc/developer/ContributeToDPCPP.md)
+Every product change should be accompanied with corresponding test modification
+(adding new test(s), extending, removing or modifying existing test(s)).
 
 There are 2 types of tests which are used for SYCLomatic validation:
 * SYCLomatic in-tree LIT tests including [check-clang-c2s](../../tree/SYCLomatic/clang/test/dpct)
@@ -91,6 +92,10 @@ Level Zero or CUDA) should be put to SYCLomatic E2E test suite following
 
 ### Review and acceptance testing
 
+- Create a pull request for your changes following [Creating a pull request
+instructions](https://help.github.com/articles/creating-a-pull-request/).
+- CI will run a signed-off check as soon as your PR is created - see the
+**check_pr** CI action results.
 - CI will run several build and functional testing checks as soon as the PR is
 approved.
   - A new approval is needed if the PR was updated (e.g. during code review).
@@ -99,12 +104,7 @@ ready for merge.
 
 ### Merge
 
-Project gatekeepers (@intel/llvm-gatekeepers) merge pull requests using [Squash
-and merge] and using PR description as the commit message, replacing all
-individual comments made per commit. Authors of the change must ensure PR
-description is up to date at the merge stage, as sometimes comments addressed
-during code reviews can invalidate original PR description. Feel free to ping
-@intel/llvm-gatekeepers if your PR is green and can be merged.
+Project maintainers merge pull requests using one of the following options:
 
 - [Rebase and merge] The preferable choice for PRs containing a single commit
 - [Squash and merge] Used when there are multiple commits in the PR
