@@ -154,7 +154,8 @@ bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
 #error Only support windows and Linux.
 #endif
 
-  if (!isChildPath(LocalInRoot, LocalFilePath, false)) {
+  if (!isChildPath(LocalInRoot, LocalFilePath, false) ||
+      DpctGlobalInfo::isExcluded(LocalFilePath, false)) {
     // Skip rewriting file path if LocalFilePath is not child of LocalInRoot
     // E.g,
     //  LocalFilePath : /path/to/inc/util.cuh
