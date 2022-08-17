@@ -194,7 +194,7 @@ SourceRange getStmtExpansionSourceRange(const Stmt *S) {
   return SourceRange(BeginLoc, EndLoc);
 }
 
-size_t calculateExpansionLevel(const SourceLocation Loc, bool IsGetBegin) {
+size_t calculateExpansionLevel(const SourceLocation Loc, bool IsBegin) {
   if (Loc.isFileID())
     return 0;
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
