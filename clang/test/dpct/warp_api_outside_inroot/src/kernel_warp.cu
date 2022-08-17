@@ -11,7 +11,7 @@
 // RUN: bash %S/../check_script.sh %T/out/inc/utils.dp.hpp %T
 // RUN: bash %S/../check_script.sh %T/out/src %T
 // RUN: FileCheck --input-file %T/exist_check --match-full-lines %S/../ref
-// RUN: rm -rf %T/kernel_warp_outside1
+// RUN: rm -rf %T/out
 #include "../inc/utils.cuh"
 #include "../inc/empty.h"
 
