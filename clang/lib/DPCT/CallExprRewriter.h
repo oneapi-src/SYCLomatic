@@ -391,6 +391,15 @@ public:
   }
 };
 
+class RemoveCubTempStorageFactory : public CallExprRewriterFactoryBase {
+  std::shared_ptr<CallExprRewriterFactoryBase> Inner;
+public:
+  RemoveCubTempStorageFactory(std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
+    : Inner(InnerFactory) {}
+  
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override;
+};
+
 class RewriterFactoryWithSubGroupSize : public CallExprRewriterFactoryBase {
   std::shared_ptr<CallExprRewriterFactoryBase> Inner;
   std::function<size_t(const CallExpr *, std::string &)> F;
