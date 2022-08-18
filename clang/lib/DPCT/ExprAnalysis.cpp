@@ -1487,6 +1487,11 @@ void FunctorAnalysis::dispatch(const Stmt *Expression) {
 }
 
 void FunctorAnalysis::addConstQuailfier(const CXXRecordDecl *CRD) {
+  if (CRD->getDeclKind() == clang::Decl::Kind::ClassTemplate ||
+      CRD->getDeclKind() == clang::Decl::Kind::ClassTemplateSpecialization ||
+      CRD->getDeclKind() ==
+          clang::Decl::Kind::ClassTemplatePartialSpecialization)
+    return;
   for (const auto &M : CRD->methods()) {
     if (M->getOverloadedOperator() == OverloadedOperatorKind::OO_Call &&
         !M->isConst()) {
@@ -1530,6 +1535,35 @@ void FunctorAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *CTOE) {
   }
 }
 
+void FunctorAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+  // Process thrust placeholder
+  auto TypeStr = DRE->getType().getAsString();
+  static const std::string PlaceHolderTypeStr =
+      "const thrust::detail::functional::placeholder<";
+  if (TypeStr.find(PlaceHolderTypeStr) == 0) {
+    unsigned PlaceholderNum = (TypeStr[PlaceHolderTypeStr.length()] - '0') + 1;
+    if (PlaceholderNum > PlaceholderCount)
+      PlaceholderCount = PlaceholderNum;
+    addReplacement(DRE, std::string("_") + std::to_string(PlaceholderNum));
+  }
+
+  // Process functor's quailfier
+  const ValueDecl *VD = DRE->getDecl();
+  if (!VD)
+    return;
+  const Type *Tp = VD->getType().getTypePtr();
+  if (!Tp)
+    return;
+  const CXXRecordDecl *CRD = Tp->getAsCXXRecordDecl();
+  if (!CRD)
+    return;
+  if (DpctGlobalInfo::isInAnalysisScope(CRD->getBeginLoc())) {
+    addConstQuailfier(CRD);
+  } else {
+    ArgumentAnalysis::analyzeExpr(DRE);
+  }
+}
+
 void FunctorAnalysis::analyze(const Expr *Expression) {
   ArgumentAnalysis::initArgumentExpr(Expression);
   ArgumentAnalysis::analyze();
@@ -1547,37 +1581,6 @@ void FunctorAnalysis::analyze(const Expr *Expression) {
   }
   std::string R = LambdaPrefix + getReplacedString() + LambdaPostfix;
   addReplacement(Expression, R);
-}
-
-void FunctorAnalysis::analyzeExpr(const DeclRefExpr* DRE) {
-  // Process thrust placeholder
-  auto TypeStr = DRE->getType().getAsString();
-  static const std::string PlaceHolderTypeStr =
-      "const thrust::detail::functional::placeholder<";
-  if (TypeStr.find(PlaceHolderTypeStr) == 0) {
-    unsigned PlaceholderNum = (TypeStr[PlaceHolderTypeStr.length()] - '0') + 1;
-    if (PlaceholderNum > PlaceholderCount)
-      PlaceholderCount = PlaceholderNum;
-    addReplacement(DRE, std::string("_") + std::to_string(PlaceholderNum));
-  }
-
-
-
-  // Process functor's quailfier
-  const ValueDecl *VD = DRE->getDecl();
-  if (!VD)
-    return;
-  const Type* Tp = VD->getType().getTypePtr();
-  if (!Tp)
-    return;
-  const CXXRecordDecl *CRD = Tp->getAsCXXRecordDecl();
-  if (!CRD)
-    return;
-  if (DpctGlobalInfo::isInAnalysisScope(CRD->getBeginLoc())) {
-    addConstQuailfier(CRD);
-  } else {
-    ArgumentAnalysis::analyzeExpr(DRE);
-  }
 }
 
 void KernelConfigAnalysis::dispatch(const Stmt *Expression) {

@@ -1180,7 +1180,6 @@ class DerefStreamExpr {
       return Val < 3; // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
                       // all migrated to default queue;
     }
-    Expression->dumpPretty(DpctGlobalInfo::getContext());
     return false;
   }
 
@@ -1410,7 +1409,6 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
   return [=](const CallExpr *C) -> std::string {
     auto E = C->getArg(Idx);
     E = E->IgnoreImpCasts();
-    E->dump();
     if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
       std::string EnumName = DRE->getNameInfo().getName().getAsString();
       if (EnumName == "device") {

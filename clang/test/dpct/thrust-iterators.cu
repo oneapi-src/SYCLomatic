@@ -11,6 +11,7 @@
 #include <thrust/iterator/transform_iterator.h>
 #include <thrust/iterator/permutation_iterator.h>
 #include <thrust/functional.h>
+#include <thrust/device_vector.h>
 
 template <typename I, typename F>
 class StridedRange {
@@ -36,3 +37,10 @@ public:
   thrust::transform_iterator<CI, F>  tIt;
 };
 
+
+int main() {
+  thrust::device_vector<int> d_vec(10);
+// CHECK: auto iter = oneapi::dpl::make_reverse_iterator(d_vec.begin());
+  auto iter = thrust::make_reverse_iterator(d_vec.begin());
+  return 0;
+}

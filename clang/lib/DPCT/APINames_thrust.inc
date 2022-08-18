@@ -91,7 +91,7 @@ ENTRY(thrust::make_counting_iterator, thrust::make_counting_iterator, true, NO_F
 ENTRY(thrust::make_discard_iterator, thrust::make_discard_iterator, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::make_pair, thrust::make_pair, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::make_permutation_iterator, thrust::make_permutation_iterator, true, NO_FLAG, P4, "Successful")
-ENTRY(thrust::make_reverse_iterator, thrust::make_reverse_iterator, false, NO_FLAG, P4, "comment")
+ENTRY(thrust::make_reverse_iterator, thrust::make_reverse_iterator, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::make_transform_iterator, thrust::make_transform_iterator, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::make_tuple, thrust::make_tuple, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::tie, thrust::tie, true, NO_FLAG, P4, "Successful")
