@@ -1414,5 +1414,5 @@ CONDITIONAL_FACTORY_ENTRY(
 
 // thrust::make_zip_iterator
 CALL_FACTORY_ENTRY("thrust::make_zip_iterator",  CALL("oneapi::dpl::make_zip_iterator",  ARG(0)))
-// thrust::make_zip_iterator
+// thrust::make_reverse_iterator
 CALL_FACTORY_ENTRY("thrust::make_reverse_iterator",  CALL("oneapi::dpl::make_reverse_iterator",  ARG(0)))
