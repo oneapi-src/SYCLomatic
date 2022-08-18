@@ -78,7 +78,7 @@ public:
   void Elif(SourceLocation Loc, SourceRange ConditionRange,
             ConditionValueKind ConditionValue, SourceLocation IfLoc) override;
   bool ShouldEnter(StringRef FileName, bool IsAngled) override;
-  bool isInRoot(SourceLocation Loc);
+  bool isInAnalysisScope(SourceLocation Loc);
   // Find the "#" before a preprocessing directive, return -1 if have some false
   int findPoundSign(SourceLocation DirectiveStart);
 
@@ -165,11 +165,11 @@ class ASTTraversalManager {
 
 public:
   const CompilerInstance &CI;
-  const std::string InRoot;
+  const std::string AnalysisScope;
   // Set per matchAST invocation
   ASTContext *Context = nullptr;
-  ASTTraversalManager(const CompilerInstance &CI, const std::string &IR)
-      : CI(CI), InRoot(IR) {}
+  ASTTraversalManager(const CompilerInstance &CI, const std::string &ASP)
+      : CI(CI), AnalysisScope(ASP) {}
   /// Add \a TR to the manager.
   ///
   /// The ownership of the TR is transferred to the ASTTraversalManager.
@@ -219,7 +219,7 @@ protected:
           getHashStrFromLoc(SM.getImmediateSpellingLoc(SL)));
       if (ItMatch !=
           dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
-        if (ItMatch->second->IsInRoot) {
+        if (ItMatch->second->IsInAnalysisScope) {
           SL = ItMatch->second->NameTokenLoc;
         }
       }
@@ -264,8 +264,8 @@ protected:
   template <typename NodeType>
   inline const NodeType *
   getAssistNodeAsType(const ast_matchers::MatchFinder::MatchResult &Result,
-                      const char *Name, bool CheckInRoot = true) {
-    return getNode<NodeType>(Result, Name, false, CheckInRoot);
+                      const char *Name, bool CheckInAnalysisScope = true) {
+    return getNode<NodeType>(Result, Name, false, CheckInAnalysisScope);
   }
 
   const VarDecl *getVarDecl(const Expr *E) {
@@ -280,14 +280,14 @@ private:
   template <typename NodeType>
   const NodeType *getNode(const ast_matchers::MatchFinder::MatchResult &Result,
                           const char *Name, bool CheckReplaced,
-                          bool CheckInRoot) {
+                          bool CheckInAnalysisScope) {
     if (auto Node = Result.Nodes.getNodeAs<NodeType>(Name))
-      if (checkNode(Node->getSourceRange(), CheckReplaced, CheckInRoot))
+      if (checkNode(Node->getSourceRange(), CheckReplaced, CheckInAnalysisScope))
         return Node;
     return nullptr;
   }
-  bool checkNode(SourceRange &&SR, bool CheckReplaced, bool CheckInRoot) {
-    if (CheckInRoot && !isInRoot(SR.getBegin()))
+  bool checkNode(SourceRange &&SR, bool CheckReplaced, bool CheckInAnalysisScope) {
+    if (CheckInAnalysisScope && !isInAnalysisScope(SR.getBegin()))
       return false;
     if (CheckReplaced && isReplaced(SR))
       return false;
@@ -295,8 +295,8 @@ private:
   }
 
   // Check if the node's host file is in the InRoot path.
-  inline bool isInRoot(SourceLocation &&SL) {
-    return DpctGlobalInfo::isInRoot(SL);
+  inline bool isInAnalysisScope(SourceLocation &&SL) {
+    return DpctGlobalInfo::isInAnalysisScope(SL);
   }
 
   // Check if the location has been replaced by the same rule.
@@ -587,7 +587,14 @@ private:
   bool isCapturedByLambda(const TypeLoc *TL);
 };
 
+class TemplateSpecializationTypeLocRule
+    : public clang::dpct::NamedMigrationRule<
+          TemplateSpecializationTypeLocRule> {
 
+public:
+  void registerMatcher(clang::ast_matchers::MatchFinder &MF) override;
+  void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
+};
 
 class UserDefinedAPIRule
     : public clang::dpct::NamedMigrationRule<UserDefinedAPIRule> {
@@ -1949,77 +1956,6 @@ public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
-
-class CubRule : public NamedMigrationRule<CubRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-
-private:
-  struct ParamAssembler {
-    std::string &ParamListRef;
-    ParamAssembler(std::string &List) : ParamListRef(List){};
-    ParamAssembler &operator<<(std::string Param) {
-      if (Param.empty()) {
-        return *this;
-      }
-      if (ParamListRef.empty()) {
-        ParamListRef = Param;
-      } else {
-        ParamListRef += ", " + Param;
-      }
-      return *this;
-    };
-  };
-  static int PlaceholderIndex;
-  template <typename NodeType>
-  void findLoop(const NodeType *Node,
-                std::vector<const clang::Stmt *> &LoopList,
-                bool OnlyFindFirstLevel = false) {
-    const Stmt *Loop = nullptr;
-    auto Conditon = [&](const DynTypedNode &LoopNode) -> bool {
-      if (auto DoLoop = LoopNode.get<clang::DoStmt>()) {
-        if (DoLoop->getBody() == Node ||
-            DpctGlobalInfo::isAncestor(DoLoop->getBody(), Node)) {
-          return true;
-        }
-      } else if (auto ForLoop = LoopNode.get<clang::ForStmt>()) {
-        if (ForLoop->getBody() == Node ||
-            DpctGlobalInfo::isAncestor(ForLoop->getBody(), Node)) {
-          return true;
-        }
-      } else if (auto WhileLoop = LoopNode.get<clang::WhileStmt>()) {
-        if (WhileLoop->getBody() == Node ||
-            DpctGlobalInfo::isAncestor(WhileLoop->getBody(), Node)) {
-          return true;
-        }
-      }
-      return false;
-    };
-    if (Loop = DpctGlobalInfo::findAncestor<clang::Stmt>(Node, Conditon)) {
-      LoopList.push_back(Loop);
-      if (!OnlyFindFirstLevel) {
-        findLoop(Loop, LoopList);
-      }
-    }
-  }
-  void removeVarDecl(const VarDecl *VD);
-  std::string getOpRepl(const Expr *Operator);
-  bool isRedundantCallExpr(const CallExpr *CE);
-  void removeRedundantTempVar(const CallExpr *CE);
-  void processCubDeclStmt(const DeclStmt *DS);
-  void processCubTypeDef(const TypedefDecl *TD);
-  void processCubFuncCall(const CallExpr *CE, bool FuncCallUsed = false);
-  void processCubMemberCall(const CXXMemberCallExpr *MC);
-  void processTypeLoc(const TypeLoc *TL);
-
-  void processDeviceLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
-  void processThreadLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
-  void processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
-  void processBlockLevelMemberCall(const CXXMemberCallExpr *MC);
-  void processWarpLevelMemberCall(const CXXMemberCallExpr *MC);
-};
-
 class ComplexAPIRule : public NamedMigrationRule<ComplexAPIRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -2029,6 +1965,8 @@ public:
 #define REGISTER_RULE(TYPE_NAME)                                               \
   RuleRegister<TYPE_NAME> g_##TYPE_NAME(&TYPE_NAME::ID, #TYPE_NAME);
 
+TextModification *replaceText(SourceLocation Begin, SourceLocation End,
+                              std::string &&Str, const SourceManager &SM);
 } // namespace dpct
 } // namespace clang
 #endif // DPCT_AST_TRAVERSAL_H

@@ -12,6 +12,7 @@
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "Utility.h"
+#include "CUBAPIMigration.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
 #include "clang/Basic/LangOptions.h"
@@ -69,7 +70,7 @@ bool isTargetMathFunction(const FunctionDecl *FD) {
   if (!FD)
     return false;
   auto FilePath = DpctGlobalInfo::getLocInfo(FD).first;
-  if (isChildOrSamePath(DpctGlobalInfo::getInRoot(), FilePath))
+  if (isChildOrSamePath(DpctGlobalInfo::getAnalysisScope(), FilePath))
     return false;
   return true;
 }
@@ -124,7 +125,7 @@ bool isTargetPseudoObjectExpr(const Expr *E) {
   } else if (auto DRE = dyn_cast<DeclRefExpr>(E->IgnoreImpCasts())) {
     auto VarDecl = DRE->getDecl();
     if (VarDecl && (VarDecl->getNameAsString() == "warpSize")) {
-      return !DpctGlobalInfo::isInRoot(VarDecl->getLocation());
+      return !DpctGlobalInfo::isInAnalysisScope(VarDecl->getLocation());
     }
   }
   return false;
@@ -157,7 +158,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       }
     }
 
-    if (dpct::DpctGlobalInfo::isInRoot(FD->getBeginLoc())) {
+    if (dpct::DpctGlobalInfo::isInAnalysisScope(FD->getBeginLoc())) {
       return "";
     }
 
@@ -599,6 +600,12 @@ Optional<std::string> MathTypeCastRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArg(1);
     OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[1], "
        << MigratedArg1 << "[1]}";
+  } else if (FuncName == "__float2bfloat16") {
+    DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_BFloat16);
+    OS << "oneapi::mkl::bfloat16(" << MigratedArg0 << ")";
+  } else if (FuncName == "__bfloat162float") {
+    DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_BFloat16);
+    OS << "static_cast<float>(" << MigratedArg0 << ")";
   } else {
     //__half2short_rd and __half2float
     static SSMap TypeMap{{"ll", "long long"},
@@ -670,7 +677,7 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
   if (!FD)
     return Base::rewrite();
 
-  if (dpct::DpctGlobalInfo::isInRoot(FD->getBeginLoc())) {
+  if (dpct::DpctGlobalInfo::isInAnalysisScope(FD->getBeginLoc())) {
     return {};
   }
 
@@ -2112,6 +2119,24 @@ createInsertHeaderFactory(
   return createInsertHeaderFactory(Header, std::move(Input));
 }
 
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createRemoveCubTempStorageFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input) {
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      std::move(Input.first),
+      std::make_shared<RemoveCubTempStorageFactory>(Input.second));
+}
+
+template <class T>
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createRemoveCubTempStorageFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input,
+    T) {
+  return createRemoveCubTempStorageFactory(std::move(Input));
+}
+
 /// Create ConditonalRewriterFactory key-value pair with two key-value
 /// candidates and predicate.
 /// If predicate result is true, \p First will be used, else \p Second will be
@@ -2550,6 +2575,38 @@ public:
   bool operator()(const CallExpr *C) { return needExtraParens(C->getArg(Idx)); }
 };
 
+/// Pseudo code:
+/// loop_1 {
+///   ...
+///   tempstorage = nullptr;
+///   ...
+///   loop_j {
+///     ...
+///     loop_N {
+///       func(tempstorage, ...);
+///       tempstorage = ...
+///     }
+///   }
+/// }
+/// The callexpr is redundant if following two conditions are meet:
+/// (1) No modified reference between tempstorage initialization and callexpr.
+/// (2) No modified reference in loop_j or deeper loop.
+/// The redundant callexpr can be remove safely.
+class CheckCubRedundantFunctionCall {
+public:
+  bool operator()(const CallExpr *C) {
+    return CubRule::isRedundantCallExpr(C);
+  }
+};
+
+std::shared_ptr<CallExprRewriter>
+RemoveCubTempStorageFactory::create(const CallExpr *C) const {
+  CubRule::removeRedundantTempVar(C);
+  return Inner->create(C);
+}
+
+#define REMOVE_CUB_TEMP_STORAGE_FACTORY(INNER)                                 \
+  createRemoveCubTempStorageFactory(INNER 0),
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
 #define INSERT_AROUND_FACTORY(x, PREFIX, SUFFIX)                               \
   createInsertAroundFactory(x PREFIX, SUFFIX),
@@ -2726,6 +2783,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   BIND_TEXTURE_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
 #define ENTRY_TEMPLATED(SOURCEAPINAME, ...)                                    \
   TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
+#include "APINamesCUB.inc"
 #include "APINamesCUBLAS.inc"
 #include "APINamesCUFFT.inc"
 #include "APINamesCURAND.inc"
@@ -2740,6 +2798,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesCUDNN.inc"
 #include "APINamesErrorHandling.inc"
 #include "APINamesMathRewrite.inc"
+#include "APINamesLIBCU.inc"
 #define FUNCTION_CALL
 #define CLASS_METHOD_CALL
 #include "APINamesCooperativeGroups.inc"

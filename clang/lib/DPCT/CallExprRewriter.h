@@ -152,7 +152,7 @@ public:
           getHashStrFromLoc(SM.getImmediateSpellingLoc(SL)));
       if (ItMatch !=
           dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
-        if (ItMatch->second->IsInRoot) {
+        if (ItMatch->second->IsInAnalysisScope) {
           SL = ItMatch->second->NameTokenLoc;
         }
       }
@@ -389,6 +389,15 @@ public:
     DpctGlobalInfo::getInstance().insertHeader(C->getBeginLoc(), Header);
     return Inner->create(C);
   }
+};
+
+class RemoveCubTempStorageFactory : public CallExprRewriterFactoryBase {
+  std::shared_ptr<CallExprRewriterFactoryBase> Inner;
+public:
+  RemoveCubTempStorageFactory(std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
+    : Inner(InnerFactory) {}
+  
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override;
 };
 
 class RewriterFactoryWithSubGroupSize : public CallExprRewriterFactoryBase {

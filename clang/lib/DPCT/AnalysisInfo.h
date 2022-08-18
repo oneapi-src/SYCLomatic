@@ -353,7 +353,9 @@ enum HeaderType {
   HT_Lib_Common_Utils,
   HT_Dnnl,
   HT_CCL,
-  HT_DplUtils,
+  HT_Atomic,
+  HT_DPL_Algorithm,
+  HT_DPL_Execution,
 };
 
 enum UsingType {
@@ -424,7 +426,7 @@ public:
       return;
     Repls->addReplacement(Repl);
   }
-  bool isInRoot();
+  bool isInAnalysisScope();
   std::shared_ptr<ExtReplacements> getRepls() { return Repls; }
 
   size_t getFileSize() const { return FileSize; }
@@ -572,10 +574,16 @@ public:
       return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
                               "/ccl_utils.hpp>");
-    case HT_DplUtils:
-      return insertHeader(HeaderType::HT_DplUtils, LastIncludeOffset,
+    case HT_Atomic:
+      return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
-                              "/dpl_utils.hpp>");
+                              "/atomic.hpp>");
+    case HT_DPL_Algorithm:
+      return insertHeader(HeaderType::HT_DPL_Algorithm, FirstIncludeOffset,
+                          "<oneapi/dpl/algorithm>");
+    case HT_DPL_Execution:
+      return insertHeader(HeaderType::HT_DPL_Execution, FirstIncludeOffset,
+                          "<oneapi/dpl/execution>");
     }
   }
 
@@ -855,9 +863,9 @@ public:
   class MacroDefRecord {
   public:
     SourceLocation NameTokenLoc;
-    bool IsInRoot;
-    MacroDefRecord(SourceLocation NTL, bool IIR)
-        : NameTokenLoc(NTL), IsInRoot(IIR) {}
+    bool IsInAnalysisScope;
+    MacroDefRecord(SourceLocation NTL, bool IIAS)
+        : NameTokenLoc(NTL), IsInAnalysisScope(IIAS) {}
   };
 
   class MacroExpansionRecord {
@@ -868,11 +876,11 @@ public:
     unsigned ReplaceTokenBeginOffset;
     unsigned ReplaceTokenEndOffset;
     SourceRange Range;
-    bool IsInRoot;
+    bool IsInAnalysisScope;
     bool IsFunctionLike;
     int TokenIndex;
     MacroExpansionRecord(IdentifierInfo *ID, const MacroInfo *MI,
-                         SourceRange Range, bool IsInRoot, int TokenIndex) {
+                         SourceRange Range, bool IsInAnalysisScope, int TokenIndex) {
       auto LocInfoBegin =
           DpctGlobalInfo::getLocInfo(MI->getReplacementToken(0).getLocation());
       auto LocInfoEnd = DpctGlobalInfo::getLocInfo(
@@ -883,7 +891,7 @@ public:
       ReplaceTokenBeginOffset = LocInfoBegin.second;
       ReplaceTokenEndOffset = LocInfoEnd.second;
       this->Range = Range;
-      this->IsInRoot = IsInRoot;
+      this->IsInAnalysisScope = IsInAnalysisScope;
       this->IsFunctionLike = MI->getNumParams() > 0;
       this->TokenIndex = TokenIndex;
     }
@@ -945,6 +953,15 @@ public:
       }
     }
   }
+  inline static bool isInAnalysisScope(SourceLocation SL) {
+    return isInAnalysisScope(getSourceManager()
+                        .getFilename(getSourceManager().getExpansionLoc(SL))
+                        .str());
+  }
+  static bool isInAnalysisScope(const std::string &FilePath,
+                                bool IsChildRelative = true) {
+    return isChildPath(AnalysisScope, FilePath, IsChildRelative);
+  }
 
   static bool isExcluded(const std::string &FilePath, bool IsRelative = true) {
     static std::map<std::string, bool> Cache;
@@ -992,6 +1009,14 @@ public:
   static const std::string &getOutRoot() {
     assert(!OutRoot.empty());
     return OutRoot;
+  }
+  static void setAnalysisScope(const std::string &InputAnalysisScope) {
+    assert(!InputAnalysisScope.empty());
+    AnalysisScope = InputAnalysisScope;
+  }
+  static const std::string &getAnalysisScope() {
+    assert(!AnalysisScope.empty());
+    return AnalysisScope;
   }
   // TODO: implement one of this for each source language.
   static void setCudaPath(const std::string &InputCudaPath) {
@@ -2229,8 +2254,8 @@ private:
   DpctGlobalInfo &operator=(const DpctGlobalInfo &) = delete;
   DpctGlobalInfo &operator=(DpctGlobalInfo &&) = delete;
 
-  // Wrapper of isInRoot for std::function usage.
-  static bool checkInRoot(SourceLocation SL) { return isInRoot(SL); }
+  // Wrapper of isInAnalysisScope for std::function usage.
+  static bool checkInAnalysisScope(SourceLocation SL) { return isInAnalysisScope(SL); }
 
   // Record token split when it's in macro
   static void recordTokenSplit(SourceLocation SL, unsigned Len) {
@@ -2254,7 +2279,7 @@ private:
     if (!N)
       return std::shared_ptr<Info>();
     auto LocInfo = getLocInfo(N);
-    if (isInRoot(LocInfo.first))
+    if (isInAnalysisScope(LocInfo.first))
       return insertFile(LocInfo.first)->template findNode<Info>(LocInfo.second);
     return std::shared_ptr<Info>();
   }
@@ -2321,6 +2346,7 @@ private:
       MainSourceYamlTUR;
   static std::string InRoot;
   static std::string OutRoot;
+  static std::string AnalysisScope;
   // TODO: implement one of this for each source language.
   static std::string CudaPath;
   static std::string RuleFile;
@@ -4600,32 +4626,44 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
     // Start a new line if we're not inserting at the first inclusion offset
     if (Offset != FirstIncludeOffset) {
       RSO << getNL();
-    } else {
-      if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) &&
-          (Type == HT_SYCL)) {
-        RSO << "#define DPCT_USM_LEVEL_NONE" << getNL();
-      }
-      if (AddOneDplHeaders && Type == HT_SYCL) {
-        RSO << "#include <oneapi/dpl/execution>" << getNL()
-            << "#include <oneapi/dpl/algorithm>" << getNL();
-      }
     }
+
+    if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) &&
+        (Type == HT_SYCL)) {
+      RSO << "#define DPCT_USM_LEVEL_NONE" << getNL();
+    }
+
     concatHeader(RSO, std::forward<T>(Args)...);
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_DPCT) ||
-        DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
-      RSO << "using namespace dpct;" << getNL();
+
+    // We only add these things when inserting HT_SYCL, because we have to make
+    // sure that these things are only added once
+    if (Type == HeaderType::HT_SYCL) {
+      if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+              ExplicitNamespace::EN_DPCT) ||
+          DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
+        RSO << "using namespace dpct;" << getNL();
+      }
+      if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+              ExplicitNamespace::EN_SYCL) &&
+          !DpctGlobalInfo::getExplicitNamespaceSet().count(
+              ExplicitNamespace::EN_CL)) {
+        RSO << "using namespace sycl;" << getNL();
+      }
     }
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_SYCL) &&
-        !DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_CL)) {
-      RSO << "using namespace sycl;" << getNL();
-    }
-    if (Type == HT_SYCL)
+
+    // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
+    // previously added here.  However, due to some unfortunate include
+    // dependencies introduced with the PSTL/TBB headers from the
+    // gcc-9.3.0 include files, those two headers must now be included
+    // before the CL/sycl.hpp are included, so the FileInfo is set
+    // to hold a boolean that'll indicate whether to insert them when
+    // the #include CL/sycl.cpp is added later
+    if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution)
       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_AlwaysLeft);
+    else if (Type == HT_SYCL) 
+      insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Left);
     else
-      insertHeader(std::move(RSO.str()), Offset);
+      insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Right);
   }
 }
 
