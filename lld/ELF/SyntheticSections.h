@@ -186,9 +186,7 @@ private:
 class BssSection final : public SyntheticSection {
 public:
   BssSection(StringRef name, uint64_t size, uint32_t alignment);
-  void writeTo(uint8_t *) override {
-    llvm_unreachable("unexpected writeTo() call for SHT_NOBITS section");
-  }
+  void writeTo(uint8_t *) override {}
   bool isNeeded() const override { return size != 0; }
   size_t getSize() const override { return size; }
 
@@ -761,6 +759,7 @@ class IBTPltSection : public SyntheticSection {
 public:
   IBTPltSection();
   void writeTo(uint8_t *Buf) override;
+  bool isNeeded() const override;
   size_t getSize() const override;
 };
 
@@ -1081,7 +1080,10 @@ public:
   void finalizeContents() override;
   InputSection *getLinkOrderDep() const;
 
-  static bool classof(const SectionBase *d);
+  static bool classof(const SectionBase *sec) {
+    return sec->kind() == InputSectionBase::Synthetic &&
+           sec->type == llvm::ELF::SHT_ARM_EXIDX;
+  }
 
   // Links to the ARMExidxSections so we can transfer the relocations once the
   // layout is known.

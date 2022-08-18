@@ -794,7 +794,6 @@ void MetadataStreamerV3::emitHiddenKernelArgs(const MachineFunction &MF,
                                               msgpack::ArrayDocNode Args) {
   auto &Func = MF.getFunction();
   const GCNSubtarget &ST = MF.getSubtarget<GCNSubtarget>();
-  const SIMachineFunctionInfo &MFI = *MF.getInfo<SIMachineFunctionInfo>();
 
   unsigned HiddenArgNumBytes = ST.getImplicitArgNumBytes(Func);
   if (!HiddenArgNumBytes)
@@ -823,7 +822,7 @@ void MetadataStreamerV3::emitHiddenKernelArgs(const MachineFunction &MF,
     if (M->getNamedMetadata("llvm.printf.fmts"))
       emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_printf_buffer", Offset,
                     Args);
-    else if (MFI.hasHostcallPtr()) {
+    else if (!Func.hasFnAttribute("amdgpu-no-hostcall-ptr")) {
       // The printf runtime binding pass should have ensured that hostcall and
       // printf are not used in the same module.
       assert(!M->getNamedMetadata("llvm.printf.fmts"));
@@ -877,6 +876,12 @@ MetadataStreamerV3::getHSAKernelProps(const MachineFunction &MF,
       Kern.getDocument()->getNode(STM.getWavefrontSize());
   Kern[".sgpr_count"] = Kern.getDocument()->getNode(ProgramInfo.NumSGPR);
   Kern[".vgpr_count"] = Kern.getDocument()->getNode(ProgramInfo.NumVGPR);
+
+  // Only add AGPR count to metadata for supported devices
+  if (STM.hasMAIInsts()) {
+    Kern[".agpr_count"] = Kern.getDocument()->getNode(ProgramInfo.NumAccVGPR);
+  }
+
   Kern[".max_flat_workgroup_size"] =
       Kern.getDocument()->getNode(MFI.getMaxFlatWorkGroupSize());
   Kern[".sgpr_spill_count"] =
@@ -1013,7 +1018,7 @@ void MetadataStreamerV5::emitHiddenKernelArgs(const MachineFunction &MF,
   } else
     Offset += 8; // Skipped.
 
-  if (MFI.hasHostcallPtr()) {
+  if (!Func.hasFnAttribute("amdgpu-no-hostcall-ptr")) {
     emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_hostcall_buffer", Offset,
                   Args);
   } else
@@ -1022,9 +1027,10 @@ void MetadataStreamerV5::emitHiddenKernelArgs(const MachineFunction &MF,
   emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_multigrid_sync_arg", Offset,
                 Args);
 
-  // Ignore temporarily until it is implemented.
-  // emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_heap_v1", Offset, Args);
-  Offset += 8;
+  if (!Func.hasFnAttribute("amdgpu-no-heap-ptr"))
+    emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_heap_v1", Offset, Args);
+  else
+    Offset += 8; // Skipped.
 
   if (Func.hasFnAttribute("calls-enqueue-kernel")) {
     emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_default_queue", Offset,
@@ -1036,8 +1042,9 @@ void MetadataStreamerV5::emitHiddenKernelArgs(const MachineFunction &MF,
 
   Offset += 72; // Reserved.
 
-  // hidden_private_base and hidden_shared_base are only used by GFX8.
-  if (ST.getGeneration() == AMDGPUSubtarget::VOLCANIC_ISLANDS) {
+  // hidden_private_base and hidden_shared_base are only when the subtarget has
+  // ApertureRegs.
+  if (!ST.hasApertureRegs()) {
     emitKernelArg(DL, Int32Ty, Align(4), "hidden_private_base", Offset, Args);
     emitKernelArg(DL, Int32Ty, Align(4), "hidden_shared_base", Offset, Args);
   } else

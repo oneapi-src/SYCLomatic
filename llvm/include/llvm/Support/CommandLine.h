@@ -1404,7 +1404,7 @@ public:
 
   // Make sure we initialize the value with the default constructor for the
   // type.
-  opt_storage() : Value(DataType()), Default(DataType()) {}
+  opt_storage() : Value(DataType()), Default() {}
 
   template <class T> void setValue(const T &V, bool initial = false) {
     Value = V;
@@ -1474,6 +1474,8 @@ class opt : public Option,
     const OptionValue<DataType> &V = this->getDefault();
     if (V.hasValue())
       this->setValue(V.getValue());
+    else
+      this->setValue(T());
   }
 
   template <class T,
