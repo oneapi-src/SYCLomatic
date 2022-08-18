@@ -562,7 +562,7 @@ public:
     prop.set_minor_version(minor);
 
     prop.set_max_work_item_sizes(
-        get_info<cl::sycl::info::device::max_work_item_sizes>());
+        get_info<cl::sycl::info::device::max_work_item_sizes<3>>());
     prop.set_host_unified_memory(
         get_info<cl::sycl::info::device::host_unified_memory>());
 
