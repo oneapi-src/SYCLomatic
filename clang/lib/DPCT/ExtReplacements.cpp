@@ -319,15 +319,15 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
   if (isInvalid(Repl, FileInfo))
     return;
   if (Repl->getLength()) {
-    if (Repl->IsSYCLHeaderNeeded())
+    if (Repl->isSYCLHeaderNeeded())
       FileInfo->insertHeader(HT_SYCL);
     // If Repl is not insert replacement, insert it.
     ReplMap.insert(std::make_pair(Repl->getOffset(), Repl));
     // If Repl is insert replacement, check whether it is alive or dead.
   } else if (checkLiveness(Repl)) {
-    // Repl->get
-    if (Repl->isIncludeDirective()) {
-      if (Repl->IsSYCLHeaderNeeded())
+    // Only
+    if (Repl->isInsertHeaderReplacement()) {
+      if (Repl->isSYCLHeaderNeeded())
         FileInfo->insertHeader(HT_SYCL);
       }
     markAsAlive(Repl);

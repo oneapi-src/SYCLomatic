@@ -120,18 +120,18 @@ public:
     }
   }
 
-  inline bool IsSYCLHeaderNeeded() { return SYCLHeaderNeeded; }
+  inline bool isSYCLHeaderNeeded() { return SYCLHeaderNeeded; }
   inline void setSYCLHeaderNeeded(bool Val) { SYCLHeaderNeeded = Val; }
 
-  inline void setIncludeDirective(bool Val) { InsertedHeaderDirective = Val;}
-  inline bool isIncludeDirective() {return InsertedHeaderDirective; }
+  inline void setInsertHeaderReplacement(bool Val) { InsertHeaderReplacement = Val;}
+  inline bool isInsertHeaderReplacement() {return InsertHeaderReplacement; }
 
 private:
   InsertPosition InsertPos = IP_Left;
   const TextModification *TM;
   unsigned PairID = 0;
   bool SYCLHeaderNeeded = true;
-  bool InsertedHeaderDirective = false;
+  bool InsertHeaderReplacement = false;
 };
 
 enum class TextModificationID : int {

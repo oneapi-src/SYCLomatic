@@ -475,8 +475,7 @@ public:
 
     auto R =
         std::make_shared<ExtReplacement>(FilePath, Offset, 0, Repl, nullptr);
-        // ====================
-    R->setIncludeDirective(true);
+    R->setInsertHeaderReplacement(true);
     R->setInsertPosition(InsertPos);
     IncludeDirectiveInsertions.push_back(R);
   }
