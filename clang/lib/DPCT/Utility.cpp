@@ -202,7 +202,7 @@ size_t calculateExpansionLevel(const SourceLocation Loc, bool IsBegin) {
   size_t Count = 0;
   while (ExpanLoc.isMacroID()) {
     Count++;
-    if (IsGetBegin) {
+    if (IsBegin) {
       ExpanLoc = SM.getImmediateExpansionRange(ExpanLoc).getBegin();
     } else {
       ExpanLoc = SM.getImmediateExpansionRange(ExpanLoc).getEnd();
