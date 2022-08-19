@@ -143,3 +143,9 @@ FEATURE_REQUEST_FACTORY(
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxGetDevice", DEREF(0),
                                             CALL(MapNames::getDpctNamespace() +
                                                  "get_current_device_id"))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Util_get_sycl_language_version,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxGetApiVersion", DEREF(1),
+                                            CALL(MapNames::getDpctNamespace() +
+                                                 "get_sycl_language_version"))))
