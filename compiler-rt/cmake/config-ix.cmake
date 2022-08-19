@@ -78,6 +78,7 @@ check_cxx_compiler_flag(-fno-profile-generate COMPILER_RT_HAS_FNO_PROFILE_GENERA
 check_cxx_compiler_flag(-fno-profile-instr-generate COMPILER_RT_HAS_FNO_PROFILE_INSTR_GENERATE_FLAG)
 check_cxx_compiler_flag(-fno-profile-instr-use COMPILER_RT_HAS_FNO_PROFILE_INSTR_USE_FLAG)
 check_cxx_compiler_flag(-fno-coverage-mapping COMPILER_RT_HAS_FNO_COVERAGE_MAPPING_FLAG)
+check_cxx_compiler_flag("-Werror -mcrc32"    COMPILER_RT_HAS_MCRC32_FLAG)
 check_cxx_compiler_flag("-Werror -msse3" COMPILER_RT_HAS_MSSE3_FLAG)
 check_cxx_compiler_flag("-Werror -msse4.2"   COMPILER_RT_HAS_MSSE4_2_FLAG)
 check_cxx_compiler_flag(--sysroot=.          COMPILER_RT_HAS_SYSROOT_FLAG)
@@ -222,6 +223,19 @@ function(get_target_flags_for_arch arch out_var)
       # host. This will need to all be cleaned up to support building tests
       # for cross-targeted hardware (i.e. iOS).
       set(${out_var} -arch ${arch} PARENT_SCOPE)
+    endif()
+  endif()
+endfunction()
+
+# Returns a list of architecture specific target ldflags in @out_var list.
+function(get_target_link_flags_for_arch arch out_var)
+  list(FIND COMPILER_RT_SUPPORTED_ARCH ${arch} ARCH_INDEX)
+  if(ARCH_INDEX EQUAL -1)
+    message(FATAL_ERROR "Unsupported architecture: ${arch}")
+  else()
+    # Workaround for direct calls to __tls_get_addr on Solaris/amd64.
+    if(OS_NAME MATCHES "SunOS" AND ${arch} MATCHES x86_64)
+      set(${out_var} "-Wl,-z,relax=transtls" PARENT_SCOPE)
     endif()
   endif()
 endfunction()

@@ -14,6 +14,7 @@ include "mlir/Dialect/DLTI/DLTIBase.td"
 include "mlir/IR/EnumAttr.td"
 include "mlir/IR/OpBase.td"
 include "mlir/IR/OpAsmInterface.td"
+include "mlir/IR/PatternBase.td"
 include "mlir/IR/RegionKindInterface.td"
 include "mlir/IR/SymbolInterfaces.td"
 include "mlir/Interfaces/CallInterfaces.td"
@@ -374,6 +375,14 @@ def VariadicNoTerminatorOp : TEST_Op<"variadic_no_terminator_op",
 // Test Call Interfaces
 //===----------------------------------------------------------------------===//
 
+def TestCallOp : TEST_Op<"call", [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+  let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<AnyType>:$operands);
+  let results = (outs Variadic<AnyType>);
+  let assemblyFormat = [{
+    $callee `(` $operands `)` attr-dict `:` functional-type($operands, results)
+  }];
+}
+
 def ConversionCallOp : TEST_Op<"conversion_call_op",
     [CallOpInterface]> {
   let arguments = (ins Variadic<AnyType>:$arg_operands, SymbolRefAttr:$callee);
@@ -608,6 +617,15 @@ def TestBranchOp : TEST_Op<"br",
   let successors = (successor AnySuccessor:$target);
 }
 
+def TestProducingBranchOp : TEST_Op<"producing_br",
+    [DeclareOpInterfaceMethods<BranchOpInterface>, Terminator,
+     AttrSizedOperandSegments]> {
+  let arguments = (ins Variadic<AnyType>:$firstOperands,
+                       Variadic<AnyType>:$secondOperands);
+  let results = (outs I32:$dummy);
+  let successors = (successor AnySuccessor:$first,AnySuccessor:$second);
+}
+
 def AttrSizedOperandOp : TEST_Op<"attr_sized_operands",
                                  [AttrSizedOperandSegments]> {
   let arguments = (ins
@@ -635,6 +653,57 @@ def AttrSizedResultOp : TEST_Op<"attr_sized_results",
 // This is used to test that the fallback for a custom op's parser and printer
 // is the dialect parser and printer hooks.
 def CustomFormatFallbackOp : TEST_Op<"dialect_custom_format_fallback">;
+
+// Ops related to OIList primitive
+def OIListTrivial : TEST_Op<"oilist_with_keywords_only"> {
+  let arguments = (ins UnitAttr:$keyword, UnitAttr:$otherKeyword,
+                       UnitAttr:$diffNameUnitAttrKeyword);
+  let assemblyFormat = [{
+    oilist( `keyword` $keyword
+          | `otherKeyword` $otherKeyword
+          | `thirdKeyword` $diffNameUnitAttrKeyword) attr-dict
+  }];
+}
+
+def OIListSimple : TEST_Op<"oilist_with_simple_args", [AttrSizedOperandSegments]> {
+  let arguments = (ins Optional<AnyType>:$arg0,
+                       Optional<AnyType>:$arg1,
+                       Optional<AnyType>:$arg2);
+  let assemblyFormat = [{
+    oilist( `keyword` $arg0 `:` type($arg0)
+          | `otherKeyword` $arg1 `:` type($arg1)
+          | `thirdKeyword` $arg2 `:` type($arg2) ) attr-dict
+  }];
+}
+
+def OIListVariadic : TEST_Op<"oilist_variadic_with_parens", [AttrSizedOperandSegments]> {
+  let arguments = (ins Variadic<AnyType>:$arg0,
+                       Variadic<AnyType>:$arg1,
+                       Variadic<AnyType>:$arg2);
+  let assemblyFormat = [{
+    oilist( `keyword` `(` $arg0 `:` type($arg0) `)`
+          | `otherKeyword` `(` $arg1 `:` type($arg1) `)`
+          | `thirdKeyword` `(` $arg2 `:` type($arg2) `)`) attr-dict
+  }];
+}
+
+def OIListCustom : TEST_Op<"oilist_custom", [AttrSizedOperandSegments]> {
+  let arguments = (ins Variadic<AnyType>:$arg0,
+                       Optional<I32>:$optOperand,
+                       UnitAttr:$nowait);
+  let assemblyFormat = [{
+    oilist( `private` `(` $arg0 `:` type($arg0) `)`
+          | `reduction` custom<CustomOptionalOperand>($optOperand)
+          | `nowait` $nowait
+    ) attr-dict
+  }];
+}
+
+def OIListAllowedLiteral : TEST_Op<"oilist_allowed_literal"> {
+  let assemblyFormat = [{
+    oilist( `foo` | `bar` ) `buzz` attr-dict
+  }];
+}
 
 // This is used to test encoding of a string attribute into an SSA name of a
 // pretty printed value name.
@@ -1017,6 +1086,11 @@ def TestOpWithVariadicResultsAndFolder: TEST_Op<"op_with_variadic_results_and_fo
 
 def TestCommutativeOp : TEST_Op<"op_commutative", [Commutative]> {
   let arguments = (ins I32:$op1, I32:$op2, I32:$op3, I32:$op4);
+  let results = (outs I32);
+}
+
+def TestCommutative2Op : TEST_Op<"op_commutative2", [Commutative]> {
+  let arguments = (ins I32:$op1, I32:$op2);
   let results = (outs I32);
 }
 
@@ -1555,6 +1629,8 @@ def TestAnotherTypeProducerOp : TEST_Op<"another_type_producer">,
   Results<(outs AnyType)>;
 def TestTypeConsumerOp : TEST_Op<"type_consumer">,
   Arguments<(ins AnyType)>;
+def TestTypeChangerOp : TEST_Op<"type_changer">,
+  Arguments<(ins AnyType)>, Results<(outs AnyType)>;
 def TestValidOp : TEST_Op<"valid", [Terminator]>,
   Arguments<(ins Variadic<AnyType>)>;
 
@@ -1911,6 +1987,12 @@ def FormatOptionalResultBOp : FormatOptionalResultOpBase<"b", [{
 def FormatOptionalResultCOp : FormatOptionalResultOpBase<"c", [{
   (`:` functional-type($optional, $variadic)^)? attr-dict
 }]>;
+
+def FormatOptionalResultDOp
+  : TEST_Op<"format_optional_result_d_op" > {
+  let results = (outs Optional<F80>:$optional);
+  let assemblyFormat = "(`:` type($optional)^)? attr-dict";
+}
 
 def FormatTwoVariadicOperandsNoBuildableTypeOp
     : TEST_Op<"format_two_variadic_operands_no_buildable_type_op",
@@ -2540,6 +2622,64 @@ def TestLinalgConvOpNotLinalgOp : TEST_Op<"conv_op_not_linalg_op", [
 def TestLinalgConvOp :
   TEST_Op<"linalg_conv_op", [AttrSizedOperandSegments, SingleBlock,
       LinalgStructuredInterface, LinalgConvolutionOpInterface]> {
+
+  let arguments = (ins Variadic<AnyType>:$inputs,
+    Variadic<AnyType>:$outputs);
+  let results = (outs Variadic<AnyType>:$results);
+  let regions = (region AnyRegion:$region);
+
+  let assemblyFormat = [{
+    attr-dict (`ins` `(` $inputs^ `:` type($inputs) `)`)?
+    `outs` `(` $outputs `:` type($outputs) `)`
+    $region (`->` type($results)^)?
+  }];
+
+  let extraClassDeclaration = [{
+    bool hasIndexSemantics() { return false; }
+
+    static void regionBuilder(mlir::ImplicitLocOpBuilder &b, mlir::Block &block,
+                              mlir::ArrayRef<mlir::NamedAttribute> attrs) {
+      b.create<mlir::linalg::YieldOp>(block.getArguments().back());
+    }
+
+    static std::function<void(mlir::ImplicitLocOpBuilder &, mlir::Block &,
+                              mlir::ArrayRef<mlir::NamedAttribute>)>
+    getRegionBuilder() {
+      return &regionBuilder;
+    }
+
+    mlir::ArrayAttr iterator_types() {
+      return getOperation()->getAttrOfType<mlir::ArrayAttr>("iterator_types");
+    }
+
+    mlir::ArrayAttr indexing_maps() {
+      return getOperation()->getAttrOfType<mlir::ArrayAttr>("indexing_maps");
+    }
+
+    std::string getLibraryCallName() {
+      return "";
+    }
+
+    // To conform with interface requirement on operand naming.
+    mlir::ValueRange inputs() { return getInputs(); }
+    mlir::ValueRange outputs() { return getOutputs(); }
+  }];
+}
+
+//===----------------------------------------------------------------------===//
+// Test LinalgFillOpInterface.
+//===----------------------------------------------------------------------===//
+
+def TestLinalgFillOpNotLinalgOp : TEST_Op<"fill_op_not_linalg_op", [
+    LinalgFillOpInterface]> {
+  let arguments = (ins
+    AnyType:$value, AnyType:$output);
+  let results = (outs AnyRankedTensor:$result);
+}
+
+def TestLinalgFillOp :
+  TEST_Op<"linalg_fill_op", [AttrSizedOperandSegments, SingleBlock,
+      LinalgStructuredInterface, LinalgFillOpInterface]> {
 
   let arguments = (ins Variadic<AnyType>:$inputs,
     Variadic<AnyType>:$outputs);

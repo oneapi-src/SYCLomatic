@@ -353,8 +353,9 @@ enum HeaderType {
   HT_Lib_Common_Utils,
   HT_Dnnl,
   HT_CCL,
-  HT_DplUtils,
   HT_Atomic,
+  HT_DPL_Algorithm,
+  HT_DPL_Execution,
 };
 
 enum UsingType {
@@ -573,15 +574,16 @@ public:
       return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
                               "/ccl_utils.hpp>");
-    case HT_DplUtils:
-      return insertHeader(HeaderType::HT_DplUtils, LastIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/dpl_utils.hpp>");
     case HT_Atomic:
       return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
                               "/atomic.hpp>");
-
+    case HT_DPL_Algorithm:
+      return insertHeader(HeaderType::HT_DPL_Algorithm, FirstIncludeOffset,
+                          "<oneapi/dpl/algorithm>");
+    case HT_DPL_Execution:
+      return insertHeader(HeaderType::HT_DPL_Execution, FirstIncludeOffset,
+                          "<oneapi/dpl/execution>");
     }
   }
 
@@ -4624,32 +4626,44 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
     // Start a new line if we're not inserting at the first inclusion offset
     if (Offset != FirstIncludeOffset) {
       RSO << getNL();
-    } else {
-      if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) &&
-          (Type == HT_SYCL)) {
-        RSO << "#define DPCT_USM_LEVEL_NONE" << getNL();
-      }
-      if (AddOneDplHeaders && Type == HT_SYCL) {
-        RSO << "#include <oneapi/dpl/execution>" << getNL()
-            << "#include <oneapi/dpl/algorithm>" << getNL();
-      }
     }
+
+    if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) &&
+        (Type == HT_SYCL)) {
+      RSO << "#define DPCT_USM_LEVEL_NONE" << getNL();
+    }
+
     concatHeader(RSO, std::forward<T>(Args)...);
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_DPCT) ||
-        DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
-      RSO << "using namespace dpct;" << getNL();
+
+    // We only add these things when inserting HT_SYCL, because we have to make
+    // sure that these things are only added once
+    if (Type == HeaderType::HT_SYCL) {
+      if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+              ExplicitNamespace::EN_DPCT) ||
+          DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
+        RSO << "using namespace dpct;" << getNL();
+      }
+      if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+              ExplicitNamespace::EN_SYCL) &&
+          !DpctGlobalInfo::getExplicitNamespaceSet().count(
+              ExplicitNamespace::EN_CL)) {
+        RSO << "using namespace sycl;" << getNL();
+      }
     }
-    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_SYCL) &&
-        !DpctGlobalInfo::getExplicitNamespaceSet().count(
-            ExplicitNamespace::EN_CL)) {
-      RSO << "using namespace sycl;" << getNL();
-    }
-    if (Type == HT_SYCL)
+
+    // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
+    // previously added here.  However, due to some unfortunate include
+    // dependencies introduced with the PSTL/TBB headers from the
+    // gcc-9.3.0 include files, those two headers must now be included
+    // before the CL/sycl.hpp are included, so the FileInfo is set
+    // to hold a boolean that'll indicate whether to insert them when
+    // the #include CL/sycl.cpp is added later
+    if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution)
       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_AlwaysLeft);
+    else if (Type == HT_SYCL) 
+      insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Left);
     else
-      insertHeader(std::move(RSO.str()), Offset);
+      insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Right);
   }
 }
 

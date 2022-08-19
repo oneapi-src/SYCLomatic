@@ -1956,77 +1956,6 @@ public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
-
-class CubRule : public NamedMigrationRule<CubRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-
-private:
-  struct ParamAssembler {
-    std::string &ParamListRef;
-    ParamAssembler(std::string &List) : ParamListRef(List){};
-    ParamAssembler &operator<<(std::string Param) {
-      if (Param.empty()) {
-        return *this;
-      }
-      if (ParamListRef.empty()) {
-        ParamListRef = Param;
-      } else {
-        ParamListRef += ", " + Param;
-      }
-      return *this;
-    };
-  };
-  static int PlaceholderIndex;
-  template <typename NodeType>
-  void findLoop(const NodeType *Node,
-                std::vector<const clang::Stmt *> &LoopList,
-                bool OnlyFindFirstLevel = false) {
-    const Stmt *Loop = nullptr;
-    auto Conditon = [&](const DynTypedNode &LoopNode) -> bool {
-      if (auto DoLoop = LoopNode.get<clang::DoStmt>()) {
-        if (DoLoop->getBody() == Node ||
-            DpctGlobalInfo::isAncestor(DoLoop->getBody(), Node)) {
-          return true;
-        }
-      } else if (auto ForLoop = LoopNode.get<clang::ForStmt>()) {
-        if (ForLoop->getBody() == Node ||
-            DpctGlobalInfo::isAncestor(ForLoop->getBody(), Node)) {
-          return true;
-        }
-      } else if (auto WhileLoop = LoopNode.get<clang::WhileStmt>()) {
-        if (WhileLoop->getBody() == Node ||
-            DpctGlobalInfo::isAncestor(WhileLoop->getBody(), Node)) {
-          return true;
-        }
-      }
-      return false;
-    };
-    if (Loop = DpctGlobalInfo::findAncestor<clang::Stmt>(Node, Conditon)) {
-      LoopList.push_back(Loop);
-      if (!OnlyFindFirstLevel) {
-        findLoop(Loop, LoopList);
-      }
-    }
-  }
-  void removeVarDecl(const VarDecl *VD);
-  std::string getOpRepl(const Expr *Operator);
-  bool isRedundantCallExpr(const CallExpr *CE);
-  void removeRedundantTempVar(const CallExpr *CE);
-  void processCubDeclStmt(const DeclStmt *DS);
-  void processCubTypeDef(const TypedefDecl *TD);
-  void processCubFuncCall(const CallExpr *CE, bool FuncCallUsed = false);
-  void processCubMemberCall(const CXXMemberCallExpr *MC);
-  void processTypeLoc(const TypeLoc *TL);
-
-  void processDeviceLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
-  void processThreadLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
-  void processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
-  void processBlockLevelMemberCall(const CXXMemberCallExpr *MC);
-  void processWarpLevelMemberCall(const CXXMemberCallExpr *MC);
-};
-
 class ComplexAPIRule : public NamedMigrationRule<ComplexAPIRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -2036,6 +1965,8 @@ public:
 #define REGISTER_RULE(TYPE_NAME)                                               \
   RuleRegister<TYPE_NAME> g_##TYPE_NAME(&TYPE_NAME::ID, #TYPE_NAME);
 
+TextModification *replaceText(SourceLocation Begin, SourceLocation End,
+                              std::string &&Str, const SourceManager &SM);
 } // namespace dpct
 } // namespace clang
 #endif // DPCT_AST_TRAVERSAL_H

@@ -12,6 +12,7 @@
 #include "ExprAnalysis.h"
 #include "MapNames.h"
 #include "Utility.h"
+#include "CUBAPIMigration.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
 #include "clang/Basic/LangOptions.h"
@@ -2118,6 +2119,24 @@ createInsertHeaderFactory(
   return createInsertHeaderFactory(Header, std::move(Input));
 }
 
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createRemoveCubTempStorageFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input) {
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      std::move(Input.first),
+      std::make_shared<RemoveCubTempStorageFactory>(Input.second));
+}
+
+template <class T>
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createRemoveCubTempStorageFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Input,
+    T) {
+  return createRemoveCubTempStorageFactory(std::move(Input));
+}
+
 /// Create ConditonalRewriterFactory key-value pair with two key-value
 /// candidates and predicate.
 /// If predicate result is true, \p First will be used, else \p Second will be
@@ -2556,6 +2575,38 @@ public:
   bool operator()(const CallExpr *C) { return needExtraParens(C->getArg(Idx)); }
 };
 
+/// Pseudo code:
+/// loop_1 {
+///   ...
+///   tempstorage = nullptr;
+///   ...
+///   loop_j {
+///     ...
+///     loop_N {
+///       func(tempstorage, ...);
+///       tempstorage = ...
+///     }
+///   }
+/// }
+/// The callexpr is redundant if following two conditions are meet:
+/// (1) No modified reference between tempstorage initialization and callexpr.
+/// (2) No modified reference in loop_j or deeper loop.
+/// The redundant callexpr can be remove safely.
+class CheckCubRedundantFunctionCall {
+public:
+  bool operator()(const CallExpr *C) {
+    return CubRule::isRedundantCallExpr(C);
+  }
+};
+
+std::shared_ptr<CallExprRewriter>
+RemoveCubTempStorageFactory::create(const CallExpr *C) const {
+  CubRule::removeRedundantTempVar(C);
+  return Inner->create(C);
+}
+
+#define REMOVE_CUB_TEMP_STORAGE_FACTORY(INNER)                                 \
+  createRemoveCubTempStorageFactory(INNER 0),
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
 #define INSERT_AROUND_FACTORY(x, PREFIX, SUFFIX)                               \
   createInsertAroundFactory(x PREFIX, SUFFIX),
@@ -2732,6 +2783,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   BIND_TEXTURE_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
 #define ENTRY_TEMPLATED(SOURCEAPINAME, ...)                                    \
   TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
+#include "APINamesCUB.inc"
 #include "APINamesCUBLAS.inc"
 #include "APINamesCUFFT.inc"
 #include "APINamesCURAND.inc"

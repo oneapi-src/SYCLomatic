@@ -33,6 +33,7 @@ macro(build_lib_dpct)
     QueryApiMapping.cpp
     AutoComplete.cpp
     LIBCUAPIMigration.cpp
+    CUBAPIMigration.cpp
 
     DEPENDS
     ClangDriverOptions
