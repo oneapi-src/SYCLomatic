@@ -123,8 +123,8 @@ public:
   inline bool isSYCLHeaderNeeded() { return SYCLHeaderNeeded; }
   inline void setSYCLHeaderNeeded(bool Val) { SYCLHeaderNeeded = Val; }
 
-  inline void setInsertHeaderReplacement(bool Val) { InsertHeaderReplacement = Val;}
-  inline bool isInsertHeaderReplacement() {return InsertHeaderReplacement; }
+  inline void setInsertHeaderReplacement(bool Val) { InsertHeaderReplacement = Val; }
+  inline bool isInsertHeaderReplacement() { return InsertHeaderReplacement; }
 
 private:
   InsertPosition InsertPos = IP_Left;
