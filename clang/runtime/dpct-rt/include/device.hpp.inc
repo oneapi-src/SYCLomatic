@@ -1003,6 +1003,18 @@ static inline cl::sycl::queue &get_default_queue() {
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|get_current_device_id|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_current_device_id
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// Util function to get the id of current device in
+/// dpct device manager.
+static inline unsigned int &get_current_device_id() {
+  return dev_mgr::instance().current_device_id();
+}
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|get_current_device|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|dev_mgr_current_device

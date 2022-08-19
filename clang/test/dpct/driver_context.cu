@@ -75,7 +75,7 @@ int main(){
   MY_SAFE_CALL(cuCtxDestroy(ctx2));
 
   // CHECK: int* dev_ptr;
-  // CHECK-NEXT: *dev_ptr = dpct::dev_mgr::instance().current_device_id();
+  // CHECK-NEXT: *dev_ptr = dpct::get_current_device_id();
   CUdevice* dev_ptr;
   cuCtxGetDevice(dev_ptr);
 
