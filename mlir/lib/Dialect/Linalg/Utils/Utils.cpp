@@ -22,7 +22,6 @@
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/SCF/SCF.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/Dialect/Tensor/IR/Tensor.h"
 #include "mlir/Dialect/Tensor/Utils/Utils.h"
 #include "mlir/Dialect/Utils/StaticValueUtils.h"
@@ -58,7 +57,7 @@ namespace {
 //   `d0 + 2 * d1 + d3` is tiled by [0, 0, 0, 2] but not by [0, 0, 2, 0]
 //
 struct TileCheck : public AffineExprVisitor<TileCheck> {
-  TileCheck(ValueRange tileSizes) : isTiled(false), tileSizes(tileSizes) {}
+  TileCheck(ValueRange tileSizes) : tileSizes(tileSizes) {}
 
   void visitDimExpr(AffineDimExpr expr) {
     isTiled |= !isZero(tileSizes[expr.getPosition()]);
@@ -70,7 +69,7 @@ struct TileCheck : public AffineExprVisitor<TileCheck> {
       assert(expr.getRHS().cast<AffineConstantExpr>().getValue() > 0 &&
              "nonpositive multiplying coefficient");
   }
-  bool isTiled;
+  bool isTiled = false;
   ValueRange tileSizes;
 };
 
@@ -125,7 +124,6 @@ RegionMatcher::matchAsScalarBinaryOp(GenericOp op) {
 template struct mlir::linalg::GenerateLoopNest<scf::ForOp>;
 template struct mlir::linalg::GenerateLoopNest<scf::ParallelOp>;
 template struct mlir::linalg::GenerateLoopNest<AffineForOp>;
-template struct mlir::linalg::GenerateLoopNest<TiledLoopOp>;
 
 /// Given a list of subview ranges, extract individual values for lower, upper
 /// bounds and steps and put them into the corresponding vectors.
@@ -324,8 +322,6 @@ tensor::ExtractSliceOp makeComposedExtractSliceOp(
 
 Value makeComposedPadHighOp(OpBuilder &b, Location loc, RankedTensorType type,
                             Value source, Value pad, bool nofold) {
-  assert(type.hasStaticShape() && "expect tensor type to have static shape");
-
   // Exit if `source` is not defined by an ExtractSliceOp.
   auto sliceOp = source.getDefiningOp<tensor::ExtractSliceOp>();
   if (!sliceOp)
@@ -535,39 +531,6 @@ void GenerateLoopNest<AffineForOp>::doit(
                                   linalgOp.getInputAndOutputOperands();
                               bodyBuilderFn(b, loc, ivs, operandValuesToUse);
                             });
-}
-
-/// Specialization to build an linalg.tiled_loop
-template <>
-void GenerateLoopNest<TiledLoopOp>::doit(
-    OpBuilder &b, Location loc, ArrayRef<Range> loopRanges, LinalgOp linalgOp,
-    ArrayRef<Attribute> iteratorTypes,
-    function_ref<scf::ValueVector(OpBuilder &, Location, ValueRange,
-                                  ValueRange)>
-        bodyBuilderFn,
-    Optional<LinalgLoopDistributionOptions> distributionOptions,
-    ArrayRef<StringRef> distributionTypes) {
-  SmallVector<ProcInfo, 2> procInfo;
-  SmallVector<Value, 4> lbs, ubs, steps;
-  unpackRanges(loopRanges, lbs, ubs, steps);
-
-  auto wrappedBuilderFn = [&](OpBuilder &nestedBuilder, Location nestedLoc,
-                              ValueRange ivs, ValueRange inputs,
-                              ValueRange outputs) {
-    SmallVector<Value> operandValuesToUse = inputs;
-    operandValuesToUse.append(outputs.begin(), outputs.end());
-    scf::ValueVector results =
-        bodyBuilderFn(nestedBuilder, nestedLoc, ivs, operandValuesToUse);
-    nestedBuilder.create<linalg::YieldOp>(nestedLoc, results);
-  };
-
-  SmallVector<Value> inputOperands = linalgOp.getInputOperands();
-  SmallVector<Value> outputOperands = linalgOp.getOutputOperands();
-  auto tiledLoop =
-      b.create<TiledLoopOp>(loc, lbs, ubs, steps, inputOperands, outputOperands,
-                            b.getArrayAttr(iteratorTypes), wrappedBuilderFn);
-  if (!distributionTypes.empty())
-    tiledLoop.setDistributionTypes(b, distributionTypes);
 }
 
 /// Update the `lb`, `ub` and `step` to get per processor `lb`, `ub` and `step`.
@@ -782,7 +745,8 @@ static Value fullyComposeAndAffineApply(OpBuilder &b, Location loc,
 
 Value makeTiledShape(OpBuilder &builder, Location loc, Value valueToTile,
                      ValueRange tileSizes, AffineMap map, ValueRange lbs,
-                     ValueRange ubs, ValueRange subShapeSizes) {
+                     ValueRange ubs, ValueRange subShapeSizes,
+                     bool omitPartialTileCheck) {
   auto shapedType = valueToTile.getType().dyn_cast<ShapedType>();
   assert(shapedType && "only shaped types can be tiled");
   ArrayRef<int64_t> shape = shapedType.getShape();
@@ -810,7 +774,7 @@ Value makeTiledShape(OpBuilder &builder, Location loc, Value valueToTile,
     auto m = map.getSubMap({r});
     LLVM_DEBUG(llvm::dbgs() << "makeTiledShape: submap: " << m << "\n");
     auto offset = applyMapToValues(builder, loc, m, lbs).front();
-    offsets.push_back(offset);
+    offsets.push_back(getAsOpFoldResult(offset));
     auto closedIntSize =
         applyMapToValues(builder, loc, m, subShapeSizes).front();
     // Resulting size needs to be made half open interval again.
@@ -818,6 +782,17 @@ Value makeTiledShape(OpBuilder &builder, Location loc, Value valueToTile,
     Value size =
         fullyComposeAndAffineApply(builder, loc, s0 + 1, closedIntSize);
     LLVM_DEBUG(llvm::dbgs() << "makeTiledShape: raw size: " << size << "\n");
+    LLVM_DEBUG(llvm::dbgs()
+               << "makeTiledShape: new offset: " << offset << "\n");
+    strides.push_back(builder.getIndexAttr(1));
+
+    if (omitPartialTileCheck) {
+      // We statically know that the partial/boundary tile condition is
+      // unnecessary.
+      LLVM_DEBUG(llvm::dbgs() << "makeTiledShape: new size: " << size << "\n");
+      sizes.push_back(getAsOpFoldResult(size));
+      continue;
+    }
 
     // The size of the subview / extract_slice should be trimmed to avoid
     // out-of-bounds accesses, unless:
@@ -856,9 +831,9 @@ Value makeTiledShape(OpBuilder &builder, Location loc, Value valueToTile,
       Value maxIndex = applyMapToValues(builder, loc, m, maxIndices).front();
       Value d = makeComposedAffineApply(builder, loc, plusOneMap, {maxIndex});
 
-      // Compute min(size, dim - offset) to avoid out-of-bounds accesses.
+      // Compute min(dim - offset, size) to avoid out-of-bounds accesses.
       AffineMap minMap = AffineMap::inferFromExprList(
-                             {ArrayRef<AffineExpr>{dim0, dim1 - dim2}})
+                             {ArrayRef<AffineExpr>{dim1 - dim2, dim0}})
                              .front();
       SmallVector<Value, 4> operands{size, d, offset};
       fullyComposeAffineMapAndOperands(&minMap, &operands);
@@ -866,12 +841,8 @@ Value makeTiledShape(OpBuilder &builder, Location loc, Value valueToTile,
       size = builder.create<AffineMinOp>(loc, builder.getIndexType(), minMap,
                                          operands);
     }
-
-    sizes.push_back(size);
-    LLVM_DEBUG(llvm::dbgs()
-               << "makeTiledShape: new offset: " << offset << "\n");
     LLVM_DEBUG(llvm::dbgs() << "makeTiledShape: new size: " << size << "\n");
-    strides.push_back(builder.getIndexAttr(1));
+    sizes.push_back(getAsOpFoldResult(size));
   }
 
   auto *sliceOp = TypeSwitch<ShapedType, Operation *>(shapedType)
@@ -923,7 +894,8 @@ SmallVector<Value, 4> makeTiledShapes(OpBuilder &b, Location loc,
                                       LinalgOp linalgOp,
                                       ArrayRef<Value> valuesToTile,
                                       ValueRange ivs, ValueRange tileSizes,
-                                      ArrayRef<Value> sizeBounds) {
+                                      ArrayRef<Value> sizeBounds,
+                                      bool omitPartialTileCheck) {
   assert(ivs.size() == static_cast<size_t>(llvm::count_if(
                            llvm::make_range(tileSizes.begin(), tileSizes.end()),
                            [](Value v) { return !isZero(v); })) &&
@@ -958,7 +930,8 @@ SmallVector<Value, 4> makeTiledShapes(OpBuilder &b, Location loc,
     LLVM_DEBUG(llvm::dbgs() << ": tiled: figure out subshape...\n");
 
     tiledShapes.push_back(makeTiledShape(b, loc, shapedOp, tileSizes, map, lbs,
-                                         sizeBounds, subShapeSizes));
+                                         sizeBounds, subShapeSizes,
+                                         omitPartialTileCheck));
   }
 
   return tiledShapes;

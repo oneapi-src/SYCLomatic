@@ -326,12 +326,19 @@ private:
           for (; J != AnnotatedLines.begin(); --J)
             if ((*J)->Level < TheLine->Level)
               break;
+          if ((*J)->Level >= TheLine->Level)
+            return false;
 
           // Check if the found line starts a record.
-          for (const FormatToken *RecordTok = (*J)->Last; RecordTok;
-               RecordTok = RecordTok->Previous)
-            if (RecordTok->is(tok::l_brace))
-              return isRecordLBrace(*RecordTok);
+          const FormatToken *LastNonComment = (*J)->Last;
+          assert(LastNonComment);
+          if (LastNonComment->is(tok::comment)) {
+            LastNonComment = LastNonComment->getPreviousNonComment();
+            // There must be another token (usually `{`), because we chose a
+            // line that has a smaller level.
+            assert(LastNonComment);
+          }
+          return isRecordLBrace(*LastNonComment);
         }
       }
 
@@ -508,7 +515,8 @@ private:
       } else {
         // Try to merge a block with left brace unwrapped that wasn't yet
         // covered.
-        assert(!TheLine->First->isOneOf(tok::kw_class, tok::kw_enum,
+        assert(TheLine->InPPDirective ||
+               !TheLine->First->isOneOf(tok::kw_class, tok::kw_enum,
                                         tok::kw_struct));
         ShouldMerge = !Style.BraceWrapping.AfterFunction ||
                       (NextLine.First->is(tok::r_brace) &&
@@ -1499,8 +1507,10 @@ void UnwrappedLineFormatter::formatFirstToken(
   if (Newlines)
     Indent = NewlineIndent;
 
-  // Preprocessor directives get indented before the hash only if specified
-  if (Style.IndentPPDirectives != FormatStyle::PPDIS_BeforeHash &&
+  // Preprocessor directives get indented before the hash only if specified. In
+  // Javascript import statements are indented like normal statements.
+  if (!Style.isJavaScript() &&
+      Style.IndentPPDirectives != FormatStyle::PPDIS_BeforeHash &&
       (Line.Type == LT_PreprocessorDirective ||
        Line.Type == LT_ImportStatement))
     Indent = 0;

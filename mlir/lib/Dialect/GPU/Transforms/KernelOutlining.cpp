@@ -14,15 +14,16 @@
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
 #include "mlir/Dialect/DLTI/DLTI.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/GPU/GPUDialect.h"
 #include "mlir/Dialect/GPU/Passes.h"
 #include "mlir/Dialect/GPU/Utils.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/BlockAndValueMapping.h"
 #include "mlir/IR/Builders.h"
+#include "mlir/IR/Matchers.h"
 #include "mlir/IR/SymbolTable.h"
-#include "mlir/Parser.h"
+#include "mlir/Parser/Parser.h"
 #include "mlir/Support/LLVM.h"
 #include "mlir/Transforms/RegionUtils.h"
 
@@ -59,9 +60,9 @@ static void injectGpuIndexOperations(Location loc, Region &launchFuncOpBody,
 /// Identifies operations that are beneficial to sink into kernels. These
 /// operations may not have side-effects, as otherwise sinking (and hence
 /// duplicating them) is not legal.
-static bool isLikelyAnIndexComputatio(Operation *op) {
-  return isa<arith::ConstantOp, ConstantOp, memref::DimOp, arith::SelectOp,
-             arith::CmpIOp>(op);
+static bool isLikelyAnIndexComputation(Operation *op) {
+  return matchPattern(op, m_Constant()) ||
+         isa<memref::DimOp, arith::SelectOp, arith::CmpIOp>(op);
 }
 
 /// For a given operation `op`, computes whether it is beneficial to sink the
@@ -232,6 +233,26 @@ static void convertToLaunchFuncOp(gpu::LaunchOp launchOp,
 }
 
 namespace {
+/// Pass that moves ops which are likely an index computation into gpu.launch
+/// body.
+class GpuLaunchSinkIndexComputationsPass
+    : public GpuLaunchSinkIndexComputationsBase<
+          GpuLaunchSinkIndexComputationsPass> {
+public:
+  void runOnOperation() override {
+    Operation *op = getOperation();
+    if (op->walk([](gpu::LaunchOp launch) {
+            // Pull in instructions that can be sunk
+            if (failed(sinkOperationsIntoLaunchOp(launch,
+                                                  isLikelyAnIndexComputation)))
+              return WalkResult::interrupt();
+
+            return WalkResult::advance();
+          }).wasInterrupted())
+      signalPassFailure();
+  }
+};
+
 /// Pass that moves the kernel of each LaunchOp into its separate nested module.
 ///
 /// This pass moves the kernel code of each LaunchOp into a function created
@@ -280,9 +301,6 @@ public:
         std::string kernelFnName =
             Twine(op->getParentOfType<FuncOp>().getName(), "_kernel").str();
 
-        // Pull in instructions that can be sunk
-        if (failed(sinkOperationsIntoLaunchOp(op, isLikelyAnIndexComputatio)))
-          return WalkResult::interrupt();
         gpu::GPUFuncOp outlinedFunc =
             outlineKernelFuncImpl(op, kernelFnName, operands);
 
@@ -359,6 +377,10 @@ private:
 };
 
 } // namespace
+
+std::unique_ptr<Pass> mlir::createGpuLauchSinkIndexComputationsPass() {
+  return std::make_unique<GpuLaunchSinkIndexComputationsPass>();
+}
 
 std::unique_ptr<OperationPass<ModuleOp>>
 mlir::createGpuKernelOutliningPass(StringRef dataLayoutStr) {

@@ -13,6 +13,7 @@
 #ifndef VECTOR_OPS
 #define VECTOR_OPS
 
+include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/Interfaces/VectorInterfaces.td"
 include "mlir/Interfaces/ViewLikeInterface.td"
@@ -22,7 +23,7 @@ def Vector_Dialect : Dialect {
   let cppNamespace = "::mlir::vector";
   let hasConstantMaterializer = 1;
   let dependentDialects = ["arith::ArithmeticDialect"];
-  let emitAccessorPrefix = kEmitAccessorPrefix_Both;
+  let emitAccessorPrefix = kEmitAccessorPrefix_Prefixed;
 }
 
 // Base class for Vector dialect ops.
@@ -218,18 +219,18 @@ def Vector_ContractionOp :
   ];
   let extraClassDeclaration = [{
     VectorType getLhsType() {
-      return lhs().getType().cast<VectorType>();
+      return getLhs().getType().cast<VectorType>();
     }
     VectorType getRhsType() {
-      return rhs().getType().cast<VectorType>();
+      return getRhs().getType().cast<VectorType>();
     }
-    Type getAccType() { return acc().getType(); }
+    Type getAccType() { return getAcc().getType(); }
     VectorType getLHSVectorMaskType() {
-      if (llvm::size(masks()) != 2) return VectorType();
+      if (llvm::size(getMasks()) != 2) return VectorType();
       return getOperand(3).getType().cast<VectorType>();
     }
     VectorType getRHSVectorMaskType() {
-      if (llvm::size(masks()) != 2) return VectorType();
+      if (llvm::size(getMasks()) != 2) return VectorType();
       return getOperand(4).getType().cast<VectorType>();
     }
     Type getResultType() { return getResult().getType(); }
@@ -265,7 +266,9 @@ def Vector_ContractionOp :
 def Vector_ReductionOp :
   Vector_Op<"reduction", [NoSideEffect,
      PredOpTrait<"source operand and result have same element type",
-                 TCresVTEtIsSameAsOpBase<0, 0>>]>,
+                 TCresVTEtIsSameAsOpBase<0, 0>>,
+     DeclareOpInterfaceMethods<VectorUnrollOpInterface,
+                               ["getShapeForUnroll"]>]>,
     Arguments<(ins Vector_CombiningKindAttr:$kind, AnyVector:$vector,
                    Optional<AnyType>:$acc)>,
     Results<(outs AnyType:$dest)> {
@@ -293,7 +296,7 @@ def Vector_ReductionOp :
   }];
   let extraClassDeclaration = [{
     VectorType getVectorType() {
-      return vector().getType().cast<VectorType>();
+      return getVector().getType().cast<VectorType>();
     }
   }];
   let builders = [
@@ -312,7 +315,10 @@ def Vector_ReductionOp :
 def Vector_MultiDimReductionOp :
   Vector_Op<"multi_reduction", [NoSideEffect,
      PredOpTrait<"source operand and result have same element type",
-                 TCresVTEtIsSameAsOpBase<0, 0>>]>,
+                 TCresVTEtIsSameAsOpBase<0, 0>>,
+     DeclareOpInterfaceMethods<InferTypeOpInterface>,
+     DeclareOpInterfaceMethods<VectorUnrollOpInterface,
+                               ["getShapeForUnroll"]>]>,
     Arguments<(ins Vector_CombiningKindAttr:$kind,
                    AnyVector:$source,
                    I64ArrayAttr:$reduction_dims)>,
@@ -341,10 +347,10 @@ def Vector_MultiDimReductionOp :
     static StringRef getReductionDimsAttrStrName() { return "reduction_dims"; }
 
     VectorType getSourceVectorType() {
-      return source().getType().cast<VectorType>();
+      return getSource().getType().cast<VectorType>();
     }
     Type getDestType() {
-      return dest().getType();
+      return getDest().getType();
     }
 
     bool isReducedDim(int64_t d) {
@@ -355,7 +361,7 @@ def Vector_MultiDimReductionOp :
 
     SmallVector<bool> getReductionMask() {
       SmallVector<bool> res(getSourceVectorType().getRank(), false);
-      for (auto ia : reduction_dims().getAsRange<IntegerAttr>())
+      for (auto ia : getReductionDims().getAsRange<IntegerAttr>())
         res[ia.getInt()] = true;
       return res;
     }
@@ -366,31 +372,10 @@ def Vector_MultiDimReductionOp :
         res[idx] = true;
       return res;
     }
-
-    static SmallVector<int64_t> inferDestShape(
-      ArrayRef<int64_t> sourceShape, ArrayRef<bool> reducedDimsMask) {
-      assert(sourceShape.size() == reducedDimsMask.size() &&
-             "sourceShape and maks of different sizes");
-      SmallVector<int64_t> res;
-      for (auto it : llvm::zip(reducedDimsMask, sourceShape))
-        if (!std::get<0>(it))
-          res.push_back(std::get<1>(it));
-      return res;
-    }
-
-    static Type inferDestType(
-      ArrayRef<int64_t> sourceShape, ArrayRef<bool> reducedDimsMask, Type elementType) {
-      auto targetShape = inferDestShape(sourceShape, reducedDimsMask);
-      // TODO: update to also allow 0-d vectors when available.
-      if (targetShape.empty())
-        return elementType;
-      return VectorType::get(targetShape, elementType);
-    }
   }];
   let assemblyFormat =
     "$kind `,` $source attr-dict $reduction_dims `:` type($source) `to` type($dest)";
   let hasFolder = 1;
-  let hasVerifier = 1;
 }
 
 def Vector_BroadcastOp :
@@ -430,9 +415,9 @@ def Vector_BroadcastOp :
     ```
   }];
   let extraClassDeclaration = [{
-    Type getSourceType() { return source().getType(); }
+    Type getSourceType() { return getSource().getType(); }
     VectorType getVectorType() {
-      return vector().getType().cast<VectorType>();
+      return getVector().getType().cast<VectorType>();
     }
   }];
   let assemblyFormat = "$source attr-dict `:` type($source) `to` type($vector)";
@@ -446,7 +431,8 @@ def Vector_ShuffleOp :
      PredOpTrait<"first operand v1 and result have same element type",
                  TCresVTEtIsSameAsOpBase<0, 0>>,
      PredOpTrait<"second operand v2 and result have same element type",
-                 TCresVTEtIsSameAsOpBase<0, 1>>]>,
+                 TCresVTEtIsSameAsOpBase<0, 1>>,
+     DeclareOpInterfaceMethods<InferTypeOpInterface>]>,
      Arguments<(ins AnyVector:$v1, AnyVector:$v2, I64ArrayAttr:$mask)>,
      Results<(outs AnyVector:$vector)> {
   let summary = "shuffle operation";
@@ -486,16 +472,16 @@ def Vector_ShuffleOp :
   let extraClassDeclaration = [{
     static StringRef getMaskAttrStrName() { return "mask"; }
     VectorType getV1VectorType() {
-      return v1().getType().cast<VectorType>();
+      return getV1().getType().cast<VectorType>();
     }
     VectorType getV2VectorType() {
-      return v2().getType().cast<VectorType>();
+      return getV2().getType().cast<VectorType>();
     }
     VectorType getVectorType() {
-      return vector().getType().cast<VectorType>();
+      return getVector().getType().cast<VectorType>();
     }
   }];
-  let hasCustomAssemblyFormat = 1;
+  let assemblyFormat = "operands $mask attr-dict `:` type(operands)";
   let hasVerifier = 1;
 }
 
@@ -540,16 +526,18 @@ def Vector_ExtractElementOp :
   ];
   let extraClassDeclaration = [{
     VectorType getVectorType() {
-      return vector().getType().cast<VectorType>();
+      return getVector().getType().cast<VectorType>();
     }
   }];
   let hasVerifier = 1;
+  let hasFolder = 1;
 }
 
 def Vector_ExtractOp :
   Vector_Op<"extract", [NoSideEffect,
      PredOpTrait<"operand and result have same element type",
-                 TCresVTEtIsSameAsOpBase<0, 0>>]>,
+                 TCresVTEtIsSameAsOpBase<0, 0>>,
+     DeclareOpInterfaceMethods<InferTypeOpInterface>]>,
     Arguments<(ins AnyVector:$vector, I64ArrayAttr:$position)>,
     Results<(outs AnyType)> {
   let summary = "extract operation";
@@ -573,11 +561,12 @@ def Vector_ExtractOp :
   let extraClassDeclaration = [{
     static StringRef getPositionAttrStrName() { return "position"; }
     VectorType getVectorType() {
-      return vector().getType().cast<VectorType>();
+      return getVector().getType().cast<VectorType>();
     }
+    static bool isCompatibleReturnTypes(TypeRange l, TypeRange r);
   }];
+  let assemblyFormat = "$vector `` $position attr-dict `:` type($vector)";
   let hasCanonicalizer = 1;
-  let hasCustomAssemblyFormat = 1;
   let hasFolder = 1;
   let hasVerifier = 1;
 }
@@ -635,7 +624,7 @@ def Vector_ExtractMapOp :
                   "AffineMap":$map)>];
   let extraClassDeclaration = [{
     VectorType getSourceVectorType() {
-      return vector().getType().cast<VectorType>();
+      return getVector().getType().cast<VectorType>();
     }
     VectorType getResultType() {
       return getResult().getType().cast<VectorType>();
@@ -675,12 +664,8 @@ def Vector_FMAOp :
     ```
   }];
   let assemblyFormat = "$lhs `,` $rhs `,` $acc attr-dict `:` type($lhs)";
-  let builders = [
-    OpBuilder<(ins "Value":$lhs, "Value":$rhs, "Value":$acc),
-    [{build($_builder, $_state, lhs.getType(), lhs, rhs, acc);}]>
-  ];
   let extraClassDeclaration = [{
-    VectorType getVectorType() { return lhs().getType().cast<VectorType>(); }
+    VectorType getVectorType() { return getLhs().getType().cast<VectorType>(); }
   }];
 }
 
@@ -721,16 +706,15 @@ def Vector_InsertElementOp :
   let builders = [
     // 0-D builder.
     OpBuilder<(ins "Value":$source, "Value":$dest)>,
-    // 1-D + position builder.
-    OpBuilder<(ins "Value":$source, "Value":$dest, "Value":$position)>
   ];
   let extraClassDeclaration = [{
-    Type getSourceType() { return source().getType(); }
+    Type getSourceType() { return getSource().getType(); }
     VectorType getDestVectorType() {
-      return dest().getType().cast<VectorType>();
+      return getDest().getType().cast<VectorType>();
     }
   }];
   let hasVerifier = 1;
+  let hasFolder = 1;
 }
 
 def Vector_InsertOp :
@@ -765,9 +749,9 @@ def Vector_InsertOp :
   ];
   let extraClassDeclaration = [{
     static StringRef getPositionAttrStrName() { return "position"; }
-    Type getSourceType() { return source().getType(); }
+    Type getSourceType() { return getSource().getType(); }
     VectorType getDestVectorType() {
-      return dest().getType().cast<VectorType>();
+      return getDest().getType().cast<VectorType>();
     }
   }];
 
@@ -825,11 +809,9 @@ def Vector_InsertMapOp :
       into vector<64x4x32xf32>
     ```
   }];
-  let builders = [OpBuilder<(ins "Value":$vector, "Value":$dest,
-                                "ValueRange":$ids)>];
   let extraClassDeclaration = [{
     VectorType getSourceVectorType() {
-      return vector().getType().cast<VectorType>();
+      return getVector().getType().cast<VectorType>();
     }
     VectorType getResultType() {
       return getResult().getType().cast<VectorType>();
@@ -886,13 +868,13 @@ def Vector_InsertStridedSliceOp :
     static StringRef getOffsetsAttrStrName() { return "offsets"; }
     static StringRef getStridesAttrStrName() { return "strides"; }
     VectorType getSourceVectorType() {
-      return source().getType().cast<VectorType>();
+      return getSource().getType().cast<VectorType>();
     }
     VectorType getDestVectorType() {
-      return dest().getType().cast<VectorType>();
+      return getDest().getType().cast<VectorType>();
     }
     bool hasNonUnitStrides() {
-      return llvm::any_of(strides(), [](Attribute attr) {
+      return llvm::any_of(getStrides(), [](Attribute attr) {
         return attr.cast<IntegerAttr>().getInt() != 1;
       });
     }
@@ -967,15 +949,15 @@ def Vector_OuterProductOp :
   ];
   let extraClassDeclaration = [{
     VectorType getOperandVectorTypeLHS() {
-      return lhs().getType().cast<VectorType>();
+      return getLhs().getType().cast<VectorType>();
     }
     Type getOperandTypeRHS() {
-      return rhs().getType();
+      return getRhs().getType();
     }
     VectorType getOperandVectorTypeACC() {
-      return (llvm::size(acc()) == 0)
+      return (llvm::size(getAcc()) == 0)
         ? VectorType()
-        : (*acc().begin()).getType().cast<VectorType>();
+        : (*getAcc().begin()).getType().cast<VectorType>();
     }
     VectorType getVectorType() {
       return getResult().getType().cast<VectorType>();
@@ -1085,17 +1067,17 @@ def Vector_ReshapeOp :
 
   let extraClassDeclaration = [{
     VectorType getInputVectorType() {
-      return vector().getType().cast<VectorType>();
+      return getVector().getType().cast<VectorType>();
     }
     VectorType getOutputVectorType() {
       return getResult().getType().cast<VectorType>();
     }
 
     /// Returns as integer value the number of input shape operands.
-    int64_t getNumInputShapeSizes() { return input_shape().size(); }
+    int64_t getNumInputShapeSizes() { return getInputShape().size(); }
 
     /// Returns as integer value the number of output shape operands.
-    int64_t getNumOutputShapeSizes() { return output_shape().size(); }
+    int64_t getNumOutputShapeSizes() { return getOutputShape().size(); }
 
     void getFixedVectorSizes(SmallVectorImpl<int64_t> &results);
 
@@ -1153,10 +1135,10 @@ def Vector_ExtractStridedSliceOp :
     static StringRef getOffsetsAttrStrName() { return "offsets"; }
     static StringRef getSizesAttrStrName() { return "sizes"; }
     static StringRef getStridesAttrStrName() { return "strides"; }
-    VectorType getVectorType(){ return vector().getType().cast<VectorType>(); }
+    VectorType getVectorType(){ return getVector().getType().cast<VectorType>(); }
     void getOffsets(SmallVectorImpl<int64_t> &results);
     bool hasNonUnitStrides() {
-      return llvm::any_of(strides(), [](Attribute attr) {
+      return llvm::any_of(getStrides(), [](Attribute attr) {
         return attr.cast<IntegerAttr>().getInt() != 1;
       });
     }
@@ -1578,11 +1560,11 @@ def Vector_LoadOp : Vector_Op<"load"> {
 
   let extraClassDeclaration = [{
     MemRefType getMemRefType() {
-      return base().getType().cast<MemRefType>();
+      return getBase().getType().cast<MemRefType>();
     }
 
     VectorType getVectorType() {
-      return result().getType().cast<VectorType>();
+      return getResult().getType().cast<VectorType>();
     }
   }];
 
@@ -1655,11 +1637,11 @@ def Vector_StoreOp : Vector_Op<"store"> {
 
   let extraClassDeclaration = [{
     MemRefType getMemRefType() {
-      return base().getType().cast<MemRefType>();
+      return getBase().getType().cast<MemRefType>();
     }
 
     VectorType getVectorType() {
-      return valueToStore().getType().cast<VectorType>();
+      return getValueToStore().getType().cast<VectorType>();
     }
   }];
 
@@ -1708,16 +1690,16 @@ def Vector_MaskedLoadOp :
   }];
   let extraClassDeclaration = [{
     MemRefType getMemRefType() {
-      return base().getType().cast<MemRefType>();
+      return getBase().getType().cast<MemRefType>();
     }
     VectorType getMaskVectorType() {
-      return mask().getType().cast<VectorType>();
+      return getMask().getType().cast<VectorType>();
     }
     VectorType getPassThruVectorType() {
-      return pass_thru().getType().cast<VectorType>();
+      return getPassThru().getType().cast<VectorType>();
     }
     VectorType getVectorType() {
-      return result().getType().cast<VectorType>();
+      return getResult().getType().cast<VectorType>();
     }
   }];
   let assemblyFormat = "$base `[` $indices `]` `,` $mask `,` $pass_thru attr-dict `:` "
@@ -1764,13 +1746,13 @@ def Vector_MaskedStoreOp :
   }];
   let extraClassDeclaration = [{
     MemRefType getMemRefType() {
-      return base().getType().cast<MemRefType>();
+      return getBase().getType().cast<MemRefType>();
     }
     VectorType getMaskVectorType() {
-      return mask().getType().cast<VectorType>();
+      return getMask().getType().cast<VectorType>();
     }
     VectorType getVectorType() {
-      return valueToStore().getType().cast<VectorType>();
+      return getValueToStore().getType().cast<VectorType>();
     }
   }];
   let assemblyFormat =
@@ -1823,19 +1805,19 @@ def Vector_GatherOp :
   }];
   let extraClassDeclaration = [{
     MemRefType getMemRefType() {
-      return base().getType().cast<MemRefType>();
+      return getBase().getType().cast<MemRefType>();
     }
     VectorType getIndexVectorType() {
-      return index_vec().getType().cast<VectorType>();
+      return getIndexVec().getType().cast<VectorType>();
     }
     VectorType getMaskVectorType() {
-      return mask().getType().cast<VectorType>();
+      return getMask().getType().cast<VectorType>();
     }
     VectorType getPassThruVectorType() {
-      return pass_thru().getType().cast<VectorType>();
+      return getPassThru().getType().cast<VectorType>();
     }
     VectorType getVectorType() {
-      return result().getType().cast<VectorType>();
+      return getResult().getType().cast<VectorType>();
     }
   }];
   let assemblyFormat =
@@ -1890,16 +1872,16 @@ def Vector_ScatterOp :
   }];
   let extraClassDeclaration = [{
     MemRefType getMemRefType() {
-      return base().getType().cast<MemRefType>();
+      return getBase().getType().cast<MemRefType>();
     }
     VectorType getIndexVectorType() {
-      return index_vec().getType().cast<VectorType>();
+      return getIndexVec().getType().cast<VectorType>();
     }
     VectorType getMaskVectorType() {
-      return mask().getType().cast<VectorType>();
+      return getMask().getType().cast<VectorType>();
     }
     VectorType getVectorType() {
-      return valueToStore().getType().cast<VectorType>();
+      return getValueToStore().getType().cast<VectorType>();
     }
   }];
   let assemblyFormat =
@@ -1951,16 +1933,16 @@ def Vector_ExpandLoadOp :
   }];
   let extraClassDeclaration = [{
     MemRefType getMemRefType() {
-      return base().getType().cast<MemRefType>();
+      return getBase().getType().cast<MemRefType>();
     }
     VectorType getMaskVectorType() {
-      return mask().getType().cast<VectorType>();
+      return getMask().getType().cast<VectorType>();
     }
     VectorType getPassThruVectorType() {
-      return pass_thru().getType().cast<VectorType>();
+      return getPassThru().getType().cast<VectorType>();
     }
     VectorType getVectorType() {
-      return result().getType().cast<VectorType>();
+      return getResult().getType().cast<VectorType>();
     }
   }];
   let assemblyFormat = "$base `[` $indices `]` `,` $mask `,` $pass_thru attr-dict `:` "
@@ -2009,13 +1991,13 @@ def Vector_CompressStoreOp :
   }];
   let extraClassDeclaration = [{
     MemRefType getMemRefType() {
-      return base().getType().cast<MemRefType>();
+      return getBase().getType().cast<MemRefType>();
     }
     VectorType getMaskVectorType() {
-      return mask().getType().cast<VectorType>();
+      return getMask().getType().cast<VectorType>();
     }
     VectorType getVectorType() {
-      return valueToStore().getType().cast<VectorType>();
+      return getValueToStore().getType().cast<VectorType>();
     }
   }];
   let assemblyFormat =
@@ -2065,7 +2047,7 @@ def Vector_ShapeCastOp :
   }];
   let extraClassDeclaration = [{
     VectorType getSourceVectorType() {
-      return source().getType().cast<VectorType>();
+      return getSource().getType().cast<VectorType>();
     }
     VectorType getResultVectorType() {
       return getResult().getType().cast<VectorType>();
@@ -2106,7 +2088,7 @@ def Vector_BitCastOp :
   }];
   let extraClassDeclaration = [{
     VectorType getSourceVectorType() {
-      return source().getType().cast<VectorType>();
+      return getSource().getType().cast<VectorType>();
     }
     VectorType getResultVectorType() {
       return getResult().getType().cast<VectorType>();
@@ -2149,13 +2131,13 @@ def Vector_TypeCastOp :
 
   let extraClassDeclaration = [{
     MemRefType getMemRefType() {
-      return memref().getType().cast<MemRefType>();
+      return getMemref().getType().cast<MemRefType>();
     }
     MemRefType getResultMemRefType() {
       return getResult().getType().cast<MemRefType>();
     }
     // Implement ViewLikeOpInterface.
-    Value getViewSource() { return memref(); }
+    Value getViewSource() { return getMemref(); }
   }];
 
   let assemblyFormat = [{
@@ -2280,10 +2262,10 @@ def Vector_TransposeOp :
   ];
   let extraClassDeclaration = [{
     VectorType getVectorType() {
-      return vector().getType().cast<VectorType>();
+      return getVector().getType().cast<VectorType>();
     }
     VectorType getResultType() {
-      return result().getType().cast<VectorType>();
+      return getResult().getType().cast<VectorType>();
     }
     void getTransp(SmallVectorImpl<int64_t> &results);
     static StringRef getTranspAttrStrName() { return "transp"; }
@@ -2323,7 +2305,7 @@ def Vector_PrintOp :
   }];
   let extraClassDeclaration = [{
     Type getPrintType() {
-      return source().getType();
+      return getSource().getType();
     }
   }];
   let assemblyFormat = "$source attr-dict `:` type($source)";
@@ -2550,16 +2532,16 @@ def Vector_ScanOp :
     static StringRef getKindAttrStrName() { return "kind"; }
     static StringRef getReductionDimAttrStrName() { return "reduction_dim"; }
     VectorType getSourceType() {
-      return source().getType().cast<VectorType>();
+      return getSource().getType().cast<VectorType>();
     }
     VectorType getDestType() {
-      return dest().getType().cast<VectorType>();
+      return getDest().getType().cast<VectorType>();
     }
     VectorType getAccumulatorType() {
-      return accumulated_value().getType().cast<VectorType>();
+      return getAccumulatedValue().getType().cast<VectorType>();
     }
     VectorType getInitialValueType() {
-      return initial_value().getType().cast<VectorType>();
+      return getInitialValue().getType().cast<VectorType>();
     }
   }];
   let assemblyFormat =

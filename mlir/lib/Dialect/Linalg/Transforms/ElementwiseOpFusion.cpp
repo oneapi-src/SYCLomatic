@@ -17,6 +17,7 @@
 #include "mlir/Dialect/Linalg/Passes.h"
 #include "mlir/Dialect/Linalg/Transforms/Transforms.h"
 #include "mlir/Dialect/Linalg/Utils/Utils.h"
+#include "mlir/Dialect/SparseTensor/IR/SparseTensor.h"
 #include "mlir/IR/AffineExpr.h"
 #include "mlir/IR/AffineMap.h"
 #include "mlir/IR/Matchers.h"
@@ -48,7 +49,7 @@ static AffineMap getIndexingMapOfProducerOperandsInCoordinatesOfFusedOp(
   AffineMap invProducerResultIndexMap =
       inversePermutation(producerResultIndexMap);
   assert(invProducerResultIndexMap &&
-         "expected producer result indexig map to be invertible");
+         "expected producer result indexing map to be invertible");
 
   LinalgOp producer = cast<LinalgOp>(producerOpOperand->getOwner());
   // argMap is a map from producer loop -> producer arg tensor index.
@@ -1204,14 +1205,14 @@ static bool isDimSequencePreserved(AffineMap indexingMap,
   sequenceElements.insert(dimSequence.begin(), dimSequence.end());
 
   unsigned dimSequenceStart = dimSequence[0];
-  for (auto expr : enumerate(indexingMap.getResults())) {
+  for (const auto &expr : enumerate(indexingMap.getResults())) {
     unsigned dimInMapStart = expr.value().cast<AffineDimExpr>().getPosition();
     // 1.  Check if this start of the sequence.
     if (dimInMapStart == dimSequenceStart) {
       if (expr.index() + dimSequence.size() > indexingMap.getNumResults())
         return false;
       // 1a. Check if sequence is preserved.
-      for (auto dimInSequence : enumerate(dimSequence)) {
+      for (const auto &dimInSequence : enumerate(dimSequence)) {
         unsigned dimInMap =
             indexingMap.getResult(expr.index() + dimInSequence.index())
                 .cast<AffineDimExpr>()
@@ -1288,7 +1289,7 @@ class CollapsingInfo {
 public:
   CollapsingInfo(SmallVector<ReassociationIndices> &&reassociation) {
     iterationReassociation = std::move(reassociation);
-    for (auto foldedIterDims : enumerate(iterationReassociation)) {
+    for (const auto &foldedIterDims : enumerate(iterationReassociation)) {
       foldedDimStartToSequenceMap[foldedIterDims.value()[0]] =
           foldedIterDims.index();
     }
@@ -1533,7 +1534,7 @@ fuseWithReshapeByCollapsing(GenericOp genericOp, Operation *reshapeOp,
   // Insert expanding reshape for the result to get back the original result
   // type.
   SmallVector<Value> results;
-  for (auto originalResult : llvm::enumerate(genericOp->getResults())) {
+  for (const auto &originalResult : llvm::enumerate(genericOp->getResults())) {
     Value collapsedOpResult =
         collapsedGenericOp->getResult(originalResult.index());
     auto originalResultType =
@@ -2184,6 +2185,10 @@ struct RemoveOutsDependency : public OpRewritePattern<GenericOp> {
         if (!operandType)
           continue;
 
+        // If outs is sparse, leave it to the sparse compiler.
+        if (sparse_tensor::getSparseTensorEncoding(operandVal.getType()))
+          continue;
+
         // If outs is already an `init_tensor` operation, nothing to do.
         auto definingOp = operandVal.getDefiningOp<InitTensorOp>();
         if (definingOp)
@@ -2213,17 +2218,16 @@ struct RemoveOutsDependency : public OpRewritePattern<GenericOp> {
 } // namespace
 
 //===---------------------------------------------------------------------===//
-// Methods that add patterns descrined in this file to a pattern list.
+// Methods that add patterns described in this file to a pattern list.
 //===---------------------------------------------------------------------===//
 
 void mlir::linalg::populateFoldReshapeOpsByLinearizationPatterns(
     RewritePatternSet &patterns) {
-  patterns
-      .add<FoldProducerReshapeOpByLinearization<false, tensor::CollapseShapeOp>,
-           FoldProducerReshapeOpByLinearization<false, tensor::ExpandShapeOp>,
-           FoldConsumerReshapeOpByLinearization<false, tensor::CollapseShapeOp>,
-           FoldConsumerReshapeOpByLinearization<false, tensor::ExpandShapeOp>>(
-          patterns.getContext());
+  patterns.add<
+      FoldProducerReshapeOpByLinearization<false, tensor::CollapseShapeOp>,
+      FoldProducerReshapeOpByLinearization<false, tensor::ExpandShapeOp>,
+      FoldConsumerReshapeOpByLinearization<false, tensor::CollapseShapeOp>>(
+      patterns.getContext());
 }
 
 void mlir::linalg::populateFoldUnitDimsReshapeOpsByLinearizationPatterns(
@@ -2231,8 +2235,7 @@ void mlir::linalg::populateFoldUnitDimsReshapeOpsByLinearizationPatterns(
   patterns
       .add<FoldProducerReshapeOpByLinearization<true, tensor::CollapseShapeOp>,
            FoldProducerReshapeOpByLinearization<true, tensor::ExpandShapeOp>,
-           FoldConsumerReshapeOpByLinearization<true, tensor::CollapseShapeOp>,
-           FoldConsumerReshapeOpByLinearization<true, tensor::ExpandShapeOp>>(
+           FoldConsumerReshapeOpByLinearization<true, tensor::CollapseShapeOp>>(
           patterns.getContext());
 }
 
@@ -2259,6 +2262,7 @@ void mlir::linalg::populateElementwiseOpsFusionPatterns(
                FoldConstantTranspose>(context,
                                       options.controlElementwiseOpsFusionFn);
   patterns.add<RemoveOutsDependency>(context);
+  populateSparseTensorRewriting(patterns);
   populateFoldReshapeOpsByExpansionPatterns(patterns,
                                             options.controlFoldingReshapesFn);
   AffineApplyOp::getCanonicalizationPatterns(patterns, context);

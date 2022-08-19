@@ -6,6 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "TestDialect.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Pass/PassManager.h"
@@ -29,16 +31,26 @@ struct TestFunctionPass
     return "Test a function pass in the pass manager";
   }
 };
+class TestInterfacePass
+    : public PassWrapper<TestInterfacePass,
+                         InterfacePass<FunctionOpInterface>> {
+  void runOnOperation() final {
+    getOperation()->emitRemark() << "Executing interface pass on operation";
+  }
+  StringRef getArgument() const final { return "test-interface-pass"; }
+  StringRef getDescription() const final {
+    return "Test an interface pass (running on FunctionOpInterface) in the "
+           "pass manager";
+  }
+};
 class TestOptionsPass
     : public PassWrapper<TestOptionsPass, OperationPass<FuncOp>> {
 public:
   struct Options : public PassPipelineOptions<Options> {
     ListOption<int> listOption{*this, "list",
-                               llvm::cl::MiscFlags::CommaSeparated,
                                llvm::cl::desc("Example list option")};
     ListOption<std::string> stringListOption{
-        *this, "string-list", llvm::cl::MiscFlags::CommaSeparated,
-        llvm::cl::desc("Example string list option")};
+        *this, "string-list", llvm::cl::desc("Example string list option")};
     Option<std::string> stringOption{*this, "string",
                                      llvm::cl::desc("Example string option")};
   };
@@ -56,11 +68,10 @@ public:
     return "Test options parsing capabilities";
   }
 
-  ListOption<int> listOption{*this, "list", llvm::cl::MiscFlags::CommaSeparated,
+  ListOption<int> listOption{*this, "list",
                              llvm::cl::desc("Example list option")};
   ListOption<std::string> stringListOption{
-      *this, "string-list", llvm::cl::MiscFlags::CommaSeparated,
-      llvm::cl::desc("Example string list option")};
+      *this, "string-list", llvm::cl::desc("Example string list option")};
   Option<std::string> stringOption{*this, "string",
                                    llvm::cl::desc("Example string option")};
 };
@@ -83,6 +94,27 @@ class TestFailurePass : public PassWrapper<TestFailurePass, OperationPass<>> {
   StringRef getArgument() const final { return "test-pass-failure"; }
   StringRef getDescription() const final {
     return "Test a pass in the pass manager that always fails";
+  }
+};
+
+/// A test pass that always fails to enable testing the failure recovery
+/// mechanisms of the pass manager.
+class TestInvalidParentPass
+    : public PassWrapper<TestInvalidParentPass,
+                         InterfacePass<FunctionOpInterface>> {
+  StringRef getArgument() const final { return "test-pass-invalid-parent"; }
+  StringRef getDescription() const final {
+    return "Test a pass in the pass manager that makes the parent operation "
+           "invalid";
+  }
+  void getDependentDialects(DialectRegistry &registry) const final {
+    registry.insert<test::TestDialect>();
+  }
+  void runOnOperation() final {
+    FunctionOpInterface op = getOperation();
+    OpBuilder b(getOperation().getBody());
+    b.create<test::TestCallOp>(op.getLoc(), TypeRange(), "some_unknown_func",
+                               ValueRange());
   }
 };
 
@@ -128,8 +160,11 @@ void registerPassManagerTestPass() {
 
   PassRegistration<TestFunctionPass>();
 
+  PassRegistration<TestInterfacePass>();
+
   PassRegistration<TestCrashRecoveryPass>();
   PassRegistration<TestFailurePass>();
+  PassRegistration<TestInvalidParentPass>();
 
   PassRegistration<TestStatisticPass>();
 
