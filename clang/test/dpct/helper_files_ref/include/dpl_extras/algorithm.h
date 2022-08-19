@@ -156,7 +156,7 @@ std::pair<Iter1, Iter2> unique(Policy &&policy, Iter1 keys_first,
 
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4,
           class BinaryPred>
-std::pair<Iter1, Iter2> unique_copy(Policy &&policy, Iter1 keys_first,
+std::pair<Iter3, Iter4> unique_copy(Policy &&policy, Iter1 keys_first,
                                     Iter1 keys_last, Iter2 values_first,
                                     Iter3 keys_result, Iter4 values_result,
                                     BinaryPred binary_pred) {
@@ -183,7 +183,7 @@ std::pair<Iter1, Iter2> unique_copy(Policy &&policy, Iter1 keys_first,
 }
 
 template <class Policy, class Iter1, class Iter2, class Iter3, class Iter4>
-std::pair<Iter1, Iter2> unique_copy(Policy &&policy, Iter1 keys_first,
+std::pair<Iter3, Iter4> unique_copy(Policy &&policy, Iter1 keys_first,
                                     Iter1 keys_last, Iter2 values_first,
                                     Iter3 keys_result, Iter4 values_result) {
   static_assert(
