@@ -24,7 +24,7 @@
 
 namespace dpct {
 
-namespace sycl = cl::sycl;
+namespace sycl = sycl;
 
 namespace internal {
 template <typename Iter, typename Void = void> // for non-iterators
@@ -357,10 +357,10 @@ public:
 
 #else
 
-template <typename T, typename Allocator = cl::sycl::buffer_allocator>
+template <typename T, typename Allocator = sycl::buffer_allocator>
 class device_vector {
   static_assert(
-      std::is_same<Allocator, cl::sycl::buffer_allocator>::value,
+      std::is_same<Allocator, sycl::buffer_allocator>::value,
       "device_vector doesn't support custom allocator when USM is not used.");
 
 public:

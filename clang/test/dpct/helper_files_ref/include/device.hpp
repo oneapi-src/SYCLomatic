@@ -32,11 +32,11 @@
 namespace dpct {
 
 /// SYCL default exception handler
-auto exception_handler = [](cl::sycl::exception_list exceptions) {
+auto exception_handler = [](sycl::exception_list exceptions) {
   for (std::exception_ptr const &e : exceptions) {
     try {
       std::rethrow_exception(e);
-    } catch (cl::sycl::exception const &e) {
+    } catch (sycl::exception const &e) {
       std::cerr << "Caught asynchronous SYCL exception:" << std::endl
                 << e.what() << std::endl
                 << "Exception caught at file:" << __FILE__
@@ -59,22 +59,22 @@ public:
   // get interface
   const char *get_name() const { return _name; }
   char *get_name() { return _name; }
-  template <typename WorkItemSizesTy = cl::sycl::id<3>,
-            std::enable_if_t<std::is_same_v<WorkItemSizesTy, cl::sycl::id<3>> ||
+  template <typename WorkItemSizesTy = sycl::id<3>,
+            std::enable_if_t<std::is_same_v<WorkItemSizesTy, sycl::id<3>> ||
                                  std::is_same_v<WorkItemSizesTy, int *>,
                              int> = 0>
   auto get_max_work_item_sizes() const {
-    if constexpr (std::is_same_v<WorkItemSizesTy, cl::sycl::id<3>>)
+    if constexpr (std::is_same_v<WorkItemSizesTy, sycl::id<3>>)
       return _max_work_item_sizes;
     else
       return _max_work_item_sizes_i;
   }
-  template <typename WorkItemSizesTy = cl::sycl::id<3>,
-            std::enable_if_t<std::is_same_v<WorkItemSizesTy, cl::sycl::id<3>> ||
+  template <typename WorkItemSizesTy = sycl::id<3>,
+            std::enable_if_t<std::is_same_v<WorkItemSizesTy, sycl::id<3>> ||
                                  std::is_same_v<WorkItemSizesTy, int *>,
                              int> = 0>
   auto get_max_work_item_sizes() {
-    if constexpr (std::is_same_v<WorkItemSizesTy, cl::sycl::id<3>>)
+    if constexpr (std::is_same_v<WorkItemSizesTy, sycl::id<3>>)
       return _max_work_item_sizes;
     else
       return _max_work_item_sizes_i;
@@ -114,7 +114,7 @@ public:
   size_t get_local_mem_size() const { return _local_mem_size; }
   // set interface
   void set_name(const char *name) { std::strncpy(_name, name, 256); }
-  void set_max_work_item_sizes(const cl::sycl::id<3> max_work_item_sizes) {
+  void set_max_work_item_sizes(const sycl::id<3> max_work_item_sizes) {
     _max_work_item_sizes = max_work_item_sizes;
     for (int i = 0; i < 3; ++i)
       _max_work_item_sizes_i[i] = max_work_item_sizes[i];
@@ -154,7 +154,7 @@ public:
 
 private:
   char _name[256];
-  cl::sycl::id<3> _max_work_item_sizes;
+  sycl::id<3> _max_work_item_sizes;
   int _max_work_item_sizes_i[3];
   bool _host_unified_memory = false;
   int _major;
@@ -172,9 +172,9 @@ private:
 };
 
 /// dpct device extension
-class device_ext : public cl::sycl::device {
+class device_ext : public sycl::device {
 public:
-  device_ext() : cl::sycl::device(), _ctx(*this) {}
+  device_ext() : sycl::device(), _ctx(*this) {}
   ~device_ext() {
     std::lock_guard<std::mutex> lock(m_mutex);
     for (auto &task : _tasks) {
@@ -184,14 +184,14 @@ public:
     _tasks.clear();
     _queues.clear();
   }
-  device_ext(const cl::sycl::device &base)
-      : cl::sycl::device(base), _ctx(*this) {
+  device_ext(const sycl::device &base)
+      : sycl::device(base), _ctx(*this) {
 #ifdef DPCT_USM_LEVEL_NONE
     _queues.push_back(
-        std::make_shared<cl::sycl::queue>(_ctx, base, exception_handler));
+        std::make_shared<sycl::queue>(_ctx, base, exception_handler));
 #else
-    _queues.push_back(std::make_shared<cl::sycl::queue>(
-        _ctx, base, exception_handler, cl::sycl::property::queue::in_order()));
+    _queues.push_back(std::make_shared<sycl::queue>(
+        _ctx, base, exception_handler, sycl::property::queue::in_order()));
 #endif
     _saved_queue = _default_queue = _queues[0].get();
   }
@@ -221,7 +221,7 @@ public:
 
   void get_device_info(device_info &out) const {
     device_info prop;
-    prop.set_name(get_info<cl::sycl::info::device::name>().c_str());
+    prop.set_name(get_info<sycl::info::device::name>().c_str());
 
     int major, minor;
     get_version(major, minor);
@@ -229,9 +229,9 @@ public:
     prop.set_minor_version(minor);
 
     prop.set_max_work_item_sizes(
-        get_info<cl::sycl::info::device::max_work_item_sizes>());
+        get_info<sycl::info::device::max_work_item_sizes>());
     prop.set_host_unified_memory(
-        get_info<cl::sycl::info::device::host_unified_memory>());
+        get_info<sycl::info::device::host_unified_memory>());
 
     // max_clock_frequency parameter is not supported on host device
     if (is_host()) {
@@ -242,20 +242,20 @@ public:
       prop.set_max_clock_frequency(1);
     } else {
       prop.set_max_clock_frequency(
-          get_info<cl::sycl::info::device::max_clock_frequency>());
+          get_info<sycl::info::device::max_clock_frequency>());
     }
 
     prop.set_max_compute_units(
-        get_info<cl::sycl::info::device::max_compute_units>());
+        get_info<sycl::info::device::max_compute_units>());
     prop.set_max_work_group_size(
-        get_info<cl::sycl::info::device::max_work_group_size>());
+        get_info<sycl::info::device::max_work_group_size>());
     prop.set_global_mem_size(
-        get_info<cl::sycl::info::device::global_mem_size>());
-    prop.set_local_mem_size(get_info<cl::sycl::info::device::local_mem_size>());
+        get_info<sycl::info::device::global_mem_size>());
+    prop.set_local_mem_size(get_info<sycl::info::device::local_mem_size>());
 
     size_t max_sub_group_size = 1;
     std::vector<size_t> sub_group_sizes =
-        get_info<cl::sycl::info::device::sub_group_sizes>();
+        get_info<sycl::info::device::sub_group_sizes>();
 
     for (const auto &sub_group_size : sub_group_sizes) {
       if (max_sub_group_size < sub_group_size)
@@ -265,7 +265,7 @@ public:
     prop.set_max_sub_group_size(max_sub_group_size);
 
     prop.set_max_work_items_per_compute_unit(
-        get_info<cl::sycl::info::device::max_work_group_size>());
+        get_info<sycl::info::device::max_work_group_size>());
     int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
     prop.set_max_nd_range_size(max_nd_range_size);
 
@@ -289,19 +289,19 @@ public:
     // create new default queue.
 #ifdef DPCT_USM_LEVEL_NONE
     _queues.push_back(
-        std::make_shared<cl::sycl::queue>(_ctx, *this, exception_handler));
+        std::make_shared<sycl::queue>(_ctx, *this, exception_handler));
 #else
-    _queues.push_back(std::make_shared<cl::sycl::queue>(
-        _ctx, *this, exception_handler, cl::sycl::property::queue::in_order()));
+    _queues.push_back(std::make_shared<sycl::queue>(
+        _ctx, *this, exception_handler, sycl::property::queue::in_order()));
 #endif
     _saved_queue = _default_queue = _queues.front().get();
   }
 
-  cl::sycl::queue &default_queue() { return *_default_queue; }
+  sycl::queue &default_queue() { return *_default_queue; }
 
   void queues_wait_and_throw() {
     std::unique_lock<std::mutex> lock(m_mutex);
-    std::vector<std::shared_ptr<cl::sycl::queue>> current_queues(
+    std::vector<std::shared_ptr<sycl::queue>> current_queues(
         _queues);
     lock.unlock();
     for (const auto &q : current_queues) {
@@ -310,40 +310,40 @@ public:
     // Guard the destruct of current_queues to make sure the ref count is safe.
     lock.lock();
   }
-  cl::sycl::queue *create_queue(bool enable_exception_handler = false) {
+  sycl::queue *create_queue(bool enable_exception_handler = false) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    cl::sycl::async_handler eh = {};
+    sycl::async_handler eh = {};
     if (enable_exception_handler) {
       eh = exception_handler;
     }
 #ifdef DPCT_USM_LEVEL_NONE
-    _queues.push_back(std::make_shared<cl::sycl::queue>(
+    _queues.push_back(std::make_shared<sycl::queue>(
         _ctx, *this, eh));
 #else
-    _queues.push_back(std::make_shared<cl::sycl::queue>(
+    _queues.push_back(std::make_shared<sycl::queue>(
         _ctx, *this, eh,
-        cl::sycl::property::queue::in_order()));
+        sycl::property::queue::in_order()));
 #endif
     return _queues.back().get();
   }
-  void destroy_queue(cl::sycl::queue *&queue) {
+  void destroy_queue(sycl::queue *&queue) {
     std::lock_guard<std::mutex> lock(m_mutex);
     _queues.erase(std::remove_if(_queues.begin(), _queues.end(),
-                                  [=](const std::shared_ptr<cl::sycl::queue> &q) -> bool {
+                                  [=](const std::shared_ptr<sycl::queue> &q) -> bool {
                                     return q.get() == queue;
                                   }),
                    _queues.end());
     queue = nullptr;
   }
-  void set_saved_queue(cl::sycl::queue* q) {
+  void set_saved_queue(sycl::queue* q) {
     std::lock_guard<std::mutex> lock(m_mutex);
     _saved_queue = q;
   }
-  cl::sycl::queue* get_saved_queue() const {
+  sycl::queue* get_saved_queue() const {
     std::lock_guard<std::mutex> lock(m_mutex);
     return _saved_queue;
   }
-  cl::sycl::context get_context() const { return _ctx; }
+  sycl::context get_context() const { return _ctx; }
 
 private:
   void get_version(int &major, int &minor) const {
@@ -351,7 +351,7 @@ private:
     // a. OpenCL<space><major.minor><space><vendor-specific-information>
     // b. <major.minor>
     std::string ver;
-    ver = get_info<cl::sycl::info::device::version>();
+    ver = get_info<sycl::info::device::version>();
     std::string::size_type i = 0;
     while (i < ver.size()) {
       if (isdigit(ver[i]))
@@ -372,12 +372,12 @@ private:
     _tasks.push_back(std::move(task));
   }
   friend void async_dpct_free(std::vector<void *>,
-                              std::vector<cl::sycl::event>,
-                              cl::sycl::queue &);
-  cl::sycl::queue *_default_queue;
-  cl::sycl::queue *_saved_queue;
-  cl::sycl::context _ctx;
-  std::vector<std::shared_ptr<cl::sycl::queue>> _queues;
+                              std::vector<sycl::event>,
+                              sycl::queue &);
+  sycl::queue *_default_queue;
+  sycl::queue *_saved_queue;
+  sycl::context _ctx;
+  std::vector<std::shared_ptr<sycl::queue>> _queues;
   mutable std::mutex m_mutex;
   std::vector<std::thread> _tasks;
 };
@@ -440,12 +440,12 @@ public:
 private:
   mutable std::mutex m_mutex;
   dev_mgr() {
-    cl::sycl::device default_device =
-        cl::sycl::device(cl::sycl::default_selector{});
+    sycl::device default_device =
+        sycl::device(sycl::default_selector{});
     _devs.push_back(std::make_shared<device_ext>(default_device));
 
-    std::vector<cl::sycl::device> sycl_all_devs =
-        cl::sycl::device::get_devices(cl::sycl::info::device_type::all);
+    std::vector<sycl::device> sycl_all_devs =
+        sycl::device::get_devices(sycl::info::device_type::all);
     // Collect other devices except for the default device.
     if (default_device.is_cpu())
       _cpu_device = 0;
@@ -476,7 +476,7 @@ private:
 
 /// Util function to get the default queue of current device in
 /// dpct device manager.
-static inline cl::sycl::queue &get_default_queue() {
+static inline sycl::queue &get_default_queue() {
   return dev_mgr::instance().current_device().default_queue();
 }
 
@@ -498,7 +498,7 @@ static inline device_ext &get_device(unsigned int id) {
 
 /// Util function to get the context of the default queue of current
 /// device in dpct device manager.
-static inline cl::sycl::context get_default_context() {
+static inline sycl::context get_default_context() {
   return dpct::get_current_device().get_context();
 }
 

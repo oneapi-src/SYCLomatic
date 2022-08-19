@@ -138,7 +138,7 @@ private:
     } else if constexpr (vec_size == 1) {
       return oneapi::mkl::rng::device::generate_single(distr, _engine);
     } else if constexpr (vec_size == 2) {
-      cl::sycl::vec<typename distr_t::result_type, 2> res;
+      sycl::vec<typename distr_t::result_type, 2> res;
       res.x() = oneapi::mkl::rng::device::generate_single(distr, _engine);
       res.y() = oneapi::mkl::rng::device::generate_single(distr, _engine);
       return res;
