@@ -391,6 +391,10 @@ sycl::vec<T, 2> conj(sycl::vec<T, 2> x) {
   return sycl::vec<T, 2>(t.real(), t.imag());
 }
 
+inline int get_sycl_language_version() {
+  return SYCL_LANGUAGE_VERSION;
+}
+
 namespace experimental {
 /// Synchronize work items from all work groups within a SYCL kernel.
 /// \param [in] item:  Represents a work group.
@@ -517,5 +521,7 @@ public:
 };
 }
 } // namespace dpct
+
+
 
 #endif // __DPCT_UTIL_HPP__

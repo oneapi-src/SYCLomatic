@@ -79,5 +79,9 @@ int main(){
   CUdevice* dev_ptr;
   cuCtxGetDevice(dev_ptr);
 
+  unsigned int ver;
+  // CHECK: ver = dpct::get_sycl_language_version();
+  cuCtxGetApiVersion(ctx, &ver);
+
   return 0;
 }
