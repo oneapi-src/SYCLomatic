@@ -9,7 +9,7 @@
 #ifndef __DPCT_FFT_UTILS_HPP__
 #define __DPCT_FFT_UTILS_HPP__
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include "lib_common_utils.hpp"
 
@@ -183,37 +183,37 @@ public:
     }
   }
   template<>
-  void compute(float *input, cl::sycl::float2 *output, fft_direction direction) {
+  void compute(float *input, sycl::float2 *output, fft_direction direction) {
     _direction = direction;
     compute_real<float, oneapi::mkl::dft::precision::SINGLE>(
         _idist, _odist, (float *)input, (float *)output);
   }
   template<>
-  void compute(cl::sycl::float2 *input, float *output, fft_direction direction) {
+  void compute(sycl::float2 *input, float *output, fft_direction direction) {
     _direction = direction;
     compute_real<float, oneapi::mkl::dft::precision::SINGLE>(
         _odist, _idist, (float *)input, (float *)output);
   }
   template<>
-  void compute(double *input, cl::sycl::double2 *output, fft_direction direction) {
+  void compute(double *input, sycl::double2 *output, fft_direction direction) {
     _direction = direction;
     compute_real<double, oneapi::mkl::dft::precision::DOUBLE>(
         _idist, _odist, (double *)input, (double *)output);
   }
   template<>
-  void compute(cl::sycl::double2 *input, double *output, fft_direction direction) {
+  void compute(sycl::double2 *input, double *output, fft_direction direction) {
     _direction = direction;
     compute_real<double, oneapi::mkl::dft::precision::DOUBLE>(
         _odist, _idist, (double *)input, (double *)output);
   }
   template<>
-  void compute(cl::sycl::float2 *input, cl::sycl::float2 *output, fft_direction direction) {
+  void compute(sycl::float2 *input, sycl::float2 *output, fft_direction direction) {
     _direction = direction;
     compute_complex<float, oneapi::mkl::dft::precision::SINGLE>(
         _idist, _odist, (float *)input, (float *)output);
   }
   template<>
-  void compute(cl::sycl::double2 *input, cl::sycl::double2 *output, fft_direction direction) {
+  void compute(sycl::double2 *input, sycl::double2 *output, fft_direction direction) {
     _direction = direction;
     compute_complex<double, oneapi::mkl::dft::precision::DOUBLE>(
         _idist, _odist, (double *)input, (double *)output);
