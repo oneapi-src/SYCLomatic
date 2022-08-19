@@ -10,6 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/Linalg/Analysis/DependenceAnalysis.h"
 #include "mlir/Dialect/Linalg/Transforms/Transforms.h"
 #include "mlir/Dialect/SCF/Transforms.h"
@@ -115,7 +116,7 @@ struct TestLinalgFusionTransforms
                          OperationPass<FuncOp>> {
   void getDependentDialects(DialectRegistry &registry) const override {
     registry.insert<AffineDialect, linalg::LinalgDialect, memref::MemRefDialect,
-                    scf::SCFDialect, StandardOpsDialect>();
+                    scf::SCFDialect>();
   }
   TestLinalgFusionTransforms() = default;
   TestLinalgFusionTransforms(const TestLinalgFusionTransforms &pass) {}
@@ -269,9 +270,9 @@ struct TestLinalgTileAndFuseSequencePass
       const TestLinalgTileAndFuseSequencePass &pass)
       : PassWrapper(pass){};
 
-  ListOption<int64_t> tileSizes{
-      *this, "tile-sizes", llvm::cl::desc("Tile sizes to use for ops"),
-      llvm::cl::ZeroOrMore, llvm::cl::MiscFlags::CommaSeparated};
+  ListOption<int64_t> tileSizes{*this, "tile-sizes",
+                                llvm::cl::desc("Tile sizes to use for ops"),
+                                llvm::cl::ZeroOrMore};
 
   void getDependentDialects(DialectRegistry &registry) const override {
     registry.insert<AffineDialect, linalg::LinalgDialect, memref::MemRefDialect,

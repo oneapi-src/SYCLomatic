@@ -230,6 +230,7 @@ namespace std {
 }
 */
 
+#include <__assert> // all public C++ headers provide the assertion handler
 #include <__config>
 #include <__ranges/access.h>
 #include <__ranges/all.h>
@@ -256,6 +257,7 @@ namespace std {
 #include <__ranges/transform_view.h>
 #include <__ranges/view_interface.h>
 #include <__ranges/views.h>
+#include <__tuple> // TODO: <ranges> has to export std::tuple_size. Replace this, once <tuple> is granularized.
 #include <compare>          // Required by the standard.
 #include <initializer_list> // Required by the standard.
 #include <iterator>         // Required by the standard.

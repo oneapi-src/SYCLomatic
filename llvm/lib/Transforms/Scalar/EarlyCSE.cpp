@@ -16,7 +16,6 @@
 #include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/ScopedHashTable.h"
-#include "llvm/ADT/SetVector.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/Analysis/AssumptionCache.h"
@@ -30,19 +29,16 @@
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
-#include "llvm/IR/DataLayout.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
-#include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/IR/PatternMatch.h"
 #include "llvm/IR/Type.h"
-#include "llvm/IR/Use.h"
 #include "llvm/IR/Value.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Pass.h"
@@ -55,7 +51,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Utils/AssumeBundleBuilder.h"
-#include "llvm/Transforms/Utils/GuardUtils.h"
 #include "llvm/Transforms/Utils/Local.h"
 #include <cassert>
 #include <deque>
@@ -603,7 +598,10 @@ public:
            const TargetTransformInfo &TTI, DominatorTree &DT,
            AssumptionCache &AC, MemorySSA *MSSA)
       : TLI(TLI), TTI(TTI), DT(DT), AC(AC), SQ(DL, &TLI, &DT, &AC), MSSA(MSSA),
-        MSSAUpdater(std::make_unique<MemorySSAUpdater>(MSSA)) {}
+        MSSAUpdater(std::make_unique<MemorySSAUpdater>(MSSA)) {
+    if (MSSA)
+      MSSA->ensureOptimizedUses();
+  }
 
   bool run();
 
@@ -779,6 +777,21 @@ private:
       if (IntrID != 0)
         return Info.PtrVal;
       return getLoadStorePointerOperand(Inst);
+    }
+
+    Type *getValueType() const {
+      // TODO: handle target-specific intrinsics.
+      if (IntrinsicInst *II = dyn_cast<IntrinsicInst>(Inst)) {
+        switch (II->getIntrinsicID()) {
+        case Intrinsic::masked_load:
+          return II->getType();
+        case Intrinsic::masked_store:
+          return II->getArgOperand(0)->getType();
+        default:
+          return nullptr;
+        }
+      }
+      return getLoadStoreType(Inst);
     }
 
     bool mayReadFromMemory() const {
@@ -1161,6 +1174,9 @@ bool EarlyCSE::overridingStores(const ParseMemoryInst &Earlier,
   assert(Earlier.isUnordered() && !Earlier.isVolatile() &&
          "Violated invariant");
   if (Earlier.getPointerOperand() != Later.getPointerOperand())
+    return false;
+  if (!Earlier.getValueType() || !Later.getValueType() ||
+      Earlier.getValueType() != Later.getValueType())
     return false;
   if (Earlier.getMatchingId() != Later.getMatchingId())
     return false;

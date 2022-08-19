@@ -80,7 +80,10 @@ module std [system] {
       header "string.h"
       export *
     }
-    // FIXME: <uchar.h> is missing.
+    module uchar_h {
+      header "uchar.h"
+      export *
+    }
     // <time.h> provided by C library.
     module wchar_h {
       // <wchar.h>'s __need_* macros require textual inclusion.
@@ -203,7 +206,10 @@ module std [system] {
       header "ctime"
       export *
     }
-    // FIXME: <cuchar> is missing.
+    module cuchar {
+      header "cuchar"
+      export *
+    }
     module cwchar {
       header "cwchar"
       export depr.stdio_h
@@ -248,6 +254,7 @@ module std [system] {
       module generate                 { private header "__algorithm/generate.h" }
       module generate_n               { private header "__algorithm/generate_n.h" }
       module half_positive            { private header "__algorithm/half_positive.h" }
+      module in_found_result          { private header "__algorithm/in_found_result.h" }
       module in_fun_result            { private header "__algorithm/in_fun_result.h" }
       module in_in_out_result         { private header "__algorithm/in_in_out_result.h" }
       module in_in_result             { private header "__algorithm/in_in_result.h" }
@@ -270,6 +277,7 @@ module std [system] {
       module merge                    { private header "__algorithm/merge.h" }
       module min                      { private header "__algorithm/min.h" }
       module min_element              { private header "__algorithm/min_element.h" }
+      module min_max_result           { private header "__algorithm/min_max_result.h" }
       module minmax                   { private header "__algorithm/minmax.h" }
       module minmax_element           { private header "__algorithm/minmax_element.h" }
       module mismatch                 { private header "__algorithm/mismatch.h" }
@@ -286,7 +294,14 @@ module std [system] {
       module pop_heap                 { private header "__algorithm/pop_heap.h" }
       module prev_permutation         { private header "__algorithm/prev_permutation.h" }
       module push_heap                { private header "__algorithm/push_heap.h" }
+      module ranges_find              { private header "__algorithm/ranges_find.h" }
+      module ranges_find_if           { private header "__algorithm/ranges_find_if.h" }
+      module ranges_find_if_not       { private header "__algorithm/ranges_find_if_not.h" }
+      module ranges_max               { private header "__algorithm/ranges_max.h" }
+      module ranges_max_element       { private header "__algorithm/ranges_max_element.h" }
+      module ranges_min               { private header "__algorithm/ranges_min.h" }
       module ranges_min_element       { private header "__algorithm/ranges_min_element.h" }
+      module ranges_mismatch          { private header "__algorithm/ranges_mismatch.h" }
       module ranges_swap_ranges       { private header "__algorithm/ranges_swap_ranges.h" }
       module remove                   { private header "__algorithm/remove.h" }
       module remove_copy              { private header "__algorithm/remove_copy.h" }
@@ -498,6 +513,7 @@ module std [system] {
     export *
 
     module __format {
+      module buffer                   { private header "__format/buffer.h" }
       module format_arg               { private header "__format/format_arg.h" }
       module format_args              { private header "__format/format_args.h" }
       module format_context {
@@ -628,6 +644,7 @@ module std [system] {
       module iter_swap             { private header "__iterator/iter_swap.h" }
       module iterator              { private header "__iterator/iterator.h" }
       module iterator_traits       { private header "__iterator/iterator_traits.h" }
+      module mergeable             { private header "__iterator/mergeable.h" }
       module move_iterator         { private header "__iterator/move_iterator.h" }
       module next                  { private header "__iterator/next.h" }
       module ostream_iterator      { private header "__iterator/ostream_iterator.h" }
@@ -639,6 +656,7 @@ module std [system] {
       module reverse_access        { private header "__iterator/reverse_access.h" }
       module reverse_iterator      { private header "__iterator/reverse_iterator.h" }
       module size                  { private header "__iterator/size.h" }
+      module sortable              { private header "__iterator/sortable.h" }
       module unreachable_sentinel  { private header "__iterator/unreachable_sentinel.h" }
       module wrap_iter             { private header "__iterator/wrap_iter.h" }
     }
@@ -760,6 +778,7 @@ module std [system] {
       module geometric_distribution          { private header "__random/geometric_distribution.h" }
       module independent_bits_engine         { private header "__random/independent_bits_engine.h" }
       module is_seed_sequence                { private header "__random/is_seed_sequence.h" }
+      module is_valid                        { private header "__random/is_valid.h" }
       module knuth_b                         { private header "__random/knuth_b.h" }
       module linear_congruential_engine      { private header "__random/linear_congruential_engine.h" }
       module log2                            { private header "__random/log2.h" }
@@ -1015,7 +1034,7 @@ module std [system] {
       header "experimental/algorithm"
       export *
     }
-     module coroutine {
+    module coroutine {
       requires coroutines
       header "experimental/coroutine"
       export *
