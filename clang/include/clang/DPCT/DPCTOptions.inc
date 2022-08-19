@@ -219,7 +219,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<DPCTFormatStyle>), FormatST,
            llvm::cl::Optional)
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), NoClNamespaceInline, "no-cl-namespace-inline",
-           llvm::cl::desc("DEPRECATED: Do not use llvm::cl:: namespace inline. Default: off. This option will be\n"
+           llvm::cl::desc("DEPRECATED: Do not use cl:: namespace inline. Default: off. This option will be\n"
                    "ignored if the replacement option --use-explicit-namespace is used.\n"),
            llvm::cl::cat(DPCTCat), llvm::cl::location(ExplicitClNamespace))
 
@@ -295,7 +295,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<ExplicitNamespace>), UseExp
                                      "be used with other values.",
                                      false),
              DPCT_OPT_ENUM("cl", int(ExplicitNamespace::EN_CL),
-               "Generate code with llvm::cl::sycl:: namespace. Cannot be used with "
+               "Generate code with cl::sycl:: namespace. Cannot be used with "
                "sycl or sycl-math values.",
                false),
              DPCT_OPT_ENUM("dpct", int(ExplicitNamespace::EN_DPCT),
