@@ -9,7 +9,7 @@
 #ifndef __DPCT_RNG_UTILS_HPP__
 #define __DPCT_RNG_UTILS_HPP__
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include <oneapi/mkl/rng/device.hpp>
 

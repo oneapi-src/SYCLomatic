@@ -12,7 +12,7 @@
 #include "memory.hpp"
 #include "util.hpp"
 #include "lib_common_utils.hpp"
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include <utility>
 #include <vector>
