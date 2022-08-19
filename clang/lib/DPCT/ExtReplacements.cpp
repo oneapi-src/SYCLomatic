@@ -328,7 +328,7 @@ void ExtReplacements::addReplacement(std::shared_ptr<ExtReplacement> Repl) {
     if (Repl->isInsertHeaderReplacement()) {
       if (Repl->isSYCLHeaderNeeded())
         FileInfo->insertHeader(HT_SYCL);
-      }
+    }
     markAsAlive(Repl);
   } else {
     markAsDead(Repl);
