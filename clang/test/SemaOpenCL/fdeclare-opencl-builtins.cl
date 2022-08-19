@@ -1,7 +1,7 @@
 // RUN: %clang_cc1 %s -triple spir -verify -pedantic -Wconversion -Werror -fsyntax-only -cl-std=CL -fdeclare-opencl-builtins -DNO_HEADER
 // RUN: %clang_cc1 %s -triple spir -verify -pedantic -Wconversion -Werror -fsyntax-only -cl-std=CL -fdeclare-opencl-builtins -finclude-default-header
-// RUN: %clang_cc1 %s -triple spir -verify -pedantic -Wconversion -Werror -fsyntax-only -cl-std=CL1.2 -fdeclare-opencl-builtins -DNO_HEADER
-// RUN: %clang_cc1 %s -triple spir -verify -pedantic -Wconversion -Werror -fsyntax-only -cl-std=CL1.2 -fdeclare-opencl-builtins -finclude-default-header
+// RUN: %clang_cc1 %s -triple spir -verify -pedantic -Wconversion -Werror -fsyntax-only -cl-std=CL1.2 -fdeclare-opencl-builtins -DNO_HEADER -cl-ext=-cl_intel_subgroups
+// RUN: %clang_cc1 %s -triple spir -verify -pedantic -Wconversion -Werror -fsyntax-only -cl-std=CL1.2 -fdeclare-opencl-builtins -finclude-default-header -cl-ext=-cl_intel_subgroups
 // RUN: %clang_cc1 %s -triple spir -verify -pedantic -Wconversion -Werror -fsyntax-only -cl-std=CL2.0 -fdeclare-opencl-builtins -DNO_HEADER
 // RUN: %clang_cc1 %s -triple spir -verify -pedantic -Wconversion -Werror -fsyntax-only -cl-std=CL2.0 -fdeclare-opencl-builtins -finclude-default-header
 // RUN: %clang_cc1 %s -triple spir -verify -pedantic -Wconversion -Werror -fsyntax-only -cl-std=CL3.0 -fdeclare-opencl-builtins -finclude-default-header
@@ -27,7 +27,7 @@
 
 // First, test that Clang gracefully handles missing types.
 #ifdef NO_HEADER
-void test_without_header() {
+void test_without_header(void) {
   barrier(0);
   // expected-note@-1 0+{{candidate function not viable}}
   // expected-error@-2 0+{{argument type 'void' is incomplete}}
@@ -79,6 +79,7 @@ typedef struct {int a;} ndrange_t;
 #define cl_khr_subgroup_non_uniform_arithmetic 1
 #define cl_khr_subgroup_clustered_reduce 1
 #define __opencl_c_read_write_images 1
+#define __opencl_subgroup_builtins 1
 #endif
 
 #if (__OPENCL_CPP_VERSION__ == 100 || __OPENCL_C_VERSION__ == 200)
@@ -163,6 +164,25 @@ void test_atomic_fetch_with_address_space(volatile __generic atomic_float *a_flo
 }
 #endif // !defined(NO_HEADER) && __OPENCL_C_VERSION__ >= 200
 
+#if !defined(NO_HEADER) && __OPENCL_C_VERSION__ == 200 && defined(__opencl_c_generic_address_space)
+
+// Test that overloads that use atomic_double are not available when the fp64
+// extension is disabled.  Test this by counting the number of notes about
+// candidate functions.
+void test_atomic_double_reporting(volatile __generic atomic_int *a) {
+  atomic_init(a);
+  // expected-error@-1{{no matching function for call to 'atomic_init'}}
+#if defined(NO_FP64)
+  // Expecting 5 candidates: int, uint, long, ulong, float
+  // expected-note@-4 5 {{candidate function not viable: requires 2 arguments, but 1 was provided}}
+#else
+  // Expecting 6 candidates: int, uint, long, ulong, float, double
+  // expected-note@-7 6 {{candidate function not viable: requires 2 arguments, but 1 was provided}}
+#endif
+}
+
+#endif
+
 #if defined(NO_ATOMSCOPE) && __OPENCL_C_VERSION__ >= 300
 // Disable the feature by undefining the feature macro.
 #undef __opencl_c_atomic_scope_device
@@ -195,7 +215,7 @@ void test_legacy_atomics_cpp(__generic volatile unsigned int *a) {
 }
 #endif
 
-kernel void basic_conversion() {
+kernel void basic_conversion(void) {
   float f;
   char2 c2;
   long2 l2;
@@ -213,7 +233,7 @@ kernel void basic_conversion() {
   i4 = convert_int4_sat(f4);
 }
 
-kernel void basic_conversion_neg() {
+kernel void basic_conversion_neg(void) {
   int i;
   float f;
 
@@ -316,7 +336,7 @@ kernel void extended_subgroup(global uint4 *out, global int *scalar, global char
 #endif
 }
 
-kernel void basic_vector_data() {
+kernel void basic_vector_data(void) {
 #if __OPENCL_C_VERSION__ >= CL_VERSION_2_0
   generic void *generic_p;
 #endif
@@ -348,7 +368,7 @@ kernel void basic_vector_data() {
   f16 = vload16(s, (const __private float *) private_p);
 }
 
-kernel void basic_work_item() {
+kernel void basic_work_item(void) {
   uint ui;
 
   barrier(CLK_GLOBAL_MEM_FENCE);

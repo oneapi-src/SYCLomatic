@@ -70,6 +70,43 @@ def HasStdExtZfhOrZfhmin
                                    "'Zfh' (Half-Precision Floating-Point) or "
                                    "'Zfhmin' (Half-Precision Floating-Point Minimal)">;
 
+def FeatureStdExtZfinx
+    : SubtargetFeature<"zfinx", "HasStdExtZfinx", "true",
+                       "'Zfinx' (Float in Integer)">;
+def HasStdExtZfinx : Predicate<"Subtarget->hasStdExtZfinx()">,
+                               AssemblerPredicate<(all_of FeatureStdExtZfinx),
+                               "'Zfinx' (Float in Integer)">;
+
+def FeatureStdExtZdinx
+    : SubtargetFeature<"zdinx", "HasStdExtZdinx", "true",
+                       "'Zdinx' (Double in Integer)",
+                       [FeatureStdExtZfinx]>;
+def HasStdExtZdinx : Predicate<"Subtarget->hasStdExtZdinx()">,
+                               AssemblerPredicate<(all_of FeatureStdExtZdinx),
+                               "'Zdinx' (Double in Integer)">;
+
+def FeatureStdExtZhinxmin
+    : SubtargetFeature<"zhinxmin", "HasStdExtZhinxmin", "true",
+                       "'Zhinxmin' (Half Float in Integer Minimal)",
+                       [FeatureStdExtZfinx]>;
+def HasStdExtZhinxmin : Predicate<"Subtarget->hasStdExtZhinxmin()">,
+                                  AssemblerPredicate<(all_of FeatureStdExtZhinxmin),
+                                  "'Zhinxmin' (Half Float in Integer Minimal)">;
+
+def FeatureStdExtZhinx
+    : SubtargetFeature<"zhinx", "HasStdExtZhinx", "true",
+                       "'Zhinx' (Half Float in Integer)",
+                       [FeatureStdExtZfinx]>;
+def HasStdExtZhinx : Predicate<"Subtarget->hasStdExtZhinx()">,
+                               AssemblerPredicate<(all_of FeatureStdExtZhinx),
+                               "'Zhinx' (Half Float in Integer)">;
+
+def HasStdExtZhinxOrZhinxmin
+    : Predicate<"Subtarget->hasStdExtZhinx() || Subtarget->hasStdExtZhinxmin()">,
+                AssemblerPredicate<(any_of FeatureStdExtZhinx, FeatureStdExtZhinxmin),
+                                   "'Zhinx' (Half Float in Integer) or "
+                                   "'Zhinxmin' (Half Float in Integer Minimal)">;
+
 def FeatureStdExtC
     : SubtargetFeature<"c", "HasStdExtC", "true",
                        "'C' (Compressed Instructions)">;
@@ -358,6 +395,11 @@ def HasVInstructionsAnyF : Predicate<"Subtarget->hasVInstructionsAnyF()">,
           "'V' (Vector Extension for Application Processors), 'Zve32f', "
           "'Zve64f' or 'Zve64d' (Vector Extensions for Embedded Processors)">;
 
+def FeatureStdExtZvfh
+    : SubtargetFeature<"experimental-zvfh", "HasStdExtZvfh", "true",
+                       "'Zvfh' (Vector Half-Precision Floating-Point)",
+                       [FeatureStdExtZve32f]>;
+
 def Feature64Bit
     : SubtargetFeature<"64bit", "HasRV64", "true", "Implements RV64">;
 def IsRV64 : Predicate<"Subtarget->is64Bit()">,
@@ -415,6 +457,9 @@ include "RISCVSchedSiFive7.td"
 
 def : ProcessorModel<"generic-rv32", NoSchedModel, []>;
 def : ProcessorModel<"generic-rv64", NoSchedModel, [Feature64Bit]>;
+// Support generic for compatibility with other targets. The triple will be used
+// to change to the appropriate rv32/rv64 version.
+def : ProcessorModel<"generic", NoSchedModel, []>;
 
 def : ProcessorModel<"rocket-rv32", RocketModel, []>;
 def : ProcessorModel<"rocket-rv64", RocketModel, [Feature64Bit]>;
