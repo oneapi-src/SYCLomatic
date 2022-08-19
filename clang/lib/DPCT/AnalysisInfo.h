@@ -472,8 +472,11 @@ public:
   // Insert one or more header inclusion directives at a specified offset
   void insertHeader(std::string &&Repl, unsigned Offset,
                     InsertPosition InsertPos = IP_Left) {
+
     auto R =
         std::make_shared<ExtReplacement>(FilePath, Offset, 0, Repl, nullptr);
+        // ====================
+    R->setIncludeDirective(true);
     R->setInsertPosition(InsertPos);
     IncludeDirectiveInsertions.push_back(R);
   }

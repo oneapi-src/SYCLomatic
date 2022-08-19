@@ -346,8 +346,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
     }
     // For host functions
     else {
-      // Insert "#include <cmath>" to migrated code
-      DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_Math);
       NewFuncName = SourceCalleeName.str();
       if (SourceCalleeName == "abs") {
         auto *BT =
@@ -521,6 +519,9 @@ std::string MathFuncNameRewriter::getNewFuncName() {
 
       if (!NamespaceStr.empty())
         NewFuncName = NamespaceStr + "::" + NewFuncName;
+      if (!NewFuncName.empty() && (NewFuncName != SourceCalleeName))
+        // Insert "#include <cmath>" to migrated code
+        DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_Math);
     }
   }
   return NewFuncName;

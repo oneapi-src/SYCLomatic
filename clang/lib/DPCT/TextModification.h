@@ -123,11 +123,15 @@ public:
   inline bool IsSYCLHeaderNeeded() { return SYCLHeaderNeeded; }
   inline void setSYCLHeaderNeeded(bool Val) { SYCLHeaderNeeded = Val; }
 
+  inline void setIncludeDirective(bool Val) { InsertedHeaderDirective = Val;}
+  inline bool isIncludeDirective() {return InsertedHeaderDirective; }
+
 private:
   InsertPosition InsertPos = IP_Left;
   const TextModification *TM;
   unsigned PairID = 0;
   bool SYCLHeaderNeeded = true;
+  bool InsertedHeaderDirective = false;
 };
 
 enum class TextModificationID : int {
