@@ -2122,6 +2122,7 @@ void ThrustFunctionRule::thrustFuncMigration(
       std::string ReplStr = "oneapi::dpl::execution::make_device_policy(" +
                             getDrefName(CMCE->getArg(0)) + ")";
       emplaceTransformation(new ReplaceStmt(CMCE, std::move(ReplStr)));
+      return;
     }
   }
 
