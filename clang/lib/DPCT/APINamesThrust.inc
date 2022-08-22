@@ -406,7 +406,7 @@ CONDITIONAL_FACTORY_ENTRY(
                               ARG("oneapi::dpl::execution::seq"),
                               ARG(1), ARG(2), ARG(3), ARG(4)))),
     CALL_FACTORY_ENTRY("thrust::any_of",
-                      CALL("oneapi::dpl::any_of", 
+                      CALL("oneapi::dpl::any_of",
                             makeMappedThrustPolicyEnum(0),
                             ARG(1), ARG(2), ARG(3)))
   ),
@@ -459,7 +459,7 @@ CONDITIONAL_FACTORY_ENTRY(
                               ARG("oneapi::dpl::execution::seq"),
                               ARG(1), ARG(2), ARG(3), ARG(4)))),
     CALL_FACTORY_ENTRY("thrust::replace",
-                       CALL("oneapi::dpl::replace", 
+                       CALL("oneapi::dpl::replace",
                             makeMappedThrustPolicyEnum(0),
                             ARG(1), ARG(2), ARG(3), ARG(4)))
   ),
