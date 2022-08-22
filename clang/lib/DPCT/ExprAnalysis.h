@@ -849,6 +849,8 @@ class FunctorAnalysis : public ArgumentAnalysis {
 private:
   void analyzeExpr(const CXXTemporaryObjectExpr* CTOE);
   void analyzeExpr(const DeclRefExpr* DRE);
+  void analyzeExpr(const CXXConstructExpr *CCE);
+  void analyzeExpr(const CXXFunctionalCastExpr *CFCE);
   void addConstQuailfier(const CXXRecordDecl *CRD);
   unsigned PlaceholderCount = 0;
 protected:

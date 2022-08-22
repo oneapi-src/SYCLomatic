@@ -1481,44 +1481,49 @@ void FunctorAnalysis::dispatch(const Stmt *Expression) {
   switch (Expression->getStmtClass()) {
     ANALYZE_EXPR(CXXTemporaryObjectExpr)
     ANALYZE_EXPR(DeclRefExpr)
+    ANALYZE_EXPR(CXXConstructExpr)
+    ANALYZE_EXPR(CXXFunctionalCastExpr)
   default:
     return ArgumentAnalysis::dispatch(Expression);
   }
 }
 
 void FunctorAnalysis::addConstQuailfier(const CXXRecordDecl *CRD) {
-  if (CRD->getDeclKind() == clang::Decl::Kind::ClassTemplate ||
-      CRD->getDeclKind() == clang::Decl::Kind::ClassTemplateSpecialization ||
-      CRD->getDeclKind() ==
-          clang::Decl::Kind::ClassTemplatePartialSpecialization)
-    return;
-  for (const auto &M : CRD->methods()) {
-    if (M->getOverloadedOperator() == OverloadedOperatorKind::OO_Call &&
-        !M->isConst()) {
-      // Add "const" at declaration place and definition place.
-      for (const auto &FD : M->redecls()) {
-        const auto *Def = FD->getDefinition();
-        SourceLocation InsertLoc;
-        if (Def == FD) {
-          // definition
-          InsertLoc = FD->getBody()->getBeginLoc();
+  for (const auto &D : CRD->decls()) {
+    const CXXMethodDecl *Method = dyn_cast<CXXMethodDecl>(D);
+    if (!Method) {
+      if (const FunctionTemplateDecl *FTD =
+              dyn_cast<FunctionTemplateDecl>(D)) {
+        if (const CXXMethodDecl *CMD =
+                dyn_cast_or_null<CXXMethodDecl>(FTD->getAsFunction())) {
+          Method = CMD;
+        }
+      }
+    }
+    if (!Method) {
+      continue;
+    }
+    if (Method->getOverloadedOperator() == OverloadedOperatorKind::OO_Call &&
+        !Method->isConst()) {
+      for (const auto &FD : Method->redecls()) {
+        SourceLocation InsertLoc = FD->getFunctionTypeLoc().getRParenLoc();
+        // Get the location after ')'
+        if (InsertLoc.isMacroID()) {
+          InsertLoc = SM.getSpellingLoc(InsertLoc).getLocWithOffset(1);
         } else {
-          // declaration
-          // Get the location after ')'
-          InsertLoc = FD->getEndLoc();
-          if (InsertLoc.isMacroID()) {
-            InsertLoc = SM.getSpellingLoc(InsertLoc).getLocWithOffset(1);
-          } else {
-            InsertLoc = InsertLoc.getLocWithOffset(1);
-          }
+          InsertLoc = InsertLoc.getLocWithOffset(1);
         }
         DpctGlobalInfo::getInstance().addReplacement(
-            std::make_shared<ExtReplacement>(SM, InsertLoc, 0, " const ",
+            std::make_shared<ExtReplacement>(SM, InsertLoc, 0, " const",
                                              nullptr));
       }
       break;
     }
   }
+}
+
+void FunctorAnalysis::analyzeExpr(const CXXFunctionalCastExpr *CFCE) {
+  dispatch(CFCE->getSubExpr());
 }
 
 void FunctorAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *CTOE) {
@@ -1530,9 +1535,8 @@ void FunctorAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *CTOE) {
     return;
   if (DpctGlobalInfo::isInAnalysisScope(CRD->getBeginLoc())) {
     addConstQuailfier(CRD);
-  } else {
-    Base::analyzeExpr(CTOE);
   }
+  Base::analyzeExpr(CTOE);
 }
 
 void FunctorAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
@@ -1548,10 +1552,7 @@ void FunctorAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   }
 
   // Process functor's quailfier
-  const ValueDecl *VD = DRE->getDecl();
-  if (!VD)
-    return;
-  const Type *Tp = VD->getType().getTypePtr();
+  const Type *Tp = DRE->getType().getTypePtr();
   if (!Tp)
     return;
   const CXXRecordDecl *CRD = Tp->getAsCXXRecordDecl();
@@ -1559,9 +1560,21 @@ void FunctorAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     return;
   if (DpctGlobalInfo::isInAnalysisScope(CRD->getBeginLoc())) {
     addConstQuailfier(CRD);
-  } else {
-    ArgumentAnalysis::analyzeExpr(DRE);
   }
+  ArgumentAnalysis::analyzeExpr(DRE);
+}
+
+void FunctorAnalysis::analyzeExpr(const CXXConstructExpr *CCE) {
+  const CXXConstructorDecl *CCD = CCE->getConstructor();
+  if (!CCD)
+    return;
+  const CXXRecordDecl *CRD = CCD->getParent();
+  if (!CRD)
+    return;
+  if (DpctGlobalInfo::isInAnalysisScope(CRD->getBeginLoc())) {
+    addConstQuailfier(CRD);
+  }
+  Base::analyzeExpr(CCE);
 }
 
 void FunctorAnalysis::analyze(const Expr *Expression) {

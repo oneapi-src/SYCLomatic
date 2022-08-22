@@ -83,7 +83,7 @@ struct isfoo_test {
 //CHECK-NEXT:   }
 //CHECK-NEXT: };
 //CHECK-NEXT: struct is_even_3 {
-//CHECK-NEXT:   bool operator()(int x)  const ;
+//CHECK-NEXT:   bool operator()(int x)  const;
 //CHECK-NEXT: };
 //CHECK-NEXT: bool is_even_3::operator()(int x)  const {
 //CHECK-NEXT:   return (static_cast<unsigned int>(x) & 1) == 0;
@@ -99,6 +99,12 @@ struct is_even_3 {
 __host__ __device__ bool is_even_3::operator()(int x) {
   return (static_cast<unsigned int>(x) & 1) == 0;
 }
+template<class T>
+struct is_even_4 {
+  __host__ __device__ bool operator()(T x) {
+    return (static_cast<unsigned int>(x) & 1) == 0;
+  }
+};
 
 void foo() {
   //CHECK: copy_if_device(oneapi::dpl::execution::seq);
@@ -156,9 +162,11 @@ void foo() {
   //CHECK: dpct::device_vector<int> t;
   //CHECK-NEXT: std::for_each(oneapi::dpl::execution::make_device_policy(q_ct1), t.begin(), t.end(), is_even_2());
   //CHECK-NEXT: std::for_each(oneapi::dpl::execution::make_device_policy(q_ct1), t.begin(), t.end(), is_even_3());
+  //CHECK-NEXT: std::for_each(oneapi::dpl::execution::make_device_policy(q_ct1), t.begin(), t.end(), is_even_4<int>());
   thrust::device_vector<int> t;
   thrust::for_each(t.begin(), t.end(), is_even_2());
   thrust::for_each(t.begin(), t.end(), is_even_3());
+  thrust::for_each(t.begin(), t.end(), is_even_4<int>());
  }
 
  {
