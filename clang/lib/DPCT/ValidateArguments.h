@@ -72,6 +72,8 @@ enum class ExperimentalFeatures : unsigned int {
 bool makeInRootCanonicalOrSetDefaults(
     std::string &InRoot, const std::vector<std::string> SourceFiles);
 bool makeOutRootCanonicalOrSetDefaults(std::string &OutRoot);
+bool makeAnalysisScopeCanonicalOrSetDefaults(std::string &AnalysisScope,
+                                             const std::string &InRoot);
 
 /// Make sure files passed to tool are under the
 /// input root directory and have an extension.

@@ -2628,6 +2628,7 @@ RemoveCubTempStorageFactory::create(const CallExpr *C) const {
 #define QUEUESTR makeQueueStr()
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
+#define MEMBER_EXPR(...) makeMemberExprCreator(__VA_ARGS__)
 #define LAMBDA(...) makeLambdaCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define CAST(T, S) makeCastExprCreator(T, S)

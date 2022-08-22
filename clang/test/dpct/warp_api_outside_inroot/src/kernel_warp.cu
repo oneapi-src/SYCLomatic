@@ -1,9 +1,19 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: dpct --format-range=none --usm-level=none --in-root=%S --out-root=%T/kernel_warp_outside --analysis-scope-path=%S/.. %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/kernel_warp_outside/kernel_warp.dp.cpp --match-full-lines %s
-// RUN: rm -rf %T/kernel_warp_outside
+// RUN: dpct --format-range=none --usm-level=none --in-root=%S --out-root=%T/out --analysis-scope-path=%S/.. %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// out/
+// ├── kernel_warp.dp.cpp
+// └── MainSourceFiles.yaml
+// RUN: echo > %T/exist_check
+// RUN: bash %S/../check_script.sh %T/out/kernel_warp.dp.cpp %T
+// RUN: bash %S/../check_script.sh %T/out/MainSourceFiles.yaml %T
+// RUN: bash %S/../check_script.sh %T/out/inc/empty.h %T
+// RUN: bash %S/../check_script.sh %T/out/inc/utils.dp.hpp %T
+// RUN: bash %S/../check_script.sh %T/out/src %T
+// RUN: FileCheck --input-file %T/exist_check --match-full-lines %S/../ref
+// RUN: rm -rf %T/out
 #include "../inc/utils.cuh"
+#include "../inc/empty.h"
 
 //CHECK:void kernel(float *input, sycl::nd_item<3> item_ct1, float *smem) {
 __global__ void kernel(float *input) {

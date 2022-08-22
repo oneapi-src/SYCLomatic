@@ -53,8 +53,10 @@ extern std::map<std::string, bool> IncludeFileMap;
 void processAllFiles(llvm::StringRef InRoot, llvm::StringRef OutRoot,
                      std::vector<std::string> &FilesNotProcessed);
 
-// Replace file path specified by \pInRoot with \pOutRoot in \pFilePath.
-void rewriteDir(llvm::SmallString<512> &FilePath, const llvm::StringRef InRoot,
+/// Replace file path specified by \pInRoot with \pOutRoot in \pFilePath.
+///
+/// \returns true if file path is rewritten, false otherwise.
+bool rewriteDir(llvm::SmallString<512> &FilePath, const llvm::StringRef InRoot,
                 const llvm::StringRef OutRoot);
 
 // Replace file name \pFileName with new migrated name.
