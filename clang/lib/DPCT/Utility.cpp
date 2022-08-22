@@ -194,7 +194,7 @@ SourceRange getStmtExpansionSourceRange(const Stmt *S) {
   return SourceRange(BeginLoc, EndLoc);
 }
 
-size_t calculateExpansionLevel(const SourceLocation Loc) {
+size_t calculateExpansionLevel(const SourceLocation Loc, bool IsBegin) {
   if (Loc.isFileID())
     return 0;
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
@@ -202,7 +202,11 @@ size_t calculateExpansionLevel(const SourceLocation Loc) {
   size_t Count = 0;
   while (ExpanLoc.isMacroID()) {
     Count++;
-    ExpanLoc = SM.getImmediateExpansionRange(ExpanLoc).getBegin();
+    if (IsBegin) {
+      ExpanLoc = SM.getImmediateExpansionRange(ExpanLoc).getBegin();
+    } else {
+      ExpanLoc = SM.getImmediateExpansionRange(ExpanLoc).getEnd();
+    }
   }
   return Count;
 }
@@ -2075,8 +2079,8 @@ std::pair<clang::SourceLocation, clang::SourceLocation>
 getTheLastCompleteImmediateRange(clang::SourceLocation BeginLoc,
                                  clang::SourceLocation EndLoc) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
-  auto BeginLevel = calculateExpansionLevel(BeginLoc);
-  auto EndLevel = calculateExpansionLevel(EndLoc);
+  auto BeginLevel = calculateExpansionLevel(BeginLoc, true);
+  auto EndLevel = calculateExpansionLevel(EndLoc, false);
   while ((BeginLevel > 0 || EndLevel > 0) &&
          (isLocationStraddle(BeginLoc, EndLoc) ||
           ((BeginLoc.isMacroID() &&

@@ -1,0 +1,12 @@
+
+#define FATAL 1
+#define TEST_LOG_IF(LEVEL, CONDITION) \
+  !(CONDITION) ? 0 : LEVEL
+
+
+#define TEST_CHECK(EXPRESSION) \
+  TEST_LOG_IF(0, !(EXPRESSION))
+
+
+#define TEST_DCHECK TEST_CHECK
+
