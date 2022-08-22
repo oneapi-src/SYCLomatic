@@ -3,8 +3,8 @@
 // RUN: FileCheck --input-file %T/Image/api_test14_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Image/api_test14_out
 
-// CHECK: 61
-// TEST_FEATURE: Image_image_wrapper_attach
+// CHECK: 60
+// TEST_FEATURE: Image_image_wrapper_base_attach
 // TEST_FEATURE: Image_image_wrapper_base_set_data
 
 int main() {
