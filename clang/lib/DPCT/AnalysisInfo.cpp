@@ -716,6 +716,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
   if (ExecutionConfig.Stream == "0") {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     ExecutionConfig.Stream = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+    ExecutionConfig.IsQueuePtr = false;
     buildTempVariableMap(Index, *ConfigArgs.begin(),
                          HelperFuncType::HFT_DefaultQueue);
   } else if (NeedTypeCast) {
@@ -798,8 +799,8 @@ void KernelCallExpr::addAccessorDecl(std::shared_ptr<MemVarInfo> VI) {
                        ? HelperFeatureEnum::Memory_device_memory_init
                        : HelperFeatureEnum::Memory_device_memory_init_q,
                    getFilePath());
-    SubmitStmtsList.InitList.emplace_back(
-        VI->getInitStmt(isDefaultStream() ? "" : ExecutionConfig.Stream));
+    SubmitStmtsList.InitList.emplace_back(VI->getInitStmt(
+        isDefaultStream() ? "" : ExecutionConfig.Stream, isQueuePtr()));
     if (VI->isLocal()) {
       SubmitStmtsList.MemoryList.emplace_back(
           VI->getMemoryDecl(ExecutionConfig.ExternMemSize));
@@ -1053,10 +1054,10 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
   } else {
     Printer << ExecutionConfig.Stream;
   }
-  if (isDefaultStream())
-    Printer << ".";
-  else
+  if (isQueuePtr())
     Printer << "->";
+  else
+    Printer << ".";
   if (SubmitStmtsList.empty()) {
     printParallelFor(Printer, false);
   } else {
@@ -1281,7 +1282,8 @@ KernelCallExpr::buildForWrapper(std::string FilePath, const FunctionDecl *FD,
   Kernel->ExecutionConfig.Config[2] = "localMemSize";
   Kernel->ExecutionConfig.Config[3] = "queue";
   Kernel->ExecutionConfig.Config[4] = "nr";
-  Kernel->ExecutionConfig.IsDefaultStream = true;
+  Kernel->ExecutionConfig.IsDefaultStream = false;
+  Kernel->ExecutionConfig.IsQueuePtr = false;
   Kernel->NeedBraces = false;
   Kernel->getFuncInfo()->getVarMap().Dim = 3;
   for (auto &Parm : FD->parameters()) {
