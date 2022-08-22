@@ -46,3 +46,10 @@ void checkCopyIf() {
 // CHECK:  std::copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), dVecIn.begin(), dVecIn.end(), dVecOut.begin(), isEven);
   thrust::copy_if(dVecIn.begin(), dVecIn.end(), dVecOut.begin(), isEven);
 }
+
+class MyAlloctor {};
+void foo(cudaStream_t stream) {
+  MyAlloctor thrust_allocator;
+  // CHECK: auto p = oneapi::dpl::execution::make_device_policy(*stream);
+  auto p = thrust::cuda::par(thrust_allocator).on(stream);
+}
