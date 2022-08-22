@@ -55,12 +55,15 @@ static bool isCudaMemoryAPIName(StringRef FuncName) {
 static bool isCubDeviceFuncName(StringRef FuncName) {
   return FuncName == "Reduce" || FuncName == "Min" || FuncName == "Max" ||
          FuncName == "Sum" || FuncName == "ExclusiveSum" ||
-         FuncName == "InclusiveSum" || FuncName == "Flagged";
+         FuncName == "InclusiveSum" || FuncName == "InclusiveScan" ||
+         FuncName == "ExclusiveScan" || FuncName == "Flagged" ||
+         FuncName == "Unique" || FuncName == "Encode";
 }
 
 static bool isCubDeviceCXXRecordName(StringRef CXXRDName) {
   return CXXRDName == "DeviceSegmentedReduce" || CXXRDName == "DeviceReduce" ||
-         CXXRDName == "DeviceScan" || CXXRDName == "DeviceSelect";
+         CXXRDName == "DeviceScan" || CXXRDName == "DeviceSelect" ||
+         CXXRDName == "DeviceRunLengthEncode";
 }
 
 static llvm::Optional<std::string>
@@ -496,21 +499,25 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                     .bind("MemberCall"),
                 this);
 
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(hasAnyName(
-                                   "ShuffleIndex", "ThreadLoad", "ThreadStore",
-                                   "Sum", "Min", "Max", "Reduce",
-                                   "ExclusiveSum", "InclusiveSum", "Flagged"))),
-                               parentStmt()))
-                    .bind("FuncCall"),
-                this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(hasAnyName(
+                         "ShuffleIndex", "ThreadLoad", "ThreadStore", "Sum",
+                         "Min", "Max", "Reduce", "ExclusiveSum", "InclusiveSum",
+                         "InclusiveScan", "ExclusiveScan", "Flagged", "Unique",
+                         "Encode"))),
+                     parentStmt()))
+          .bind("FuncCall"),
+      this);
 
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(hasAnyName(
-                                   "Sum", "Min", "Max", "Reduce", "ThreadLoad",
-                                   "ShuffleIndex", "ExclusiveSum",
-                                   "InclusiveSum", "Flagged"))),
-                               unless(parentStmt())))
-                    .bind("FuncCallUsed"),
-                this);
+  MF.addMatcher(
+      callExpr(
+          allOf(callee(functionDecl(hasAnyName(
+                    "Sum", "Min", "Max", "Reduce", "ThreadLoad", "ShuffleIndex",
+                    "ExclusiveSum", "InclusiveSum", "InclusiveScan",
+                    "ExclusiveScan", "Flagged", "Unique", "Encode"))),
+                unless(parentStmt())))
+          .bind("FuncCallUsed"),
+      this);
 }
 
 std::string CubRule::getOpRepl(const Expr *Operator) {
