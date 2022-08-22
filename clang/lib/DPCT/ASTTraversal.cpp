@@ -1037,7 +1037,7 @@ void IncludesCallbacks::InclusionDirective(
 
   // Extra process thrust headers, map to PSTL mapping headers in runtime.
   // For multi thrust header files, only insert once for PSTL mapping header.
-  if (IsAngled && (FileName.find("thrust/") != std::string::npos)) {
+  if (FileName.find("thrust/") != std::string::npos) {
     DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Utils);
     requestFeature(HelperFeatureEnum::DplUtils_non_local_include_dependency,
                    HashLoc);
@@ -2072,10 +2072,12 @@ void AtomicFunctionRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(AtomicFunctionRule)
 
 void ThrustFunctionRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(callExpr(callee(functionDecl(
-                             hasDeclContext(namespaceDecl(hasName("thrust"))))))
-                     .bind("thrustFuncCall"),
-                 this);
+  auto functionName = [&]() { return hasAnyName("on"); };
+  MF.addMatcher(callExpr(callee(functionDecl(anyOf(
+                             hasDeclContext(namespaceDecl(hasName("thrust"))),
+                             functionName()))))
+                    .bind("thrustFuncCall"),
+                this);
 
   MF.addMatcher(
       unresolvedLookupExpr(hasAnyDeclaration(namedDecl(hasDeclContext(
@@ -2107,6 +2109,22 @@ void ThrustFunctionRule::thrustFuncMigration(
       ThrustFuncName = ULExpr->getName().getAsString();
   } else {
     ThrustFuncName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();
+  }
+
+  // Process API: "thrust::cuda::par(thrust_allocator).on(stream)"
+  const CXXMemberCallExpr *CMCE = dyn_cast_or_null<CXXMemberCallExpr>(CE);
+  if (CMCE) {
+    auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
+    PP.PrintCanonicalTypes = true;
+    auto BaseType = CMCE->getObjectType().getUnqualifiedType().getAsString(PP);
+    StringRef BaseTypeRef(BaseType);
+    if (BaseTypeRef.startswith("thrust::cuda_cub::execute_on_stream_base<") &&
+        ThrustFuncName == "on") {
+      std::string ReplStr = "oneapi::dpl::execution::make_device_policy(" +
+                            getDrefName(CMCE->getArg(0)) + ")";
+      emplaceTransformation(new ReplaceStmt(CMCE, std::move(ReplStr)));
+      return;
+    }
   }
 
   std::string ThrustFuncNameWithNamespace = "thrust::" + ThrustFuncName;

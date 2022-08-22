@@ -2720,11 +2720,14 @@ public:
 
   std::string getDeclarationReplacement(const VarDecl *);
 
-  std::string getInitStmt() { return getInitStmt(""); }
-  std::string getInitStmt(StringRef QueueString) {
+  std::string getInitStmt() { return getInitStmt("", false); }
+  std::string getInitStmt(StringRef QueueString, bool IsQueuePtr) {
     if (QueueString.empty())
       return getConstVarName() + ".init();";
-    return buildString(getConstVarName(), ".init(*", QueueString, ");");
+    std::string DerefQueuePtr = "";
+    if(IsQueuePtr)
+      DerefQueuePtr = "*";
+    return buildString(getConstVarName(), ".init(", DerefQueuePtr, QueueString, ");");
   }
 
   inline std::string getMemoryDecl(const std::string &MemSize) {
@@ -4308,6 +4311,10 @@ private:
            ExecutionConfig.IsDefaultStream;
   }
 
+  bool isQueuePtr() {
+    return ExecutionConfig.IsQueuePtr;
+  }
+
   void buildKernelInfo(const CUDAKernelCallExpr *KernelCall);
   void setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall);
   void setNeedAddLambda(const CUDAKernelCallExpr *KernelCall);
@@ -4399,6 +4406,7 @@ private:
     std::string &NdRange = Config[4];
     std::string &SubGroupSize = Config[5];
     bool IsDefaultStream = false;
+    bool IsQueuePtr = true;
   } ExecutionConfig;
 
   std::vector<ArgInfo> ArgsInfo;
