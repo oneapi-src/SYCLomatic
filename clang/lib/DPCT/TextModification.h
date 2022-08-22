@@ -120,7 +120,7 @@ public:
     }
   }
 
-  inline bool isSYCLHeaderNeeded() { return SYCLHeaderNeeded; }
+  inline bool IsSYCLHeaderNeeded() { return SYCLHeaderNeeded; }
   inline void setSYCLHeaderNeeded(bool Val) { SYCLHeaderNeeded = Val; }
 
   inline void setInsertHeaderReplacement(bool Val) { InsertHeaderReplacement = Val; }
