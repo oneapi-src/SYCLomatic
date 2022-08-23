@@ -565,7 +565,7 @@ void MapNames::setExplicitNamespaceMap() {
            getClNamespace() + "usm::alloc::unknown")},
       {"cudaMemoryTypeManaged",
        std::make_shared<EnumNameRule>(
-           getClNamespace() + "usm::alloc::unknown")},
+           getClNamespace() + "usm::alloc::shared")},
       // enum Texture Address Mode
       {"cudaAddressModeWrap",
        std::make_shared<EnumNameRule>(getClNamespace() +
