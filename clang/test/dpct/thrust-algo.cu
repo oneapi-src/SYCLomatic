@@ -29,34 +29,34 @@ void k() {
   // exclusive_scan_by_key
 
   // CHECK: oneapi::dpl::exclusive_scan_by_segment(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v3.begin());
-  // CHECK: oneapi::dpl::exclusive_scan_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), v.begin(), v.end(), v2.begin(), v3.begin());
+  // CHECK: oneapi::dpl::exclusive_scan_by_segment(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v3.begin());
   thrust::exclusive_scan_by_key(thrust::seq, v.begin(), v.end(), v2.begin(), v3.begin());
   thrust::exclusive_scan_by_key(v.begin(), v.end(), v2.begin(), v3.begin());
 
   // CHECK: oneapi::dpl::exclusive_scan_by_segment(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v3.begin(), 1);
-  // CHECK: oneapi::dpl::exclusive_scan_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), v.begin(), v.end(), v2.begin(), v3.begin(), 1);
+  // CHECK: oneapi::dpl::exclusive_scan_by_segment(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v3.begin(), 1);
   thrust::exclusive_scan_by_key(thrust::seq, v.begin(), v.end(), v2.begin(), v3.begin(), 1);
   thrust::exclusive_scan_by_key(v.begin(), v.end(), v2.begin(), v3.begin(), 1);
 
   // CHECK: oneapi::dpl::exclusive_scan_by_segment(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v3.begin(), 1, bp);
-  // CHECK: oneapi::dpl::exclusive_scan_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), v.begin(), v.end(), v2.begin(), v3.begin(), 1, bp);
+  // CHECK: oneapi::dpl::exclusive_scan_by_segment(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v3.begin(), 1, bp);
   thrust::exclusive_scan_by_key(thrust::seq, v.begin(), v.end(), v2.begin(), v3.begin(), 1, bp);
   thrust::exclusive_scan_by_key(v.begin(), v.end(), v2.begin(), v3.begin(), 1, bp);
 
   // inclusive_scan_by_key
 
   // CHECK: oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v3.begin());
-  // CHECK: oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), v.begin(), v.end(), v2.begin(), v3.begin());
+  // CHECK: oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v3.begin());
   thrust::inclusive_scan_by_key(thrust::seq, v.begin(), v.end(), v2.begin(), v3.begin());
   thrust::inclusive_scan_by_key(v.begin(), v.end(), v2.begin(), v3.begin());
 
   // CHECK: oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v3.begin(), bp);
-  // CHECK: oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), v.begin(), v.end(), v2.begin(), v3.begin(), bp);
+  // CHECK: oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v3.begin(), bp);
   thrust::inclusive_scan_by_key(thrust::seq, v.begin(), v.end(), v2.begin(), v3.begin(), bp);
   thrust::inclusive_scan_by_key(v.begin(), v.end(), v2.begin(), v3.begin(), bp);
 
   // CHECK: oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v3.begin(), bp, bo);
-  // CHECK: oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), v.begin(), v.end(), v2.begin(), v3.begin(), bp, bo);
+  // CHECK: oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v3.begin(), bp, bo);
   thrust::inclusive_scan_by_key(thrust::seq, v.begin(), v.end(), v2.begin(), v3.begin(), bp, bo);
   thrust::inclusive_scan_by_key(v.begin(), v.end(), v2.begin(), v3.begin(), bp, bo);
 
@@ -232,3 +232,36 @@ void foo(cudaStream_t stream) {
   thrust::reduce_by_key(h.begin(), h.end(), h.begin(), h.end(), h.begin());
   thrust::reduce_by_key(d.begin(), d.end(), d.begin(), d.end(), d.begin());
 }
+
+
+template<typename index_t>
+void embedding_dense_backward_cuda_scan() {
+  thrust::host_vector<int> h;
+  thrust::device_vector<int> d;
+  thrust::device_ptr<int> my_data;
+
+  //CHECK: oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), oneapi::dpl::make_reverse_iterator(my_data), oneapi::dpl::make_reverse_iterator(my_data), oneapi::dpl::make_reverse_iterator(my_data), oneapi::dpl::make_reverse_iterator(my_data), oneapi::dpl::equal_tothrust::equal_to<index_t>(), oneapi::dpl::maximumthrust::maximum<index_t>());
+  thrust::inclusive_scan_by_key(
+    thrust::device,
+    thrust::make_reverse_iterator(my_data),
+    thrust::make_reverse_iterator(my_data),
+    thrust::make_reverse_iterator(my_data),
+    thrust::make_reverse_iterator(my_data),
+    thrust::equal_to<index_t>(),
+    thrust::maximum<index_t>()
+  );
+
+  //CHECK:oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), d.end(), oneapi::dpl::equal_tothrust::equal_to<index_t>(), oneapi::dpl::maximumthrust::maximum<index_t>());
+  thrust::inclusive_scan_by_key(
+    thrust::device,
+    d.begin(),
+    d.end(),
+    d.begin(),
+    d.end(),
+    thrust::equal_to<index_t>(),
+    thrust::maximum<index_t>()
+  );
+}
+
+template void embedding_dense_backward_cuda_scan<int>();
+template void embedding_dense_backward_cuda_scan<int64_t>();

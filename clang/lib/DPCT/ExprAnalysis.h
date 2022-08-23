@@ -383,7 +383,8 @@ private:
   size_t getOffset(SourceLocation Loc) {
     return SM.getFileOffset(Loc) - SrcBegin;
   }
-
+  bool processThrustCtorName(const std::string &CtorClassName,
+                             std::string &Replacement, size_t TypeLen);
 protected:
   void analyzeArgument(const Expr *E) {
     switch (E->getStmtClass()) {
@@ -614,6 +615,7 @@ protected:
   }
 
   void analyzeExpr(const CXXConstructExpr *Ctor);
+  void analyzeExpr(const CXXUnresolvedConstructExpr *Ctor);
   void analyzeExpr(const MemberExpr *ME);
   void analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT);
   void analyzeExpr(const ExplicitCastExpr *Cast);

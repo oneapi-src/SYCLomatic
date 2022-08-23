@@ -494,13 +494,47 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   }
 }
 
+bool ExprAnalysis::processThrustCtorName(const std::string &CtorClassName,
+                                         std::string &Replacement,
+                                         size_t TypeLen) {
+  if (CtorClassName.find("thrust::") == 0) {
+    auto TypeLen = CtorClassName.find('<');
+    if (TypeLen != std::string::npos) {
+      auto RealTypeNameStr = CtorClassName.substr(0, TypeLen);
+      Replacement =
+          MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
+      if (!Replacement.empty()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
   dispatch(CE->getSubExpr());
 }
 
+void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
+  std::string CtorClassName =
+      Ctor->getTypeAsWritten().getAsString();
+  std::string Replacement;
+  size_t TypeLen;
+
+  if (processThrustCtorName(CtorClassName, Replacement, TypeLen)) {
+    addReplacement(Ctor, TypeLen, Replacement);
+  }
+
+  for (auto It = Ctor->arg_begin(); It != Ctor->arg_end(); It++) {
+    dispatch(*It);
+  }
+}
+
+
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   std::string CtorClassName =
       Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
+
   if (CtorClassName.find("thrust::") == 0) {
     // Distinguish CXXTemporaryObjectExpr from other copy ctor before migrating
     // the ctor. Ex. foo(thrust::minus<int>());
@@ -510,7 +544,13 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
         clang::ast_matchers::match(CXXTemporaryObjectExprMatcher, *Ctor,
                                    clang::dpct::DpctGlobalInfo::getContext());
     if (MatchedResults.size() > 0) {
-      addReplacement(Ctor, 8, "std::");
+      std::string Replacement;
+      size_t TypeLen;
+      if (processThrustCtorName(CtorClassName, Replacement, TypeLen)) {
+        addReplacement(Ctor, TypeLen, Replacement);
+      } else {
+        addReplacement(Ctor, 8, "std::");
+      }
     }
   }
 
