@@ -479,6 +479,17 @@ void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
   dispatch(CE->getSubExpr());
 }
 
+void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
+  std::string CtorClassName =
+      Ctor->getTypeAsWritten().getAsString();
+  if (CtorClassName.find("thrust::") == 0) {
+    addReplacement(Ctor, 8, "std::");
+  }
+  for (auto It = Ctor->arg_begin(); It != Ctor->arg_end(); It++) {
+    dispatch(*It);
+  }
+}
+
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   std::string CtorClassName =
       Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
@@ -736,7 +747,6 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
                            false, RefString);
         } else {
           FCIMMR[LocStr] = ResultStr;
-
           // When migrating thrust API with usmnone and raw-ptr,
           // the CallExpr will be rewritten into an if-else stmt,
           // DPCT needs to remove the following semicolon.

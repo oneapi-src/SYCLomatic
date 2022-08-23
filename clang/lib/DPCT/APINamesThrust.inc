@@ -1304,3 +1304,70 @@ CONDITIONAL_FACTORY_ENTRY(
                             ARG("oneapi::dpl::execution::seq"),
                             ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))))))
 )
+
+
+// // thrust::inclusive_scan_by_key
+// CONDITIONAL_FACTORY_ENTRY(
+//   CheckArgCount(7),
+//   //Handling case: thrust::inclusive_scan_by_key(policy, device.begin(), device.end(), device.begin(), result, binary_pred, binary_op);
+//   CALL_FACTORY_ENTRY("thrust::inclusive_scan_by_key",
+//                       CALL("oneapi::dpl::inclusive_scan_by_segment",
+//                             makeMappedThrustPolicyEnum(0),
+//                             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
+//   CONDITIONAL_FACTORY_ENTRY(
+//     CheckArgCount(6),
+//     CONDITIONAL_FACTORY_ENTRY(
+//       CompareArgType(0, 1),
+//       //Handling case: thrust::inclusive_scan_by_key(policy, device.begin(), device.end(), device.begin(), result, binary_pred);
+//       CALL_FACTORY_ENTRY("thrust::inclusive_scan_by_key",
+//                       CALL("oneapi::dpl::inclusive_scan_by_segment",
+//                             makeMappedThrustPolicyEnum(0),
+//                             ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
+//       //Handling case: thrust::inclusive_scan_by_key(device.begin(), device.end(), device.begin(), result, binary_pred, binary_op);
+//      CONDITIONAL_FACTORY_ENTRY(
+//         CheckArgType(1, "thrust::device_ptr"),
+//         CALL_FACTORY_ENTRY("thrust::inclusive_scan_by_key",
+//                        CALL("oneapi::dpl::inclusive_scan_by_segment",
+//                             CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+//                             ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
+//         CALL_FACTORY_ENTRY("thrust::inclusive_scan_by_key",
+//                        CALL("oneapi::dpl::inclusive_scan_by_segment",
+//                             ARG("oneapi::dpl::execution::seq"),
+//                             ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))
+//     ),
+//     CONDITIONAL_FACTORY_ENTRY(
+//       CheckArgCount(5),
+//       CONDITIONAL_FACTORY_ENTRY(
+//         CompareArgType(0, 1),
+//         //Handling case: thrust::inclusive_scan_by_key(policy, device.begin(), device.end(), device.begin(), result);
+//         CALL_FACTORY_ENTRY("thrust::inclusive_scan_by_key",
+//                         CALL("oneapi::dpl::inclusive_scan_by_segment",
+//                               makeMappedThrustPolicyEnum(0),
+//                               ARG(1), ARG(2), ARG(3), ARG(4))),
+//         //Handling case: thrust::inclusive_scan_by_key(device.begin(), device.end(), device.begin(), result, binary_pred);
+//         CONDITIONAL_FACTORY_ENTRY(
+//           CheckArgType(1, "thrust::device_ptr"),
+//           CALL_FACTORY_ENTRY("thrust::inclusive_scan_by_key",
+//                          CALL("oneapi::dpl::inclusive_scan_by_segment",
+//                               CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+//                               ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))),
+//           CALL_FACTORY_ENTRY("thrust::inclusive_scan_by_key",
+//                          CALL("oneapi::dpl::inclusive_scan_by_segment",
+//                               ARG("oneapi::dpl::execution::seq"),
+//                               ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))))
+//       ),
+//       //Handling case: thrust::inclusive_scan_by_key(device.begin(), device.end(), device.begin(), result);
+//       CONDITIONAL_FACTORY_ENTRY(
+//         CheckArgType(1, "thrust::device_ptr"),
+//         CALL_FACTORY_ENTRY("thrust::inclusive_scan_by_key",
+//                        CALL("oneapi::dpl::inclusive_scan_by_segment",
+//                             CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+//                             ARG(0), ARG(1), ARG(2), ARG(3))),
+//         CALL_FACTORY_ENTRY("thrust::inclusive_scan_by_key",
+//                        CALL("oneapi::dpl::inclusive_scan_by_segment",
+//                             ARG("oneapi::dpl::execution::seq"),
+//                             ARG(0), ARG(1), ARG(2), ARG(3))))))
+// )
+
+CALL_FACTORY_ENTRY("thrust::inclusive_scan_by_key",
+                    CALL("oneapi::dpl::inclusive_scan_by_segment", ARG(6)))
