@@ -123,15 +123,11 @@ public:
   inline bool IsSYCLHeaderNeeded() { return SYCLHeaderNeeded; }
   inline void setSYCLHeaderNeeded(bool Val) { SYCLHeaderNeeded = Val; }
 
-  inline void setInsertHeaderReplacement(bool Val) { InsertHeaderReplacement = Val; }
-  inline bool isInsertHeaderReplacement() { return InsertHeaderReplacement; }
-
 private:
   InsertPosition InsertPos = IP_Left;
   const TextModification *TM;
   unsigned PairID = 0;
   bool SYCLHeaderNeeded = true;
-  bool InsertHeaderReplacement = false;
 };
 
 enum class TextModificationID : int {

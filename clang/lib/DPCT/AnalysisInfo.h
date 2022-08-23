@@ -474,7 +474,7 @@ public:
                     InsertPosition InsertPos = IP_Left) {
     auto R =
         std::make_shared<ExtReplacement>(FilePath, Offset, 0, Repl, nullptr);
-    R->setInsertHeaderReplacement(true);
+    R->setSYCLHeaderNeeded(false);
     R->setInsertPosition(InsertPos);
     IncludeDirectiveInsertions.push_back(R);
   }
