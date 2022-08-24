@@ -1305,7 +1305,6 @@ CONDITIONAL_FACTORY_ENTRY(
                             ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))))))
 )
 
-<<<<<<< HEAD
 // thrust::for_each
 CONDITIONAL_FACTORY_ENTRY(
   CheckArgCount(4),
@@ -1415,7 +1414,6 @@ CONDITIONAL_FACTORY_ENTRY(
 
 // thrust::make_zip_iterator
 CALL_FACTORY_ENTRY("thrust::make_zip_iterator",  CALL("oneapi::dpl::make_zip_iterator",  ARG(0)))
-
 // thrust::inclusive_scan_by_key
 CONDITIONAL_FACTORY_ENTRY(
   CheckArgCount(7),
