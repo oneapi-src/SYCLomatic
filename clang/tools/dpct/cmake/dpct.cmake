@@ -12,6 +12,7 @@ macro(set_dpct_package)
       install-dpct-headers
       install-clang-resource-headers
       install-dpct-binary
+      install-dpct-autocomplete
       install-dpct-opt-rules
       )
   endif()
@@ -24,4 +25,19 @@ macro(install_dpct)
     )
 
   add_clang_symlink(c2s dpct-binary)
+  if(UNIX)
+    set(dpct_autocomplete_script bash-autocomplete.sh)
+  endif()
+
+  if(UNIX)
+    install(
+      FILES ${dpct_autocomplete_script}
+      COMPONENT dpct-autocomplete
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+      DESTINATION ./env)
+    if (NOT CMAKE_CONFIGURATION_TYPES)
+      add_llvm_install_targets(install-dpct-autocomplete
+                               COMPONENT dpct-autocomplete)
+    endif()
+  endif()
 endmacro()
