@@ -99,8 +99,18 @@ ExprAnalysis::getSpellingOffsetAndLength(SourceLocation Loc) {
   if (Loc.isInvalid())
     return std::pair<SourceLocation, size_t>(Loc, SrcLength);
   Loc = SM.getSpellingLoc(Loc);
+  auto TokenLen = Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts());
+  Token Tok2;
+  Lexer::getRawToken(Loc, Tok2, SM, Context.getLangOpts());
+  // if the last token is ">>" or ">>>",
+  // since DPCT does not support nested template type migration,
+  // the last token should be treated as ">"
+  if (Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)) {
+    TokenLen = 1;
+  }
+
   return std::pair<SourceLocation, size_t>(
-      Loc, Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts()));
+      Loc, TokenLen);
 }
 
 std::pair<SourceLocation, size_t>
@@ -132,9 +142,18 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(SourceLocation Loc) {
     return std::pair<size_t, size_t>(0, SrcLength);
   Loc = getExprLocation(Loc);
   FileId = SM.getDecomposedLoc(Loc).first;
+  auto TokenLen = Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts());
+  Token Tok2;
+  Lexer::getRawToken(Loc, Tok2, SM, Context.getLangOpts());
+  // if the last token is ">>" or ">>>",
+  // since DPCT does not support nested template type migration,
+  // the last token should be treated as ">"
+  if(Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)){
+    TokenLen = 1;
+  }
   return std::pair<size_t, size_t>(
       getOffset(Loc),
-      Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts()));
+      TokenLen);
 }
 
 std::pair<size_t, size_t>
@@ -897,7 +916,11 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
       auto Result = Rewriter->rewrite();
       if (Result.hasValue()) {
         auto ResultStr = Result.getValue();
-        addReplacement(SR.getBegin(), SR.getEnd(), CSCE, ResultStr);
+        // Since Parser splits ">>" or ">>>" to ">" when parse template
+        // the SR.getEnd location might be a "scratch space" location.
+        // Therfore, need to apply SM.getExpansionLoc before call addReplacement.
+        addReplacement(SM.getExpansionLoc(SR.getBegin()),
+                       SM.getExpansionLoc(SR.getEnd()), CSCE, ResultStr);
         return;
       }
     }
