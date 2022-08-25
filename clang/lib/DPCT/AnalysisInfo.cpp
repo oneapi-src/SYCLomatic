@@ -1841,8 +1841,10 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
 
 void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
   if (FuncInfo && Info && (FuncInfo != Info)) {
-    DiagnosticsUtils::report(getFilePath(), getBegin(),
-                             Warnings::DEVICE_CALL_DIFFERENT, true, false);
+    if (Info->getVarMap().hasTexture()) {
+      DiagnosticsUtils::report(getFilePath(), getBegin(),
+                               Warnings::DEVICE_CALL_DIFFERENT, true, false);
+    }
   }
   FuncInfo = Info;
 }
