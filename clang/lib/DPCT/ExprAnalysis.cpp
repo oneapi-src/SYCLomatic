@@ -494,21 +494,24 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   }
 }
 
-bool ExprAnalysis::processThrustCtorName(const std::string &CtorClassName,
-                                         std::string &Replacement,
-                                         size_t TypeLen) {
+// Get replacement str and replacement length for thrust construct type.
+// If thrust construct type have mapping type in MapNames::TypeNamesMap, using
+// the mapping type, else just use "std::" to replace "thrust::".
+void ExprAnalysis::getThrustReplStrAndLength(const std::string &CtorClassName,
+                                             std::string &Replacement,
+                                             size_t &TypeLen) {
+
   if (CtorClassName.find("thrust::") == 0) {
-    auto TypeLen = CtorClassName.find('<');
-    if (TypeLen != std::string::npos) {
-      auto RealTypeNameStr = CtorClassName.substr(0, TypeLen);
-      Replacement =
-          MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
-      if (!Replacement.empty()) {
-        return true;
-      }
-    }
+    TypeLen = CtorClassName.find('<');
+    if (TypeLen == std::string::npos)
+      TypeLen = 8;
+
+    auto RealTypeNameStr = CtorClassName.substr(0, TypeLen);
+    Replacement =
+        MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
+    if (Replacement.empty())
+      Replacement = "std::";
   }
-  return false;
 }
 
 void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
@@ -521,9 +524,8 @@ void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
   std::string Replacement;
   size_t TypeLen;
 
-  if (processThrustCtorName(CtorClassName, Replacement, TypeLen)) {
-    addReplacement(Ctor, TypeLen, Replacement);
-  }
+  getThrustReplStrAndLength(CtorClassName, Replacement, TypeLen);
+  addReplacement(Ctor, TypeLen, Replacement);
 
   for (auto It = Ctor->arg_begin(); It != Ctor->arg_end(); It++) {
     dispatch(*It);
@@ -546,11 +548,8 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
     if (MatchedResults.size() > 0) {
       std::string Replacement;
       size_t TypeLen;
-      if (processThrustCtorName(CtorClassName, Replacement, TypeLen)) {
-        addReplacement(Ctor, TypeLen, Replacement);
-      } else {
-        addReplacement(Ctor, 8, "std::");
-      }
+      getThrustReplStrAndLength(CtorClassName, Replacement, TypeLen);
+      addReplacement(Ctor, TypeLen, Replacement);
     }
   }
 

@@ -7,18 +7,7 @@
 #include <thrust/copy.h>
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
-#include <thrust/random.h>
-#include <thrust/reduce.h>
-#include <thrust/inner_product.h>
-#include <thrust/extrema.h>
-#include <thrust/gather.h>
-#include <thrust/binary_search.h>
-
-#include <thrust/find.h>
-#include <thrust/sort.h>
 #include <thrust/host_vector.h>
-
-
 
 template<typename index_t>
 void embedding_dense_backward_cuda_scan() {
@@ -26,7 +15,7 @@ void embedding_dense_backward_cuda_scan() {
   thrust::device_vector<int> d;
   thrust::device_ptr<int> my_data;
 
-  //CHECK: oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), oneapi::dpl::make_reverse_iterator(my_data), oneapi::dpl::make_reverse_iterator(my_data), oneapi::dpl::make_reverse_iterator(my_data), oneapi::dpl::make_reverse_iterator(my_data), oneapi::dpl::equal_tothrust::equal_to<index_t>(), oneapi::dpl::maximumthrust::maximum<index_t>());
+  //CHECK: oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), oneapi::dpl::make_reverse_iterator(my_data), oneapi::dpl::make_reverse_iterator(my_data), oneapi::dpl::make_reverse_iterator(my_data), oneapi::dpl::make_reverse_iterator(my_data), oneapi::dpl::equal_to<index_t>(), oneapi::dpl::maximum<index_t>());
   thrust::inclusive_scan_by_key(
     thrust::device,
     thrust::make_reverse_iterator(my_data),
@@ -37,7 +26,7 @@ void embedding_dense_backward_cuda_scan() {
     thrust::maximum<index_t>()
   );
 
-  //CHECK:oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), d.end(), oneapi::dpl::equal_tothrust::equal_to<index_t>(), oneapi::dpl::maximumthrust::maximum<index_t>());
+  //CHECK:oneapi::dpl::inclusive_scan_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), d.end(), oneapi::dpl::equal_to<index_t>(), oneapi::dpl::maximum<index_t>());
   thrust::inclusive_scan_by_key(
     thrust::device,
     d.begin(),
