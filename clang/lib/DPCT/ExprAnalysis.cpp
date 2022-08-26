@@ -519,14 +519,7 @@ void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
 }
 
 void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
-  std::string CtorClassName =
-      Ctor->getTypeAsWritten().getAsString();
-  std::string Replacement;
-  size_t TypeLen;
-
-  getThrustReplStrAndLength(CtorClassName, Replacement, TypeLen);
-  addReplacement(Ctor, TypeLen, Replacement);
-
+  analyzeType(Ctor->getTypeSourceInfo()->getTypeLoc());
   for (auto It = Ctor->arg_begin(); It != Ctor->arg_end(); It++) {
     dispatch(*It);
   }
