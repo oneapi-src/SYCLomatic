@@ -9,9 +9,9 @@
 #include "ExprAnalysis.h"
 
 #include "ASTTraversal.h"
-#include "DNNAPIMigration.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
+#include "DNNAPIMigration.h"
 #include "TypeLocRewriters.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
@@ -212,7 +212,7 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
-    if(SrcBeginLoc.isInvalid())
+    if (SrcBeginLoc.isInvalid())
       SrcBeginLoc = BeginLoc;
 
     // Avoid illegal range which will cause SIGABRT
@@ -431,12 +431,41 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   } else {
     RefString = DRE->getNameInfo().getAsString();
   }
-
   if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
     addReplacement(DRE, TemplateDecl->getIndex());
   else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
-    auto &ReplEnum = MapNames::findReplacedName(EnumConstantRule::EnumNamesMap,
-                                                RefString);
+    std::vector<std::string> targetStr = {
+        "thread_scope_system",  "thread_scope_device",  "thread_scope_block",
+        "memory_order_relaxed", "memory_order_acq_rel", "memory_order_release",
+        "memory_order_acquire", "memory_order_seq_cst"};
+    bool isLIBCU = false;
+    for (int i = 0; i < targetStr.size(); ++i) {
+      if (RefString.find(targetStr[i]) != std::string::npos) {
+        RefString = targetStr[i];
+        isLIBCU = true;
+        break;
+      }
+    }
+    if (isLIBCU) {
+      if (const auto *NSD =
+              dyn_cast<NamespaceDecl>(dyn_cast<EnumType>(DRE->getType())
+                                          ->getDecl()
+                                          ->getDeclContext())) {
+        if (NSD->getName() == "__detail")
+          NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
+        while (NSD->isInline())
+          NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
+        if (NSD->getName() == "std")
+          NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
+        RefString = NSD->getNameAsString() + "::" + RefString;
+        while (NSD = dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
+          RefString = NSD->getNameAsString() + "::" + RefString;
+        }
+      }
+    }
+
+    auto &ReplEnum =
+        MapNames::findReplacedName(EnumConstantRule::EnumNamesMap, RefString);
     requestHelperFeatureForEnumNames(RefString, DRE);
     auto ItEnum = EnumConstantRule::EnumNamesMap.find(RefString);
     if (ItEnum != EnumConstantRule::EnumNamesMap.end()) {
@@ -471,6 +500,20 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
         !DpctGlobalInfo::isInRoot(VD->getLocation())) {
       addReplacement(DRE, DpctGlobalInfo::getSubGroup(DRE) +
                               ".get_local_range().get(0)");
+    }
+  } else if (auto FD= dyn_cast<FunctionDecl>(DRE->getDecl())){
+    if(RefString == "atomic_thread_fence"){
+      if(const auto *NSD =dyn_cast<NamespaceDecl>(DRE->getDecl()->getDeclContext())){
+        if (NSD->getName() == "__detail")
+          NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
+        while (NSD->isInline())
+          NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
+        RefString = NSD->getNameAsString() + "::" + RefString;
+        while (NSD = dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
+          RefString = NSD->getNameAsString() + "::" + RefString;
+        }
+      }
+
     }
   }
 }
