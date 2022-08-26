@@ -95,11 +95,8 @@ typedef cl::sycl::event *event_ptr;
 /// Destroy \p event pointed memory.
 ///
 /// \param event Pointer to the sycl::event address.
-static void destroy_event(event_ptr &event) {
-  if (event != nullptr) {
+static void destroy_event(event_ptr event) {
     delete event;
-    event = nullptr;
-  }
 }
 // DPCT_LABEL_END
 
