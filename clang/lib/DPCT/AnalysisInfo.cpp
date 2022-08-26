@@ -2631,7 +2631,8 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
       TSK_ExplicitInstantiationDefinition)
     return;
   if (FD->isImplicit() ||
-      FD->getTemplateSpecializationKind() == TSK_ImplicitInstantiation) {
+      (FD->getTemplateSpecializationKind() == TSK_ImplicitInstantiation &&
+       FD->getPrimaryTemplate())) {
     auto &FuncInfo = getFuncInfo(FD);
     if (Info) {
       if (FuncInfo)
