@@ -9,6 +9,7 @@
 // CHECK: #include <dpct/atomic.hpp>
 #include <cuda/atomic>
 
+// CHECK-EMPTY
 using namespace cuda;
 
 int main(){

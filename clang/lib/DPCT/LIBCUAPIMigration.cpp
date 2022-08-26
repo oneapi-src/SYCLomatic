@@ -30,8 +30,8 @@ bool CheckTopNamespaceIsCuda(const clang::CallExpr *CE) {
           clang::dyn_cast<clang::NamespaceDecl>(DC->getDeclContext())) {
     while (NSD->isInline())
       NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
-    if (NSD->getName() == "__detail") 
-          NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
+    if (NSD->getName() == "__detail")
+      NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
     return NSD->getName() == "cuda";
   } else
     return false;
@@ -45,8 +45,8 @@ bool CheckNamespaceIsCudaStd(const clang::CallExpr *CE) {
           clang::dyn_cast<clang::NamespaceDecl>(DC->getDeclContext())) {
     while (NSD->isInline())
       NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
-    if (NSD->getName() == "__detail") 
-          NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
+    if (NSD->getName() == "__detail")
+      NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
     if (NSD->getName() == "std") {
       NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
       return NSD->getName() == "cuda";
@@ -73,11 +73,10 @@ void LIBCURule::processLIBCUMemberCall(const CXXMemberCallExpr *MC) {
 }
 
 void LIBCURule::processLIBCUTypeLoc(const TypeLoc *TL) {
-    ExprAnalysis EA;
-    EA.analyze(*TL);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-
+  ExprAnalysis EA;
+  EA.analyze(*TL);
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 
 void LIBCURule::processLIBCUFuncCall(const CallExpr *CE) {
@@ -86,6 +85,17 @@ void LIBCURule::processLIBCUFuncCall(const CallExpr *CE) {
     EA.analyze(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
+  }
+}
+
+void LIBCURule::processLIBCUUsingDirectiveDecl(const UsingDirectiveDecl *UDD) {
+  std::string NamespaceName = UDD->getNominatedNamespace()->getNameAsString();
+  if (NamespaceName == "cuda") {
+    if (const auto *NSD = dyn_cast<NamespaceDecl>(UDD->getNominatedNamespace())) {
+      if (!DpctGlobalInfo::isInRoot(NSD->getLocation())) {
+        emplaceTransformation(new ReplaceDecl(UDD, ""));
+      }
+    }
   }
 }
 
@@ -132,6 +142,9 @@ void LIBCURule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
     processLIBCUFuncCall(CE);
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "TypeLoc")) {
     processLIBCUTypeLoc(TL);
+  } else if (auto UDD = getNodeAsType<UsingDirectiveDecl>(
+                 Result, "UsingDirectiveDecl")) {
+    processLIBCUUsingDirectiveDecl(UDD);
   }
 }
 

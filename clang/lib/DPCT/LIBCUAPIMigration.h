@@ -25,6 +25,7 @@ private:
   void processLIBCUMemberCall(const CXXMemberCallExpr *MC);
   void processLIBCUTypeLoc(const TypeLoc *TL);
   void processCubTypeDef(const TypedefDecl *TD);
+  void processLIBCUUsingDirectiveDecl(const UsingDirectiveDecl *UDD);
 };
 } // namespace dpct
 } // namespace clang
