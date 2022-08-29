@@ -2306,11 +2306,6 @@ void ThrustFunctionRule::thrustFuncMigration(
     return;
   }
 
-  if (ThrustFuncName == "exclusive_scan") {
-    DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), HT_Numeric);
-    emplaceTransformation(new InsertText(CE->getEndLoc(), ", 0"));
-  }
-
   if (ULExpr) {
     auto BeginLoc = ULExpr->getBeginLoc();
     auto EndLoc = ULExpr->hasExplicitTemplateArgs()
