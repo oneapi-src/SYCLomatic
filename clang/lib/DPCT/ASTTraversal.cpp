@@ -1964,52 +1964,17 @@ void AtomicFunctionRule::MigrateAtomicFunc(
         ReplStr += "global_ptr<";
       ReplStr += TypeName;
       ReplStr += ">(";
-      // Take care of __shared__ variables because their types are
-      // changed to pointers
-      bool Arg0NeedDeref = false;
-      const Expr *Arg0RemoveCStyleCast = CE->getArg(0);
-      if (const CStyleCastExpr *Arg0CSCE =
-              dyn_cast<CStyleCastExpr>(CE->getArg(0))) {
-        ReplStr += "(";
-        ReplStr +=
-            DpctGlobalInfo::getReplacedTypeName(Arg0CSCE->getTypeAsWritten());
-        ReplStr += ")";
-        Arg0RemoveCStyleCast = Arg0CSCE->getSubExpr();
-      }
 
-      auto *UO = dyn_cast<UnaryOperator>(Arg0RemoveCStyleCast);
-      if (UO && UO->getOpcode() == clang::UO_AddrOf) {
-        if (auto DRE =
-                dyn_cast<DeclRefExpr>(UO->getSubExpr()->IgnoreImpCasts()))
-          Arg0NeedDeref = IsTypeChangedToPointer(DRE);
-      }
-      // Deref the expression if it is the unary operator of a shared simple
-      // variable
-      if (Arg0NeedDeref) {
-        std::ostringstream OS;
-        printDerefOp(OS, Arg0RemoveCStyleCast);
-        ReplStr += OS.str();
-      } else {
-        ArgumentAnalysis A(CE->getArg(0), false);
-        A.analyze();
-        ReplStr += A.getReplacedString();
-      }
+      ArgumentAnalysis A0(CE->getArg(0), false);
+      A0.analyze();
+      ReplStr += A0.getReplacedString();
       ReplStr += ")).";
       ReplStr += Iter->second;
       ReplStr += "(";
 
-      auto Arg1NeedDeref = false;
-      if (auto DRE = dyn_cast<DeclRefExpr>(CE->getArg(1)->IgnoreImpCasts()))
-        Arg1NeedDeref = IsTypeChangedToPointer(DRE);
-      if (Arg1NeedDeref) {
-        std::ostringstream OS;
-        printDerefOp(OS, CE->getArg(1));
-        ReplStr += OS.str();
-      } else {
-        ArgumentAnalysis A(CE->getArg(1), false);
-        A.analyze();
-        ReplStr += A.getReplacedString();
-      }
+      ArgumentAnalysis A1(CE->getArg(1), false);
+      A1.analyze();
+      ReplStr += A1.getReplacedString();
       ReplStr += ")";
 
       emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
@@ -10209,32 +10174,6 @@ void MemVarRule::registerMatcher(MatchFinder &MF) {
                 this);
 }
 
-void MemVarRule::processDeref(const Stmt *S, ASTContext &Context) {
-  auto Parents = Context.getParents(*S);
-  if (Parents.size()) {
-    auto &Parent = Parents[0];
-    if (auto ICE = Parent.get<ImplicitCastExpr>()) {
-      processDeref(ICE, Context);
-    } else if (auto ME = Parent.get<MemberExpr>()) {
-      emplaceTransformation(new ReplaceToken(ME->getOperatorLoc(), "->"));
-    } else if (auto CDSME = Parent.get<CXXDependentScopeMemberExpr>()) {
-      emplaceTransformation(new ReplaceToken(CDSME->getOperatorLoc(), "->"));
-    } else if (Parent.get<BinaryOperator>() || Parent.get<CallExpr>() ||
-               Parent.get<CXXConstructExpr>() || Parent.get<ParenExpr>()) {
-      emplaceTransformation(new InsertBeforeStmt(S, "*"));
-
-    } else if (auto UO = Parent.get<UnaryOperator>()) {
-      if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
-        emplaceTransformation(new ReplaceToken(UO->getOperatorLoc(), ""));
-      } else {
-        insertAroundStmt(S, "(*", ")");
-      }
-    } else {
-      insertAroundStmt(S, "(*", ")");
-    }
-  }
-}
-
 void MemVarRule::previousHCurrentD(const VarDecl *VD, tooling::Replacement &R) {
   // 1. emit DPCT1055 warning
   // 2. add a new variable for host
@@ -10338,6 +10277,30 @@ void MemVarRule::removeHostConstantWarning(Replacement &R) {
 void MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
                                           std::shared_ptr<MemVarInfo> Info) {
   auto &SM = DpctGlobalInfo::getSourceManager();
+  auto DS = Info->getDeclStmtOfVarType();
+  // this token is ';'
+  auto InsertSL = SM.getExpansionLoc(DS->getEndLoc()).getLocWithOffset(1);
+  auto GenDeclStmt = [=, &SM](
+                         StringRef TypeName) -> std::string {
+    bool IsReference = !Info->getType()->getDimension();
+    std::string Ret;
+    llvm::raw_string_ostream OS(Ret);
+    OS << getNL() << getIndent(InsertSL, SM);
+    OS << TypeName << ' ';
+    if (IsReference)
+      OS << '&';
+    else
+      OS << '*';
+    OS << Info->getName();
+    OS << " = ";
+    if (IsReference)
+      OS << '*';
+    // add typecast for the __shared__ variable, since after migration the
+    // __shared__ variable type will be uint8_t*
+    OS << '(' << TypeName << " *)";
+    OS << Info->getNameAppendSuffix() << ';';
+    return OS.str();
+  };
   if (Info->isAnonymousType()) {
     // keep the origin type declaration, only remove variable name
     //  }  a_variable  ,  b_variable ;
@@ -10360,30 +10323,15 @@ void MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
 
     // add typecast for the __shared__ variable, since after migration the
     // __shared__ variable type will be uint8_t*
-    auto DS = Info->getDeclStmtOfVarType();
-    SourceLocation InsertSL = SM.getExpansionLoc(DS->getEndLoc());
-    InsertSL = InsertSL.getLocWithOffset(1); // this token is ;
-    std::string InsertStr = getNL() + getIndent(InsertSL, SM).str() +
-                            NewTypeName + "* " + Info->getName() + " = (" +
-                            NewTypeName + "*)" + Info->getNameAppendSuffix() +
-                            ";";
-    emplaceTransformation(new InsertText(InsertSL, std::move(InsertStr)));
-  } else if (auto DS = Info->getDeclStmtOfVarType()) {
+    emplaceTransformation(new InsertText(InsertSL, GenDeclStmt(NewTypeName)));
+  } else if (DS) {
     // remove var decl
     emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
         MemVar, Info->getDeclarationReplacement(MemVar)));
 
     Info->setLocalTypeName(Info->getType()->getBaseName());
-    // add typecast for the __shared__ variable, since after migration the
-    // __shared__ variable type will be uint8_t*
-    SourceLocation InsertSL = SM.getExpansionLoc(DS->getEndLoc());
-    InsertSL = InsertSL.getLocWithOffset(1); // this token is ;
-    std::string InsertStr = getNL() + getIndent(InsertSL, SM).str() +
-                            Info->getType()->getBaseName() + "* " +
-                            Info->getName() + " = (" +
-                            Info->getType()->getBaseName() + "*)" +
-                            Info->getNameAppendSuffix() + ";";
-    emplaceTransformation(new InsertText(InsertSL, std::move(InsertStr)));
+    emplaceTransformation(
+        new InsertText(InsertSL, GenDeclStmt(Info->getType()->getBaseName())));
   }
 }
 
@@ -10647,9 +10595,6 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
       } else {
         if (Var) {
           DeviceFunctionDecl::LinkRedecls(Func)->addVar(Var);
-        }
-        if (!VD->getType()->isArrayType() && !VD->hasAttr<CUDAConstantAttr>()) {
-          processDeref(MemVarRef, *Result.Context);
         }
       }
     } else {

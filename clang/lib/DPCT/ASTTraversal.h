@@ -1478,7 +1478,6 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
-  void processDeref(const Stmt *S, ASTContext &Context);
   void previousHCurrentD(const VarDecl *VD, tooling::Replacement &R);
   void previousDCurrentH(const VarDecl *VD, tooling::Replacement &R);
   void removeHostConstantWarning(tooling::Replacement &R);

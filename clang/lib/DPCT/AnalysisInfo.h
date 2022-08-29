@@ -2769,6 +2769,11 @@ public:
       if (!getType()->isPointer())
         PS << " ";
       PS << "*";
+    } else if (AccMode == Reference) {
+      PS << getAccessorDataType(true);
+      if (!getType()->isPointer())
+        PS << " ";
+      PS << "&";
     } else if (AccMode == Accessor && isExtern() && isShared() &&
                getType()->getDimension() > 1) {
       PS << getAccessorDataType();
@@ -2797,7 +2802,7 @@ public:
       if (AccMode == Accessor) {
         PS << getAccessorName();
       } else {
-        if (AccMode == Value) {
+        if (AccMode == Value || AccMode == Reference) {
           PS << "*";
         }
         PS << getPtrName();
@@ -2878,6 +2883,7 @@ private:
     Value,
     Pointer,
     Accessor,
+    Reference,
   };
 
 private:
