@@ -595,14 +595,14 @@ public:
                               const memory_desc_ext &weight_desc, int *out_n,
                               int *out_c, int *out_h, int *out_w) const {
     auto dims = desc.get_desc().data.dims;
-    auto filter_dims = filter_desc.get_desc().data.dims;
+    auto weight_dims = weight_desc.get_desc().data.dims;
     *out_n = dims[0];
-    *out_c = filter_dims[0];
+    *out_c = weight_dims[0];
     *out_h = 1 + (dims[2] + 2 * _paddings[0] -
-                  (1 + (_dilates[0] * (filter_dims[2] - 1)))) /
+                  (1 + (_dilates[0] * (weight_dims[2] - 1)))) /
                      _strides[0];
     *out_w = 1 + (dims[3] + 2 * _paddings[1] -
-                  (1 + (_dilates[1] * (filter_dims[3] - 1)))) /
+                  (1 + (_dilates[1] * (weight_dims[3] - 1)))) /
                      _strides[1];
   }
   /// Getting the output dimensions of a memory after ND convolution has been
@@ -617,12 +617,12 @@ public:
                               int out_dims[]) const {
     assert(ndims >= 4 && "ndims is at least 4.");
     auto dims = desc.get_desc().data.dims;
-    auto filter_dims = filter_desc.get_desc().data.dims;
+    auto weight_dims = weight_desc.get_desc().data.dims;
     out_dims[0] = dims[0];
-    out_dims[1] = filter_dims[1];
+    out_dims[1] = weight_dims[1];
     for (int i = 2; i < ndims; i++) {
       out_dims[i] = 1 + (dims[i] + 2 * _paddings[i - 2] -
-                         (1 + (_dilates[i - 2] * (filter_dims[i] - 1)))) /
+                         (1 + (_dilates[i - 2] * (weight_dims[i] - 1)))) /
                             _strides[i - 2];
     }
   }
@@ -718,9 +718,10 @@ class engine_ext {
   execute_primitive(primitive_type &&primitive, args_type &&args,
                     const std::vector<output_argument_info> &extra_args);
   template <typename T>
-  sycl::event fill_with_type(sycl::queue *q, T *src, T *value,
+  sycl::event fill_with_type(sycl::queue *q, void *src, const void *value,
                              size_t size_with_byte) {
-    return q->fill<T>(src, value, size_with_byte / sizeof(T));
+    return q->fill<T>(static_cast<T *>(src), *static_cast<const T *>(value),
+                      size_with_byte / sizeof(T));
   }
   template <typename T> struct no_zero_op {
     T operator()(T e) {
@@ -731,9 +732,11 @@ class engine_ext {
     }
   };
   template <typename T>
-  void transform_no_zero_with_type(sycl::queue *q, T *src, T *dst, size_t num) {
-    std::transform(oneapi::dpl::execution::make_device_policy(*q), src,
-                   src + num, dst, no_zero_op<T>());
+  void transform_no_zero_with_type(sycl::queue *q, void *src, void *dst,
+                                   size_t num) {
+    std::transform(oneapi::dpl::execution::make_device_policy(*q),
+                   static_cast<T *>(src), static_cast<T *>(src) + num,
+                   static_cast<T *>(dst), no_zero_op<T>());
   }
   void transform_no_zero(memory_desc_ext desc, void *src, void *dst);
   ::dnnl::memory::desc get_group_weight_desc(int group_count,
@@ -839,8 +842,22 @@ public:
 // DnnlUtils|binary_op
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// \returns An event representing the binary operations.
-  sycl::event binary(binary_op &op, float alpha_0,
+  /// Perform specified binary operation.
+  /// \param [in] op Specified binary operation.
+  /// \param [in] alpha_0 Value to scaling factors used to scale the src_0
+  /// value.
+  /// \param [in] src_desc_0 Source 0 memory descriptor.
+  /// \param [in] src_0 Pointer to source 0 data.
+  /// \param [in] alpha_1 Value to scaling factors used to scale the src_1
+  /// value.
+  /// \param [in] src_desc_1 Source 1 memory descriptor.
+  /// \param [in] src_1 Pointer to source 1 data.
+  /// \param [in] beta Value to scaling factors used to scale the prior value
+  /// in the destination memory.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [out] dst Pointer to destination data.
+  /// \returns An event representing the binary operations.
+  sycl::event binary(binary_op op, float alpha_0,
                      const memory_desc_ext &src_desc_0, void *src_0,
                      float alpha_1, const memory_desc_ext &src_desc_1,
                      void *src_1, float beta, const memory_desc_ext &dst_desc,
@@ -853,8 +870,18 @@ public:
 // DnnlUtils|reduction_op
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// \returns An event representing the reduction operations.
-  sycl::event reduction(reduction_op &op, float alpha,
+  /// Perform specified binary operation.
+  /// \param [in] op Specified reduction operation.
+  /// \param [in] alpha Value to scaling factors used to scale the data
+  /// value.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data.
+  /// \param [in] beta Value to scaling factors used to scale the prior value
+  /// in the destination memory.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [out] dst Pointer to destination data.
+  /// \returns An event representing the reduction operations.
+  sycl::event reduction(reduction_op op, float alpha,
                         const memory_desc_ext &src_desc, void *src, float beta,
                         const memory_desc_ext &dst_desc, void *dst);
 // DPCT_LABEL_END
@@ -1622,9 +1649,6 @@ void engine_ext::transform_no_zero(memory_desc_ext desc, void *src, void *dst) {
   case ::dnnl::memory::data_type::u8:
     transform_no_zero_with_type<uint8_t>(_q, src, dst, element_num);
     break;
-  case ::dnnl::memory::data_type::bf16:
-    transform_no_zero_with_type<sycl::bfloat16>(_q, src, dst, element_num);
-    break;
   default:
     throw std::runtime_error("fill: unsupported data type.");
   }
@@ -1775,10 +1799,12 @@ sycl::event engine_ext::execute_primitive(
       auto cache = allocate(output_args[i]._desc);
       caches.push_back(cache);
       args.insert(
-          {output_args[i]._name, ::dnnl::memory(desc.get_desc(), _eng, cache)});
+          {output_args[i]._name,
+           ::dnnl::memory(output_args[i]._desc.get_desc(), _eng, cache)});
     } else {
-      args.insert({output_args[i]._name, ::dnnl::memory(desc.get_desc(), _eng,
-                                                        output_args[i]._data)});
+      args.insert(
+          {output_args[i]._name, ::dnnl::memory(output_args[i]._desc.get_desc(),
+                                                _eng, output_args[i]._data)});
     }
   }
 
@@ -1872,8 +1898,6 @@ sycl::event engine_ext::fill(const memory_desc_ext &src_desc, void *src,
     return fill_with_type<int8_t>(_q, src, valuePtr, mem_size);
   case ::dnnl::memory::data_type::u8:
     return fill_with_type<uint8_t>(_q, src, valuePtr, mem_size);
-  case ::dnnl::memory::data_type::bf16:
-    return fill_with_type<sycl::bfloat16>(_q, src, valuePtr, mem_size);
   default:
     throw std::runtime_error("fill: unsupported data type.");
   }
@@ -1951,7 +1975,7 @@ sycl::event engine_ext::sum(float alpha, const memory_desc_ext &src_desc,
 // DnnlUtils|binary_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-sycl::event engine_ext::binary(binary_op &op, float alpha_0,
+sycl::event engine_ext::binary(binary_op op, float alpha_0,
                                const memory_desc_ext &src_desc_0, void *src_0,
                                float alpha_1, const memory_desc_ext &src_desc_1,
                                void *src_1, float beta,
@@ -1988,7 +2012,7 @@ sycl::event engine_ext::binary(binary_op &op, float alpha_0,
     void *src_cache = nullptr;
     if (alpha_0 != 1.f) {
       src_cache = allocate(src_desc_0);
-      reorder(alpha_0, src_desc_0, src, 0.f, src_desc_0, src_cache);
+      reorder(alpha_0, src_desc_0, src_0, 0.f, src_desc_0, src_cache);
     }
     // Let the output = 1 - input to simulate the behavior of neg.
     auto primitive = create_forward_primitive<::dnnl::eltwise_forward>(
