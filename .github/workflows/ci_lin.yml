@@ -89,6 +89,7 @@ jobs:
           steps.Echo-Build-Success.outputs.build_success == 'true'
         run: |
           cd c2s.src/build
+          rm -rf tools/clang/test/dpct
           CUDA_PATH=$CUDAROOT/cuda-8.0 ninja check-clang-c2s
 
       - name: Lit_CUDA9.2
@@ -97,6 +98,7 @@ jobs:
           steps.Echo-Build-Success.outputs.build_success == 'true'
         run: |
           cd c2s.src/build
+          rm -rf tools/clang/test/dpct
           CUDA_PATH=$CUDAROOT/cuda-9.2 ninja check-clang-c2s
 
       - name: Lit_CUDA10.2
@@ -105,6 +107,7 @@ jobs:
           steps.Echo-Build-Success.outputs.build_success == 'true'
         run: |
           cd c2s.src/build
+          rm -rf tools/clang/test/dpct
           CUDA_PATH=$CUDAROOT/cuda-10.2 ninja check-clang-c2s
 
   linux-test:
