@@ -494,13 +494,42 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   }
 }
 
+// Get replacement str and replacement length for thrust construct type.
+// If thrust construct type have mapping type in MapNames::TypeNamesMap, using
+// the mapping type, else just use "std::" to replace "thrust::".
+void ExprAnalysis::getThrustReplStrAndLength(const std::string &CtorClassName,
+                                             std::string &Replacement,
+                                             size_t &TypeLen) {
+
+  if (CtorClassName.find("thrust::") == 0) {
+    TypeLen = CtorClassName.find('<');
+    if (TypeLen == std::string::npos)
+      TypeLen = 8;
+
+    auto RealTypeNameStr = CtorClassName.substr(0, TypeLen);
+    Replacement =
+        MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
+    if (Replacement.empty())
+      Replacement = "std::";
+  }
+}
+
 void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
   dispatch(CE->getSubExpr());
 }
 
+void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
+  analyzeType(Ctor->getTypeSourceInfo()->getTypeLoc());
+  for (auto It = Ctor->arg_begin(); It != Ctor->arg_end(); It++) {
+    dispatch(*It);
+  }
+}
+
+
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   std::string CtorClassName =
       Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
+
   if (CtorClassName.find("thrust::") == 0) {
     // Distinguish CXXTemporaryObjectExpr from other copy ctor before migrating
     // the ctor. Ex. foo(thrust::minus<int>());
@@ -510,7 +539,10 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
         clang::ast_matchers::match(CXXTemporaryObjectExprMatcher, *Ctor,
                                    clang::dpct::DpctGlobalInfo::getContext());
     if (MatchedResults.size() > 0) {
-      addReplacement(Ctor, 8, "std::");
+      std::string Replacement;
+      size_t TypeLen;
+      getThrustReplStrAndLength(CtorClassName, Replacement, TypeLen);
+      addReplacement(Ctor, TypeLen, Replacement);
     }
   }
 

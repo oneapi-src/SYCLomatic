@@ -3856,7 +3856,8 @@ void VectorTypeOperatorRule::MigrateOverloadedOperatorCall(
   // a += b
   // =>
   // dpct_operator_overloading::operator+=(a, b)
-
+  if (!clang::getOperatorSpelling(CE->getOperator()))
+    return;
   const std::string OperatorName =
       std::string(clang::getOperatorSpelling(CE->getOperator()));
   std::ostringstream FuncCall;

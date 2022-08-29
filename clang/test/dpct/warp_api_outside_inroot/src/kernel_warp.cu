@@ -1,6 +1,7 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none --usm-level=none --in-root=%S --out-root=%T/out --analysis-scope-path=%S/.. %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/out/kernel_warp.dp.cpp --match-full-lines %s
 // out/
 // ├── kernel_warp.dp.cpp
 // └── MainSourceFiles.yaml
@@ -37,4 +38,41 @@ void foo() {
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });
   kernel<<<1, 128>>>(input);
+}
+
+template <class ReduceOp>
+//CHECK:float WarpReduce(float val, const ReduceOp &op, sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  val = op.warp_shfl_down(val, 16, item_ct1);
+__device__ float WarpReduce(float val, const ReduceOp &op) {
+  val = op.warp_shfl_down(val, 16);
+  return val;
+}
+
+template <size_t num>
+//CHECK:void compute_mode(float *input, sycl::nd_item<3> item_ct1) {
+__global__ void compute_mode(float *input) {
+  struct MaxOp {
+    //CHECK:float warp_shfl_down(float acc, int offset, sycl::nd_item<3> item_ct1) const {
+    //CHECK-NEXT:  return WARP_SHFL_DOWN(acc, offset, item_ct1);
+    __device__ float warp_shfl_down(float acc, int offset) const {
+      return WARP_SHFL_DOWN(acc, offset);
+    }
+  };
+  float m;
+  //CHECK:WarpReduce(m, MaxOp{}, item_ct1);
+  WarpReduce(m, MaxOp{});
+}
+
+void foo_2(float *ptr) {
+  //CHECK:dpct::get_default_queue().submit(
+  //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    dpct::access_wrapper<float *> ptr_acc_ct0(ptr, cgh);
+  //CHECK-EMPTY:
+  //CHECK-NEXT:    cgh.parallel_for(
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)), 
+  //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
+  //CHECK-NEXT:        compute_mode<8>(ptr_acc_ct0.get_raw_pointer(), item_ct1);
+  //CHECK-NEXT:      });
+  //CHECK-NEXT:  });
+  compute_mode<8><<<1, 64>>>(ptr);
 }

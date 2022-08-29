@@ -532,7 +532,7 @@ public:
 template<int N>
 class foo_class1<int, N>{
 public:
-// CHECK: void foo() {
+// CHECK: void foo(sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT: int a = item_ct1.get_local_id(2);
   __device__ void foo() {
     int a = threadIdx.x;

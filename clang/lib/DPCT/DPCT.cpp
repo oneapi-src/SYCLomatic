@@ -123,7 +123,6 @@ bool NoDRYPatternFlag = false;
 bool NoUseGenericSpaceFlag = false;
 bool ProcessAllFlag = false;
 bool AsyncHandlerFlag = false;
-
 static std::string SuppressWarningsMessage = "Comma separated list of migration warnings to suppress. Valid "
                 "warning IDs range\n"
                 "from " + std::to_string((size_t)Warnings::BEGIN) + " to " +
