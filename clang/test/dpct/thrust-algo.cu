@@ -197,7 +197,7 @@ void foo(cudaStream_t stream) {
   thrust::multiplies<int> bo1;
   thrust::multiplies<int> bo2;
   //thrust::inner_product
-  //CHECK:dpct::inner_product(oneapi::dpl::execution::make_device_policy(q_ct1), h.begin(), h.end(), h.begin(), 1);
+  //CHECK:dpct::inner_product(oneapi::dpl::execution::seq, h.begin(), h.end(), h.begin(), 1);
   //CHECK-NEXT:dpct::inner_product(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), 1, bo1, bo2);
   //CHECK-NEXT:dpct::inner_product(oneapi::dpl::execution::seq, h.begin(), h.end(), h.begin(), 1);
   //CHECK-NEXT:dpct::inner_product(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), 1);
@@ -213,11 +213,11 @@ void foo(cudaStream_t stream) {
   //CHECK:std::not_equal_to<int> bp;
   thrust::not_equal_to<int> bp;
   //thrust::reduce_by_key
-  //CHECK:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), h.begin(), h.end(), h.begin(), h.end(), h.begin(), bp, bo1);
+  //CHECK:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::seq, h.begin(), h.end(), h.begin(), h.end(), h.begin(), bp, bo1);
   //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), d.end(), d.begin(), bp);
   //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::seq, h.begin(), h.end(), h.begin(), h.end(), h.begin(), bp, bo1);
   //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), d.end(), d.begin(), bp, bo1);
-  //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), h.begin(), h.end(), dpct::constant_iterator<int>(1), h.end(), h.begin());
+  //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::seq, h.begin(), h.end(), dpct::constant_iterator<int>(1), h.end(), h.begin());
   //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::seq, h.begin(), h.end(), h.begin(), h.end(), h.begin(), bp);
   //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::make_device_policy(q_ct1), d.begin(), d.end(), d.begin(), d.end(), d.begin(), bp);
   //CHECK-NEXT:oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::seq, h.begin(), h.end(), h.begin(), h.end(), h.begin());

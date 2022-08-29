@@ -137,8 +137,11 @@ bool isTargetPseudoObjectExpr(const Expr *E) {
 ///    attribute are treated as device functions;
 /// 3) Functions whose calling functions are augmented with __device__
 ///    or __global__ attributes are treated as device functions;
-/// 4) Other functions are treated as host functions.
-///    eg. "__host__ __device__ fabs()" falls in 4) if fabs is not called in
+/// 4) std::min and std::max are treated as host functions if they are
+///    called by host functions or by local lambda expressions without
+//     explicit __host__ or __device__ attributes in host functions;
+/// 5) Other functions are treated as host functions.
+///    eg. "__host__ __device__ fabs()" falls in 5) if fabs is not called in
 ///    device or kernel
 std::string MathFuncNameRewriter::getNewFuncName() {
   auto FD = Call->getDirectCallee();
@@ -163,6 +166,26 @@ std::string MathFuncNameRewriter::getNewFuncName() {
     }
 
     auto ContextFD = getImmediateOuterFuncDecl(Call);
+    if (NamespaceStr == "std" &&
+        (SourceCalleeName == "min" || SourceCalleeName == "max")) {
+      auto getImmediateOuterLambdaExpr =
+          [](const FunctionDecl *FuncDecl) -> const LambdaExpr * {
+        if (FuncDecl && FuncDecl->hasAttr<CUDADeviceAttr>() &&
+            FuncDecl->getAttr<CUDADeviceAttr>()->isImplicit() &&
+            FuncDecl->hasAttr<CUDAHostAttr>() &&
+            FuncDecl->getAttr<CUDAHostAttr>()->isImplicit()) {
+          auto *LE = DpctGlobalInfo::findAncestor<LambdaExpr>(FuncDecl);
+          if (LE && LE->getLambdaClass() && LE->getLambdaClass()->isLambda() &&
+              isLexicallyInLocalScope(LE->getLambdaClass())) {
+            return LE;
+          }
+        }
+        return nullptr;
+      };
+      while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
+        ContextFD = getImmediateOuterFuncDecl(LE);
+      }
+    }
     if (NamespaceStr == "std" && ContextFD &&
         !ContextFD->hasAttr<CUDADeviceAttr>() &&
         !ContextFD->hasAttr<CUDAGlobalAttr>()) {
@@ -1180,7 +1203,6 @@ class DerefStreamExpr {
       return Val < 3; // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
                       // all migrated to default queue;
     }
-    Expression->dumpPretty(DpctGlobalInfo::getContext());
     return false;
   }
 
@@ -1303,6 +1325,13 @@ makeCallArgCreator(std::string Str) {
   return [=](const CallExpr *C) -> const StringRef { return StringRef(Str); };
 }
 
+std::function<ThrustFunctor(const CallExpr *)>
+makeThrustFunctorArgCreator(unsigned Idx) {
+  return [=](const CallExpr *C) -> ThrustFunctor {
+    return ThrustFunctor(C->getArg(Idx));
+  };
+}
+
 std::function<bool(const CallExpr *)> makeBooleanCreator(bool B) {
   return [=](const CallExpr *C) -> bool { return B; };
 }
@@ -1400,16 +1429,52 @@ std::function<std::string(const CallExpr *)> makeDeviceStr() {
 
 std::function<std::string(const CallExpr *)>
 makeMappedThrustPolicyEnum(unsigned Idx) {
+  auto getBaseType = [](QualType QT) -> std::string {
+    auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
+    PP.PrintCanonicalTypes = true;
+    return QT.getUnqualifiedType().getAsString(PP);
+  };
+  auto getMehtodName = [](const ValueDecl* VD) -> std::string {
+    if (!VD)
+      return "";
+    if (VD->getIdentifier()) {
+      return VD->getNameAsString();
+    }
+    return "";
+  };
+
   return [=](const CallExpr *C) -> std::string {
     auto E = C->getArg(Idx);
-    if (auto ICE = dyn_cast<ImplicitCastExpr>(E)) {
-      if (auto DRE = dyn_cast<DeclRefExpr>(ICE->getSubExpr())) {
-        std::string EnumName = DRE->getNameInfo().getName().getAsString();
-        if (EnumName == "device") {
+    E = E->IgnoreImpCasts();
+    if (auto DRE = dyn_cast<DeclRefExpr>(E)) {
+      std::string EnumName = DRE->getNameInfo().getName().getAsString();
+      if (EnumName == "device") {
+        return "oneapi::dpl::execution::make_device_policy(" +
+               makeQueueStr()(C) + ")";
+      } else if (EnumName == "seq" || EnumName == "host") {
+        return "oneapi::dpl::execution::seq";
+      } else {
+        return EnumName;
+      }
+    } else if (auto MTE = dyn_cast<MaterializeTemporaryExpr>(E)) {
+      if (auto CMCE = dyn_cast_or_null<CXXMemberCallExpr>(
+              MTE->getSubExpr()->IgnoreImpCasts())) {
+        auto BaseType = getBaseType(CMCE->getObjectType());
+        auto MethodName = getMehtodName(CMCE->getMethodDecl());
+        if (BaseType == "thrust::cuda_cub::par_t" &&
+            MethodName == "on") {
           return "oneapi::dpl::execution::make_device_policy(" +
-                 makeQueueStr()(C) + ")";
-        } else if (EnumName == "seq") {
-          return "oneapi::dpl::execution::seq";
+                 getDrefName(CMCE->getArg(0)) + ")";
+        }
+      }
+    } else if (auto CE = dyn_cast<CallExpr>(E)) {
+      if (auto ME = dyn_cast_or_null<MemberExpr>(CE->getCallee())) {
+        auto BaseType = getBaseType(ME->getBase()->getType());
+        auto MethodName = getMehtodName(ME->getMemberDecl());
+        if (BaseType == "thrust::cuda_cub::par_t" &&
+            MethodName == "on") {
+          return "oneapi::dpl::execution::make_device_policy(" +
+                 getDrefName(CE->getArg(0)) + ")";
         }
       }
     }
@@ -2620,6 +2685,7 @@ RemoveCubTempStorageFactory::create(const CallExpr *C) const {
 #define DEREF(x) makeDerefExprCreator(x)
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
+#define THRUST_FUNCTOR(x) makeThrustFunctorArgCreator(x)
 #define ARG_WC(x) makeDerefArgCreatorWithCall(x)
 #define BOOL(x) makeBooleanCreator(x)
 #define BLAS_ENUM_ARG(x, BLAS_ENUM_TYPE)                                       \

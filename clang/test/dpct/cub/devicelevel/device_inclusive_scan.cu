@@ -29,7 +29,7 @@ struct CustomSum {
 // CHECK: device_out = sycl::malloc_device<int>(N, q_ct1);
 // CHECK: q_ct1.memcpy(device_in, (void *)host_in, sizeof(host_in)).wait();
 // CHECK: DPCT1026:{{.*}}
-// CHECK: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + op, device_out, N, op);
+// CHECK: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + N, device_out, op);
 // CHECK: q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out)).wait();
 // CHECK: sycl::free(device_in, q_ct1);
 // CHECK: sycl::free(device_out, q_ct1);
@@ -66,7 +66,7 @@ void test_1() {
 // CHECK: q_ct1.memcpy(device_in, (void *)host_in, sizeof(host_in)).wait();
 // CHECK: DPCT1027:{{.*}}
 // CHECK: 0, 0;
-// CHECK: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + op, device_out, N, op);
+// CHECK: oneapi::dpl::inclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + N, device_out, op);
 // CHECK: q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out)).wait();
 // CHECK: sycl::free(device_in, q_ct1);
 // CHECK: sycl::free(device_out, q_ct1);

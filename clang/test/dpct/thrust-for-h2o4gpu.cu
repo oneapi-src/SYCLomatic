@@ -34,7 +34,7 @@ template <typename T> struct absolute_value {
 //CHECK: template<typename ExecutionPolicy, typename Iterator1, typename Iterator2, typename Predicate, typename Iterator3>
 //CHECK-NEXT: void copy_if_kernel(ExecutionPolicy exec, Iterator1 first, Iterator1 last, Iterator2 result1, Predicate pred, Iterator3 result2)
 //CHECK-NEXT: {
-//CHECK-NEXT:   *result2 = std::copy_if(first, last, result1, pred);
+//CHECK-NEXT:   *result2 = std::copy_if(exec, first, last, result1, pred);
 //CHECK-NEXT: }
 template<typename ExecutionPolicy, typename Iterator1, typename Iterator2, typename Predicate, typename Iterator3>
 __global__ void copy_if_kernel(ExecutionPolicy exec, Iterator1 first, Iterator1 last, Iterator2 result1, Predicate pred, Iterator3 result2)
@@ -77,6 +77,35 @@ struct isfoo_test {
     __host__ __device__ bool operator()(const T a) const { return true; }
 };
 
+//CHECK: struct is_even_2 {
+//CHECK-NEXT:   bool operator()(int x)  const {
+//CHECK-NEXT:     return (static_cast<unsigned int>(x) & 1) == 0;
+//CHECK-NEXT:   }
+//CHECK-NEXT: };
+//CHECK-NEXT: struct is_even_3 {
+//CHECK-NEXT:   bool operator()(int x)  const;
+//CHECK-NEXT: };
+//CHECK-NEXT: bool is_even_3::operator()(int x)  const {
+//CHECK-NEXT:   return (static_cast<unsigned int>(x) & 1) == 0;
+//CHECK-NEXT: }
+struct is_even_2 {
+  __host__ __device__ bool operator()(int x) {
+    return (static_cast<unsigned int>(x) & 1) == 0;
+  }
+};
+struct is_even_3 {
+  __host__ __device__ bool operator()(int x);
+};
+__host__ __device__ bool is_even_3::operator()(int x) {
+  return (static_cast<unsigned int>(x) & 1) == 0;
+}
+template<class T>
+struct is_even_4 {
+  __host__ __device__ bool operator()(T x) {
+    return (static_cast<unsigned int>(x) & 1) == 0;
+  }
+};
+
 void foo() {
   //CHECK: copy_if_device(oneapi::dpl::execution::seq);
   copy_if_device(thrust::seq);
@@ -92,9 +121,9 @@ void foo() {
   thrust::device_vector<int> d_new_potential_centroids(10);
   auto range = thrust::make_counting_iterator(0);
 
-  //CHECK: std::copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
+  //CHECK: std::copy_if(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   //CHECK-NEXT: std::copy_if(oneapi::dpl::execution::seq, h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
-  //CHECK-NEXT: dpct::copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), (*data[0]).begin(), (*data[0]).end(), range, d_new_potential_centroids.begin(),[=] (int idx) { return true; });
+  //CHECK-NEXT: dpct::copy_if(oneapi::dpl::execution::make_device_policy(q_ct1), (*data[0]).begin(), (*data[0]).end(), range, d_new_potential_centroids.begin(), [=] (int idx) { return true; });
   thrust::copy_if(h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   thrust::copy_if(thrust::seq, h_data.begin(), h_data.end(), h_result.begin(), is_even<int>());
   thrust::copy_if((*data[0]).begin(), (*data[0]).end(), range, d_new_potential_centroids.begin(),[=] __device__(int idx) { return true; });
@@ -124,9 +153,20 @@ void foo() {
 
  {
   //CHECK: dpct::device_vector<double> t;
-  //CHECK-NEXT: std::for_each( oneapi::dpl::execution::make_device_policy(q_ct1), t.begin(), t.end(), absolute_value<double>());
+  //CHECK-NEXT: std::for_each(oneapi::dpl::execution::make_device_policy(q_ct1), t.begin(), t.end(), absolute_value<double>());
   thrust::device_vector<double> t;
   thrust::for_each( t.begin(), t.end(), absolute_value<double>());
+ }
+
+ {
+  //CHECK: dpct::device_vector<int> t;
+  //CHECK-NEXT: std::for_each(oneapi::dpl::execution::make_device_policy(q_ct1), t.begin(), t.end(), is_even_2());
+  //CHECK-NEXT: std::for_each(oneapi::dpl::execution::make_device_policy(q_ct1), t.begin(), t.end(), is_even_3());
+  //CHECK-NEXT: std::for_each(oneapi::dpl::execution::make_device_policy(q_ct1), t.begin(), t.end(), is_even_4<int>());
+  thrust::device_vector<int> t;
+  thrust::for_each(t.begin(), t.end(), is_even_2());
+  thrust::for_each(t.begin(), t.end(), is_even_3());
+  thrust::for_each(t.begin(), t.end(), is_even_4<int>());
  }
 
  {
@@ -178,9 +218,9 @@ void foo() {
  {
   //CHECK: dpct::device_vector<int> int_in(3);
   //CHECK-NEXT: dpct::device_vector<float> float_in(3);
-  //CHECK-NEXT: auto ret = oneapi::dpl::make_zip_iterator(int_in.begin(), float_in.begin());
+  //CHECK-NEXT: auto ret = oneapi::dpl::make_zip_iterator(std::make_tuple(int_in.begin(), float_in.begin()));
   //CHECK-NEXT: auto arg = std::make_tuple(int_in.begin(), float_in.begin());
-  //CHECK-NEXT: auto ret_1 = oneapi::dpl::make_zip_iterator(std::get<0>(arg), std::get<1>(arg));
+  //CHECK-NEXT: auto ret_1 = oneapi::dpl::make_zip_iterator(arg);
   thrust::device_vector<int> int_in(3);
   thrust::device_vector<float> float_in(3);
   auto ret = thrust::make_zip_iterator(thrust::make_tuple(int_in.begin(), float_in.begin()));
@@ -268,7 +308,7 @@ void foo() {
   int *dev_a = NULL, *dev_b = NULL;
   cudaStream_t stream;
   my_math c;
-  //CHECK: std::transform(oneapi::dpl::execution::make_device_policy(*stream),dev_a,dev_a + 10,dev_b,c);
+  //CHECK: std::transform(oneapi::dpl::execution::make_device_policy(*stream), dev_a, dev_a + 10, dev_b, c);
   thrust::transform(thrust::cuda::par.on(stream),dev_a,dev_a + 10,dev_b,c);
 }
 

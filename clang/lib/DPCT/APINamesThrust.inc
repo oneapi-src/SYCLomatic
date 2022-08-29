@@ -1304,3 +1304,115 @@ CONDITIONAL_FACTORY_ENTRY(
                             ARG("oneapi::dpl::execution::seq"),
                             ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))))))
 )
+
+// thrust::for_each
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(4),
+  //Handling case: thrust::for_each(policy, device.begin(), device.end(), f);
+  CALL_FACTORY_ENTRY("thrust::for_each",
+                      CALL("std::for_each",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), THRUST_FUNCTOR(3))),
+  //Handling case: thrust::for_each(host.begin(), host.end(), f);
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgType(0, "thrust::device_ptr"),
+    CALL_FACTORY_ENTRY("thrust::for_each",
+                       CALL("std::for_each",
+                            CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                            ARG(0), ARG(1), THRUST_FUNCTOR(2))),
+    CALL_FACTORY_ENTRY("thrust::for_each",
+                       CALL("std::for_each",
+                            ARG("oneapi::dpl::execution::seq"),
+                            ARG(0), ARG(1), THRUST_FUNCTOR(2))))
+)
+
+// thrust::transform
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(6),
+  //Handling case: thrust::transform(policy, device.begin(), device.end(), device.end(), device.end(), f);
+  CALL_FACTORY_ENTRY("thrust::transform",
+                      CALL("std::transform",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3), ARG(4), THRUST_FUNCTOR(5))),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(4),
+    //Handling case: thrust::transform(host.begin(), host.end(), host.end(), f);
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(0, "thrust::device_ptr"),
+      CALL_FACTORY_ENTRY("thrust::transform",
+                         CALL("std::transform",
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                              ARG(0), ARG(1), ARG(2), THRUST_FUNCTOR(3))),
+      CALL_FACTORY_ENTRY("thrust::transform",
+                         CALL("std::transform",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        //Handling case: thrust::transform(policy, device.begin(), device.end(), device.begin(), f);
+        CALL_FACTORY_ENTRY("thrust::transform",
+                        CALL("std::transform",
+                              makeMappedThrustPolicyEnum(0),
+                              ARG(1), ARG(2), ARG(3), THRUST_FUNCTOR(4))),
+        //Handling case: thrust::transform(device.begin(), device.end(), device.begin(), device.end(), f);
+        CONDITIONAL_FACTORY_ENTRY(
+          CheckArgType(1, "thrust::device_ptr"),
+          CALL_FACTORY_ENTRY("thrust::transform",
+                         CALL("std::transform",
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                              ARG(0), ARG(1), ARG(2), ARG(3), THRUST_FUNCTOR(4))),
+          CALL_FACTORY_ENTRY("thrust::transform",
+                         CALL("std::transform",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2), ARG(3), THRUST_FUNCTOR(4))))
+      ))
+)
+
+// thrust::copy_if
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(6),
+  //Handling case: thrust::copy_if(policy, device.begin(), device.end(), device.end(), device.end(), f);
+  FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_copy_if,
+  CALL_FACTORY_ENTRY("thrust::copy_if",
+                      CALL(MapNames::getDpctNamespace() + "copy_if",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3), ARG(4), THRUST_FUNCTOR(5)))),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(4),
+    //Handling case: thrust::copy_if(host.begin(), host.end(), host.end(), f);
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgType(0, "thrust::device_ptr"),
+      CALL_FACTORY_ENTRY("thrust::copy_if",
+                         CALL("std::copy_if",
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                              ARG(0), ARG(1), ARG(2), THRUST_FUNCTOR(3))),
+      CALL_FACTORY_ENTRY("thrust::copy_if",
+                         CALL("std::copy_if",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        //Handling case: thrust::copy_if(policy, device.begin(), device.end(), device.begin(), f);
+        CALL_FACTORY_ENTRY("thrust::copy_if",
+                        CALL("std::copy_if",
+                              makeMappedThrustPolicyEnum(0),
+                              ARG(1), ARG(2), ARG(3), THRUST_FUNCTOR(4))),
+        //Handling case: thrust::copy_if(device.begin(), device.end(), device.begin(), device.end(), f);
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_copy_if,
+        CONDITIONAL_FACTORY_ENTRY(
+          CheckArgType(1, "thrust::device_ptr"),
+          CALL_FACTORY_ENTRY("thrust::copy_if",
+                         CALL(MapNames::getDpctNamespace() + "copy_if",
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                              ARG(0), ARG(1), ARG(2), ARG(3), THRUST_FUNCTOR(4))),
+          CALL_FACTORY_ENTRY("thrust::copy_if",
+                         CALL(MapNames::getDpctNamespace() + "copy_if",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2), ARG(3), THRUST_FUNCTOR(4)))))
+      ))
+)
+
+// thrust::make_zip_iterator
+CALL_FACTORY_ENTRY("thrust::make_zip_iterator",  CALL("oneapi::dpl::make_zip_iterator",  ARG(0)))
+// thrust::make_reverse_iterator
+CALL_FACTORY_ENTRY("thrust::make_reverse_iterator",  CALL("oneapi::dpl::make_reverse_iterator",  ARG(0)))

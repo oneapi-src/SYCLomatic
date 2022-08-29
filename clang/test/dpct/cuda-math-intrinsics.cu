@@ -3556,3 +3556,86 @@ __device__ void bar2() {
   //CHECK-NEXT:double d2 = sycl::frexp(d0, sycl::make_ptr<int, sycl::access::address_space::global_space>(get_ptr() + i));
   double d2 = frexp(d0, get_ptr() + i);
 }
+
+__device__ void foo_lambda1()
+{
+  []()
+  {
+    int x = 16, y = 32;
+    // CHECK: int s = sycl::min(x, 10) + sycl::max(y, 64);
+    int s = std::min(x, 10) + std::max(y, 64);
+  }();
+}
+
+__device__ __host__ void foo_lambda2()
+{
+  []()
+  {
+    int x = 16, y = 32;
+    // CHECK: int s = sycl::min(x, 10) + sycl::max(y, 64);
+    int s = std::min(x, 10) + std::max(y, 64);
+  }();
+}
+
+__global__ void foo_lambda3()
+{
+  []()
+  {
+    int x = 16, y = 32;
+    // CHECK: int s = sycl::min(x, 10) + sycl::max(y, 64);
+    int s = std::min(x, 10) + std::max(y, 64);
+  }();
+}
+
+void foo_lambda4()
+{
+  []()
+  {
+    int num = 256;
+    // CHECK: auto x = std::min<long long>(num, 10);
+    auto x = std::min<long long>(num, 10);
+    // CHECK: auto y = std::max<float>(100.0f, num);
+    auto y = std::max<float>(100.0f, num);
+  }();
+}
+
+void foo_lambda5()
+{
+  auto foo = []()
+  {
+    int num = 256;
+    // CHECK: auto x = std::min<long long>(num, 10);
+    auto x = std::min<long long>(num, 10);
+    // CHECK: auto y = std::max<float>(100.0f, num);
+    auto y = std::max<float>(100.0f, num);
+  };
+  foo();
+}
+
+void foo_lambda6()
+{
+  []()
+  {
+    []()
+    {
+      int num = 256;
+      // CHECK: auto x = std::min<long long>(num, 10);
+      auto x = std::min<long long>(num, 10);
+      // CHECK: auto y = std::max<float>(100.0f, num);
+      auto y = std::max<float>(100.0f, num);
+    }();
+  }();
+}
+
+auto static_foo = []()
+{
+  int num = 256;
+  // CHECK: auto x = sycl::min(num, 10);
+  auto x = std::min(num, 10);
+  // CHECK: auto y = sycl::max(100, num);
+  auto y = std::max(100, num);
+};
+void foo_lambda7()
+{
+  static_foo();
+}

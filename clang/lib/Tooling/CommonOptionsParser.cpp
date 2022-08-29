@@ -113,25 +113,24 @@ llvm::Error CommonOptionsParser::init(
 #ifdef SYCLomatic_CUSTOMIZATION
   bool IsCudaFile = false;
   int OriArgc = argc;
-  static cl::opt<std::string> BuildPath(
-      "p",
-      cl::desc("The directory path for the compilation database (compile_commands.json). When no\n"
-               "path is specified, a search for compile_commands.json is attempted through all\n"
-               "parent directories of the first input source file."),
-      cl::Optional, cl::cat(Category), cl::value_desc("dir"),
-      cl::sub(*cl::AllSubCommands));
+#define DPCT_OPTIONS_IN_CLANG_TOOLING
+#define DPCT_OPT_TYPE(...) __VA_ARGS__
+#define DPCT_NON_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)  \
+OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
+#include "clang/DPCT/DPCTOptions.inc"
+#undef DPCT_NON_ENUM_OPTION
+#undef DPCT_OPT_TYPE
+#undef DPCT_OPTIONS_IN_CLANG_TOOLING
 
-  static cl::list<std::string> SourcePaths(
-      cl::Positional, cl::desc("[<source0> ... <sourceN>]"), llvm::cl::ZeroOrMore,
-      cl::cat(Category), cl::sub(*cl::AllSubCommands));
-#ifdef _WIN32
-  static cl::opt<std::string>
-    VcxprojFile("vcxprojfile",
-                cl::desc("The file path of vcxproj."),
-                cl::value_desc("file"),
-                cl::Optional, cl::cat(Category),
-                cl::sub(*cl::AllSubCommands));
-#endif
+  static llvm::cl::list<std::string> SourcePaths(
+      llvm::cl::Positional, llvm::cl::desc("[<source0> ... <sourceN>]"), llvm::cl::ZeroOrMore,
+      llvm::cl::cat(Category), llvm::cl::sub(*llvm::cl::AllSubCommands));
+
+  static cl::list<std::string> ArgsBefore(
+     "extra-arg-before",
+     cl::desc("Additional argument to prepend to the compiler command line.\n"
+              "Refer to extra-arg option.\n"),
+     cl::cat(Category), cl::sub(*cl::AllSubCommands), llvm::cl::Hidden);
 #else
   static cl::opt<std::string> BuildPath("p", cl::desc("Build path"),
                                         cl::Optional, cl::cat(Category),
@@ -140,22 +139,7 @@ llvm::Error CommonOptionsParser::init(
   static cl::list<std::string> SourcePaths(
       cl::Positional, cl::desc("<source0> [... <sourceN>]"), OccurrencesFlag,
       cl::cat(Category), cl::sub(*cl::AllSubCommands));
-#endif // SYCLomatic_CUSTOMIZATION
 
-#ifdef SYCLomatic_CUSTOMIZATION
- static cl::list<std::string> ArgsAfter(
-     "extra-arg",
-     cl::desc("Additional argument to append to the migration command line, example:\n"
-              "--extra-arg=\"-I /path/to/header\". The options that can be passed this way can\n"
-              "be found with the dpct -- -help command."),
-     cl::value_desc("string"), cl::cat(Category), cl::sub(*cl::AllSubCommands));
-
-  static cl::list<std::string> ArgsBefore(
-     "extra-arg-before",
-     cl::desc("Additional argument to prepend to the compiler command line.\n"
-              "Refer to extra-arg option.\n"),
-     cl::cat(Category), cl::sub(*cl::AllSubCommands), llvm::cl::Hidden);
-#else
   static cl::list<std::string> ArgsAfter(
       "extra-arg",
       cl::desc("Additional argument to append to the compiler command line"),

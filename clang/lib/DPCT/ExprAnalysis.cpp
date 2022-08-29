@@ -99,8 +99,18 @@ ExprAnalysis::getSpellingOffsetAndLength(SourceLocation Loc) {
   if (Loc.isInvalid())
     return std::pair<SourceLocation, size_t>(Loc, SrcLength);
   Loc = SM.getSpellingLoc(Loc);
+  auto TokenLen = Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts());
+  Token Tok2;
+  Lexer::getRawToken(Loc, Tok2, SM, Context.getLangOpts());
+  // if the last token is ">>" or ">>>",
+  // since DPCT does not support nested template type migration,
+  // the last token should be treated as ">"
+  if (Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)) {
+    TokenLen = 1;
+  }
+
   return std::pair<SourceLocation, size_t>(
-      Loc, Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts()));
+      Loc, TokenLen);
 }
 
 std::pair<SourceLocation, size_t>
@@ -132,9 +142,18 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(SourceLocation Loc) {
     return std::pair<size_t, size_t>(0, SrcLength);
   Loc = getExprLocation(Loc);
   FileId = SM.getDecomposedLoc(Loc).first;
+  auto TokenLen = Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts());
+  Token Tok2;
+  Lexer::getRawToken(Loc, Tok2, SM, Context.getLangOpts());
+  // if the last token is ">>" or ">>>",
+  // since DPCT does not support nested template type migration,
+  // the last token should be treated as ">"
+  if(Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)){
+    TokenLen = 1;
+  }
   return std::pair<size_t, size_t>(
       getOffset(Loc),
-      Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts()));
+      TokenLen);
 }
 
 std::pair<size_t, size_t>
@@ -814,6 +833,16 @@ void ExprAnalysis::analyzeExpr(const ReturnStmt *RS) {
 }
 
 void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
+  // E.g.,
+  // my_kernel<<<1, 1>>>([=] __device__(int idx) { idx++; });
+  // The "__device__" attribute need to be removed.
+  if (const CXXRecordDecl *CRD = LE->getLambdaClass()) {
+    if (const CXXMethodDecl *CMD = CRD->getLambdaCallOperator()) {
+      if (CMD->hasAttr<CUDADeviceAttr>()) {
+        addReplacement(CMD->getAttr<CUDADeviceAttr>()->getRange(), LE, "");
+      }
+    }
+  }
   // TODO: Need to handle capture ([=] in lambda) if required in the future
   for (const auto &Param : LE->getCallOperator()->parameters()) {
     analyzeType(Param->getTypeSourceInfo()->getTypeLoc(), LE);
@@ -887,7 +916,11 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
       auto Result = Rewriter->rewrite();
       if (Result.hasValue()) {
         auto ResultStr = Result.getValue();
-        addReplacement(SR.getBegin(), SR.getEnd(), CSCE, ResultStr);
+        // Since Parser splits ">>" or ">>>" to ">" when parse template
+        // the SR.getEnd location might be a "scratch space" location.
+        // Therfore, need to apply SM.getExpansionLoc before call addReplacement.
+        addReplacement(SM.getExpansionLoc(SR.getBegin()),
+                       SM.getExpansionLoc(SR.getEnd()), CSCE, ResultStr);
         return;
       }
     }
@@ -1306,7 +1339,6 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(ArraySubscriptExpr)
     ANALYZE_EXPR(UnaryOperator)
     ANALYZE_EXPR(CXXDependentScopeMemberExpr)
-    ANALYZE_EXPR(LambdaExpr)
     ANALYZE_EXPR(MaterializeTemporaryExpr)
   default:
     return ExprAnalysis::dispatch(Expression);
@@ -1344,20 +1376,6 @@ KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
 
 void KernelArgumentAnalysis::analyzeExpr(const MaterializeTemporaryExpr *MTE) {
   KernelArgumentAnalysis::dispatch(MTE->getSubExpr());
-}
-
-// This function is used to process code like:
-// my_kernel<<<1, 1>>>([=] __device__(int idx) { idx++; });
-// The "__device__" attribute need to be removed.
-void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
-  if (const CXXRecordDecl *CRD = LE->getLambdaClass()) {
-    if (const CXXMethodDecl *CMD = CRD->getLambdaCallOperator()) {
-      if (CMD->hasAttr<CUDADeviceAttr>()) {
-        addReplacement(CMD->getAttr<CUDADeviceAttr>()->getRange(), LE, "");
-      }
-    }
-  }
-  Base::dispatch(LE);
 }
 
 void KernelArgumentAnalysis::analyzeExpr(
@@ -1480,6 +1498,125 @@ bool KernelArgumentAnalysis::isNullPtr(const Expr *E) {
       return true;
   }
   return false;
+}
+
+void FunctorAnalysis::dispatch(const Stmt *Expression) {
+  switch (Expression->getStmtClass()) {
+    ANALYZE_EXPR(CXXTemporaryObjectExpr)
+    ANALYZE_EXPR(DeclRefExpr)
+    ANALYZE_EXPR(CXXConstructExpr)
+    ANALYZE_EXPR(CXXFunctionalCastExpr)
+  default:
+    return ArgumentAnalysis::dispatch(Expression);
+  }
+}
+
+void FunctorAnalysis::addConstQuailfier(const CXXRecordDecl *CRD) {
+  for (const auto &D : CRD->decls()) {
+    const CXXMethodDecl *Method = dyn_cast<CXXMethodDecl>(D);
+    if (!Method) {
+      if (const FunctionTemplateDecl *FTD =
+              dyn_cast<FunctionTemplateDecl>(D)) {
+        if (const CXXMethodDecl *CMD =
+                dyn_cast_or_null<CXXMethodDecl>(FTD->getAsFunction())) {
+          Method = CMD;
+        }
+      }
+    }
+    if (!Method) {
+      continue;
+    }
+    if (Method->getOverloadedOperator() == OverloadedOperatorKind::OO_Call &&
+        !Method->isConst()) {
+      for (const auto &FD : Method->redecls()) {
+        SourceLocation InsertLoc = FD->getFunctionTypeLoc().getRParenLoc();
+        // Get the location after ')'
+        if (InsertLoc.isMacroID()) {
+          InsertLoc = SM.getSpellingLoc(InsertLoc).getLocWithOffset(1);
+        } else {
+          InsertLoc = InsertLoc.getLocWithOffset(1);
+        }
+        DpctGlobalInfo::getInstance().addReplacement(
+            std::make_shared<ExtReplacement>(SM, InsertLoc, 0, " const",
+                                             nullptr));
+      }
+      break;
+    }
+  }
+}
+
+void FunctorAnalysis::analyzeExpr(const CXXFunctionalCastExpr *CFCE) {
+  dispatch(CFCE->getSubExpr());
+}
+
+void FunctorAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *CTOE) {
+  const CXXConstructorDecl *CCD = CTOE->getConstructor();
+  if (!CCD)
+    return;
+  const CXXRecordDecl *CRD = CCD->getParent();
+  if (!CRD)
+    return;
+  if (DpctGlobalInfo::isInAnalysisScope(CRD->getBeginLoc())) {
+    addConstQuailfier(CRD);
+  }
+  Base::analyzeExpr(CTOE);
+}
+
+void FunctorAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
+  // Process thrust placeholder
+  auto TypeStr = DRE->getType().getAsString();
+  static const std::string PlaceHolderTypeStr =
+      "const thrust::detail::functional::placeholder<";
+  if (TypeStr.find(PlaceHolderTypeStr) == 0) {
+    unsigned PlaceholderNum = (TypeStr[PlaceHolderTypeStr.length()] - '0') + 1;
+    if (PlaceholderNum > PlaceholderCount)
+      PlaceholderCount = PlaceholderNum;
+    addReplacement(DRE, std::string("_") + std::to_string(PlaceholderNum));
+  }
+
+  // Process functor's quailfier
+  const Type *Tp = DRE->getType().getTypePtr();
+  if (!Tp)
+    return;
+  const CXXRecordDecl *CRD = Tp->getAsCXXRecordDecl();
+  if (!CRD)
+    return;
+  if (DpctGlobalInfo::isInAnalysisScope(CRD->getBeginLoc())) {
+    addConstQuailfier(CRD);
+  }
+  ArgumentAnalysis::analyzeExpr(DRE);
+}
+
+void FunctorAnalysis::analyzeExpr(const CXXConstructExpr *CCE) {
+  const CXXConstructorDecl *CCD = CCE->getConstructor();
+  if (!CCD)
+    return;
+  const CXXRecordDecl *CRD = CCD->getParent();
+  if (!CRD)
+    return;
+  if (DpctGlobalInfo::isInAnalysisScope(CRD->getBeginLoc())) {
+    addConstQuailfier(CRD);
+  }
+  Base::analyzeExpr(CCE);
+}
+
+void FunctorAnalysis::analyze(const Expr *Expression) {
+  ArgumentAnalysis::initArgumentExpr(Expression);
+  ArgumentAnalysis::analyze();
+  std::string LambdaPrefix;
+  std::string LambdaPostfix;
+  if (PlaceholderCount) {
+    LambdaPrefix = "[=](";
+    for (unsigned i = 1; i <= PlaceholderCount; ++i) {
+      if (i > 1)
+        LambdaPrefix += ", ";
+      LambdaPrefix += "auto _" + std::to_string(i);
+    }
+    LambdaPrefix += "){ return ";
+    LambdaPostfix = "; }";
+  }
+  std::string R = LambdaPrefix + getReplacedString() + LambdaPostfix;
+  addReplacement(Expression, R);
 }
 
 void KernelConfigAnalysis::dispatch(const Stmt *Expression) {

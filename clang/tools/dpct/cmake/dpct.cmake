@@ -17,6 +17,7 @@ macro(set_dpct_package)
       install-dpct-vars
       install-dpct-syscheck
       install-dpct-modulefiles
+      install-dpct-autocomplete
       install-dpct-opt-rules
       )
   endif()
@@ -87,5 +88,21 @@ macro(install_dpct)
   if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
     add_llvm_install_targets(install-dpct-modulefiles
                              COMPONENT dpct-modulefiles)
+  endif()
+
+  if(UNIX)
+    set(dpct_autocomplete_script bash-autocomplete.sh)
+  endif()
+
+  if(UNIX)
+    install(
+      FILES ${dpct_autocomplete_script}
+      COMPONENT dpct-autocomplete
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+      DESTINATION ./env)
+    if (NOT CMAKE_CONFIGURATION_TYPES)
+      add_llvm_install_targets(install-dpct-autocomplete
+                               COMPONENT dpct-autocomplete)
+    endif()
   endif()
 endmacro()

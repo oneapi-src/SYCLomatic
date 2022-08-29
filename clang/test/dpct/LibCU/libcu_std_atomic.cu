@@ -9,6 +9,10 @@
 // CHECK: #include <dpct/atomic.hpp>
 #include <cuda/std/atomic>
 
+
+template <typename T>
+void device_construct() {}
+
 int main(){
   // CHECK: sycl::atomic_fence(sycl::memory_order::release);
   cuda::std::atomic_thread_fence(cuda::std::memory_order_release);
@@ -38,5 +42,9 @@ int main(){
   //CHECK: ans = a.fetch_sub(-1);
   ans = a.fetch_add(1);
   ans = a.fetch_sub(-1);
+
+  //CHECK: device_construct<dpct::atomic<signed int>>();
+  device_construct<cuda::std::atomic<signed int>>();
+
   return 0;
 }

@@ -50,6 +50,7 @@ macro(build_lib_dpct)
     NCCLAPIMigration.cpp
     TypeLocRewriters.cpp
     QueryApiMapping.cpp
+    AutoComplete.cpp
     LIBCUAPIMigration.cpp
     CUBAPIMigration.cpp
 

@@ -2165,17 +2165,6 @@ void ThrustFunctionRule::thrustFuncMigration(
       ArgT.find("execution_policy_base") != std::string::npos;
   bool PolicyProcessed = false;
 
-  if (ThrustFuncName == "transform" || ThrustFuncName == "copy_if") {
-    if (NumArgs == 6) {
-      hasExecutionPolicy = true;
-    } else if (NumArgs == 5) {
-      std::string FirstArgType = CE->getArg(0)->getType().getAsString();
-      std::string SecondArgType = CE->getArg(1)->getType().getAsString();
-      if (FirstArgType != SecondArgType)
-        hasExecutionPolicy = true;
-    }
-  }
-
   if (ThrustFuncName == "sort") {
     auto ExprLoc = SM.getSpellingLoc(CE->getBeginLoc());
     if (SortULExpr.count(ExprLoc) != 0)
@@ -2226,7 +2215,7 @@ void ThrustFunctionRule::thrustFuncMigration(
     }
   }
 
-  // All the thrust APIs (such as thrust::copy_if, thrust::copy, thrust::fill,
+  // All the thrust APIs (such as thrust::copy, thrust::fill,
   // thrust::count, thrust::equal) called in device function , should be
   // migrated to oneapi::dpl APIs without a policy on the SYCL side
   if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
@@ -2241,44 +2230,7 @@ void ThrustFunctionRule::thrustFuncMigration(
     }
   }
 
-  if (ThrustFuncName == "copy_if" &&
-      (!hasExecutionPolicy && NumArgs == 5 || NumArgs > 5)) {
-    NewName = MapNames::getDpctNamespace() + ThrustFuncName;
-    requestFeature(HelperFeatureEnum::DplExtrasAlgorithm_copy_if, CE);
-
-    if (ULExpr) {
-      auto BeginLoc = ULExpr->getBeginLoc();
-      auto EndLoc = ULExpr->hasExplicitTemplateArgs()
-                   ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
-                   : ULExpr->getEndLoc();
-      emplaceTransformation(new ReplaceToken(BeginLoc, EndLoc, std::move(NewName)));
-    } else {
-      emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
-    }
-  } else if (ThrustFuncName == "make_zip_iterator") {
-    // oneapi::dpl::make_zip_iterator expects the component iterators to be
-    // passed directly instead of being wrapped in a tuple as
-    // thrust::make_zip_iterator requires.
-    std::string NewArg;
-    if (auto CCE = dyn_cast<CXXConstructExpr>(CE->getArg(0)))
-      if (const CallExpr *SubCE =
-              dyn_cast<CallExpr>(CCE->getArg(0)->IgnoreImplicit())) {
-        std::string Arg0 = getStmtSpelling(SubCE->getArg(0));
-        std::string Arg1 = getStmtSpelling(SubCE->getArg(1));
-        NewArg = Arg0 + ", " + Arg1;
-      }
-
-    if (NewArg.empty()) {
-      std::string Arg0 = "std::get<0>(" + getStmtSpelling(CE->getArg(0)) + ")";
-      std::string Arg1 = "std::get<1>(" + getStmtSpelling(CE->getArg(0)) + ")";
-      NewArg = Arg0 + ", " + Arg1;
-    }
-
-    emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
-    emplaceTransformation(
-        new InsertAfterStmt(CE->getArg(0), std::move(NewArg)));
-
-  } else if (ThrustFuncName == "binary_search" &&
+  if (ThrustFuncName == "binary_search" &&
              (NumArgs <= 4 || (NumArgs == 5 && hasExecutionPolicy))) {
     // Currently, we do not support migration of 4 of the 8 overloaded versions
     // of thrust::binary_search.  The ones we do not support are the ones
