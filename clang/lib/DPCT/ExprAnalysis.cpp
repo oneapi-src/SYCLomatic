@@ -434,34 +434,24 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
     addReplacement(DRE, TemplateDecl->getIndex());
   else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
-    std::vector<std::string> targetStr = {
+    std::unordered_set<std::string> targetStr = {
         "thread_scope_system",  "thread_scope_device",  "thread_scope_block",
         "memory_order_relaxed", "memory_order_acq_rel", "memory_order_release",
         "memory_order_acquire", "memory_order_seq_cst"};
-    bool isLIBCU = false;
-    for (int i = 0; i < targetStr.size(); ++i) {
-      if (RefString.find(targetStr[i]) != std::string::npos) {
-        RefString = targetStr[i];
-        isLIBCU = true;
-        break;
-      }
-    }
-    if (isLIBCU) {
+    std::string NameString = "";
+    llvm::raw_string_ostream NameStringOS(NameString);
+    if (targetStr.find(ECD->getNameAsString())!=targetStr.end()) {
       if (const auto *NSD =
-              dyn_cast<NamespaceDecl>(dyn_cast<EnumType>(DRE->getType())
-                                          ->getDecl()
+              dyn_cast<NamespaceDecl>(dyn_cast<EnumDecl>(ECD->getDeclContext())
                                           ->getDeclContext())) {
-        if (NSD->getName() == "__detail")
-          NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
-        while (NSD->isInline())
-          NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
-        if (NSD->getName() == "std")
-          NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
-        RefString = NSD->getNameAsString() + "::" + RefString;
         while (NSD = dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
-          RefString = NSD->getNameAsString() + "::" + RefString;
+          if (NSD->getName() == "__detail"||NSD->isInline()||NSD->getName() == "std")
+            continue;
+          NameStringOS<<NSD->getNameAsString()<<"::";
         }
       }
+      NameStringOS<<ECD->getNameAsString();
+      RefString = NameString;
     }
 
     auto &ReplEnum =
@@ -501,21 +491,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       addReplacement(DRE, DpctGlobalInfo::getSubGroup(DRE) +
                               ".get_local_range().get(0)");
     }
-  } else if (auto FD= dyn_cast<FunctionDecl>(DRE->getDecl())){
-    if(RefString == "atomic_thread_fence"){
-      if(const auto *NSD =dyn_cast<NamespaceDecl>(DRE->getDecl()->getDeclContext())){
-        if (NSD->getName() == "__detail")
-          NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
-        while (NSD->isInline())
-          NSD = clang::dyn_cast<clang::NamespaceDecl>(NSD->getDeclContext());
-        RefString = NSD->getNameAsString() + "::" + RefString;
-        while (NSD = dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
-          RefString = NSD->getNameAsString() + "::" + RefString;
-        }
-      }
-
-    }
-  }
+  } 
 }
 
 void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
