@@ -112,7 +112,7 @@ jobs:
           steps.Echo-Build-Success.outputs.build_success == 'true'
         run: |
           cd c2s.src/build
-          rm -rf tools/clang/test/dpct
+          rm -r tools/clang/test/dpct
           ninja check-clang-c2s -j8
         shell: bash
 
@@ -130,7 +130,7 @@ jobs:
           steps.Echo-Build-Success.outputs.build_success == 'true'
         run: |
           cd c2s.src/build
-          rm -rf tools/clang/test/dpct
+          rm -r tools/clang/test/dpct
           ninja check-clang-c2s -j8
       
       - name: Set_CUDA_Env10.2
@@ -147,7 +147,7 @@ jobs:
           steps.Echo-Build-Success.outputs.build_success == 'true'
         run: |
           cd c2s.src/build
-          rm -rf tools/clang/test/dpct
+          rm -r tools/clang/test/dpct
           ninja check-clang-c2s -j8
      
   windows-test:
