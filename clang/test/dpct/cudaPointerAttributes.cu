@@ -45,21 +45,21 @@ int main() {
   std::cout << attributes2.hostPointer << std::endl;
   std::cout << attributes2.devicePointer << std::endl;
 
-  // CHECK: dpct::pointer_attributes *attributes2 = new dpct::pointer_attributes();
+  // CHECK: dpct::pointer_attributes *attributes3 = new dpct::pointer_attributes();
   cudaPointerAttributes *attributes3 = new cudaPointerAttributes();
-  // CHECK: dpct::get_pointer_attributes(*attributes2, h_A);
+  // CHECK: dpct::get_pointer_attributes(*attributes3, d_A);
   cudaPointerGetAttributes (attributes3, d_A);
-  // CHECK: std::cout << attributes2->device << std::endl;
-  // CHECK: std::cout << attributes2->memory_type << std::endl;
+  // CHECK: std::cout << attributes3->device << std::endl;
+  // CHECK: std::cout << attributes3->memory_type << std::endl;
   std::cout << "====== Device Attributes =======" << std::endl;
   std::cout << attributes3->device << std::endl;
   std::cout << attributes3->type << std::endl;
   std::cout << attributes3->hostPointer << std::endl;
   std::cout << attributes3->devicePointer << std::endl;
-  // CHECK: if (attributes2->memory_type == sycl::usm::alloc::host) {
-  // CHECK: } else if (attributes2->memory_type == sycl::usm::alloc::device) {
-  // CHECK: } else if (attributes2->memory_type == sycl::usm::alloc::unknown) {
-  // CHECK: } else if (attributes2->memory_type == sycl::usm::alloc::unknown) {
+  // CHECK: if (attributes3->memory_type == sycl::usm::alloc::host) {
+  // CHECK: } else if (attributes3->memory_type == sycl::usm::alloc::device) {
+  // CHECK: } else if (attributes3->memory_type == sycl::usm::alloc::shared) {
+  // CHECK: } else if (attributes3->memory_type == sycl::usm::alloc::unknown) {
   if (attributes3->type == cudaMemoryTypeHost) {
     return 0;
   } else if (attributes3->type == cudaMemoryTypeDevice) {

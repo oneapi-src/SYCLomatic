@@ -523,15 +523,16 @@ static inline unsigned int select_device(unsigned int id){
 
 class pointer_attributes {
 public:
-  void init_attributes(void *ptr,
-                        sycl::context ctx = dpct::get_default_context()) {
+  void init_attributes(const void *ptr,
+                        sycl::context &ctx = dpct::get_default_context()) {
     memory_type = cl::sycl::get_pointer_type(ptr, ctx);
-    device_pointer = (cl::sycl::get_pointer_type(ptr, ctx) !=
+    device_pointer = (memory_type !=
                         sycl::usm::alloc::unknown) ? ptr : nullptr;
-    host_pointer = (cl::sycl::get_pointer_type(ptr, ctx) !=
-                      sycl::usm::alloc::unknown) ? nullptr : ptr;
-    sycl::device dev_obj = cl::sycl::get_pointer_device(ptr, ctx);
+    host_pointer = (memory_type !=
+                        sycl::usm::alloc::unknown) &&
+                   (memory_type != sycl::usm::alloc::device) ? ptr : nullptr;
 
+    sycl::device dev_obj = cl::sycl::get_pointer_device(ptr, ctx);
     for (int id = 0; id < dpct::dev_mgr::instance().device_count(); id++) {
       if(dpct::dev_mgr::instance().get_device(id) == dev_obj) {
         device = id;
@@ -540,9 +541,10 @@ public:
     }
   }
 
+private:
   cl::sycl::usm::alloc memory_type;
-  void *device_pointer;
-  void *host_pointer;
+  const void *device_pointer;
+  const void *host_pointer;
   int device;
 };
 
