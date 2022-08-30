@@ -89,8 +89,9 @@ void LIBCURule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   } else if (auto UDD = getNodeAsType<UsingDirectiveDecl>(
                  Result, "UsingDirectiveDecl")) {
     processLIBCUUsingDirectiveDecl(UDD);
+    return ;
   } else {
-    return;
+    return ;
   }
   emplaceTransformation(EA.getReplacement());
   EA.applyAllSubExprRepl();

@@ -491,7 +491,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       addReplacement(DRE, DpctGlobalInfo::getSubGroup(DRE) +
                               ".get_local_range().get(0)");
     }
-  } 
+  }
 }
 
 void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
