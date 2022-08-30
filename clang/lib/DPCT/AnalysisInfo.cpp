@@ -1841,7 +1841,9 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
 
 void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
   if (FuncInfo && Info && (FuncInfo != Info)) {
-    if (Info->getVarMap().hasTexture()) {
+    const auto &FuncInfoVarMap = FuncInfo->getVarMap();
+    const auto &InfoVarMap = Info->getVarMap();
+    if (!FuncInfoVarMap.isSameAs(InfoVarMap)) {
       DiagnosticsUtils::report(getFilePath(), getBegin(),
                                Warnings::DEVICE_CALL_DIFFERENT, true, false);
     }
@@ -3049,6 +3051,28 @@ std::string MemVarMap::getKernelArguments(bool HasPreParam, bool HasPostParam,
                                           const std::string &Path) const {
   requestFeatureForAllVarMaps(Path);
   return getArgumentsOrParameters<KernelArgument>(HasPreParam, HasPostParam);
+}
+bool MemVarMap::isSameAs(const MemVarMap& Other) const {
+  if (HasItem != Other.HasItem)
+    return false;
+  if (HasStream != Other.HasStream)
+    return false;
+  if (HasSync != Other.HasSync)
+    return false;
+
+  #define COMPARE_MAP(MAP)                                                     \
+  {                                                                            \
+    if (MAP.size() != Other.MAP.size())                                        \
+      return false;                                                            \
+    if (!std::equal(MAP.begin(), MAP.end(), Other.MAP.begin()))                \
+      return false;                                                            \
+  }
+  COMPARE_MAP(LocalVarMap);
+  COMPARE_MAP(GlobalVarMap);
+  COMPARE_MAP(ExternVarMap);
+  COMPARE_MAP(TextureMap);
+#undef COMPARE_MAP
+  return true;
 }
 
 CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)

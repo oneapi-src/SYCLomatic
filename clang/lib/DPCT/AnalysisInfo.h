@@ -3273,7 +3273,6 @@ public:
   bool hasStream() const { return HasStream; }
   bool hasSync() const { return HasSync; }
   bool hasExternShared() const { return !ExternVarMap.empty(); }
-  bool hasTexture() const { return !TextureMap.empty(); }
   inline void setItem(bool Has = true) { HasItem = Has; }
   inline void setStream(bool Has = true) { HasStream = Has; }
   inline void setSync(bool Has = true) { HasSync = Has; }
@@ -3354,6 +3353,7 @@ public:
     static MemVarInfoMap InvalidMap;
     return InvalidMap;
   }
+  bool isSameAs(const MemVarMap &Other) const;
 
   enum CallOrDecl {
     CallArgument = 0,
