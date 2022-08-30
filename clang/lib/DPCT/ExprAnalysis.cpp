@@ -99,8 +99,18 @@ ExprAnalysis::getSpellingOffsetAndLength(SourceLocation Loc) {
   if (Loc.isInvalid())
     return std::pair<SourceLocation, size_t>(Loc, SrcLength);
   Loc = SM.getSpellingLoc(Loc);
+  auto TokenLen = Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts());
+  Token Tok2;
+  Lexer::getRawToken(Loc, Tok2, SM, Context.getLangOpts());
+  // if the last token is ">>" or ">>>",
+  // since DPCT does not support nested template type migration,
+  // the last token should be treated as ">"
+  if (Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)) {
+    TokenLen = 1;
+  }
+
   return std::pair<SourceLocation, size_t>(
-      Loc, Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts()));
+      Loc, TokenLen);
 }
 
 std::pair<SourceLocation, size_t>
@@ -132,9 +142,18 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(SourceLocation Loc) {
     return std::pair<size_t, size_t>(0, SrcLength);
   Loc = getExprLocation(Loc);
   FileId = SM.getDecomposedLoc(Loc).first;
+  auto TokenLen = Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts());
+  Token Tok2;
+  Lexer::getRawToken(Loc, Tok2, SM, Context.getLangOpts());
+  // if the last token is ">>" or ">>>",
+  // since DPCT does not support nested template type migration,
+  // the last token should be treated as ">"
+  if(Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)){
+    TokenLen = 1;
+  }
   return std::pair<size_t, size_t>(
       getOffset(Loc),
-      Lexer::MeasureTokenLength(Loc, SM, Context.getLangOpts()));
+      TokenLen);
 }
 
 std::pair<size_t, size_t>
@@ -475,13 +494,42 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   }
 }
 
+// Get replacement str and replacement length for thrust construct type.
+// If thrust construct type have mapping type in MapNames::TypeNamesMap, using
+// the mapping type, else just use "std::" to replace "thrust::".
+void ExprAnalysis::getThrustReplStrAndLength(const std::string &CtorClassName,
+                                             std::string &Replacement,
+                                             size_t &TypeLen) {
+
+  if (CtorClassName.find("thrust::") == 0) {
+    TypeLen = CtorClassName.find('<');
+    if (TypeLen == std::string::npos)
+      TypeLen = 8;
+
+    auto RealTypeNameStr = CtorClassName.substr(0, TypeLen);
+    Replacement =
+        MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
+    if (Replacement.empty())
+      Replacement = "std::";
+  }
+}
+
 void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
   dispatch(CE->getSubExpr());
 }
 
+void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
+  analyzeType(Ctor->getTypeSourceInfo()->getTypeLoc());
+  for (auto It = Ctor->arg_begin(); It != Ctor->arg_end(); It++) {
+    dispatch(*It);
+  }
+}
+
+
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   std::string CtorClassName =
       Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
+
   if (CtorClassName.find("thrust::") == 0) {
     // Distinguish CXXTemporaryObjectExpr from other copy ctor before migrating
     // the ctor. Ex. foo(thrust::minus<int>());
@@ -491,7 +539,10 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
         clang::ast_matchers::match(CXXTemporaryObjectExprMatcher, *Ctor,
                                    clang::dpct::DpctGlobalInfo::getContext());
     if (MatchedResults.size() > 0) {
-      addReplacement(Ctor, 8, "std::");
+      std::string Replacement;
+      size_t TypeLen;
+      getThrustReplStrAndLength(CtorClassName, Replacement, TypeLen);
+      addReplacement(Ctor, TypeLen, Replacement);
     }
   }
 
@@ -897,7 +948,11 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
       auto Result = Rewriter->rewrite();
       if (Result.hasValue()) {
         auto ResultStr = Result.getValue();
-        addReplacement(SR.getBegin(), SR.getEnd(), CSCE, ResultStr);
+        // Since Parser splits ">>" or ">>>" to ">" when parse template
+        // the SR.getEnd location might be a "scratch space" location.
+        // Therfore, need to apply SM.getExpansionLoc before call addReplacement.
+        addReplacement(SM.getExpansionLoc(SR.getBegin()),
+                       SM.getExpansionLoc(SR.getEnd()), CSCE, ResultStr);
         return;
       }
     }

@@ -63,7 +63,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 "cub::DeviceScan::ExclusiveScan",
                 CALL("oneapi::dpl::exclusive_scan",
                      CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
-                     ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
+                     ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(6)),
                      ARG(3), ARG(5), ARG(4)))))))
 
 // cub::DeviceScan::InclusiveScan
@@ -78,8 +78,8 @@ CONDITIONAL_FACTORY_ENTRY(
                 "cub::DeviceScan::InclusiveScan",
                 CALL("oneapi::dpl::inclusive_scan",
                      CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
-                     ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
-                     ARG(3), ARG(5), ARG(4)))))))
+                     ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(5)),
+                     ARG(3), ARG(4)))))))
 
 
 // cub::DeviceSelect::Flagged
