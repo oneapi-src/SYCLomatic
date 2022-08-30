@@ -21,10 +21,6 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
 private:
-  void processLIBCUFuncCall(const CallExpr *CE);
-  void processLIBCUMemberCall(const CXXMemberCallExpr *MC);
-  void processLIBCUTypeLoc(const TypeLoc *TL);
-  void processCubTypeDef(const TypedefDecl *TD);
   void processLIBCUUsingDirectiveDecl(const UsingDirectiveDecl *UDD);
 };
 } // namespace dpct
