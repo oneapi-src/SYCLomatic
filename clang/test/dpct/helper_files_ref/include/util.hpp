@@ -392,7 +392,11 @@ sycl::vec<T, 2> conj(sycl::vec<T, 2> x) {
 }
 
 inline int get_sycl_language_version() {
+#ifdef SYCL_LANGUAGE_VERSION
   return SYCL_LANGUAGE_VERSION;
+#else
+  return 202000;
+#endif
 }
 
 namespace experimental {
