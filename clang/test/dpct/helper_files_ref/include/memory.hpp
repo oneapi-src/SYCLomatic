@@ -1245,6 +1245,40 @@ template <class T, size_t Dimension>
 using constant_memory = detail::device_memory<T, constant, Dimension>;
 template <class T, size_t Dimension>
 using shared_memory = detail::device_memory<T, shared, Dimension>;
+
+template <typename T, sycl::usm::alloc AllocKind = sycl::usm::alloc::shared>
+class allocator {
+public:
+  using value_type = T;
+  using pointer = T *;
+  using const_pointer = const T *;
+  using reference = T &;
+  using const_reference = const T &;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+
+  template <typename U> struct rebind { typedef allocator<U> other; };
+
+  inline allocator() : _impl(dpct::get_default_queue()) {}
+  inline ~allocator() {}
+  inline allocator(allocator const &other) : _impl(dpct::get_default_queue()) {}
+  inline pointer address(reference r) { return &r; }
+  inline const_pointer address(const_reference r) { return &r; }
+  inline pointer allocate(size_type cnt, const_pointer = 0) {
+    return _impl.allocate(cnt);
+  }
+  inline void deallocate(pointer p, size_type cnt) {
+    return _impl.deallocate(p, cnt);
+  }
+  inline size_type max_size() const {
+    return (std::numeric_limits<size_type>::max)() / sizeof(value_type);
+  }
+  inline bool operator==(allocator const &) const { return true; }
+  inline bool operator!=(allocator const &x) const { return false; }
+
+private:
+  sycl::usm_allocator<T, AllocKind> _impl;
+};
 } // namespace dpct
 
 #endif // __DPCT_MEMORY_HPP__
