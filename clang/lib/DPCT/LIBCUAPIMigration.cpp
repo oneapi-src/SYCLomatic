@@ -28,7 +28,7 @@ using namespace clang::dpct;
 using namespace clang::ast_matchers;
 
 void LIBCURule::processLIBCUUsingDirectiveDecl(const UsingDirectiveDecl *UDD) {
-  std::string NamespaceName = UDD->getNominatedNamespace()->getNameAsString();
+  llvm::StringRef NamespaceName = UDD->getNominatedNamespace()->getName();
   if (NamespaceName == "cuda") {
     if (const auto *NSD =
             dyn_cast<NamespaceDecl>(UDD->getNominatedNamespace())) {
@@ -89,9 +89,9 @@ void LIBCURule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   } else if (auto UDD = getNodeAsType<UsingDirectiveDecl>(
                  Result, "UsingDirectiveDecl")) {
     processLIBCUUsingDirectiveDecl(UDD);
-    return ;
+    return;
   } else {
-    return ;
+    return;
   }
   emplaceTransformation(EA.getReplacement());
   EA.applyAllSubExprRepl();

@@ -438,21 +438,22 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
         "thread_scope_system",  "thread_scope_device",  "thread_scope_block",
         "memory_order_relaxed", "memory_order_acq_rel", "memory_order_release",
         "memory_order_acquire", "memory_order_seq_cst"};
-    std::string NameString = "";
-    llvm::raw_string_ostream NameStringOS(NameString);
-    if (targetStr.find(ECD->getNameAsString())!=targetStr.end()) {
-      if (const auto *NSD =
-              dyn_cast<NamespaceDecl>(dyn_cast<EnumDecl>(ECD->getDeclContext())
-                                          ->getDeclContext())) {
-        while (NSD = dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
-          if (NSD->getName() == "__detail"||NSD->isInline()||NSD->getName() == "std")
-            continue;
-          NameStringOS<<NSD->getNameAsString()<<"::";
+
+    if (targetStr.find(ECD->getNameAsString()) != targetStr.end())
+      if (const auto *ED = dyn_cast<EnumDecl>(ECD->getDeclContext())) {
+        std::string NameString = "";
+        llvm::raw_string_ostream NameStringOS(NameString);
+        if (const auto *NSD = dyn_cast<NamespaceDecl>(ED->getDeclContext())) {
+          while (NSD = dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
+            if (NSD->getName() == "__detail" || NSD->isInline() ||
+                NSD->getName() == "std")
+              continue;
+            NameStringOS << NSD->getNameAsString() << "::";
+          }
         }
+        NameStringOS << ECD->getNameAsString();
+        RefString = NameString;
       }
-      NameStringOS<<ECD->getNameAsString();
-      RefString = NameString;
-    }
 
     auto &ReplEnum =
         MapNames::findReplacedName(EnumConstantRule::EnumNamesMap, RefString);
