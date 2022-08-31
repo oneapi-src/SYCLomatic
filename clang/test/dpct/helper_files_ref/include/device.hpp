@@ -531,7 +531,7 @@ public:
     host_pointer = (memory_type !=
                         sycl::usm::alloc::unknown) &&
                    (memory_type != sycl::usm::alloc::device) ? ptr : nullptr;
-
+    is_shared = (memory_type == sycl::usm::alloc::shared) ? 0 : -1;
     sycl::device dev_obj = cl::sycl::get_pointer_device(ptr, ctx);
     for (int id = 0; id < dpct::dev_mgr::instance().device_count(); id++) {
       if(dpct::dev_mgr::instance().get_device(id) == dev_obj) {
@@ -545,6 +545,7 @@ private:
   cl::sycl::usm::alloc memory_type;
   const void *device_pointer;
   const void *host_pointer;
+  int is_shared;
   int device;
 };
 

@@ -16,13 +16,24 @@ MEMBER_REWRITE_ENTRY(
     "cudaPointerAttributes.hostPointer",
     MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_ATTR("host_pointer"))
 )
+
 MEMBER_REWRITE_ENTRY(
     "cudaPointerAttributes.devicePointer",
     MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_ATTR("device_pointer"))
 )
+
 MEMBER_REWRITE_ENTRY(
     "cudaPointerAttributes.type",
     MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_ATTR("memory_type"))
 )
 
+MEMBER_REWRITE_ENTRY(
+    "cudaPointerAttributes.memoryType",
+    MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_ATTR("memory_type"))
+)
 
+
+MEMBER_REWRITE_ENTRY(
+    "cudaPointerAttributes.isManaged",
+    MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_ATTR("is_shared"))
+)
