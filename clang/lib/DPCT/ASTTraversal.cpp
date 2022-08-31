@@ -10221,8 +10221,13 @@ void MemVarRule::processDeref(const Stmt *S, ASTContext &Context) {
       emplaceTransformation(new ReplaceToken(CDSME->getOperatorLoc(), "->"));
     } else if (Parent.get<BinaryOperator>() || Parent.get<CallExpr>() ||
                Parent.get<CXXConstructExpr>() || Parent.get<ParenExpr>()) {
-      emplaceTransformation(new InsertBeforeStmt(S, "*"));
-
+      if (Parent.get<BinaryOperator>() &&
+            Parent.get<BinaryOperator>()->getOpcode() ==
+                                                BinaryOperatorKind::BO_Div) {
+        insertAroundStmt(S, "(*", ")");
+      } else {
+        emplaceTransformation(new InsertBeforeStmt(S, "*"));
+      }
     } else if (auto UO = Parent.get<UnaryOperator>()) {
       if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
         emplaceTransformation(new ReplaceToken(UO->getOperatorLoc(), ""));
