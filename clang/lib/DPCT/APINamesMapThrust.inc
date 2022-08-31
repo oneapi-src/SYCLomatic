@@ -53,7 +53,6 @@ ENTRY_BOTH("thrust::generate_n", "std::generate_n", "oneapi::dpl::execution::syc
 ENTRY_BOTH("thrust::merge", "std::merge", "oneapi::dpl::execution::sycl")
 ENTRY_BOTH("thrust::uninitialized_fill", "std::uninitialized_fill", "")
 ENTRY_BOTH("thrust::unique", "std::unique", "")
-ENTRY_BOTH("thrust::exclusive_scan", "std::exclusive_scan", "oneapi::dpl::execution::sycl")
 ENTRY_BOTH("thrust::max_element", "std::max_element", "")
 ENTRY_BOTH("thrust::min_element", "std::min_element", "")
 ENTRY_BOTH("thrust::make_permutation_iterator", "oneapi::dpl::make_permutation_iterator", "")
