@@ -28,8 +28,8 @@ template <class... MsgArgs> class UnsupportFunctionRewriter;
 
 /*
 Factory usage example:
-using BinaryOperatorExprRewriterFactory =
-    CallExprRewriterFactory<BinaryOperatorExprRewriter, BinaryOperatorKind>;
+using FuncCallExprRewriterFactory =
+    CallExprRewriterFactory<FuncCallExprRewriter, std::string>;
 */
 /// Base class in abstract factory pattern
 class CallExprRewriterFactoryBase {
@@ -693,14 +693,23 @@ void printCapture(StreamT &Stream, bool IsCaptureRef) {
 class DerefExpr {
   bool AddrOfRemoved = false, NeedParens = false;
   const Expr *E = nullptr;
+  const CallExpr * C = nullptr;
 
   template <class StreamT>
   void print(StreamT &Stream, ExprAnalysis &EA, bool IgnoreDerefOp) const {
-    std::unique_ptr<ParensPrinter<StreamT>> Parens;
     if (!AddrOfRemoved && !IgnoreDerefOp)
       Stream << "*";
 
     printWithParens(Stream, EA, E);
+  }
+
+  template <class StreamT>
+  void print(StreamT &Stream, ArgumentAnalysis &AA, bool IgnoreDerefOp,
+              std::pair<const CallExpr *, const Expr *> P) const {
+    if (!AddrOfRemoved && !IgnoreDerefOp)
+      Stream << "*";
+
+    printWithParens(Stream, AA, P);
   }
 
   DerefExpr() = default;
@@ -717,11 +726,17 @@ public:
   }
 
   template <class StreamT> void print(StreamT &Stream) const {
-    ExprAnalysis EA;
-    print(Stream, EA, false);
+    if (C == nullptr) {
+      ExprAnalysis EA;
+      print(Stream, EA, false);
+    } else {
+      ArgumentAnalysis AA;
+      std::pair<const CallExpr*, const Expr*> ExprPair(C, E);
+      print(Stream, AA, false, ExprPair);
+    }
   }
 
-  static DerefExpr create(const Expr *E);
+  static DerefExpr create(const Expr *E, const CallExpr * C);
 };
 
 class RenameWithSuffix {

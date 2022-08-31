@@ -83,6 +83,23 @@ auto exception_handler = [](cl::sycl::exception_list exceptions) {
 };
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|typedef_event_ptr|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+typedef cl::sycl::event *event_ptr;
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|destroy_event|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// Destroy \p event pointed memory.
+///
+/// \param event Pointer to the sycl::event address.
+static void destroy_event(event_ptr event) {
+    delete event;
+}
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|device_info|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|device_info_1
