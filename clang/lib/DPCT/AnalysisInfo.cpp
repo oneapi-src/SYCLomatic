@@ -518,17 +518,6 @@ void DpctFileInfo::buildReplacements() {
     ExecInfo.second.buildInfo();
   }
 
-  const auto &EventMallocFreeMap = getEventMallocFreeMap();
-  for (const auto &Entry : EventMallocFreeMap) {
-    auto &Pair = Entry.second;
-    for (auto &R0 : Pair.first) {
-      addReplacement(R0);
-    }
-    for (auto &R1 : Pair.second) {
-      addReplacement(R1);
-    }
-  }
-
   const auto &TimeStubBounds = getTimeStubBounds();
   if (TimeStubBounds.empty()) {
     for (auto &DescInfo : TimeStubTypeMap) {
@@ -938,7 +927,7 @@ void KernelCallExpr::print(KernelPrinter &Printer) {
   printSubmit(Printer);
   Block.reset();
   if (!getEvent().empty() && isSync())
-    Printer.line(getEvent(), ".wait();");
+    Printer.line(getEvent(), "->wait();");
 }
 
 void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
@@ -1047,7 +1036,7 @@ void KernelCallExpr::printSubmit(KernelPrinter &Printer) {
     Printer.indent();
   }
   if (!getEvent().empty()) {
-    Printer << getEvent() << " = ";
+    Printer << "*" << getEvent() << " = ";
   }
   if (ExecutionConfig.Stream[0] == '*' || ExecutionConfig.Stream[0] == '&') {
     Printer << "(" << ExecutionConfig.Stream << ")";

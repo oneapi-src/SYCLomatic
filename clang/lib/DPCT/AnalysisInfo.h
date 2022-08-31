@@ -356,6 +356,7 @@ enum HeaderType {
   HT_Atomic,
   HT_DPL_Algorithm,
   HT_DPL_Execution,
+  HT_DPL_Iterator,
 };
 
 enum UsingType {
@@ -585,6 +586,9 @@ public:
     case HT_DPL_Execution:
       return insertHeader(HeaderType::HT_DPL_Execution, FirstIncludeOffset,
                           "<oneapi/dpl/execution>");
+    case HT_DPL_Iterator:
+      return insertHeader(HeaderType::HT_DPL_Iterator, LastIncludeOffset,
+                          "<oneapi/dpl/iterator>");
     }
   }
 
@@ -727,13 +731,6 @@ public:
     return AtomicMap;
   }
 
-  std::map<unsigned int,
-           std::pair<std::vector<std::shared_ptr<ExtReplacement>>,
-                     std::vector<std::shared_ptr<ExtReplacement>>>> &
-  getEventMallocFreeMap() {
-    return EventMallocFreeMap;
-  }
-
   void setAddOneDplHeaders(bool Value) { AddOneDplHeaders = Value; }
 
   std::vector<std::pair<unsigned int, unsigned int>> &getTimeStubBounds() {
@@ -747,12 +744,6 @@ private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
 
   std::unordered_set<std::shared_ptr<DpctFileInfo>> IncludedFilesInfoSet;
-
-  std::map<
-      unsigned int /*Hash Value*/,
-      std::pair<std::vector<std::shared_ptr<ExtReplacement>> /*malloc repl*/,
-                std::vector<std::shared_ptr<ExtReplacement>> /*free repl*/>>
-      EventMallocFreeMap;
 
   template <class Obj> GlobalMap<Obj> &getMap() {
     llvm::dbgs() << "[DpctFileInfo::getMap] Unknow map type";
@@ -1822,22 +1813,6 @@ public:
   void insertBuiltinVarInfo(SourceLocation SL, unsigned int Len,
                             std::string Repl,
                             std::shared_ptr<DeviceFunctionInfo> DFI);
-
-  void insertReplMalloc(const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
-                        unsigned int Offset) {
-    std::string FilePath = Repl->getFilePath().str();
-    auto FileInfo = insertFile(FilePath);
-    auto &EventMallocFreeMap = FileInfo->getEventMallocFreeMap();
-    EventMallocFreeMap[Offset].first.push_back(Repl);
-  }
-
-  void insertReplFree(const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
-                      unsigned int Offset) {
-    std::string FilePath = Repl->getFilePath().str();
-    auto FileInfo = insertFile(FilePath);
-    auto &EventMallocFreeMap = FileInfo->getEventMallocFreeMap();
-    EventMallocFreeMap[Offset].second.push_back(Repl);
-  }
 
   void insertRandomEngine(const Expr *E);
   std::shared_ptr<RandomEngineInfo> findRandomEngine(const Expr *E);
