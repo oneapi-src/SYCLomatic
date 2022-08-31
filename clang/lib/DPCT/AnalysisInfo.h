@@ -356,6 +356,7 @@ enum HeaderType {
   HT_Atomic,
   HT_DPL_Algorithm,
   HT_DPL_Execution,
+  HT_DPL_Iterator,
 };
 
 enum UsingType {
@@ -585,6 +586,9 @@ public:
     case HT_DPL_Execution:
       return insertHeader(HeaderType::HT_DPL_Execution, FirstIncludeOffset,
                           "<oneapi/dpl/execution>");
+    case HT_DPL_Iterator:
+      return insertHeader(HeaderType::HT_DPL_Iterator, LastIncludeOffset,
+                          "<oneapi/dpl/iterator>");
     }
   }
 
