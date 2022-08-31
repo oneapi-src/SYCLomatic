@@ -1112,7 +1112,7 @@ static inline unsigned int select_device(unsigned int id){
 class pointer_attributes {
 public:
   void init_attributes(const void *ptr,
-                        sycl::context &ctx = dpct::get_default_context()) {
+                        sycl::context ctx = dpct::get_default_context()) {
     memory_type = cl::sycl::get_pointer_type(ptr, ctx);
     device_pointer = (memory_type !=
                         sycl::usm::alloc::unknown) ? ptr : nullptr;
