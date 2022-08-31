@@ -1129,7 +1129,6 @@ public:
     }
   }
 
-private:
   cl::sycl::usm::alloc memory_type;
   const void *device_pointer;
   const void *host_pointer;

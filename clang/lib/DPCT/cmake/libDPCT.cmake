@@ -33,11 +33,8 @@ macro(build_lib_dpct)
     QueryApiMapping.cpp
     AutoComplete.cpp
     LIBCUAPIMigration.cpp
-<<<<<<< HEAD
     CUBAPIMigration.cpp
-=======
     MemberExprRewriter.cpp
->>>>>>> [SYCLomatic] Support cudaPointerAttributes and cudaPointerGetAttributes migration.
 
     DEPENDS
     ClangDriverOptions

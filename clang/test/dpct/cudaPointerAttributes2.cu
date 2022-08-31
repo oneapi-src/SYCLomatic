@@ -1,7 +1,7 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2
-// RUN: dpct --format-range=none -out-root %T/Out %s --cuda-include-path="%cuda-path/include"
-// RUN: FileCheck %s --match-full-lines --input-file %T/Out/cudaPointerAttributes2.dp.cpp
+// RUN: dpct --format-range=none -out-root %T/Out/cudaPointerAttributes2 %s --cuda-include-path="%cuda-path/include"
+// RUN: FileCheck %s --match-full-lines --input-file %T/Out/cudaPointerAttributes2/cudaPointerAttributes2.dp.cpp
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <stdlib.h>
