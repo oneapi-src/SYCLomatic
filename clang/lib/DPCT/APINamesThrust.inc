@@ -1566,3 +1566,65 @@ CONDITIONAL_FACTORY_ENTRY(
 
 // thrust::make_reverse_iterator
 CALL_FACTORY_ENTRY("thrust::make_reverse_iterator",  CALL("oneapi::dpl::make_reverse_iterator",  ARG(0)))
+
+// thrust::exclusive_scan
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(3),
+  // thrust::exclusive_scan(data, data + 6, data)
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgType(1, "thrust::device_ptr"),
+    CALL_FACTORY_ENTRY("thrust::exclusive_scan",
+      CALL("std::exclusive_scan",
+        CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+        ARG(0), ARG(1), ARG(2), ARG("0"))),
+    CALL_FACTORY_ENTRY("thrust::exclusive_scan",
+      CALL("std::exclusive_scan",
+        ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), ARG("0")))
+  ),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(4),
+    CONDITIONAL_FACTORY_ENTRY(
+      CompareArgType(0, 1),
+      // thrust::exclusive_scan(thrust::host, data, data + 6, data);
+      CALL_FACTORY_ENTRY("thrust::exclusive_scan",
+        CALL("std::exclusive_scan",
+          makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), ARG("0"))),
+      // thrust::exclusive_scan(data, data + 6, data, 4);
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        CALL_FACTORY_ENTRY("thrust::exclusive_scan",
+          CALL("std::exclusive_scan",
+            CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+            ARG(0), ARG(1), ARG(2), ARG(3))),
+        CALL_FACTORY_ENTRY("thrust::exclusive_scan",
+          CALL("std::exclusive_scan",
+            ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), ARG(3)))
+      )
+    ),
+    CONDITIONAL_FACTORY_ENTRY(
+      CheckArgCount(5),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        // thrust::exclusive_scan(thrust::host, data, data + 6, data, 4);
+        CALL_FACTORY_ENTRY("thrust::exclusive_scan",
+          CALL("std::exclusive_scan",
+            makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), ARG(4))),
+        // thrust::exclusive_scan(data, data + 10, data, 1, binary_op);
+        CONDITIONAL_FACTORY_ENTRY(
+          CheckArgType(1, "thrust::device_ptr"),
+          CALL_FACTORY_ENTRY("thrust::exclusive_scan",
+            CALL("std::exclusive_scan",
+              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+              ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))),
+          CALL_FACTORY_ENTRY("thrust::exclusive_scan",
+            CALL("std::exclusive_scan",
+              ARG("oneapi::dpl::execution::seq"), ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))
+        )
+      ),
+      // thrust::exclusive_scan(thrust::host, data, data + 10, data, 1, binary_op);
+      CALL_FACTORY_ENTRY("thrust::exclusive_scan",
+        CALL("std::exclusive_scan",
+          makeMappedThrustPolicyEnum(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))
+    )
+  )
+)

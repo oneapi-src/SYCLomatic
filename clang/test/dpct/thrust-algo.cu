@@ -26,6 +26,41 @@ void k() {
   auto bo = [](int x, int y) -> int { return x + y; };
   auto gen = []() -> int { return 23; };
 
+  thrust::maximum<int> binary_op;
+  thrust::device_vector<int> tv, tv2, tv3, tv4;
+
+  // exclusive_scan
+
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), 0);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), 0);
+  thrust::exclusive_scan(thrust::host, v.begin(), v.end(), v2.begin());
+  thrust::exclusive_scan(thrust::device, tv.begin(), tv.end(), tv2.begin());
+
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), 0);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), 0);
+  thrust::exclusive_scan(v.begin(), v.end(), v2.begin());
+  thrust::exclusive_scan(tv.begin(), tv.end(), tv2.begin());
+
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), 4);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), 4);
+  thrust::exclusive_scan(thrust::host, v.begin(), v.end(), v2.begin(), 4);
+  thrust::exclusive_scan(thrust::device, tv.begin(), tv.end(), tv2.begin(), 4);
+
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), 4);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), 4);
+  thrust::exclusive_scan(v.begin(), v.end(), v2.begin(), 4);
+  thrust::exclusive_scan(tv.begin(), tv.end(), tv2.begin(), 4);
+
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), 1, binary_op);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), 1, binary_op);
+  thrust::exclusive_scan(thrust::host, v.begin(), v.end(), v2.begin(), 1, binary_op);
+  thrust::exclusive_scan(thrust::device, tv.begin(), tv.end(), tv2.begin(), 1, binary_op);
+
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), 1, binary_op);
+  // CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), tv.begin(), tv.end(), tv2.begin(), 1, binary_op);
+  thrust::exclusive_scan(v.begin(), v.end(), v2.begin(), 1, binary_op);
+  thrust::exclusive_scan(tv.begin(), tv.end(), tv2.begin(), 1, binary_op);
+
   // exclusive_scan_by_key
 
   // CHECK: oneapi::dpl::exclusive_scan_by_segment(oneapi::dpl::execution::seq, v.begin(), v.end(), v2.begin(), v3.begin());
