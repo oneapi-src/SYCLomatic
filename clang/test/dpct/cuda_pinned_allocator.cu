@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/cuda_pinned_alloc %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --match-full-lines --input-file %T/cuda_pinned_alloc/cuda_pinned_allocator.dp.cpp %s
 
