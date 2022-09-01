@@ -596,12 +596,12 @@ struct test_class {
   // CHECK-NEXT:  // __shared__ variable
   // CHECK-NEXT:   s1[0] = item_ct1.get_local_range(2);
   // CHECK-NEXT: }
-  // CHECK-NEXT: test_class(int *a, int *b, cl::sycl::nd_item<3> item_ct1, float *s2) {
+  // CHECK-NEXT: test_class(int *a, int *b, cl::sycl::nd_item<3> item_ct1, float &s2) {
   // CHECK-NEXT:  // __shared__ variable
   // CHECK-NEXT:   int d = item_ct1.get_local_range(2);
   // CHECK-NEXT: }
   // CHECK-NEXT: template<class T>
-  // CHECK-NEXT: test_class(T *a, T *b, cl::sycl::nd_item<3> item_ct1, T *s3) {
+  // CHECK-NEXT: test_class(T *a, T *b, cl::sycl::nd_item<3> item_ct1, T &s3) {
   // CHECK-NEXT:  // __shared__ variable
   // CHECK-NEXT:   int d = item_ct1.get_local_range(2);
   // CHECK-NEXT: }
@@ -620,7 +620,7 @@ struct test_class {
   }
 };
 
-// CHECK: void kernel_ctor(cl::sycl::nd_item<3> item_ct1, int *s1, float *s2, float *s3) {
+// CHECK: void kernel_ctor(cl::sycl::nd_item<3> item_ct1, int *s1, float &s2, float &s3) {
 // CHECK-NEXT:   float *fa, *fb;
 // CHECK-NEXT:   int *la, *lb;
 // CHECK-NEXT:   test_class tc(la, item_ct1, s1);
@@ -645,7 +645,7 @@ void test_ctor() {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ctor_{{[0-9a-z]+}}>>(
   // CHECK-NEXT:       cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:       [=](cl::sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         kernel_ctor(item_ct1, s1_acc_ct1.get_pointer(), s2_acc_ct1.get_pointer(), (float *)s3_acc_ct1.get_pointer());
+  // CHECK-NEXT:         kernel_ctor(item_ct1, s1_acc_ct1.get_pointer(), s2_acc_ct1, s3_acc_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
 
@@ -657,10 +657,10 @@ void test_ctor() {
 //CHECK-NEXT:union  type_ct1{
 //CHECK-NEXT:    T up;
 //CHECK-NEXT:  };
-//CHECK-NEXT:  type_ct1* temp = (type_ct1*)temp_ct1;
-//CHECK-NEXT:  type_ct1* temp2 = (type_ct1*)temp2_ct1;
-//CHECK-NEXT:  temp->up = a;
-//CHECK-NEXT:  temp2->up = a;
+//CHECK-NEXT:  type_ct1 &temp = *(type_ct1 *)temp_ct1;
+//CHECK-NEXT:  type_ct1 &temp2 = *(type_ct1 *)temp2_ct1;
+//CHECK-NEXT:  temp.up = a;
+//CHECK-NEXT:  temp2.up = a;
 //CHECK-NEXT:}
 //CHECK-NEXT:template<typename TT>
 //CHECK-NEXT:void foo11() {
@@ -702,14 +702,14 @@ void foo11() {
 //CHECK-NEXT:  union UnionType {
 //CHECK-NEXT:    T up;
 //CHECK-NEXT:  };
-//CHECK-NEXT:  UnionType* temp = (UnionType*)temp_ct1;
+//CHECK-NEXT:  UnionType &temp = *(UnionType *)temp_ct1;
 //CHECK-NEXT:  //shared variable
-//CHECK-NEXT:  temp->up = a;
+//CHECK-NEXT:  temp.up = a;
 //CHECK-NEXT:  union  type_ct2{
 //CHECK-NEXT:    T up;
 //CHECK-NEXT:  };
-//CHECK-NEXT:  type_ct2* temp2 = (type_ct2*)temp2_ct1;
-//CHECK-NEXT:  temp2->up = a;
+//CHECK-NEXT:  type_ct2 &temp2 = *(type_ct2 *)temp2_ct1;
+//CHECK-NEXT:  temp2.up = a;
 //CHECK-NEXT:}
 //CHECK-NEXT:template<typename TT>
 //CHECK-NEXT:void foo2() {
@@ -799,7 +799,7 @@ void run_foo13(float* a_host[]) {
   //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel5_{{[0-9a-z]+}}, float>>(
   //CHECK-NEXT:      cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](cl::sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:        my_kernel5(a_host_acc_ct0.get_raw_pointer(), (float * *)aa_acc_ct1.get_pointer());
+  //CHECK-NEXT:        my_kernel5(a_host_acc_ct0.get_raw_pointer(), aa_acc_ct1);
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });
   my_kernel5<<<1, 1>>>(a_host);
