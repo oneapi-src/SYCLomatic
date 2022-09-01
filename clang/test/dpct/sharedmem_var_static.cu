@@ -10,9 +10,9 @@
 
 class TestObject{
 public:
-  // CHECK: static void run(int *in, int *out, sycl::nd_item<3> item_ct1, int *a0) {
+  // CHECK: static void run(int *in, int *out, sycl::nd_item<3> item_ct1, int &a0) {
   // CHECK-NEXT:  // the size of s is static
-  // CHECK-NEXT:  *a0 = item_ct1.get_local_id(2);
+  // CHECK-NEXT:  a0 = item_ct1.get_local_id(2);
   __device__ static void run(int *in, int *out) {
     __shared__ int a0; // the size of s is static
     a0 = threadIdx.x;
@@ -20,9 +20,9 @@ public:
   __device__ void test() {}
 };
 
-// CHECK: void memberAcc(TestObject *s) {
+// CHECK: void memberAcc(TestObject &s) {
 // CHECK-NEXT: // the size of s is static
-// CHECK-NEXT: s->test();
+// CHECK-NEXT: s.test();
 // CHECK-NEXT: }
 __global__ void memberAcc() {
   __shared__ TestObject s; // the size of s is static
@@ -41,7 +41,7 @@ __global__ void nonTypeTemplateReverse(int *d, int n) {
   }
 }
 
-// CHECK: void staticReverse(int *d, int n, sycl::nd_item<3> [[ITEM:item_ct1]], int *a0, int *s) {
+// CHECK: void staticReverse(int *d, int n, sycl::nd_item<3> [[ITEM:item_ct1]], int &a0, int *s) {
 __global__ void staticReverse(int *d, int n) {
   const int size = 64;
   // CHECK:  // the size of s is static
@@ -112,7 +112,7 @@ int main(void) {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class memberAcc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           memberAcc(s_acc_ct1.get_pointer());
+  // CHECK-NEXT:           memberAcc(s_acc_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   memberAcc<<<1, 1>>>();
@@ -125,7 +125,7 @@ int main(void) {
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class staticReverse_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, n), sycl::range<3>(1, 1, n)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         staticReverse((int *)(&d_d_acc_ct0[0]), n, item_ct1, a0_acc_ct1.get_pointer(), s_acc_ct1.get_pointer());
+  // CHECK-NEXT:         staticReverse((int *)(&d_d_acc_ct0[0]), n, item_ct1, a0_acc_ct1, s_acc_ct1.get_pointer());
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   staticReverse<<<1, n>>>(d_d, n);

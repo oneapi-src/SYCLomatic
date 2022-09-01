@@ -15,8 +15,8 @@ public:
 // CHECK: dpct::global_memory<TestStruct, 0> t1;
 __device__ TestStruct t1;
 
-// CHECK: void member_acc(TestStruct *t1) {
-// CHECK-NEXT:  t1->test();
+// CHECK: void member_acc(TestStruct &t1) {
+// CHECK-NEXT:  t1.test();
 // CHECK-NEXT:}
 __global__ void member_acc() {
   t1.test();
@@ -47,9 +47,9 @@ __device__ float fx[2], fy[num_elements][4 * num_elements];
 // CHECK: dpct::global_memory<float, 1> tmp(size);
 const int size = 64;
 __device__ float tmp[size];
-// CHECK: void kernel2(float *out, sycl::nd_item<3> [[ITEM:item_ct1]], int *al, float *fx,
+// CHECK: void kernel2(float *out, sycl::nd_item<3> [[ITEM:item_ct1]], int &al, float *fx,
 // CHECK:              dpct::accessor<float, dpct::global, 2> fy, float *tmp) {
-// CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] += *al;
+// CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] += al;
 // CHECK:   fx[{{.*}}[[ITEM]].get_local_id(2)] = fy[{{.*}}[[ITEM]].get_local_id(2)][{{.*}}[[ITEM]].get_local_id(2)];
 // CHECK:   tmp[1] = 1.0f;
 // CHECK: }
@@ -90,7 +90,7 @@ int main() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class member_acc_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           member_acc(t1_ptr_ct1);
+  // CHECK-NEXT:           member_acc(*t1_ptr_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   member_acc<<<1, threads_per_block>>>();
@@ -124,7 +124,7 @@ int main() {
   // CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class kernel2_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, threads_per_block), sycl::range<3>(1, 1, threads_per_block)),
   // CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:           kernel2(d_out, item_ct1, al_ptr_ct1, fx_ptr_ct1, fy_acc_ct1, tmp_ptr_ct1);
+  // CHECK-NEXT:           kernel2(d_out, item_ct1, *al_ptr_ct1, fx_ptr_ct1, fy_acc_ct1, tmp_ptr_ct1);
   // CHECK-NEXT:         });
   // CHECK-NEXT:     });
   kernel2<<<1, threads_per_block>>>(d_out);
