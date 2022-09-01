@@ -2705,13 +2705,6 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
   }
   if (Var->hasInit())
     setInitList(Var->getInit(), Var);
-  if (getType()->getDimension() == 0 && Attr == Constant) {
-    AccMode = Value;
-  } else if (getType()->getDimension() <= 1) {
-    AccMode = Pointer;
-  } else {
-    AccMode = Accessor;
-  }
   if (Var->getStorageClass() == SC_Static) {
     IsStatic = true;
   }
@@ -2751,6 +2744,16 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
         }
       }
     }
+  }
+  if (getType()->getDimension() == 0 && !isTypeDeclaredLocal()) {
+    if (Attr == Constant)
+      AccMode = Value;
+    else
+      AccMode = Reference;
+  } else if (getType()->getDimension() <= 1) {
+    AccMode = Pointer;
+  } else {
+    AccMode = Accessor;
   }
 
   newConstVarInit(Var);

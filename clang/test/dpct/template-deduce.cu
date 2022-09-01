@@ -115,11 +115,11 @@ int main() {
 }
 
 // CHECK: template<typename T1, typename T2>
-// CHECK-NEXT: void k(T1 arg1, T2 arg2, T1 *v1, T2 *v2) {
+// CHECK-NEXT: void k(T1 arg1, T2 arg2, T1 &v1, T2 &v2) {
 // CHECK-EMPTY:
 // CHECK-EMPTY:
-// CHECK-NEXT:   *v1 += arg1;
-// CHECK-NEXT:   *v2 += arg2;
+// CHECK-NEXT:   v1 += arg1;
+// CHECK-NEXT:   v2 += arg2;
 // CHECK-NEXT: }
 template<typename T1, typename T2>
 __global__ void k(T1 arg1, T2 arg2) {
@@ -141,7 +141,7 @@ void foo() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         k(1, 2.3, (int *)v1_acc_ct1.get_pointer(), (double *)v2_acc_ct1.get_pointer());
+  // CHECK-NEXT:         k(1, 2.3, v1_acc_ct1, v2_acc_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   k<<<16, 32>>>(1, 2.3);
@@ -153,7 +153,7 @@ void foo() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         k<int>(1, 2.3, v1_acc_ct1.get_pointer(), (double *)v2_acc_ct1.get_pointer());
+  // CHECK-NEXT:         k<int>(1, 2.3, v1_acc_ct1, v2_acc_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   k<int><<<16, 32>>>(1, 2.3);
@@ -165,7 +165,7 @@ void foo() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         k<int, float>(1, 2.3, v1_acc_ct1.get_pointer(), v2_acc_ct1.get_pointer());
+  // CHECK-NEXT:         k<int, float>(1, 2.3, v1_acc_ct1, v2_acc_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   k<int, float><<<16, 32>>>(1, 2.3);
@@ -178,7 +178,7 @@ void foo() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         k<T3>(1, 2.3, v1_acc_ct1.get_pointer(), (double *)v2_acc_ct1.get_pointer());
+  // CHECK-NEXT:         k<T3>(1, 2.3, v1_acc_ct1, v2_acc_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   k<T3><<<16, 32>>>(1, 2.3);
@@ -190,7 +190,7 @@ void foo() {
   // CHECK-NEXT:     cgh.parallel_for(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
   // CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
-  // CHECK-NEXT:         k<T3, T4>(1, 2.3, v1_acc_ct1.get_pointer(), v2_acc_ct1.get_pointer());
+  // CHECK-NEXT:         k<T3, T4>(1, 2.3, v1_acc_ct1, v2_acc_ct1);
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   k<T3, T4><<<16, 32>>>(1, 2.3);
