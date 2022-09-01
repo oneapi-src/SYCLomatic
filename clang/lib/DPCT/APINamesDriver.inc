@@ -139,7 +139,7 @@ WARNING_FACTORY_ENTRY("cuDriverGetVersion",
     Diagnostics::TYPE_MISMATCH)
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Device_dev_mgr_current_device_id,
+    HelperFeatureEnum::Device_get_current_device_id,
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxGetDevice", DEREF(0),
                                             CALL(MapNames::getDpctNamespace() +
                                                  "get_current_device_id"))))
