@@ -4753,10 +4753,8 @@ template <typename T> int getPlaceholderIdx(const T *S) {
 /// return true: update success
 /// return false: key already there, map is not changed.
 template <typename T> bool UpdatePlaceholderIdxMap(const T *S, int Index) {
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  SourceLocation Loc = S->getBeginLoc();
-  Loc = SM.getExpansionLoc(Loc);
-
+  auto Range = getDefinitionRange(S->getBeginLoc(), S->getEndLoc());
+  SourceLocation Loc = Range.getBegin();
   auto LocInfo = DpctGlobalInfo::getLocInfo(Loc);
   std::string Key = LocInfo.first + ":" + std::to_string(LocInfo.second);
   auto Iter = DpctGlobalInfo::getTempVariableHandledMap().find(Key);
