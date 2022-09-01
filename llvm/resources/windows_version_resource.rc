@@ -7,10 +7,10 @@
 
 // Default values for required fields.
 
-#define RC_VERSION_FIELD_1 2022
-#define RC_VERSION_FIELD_2 2
-#define RC_PRODUCT_VERSION "2022.2.0.0"
-#define RC_COPYRIGHT "Copyright (C) 2018 - 2022 Intel Corporation"
+#define RC_VERSION_FIELD_1 2023
+#define RC_VERSION_FIELD_2 0
+#define RC_PRODUCT_VERSION "2023.0.0.0"
+#define RC_COPYRIGHT "Copyright (C) 2018 - 2023 Intel Corporation"
 #define RC_PRODUCT_NAME "Intel(R) DPC++ Compatibility Tool"
 #define RC_FILE_DESCRIPTION "Intel(R) DPC++ Compatibility Tool"
 #define RC_COMPANY_NAME "Intel Corporation"
