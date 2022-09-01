@@ -592,6 +592,110 @@ void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
     Repls->emplaceIntoReplSet(ReplSet[FilePath]);
 }
 
+void DpctFileInfo::insertHeader(HeaderType Type) {
+    switch (Type) {
+    case HT_SYCL:
+      return insertHeader(HeaderType::HT_SYCL, FirstIncludeOffset,
+                          "<CL/sycl.hpp>",
+                          "<" + getCustomMainHelperFileName() + "/" +
+                              getCustomMainHelperFileName() + ".hpp>");
+    case HT_Math:
+      return insertHeader(HeaderType::HT_Math, LastIncludeOffset, "<cmath>");
+    case HT_Algorithm:
+      return insertHeader(HeaderType::HT_Algorithm, LastIncludeOffset,
+                          "<algorithm>");
+    case HT_Complex:
+      return insertHeader(HeaderType::HT_Complex, LastIncludeOffset,
+                          "<complex>");
+    case HT_Thread:
+      return insertHeader(HeaderType::HT_Thread, LastIncludeOffset, "<thread>");
+    case HT_Future:
+      return insertHeader(HeaderType::HT_Future, LastIncludeOffset, "<future>");
+    case HT_Time:
+      return insertHeader(HeaderType::HT_Time, LastIncludeOffset, "<time.h>");
+    case HT_Dnnl:
+      return insertHeader(HeaderType::HT_Dnnl, LastIncludeOffset,
+                          "<" + getCustomMainHelperFileName() +
+                              "/dnnl_utils.hpp>");
+    case HT_MKL_BLAS_Solver:
+      return insertHeader(
+          HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
+    case HT_MKL_BLAS_Solver_Without_Util:
+      return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>");
+    case HT_MKL_RNG:
+      return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>",
+                          "<" + getCustomMainHelperFileName() +
+                              "/rng_utils.hpp>");
+    case HT_MKL_RNG_Without_Util:
+      return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>");
+    case HT_MKL_SPBLAS:
+      return insertHeader(
+          HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
+    case HT_MKL_SPBLAS_Without_Util:
+      return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>");
+    case HT_MKL_FFT:
+      return insertHeader(HeaderType::HT_MKL_FFT, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>");
+    case HT_Numeric:
+      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
+                          "<numeric>");
+    case HT_Chrono:
+      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
+                          "<chrono>");
+    case HT_DL:
+#ifdef _WIN32
+      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
+                          "<libloaderapi.h>");
+#else
+      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
+                          "<dlfcn.h>");
+#endif
+    case HT_STD_Numeric_Limits:
+      return insertHeader(HeaderType::HT_STD_Numeric_Limits, LastIncludeOffset,
+                          "<limits>");
+    case HT_DPL_Utils:
+      return insertHeader(HeaderType::HT_DPL_Utils, LastIncludeOffset,
+                          "<" + getCustomMainHelperFileName() +
+                              "/dpl_utils.hpp>");
+    case HT_BFloat16:
+      return insertHeader(HeaderType::HT_BFloat16, LastIncludeOffset,
+                          "<oneapi/mkl/bfloat16.hpp>");
+    case HT_Lib_Common_Utils:
+      return insertHeader(HeaderType::HT_Lib_Common_Utils, LastIncludeOffset,
+                          "<" + getCustomMainHelperFileName() +
+                              "/lib_common_utils.hpp>");
+    case HT_CCL:
+      return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
+                          "<" + getCustomMainHelperFileName() +
+                              "/ccl_utils.hpp>");
+    case HT_Atomic:
+      return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
+                          "<" + getCustomMainHelperFileName() +
+                              "/atomic.hpp>");
+    case HT_DPL_Algorithm:
+      if (this != DpctGlobalInfo::getInstance().getMainFile().get())
+        return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+            HT_DPL_Algorithm);
+      return insertHeader(HeaderType::HT_DPL_Algorithm, FirstIncludeOffset,
+                          "<oneapi/dpl/algorithm>");
+    case HT_DPL_Execution:
+      if (this != DpctGlobalInfo::getInstance().getMainFile().get())
+        return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+            HT_DPL_Execution);
+      return insertHeader(HeaderType::HT_DPL_Execution, FirstIncludeOffset,
+                          "<oneapi/dpl/execution>");
+    case HT_DPL_Iterator:
+      return insertHeader(HeaderType::HT_DPL_Iterator, LastIncludeOffset,
+                          "<oneapi/dpl/iterator>");
+    }
+  }
+
 void DpctGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
   if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(0)))
     insertCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(1));
@@ -630,6 +734,26 @@ void DpctGlobalInfo::insertBuiltinVarInfo(
     BuiltinVarInfo BVI(Len, Repl, DFI);
     M.insert(std::make_pair(LocInfo.second, BVI));
   }
+}
+
+llvm::Optional<std::string> DpctGlobalInfo::getAbsolutePath(FileID ID) {
+  assert(SM && "SourceManager must be initialized");
+  if (const auto *FileEntry = SM->getFileEntryForID(ID)) {
+    // To avoid potential path inconsistent issue,
+    // using tryGetRealPathName while applicable.
+    if (!FileEntry->tryGetRealPathName().empty())
+      return FileEntry->tryGetRealPathName().str();
+
+    llvm::SmallString<512> FilePathAbs(FileEntry->getName());
+    SM->getFileManager().makeAbsolutePath(FilePathAbs);
+    llvm::sys::path::native(FilePathAbs);
+    // Need to remove dot to keep the file path
+    // added by ASTMatcher and added by
+    // AnalysisInfo::getLocInfo() consistent.
+    llvm::sys::path::remove_dots(FilePathAbs, true);
+    return (std::string)FilePathAbs;
+  }
+  return llvm::None;
 }
 
 int KernelCallExpr::calculateOriginArgsSize() const {
