@@ -1246,38 +1246,55 @@ using constant_memory = detail::device_memory<T, constant, Dimension>;
 template <class T, size_t Dimension>
 using shared_memory = detail::device_memory<T, shared, Dimension>;
 
-template <typename T, sycl::usm::alloc AllocKind = sycl::usm::alloc::shared>
+template <typename T, sycl::usm::alloc AllocKind = sycl::usm::alloc::host>
 class allocator {
-public:
-  using value_type = T;
-  using pointer = T *;
-  using const_pointer = const T *;
-  using reference = T &;
-  using const_reference = const T &;
-  using size_type = std::size_t;
-  using difference_type = std::ptrdiff_t;
-
-  template <typename U> struct rebind { typedef allocator<U> other; };
-
-  inline allocator() : _impl(dpct::get_default_queue()) {}
-  inline ~allocator() {}
-  inline allocator(allocator const &other) : _impl(dpct::get_default_queue()) {}
-  inline pointer address(reference r) { return &r; }
-  inline const_pointer address(const_reference r) { return &r; }
-  inline pointer allocate(size_type cnt, const_pointer = 0) {
-    return _impl.allocate(cnt);
-  }
-  inline void deallocate(pointer p, size_type cnt) {
-    return _impl.deallocate(p, cnt);
-  }
-  inline size_type max_size() const {
-    return (std::numeric_limits<size_type>::max)() / sizeof(value_type);
-  }
-  inline bool operator==(allocator const &) const { return true; }
-  inline bool operator!=(allocator const &x) const { return false; }
-
 private:
-  sycl::usm_allocator<T, AllocKind> _impl;
+  using Alloc = sycl::usm_allocator<T, AllocKind>;
+  Alloc _impl;
+
+public:
+  using value_type = typename std::allocator_traits<Alloc>::value_type;
+  using pointer = typename std::allocator_traits<Alloc>::pointer;
+  using const_pointer = typename std::allocator_traits<Alloc>::const_pointer;
+  using void_pointer = typename std::allocator_traits<Alloc>::void_pointer;
+  using const_void_pointer =
+      typename std::allocator_traits<Alloc>::const_void_pointer;
+  using reference = typename std::allocator_traits<Alloc>::value_type &;
+  using const_reference =
+      const typename std::allocator_traits<Alloc>::value_type &;
+  using difference_type =
+      typename std::allocator_traits<Alloc>::difference_type;
+  using size_type = typename std::allocator_traits<Alloc>::size_type;
+  using propagate_on_container_copy_assignment = typename std::allocator_traits<
+      Alloc>::propagate_on_container_copy_assignment;
+  using propagate_on_container_move_assignment = typename std::allocator_traits<
+      Alloc>::propagate_on_container_move_assignment;
+  using propagate_on_container_swap =
+      typename std::allocator_traits<Alloc>::propagate_on_container_swap;
+  using is_always_equal =
+      typename std::allocator_traits<Alloc>::is_always_equal;
+
+  template <typename U> struct rebind {
+    typedef allocator<U, AllocKind> other;
+  };
+
+  allocator() : _impl(dpct::get_default_queue()) {}
+  ~allocator() {}
+  allocator(const allocator &other) : _impl(other._impl) {}
+  allocator(allocator &&other) : _impl(std::move(other._impl)) {}
+  pointer address(reference r) { return &r; }
+  const_pointer address(const_reference r) { return &r; }
+  pointer allocate(size_type cnt, const_void_pointer hint = nullptr) {
+    return std::allocator_traits<Alloc>::allocate(_impl, cnt, hint);
+  }
+  void deallocate(pointer p, size_type cnt) {
+    std::allocator_traits<Alloc>::deallocate(_impl, p, cnt);
+  }
+  size_type max_size() const {
+    return std::allocator_traits<Alloc>::max_size(_impl);
+  }
+  bool operator==(const allocator &other) const { return _impl == other._impl; }
+  bool operator!=(const allocator &other) const { return _impl != other._impl; }
 };
 } // namespace dpct
 
