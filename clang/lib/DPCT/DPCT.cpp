@@ -264,6 +264,13 @@ public:
           std::make_shared<MisleadingBidirectionalHandler>(TransformSet);
       PP.addCommentHandler(CommentHandler.get());
     }
+
+    auto MainFileID =
+        DpctGlobalInfo::getInstance().getSourceManager().getMainFileID();
+    auto Path = DpctGlobalInfo::getInstance().getAbsolutePath(MainFileID);
+    assert(Path && "Can not find absolute path");
+    auto MainFile = DpctGlobalInfo::getInstance().insertFile(Path.getValue());
+    DpctGlobalInfo::getInstance().setMainFile(MainFile);
   }
 
   void HandleCXXExplicitFunctionInstantiation(
