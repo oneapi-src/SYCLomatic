@@ -25,6 +25,10 @@ def build_libear(compiler, dst_dir):
         prebuildlib = os.path.join(src_dir, "libear.so")
         if os.path.exists(prebuildlib):
             return prebuildlib
+
+        prebuildlib = os.path.join(src_dir, "../libear.so")
+        if os.path.exists(prebuildlib):
+            return prebuildlib
 # SYCLomatic_CUSTOMIZATION end
         toolset = make_toolset(src_dir)
         toolset.set_compiler(compiler)
