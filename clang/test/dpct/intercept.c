@@ -1,3 +1,6 @@
+// UNSUPPORTED: -windows-
+// intercept-build not found on windows
+//
 // ------ prepare test directory
 // RUN: cd %T
 // RUN: rm -rf intercept-build
