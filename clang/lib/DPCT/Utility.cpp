@@ -4034,35 +4034,27 @@ std::string getArgTypeStr(const CallExpr *CE, unsigned int Idx) {
       .getAsString();
 }
 std::string getFunctionName(const clang::FunctionDecl *Node) {
-  std::string BaseName;
+  std::string FunctionName;
+  llvm::raw_string_ostream OS(FunctionName);
   if (const auto *CMD = dyn_cast<clang::CXXMethodDecl>(Node)) {
     const CXXRecordDecl *CRD = CMD->getParent();
-    llvm::raw_string_ostream OS(BaseName);
     CRD->printName(OS);
-    OS.flush();
+    OS << "::";
   }
-  if (BaseName.empty())
-    return Node->getNameInfo().getName().getAsString();
-  return BaseName + "::" + Node->getNameInfo().getName().getAsString();
+  OS << Node->getNameInfo().getName().getAsString();
+  OS.flush();
+  return FunctionName;
 }
 std::string getFunctionName(const clang::UnresolvedLookupExpr *Node) {
   return Node->getNameInfo().getName().getAsString();
 }
 std::string getFunctionName(const clang::FunctionTemplateDecl *Node) {
-  std::string BaseName;
-  if (const auto *CMD =
-          dyn_cast<clang::CXXMethodDecl>(Node->getTemplatedDecl())) {
-    const CXXRecordDecl *CRD = CMD->getParent();
-    llvm::raw_string_ostream OS(BaseName);
-    CRD->printName(OS);
-    OS.flush();
+  if (const auto *FD = Node->getTemplatedDecl()) {
+    return getFunctionName(FD);
   }
-
   std::string FunctionName;
   llvm::raw_string_ostream OS(FunctionName);
   Node->printName(OS);
   OS.flush();
-  if (BaseName.empty())
-    return FunctionName;
-  return BaseName + "::" + FunctionName;
+  return FunctionName;
 }

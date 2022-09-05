@@ -3671,7 +3671,7 @@ public:
 
   template <class IteratorRange>
   static std::shared_ptr<DeviceFunctionInfo>
-  LinkDeclRange(IteratorRange &&Range, std::string FunctionName) {
+  LinkDeclRange(IteratorRange &&Range, const std::string &FunctionName) {
     std::shared_ptr<DeviceFunctionInfo> Info;
     DeclList List;
     LinkDeclRange(std::move(Range), List, Info);

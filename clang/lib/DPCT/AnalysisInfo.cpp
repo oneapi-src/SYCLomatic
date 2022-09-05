@@ -1954,9 +1954,7 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
 
 void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
   if (FuncInfo && Info && (FuncInfo != Info)) {
-    const auto &FuncInfoVarMap = FuncInfo->getVarMap();
-    const auto &InfoVarMap = Info->getVarMap();
-    if (!FuncInfoVarMap.isSameAs(InfoVarMap)) {
+    if (!FuncInfo->getVarMap().isSameAs(Info->getVarMap())) {
       DiagnosticsUtils::report(getFilePath(), getBegin(),
                                Warnings::DEVICE_CALL_DIFFERENT, true, false,
                                FuncInfo->getFunctionName());
