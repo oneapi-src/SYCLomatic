@@ -1958,7 +1958,8 @@ void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
     const auto &InfoVarMap = Info->getVarMap();
     if (!FuncInfoVarMap.isSameAs(InfoVarMap)) {
       DiagnosticsUtils::report(getFilePath(), getBegin(),
-                               Warnings::DEVICE_CALL_DIFFERENT, true, false);
+                               Warnings::DEVICE_CALL_DIFFERENT, true, false,
+                               FuncInfo->getFunctionName());
     }
   }
   FuncInfo = Info;
@@ -2450,9 +2451,10 @@ DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
       ReplaceOffset(0), ReplaceLength(0),
       NonDefaultParamNum(FD->getMostRecentDecl()->getMinRequiredArguments()),
       FuncInfo(getFuncInfo(FD)) {
-  if (!FuncInfo)
-    FuncInfo = std::make_shared<DeviceFunctionInfo>(FD->param_size(),
-                                                    NonDefaultParamNum);
+  if (!FuncInfo) {
+    FuncInfo = std::make_shared<DeviceFunctionInfo>(
+        FD->param_size(), NonDefaultParamNum, getFunctionName(FD));
+  }
   if (!FilePath.empty()) {
     SourceProcessType FileType = GetSourceFileType(FilePath);
     if (!(FileType & SPT_CudaHeader) && !(FileType & SPT_CppHeader) &&
@@ -2759,7 +2761,8 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
       Info = FuncInfo;
     } else {
       Info = std::make_shared<DeviceFunctionInfo>(
-          FD->param_size(), FD->getMostRecentDecl()->getMinRequiredArguments());
+          FD->param_size(), FD->getMostRecentDecl()->getMinRequiredArguments(),
+          getFunctionName(FD));
       FuncInfo = Info;
     }
     return;
