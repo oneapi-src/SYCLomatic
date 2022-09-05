@@ -1722,18 +1722,6 @@ std::function<std::string(const CallExpr *C)> getReplacedType(size_t Idx) {
   };
 }
 
-// Get the template argument string
-// For example, thrust::get<0>(t), this function will return "0" if Idx is 0
-std::function<std::string(const CallExpr *C)> getTemplateArg(size_t Idx) {
-  return [=](const CallExpr *C) -> std::string {
-    auto TemplateArgs = getTemplateArgsList(C);
-    assert(TemplateArgs.size() > Idx);
-    if (Idx >= TemplateArgs.size())
-      return "";
-    return TemplateArgs.at(Idx).getString();
-  };
-}
-
 // Get the derefed type name of an arg while getDereferencedExpr is get the
 // derefed expr.
 std::function<std::string(const CallExpr *C)> getDerefedType(size_t Idx) {
