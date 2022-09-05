@@ -8,7 +8,6 @@
 // CHECK-NEXT:#include <CL/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <dpct/dpl_utils.hpp>
-// CHECK-NEXT: #include <numeric>
 #include <thrust/scan.h>
 #include <thrust/host_vector.h>
 #include <thrust/functional.h>
@@ -56,7 +55,7 @@ void foo_host(){
     thrust::uninitialized_fill(h_input.begin(), h_input.end(), 10);
     //CHECK: std::unique(h_input.begin(), h_input.end());
     thrust::unique(h_input.begin(), h_input.end());
-    //CHECK: std::exclusive_scan(oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()), h_input.begin(), h_input.end(), h_output.begin(), 0);
+    //CHECK: std::exclusive_scan(oneapi::dpl::execution::seq, h_input.begin(), h_input.end(), h_output.begin(), 0);
     thrust::exclusive_scan(h_input.begin(), h_input.end(), h_output.begin());
     //CHECK: std::max_element(h_input.begin(), h_input.end());
     thrust::max_element(h_input.begin(), h_input.end());

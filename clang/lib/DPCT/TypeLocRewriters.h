@@ -124,6 +124,21 @@ public:
   }
 };
 
+class HeaderInsertionRewriterFactory : public TypeLocRewriterFactoryBase {
+  HeaderType Header;
+  std::shared_ptr<TypeLocRewriterFactoryBase> SubRewriterFactory;
+
+public:
+  HeaderInsertionRewriterFactory(
+      HeaderType Header,
+      std::shared_ptr<TypeLocRewriterFactoryBase> SubRewriterFactory)
+      : Header(Header), SubRewriterFactory(SubRewriterFactory) {}
+
+  std::shared_ptr<TypeLocRewriter> create(const TypeLoc TL) const override {
+    DpctGlobalInfo::getInstance().insertHeader(TL.getBeginLoc(), Header);
+    return SubRewriterFactory->create(TL);
+  }
+};
 
 } // namespace dpct
 } // namespace clang

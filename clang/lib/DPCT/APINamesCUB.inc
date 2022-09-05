@@ -13,13 +13,17 @@ CONDITIONAL_FACTORY_ENTRY(
     HEADER_INSERT_FACTORY(
         HeaderType::HT_DPL_Execution,
         HEADER_INSERT_FACTORY(
-        HeaderType::HT_DPL_Algorithm,
-        REMOVE_CUB_TEMP_STORAGE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-            "cub::DeviceReduce::Sum", QUEUESTR, false, "fill", ARG(3),
-            CALL("oneapi::dpl::reduce",
-                 CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
-                 ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4))),
-            LITERAL("1"))))))
+            HeaderType::HT_DPL_Algorithm,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                "cub::DeviceReduce::Sum",
+                MEMBER_CALL(
+                    QUEUESTR, false, "fill", ARG(3),
+                    CALL(
+                        "oneapi::dpl::reduce",
+                        CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
+                        ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4))),
+                    LITERAL("1")),
+                false, "wait")))))
 
 // cub::DeviceScan::ExclusiveSum
 CONDITIONAL_FACTORY_ENTRY(
@@ -28,13 +32,13 @@ CONDITIONAL_FACTORY_ENTRY(
     HEADER_INSERT_FACTORY(
         HeaderType::HT_DPL_Execution,
         HEADER_INSERT_FACTORY(
-        HeaderType::HT_DPL_Algorithm,
-        REMOVE_CUB_TEMP_STORAGE_FACTORY(CALL_FACTORY_ENTRY(
-            "cub::DeviceScan::ExclusiveSum",
-            CALL("oneapi::dpl::exclusive_scan",
-                 CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
-                 ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)), ARG(3),
-                 LITERAL("0")))))))
+            HeaderType::HT_DPL_Algorithm,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CALL_FACTORY_ENTRY(
+                "cub::DeviceScan::ExclusiveSum",
+                CALL("oneapi::dpl::exclusive_scan",
+                     CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
+                     ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
+                     ARG(3), LITERAL("0")))))))
 
 // cub::DeviceScan::InclusiveSum
 CONDITIONAL_FACTORY_ENTRY(
@@ -43,13 +47,13 @@ CONDITIONAL_FACTORY_ENTRY(
     HEADER_INSERT_FACTORY(
         HeaderType::HT_DPL_Execution,
         HEADER_INSERT_FACTORY(
-        HeaderType::HT_DPL_Algorithm,
-        REMOVE_CUB_TEMP_STORAGE_FACTORY(CALL_FACTORY_ENTRY(
-            "cub::DeviceScan::InclusiveSum",
-            CALL("oneapi::dpl::inclusive_scan",
-                 CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
-                 ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
-                 ARG(3)))))))
+            HeaderType::HT_DPL_Algorithm,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CALL_FACTORY_ENTRY(
+                "cub::DeviceScan::InclusiveSum",
+                CALL("oneapi::dpl::inclusive_scan",
+                     CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
+                     ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
+                     ARG(3)))))))
 
 // cub::DeviceScan::ExclusiveScan
 CONDITIONAL_FACTORY_ENTRY(
@@ -81,7 +85,6 @@ CONDITIONAL_FACTORY_ENTRY(
                      ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(5)),
                      ARG(3), ARG(4)))))))
 
-
 // cub::DeviceSelect::Flagged
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
@@ -89,12 +92,18 @@ CONDITIONAL_FACTORY_ENTRY(
     HEADER_INSERT_FACTORY(
         HeaderType::HT_DPL_Utils,
         REMOVE_CUB_TEMP_STORAGE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-            "cub::DeviceSelect::Flagged", QUEUESTR, false, "fill", ARG(5),
-            BO(BinaryOperatorKind::BO_Sub, CALL("dpct::copy_if",
-                 CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
-                 ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(6)), ARG(3),
-                 ARG(4), LITERAL("[](const auto &t) -> bool { return t; }")), ARG(4)),
-            LITERAL("1")))))
+            "cub::DeviceSelect::Flagged",
+            MEMBER_CALL(
+                QUEUESTR, false, "fill", ARG(5),
+                BO(BinaryOperatorKind::BO_Sub,
+                   CALL("dpct::copy_if",
+                        CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
+                        ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(6)),
+                        ARG(3), ARG(4),
+                        LITERAL("[](const auto &t) -> bool { return t; }")),
+                   ARG(4)),
+                LITERAL("1")),
+            false, "wait"))))
 
 // cub::DeviceSelect::Unique
 CONDITIONAL_FACTORY_ENTRY(
@@ -105,14 +114,19 @@ CONDITIONAL_FACTORY_ENTRY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPL_Algorithm,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-                "cub::DeviceSelect::Unique", QUEUESTR, false, "fill", ARG(4),
-                BO(BinaryOperatorKind::BO_Sub,
-                   CALL("oneapi::dpl::unique_copy",
-                        CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
-                        ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(5)),
-                        ARG(3)),
-                   ARG(3)),
-                LITERAL("1"))))))
+                "cub::DeviceSelect::Unique",
+                MEMBER_CALL(
+                    QUEUESTR, false, "fill", ARG(4),
+                    BO(BinaryOperatorKind::BO_Sub,
+                       CALL("oneapi::dpl::unique_copy",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                 QUEUESTR),
+                            ARG(2),
+                            BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(5)),
+                            ARG(3)),
+                       ARG(3)),
+                    LITERAL("1")),
+                false, "wait")))))
 
 // cub::DeviceRunLengthEncode::Encode
 CONDITIONAL_FACTORY_ENTRY(
@@ -125,19 +139,24 @@ CONDITIONAL_FACTORY_ENTRY(
             HEADER_INSERT_FACTORY(
                 HeaderType::HT_DPL_Algorithm,
                 REMOVE_CUB_TEMP_STORAGE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-                    "cub::DeviceRunLengthEncode::Encode", QUEUESTR, false,
-                    "fill", ARG(5),
-                    BO(BinaryOperatorKind::BO_Sub,
-                       MEMBER_EXPR(
-                           CALL("oneapi::dpl::reduce_by_segment",
-                                CALL("oneapi::dpl::execution::device_policy",
-                                     QUEUESTR),
-                                ARG(2),
-                                BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(6)),
-                                MEMBER_CALL(CALL("dpct::device_vector<size_t>",
-                                                 ARG(6), LITERAL("1")),
-                                            false, "begin"),
-                                ARG(3), ARG(4)),
-                           false, LITERAL("first")),
-                       ARG(3)),
-                    LITERAL("1")))))))
+                    "cub::DeviceRunLengthEncode::Encode",
+                    MEMBER_CALL(
+                        QUEUESTR, false, "fill", ARG(5),
+                        BO(BinaryOperatorKind::BO_Sub,
+                           MEMBER_EXPR(
+                               CALL(
+                                   "oneapi::dpl::reduce_by_segment",
+                                   CALL("oneapi::dpl::execution::device_policy",
+                                        QUEUESTR),
+                                   ARG(2),
+                                   BO(BinaryOperatorKind::BO_Add, ARG(2),
+                                      ARG(6)),
+                                   MEMBER_CALL(
+                                       CALL("dpct::device_vector<size_t>",
+                                            ARG(6), LITERAL("1")),
+                                       false, "begin"),
+                                   ARG(3), ARG(4)),
+                               false, LITERAL("first")),
+                           ARG(3)),
+                        LITERAL("1")),
+                    false, "wait"))))))

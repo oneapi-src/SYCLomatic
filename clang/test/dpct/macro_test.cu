@@ -813,15 +813,15 @@ void foo17(){
 
 //CHECK: #define CONCATE(name) cuda##name
 //CHECK-NEXT: typedef sycl::queue *stream_t2;
-//CHECK-NEXT: typedef sycl::event event_t2;
+//CHECK-NEXT: typedef dpct::event_ptr event_t2;
 #define CONCATE(name) cuda##name
 typedef CONCATE(Stream_t) stream_t2;
 typedef CONCATE(Event_t) event_t2;
 
 //CHECK: void foo18() {
 //CHECK-NEXT:   dpct::device_ext &dev_ct1 = dpct::get_current_device();
-//CHECK-NEXT:   sycl::event event;
-//CHECK-NEXT:   event.wait_and_throw();
+//CHECK-NEXT:   dpct::event_ptr event;
+//CHECK-NEXT:   event->wait_and_throw();
 //CHECK-NEXT:   stream_t2 *stream;
 //CHECK-NEXT:   stream_t2 stream2;
 //CHECK-NEXT:   *(stream) = dev_ct1.create_queue();
@@ -886,14 +886,16 @@ void foo19(){
 }
 
 //     CHECK:#define CMC_PROFILING_BEGIN()                                                  \
-//CHECK-NEXT:  sycl::event start;                                                           \
+//CHECK-NEXT:  dpct::event_ptr start;                                                         \
 //CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> start_ct1;                \
-//CHECK-NEXT:  sycl::event stop;                                                            \
+//CHECK-NEXT:  dpct::event_ptr stop;                                                          \
 //CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> stop_ct1;                 \
 //CHECK-NEXT:  if (CMC_profile)                                                             \
 //CHECK-NEXT:  {                                                                            \
+//CHECK-NEXT:    start = new sycl::event();                                                 \
+//CHECK-NEXT:    stop = new sycl::event();                                                  \
 //CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();                              \
-//CHECK-NEXT:  start = q_ct1.ext_oneapi_submit_barrier();                         \
+//CHECK-NEXT:    *start = q_ct1.ext_oneapi_submit_barrier();                                \
 //CHECK-NEXT:  }
 #define CMC_PROFILING_BEGIN()                                                                                      \
   cudaEvent_t start;                                                                                               \
@@ -911,11 +913,13 @@ void foo19(){
 //CHECK-NEXT:  if (CMC_profile)                                                             \
 //CHECK-NEXT:  {                                                                            \
 //CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();                               \
-//CHECK-NEXT:    stop = q_ct1.ext_oneapi_submit_barrier();                         \
-//CHECK-NEXT:    stop.wait_and_throw();                                                     \
+//CHECK-NEXT:    *stop = q_ct1.ext_oneapi_submit_barrier();                                 \
+//CHECK-NEXT:    stop->wait_and_throw();                                                    \
 //CHECK-NEXT:    float time = 0.0f;                                                         \
 //CHECK-NEXT:    time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1)      \
 //CHECK-NEXT:               .count();                                                       \
+//CHECK-NEXT:    dpct::destroy_event(start);                                                \
+//CHECK-NEXT:    dpct::destroy_event(stop);                                                 \
 //CHECK-NEXT:  }                                                                            \
 //CHECK-NEXT:  int error = 0;
 #define CMC_PROFILING_END(lineno)                                                                          \
@@ -1172,7 +1176,7 @@ int foo31(){
   //CHECK:     cgh.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:           template_kernel<int>(10, t2_acc_ct1.get_pointer());
+  //CHECK-NEXT:           template_kernel<int>(10, t2_acc_ct1);
   //CHECK-NEXT:         });
   //CHECK-NEXT:   });
   //CHECK-NEXT: }));

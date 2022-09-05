@@ -1964,52 +1964,17 @@ void AtomicFunctionRule::MigrateAtomicFunc(
         ReplStr += "global_ptr<";
       ReplStr += TypeName;
       ReplStr += ">(";
-      // Take care of __shared__ variables because their types are
-      // changed to pointers
-      bool Arg0NeedDeref = false;
-      const Expr *Arg0RemoveCStyleCast = CE->getArg(0);
-      if (const CStyleCastExpr *Arg0CSCE =
-              dyn_cast<CStyleCastExpr>(CE->getArg(0))) {
-        ReplStr += "(";
-        ReplStr +=
-            DpctGlobalInfo::getReplacedTypeName(Arg0CSCE->getTypeAsWritten());
-        ReplStr += ")";
-        Arg0RemoveCStyleCast = Arg0CSCE->getSubExpr();
-      }
 
-      auto *UO = dyn_cast<UnaryOperator>(Arg0RemoveCStyleCast);
-      if (UO && UO->getOpcode() == clang::UO_AddrOf) {
-        if (auto DRE =
-                dyn_cast<DeclRefExpr>(UO->getSubExpr()->IgnoreImpCasts()))
-          Arg0NeedDeref = IsTypeChangedToPointer(DRE);
-      }
-      // Deref the expression if it is the unary operator of a shared simple
-      // variable
-      if (Arg0NeedDeref) {
-        std::ostringstream OS;
-        printDerefOp(OS, Arg0RemoveCStyleCast);
-        ReplStr += OS.str();
-      } else {
-        ArgumentAnalysis A(CE->getArg(0), false);
-        A.analyze();
-        ReplStr += A.getReplacedString();
-      }
+      ArgumentAnalysis A0(CE->getArg(0), false);
+      A0.analyze();
+      ReplStr += A0.getReplacedString();
       ReplStr += ")).";
       ReplStr += Iter->second;
       ReplStr += "(";
 
-      auto Arg1NeedDeref = false;
-      if (auto DRE = dyn_cast<DeclRefExpr>(CE->getArg(1)->IgnoreImpCasts()))
-        Arg1NeedDeref = IsTypeChangedToPointer(DRE);
-      if (Arg1NeedDeref) {
-        std::ostringstream OS;
-        printDerefOp(OS, CE->getArg(1));
-        ReplStr += OS.str();
-      } else {
-        ArgumentAnalysis A(CE->getArg(1), false);
-        A.analyze();
-        ReplStr += A.getReplacedString();
-      }
+      ArgumentAnalysis A1(CE->getArg(1), false);
+      A1.analyze();
+      ReplStr += A1.getReplacedString();
       ReplStr += ")";
 
       emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
@@ -2304,11 +2269,6 @@ void ThrustFunctionRule::thrustFuncMigration(
   } else if (hasExecutionPolicy) {
     emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
     return;
-  }
-
-  if (ThrustFuncName == "exclusive_scan") {
-    DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), HT_Numeric);
-    emplaceTransformation(new InsertText(CE->getEndLoc(), ", 0"));
   }
 
   if (ULExpr) {
@@ -8408,7 +8368,7 @@ EventQueryTraversal::buildCallReplacement(const CallExpr *Call) {
   static std::string MemberName = "get_info<" + MapNames::getClNamespace() +
                                   "info::event::command_execution_status>";
   std::string ReplStr;
-  MemberCallPrinter<const Expr *, StringRef> Printer(Call->getArg(0), false,
+  MemberCallPrinter<const Expr *, StringRef> Printer(Call->getArg(0), true,
                                                      MemberName);
   llvm::raw_string_ostream OS(ReplStr);
   Printer.print(OS);
@@ -8658,22 +8618,15 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
   std::string FuncName =
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
-  if (FuncName == "cudaEventCreate" || FuncName == "cudaEventCreateWithFlags" ||
-      FuncName == "cudaEventDestroy" || FuncName == "cuEventCreate" ||
-      FuncName == "cuEventDestroy_v2") {
-    auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
-    if (IsAssigned) {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
-             MapNames::ITFName.at(FuncName), Msg->second);
-      emplaceTransformation(new ReplaceStmt(CE,
-                                            /*IsProcessMacro*/ true, "0"));
-    } else {
-      report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
-             MapNames::ITFName.at(FuncName), Msg->second);
-      emplaceTransformation(new ReplaceStmt(CE,
-                                            /*IsProcessMacro*/ true, ""));
-    }
-  } else if (FuncName == "cudaEventQuery" || FuncName == "cuEventQuery") {
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
+
+  if (FuncName == "cudaEventQuery" || FuncName == "cuEventQuery") {
     if (getEventQueryTraversal().startFromQuery(CE))
       return;
 
@@ -8703,7 +8656,7 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     ExprAnalysis EA(CE->getArg(0));
-    std::string ReplStr = "(int)" + EA.getReplacedString() + ".get_info<" +
+    std::string ReplStr = "(int)" + EA.getReplacedString() + "->get_info<" +
                           MapNames::getClNamespace() +
                           "info::event::command_execution_status>()";
     emplaceTransformation(new ReplaceStmt(CE, ReplStr));
@@ -8720,7 +8673,7 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cuEventSynchronize") {
     bool NeedReport = false;
     std::string ReplStr{getStmtSpelling(CE->getArg(0))};
-    ReplStr += ".wait_and_throw()";
+    ReplStr += "->wait_and_throw()";
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
       NeedReport = true;
@@ -8893,6 +8846,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
       emplaceTransformation(new ReplaceStmt(CE, "0"));
     } else {
       std::string StmtStr;
+
       if (IsDefaultStream) {
         if (isPlaceholderIdxDuplicated(CE))
           return;
@@ -8901,10 +8855,10 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
 
         std::string Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
                           "}}.ext_oneapi_submit_barrier()";
-        StmtStr = ArgName + " = " + Str;
+        StmtStr = "*" + ArgName + " = " + Str;
       } else {
         std::string Str = StreamName + "->" + "ext_oneapi_submit_barrier()";
-        StmtStr = ArgName + " = " + Str;
+        StmtStr = "*" + ArgName + " = " + Str;
       }
       StmtStr = "(" + StmtStr + ", 0)";
 
@@ -8946,8 +8900,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
           return;
         int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
         buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
-
-        std::string Str = ArgName + " = {{NEEDREPLACEQ" +
+        std::string Str = "*" + ArgName + " = {{NEEDREPLACEQ" +
                           std::to_string(Index) +
                           "}}.ext_oneapi_submit_barrier()";
         ReplStr += getNL();
@@ -8955,12 +8908,11 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
         ReplStr += Str;
       } else {
         std::string Str =
-            ArgName + " = " + StreamName + "->ext_oneapi_submit_barrier()";
+            "*" + ArgName + " = " + StreamName + "->ext_oneapi_submit_barrier()";
         ReplStr += getNL();
         ReplStr += getIndent(IndentLoc, SM).str();
         ReplStr += Str;
       }
-
       Repl << ReplStr;
       auto ReplWithSB = ReplaceStmt(CE, Repl.str()).getReplacement(Context);
       DpctGlobalInfo::getInstance().insertTimeStubTypeInfo(ReplWithSB,
@@ -9400,6 +9352,7 @@ void EventAPICallRule::handleKernelCalls(const Stmt *Node,
   if (!EventExpr && TimeElapsedCE->getNumArgs() == 3)
     EventExpr = TimeElapsedCE->getArg(2);
 
+  auto ArgName = ExprAnalysis::ref(EventExpr);
   // Skip statements before RecordBeginLoc or after RecordEndLoc
   if (KCallLoc < RecordBeginLoc || KCallLoc > RecordEndLoc)
     return;
@@ -9412,7 +9365,7 @@ void EventAPICallRule::handleKernelCalls(const Stmt *Node,
 
     if (KCallLoc > RecordBeginLoc && !NeedWait) {
       if (IsKernelSync) {
-        K->setEvent(ExprAnalysis::ref(EventExpr));
+        K->setEvent(ArgName);
         K->setSync();
       } else {
         Queues2Wait.emplace_back(MapNames::getDpctNamespace() +
@@ -9429,11 +9382,12 @@ void EventAPICallRule::handleKernelCalls(const Stmt *Node,
   if (USMLevel == UsmLevel::UL_Restricted) {
     if (KCallLoc > RecordBeginLoc) {
       if (!IsKernelInLoopStmt && !IsKernelSync) {
-        K->setEvent(ExprAnalysis::ref(EventExpr));
-        Events2Wait.push_back(ExprAnalysis::ref(EventExpr) + ".wait();");
+        K->setEvent(ArgName);
+        Events2Wait.push_back(ArgName + "->wait();");
       } else if (IsKernelSync) {
-        K->setEvent(ExprAnalysis::ref(EventExpr));
+        K->setEvent(ArgName);
         K->setSync();
+        // Events2Wait.push_back("(" + ArgName + ")" + ".wait();");
       } else {
         std::string WaitQueue = MapNames::getDpctNamespace() +
                                 "get_current_device()."
@@ -9700,8 +9654,9 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     if (!DpctGlobalInfo::useEnqueueBarrier()) {
       // ext_oneapi_submit_barrier is specified in the value of option
       // --no-dpcpp-extensions.
-      ReplStr = StmtStr1 + ".wait()";
+      ReplStr = StmtStr1 + "->wait()";
     } else {
+      StmtStr1 = "*" + StmtStr1;
       auto StreamArg = CE->getArg(0);
       bool IsDefaultStream = isDefaultStream(StreamArg);
       std::string StmtStr0;
@@ -10032,161 +9987,6 @@ void DeviceFunctionDeclRule::runRule(
 
 REGISTER_RULE(DeviceFunctionDeclRule)
 
-void GlibcMemoryAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-
-  MF.addMatcher(callExpr(hasParent(cStyleCastExpr().bind("CStyleCastExpr")),
-                         callee(functionDecl(hasName("malloc"))))
-                    .bind("mallocCallExpr"),
-                this);
-
-  MF.addMatcher(
-      callExpr(callee(functionDecl(hasName("free")))).bind("FreeCallExpr"),
-      this);
-}
-
-template <typename T> const T *GlibcMemoryAPIRule::getAncestor(const Stmt *CE) {
-  auto &Context = dpct::DpctGlobalInfo::getContext();
-  auto Parents = Context.getParents(*CE);
-  while (Parents.size() == 1) {
-    auto *Parent = Parents[0].get<T>();
-    if (Parent) {
-      return Parent;
-    } else {
-      Parents = Context.getParents(Parents[0]);
-    }
-  }
-  return nullptr;
-}
-
-// This function is used to migrate malloc to new.
-// \p ReplStmt is the statement to be processed
-// \p DD is the variable assigned by \p CE,
-// Take a case for example:
-// "cudaEvent_t *kernelEvent = (cudaEvent_t *) malloc(*sizeof(cudaEvent_t));".
-// ReplStmt stands for "(cudaEvent_t *) malloc(*sizeof(cudaEvent_t))",
-// DD is variable "kernelEvent", and CE is CallExpr "malloc".
-void GlibcMemoryAPIRule::processMalloc(const Stmt *ReplStmt,
-                                       const DeclaratorDecl *DD,
-                                       const CallExpr *CE) {
-  auto &Context = dpct::DpctGlobalInfo::getContext();
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  std::string Repl;
-  if (const BinaryOperator *BO = dyn_cast<BinaryOperator>(CE->getArg(0))) {
-    if (BO->getOpcode() == BinaryOperatorKind::BO_Mul) {
-      if (!isContainMacro(BO->getLHS()) &&
-          isSameSizeofTypeWithTypeStr(BO->getLHS(),
-                                      MapNames::getClNamespace() + "event")) {
-        // case 1: sizeof(b) * a
-        ArgumentAnalysis AA;
-        AA.setCallSpelling(BO);
-        AA.analyze(BO->getRHS());
-        Repl = AA.getRewritePrefix() + AA.getRewriteString() +
-               AA.getRewritePostfix();
-      } else if (!isContainMacro(BO->getRHS()) &&
-                 isSameSizeofTypeWithTypeStr(
-                     BO->getRHS(), MapNames::getClNamespace() + "event")) {
-        // case 2: a * sizeof(b)
-        ArgumentAnalysis AA;
-        AA.setCallSpelling(BO);
-        AA.analyze(BO->getLHS());
-        Repl = AA.getRewritePrefix() + AA.getRewriteString() +
-               AA.getRewritePostfix();
-      }
-    }
-  }
-
-  if (Repl.empty()) {
-    dpct::ExprAnalysis EA(CE->getArg(0));
-    auto Str = EA.getReplacedString();
-    std::string Size = "sizeof(" + MapNames::getClNamespace() + "event)";
-    Str = "(" + Str + ")/";
-    Repl = Str + Size;
-  }
-  std::string ReplStr =
-      "new " + MapNames::getClNamespace() + "event[" + Repl + "]";
-  auto R = ReplaceStmt(ReplStmt, ReplStr).getReplacement(Context);
-  DpctGlobalInfo::getInstance().insertReplMalloc(
-      R,
-      DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(DD->getBeginLoc())).second);
-}
-
-void GlibcMemoryAPIRule::processFree(const CallExpr *CE) {
-  auto &Context = dpct::DpctGlobalInfo::getContext();
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  std::string ReplStr = "delete [] " + getStmtSpelling(CE->getArg(0));
-
-  auto Arg = CE->getArg(0);
-  if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
-    if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-      // To process free called in C ordinary function.
-      auto R = ReplaceStmt(CE, ReplStr).getReplacement(Context);
-      DpctGlobalInfo::getInstance().insertReplFree(
-          R, DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(VD->getBeginLoc()))
-                 .second);
-    }
-  } else if (auto ME = dyn_cast<MemberExpr>(Arg->IgnoreImpCasts())) {
-    if (auto FD = dyn_cast<FieldDecl>(ME->getMemberDecl())) {
-      // To process free called in member function.
-      auto R = ReplaceStmt(CE, ReplStr).getReplacement(Context);
-      DpctGlobalInfo::getInstance().insertReplFree(
-          R, DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(FD->getBeginLoc()))
-                 .second);
-    }
-  }
-}
-
-void GlibcMemoryAPIRule::runRule(
-    const ast_matchers::MatchFinder::MatchResult &Result) {
-
-  if (auto CE = getAssistNodeAsType<CallExpr>(Result, "mallocCallExpr")) {
-    if (auto CSCE =
-            getAssistNodeAsType<CStyleCastExpr>(Result, "CStyleCastExpr")) {
-      auto Type = CSCE->getType().getAsString();
-      if (Type != "cudaEvent_t *")
-        return;
-
-      if (auto VD = getAncestor<VarDecl>(CE)) {
-        // To process case like:
-        // cudaEvent_t *kernelEvent = (cudaEvent_t *)
-        // malloc(sizeof(cudaEvent_t));
-        processMalloc(VD->getInit(), VD, CE);
-      } else {
-        // To process case like:
-        // cudaEvent_t *kernelEvent;
-        // kernelEvent = (cudaEvent_t *) malloc(sizeof(cudaEvent_t));
-        auto BO = getAncestor<BinaryOperator>(CE);
-        if (BO && BO->getOpcode() == BO_Assign) {
-          if (auto DRE = dyn_cast<DeclRefExpr>(BO->getLHS())) {
-            if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-              // To process malloc called in C ordinary function.
-              processMalloc(CSCE, VD, CE);
-            }
-          } else if (auto ME = dyn_cast<MemberExpr>(BO->getLHS())) {
-            if (auto FD = dyn_cast<FieldDecl>(ME->getMemberDecl())) {
-              // To process malloc called in member function.
-              processMalloc(CSCE, FD, CE);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  if (auto CE = getAssistNodeAsType<CallExpr>(Result, "FreeCallExpr")) {
-    if (CE->getNumArgs() != 1)
-      return;
-
-    if (auto IIC = CE->getArg(0)->IgnoreImpCasts()) {
-      auto Type = IIC->getType().getAsString();
-      if (Type != "cudaEvent_t *")
-        return;
-    }
-    processFree(CE);
-  }
-}
-
-REGISTER_RULE(GlibcMemoryAPIRule)
-
 /// __constant__/__shared__/__device__ var information collection
 void MemVarRule::registerMatcher(MatchFinder &MF) {
   auto DeclMatcher =
@@ -10207,32 +10007,6 @@ void MemVarRule::registerMatcher(MatchFinder &MF) {
 
   MF.addMatcher(varDecl(hasParent(translationUnitDecl())).bind("hostGlobalVar"),
                 this);
-}
-
-void MemVarRule::processDeref(const Stmt *S, ASTContext &Context) {
-  auto Parents = Context.getParents(*S);
-  if (Parents.size()) {
-    auto &Parent = Parents[0];
-    if (auto ICE = Parent.get<ImplicitCastExpr>()) {
-      processDeref(ICE, Context);
-    } else if (auto ME = Parent.get<MemberExpr>()) {
-      emplaceTransformation(new ReplaceToken(ME->getOperatorLoc(), "->"));
-    } else if (auto CDSME = Parent.get<CXXDependentScopeMemberExpr>()) {
-      emplaceTransformation(new ReplaceToken(CDSME->getOperatorLoc(), "->"));
-    } else if (Parent.get<BinaryOperator>() || Parent.get<CallExpr>() ||
-               Parent.get<CXXConstructExpr>() || Parent.get<ParenExpr>()) {
-      emplaceTransformation(new InsertBeforeStmt(S, "*"));
-
-    } else if (auto UO = Parent.get<UnaryOperator>()) {
-      if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf) {
-        emplaceTransformation(new ReplaceToken(UO->getOperatorLoc(), ""));
-      } else {
-        insertAroundStmt(S, "(*", ")");
-      }
-    } else {
-      insertAroundStmt(S, "(*", ")");
-    }
-  }
 }
 
 void MemVarRule::previousHCurrentD(const VarDecl *VD, tooling::Replacement &R) {
@@ -10338,6 +10112,30 @@ void MemVarRule::removeHostConstantWarning(Replacement &R) {
 void MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
                                           std::shared_ptr<MemVarInfo> Info) {
   auto &SM = DpctGlobalInfo::getSourceManager();
+  auto DS = Info->getDeclStmtOfVarType();
+  // this token is ';'
+  auto InsertSL = SM.getExpansionLoc(DS->getEndLoc()).getLocWithOffset(1);
+  auto GenDeclStmt = [=, &SM](
+                         StringRef TypeName) -> std::string {
+    bool IsReference = !Info->getType()->getDimension();
+    std::string Ret;
+    llvm::raw_string_ostream OS(Ret);
+    OS << getNL() << getIndent(InsertSL, SM);
+    OS << TypeName << ' ';
+    if (IsReference)
+      OS << '&';
+    else
+      OS << '*';
+    OS << Info->getName();
+    OS << " = ";
+    if (IsReference)
+      OS << '*';
+    // add typecast for the __shared__ variable, since after migration the
+    // __shared__ variable type will be uint8_t*
+    OS << '(' << TypeName << " *)";
+    OS << Info->getNameAppendSuffix() << ';';
+    return OS.str();
+  };
   if (Info->isAnonymousType()) {
     // keep the origin type declaration, only remove variable name
     //  }  a_variable  ,  b_variable ;
@@ -10360,30 +10158,15 @@ void MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
 
     // add typecast for the __shared__ variable, since after migration the
     // __shared__ variable type will be uint8_t*
-    auto DS = Info->getDeclStmtOfVarType();
-    SourceLocation InsertSL = SM.getExpansionLoc(DS->getEndLoc());
-    InsertSL = InsertSL.getLocWithOffset(1); // this token is ;
-    std::string InsertStr = getNL() + getIndent(InsertSL, SM).str() +
-                            NewTypeName + "* " + Info->getName() + " = (" +
-                            NewTypeName + "*)" + Info->getNameAppendSuffix() +
-                            ";";
-    emplaceTransformation(new InsertText(InsertSL, std::move(InsertStr)));
-  } else if (auto DS = Info->getDeclStmtOfVarType()) {
+    emplaceTransformation(new InsertText(InsertSL, GenDeclStmt(NewTypeName)));
+  } else if (DS) {
     // remove var decl
     emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
         MemVar, Info->getDeclarationReplacement(MemVar)));
 
     Info->setLocalTypeName(Info->getType()->getBaseName());
-    // add typecast for the __shared__ variable, since after migration the
-    // __shared__ variable type will be uint8_t*
-    SourceLocation InsertSL = SM.getExpansionLoc(DS->getEndLoc());
-    InsertSL = InsertSL.getLocWithOffset(1); // this token is ;
-    std::string InsertStr = getNL() + getIndent(InsertSL, SM).str() +
-                            Info->getType()->getBaseName() + "* " +
-                            Info->getName() + " = (" +
-                            Info->getType()->getBaseName() + "*)" +
-                            Info->getNameAppendSuffix() + ";";
-    emplaceTransformation(new InsertText(InsertSL, std::move(InsertStr)));
+    emplaceTransformation(
+        new InsertText(InsertSL, GenDeclStmt(Info->getType()->getBaseName())));
   }
 }
 
@@ -10647,9 +10430,6 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
       } else {
         if (Var) {
           DeviceFunctionDecl::LinkRedecls(Func)->addVar(Var);
-        }
-        if (!VD->getType()->isArrayType() && !VD->hasAttr<CUDAConstantAttr>()) {
-          processDeref(MemVarRef, *Result.Context);
         }
       }
     } else {
@@ -15914,8 +15694,9 @@ REGISTER_RULE(ComplexAPIRule)
 void TemplateSpecializationTypeLocRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
-    return hasAnyName("thrust::not_equal_to",
-                      "thrust::constant_iterator");
+    return hasAnyName("thrust::not_equal_to", "thrust::constant_iterator",
+                      "cub::CountingInputIterator",
+                      "cub::TransformInputIterator");
   };
 
   MF.addMatcher(typeLoc(

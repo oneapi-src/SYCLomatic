@@ -356,6 +356,7 @@ enum HeaderType {
   HT_Atomic,
   HT_DPL_Algorithm,
   HT_DPL_Execution,
+  HT_DPL_Iterator,
 };
 
 enum UsingType {
@@ -492,101 +493,7 @@ public:
   // locations
   template <typename... T>
   void insertHeader(HeaderType Type, unsigned Offset, T... Args);
-
-  void insertHeader(HeaderType Type) {
-    switch (Type) {
-    case HT_SYCL:
-      return insertHeader(HeaderType::HT_SYCL, FirstIncludeOffset,
-                          "<CL/sycl.hpp>",
-                          "<" + getCustomMainHelperFileName() + "/" +
-                              getCustomMainHelperFileName() + ".hpp>");
-    case HT_Math:
-      return insertHeader(HeaderType::HT_Math, LastIncludeOffset, "<cmath>");
-    case HT_Algorithm:
-      return insertHeader(HeaderType::HT_Algorithm, LastIncludeOffset,
-                          "<algorithm>");
-    case HT_Complex:
-      return insertHeader(HeaderType::HT_Complex, LastIncludeOffset,
-                          "<complex>");
-    case HT_Thread:
-      return insertHeader(HeaderType::HT_Thread, LastIncludeOffset, "<thread>");
-    case HT_Future:
-      return insertHeader(HeaderType::HT_Future, LastIncludeOffset, "<future>");
-    case HT_Time:
-      return insertHeader(HeaderType::HT_Time, LastIncludeOffset, "<time.h>");
-    case HT_Dnnl:
-      return insertHeader(HeaderType::HT_Dnnl, LastIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/dnnl_utils.hpp>");
-    case HT_MKL_BLAS_Solver:
-      return insertHeader(
-          HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
-          "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
-    case HT_MKL_BLAS_Solver_Without_Util:
-      return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>");
-    case HT_MKL_RNG:
-      return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>",
-                          "<" + getCustomMainHelperFileName() +
-                              "/rng_utils.hpp>");
-    case HT_MKL_RNG_Without_Util:
-      return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>");
-    case HT_MKL_SPBLAS:
-      return insertHeader(
-          HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
-          "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
-    case HT_MKL_SPBLAS_Without_Util:
-      return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>");
-    case HT_MKL_FFT:
-      return insertHeader(HeaderType::HT_MKL_FFT, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>");
-    case HT_Numeric:
-      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
-                          "<numeric>");
-    case HT_Chrono:
-      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
-                          "<chrono>");
-    case HT_DL:
-#ifdef _WIN32
-      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
-                          "<libloaderapi.h>");
-#else
-      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
-                          "<dlfcn.h>");
-#endif
-    case HT_STD_Numeric_Limits:
-      return insertHeader(HeaderType::HT_STD_Numeric_Limits, LastIncludeOffset,
-                          "<limits>");
-    case HT_DPL_Utils:
-      return insertHeader(HeaderType::HT_DPL_Utils, LastIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/dpl_utils.hpp>");
-    case HT_BFloat16:
-      return insertHeader(HeaderType::HT_BFloat16, LastIncludeOffset,
-                          "<oneapi/mkl/bfloat16.hpp>");
-    case HT_Lib_Common_Utils:
-      return insertHeader(HeaderType::HT_Lib_Common_Utils, LastIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/lib_common_utils.hpp>");
-    case HT_CCL:
-      return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/ccl_utils.hpp>");
-    case HT_Atomic:
-      return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/atomic.hpp>");
-    case HT_DPL_Algorithm:
-      return insertHeader(HeaderType::HT_DPL_Algorithm, FirstIncludeOffset,
-                          "<oneapi/dpl/algorithm>");
-    case HT_DPL_Execution:
-      return insertHeader(HeaderType::HT_DPL_Execution, FirstIncludeOffset,
-                          "<oneapi/dpl/execution>");
-    }
-  }
+  void insertHeader(HeaderType Type);
 
   // Record line info in file.
   struct SourceLineInfo {
@@ -727,13 +634,6 @@ public:
     return AtomicMap;
   }
 
-  std::map<unsigned int,
-           std::pair<std::vector<std::shared_ptr<ExtReplacement>>,
-                     std::vector<std::shared_ptr<ExtReplacement>>>> &
-  getEventMallocFreeMap() {
-    return EventMallocFreeMap;
-  }
-
   void setAddOneDplHeaders(bool Value) { AddOneDplHeaders = Value; }
 
   std::vector<std::pair<unsigned int, unsigned int>> &getTimeStubBounds() {
@@ -747,12 +647,6 @@ private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
 
   std::unordered_set<std::shared_ptr<DpctFileInfo>> IncludedFilesInfoSet;
-
-  std::map<
-      unsigned int /*Hash Value*/,
-      std::pair<std::vector<std::shared_ptr<ExtReplacement>> /*malloc repl*/,
-                std::vector<std::shared_ptr<ExtReplacement>> /*free repl*/>>
-      EventMallocFreeMap;
 
   template <class Obj> GlobalMap<Obj> &getMap() {
     llvm::dbgs() << "[DpctFileInfo::getMap] Unknow map type";
@@ -1444,31 +1338,18 @@ public:
     return getLocInfo(TL.getBeginLoc(), IsInvalid);
   }
 
+  // Return the absolute path of \p ID 
+  static llvm::Optional<std::string> getAbsolutePath(FileID ID);
+
   static inline std::pair<std::string, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
     if (SM->isMacroArgExpansion(Loc)) {
       Loc = SM->getSpellingLoc(Loc);
     }
     auto LocInfo = SM->getDecomposedLoc(SM->getExpansionLoc(Loc));
-
-    if (auto FileEntry = SM->getFileEntryForID(LocInfo.first)) {
-      // To avoid potential path inconsistent issue,
-      // using tryGetRealPathName while applicable.
-      std::string FileName;
-      if (!FileEntry->tryGetRealPathName().empty()) {
-        FileName = FileEntry->tryGetRealPathName().str();
-      } else {
-        llvm::SmallString<512> FilePathAbs(FileEntry->getName());
-        getSourceManager().getFileManager().makeAbsolutePath(FilePathAbs);
-        llvm::sys::path::native(FilePathAbs);
-        // Need to remove dot to keep the file path
-        // added by ASTMatcher and added by
-        // AnalysisInfo::getLocInfo() consistent.
-        llvm::sys::path::remove_dots(FilePathAbs, true);
-        FileName = std::string(FilePathAbs.str());
-      }
-      return std::make_pair(FileName, LocInfo.second);
-    }
+    auto AbsPath = getAbsolutePath(LocInfo.first);
+    if (AbsPath)
+      return std::make_pair(AbsPath.getValue(), LocInfo.second);
     if (IsInvalid)
       *IsInvalid = true;
     return std::make_pair("", 0);
@@ -1823,22 +1704,6 @@ public:
                             std::string Repl,
                             std::shared_ptr<DeviceFunctionInfo> DFI);
 
-  void insertReplMalloc(const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
-                        unsigned int Offset) {
-    std::string FilePath = Repl->getFilePath().str();
-    auto FileInfo = insertFile(FilePath);
-    auto &EventMallocFreeMap = FileInfo->getEventMallocFreeMap();
-    EventMallocFreeMap[Offset].first.push_back(Repl);
-  }
-
-  void insertReplFree(const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
-                      unsigned int Offset) {
-    std::string FilePath = Repl->getFilePath().str();
-    auto FileInfo = insertFile(FilePath);
-    auto &EventMallocFreeMap = FileInfo->getEventMallocFreeMap();
-    EventMallocFreeMap[Offset].second.push_back(Repl);
-  }
-
   void insertRandomEngine(const Expr *E);
   std::shared_ptr<RandomEngineInfo> findRandomEngine(const Expr *E);
 
@@ -2079,6 +1944,14 @@ public:
 
   inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
     return insertObject(FileMap, FilePath);
+  }
+
+  inline std::shared_ptr<DpctFileInfo> getMainFile() const {
+    return MainFile;
+  }
+
+  inline void setMainFile(std::shared_ptr<DpctFileInfo> Main) {
+    MainFile = Main;
   }
 
   inline void recordIncludingRelationship(const std::string &CurrentFileName,
@@ -2341,7 +2214,7 @@ private:
 
     return CKC->getBeginLoc();
   }
-
+  std::shared_ptr<DpctFileInfo> MainFile = nullptr;
   std::unordered_map<std::string, std::shared_ptr<DpctFileInfo>> FileMap;
   static std::shared_ptr<clang::tooling::TranslationUnitReplacements>
       MainSourceYamlTUR;
@@ -2769,6 +2642,11 @@ public:
       if (!getType()->isPointer())
         PS << " ";
       PS << "*";
+    } else if (AccMode == Reference) {
+      PS << getAccessorDataType(true);
+      if (!getType()->isPointer())
+        PS << " ";
+      PS << "&";
     } else if (AccMode == Accessor && isExtern() && isShared() &&
                getType()->getDimension() > 1) {
       PS << getAccessorDataType();
@@ -2797,7 +2675,7 @@ public:
       if (AccMode == Accessor) {
         PS << getAccessorName();
       } else {
-        if (AccMode == Value) {
+        if (AccMode == Value || AccMode == Reference) {
           PS << "*";
         }
         PS << getPtrName();
@@ -2878,6 +2756,7 @@ private:
     Value,
     Pointer,
     Accessor,
+    Reference,
   };
 
 private:

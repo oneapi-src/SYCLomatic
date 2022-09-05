@@ -55,10 +55,10 @@ CUresult &&var4 = std::move(var1);
 }
 
 {
-// CHECK: sycl::event var1;
-// CHECK-NEXT: sycl::event *var2;
-// CHECK-NEXT: sycl::event &var3 = var1;
-// CHECK-NEXT: sycl::event &&var4 = std::move(var1);
+// CHECK: dpct::event_ptr var1;
+// CHECK-NEXT: dpct::event_ptr *var2;
+// CHECK-NEXT: dpct::event_ptr &var3 = var1;
+// CHECK-NEXT: dpct::event_ptr &&var4 = std::move(var1);
 cudaEvent_t var1;
 cudaEvent_t *var2;
 cudaEvent_t &var3 = var1;
@@ -267,8 +267,8 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new sycl::event();
-// CHECK-NEXT:  new sycl::event *();
+// CHECK:  new dpct::event_ptr();
+// CHECK-NEXT:  new dpct::event_ptr *();
   new cudaEvent_t();
   new cudaEvent_t *();
 }
@@ -413,9 +413,9 @@ CUresult foo9();
 CUresult *foo10();
 CUresult &foo11();
 
-// CHECK: sycl::event foo12();
-// CHECK-NEXT: sycl::event *foo13();
-// CHECK-NEXT: sycl::event &foo14();
+// CHECK: dpct::event_ptr foo12();
+// CHECK-NEXT: dpct::event_ptr *foo13();
+// CHECK-NEXT: dpct::event_ptr &foo14();
 cudaEvent_t foo12();
 cudaEvent_t *foo13();
 cudaEvent_t &foo14();
@@ -561,10 +561,10 @@ template <> struct S<CUresult *> {};
 template <> struct S<CUresult &> {};
 template <> struct S<CUresult &&> {};
 
-// CHECK: template <> struct S<sycl::event> {};
-// CHECK-NEXT: template <> struct S<sycl::event *> {};
-// CHECK-NEXT: template <> struct S<sycl::event &> {};
-// CHECK-NEXT: template <> struct S<sycl::event &&> {};
+// CHECK: template <> struct S<dpct::event_ptr> {};
+// CHECK-NEXT: template <> struct S<dpct::event_ptr *> {};
+// CHECK-NEXT: template <> struct S<dpct::event_ptr &> {};
+// CHECK-NEXT: template <> struct S<dpct::event_ptr &&> {};
 template <> struct S<cudaEvent_t> {};
 template <> struct S<cudaEvent_t *> {};
 template <> struct S<cudaEvent_t &> {};
@@ -738,10 +738,10 @@ template_foo<CUresult *>();
 template_foo<CUresult &>();
 template_foo<CUresult &&>();
 
-// CHECK: template_foo<sycl::event>();
-// CHECK-NEXT: template_foo<sycl::event *>();
-// CHECK-NEXT: template_foo<sycl::event &>();
-// CHECK-NEXT: template_foo<sycl::event &&>();
+// CHECK: template_foo<dpct::event_ptr>();
+// CHECK-NEXT: template_foo<dpct::event_ptr *>();
+// CHECK-NEXT: template_foo<dpct::event_ptr &>();
+// CHECK-NEXT: template_foo<dpct::event_ptr &&>();
 template_foo<cudaEvent_t>();
 template_foo<cudaEvent_t *>();
 template_foo<cudaEvent_t &>();
@@ -931,10 +931,10 @@ using UT13 = CUresult *;
 using UT14 = CUresult &;
 using UT15 = CUresult &&;
 
-// CHECK: using UT16 = sycl::event;
-// CHECK-NEXT: using UT17 = sycl::event *;
-// CHECK-NEXT: using UT18 = sycl::event &;
-// CHECK-NEXT: using UT19 = sycl::event &&;
+// CHECK: using UT16 = dpct::event_ptr;
+// CHECK-NEXT: using UT17 = dpct::event_ptr *;
+// CHECK-NEXT: using UT18 = dpct::event_ptr &;
+// CHECK-NEXT: using UT19 = dpct::event_ptr &&;
 using UT16 = cudaEvent_t;
 using UT17 = cudaEvent_t *;
 using UT18 = cudaEvent_t &;
@@ -1123,10 +1123,10 @@ typedef CUresult* T13;
 typedef CUresult& T14;
 typedef CUresult&& T15;
 
-// CHECK: typedef sycl::event T16;
-// CHECK-NEXT: typedef sycl::event* T17;
-// CHECK-NEXT: typedef sycl::event& T18;
-// CHECK-NEXT: typedef sycl::event&& T19;
+// CHECK: typedef dpct::event_ptr T16;
+// CHECK-NEXT: typedef dpct::event_ptr* T17;
+// CHECK-NEXT: typedef dpct::event_ptr& T18;
+// CHECK-NEXT: typedef dpct::event_ptr&& T19;
 typedef cudaEvent_t T16;
 typedef cudaEvent_t* T17;
 typedef cudaEvent_t& T18;
@@ -1361,10 +1361,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_16 sycl::event
-// CHECK-NEXT: #define T8_17 sycl::event *
-// CHECK-NEXT: #define T8_18 sycl::event &
-// CHECK-NEXT: #define T8_19 sycl::event &&
+// CHECK: #define T8_16 dpct::event_ptr
+// CHECK-NEXT: #define T8_17 dpct::event_ptr *
+// CHECK-NEXT: #define T8_18 dpct::event_ptr &
+// CHECK-NEXT: #define T8_19 dpct::event_ptr &&
 // CHECK-NEXT:     T8_16 a1;
 // CHECK-NEXT:     T8_17 a2;
 // CHECK-NEXT:     T8_18 a3=a1;
@@ -1735,10 +1735,10 @@ template <> void foo2(CUresult){}
 template <> void foo3(CUresult){}
 template <> void foo4(CUresult){}
 
-// CHECK: template <> void foo1(sycl::event){}
-// CHECK-NEXT: template <> void foo2(sycl::event){}
-// CHECK-NEXT: template <> void foo3(sycl::event){}
-// CHECK-NEXT: template <> void foo4(sycl::event){}
+// CHECK: template <> void foo1(dpct::event_ptr){}
+// CHECK-NEXT: template <> void foo2(dpct::event_ptr){}
+// CHECK-NEXT: template <> void foo3(dpct::event_ptr){}
+// CHECK-NEXT: template <> void foo4(dpct::event_ptr){}
 template <> void foo1(cudaEvent_t){}
 template <> void foo2(cudaEvent_t){}
 template <> void foo3(cudaEvent_t){}
