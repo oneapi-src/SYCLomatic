@@ -662,7 +662,7 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
     case HT_DPL_Utils:
       // Because <dpct/dpl_utils.hpp> include <oneapi/dpl/execution> and
       // <oneapi/dpl/algorithm>, so we have to make sure that
-      // <oneapi/dpl/execution> and <oneapi/dpl/algorithm> come before
+      // <oneapi/dpl/execution> and <oneapi/dpl/algorithm> inserted before
       // <CL/sycl.hpp>
       // e.g.
       // #include <CL/sycl.hpp>
@@ -679,7 +679,7 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
       // #include <dpct/dpl_utils.hpp>
       //
       // We will insert <oneapi/dpl/execution> and <oneapi/dpl/algorithm> at the
-      // front of the main file
+      // begining of the main file
       DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
           HT_DPL_Execution);
       DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
