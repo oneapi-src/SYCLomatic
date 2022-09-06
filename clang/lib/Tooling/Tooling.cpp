@@ -697,6 +697,13 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
       return -1;
     }
     for (CompileCommand &CompileCommand : CompileCommandsForFile) {
+      if (CompileCommand.Heuristic != "") {
+        llvm::errs() << "Skipping " << File
+                    << ". Compile command for this file not found in "
+                        "compile_commands.json.\n";
+        FileSkipped = true;
+        return -1;
+      }
       // FIXME: chdir is thread hostile; on the other hand, creating the same
       // behavior as chdir is complex: chdir resolves the path once, thus
       // guaranteeing that all subsequent relative path operations work
