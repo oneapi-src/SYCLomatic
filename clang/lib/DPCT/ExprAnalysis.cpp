@@ -9,9 +9,9 @@
 #include "ExprAnalysis.h"
 
 #include "ASTTraversal.h"
-#include "DNNAPIMigration.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
+#include "DNNAPIMigration.h"
 #include "TypeLocRewriters.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
@@ -231,7 +231,7 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
-    if(SrcBeginLoc.isInvalid())
+    if (SrcBeginLoc.isInvalid())
       SrcBeginLoc = BeginLoc;
 
     // Avoid illegal range which will cause SIGABRT
@@ -450,12 +450,31 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
   } else {
     RefString = DRE->getNameInfo().getAsString();
   }
-
   if (auto TemplateDecl = dyn_cast<NonTypeTemplateParmDecl>(DRE->getDecl()))
     addReplacement(DRE, TemplateDecl->getIndex());
   else if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
-    auto &ReplEnum = MapNames::findReplacedName(EnumConstantRule::EnumNamesMap,
-                                                RefString);
+    std::unordered_set<std::string> targetStr = {
+        "thread_scope_system",  "thread_scope_device",  "thread_scope_block",
+        "memory_order_relaxed", "memory_order_acq_rel", "memory_order_release",
+        "memory_order_acquire", "memory_order_seq_cst"};
+
+    if (targetStr.find(ECD->getNameAsString()) != targetStr.end())
+      if (const auto *ED = dyn_cast<EnumDecl>(ECD->getDeclContext())) {
+        std::string NameString = "";
+        llvm::raw_string_ostream NameStringOS(NameString);
+        for (const auto *NSD = dyn_cast<NamespaceDecl>(ED->getDeclContext());
+             NSD; NSD = dyn_cast<NamespaceDecl>(NSD->getDeclContext())) {
+          if (NSD->getName() == "__detail" || NSD->isInline() ||
+              NSD->getName() == "std")
+            continue;
+          NameStringOS << NSD->getNameAsString() << "::";
+        }
+        NameStringOS << ECD->getNameAsString();
+        RefString = NameString;
+      }
+
+    auto &ReplEnum =
+        MapNames::findReplacedName(EnumConstantRule::EnumNamesMap, RefString);
     requestHelperFeatureForEnumNames(RefString, DRE);
     auto ItEnum = EnumConstantRule::EnumNamesMap.find(RefString);
     if (ItEnum != EnumConstantRule::EnumNamesMap.end()) {
