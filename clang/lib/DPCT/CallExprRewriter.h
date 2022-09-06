@@ -760,6 +760,9 @@ public:
   template <class StreamT> void print(StreamT &) const {}
   template <class StreamT>
   void printArg(std::false_type, StreamT &Stream, const Expr *E) const {
+    if(auto defaultArg = dyn_cast<CXXDefaultArgExpr>(E)){
+      E = defaultArg->getExpr();
+    }
     dpct::print(Stream, A, E);
   }
 

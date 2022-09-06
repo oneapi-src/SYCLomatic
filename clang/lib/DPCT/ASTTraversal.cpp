@@ -15664,11 +15664,7 @@ REGISTER_RULE(CuDNNAPIRule)
 
 REGISTER_RULE(NCCLRule)
 
-REGISTER_RULE(LIBCUAPIRule)
-
-REGISTER_RULE(LIBCUMemberFuncRule)
-
-REGISTER_RULE(LIBCUTypeRule)
+REGISTER_RULE(LIBCURule)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {
