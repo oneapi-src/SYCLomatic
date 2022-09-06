@@ -24,7 +24,7 @@ int main() {
   cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
   // CHECK: dpct::pointer_attributes attributes;
   cudaPointerAttributes attributes;
-  // CHECK: dpct::get_pointer_attributes(attributes, h_A);
+  // CHECK: (&attributes)->init(h_A);
   cudaPointerGetAttributes (&attributes, h_A);
   // CHECK: std::cout << attributes.device << std::endl;
   // CHECK: std::cout << attributes.memory_type << std::endl;
@@ -49,7 +49,7 @@ int main() {
 
   // CHECK: dpct::pointer_attributes *attributes3 = new dpct::pointer_attributes();
   cudaPointerAttributes *attributes3 = new cudaPointerAttributes();
-  // CHECK: dpct::get_pointer_attributes(*attributes3, d_A);
+  // CHECK: attributes3->init(d_A);
   cudaPointerGetAttributes (attributes3, d_A);
   // CHECK: std::cout << attributes3->device << std::endl;
   // CHECK: std::cout << attributes3->memory_type << std::endl;

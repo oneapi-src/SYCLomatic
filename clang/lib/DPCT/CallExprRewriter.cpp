@@ -2973,7 +2973,6 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesMathRewrite.inc"
 #include "APINamesLIBCU.inc"
 #include "APINamesEvent.inc"
-#include "APINamesMisc.inc"
 #define FUNCTION_CALL
 #define CLASS_METHOD_CALL
 #include "APINamesCooperativeGroups.inc"

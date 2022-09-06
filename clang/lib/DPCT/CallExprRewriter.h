@@ -396,7 +396,7 @@ class RemoveCubTempStorageFactory : public CallExprRewriterFactoryBase {
 public:
   RemoveCubTempStorageFactory(std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
     : Inner(InnerFactory) {}
-  
+
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override;
 };
 
@@ -1140,7 +1140,6 @@ public:
   PrinterRewriter(const CallExpr *C, StringRef Source,
                   const std::function<ArgsT(const CallExpr *)> &...ArgCreators)
       : PrinterRewriter(C, Source, ArgCreators(C)...) {}
-
   Optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);

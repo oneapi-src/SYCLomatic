@@ -1111,8 +1111,8 @@ static inline unsigned int select_device(unsigned int id){
 // DPCT_CODE
 class pointer_attributes {
 public:
-  void init_attributes(const void *ptr,
-                        sycl::context ctx = dpct::get_default_context()) {
+  void init(const void *ptr,
+              sycl::context ctx = dpct::get_default_context()) {
     memory_type = cl::sycl::get_pointer_type(ptr, ctx);
     device_pointer = (memory_type !=
                         sycl::usm::alloc::unknown) ? ptr : nullptr;
@@ -1122,7 +1122,7 @@ public:
     is_shared = (memory_type == sycl::usm::alloc::shared) ? 0 : -1;
     sycl::device dev_obj = cl::sycl::get_pointer_device(ptr, ctx);
     for (int id = 0; id < dpct::dev_mgr::instance().device_count(); id++) {
-      if(dpct::dev_mgr::instance().get_device(id) == dev_obj) {
+      if (dpct::dev_mgr::instance().get_device(id) == dev_obj) {
         device = id;
         break;
       }
@@ -1136,10 +1136,6 @@ public:
   int device;
 };
 
-inline void get_pointer_attributes(dpct::pointer_attributes &attributes,
-                                     void *ptr) {
-  attributes.init_attributes(ptr);
-}
 // DPCT_LABEL_END
 } // namespace dpct
 
