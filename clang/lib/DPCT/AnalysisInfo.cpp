@@ -660,9 +660,9 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
       return insertHeader(HeaderType::HT_STD_Numeric_Limits, LastIncludeOffset,
                           "<limits>");
     case HT_DPL_Utils:
-      // Because <dpct/dpl_utils.hpp> include <oneapi/dpl/execution> and
+      // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
       // <oneapi/dpl/algorithm>, so we have to make sure that
-      // <oneapi/dpl/execution> and <oneapi/dpl/algorithm> inserted before
+      // <oneapi/dpl/execution> and <oneapi/dpl/algorithm> are inserted before
       // <CL/sycl.hpp>
       // e.g.
       // #include <CL/sycl.hpp>
