@@ -1628,3 +1628,8 @@ CONDITIONAL_FACTORY_ENTRY(
     )
   )
 )
+
+// thrust::get
+CALL_FACTORY_ENTRY(
+    "thrust::get",
+    CALL(TEMPLATED_CALLEE("std::get", std::vector<size_t>(1, 0)), ARG(0)))
