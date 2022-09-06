@@ -4049,12 +4049,5 @@ std::string getFunctionName(const clang::UnresolvedLookupExpr *Node) {
   return Node->getNameInfo().getName().getAsString();
 }
 std::string getFunctionName(const clang::FunctionTemplateDecl *Node) {
-  if (const auto *FD = Node->getTemplatedDecl()) {
-    return getFunctionName(FD);
-  }
-  std::string FunctionName;
-  llvm::raw_string_ostream OS(FunctionName);
-  Node->printName(OS);
-  OS.flush();
-  return FunctionName;
+  return getFunctionName(Node->getTemplatedDecl());
 }
