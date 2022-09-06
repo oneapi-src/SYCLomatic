@@ -151,12 +151,22 @@ CompilationDatabase::autoDetectFromSource(StringRef SourceFile,
   std::unique_ptr<CompilationDatabase> DB =
       findCompilationDatabaseFromDirectory(Directory, ErrorMessage,
                                            ErrCode, CompilationDatabaseDir);
-  if (!DB)
+  if (!DB) {
     ErrorMessage =
         (ErrorMessage +
          "Migration initiated without compilation database for file \"" +
          SourceFile + "\"\n")
             .str();
+  } else {
+    bool IsDBItem = false;
+    for(std::string &file : DB->getAllFiles()) {
+      if (AbsolutePath.equals(getAbsolutePath(StringRef(file)))) {
+        IsDBItem = true;
+      }
+    }
+    if (!IsDBItem)
+      DB = nullptr;
+  }
 #else
   std::unique_ptr<CompilationDatabase> DB =
       findCompilationDatabaseFromDirectory(Directory, ErrorMessage);
