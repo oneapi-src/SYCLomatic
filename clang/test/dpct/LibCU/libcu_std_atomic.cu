@@ -14,7 +14,7 @@ template <typename T>
 void device_construct() {}
 
 int main(){
-  // CHECK: sycl::atomic_fence(sycl::memory_order::release);
+  // CHECK: sycl::atomic_fence(sycl::memory_order::release, sycl::memory_scope::system);
   cuda::std::atomic_thread_fence(cuda::std::memory_order_release);
   // CHECK: dpct::atomic<int> a;
   // CHECK: dpct::atomic<int> b(0);
