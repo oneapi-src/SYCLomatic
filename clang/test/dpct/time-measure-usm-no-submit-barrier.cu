@@ -475,8 +475,7 @@ void test_1999(void* ref_image, void* cur_image,
 }
 
 class Stream {};
-namespace c10 {
-namespace cuda {
+namespace user {
 class CUDAStream {
 public:
   operator cudaStream_t() const {
@@ -485,12 +484,11 @@ public:
   }
 };
 CUDAStream getCurrentCUDAStream(int device_index = -1);
-} // namespace cuda
-} // namespace c10
+} // namespace user
 
 
 void foo() {
-  c10::cuda::CUDAStream stream = c10::cuda::getCurrentCUDAStream();
+  user::CUDAStream stream = user::getCurrentCUDAStream();
   void* dst = NULL;
   void* src = NULL;
   int nbytes;
