@@ -91,8 +91,6 @@ ENTRY_MEMBER_FUNCTION(cub::BlockAdjacentDifference, SubtractRightPartialTile, Su
 ENTRY_MEMBER_FUNCTION(cub::BlockAdjacentDifference, FlagHeads, FlagHeads, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockAdjacentDifference, FlagTails, FlagTails, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockAdjacentDifference, FlagHeadsAndTails, FlagHeadsAndTails, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::BlockAdjacentDifference, FlagHeads, FlagHeads, false, NO_FLAG, P4, "Comment")
-ENTRY_MEMBER_FUNCTION(cub::BlockAdjacentDifference, FlagHeads, FlagHeads, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockDiscontinuity, FlagHeads, FlagHeads, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockDiscontinuity, FlagTails, FlagTails, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::BlockDiscontinuity, FlagHeadsAndTails, FlagHeadsAndTails, false, NO_FLAG, P4, "Comment")
@@ -130,7 +128,6 @@ ENTRY_MEMBER_FUNCTION(cub::DeviceAdjacentDifference, SubtractLeftCopy, SubtractL
 ENTRY_MEMBER_FUNCTION(cub::DeviceAdjacentDifference, SubtractLeft, SubtractLeft, false, NO_FLAGE, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceAdjacentDifference, SubtractRightCopy, SubtractRightCopy, false, NO_FLAGE, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceAdjacentDifference, SubtractRight, SubtractRight, false, NO_FLAGE, P4, "Comment")
-
 ENTRY_MEMBER_FUNCTION(cub::DeviceHistogram, HistogramEven, HistogramEven, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceHistogram, MultiHistogramEven, MultiHistogramEven, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceHistogram, HistogramRange, HistogramRange, false, NO_FLAG, P4, "Comment")
@@ -143,7 +140,6 @@ ENTRY_MEMBER_FUNCTION(cub::DeviceMergeSort, SortKeys, SortKeys, false, NO_FLAG, 
 ENTRY_MEMBER_FUNCTION(cub::DeviceMergeSort, SortKeysCopy, SortKeysCopy, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceMergeSort, StableSortPairs, StableSortPairs, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceMergeSort, StableSortKeys, StableSortKeys, false, NO_FLAG, P4, "Comment")
-
 ENTRY_MEMBER_FUNCTION(cub::DeviceRadixSort, SortPairs, SortPairs, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceRadixSort, SortPairsDescending, SortPairsDescending, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceRadixSort, SortKeys, SortKeys, false, NO_FLAG, P4, "Comment")
@@ -224,7 +220,6 @@ ENTRY_MEMBER_FUNCTION(cub::CachingDeviceAllocator, DeviceAllocate, DeviceAllocat
 ENTRY_MEMBER_FUNCTION(cub::CachingDeviceAllocator, DeviceFree, DeviceFree, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::CachingDeviceAllocator, FreeAllCached, FreeAllCached, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::ChainedPolicy, Invoke, Invoke, false, NO_FLAG, P4, "Comment")
-
 ENTRY(cub::Debug, cub::Debug, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::MaxSmOccupancy, cub::MaxSmOccupancy, false, NO_FLAG, P4, "Comment")
 ENTRY(cub::PtxVersion, cub::PtxVersion, false, NO_FLAG, P4, "Comment")
