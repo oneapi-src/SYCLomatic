@@ -3,5 +3,6 @@
     "command": "cc -c -DTEST t2.c",
     "directory": ".",
     "file": "./t2.c"
-}
+    }
 ]
+
