@@ -494,8 +494,8 @@ void foo() {
   int nbytes;
   cudaMemcpyKind kind;
 
-  // CHECK:  ((sycl::queue*)(stream))->memcpy(dst, src, nbytes);
-  // CHECK-NEXT:  ((sycl::queue*)(stream))->memset(dst, 0, nbytes);
+  // CHECK:  ((sycl::queue *)(stream))->memcpy(dst, src, nbytes);
+  // CHECK-NEXT:  ((sycl::queue *)(stream))->memset(dst, 0, nbytes);
   cudaMemcpyAsync(dst, src, nbytes, kind, stream);
   cudaMemsetAsync(dst, 0, nbytes, stream);
 }
