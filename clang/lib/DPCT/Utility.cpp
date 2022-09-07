@@ -4041,7 +4041,8 @@ std::string getFunctionName(const clang::FunctionDecl *Node) {
     CRD->printName(OS);
     OS << "::";
   }
-  OS << Node->getNameInfo().getName().getAsString();
+  Node->getNameInfo().printName(
+      OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
   OS.flush();
   return FunctionName;
 }
