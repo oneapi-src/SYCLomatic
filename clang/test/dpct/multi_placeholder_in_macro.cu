@@ -5,19 +5,23 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
 
-// CHECK: #define MACRO(PTR)
-// CHECK-NEXT: do {
-// CHECK-NEXT:   sycl::free(PTR, q_ct1);
-// CHECK-NEXT:   sycl::free(PTR, q_ct1);
-// CHECK-NEXT: } while (0)
-#define MACRO(PTR)  \
-do {                \
-  cudaFree(PTR);    \
-  cudaFree(PTR);    \
-} while(0)
+// CHECK: #define MACRO(PTR, SIZE) 
+// CHECK-NEXT:  do {
+// CHECK-NEXT:     PTR = (int *)sycl::malloc_device(SIZE, q_ct1);
+// CHECK-NEXT:     sycl::free(PTR, dpct::get_default_queue());
+// CHECK-NEXT:     sycl::free(PTR, dpct::get_default_queue());
+// CHECK-NEXT:     sycl::free(PTR, dpct::get_default_queue());
+// CHECK-NEXT:   } while (0);
+#define MACRO(PTR, SIZE)    \
+  do {                      \
+    cudaMalloc(&PTR, SIZE); \
+    cudaFree(PTR);\
+    cudaFree(PTR);\
+    cudaFree(PTR);\
+  } while (0);
 
 int main() {
   int *Ptr = nullptr;
-  MACRO(Ptr);
+  MACRO(Ptr, 4);
   return 0;
 }
