@@ -22,6 +22,6 @@
 
 int main() {
   int *Ptr = nullptr;
-  MACRO(Ptr, 4);
+  MACRO(Ptr, 8);
   return 0;
 }
