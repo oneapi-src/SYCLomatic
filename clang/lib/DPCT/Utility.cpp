@@ -4033,3 +4033,21 @@ std::string getArgTypeStr(const CallExpr *CE, unsigned int Idx) {
       .getUnqualifiedType()
       .getAsString();
 }
+std::string getFunctionName(const clang::FunctionDecl *Node) {
+  std::string FunctionName;
+  llvm::raw_string_ostream OS(FunctionName);
+  if (const auto *CMD = dyn_cast<clang::CXXMethodDecl>(Node)) {
+    const CXXRecordDecl *CRD = CMD->getParent();
+    CRD->printName(OS);
+    OS << "::";
+  }
+  OS << Node->getNameInfo().getName().getAsString();
+  OS.flush();
+  return FunctionName;
+}
+std::string getFunctionName(const clang::UnresolvedLookupExpr *Node) {
+  return Node->getNameInfo().getName().getAsString();
+}
+std::string getFunctionName(const clang::FunctionTemplateDecl *Node) {
+  return getFunctionName(Node->getTemplatedDecl());
+}
