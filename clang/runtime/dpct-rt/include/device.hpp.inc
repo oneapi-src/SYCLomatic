@@ -950,9 +950,11 @@ public:
     unsigned int id = 0;
     for(auto dev_item : _devs) {
       if (*dev_item == dev) {
-        return id++;
+        break;
       }
+      id++;
     }
+    return id;
   }
 // DPCT_LABEL_END
 
@@ -1119,50 +1121,6 @@ static inline unsigned int select_device(unsigned int id){
 }
 // DPCT_LABEL_END
 
-
-// DPCT_LABEL_BEGIN|pointer_attributes|dpct
-// DPCT_DEPENDENCY_BEGIN
-// Device|get_default_context
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-class pointer_attributes {
-public:
-  void init(const void *ptr,
-              sycl::context ctx = dpct::get_default_context()) {
-#ifdef DPCT_USM_LEVEL_NONE
-    auto iter = get_map_iterator(ptr);
-    if (iter) {
-      memory_type = sycl::usm::alloc::device;
-      device_pointer = ptr;
-      host_pointer = nullptr;
-    } else {
-      memory_type = sycl::usm::alloc::host;
-      device_pointer = nullptr;
-      host_pointer = ptr;
-    }
-    is_shared = (memory_type == sycl::usm::alloc::shared) ? 0 : -1;
-    device = dpct::dev_mgr::instance().current_device_id();
-#else
-    memory_type = cl::sycl::get_pointer_type(ptr, ctx);
-    device_pointer = (memory_type !=
-                        sycl::usm::alloc::unknown) ? ptr : nullptr;
-    host_pointer = (memory_type !=
-                        sycl::usm::alloc::unknown) &&
-                   (memory_type != sycl::usm::alloc::device) ? ptr : nullptr;
-    is_shared = (memory_type == sycl::usm::alloc::shared) ? 0 : -1;
-    sycl::device dev_obj = sycl::get_pointer_device(ptr, ctx);
-    device = dpct::dev_mgr::instance().get_device_id(dev_obj);
-#endif
-  }
-
-  cl::sycl::usm::alloc memory_type;
-  const void *device_pointer = nullptr;
-  const void *host_pointer = nullptr;
-  int is_shared = -1;
-  unsigned int device = 0;
-};
-
-// DPCT_LABEL_END
 } // namespace dpct
 
 #endif // __DPCT_DEVICE_HPP__

@@ -335,6 +335,6 @@ CONDITIONAL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(
     FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::Device_pointer_attributes,
+        HelperFeatureEnum::Memory_pointer_attributes,
         MEMBER_CALL_FACTORY_ENTRY(
             "cudaPointerGetAttributes", ARG(0), true, "init", ARG(1))))

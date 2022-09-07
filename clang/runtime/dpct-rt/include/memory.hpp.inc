@@ -1906,6 +1906,57 @@ using constant_memory = detail::device_memory<T, constant, Dimension>;
 template <class T, size_t Dimension>
 using shared_memory = detail::device_memory<T, shared, Dimension>;
 // DPCT_LABEL_END
-} // namespace dpct
 
+// DPCT_LABEL_BEGIN|pointer_attributes|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+class pointer_attributes {
+public:
+  void init(const void *ptr,
+              sycl::queue &q = dpct::get_default_queue()) {
+#ifdef DPCT_USM_LEVEL_NONE
+    dpct::detail::pointer_access_attribute attribute =
+             dpct::detail::get_pointer_attribute(q, ptr);
+    if (attribute == dpct::detail::pointer_access_attribute::host_only) {
+      memory_type = sycl::usm::alloc::unknown;
+      device_pointer = nullptr;
+      host_pointer = nullptr;
+    } else {
+      if (attribute ==
+          dpct::detail::pointer_access_attribute::device_only) {
+        memory_type = sycl::usm::alloc::device;
+        host_pointer = nullptr;
+      } else {
+        host_pointer = nullptr;
+        memory_type = sycl::usm::alloc::shared;
+        is_shared = 0;
+      }
+      auto accessor = dpct::detail::mem_mgr::instance().
+                        translate_ptr(ptr).buffer.get_access();
+      device_pointer = (void *)&accessor;
+    }
+    device = dpct::dev_mgr::instance().current_device_id();
+#else
+    memory_type = cl::sycl::get_pointer_type(ptr, q.get_context());
+    device_pointer = (memory_type !=
+                        sycl::usm::alloc::unknown) ? ptr : nullptr;
+    host_pointer = (memory_type !=
+                        sycl::usm::alloc::unknown) &&
+                   (memory_type != sycl::usm::alloc::device) ? ptr : nullptr;
+    is_shared = (memory_type == sycl::usm::alloc::shared) ? 0 : -1;
+    sycl::device dev_obj = sycl::get_pointer_device(ptr, q.get_context());
+    device = dpct::dev_mgr::instance().get_device_id(dev_obj);
+#endif
+  }
+
+  cl::sycl::usm::alloc memory_type = sycl::usm::alloc::unknown;
+  const void *device_pointer = nullptr;
+  const void *host_pointer = nullptr;
+  int is_shared = -1;
+  unsigned int device = 0;
+};
+// DPCT_LABEL_END
+} // namespace dpct
 #endif // __DPCT_MEMORY_HPP__

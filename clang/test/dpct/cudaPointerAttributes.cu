@@ -52,7 +52,7 @@ int main() {
 
   // CHECK: dpct::pointer_attributes *attributes3 = new dpct::pointer_attributes();
   cudaPointerAttributes *attributes3 = new cudaPointerAttributes();
-  // CHECK: attributes3->init(d_A)
+  // CHECK: attributes3->init(d_A);
   cudaPointerGetAttributes (attributes3, d_A);
   // CHECK: std::cout << attributes3->device << std::endl;
   // CHECK: std::cout << attributes3->memory_type << std::endl;
