@@ -73,10 +73,8 @@
 // │       └── libsrc_1.dp.cpp
 // └── lib_2
 // │   └── inc
-// │   │   └── header_2.dp.hpp
-// │   │   └── header_2.dp.hpp.yaml
+// │   │   └── header_2.cuh
 // │   └── src
-// │       └── libsrc_2.dp.cpp
 // └── main.dp.cpp
 // └── README.md
 // └── compile_commands.json

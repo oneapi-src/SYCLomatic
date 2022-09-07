@@ -697,13 +697,6 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
       return -1;
     }
     for (CompileCommand &CompileCommand : CompileCommandsForFile) {
-      if (CompileCommand.Heuristic != "") {
-        llvm::errs() << "Skipping " << File
-                    << ". Compile command for this file not found in "
-                        "compile_commands.json.\n";
-        FileSkipped = true;
-        return -1;
-      }
       // FIXME: chdir is thread hostile; on the other hand, creating the same
       // behavior as chdir is complex: chdir resolves the path once, thus
       // guaranteeing that all subsequent relative path operations work
@@ -718,6 +711,13 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
         return -29 /*MigrationErrorCannotAccessDirInDatabase*/;
       }
 
+      if (CompileCommand.Heuristic != "") {
+        llvm::errs() << "Skipping " << File
+                    << ". Compile command for this file not found in "
+                        "compile_commands.json.\n";
+        FileSkipped = true;
+        return -1;
+      }
       // Now fill the in-memory VFS with the relative file mappings so it will
       // have the correct relative paths. We never remove mappings but that
       // should be fine.

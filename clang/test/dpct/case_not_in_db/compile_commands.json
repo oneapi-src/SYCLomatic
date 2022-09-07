@@ -1,0 +1,7 @@
+[
+    {
+    "command": "cc -c -DTEST  /home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/test/t2.c",
+    "directory": "/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/test",
+    "file": "/home/chenshe1/sandbox/SYCLomatic/clang/test/dpct/test/t2.c"
+}
+]
