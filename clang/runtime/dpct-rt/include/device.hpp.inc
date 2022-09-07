@@ -940,6 +940,22 @@ public:
   unsigned int device_count() { return _devs.size(); }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|dev_mgr_get_device_id|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  unsigned int get_device_id(const sycl::device &dev) {
+    unsigned int id = 0;
+    for(auto dev_item : _devs) {
+      if (*dev_item == dev) {
+        return id++;
+      }
+    }
+  }
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|dev_mgr_2|dpct
 // DPCT_PARENT_FEATURE|dev_mgr
 // DPCT_DEPENDENCY_BEGIN
@@ -1113,6 +1129,20 @@ class pointer_attributes {
 public:
   void init(const void *ptr,
               sycl::context ctx = dpct::get_default_context()) {
+#ifdef DPCT_USM_LEVEL_NONE
+    auto iter = get_map_iterator(ptr);
+    if (iter) {
+      memory_type = sycl::usm::alloc::device;
+      device_pointer = ptr;
+      host_pointer = nullptr;
+    } else {
+      memory_type = sycl::usm::alloc::host;
+      device_pointer = nullptr;
+      host_pointer = ptr;
+    }
+    is_shared = (memory_type == sycl::usm::alloc::shared) ? 0 : -1;
+    device = dpct::dev_mgr::instance().current_device_id();
+#else
     memory_type = cl::sycl::get_pointer_type(ptr, ctx);
     device_pointer = (memory_type !=
                         sycl::usm::alloc::unknown) ? ptr : nullptr;
@@ -1120,20 +1150,16 @@ public:
                         sycl::usm::alloc::unknown) &&
                    (memory_type != sycl::usm::alloc::device) ? ptr : nullptr;
     is_shared = (memory_type == sycl::usm::alloc::shared) ? 0 : -1;
-    sycl::device dev_obj = cl::sycl::get_pointer_device(ptr, ctx);
-    for (int id = 0; id < dpct::dev_mgr::instance().device_count(); id++) {
-      if (dpct::dev_mgr::instance().get_device(id) == dev_obj) {
-        device = id;
-        break;
-      }
-    }
+    sycl::device dev_obj = sycl::get_pointer_device(ptr, ctx);
+    device = dpct::dev_mgr::instance().get_device_id(dev_obj);
+#endif
   }
 
   cl::sycl::usm::alloc memory_type;
-  const void *device_pointer;
-  const void *host_pointer;
-  int is_shared;
-  int device;
+  const void *device_pointer = nullptr;
+  const void *host_pointer = nullptr;
+  int is_shared = -1;
+  unsigned int device = 0;
 };
 
 // DPCT_LABEL_END
