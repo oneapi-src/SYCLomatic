@@ -3233,6 +3233,7 @@ public:
     static MemVarInfoMap InvalidMap;
     return InvalidMap;
   }
+  bool isSameAs(const MemVarMap &Other) const;
 
   enum CallOrDecl {
     CallArgument = 0,
@@ -3622,7 +3623,7 @@ public:
                      const FunctionDecl *Specialization);
   inline static std::shared_ptr<DeviceFunctionInfo>
   LinkUnresolved(const UnresolvedLookupExpr *ULE) {
-    return LinkDeclRange(ULE->decls());
+    return LinkDeclRange(ULE->decls(), getFunctionName(ULE));
   }
   inline static std::shared_ptr<DeviceFunctionInfo>
   LinkRedecls(const FunctionDecl *FD) {
@@ -3632,11 +3633,11 @@ public:
       return LinkTemplateDecl(FTD);
     else if (FTD = FD->getDescribedFunctionTemplate())
       return LinkTemplateDecl(FTD);
-    return LinkDeclRange(FD->redecls());
+    return LinkDeclRange(FD->redecls(), getFunctionName(FD));
   }
   inline static std::shared_ptr<DeviceFunctionInfo>
   LinkTemplateDecl(const FunctionTemplateDecl *FTD) {
-    return LinkDeclRange(FTD->redecls());
+    return LinkDeclRange(FTD->redecls(), getFunctionName(FTD));
   }
   inline static std::shared_ptr<DeviceFunctionInfo> LinkExplicitInstantiation(
       const FunctionDecl *Specialization, const FunctionTypeLoc &FTL,
@@ -3670,15 +3671,15 @@ public:
 
   template <class IteratorRange>
   static std::shared_ptr<DeviceFunctionInfo>
-  LinkDeclRange(IteratorRange &&Range) {
+  LinkDeclRange(IteratorRange &&Range, const std::string &FunctionName) {
     std::shared_ptr<DeviceFunctionInfo> Info;
     DeclList List;
     LinkDeclRange(std::move(Range), List, Info);
     if (List.empty())
       return Info;
     if (!Info)
-      Info = std::make_shared<DeviceFunctionInfo>(List[0]->ParamsNum,
-                                                  List[0]->NonDefaultParamNum);
+      Info = std::make_shared<DeviceFunctionInfo>(
+          List[0]->ParamsNum, List[0]->NonDefaultParamNum, FunctionName);
     for (auto &D : List)
       D->setFuncInfo(Info);
     return Info;
@@ -3794,10 +3795,12 @@ class DeviceFunctionInfo {
   };
 
 public:
-  DeviceFunctionInfo(size_t ParamsNum, size_t NonDefaultParamNum)
+  DeviceFunctionInfo(size_t ParamsNum, size_t NonDefaultParamNum,
+                     std::string FunctionName)
       : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
         IsBuilt(false),
-        TextureObjectTypeList(ParamsNum, std::shared_ptr<TextureTypeInfo>()) {
+        TextureObjectTypeList(ParamsNum, std::shared_ptr<TextureTypeInfo>()),
+        FunctionName(FunctionName) {
     ParametersProps.resize(ParamsNum);
   }
 
@@ -3885,6 +3888,7 @@ public:
     ParametersProps[Index].IsReferenced =
         ParametersProps[Index].IsReferenced || IsReferenced;
   }
+  std::string getFunctionName() { return FunctionName; }
 
 private:
   void mergeCalledTexObj(
@@ -3905,6 +3909,7 @@ private:
 
   std::vector<std::shared_ptr<TextureTypeInfo>> TextureObjectTypeList;
   std::vector<ParameterProps> ParametersProps;
+  std::string FunctionName;
 };
 
 class KernelPrinter {

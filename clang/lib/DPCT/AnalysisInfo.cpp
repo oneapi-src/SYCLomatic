@@ -660,6 +660,30 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
       return insertHeader(HeaderType::HT_STD_Numeric_Limits, LastIncludeOffset,
                           "<limits>");
     case HT_DPL_Utils:
+      // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
+      // <oneapi/dpl/algorithm>, so we have to make sure that
+      // <oneapi/dpl/execution> and <oneapi/dpl/algorithm> are inserted before
+      // <CL/sycl.hpp>
+      // e.g.
+      // #include <CL/sycl.hpp>
+      // #include <dpct/dpct.hpp>
+      // #include <dpct/dpl_utils.hpp>
+      // ...
+      // This will cause compilation error due to onedpl header dependence
+      // The order we expect is:
+      // e.g.
+      // #include <oneapi/dpl/execution>
+      // #include <oneapi/dpl/algorithm>
+      // #include <CL/sycl.hpp>
+      // #include <dpct/dpct.hpp>
+      // #include <dpct/dpl_utils.hpp>
+      //
+      // We will insert <oneapi/dpl/execution> and <oneapi/dpl/algorithm> at the
+      // begining of the main file
+      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+          HT_DPL_Execution);
+      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+            HT_DPL_Algorithm);
       return insertHeader(HeaderType::HT_DPL_Utils, LastIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
                               "/dpl_utils.hpp>");
@@ -679,12 +703,16 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
                           "<" + getCustomMainHelperFileName() +
                               "/atomic.hpp>");
     case HT_DPL_Algorithm:
+      // Make sure <oneapi/dpl/algorithm> int the front of <CL/sycl.hpp>, also
+      // when crossing files
       if (this != DpctGlobalInfo::getInstance().getMainFile().get())
         return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
             HT_DPL_Algorithm);
       return insertHeader(HeaderType::HT_DPL_Algorithm, FirstIncludeOffset,
                           "<oneapi/dpl/algorithm>");
     case HT_DPL_Execution:
+      // Make sure <oneapi/dpl/execution> int the front of <CL/sycl.hpp>, also
+      // when crossing files
       if (this != DpctGlobalInfo::getInstance().getMainFile().get())
         return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
             HT_DPL_Execution);
@@ -1954,8 +1982,11 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
 
 void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
   if (FuncInfo && Info && (FuncInfo != Info)) {
-    DiagnosticsUtils::report(getFilePath(), getBegin(),
-                             Warnings::DEVICE_CALL_DIFFERENT, true, false);
+    if (!FuncInfo->getVarMap().isSameAs(Info->getVarMap())) {
+      DiagnosticsUtils::report(getFilePath(), getBegin(),
+                               Warnings::DEVICE_CALL_DIFFERENT, true, false,
+                               FuncInfo->getFunctionName());
+    }
   }
   FuncInfo = Info;
 }
@@ -2446,9 +2477,10 @@ DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
       ReplaceOffset(0), ReplaceLength(0),
       NonDefaultParamNum(FD->getMostRecentDecl()->getMinRequiredArguments()),
       FuncInfo(getFuncInfo(FD)) {
-  if (!FuncInfo)
-    FuncInfo = std::make_shared<DeviceFunctionInfo>(FD->param_size(),
-                                                    NonDefaultParamNum);
+  if (!FuncInfo) {
+    FuncInfo = std::make_shared<DeviceFunctionInfo>(
+        FD->param_size(), NonDefaultParamNum, getFunctionName(FD));
+  }
   if (!FilePath.empty()) {
     SourceProcessType FileType = GetSourceFileType(FilePath);
     if (!(FileType & SPT_CudaHeader) && !(FileType & SPT_CppHeader) &&
@@ -2755,7 +2787,8 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
       Info = FuncInfo;
     } else {
       Info = std::make_shared<DeviceFunctionInfo>(
-          FD->param_size(), FD->getMostRecentDecl()->getMinRequiredArguments());
+          FD->param_size(), FD->getMostRecentDecl()->getMinRequiredArguments(),
+          getFunctionName(FD));
       FuncInfo = Info;
     }
     return;
@@ -3164,6 +3197,28 @@ std::string MemVarMap::getKernelArguments(bool HasPreParam, bool HasPostParam,
                                           const std::string &Path) const {
   requestFeatureForAllVarMaps(Path);
   return getArgumentsOrParameters<KernelArgument>(HasPreParam, HasPostParam);
+}
+bool MemVarMap::isSameAs(const MemVarMap& Other) const {
+  if (HasItem != Other.HasItem)
+    return false;
+  if (HasStream != Other.HasStream)
+    return false;
+  if (HasSync != Other.HasSync)
+    return false;
+
+  #define COMPARE_MAP(MAP)                                                     \
+  {                                                                            \
+    if (MAP.size() != Other.MAP.size())                                        \
+      return false;                                                            \
+    if (!std::equal(MAP.begin(), MAP.end(), Other.MAP.begin()))                \
+      return false;                                                            \
+  }
+  COMPARE_MAP(LocalVarMap);
+  COMPARE_MAP(GlobalVarMap);
+  COMPARE_MAP(ExternVarMap);
+  COMPARE_MAP(TextureMap);
+#undef COMPARE_MAP
+  return true;
 }
 
 CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)
