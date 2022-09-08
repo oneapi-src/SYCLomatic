@@ -28,6 +28,7 @@
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
+#include "memory.hpp"
 #include "device.hpp"
 #include "lib_common_utils.hpp"
 // DPCT_LABEL_END
@@ -742,12 +743,6 @@ class engine_ext {
   ::dnnl::memory::desc get_group_weight_desc(int group_count,
                                              const memory_desc_ext &weight_desc);
   static ::dnnl::primitive_attr generate_scaling_attr(float alpha, float beta);
-  static void derive_batch_normalization_memory_desc(
-    memory_desc_ext &desc, const memory_desc_ext &src_desc,
-    batch_normalization_mode mode);
-  static void derive_batch_normalization_memory_desc(
-    memory_desc_ext &scale_bias_desc, memory_desc_ext &mean_var_desc,
-    const memory_desc_ext &src_desc, batch_normalization_mode mode);
 public:
   engine_ext() {}
   /// Creating oneDNN engine.
@@ -1114,9 +1109,28 @@ public:
   /// \param [out] desc Derived memory descriptor.
   /// \param [in] src_desc Source memory descriptor.
   /// \param [in] mode Batch normalization mode.
-  void derive_batch_normalization_memory_desc(memory_desc_ext &desc,
+  static void derive_batch_normalization_memory_desc(memory_desc_ext &desc,
                                               const memory_desc_ext &src_desc,
                                               batch_normalization_mode mode);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|derive_batch_normalization_memory_desc_decl_norm|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|batch_normalization_mode
+// DnnlUtils|batch_normalization_ops
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Derives a memory descriptor for the batch normalization scale, bias, mean,
+  /// variance from the source memory descripotr and batch normalization mode.
+  /// \param [out] scale_bias_desc Derived scale and bias memory descriptor.
+  /// \param [out] mean_var_desc Derived mean and var memory descriptor.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] mode Batch normalization mode.
+  static void derive_batch_normalization_memory_desc(memory_desc_ext &scale_bias_desc,
+                                             memory_desc_ext &mean_var_desc,
+                                             const memory_desc_ext &src_desc,
+                                             batch_normalization_mode mode);
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|batch_normalization_forward_inference_decl|dpct::dnnl
