@@ -11040,6 +11040,12 @@ void MemoryMigrationRule::memcpyMigration(
       handleDirection(C, 3);
     }
     std::string AsyncQueue;
+    bool NeedTypeCast = false;
+
+    if (C->getNumArgs() > 4 && !C->getArg(4)->isDefaultArgument())
+      if (auto ICE = dyn_cast<ImplicitCastExpr>(C->getArg(4)))
+        NeedTypeCast = ICE->getCastKind() != clang::CK_LValueToRValue;
+
     size_t QueueIndex = NameRef.compare("cudaMemcpy") ? 3 : 4;
     if (C->getNumArgs() > QueueIndex &&
         !C->getArg(QueueIndex)->isDefaultArgument()) {
@@ -11068,6 +11074,9 @@ void MemoryMigrationRule::memcpyMigration(
         buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
         ReplaceStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memcpy";
       } else {
+        if (NeedTypeCast)
+          AsyncQueue = buildString("((sycl::queue *)(", AsyncQueue, "))");
+
         ReplaceStr = AsyncQueue + "->memcpy";
       }
     } else {
@@ -11424,7 +11433,11 @@ void MemoryMigrationRule::memsetMigration(
     handleAsync(C, 3, Result);
   } else if (NameRef == "cudaMemset") {
     std::string AsyncQueue;
+    bool NeedTypeCast = false;
     if (C->getNumArgs() > 3 && !C->getArg(3)->isDefaultArgument()) {
+      if (auto ICE = dyn_cast<ImplicitCastExpr>(C->getArg(3)))
+        NeedTypeCast = ICE->getCastKind() != clang::CK_LValueToRValue;
+
       if (!isPredefinedStreamHandle(C->getArg(3)))
         AsyncQueue = ExprAnalysis::ref(C->getArg(3));
     }
@@ -11442,6 +11455,9 @@ void MemoryMigrationRule::memsetMigration(
         buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
         ReplaceStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memset";
       } else {
+        if (NeedTypeCast)
+          AsyncQueue = buildString("((sycl::queue *)(", AsyncQueue, "))");
+
         ReplaceStr = AsyncQueue + "->memset";
       }
     } else {
