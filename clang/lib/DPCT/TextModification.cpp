@@ -537,16 +537,6 @@ void ReplaceDim3Ctor::setRange() {
       return;
     }
     if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
-      // auto results = getTheOneBeforeLastImmediateExapansion(S->getBeginLoc(),
-      //                                                       S->getEndLoc());
-      // auto Begin = SM.getImmediateSpellingLoc(results.first);
-      // auto End = SM.getImmediateSpellingLoc(results.second);
-      // printf("set begin %s\n", Begin.printToString(SM).c_str());
-      // printf("set end %s\n", End.printToString(SM).c_str());
-      // if (SM.isMacroArgExpansion(S->getBeginLoc())) {
-      //   Begin = SM.getImmediateSpellingLoc(S->getBeginLoc());
-      //   End = SM.getImmediateSpellingLoc(S->getEndLoc());
-      // }
       auto Range = getDefinitionRange(S->getBeginLoc(), S->getEndLoc());
       auto Begin = Range.getBegin();
       auto End = Range.getEnd();

@@ -2287,35 +2287,7 @@ private:
   }
   // The result will be also stored in KernelCallExpr.BeginLoc
   static inline SourceLocation getLocation(const CUDAKernelCallExpr *CKC) {
-    // if the BeginLoc of CKC is in macro define, use getImmediateSpellingLoc.
     return getTheLastCompleteImmediateRange(CKC->getBeginLoc(), CKC->getEndLoc()).first;
-    // auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
-    //     getCombinedStrFromLoc(SM->getSpellingLoc(CKC->getBeginLoc())));
-    // if (CKC->getBeginLoc().isMacroID() &&
-    //     It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
-    //   return SM->getImmediateSpellingLoc(CKC->getBeginLoc());
-    // }
-
-    // if (CKC->getBeginLoc().isMacroID()) {
-    //   // if only the BeginLoc of CKC is in macro arg expansion,
-    //   // use getImmediateExpansionRange.
-    //   // #define CALL(Name, ...) NAME<<<...>>>(...)
-    //   if (SM->isMacroArgExpansion(CKC->getBeginLoc()) &&
-    //       !SM->isMacroArgExpansion(CKC->getEndLoc())) {
-    //     return SM->getImmediateSpellingLoc(
-    //         SM->getImmediateExpansionRange(CKC->getBeginLoc()).getBegin());
-    //   }
-    //   // if both BeginLoc/EndLoc of CKC is in macro arg expansion,
-    //   // use getImmediateExpansionRange.
-    //   // #define CALL(call) call
-    //   // CALL(NAME<<<...>>>(...))
-    //   if (SM->isMacroArgExpansion(CKC->getBeginLoc()) &&
-    //       SM->isMacroArgExpansion(CKC->getEndLoc())) {
-    //     return SM->getImmediateSpellingLoc(CKC->getBeginLoc());
-    //   }
-    // }
-
-    // return CKC->getBeginLoc();
   }
 
   std::unordered_map<std::string, std::shared_ptr<DpctFileInfo>> FileMap;
