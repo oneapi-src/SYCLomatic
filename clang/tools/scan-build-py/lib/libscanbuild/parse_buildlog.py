@@ -24,7 +24,7 @@ def create_compilation_DB_entry(file, command, directory):
     fullname = file if os.path.isabs(file) else os.path.join(abs_dir, file)
     return {'file' : fullname, 'command' : command, 'directory' : abs_dir}
 
-def parse_build_log(file):
+def parse_build_log(file, directory):
     """Parse a build log file to generate compilation database entries"""
 
     # Currently it covers ninja compile command pattern and make compile command pattern.
@@ -60,5 +60,5 @@ def parse_build_log(file):
                 for source in compilation.files:
                     command = [compiler, '-c'] + compilation.flags + [source]
                     logging.debug('formated as: %s', command)
-                    entries.append(create_compilation_DB_entry(source, encode(command), file))
+                    entries.append(create_compilation_DB_entry(source, encode(command), directory))
     return entries
