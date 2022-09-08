@@ -5528,7 +5528,8 @@ void DeviceRandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "curand_log_normal4", "curand_log_normal_double", "curand_uniform",
         "curand_uniform2_double", "curand_uniform4", "curand_uniform_double",
         "curand_poisson", "curand_poisson4", "skipahead", "skipahead_sequence",
-        "skipahead_subsequence");
+        "skipahead_subsequence", "curand_uniform4_double", "curand_normal4_double",
+        "curand_log_normal4_double");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
