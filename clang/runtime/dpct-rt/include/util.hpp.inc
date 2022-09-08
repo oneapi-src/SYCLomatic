@@ -523,6 +523,18 @@ sycl::vec<T, 2> conj(sycl::vec<T, 2> x) {
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|get_sycl_language_version|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+inline int get_sycl_language_version() {
+#ifdef SYCL_LANGUAGE_VERSION
+  return SYCL_LANGUAGE_VERSION;
+#else
+  return 202000;
+#endif
+}
+// DPCT_LABEL_END
+
 namespace experimental {
 // DPCT_LABEL_BEGIN|nd_range_barrier|dpct::experimental
 // DPCT_DEPENDENCY_EMPTY
@@ -694,5 +706,7 @@ public:
 // DPCT_LABEL_END
 }
 } // namespace dpct
+
+
 
 #endif // __DPCT_UTIL_HPP__

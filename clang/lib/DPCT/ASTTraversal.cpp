@@ -13762,6 +13762,11 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuTexRefSetAddressMode",
       "cuTexRefSetFilterMode",
       "cuTexRefSetFlags",
+      "cuTexRefGetAddressMode",
+      "cuTexRefGetFilterMode",
+      "cuTexRefGetFlags",
+      "cuTexRefSetAddress_v2",
+      "cuTexRefSetAddress2D_v3",
   };
 
   auto hasAnyFuncName = [&]() {
@@ -15378,7 +15383,8 @@ void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
     return hasAnyName(
         "cuInit", "cuCtxCreate_v2", "cuCtxSetCurrent", "cuCtxGetCurrent",
         "cuCtxSynchronize", "cuCtxDestroy_v2", "cuDevicePrimaryCtxRetain",
-        "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease");
+        "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease",
+        "cuCtxGetDevice", "cuCtxGetApiVersion");
   };
 
   MF.addMatcher(

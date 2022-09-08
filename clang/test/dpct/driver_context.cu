@@ -74,5 +74,14 @@ int main(){
   // CHECK-NEXT: MY_SAFE_CALL(0);
   MY_SAFE_CALL(cuCtxDestroy(ctx2));
 
+  // CHECK: int* dev_ptr;
+  // CHECK-NEXT: *dev_ptr = dpct::get_current_device_id();
+  CUdevice* dev_ptr;
+  cuCtxGetDevice(dev_ptr);
+
+  unsigned int ver;
+  // CHECK: ver = dpct::get_sycl_language_version();
+  cuCtxGetApiVersion(ctx, &ver);
+
   return 0;
 }
