@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Image/api_test26_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Image/api_test26_out
 
-// CHECK: 69
+// CHECK: 72
 // TEST_FEATURE: Image_sampling_info_set_addressing_mode_filtering_mode_is_normalized
 
 int main() {

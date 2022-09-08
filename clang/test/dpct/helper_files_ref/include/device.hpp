@@ -480,6 +480,12 @@ static inline cl::sycl::queue &get_default_queue() {
   return dev_mgr::instance().current_device().default_queue();
 }
 
+/// Util function to get the id of current device in
+/// dpct device manager.
+static inline unsigned int get_current_device_id() {
+  return dev_mgr::instance().current_device_id();
+}
+
 /// Util function to get the current device.
 static inline device_ext &get_current_device() {
   return dev_mgr::instance().current_device();

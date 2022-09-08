@@ -5527,7 +5527,8 @@ void DeviceRandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "curand_log_normal4", "curand_log_normal_double", "curand_uniform",
         "curand_uniform2_double", "curand_uniform4", "curand_uniform_double",
         "curand_poisson", "curand_poisson4", "skipahead", "skipahead_sequence",
-        "skipahead_subsequence");
+        "skipahead_subsequence", "curand_uniform4_double", "curand_normal4_double",
+        "curand_log_normal4_double");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
@@ -13762,6 +13763,11 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuTexRefSetAddressMode",
       "cuTexRefSetFilterMode",
       "cuTexRefSetFlags",
+      "cuTexRefGetAddressMode",
+      "cuTexRefGetFilterMode",
+      "cuTexRefGetFlags",
+      "cuTexRefSetAddress_v2",
+      "cuTexRefSetAddress2D_v3",
   };
 
   auto hasAnyFuncName = [&]() {
@@ -15378,7 +15384,8 @@ void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
     return hasAnyName(
         "cuInit", "cuCtxCreate_v2", "cuCtxSetCurrent", "cuCtxGetCurrent",
         "cuCtxSynchronize", "cuCtxDestroy_v2", "cuDevicePrimaryCtxRetain",
-        "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease");
+        "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease",
+        "cuCtxGetDevice", "cuCtxGetApiVersion");
   };
 
   MF.addMatcher(
@@ -15661,11 +15668,7 @@ REGISTER_RULE(CuDNNAPIRule)
 
 REGISTER_RULE(NCCLRule)
 
-REGISTER_RULE(LIBCUAPIRule)
-
-REGISTER_RULE(LIBCUMemberFuncRule)
-
-REGISTER_RULE(LIBCUTypeRule)
+REGISTER_RULE(LIBCURule)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {
