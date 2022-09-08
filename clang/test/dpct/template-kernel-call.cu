@@ -545,3 +545,24 @@ __global__ void test_fooclass1() {
   foo_class1<float, 10> b;
   b.foo();
 }
+
+texture<int4, 1, cudaReadModeElementType> tex_1;
+texture<int4, 1, cudaReadModeElementType> tex_2;
+struct tex_reader_1 {
+  __device__ int4 operator()(int idx) const { return tex1Dfetch(tex_1, idx); }
+};
+struct tex_reader_2 {
+  __device__ int4 operator()(int idx) const { return tex1Dfetch(tex_1, idx); }
+};
+template <typename tex_reader> __global__ void kernel_2() {
+  //CHECK:int idx = item_ct1.get_local_id(2);
+  //CHECK-NEXT:tex_reader reader;
+  //CHECK-NEXT:float res = reader(idx, tex_1).x();
+  int idx = threadIdx.x;
+  tex_reader reader;
+  float res = reader(idx).x;
+}
+void foo_2() {
+  kernel_2<tex_reader_1><<<1, 1>>>();
+  kernel_2<tex_reader_2><<<1, 1>>>();
+}
