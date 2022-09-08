@@ -100,16 +100,10 @@ FEATURE_REQUEST_FACTORY(
             DEREF(0),
             CALL(MapNames::getDpctNamespace() + "select_device", ARG(1)))))
 
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cudaHostGetFlags", DEREF(0), ARG("0")))
 
- ASSIGNABLE_FACTORY(
-        ASSIGN_FACTORY_ENTRY("cudaHostGetFlags",
-        DEREF(0),
-        ARG("0")))
-
- ASSIGNABLE_FACTORY(
-        ASSIGN_FACTORY_ENTRY("cuMemHostGetFlags",
-        DEREF(0),
-        ARG("0")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuMemHostGetFlags", DEREF(0),
+                                        ARG("0")))
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsCallExprOnly(),
@@ -143,3 +137,15 @@ WARNING_FACTORY_ENTRY("cuDriverGetVersion",
                     "get_current_device().get_info<" + MapNames::getClNamespace() +
                     "info::device::version>"))))),
     Diagnostics::TYPE_MISMATCH)
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Device_get_current_device_id,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxGetDevice", DEREF(0),
+                                            CALL(MapNames::getDpctNamespace() +
+                                                 "get_current_device_id"))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Util_get_sycl_language_version,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxGetApiVersion", DEREF(1),
+                                            CALL(MapNames::getDpctNamespace() +
+                                                 "get_sycl_language_version"))))
