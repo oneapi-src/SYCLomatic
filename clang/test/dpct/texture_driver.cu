@@ -155,7 +155,7 @@ void test_texref() {
   cudaCheck(cuTexRefSetFormat(tex, format, 4));
   func(cuTexRefSetFormat(tex,format,4));
   funcT(cuTexRefSetFormat(tex,format,4));
-  
+
   // CHECK: /*
   // CHECK-NEXT: DPCT1074:{{[0-9]+}}: The SYCL Image class does not support some of the flags used in the original code. Unsupported flags were ignored. Data read from SYCL Image could not be normalized as specified in the original code.
   // CHECK-NEXT: */
@@ -184,6 +184,9 @@ void test_texref() {
   cudaCheck(cuTexRefSetFlags(tex,  CU_TRSF_NORMALIZED_COORDINATES | CU_TRSF_READ_AS_INTEGER));
   func(cuTexRefSetFlags(tex,3));
   funcT(cuTexRefSetFlags(tex,1));
+  unsigned int uflag;
+  // CHECK: uflag = tex->is_coordinate_normalized() << 1;
+  cuTexRefGetFlags(&uflag, tex);
 
   // CHECK: tex->set(addr_mode);
   // CHECK-NEXT: /*
@@ -208,6 +211,9 @@ void test_texref() {
   func(cuTexRefSetAddressMode(tex,0,addr_mode));
   funcT(cuTexRefSetAddressMode(tex,0,addr_mode));
 
+  // CHECK: addr_mode = tex->get_addressing_mode();
+  cuTexRefGetAddressMode(&addr_mode, tex, 0);
+
   // CHECK: tex->set(filter_mode);
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -231,6 +237,9 @@ void test_texref() {
   func(cuTexRefSetFilterMode(tex,filter_mode));
   funcT(cuTexRefSetFilterMode(tex,filter_mode));
 
+  // CHECK: filter_mode = tex->get_filtering_mode();
+  cuTexRefGetFilterMode(&filter_mode, tex);
+
   // CHECK: tex->attach(dpct::image_data(arr));
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -253,4 +262,17 @@ void test_texref() {
   cudaCheck(cuTexRefSetArray(tex, arr, CU_TRSA_OVERRIDE_FORMAT));
   func(cuTexRefSetArray(tex,arr, CU_TRSA_OVERRIDE_FORMAT));
   funcT(cuTexRefSetArray(tex,arr, CU_TRSA_OVERRIDE_FORMAT));
+
+  // CHECK: char * dptr;
+  // CHECK-Next: size_t s, b;
+  // CHECK-Next: tex->attach(dptr, b);
+  // CHECK-Next: size_t desc_x_ct1, desc_y_ct1;
+  // CHECK-Next: unsigned desc_channel_num_ct1;
+  // CHECK-Next: sycl::image_channel_type desc_channel_type_ct1;
+  // CHECK-Next: tex->attach(dptr, desc_x_ct1, desc_y_ct1, b);
+  CUdeviceptr dptr;
+  size_t s, b;
+  cuTexRefSetAddress(&s, tex, dptr, b);
+  CUDA_ARRAY_DESCRIPTOR desc;
+  cuTexRefSetAddress2D(tex, &desc, dptr, b);
 }

@@ -5528,7 +5528,8 @@ void DeviceRandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "curand_log_normal4", "curand_log_normal_double", "curand_uniform",
         "curand_uniform2_double", "curand_uniform4", "curand_uniform_double",
         "curand_poisson", "curand_poisson4", "skipahead", "skipahead_sequence",
-        "skipahead_subsequence");
+        "skipahead_subsequence", "curand_uniform4_double", "curand_normal4_double",
+        "curand_log_normal4_double");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
@@ -11040,6 +11041,12 @@ void MemoryMigrationRule::memcpyMigration(
       handleDirection(C, 3);
     }
     std::string AsyncQueue;
+    bool NeedTypeCast = false;
+
+    if (C->getNumArgs() > 4 && !C->getArg(4)->isDefaultArgument())
+      if (auto ICE = dyn_cast<ImplicitCastExpr>(C->getArg(4)))
+        NeedTypeCast = ICE->getCastKind() != clang::CK_LValueToRValue;
+
     size_t QueueIndex = NameRef.compare("cudaMemcpy") ? 3 : 4;
     if (C->getNumArgs() > QueueIndex &&
         !C->getArg(QueueIndex)->isDefaultArgument()) {
@@ -11068,6 +11075,9 @@ void MemoryMigrationRule::memcpyMigration(
         buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
         ReplaceStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memcpy";
       } else {
+        if (NeedTypeCast)
+          AsyncQueue = buildString("((sycl::queue *)(", AsyncQueue, "))");
+
         ReplaceStr = AsyncQueue + "->memcpy";
       }
     } else {
@@ -11424,7 +11434,11 @@ void MemoryMigrationRule::memsetMigration(
     handleAsync(C, 3, Result);
   } else if (NameRef == "cudaMemset") {
     std::string AsyncQueue;
+    bool NeedTypeCast = false;
     if (C->getNumArgs() > 3 && !C->getArg(3)->isDefaultArgument()) {
+      if (auto ICE = dyn_cast<ImplicitCastExpr>(C->getArg(3)))
+        NeedTypeCast = ICE->getCastKind() != clang::CK_LValueToRValue;
+
       if (!isPredefinedStreamHandle(C->getArg(3)))
         AsyncQueue = ExprAnalysis::ref(C->getArg(3));
     }
@@ -11442,6 +11456,9 @@ void MemoryMigrationRule::memsetMigration(
         buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
         ReplaceStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memset";
       } else {
+        if (NeedTypeCast)
+          AsyncQueue = buildString("((sycl::queue *)(", AsyncQueue, "))");
+
         ReplaceStr = AsyncQueue + "->memset";
       }
     } else {
@@ -13765,6 +13782,11 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuTexRefSetAddressMode",
       "cuTexRefSetFilterMode",
       "cuTexRefSetFlags",
+      "cuTexRefGetAddressMode",
+      "cuTexRefGetFilterMode",
+      "cuTexRefGetFlags",
+      "cuTexRefSetAddress_v2",
+      "cuTexRefSetAddress2D_v3",
   };
 
   auto hasAnyFuncName = [&]() {
@@ -15381,7 +15403,8 @@ void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
     return hasAnyName(
         "cuInit", "cuCtxCreate_v2", "cuCtxSetCurrent", "cuCtxGetCurrent",
         "cuCtxSynchronize", "cuCtxDestroy_v2", "cuDevicePrimaryCtxRetain",
-        "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease");
+        "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease",
+        "cuCtxGetDevice", "cuCtxGetApiVersion");
   };
 
   MF.addMatcher(
