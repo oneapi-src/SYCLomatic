@@ -10,7 +10,7 @@
 // RUN: cp %S/nccl.cu                    .
 //
 // ------ create custom header files
-// RUN:  dpct thrust-iterators.cu cublas_curandInMacro.cu nccl.cu --use-custom-helper=api
+// RUN:  dpct thrust-iterators.cu cublas_curandInMacro.cu nccl.cu --use-custom-helper=api --cuda-include-path="%cuda-path/include"
 // RUN:  grep ifndef dpct_output/include/dpct/*.hpp > header_guards.txt
 //
 // ------ ensure header guard names in custom header files match the names in the standard header files
