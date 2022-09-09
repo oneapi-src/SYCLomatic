@@ -45,7 +45,7 @@ auto exception_handler = [](sycl::exception_list exceptions) {
   }
 };
 
-typedef cl::sycl::event *event_ptr;
+typedef sycl::event *event_ptr;
 
 /// Destroy \p event pointed memory.
 ///
