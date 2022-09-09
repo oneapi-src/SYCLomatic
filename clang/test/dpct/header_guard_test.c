@@ -14,7 +14,7 @@
 // RUN:  grep ifndef dpct_output/include/dpct/*.hpp > header_guards.txt
 //
 // ------ ensure header guard names in custom header files match the names in the standard header files
-// RUN: FileCheck --input-file header_guards.txt --match-full-lines %s
+// RUN: FileCheck --input-file header_guards.txt %s
 //
 // ------ cleanup test directory
 // RUN: cd ..
