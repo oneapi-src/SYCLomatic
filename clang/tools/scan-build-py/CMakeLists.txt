@@ -17,8 +17,7 @@ set (LibScanbuild
      "compilation.py"
      "intercept.py"
      "report.py"
-     "shell.py"
-     "parse_buildlog.py")
+     "shell.py")
 
 set (LibScanbuildResources
      "scanview.css"
