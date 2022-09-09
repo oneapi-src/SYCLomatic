@@ -895,6 +895,64 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
                      cl::sycl::range<3>(x, y, 1), direction);
 }
 // DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|dpct_usm_allocator|dpct::detail
+// DPCT_DEPENDENCY_BEGIN
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T, sycl::usm::alloc AllocKind>
+class usm_allocator {
+private:
+  using Alloc = sycl::usm_allocator<T, AllocKind>;
+  Alloc _impl;
+
+public:
+  using value_type = typename std::allocator_traits<Alloc>::value_type;
+  using pointer = typename std::allocator_traits<Alloc>::pointer;
+  using const_pointer = typename std::allocator_traits<Alloc>::const_pointer;
+  using void_pointer = typename std::allocator_traits<Alloc>::void_pointer;
+  using const_void_pointer =
+      typename std::allocator_traits<Alloc>::const_void_pointer;
+  using reference = typename std::allocator_traits<Alloc>::value_type &;
+  using const_reference =
+      const typename std::allocator_traits<Alloc>::value_type &;
+  using difference_type =
+      typename std::allocator_traits<Alloc>::difference_type;
+  using size_type = typename std::allocator_traits<Alloc>::size_type;
+  using propagate_on_container_copy_assignment = typename std::allocator_traits<
+      Alloc>::propagate_on_container_copy_assignment;
+  using propagate_on_container_move_assignment = typename std::allocator_traits<
+      Alloc>::propagate_on_container_move_assignment;
+  using propagate_on_container_swap =
+      typename std::allocator_traits<Alloc>::propagate_on_container_swap;
+  using is_always_equal =
+      typename std::allocator_traits<Alloc>::is_always_equal;
+
+  template <typename U> struct rebind {
+    typedef usm_allocator<U, AllocKind> other;
+  };
+
+  usm_allocator() : _impl(dpct::get_default_queue()) {}
+  ~usm_allocator() {}
+  usm_allocator(const usm_allocator &other) : _impl(other._impl) {}
+  usm_allocator(usm_allocator &&other) : _impl(std::move(other._impl)) {}
+  pointer address(reference r) { return &r; }
+  const_pointer address(const_reference r) { return &r; }
+  pointer allocate(size_type cnt, const_void_pointer hint = nullptr) {
+    return std::allocator_traits<Alloc>::allocate(_impl, cnt, hint);
+  }
+  void deallocate(pointer p, size_type cnt) {
+    std::allocator_traits<Alloc>::deallocate(_impl, p, cnt);
+  }
+  size_type max_size() const {
+    return std::allocator_traits<Alloc>::max_size(_impl);
+  }
+  bool operator==(const usm_allocator &other) const { return _impl == other._impl; }
+  bool operator!=(const usm_allocator &other) const { return _impl != other._impl; }
+};
+// DPCT_LABEL_END
+
 } // namespace detail
 
 // DPCT_LABEL_BEGIN|is_device_ptr|dpct
@@ -1907,61 +1965,14 @@ template <class T, size_t Dimension>
 using shared_memory = detail::device_memory<T, shared, Dimension>;
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_allocator|dpct
+// DPCT_LABEL_BEGIN|usm_host_allocator_alias|dpct
 // DPCT_DEPENDENCY_BEGIN
+// Memory|dpct_usm_allocator
 // Device|get_default_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-template <typename T, sycl::usm::alloc AllocKind = sycl::usm::alloc::host>
-class allocator {
-private:
-  using Alloc = sycl::usm_allocator<T, AllocKind>;
-  Alloc _impl;
-
-public:
-  using value_type = typename std::allocator_traits<Alloc>::value_type;
-  using pointer = typename std::allocator_traits<Alloc>::pointer;
-  using const_pointer = typename std::allocator_traits<Alloc>::const_pointer;
-  using void_pointer = typename std::allocator_traits<Alloc>::void_pointer;
-  using const_void_pointer =
-      typename std::allocator_traits<Alloc>::const_void_pointer;
-  using reference = typename std::allocator_traits<Alloc>::value_type &;
-  using const_reference =
-      const typename std::allocator_traits<Alloc>::value_type &;
-  using difference_type =
-      typename std::allocator_traits<Alloc>::difference_type;
-  using size_type = typename std::allocator_traits<Alloc>::size_type;
-  using propagate_on_container_copy_assignment = typename std::allocator_traits<
-      Alloc>::propagate_on_container_copy_assignment;
-  using propagate_on_container_move_assignment = typename std::allocator_traits<
-      Alloc>::propagate_on_container_move_assignment;
-  using propagate_on_container_swap =
-      typename std::allocator_traits<Alloc>::propagate_on_container_swap;
-  using is_always_equal =
-      typename std::allocator_traits<Alloc>::is_always_equal;
-
-  template <typename U> struct rebind {
-    typedef allocator<U, AllocKind> other;
-  };
-
-  allocator() : _impl(dpct::get_default_queue()) {}
-  ~allocator() {}
-  allocator(const allocator &other) : _impl(other._impl) {}
-  allocator(allocator &&other) : _impl(std::move(other._impl)) {}
-  pointer address(reference r) { return &r; }
-  const_pointer address(const_reference r) { return &r; }
-  pointer allocate(size_type cnt, const_void_pointer hint = nullptr) {
-    return std::allocator_traits<Alloc>::allocate(_impl, cnt, hint);
-  }
-  void deallocate(pointer p, size_type cnt) {
-    std::allocator_traits<Alloc>::deallocate(_impl, p, cnt);
-  }
-  size_type max_size() const {
-    return std::allocator_traits<Alloc>::max_size(_impl);
-  }
-  bool operator==(const allocator &other) const { return _impl == other._impl; }
-  bool operator!=(const allocator &other) const { return _impl != other._impl; }
-};
+template <typename T>
+using usm_host_allocator = detail::usm_allocator<T, sycl::usm::alloc::host>;
 // DPCT_LABEL_END
 } // namespace dpct
 

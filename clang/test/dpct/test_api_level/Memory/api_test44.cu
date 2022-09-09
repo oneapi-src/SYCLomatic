@@ -3,8 +3,8 @@
 // RUN: FileCheck --input-file %T/Memory/api_test44_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test44_out
 
-// CHECK: 18
-// TEST_FEATURE: Memory_dpct_allocator
+// CHECK: 19
+// TEST_FEATURE: Memory_usm_host_allocator_alias
 
 #include <vector>
 #include <algorithm>
