@@ -519,17 +519,18 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
 void ExprAnalysis::getThrustReplStrAndLength(const std::string &CtorClassName,
                                              std::string &Replacement,
                                              size_t &TypeLen) {
-
   if (CtorClassName.find("thrust::") == 0) {
     TypeLen = CtorClassName.find('<');
     if (TypeLen == std::string::npos)
-      TypeLen = 8;
+      TypeLen = CtorClassName.size();
 
     auto RealTypeNameStr = CtorClassName.substr(0, TypeLen);
     Replacement =
         MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
-    if (Replacement.empty())
+    if (Replacement.empty()) {
+      TypeLen = std::strlen("thrust::");
       Replacement = "std::";
+    }
   }
 }
 
