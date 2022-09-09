@@ -596,7 +596,7 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
     switch (Type) {
     case HT_SYCL:
       return insertHeader(HeaderType::HT_SYCL, FirstIncludeOffset,
-                          "<CL/sycl.hpp>",
+                          "<sycl/sycl.hpp>",
                           "<" + getCustomMainHelperFileName() + "/" +
                               getCustomMainHelperFileName() + ".hpp>");
     case HT_Math:
