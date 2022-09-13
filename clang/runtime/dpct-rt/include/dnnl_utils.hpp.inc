@@ -188,14 +188,23 @@ public:
 /// \param [in] alpha Value of alpha parameter.
   void set(::dnnl::algorithm alg, float alpha) {
     _alg = alg;
-    _alpha = alpha;
+    if(alg == ::dnnl::algorithm::eltwise_clip) {
+      _alpha = 0;
+      _beta = alpha;
+    } else {
+      _alpha = alpha;
+    }
   }
 /// Getting parameters form an activation descriptor.
 /// \param [out] alg Activation algorithm.
 /// \param [out] alpha Value of alpha parameter.
   void get(::dnnl::algorithm *alg, float *alpha) const {
     *alg = _alg;
-    *alpha = _alpha;
+    if(_alg == ::dnnl::algorithm::eltwise_clip) {
+      *alpha = _beta;
+    } else {
+      *alpha = _alpha;
+    }
   }
 /// Setting the alpha parameter of an activation descriptor.
 /// \param [in] alpha Value of alpha parameter.
@@ -2481,10 +2490,13 @@ sycl::event engine_ext::pooling_forward(pooling_desc &desc, float alpha,
   if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
     return sycl::event();
   }
-  auto primitive_desc = create_forward_primitive_desc<::dnnl::pooling_forward>(
+  int pooling_dim = desc.get_stride().size();
+  std::vector<int64_t> dilation(pooling_dim, 0);
+  auto primitive_desc = create_forward_primitive_desc<::dnnl::pooling_v2_forward>(
       ::dnnl::prop_kind::forward_training, desc.get_algorithm(),
       src_desc.get_desc(), dst_desc.get_desc(), desc.get_stride(),
-      desc.get_kernel(), desc.get_padding(), desc.get_padding());
+      desc.get_kernel(), dilation, desc.get_padding(),
+      desc.get_padding());
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
       {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}}};
@@ -2517,13 +2529,15 @@ sycl::event engine_ext::pooling_backward(
   if (scale_parameter_preprocess({{alpha, beta, diff_src_desc, diff_src}})) {
     return sycl::event();
   }
+  int pooling_dim = desc.get_stride().size();
+  std::vector<int64_t> dilation(pooling_dim, 0);
   auto primitive = create_backward_primitive<::dnnl::pooling_backward>(
       create_forward_primitive_desc<::dnnl::pooling_forward>(
           ::dnnl::prop_kind::forward_training, desc.get_algorithm(),
           src_desc.get_desc(), dst_desc.get_desc(), desc.get_stride(),
-          desc.get_kernel(), desc.get_padding(), desc.get_padding()),
+          desc.get_kernel(), dilation, desc.get_padding(), desc.get_padding()),
       desc.get_algorithm(), diff_src_desc.get_desc(), diff_dst_desc.get_desc(),
-      desc.get_stride(), desc.get_kernel(), desc.get_padding(),
+      desc.get_stride(), desc.get_kernel(), dilation, desc.get_padding(),
       desc.get_padding());
 
   std::unordered_map<int, ::dnnl::memory> execution_args = {
