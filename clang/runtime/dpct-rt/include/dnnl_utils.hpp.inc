@@ -188,23 +188,14 @@ public:
 /// \param [in] alpha Value of alpha parameter.
   void set(::dnnl::algorithm alg, float alpha) {
     _alg = alg;
-    if(alg == ::dnnl::algorithm::eltwise_clip) {
-      _alpha = 0;
-      _beta = alpha;
-    } else {
-      _alpha = alpha;
-    }
+    _alpha = alpha;
   }
 /// Getting parameters form an activation descriptor.
 /// \param [out] alg Activation algorithm.
 /// \param [out] alpha Value of alpha parameter.
   void get(::dnnl::algorithm *alg, float *alpha) const {
     *alg = _alg;
-    if(_alg == ::dnnl::algorithm::eltwise_clip) {
-      *alpha = _beta;
-    } else {
-      *alpha = _alpha;
-    }
+    *alpha = _alpha;
   }
 /// Setting the alpha parameter of an activation descriptor.
 /// \param [in] alpha Value of alpha parameter.
