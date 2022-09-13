@@ -939,8 +939,8 @@ void engine_ext::pooling_backward(pooling_desc &desc, float alpha,
                                   void *diff_src, ::dnnl::memory *workspace) {
   SCALE_PARAMETER_PREPROCESS(alpha, beta, diff_src_desc, diff_src)
 
-  auto primitive = create_backward_primitive<::dnnl::pooling_v2_backward>(
-      create_forward_primitive_desc<::dnnl::pooling_v2_forward>(
+  auto primitive = create_backward_primitive<::dnnl::pooling_backward>(
+      create_forward_primitive_desc<::dnnl::pooling_forward>(
           ::dnnl::prop_kind::forward_training, desc.get_algorithm(),
           src_desc.get_desc(), dst_desc.get_desc(), desc.get_stride(),
           desc.get_kernel(), desc.get_padding(), desc.get_padding()),

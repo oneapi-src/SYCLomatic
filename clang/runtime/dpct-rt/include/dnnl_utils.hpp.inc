@@ -2522,8 +2522,8 @@ sycl::event engine_ext::pooling_backward(
   }
   int pooling_dim = desc.get_stride().size();
   std::vector<int64_t> dilation(pooling_dim, 0);
-  auto primitive = create_backward_primitive<::dnnl::pooling_backward>(
-      create_forward_primitive_desc<::dnnl::pooling_forward>(
+  auto primitive = create_backward_primitive<::dnnl::pooling_v2_backward>(
+      create_forward_primitive_desc<::dnnl::pooling_v2_forward>(
           ::dnnl::prop_kind::forward_training, desc.get_algorithm(),
           src_desc.get_desc(), dst_desc.get_desc(), desc.get_stride(),
           desc.get_kernel(), dilation, desc.get_padding(), desc.get_padding()),
