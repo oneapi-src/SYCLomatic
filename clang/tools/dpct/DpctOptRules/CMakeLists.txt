@@ -1,5 +1,6 @@
 set(dpct_opt_rule_files
   ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/forceinline.yaml
+  ${CMAKE_SOURCE_DIR}/../clang/tools/dpct/DpctOptRules/intel_specific_math.yaml
 )
 install(
   FILES ${dpct_opt_rule_files}
