@@ -229,13 +229,12 @@ public:
     prop.set_minor_version(minor);
 
     prop.set_max_work_item_sizes(
-// SYCL 2020 uses structs as information descriptors. Previous versions of SYCL use enum class elements
-#if (SYCL_LANGUAGE_VERSION && SYCL_LANGUAGE_VERSION>=202001)
-        // SYCL 2020, max_work_item_sizes is a struct templated by an int
-        get_info<cl::sycl::info::device::max_work_item_sizes<3>>());
-#else
-        // Pre-SYCL 2020, max_work_item_sizes is an enum class element
+#if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION<20220902)
+        // syclos compiler older than 2022/09/02, where max_work_item_sizes is an enum class element
         get_info<cl::sycl::info::device::max_work_item_sizes>());
+#else
+        // SYCL 2020-conformant code, max_work_item_sizes is a struct templated by an int
+        get_info<cl::sycl::info::device::max_work_item_sizes<3>>());
 #endif
     prop.set_host_unified_memory(
         get_info<cl::sycl::info::device::host_unified_memory>());
