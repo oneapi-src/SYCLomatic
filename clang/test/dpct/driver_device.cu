@@ -58,9 +58,9 @@ int main(){
   // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).is_native_atomic_supported();
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED, device);
 
-  // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_work_item_max_dim_x_size();
+  // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_device_info().get_max_work_item_sizes().get(0);
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X, device);
-  // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_local_mem_size();
+  // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_device_info().get_local_mem_size();
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK, device);
   // CHECK: int context;
   CUcontext context;
@@ -87,9 +87,7 @@ int main(){
   cuCtxSetLimit(CU_LIMIT_PRINTF_FIFO_SIZE, 10);
   size_t printfsize;
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxGetLimit was removed because SYCL currently does not support getting resource limits on devices.
-  // CHECK-NEXT: */
+  // CHECK: printfsize = dpct::get_current_device().get_device_info().get_max_stream_buffer_size();
   cuCtxGetLimit(&printfsize, CU_LIMIT_PRINTF_FIFO_SIZE);
 
 

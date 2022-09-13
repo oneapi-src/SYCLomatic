@@ -7752,8 +7752,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion",
         "cudaRuntimeGetVersion", "clock64", "__ldg",
         "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
-        "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit",
-        "cuCtxGetLimit");
+        "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit");
   };
 
   MF.addMatcher(
@@ -8026,7 +8025,6 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cudaDeviceSetCacheConfig" ||
              FuncName == "cudaDeviceGetCacheConfig" ||
              FuncName == "cuCtxSetCacheConfig" ||
-             FuncName == "cuCtxGetLimit" ||
              FuncName == "cuCtxSetLimit") {
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
@@ -14854,7 +14852,6 @@ void DriverDeviceAPIRule::runRule(
   std::ostringstream OS;
 
 
-
   if (APIName == "cuDeviceGet") {
     if (IsAssigned)
       OS << "(";
@@ -14949,26 +14946,19 @@ void DriverDeviceAPIRule::runRule(
     }
     emplaceTransformation(new ReplaceStmt(CE, OS.str()));
   } else if (APIName == "cuDeviceGetAttribute") {
-    auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(APIName);
-    if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
-      auto SecArg = CE->getArg(1);
-      if (auto DRE = dyn_cast<DeclRefExpr>(SecArg)) {
-        auto AttributeName = DRE->getNameInfo().getAsString();
-        auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
-        if (Search == EnumConstantRule::EnumNamesMap.end()) {
-          report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-              "cuDeviceGetAttribute");
-          return;
-        }
-        ExprAnalysis EA(CE);
-        emplaceTransformation(EA.getReplacement());
-        EA.applyAllSubExprRepl();
-        return;
-      } else {
-        report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
-              false);
+    auto SecArg = CE->getArg(1);
+    if (auto DRE = dyn_cast<DeclRefExpr>(SecArg)) {
+      auto AttributeName = DRE->getNameInfo().getAsString();
+      auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
+      if (Search == EnumConstantRule::EnumNamesMap.end()) {
+        report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+            "cuDeviceGetAttribute");
         return;
       }
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
+            false);
+      return;
     }
   }
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(APIName);
@@ -14988,7 +14978,7 @@ void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cuInit", "cuCtxCreate_v2", "cuCtxSetCurrent", "cuCtxGetCurrent",
         "cuCtxSynchronize", "cuCtxDestroy_v2", "cuDevicePrimaryCtxRetain",
         "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease",
-        "cuCtxGetDevice", "cuCtxGetApiVersion");
+        "cuCtxGetDevice", "cuCtxGetApiVersion", "cuCtxGetLimit");
   };
 
   MF.addMatcher(
@@ -15103,6 +15093,30 @@ void DriverContextAPIRule::runRule(
     requestFeature(HelperFeatureEnum::Device_get_current_device, CE);
     requestFeature(HelperFeatureEnum::Device_device_ext_queues_wait_and_throw,
                    CE);
+  } else if (APIName == "cuCtxGetLimit") {
+    auto SecArg = CE->getArg(1);
+    if (auto DRE = dyn_cast<DeclRefExpr>(SecArg)) {
+      std::string AttributeName = DRE->getNameInfo().getAsString();
+      auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
+      if (Search != EnumConstantRule::EnumNamesMap.end()) {
+        printDerefOp(OS, CE->getArg(0));
+        OS << " = " << MapNames::getDpctNamespace() +
+            "get_current_device().get_device_info()."
+              + Search->second->NewName + "()";
+      } else {
+        auto Msg = MapNames::RemovedAPIWarningMessage.find(APIName);
+        if (IsAssigned) {
+          report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+                MapNames::ITFName.at(APIName), Msg->second);
+          emplaceTransformation(new ReplaceStmt(CE, "0"));
+        } else {
+          report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+                MapNames::ITFName.at(APIName), Msg->second);
+          emplaceTransformation(new ReplaceStmt(CE, ""));
+        }
+        return;
+      }
+    }
   }
   if (IsAssigned) {
     OS << ", 0)";

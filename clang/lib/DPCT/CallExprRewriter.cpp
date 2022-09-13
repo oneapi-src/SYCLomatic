@@ -1670,7 +1670,8 @@ makeCallExprCreator(std::string Callee,
                                                                        Args...);
 }
 
-std::function<std::string(const CallExpr *)> makeFuncNameCreator(unsigned idx) {
+std::function<std::string(const CallExpr *)>
+makeFuncNameFromDevAttrCreator(unsigned idx) {
   return [=](const CallExpr *CE) -> std::string {
     auto Arg = CE->getArg(idx)->IgnoreImplicitAsWritten();
     if (auto DRE = dyn_cast<DeclRefExpr>(Arg)) {
@@ -1680,6 +1681,20 @@ std::function<std::string(const CallExpr *)> makeFuncNameCreator(unsigned idx) {
         requestHelperFeatureForEnumNames(ArgName, CE);
         return Search->second->NewName;
       }
+    }
+    return "";
+  };
+}
+std::function<std::string(const CallExpr *)> getWorkGroupDim(unsigned index) {
+  return [=](const CallExpr * C) {
+    auto Arg = dyn_cast<DeclRefExpr>(C->getArg(index)->
+                IgnoreImplicitAsWritten())->getNameInfo().getAsString();
+    if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X")
+      return "0";
+    else if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y") {
+      return "1";
+    } else if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z") {
+      return "2";
     }
     return "";
   };
@@ -1975,6 +1990,16 @@ std::function<bool(const CallExpr *C)> checkIsCallExprOnly() {
     if (parentStmt != nullptr && (dyn_cast<CompoundStmt>(parentStmt) ||
                           dyn_cast<ExprWithCleanups>(parentStmt)))
       return true;
+    return false;
+    };
+}
+
+std::function<bool(const CallExpr *C)> checkIsGetWorkGroupDim(size_t index) {
+  return [=](const CallExpr *C) -> bool {
+    if (getStmtSpelling(C->getArg(index)).
+          find("CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_") != std::string::npos) {
+      return true;
+    }
     return false;
     };
 }
@@ -2846,7 +2871,6 @@ std::function<bool(const CallExpr *C)> hasManagedAttr(int Idx) {
 #define LAMBDA(...) makeLambdaCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define CAST(T, S) makeCastExprCreator(T, S)
-#define GET_FUNC_NAME(S) makeFuncNameCreator(S)
 #define CAST_IF_NEED(T, S) makeCastIfNeedExprCreator(T, S)
 #define DOUBLE_POINTER_CONST_CAST(BASE_VALUE_TYPE, EXPR,                       \
                                   DOES_BASE_VALUE_NEED_CONST,                  \
