@@ -15255,7 +15255,6 @@ void DriverDeviceAPIRule::runRule(
   std::ostringstream OS;
 
 
-
   if (APIName == "cuDeviceGet") {
     if (IsAssigned)
       OS << "(";
@@ -15350,26 +15349,23 @@ void DriverDeviceAPIRule::runRule(
     }
     emplaceTransformation(new ReplaceStmt(CE, OS.str()));
   } else if (APIName == "cuDeviceGetAttribute") {
-    auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(APIName);
-    if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
-      auto SecArg = CE->getArg(1);
-      if (auto DRE = dyn_cast<DeclRefExpr>(SecArg)) {
-        auto AttributeName = DRE->getNameInfo().getAsString();
-        auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
-        if (Search == EnumConstantRule::EnumNamesMap.end()) {
-          report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-              "cuDeviceGetAttribute");
-          return;
-        }
-        ExprAnalysis EA(CE);
-        emplaceTransformation(EA.getReplacement());
-        EA.applyAllSubExprRepl();
-        return;
-      } else {
-        report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
-              false);
+    auto SecArg = CE->getArg(1);
+    if (auto DRE = dyn_cast<DeclRefExpr>(SecArg)) {
+      auto AttributeName = DRE->getNameInfo().getAsString();
+      auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
+      if (Search == EnumConstantRule::EnumNamesMap.end()) {
+        report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+            "cuDeviceGetAttribute");
         return;
       }
+      ExprAnalysis EA(CE);
+      emplaceTransformation(EA.getReplacement());
+      EA.applyAllSubExprRepl();
+      return;
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
+            false);
+      return;
     }
   }
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(APIName);

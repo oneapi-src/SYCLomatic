@@ -150,7 +150,14 @@ FEATURE_REQUEST_FACTORY(
                                             CALL(MapNames::getDpctNamespace() +
                                                  "get_sycl_language_version"))))
 ASSIGNABLE_FACTORY(
-    ASSIGN_FACTORY_ENTRY("cuDeviceGetAttribute", DEREF(0),
-                    makeMemberCallCreator(CALL(MapNames::getDpctNamespace() +
-                    "dev_mgr::instance().get_device", ARG(2)), false,
-                    makeFuncNameCreator(1))))
+CONDITIONAL_FACTORY_ENTRY(
+        checkIsGetWorkGroupDim(1),
+        ASSIGN_FACTORY_ENTRY("cuDeviceGetAttribute", DEREF(0),
+                       MEMBER_CALL(MEMBER_CALL(MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"),
+                        false, "get_device", ARG(2)),
+                        false, "get_device_info"), false, makeFuncNameFromArgCreator(1)), false, "get", getWorkGroupDim(1))),
+        ASSIGN_FACTORY_ENTRY("cuDeviceGetAttribute", DEREF(0),
+                       MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"),
+                        false, "get_device", ARG(2)), false, makeFuncNameFromArgCreator(1)))
+        )
+)
