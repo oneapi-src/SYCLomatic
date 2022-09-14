@@ -25,12 +25,12 @@
   Kind: API
   Priority: Takeover
   In: normcdff
-  Out: sycl::ext::intel::math::normcdf($1)
+  Out: sycl::ext::intel::math::cdfnorm($1)
   Includes: [<sycl/ext/intel/math.hpp>]
 
 - Rule: intel_specific_math_normcdf
   Kind: API
   Priority: Takeover
   In: normcdf
-  Out: sycl::ext::intel::math::normcdf($1)
+  Out: sycl::ext::intel::math::cdfnorm($1)
   Includes: [<sycl/ext/intel/math.hpp>]
