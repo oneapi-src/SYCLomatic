@@ -1089,6 +1089,12 @@ void IncludesCallbacks::InclusionDirective(
     }
   }
 
+  // Always keep include of CL/opencl.h
+  // Only CUDA code is migrated, not OpenCL.
+  // Thus CL/opencl.h header must be kept
+  if (FileName == "CL/opencl.h")
+    return;
+  
   // Replace the complete include directive with an empty string.
   // Also remove the trailing spaces to end of the line.
   TransformSet.emplace_back(new ReplaceInclude(

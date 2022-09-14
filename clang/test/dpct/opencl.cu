@@ -1,0 +1,34 @@
+// ------ prepare test directory
+// RUN: cd %T
+// RUN: rm -rf opencl-build
+// RUN: mkdir  opencl-build
+// RUN: cd     opencl-build
+// RUN: cp %s opencl.cu
+//
+// ------ run dpct
+// RUN: dpct opencl.cu
+//
+// ------ ensure file inclusion of CL/opencl.h is kept
+// RUN: FileCheck --input-file dpct_output/opencl.dp.cpp --match-full-lines %s
+//
+// ------ cleanup test directory
+// RUN: cd ..
+// RUN: rm -rf ./opencl-build
+
+// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <dpct/dpct.hpp>
+// CHECK: #include <iostream>
+// CHECK: #include <math.h>
+// CHECK: #include <CL/opencl.h>
+
+#include <iostream>
+#include <math.h>
+#include <CL/opencl.h>
+
+__global__
+void recip( double *x, double *y)
+{
+    int a = *x;
+
+    *y = __drcp_rn(*x);
+}
