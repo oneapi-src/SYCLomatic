@@ -2173,7 +2173,11 @@ sycl::event engine_ext::reorder(float alpha, const memory_desc_ext &src_desc,
       {DNNL_ARG_DST, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)},
       {DNNL_ARG_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, src)}};
 
-  return ::dnnl::sycl_interop::execute(reorder_primitive, _s, args);
+  auto e = ::dnnl::sycl_interop::execute(reorder_primitive, _s, args);
+  if(_eng.get_kind() == ::dnnl::engine::kind::cpu) {
+    e.wait();
+  }
+  return e;
 }
 
 sycl::event engine_ext::scale(float alpha, const memory_desc_ext &src_desc,
@@ -2189,7 +2193,11 @@ sycl::event engine_ext::scale(float alpha, const memory_desc_ext &src_desc,
       {DNNL_ARG_DST, ::dnnl::memory(src_desc.get_desc(), _eng, src)},
       {DNNL_ARG_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, src)}};
 
-  return ::dnnl::sycl_interop::execute(primitive, _s, args);
+  auto e = ::dnnl::sycl_interop::execute(primitive, _s, args);
+  if(_eng.get_kind() == ::dnnl::engine::kind::cpu) {
+    e.wait();
+  }
+  return e;
 }
 
 sycl::event engine_ext::sum(float alpha, const memory_desc_ext &src_desc,
