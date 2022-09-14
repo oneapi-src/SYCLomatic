@@ -328,7 +328,8 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_binary,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnOpTensor", ARG_WC(0), false, "binary",
                             ARG_WC(1), DEREF(ARG_WC(2)), ARG_WC(3), ARG_WC(4),
-                            DEREF(ARG_WC(5)), ARG_WC(6), ARG_WC(7))))
+                            DEREF(ARG_WC(5)), ARG_WC(6), ARG_WC(7), ARG_WC(8),
+                            ARG_WC(9), ARG_WC(10))))
 
 // Batch Normalization Layer
 FEATURE_REQUEST_FACTORY(
