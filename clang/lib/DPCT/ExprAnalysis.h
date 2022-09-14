@@ -628,6 +628,7 @@ protected:
   void analyzeExpr(const IfStmt *IS);
   void analyzeExpr(const DeclStmt *DS);
   void analyzeExpr(const ConstantExpr *CE);
+  void analyzeExpr(const IntegerLiteral *IL);
 
   inline void analyzeType(const TypeSourceInfo *TSI,
                           const Expr *CSCE = nullptr) {

@@ -4,6 +4,7 @@
 //CHECK:#include <CL/sycl.hpp>
 //CHECK-NEXT:#include <dpct/dpct.hpp>
 //CHECK-NEXT:#include <oneapi/mkl.hpp>
+//CHECK-NEXT:#include <dpct/fft_utils.hpp>
 //CHECK-NEXT:#include <dpct/lib_common_utils.hpp>
 #include "cufft.h"
 

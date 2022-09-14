@@ -1404,16 +1404,26 @@ makeExtendStr(unsigned Idx, const std::string Suffix) {
   };
 }
 
+namespace {
+std::string registerAndGetQueueStr(const CallExpr *C, std::string Prefix) {
+  int Index = getPlaceholderIdx(C);
+  if (Index == 0) {
+    Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+  }
+  buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+  return Prefix + "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+}
+}
+
 std::function<std::string(const CallExpr *)> makeQueueStr() {
   return [=](const CallExpr *C) -> std::string {
-    int Index = getPlaceholderIdx(C);
-    if (Index == 0) {
-      Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    }
+    return registerAndGetQueueStr(C, "");
+  };
+}
 
-    buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-    std::string S = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
-    return S;
+std::function<std::string(const CallExpr *)> makeQueuePtrStr() {
+  return [=](const CallExpr *C) -> std::string {
+    return registerAndGetQueueStr(C, "&");
   };
 }
 
@@ -2695,6 +2705,7 @@ RemoveCubTempStorageFactory::create(const CallExpr *C) const {
   makeBLASEnumCallArgCreator(x, BLAS_ENUM_TYPE)
 #define EXTENDSTR(idx, str) makeExtendStr(idx, str)
 #define QUEUESTR makeQueueStr()
+#define QUEUEPTRSTR makeQueuePtrStr()
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
 #define MEMBER_EXPR(...) makeMemberExprCreator(__VA_ARGS__)

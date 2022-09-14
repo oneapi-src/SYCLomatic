@@ -1876,17 +1876,6 @@ class FFTFunctionCallRule : public NamedMigrationRule<FFTFunctionCallRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-
-private:
-  void processFunctionPointer(const VarDecl *VD);
-  void processFunctionPointerAssignment(const BinaryOperator *BO);
-  void prepareFEAInfo(std::string IndentStr, std::string FuncName,
-                      std::string FuncPtrName,
-                      LibraryMigrationLocations Locations,
-                      LibraryMigrationFlags Flags, SourceLocation SL);
-  std::vector<std::string> PrefixStmts;
-  std::string IndentStr;
-  std::string CallExprRepl;
 };
 
 class AsmRule : public NamedMigrationRule<AsmRule> {
