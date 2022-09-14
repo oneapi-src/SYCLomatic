@@ -7,28 +7,28 @@
 # The rule specified in this file can be imported with commandline option:
 # --rule-file={dpct_install_folder}/extensions/opt_rules/intel_specific_math.yaml
 ---
-- Rule: intel_specific_math
+- Rule: intel_specific_math_erfinv
   Kind: API
   Priority: Takeover
   In: erfinv
   Out: sycl::ext::intel::erfinv($1)
   Includes: [<sycl/ext/intel/math.hpp>]
 
-- Rule: intel_specific_math
+- Rule: intel_specific_math_erfinvf
   Kind: API
   Priority: Takeover
   In: erfinvf
   Out: sycl::ext::intel::erfinv($1)
   Includes: [<sycl/ext/intel/math.hpp>]
 
-- Rule: intel_specific_math
+- Rule: intel_specific_math_normcdff
   Kind: API
   Priority: Takeover
   In: normcdff
   Out: sycl::ext::intel::normcdf($1)
   Includes: [<sycl/ext/intel/math.hpp>]
 
-- Rule: intel_specific_math
+- Rule: intel_specific_math_normcdf
   Kind: API
   Priority: Takeover
   In: normcdf
