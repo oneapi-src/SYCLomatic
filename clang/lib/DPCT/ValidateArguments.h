@@ -58,6 +58,7 @@ enum class ExplicitNamespace : unsigned int {
 };
 enum class DPCPPExtensions : unsigned int {
   Ext_EnqueueBarrier = 0x01,
+  Ext_CAndCXXStandardLibraries,
   Ext_DPCPPExtensionsEnumSize
 };
 enum class ExperimentalFeatures : unsigned int {

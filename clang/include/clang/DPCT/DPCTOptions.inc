@@ -323,6 +323,10 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<DPCPPExtensions>), NoDPCPPE
              DPCT_OPT_ENUM("enqueued_barriers",
                                      int(DPCPPExtensions::Ext_EnqueueBarrier),
                                      "Enqueued barriers extension.",
+                                     false),
+             DPCT_OPT_ENUM("c_and_cxx_standard_libraries",
+                                     int(DPCPPExtensions::Ext_CAndCXXStandardLibraries),
+                                     "C and C++ standard libraries can be used in SYCL device code.",
                                      false)
            ),
            llvm::cl::desc("Comma separated list of extensions not to be used in migrated "

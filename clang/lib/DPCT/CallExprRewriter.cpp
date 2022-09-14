@@ -2463,6 +2463,9 @@ auto UseNDRangeBarrier = [](const CallExpr *C) -> bool {
 auto UseLogicalGroup = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useLogicalGroup();
 };
+auto UseCAndCXXStandardLibrariesExt = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::UseCAndCXXStandardLibrariesExt();
+};
 
 class CheckDerefedTypeBeforeCast {
   unsigned Idx;
@@ -2667,6 +2670,15 @@ public:
   }
 };
 
+class IsIntegerType {
+  unsigned Idx;
+public:
+  IsIntegerType(unsigned Idx) : Idx(Idx) {}
+  bool operator()(const CallExpr *C) {
+    return C->getArg(Idx)->getType()->isIntegerType();
+  }
+};
+
 std::shared_ptr<CallExprRewriter>
 RemoveCubTempStorageFactory::create(const CallExpr *C) const {
   CubRule::removeRedundantTempVar(C);
@@ -2787,6 +2799,8 @@ RemoveCubTempStorageFactory::create(const CallExpr *C) const {
 #define NO_REWRITE_FUNCNAME_FACTORY_ENTRY(FuncName, RewriterName)              \
   REWRITER_FACTORY_ENTRY(FuncName, NoRewriteFuncNameRewriterFactory,           \
                          RewriterName)
+#define FUNCNAME_FACTORY_ENTRY(FuncName, NewName)                              \
+  REWRITER_FACTORY_ENTRY(FuncName, FuncNameRewriterFactory, NewName)
 #define MATH_SIMULATED_FUNC_FACTORY_ENTRY(FuncName, RewriterName)              \
   REWRITER_FACTORY_ENTRY(FuncName, MathSimulatedRewriterFactory, RewriterName)
 #define MATH_TYPECAST_FACTORY_ENTRY(FuncName)                                  \

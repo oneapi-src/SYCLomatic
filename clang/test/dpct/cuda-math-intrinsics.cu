@@ -365,9 +365,9 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: d2 = sycl::fabs((double)i);
   d2 = fabs(i);
 
-  // CHECK: sycl::fabs(d0);
+  // CHECK: std::abs(d0);
   abs(d0);
-  // CHECK: sycl::fabs(d0 * d1);
+  // CHECK: std::abs(d0 * d1);
   abs(d0 * d1);
 
   // CHECK: d2 = sycl::fdim(d0, d1);
@@ -2482,7 +2482,7 @@ __global__ void testIntegerFunctions() {
   __mul24(u, u);
   __mulhi(u, u);
 
-  // CHECK: i = sycl::abs(i);
+  // CHECK: i = std::abs(i);
   // CHECK-NEXT: l = sycl::abs(l);
   // CHECK-NEXT: ll = sycl::abs(ll);
   i = abs(i);
@@ -2881,7 +2881,7 @@ __device__ void do_migration5() {
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
-  //CHECK-NEXT: sycl::fabs(f);
+  //CHECK-NEXT: std::abs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -2951,7 +2951,7 @@ __global__ void do_migration6() {
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
-  //CHECK-NEXT: sycl::fabs(f);
+  //CHECK-NEXT: std::abs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -3021,7 +3021,7 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
-  //CHECK-NEXT: sycl::fabs(f);
+  //CHECK-NEXT: std::abs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -3078,7 +3078,7 @@ __device__ void foo1() {
 
 __device__ void test_recursive_unary() {
   int i, j, k;
-  // CHECK: sycl::max(-sycl::max(-sycl::abs(i), j), k);
+  // CHECK: sycl::max(-sycl::max(-std::abs(i), j), k);
   max(-max(-abs(i), j), k);
 }
 

@@ -24,6 +24,7 @@ class MathBinaryOperatorRewriter;
 class MathUnsupportedRewriter;
 class WarpFunctionRewriter;
 class NoRewriteFuncNameRewriter;
+class FuncNameRewriter;
 template <class... MsgArgs> class UnsupportFunctionRewriter;
 
 /*
@@ -80,6 +81,8 @@ using MathFuncNameRewriterFactory =
     CallExprRewriterFactory<MathFuncNameRewriter, std::string>;
 using NoRewriteFuncNameRewriterFactory =
     CallExprRewriterFactory<NoRewriteFuncNameRewriter, std::string>;
+using FuncNameRewriterFactory =
+    CallExprRewriterFactory<FuncNameRewriter, std::string>;
 using MathUnsupportedRewriterFactory =
     CallExprRewriterFactory<MathUnsupportedRewriter, std::string>;
 using MathSimulatedRewriterFactory =
@@ -486,6 +489,21 @@ protected:
   static const std::vector<std::string> SingleFuctions;
   static const std::vector<std::string> DoubleFuctions;
   friend MathFuncNameRewriterFactory;
+};
+
+class FuncNameRewriter : public CallExprRewriter {
+  std::string NewFuncName;
+public:
+  FuncNameRewriter(const CallExpr *Call, StringRef SourceName,
+                StringRef NewName)
+      : CallExprRewriter(Call, SourceCalleeName) {
+    NewFuncName = NewName.str();
+    NoRewrite = true;
+  }
+
+  Optional<std::string> rewrite() override {
+    return NewFuncName;
+  }
 };
 
 /// The rewriter for renaming math function calls

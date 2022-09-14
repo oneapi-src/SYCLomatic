@@ -194,10 +194,18 @@ bool printOptions(
         return false;
       }
       unsigned int UValue = std::stoul(Value);
+      std::string Str = "";
       if (UValue < static_cast<unsigned>(-1)) {
         if (!(UValue &
               static_cast<unsigned>(DPCPPExtensions::Ext_EnqueueBarrier)))
-          Opts.emplace_back("--no-dpcpp-extensions=enqueued_barriers");
+          Str = Str + "enqueued_barriers,";
+        if (!(UValue & static_cast<unsigned>(
+                           DPCPPExtensions::Ext_CAndCXXStandardLibraries)))
+          Str = Str + "c_and_cxx_standard_libraries,";
+      }
+      if (!Str.empty()) {
+        Str = "--no-dpcpp-extensions=" + Str;
+        Opts.emplace_back(Str.substr(0, Str.size() - 1));
       }
     }
     if (Key == clang::dpct::OPTION_NoDRYPattern) {
