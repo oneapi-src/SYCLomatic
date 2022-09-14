@@ -2072,11 +2072,11 @@ sycl::event engine_ext::execute_primitive(
 
   final_event = final_cache_event =
       ::dnnl::sycl_interop::execute(primitive, _s, args);
-
+  int cache_index = 0;
   for (int i = 0; i < output_arg_num; i++) {
     if (output_args[i]._beta != 0.f) {
       final_event = final_cache_event =
-          sum(output_args[i]._alpha, output_args[i]._desc, caches[i],
+          sum(output_args[i]._alpha, output_args[i]._desc, caches[cache_index++],
               output_args[i]._beta, output_args[i]._desc, output_args[i]._data);
     } else {
       if (output_args[i]._alpha != 1.f) {
@@ -2522,18 +2522,17 @@ sycl::event engine_ext::sum(float alpha, const memory_desc_ext &src_desc,
   ::dnnl::sum::primitive_desc sum_primitive_desc(
       {beta, alpha}, {src_desc.get_desc(), dst_desc.get_desc()}, _eng);
 
-  auto args = new std::unordered_map<int, ::dnnl::memory>{
+  std::unordered_map<int, ::dnnl::memory> args = {
       {DNNL_ARG_DST, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)},
       {DNNL_ARG_MULTIPLE_SRC + 1,
        ::dnnl::memory(src_desc.get_desc(), _eng, src)},
       {DNNL_ARG_MULTIPLE_SRC, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)}};
 
   auto e = ::dnnl::sycl_interop::execute(::dnnl::sum(sum_primitive_desc), _s,
-                                       *args);
-  _q->submit([&](cl::sycl::handler &cgh) {
-    cgh.depends_on(e);
-    cgh.host_task([=] { delete args; });
-  });
+                                       args);
+  if(_eng.get_kind() == ::dnnl::engine::kind::cpu) {
+    e.wait();
+  }
   return e;
 }
 // DPCT_LABEL_END
@@ -2775,7 +2774,7 @@ sycl::event engine_ext::pooling_forward(pooling_desc &desc, float alpha,
     insert_workspace(src, ws_mem);
   }
 
-  return execute_primitive(::dnnl::pooling_forward(primitive_desc),
+  return execute_primitive(::dnnl::pooling_v2_forward(primitive_desc),
                            execution_args,
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }

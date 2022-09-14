@@ -2201,18 +2201,17 @@ sycl::event engine_ext::sum(float alpha, const memory_desc_ext &src_desc,
   ::dnnl::sum::primitive_desc sum_primitive_desc(
       {beta, alpha}, {src_desc.get_desc(), dst_desc.get_desc()}, _eng);
 
-  auto args = new std::unordered_map<int, ::dnnl::memory>{
+  std::unordered_map<int, ::dnnl::memory> args = {
       {DNNL_ARG_DST, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)},
       {DNNL_ARG_MULTIPLE_SRC + 1,
        ::dnnl::memory(src_desc.get_desc(), _eng, src)},
       {DNNL_ARG_MULTIPLE_SRC, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)}};
 
   auto e = ::dnnl::sycl_interop::execute(::dnnl::sum(sum_primitive_desc), _s,
-                                       *args);
-  _q->submit([&](cl::sycl::handler &cgh) {
-    cgh.depends_on(e);
-    cgh.host_task([=] { delete args; });
-  });
+                                       args);
+  if(_eng.get_kind() == ::dnnl::engine::kind::cpu) {
+    e.wait();
+  }
   return e;
 }
 
