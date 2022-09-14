@@ -10,8 +10,8 @@
 
 // CHECK: void kernelFunc(double *deviceArray) {
 // CHECK:   double &d0 = *deviceArray;
-// CHECK:   d0 = sycl::ext::intel::erfinv(d0);
-// CHECK:   d0 = sycl::ext::intel::normcdf(d0);
+// CHECK:   d0 = sycl::ext::intel::math::erfinv(d0);
+// CHECK:   d0 = sycl::ext::intel::math::normcdf(d0);
 // CHECK: }
 __global__ void kernelFunc(double *deviceArray) {
   double &d0 = *deviceArray;
@@ -22,8 +22,8 @@ __global__ void kernelFunc(double *deviceArray) {
 
 // CHECK: void kernelFunc(float *deviceArray) {
 // CHECK:   float &f0 = *deviceArray;
-// CHECK:   f0 = sycl::ext::intel::erfinv(f0);
-// CHECK:   f0 = sycl::ext::intel::normcdf(f0);
+// CHECK:   f0 = sycl::ext::intel::math::erfinv(f0);
+// CHECK:   f0 = sycl::ext::intel::math::normcdf(f0);
 // CHECK: }
 __global__ void kernelFunc(float *deviceArray) {
   float &f0 = *deviceArray;
