@@ -6,7 +6,7 @@
 // RUN: cp %s opencl.cu
 //
 // ------ run dpct
-// RUN: dpct opencl.cu
+// RUN: dpct opencl.cu --cuda-include-path="%cuda-path/include"
 //
 // ------ ensure file inclusion of CL/opencl.h is kept
 // RUN: FileCheck --input-file dpct_output/opencl.dp.cpp --match-full-lines %s
