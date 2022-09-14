@@ -377,6 +377,17 @@ void foobar() {
 
   //CHECK: MY_ERROR_CHECKER((d_Output = sycl::malloc_device<float>(1, q_ct1), 0));
   MY_ERROR_CHECKER(cudaMalloc((void **)&d_Output, sizeof(float)));
+
+  size_t free_mem, total_mem;
+
+  //CHECK: dpct::get_sycl_mem_info(free_mem, total_mem);
+  cudaMemGetInfo(&free_mem, &total_mem);
+  //CHECK: MY_ERROR_CHECKER(dpct::get_sycl_mem_info(free_mem, total_mem), 0));
+  MY_ERROR_CHECKER(cudaMemGetInfo(&free_mem, &total_mem));
+  //CHECK: dpct::get_sycl_mem_info(free_mem, total_mem);
+  cuMemGetInfo(&free_mem, &total_mem);
+  //CHECK: MY_ERROR_CHECKER(dpct::get_sycl_mem_info(free_mem, total_mem), 0));
+  MY_ERROR_CHECKER(cuMemGetInfo(&free_mem, &total_mem));
 }
 
 template <typename T>

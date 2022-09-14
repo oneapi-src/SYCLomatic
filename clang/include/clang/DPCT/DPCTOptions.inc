@@ -320,7 +320,11 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<DPCPPExtensionsDefaultEnabl
              DPCT_OPT_ENUM("enqueued_barriers",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier),
                                      "Enqueued barriers extension.",
-                                     false)
+                                     false),
+             DPCT_OPT_ENUM("free_mem_size",
+                                     int(DPCPPExtensionsDefaultEnabled::Ext_FreeMemSize),
+                                     "Used to get the number of bytes of free memory on.",
+                                     false)                            
            ),
            llvm::cl::desc("Comma separated list of extensions not to be used in migrated "
            "code.\n"

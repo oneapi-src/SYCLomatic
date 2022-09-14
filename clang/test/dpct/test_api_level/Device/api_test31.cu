@@ -3,11 +3,11 @@
 // RUN: FileCheck --input-file %T/Device/api_test29_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test29_out
 
-// CHECK: 2
-// TEST_FEATURE: Device_typedef_queue_ptr
+// CHECK: 37
+// TEST_FEATURE: Util_get_sycl_mem_info
 
 int main() {
-  cudaStream_t stream;
+  size_t result1, result2;
+  cuMemGetInfo(&result1, &result2);
   return 0;
 }
-

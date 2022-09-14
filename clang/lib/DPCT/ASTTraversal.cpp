@@ -11516,47 +11516,65 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
     emplaceTransformation(new ReplaceStmt(C, OS.str()));
     requestFeature(HelperFeatureEnum::Image_image_matrix_get_channel, C);
   } else if (Name == "cuMemGetInfo_v2" || Name == "cudaMemGetInfo") {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    std::ostringstream OS;
-    if (IsAssigned)
+    if (DpctGlobalInfo::useFreeMemSize()) {
+      std::ostringstream OS;
+      OS << MapNames::getDpctNamespace() + "get_sycl_mem_info";
       OS << "(";
-    auto SecArg = C->getArg(1);
-    printDerefOp(OS, SecArg);
-    OS << " = " << MapNames::getDpctNamespace()
-       << "get_current_device().get_device_info()"
-          ".get_global_mem_size()";
-    requestFeature(HelperFeatureEnum::Device_get_current_device, C);
-    requestFeature(
-        HelperFeatureEnum::Device_device_ext_get_device_info_return_info, C);
-    requestFeature(HelperFeatureEnum::Device_device_info_get_global_mem_size,
-                   C);
-    if (IsAssigned) {
-      OS << ", 0)";
-      report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      printDerefOp(OS, C->getArg(0));
+      OS << ", ";
+      printDerefOp(OS, C->getArg(1));
+      OS << ")";
+
+      emplaceTransformation(new ReplaceStmt(C, OS.str()));
+      if (IsAssigned) {
+        emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
+        report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      }
+      requestFeature(HelperFeatureEnum::Util_get_sycl_mem_info, C);
+    } else {
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      std::ostringstream OS;
+      if (IsAssigned)
+        OS << "(";
+
+      auto SecondArg = C->getArg(1);
+      printDerefOp(OS, SecondArg);
+      OS << " = " << MapNames::getDpctNamespace()
+         << "get_current_device().get_device_info()"
+            ".get_global_mem_size()";
+      requestFeature(HelperFeatureEnum::Device_get_current_device, C);
+      requestFeature(
+          HelperFeatureEnum::Device_device_ext_get_device_info_return_info, C);
+      requestFeature(HelperFeatureEnum::Device_device_info_get_global_mem_size,
+                     C);
+      if (IsAssigned) {
+        OS << ", 0)";
+        report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      }
+      SourceLocation CallBegin(C->getBeginLoc());
+      SourceLocation CallEnd(C->getEndLoc());
+
+      bool IsMacroArg =
+          SM.isMacroArgExpansion(CallBegin) && SM.isMacroArgExpansion(CallEnd);
+
+      if (CallBegin.isMacroID() && IsMacroArg) {
+        CallBegin = SM.getImmediateSpellingLoc(CallBegin);
+        CallBegin = SM.getExpansionLoc(CallBegin);
+      } else if (CallBegin.isMacroID()) {
+        CallBegin = SM.getExpansionLoc(CallBegin);
+      }
+
+      if (CallEnd.isMacroID() && IsMacroArg) {
+        CallEnd = SM.getImmediateSpellingLoc(CallEnd);
+        CallEnd = SM.getExpansionLoc(CallEnd);
+      } else if (CallEnd.isMacroID()) {
+        CallEnd = SM.getExpansionLoc(CallEnd);
+      }
+      CallEnd = CallEnd.getLocWithOffset(1);
+
+      emplaceTransformation(replaceText(CallBegin, CallEnd, OS.str(), SM));
+      report(C->getBeginLoc(), Diagnostics::UNSUPPORT_FREE_MEMORY_SIZE, false);
     }
-    SourceLocation CallBegin(C->getBeginLoc());
-    SourceLocation CallEnd(C->getEndLoc());
-
-    bool IsMacroArg =
-        SM.isMacroArgExpansion(CallBegin) && SM.isMacroArgExpansion(CallEnd);
-
-    if (CallBegin.isMacroID() && IsMacroArg) {
-      CallBegin = SM.getImmediateSpellingLoc(CallBegin);
-      CallBegin = SM.getExpansionLoc(CallBegin);
-    } else if (CallBegin.isMacroID()) {
-      CallBegin = SM.getExpansionLoc(CallBegin);
-    }
-
-    if (CallEnd.isMacroID() && IsMacroArg) {
-      CallEnd = SM.getImmediateSpellingLoc(CallEnd);
-      CallEnd = SM.getExpansionLoc(CallEnd);
-    } else if (CallEnd.isMacroID()) {
-      CallEnd = SM.getExpansionLoc(CallEnd);
-    }
-    CallEnd = CallEnd.getLocWithOffset(1);
-
-    emplaceTransformation(replaceText(CallBegin, CallEnd, OS.str(), SM));
-    report(C->getBeginLoc(), Diagnostics::UNSUPPORT_FREE_MEMORY_SIZE, false);
   } else {
     auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(Name);
     if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
