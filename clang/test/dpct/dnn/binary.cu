@@ -49,7 +49,7 @@ int main() {
     cudnnSetOpTensorDescriptor(OpDesc, CUDNN_OP_TENSOR_NOT, CUDNN_DATA_FLOAT, CUDNN_PROPAGATE_NAN);
 
     float alpha0 = 1.f, alpha1 = 1.f, beta = 0.f;
-    // CHECK: auto status = (handle.binary(OpDesc, alpha0, dataTensor, data, alpha1, dataTensor, data), 0);
+    // CHECK: auto status = (handle.binary(OpDesc, alpha0, dataTensor, data, alpha1, dataTensor, data, beta, outTensor, out), 0);
     auto status = cudnnOpTensor(
         handle, 
         OpDesc,
