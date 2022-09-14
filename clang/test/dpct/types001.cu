@@ -155,8 +155,8 @@ int main(int argc, char **argv) {
   a = sizeof(event);
   a = sizeof event;
 
-  //CHECK:sycl::queue *stream;
-  //CHECK-NEXT:a = sizeof(sycl::queue *);
+  //CHECK:dpct::queue_ptr stream;
+  //CHECK-NEXT:a = sizeof(dpct::queue_ptr);
   //CHECK-NEXT:a = sizeof(stream);
   //CHECK-NEXT:a = sizeof stream;
   cudaStream_t stream;
@@ -386,20 +386,20 @@ int main(int argc, char **argv) {
 
 __global__ void foo() {
   void *p;
-  // CHECK: (sycl::queue *)p;
-  // CHECK-NEXT: (sycl::queue **)p;
-  // CHECK-NEXT: (sycl::queue ***)p;
-  // CHECK-NEXT: (sycl::queue ****)p;
+  // CHECK: (dpct::queue_ptr) p;
+  // CHECK-NEXT: (dpct::queue_ptr *)p;
+  // CHECK-NEXT: (dpct::queue_ptr **)p;
+  // CHECK-NEXT: (dpct::queue_ptr ***)p;
   (cudaStream_t)p;
   (cudaStream_t *)p;
   (cudaStream_t **)p;
   (cudaStream_t ***)p;
 
 
-  // CHECK: malloc(sizeof(sycl::queue **));
-  // CHECK-NEXT: malloc(sizeof(sycl::queue ***));
-  // CHECK-NEXT: malloc(sizeof(sycl::queue ****));
-  // CHECK-NEXT: malloc(sizeof(sycl::queue *&));
+  // CHECK: malloc(sizeof(dpct::queue_ptr *));
+  // CHECK-NEXT: malloc(sizeof(dpct::queue_ptr **));
+  // CHECK-NEXT: malloc(sizeof(dpct::queue_ptr ***));
+  // CHECK-NEXT: malloc(sizeof(dpct::queue_ptr &));
   malloc(sizeof(cudaStream_t *));
   malloc(sizeof(cudaStream_t **));
   malloc(sizeof(cudaStream_t ***));
@@ -428,7 +428,7 @@ __global__ void foo() {
 
 template <typename T> struct S {};
 
-// CHECK: template <> struct S<sycl::queue *> {};
+// CHECK: template <> struct S<dpct::queue_ptr> {};
 // CHECK-NEXT: template <> struct S<sycl::queue> {};
 // CHECK-NEXT: template <> struct S<sycl::float2> {};
 // CHECK-NEXT: template <> struct S<sycl::float4> {};
@@ -438,7 +438,7 @@ template <> struct S<float2> {};
 template <> struct S<float4> {};
 
 void foobar() {
-  // CHECK: S<sycl::queue *> s0;
+  // CHECK: S<dpct::queue_ptr> s0;
   S<cudaStream_t> s0;
   // CHECK: S<sycl::float2> s1;
   S<float2> s1;
@@ -447,63 +447,63 @@ void foobar() {
 }
 
 void fun() {
-  // CHECK: sycl::queue **p, *s, *&r = s;
+  // CHECK: dpct::queue_ptr *p, s, &r = s;
   cudaStream_t *p, s, &r = s;
-  // CHECK: sycl::queue *const s_2 = NULL, *const * p_2, *const &r_2 = s;
+  // CHECK: dpct::queue_ptr const s_2 = NULL, *p_2, &r_2 = s;
   cudaStream_t const s_2 = NULL, *p_2, &r_2 = s;
-  // CHECK: sycl::queue *const &r_3 = s, *const * p_3, *const s_3 = NULL;
+  // CHECK: const dpct::queue_ptr &r_3 = s, *p_3, s_3 = NULL;
   const cudaStream_t &r_3 = s, *p_3, s_3 = NULL;
 
-  // CHECK: sycl::queue *const *pc, *const sc = s, *const &rc = s;
+  // CHECK: dpct::queue_ptr const *pc, sc = s, &rc = s;
   cudaStream_t const *pc, sc = s, &rc = s;
-  // CHECK: sycl::queue *const *pc1, *const sc1 = s, *const &rc1 = s;
+  // CHECK: const dpct::queue_ptr *pc1, sc1 = s, &rc1 = s;
   const cudaStream_t *pc1, sc1 = s, &rc1 = s;
-  // CHECK: sycl::queue *s1, **p1, *&r1 = *p1;
+  // CHECK: dpct::queue_ptr s1, *p1, &r1 = *p1;
   cudaStream_t s1, *p1, &r1 = *p1;
-  // CHECK: sycl::queue *&r2 = s1, **p2, *s2;
+  // CHECK: dpct::queue_ptr &r2 = s1, *p2, s2;
   cudaStream_t &r2 = s1, *p2, s2;
 
-  // CHECK: sycl::queue *&r3 = s2,
-  // CHECK-NEXT:             **p3,
-  // CHECK-NEXT:             *s3;
+  // CHECK: dpct::queue_ptr &r3 = s2,
+  // CHECK-NEXT:             *p3,
+  // CHECK-NEXT:             s3;
   cudaStream_t &r3 = s2,
                *p3,
                s3;
 
-  // CHECK: sycl::queue *const s4 = s1, *const s5 = s2;
+  // CHECK: dpct::queue_ptr const s4 = s1, s5 = s2;
   cudaStream_t const s4 = s1, s5 = s2;
-  // CHECK: sycl::queue *const s6 = s1, *const s7 = s2;
+  // CHECK: const dpct::queue_ptr s6 = s1, s7 = s2;
   const cudaStream_t s6 = s1, s7 = s2;
 
-  // CHECK: sycl::queue *const *s8, *const *s9;
+  // CHECK: dpct::queue_ptr const *s8, *s9;
   cudaStream_t const *s8, *s9;
-  // CHECK: sycl::queue *const *s10, *const *s11;
+  // CHECK: const dpct::queue_ptr *s10, *s11;
   const cudaStream_t *s10, *s11;
-  // CHECK: sycl::queue **const s12 = NULL, **const s13 = NULL;
+  // CHECK: dpct::queue_ptr *const s12 = NULL, *const s13 = NULL;
   cudaStream_t *const s12 = NULL, *const s13 = NULL;
-  // CHECK: sycl::queue *const *const s14 = NULL, *const *const s15 = NULL;
+  // CHECK: const dpct::queue_ptr *const s14 = NULL, *const s15 = NULL;
   const cudaStream_t *const s14 = NULL, *const s15 = NULL;
 }
 
 void fun2() {
-  // CHECK: sycl::queue *s, *s2;
+  // CHECK: dpct::queue_ptr s, s2;
   cudaStream_t s, s2;
-  // CHECK: sycl::queue *const s3 = NULL, *const s4 = NULL;
+  // CHECK: dpct::queue_ptr const s3 = NULL, s4 = NULL;
   cudaStream_t const s3 = NULL, s4 = NULL;
-  // CHECK: sycl::queue *const s5 = NULL, *const s6 = NULL;
+  // CHECK: const dpct::queue_ptr s5 = NULL, s6 = NULL;
   const cudaStream_t s5 = NULL, s6 = NULL;
 
-  // CHECK: sycl::queue **s7, **const s8 = NULL;
+  // CHECK: dpct::queue_ptr *s7, *const s8 = NULL;
   cudaStream_t *s7, *const s8 = NULL;
-  // CHECK: sycl::queue **const s9 = NULL, **s10;
+  // CHECK: dpct::queue_ptr *const s9 = NULL, *s10;
   cudaStream_t *const s9 = NULL, *s10;
-  // CHECK: sycl::queue *const *s11, *const *const s12 = NULL;
+  // CHECK: const dpct::queue_ptr *s11, *const s12 = NULL;
   const cudaStream_t *s11, *const s12 = NULL;
-  // CHECK: sycl::queue *const *const s13 = NULL, *const * s14;
+  // CHECK: dpct::queue_ptr const *const s13 = NULL, *s14;
   cudaStream_t const *const s13 = NULL, *s14;
-  // CHECK: sycl::queue *const *const s15 = NULL, *const * s16;
+  // CHECK: const dpct::queue_ptr *const s15 = NULL, *s16;
   const cudaStream_t *const s15 = NULL, *s16;
-  // CHECK: sycl::queue *const *s17, *const *const s18 = NULL;
+  // CHECK: dpct::queue_ptr const *s17, *const s18 = NULL;
   cudaStream_t const *s17, *const s18 = NULL;
 }
 
@@ -566,12 +566,12 @@ void fun3() {
 }
 
 void fun4() {
-  // CHECK: std::vector<sycl::queue *> vec1;
-  // CHECK-NEXT: vec1.push_back(nullptr);
-  // CHECK-NEXT: std::vector<sycl::queue *> vec2;
-  // CHECK-NEXT: vec2.push_back(nullptr);
-  // CHECK-NEXT: sycl::queue *a1 = nullptr;
-  // CHECK-NEXT: sycl::queue *a2 = nullptr;
+  // CHECK: std::vector<dpct::queue_ptr> vec1;
+  // CHECK-NEXT: vec1.push_back(dpct::queue_ptr());
+  // CHECK-NEXT: std::vector<dpct::queue_ptr> vec2;
+  // CHECK-NEXT: vec2.push_back(dpct::queue_ptr());
+  // CHECK-NEXT: dpct::queue_ptr a1 = dpct::queue_ptr();
+  // CHECK-NEXT: dpct::queue_ptr a2 = dpct::queue_ptr();
   std::vector<cudaStream_t> vec1;
   vec1.push_back(cudaStream_t());
   std::vector<CUstream> vec2;

@@ -7,7 +7,7 @@
 // CHECK-EMPTY:
 #include <stdio.h>
 
-// CHECK: #define DEF_BAR sycl::queue * bar() { \
+// CHECK: #define DEF_BAR dpct::queue_ptr bar() { \
 // CHECK-NEXT:   return 0; \
 // CHECK-NEXT: }
 #define DEF_BAR cudaStream_t bar() { \
@@ -24,7 +24,7 @@ DEF_BAR
 DEF_BAR2
 
 // CHECK: template <typename T>
-// CHECK-NEXT: sycl::queue * bar() {
+// CHECK-NEXT: dpct::queue_ptr bar() {
 // CHECK-NEXT:   return 0;
 // CHECK-NEXT: }
 template <typename T>
@@ -41,7 +41,7 @@ cudaEvent_t bar2() {
   return 0;
 }
 
-// CHECK: sycl::queue * foo() {
+// CHECK: dpct::queue_ptr foo() {
 cudaStream_t foo() {
   return 0;
 }
@@ -52,7 +52,7 @@ cudaEvent_t foo2() {
 }
 
 class S {
-  // CHECK: sycl::queue * foo() {
+  // CHECK: dpct::queue_ptr foo() {
   cudaStream_t foo() {
     return 0;
   }
@@ -64,7 +64,7 @@ class S {
 };
 
 class C {
-  // CHECK: sycl::queue * foo() {
+  // CHECK: dpct::queue_ptr foo() {
   cudaStream_t foo() {
     return 0;
   }
@@ -75,28 +75,28 @@ class C {
   }
 };
 
-// CHECK: sycl::queue * *foo(int i) {
+// CHECK: dpct::queue_ptr *foo(int i) {
 cudaStream_t *foo(int i) {
   return 0;
 }
 
-// CHECK: const sycl::queue * *foo(unsigned i) {
+// CHECK: const dpct::queue_ptr *foo(unsigned i) {
 const cudaStream_t *foo(unsigned i) {
   return 0;
 }
 
-// CHECK: sycl::queue * **foo(char i) {
+// CHECK: dpct::queue_ptr **foo(char i) {
 cudaStream_t **foo(char i) {
   return 0;
 }
 
-// CHECK: sycl::queue * &foo(short i) {
+// CHECK: dpct::queue_ptr &foo(short i) {
 cudaStream_t &foo(short i) {
   cudaStream_t s;
   return s;
 }
 
-// CHECK: const sycl::queue * &foo(long i) {
+// CHECK: const dpct::queue_ptr &foo(long i) {
 const cudaStream_t &foo(long i) {
   cudaStream_t s;
   return s;

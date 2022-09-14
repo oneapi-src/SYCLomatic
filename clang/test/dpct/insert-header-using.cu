@@ -13,7 +13,7 @@
 #define _TEST_
 
 __global__ void hello() {
-  // CHECK: sycl::queue *stream;
+  // CHECK: dpct::queue_ptr stream;
   cudaStream_t stream;
 }
 

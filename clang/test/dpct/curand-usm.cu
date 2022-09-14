@@ -129,7 +129,7 @@ int main(){
   curandDestroyGenerator(rng);
   s1 = curandDestroyGenerator(rng);
 
-  //CHECK: sycl::queue *stream;
+  //CHECK: dpct::queue_ptr stream;
   //CHECK-NEXT: rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(*stream, 1337ull);
   cudaStream_t stream;
   curandSetStream(rng, stream);

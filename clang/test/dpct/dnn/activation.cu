@@ -62,7 +62,7 @@ void test1() {
 
     // CHECK: handle.create_engine();
 
-    // CHECK: sycl::queue *stream1;
+    // CHECK: dpct::queue_ptr stream1;
     // CHECK: stream1 = dpct::get_current_device().create_queue();
     // CHECK: handle.set_queue(stream1);
     cudnnHandle_t handle;

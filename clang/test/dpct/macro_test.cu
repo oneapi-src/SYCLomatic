@@ -812,7 +812,7 @@ void foo17(){
 }
 
 //CHECK: #define CONCATE(name) cuda##name
-//CHECK-NEXT: typedef sycl::queue *stream_t2;
+//CHECK-NEXT: typedef dpct::queue_ptr stream_t2;
 //CHECK-NEXT: typedef dpct::event_ptr event_t2;
 #define CONCATE(name) cuda##name
 typedef CONCATE(Stream_t) stream_t2;
