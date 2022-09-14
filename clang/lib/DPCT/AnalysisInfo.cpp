@@ -878,6 +878,9 @@ void KernelCallExpr::buildLocationInfo(const CallExpr *KernelCall) {
   LocInfo.NL = getNL();
   LocInfo.Indent = getIndent(Begin, SM).str();
   LocInfo.LocHash = getHashAsString(Begin.printToString(SM)).substr(0, 6);
+  if (IsInMacroDefine) {
+    LocInfo.NL = "\\" + LocInfo.NL;
+  }
 }
 
 void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
@@ -1337,9 +1340,6 @@ std::string KernelCallExpr::getReplacement() {
   addStreamDecl();
   buildKernelArgsStmt();
 
-  if (IsInMacroDefine) {
-    LocInfo.NL = "\\" + LocInfo.NL;
-  }
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   KernelPrinter Printer(LocInfo.NL, LocInfo.Indent, OS);
@@ -1496,6 +1496,14 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   auto CallBegin = KernelCall->getBeginLoc();
   auto CallEnd = KernelCall->getEndLoc();
 
+  auto Range = getDefinitionRange(KernelCall->getBeginLoc(), KernelCall->getEndLoc());
+  auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      getCombinedStrFromLoc(Range.getBegin()));
+  if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+    IsInMacroDefine = true;
+    return;
+  }
+
   if (SM.isMacroArgExpansion(CallBegin) && SM.isMacroArgExpansion(CallEnd) &&
       isLocInSameMacroArg(CallBegin, CallEnd)) {
     IsInMacroDefine = false;
@@ -1508,7 +1516,7 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   }
   CalleeSpelling = SM.getSpellingLoc(CalleeSpelling);
 
-  auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+  ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
       getCombinedStrFromLoc(CalleeSpelling));
   if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     IsInMacroDefine = true;

@@ -537,14 +537,9 @@ void ReplaceDim3Ctor::setRange() {
       return;
     }
     if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
-      auto results = getTheOneBeforeLastImmediateExapansion(S->getBeginLoc(),
-                                                            S->getEndLoc());
-      auto Begin = SM.getImmediateSpellingLoc(results.first);
-      auto End = SM.getImmediateSpellingLoc(results.second);
-      if (SM.isMacroArgExpansion(S->getBeginLoc())) {
-        Begin = SM.getImmediateSpellingLoc(S->getBeginLoc());
-        End = SM.getImmediateSpellingLoc(S->getEndLoc());
-      }
+      auto Range = getDefinitionRange(S->getBeginLoc(), S->getEndLoc());
+      auto Begin = Range.getBegin();
+      auto End = Range.getEnd();
       End = End.getLocWithOffset(Lexer::MeasureTokenLength(
           End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
       CSR = CharSourceRange::getTokenRange(Begin, End);
