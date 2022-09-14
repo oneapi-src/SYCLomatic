@@ -662,23 +662,28 @@ __global__ void kernelFuncDouble(double *deviceArrayDouble) {
   // CHECK: /*
   // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
-  // CHECK-NEXT: d1 = (1.0/(d0));
+  // CHECK-NEXT: d1 = (1.0/d0);
   d1 = __drcp_rd(d0);
   // CHECK: /*
   // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
-  // CHECK-NEXT: d1 = (1.0/(d0));
+  // CHECK-NEXT: d1 = (1.0/d0);
   d1 = __drcp_rn(d0);
   // CHECK: /*
   // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
-  // CHECK-NEXT: d1 = (1.0/(d0));
+  // CHECK-NEXT: d1 = (1.0/d0);
   d1 = __drcp_ru(d0);
   // CHECK: /*
   // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
-  // CHECK-NEXT: d1 = (1.0/(d0));
+  // CHECK-NEXT: d1 = (1.0/d0);
   d1 = __drcp_rz(d0);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: d1 = (1.0/(d0+d0));
+  d1 = __drcp_rz(d0+d0);
 
   // CHECK: /*
   // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
@@ -3257,23 +3262,28 @@ __global__ void k2() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
-  // CHECK-NEXT: (1.0/(d0));
+  // CHECK-NEXT: (1.0/d0);
   __drcp_rd(d0);
   // CHECK: /*
   // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
-  // CHECK-NEXT: (1.0/(d0));
+  // CHECK-NEXT: (1.0/d0);
   __drcp_rn(d0);
   // CHECK: /*
   // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
-  // CHECK-NEXT: (1.0/(d0));
+  // CHECK-NEXT: (1.0/d0);
   __drcp_ru(d0);
   // CHECK: /*
   // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
-  // CHECK-NEXT: (1.0/(d0));
+  // CHECK-NEXT: (1.0/d0);
   __drcp_rz(d0);
+  // CHECK: /*  
+  // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: (1.0/(d0+d0));
+  __drcp_rz(d0+d0);
 
   // CHECK: sycl::mul_hi(ll, ll);
   __mul64hi(ll, ll);

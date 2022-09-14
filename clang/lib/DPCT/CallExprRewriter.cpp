@@ -1069,6 +1069,9 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
     report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, false);
     if (T0 == "double") {
+      if (DRE0)
+        OS << "(1.0/" << MigratedArg0 << ")";
+      else
         OS << "(1.0/(" << MigratedArg0 << "))";
     } else if (T0 != "float") {
       OS << TargetCalleeName;
