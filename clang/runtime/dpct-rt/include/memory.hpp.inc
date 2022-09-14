@@ -1917,45 +1917,26 @@ public:
   void init(const void *ptr,
               sycl::queue &q = dpct::get_default_queue()) {
 #ifdef DPCT_USM_LEVEL_NONE
-    dpct::detail::pointer_access_attribute attribute =
-             dpct::detail::get_pointer_attribute(q, ptr);
-    if (attribute == dpct::detail::pointer_access_attribute::host_only) {
-      memory_type = sycl::usm::alloc::unknown;
-      device_pointer = nullptr;
-      host_pointer = nullptr;
-    } else {
-      if (attribute ==
-          dpct::detail::pointer_access_attribute::device_only) {
-        memory_type = sycl::usm::alloc::device;
-        host_pointer = nullptr;
-      } else {
-        host_pointer = nullptr;
-        memory_type = sycl::usm::alloc::shared;
-        is_shared = 0;
-      }
-      auto accessor = dpct::detail::mem_mgr::instance().
-                        translate_ptr(ptr).buffer.get_access();
-      device_pointer = (void *)&accessor;
-    }
-    device = dpct::dev_mgr::instance().current_device_id();
+    throw std::runtime_error(
+          "dpct::pointer_attributes: only works for USM pointer.");
 #else
     memory_type = cl::sycl::get_pointer_type(ptr, q.get_context());
-    device_pointer = (memory_type !=
+    device_ptr = (memory_type !=
                         sycl::usm::alloc::unknown) ? ptr : nullptr;
-    host_pointer = (memory_type !=
+    host_ptr = (memory_type !=
                         sycl::usm::alloc::unknown) &&
                    (memory_type != sycl::usm::alloc::device) ? ptr : nullptr;
-    is_shared = (memory_type == sycl::usm::alloc::shared) ? 0 : -1;
+    is_shared = (memory_type == sycl::usm::alloc::shared);
     sycl::device dev_obj = sycl::get_pointer_device(ptr, q.get_context());
-    device = dpct::dev_mgr::instance().get_device_id(dev_obj);
+    dev_id = dpct::dev_mgr::instance().get_device_id(dev_obj);
 #endif
   }
 
-  cl::sycl::usm::alloc memory_type = sycl::usm::alloc::unknown;
-  const void *device_pointer = nullptr;
-  const void *host_pointer = nullptr;
-  int is_shared = -1;
-  unsigned int device = 0;
+  sycl::usm::alloc memory_type = sycl::usm::alloc::unknown;
+  const void *device_ptr = nullptr;
+  const void *host_ptr = nullptr;
+  bool is_shared = false;
+  unsigned int dev_id = 0;
 };
 // DPCT_LABEL_END
 } // namespace dpct

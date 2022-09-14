@@ -9,17 +9,17 @@
 
 MEMBER_REWRITE_ENTRY(
     "cudaPointerAttributes.device",
-    MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_ATTR("device"))
+    MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_ATTR("dev_id"))
 )
 
 MEMBER_REWRITE_ENTRY(
     "cudaPointerAttributes.hostPointer",
-    MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_ATTR("host_pointer"))
+    MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_ATTR("host_ptr"))
 )
 
 MEMBER_REWRITE_ENTRY(
     "cudaPointerAttributes.devicePointer",
-    MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_ATTR("device_pointer"))
+    MEMBER_FACTORY(MEM_BASE, IS_ARROW, MEM_ATTR("device_ptr"))
 )
 
 MEMBER_REWRITE_ENTRY(

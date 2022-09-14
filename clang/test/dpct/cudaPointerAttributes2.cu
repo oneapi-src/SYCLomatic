@@ -26,10 +26,10 @@ int main() {
   cudaPointerAttributes attributes;
   // CHECK: (&attributes)->init(h_A);
   cudaPointerGetAttributes (&attributes, h_A);
-  // CHECK: std::cout << attributes.device << std::endl;
+  // CHECK: std::cout << attributes.dev_id << std::endl;
   // CHECK: std::cout << attributes.memory_type << std::endl;
-  // CHECK: std::cout << attributes.host_pointer << std::endl;
-  // CHECK: std::cout << attributes.device_pointer << std::endl;
+  // CHECK: std::cout << attributes.host_ptr << std::endl;
+  // CHECK: std::cout << attributes.device_ptr << std::endl;
   std::cout << "====== Host Attributes =======" << std::endl;
   std::cout << attributes.device << std::endl;
   std::cout << attributes.type << std::endl;
@@ -51,7 +51,7 @@ int main() {
   cudaPointerAttributes *attributes3 = new cudaPointerAttributes();
   // CHECK: attributes3->init(d_A);
   cudaPointerGetAttributes (attributes3, d_A);
-  // CHECK: std::cout << attributes3->device << std::endl;
+  // CHECK: std::cout << attributes3->dev_id << std::endl;
   // CHECK: std::cout << attributes3->memory_type << std::endl;
   std::cout << "====== Device Attributes =======" << std::endl;
   std::cout << attributes3->device << std::endl;
