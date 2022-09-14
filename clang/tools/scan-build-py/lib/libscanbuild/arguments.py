@@ -38,11 +38,11 @@ def parse_args_for_intercept_build():
         print('Error: --linker-entry conflicts with --no-linker-entry')
         sys.exit(-1)
 
-    if args.parse_build_log and not args.in_root:
-        print('Error: option --in-root needs to be specified, if --build-log is specified')
+    if args.parse_build_log and not args.work_directory:
+        print('Error: option --work-directory needs to be specified, if --build-log is specified')
         sys.exit(-1)
 
-    if not args.parse_build_log and args.in_root:
+    if not args.parse_build_log and args.work_directory:
         print('Error: option --build-log needs to be specified, if –in-root is specified')
         sys.exit(-1)
 # SYCLomatic_CUSTOMIZATION end
@@ -51,7 +51,7 @@ def parse_args_for_intercept_build():
     logging.debug('Raw arguments %s', sys.argv)
 
     # short validation logic
-    if not args.build and not args.parse_build_log and not args.in_root:
+    if not args.build and not args.parse_build_log and not args.work_directory:
         parser.error(message='Please specify build command, or specify build log file to be parsed')
 
     logging.debug('Parsed arguments: %s', args)
@@ -138,7 +138,7 @@ def validate_args_for_analyze(parser, args, from_build_command):
     elif args.help_checkers:
         print_active_checkers(get_checkers(args.clang, args.plugins))
         parser.exit(status=0)
-    elif from_build_command and not args.build and not args.parse_build_log and not args.in_root:
+    elif from_build_command and not args.build and not args.parse_build_log and not args.work_directory:
         parser.error(message='Please specify build command, or specify build log file to be parsed')
     elif not from_build_command and not os.path.exists(args.cdb):
         parser.error(message='compilation database is missing')
@@ -162,7 +162,7 @@ def create_intercept_parser():
     parser = create_default_parser()
     parser_add_cdb(parser)
     parser_build_log(parser)
-    parser_in_root(parser)
+    parser_work_directory(parser)
     parser_add_linker_entry(parser)
     parser_add_no_linker_entry(parser)
 
@@ -469,11 +469,11 @@ def parser_build_log(parser):
     parser.add_argument(
         '--parse-build-log',
         metavar='<file>',
-        help="""Specifies the build log file path of project specified by --in-root.""")
+        help="""Specifies the build log file path of project specified by --work-directory.""")
 
-def parser_in_root(parser):
+def parser_work_directory(parser):
     parser.add_argument(
-        '--in-root',
+        '--work-directory',
         metavar='<path>',
         help="""Specifies the directory path for the root of the source tree that needs to be migrated.""")
 

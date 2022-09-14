@@ -131,7 +131,7 @@ def capture(args):
         exit_code = 0
         entries = []
         if args.parse_build_log:
-            entries = parse_build_log(args.parse_build_log, args.in_root)
+            entries = parse_build_log(args.parse_build_log, args.work_directory)
         else:
             # run the build command
             environment = setup_environment(args, tmp_dir)
