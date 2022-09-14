@@ -1575,6 +1575,17 @@ void setTemplateArgumentInfo(const CallExpr *C,
   setTemplateArgumentInfo(C, Vec, Args...);
 }
 
+template <class... TemplateArgsT>
+std::function<
+    TemplatedNamePrinter<StringRef, TemplateArgsT...>(const CallExpr *)>
+makeTemplatedName(StringRef TemplatedName,
+                  std::function<TemplateArgsT(const CallExpr *)>... Args) {
+  return PrinterCreator<TemplatedNamePrinter<StringRef, TemplateArgsT...>,
+                        StringRef,
+                        std::function<TemplateArgsT(const CallExpr *)>...>(
+      TemplatedName, std::move(Args)...);
+}
+
 template <class... CallArgsT>
 std::function<TemplatedNamePrinter<
     StringRef, std::vector<TemplateArgumentInfo>>(const CallExpr *)>
@@ -1634,6 +1645,15 @@ makeMemberExprCreator(std::function<BaseT(const CallExpr *)> Base, bool IsArrow,
                                                                   Member);
 }
 
+template <class BaseT, class MemberT>
+std::function<StaticMemberExprPrinter<BaseT, MemberT>(const CallExpr *)>
+makeStaticMemberExprCreator(std::function<BaseT(const CallExpr *)> Base,
+                            std::function<MemberT(const CallExpr *)> Member) {
+  return PrinterCreator<StaticMemberExprPrinter<BaseT, MemberT>,
+                        std::function<BaseT(const CallExpr *)>,
+                        std::function<MemberT(const CallExpr *)>>(Base, Member);
+}
+
 template <class TypeInfoT, class SubExprT>
 std::function<CastExprPrinter<TypeInfoT, SubExprT>(const CallExpr *)>
 makeCastExprCreator(std::function<TypeInfoT(const CallExpr *)> TypeInfo,
@@ -1676,6 +1696,14 @@ makeNewExprCreator(std::string TypeName,
   return PrinterCreator<NewExprPrinter<ArgsT...>, std::string,
                         std::function<ArgsT(const CallExpr *)>...>(TypeName,
                                                                    Args...);
+}
+
+template <class SubExprT>
+std::function<TypenameExprPrinter<SubExprT>(const CallExpr *)>
+makeTypenameExprCreator(
+                   std::function<SubExprT(const CallExpr *)> SubExpr) {
+  return PrinterCreator<TypenameExprPrinter<SubExprT>,
+                        std::function<SubExprT(const CallExpr *)>>(SubExpr);
 }
 
 bool isCallAssigned(const CallExpr *C) { return isAssigned(C); }
@@ -2698,6 +2726,7 @@ RemoveCubTempStorageFactory::create(const CallExpr *C) const {
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
 #define MEMBER_EXPR(...) makeMemberExprCreator(__VA_ARGS__)
+#define STATIC_MEMBER_EXPR(...) makeStaticMemberExprCreator(__VA_ARGS__)
 #define LAMBDA(...) makeLambdaCreator(__VA_ARGS__)
 #define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define CAST(T, S) makeCastExprCreator(T, S)
@@ -2709,6 +2738,7 @@ RemoveCubTempStorageFactory::create(const CallExpr *C) const {
                                         DOES_BASE_VALUE_NEED_CONST,            \
                                         DOES_FIRST_LEVEL_POINTER_NEED_CONST)
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
+#define TYPENAME(SUBEXPR) makeTypenameExprCreator(SUBEXPR)
 #define SUBGROUP                                                               \
   std::function<SubGroupPrinter(const CallExpr *)>(SubGroupPrinter::create)
 #define NDITEM std::function<ItemPrinter(const CallExpr *)>(ItemPrinter::create)
@@ -2716,6 +2746,7 @@ RemoveCubTempStorageFactory::create(const CallExpr *C) const {
   std::function<GroupPrinter(const CallExpr *)>(GroupPrinter::create)
 #define POINTER_CHECKER(x) makePointerChecker(x)
 #define LITERAL(x) makeLiteral(x)
+#define TEMPLATED_NAME(Name, ...) makeTemplatedName(Name, __VA_ARGS__)
 #define TEMPLATED_CALLEE(FuncName, ...)                                        \
   makeTemplatedCalleeCreator(FuncName, {__VA_ARGS__})
 #define TEMPLATED_CALLEE_WITH_ARGS(FuncName, ...)                              \

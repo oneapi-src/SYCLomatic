@@ -901,6 +901,20 @@ public:
   }
 };
 
+template <class BaseT, class MemberT> class StaticMemberExprPrinter {
+  BaseT Base;
+  MemberT Member;
+public:
+  StaticMemberExprPrinter(BaseT &&Base, MemberT &&Member)
+    : Base(std::forward<BaseT>(Base)), Member(std::forward<MemberT>(Member)) {}
+  
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Base);
+    Stream << "::";
+    dpct::print(Stream, Member);
+  }
+};
+
 template <class BaseT, class MemberT, class... CallArgsT>
 class MemberCallPrinter
     : public CallExprPrinter<MemberExprPrinter<BaseT, MemberT>, CallArgsT...> {
@@ -997,6 +1011,19 @@ public:
     Base::print(Stream);
   }
 };
+
+template<class SubExprT>
+class TypenameExprPrinter {
+  SubExprT SubExpr;
+public:
+  TypenameExprPrinter(SubExprT &&SubExpr) : SubExpr(std::forward<SubExprT>(SubExpr)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    Stream << "typename ";
+    dpct::print(Stream, SubExpr);
+  }
+};
+
+// typename SubExpr
 
 template <class FirstPrinter, class... RestPrinter>
 class MultiStmtsPrinter : MultiStmtsPrinter<RestPrinter...> {
