@@ -11373,6 +11373,13 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
                     AA.getRewritePostfix();
       std::ostringstream Repl;
       buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      if (auto ArgDRE = dyn_cast_or_null<DeclRefExpr>(C->getArg(0)->IgnoreImpCasts())) {
+        auto D = ArgDRE->getDecl();
+        if (D->hasAttr<CUDADeviceAttr>() || D->hasAttr<CUDAConstantAttr>() ||
+            D->hasAttr<CUDAGlobalAttr>() || D->hasAttr<HIPManagedAttr>()) {
+          ArgStr += ".get_ptr()";
+        }
+      }
       Repl << MapNames::getClNamespace() + "free(" << ArgStr
            << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
