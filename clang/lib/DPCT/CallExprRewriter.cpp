@@ -93,23 +93,6 @@ Optional<std::string> MathFuncNameRewriter::rewrite() {
   return buildRewriteString();
 }
 
-Optional<std::string> NoRewriteFuncNameRewriter::rewrite() {
-  // If the function is not a target math function, do not migrate it
-  if (!isTargetMathFunction(Call->getDirectCallee())) {
-    // No actions needed here, just return an empty string
-    return {};
-  }
-
-  reportUnsupportedRoundingMode();
-  RewriteArgList = getMigratedArgs();
-  auto NewFuncName = getNewFuncName();
-
-  if (NewFuncName == SourceCalleeName)
-    return {};
-
-  return NewFuncName;
-}
-
 /// Returns true if E is one of the forms:
 /// (blockDim/blockIdx/threadIdx/gridDim).(x/y/z)
 bool isTargetPseudoObjectExpr(const Expr *E) {
@@ -2796,11 +2779,9 @@ RemoveCubTempStorageFactory::create(const CallExpr *C) const {
   REWRITER_FACTORY_ENTRY(FuncName, FuncCallExprRewriterFactory, RewriterName)
 #define MATH_FUNCNAME_FACTORY_ENTRY(FuncName, RewriterName)                    \
   REWRITER_FACTORY_ENTRY(FuncName, MathFuncNameRewriterFactory, RewriterName)
-#define NO_REWRITE_FUNCNAME_FACTORY_ENTRY(FuncName, RewriterName)              \
+#define NO_REWRITE_FUNCNAME_FACTORY_ENTRY(FuncName, NewName)                   \
   REWRITER_FACTORY_ENTRY(FuncName, NoRewriteFuncNameRewriterFactory,           \
-                         RewriterName)
-#define FUNCNAME_FACTORY_ENTRY(FuncName, NewName)                              \
-  REWRITER_FACTORY_ENTRY(FuncName, FuncNameRewriterFactory, NewName)
+                         NewName)
 #define MATH_SIMULATED_FUNC_FACTORY_ENTRY(FuncName, RewriterName)              \
   REWRITER_FACTORY_ENTRY(FuncName, MathSimulatedRewriterFactory, RewriterName)
 #define MATH_TYPECAST_FACTORY_ENTRY(FuncName)                                  \

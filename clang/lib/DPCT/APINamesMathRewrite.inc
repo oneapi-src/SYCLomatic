@@ -27,7 +27,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CALL_FACTORY_ENTRY("rsqrt",
                        CALL(MapNames::getClNamespace(false, true) + "rsqrt",
                             CAST_IF_NEED(makeLiteral("double"), ARG(0)))),
-    FUNCNAME_FACTORY_ENTRY("rsqrt", "rsqrt"))
+    NO_REWRITE_FUNCNAME_FACTORY_ENTRY("rsqrt", "rsqrt"))
 
 CONDITIONAL_FACTORY_ENTRY(
     makeCheckOr(
@@ -49,7 +49,7 @@ CONDITIONAL_FACTORY_ENTRY(
             CALL_FACTORY_ENTRY(
                 "std::abs",
                 CALL(MapNames::getClNamespace(false, true) + "fabs", ARG(0))))),
-    FUNCNAME_FACTORY_ENTRY("std::abs", "std::abs"))
+    NO_REWRITE_FUNCNAME_FACTORY_ENTRY("std::abs", "std::abs"))
 
 CONDITIONAL_FACTORY_ENTRY(
     makeCheckOr(
@@ -71,4 +71,4 @@ CONDITIONAL_FACTORY_ENTRY(
             CALL_FACTORY_ENTRY(
                 "abs",
                 CALL(MapNames::getClNamespace(false, true) + "fabs", ARG(0))))),
-    FUNCNAME_FACTORY_ENTRY("abs", "std::abs"))
+    NO_REWRITE_FUNCNAME_FACTORY_ENTRY("abs", "std::abs"))

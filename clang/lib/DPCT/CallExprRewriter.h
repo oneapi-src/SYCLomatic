@@ -24,7 +24,6 @@ class MathBinaryOperatorRewriter;
 class MathUnsupportedRewriter;
 class WarpFunctionRewriter;
 class NoRewriteFuncNameRewriter;
-class FuncNameRewriter;
 template <class... MsgArgs> class UnsupportFunctionRewriter;
 
 /*
@@ -81,8 +80,6 @@ using MathFuncNameRewriterFactory =
     CallExprRewriterFactory<MathFuncNameRewriter, std::string>;
 using NoRewriteFuncNameRewriterFactory =
     CallExprRewriterFactory<NoRewriteFuncNameRewriter, std::string>;
-using FuncNameRewriterFactory =
-    CallExprRewriterFactory<FuncNameRewriter, std::string>;
 using MathUnsupportedRewriterFactory =
     CallExprRewriterFactory<MathUnsupportedRewriter, std::string>;
 using MathSimulatedRewriterFactory =
@@ -491,33 +488,18 @@ protected:
   friend MathFuncNameRewriterFactory;
 };
 
-class FuncNameRewriter : public CallExprRewriter {
+class NoRewriteFuncNameRewriter : public CallExprRewriter {
   std::string NewFuncName;
+
 public:
-  FuncNameRewriter(const CallExpr *Call, StringRef SourceName,
-                StringRef NewName)
+  NoRewriteFuncNameRewriter(const CallExpr *Call, StringRef SourceName,
+                            StringRef NewName)
       : CallExprRewriter(Call, SourceCalleeName) {
     NewFuncName = NewName.str();
     NoRewrite = true;
   }
 
-  Optional<std::string> rewrite() override {
-    return NewFuncName;
-  }
-};
-
-/// The rewriter for renaming math function calls
-class NoRewriteFuncNameRewriter : public MathFuncNameRewriter {
-protected:
-  NoRewriteFuncNameRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                            StringRef TargetCalleeName)
-      : MathFuncNameRewriter(Call, SourceCalleeName, TargetCalleeName) {
-    NoRewrite = true;
-  }
-
-public:
-  virtual Optional<std::string> rewrite() override;
-  friend NoRewriteFuncNameRewriterFactory;
+  Optional<std::string> rewrite() override { return NewFuncName; }
 };
 
 /// The rewriter for warning on unsupported math functions
