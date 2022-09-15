@@ -1,0 +1,36 @@
+# Copyright (C) Intel Corporation
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+# See https://llvm.org/LICENSE.txt for license information.
+
+# This file will be installed to folder:
+# {dpct_install_folder}/extensions/opt_rules.
+# The rule specified in this file can be imported with commandline option:
+# --rule-file={dpct_install_folder}/extensions/opt_rules/intel_specific_math.yaml
+---
+- Rule: intel_specific_math_erfinv
+  Kind: API
+  Priority: Takeover
+  In: erfinv
+  Out: sycl::ext::intel::math::erfinv($1)
+  Includes: [<sycl/ext/intel/math.hpp>]
+
+- Rule: intel_specific_math_erfinvf
+  Kind: API
+  Priority: Takeover
+  In: erfinvf
+  Out: sycl::ext::intel::math::erfinv($1)
+  Includes: [<sycl/ext/intel/math.hpp>]
+
+- Rule: intel_specific_math_normcdff
+  Kind: API
+  Priority: Takeover
+  In: normcdff
+  Out: sycl::ext::intel::math::cdfnorm($1)
+  Includes: [<sycl/ext/intel/math.hpp>]
+
+- Rule: intel_specific_math_normcdf
+  Kind: API
+  Priority: Takeover
+  In: normcdf
+  Out: sycl::ext::intel::math::cdfnorm($1)
+  Includes: [<sycl/ext/intel/math.hpp>]
