@@ -528,7 +528,8 @@ void ExprAnalysis::getThrustReplStrAndLength(const std::string &CtorClassName,
     Replacement =
         MapNames::findReplacedName(MapNames::TypeNamesMap, RealTypeNameStr);
     if (Replacement.empty()) {
-      TypeLen = std::strlen("thrust::");
+      static const size_t ThrustNamespaceLength = std::strlen("thrust::");
+      TypeLen = ThrustNamespaceLength;
       Replacement = "std::";
     }
   }
