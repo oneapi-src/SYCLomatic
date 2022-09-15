@@ -296,6 +296,8 @@ struct TexList {
 };
 
 // CHECK: void texlist_device(TexList list, dpct::image_accessor_ext<int, 1> list_tex1) {
+// CHECK-NEXT:  int a;
+// CHECK-NEXT:  a = list_tex1.read(1);
 __device__ void texlist_device(TexList list) {
   int a;
   tex1Dfetch(&a, list.tex1, 1);
@@ -304,6 +306,10 @@ __device__ void texlist_device(TexList list) {
 // CHECK: void texlist_kernel(TexList list, dpct::image_accessor_ext<int, 1> list_tex1,
 // CHECK-NEXT:                     dpct::image_accessor_ext<float, 2> list_tex2,
 // CHECK-NEXT:                    dpct::image_accessor_ext<float, 2> list_tex3) {
+// CHECK-NEXT:  float b;
+// CHECK-NEXT:  texlist_device(list, list_tex1);
+// CHECK-NEXT:  b = list_tex2.read(0.5f, 0.5f);
+// CHECK-NEXT:  b = list_tex3.read(0.5f, 0.5f);
 __global__ void texlist_kernel(TexList list) {
   float b;
   texlist_device(list);
