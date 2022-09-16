@@ -396,8 +396,16 @@ void foo(int a, int b) {
 }
 
 __managed__ char *foo2_a;
+__device__ char *foo2_b;
+__constant__ char *foo2_c;
 void foo2() {
   cudaMallocManaged((void **)&foo2_a, 4);
+  cudaMallocManaged((void **)&foo2_b, 4);
+  cudaMallocManaged((void **)&foo2_c, 4);
   // CHECK: sycl::free(foo2_a.get_ptr(), q_ct1);
+  // CHECK-NEXT: sycl::free(foo2_b.get_ptr(), q_ct1);
+  // CHECK-NEXT: sycl::free(foo2_c.get_ptr(), q_ct1);
   cudaFree(foo2_a);
+  cudaFree(foo2_b);
+  cudaFree(foo2_c);
 }
