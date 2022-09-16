@@ -3,7 +3,7 @@
 
 
 // CHECK: #define DUMMY_MACRO
-// CHECK-NEXT: #include <CL/sycl.hpp>
+// CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <stdio.h>
 #define DUMMY_MACRO

@@ -16,7 +16,7 @@
 // DPCT_LABEL_BEGIN|non_local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <oneapi/dnnl/dnnl.hpp>
 #include <oneapi/dnnl/dnnl_sycl.hpp>
 #include <unordered_map>
@@ -837,7 +837,7 @@ void memory_desc_ext::get(int requested_ndims, dpct::library_data_t *dt, int *nd
 std::unique_ptr<void, engine_ext::device_pointer_deleter>
 engine_ext::allocate(const memory_desc_ext &data_desc) const {
   size_t mem_size = data_desc.get_size();
-  void *mem = cl::sycl::malloc_device(mem_size, *_q);
+  void *mem = sycl::malloc_device(mem_size, *_q);
   return std::unique_ptr<void, device_pointer_deleter>(
       mem, device_pointer_deleter(*_q));
 }

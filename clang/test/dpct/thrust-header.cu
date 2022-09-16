@@ -4,7 +4,7 @@
 // RUN: FileCheck --input-file %T/thrust-header/thrust-header.dp.cpp --match-full-lines %s
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
-// CHECK-NEXT: #include <CL/sycl.hpp>
+// CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <cstdio>
 // CHECK-NEXT: #include <algorithm>
