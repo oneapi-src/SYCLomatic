@@ -11376,7 +11376,7 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       if (auto ArgDRE = dyn_cast_or_null<DeclRefExpr>(C->getArg(0)->IgnoreImpCasts())) {
         auto D = ArgDRE->getDecl();
         if (D->hasAttr<CUDADeviceAttr>() || D->hasAttr<CUDAConstantAttr>() ||
-            D->hasAttr<CUDAGlobalAttr>() || D->hasAttr<HIPManagedAttr>()) {
+            D->hasAttr<HIPManagedAttr>()) {
           ArgStr += ".get_ptr()";
         }
       }
