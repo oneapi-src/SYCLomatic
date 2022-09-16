@@ -469,13 +469,13 @@ def parser_build_log(parser):
     parser.add_argument(
         '--parse-build-log',
         metavar='<file>',
-        help="""Specifies the build log file path of project specified by --work-directory.""")
+        help="""Specifies the file path of the build log.""")
 
 def parser_work_directory(parser):
     parser.add_argument(
         '--work-directory',
         metavar='<path>',
-        help="""Specifies the work directory of the source tree that needs to be migrated.""")
+        help="""Specifies the work directory of the source file in the build log that needs to be migrated.""")
 
 def parser_add_linker_entry(parser):
     parser.add_argument(
