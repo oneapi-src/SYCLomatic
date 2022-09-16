@@ -50,12 +50,6 @@
 // DPCT_LABEL_END
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|cl_sycl_alias|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-namespace sycl = sycl;
-// DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|device_pointer_forward_decl|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasMemory|device_iterator_forward_decl_device_pointer

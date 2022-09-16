@@ -24,8 +24,6 @@
 
 namespace dpct {
 
-namespace sycl = sycl;
-
 namespace internal {
 template <typename Iter, typename Void = void> // for non-iterators
 struct is_iterator : std::false_type {};

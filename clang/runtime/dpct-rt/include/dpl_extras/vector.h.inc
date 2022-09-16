@@ -62,12 +62,6 @@
 
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|cl_sycl_alias|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-namespace sycl = sycl;
-// DPCT_LABEL_END
-
 namespace internal {
 // DPCT_LABEL_BEGIN|is_iterator|dpct::internal
 // DPCT_DEPENDENCY_EMPTY

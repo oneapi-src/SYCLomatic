@@ -16,8 +16,6 @@
 // device_new, free_device, device_delete
 namespace dpct {
 
-namespace sycl = sycl;
-
 #ifdef DPCT_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,
           typename Allocator = sycl::buffer_allocator>
