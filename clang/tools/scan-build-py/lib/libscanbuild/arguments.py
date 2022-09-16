@@ -43,7 +43,7 @@ def parse_args_for_intercept_build():
         sys.exit(-1)
 
     if not args.parse_build_log and args.work_directory:
-        print('Error: option --build-log needs to be specified, if –in-root is specified')
+        print('Error: option --build-log needs to be specified, if -work-directory is specified')
         sys.exit(-1)
 # SYCLomatic_CUSTOMIZATION end
 
