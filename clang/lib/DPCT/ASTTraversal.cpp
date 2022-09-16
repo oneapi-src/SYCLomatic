@@ -11518,6 +11518,8 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
   } else if (Name == "cuMemGetInfo_v2" || Name == "cudaMemGetInfo") {
     if (DpctGlobalInfo::useFreeMemSize()) {
       std::ostringstream OS;
+      if (IsAssigned)
+        OS << "(";
       OS << MapNames::getDpctNamespace() + "get_sycl_mem_info";
       OS << "(";
       printDerefOp(OS, C->getArg(0));
@@ -11527,9 +11529,10 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
 
       emplaceTransformation(new ReplaceStmt(C, OS.str()));
       if (IsAssigned) {
-        emplaceTransformation(new InsertAfterStmt(C, ", 0)"));
+        OS << ", 0)";
         report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       }
+      emplaceTransformation(new ReplaceStmt(C, OS.str()));
       requestFeature(HelperFeatureEnum::Util_get_sycl_mem_info, C);
     } else {
       auto &SM = DpctGlobalInfo::getSourceManager();
