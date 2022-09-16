@@ -475,7 +475,7 @@ def parser_work_directory(parser):
     parser.add_argument(
         '--work-directory',
         metavar='<path>',
-        help="""Specifies the directory path for the root of the source tree that needs to be migrated.""")
+        help="""Specifies the work directory of the source tree that needs to be migrated.""")
 
 def parser_add_linker_entry(parser):
     parser.add_argument(
