@@ -11373,6 +11373,7 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
                     AA.getRewritePostfix();
       std::ostringstream Repl;
       buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+
       if (auto ArgDRE = dyn_cast_or_null<DeclRefExpr>(C->getArg(0)->IgnoreImpCasts())) {
         auto D = ArgDRE->getDecl();
         if (D->hasAttr<CUDADeviceAttr>() || D->hasAttr<CUDAConstantAttr>() ||
