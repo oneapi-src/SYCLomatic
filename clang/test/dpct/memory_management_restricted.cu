@@ -395,17 +395,15 @@ void foo(int a, int b) {
   cudaMalloc((void **)c[0].Pos2, b);
 }
 
-__managed__ char *foo2_a;
-__device__ char *foo2_b;
-__constant__ char *foo2_c;
+__managed__ char *a1;
+__managed__ char *a2;
 void foo2() {
-  cudaMallocManaged((void **)&foo2_a, 4);
-  cudaMallocManaged((void **)&foo2_b, 4);
-  cudaMallocManaged((void **)&foo2_c, 4);
-  // CHECK: sycl::free(foo2_a.get_ptr(), q_ct1);
-  // CHECK-NEXT: sycl::free(foo2_b.get_ptr(), q_ct1);
-  // CHECK-NEXT: sycl::free(foo2_c.get_ptr(), q_ct1);
-  cudaFree(foo2_a);
-  cudaFree(foo2_b);
-  cudaFree(foo2_c);
+  // CHECK: *(a1.get_ptr()) = (char *)sycl::malloc_shared(4, q_ct1);
+  // CHECK-NEXT: *(a2.get_ptr()) = sycl::malloc_shared<char>(1, q_ct1);
+  // CHECK-NEXT: sycl::free(*(a1.get_ptr()), q_ct1);
+  // CHECK-NEXT: sycl::free(*(a2.get_ptr()), q_ct1);
+  cudaMallocManaged((void **)&a1, 4);
+  cudaMallocManaged((void **)&a2, sizeof(char));
+  cudaFree(a1);
+  cudaFree(a2);
 }

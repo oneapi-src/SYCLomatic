@@ -11374,12 +11374,8 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
       std::ostringstream Repl;
       buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
 
-      if (auto ArgDRE = dyn_cast_or_null<DeclRefExpr>(C->getArg(0)->IgnoreImpCasts())) {
-        auto D = ArgDRE->getDecl();
-        if (D->hasAttr<CUDADeviceAttr>() || D->hasAttr<CUDAConstantAttr>() ||
-            D->hasAttr<HIPManagedAttr>()) {
-          ArgStr += ".get_ptr()";
-        }
+      if (hasManagedAttr(0)(C)) {
+          ArgStr = "*(" + ArgStr + ".get_ptr())";
       }
       Repl << MapNames::getClNamespace() + "free(" << ArgStr
            << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
