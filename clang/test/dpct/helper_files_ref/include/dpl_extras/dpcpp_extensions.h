@@ -9,7 +9,7 @@
 #ifndef __DPCT_DPCPP_EXTENSIONS_H__
 #define __DPCT_DPCPP_EXTENSIONS_H__
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <stdexcept>
 
 namespace dpct {

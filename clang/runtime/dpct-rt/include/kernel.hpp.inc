@@ -38,7 +38,7 @@
 // DPCT_LABEL_BEGIN|non_local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
@@ -50,7 +50,7 @@ namespace dpct {
 // DPCT_LABEL_BEGIN|kernel_functor|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-typedef void (*kernel_functor)(cl::sycl::queue &, const cl::sycl::nd_range<3> &,
+typedef void (*kernel_functor)(sycl::queue &, const sycl::nd_range<3> &,
                                unsigned int, void **, void **);
 // DPCT_LABEL_END
 
@@ -74,14 +74,14 @@ static void get_kernel_function_info(kernel_function_info *kernel_info,
   kernel_info->max_work_group_size =
       dpct::dev_mgr::instance()
           .current_device()
-          .get_info<cl::sycl::info::device::max_work_group_size>();
+          .get_info<sycl::info::device::max_work_group_size>();
 }
 static kernel_function_info get_kernel_function_info(const void *function) {
   kernel_function_info kernel_info;
   kernel_info.max_work_group_size =
       dpct::dev_mgr::instance()
           .current_device()
-          .get_info<cl::sycl::info::device::max_work_group_size>();
+          .get_info<sycl::info::device::max_work_group_size>();
   return kernel_info;
 }
 // DPCT_LABEL_END

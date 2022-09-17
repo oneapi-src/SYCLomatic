@@ -4,7 +4,7 @@
 // RUN: FileCheck --input-file %T/Libcu/libcu_std_atomic.dp.cpp --match-full-lines %s
 
 
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>
 // CHECK: #include <dpct/atomic.hpp>
 #include <cuda/atomic>

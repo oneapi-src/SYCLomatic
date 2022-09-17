@@ -3,7 +3,7 @@
 
 // This file is migrated as CUDA file as default if compilation db is not used.
 
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
 
