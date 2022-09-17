@@ -1,7 +1,7 @@
 // RUN: dpct --usm-level=none -out-root %T/const-ref-qualifiers %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/const-ref-qualifiers/const-ref-qualifiers.dp.cpp --match-full-lines %s
 
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <stdio.h>
 // CHECK-EMPTY:

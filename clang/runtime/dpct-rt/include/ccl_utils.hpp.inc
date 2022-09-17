@@ -38,7 +38,7 @@
 // DPCT_LABEL_BEGIN|non_local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <oneapi/ccl.hpp>
 #include <unordered_map>
 #include <memory>

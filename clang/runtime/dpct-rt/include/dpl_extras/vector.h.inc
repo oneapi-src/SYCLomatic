@@ -43,7 +43,7 @@
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 
 #include "memory.h"
 
@@ -61,12 +61,6 @@
 // DPCT_LABEL_END
 
 namespace dpct {
-
-// DPCT_LABEL_BEGIN|cl_sycl_alias|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-namespace sycl = cl::sycl;
-// DPCT_LABEL_END
 
 namespace internal {
 // DPCT_LABEL_BEGIN|is_iterator|dpct::internal
@@ -415,10 +409,10 @@ public:
 
 #else
 
-template <typename T, typename Allocator = cl::sycl::buffer_allocator>
+template <typename T, typename Allocator = sycl::buffer_allocator>
 class device_vector {
   static_assert(
-      std::is_same<Allocator, cl::sycl::buffer_allocator>::value,
+      std::is_same<Allocator, sycl::buffer_allocator>::value,
       "device_vector doesn't support custom allocator when USM is not used.");
 
 public:

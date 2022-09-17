@@ -1,4 +1,4 @@
-//     CHECK:inline void getrf_batch_wrapper(cl::sycl::queue &exec_queue, int n, T *a[],
+//     CHECK:inline void getrf_batch_wrapper(sycl::queue &exec_queue, int n, T *a[],
 //CHECK-NEXT:                                int lda, int *ipiv, int *info, int batch_size) {
 //CHECK-NEXT:  if (ipiv == nullptr) {
 //CHECK-NEXT:    detail::getrfnp_batch_wrapper(exec_queue, n, a, lda, info, batch_size);

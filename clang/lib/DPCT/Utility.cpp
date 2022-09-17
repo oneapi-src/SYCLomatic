@@ -2434,10 +2434,9 @@ clang::RecordDecl *getRecordDecl(clang::QualType QT) {
   return nullptr;
 }
 
-bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE) {
+bool checkPointerInStructRecursively(const RecordDecl *R) {
   std::deque<const clang::RecordDecl *> Q;
-  Q.push_back(getRecordDecl(DRE->getType()));
-
+  Q.push_back(R);
   while (!Q.empty()) {
     if (Q.front() == nullptr) {
       Q.pop_front();
@@ -2457,6 +2456,10 @@ bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE) {
     }
   }
   return false;
+}
+
+bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE) {
+  return checkPointerInStructRecursively(getRecordDecl(DRE->getType()));
 }
 
 SourceLocation getImmSpellingLocRecursive(const SourceLocation Loc) {
