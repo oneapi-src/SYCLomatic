@@ -2596,11 +2596,20 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
           InsertLoc = Tok.getEndLoc().getLocWithOffset(1);
           emplaceTransformation(
               new InsertText(InsertLoc, std::move(PointerType)));
+          if(const auto VD = dyn_cast<clang::VarDecl>(DD)){
+            if(VD->hasInit()){
+              if(const auto VarInitExpr=dyn_cast<InitListExpr>(VD->getInit())){
+                if(getStmtSpelling(VarInitExpr)=="{0}"){
+                  std::string Repl="{&"+MapNames::getDpctNamespace()+"get_default_queue()}";
+                  emplaceTransformation(new ReplaceStmt(VarInitExpr, Repl));
+                }
+              } 
+            }   
+          }
         }
       }
     } else if (Tok.getKind() == tok::raw_identifier &&
                Tok.getRawIdentifier() == "const") {
-
       // const cudaStream_t
       TypeStr = Tok2.getRawIdentifier().str();
       if (Tok.getKind() == tok::raw_identifier && TypeStr == "cudaStream_t") {
@@ -2647,6 +2656,16 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
     auto InsertLoc = L2.getLocWithOffset(P - SM->getCharacterData(L2));
     auto PointerType = deducePointerType(DD2, "CUstream_st");
     emplaceTransformation(new InsertText(InsertLoc, std::move(PointerType)));
+    if(const auto VD = dyn_cast<clang::VarDecl>(DD2)){
+      if(VD->hasInit()){
+        if(const auto VarInitExpr=dyn_cast<InitListExpr>(VD->getInit())){
+          if(getStmtSpelling(VarInitExpr)=="{0}"){
+            std::string Repl="{&"+MapNames::getDpctNamespace()+"get_default_queue()}";
+            emplaceTransformation(new ReplaceStmt(VarInitExpr, Repl));
+          }
+        } 
+      }   
+    }
   }
 }
 
