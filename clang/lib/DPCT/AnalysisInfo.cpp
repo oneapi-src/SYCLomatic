@@ -2175,8 +2175,7 @@ void CallFunctionExpr::buildInfo() {
 
   const std::string &DefFilePath = FuncInfo->getDefinitionFilePath();
   if (!DefFilePath.empty() && DefFilePath != getFilePath() &&
-      !(isIncludedFile(getFilePath(), DefFilePath) ||
-        isIncludedFile(DefFilePath, getFilePath()))) {
+      !isIncludedFile(getFilePath(), DefFilePath)) {
     FuncInfo->setNeedSyclExternMacro();
   }
 
