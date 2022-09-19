@@ -357,7 +357,7 @@ FEATURE_REQUEST_FACTORY(
         ARG_WC(20), ARG_WC(17), ARG_WC(14), DEREF(ARG_WC(3)), ARG_WC(5),
         ARG_WC(6), DEREF(ARG_WC(4)), ARG_WC(9), ARG_WC(10), ARG_WC(7),
         ARG_WC(8), ARG_WC(11), ARG_WC(12), ARG_WC(13), ARG_WC(15), ARG_WC(16),
-        ARG_WC(18), ARG_WC(19))))
+        ARG_WC(18), ARG_WC(19), ARG_WC(23), ARG_WC(24))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_backward,
@@ -370,18 +370,14 @@ FEATURE_REQUEST_FACTORY(
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_backward_ex,
-    WARNING_FACTORY_ENTRY(
-        "cudnnBatchNormalizationBackwardEx",
-        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-            "cudnnBatchNormalizationBackwardEx", ARG_WC(0), false,
-            "batch_normalization_backward_ex", ARG_WC(1), ARG_WC(2), ARG_WC(25),
-            DEREF(ARG_WC(3)), ARG_WC(7), ARG_WC(8), ARG_WC(9), ARG_WC(10),
-            DEREF(ARG_WC(4)), ARG_WC(15), ARG_WC(16), ARG_WC(13), ARG_WC(14),
-            DEREF(ARG_WC(5)), ARG_WC(17), ARG_WC(18), ARG_WC(19),
-            DEREF(ARG_WC(6)), ARG_WC(20), ARG_WC(21), ARG_WC(23), ARG_WC(24))),
-        Diagnostics::PRIMITIVE_WORKSPACE,
-        ARG("batch_normalization_backward_ex"),
-        ARG("batch_normalization_forward_training_ex")))
+    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+        "cudnnBatchNormalizationBackwardEx", ARG_WC(0), false,
+        "batch_normalization_backward_ex", ARG_WC(1), ARG_WC(2), ARG_WC(25),
+        DEREF(ARG_WC(3)), ARG_WC(7), ARG_WC(8), ARG_WC(9), ARG_WC(10),
+        DEREF(ARG_WC(4)), ARG_WC(15), ARG_WC(16), ARG_WC(13), ARG_WC(14),
+        DEREF(ARG_WC(5)), ARG_WC(17), ARG_WC(18), ARG_WC(19), DEREF(ARG_WC(6)),
+        ARG_WC(20), ARG_WC(21), ARG_WC(23), ARG_WC(24), ARG_WC(28),
+        ARG_WC(29))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_engine_ext,
@@ -408,9 +404,10 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize",
     DEREF(ARG_WC(8)), ARG("0")))
 
-ASSIGNABLE_FACTORY(
-    ASSIGN_FACTORY_ENTRY("cudnnGetBatchNormalizationTrainingExReserveSpaceSize",
-                         DEREF(ARG_WC(5)), ARG("0")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cudnnGetBatchNormalizationTrainingExReserveSpaceSize", DEREF(ARG_WC(5)),
+    MEMBER_CALL(ARG_WC(0), false, "get_batch_normalization_workspace_size",
+                ARG_WC(2), ARG_WC(4))))
 
 // Normalization Layer
 FEATURE_REQUEST_FACTORY(
@@ -424,9 +421,10 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cudnnGetNormalizationForwardTrainingWorkspaceSize",
     DEREF(ARG_WC(10)), ARG("0")))
 
-ASSIGNABLE_FACTORY(
-    ASSIGN_FACTORY_ENTRY("cudnnGetNormalizationTrainingReserveSpaceSize",
-                         DEREF(ARG_WC(6)), ARG("0")))
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+    "cudnnGetNormalizationTrainingReserveSpaceSize", DEREF(ARG_WC(6)),
+    MEMBER_CALL(ARG_WC(0), false, "get_batch_normalization_workspace_size",
+                ARG_WC(2), ARG_WC(5))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_forward_inference_ex_norm,
@@ -445,23 +443,18 @@ FEATURE_REQUEST_FACTORY(
         ARG_WC(18), ARG_WC(15), ARG_WC(11), DEREF(ARG_WC(4)), ARG_WC(6),
         ARG_WC(7), DEREF(ARG_WC(5)), ARG_WC(21), ARG_WC(22), ARG_WC(19),
         ARG_WC(20), ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(12), ARG_WC(13),
-        ARG_WC(14), ARG_WC(16), ARG_WC(17))))
+        ARG_WC(14), ARG_WC(16), ARG_WC(17), ARG_WC(25), ARG_WC(26))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_backward_ex_norm,
-    WARNING_FACTORY_ENTRY(
-        "cudnnNormalizationBackward",
-        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-            "cudnnNormalizationBackward", ARG_WC(0), false,
-            "batch_normalization_backward_ex", ARG_WC(1), ARG_WC(2), ARG_WC(23),
-            DEREF(ARG_WC(4)), ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(11),
-            ARG_WC(12), ARG_WC(13), DEREF(ARG_WC(5)), ARG_WC(16), ARG_WC(17),
-            ARG_WC(14), ARG_WC(15), DEREF(ARG_WC(6)), ARG_WC(19), ARG_WC(20),
-            DEREF(ARG_WC(7)), ARG_WC(21), ARG_WC(22), ARG_WC(24), ARG_WC(25),
-            ARG_WC(26))),
-        Diagnostics::PRIMITIVE_WORKSPACE,
-        ARG("batch_normalization_backward_ex"),
-        ARG("batch_normalization_forward_training_ex")))
+    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+        "cudnnNormalizationBackward", ARG_WC(0), false,
+        "batch_normalization_backward_ex", ARG_WC(1), ARG_WC(2), ARG_WC(23),
+        DEREF(ARG_WC(4)), ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(11),
+        ARG_WC(12), ARG_WC(13), DEREF(ARG_WC(5)), ARG_WC(16), ARG_WC(17),
+        ARG_WC(14), ARG_WC(15), DEREF(ARG_WC(6)), ARG_WC(19), ARG_WC(20),
+        DEREF(ARG_WC(7)), ARG_WC(21), ARG_WC(22), ARG_WC(24), ARG_WC(25),
+        ARG_WC(26), ARG_WC(30), ARG_WC(31))))
 
 // Convolution Layer
 REMOVE_API_FACTORY_ENTRY("cudnnCreateFilterDescriptor")

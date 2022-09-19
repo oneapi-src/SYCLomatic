@@ -997,8 +997,8 @@ public:
   /// in the destination memory.
   /// \param [in] dst_desc Destination memory descriptor.
   /// \param [out] dst Pointer to destination data.
-  /// \param [in] addition_desc Addition memory descriptor.
-  /// \param [in] addition Pointer to addition data.
+  /// \param [in] summand_desc Summand memory descriptor.
+  /// \param [in] summand Pointer to summand data.
   /// \param [in] scale_bias_desc Scale, bias memory descriptor.
   /// \param [in] scale Pointer to scale data.
   /// \param [in] bias Pointer to bias data.
@@ -1011,7 +1011,7 @@ public:
       activation_desc &adesc, float epsilon, float alpha,
       const memory_desc_ext &src_desc, void *src, float beta,
       const memory_desc_ext &dst_desc, void *dst,
-      const memory_desc_ext &addition_desc, void *addition,
+      const memory_desc_ext &summand_desc, void *summand,
       const memory_desc_ext &scale_bias_desc, void *scale, void *bias,
       const memory_desc_ext &mean_var_desc, void *mean, void *var);
 
@@ -1062,8 +1062,8 @@ public:
   /// in the destination memory.
   /// \param [in] dst_desc Destination memory descriptor.
   /// \param [out] dst Pointer to destination data.
-  /// \param [in] addition_desc Addition memory descriptor.
-  /// \param [in] addition Pointer to addition data.
+  /// \param [in] summand_desc Summand memory descriptor.
+  /// \param [in] summand Pointer to summand data.
   /// \param [in] scale_bias_mean_var_desc Scale, bias, mean, variance memory
   /// descriptor.
   /// \param [in] scale Pointer to scale data.
@@ -1072,6 +1072,7 @@ public:
   /// \param [out] running_var Pointer to running variance data.
   /// \param [out] saved_mean Pointer to optional cache to save mean data.
   /// \param [out] saved_var Pointer to optional cache to save variance data.
+  /// \param [in] workspace_size Size of workspace.
   /// \param [out] workspace Pointer to workspace generated from forward
   /// propagation.
   /// \returns An event representing the batch normalization forward operations.
@@ -1080,10 +1081,10 @@ public:
       activation_desc &adesc, float epsilon, float factor, float alpha,
       const memory_desc_ext &src_desc, void *src, float beta,
       const memory_desc_ext &dst_desc, void *dst,
-      const memory_desc_ext &addition_desc, void *addition,
+      const memory_desc_ext &summand_desc, void *summand,
       const memory_desc_ext &scale_bias_mean_var_desc, void *scale, void *bias,
       void *running_mean, void *running_var, void *saved_mean, void *saved_var,
-      ::dnnl::memory *workspace = nullptr);
+      size_t workspace_size, void *workspace);
 
   /// Computing a specified batch normalization training stage function value.
   /// \param [in] mode Batch normalization mode.
@@ -1103,8 +1104,8 @@ public:
   /// in the destination memory.
   /// \param [in] dst_desc Destination memory descriptor.
   /// \param [out] dst Pointer to destination data.
-  /// \param [in] addition_desc Addition memory descriptor.
-  /// \param [in] addition Pointer to addition data.
+  /// \param [in] summand_desc Summand memory descriptor.
+  /// \param [in] summand Pointer to summand data.
   /// \param [in] scale_bias_desc Scale, bias memory descriptor.
   /// \param [in] scale Pointer to scale data.
   /// \param [in] bias Pointer to bias data.
@@ -1113,6 +1114,7 @@ public:
   /// \param [out] running_var Pointer to running variance data.
   /// \param [out] saved_mean Pointer to optional cache to save mean data.
   /// \param [out] saved_var Pointer to optional cache to save variance data.
+  /// \param [in] workspace_size Size of workspace.
   /// \param [out] workspace Pointer to workspace generated from forward
   /// propagation.
   /// \returns An event representing the batch normalization forward operations.
@@ -1121,10 +1123,10 @@ public:
       activation_desc &adesc, float epsilon, float factor, float alpha,
       const memory_desc_ext &src_desc, void *src, float beta,
       const memory_desc_ext &dst_desc, void *dst,
-      const memory_desc_ext &addition_desc, void *addition,
+      const memory_desc_ext &summand_desc, void *summand,
       const memory_desc_ext &scale_bias_desc, void *scale, void *bias,
       const memory_desc_ext &mean_var_desc, void *running_mean, void *running_var,
-      void *saved_mean, void *saved_var, ::dnnl::memory *workspace = nullptr);
+      void *saved_mean, void *saved_var, size_t workspace_size, void *workspace);
 
   /// Computing the gradient of a specified batch normalization function.
   /// \param [in] mode Batch normalization mode.
@@ -1180,8 +1182,8 @@ public:
   /// in the data memory.
   /// \param [in] diff_src_desc Differential source memory descriptor.
   /// \param [out] diff_src Pointer to differential source data.
-  /// \param [in] diff_addition_desc Differential addition memory descriptor.
-  /// \param [out] diff_addition Pointer to differential addition data.
+  /// \param [in] diff_summand_desc Differential summand memory descriptor.
+  /// \param [out] diff_summand Pointer to differential summand data.
   /// \param [in] alpha_param Value to scaling factors used to scale the computed
   /// parameter value.
   /// \param [in] diff_scale_bias_mean_var_desc Differential scale, bias, mean,
@@ -1194,6 +1196,7 @@ public:
   /// \param [out] diff_bias Pointer to differential bias data.
   /// \param [in] saved_mean Pointer to optional cache saved mean data in forward.
   /// \param [in] saved_var Pointer to optional cache saved variance data in forward.
+  /// \param [in] workspace_size Size of workspace.
   /// \param [in] workspace Pointer to workspace used for backward propagation.
   /// \returns An event representing the batch normalization backward operations.
   sycl::event batch_normalization_backward_ex(
@@ -1203,11 +1206,11 @@ public:
       const memory_desc_ext &dst_desc, void *dst,
       const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta_data,
       const memory_desc_ext &diff_src_desc, void *diff_src,
-      const memory_desc_ext &diff_addition_desc, void *diff_addition,
+      const memory_desc_ext &diff_summand_desc, void *diff_summand,
       float alpha_param, const memory_desc_ext &diff_scale_bias_mean_var_desc,
       void *scale, void *bias, float beta_param, void *diff_scale,
       void *diff_bias, void *saved_mean, void *saved_var,
-      ::dnnl::memory *workspace = nullptr);
+      size_t workspace_size, void *workspace);
 
   /// Computing the gradient of a specified batch normalization function.
   /// \param [in] mode Batch normalization mode.
@@ -1229,8 +1232,8 @@ public:
   /// in the data memory.
   /// \param [in] diff_src_desc Differential source memory descriptor.
   /// \param [out] diff_src Pointer to differential source data.
-  /// \param [in] diff_addition_desc Differential addition memory descriptor.
-  /// \param [out] diff_addition Pointer to differential addition data.
+  /// \param [in] diff_summand_desc Differential summand memory descriptor.
+  /// \param [out] diff_summand Pointer to differential summand data.
   /// \param [in] alpha_param Value to scaling factors used to scale the computed
   /// parameter value.
   /// \param [in] diff_scale_bias_desc Differential scale, bias memory descriptor.
@@ -1243,6 +1246,7 @@ public:
   /// \param [in] mean_var_desc Differential mean, variance memory descriptor.
   /// \param [in] saved_mean Pointer to optional cache saved mean data in forward.
   /// \param [in] saved_var Pointer to optional cache saved variance data in forward.
+  /// \param [in] workspace_size Size of workspace.
   /// \param [in] workspace Pointer to workspace used for backward propagation.
   /// \returns An event representing the batch normalization backward operations.
   sycl::event batch_normalization_backward_ex(
@@ -1251,11 +1255,11 @@ public:
       const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
       void *dst, const memory_desc_ext &diff_dst_desc, void *diff_dst,
       float beta_data, const memory_desc_ext &diff_src_desc, void *diff_src,
-      const memory_desc_ext &diff_addition_desc, void *diff_addition,
+      const memory_desc_ext &diff_summand_desc, void *diff_summand,
       float alpha_param, const memory_desc_ext &diff_scale_bias_desc, void *scale,
       void *bias, float beta_param, void *diff_scale, void *diff_bias,
       const memory_desc_ext &mean_var_desc, void *saved_mean, void *saved_var,
-      ::dnnl::memory *workspace = nullptr);
+      size_t workspace_size, void *workspace);
 
   /// Computing a specified convolution function value.
   /// \param [in] desc Convolution descriptor.
@@ -1287,10 +1291,10 @@ public:
   /// \param [in] src Pointer to source data.
   /// \param [in] weight_desc Weight memory descriptor.
   /// \param [in] weight Pointer to weight data.
-  /// \param [in] alpha_1 Value to scaling factors used to scale the addition
+  /// \param [in] alpha_1 Value to scaling factors used to scale the summand
   /// value.
-  /// \param [in] addition_desc Addition memory descriptor.
-  /// \param [in] addition Pointer to addition data.
+  /// \param [in] summand_desc Summand memory descriptor.
+  /// \param [in] summand Pointer to summand data.
   /// \param [in] bias_desc Bias memory descriptor.
   /// \param [in] bias Pointer to bias data.
   /// \param [in] dst_desc Destination memory descriptor.
@@ -1300,7 +1304,7 @@ public:
       convolution_desc &desc, ::dnnl::algorithm alg, activation_desc &adesc,
       float alpha_0, const memory_desc_ext &src_desc, void *src,
       const memory_desc_ext &weight_desc, void *weight, float alpha_1,
-      const memory_desc_ext &addition_desc, void *addition,
+      const memory_desc_ext &summand_desc, void *summand,
       const memory_desc_ext &bias_desc, void *bias,
       const memory_desc_ext &dst_desc, void *dst);
 
@@ -2628,7 +2632,7 @@ sycl::event engine_ext::batch_normalization_forward_inference_ex(
     activation_desc &adesc, float epsilon, float alpha,
     const memory_desc_ext &src_desc, void *src, float beta,
     const memory_desc_ext &dst_desc, void *dst,
-    const memory_desc_ext &addition_desc, void *addition,
+    const memory_desc_ext &summand_desc, void *summand,
     const memory_desc_ext &scale_bias_desc, void *scale, void *bias,
     const memory_desc_ext &mean_var_desc, void *mean, void *var) {
 
@@ -2644,7 +2648,7 @@ sycl::event engine_ext::batch_normalization_forward_inference_ex(
         nullptr);
 
     if (ops == batch_normalization_ops::add_activation) {
-      sum(1.f, addition_desc, addition, 1.f, dst_desc, dst_cache);
+      sum(1.f, summand_desc, summand, 1.f, dst_desc, dst_cache);
     }
     activation_forward(adesc, 1.f, dst_desc, dst_cache, 0.f, dst_desc,
                        dst_cache);
@@ -2674,29 +2678,27 @@ sycl::event engine_ext::batch_normalization_forward_training_ex(
     activation_desc &adesc, float epsilon, float factor, float alpha,
     const memory_desc_ext &src_desc, void *src, float beta,
     const memory_desc_ext &dst_desc, void *dst,
-    const memory_desc_ext &addition_desc, void *addition,
+    const memory_desc_ext &summand_desc, void *summand,
     const memory_desc_ext &scale_bias_desc, void *scale, void *bias,
     const memory_desc_ext &mean_var_desc, void *running_mean, void *running_var,
-    void *saved_mean, void *saved_var, ::dnnl::memory *workspace) {
+    void *saved_mean, void *saved_var, size_t workspace_size,
+    ::dnnl::memory *workspace) {
   bool has_post_op = (ops != batch_normalization_ops::none);
-  ::dnnl::memory ws_mem;
   sycl::event e;
   if (has_post_op) {
-    ws_mem = ::dnnl::memory(dst_desc.get_desc(), _eng);
+    if(workspace_size < dst_desc.get_desc().get_size()) {
+      throw std::runtime_error("batch_normalization_forward_training_ex:
+        no sufficient workspace.");
+    }
     batch_normalization_forward_internal(
         false, mode, epsilon, factor, 1.f, src_desc, src, 0.f, dst_desc,
-        ws_mem.get_data_handle(), scale_bias_desc, scale, bias, mean_var_desc,
+        workspace, scale_bias_desc, scale, bias, mean_var_desc,
         saved_mean, saved_var, running_mean, running_var);
-    if (workspace) {
-      *workspace = ws_mem;
-    } else {
-      insert_workspace(src, ws_mem);
-    }
     if (ops == batch_normalization_ops::add_activation) {
-      sum(1.f, addition_desc, addition, 1.f, dst_desc,
-          ws_mem.get_data_handle());
+      sum(1.f, summand_desc, summand, 1.f, dst_desc,
+          workspace);
     }
-    return activation_forward(adesc, alpha, dst_desc, ws_mem.get_data_handle(),
+    return activation_forward(adesc, alpha, dst_desc, workspace,
                               beta, dst_desc, dst);
   }
   return batch_normalization_forward_internal(
@@ -2710,15 +2712,15 @@ sycl::event engine_ext::batch_normalization_forward_training_ex(
     activation_desc &adesc, float epsilon, float factor, float alpha,
     const memory_desc_ext &src_desc, void *src, float beta,
     const memory_desc_ext &dst_desc, void *dst,
-    const memory_desc_ext &addition_desc, void *addition,
+    const memory_desc_ext &summand_desc, void *summand,
     const memory_desc_ext &scale_bias_mean_var_desc, void *scale, void *bias,
     void *running_mean, void *running_var, void *saved_mean, void *saved_var,
-    ::dnnl::memory *workspace) {
+    size_t workspace_size, void *workspace) {
   return batch_normalization_forward_training_ex(
       mode, ops, adesc, epsilon, factor, alpha, src_desc, src, beta, dst_desc,
-      dst, addition_desc, addition, scale_bias_mean_var_desc, scale, bias,
+      dst, summand_desc, summand, scale_bias_mean_var_desc, scale, bias,
       scale_bias_mean_var_desc, running_mean, running_var, saved_mean,
-      saved_var, workspace);
+      saved_var, workspace_size, workspace);
 }
 
 sycl::event engine_ext::batch_normalization_backward(
@@ -2743,42 +2745,34 @@ sycl::event engine_ext::batch_normalization_backward_ex(
     const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
     void *dst, const memory_desc_ext &diff_dst_desc, void *diff_dst,
     float beta_data, const memory_desc_ext &diff_src_desc, void *diff_src,
-    const memory_desc_ext &diff_addition_desc, void *diff_addition,
+    const memory_desc_ext &diff_summand_desc, void *diff_summand,
     float alpha_param, const memory_desc_ext &diff_scale_bias_desc, void *scale,
     void *bias, float beta_param, void *diff_scale, void *diff_bias,
     const memory_desc_ext &mean_var_desc, void *saved_mean, void *saved_var,
-    ::dnnl::memory *workspace) {
-  if (scale_parameter_preprocess(
-          {{alpha_data, beta_data, diff_src_desc, diff_src},
-           {alpha_data, beta_data, diff_addition_desc, diff_addition},
-           {alpha_param, beta_param, diff_scale_bias_desc, diff_scale},
-           {alpha_param, beta_param, diff_scale_bias_desc, diff_bias}})) {
-    return sycl::event();
-  }
+    size_t workspace_size, void *workspace) {
   std::vector<void *> caches;
-  ::dnnl::memory ws_mem;
   ::dnnl::memory::desc real_diff_dst_desc = diff_dst_desc.get_desc();
   void *real_diff_dst = diff_dst;
-  if (workspace) {
-    ws_mem = *workspace;
-  } else {
-    ws_mem = get_workspace(src);
+
+  if (workspace_size < dst_desc.get_desc().get_size()) {
+      throw std::runtime_error("batch_normalization_backward_ex:
+        no sufficient workspace.");
   }
   if (ops == batch_normalization_ops::add_activation) {
-    void *diff_addition_cache = allocate(diff_addition_desc);
+    void *diff_summand_cache = allocate(diff_summand_desc);
     activation_backward(adesc, 1.f, dst_desc, dst, diff_dst_desc, diff_dst,
-                        ws_mem.get_desc(), ws_mem.get_data_handle(), 0.f,
-                        diff_addition_desc, diff_addition_cache);
-    caches.push_back(diff_addition_cache);
-    sum(alpha_data, diff_addition_desc, diff_addition_cache, beta_data,
-        diff_addition_desc, diff_addition);
-    real_diff_dst_desc = diff_addition_desc.get_desc();
-    real_diff_dst = diff_addition_cache;
+                        dst_desc, workspace, 0.f,
+                        diff_summand_desc, diff_summand_cache);
+    caches.push_back(diff_summand_cache);
+    sum(alpha_data, diff_summand_desc, diff_summand_cache, beta_data,
+        diff_summand_desc, diff_summand);
+    real_diff_dst_desc = diff_summand_desc.get_desc();
+    real_diff_dst = diff_summand_cache;
   } else if (ops == batch_normalization_ops::activation) {
     void *diff_dst_cache = allocate(diff_dst_desc);
     caches.push_back(diff_dst_cache);
     activation_backward(adesc, alpha_data, dst_desc, dst, diff_dst_desc,
-                        diff_dst, ws_mem.get_desc(), ws_mem.get_data_handle(),
+                        diff_dst, dst_desc, workspace,
                         beta_data, diff_dst_desc, diff_dst_cache);
     real_diff_dst = diff_dst_cache;
   }
@@ -2802,19 +2796,19 @@ sycl::event engine_ext::batch_normalization_backward_ex(
     const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
     void *dst, const memory_desc_ext &diff_dst_desc, void *diff_dst,
     float beta_data, const memory_desc_ext &diff_src_desc, void *diff_src,
-    const memory_desc_ext &diff_addition_desc, void *diff_addition,
+    const memory_desc_ext &diff_summand_desc, void *diff_summand,
     float alpha_param, const memory_desc_ext &diff_scale_bias_mean_var_desc,
     void *scale, void *bias, float beta_param, void *diff_scale,
     void *diff_bias, void *saved_mean, void *saved_var,
-    ::dnnl::memory *workspace) {
+    size_t workspace_size, void *workspace) {
 
   return batch_normalization_backward_ex(
       mode, ops, adesc, epsilon, alpha_data, src_desc, src, dst_desc, dst,
       diff_dst_desc, diff_dst, beta_data, diff_src_desc, diff_src,
-      diff_addition_desc, diff_addition, alpha_param,
+      diff_summand_desc, diff_summand, alpha_param,
       diff_scale_bias_mean_var_desc, scale, bias, beta_param, diff_scale,
       diff_bias, diff_scale_bias_mean_var_desc, saved_mean, saved_var,
-      workspace);
+      workspace_size, workspace);
 }
 
 sycl::event
@@ -2846,7 +2840,7 @@ sycl::event engine_ext::convolution_forward_ex(
     convolution_desc &desc, ::dnnl::algorithm alg, activation_desc &adesc,
     float alpha_0, const memory_desc_ext &src_desc, void *src,
     const memory_desc_ext &weight_desc, void *weight, float alpha_1,
-    const memory_desc_ext &addition_desc, void *addition,
+    const memory_desc_ext &summand_desc, void *summand,
     const memory_desc_ext &bias_desc, void *bias,
     const memory_desc_ext &dst_desc, void *dst) {
 
@@ -2882,7 +2876,7 @@ sycl::event engine_ext::convolution_forward_ex(
   if (cache != nullptr) {
     async_dpct_free({cache}, {e}, *_q);
   }
-  sum(alpha_1, addition_desc, addition, 1.f, dst_desc, dst);
+  sum(alpha_1, summand_desc, summand, 1.f, dst_desc, dst);
   return activation_forward(adesc, 1.f, dst_desc, dst, 0.f, dst_desc, dst);
 }
 
