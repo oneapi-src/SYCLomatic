@@ -9753,9 +9753,9 @@ void KernelCallRule::runRule(
 
     // Add kernel call to map,
     // will do code generation in Global.buildReplacements();
-    if (!FD->isTemplateInstantiation())
+    if (!FD->isTemplateInstantiation()){
       DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
-
+    }
     const CallExpr *Config = KCall->getConfig();
     if (Config) {
       if (Config->getNumArgs() > 2) {
@@ -9813,7 +9813,7 @@ void KernelCallRule::removeTrailingSemicolon(
     const CallExpr *KCall,
     const ast_matchers::MatchFinder::MatchResult &Result) {
   const auto &SM = (*Result.Context).getSourceManager();
-  auto KELoc = getStmtExpansionSourceRange(KCall).getEnd();
+  auto KELoc = getTheLastCompleteImmediateRange(KCall->getBeginLoc(), KCall->getEndLoc()).second;
   auto Tok = Lexer::findNextToken(KELoc, SM, LangOptions()).getValue();
   if (Tok.is(tok::TokenKind::semi))
     emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));

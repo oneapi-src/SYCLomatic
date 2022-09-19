@@ -38,7 +38,7 @@
 // DPCT_LABEL_BEGIN|non_local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include <oneapi/mkl/rng/device.hpp>
 // DPCT_LABEL_END
@@ -196,7 +196,7 @@ private:
     } else if constexpr (vec_size == 1) {
       return oneapi::mkl::rng::device::generate_single(distr, _engine);
     } else if constexpr (vec_size == 2) {
-      cl::sycl::vec<typename distr_t::result_type, 2> res;
+      sycl::vec<typename distr_t::result_type, 2> res;
       res.x() = oneapi::mkl::rng::device::generate_single(distr, _engine);
       res.y() = oneapi::mkl::rng::device::generate_single(distr, _engine);
       return res;

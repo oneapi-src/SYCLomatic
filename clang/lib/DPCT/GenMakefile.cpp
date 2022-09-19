@@ -233,6 +233,10 @@ static void getCompileInfo(
       } else if (llvm::StringRef(Option).startswith("-O")) {
         // Keep optimization level same as original compile command.
         NewOptions += Option + " ";
+      } else if (Option == "-msse4.1" ||
+                 Option == "-mavx512vl") {
+        // Keep some options from original compile command.
+        NewOptions += Option + " ";
       }
     }
     if (!IsObjSpecified) {

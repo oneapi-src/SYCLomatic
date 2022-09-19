@@ -1,7 +1,7 @@
 //CHECK:#ifndef __DPCT_HPP__
 //CHECK-NEXT:#define __DPCT_HPP__
 //CHECK-EMPTY:
-//CHECK-NEXT:#include <CL/sycl.hpp>
+//CHECK-NEXT:#include <sycl/sycl.hpp>
 //CHECK-NEXT:#include <iostream>
 //CHECK-NEXT:#include <limits.h>
 //CHECK-EMPTY:

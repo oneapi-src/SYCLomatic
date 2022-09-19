@@ -6,7 +6,7 @@
 
 //CHECK:#include <oneapi/dpl/execution>
 //CHECK-NEXT:#include <oneapi/dpl/algorithm>
-//CHECK-NEXT:#include <CL/sycl.hpp>
+//CHECK-NEXT:#include <sycl/sycl.hpp>
 //CHECK-NEXT:#include <dpct/dpct.hpp>
 //CHECK-NEXT:#include "thrust-header2.h"
 //CHECK-NEXT:#include <cstdio>
