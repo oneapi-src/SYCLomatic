@@ -32,11 +32,13 @@ using namespace dpct;
 using namespace tooling;
 using namespace ast_matchers;
 
+namespace {
 auto parentStmt = []() {
   return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
                hasParent(whileStmt()), hasParent(doStmt()),
                hasParent(ifStmt()));
 };
+} // namespace
 
 /// Check if expression is one of NULL(0)/nullptr/__null
 static bool isNullPointerConstant(const Expr *E) {
