@@ -2642,7 +2642,7 @@ sycl::event engine_ext::binary(binary_op op, float alpha_0,
          {::dnnl::memory(src_desc_0.get_desc(), _eng,
                          src_cache ? src_cache : src_0)}}};
     sycl::event e = execute_primitive(
-        *primitive, *execution_args, {{1.f, beta, DNNL_ARG_DST, dst_desc, dst}},
+        primitive, execution_args, {{1.f, beta, DNNL_ARG_DST, dst_desc, dst}},
         {src_cache});
     return e;
   }
@@ -3143,13 +3143,13 @@ sycl::event engine_ext::batch_normalization_forward_training_ex(
     const memory_desc_ext &scale_bias_desc, void *scale, void *bias,
     const memory_desc_ext &mean_var_desc, void *running_mean, void *running_var,
     void *saved_mean, void *saved_var, size_t workspace_size,
-    ::dnnl::memory *workspace) {
+    size_t workspace_size, void *workspace) {
   bool has_post_op = (ops != batch_normalization_ops::none);
   sycl::event e;
   if (has_post_op) {
     if(workspace_size < dst_desc.get_desc().get_size()) {
-      throw std::runtime_error("batch_normalization_forward_training_ex:
-        no sufficient workspace.");
+      throw std::runtime_error("batch_normalization_forward_training_ex:"
+        "no sufficient workspace.");
     }
     batch_normalization_forward_internal(
         false, mode, epsilon, factor, 1.f, src_desc, src, 0.f, dst_desc,
