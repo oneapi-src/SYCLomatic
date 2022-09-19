@@ -306,6 +306,10 @@ bool printOptions(
     if (Key == clang::dpct::OPTION_AnalysisScopePath && Specified) {
       Opts.emplace_back("--analysis-scope-path=\"" + Value + "\"");
     }
+    if (Key == clang::dpct::OPTION_UseIntelSpecificAPI) {
+      if ("true" == Value)
+        Opts.emplace_back("--use-intel-specific-API");
+    }
   }
 
   Msg = "";

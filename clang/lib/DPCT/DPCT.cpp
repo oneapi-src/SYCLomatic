@@ -122,6 +122,8 @@ bool NoDRYPatternFlag = false;
 bool NoUseGenericSpaceFlag = false;
 bool ProcessAllFlag = false;
 bool AsyncHandlerFlag = false;
+bool UseIntelSpecificFlag = false;
+
 static std::string SuppressWarningsMessage = "Comma separated list of migration warnings to suppress. Valid "
                 "warning IDs range\n"
                 "from " + std::to_string((size_t)Warnings::BEGIN) + " to " +
@@ -140,6 +142,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 #define DPCT_ENUM_OPTION(OPT_TYPE, OPT_VAR, OPTION_NAME, ...)      \
 OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 #include "clang/DPCT/DPCTOptions.inc"
+
 #undef DPCT_ENUM_OPTION
 #undef DPCT_NON_ENUM_OPTION
 #undef DPCT_OPTION_VALUES
@@ -1007,7 +1010,15 @@ int runDPCT(int argc, const char **argv) {
   CallExprRewriterFactoryBase::initRewriterMap();
   CallExprRewriterFactoryBase::initMethodRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
-  if (!RuleFile.empty()) {
+  if (UseIntelSpecificFlag==true){
+    std::string ClangExecutablePath =
+      llvm::sys::path::parent_path(
+        llvm::sys::path::parent_path(
+          llvm::sys::fs::getMainExecutable(argv[0], nullptr))).str();
+    RuleFile.addValue(ClangExecutablePath+
+      llvm::sys::path::convert_to_slash("/extensions/opt_rules/intel_specific_math.yaml"));
+  }
+  if (!RuleFile.empty()) { 
     importRules(RuleFile);
   }
 
@@ -1073,6 +1084,9 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
                      DpctGlobalInfo::getAnalysisScope(),
                      AnalysisScope.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_UseIntelSpecificAPI,
+                     UseIntelSpecificFlag,
+                     UseIntelSpecificAPI.getNumOccurrences());
 
     if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;
