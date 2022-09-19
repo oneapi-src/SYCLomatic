@@ -139,6 +139,15 @@ __shared__ extern char cuda_shared_memory[];
 #endif
 
 // CHECK: static char *Env_cuda_shared_memory(char *cuda_shared_memory) {
+// CHECK-EMPTY: 
+// CHECK: return cuda_shared_memory;
+// CHECK-EMPTY: 
+// CHECK: }
+// CHECK: static char *Env_cuda_shared_memory_host_ct{{[0-9]+}}() {
+// CHECK-EMPTY: 
+// CHECK: return (char *)0;
+// CHECK-EMPTY: 
+// CHECK: }
 __host__ __device__ static char *Env_cuda_shared_memory() {
 #ifdef __CUDA_ARCH__
   return cuda_shared_memory;
@@ -147,17 +156,20 @@ __host__ __device__ static char *Env_cuda_shared_memory() {
 #endif
 }
 
-// CHECK: void foo_4(char *cuda_shared_memory) { char *p = Env_cuda_shared_memory(cuda_shared_memory); }
-__global__ void foo_4() { char *p = Env_cuda_shared_memory(); }
+// CHECK: void foo_4_g(char *cuda_shared_memory) { char *p = Env_cuda_shared_memory(cuda_shared_memory); }
+__global__ void foo_4_g() { char *p = Env_cuda_shared_memory(); }
+
+// CHECK: void foo_4_h() { char *p = Env_cuda_shared_memory_host_ct{{[0-9]+}}(); }
+__host__ void foo_4_h() { char *p = Env_cuda_shared_memory(); }
 
 // CHECK: void call_foo4() { dpct::get_default_queue().submit(
 // CHECK-NEXT:  [&](sycl::handler &cgh) {
 // CHECK-NEXT:    sycl::accessor<char, 1, sycl::access_mode::read_write, sycl::access::target::local> cuda_shared_memory_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK-EMPTY: 
-// CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class foo_4_{{[a-f0-9]+}}>>(
+// CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class foo_4_g_{{[a-f0-9]+}}>>(
 // CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)), 
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:        foo_4(cuda_shared_memory_acc_ct1.get_pointer());
+// CHECK-NEXT:        foo_4_g(cuda_shared_memory_acc_ct1.get_pointer());
 // CHECK-NEXT:      });
 // CHECK-NEXT:  }); }
-void call_foo4() { foo_4<<<16, 64, 10>>>(); }
+void call_foo4() { foo_4_g<<<16, 64, 10>>>(); }
