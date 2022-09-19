@@ -734,7 +734,7 @@ class engine_ext {
           delete args;
         }
         for (auto ptr : device_ptrs) {
-          sycl::free(ptr);
+          sycl::free(ptr, *_q);
         }
       });
     });
@@ -744,7 +744,8 @@ class engine_ext {
   template <typename primitive_type, typename args_type>
   sycl::event
   execute_primitive(primitive_type *primitive, args_type *args,
-                    const std::vector<output_argument_info> &extra_args);
+                    const std::vector<output_argument_info> &extra_args,
+                    const std::vector<void *> &device_ptrs);
   template <typename T>
   sycl::event fill_with_type(sycl::queue *q, void *src, const void *value,
                              size_t size_with_byte) {
@@ -2094,7 +2095,7 @@ template <typename primitive_type, typename args_type>
 sycl::event engine_ext::execute_primitive(
     primitive_type *primitive, args_type *args,
     const std::vector<output_argument_info> &output_args,
-    std::vector<void *> device_ptrs) {
+    const std::vector<void *> &device_ptrs) {
   std::vector<void *> caches;
   sycl::event final_event, final_cache_event;
   int output_arg_num = output_args.size();
@@ -2429,20 +2430,20 @@ sycl::event engine_ext::batch_normalization_forward_internal(
 }
 
 template <typename primitive_type, typename... args_type>
-primitive_type engine_ext::create_forward_primitive(args_type &&...args) {
-  return primitive_type(create_forward_primitive_desc<primitive_type>(
+primitive_type *engine_ext::create_forward_primitive(args_type &&...args) {
+  return new primitive_type(create_forward_primitive_desc<primitive_type>(
       std::forward<args_type>(args)...));
 }
 
 template <bool use_attr, typename primitive_type, typename attr_type,
           typename... args_type>
-primitive_type engine_ext::create_forward_primitive(attr_type &&attr,
+primitive_type *engine_ext::create_forward_primitive(attr_type &&attr,
                                                     args_type &&...args) {
   if constexpr (use_attr) {
-    return primitive_type(create_forward_primitive_desc<true, primitive_type>(
+    return new primitive_type(create_forward_primitive_desc<true, primitive_type>(
         attr, std::forward<args_type>(args)...));
   }
-  return primitive_type(create_forward_primitive_desc<primitive_type>(
+  return new primitive_type(create_forward_primitive_desc<primitive_type>(
       std::forward<args_type>(args)...));
 }
 
@@ -2468,10 +2469,10 @@ engine_ext::create_forward_primitive_desc(attr_type &&attr,
 
 template <typename primitive_type, typename forward_primitive_type,
           typename... args_type>
-primitive_type
+primitive_type *
 engine_ext::create_backward_primitive(forward_primitive_type &&fp,
                                       args_type &&...args) {
-  return primitive_type(typename primitive_type::primitive_desc(
+  return new primitive_type(typename primitive_type::primitive_desc(
       {std::forward<args_type>(args)...}, _eng,
       std::forward<forward_primitive_type>(fp)));
 }
