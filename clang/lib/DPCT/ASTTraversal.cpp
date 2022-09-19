@@ -11373,7 +11373,6 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
                     AA.getRewritePostfix();
       std::ostringstream Repl;
       buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-
       if (hasManagedAttr(0)(C)) {
           ArgStr = "*(" + ArgStr + ".get_ptr())";
       }
