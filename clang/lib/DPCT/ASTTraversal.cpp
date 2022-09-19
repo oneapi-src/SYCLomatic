@@ -2599,9 +2599,15 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
           if(const auto VD = dyn_cast<clang::VarDecl>(DD)){
             if(VD->hasInit()){
               if(const auto VarInitExpr=dyn_cast<InitListExpr>(VD->getInit())){
-                if(getStmtSpelling(VarInitExpr)=="{0}"){
-                  std::string Repl="{&"+MapNames::getDpctNamespace()+"get_default_queue()}";
-                  emplaceTransformation(new ReplaceStmt(VarInitExpr, Repl));
+                if(VarInitExpr->getNumInits()==1){
+                  Expr::EvalResult ER;
+                  if (VarInitExpr->EvaluateAsInt(ER, dpct::DpctGlobalInfo::getContext())) {
+                    int64_t Value = ER.Val.getInt().getExtValue();
+                    if (Value == 0) {
+                      std::string Repl="{&"+MapNames::getDpctNamespace()+"get_default_queue()}";
+                      emplaceTransformation(new ReplaceStmt(VarInitExpr, Repl));
+                    }
+                  }
                 }
               } 
             }   
@@ -2659,9 +2665,15 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
     if(const auto VD = dyn_cast<clang::VarDecl>(DD2)){
       if(VD->hasInit()){
         if(const auto VarInitExpr=dyn_cast<InitListExpr>(VD->getInit())){
-          if(getStmtSpelling(VarInitExpr)=="{0}"){
-            std::string Repl="{&"+MapNames::getDpctNamespace()+"get_default_queue()}";
-            emplaceTransformation(new ReplaceStmt(VarInitExpr, Repl));
+          if(VarInitExpr->getNumInits()==1){
+            Expr::EvalResult ER;
+            if (VarInitExpr->EvaluateAsInt(ER, dpct::DpctGlobalInfo::getContext())) {
+              int64_t Value = ER.Val.getInt().getExtValue();
+              if (Value == 0) {
+                std::string Repl="{&"+MapNames::getDpctNamespace()+"get_default_queue()}";
+                emplaceTransformation(new ReplaceStmt(VarInitExpr, Repl));
+              }
+            }
           }
         } 
       }   
