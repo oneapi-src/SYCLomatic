@@ -745,7 +745,7 @@ class engine_ext {
   sycl::event
   execute_primitive(primitive_type *primitive, args_type *args,
                     const std::vector<output_argument_info> &extra_args,
-                    const std::vector<void *> &device_ptrs);
+                    const std::vector<void *> &device_ptrs = {});
   template <typename T>
   sycl::event fill_with_type(sycl::queue *q, void *src, const void *value,
                              size_t size_with_byte) {
@@ -2302,7 +2302,14 @@ sycl::event engine_ext::batch_normalization_backward_internal(
     e = reorder(1.f, actual_diff_scale_bias_desc, reordered_diff_bias, 0.f,
                 diff_scale_bias_desc, diff_bias);
   }
-  async_free(_q, e, nullptr, nullptr, caches);
+  _q->submit([&](cl::sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] {
+      for (auto ptr : caches) {
+        sycl::free(ptr, *_q);
+      }
+    });
+  });
   return e;
 }
 
@@ -2425,7 +2432,14 @@ sycl::event engine_ext::batch_normalization_forward_internal(
     e = reorder(1.f, actual_mean_var_desc, reordered_saved_var, 0.f,
                 mean_var_desc, saved_var);
   }
-  async_free(_q, e, nullptr, nullptr, caches);
+  _q->submit([&](cl::sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] {
+      for (auto ptr : caches) {
+        sycl::free(ptr, *_q);
+      }
+    });
+  });
   return e;
 }
 
@@ -3081,7 +3095,14 @@ sycl::event engine_ext::batch_normalization_forward_inference_ex(
     activation_forward(adesc, 1.f, dst_desc, dst_cache, 0.f, dst_desc,
                        dst_cache);
     e = sum(alpha, dst_desc, dst_cache, beta, dst_desc, dst);
-    async_free(_q, e, nullptr, nullptr, caches);
+    _q->submit([&](cl::sycl::handler &cgh) {
+      cgh.depends_on(e);
+      cgh.host_task([=] {
+        for (auto ptr : caches) {
+          sycl::free(ptr, *_q);
+        }
+      });
+    });
     return e;
   }
   return batch_normalization_forward_internal(
@@ -3240,8 +3261,14 @@ sycl::event engine_ext::batch_normalization_backward_ex(
       real_diff_dst, beta_data, diff_src_desc, diff_src, alpha_param,
       diff_scale_bias_desc, scale, bias, beta_param, diff_scale, diff_bias,
       mean_var_desc, saved_mean, saved_var);
-
-  async_free(_q, e, nullptr, nullptr, caches);
+  _q->submit([&](cl::sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] {
+      for (auto ptr : caches) {
+        sycl::free(ptr, *_q);
+      }
+    });
+  });
   return e;
 }
 // DPCT_LABEL_END
