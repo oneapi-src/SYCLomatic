@@ -3143,12 +3143,12 @@ sycl::event engine_ext::batch_normalization_forward_training_ex(
     const memory_desc_ext &scale_bias_desc, void *scale, void *bias,
     const memory_desc_ext &mean_var_desc, void *running_mean, void *running_var,
     void *saved_mean, void *saved_var, size_t workspace_size,
-    size_t workspace_size, void *workspace) {
+    void *workspace) {
   bool has_post_op = (ops != batch_normalization_ops::none);
   sycl::event e;
   if (has_post_op) {
     if(workspace_size < dst_desc.get_desc().get_size()) {
-      throw std::runtime_error("batch_normalization_forward_training_ex:"
+      throw std::runtime_error("batch_normalization_forward_training_ex: "
         "no sufficient workspace.");
     }
     batch_normalization_forward_internal(
@@ -3234,8 +3234,8 @@ sycl::event engine_ext::batch_normalization_backward_ex(
   void *real_diff_dst = diff_dst;
 
   if (workspace_size < dst_desc.get_desc().get_size()) {
-      throw std::runtime_error("batch_normalization_backward_ex:
-        no sufficient workspace.");
+      throw std::runtime_error("batch_normalization_backward_ex: "
+        "no sufficient workspace.");
   }
   if (ops == batch_normalization_ops::add_activation) {
     void *diff_summand_cache = allocate(diff_summand_desc);
