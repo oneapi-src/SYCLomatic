@@ -4041,19 +4041,10 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     // migrate to get_XXX() eg. "b=a.minor" to "b=a.get_minor_version()"
     requestFeature(PropToGetFeatureMap.at(MemberName), ME);
     std::string TmplArg = "";
-    if (MemberName == "maxGridSize" || MemberName == "maxThreadsDim") {
-      auto GradParents = Result.Context->getParents(*ICE);
-      if (GradParents.size() > 0 &&
-          !GradParents[0].get<clang::ArraySubscriptExpr>()) {
-        // migrate to get_XXX<int *>() if it's not used in array subscripting
-        // expr.
-        // e.g.
-        // "int *ptr=b.maxGridSize"
-        // => "int *ptr=get_get_max_nd_range_size<int *>()".
-        // "int *ptr=b.maxThreadsDim"
-        // => "int *ptr=get_max_work_item_sizes<int *>()"
-        TmplArg = "<int *>";
-      }
+    if (MemberName == "maxGridSize" ||
+        MemberName == "maxThreadsDim") {
+      // Similar code in ExprAnalysis.cpp
+      TmplArg = "<int *>";
     }
     emplaceTransformation(new RenameFieldInMemberExpr(
         ME, "get_" + Search->second + TmplArg + "()"));
