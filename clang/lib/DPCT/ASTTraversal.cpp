@@ -2525,131 +2525,6 @@ void insertComplexHeader(SourceLocation SL, std::string &Replacement) {
   }
 }
 
-void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
-                                           const SourceManager *SM,
-                                           bool &SpecialCaseHappened) {
-  Token Tok;
-  Lexer::getRawToken(DD->getBeginLoc(), Tok, *SM, LangOptions());
-  auto Tok2Ptr = Lexer::findNextToken(DD->getBeginLoc(), *SM, LangOptions());
-  llvm::Optional<Token> TokAfterTypePtr;
-  Token TokAfterType;
-  // Distinguish between variable decls and just types (e.g. in function
-  // signatures). If the next token of the tye is comma or r_paren, it is
-  // just a name.
-  // It matters for migration of cudaStream_t.
-  bool IsTokenAfterTypeCommaRParenOrRef = false;
-
-  if (Tok2Ptr.hasValue()) {
-    auto Tok2 = Tok2Ptr.getValue();
-    SourceLocation InsertLoc;
-    auto PointerType = deducePointerType(DD, "CUstream_st");
-    std::string TypeStr = Tok.getRawIdentifier().str();
-    if (Tok.getKind() == tok::raw_identifier && TypeStr == "cudaStream_t") {
-      SpecialCaseHappened = true;
-      SrcAPIStaticsMap[TypeStr]++;
-      // cudaStream_t const
-      if (Tok2.getKind() == tok::raw_identifier &&
-          Tok2.getRawIdentifier() == "const") {
-        TokAfterTypePtr =
-            Lexer::findNextToken(Tok2.getLocation(), *SM, LangOptions());
-        if (TokAfterTypePtr.hasValue()) {
-          TokAfterType = TokAfterTypePtr.getValue();
-          if (TokAfterType.getKind() == tok::comma ||
-              TokAfterType.getKind() == tok::r_paren ||
-              TokAfterType.getKind() == tok::amp)
-            IsTokenAfterTypeCommaRParenOrRef = true;
-        }
-        if (IsTokenAfterTypeCommaRParenOrRef) {
-          emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
-          std::string T{MapNames::getClNamespace() + "queue "};
-          T += PointerType;
-          emplaceTransformation(
-              new ReplaceToken(Tok2.getLocation(), std::move(T)));
-        } else {
-          emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
-          emplaceTransformation(new ReplaceToken(
-              Tok2.getLocation(), MapNames::getClNamespace() + "queue"));
-          InsertLoc = Tok2.getEndLoc().getLocWithOffset(1);
-          emplaceTransformation(
-              new InsertText(InsertLoc, std::move(PointerType)));
-        }
-      }
-      // cudaStream_t
-      else {
-        TokAfterTypePtr =
-            Lexer::findNextToken(Tok.getLocation(), *SM, LangOptions());
-        if (TokAfterTypePtr.hasValue()) {
-          TokAfterType = TokAfterTypePtr.getValue();
-          if (TokAfterType.getKind() == tok::comma ||
-              TokAfterType.getKind() == tok::r_paren ||
-              TokAfterType.getKind() == tok::amp)
-            IsTokenAfterTypeCommaRParenOrRef = true;
-        }
-        if (IsTokenAfterTypeCommaRParenOrRef) {
-          std::string T{MapNames::getClNamespace() + "queue "};
-          T += PointerType;
-          emplaceTransformation(
-              new ReplaceToken(Tok.getLocation(), std::move(T)));
-        } else {
-          emplaceTransformation(new ReplaceToken(
-              Tok.getLocation(), MapNames::getClNamespace() + "queue"));
-          InsertLoc = Tok.getEndLoc().getLocWithOffset(1);
-          emplaceTransformation(
-              new InsertText(InsertLoc, std::move(PointerType)));
-        }
-      }
-    } else if (Tok.getKind() == tok::raw_identifier &&
-               Tok.getRawIdentifier() == "const") {
-
-      // const cudaStream_t
-      TypeStr = Tok2.getRawIdentifier().str();
-      if (Tok.getKind() == tok::raw_identifier && TypeStr == "cudaStream_t") {
-        SpecialCaseHappened = true;
-        SrcAPIStaticsMap[TypeStr]++;
-        TokAfterTypePtr =
-            Lexer::findNextToken(Tok2.getLocation(), *SM, LangOptions());
-        if (TokAfterTypePtr.hasValue()) {
-          TokAfterType = TokAfterTypePtr.getValue();
-          if (TokAfterType.getKind() == tok::comma ||
-              TokAfterType.getKind() == tok::r_paren ||
-              TokAfterType.getKind() == tok::amp)
-            IsTokenAfterTypeCommaRParenOrRef = true;
-        }
-        if (IsTokenAfterTypeCommaRParenOrRef) {
-          emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
-          std::string T{MapNames::getClNamespace() + "queue "};
-          T += PointerType;
-          emplaceTransformation(
-              new ReplaceToken(Tok2.getLocation(), std::move(T)));
-        } else {
-          emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
-          emplaceTransformation(new ReplaceToken(
-              Tok2.getLocation(), MapNames::getClNamespace() + "queue"));
-          InsertLoc = Tok2.getEndLoc().getLocWithOffset(1);
-          emplaceTransformation(
-              new InsertText(InsertLoc, std::move(PointerType)));
-        }
-      }
-    }
-  }
-  auto SD = getSiblingDecls(DD);
-  for (auto It = SD.begin(); It != SD.end(); ++It) {
-    auto DD2 = *It;
-    auto L2 = DD2->getLocation();
-    auto P = SM->getCharacterData(L2);
-    // Find the first non-space char after previous semicolon
-    while (*P != ',')
-      --P;
-    ++P;
-    while (isspace(*P))
-      ++P;
-    // Insert "*" or "*const" right before it
-    auto InsertLoc = L2.getLocWithOffset(P - SM->getCharacterData(L2));
-    auto PointerType = deducePointerType(DD2, "CUstream_st");
-    emplaceTransformation(new InsertText(InsertLoc, std::move(PointerType)));
-  }
-}
-
 bool TypeInDeclRule::replaceTemplateSpecialization(
     SourceManager *SM, LangOptions &LOpts, SourceLocation BeginLoc,
     const TemplateSpecializationTypeLoc TSL) {
@@ -3296,38 +3171,8 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         Init = FieldD->getInClassInitializer();
     }
 
-    auto IsTypeInInitializer = [&]() -> bool {
-      if (!Init)
-        return false;
-      if (TL->getBeginLoc() >= Init->getBeginLoc() &&
-          TL->getEndLoc() <= Init->getEndLoc())
-        return true;
-      return false;
-    };
-
-    bool SpecialCaseHappened = false;
-    if (DD && !IsTypeInInitializer()) {
-      if (TL->getType().getAsString().find("cudaStream_t") !=
-          std::string::npos) {
-        processCudaStreamType(DD, SM, SpecialCaseHappened);
-      }
-    }
-    if (!Str.empty() && !SpecialCaseHappened) {
+    if (!Str.empty()) {
       SrcAPIStaticsMap[TypeStr]++;
-
-      /// Process code like:
-      /// \code
-      ///   vector.push_back(cudaStream_t());
-      ///   cudaStream_t s = cudaStream_t();
-      /// \endcode
-      if (TL->getType().getAsString() == "cudaStream_t" ||
-          TL->getType().getAsString() == "CUstream") {
-        if (auto CSVIE =
-                DpctGlobalInfo::findParent<CXXScalarValueInitExpr>(TL)) {
-          emplaceTransformation(new ReplaceStmt(CSVIE, "nullptr"));
-          return;
-        }
-      }
 
       auto Len = Lexer::MeasureTokenLength(
           EndLoc, *SM, DpctGlobalInfo::getContext().getLangOpts());
@@ -9671,7 +9516,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       } else {
         StmtStr0 = getStmtSpelling(CE->getArg(0)) + "->";
       }
-      ReplStr = StmtStr1 + " = " + StmtStr0 + "ext_oneapi_submit_barrier({" +
+      ReplStr = StmtStr0 + "ext_oneapi_submit_barrier({" +
                 StmtStr1 + "})";
     }
     if (IsAssigned) {

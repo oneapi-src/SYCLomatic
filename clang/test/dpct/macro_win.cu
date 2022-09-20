@@ -8,7 +8,7 @@
 // CHECK: #define AAA __stdcall
 #define AAA CUDART_CB
 
-// CHECK: void __stdcall my_callback(sycl::queue *stream, int status, void *data) {
+// CHECK: void __stdcall my_callback(dpct::queue_ptr stream, int status, void *data) {
 // CHECK-NEXT:   printf("callback from stream %d\n", *((int *)data));
 // CHECK-NEXT: }
 void CUDART_CB my_callback(cudaStream_t stream, cudaError_t status, void *data) {
