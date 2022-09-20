@@ -165,7 +165,7 @@ int main(int argc, char **argv)
         // CHECK: kernelEvent_ct1_i = std::chrono::steady_clock::now();
         // CHECK-NEXT:        *kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier();
         cudaEventRecord(kernelEvent[i], streams[i]);
-        // CHECK:         *kernelEvent[i] = streams[n_streams - 1]->ext_oneapi_submit_barrier({*kernelEvent[i]});
+        // CHECK:         streams[n_streams - 1]->ext_oneapi_submit_barrier({*kernelEvent[i]});
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
     }
 
@@ -278,8 +278,8 @@ int foo_test_2()
     int iblock = 1;
     float elapsed_time;
 
-// CHECK:    sycl::queue **streams = (sycl::queue **)malloc(n_streams * sizeof(
-// CHECK-NEXT:                                                                   sycl::queue *));
+// CHECK:   dpct::queue_ptr *streams = (dpct::queue_ptr *)malloc(n_streams * sizeof(
+// CHECK-NEXT:                                                                   dpct::queue_ptr));
     cudaStream_t *streams = (cudaStream_t *) malloc(n_streams * sizeof(
                                 cudaStream_t));
 
@@ -365,7 +365,7 @@ int foo_test_2()
 // CHECK-NEXT:        */
 // CHECK-NEXT:        kernelEvent_ct1_i = std::chrono::steady_clock::now();
 // CHECK-NEXT:        CHECK((*kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier(), 0));
-// CHECK-NEXT:        *kernelEvent[i] = streams[n_streams - 1]->ext_oneapi_submit_barrier({*kernelEvent[i]});
+// CHECK-NEXT:        streams[n_streams - 1]->ext_oneapi_submit_barrier({*kernelEvent[i]});
         CHECK(cudaEventRecord(kernelEvent[i], streams[i]));
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
     }

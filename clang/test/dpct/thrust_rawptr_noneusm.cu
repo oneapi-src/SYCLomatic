@@ -710,4 +710,36 @@ void foo()
   thrust::stable_sort_by_key(keys, keys + N, values);
   thrust::stable_sort_by_key(thrust::host, keys, keys + N, values,thrust::greater<int>());
   thrust::stable_sort_by_key(keys, keys + N, values, thrust::greater<int>());
+
+  thrust::equal_to<int> binary_pred;
+  int A[N]; // keys
+  int B[N]; // values
+
+  //CHECK:  dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.end(), d_values.begin(), binary_pred);
+  //CHECK-NEXT:  if (dpct::is_device_ptr(A)) {
+  //CHECK-NEXT:    dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B));
+  //CHECK-NEXT:  } else {
+  //CHECK-NEXT:    dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
+  //CHECK-NEXT:  };
+  //CHECK-NEXT:  if (dpct::is_device_ptr(A + N)) {
+  //CHECK-NEXT:    dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B));
+  //CHECK-NEXT:  } else {
+  //CHECK-NEXT:    dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
+  //CHECK-NEXT:  };
+  //CHECK-NEXT:  if (dpct::is_device_ptr(A)) {
+  //CHECK-NEXT:    dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B), binary_pred);
+  //CHECK-NEXT:  } else {
+  //CHECK-NEXT:    dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
+  //CHECK-NEXT:  };
+  //CHECK-NEXT:  if (dpct::is_device_ptr(A + N)) {
+  //CHECK-NEXT:    dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B), binary_pred);
+  //CHECK-NEXT:  } else {
+  //CHECK-NEXT:    dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
+  //CHECK-NEXT:  };
+  thrust::unique_by_key(d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
+  thrust::unique_by_key(thrust::host, A, A + N, B);
+  thrust::unique_by_key(A, A + N, B);
+  thrust::unique_by_key(thrust::host, A, A + N, B, binary_pred);
+  thrust::unique_by_key(A, A + N, B, binary_pred);
+
 }

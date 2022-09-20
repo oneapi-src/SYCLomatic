@@ -47,6 +47,8 @@ auto exception_handler = [](sycl::exception_list exceptions) {
 
 typedef sycl::event *event_ptr;
 
+typedef sycl::queue *queue_ptr;
+
 /// Destroy \p event pointed memory.
 ///
 /// \param event Pointer to the sycl::event address.

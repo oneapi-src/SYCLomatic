@@ -89,8 +89,16 @@ auto exception_handler = [](sycl::exception_list exceptions) {
 typedef sycl::event *event_ptr;
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|destroy_event|dpct
+// DPCT_LABEL_BEGIN|typedef_queue_ptr|dpct
 // DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+typedef sycl::queue *queue_ptr;
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|destroy_event|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|typedef_event_ptr
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Destroy \p event pointed memory.
 ///

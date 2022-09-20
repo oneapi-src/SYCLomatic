@@ -24,7 +24,7 @@ int main(){
     // CHECK: f_D = (char *)dpct::dpct_malloc(size);
     cuMemAlloc(&f_D, size);
 
-    // CHECK: sycl::queue * stream;
+    // CHECK: dpct::queue_ptr stream;
     CUstream stream;
     // CHECK: dpct::async_dpct_memcpy(f_D, f_A, size, dpct::automatic, *stream);
     cuMemcpyHtoDAsync(f_D, f_A, size, stream);
