@@ -3250,9 +3250,9 @@ sycl::event engine_ext::batch_normalization_backward_ex(
   } else if (ops == batch_normalization_ops::activation) {
     void *diff_dst_cache = allocate(diff_dst_desc);
     caches.push_back(diff_dst_cache);
-    activation_backward(adesc, alpha_data, dst_desc, dst, diff_dst_desc,
+    activation_backward(adesc, 1.f, dst_desc, dst, diff_dst_desc,
                         diff_dst, dst_desc, workspace,
-                        beta_data, diff_dst_desc, diff_dst_cache);
+                        0.f, diff_dst_desc, diff_dst_cache);
     real_diff_dst = diff_dst_cache;
   }
 
