@@ -2,7 +2,7 @@
 // RUN: FileCheck --input-file %T/new-expr/new-expr.dp.cpp --match-full-lines %s
 #include <stdio.h>
 
-// CHECK: #define NEW_STREAM new sycl::queue *
+// CHECK: #define NEW_STREAM new dpct::queue_ptr
 // CHECK-NEXT: #define NEW_EVENT new dpct::event_ptr
 // CHECK-EMPTY:
 // CHECK-NEXT: #define NEW(T) new T
@@ -14,11 +14,11 @@
 void foo() {
   int n = 16;
 
-  // CHECK: sycl::queue **stream = new sycl::queue *;
-  // CHECK-NEXT: stream = new sycl::queue *();
+  // CHECK: dpct::queue_ptr *stream = new dpct::queue_ptr;
+  // CHECK-NEXT: stream = new dpct::queue_ptr();
   // CHECK-NEXT: stream = NEW_STREAM;
-  // CHECK-NEXT: stream = NEW(sycl::queue *);
-  // CHECK-NEXT: sycl::queue **streams = new sycl::queue *[n];
+  // CHECK-NEXT: stream = NEW(dpct::queue_ptr);
+  // CHECK-NEXT: dpct::queue_ptr *streams = new dpct::queue_ptr[n];
   cudaStream_t *stream = new cudaStream_t;
   stream = new cudaStream_t();
   stream = NEW_STREAM;

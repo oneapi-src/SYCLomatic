@@ -25,7 +25,7 @@ void funcT(T t) {}
 // CHECK: void gather_force(const dpct::image_accessor_ext<dpct_placeholder/*Fix the type manually*/, 1> gridTexObj){}
 __global__ void gather_force(const cudaTextureObject_t gridTexObj){}
 
-// CHECK: void gather_force(const dpct::image_wrapper_base_p gridTexObj, sycl::queue *stream) {
+// CHECK: void gather_force(const dpct::image_wrapper_base_p gridTexObj, dpct::queue_ptr stream) {
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1050:{{[0-9]+}}: The template argument of the image_accessor_ext could not be deduced. You need to update this code.
 // CHECK-NEXT:  */
@@ -187,7 +187,7 @@ int main() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel<<<1, 1>>>(tex21, tex42);
-  
+
   // CHECK: texDesc42 = tex42->get_sampling_info();
   // CHECK-NEXT: res42 = tex42->get_data();
   cudaGetTextureObjectTextureDesc(&texDesc42, tex42);

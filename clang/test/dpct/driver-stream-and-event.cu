@@ -25,7 +25,7 @@ void foo(){
   cuStreamCreate(&s, CU_STREAM_DEFAULT);
   cuStreamSynchronize(s);
 
-  //CHECK: *e = s->ext_oneapi_submit_barrier({*e});
+  //CHECK: s->ext_oneapi_submit_barrier({*e});
   cuEventCreate(&e, CU_EVENT_DEFAULT);
   cuStreamWaitEvent(s, e, 0);
 
@@ -74,11 +74,11 @@ void foo(){
 }
 
 
-// CHECK: void process(sycl::queue *st, char *data, int status) {}
+// CHECK: void process(dpct::queue_ptr st, char *data, int status) {}
 void process(CUstream st, char *data, CUresult status) {}
 
 template<typename T>
-// CHECK: void callback(sycl::queue *hStream, int status, void *userData) {
+// CHECK: void callback(dpct::queue_ptr hStream, int status, void *userData) {
 void callback(CUstream hStream, CUresult status, void* userData) {
   T *data = static_cast<T *>(userData);
   process(hStream, data, status);

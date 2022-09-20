@@ -65,7 +65,7 @@ int foo2(cudaDataType DT) {
   cudaDataType_t cdt;
   cublasDataType_t cbdt;
 
-  // CHECK: sycl::queue *stream1;
+  // CHECK: dpct::queue_ptr stream1;
   // CHECK-NEXT: stream1 = dev_ct1.create_queue();
   // CHECK-NEXT: handle = stream1;
   // CHECK-NEXT: /*
