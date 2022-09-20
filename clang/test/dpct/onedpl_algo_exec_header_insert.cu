@@ -4,7 +4,7 @@
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
-// CHECK-NEXT: #include <CL/sycl.hpp>
+// CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK_NEXT: #include "onedpl_algo_exec_header_insert.h"
 #include "onedpl_algo_exec_header_insert.h"

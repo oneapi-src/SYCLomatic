@@ -2297,18 +2297,83 @@ createBindTextureRewriterFactory(const std::string &Source) {
               makeCallArgCreatorWithCall(StartIdx + Idx)...)));
 }
 
-void setTextureInfo(const CallExpr *C, int TexType, int ObjIdx, QualType QT) {
-  if (auto FD = DpctGlobalInfo::findAncestor<FunctionDecl>(C)) {
-    if (auto ObjInfo =
-            DeviceFunctionDecl::LinkRedecls(FD)
-                ->addCallee(C)
-                ->addTextureObjectArg(
-                    ObjIdx, dyn_cast<DeclRefExpr>(
-                                C->getArg(ObjIdx)->IgnoreImpCasts()))) {
-      ObjInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(QT), TexType);
+template <size_t... Idx>
+class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
+  std::string Source;
+  int TexType;
+
+public:
+  TextureReadRewriterFactory(std::string Name, int Tex)
+      : Source(std::move(Name)), TexType(Tex) {}
+  std::shared_ptr<CallExprRewriter>
+  create(const CallExpr *Call) const override {
+    const Expr *SourceExpr = Call->getArg(0);
+    unsigned SourceIdx = 0;
+    QualType TargetType = Call->getType();
+    StringRef SourceName;
+    bool RetAssign = false;
+    if (SourceExpr->getType()->isPointerType()) {
+      TargetType = SourceExpr->getType()->getPointeeType();
+      SourceExpr = Call->getArg(1);
+      SourceIdx = 1;
+      RetAssign = true;
+      if (auto UO = dyn_cast<UnaryOperator>(SourceExpr)) {
+        if (UO->getOpcode() == UnaryOperator::Opcode::UO_AddrOf) {
+          SourceExpr = UO->getSubExpr();
+        }
+      }
+    }
+    SourceExpr = SourceExpr->IgnoreImpCasts();
+    if (auto FD = DpctGlobalInfo::getParentFunction(Call)) {
+      auto FuncInfo = DeviceFunctionDecl::LinkRedecls(FD);
+      auto CallInfo = FuncInfo->addCallee(Call);
+      if (auto ME = dyn_cast<MemberExpr>(SourceExpr)) {
+        auto MemberInfo =
+            CallInfo->addStructureTextureObjectArg(SourceIdx, ME, false);
+        if (MemberInfo) {
+          FuncInfo->addTexture(MemberInfo);
+          MemberInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),
+            TexType);
+          SourceName = MemberInfo->getName();
+          if (RetAssign) {
+            return creatBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(
+                       Source, makeDerefExprCreator(0),
+                       makeMemberCallCreator(makeLiteral(SourceName.str()),
+                                             false, "read",
+                                             makeCallArgCreator(Idx + 1)...))
+                ->create(Call);
+          } else {
+            return createMemberCallExprRewriterFactory(
+                       Source, makeLiteral(SourceName.str()), false, "read",
+                       makeCallArgCreator(Idx)...)
+                ->create(Call);
+          }
+        }
+      } else if (auto DRE = dyn_cast<DeclRefExpr>(SourceExpr)) {
+        auto TexInfo = CallInfo->addTextureObjectArg(SourceIdx, DRE, false);
+        if (TexInfo) {
+          TexInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),
+            TexType);
+        }
+      }
+    }
+    
+    if (RetAssign) {
+      static std::shared_ptr<CallExprRewriterFactoryBase> Factory =
+          creatBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(
+              Source, makeDerefExprCreator(0),
+              makeMemberCallCreator(makeCallArgCreator(1), false, "read",
+                                    makeCallArgCreator(Idx + 1)...));
+      return Factory->create(Call);
+    } else {
+      static std::shared_ptr<CallExprRewriterFactoryBase> Factory =
+          createMemberCallExprRewriterFactory(Source, makeCallArgCreator(0),
+                                              false, "read",
+                                              makeCallArgCreator(Idx)...);
+      return Factory->create(Call);
     }
   }
-}
+};
 
 /// Create rewriter factory for texture reader APIs.
 /// Predicate: check the first arg if is pointer and set texture info with
@@ -2320,24 +2385,8 @@ void setTextureInfo(const CallExpr *C, int TexType, int ObjIdx, QualType QT) {
 template <size_t... Idx>
 std::shared_ptr<CallExprRewriterFactoryBase>
 createTextureReaderRewriterFactory(const std::string &Source, int TextureType) {
-  std::function<bool(const CallExpr *)> Pred = [=](const CallExpr *C) -> bool {
-    if (C->getArg(0)->getType()->isPointerType()) {
-      setTextureInfo(C, TextureType, 1,
-                     C->getArg(0)->getType()->getPointeeType());
-      return true;
-    } else {
-      setTextureInfo(C, TextureType, 0, C->getType());
-      return false;
-    }
-  };
-  return std::make_shared<ConditionalRewriterFactory>(
-      Pred,
-      creatBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(
-          Source, makeDerefExprCreator(0),
-          makeMemberCallCreator(makeCallArgCreator(1), false, "read",
-                                makeCallArgCreator(Idx + 1)...)),
-      createMemberCallExprRewriterFactory(Source, makeCallArgCreator(0), false,
-                                          "read", makeCallArgCreator(Idx)...));
+  return std::make_shared<TextureReadRewriterFactory<Idx...>>(Source,
+                                                              TextureType);
 }
 
 template <class... MsgArgs>

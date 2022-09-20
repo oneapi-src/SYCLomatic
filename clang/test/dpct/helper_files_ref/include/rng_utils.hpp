@@ -9,7 +9,7 @@
 #ifndef __DPCT_RNG_UTILS_HPP__
 #define __DPCT_RNG_UTILS_HPP__
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
 #include <oneapi/mkl/rng/device.hpp>
 
@@ -138,7 +138,7 @@ private:
     } else if constexpr (vec_size == 1) {
       return oneapi::mkl::rng::device::generate_single(distr, _engine);
     } else if constexpr (vec_size == 2) {
-      cl::sycl::vec<typename distr_t::result_type, 2> res;
+      sycl::vec<typename distr_t::result_type, 2> res;
       res.x() = oneapi::mkl::rng::device::generate_single(distr, _engine);
       res.y() = oneapi::mkl::rng::device::generate_single(distr, _engine);
       return res;
