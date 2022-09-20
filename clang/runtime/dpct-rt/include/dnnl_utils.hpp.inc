@@ -678,20 +678,26 @@ class engine_ext {
   get_bn_scale_bias_mean_var_desc(const ::dnnl::memory::desc &desc,
                                   batch_normalization_mode mode);
   sycl::event batch_normalization_backward_internal(
-      batch_normalization_mode mode, float epsilon, float alpha_data,
+      batch_normalization_mode mode, batch_normalization_ops ops,
+      const activation_desc &adesc, const memory_desc_ext &diff_summand_desc,
+      void *diff_summand, float epsilon, float alpha_data,
       const memory_desc_ext &src_desc, void *src,
       const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta_data,
       const memory_desc_ext &diff_src_desc, void *diff_src, float alpha_param,
       const memory_desc_ext &diff_scale_bias_desc, void *scale, void *bias,
       float beta_param, void *diff_scale, void *diff_bias,
-      const memory_desc_ext &mean_var_desc, void *saved_mean, void *saved_var);
+      const memory_desc_ext &mean_var_desc, void *saved_mean, void *saved_var,
+      size_t workspace_size, void *workspace);
   sycl::event batch_normalization_forward_internal(
-      bool is_infer, batch_normalization_mode mode, float epsilon, float factor,
-      float alpha, const memory_desc_ext &src_desc, void *src, float beta,
+      bool is_infer, batch_normalization_mode mode, batch_normalization_ops ops,
+      const activation_desc &adesc, const memory_desc_ext &summand_desc,
+      void *summand, float epsilon, float factor, float alpha,
+      const memory_desc_ext &src_desc, void *src, float beta,
       const memory_desc_ext &dst_desc, void *dst,
       const memory_desc_ext &scale_bias_desc, void *scale, void *bias,
       const memory_desc_ext &mean_var_desc, void *saved_mean, void *saved_var,
-      void *running_mean, void *running_var);
+      void *running_mean, void *running_var, size_t workspace_size,
+      void *workspace);
   ::dnnl::memory::desc
   transfer_memory_desc_to_channel_major_format(const ::dnnl::memory::desc &desc);
   ::dnnl::memory::desc
@@ -2148,25 +2154,38 @@ sycl::event engine_ext::execute_primitive(
 }
 
 sycl::event engine_ext::batch_normalization_backward_internal(
-    batch_normalization_mode mode, float epsilon, float alpha_data,
+    batch_normalization_mode mode, batch_normalization_ops ops,
+    const activation_desc &adesc, const memory_desc_ext &diff_summand_desc,
+    void *diff_summand, float epsilon, float alpha_data,
     const memory_desc_ext &src_desc, void *src,
     const memory_desc_ext &diff_dst_desc, void *diff_dst, float beta_data,
     const memory_desc_ext &diff_src_desc, void *diff_src, float alpha_param,
     const memory_desc_ext &diff_scale_bias_desc, void *scale, void *bias,
     float beta_param, void *diff_scale, void *diff_bias,
-    const memory_desc_ext &mean_var_desc, void *saved_mean, void *saved_var) {
+    const memory_desc_ext &mean_var_desc, void *saved_mean, void *saved_var,
+    size_t workspace_size, void *workspace) {
   if (scale_parameter_preprocess(
           {{alpha_data, beta_data, diff_src_desc, diff_src},
            {alpha_param, beta_param, diff_scale_bias_desc, diff_scale},
            {alpha_param, beta_param, diff_scale_bias_desc, diff_bias}})) {
     return sycl::event();
   }
+  if (ops != batch_normalization_ops::none &&
+      adesc.get_algorithm() !=
+          ::dnnl::algorithm::eltwise_relu_use_dst_for_bwd) {
+    throw std::runtime_error("batch_normalization_backward_internal: currently "
+                             "only relu is supported.");
+  } else if (workspace_size <
+             get_batch_normalization_workspace_size(ops, src_desc)) {
+    throw std::runtime_error(
+        "batch_normalization_backward_internal: no sufficient workspace");
+  }
   std::vector<void *> caches;
   void *reordered_src = nullptr, *reordered_diff_dst = nullptr,
        *reordered_diff_src = nullptr, *reordered_scale = nullptr,
        *reordered_bias = nullptr, *reordered_diff_scale = nullptr,
        *reordered_diff_bias = nullptr, *reordered_saved_mean = nullptr,
-       *reordered_saved_var = nullptr;
+       *reordered_saved_var = nullptr, *reordered_diff_summand = nullptr;
 
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
   ::dnnl::memory::desc help_diff_dst_desc = diff_dst_desc.get_desc();
@@ -2174,8 +2193,10 @@ sycl::event engine_ext::batch_normalization_backward_internal(
   ::dnnl::memory::desc help_diff_scale_bias_desc =
       diff_scale_bias_desc.get_desc();
   ::dnnl::memory::desc help_mean_var_desc = mean_var_desc.get_desc();
+  ::dnnl::memory::desc help_diff_summand_desc = diff_summand_desc.get_desc();
   ::dnnl::memory::desc actual_diff_src_desc = help_diff_src_desc;
   ::dnnl::memory::desc actual_diff_scale_bias_desc = help_diff_scale_bias_desc;
+  ::dnnl::memory::desc actual_diff_summand_desc = help_diff_summand_desc;
 
   if (mode == batch_normalization_mode::per_activation) {
     help_src_desc = bn_reorder_memory_to_channel_major_format(true, help_src_desc, src,
@@ -2202,11 +2223,16 @@ sycl::event engine_ext::batch_normalization_backward_internal(
         true, help_mean_var_desc, saved_mean, &reordered_saved_mean, caches);
     bn_reorder_memory_to_channel_major_format(true, help_mean_var_desc, saved_var,
                                        &reordered_saved_var, caches);
+    help_diff_summand_desc = bn_reorder_memory_to_channel_major_format(
+        false, help_diff_summand_desc, diff_summand, &reordered_diff_summand,
+        caches);
     help_src_desc = compress_spatial_dimensions_to_channel(help_src_desc);
     help_diff_src_desc =
         compress_spatial_dimensions_to_channel(help_diff_src_desc);
     help_diff_dst_desc =
         compress_spatial_dimensions_to_channel(help_diff_dst_desc);
+    help_diff_summand_desc = 
+        compress_spatial_dimensions_to_channel(help_diff_summand_desc);
   } else {
     if ((help_src_desc != help_diff_dst_desc) ||
         (help_src_desc != help_diff_src_desc) ||
@@ -2226,17 +2252,22 @@ sycl::event engine_ext::batch_normalization_backward_internal(
   help_mean_var_desc =
       get_bn_scale_bias_mean_var_desc(help_mean_var_desc, mode);
 
+  ::dnnl::normalization_flags flag = ::dnnl::normalization_flags::use_scale |
+                                     ::dnnl::normalization_flags::use_shift;
+  if (ops == batch_normalization_ops::activation) {
+    flag = flag | ::dnnl::normalization_flags::fuse_norm_relu;
+  } else if (ops == batch_normalization_ops::add_activation){
+    flag = flag | ::dnnl::normalization_flags::fuse_norm_add_relu;
+  }
+
   auto forward_primitive =
       create_forward_primitive_desc<::dnnl::batch_normalization_forward>(
           ::dnnl::prop_kind::forward_training, help_src_desc, epsilon,
-          ::dnnl::normalization_flags::use_scale |
-              ::dnnl::normalization_flags::use_shift);
+          flag);
   auto primitive =
       create_backward_primitive<::dnnl::batch_normalization_backward>(
           forward_primitive, ::dnnl::prop_kind::backward, help_diff_src_desc,
-          help_src_desc, epsilon,
-          ::dnnl::normalization_flags::use_scale |
-              ::dnnl::normalization_flags::use_shift);
+          help_src_desc, epsilon, flag);
 
   void *dst_cache = nullptr;
   if (!saved_mean && !saved_var) {
@@ -2283,6 +2314,19 @@ sycl::event engine_ext::batch_normalization_backward_internal(
        {::dnnl::memory(help_diff_src_desc, _eng,
                        reordered_diff_dst ? reordered_diff_dst : diff_dst)}}};
 
+  if (ops != batch_normalization_ops::none) {
+    execution_args->insert({DNNL_ARG_WORKSPACE,
+                            {::dnnl::memory(forward_primitive.workspace_desc(),
+                                            _eng, workspace)}});
+    if (ops == batch_normalization_ops::add_activation) {
+      execution_args->insert(
+          {DNNL_ARG_DIFF_SRC_1,
+           {::dnnl::memory(help_diff_summand_desc, _eng,
+                           reordered_diff_summand ? reordered_diff_summand
+                                                  : diff_summand)}});
+    }
+  }
+
   sycl::event e = execute_primitive(
       primitive, execution_args,
       {{alpha_data, beta_data, DNNL_ARG_DIFF_SRC, help_diff_src_desc,
@@ -2294,6 +2338,11 @@ sycl::event engine_ext::batch_normalization_backward_internal(
   if (actual_diff_src_desc != diff_src_desc.get_desc() && reordered_diff_src) {
     e = reorder(1.f, actual_diff_src_desc, reordered_diff_src, 0.f,
                 diff_src_desc, diff_src);
+  }
+  if (acutal_diff_summand_desc != diff_summand_desc.get_desc() &&
+      reordered_diff_summand) {
+    e = reorder(1.f, acutal_diff_summand_desc, reordered_diff_summand, 0.f,
+                diff_summand_desc, diff_summand);
   }
   if (actual_diff_scale_bias_desc != diff_scale_bias_desc.get_desc() &&
       reordered_diff_scale && reordered_diff_bias) {
@@ -2314,21 +2363,36 @@ sycl::event engine_ext::batch_normalization_backward_internal(
 }
 
 sycl::event engine_ext::batch_normalization_forward_internal(
-    bool is_infer, batch_normalization_mode mode, float epsilon, float factor,
-    float alpha, const memory_desc_ext &src_desc, void *src, float beta,
+    bool is_infer, batch_normalization_mode mode, batch_normalization_ops ops,
+    const activation_desc &adesc, const memory_desc_ext &summand_desc,
+    void *summand, float epsilon, float factor, float alpha,
+    const memory_desc_ext &src_desc, void *src, float beta,
     const memory_desc_ext &dst_desc, void *dst,
     const memory_desc_ext &scale_bias_desc, void *scale, void *bias,
     const memory_desc_ext &mean_var_desc, void *saved_mean, void *saved_var,
-    void *running_mean, void *running_var) {
+    void *running_mean, void *running_var, size_t workspace_size,
+    void *workspace) {
   if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
     return sycl::event();
+  }
+  if (ops != batch_normalization_ops::none &&
+      adesc.get_algorithm() !=
+          ::dnnl::algorithm::eltwise_relu_use_dst_for_bwd) {
+    throw std::runtime_error("batch_normalization_backward_internal: currently "
+                             "only relu is supported.");
+  } else if (workspace_size <
+             get_batch_normalization_workspace_size(ops, src_desc)) {
+    throw std::runtime_error(
+        "batch_normalization_backward_internal: no sufficient workspace");
   }
   std::vector<void *> caches;
   void *reordered_src = nullptr, *reordered_dst = nullptr,
        *reordered_scale = nullptr, *reordered_bias = nullptr,
        *reordered_saved_mean = nullptr, *reordered_saved_var = nullptr;
+       *reordered_summand = nullptr;
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
   ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
+  ::dnnl::memory::desc help_summand_desc = summand_desc.get_desc();
   ::dnnl::memory::desc help_scale_bias_desc = scale_bias_desc.get_desc();
   ::dnnl::memory::desc help_mean_var_desc = mean_var_desc.get_desc();
   ::dnnl::memory::desc actual_dst_desc = help_dst_desc;
@@ -2337,6 +2401,8 @@ sycl::event engine_ext::batch_normalization_forward_internal(
   if (mode == batch_normalization_mode::per_activation) {
     help_src_desc = bn_reorder_memory_to_channel_major_format(true, help_src_desc, src,
                                                        &reordered_src, caches);
+    help_summand_desc = bn_reorder_memory_to_channel_major_format(
+        true, help_summand_desc, summand, &reordered_summand, caches);
     help_dst_desc = bn_reorder_memory_to_channel_major_format(
         false, help_dst_desc, dst, &reordered_dst, caches);
     actual_dst_desc = help_dst_desc;
@@ -2352,6 +2418,7 @@ sycl::event engine_ext::batch_normalization_forward_internal(
                                        help_mean_var_desc, saved_var,
                                        &reordered_saved_var, caches);
     help_src_desc = compress_spatial_dimensions_to_channel(help_src_desc);
+    help_summand_desc = compress_spatial_dimensions_to_channel(help_summand_desc);
     help_dst_desc = compress_spatial_dimensions_to_channel(help_dst_desc);
   } else {
     if (help_src_desc != help_dst_desc) {
@@ -2376,6 +2443,11 @@ sycl::event engine_ext::batch_normalization_forward_internal(
   } else {
     kind = ::dnnl::prop_kind::forward_training;
   }
+  if (ops == batch_normalization_ops::activation) {
+    flag = flag | ::dnnl::normalization_flags::fuse_norm_relu;
+  } else if (ops == batch_normalization_ops::add_activation){
+    flag = flag | ::dnnl::normalization_flags::fuse_norm_add_relu;
+  }
   auto primitive =
       create_forward_primitive<::dnnl::batch_normalization_forward>(
           kind, help_src_desc, epsilon, flag);
@@ -2399,6 +2471,21 @@ sycl::event engine_ext::batch_normalization_forward_internal(
                        reordered_saved_var ? reordered_saved_var
                                            : saved_var)}}};
 
+  if (ops != batch_normalization_ops::none && !is_infer) {
+    execution_args->insert(
+        {DNNL_ARG_WORKSPACE,
+         {::dnnl::memory(
+             create_forward_primitive_desc<::dnnl::batch_normalization_forward>(
+                 kind, help_src_desc, epsilon, flag)
+                 .workspace_desc(),
+             _eng, workspace)}});
+  }
+  if (ops == batch_normalization_ops::add_activation) {
+    execution_args->insert(
+        {DNNL_ARG_SRC_1,
+         {::dnnl::memory(help_summand_desc, _eng,
+                         reordered_summand ? reordered_summand : summand)}});
+  }
   sycl::event e = execute_primitive(primitive, execution_args,
                                     {{alpha, beta, DNNL_ARG_DST, help_dst_desc,
                                       reordered_dst ? reordered_dst : dst}});
@@ -3038,10 +3125,20 @@ engine_ext::lrn_backward(lrn_desc &desc, float alpha,
 // DPCT_CODE
 size_t engine_ext::get_batch_normalization_workspace_size(
     batch_normalization_ops ops, const memory_desc_ext &src_desc) {
-  if(ops == batch_normalization_ops::none) {
+  ::dnnl::normalization_flags flag = ::dnnl::normalization_flags::use_scale |
+                                     ::dnnl::normalization_flags::use_shift;
+  if (ops == batch_normalization_ops::none) {
     return 0;
+  } else if (ops == batch_normalization_ops::activation) {
+    flag = flag | ::dnnl::normalization_flags::fuse_norm_relu;
+  } else {
+    flag = flag | ::dnnl::normalization_flags::fuse_norm_add_relu;
   }
-  return src_desc.get_size();
+
+  auto primitive_desc =
+      create_forward_primitive_desc<::dnnl::batch_normalization_forward>(
+          ::dnnl::prop_kind::forward_training, src_desc, 0.1f, flag);
+  return primitive_desc.workspace_desc().get_size();
 }
 // DPCT_LABEL_END
 
@@ -3058,9 +3155,10 @@ sycl::event engine_ext::batch_normalization_forward_inference(
     void *mean, void *var) {
 
   return batch_normalization_forward_internal(
-      true, mode, epsilon, 0.f, alpha, src_desc, src, beta, dst_desc, dst,
-      scale_bias_mean_var_desc, scale, bias, scale_bias_mean_var_desc, mean,
-      var, nullptr, nullptr);
+      true, mode, batch_normalization_ops::none, activation_desc(),
+      memory_desc_ext(), nullptr, epsilon, 0.f, alpha, src_desc, src, beta,
+      dst_desc, dst, scale_bias_mean_var_desc, scale, bias,
+      scale_bias_mean_var_desc, mean, var, nullptr, nullptr, 0, nullptr);
 }
 // DPCT_LABEL_END
 
@@ -3077,37 +3175,10 @@ sycl::event engine_ext::batch_normalization_forward_inference_ex(
     const memory_desc_ext &summand_desc, void *summand,
     const memory_desc_ext &scale_bias_desc, void *scale, void *bias,
     const memory_desc_ext &mean_var_desc, void *mean, void *var) {
-
-  bool has_post_op = (ops != batch_normalization_ops::none);
-  sycl::event e;
-  std::vector<void *> caches;
-  if (has_post_op) {
-    void *dst_cache = allocate(dst_desc);
-    caches.push_back(dst_cache);
-    batch_normalization_forward_internal(
-        true, mode, epsilon, 0.f, 1.f, src_desc, src, 0.f, dst_desc, dst_cache,
-        scale_bias_desc, scale, bias, mean_var_desc, mean, var, nullptr,
-        nullptr);
-
-    if (ops == batch_normalization_ops::add_activation) {
-      sum(1.f, summand_desc, summand, 1.f, dst_desc, dst_cache);
-    }
-    activation_forward(adesc, 1.f, dst_desc, dst_cache, 0.f, dst_desc,
-                       dst_cache);
-    e = sum(alpha, dst_desc, dst_cache, beta, dst_desc, dst);
-    _q->submit([&](cl::sycl::handler &cgh) {
-      cgh.depends_on(e);
-      cgh.host_task([=] {
-        for (auto ptr : caches) {
-          sycl::free(ptr, *_q);
-        }
-      });
-    });
-    return e;
-  }
   return batch_normalization_forward_internal(
-      false, mode, epsilon, 0.f, alpha, src_desc, src, beta, dst_desc, dst,
-      scale_bias_desc, scale, bias, mean_var_desc, mean, var, nullptr, nullptr);
+      false, mode, ops, adesc, summand_desc, summand, epsilon, 0.f, alpha,
+      src_desc, src, beta, dst_desc, dst, scale_bias_desc, scale, bias,
+      mean_var_desc, mean, var, nullptr, nullptr, 0, nullptr);
 }
 // DPCT_LABEL_END
 
@@ -3123,9 +3194,11 @@ sycl::event engine_ext::batch_normalization_forward_training(
     const memory_desc_ext &scale_bias_mean_var_desc, void *scale, void *bias,
     void *running_mean, void *running_var, void *saved_mean, void *saved_var) {
   return batch_normalization_forward_internal(
-      false, mode, epsilon, factor, alpha, src_desc, src, beta, dst_desc, dst,
-      scale_bias_mean_var_desc, scale, bias, scale_bias_mean_var_desc,
-      saved_mean, saved_var, running_mean, running_var);
+      false, mode, batch_normalization_ops::none, activation_desc(),
+      memory_desc_ext(), nullptr, epsilon, factor, alpha, src_desc, src, beta,
+      dst_desc, dst, scale_bias_mean_var_desc, scale, bias,
+      scale_bias_mean_var_desc, saved_mean, saved_var, running_mean,
+      running_var, 0, nullptr);
 }
 // DPCT_LABEL_END
 
@@ -3142,30 +3215,12 @@ sycl::event engine_ext::batch_normalization_forward_training_ex(
     const memory_desc_ext &summand_desc, void *summand,
     const memory_desc_ext &scale_bias_desc, void *scale, void *bias,
     const memory_desc_ext &mean_var_desc, void *running_mean, void *running_var,
-    void *saved_mean, void *saved_var, size_t workspace_size,
-    void *workspace) {
-  bool has_post_op = (ops != batch_normalization_ops::none);
-  sycl::event e;
-  if (has_post_op) {
-    if(workspace_size < dst_desc.get_desc().get_size()) {
-      throw std::runtime_error("batch_normalization_forward_training_ex: "
-        "no sufficient workspace.");
-    }
-    batch_normalization_forward_internal(
-        false, mode, epsilon, factor, 1.f, src_desc, src, 0.f, dst_desc,
-        workspace, scale_bias_desc, scale, bias, mean_var_desc,
-        saved_mean, saved_var, running_mean, running_var);
-    if (ops == batch_normalization_ops::add_activation) {
-      sum(1.f, summand_desc, summand, 1.f, dst_desc,
-          workspace);
-    }
-    return activation_forward(adesc, alpha, dst_desc, workspace,
-                              beta, dst_desc, dst);
-  }
+    void *saved_mean, void *saved_var, size_t workspace_size, void *workspace) {
   return batch_normalization_forward_internal(
-      false, mode, epsilon, factor, alpha, src_desc, src, beta, dst_desc, dst,
-      scale_bias_desc, scale, bias, mean_var_desc, saved_mean, saved_var,
-      running_mean, running_var);
+      false, mode, ops, adesc, summand_desc, summand, epsilon, factor, alpha,
+      src_desc, src, beta, dst_desc, dst, scale_bias_desc, scale, bias,
+      mean_var_desc, saved_mean, saved_var, running_mean, running_var,
+      workspace_size, workspace);
 }
 // DPCT_LABEL_END
 
@@ -3206,10 +3261,12 @@ sycl::event engine_ext::batch_normalization_backward(
     void *saved_var) {
 
   return batch_normalization_backward_internal(
-      mode, epsilon, alpha_data, src_desc, src, diff_dst_desc, diff_dst,
+      mode, batch_normalization_ops::none, activation_desc(), memory_desc_ext(),
+      nullptr, epsilon, alpha_data, src_desc, src, diff_dst_desc, diff_dst,
       beta_data, diff_src_desc, diff_src, alpha_param,
       diff_scale_bias_mean_var_desc, scale, nullptr, beta_param, diff_scale,
-      diff_bias, diff_scale_bias_mean_var_desc, saved_mean, saved_var);
+      diff_bias, diff_scale_bias_mean_var_desc, saved_mean, saved_var, 0,
+      nullptr);
 }
 // DPCT_LABEL_END
 
@@ -3229,47 +3286,12 @@ sycl::event engine_ext::batch_normalization_backward_ex(
     void *bias, float beta_param, void *diff_scale, void *diff_bias,
     const memory_desc_ext &mean_var_desc, void *saved_mean, void *saved_var,
     size_t workspace_size, void *workspace) {
-  std::vector<void *> caches;
-  ::dnnl::memory::desc real_diff_dst_desc = diff_dst_desc.get_desc();
-  void *real_diff_dst = diff_dst;
-
-  if (workspace_size < dst_desc.get_desc().get_size()) {
-      throw std::runtime_error("batch_normalization_backward_ex: "
-        "no sufficient workspace.");
-  }
-  if (ops == batch_normalization_ops::add_activation) {
-    void *diff_summand_cache = allocate(diff_summand_desc);
-    activation_backward(adesc, 1.f, dst_desc, dst, diff_dst_desc, diff_dst,
-                        dst_desc, workspace, 0.f,
-                        diff_summand_desc, diff_summand_cache);
-    caches.push_back(diff_summand_cache);
-    sum(alpha_data, diff_summand_desc, diff_summand_cache, beta_data,
-        diff_summand_desc, diff_summand);
-    real_diff_dst_desc = diff_summand_desc.get_desc();
-    real_diff_dst = diff_summand_cache;
-  } else if (ops == batch_normalization_ops::activation) {
-    void *diff_dst_cache = allocate(diff_dst_desc);
-    caches.push_back(diff_dst_cache);
-    activation_backward(adesc, alpha_data, dst_desc, dst, diff_dst_desc,
-                        diff_dst, dst_desc, workspace,
-                        beta_data, diff_dst_desc, diff_dst_cache);
-    real_diff_dst = diff_dst_cache;
-  }
-
-  sycl::event e = batch_normalization_backward_internal(
-      mode, epsilon, alpha_data, src_desc, src, real_diff_dst_desc,
-      real_diff_dst, beta_data, diff_src_desc, diff_src, alpha_param,
-      diff_scale_bias_desc, scale, bias, beta_param, diff_scale, diff_bias,
-      mean_var_desc, saved_mean, saved_var);
-  _q->submit([&](cl::sycl::handler &cgh) {
-    cgh.depends_on(e);
-    cgh.host_task([=] {
-      for (auto ptr : caches) {
-        sycl::free(ptr, *_q);
-      }
-    });
-  });
-  return e;
+  return batch_normalization_backward_internal(
+      mode, ops, adesc, diff_summand_desc, diff_summand, epsilon, alpha_data,
+      src_desc, src, real_diff_dst_desc, real_diff_dst, beta_data,
+      diff_src_desc, diff_src, alpha_param, diff_scale_bias_desc, scale, bias,
+      beta_param, diff_scale, diff_bias, mean_var_desc, saved_mean, saved_var,
+      workspace_size, workspace);
 }
 // DPCT_LABEL_END
 
@@ -3289,7 +3311,6 @@ sycl::event engine_ext::batch_normalization_backward_ex(
     void *scale, void *bias, float beta_param, void *diff_scale,
     void *diff_bias, void *saved_mean, void *saved_var,
     size_t workspace_size, void *workspace) {
-
   return batch_normalization_backward_ex(
       mode, ops, adesc, epsilon, alpha_data, src_desc, src, dst_desc, dst,
       diff_dst_desc, diff_dst, beta_data, diff_src_desc, diff_src,
