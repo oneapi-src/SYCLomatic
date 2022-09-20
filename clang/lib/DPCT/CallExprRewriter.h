@@ -739,6 +739,22 @@ public:
   static DerefExpr create(const Expr *E, const CallExpr * C);
 };
 
+template <class StreamT>
+void print(StreamT &Stream,
+           std::pair<const llvm::StringRef, clang::dpct::DerefExpr> Pair) {
+  Stream << Pair.first;
+  ArgumentAnalysis AA;
+  Pair.second.printArg(Stream, AA);
+}
+template <class StreamT>
+void print(StreamT &Stream,
+           std::pair<std::pair<const llvm::StringRef, clang::dpct::DerefExpr>,
+                     const llvm::StringRef>
+               Pair) {
+  print(Stream, Pair.first);
+  Stream << Pair.second;
+}
+
 class RenameWithSuffix {
   StringRef OriginalName, SuffixStr;
 
@@ -1469,6 +1485,8 @@ public:
 
 using CheckIntergerTemplateArgValueNE = CheckIntergerTemplateArgValue<std::not_equal_to<std::int64_t>>;
 using CheckIntergerTemplateArgValueLE = CheckIntergerTemplateArgValue<std::less_equal<std::int64_t>>;
+
+std::function<bool(const CallExpr *C)> hasManagedAttr(int Idx);
 
 } // namespace dpct
 } // namespace clang
