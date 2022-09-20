@@ -394,3 +394,16 @@ void foo(int a, int b) {
   cudaMalloc((void **)&c[0].Pos1[0], b);
   cudaMalloc((void **)c[0].Pos2, b);
 }
+
+__managed__ char *a1;
+__managed__ char *a2;
+void foo2() {
+  // CHECK: *(a1.get_ptr()) = (char *)sycl::malloc_shared(4, q_ct1);
+  // CHECK-NEXT: *(a2.get_ptr()) = sycl::malloc_shared<char>(1, q_ct1);
+  // CHECK-NEXT: sycl::free(*(a1.get_ptr()), q_ct1);
+  // CHECK-NEXT: sycl::free(*(a2.get_ptr()), q_ct1);
+  cudaMallocManaged((void **)&a1, 4);
+  cudaMallocManaged((void **)&a2, sizeof(char));
+  cudaFree(a1);
+  cudaFree(a2);
+}

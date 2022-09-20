@@ -2750,6 +2750,25 @@ RemoveCubTempStorageFactory::create(const CallExpr *C) const {
   return Inner->create(C);
 }
 
+std::function<bool(const CallExpr *C)> hasManagedAttr(int Idx) {
+  return [=](const CallExpr *C) -> bool {
+    const Expr *Arg = C->getArg(Idx)->IgnoreImpCasts();
+    if (auto CSCE = dyn_cast_or_null<CStyleCastExpr>(Arg)) {
+      Arg = CSCE->getSubExpr();
+    }
+    if (auto UO = dyn_cast_or_null<UnaryOperator>(Arg)) {
+      Arg = UO->getSubExpr();
+    }
+    if (auto ArgDRE = dyn_cast_or_null<DeclRefExpr>(Arg)) {
+      auto D = ArgDRE->getDecl();
+      if (D->hasAttr<HIPManagedAttr>()) {
+        return true;
+      }
+    }
+    return false;
+  };
+}
+
 #define REMOVE_CUB_TEMP_STORAGE_FACTORY(INNER)                                 \
   createRemoveCubTempStorageFactory(INNER 0),
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
