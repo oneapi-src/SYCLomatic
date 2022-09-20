@@ -53,11 +53,11 @@ static bool isCudaMemoryAPIName(StringRef FuncName) {
 }
 
 static bool isCubDeviceFuncName(StringRef FuncName) {
-  return FuncName == "Reduce" || FuncName == "Min" || FuncName == "Max" ||
-         FuncName == "Sum" || FuncName == "ExclusiveSum" ||
-         FuncName == "InclusiveSum" || FuncName == "InclusiveScan" ||
-         FuncName == "ExclusiveScan" || FuncName == "Flagged" ||
-         FuncName == "Unique" || FuncName == "Encode";
+  return FuncName == "Reduce" || FuncName == "ReduceByKey" ||
+         FuncName == "Min" || FuncName == "Max" || FuncName == "Sum" ||
+         FuncName == "ExclusiveSum" || FuncName == "InclusiveSum" ||
+         FuncName == "InclusiveScan" || FuncName == "ExclusiveScan" ||
+         FuncName == "Flagged" || FuncName == "Unique" || FuncName == "Encode";
 }
 
 static bool isCubDeviceCXXRecordName(StringRef CXXRDName) {
@@ -502,20 +502,20 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(hasAnyName(
                          "ShuffleIndex", "ThreadLoad", "ThreadStore", "Sum",
-                         "Min", "Max", "Reduce", "ExclusiveSum", "InclusiveSum",
-                         "InclusiveScan", "ExclusiveScan", "Flagged", "Unique",
-                         "Encode"))),
+                         "Min", "Max", "Reduce", "ReduceByKey", "ExclusiveSum",
+                         "InclusiveSum", "InclusiveScan", "ExclusiveScan",
+                         "Flagged", "Unique", "Encode"))),
                      parentStmt()))
           .bind("FuncCall"),
       this);
 
   MF.addMatcher(
-      callExpr(
-          allOf(callee(functionDecl(hasAnyName(
-                    "Sum", "Min", "Max", "Reduce", "ThreadLoad", "ShuffleIndex",
-                    "ExclusiveSum", "InclusiveSum", "InclusiveScan",
-                    "ExclusiveScan", "Flagged", "Unique", "Encode"))),
-                unless(parentStmt())))
+      callExpr(allOf(callee(functionDecl(hasAnyName(
+                         "Sum", "Min", "Max", "Reduce", "ReduceByKey",
+                         "ThreadLoad", "ShuffleIndex", "ExclusiveSum",
+                         "InclusiveSum", "InclusiveScan", "ExclusiveScan",
+                         "Flagged", "Unique", "Encode"))),
+                     unless(parentStmt())))
           .bind("FuncCallUsed"),
       this);
 }

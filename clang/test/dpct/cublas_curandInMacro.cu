@@ -38,7 +38,7 @@ int main() {
     int *result = 0;
     const float *x_S = 0;
 
-    // CHECK: sycl::queue *stream1;
+    // CHECK: dpct::queue_ptr stream1;
     // CHECK-NEXT: stream1 = dpct::get_current_device().create_queue();
     // CHECK-NEXT: /*
     // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
