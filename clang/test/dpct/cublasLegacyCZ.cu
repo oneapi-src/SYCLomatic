@@ -210,6 +210,19 @@ int main() {
   // CHECK-NEXT: }
   cublasZdrot(n, x_Z, incx, y_Z, incy, *x_D, *y_D);
 
+  // CHECK:{
+  // CHECK-NEXT:auto x_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(x_C);
+  // CHECK-NEXT:auto y_C_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<float>>(y_C);
+  // CHECK-NEXT:oneapi::mkl::blas::column_major::rot(*dpct::get_current_device().get_saved_queue(), n, x_C_buf_ct{{[0-9]+}}, incx, y_C_buf_ct{{[0-9]+}}, incy, *x_S, std::complex<float>((*y_C).x(),(*y_C).y()));
+  // CHECK-NEXT:}
+  cublasCrot(n, x_C, incx, y_C, incy, *x_S, *y_C);
+
+  // CHECK:{
+  // CHECK-NEXT:auto x_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(x_Z);
+  // CHECK-NEXT:auto y_Z_buf_ct{{[0-9]+}} = dpct::get_buffer<std::complex<double>>(y_Z);
+  // CHECK-NEXT:oneapi::mkl::blas::column_major::rot(*dpct::get_current_device().get_saved_queue(), n, x_Z_buf_ct{{[0-9]+}}, incx, y_Z_buf_ct{{[0-9]+}}, incy, *x_D, std::complex<double>((*y_Z).x(),(*y_Z).y()));
+  // CHECK-NEXT:}
+  cublasZrot(n, x_Z, incx, y_Z, incy, *x_D, *y_Z);
 
   //cublas<t>scal
   // CHECK: {

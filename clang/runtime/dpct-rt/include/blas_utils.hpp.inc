@@ -298,6 +298,14 @@ inline void dotuc(sycl::queue &q, int n, const void *x,
         reinterpret_cast<std::complex<double> *>(result));
     break;
   }
+  case detail::get_type_combination_id(library_data_t::real_half, library_data_t::real_half,
+                       library_data_t::real_half): {
+    detail::dotuc_impl<is_conjugate>(
+        q, n, reinterpret_cast<const sycl::half *>(x), incx,
+        reinterpret_cast<const sycl::half *>(y), incy,
+        reinterpret_cast<sycl::half *>(result));
+    break;
+  }
   default:
     throw std::runtime_error("the combination of data type is unsupported");
   }
@@ -344,11 +352,11 @@ inline void axpy_impl(sycl::queue &q, int n, const void *alpha, const void *x,
 // BlasUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-template <class Txy, class Tcs>
+template <class Txy, class Tc, class Ts>
 inline void rot_impl(sycl::queue &q, int n, void *x, int incx, void *y,
                         int incy, const void *c, const void *s) {
-  Tcs c_value = dpct::get_value(reinterpret_cast<const Tcs *>(c), q);
-  Tcs s_value = dpct::get_value(reinterpret_cast<const Tcs *>(s), q);
+  Tc c_value = dpct::get_value(reinterpret_cast<const Tc *>(c), q);
+  Ts s_value = dpct::get_value(reinterpret_cast<const Ts *>(s), q);
   auto data_x = get_memory(reinterpret_cast<Txy *>(x));
   auto data_y = get_memory(reinterpret_cast<Txy *>(y));
   oneapi::mkl::blas::column_major::rot(q, n, data_x, incx,
@@ -1208,6 +1216,12 @@ inline void nrm2(sycl::queue &q, int n, const void *x, library_data_t x_type,
         q, n, x, incx, result);
     break;
   }
+  case detail::get_type_combination_id(library_data_t::real_half,
+                       library_data_t::real_half): {
+    detail::nrm2_impl<sycl::half, sycl::half>(
+        q, n, x, incx, result);
+    break;
+  }
   default:
     throw std::runtime_error("the combination of data type is unsupported");
   }
@@ -1302,6 +1316,13 @@ inline void scal(sycl::queue &q, int n, const void *alpha,
         q, n, alpha, x, incx);
     break;
   }
+  case detail::get_type_combination_id(library_data_t::real_half): {
+    float alpha_value =
+        dpct::get_value(reinterpret_cast<const float *>(alpha), q);
+    sycl::half alaph_half(alpha_value);
+    detail::scal_impl<sycl::half, sycl::half>(q, n, &alaph_half, x, incx);
+    break;
+  }
   default:
     throw std::runtime_error("the combination of data type is unsupported");
   }
@@ -1353,6 +1374,14 @@ inline void axpy(sycl::queue &q, int n, const void *alpha,
         q, n, alpha, x, incx, y, incy);
     break;
   }
+  case detail::get_type_combination_id(library_data_t::real_half,
+                       library_data_t::real_float): {
+    float alpha_value =
+        dpct::get_value(reinterpret_cast<const float *>(alpha), q);
+    sycl::half alaph_half(alpha_value);
+    detail::axpy_impl<sycl::half, sycl::half>(q, n, &alaph_half, x, incx, y, incy);
+    break;
+  }
   default:
     throw std::runtime_error("the combination of data type is unsupported");
   }
@@ -1385,24 +1414,44 @@ inline void rot(sycl::queue &q, int n, void *x, library_data_t x_type,
   switch (key) {
   case detail::get_type_combination_id(library_data_t::real_float,
                        library_data_t::real_float): {
-    detail::rot_impl<float, float>(q, n, x, incx, y, incy, c, s);
+    detail::rot_impl<float, float, float>(q, n, x, incx, y, incy, c, s);
     break;
   }
   case detail::get_type_combination_id(library_data_t::real_double,
                        library_data_t::real_double): {
-    detail::rot_impl<double, double>(q, n, x, incx, y, incy, c, s);
+    detail::rot_impl<double, double, double>(q, n, x, incx, y, incy, c, s);
     break;
   }
   case detail::get_type_combination_id(library_data_t::complex_float,
                        library_data_t::real_float): {
-    detail::rot_impl<std::complex<float>, float>(q, n, x, incx, y, incy, c,
+    detail::rot_impl<std::complex<float>, float, float>(q, n, x, incx, y, incy, c,
                                                     s);
     break;
   }
   case detail::get_type_combination_id(library_data_t::complex_double,
                        library_data_t::real_double): {
-    detail::rot_impl<std::complex<double>, double>(q, n, x, incx, y, incy, c,
+    detail::rot_impl<std::complex<double>, double, double>(q, n, x, incx, y, incy, c,
                                                       s);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_float,
+                       library_data_t::complex_float): {
+    detail::rot_impl<std::complex<float>, float, std::complex<float>>(q, n, x, incx, y, incy, c, s);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::complex_double,
+                       library_data_t::complex_double): {
+    detail::rot_impl<std::complex<double>, double, std::complex<double>>(q, n, x, incx, y, incy, c, s);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::real_half,
+                       library_data_t::real_half): {
+    detail::rot_impl<sycl::half, sycl::half, sycl::half>(q, n, x, incx, y, incy, c, s);
+    break;
+  }
+  case detail::get_type_combination_id(library_data_t::real_bfloat16,
+                       library_data_t::real_bfloat16): {
+    detail::rot_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16, oneapi::mkl::bfloat16>(q, n, x, incx, y, incy, c, s);
     break;
   }
   default:
@@ -1438,11 +1487,11 @@ inline void rot(sycl::queue &q, int n, void *x, library_data_t x_type,
 /// \param [in] ldc Leading dimension of C.
 /// \param [in] scaling_type Data type of the scaling factors.
 inline void gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
-                    oneapi::mkl::transpose b_trans, int m, int n, int k,
-                    const void *alpha, const void *a, library_data_t a_type,
-                    int lda, const void *b, library_data_t b_type, int ldb,
-                    const void *beta, void *c, library_data_t c_type, int ldc,
-                    library_data_t scaling_type) {
+                 oneapi::mkl::transpose b_trans, int m, int n, int k,
+                 const void *alpha, const void *a, library_data_t a_type,
+                 int lda, const void *b, library_data_t b_type, int ldb,
+                 const void *beta, void *c, library_data_t c_type, int ldc,
+                 library_data_t scaling_type) {
   bool matched = false;
   if (scaling_type == library_data_t::real_float &&
       c_type == library_data_t::complex_float) {
@@ -1452,18 +1501,19 @@ inline void gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
     scaling_type = library_data_t::complex_double;
   }
 
-  std::uint64_t key = detail::get_type_combination_id(a_type, b_type, c_type, scaling_type);
+  std::uint64_t key =
+      detail::get_type_combination_id(a_type, b_type, c_type, scaling_type);
   switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float, library_data_t::real_float,
-                       library_data_t::real_float,
-                       library_data_t::real_float): {
+  case detail::get_type_combination_id(
+      library_data_t::real_float, library_data_t::real_float,
+      library_data_t::real_float, library_data_t::real_float): {
     detail::gemm_impl<float, float, float, float>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_double, library_data_t::real_double,
-                       library_data_t::real_double,
-                       library_data_t::real_double): {
+  case detail::get_type_combination_id(
+      library_data_t::real_double, library_data_t::real_double,
+      library_data_t::real_double, library_data_t::real_double): {
     detail::gemm_impl<double, double, double, double>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
     break;
@@ -1472,7 +1522,7 @@ inline void gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
       library_data_t::complex_float, library_data_t::complex_float,
       library_data_t::complex_float, library_data_t::complex_float): {
     detail::gemm_impl<std::complex<float>, std::complex<float>,
-                         std::complex<float>, std::complex<float>>(
+                      std::complex<float>, std::complex<float>>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
     break;
   }
@@ -1480,34 +1530,36 @@ inline void gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
       library_data_t::complex_double, library_data_t::complex_double,
       library_data_t::complex_double, library_data_t::complex_double): {
     detail::gemm_impl<std::complex<double>, std::complex<double>,
-                         std::complex<double>, std::complex<double>>(
+                      std::complex<double>, std::complex<double>>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_half, library_data_t::real_half,
-                       library_data_t::real_half, library_data_t::real_half): {
+  case detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_half, library_data_t::real_half): {
     detail::gemm_impl<sycl::half, sycl::half, sycl::half,
-                         sycl::half>(q, a_trans, b_trans, m, n, k, alpha, a,
-                                         lda, b, ldb, beta, c, ldc);
+                      sycl::half>(q, a_trans, b_trans, m, n, k, alpha, a,
+                                      lda, b, ldb, beta, c, ldc);
     break;
   }
   case detail::get_type_combination_id(
       library_data_t::real_bfloat16, library_data_t::real_bfloat16,
       library_data_t::real_float, library_data_t::real_float): {
     detail::gemm_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16, float,
-                         float>(q, a_trans, b_trans, m, n, k, alpha, a, lda, b,
-                                ldb, beta, c, ldc);
+                      float>(q, a_trans, b_trans, m, n, k, alpha, a, lda, b,
+                             ldb, beta, c, ldc);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_half, library_data_t::real_half,
-                       library_data_t::real_float,
-                       library_data_t::real_float): {
+  case detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_float, library_data_t::real_float): {
     detail::gemm_impl<sycl::half, sycl::half, float, float>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_half, library_data_t::real_half,
-                       library_data_t::real_half, library_data_t::real_float): {
+  case detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_half, library_data_t::real_float): {
     float alpha_value =
         dpct::get_value(reinterpret_cast<const float *>(alpha), q);
     float beta_value =
@@ -1515,9 +1567,34 @@ inline void gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
     sycl::half alpha_half(alpha_value);
     sycl::half beta_half(beta_value);
     detail::gemm_impl<sycl::half, sycl::half, sycl::half,
-                         sycl::half>(q, a_trans, b_trans, m, n, k,
-                                         &alpha_half, a, lda, b, ldb,
-                                         &beta_half, c, ldc);
+                      sycl::half>(q, a_trans, b_trans, m, n, k, &alpha_half,
+                                      a, lda, b, ldb, &beta_half, c, ldc);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_int8, library_data_t::real_int8,
+      library_data_t::real_float, library_data_t::real_float): {
+    detail::gemm_impl<std::int8_t, std::int8_t, float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
+      library_data_t::real_bfloat16, library_data_t::real_float): {
+    detail::gemm_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16,
+                      oneapi::mkl::bfloat16, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_int8, library_data_t::real_int8,
+      library_data_t::real_int32, library_data_t::real_int32): {
+    float alpha_float =
+        dpct::get_value(reinterpret_cast<const std::int32_t *>(alpha), q);
+    float beta_float =
+        dpct::get_value(reinterpret_cast<const std::int32_t *>(beta), q);
+    detail::gemm_impl<std::int8_t, std::int8_t, std::int32_t, float>(
+        q, a_trans, b_trans, m, n, k, &alpha_float, a, lda, b, ldb, &beta_float, c, ldc);
     break;
   }
   default:
@@ -1554,12 +1631,12 @@ inline void gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
 /// \param [in] batch_size Specifies the number of matrix multiply operations to perform.
 /// \param [in] scaling_type Data type of the scaling factors.
 inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
-                            oneapi::mkl::transpose b_trans, int m, int n, int k,
-                            const void *alpha, const void *a[],
-                            library_data_t a_type, int lda, const void *b[],
-                            library_data_t b_type, int ldb, const void *beta,
-                            void *c[], library_data_t c_type, int ldc,
-                            int batch_size, library_data_t scaling_type) {
+                       oneapi::mkl::transpose b_trans, int m, int n, int k,
+                       const void *alpha, const void *a[],
+                       library_data_t a_type, int lda, const void *b[],
+                       library_data_t b_type, int ldb, const void *beta,
+                       void *c[], library_data_t c_type, int ldc,
+                       int batch_size, library_data_t scaling_type) {
 #ifdef DPCT_USM_LEVEL_NONE
   throw std::runtime_error("this API is unsupported when USM level is none");
 #else
@@ -1572,19 +1649,20 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
     scaling_type = library_data_t::complex_double;
   }
 
-  std::uint64_t key = detail::get_type_combination_id(a_type, b_type, c_type, scaling_type);
+  std::uint64_t key =
+      detail::get_type_combination_id(a_type, b_type, c_type, scaling_type);
   switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float, library_data_t::real_float,
-                       library_data_t::real_float,
-                       library_data_t::real_float): {
+  case detail::get_type_combination_id(
+      library_data_t::real_float, library_data_t::real_float,
+      library_data_t::real_float, library_data_t::real_float): {
     detail::gemm_batch_impl<float, float, float, float>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
         batch_size);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_double, library_data_t::real_double,
-                       library_data_t::real_double,
-                       library_data_t::real_double): {
+  case detail::get_type_combination_id(
+      library_data_t::real_double, library_data_t::real_double,
+      library_data_t::real_double, library_data_t::real_double): {
     detail::gemm_batch_impl<double, double, double, double>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
         batch_size);
@@ -1594,7 +1672,7 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
       library_data_t::complex_float, library_data_t::complex_float,
       library_data_t::complex_float, library_data_t::complex_float): {
     detail::gemm_batch_impl<std::complex<float>, std::complex<float>,
-                                std::complex<float>, std::complex<float>>(
+                            std::complex<float>, std::complex<float>>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
         batch_size);
     break;
@@ -1603,17 +1681,78 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
       library_data_t::complex_double, library_data_t::complex_double,
       library_data_t::complex_double, library_data_t::complex_double): {
     detail::gemm_batch_impl<std::complex<double>, std::complex<double>,
-                                std::complex<double>, std::complex<double>>(
+                            std::complex<double>, std::complex<double>>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
         batch_size);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_half, library_data_t::real_half,
-                       library_data_t::real_half, library_data_t::real_half): {
+  case detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_half, library_data_t::real_half): {
     detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half,
-                                sycl::half>(q, a_trans, b_trans, m, n, k,
-                                                alpha, a, lda, b, ldb, beta, c,
-                                                ldc, batch_size);
+                            sycl::half>(q, a_trans, b_trans, m, n, k, alpha,
+                                            a, lda, b, ldb, beta, c, ldc,
+                                            batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
+      library_data_t::real_bfloat16, library_data_t::real_float): {
+    detail::gemm_batch_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16,
+                            oneapi::mkl::bfloat16, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
+        batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
+      library_data_t::real_float, library_data_t::real_float): {
+    detail::gemm_batch_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16, float,
+                            float>(q, a_trans, b_trans, m, n, k, alpha, a, lda,
+                                   b, ldb, beta, c, ldc, batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_int8, library_data_t::real_int8,
+      library_data_t::real_int32, library_data_t::real_int32): {
+    float alpha_float =
+        dpct::get_value(reinterpret_cast<const std::int32_t *>(alpha), q);
+    float beta_float =
+        dpct::get_value(reinterpret_cast<const std::int32_t *>(beta), q);
+    detail::gemm_batch_impl<std::int8_t, std::int8_t, std::int32_t,
+                            float>(q, a_trans, b_trans, m, n, k, &alpha_float,
+                                          a, lda, b, ldb, &beta_float, c, ldc,
+                                          batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_int8, library_data_t::real_int8,
+      library_data_t::real_float, library_data_t::real_float): {
+    detail::gemm_batch_impl<std::int8_t, std::int8_t, float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
+        batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_float, library_data_t::real_float): {
+    detail::gemm_batch_impl<sycl::half, sycl::half, float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
+        batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_half, library_data_t::real_float): {
+    float alpha_value =
+        dpct::get_value(reinterpret_cast<const float *>(alpha), q);
+    float beta_value =
+        dpct::get_value(reinterpret_cast<const float *>(beta), q);
+    sycl::half alpha_half(alpha_value);
+    sycl::half beta_half(beta_value);
+    detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half, sycl::half>(
+        q, a_trans, b_trans, m, n, k, &alpha_half, a, lda, b, ldb, &beta_half, c, ldc,
+        batch_size);
     break;
   }
   default:
@@ -1653,13 +1792,14 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
 /// \param [in] stride_c Stride between the different C matrices.
 /// \param [in] batch_size Specifies the number of matrix multiply operations to perform.
 /// \param [in] scaling_type Data type of the scaling factors.
-inline void gemm_batch(
-    sycl::queue &q, oneapi::mkl::transpose a_trans,
-    oneapi::mkl::transpose b_trans, int m, int n, int k, const void *alpha,
-    const void *a, library_data_t a_type, int lda, long long int stride_a,
-    const void *b, library_data_t b_type, int ldb, long long int stride_b,
-    const void *beta, void *c, library_data_t c_type, int ldc,
-    long long int stride_c, int batch_size, library_data_t scaling_type) {
+inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
+                       oneapi::mkl::transpose b_trans, int m, int n, int k,
+                       const void *alpha, const void *a, library_data_t a_type,
+                       int lda, long long int stride_a, const void *b,
+                       library_data_t b_type, int ldb, long long int stride_b,
+                       const void *beta, void *c, library_data_t c_type,
+                       int ldc, long long int stride_c, int batch_size,
+                       library_data_t scaling_type) {
   bool matched = false;
   if (scaling_type == library_data_t::real_float &&
       c_type == library_data_t::complex_float) {
@@ -1669,19 +1809,20 @@ inline void gemm_batch(
     scaling_type = library_data_t::complex_double;
   }
 
-  std::uint64_t key = detail::get_type_combination_id(a_type, b_type, c_type, scaling_type);
+  std::uint64_t key =
+      detail::get_type_combination_id(a_type, b_type, c_type, scaling_type);
   switch (key) {
-  case detail::get_type_combination_id(library_data_t::real_float, library_data_t::real_float,
-                       library_data_t::real_float,
-                       library_data_t::real_float): {
+  case detail::get_type_combination_id(
+      library_data_t::real_float, library_data_t::real_float,
+      library_data_t::real_float, library_data_t::real_float): {
     detail::gemm_batch_impl<float, float, float, float>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
         beta, c, ldc, stride_c, batch_size);
     break;
   }
-  case detail::get_type_combination_id(library_data_t::real_double, library_data_t::real_double,
-                       library_data_t::real_double,
-                       library_data_t::real_double): {
+  case detail::get_type_combination_id(
+      library_data_t::real_double, library_data_t::real_double,
+      library_data_t::real_double, library_data_t::real_double): {
     detail::gemm_batch_impl<double, double, double, double>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
         beta, c, ldc, stride_c, batch_size);
@@ -1690,29 +1831,85 @@ inline void gemm_batch(
   case detail::get_type_combination_id(
       library_data_t::complex_float, library_data_t::complex_float,
       library_data_t::complex_float, library_data_t::complex_float): {
-    detail::gemm_batch_impl<
-        std::complex<float>, std::complex<float>, std::complex<float>,
-        std::complex<float>>(q, a_trans, b_trans, m, n, k, alpha, a, lda,
-                             stride_a, b, ldb, stride_b, beta, c, ldc, stride_c,
-                             batch_size);
+    detail::gemm_batch_impl<std::complex<float>, std::complex<float>,
+                            std::complex<float>, std::complex<float>>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
+        beta, c, ldc, stride_c, batch_size);
     break;
   }
   case detail::get_type_combination_id(
       library_data_t::complex_double, library_data_t::complex_double,
       library_data_t::complex_double, library_data_t::complex_double): {
-    detail::gemm_batch_impl<
-        std::complex<double>, std::complex<double>, std::complex<double>,
-        std::complex<double>>(q, a_trans, b_trans, m, n, k, alpha, a, lda,
-                              stride_a, b, ldb, stride_b, beta, c, ldc,
-                              stride_c, batch_size);
-    break;
-  }
-  case detail::get_type_combination_id(library_data_t::real_half, library_data_t::real_half,
-                       library_data_t::real_half, library_data_t::real_half): {
-    detail::gemm_batch_impl<sycl::half, sycl::half,
-                                sycl::half, sycl::half>(
+    detail::gemm_batch_impl<std::complex<double>, std::complex<double>,
+                            std::complex<double>, std::complex<double>>(
         q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
         beta, c, ldc, stride_c, batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_half, library_data_t::real_half): {
+    detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half,
+                            sycl::half>(q, a_trans, b_trans, m, n, k, alpha,
+                                            a, lda, stride_a, b, ldb, stride_b,
+                                            beta, c, ldc, stride_c, batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
+      library_data_t::real_bfloat16, library_data_t::real_float): {
+    detail::gemm_batch_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16,
+                            oneapi::mkl::bfloat16, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
+        beta, c, ldc, stride_c, batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_bfloat16, library_data_t::real_bfloat16,
+      library_data_t::real_float, library_data_t::real_float): {
+    detail::gemm_batch_impl<oneapi::mkl::bfloat16, oneapi::mkl::bfloat16, float,
+                            float>(q, a_trans, b_trans, m, n, k, alpha, a, lda,
+                                   stride_a, b, ldb, stride_b, beta, c, ldc,
+                                   stride_c, batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_int8, library_data_t::real_int8,
+      library_data_t::real_int32, library_data_t::real_int32): {
+    detail::gemm_batch_impl<std::int8_t, std::int8_t, std::int32_t,
+                            std::int32_t>(q, a_trans, b_trans, m, n, k, alpha,
+                                          a, lda, stride_a, b, ldb, stride_b,
+                                          beta, c, ldc, stride_c, batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_int8, library_data_t::real_int8,
+      library_data_t::real_float, library_data_t::real_float): {
+    detail::gemm_batch_impl<std::int8_t, std::int8_t, float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
+        beta, c, ldc, stride_c, batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_float, library_data_t::real_float): {
+    detail::gemm_batch_impl<sycl::half, sycl::half, float, float>(
+        q, a_trans, b_trans, m, n, k, alpha, a, lda, stride_a, b, ldb, stride_b,
+        beta, c, ldc, stride_c, batch_size);
+    break;
+  }
+  case detail::get_type_combination_id(
+      library_data_t::real_half, library_data_t::real_half,
+      library_data_t::real_half, library_data_t::real_float): {
+    float alpha_value =
+        dpct::get_value(reinterpret_cast<const float *>(alpha), q);
+    float beta_value =
+        dpct::get_value(reinterpret_cast<const float *>(beta), q);
+    sycl::half alpha_half(alpha_value);
+    sycl::half beta_half(beta_value);
+    detail::gemm_batch_impl<sycl::half, sycl::half, sycl::half, sycl::half>(
+        q, a_trans, b_trans, m, n, k, &alpha_half, a, lda, stride_a, b, ldb, stride_b,
+        &beta_half, c, ldc, stride_c, batch_size);
     break;
   }
   default:

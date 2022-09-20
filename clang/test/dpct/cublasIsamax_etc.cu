@@ -1491,6 +1491,22 @@ int main() {
   // CHECK-NEXT: oneapi::mkl::blas::column_major::trsm(*handle, (oneapi::mkl::side)foo(), foo()==0 ? oneapi::mkl::uplo::lower : oneapi::mkl::uplo::upper, (int)transpose_ct{{[0-9]+}}==2 ? oneapi::mkl::transpose::conjtrans : (oneapi::mkl::transpose)transpose_ct{{[0-9]+}}, (oneapi::mkl::diag)foo(), m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, C_D_buf_ct{{[0-9]+}}, ldc);
   // CHECK-NEXT: }
   cublasDtrsm(handle, (cublasSideMode_t)foo(), (cublasFillMode_t)foo(), (cublasOperation_t)foo(), (cublasDiagType_t)foo(), m, n, &alpha_D, A_D, lda, C_D, ldc);
+
+  // CHECK: {
+  // CHECK-NEXT: auto A_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(A_S);
+  // CHECK-NEXT: auto B_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(B_S);
+  // CHECK-NEXT: auto C_S_buf_ct{{[0-9]+}} = dpct::get_buffer<float>(C_S);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::omatadd(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::trans, m, n, alpha_S, A_S_buf_ct{{[0-9]+}}, lda, beta_S, B_S_buf_ct{{[0-9]+}}, ldb, C_S_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: }
+  cublasSgeam(handle, CUBLAS_OP_C, CUBLAS_OP_T, m, n, &alpha_S, A_S, lda, &beta_S, B_S, ldb, C_S, ldc);
+
+  // CHECK: {
+  // CHECK-NEXT: auto A_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(A_D);
+  // CHECK-NEXT: auto B_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(B_D);
+  // CHECK-NEXT: auto C_D_buf_ct{{[0-9]+}} = dpct::get_buffer<double>(C_D);
+  // CHECK-NEXT: oneapi::mkl::blas::column_major::omatadd(*handle, oneapi::mkl::transpose::conjtrans, oneapi::mkl::transpose::trans, m, n, alpha_D, A_D_buf_ct{{[0-9]+}}, lda, beta_D, B_D_buf_ct{{[0-9]+}}, ldb, C_D_buf_ct{{[0-9]+}}, ldc);
+  // CHECK-NEXT: }
+  cublasDgeam(handle, CUBLAS_OP_C, CUBLAS_OP_T, m, n, &alpha_D, A_D, lda, &beta_D, B_D, ldb, C_D, ldc);
   return 0;
 }
 

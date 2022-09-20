@@ -42,3 +42,17 @@ void foo2() {
   //CHECK:dpct::gemm_batch(*handle, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans, 4, 4, 4, alpha, const_cast<void const **>(a_array), dpct::library_data_t::real_half, 4, const_cast<void const **>(b_array), dpct::library_data_t::real_half, 4, beta, c_array, dpct::library_data_t::real_half, 4, 2, dpct::library_data_t::real_half);
   cublasGemmBatchedEx(handle, CUBLAS_OP_N, CUBLAS_OP_N, 4, 4, 4, alpha, a_array, CUDA_R_16F, 4, b_array, CUDA_R_16F, 4, beta, c_array, CUDA_R_16F, 4, 2, CUBLAS_COMPUTE_16F, CUBLAS_GEMM_DEFAULT);
 }
+
+void foo3() {
+  cublasHandle_t handle;
+  //CHECK: int Mathmode;
+  //CHECK-NEXT: /*
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasGetMathMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: */
+  //CHECK-NEXT: /*
+  //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cublasSetMathMode was removed because this call is redundant in SYCL.
+  //CHECK-NEXT: */
+  cublasMath_t Mathmode;
+  cublasGetMathMode(handle, &Mathmode);
+  cublasSetMathMode(handle, Mathmode);
+}
