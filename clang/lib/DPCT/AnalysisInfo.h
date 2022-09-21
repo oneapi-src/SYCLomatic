@@ -3707,6 +3707,8 @@ public:
       return LinkTemplateDecl(FTD);
     else if (FTD = FD->getDescribedFunctionTemplate())
       return LinkTemplateDecl(FTD);
+    else if (auto Decl = FD->getInstantiatedFromMemberFunction())
+      FD = Decl;
     return LinkDeclRange(FD->redecls(), getFunctionName(FD));
   }
   inline static std::shared_ptr<DeviceFunctionInfo>
