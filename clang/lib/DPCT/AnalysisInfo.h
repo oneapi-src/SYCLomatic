@@ -1935,7 +1935,7 @@ public:
     return getUsingExtension(DPCPPExtensions::Ext_EnqueueBarrier);
   }
   static bool UseCAndCXXStandardLibrariesExt() {
-    return getUsingExtension(DPCPPExtensions::Ext_CAndCXXStandardLibraries);
+    return getUsingExtension(DPCPPExtensions::Ext_CCXXStandardLibrary);
   }
 
   static bool getSpBLASUnsupportedMatrixTypeFlag() {

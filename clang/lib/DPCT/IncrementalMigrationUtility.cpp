@@ -200,7 +200,7 @@ bool printOptions(
               static_cast<unsigned>(DPCPPExtensions::Ext_EnqueueBarrier)))
           Str = Str + "enqueued_barriers,";
         if (!(UValue & static_cast<unsigned>(
-                           DPCPPExtensions::Ext_CAndCXXStandardLibraries)))
+                           DPCPPExtensions::Ext_CCXXStandardLibrary)))
           Str = Str + "c_and_cxx_standard_libraries,";
       }
       if (!Str.empty()) {

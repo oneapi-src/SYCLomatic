@@ -42,7 +42,7 @@ std::map<std::string /*Original API*/, HelperFeatureEnum>
 MapNames::ThrustMapTy MapNames::ThrustFuncNamesMap;
 std::map<std::string /*Original API*/, HelperFeatureEnum>
     MapNames::ThrustFuncNamesHelperFeaturesMap;
-MapNames::MapTy MapNames::MathRewriterMap;
+MapNames::MapTy MapNames::MathFuncNameMap;
 std::unordered_map<std::string, std::string> MapNames::AtomicFuncNamesMap;
 MapNames::MapTy MapNames::ITFName;
 std::map<std::string, MapNames::BLASFuncReplInfo> MapNames::BLASFuncReplInfoMap;
@@ -1266,8 +1266,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"}};
 
-
-  MathRewriterMap = {
+  // This map now is only used to migrate using declaration
+  MathFuncNameMap = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   {SOURCEAPINAME, TARGETAPINAME},
 #define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)                 \
@@ -1291,6 +1291,7 @@ void MapNames::setExplicitNamespaceMap() {
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
 #undef ENTRY_REWRITE
+  {"abs", MapNames::getClNamespace(false, true) + "abs"},
   };
 }
 

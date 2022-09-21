@@ -315,18 +315,16 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<ExplicitNamespace>), UseExp
            "Possible values are:"),
            llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore)
 
-// When more dpcpp extensions are implemented, more extension names will be
-// added into the value of option --no-dpcpp-extensions, currently only
-// Enqueued barriers is supported.
 DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<DPCPPExtensions>), NoDPCPPExtensions, "no-dpcpp-extensions",
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("enqueued_barriers",
                                      int(DPCPPExtensions::Ext_EnqueueBarrier),
                                      "Enqueued barriers extension.",
                                      false),
-             DPCT_OPT_ENUM("c_and_cxx_standard_libraries",
-                                     int(DPCPPExtensions::Ext_CAndCXXStandardLibraries),
-                                     "C and C++ standard libraries can be used in SYCL device code.",
+             DPCT_OPT_ENUM("c_cxx_standard_library",
+                                     int(DPCPPExtensions::Ext_CCXXStandardLibrary),
+                                     "A set of functions from the C and C++ standard libraries which is allowed to\n"
+                                     "be used in SYCL device code.",
                                      false)
            ),
            llvm::cl::desc("Comma separated list of extensions not to be used in migrated "

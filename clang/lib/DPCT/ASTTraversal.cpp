@@ -14663,8 +14663,8 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     Toklen = Lexer::MeasureTokenLength(
         End, SM, DpctGlobalInfo::getContext().getLangOpts());
     Len = SM.getFileOffset(End) - SM.getFileOffset(Beg) + Toklen;
-    auto Iter = MapNames::MathRewriterMap.find(UD->getNameAsString());
-    if (Iter != MapNames::MathRewriterMap.end()) {
+    auto Iter = MapNames::MathFuncNameMap.find(UD->getNameAsString());
+    if (Iter != MapNames::MathFuncNameMap.end()) {
       DpctGlobalInfo::getInstance().insertHeader(UD->getBeginLoc(), HT_Math);
       std::string Repl{"using "};
       Repl += Iter->second;

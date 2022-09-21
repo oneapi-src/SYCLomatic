@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/math-functions %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -fno-delayed-template-parsing
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/math-functions %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda --no-dpcpp-extensions=c_cxx_standard_library -- -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/math-functions/math-functions.dp.cpp --match-full-lines %s
 
 #include <cmath>
@@ -37,17 +37,17 @@ __device__ float4 fun() {
 #else
 #define USING(FUNC) using std::FUNC;
 #endif
-// CHECK: USING(abs)
+// CHECK: using sycl::abs;
 USING(abs)
 
 __global__ void kernel() {
-  // CHECK: USING(abs)
+  // CHECK: using sycl::abs;
   USING(abs)
 }
 
 void host() {
 #define USE_STD
-// CHECK: USING(abs)
+// CHECK: using sycl::abs;
   USING(abs)
 #undef USE_STD
 }
