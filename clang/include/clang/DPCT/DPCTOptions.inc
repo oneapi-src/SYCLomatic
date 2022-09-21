@@ -258,7 +258,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<HelperFilesCustomizationLeve
             "Generate a complete set of helper header files and place them in the --out-root\n"
             "directory.", false)
            ),
-           llvm::cl::desc("Customize the helper header files for migrated code. The values are:\n"),
+           llvm::cl::desc("DEPRECATED: Customize the helper header files for migrated code. The values are:\n"),
            llvm::cl::init(HelperFilesCustomizationLevel::HFCL_None), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
            llvm::cl::Optional)
 
