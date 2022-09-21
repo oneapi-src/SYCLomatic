@@ -3106,7 +3106,7 @@ sycl::event engine_ext::batch_normalization_forward_inference_ex(
     return e;
   }
   return batch_normalization_forward_internal(
-      false, mode, epsilon, 0.f, alpha, src_desc, src, beta, dst_desc, dst,
+      true, mode, epsilon, 0.f, alpha, src_desc, src, beta, dst_desc, dst,
       scale_bias_desc, scale, bias, mean_var_desc, mean, var, nullptr, nullptr);
 }
 // DPCT_LABEL_END
