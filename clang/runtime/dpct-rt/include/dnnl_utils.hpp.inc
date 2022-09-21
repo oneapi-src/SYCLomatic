@@ -3233,9 +3233,10 @@ sycl::event engine_ext::batch_normalization_backward_ex(
   ::dnnl::memory::desc real_diff_dst_desc = diff_dst_desc.get_desc();
   void *real_diff_dst = diff_dst;
 
-  if (workspace_size < dst_desc.get_desc().get_size()) {
-      throw std::runtime_error("batch_normalization_backward_ex: "
-        "no sufficient workspace.");
+  if (ops != batch_normalization_ops::none &&
+      workspace_size < dst_desc.get_desc().get_size()) {
+    throw std::runtime_error("batch_normalization_backward_ex: "
+                             "no sufficient workspace.");
   }
   if (ops == batch_normalization_ops::add_activation) {
     void *diff_summand_cache = allocate(diff_summand_desc);

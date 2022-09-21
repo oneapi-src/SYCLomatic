@@ -40,7 +40,7 @@ void CuDNNTypeRule::registerMatcher(MatchFinder &MF) {
               "cudnnBatchNormOps_t", "cudnnBatchNormMode_t", "cudnnNormMode_t",
               "cudnnNormOps_t", "cudnnConvolutionDescriptor_t",
               "cudnnConvolutionFwdAlgo_t", "cudnnConvolutionBwdDataAlgo_t",
-              "cudnnConvolutionBwdFilterAlgo_t"))))))
+              "cudnnConvolutionBwdFilterAlgo_t", "cudnnFilterDescriptor_t"))))))
           .bind("CuDNNType"),
       this);
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CUDNN_.*"))))
