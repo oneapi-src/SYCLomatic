@@ -2884,7 +2884,7 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
       if(VD->getInitStyle()==VarDecl::InitializationStyle::ListInit){
         if(const auto VarInitExpr=dyn_cast<InitListExpr>(VD->getInit())){
           Expr::EvalResult ER;
-          if(auto ArgInitExpr = VarInitExpr->getInit(0)->IgnoreImpCasts()){
+          if(auto ArgInitExpr = VarInitExpr->getInit(0)->IgnoreCasts()){
             if (ArgInitExpr->EvaluateAsInt(ER, dpct::DpctGlobalInfo::getContext())){
               int64_t Value = ER.Val.getInt().getExtValue();
               if (Value != 0) continue ;
@@ -2895,7 +2895,7 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
         }
       }
       else{
-        if(const auto VarInitExpr=VD->getInit()->IgnoreImpCasts()){
+        if(const auto VarInitExpr=VD->getInit()->IgnoreCasts()){
           Expr::EvalResult ER;
           if (VarInitExpr->EvaluateAsInt(ER, dpct::DpctGlobalInfo::getContext())){
             int64_t Value = ER.Val.getInt().getExtValue();
