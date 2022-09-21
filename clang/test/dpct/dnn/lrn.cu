@@ -2,7 +2,7 @@
 // RUN: FileCheck --input-file %T/lrn/lrn.dp.cpp --match-full-lines %s
 
 // CHECK: #include <dpct/dnnl_utils.hpp>
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>
 // CHECK: #include <iostream>
 // CHECK: #include <vector>
@@ -62,7 +62,7 @@ void test1() {
 
     // CHECK: handle.create_engine();
 
-    // CHECK: sycl::queue *stream1;
+    // CHECK: dpct::queue_ptr stream1;
     // CHECK: stream1 = dpct::get_current_device().create_queue();
     // CHECK: handle.set_queue(stream1);
     cudnnHandle_t handle;
@@ -157,7 +157,7 @@ int main() {
     int nDevices;
     cudaGetDeviceCount(&nDevices);
     cudaSetDevice(1);
-    
+
     test1<CUDNN_DATA_FLOAT>();
 
     return 0;

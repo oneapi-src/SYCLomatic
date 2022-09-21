@@ -9,7 +9,7 @@
 #ifndef __DPCT_UTIL_HPP__
 #define __DPCT_UTIL_HPP__
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <complex>
 #include <type_traits>
 #include <cassert>
@@ -24,14 +24,14 @@ template <int... Ints>
 struct make_index_sequence<0, Ints...> : public integer_sequence<Ints...> {};
 
 template <typename T> struct DataType { using T2 = T; };
-template <typename T> struct DataType<cl::sycl::vec<T, 2>> {
+template <typename T> struct DataType<sycl::vec<T, 2>> {
   using T2 = std::complex<T>;
 };
 
 inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
                             int from_ld, int rows, int cols, int elem_size,
                             memcpy_direction direction = automatic,
-                            cl::sycl::queue &queue = dpct::get_default_queue(),
+                            sycl::queue &queue = dpct::get_default_queue(),
                             bool async = false) {
   if (to_ptr == from_ptr && to_ld == from_ld) {
     return;
@@ -51,7 +51,7 @@ inline void matrix_mem_copy(void *to_ptr, const void *from_ptr, int to_ld,
                           elem_size * from_ld, elem_size * rows, cols,
                           direction);
     else
-      cl::sycl::event::wait(detail::dpct_memcpy(
+      sycl::event::wait(detail::dpct_memcpy(
           queue, to_ptr, from_ptr, elem_size * to_ld, elem_size * from_ld,
           elem_size * rows, cols, direction));
   }
@@ -72,7 +72,7 @@ template <typename T>
 inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
                             int from_ld, int rows, int cols,
                             memcpy_direction direction = automatic,
-                            cl::sycl::queue &queue = dpct::get_default_queue(),
+                            sycl::queue &queue = dpct::get_default_queue(),
                             bool async = false) {
   using Ty = typename DataType<T>::T2;
   matrix_mem_copy((void *)to_ptr, (void *)from_ptr, to_ld, from_ld, rows, cols,
@@ -84,8 +84,8 @@ inline void matrix_mem_copy(T *to_ptr, const T *from_ptr, int to_ld,
 /// \param [in] use_high32 Cast the high 32 bits of the double if true;
 /// otherwise cast the low 32 bits.
 inline int cast_double_to_int(double d, bool use_high32 = true) {
-  cl::sycl::vec<double, 1> v0{d};
-  auto v1 = v0.as<cl::sycl::int2>();
+  sycl::vec<double, 1> v0{d};
+  auto v1 = v0.as<sycl::int2>();
   if (use_high32)
     return v1[0];
   return v1[1];
@@ -96,8 +96,8 @@ inline int cast_double_to_int(double d, bool use_high32 = true) {
 /// \param [in] high32 The integer as the high 32 bits
 /// \param [in] low32 The integer as the low 32 bits
 inline double cast_ints_to_double(int high32, int low32) {
-  cl::sycl::int2 v0{high32, low32};
-  auto v1 = v0.as<cl::sycl::vec<double, 1>>();
+  sycl::int2 v0{high32, low32};
+  auto v1 = v0.as<sycl::vec<double, 1>>();
   return v1;
 }
 
@@ -108,20 +108,20 @@ inline double cast_ints_to_double(int high32, int low32) {
 inline float fast_length(const float *a, int len) {
   switch (len) {
   case 1:
-    return cl::sycl::fast_length(a[0]);
+    return sycl::fast_length(a[0]);
   case 2:
-    return cl::sycl::fast_length(cl::sycl::float2(a[0], a[1]));
+    return sycl::fast_length(sycl::float2(a[0], a[1]));
   case 3:
-    return cl::sycl::fast_length(cl::sycl::float3(a[0], a[1], a[2]));
+    return sycl::fast_length(sycl::float3(a[0], a[1], a[2]));
   case 4:
-    return cl::sycl::fast_length(cl::sycl::float4(a[0], a[1], a[2], a[3]));
+    return sycl::fast_length(sycl::float4(a[0], a[1], a[2], a[3]));
   case 0:
     return 0;
   default:
     float f = 0;
     for (int i = 0; i < len; ++i)
       f += a[i] * a[i];
-    return cl::sycl::sqrt(f);
+    return sycl::sqrt(f);
   }
 }
 
@@ -134,11 +134,11 @@ inline float fast_length(const float *a, int len) {
 /// \returns The vectorized max of the two values
 template <typename S, typename T>
 inline T vectorized_max(T a, T b) {
-  cl::sycl::vec<T, 1> v0{a}, v1{b};
+  sycl::vec<T, 1> v0{a}, v1{b};
   auto v2 = v0.template as<S>();
   auto v3 = v1.template as<S>();
-  v2 = cl::sycl::max(v2, v3);
-  v0 = v2.template as<cl::sycl::vec<T, 1>>();
+  v2 = sycl::max(v2, v3);
+  v0 = v2.template as<sycl::vec<T, 1>>();
   return v0;
 }
 
@@ -151,11 +151,11 @@ inline T vectorized_max(T a, T b) {
 /// \returns The vectorized min of the two values
 template <typename S, typename T>
 inline T vectorized_min(T a, T b) {
-  cl::sycl::vec<T, 1> v0{a}, v1{b};
+  sycl::vec<T, 1> v0{a}, v1{b};
   auto v2 = v0.template as<S>();
   auto v3 = v1.template as<S>();
-  v2 = cl::sycl::min(v2, v3);
-  v0 = v2.template as<cl::sycl::vec<T, 1>>();
+  v2 = sycl::min(v2, v3);
+  v0 = v2.template as<sycl::vec<T, 1>>();
   return v0;
 }
 
@@ -168,11 +168,11 @@ inline T vectorized_min(T a, T b) {
 /// \returns The vectorized greater than of the two values
 template <typename S, typename T>
 inline T vectorized_isgreater(T a, T b) {
-  cl::sycl::vec<T, 1> v0{a}, v1{b};
+  sycl::vec<T, 1> v0{a}, v1{b};
   auto v2 = v0.template as<S>();
   auto v3 = v1.template as<S>();
-  auto v4 = cl::sycl::isgreater(v2, v3);
-  v0 = v4.template as<cl::sycl::vec<T, 1>>();
+  auto v4 = sycl::isgreater(v2, v3);
+  v0 = v4.template as<sycl::vec<T, 1>>();
   return v0;
 }
 
@@ -183,14 +183,14 @@ inline T vectorized_isgreater(T a, T b) {
 /// \returns The vectorized greater than of the two values
 template<>
 inline unsigned
-vectorized_isgreater<cl::sycl::ushort2, unsigned>(unsigned a, unsigned b) {
-  cl::sycl::vec<unsigned, 1> v0{a}, v1{b};
-  auto v2 = v0.template as<cl::sycl::ushort2>();
-  auto v3 = v1.template as<cl::sycl::ushort2>();
-  cl::sycl::ushort2 v4;
+vectorized_isgreater<sycl::ushort2, unsigned>(unsigned a, unsigned b) {
+  sycl::vec<unsigned, 1> v0{a}, v1{b};
+  auto v2 = v0.template as<sycl::ushort2>();
+  auto v3 = v1.template as<sycl::ushort2>();
+  sycl::ushort2 v4;
   v4[0] = v2[0] > v3[0];
   v4[1] = v2[1] > v3[1];
-  v0 = v4.template as<cl::sycl::vec<unsigned, 1>>();
+  v0 = v4.template as<sycl::vec<unsigned, 1>>();
   return v0;
 }
 
@@ -391,6 +391,14 @@ sycl::vec<T, 2> conj(sycl::vec<T, 2> x) {
   return sycl::vec<T, 2>(t.real(), t.imag());
 }
 
+inline int get_sycl_language_version() {
+#ifdef SYCL_LANGUAGE_VERSION
+  return SYCL_LANGUAGE_VERSION;
+#else
+  return 202000;
+#endif
+}
+
 namespace experimental {
 /// Synchronize work items from all work groups within a SYCL kernel.
 /// \param [in] item:  Represents a work group.
@@ -401,11 +409,11 @@ namespace experimental {
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <int dimensions = 3>
 inline void
-nd_range_barrier(cl::sycl::nd_item<dimensions> item,
-                 cl::sycl::atomic_ref<
-                     unsigned int, cl::sycl::memory_order::seq_cst,
-                     cl::sycl::memory_scope::device,
-                     cl::sycl::access::address_space::global_space> &counter) {
+nd_range_barrier(sycl::nd_item<dimensions> item,
+                 sycl::atomic_ref<
+                     unsigned int, sycl::memory_order::seq_cst,
+                     sycl::memory_scope::device,
+                     sycl::access::address_space::global_space> &counter) {
 
   static_assert(dimensions == 3, "dimensions must be 3.");
 
@@ -441,11 +449,11 @@ nd_range_barrier(cl::sycl::nd_item<dimensions> item,
 /// a SYCL kernel can be scheduled actively at the same time on a device.
 template <>
 inline void
-nd_range_barrier(cl::sycl::nd_item<1> item,
-                 cl::sycl::atomic_ref<
-                     unsigned int, cl::sycl::memory_order::seq_cst,
-                     cl::sycl::memory_scope::device,
-                     cl::sycl::access::address_space::global_space> &counter) {
+nd_range_barrier(sycl::nd_item<1> item,
+                 sycl::atomic_ref<
+                     unsigned int, sycl::memory_order::seq_cst,
+                     sycl::memory_scope::device,
+                     sycl::access::address_space::global_space> &counter) {
   unsigned int num_groups = item.get_group_range(0);
 
   item.barrier();
@@ -472,8 +480,8 @@ nd_range_barrier(cl::sycl::nd_item<1> item,
 /// Note: Please make sure that the logical-group size is a power of 2 in the
 /// range [1, current_sub_group_size].
 class logical_group {
-  cl::sycl::nd_item<3> _item;
-  cl::sycl::group<3> _g;
+  sycl::nd_item<3> _item;
+  sycl::group<3> _g;
   uint32_t _logical_group_size;
   uint32_t _group_linear_range_in_parent;
 
@@ -482,7 +490,7 @@ public:
   /// \param [in] item Current work-item.
   /// \param [in] parent_group The group to be divided.
   /// \param [in] size The logical-group size.
-  logical_group(cl::sycl::nd_item<3> item, cl::sycl::group<3> parent_group,
+  logical_group(sycl::nd_item<3> item, sycl::group<3> parent_group,
                 uint32_t size)
       : _item(item), _g(parent_group), _logical_group_size(size) {
     _group_linear_range_in_parent =
@@ -517,5 +525,7 @@ public:
 };
 }
 } // namespace dpct
+
+
 
 #endif // __DPCT_UTIL_HPP__

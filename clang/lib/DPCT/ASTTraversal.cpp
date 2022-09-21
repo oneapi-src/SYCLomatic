@@ -2525,131 +2525,6 @@ void insertComplexHeader(SourceLocation SL, std::string &Replacement) {
   }
 }
 
-void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
-                                           const SourceManager *SM,
-                                           bool &SpecialCaseHappened) {
-  Token Tok;
-  Lexer::getRawToken(DD->getBeginLoc(), Tok, *SM, LangOptions());
-  auto Tok2Ptr = Lexer::findNextToken(DD->getBeginLoc(), *SM, LangOptions());
-  llvm::Optional<Token> TokAfterTypePtr;
-  Token TokAfterType;
-  // Distinguish between variable decls and just types (e.g. in function
-  // signatures). If the next token of the tye is comma or r_paren, it is
-  // just a name.
-  // It matters for migration of cudaStream_t.
-  bool IsTokenAfterTypeCommaRParenOrRef = false;
-
-  if (Tok2Ptr.hasValue()) {
-    auto Tok2 = Tok2Ptr.getValue();
-    SourceLocation InsertLoc;
-    auto PointerType = deducePointerType(DD, "CUstream_st");
-    std::string TypeStr = Tok.getRawIdentifier().str();
-    if (Tok.getKind() == tok::raw_identifier && TypeStr == "cudaStream_t") {
-      SpecialCaseHappened = true;
-      SrcAPIStaticsMap[TypeStr]++;
-      // cudaStream_t const
-      if (Tok2.getKind() == tok::raw_identifier &&
-          Tok2.getRawIdentifier() == "const") {
-        TokAfterTypePtr =
-            Lexer::findNextToken(Tok2.getLocation(), *SM, LangOptions());
-        if (TokAfterTypePtr.hasValue()) {
-          TokAfterType = TokAfterTypePtr.getValue();
-          if (TokAfterType.getKind() == tok::comma ||
-              TokAfterType.getKind() == tok::r_paren ||
-              TokAfterType.getKind() == tok::amp)
-            IsTokenAfterTypeCommaRParenOrRef = true;
-        }
-        if (IsTokenAfterTypeCommaRParenOrRef) {
-          emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
-          std::string T{MapNames::getClNamespace() + "queue "};
-          T += PointerType;
-          emplaceTransformation(
-              new ReplaceToken(Tok2.getLocation(), std::move(T)));
-        } else {
-          emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
-          emplaceTransformation(new ReplaceToken(
-              Tok2.getLocation(), MapNames::getClNamespace() + "queue"));
-          InsertLoc = Tok2.getEndLoc().getLocWithOffset(1);
-          emplaceTransformation(
-              new InsertText(InsertLoc, std::move(PointerType)));
-        }
-      }
-      // cudaStream_t
-      else {
-        TokAfterTypePtr =
-            Lexer::findNextToken(Tok.getLocation(), *SM, LangOptions());
-        if (TokAfterTypePtr.hasValue()) {
-          TokAfterType = TokAfterTypePtr.getValue();
-          if (TokAfterType.getKind() == tok::comma ||
-              TokAfterType.getKind() == tok::r_paren ||
-              TokAfterType.getKind() == tok::amp)
-            IsTokenAfterTypeCommaRParenOrRef = true;
-        }
-        if (IsTokenAfterTypeCommaRParenOrRef) {
-          std::string T{MapNames::getClNamespace() + "queue "};
-          T += PointerType;
-          emplaceTransformation(
-              new ReplaceToken(Tok.getLocation(), std::move(T)));
-        } else {
-          emplaceTransformation(new ReplaceToken(
-              Tok.getLocation(), MapNames::getClNamespace() + "queue"));
-          InsertLoc = Tok.getEndLoc().getLocWithOffset(1);
-          emplaceTransformation(
-              new InsertText(InsertLoc, std::move(PointerType)));
-        }
-      }
-    } else if (Tok.getKind() == tok::raw_identifier &&
-               Tok.getRawIdentifier() == "const") {
-
-      // const cudaStream_t
-      TypeStr = Tok2.getRawIdentifier().str();
-      if (Tok.getKind() == tok::raw_identifier && TypeStr == "cudaStream_t") {
-        SpecialCaseHappened = true;
-        SrcAPIStaticsMap[TypeStr]++;
-        TokAfterTypePtr =
-            Lexer::findNextToken(Tok2.getLocation(), *SM, LangOptions());
-        if (TokAfterTypePtr.hasValue()) {
-          TokAfterType = TokAfterTypePtr.getValue();
-          if (TokAfterType.getKind() == tok::comma ||
-              TokAfterType.getKind() == tok::r_paren ||
-              TokAfterType.getKind() == tok::amp)
-            IsTokenAfterTypeCommaRParenOrRef = true;
-        }
-        if (IsTokenAfterTypeCommaRParenOrRef) {
-          emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
-          std::string T{MapNames::getClNamespace() + "queue "};
-          T += PointerType;
-          emplaceTransformation(
-              new ReplaceToken(Tok2.getLocation(), std::move(T)));
-        } else {
-          emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
-          emplaceTransformation(new ReplaceToken(
-              Tok2.getLocation(), MapNames::getClNamespace() + "queue"));
-          InsertLoc = Tok2.getEndLoc().getLocWithOffset(1);
-          emplaceTransformation(
-              new InsertText(InsertLoc, std::move(PointerType)));
-        }
-      }
-    }
-  }
-  auto SD = getSiblingDecls(DD);
-  for (auto It = SD.begin(); It != SD.end(); ++It) {
-    auto DD2 = *It;
-    auto L2 = DD2->getLocation();
-    auto P = SM->getCharacterData(L2);
-    // Find the first non-space char after previous semicolon
-    while (*P != ',')
-      --P;
-    ++P;
-    while (isspace(*P))
-      ++P;
-    // Insert "*" or "*const" right before it
-    auto InsertLoc = L2.getLocWithOffset(P - SM->getCharacterData(L2));
-    auto PointerType = deducePointerType(DD2, "CUstream_st");
-    emplaceTransformation(new InsertText(InsertLoc, std::move(PointerType)));
-  }
-}
-
 bool TypeInDeclRule::replaceTemplateSpecialization(
     SourceManager *SM, LangOptions &LOpts, SourceLocation BeginLoc,
     const TemplateSpecializationTypeLoc TSL) {
@@ -3296,38 +3171,8 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         Init = FieldD->getInClassInitializer();
     }
 
-    auto IsTypeInInitializer = [&]() -> bool {
-      if (!Init)
-        return false;
-      if (TL->getBeginLoc() >= Init->getBeginLoc() &&
-          TL->getEndLoc() <= Init->getEndLoc())
-        return true;
-      return false;
-    };
-
-    bool SpecialCaseHappened = false;
-    if (DD && !IsTypeInInitializer()) {
-      if (TL->getType().getAsString().find("cudaStream_t") !=
-          std::string::npos) {
-        processCudaStreamType(DD, SM, SpecialCaseHappened);
-      }
-    }
-    if (!Str.empty() && !SpecialCaseHappened) {
+    if (!Str.empty()) {
       SrcAPIStaticsMap[TypeStr]++;
-
-      /// Process code like:
-      /// \code
-      ///   vector.push_back(cudaStream_t());
-      ///   cudaStream_t s = cudaStream_t();
-      /// \endcode
-      if (TL->getType().getAsString() == "cudaStream_t" ||
-          TL->getType().getAsString() == "CUstream") {
-        if (auto CSVIE =
-                DpctGlobalInfo::findParent<CXXScalarValueInitExpr>(TL)) {
-          emplaceTransformation(new ReplaceStmt(CSVIE, "nullptr"));
-          return;
-        }
-      }
 
       auto Len = Lexer::MeasureTokenLength(
           EndLoc, *SM, DpctGlobalInfo::getContext().getLangOpts());
@@ -5527,7 +5372,8 @@ void DeviceRandomFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "curand_log_normal4", "curand_log_normal_double", "curand_uniform",
         "curand_uniform2_double", "curand_uniform4", "curand_uniform_double",
         "curand_poisson", "curand_poisson4", "skipahead", "skipahead_sequence",
-        "skipahead_subsequence");
+        "skipahead_subsequence", "curand_uniform4_double", "curand_normal4_double",
+        "curand_log_normal4_double");
   };
   MF.addMatcher(
       callExpr(callee(functionDecl(functionName()))).bind("FunctionCall"),
@@ -9670,7 +9516,7 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       } else {
         StmtStr0 = getStmtSpelling(CE->getArg(0)) + "->";
       }
-      ReplStr = StmtStr1 + " = " + StmtStr0 + "ext_oneapi_submit_barrier({" +
+      ReplStr = StmtStr0 + "ext_oneapi_submit_barrier({" +
                 StmtStr1 + "})";
     }
     if (IsAssigned) {
@@ -9752,9 +9598,9 @@ void KernelCallRule::runRule(
 
     // Add kernel call to map,
     // will do code generation in Global.buildReplacements();
-    if (!FD->isTemplateInstantiation())
+    if (!FD->isTemplateInstantiation()){
       DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
-
+    }
     const CallExpr *Config = KCall->getConfig();
     if (Config) {
       if (Config->getNumArgs() > 2) {
@@ -9812,7 +9658,7 @@ void KernelCallRule::removeTrailingSemicolon(
     const CallExpr *KCall,
     const ast_matchers::MatchFinder::MatchResult &Result) {
   const auto &SM = (*Result.Context).getSourceManager();
-  auto KELoc = getStmtExpansionSourceRange(KCall).getEnd();
+  auto KELoc = getTheLastCompleteImmediateRange(KCall->getBeginLoc(), KCall->getEndLoc()).second;
   auto Tok = Lexer::findNextToken(KELoc, SM, LangOptions()).getValue();
   if (Tok.is(tok::TokenKind::semi))
     emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
@@ -10414,8 +10260,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
 
     auto Var = Global.findMemVarInfo(VD);
-    if (Func->hasAttr<CUDAGlobalAttr>() ||
-        (Func->hasAttr<CUDADeviceAttr>() && !Func->hasAttr<CUDAHostAttr>())) {
+    if (Func->hasAttr<CUDAGlobalAttr>() || Func->hasAttr<CUDADeviceAttr>()) {
       if (DpctGlobalInfo::useGroupLocalMemory() &&
           VD->hasAttr<CUDASharedAttr>() && VD->getStorageClass() != SC_Extern) {
         if (!Var)
@@ -11039,6 +10884,12 @@ void MemoryMigrationRule::memcpyMigration(
       handleDirection(C, 3);
     }
     std::string AsyncQueue;
+    bool NeedTypeCast = false;
+
+    if (C->getNumArgs() > 4 && !C->getArg(4)->isDefaultArgument())
+      if (auto ICE = dyn_cast<ImplicitCastExpr>(C->getArg(4)))
+        NeedTypeCast = ICE->getCastKind() != clang::CK_LValueToRValue;
+
     size_t QueueIndex = NameRef.compare("cudaMemcpy") ? 3 : 4;
     if (C->getNumArgs() > QueueIndex &&
         !C->getArg(QueueIndex)->isDefaultArgument()) {
@@ -11067,6 +10918,9 @@ void MemoryMigrationRule::memcpyMigration(
         buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
         ReplaceStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memcpy";
       } else {
+        if (NeedTypeCast)
+          AsyncQueue = buildString("((sycl::queue *)(", AsyncQueue, "))");
+
         ReplaceStr = AsyncQueue + "->memcpy";
       }
     } else {
@@ -11363,6 +11217,9 @@ void MemoryMigrationRule::freeMigration(const MatchFinder::MatchResult &Result,
                     AA.getRewritePostfix();
       std::ostringstream Repl;
       buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+      if (hasManagedAttr(0)(C)) {
+          ArgStr = "*(" + ArgStr + ".get_ptr())";
+      }
       Repl << MapNames::getClNamespace() + "free(" << ArgStr
            << ", {{NEEDREPLACEQ" + std::to_string(Index) + "}})";
       emplaceTransformation(new ReplaceStmt(C, std::move(Repl.str())));
@@ -11423,7 +11280,11 @@ void MemoryMigrationRule::memsetMigration(
     handleAsync(C, 3, Result);
   } else if (NameRef == "cudaMemset") {
     std::string AsyncQueue;
+    bool NeedTypeCast = false;
     if (C->getNumArgs() > 3 && !C->getArg(3)->isDefaultArgument()) {
+      if (auto ICE = dyn_cast<ImplicitCastExpr>(C->getArg(3)))
+        NeedTypeCast = ICE->getCastKind() != clang::CK_LValueToRValue;
+
       if (!isPredefinedStreamHandle(C->getArg(3)))
         AsyncQueue = ExprAnalysis::ref(C->getArg(3));
     }
@@ -11441,6 +11302,9 @@ void MemoryMigrationRule::memsetMigration(
         buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
         ReplaceStr = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.memset";
       } else {
+        if (NeedTypeCast)
+          AsyncQueue = buildString("((sycl::queue *)(", AsyncQueue, "))");
+
         ReplaceStr = AsyncQueue + "->memset";
       }
     } else {
@@ -13762,6 +13626,11 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
       "cuTexRefSetAddressMode",
       "cuTexRefSetFilterMode",
       "cuTexRefSetFlags",
+      "cuTexRefGetAddressMode",
+      "cuTexRefGetFilterMode",
+      "cuTexRefGetFlags",
+      "cuTexRefSetAddress_v2",
+      "cuTexRefSetAddress2D_v3",
   };
 
   auto hasAnyFuncName = [&]() {
@@ -15378,7 +15247,8 @@ void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
     return hasAnyName(
         "cuInit", "cuCtxCreate_v2", "cuCtxSetCurrent", "cuCtxGetCurrent",
         "cuCtxSynchronize", "cuCtxDestroy_v2", "cuDevicePrimaryCtxRetain",
-        "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease");
+        "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease",
+        "cuCtxGetDevice", "cuCtxGetApiVersion");
   };
 
   MF.addMatcher(

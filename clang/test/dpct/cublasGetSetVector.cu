@@ -17,7 +17,7 @@ int main() {
   float *d_C;
   float *h_A;
   float *d_A;
-  // CHECK: sycl::queue *stream;
+  // CHECK: dpct::queue_ptr stream;
   cudaStream_t stream;
 
   // CHECK: /*

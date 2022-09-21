@@ -4,7 +4,7 @@ Replacements:
   - FilePath:        '/home/testfolder/test.cu'
     Offset:          0
     Length:          26
-    ReplacementText: "#include <CL/sycl.hpp>\n#include <dpct/dpct.hpp>\n"
+    ReplacementText: "#include <sycl/sycl.hpp>\n#include <dpct/dpct.hpp>\n"
     ConstantFlag:    ''
     ConstantOffset:  0
     InitStr:         ''

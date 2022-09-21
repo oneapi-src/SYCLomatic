@@ -2,7 +2,7 @@
 // RUN: FileCheck --input-file %T/fill/fill.dp.cpp --match-full-lines %s
 
 // CHECK: #include <dpct/dnnl_utils.hpp>
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>
 // CHECK: #include <iostream>
 // CHECK: #include <vector>

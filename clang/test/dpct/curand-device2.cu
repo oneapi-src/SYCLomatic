@@ -12,6 +12,7 @@ __global__ void kernel1() {
   float4 f4;
   double d;
   double2 d2;
+  double4 d4;
 
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> rng1;
   //CHECK-NEXT:rng1 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>(1, {3, 2 * 4});
@@ -138,6 +139,27 @@ __global__ void kernel1() {
   curandStatePhilox4_32_10_t rng18;
   curand_init(1, 2, 3, &rng18);
   u4 = curand_poisson4(&rng18, 3);
+
+  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> rng19;
+  //CHECK-NEXT:rng19 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>(1, {3, 2 * 4});
+  //CHECK-NEXT:d4 = rng19.generate<oneapi::mkl::rng::device::uniform<double>, 4>();
+  curandStatePhilox4_32_10_t rng19;
+  curand_init(1, 2, 3, &rng19);
+  d4 = curand_uniform4_double(&rng19);
+
+  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> rng20;
+  //CHECK-NEXT:rng20 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>(1, {3, 2 * 4});
+  //CHECK-NEXT:d4 = rng20.generate<oneapi::mkl::rng::device::gaussian<double>, 4>();
+  curandStatePhilox4_32_10_t rng20;
+  curand_init(1, 2, 3, &rng20);
+  d4 = curand_normal4_double(&rng20);
+
+  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> rng21;
+  //CHECK-NEXT:rng21 = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>(1, {3, 2 * 4});
+  //CHECK-NEXT:d4 = rng21.generate<oneapi::mkl::rng::device::lognormal<double>, 4>(3, 7);
+  curandStatePhilox4_32_10_t rng21;
+  curand_init(1, 2, 3, &rng21);
+  d4 = curand_log_normal4_double(&rng21, 3, 7);
 }
 
 __global__ void kernel2() {

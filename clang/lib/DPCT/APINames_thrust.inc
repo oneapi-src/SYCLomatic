@@ -181,7 +181,7 @@ ENTRY(thrust::uninitialized_copy_n, thrust::uninitialized_copy_n, false, NO_FLAG
 ENTRY(thrust::uninitialized_fill, thrust::uninitialized_fill, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::uninitialized_fill_n, thrust::uninitialized_fill_n, false, NO_FLAG, P4, "comment")
 ENTRY(thrust::unique, thrust::unique, true, NO_FLAG, P4, "Successful")
-ENTRY(thrust::unique_by_key, thrust::unique_by_key, false, NO_FLAG, P4, "comment")
+ENTRY(thrust::unique_by_key, thrust::unique_by_key, true, NO_FLAG, P4, "comment")
 ENTRY(thrust::unique_by_key_copy, thrust::unique_by_key_copy, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::unique_copy, thrust::unique_copy, false, NO_FLAG, P4, "comment")
 ENTRY(thrust::upper_bound, thrust::upper_bound, true, NO_FLAG, P4, "Successful")

@@ -1,7 +1,7 @@
 // RUN: dpct --format-range=none -out-root %T/cuda_typecast %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/cuda_typecast/cuda_typecast.dp.cpp
 
-// CHECK:#include <CL/sycl.hpp>
+// CHECK:#include <sycl/sycl.hpp>
 // CHECK-NEXT:#include <dpct/dpct.hpp>
 #include "cuda_fp16.h"
 

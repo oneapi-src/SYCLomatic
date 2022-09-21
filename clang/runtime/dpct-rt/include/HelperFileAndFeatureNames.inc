@@ -278,6 +278,7 @@ HELPER_FEATURE_MAP_TO_APINAME(Device, "dev_mgr_2", "dev_mgr")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "dev_mgr_3", "dev_mgr")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "dev_mgr_check_id", "dev_mgr::check_id")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "dev_mgr_4", "dev_mgr")
+HELPER_FEATURE_MAP_TO_APINAME(Device, "typedef_queue_ptr", "queue_ptr")
 
 // dpl_extras/iterators.h
 // features

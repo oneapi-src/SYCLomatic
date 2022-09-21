@@ -9,7 +9,7 @@
 #ifndef __DPCT_CCL_UTILS_HPP__
 #define __DPCT_CCL_UTILS_HPP__
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <oneapi/ccl.hpp>
 #include <unordered_map>
 #include <memory>

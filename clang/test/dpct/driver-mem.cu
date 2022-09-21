@@ -27,7 +27,7 @@ int main(){
     // CHECK: f_D = (char *)sycl::malloc_device(size, q_ct1);
     cuMemAlloc(&f_D, size);
 
-    // CHECK: sycl::queue * stream;
+    // CHECK: dpct::queue_ptr stream;
     CUstream stream;
     // CHECK: stream->memcpy(f_D, f_A, size);
     cuMemcpyHtoDAsync(f_D, f_A, size, stream);

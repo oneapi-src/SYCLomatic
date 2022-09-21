@@ -9,6 +9,19 @@ Use c2s command to make it as easy as possible to migrate existing CUDA codebase
 
 The SYCLomatic development branch is the SYCLomatic branch.
 
+## Releases
+
+Daily builds of the SYCLomatic branch on Linux and Windows* are available at
+[releases](/../../releases).
+A few times a year, we publish Release Notes to
+highlight all important changes made in the project: features implemented and
+issues addressed. The corresponding builds can be found using
+[search](https://github.com/oneapi-src/SYCLomatic/releases)
+in daily releases. None of the branches in the project are stable or rigorously
+tested for production quality control, so the quality of these releases is
+expected to be similar to the daily releases.
+
+
 ## Useful Links
 * [SYCLomatic getting started](GetStartedGuide.md)
 * More information about how to use SYCLomatic can be found in Intel(R) DPC++ Compatibility Tool documentation, which is the Intel product version of SYCLomatic:

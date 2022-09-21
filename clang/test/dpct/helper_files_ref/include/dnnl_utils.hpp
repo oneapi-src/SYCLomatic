@@ -12,7 +12,7 @@
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <oneapi/dnnl/dnnl.hpp>
 #include <oneapi/dnnl/dnnl_sycl.hpp>
 #include <unordered_map>

@@ -547,13 +547,13 @@ __global__ void templatefoo(){
   int y = b;
 }
 //CHECK: #define AAA 15 + 3
-//CHECK-NEXT: #define CCC <<<1,1>>>()
+//CHECK-NEXT: #define CCC <<<sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)>>>()
 //CHECK-NEXT: #define KERNEL(A, B)                                                           \
 //CHECK-NEXT:   dpct::get_default_queue().parallel_for(                                      \
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),   \
 //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { templatefoo<A, B>(); });
 //CHECK-NEXT: #define CALL_KERNEL(C, D) KERNEL(C, D); int a = 0;
-//CHECK-NEXT: #define CALL_KERNEL2(E, F) sycl::range<3>(1, 1, 1)
+//CHECK-NEXT: #define CALL_KERNEL2(E, F) CALL_KERNEL(E, F)
 //CHECK-NEXT: void templatefoo2(){
 //CHECK-NEXT:   CALL_KERNEL2(8, AAA)
 //CHECK-NEXT: }
@@ -812,7 +812,7 @@ void foo17(){
 }
 
 //CHECK: #define CONCATE(name) cuda##name
-//CHECK-NEXT: typedef sycl::queue *stream_t2;
+//CHECK-NEXT: typedef dpct::queue_ptr stream_t2;
 //CHECK-NEXT: typedef dpct::event_ptr event_t2;
 #define CONCATE(name) cuda##name
 typedef CONCATE(Stream_t) stream_t2;

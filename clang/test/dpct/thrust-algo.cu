@@ -266,4 +266,42 @@ void foo(cudaStream_t stream) {
   thrust::reduce_by_key(d.begin(), d.end(), d.begin(), d.end(), d.begin(), bp);
   thrust::reduce_by_key(h.begin(), h.end(), h.begin(), h.end(), h.begin());
   thrust::reduce_by_key(d.begin(), d.end(), d.begin(), d.end(), d.begin());
+
+  {
+    //CHECK:std::vector<int> h_keys,h_values;
+    //CHECK-NEXT:dpct::device_vector<int> d_keys, d_values;
+    //CHECK-NEXT:oneapi::dpl::equal_to<int> binary_pred;
+    thrust::host_vector<int> h_keys,h_values;
+    thrust::device_vector<int> d_keys, d_values;
+    thrust::equal_to<int> binary_pred;
+    const int N = 7;
+    int A[N]; // keys
+    int B[N]; // values
+
+    //CHECK:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
+    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
+    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), binary_pred);
+    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), binary_pred);
+    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin());
+    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin());
+    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
+    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
+    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
+    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
+    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
+    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
+    thrust::unique_by_key(thrust::host, h_keys.begin(), h_keys.end(), h_values.begin());
+    thrust::unique_by_key(h_keys.begin(), h_keys.end(), h_values.begin());
+    thrust::unique_by_key(thrust::host, h_keys.begin(), h_keys.end(),h_values.begin(), binary_pred);
+    thrust::unique_by_key(h_keys.begin(), h_keys.end(),h_values.begin(), binary_pred);
+    thrust::unique_by_key(thrust::device, d_keys.begin(), d_keys.end(), d_values.begin());
+    thrust::unique_by_key(d_keys.begin(), d_keys.end(), d_values.begin());
+    thrust::unique_by_key(thrust::device, d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
+    thrust::unique_by_key(d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
+    thrust::unique_by_key(thrust::host, A, A + N, B);
+    thrust::unique_by_key(A, A + N, B);
+    thrust::unique_by_key(thrust::host, A, A + N, B, binary_pred);
+    thrust::unique_by_key(A, A + N, B, binary_pred);
+
+  }
 }

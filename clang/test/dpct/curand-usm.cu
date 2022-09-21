@@ -1,6 +1,6 @@
 //RUN: dpct -out-root %T/curand-usm %s --format-range=none --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 //RUN: FileCheck --input-file %T/curand-usm/curand-usm.dp.cpp --match-full-lines %s
-//CHECK:#include <CL/sycl.hpp>
+//CHECK:#include <sycl/sycl.hpp>
 //CHECK:#include <dpct/dpct.hpp>
 //CHECK:#include <oneapi/mkl.hpp>
 #include <cuda.h>
@@ -129,7 +129,7 @@ int main(){
   curandDestroyGenerator(rng);
   s1 = curandDestroyGenerator(rng);
 
-  //CHECK: sycl::queue *stream;
+  //CHECK: dpct::queue_ptr stream;
   //CHECK-NEXT: rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(*stream, 1337ull);
   cudaStream_t stream;
   curandSetStream(rng, stream);

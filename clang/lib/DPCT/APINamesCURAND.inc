@@ -151,6 +151,11 @@ FEATURE_REQUEST_FACTORY(
     MEMBER_CALL_FACTORY_ENTRY("curand_normal_double",
                               DEREF(makeDerefArgCreatorWithCall(0)), false,
                               "generate<oneapi::mkl::rng::device::gaussian<double>, 1>"))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::RngUtils_rng_generator_generate,
+    MEMBER_CALL_FACTORY_ENTRY("curand_normal4_double",
+                              DEREF(makeDerefArgCreatorWithCall(0)), false,
+                              "generate<oneapi::mkl::rng::device::gaussian<double>, 4>"))
 // lognormal
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
@@ -177,6 +182,11 @@ FEATURE_REQUEST_FACTORY(
     MEMBER_CALL_FACTORY_ENTRY("curand_log_normal_double",
                               DEREF(makeDerefArgCreatorWithCall(0)), false,
                               "generate<oneapi::mkl::rng::device::lognormal<double>, 1>", ARG(1), ARG(2)))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::RngUtils_rng_generator_generate,
+    MEMBER_CALL_FACTORY_ENTRY("curand_log_normal4_double",
+                              DEREF(makeDerefArgCreatorWithCall(0)), false,
+                              "generate<oneapi::mkl::rng::device::lognormal<double>, 4>", ARG(1), ARG(2)))
 // uniform
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,
@@ -198,6 +208,11 @@ FEATURE_REQUEST_FACTORY(
     MEMBER_CALL_FACTORY_ENTRY("curand_uniform_double",
                               DEREF(makeDerefArgCreatorWithCall(0)), false,
                               "generate<oneapi::mkl::rng::device::uniform<double>, 1>"))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::RngUtils_rng_generator_generate,
+    MEMBER_CALL_FACTORY_ENTRY("curand_uniform4_double",
+                              DEREF(makeDerefArgCreatorWithCall(0)), false,
+                              "generate<oneapi::mkl::rng::device::uniform<double>, 4>"))
 // Poisson
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::RngUtils_rng_generator_generate,

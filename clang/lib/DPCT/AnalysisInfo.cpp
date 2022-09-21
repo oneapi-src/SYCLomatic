@@ -596,7 +596,7 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
     switch (Type) {
     case HT_SYCL:
       return insertHeader(HeaderType::HT_SYCL, FirstIncludeOffset,
-                          "<CL/sycl.hpp>",
+                          "<sycl/sycl.hpp>",
                           "<" + getCustomMainHelperFileName() + "/" +
                               getCustomMainHelperFileName() + ".hpp>");
     case HT_Math:
@@ -663,6 +663,30 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
       return insertHeader(HeaderType::HT_STD_Numeric_Limits, LastIncludeOffset,
                           "<limits>");
     case HT_DPL_Utils:
+      // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
+      // <oneapi/dpl/algorithm>, so we have to make sure that
+      // <oneapi/dpl/execution> and <oneapi/dpl/algorithm> are inserted before
+      // <CL/sycl.hpp>
+      // e.g.
+      // #include <CL/sycl.hpp>
+      // #include <dpct/dpct.hpp>
+      // #include <dpct/dpl_utils.hpp>
+      // ...
+      // This will cause compilation error due to onedpl header dependence
+      // The order we expect is:
+      // e.g.
+      // #include <oneapi/dpl/execution>
+      // #include <oneapi/dpl/algorithm>
+      // #include <CL/sycl.hpp>
+      // #include <dpct/dpct.hpp>
+      // #include <dpct/dpl_utils.hpp>
+      //
+      // We will insert <oneapi/dpl/execution> and <oneapi/dpl/algorithm> at the
+      // begining of the main file
+      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+          HT_DPL_Execution);
+      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+            HT_DPL_Algorithm);
       return insertHeader(HeaderType::HT_DPL_Utils, LastIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
                               "/dpl_utils.hpp>");
@@ -682,12 +706,16 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
                           "<" + getCustomMainHelperFileName() +
                               "/atomic.hpp>");
     case HT_DPL_Algorithm:
+      // Make sure <oneapi/dpl/algorithm> int the front of <CL/sycl.hpp>, also
+      // when crossing files
       if (this != DpctGlobalInfo::getInstance().getMainFile().get())
         return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
             HT_DPL_Algorithm);
       return insertHeader(HeaderType::HT_DPL_Algorithm, FirstIncludeOffset,
                           "<oneapi/dpl/algorithm>");
     case HT_DPL_Execution:
+      // Make sure <oneapi/dpl/execution> int the front of <CL/sycl.hpp>, also
+      // when crossing files
       if (this != DpctGlobalInfo::getInstance().getMainFile().get())
         return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
             HT_DPL_Execution);
@@ -853,6 +881,9 @@ void KernelCallExpr::buildLocationInfo(const CallExpr *KernelCall) {
   LocInfo.NL = getNL();
   LocInfo.Indent = getIndent(Begin, SM).str();
   LocInfo.LocHash = getHashAsString(Begin.printToString(SM)).substr(0, 6);
+  if (IsInMacroDefine) {
+    LocInfo.NL = "\\" + LocInfo.NL;
+  }
 }
 
 void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
@@ -884,10 +915,6 @@ void KernelCallExpr::addAccessorDecl() {
   }
   addAccessorDecl(MemVarInfo::Local);
   addAccessorDecl(MemVarInfo::Global);
-  for (auto &Tex : VM.getTextureMap()) {
-    SubmitStmtsList.TextureList.emplace_back(Tex.second->getAccessorDecl());
-    SubmitStmtsList.SamplerList.emplace_back(Tex.second->getSamplerDecl());
-  }
   for (auto &Tex : getTextureObjectList()) {
     if (Tex) {
       if (!Tex->getType()) {
@@ -897,9 +924,11 @@ void KernelCallExpr::addAccessorDecl() {
                                  Diagnostics::UNDEDUCED_TYPE, true, false,
                                  "image_accessor_ext");
       }
-      SubmitStmtsList.TextureList.emplace_back(Tex->getAccessorDecl());
-      SubmitStmtsList.SamplerList.emplace_back(Tex->getSamplerDecl());
+      Tex->addDecl(SubmitStmtsList.TextureList, SubmitStmtsList.SamplerList);
     }
+  }
+  for (auto& Tex : VM.getTextureMap()) {
+    Tex.second->addDecl(SubmitStmtsList.TextureList, SubmitStmtsList.SamplerList);
   }
 }
 
@@ -958,7 +987,6 @@ void KernelCallExpr::buildKernelArgsStmt() {
     }
     if (ArgCounter != 0)
       KernelArgs += ", ";
-
     if (Arg.IsDoublePointer) {
       DiagnosticsUtils::report(getFilePath(), getBegin(),
                                Diagnostics::VIRTUAL_POINTER, true, false,
@@ -1312,9 +1340,6 @@ std::string KernelCallExpr::getReplacement() {
   addStreamDecl();
   buildKernelArgsStmt();
 
-  if (IsInMacroDefine) {
-    LocInfo.NL = "\\" + LocInfo.NL;
-  }
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   KernelPrinter Printer(LocInfo.NL, LocInfo.Indent, OS);
@@ -1471,6 +1496,14 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   auto CallBegin = KernelCall->getBeginLoc();
   auto CallEnd = KernelCall->getEndLoc();
 
+  auto Range = getDefinitionRange(KernelCall->getBeginLoc(), KernelCall->getEndLoc());
+  auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      getCombinedStrFromLoc(Range.getBegin()));
+  if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+    IsInMacroDefine = true;
+    return;
+  }
+
   if (SM.isMacroArgExpansion(CallBegin) && SM.isMacroArgExpansion(CallEnd) &&
       isLocInSameMacroArg(CallBegin, CallEnd)) {
     IsInMacroDefine = false;
@@ -1483,7 +1516,7 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   }
   CalleeSpelling = SM.getSpellingLoc(CalleeSpelling);
 
-  auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+  ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
       getCombinedStrFromLoc(CalleeSpelling));
   if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     IsInMacroDefine = true;
@@ -1957,8 +1990,11 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
 
 void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
   if (FuncInfo && Info && (FuncInfo != Info)) {
-    DiagnosticsUtils::report(getFilePath(), getBegin(),
-                             Warnings::DEVICE_CALL_DIFFERENT, true, false);
+    if (!FuncInfo->getVarMap().isSameAs(Info->getVarMap())) {
+      DiagnosticsUtils::report(getFilePath(), getBegin(),
+                               Warnings::DEVICE_CALL_DIFFERENT, true, false,
+                               FuncInfo->getFunctionName());
+    }
   }
   FuncInfo = Info;
 }
@@ -1991,6 +2027,8 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
 SourceLocation getActualInsertLocation(SourceLocation InsertLoc,
                                        const SourceManager &SM,
                                        const LangOptions &LO);
+
+
 void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
   if (!Ctor)
     return;
@@ -2079,22 +2117,46 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
       }
     }
   }
+
+}
+
+template <class TargetType>
+std::shared_ptr<TargetType> makeTextureObjectInfo(const ValueDecl *D,
+                                                  bool IsKernelCall) {
+  if (IsKernelCall) {
+    if (auto VD = dyn_cast<VarDecl>(D)) {
+      return std::make_shared<TargetType>(VD);
+    }
+  } else if (auto PVD = dyn_cast<ParmVarDecl>(D)) {
+    return std::make_shared<TargetType>(PVD);
+  }
+  return std::shared_ptr<TargetType>();
 }
 
 std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
     unsigned ArgIdx, const DeclRefExpr *TexRef, bool isKernelCall) {
+  std::shared_ptr<TextureObjectInfo> Info;
   if (TextureObjectInfo::isTextureObject(TexRef)) {
-    if (isKernelCall) {
-      if (auto VD = dyn_cast<VarDecl>(TexRef->getDecl())) {
-        return addTextureObjectArgInfo(ArgIdx,
-                                       std::make_shared<TextureObjectInfo>(VD));
-      }
-    } else if (auto PVD = dyn_cast<ParmVarDecl>(TexRef->getDecl())) {
-      return addTextureObjectArgInfo(ArgIdx,
-                                     std::make_shared<TextureObjectInfo>(PVD));
+    Info = makeTextureObjectInfo<TextureObjectInfo>(TexRef->getDecl(), isKernelCall);
+  } else if (TexRef->getType()->isRecordType()) {
+    Info = makeTextureObjectInfo<StructureTextureObjectInfo>(TexRef->getDecl(), isKernelCall);
+  }
+  if (Info)
+    return addTextureObjectArgInfo(ArgIdx, Info);
+  return Info;
+}
+
+std::shared_ptr<TextureObjectInfo>
+CallFunctionExpr::addStructureTextureObjectArg(unsigned ArgIdx,
+                                               const MemberExpr *TexRef,
+                                               bool isKernelCall) {
+  if (auto DRE = dyn_cast<DeclRefExpr>(TexRef->getBase())) {
+    if (auto Info = std::dynamic_pointer_cast<StructureTextureObjectInfo>(
+      addTextureObjectArg(ArgIdx, DRE, isKernelCall))) {
+      return Info->addMember(TexRef);
     }
   }
-  return std::shared_ptr<TextureObjectInfo>();
+  return {};
 }
 
 std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
@@ -2118,10 +2180,10 @@ std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
   return std::shared_ptr<TextureObjectInfo>();
 }
 
-void CallFunctionExpr::mergeTextureObjectTypeInfo() {
+void CallFunctionExpr::mergeTextureObjectInfo() {
   for (unsigned Idx = 0; Idx < TextureObjectList.size(); ++Idx) {
     if (auto &Obj = TextureObjectList[Idx]) {
-      Obj->setType(FuncInfo->getTextureTypeInfo(Idx));
+      Obj->merge(FuncInfo->getTextureObject(Idx));
     }
   }
 }
@@ -2145,7 +2207,7 @@ void CallFunctionExpr::buildInfo() {
 
   FuncInfo->buildInfo();
   VarMap.merge(FuncInfo->getVarMap(), TemplateArgs);
-  mergeTextureObjectTypeInfo();
+  mergeTextureObjectInfo();
 }
 
 void CallFunctionExpr::emplaceReplacement() {
@@ -2245,28 +2307,32 @@ void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
     return;
   VarMap.merge(Other->getVarMap());
   dpct::merge(CallExprMap, Other->CallExprMap);
-  mergeTextureTypeList(Other->TextureObjectTypeList);
+  mergeTextureObjectList(Other->TextureObjectList);
 }
 
-void DeviceFunctionInfo::mergeTextureTypeList(
-    const std::vector<std::shared_ptr<TextureTypeInfo>> &Other) {
-  auto SelfItr = TextureObjectTypeList.begin();
+void DeviceFunctionInfo::mergeTextureObjectList(
+    const std::vector<std::shared_ptr<TextureObjectInfo>> &Other) {
+  auto SelfItr = TextureObjectList.begin();
   auto BranchItr = Other.begin();
-  while ((SelfItr != TextureObjectTypeList.end()) &&
+  while ((SelfItr != TextureObjectList.end()) &&
          (BranchItr != Other.end())) {
     if (!(*SelfItr))
       *SelfItr = *BranchItr;
     ++SelfItr;
     ++BranchItr;
   }
-  TextureObjectTypeList.insert(SelfItr, BranchItr, Other.end());
+  TextureObjectList.insert(SelfItr, BranchItr, Other.end());
 }
 
 void DeviceFunctionInfo::mergeCalledTexObj(
     const std::vector<std::shared_ptr<TextureObjectInfo>> &TexObjList) {
-  for (auto &Ty : TexObjList) {
-    if (Ty) {
-      TextureObjectTypeList[Ty->getParamIdx()] = Ty->getType();
+  for (auto &Obj : TexObjList) {
+    if (!Obj)
+      continue;
+    if (auto &Parm = TextureObjectList[Obj->getParamIdx()]) {
+      Parm->merge(Obj);
+    } else {
+      TextureObjectList[Obj->getParamIdx()] = Obj;
     }
   }
 }
@@ -2379,7 +2445,7 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
   }
   for (auto &Obj : TextureObjectList) {
     if (Obj) {
-      Obj->setType(FuncInfo->getTextureTypeInfo(Obj->getParamIdx()));
+      Obj->merge(FuncInfo->getTextureObject((Obj->getParamIdx())));
       if (!Obj->getType()) {
         // Type dpct_placeholder
         Obj->setType("dpct_placeholder/*Fix the type manually*/", 1);
@@ -2449,9 +2515,10 @@ DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
       ReplaceOffset(0), ReplaceLength(0),
       NonDefaultParamNum(FD->getMostRecentDecl()->getMinRequiredArguments()),
       FuncInfo(getFuncInfo(FD)) {
-  if (!FuncInfo)
-    FuncInfo = std::make_shared<DeviceFunctionInfo>(FD->param_size(),
-                                                    NonDefaultParamNum);
+  if (!FuncInfo) {
+    FuncInfo = std::make_shared<DeviceFunctionInfo>(
+        FD->param_size(), NonDefaultParamNum, getFunctionName(FD));
+  }
   if (!FilePath.empty()) {
     SourceProcessType FileType = GetSourceFileType(FilePath);
     if (!(FileType & SPT_CudaHeader) && !(FileType & SPT_CppHeader) &&
@@ -2758,7 +2825,8 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
       Info = FuncInfo;
     } else {
       Info = std::make_shared<DeviceFunctionInfo>(
-          FD->param_size(), FD->getMostRecentDecl()->getMinRequiredArguments());
+          FD->param_size(), FD->getMostRecentDecl()->getMinRequiredArguments(),
+          getFunctionName(FD));
       FuncInfo = Info;
     }
     return;
@@ -3167,6 +3235,28 @@ std::string MemVarMap::getKernelArguments(bool HasPreParam, bool HasPostParam,
                                           const std::string &Path) const {
   requestFeatureForAllVarMaps(Path);
   return getArgumentsOrParameters<KernelArgument>(HasPreParam, HasPostParam);
+}
+bool MemVarMap::isSameAs(const MemVarMap& Other) const {
+  if (HasItem != Other.HasItem)
+    return false;
+  if (HasStream != Other.HasStream)
+    return false;
+  if (HasSync != Other.HasSync)
+    return false;
+
+  #define COMPARE_MAP(MAP)                                                     \
+  {                                                                            \
+    if (MAP.size() != Other.MAP.size())                                        \
+      return false;                                                            \
+    if (!std::equal(MAP.begin(), MAP.end(), Other.MAP.begin()))                \
+      return false;                                                            \
+  }
+  COMPARE_MAP(LocalVarMap);
+  COMPARE_MAP(GlobalVarMap);
+  COMPARE_MAP(ExternVarMap);
+  COMPARE_MAP(TextureMap);
+#undef COMPARE_MAP
+  return true;
 }
 
 CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)
