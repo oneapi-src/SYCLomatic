@@ -483,6 +483,8 @@ std::string getFinalCastTypeNameStr(std::string CastTypeName);
 bool isLexicallyInLocalScope(const clang::Decl *);
 const clang::DeclaratorDecl *getHandleVar(const clang::Expr *Arg);
 bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE);
+bool checkPointerInStructRecursively(const clang::RecordDecl *);
+clang::RecordDecl *getRecordDecl(clang::QualType QT);
 clang::SourceLocation
 getImmSpellingLocRecursive(const clang::SourceLocation Loc);
 clang::dpct::FFTTypeEnum getFFTTypeFromValue(std::int64_t Value);

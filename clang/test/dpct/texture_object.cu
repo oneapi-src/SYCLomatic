@@ -25,7 +25,7 @@ void funcT(T t) {}
 // CHECK: void gather_force(const dpct::image_accessor_ext<dpct_placeholder/*Fix the type manually*/, 1> gridTexObj){}
 __global__ void gather_force(const cudaTextureObject_t gridTexObj){}
 
-// CHECK: void gather_force(const dpct::image_wrapper_base_p gridTexObj, sycl::queue *stream) {
+// CHECK: void gather_force(const dpct::image_wrapper_base_p gridTexObj, dpct::queue_ptr stream) {
 // CHECK-NEXT:  /*
 // CHECK-NEXT:  DPCT1050:{{[0-9]+}}: The template argument of the image_accessor_ext could not be deduced. You need to update this code.
 // CHECK-NEXT:  */
@@ -187,7 +187,7 @@ int main() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel<<<1, 1>>>(tex21, tex42);
-  
+
   // CHECK: texDesc42 = tex42->get_sampling_info();
   // CHECK-NEXT: res42 = tex42->get_data();
   cudaGetTextureObjectTextureDesc(&texDesc42, tex42);
@@ -287,5 +287,54 @@ void foo(){
   tex_tmp.filterMode = cudaFilterModePoint;
   tex_tmp.addressMode[2] = cudaAddressModeClamp;
   tex_tmp.normalizedCoords = 1;
+}
+
+struct TexList {
+  cudaTextureObject_t tex1;  
+  cudaTextureObject_t tex2;
+  cudaTextureObject_t tex3;
+};
+
+// CHECK: void texlist_device(TexList list, dpct::image_accessor_ext<int, 1> list_tex1) {
+// CHECK-NEXT:  int a;
+// CHECK-NEXT:  a = list_tex1.read(1);
+__device__ void texlist_device(TexList list) {
+  int a;
+  tex1Dfetch(&a, list.tex1, 1);
+}
+
+// CHECK: void texlist_kernel(TexList list, dpct::image_accessor_ext<int, 1> list_tex1,
+// CHECK-NEXT:                     dpct::image_accessor_ext<float, 2> list_tex2,
+// CHECK-NEXT:                    dpct::image_accessor_ext<float, 2> list_tex3) {
+// CHECK-NEXT:  float b;
+// CHECK-NEXT:  texlist_device(list, list_tex1);
+// CHECK-NEXT:  b = list_tex2.read(0.5f, 0.5f);
+// CHECK-NEXT:  b = list_tex3.read(0.5f, 0.5f);
+__global__ void texlist_kernel(TexList list) {
+  float b;
+  texlist_device(list);
+  tex2D(&b, list.tex2, 0.5f, 0.5f);
+  tex2D(&b, list.tex3, 0.5f, 0.5f);
+}
+
+// CHECK: dpct::get_default_queue().submit(
+// CHECK-NEXT:     [&](sycl::handler &cgh) {
+// CHECK-NEXT:       auto list_tex1_acc = static_cast<dpct::image_wrapper<int, 1> *>(list.tex1)->get_access(cgh);
+// CHECK-NEXT:       auto list_tex2_acc = static_cast<dpct::image_wrapper<float, 2> *>(list.tex2)->get_access(cgh);
+// CHECK-NEXT:       auto list_tex3_acc = static_cast<dpct::image_wrapper<float, 2> *>(list.tex3)->get_access(cgh);
+// CHECK-EMPTY: 
+// CHECK-NEXT:       auto list_tex1_smpl = list.tex1->get_sampler();
+// CHECK-NEXT:       auto list_tex2_smpl = list.tex2->get_sampler();
+// CHECK-NEXT:       auto list_tex3_smpl = list.tex3->get_sampler();
+// CHECK-EMPTY: 
+// CHECK-NEXT:       cgh.parallel_for<dpct_kernel_name<class texlist_kernel_{{[a-f0-9]+}}>>(
+// CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+// CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:           texlist_kernel(list, dpct::image_accessor_ext<int, 1>(list_tex1_smpl, list_tex1_acc), dpct::image_accessor_ext<float, 2>(list_tex2_smpl, list_tex2_acc), dpct::image_accessor_ext<float, 2>(list_tex3_smpl, list_tex3_acc));
+// CHECK-NEXT:         });
+// CHECK-NEXT:     });
+
+void texlist(TexList list) {
+  texlist_kernel<<<1, 1>>>(list);
 }
 

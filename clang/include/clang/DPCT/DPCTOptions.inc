@@ -295,7 +295,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<ExplicitNamespace>), UseExp
                                      "be used with other values.",
                                      false),
              DPCT_OPT_ENUM("cl", int(ExplicitNamespace::EN_CL),
-               "Generate code with cl::sycl:: namespace. Cannot be used with "
+               "DEPRECATED: Generate code with cl::sycl:: namespace. Cannot be used with "
                "sycl or sycl-math values.",
                false),
              DPCT_OPT_ENUM("dpct", int(ExplicitNamespace::EN_DPCT),

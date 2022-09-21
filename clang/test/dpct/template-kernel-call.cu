@@ -308,7 +308,7 @@ void convert(){
 // CHECK-NEXT:class Image {
 // CHECK-NEXT:public:
 // CHECK-NEXT:  T* dPtr;
-// CHECK-NEXT:  sycl::queue *s;
+// CHECK-NEXT:  dpct::queue_ptr s;
 // CHECK-NEXT:};
 // CHECK-NEXT:template <typename T>
 // CHECK-NEXT:void my_kernel(T *A) {
@@ -329,7 +329,7 @@ __global__ void my_kernel(T *A) {
 // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:  */
 // CHECK-NEXT:  ptr.s->parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, T>>(
-// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(1, 1, block_size), sycl::range<3>(1, 1, block_size)), 
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(1, 1, block_size), sycl::range<3>(1, 1, block_size)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:          my_kernel<T>(ptr.dPtr);
 // CHECK-NEXT:        });

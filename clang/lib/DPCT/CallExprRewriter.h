@@ -739,6 +739,22 @@ public:
   static DerefExpr create(const Expr *E, const CallExpr * C);
 };
 
+template <class StreamT>
+void print(StreamT &Stream,
+           std::pair<const llvm::StringRef, clang::dpct::DerefExpr> Pair) {
+  Stream << Pair.first;
+  ArgumentAnalysis AA;
+  Pair.second.printArg(Stream, AA);
+}
+template <class StreamT>
+void print(StreamT &Stream,
+           std::pair<std::pair<const llvm::StringRef, clang::dpct::DerefExpr>,
+                     const llvm::StringRef>
+               Pair) {
+  print(Stream, Pair.first);
+  Stream << Pair.second;
+}
+
 class RenameWithSuffix {
   StringRef OriginalName, SuffixStr;
 
@@ -901,6 +917,20 @@ public:
   }
 };
 
+template <class BaseT, class MemberT> class StaticMemberExprPrinter {
+  BaseT Base;
+  MemberT Member;
+public:
+  StaticMemberExprPrinter(BaseT &&Base, MemberT &&Member)
+    : Base(std::forward<BaseT>(Base)), Member(std::forward<MemberT>(Member)) {}
+  
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Base);
+    Stream << "::";
+    dpct::print(Stream, Member);
+  }
+};
+
 template <class BaseT, class MemberT, class... CallArgsT>
 class MemberCallPrinter
     : public CallExprPrinter<MemberExprPrinter<BaseT, MemberT>, CallArgsT...> {
@@ -997,6 +1027,19 @@ public:
     Base::print(Stream);
   }
 };
+
+template<class SubExprT>
+class TypenameExprPrinter {
+  SubExprT SubExpr;
+public:
+  TypenameExprPrinter(SubExprT &&SubExpr) : SubExpr(std::forward<SubExprT>(SubExpr)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    Stream << "typename ";
+    dpct::print(Stream, SubExpr);
+  }
+};
+
+// typename SubExpr
 
 template <class FirstPrinter, class... RestPrinter>
 class MultiStmtsPrinter : MultiStmtsPrinter<RestPrinter...> {
@@ -1442,6 +1485,8 @@ public:
 
 using CheckIntergerTemplateArgValueNE = CheckIntergerTemplateArgValue<std::not_equal_to<std::int64_t>>;
 using CheckIntergerTemplateArgValueLE = CheckIntergerTemplateArgValue<std::less_equal<std::int64_t>>;
+
+std::function<bool(const CallExpr *C)> hasManagedAttr(int Idx);
 
 } // namespace dpct
 } // namespace clang

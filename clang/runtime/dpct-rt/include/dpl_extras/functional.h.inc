@@ -141,7 +141,7 @@ using make_index_sequence = typename make_index_sequence_impl<_Np>::type;
 // would make the span be at least O(N).
 #if ONEDPL_USE_DPCPP_BACKEND
 template <typename _Tp> class __buffer {
-  cl::sycl::buffer<_Tp, 1> __buf;
+  sycl::buffer<_Tp, 1> __buf;
 
   __buffer(const __buffer &) = delete;
 
