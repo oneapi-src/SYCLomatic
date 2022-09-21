@@ -485,13 +485,13 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetFilter4dDescriptor", ARG_WC(0), false,
-                            "set", ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4),
+                            "set", ARG_WC(2), ARG_WC(1), ARG_WC(3), ARG_WC(4),
                             ARG_WC(5), ARG_WC(6))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSetFilterNdDescriptor", ARG_WC(0), false,
-                            "set", ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4))))
+                            "set", ARG_WC(2), ARG_WC(1), ARG_WC(3), ARG_WC(4))))
 
 REMOVE_API_FACTORY_ENTRY("cudnnCreateConvolutionDescriptor")
 
