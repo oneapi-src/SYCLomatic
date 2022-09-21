@@ -2874,6 +2874,41 @@ bool TypeInDeclRule::isCapturedByLambda(const TypeLoc *TL) {
   return false;
 }
 
+void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD, 
+                                           const SourceManager *SM){
+  auto SD = getAllDecls(DD);
+  for (auto It = SD.begin(); It != SD.end(); ++It) {
+    auto DDiter = *It;
+    if(const auto VD = dyn_cast<clang::VarDecl>(DDiter)){
+      if(!VD->hasInit()) continue;
+      if(VD->getInitStyle()==VarDecl::InitializationStyle::ListInit){
+        if(const auto VarInitExpr=dyn_cast<InitListExpr>(VD->getInit())){
+          Expr::EvalResult ER;
+          if(auto ArgInitExpr = VarInitExpr->getInit(0)->IgnoreImpCasts()){
+            if (ArgInitExpr->EvaluateAsInt(ER, dpct::DpctGlobalInfo::getContext())){
+              int64_t Value = ER.Val.getInt().getExtValue();
+              if (Value != 0) return ;
+              std::string Repl="&"+MapNames::getDpctNamespace()+"get_default_queue()";
+              emplaceTransformation(new ReplaceStmt(ArgInitExpr, Repl));
+            }
+          }
+        }
+      }
+      else{
+        if(const auto VarInitExpr=VD->getInit()->IgnoreImpCasts()){
+          Expr::EvalResult ER;
+          if (VarInitExpr->EvaluateAsInt(ER, dpct::DpctGlobalInfo::getContext())){
+            int64_t Value = ER.Val.getInt().getExtValue();
+            if (Value != 0) return ;
+            std::string Repl="&"+MapNames::getDpctNamespace()+"get_default_queue()";
+            emplaceTransformation(new ReplaceStmt(VarInitExpr, Repl));
+          }
+        }
+      } 
+    }
+  }
+}
+
 void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
   SourceManager *SM = Result.SourceManager;
   auto LOpts = Result.Context->getLangOpts();
@@ -3169,6 +3204,14 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       DD = FieldD;
       if (FieldD->hasInClassInitializer())
         Init = FieldD->getInClassInitializer();
+    }
+
+    if (DD) {
+      if (TL->getType().getAsString().find("cudaStream_t") !=
+          std::string::npos) {
+        processCudaStreamType(DD, SM);
+      }
+
     }
 
     if (!Str.empty()) {
