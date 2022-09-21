@@ -26,7 +26,7 @@ int main() {
     cudnnSetTensor4dDescriptor(outTensor, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, on, oc, oh, ow);
     
     int filterdim[4] = {fk, fc, fh, fw};
-    // CHECK: filterTensor.set(dpct::library_data_t::real_float, dpct::dnnl::memory_format_tag::nchw, 4, filterdim);
+    // CHECK: filterTensor.set(dpct::dnnl::memory_format_tag::nchw, dpct::library_data_t::real_float, 4, filterdim);
     cudnnSetFilterNdDescriptor(filterTensor, CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW, 4, filterdim);
     
     float *data, *out, *filter, *bias;

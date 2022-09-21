@@ -79,7 +79,7 @@ int main() {
     float alpha = 1.f, beta = 0.f, eps = 1.f;
     double factor = 0.5f;
     // CHECK: dpct::dnnl::activation_desc ActivationDesc;
-    // CHECK: ActivationDesc.set(dnnl::algorithm::eltwise_bounded_relu, 0.0f);
+    // CHECK: ActivationDesc.set(dnnl::algorithm::eltwise_relu_use_dst_for_bwd, 0.0f);
     cudnnActivationDescriptor_t ActivationDesc;
     cudnnCreateActivationDescriptor(&ActivationDesc);
     cudnnSetActivationDescriptor(ActivationDesc, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, 0.0f);

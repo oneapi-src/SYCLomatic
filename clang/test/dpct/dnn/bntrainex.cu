@@ -80,7 +80,7 @@ int main() {
     float alpha = 1.f, beta = 0.f, eps = 1.f;
     double factor = 0.5f;
     // CHECK: dpct::dnnl::activation_desc ActivationDesc;
-    // CHECK: ActivationDesc.set(dnnl::algorithm::eltwise_bounded_relu, 0.0f);
+    // CHECK: ActivationDesc.set(dnnl::algorithm::eltwise_relu_use_dst_for_bwd, 0.0f);
     cudnnActivationDescriptor_t ActivationDesc;
     cudnnCreateActivationDescriptor(&ActivationDesc);
 
@@ -102,7 +102,7 @@ int main() {
         scalebiasTensor, 
         ActivationDesc, 
         &workspace_size);
-    // CHECK: reservespace_size = 0;
+    // CHECK: reservespace_size = handle.get_batch_normalization_workspace_size(dpct::dnnl::batch_normalization_ops::none, dataTensor);
     cudnnGetBatchNormalizationTrainingExReserveSpaceSize(
         handle, 
         //CUDNN_BATCHNORM_PER_ACTIVATION, 
@@ -116,7 +116,7 @@ int main() {
     
     cudaMalloc(&workspace, workspace_size);
     cudaMalloc(&reservespace, reservespace_size);
-    // CHECK: auto status = (handle.batch_normalization_forward_training_ex(dpct::dnnl::batch_normalization_mode::spatial, dpct::dnnl::batch_normalization_ops::none, ActivationDesc, eps, factor, alpha, dataTensor, data, beta, outTensor, out, outTensor, z, scalebiasTensor, scale, bias, rmean, rvar, smean, svar), 0);
+    // CHECK: auto status = (handle.batch_normalization_forward_training_ex(dpct::dnnl::batch_normalization_mode::spatial, dpct::dnnl::batch_normalization_ops::none, ActivationDesc, eps, factor, alpha, dataTensor, data, beta, outTensor, out, outTensor, z, scalebiasTensor, scale, bias, rmean, rvar, smean, svar, reservespace_size, reservespace), 0);
     auto status = cudnnBatchNormalizationForwardTrainingEx(
         handle, 
         //CUDNN_BATCHNORM_PER_ACTIVATION, 

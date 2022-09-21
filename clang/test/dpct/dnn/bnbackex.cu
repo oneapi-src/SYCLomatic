@@ -95,7 +95,7 @@ int main() {
     // CHECK: dpct::dnnl::activation_desc ActivationDesc;
     cudnnActivationDescriptor_t ActivationDesc;
     cudnnCreateActivationDescriptor(&ActivationDesc);
-    // CHECK: ActivationDesc.set(dnnl::algorithm::eltwise_bounded_relu, 0.0f);
+    // CHECK: ActivationDesc.set(dnnl::algorithm::eltwise_relu_use_dst_for_bwd, 0.0f);
     cudnnSetActivationDescriptor(ActivationDesc, CUDNN_ACTIVATION_RELU, CUDNN_PROPAGATE_NAN, 0.0f);
 
     float *workspace, *reservespace;
@@ -114,7 +114,7 @@ int main() {
         scalebiasTensor, 
         ActivationDesc, 
         &workspace_size);
-// CHECK: reservespace_size = 0;
+// CHECK: reservespace_size = handle.get_batch_normalization_workspace_size(dpct::dnnl::batch_normalization_ops::activation, dataTensor);
     cudnnGetBatchNormalizationTrainingExReserveSpaceSize(
         handle, 
         CUDNN_BATCHNORM_PER_ACTIVATION, 
@@ -128,7 +128,7 @@ int main() {
     
     cudaMalloc(&workspace, workspace_size);
     cudaMalloc(&reservespace, reservespace_size);
-    // CHECK: auto status = (handle.batch_normalization_forward_training_ex(dpct::dnnl::batch_normalization_mode::per_activation, dpct::dnnl::batch_normalization_ops::activation, ActivationDesc, eps, factor, alpha, dataTensor, data, beta, outTensor, out, outTensor, z, scalebiasTensor, scale, bias, rmean, rvar, smean, svar), 0);
+    // CHECK: auto status = (handle.batch_normalization_forward_training_ex(dpct::dnnl::batch_normalization_mode::per_activation, dpct::dnnl::batch_normalization_ops::activation, ActivationDesc, eps, factor, alpha, dataTensor, data, beta, outTensor, out, outTensor, z, scalebiasTensor, scale, bias, rmean, rvar, smean, svar, reservespace_size, reservespace), 0);
     auto status = cudnnBatchNormalizationForwardTrainingEx(
         handle, 
         CUDNN_BATCHNORM_PER_ACTIVATION, 
@@ -180,10 +180,8 @@ int main() {
         &bworkspace_size);
 
     cudaMalloc(&bworkspace, bworkspace_size);
-// CHECK: /*
-// CHECK: DPCT1097:5: The function "batch_normalization_backward_ex" may require the workspace used to save intermediate results from function "batch_normalization_forward_training_ex". By default, a workspace from engine_ext is selected according to the source data pointer, but this may be incorrect and cause a workspace data race. You may need to rewrite this code.
-// CHECK: */
-// CHECK: handle.batch_normalization_backward_ex(dpct::dnnl::batch_normalization_mode::per_activation, dpct::dnnl::batch_normalization_ops::activation, ActivationDesc, alpha, dataTensor, data, outTensor, out, beta, dataTensor, diffdata, outTensor, diffz, alpha, scalebiasTensor, scale, bias, beta, diffscale, diffbias, smean, svar);
+
+// CHECK: handle.batch_normalization_backward_ex(dpct::dnnl::batch_normalization_mode::per_activation, dpct::dnnl::batch_normalization_ops::activation, ActivationDesc, eps, alpha, dataTensor, data, outTensor, out, outTensor, diffout, beta, dataTensor, diffdata, outTensor, diffz, alpha, scalebiasTensor, scale, bias, beta, diffscale, diffbias, smean, svar, reservespace_size, reservespace);
     cudnnBatchNormalizationBackwardEx(
         handle,
         CUDNN_BATCHNORM_PER_ACTIVATION, 
