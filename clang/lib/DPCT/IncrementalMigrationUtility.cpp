@@ -66,8 +66,9 @@ bool convertToIntVersion(std::string VersionStr, unsigned int &Result) {
 VersionCmpResult compareToolVersion(std::string VersionInYaml) {
   unsigned int PreviousVersion;
   if (convertToIntVersion(VersionInYaml, PreviousVersion)) {
-    unsigned int CurrentVersion =
-        DPCT_VERSION_MAJOR * 100 + DPCT_VERSION_MINOR * 10 + DPCT_VERSION_PATCH;
+    unsigned int CurrentVersion = std::stoi(DPCT_VERSION_MAJOR) * 100 +
+                                  std::stoi(DPCT_VERSION_MINOR) * 10 +
+                                  std::stoi(DPCT_VERSION_PATCH);
     if (PreviousVersion > CurrentVersion)
       return VersionCmpResult::VCR_CURRENT_IS_OLDER;
     if (PreviousVersion < CurrentVersion)
