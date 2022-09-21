@@ -10269,8 +10269,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
 
     auto Var = Global.findMemVarInfo(VD);
-    if (Func->hasAttr<CUDAGlobalAttr>() ||
-        (Func->hasAttr<CUDADeviceAttr>() && !Func->hasAttr<CUDAHostAttr>())) {
+    if (Func->hasAttr<CUDAGlobalAttr>() || Func->hasAttr<CUDADeviceAttr>()) {
       if (DpctGlobalInfo::useGroupLocalMemory() &&
           VD->hasAttr<CUDASharedAttr>() && VD->getStorageClass() != SC_Extern) {
         if (!Var)
