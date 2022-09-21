@@ -2887,7 +2887,7 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
           if(auto ArgInitExpr = VarInitExpr->getInit(0)->IgnoreImpCasts()){
             if (ArgInitExpr->EvaluateAsInt(ER, dpct::DpctGlobalInfo::getContext())){
               int64_t Value = ER.Val.getInt().getExtValue();
-              if (Value != 0) return ;
+              if (Value != 0) continue ;
               std::string Repl="&"+MapNames::getDpctNamespace()+"get_default_queue()";
               emplaceTransformation(new ReplaceStmt(ArgInitExpr, Repl));
             }
@@ -2899,7 +2899,7 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
           Expr::EvalResult ER;
           if (VarInitExpr->EvaluateAsInt(ER, dpct::DpctGlobalInfo::getContext())){
             int64_t Value = ER.Val.getInt().getExtValue();
-            if (Value != 0) return ;
+            if (Value != 0) continue ;
             std::string Repl="&"+MapNames::getDpctNamespace()+"get_default_queue()";
             emplaceTransformation(new ReplaceStmt(VarInitExpr, Repl));
           }
