@@ -960,6 +960,10 @@ int runDPCT(int argc, const char **argv) {
   }
   DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
   DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
+  if (CustomHelperFileName.getNumOccurrences()) {
+    clang::dpct::PrintMsg("Note: Option --custom-helper-name is deprecated and "
+                          "may be removed in the future.\n");
+  }
   HelperFileNameMap[HelperFileEnum::Dpct] =
       DpctGlobalInfo::getCustomHelperFileName() + ".hpp";
   DpctGlobalInfo::setFormatRange(FormatRng);

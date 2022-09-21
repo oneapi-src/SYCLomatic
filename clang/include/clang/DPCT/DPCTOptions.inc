@@ -263,7 +263,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<HelperFilesCustomizationLeve
            llvm::cl::Optional)
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), CustomHelperFileName, "custom-helper-name",
-        llvm::cl::desc("Specifies the helper headers folder name and main helper header file name.\n"
+        llvm::cl::desc("DEPRECATED: Specifies the helper headers folder name and main helper header file name.\n"
         "Default: dpct."),
         llvm::cl::init("dpct"), llvm::cl::value_desc("name"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
