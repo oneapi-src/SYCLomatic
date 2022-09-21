@@ -1254,23 +1254,44 @@ public:
     throw std::runtime_error(
           "dpct::pointer_attributes: only works for USM pointer.");
 #else
-    memory_type = cl::sycl::get_pointer_type(ptr, q.get_context());
-    device_ptr = (memory_type !=
+    memory_type = sycl::get_pointer_type(ptr, q.get_context());
+    device_pointer = (memory_type !=
                         sycl::usm::alloc::unknown) ? ptr : nullptr;
-    host_ptr = (memory_type !=
+    host_pointer = (memory_type !=
                         sycl::usm::alloc::unknown) &&
                    (memory_type != sycl::usm::alloc::device) ? ptr : nullptr;
-    is_shared = (memory_type == sycl::usm::alloc::shared);
-    sycl::device dev_obj = sycl::get_pointer_device(ptr, q.get_context());
-    dev_id = dpct::dev_mgr::instance().get_device_id(dev_obj);
+    is_shared = memory_type == sycl::usm::alloc::shared;
+    sycl::device device_obj = sycl::get_pointer_device(ptr, q.get_context());
+    device_id = dpct::dev_mgr::instance().get_device_id(device_obj);
 #endif
   }
 
+  sycl::usm::alloc get_memory_type() {
+    return memory_type;
+  }
+
+  const void *get_device_pointer() {
+    return device_pointer;
+  }
+
+  const void *get_host_pointer() {
+    return host_pointer;
+  }
+
+  bool is_memory_shared() {
+    return is_shared;
+  }
+
+  unsigned int get_device_id() {
+    return device_id;
+  }
+
+private:
   sycl::usm::alloc memory_type = sycl::usm::alloc::unknown;
-  const void *device_ptr = nullptr;
-  const void *host_ptr = nullptr;
+  const void *device_pointer = nullptr;
+  const void *host_pointer = nullptr;
   bool is_shared = false;
-  unsigned int dev_id = 0;
+  unsigned int device_id = 0;
 };
 } // namespace dpct
 #endif // __DPCT_MEMORY_HPP__

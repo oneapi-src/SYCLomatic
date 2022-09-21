@@ -104,7 +104,8 @@ void MapNames::setExplicitNamespaceMap() {
                          getDpctNamespace() + "kernel_functor",
                          HelperFeatureEnum::Kernel_kernel_functor)},
       {"cudaPointerAttributes",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes")},
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes",
+                                  HelperFeatureEnum::Memory_pointer_attributes)},
       {"dim3", std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},
       {"int2", std::make_shared<TypeNameRule>(getClNamespace() + "int2")},
       {"double2", std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
@@ -556,16 +557,20 @@ void MapNames::setExplicitNamespaceMap() {
       // enum cudaMemory Type
       {"cudaMemoryTypeHost",
        std::make_shared<EnumNameRule>(
-           getClNamespace() + "usm::alloc::host")},
+           getClNamespace() + "usm::alloc::host",
+           HelperFeatureEnum::Memory_pointer_attributes)},
       {"cudaMemoryTypeDevice",
        std::make_shared<EnumNameRule>(
-           getClNamespace() + "usm::alloc::device")},
+           getClNamespace() + "usm::alloc::device",
+           HelperFeatureEnum::Memory_pointer_attributes)},
       {"cudaMemoryTypeUnregistered",
        std::make_shared<EnumNameRule>(
-           getClNamespace() + "usm::alloc::unknown")},
+           getClNamespace() + "usm::alloc::unknown",
+           HelperFeatureEnum::Memory_pointer_attributes)},
       {"cudaMemoryTypeManaged",
        std::make_shared<EnumNameRule>(
-           getClNamespace() + "usm::alloc::shared")},
+           getClNamespace() + "usm::alloc::shared",
+           HelperFeatureEnum::Memory_pointer_attributes)},
       // enum Texture Address Mode
       {"cudaAddressModeWrap",
        std::make_shared<EnumNameRule>(getClNamespace() +

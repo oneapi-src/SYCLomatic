@@ -24,13 +24,13 @@ int main() {
   cudaMemcpy(d_B, h_B, size, cudaMemcpyHostToDevice);
   // CHECK: dpct::pointer_attributes attributes;
   cudaPointerAttributes attributes;
-  // CHECK: (&attributes)->init(h_A);
+  // CHECK: attributes.init(h_A);
   cudaPointerGetAttributes (&attributes, h_A);
-  // CHECK: std::cout << attributes.dev_id << std::endl;
-  // CHECK: std::cout << attributes.memory_type << std::endl;
-  // CHECK: std::cout << attributes.host_ptr << std::endl;
-  // CHECK: std::cout << attributes.device_ptr << std::endl;
-  // CHECK: std::cout << attributes.is_shared << std::endl;
+  // CHECK: std::cout << attributes.get_device_id() << std::endl;
+  // CHECK: std::cout << attributes.get_memory_type() << std::endl;
+  // CHECK: std::cout << attributes.get_host_pointer() << std::endl;
+  // CHECK: std::cout << attributes.get_device_pointer() << std::endl;
+  // CHECK: std::cout << attributes.is_memory_shared() << std::endl;
   std::cout << "====== Host Attributes =======" << std::endl;
   std::cout << attributes.device << std::endl;
   std::cout << attributes.memoryType << std::endl;
@@ -54,17 +54,17 @@ int main() {
   cudaPointerAttributes *attributes3 = new cudaPointerAttributes();
   // CHECK: attributes3->init(d_A);
   cudaPointerGetAttributes (attributes3, d_A);
-  // CHECK: std::cout << attributes3->dev_id << std::endl;
-  // CHECK: std::cout << attributes3->memory_type << std::endl;
+  // CHECK: std::cout << attributes3->get_device_id() << std::endl;
+  // CHECK: std::cout << attributes3->get_memory_type() << std::endl;
   std::cout << "====== Device Attributes =======" << std::endl;
   std::cout << attributes3->device << std::endl;
   std::cout << attributes3->memoryType << std::endl;
   std::cout << attributes3->hostPointer << std::endl;
   std::cout << attributes3->devicePointer << std::endl;
   std::cout << attributes3->isManaged << std::endl;
-  // CHECK: if (attributes3->memory_type == sycl::usm::alloc::host) {
-  // CHECK: } else if (attributes3->memory_type == sycl::usm::alloc::device) {
-  // CHECK: } else if (attributes3->is_shared) {
+  // CHECK: if (attributes3->get_memory_type() == sycl::usm::alloc::host) {
+  // CHECK: } else if (attributes3->get_memory_type() == sycl::usm::alloc::device) {
+  // CHECK: } else if (attributes3->is_memory_shared()) {
   if (attributes3->memoryType == cudaMemoryTypeHost) {
     return 0;
   } else if (attributes3->memoryType == cudaMemoryTypeDevice) {

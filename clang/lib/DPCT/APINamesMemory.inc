@@ -337,4 +337,4 @@ ASSIGNABLE_FACTORY(
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::Memory_pointer_attributes,
         MEMBER_CALL_FACTORY_ENTRY(
-            "cudaPointerGetAttributes", ARG(0), true, "init", ARG(1))))
+            "cudaPointerGetAttributes", DEREF(0), false, "init", ARG(1))))

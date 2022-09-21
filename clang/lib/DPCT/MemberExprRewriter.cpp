@@ -43,9 +43,10 @@ std::function<bool(const MemberExpr *)> isArrow() {
   };
 }
 
-std::function<std::string(const MemberExpr *)> makeMemberAttribute(std::string Attribute) {
+std::function<std::string(const MemberExpr *)>
+                makeMemberGetCall(std::string FuncName) {
   return [=] (const MemberExpr * ME) -> std::string {
-    return Attribute;
+    return FuncName + "()";
   };
 }
 
@@ -59,10 +60,12 @@ void MemberExprRewriterFactoryBase::initMemberExprRewriterMap() {
         std::unordered_map<std::string,
                          std::shared_ptr<MemberExprRewriterFactoryBase>>({
 
+
+#define CALL(...) makeCallExprCreator(__VA_ARGS__)
 #define MEMBER_REWRITE_ENTRY(Name, Factory) {Name, Factory},
 #define MEMBER_FACTORY(...) createMemberRewriterFactory(__VA_ARGS__)
 #define MEM_BASE makeMemberBase()
-#define MEM_ATTR(x) makeMemberAttribute(x)
+#define MEM_CALL(x) makeMemberGetCall(x)
 #define IS_ARROW isArrow()
 #include "APINamesMemberExpr.inc"
 #undef MEMBER_REWRITE_ENTRY
