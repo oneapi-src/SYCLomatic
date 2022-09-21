@@ -16,7 +16,7 @@ int main() {
   float *A = NULL;
   float *d_A = NULL;
   cublasStatus_t status;
-  // CHECK: sycl::queue *stream;
+  // CHECK: dpct::queue_ptr stream;
   cudaStream_t stream;
 
 #define LDA_MARCO 100

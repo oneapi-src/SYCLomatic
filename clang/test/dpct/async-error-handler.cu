@@ -4,7 +4,7 @@
 
 int main() {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  // CHECK: sycl::queue *s0, *s1, *s2;
+  // CHECK: dpct::queue_ptr s0, s1, s2;
   cudaStream_t s0, s1, s2;
 
   // CHECK: s0 = dev_ct1.create_queue(true);

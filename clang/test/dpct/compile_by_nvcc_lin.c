@@ -16,7 +16,7 @@
 // RUN: rm -rf %T/compile_by_nvcc
 
 
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
 

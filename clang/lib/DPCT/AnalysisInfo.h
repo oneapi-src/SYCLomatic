@@ -2674,7 +2674,7 @@ class TextureInfo {
 protected:
   const std::string FilePath;
   const unsigned Offset;
-  const std::string Name; // original expression str
+  std::string Name; // original expression str
   std::string NewVarName; // name of new variable which tool
 
   std::shared_ptr<TextureTypeInfo> Type;
@@ -2772,13 +2772,17 @@ public:
     return buildString("auto ", NewVarName, "_acc = ", Name,
                        ".get_access(cgh);");
   }
+  virtual void addDecl(StmtList &AccessorList, StmtList &SamplerList) {
+    AccessorList.emplace_back(getAccessorDecl());
+    SamplerList.emplace_back(getSamplerDecl());
+  }
 
   inline ParameterStream &getFuncDecl(ParameterStream &PS) {
     requestFeature(HelperFeatureEnum::Image_image_accessor_ext, FilePath);
     return getDecl(PS, "image_accessor_ext");
   }
   inline ParameterStream &getFuncArg(ParameterStream &PS) { return PS << Name; }
-  inline ParameterStream &getKernelArg(ParameterStream &OS) {
+  virtual ParameterStream &getKernelArg(ParameterStream &OS) {
     requestFeature(HelperFeatureEnum::Image_image_accessor_ext, FilePath);
     getType()->printType(OS,
                          MapNames::getDpctNamespace() + "image_accessor_ext");
@@ -2803,6 +2807,11 @@ class TextureObjectInfo : public TextureInfo {
       : TextureInfo(VD), ParamIdx(ParamIdx) {}
   TextureObjectInfo(const VarDecl *VD, std::string Subscript, unsigned ParamIdx)
       : TextureInfo(VD, Subscript), ParamIdx(ParamIdx) {}
+
+protected:
+  TextureObjectInfo(unsigned Offset, const std::string &FilePath,
+                    StringRef Name)
+      : TextureInfo(Offset, FilePath, Name), ParamIdx(0) {}
 
 public:
   TextureObjectInfo(const ParmVarDecl *PVD)
@@ -2840,7 +2849,12 @@ public:
     return PS.Str;
   }
 
-  void addParamDeclReplacement() {
+  virtual void merge(std::shared_ptr<TextureObjectInfo> Target) {
+    if (Target)
+      setType(Target->getType());
+  }
+
+  virtual void addParamDeclReplacement() {
     if (Type) {
       DpctGlobalInfo::getInstance().addReplacement(
           std::make_shared<ExtReplacement>(FilePath, Offset, ReplaceTypeLength,
@@ -2875,6 +2889,82 @@ public:
     requestFeature(HelperFeatureEnum::Image_image_wrapper_base_get_sampler,
                    FilePath);
     return buildString("auto ", Name, "_smpl = (", ArgStr, ")->get_sampler();");
+  }
+};
+
+class MemberTextureObjectInfo : public TextureObjectInfo {
+  StringRef BaseName;
+  std::string MemberName;
+
+  class NewVarNameRAII {
+    std::string OldName;
+    MemberTextureObjectInfo *Member;
+
+  public:
+    NewVarNameRAII(MemberTextureObjectInfo *M)
+        : OldName(std::move(M->Name)), Member(M) {
+      Member->Name = buildString(M->BaseName, '.', M->MemberName);
+    }
+    ~NewVarNameRAII() { Member->Name = std::move(OldName); }
+  };
+
+  MemberTextureObjectInfo(unsigned Offset, const std::string& FilePath,
+    StringRef Name)
+    : TextureObjectInfo(Offset, FilePath, Name) {}
+
+public:
+  static std::shared_ptr<MemberTextureObjectInfo> create(const MemberExpr* ME) {
+    auto LocInfo = DpctGlobalInfo::getLocInfo(ME);
+    auto Ret = std::shared_ptr<MemberTextureObjectInfo>(
+        new MemberTextureObjectInfo(LocInfo.second, LocInfo.first,
+                                    getTempNameForExpr(ME, false, false)));
+    Ret->MemberName = ME->getMemberDecl()->getNameAsString();
+    return Ret;
+  }
+  void addDecl(StmtList &AccessorList, StmtList &SamplerList) override {
+    NewVarNameRAII RAII(this);
+    TextureObjectInfo::addDecl(AccessorList, SamplerList);
+  }
+  void setBaseName(StringRef Name) { BaseName = Name; }
+  StringRef getMemberName() { return MemberName; }
+};
+
+class StructureTextureObjectInfo : public TextureObjectInfo {
+  std::unordered_map<std::string, std::shared_ptr<MemberTextureObjectInfo>>
+      Members;
+  bool ContainsVirtualPointer;
+
+public:
+  StructureTextureObjectInfo(const ParmVarDecl *PVD) : TextureObjectInfo(PVD) {
+    ContainsVirtualPointer =
+        checkPointerInStructRecursively(getRecordDecl(PVD->getType()));
+    setType("", 0);
+  }
+  StructureTextureObjectInfo(const VarDecl *VD) : TextureObjectInfo(VD) {
+    ContainsVirtualPointer =
+        checkPointerInStructRecursively(getRecordDecl(VD->getType()));
+    setType("", 0);
+  }
+  bool containsVirtualPointer() const { return ContainsVirtualPointer; }
+  std::shared_ptr<MemberTextureObjectInfo> addMember(const MemberExpr *ME) {
+    auto Member = MemberTextureObjectInfo::create(ME);
+    return Members.emplace(Member->getMemberName().str(), Member).first->second;
+  }
+  void addDecl(StmtList &AccessorList, StmtList &SamplerList) override {
+    for (const auto &M : Members) {
+      M.second->setBaseName(Name);
+    }
+  }
+  void addParamDeclReplacement() { return; }
+  void merge(std::shared_ptr<TextureObjectInfo> Target) override {
+    if (auto T =
+            std::dynamic_pointer_cast<StructureTextureObjectInfo>(Target)) {
+      dpct::merge(Members, T->Members);
+    }
+  }
+  ParameterStream &getKernelArg(ParameterStream &OS) override {
+    OS << Name;
+    return OS;
   }
 };
 
@@ -3392,6 +3482,9 @@ public:
   addTextureObjectArg(unsigned ArgIdx, const DeclRefExpr *TexRef,
                       bool isKernelCall = false);
   virtual std::shared_ptr<TextureObjectInfo>
+  addStructureTextureObjectArg(unsigned ArgIdx, const MemberExpr *TexRef,
+                               bool isKernelCall = false);
+  virtual std::shared_ptr<TextureObjectInfo>
   addTextureObjectArg(unsigned ArgIdx, const ArraySubscriptExpr *TexRef,
                       bool isKernelCall = false);
   std::shared_ptr<DeviceFunctionInfo> getFuncInfo() { return FuncInfo; }
@@ -3436,15 +3529,21 @@ private:
     unsigned Idx = 0;
     TextureObjectList.resize(ArgsNum);
     while (ArgItr != Args.end()) {
-      if (auto DRE = dyn_cast<DeclRefExpr>((*ArgItr)->IgnoreImpCasts()))
+      const Expr *Arg = (*ArgItr)->IgnoreImpCasts();
+      if (auto Ctor = dyn_cast<CXXConstructExpr>(Arg)) {
+        if (Ctor->getConstructor()->isCopyOrMoveConstructor()) {
+          Arg = Ctor->getArg(0);
+        }
+      }
+      if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
         addTextureObjectArg(Idx++, DRE, IsKernel);
       else if (auto ASE =
-                   dyn_cast<ArraySubscriptExpr>((*ArgItr)->IgnoreImpCasts()))
+                   dyn_cast<ArraySubscriptExpr>(Arg->IgnoreImpCasts()))
         addTextureObjectArg(Idx++, ASE, IsKernel);
       ArgItr++;
     }
   }
-  void mergeTextureObjectTypeInfo();
+  void mergeTextureObjectInfo();
 
   const std::string FilePath;
   unsigned BeginLoc = 0;
@@ -3452,6 +3551,8 @@ private:
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
   std::vector<TemplateArgumentInfo> TemplateArgs;
 
+  // <ParameterIndex, ParameterName>
+  std::vector<std::pair<int, std::string>> ParmRefArgs;
   MemVarMap VarMap;
   bool HasArgs = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
@@ -3644,7 +3745,7 @@ public:
                      std::string FunctionName)
       : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
         IsBuilt(false),
-        TextureObjectTypeList(ParamsNum, std::shared_ptr<TextureTypeInfo>()),
+        TextureObjectList(ParamsNum, std::shared_ptr<TextureObjectInfo>()),
         FunctionName(FunctionName) {
     ParametersProps.resize(ParamsNum);
   }
@@ -3667,10 +3768,10 @@ public:
     VarMap.addTexture(Tex);
   }
   inline MemVarMap &getVarMap() { return VarMap; }
-  inline std::shared_ptr<TextureTypeInfo> getTextureTypeInfo(unsigned Idx) {
-    if (Idx < TextureObjectTypeList.size())
-      return TextureObjectTypeList[Idx];
-    return std::shared_ptr<TextureTypeInfo>();
+  inline std::shared_ptr<TextureObjectInfo> getTextureObject(unsigned Idx) {
+    if (Idx < TextureObjectList.size())
+      return TextureObjectList[Idx];
+    return {};
   }
 
   void buildInfo();
@@ -3739,8 +3840,8 @@ private:
   void mergeCalledTexObj(
       const std::vector<std::shared_ptr<TextureObjectInfo>> &TexObjList);
 
-  void mergeTextureTypeList(
-      const std::vector<std::shared_ptr<TextureTypeInfo>> &Other);
+  void mergeTextureObjectList(
+      const std::vector<std::shared_ptr<TextureObjectInfo>> &Other);
 
   bool IsBuilt;
   std::string DefinitionFilePath;
@@ -3752,7 +3853,7 @@ private:
   GlobalMap<CallFunctionExpr> CallExprMap;
   MemVarMap VarMap;
 
-  std::vector<std::shared_ptr<TextureTypeInfo>> TextureObjectTypeList;
+  std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::vector<ParameterProps> ParametersProps;
   std::string FunctionName;
 };
@@ -3802,6 +3903,8 @@ public:
   KernelPrinter &operator<<(const StmtList &Stmts) {
 
     for (auto &S : Stmts) {
+      if (S.StmtStr.empty())
+        continue;
       if (!S.Warnings.empty()) {
         for (auto &Warning : S.Warnings) {
           line("/*");
@@ -3933,6 +4036,10 @@ private:
       IsRedeclareRequired = false;
       TypeString = "";
       Index = 0;
+      if (auto S = std::dynamic_pointer_cast<StructureTextureObjectInfo>(Obj)) {
+        IsDoublePointer = S->containsVirtualPointer();
+      }
+      ArgString = Obj->getName();
       ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Texture);
     }
 

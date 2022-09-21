@@ -1,6 +1,6 @@
 // RUN: dpct --no-cl-namespace-inline --format-range=none --usm-level=none -out-root %T/cublasLegacyHelper %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/cublasLegacyHelper/cublasLegacyHelper.dp.cpp --match-full-lines %s
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <cstdio>
 // CHECK: #include <oneapi/mkl.hpp>
@@ -83,7 +83,7 @@ int main() {
   a = sizeof(cuComplex);
   a = sizeof(cuDoubleComplex);
 
-  // CHECK: cl::sycl::queue *stream1;
+  // CHECK: dpct::queue_ptr stream1;
   // CHECK-NEXT: stream1 = dev_ct1.create_queue();
   // CHECK-NEXT: dev_ct1.set_saved_queue(stream1);
   // CHECK-NEXT: /*

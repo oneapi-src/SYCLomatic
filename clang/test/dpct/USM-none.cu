@@ -4,7 +4,7 @@
 // RUN: FileCheck --match-full-lines --input-file %T/USM-none/USM-none.dp.cpp %s
 
 // CHECK: #define DPCT_USM_LEVEL_NONE
-// CHECK-NEXT: #include <CL/sycl.hpp>
+// CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
 #include <stdio.h>
@@ -203,9 +203,9 @@ void foo3() {
   cudaArray_t a1;
   int deviceID = 0;
 
-  // CHECK: auto s1 = std::make_shared<sycl::queue *>((sycl::queue *)&q_ct1);
-  // CHECK: auto s2 = std::make_shared<sycl::queue *>(&q_ct1);
-  // CHECK: auto s3 = std::make_shared<sycl::queue *>(&q_ct1);
+  // CHECK: auto s1 = std::make_shared<dpct::queue_ptr>((dpct::queue_ptr)&q_ct1);
+  // CHECK: auto s2 = std::make_shared<dpct::queue_ptr>(&q_ct1);
+  // CHECK: auto s3 = std::make_shared<dpct::queue_ptr>(&q_ct1);
   auto s1 = std::make_shared<cudaStream_t>((cudaStream_t)cudaStreamDefault);
   auto s2 = std::make_shared<cudaStream_t>(cudaStreamLegacy);
   auto s3 = std::make_shared<cudaStream_t>(cudaStreamPerThread);
