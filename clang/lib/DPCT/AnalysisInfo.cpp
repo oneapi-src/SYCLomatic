@@ -2326,6 +2326,8 @@ void DeviceFunctionInfo::mergeCalledTexObj(
   for (auto &Obj : TexObjList) {
     if (!Obj)
       continue;
+    if(Obj->getParamIdx() >= TextureObjectList.size())
+      continue;
     if (auto &Parm = TextureObjectList[Obj->getParamIdx()]) {
       Parm->merge(Obj);
     } else {
