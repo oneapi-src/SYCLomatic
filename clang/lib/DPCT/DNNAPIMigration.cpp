@@ -162,7 +162,8 @@ void CuDNNAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cudnnConvolutionBackwardData", "cudnnConvolutionBiasActivationForward",
         "cudnnConvolutionBackwardBias", "cudnnConvolutionBackwardFilter",
         "cudnnGetConvolutionForwardWorkspaceSize", "cudnnGetConvolutionBackwardDataWorkspaceSize",
-        "cudnnGetConvolutionBackwardFilterWorkspaceSize");
+        "cudnnGetConvolutionBackwardFilterWorkspaceSize",
+        "cudnnGetNormalizationBackwardWorkspaceSize");
   };
 
   MF.addMatcher(callExpr(callee(functionDecl(CuDNNAPI()))).bind("call"), this);
