@@ -404,10 +404,13 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cudnnGetBatchNormalizationForwardTrainingExWorkspaceSize",
     DEREF(ARG_WC(8)), ARG("0")))
 
-ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-    "cudnnGetBatchNormalizationTrainingExReserveSpaceSize", DEREF(ARG_WC(5)),
-    MEMBER_CALL(ARG_WC(0), false, "get_batch_normalization_workspace_size",
-                ARG_WC(2), ARG_WC(4))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::DnnlUtils_get_batch_normalization_workspace_size,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudnnGetBatchNormalizationTrainingExReserveSpaceSize",
+        DEREF(ARG_WC(5)),
+        MEMBER_CALL(ARG_WC(0), false, "get_batch_normalization_workspace_size",
+                    ARG_WC(2), ARG_WC(4)))))
 
 // Normalization Layer
 FEATURE_REQUEST_FACTORY(
@@ -425,10 +428,12 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cudnnGetNormalizationBackwardWorkspaceSize",
     DEREF(ARG_WC(12)), ARG("0")))
 
-ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-    "cudnnGetNormalizationTrainingReserveSpaceSize", DEREF(ARG_WC(6)),
-    MEMBER_CALL(ARG_WC(0), false, "get_batch_normalization_workspace_size",
-                ARG_WC(2), ARG_WC(5))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::DnnlUtils_get_batch_normalization_workspace_size,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cudnnGetNormalizationTrainingReserveSpaceSize", DEREF(ARG_WC(6)),
+        MEMBER_CALL(ARG_WC(0), false, "get_batch_normalization_workspace_size",
+                    ARG_WC(2), ARG_WC(5)))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_forward_inference_ex_norm,

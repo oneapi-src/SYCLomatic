@@ -7,6 +7,7 @@
 // TEST_FEATURE: DnnlUtils_batch_normalization_forward_inference
 // TEST_FEATURE: DnnlUtils_batch_normalization_mode
 // TEST_FEATURE: DnnlUtils_batch_normalization_ops
+// TEST_FEATURE: DnnlUtils_get_batch_normalization_workspace_size
 #include <cuda_runtime.h>
 #include <cudnn.h>
 #include <iostream>
