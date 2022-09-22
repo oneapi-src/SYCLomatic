@@ -651,7 +651,7 @@ class engine_ext {
   template <typename primitive_type, typename args_type>
   void async_free(sycl::queue *q, sycl::event e, primitive_type *primitive,
                   args_type *args, std::vector<void *> device_ptrs = {}) {
-    q->submit([&](cl::sycl::handler &cgh) {
+    q->submit([&](sycl::handler &cgh) {
       cgh.depends_on(e);
       cgh.host_task([=] {
         if (primitive) {
@@ -1997,7 +1997,7 @@ sycl::event engine_ext::batch_normalization_backward_internal(
     e = reorder(1.f, actual_diff_scale_bias_desc, reordered_diff_bias, 0.f,
                 diff_scale_bias_desc, diff_bias);
   }
-  _q->submit([&](cl::sycl::handler &cgh) {
+  _q->submit([&](sycl::handler &cgh) {
     cgh.depends_on(e);
     cgh.host_task([=] {
       for (auto ptr : caches) {
@@ -2127,7 +2127,7 @@ sycl::event engine_ext::batch_normalization_forward_internal(
     e = reorder(1.f, actual_mean_var_desc, reordered_saved_var, 0.f,
                 mean_var_desc, saved_var);
   }
-  _q->submit([&](cl::sycl::handler &cgh) {
+  _q->submit([&](sycl::handler &cgh) {
     cgh.depends_on(e);
     cgh.host_task([=] {
       for (auto ptr : caches) {
@@ -2688,7 +2688,7 @@ sycl::event engine_ext::batch_normalization_forward_inference_ex(
     activation_forward(adesc, 1.f, dst_desc, dst_cache, 0.f, dst_desc,
                        dst_cache);
     e = sum(alpha, dst_desc, dst_cache, beta, dst_desc, dst);
-    _q->submit([&](cl::sycl::handler &cgh) {
+    _q->submit([&](sycl::handler &cgh) {
       cgh.depends_on(e);
       cgh.host_task([=] {
         for (auto ptr : caches) {
@@ -2825,7 +2825,7 @@ sycl::event engine_ext::batch_normalization_backward_ex(
       real_diff_dst, beta_data, diff_src_desc, diff_src, alpha_param,
       diff_scale_bias_desc, scale, bias, beta_param, diff_scale, diff_bias,
       mean_var_desc, saved_mean, saved_var);
-  _q->submit([&](cl::sycl::handler &cgh) {
+  _q->submit([&](sycl::handler &cgh) {
     cgh.depends_on(e);
     cgh.host_task([=] {
       for (auto ptr : caches) {
