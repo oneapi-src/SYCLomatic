@@ -1260,7 +1260,6 @@ public:
     host_pointer = (memory_type !=
                         sycl::usm::alloc::unknown) &&
                    (memory_type != sycl::usm::alloc::device) ? ptr : nullptr;
-    is_shared = memory_type == sycl::usm::alloc::shared;
     sycl::device device_obj = sycl::get_pointer_device(ptr, q.get_context());
     device_id = dpct::dev_mgr::instance().get_device_id(device_obj);
 #endif
@@ -1279,7 +1278,7 @@ public:
   }
 
   bool is_memory_shared() {
-    return is_shared;
+    return memory_type == sycl::usm::alloc::shared;
   }
 
   unsigned int get_device_id() {
@@ -1290,7 +1289,6 @@ private:
   sycl::usm::alloc memory_type = sycl::usm::alloc::unknown;
   const void *device_pointer = nullptr;
   const void *host_pointer = nullptr;
-  bool is_shared = false;
   unsigned int device_id = 0;
 };
 } // namespace dpct
