@@ -33,12 +33,21 @@ endfunction(clang_tablegen)
 
 macro(set_clang_windows_version_resource_properties name)
   if(DEFINED windows_resource_file)
-    set_windows_version_resource_properties(${name} ${windows_resource_file}
-      VERSION_MAJOR ${CLANG_VERSION_MAJOR}
-      VERSION_MINOR ${CLANG_VERSION_MINOR}
-      VERSION_PATCHLEVEL ${CLANG_VERSION_PATCHLEVEL}
-      VERSION_STRING "${CLANG_VERSION} (${BACKEND_PACKAGE_STRING})"
-      PRODUCT_NAME "clang")
+# SYCLomatic_CUSTOMIZATION begin
+      set_windows_version_resource_properties(${name} ${windows_resource_file}
+        VERSION_MAJOR ${CLANG_VERSION_MAJOR}
+        VERSION_MINOR ${CLANG_VERSION_MINOR}
+        VERSION_PATCHLEVEL ${CLANG_VERSION_PATCHLEVEL}
+        VERSION_STRING "${CLANG_VERSION}"
+        PRODUCT_NAME "SYCLomatic")
+# SYCLomatic_CUSTOMIZATION else
+    # set_windows_version_resource_properties(${name} ${windows_resource_file}
+    #   VERSION_MAJOR ${CLANG_VERSION_MAJOR}
+    #   VERSION_MINOR ${CLANG_VERSION_MINOR}
+    #   VERSION_PATCHLEVEL ${CLANG_VERSION_PATCHLEVEL}
+    #   VERSION_STRING "${CLANG_VERSION} (${BACKEND_PACKAGE_STRING})"
+    #   PRODUCT_NAME "clang")
+# SYCLomatic_CUSTOMIZATION end
   endif()
 endmacro()
 

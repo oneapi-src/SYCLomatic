@@ -2340,6 +2340,24 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   std::string Source;
   int TexType;
 
+  template <class BaseT>
+  std::shared_ptr<CallExprRewriter>
+  createRewriter(const CallExpr *C, bool RetAssign, BaseT Base) const {
+    const static std::string MemberName = "read";
+    using ReaderPrinter = decltype(makeMemberCallCreator(
+        std::declval<std::function<BaseT(const CallExpr *)>>(), false,
+        MemberName, makeCallArgCreator(Idx)...)(C));
+    if (RetAssign) {
+      return std::make_shared<PrinterRewriter<
+          BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
+          C, Source, DerefExpr::create(C->getArg(0), C),
+          ReaderPrinter(std::move(Base), false, MemberName,
+                        C->getArg(Idx + 1)...));
+    }
+    return std::make_shared<PrinterRewriter<ReaderPrinter>>(
+        C, Source, Base, false, MemberName, C->getArg(Idx)...);
+  }
+
 public:
   TextureReadRewriterFactory(std::string Name, int Tex)
       : Source(std::move(Name)), TexType(Tex) {}
@@ -2373,19 +2391,7 @@ public:
           MemberInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),
             TexType);
           SourceName = MemberInfo->getName();
-          if (RetAssign) {
-            return creatBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(
-                       Source, makeDerefExprCreator(0),
-                       makeMemberCallCreator(makeLiteral(SourceName.str()),
-                                             false, "read",
-                                             makeCallArgCreator(Idx + 1)...))
-                ->create(Call);
-          } else {
-            return createMemberCallExprRewriterFactory(
-                       Source, makeLiteral(SourceName.str()), false, "read",
-                       makeCallArgCreator(Idx)...)
-                ->create(Call);
-          }
+          return createRewriter(Call, RetAssign, SourceName);
         }
       } else if (auto DRE = dyn_cast<DeclRefExpr>(SourceExpr)) {
         auto TexInfo = CallInfo->addTextureObjectArg(SourceIdx, DRE, false);
@@ -2395,21 +2401,8 @@ public:
         }
       }
     }
-    
-    if (RetAssign) {
-      static std::shared_ptr<CallExprRewriterFactoryBase> Factory =
-          creatBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(
-              Source, makeDerefExprCreator(0),
-              makeMemberCallCreator(makeCallArgCreator(1), false, "read",
-                                    makeCallArgCreator(Idx + 1)...));
-      return Factory->create(Call);
-    } else {
-      static std::shared_ptr<CallExprRewriterFactoryBase> Factory =
-          createMemberCallExprRewriterFactory(Source, makeCallArgCreator(0),
-                                              false, "read",
-                                              makeCallArgCreator(Idx)...);
-      return Factory->create(Call);
-    }
+
+    return createRewriter(Call, RetAssign, Call->getArg(RetAssign & 0x01));
   }
 };
 
