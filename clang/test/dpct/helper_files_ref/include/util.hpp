@@ -529,13 +529,13 @@ public:
 /// \param [out] the number of bytes of free memory on the SYCL device.
 /// \param [out] the number of bytes of total memory on the SYCL device.
 void get_sycl_mem_info(size_t &free_mem, size_t &total_mem) {
-#ifdef SYCL_IMPLEMENTATION_INTEL
+#if (defined(__SYCL_COMPILER_VERSION) && __SYCL_COMPILER_VERSION >= 20220927)
   free_mem = dpct::get_default_queue()
                  .get_device()
                  .get_info<sycl::ext::intel::info::device::free_memory>();
 #else
-  throw std::runtime_error("Querying the number of bytes of free memory on "
-                           "the SYCL device is not supported!");
+  static_assert(
+      false, "Querying the number of bytes of free memory is not supported.");
 #endif
   total_mem =
       dpct::get_current_device().get_device_info().get_global_mem_size();
