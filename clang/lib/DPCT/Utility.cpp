@@ -1433,9 +1433,29 @@ std::string getTempNameForExpr(const Expr *E, bool HandleLiteral,
                                SourceLocation CallBegin, SourceLocation CallEnd) {
   SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
   E = E->IgnoreCasts();
-  auto Range = getRangeInRange(E, CallBegin, CallEnd);
-  auto TokenBegin = Range.first;
-  auto ExprEndLoc = Range.second;
+  bool RangeInCall = false;
+  SourceLocation TokenBegin;
+  SourceLocation ExprEndLoc;
+  if (CallBegin.isValid() && CallEnd.isValid()) {
+    auto Range = getRangeInRange(E, CallBegin, CallEnd);
+    auto DLBegin = SM.getDecomposedLoc(Range.first);
+    auto DLEnd = SM.getDecomposedLoc(Range.second);
+    if (DLBegin.first == DLEnd.first &&
+        DLBegin.second <= DLEnd.second) {
+      TokenBegin = Range.first;
+      ExprEndLoc = Range.second;
+      RangeInCall = true;
+    }
+  }
+  // Fallback to Range while CallBegin/End is not valid or getRangeInRange dose
+  // not return a valid range
+  if (!RangeInCall) {
+    auto Range =
+        getTheLastCompleteImmediateRange(E->getBeginLoc(), E->getEndLoc());
+    TokenBegin = Range.first;
+    ExprEndLoc = Range.second;
+  }
+
   std::string IdString;
   llvm::raw_string_ostream OS(IdString);
   Token Tok;
