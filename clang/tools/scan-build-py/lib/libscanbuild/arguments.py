@@ -32,18 +32,10 @@ def parse_args_for_intercept_build():
     args = parser.parse_args()
 # SYCLomatic_CUSTOMIZATION begin
     if len(args.cdb)>4095:
-        print('Error: File name specified by --cdb option is too long')
+        print('Error: File name specified by --cdb option is too long.')
         sys.exit(-1)
     if args.no_linker_entry > 0 and args.linker_entry > 1:
-        print('Error: --linker-entry conflicts with --no-linker-entry')
-        sys.exit(-1)
-
-    if args.parse_build_log and not args.work_directory:
-        print('Error: option --work-directory needs to be specified, if --build-log is specified')
-        sys.exit(-1)
-
-    if not args.parse_build_log and args.work_directory:
-        print('Error: option --build-log needs to be specified, if -work-directory is specified')
+        print('Error: --linker-entry conflicts with --no-linker-entry.')
         sys.exit(-1)
 # SYCLomatic_CUSTOMIZATION end
 
@@ -51,8 +43,8 @@ def parse_args_for_intercept_build():
     logging.debug('Raw arguments %s', sys.argv)
 
     # short validation logic
-    if not args.build and not args.parse_build_log and not args.work_directory:
-        parser.error(message='Please specify build command, or specify build log file to be parsed')
+    if not args.build and not args.parse_build_log:
+        parser.error(message='Please specify build command, or specify build log file to be parsed.')
 
     logging.debug('Parsed arguments: %s', args)
     return args

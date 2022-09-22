@@ -1,6 +1,6 @@
 // CHECK:[
 // CHECK:    {
-// CHECK:        "command": "nvcc -c -I../../common/inc -m64 --std=c++11 -o bar.o -D__CUDACC__=1 bar.cu",
+// CHECK:        "command": "nvcc -c -I../../common/inc -m64 -D__BAR__ --std=c++11 -o bar.o -D__CUDACC__=1 bar.cu",
 // CHECK:        "directory": "{{.*}}/parse_build_log/Output",
 // CHECK:        "file": "{{.*}}/parse_build_log/Output/bar.cu"
 // CHECK:    },
