@@ -1010,7 +1010,7 @@ int runDPCT(int argc, const char **argv) {
   CallExprRewriterFactoryBase::initRewriterMap();
   CallExprRewriterFactoryBase::initMethodRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
-  if (UseIntelSpecificFlag==true){
+  if (clang::dpct::DpctGlobalInfo::useLibDevice()){
     std::string ClangExecutablePath =
       llvm::sys::path::parent_path(
         llvm::sys::path::parent_path(
@@ -1084,9 +1084,6 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
                      DpctGlobalInfo::getAnalysisScope(),
                      AnalysisScope.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_UseIntelSpecificAPI,
-                     UseIntelSpecificFlag,
-                     UseIntelSpecificAPI.getNumOccurrences());
 
     if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
       std::string Msg;

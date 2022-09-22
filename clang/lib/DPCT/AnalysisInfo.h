@@ -1934,6 +1934,9 @@ public:
   static bool useEnqueueBarrier() {
     return getUsingExtension(DPCPPExtensions::Ext_EnqueueBarrier);
   }
+  static bool useLibDevice() {
+    return getUsingExtension(DPCPPExtensions::Ext_UseLibDevice);
+  }
 
   static bool getSpBLASUnsupportedMatrixTypeFlag() {
     return SpBLASUnsupportedMatrixTypeFlag;

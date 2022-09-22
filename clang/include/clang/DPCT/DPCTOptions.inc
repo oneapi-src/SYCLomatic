@@ -323,6 +323,10 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<DPCPPExtensions>), NoDPCPPE
              DPCT_OPT_ENUM("enqueued_barriers",
                                      int(DPCPPExtensions::Ext_EnqueueBarrier),
                                      "Enqueued barriers extension.",
+                                     false),
+             DPCT_OPT_ENUM("use_lib_device",
+                                     int(DPCPPExtensions::Ext_UseLibDevice),
+                                     "Use Intel specific APi.",
                                      false)
            ),
            llvm::cl::desc("Comma separated list of extensions not to be used in migrated "
@@ -384,10 +388,4 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisS
              "needs to be migrated.\n"
              "Default: the value of --in-root"),
         llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat))
-
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool,true>), UseIntelSpecificAPI, "use-intel-specific-API",
-        llvm::cl::desc("Tells the tool to use intel specfic API.\n"
-                   "Default: off."),
-        llvm::cl::cat(DPCTCat), llvm::cl::location(UseIntelSpecificFlag))
-
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT
