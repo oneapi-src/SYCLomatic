@@ -26,6 +26,13 @@ int main(){
   // CHECK: dpct::queue_ptr s8 = &dpct::get_default_queue();
   cudaStream_t s8 = NULL;
 
+  struct a{
+    // CHECK: dpct::queue_ptr s9;
+    cudaStream_t s9;
+    // CHECK: dpct::queue_ptr s10 = &dpct::get_default_queue(), s11, s12{&dpct::get_default_queue()};
+    cudaStream_t s10 = 0, s11, s12{0};
+  };
+
 }
 
 
