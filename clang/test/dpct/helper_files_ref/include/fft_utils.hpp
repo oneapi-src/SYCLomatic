@@ -37,7 +37,7 @@ class fft_engine {
 public:
   /// Default constructor.
   fft_engine() {}
-  /// Commit the config for calculate n-D FFT.
+  /// Commit the configuration to calculate n-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
   /// \param [in] dim Dimension number of the data.
   /// \param [in] n Pointer to an array containing each dimension's size.
@@ -71,7 +71,7 @@ public:
                     ostride, odist, output_type, batch,
                     direction_and_placement);
   }
-  /// Commit the config for calculate n-D FFT.
+  /// Commit the configuration to calculate n-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
   /// \param [in] dim Dimension number of the data.
   /// \param [in] n Pointer to an array containing each dimension's size.
@@ -103,7 +103,7 @@ public:
     init<int>(dim, n, inembed, istride, idist, input_type, onembed, ostride,
               odist, output_type, batch, direction_and_placement);
   }
-  /// Commit the config for calculate n-D FFT.
+  /// Commit the configuration to calculate n-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
   /// \param [in] dim Dimension number of the data.
   /// \param [in] n Pointer to an array containing each dimension's size.
@@ -135,7 +135,7 @@ public:
            fft_type_to_data_type(type).second, batch, scratchpad_size,
            direction_and_placement);
   }
-  /// Commit the config for calculate n-D FFT.
+  /// Commit the configuration to calculate n-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
   /// \param [in] dim Dimension number of the data.
   /// \param [in] n Pointer to an array containing each dimension's size.
@@ -166,7 +166,7 @@ public:
            fft_type_to_data_type(type).second, batch, scratchpad_size,
            direction_and_placement);
   }
-  /// Commit the config for calculate 1-D FFT.
+  /// Commit the configuration to calculate 1-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
   /// \param [in] n1 The size of the dimension of the data.
   /// \param [in] type The FFT type.
@@ -196,7 +196,7 @@ public:
     }
     config_and_commit_basic();
   }
-  /// Commit the config for calculate 2-D FFT.
+  /// Commit the configuration to calculate 2-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
   /// \param [in] n2 The size of the 2nd dimension (outermost) of the data.
   /// \param [in] n1 The size of the 1st dimension (innermost) of the data.
@@ -226,7 +226,7 @@ public:
     }
     config_and_commit_basic();
   }
-  /// Commit the config for calculate 3-D FFT.
+  /// Commit the configuration to calculate 3-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
   /// \param [in] n3 The size of the 3rd dimension (outermost) of the data.
   /// \param [in] n2 The size of the 2nd dimension of the data.
