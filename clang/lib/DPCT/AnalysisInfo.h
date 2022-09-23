@@ -3083,7 +3083,7 @@ public:
       M.second->setBaseName(Name);
     }
   }
-  void addParamDeclReplacement() { return; }
+  void addParamDeclReplacement() override { return; }
   void merge(std::shared_ptr<TextureObjectInfo> Target) override {
     if (auto T =
             std::dynamic_pointer_cast<StructureTextureObjectInfo>(Target)) {
