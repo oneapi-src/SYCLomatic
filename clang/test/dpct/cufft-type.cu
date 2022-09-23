@@ -32,21 +32,21 @@ int main() {
   size = sizeof(cuComplex);
   size = sizeof(cuDoubleComplex);
 
-  //CHECK:int forward = -1;
-  //CHECK-NEXT:int inverse = 1;
+  //CHECK:int forward = dpct::fft::fft_direction::forward;
+  //CHECK-NEXT:int inverse = dpct::fft::fft_direction::backward;
   int forward = CUFFT_FORWARD;
   int inverse = CUFFT_INVERSE;
 
-  //CHECK:int fftt_t;
-  //CHECK-NEXT:int fftt;
-  //CHECK-NEXT:size = sizeof(int);
-  //CHECK-NEXT:size = sizeof(int);
-  //CHECK-NEXT:fftt = 42;
-  //CHECK-NEXT:fftt = 44;
-  //CHECK-NEXT:fftt = 41;
-  //CHECK-NEXT:fftt = 106;
-  //CHECK-NEXT:fftt = 108;
-  //CHECK-NEXT:fftt = 105;
+  //CHECK:dpct::fft::fft_type fftt_t;
+  //CHECK-NEXT:dpct::fft::fft_type fftt;
+  //CHECK-NEXT:size = sizeof(dpct::fft::fft_type);
+  //CHECK-NEXT:size = sizeof(dpct::fft::fft_type);
+  //CHECK-NEXT:fftt = dpct::fft::fft_type::real_float_to_complex_float;
+  //CHECK-NEXT:fftt = dpct::fft::fft_type::complex_float_to_real_float;
+  //CHECK-NEXT:fftt = dpct::fft::fft_type::complex_float_to_complex_float;
+  //CHECK-NEXT:fftt = dpct::fft::fft_type::real_double_to_complex_double;
+  //CHECK-NEXT:fftt = dpct::fft::fft_type::complex_double_to_real_double;
+  //CHECK-NEXT:fftt = dpct::fft::fft_type::complex_double_to_complex_double;
   cufftType_t fftt_t;
   cufftType fftt;
   size = sizeof(cufftType_t);
@@ -58,14 +58,8 @@ int main() {
   fftt = CUFFT_Z2D;
   fftt = CUFFT_Z2Z;
 
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1050:{{[0-9]+}}: The template argument of the FFT precision and domain type could not be deduced. You need to update this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>> ffth;
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1050:{{[0-9]+}}: The template argument of the FFT precision and domain type could not be deduced. You need to update this code.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:size = sizeof(std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>>);
+  //CHECK:dpct::fft::fft_engine* ffth;
+  //CHECK-NEXT:size = sizeof(dpct::fft::fft_engine*);
   cufftHandle ffth;
   size = sizeof(cufftHandle);
 
@@ -123,12 +117,9 @@ int main() {
 //CHECK-NEXT:typename D = sycl::double2,
 //CHECK-NEXT:typename E = sycl::float2,
 //CHECK-NEXT:typename F = sycl::double2,
-//CHECK-NEXT:typename G = int,
-//CHECK-NEXT:typename H = int,
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1050:2: The template argument of the FFT precision and domain type could not be deduced. You need to update this code.
-//CHECK-NEXT:*/
-//CHECK-NEXT:typename I = std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>>,
+//CHECK-NEXT:typename G = dpct::fft::fft_type,
+//CHECK-NEXT:typename H = dpct::fft::fft_type,
+//CHECK-NEXT:typename I = dpct::fft::fft_engine*,
 //CHECK-NEXT:typename J = int,
 //CHECK-NEXT:typename K = int>
 //CHECK-NEXT:void foo1(
@@ -138,12 +129,9 @@ int main() {
 //CHECK-NEXT:sycl::double2 d,
 //CHECK-NEXT:sycl::float2 e,
 //CHECK-NEXT:sycl::double2 f,
-//CHECK-NEXT:int g,
-//CHECK-NEXT:int h,
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1050:3: The template argument of the FFT precision and domain type could not be deduced. You need to update this code.
-//CHECK-NEXT:*/
-//CHECK-NEXT:std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>> i,
+//CHECK-NEXT:dpct::fft::fft_type g,
+//CHECK-NEXT:dpct::fft::fft_type h,
+//CHECK-NEXT:dpct::fft::fft_engine* i,
 //CHECK-NEXT:int j,
 //CHECK-NEXT:int k
 //CHECK-NEXT:){}
@@ -175,12 +163,12 @@ cufftResult k
 
 
 //CHECK:template<
-//CHECK-NEXT:int A1 = 42,
-//CHECK-NEXT:int A2 = 44,
-//CHECK-NEXT:int A3 = 41,
-//CHECK-NEXT:int A4 = 106,
-//CHECK-NEXT:int A5 = 108,
-//CHECK-NEXT:int A6 = 105,
+//CHECK-NEXT:dpct::fft::fft_type A1 = dpct::fft::fft_type::real_float_to_complex_float,
+//CHECK-NEXT:dpct::fft::fft_type A2 = dpct::fft::fft_type::complex_float_to_real_float,
+//CHECK-NEXT:dpct::fft::fft_type A3 = dpct::fft::fft_type::complex_float_to_complex_float,
+//CHECK-NEXT:dpct::fft::fft_type A4 = dpct::fft::fft_type::real_double_to_complex_double,
+//CHECK-NEXT:dpct::fft::fft_type A5 = dpct::fft::fft_type::complex_double_to_real_double,
+//CHECK-NEXT:dpct::fft::fft_type A6 = dpct::fft::fft_type::complex_double_to_complex_double,
 //CHECK-NEXT:int B1 = 0,
 //CHECK-NEXT:int B2 = 1,
 //CHECK-NEXT:int B3 = 2,
@@ -199,12 +187,12 @@ cufftResult k
 //CHECK-NEXT:int B16 = 15,
 //CHECK-NEXT:int B17 = 16>
 //CHECK-NEXT:void foo2(
-//CHECK-NEXT:int a1 = 42,
-//CHECK-NEXT:int a2 = 44,
-//CHECK-NEXT:int a3 = 41,
-//CHECK-NEXT:int a4 = 106,
-//CHECK-NEXT:int a5 = 108,
-//CHECK-NEXT:int a6 = 105,
+//CHECK-NEXT:dpct::fft::fft_type a1 = dpct::fft::fft_type::real_float_to_complex_float,
+//CHECK-NEXT:dpct::fft::fft_type a2 = dpct::fft::fft_type::complex_float_to_real_float,
+//CHECK-NEXT:dpct::fft::fft_type a3 = dpct::fft::fft_type::complex_float_to_complex_float,
+//CHECK-NEXT:dpct::fft::fft_type a4 = dpct::fft::fft_type::real_double_to_complex_double,
+//CHECK-NEXT:dpct::fft::fft_type a5 = dpct::fft::fft_type::complex_double_to_real_double,
+//CHECK-NEXT:dpct::fft::fft_type a6 = dpct::fft::fft_type::complex_double_to_complex_double,
 //CHECK-NEXT:int b1 = 0,
 //CHECK-NEXT:int b2 = 1,
 //CHECK-NEXT:int b3 = 2,
@@ -305,20 +293,17 @@ template<typename T>
 cuDoubleComplex foo8(){}
 
 //CHECK:template<typename T>
-//CHECK-NEXT:int foo9(){}
+//CHECK-NEXT:dpct::fft::fft_type foo9(){}
 template<typename T>
 cufftType_t foo9(){}
 
 //CHECK:template<typename T>
-//CHECK-NEXT:int foo10(){}
+//CHECK-NEXT:dpct::fft::fft_type foo10(){}
 template<typename T>
 cufftType foo10(){}
 
 //CHECK:template<typename T>
-//CHECK-NEXT:/*
-//CHECK-NEXT:DPCT1050:4: The template argument of the FFT precision and domain type could not be deduced. You need to update this code.
-//CHECK:*/
-//CHECK-NEXT:std::shared_ptr<oneapi::mkl::dft::descriptor<dpct_placeholder/*Fix the precision and domain type manually*/>> foo11(){}
+//CHECK-NEXT:dpct::fft::fft_engine* foo11(){}
 template<typename T>
 cufftHandle foo11(){}
 
