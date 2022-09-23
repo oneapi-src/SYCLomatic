@@ -6,6 +6,44 @@
 //
 //===----------------------------------------------------------------------===//
 
+CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckArgCountGreaterThan(5), CheckArgIsDefaultCudaStream(5)),
+    CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceReduce::Sum"),
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_DPL_Execution,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Algorithm,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                "cub::DeviceReduce::Sum",
+                MEMBER_CALL(
+                    QUEUESTR, false, "fill", ARG(3),
+                    CALL(
+                        "oneapi::dpl::reduce",
+                        CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
+                        ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4))),
+                    LITERAL("1")),
+                false, "wait"))))),
+    CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceReduce::Sum"),
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_DPL_Execution,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Algorithm,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                "cub::DeviceReduce::Sum",
+                MEMBER_CALL(
+                    QUEUESTR, false, "fill", ARG(3),
+                    CALL(
+                        "oneapi::dpl::reduce",
+                        CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
+                        ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4))),
+                    LITERAL("1")),
+                false, "wait")))))
+)
+
 // cub::DeviceReduce::Sum
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),

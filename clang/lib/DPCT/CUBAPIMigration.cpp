@@ -42,15 +42,6 @@ auto parentStmt = []() {
 };
 } // namespace
 
-/// Check if expression is one of NULL(0)/nullptr/__null
-static bool isNullPointerConstant(const Expr *E) {
-  if (!E)
-    return false;
-  return E->isNullPointerConstant(DpctGlobalInfo::getContext(),
-                                  Expr::NPC_ValueDependentIsNull) !=
-         Expr::NPCK_NotNull;
-}
-
 static bool isCudaMemoryAPIName(StringRef FuncName) {
   return FuncName == "cudaMalloc" || FuncName == "cuMemAlloc_v2" ||
          FuncName == "cudaFree";

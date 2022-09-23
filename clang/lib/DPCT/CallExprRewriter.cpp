@@ -1206,24 +1206,6 @@ DerefExpr DerefExpr::create(const Expr *E, const CallExpr * C = nullptr) {
 class DerefStreamExpr {
   const Expr *E;
 
-  bool isDefaultStream() const {
-    auto Expression = E->IgnoreImpCasts();
-    if (auto Paren = dyn_cast<ParenExpr>(Expression)) {
-      Expression = Paren->getSubExpr()->IgnoreImpCasts();
-    }
-    if (auto TypeCast = dyn_cast<ExplicitCastExpr>(Expression)) {
-      Expression = TypeCast->getSubExpr()->IgnoreImpCasts();
-    }
-    Expr::EvalResult Result;
-    if (!Expression->isValueDependent() &&
-        Expression->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
-      auto Val = Result.Val.getInt().getZExtValue();
-      return Val < 3; // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
-                      // all migrated to default queue;
-    }
-    return false;
-  }
-
   template <class StreamT> void printDefaultQueue(StreamT &Stream) const {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     buildTempVariableMap(Index, E, HelperFuncType::HFT_DefaultQueue);
@@ -1233,13 +1215,13 @@ class DerefStreamExpr {
 public:
   template <class StreamT>
   void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
-    if (isDefaultStream())
+    if (isDefaultCudaStream(E))
       printDefaultQueue(Stream);
     else
       DerefExpr::create(E).printArg(Stream, A);
   }
   template <class StreamT> void printMemberBase(StreamT &Stream) const {
-    if (isDefaultStream()) {
+    if (isDefaultCudaStream(E)) {
       printDefaultQueue(Stream);
       Stream << ".";
     } else {
@@ -1248,7 +1230,7 @@ public:
   }
 
   template <class StreamT> void print(StreamT &Stream) const {
-    if (isDefaultStream())
+    if (isDefaultCudaStream(E))
       printDefaultQueue(Stream);
     else
       DerefExpr::create(E).print(Stream);
@@ -2546,6 +2528,15 @@ public:
   bool operator()(const CallExpr *C) { return C->getNumArgs() == Count; }
 };
 
+class CheckArgCountGreaterThan {
+  unsigned Count;
+public:
+  CheckArgCountGreaterThan(unsigned I) : Count(I) {}
+  bool operator()(const CallExpr *C) {
+    return C->getNumArgs() > Count;
+  }
+};
+
 class CheckBaseType {
   std::string TypeName;
 
@@ -2601,6 +2592,16 @@ public:
       return true;
     }
     return false;
+  }
+};
+
+class CheckArgIsDefaultCudaStream {
+  unsigned ArgIndex;
+
+public:
+  CheckArgIsDefaultCudaStream(unsigned ArgIndex) : ArgIndex(ArgIndex) {}
+  bool operator()(const CallExpr *C) const {
+    return isDefaultCudaStream(C->getArg(ArgIndex));
   }
 };
 

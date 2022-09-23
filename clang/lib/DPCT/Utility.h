@@ -571,4 +571,12 @@ std::string getArgTypeStr(const clang::CallExpr *CE, unsigned int Idx);
 std::string getFunctionName(const clang::FunctionDecl *Node);
 std::string getFunctionName(const clang::UnresolvedLookupExpr *Node);
 std::string getFunctionName(const clang::FunctionTemplateDecl *Node);
+
+/// if \p E is cudaStream_t type and also it can be evaluated into one of NULL,
+/// nullptr, __null, 0, 1, 2, this expression can be replaced by default queue
+bool isDefaultCudaStream(const clang::Expr *E);
+
+/// Check if expression is one of NULL(0)/nullptr/__null
+bool isNullPointerConstant(const clang::Expr *E);
+
 #endif // DPCT_UTILITY_H

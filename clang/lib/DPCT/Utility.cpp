@@ -4016,3 +4016,28 @@ std::string getFunctionName(const clang::UnresolvedLookupExpr *Node) {
 std::string getFunctionName(const clang::FunctionTemplateDecl *Node) {
   return getFunctionName(Node->getTemplatedDecl());
 }
+
+bool isDefaultCudaStream(const clang::Expr *E) {
+  assert(E && "Expr can not be nullptr");
+  QualType Ty = E->getType();
+  if (Ty.getAsString() != "cudaStream_t")
+    return false;
+  if (isNullPointerConstant(E))
+    return true;
+  Expr::EvalResult Result;
+  const auto *NoCastExpr = E->IgnoreCasts();
+  if (!NoCastExpr->isValueDependent() &&
+      NoCastExpr->EvaluateAsInt(Result, clang::dpct::DpctGlobalInfo::getContext())) {
+    auto Val = Result.Val.getInt().getZExtValue();
+    return Val < 3; // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
+                    // all migrated to default queue;
+  }
+  return false;
+}
+
+bool isNullPointerConstant(const clang::Expr *E) {
+  assert(E && "Expr can not be nullptr");
+  return E->isNullPointerConstant(clang::dpct::DpctGlobalInfo::getContext(),
+                                  Expr::NPC_ValueDependentIsNull) !=
+         Expr::NPCK_NotNull;
+}
