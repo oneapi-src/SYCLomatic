@@ -7,15 +7,11 @@ void foo1() {
   float2* iodata;
   cudaStream_t s;
 
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK-NEXT:plan->set_queue(s);
+  //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftSetStream(plan, s);
-
-  //CHECK:plan->commit(*s);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
-  //CHECK-NEXT:}
   cufftExecR2C(plan, (float*)iodata, iodata);
 }
 
@@ -31,21 +27,17 @@ void foo2() {
   float2* iodata;
   cudaStream_t s;
 
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:cufftCheck((plan->set_queue(s), 0));
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:cufftCheck((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftCheck(cufftSetStream(plan, s));
-
-  //CHECK:cufftCheck([&](){
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*s);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:return 0;
-  //CHECK-NEXT:}());
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
 }
 #undef cufftCheck
@@ -66,21 +58,17 @@ void foo3() {
   float2* iodata;
   cudaStream_t s;
 
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:HANDLE_CUFFT_ERROR((plan->set_queue(s), 0));
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:HANDLE_CUFFT_ERROR((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   HANDLE_CUFFT_ERROR(cufftSetStream(plan, s));
-
-  //CHECK:HANDLE_CUFFT_ERROR([&](){
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*s);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:return 0;
-  //CHECK-NEXT:}());
   HANDLE_CUFFT_ERROR(cufftExecR2C(plan, (float*)iodata, iodata));
 }
 #undef HANDLE_CUFFT_ERROR
@@ -91,21 +79,17 @@ void foo4() {
   float2* iodata;
   cudaStream_t s;
 
-  cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
-  cufftResult err = cufftSetStream(plan, s);
-
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*s);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:err = (oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata), 0);
-  //CHECK-NEXT:}
+  //CHECK-NEXT:int err = (plan->set_queue(s), 0);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:err = (plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0);
+  cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
+  cufftResult err = cufftSetStream(plan, s);
   err = cufftExecR2C(plan, (float*)iodata, iodata);
 }
 
@@ -121,20 +105,17 @@ void foo5() {
   float2* iodata;
   cudaStream_t s;
 
-  cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
-  CUFFT_CHECK(cufftSetStream(plan, s));
-
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*s);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:CUFFT_CHECK((oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata), 0));
+  //CHECK-NEXT:CUFFT_CHECK((plan->set_queue(s), 0));
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:CUFFT_CHECK((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
+  cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
+  CUFFT_CHECK(cufftSetStream(plan, s));
   CUFFT_CHECK(cufftExecR2C(plan, (float*)iodata, iodata));
 }
 
@@ -148,21 +129,17 @@ void foo6() {
   float2* iodata;
   cudaStream_t s;
 
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:MY_ERROR_CHECKER((plan->set_queue(s), 0));
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:MY_ERROR_CHECKER((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   MY_ERROR_CHECKER(cufftSetStream(plan, s));
-
-  //CHECK:MY_ERROR_CHECKER([&](){
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*s);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:return 0;
-  //CHECK-NEXT:}());
   MY_ERROR_CHECKER(cufftExecR2C(plan, (float*)iodata, iodata));
 }
 #undef MY_ERROR_CHECKER
@@ -180,21 +157,17 @@ void foo7() {
   float2* iodata;
   cudaStream_t s;
 
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:CHECK_CUFFT((plan->set_queue(s), 0));
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:CHECK_CUFFT((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   CHECK_CUFFT(cufftSetStream(plan, s));
-
-  //CHECK:CHECK_CUFFT([&](){
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*s);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:return 0;
-  //CHECK-NEXT:}());
   CHECK_CUFFT(cufftExecR2C(plan, (float*)iodata, iodata));
 }
 #undef CHECK_CUFFT
@@ -210,21 +183,17 @@ void foo8() {
   float2* iodata;
   cudaStream_t s;
 
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:cufftCheck((plan->set_queue(s), 0));
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:cufftCheck((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftCheck(cufftSetStream(plan, s));
-
-  //CHECK:cufftCheck([&](){
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*s);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:return 0;
-  //CHECK-NEXT:}());
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
 }
 
@@ -234,52 +203,32 @@ void foo9() {
   float2* iodata;
   cudaStream_t s1, s2;
 
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:cufftCheck((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:cufftCheck((plan->set_queue(s1), 0));
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:cufftCheck((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:cufftCheck((plan->set_queue(s2), 0));
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:cufftCheck((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
-
-  //CHECK:cufftCheck([&](){
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(q_ct1);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:return 0;
-  //CHECK-NEXT:}());
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
-  
   cufftCheck(cufftSetStream(plan, s1));
-
-  //CHECK:cufftCheck([&](){
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*s1);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:return 0;
-  //CHECK-NEXT:}());
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
-
   cufftCheck(cufftSetStream(plan, s2));
-
-  //CHECK:cufftCheck([&](){
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*s2);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:return 0;
-  //CHECK-NEXT:}());
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
 }
 
@@ -289,38 +238,26 @@ void foo10(bool flag) {
   float2* iodata;
   cudaStream_t s;
 
-  cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
-
-  //CHECK:cufftCheck([&](){
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(q_ct1);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
+  //CHECK-NEXT:cufftCheck((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
+  //CHECK-NEXT:if (flag) {
+  //CHECK-NEXT:  /*
+  //CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:  */
+  //CHECK-NEXT:  cufftCheck((plan->set_queue(s), 0));
   //CHECK-NEXT:}
-  //CHECK-NEXT:return 0;
-  //CHECK-NEXT:}());
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:cufftCheck((plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward), 0));
+  cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
-
   if (flag) {
     cufftCheck(cufftSetStream(plan, s));
   }
-
-  //CHECK:cufftCheck([&](){
-  //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(q_ct1);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
-  //CHECK-NEXT:}
-  //CHECK-NEXT:return 0;
-  //CHECK-NEXT:}());
   cufftCheck(cufftExecR2C(plan, (float*)iodata, iodata));
 }
 #undef cufftCheck
@@ -330,20 +267,13 @@ void foo11(bool flag) {
   float2* iodata;
   cudaStream_t s;
 
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK-NEXT:if (flag)
+  //CHECK-NEXT:  plan->set_queue(s);
+  //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
-
   if (flag)
     cufftSetStream(plan, s);
-
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(dpct::get_default_queue());
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
-  //CHECK-NEXT:}
   cufftExecR2C(plan, (float*)iodata, iodata);
 }
 
@@ -352,20 +282,13 @@ void foo12(cufftHandle plan2) {
   float2* iodata;
   cudaStream_t s;
 
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK-NEXT:plan->set_queue(s);
+  //CHECK-NEXT:plan = plan2;
+  //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
-
   cufftSetStream(plan, s);
   plan = plan2;
-
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*s);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
-  //CHECK-NEXT:}
   cufftExecR2C(plan, (float*)iodata, iodata);
 }
 
@@ -376,20 +299,13 @@ void foo13() {
   float2* iodata;
   cudaStream_t s;
 
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK-NEXT:plan->set_queue(s);
+  //CHECK-NEXT:changeHandle(plan);
+  //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
-
   cufftSetStream(plan, s);
   changeHandle(plan);
-
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*s);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
-  //CHECK-NEXT:}
   cufftExecR2C(plan, (float*)iodata, iodata);
 }
 
@@ -398,22 +314,14 @@ void foo14() {
   float2* iodata;
   cudaStream_t s;
 
+  //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
+  //CHECK-NEXT:plan->set_queue(s);
+  //CHECK-NEXT:plan = dpct::fft::fft_engine::create();
+  //CHECK-NEXT:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
+  //CHECK-NEXT:dpct::fft::fft_engine::destroy(plan);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
-
   cufftSetStream(plan, s);
-  //CHECK: DPCT1026:{{[0-9]+}}: The call to cufftCreate was removed because this call is redundant in SYCL.
   cufftCreate(&plan);
-
-  //CHECK:/*
-  //CHECK-NEXT:DPCT1075:{{[0-9]+}}: Migration of cuFFT calls may be incorrect and require review.
-  //CHECK-NEXT:*/
-  //CHECK-NEXT:plan->commit(*s);
-  //CHECK-NEXT:if ((void *)(float*)iodata == (void *)iodata) {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata);
-  //CHECK-NEXT:} else {
-  //CHECK-NEXT:oneapi::mkl::dft::compute_forward(*plan, (float*)iodata, (float*)iodata);
-  //CHECK-NEXT:}
   cufftExecR2C(plan, (float*)iodata, iodata);
-  //CHECK: DPCT1026:{{[0-9]+}}: The call to cufftDestroy was removed because this call is redundant in SYCL.
   cufftDestroy(plan);
 }

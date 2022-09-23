@@ -53,7 +53,6 @@ HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
     HelperFilesCustomizationLevel::HFCL_None;
 std::string DpctGlobalInfo::CustomHelperFileName = "dpct";
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
-std::unordered_set<FFTTypeEnum> DpctGlobalInfo::FFTTypeSet;
 std::unordered_set<std::string> DpctGlobalInfo::HostRNGEngineTypeSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
@@ -114,9 +113,6 @@ std::unordered_map<std::string, int> DpctGlobalInfo::TempVariableHandledMap;
 bool DpctGlobalInfo::UsingDRYPattern = true;
 bool DpctGlobalInfo::UsingGenericSpace = true;
 bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
-std::unordered_map<std::string, FFTExecAPIInfo>
-    DpctGlobalInfo::FFTExecAPIInfoMap;
-std::unordered_map<std::string, FFTHandleInfo> DpctGlobalInfo::FFTHandleInfoMap;
 unsigned int DpctGlobalInfo::CudaKernelDimDFIIndex = 1;
 std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CudaKernelDimDFIMap;
@@ -267,7 +263,6 @@ public:
 void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
   PrecAndDomPairSet.clear();
-  FFTTypeSet.clear();
   HostRNGEngineTypeSet.clear();
   KCIndentWidthMap.clear();
   LocationInitIndexMap.clear();
@@ -293,8 +288,6 @@ void DpctGlobalInfo::resetInfo() {
   TempVariableHandledMap.clear();
   UsingDRYPattern = true;
   SpBLASUnsupportedMatrixTypeFlag = false;
-  FFTExecAPIInfoMap.clear();
-  FFTHandleInfoMap.clear();
   NeedRunAgain = false;
   SpellingLocToDFIsMapForAssumeNDRange.clear();
   DFIToSpellingLocsMapForAssumeNDRange.clear();
@@ -328,29 +321,8 @@ DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
   return KernelInfo;
 }
 
-void DpctGlobalInfo::insertFFTPlanAPIInfo(SourceLocation SL,
-                                          FFTPlanAPIInfo Info) {
-  auto LocInfo = getLocInfo(SL);
-  auto FileInfo = insertFile(LocInfo.first);
-  auto &M = FileInfo->getFFTPlanAPIInfoMap();
-  if (M.find(LocInfo.second) == M.end()) {
-    Info.FilePath = LocInfo.first;
-    M.insert(std::make_pair(LocInfo.second, Info));
-  }
-}
-
-void DpctGlobalInfo::insertFFTExecAPIInfo(SourceLocation SL,
-                                          FFTExecAPIInfo Info) {
-  auto LocInfo = getLocInfo(SL);
-  auto FileInfo = insertFile(LocInfo.first);
-  auto &M = FileInfo->getFFTExecAPIInfoMap();
-  if (M.find(LocInfo.second) == M.end()) {
-    Info.FilePath = LocInfo.first;
-    M.insert(std::make_pair(LocInfo.second, Info));
-  }
-}
-
 bool DpctFileInfo::isInAnalysisScope() { return DpctGlobalInfo::isInAnalysisScope(FilePath); }
+
 // TODO: implement one of this for each source language.
 bool DpctFileInfo::isInCudaPath() {
   return DpctGlobalInfo::isInCudaPath(FilePath);
@@ -502,20 +474,8 @@ void DpctFileInfo::buildReplacements() {
                                false, std::get<1>(AtomicInfo.second));
   }
 
-  for (auto &DescInfo : FFTDescriptorTypeMap) {
-    DescInfo.second.buildInfo(FilePath, DescInfo.first);
-  }
-
   for (auto &DescInfo : EventSyncTypeMap) {
     DescInfo.second.buildInfo(FilePath, DescInfo.first);
-  }
-
-  for (auto &PlanInfo : FFTPlanAPIInfoMap) {
-    PlanInfo.second.buildInfo();
-  }
-
-  for (auto &ExecInfo : FFTExecAPIInfoMap) {
-    ExecInfo.second.buildInfo();
   }
 
   const auto &TimeStubBounds = getTimeStubBounds();
@@ -643,8 +603,9 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
       return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
                           "<oneapi/mkl.hpp>");
     case HT_MKL_FFT:
-      return insertHeader(HeaderType::HT_MKL_FFT, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>");
+      return insertHeader(
+          HeaderType::HT_MKL_FFT, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          "<" + getCustomMainHelperFileName() + "/fft_utils.hpp>");
     case HT_Numeric:
       return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
                           "<numeric>");
@@ -2328,6 +2289,8 @@ void DeviceFunctionInfo::mergeCalledTexObj(
     const std::vector<std::shared_ptr<TextureObjectInfo>> &TexObjList) {
   for (auto &Obj : TexObjList) {
     if (!Obj)
+      continue;
+    if(Obj->getParamIdx() >= TextureObjectList.size())
       continue;
     if (auto &Parm = TextureObjectList[Obj->getParamIdx()]) {
       Parm->merge(Obj);

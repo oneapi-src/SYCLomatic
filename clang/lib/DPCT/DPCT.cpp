@@ -214,6 +214,7 @@ public:
         Context.getDiagnostics().getClient()->getNumErrors() > 0) {
       return;
     }
+    Context.getParentMapContext().clear();
     // The migration process is separated into two stages:
     // 1) Analysis of AST and identification of applicable migration rules
     // 2) Generation of actual textual Replacements
@@ -954,8 +955,16 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setUsmLevel(USMLevel);
   DpctGlobalInfo::setIsIncMigration(!NoIncrementalMigration);
   DpctGlobalInfo::setHelperFilesCustomizationLevel(UseCustomHelperFileLevel);
+  if (UseCustomHelperFileLevel.getNumOccurrences()) {
+    clang::dpct::PrintMsg("Note: Option --use-custom-helper is deprecated and "
+                          "may be removed in the future.\n");
+  }
   DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
   DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
+  if (CustomHelperFileName.getNumOccurrences()) {
+    clang::dpct::PrintMsg("Note: Option --custom-helper-name is deprecated and "
+                          "may be removed in the future.\n");
+  }
   HelperFileNameMap[HelperFileEnum::Dpct] =
       DpctGlobalInfo::getCustomHelperFileName() + ".hpp";
   DpctGlobalInfo::setFormatRange(FormatRng);
