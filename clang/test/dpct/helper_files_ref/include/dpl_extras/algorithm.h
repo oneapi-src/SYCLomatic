@@ -234,35 +234,6 @@ Iter3 copy_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask,
   return std::get<0>(ret_val.base());
 }
 
-template <class Policy, class Iter1, class Iter2, class UnaryOperation>
-Iter2 transform(Policy &&policy, Iter1 first, Iter1 last, Iter2 result,
-                UnaryOperation unary_op) {
-  static_assert(
-      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
-                   std::random_access_iterator_tag>::value &&
-          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
-                       std::random_access_iterator_tag>::value,
-      "Iterators passed to algorithms must be random-access iterators.");
-  return std::transform(std::forward<Policy>(policy), first, last, result,
-                        unary_op);
-}
-
-template <class Policy, class Iter1, class Iter2, class Iter3,
-          class UnaryOperation>
-Iter3 transform(Policy &&policy, Iter1 first1, Iter1 last1, Iter2 first2,
-                Iter3 result, UnaryOperation unary_op) {
-  static_assert(
-      std::is_same<typename std::iterator_traits<Iter1>::iterator_category,
-                   std::random_access_iterator_tag>::value &&
-          std::is_same<typename std::iterator_traits<Iter2>::iterator_category,
-                       std::random_access_iterator_tag>::value &&
-          std::is_same<typename std::iterator_traits<Iter3>::iterator_category,
-                       std::random_access_iterator_tag>::value,
-      "Iterators passed to algorithms must be random-access iterators.");
-  return std::transform(std::forward<Policy>(policy), first1, last1, first2,
-                        result, unary_op);
-}
-
 template <class Policy, class Iter1, class Iter2, class UnaryOperation,
           class Pred>
 Iter2 transform_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 result,
