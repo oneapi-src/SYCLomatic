@@ -113,6 +113,10 @@ void Dialect::addInterface(std::unique_ptr<DialectInterface> interface) {
 
 DialectInterface::~DialectInterface() = default;
 
+MLIRContext *DialectInterface::getContext() const {
+  return dialect->getContext();
+}
+
 DialectInterfaceCollectionBase::DialectInterfaceCollectionBase(
     MLIRContext *ctx, TypeID interfaceKind) {
   for (auto *dialect : ctx->getLoadedDialects()) {
@@ -227,4 +231,13 @@ void DialectRegistry::applyExtensions(MLIRContext *ctx) const {
 
   for (const auto &extension : extensions)
     applyExtension(*extension);
+}
+
+bool DialectRegistry::isSubsetOf(const DialectRegistry &rhs) const {
+  // Treat any extensions conservatively.
+  if (!extensions.empty())
+    return false;
+  // Check that the current dialects fully overlap with the dialects in 'rhs'.
+  return llvm::all_of(
+      registry, [&](const auto &it) { return rhs.registry.count(it.first); });
 }

@@ -186,6 +186,10 @@ class Register<string n, list<string> altNames = []> {
   bits<16> HWEncoding = 0;
 
   bit isArtificial = false;
+
+  // isConstant - This register always holds a constant value (e.g. the zero
+  // register in architectures such as MIPS)
+  bit isConstant = false;
 }
 
 // RegisterWithSubRegs - This can be used to define instances of Register which
@@ -279,6 +283,8 @@ class RegisterClass<string namespace, list<ValueType> regTypes, int alignment,
   // heuristic. Classes with higher priority values are assigned first. This is
   // useful as it is sometimes beneficial to assign registers to highly
   // constrained classes first. The value has to be in the range [0,63].
+  // Values >= 32 should be used with care since they may overlap with other
+  // fields in the allocator's priority heuristics.
   int AllocationPriority = 0;
 
   // Generate register pressure set for this register class and any class

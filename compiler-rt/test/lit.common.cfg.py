@@ -172,11 +172,9 @@ if config.asan_shadow_scale != '':
 if config.memprof_shadow_scale != '':
   config.target_cflags += " -mllvm -memprof-mapping-scale=" + config.memprof_shadow_scale
 
-config.environment = dict(os.environ)
-
 # Clear some environment variables that might affect Clang.
-possibly_dangerous_env_vars = ['ASAN_OPTIONS', 'DFSAN_OPTIONS', 'LSAN_OPTIONS',
-                               'MSAN_OPTIONS', 'UBSAN_OPTIONS',
+possibly_dangerous_env_vars = ['ASAN_OPTIONS', 'DFSAN_OPTIONS', 'HWASAN_OPTIONS',
+                               'LSAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS',
                                'COMPILER_PATH', 'RC_DEBUG_OPTIONS',
                                'CINDEXTEST_PREAMBLE_FILE', 'LIBRARY_PATH',
                                'CPATH', 'C_INCLUDE_PATH', 'CPLUS_INCLUDE_PATH',
@@ -206,6 +204,9 @@ if platform.system() == 'Windows' and '-win' in config.target_triple:
   config.environment['LIB'] = os.environ['LIB']
 
 config.available_features.add(config.host_os.lower())
+
+if config.target_triple.startswith("ppc") or config.target_triple.startswith("powerpc"):
+  config.available_features.add("ppc")
 
 if re.match(r'^x86_64.*-linux', config.target_triple):
   config.available_features.add("x86_64-linux")
@@ -452,7 +453,11 @@ if config.host_os == 'Darwin':
   for vers in min_macos_deployment_target_substitutions:
     flag = config.apple_platform_min_deployment_target_flag
     major, minor = get_macos_aligned_version(vers)
-    config.substitutions.append( ('%%min_macos_deployment_target=%s.%s' % vers, '{}={}.{}'.format(flag, major, minor)) )
+    if 'mtargetos' in flag:
+      sim = '-simulator' if 'sim' in config.apple_platform else ''
+      config.substitutions.append( ('%%min_macos_deployment_target=%s.%s' % vers, '{}{}.{}{}'.format(flag, major, minor, sim)) )
+    else:
+      config.substitutions.append( ('%%min_macos_deployment_target=%s.%s' % vers, '{}={}.{}'.format(flag, major, minor)) )
 else:
   for vers in min_macos_deployment_target_substitutions:
     config.substitutions.append( ('%%min_macos_deployment_target=%s.%s' % vers, '') )
@@ -520,8 +525,11 @@ if os.path.exists(sancovcc_path):
   config.available_features.add("has_sancovcc")
   config.substitutions.append( ("%sancovcc ", sancovcc_path) )
 
+def liblto_path():
+  return os.path.join(config.llvm_shlib_dir, 'libLTO.dylib')
+
 def is_darwin_lto_supported():
-  return os.path.exists(os.path.join(config.llvm_shlib_dir, 'libLTO.dylib'))
+  return os.path.exists(liblto_path())
 
 def is_binutils_lto_supported():
   if not os.path.exists(os.path.join(config.llvm_shlib_dir, 'LLVMgold.so')):
@@ -543,8 +551,7 @@ def is_windows_lto_supported():
 
 if config.host_os == 'Darwin' and is_darwin_lto_supported():
   config.lto_supported = True
-  config.lto_launch = ["env", "DYLD_LIBRARY_PATH=" + config.llvm_shlib_dir]
-  config.lto_flags = []
+  config.lto_flags = [ '-Wl,-lto_library,' + liblto_path() ]
 elif config.host_os in ['Linux', 'FreeBSD', 'NetBSD']:
   config.lto_supported = False
   if config.use_lld:
@@ -554,14 +561,12 @@ elif config.host_os in ['Linux', 'FreeBSD', 'NetBSD']:
     config.lto_supported = True
 
   if config.lto_supported:
-    config.lto_launch = []
     if config.use_lld:
       config.lto_flags = ["-fuse-ld=lld"]
     else:
       config.lto_flags = ["-fuse-ld=gold"]
 elif config.host_os == 'Windows' and is_windows_lto_supported():
   config.lto_supported = True
-  config.lto_launch = []
   config.lto_flags = ["-fuse-ld=lld"]
 else:
   config.lto_supported = False
@@ -573,8 +578,6 @@ if config.lto_supported:
     config.lto_flags += ["-flto=thin"]
   else:
     config.lto_flags += ["-flto"]
-  if config.use_newpm:
-    config.lto_flags += ["-fexperimental-new-pass-manager"]
 
 if config.have_rpc_xdr_h:
   config.available_features.add('sunrpc')
@@ -694,7 +697,6 @@ target_cflags = [getattr(config, 'target_cflags', None)]
 extra_cflags = []
 
 if config.use_lto and config.lto_supported:
-  run_wrapper += config.lto_launch
   extra_cflags += config.lto_flags
 elif config.use_lto and (not config.lto_supported):
   config.unsupported = True

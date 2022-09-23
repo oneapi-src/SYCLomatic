@@ -22,6 +22,7 @@
 #include "clang/AST/PrettyPrinter.h"
 #include "clang/AST/TemplateBase.h"
 #include "clang/AST/TemplateName.h"
+#include "clang/AST/TextNodeDumper.h"
 #include "clang/AST/Type.h"
 #include "clang/Basic/AddressSpaces.h"
 #include "clang/Basic/ExceptionSpecificationType.h"
@@ -32,6 +33,7 @@
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/Specifiers.h"
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
@@ -77,6 +79,21 @@ namespace {
 
     ~ParamPolicyRAII() {
       Policy.SuppressSpecifiers = Old;
+    }
+  };
+
+  class DefaultTemplateArgsPolicyRAII {
+    PrintingPolicy &Policy;
+    bool Old;
+
+  public:
+    explicit DefaultTemplateArgsPolicyRAII(PrintingPolicy &Policy)
+        : Policy(Policy), Old(Policy.SuppressDefaultTemplateArgs) {
+      Policy.SuppressDefaultTemplateArgs = false;
+    }
+
+    ~DefaultTemplateArgsPolicyRAII() {
+      Policy.SuppressDefaultTemplateArgs = Old;
     }
   };
 
@@ -255,7 +272,7 @@ bool TypePrinter::canPrefixQualifiers(const Type *T,
     case Type::VariableArray:
     case Type::DependentSizedArray:
       NeedARCStrongQualifier = true;
-      LLVM_FALLTHROUGH;
+      [[fallthrough]];
 
     case Type::ConstantArray:
     case Type::IncompleteArray:
@@ -291,6 +308,7 @@ bool TypePrinter::canPrefixQualifiers(const Type *T,
       // address_space attribute.
       const auto *AttrTy = cast<AttributedType>(UnderlyingType);
       CanPrefixQualifiers = AttrTy->getAttrKind() == attr::AddressSpace;
+      break;
     }
   }
 
@@ -976,6 +994,12 @@ void TypePrinter::printFunctionAfter(const FunctionType::ExtInfo &Info,
     case CC_AArch64VectorCall:
       OS << "__attribute__((aarch64_vector_pcs))";
       break;
+    case CC_AArch64SVEPCS:
+      OS << "__attribute__((aarch64_sve_pcs))";
+      break;
+    case CC_AMDGPUKernelCall:
+      OS << "__attribute__((amdgpu_kernel))";
+      break;
     case CC_IntelOclBicc:
       OS << " __attribute__((intel_ocl_bicc))";
       break;
@@ -1143,29 +1167,19 @@ void TypePrinter::printUnaryTransformBefore(const UnaryTransformType *T,
                                             raw_ostream &OS) {
   IncludeStrongLifetimeRAII Strong(Policy);
 
-  switch (T->getUTTKind()) {
-    case UnaryTransformType::EnumUnderlyingType:
-      OS << "__underlying_type(";
-      print(T->getBaseType(), OS, StringRef());
-      OS << ')';
-      spaceBeforePlaceHolder(OS);
-      return;
-  }
-
-  printBefore(T->getBaseType(), OS);
+  static llvm::DenseMap<int, const char *> Transformation = {{
+#define TRANSFORM_TYPE_TRAIT_DEF(Enum, Trait)                                  \
+  {UnaryTransformType::Enum, "__" #Trait},
+#include "clang/Basic/TransformTypeTraits.def"
+  }};
+  OS << Transformation[T->getUTTKind()] << '(';
+  print(T->getBaseType(), OS, StringRef());
+  OS << ')';
+  spaceBeforePlaceHolder(OS);
 }
 
 void TypePrinter::printUnaryTransformAfter(const UnaryTransformType *T,
-                                           raw_ostream &OS) {
-  IncludeStrongLifetimeRAII Strong(Policy);
-
-  switch (T->getUTTKind()) {
-    case UnaryTransformType::EnumUnderlyingType:
-      return;
-  }
-
-  printAfter(T->getBaseType(), OS);
-}
+                                           raw_ostream &OS) {}
 
 void TypePrinter::printAutoBefore(const AutoType *T, raw_ostream &OS) {
   // If the type has been deduced, do not print 'auto'.
@@ -1530,21 +1544,23 @@ void TypePrinter::printTemplateId(const TemplateSpecializationType *T,
   Optional<std::string> Name;
   if (getReplacedNamePtr)
     Name = getReplacedNamePtr(TD);
-  if (Name.hasValue())
-    OS << Name.getValue();
+  if (Name.has_value())
+    OS << Name.value();
   else
 #endif // SYCLomatic_CUSTOMIZATION
+  // FIXME: Null TD never excercised in test suite.
   if (FullyQualify && TD) {
     if (!Policy.SuppressScope)
       AppendScope(TD->getDeclContext(), OS, TD->getDeclName());
 
-    IdentifierInfo *II = TD->getIdentifier();
-    OS << II->getName();
+    OS << TD->getName();
   } else {
     T->getTemplateName().print(OS, Policy);
   }
 
-  printTemplateArgumentList(OS, T->template_arguments(), Policy);
+  DefaultTemplateArgsPolicyRAII TemplateArgs(Policy);
+  const TemplateParameterList *TPL = TD ? TD->getTemplateParameters() : nullptr;
+  printTemplateArgumentList(OS, T->template_arguments(), Policy, TPL);
   spaceBeforePlaceHolder(OS);
 }
 
@@ -1780,6 +1796,15 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
   if (T->getAttrKind() == attr::AddressSpace)
     return;
 
+  if (T->getAttrKind() == attr::AnnotateType) {
+    // FIXME: Print the attribute arguments once we have a way to retrieve these
+    // here. For the meantime, we just print `[[clang::annotate_type(...)]]`
+    // without the arguments so that we know at least that we had _some_
+    // annotation on the type.
+    OS << " [[clang::annotate_type(...)]]";
+    return;
+  }
+
   OS << " __attribute__((";
   switch (T->getAttrKind()) {
 #define TYPE_ATTR(NAME)
@@ -1821,6 +1846,7 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
   case attr::UPtr:
   case attr::AddressSpace:
   case attr::CmseNSCall:
+  case attr::AnnotateType:
     llvm_unreachable("This attribute should have been handled already");
 
   case attr::NSReturnsRetained:
@@ -1852,6 +1878,8 @@ void TypePrinter::printAttributedAfter(const AttributedType *T,
    break;
   }
   case attr::AArch64VectorPcs: OS << "aarch64_vector_pcs"; break;
+  case attr::AArch64SVEPcs: OS << "aarch64_sve_pcs"; break;
+  case attr::AMDGPUKernelCall: OS << "amdgpu_kernel"; break;
   case attr::IntelOclBicc: OS << "inteloclbicc"; break;
   case attr::PreserveMost:
     OS << "preserve_most";
@@ -2408,4 +2436,10 @@ void QualType::getAsStringInternal(const Type *ty, Qualifiers qs,
   TypePrinter(policy).print(ty, qs, StrOS, buffer);
   std::string str = std::string(StrOS.str());
   buffer.swap(str);
+}
+
+raw_ostream &clang::operator<<(raw_ostream &OS, QualType QT) {
+  SplitQualType S = QT.split();
+  TypePrinter(LangOptions()).print(S.Ty, S.Quals, OS, /*PlaceHolder=*/"");
+  return OS;
 }

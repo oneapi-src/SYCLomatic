@@ -21,9 +21,10 @@
 #include "mlir/Conversion/ReconcileUnrealizedCasts/ReconcileUnrealizedCasts.h"
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
-#include "mlir/Dialect/GPU/GPUDialect.h"
-#include "mlir/Dialect/GPU/Passes.h"
+#include "mlir/Dialect/GPU/IR/GPUDialect.h"
+#include "mlir/Dialect/GPU/Transforms/Passes.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
+#include "mlir/Dialect/LLVMIR/Transforms/RequestCWrappers.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/MemRef/Transforms/Passes.h"
 #include "mlir/Dialect/SPIRV/IR/SPIRVDialect.h"
@@ -45,18 +46,21 @@ static LogicalResult runMLIRPasses(ModuleOp module) {
   applyPassManagerCLOptions(passManager);
 
   passManager.addPass(createGpuKernelOutliningPass());
-  passManager.addPass(memref::createFoldSubViewOpsPass());
-  passManager.addPass(createConvertGPUToSPIRVPass());
+  passManager.addPass(memref::createFoldMemRefAliasOpsPass());
+
+  passManager.addPass(createConvertGPUToSPIRVPass(/*mapMemorySpace=*/true));
   OpPassManager &modulePM = passManager.nest<spirv::ModuleOp>();
   modulePM.addPass(spirv::createLowerABIAttributesPass());
   modulePM.addPass(spirv::createUpdateVersionCapabilityExtensionPass());
+
   passManager.addPass(createConvertGpuLaunchFuncToVulkanLaunchFuncPass());
   LowerToLLVMOptions llvmOptions(module.getContext(), DataLayout(module));
-  llvmOptions.emitCWrappers = true;
   passManager.addPass(createMemRefToLLVMPass());
+  passManager.nest<func::FuncOp>().addPass(LLVM::createRequestCWrappersPass());
   passManager.addPass(createConvertFuncToLLVMPass(llvmOptions));
   passManager.addPass(createReconcileUnrealizedCastsPass());
   passManager.addPass(createConvertVulkanLaunchFuncToVulkanCallsPass());
+
   return passManager.run(module);
 }
 
@@ -67,7 +71,6 @@ int main(int argc, char **argv) {
   llvm::InitLLVM y(argc, argv);
   llvm::InitializeNativeTarget();
   llvm::InitializeNativeTargetAsmPrinter();
-  mlir::initializeLLVMPasses();
 
   mlir::JitRunnerConfig jitRunnerConfig;
   jitRunnerConfig.mlirTransformer = runMLIRPasses;

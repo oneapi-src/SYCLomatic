@@ -19,6 +19,19 @@ def HasStdExtM : Predicate<"Subtarget->hasStdExtM()">,
                            AssemblerPredicate<(all_of FeatureStdExtM),
                            "'M' (Integer Multiplication and Division)">;
 
+def FeatureStdExtZmmul
+    : SubtargetFeature<"zmmul", "HasStdExtZmmul", "true",
+                       "'Zmmul' (Integer Multiplication)">;
+def HasStdExtZmmul : Predicate<"Subtarget->hasStdExtZmmul()">,
+                               AssemblerPredicate<(all_of FeatureStdExtZmmul),
+                               "'Zmmul' (Integer Multiplication)">;
+
+def HasStdExtMOrZmmul
+    : Predicate<"Subtarget->hasStdExtM() || Subtarget->hasStdExtZmmul()">,
+                AssemblerPredicate<(any_of FeatureStdExtM, FeatureStdExtZmmul),
+                                   "'M' (Integer Multiplication and Division) or "
+                                   "'Zmmul' (Integer Multiplication)">;
+
 def FeatureStdExtA
     : SubtargetFeature<"a", "HasStdExtA", "true",
                        "'A' (Atomic Instructions)">;
@@ -47,6 +60,13 @@ def FeatureStdExtZihintpause
 def HasStdExtZihintpause : Predicate<"Subtarget->hasStdExtZihintpause()">,
                                      AssemblerPredicate<(all_of FeatureStdExtZihintpause),
                                      "'Zihintpause' (Pause Hint)">;
+
+def FeatureStdExtZihintntl
+    : SubtargetFeature<"experimental-zihintntl", "HasStdExtZihintntl", "true",
+                       "'zihintntl' (Non-Temporal Locality Hints)">;
+def HasStdExtZihintntl : Predicate<"Subtarget->hasStdExtZihintntl()">,
+                                    AssemblerPredicate<(all_of FeatureStdExtZihintntl),
+                                    "'Zihintntl' (Non-Temporal Locality Hints)">;
 
 def FeatureStdExtZfhmin
     : SubtargetFeature<"zfhmin", "HasStdExtZfhmin", "true",
@@ -327,6 +347,19 @@ def FeatureStdExtZk
                         FeatureStdExtZkr,
                         FeatureStdExtZkt]>;
 
+def FeatureExtZca
+    : SubtargetFeature<"experimental-zca", "HasStdExtZca", "true",
+                       "'Zca' (part of the C extension, excluding compressed floating point loads/stores)">;
+def HasStdExtZca : Predicate<"Subtarget->hasStdExtZca()">,
+                           AssemblerPredicate<(all_of FeatureExtZca),
+                           "'Zca' (part of the C extension, excluding compressed floating point loads/stores)">;
+
+def HasStdExtCOrZca
+    : Predicate<"Subtarget->hasStdExtC() || Subtarget->hasStdExtZca()">,
+                AssemblerPredicate<(any_of FeatureStdExtC, FeatureExtZca),
+                                   "'C' (Compressed Instructions) or "
+                                   "'Zca' (part of the C extension, excluding compressed floating point loads/stores)">;
+
 def FeatureNoRVCHints
     : SubtargetFeature<"no-rvc-hints", "EnableRVCHintInstrs", "false",
                        "Disable RVC Hint Instructions.">;
@@ -334,13 +367,13 @@ def HasRVCHints : Predicate<"Subtarget->enableRVCHintInstrs()">,
                   AssemblerPredicate<(all_of(not FeatureNoRVCHints)),
                                       "RVC Hint Instructions">;
 
-def FeatureStdExtZvl32b : SubtargetFeature<"zvl32b", "ZvlLen", "ExtZvl::Zvl32b",
+def FeatureStdExtZvl32b : SubtargetFeature<"zvl32b", "ZvlLen", "32",
                        "'Zvl' (Minimum Vector Length) 32">;
 
 foreach i = { 6-15 } in {
     defvar I = !shl(1, i);
     def FeatureStdExtZvl#I#b :
-        SubtargetFeature<"zvl"#I#"b", "ZvlLen", "ExtZvl::Zvl"#I#"b",
+        SubtargetFeature<"zvl"#I#"b", "ZvlLen", !cast<string>(I),
                         "'Zvl' (Minimum Vector Length) "#I,
                         [!cast<SubtargetFeature>("FeatureStdExtZvl"#!srl(I, 1)#"b")]>;
 }
@@ -400,6 +433,31 @@ def FeatureStdExtZvfh
                        "'Zvfh' (Vector Half-Precision Floating-Point)",
                        [FeatureStdExtZve32f]>;
 
+def FeatureStdExtZicbom
+    : SubtargetFeature<"zicbom", "HasStdExtZicbom", "true",
+                       "'Zicbom' (Cache-Block Management Instructions)">;
+def HasStdExtZicbom : Predicate<"Subtarget->hasStdExtZicbom()">,
+                                AssemblerPredicate<(all_of FeatureStdExtZicbom),
+                                "'Zicbom' (Cache-Block Management Instructions)">;
+
+def FeatureStdExtZicboz
+    : SubtargetFeature<"zicboz", "HasStdExtZicboz", "true",
+                       "'Zicboz' (Cache-Block Zero Instructions)">;
+def HasStdExtZicboz : Predicate<"Subtarget->hasStdExtZicboz()">,
+                                AssemblerPredicate<(all_of FeatureStdExtZicboz),
+                                "'Zicboz' (Cache-Block Zero Instructions)">;
+
+def FeatureStdExtZicbop
+    : SubtargetFeature<"zicbop", "HasStdExtZicbop", "true",
+                       "'Zicbop' (Cache-Block Prefetch Instructions)">;
+def HasStdExtZicbop : Predicate<"Subtarget->hasStdExtZicbop()">,
+                                AssemblerPredicate<(all_of FeatureStdExtZicbop),
+                                "'Zicbop' (Cache-Block Prefetch Instructions)">;
+
+// Feature32Bit exists to mark CPUs that support RV32 to distinquish them from
+// tuning CPU names.
+def Feature32Bit
+    : SubtargetFeature<"32bit", "HasRV32", "true", "Implements RV32">;
 def Feature64Bit
     : SubtargetFeature<"64bit", "HasRV64", "true", "Implements RV64">;
 def IsRV64 : Predicate<"Subtarget->is64Bit()">,
@@ -430,8 +488,33 @@ foreach i = {1-31} in
 def FeatureSaveRestore : SubtargetFeature<"save-restore", "EnableSaveRestore",
                                           "true", "Enable save/restore.">;
 
+def FeatureUnalignedScalarMem
+   : SubtargetFeature<"unaligned-scalar-mem", "EnableUnalignedScalarMem",
+                      "true", "Has reasonably performant unaligned scalar "
+                      "loads and stores">;
+
+def TuneLUIADDIFusion
+    : SubtargetFeature<"lui-addi-fusion", "HasLUIADDIFusion",
+                       "true", "Enable LUI+ADDI macrofusion">;
+
+def TuneNoDefaultUnroll
+    : SubtargetFeature<"no-default-unroll", "EnableDefaultUnroll", "false",
+                       "Disable default unroll preference.">;
+
 def TuneSiFive7 : SubtargetFeature<"sifive7", "RISCVProcFamily", "SiFive7",
-                                   "SiFive 7-Series processors">;
+                                   "SiFive 7-Series processors",
+                                   [TuneNoDefaultUnroll]>;
+
+// Assume that lock-free native-width atomics are available, even if the target
+// and operating system combination would not usually provide them. The user
+// is responsible for providing any necessary __sync implementations. Code
+// built with this feature is not ABI-compatible with code built without this
+// feature, if atomic variables are exposed across the ABI boundary.
+def FeatureForcedAtomics : SubtargetFeature<
+    "forced-atomics", "HasForcedAtomics", "true",
+    "Assume that lock-free native-width atomics are available">;
+def HasAtomicLdSt
+    : Predicate<"Subtarget->hasStdExtA() || Subtarget->hasForcedAtomics()">;
 
 //===----------------------------------------------------------------------===//
 // Named operands for CSR instructions.
@@ -455,42 +538,47 @@ include "RISCVSchedSiFive7.td"
 // RISC-V processors supported.
 //===----------------------------------------------------------------------===//
 
-def : ProcessorModel<"generic-rv32", NoSchedModel, []>;
+def : ProcessorModel<"generic-rv32", NoSchedModel, [Feature32Bit]>;
 def : ProcessorModel<"generic-rv64", NoSchedModel, [Feature64Bit]>;
 // Support generic for compatibility with other targets. The triple will be used
 // to change to the appropriate rv32/rv64 version.
 def : ProcessorModel<"generic", NoSchedModel, []>;
 
-def : ProcessorModel<"rocket-rv32", RocketModel, []>;
+def : ProcessorModel<"rocket-rv32", RocketModel, [Feature32Bit]>;
 def : ProcessorModel<"rocket-rv64", RocketModel, [Feature64Bit]>;
+def : ProcessorModel<"rocket", RocketModel, []>;
 
-def : ProcessorModel<"sifive-7-rv32", SiFive7Model, [],
-                     [TuneSiFive7]>;
-def : ProcessorModel<"sifive-7-rv64", SiFive7Model, [Feature64Bit],
+def : ProcessorModel<"sifive-7-series", SiFive7Model, [],
                      [TuneSiFive7]>;
 
-def : ProcessorModel<"sifive-e20", RocketModel, [FeatureStdExtM,
+def : ProcessorModel<"sifive-e20", RocketModel, [Feature32Bit,
+                                                 FeatureStdExtM,
                                                  FeatureStdExtC]>;
 
-def : ProcessorModel<"sifive-e21", RocketModel, [FeatureStdExtM,
+def : ProcessorModel<"sifive-e21", RocketModel, [Feature32Bit,
+                                                 FeatureStdExtM,
                                                  FeatureStdExtA,
                                                  FeatureStdExtC]>;
 
-def : ProcessorModel<"sifive-e24", RocketModel, [FeatureStdExtM,
+def : ProcessorModel<"sifive-e24", RocketModel, [Feature32Bit,
+                                                 FeatureStdExtM,
                                                  FeatureStdExtA,
                                                  FeatureStdExtF,
                                                  FeatureStdExtC]>;
 
-def : ProcessorModel<"sifive-e31", RocketModel, [FeatureStdExtM,
+def : ProcessorModel<"sifive-e31", RocketModel, [Feature32Bit,
+                                                 FeatureStdExtM,
                                                  FeatureStdExtA,
                                                  FeatureStdExtC]>;
 
-def : ProcessorModel<"sifive-e34", RocketModel, [FeatureStdExtM,
+def : ProcessorModel<"sifive-e34", RocketModel, [Feature32Bit,
+                                                 FeatureStdExtM,
                                                  FeatureStdExtA,
                                                  FeatureStdExtF,
                                                  FeatureStdExtC]>;
 
-def : ProcessorModel<"sifive-e76", SiFive7Model, [FeatureStdExtM,
+def : ProcessorModel<"sifive-e76", SiFive7Model, [Feature32Bit,
+                                                  FeatureStdExtM,
                                                   FeatureStdExtA,
                                                   FeatureStdExtF,
                                                   FeatureStdExtC],
