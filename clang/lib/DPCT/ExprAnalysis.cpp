@@ -338,7 +338,6 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
 
   ExprBeginLoc = BeginLoc;
   ExprEndLoc = EndLoc;
-
   RewritePrefix =
       std::string(SM.getCharacterData(BeginLoc), RewritePrefixLength);
 
@@ -811,7 +810,6 @@ void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
 void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // To set the RefString
   dispatch(CE->getCallee());
-
   // If the callee requires rewrite, get the rewriter
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
@@ -855,7 +853,6 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
                            false, RefString);
         } else {
           FCIMMR[LocStr] = ResultStr;
-
           // When migrating thrust API with usmnone and raw-ptr,
           // the CallExpr will be rewritten into an if-else stmt,
           // DPCT needs to remove the following semicolon.
@@ -1832,6 +1829,7 @@ std::vector<std::string>
 KernelConfigAnalysis::getCtorArgs(const CXXConstructExpr *Ctor) {
   std::vector<std::string> Args;
   ArgumentAnalysis A(IsInMacroDefine);
+  A.setCallSpelling(CallSpellingBegin, CallSpellingEnd);
   for (auto Arg : Ctor->arguments())
     Args.emplace_back(getCtorArg(A, Arg));
   return Args;
@@ -1849,8 +1847,6 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
       addReplacement("0");
       return;
     }
-    initArgumentExpr(E);
-    return;
   }
 
   DoReverse = ReverseIfNeed;
@@ -1858,7 +1854,6 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
     addReplacement("0");
     return;
   }
-
   ArgumentAnalysis::analyze(E);
 
   if (getTargetExpr()->IgnoreImplicit()->getStmtClass() ==

@@ -1188,16 +1188,17 @@ int foo31(){
 //CHECK-NEXT: #define VACALL3(...) VACALL4(__VA_ARGS__)
 //CHECK-NEXT: #define VACALL2(...) VACALL3(__VA_ARGS__)
 //CHECK-NEXT: #define VACALL(x)                                                              \
-//CHECK-NEXT:  dpct::get_default_queue().submit([&](sycl::handler &cgh) {                    \
-//CHECK-NEXT:   auto i_ct0 = i;                                                              \
+//CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
+//CHECK-NEXT:     auto i_ct0 = i;                                                            \
 //CHECK-NEXT:                                                                                \
-//CHECK-NEXT:   cgh.parallel_for(sycl::nd_range<3>(1 * 1, 1),                                \
-//CHECK-NEXT:                    [=](sycl::nd_item<3> item_ct1) { foo32(i_ct0); });          \
-//CHECK-NEXT:  });
+//CHECK-NEXT:     cgh.parallel_for(                                                          \
+//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 1)),   \
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo32(i_ct0); });                     \
+//CHECK-NEXT:   });
 #define VACALL4(...) __VA_ARGS__()
 #define VACALL3(...) VACALL4(__VA_ARGS__)
 #define VACALL2(...) VACALL3(__VA_ARGS__)
-#define VACALL(x) foo32<<<1,1,0>>>(i)
+#define VACALL(x) foo32<<<2,1,0>>>(i)
 __global__ void foo32(int a){}
 
 // CHECK: int foo33(){
