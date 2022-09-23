@@ -467,7 +467,9 @@ def parser_work_directory(parser):
     parser.add_argument(
         '--work-directory',
         metavar='<path>',
-        help="""Specifies the work directory of the source file in the build log that needs to be migrated.""")
+        default=argparse.SUPPRESS,
+        help="""Specifies the work directory of the source file in the build log that needs to be migrated.
+                 (default: the directory of build log file, if work directory is not provided)""")
 
 def parser_add_linker_entry(parser):
     parser.add_argument(
