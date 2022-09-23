@@ -2755,15 +2755,12 @@ void UnwrappedLineParser::parseNamespace() {
         nextToken();
   }
   if (FormatTok->is(tok::l_brace)) {
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
     if ((formatRangeGetter() == FormatRange::migrated &&
          isAllSpaceUntilNL(FormatTok, SourceMgr)) ||
         (formatRangeGetter() != FormatRange::migrated &&
          ShouldBreakBeforeBrace(Style, InitialToken)))
 #else
-=======
->>>>>>> sycl
     if (ShouldBreakBeforeBrace(Style, InitialToken))
 #endif // SYCLomatic_CUSTOMIZATION
       addUnwrappedLine();
@@ -2853,15 +2850,12 @@ void UnwrappedLineParser::parseForOrWhileLoop() {
   keepAncestorBraces();
 
   if (FormatTok->is(tok::l_brace)) {
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
     if (formatRangeGetter() == FormatRange::migrated &&
         isAllSpaceUntilNL(FormatTok, SourceMgr)) {
       addUnwrappedLine();
     }
 #endif // SYCLomatic_CUSTOMIZATION
-=======
->>>>>>> sycl
     FormatToken *LeftBrace = FormatTok;
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock();
@@ -2886,15 +2880,12 @@ void UnwrappedLineParser::parseDoWhile() {
   keepAncestorBraces();
 
   if (FormatTok->is(tok::l_brace)) {
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
     if (formatRangeGetter() == FormatRange::migrated &&
         isAllSpaceUntilNL(FormatTok, SourceMgr)) {
       addUnwrappedLine();
     }
 #endif // SYCLomatic_CUSTOMIZATION
-=======
->>>>>>> sycl
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock();
     if (Style.BraceWrapping.BeforeWhile)
@@ -2978,15 +2969,12 @@ void UnwrappedLineParser::parseSwitch() {
   keepAncestorBraces();
 
   if (FormatTok->is(tok::l_brace)) {
-<<<<<<< HEAD
 #ifdef SYCLomatic_CUSTOMIZATION
     if (formatRangeGetter() == FormatRange::migrated &&
         isAllSpaceUntilNL(FormatTok, SourceMgr)) {
       addUnwrappedLine();
     }
 #endif // SYCLomatic_CUSTOMIZATION
-=======
->>>>>>> sycl
     CompoundStatementIndenter Indenter(this, Style, Line->Level);
     parseBlock();
     addUnwrappedLine();
