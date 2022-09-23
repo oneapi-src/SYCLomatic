@@ -12,6 +12,7 @@
 #include "CallExprRewriter.h"
 #include "CustomHelperFiles.h"
 #include "ExprAnalysis.h"
+#include "FFTAPIMigration.h"
 #include "GAnalytics.h"
 #include "Homoglyph.h"
 #include "MisleadingBidirectional.h"
@@ -384,10 +385,16 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     ReplMap.insert(Repl->getReplacement(DpctGlobalInfo::getContext()));
   } else if (MacroNameTok.getIdentifierInfo() &&
              MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_FORWARD") {
-    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "-1"));
+    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13,
+                                              MapNames::getDpctNamespace() +
+                                                  "fft::fft_direction::forward"));
+    requestFeature(HelperFeatureEnum::FftUtils_fft_direction, Range.getBegin());
   } else if (MacroNameTok.getIdentifierInfo() &&
              MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_INVERSE") {
-    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "1"));
+    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13,
+                                              MapNames::getDpctNamespace() +
+                                                  "fft::fft_direction::backward"));
+    requestFeature(HelperFeatureEnum::FftUtils_fft_direction, Range.getBegin());
   }
 
   // For the un-specialized struct, there is no AST for the extern function
@@ -2999,14 +3006,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
     }
 
-    if (TypeStr == "cufftHandle") {
-      DpctGlobalInfo::getInstance().insertFFTDescriptorTypeInfo(
-          BeginLoc,
-          Lexer::MeasureTokenLength(
-              BeginLoc, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-      return;
-    }
-
     if (replaceDependentNameTypeLoc(SM, LOpts, TL)) {
       return;
     }
@@ -4084,7 +4083,7 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
               hasType(enumDecl(hasAnyName(
                   "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
                   "cudaDeviceAttr", "libraryPropertyType_t", "cudaDataType_t",
-                  "cublasComputeType_t", "CUmem_advise_enum"))),
+                  "cublasComputeType_t", "CUmem_advise_enum", "cufftType_t", "cufftType"))),
               matchesName("CUDNN_.*")))))
           .bind("EnumConstant"),
       this);
@@ -4357,12 +4356,6 @@ void FFTEnumsRule::registerMatcher(MatchFinder &MF) {
               "IMPLEMENTED|CUFFT_LICENSE_ERROR|CUFFT_NOT_SUPPORTED)"))))
           .bind("FFTConstants"),
       this);
-
-  MF.addMatcher(declRefExpr(to(enumConstantDecl(
-                                matchesName("(CUFFT_R2C|CUFFT_C2R|CUFFT_C2C|"
-                                            "CUFFT_D2Z|CUFFT_Z2D|CUFFT_Z2Z)"))))
-                    .bind("FFTTypeConstants"),
-                this);
 }
 
 void FFTEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -4370,18 +4363,6 @@ void FFTEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
           getNodeAsType<DeclRefExpr>(Result, "FFTConstants")) {
     auto *EC = cast<EnumConstantDecl>(DE->getDecl());
     emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
-    return;
-  }
-
-  if (const DeclRefExpr *DE =
-          getNodeAsType<DeclRefExpr>(Result, "FFTTypeConstants")) {
-    auto *EC = cast<EnumConstantDecl>(DE->getDecl());
-    emplaceTransformation(new ReplaceStmt(DE, toString(EC->getInitVal(), 10)));
-
-    auto Value = EC->getInitVal().getExtValue();
-    DpctGlobalInfo::getFFTTypeSet().insert(getFFTTypeFromValue(Value));
-    DpctGlobalInfo::getPrecAndDomPairSet().insert(
-        getPrecAndDomainStrFromValue(Value));
     return;
   }
 }
@@ -14702,15 +14683,10 @@ void FFTFunctionCallRule::registerMatcher(MatchFinder &MF) {
                       "cufftMakePlanMany64", "cufftExecC2C", "cufftExecR2C",
                       "cufftExecC2R", "cufftExecZ2Z", "cufftExecZ2D",
                       "cufftExecD2Z", "cufftCreate", "cufftDestroy",
-                      "cufftSetStream", "cufftGetVersion", "cufftGetProperty");
+                      "cufftSetStream", "cufftGetVersion", "cufftGetProperty",
+                      "cufftXtMakePlanMany", "cufftXtExec");
   };
-  MF.addMatcher(
-      callExpr(allOf(callee(functionDecl(functionName())), parentStmt()))
-          .bind("FunctionCall"),
-      this);
-  MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
-                               unless(parentStmt())))
-                    .bind("FunctionCallUsed"),
+  MF.addMatcher(callExpr(callee(functionDecl(functionName()))).bind("FuncCall"),
                 this);
 
   // Currently, only exec functions support function pointer migration
@@ -14718,160 +14694,31 @@ void FFTFunctionCallRule::registerMatcher(MatchFinder &MF) {
     return hasAnyName("cufftExecC2C", "cufftExecR2C", "cufftExecC2R",
                       "cufftExecZ2Z", "cufftExecZ2D", "cufftExecD2Z");
   };
-  MF.addMatcher(varDecl(hasInitializer(unaryOperator(
-                            hasOperatorName("&"),
-                            hasUnaryOperand(declRefExpr(hasDeclaration(
-                                functionDecl(execFunctionName())))))))
-                    .bind("FunctionPointerDecl"),
+  MF.addMatcher(unaryOperator(hasOperatorName("&"),
+                              hasUnaryOperand(declRefExpr(hasDeclaration(
+                                  functionDecl(execFunctionName())))))
+                    .bind("FuncPtr"),
                 this);
-  MF.addMatcher(binaryOperator(hasOperatorName("="), hasLHS(declRefExpr()),
-                               hasRHS(unaryOperator(
-                                   hasOperatorName("&"),
-                                   hasUnaryOperand(declRefExpr(hasDeclaration(
-                                       functionDecl(execFunctionName())))))))
-                    .bind("FunctionPointerAssignment"),
-                this);
-}
-
-void FFTFunctionCallRule::prepareFEAInfo(std::string IndentStr,
-                                         std::string FuncName,
-                                         std::string FuncPtrName,
-                                         LibraryMigrationLocations Locations,
-                                         LibraryMigrationFlags Flags,
-                                         SourceLocation SL) {
-  dpct::FFTFunctionCallBuilder FFCB(nullptr, IndentStr, FuncName, FuncPtrName,
-                                    Locations, Flags);
-  if (FuncName == "cufftExecC2C" || FuncName == "cufftExecZ2Z" ||
-      FuncName == "cufftExecC2R" || FuncName == "cufftExecR2C" ||
-      FuncName == "cufftExecZ2D" || FuncName == "cufftExecD2Z") {
-    FFCB.updateExecCallExpr();
-    FFTExecAPIInfo FEAInfo;
-    FFCB.updateFFTExecAPIInfo(FEAInfo);
-    FEAInfo.HandleDeclFileAndOffset = "";
-    FEAInfo.QueueIndex = -1;
-    FEAInfo.CompoundStmtBeginOffset = 0;
-    FEAInfo.PlanHandleDeclBeginOffset = 0;
-    FEAInfo.ExecAPIBeginOffset = 0;
-    DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(SL, FEAInfo);
-  }
-}
-
-void FFTFunctionCallRule::processFunctionPointer(const VarDecl *VD) {
-  std::string FuncName;
-  std::string FuncPtrName;
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  const UnaryOperator *UO = dyn_cast<UnaryOperator>(VD->getInit());
-  if (!UO)
-    return;
-  const DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr());
-  if (!DRE)
-    return;
-  const FunctionDecl *FD = dyn_cast<FunctionDecl>(DRE->getDecl());
-  if (!FD)
-    return;
-  FuncName = FD->getNameAsString();
-  auto SL = SM.getExpansionLoc(VD->getBeginLoc());
-  std::string Key =
-      SM.getFilename(SL).str() + std::to_string(SM.getDecomposedLoc(SL).second);
-  DpctGlobalInfo::updateInitSuffixIndexInRule(
-      DpctGlobalInfo::getSuffixIndexInitValue(Key));
-  FuncPtrName = VD->getNameAsString();
-  if (VD->getStorageDuration() == SD_Static)
-    FuncPtrName = "static " + FuncPtrName;
-
-  LibraryMigrationFlags Flags;
-  Flags.IsAssigned = false;
-  Flags.IsFunctionPointer = true;
-  Flags.IsFunctionPointerAssignment = false;
-  LibraryMigrationStrings ReplaceStrs;
-  LibraryMigrationLocations Locations;
-  initVars(nullptr, VD, nullptr, Flags, ReplaceStrs, Locations);
-
-  prepareFEAInfo(ReplaceStrs.IndentStr, FuncName, FuncPtrName, Locations, Flags,
-                 SL);
-}
-
-void FFTFunctionCallRule::processFunctionPointerAssignment(
-    const BinaryOperator *BO) {
-  std::string FuncName;
-  std::string FuncPtrName;
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  const UnaryOperator *UO = dyn_cast<UnaryOperator>(BO->getRHS());
-  if (!UO)
-    return;
-  const DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(UO->getSubExpr());
-  if (!DRE)
-    return;
-  const FunctionDecl *FD = dyn_cast<FunctionDecl>(DRE->getDecl());
-  if (!FD)
-    return;
-  FuncName = FD->getNameAsString();
-  auto SL = SM.getExpansionLoc(BO->getBeginLoc());
-  std::string Key =
-      SM.getFilename(SL).str() + std::to_string(SM.getDecomposedLoc(SL).second);
-  DpctGlobalInfo::updateInitSuffixIndexInRule(
-      DpctGlobalInfo::getSuffixIndexInitValue(Key));
-
-  LibraryMigrationFlags Flags;
-  Flags.IsAssigned = false;
-  Flags.IsFunctionPointer = false;
-  Flags.IsFunctionPointerAssignment = true;
-  LibraryMigrationStrings ReplaceStrs;
-  LibraryMigrationLocations Locations;
-  initVars(nullptr, nullptr, BO, Flags, ReplaceStrs, Locations);
-
-  prepareFEAInfo(ReplaceStrs.IndentStr, FuncName, FuncPtrName, Locations, Flags,
-                 SL);
 }
 
 void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
-  bool IsAssigned = false;
-  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FunctionCall");
-  const VarDecl *VD = getNodeAsType<VarDecl>(Result, "FunctionPointerDecl");
-  const BinaryOperator *BO =
-      getNodeAsType<BinaryOperator>(Result, "FunctionPointerAssignment");
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall");
+  const UnaryOperator *UO = getNodeAsType<UnaryOperator>(Result, "FuncPtr");
 
   if (!CE) {
-    CE = getNodeAsType<CallExpr>(Result, "FunctionCallUsed");
-    if (CE) {
-      IsAssigned = true;
-    } else if (VD) {
-      processFunctionPointer(VD);
-      return;
-    } else if (BO) {
-      processFunctionPointerAssignment(BO);
-      return;
-    } else {
-      return;
+    auto TM = processFunctionPointer(UO);
+    if (TM) {
+      emplaceTransformation(TM);
     }
+    return;
   }
 
-  std::string FuncName;
-  std::string FuncPtrName;
-
   auto &SM = DpctGlobalInfo::getSourceManager();
-
   if (!CE->getDirectCallee())
     return;
-  auto SL = SM.getExpansionLoc(CE->getBeginLoc());
-  std::string Key =
-      SM.getFilename(SL).str() + std::to_string(SM.getDecomposedLoc(SL).second);
-  DpctGlobalInfo::updateInitSuffixIndexInRule(
-      DpctGlobalInfo::getSuffixIndexInitValue(Key));
-  FuncName = CE->getDirectCallee()->getNameInfo().getName().getAsString();
+  std::string FuncName =
+      CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
-  StringRef FuncNameRef(FuncName);
-
-  LibraryMigrationFlags Flags;
-  Flags.IsAssigned = IsAssigned;
-  Flags.IsFunctionPointer = false;
-  Flags.IsFunctionPointerAssignment = false;
-  LibraryMigrationStrings ReplaceStrs;
-  LibraryMigrationLocations Locations;
-  initVars(CE, VD, BO, Flags, ReplaceStrs, Locations);
-
-  dpct::FFTFunctionCallBuilder FFCB(CE, ReplaceStrs.IndentStr, FuncName,
-                                    FuncPtrName, Locations, Flags);
   if (FuncName == "cufftGetVersion" || FuncName == "cufftGetProperty") {
     if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_None ||
@@ -14884,137 +14731,20 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
-  } else if (FuncName == "cufftSetStream") {
-    const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
-    if (!DD)
-      return;
-
-    SourceLocation SL = SM.getExpansionLoc(DD->getBeginLoc());
-    std::string HandleInfoKey =
-        DpctGlobalInfo::getLocInfo(SL).first + ":" +
-        std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
-
-    std::string StreamStr = getDrefName(CE->getArg(1));
-
-    if (IsAssigned) {
-      emplaceTransformation(new ReplaceStmt(CE, false, "0"));
-    } else {
-      emplaceTransformation(new ReplaceStmt(CE, false, ""));
-    }
-
-    const CompoundStmt *CS =
-        findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(CE);
-    if (!CS)
-      return;
-    SourceLocation CompoundStmtBeginSL = SM.getExpansionLoc(CS->getBeginLoc());
-    SourceLocation PlanHandleDeclBeginSL =
-        SM.getExpansionLoc(DD->getBeginLoc());
-    SourceLocation SetStreamAPIBeginSL = SM.getExpansionLoc(CE->getBeginLoc());
-    DpctGlobalInfo::getInstance().updateFFTSetStreamAPIInfoMap(
-        CompoundStmtBeginSL, PlanHandleDeclBeginSL, SetStreamAPIBeginSL,
-        StreamStr);
-    return;
-  } else if (FuncName == "cufftCreate" || FuncName == "cufftDestroy") {
-    if (IsAssigned) {
-      report(Locations.PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false,
-             FuncName, "this call is redundant in SYCL.");
-      emplaceTransformation(new ReplaceStmt(CE, false, "0"));
-    } else {
-      report(Locations.PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED, false,
-             FuncName, "this call is redundant in SYCL.");
-      emplaceTransformation(new ReplaceStmt(CE, false, ""));
-    }
-    return;
-  } else if (FuncName == "cufftPlan1d" || FuncName == "cufftMakePlan1d" ||
+  } else if (FuncName == "cufftSetStream" ||
+             FuncName == "cufftCreate" || FuncName == "cufftDestroy" ||
+             FuncName == "cufftPlan1d" || FuncName == "cufftMakePlan1d" ||
              FuncName == "cufftPlan2d" || FuncName == "cufftMakePlan2d" ||
              FuncName == "cufftPlan3d" || FuncName == "cufftMakePlan3d" ||
              FuncName == "cufftPlanMany" || FuncName == "cufftMakePlanMany" ||
-             FuncName == "cufftMakePlanMany64") {
-
-    const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
-    if (!DD)
-      return;
-    SourceLocation SL = SM.getExpansionLoc(DD->getBeginLoc());
-    std::string HandleDeclFileAndOffset =
-        DpctGlobalInfo::getLocInfo(SL).first + ":" +
-        std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
-
-    FFTPlanAPIInfo FPAInfo;
-    FFCB.updateFFTPlanAPIInfo(FPAInfo, Flags);
-    FFCB.updateFFTHandleInfoFromPlan(HandleDeclFileAndOffset);
-    replacementLocation(Locations, Flags, FPAInfo.ReplaceOffset,
-                        FPAInfo.ReplaceLen, FPAInfo.InsertOffsets,
-                        FPAInfo.FilePath);
-    FPAInfo.HandleDeclFileAndOffset = HandleDeclFileAndOffset;
-    if (FuncNameRef.startswith("cufftMake")) {
-      FPAInfo.UnsupportedArg =
-          ExprAnalysis::ref(CE->getArg(CE->getNumArgs() - 1));
-    }
-
-    DpctGlobalInfo::getInstance().insertFFTPlanAPIInfo(
-        SM.getExpansionLoc(CE->getBeginLoc()), FPAInfo);
-    return;
-  } else if (FuncName == "cufftExecC2C" || FuncName == "cufftExecZ2Z" ||
+             FuncName == "cufftMakePlanMany64" || FuncName == "cufftXtMakePlanMany" ||
+             FuncName == "cufftExecC2C" || FuncName == "cufftExecZ2Z" ||
              FuncName == "cufftExecC2R" || FuncName == "cufftExecR2C" ||
-             FuncName == "cufftExecZ2D" || FuncName == "cufftExecD2Z") {
-    std::string FFTHandleInfoKey;
-    int Index = -1;
-    unsigned int CompoundStmtBeginOffset = 0;
-    unsigned int PlanHandleDeclBeginOffset = 0;
-    unsigned int ExecAPIBeginOffset = 0;
-
-    const DeclaratorDecl *DD = getHandleVar(CE->getArg(0));
-    if (!DD)
-      return;
-    if (isPlaceholderIdxDuplicated(CE))
-      return;
-
-    Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
-
-    SourceLocation SL = SM.getExpansionLoc(DD->getBeginLoc());
-    FFTHandleInfoKey = DpctGlobalInfo::getLocInfo(SL).first + ":" +
-                       std::to_string(DpctGlobalInfo::getLocInfo(SL).second);
-
-    FFCB.updateExecCallExpr(FFTHandleInfoKey);
-
-    const CompoundStmt *CS =
-        findTheOuterMostCompoundStmtUntilMeetControlFlowNodes(CE);
-    if (CS) {
-      CompoundStmtBeginOffset =
-          DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(CS->getBeginLoc()))
-              .second;
-      PlanHandleDeclBeginOffset =
-          DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(DD->getBeginLoc()))
-              .second;
-      ExecAPIBeginOffset =
-          DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(CE->getBeginLoc()))
-              .second;
-    }
-
-    SourceLocation TypeBegin;
-    int TypeLength = 0;
-    if (FFCB.moveDeclOutOfBracesIfNeeds(Flags, TypeBegin, TypeLength)) {
-      emplaceTransformation(new ReplaceText(TypeBegin, TypeLength, ""));
-    }
-
-    FFTExecAPIInfo FEAInfo;
-    FFCB.updateFFTExecAPIInfo(FEAInfo);
-    FEAInfo.HandleDeclFileAndOffset = FFTHandleInfoKey;
-    FEAInfo.QueueIndex = Index;
-    FEAInfo.CompoundStmtBeginOffset = CompoundStmtBeginOffset;
-    FEAInfo.PlanHandleDeclBeginOffset = PlanHandleDeclBeginOffset;
-    FEAInfo.ExecAPIBeginOffset = ExecAPIBeginOffset;
-
-    // If previous stat is setStream(plan, s), then using "s" as queue and
-    // not emit warning.
-    std::string DefiniteStream;
-    if (isPreviousStmtRelatedSetStream(CE, Index, DefiniteStream)) {
-      FEAInfo.DefiniteStream = DefiniteStream;
-    }
-
-    DpctGlobalInfo::getInstance().insertFFTExecAPIInfo(
-        SM.getExpansionLoc(CE->getBeginLoc()), FEAInfo);
+             FuncName == "cufftExecZ2D" || FuncName == "cufftExecD2Z" ||
+             FuncName == "cufftXtExec") {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
     return;
   }
 }

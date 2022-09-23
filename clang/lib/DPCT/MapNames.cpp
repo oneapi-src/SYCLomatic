@@ -330,8 +330,16 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
       {"cufftResult_t", std::make_shared<TypeNameRule>("int")},
       {"cufftResult", std::make_shared<TypeNameRule>("int")},
-      {"cufftType_t", std::make_shared<TypeNameRule>("int")},
-      {"cufftType", std::make_shared<TypeNameRule>("int")},
+      {"cufftType_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "fft::fft_type",
+                                      HelperFeatureEnum::FftUtils_fft_type)},
+      {"cufftType",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "fft::fft_type",
+                                      HelperFeatureEnum::FftUtils_fft_type)},
+      {"cufftHandle",
+       std::make_shared<TypeNameRule>(getDpctNamespace() +
+                                          "fft::fft_engine*",
+                                      HelperFeatureEnum::FftUtils_fft_engine)},
       {"CUdevice", std::make_shared<TypeNameRule>("int")},
       {"CUarray_st",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_matrix",
@@ -813,6 +821,30 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<EnumNameRule>(getClNamespace() + "memory_order::acquire")},
       {"cuda::memory_order_seq_cst",
        std::make_shared<EnumNameRule>(getClNamespace() + "memory_order::seq_cst")},
+      {"CUFFT_R2C",
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "fft::fft_type::real_float_to_complex_float",
+           HelperFeatureEnum::FftUtils_fft_type)},
+      {"CUFFT_C2R",
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "fft::fft_type::complex_float_to_real_float",
+           HelperFeatureEnum::FftUtils_fft_type)},
+      {"CUFFT_D2Z",
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "fft::fft_type::real_double_to_complex_double",
+           HelperFeatureEnum::FftUtils_fft_type)},
+      {"CUFFT_Z2D",
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "fft::fft_type::complex_double_to_real_double",
+           HelperFeatureEnum::FftUtils_fft_type)},
+      {"CUFFT_C2C",
+       std::make_shared<EnumNameRule>(
+           getDpctNamespace() + "fft::fft_type::complex_float_to_complex_float",
+           HelperFeatureEnum::FftUtils_fft_type)},
+      {"CUFFT_Z2Z", std::make_shared<EnumNameRule>(
+                        getDpctNamespace() +
+                            "fft::fft_type::complex_double_to_complex_double",
+                        HelperFeatureEnum::FftUtils_fft_type)},
       // ...
   };
 

@@ -123,20 +123,6 @@ inline constexpr std::uint64_t get_type_combination_id(FirstT FirstVal, RestT...
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|get_memory|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// Memory|get_buffer_T|UsmNone
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-template <typename T> inline auto get_memory(T *x) {
-#ifdef DPCT_USM_LEVEL_NONE
-  return dpct::get_buffer<std::remove_cv_t<T>>(x);
-#else
-  return x;
-#endif
-}
-// DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|working_memory|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // Memory|async_dpct_free
@@ -315,7 +301,7 @@ inline void dotuc(sycl::queue &q, int n, const void *x,
 // DPCT_LABEL_BEGIN|scal_impl|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // BlasUtils|get_value
-// BlasUtils|get_memory
+// LibCommonUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <class Tx, class Te>
@@ -331,7 +317,7 @@ inline void scal_impl(sycl::queue &q, int n, const void *alpha, void *x,
 // DPCT_LABEL_BEGIN|axpy_impl|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // BlasUtils|get_value
-// BlasUtils|get_memory
+// LibCommonUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <class Txy, class Te>
@@ -349,7 +335,7 @@ inline void axpy_impl(sycl::queue &q, int n, const void *alpha, const void *x,
 // DPCT_LABEL_BEGIN|rot_impl|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // BlasUtils|get_value
-// BlasUtils|get_memory
+// LibCommonUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <class Txy, class Tc, class Ts>
@@ -368,7 +354,7 @@ inline void rot_impl(sycl::queue &q, int n, void *x, int incx, void *y,
 // DPCT_LABEL_BEGIN|gemm_impl|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // BlasUtils|get_value
-// BlasUtils|get_memory
+// LibCommonUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <class Ta, class Tb, class Tc, class Ts>
@@ -442,7 +428,7 @@ inline void gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
 // DPCT_LABEL_BEGIN|gemm_batch_impl_stride|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // BlasUtils|get_value
-// BlasUtils|get_memory
+// LibCommonUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <class Ta, class Tb, class Tc, class Ts>
@@ -468,7 +454,7 @@ gemm_batch_impl(sycl::queue &q, oneapi::mkl::transpose a_trans,
 // DPCT_LABEL_BEGIN|rk_impl|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // BlasUtils|get_value
-// BlasUtils|get_memory
+// LibCommonUtils|get_memory
 // Util|DataType
 // Memory|get_buffer_T|UsmNone
 // Memory|dpct_malloc|UsmNone
@@ -2062,7 +2048,7 @@ inline void trsm_batch(sycl::queue &q, oneapi::mkl::side left_right,
 // Util|DataType
 // Util|matrix_mem_copy_T
 // BlasUtils|get_value
-// BlasUtils|get_memory
+// LibCommonUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes a triangular matrix-general matrix product.

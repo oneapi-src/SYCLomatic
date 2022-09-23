@@ -69,8 +69,6 @@ struct LibraryMigrationFlags {
   bool IsPrefixEmpty = false;
   bool IsSuffixEmpty = false;
   bool IsPrePrefixEmpty = false;
-  bool IsFunctionPointer = false;
-  bool IsFunctionPointerAssignment = false;
 };
 struct LibraryMigrationLocations {
   SourceLocation PrefixInsertLoc;
