@@ -1,6 +1,7 @@
 // RUN: dpct --format-range=none -out-root %T/math_functions_std %s --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/math_functions_std/math_functions_std.dp.cpp --match-full-lines %s
 
+// CHECK: #include <cstdlib>
 #include <cuda_runtime.h>
 
 __device__ void d() {

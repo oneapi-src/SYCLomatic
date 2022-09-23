@@ -721,6 +721,9 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
     case HT_DPL_Iterator:
       return insertHeader(HeaderType::HT_DPL_Iterator, LastIncludeOffset,
                           "<oneapi/dpl/iterator>");
+    case HT_STDLIB:
+      return insertHeader(HeaderType::HT_STDLIB, LastIncludeOffset,
+                          "<cstdlib>");
     }
   }
 

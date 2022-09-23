@@ -357,6 +357,7 @@ enum HeaderType {
   HT_DPL_Algorithm,
   HT_DPL_Execution,
   HT_DPL_Iterator,
+  HT_STDLIB,
 };
 
 enum UsingType {
