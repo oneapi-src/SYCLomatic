@@ -126,7 +126,7 @@ dpct is an alias command for c2s.
 ## Find More
 
 * oneAPI specification:
-[https://spec.oneapi.io/releases/index.html](https://spec.oneapi.io/releases/index.html)
+[ https://spec.oneapi.io/versions/latest/index.html]( https://spec.oneapi.io/versions/latest/index.html)
 * SYCL\* 2020 specification:
 [https://www.khronos.org/registry/SYCL/](https://www.khronos.org/registry/SYCL/)
 
