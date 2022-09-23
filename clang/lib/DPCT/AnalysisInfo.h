@@ -13,7 +13,7 @@
 #include "Error.h"
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
-#include "FFTAPIMigration.h"
+#include "LibraryAPIMigration.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
@@ -583,27 +583,12 @@ public:
     return HostRandomEngineTypeMap;
   }
 
-  std::map<unsigned int, FFTDescriptorTypeInfo> &getFFTDescriptorTypeMap() {
-    return FFTDescriptorTypeMap;
-  }
-  std::map<unsigned int, FFTPlanAPIInfo> &getFFTPlanAPIInfoMap() {
-    return FFTPlanAPIInfoMap;
-  }
-  std::map<unsigned int, FFTExecAPIInfo> &getFFTExecAPIInfoMap() {
-    return FFTExecAPIInfoMap;
-  }
-
   std::map<unsigned int, EventSyncTypeInfo> &getEventSyncTypeMap() {
     return EventSyncTypeMap;
   }
 
   std::map<unsigned int, TimeStubTypeInfo> &getTimeStubTypeMap() {
     return TimeStubTypeMap;
-  }
-
-  std::unordered_map<std::string, FFTSetStreamAPIInfo> &
-  getFFTSetStreamAPIInfoMap() {
-    return FFTSetStreamAPIInfoMap;
   }
 
   std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
@@ -682,11 +667,8 @@ private:
   std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
            HostRandomDistrInfo>
       HostRandomDistrMap;
-  std::map<unsigned int, FFTDescriptorTypeInfo> FFTDescriptorTypeMap;
   std::map<unsigned int, EventSyncTypeInfo> EventSyncTypeMap;
-  std::map<unsigned int, FFTPlanAPIInfo> FFTPlanAPIInfoMap;
   std::map<unsigned int, TimeStubTypeInfo> TimeStubTypeMap;
-  std::map<unsigned int, FFTExecAPIInfo> FFTExecAPIInfoMap;
   std::map<unsigned int, BuiltinVarInfo> BuiltinVarInfoMap;
   GlobalMap<MemVarInfo> MemVarMap;
   GlobalMap<DeviceFunctionDecl> FuncMap;
@@ -698,21 +680,6 @@ private:
   std::unordered_set<std::shared_ptr<TextModification>> ConstantMacroTMSet;
   std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>>
       AtomicMap;
-  // Key is the begin location offset of the CompoundStmt and the begin location
-  // offset of the plan handle VarDecl/FieldDecl.
-  // Value is the stream name.
-  // Example:
-  // TranslationUnitDecl
-  // `-FunctionDecl
-  //   `-CompoundStmt #1
-  //     `-IfStmt
-  //       |-CXXBoolLiteralExpr
-  //       `-CompoundStmt #2 ==> node as key
-  //         `-CompoundStmt
-  //           `-CallExpr
-  // If we can evaluate the value of "CXXBoolLiteralExpr" is always true, then
-  // the #1 will be used as key.
-  std::unordered_map<std::string, FFTSetStreamAPIInfo> FFTSetStreamAPIInfoMap;
   std::shared_ptr<ExtReplacements> Repls;
   size_t FileSize = 0;
   std::vector<SourceLineInfo> Lines;
@@ -1175,9 +1142,6 @@ public:
   inline static std::unordered_set<std::string> &getPrecAndDomPairSet() {
     return PrecAndDomPairSet;
   }
-  inline static std::unordered_set<FFTTypeEnum> &getFFTTypeSet() {
-    return FFTTypeSet;
-  }
 
   inline static bool isMKLHeaderUsed() { return IsMLKHeaderUsed; }
   inline static void setMKLHeaderUsed(bool Used = true) {
@@ -1560,14 +1524,6 @@ public:
     }
   }
 
-  void insertFFTDescriptorTypeInfo(SourceLocation SL, unsigned int Length) {
-    auto LocInfo = getLocInfo(SL);
-    auto FileInfo = insertFile(LocInfo.first);
-    auto &M = FileInfo->getFFTDescriptorTypeMap();
-    if (M.find(LocInfo.second) == M.end()) {
-      M.insert(std::make_pair(LocInfo.second, FFTDescriptorTypeInfo(Length)));
-    }
-  }
   void
   insertHostDeviceFuncCallInfo(std::string &&FuncName,
                                std::pair<std::string, unsigned int> &&Info) {
@@ -1591,8 +1547,6 @@ public:
     return CudaArchMacroRepl;
   }
   CudaArchDefMap &getCudaArchDefinedMap() { return CudaArchDefinedMap; }
-  void insertFFTPlanAPIInfo(SourceLocation SL, FFTPlanAPIInfo Info);
-  void insertFFTExecAPIInfo(SourceLocation SL, FFTExecAPIInfo Info);
 
   void insertReplInfoFromYAMLToFileInfo(
       std::string FilePath,
@@ -1754,45 +1708,6 @@ public:
         std::get<2>(Iter->second) = false;
         return;
       }
-    }
-  }
-
-  void updateFFTSetStreamAPIInfoMap(SourceLocation CompoundStmtBeginSL,
-                                    SourceLocation PlanHandleDeclBeginSL,
-                                    SourceLocation SetStreamAPIBeginSL,
-                                    std::string StreamStr) {
-    auto LocInfo = getLocInfo(CompoundStmtBeginSL);
-    auto FileInfo = insertFile(LocInfo.first);
-    auto &M = FileInfo->getFFTSetStreamAPIInfoMap();
-
-    std::string Key = std::to_string(LocInfo.second) + ":" +
-                      std::to_string(getLocInfo(PlanHandleDeclBeginSL).second);
-    auto Iter = M.find(Key);
-    if (Iter == M.end()) {
-      FFTSetStreamAPIInfo Info;
-      Info.Streams.push_back(
-          std::make_pair(getLocInfo(SetStreamAPIBeginSL).second, StreamStr));
-      M.insert(std::make_pair(Key, Info));
-    } else {
-      Iter->second.Streams.push_back(
-          std::make_pair(getLocInfo(SetStreamAPIBeginSL).second, StreamStr));
-    }
-  }
-
-  std::string getRelatedFFTStream(std::string FilePath,
-                                  unsigned int CompoundStmtBeginOffset,
-                                  unsigned int PlanHandleDeclBeginOffset,
-                                  unsigned int ExecAPIBeginOffset) {
-    auto FileInfo = insertFile(FilePath);
-    auto &M = FileInfo->getFFTSetStreamAPIInfoMap();
-
-    std::string Key = std::to_string(CompoundStmtBeginOffset) + ":" +
-                      std::to_string(PlanHandleDeclBeginOffset);
-    auto Iter = M.find(Key);
-    if (Iter == M.end()) {
-      return "";
-    } else {
-      return Iter->second.getLatestStream(ExecAPIBeginOffset);
     }
   }
 
@@ -1963,44 +1878,6 @@ public:
     auto CurrentFileInfo = this->insertFile(CurrentFileName);
     auto IncludedFileInfo = this->insertFile(IncludedFileName);
     CurrentFileInfo->insertIncludedFilesInfo(IncludedFileInfo);
-  }
-
-  static void insertOrUpdateFFTHandleInfo(const std::string &FileAndOffset,
-                                          const FFTDirectionType Direction,
-                                          const FFTPlacementType Placement) {
-    auto I = FFTHandleInfoMap.find(FileAndOffset);
-    if (I == FFTHandleInfoMap.end()) {
-      FFTHandleInfo Info;
-      Info.Direction = Direction;
-      Info.Placement = Placement;
-      FFTHandleInfoMap.insert(std::make_pair(FileAndOffset, Info));
-    } else {
-      I->second.updateDirectionFromExec(Direction);
-      I->second.updatePlacementFromExec(Placement);
-    }
-  }
-  static void insertOrUpdateFFTHandleInfo(const std::string &FileAndOffset,
-                                          bool MayNeedReset,
-                                          std::string InputDistance,
-                                          std::string OutputDistance,
-                                          std::string InembedStr,
-                                          std::string OnembedStr) {
-    auto I = FFTHandleInfoMap.find(FileAndOffset);
-    if (I == FFTHandleInfoMap.end()) {
-      FFTHandleInfo Info;
-      Info.MayNeedReset = MayNeedReset;
-      Info.InputDistance = InputDistance;
-      Info.OutputDistance = OutputDistance;
-      Info.InembedStr = InembedStr;
-      Info.OnembedStr = OnembedStr;
-      FFTHandleInfoMap.insert(std::make_pair(FileAndOffset, Info));
-    } else {
-      I->second.updateResetInfo(MayNeedReset, InputDistance, OutputDistance,
-                                InembedStr, OnembedStr);
-    }
-  }
-  static std::unordered_map<std::string, FFTHandleInfo> &getFFTHandleInfoMap() {
-    return FFTHandleInfoMap;
   }
 
   static unsigned int getCudaKernelDimDFIIndexThenInc() {
@@ -2207,7 +2084,6 @@ private:
   static HelperFilesCustomizationLevel HelperFilesCustomizationLvl;
   static std::string CustomHelperFileName;
   static std::unordered_set<std::string> PrecAndDomPairSet;
-  static std::unordered_set<FFTTypeEnum> FFTTypeSet;
   static std::unordered_set<std::string> HostRNGEngineTypeSet;
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;
@@ -2271,10 +2147,6 @@ private:
   static bool UsingGenericSpace;
   static bool UsingThisItem;
   static bool SpBLASUnsupportedMatrixTypeFlag;
-  // Key: the FFT handle declaration "FilePath:Offset"
-  // Value: a struct including placement and direction
-  static std::unordered_map<std::string, FFTExecAPIInfo> FFTExecAPIInfoMap;
-  static std::unordered_map<std::string, FFTHandleInfo> FFTHandleInfoMap;
   static unsigned int CudaKernelDimDFIIndex;
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
       CudaKernelDimDFIMap;
