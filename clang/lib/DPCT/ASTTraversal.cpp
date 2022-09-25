@@ -785,7 +785,7 @@ private:
 
 void IncludesCallbacks::InclusionDirective(
     SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
-    bool IsAngled, CharSourceRange FilenameRange, const FileEntry *File,
+    bool IsAngled, CharSourceRange FilenameRange, Optional<FileEntryRef> File,
     StringRef SearchPath, StringRef RelativePath, const Module *Imported,
     SrcMgr::CharacteristicKind FileType) {
   // Record the locations of the first and last inclusion directives in a file
@@ -810,8 +810,8 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   std::string FilePath;
-  if (!File->tryGetRealPathName().empty()) {
-    FilePath = File->tryGetRealPathName().str();
+  if (!File->getFileEntry().tryGetRealPathName().empty()) {
+    FilePath = File->getFileEntry().tryGetRealPathName().str();
   } else {
     llvm::SmallString<512> FilePathAbs(File->getName());
     DpctGlobalInfo::getSourceManager().getFileManager().makeAbsolutePath(
