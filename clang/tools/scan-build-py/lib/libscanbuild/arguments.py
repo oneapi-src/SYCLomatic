@@ -468,8 +468,8 @@ def parser_work_directory(parser):
         '--work-directory',
         metavar='<path>',
         default=argparse.SUPPRESS,
-        help="""Specifies the working directory of the command that generates the build log.
-                 (default: the directory of build log file, if work directory is not provided)""")
+        help="""Specifies the working directory of the command that generates the build log specified by option --parse-build-log.
+                 (default: the directory of build log file specified by option --parse-build-log)""")
 
 def parser_add_linker_entry(parser):
     parser.add_argument(
