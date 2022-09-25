@@ -413,8 +413,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
                                   "_FLAG_" + std::to_string(Idx);
         OS << buildString("$(", ObjStrName, "):$(", SrcStrName, ")\n");
 
-        // Use 'icpx -fsycl' to compile the migrated SYCL file whose original file is compiled
-        // by nvcc.
+        // Use 'icpx -fsycl' to compile the migrated SYCL file.
         std::string Compiler =
             llvm::StringRef((Entry.second)[Idx].Compiler).endswith("nvcc")
                 ? "$(CC)"
