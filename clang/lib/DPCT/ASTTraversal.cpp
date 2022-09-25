@@ -11516,7 +11516,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
     emplaceTransformation(new ReplaceStmt(C, OS.str()));
     requestFeature(HelperFeatureEnum::Image_image_matrix_get_channel, C);
   } else if (Name == "cuMemGetInfo_v2" || Name == "cudaMemGetInfo") {
-    if (DpctGlobalInfo::useFreeMemSize()) {
+    if (DpctGlobalInfo::useDeviceInfo()) {
       std::ostringstream OS;
       if (IsAssigned)
         OS << "(";

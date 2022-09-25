@@ -200,8 +200,8 @@ bool printOptions(
               static_cast<unsigned>(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier)))
           Str = Str + "enqueued_barriers,";
         if (!(UValue &
-              static_cast<unsigned>(DPCPPExtensionsDefaultEnabled::Ext_FreeMemSize)))
-          Str += "free_mem_size,";
+              static_cast<unsigned>(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo)))
+          Str += "device_info,";
       }
       if (!Str.empty()) {
         Str = "--no-dpcpp-extensions=" + Str;

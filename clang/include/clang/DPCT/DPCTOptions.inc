@@ -321,9 +321,9 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<DPCPPExtensionsDefaultEnabl
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier),
                                      "Enqueued barriers extension.",
                                      false),
-             DPCT_OPT_ENUM("free_mem_size",
-                                     int(DPCPPExtensionsDefaultEnabled::Ext_FreeMemSize),
-                                     "Used to get the number of bytes of free memory on.",
+             DPCT_OPT_ENUM("device_info",
+                                     int(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo),
+                                     "Intel's Extensions for Device Information.",
                                      false)                            
            ),
            llvm::cl::desc("Comma separated list of extensions not to be used in migrated "

@@ -1864,8 +1864,8 @@ public:
     return getUsingExtensionDD(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
   }
 
-  static bool useFreeMemSize() {
-    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::Ext_FreeMemSize);
+  static bool useDeviceInfo() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
   }
 
   static bool getSpBLASUnsupportedMatrixTypeFlag() {

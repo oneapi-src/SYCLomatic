@@ -58,7 +58,7 @@ enum class ExplicitNamespace : unsigned int {
 };
 enum class DPCPPExtensionsDefaultEnabled : unsigned int {
   ExtDE_EnqueueBarrier = 0x01,
-  Ext_FreeMemSize = 0x02,
+  ExtDE_DeviceInfo = 0x02,
   ExtDE_DPCPPExtensionsDefaultEnabledEnumSize
 };
 enum class DPCPPExtensionsDefaultDisabled : unsigned int {
