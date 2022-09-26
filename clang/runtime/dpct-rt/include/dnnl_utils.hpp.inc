@@ -2210,7 +2210,7 @@ bool engine_ext::scale_parameter_preprocess(
   for (auto &arg : args) {
     if (arg._alpha == 0.f) {
       if (arg._beta != 1.f) {
-        scale(arg._beta, arg._desc, arg._data);
+        async_scale(arg._beta, arg._desc, arg._data);
       }
     } else {
       direct_exit = false;
@@ -2306,12 +2306,12 @@ sycl::event engine_ext::execute_primitive(
   int cache_index = 0;
   for (int i = 0; i < output_arg_num; i++) {
     if (output_args[i]._beta != 0.f) {
-      e = sum(output_args[i]._alpha, output_args[i]._desc,
+      e = async_sum(output_args[i]._alpha, output_args[i]._desc,
               caches[cache_index++], output_args[i]._beta, output_args[i]._desc,
               output_args[i]._data);
     } else {
       if (output_args[i]._alpha != 1.f) {
-        e = scale(output_args[i]._alpha, output_args[i]._desc,
+        e = async_scale(output_args[i]._alpha, output_args[i]._desc,
                   output_args[i]._data);
       }
     }
@@ -2329,7 +2329,7 @@ sycl::event engine_ext::execute_primitive(
   if ((result != desc) || !src) {
     *cache = allocate(desc);
     if (is_input && src) {
-      reorder(1.f, desc, src, 0.f, result, *cache);
+      async_reorder(1.f, desc, src, 0.f, result, *cache);
     }
     caches.push_back(*cache);
   }
@@ -2481,14 +2481,14 @@ sycl::event engine_ext::batch_normalization_backward_internal(
        {alpha_param, beta_param, DNNL_ARG_DIFF_SHIFT, help_diff_scale_bias_desc,
         reordered_diff_bias ? reordered_diff_bias : diff_bias}});
   if (actual_diff_src_desc != diff_src_desc.get_desc() && reordered_diff_src) {
-    e = reorder(1.f, actual_diff_src_desc, reordered_diff_src, 0.f,
+    e = async_reorder(1.f, actual_diff_src_desc, reordered_diff_src, 0.f,
                 diff_src_desc, diff_src);
   }
   if (actual_diff_scale_bias_desc != diff_scale_bias_desc.get_desc() &&
       reordered_diff_scale && reordered_diff_bias) {
-    reorder(1.f, actual_diff_scale_bias_desc, reordered_diff_scale, 0.f,
+    async_reorder(1.f, actual_diff_scale_bias_desc, reordered_diff_scale, 0.f,
             diff_scale_bias_desc, diff_scale);
-    e = reorder(1.f, actual_diff_scale_bias_desc, reordered_diff_bias, 0.f,
+    e = async_reorder(1.f, actual_diff_scale_bias_desc, reordered_diff_bias, 0.f,
                 diff_scale_bias_desc, diff_bias);
   }
   _q->submit([&](sycl::handler &cgh) {
@@ -2518,7 +2518,7 @@ sycl::event engine_ext::batch_normalization_forward_internal(
        *reordered_saved_mean = nullptr, *reordered_saved_var = nullptr;
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
   ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
-  ::dnnl::memory::desc help_scale_bias_desc = scale_bias_desc.get_desc();
+  ::dnnl::memory::desc help_scale_bias_desc = async_scale_bias_desc.get_desc();
   ::dnnl::memory::desc help_mean_var_desc = mean_var_desc.get_desc();
   ::dnnl::memory::desc actual_dst_desc = help_dst_desc;
   ::dnnl::memory::desc actual_mean_var_desc = help_mean_var_desc;
@@ -2602,23 +2602,23 @@ sycl::event engine_ext::batch_normalization_forward_internal(
       }
     }
     float unbias_factor = element_num / (element_num - 1.f);
-    e = sum(factor * unbias_factor, mean_var_desc,
+    e = async_sum(factor * unbias_factor, mean_var_desc,
             reordered_saved_var ? reordered_saved_var : saved_var,
             (1.f - factor), mean_var_desc, running_var);
   }
   if (!is_infer && running_mean) {
-    e = sum(factor, mean_var_desc,
+    e = async_sum(factor, mean_var_desc,
             reordered_saved_mean ? reordered_saved_mean : saved_mean,
             (1.f - factor), mean_var_desc, running_mean);
   }
   if (reordered_dst && (actual_dst_desc != dst_desc.get_desc())) {
-    e = reorder(1.f, actual_dst_desc, reordered_dst, 0.f, dst_desc, dst);
+    e = async_reorder(1.f, actual_dst_desc, reordered_dst, 0.f, dst_desc, dst);
   }
   if (!is_infer && reordered_saved_mean && reordered_saved_var && saved_mean &&
       saved_var && (actual_mean_var_desc != mean_var_desc.get_desc())) {
-    e = reorder(1.f, actual_mean_var_desc, reordered_saved_mean, 0.f,
+    e = async_reorder(1.f, actual_mean_var_desc, reordered_saved_mean, 0.f,
                 mean_var_desc, saved_mean);
-    e = reorder(1.f, actual_mean_var_desc, reordered_saved_var, 0.f,
+    e = async_reorder(1.f, actual_mean_var_desc, reordered_saved_var, 0.f,
                 mean_var_desc, saved_var);
   }
   _q->submit([&](sycl::handler &cgh) {
@@ -2719,7 +2719,7 @@ void engine_ext::pooling_forward(pooling_desc &desc, float alpha,
                                  const memory_desc_ext &src_desc, void *src,
                                  float beta, const memory_desc_ext &dst_desc,
                                  void *dst,
-                                 ::dnnl::memory *workspace = nullptr) {
+                                 ::dnnl::memory *workspace) {
   async_pooling_forward(desc, alpha, src_desc, src, beta, dst_desc, dst,
                         workspace).wait();
 }
@@ -2729,7 +2729,7 @@ void engine_ext::pooling_backward(
     const memory_desc_ext &diff_dst_desc, void *diff_dst,
     const memory_desc_ext &src_desc, void *src, float beta,
     const memory_desc_ext &diff_src_desc, void *diff_src,
-    ::dnnl::memory *workspace = nullptr) {
+    ::dnnl::memory *workspace) {
   async_pooling_backward(desc, alpha, dst_desc, dst, diff_dst_desc, diff_dst,
                          src_desc, src, beta, diff_src_desc, diff_src,
                          workspace)
@@ -2759,7 +2759,7 @@ void engine_ext::softmax_backward(softmax_algorithm alg, softmax_mode mode,
 void engine_ext::lrn_forward(lrn_desc &desc, float alpha,
                              const memory_desc_ext &src_desc, void *src,
                              float beta, const memory_desc_ext &dst_desc,
-                             void *dst, ::dnnl::memory *workspace = nullptr) {
+                             void *dst, ::dnnl::memory *workspace) {
   async_lrn_forward(desc, alpha, src_desc, src, beta, dst_desc, dst, workspace)
       .wait();
 }
@@ -2771,7 +2771,7 @@ void engine_ext::lrn_backward(lrn_desc &desc, float alpha,
                               void *src, float beta,
                               const memory_desc_ext &diff_src_desc,
                               void *diff_src,
-                              ::dnnl::memory *workspace = nullptr) {
+                              ::dnnl::memory *workspace) {
   async_lrn_backward(desc, alpha, dst_desc, dst, diff_dst_desc, diff_dst,
                      src_desc, src, beta, diff_src_desc, diff_src, workspace)
       .wait();
