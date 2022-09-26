@@ -2518,7 +2518,7 @@ sycl::event engine_ext::batch_normalization_forward_internal(
        *reordered_saved_mean = nullptr, *reordered_saved_var = nullptr;
   ::dnnl::memory::desc help_src_desc = src_desc.get_desc();
   ::dnnl::memory::desc help_dst_desc = dst_desc.get_desc();
-  ::dnnl::memory::desc help_scale_bias_desc = async_scale_bias_desc.get_desc();
+  ::dnnl::memory::desc help_scale_bias_desc = scale_bias_desc.get_desc();
   ::dnnl::memory::desc help_mean_var_desc = mean_var_desc.get_desc();
   ::dnnl::memory::desc actual_dst_desc = help_dst_desc;
   ::dnnl::memory::desc actual_mean_var_desc = help_mean_var_desc;
