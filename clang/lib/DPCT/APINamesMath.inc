@@ -301,10 +301,10 @@ ENTRY_EMULATED("__double2loint", "")
 ENTRY_EMULATED("__hiloint2double", "")
 ENTRY_EMULATED("__sad", MapNames::getClNamespace(false, true) + "abs_diff")
 ENTRY_EMULATED("__usad", MapNames::getClNamespace(false, true) + "abs_diff")
-ENTRY_EMULATED("__drcp_rd", MapNames::getClNamespace(false, true) + "native::recip")
-ENTRY_EMULATED("__drcp_rn", MapNames::getClNamespace(false, true) + "native::recip")
-ENTRY_EMULATED("__drcp_ru", MapNames::getClNamespace(false, true) + "native::recip")
-ENTRY_EMULATED("__drcp_rz", MapNames::getClNamespace(false, true) + "native::recip")
+ENTRY_EMULATED("__drcp_rd", "(1.0/(X))")
+ENTRY_EMULATED("__drcp_rn", "(1.0/(X))")
+ENTRY_EMULATED("__drcp_ru", "(1.0/(X))")
+ENTRY_EMULATED("__drcp_rz", "(1.0/(X))")
 
 
 // Half/Half2 Arithmetic Functions
