@@ -3157,17 +3157,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           std::string::npos)
         report(BeginLoc, Diagnostics::HANDLE_IN_DEVICE, false, TypeStr);
     }
-
-    const Expr *Init = nullptr;
-
+    
     if (VarD) {
       DD = VarD;
-      if (VarD->hasInit())
-        Init = VarD->getInit();
     } else if (FieldD) {
       DD = FieldD;
-      if (FieldD->hasInClassInitializer())
-        Init = FieldD->getInClassInitializer();
     }
 
     if (!Str.empty()) {
