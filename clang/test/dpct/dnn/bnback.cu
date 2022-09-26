@@ -92,11 +92,15 @@ int main() {
       cudaMemcpyHostToDevice);
     float alpha = 1.f, beta = 0.f, eps = 1.f;
     double factor = 0.1f;
-// CHECK: auto status = (handle.batch_normalization_forward_training(dpct::dnnl::batch_normalization_mode::per_activation, eps, factor, alpha, dataTensor, data, beta, outTensor, out, scalebiasTensor, scale, bias, rmean, rvar, smean, svar), 0);
+// CHECK:     /*
+// CHECK:     DPCT1007:{{[0-9]+}}: Migration of CUDNN_BATCHNORM_SPATIAL_PERSISTENT is not supported.
+// CHECK:     */
+// CHECK:     dpct::dnnl::batch_normalization_mode m = dpct::dnnl::batch_normalization_mode::spatial;
+    cudnnBatchNormMode_t m = CUDNN_BATCHNORM_SPATIAL_PERSISTENT;
+// CHECK: auto status = (handle.batch_normalization_forward_training(m, eps, factor, alpha, dataTensor, data, beta, outTensor, out, scalebiasTensor, scale, bias, rmean, rvar, smean, svar), 0);
     auto status = cudnnBatchNormalizationForwardTraining(
         handle,
-        CUDNN_BATCHNORM_PER_ACTIVATION,
-        //CUDNN_BATCHNORM_SPATIAL,
+        m,
         &alpha,
         &beta,
         dataTensor,
