@@ -15,7 +15,7 @@
 // RUN: cd ..
 // RUN: rm -rf ./opencl-build
 
-// CHECK: #include <CL/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK: #include <dpct/dpct.hpp>
 // CHECK: #include <iostream>
 // CHECK: #include <math.h>
