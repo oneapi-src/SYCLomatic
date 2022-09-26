@@ -76,7 +76,7 @@ int main() {
     // CHECK: /*
     // CHECK: DPCT1007:{{[0-9]+}}: Migration of reduction index is not supported.
     // CHECK: */
-    // CHECK: handle.reduction(reducedesc, alpha, dataTensor, data, beta, outTensor, out);
+    // CHECK: handle.async_reduction(reducedesc, alpha, dataTensor, data, beta, outTensor, out);
     cudnnReduceTensor(
         handle,
         reducedesc,

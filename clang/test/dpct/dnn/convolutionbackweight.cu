@@ -82,7 +82,7 @@ int main() {
     cudaMalloc(&workspacesize, size);
 
     float alpha = 1.0f, beta = 0.f;
-    // CHECK: handle.convolution_backward_weight(covdes, dnnl::algorithm::convolution_direct, alpha, dataTensor, data, diffoutTensor, diffout, beta, difffilterTensor, difffilter);
+    // CHECK: handle.async_convolution_backward_weight(covdes, dnnl::algorithm::convolution_direct, alpha, dataTensor, data, diffoutTensor, diffout, beta, difffilterTensor, difffilter);
     cudnnConvolutionBackwardFilter(
         handle, 
         &alpha,

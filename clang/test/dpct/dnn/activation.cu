@@ -132,14 +132,14 @@ void test1() {
     // CHECK: desc.set(dnnl::algorithm::eltwise_logistic_use_dst_for_bwd, 0.f);
 
     // CHECK: float alpha = 1.5f, beta = 0.f;
-    // CHECK: handle.activation_forward(desc, alpha, dataTensor, data, beta, outTensor, out);
+    // CHECK: handle.async_activation_forward(desc, alpha, dataTensor, data, beta, outTensor, out);
 
     // CHECK: alpha = 2.f, beta = 0.f;
     // CHECK: dpct::get_current_device().queues_wait_and_throw();
     // CHECK: /*
     // CHECK: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK: */
-    // CHECK: auto s = (handle.activation_backward(desc, alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, beta, diffdataTensor, diffdata), 0);
+    // CHECK: auto s = (handle.async_activation_backward(desc, alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, beta, diffdataTensor, diffdata), 0);
     cudnnActivationDescriptor_t desc;
     cudnnCreateActivationDescriptor(&desc);
     cudnnSetActivationDescriptor(desc, CUDNN_ACTIVATION_SIGMOID, CUDNN_PROPAGATE_NAN, 0.f);

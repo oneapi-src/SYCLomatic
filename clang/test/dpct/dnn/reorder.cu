@@ -98,7 +98,7 @@ void test() {
     //CHECK: /*
     //CHECK: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK: */
-    //CHECK: auto s = (handle.reorder(alpha, dataTensor, data, beta, outTensor, out), 0);
+    //CHECK: auto s = (handle.async_reorder(alpha, dataTensor, data, beta, outTensor, out), 0);
     auto s = cudnnTransformTensor(handle, &alpha, dataTensor, data, &beta, outTensor, out);
 
     cudaMemcpy(host_out.data(), out, ele_num * sizeof(HT), cudaMemcpyDeviceToHost);

@@ -65,7 +65,7 @@ int main() {
     cudnnGetConvolutionNdForwardOutputDim(covdes, dataTensor, filterTensor, 4, dimo);
 
     float alpha = 1.0f, beta = 0.0f;
-    // CHECK: handle.convolution_forward(covdes, dnnl::algorithm::convolution_direct, alpha, dataTensor, data, filterTensor, filter, beta, outTensor, out);
+    // CHECK: handle.async_convolution_forward(covdes, dnnl::algorithm::convolution_direct, alpha, dataTensor, data, filterTensor, filter, beta, outTensor, out);
     cudnnConvolutionForward(handle, &alpha, dataTensor, data, filterTensor, filter, covdes, CUDNN_CONVOLUTION_FWD_ALGO_DIRECT, workspacesize, size, &beta, outTensor, out);
 
     cudaDeviceSynchronize();

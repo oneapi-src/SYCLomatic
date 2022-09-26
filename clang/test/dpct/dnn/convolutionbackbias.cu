@@ -78,7 +78,7 @@ int main() {
     
 
     float alpha = 1.f, beta = 0.f;
-    // CHECK: handle.convolution_backward_bias(alpha, outTensor, out, beta, biasTensor, bias);
+    // CHECK: handle.async_convolution_backward_bias(alpha, outTensor, out, beta, biasTensor, bias);
     cudnnConvolutionBackwardBias(
         handle,
         &alpha,

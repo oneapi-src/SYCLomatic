@@ -96,7 +96,7 @@ void test() {
     // CHECK: /*
     // CHECK: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK: */
-    // CHECK: auto s = (handle.sum(alpha, dataTensor, data, beta, outTensor, out), 0);
+    // CHECK: auto s = (handle.async_sum(alpha, dataTensor, data, beta, outTensor, out), 0);
 
     auto s = cudnnAddTensor(handle, &alpha, dataTensor, data, &beta, outTensor, out);
 

@@ -91,7 +91,7 @@ int main() {
     
 
     float alpha = 1.5f, beta = 1.f;
-    // CHECK: handle.convolution_forward_ex(covdes, dnnl::algorithm::convolution_direct, ActivationDesc, alpha, dataTensor, data, filterTensor, filter, beta, outTensor, z, biasTensor, bias, outTensor, out);
+    // CHECK: handle.async_convolution_forward_ex(covdes, dnnl::algorithm::convolution_direct, ActivationDesc, alpha, dataTensor, data, filterTensor, filter, beta, outTensor, z, biasTensor, bias, outTensor, out);
     cudnnConvolutionBiasActivationForward(
         handle, 
         &alpha, 

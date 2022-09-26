@@ -73,23 +73,23 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_memory_desc_ext,
 // Simple Operation
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_reorder,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-                            "cudnnTransformTensor", ARG_WC(0), false, "reorder",
-                            DEREF(ARG_WC(1)), ARG_WC(2), ARG_WC(3),
-                            DEREF(ARG_WC(4)), ARG_WC(5), ARG_WC(6))))
+                            "cudnnTransformTensor", ARG_WC(0), false,
+                            "async_reorder", DEREF(ARG_WC(1)), ARG_WC(2),
+                            ARG_WC(3), DEREF(ARG_WC(4)), ARG_WC(5), ARG_WC(6))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_fill,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-                            "cudnnSetTensor", ARG_WC(0), false, "fill",
+                            "cudnnSetTensor", ARG_WC(0), false, "async_fill",
                             ARG_WC(1), ARG_WC(2), ARG_WC(3))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_scale,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-                            "cudnnScaleTensor", ARG_WC(0), false, "scale",
+                            "cudnnScaleTensor", ARG_WC(0), false, "async_scale",
                             DEREF(ARG_WC(3)), ARG_WC(1), ARG_WC(2))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_sum,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-                            "cudnnAddTensor", ARG_WC(0), false, "sum",
+                            "cudnnAddTensor", ARG_WC(0), false, "async_sum",
                             DEREF(ARG_WC(1)), ARG_WC(2), ARG_WC(3),
                             DEREF(ARG_WC(4)), ARG_WC(5), ARG_WC(6))))
 
@@ -130,16 +130,17 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_activation_desc,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_activation_forward,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnActivationForward", ARG_WC(0), false,
-                            "activation_forward", ARG_WC(1), DEREF(ARG_WC(2)),
-                            ARG_WC(3), ARG_WC(4), DEREF(ARG_WC(5)), ARG_WC(6),
-                            ARG_WC(7))))
+                            "async_activation_forward", ARG_WC(1),
+                            DEREF(ARG_WC(2)), ARG_WC(3), ARG_WC(4),
+                            DEREF(ARG_WC(5)), ARG_WC(6), ARG_WC(7))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_activation_backward,
-    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-        "cudnnActivationBackward", ARG_WC(0), false, "activation_backward",
-        ARG_WC(1), DEREF(ARG_WC(2)), ARG_WC(3), ARG_WC(4), ARG_WC(5), ARG_WC(6),
-        ARG_WC(7), ARG_WC(8), DEREF(ARG_WC(9)), ARG_WC(10), ARG_WC(11))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_activation_backward,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cudnnActivationBackward", ARG_WC(0), false,
+                            "async_activation_backward", ARG_WC(1),
+                            DEREF(ARG_WC(2)), ARG_WC(3), ARG_WC(4), ARG_WC(5),
+                            ARG_WC(6), ARG_WC(7), ARG_WC(8), DEREF(ARG_WC(9)),
+                            ARG_WC(10), ARG_WC(11))))
 
 // LRN Layer
 REMOVE_API_FACTORY_ENTRY("cudnnCreateLRNDescriptor")
@@ -159,19 +160,21 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_lrn_desc,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_lrn_forward,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnLRNCrossChannelForward", ARG_WC(0), false,
-                            "lrn_forward", ARG_WC(1), DEREF(ARG_WC(3)), ARG_WC(4),
-                            ARG_WC(5), DEREF(ARG_WC(6)), ARG_WC(7), ARG_WC(8))))
+                            "async_lrn_forward", ARG_WC(1), DEREF(ARG_WC(3)),
+                            ARG_WC(4), ARG_WC(5), DEREF(ARG_WC(6)), ARG_WC(7),
+                            ARG_WC(8))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_lrn_backward,
     WARNING_FACTORY_ENTRY("cudnnLRNCrossChannelBackward",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnLRNCrossChannelBackward", ARG_WC(0), false,
-                              "lrn_backward", ARG_WC(1), DEREF(ARG_WC(3)), ARG_WC(4),
-                              ARG_WC(5), ARG_WC(6), ARG_WC(7), ARG_WC(8),
-                              ARG_WC(9), DEREF(ARG_WC(10)), ARG_WC(11), ARG_WC(12))),
-                          Diagnostics::PRIMITIVE_WORKSPACE, ARG("lrn_backward"),
-                          ARG("lrn_forward")))
+                              "async_lrn_backward", ARG_WC(1), DEREF(ARG_WC(3)),
+                              ARG_WC(4), ARG_WC(5), ARG_WC(6), ARG_WC(7),
+                              ARG_WC(8), ARG_WC(9), DEREF(ARG_WC(10)),
+                              ARG_WC(11), ARG_WC(12))),
+                          Diagnostics::PRIMITIVE_WORKSPACE, ARG("async_lrn_backward"),
+                          ARG("async_lrn_forward")))
 
 // Pooling Layer
 REMOVE_API_FACTORY_ENTRY("cudnnCreatePoolingDescriptor")
@@ -233,34 +236,37 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_pooling_desc,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_pooling_forward,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnPoolingForward", ARG_WC(0), false,
-                            "pooling_forward", ARG_WC(1), DEREF(ARG_WC(2)), ARG_WC(3),
-                            ARG_WC(4), DEREF(ARG_WC(5)), ARG_WC(6), ARG_WC(7))))
+                            "async_pooling_forward", ARG_WC(1),
+                            DEREF(ARG_WC(2)), ARG_WC(3), ARG_WC(4),
+                            DEREF(ARG_WC(5)), ARG_WC(6), ARG_WC(7))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_pooling_backward,
-    WARNING_FACTORY_ENTRY(
-        "cudnnPoolingBackward",
-        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-            "cudnnPoolingBackward", ARG_WC(0), false, "pooling_backward",
-            ARG_WC(1), DEREF(ARG_WC(2)), ARG_WC(3), ARG_WC(4), ARG_WC(5), ARG_WC(6),
-            ARG_WC(7), ARG_WC(8), DEREF(ARG_WC(9)), ARG_WC(10), ARG_WC(11))),
-        Diagnostics::PRIMITIVE_WORKSPACE, ARG("pooling_backward"),
-        ARG("pooling_forward")))
+    WARNING_FACTORY_ENTRY("cudnnPoolingBackward",
+                          ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                              "cudnnPoolingBackward", ARG_WC(0), false,
+                              "async_pooling_backward", ARG_WC(1),
+                              DEREF(ARG_WC(2)), ARG_WC(3), ARG_WC(4), ARG_WC(5),
+                              ARG_WC(6), ARG_WC(7), ARG_WC(8), DEREF(ARG_WC(9)),
+                              ARG_WC(10), ARG_WC(11))),
+                          Diagnostics::PRIMITIVE_WORKSPACE,
+                          ARG("async_pooling_backward"),
+                          ARG("async_pooling_forward")))
 
 // Softmax Layer
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_softmax_forward,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnSoftmaxForward", ARG_WC(0), false,
-                            "softmax_forward", ARG_WC(1), ARG_WC(2), DEREF(ARG_WC(3)),
-                            ARG_WC(4), ARG_WC(5), DEREF(ARG_WC(6)), ARG_WC(7),
-                            ARG_WC(8))))
+                            "async_softmax_forward", ARG_WC(1), ARG_WC(2),
+                            DEREF(ARG_WC(3)), ARG_WC(4), ARG_WC(5),
+                            DEREF(ARG_WC(6)), ARG_WC(7), ARG_WC(8))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_softmax_backward,
-                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-                            "cudnnSoftmaxBackward", ARG_WC(0), false,
-                            "softmax_backward", ARG_WC(1), ARG_WC(2), DEREF(ARG_WC(3)),
-                            ARG_WC(4), ARG_WC(5), ARG_WC(6), ARG_WC(7),
-                            DEREF(ARG_WC(8)), ARG_WC(9), ARG_WC(10))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::DnnlUtils_softmax_backward,
+    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+        "cudnnSoftmaxBackward", ARG_WC(0), false, "async_softmax_backward",
+        ARG_WC(1), ARG_WC(2), DEREF(ARG_WC(3)), ARG_WC(4), ARG_WC(5), ARG_WC(6),
+        ARG_WC(7), DEREF(ARG_WC(8)), ARG_WC(9), ARG_WC(10))))
 
 // Reduce Layer
 REMOVE_API_FACTORY_ENTRY("cudnnCreateReduceTensorDescriptor")
@@ -295,7 +301,7 @@ FEATURE_REQUEST_FACTORY(
     WARNING_FACTORY_ENTRY("cudnnReduceTensor",
                           ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                               "cudnnReduceTensor", ARG_WC(0), false,
-                              "reduction", ARG_WC(1), DEREF(ARG_WC(6)),
+                              "async_reduction", ARG_WC(1), DEREF(ARG_WC(6)),
                               ARG_WC(7), ARG_WC(8), DEREF(ARG_WC(9)),
                               ARG_WC(10), ARG_WC(11))),
                           Diagnostics::API_NOT_MIGRATED,
@@ -326,17 +332,17 @@ FEATURE_REQUEST_FACTORY(
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_binary,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-                            "cudnnOpTensor", ARG_WC(0), false, "binary",
+                            "cudnnOpTensor", ARG_WC(0), false, "async_binary",
                             ARG_WC(1), DEREF(ARG_WC(2)), ARG_WC(3), ARG_WC(4),
-                            DEREF(ARG_WC(5)), ARG_WC(6), ARG_WC(7), DEREF(ARG_WC(8)),
-                            ARG_WC(9), ARG_WC(10))))
+                            DEREF(ARG_WC(5)), ARG_WC(6), ARG_WC(7),
+                            DEREF(ARG_WC(8)), ARG_WC(9), ARG_WC(10))))
 
 // Batch Normalization Layer
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_forward_inference,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnBatchNormalizationForwardInference", ARG_WC(0), false,
-        "batch_normalization_forward_inference", ARG_WC(1), ARG_WC(13),
+        "async_batch_normalization_forward_inference", ARG_WC(1), ARG_WC(13),
         DEREF(ARG_WC(2)), ARG_WC(4), ARG_WC(5), DEREF(ARG_WC(3)), ARG_WC(6),
         ARG_WC(7), ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(11), ARG_WC(12))))
 
@@ -344,7 +350,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_forward_training,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnBatchNormalizationForwardTraining", ARG_WC(0), false,
-        "batch_normalization_forward_training", ARG_WC(1), ARG_WC(14),
+        "async_batch_normalization_forward_training", ARG_WC(1), ARG_WC(14),
         ARG_WC(11), DEREF(ARG_WC(2)), ARG_WC(4), ARG_WC(5), DEREF(ARG_WC(3)),
         ARG_WC(6), ARG_WC(7), ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(12),
         ARG_WC(13), ARG_WC(15), ARG_WC(16))))
@@ -353,7 +359,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_forward_training_ex,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnBatchNormalizationForwardTrainingEx", ARG_WC(0), false,
-        "batch_normalization_forward_training_ex", ARG_WC(1), ARG_WC(2),
+        "async_batch_normalization_forward_training_ex", ARG_WC(1), ARG_WC(2),
         ARG_WC(20), ARG_WC(17), ARG_WC(14), DEREF(ARG_WC(3)), ARG_WC(5),
         ARG_WC(6), DEREF(ARG_WC(4)), ARG_WC(9), ARG_WC(10), ARG_WC(7),
         ARG_WC(8), ARG_WC(11), ARG_WC(12), ARG_WC(13), ARG_WC(15), ARG_WC(16),
@@ -363,7 +369,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_backward,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnBatchNormalizationBackward", ARG_WC(0), false,
-        "batch_normalization_backward", ARG_WC(1), ARG_WC(16), DEREF(ARG_WC(2)),
+        "async_batch_normalization_backward", ARG_WC(1), ARG_WC(16), DEREF(ARG_WC(2)),
         ARG_WC(6), ARG_WC(7), ARG_WC(8), ARG_WC(9), DEREF(ARG_WC(3)),
         ARG_WC(10), ARG_WC(11), DEREF(ARG_WC(4)), ARG_WC(12), ARG_WC(13),
         DEREF(ARG_WC(5)), ARG_WC(14), ARG_WC(15), ARG_WC(17), ARG_WC(18))))
@@ -372,7 +378,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_backward_ex,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnBatchNormalizationBackwardEx", ARG_WC(0), false,
-        "batch_normalization_backward_ex", ARG_WC(1), ARG_WC(2), ARG_WC(25),
+        "async_batch_normalization_backward_ex", ARG_WC(1), ARG_WC(2), ARG_WC(25),
         ARG_WC(22), DEREF(ARG_WC(3)), ARG_WC(7), ARG_WC(8), ARG_WC(9),
         ARG_WC(10), ARG_WC(11), ARG_WC(12), DEREF(ARG_WC(4)), ARG_WC(15),
         ARG_WC(16), ARG_WC(13), ARG_WC(14), DEREF(ARG_WC(5)), ARG_WC(17),
@@ -439,7 +445,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_forward_inference_ex_norm,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnNormalizationForwardInference", ARG_WC(0), false,
-        "batch_normalization_forward_inference_ex", ARG_WC(1), ARG_WC(2),
+        "async_batch_normalization_forward_inference_ex", ARG_WC(1), ARG_WC(2),
         ARG_WC(16), ARG_WC(19), DEREF(ARG_WC(4)), ARG_WC(6), ARG_WC(7),
         DEREF(ARG_WC(5)), ARG_WC(17), ARG_WC(18), ARG_WC(14), ARG_WC(15),
         ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(11), ARG_WC(12), ARG_WC(13))))
@@ -448,7 +454,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_forward_training_ex_norm,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnNormalizationForwardTraining", ARG_WC(0), false,
-        "batch_normalization_forward_training_ex", ARG_WC(1), ARG_WC(2),
+        "async_batch_normalization_forward_training_ex", ARG_WC(1), ARG_WC(2),
         ARG_WC(18), ARG_WC(15), ARG_WC(11), DEREF(ARG_WC(4)), ARG_WC(6),
         ARG_WC(7), DEREF(ARG_WC(5)), ARG_WC(21), ARG_WC(22), ARG_WC(19),
         ARG_WC(20), ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(12), ARG_WC(13),
@@ -458,7 +464,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_backward_ex_norm,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnNormalizationBackward", ARG_WC(0), false,
-        "batch_normalization_backward_ex", ARG_WC(1), ARG_WC(2), ARG_WC(27),
+        "async_batch_normalization_backward_ex", ARG_WC(1), ARG_WC(2), ARG_WC(27),
         ARG_WC(23), DEREF(ARG_WC(4)), ARG_WC(8), ARG_WC(9), ARG_WC(10),
         ARG_WC(11), ARG_WC(12), ARG_WC(13), DEREF(ARG_WC(5)), ARG_WC(16),
         ARG_WC(17), ARG_WC(14), ARG_WC(15), DEREF(ARG_WC(6)), ARG_WC(18),
@@ -567,14 +573,14 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_pooling_desc,
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_convolution_forward,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-        "cudnnConvolutionForward", ARG_WC(0), false, "convolution_forward",
+        "cudnnConvolutionForward", ARG_WC(0), false, "async_convolution_forward",
         ARG_WC(6), ARG_WC(7), DEREF(ARG_WC(1)), ARG_WC(2), ARG_WC(3), ARG_WC(4),
         ARG_WC(5), DEREF(ARG_WC(10)), ARG_WC(11), ARG_WC(12))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_forward_ex,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnConvolutionBiasActivationForward", ARG_WC(0),
-                            false, "convolution_forward_ex", ARG_WC(6),
+                            false, "async_convolution_forward_ex", ARG_WC(6),
                             ARG_WC(7), ARG_WC(15), DEREF(ARG_WC(1)), ARG_WC(2),
                             ARG_WC(3), ARG_WC(4), ARG_WC(5), DEREF(ARG_WC(10)),
                             ARG_WC(11), ARG_WC(12), ARG_WC(13), ARG_WC(14),
@@ -583,7 +589,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_forward_ex,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_backward_data,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnConvolutionBackwardData", ARG_WC(0), false,
-                            "convolution_backward_data", ARG_WC(6), ARG_WC(7),
+                            "async_convolution_backward_data", ARG_WC(6), ARG_WC(7),
                             DEREF(ARG_WC(1)), ARG_WC(2), ARG_WC(3), ARG_WC(4),
                             ARG_WC(5), DEREF(ARG_WC(10)), ARG_WC(11),
                             ARG_WC(12))))
@@ -592,14 +598,14 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_convolution_backward_weight,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnConvolutionBackwardFilter", ARG_WC(0), false,
-        "convolution_backward_weight", ARG_WC(6), ARG_WC(7), DEREF(ARG_WC(1)),
+        "async_convolution_backward_weight", ARG_WC(6), ARG_WC(7), DEREF(ARG_WC(1)),
         ARG_WC(2), ARG_WC(3), ARG_WC(4), ARG_WC(5), DEREF(ARG_WC(10)),
         ARG_WC(11), ARG_WC(12))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_backward_bias,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnConvolutionBackwardBias", ARG_WC(0), false,
-                            "convolution_backward_bias", DEREF(ARG_WC(1)),
+                            "async_convolution_backward_bias", DEREF(ARG_WC(1)),
                             ARG_WC(2), ARG_WC(3), DEREF(ARG_WC(4)), ARG_WC(5),
                             ARG_WC(6))))
 

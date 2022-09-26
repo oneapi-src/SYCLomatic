@@ -77,7 +77,7 @@ void test() {
     cudnnSetTensor4dDescriptor(dataTensor, CUDNN_TENSOR_NCHW, T, n, c, h, w);
 
     cudaMalloc(&data, ele_num * sizeof(HT));
-    // CHECK: handle.fill(dataTensor, data, &value);
+    // CHECK: handle.async_fill(dataTensor, data, &value);
     cudnnSetTensor(handle, dataTensor, data, &value);
 
     cudaMemcpy(host_data.data(), data, ele_num * sizeof(HT), cudaMemcpyDeviceToHost);
