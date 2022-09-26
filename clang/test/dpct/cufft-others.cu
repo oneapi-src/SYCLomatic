@@ -34,7 +34,13 @@ int foo2() {
   double2* idata_mmany64_Z2Z;
 
 
-  //CHECK:plan_mmany64_Z2Z->commit(&dpct::get_default_queue(), 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, dpct::fft::fft_type::complex_double_to_complex_double, 12, nullptr);
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan_mmany64_Z2Z->commit(&dpct::get_default_queue(), 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, dpct::fft::fft_type::complex_double_to_complex_double, 12, work_size_mmany64_Z2Z);
   cufftMakePlanMany64(plan_mmany64_Z2Z, 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, CUFFT_Z2Z, 12, work_size_mmany64_Z2Z);
 
   //CHECK:plan_mmany64_Z2Z->compute<sycl::double2, sycl::double2>(idata_mmany64_Z2Z, odata_mmany64_Z2Z, dpct::fft::fft_direction::forward);

@@ -26,9 +26,15 @@ static void CufftHandleError( cufftResult err, const char *file, int line ) {
 int main() {
   cufftHandle plan1;
   //CHECK:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:int res1 = (plan1->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, nullptr), 0);
+  //CHECK-NEXT:int res1 = (plan1->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size), 0);
   cufftResult res1 = cufftMakePlanMany(plan1, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -38,9 +44,15 @@ int main() {
 
   cufftHandle plan2;
   //CHECK:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:res1 = (plan2->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, nullptr), 0);
+  //CHECK-NEXT:res1 = (plan2->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size), 0);
   res1 = cufftMakePlanMany(plan2, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -50,9 +62,15 @@ int main() {
 
   cufftHandle plan3;
   //CHECK:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:HANDLE_CUFFT_ERROR((plan3->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, nullptr), 0));
+  //CHECK-NEXT:HANDLE_CUFFT_ERROR((plan3->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size), 0));
   HANDLE_CUFFT_ERROR(cufftMakePlanMany(plan3, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size));
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -63,13 +81,25 @@ int main() {
   cufftHandle plan4;
   cufftHandle plan5;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:if((plan4->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, nullptr), 0)) {
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:} else if ((plan5->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, nullptr), 0)) {
+  //CHECK-NEXT:if((plan4->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size), 0)) {
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:} else if ((plan5->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size), 0)) {
   //CHECK-NEXT:}
   if(cufftMakePlanMany(plan4, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)) {
   } else if (cufftMakePlanMany(plan5, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)) {
@@ -89,9 +119,15 @@ int main() {
 
   cufftHandle plan6;
   //CHECK:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:if(int res = (plan6->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, nullptr), 0)) {
+  //CHECK-NEXT:if(int res = (plan6->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size), 0)) {
   //CHECK-NEXT:}
   if(cufftResult res = cufftMakePlanMany(plan6, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)) {
   }
@@ -104,7 +140,13 @@ int main() {
   }
 
   cufftHandle plan7;
-  //CHECK:for (plan7->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, nullptr);;) {
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:for (plan7->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);;) {
   //CHECK-NEXT:}
   for (cufftMakePlanMany(plan7, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);;) {
   }
@@ -115,9 +157,15 @@ int main() {
 
   cufftHandle plan8;
   //CHECK:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:for (;(plan8->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, nullptr), 0);) {
+  //CHECK-NEXT:for (;(plan8->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size), 0);) {
   //CHECK-NEXT:}
   for (;cufftMakePlanMany(plan8, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);) {
   }
@@ -132,9 +180,15 @@ int main() {
 
   cufftHandle plan9;
   //CHECK:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:while ((plan9->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, nullptr), 0) != 0) {
+  //CHECK-NEXT:while ((plan9->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size), 0) != 0) {
   //CHECK-NEXT:}
   while (cufftMakePlanMany(plan9, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size) != 0) {
   }
@@ -150,9 +204,15 @@ int main() {
   cufftHandle plan10;
   //CHECK:do {
   //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:} while ((plan10->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, nullptr), 0));
+  //CHECK-NEXT:} while ((plan10->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size), 0));
   do {
   } while (cufftMakePlanMany(plan10, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size));
   //CHECK:do {
@@ -165,9 +225,15 @@ int main() {
 
   cufftHandle plan11;
   //CHECK:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:switch (int stat = (plan11->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, nullptr), 0)){
+  //CHECK-NEXT:switch (int stat = (plan11->commit(&q_ct1, 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size), 0)){
   //CHECK-NEXT:}
   switch (int stat = cufftMakePlanMany(plan11, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size)){
   }
@@ -184,9 +250,15 @@ int main() {
 
 cufftResult foo1(cufftHandle plan) {
   //CHECK:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:return (plan->commit(&dpct::get_default_queue(), 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, nullptr), 0);
+  //CHECK-NEXT:return (plan->commit(&dpct::get_default_queue(), 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size), 0);
   return cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
 }
 
@@ -199,7 +271,13 @@ cufftResult foo2(cufftHandle plan) {
 }
 
 cufftResult foo3(cufftHandle plan) {
-  //CHECK:plan->commit(&dpct::get_default_queue(), 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, nullptr);
+  //CHECK:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan->commit(&dpct::get_default_queue(), 3, n, inembed, istride, idist, onembed, ostride, odist, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);
   cufftMakePlanMany(plan, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);
 }
 

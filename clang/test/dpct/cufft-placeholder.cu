@@ -40,14 +40,26 @@ void foo2(cufftHandle plan) {
 int main() {
   //CHECK:dpct::fft::fft_engine* plan1;
   //CHECK-NEXT:dpct::fft::fft_type type1 = dpct::fft::fft_type::complex_double_to_real_double;
-  //CHECK-NEXT:plan1->commit(&q_ct1, rank, n, inembed, istride, idist, onembed, ostride, odist, type1, 11, nullptr);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan1->commit(&q_ct1, rank, n, inembed, istride, idist, onembed, ostride, odist, type1, 11, work_size);
   cufftHandle plan1;
   cufftType_t type1 = CUFFT_Z2D;
   cufftMakePlanMany(plan1, rank, n, inembed, istride, idist, onembed, ostride, odist, type1, 11, work_size);
 
   //CHECK:dpct::fft::fft_engine* plan2;
   //CHECK-NEXT:dpct::fft::fft_type type2 = dpct::fft::fft_type::complex_float_to_real_float;
-  //CHECK-NEXT:plan2->commit(&q_ct1, rank, n, inembed, istride, idist, onembed, ostride, odist, type2, 12, nullptr);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan2->commit(&q_ct1, rank, n, inembed, istride, idist, onembed, ostride, odist, type2, 12, work_size);
   cufftHandle plan2;
   cufftType_t type2 = CUFFT_C2R;
   cufftMakePlanMany(plan2, rank, n, inembed, istride, idist, onembed, ostride, odist, type2, 12, work_size);

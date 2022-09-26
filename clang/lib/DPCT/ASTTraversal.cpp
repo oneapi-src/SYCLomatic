@@ -14684,7 +14684,12 @@ void FFTFunctionCallRule::registerMatcher(MatchFinder &MF) {
                       "cufftExecC2R", "cufftExecZ2Z", "cufftExecZ2D",
                       "cufftExecD2Z", "cufftCreate", "cufftDestroy",
                       "cufftSetStream", "cufftGetVersion", "cufftGetProperty",
-                      "cufftXtMakePlanMany", "cufftXtExec");
+                      "cufftXtMakePlanMany", "cufftXtExec", "cufftGetSize1d",
+                      "cufftGetSize2d", "cufftGetSize3d", "cufftGetSizeMany",
+                      "cufftGetSize", "cufftEstimate1d", "cufftEstimate2d",
+                      "cufftEstimate3d", "cufftEstimateMany",
+                      "cufftSetAutoAllocation", "cufftGetSizeMany64",
+                      "cufftSetWorkArea");
   };
   MF.addMatcher(callExpr(callee(functionDecl(functionName()))).bind("FuncCall"),
                 this);
@@ -14741,7 +14746,13 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cufftExecC2C" || FuncName == "cufftExecZ2Z" ||
              FuncName == "cufftExecC2R" || FuncName == "cufftExecR2C" ||
              FuncName == "cufftExecZ2D" || FuncName == "cufftExecD2Z" ||
-             FuncName == "cufftXtExec") {
+             FuncName == "cufftXtExec" || FuncName == "cufftGetSize1d" ||
+             FuncName == "cufftGetSize2d" || FuncName == "cufftGetSize3d" ||
+             FuncName == "cufftGetSizeMany" || FuncName == "cufftGetSize" ||
+             FuncName == "cufftEstimate1d" || FuncName == "cufftEstimate2d" ||
+             FuncName == "cufftEstimate3d" || FuncName == "cufftEstimateMany" ||
+             FuncName == "cufftSetAutoAllocation" || FuncName == "cufftGetSizeMany64" ||
+             FuncName == "cufftSetWorkArea") {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();

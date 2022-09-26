@@ -52,8 +52,9 @@ public:
   /// \param [in] odist Distance between the two batches of the output data.
   /// \param [in] output_type Output data type.
   /// \param [in] batch The number of FFT operations to perform.
-  /// \param [out] scratchpad_size Parameter is not used currently. It is
-  /// reserved for future use.
+  /// \param [out] scratchpad_size The workspace size required for this FFT.
+  /// If this value is used to allocate memory, \p direction_and_placement need
+  /// to be specified explicitly to get correct result.
   /// \param [in] direction_and_placement Explicitly specify the FFT direction
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
@@ -70,6 +71,10 @@ public:
     init<long long>(dim, n, inembed, istride, idist, input_type, onembed,
                     ostride, odist, output_type, batch,
                     direction_and_placement);
+    if (_is_estimate_call)
+      *scratchpad_size = _workspace_estimate_bytes;
+    else
+      *scratchpad_size = _workspace_bytes;
   }
   /// Commit the configuration to calculate n-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
@@ -86,8 +91,9 @@ public:
   /// \param [in] odist Distance between the two batches of the output data.
   /// \param [in] output_type Output data type.
   /// \param [in] batch The number of FFT operations to perform.
-  /// \param [out] scratchpad_size Parameter is not used currently. It is
-  /// reserved for future use.
+  /// \param [out] scratchpad_size The workspace size required for this FFT.
+  /// If this value is used to allocate memory, \p direction_and_placement need
+  /// to be specified explicitly to get correct result.
   /// \param [in] direction_and_placement Explicitly specify the FFT direction
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
@@ -102,6 +108,10 @@ public:
     _q = exec_queue;
     init<int>(dim, n, inembed, istride, idist, input_type, onembed, ostride,
               odist, output_type, batch, direction_and_placement);
+    if (_is_estimate_call)
+      *scratchpad_size = _workspace_estimate_bytes;
+    else
+      *scratchpad_size = _workspace_bytes;
   }
   /// Commit the configuration to calculate n-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
@@ -117,8 +127,9 @@ public:
   /// \param [in] odist Distance between the two batches of the output data.
   /// \param [in] type The FFT type.
   /// \param [in] batch The number of FFT operations to perform.
-  /// \param [out] scratchpad_size Parameter is not used currently. It is
-  /// reserved for future use.
+  /// \param [out] scratchpad_size The workspace size required for this FFT.
+  /// If this value is used to allocate memory, \p direction_and_placement need
+  /// to be specified explicitly to get correct result.
   /// \param [in] direction_and_placement Explicitly specify the FFT direction
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
@@ -149,8 +160,9 @@ public:
   /// \param [in] odist Distance between the two batches of the output data.
   /// \param [in] type The FFT type.
   /// \param [in] batch The number of FFT operations to perform.
-  /// \param [out] scratchpad_size Parameter is not used currently. It is
-  /// reserved for future use.
+  /// \param [out] scratchpad_size The workspace size required for this FFT.
+  /// If this value is used to allocate memory, \p direction_and_placement need
+  /// to be specified explicitly to get correct result.
   /// \param [in] direction_and_placement Explicitly specify the FFT direction
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
@@ -171,8 +183,9 @@ public:
   /// \param [in] n1 The size of the dimension of the data.
   /// \param [in] type The FFT type.
   /// \param [in] batch The number of FFT operations to perform.
-  /// \param [out] scratchpad_size Parameter is not used currently. It is
-  /// reserved for future use.
+  /// \param [out] scratchpad_size The workspace size required for this FFT.
+  /// If this value is used to allocate memory, \p direction_and_placement need
+  /// to be specified explicitly to get correct result.
   /// \param [in] direction_and_placement Explicitly specify the FFT direction
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
@@ -195,14 +208,19 @@ public:
       _is_inplace = direction_and_placement->second;
     }
     config_and_commit_basic();
+    if (_is_estimate_call)
+      *scratchpad_size = _workspace_estimate_bytes;
+    else
+      *scratchpad_size = _workspace_bytes;
   }
   /// Commit the configuration to calculate 2-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
   /// \param [in] n2 The size of the 2nd dimension (outermost) of the data.
   /// \param [in] n1 The size of the 1st dimension (innermost) of the data.
   /// \param [in] type The FFT type.
-  /// \param [out] scratchpad_size Parameter is not used currently. It is
-  /// reserved for future use.
+  /// \param [out] scratchpad_size The workspace size required for this FFT.
+  /// If this value is used to allocate memory, \p direction_and_placement need
+  /// to be specified explicitly to get correct result.
   /// \param [in] direction_and_placement Explicitly specify the FFT direction
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
@@ -225,6 +243,10 @@ public:
       _is_inplace = direction_and_placement->second;
     }
     config_and_commit_basic();
+    if (_is_estimate_call)
+      *scratchpad_size = _workspace_estimate_bytes;
+    else
+      *scratchpad_size = _workspace_bytes;
   }
   /// Commit the configuration to calculate 3-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
@@ -232,8 +254,9 @@ public:
   /// \param [in] n2 The size of the 2nd dimension of the data.
   /// \param [in] n1 The size of the 1st dimension (innermost) of the data.
   /// \param [in] type The FFT type.
-  /// \param [out] scratchpad_size Parameter is not used currently. It is
-  /// reserved for future use.
+  /// \param [out] scratchpad_size The workspace size required for this FFT.
+  /// If this value is used to allocate memory, \p direction_and_placement need
+  /// to be specified explicitly to get correct result.
   /// \param [in] direction_and_placement Explicitly specify the FFT direction
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
@@ -257,6 +280,10 @@ public:
       _is_inplace = direction_and_placement->second;
     }
     config_and_commit_basic();
+    if (_is_estimate_call)
+      *scratchpad_size = _workspace_estimate_bytes;
+    else
+      *scratchpad_size = _workspace_bytes;
   }
 
   /// Create the class for calculate 1-D FFT.
@@ -356,6 +383,143 @@ public:
   /// \param [in] engine Pointer returned from fft_engine::craete.
   static void destroy(fft_engine *engine) { delete engine; }
 
+  /// Estimates the workspace size for calculating n-D FFT.
+  /// \param [in] dim Dimension number of the data.
+  /// \param [in] n Pointer to an array containing each dimension's size.
+  /// \param [in] inembed Pointer to an array containing each dimension's size
+  /// of the embedded input data.
+  /// \param [in] istride Stride size of the input data.
+  /// \param [in] idist Distance between the two batches of the input data.
+  /// \param [in] onembed Pointer to an array containing each dimension's size
+  /// of the embedded output data.
+  /// \param [in] ostride Stride size of the output data.
+  /// \param [in] odist Distance between the two batches of the output data.
+  /// \param [in] type The FFT type.
+  /// \param [in] batch The number of FFT operations to perform.
+  /// \param [out] estimated_scratchpad_size The estimated workspace size
+  /// required for this FFT. If this value is used to allocate memory,
+  /// \p direction_and_placement need to be specified explicitly to get correct
+  /// result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT
+  /// direction and placement info. If it is not set, forward direction(if
+  /// current FFT is complex-to-complex) and out-of-place are set by default.
+  static void
+  estimate_size(int dim, long long *n, long long *inembed, long long istride,
+                long long idist, long long *onembed, long long ostride,
+                long long odist, fft_type type, long long batch,
+                size_t *estimated_scratchpad_size,
+                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                    direction_and_placement = std::nullopt) {
+    fft_engine *engine = fft_engine::create();
+    engine->_is_estimate_call = true;
+    engine->commit(&dpct::get_default_queue(), dim, n, inembed, istride, idist,
+                   fft_type_to_data_type(type).first, onembed, ostride, odist,
+                   fft_type_to_data_type(type).second, batch,
+                   estimated_scratchpad_size, direction_and_placement);
+    fft_engine::destroy(engine);
+  }
+  /// Estimates the workspace size for calculating n-D FFT.
+  /// \param [in] dim Dimension number of the data.
+  /// \param [in] n Pointer to an array containing each dimension's size.
+  /// \param [in] inembed Pointer to an array containing each dimension's size
+  /// of the embedded input data.
+  /// \param [in] istride Stride size of the input data.
+  /// \param [in] idist Distance between the two batches of the input data.
+  /// \param [in] onembed Pointer to an array containing each dimension's size
+  /// of the embedded output data.
+  /// \param [in] ostride Stride size of the output data.
+  /// \param [in] odist Distance between the two batches of the output data.
+  /// \param [in] type The FFT type.
+  /// \param [in] batch The number of FFT operations to perform.
+  /// \param [out] estimated_scratchpad_size The estimated workspace size
+  /// required for this FFT. If this value is used to allocate memory,
+  /// \p direction_and_placement need to be specified explicitly to get correct
+  /// result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT
+  /// direction and placement info. If it is not set, forward direction(if
+  /// current FFT is complex-to-complex) and out-of-place are set by default.
+  static void
+  estimate_size(int dim, int *n, int *inembed, int istride, int idist,
+                int *onembed, int ostride, int odist, fft_type type, int batch,
+                size_t *estimated_scratchpad_size,
+                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                    direction_and_placement = std::nullopt) {
+    fft_engine *engine = fft_engine::create();
+    engine->_is_estimate_call = true;
+    engine->commit(&dpct::get_default_queue(), dim, n, inembed, istride, idist,
+                   fft_type_to_data_type(type).first, onembed, ostride, odist,
+                   fft_type_to_data_type(type).second, batch,
+                   estimated_scratchpad_size, direction_and_placement);
+    fft_engine::destroy(engine);
+  }
+  /// Estimates the workspace size for calculating 1-D FFT.
+  /// \param [in] n1 The size of the dimension of the data.
+  /// \param [in] type The FFT type.
+  /// \param [in] batch The number of FFT operations to perform.
+  /// \param [out] estimated_scratchpad_size The estimated workspace size
+  /// required for this FFT. If this value is used to allocate memory,
+  /// \p direction_and_placement need to be specified explicitly to get correct
+  /// result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT direction
+  /// and placement info. If it is not set, forward direction(if current FFT is
+  /// complex-to-complex) and out-of-place are set by default.
+  static void
+  estimate_size(int n1, fft_type type, int batch,
+                size_t *estimated_scratchpad_size,
+                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                    direction_and_placement = std::nullopt) {
+    fft_engine *engine = fft_engine::create();
+    engine->_is_estimate_call = true;
+    engine->commit(&dpct::get_default_queue(), n1, type, batch,
+                   estimated_scratchpad_size, direction_and_placement);
+    fft_engine::destroy(engine);
+  }
+  /// Estimates the workspace size for calculating 2-D FFT.
+  /// \param [in] n2 The size of the 2nd dimension (outermost) of the data.
+  /// \param [in] n1 The size of the 1st dimension (innermost) of the data.
+  /// \param [in] type The FFT type.
+  /// \param [out] estimated_scratchpad_size The estimated workspace size
+  /// required for this FFT. If this value is used to allocate memory,
+  /// \p direction_and_placement need to be specified explicitly to get correct
+  /// result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT
+  /// direction and placement info. If it is not set, forward direction(if
+  /// current FFT is complex-to-complex) and out-of-place are set by default.
+  static void
+  estimate_size(int n2, int n1, fft_type type,
+                size_t *estimated_scratchpad_size,
+                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                    direction_and_placement = std::nullopt) {
+    fft_engine *engine = fft_engine::create();
+    engine->_is_estimate_call = true;
+    engine->commit(&dpct::get_default_queue(), n2, n1, type,
+                   estimated_scratchpad_size, direction_and_placement);
+    fft_engine::destroy(engine);
+  }
+  /// Estimates the workspace size for calculating 3-D FFT.
+  /// \param [in] n3 The size of the 3rd dimension (outermost) of the data.
+  /// \param [in] n2 The size of the 2nd dimension of the data.
+  /// \param [in] n1 The size of the 1st dimension (innermost) of the data.
+  /// \param [in] type The FFT type.
+  /// \param [out] estimated_scratchpad_size The estimated workspace size
+  /// required for this FFT. If this value is used to allocate memory,
+  /// \p direction_and_placement need to be specified explicitly to get correct
+  /// result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT
+  /// direction and placement info. If it is not set, forward direction(if
+  /// current FFT is complex-to-complex) and out-of-place are set by default.
+  static void
+  estimate_size(int n3, int n2, int n1, fft_type type,
+                size_t *estimated_scratchpad_size,
+                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                    direction_and_placement = std::nullopt) {
+    fft_engine *engine = fft_engine::create();
+    engine->_is_estimate_call = true;
+    engine->commit(&dpct::get_default_queue(), n3, n2, n1, type,
+                   estimated_scratchpad_size, direction_and_placement);
+    fft_engine::destroy(engine);
+  }
+
   /// Execute the FFT calculation.
   /// \param [in] input Pointer to the input data.
   /// \param [out] output Pointer to the output data.
@@ -431,6 +595,51 @@ public:
   /// Setting the user's SYCL queue for calculation.
   /// \param [in] q Pointer to the SYCL queue.
   void set_queue(sycl::queue *q) { _q = q; }
+  /// Setting whether to use external or internal workspace.
+  /// \param [in] flag True means using internal workspace. False means using
+  /// external workspace.
+  void use_internal_workspace(bool flag = true) { _use_external_workspace = !flag; }
+  /// Specify the external workspace.
+  /// \param [in] ptr Pointer to the workspace.
+  void set_workspace(void *ptr) {
+    if (_input_type == library_data_t::complex_float &&
+        _output_type == library_data_t::complex_float) {
+      auto data = dpct::detail::get_memory(reinterpret_cast<float *>(ptr));
+#if __INTEL_MKL_BUILD_DATE > 20220920
+      _desc_sc->set_workspace(data);
+#endif
+    } else if (_input_type == library_data_t::complex_double &&
+               _output_type == library_data_t::complex_double) {
+      auto data = dpct::detail::get_memory(reinterpret_cast<double *>(ptr));
+#if __INTEL_MKL_BUILD_DATE > 20220920
+      _desc_dc->set_workspace(data);
+#endif
+    } else if ((_input_type == library_data_t::real_float &&
+                _output_type == library_data_t::complex_float) ||
+               (_input_type == library_data_t::complex_float &&
+                _output_type == library_data_t::real_float)) {
+      auto data = dpct::detail::get_memory(reinterpret_cast<float *>(ptr));
+#if __INTEL_MKL_BUILD_DATE > 20220920
+      _desc_sr->set_workspace(data);
+#endif
+    } else if ((_input_type == library_data_t::real_double &&
+                _output_type == library_data_t::complex_double) ||
+               (_input_type == library_data_t::complex_double &&
+                _output_type == library_data_t::real_double)) {
+      auto data = dpct::detail::get_memory(reinterpret_cast<double *>(ptr));
+#if __INTEL_MKL_BUILD_DATE > 20220920
+      _desc_dr->set_workspace(data);
+#endif
+    } else {
+      throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                            "invalid fft type");
+    }
+  }
+  /// Get the workspace size.
+  /// \param [out] scratchpad_size Workspace size in bytes.
+  void get_workspace_size(size_t *scratchpad_size) {
+    *scratchpad_size = _workspace_bytes;
+  }
 
 private:
   static std::pair<library_data_t, library_data_t>
@@ -486,7 +695,23 @@ private:
       else
         _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-      _desc_sc->commit(*_q);
+      if (_use_external_workspace) {
+#if __INTEL_MKL_BUILD_DATE > 20220920
+        _desc_sc->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
+                            oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+#endif
+      }
+      if (_is_estimate_call) {
+#if __INTEL_MKL_BUILD_DATE > 20220920
+        _desc_sc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
+                            &_workspace_estimate_bytes);
+#endif
+      } else {
+        _desc_sc->commit(*_q);
+#if __INTEL_MKL_BUILD_DATE > 20220920
+        _desc_sc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
+#endif
+      }
     } else if (_input_type == library_data_t::complex_double &&
                _output_type == library_data_t::complex_double) {
       _desc_dc = std::make_shared<
@@ -509,7 +734,23 @@ private:
       else
         _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
-      _desc_dc->commit(*_q);
+      if (_use_external_workspace) {
+#if __INTEL_MKL_BUILD_DATE > 20220920
+        _desc_dc->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
+                            oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+#endif
+      }
+      if (_is_estimate_call) {
+#if __INTEL_MKL_BUILD_DATE > 20220920
+        _desc_dc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
+                            &_workspace_estimate_bytes);
+#endif
+      } else {
+        _desc_dc->commit(*_q);
+#if __INTEL_MKL_BUILD_DATE > 20220920
+        _desc_dc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
+#endif
+      }
     } else if ((_input_type == library_data_t::real_float &&
                 _output_type == library_data_t::complex_float) ||
                (_input_type == library_data_t::complex_float &&
@@ -533,7 +774,23 @@ private:
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
         set_stride_and_distance_basic<false>(_desc_sr);
       }
-      _desc_sr->commit(*_q);
+      if (_use_external_workspace) {
+#if __INTEL_MKL_BUILD_DATE > 20220920
+        _desc_sr->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
+                            oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+#endif
+      }
+      if (_is_estimate_call) {
+#if __INTEL_MKL_BUILD_DATE > 20220920
+        _desc_sr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
+                            &_workspace_estimate_bytes);
+#endif
+      } else {
+        _desc_sr->commit(*_q);
+#if __INTEL_MKL_BUILD_DATE > 20220920
+        _desc_sr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
+#endif
+      }
     } else if ((_input_type == library_data_t::real_double &&
                 _output_type == library_data_t::complex_double) ||
                (_input_type == library_data_t::complex_double &&
@@ -557,7 +814,23 @@ private:
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
         set_stride_and_distance_basic<false>(_desc_dr);
       }
-      _desc_dr->commit(*_q);
+      if (_use_external_workspace) {
+#if __INTEL_MKL_BUILD_DATE > 20220920
+        _desc_dr->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
+                            oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+#endif
+      }
+      if (_is_estimate_call) {
+#if __INTEL_MKL_BUILD_DATE > 20220920
+        _desc_dr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
+                            &_workspace_estimate_bytes);
+#endif
+      } else {
+        _desc_dr->commit(*_q);
+#if __INTEL_MKL_BUILD_DATE > 20220920
+        _desc_dr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
+#endif
+      }
     } else {
       throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                             "invalid fft type");
@@ -565,7 +838,38 @@ private:
   }
 
   void config_and_commit_advanced() {
-#define CONFIG_AND_COMMIT(DESC, PREC, DOM)                                     \
+#if __INTEL_MKL_BUILD_DATE > 20220920
+#define CONFIG_AND_COMMIT(DESC, PREC, DOM, TYPE)                               \
+  {                                                                            \
+    DESC = std::make_shared<oneapi::mkl::dft::descriptor<                      \
+        oneapi::mkl::dft::precision::PREC, oneapi::mkl::dft::domain::DOM>>(    \
+        _n);                                                                   \
+    set_stride_advanced(DESC);                                                 \
+    DESC->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, _fwd_dist);  \
+    DESC->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);  \
+    DESC->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,      \
+                    _batch);                                                   \
+    if (_is_user_specified_dir_and_placement && _is_inplace)                   \
+      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
+                      DFTI_CONFIG_VALUE::DFTI_INPLACE);                        \
+    else                                                                       \
+      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
+                      DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);                    \
+    if (_use_external_workspace) {                                             \
+      DESC->set_value(oneapi::mkl::dft::config_param::WORKSPACE,               \
+                      oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);     \
+    }                                                                          \
+    if (_is_estimate_call) {                                                   \
+      DESC->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,\
+                      &_workspace_estimate_bytes);                             \
+    } else {                                                                   \
+      DESC->commit(*_q);                                                       \
+      DESC->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES,         \
+                      &_workspace_bytes);                                      \
+    }                                                                          \
+  }
+#else
+#define CONFIG_AND_COMMIT(DESC, PREC, DOM, TYPE)                               \
   {                                                                            \
     DESC = std::make_shared<oneapi::mkl::dft::descriptor<                      \
         oneapi::mkl::dft::precision::PREC, oneapi::mkl::dft::domain::DOM>>(    \
@@ -583,22 +887,23 @@ private:
                       DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);                    \
     DESC->commit(*_q);                                                         \
   }
+#endif
     if (_input_type == library_data_t::complex_float &&
         _output_type == library_data_t::complex_float) {
-      CONFIG_AND_COMMIT(_desc_sc, SINGLE, COMPLEX);
+      CONFIG_AND_COMMIT(_desc_sc, SINGLE, COMPLEX, float);
     } else if (_input_type == library_data_t::complex_double &&
                _output_type == library_data_t::complex_double) {
-      CONFIG_AND_COMMIT(_desc_dc, DOUBLE, COMPLEX);
+      CONFIG_AND_COMMIT(_desc_dc, DOUBLE, COMPLEX, double);
     } else if ((_input_type == library_data_t::real_float &&
                 _output_type == library_data_t::complex_float) ||
                (_input_type == library_data_t::complex_float &&
                 _output_type == library_data_t::real_float)) {
-      CONFIG_AND_COMMIT(_desc_sr, SINGLE, REAL);
+      CONFIG_AND_COMMIT(_desc_sr, SINGLE, REAL, float);
     } else if ((_input_type == library_data_t::real_double &&
                 _output_type == library_data_t::complex_double) ||
                (_input_type == library_data_t::complex_double &&
                 _output_type == library_data_t::real_double)) {
-      CONFIG_AND_COMMIT(_desc_dr, DOUBLE, REAL);
+      CONFIG_AND_COMMIT(_desc_dr, DOUBLE, REAL, double);
     } else {
       throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                             "invalid fft type");
@@ -917,6 +1222,11 @@ private:
   bool _is_inplace = false;
   fft_direction _direction = fft_direction::forward;
   bool _is_user_specified_dir_and_placement = false;
+  bool _use_external_workspace = false;
+  void *_external_workspace_ptr = nullptr;
+  size_t _workspace_bytes = 0;
+  bool _is_estimate_call = false;
+  size_t _workspace_estimate_bytes = 0;
   std::shared_ptr<oneapi::mkl::dft::descriptor<
       oneapi::mkl::dft::precision::SINGLE, oneapi::mkl::dft::domain::REAL>>
       _desc_sr;

@@ -43,17 +43,35 @@ int main() {
   cufftType_t type2 = type;
 
   //CHECK:dpct::fft::fft_engine* plan1;
-  //CHECK-NEXT:plan1->commit(&q_ct1, rank, n, inembed, istride, idist, onembed, ostride, odist, type, 12, nullptr);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan1->commit(&q_ct1, rank, n, inembed, istride, idist, onembed, ostride, odist, type, 12, work_size);
   cufftHandle plan1;
   cufftMakePlanMany(plan1, rank, n, inembed, istride, idist, onembed, ostride, odist, type, 12, work_size);
 
   //CHECK:dpct::fft::fft_engine* plan2;
-  //CHECK-NEXT:plan2->commit(&q_ct1, rank, n, inembed, istride, idist, onembed, ostride, odist, type, 12, nullptr);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan2->commit(&q_ct1, rank, n, inembed, istride, idist, onembed, ostride, odist, type, 12, work_size);
   cufftHandle plan2;
   cufftMakePlanMany(plan2, rank, n, inembed, istride, idist, onembed, ostride, odist, type, 12, work_size);
 
   //CHECK:dpct::fft::fft_engine* plan3;
-  //CHECK-NEXT:plan3->commit(&q_ct1, rank, n, inembed, istride, idist, onembed, ostride, odist, type2, 12, nullptr);
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:/*
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:*/
+  //CHECK-NEXT:plan3->commit(&q_ct1, rank, n, inembed, istride, idist, onembed, ostride, odist, type2, 12, work_size);
   cufftHandle plan3;
   cufftMakePlanMany(plan3, rank, n, inembed, istride, idist, onembed, ostride, odist, type2, 12, work_size);
 
