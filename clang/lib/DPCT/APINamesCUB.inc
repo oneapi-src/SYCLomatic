@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 CONDITIONAL_FACTORY_ENTRY(
-    makeCheckAnd(CheckArgCountGreaterThan(5), CheckArgIsDefaultCudaStream(5)),
+    makeCheckAnd(CheckArgCountGreaterThan(5), makeCheckNot(CheckArgIsDefaultCudaStream(5))),
     CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
     REMOVE_API_FACTORY_ENTRY("cub::DeviceReduce::Sum"),
@@ -18,10 +18,10 @@ CONDITIONAL_FACTORY_ENTRY(
             REMOVE_CUB_TEMP_STORAGE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                 "cub::DeviceReduce::Sum",
                 MEMBER_CALL(
-                    QUEUESTR, false, "fill", ARG(3),
+                    STREAM(5), false, "fill", ARG(3),
                     CALL(
                         "oneapi::dpl::reduce",
-                        CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
+                        CALL("oneapi::dpl::execution::device_policy", STREAM(5)),
                         ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4))),
                     LITERAL("1")),
                 false, "wait"))))),
