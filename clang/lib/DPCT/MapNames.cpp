@@ -103,6 +103,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"CUfunction", std::make_shared<TypeNameRule>(
                          getDpctNamespace() + "kernel_functor",
                          HelperFeatureEnum::Kernel_kernel_functor)},
+      {"cudaPointerAttributes",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes",
+                                  HelperFeatureEnum::Memory_pointer_attributes)},
       {"dim3", std::make_shared<TypeNameRule>(getClNamespace() + "range<3>")},
       {"int2", std::make_shared<TypeNameRule>(getClNamespace() + "int2")},
       {"double2", std::make_shared<TypeNameRule>(getClNamespace() + "double2")},
@@ -551,6 +554,23 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaMemcpyDefault", std::make_shared<EnumNameRule>(
                                 getDpctNamespace() + "automatic",
                                 HelperFeatureEnum::Memory_memcpy_direction)},
+      // enum cudaMemory Type
+      {"cudaMemoryTypeHost",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() + "usm::alloc::host",
+           HelperFeatureEnum::Memory_pointer_attributes)},
+      {"cudaMemoryTypeDevice",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() + "usm::alloc::device",
+           HelperFeatureEnum::Memory_pointer_attributes)},
+      {"cudaMemoryTypeUnregistered",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() + "usm::alloc::unknown",
+           HelperFeatureEnum::Memory_pointer_attributes)},
+      {"cudaMemoryTypeManaged",
+       std::make_shared<EnumNameRule>(
+           getClNamespace() + "usm::alloc::shared",
+           HelperFeatureEnum::Memory_pointer_attributes)},
       // enum Texture Address Mode
       {"cudaAddressModeWrap",
        std::make_shared<EnumNameRule>(getClNamespace() +
@@ -3710,7 +3730,7 @@ const MapNames::MapTy TextureRule::TextureMemberNames{
 };
 
 // DeviceProp names mapping.
-const MapNames::MapTy DevicePropVarRule::PropNamesMap{
+const MapNames::MapTy DeviceInfoVarRule::PropNamesMap{
     {"clockRate", "max_clock_frequency"},
     {"major", "major_version"},
     {"minor", "minor_version"},
