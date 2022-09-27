@@ -1429,12 +1429,33 @@ bool isAssigned(const Stmt *S) {
 /// \return A temporary variable name
 
 std::string getTempNameForExpr(const Expr *E, bool HandleLiteral,
-                               bool KeepLastUnderline, bool IsInMacroDefine) {
+                               bool KeepLastUnderline, bool IsInMacroDefine,
+                               SourceLocation CallBegin, SourceLocation CallEnd) {
   SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
   E = E->IgnoreCasts();
-  dpct::ArgumentAnalysis EA(E, IsInMacroDefine);
-  auto TokenBegin = EA.getExprBeginSrcLoc();
-  auto ExprEndLoc = EA.getExprEndSrcLoc();
+  bool RangeInCall = false;
+  SourceLocation TokenBegin;
+  SourceLocation ExprEndLoc;
+  if (CallBegin.isValid() && CallEnd.isValid()) {
+    auto Range = getRangeInRange(E, CallBegin, CallEnd);
+    auto DLBegin = SM.getDecomposedLoc(Range.first);
+    auto DLEnd = SM.getDecomposedLoc(Range.second);
+    if (DLBegin.first == DLEnd.first &&
+        DLBegin.second <= DLEnd.second) {
+      TokenBegin = Range.first;
+      ExprEndLoc = Range.second;
+      RangeInCall = true;
+    }
+  }
+  // Fallback to Range while CallBegin/End is not valid or getRangeInRange dose
+  // not return a valid range
+  if (!RangeInCall) {
+    auto Range =
+        getTheLastCompleteImmediateRange(E->getBeginLoc(), E->getEndLoc());
+    TokenBegin = Range.first;
+    ExprEndLoc = Range.second;
+  }
+
   std::string IdString;
   llvm::raw_string_ostream OS(IdString);
   Token Tok;
@@ -2554,7 +2575,6 @@ SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
 
   // if there is still either one of begin/end is macro arg expansion
   if (SM.isMacroArgExpansion(Begin) || SM.isMacroArgExpansion(End)) {
-
     // In cases like CALL(FUNC_NAME CALL(ARGS))
     // If the Begin location is always the 1st token of macro defines,
     // it's safe to use the expansion location as the begin location.

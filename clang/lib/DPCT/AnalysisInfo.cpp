@@ -754,14 +754,17 @@ int KernelCallExpr::calculateOriginArgsSize() const {
 }
 
 template <class ArgsRange>
-void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
+void KernelCallExpr::buildExecutionConfig(
+    const ArgsRange &ConfigArgs, const CallExpr *KernelCall) {
   bool NeedTypeCast = true;
   int Idx = 0;
+  auto KCallSpellingRange = getTheLastCompleteImmediateRange(
+      KernelCall->getBeginLoc(), KernelCall->getEndLoc());
   for (auto Arg : ConfigArgs) {
     KernelConfigAnalysis A(IsInMacroDefine);
+    A.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
     A.analyze(Arg, Idx, Idx < 2);
     ExecutionConfig.Config[Idx] = A.getReplacedString();
-
     if (Idx == 0) {
       ExecutionConfig.GroupDirectRef = A.isDirectRef();
     } else if (Idx == 1) {
@@ -829,7 +832,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
 
 void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
   buildLocationInfo(KernelCall);
-  buildExecutionConfig(KernelCall->getConfig()->arguments());
+  buildExecutionConfig(KernelCall->getConfig()->arguments(), KernelCall);
   buildNeedBracesInfo(KernelCall);
 }
 
@@ -1348,7 +1351,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
     Kernel->buildCalleeInfo(Callee);
     Kernel->buildLocationInfo(CE);
     Kernel->buildExecutionConfig(ArrayRef<const Expr *>{
-        CE->getArg(1), CE->getArg(2), CE->getArg(4), CE->getArg(5)});
+        CE->getArg(1), CE->getArg(2), CE->getArg(4), CE->getArg(5)}, CE);
     Kernel->buildNeedBracesInfo(CE);
     auto FD =
         dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee());

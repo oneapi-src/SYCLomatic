@@ -3981,9 +3981,10 @@ private:
           ArgSize =
               MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
       }
-
       if (IsRedeclareRequired || IsPointer || BASE->IsInMacroDefine) {
-        IdString = getTempNameForExpr(Arg, false, true, BASE->IsInMacroDefine);
+        IdString = getTempNameForExpr(Arg, false, true, BASE->IsInMacroDefine,
+                                      Analysis.CallSpellingBegin,
+                                      Analysis.CallSpellingEnd);
       }
     }
 
@@ -4131,6 +4132,9 @@ private:
                                   const Expr *ArgsArray) {}
   void buildArgsInfo(const CallExpr *CE) {
     KernelArgumentAnalysis Analysis(IsInMacroDefine);
+    auto KCallSpellingRange =
+        getTheLastCompleteImmediateRange(CE->getBeginLoc(), CE->getEndLoc());
+    Analysis.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
     auto &TexList = getTextureObjectList();
 
     for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {
@@ -4160,7 +4164,8 @@ private:
   void buildNeedBracesInfo(const CallExpr *KernelCall);
   void buildLocationInfo(const CallExpr *KernelCall);
   template <class ArgsRange>
-  void buildExecutionConfig(const ArgsRange &ConfigArgs);
+  void buildExecutionConfig(const ArgsRange &ConfigArgs,
+                            const CallExpr *KernelCall);
 
   void removeExtraIndent() {
     DpctGlobalInfo::getInstance().addReplacement(
