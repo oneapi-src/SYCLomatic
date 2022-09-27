@@ -193,7 +193,7 @@ ENTRY(make_cudaPitchedPtr, make_cudaPitchedPtr, true, NO_FLAG, P0, "Successful")
 ENTRY(make_cudaPos, make_cudaPos, true, NO_FLAG, P0, "Successful")
 
 // unified addressing functions of runtime API
-ENTRY(cudaPointerGetAttributes, cudaPointerGetAttributes, false, NO_FLAG, P0, "Comment")
+ENTRY(cudaPointerGetAttributes, cudaPointerGetAttributes, true, NO_FLAG, P0, "Successful")
 
 // peer device memory access functions of runtime API
 ENTRY(cudaDeviceCanAccessPeer, cudaDeviceCanAccessPeer, true, NO_FLAG, P0, "DPCT1031")
@@ -778,10 +778,10 @@ ENTRY(__dmul_rd, __dmul_rd, true, NO_FLAG, P0, "Successful:  DPCT1013")
 ENTRY(__dmul_rn, __dmul_rn, true, NO_FLAG, P0, "Successful:  DPCT1013")
 ENTRY(__dmul_ru, __dmul_ru, true, NO_FLAG, P0, "Successful:  DPCT1013")
 ENTRY(__dmul_rz, __dmul_rz, true, NO_FLAG, P4, "Successful:  DPCT1013")
-ENTRY(__drcp_rd, __drcp_rd, true, NO_FLAG, P4, "DPCT1017")
-ENTRY(__drcp_rn, __drcp_rn, true, NO_FLAG, P4, "DPCT1017")
-ENTRY(__drcp_ru, __drcp_ru, true, NO_FLAG, P4, "DPCT1017")
-ENTRY(__drcp_rz, __drcp_rz, true, NO_FLAG, P4, "DPCT1017")
+ENTRY(__drcp_rd, __drcp_rd, true, NO_FLAG, P4, "Successful:  DPCT1013")
+ENTRY(__drcp_rn, __drcp_rn, true, NO_FLAG, P4, "Successful:  DPCT1013")
+ENTRY(__drcp_ru, __drcp_ru, true, NO_FLAG, P4, "Successful:  DPCT1013")
+ENTRY(__drcp_rz, __drcp_rz, true, NO_FLAG, P4, "Successful:  DPCT1013")
 ENTRY(__dsqrt_rd, __dsqrt_rd, true, NO_FLAG, P0, "Successful:  DPCT1013")
 ENTRY(__dsqrt_rn, __dsqrt_rn, true, NO_FLAG, P4, "Successful:  DPCT1013")
 ENTRY(__dsqrt_ru, __dsqrt_ru, true, NO_FLAG, P0, "Successful:  DPCT1013")

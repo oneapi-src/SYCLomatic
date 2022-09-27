@@ -716,12 +716,18 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       !ContextFD->hasAttr<CUDAGlobalAttr>())
     return Base::rewrite();
 
-  // Do need to report warnings for pow or funnelshift migrations
-  if (SourceCalleeName != "pow" && SourceCalleeName != "powf" &&
-      SourceCalleeName != "__powf" && SourceCalleeName != "__funnelshift_l" &&
-      SourceCalleeName != "__funnelshift_lc" &&
-      SourceCalleeName != "__funnelshift_r" &&
-      SourceCalleeName != "__funnelshift_rc")
+  // Do not need to report warnings for pow, funnelshift, or drcp migrations
+  if (SourceCalleeName != "pow"                     && 
+      SourceCalleeName != "powf"                    &&
+      SourceCalleeName != "__powf"                  && 
+      SourceCalleeName != "__funnelshift_l"         &&
+      SourceCalleeName != "__funnelshift_lc"        &&
+      SourceCalleeName != "__funnelshift_r"         &&
+      SourceCalleeName != "__funnelshift_rc"        &&
+      SourceCalleeName != "__drcp_rd"               &&
+      SourceCalleeName != "__drcp_rn"               &&
+      SourceCalleeName != "__drcp_ru"               &&
+      SourceCalleeName != "__drcp_rz")
     report(Diagnostics::MATH_EMULATION, false,
            MapNames::ITFName.at(SourceCalleeName.str()), TargetCalleeName);
 
@@ -1053,20 +1059,28 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << TargetCalleeName << "(" << MigratedArg0 << ", " << getMigratedArg(1)
        << ")"
        << "+" << getMigratedArg(2);
-  } else if (FuncName == "__drcp_rd" || FuncName == "__drcp_rn" ||
-             FuncName == "__drcp_ru" || FuncName == "__drcp_rz") {
+  } else if (FuncName == "__drcp_rd" || 
+             FuncName == "__drcp_rn" ||
+             FuncName == "__drcp_ru" || 
+             FuncName == "__drcp_rz") {
     auto Arg0 = Call->getArg(0);
     auto T0 = Arg0->IgnoreCasts()->getType().getAsString(
         PrintingPolicy(LangOptions()));
     auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
     report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, false);
-    OS << TargetCalleeName;
-    if (T0 != "float") {
+    if (T0 == "double") {
+      if (DRE0)
+        OS << "(1.0/" << MigratedArg0 << ")";
+      else
+        OS << "(1.0/(" << MigratedArg0 << "))";
+    } else if (T0 != "float") {
+      OS << TargetCalleeName;
       if (DRE0)
         OS << "((float)" << MigratedArg0 << ")";
       else
         OS << "((float)(" << MigratedArg0 << "))";
     } else {
+      OS << TargetCalleeName;
       OS << "(" << MigratedArg0 << ")";
     }
   } else if (FuncName == "norm") {

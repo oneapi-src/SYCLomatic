@@ -332,3 +332,9 @@ CONDITIONAL_FACTORY_ENTRY(
         TOSTRING_FACTORY_ENTRY("cudaHostRegister", LITERAL("0")),
         Diagnostics::FUNC_CALL_REMOVED_0,
         std::string("cudaHostRegister"), getRemovedAPIWarningMessage("cudaHostRegister")))
+
+ASSIGNABLE_FACTORY(
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::Memory_pointer_attributes,
+        MEMBER_CALL_FACTORY_ENTRY(
+            "cudaPointerGetAttributes", DEREF(0), false, "init", ARG(1))))
