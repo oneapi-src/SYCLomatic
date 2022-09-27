@@ -233,10 +233,10 @@ public:
     prop.set_max_work_item_sizes(
 #if (__SYCL_COMPILER_VERSION && __SYCL_COMPILER_VERSION<20220902)
         // oneAPI DPC++ compiler older than 2022/09/02, where max_work_item_sizes is an enum class element
-        get_info<cl::sycl::info::device::max_work_item_sizes>());
+        get_info<sycl::info::device::max_work_item_sizes>());
 #else
         // SYCL 2020-conformant code, max_work_item_sizes is a struct templated by an int
-        get_info<cl::sycl::info::device::max_work_item_sizes<3>>());
+        get_info<sycl::info::device::max_work_item_sizes<3>>());
 #endif
     prop.set_host_unified_memory(
         get_info<sycl::info::device::host_unified_memory>());
@@ -434,6 +434,17 @@ public:
     _thread2dev_map[get_tid()]=id;
   }
   unsigned int device_count() { return _devs.size(); }
+
+  unsigned int get_device_id(const sycl::device &dev) {
+    unsigned int id = 0;
+    for(auto dev_item : _devs) {
+      if (*dev_item == dev) {
+        break;
+      }
+      id++;
+    }
+    return id;
+  }
 
   /// Returns the instance of device manager singleton.
   static dev_mgr &instance() {

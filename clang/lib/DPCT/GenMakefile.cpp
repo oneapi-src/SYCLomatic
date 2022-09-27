@@ -96,8 +96,7 @@ static void getCompileInfo(
           // Set the target name
           TargetName = Obj;
           IsTargetName = false;
-          Tool = "dpcpp -o"; // Record the tool that generates the target file
-                             // and use dpcpp as the linker tool in the
+          Tool = "$(CC) -o"; // use 'icpx -fsycl' to link the target file in the
                              // generated Makefile.
         } else if (llvm::StringRef(Obj).endswith(".o")) {
           llvm::SmallString<512> FilePathAbs(Obj);
@@ -308,7 +307,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
   llvm::raw_string_ostream OS(Buf);
   std::string TargetName;
 
-  OS << "CC := dpcpp\n\n";
+  OS << "CC := icpx -fsycl\n\n";
   OS << "LD := $(CC)\n\n";
   OS << buildString(
       "#", DiagnosticsUtils::getMsgText(MakefileMsgs::GEN_MAKEFILE_LIB), "\n");
@@ -414,8 +413,7 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
                                   "_FLAG_" + std::to_string(Idx);
         OS << buildString("$(", ObjStrName, "):$(", SrcStrName, ")\n");
 
-        // Only apply dpcpp compiler to the files which are originally built
-        // with nvcc.
+        // Use 'icpx -fsycl' to compile the migrated SYCL file.
         std::string Compiler =
             llvm::StringRef((Entry.second)[Idx].Compiler).endswith("nvcc")
                 ? "$(CC)"
