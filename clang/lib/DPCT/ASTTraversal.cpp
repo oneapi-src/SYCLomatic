@@ -10896,7 +10896,7 @@ void MemoryMigrationRule::memcpyMigration(
     size_t QueueIndex = NameRef.compare("cudaMemcpy") ? 3 : 4;
     if (C->getNumArgs() > QueueIndex &&
         !C->getArg(QueueIndex)->isDefaultArgument()) {
-      if (!isPredefinedStreamHandle(C->getArg(QueueIndex)))
+      if (!isDefaultStream(C->getArg(QueueIndex)))
         AsyncQueue = ExprAnalysis::ref(C->getArg(QueueIndex));
     }
     replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
@@ -11095,7 +11095,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
     }
   } else {
     if (C->getNumArgs() == 6 && !C->getArg(5)->isDefaultArgument()) {
-      if (!isPredefinedStreamHandle(C->getArg(5))) {
+      if (!isDefaultStream(C->getArg(5))) {
         StreamStr = ExprAnalysis::ref(C->getArg(5));
       }
     }
@@ -11288,7 +11288,7 @@ void MemoryMigrationRule::memsetMigration(
       if (auto ICE = dyn_cast<ImplicitCastExpr>(C->getArg(3)))
         NeedTypeCast = ICE->getCastKind() != clang::CK_LValueToRValue;
 
-      if (!isPredefinedStreamHandle(C->getArg(3)))
+      if (!isDefaultStream(C->getArg(3)))
         AsyncQueue = ExprAnalysis::ref(C->getArg(3));
     }
     replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
@@ -11367,7 +11367,7 @@ void MemoryMigrationRule::prefetchMigration(
     auto StmtStrArg2 = EA.getReplacedString();
     std::string StmtStrArg3;
     if (C->getNumArgs() == 4 && !C->getArg(3)->isDefaultArgument()) {
-      if (!isPredefinedStreamHandle(C->getArg(3)))
+      if (!isDefaultStream(C->getArg(3)))
         StmtStrArg3 = ExprAnalysis::ref(C->getArg(3));
     } else {
       StmtStrArg3 = "0";
@@ -11930,7 +11930,7 @@ void MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
         emplaceTransformation(new InsertBeforeStmt(
             StreamExpr, "(" + MapNames::getClNamespace() + "queue *)"));
       }
-    } else if (isPredefinedStreamHandle(StreamExpr)) {
+    } else if (isDefaultStream(StreamExpr)) {
       emplaceTransformation(removeArg(C, i, *Result.SourceManager));
       return;
     } else if (!isa<DeclRefExpr>(StreamExpr)) {
@@ -14782,13 +14782,11 @@ void DriverModuleAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void DriverModuleAPIRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call");
   if (!CE) {
     if (!(CE = getNodeAsType<CallExpr>(Result, "callUsed"))) {
       return;
     }
-    IsAssigned = true;
   }
 
   std::string APIName = "";

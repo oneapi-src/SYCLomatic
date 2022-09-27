@@ -451,7 +451,6 @@ std::string getNestedNameSpecifierString(const clang::NestedNameSpecifier *);
 std::string getNestedNameSpecifierString(const clang::NestedNameSpecifierLoc &);
 
 bool needExtraParens(const clang::Expr *);
-bool isPredefinedStreamHandle(const clang::Expr *E);
 std::pair<clang::SourceLocation, clang::SourceLocation>
 getTheOneBeforeLastImmediateExapansion(const clang::SourceLocation Begin,
                                        const clang::SourceLocation End);

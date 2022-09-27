@@ -2013,37 +2013,6 @@ bool needExtraParens(const Expr *E) {
   }
 }
 
-bool isPredefinedStreamHandle(const Expr *E) {
-  Expr::EvalResult ER;
-  if (auto PE = dyn_cast<ParenExpr>(E->IgnoreImplicit())) {
-    if (auto CSCE = dyn_cast<CStyleCastExpr>(PE->getSubExpr())) {
-      if (!CSCE->getSubExpr()->isValueDependent() &&
-          CSCE->getSubExpr()->EvaluateAsInt(
-              ER, dpct::DpctGlobalInfo::getContext())) {
-        int64_t Value = ER.Val.getInt().getExtValue();
-        if (Value == 1 || Value == 2) {
-          // cudaStreamLegacy is ((cudaStream_t)0x1)
-          // cudaStreamPerThread is ((cudaStream_t)0x2)
-          return true;
-        }
-      }
-    }
-  } else if (!E->IgnoreImplicit()->isValueDependent() &&
-             E->IgnoreImplicit()->EvaluateAsInt(
-                 ER, dpct::DpctGlobalInfo::getContext())) {
-    int64_t Value = ER.Val.getInt().getExtValue();
-    if (Value == 0) {
-      // cudaStreamDefault is 0x00
-      return true;
-    }
-  } else if (dyn_cast<GNUNullExpr>(E->IgnoreImplicit()) ||
-             dyn_cast<CXXNullPtrLiteralExpr>(E->IgnoreImplicit())) {
-    // default stream can be used as NULL, __null, nullptr
-    return true;
-  }
-  return false;
-}
-
 // Get the range of an Expr in the largest (the outermost) macro definition
 // e.g.
 // line 1: #define MACRO_A 3
@@ -3118,23 +3087,29 @@ bool isModifiedRef(const clang::DeclRefExpr *DRE) {
 }
 
 bool isDefaultStream(const Expr *StreamArg) {
-  auto Arg = StreamArg->IgnoreImpCasts();
-  bool IsDefaultStream = false;
-  // Need queue for default stream or stream 0, 1 and 2
+  auto Arg = StreamArg->IgnoreCasts();
   if (Arg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
-    IsDefaultStream = true;
-  } else if (Arg->getStmtClass() == Stmt::IntegerLiteralClass) {
-    if (auto IL = dyn_cast<IntegerLiteral>(Arg)) {
-      auto V = IL->getValue().getZExtValue();
-      if (V <= 2) // V should be 0, 1 or 2
-        IsDefaultStream = true;
-    }
-  } else if (Arg->getStmtClass() == Expr::GNUNullExprClass) {
-    IsDefaultStream = true;
-  } else if (Arg->getStmtClass() == Expr::CXXNullPtrLiteralExprClass) {
-    IsDefaultStream = true;
+    return true;
   }
-  return IsDefaultStream;
+  if (auto Paren = dyn_cast<ParenExpr>(Arg)) {
+    Arg = Paren->getSubExpr()->IgnoreImpCasts();
+  }
+  if (auto TypeCast = dyn_cast<ExplicitCastExpr>(Arg)) {
+    Arg = TypeCast->getSubExpr()->IgnoreImpCasts();
+  }
+  Expr::EvalResult Result;
+  if (!Arg->isValueDependent() &&
+      Arg->EvaluateAsInt(Result, dpct::DpctGlobalInfo::getContext())) {
+    auto Val = Result.Val.getInt().getZExtValue();
+    return Val < 3; // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
+                    // all migrated to default queue;
+  }
+  if (dyn_cast<GNUNullExpr>(Arg->IgnoreImplicit()) ||
+             dyn_cast<CXXNullPtrLiteralExpr>(Arg->IgnoreImplicit())) {
+    // default stream can be used as NULL, __null, nullptr
+    return true;
+  }
+  return false;
 }
 
 const NamedDecl *getNamedDecl(const clang::Type *TypePtr) {
