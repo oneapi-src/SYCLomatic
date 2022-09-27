@@ -3155,7 +3155,7 @@ bool isModifiedRef(const clang::DeclRefExpr *DRE) {
 }
 
 bool isDefaultStream(const Expr *StreamArg) {
-  auto Arg = StreamArg->IgnoreImpCasts();
+  auto Arg = StreamArg->IgnoreCasts();
   bool IsDefaultStream = false;
   // Need queue for default stream or stream 0, 1 and 2
   if (Arg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {

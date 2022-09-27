@@ -447,11 +447,13 @@ void foobar() {
 }
 
 void fun() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: dpct::queue_ptr *p, s, &r = s;
   cudaStream_t *p, s, &r = s;
-  // CHECK: dpct::queue_ptr const s_2 = &dpct::get_default_queue(), *p_2, &r_2 = s;
+  // CHECK: dpct::queue_ptr const s_2 = &q_ct1, *p_2, &r_2 = s;
   cudaStream_t const s_2 = NULL, *p_2, &r_2 = s;
-  // CHECK: const dpct::queue_ptr &r_3 = s, *p_3, s_3 = &dpct::get_default_queue();
+  // CHECK: const dpct::queue_ptr &r_3 = s, *p_3, s_3 = &q_ct1;
   const cudaStream_t &r_3 = s, *p_3, s_3 = NULL;
 
   // CHECK: dpct::queue_ptr const *pc, sc = s, &rc = s;
@@ -479,31 +481,33 @@ void fun() {
   cudaStream_t const *s8, *s9;
   // CHECK: const dpct::queue_ptr *s10, *s11;
   const cudaStream_t *s10, *s11;
-  // CHECK: dpct::queue_ptr *const s12 = &dpct::get_default_queue(), *const s13 = &dpct::get_default_queue();
+  // CHECK: dpct::queue_ptr *const s12 = &q_ct1, *const s13 = &q_ct1;
   cudaStream_t *const s12 = NULL, *const s13 = NULL;
-  // CHECK: const dpct::queue_ptr *const s14 = &dpct::get_default_queue(), *const s15 = &dpct::get_default_queue();
+  // CHECK: const dpct::queue_ptr *const s14 = &q_ct1, *const s15 = &q_ct1;
   const cudaStream_t *const s14 = NULL, *const s15 = NULL;
 }
 
 void fun2() {
+  // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // CHECK: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: dpct::queue_ptr s, s2;
   cudaStream_t s, s2;
-  // CHECK: dpct::queue_ptr const s3 = &dpct::get_default_queue(), s4 = &dpct::get_default_queue();
+  // CHECK: dpct::queue_ptr const s3 = &q_ct1, s4 = &q_ct1;
   cudaStream_t const s3 = NULL, s4 = NULL;
-  // CHECK: const dpct::queue_ptr s5 = &dpct::get_default_queue(), s6 = &dpct::get_default_queue();
+  // CHECK: const dpct::queue_ptr s5 = &q_ct1, s6 = &q_ct1;
   const cudaStream_t s5 = NULL, s6 = NULL;
 
-  // CHECK: dpct::queue_ptr *s7, *const s8 = &dpct::get_default_queue();
+  // CHECK: dpct::queue_ptr *s7, *const s8 = &q_ct1;
   cudaStream_t *s7, *const s8 = NULL;
-  // CHECK: dpct::queue_ptr *const s9 = &dpct::get_default_queue(), *s10;
+  // CHECK: dpct::queue_ptr *const s9 = &q_ct1, *s10;
   cudaStream_t *const s9 = NULL, *s10;
-  // CHECK: const dpct::queue_ptr *s11, *const s12 = &dpct::get_default_queue();
+  // CHECK: const dpct::queue_ptr *s11, *const s12 = &q_ct1;
   const cudaStream_t *s11, *const s12 = NULL;
-  // CHECK: dpct::queue_ptr const *const s13 = &dpct::get_default_queue(), *s14;
+  // CHECK: dpct::queue_ptr const *const s13 = &q_ct1, *s14;
   cudaStream_t const *const s13 = NULL, *s14;
-  // CHECK: const dpct::queue_ptr *const s15 = &dpct::get_default_queue(), *s16;
+  // CHECK: const dpct::queue_ptr *const s15 = &q_ct1, *s16;
   const cudaStream_t *const s15 = NULL, *s16;
-  // CHECK: dpct::queue_ptr const *s17, *const s18 = &dpct::get_default_queue();
+  // CHECK: dpct::queue_ptr const *s17, *const s18 = &q_ct1;
   cudaStream_t const *s17, *const s18 = NULL;
 }
 

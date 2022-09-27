@@ -2879,41 +2879,35 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
   auto SD = getAllDecls(DD);
   for (auto It = SD.begin(); It != SD.end(); ++It) {
     auto DDiter = *It;
+
     const clang::Expr *replExpr = nullptr;
     if (const auto VD = dyn_cast<clang::VarDecl>(DDiter)) {
       if (!VD->hasInit())
         continue;
-      if (const auto VarInitExpr = dyn_cast<InitListExpr>(VD->getInit())) {
-        if (auto ArgInitExpr = VarInitExpr->getInit(0)->IgnoreCasts())
-          replExpr = ArgInitExpr;
-      } else {
-        if (auto ArgInitExpr = VD->getInit()->IgnoreCasts())
-          replExpr = ArgInitExpr;
-      }
-    } else if (const auto FD = dyn_cast<clang::FieldDecl>(DDiter)) {
+      replExpr = VD->getInit();
+    } 
+    else if (const auto FD = dyn_cast<clang::FieldDecl>(DDiter)) {
       if (!FD->hasInClassInitializer())
         continue;
-      if (const auto FieldInitExpr =
-              dyn_cast<InitListExpr>(FD->getInClassInitializer())) {
-        if (auto ArgInitExpr = FieldInitExpr->getInit(0)->IgnoreCasts())
-          replExpr = ArgInitExpr;
-      } else {
-        if (auto ArgInitExpr = FD->getInClassInitializer()->IgnoreCasts())
-          replExpr = ArgInitExpr;
-      }
+      replExpr = FD->getInClassInitializer();
     }
-    if (replExpr != nullptr) {
-      Expr::EvalResult ER;
-      if (replExpr->EvaluateAsInt(ER, dpct::DpctGlobalInfo::getContext())) {
-        int64_t Value = ER.Val.getInt().getExtValue();
-        if (Value != 0)
-          continue;
-        std::string Repl =
-            "&" + MapNames::getDpctNamespace() + "get_default_queue()";
-        emplaceTransformation(new ReplaceStmt(replExpr, Repl));
-      }
-      replExpr = nullptr;
+    
+    if (replExpr == nullptr)
+      continue;
+
+    if (const auto VarInitExpr = dyn_cast<InitListExpr>(replExpr)) {
+      replExpr = VarInitExpr->getInit(0);
     }
+    if (isDefaultStream(replExpr)) {
+      int Index = getPlaceholderIdx(replExpr);
+      if (Index == 0) {
+        Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      }
+      buildTempVariableMap(Index, replExpr, HelperFuncType::HFT_DefaultQueue);
+      std::string Repl = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+      emplaceTransformation(new ReplaceStmt(replExpr, "&" + Repl));
+    }
+    replExpr = nullptr;
   }
 }
 
