@@ -42,6 +42,13 @@ auto parentStmt = []() {
 };
 } // namespace
 
+static bool isNullPointerConstant(const clang::Expr *E) {
+  assert(E && "Expr can not be nullptr");
+  return E->isNullPointerConstant(clang::dpct::DpctGlobalInfo::getContext(),
+                                  Expr::NPC_ValueDependentIsNull) !=
+         Expr::NPCK_NotNull;
+}
+
 static bool isCudaMemoryAPIName(StringRef FuncName) {
   return FuncName == "cudaMalloc" || FuncName == "cuMemAlloc_v2" ||
          FuncName == "cudaFree";

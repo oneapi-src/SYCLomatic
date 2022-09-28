@@ -1215,13 +1215,13 @@ class DerefStreamExpr {
 public:
   template <class StreamT>
   void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
-    if (isDefaultCudaStream(E))
+    if (isDefaultStream(E))
       printDefaultQueue(Stream);
     else
       DerefExpr::create(E).printArg(Stream, A);
   }
   template <class StreamT> void printMemberBase(StreamT &Stream) const {
-    if (isDefaultCudaStream(E)) {
+    if (isDefaultStream(E)) {
       printDefaultQueue(Stream);
       Stream << ".";
     } else {
@@ -1230,7 +1230,7 @@ public:
   }
 
   template <class StreamT> void print(StreamT &Stream) const {
-    if (isDefaultCudaStream(E))
+    if (isDefaultStream(E))
       printDefaultQueue(Stream);
     else
       DerefExpr::create(E).print(Stream);
@@ -2533,7 +2533,13 @@ class CheckArgCountGreaterThan {
 public:
   CheckArgCountGreaterThan(unsigned I) : Count(I) {}
   bool operator()(const CallExpr *C) {
-    return C->getNumArgs() > Count;
+    unsigned DefaultArgNum = 0;
+    llvm::ArrayRef<const Expr *> Args(C->getArgs(), C->getNumArgs());
+    for (const Expr *Arg : Args) {
+      if (Arg->isDefaultArgument())
+        ++DefaultArgNum;
+    }
+    return C->getNumArgs() - DefaultArgNum > Count;
   }
 };
 
@@ -2601,7 +2607,7 @@ class CheckArgIsDefaultCudaStream {
 public:
   CheckArgIsDefaultCudaStream(unsigned ArgIndex) : ArgIndex(ArgIndex) {}
   bool operator()(const CallExpr *C) const {
-    return isDefaultCudaStream(C->getArg(ArgIndex));
+    return isDefaultStream(C->getArg(ArgIndex));
   }
 };
 
