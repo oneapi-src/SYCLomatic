@@ -1211,3 +1211,36 @@ int foo33(){
   int i;
   VACALL2([&]{VACALL(0);});
 }
+
+
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
+#include <thrust/unique.h>
+
+void foo34() {
+
+  int *ptr;
+  thrust::host_vector<int> h_keys, h_values;
+  thrust::device_vector<int> d_keys, d_values;
+  thrust::equal_to<int> binary_pred;
+
+  auto dummy_dev = thrust::device_ptr<int>(ptr);
+  int numel = 1;
+  using index_t = int;
+  VACALL3([&]() {
+    int64_t num_of_segments;
+    {
+      auto sorted_indices_dev = thrust::device_ptr<index_t>(ptr);
+      auto dummy_dev = thrust::device_ptr<index_t>(ptr);
+      //CHECK: auto ends = dpct::unique_copy(
+      //CHECK-NEXT:   oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      //CHECK-NEXT:   sorted_indices_dev, sorted_indices_dev + numel,
+      //CHECK-NEXT:   dpct::make_counting_iterator(0), dummy_dev,
+      //CHECK-NEXT:   dpct::device_pointer<index_t>(ptr));
+      auto ends = thrust::unique_by_key_copy(
+          thrust::device, sorted_indices_dev, sorted_indices_dev + numel,
+          thrust::make_counting_iterator(0), dummy_dev,
+          thrust::device_ptr<index_t>(ptr));
+    }
+  });
+}

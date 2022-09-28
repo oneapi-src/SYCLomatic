@@ -597,7 +597,6 @@ void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   std::string CtorClassName =
       Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
-
   if (CtorClassName.find("thrust::") == 0) {
     // Distinguish CXXTemporaryObjectExpr from other copy ctor before migrating
     // the ctor. Ex. foo(thrust::minus<int>());
@@ -1079,12 +1078,14 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
       requestHelperFeatureForTypeNames(TyName, SR.getBegin());
     }
   }
+
+  auto Range = getDefinitionRange(SR.getBegin(), SR.getEnd());
   if (MapNames::replaceName(MapNames::TypeNamesMap, TyName)) {
-    addReplacement(SR.getBegin(), SR.getEnd(), CSCE, TyName);
+    addReplacement(Range.getBegin(), Range.getEnd(), CSCE, TyName);
   } else if (MapNames::replaceName(MapNames::CuDNNTypeNamesMap, TyName)) {
-    addReplacement(SR.getBegin(), SR.getEnd(), CSCE, TyName);
+    addReplacement(Range.getBegin(), Range.getEnd(), CSCE, TyName);
   } else if (getFinalCastTypeNameStr(TyName) != TyName) {
-    addReplacement(SR.getBegin(), SR.getEnd(), CSCE,
+    addReplacement(Range.getBegin(), Range.getEnd(), CSCE,
                    getFinalCastTypeNameStr(TyName));
   }
 }
