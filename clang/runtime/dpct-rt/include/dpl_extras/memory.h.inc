@@ -43,6 +43,7 @@
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 #include <sycl/sycl.hpp>
+#include <oneapi/dpl/pstl/hetero/dpcpp/sycl_defs.h>
 
 // Memory management section:
 // device_pointer, device_reference, swap, device_iterator, malloc_device,
@@ -57,7 +58,7 @@ namespace dpct {
 // DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,
-          typename Allocator = sycl::buffer_allocator>
+          typename Allocator = __dpl_sycl::__buffer_allocator<T>>
 class device_pointer;
 #else
 template <typename T> class device_pointer;
@@ -524,7 +525,7 @@ public:
 // DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,
-          typename Allocator = sycl::buffer_allocator>
+          typename Allocator = __dpl_sycl::__buffer_allocator<T>>
 class device_iterator : public device_pointer<T, Mode, Allocator> {
   using Base = device_pointer<T, Mode, Allocator>;
 

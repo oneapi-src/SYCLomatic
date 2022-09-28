@@ -40,6 +40,7 @@
 // DplExtrasMemory|non_local_include_dependency
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+#include <oneapi/dpl/pstl/hetero/dpcpp/sycl_defs.h>
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 
@@ -409,10 +410,10 @@ public:
 
 #else
 
-template <typename T, typename Allocator = sycl::buffer_allocator>
+template <typename T, typename Allocator = __dpl_sycl::__buffer_allocator<T>>
 class device_vector {
   static_assert(
-      std::is_same<Allocator, sycl::buffer_allocator>::value,
+      std::is_same<Allocator, __dpl_sycl::__buffer_allocator<T>>::value,
       "device_vector doesn't support custom allocator when USM is not used.");
 
 public:
