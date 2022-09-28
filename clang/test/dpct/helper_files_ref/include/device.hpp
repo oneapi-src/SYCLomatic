@@ -435,6 +435,17 @@ public:
   }
   unsigned int device_count() { return _devs.size(); }
 
+  unsigned int get_device_id(const sycl::device &dev) {
+    unsigned int id = 0;
+    for(auto dev_item : _devs) {
+      if (*dev_item == dev) {
+        break;
+      }
+      id++;
+    }
+    return id;
+  }
+
   /// Returns the instance of device manager singleton.
   static dev_mgr &instance() {
     static dev_mgr d_m;

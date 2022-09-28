@@ -193,7 +193,7 @@ ENTRY(make_cudaPitchedPtr, make_cudaPitchedPtr, true, NO_FLAG, P0, "Successful")
 ENTRY(make_cudaPos, make_cudaPos, true, NO_FLAG, P0, "Successful")
 
 // unified addressing functions of runtime API
-ENTRY(cudaPointerGetAttributes, cudaPointerGetAttributes, false, NO_FLAG, P0, "Comment")
+ENTRY(cudaPointerGetAttributes, cudaPointerGetAttributes, true, NO_FLAG, P0, "Successful")
 
 // peer device memory access functions of runtime API
 ENTRY(cudaDeviceCanAccessPeer, cudaDeviceCanAccessPeer, true, NO_FLAG, P0, "DPCT1031")

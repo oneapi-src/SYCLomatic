@@ -940,6 +940,24 @@ public:
   unsigned int device_count() { return _devs.size(); }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|dev_mgr_get_device_id|dpct
+// DPCT_PARENT_FEATURE|dev_mgr
+// DPCT_DEPENDENCY_BEGIN
+// Device|dev_mgr_1
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  unsigned int get_device_id(const sycl::device &dev) {
+    unsigned int id = 0;
+    for(auto dev_item : _devs) {
+      if (*dev_item == dev) {
+        break;
+      }
+      id++;
+    }
+    return id;
+  }
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|dev_mgr_2|dpct
 // DPCT_PARENT_FEATURE|dev_mgr
 // DPCT_DEPENDENCY_BEGIN

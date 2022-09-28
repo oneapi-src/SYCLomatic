@@ -22,6 +22,7 @@
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
+#include "MemberExprRewriter.h"
 
 extern std::string DpctInstallPath;
 namespace clang {
@@ -272,24 +273,48 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
 
 std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   SourceLocation BeginLoc, EndLoc;
-  // if the parent expr is inside macro and current expr is macro arg expansion,
-  // use the expansion location of the macro arg in the macro definition.
+  size_t End;
+
   if (IsInMacroDefine) {
-    if (SM.isMacroArgExpansion(E->getBeginLoc())) {
-      BeginLoc = SM.getSpellingLoc(
-          SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
-      EndLoc = SM.getSpellingLoc(
-          SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
-    } else {
-      BeginLoc =
-          SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
-      EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getEndLoc()));
-      if (isExprStraddle(E)) {
-        auto Range = getTheOneBeforeLastImmediateExapansion(E->getBeginLoc(),
-                                                            E->getEndLoc());
-        BeginLoc = SM.getImmediateSpellingLoc(Range.first);
-        EndLoc = SM.getImmediateSpellingLoc(Range.second);
+    // If the expr is in macro define, and the CallSpellingBegin/End is set,
+    // we can use the CallSpellingBegin/End to get a more precise range.
+    bool RangeInCall = false;
+    if (CallSpellingBegin.isValid() && CallSpellingEnd.isValid()) {
+      auto Range = getRangeInRange(E, CallSpellingBegin, CallSpellingEnd);
+      auto DLBegin = SM.getDecomposedLoc(Range.first);
+      auto DLEnd = SM.getDecomposedLoc(Range.second);
+      if (DLBegin.first == DLEnd.first &&
+          DLBegin.second <= DLEnd.second) {
+        BeginLoc = Range.first;
+        EndLoc = Range.second;
+        End = getOffset(EndLoc);
+        RangeInCall = true;
       }
+    }
+    // In cases like:
+    // #define CCC <<<1,1>>>()
+    // #define KERNEL foo CCC
+    // The getRangeInRange cannot find the correct range,
+    // fallback to use heuristics.
+    if (!RangeInCall) {
+      if (SM.isMacroArgExpansion(E->getBeginLoc())) {
+        BeginLoc = SM.getSpellingLoc(
+            SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
+        EndLoc = SM.getSpellingLoc(
+            SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
+      } else {
+        BeginLoc =
+            SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
+        EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getEndLoc()));
+        if (isExprStraddle(E)) {
+          auto Range = getTheOneBeforeLastImmediateExapansion(E->getBeginLoc(),
+                                                              E->getEndLoc());
+          BeginLoc = SM.getImmediateSpellingLoc(Range.first);
+          EndLoc = SM.getImmediateSpellingLoc(Range.second);
+        }
+      }
+      End = getOffset(EndLoc) +
+            Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
     }
   } else {
     // If the Expr is FileID or is macro arg
@@ -297,11 +322,8 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
     auto Range = getStmtExpansionSourceRange(E);
     BeginLoc = Range.getBegin();
     EndLoc = Range.getEnd();
+    End = getOffset(EndLoc) + Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
   }
-  // Calculate offset and length from SourceLocation
-  auto End = getOffset(EndLoc);
-  auto LastTokenLength =
-      Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
 
   // Find the begin/end location include prefix and postfix
   // Set Prefix and Postfix strings
@@ -317,7 +339,6 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
 
   ExprBeginLoc = BeginLoc;
   ExprEndLoc = EndLoc;
-
   RewritePrefix =
       std::string(SM.getCharacterData(BeginLoc), RewritePrefixLength);
 
@@ -338,7 +359,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   // The offset of Expr used in ExprAnalysis is related to SrcBegin not
   // FileBegin
   auto Begin = DecompLoc.second - SrcBegin;
-  return std::pair<size_t, size_t>(Begin, End - Begin + LastTokenLength);
+  return std::pair<size_t, size_t>(Begin, End - Begin);
 }
 
 void ExprAnalysis::initExpression(const Expr *Expression) {
@@ -640,7 +661,20 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
   std::string FieldName = "";
   if (ME->getMemberDecl()->getIdentifier()) {
     FieldName = ME->getMemberDecl()->getName().str();
-    auto ItFieldRule = MapNames::ClassFieldMap.find(BaseType + "." + FieldName);
+    auto MemberExprName = BaseType + "." + FieldName;
+    auto ItFieldRule = MapNames::ClassFieldMap.find(MemberExprName);
+    if (!MemberExprRewriterFactoryBase::MemberExprRewriterMap)
+      return;
+    auto Itr = MemberExprRewriterFactoryBase::MemberExprRewriterMap->find(MemberExprName);
+    if (Itr != MemberExprRewriterFactoryBase::MemberExprRewriterMap->end()) {
+      auto Rewriter = Itr->second->create(ME);
+      auto Result = Rewriter->rewrite();
+      if (Result.hasValue()) {
+        auto ResultStr = Result.getValue();
+        addReplacement(ME->getBeginLoc(), ME->getEndLoc(), Result.getValue());
+      }
+      return;
+    }
     if (ItFieldRule != MapNames::ClassFieldMap.end()) {
       if (ItFieldRule->second->GetterName == "") {
         addReplacement(ME->getMemberLoc(), ME->getMemberLoc(),
@@ -716,7 +750,7 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
                                    ME->getMemberNameInfo().getAsString()));
   } else if (BaseType == "cudaDeviceProp") {
     std::string ReplacementStr = MapNames::findReplacedName(
-        DevicePropVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
+        DeviceInfoVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
     if (!ReplacementStr.empty()) {
       addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + "()");
       requestFeature(
@@ -790,7 +824,6 @@ void ExprAnalysis::analyzeExpr(const ExplicitCastExpr *Cast) {
 void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // To set the RefString
   dispatch(CE->getCallee());
-
   // If the callee requires rewrite, get the rewriter
   if (!CallExprRewriterFactoryBase::RewriterMap)
     return;
@@ -834,7 +867,6 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
                            false, RefString);
         } else {
           FCIMMR[LocStr] = ResultStr;
-
           // When migrating thrust API with usmnone and raw-ptr,
           // the CallExpr will be rewritten into an if-else stmt,
           // DPCT needs to remove the following semicolon.
@@ -1811,6 +1843,7 @@ std::vector<std::string>
 KernelConfigAnalysis::getCtorArgs(const CXXConstructExpr *Ctor) {
   std::vector<std::string> Args;
   ArgumentAnalysis A(IsInMacroDefine);
+  A.setCallSpelling(CallSpellingBegin, CallSpellingEnd);
   for (auto Arg : Ctor->arguments())
     Args.emplace_back(getCtorArg(A, Arg));
   return Args;
@@ -1828,8 +1861,6 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
       addReplacement("0");
       return;
     }
-    initArgumentExpr(E);
-    return;
   }
 
   DoReverse = ReverseIfNeed;
@@ -1837,7 +1868,6 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
     addReplacement("0");
     return;
   }
-
   ArgumentAnalysis::analyze(E);
 
   if (getTargetExpr()->IgnoreImplicit()->getStmtClass() ==
