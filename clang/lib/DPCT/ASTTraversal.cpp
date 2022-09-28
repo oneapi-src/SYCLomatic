@@ -13524,10 +13524,10 @@ void TextureMemberSetRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(TextureMemberSetRule)
 
 void TextureRule::registerMatcher(MatchFinder &MF) {
-  auto DeclMatcher = varDecl(hasType(templateSpecializationType(
-      hasDeclaration(classTemplateSpecializationDecl(hasName("texture"))))));
+  auto DeclMatcher = varDecl(hasType(classTemplateSpecializationDecl(
+      hasName("texture"))));
 
-  auto DeclMatcherUTF = varDecl(hasType(templateSpecializationType()));
+  auto DeclMatcherUTF = varDecl(hasType(classTemplateSpecializationDecl()));
   MF.addMatcher(DeclMatcherUTF.bind("texDeclForUnspecializedTemplateFunc"),
                 this);
 
