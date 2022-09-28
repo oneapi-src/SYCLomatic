@@ -113,7 +113,6 @@ public:
       return _max_nd_range_size_i;
   }
   size_t get_global_mem_size() const { return _global_mem_size; }
-  size_t get_max_stream_buffer_size() const { return _max_stream_buffer_size; }
   size_t get_local_mem_size() const { return _local_mem_size; }
   // set interface
   void set_name(const char *name) { std::strncpy(_name, name, 256); }
@@ -155,10 +154,6 @@ public:
     }
   }
 
-  void set_max_stream_buffer_size(size_t max_buffer_size) {
-    _max_stream_buffer_size = max_buffer_size;
-  }
-
 private:
   char _name[256];
   sycl::id<3> _max_work_item_sizes;
@@ -176,7 +171,6 @@ private:
   size_t _local_mem_size;
   size_t _max_nd_range_size[3];
   int _max_nd_range_size_i[3];
-  size_t _max_stream_buffer_size;
 };
 
 /// dpct device extension
@@ -224,6 +218,20 @@ public:
   int get_max_clock_frequency() const {
     return get_device_info().get_max_clock_frequency();
   }
+
+  size_t get_local_mem_size() const { return get_device_info().get_local_mem_size(); }
+
+int get_work_item_max_dim_x_size() const {
+  return get_device_info().get_max_work_item_sizes()[0];
+}
+
+int get_work_item_max_dim_y_size() {
+  return get_device_info().get_max_work_item_sizes()[1];
+}
+
+int get_work_item_max_dim_z_size() {
+  return get_device_info().get_max_work_item_sizes()[2];
+}
 
   int get_integrated() const { return get_device_info().get_integrated(); }
 
@@ -282,8 +290,6 @@ public:
         get_info<sycl::info::device::max_work_group_size>());
     int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
     prop.set_max_nd_range_size(max_nd_range_size);
-
-    prop.set_max_stream_buffer_size(0x7FFFFFFF);
 
     out = prop;
   }

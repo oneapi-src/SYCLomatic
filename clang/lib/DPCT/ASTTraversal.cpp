@@ -4093,7 +4093,7 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                   "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
                   "cudaDeviceAttr", "libraryPropertyType_t", "cudaDataType_t",
                   "cublasComputeType_t", "CUmem_advise_enum", "cufftType_t",
-                  "cufftType", "cudaMemoryType", "CUctx_flags_enum"))),
+                  "cufftType", "cudaMemoryType"))),
               matchesName("CUDNN_.*")))))
           .bind("EnumConstant"),
       this);
@@ -15100,9 +15100,7 @@ void DriverContextAPIRule::runRule(
       auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
       if (Search != EnumConstantRule::EnumNamesMap.end()) {
         printDerefOp(OS, CE->getArg(0));
-        OS << " = " << MapNames::getDpctNamespace() +
-            "get_current_device().get_device_info()."
-              + Search->second->NewName + "()";
+        OS << " = " << Search->second->NewName;
       } else {
         auto Msg = MapNames::RemovedAPIWarningMessage.find(APIName);
         if (IsAssigned) {

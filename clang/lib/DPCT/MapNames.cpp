@@ -687,8 +687,7 @@ void MapNames::setExplicitNamespaceMap() {
 
       // enum CUlimit
       {"CU_LIMIT_PRINTF_FIFO_SIZE",
-       std::make_shared<EnumNameRule>("get_max_stream_buffer_size",
-            HelperFeatureEnum::Device_device_info_get_max_stream_buffer_size)},
+       std::make_shared<EnumNameRule>("INT_MAX")},
 
       // enum CUarray_format
       {"CU_AD_FORMAT_UNSIGNED_INT8",

@@ -262,14 +262,6 @@ public:
 // DPCT_CODE
   size_t get_global_mem_size() const { return _global_mem_size; }
 // DPCT_LABEL_END
-// DPCT_LABEL_BEGIN|device_info_get_max_stream_buffer_size|dpct
-// DPCT_PARENT_FEATURE|device_info
-// DPCT_DEPENDENCY_BEGIN
-// Device|device_info
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-  size_t get_max_stream_buffer_size() const { return _max_stream_buffer_size; }
-// DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_get_local_mem_size|dpct
 // DPCT_PARENT_FEATURE|device_info
 // DPCT_DEPENDENCY_BEGIN
@@ -416,17 +408,6 @@ public:
   }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|device_info_set_max_stream_buffer_size|dpct
-// DPCT_PARENT_FEATURE|device_info
-// DPCT_DEPENDENCY_BEGIN
-// Device|device_info
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-  void set_max_stream_buffer_size(size_t max_buffer_size) {
-    _max_stream_buffer_size = max_buffer_size;
-  }
-// DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|device_info_1|dpct
 // DPCT_PARENT_FEATURE|device_info
 // DPCT_DEPENDENCY_BEGIN
@@ -450,7 +431,6 @@ private:
   size_t _local_mem_size;
   size_t _max_nd_range_size[3];
   int _max_nd_range_size_i[3];
-  size_t _max_stream_buffer_size;
 };
 // DPCT_LABEL_END
 
@@ -548,6 +528,48 @@ public:
   }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_get_local_mem_size|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  size_t get_local_mem_size() const { return get_device_info().get_local_mem_size(); }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_get_work_item_max_dim_x_size|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+int get_work_item_max_dim_x_size() const {
+  return get_device_info().get_max_work_item_sizes()[0];
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_get_work_item_max_dim_y_size|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+int get_work_item_max_dim_y_size() {
+  return get_device_info().get_max_work_item_sizes()[1];
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_get_work_item_max_dim_z_size|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+int get_work_item_max_dim_z_size() {
+  return get_device_info().get_max_work_item_sizes()[2];
+}
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|device_ext_get_integrated|dpct
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
@@ -635,8 +657,6 @@ public:
         get_info<sycl::info::device::max_work_group_size>());
     int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
     prop.set_max_nd_range_size(max_nd_range_size);
-
-    prop.set_max_stream_buffer_size(0x7FFFFFFF);
 
     out = prop;
   }
