@@ -1,6 +1,7 @@
-// RUN: set +o pipefail
-// RUN: dpct --format-range=none --out-root=%T/cuda_arch_lang --stop-on-parse-err %s -- -x c++ 2>&1 | grep "no CUDA code detected"
-// RUN: set -o pipefail
+// RUN: mkdir -p %T/cuda_arch_lang
+// RUN: not dpct --format-range=none --out-root=%T/cuda_arch_lang --stop-on-parse-err %s -- -x c++ > %T/cuda_arch_lang/output 2>&1
+// RUN: cat %T/cuda_arch_lang/output
+// RUN: python -c "assert 'no CUDA code detected' in input()" < %T/cuda_arch_lang/output
 // RUN: dpct --format-range=none --out-root=%T/cuda_arch_lang --stop-on-parse-err %s -- -x cuda
 // RUN: FileCheck --input-file=%T/cuda_arch_lang/cuda_arch_lang.cpp.dp.cpp %s 
 
