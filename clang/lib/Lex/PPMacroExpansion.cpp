@@ -1877,7 +1877,7 @@ void Preprocessor::ExpandBuiltinMacro(Token &Tok) {
         });
 #ifdef SYCLomatic_CUSTOMIZATION
   // Treat __CUDA_ARCH__ as 600 in code
-  } else if (II->getName() == "__CUDA_ARCH__") {
+  } else if (LangOpts.CUDA && II->getName() == "__CUDA_ARCH__") {
     if(GetRunRound() == 0)
       OS << 600;
     else

@@ -1840,7 +1840,7 @@ bool Lexer::LexIdentifierContinue(Token &Result, const char *CurPtr) {
 
 #ifdef SYCLomatic_CUSTOMIZATION
   // if __CUDA_ARCH__ in analysis-scope-path, perfrom HandleIdentifier anyway
-  if (!II->isHandleIdentifierCase() && II->getName() == "__CUDA_ARCH__" &&
+  if (!II->isHandleIdentifierCase() && LangOpts.CUDA && II->getName() == "__CUDA_ARCH__" &&
       IsInAnalysisScopeFunc(Result.getLocation())) {
     return PP->HandleIdentifier(Result);
   }

@@ -151,7 +151,8 @@ static bool EvaluateDefined(PPValue &Result, Token &PeekTok, DefinedTracker &DT,
 #ifdef SYCLomatic_CUSTOMIZATION
   // If macro name is '__CUDA_ARCH__' and is inside analysis-scope-path folder,
   // handle is as defined.
-  if (!Result.Val && II->getName() == "__CUDA_ARCH__" &&
+  if (!Result.Val && PP.getLangOpts().CUDA &&
+      II->getName() == "__CUDA_ARCH__" &&
       IsInAnalysisScopeFunc(PeekTok.getLocation()) && GetRunRound() == 0) {
     Result.Val = true;
   }
