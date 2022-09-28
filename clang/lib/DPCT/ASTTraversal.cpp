@@ -13527,7 +13527,7 @@ void TextureRule::registerMatcher(MatchFinder &MF) {
   auto DeclMatcher = varDecl(hasType(classTemplateSpecializationDecl(
       hasName("texture"))));
 
-  auto DeclMatcherUTF = varDecl(hasType(classTemplateSpecializationDecl()));
+  auto DeclMatcherUTF = varDecl(hasType(classTemplateDecl(hasName("texture"))));
   MF.addMatcher(DeclMatcherUTF.bind("texDeclForUnspecializedTemplateFunc"),
                 this);
 
