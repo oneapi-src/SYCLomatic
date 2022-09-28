@@ -11520,7 +11520,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
       std::ostringstream OS;
       if (IsAssigned)
         OS << "(";
-      OS << MapNames::getDpctNamespace() + "get_sycl_mem_info";
+      OS << MapNames::getDpctNamespace() + "get_current_device().get_memory_info";
       OS << "(";
       printDerefOp(OS, C->getArg(0));
       OS << ", ";
@@ -11533,7 +11533,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
         report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       }
       emplaceTransformation(new ReplaceStmt(C, OS.str()));
-      requestFeature(HelperFeatureEnum::Util_get_sycl_mem_info, C);
+      requestFeature(HelperFeatureEnum::Device_device_ext_get_memory_info, C);
     } else {
       auto &SM = DpctGlobalInfo::getSourceManager();
       std::ostringstream OS;

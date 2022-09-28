@@ -547,6 +547,35 @@ public:
   int get_integrated() const { return get_device_info().get_integrated(); }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_get_memory_info|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_device_info_return_info
+// Device|device_info_get_global_mem_size
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Get the number of bytes of free and total memory on the SYCL device.
+  /// \param [out] free_memory The number of bytes of free memory on the SYCL device.
+  /// \param [out] total_memory The number of bytes of total memory on the SYCL device.
+  void get_memory_info(size_t &free_memory, size_t &total_memory) {
+#if (defined(__SYCL_COMPILER_VERSION) && __SYCL_COMPILER_VERSION >= 20220927)
+    if (!has(sycl::aspect::ext_intel_free_memory)) {
+      throw std::runtime_error("ext_intel_free_memory is not supported");
+    }
+    free_memory = get_info<sycl::ext::intel::info::device::free_memory>();
+#else
+    free_memory = 0;
+#if defined(_MSC_VER) && !defined(__clang__)
+#pragma message("Querying the number of bytes of free memory is not supported")
+#else
+#warning "Querying the number of bytes of free memory is not supported"
+#endif
+#endif
+    total_memory = get_device_info().get_global_mem_size();
+  }
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|device_ext_get_device_info_return_void|dpct
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN

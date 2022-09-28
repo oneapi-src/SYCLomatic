@@ -380,13 +380,13 @@ void foobar() {
 
   size_t free_mem, total_mem;
 
-  //CHECK: dpct::get_sycl_mem_info(free_mem, total_mem);
+  //CHECK: dpct::get_current_device().get_memory_info(free_mem, total_mem);
   cudaMemGetInfo(&free_mem, &total_mem);
-  //CHECK: MY_ERROR_CHECKER((dpct::get_sycl_mem_info(free_mem, total_mem), 0));
+  //CHECK: MY_ERROR_CHECKER((dpct::get_current_device().get_memory_info(free_mem, total_mem), 0));
   MY_ERROR_CHECKER(cudaMemGetInfo(&free_mem, &total_mem));
-  //CHECK: dpct::get_sycl_mem_info(free_mem, total_mem);
+  //CHECK: dpct::get_current_device().get_memory_info(free_mem, total_mem);
   cuMemGetInfo(&free_mem, &total_mem);
-  //CHECK: MY_ERROR_CHECKER((dpct::get_sycl_mem_info(free_mem, total_mem), 0));
+  //CHECK: MY_ERROR_CHECKER((dpct::get_current_device().get_memory_info(free_mem, total_mem), 0));
   MY_ERROR_CHECKER(cuMemGetInfo(&free_mem, &total_mem));
 }
 
