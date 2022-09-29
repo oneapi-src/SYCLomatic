@@ -3031,6 +3031,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         std::string Replacement =
             MapNames::findReplacedName(MapNames::TypeNamesMap, TyName);
         requestHelperFeatureForTypeNames(TyName, BeginLoc);
+        insertHeaderForTypeRule(TyName, TL->getBeginLoc());
 
         if (!Replacement.empty()) {
           emplaceTransformation(new ReplaceToken(BeginLoc, TSL.getEndLoc(),
