@@ -2475,9 +2475,9 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               )))))
           .bind("cudaTypeDef"),
       this);
-  MF.addMatcher(varDecl(hasTypeLoc(typeLoc(loc(templateSpecializationType(
+  MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
                             hasAnyTemplateArgument(refersToType(hasDeclaration(
-                                namedDecl(hasName("use_default"))))))))))
+                                namedDecl(hasName("use_default"))))))))
                     .bind("useDefaultVarDeclInTemplateArg"),
                 this);
 }
@@ -2884,6 +2884,7 @@ bool TypeInDeclRule::isCapturedByLambda(const TypeLoc *TL) {
 void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
   SourceManager *SM = Result.SourceManager;
   auto LOpts = Result.Context->getLangOpts();
+
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
 
     // if TL is the T in
@@ -3187,11 +3188,10 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           getNodeAsType<VarDecl>(Result, "useDefaultVarDeclInTemplateArg")) {
     auto TL = VD->getTypeSourceInfo()->getTypeLoc();
 
-    auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>();
+    auto TSTL = TL.getAsAdjusted<TemplateSpecializationTypeLoc>();
     if (!TSTL)
       return;
-    auto TST = dyn_cast<TemplateSpecializationType>(
-        VD->getType().getUnqualifiedType());
+    auto TST = TSTL.getType()->getAsAdjusted<TemplateSpecializationType>();
     if (!TST)
       return;
 
