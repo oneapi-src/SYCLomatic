@@ -19,11 +19,23 @@
 // CHECK: #include <dpct/dpct.hpp>
 // CHECK: #include <iostream>
 // CHECK: #include <math.h>
+// CHECK: #include <CL/cl.h>
+// CHECK: #include <CL/cl_egl.h>
+// CHECK: #include <CL/cl_ext.h>
+// CHECK: #include <CL/cl_gl_ext.h>
+// CHECK: #include <CL/cl_platform.h>
 // CHECK: #include <CL/opencl.h>
 
 #include <iostream>
 #include <math.h>
+#include <CL/cl.h>
+#include <CL/cl_egl.h>
+#include <CL/cl_ext.h>
+#include <CL/cl_gl_ext.h>
+#include <CL/cl_platform.h>
 #include <CL/opencl.h>
+//#include <CL/cl.hpp>          do not test, needs GL/gl.h
+//#include <CL/cl_gl.h>         do not test, needs GL/gl.h
 
 __global__
 void recip( double *x, double *y)

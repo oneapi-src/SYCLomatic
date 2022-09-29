@@ -1089,10 +1089,11 @@ void IncludesCallbacks::InclusionDirective(
     }
   }
 
-  // Always keep include of CL/opencl.h
+  // Always keep include of CL/*.  Do not delete even if
+  // they are found in a CUDA include directory.
   // Only CUDA code is migrated, not OpenCL.
-  // Thus CL/opencl.h header must be kept
-  if (FileName == "CL/opencl.h")
+  // Thus CL/* headers must be kept
+  if (FileName.startswith("CL/"))
     return;
   
   // Replace the complete include directive with an empty string.
