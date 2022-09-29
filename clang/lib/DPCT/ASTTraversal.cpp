@@ -5623,6 +5623,14 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
 }
 
 void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
+  auto getArgWithTypeCast = [&](const Expr* E, const std::string& CastType) {
+    if (auto Cast = dyn_cast<CStyleCastExpr>(E->IgnoreImpCasts())) {
+      return "(" + CastType + ")" + ExprAnalysis::ref(Cast->getSubExpr());
+    } else {
+      return "(" + CastType + ")" + ExprAnalysis::ref(E);
+    }
+  };
+
   bool IsAssigned = false;
   bool IsInitializeVarDecl = false;
   bool HasDeviceAttr = false;
@@ -5811,18 +5819,18 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     } else {
       if (FuncName == "cublasCdgmm") {
         CallExprArguReplVec[4] =
-            "(std::complex<float>*)" + CallExprArguReplVec[4];
+            getArgWithTypeCast(CE->getArg(4), "std::complex<float>*");
         CallExprArguReplVec[6] =
-            "(std::complex<float>*)" + CallExprArguReplVec[6];
+            getArgWithTypeCast(CE->getArg(6), "std::complex<float>*");
         CallExprArguReplVec[8] =
-            "(std::complex<float>*)" + CallExprArguReplVec[8];
+            getArgWithTypeCast(CE->getArg(8), "std::complex<float>*");
       } else if (FuncName == "cublasZdgmm") {
         CallExprArguReplVec[4] =
-            "(std::complex<double>*)" + CallExprArguReplVec[4];
+            getArgWithTypeCast(CE->getArg(4), "std::complex<double>*");
         CallExprArguReplVec[6] =
-            "(std::complex<double>*)" + CallExprArguReplVec[6];
+            getArgWithTypeCast(CE->getArg(6), "std::complex<double>*");
         CallExprArguReplVec[8] =
-            "(std::complex<double>*)" + CallExprArguReplVec[8];
+            getArgWithTypeCast(CE->getArg(8), "std::complex<double>*");
       }
     }
 
@@ -6166,8 +6174,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                          "std::complex<float>" ||
                      ReplInfo.BufferTypeInfo[IndexTemp] ==
                          "std::complex<double>") {
-            CurrentArgumentRepl = "(" + ReplInfo.BufferTypeInfo[IndexTemp] +
-                                  "*)" + ExprAnalysis::ref(CE->getArg(i));
+            CurrentArgumentRepl = getArgWithTypeCast(
+                CE->getArg(i), ReplInfo.BufferTypeInfo[IndexTemp] + "*");
           } else {
             CurrentArgumentRepl = ExprAnalysis::ref(CE->getArg(i));
           }
@@ -6311,9 +6319,10 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                          "std::complex<float>" ||
                      ReplInfo.BufferTypeInfo[IndexTemp] ==
                          "std::complex<double>") {
-            CallExprReplStr = CallExprReplStr + ", (" +
-                              ReplInfo.BufferTypeInfo[IndexTemp] + "*)" +
-                              ParamsStrsVec[i];
+            CallExprReplStr =
+                CallExprReplStr + ", " +
+                getArgWithTypeCast(CE->getArg(i),
+                                   ReplInfo.BufferTypeInfo[IndexTemp] + "*");
           } else {
             CallExprReplStr = CallExprReplStr + ", " + ParamsStrsVec[i];
           }

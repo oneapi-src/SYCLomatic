@@ -220,8 +220,8 @@ int main() {
   cublasStrmm('L', 'L', 'N', 'N', n, n, alpha_S, A_S, n, C_S, n);
   //CHECK:oneapi::mkl::blas::column_major::trmm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, n, n, alpha_D, A_D, n, C_D, n).wait();
   cublasDtrmm('L', 'L', 'N', 'N', n, n, alpha_D, A_D, n, C_D, n);
-  //CHECK:oneapi::mkl::blas::column_major::trmm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, n, n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)A_C, n,  (std::complex<float>*)C_C, n).wait();
-  cublasCtrmm('L', 'L', 'N', 'N', n, n, alpha_C, A_C, n, C_C, n);
+  //CHECK:oneapi::mkl::blas::column_major::trmm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, n, n, std::complex<float>(alpha_C.x(),alpha_C.y()), (std::complex<float>*)A_S, n,  (std::complex<float>*)C_C, n).wait();
+  cublasCtrmm('L', 'L', 'N', 'N', n, n, alpha_C, (float2*)A_S, n, C_C, n);
   //CHECK:oneapi::mkl::blas::column_major::trmm(*dpct::get_current_device().get_saved_queue(), oneapi::mkl::side::left, oneapi::mkl::uplo::lower, oneapi::mkl::transpose::nontrans, oneapi::mkl::diag::nonunit, n, n, std::complex<double>(alpha_Z.x(),alpha_Z.y()), (std::complex<double>*)A_Z, n,  (std::complex<double>*)C_Z, n).wait();
   cublasZtrmm('L', 'L', 'N', 'N', n, n, alpha_Z, A_Z, n, C_Z, n);
 }
