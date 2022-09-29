@@ -1,5 +1,4 @@
-//===--------------- MigrationAction.cpp
-//-------------------------------------===//
+//===--------------- MigrationAction.cpp ----------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -158,19 +157,8 @@ void DpctToolAction::runPass(PassKind Pass) {
 void DpctToolAction::runPasses() {
   for (auto Pass : Passes) {
     runPass(Pass);
-
-    // CHECKPOINT_ReplacementPostProcess_ENTRY(RetJmp);
-    // if (RetJmp == 0) {
-    //   try {
-    //   } catch (std::exception &e) {
-    //     std::string FaultMsg = "Error: dpct internal error. dpct tries to "
-    //                            "recover and write the migration result.\n";
-    //     llvm::errs() << FaultMsg;
-    //   }
-    // }
-    // CHECKPOINT_ReplacementPostProcess_EXIT();
-    // RetJmp = 0;
   }
+
   int RetJmp = 0;
   CHECKPOINT_ReplacementPostProcess_ENTRY(RetJmp);
   if (RetJmp == 0) {

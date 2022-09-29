@@ -35,7 +35,7 @@ class MigrationRuleManager {
   ast_matchers::MatchFinder Matchers;
   TransformSetTy &Transformers;
 
-  static RuleFactoryMapType& getFactoryMap(PassKind Kind) {
+  static RuleFactoryMapType &getFactoryMap(PassKind Kind) {
     static RuleFactoryMapType Map[static_cast<unsigned>(PassKind::PK_End)];
     return Map[static_cast<unsigned>(Kind)];
   }

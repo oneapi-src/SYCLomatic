@@ -57,7 +57,7 @@ enum {
 
 class AstCPStageMaintainer {
 public:
-  ~AstCPStageMaintainer() { CheckPointStage = CHECKPOINT_UNKNOWN; }
+  ~AstCPStageMaintainer() { CheckPointStage = CHECKPOINT_PROCESSING_FILE; }
 };
 
 #define CHECKPOINT_ASTMATCHER_RUN_ENTRY()                                      \
