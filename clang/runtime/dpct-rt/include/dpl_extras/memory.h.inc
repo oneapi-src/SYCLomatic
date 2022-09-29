@@ -66,6 +66,7 @@ using __buffer_allocator =
 // DPCT_LABEL_BEGIN|device_pointer_forward_decl|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasMemory|device_iterator_forward_decl_device_pointer
+// DplExtrasMemory|__buffer_allocator
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE
@@ -533,6 +534,7 @@ public:
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasMemory|is_hetero_iterator
 // DplExtrasMemory|device_iterator_forward_decl_device_pointer
+// DplExtrasMemory|__buffer_allocator
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE

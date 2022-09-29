@@ -85,6 +85,7 @@ struct is_iterator<T *> : std::true_type {};
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasMemory|device_iterator
 // DplExtrasMemory|device_reference
+// DplExtrasMemory|__buffer_allocator
 // DplExtrasVector|is_iterator
 // Device|get_default_queue
 // Device|get_default_context
