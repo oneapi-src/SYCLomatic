@@ -46,13 +46,10 @@
 
 // Memory management section:
 // device_pointer, device_reference, swap, device_iterator, malloc_device,
-// device_new, free_device, device_delete, dpl_buffer_allocator
+// device_new, free_device, device_delete
 // DPCT_LABEL_END
 namespace dpct {
 namespace detail {
-// DPCT_LABEL_BEGIN|dpl_buffer_allocator|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
 template <typename _DataT>
 using __buffer_allocator =
 #if __LIBSYCL_VERSION >= 50707
@@ -60,7 +57,7 @@ using __buffer_allocator =
 #else
     sycl::buffer_allocator;
 #endif
-}
+} // namespace detail
 
 // DPCT_LABEL_BEGIN|device_pointer_forward_decl|dpct
 // DPCT_DEPENDENCY_BEGIN
