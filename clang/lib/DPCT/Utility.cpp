@@ -3100,8 +3100,7 @@ bool isDefaultStream(const Expr *StreamArg) {
   Expr::EvalResult Result;
   if (!Arg->isValueDependent() &&
       Arg->EvaluateAsInt(Result, dpct::DpctGlobalInfo::getContext())) {
-    auto Val = Result.Val.getInt().getZExtValue();
-    return Val < 3; // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
+    return Result.Val.getInt() < APSInt::get(3); // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
                     // all migrated to default queue;
   }
   if (dyn_cast<GNUNullExpr>(Arg->IgnoreImplicit()) ||
