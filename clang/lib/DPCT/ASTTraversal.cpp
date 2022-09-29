@@ -3819,7 +3819,7 @@ void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
     Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
     if (Tok.isAnyIdentifier()) {
 
-      if (TL->getTypeLocClass() == clang::TypeLoc::Elaborated) {
+      if (TL->getType()->isElaboratedTypeSpecifier()) {
         // To handle case like "struct cudaExtent extent;"
         auto ETC = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>();
         auto NTL = ETC.getNamedTypeLoc();
@@ -3850,13 +3850,13 @@ void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
       if (auto VD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
         auto TypeStr = VD->getType().getAsString();
         if (VD->getKind() == Decl::Var &&
-            (TypeStr == "dim3" || TypeStr == "struct cudaExtent" ||
-             TypeStr == "struct cudaPos")) {
+            (TypeStr == "dim3" || TypeStr == "cudaExtent" ||
+             TypeStr == "cudaPos")) {
           std::string Replacement;
           std::string ReplacedType = "range";
-          if (TypeStr == "dim3" || TypeStr == "struct cudaExtent") {
+          if (TypeStr == "dim3" || TypeStr == "cudaExtent") {
             ReplacedType = "range";
-          } else if (TypeStr == "struct cudaPos") {
+          } else if (TypeStr == "cudaPos") {
             ReplacedType = "id";
           }
 
