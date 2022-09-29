@@ -128,7 +128,7 @@ int main() {
     
     cudaMalloc(&workspace, workspace_size);
     cudaMalloc(&reservespace, reservespace_size);
-    // CHECK: auto status = (handle.async_batch_normalization_forward_training_ex(dpct::dnnl::batch_normalization_mode::per_activation, dpct::dnnl::batch_normalization_ops::activation, ActivationDesc, eps, factor, alpha, dataTensor, data, beta, outTensor, out, outTensor, z, scalebiasTensor, scale, bias, rmean, rvar, smean, svar, reservespace_size, reservespace), 0);
+    // CHECK: auto status = (handle.async_batch_normalization_forward_training(dpct::dnnl::batch_normalization_mode::per_activation, dpct::dnnl::batch_normalization_ops::activation, ActivationDesc, eps, factor, alpha, dataTensor, data, beta, outTensor, out, outTensor, z, scalebiasTensor, scale, bias, rmean, rvar, smean, svar, reservespace_size, reservespace), 0);
     auto status = cudnnBatchNormalizationForwardTrainingEx(
         handle, 
         CUDNN_BATCHNORM_PER_ACTIVATION, 
@@ -181,7 +181,7 @@ int main() {
 
     cudaMalloc(&bworkspace, bworkspace_size);
 
-// CHECK: handle.async_batch_normalization_backward_ex(dpct::dnnl::batch_normalization_mode::per_activation, dpct::dnnl::batch_normalization_ops::activation, ActivationDesc, eps, alpha, dataTensor, data, outTensor, out, outTensor, diffout, beta, dataTensor, diffdata, outTensor, diffz, alpha, scalebiasTensor, scale, bias, beta, diffscale, diffbias, smean, svar, reservespace_size, reservespace);
+// CHECK: handle.async_batch_normalization_backward(dpct::dnnl::batch_normalization_mode::per_activation, dpct::dnnl::batch_normalization_ops::activation, ActivationDesc, eps, alpha, dataTensor, data, outTensor, out, outTensor, diffout, beta, dataTensor, diffdata, outTensor, diffz, alpha, scalebiasTensor, scale, bias, beta, diffscale, diffbias, smean, svar, reservespace_size, reservespace);
     cudnnBatchNormalizationBackwardEx(
         handle,
         CUDNN_BATCHNORM_PER_ACTIVATION, 

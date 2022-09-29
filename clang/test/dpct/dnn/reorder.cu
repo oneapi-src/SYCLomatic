@@ -21,7 +21,7 @@
 // CHECK: };
 // CHECK: template <>
 // CHECK: /*
-// CHECK: DPCT1007:{{[0-9]+}}: Migration of data type double is not supported.
+// CHECK: DPCT1007:{{[0-9]+}}: Migration of CUDNN_DATA_DOUBLE is not supported.
 // CHECK: */
 // CHECK: struct dt_trait<CUDNN_DATA_DOUBLE> {
 // CHECK:     typedef double type;

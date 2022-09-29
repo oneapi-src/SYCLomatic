@@ -359,7 +359,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_forward_training_ex,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnBatchNormalizationForwardTrainingEx", ARG_WC(0), false,
-        "async_batch_normalization_forward_training_ex", ARG_WC(1), ARG_WC(2),
+        "async_batch_normalization_forward_training", ARG_WC(1), ARG_WC(2),
         ARG_WC(20), ARG_WC(17), ARG_WC(14), DEREF(ARG_WC(3)), ARG_WC(5),
         ARG_WC(6), DEREF(ARG_WC(4)), ARG_WC(9), ARG_WC(10), ARG_WC(7),
         ARG_WC(8), ARG_WC(11), ARG_WC(12), ARG_WC(13), ARG_WC(15), ARG_WC(16),
@@ -378,7 +378,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_backward_ex,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnBatchNormalizationBackwardEx", ARG_WC(0), false,
-        "async_batch_normalization_backward_ex", ARG_WC(1), ARG_WC(2), ARG_WC(25),
+        "async_batch_normalization_backward", ARG_WC(1), ARG_WC(2), ARG_WC(25),
         ARG_WC(22), DEREF(ARG_WC(3)), ARG_WC(7), ARG_WC(8), ARG_WC(9),
         ARG_WC(10), ARG_WC(11), ARG_WC(12), DEREF(ARG_WC(4)), ARG_WC(15),
         ARG_WC(16), ARG_WC(13), ARG_WC(14), DEREF(ARG_WC(5)), ARG_WC(17),
@@ -445,7 +445,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_forward_inference_ex_norm,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnNormalizationForwardInference", ARG_WC(0), false,
-        "async_batch_normalization_forward_inference_ex", ARG_WC(1), ARG_WC(2),
+        "async_batch_normalization_forward_inference", ARG_WC(1), ARG_WC(2),
         ARG_WC(16), ARG_WC(19), DEREF(ARG_WC(4)), ARG_WC(6), ARG_WC(7),
         DEREF(ARG_WC(5)), ARG_WC(17), ARG_WC(18), ARG_WC(14), ARG_WC(15),
         ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(11), ARG_WC(12), ARG_WC(13))))
@@ -454,7 +454,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_forward_training_ex_norm,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnNormalizationForwardTraining", ARG_WC(0), false,
-        "async_batch_normalization_forward_training_ex", ARG_WC(1), ARG_WC(2),
+        "async_batch_normalization_forward_training", ARG_WC(1), ARG_WC(2),
         ARG_WC(18), ARG_WC(15), ARG_WC(11), DEREF(ARG_WC(4)), ARG_WC(6),
         ARG_WC(7), DEREF(ARG_WC(5)), ARG_WC(21), ARG_WC(22), ARG_WC(19),
         ARG_WC(20), ARG_WC(8), ARG_WC(9), ARG_WC(10), ARG_WC(12), ARG_WC(13),
@@ -464,7 +464,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DnnlUtils_batch_normalization_backward_ex_norm,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
         "cudnnNormalizationBackward", ARG_WC(0), false,
-        "async_batch_normalization_backward_ex", ARG_WC(1), ARG_WC(2), ARG_WC(27),
+        "async_batch_normalization_backward", ARG_WC(1), ARG_WC(2), ARG_WC(27),
         ARG_WC(23), DEREF(ARG_WC(4)), ARG_WC(8), ARG_WC(9), ARG_WC(10),
         ARG_WC(11), ARG_WC(12), ARG_WC(13), DEREF(ARG_WC(5)), ARG_WC(16),
         ARG_WC(17), ARG_WC(14), ARG_WC(15), DEREF(ARG_WC(6)), ARG_WC(18),
@@ -580,7 +580,7 @@ FEATURE_REQUEST_FACTORY(
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_forward_ex,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnConvolutionBiasActivationForward", ARG_WC(0),
-                            false, "async_convolution_forward_ex", ARG_WC(6),
+                            false, "async_convolution_forward", ARG_WC(6),
                             ARG_WC(7), ARG_WC(15), DEREF(ARG_WC(1)), ARG_WC(2),
                             ARG_WC(3), ARG_WC(4), ARG_WC(5), DEREF(ARG_WC(10)),
                             ARG_WC(11), ARG_WC(12), ARG_WC(13), ARG_WC(14),

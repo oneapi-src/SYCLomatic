@@ -155,7 +155,7 @@ public:
            memory_format_tag *tag, int *ndims, int dims[]) const;
   /// Getting dims from a ND memory.
   /// \return The dims.
-  std::vector<int64_t> get_dims() const { return _desc.dims(); }
+  const std::vector<int64_t> &get_dims() const { return _desc.dims(); }
   /// Getting strides from a ND memory.
   /// \return The strides.
   std::vector<int64_t> get_strides() const {
@@ -1427,7 +1427,7 @@ public:
   /// \param [in] mean Pointer to mean data.
   /// \param [in] var Pointer to variance data.
   /// \returns An event representing the batch normalization forward operations.
-  sycl::event async_batch_normalization_forward_inference_ex(
+  sycl::event async_batch_normalization_forward_inference(
       batch_normalization_mode mode, batch_normalization_ops ops,
       activation_desc &adesc, float epsilon, float alpha,
       const memory_desc_ext &src_desc, void *src, float beta,
@@ -1515,7 +1515,7 @@ public:
   /// \param [out] workspace Pointer to workspace generated from forward
   /// propagation.
   /// \returns An event representing the batch normalization forward operations.
-  sycl::event async_batch_normalization_forward_training_ex(
+  sycl::event async_batch_normalization_forward_training(
       batch_normalization_mode mode, batch_normalization_ops ops,
       activation_desc &adesc, float epsilon, float factor, float alpha,
       const memory_desc_ext &src_desc, void *src, float beta,
@@ -1566,7 +1566,7 @@ public:
   /// \param [out] workspace Pointer to workspace generated from forward
   /// propagation.
   /// \returns An event representing the batch normalization forward operations.
-  sycl::event async_batch_normalization_forward_training_ex(
+  sycl::event async_batch_normalization_forward_training(
       batch_normalization_mode mode, batch_normalization_ops ops,
       activation_desc &adesc, float epsilon, float factor, float alpha,
       const memory_desc_ext &src_desc, void *src, float beta,
@@ -1664,7 +1664,7 @@ public:
   /// \param [in] workspace_size Size of workspace.
   /// \param [in] workspace Pointer to workspace used for backward propagation.
   /// \returns An event representing the batch normalization backward operations.
-  sycl::event async_batch_normalization_backward_ex(
+  sycl::event async_batch_normalization_backward(
       batch_normalization_mode mode, batch_normalization_ops ops,
       activation_desc &adesc, float epsilon, float alpha_data,
       const memory_desc_ext &src_desc, void *src,
@@ -1723,7 +1723,7 @@ public:
   /// \param [in] workspace_size Size of workspace.
   /// \param [in] workspace Pointer to workspace used for backward propagation.
   /// \returns An event representing the batch normalization backward operations.
-  sycl::event async_batch_normalization_backward_ex(
+  sycl::event async_batch_normalization_backward(
       batch_normalization_mode mode, batch_normalization_ops ops,
       activation_desc &adesc, float epsilon, float alpha_data,
       const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
@@ -1788,7 +1788,7 @@ public:
   /// \param [in] dst_desc Destination memory descriptor.
   /// \param [out] dst Pointer to destination data.
   /// \returns An event representing the convolution forward operations.
-  sycl::event async_convolution_forward_ex(
+  sycl::event async_convolution_forward(
       convolution_desc &desc, ::dnnl::algorithm alg, activation_desc &adesc,
       float alpha_0, const memory_desc_ext &src_desc, void *src,
       const memory_desc_ext &weight_desc, void *weight, float alpha_1,
@@ -2202,7 +2202,7 @@ engine_ext::get_bn_scale_bias_mean_var_desc(const ::dnnl::memory::desc &desc,
 }
 
 /// If the alpha = 0 and beta = 1, then the destination (dst = alpha * out +
-/// beta * prior_dst) have no change. In this case this function return true
+/// beta * prior_dst) have no change. In this case this function returns true
 /// means the operation can exit directly.
 bool engine_ext::scale_parameter_preprocess(
     const std::vector<output_argument_info> &args) {
@@ -3355,7 +3355,7 @@ sycl::event engine_ext::async_batch_normalization_forward_inference(
 // DnnlUtils|batch_normalization_forward_inference_ex_norm_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-sycl::event engine_ext::async_batch_normalization_forward_inference_ex(
+sycl::event engine_ext::async_batch_normalization_forward_inference(
     batch_normalization_mode mode, batch_normalization_ops ops,
     activation_desc &adesc, float epsilon, float alpha,
     const memory_desc_ext &src_desc, void *src, float beta,
@@ -3420,7 +3420,7 @@ sycl::event engine_ext::async_batch_normalization_forward_training(
 // DnnlUtils|batch_normalization_forward_training_ex_2_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-sycl::event engine_ext::async_batch_normalization_forward_training_ex(
+sycl::event engine_ext::async_batch_normalization_forward_training(
     batch_normalization_mode mode, batch_normalization_ops ops,
     activation_desc &adesc, float epsilon, float factor, float alpha,
     const memory_desc_ext &src_desc, void *src, float beta,
@@ -3460,7 +3460,7 @@ sycl::event engine_ext::async_batch_normalization_forward_training_ex(
 // DnnlUtils|batch_normalization_forward_training_ex_1_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-sycl::event engine_ext::async_batch_normalization_forward_training_ex(
+sycl::event engine_ext::async_batch_normalization_forward_training(
     batch_normalization_mode mode, batch_normalization_ops ops,
     activation_desc &adesc, float epsilon, float factor, float alpha,
     const memory_desc_ext &src_desc, void *src, float beta,
@@ -3469,7 +3469,7 @@ sycl::event engine_ext::async_batch_normalization_forward_training_ex(
     const memory_desc_ext &scale_bias_mean_var_desc, void *scale, void *bias,
     void *running_mean, void *running_var, void *saved_mean, void *saved_var,
     size_t workspace_size, void *workspace) {
-  return async_batch_normalization_forward_training_ex(
+  return async_batch_normalization_forward_training(
       mode, ops, adesc, epsilon, factor, alpha, src_desc, src, beta, dst_desc,
       dst, summand_desc, summand, scale_bias_mean_var_desc, scale, bias,
       scale_bias_mean_var_desc, running_mean, running_var, saved_mean,
@@ -3504,7 +3504,7 @@ sycl::event engine_ext::async_batch_normalization_backward(
 // DnnlUtils|batch_normalization_backward_ex_2_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-sycl::event engine_ext::async_batch_normalization_backward_ex(
+sycl::event engine_ext::async_batch_normalization_backward(
     batch_normalization_mode mode, batch_normalization_ops ops,
     activation_desc &adesc, float epsilon, float alpha_data,
     const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
@@ -3565,7 +3565,7 @@ sycl::event engine_ext::async_batch_normalization_backward_ex(
 // DnnlUtils|batch_normalization_backward_ex_1_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-sycl::event engine_ext::async_batch_normalization_backward_ex(
+sycl::event engine_ext::async_batch_normalization_backward(
     batch_normalization_mode mode, batch_normalization_ops ops,
     activation_desc &adesc, float epsilon, float alpha_data,
     const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
@@ -3577,7 +3577,7 @@ sycl::event engine_ext::async_batch_normalization_backward_ex(
     void *diff_bias, void *saved_mean, void *saved_var,
     size_t workspace_size, void *workspace) {
 
-  return async_batch_normalization_backward_ex(
+  return async_batch_normalization_backward(
       mode, ops, adesc, epsilon, alpha_data, src_desc, src, dst_desc, dst,
       diff_dst_desc, diff_dst, beta_data, diff_src_desc, diff_src,
       diff_summand_desc, diff_summand, alpha_param,
@@ -3623,7 +3623,7 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
 // DnnlUtils|convolution_forward_ex_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-sycl::event engine_ext::async_convolution_forward_ex(
+sycl::event engine_ext::async_convolution_forward(
     convolution_desc &desc, ::dnnl::algorithm alg, activation_desc &adesc,
     float alpha_0, const memory_desc_ext &src_desc, void *src,
     const memory_desc_ext &weight_desc, void *weight, float alpha_1,
