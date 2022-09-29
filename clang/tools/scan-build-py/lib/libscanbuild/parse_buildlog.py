@@ -10,6 +10,7 @@
 """ This module is responsible for to parse a build log file to generate compilation
     database entries"""
 
+import sys
 import re
 import os
 import logging
@@ -21,10 +22,17 @@ __all__ = ['parse_build_log']
 def create_compilation_DB_entry(file, command, directory):
     """create one entry of compilation database"""
     abs_dir = os.path.abspath(directory)
-    fullname = file if os.path.isabs(file) else os.path.join(abs_dir, file)
+    file_path = os.path.join(abs_dir, file)
+
+    if(not os.path.exists(file_path)):
+        print('Error: option --work-directory is not set correctly, please specify correct --work-directory.')
+        sys.exit(-1)
+
+    fullname = file if os.path.isabs(file) else file_path
+    logging.debug('file entry in compilation database: %s', fullname)
     return {'file' : fullname, 'command' : command, 'directory' : abs_dir}
 
-def parse_build_log(file):
+def parse_build_log(file, directory):
     """Parse a build log file to generate compilation database entries"""
 
     # Currently it covers ninja compile command pattern and make compile command pattern.
@@ -60,5 +68,5 @@ def parse_build_log(file):
                 for source in compilation.files:
                     command = [compiler, '-c'] + compilation.flags + [source]
                     logging.debug('formated as: %s', command)
-                    entries.append(create_compilation_DB_entry(source, encode(command), file))
+                    entries.append(create_compilation_DB_entry(source, encode(command), directory))
     return entries
