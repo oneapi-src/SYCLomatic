@@ -219,20 +219,6 @@ public:
     return get_device_info().get_max_clock_frequency();
   }
 
-  size_t get_local_mem_size() const { return get_device_info().get_local_mem_size(); }
-
-int get_work_item_max_dim_x_size() const {
-  return get_device_info().get_max_work_item_sizes()[0];
-}
-
-int get_work_item_max_dim_y_size() {
-  return get_device_info().get_max_work_item_sizes()[1];
-}
-
-int get_work_item_max_dim_z_size() {
-  return get_device_info().get_max_work_item_sizes()[2];
-}
-
   int get_integrated() const { return get_device_info().get_integrated(); }
 
   void get_device_info(device_info &out) const {

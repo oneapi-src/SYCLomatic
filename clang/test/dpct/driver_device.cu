@@ -87,7 +87,7 @@ int main(){
   cuCtxSetLimit(CU_LIMIT_PRINTF_FIFO_SIZE, 10);
   size_t printfsize;
 
-  // CHECK: printfsize = dpct::get_current_device().get_device_info().get_max_stream_buffer_size();
+  // CHECK: printfsize = INT_MAX;
   cuCtxGetLimit(&printfsize, CU_LIMIT_PRINTF_FIFO_SIZE);
 
 
