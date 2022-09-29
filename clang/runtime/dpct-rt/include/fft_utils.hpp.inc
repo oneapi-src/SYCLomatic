@@ -110,7 +110,7 @@ public:
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
   /// forward direction(if current FFT is complex-to-complex) and out-of-place
-  /// are set by default.
+  /// (false) are set by default.
   void commit(sycl::queue *exec_queue, int dim, long long *n,
               long long *inembed, long long istride, long long idist,
               library_data_t input_type, long long *onembed, long long ostride,
@@ -149,7 +149,7 @@ public:
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
   /// forward direction(if current FFT is complex-to-complex) and out-of-place
-  /// are set by default.
+  /// (false) are set by default.
   void commit(sycl::queue *exec_queue, int dim, int *n, int *inembed,
               int istride, int idist, library_data_t input_type, int *onembed,
               int ostride, int odist, library_data_t output_type, int batch,
@@ -185,7 +185,7 @@ public:
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
   /// forward direction(if current FFT is complex-to-complex) and out-of-place
-  /// are set by default.
+  /// (false) are set by default.
   void commit(sycl::queue *exec_queue, int dim, long long *n,
               long long *inembed, long long istride, long long idist,
               long long *onembed, long long ostride, long long odist,
@@ -218,7 +218,7 @@ public:
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
   /// forward direction(if current FFT is complex-to-complex) and out-of-place
-  /// are set by default.
+  /// (false) are set by default.
   void commit(sycl::queue *exec_queue, int dim, int *n, int *inembed,
               int istride, int idist, int *onembed, int ostride, int odist,
               fft_type type, int batch, size_t *scratchpad_size,
@@ -241,7 +241,7 @@ public:
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
   /// forward direction(if current FFT is complex-to-complex) and out-of-place
-  /// are set by default.
+  /// (false) are set by default.
   void commit(sycl::queue *exec_queue, int n1, fft_type type, int batch,
               size_t *scratchpad_size,
               std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
@@ -276,7 +276,7 @@ public:
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
   /// forward direction(if current FFT is complex-to-complex) and out-of-place
-  /// are set by default.
+  /// (false) are set by default.
   void commit(sycl::queue *exec_queue, int n2, int n1, fft_type type,
               size_t *scratchpad_size,
               std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
@@ -312,7 +312,7 @@ public:
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
   /// forward direction(if current FFT is complex-to-complex) and out-of-place
-  /// are set by default.
+  /// (false) are set by default.
   void commit(sycl::queue *exec_queue, int n3, int n2, int n1, fft_type type,
               size_t *scratchpad_size,
               std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
@@ -346,7 +346,7 @@ public:
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
   /// forward direction(if current FFT is complex-to-complex) and out-of-place
-  /// are set by default.
+  /// (false) are set by default.
   static fft_engine *
   create(sycl::queue *exec_queue, int n1, fft_type type, int batch,
          std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
@@ -365,7 +365,7 @@ public:
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
   /// forward direction(if current FFT is complex-to-complex) and out-of-place
-  /// are set by default.
+  /// (false) are set by default.
   static fft_engine *
   create(sycl::queue *exec_queue, int n2, int n1, fft_type type,
          std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
@@ -384,7 +384,7 @@ public:
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
   /// forward direction(if current FFT is complex-to-complex) and out-of-place
-  /// are set by default.
+  /// (false) are set by default.
   static fft_engine *
   create(sycl::queue *exec_queue, int n3, int n2, int n1, fft_type type,
          std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
@@ -412,7 +412,7 @@ public:
   /// and placement info. If this value is specified, the direction parameter
   /// will be ignored in the fft_engine::compute function. If it is not set,
   /// forward direction(if current FFT is complex-to-complex) and out-of-place
-  /// are set by default.
+  /// (false) are set by default.
   static fft_engine *
   create(sycl::queue *exec_queue, int dim, int *n, int *inembed, int istride,
          int idist, int *onembed, int ostride, int odist, fft_type type,
@@ -453,7 +453,7 @@ public:
   /// result.
   /// \param [in] direction_and_placement Explicitly specify the FFT
   /// direction and placement info. If it is not set, forward direction(if
-  /// current FFT is complex-to-complex) and out-of-place are set by default.
+  /// current FFT is complex-to-complex) and out-of-place (false) are set by default.
   static void
   estimate_size(int dim, long long *n, long long *inembed, long long istride,
                 long long idist, long long *onembed, long long ostride,
@@ -488,7 +488,7 @@ public:
   /// result.
   /// \param [in] direction_and_placement Explicitly specify the FFT
   /// direction and placement info. If it is not set, forward direction(if
-  /// current FFT is complex-to-complex) and out-of-place are set by default.
+  /// current FFT is complex-to-complex) and out-of-place (false) are set by default.
   static void
   estimate_size(int dim, int *n, int *inembed, int istride, int idist,
                 int *onembed, int ostride, int odist, fft_type type, int batch,
@@ -513,7 +513,7 @@ public:
   /// result.
   /// \param [in] direction_and_placement Explicitly specify the FFT direction
   /// and placement info. If it is not set, forward direction(if current FFT is
-  /// complex-to-complex) and out-of-place are set by default.
+  /// complex-to-complex) and out-of-place (false) are set by default.
   static void
   estimate_size(int n1, fft_type type, int batch,
                 size_t *estimated_scratchpad_size,
@@ -535,7 +535,7 @@ public:
   /// result.
   /// \param [in] direction_and_placement Explicitly specify the FFT
   /// direction and placement info. If it is not set, forward direction(if
-  /// current FFT is complex-to-complex) and out-of-place are set by default.
+  /// current FFT is complex-to-complex) and out-of-place (false) are set by default.
   static void
   estimate_size(int n2, int n1, fft_type type,
                 size_t *estimated_scratchpad_size,
@@ -558,7 +558,7 @@ public:
   /// result.
   /// \param [in] direction_and_placement Explicitly specify the FFT
   /// direction and placement info. If it is not set, forward direction(if
-  /// current FFT is complex-to-complex) and out-of-place are set by default.
+  /// current FFT is complex-to-complex) and out-of-place (false) are set by default.
   static void
   estimate_size(int n3, int n2, int n1, fft_type type,
                 size_t *estimated_scratchpad_size,
