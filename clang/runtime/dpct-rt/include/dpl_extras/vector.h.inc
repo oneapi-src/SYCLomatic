@@ -410,10 +410,10 @@ public:
 
 #else
 
-template <typename T, typename Allocator = __dpl_sycl::__buffer_allocator<T>>
+template <typename T, typename Allocator = detail::__buffer_allocator<T>>
 class device_vector {
   static_assert(
-      std::is_same<Allocator, __dpl_sycl::__buffer_allocator<T>>::value,
+      std::is_same<Allocator, detail::__buffer_allocator<T>>::value,
       "device_vector doesn't support custom allocator when USM is not used.");
 
 public:

@@ -43,13 +43,24 @@
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 #include <sycl/sycl.hpp>
-#include <oneapi/dpl/pstl/hetero/dpcpp/sycl_defs.h>
 
 // Memory management section:
 // device_pointer, device_reference, swap, device_iterator, malloc_device,
-// device_new, free_device, device_delete
+// device_new, free_device, device_delete, dpl_buffer_allocator
 // DPCT_LABEL_END
 namespace dpct {
+namespace detail {
+// DPCT_LABEL_BEGIN|dpl_buffer_allocator|dpct::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+template <typename _DataT>
+using __buffer_allocator =
+#if __LIBSYCL_VERSION >= 50707
+    sycl::buffer_allocator<_DataT>;
+#else
+    sycl::buffer_allocator;
+#endif
+}
 
 // DPCT_LABEL_BEGIN|device_pointer_forward_decl|dpct
 // DPCT_DEPENDENCY_BEGIN
@@ -58,7 +69,7 @@ namespace dpct {
 // DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,
-          typename Allocator = __dpl_sycl::__buffer_allocator<T>>
+          typename Allocator = detail::__buffer_allocator<T>>
 class device_pointer;
 #else
 template <typename T> class device_pointer;
@@ -525,7 +536,7 @@ public:
 // DPCT_CODE
 #ifdef DPCT_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,
-          typename Allocator = __dpl_sycl::__buffer_allocator<T>>
+          typename Allocator = detail::__buffer_allocator<T>>
 class device_iterator : public device_pointer<T, Mode, Allocator> {
   using Base = device_pointer<T, Mode, Allocator>;
 
