@@ -27,7 +27,7 @@
 // CHECK:d_selected_num = sycl::malloc_device<int>(1, q_ct1);
 // CHECK:q_ct1.memcpy((void *)d_in, (void *)h_in, sizeof(h_in)).wait();
 // CHECK:DPCT1026{{.*}}
-// CHECK:q_ct1.fill(d_selected_num, oneapi::dpl::unique_copy(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_in + N, d_out) - d_out, 1).wait();
+// CHECK:q_ct1.fill(d_selected_num, std::distance(d_out, oneapi::dpl::unique_copy(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_in + N, d_out)), 1).wait();
 // CHECK:q_ct1.memcpy((void *)&h_selected_num, (void *)d_selected_num, sizeof(int)){{.*}};
 // CHECK:q_ct1.memcpy((void *)h_out, (void *)d_out, h_selected_num * sizeof(int)).wait();
 // CHECK:}
@@ -73,7 +73,7 @@ void test_1() {
 // CHECK:q_ct1.memcpy((void *)d_in, (void *)h_in, sizeof(h_in)).wait();
 // CHECK:DPCT1027:{{.*}}
 // CHECK:0, 0;
-// CHECK:q_ct1.fill(d_selected_num, oneapi::dpl::unique_copy(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_in + N, d_out) - d_out, 1).wait();
+// CHECK:q_ct1.fill(d_selected_num, std::distance(d_out, oneapi::dpl::unique_copy(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_in + N, d_out)), 1).wait();
 // CHECK:q_ct1.memcpy((void *)&h_selected_num, (void *)d_selected_num, sizeof(int)){{.*}};
 // CHECK:q_ct1.memcpy((void *)h_out, (void *)d_out, h_selected_num * sizeof(int)).wait();
 // }
