@@ -9780,7 +9780,7 @@ void DeviceFunctionDeclRule::runRule(
       if (!CE)
         return;
 
-      if (CE->getType().getAsString() !=
+      if (CE->getType().getCanonicalType().getAsString() !=
           "class cooperative_groups::__v1::grid_group")
         return;
 
