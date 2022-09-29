@@ -40,7 +40,6 @@
 // DplExtrasMemory|non_local_include_dependency
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-#include <oneapi/dpl/pstl/hetero/dpcpp/sycl_defs.h>
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 
