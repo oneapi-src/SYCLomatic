@@ -396,7 +396,7 @@ class RemoveCubTempStorageFactory : public CallExprRewriterFactoryBase {
 public:
   RemoveCubTempStorageFactory(std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
     : Inner(InnerFactory) {}
-  
+
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override;
 };
 
