@@ -22,10 +22,10 @@ CONDITIONAL_FACTORY_ENTRY(
                                       QUEUESTR),
                                  ARG(2),
                                  BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
-                                 CALL(STATIC_MEMBER_EXPR(
+                                 ZERO_INITIALIZER(TYPENAME(STATIC_MEMBER_EXPR(
                                      TEMPLATED_NAME("std::iterator_traits",
                                                     CALL("decltype", ARG(3))),
-                                     LITERAL("value_type")))),
+                                     LITERAL("value_type"))))),
                             LITERAL("1")),
                 false, "wait")))))
 
