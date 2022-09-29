@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1022:{{[0-9]+}}: There is no exact match between the maxGridSize and the max_nd_range size. Verify the correctness of the code.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  int maxGridSizeX = deviceProp.get_max_nd_range_size()[0];
+  // CHECK-NEXT:  int maxGridSizeX = deviceProp.get_max_nd_range_size<int *>()[0];
   int maxGridSizeX = deviceProp.maxGridSize[0];
 
   // CHECK:  /*
@@ -156,7 +156,7 @@ void test2() {
 void test3() {
   //CHECK:dpct::device_info deviceProp;
   cudaDeviceProp deviceProp;
-  //CHECK:int a1 = deviceProp.get_max_work_item_sizes()[2];
+  //CHECK:int a1 = deviceProp.get_max_work_item_sizes<int *>()[2];
   int a1 = deviceProp.maxThreadsDim[2];
   //CHECK:int *a1_ptr = deviceProp.get_max_work_item_sizes<int *>();
   int *a1_ptr = deviceProp.maxThreadsDim;
@@ -236,9 +236,9 @@ __device__ void test5() {
     // CHECK:/*
     // CHECK-NEXT:DPCT1022:{{[0-9]+}}: There is no exact match between the maxGridSize and the max_nd_range size. Verify the correctness of the code.
     // CHECK-NEXT:*/
-    // CHECK-NEXT: a = sycl::min(pDeviceProp->get_max_nd_range_size()[0], 1000);
+    // CHECK-NEXT: a = sycl::min(pDeviceProp->get_max_nd_range_size<int *>()[0], 1000);
     a = std::min(pDeviceProp->maxGridSize[0], 1000);
-    //CHECK:a = sycl::min(pDeviceProp->get_max_work_item_sizes()[0], 1000);
+    //CHECK:a = sycl::min(pDeviceProp->get_max_work_item_sizes<int *>()[0], 1000);
     a = std::min(pDeviceProp->maxThreadsDim[0], 1000);
     //CHECK:a = sycl::min(pDeviceProp->get_name()[0], 'A');
     a = std::min(pDeviceProp->name[0], 'A');
