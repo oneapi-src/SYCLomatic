@@ -158,7 +158,7 @@ public:
       }
     }
     DiagnosticsUtils::report<IDTy, Ts...>(
-        SL, MsgID, DpctGlobalInfo::getCompilerInstance(), &TS, UseTextBegin,
+        SL, MsgID, DpctGlobalInfo::getSourceManager(), &TS, UseTextBegin,
         std::forward<Ts>(Vals)...);
     for (auto &T : TS)
       DpctGlobalInfo::getInstance().addReplacement(
