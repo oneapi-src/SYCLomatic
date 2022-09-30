@@ -14,7 +14,7 @@
 
 #include "llvm/IR/FPEnv.h"
 #include "llvm/ADT/StringSwitch.h"
-#include "llvm/IR/InstrTypes.h"
+#include "llvm/IR/Instruction.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Intrinsics.h"
 
@@ -34,7 +34,7 @@ Optional<RoundingMode> convertStrToRoundingMode(StringRef RoundingArg) {
 }
 
 Optional<StringRef> convertRoundingModeToStr(RoundingMode UseRounding) {
-  Optional<StringRef> RoundingStr = None;
+  Optional<StringRef> RoundingStr;
   switch (UseRounding) {
   case RoundingMode::Dynamic:
     RoundingStr = "round.dynamic";
@@ -71,7 +71,7 @@ convertStrToExceptionBehavior(StringRef ExceptionArg) {
 
 Optional<StringRef>
 convertExceptionBehaviorToStr(fp::ExceptionBehavior UseExcept) {
-  Optional<StringRef> ExceptStr = None;
+  Optional<StringRef> ExceptStr;
   switch (UseExcept) {
   case fp::ebStrict:
     ExceptStr = "fpexcept.strict";

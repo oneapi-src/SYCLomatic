@@ -2189,7 +2189,17 @@ enum CXCursorKind {
    */
   CXCursor_CXXAddrspaceCastExpr = 152,
 
-  CXCursor_LastExpr = CXCursor_CXXAddrspaceCastExpr,
+  /**
+   * Expression that references a C++20 concept.
+   */
+  CXCursor_ConceptSpecializationExpr = 153,
+
+  /**
+   * Expression that references a C++20 concept.
+   */
+  CXCursor_RequiresExpr = 154,
+
+  CXCursor_LastExpr = CXCursor_RequiresExpr,
 
   /* Statements */
   CXCursor_FirstStmt = 200,
@@ -2616,7 +2626,27 @@ enum CXCursorKind {
    */
   CXCursor_OMPTargetParallelGenericLoopDirective = 299,
 
-  CXCursor_LastStmt = CXCursor_OMPTargetParallelGenericLoopDirective,
+  /** OpenMP parallel masked directive.
+   */
+  CXCursor_OMPParallelMaskedDirective = 300,
+
+  /** OpenMP masked taskloop directive.
+   */
+  CXCursor_OMPMaskedTaskLoopDirective = 301,
+
+  /** OpenMP masked taskloop simd directive.
+   */
+  CXCursor_OMPMaskedTaskLoopSimdDirective = 302,
+
+  /** OpenMP parallel masked taskloop directive.
+   */
+  CXCursor_OMPParallelMaskedTaskLoopDirective = 303,
+
+  /** OpenMP parallel masked taskloop simd directive.
+   */
+  CXCursor_OMPParallelMaskedTaskLoopSimdDirective = 304,
+
+  CXCursor_LastStmt = CXCursor_OMPParallelMaskedTaskLoopSimdDirective,
 
   /**
    * Cursor that represents the translation unit itself.
@@ -2624,7 +2654,7 @@ enum CXCursorKind {
    * The translation unit cursor exists primarily to act as the root
    * cursor for traversing the contents of a translation unit.
    */
-  CXCursor_TranslationUnit = 300,
+  CXCursor_TranslationUnit = 350,
 
   /* Attributes */
   CXCursor_FirstAttr = 400,
@@ -2700,8 +2730,13 @@ enum CXCursorKind {
    * a friend declaration.
    */
   CXCursor_FriendDecl = 603,
+  /**
+   * a concept declaration.
+   */
+  CXCursor_ConceptDecl = 604,
+
   CXCursor_FirstExtraDecl = CXCursor_ModuleImportDecl,
-  CXCursor_LastExtraDecl = CXCursor_FriendDecl,
+  CXCursor_LastExtraDecl = CXCursor_ConceptDecl,
 
   /**
    * A code completion overload candidate.
@@ -3459,6 +3494,7 @@ enum CXCallingConv {
   CXCallingConv_PreserveAll = 15,
   CXCallingConv_AArch64VectorCall = 16,
   CXCallingConv_SwiftAsync = 17,
+  CXCallingConv_AArch64SVEPCS = 18,
 
   CXCallingConv_Invalid = 100,
   CXCallingConv_Unexposed = 200
@@ -3737,6 +3773,54 @@ CINDEX_LINKAGE CXString clang_getTypedefName(CXType CT);
  * For pointer types, returns the type of the pointee.
  */
 CINDEX_LINKAGE CXType clang_getPointeeType(CXType T);
+
+/**
+ * Retrieve the unqualified variant of the given type, removing as
+ * little sugar as possible.
+ *
+ * For example, given the following series of typedefs:
+ *
+ * \code
+ * typedef int Integer;
+ * typedef const Integer CInteger;
+ * typedef CInteger DifferenceType;
+ * \endcode
+ *
+ * Executing \c clang_getUnqualifiedType() on a \c CXType that
+ * represents \c DifferenceType, will desugar to a type representing
+ * \c Integer, that has no qualifiers.
+ *
+ * And, executing \c clang_getUnqualifiedType() on the type of the
+ * first argument of the following function declaration:
+ *
+ * \code
+ * void foo(const int);
+ * \endcode
+ *
+ * Will return a type representing \c int, removing the \c const
+ * qualifier.
+ *
+ * Sugar over array types is not desugared.
+ *
+ * A type can be checked for qualifiers with \c
+ * clang_isConstQualifiedType(), \c clang_isVolatileQualifiedType()
+ * and \c clang_isRestrictQualifiedType().
+ *
+ * A type that resulted from a call to \c clang_getUnqualifiedType
+ * will return \c false for all of the above calls.
+ */
+CINDEX_LINKAGE CXType clang_getUnqualifiedType(CXType CT);
+
+/**
+ * For reference types (e.g., "const int&"), returns the type that the
+ * reference refers to (e.g "const int").
+ *
+ * Otherwise, returns the type itself.
+ *
+ * A type that has kind \c CXType_LValueReference or
+ * \c CXType_RValueReference is a reference type.
+ */
+CINDEX_LINKAGE CXType clang_getNonReferenceType(CXType CT);
 
 /**
  * Return the cursor for the declaration of the given type.
@@ -6332,7 +6416,8 @@ typedef enum {
   CXIdxEntity_CXXDestructor = 23,
   CXIdxEntity_CXXConversionFunction = 24,
   CXIdxEntity_CXXTypeAlias = 25,
-  CXIdxEntity_CXXInterface = 26
+  CXIdxEntity_CXXInterface = 26,
+  CXIdxEntity_CXXConcept = 27
 
 } CXIdxEntityKind;
 

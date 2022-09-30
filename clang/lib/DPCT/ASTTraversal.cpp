@@ -773,7 +773,7 @@ private:
 
 void IncludesCallbacks::InclusionDirective(
     SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
-    bool IsAngled, CharSourceRange FilenameRange, const FileEntry *File,
+    bool IsAngled, CharSourceRange FilenameRange, Optional<FileEntryRef> File,
     StringRef SearchPath, StringRef RelativePath, const Module *Imported,
     SrcMgr::CharacteristicKind FileType) {
   // Record the locations of the first and last inclusion directives in a file
@@ -798,8 +798,8 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   std::string FilePath;
-  if (!File->tryGetRealPathName().empty()) {
-    FilePath = File->tryGetRealPathName().str();
+  if (!File->getFileEntry().tryGetRealPathName().empty()) {
+    FilePath = File->getFileEntry().tryGetRealPathName().str();
   } else {
     llvm::SmallString<512> FilePathAbs(File->getName());
     DpctGlobalInfo::getSourceManager().getFileManager().makeAbsolutePath(
@@ -2462,9 +2462,9 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               )))))
           .bind("cudaTypeDef"),
       this);
-  MF.addMatcher(varDecl(hasTypeLoc(typeLoc(loc(templateSpecializationType(
+  MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
                             hasAnyTemplateArgument(refersToType(hasDeclaration(
-                                namedDecl(hasName("use_default"))))))))))
+                                namedDecl(hasName("use_default"))))))))
                     .bind("useDefaultVarDeclInTemplateArg"),
                 this);
 }
@@ -2871,6 +2871,7 @@ bool TypeInDeclRule::isCapturedByLambda(const TypeLoc *TL) {
 void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
   SourceManager *SM = Result.SourceManager;
   auto LOpts = Result.Context->getLangOpts();
+
   if (auto TL = getNodeAsType<TypeLoc>(Result, "cudaTypeDef")) {
 
     // if TL is the T in
@@ -3010,7 +3011,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         if (replaceTemplateSpecialization(SM, LOpts, BeginLoc, TSL)) {
           return;
         }
-      } else if (NTL.getTypeLocClass() == clang::TypeLoc::Record) {
+      } else if (NTL.getType()->isElaboratedTypeSpecifier()) {
         auto TSL = NTL.getUnqualifiedLoc().getAs<RecordTypeLoc>();
 
         const std::string TyName =
@@ -3018,6 +3019,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         std::string Replacement =
             MapNames::findReplacedName(MapNames::TypeNamesMap, TyName);
         requestHelperFeatureForTypeNames(TyName, BeginLoc);
+        insertHeaderForTypeRule(TyName, TL->getBeginLoc());
 
         if (!Replacement.empty()) {
           emplaceTransformation(new ReplaceToken(BeginLoc, TSL.getEndLoc(),
@@ -3167,11 +3169,10 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           getNodeAsType<VarDecl>(Result, "useDefaultVarDeclInTemplateArg")) {
     auto TL = VD->getTypeSourceInfo()->getTypeLoc();
 
-    auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>();
+    auto TSTL = TL.getAsAdjusted<TemplateSpecializationTypeLoc>();
     if (!TSTL)
       return;
-    auto TST = dyn_cast<TemplateSpecializationType>(
-        VD->getType().getUnqualifiedType());
+    auto TST = TSTL.getType()->getAsAdjusted<TemplateSpecializationType>();
     if (!TST)
       return;
 
@@ -3799,7 +3800,7 @@ void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
     Lexer::getRawToken(BeginLoc, Tok, *SM, LOpts, true);
     if (Tok.isAnyIdentifier()) {
 
-      if (TL->getTypeLocClass() == clang::TypeLoc::Elaborated) {
+      if (TL->getType()->isElaboratedTypeSpecifier()) {
         // To handle case like "struct cudaExtent extent;"
         auto ETC = TL->getUnqualifiedLoc().getAs<ElaboratedTypeLoc>();
         auto NTL = ETC.getNamedTypeLoc();
@@ -3830,13 +3831,13 @@ void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
       if (auto VD = DpctGlobalInfo::findAncestor<VarDecl>(TL)) {
         auto TypeStr = VD->getType().getAsString();
         if (VD->getKind() == Decl::Var &&
-            (TypeStr == "dim3" || TypeStr == "struct cudaExtent" ||
-             TypeStr == "struct cudaPos")) {
+            (TypeStr == "dim3" || TypeStr == "cudaExtent" ||
+             TypeStr == "cudaPos")) {
           std::string Replacement;
           std::string ReplacedType = "range";
-          if (TypeStr == "dim3" || TypeStr == "struct cudaExtent") {
+          if (TypeStr == "dim3" || TypeStr == "cudaExtent") {
             ReplacedType = "range";
-          } else if (TypeStr == "struct cudaPos") {
+          } else if (TypeStr == "cudaPos") {
             ReplacedType = "id";
           }
 
@@ -9768,7 +9769,7 @@ void DeviceFunctionDeclRule::runRule(
       if (!CE)
         return;
 
-      if (CE->getType().getAsString() !=
+      if (CE->getType().getCanonicalType().getAsString() !=
           "class cooperative_groups::__v1::grid_group")
         return;
 
@@ -13513,10 +13514,10 @@ void TextureMemberSetRule::runRule(const MatchFinder::MatchResult &Result) {
 REGISTER_RULE(TextureMemberSetRule, PassKind::PK_Migration)
 
 void TextureRule::registerMatcher(MatchFinder &MF) {
-  auto DeclMatcher = varDecl(hasType(templateSpecializationType(
-      hasDeclaration(classTemplateSpecializationDecl(hasName("texture"))))));
+  auto DeclMatcher = varDecl(hasType(classTemplateSpecializationDecl(
+      hasName("texture"))));
 
-  auto DeclMatcherUTF = varDecl(hasType(templateSpecializationType()));
+  auto DeclMatcherUTF = varDecl(hasType(classTemplateDecl(hasName("texture"))));
   MF.addMatcher(DeclMatcherUTF.bind("texDeclForUnspecializedTemplateFunc"),
                 this);
 

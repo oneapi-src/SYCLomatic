@@ -356,6 +356,7 @@ bool X86ExpandPseudo::ExpandMI(MachineBasicBlock &MBB,
 
     MachineInstr &NewMI = *std::prev(MBBI);
     NewMI.copyImplicitOps(*MBBI->getParent()->getParent(), *MBBI);
+    NewMI.setCFIType(*MBB.getParent(), MI.getCFIType());
 
     // Update the call site info.
     if (MBBI->isCandidateForCallSiteEntry())
@@ -730,7 +731,7 @@ bool X86ExpandPseudo::ExpandPseudosWhichAffectControlFlow(MachineFunction &MF) {
 }
 
 bool X86ExpandPseudo::runOnMachineFunction(MachineFunction &MF) {
-  STI = &static_cast<const X86Subtarget &>(MF.getSubtarget());
+  STI = &MF.getSubtarget<X86Subtarget>();
   TII = STI->getInstrInfo();
   TRI = STI->getRegisterInfo();
   X86FI = MF.getInfo<X86MachineFunctionInfo>();

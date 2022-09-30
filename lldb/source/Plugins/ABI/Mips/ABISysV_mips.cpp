@@ -835,11 +835,11 @@ ValueObjectSP ABISysV_mips::GetReturnValueObjectImpl(
       default:
         return return_valobj_sp;
       case 32:
-        static_assert(sizeof(float) == sizeof(uint32_t), "");
+        static_assert(sizeof(float) == sizeof(uint32_t));
         value.GetScalar() = *((float *)(&raw_value));
         break;
       case 64:
-        static_assert(sizeof(double) == sizeof(uint64_t), "");
+        static_assert(sizeof(double) == sizeof(uint64_t));
         const RegisterInfo *r3_reg_info =
             reg_ctx->GetRegisterInfoByName("r3", 0);
         if (target_byte_order == eByteOrderLittle)
@@ -867,13 +867,13 @@ ValueObjectSP ABISysV_mips::GetReturnValueObjectImpl(
         default:
           return return_valobj_sp;
         case 64: {
-          static_assert(sizeof(double) == sizeof(uint64_t), "");
+          static_assert(sizeof(double) == sizeof(uint64_t));
           const RegisterInfo *f1_info = reg_ctx->GetRegisterInfoByName("f1", 0);
           RegisterValue f1_value;
           DataExtractor f1_data;
           reg_ctx->ReadRegister(f1_info, f1_value);
           DataExtractor *copy_from_extractor = nullptr;
-          DataBufferSP data_sp(new DataBufferHeap(8, 0));
+          WritableDataBufferSP data_sp(new DataBufferHeap(8, 0));
           DataExtractor return_ext(
               data_sp, target_byte_order,
               target->GetArchitecture().GetAddressByteSize());
@@ -899,7 +899,7 @@ ValueObjectSP ABISysV_mips::GetReturnValueObjectImpl(
           break;
         }
         case 32: {
-          static_assert(sizeof(float) == sizeof(uint32_t), "");
+          static_assert(sizeof(float) == sizeof(uint32_t));
           value.GetScalar() = (float)f0_data.GetFloat(&offset);
           break;
         }
