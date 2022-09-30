@@ -21,7 +21,7 @@
 // CHECK:device_out = sycl::malloc_device<int>(n, q_ct1);
 // CHECK:q_ct1.memcpy(device_in, (void *)host_in, sizeof(host_in)).wait();
 // CHECK:DPCT1026:{{.*}}
-// CHECK:oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_out, 0);
+// CHECK:oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_out, typename std::iterator_traits<decltype(device_in)>::value_type{});
 // CHECK:q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out)).wait();
 // CHECK:sycl::free(device_in, q_ct1);
 // CHECK:sycl::free(device_out, q_ct1);
@@ -59,7 +59,7 @@ void test_1() {
 // CHECK:q_ct1.memcpy(device_in, (void *)host_in, sizeof(host_in)).wait();
 // CHECK:DPCT1027:{{.*}}
 // CHECK:0, 0;
-// CHECK:oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_out, 0);
+// CHECK:oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_out, typename std::iterator_traits<decltype(device_in)>::value_type{});
 // CHECK:q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out)).wait();
 // CHECK:sycl::free(device_in, q_ct1);
 // CHECK:sycl::free(device_out, q_ct1);

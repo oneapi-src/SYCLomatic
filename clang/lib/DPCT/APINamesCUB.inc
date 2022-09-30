@@ -95,7 +95,11 @@ CONDITIONAL_FACTORY_ENTRY(
                 CALL("oneapi::dpl::exclusive_scan",
                      CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
                      ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
-                     ARG(3), LITERAL("0")))))))
+                     ARG(3),
+                     ZERO_INITIALIZER(TYPENAME(STATIC_MEMBER_EXPR(
+                         TEMPLATED_NAME("std::iterator_traits",
+                                        CALL("decltype", ARG(2))),
+                         LITERAL("value_type"))))))))))
 
 // cub::DeviceScan::InclusiveSum
 CONDITIONAL_FACTORY_ENTRY(
