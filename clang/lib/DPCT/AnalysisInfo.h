@@ -270,7 +270,7 @@ public:
 
   std::string Str = "";
   FormatInfo FormatInformation;
-  int ColumnLimit;
+  int ColumnLimit = 80;
 };
 
 struct StmtWithWarning {
