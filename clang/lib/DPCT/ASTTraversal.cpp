@@ -3024,7 +3024,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         if (replaceTemplateSpecialization(SM, LOpts, BeginLoc, TSL)) {
           return;
         }
-      } else if (NTL.getTypeLocClass() == clang::TypeLoc::Record) {
+      } else if (NTL.getType()->isElaboratedTypeSpecifier()) {
         auto TSL = NTL.getUnqualifiedLoc().getAs<RecordTypeLoc>();
 
         const std::string TyName =
