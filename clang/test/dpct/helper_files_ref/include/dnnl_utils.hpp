@@ -132,7 +132,7 @@ public:
            memory_format_tag *tag, int *ndims, int dims[]) const;
   /// Getting dims from a ND memory.
   /// \return The dims.
-  const std::vector<int64_t> &get_dims() const { return _desc.dims(); }
+  std::vector<int64_t> get_dims() const { return _desc.dims(); }
   /// Getting strides from a ND memory.
   /// \return The strides.
   std::vector<int64_t> get_strides() const {
