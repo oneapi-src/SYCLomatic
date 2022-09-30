@@ -24,6 +24,9 @@ int main() {
 //CHECK:int a1 = cudnnAAA();
 //CHECK-NEXT:cudnnFooType b1;
 //CHECK-NEXT:cudnnFooEnum c1;
+//CHECK-NEXT:/*
+//CHECK-NEXT:DPCT1007:0: Migration of CUDNN_FOO_VAL is not supported.
+//CHECK-NEXT:*/
 //CHECK-NEXT:if(b1 == CUDNN_FOO_VAL){
 //CHECK-NEXT:}
 //CHECK-NEXT:cudnnCLASS d1;

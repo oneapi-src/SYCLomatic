@@ -4145,10 +4145,6 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
       EnumName == "cudaComputeModeExclusiveProcess") {
     handleComputeMode(EnumName, E);
     return;
-  } else if(EnumName == "CUDNN_DATA_DOUBLE") {
-    report(E->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-               "data type double");
-    return;
   } else if (auto ET = dyn_cast<EnumType>(E->getType())) {
     if (auto ETD = ET->getDecl()) {
       auto EnumTypeName = ETD->getName().str();

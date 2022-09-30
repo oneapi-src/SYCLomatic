@@ -574,7 +574,10 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
     case HT_Time:
       return insertHeader(HeaderType::HT_Time, LastIncludeOffset, "<time.h>");
     case HT_Dnnl:
-      return insertHeader(HeaderType::HT_Dnnl, LastIncludeOffset,
+      if (this != DpctGlobalInfo::getInstance().getMainFile().get())
+        return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+            HT_Dnnl);
+      return insertHeader(HeaderType::HT_Dnnl, FirstIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
                               "/dnnl_utils.hpp>");
     case HT_MKL_BLAS_Solver:

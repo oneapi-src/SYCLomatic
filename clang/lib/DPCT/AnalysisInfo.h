@@ -4510,7 +4510,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
     // before the CL/sycl.hpp are included, so the FileInfo is set
     // to hold a boolean that'll indicate whether to insert them when
     // the #include CL/sycl.cpp is added later
-    if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution)
+    if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution || Type == HT_Dnnl)
       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_AlwaysLeft);
     else if (Type == HT_SYCL) 
       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Left);
