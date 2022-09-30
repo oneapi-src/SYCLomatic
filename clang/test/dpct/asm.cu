@@ -12,7 +12,7 @@ __global__ void gpu_ptx(int *d_ptr, int length) {
     if (elemID < length) {
       unsigned int laneid;
       // CHECK: /*
-      // CHECK-NEXT: DPCT1053:0: Migration of device assembly code is not supported.
+      // CHECK-NEXT: DPCT1053:{{[0-9]+}}: Migration of device assembly code is not supported.
       // CHECK-NEXT: */
       asm("mov.u32 %0, %%laneid;" : "=r"(laneid));
       d_ptr[elemID] = laneid;
@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 
   return 0;
   // CHECK: printf("Time Used on GPU:%f(ms)\n", time_elapsed);
-  // CHECK-NOT: DPCT1053:0: Migration of device assembly code is not supported.
+  // CHECK-NOT: DPCT1053:{{[0-9]+}}: Migration of device assembly code is not supported.
   // CHECK: return 0;
 }
 

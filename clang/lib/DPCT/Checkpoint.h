@@ -74,11 +74,6 @@ public:
       }                                                                        \
     }                                                                          \
   } while (0);
-#define CHECKPOINT_ASTMATCHER_RUN_EXIT()                                       \
-  do {                                                                         \
-    if (EnableErrorRecover)                                                    \
-      CheckPointStage = CHECKPOINT_PROCESSING_FILE;                            \
-  } while (0);
 
 #define CHECKPOINT_ReplacementPostProcess_ENTRY(Ret)                           \
   do {                                                                         \

@@ -82,7 +82,6 @@ static std::set<std::string> *ReProcessFilePtr = nullptr;
 static std::set<std::string> *ProcessedFilePtr = nullptr;
 static std::function<unsigned int()> GetRunRoundPtr;
 static std::set<std::string> *ModuleFiles = nullptr;
-static unsigned int *ColorOptionPtr = nullptr;
 static std::function<bool(const std::string &, bool)> IsExcludePathPtr;
 extern std::string VcxprojFilePath;
 
@@ -197,16 +196,6 @@ std::string getRealFilePath(std::string File, clang::FileManager *FM){
 #else
   return File;
 #endif
-}
-
-void SetColorOptionPtr(unsigned int &ColorOption) {
-  ColorOptionPtr = &ColorOption;
-}
-
-void SetColorOptionValue(unsigned int ColorOption) {
-  if(ColorOptionPtr) {
-    *ColorOptionPtr = ColorOption;
-  }
 }
 
 void SetIsExcludePathHandler(std::function<bool(const std::string &, bool)> Func){
@@ -540,7 +529,6 @@ bool ToolInvocation::run() {
     DiagOpts = &*ParsedDiagOpts;
   }
 #ifdef SYCLomatic_CUSTOMIZATION
-  SetColorOptionValue(DiagOpts->ShowColors);
   DiagnosticPrinter =new TextDiagnosticPrinter(DiagnosticsOS(), &*DiagOpts);
   DiagConsumer = DiagnosticPrinter;
 #endif // SYCLomatic_CUSTOMIZATION

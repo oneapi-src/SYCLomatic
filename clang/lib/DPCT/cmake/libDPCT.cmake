@@ -54,6 +54,8 @@ macro(build_lib_dpct)
     LIBCUAPIMigration.cpp
     CUBAPIMigration.cpp
     MemberExprRewriter.cpp
+    MigrationRuleManager.cpp
+    MigrationAction.cpp
 
     DEPENDS
     ClangDriverOptions
