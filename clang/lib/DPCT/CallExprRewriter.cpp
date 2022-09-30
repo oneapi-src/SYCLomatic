@@ -2632,7 +2632,7 @@ template <class F, class S> class CheckOr {
   S Sec;
 
 public:
-  CheckOr(F Fir, S Sec) : Fir(Fir), Sec(Sec) {}
+  CheckOr(const F &Fir, const S &Sec) : Fir(Fir), Sec(Sec) {}
   bool operator()(const CallExpr *C) { return Fir(C) || Sec(C); }
 };
 
@@ -2640,7 +2640,7 @@ template <class F, class S> CheckAnd<F, S> makeCheckAnd(F Fir, S Sec) {
   return CheckAnd<F, S>(Fir, Sec);
 }
 
-template <class F, class S> CheckOr<F, S> makeCheckOr(F Fir, S Sec) {
+template <class F, class S> CheckOr<F, S> makeCheckOr(const F &Fir, const S &Sec) {
   return CheckOr<F, S>(Fir, Sec);
 }
 

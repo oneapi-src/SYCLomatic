@@ -295,7 +295,8 @@ getHelperFileContent(const clang::dpct::HelperFileEnum File,
     addDependencyIncludeDirectives(File, ContentVec);
   }
 
-  auto CompareAsc = [](clang::dpct::HelperFunc A, clang::dpct::HelperFunc B) {
+  auto CompareAsc = [](const clang::dpct::HelperFunc &A,
+                       const clang::dpct::HelperFunc &B) {
     return A.PositionIdx < B.PositionIdx;
   };
   std::sort(ContentVec.begin(), ContentVec.end(), CompareAsc);
