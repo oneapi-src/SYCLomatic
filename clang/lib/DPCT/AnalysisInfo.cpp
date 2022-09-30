@@ -62,7 +62,6 @@ bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::EnableComments = false;
 bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
 bool DpctGlobalInfo::IsMLKHeaderUsed = false;
-CompilerInstance *DpctGlobalInfo::CI = nullptr;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
 FileManager *DpctGlobalInfo::FM = nullptr;
@@ -301,7 +300,6 @@ DpctGlobalInfo::DpctGlobalInfo() {
   tooling::SetGetRunRound(DpctGlobalInfo::getRunRound);
   tooling::SetReProcessFile(DpctGlobalInfo::ReProcessFile);
   tooling::SetProcessedFile(DpctGlobalInfo::ProcessedFile);
-  tooling::SetColorOptionPtr(DpctGlobalInfo::ColorOption);
   tooling::SetIsExcludePathHandler(DpctGlobalInfo::isExcluded);
 }
 
@@ -379,6 +377,11 @@ void DpctFileInfo::buildUnionFindSetForUncalledFunc() {
 void DpctFileInfo::buildKernelInfo() {
   for (auto &Kernel : KernelMap)
     Kernel.second->buildInfo();
+  
+  for (auto &D : FuncMap){
+    if(auto I = D.second->getFuncInfo())
+      I->buildInfo();
+  }
 }
 void DpctFileInfo::postProcess() {
   if (!isInAnalysisScope())
