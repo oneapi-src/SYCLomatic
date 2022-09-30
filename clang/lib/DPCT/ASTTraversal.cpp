@@ -2874,25 +2874,16 @@ bool TypeInDeclRule::isCapturedByLambda(const TypeLoc *TL) {
   return false;
 }
 
-void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
-                                           const SourceManager *SM) {
+void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
   auto SD = getAllDecls(DD);
   for (auto It = SD.begin(); It != SD.end(); ++It) {
-    auto DDiter = *It;
-
     const clang::Expr *replExpr = nullptr;
-    if (const auto VD = dyn_cast<clang::VarDecl>(DDiter)) {
-      if (!VD->hasInit())
-        continue;
+    if (const auto VD = dyn_cast<clang::VarDecl>(*It))
       replExpr = VD->getInit();
-    } 
-    else if (const auto FD = dyn_cast<clang::FieldDecl>(DDiter)) {
-      if (!FD->hasInClassInitializer())
-        continue;
+    else if (const auto FD = dyn_cast<clang::FieldDecl>(*It)) 
       replExpr = FD->getInClassInitializer();
-    }
-    
-    if (replExpr == nullptr)
+
+    if (!replExpr)
       continue;
 
     if (const auto VarInitExpr = dyn_cast<InitListExpr>(replExpr)) {
@@ -2907,7 +2898,6 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD,
       std::string Repl = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
       emplaceTransformation(new ReplaceStmt(replExpr, "&" + Repl));
     }
-    replExpr = nullptr;
   }
 }
 
@@ -3211,7 +3201,10 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (DD) {
       if (TL->getType().getAsString().find("cudaStream_t") !=
           std::string::npos) {
-        processCudaStreamType(DD, SM);
+        //DpctGlobalInfo::isInCudaPath
+        TL->getType()
+        std::cout<<TL->getType().getAsString()<<'\n';
+        processCudaStreamType(DD);
       }
 
     }
@@ -3257,6 +3250,19 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
+static bool isCudaStreamType(QualType Ty) {
+  QualType CanTy = Ty.getCanonicalType();
+  if (const auto *PtrTy = CanTy->getAs<PointerType>()) {
+    if (const auto *RecordTy = PtrTy->getPointeeType()->getAs<RecordType>()) {
+      const auto *RD = RecordTy->getAsRecordDecl();
+      if (RD->getName() != "CUstream_st")
+        return false;
+      return DpctGlobalInfo::isInCudaPath(RD->getBeginLoc());
+    }
+  }
+  return false;
+}
+
 REGISTER_RULE(TypeInDeclRule)
 
 // Rule for types replacements in var. declarations.
@@ -3272,6 +3278,8 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
           .bind("inheritanceType"),
       this);
 }
+
+
 
 void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
   SourceManager *SM = Result.SourceManager;
