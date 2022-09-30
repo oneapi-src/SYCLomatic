@@ -5665,11 +5665,10 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       CE->getDirectCallee()->getNameInfo().getName().getAsString();
 
   const SourceManager *SM = Result.SourceManager;
-  // auto SL = SM->getExpansionLoc(CE->getBeginLoc());
   auto Loc = DpctGlobalInfo::getLocInfo(SM->getExpansionLoc(CE->getBeginLoc()));
-  std::string Key = Loc.first + std::to_string(Loc.second);
   DpctGlobalInfo::updateInitSuffixIndexInRule(
-      DpctGlobalInfo::getSuffixIndexInitValue(Key));
+      DpctGlobalInfo::getSuffixIndexInitValue(Loc.first +
+                                              std::to_string(Loc.second)));
 
   SourceLocation FuncNameBegin(CE->getBeginLoc());
   SourceLocation FuncCallEnd(CE->getEndLoc());
