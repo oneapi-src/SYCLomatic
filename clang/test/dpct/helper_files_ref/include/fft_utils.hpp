@@ -71,10 +71,12 @@ public:
     init<long long>(dim, n, inembed, istride, idist, input_type, onembed,
                     ostride, odist, output_type, batch,
                     direction_and_placement);
-    if (_is_estimate_call)
-      *scratchpad_size = _workspace_estimate_bytes;
-    else
-      *scratchpad_size = _workspace_bytes;
+    if (scratchpad_size) {
+      if (_is_estimate_call)
+        *scratchpad_size = _workspace_estimate_bytes;
+      else
+        *scratchpad_size = _workspace_bytes;
+    }
   }
   /// Commit the configuration to calculate n-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
@@ -108,10 +110,12 @@ public:
     _q = exec_queue;
     init<int>(dim, n, inembed, istride, idist, input_type, onembed, ostride,
               odist, output_type, batch, direction_and_placement);
-    if (_is_estimate_call)
-      *scratchpad_size = _workspace_estimate_bytes;
-    else
-      *scratchpad_size = _workspace_bytes;
+    if (scratchpad_size) {
+      if (_is_estimate_call)
+        *scratchpad_size = _workspace_estimate_bytes;
+      else
+        *scratchpad_size = _workspace_bytes;
+    }
   }
   /// Commit the configuration to calculate n-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
@@ -208,10 +212,12 @@ public:
       _is_inplace = direction_and_placement->second;
     }
     config_and_commit_basic();
-    if (_is_estimate_call)
-      *scratchpad_size = _workspace_estimate_bytes;
-    else
-      *scratchpad_size = _workspace_bytes;
+    if (scratchpad_size) {
+      if (_is_estimate_call)
+        *scratchpad_size = _workspace_estimate_bytes;
+      else
+        *scratchpad_size = _workspace_bytes;
+    }
   }
   /// Commit the configuration to calculate 2-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
@@ -243,10 +249,12 @@ public:
       _is_inplace = direction_and_placement->second;
     }
     config_and_commit_basic();
-    if (_is_estimate_call)
-      *scratchpad_size = _workspace_estimate_bytes;
-    else
-      *scratchpad_size = _workspace_bytes;
+    if (scratchpad_size) {
+      if (_is_estimate_call)
+        *scratchpad_size = _workspace_estimate_bytes;
+      else
+        *scratchpad_size = _workspace_bytes;
+    }
   }
   /// Commit the configuration to calculate 3-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
@@ -280,10 +288,12 @@ public:
       _is_inplace = direction_and_placement->second;
     }
     config_and_commit_basic();
-    if (_is_estimate_call)
-      *scratchpad_size = _workspace_estimate_bytes;
-    else
-      *scratchpad_size = _workspace_bytes;
+    if (scratchpad_size) {
+      if (_is_estimate_call)
+        *scratchpad_size = _workspace_estimate_bytes;
+      else
+        *scratchpad_size = _workspace_bytes;
+    }
   }
 
   /// Create the class for calculate 1-D FFT.
@@ -638,7 +648,9 @@ public:
   /// Get the workspace size.
   /// \param [out] scratchpad_size Workspace size in bytes.
   void get_workspace_size(size_t *scratchpad_size) {
-    *scratchpad_size = _workspace_bytes;
+    if (scratchpad_size) {
+      *scratchpad_size = _workspace_bytes;
+    }
   }
 
 private:
