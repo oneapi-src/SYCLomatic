@@ -470,14 +470,6 @@ class VectorType;
                                Type *Ty, unsigned AS,
                                Instruction *I = nullptr) const override;
 
-    /// getScalingFactorCost - Return the cost of the scaling used in
-    /// addressing mode represented by AM.
-    /// If the AM is supported, the return value must be >= 0.
-    /// If the AM is not supported, the return value must be negative.
-    InstructionCost getScalingFactorCost(const DataLayout &DL,
-                                         const AddrMode &AM, Type *Ty,
-                                         unsigned AS) const override;
-
     bool isLegalT2ScaledAddressingMode(const AddrMode &AM, EVT VT) const;
 
     /// Returns true if the addressing mode representing by AM is legal
@@ -581,7 +573,7 @@ class VectorType;
     getRegClassFor(MVT VT, bool isDivergent = false) const override;
 
     bool shouldAlignPointerArgs(CallInst *CI, unsigned &MinSize,
-                                unsigned &PrefAlign) const override;
+                                Align &PrefAlign) const override;
 
     /// createFastISel - This method returns a target specific FastISel object,
     /// or null if the target does not support "fast" ISel.
@@ -665,7 +657,8 @@ class VectorType;
     bool shouldInsertFencesForAtomic(const Instruction *I) const override;
     TargetLoweringBase::AtomicExpansionKind
     shouldExpandAtomicLoadInIR(LoadInst *LI) const override;
-    bool shouldExpandAtomicStoreInIR(StoreInst *SI) const override;
+    TargetLoweringBase::AtomicExpansionKind
+    shouldExpandAtomicStoreInIR(StoreInst *SI) const override;
     TargetLoweringBase::AtomicExpansionKind
     shouldExpandAtomicRMWInIR(AtomicRMWInst *AI) const override;
     TargetLoweringBase::AtomicExpansionKind
@@ -686,8 +679,8 @@ class VectorType;
       return (MemVT.getSizeInBits() <= 32);
     }
 
-    bool isCheapToSpeculateCttz() const override;
-    bool isCheapToSpeculateCtlz() const override;
+    bool isCheapToSpeculateCttz(Type *Ty) const override;
+    bool isCheapToSpeculateCtlz(Type *Ty) const override;
 
     bool convertSetCCLogicToBitwiseLogic(EVT VT) const override {
       return VT.isScalarInteger();
@@ -731,6 +724,8 @@ class VectorType;
 
     bool isDesirableToCommuteWithShift(const SDNode *N,
                                        CombineLevel Level) const override;
+
+    bool isDesirableToCommuteXorWithShift(const SDNode *N) const override;
 
     bool shouldFoldConstantShiftPairToMask(const SDNode *N,
                                            CombineLevel Level) const override;
@@ -845,6 +840,7 @@ class VectorType;
     SDValue LowerFP_TO_INT(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerINT_TO_FP(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerFSETCC(SDValue Op, SelectionDAG &DAG) const;
+    SDValue LowerSPONENTRY(SDValue Op, SelectionDAG &DAG) const;
     void LowerLOAD(SDNode *N, SmallVectorImpl<SDValue> &Results,
                    SelectionDAG &DAG) const;
 

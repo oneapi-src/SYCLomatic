@@ -59,8 +59,8 @@ YieldOp::getMutableSuccessorOperands(Optional<unsigned> index) {
 
 constexpr char kOperandSegmentSizesAttr[] = "operand_segment_sizes";
 
-OperandRange ExecuteOp::getSuccessorEntryOperands(unsigned index) {
-  assert(index == 0 && "invalid region index");
+OperandRange ExecuteOp::getSuccessorEntryOperands(Optional<unsigned> index) {
+  assert(index && *index == 0 && "invalid region index");
   return operands();
 }
 
@@ -77,7 +77,7 @@ void ExecuteOp::getSuccessorRegions(Optional<unsigned> index,
                                     ArrayRef<Attribute>,
                                     SmallVectorImpl<RegionSuccessor> &regions) {
   // The `body` region branch back to the parent operation.
-  if (index.hasValue()) {
+  if (index) {
     assert(*index == 0 && "invalid region index");
     regions.push_back(RegionSuccessor(results()));
     return;
@@ -97,9 +97,8 @@ void ExecuteOp::build(OpBuilder &builder, OperationState &result,
   // Add derived `operand_segment_sizes` attribute based on parsed operands.
   int32_t numDependencies = dependencies.size();
   int32_t numOperands = operands.size();
-  auto operandSegmentSizes = DenseIntElementsAttr::get(
-      VectorType::get({2}, builder.getIntegerType(32)),
-      {numDependencies, numOperands});
+  auto operandSegmentSizes =
+      builder.getDenseI32ArrayAttr({numDependencies, numOperands});
   result.addAttribute(kOperandSegmentSizesAttr, operandSegmentSizes);
 
   // First result is always a token, and then `resultTypes` wrapped into
@@ -178,21 +177,19 @@ ParseResult ExecuteOp::parse(OpAsmParser &parser, OperationState &result) {
 
   // Parse async value operands (%value as %unwrapped : !async.value<!type>).
   SmallVector<OpAsmParser::UnresolvedOperand, 4> valueArgs;
-  SmallVector<OpAsmParser::UnresolvedOperand, 4> unwrappedArgs;
+  SmallVector<OpAsmParser::Argument, 4> unwrappedArgs;
   SmallVector<Type, 4> valueTypes;
-  SmallVector<Type, 4> unwrappedTypes;
 
   // Parse a single instance of `%value as %unwrapped : !async.value<!type>`.
   auto parseAsyncValueArg = [&]() -> ParseResult {
     if (parser.parseOperand(valueArgs.emplace_back()) ||
         parser.parseKeyword("as") ||
-        parser.parseOperand(unwrappedArgs.emplace_back()) ||
+        parser.parseArgument(unwrappedArgs.emplace_back()) ||
         parser.parseColonType(valueTypes.emplace_back()))
       return failure();
 
     auto valueTy = valueTypes.back().dyn_cast<ValueType>();
-    unwrappedTypes.emplace_back(valueTy ? valueTy.getValueType() : Type());
-
+    unwrappedArgs.back().type = valueTy ? valueTy.getValueType() : Type();
     return success();
   };
 
@@ -205,35 +202,26 @@ ParseResult ExecuteOp::parse(OpAsmParser &parser, OperationState &result) {
   int32_t numOperands = valueArgs.size();
 
   // Add derived `operand_segment_sizes` attribute based on parsed operands.
-  auto operandSegmentSizes = DenseIntElementsAttr::get(
-      VectorType::get({2}, parser.getBuilder().getI32Type()),
-      {numDependencies, numOperands});
+  auto operandSegmentSizes =
+      parser.getBuilder().getDenseI32ArrayAttr({numDependencies, numOperands});
   result.addAttribute(kOperandSegmentSizesAttr, operandSegmentSizes);
 
   // Parse the types of results returned from the async execute op.
   SmallVector<Type, 4> resultTypes;
-  if (parser.parseOptionalArrowTypeList(resultTypes))
-    return failure();
-
-  // Async execute first result is always a completion token.
-  parser.addTypeToList(tokenTy, result.types);
-  parser.addTypesToList(resultTypes, result.types);
-
-  // Parse operation attributes.
   NamedAttrList attrs;
-  if (parser.parseOptionalAttrDictWithKeyword(attrs))
+  if (parser.parseOptionalArrowTypeList(resultTypes) ||
+      // Async execute first result is always a completion token.
+      parser.addTypeToList(tokenTy, result.types) ||
+      parser.addTypesToList(resultTypes, result.types) ||
+      // Parse operation attributes.
+      parser.parseOptionalAttrDictWithKeyword(attrs))
     return failure();
+
   result.addAttributes(attrs);
 
   // Parse asynchronous region.
   Region *body = result.addRegion();
-  if (parser.parseRegion(*body, /*arguments=*/{unwrappedArgs},
-                         /*argTypes=*/{unwrappedTypes},
-                         /*argLocations=*/{},
-                         /*enableNameShadowing=*/false))
-    return failure();
-
-  return success();
+  return parser.parseRegion(*body, /*arguments=*/unwrappedArgs);
 }
 
 LogicalResult ExecuteOp::verifyRegions() {

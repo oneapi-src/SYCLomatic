@@ -354,7 +354,7 @@ bool HexagonDAGToDAGISel::SelectBrevLdIntrinsic(SDNode *IntN) {
   return false;
 }
 
-/// Generate a machine instruction node for the new circlar buffer intrinsics.
+/// Generate a machine instruction node for the new circular buffer intrinsics.
 /// The new versions use a CSx register instead of the K field.
 bool HexagonDAGToDAGISel::SelectNewCircIntrinsic(SDNode *IntN) {
   if (IntN->getOpcode() != ISD::INTRINSIC_W_CHAIN)
@@ -984,7 +984,7 @@ static bool isMemOPCandidate(SDNode *I, SDNode *U) {
 void HexagonDAGToDAGISel::ppSimplifyOrSelect0(std::vector<SDNode*> &&Nodes) {
   SelectionDAG &DAG = *CurDAG;
 
-  for (auto I : Nodes) {
+  for (auto *I : Nodes) {
     if (I->getOpcode() != ISD::OR)
       continue;
 
@@ -1032,7 +1032,7 @@ void HexagonDAGToDAGISel::ppSimplifyOrSelect0(std::vector<SDNode*> &&Nodes) {
 void HexagonDAGToDAGISel::ppAddrReorderAddShl(std::vector<SDNode*> &&Nodes) {
   SelectionDAG &DAG = *CurDAG;
 
-  for (auto I : Nodes) {
+  for (auto *I : Nodes) {
     if (I->getOpcode() != ISD::STORE)
       continue;
 
@@ -1345,7 +1345,8 @@ inline bool HexagonDAGToDAGISel::SelectAnyInt(SDValue &N, SDValue &R) {
   EVT T = N.getValueType();
   if (!T.isInteger() || T.getSizeInBits() != 32 || !isa<ConstantSDNode>(N))
     return false;
-  R = N;
+  int32_t V = cast<const ConstantSDNode>(N)->getZExtValue();
+  R = CurDAG->getTargetConstant(V, SDLoc(N), N.getValueType());
   return true;
 }
 
@@ -1540,7 +1541,7 @@ bool HexagonDAGToDAGISel::keepsLowBits(const SDValue &Val, unsigned NumBits,
     break;
   case ISD::AND: {
     // Check if this is an AND with NumBits of lower bits set to 1.
-    uint64_t Mask = (1 << NumBits) - 1;
+    uint64_t Mask = (1ULL << NumBits) - 1;
     if (ConstantSDNode *C = dyn_cast<ConstantSDNode>(Val.getOperand(0))) {
       if (C->getZExtValue() == Mask) {
         Src = Val.getOperand(1);
@@ -1558,7 +1559,7 @@ bool HexagonDAGToDAGISel::keepsLowBits(const SDValue &Val, unsigned NumBits,
   case ISD::OR:
   case ISD::XOR: {
     // OR/XOR with the lower NumBits bits set to 0.
-    uint64_t Mask = (1 << NumBits) - 1;
+    uint64_t Mask = (1ULL << NumBits) - 1;
     if (ConstantSDNode *C = dyn_cast<ConstantSDNode>(Val.getOperand(0))) {
       if ((C->getZExtValue() & Mask) == 0) {
         Src = Val.getOperand(1);
@@ -1580,7 +1581,7 @@ bool HexagonDAGToDAGISel::keepsLowBits(const SDValue &Val, unsigned NumBits,
 }
 
 bool HexagonDAGToDAGISel::isAlignedMemNode(const MemSDNode *N) const {
-  return N->getAlignment() >= N->getMemoryVT().getStoreSize();
+  return N->getAlign().value() >= N->getMemoryVT().getStoreSize();
 }
 
 bool HexagonDAGToDAGISel::isSmallStackStore(const StoreSDNode *N) const {

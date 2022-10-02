@@ -10,22 +10,28 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "PassDetail.h"
+#include "mlir/Dialect/GPU/Transforms/Passes.h"
+
+#include "mlir/AsmParser/AsmParser.h"
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
 #include "mlir/Dialect/DLTI/DLTI.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
-#include "mlir/Dialect/GPU/GPUDialect.h"
-#include "mlir/Dialect/GPU/Passes.h"
-#include "mlir/Dialect/GPU/Utils.h"
+#include "mlir/Dialect/GPU/IR/GPUDialect.h"
+#include "mlir/Dialect/GPU/Transforms/Utils.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/IR/BlockAndValueMapping.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/Matchers.h"
 #include "mlir/IR/SymbolTable.h"
-#include "mlir/Parser/Parser.h"
 #include "mlir/Support/LLVM.h"
 #include "mlir/Transforms/RegionUtils.h"
+
+namespace mlir {
+#define GEN_PASS_DEF_GPULAUNCHSINKINDEXCOMPUTATIONS
+#define GEN_PASS_DEF_GPUKERNELOUTLINING
+#include "mlir/Dialect/GPU/Transforms/Passes.h.inc"
+} // namespace mlir
 
 using namespace mlir;
 
@@ -225,10 +231,13 @@ static void convertToLaunchFuncOp(gpu::LaunchOp launchOp,
   OpBuilder builder(launchOp);
   // The launch op has an optional dynamic shared memory size. If it doesn't
   // exist, we use zero.
-  builder.create<gpu::LaunchFuncOp>(
+  Value asyncToken = launchOp.asyncToken();
+  auto launchFunc = builder.create<gpu::LaunchFuncOp>(
       launchOp.getLoc(), kernelFunc, launchOp.getGridSizeOperandValues(),
       launchOp.getBlockSizeOperandValues(), launchOp.dynamicSharedMemorySize(),
-      operands);
+      operands, asyncToken ? asyncToken.getType() : nullptr,
+      launchOp.asyncDependencies());
+  launchOp.replaceAllUsesWith(launchFunc);
   launchOp.erase();
 }
 
@@ -236,7 +245,7 @@ namespace {
 /// Pass that moves ops which are likely an index computation into gpu.launch
 /// body.
 class GpuLaunchSinkIndexComputationsPass
-    : public GpuLaunchSinkIndexComputationsBase<
+    : public impl::GpuLaunchSinkIndexComputationsBase<
           GpuLaunchSinkIndexComputationsPass> {
 public:
   void runOnOperation() override {
@@ -263,7 +272,7 @@ public:
 /// a separate pass. The external functions can then be annotated with the
 /// symbol of the cubin accessor function.
 class GpuKernelOutliningPass
-    : public GpuKernelOutliningBase<GpuKernelOutliningPass> {
+    : public impl::GpuKernelOutliningBase<GpuKernelOutliningPass> {
 public:
   GpuKernelOutliningPass(StringRef dlStr) {
     if (!dlStr.empty() && !dataLayoutStr.hasValue())
@@ -271,8 +280,8 @@ public:
   }
 
   GpuKernelOutliningPass(const GpuKernelOutliningPass &other)
-      : dataLayoutSpec(other.dataLayoutSpec) {
-    dataLayoutStr = other.dataLayoutStr;
+      : GpuKernelOutliningBase(other), dataLayoutSpec(other.dataLayoutSpec) {
+    dataLayoutStr = other.dataLayoutStr.getValue();
   }
 
   LogicalResult initialize(MLIRContext *context) override {
@@ -293,13 +302,14 @@ public:
   void runOnOperation() override {
     SymbolTable symbolTable(getOperation());
     bool modified = false;
-    for (auto func : getOperation().getOps<FuncOp>()) {
+    for (auto func : getOperation().getOps<func::FuncOp>()) {
       // Insert just after the function.
       Block::iterator insertPt(func->getNextNode());
       auto funcWalkResult = func.walk([&](gpu::LaunchOp op) {
         SetVector<Value> operands;
         std::string kernelFnName =
-            Twine(op->getParentOfType<FuncOp>().getName(), "_kernel").str();
+            Twine(op->getParentOfType<func::FuncOp>().getName(), "_kernel")
+                .str();
 
         gpu::GPUFuncOp outlinedFunc =
             outlineKernelFuncImpl(op, kernelFnName, operands);

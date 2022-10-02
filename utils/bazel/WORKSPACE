@@ -37,7 +37,7 @@ maybe(
     http_archive,
     name = "zlib",
     build_file = "@llvm-raw//utils/bazel/third_party_build:zlib.BUILD",
-    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
+    sha256 = "91844808532e5ce316b3c010929493c0244f3d37593afd6de04f71821d5136d9",
     strip_prefix = "zlib-1.2.12",
     urls = [
         "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.12.tar.gz",
@@ -71,16 +71,3 @@ maybe(
     name = "vulkan_sdk",
 )
 
-http_archive(
-    name = "bazel_toolchains",
-    sha256 = "1adf5db506a7e3c465a26988514cfc3971af6d5b3c2218925cd6e71ee443fc3f",
-    strip_prefix = "bazel-toolchains-4.0.0",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/releases/download/4.0.0/bazel-toolchains-4.0.0.tar.gz",
-        "https://github.com/bazelbuild/bazel-toolchains/releases/download/4.0.0/bazel-toolchains-4.0.0.tar.gz",
-    ],
-)
-
-load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
-
-rbe_autoconfig(name = "rbe_default")

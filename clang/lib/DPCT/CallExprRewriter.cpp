@@ -401,14 +401,14 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         // 2) using int_t = int;
         const TypedefType *TT0 = nullptr, *TT1 = nullptr;
         if (!BT0) {
-          TT0 = dyn_cast<TypedefType>(Arg0->getType());
+          TT0 = Arg0->getType()->getAs<TypedefType>();
           if (TT0)
-            BT0 = dyn_cast<BuiltinType>(TT0->desugar().getTypePtr());
+            BT0 = dyn_cast<BuiltinType>(TT0->getCanonicalTypeUnqualified().getTypePtr());
         }
         if (!BT1) {
-          TT1 = dyn_cast<TypedefType>(Arg1->getType());
+          TT1 = Arg1->getType()->getAs<TypedefType>();
           if (TT1)
-            BT1 = dyn_cast<BuiltinType>(TT1->desugar().getTypePtr());
+            BT1 = dyn_cast<BuiltinType>(TT1->getCanonicalTypeUnqualified().getTypePtr());
         }
         if (BT0 && BT1) {
           auto K0 = BT0->getKind();

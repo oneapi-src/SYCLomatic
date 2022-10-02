@@ -790,11 +790,11 @@ namespace llvm {
       return MVT::i32;
     }
 
-    bool isCheapToSpeculateCttz() const override {
+    bool isCheapToSpeculateCttz(Type *Ty) const override {
       return true;
     }
 
-    bool isCheapToSpeculateCtlz() const override {
+    bool isCheapToSpeculateCtlz(Type *Ty) const override {
       return true;
     }
 
@@ -909,6 +909,8 @@ namespace llvm {
                                   AtomicOrdering Ord) const override;
     Instruction *emitTrailingFence(IRBuilderBase &Builder, Instruction *Inst,
                                    AtomicOrdering Ord) const override;
+
+    bool shouldInlineQuadwordAtomics() const;
 
     TargetLowering::AtomicExpansionKind
     shouldExpandAtomicRMWInIR(AtomicRMWInst *AI) const override;
@@ -1291,6 +1293,7 @@ namespace llvm {
                                     SelectionDAG &DAG) const;
     bool isLowringToMASSFiniteSafe(SDValue Op) const;
     bool isLowringToMASSSafe(SDValue Op) const;
+    bool isScalarMASSConversionEnabled() const;
     SDValue lowerLibCallBase(const char *LibCallDoubleName,
                              const char *LibCallFloatName,
                              const char *LibCallDoubleNameFinite,

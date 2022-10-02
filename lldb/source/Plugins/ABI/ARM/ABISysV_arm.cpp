@@ -1539,7 +1539,7 @@ ValueObjectSP ABISysV_arm::GetReturnValueObjectImpl(
       default:
         return return_valobj_sp;
       case 64: {
-        static_assert(sizeof(double) == sizeof(uint64_t), "");
+        static_assert(sizeof(double) == sizeof(uint64_t));
 
         if (IsArmHardFloat(thread)) {
           RegisterValue reg_value;
@@ -1563,7 +1563,7 @@ ValueObjectSP ABISysV_arm::GetReturnValueObjectImpl(
       }
       case 16: // Half precision returned after a conversion to single precision
       case 32: {
-        static_assert(sizeof(float) == sizeof(uint32_t), "");
+        static_assert(sizeof(float) == sizeof(uint32_t));
 
         if (IsArmHardFloat(thread)) {
           RegisterValue reg_value;
@@ -1668,7 +1668,7 @@ ValueObjectSP ABISysV_arm::GetReturnValueObjectImpl(
     ProcessSP process_sp(thread.GetProcess());
     ByteOrder byte_order = process_sp->GetByteOrder();
 
-    DataBufferSP data_sp(new DataBufferHeap(*byte_size, 0));
+    WritableDataBufferSP data_sp(new DataBufferHeap(*byte_size, 0));
     uint32_t data_offset = 0;
 
     for (uint32_t reg_index = 0; reg_index < vfp_count; reg_index++) {

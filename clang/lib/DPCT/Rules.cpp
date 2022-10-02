@@ -509,7 +509,7 @@ void clang::dpct::UserDefinedTypeRule::runRule(
         DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
     // if the TypeLoc is a TemplateSpecializationTypeLoc
     // the TypeStr should be the substr before the "<"
-    if(auto TSTL = TL->getAs<TemplateSpecializationTypeLoc>()){
+    if (auto TSTL = TL->getAsAdjusted<TemplateSpecializationTypeLoc>()) {
       TypeStr = TypeStr.substr(0, TypeStr.find("<"));
     }
     auto It = MapNames::TypeNamesMap.find(TypeStr);
@@ -522,7 +522,7 @@ void clang::dpct::UserDefinedTypeRule::runRule(
     auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
     auto Len = Lexer::MeasureTokenLength(
         Range.getEnd(), SM, DpctGlobalInfo::getContext().getLangOpts());
-    if (auto TSTL = TL->getAs<TemplateSpecializationTypeLoc>()) {
+    if (auto TSTL = TL->getAsAdjusted<TemplateSpecializationTypeLoc>()) {
       Range = getDefinitionRange(TSTL.getBeginLoc(), TSTL.getLAngleLoc());
       Len = 0;
     }
