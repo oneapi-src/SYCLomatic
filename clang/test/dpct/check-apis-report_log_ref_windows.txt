@@ -1,5 +1,6 @@
 // CHECK: API name				Frequency
 // CHECK: CUresult cuMemGetAddressRange_v2(CUdeviceptr * pbase,size_t * psize,CUdeviceptr dptr)               1
+// CHECK: cudaChannelFormatDesc cudaCreateChannelDesc()               1
 // CHECK: cudaDeviceProp                               1
 // CHECK: cudaError_t                                  3
 // CHECK: cudaError_t cudaDeviceSynchronize()               4
@@ -16,7 +17,6 @@
 // CHECK: float max(float a,float b)                   1
 // CHECK: int2                                         3
 // CHECK: longlong4                                    1
-// CHECK: struct cudaChannelFormatDesc cudaCreateChannelDesc()               1
 // CHECK: struct cudaExtent make_cudaExtent(size_t w,size_t h,size_t d)               2
 // CHECK: struct cudaPitchedPtr make_cudaPitchedPtr(void * d,size_t p,size_t xsz,size_t ysz)               1
 // CHECK: uint4                                        1

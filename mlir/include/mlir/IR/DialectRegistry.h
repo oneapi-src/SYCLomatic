@@ -90,9 +90,8 @@ protected:
     unsigned dialectIdx = 0;
     auto derivedDialects = std::tuple<DialectsT *...>{
         static_cast<DialectsT *>(dialects[dialectIdx++])...};
-    llvm::apply_tuple(
-        [&](DialectsT *...dialect) { apply(context, dialect...); },
-        derivedDialects);
+    std::apply([&](DialectsT *...dialect) { apply(context, dialect...); },
+               derivedDialects);
   }
 };
 
@@ -175,8 +174,7 @@ public:
   /// Add the given extensions to the registry.
   template <typename... ExtensionsT>
   void addExtensions() {
-    (void)std::initializer_list<int>{
-        addExtension(std::make_unique<ExtensionsT>())...};
+    (addExtension(std::make_unique<ExtensionsT>()), ...);
   }
 
   /// Add an extension function that requires the given dialects.
@@ -211,6 +209,10 @@ public:
     };
     addExtension(std::make_unique<Extension>(std::move(extensionFn)));
   }
+
+  /// Returns true if the current registry is a subset of 'rhs', i.e. if 'rhs'
+  /// contains all of the components of this registry.
+  bool isSubsetOf(const DialectRegistry &rhs) const;
 
 private:
   MapTy registry;

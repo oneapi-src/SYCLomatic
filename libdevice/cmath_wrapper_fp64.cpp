@@ -1,4 +1,5 @@
-//==--- cmath_wrapper.cpp - wrappers for C math library functions ----------==//
+//==--- cmath_wrapper_fp64.cpp - wrappers for double precision C math library
+// functions ----------==//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -8,7 +9,7 @@
 
 #include "device_math.h"
 
-#ifdef __SPIR__
+#if defined(__SPIR__) || defined(__NVPTX__)
 
 // All exported functions in math and complex device libraries are weak
 // reference. If users provide their own math or complex functions(with
@@ -443,4 +444,4 @@ double _Sinh(double x, double y) { // compute y * sinh(x), |y| <= 1
   }
 }
 #endif // defined(_WIN32)
-#endif // __SPIR__
+#endif // __SPIR__ || __NVPTX__

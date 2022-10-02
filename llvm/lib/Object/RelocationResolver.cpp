@@ -78,6 +78,7 @@ static bool supportsAArch64(uint64_t Type) {
   switch (Type) {
   case ELF::R_AARCH64_ABS32:
   case ELF::R_AARCH64_ABS64:
+  case ELF::R_AARCH64_PREL16:
   case ELF::R_AARCH64_PREL32:
   case ELF::R_AARCH64_PREL64:
     return true;
@@ -93,6 +94,8 @@ static uint64_t resolveAArch64(uint64_t Type, uint64_t Offset, uint64_t S,
     return (S + Addend) & 0xFFFFFFFF;
   case ELF::R_AARCH64_ABS64:
     return S + Addend;
+  case ELF::R_AARCH64_PREL16:
+    return (S + Addend - Offset) & 0xFFFF;
   case ELF::R_AARCH64_PREL32:
     return (S + Addend - Offset) & 0xFFFFFFFF;
   case ELF::R_AARCH64_PREL64:
@@ -483,6 +486,83 @@ static uint64_t resolveRISCV(uint64_t Type, uint64_t Offset, uint64_t S,
   }
 }
 
+static bool supportsCSKY(uint64_t Type) {
+  switch (Type) {
+  case ELF::R_CKCORE_NONE:
+  case ELF::R_CKCORE_ADDR32:
+  case ELF::R_CKCORE_PCREL32:
+    return true;
+  default:
+    return false;
+  }
+}
+
+static uint64_t resolveCSKY(uint64_t Type, uint64_t Offset, uint64_t S,
+                            uint64_t LocData, int64_t Addend) {
+  switch (Type) {
+  case ELF::R_CKCORE_NONE:
+    return LocData;
+  case ELF::R_CKCORE_ADDR32:
+    return (S + Addend) & 0xFFFFFFFF;
+  case ELF::R_CKCORE_PCREL32:
+    return (S + Addend - Offset) & 0xFFFFFFFF;
+  default:
+    llvm_unreachable("Invalid relocation type");
+  }
+}
+
+static bool supportsLoongArch(uint64_t Type) {
+  switch (Type) {
+  case ELF::R_LARCH_NONE:
+  case ELF::R_LARCH_32:
+  case ELF::R_LARCH_32_PCREL:
+  case ELF::R_LARCH_64:
+  case ELF::R_LARCH_ADD8:
+  case ELF::R_LARCH_SUB8:
+  case ELF::R_LARCH_ADD16:
+  case ELF::R_LARCH_SUB16:
+  case ELF::R_LARCH_ADD32:
+  case ELF::R_LARCH_SUB32:
+  case ELF::R_LARCH_ADD64:
+  case ELF::R_LARCH_SUB64:
+    return true;
+  default:
+    return false;
+  }
+}
+
+static uint64_t resolveLoongArch(uint64_t Type, uint64_t Offset, uint64_t S,
+                                 uint64_t LocData, int64_t Addend) {
+  switch (Type) {
+  case ELF::R_LARCH_NONE:
+    return LocData;
+  case ELF::R_LARCH_32:
+    return (S + Addend) & 0xFFFFFFFF;
+  case ELF::R_LARCH_32_PCREL:
+    return (S + Addend - Offset) & 0xFFFFFFFF;
+  case ELF::R_LARCH_64:
+    return S + Addend;
+  case ELF::R_LARCH_ADD8:
+    return (LocData + (S + Addend)) & 0xFF;
+  case ELF::R_LARCH_SUB8:
+    return (LocData - (S + Addend)) & 0xFF;
+  case ELF::R_LARCH_ADD16:
+    return (LocData + (S + Addend)) & 0xFFFF;
+  case ELF::R_LARCH_SUB16:
+    return (LocData - (S + Addend)) & 0xFFFF;
+  case ELF::R_LARCH_ADD32:
+    return (LocData + (S + Addend)) & 0xFFFFFFFF;
+  case ELF::R_LARCH_SUB32:
+    return (LocData - (S + Addend)) & 0xFFFFFFFF;
+  case ELF::R_LARCH_ADD64:
+    return (LocData + (S + Addend));
+  case ELF::R_LARCH_SUB64:
+    return (LocData - (S + Addend));
+  default:
+    llvm_unreachable("Invalid relocation type");
+  }
+}
+
 static bool supportsCOFFX86(uint64_t Type) {
   switch (Type) {
   case COFF::IMAGE_REL_I386_SECREL:
@@ -683,6 +763,8 @@ getRelocationResolver(const ObjectFile &Obj) {
       case Triple::bpfel:
       case Triple::bpfeb:
         return {supportsBPF, resolveBPF};
+      case Triple::loongarch64:
+        return {supportsLoongArch, resolveLoongArch};
       case Triple::mips64el:
       case Triple::mips64:
         return {supportsMips64, resolveMips64};
@@ -719,6 +801,8 @@ getRelocationResolver(const ObjectFile &Obj) {
       return {supportsAVR, resolveAVR};
     case Triple::lanai:
       return {supportsLanai, resolveLanai};
+    case Triple::loongarch32:
+      return {supportsLoongArch, resolveLoongArch};
     case Triple::mipsel:
     case Triple::mips:
       return {supportsMips32, resolveMips32};
@@ -730,6 +814,8 @@ getRelocationResolver(const ObjectFile &Obj) {
       return {supportsHexagon, resolveHexagon};
     case Triple::riscv32:
       return {supportsRISCV, resolveRISCV};
+    case Triple::csky:
+      return {supportsCSKY, resolveCSKY};
     default:
       return {nullptr, nullptr};
     }

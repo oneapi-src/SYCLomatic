@@ -134,22 +134,23 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 #else
   static cl::opt<std::string> BuildPath("p", cl::desc("Build path"),
                                         cl::Optional, cl::cat(Category),
-                                        cl::sub(*cl::AllSubCommands));
+                                        cl::sub(cl::SubCommand::getAll()));
 
   static cl::list<std::string> SourcePaths(
       cl::Positional, cl::desc("<source0> [... <sourceN>]"), OccurrencesFlag,
-      cl::cat(Category), cl::sub(*cl::AllSubCommands));
+      cl::cat(Category), cl::sub(cl::SubCommand::getAll()));
 
   static cl::list<std::string> ArgsAfter(
       "extra-arg",
       cl::desc("Additional argument to append to the compiler command line"),
-      cl::cat(Category), cl::sub(*cl::AllSubCommands));
+      cl::cat(Category), cl::sub(cl::SubCommand::getAll()));
 
   static cl::list<std::string> ArgsBefore(
       "extra-arg-before",
       cl::desc("Additional argument to prepend to the compiler command line"),
-      cl::cat(Category), cl::sub(*cl::AllSubCommands));
+      cl::cat(Category), cl::sub(cl::SubCommand::getAll()));
 #endif // SYCLomatic_CUSTOMIZATION
+
   cl::ResetAllOptionOccurrences();
 
   cl::HideUnrelatedOptions(Category);

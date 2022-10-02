@@ -19,7 +19,7 @@ define void @outside_user_blocks_tail_folding(i8* nocapture readonly %ptr, i32 %
 ; CHECK-NEXT:    [[N_MOD_VF:%.*]] = urem i32 [[SIZE]], 16
 ; CHECK-NEXT:    [[N_VEC:%.*]] = sub i32 [[SIZE]], [[N_MOD_VF]]
 ; CHECK-NEXT:    [[IND_END:%.*]] = sub i32 [[SIZE]], [[N_VEC]]
-; CHECK-NEXT:    [[IND_END2:%.*]] = getelementptr i8, i8* [[PTR:%.*]], i32 [[N_VEC]]
+; CHECK-NEXT:    [[IND_END1:%.*]] = getelementptr i8, i8* [[PTR:%.*]], i32 [[N_VEC]]
 ; CHECK-NEXT:    br label [[VECTOR_BODY:%.*]]
 ; CHECK:       vector.body:
 ; CHECK-NEXT:    [[INDEX:%.*]] = phi i32 [ 0, [[VECTOR_PH]] ], [ [[INDEX_NEXT:%.*]], [[VECTOR_BODY]] ]
@@ -40,11 +40,11 @@ define void @outside_user_blocks_tail_folding(i8* nocapture readonly %ptr, i32 %
 ; CHECK-NEXT:    br i1 [[CMP_N]], label [[END:%.*]], label [[SCALAR_PH]]
 ; CHECK:       scalar.ph:
 ; CHECK-NEXT:    [[BC_RESUME_VAL:%.*]] = phi i32 [ [[IND_END]], [[MIDDLE_BLOCK]] ], [ [[SIZE]], [[HEADER:%.*]] ]
-; CHECK-NEXT:    [[BC_RESUME_VAL1:%.*]] = phi i8* [ [[IND_END2]], [[MIDDLE_BLOCK]] ], [ [[PTR]], [[HEADER]] ]
+; CHECK-NEXT:    [[BC_RESUME_VAL2:%.*]] = phi i8* [ [[IND_END1]], [[MIDDLE_BLOCK]] ], [ [[PTR]], [[HEADER]] ]
 ; CHECK-NEXT:    br label [[BODY:%.*]]
 ; CHECK:       body:
 ; CHECK-NEXT:    [[DEC66:%.*]] = phi i32 [ [[DEC:%.*]], [[BODY]] ], [ [[BC_RESUME_VAL]], [[SCALAR_PH]] ]
-; CHECK-NEXT:    [[BUFF:%.*]] = phi i8* [ [[INCDEC_PTR:%.*]], [[BODY]] ], [ [[BC_RESUME_VAL1]], [[SCALAR_PH]] ]
+; CHECK-NEXT:    [[BUFF:%.*]] = phi i8* [ [[INCDEC_PTR:%.*]], [[BODY]] ], [ [[BC_RESUME_VAL2]], [[SCALAR_PH]] ]
 ; CHECK-NEXT:    [[INCDEC_PTR]] = getelementptr inbounds i8, i8* [[BUFF]], i32 1
 ; CHECK-NEXT:    [[DEC]] = add nsw i32 [[DEC66]], -1
 ; CHECK-NEXT:    [[TMP7:%.*]] = load i8, i8* [[INCDEC_PTR]], align 1
@@ -52,7 +52,7 @@ define void @outside_user_blocks_tail_folding(i8* nocapture readonly %ptr, i32 %
 ; CHECK-NEXT:    [[TOBOOL11:%.*]] = icmp eq i32 [[DEC]], 0
 ; CHECK-NEXT:    br i1 [[TOBOOL11]], label [[END]], label [[BODY]], !llvm.loop [[LOOP2:![0-9]+]]
 ; CHECK:       end:
-; CHECK-NEXT:    [[INCDEC_PTR_LCSSA:%.*]] = phi i8* [ [[INCDEC_PTR]], [[BODY]] ], [ [[IND_END2]], [[MIDDLE_BLOCK]] ]
+; CHECK-NEXT:    [[INCDEC_PTR_LCSSA:%.*]] = phi i8* [ [[INCDEC_PTR]], [[BODY]] ], [ [[IND_END1]], [[MIDDLE_BLOCK]] ]
 ; CHECK-NEXT:    store i8* [[INCDEC_PTR_LCSSA]], i8** [[POS]], align 4
 ; CHECK-NEXT:    ret void
 ;
