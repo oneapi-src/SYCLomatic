@@ -3011,7 +3011,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         if (replaceTemplateSpecialization(SM, LOpts, BeginLoc, TSL)) {
           return;
         }
-      } else if (NTL.getType()->isElaboratedTypeSpecifier()) {
+      } else if (NTL.getTypeLocClass() == clang::TypeLoc::Record) {
         auto TSL = NTL.getUnqualifiedLoc().getAs<RecordTypeLoc>();
 
         const std::string TyName =
@@ -3022,6 +3022,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
         insertHeaderForTypeRule(TyName, TL->getBeginLoc());
 
         if (!Replacement.empty()) {
+          SrcAPIStaticsMap[TyName]++;
           emplaceTransformation(new ReplaceToken(BeginLoc, TSL.getEndLoc(),
                                                  std::move(Replacement)));
           return;
