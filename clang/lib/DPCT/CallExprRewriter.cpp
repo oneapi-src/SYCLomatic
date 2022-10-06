@@ -1064,16 +1064,15 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
              FuncName == "__drcp_ru" || 
              FuncName == "__drcp_rz") {
     auto Arg0 = Call->getArg(0);
-    auto T0 = Arg0->IgnoreCasts()->getType().getAsString(
-        PrintingPolicy(LangOptions()));
+    auto T0 = Arg0->IgnoreCasts()->getType();
     auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
     report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, false);
-    if (T0 == "double") {
+    if (T0->isSpecificBuiltinType(BuiltinType::Double)) {
       if (DRE0)
         OS << "(1.0/" << MigratedArg0 << ")";
       else
         OS << "(1.0/(" << MigratedArg0 << "))";
-    } else if (T0 != "float") {
+    } else if (T0->isSpecificBuiltinType(BuiltinType::Float)) {
       OS << TargetCalleeName;
       if (DRE0)
         OS << "((float)" << MigratedArg0 << ")";
