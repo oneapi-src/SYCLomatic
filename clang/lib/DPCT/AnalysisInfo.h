@@ -157,9 +157,9 @@ struct FormatInfo {
   FormatInfo() : EnableFormat(false), IsAllParamsOneLine(true) {}
   bool EnableFormat;
   bool IsAllParamsOneLine;
-  bool IsEachParamNL;
-  int CurrentLength;
-  int NewLineIndentLength;
+  bool IsEachParamNL = false;
+  int CurrentLength = 0;
+  int NewLineIndentLength = 0;
   std::string NewLineIndentStr;
   bool IsFirstArg = false;
 };
@@ -270,7 +270,7 @@ public:
 
   std::string Str = "";
   FormatInfo FormatInformation;
-  int ColumnLimit;
+  int ColumnLimit = 0;
 };
 
 struct StmtWithWarning {
@@ -3669,7 +3669,7 @@ protected:
   unsigned ReplaceLength;
   bool IsReplaceFollowedByPP = false;
   unsigned NonDefaultParamNum;
-  bool IsDefFilePathNeeded;
+  bool IsDefFilePathNeeded = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   FormatInfo FormatInformation;
 
@@ -4034,7 +4034,7 @@ private:
     }
 
     ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr *BASE)
-        : Texture(Obj) {
+        : IsUsedAsLvalueAfterMalloc(false), Texture(Obj) {
       IsPointer = false;
       IsRedeclareRequired = false;
       TypeString = "";

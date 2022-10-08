@@ -190,14 +190,14 @@ private:
   static std::vector<std::shared_ptr<MacroInfo>> MacroInfos;
 
   std::string FilePath;
-  unsigned ExtraDeclLoc;
+  unsigned ExtraDeclLoc = 0;
   unsigned Counter[FreeQueriesKind::End] = {0};
   std::string Indent;
   std::string NL;
   std::shared_ptr<DeviceFunctionInfo> FuncInfo;
   unsigned Dimension = 3;
   std::set<unsigned> Refs;
-  unsigned Idx;
+  unsigned Idx = 0;
 
   static const FreeQueriesNames &getNames(FreeQueriesKind);
   static std::shared_ptr<FreeQueriesInfo> getInfo(const FunctionDecl *);

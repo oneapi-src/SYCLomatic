@@ -4037,7 +4037,7 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (Search == PropNamesMap.end()) {
     return;
   }
-  if (auto *ICE = Parents[0].get<clang::ImplicitCastExpr>()) {
+  if (auto * _ = Parents[0].get<clang::ImplicitCastExpr>()) {
     // migrate to get_XXX() eg. "b=a.minor" to "b=a.get_minor_version()"
     requestFeature(PropToGetFeatureMap.at(MemberName), ME);
     std::string TmplArg = "";
@@ -9610,9 +9610,6 @@ void KernelCallRule::runRule(
       }
     }
 
-    if (!FD)
-      return;
-
     // Filter out compiler generated methods
     if (const CXXMethodDecl *CXXMDecl = dyn_cast<CXXMethodDecl>(FD)) {
       if (!CXXMDecl->isUserProvided()) {
@@ -9943,10 +9940,11 @@ void MemVarRule::removeHostConstantWarning(Replacement &R) {
   R.setReplacementText(Result);
 }
 
-void MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
+bool MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
                                           std::shared_ptr<MemVarInfo> Info) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto DS = Info->getDeclStmtOfVarType();
+  if(!DS) return false;
   // this token is ';'
   auto InsertSL = SM.getExpansionLoc(DS->getEndLoc()).getLocWithOffset(1);
   auto GenDeclStmt = [=, &SM](
@@ -10207,7 +10205,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
 
     if (Info->isTypeDeclaredLocal()) {
-      processTypeDeclaredLocal(MemVar, Info);
+      if(!processTypeDeclaredLocal(MemVar, Info)) return;
     } else {
       // This IgnoreFlag is used to disable the replacement of
       // "dpct::constant_memory<T, 0> a;"
@@ -14274,7 +14272,7 @@ std::string TextureRule::getMemberAssignedValue(const Stmt *AssignStmt,
 
 bool TextureRule::SettersMerger::applyResult() {
   class ResultMapInserter {
-    unsigned LastIndex;
+    unsigned LastIndex = 0;
     std::vector<const Stmt *> LatestStmts;
     std::vector<const Stmt *> DuplicatedStmts;
     TextureRule *Rule;
@@ -14767,13 +14765,11 @@ void DriverModuleAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void DriverModuleAPIRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call");
   if (!CE) {
     if (!(CE = getNodeAsType<CallExpr>(Result, "callUsed"))) {
       return;
     }
-    IsAssigned = true;
   }
 
   std::string APIName = "";

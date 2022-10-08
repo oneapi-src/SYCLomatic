@@ -549,7 +549,7 @@ protected:
 
 // Simple copy of the option value.
 template <class DataType> class OptionValueCopy : public GenericOptionValue {
-  DataType Value;
+  DataType Value{};
   bool Valid = false;
 
 protected:
