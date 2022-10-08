@@ -48,7 +48,7 @@
 // device_pointer, device_reference, swap, device_iterator, malloc_device,
 // device_new, free_device, device_delete
 // DPCT_LABEL_END
-
+namespace dpct {
 namespace detail {
 // DPCT_LABEL_BEGIN|__buffer_allocator|dpct::detail
 // DPCT_DEPENDENCY_EMPTY
