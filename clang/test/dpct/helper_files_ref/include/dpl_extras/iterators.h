@@ -106,7 +106,7 @@ public:
   }
 
 private:
-  const _Tp __my_value_;
+  _Tp __my_value_;
   uint64_t __my_counter_;
 };
 
