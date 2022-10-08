@@ -3702,7 +3702,7 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
 std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   unsigned Index = 0;
   char Method = MatchedStr[RegexPrefix.length()];
-  MatchedStr.substr(RegexPrefix.length() + 1).consumeInteger(10, Index);
+  (void)MatchedStr.substr(RegexPrefix.length() + 1).consumeInteger(10, Index);
   // D: device, used for pretty code
   // Q: queue, used for pretty code
   // R: range dim, used for built-in variables (threadIdx.x,...) migration
