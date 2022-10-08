@@ -9944,7 +9944,8 @@ bool MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
                                           std::shared_ptr<MemVarInfo> Info) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto DS = Info->getDeclStmtOfVarType();
-  if(!DS) return false;
+  if (!DS)
+    return false;
   // this token is ';'
   auto InsertSL = SM.getExpansionLoc(DS->getEndLoc()).getLocWithOffset(1);
   auto GenDeclStmt = [=, &SM](
