@@ -9560,6 +9560,8 @@ void KernelCallRule::runRule(
   if (auto KCall =
           getAssistNodeAsType<CUDAKernelCallExpr>(Result, "kernelCall")) {
     auto FD = getAssistNodeAsType<FunctionDecl>(Result, "callContext");
+    if (!FD)
+      return;
     const auto &SM = (*Result.Context).getSourceManager();
 
     if (SM.isMacroArgExpansion(KCall->getCallee()->getBeginLoc())) {
