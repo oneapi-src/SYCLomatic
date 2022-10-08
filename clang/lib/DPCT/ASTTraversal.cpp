@@ -3199,14 +3199,17 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     if (DD) {
-      if (TL->getType().getAsString().find("cudaStream_t") !=
-          std::string::npos) {
-        //DpctGlobalInfo::isInCudaPath
-        TL->getType()
-        std::cout<<TL->getType().getAsString()<<'\n';
-        processCudaStreamType(DD);
+      if(TL->getType().getCanonicalType()->isPointerType()){
+        const auto *PtrTy =
+              TL->getType().getCanonicalType()->getAs<PointerType>();
+        if (PtrTy->getPointeeType()->isRecordType()) {
+          const auto *RecordTy =PtrTy->getPointeeType()->getAs<RecordType>();
+          const auto *RD = RecordTy->getAsRecordDecl();
+          if (RD->getName() == "CUstream_st" &&
+              DpctGlobalInfo::isInCudaPath(RD->getBeginLoc()))
+            processCudaStreamType(DD);
+        }
       }
-
     }
 
     if (!Str.empty()) {
