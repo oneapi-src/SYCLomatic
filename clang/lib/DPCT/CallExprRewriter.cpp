@@ -460,7 +460,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
               // otherwise, do not migrate them. Overflow is not considered.
               const BuiltinType *UnsignedType;
               const TypedefType *UnsignedTypedefType;
-              BuiltinType::Kind UnsignedKind, SignedKind;
+              BuiltinType::Kind UnsignedKind = BuiltinType::Kind::Void;
+              BuiltinType::Kind SignedKind = BuiltinType::Kind::Void;
               if (BT0->isSignedInteger() && BT1->isUnsignedInteger()) {
                 UnsignedType = BT1;
                 UnsignedTypedefType = TT1;
