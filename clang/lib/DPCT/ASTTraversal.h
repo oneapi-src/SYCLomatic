@@ -291,7 +291,7 @@ protected:
   }
 
   void addReplacementForLibraryAPI(LibraryMigrationFlags Flags,
-                                   LibraryMigrationStrings Strings,
+                                   LibraryMigrationStrings &Strings,
                                    LibraryMigrationLocations Locations,
                                    std::string FuncName, const CallExpr *CE) {
     if (Flags.NeedUseLambda) {

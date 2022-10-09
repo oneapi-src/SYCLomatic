@@ -270,7 +270,7 @@ public:
 
   std::string Str = "";
   FormatInfo FormatInformation;
-  int ColumnLimit;
+  int ColumnLimit = 80;
 };
 
 struct StmtWithWarning {
@@ -1175,7 +1175,7 @@ public:
 
   static std::string getStringForRegexReplacement(StringRef);
 
-  inline static void setCodeFormatStyle(clang::format::FormatStyle Style) {
+  inline static void setCodeFormatStyle(const clang::format::FormatStyle &Style) {
     CodeFormatStyle = Style;
   }
   inline static clang::format::FormatStyle getCodeFormatStyle() {
