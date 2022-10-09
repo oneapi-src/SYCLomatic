@@ -1039,7 +1039,17 @@ public:
   }
 };
 
-// typename SubExpr
+template <class SubExprT> class ZeroInitializerPrinter {
+  SubExprT SubExpr;
+
+public:
+  ZeroInitializerPrinter(SubExprT &&SubExpr)
+      : SubExpr(std::forward<SubExprT>(SubExpr)) {}
+  template <typename StreamT> void print(StreamT &&Stream) const {
+    dpct::print(Stream, SubExpr);
+    Stream << "{}";
+  }
+};
 
 template <class FirstPrinter, class... RestPrinter>
 class MultiStmtsPrinter : MultiStmtsPrinter<RestPrinter...> {

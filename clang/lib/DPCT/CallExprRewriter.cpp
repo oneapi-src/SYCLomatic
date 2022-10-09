@@ -1730,6 +1730,13 @@ makeTypenameExprCreator(
                         std::function<SubExprT(const CallExpr *)>>(SubExpr);
 }
 
+template <class SubExprT>
+std::function<ZeroInitializerPrinter<SubExprT>(const CallExpr *)>
+makeZeroInitializerCreator(std::function<SubExprT(const CallExpr *)> SubExpr) {
+  return PrinterCreator<ZeroInitializerPrinter<SubExprT>,
+                        std::function<SubExprT(const CallExpr *)>>(SubExpr);
+}
+
 bool isCallAssigned(const CallExpr *C) { return isAssigned(C); }
 
 template <unsigned int Idx>
@@ -2825,6 +2832,7 @@ std::function<bool(const CallExpr *C)> hasManagedAttr(int Idx) {
                                         DOES_FIRST_LEVEL_POINTER_NEED_CONST)
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
 #define TYPENAME(SUBEXPR) makeTypenameExprCreator(SUBEXPR)
+#define ZERO_INITIALIZER(SUBEXPR) makeZeroInitializerCreator(SUBEXPR)
 #define SUBGROUP                                                               \
   std::function<SubGroupPrinter(const CallExpr *)>(SubGroupPrinter::create)
 #define NDITEM std::function<ItemPrinter(const CallExpr *)>(ItemPrinter::create)
