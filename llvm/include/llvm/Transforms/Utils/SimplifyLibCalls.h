@@ -161,8 +161,10 @@ private:
   Value *optimizeStrNDup(CallInst *CI, IRBuilderBase &B);
   Value *optimizeStrCpy(CallInst *CI, IRBuilderBase &B);
   Value *optimizeStpCpy(CallInst *CI, IRBuilderBase &B);
+  Value *optimizeStrLCpy(CallInst *CI, IRBuilderBase &B);
   Value *optimizeStrNCpy(CallInst *CI, IRBuilderBase &B);
   Value *optimizeStrLen(CallInst *CI, IRBuilderBase &B);
+  Value *optimizeStrNLen(CallInst *CI, IRBuilderBase &B);
   Value *optimizeStrPBrk(CallInst *CI, IRBuilderBase &B);
   Value *optimizeStrTo(CallInst *CI, IRBuilderBase &B);
   Value *optimizeStrSpn(CallInst *CI, IRBuilderBase &B);
@@ -207,7 +209,7 @@ private:
   Value *optimizeIsAscii(CallInst *CI, IRBuilderBase &B);
   Value *optimizeToAscii(CallInst *CI, IRBuilderBase &B);
   Value *optimizeAtoi(CallInst *CI, IRBuilderBase &B);
-  Value *optimizeStrtol(CallInst *CI, IRBuilderBase &B);
+  Value *optimizeStrToInt(CallInst *CI, IRBuilderBase &B, bool AsSigned);
 
   // Formatting and IO Library Call Optimizations
   Value *optimizeErrorReporting(CallInst *CI, IRBuilderBase &B,
@@ -221,6 +223,8 @@ private:
   Value *optimizePuts(CallInst *CI, IRBuilderBase &B);
 
   // Helper methods
+  Value* emitSnPrintfMemCpy(CallInst *CI, Value *StrArg, StringRef Str,
+                            uint64_t N, IRBuilderBase &B);
   Value *emitStrLenMemCpy(Value *Src, Value *Dst, uint64_t Len,
                           IRBuilderBase &B);
   void classifyArgUse(Value *Val, Function *F, bool IsFloat,
@@ -234,10 +238,11 @@ private:
 
   /// hasFloatVersion - Checks if there is a float version of the specified
   /// function by checking for an existing function with name FuncName + f
-  bool hasFloatVersion(StringRef FuncName);
+  bool hasFloatVersion(const Module *M, StringRef FuncName);
 
-  /// Shared code to optimize strlen+wcslen.
-  Value *optimizeStringLength(CallInst *CI, IRBuilderBase &B, unsigned CharSize);
+  /// Shared code to optimize strlen+wcslen and strnlen+wcsnlen.
+  Value *optimizeStringLength(CallInst *CI, IRBuilderBase &B, unsigned CharSize,
+                              Value *Bound = nullptr);
 };
 } // End llvm namespace
 

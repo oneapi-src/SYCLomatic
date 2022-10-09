@@ -52,7 +52,7 @@ define dso_local void @tail_folding_enabled(i32* noalias nocapture %A, i32* noal
 ; CHECK-NEXT:    store i32 [[ADD]], i32* [[ARRAYIDX4]], align 4
 ; CHECK-NEXT:    [[INDVARS_IV_NEXT]] = add nuw nsw i64 [[INDVARS_IV]], 1
 ; CHECK-NEXT:    [[EXITCOND:%.*]] = icmp eq i64 [[INDVARS_IV_NEXT]], 430
-; CHECK-NEXT:    br i1 [[EXITCOND]], label [[FOR_COND_CLEANUP]], label [[FOR_BODY]], !llvm.loop [[LOOP2:![0-9]+]]
+; CHECK-NEXT:    br i1 [[EXITCOND]], label [[FOR_COND_CLEANUP]], label [[FOR_BODY]], !llvm.loop [[LOOP3:![0-9]+]]
 ;
 entry:
   br label %for.body
@@ -237,12 +237,12 @@ for.cond.cleanup:
   ret i32 %sum.1
 }
 
-; CHECK:      !0 = distinct !{!0, !1}
-; CHECK-NEXT: !1 = !{!"llvm.loop.isvectorized", i32 1}
-; CHECK-NEXT: !2 = distinct !{!2, !3, !1}
-; CHECK-NEXT: !3 = !{!"llvm.loop.unroll.runtime.disable"}
-; CHECK-NEXT: !4 = distinct !{!4, !1}
-; CHECK-NEXT: !5 = distinct !{!5, !3, !1}
+; CHECK:      [[LOOP0]] = distinct !{[[LOOP0]], [[MD_IS_VEC:![0-9]+]]}
+; CHECK-NEXT: [[MD_IS_VEC:![0-9]+]] = !{!"llvm.loop.isvectorized", i32 1}
+; CHECK-NEXT: [[LOOP3]] = distinct !{[[LOOP3]], [[MD_RT_UNROLL_DIS:![0-9]+]], [[MD_IS_VEC]]}
+; CHECK-NEXT: [[MD_RT_UNROLL_DIS]] = !{!"llvm.loop.unroll.runtime.disable"}
+; CHECK-NEXT: [[LOOP4]] = distinct !{[[LOOP4]], [[MD_IS_VEC]]}
+; CHECK-NEXT: [[LOOP5]] = distinct !{[[LOOP5]], [[MD_RT_UNROLL_DIS]], [[MD_IS_VEC]]}
 
 attributes #0 = { nounwind optsize uwtable "target-cpu"="core-avx2" "target-features"="+avx,+avx2" }
 

@@ -283,8 +283,7 @@ public:
   explicit AArch64FastISel(FunctionLoweringInfo &FuncInfo,
                            const TargetLibraryInfo *LibInfo)
       : FastISel(FuncInfo, LibInfo, /*SkipTargetIndependentISel=*/true) {
-    Subtarget =
-        &static_cast<const AArch64Subtarget &>(FuncInfo.MF->getSubtarget());
+    Subtarget = &FuncInfo.MF->getSubtarget<AArch64Subtarget>();
     Context = &FuncInfo.Fn->getContext();
   }
 
@@ -2099,7 +2098,7 @@ bool AArch64FastISel::emitStore(MVT VT, unsigned SrcReg, Address Addr,
 
   switch (VT.SimpleTy) {
   default: llvm_unreachable("Unexpected value type.");
-  case MVT::i1:  VTIsi1 = true; LLVM_FALLTHROUGH;
+  case MVT::i1:  VTIsi1 = true; [[fallthrough]];
   case MVT::i8:  Opc = OpcTable[Idx][0]; break;
   case MVT::i16: Opc = OpcTable[Idx][1]; break;
   case MVT::i32: Opc = OpcTable[Idx][2]; break;
@@ -2504,7 +2503,7 @@ bool AArch64FastISel::selectIndirectBr(const Instruction *I) {
   BuildMI(*FuncInfo.MBB, FuncInfo.InsertPt, DbgLoc, II).addReg(AddrReg);
 
   // Make sure the CFG is up-to-date.
-  for (auto *Succ : BI->successors())
+  for (const auto *Succ : BI->successors())
     FuncInfo.MBB->addSuccessor(FuncInfo.MBBMap[Succ]);
 
   return true;
@@ -3133,6 +3132,11 @@ bool AArch64FastISel::fastLowerCall(CallLoweringInfo &CLI) {
   if (CLI.CB && CLI.CB->hasFnAttr(Attribute::ReturnsTwice) &&
       !Subtarget->noBTIAtReturnTwice() &&
       MF->getInfo<AArch64FunctionInfo>()->branchTargetEnforcement())
+    return false;
+
+  // Allow SelectionDAG isel to handle indirect calls with KCFI checks.
+  if (CLI.CB && CLI.CB->isIndirectCall() &&
+      CLI.CB->getOperandBundle(LLVMContext::OB_kcfi))
     return false;
 
   // Allow SelectionDAG isel to handle tail calls.

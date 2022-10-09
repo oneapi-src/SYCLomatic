@@ -150,9 +150,9 @@ public:
   InsertPosition InsertPos = InsertPosition::IP_Left;
 
 public:
-  TextModification(TMID _TMID) : ID(_TMID), Key(Any), ParentRuleID(0) {}
+  TextModification(TMID _TMID) : ID(_TMID), Key(Any) {}
   TextModification(TMID _TMID, Group _Key)
-      : ID(_TMID), Key(_Key), ParentRuleID(0) {}
+      : ID(_TMID), Key(_Key) {}
   virtual ~TextModification() {}
   /// Generate actual Replacement from this TextModification object.
   virtual std::shared_ptr<ExtReplacement>
@@ -168,8 +168,8 @@ public:
   TMID getID() const { return ID; }
   const std::string &getName() const;
 
-  void setParentRuleID(const char *RuleID) { ParentRuleID = RuleID; }
-  const char *getParentRuleID() const { return ParentRuleID; }
+  void setParentRuleName(StringRef Name) { ParentRuleName = Name; }
+  StringRef getParentRuleName() const { return ParentRuleName; }
   inline void setPairID(unsigned Pair) { PairID = Pair; }
   dpct::ConstantFlagType getConstantFlag() const { return ConstantFlag; }
   void setConstantFlag(dpct::ConstantFlagType F) { ConstantFlag = F; }
@@ -203,7 +203,7 @@ public:
 private:
   const TMID ID;
   Group Key;
-  const char *ParentRuleID;
+  StringRef ParentRuleName;
   unsigned PairID = 0;
   bool BlockLevelFormatFlag = false;
   // below members are used for process __constant__ macro used in host and
