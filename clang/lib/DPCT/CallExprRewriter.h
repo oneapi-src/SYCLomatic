@@ -878,7 +878,7 @@ template <class CalleeT, class... CallArgsT> class CallExprPrinter {
   ArgsPrinter<false, CallArgsT...> Args;
 
 public:
-  CallExprPrinter(CalleeT Callee, CallArgsT &&...Args)
+  CallExprPrinter(const CalleeT &Callee, CallArgsT &&...Args)
       : Callee(Callee), Args(std::forward<CallArgsT>(Args)...) {}
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Callee);
@@ -908,7 +908,7 @@ template <class BaseT, class MemberT> class MemberExprPrinter {
   MemberT MemberName;
 
 public:
-  MemberExprPrinter(BaseT Base, bool IsArrow, MemberT MemberName)
+  MemberExprPrinter(const BaseT &Base, bool IsArrow, MemberT MemberName)
       : Base(Base), IsArrow(IsArrow), MemberName(MemberName) {}
 
   template <class StreamT> void print(StreamT &Stream) const {
@@ -935,7 +935,7 @@ template <class BaseT, class MemberT, class... CallArgsT>
 class MemberCallPrinter
     : public CallExprPrinter<MemberExprPrinter<BaseT, MemberT>, CallArgsT...> {
 public:
-  MemberCallPrinter(BaseT Base, bool IsArrow, MemberT MemberName,
+  MemberCallPrinter(const BaseT &Base, bool IsArrow, MemberT MemberName,
                     CallArgsT &&...Args)
       : CallExprPrinter<MemberExprPrinter<BaseT, MemberT>, CallArgsT...>(
             MemberExprPrinter<BaseT, MemberT>(std::move(Base), IsArrow,
@@ -1039,7 +1039,17 @@ public:
   }
 };
 
-// typename SubExpr
+template <class SubExprT> class ZeroInitializerPrinter {
+  SubExprT SubExpr;
+
+public:
+  ZeroInitializerPrinter(SubExprT &&SubExpr)
+      : SubExpr(std::forward<SubExprT>(SubExpr)) {}
+  template <typename StreamT> void print(StreamT &&Stream) const {
+    dpct::print(Stream, SubExpr);
+    Stream << "{}";
+  }
+};
 
 template <class FirstPrinter, class... RestPrinter>
 class MultiStmtsPrinter : MultiStmtsPrinter<RestPrinter...> {

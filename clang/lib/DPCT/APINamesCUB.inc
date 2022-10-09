@@ -16,13 +16,17 @@ CONDITIONAL_FACTORY_ENTRY(
             HeaderType::HT_DPL_Algorithm,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                 "cub::DeviceReduce::Sum",
-                MEMBER_CALL(
-                    QUEUESTR, false, "fill", ARG(3),
-                    CALL(
-                        "oneapi::dpl::reduce",
-                        CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
-                        ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4))),
-                    LITERAL("1")),
+                MEMBER_CALL(QUEUESTR, false, "fill", ARG(3),
+                            CALL("oneapi::dpl::reduce",
+                                 CALL("oneapi::dpl::execution::device_policy",
+                                      QUEUESTR),
+                                 ARG(2),
+                                 BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
+                                 ZERO_INITIALIZER(TYPENAME(STATIC_MEMBER_EXPR(
+                                     TEMPLATED_NAME("std::iterator_traits",
+                                                    CALL("decltype", ARG(3))),
+                                     LITERAL("value_type"))))),
+                            LITERAL("1")),
                 false, "wait")))))
 
 // cub::DeviceReduce::Reduce
@@ -91,7 +95,11 @@ CONDITIONAL_FACTORY_ENTRY(
                 CALL("oneapi::dpl::exclusive_scan",
                      CALL("oneapi::dpl::execution::device_policy", QUEUESTR),
                      ARG(2), BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
-                     ARG(3), LITERAL("0")))))))
+                     ARG(3),
+                     ZERO_INITIALIZER(TYPENAME(STATIC_MEMBER_EXPR(
+                         TEMPLATED_NAME("std::iterator_traits",
+                                        CALL("decltype", ARG(2))),
+                         LITERAL("value_type"))))))))))
 
 // cub::DeviceScan::InclusiveSum
 CONDITIONAL_FACTORY_ENTRY(

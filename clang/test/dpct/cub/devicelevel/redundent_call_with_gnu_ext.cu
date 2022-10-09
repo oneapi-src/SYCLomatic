@@ -25,7 +25,7 @@
 // CHECK:DPCT1026:{{.*}}
 // CHECK:DPCT1026:{{.*}}
 // CHECK:DPCT1026:{{.*}}
-// CHECK:q_ct1.fill(device_out, oneapi::dpl::reduce(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n), 1).wait();
+// CHECK:q_ct1.fill(device_out, oneapi::dpl::reduce(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, typename std::iterator_traits<decltype(device_out)>::value_type{}), 1).wait();
 // CHECK:q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out)).wait();
 // CHECK:sycl::free(device_in, q_ct1);
 // CHECK:sycl::free(device_out, q_ct1);
