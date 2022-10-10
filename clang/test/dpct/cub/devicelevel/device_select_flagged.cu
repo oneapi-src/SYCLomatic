@@ -8,24 +8,8 @@
 #include <cub/cub.cuh>
 #include <stdio.h>
 
-// CHECK: void test_1() {
-// CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK: sycl::queue &q_ct1 = dev_ct1.default_queue();
-// CHECK: device_in = sycl::malloc_device<int>(n, q_ct1);
-// CHECK: device_out = sycl::malloc_device<int>(n, q_ct1);
-// CHECK: device_flagged = sycl::malloc_device<int>(n, q_ct1);
-// CHECK: device_select_num = sycl::malloc_device<int>(1, q_ct1);
-// CHECK: q_ct1.memcpy(device_in, (void *)host_in, sizeof(host_in));
-// CHECK: q_ct1.memcpy(device_flagged, host_flagged, sizeof(host_flagged)).wait();
 // CHECK: DPCT1026:{{.*}}
 // CHECK: q_ct1.fill(device_select_num, std::distance(device_out, dpct::copy_if(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_flagged, device_out, [](const auto &t) -> bool { return t; })), 1).wait();
-// CHECK: q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out));
-// CHECK: q_ct1.memcpy((void *)&num, (void *)device_select_num, sizeof(int)).wait();
-// CHECK: sycl::free(device_in, q_ct1);
-// CHECK: sycl::free(device_out, q_ct1);
-// CHECK: sycl::free(device_flagged, q_ct1);
-// CHECK: sycl::free(device_select_num, q_ct1);
-// CHECK: }
 void test_1() {
    int n = 5;
   int num = 0;
@@ -59,25 +43,9 @@ void test_1() {
   }
 }
 
-// CHECK: void test_2() {
-// CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK: sycl::queue &q_ct1 = dev_ct1.default_queue();
-// CHECK: device_in = sycl::malloc_device<int>(n, q_ct1);
-// CHECK: device_out = sycl::malloc_device<int>(n, q_ct1);
-// CHECK: device_flagged = sycl::malloc_device<int>(n, q_ct1);
-// CHECK: device_select_num = sycl::malloc_device<int>(1, q_ct1);
-// CHECK: q_ct1.memcpy(device_in, (void *)host_in, sizeof(host_in));
-// CHECK: q_ct1.memcpy(device_flagged, host_flagged, sizeof(host_flagged)).wait();
 // CHECK: DPCT1027:{{.*}}
 // CHECK: 0, 0;
 // CHECK: q_ct1.fill(device_select_num, std::distance(device_out, dpct::copy_if(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_flagged, device_out, [](const auto &t) -> bool { return t; })), 1).wait();
-// CHECK: q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out));
-// CHECK: q_ct1.memcpy((void *)&num, (void *)device_select_num, sizeof(int)).wait();
-// CHECK: sycl::free(device_in, q_ct1);
-// CHECK: sycl::free(device_out, q_ct1);
-// CHECK: sycl::free(device_flagged, q_ct1);
-// CHECK: sycl::free(device_select_num, q_ct1);
-// CHECK: }
 void test_2() {
   int n = 5;
   int num = 0;
@@ -111,25 +79,9 @@ void test_2() {
   }
 }
 
-// CHECK: void test_3() {
-// CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK: sycl::queue &q_ct1 = dev_ct1.default_queue();
-// CHECK: device_in = sycl::malloc_device<int>(n, q_ct1);
-// CHECK: device_out = sycl::malloc_device<int>(n, q_ct1);
-// CHECK: device_flagged = sycl::malloc_device<int>(n, q_ct1);
-// CHECK: device_select_num = sycl::malloc_device<int>(1, q_ct1);
-// CHECK: q_ct1.memcpy(device_in, (void *)host_in, sizeof(host_in));
-// CHECK: q_ct1.memcpy(device_flagged, host_flagged, sizeof(host_flagged)).wait();
 // CHECK: dpct::queue_ptr stream = (dpct::queue_ptr)(void *)(uintptr_t)5;
 // CHECK: DPCT1026:{{.*}}
 // CHECK: stream->fill(device_select_num, std::distance(device_out, dpct::copy_if(oneapi::dpl::execution::device_policy(*stream), device_in, device_in + n, device_flagged, device_out, [](const auto &t) -> bool { return t; })), 1).wait();
-// CHECK: q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out));
-// CHECK: q_ct1.memcpy((void *)&num, (void *)device_select_num, sizeof(int)).wait();
-// CHECK: sycl::free(device_in, q_ct1);
-// CHECK: sycl::free(device_out, q_ct1);
-// CHECK: sycl::free(device_flagged, q_ct1);
-// CHECK: sycl::free(device_select_num, q_ct1);
-// CHECK: }
 void test_3() {
    int n = 5;
   int num = 0;
