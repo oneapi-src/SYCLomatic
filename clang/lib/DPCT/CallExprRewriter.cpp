@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "CallExprRewriter.h"
+#include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "BLASAPIMigration.h"
 #include "ExprAnalysis.h"
@@ -1527,6 +1528,20 @@ makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                                                        Member, Args...);
 }
 
+template <class BaseT, class MemberT>
+std::function<
+    MemberCallPrinter<BaseT, MemberT>(const CallExpr *)>
+makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
+                      bool IsArrow,
+                      std::function<MemberT(const CallExpr *)> Member) {
+
+  return PrinterCreator<MemberCallPrinter<BaseT, MemberT>,
+    std::function<BaseT(const CallExpr *)>, bool,
+    std::function<MemberT(const CallExpr *)>>(BaseFunc, IsArrow,
+                                              Member);
+}
+
+
 template <class... StmtT>
 std::function<
     LambdaPrinter<StmtT...>(const CallExpr *)>
@@ -1654,6 +1669,36 @@ makeCallExprCreator(std::string Callee,
   return PrinterCreator<CallExprPrinter<StringRef, CallArgsT...>, std::string,
                         std::function<CallArgsT(const CallExpr *)>...>(Callee,
                                                                        Args...);
+}
+
+std::function<std::string(const CallExpr *)>
+makeFuncNameFromDevAttrCreator(unsigned idx) {
+  return [=](const CallExpr *CE) -> std::string {
+    auto Arg = CE->getArg(idx)->IgnoreImplicitAsWritten();
+    if (auto DRE = dyn_cast<DeclRefExpr>(Arg)) {
+      auto ArgName = DRE->getNameInfo().getAsString();
+      auto Search = EnumConstantRule::EnumNamesMap.find(ArgName);
+      if (Search != EnumConstantRule::EnumNamesMap.end()) {
+        requestHelperFeatureForEnumNames(ArgName, CE);
+        return Search->second->NewName;
+      }
+    }
+    return "";
+  };
+}
+std::function<std::string(const CallExpr *)> getWorkGroupDim(unsigned index) {
+  return [=](const CallExpr * C) {
+    auto Arg = dyn_cast<DeclRefExpr>(C->getArg(index)->
+                IgnoreImplicitAsWritten())->getNameInfo().getAsString();
+    if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X")
+      return "0";
+    else if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y") {
+      return "1";
+    } else if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z") {
+      return "2";
+    }
+    return "";
+  };
 }
 
 std::function<std::string(const CallExpr *)> makeLiteral(std::string Str) {
@@ -1953,6 +1998,16 @@ std::function<bool(const CallExpr *C)> checkIsCallExprOnly() {
     if (parentStmt != nullptr && (dyn_cast<CompoundStmt>(parentStmt) ||
                           dyn_cast<ExprWithCleanups>(parentStmt)))
       return true;
+    return false;
+    };
+}
+
+std::function<bool(const CallExpr *C)> checkIsGetWorkGroupDim(size_t index) {
+  return [=](const CallExpr *C) -> bool {
+    if (getStmtSpelling(C->getArg(index)).
+          find("CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_") != std::string::npos) {
+      return true;
+    }
     return false;
     };
 }

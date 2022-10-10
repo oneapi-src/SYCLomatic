@@ -4069,7 +4069,7 @@ void EnumConstantRule::registerMatcher(MatchFinder &MF) {
                   "cudaComputeMode", "cudaMemcpyKind", "cudaMemoryAdvise",
                   "cudaDeviceAttr", "libraryPropertyType_t", "cudaDataType_t",
                   "cublasComputeType_t", "CUmem_advise_enum", "cufftType_t",
-                  "cufftType", "cudaMemoryType"))),
+                  "cufftType", "cudaMemoryType", "CUctx_flags_enum"))),
               matchesName("CUDNN_.*")))))
           .bind("EnumConstant"),
       this);
@@ -4182,7 +4182,6 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
   }
-
   emplaceTransformation(new ReplaceStmt(E, Search->second->NewName));
   requestHelperFeatureForEnumNames(EnumName, E);
 }
@@ -7731,7 +7730,8 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaDeviceCanAccessPeer", "cudaDeviceDisablePeerAccess",
         "cudaDeviceEnablePeerAccess", "cudaDriverGetVersion",
         "cudaRuntimeGetVersion", "clock64", "__ldg",
-        "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig", "cudaPointerGetAttributes");
+        "cudaFuncSetSharedMemConfig", "cuFuncSetCacheConfig",
+        "cudaPointerGetAttributes", "cuCtxSetCacheConfig", "cuCtxSetLimit");
   };
 
   MF.addMatcher(
@@ -8002,7 +8002,9 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaDeviceSetLimit" ||
              FuncName == "cudaThreadSetLimit" ||
              FuncName == "cudaDeviceSetCacheConfig" ||
-             FuncName == "cudaDeviceGetCacheConfig") {
+             FuncName == "cudaDeviceGetCacheConfig" ||
+             FuncName == "cuCtxSetCacheConfig" ||
+             FuncName == "cuCtxSetLimit") {
     auto Msg = MapNames::RemovedAPIWarningMessage.find(FuncName);
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
@@ -14841,13 +14843,6 @@ void DriverDeviceAPIRule::runRule(
   }
   std::ostringstream OS;
 
-  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(APIName);
-  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
-    ExprAnalysis EA(CE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-    return;
-  }
 
   if (APIName == "cuDeviceGet") {
     if (IsAssigned)
@@ -14943,43 +14938,27 @@ void DriverDeviceAPIRule::runRule(
     }
     emplaceTransformation(new ReplaceStmt(CE, OS.str()));
   } else if (APIName == "cuDeviceGetAttribute") {
-    if (IsAssigned)
-      OS << "(";
-    auto FirArg = CE->getArg(0)->IgnoreImplicitAsWritten();
     auto SecArg = CE->getArg(1);
-    auto ThrArg = CE->getArg(2)->IgnoreImplicitAsWritten();
-
-    std::string AttributeName;
-    std::string DevStr;
-    std::string SYCLCallName;
     if (auto DRE = dyn_cast<DeclRefExpr>(SecArg)) {
-      AttributeName = DRE->getNameInfo().getAsString();
+      auto AttributeName = DRE->getNameInfo().getAsString();
       auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
       if (Search == EnumConstantRule::EnumNamesMap.end()) {
         report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-               "cuDeviceGetAttribute");
+            "cuDeviceGetAttribute");
         return;
       }
-      requestHelperFeatureForEnumNames(AttributeName, CE);
-      SYCLCallName = Search->second->NewName;
     } else {
       report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
-             false);
+            false);
       return;
     }
-    printDerefOp(OS, FirArg);
-    ExprAnalysis EA(ThrArg);
-    EA.analyze();
-    DevStr = EA.getReplacedString();
-    OS << " = " << MapNames::getDpctNamespace()
-       << "dev_mgr::instance().get_device(" << DevStr << ")." << SYCLCallName
-       << "()";
-    requestFeature(HelperFeatureEnum::Device_dev_mgr_get_device, CE);
-    if (IsAssigned) {
-      OS << ", 0)";
-      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
-    }
-    emplaceTransformation(new ReplaceStmt(CE, OS.str()));
+  }
+  auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(APIName);
+  if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
   }
 }
 
@@ -14991,7 +14970,7 @@ void DriverContextAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cuInit", "cuCtxCreate_v2", "cuCtxSetCurrent", "cuCtxGetCurrent",
         "cuCtxSynchronize", "cuCtxDestroy_v2", "cuDevicePrimaryCtxRetain",
         "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease",
-        "cuCtxGetDevice", "cuCtxGetApiVersion");
+        "cuCtxGetDevice", "cuCtxGetApiVersion", "cuCtxGetLimit");
   };
 
   MF.addMatcher(
@@ -15106,6 +15085,28 @@ void DriverContextAPIRule::runRule(
     requestFeature(HelperFeatureEnum::Device_get_current_device, CE);
     requestFeature(HelperFeatureEnum::Device_device_ext_queues_wait_and_throw,
                    CE);
+  } else if (APIName == "cuCtxGetLimit") {
+    auto SecArg = CE->getArg(1);
+    if (auto DRE = dyn_cast<DeclRefExpr>(SecArg)) {
+      std::string AttributeName = DRE->getNameInfo().getAsString();
+      auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
+      if (Search != EnumConstantRule::EnumNamesMap.end()) {
+        printDerefOp(OS, CE->getArg(0));
+        OS << " = " << Search->second->NewName;
+      } else {
+        auto Msg = MapNames::RemovedAPIWarningMessage.find(APIName);
+        if (IsAssigned) {
+          report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
+                MapNames::ITFName.at(APIName), Msg->second);
+          emplaceTransformation(new ReplaceStmt(CE, "0"));
+        } else {
+          report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED, false,
+                MapNames::ITFName.at(APIName), Msg->second);
+          emplaceTransformation(new ReplaceStmt(CE, ""));
+        }
+        return;
+      }
+    }
   }
   if (IsAssigned) {
     OS << ", 0)";
