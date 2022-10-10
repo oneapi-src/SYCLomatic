@@ -3670,49 +3670,6 @@ void VectorTypeOperatorRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(VectorTypeOperatorRule, PassKind::PK_Migration)
 
-void VectorTypeCtorRule::registerMatcher(MatchFinder &MF) {
-
-  // make_int2
-  auto makeVectorFunc = [&]() {
-    std::vector<std::string> MakeVectorFuncNames;
-    for (const std::string &TypeName : MapNames::SupportedVectorTypes) {
-      MakeVectorFuncNames.emplace_back("make_" + TypeName);
-    }
-
-    return internal::Matcher<NamedDecl>(
-        new internal::HasNameMatcher(MakeVectorFuncNames));
-  };
-
-  // migrate utility for vector type: eg. make_int2
-  MF.addMatcher(
-      callExpr(callee(functionDecl(makeVectorFunc()))).bind("VecUtilFunc"),
-      this);
-}
-
-std::string
-VectorTypeCtorRule::getReplaceTypeName(const std::string &TypeName) {
-  return std::string(
-      MapNames::findReplacedName(MapNames::TypeNamesMap, TypeName));
-}
-
-// Determines which case of construction applies and creates replacements for
-// the syntax. Returns the constructor node and a boolean indicating if a
-// closed brace needs to be appended.
-void VectorTypeCtorRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "VecUtilFunc")) {
-    if (!CE->getDirectCallee())
-      return;
-
-    assert(CE->getDirectCallee()->getName().startswith("make_") &&
-           "Found non make_<vector type> function");
-    emplaceTransformation(new ReplaceStmt(
-        CE->getCallee(), getReplaceTypeName(CE->getType().getAsString())));
-    return;
-  }
-}
-
-REGISTER_RULE(VectorTypeCtorRule, PassKind::PK_Migration)
-
 void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
   // Find dim3 constructors which are part of different casts (representing
   // different syntaxes). This includes copy constructors. All constructors

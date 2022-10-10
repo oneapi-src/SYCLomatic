@@ -371,9 +371,15 @@ std::string MathFuncNameRewriter::getNewFuncName() {
     }
     // For host functions
     else {
-      // Insert "#include <cmath>" to migrated code
-      DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_Math);
-      NewFuncName = SourceCalleeName.str();
+      // The vector type constructors (e.g. make_double3) are available in
+      // the host, but should not need to include cmath nor be migrated to
+      // SourceCalleeName.
+      if (!SourceCalleeName.startswith("make_")) {
+	// Insert "#include <cmath>" to migrated code
+        DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_Math);
+        NewFuncName = SourceCalleeName.str();
+      }
+
       if (SourceCalleeName == "abs") {
         auto *BT =
             dyn_cast<BuiltinType>(Call->getArg(0)->IgnoreImpCasts()->getType());
