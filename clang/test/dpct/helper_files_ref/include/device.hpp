@@ -115,7 +115,13 @@ public:
   size_t get_global_mem_size() const { return _global_mem_size; }
   size_t get_local_mem_size() const { return _local_mem_size; }
   // set interface
-  void set_name(const char *name) { std::strncpy(_name, name, 256); }
+  void set_name(const char *name) {
+#if defined(_MSC_VER) && !defined(__clang__)
+    strncpy_s(_name, 256, name, 255);
+#else
+    std::strncpy(_name, name, 256);
+#endif
+}
   void set_max_work_item_sizes(const sycl::id<3> max_work_item_sizes) {
     _max_work_item_sizes = max_work_item_sizes;
     for (int i = 0; i < 3; ++i)
