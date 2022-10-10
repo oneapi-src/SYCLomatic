@@ -571,4 +571,5 @@ std::string getArgTypeStr(const clang::CallExpr *CE, unsigned int Idx);
 std::string getFunctionName(const clang::FunctionDecl *Node);
 std::string getFunctionName(const clang::UnresolvedLookupExpr *Node);
 std::string getFunctionName(const clang::FunctionTemplateDecl *Node);
+bool isLambda(const clang::FunctionDecl *FD);
 #endif // DPCT_UTILITY_H

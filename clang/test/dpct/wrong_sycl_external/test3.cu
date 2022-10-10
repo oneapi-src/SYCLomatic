@@ -7,8 +7,10 @@
   // CHECK: template <typename T> void do_work() {
 template <typename T> __global__ void do_work() {
   T x=T(), y=T();
-  // CHECK: func_wrapper<T>([] (T a, T b) -> SYCL_EXTERNAL T { return a * b; }).reduce(x, y);
+  // CHECK: func_wrapper<T>([] (T a, T b) -> T { return a * b; }).reduce(x, y);
   func_wrapper<T>([] __host__ __device__ (T a, T b) -> T { return a * b; }).reduce(x, y);
+  // CHECK: func_wrapper<T>([] (T a, T b) { return a * b; }).reduce(x, y);
+  func_wrapper<T>([] __host__ __device__ (T a, T b) { return a * b; }).reduce(x, y);
 }
 
 // CHECK: void kernel() { dpct::get_default_queue().parallel_for(

@@ -4016,3 +4016,10 @@ std::string getFunctionName(const clang::UnresolvedLookupExpr *Node) {
 std::string getFunctionName(const clang::FunctionTemplateDecl *Node) {
   return getFunctionName(Node->getTemplatedDecl());
 }
+bool isLambda(const clang::FunctionDecl *FD) {
+  if (const auto *CMD = dyn_cast<clang::CXXMethodDecl>(FD)) {
+    const CXXRecordDecl *CRD = CMD->getParent();
+    return CRD->isLambda();
+  }
+  return false;
+}
