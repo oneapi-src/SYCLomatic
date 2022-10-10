@@ -149,3 +149,22 @@ FEATURE_REQUEST_FACTORY(
     ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuCtxGetApiVersion", DEREF(1),
                                             CALL(MapNames::getDpctNamespace() +
                                                  "get_sycl_language_version"))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    checkIsGetWorkGroupDim(1),
+    ASSIGN_FACTORY_ENTRY(
+        "cuDeviceGetAttribute", DEREF(0),
+        MEMBER_CALL(
+            MEMBER_CALL(
+                MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                                             "dev_mgr::instance"),
+                                        false, "get_device", ARG(2)),
+                            false, "get_device_info"),
+                false, makeFuncNameFromDevAttrCreator(1)),
+            false, "get", getWorkGroupDim(1))),
+    ASSIGN_FACTORY_ENTRY(
+        "cuDeviceGetAttribute", DEREF(0),
+        MEMBER_CALL(MEMBER_CALL(CALL(MapNames::getDpctNamespace() +
+                                     "dev_mgr::instance"),
+                                false, "get_device", ARG(2)),
+                    false, makeFuncNameFromDevAttrCreator(1)))))
