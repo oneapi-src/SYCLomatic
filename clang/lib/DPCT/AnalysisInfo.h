@@ -3531,10 +3531,11 @@ private:
         }
       }
       if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
-        addTextureObjectArg(Idx++, DRE, IsKernel);
+        addTextureObjectArg(Idx, DRE, IsKernel);
       else if (auto ASE =
                    dyn_cast<ArraySubscriptExpr>(Arg->IgnoreImpCasts()))
-        addTextureObjectArg(Idx++, ASE, IsKernel);
+        addTextureObjectArg(Idx, ASE, IsKernel);
+      Idx++;
       ArgItr++;
     }
   }

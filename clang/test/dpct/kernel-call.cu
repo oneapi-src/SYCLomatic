@@ -900,3 +900,22 @@ void run_foo17() {
   //CHECK-NEXT:  });
   testKernel<<<1,1>>>(1,2,count.run_foo());
 }
+
+template <class T>
+__global__ void my_kernel9(uchar4 *param0, const int param1, const int param2,
+                           const int param3, const T param4, const T param5,
+                           const T param6, const T param7, const T param8,
+                           const uchar4 param9, const int param10,
+                           const int param11) {}
+
+void run_foo18(uchar4 *param0, const int param1, const int param2,
+               const int param3, const double param4, const double param5,
+               const double param6, const double param7, const double param8,
+               const uchar4 param9, const int param10, const int param11) {
+//CHECK:  dpct::get_default_queue().parallel_for<dpct_kernel_name<class my_kernel9_{{[0-9a-z]+}}, float>>(
+//CHECK-NEXT:    cl::sycl::nd_range<3>(cl::sycl::range<3>(1, 1, 1), cl::sycl::range<3>(1, 1, 1)),
+//CHECK-NEXT:    [=](cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:      my_kernel9<float>(nullptr, param1, param2, param3, (float)param4, (float)param5, (float)param6, (float)param7, (float)param8, param9, param10, param11);
+//CHECK-NEXT:  });
+  my_kernel9<float><<<1, 1>>>(param0, param1, param2, param3, (float)param4, (float)param5, (float)param6, (float)param7, (float)param8, param9, param10, param11);
+}
