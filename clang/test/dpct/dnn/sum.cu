@@ -1,9 +1,9 @@
 // RUN: dpct -in-root %S -out-root %T/sum %S/sum.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/sum/sum.dp.cpp --match-full-lines %s
 
-// CHECK: #include <CL/sycl.hpp>
-// CHECK: #include <dpct/dpct.hpp>
 // CHECK: #include <dpct/dnnl_utils.hpp>
+// CHECK: #include <sycl/sycl.hpp>
+// CHECK: #include <dpct/dpct.hpp>
 // CHECK: #include <iostream>
 // CHECK: #include <vector>
 #include <cuda_runtime.h>
@@ -21,7 +21,7 @@
 // CHECK: };
 // CHECK: template <>
 // CHECK: /*
-// CHECK: DPCT1007:{{[0-9]+}}: Migration of data type double is not supported.
+// CHECK: DPCT1007:{{[0-9]+}}: Migration of CUDNN_DATA_DOUBLE is not supported.
 // CHECK: */
 // CHECK: struct dt_trait<CUDNN_DATA_DOUBLE> {
 // CHECK:     typedef double type;
@@ -96,7 +96,7 @@ void test() {
     // CHECK: /*
     // CHECK: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK: */
-    // CHECK: auto s = (handle.sum(alpha, dataTensor, data, beta, outTensor, out), 0);
+    // CHECK: auto s = (handle.async_sum(alpha, dataTensor, data, beta, outTensor, out), 0);
 
     auto s = cudnnAddTensor(handle, &alpha, dataTensor, data, &beta, outTensor, out);
 

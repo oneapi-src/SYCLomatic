@@ -9,10 +9,13 @@
 // Base API
 
 CALL_FACTORY_ENTRY("cuda::std::atomic_thread_fence",
-                   CALL(MapNames::getClNamespace() + "atomic_fence", ARG(0)))
+                   CALL(MapNames::getClNamespace() + "atomic_fence", ARG(0),
+                        LITERAL(MapNames::getClNamespace() +
+                                "memory_scope::system")))
 
 CALL_FACTORY_ENTRY("cuda::atomic_thread_fence",
-                   CALL(MapNames::getClNamespace() + "atomic_fence", ARG(0)))
+                   CALL(MapNames::getClNamespace() + "atomic_fence", ARG(0),
+                        ARG(1)))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Atomic_atomic_class_store,
                         MEMBER_CALL_FACTORY_ENTRY("store", ARG(0), false,

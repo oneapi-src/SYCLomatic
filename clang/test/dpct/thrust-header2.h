@@ -1,8 +1,6 @@
 
 
-//CHECK:#include <oneapi/dpl/execution>
-//CHECK-NEXT:#include <oneapi/dpl/algorithm>
-//CHECK-NEXT:#include <CL/sycl.hpp>
+//CHECK:#include <sycl/sycl.hpp>
 //CHECK-NEXT:#include <dpct/dpct.hpp>
 //CHECK-NEXT:#include <cstdio>
 //CHECK-NEXT:#include <dpct/dpl_utils.hpp>

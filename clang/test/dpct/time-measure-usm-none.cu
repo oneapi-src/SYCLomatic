@@ -246,7 +246,6 @@ void foo_usm() {
   cudaEvent_t start, stop;
   SAFE_CALL(cudaEventRecord(start, 0));
 
-
   // CHECK:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
   // CHECK:  SAFE_CALL((dpct::async_dpct_memcpy(gpu_t, host_t, n * sizeof(int), dpct::host_to_device, *s1), 0));
@@ -496,7 +495,7 @@ int foo_test_4()
 
 // CHECK:        kernelEvent_ct1_i = std::chrono::steady_clock::now();
 // CHECK-NEXT:        CHECK((*kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier(), 0));
-// CHECK-NEXT:        *kernelEvent[i] = streams[n_streams - 1]->ext_oneapi_submit_barrier({*kernelEvent[i]});
+// CHECK-NEXT:        streams[n_streams - 1]->ext_oneapi_submit_barrier({*kernelEvent[i]});
         CHECK(cudaEventRecord(kernelEvent[i], streams[i]));
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
     }

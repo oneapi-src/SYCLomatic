@@ -73,6 +73,12 @@ void MultiplexASTDeserializationListener::ModuleRead(
     Listener->ModuleRead(ID, Mod);
 }
 
+void MultiplexASTDeserializationListener::ModuleImportRead(
+    serialization::SubmoduleID ID, SourceLocation ImportLoc) {
+  for (auto &Listener : Listeners)
+    Listener->ModuleImportRead(ID, ImportLoc);
+}
+
 // This ASTMutationListener forwards its notifications to a set of
 // child listeners.
 class MultiplexASTMutationListener : public ASTMutationListener {
@@ -368,3 +374,14 @@ void MultiplexConsumer::ForgetSema() {
     if (SemaConsumer *SC = dyn_cast<SemaConsumer>(Consumer.get()))
       SC->ForgetSema();
 }
+
+#ifdef SYCLomatic_CUSTOMIZATION
+void MultiplexConsumer::HandleCXXExplicitFunctionInstantiation(
+    const FunctionDecl *Specialization, const FunctionTypeLoc &FTL,
+    const ParsedAttributes &Attrs, const TemplateArgumentListInfo &TAList) {
+  for (auto &Consumer : Consumers)
+    Consumer->HandleCXXExplicitFunctionInstantiation(Specialization, FTL, Attrs,
+                                                     TAList);
+}
+#endif // SYCLomatic_CUSTOMIZATION
+

@@ -10,11 +10,29 @@
 #include "CallExprRewriter.h"
 #include "Error.h"
 #include "MapNames.h"
+#include "MigrationRuleManager.h"
 #include "Utility.h"
 #include "llvm/Support/YAMLTraits.h"
 #include "NCCLAPIMigration.h"
 std::vector<std::string> MetaRuleObject::RuleFiles;
 std::vector<std::shared_ptr<MetaRuleObject>> MetaRules;
+
+template <class Functor>
+void reisterMigrationRule(const std::string &Name, Functor F) {
+  class UserDefinedRuleFactory : public clang::dpct::MigrationRuleFactoryBase {
+    Functor F;
+
+  public:
+    UserDefinedRuleFactory(Functor Func) : F(std::move(Func)) {}
+    std::unique_ptr<clang::dpct::MigrationRule>
+    createMigrationRule() const override {
+      return F();
+    }
+  };
+  clang::dpct::MigrationRuleManager::registerRule(
+      clang::dpct::PassKind::PK_Migration, Name,
+      std::make_shared<UserDefinedRuleFactory>(std::move(F)));
+}
 
 void registerMacroRule(MetaRuleObject &R) {
   auto It = MapNames::MacroRuleMap.find(R.In);
@@ -39,8 +57,8 @@ void registerMacroRule(MetaRuleObject &R) {
 
 void registerAPIRule(MetaRuleObject &R) {
   // register rule
-  clang::dpct::ASTTraversalMetaInfo::registerRule((char *)&R, R.RuleId, [=] {
-    return new clang::dpct::UserDefinedAPIRule(R.In);
+  reisterMigrationRule(R.RuleId, [=] {
+    return std::make_unique<clang::dpct::UserDefinedAPIRule>(R.In);
   });
   // create and register rewriter
   // RewriterMap contains entries like {"FunctionName", RewriterFactory}
@@ -85,8 +103,8 @@ void registerTypeRule(MetaRuleObject &R) {
                                   R.Includes.begin(), R.Includes.end());
     }
   } else {
-    clang::dpct::ASTTraversalMetaInfo::registerRule((char *)&R, R.RuleId, [=] {
-      return new clang::dpct::UserDefinedTypeRule(R.In);
+    reisterMigrationRule(R.RuleId, [=] {
+      return std::make_unique<clang::dpct::UserDefinedTypeRule>(R.In);
     });
     auto RulePtr = std::make_shared<TypeNameRule>(
         R.Out, clang::dpct::HelperFeatureEnum::no_feature_helper, R.Priority);
@@ -123,11 +141,10 @@ void registerClassRule(MetaRuleObject &R) {
             R.Includes.end());
       }
     } else {
-      clang::dpct::ASTTraversalMetaInfo::registerRule(
-          (char *)&(**ItField), BaseAndFieldName, [=] {
-            return new clang::dpct::UserDefinedClassFieldRule(R.In,
-                                                              (*ItField)->In);
-          });
+      reisterMigrationRule(BaseAndFieldName, [=] {
+        return std::make_unique<clang::dpct::UserDefinedClassFieldRule>(
+            R.In, (*ItField)->In);
+      });
       std::shared_ptr<ClassFieldRule> RulePtr;
       if ((*ItField)->OutGetter != "") {
         RulePtr = std::make_shared<ClassFieldRule>(
@@ -147,11 +164,10 @@ void registerClassRule(MetaRuleObject &R) {
   for (auto ItMethod = R.Methods.begin(); ItMethod != R.Methods.end();
        ItMethod++) {
     std::string BaseAndMethodName = R.In + "." + (*ItMethod)->In;
-    clang::dpct::ASTTraversalMetaInfo::registerRule(
-        (char *)&(**ItMethod), BaseAndMethodName, [=] {
-          return new clang::dpct::UserDefinedClassMethodRule(R.In,
+    reisterMigrationRule(BaseAndMethodName, [=] {
+      return std::make_unique<clang::dpct::UserDefinedClassMethodRule>(R.In,
                                                              (*ItMethod)->In);
-        });
+    });
 
     auto ItMethodRule =
         clang::dpct::CallExprRewriterFactoryBase::MethodRewriterMap->find(
@@ -186,8 +202,8 @@ void registerEnumRule(MetaRuleObject &R) {
     if(R.EnumName == ""){
       return;
     }
-    clang::dpct::ASTTraversalMetaInfo::registerRule((char *)&R, R.RuleId, [=] {
-      return new clang::dpct::UserDefinedEnumRule(R.EnumName);
+    reisterMigrationRule(R.RuleId, [=] {
+      return std::make_unique<clang::dpct::UserDefinedEnumRule>(R.EnumName);
     });
     auto RulePtr = std::make_shared<EnumNameRule>(
         R.Out, clang::dpct::HelperFeatureEnum::no_feature_helper, R.Priority);
@@ -493,7 +509,7 @@ void clang::dpct::UserDefinedTypeRule::runRule(
         DpctGlobalInfo::getTypeName(TL->getType().getUnqualifiedType());
     // if the TypeLoc is a TemplateSpecializationTypeLoc
     // the TypeStr should be the substr before the "<"
-    if(auto TSTL = TL->getAs<TemplateSpecializationTypeLoc>()){
+    if (auto TSTL = TL->getAsAdjusted<TemplateSpecializationTypeLoc>()) {
       TypeStr = TypeStr.substr(0, TypeStr.find("<"));
     }
     auto It = MapNames::TypeNamesMap.find(TypeStr);
@@ -506,7 +522,7 @@ void clang::dpct::UserDefinedTypeRule::runRule(
     auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
     auto Len = Lexer::MeasureTokenLength(
         Range.getEnd(), SM, DpctGlobalInfo::getContext().getLangOpts());
-    if (auto TSTL = TL->getAs<TemplateSpecializationTypeLoc>()) {
+    if (auto TSTL = TL->getAsAdjusted<TemplateSpecializationTypeLoc>()) {
       Range = getDefinitionRange(TSTL.getBeginLoc(), TSTL.getLAngleLoc());
       Len = 0;
     }

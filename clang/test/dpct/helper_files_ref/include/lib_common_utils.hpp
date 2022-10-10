@@ -9,10 +9,20 @@
 #ifndef __DPCT_LIB_COMMON_UTILS_HPP__
 #define __DPCT_LIB_COMMON_UTILS_HPP__
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include <oneapi/mkl.hpp>
+#include "memory.hpp"
 
 namespace dpct {
+namespace detail {
+template <typename T> inline auto get_memory(T *x) {
+#ifdef DPCT_USM_LEVEL_NONE
+  return dpct::get_buffer<std::remove_cv_t<T>>(x);
+#else
+  return x;
+#endif
+}
+}
 enum class version_field : int {
   major,
   minor,

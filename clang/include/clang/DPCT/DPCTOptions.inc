@@ -258,12 +258,12 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<HelperFilesCustomizationLeve
             "Generate a complete set of helper header files and place them in the --out-root\n"
             "directory.", false)
            ),
-           llvm::cl::desc("Customize the helper header files for migrated code. The values are:\n"),
+           llvm::cl::desc("DEPRECATED: Customize the helper header files for migrated code. The values are:\n"),
            llvm::cl::init(HelperFilesCustomizationLevel::HFCL_None), llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat),
            llvm::cl::Optional)
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), CustomHelperFileName, "custom-helper-name",
-        llvm::cl::desc("Specifies the helper headers folder name and main helper header file name.\n"
+        llvm::cl::desc("DEPRECATED: Specifies the helper headers folder name and main helper header file name.\n"
         "Default: dpct."),
         llvm::cl::init("dpct"), llvm::cl::value_desc("name"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
@@ -295,7 +295,7 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<ExplicitNamespace>), UseExp
                                      "be used with other values.",
                                      false),
              DPCT_OPT_ENUM("cl", int(ExplicitNamespace::EN_CL),
-               "Generate code with cl::sycl:: namespace. Cannot be used with "
+               "DEPRECATED: Generate code with cl::sycl:: namespace. Cannot be used with "
                "sycl or sycl-math values.",
                false),
              DPCT_OPT_ENUM("dpct", int(ExplicitNamespace::EN_DPCT),

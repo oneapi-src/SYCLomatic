@@ -130,16 +130,40 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     CheckCanUseTemplateMalloc(0, 1),
-    ASSIGN_FACTORY_ENTRY("cudaMallocManaged", DEREF(makeDerefArgCreatorWithCall(0)),
-                         CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                                  MapNames::getClNamespace() + "malloc_shared",
-                                  getDoubleDerefedType(0)),
-                              getSizeForMalloc(0, 1), QUEUESTR)),
-    ASSIGN_FACTORY_ENTRY("cudaMallocManaged", DEREF(makeDerefArgCreatorWithCall(0)),
-                         CAST(getDerefedType(0),
-                              CALL(MapNames::getClNamespace() + "malloc_shared",
-                                   getSizeForMalloc(0, 1), QUEUESTR)
-                             ))))
+    CONDITIONAL_FACTORY_ENTRY(
+        hasManagedAttr(0),
+        ASSIGN_FACTORY_ENTRY(
+            "cudaMallocManaged",
+            makeCombinedArg(
+                makeCombinedArg(ARG("*("),
+                                DEREF(makeDerefArgCreatorWithCall(0))),
+                ARG(".get_ptr())")),
+            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getClNamespace() +
+                                                "malloc_shared",
+                                            getDoubleDerefedType(0)),
+                 getSizeForMalloc(0, 1), QUEUESTR)),
+        ASSIGN_FACTORY_ENTRY(
+            "cudaMallocManaged", DEREF(makeDerefArgCreatorWithCall(0)),
+            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getClNamespace() +
+                                                "malloc_shared",
+                                            getDoubleDerefedType(0)),
+                 getSizeForMalloc(0, 1), QUEUESTR))),
+    CONDITIONAL_FACTORY_ENTRY(
+        hasManagedAttr(0),
+        ASSIGN_FACTORY_ENTRY(
+            "cudaMallocManaged",
+            makeCombinedArg(
+                makeCombinedArg(ARG("*("),
+                                DEREF(makeDerefArgCreatorWithCall(0))),
+                ARG(".get_ptr())")),
+            CAST(getDerefedType(0),
+                 CALL(MapNames::getClNamespace() + "malloc_shared",
+                      getSizeForMalloc(0, 1), QUEUESTR))),
+        ASSIGN_FACTORY_ENTRY(
+            "cudaMallocManaged", DEREF(makeDerefArgCreatorWithCall(0)),
+            CAST(getDerefedType(0),
+                 CALL(MapNames::getClNamespace() + "malloc_shared",
+                      getSizeForMalloc(0, 1), QUEUESTR))))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     CheckCanUseTemplateMalloc(0, 1),
@@ -308,3 +332,9 @@ CONDITIONAL_FACTORY_ENTRY(
         TOSTRING_FACTORY_ENTRY("cudaHostRegister", LITERAL("0")),
         Diagnostics::FUNC_CALL_REMOVED_0,
         std::string("cudaHostRegister"), getRemovedAPIWarningMessage("cudaHostRegister")))
+
+ASSIGNABLE_FACTORY(
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::Memory_pointer_attributes,
+        MEMBER_CALL_FACTORY_ENTRY(
+            "cudaPointerGetAttributes", DEREF(0), false, "init", ARG(1))))

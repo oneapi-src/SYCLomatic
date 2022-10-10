@@ -140,14 +140,14 @@ int main() {
   InvokeKernel<double>();
 }
 
-// CHECK: void foo(sycl::nd_item<3> item_ct1, uint8_t *dpct_local, uint32_t *share_v) {
+// CHECK: void foo(sycl::nd_item<3> item_ct1, uint8_t *dpct_local, uint32_t &share_v) {
 // CHECK-NEXT:  auto share_array = (uint32_t *)dpct_local;
 // CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range(2)) {
 // CHECK-NEXT:    dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::generic_space>(&share_array[b], (uint32_t)1);
 // CHECK-NEXT:    dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::generic_space>((uint32_t*)share_array, (uint32_t)1);
 // CHECK-NEXT:  }
 // CHECK-EMPTY:
-// CHECK-NEXT:  dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::generic_space>(share_v, (uint32_t)1);
+// CHECK-NEXT:  dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::generic_space>(&share_v, (uint32_t)1);
 // CHECK-NEXT:}
 __global__ void foo() {
   extern __shared__ uint32_t share_array[];
@@ -159,7 +159,7 @@ __shared__ uint32_t share_v;
   atomicAdd(&share_v, 1);
 }
 
-// CHECK:void foo_2(sycl::nd_item<3> item_ct1, uint8_t *dpct_local, uint32_t *share_v) {
+// CHECK:void foo_2(sycl::nd_item<3> item_ct1, uint8_t *dpct_local, uint32_t &share_v) {
 // CHECK-NEXT:  auto share_array = (uint32_t *)dpct_local;
 // CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range(2)) {
 // CHECK-NEXT:    uint32_t *p_1 = &share_array[b];
@@ -170,7 +170,7 @@ __shared__ uint32_t share_v;
 // CHECK-NEXT:    dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::generic_space>(p_3, (uint32_t)1);
 // CHECK-NEXT:  }
 // CHECK-EMPTY:
-// CHECK-NEXT:  uint32_t *p_1 = share_v;
+// CHECK-NEXT:  uint32_t *p_1 = &share_v;
 // CHECK-NEXT:  uint32_t *p_2 = p_1;
 // CHECK-NEXT:  uint32_t *p_3 = p_2;
 // CHECK-NEXT:  dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::generic_space>(p_1, (uint32_t)1);
@@ -196,12 +196,12 @@ __shared__ uint32_t share_v;
   atomicAdd(p_3, 1);
 }
 
-// CHECK:void foo_3(uint32_t *share_v) {
+// CHECK:void foo_3(uint32_t &share_v) {
 // CHECK-EMPTY:
 // CHECK-NEXT:  uint32_t *p_1 = NULL;
 // CHECK-NEXT:  uint32_t *p_2 = NULL;
 // CHECK-NEXT:  uint32_t *p_3 = NULL;
-// CHECK-NEXT:  p_1 = share_v;
+// CHECK-NEXT:  p_1 = &share_v;
 // CHECK-NEXT:  p_2 = p_1;
 // CHECK-NEXT:  p_3 = p_2;
 // CHECK-NEXT:  uint32_t *p_4 = p_3;
@@ -389,7 +389,7 @@ __global__ void kernel_2(unsigned* data) {
   data[1] = ptr[0];
 }
 
-// CHECK: void k(uint32_t *u32) {
+// CHECK: void k(uint32_t &u32) {
 __global__ void k() {
   int i;
   unsigned ui;
@@ -446,7 +446,7 @@ __global__ void k() {
   // CHECK: dpct::atomic_fetch_add<unsigned int, sycl::access::address_space::generic_space>(&ui, (unsigned int)(i + i));
   atomicAdd(&ui, i + i);
 
-  // CHECK: dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::generic_space>(u32, *u32);
+  // CHECK: dpct::atomic_fetch_add<uint32_t, sycl::access::address_space::generic_space>(&u32, u32);
   atomicAdd(&u32, u32);
 
   // CHECK: dpct::atomic_fetch_add<float, sycl::access::address_space::generic_space>(&f, f);
@@ -539,9 +539,9 @@ __shared__ unsigned int s_Hist[100];
 //CHECK:dpct::global_memory<volatile int, 0> g_mutex(0);
 volatile __device__ int g_mutex = 0;
 
-//CHECK:void __gpu_sync(int blocks_to_synch, volatile int *g_mutex) {
-//CHECK-NEXT:  dpct::atomic_fetch_add<int, sycl::access::address_space::generic_space>((int *)g_mutex, 1);
-//CHECK-NEXT:  while(*g_mutex < blocks_to_synch);
+//CHECK:void __gpu_sync(int blocks_to_synch, volatile int &g_mutex) {
+//CHECK-NEXT:  dpct::atomic_fetch_add<int, sycl::access::address_space::generic_space>((int *)&g_mutex, 1);
+//CHECK-NEXT:  while(g_mutex < blocks_to_synch);
 //CHECK-NEXT:}
 __device__ void __gpu_sync(int blocks_to_synch) {
   atomicAdd((int *)&g_mutex, 1);
@@ -549,14 +549,14 @@ __device__ void __gpu_sync(int blocks_to_synch) {
 }
 
 //CHECK:void atomicInc_foo(sycl::nd_item<3> item_ct1, uint8_t *dpct_local,
-//CHECK-NEXT:                   unsigned int *share_v) {
+//CHECK-NEXT:                   unsigned int &share_v) {
 //CHECK-NEXT:  auto share_array = (unsigned int *)dpct_local;
 //CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range(2)) {
 //CHECK-NEXT:    dpct::atomic_fetch_compare_inc<sycl::access::address_space::generic_space>(&share_array[b], (unsigned int)1);
 //CHECK-NEXT:    dpct::atomic_fetch_compare_inc<sycl::access::address_space::generic_space>((unsigned int*)share_array, (unsigned int)1);
 //CHECK-NEXT:  }
 //CHECK-EMPTY:
-//CHECK-NEXT:  dpct::atomic_fetch_compare_inc<sycl::access::address_space::generic_space>(share_v, (unsigned int)1);
+//CHECK-NEXT:  dpct::atomic_fetch_compare_inc<sycl::access::address_space::generic_space>(&share_v, (unsigned int)1);
 //CHECK-NEXT:}
 __global__ void atomicInc_foo() {
   extern __shared__ unsigned int share_array[];

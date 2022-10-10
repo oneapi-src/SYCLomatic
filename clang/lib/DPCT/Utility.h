@@ -417,7 +417,9 @@ bool isAssigned(const clang::Stmt *S);
 
 std::string getTempNameForExpr(const clang::Expr *E, bool HandleLiteral = false,
                                bool KeepLastUnderline = true,
-                               bool IsInMacroDefine = false);
+                               bool IsInMacroDefine = false,
+                               clang::SourceLocation CallBegin = clang::SourceLocation(),
+                               clang::SourceLocation CallEnd = clang::SourceLocation());
 bool isOuterMostMacro(const clang::Stmt *E);
 bool isSameLocation(const clang::SourceLocation L1,
                     const clang::SourceLocation L2);
@@ -483,6 +485,8 @@ std::string getFinalCastTypeNameStr(std::string CastTypeName);
 bool isLexicallyInLocalScope(const clang::Decl *);
 const clang::DeclaratorDecl *getHandleVar(const clang::Expr *Arg);
 bool checkPointerInStructRecursively(const clang::DeclRefExpr *DRE);
+bool checkPointerInStructRecursively(const clang::RecordDecl *);
+clang::RecordDecl *getRecordDecl(clang::QualType QT);
 clang::SourceLocation
 getImmSpellingLocRecursive(const clang::SourceLocation Loc);
 clang::dpct::FFTTypeEnum getFFTTypeFromValue(std::int64_t Value);
@@ -564,4 +568,7 @@ void insertHeaderForTypeRule(std::string, clang::SourceLocation);
 std::string getRemovedAPIWarningMessage(std::string FuncName);
 std::string getBaseTypeStr(const clang::CallExpr *CE);
 std::string getArgTypeStr(const clang::CallExpr *CE, unsigned int Idx);
+std::string getFunctionName(const clang::FunctionDecl *Node);
+std::string getFunctionName(const clang::UnresolvedLookupExpr *Node);
+std::string getFunctionName(const clang::FunctionTemplateDecl *Node);
 #endif // DPCT_UTILITY_H

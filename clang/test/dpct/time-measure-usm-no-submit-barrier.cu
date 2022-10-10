@@ -473,3 +473,30 @@ void test_1999(void* ref_image, void* cur_image,
     cudaEventElapsedTime(sad_calc_8_ms, sad_calc_8_start, sad_calc_8_stop);
     cudaEventElapsedTime(sad_calc_16_ms, sad_calc_16_start, sad_calc_16_stop);
 }
+
+class Stream {};
+namespace user {
+class CUDAStream {
+public:
+  operator cudaStream_t() const {
+    cudaStream_t tt;
+    return tt;
+  }
+};
+CUDAStream getCurrentCUDAStream(int device_index = -1);
+} // namespace user
+
+
+void foo() {
+  user::CUDAStream stream = user::getCurrentCUDAStream();
+  void* dst = NULL;
+  void* src = NULL;
+  int nbytes;
+  cudaMemcpyKind kind;
+
+  // CHECK:  ((sycl::queue *)(stream))->memcpy(dst, src, nbytes);
+  // CHECK-NEXT:  ((sycl::queue *)(stream))->memset(dst, 0, nbytes);
+  cudaMemcpyAsync(dst, src, nbytes, kind, stream);
+  cudaMemsetAsync(dst, 0, nbytes, stream);
+}
+

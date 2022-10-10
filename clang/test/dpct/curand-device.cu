@@ -1,7 +1,7 @@
 // RUN: dpct --format-range=none --usm-level=none -extra-arg-before=-std=c++14 -out-root %T/curand-device %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/curand-device/curand-device.dp.cpp --match-full-lines %s
 
-//CHECK: #include <CL/sycl.hpp>
+//CHECK: #include <sycl/sycl.hpp>
 //CHECK-NEXT: #include <dpct/dpct.hpp>
 //CHECK-NEXT: #include <oneapi/mkl.hpp>
 //CHECK-NEXT: #include <oneapi/mkl/rng/device.hpp>
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-// CHECK: void my_kernel5(          int *a  ) {
+// CHECK: void my_kernel5(          int &a  ) {
 __global__ void my_kernel5(          void  ) {
   __shared__ int a;
 }

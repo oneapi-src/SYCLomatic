@@ -158,7 +158,7 @@ public:
       }
     }
     DiagnosticsUtils::report<IDTy, Ts...>(
-        SL, MsgID, DpctGlobalInfo::getCompilerInstance(), &TS, UseTextBegin,
+        SL, MsgID, DpctGlobalInfo::getSourceManager(), &TS, UseTextBegin,
         std::forward<Ts>(Vals)...);
     for (auto &T : TS)
       DpctGlobalInfo::getInstance().addReplacement(
@@ -396,7 +396,7 @@ class RemoveCubTempStorageFactory : public CallExprRewriterFactoryBase {
 public:
   RemoveCubTempStorageFactory(std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory)
     : Inner(InnerFactory) {}
-  
+
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override;
 };
 
@@ -739,6 +739,22 @@ public:
   static DerefExpr create(const Expr *E, const CallExpr * C);
 };
 
+template <class StreamT>
+void print(StreamT &Stream,
+           std::pair<const llvm::StringRef, clang::dpct::DerefExpr> Pair) {
+  Stream << Pair.first;
+  ArgumentAnalysis AA;
+  Pair.second.printArg(Stream, AA);
+}
+template <class StreamT>
+void print(StreamT &Stream,
+           std::pair<std::pair<const llvm::StringRef, clang::dpct::DerefExpr>,
+                     const llvm::StringRef>
+               Pair) {
+  print(Stream, Pair.first);
+  Stream << Pair.second;
+}
+
 class RenameWithSuffix {
   StringRef OriginalName, SuffixStr;
 
@@ -760,6 +776,9 @@ public:
   template <class StreamT> void print(StreamT &) const {}
   template <class StreamT>
   void printArg(std::false_type, StreamT &Stream, const Expr *E) const {
+    if(auto defaultArg = dyn_cast<CXXDefaultArgExpr>(E)){
+      E = defaultArg->getExpr();
+    }
     dpct::print(Stream, A, E);
   }
 
@@ -859,7 +878,7 @@ template <class CalleeT, class... CallArgsT> class CallExprPrinter {
   ArgsPrinter<false, CallArgsT...> Args;
 
 public:
-  CallExprPrinter(CalleeT Callee, CallArgsT &&...Args)
+  CallExprPrinter(const CalleeT &Callee, CallArgsT &&...Args)
       : Callee(Callee), Args(std::forward<CallArgsT>(Args)...) {}
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Callee);
@@ -889,7 +908,7 @@ template <class BaseT, class MemberT> class MemberExprPrinter {
   MemberT MemberName;
 
 public:
-  MemberExprPrinter(BaseT Base, bool IsArrow, MemberT MemberName)
+  MemberExprPrinter(const BaseT &Base, bool IsArrow, MemberT MemberName)
       : Base(Base), IsArrow(IsArrow), MemberName(MemberName) {}
 
   template <class StreamT> void print(StreamT &Stream) const {
@@ -898,11 +917,25 @@ public:
   }
 };
 
+template <class BaseT, class MemberT> class StaticMemberExprPrinter {
+  BaseT Base;
+  MemberT Member;
+public:
+  StaticMemberExprPrinter(BaseT &&Base, MemberT &&Member)
+    : Base(std::forward<BaseT>(Base)), Member(std::forward<MemberT>(Member)) {}
+  
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Base);
+    Stream << "::";
+    dpct::print(Stream, Member);
+  }
+};
+
 template <class BaseT, class MemberT, class... CallArgsT>
 class MemberCallPrinter
     : public CallExprPrinter<MemberExprPrinter<BaseT, MemberT>, CallArgsT...> {
 public:
-  MemberCallPrinter(BaseT Base, bool IsArrow, MemberT MemberName,
+  MemberCallPrinter(const BaseT &Base, bool IsArrow, MemberT MemberName,
                     CallArgsT &&...Args)
       : CallExprPrinter<MemberExprPrinter<BaseT, MemberT>, CallArgsT...>(
             MemberExprPrinter<BaseT, MemberT>(std::move(Base), IsArrow,
@@ -992,6 +1025,29 @@ public:
   template <class StreamT> void print(StreamT &Stream) const {
     Stream << "new ";
     Base::print(Stream);
+  }
+};
+
+template<class SubExprT>
+class TypenameExprPrinter {
+  SubExprT SubExpr;
+public:
+  TypenameExprPrinter(SubExprT &&SubExpr) : SubExpr(std::forward<SubExprT>(SubExpr)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    Stream << "typename ";
+    dpct::print(Stream, SubExpr);
+  }
+};
+
+template <class SubExprT> class ZeroInitializerPrinter {
+  SubExprT SubExpr;
+
+public:
+  ZeroInitializerPrinter(SubExprT &&SubExpr)
+      : SubExpr(std::forward<SubExprT>(SubExpr)) {}
+  template <typename StreamT> void print(StreamT &&Stream) const {
+    dpct::print(Stream, SubExpr);
+    Stream << "{}";
   }
 };
 
@@ -1439,6 +1495,8 @@ public:
 
 using CheckIntergerTemplateArgValueNE = CheckIntergerTemplateArgValue<std::not_equal_to<std::int64_t>>;
 using CheckIntergerTemplateArgValueLE = CheckIntergerTemplateArgValue<std::less_equal<std::int64_t>>;
+
+std::function<bool(const CallExpr *C)> hasManagedAttr(int Idx);
 
 } // namespace dpct
 } // namespace clang

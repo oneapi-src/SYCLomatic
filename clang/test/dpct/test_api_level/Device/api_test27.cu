@@ -3,12 +3,13 @@
 // RUN: FileCheck --input-file %T/Device/api_test27_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test27_out
 
-// CHECK: 14
+// CHECK: 16
 // TEST_FEATURE: Device_select_device
-
+// TEST_FEATURE: Device_get_current_device_id
 int main() {
     CUdevice device;
     CUcontext ctx;
     cuCtxCreate(&ctx, CU_CTX_LMEM_RESIZE_TO_MAX, device);
+    cuCtxGetDevice(&device);
     return 0;
 }

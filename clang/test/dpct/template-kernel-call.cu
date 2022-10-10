@@ -32,7 +32,7 @@ __global__ void compute_lj_force()
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
     texReader positionTexReader;
     // CHECK: /*
-    // CHECK-NEXT: DPCT1084:{{[0-9]+}}:  The function call has multiple migration results in different template instantiations that could not be unified. You may need to adjust the code.
+    // CHECK-NEXT: DPCT1084:{{[0-9]+}}: The function call "texReader_sp::operator()" has multiple migration results in different template instantiations that could not be unified. You may need to adjust the code.
     // CHECK-NEXT: */
     // CHECK-NEXT: float j = positionTexReader(idx, posTexture_dp).x();
     float j = positionTexReader(idx).x;
@@ -308,7 +308,7 @@ void convert(){
 // CHECK-NEXT:class Image {
 // CHECK-NEXT:public:
 // CHECK-NEXT:  T* dPtr;
-// CHECK-NEXT:  sycl::queue *s;
+// CHECK-NEXT:  dpct::queue_ptr s;
 // CHECK-NEXT:};
 // CHECK-NEXT:template <typename T>
 // CHECK-NEXT:void my_kernel(T *A) {
@@ -329,7 +329,7 @@ __global__ void my_kernel(T *A) {
 // CHECK-NEXT:  DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
 // CHECK-NEXT:  */
 // CHECK-NEXT:  ptr.s->parallel_for<dpct_kernel_name<class my_kernel_{{[a-f0-9]+}}, T>>(
-// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(1, 1, block_size), sycl::range<3>(1, 1, block_size)), 
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 8) * sycl::range<3>(1, 1, block_size), sycl::range<3>(1, 1, block_size)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:          my_kernel<T>(ptr.dPtr);
 // CHECK-NEXT:        });
@@ -394,7 +394,7 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 
   void run_naive() {
     val_t *dresult;
-// CHECK:dresult = (cuda::spmv_driver<V>::val_t *)dpct::dpct_malloc(sizeof(val_t));
+// CHECK:dresult = (val_t *)dpct::dpct_malloc(sizeof(val_t));
     cudaMalloc((void **)&dresult, sizeof(val_t));
 // CHECK:q_ct1.submit(
 // CHECK-NEXT:  [&](sycl::handler &cgh) {
@@ -544,4 +544,25 @@ __global__ void test_fooclass1() {
   a.foo();
   foo_class1<float, 10> b;
   b.foo();
+}
+
+texture<int4, 1, cudaReadModeElementType> tex_1;
+texture<int4, 1, cudaReadModeElementType> tex_2;
+struct tex_reader_1 {
+  __device__ int4 operator()(int idx) const { return tex1Dfetch(tex_1, idx); }
+};
+struct tex_reader_2 {
+  __device__ int4 operator()(int idx) const { return tex1Dfetch(tex_1, idx); }
+};
+template <typename tex_reader> __global__ void kernel_2() {
+  //CHECK:int idx = item_ct1.get_local_id(2);
+  //CHECK-NEXT:tex_reader reader;
+  //CHECK-NEXT:float res = reader(idx, tex_1).x();
+  int idx = threadIdx.x;
+  tex_reader reader;
+  float res = reader(idx).x;
+}
+void foo_2() {
+  kernel_2<tex_reader_1><<<1, 1>>>();
+  kernel_2<tex_reader_2><<<1, 1>>>();
 }

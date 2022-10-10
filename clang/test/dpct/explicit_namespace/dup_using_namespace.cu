@@ -4,7 +4,7 @@
 // RUN: FileCheck --input-file %T/dup_using_namespace/dup_using_namespace.dp.cpp --match-full-lines %s
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
-// CHECK-NEXT: #include <CL/sycl.hpp>
+// CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: using namespace dpct;
 // CHECK-NEXT: #include <dpct/dpl_utils.hpp>

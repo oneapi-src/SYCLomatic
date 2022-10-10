@@ -53,7 +53,6 @@ HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
     HelperFilesCustomizationLevel::HFCL_None;
 std::string DpctGlobalInfo::CustomHelperFileName = "dpct";
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
-std::unordered_set<FFTTypeEnum> DpctGlobalInfo::FFTTypeSet;
 std::unordered_set<std::string> DpctGlobalInfo::HostRNGEngineTypeSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
@@ -63,7 +62,6 @@ bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::EnableComments = false;
 bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
 bool DpctGlobalInfo::IsMLKHeaderUsed = false;
-CompilerInstance *DpctGlobalInfo::CI = nullptr;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
 FileManager *DpctGlobalInfo::FM = nullptr;
@@ -114,9 +112,6 @@ std::unordered_map<std::string, int> DpctGlobalInfo::TempVariableHandledMap;
 bool DpctGlobalInfo::UsingDRYPattern = true;
 bool DpctGlobalInfo::UsingGenericSpace = true;
 bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
-std::unordered_map<std::string, FFTExecAPIInfo>
-    DpctGlobalInfo::FFTExecAPIInfoMap;
-std::unordered_map<std::string, FFTHandleInfo> DpctGlobalInfo::FFTHandleInfoMap;
 unsigned int DpctGlobalInfo::CudaKernelDimDFIIndex = 1;
 std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CudaKernelDimDFIMap;
@@ -267,7 +262,6 @@ public:
 void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
   PrecAndDomPairSet.clear();
-  FFTTypeSet.clear();
   HostRNGEngineTypeSet.clear();
   KCIndentWidthMap.clear();
   LocationInitIndexMap.clear();
@@ -293,8 +287,6 @@ void DpctGlobalInfo::resetInfo() {
   TempVariableHandledMap.clear();
   UsingDRYPattern = true;
   SpBLASUnsupportedMatrixTypeFlag = false;
-  FFTExecAPIInfoMap.clear();
-  FFTHandleInfoMap.clear();
   NeedRunAgain = false;
   SpellingLocToDFIsMapForAssumeNDRange.clear();
   DFIToSpellingLocsMapForAssumeNDRange.clear();
@@ -308,7 +300,6 @@ DpctGlobalInfo::DpctGlobalInfo() {
   tooling::SetGetRunRound(DpctGlobalInfo::getRunRound);
   tooling::SetReProcessFile(DpctGlobalInfo::ReProcessFile);
   tooling::SetProcessedFile(DpctGlobalInfo::ProcessedFile);
-  tooling::SetColorOptionPtr(DpctGlobalInfo::ColorOption);
   tooling::SetIsExcludePathHandler(DpctGlobalInfo::isExcluded);
 }
 
@@ -328,29 +319,8 @@ DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
   return KernelInfo;
 }
 
-void DpctGlobalInfo::insertFFTPlanAPIInfo(SourceLocation SL,
-                                          FFTPlanAPIInfo Info) {
-  auto LocInfo = getLocInfo(SL);
-  auto FileInfo = insertFile(LocInfo.first);
-  auto &M = FileInfo->getFFTPlanAPIInfoMap();
-  if (M.find(LocInfo.second) == M.end()) {
-    Info.FilePath = LocInfo.first;
-    M.insert(std::make_pair(LocInfo.second, Info));
-  }
-}
-
-void DpctGlobalInfo::insertFFTExecAPIInfo(SourceLocation SL,
-                                          FFTExecAPIInfo Info) {
-  auto LocInfo = getLocInfo(SL);
-  auto FileInfo = insertFile(LocInfo.first);
-  auto &M = FileInfo->getFFTExecAPIInfoMap();
-  if (M.find(LocInfo.second) == M.end()) {
-    Info.FilePath = LocInfo.first;
-    M.insert(std::make_pair(LocInfo.second, Info));
-  }
-}
-
 bool DpctFileInfo::isInAnalysisScope() { return DpctGlobalInfo::isInAnalysisScope(FilePath); }
+
 // TODO: implement one of this for each source language.
 bool DpctFileInfo::isInCudaPath() {
   return DpctGlobalInfo::isInCudaPath(FilePath);
@@ -407,6 +377,11 @@ void DpctFileInfo::buildUnionFindSetForUncalledFunc() {
 void DpctFileInfo::buildKernelInfo() {
   for (auto &Kernel : KernelMap)
     Kernel.second->buildInfo();
+  
+  for (auto &D : FuncMap){
+    if(auto I = D.second->getFuncInfo())
+      I->buildInfo();
+  }
 }
 void DpctFileInfo::postProcess() {
   if (!isInAnalysisScope())
@@ -502,20 +477,8 @@ void DpctFileInfo::buildReplacements() {
                                false, std::get<1>(AtomicInfo.second));
   }
 
-  for (auto &DescInfo : FFTDescriptorTypeMap) {
-    DescInfo.second.buildInfo(FilePath, DescInfo.first);
-  }
-
   for (auto &DescInfo : EventSyncTypeMap) {
     DescInfo.second.buildInfo(FilePath, DescInfo.first);
-  }
-
-  for (auto &PlanInfo : FFTPlanAPIInfoMap) {
-    PlanInfo.second.buildInfo();
-  }
-
-  for (auto &ExecInfo : FFTExecAPIInfoMap) {
-    ExecInfo.second.buildInfo();
   }
 
   const auto &TimeStubBounds = getTimeStubBounds();
@@ -592,6 +555,142 @@ void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
     Repls->emplaceIntoReplSet(ReplSet[FilePath]);
 }
 
+void DpctFileInfo::insertHeader(HeaderType Type) {
+    switch (Type) {
+    case HT_SYCL:
+      return insertHeader(HeaderType::HT_SYCL, FirstIncludeOffset,
+                          "<sycl/sycl.hpp>",
+                          "<" + getCustomMainHelperFileName() + "/" +
+                              getCustomMainHelperFileName() + ".hpp>");
+    case HT_Math:
+      return insertHeader(HeaderType::HT_Math, LastIncludeOffset, "<cmath>");
+    case HT_Algorithm:
+      return insertHeader(HeaderType::HT_Algorithm, LastIncludeOffset,
+                          "<algorithm>");
+    case HT_Complex:
+      return insertHeader(HeaderType::HT_Complex, LastIncludeOffset,
+                          "<complex>");
+    case HT_Thread:
+      return insertHeader(HeaderType::HT_Thread, LastIncludeOffset, "<thread>");
+    case HT_Future:
+      return insertHeader(HeaderType::HT_Future, LastIncludeOffset, "<future>");
+    case HT_Time:
+      return insertHeader(HeaderType::HT_Time, LastIncludeOffset, "<time.h>");
+    case HT_Dnnl:
+      if (this != DpctGlobalInfo::getInstance().getMainFile().get())
+        return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+            HT_Dnnl);
+      return insertHeader(HeaderType::HT_Dnnl, FirstIncludeOffset,
+                          "<" + getCustomMainHelperFileName() +
+                              "/dnnl_utils.hpp>");
+    case HT_MKL_BLAS_Solver:
+      return insertHeader(
+          HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
+    case HT_MKL_BLAS_Solver_Without_Util:
+      return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>");
+    case HT_MKL_RNG:
+      return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>",
+                          "<" + getCustomMainHelperFileName() +
+                              "/rng_utils.hpp>");
+    case HT_MKL_RNG_Without_Util:
+      return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>");
+    case HT_MKL_SPBLAS:
+      return insertHeader(
+          HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
+    case HT_MKL_SPBLAS_Without_Util:
+      return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>");
+    case HT_MKL_FFT:
+      return insertHeader(
+          HeaderType::HT_MKL_FFT, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          "<" + getCustomMainHelperFileName() + "/fft_utils.hpp>");
+    case HT_Numeric:
+      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
+                          "<numeric>");
+    case HT_Chrono:
+      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
+                          "<chrono>");
+    case HT_DL:
+#ifdef _WIN32
+      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
+                          "<libloaderapi.h>");
+#else
+      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
+                          "<dlfcn.h>");
+#endif
+    case HT_STD_Numeric_Limits:
+      return insertHeader(HeaderType::HT_STD_Numeric_Limits, LastIncludeOffset,
+                          "<limits>");
+    case HT_DPL_Utils:
+      // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
+      // <oneapi/dpl/algorithm>, so we have to make sure that
+      // <oneapi/dpl/execution> and <oneapi/dpl/algorithm> are inserted before
+      // <CL/sycl.hpp>
+      // e.g.
+      // #include <CL/sycl.hpp>
+      // #include <dpct/dpct.hpp>
+      // #include <dpct/dpl_utils.hpp>
+      // ...
+      // This will cause compilation error due to onedpl header dependence
+      // The order we expect is:
+      // e.g.
+      // #include <oneapi/dpl/execution>
+      // #include <oneapi/dpl/algorithm>
+      // #include <CL/sycl.hpp>
+      // #include <dpct/dpct.hpp>
+      // #include <dpct/dpl_utils.hpp>
+      //
+      // We will insert <oneapi/dpl/execution> and <oneapi/dpl/algorithm> at the
+      // begining of the main file
+      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+          HT_DPL_Execution);
+      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+            HT_DPL_Algorithm);
+      return insertHeader(HeaderType::HT_DPL_Utils, LastIncludeOffset,
+                          "<" + getCustomMainHelperFileName() +
+                              "/dpl_utils.hpp>");
+    case HT_BFloat16:
+      return insertHeader(HeaderType::HT_BFloat16, LastIncludeOffset,
+                          "<oneapi/mkl/bfloat16.hpp>");
+    case HT_Lib_Common_Utils:
+      return insertHeader(HeaderType::HT_Lib_Common_Utils, LastIncludeOffset,
+                          "<" + getCustomMainHelperFileName() +
+                              "/lib_common_utils.hpp>");
+    case HT_CCL:
+      return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
+                          "<" + getCustomMainHelperFileName() +
+                              "/ccl_utils.hpp>");
+    case HT_Atomic:
+      return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
+                          "<" + getCustomMainHelperFileName() +
+                              "/atomic.hpp>");
+    case HT_DPL_Algorithm:
+      // Make sure <oneapi/dpl/algorithm> int the front of <CL/sycl.hpp>, also
+      // when crossing files
+      if (this != DpctGlobalInfo::getInstance().getMainFile().get())
+        return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+            HT_DPL_Algorithm);
+      return insertHeader(HeaderType::HT_DPL_Algorithm, FirstIncludeOffset,
+                          "<oneapi/dpl/algorithm>");
+    case HT_DPL_Execution:
+      // Make sure <oneapi/dpl/execution> int the front of <CL/sycl.hpp>, also
+      // when crossing files
+      if (this != DpctGlobalInfo::getInstance().getMainFile().get())
+        return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+            HT_DPL_Execution);
+      return insertHeader(HeaderType::HT_DPL_Execution, FirstIncludeOffset,
+                          "<oneapi/dpl/execution>");
+    case HT_DPL_Iterator:
+      return insertHeader(HeaderType::HT_DPL_Iterator, LastIncludeOffset,
+                          "<oneapi/dpl/iterator>");
+    }
+  }
+
 void DpctGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
   if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(0)))
     insertCudaMallocInfo(MallocVar)->setSizeExpr(CE->getArg(1));
@@ -632,6 +731,26 @@ void DpctGlobalInfo::insertBuiltinVarInfo(
   }
 }
 
+llvm::Optional<std::string> DpctGlobalInfo::getAbsolutePath(FileID ID) {
+  assert(SM && "SourceManager must be initialized");
+  if (const auto *FileEntry = SM->getFileEntryForID(ID)) {
+    // To avoid potential path inconsistent issue,
+    // using tryGetRealPathName while applicable.
+    if (!FileEntry->tryGetRealPathName().empty())
+      return FileEntry->tryGetRealPathName().str();
+
+    llvm::SmallString<512> FilePathAbs(FileEntry->getName());
+    SM->getFileManager().makeAbsolutePath(FilePathAbs);
+    llvm::sys::path::native(FilePathAbs);
+    // Need to remove dot to keep the file path
+    // added by ASTMatcher and added by
+    // AnalysisInfo::getLocInfo() consistent.
+    llvm::sys::path::remove_dots(FilePathAbs, true);
+    return (std::string)FilePathAbs;
+  }
+  return llvm::None;
+}
+
 int KernelCallExpr::calculateOriginArgsSize() const {
   int Size = 0;
   for (auto &ArgInfo : ArgsInfo) {
@@ -641,14 +760,17 @@ int KernelCallExpr::calculateOriginArgsSize() const {
 }
 
 template <class ArgsRange>
-void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
+void KernelCallExpr::buildExecutionConfig(
+    const ArgsRange &ConfigArgs, const CallExpr *KernelCall) {
   bool NeedTypeCast = true;
   int Idx = 0;
+  auto KCallSpellingRange = getTheLastCompleteImmediateRange(
+      KernelCall->getBeginLoc(), KernelCall->getEndLoc());
   for (auto Arg : ConfigArgs) {
     KernelConfigAnalysis A(IsInMacroDefine);
+    A.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
     A.analyze(Arg, Idx, Idx < 2);
     ExecutionConfig.Config[Idx] = A.getReplacedString();
-
     if (Idx == 0) {
       ExecutionConfig.GroupDirectRef = A.isDirectRef();
     } else if (Idx == 1) {
@@ -716,7 +838,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
 
 void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
   buildLocationInfo(KernelCall);
-  buildExecutionConfig(KernelCall->getConfig()->arguments());
+  buildExecutionConfig(KernelCall->getConfig()->arguments(), KernelCall);
   buildNeedBracesInfo(KernelCall);
 }
 
@@ -726,6 +848,9 @@ void KernelCallExpr::buildLocationInfo(const CallExpr *KernelCall) {
   LocInfo.NL = getNL();
   LocInfo.Indent = getIndent(Begin, SM).str();
   LocInfo.LocHash = getHashAsString(Begin.printToString(SM)).substr(0, 6);
+  if (IsInMacroDefine) {
+    LocInfo.NL = "\\" + LocInfo.NL;
+  }
 }
 
 void KernelCallExpr::buildNeedBracesInfo(const CallExpr *KernelCall) {
@@ -757,10 +882,6 @@ void KernelCallExpr::addAccessorDecl() {
   }
   addAccessorDecl(MemVarInfo::Local);
   addAccessorDecl(MemVarInfo::Global);
-  for (auto &Tex : VM.getTextureMap()) {
-    SubmitStmtsList.TextureList.emplace_back(Tex.second->getAccessorDecl());
-    SubmitStmtsList.SamplerList.emplace_back(Tex.second->getSamplerDecl());
-  }
   for (auto &Tex : getTextureObjectList()) {
     if (Tex) {
       if (!Tex->getType()) {
@@ -770,9 +891,11 @@ void KernelCallExpr::addAccessorDecl() {
                                  Diagnostics::UNDEDUCED_TYPE, true, false,
                                  "image_accessor_ext");
       }
-      SubmitStmtsList.TextureList.emplace_back(Tex->getAccessorDecl());
-      SubmitStmtsList.SamplerList.emplace_back(Tex->getSamplerDecl());
+      Tex->addDecl(SubmitStmtsList.TextureList, SubmitStmtsList.SamplerList);
     }
+  }
+  for (auto& Tex : VM.getTextureMap()) {
+    Tex.second->addDecl(SubmitStmtsList.TextureList, SubmitStmtsList.SamplerList);
   }
 }
 
@@ -831,7 +954,6 @@ void KernelCallExpr::buildKernelArgsStmt() {
     }
     if (ArgCounter != 0)
       KernelArgs += ", ";
-
     if (Arg.IsDoublePointer) {
       DiagnosticsUtils::report(getFilePath(), getBegin(),
                                Diagnostics::VIRTUAL_POINTER, true, false,
@@ -1185,9 +1307,6 @@ std::string KernelCallExpr::getReplacement() {
   addStreamDecl();
   buildKernelArgsStmt();
 
-  if (IsInMacroDefine) {
-    LocInfo.NL = "\\" + LocInfo.NL;
-  }
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   KernelPrinter Printer(LocInfo.NL, LocInfo.Indent, OS);
@@ -1238,7 +1357,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
     Kernel->buildCalleeInfo(Callee);
     Kernel->buildLocationInfo(CE);
     Kernel->buildExecutionConfig(ArrayRef<const Expr *>{
-        CE->getArg(1), CE->getArg(2), CE->getArg(4), CE->getArg(5)});
+        CE->getArg(1), CE->getArg(2), CE->getArg(4), CE->getArg(5)}, CE);
     Kernel->buildNeedBracesInfo(CE);
     auto FD =
         dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee());
@@ -1344,6 +1463,14 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   auto CallBegin = KernelCall->getBeginLoc();
   auto CallEnd = KernelCall->getEndLoc();
 
+  auto Range = getDefinitionRange(KernelCall->getBeginLoc(), KernelCall->getEndLoc());
+  auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      getCombinedStrFromLoc(Range.getBegin()));
+  if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+    IsInMacroDefine = true;
+    return;
+  }
+
   if (SM.isMacroArgExpansion(CallBegin) && SM.isMacroArgExpansion(CallEnd) &&
       isLocInSameMacroArg(CallBegin, CallEnd)) {
     IsInMacroDefine = false;
@@ -1356,7 +1483,7 @@ void KernelCallExpr::setIsInMacroDefine(const CUDAKernelCallExpr *KernelCall) {
   }
   CalleeSpelling = SM.getSpellingLoc(CalleeSpelling);
 
-  auto ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+  ItMatch = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
       getCombinedStrFromLoc(CalleeSpelling));
   if (ItMatch != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
     IsInMacroDefine = true;
@@ -1830,8 +1957,11 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
 
 void CallFunctionExpr::setFuncInfo(std::shared_ptr<DeviceFunctionInfo> Info) {
   if (FuncInfo && Info && (FuncInfo != Info)) {
-    DiagnosticsUtils::report(getFilePath(), getBegin(),
-                             Warnings::DEVICE_CALL_DIFFERENT, true, false);
+    if (!FuncInfo->getVarMap().isSameAs(Info->getVarMap())) {
+      DiagnosticsUtils::report(getFilePath(), getBegin(),
+                               Warnings::DEVICE_CALL_DIFFERENT, true, false,
+                               FuncInfo->getFunctionName());
+    }
   }
   FuncInfo = Info;
 }
@@ -1864,6 +1994,8 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
 SourceLocation getActualInsertLocation(SourceLocation InsertLoc,
                                        const SourceManager &SM,
                                        const LangOptions &LO);
+
+
 void CallFunctionExpr::buildCallExprInfo(const CXXConstructExpr *Ctor) {
   if (!Ctor)
     return;
@@ -1952,22 +2084,46 @@ void CallFunctionExpr::buildCallExprInfo(const CallExpr *CE) {
       }
     }
   }
+
+}
+
+template <class TargetType>
+std::shared_ptr<TargetType> makeTextureObjectInfo(const ValueDecl *D,
+                                                  bool IsKernelCall) {
+  if (IsKernelCall) {
+    if (auto VD = dyn_cast<VarDecl>(D)) {
+      return std::make_shared<TargetType>(VD);
+    }
+  } else if (auto PVD = dyn_cast<ParmVarDecl>(D)) {
+    return std::make_shared<TargetType>(PVD);
+  }
+  return std::shared_ptr<TargetType>();
 }
 
 std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
     unsigned ArgIdx, const DeclRefExpr *TexRef, bool isKernelCall) {
+  std::shared_ptr<TextureObjectInfo> Info;
   if (TextureObjectInfo::isTextureObject(TexRef)) {
-    if (isKernelCall) {
-      if (auto VD = dyn_cast<VarDecl>(TexRef->getDecl())) {
-        return addTextureObjectArgInfo(ArgIdx,
-                                       std::make_shared<TextureObjectInfo>(VD));
-      }
-    } else if (auto PVD = dyn_cast<ParmVarDecl>(TexRef->getDecl())) {
-      return addTextureObjectArgInfo(ArgIdx,
-                                     std::make_shared<TextureObjectInfo>(PVD));
+    Info = makeTextureObjectInfo<TextureObjectInfo>(TexRef->getDecl(), isKernelCall);
+  } else if (TexRef->getType()->isRecordType()) {
+    Info = makeTextureObjectInfo<StructureTextureObjectInfo>(TexRef->getDecl(), isKernelCall);
+  }
+  if (Info)
+    return addTextureObjectArgInfo(ArgIdx, Info);
+  return Info;
+}
+
+std::shared_ptr<TextureObjectInfo>
+CallFunctionExpr::addStructureTextureObjectArg(unsigned ArgIdx,
+                                               const MemberExpr *TexRef,
+                                               bool isKernelCall) {
+  if (auto DRE = dyn_cast<DeclRefExpr>(TexRef->getBase())) {
+    if (auto Info = std::dynamic_pointer_cast<StructureTextureObjectInfo>(
+      addTextureObjectArg(ArgIdx, DRE, isKernelCall))) {
+      return Info->addMember(TexRef);
     }
   }
-  return std::shared_ptr<TextureObjectInfo>();
+  return {};
 }
 
 std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
@@ -1991,10 +2147,10 @@ std::shared_ptr<TextureObjectInfo> CallFunctionExpr::addTextureObjectArg(
   return std::shared_ptr<TextureObjectInfo>();
 }
 
-void CallFunctionExpr::mergeTextureObjectTypeInfo() {
+void CallFunctionExpr::mergeTextureObjectInfo() {
   for (unsigned Idx = 0; Idx < TextureObjectList.size(); ++Idx) {
     if (auto &Obj = TextureObjectList[Idx]) {
-      Obj->setType(FuncInfo->getTextureTypeInfo(Idx));
+      Obj->merge(FuncInfo->getTextureObject(Idx));
     }
   }
 }
@@ -2018,7 +2174,7 @@ void CallFunctionExpr::buildInfo() {
 
   FuncInfo->buildInfo();
   VarMap.merge(FuncInfo->getVarMap(), TemplateArgs);
-  mergeTextureObjectTypeInfo();
+  mergeTextureObjectInfo();
 }
 
 void CallFunctionExpr::emplaceReplacement() {
@@ -2118,28 +2274,34 @@ void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
     return;
   VarMap.merge(Other->getVarMap());
   dpct::merge(CallExprMap, Other->CallExprMap);
-  mergeTextureTypeList(Other->TextureObjectTypeList);
+  mergeTextureObjectList(Other->TextureObjectList);
 }
 
-void DeviceFunctionInfo::mergeTextureTypeList(
-    const std::vector<std::shared_ptr<TextureTypeInfo>> &Other) {
-  auto SelfItr = TextureObjectTypeList.begin();
+void DeviceFunctionInfo::mergeTextureObjectList(
+    const std::vector<std::shared_ptr<TextureObjectInfo>> &Other) {
+  auto SelfItr = TextureObjectList.begin();
   auto BranchItr = Other.begin();
-  while ((SelfItr != TextureObjectTypeList.end()) &&
+  while ((SelfItr != TextureObjectList.end()) &&
          (BranchItr != Other.end())) {
     if (!(*SelfItr))
       *SelfItr = *BranchItr;
     ++SelfItr;
     ++BranchItr;
   }
-  TextureObjectTypeList.insert(SelfItr, BranchItr, Other.end());
+  TextureObjectList.insert(SelfItr, BranchItr, Other.end());
 }
 
 void DeviceFunctionInfo::mergeCalledTexObj(
     const std::vector<std::shared_ptr<TextureObjectInfo>> &TexObjList) {
-  for (auto &Ty : TexObjList) {
-    if (Ty) {
-      TextureObjectTypeList[Ty->getParamIdx()] = Ty->getType();
+  for (auto &Obj : TexObjList) {
+    if (!Obj)
+      continue;
+    if(Obj->getParamIdx() >= TextureObjectList.size())
+      continue;
+    if (auto &Parm = TextureObjectList[Obj->getParamIdx()]) {
+      Parm->merge(Obj);
+    } else {
+      TextureObjectList[Obj->getParamIdx()] = Obj;
     }
   }
 }
@@ -2252,7 +2414,7 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
   }
   for (auto &Obj : TextureObjectList) {
     if (Obj) {
-      Obj->setType(FuncInfo->getTextureTypeInfo(Obj->getParamIdx()));
+      Obj->merge(FuncInfo->getTextureObject((Obj->getParamIdx())));
       if (!Obj->getType()) {
         // Type dpct_placeholder
         Obj->setType("dpct_placeholder/*Fix the type manually*/", 1);
@@ -2322,9 +2484,10 @@ DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
       ReplaceOffset(0), ReplaceLength(0),
       NonDefaultParamNum(FD->getMostRecentDecl()->getMinRequiredArguments()),
       FuncInfo(getFuncInfo(FD)) {
-  if (!FuncInfo)
-    FuncInfo = std::make_shared<DeviceFunctionInfo>(FD->param_size(),
-                                                    NonDefaultParamNum);
+  if (!FuncInfo) {
+    FuncInfo = std::make_shared<DeviceFunctionInfo>(
+        FD->param_size(), NonDefaultParamNum, getFunctionName(FD));
+  }
   if (!FilePath.empty()) {
     SourceProcessType FileType = GetSourceFileType(FilePath);
     if (!(FileType & SPT_CudaHeader) && !(FileType & SPT_CppHeader) &&
@@ -2631,7 +2794,8 @@ void DeviceFunctionDecl::LinkDecl(const FunctionDecl *FD, DeclList &List,
       Info = FuncInfo;
     } else {
       Info = std::make_shared<DeviceFunctionInfo>(
-          FD->param_size(), FD->getMostRecentDecl()->getMinRequiredArguments());
+          FD->param_size(), FD->getMostRecentDecl()->getMinRequiredArguments(),
+          getFunctionName(FD));
       FuncInfo = Info;
     }
     return;
@@ -2705,13 +2869,6 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
   }
   if (Var->hasInit())
     setInitList(Var->getInit(), Var);
-  if (getType()->getDimension() == 0 && Attr == Constant) {
-    AccMode = Value;
-  } else if (getType()->getDimension() <= 1) {
-    AccMode = Pointer;
-  } else {
-    AccMode = Accessor;
-  }
   if (Var->getStorageClass() == SC_Static) {
     IsStatic = true;
   }
@@ -2751,6 +2908,16 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
         }
       }
     }
+  }
+  if (getType()->getDimension() == 0 && !isTypeDeclaredLocal()) {
+    if (Attr == Constant)
+      AccMode = Value;
+    else
+      AccMode = Reference;
+  } else if (getType()->getDimension() <= 1) {
+    AccMode = Pointer;
+  } else {
+    AccMode = Accessor;
   }
 
   newConstVarInit(Var);
@@ -3037,6 +3204,28 @@ std::string MemVarMap::getKernelArguments(bool HasPreParam, bool HasPostParam,
                                           const std::string &Path) const {
   requestFeatureForAllVarMaps(Path);
   return getArgumentsOrParameters<KernelArgument>(HasPreParam, HasPostParam);
+}
+bool MemVarMap::isSameAs(const MemVarMap& Other) const {
+  if (HasItem != Other.HasItem)
+    return false;
+  if (HasStream != Other.HasStream)
+    return false;
+  if (HasSync != Other.HasSync)
+    return false;
+
+  #define COMPARE_MAP(MAP)                                                     \
+  {                                                                            \
+    if (MAP.size() != Other.MAP.size())                                        \
+      return false;                                                            \
+    if (!std::equal(MAP.begin(), MAP.end(), Other.MAP.begin()))                \
+      return false;                                                            \
+  }
+  COMPARE_MAP(LocalVarMap);
+  COMPARE_MAP(GlobalVarMap);
+  COMPARE_MAP(ExternVarMap);
+  COMPARE_MAP(TextureMap);
+#undef COMPARE_MAP
+  return true;
 }
 
 CtTypeInfo::CtTypeInfo(const TypeLoc &TL, bool NeedSizeFold)

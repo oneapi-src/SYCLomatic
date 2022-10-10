@@ -5,7 +5,7 @@
 
 //CHECK: #include <oneapi/dpl/execution>
 //CHECK: #include <oneapi/dpl/algorithm>
-//CHECK: #include <CL/sycl.hpp>
+//CHECK: #include <sycl/sycl.hpp>
 //CHECK: #include <dpct/dpct.hpp>
 //CHECK: #include <dpct/dpl_utils.hpp>
 #include "thrust/functional.h"

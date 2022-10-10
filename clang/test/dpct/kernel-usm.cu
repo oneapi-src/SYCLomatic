@@ -302,7 +302,7 @@ void run_foo13(float* a_host[]) {
   //CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class my_kernel5_{{[0-9a-z]+}}, float>>(
   //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:        my_kernel5(a_host, (float * *)aa_acc_ct1.get_pointer());
+  //CHECK-NEXT:        my_kernel5(a_host, aa_acc_ct1);
   //CHECK-NEXT:      });
   //CHECK-NEXT:  });
   my_kernel5<<<1, 1>>>(a_host);

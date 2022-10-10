@@ -3,7 +3,7 @@
 
 // CHECK: dpct::global_memory<volatile int, 0> g_mutex(0);
 volatile __device__ int g_mutex=0;
-// CHECK: SYCL_EXTERNAL void Reset_kernel_parameters(volatile int *g_mutex)
+// CHECK: SYCL_EXTERNAL void Reset_kernel_parameters(volatile int &g_mutex)
 __global__ void Reset_kernel_parameters(void)
 {
     g_mutex=0;

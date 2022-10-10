@@ -6,7 +6,7 @@
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK-NEXT: #include <oneapi/dpl/algorithm>
-// CHECK-NEXT: #include <CL/sycl.hpp>
+// CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <dpct/dpl_utils.hpp>
 #include <thrust/copy.h>
@@ -20,6 +20,8 @@
 #include <thrust/host_vector.h>
 #include <thrust/gather.h>
 #include <thrust/scatter.h>
+#include <thrust/tuple.h>
+#include <thrust/device_ptr.h>
 
 template <typename T> struct is_even {
   __host__ __device__ bool operator()(T x) {
@@ -291,11 +293,14 @@ void foo() {
   //CHECK-NEXT: dpct::device_pointer<int> end=begin + 10;
   //CHECK-NEXT: bool h_result = std::transform_reduce(oneapi::dpl::execution::make_device_policy(q_ct1), begin, end, 0, std::plus<bool>(), isfoo_test<int>());
   //CHECK-NEXT: bool h_result_1 = std::transform_reduce(oneapi::dpl::execution::seq, begin, end, 0, std::plus<bool>(), isfoo_test<int>());
+  //CHECK-NEXT: auto ptrs = std::make_tuple(begin, end);
+  //CHECK-NEXT: int num = std::get<1>(ptrs) - std::get<0>(ptrs);
   thrust::device_ptr<int> begin = thrust::device_pointer_cast(&data[0]);
   thrust::device_ptr<int> end=begin + 10;
   bool h_result = thrust::transform_reduce(begin, end, isfoo_test<int>(), 0, thrust::plus<bool>());
   bool h_result_1 = thrust::transform_reduce(thrust::seq, begin, end, isfoo_test<int>(), 0, thrust::plus<bool>());
-
+  auto ptrs = thrust::make_tuple(begin, end);
+  int num = thrust::get<1>(ptrs) - thrust::get<0>(ptrs);
  }
 
 {

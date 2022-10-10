@@ -537,14 +537,9 @@ void ReplaceDim3Ctor::setRange() {
       return;
     }
     if (S->getBeginLoc().isMacroID() && !isOuterMostMacro(S)) {
-      auto results = getTheOneBeforeLastImmediateExapansion(S->getBeginLoc(),
-                                                            S->getEndLoc());
-      auto Begin = SM.getImmediateSpellingLoc(results.first);
-      auto End = SM.getImmediateSpellingLoc(results.second);
-      if (SM.isMacroArgExpansion(S->getBeginLoc())) {
-        Begin = SM.getImmediateSpellingLoc(S->getBeginLoc());
-        End = SM.getImmediateSpellingLoc(S->getEndLoc());
-      }
+      auto Range = getDefinitionRange(S->getBeginLoc(), S->getEndLoc());
+      auto Begin = Range.getBegin();
+      auto End = Range.getEnd();
       End = End.getLocWithOffset(Lexer::MeasureTokenLength(
           End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts()));
       CSR = CharSourceRange::getTokenRange(Begin, End);
@@ -786,10 +781,10 @@ const std::string &TextModification::getName() const {
 
 constexpr char TransformStr[] = " => ";
 static void printHeader(llvm::raw_ostream &OS, const TMID &ID,
-                        const char *ParentRuleID) {
+                        StringRef ParentRuleName) {
   OS << "[";
-  if (ParentRuleID) {
-    OS << ASTTraversalMetaInfo::getNameTable()[ParentRuleID] << ":";
+  if (!ParentRuleName.empty()) {
+    OS << ParentRuleName << ":";
   }
   OS << TextModification::TMNameMap.at((int)ID);
   OS << "] ";
@@ -821,7 +816,7 @@ static void printReplacement(llvm::raw_ostream &OS,
 
 void ReplaceStmt::print(llvm::raw_ostream &OS, ASTContext &Context,
                         const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, TheStmt->getBeginLoc(), Context, PrintDetail);
   TheStmt->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, ReplacementString);
@@ -829,7 +824,7 @@ void ReplaceStmt::print(llvm::raw_ostream &OS, ASTContext &Context,
 
 void ReplaceDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
                         const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, TheDecl->getBeginLoc(), Context, PrintDetail);
   TheDecl->print(OS);
   printReplacement(OS, ReplacementString);
@@ -837,7 +832,7 @@ void ReplaceDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
 
 void ReplaceCalleeName::print(llvm::raw_ostream &OS, ASTContext &Context,
                               const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, C->getBeginLoc(), Context, PrintDetail);
   OS << getCalleeName(C);
   printReplacement(OS, ReplStr);
@@ -847,7 +842,7 @@ void ReplaceTypeInDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
                               const bool PrintDetail) const {
   if (!DD)
     return;
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, DD->getBeginLoc(), Context, PrintDetail);
   DD->print(OS, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, T);
@@ -855,7 +850,7 @@ void ReplaceTypeInDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
 
 void ReplaceVarDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
                            const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, SR.getBegin(), Context, PrintDetail);
   D->print(OS, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, T);
@@ -863,7 +858,7 @@ void ReplaceVarDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
 
 void ReplaceReturnType::print(llvm::raw_ostream &OS, ASTContext &Context,
                               const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, FD->getBeginLoc(), Context, PrintDetail);
   FD->print(OS, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, T);
@@ -871,21 +866,21 @@ void ReplaceReturnType::print(llvm::raw_ostream &OS, ASTContext &Context,
 
 void ReplaceToken::print(llvm::raw_ostream &OS, ASTContext &Context,
                          const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, Begin, Context, PrintDetail);
   printReplacement(OS, T);
 }
 
 void InsertText::print(llvm::raw_ostream &OS, ASTContext &Context,
                        const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, Begin, Context, PrintDetail);
   printInsertion(OS, T);
 }
 
 void ReplaceCCast::print(llvm::raw_ostream &OS, ASTContext &Context,
                          const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, Cast->getBeginLoc(), Context, PrintDetail);
   Cast->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, TypeName);
@@ -893,7 +888,7 @@ void ReplaceCCast::print(llvm::raw_ostream &OS, ASTContext &Context,
 
 void RenameFieldInMemberExpr::print(llvm::raw_ostream &OS, ASTContext &Context,
                                     const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, ME->getBeginLoc(), Context, PrintDetail);
   ME->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, T);
@@ -901,28 +896,28 @@ void RenameFieldInMemberExpr::print(llvm::raw_ostream &OS, ASTContext &Context,
 
 void InsertAfterStmt::print(llvm::raw_ostream &OS, ASTContext &Context,
                             const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, S->getEndLoc(), Context, PrintDetail);
   printInsertion(OS, T);
 }
 
 void InsertAfterDecl::print(llvm::raw_ostream &OS, ASTContext &Context,
                             const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, D->getEndLoc(), Context, PrintDetail);
   printInsertion(OS, T);
 }
 
 void ReplaceInclude::print(llvm::raw_ostream &OS, ASTContext &Context,
                            const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, Range.getBegin(), Context, PrintDetail);
   printReplacement(OS, T);
 }
 
 void ReplaceDim3Ctor::print(llvm::raw_ostream &OS, ASTContext &Context,
                             const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, CSR.getBegin(), Context, PrintDetail);
   Ctor->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, ReplacementString);
@@ -930,14 +925,14 @@ void ReplaceDim3Ctor::print(llvm::raw_ostream &OS, ASTContext &Context,
 
 void InsertComment::print(llvm::raw_ostream &OS, ASTContext &Context,
                           const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, SL, Context, PrintDetail);
   printInsertion(OS, Text);
 }
 
 void InsertBeforeCtrInitList::print(llvm::raw_ostream &OS, ASTContext &Context,
                                     const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, CDecl->getBeginLoc(), Context, PrintDetail);
   CDecl->print(OS, PrintingPolicy(Context.getLangOpts()));
   printInsertion(OS, T);
@@ -945,7 +940,7 @@ void InsertBeforeCtrInitList::print(llvm::raw_ostream &OS, ASTContext &Context,
 
 void InsertBeforeStmt::print(llvm::raw_ostream &OS, ASTContext &Context,
                              const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   SourceLocation Begin = S->getSourceRange().getBegin();
   if (DoMacroExpansion) {
     auto &SM = Context.getSourceManager();
@@ -959,7 +954,7 @@ void InsertBeforeStmt::print(llvm::raw_ostream &OS, ASTContext &Context,
 
 void RemoveArg::print(llvm::raw_ostream &OS, ASTContext &Context,
                       const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, CE->getBeginLoc(), Context, PrintDetail);
   CE->printPretty(OS, nullptr, PrintingPolicy(Context.getLangOpts()));
   printReplacement(OS, "");
@@ -967,7 +962,7 @@ void RemoveArg::print(llvm::raw_ostream &OS, ASTContext &Context,
 
 void InsertClassName::print(llvm::raw_ostream &OS, ASTContext &Context,
                             const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, CD->getBeginLoc(), Context, PrintDetail);
   CD->print(OS, PrintingPolicy(Context.getLangOpts()));
   printInsertion(OS, "");
@@ -975,7 +970,7 @@ void InsertClassName::print(llvm::raw_ostream &OS, ASTContext &Context,
 
 void ReplaceText::print(llvm::raw_ostream &OS, ASTContext &Context,
                         const bool PrintDetail) const {
-  printHeader(OS, getID(), PrintDetail ? getParentRuleID() : nullptr);
+  printHeader(OS, getID(), PrintDetail ? getParentRuleName() : StringRef());
   printLocation(OS, BeginLoc, Context, PrintDetail);
   printInsertion(OS, T);
 }

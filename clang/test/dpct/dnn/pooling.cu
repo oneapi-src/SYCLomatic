@@ -1,9 +1,9 @@
 // RUN: dpct -in-root %S -out-root %T/pooling %S/pooling.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/pooling/pooling.dp.cpp --match-full-lines %s
 
-// CHECK: #include <CL/sycl.hpp>
-// CHECK: #include <dpct/dpct.hpp>
 // CHECK: #include <dpct/dnnl_utils.hpp>
+// CHECK: #include <sycl/sycl.hpp>
+// CHECK: #include <dpct/dpct.hpp>
 // CHECK: #include <iostream>
 // CHECK: #include <vector>
 #include <cuda_runtime.h>
@@ -21,7 +21,7 @@
 // CHECK: };
 // CHECK: template <>
 // CHECK: /*
-// CHECK: DPCT1007:{{[0-9]+}}: Migration of data type double is not supported.
+// CHECK: DPCT1007:{{[0-9]+}}: Migration of CUDNN_DATA_DOUBLE is not supported.
 // CHECK: */
 // CHECK: struct dt_trait<CUDNN_DATA_DOUBLE> {
 // CHECK:     typedef double type;
@@ -127,16 +127,16 @@ void test1() {
     cudaMemcpy(diffout, host_diffout.data(), ele_num2 * sizeof(HT), cudaMemcpyHostToDevice);
 
     float alpha = 1.5f, beta = 1.f;
-    // CHECK: handle.pooling_forward(desc, alpha, dataTensor, data, beta, outTensor, out);
+    // CHECK: handle.async_pooling_forward(desc, alpha, dataTensor, data, beta, outTensor, out);
     // CHECK: dpct::get_default_queue().memcpy(host_out.data(), out, ele_num2 * sizeof(HT)).wait();
     // CHECK: dpct::get_current_device().queues_wait_and_throw();
     // CHECK: /*
-    // CHECK: DPCT1097:{{[0-9]+}}: The function "pooling_backward" may require the workspace used to save intermediate results from function "pooling_forward". By default, a workspace from engine_ext is selected according to the source data pointer, but this may be incorrect and cause a workspace data race. You may need to rewrite this code.
+    // CHECK: DPCT1097:{{[0-9]+}}: The function "async_pooling_backward" may require the workspace used to save intermediate results from function "async_pooling_forward". By default, a workspace from engine_ext is selected according to the source data pointer, but this may be incorrect and cause a workspace data race. You may need to rewrite this code.
     // CHECK: */
     // CHECK: /*
     // CHECK: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK: */
-    // CHECK: auto s = (handle.pooling_backward(desc, alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, beta, diffdataTensor, diffdata), 0);
+    // CHECK: auto s = (handle.async_pooling_backward(desc, alpha, outTensor, out, diffoutTensor, diffout, dataTensor, data, beta, diffdataTensor, diffdata), 0);
 
     cudnnPoolingForward(handle, desc, &alpha, dataTensor, data, &beta, outTensor, out);
     cudaMemcpy(host_out.data(), out, ele_num2 * sizeof(HT), cudaMemcpyDeviceToHost);

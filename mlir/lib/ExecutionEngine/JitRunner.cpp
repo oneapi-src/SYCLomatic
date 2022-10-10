@@ -26,6 +26,7 @@
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ExecutionEngine/Orc/JITTargetMachineBuilder.h"
+#include "llvm/ExecutionEngine/Orc/LLJIT.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/LegacyPassNameParser.h"
@@ -36,6 +37,7 @@
 #include "llvm/Support/ToolOutputFile.h"
 #include <cstdint>
 #include <numeric>
+#include <utility>
 
 using namespace mlir;
 using llvm::Error;
@@ -57,10 +59,6 @@ struct Options {
 
   llvm::cl::OptionCategory optFlags{"opt-like flags"};
 
-  // CLI list of pass information
-  llvm::cl::list<const llvm::PassInfo *, bool, llvm::PassNameParser> llvmPasses{
-      llvm::cl::desc("LLVM optimizing passes to run"), llvm::cl::cat(optFlags)};
-
   // CLI variables for -On options.
   llvm::cl::opt<bool> optO0{"O0",
                             llvm::cl::desc("Run opt passes and codegen at O0"),
@@ -78,8 +76,7 @@ struct Options {
   llvm::cl::OptionCategory clOptionsCategory{"linking options"};
   llvm::cl::list<std::string> clSharedLibs{
       "shared-libs", llvm::cl::desc("Libraries to link dynamically"),
-      llvm::cl::ZeroOrMore, llvm::cl::MiscFlags::CommaSeparated,
-      llvm::cl::cat(clOptionsCategory)};
+      llvm::cl::MiscFlags::CommaSeparated, llvm::cl::cat(clOptionsCategory)};
 
   /// CLI variables for debugging.
   llvm::cl::opt<bool> dumpObjectFile{
@@ -90,11 +87,15 @@ struct Options {
   llvm::cl::opt<std::string> objectFilename{
       "object-filename",
       llvm::cl::desc("Dump JITted-compiled object to file <input file>.o")};
+
+  llvm::cl::opt<bool> hostSupportsJit{"host-supports-jit",
+                                      llvm::cl::desc("Report host JIT support"),
+                                      llvm::cl::Hidden};
 };
 
 struct CompileAndExecuteConfig {
   /// LLVM module transformer that is passed to ExecutionEngine.
-  llvm::function_ref<llvm::Error(llvm::Module *)> transformer;
+  std::function<llvm::Error(llvm::Module *)> transformer;
 
   /// A custom function that is passed to ExecutionEngine. It processes MLIR
   /// module and creates LLVM IR module.
@@ -152,8 +153,7 @@ static Error compileAndExecute(Options &options, ModuleOp module,
                                CompileAndExecuteConfig config, void **args) {
   Optional<llvm::CodeGenOpt::Level> jitCodeGenOptLevel;
   if (auto clOptLevel = getCommandLineOptLevel(options))
-    jitCodeGenOptLevel =
-        static_cast<llvm::CodeGenOpt::Level>(clOptLevel.getValue());
+    jitCodeGenOptLevel = static_cast<llvm::CodeGenOpt::Level>(*clOptLevel);
 
   // If shared library implements custom mlir-runner library init and destroy
   // functions, we'll use them to register the library with the execution
@@ -209,7 +209,8 @@ static Error compileAndExecute(Options &options, ModuleOp module,
 
   mlir::ExecutionEngineOptions engineOptions;
   engineOptions.llvmModuleBuilder = config.llvmModuleBuilder;
-  engineOptions.transformer = config.transformer;
+  if (config.transformer)
+    engineOptions.transformer = config.transformer;
   engineOptions.jitCodeGenOptLevel = jitCodeGenOptLevel;
   engineOptions.sharedLibPaths = executionEngineLibs;
   engineOptions.enableObjectCache = true;
@@ -233,7 +234,8 @@ static Error compileAndExecute(Options &options, ModuleOp module,
   (*fptr)(args);
 
   // Run all dynamic library destroy callbacks to prepare for the shutdown.
-  llvm::for_each(destroyFns, [](MlirRunnerDestroyFn destroy) { destroy(); });
+  for (MlirRunnerDestroyFn destroy : destroyFns)
+    destroy();
 
   return Error::success();
 }
@@ -245,7 +247,8 @@ static Error compileAndExecuteVoidFunction(Options &options, ModuleOp module,
   if (!mainFunction || mainFunction.empty())
     return makeStringError("entry point not found");
   void *empty = nullptr;
-  return compileAndExecute(options, module, entryPoint, config, &empty);
+  return compileAndExecute(options, module, entryPoint, std::move(config),
+                           &empty);
 }
 
 template <typename Type>
@@ -300,8 +303,8 @@ Error compileAndExecuteSingleReturnFunction(Options &options, ModuleOp module,
     void *data;
   } data;
   data.data = &res;
-  if (auto error = compileAndExecute(options, module, entryPoint, config,
-                                     (void **)&data))
+  if (auto error = compileAndExecute(options, module, entryPoint,
+                                     std::move(config), (void **)&data))
     return error;
 
   // Intentional printing of the output so we can test.
@@ -319,30 +322,20 @@ int mlir::JitRunnerMain(int argc, char **argv, const DialectRegistry &registry,
   Options options;
   llvm::cl::ParseCommandLineOptions(argc, argv, "MLIR CPU execution driver\n");
 
+  if (options.hostSupportsJit) {
+    auto J = llvm::orc::LLJITBuilder().create();
+    if (J)
+      llvm::outs() << "true\n";
+    else {
+      llvm::consumeError(J.takeError());
+      llvm::outs() << "false\n";
+    }
+    return 0;
+  }
+
   Optional<unsigned> optLevel = getCommandLineOptLevel(options);
   SmallVector<std::reference_wrapper<llvm::cl::opt<bool>>, 4> optFlags{
       options.optO0, options.optO1, options.optO2, options.optO3};
-  unsigned optCLIPosition = 0;
-  // Determine if there is an optimization flag present, and its CLI position
-  // (optCLIPosition).
-  for (unsigned j = 0; j < 4; ++j) {
-    auto &flag = optFlags[j].get();
-    if (flag) {
-      optCLIPosition = flag.getPosition();
-      break;
-    }
-  }
-  // Generate vector of pass information, plus the index at which we should
-  // insert any optimization passes in that vector (optPosition).
-  SmallVector<const llvm::PassInfo *, 4> passes;
-  unsigned optPosition = 0;
-  for (unsigned i = 0, e = options.llvmPasses.size(); i < e; ++i) {
-    passes.push_back(options.llvmPasses[i]);
-    if (optCLIPosition < options.llvmPasses.getPosition(i)) {
-      optPosition = i;
-      optCLIPosition = UINT_MAX; // To ensure we never insert again
-    }
-  }
 
   MLIRContext context(registry);
 
@@ -367,11 +360,11 @@ int mlir::JitRunnerMain(int argc, char **argv, const DialectRegistry &registry,
     return EXIT_FAILURE;
   }
 
-  auto transformer = mlir::makeLLVMPassesTransformer(
-      passes, optLevel, /*targetMachine=*/tmOrError->get(), optPosition);
-
   CompileAndExecuteConfig compileAndExecuteConfig;
-  compileAndExecuteConfig.transformer = transformer;
+  if (optLevel) {
+    compileAndExecuteConfig.transformer = mlir::makeOptimizingTransformer(
+        *optLevel, /*sizeLevel=*/0, /*targetMachine=*/tmOrError->get());
+  }
   compileAndExecuteConfig.llvmModuleBuilder = config.llvmModuleBuilder;
   compileAndExecuteConfig.runtimeSymbolMap = config.runtimesymbolMap;
 

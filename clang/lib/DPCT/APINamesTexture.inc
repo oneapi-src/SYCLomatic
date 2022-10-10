@@ -67,16 +67,16 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_accessor_ext,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_accessor_ext,
                         ENTRY_TEXTURE("tex2DLayered", 0xF2, 3, 1, 2))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_attach,
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_attach,
                         ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTexture",
                                                       1 /*start arg idx*/,
                                                       2 /*size in bytes*/)))
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Image_image_wrapper_attach,
+    HelperFeatureEnum::Image_image_wrapper_base_attach,
     ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTexture2D", 1 /*start arg idx*/,
                                   2 /*size in dimension x*/,
                                   3 /*size in dimension y*/, 4 /*pitch*/)))
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_attach,
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_attach,
                         ASSIGNABLE_FACTORY(ENTRY_BIND("cudaBindTextureToArray",
                                                       0 /*start arg idx*/)))
 
@@ -112,7 +112,7 @@ ENTRY_UNSUPPORTED("cuTexObjectGetResourceViewDesc", Diagnostics::API_NOT_MIGRATE
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Image_image_data,
     FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::Image_image_wrapper_attach,
+        HelperFeatureEnum::Image_image_wrapper_base_attach,
         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
             "cuTexRefSetArray", ARG(0), true, "attach",
             CALL(MapNames::getDpctNamespace() + "image_data", ARG(1))))))
@@ -125,6 +125,37 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Image_image_wrapper_base_set_filtering_mode,
     ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY("cuTexRefSetFilterMode",
                                                  ARG(0), true, "set", ARG(1))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Image_image_wrapper_base_get_addressing_mode,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuTexRefGetAddressMode", DEREF(0),
+        MEMBER_CALL(ARG(1), true, "get_addressing_mode"))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Image_image_wrapper_base_get_filtering_mode,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuTexRefGetFilterMode", DEREF(0),
+                                            MEMBER_CALL(ARG(1), true,
+                                                        "get_filtering_mode"))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Image_image_wrapper_base_is_coordinate_normalized,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuTexRefGetFlags", DEREF(0),
+        BO(BinaryOperatorKind::BO_Shl,
+           MEMBER_CALL(ARG(1), true, "is_coordinate_normalized"), ARG("1")))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_attach,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cuTexRefSetAddress_v2", ARG(1), true, "attach",
+                            ARG(2), ARG(3))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_attach,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cuTexRefSetAddress2D_v3", ARG(0), true, "attach",
+                            ARG(2), STRUCT_DISMANTLE(1, "x_ct1", "y_ct1"),
+                            ARG(3))))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Image_image_wrapper_base_set_channel_type,
     FEATURE_REQUEST_FACTORY(

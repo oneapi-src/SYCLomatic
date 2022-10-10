@@ -58,6 +58,39 @@ int main(){
   // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).is_native_atomic_supported();
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_HOST_NATIVE_ATOMIC_SUPPORTED, device);
 
+  // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_device_info().get_max_work_item_sizes().get(0);
+  cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X, device);
+  // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_device_info().get_local_mem_size();
+  cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK, device);
+  // CHECK: int context;
+  CUcontext context;
+  // CHECK: unsigned int flags = 0;
+  unsigned int flags = CU_CTX_MAP_HOST;
+  // CHECK: flags += 0;
+  flags += CU_CTX_SCHED_BLOCKING_SYNC;
+  // CHECK: flags += 0;
+  flags += CU_CTX_SCHED_SPIN;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT: */
+  if (cuCtxCreate(&context, flags, device) == CUDA_SUCCESS) {
+    return 0;
+  }
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxSetCacheConfig was removed because SYCL currently does not support setting cache config on devices.
+  // CHECK-NEXT: */
+  cuCtxSetCacheConfig(CU_FUNC_CACHE_PREFER_SHARED);
+
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuCtxSetLimit was removed because SYCL currently does not support setting resource limits on devices.
+  // CHECK-NEXT: */
+  cuCtxSetLimit(CU_LIMIT_PRINTF_FIFO_SIZE, 10);
+  size_t printfsize;
+
+  // CHECK: printfsize = INT_MAX;
+  cuCtxGetLimit(&printfsize, CU_LIMIT_PRINTF_FIFO_SIZE);
+
+
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuDeviceGetAttribute is not supported.
   // CHECK-NEXT: */

@@ -213,7 +213,7 @@ double cosine = cos(2 * PI);
 MACRO_KC
 
 
-//CHECK: #define HARD_KC(NAME, a, b, c, d)                                                   \
+//CHECK: #define HARD_KC(NAME, a, b, c, d)                                              \
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
 //CHECK-NEXT:     auto c_ct0 = c;                                                            \
 //CHECK-NEXT:     auto d_ct1 = d;                                                            \
@@ -221,12 +221,12 @@ MACRO_KC
 //CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(a * b, b),                              \
 //CHECK-NEXT:                      [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });  \
 //CHECK-NEXT:   });
-//CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1038:{{[0-9]+}}: When the kernel function name is used as a macro argument, the
-//CHECK-NEXT:   migration result may be incorrect. You need to verify the definition of the
-//CHECK-NEXT:   macro.
-//CHECK-NEXT:   */
-//CHECK-NEXT:   HARD_KC(foo3, sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 2), 1, 0)
+//CHECK-NEXT: /*
+//CHECK-NEXT: DPCT1038:{{[0-9]+}}: When the kernel function name is used as a macro argument, the
+//CHECK-NEXT: migration result may be incorrect. You need to verify the definition of the
+//CHECK-NEXT: macro.
+//CHECK-NEXT: */
+//CHECK-NEXT: HARD_KC(foo3, sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 2), 1, 0)
 #define HARD_KC(NAME,a,b,c,d) NAME<<<a,b,0>>>(c,d);
 HARD_KC(foo3,3,2,1,0)
 
@@ -547,13 +547,13 @@ __global__ void templatefoo(){
   int y = b;
 }
 //CHECK: #define AAA 15 + 3
-//CHECK-NEXT: #define CCC <<<1,1>>>()
+//CHECK-NEXT: #define CCC <<<sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)>>>()
 //CHECK-NEXT: #define KERNEL(A, B)                                                           \
 //CHECK-NEXT:   dpct::get_default_queue().parallel_for(                                      \
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),   \
 //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { templatefoo<A, B>(); });
 //CHECK-NEXT: #define CALL_KERNEL(C, D) KERNEL(C, D); int a = 0;
-//CHECK-NEXT: #define CALL_KERNEL2(E, F) sycl::range<3>(1, 1, 1)
+//CHECK-NEXT: #define CALL_KERNEL2(E, F) CALL_KERNEL(E, F)
 //CHECK-NEXT: void templatefoo2(){
 //CHECK-NEXT:   CALL_KERNEL2(8, AAA)
 //CHECK-NEXT: }
@@ -812,7 +812,7 @@ void foo17(){
 }
 
 //CHECK: #define CONCATE(name) cuda##name
-//CHECK-NEXT: typedef sycl::queue *stream_t2;
+//CHECK-NEXT: typedef dpct::queue_ptr stream_t2;
 //CHECK-NEXT: typedef dpct::event_ptr event_t2;
 #define CONCATE(name) cuda##name
 typedef CONCATE(Stream_t) stream_t2;
@@ -1176,9 +1176,42 @@ int foo31(){
   //CHECK:     cgh.parallel_for(
   //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) {
-  //CHECK-NEXT:           template_kernel<int>(10, t2_acc_ct1.get_pointer());
+  //CHECK-NEXT:           template_kernel<int>(10, t2_acc_ct1);
   //CHECK-NEXT:         });
   //CHECK-NEXT:   });
   //CHECK-NEXT: }));
   VA_CALL( ([&]{ template_kernel<int><<<1,1,0>>>(10); }) );
+}
+
+
+//CHECK: #define VACALL4(...) __VA_ARGS__()
+//CHECK-NEXT: #define VACALL3(...) VACALL4(__VA_ARGS__)
+//CHECK-NEXT: #define VACALL2(...) VACALL3(__VA_ARGS__)
+//CHECK-NEXT: #define VACALL(x)                                                              \
+//CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
+//CHECK-NEXT:     auto i_ct0 = i;                                                            \
+//CHECK-NEXT:                                                                                \
+//CHECK-NEXT:     cgh.parallel_for(                                                          \
+//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 1)),   \
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo32(i_ct0); });                     \
+//CHECK-NEXT:   });
+#define VACALL4(...) __VA_ARGS__()
+#define VACALL3(...) VACALL4(__VA_ARGS__)
+#define VACALL2(...) VACALL3(__VA_ARGS__)
+#define VACALL(x) foo32<<<2,1,0>>>(i)
+__global__ void foo32(int a){}
+
+// CHECK: int foo33(){
+// CHECK-NEXT:   int i;
+// CHECK-NEXT:   /*
+// CHECK-NEXT:   DPCT1038:{{[0-9]+}}: When the kernel function name is used as a macro argument, the
+// CHECK-NEXT:   migration result may be incorrect. You need to verify the definition of the
+// CHECK-NEXT:   macro.
+// CHECK-NEXT:   */
+// CHECK-NEXT:   VACALL2([&] {VACALL(0);
+// CHECK-NEXT:   });
+// CHECK-NEXT: }
+int foo33(){
+  int i;
+  VACALL2([&]{VACALL(0);});
 }

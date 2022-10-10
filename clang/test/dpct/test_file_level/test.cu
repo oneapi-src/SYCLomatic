@@ -5,7 +5,7 @@
 
 #include "header.h"
 
-// CHECK: void k(dpct::device_info *CDP) {
+// CHECK: void k(dpct::device_info &CDP) {
 __global__ void k() {
   d();
 }

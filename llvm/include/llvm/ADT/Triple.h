@@ -143,6 +143,7 @@ public:
     ARMSubArch_v4t,
 
     AArch64SubArch_arm64e,
+    AArch64SubArch_arm64ec,
 
     KalimbaSubArch_v3,
     KalimbaSubArch_v4,
@@ -154,7 +155,15 @@ public:
     SPIRSubArch_gen,
     SPIRSubArch_x86_64,
 
-    PPCSubArch_spe
+    PPCSubArch_spe,
+
+    // SPIR-V sub-arch corresponds to its version.
+    SPIRVSubArch_v10,
+    SPIRVSubArch_v11,
+    SPIRVSubArch_v12,
+    SPIRVSubArch_v13,
+    SPIRVSubArch_v14,
+    SPIRVSubArch_v15,
   };
   enum VendorType {
     UnknownVendor,
@@ -204,6 +213,7 @@ public:
     NVCL,       // NVIDIA OpenCL
     AMDHSA,     // AMD HSA Runtime
     PS4,
+    PS5,
     ELFIAMCU,
     TvOS,       // Apple tvOS
     WatchOS,    // Apple watchOS
@@ -271,6 +281,7 @@ public:
     ELF,
     GOFF,
     MachO,
+    SPIRV,
     Wasm,
     XCOFF,
   };
@@ -279,22 +290,22 @@ private:
   std::string Data;
 
   /// The parsed arch type.
-  ArchType Arch;
+  ArchType Arch{};
 
   /// The parsed subarchitecture type.
-  SubArchType SubArch;
+  SubArchType SubArch{};
 
   /// The parsed vendor type.
-  VendorType Vendor;
+  VendorType Vendor{};
 
   /// The parsed OS type.
-  OSType OS;
+  OSType OS{};
 
   /// The parsed Environment type.
-  EnvironmentType Environment;
+  EnvironmentType Environment{};
 
   /// The object format type.
-  ObjectFormatType ObjectFormat;
+  ObjectFormatType ObjectFormat{};
 
 public:
   /// @name Constructors
@@ -302,7 +313,7 @@ public:
 
   /// Default constructor is the same as an empty string and leaves all
   /// triple fields unknown.
-  Triple() : Arch(), SubArch(), Vendor(), OS(), Environment(), ObjectFormat() {}
+  Triple() = default;
 
   explicit Triple(const Twine &Str);
   Triple(const Twine &ArchStr, const Twine &VendorStr, const Twine &OSStr);
@@ -579,6 +590,12 @@ public:
            (isOSWindows() && getEnvironment() == Triple::UnknownEnvironment);
   }
 
+  // Checks if we're using the Windows Arm64EC ABI.
+  bool isWindowsArm64EC() const {
+    return getArch() == Triple::aarch64 &&
+           getSubArch() == Triple::AArch64SubArch_arm64ec;
+  }
+
   bool isWindowsCoreCLREnvironment() const {
     return isOSWindows() && getEnvironment() == Triple::CoreCLR;
   }
@@ -682,6 +699,16 @@ public:
            getVendor() == Triple::SCEI &&
            getOS() == Triple::PS4;
   }
+
+  /// Tests whether the target is the PS5 platform.
+  bool isPS5() const {
+    return getArch() == Triple::x86_64 &&
+      getVendor() == Triple::SCEI &&
+      getOS() == Triple::PS5;
+  }
+
+  /// Tests whether the target is the PS4 or PS5 platform.
+  bool isPS() const { return isPS4() || isPS5(); }
 
   /// Tests whether the target is Android
   bool isAndroid() const { return getEnvironment() == Triple::Android; }
@@ -845,10 +872,14 @@ public:
     return getArch() == Triple::ppc64 || getArch() == Triple::ppc64le;
   }
 
+  /// Tests whether the target is 32-bit RISC-V.
+  bool isRISCV32() const { return getArch() == Triple::riscv32; }
+
+  /// Tests whether the target is 64-bit RISC-V.
+  bool isRISCV64() const { return getArch() == Triple::riscv64; }
+
   /// Tests whether the target is RISC-V (32- and 64-bit).
-  bool isRISCV() const {
-    return getArch() == Triple::riscv32 || getArch() == Triple::riscv64;
-  }
+  bool isRISCV() const { return isRISCV32() || isRISCV64(); }
 
   /// Tests whether the target is 32-bit SPARC (little and big endian).
   bool isSPARC32() const {
@@ -914,7 +945,7 @@ public:
   }
 
   /// Tests if the environment supports dllimport/export annotations.
-  bool hasDLLImportExport() const { return isOSWindows() || isPS4(); }
+  bool hasDLLImportExport() const { return isOSWindows() || isPS(); }
 
   /// @}
   /// @name Mutators
@@ -1022,7 +1053,7 @@ public:
 
   /// Get the "prefix" canonical name for the \p Kind architecture. This is the
   /// prefix used by the architecture specific builtins, and is suitable for
-  /// passing to \see Intrinsic::getIntrinsicForGCCBuiltin().
+  /// passing to \see Intrinsic::getIntrinsicForClangBuiltin().
   ///
   /// \return - The architecture prefix, or 0 if none is defined.
   static StringRef getArchTypePrefix(ArchType Kind);

@@ -19,6 +19,7 @@ HELPERFILE(atomic.hpp.inc, Atomic)
 HELPERFILE(rng_utils.hpp.inc, RngUtils)
 HELPERFILE(lib_common_utils.hpp.inc, LibCommonUtils)
 HELPERFILE(ccl_utils.hpp.inc, CclUtils)
+HELPERFILE(fft_utils.hpp.inc, FftUtils)
 HELPERFILE(dpl_extras/algorithm.h.inc, DplExtrasAlgorithm)
 HELPERFILE(dpl_extras/functional.h.inc, DplExtrasFunctional)
 HELPERFILE(dpl_extras/iterators.h.inc, DplExtrasIterators)
@@ -279,6 +280,7 @@ HELPER_FEATURE_MAP_TO_APINAME(Device, "dev_mgr_2", "dev_mgr")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "dev_mgr_3", "dev_mgr")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "dev_mgr_check_id", "dev_mgr::check_id")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "dev_mgr_4", "dev_mgr")
+HELPER_FEATURE_MAP_TO_APINAME(Device, "typedef_queue_ptr", "queue_ptr")
 
 // dpl_extras/iterators.h
 // features

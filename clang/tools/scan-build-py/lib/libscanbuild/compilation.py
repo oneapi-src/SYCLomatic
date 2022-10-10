@@ -38,7 +38,7 @@ IGNORED_FLAGS = {
     # anyway. the benefit to get rid of them is to make the output more
     # readable.
     '-static': 0,
-    '-shared': 0,
+    #'-shared': 0,
     '-s': 0,
     '-rdynamic': 0,
     '-l': 1,
@@ -93,8 +93,8 @@ IGNORED_FLAGS = {
     '-g': 0,
     '--generate-line-info': 0,
     '-lineinfo': 0,
-    '--shared': 0,
-    '-shared' : 0,
+    #'--shared': 0,
+    #'-shared' : 0,
     '--x': 1,
     '-x': 1,
     '--no-host-device-initializer-list': 0,

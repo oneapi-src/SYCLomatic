@@ -90,6 +90,11 @@ namespace {
       AU.addPreserved<MachineBlockFrequencyInfo>();
     }
 
+    MachineFunctionProperties getRequiredProperties() const override {
+      return MachineFunctionProperties()
+        .set(MachineFunctionProperties::Property::IsSSA);
+    }
+
     void releaseMemory() override {
       ScopeMap.clear();
       PREMap.clear();
@@ -410,7 +415,7 @@ bool MachineCSE::isCSECandidate(MachineInstr *MI) {
     // Okay, this instruction does a load. As a refinement, we allow the target
     // to decide whether the loaded value is actually a constant. If so, we can
     // actually use it as a load.
-    if (!MI->isDereferenceableInvariantLoad(AA))
+    if (!MI->isDereferenceableInvariantLoad())
       // FIXME: we should be able to hoist loads with no other side effects if
       // there are no other instructions which can change memory in this loop.
       // This is a trivial form of alias analysis.
@@ -784,7 +789,7 @@ bool MachineCSE::isPRECandidate(MachineInstr *MI) {
   if (!isCSECandidate(MI) ||
       MI->isNotDuplicable() ||
       MI->mayLoad() ||
-      MI->isAsCheapAsAMove() ||
+      TII->isAsCheapAsAMove(*MI) ||
       MI->getNumDefs() != 1 ||
       MI->getNumExplicitDefs() != 1)
     return false;

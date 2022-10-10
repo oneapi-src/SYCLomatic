@@ -1,9 +1,9 @@
 // RUN: dpct -in-root %S -out-root %T/softmax %S/softmax.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/softmax/softmax.dp.cpp --match-full-lines %s
 
-// CHECK: #include <CL/sycl.hpp>
-// CHECK: #include <dpct/dpct.hpp>
 // CHECK: #include <dpct/dnnl_utils.hpp>
+// CHECK: #include <sycl/sycl.hpp>
+// CHECK: #include <dpct/dpct.hpp>
 // CHECK: #include <iostream>
 // CHECK: #include <vector>
 #include <cuda_runtime.h>
@@ -21,7 +21,7 @@
 // CHECK: };
 // CHECK: template <>
 // CHECK: /*
-// CHECK: DPCT1007:{{[0-9]+}}: Migration of data type double is not supported.
+// CHECK: DPCT1007:{{[0-9]+}}: Migration of CUDNN_DATA_DOUBLE is not supported.
 // CHECK: */
 // CHECK: struct dt_trait<CUDNN_DATA_DOUBLE> {
 // CHECK:     typedef double type;
@@ -104,14 +104,14 @@ void test1() {
     cudaMemcpy(diffout, host_diffout.data(), ele_num * sizeof(HT), cudaMemcpyHostToDevice);
 
     float alpha = 1.5f, beta = 0.f;
-    // CHECK: handle.softmax_forward(dpct::dnnl::softmax_algorithm::normal, dpct::dnnl::softmax_mode::channel, alpha, dataTensor, data, beta, outTensor, out);
+    // CHECK: handle.async_softmax_forward(dpct::dnnl::softmax_algorithm::normal, dpct::dnnl::softmax_mode::channel, alpha, dataTensor, data, beta, outTensor, out);
     // CHECK: dpct::get_default_queue().memcpy(host_out.data(), out, ele_num * sizeof(HT)).wait();
     // CHECK: alpha = 2.f, beta = 0.f;
     // CHECK: dpct::get_current_device().queues_wait_and_throw();
     // CHECK: /*
     // CHECK: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     // CHECK: */
-    // CHECK: auto s = (handle.softmax_backward(dpct::dnnl::softmax_algorithm::normal, dpct::dnnl::softmax_mode::channel, alpha, outTensor, out, diffoutTensor, diffout, beta, diffdataTensor, diffdata), 0);
+    // CHECK: auto s = (handle.async_softmax_backward(dpct::dnnl::softmax_algorithm::normal, dpct::dnnl::softmax_mode::channel, alpha, outTensor, out, diffoutTensor, diffout, beta, diffdataTensor, diffdata), 0);
 
     cudnnSoftmaxForward(handle, CUDNN_SOFTMAX_ACCURATE, CUDNN_SOFTMAX_MODE_CHANNEL, &alpha, dataTensor, data, &beta, outTensor, out);
     cudaMemcpy(host_out.data(), out, ele_num * sizeof(HT), cudaMemcpyDeviceToHost);

@@ -9,6 +9,8 @@
 #include "CUBAPIMigration.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
+#include "MigrationRuleManager.h"
+
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/Expr.h"
@@ -32,11 +34,13 @@ using namespace dpct;
 using namespace tooling;
 using namespace ast_matchers;
 
+namespace {
 auto parentStmt = []() {
   return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
                hasParent(whileStmt()), hasParent(doStmt()),
                hasParent(ifStmt()));
 };
+} // namespace
 
 /// Check if expression is one of NULL(0)/nullptr/__null
 static bool isNullPointerConstant(const Expr *E) {
@@ -53,11 +57,11 @@ static bool isCudaMemoryAPIName(StringRef FuncName) {
 }
 
 static bool isCubDeviceFuncName(StringRef FuncName) {
-  return FuncName == "Reduce" || FuncName == "Min" || FuncName == "Max" ||
-         FuncName == "Sum" || FuncName == "ExclusiveSum" ||
-         FuncName == "InclusiveSum" || FuncName == "InclusiveScan" ||
-         FuncName == "ExclusiveScan" || FuncName == "Flagged" ||
-         FuncName == "Unique" || FuncName == "Encode";
+  return FuncName == "Reduce" || FuncName == "ReduceByKey" ||
+         FuncName == "Min" || FuncName == "Max" || FuncName == "Sum" ||
+         FuncName == "ExclusiveSum" || FuncName == "InclusiveSum" ||
+         FuncName == "InclusiveScan" || FuncName == "ExclusiveScan" ||
+         FuncName == "Flagged" || FuncName == "Unique" || FuncName == "Encode";
 }
 
 static bool isCubDeviceCXXRecordName(StringRef CXXRDName) {
@@ -502,20 +506,20 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(hasAnyName(
                          "ShuffleIndex", "ThreadLoad", "ThreadStore", "Sum",
-                         "Min", "Max", "Reduce", "ExclusiveSum", "InclusiveSum",
-                         "InclusiveScan", "ExclusiveScan", "Flagged", "Unique",
-                         "Encode"))),
+                         "Min", "Max", "Reduce", "ReduceByKey", "ExclusiveSum",
+                         "InclusiveSum", "InclusiveScan", "ExclusiveScan",
+                         "Flagged", "Unique", "Encode"))),
                      parentStmt()))
           .bind("FuncCall"),
       this);
 
   MF.addMatcher(
-      callExpr(
-          allOf(callee(functionDecl(hasAnyName(
-                    "Sum", "Min", "Max", "Reduce", "ThreadLoad", "ShuffleIndex",
-                    "ExclusiveSum", "InclusiveSum", "InclusiveScan",
-                    "ExclusiveScan", "Flagged", "Unique", "Encode"))),
-                unless(parentStmt())))
+      callExpr(allOf(callee(functionDecl(hasAnyName(
+                         "Sum", "Min", "Max", "Reduce", "ReduceByKey",
+                         "ThreadLoad", "ShuffleIndex", "ExclusiveSum",
+                         "InclusiveSum", "InclusiveScan", "ExclusiveScan",
+                         "Flagged", "Unique", "Encode"))),
+                     unless(parentStmt())))
           .bind("FuncCallUsed"),
       this);
 }
@@ -1358,4 +1362,4 @@ void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
     processTypeLoc(TL);
   }
 }
-REGISTER_RULE(CubRule)
+REGISTER_RULE(CubRule, PassKind::PK_Analysis)

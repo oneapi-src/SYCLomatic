@@ -10,7 +10,7 @@
 
 //cudnn_test.h and nccl_test.h are not in inroot, so emit warnings.
 
-//CHECK:#include <CL/sycl.hpp>
+//CHECK:#include <sycl/sycl.hpp>
 //CHECK-NEXT:#include <dpct/dpct.hpp>
 //CHECK-NEXT:#include <cstdio>
 //CHECK-NEXT:#include <cudnn_test.h>

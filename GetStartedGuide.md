@@ -17,7 +17,7 @@
 
 * `git` - [Download](https://git-scm.com/downloads)
 * `cmake` version 3.14 or later - [Download](http://www.cmake.org/download/)
-* `python` - [Download](https://www.python.org/downloads/release/python-2716/)
+* `python 3` - [Download](https://www.python.org/downloads/)
 * `ninja` -
 [Download](https://github.com/ninja-build/ninja/wiki/Pre-built-Ninja-packages)
 * C++ compiler
@@ -36,11 +36,11 @@ create an environment variable with the same name.
 
 ```bash
 export SYCLOMATIC_HOME=~/workspace
+export PATH_TO_C2S_INSTALL_FOLDER=~/workspace/c2s_install
 mkdir $SYCLOMATIC_HOME
 cd $SYCLOMATIC_HOME
 
 git clone https://github.com/oneapi-src/SYCLomatic.git
-git checkout origin/SYCLomatic -b SYCLomatic
 ```
 
 **Windows (64-bit)**:
@@ -54,11 +54,11 @@ Open a developer command prompt using one of two methods:
 
 ```bat
 set SYCLOMATIC_HOME=%USERPROFILE%\workspace
+set PATH_TO_C2S_INSTALL_FOLDER=%USERPROFILE%\workspace\c2s_install
 mkdir %SYCLOMATIC_HOME%
 cd %SYCLOMATIC_HOME%
 
 git clone https://github.com/oneapi-src/SYCLomatic.git
-git checkout origin/SYCLomatic -b SYCLomatic
 ```
 
 ## Build SYCLomatic
@@ -125,8 +125,8 @@ dpct is an alias command for c2s.
 
 ## Find More
 
-* DPC++ specification:
-[https://spec.oneapi.com/versions/latest/elements/dpcpp/source/index.html](https://spec.oneapi.com/versions/latest/elements/dpcpp/source/index.html)
+* oneAPI specification:
+[https://spec.oneapi.io/versions/latest/index.html](https://spec.oneapi.io/versions/latest/index.html)
 * SYCL\* 2020 specification:
 [https://www.khronos.org/registry/SYCL/](https://www.khronos.org/registry/SYCL/)
 

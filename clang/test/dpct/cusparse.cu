@@ -24,7 +24,7 @@ cusparseMatDescr_t descrA;
 int main(){
   //CHECK: oneapi::mkl::index_base descr1 , descr2 ;
   //CHECK-NEXT:oneapi::mkl::index_base descr3 ;
-  //CHECK-NEXT: sycl::queue *s;
+  //CHECK-NEXT: dpct::queue_ptr s;
   cusparseMatDescr_t descr1 = 0, descr2 = 0;
   cusparseMatDescr_t descr3 = 0;
   cudaStream_t s;

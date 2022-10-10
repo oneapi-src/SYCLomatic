@@ -8,13 +8,14 @@ import lldb
 from lldbsuite.test.decorators import *
 from lldbsuite.test.lldbtest import *
 from lldbsuite.test import lldbutil
+import os
 import side_effect
+
 
 
 class BreakpointCommandTestCase(TestBase):
 
     NO_DEBUG_INFO_TESTCASE = True
-    mydir = TestBase.compute_mydir(__file__)
 
     @expectedFailureAll(oslist=["windows"], bugnumber="llvm.org/pr24528")
     def test_breakpoint_command_sequence(self):
@@ -31,6 +32,77 @@ class BreakpointCommandTestCase(TestBase):
     def test_commands_on_creation(self):
         self.build()
         self.breakpoint_commands_on_creation()
+
+    @skipIf(oslist=["windows"])
+    @no_debug_info_test
+    def test_breakpoints_with_relative_path_line_tables(self):
+        """
+            Test that we can set breakpoints using a full or partial path when
+            line tables in the debug information has relative paths where the
+            relative path is either fully contained in the specified path, or if
+            the specified path also a relative path that is shorter than the
+            path in the debug info.
+
+            The "relative.yaml" contains a line table that is:
+
+            Line table for a/b/c/main.cpp in `a.out
+            0x0000000100003f94: a/b/c/main.cpp:1
+            0x0000000100003fb0: a/b/c/main.cpp:2:3
+            0x0000000100003fb8: a/b/c/main.cpp:2:3
+
+            So the line table contains relative paths. We should be able to set
+            breakpoints with any source path that matches this path which
+            includes paths that are longer than "a/b/c/main.cpp", but also any
+            relative path that is shorter than this while all specified relative
+            path components still match.
+        """
+        src_dir = self.getSourceDir()
+        yaml_path = os.path.join(src_dir, "relative.yaml")
+        yaml_base, ext = os.path.splitext(yaml_path)
+        obj_path = self.getBuildArtifact("a.out")
+        self.yaml2obj(yaml_path, obj_path)
+
+        # Create a target with the object file we just created from YAML
+        target = self.dbg.CreateTarget(obj_path)
+        # We now have debug information with line table paths that start are
+        # "./a/b/c/main.cpp".
+
+        # Make sure that all of the following paths create a breakpoint
+        # successfully. We have paths that are longer than our path, and also
+        # that are shorter where all relative directories still match.
+        valid_paths = [
+            "/x/a/b/c/main.cpp",
+            "/x/y/a/b/c/main.cpp",
+            "./x/y/a/b/c/main.cpp",
+            "x/y/a/b/c/main.cpp",
+            "./y/a/b/c/main.cpp",
+            "y/a/b/c/main.cpp",
+            "./a/b/c/main.cpp",
+            "a/b/c/main.cpp",
+            "./b/c/main.cpp",
+            "b/c/main.cpp",
+            "./c/main.cpp",
+            "c/main.cpp",
+            "./main.cpp",
+            "main.cpp",
+        ]
+        for path in valid_paths:
+            bkpt = target.BreakpointCreateByLocation(path, 2)
+            self.assertTrue(bkpt.GetNumLocations() > 0,
+                'Couldn\'t resolve breakpoint using full path "%s" in executate "%s" with '
+                'debug info that has relative path with matching suffix' % (path, self.getBuildArtifact("a.out")))
+        invalid_paths = [
+            "/x/b/c/main.cpp",
+            "/x/c/main.cpp",
+            "/x/main.cpp",
+            "./x/y/a/d/c/main.cpp",
+        ]
+        for path in invalid_paths:
+            bkpt = target.BreakpointCreateByLocation(path, 2)
+            self.assertTrue(bkpt.GetNumLocations() == 0,
+                'Incorrectly resolved a breakpoint using full path "%s" with '
+                'debug info that has relative path with matching suffix' % (path))
+
 
     def setUp(self):
         # Call super's setUp().
@@ -282,6 +354,34 @@ class BreakpointCommandTestCase(TestBase):
         self.assertEqual(com_list.GetStringAtIndex(0), "bt", "First bt")
         self.assertEqual(com_list.GetStringAtIndex(1), "thread list", "Next thread list")
         self.assertEqual(com_list.GetStringAtIndex(2), "continue", "Last continue")
+
+    def test_add_commands_by_breakpoint_name(self):
+        """Make sure that when you specify a breakpoint name to "break command add"
+           it gets added to all the breakpoints marked with that name."""
+        self.build()
+        target = self.createTestTarget()
+
+        bp_ids = []
+        bp_names = ["main", "not_here", "main"]
+        for bp_name in bp_names:
+            bp = target.BreakpointCreateByName(bp_name)
+            bp.AddName("MyBKPTS")
+            bp_ids.append(bp.GetID())
+        # First do it with a script one-liner:
+        self.runCmd("breakpoint command add -s py -o 'print(\"some command\")' MyBKPTS")
+        for id in bp_ids:
+            self.expect("breakpoint command list {0}".format(id),
+                        patterns=["some command"])
+        # Now do the same thing with a python function:
+        import side_effect
+        self.runCmd("command script import --allow-reload ./bktptcmd.py")
+
+        self.runCmd("breakpoint command add --python-function bktptcmd.function MyBKPTS")
+        for id in bp_ids:
+            self.expect("breakpoint command list {0}".format(id),
+                        patterns=["bktptcmd.function"])
+
+
 
     def test_breakpoint_delete_disabled(self):
         """Test 'break delete --disabled' works"""
