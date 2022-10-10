@@ -2868,6 +2868,37 @@ bool TypeInDeclRule::isCapturedByLambda(const TypeLoc *TL) {
   return false;
 }
 
+bool TypeInDeclRule::processConstFFTHandleType(const DeclaratorDecl *DD) {
+  clang::SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
+  Token Tok;
+  Lexer::getRawToken(DD->getBeginLoc(), Tok, SM, LangOptions());
+  auto Tok2Ptr = Lexer::findNextToken(DD->getBeginLoc(), SM, LangOptions());
+  if (Tok2Ptr.hasValue()) {
+    auto Tok2 = Tok2Ptr.getValue();
+    std::string TypeStr = Tok.getRawIdentifier().str();
+    if (Tok.getKind() == tok::raw_identifier &&
+        Tok.getRawIdentifier() == "const") {
+      // const cufftHandle
+      TypeStr = Tok2.getRawIdentifier().str();
+      if (Tok.getKind() == tok::raw_identifier && TypeStr == "cufftHandle") {
+        requestFeature(HelperFeatureEnum::FftUtils_fft_engine,
+                       Tok2.getLocation());
+        SrcAPIStaticsMap[MapNames::getDpctNamespace() + "fft::fft_engine*"]++;
+        emplaceTransformation(
+            new ReplaceText(Tok.getLocation(),
+                            Tok2.getLocation().getRawEncoding() -
+                                Tok.getLocation().getRawEncoding(),
+                            ""));
+        emplaceTransformation(
+            new ReplaceToken(Tok2.getLocation(), MapNames::getDpctNamespace() +
+                                                     "fft::fft_engine* const"));
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
   SourceManager *SM = Result.SourceManager;
   auto LOpts = Result.Context->getLangOpts();
@@ -3152,6 +3183,12 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       DD = VarD;
     } else if (FieldD) {
       DD = FieldD;
+    }
+
+    if (TypeStr == "cufftHandle") {
+      if (TL->getType().isConstQualified() && processConstFFTHandleType(DD)) {
+        return;
+      }
     }
 
     if (!Str.empty()) {
