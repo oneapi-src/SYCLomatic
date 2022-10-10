@@ -611,6 +611,8 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
                      cl::sycl::range<3>(x, y, 1), direction);
 }
 
+namespace deprecated {
+
 template <typename T, sycl::usm::alloc AllocKind>
 class usm_allocator {
 private:
@@ -662,6 +664,7 @@ public:
   bool operator!=(const usm_allocator &other) const { return _impl != other._impl; }
 };
 
+} // namespace deprecated
 } // namespace detail
 
 #ifdef DPCT_USM_LEVEL_NONE
@@ -1298,8 +1301,12 @@ using constant_memory = detail::device_memory<T, constant, Dimension>;
 template <class T, size_t Dimension>
 using shared_memory = detail::device_memory<T, shared, Dimension>;
 
+namespace deprecated {
+
 template <typename T>
-using usm_host_allocator = detail::usm_allocator<T, sycl::usm::alloc::host>;
+using usm_host_allocator = detail::deprecated::usm_allocator<T, sycl::usm::alloc::host>;
+
+} // namespace deprecated
 } // namespace dpct
 
 #endif // __DPCT_MEMORY_HPP__

@@ -54,12 +54,12 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Memory_usm_host_allocator_alias,
     TYPE_REWRITE_ENTRY("thrust::system::cuda::experimental::pinned_allocator",
                        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
-                                        "usm_host_allocator"),
+                                        "deprecated::usm_host_allocator"),
                                     TEMPLATE_ARG(0))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Memory_usm_host_allocator_alias,
     TYPE_REWRITE_ENTRY("thrust::cuda::experimental::pinned_allocator",
                        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
-                                        "usm_host_allocator"),
+                                        "deprecated::usm_host_allocator"),
                                     TEMPLATE_ARG(0))))

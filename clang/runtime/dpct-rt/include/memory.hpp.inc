@@ -896,7 +896,9 @@ dpct_memcpy(cl::sycl::queue &q, void *to_ptr, const void *from_ptr,
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_usm_allocator|dpct::detail
+namespace deprecated {
+
+// DPCT_LABEL_BEGIN|dpct_usm_allocator|dpct::detail::deprecated
 // DPCT_DEPENDENCY_BEGIN
 // Device|get_default_queue
 // DPCT_DEPENDENCY_END
@@ -953,6 +955,7 @@ public:
 };
 // DPCT_LABEL_END
 
+} // namespace deprecated
 } // namespace detail
 
 // DPCT_LABEL_BEGIN|is_device_ptr|dpct
@@ -1965,6 +1968,8 @@ template <class T, size_t Dimension>
 using shared_memory = detail::device_memory<T, shared, Dimension>;
 // DPCT_LABEL_END
 
+namespace deprecated {
+
 // DPCT_LABEL_BEGIN|usm_host_allocator_alias|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Memory|dpct_usm_allocator
@@ -1972,8 +1977,10 @@ using shared_memory = detail::device_memory<T, shared, Dimension>;
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T>
-using usm_host_allocator = detail::usm_allocator<T, sycl::usm::alloc::host>;
+using usm_host_allocator = detail::deprecated::usm_allocator<T, sycl::usm::alloc::host>;
 // DPCT_LABEL_END
+
+} // namespace deprecated
 } // namespace dpct
 
 #endif // __DPCT_MEMORY_HPP__

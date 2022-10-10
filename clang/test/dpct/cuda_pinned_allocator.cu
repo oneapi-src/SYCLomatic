@@ -18,7 +18,7 @@
 
 int main(int argc, char *argv[])
 {
-    // CHECK: std::vector<float, dpct::usm_host_allocator<float>> hVec(SIZE);
+    // CHECK: std::vector<float, dpct::deprecated::usm_host_allocator<float>> hVec(SIZE);
     std::vector<float, thrust::system::cuda::experimental::pinned_allocator<float>> hVec(SIZE);
     std::fill(hVec.begin(), hVec.end(), 2);
 
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     // CHECK: std::copy(oneapi::dpl::execution::make_device_policy(q_ct1), dVec.begin(), dVec.end(), hVec.begin());
     thrust::copy(dVec.begin(), dVec.end(), hVec.begin());
 
-    // CHECK: std::vector<float, dpct::usm_host_allocator<float>> hVecCopy = hVec;
+    // CHECK: std::vector<float, dpct::deprecated::usm_host_allocator<float>> hVecCopy = hVec;
     std::vector<float, thrust::cuda::experimental::pinned_allocator<float>> hVecCopy = hVec;
     for (const auto &v : hVecCopy)
     {
