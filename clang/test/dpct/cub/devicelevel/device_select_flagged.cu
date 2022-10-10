@@ -18,7 +18,7 @@
 // CHECK: q_ct1.memcpy(device_in, (void *)host_in, sizeof(host_in));
 // CHECK: q_ct1.memcpy(device_flagged, host_flagged, sizeof(host_flagged)).wait();
 // CHECK: DPCT1026:{{.*}}
-// CHECK: q_ct1.fill(device_select_num, dpct::copy_if(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_flagged, device_out, [](const auto &t) -> bool { return t; }) - device_out, 1).wait();
+// CHECK: q_ct1.fill(device_select_num, std::distance(device_out, dpct::copy_if(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_flagged, device_out, [](const auto &t) -> bool { return t; })), 1).wait();
 // CHECK: q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out));
 // CHECK: q_ct1.memcpy((void *)&num, (void *)device_select_num, sizeof(int)).wait();
 // CHECK: sycl::free(device_in, q_ct1);
@@ -70,7 +70,7 @@ void test_1() {
 // CHECK: q_ct1.memcpy(device_flagged, host_flagged, sizeof(host_flagged)).wait();
 // CHECK: DPCT1027:{{.*}}
 // CHECK: 0, 0;
-// CHECK: q_ct1.fill(device_select_num, dpct::copy_if(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_flagged, device_out, [](const auto &t) -> bool { return t; }) - device_out, 1).wait();
+// CHECK: q_ct1.fill(device_select_num, std::distance(device_out, dpct::copy_if(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_flagged, device_out, [](const auto &t) -> bool { return t; })), 1).wait();
 // CHECK: q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out));
 // CHECK: q_ct1.memcpy((void *)&num, (void *)device_select_num, sizeof(int)).wait();
 // CHECK: sycl::free(device_in, q_ct1);

@@ -238,7 +238,7 @@ void MetadataStreamerV2::emitPrintf(const Module &Mod) {
   if (!Node)
     return;
 
-  for (auto Op : Node->operands())
+  for (auto *Op : Node->operands())
     if (Op->getNumOperands())
       Printf.push_back(
           std::string(cast<MDString>(Op->getOperand(0))->getString()));
@@ -400,17 +400,15 @@ void MetadataStreamerV2::emitHiddenKernelArgs(const Function &Func,
   auto Int8PtrTy = Type::getInt8PtrTy(Func.getContext(),
                                       AMDGPUAS::GLOBAL_ADDRESS);
 
-  // Emit "printf buffer" argument if printf is used, otherwise emit dummy
-  // "none" argument.
   if (HiddenArgNumBytes >= 32) {
+    // We forbid the use of features requiring hostcall when compiling OpenCL
+    // before code object V5, which makes the mutual exclusion between the
+    // "printf buffer" and "hostcall buffer" here sound.
     if (Func.getParent()->getNamedMetadata("llvm.printf.fmts"))
       emitKernelArg(DL, Int8PtrTy, Align(8), ValueKind::HiddenPrintfBuffer);
-    else if (!Func.hasFnAttribute("amdgpu-no-hostcall-ptr")) {
-      // The printf runtime binding pass should have ensured that hostcall and
-      // printf are not used in the same module.
-      assert(!Func.getParent()->getNamedMetadata("llvm.printf.fmts"));
+    else if (!Func.hasFnAttribute("amdgpu-no-hostcall-ptr"))
       emitKernelArg(DL, Int8PtrTy, Align(8), ValueKind::HiddenHostcallBuffer);
-    } else
+    else
       emitKernelArg(DL, Int8PtrTy, Align(8), ValueKind::HiddenNone);
   }
 
@@ -427,8 +425,12 @@ void MetadataStreamerV2::emitHiddenKernelArgs(const Function &Func,
   }
 
   // Emit the pointer argument for multi-grid object.
-  if (HiddenArgNumBytes >= 56)
-    emitKernelArg(DL, Int8PtrTy, Align(8), ValueKind::HiddenMultiGridSyncArg);
+  if (HiddenArgNumBytes >= 56) {
+    if (!Func.hasFnAttribute("amdgpu-no-multigrid-sync-arg"))
+      emitKernelArg(DL, Int8PtrTy, Align(8), ValueKind::HiddenMultiGridSyncArg);
+    else
+      emitKernelArg(DL, Int8PtrTy, Align(8), ValueKind::HiddenNone);
+  }
 }
 
 bool MetadataStreamerV2::emitTo(AMDGPUTargetStreamer &TargetStreamer) {
@@ -621,7 +623,7 @@ void MetadataStreamerV3::emitPrintf(const Module &Mod) {
     return;
 
   auto Printf = HSAMetadataDoc->getArrayNode();
-  for (auto Op : Node->operands())
+  for (auto *Op : Node->operands())
     if (Op->getNumOperands())
       Printf.push_back(Printf.getDocument()->getNode(
           cast<MDString>(Op->getOperand(0))->getString(), /*Copy=*/true));
@@ -766,7 +768,10 @@ void MetadataStreamerV3::emitKernelArg(
 
   if (auto PtrTy = dyn_cast<PointerType>(Ty))
     if (auto Qualifier = getAddressSpaceQualifier(PtrTy->getAddressSpace()))
-      Arg[".address_space"] = Arg.getDocument()->getNode(*Qualifier, /*Copy=*/true);
+      // Limiting address space to emit only for a certain ValueKind.
+      if (ValueKind == "global_buffer" || ValueKind == "dynamic_shared_pointer")
+        Arg[".address_space"] = Arg.getDocument()->getNode(*Qualifier,
+                                                           /*Copy=*/true);
 
   if (auto AQ = getAccessQualifier(AccQual))
     Arg[".access"] = Arg.getDocument()->getNode(*AQ, /*Copy=*/true);
@@ -803,6 +808,8 @@ void MetadataStreamerV3::emitHiddenKernelArgs(const MachineFunction &MF,
   auto &DL = M->getDataLayout();
   auto Int64Ty = Type::getInt64Ty(Func.getContext());
 
+  Offset = alignTo(Offset, ST.getAlignmentForImplicitArgPtr());
+
   if (HiddenArgNumBytes >= 8)
     emitKernelArg(DL, Int64Ty, Align(8), "hidden_global_offset_x", Offset,
                   Args);
@@ -816,19 +823,17 @@ void MetadataStreamerV3::emitHiddenKernelArgs(const MachineFunction &MF,
   auto Int8PtrTy =
       Type::getInt8PtrTy(Func.getContext(), AMDGPUAS::GLOBAL_ADDRESS);
 
-  // Emit "printf buffer" argument if printf is used, emit "hostcall buffer"
-  // if "hostcall" module flag is set, otherwise emit dummy "none" argument.
   if (HiddenArgNumBytes >= 32) {
+    // We forbid the use of features requiring hostcall when compiling OpenCL
+    // before code object V5, which makes the mutual exclusion between the
+    // "printf buffer" and "hostcall buffer" here sound.
     if (M->getNamedMetadata("llvm.printf.fmts"))
       emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_printf_buffer", Offset,
                     Args);
-    else if (!Func.hasFnAttribute("amdgpu-no-hostcall-ptr")) {
-      // The printf runtime binding pass should have ensured that hostcall and
-      // printf are not used in the same module.
-      assert(!M->getNamedMetadata("llvm.printf.fmts"));
+    else if (!Func.hasFnAttribute("amdgpu-no-hostcall-ptr"))
       emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_hostcall_buffer", Offset,
                     Args);
-    } else
+    else
       emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_none", Offset, Args);
   }
 
@@ -847,9 +852,14 @@ void MetadataStreamerV3::emitHiddenKernelArgs(const MachineFunction &MF,
   }
 
   // Emit the pointer argument for multi-grid object.
-  if (HiddenArgNumBytes >= 56)
-    emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_multigrid_sync_arg", Offset,
-                  Args);
+  if (HiddenArgNumBytes >= 56) {
+    if (!Func.hasFnAttribute("amdgpu-no-multigrid-sync-arg")) {
+      emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_multigrid_sync_arg", Offset,
+                    Args);
+    } else {
+      emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_none", Offset, Args);
+    }
+  }
 }
 
 msgpack::MapDocNode
@@ -868,6 +878,8 @@ MetadataStreamerV3::getHSAKernelProps(const MachineFunction &MF,
       Kern.getDocument()->getNode(ProgramInfo.LDSSize);
   Kern[".private_segment_fixed_size"] =
       Kern.getDocument()->getNode(ProgramInfo.ScratchSize);
+  Kern[".uses_dynamic_stack"] =
+      Kern.getDocument()->getNode(ProgramInfo.DynamicCallStack);
 
   // FIXME: The metadata treats the minimum as 16?
   Kern[".kernarg_segment_align"] =
@@ -977,6 +989,11 @@ void MetadataStreamerV5::emitHiddenKernelArgs(const MachineFunction &MF,
                                               msgpack::ArrayDocNode Args) {
   auto &Func = MF.getFunction();
   const GCNSubtarget &ST = MF.getSubtarget<GCNSubtarget>();
+
+  // No implicit kernel argument is used.
+  if (ST.getImplicitArgNumBytes(Func) == 0)
+    return;
+
   const Module *M = Func.getParent();
   auto &DL = M->getDataLayout();
   const SIMachineFunctionInfo &MFI = *MF.getInfo<SIMachineFunctionInfo>();
@@ -985,6 +1002,7 @@ void MetadataStreamerV5::emitHiddenKernelArgs(const MachineFunction &MF,
   auto Int32Ty = Type::getInt32Ty(Func.getContext());
   auto Int16Ty = Type::getInt16Ty(Func.getContext());
 
+  Offset = alignTo(Offset, ST.getAlignmentForImplicitArgPtr());
   emitKernelArg(DL, Int32Ty, Align(4), "hidden_block_count_x", Offset, Args);
   emitKernelArg(DL, Int32Ty, Align(4), "hidden_block_count_y", Offset, Args);
   emitKernelArg(DL, Int32Ty, Align(4), "hidden_block_count_z", Offset, Args);
@@ -1015,17 +1033,23 @@ void MetadataStreamerV5::emitHiddenKernelArgs(const MachineFunction &MF,
   if (M->getNamedMetadata("llvm.printf.fmts")) {
     emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_printf_buffer", Offset,
                   Args);
-  } else
+  } else {
     Offset += 8; // Skipped.
+  }
 
   if (!Func.hasFnAttribute("amdgpu-no-hostcall-ptr")) {
     emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_hostcall_buffer", Offset,
                   Args);
-  } else
+  } else {
     Offset += 8; // Skipped.
+  }
 
-  emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_multigrid_sync_arg", Offset,
+  if (!Func.hasFnAttribute("amdgpu-no-multigrid-sync-arg")) {
+    emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_multigrid_sync_arg", Offset,
                 Args);
+  } else {
+    Offset += 8; // Skipped.
+  }
 
   if (!Func.hasFnAttribute("amdgpu-no-heap-ptr"))
     emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_heap_v1", Offset, Args);
@@ -1037,8 +1061,9 @@ void MetadataStreamerV5::emitHiddenKernelArgs(const MachineFunction &MF,
                   Args);
     emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_completion_action", Offset,
                   Args);
-  } else
+  } else {
     Offset += 16; // Skipped.
+  }
 
   Offset += 72; // Reserved.
 
@@ -1047,8 +1072,9 @@ void MetadataStreamerV5::emitHiddenKernelArgs(const MachineFunction &MF,
   if (!ST.hasApertureRegs()) {
     emitKernelArg(DL, Int32Ty, Align(4), "hidden_private_base", Offset, Args);
     emitKernelArg(DL, Int32Ty, Align(4), "hidden_shared_base", Offset, Args);
-  } else
+  } else {
     Offset += 8; // Skipped.
+  }
 
   if (MFI.hasQueuePtr())
     emitKernelArg(DL, Int8PtrTy, Align(8), "hidden_queue_ptr", Offset, Args);

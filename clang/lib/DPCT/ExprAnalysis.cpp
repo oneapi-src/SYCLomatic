@@ -749,10 +749,17 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         MapNames::findReplacedName(MapNames::Dim3MemberNamesMap,
                                    ME->getMemberNameInfo().getAsString()));
   } else if (BaseType == "cudaDeviceProp") {
-    std::string ReplacementStr = MapNames::findReplacedName(
-        DeviceInfoVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
+    auto MemberName = ME->getMemberNameInfo().getAsString();
+
+    std::string ReplacementStr = MapNames::findReplacedName(DeviceInfoVarRule::PropNamesMap, MemberName);
     if (!ReplacementStr.empty()) {
-      addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + "()");
+      std::string TmplArg = "";
+      if (MemberName == "maxGridSize" ||
+          MemberName == "maxThreadsDim") {
+        // Similar code in ASTTraversal.cpp
+        TmplArg = "<int *>";
+      }
+      addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + TmplArg + "()");
       requestFeature(
           PropToGetFeatureMap.at(ME->getMemberNameInfo().getAsString()), ME);
     }
@@ -899,6 +906,17 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // If the callee does not need rewrite, analyze the args
   for (auto Arg : CE->arguments())
     analyzeArgument(Arg);
+
+  if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
+    if (auto F = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD)) {
+      if (auto C = F->getFuncInfo()->findCallee(CE)) {
+        auto Extra = C->getExtraArguments();
+        if (Extra.empty())
+          return;
+        addReplacement(CE->getRParenLoc(), Extra);
+      }
+    }
+  }
 }
 
 void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {

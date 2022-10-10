@@ -511,8 +511,9 @@ DynamicLoaderDarwinKernel::DynamicLoaderDarwinKernel(Process *process,
       m_kext_summary_header(), m_known_kexts(), m_mutex(),
       m_break_id(LLDB_INVALID_BREAK_ID) {
   Status error;
-  PlatformSP platform_sp(Platform::Create(
-      ConstString(PlatformDarwinKernel::GetPluginNameStatic()), error));
+  PlatformSP platform_sp =
+      process->GetTarget().GetDebugger().GetPlatformList().Create(
+          PlatformDarwinKernel::GetPluginNameStatic());
   if (platform_sp.get())
     process->GetTarget().SetPlatform(platform_sp);
 }
@@ -789,7 +790,8 @@ bool DynamicLoaderDarwinKernel::KextImageInfo::LoadImageUsingMemoryModule(
       // exists, instead of depending on the DebugSymbols preferences being
       // set.
       if (IsKernel()) {
-        if (Symbols::DownloadObjectAndSymbolFile(module_spec, true)) {
+        Status error;
+        if (Symbols::DownloadObjectAndSymbolFile(module_spec, error, true)) {
           if (FileSystem::Instance().Exists(module_spec.GetFileSpec())) {
             m_module_sp = std::make_shared<Module>(module_spec.GetFileSpec(),
                                                    target.GetArchitecture());
@@ -1387,7 +1389,7 @@ uint32_t DynamicLoaderDarwinKernel::ReadKextSummaries(
       if (name_data == nullptr)
         break;
       image_infos[i].SetName((const char *)name_data);
-      UUID uuid = UUID::fromOptionalData(extractor.GetData(&offset, 16), 16);
+      UUID uuid(extractor.GetData(&offset, 16), 16);
       image_infos[i].SetUUID(uuid);
       image_infos[i].SetLoadAddress(extractor.GetU64(&offset));
       image_infos[i].SetSize(extractor.GetU64(&offset));

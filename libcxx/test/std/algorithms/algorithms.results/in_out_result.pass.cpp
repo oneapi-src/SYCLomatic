@@ -7,7 +7,6 @@
 //===----------------------------------------------------------------------===//
 
 // UNSUPPORTED: c++03, c++11, c++14, c++17
-// UNSUPPORTED: libcpp-has-no-incomplete-ranges
 
 // template <class I1, class O1>
 // struct in_out_result;
@@ -90,4 +89,6 @@ constexpr bool test() {
 int main(int, char**) {
   test();
   static_assert(test());
+
+  return 0;
 }

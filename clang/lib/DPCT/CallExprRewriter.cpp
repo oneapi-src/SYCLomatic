@@ -384,14 +384,14 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         // 2) using int_t = int;
         const TypedefType *TT0 = nullptr, *TT1 = nullptr;
         if (!BT0) {
-          TT0 = dyn_cast<TypedefType>(Arg0->getType());
+          TT0 = Arg0->getType()->getAs<TypedefType>();
           if (TT0)
-            BT0 = dyn_cast<BuiltinType>(TT0->desugar().getTypePtr());
+            BT0 = dyn_cast<BuiltinType>(TT0->getCanonicalTypeUnqualified().getTypePtr());
         }
         if (!BT1) {
-          TT1 = dyn_cast<TypedefType>(Arg1->getType());
+          TT1 = Arg1->getType()->getAs<TypedefType>();
           if (TT1)
-            BT1 = dyn_cast<BuiltinType>(TT1->desugar().getTypePtr());
+            BT1 = dyn_cast<BuiltinType>(TT1->getCanonicalTypeUnqualified().getTypePtr());
         }
         if (BT0 && BT1) {
           auto K0 = BT0->getKind();
@@ -443,7 +443,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
               // otherwise, do not migrate them. Overflow is not considered.
               const BuiltinType *UnsignedType;
               const TypedefType *UnsignedTypedefType;
-              BuiltinType::Kind UnsignedKind, SignedKind;
+              BuiltinType::Kind UnsignedKind = BuiltinType::Kind::Void;
+              BuiltinType::Kind SignedKind = BuiltinType::Kind::Void;
               if (BT0->isSignedInteger() && BT1->isUnsignedInteger()) {
                 UnsignedType = BT1;
                 UnsignedTypedefType = TT1;
@@ -1713,6 +1714,13 @@ makeTypenameExprCreator(
                         std::function<SubExprT(const CallExpr *)>>(SubExpr);
 }
 
+template <class SubExprT>
+std::function<ZeroInitializerPrinter<SubExprT>(const CallExpr *)>
+makeZeroInitializerCreator(std::function<SubExprT(const CallExpr *)> SubExpr) {
+  return PrinterCreator<ZeroInitializerPrinter<SubExprT>,
+                        std::function<SubExprT(const CallExpr *)>>(SubExpr);
+}
+
 bool isCallAssigned(const CallExpr *C) { return isAssigned(C); }
 
 template <unsigned int Idx>
@@ -2618,7 +2626,7 @@ template <class F, class S> class CheckOr {
   S Sec;
 
 public:
-  CheckOr(F Fir, S Sec) : Fir(Fir), Sec(Sec) {}
+  CheckOr(const F &Fir, const S &Sec) : Fir(Fir), Sec(Sec) {}
   bool operator()(const CallExpr *C) { return Fir(C) || Sec(C); }
 };
 
@@ -2626,7 +2634,7 @@ template <class F, class S> CheckAnd<F, S> makeCheckAnd(F Fir, S Sec) {
   return CheckAnd<F, S>(Fir, Sec);
 }
 
-template <class F, class S> CheckOr<F, S> makeCheckOr(F Fir, S Sec) {
+template <class F, class S> CheckOr<F, S> makeCheckOr(const F &Fir, const S &Sec) {
   return CheckOr<F, S>(Fir, Sec);
 }
 
@@ -2820,6 +2828,7 @@ std::function<bool(const CallExpr *C)> hasManagedAttr(int Idx) {
                                         DOES_FIRST_LEVEL_POINTER_NEED_CONST)
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
 #define TYPENAME(SUBEXPR) makeTypenameExprCreator(SUBEXPR)
+#define ZERO_INITIALIZER(SUBEXPR) makeZeroInitializerCreator(SUBEXPR)
 #define SUBGROUP                                                               \
   std::function<SubGroupPrinter(const CallExpr *)>(SubGroupPrinter::create)
 #define NDITEM std::function<ItemPrinter(const CallExpr *)>(ItemPrinter::create)

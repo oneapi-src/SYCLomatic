@@ -36,7 +36,6 @@ import sys
 import tempfile
 
 # Third-party modules
-import six
 import unittest2
 
 # LLDB Modules
@@ -280,6 +279,18 @@ def parseOptionsAndInitTestdirs():
     if not configuration.get_filecheck_path():
         logging.warning('No valid FileCheck executable; some tests may fail...')
         logging.warning('(Double-check the --llvm-tools-dir argument to dotest.py)')
+
+    configuration.libcxx_include_dir = args.libcxx_include_dir
+    configuration.libcxx_library_dir = args.libcxx_library_dir
+    if args.libcxx_include_dir or args.libcxx_library_dir:
+        if args.lldb_platform_name:
+            logging.warning('Custom libc++ is not supported for remote runs: ignoring --libcxx arguments')
+        elif args.libcxx_include_dir and args.libcxx_library_dir:
+            configuration.libcxx_include_dir = args.libcxx_include_dir
+            configuration.libcxx_library_dir = args.libcxx_library_dir
+        else:
+            logging.error('Custom libc++ requires both --libcxx-include-dir and --libcxx-library-dir')
+            sys.exit(-1)
 
     if args.channels:
         lldbtest_config.channels = args.channels
@@ -880,6 +891,7 @@ def run_suite():
 
     import lldb
     lldb.SBDebugger.Initialize()
+    lldb.SBDebugger.PrintStackTraceOnError()
 
     checkLibcxxSupport()
     checkLibstdcxxSupport()
@@ -901,6 +913,7 @@ def run_suite():
               (configuration.lldb_platform_name))
         lldb.remote_platform = lldb.SBPlatform(
             configuration.lldb_platform_name)
+        lldb.selected_platform = lldb.remote_platform
         if not lldb.remote_platform.IsValid():
             print(
                 "error: unable to create the LLDB platform named '%s'." %
@@ -917,7 +930,6 @@ def run_suite():
             err = lldb.remote_platform.ConnectRemote(platform_connect_options)
             if err.Success():
                 print("Connected.")
-                lldb.selected_platform = lldb.remote_platform
             else:
                 print("error: failed to connect to remote platform using URL '%s': %s" % (
                     configuration.lldb_platform_url, err))

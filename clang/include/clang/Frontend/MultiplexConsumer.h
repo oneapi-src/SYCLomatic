@@ -40,6 +40,8 @@ public:
   void MacroDefinitionRead(serialization::PreprocessedEntityID,
                            MacroDefinitionRecord *MD) override;
   void ModuleRead(serialization::SubmoduleID ID, Module *Mod) override;
+  void ModuleImportRead(serialization::SubmoduleID ID,
+                        SourceLocation ImportLoc) override;
 
 private:
   std::vector<ASTDeserializationListener *> Listeners;
@@ -76,6 +78,13 @@ public:
   // SemaConsumer
   void InitializeSema(Sema &S) override;
   void ForgetSema() override;
+
+#ifdef SYCLomatic_CUSTOMIZATION
+  void HandleCXXExplicitFunctionInstantiation(
+      const FunctionDecl *Specialization, const FunctionTypeLoc &FTL,
+      const ParsedAttributes &Attrs,
+      const TemplateArgumentListInfo &TAList) override;
+#endif // SYCLomatic_CUSTOMIZATION
 
 private:
   std::vector<std::unique_ptr<ASTConsumer>> Consumers; // Owns these.

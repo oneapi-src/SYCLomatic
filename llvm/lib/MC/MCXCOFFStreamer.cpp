@@ -37,6 +37,10 @@ bool MCXCOFFStreamer::emitSymbolAttribute(MCSymbol *Sym,
   getAssembler().registerSymbol(*Symbol);
 
   switch (Attribute) {
+  // XCOFF doesn't support the cold feature.
+  case MCSA_Cold:
+    return false;
+
   case MCSA_Global:
   case MCSA_Extern:
     Symbol->setStorageClass(XCOFF::C_EXT);
@@ -55,6 +59,9 @@ bool MCXCOFFStreamer::emitSymbolAttribute(MCSymbol *Sym,
     break;
   case llvm::MCSA_Protected:
     Symbol->setVisibilityType(XCOFF::SYM_V_PROTECTED);
+    break;
+  case llvm::MCSA_Exported:
+    Symbol->setVisibilityType(XCOFF::SYM_V_EXPORTED);
     break;
   default:
     report_fatal_error("Not implemented yet.");
