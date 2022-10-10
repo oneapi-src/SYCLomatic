@@ -3253,19 +3253,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
-static bool isCudaStreamType(QualType Ty) {
-  QualType CanTy = Ty.getCanonicalType();
-  if (const auto *PtrTy = CanTy->getAs<PointerType>()) {
-    if (const auto *RecordTy = PtrTy->getPointeeType()->getAs<RecordType>()) {
-      const auto *RD = RecordTy->getAsRecordDecl();
-      if (RD->getName() != "CUstream_st")
-        return false;
-      return DpctGlobalInfo::isInCudaPath(RD->getBeginLoc());
-    }
-  }
-  return false;
-}
-
 REGISTER_RULE(TypeInDeclRule)
 
 // Rule for types replacements in var. declarations.
@@ -3281,8 +3268,6 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
           .bind("inheritanceType"),
       this);
 }
-
-
 
 void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
   SourceManager *SM = Result.SourceManager;
