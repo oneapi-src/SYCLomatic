@@ -1666,7 +1666,7 @@ public:
     auto LocInfo = getLocInfo(SL);
     auto FileInfo = insertFile(LocInfo.first);
     auto &S = FileInfo->getConstantMacroTMSet();
-    for (auto TM : S) {
+    for (const auto &TM : S) {
       if (TM->getConstantOffset() == LocInfo.second) {
         return TM;
       }
@@ -1936,7 +1936,7 @@ public:
       return Res;
     }
 
-    for (auto SpellingLoc : IterOfD2L->second) {
+    for (const auto &SpellingLoc : IterOfD2L->second) {
       auto IterOfL2D = SpellingLocToDFIsMapForAssumeNDRange.find(SpellingLoc);
       if (IterOfL2D != SpellingLocToDFIsMapForAssumeNDRange.end()) {
         Res.insert(IterOfL2D->second.begin(), IterOfL2D->second.end());
@@ -3281,7 +3281,7 @@ private:
   template <class T, CallOrDecl COD>
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
                                               const GlobalMap<T> &VarMap) {
-    for (auto VI : VarMap) {
+    for (const auto &VI : VarMap) {
       if (PS.FormatInformation.EnableFormat) {
         ParameterStream TPS;
         GetArgOrParam<T, COD>()(TPS, VI.second);

@@ -1561,7 +1561,7 @@ auto getTemplateArgsList =
   } else if (auto ULE = dyn_cast<UnresolvedLookupExpr>(Callee)) {
     TemplateArgsList = ULE->template_arguments();
   }
-  for (auto Arg : TemplateArgsList) {
+  for (const auto &Arg : TemplateArgsList) {
     Ret.emplace_back(Arg, C->getSourceRange());
   }
   return Ret;

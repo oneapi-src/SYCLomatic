@@ -45,7 +45,7 @@ TemplateDependentStringInfo::TemplateDependentStringInfo(
     const std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
         &InTDRs)
     : SourceStr(SrcStr) {
-  for (auto TDR : InTDRs)
+  for (const auto &TDR : InTDRs)
     TDRs.emplace_back(TDR.second->alterSource(SourceStr));
 }
 

@@ -1121,7 +1121,7 @@ void MigrationRule::print(llvm::raw_ostream &OS) {
 
   OS << "[" << getName() << "]" << getNL();
   constexpr char Indent[] = "  ";
-  for (auto TM : EmittedTransformations) {
+  for (const auto &TM : EmittedTransformations) {
     OS << Indent;
     TM->print(OS, DpctGlobalInfo::getContext(),
               /* Print parent */ false);
@@ -1136,7 +1136,7 @@ void MigrationRule::printStatistics(llvm::raw_ostream &OS) {
 
   OS << "<Statistics of " << getName() << ">" << getNL();
   std::unordered_map<std::string, size_t> TMNameCountMap;
-  for (auto TM : EmittedTransformations) {
+  for (const auto &TM : EmittedTransformations) {
     const std::string Name = TM->getName();
     if (TMNameCountMap.count(Name) == 0) {
       TMNameCountMap.emplace(std::make_pair(Name, 1));
@@ -8214,7 +8214,7 @@ bool EventQueryTraversal::traverseFunction(const FunctionDecl *FD,
   ResultTy Result;
   auto Ret = traverseStmt(FD->getBody(), VD, Result) && QueryCallUsed;
 
-  for (auto R : Result) {
+  for (const auto &R : Result) {
     Rule->ExprCache[R.first] = Ret;
     if (Ret)
       Rule->emplaceTransformation(R.second);
@@ -14301,7 +14301,7 @@ bool TextureRule::SettersMerger::applyResult() {
   ResultMapInserter Inserter(MethodNames.size(), Rule);
   std::vector<std::string> ArgsList(MethodNames.size());
   unsigned ActualArgs = 0;
-  for (auto R : Result) {
+  for (const auto &R : Result) {
     if (ArgsList[R.first].empty())
       ++ActualArgs;
     Inserter.update(R.first, R.second);
@@ -14456,7 +14456,7 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       } else if (auto TS =
                      DpctGlobalInfo::findAncestor<TranslationUnitDecl>(UD)) {
-        for (auto child : TS->decls()) {
+        for (const auto &child : TS->decls()) {
           if (child == UD) {
             continue;
           } else if (auto USD = dyn_cast<UsingShadowDecl>(child)) {

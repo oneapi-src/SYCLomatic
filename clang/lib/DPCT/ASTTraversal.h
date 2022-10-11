@@ -213,7 +213,7 @@ private:
 
   // Check if the location has been replaced by the same rule.
   bool isReplaced(SourceRange &SR) {
-    for (auto RR : Replaced) {
+    for (const auto &RR : Replaced) {
       if (SR == RR)
         return true;
     }

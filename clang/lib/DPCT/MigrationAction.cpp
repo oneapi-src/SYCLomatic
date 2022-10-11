@@ -70,7 +70,7 @@ DpctToolAction::DpctToolAction(ReplTy &Replacements,
   if (RuleNames.empty())
     return;
   auto Names = split(RuleNames, ',');
-  for (auto Name : Names) {
+  for (const auto &Name : Names) {
     MigrationRuleNames.push_back(Name);
   }
 }
