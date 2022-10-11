@@ -1445,7 +1445,7 @@ private:
   void previousHCurrentD(const VarDecl *VD, tooling::Replacement &R);
   void previousDCurrentH(const VarDecl *VD, tooling::Replacement &R);
   void removeHostConstantWarning(tooling::Replacement &R);
-  bool processTypeDeclaredLocal(const VarDecl *MemVar,
+  void processTypeDeclaredLocal(const VarDecl *MemVar,
                                 std::shared_ptr<MemVarInfo> Info);
   bool currentIsDevice(const VarDecl *MemVar, std::shared_ptr<MemVarInfo> Info);
   bool currentIsHost(const VarDecl *VD, std::string VarName);

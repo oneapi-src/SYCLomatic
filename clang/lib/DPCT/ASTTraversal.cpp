@@ -9942,12 +9942,12 @@ void MemVarRule::removeHostConstantWarning(Replacement &R) {
   R.setReplacementText(Result);
 }
 
-bool MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
+void MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
                                           std::shared_ptr<MemVarInfo> Info) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto DS = Info->getDeclStmtOfVarType();
   if (!DS)
-    return false;
+    return;
   // this token is ';'
   auto InsertSL = SM.getExpansionLoc(DS->getEndLoc()).getLocWithOffset(1);
   auto GenDeclStmt = [=, &SM](
@@ -10208,7 +10208,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
       return;
 
     if (Info->isTypeDeclaredLocal()) {
-      if(!processTypeDeclaredLocal(MemVar, Info)) return;
+      processTypeDeclaredLocal(MemVar, Info);
     } else {
       // This IgnoreFlag is used to disable the replacement of
       // "dpct::constant_memory<T, 0> a;"
@@ -10232,6 +10232,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
           MemVar, Info->getDeclarationReplacement(MemVar)));
     }
+    return;
   }
   auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
   auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
