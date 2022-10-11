@@ -500,24 +500,8 @@ void X86FrameLowering::emitZeroCallUsedRegs(BitVector RegsToZero,
                                             MachineBasicBlock &MBB) const {
   const MachineFunction &MF = *MBB.getParent();
 
-  // Don't clear registers that will just be reset before exiting.
-  for (const CalleeSavedInfo &CSI : MF.getFrameInfo().getCalleeSavedInfo())
-    for (MCRegister Reg : TRI->sub_and_superregs_inclusive(CSI.getReg()))
-      RegsToZero.reset(Reg);
-
   // Insertion point.
   MachineBasicBlock::iterator MBBI = MBB.getFirstTerminator();
-
-  // We don't need to zero out registers that are clobbered by "pop"
-  // instructions.
-  for (MachineBasicBlock::iterator I = MBBI, E = MBB.end(); I != E; ++I)
-    for (const MachineOperand &MO : I->operands()) {
-      if (!MO.isReg())
-        continue;
-
-      for (const MCPhysReg &Reg : TRI->sub_and_superregs_inclusive(MO.getReg()))
-        RegsToZero.reset(Reg);
-    }
 
   // Fake a debug loc.
   DebugLoc DL;
@@ -1113,9 +1097,9 @@ void X86FrameLowering::emitStackProbeInlineWindowsCoreCLR64(
     for (MachineInstr &MI : *LoopMBB) {
       MI.setFlag(MachineInstr::FrameSetup);
     }
-    for (MachineBasicBlock::iterator CMBBI = ContinueMBB->begin();
-         CMBBI != ContinueMBBI; ++CMBBI) {
-      CMBBI->setFlag(MachineInstr::FrameSetup);
+    for (MachineInstr &MI :
+         llvm::make_range(ContinueMBB->begin(), ContinueMBBI)) {
+      MI.setFlag(MachineInstr::FrameSetup);
     }
   }
 }
@@ -1549,7 +1533,7 @@ void X86FrameLowering::emitPrologue(MachineFunction &MF,
             .addUse(X86::NoRegister);
         break;
       }
-      LLVM_FALLTHROUGH;
+      [[fallthrough]];
 
     case SwiftAsyncFramePointerMode::Always:
       BuildMI(MBB, MBBI, DL, TII.get(X86::BTS64ri8), MachineFramePtr)
@@ -2793,7 +2777,7 @@ void X86FrameLowering::emitCatchRetReturnValue(MachineBasicBlock &MBB,
 
   // Record that we've taken the address of CatchRetTarget and no longer just
   // reference it in a terminator.
-  CatchRetTarget->setHasAddressTaken();
+  CatchRetTarget->setMachineBlockAddressTaken();
 }
 
 bool X86FrameLowering::restoreCalleeSavedRegisters(
@@ -2944,17 +2928,8 @@ void X86FrameLowering::adjustForSegmentedStacks(
   // prologue.
   StackSize = MFI.getStackSize();
 
-  // Do not generate a prologue for leaf functions with a stack of size zero.
-  // For non-leaf functions we have to allow for the possibility that the
-  // callis to a non-split function, as in PR37807. This function could also
-  // take the address of a non-split function. When the linker tries to adjust
-  // its non-existent prologue, it would fail with an error. Mark the object
-  // file so that such failures are not errors. See this Go language bug-report
-  // https://go-review.googlesource.com/c/go/+/148819/
-  if (StackSize == 0 && !MFI.hasTailCall()) {
-    MF.getMMI().setHasNosplitStack(true);
+  if (!MFI.needsSplitStackProlog())
     return;
-  }
 
   MachineBasicBlock *allocMBB = MF.CreateMachineBasicBlock();
   MachineBasicBlock *checkMBB = MF.CreateMachineBasicBlock();
@@ -3137,7 +3112,6 @@ void X86FrameLowering::adjustForSegmentedStacks(
         .addReg(0)
         .addExternalSymbol("__morestack_addr")
         .addReg(0);
-    MF.getMMI().setUsesMorestackAddr(true);
   } else {
     if (Is64Bit)
       BuildMI(allocMBB, DL, TII.get(X86::CALL64pcrel32))

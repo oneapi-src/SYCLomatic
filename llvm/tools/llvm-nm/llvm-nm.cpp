@@ -2254,7 +2254,11 @@ static std::vector<NMSymbol> dumpSymbolNamesFromFile(StringRef Filename) {
   if (error(BufferOrErr.getError(), Filename))
     return SymbolList;
 
+  // Always enable opaque pointers, to handle archives with mixed typed and
+  // opaque pointer bitcode files gracefully. As we're only reading symbols,
+  // the used pointer types don't matter.
   LLVMContext Context;
+  Context.setOpaquePointers(true);
   LLVMContext *ContextPtr = NoLLVMBitcode ? nullptr : &Context;
   Expected<std::unique_ptr<Binary>> BinaryOrErr =
       createBinary(BufferOrErr.get()->getMemBufferRef(), ContextPtr);
@@ -2283,10 +2287,8 @@ exportSymbolNamesFromFiles(const std::vector<std::string> &InputFilenames) {
   }
 
   // Delete symbols which should not be printed from SymolList.
-  SymbolList.erase(
-      llvm::remove_if(SymbolList,
-                      [](const NMSymbol &s) { return !s.shouldPrint(); }),
-      SymbolList.end());
+  llvm::erase_if(SymbolList,
+                 [](const NMSymbol &s) { return !s.shouldPrint(); });
   sortSymbolList(SymbolList);
   SymbolList.erase(std::unique(SymbolList.begin(), SymbolList.end()),
                    SymbolList.end());

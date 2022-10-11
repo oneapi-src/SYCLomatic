@@ -265,16 +265,31 @@ public:
   bool hasOnlyConst() const { return Mask == Const; }
   void removeConst() { Mask &= ~Const; }
   void addConst() { Mask |= Const; }
+  Qualifiers withConst() const {
+    Qualifiers Qs = *this;
+    Qs.addConst();
+    return Qs;
+  }
 
   bool hasVolatile() const { return Mask & Volatile; }
   bool hasOnlyVolatile() const { return Mask == Volatile; }
   void removeVolatile() { Mask &= ~Volatile; }
   void addVolatile() { Mask |= Volatile; }
+  Qualifiers withVolatile() const {
+    Qualifiers Qs = *this;
+    Qs.addVolatile();
+    return Qs;
+  }
 
   bool hasRestrict() const { return Mask & Restrict; }
   bool hasOnlyRestrict() const { return Mask == Restrict; }
   void removeRestrict() { Mask &= ~Restrict; }
   void addRestrict() { Mask |= Restrict; }
+  Qualifiers withRestrict() const {
+    Qualifiers Qs = *this;
+    Qs.addRestrict();
+    return Qs;
+  }
 
   bool hasCVRQualifiers() const { return getCVRQualifiers(); }
   unsigned getCVRQualifiers() const { return Mask & CVRMask; }
@@ -609,6 +624,47 @@ private:
   static const uint32_t AddressSpaceShift = 9;
 };
 
+class QualifiersAndAtomic {
+  Qualifiers Quals;
+  bool HasAtomic;
+
+public:
+  QualifiersAndAtomic() : HasAtomic(false) {}
+  QualifiersAndAtomic(Qualifiers Quals, bool HasAtomic)
+      : Quals(Quals), HasAtomic(HasAtomic) {}
+
+  operator Qualifiers() const { return Quals; }
+
+  bool hasVolatile() const { return Quals.hasVolatile(); }
+  bool hasConst() const { return Quals.hasConst(); }
+  bool hasRestrict() const { return Quals.hasRestrict(); }
+  bool hasAtomic() const { return HasAtomic; }
+
+  void addVolatile() { Quals.addVolatile(); }
+  void addConst() { Quals.addConst(); }
+  void addRestrict() { Quals.addRestrict(); }
+  void addAtomic() { HasAtomic = true; }
+
+  void removeVolatile() { Quals.removeVolatile(); }
+  void removeConst() { Quals.removeConst(); }
+  void removeRestrict() { Quals.removeRestrict(); }
+  void removeAtomic() { HasAtomic = false; }
+
+  QualifiersAndAtomic withVolatile() {
+    return {Quals.withVolatile(), HasAtomic};
+  }
+  QualifiersAndAtomic withConst() { return {Quals.withConst(), HasAtomic}; }
+  QualifiersAndAtomic withRestrict() {
+    return {Quals.withRestrict(), HasAtomic};
+  }
+  QualifiersAndAtomic withAtomic() { return {Quals, true}; }
+
+  QualifiersAndAtomic &operator+=(Qualifiers RHS) {
+    Quals += RHS;
+    return *this;
+  }
+};
+
 /// A std::pair-like structure for storing a qualified type split
 /// into its local qualifiers and its locally-unqualified type.
 struct SplitQualType {
@@ -741,6 +797,9 @@ public:
     return Value.getPointer().isNull();
   }
 
+  // Determines if a type can form `T&`.
+  bool isReferenceable() const;
+
   /// Determine whether this particular QualType instance has the
   /// "const" qualifier set, without looking through typedefs that may have
   /// added "const" at a different level.
@@ -830,6 +889,8 @@ public:
   /// Return true if this is a trivially copyable type (C++0x [basic.types]p9)
   bool isTriviallyCopyableType(const ASTContext &Context) const;
 
+  /// Return true if this is a trivially relocatable type.
+  bool isTriviallyRelocatableType(const ASTContext &Context) const;
 
   /// Returns true if it is a class and it might be dynamic.
   bool mayBeDynamicClass() const;
@@ -1316,6 +1377,8 @@ private:
   static bool hasNonTrivialToPrimitiveCopyCUnion(const RecordDecl *RD);
 };
 
+raw_ostream &operator<<(raw_ostream &OS, QualType QT);
+
 } // namespace clang
 
 namespace llvm {
@@ -1619,6 +1682,9 @@ protected:
 
     /// Whether this function has extended parameter information.
     unsigned HasExtParameterInfos : 1;
+
+    /// Whether this function has extra bitfields for the prototype.
+    unsigned HasExtraBitfields : 1;
 
     /// Whether the function is variadic.
     unsigned Variadic : 1;
@@ -3804,13 +3870,12 @@ public:
 
   /// A simple holder for various uncommon bits which do not fit in
   /// FunctionTypeBitfields. Aligned to alignof(void *) to maintain the
-  /// alignment of subsequent objects in TrailingObjects. You must update
-  /// hasExtraBitfields in FunctionProtoType after adding extra data here.
+  /// alignment of subsequent objects in TrailingObjects.
   struct alignas(void *) FunctionTypeExtraBitfields {
     /// The number of types in the exception specification.
     /// A whole unsigned is not needed here and according to
     /// [implimits] 8 bits would be enough here.
-    unsigned NumExceptionType;
+    unsigned NumExceptionType = 0;
   };
 
 protected:
@@ -4004,6 +4069,10 @@ public:
       Result.ExceptionSpec = ESI;
       return Result;
     }
+
+    bool requiresFunctionProtoTypeExtraBitfields() const {
+      return ExceptionSpec.Type == EST_Dynamic;
+    }
   };
 
 private:
@@ -4095,15 +4164,12 @@ private:
   }
 
   /// Whether the trailing FunctionTypeExtraBitfields is present.
-  static bool hasExtraBitfields(ExceptionSpecificationType EST) {
-    // If the exception spec type is EST_Dynamic then we have > 0 exception
-    // types and the exact number is stored in FunctionTypeExtraBitfields.
-    return EST == EST_Dynamic;
-  }
-
-  /// Whether the trailing FunctionTypeExtraBitfields is present.
   bool hasExtraBitfields() const {
-    return hasExtraBitfields(getExceptionSpecType());
+    assert((getExceptionSpecType() != EST_Dynamic ||
+            FunctionTypeBits.HasExtraBitfields) &&
+           "ExtraBitfields are required for given ExceptionSpecType");
+    return FunctionTypeBits.HasExtraBitfields;
+
   }
 
   bool hasExtQualifiers() const {
@@ -4571,7 +4637,8 @@ public:
 class UnaryTransformType : public Type {
 public:
   enum UTTKind {
-    EnumUnderlyingType
+#define TRANSFORM_TYPE_TRAIT_DEF(Enum, _) Enum,
+#include "clang/Basic/TransformTypeTraits.def"
   };
 
 private:
@@ -5516,9 +5583,6 @@ class ElaboratedType final
       ElaboratedTypeBits.HasOwnedTagDecl = true;
       *getTrailingObjects<TagDecl *>() = OwnedTagDecl;
     }
-    assert(!(Keyword == ETK_None && NNS == nullptr) &&
-           "ElaboratedType cannot have elaborated type keyword "
-           "and name qualifier both null.");
   }
 
 public:
@@ -5752,7 +5816,7 @@ public:
   static void Profile(llvm::FoldingSetNodeID &ID, QualType Pattern,
                       Optional<unsigned> NumExpansions) {
     ID.AddPointer(Pattern.getAsOpaquePtr());
-    ID.AddBoolean(NumExpansions.hasValue());
+    ID.AddBoolean(NumExpansions.has_value());
     if (NumExpansions)
       ID.AddInteger(*NumExpansions);
   }
@@ -6509,6 +6573,19 @@ inline const Type *QualType::getTypePtr() const {
 
 inline const Type *QualType::getTypePtrOrNull() const {
   return (isNull() ? nullptr : getCommonPtr()->BaseType);
+}
+
+inline bool QualType::isReferenceable() const {
+  // C++ [defns.referenceable]
+  //   type that is either an object type, a function type that does not have
+  //   cv-qualifiers or a ref-qualifier, or a reference type.
+  const Type &Self = **this;
+  if (Self.isObjectType() || Self.isReferenceType())
+    return true;
+  if (const auto *F = Self.getAs<FunctionProtoType>())
+    return F->getMethodQuals().empty() && F->getRefQualifier() == RQ_None;
+
+  return false;
 }
 
 inline SplitQualType QualType::split() const {

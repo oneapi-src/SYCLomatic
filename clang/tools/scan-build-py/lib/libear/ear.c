@@ -1486,7 +1486,7 @@ static void bear_report_call(char const *fun, char const *const argv[]) {
 #endif // SYCLomatic_CUSTOMIZATION
 }
 
-/* update environment assure that chilren processes will copy the desired
+/* update environment assure that children processes will copy the desired
  * behaviour */
 
 static int bear_capture_env_t(bear_env_t *env) {
