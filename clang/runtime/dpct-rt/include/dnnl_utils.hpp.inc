@@ -155,23 +155,20 @@ public:
            memory_format_tag *tag, int *ndims, int dims[]) const;
   /// Getting dims from a ND memory.
   /// \return The dims.
-  std::vector<int64_t> get_dims() const { return _desc.dims(); }
+  std::vector<int64_t> get_dims() const { return _desc.get_dims(); }
   /// Getting strides from a ND memory.
   /// \return The strides.
   std::vector<int64_t> get_strides() const {
-    int ndims = _desc.data.ndims;
-    return std::vector<int64_t>(_desc.data.format_desc.blocking.strides,
-                                _desc.data.format_desc.blocking.strides +
-                                    ndims);
+    return _desc.get_strides();
   }
   /// Getting element num from a ND memory.
   /// \return The element number.
   size_t get_element_num() const {
-    if (_desc.dims().empty()) {
+    if (_desc.get_dims().empty()) {
       return 0;
     }
     size_t result = 1;
-    for (auto &dim : _desc.dims()) {
+    for (auto &dim : _desc.get_dims()) {
       result *= dim;
     }
     return result;
@@ -431,7 +428,7 @@ public:
   /// \param [out] out_w Width of images.
   void get_forward_output_dim(const memory_desc_ext &desc, int *out_n,
                               int *out_c, int *out_h, int *out_w) const {
-    auto dims = desc.get_desc().data.dims;
+    auto dims = desc.get_desc().get_dims();
     *out_n = dims[0];
     *out_c = dims[1];
     *out_h = 1 + (dims[2] + 2 * _padding[0] - _kernel[0]) / _stride[0];
@@ -446,7 +443,7 @@ public:
   void get_forward_output_dim(const memory_desc_ext &desc, int ndims,
                               int out_dims[]) const {
     assert(ndims >= 4 && "ndims is at least 4.");
-    auto dims = desc.get_desc().data.dims;
+    auto dims = desc.get_desc().get_dims();
     out_dims[0] = dims[0];
     out_dims[1] = dims[1];
     for (int i = 2; i < ndims; i++) {
@@ -599,8 +596,8 @@ public:
   void get_forward_output_dim(const memory_desc_ext &desc,
                               const memory_desc_ext &weight_desc, int *out_n,
                               int *out_c, int *out_h, int *out_w) const {
-    auto dims = desc.get_desc().data.dims;
-    auto weight_dims = weight_desc.get_desc().data.dims;
+    auto dims = desc.get_desc().get_dims();
+    auto weight_dims = weight_desc.get_desc().get_dims();
     *out_n = dims[0];
     *out_c = weight_dims[0];
     *out_h = 1 + (dims[2] + 2 * _paddings[0] -
@@ -621,8 +618,8 @@ public:
                               const memory_desc_ext &weight_desc, int ndims,
                               int out_dims[]) const {
     assert(ndims >= 4 && "ndims is at least 4.");
-    auto dims = desc.get_desc().data.dims;
-    auto weight_dims = weight_desc.get_desc().data.dims;
+    auto dims = desc.get_desc().get_dims();
+    auto weight_dims = weight_desc.get_desc().get_dims();
     out_dims[0] = dims[0];
     out_dims[1] = weight_dims[1];
     for (int i = 2; i < ndims; i++) {
@@ -1996,52 +1993,60 @@ void memory_desc_ext::get(dpct::library_data_t *dt, int *n, int *c, int *h,
                           int *w, int *n_stride, int *c_stride, int *h_stride,
                           int *w_stride) const {
   unsigned block_size = 1;
-  if (_desc.data.format_desc.blocking.inner_blks[0]) {
-    block_size = _desc.data.format_desc.blocking.inner_blks[0];
+  auto dims = _desc.get_dims();
+  auto inner_blks = _desc.get_inner_blks();
+  auto strides = _desc.get_strides();
+  if (!inner_blks.empty()) {
+    block_size = inner_blks[0];
   }
 
-  *dt = to_dpct_library_data_t(_desc.data_type(), block_size);
-  *n = _desc.data.dims[0];
-  *c = _desc.data.dims[1];
-  *h = _desc.data.dims[2];
-  *w = _desc.data.dims[3];
-  *n_stride = _desc.data.format_desc.blocking.strides[0] / block_size;
-  *c_stride = _desc.data.format_desc.blocking.strides[1] / block_size;
-  *h_stride = _desc.data.format_desc.blocking.strides[2] / block_size;
-  *w_stride = _desc.data.format_desc.blocking.strides[3] / block_size;
+  *dt = to_dpct_library_data_t(_desc.get_data_type(), block_size);
+  *n = dims[0];
+  *c = dims[1];
+  *h = dims[2];
+  *w = dims[3];
+  *n_stride = strides[0] / block_size;
+  *c_stride = strides[1] / block_size;
+  *h_stride = strides[2] / block_size;
+  *w_stride = strides[3] / block_size;
 }
 
 void memory_desc_ext::get(dpct::library_data_t *dt, memory_format_tag *tag,
                           int *n, int *c, int *h, int *w) const {
   unsigned block_size = 1;
   *tag = memory_format_tag::nchw;
-  if (_desc.data.format_desc.blocking.inner_blks[0]) {
-    block_size = _desc.data.format_desc.blocking.inner_blks[0];
+  auto dims = _desc.get_dims();
+  auto strides = _desc.get_strides();
+  auto inner_blks = _desc.get_inner_blks();
+  if (!inner_blks.empty()) {
+    block_size = inner_blks[0];
     *tag = memory_format_tag::nchw_blocked;
   }
-  if (_desc.data.format_desc.blocking.strides[1] == 1 &&
-      _desc.data.dims[1] != 1) {
+  if (strides[1] == 1 && dims[1] != 1) {
     *tag = memory_format_tag::nhwc;
   }
-  *dt = to_dpct_library_data_t(_desc.data_type(), block_size);
-  *n = _desc.data.dims[0];
-  *c = _desc.data.dims[1];
-  *h = _desc.data.dims[2];
-  *w = _desc.data.dims[3];
+  *dt = to_dpct_library_data_t(_desc.get_data_type(), block_size);
+  *n = dims[0];
+  *c = dims[1];
+  *h = dims[2];
+  *w = dims[3];
 }
 
 void memory_desc_ext::get(int requested_ndims, dpct::library_data_t *dt,
                           int *ndims, int dims[], int strides[]) const {
   unsigned block_size = 1;
-  if (_desc.data.format_desc.blocking.inner_blks[0]) {
-    block_size = _desc.data.format_desc.blocking.inner_blks[0];
+  auto inner_blks = _desc.get_inner_blks();
+  auto adims = _desc.get_dims();
+  auto astrides = _desc.get_strides();
+  if (!inner_blks.empty()) {
+    block_size = inner_blks[0];
   }
-  *dt = to_dpct_library_data_t(_desc.data_type(), block_size);
-  *ndims = _desc.data.ndims;
+  *dt = to_dpct_library_data_t(_desc.get_data_type(), block_size);
+  *ndims = _desc.get_ndims();
   for (int index = 0; index < requested_ndims; index++) {
-    dims[index] = _desc.data.dims[index];
+    dims[index] = adims[index];
     strides[index] =
-        _desc.data.format_desc.blocking.strides[index] / block_size;
+        astrides[index] / block_size;
   }
 }
 
@@ -2050,18 +2055,21 @@ void memory_desc_ext::get(int requested_ndims, dpct::library_data_t *dt,
                           int dims[]) const {
   unsigned block_size = 1;
   *tag = memory_format_tag::nchw;
-  if (_desc.data.format_desc.blocking.inner_blks[0]) {
-    block_size = _desc.data.format_desc.blocking.inner_blks[0];
+  auto inner_blks = _desc.get_inner_blks();
+  auto adims = _desc.get_dims();
+  auto astrides = _desc.get_strides();
+  if (!inner_blks.empty()) {
+    block_size = inner_blks[0];
     *tag = memory_format_tag::nchw_blocked;
   }
-  if (_desc.data.format_desc.blocking.strides[1] == 1 &&
-      _desc.data.dims[1] != 1) {
+  if (astrides[1] == 1 &&
+      adims[1] != 1) {
     *tag = memory_format_tag::nhwc;
   }
-  *dt = to_dpct_library_data_t(_desc.data_type(), block_size);
-  *ndims = _desc.data.ndims;
+  *dt = to_dpct_library_data_t(_desc.get_data_type(), block_size);
+  *ndims = _desc.get_ndims();
   for (int index = 0; index < requested_ndims; index++) {
-    dims[index] = _desc.data.dims[index];
+    dims[index] = adims[index];
   }
 }
 // DPCT_LABEL_END
@@ -2076,7 +2084,7 @@ void *engine_ext::allocate(const memory_desc_ext &data_desc, int count) const {
 }
 
 void engine_ext::transform_no_zero(const memory_desc_ext &desc, void *src, void *dst) {
-  ::dnnl::memory::data_type dt = desc.get_desc().data_type();
+  ::dnnl::memory::data_type dt = desc.get_desc().get_data_type();
   size_t element_num = desc.get_element_num();
   switch (dt) {
   case ::dnnl::memory::data_type::f32:
@@ -2106,23 +2114,19 @@ engine_ext::get_group_weight_desc(int group_count,
     return weight_desc.get_desc();
   }
   auto help_weight_desc = weight_desc.get_desc();
-  int ndims = help_weight_desc.data.ndims;
-  unsigned block_size =
-      help_weight_desc.data.format_desc.blocking.inner_blks[0];
-  if (block_size) {
+  int ndims = help_weight_desc.get_ndims();
+  if (!help_weight_desc.get_inner_blks().empty()) {
     throw std::runtime_error("get_group_weight_desc: group convolution with "
                              "blocked weight memory unimplemented.");
   }
   std::vector<int64_t> new_size;
-  auto old_size = weight_desc.get_desc().dims();
+  auto old_size = weight_desc.get_desc().get_dims();
   new_size.push_back(group_count);
   new_size.push_back(old_size[0] / group_count);
   for (int index = 1; index < old_size.size(); index++) {
     new_size.push_back(old_size[index]);
   }
-  std::vector<int64_t> strides(
-      help_weight_desc.data.format_desc.blocking.strides,
-      help_weight_desc.data.format_desc.blocking.strides + ndims);
+  std::vector<int64_t> strides = help_weight_desc.get_strides();
   ::dnnl::memory::format_tag tag;
   bool is_nhwc = (strides[1] == 1 && old_size[1] != 1);
 
@@ -2141,63 +2145,64 @@ engine_ext::get_group_weight_desc(int group_count,
   }
 
   help_weight_desc =
-      ::dnnl::memory::desc(new_size, weight_desc.get_desc().data_type(), tag);
+      ::dnnl::memory::desc(new_size, weight_desc.get_desc().get_data_type(), tag);
   return help_weight_desc;
 }
 
 ::dnnl::memory::desc engine_ext::compress_spatial_dimensions_to_channel(
     const ::dnnl::memory::desc &desc) {
-  int ndims = desc.data.ndims;
+  int ndims = desc.get_ndims();
+  auto inner_blks = desc.get_inner_blks();
   assert(ndims >= 4 && "ndims is at least 4.");
   std::vector<int64_t> compressed_dims(ndims);
-  compressed_dims[0] = desc.data.dims[0];
-  compressed_dims[1] = desc.data.dims[1];
+  compressed_dims[0] = desc.get_dims()[0];
+  compressed_dims[1] = desc.get_dims()[1];
   for (int index = 2; index < ndims; index++) {
-    compressed_dims[1] = compressed_dims[1] * desc.data.dims[index];
+    compressed_dims[1] = compressed_dims[1] * desc.get_dims()[index];
     compressed_dims[index] = 1;
   }
-  if (desc.data.format_desc.blocking.inner_blks[0] == 4) {
-    return ::dnnl::memory::desc(compressed_dims, desc.data_type(),
+  if (!inner_blks.empty() && inner_blks[0] == 4) {
+    return ::dnnl::memory::desc(compressed_dims, desc.get_data_type(),
                                 ::dnnl::memory::format_tag::nChw4c);
-  } else if (desc.data.format_desc.blocking.inner_blks[0] == 32) {
-    return ::dnnl::memory::desc(compressed_dims, desc.data_type(),
+  } else if (!inner_blks.empty() && inner_blks[0] == 32) {
+    return ::dnnl::memory::desc(compressed_dims, desc.get_data_type(),
                                 ::dnnl::memory::format_tag::nChw32c);
   }
   std::vector<int64_t> strides(ndims, 1);
   strides[0] = compressed_dims[1];
 
-  return ::dnnl::memory::desc(compressed_dims, desc.data_type(), strides);
+  return ::dnnl::memory::desc(compressed_dims, desc.get_data_type(), strides);
 }
 
 ::dnnl::memory::desc
 engine_ext::get_bn_scale_bias_mean_var_desc(const ::dnnl::memory::desc &desc,
                                             batch_normalization_mode mode) {
-  int ndims = desc.data.ndims;
+  int ndims = desc.get_ndims();
   assert(ndims >= 4 && "ndims is at least 4.");
   int channel_number = 1;
   if (mode == batch_normalization_mode::spatial) {
-    channel_number = desc.data.dims[1];
+    channel_number = desc.get_dims()[1];
   } else {
     for (int index = 1; index < ndims; index++) {
-      channel_number = channel_number * desc.data.dims[index];
+      channel_number = channel_number * desc.get_dims()[index];
     }
   }
-  return ::dnnl::memory::desc({channel_number}, desc.data_type(),
+  return ::dnnl::memory::desc({channel_number}, desc.get_data_type(),
                               ::dnnl::memory::format_tag::a);
 }
 
 ::dnnl::memory::desc engine_ext::transfer_memory_desc_to_channel_major_format(
     const ::dnnl::memory::desc &desc) {
-  if (desc.data.format_desc.blocking.inner_blks[0]) {
+  if (!desc.get_inner_blks().empty()) {
     return desc;
   }
-  int ndims = desc.data.ndims;
-  auto dims = desc.dims();
+  int ndims = desc.get_ndims();
+  auto dims = desc.get_dims();
   if (ndims == 4) {
-    return ::dnnl::memory::desc(dims, desc.data_type(),
+    return ::dnnl::memory::desc(dims, desc.get_data_type(),
                                 ::dnnl::memory::format_tag::nchw);
   }
-  return ::dnnl::memory::desc(dims, desc.data_type(),
+  return ::dnnl::memory::desc(dims, desc.get_data_type(),
                               ::dnnl::memory::format_tag::ncdhw);
 }
 
@@ -2243,13 +2248,14 @@ void engine_ext::derive_batch_normalization_memory_desc(
 void engine_ext::derive_batch_normalization_memory_desc(
     memory_desc_ext &desc, const memory_desc_ext &src_desc,
     batch_normalization_mode mode) {
-  int src_ndims = src_desc.get_desc().data.ndims;
-  if (src_desc.get_desc().data.ndims != 4 ||
-      src_desc.get_desc().data.ndims != 5) {
+  int src_ndims = src_desc.get_desc().get_ndims();
+  auto inner_blks = src_desc.get_desc().get_inner_blks();
+  if (src_desc.get_desc().get_ndims() != 4 ||
+      src_desc.get_desc().get_ndims() != 5) {
     throw std::runtime_error("derive_batch_normalization_memory_desc: only 4d "
                              "and 5d memory descriptor supported.");
   }
-  std::vector<int64_t> dims = src_desc.get_desc().dims();
+  std::vector<int64_t> dims = src_desc.get_desc().get_dims();
   dims[0] = 1;
   if (mode == batch_normalization_mode::spatial) {
     dims[2] = 1;
@@ -2258,15 +2264,14 @@ void engine_ext::derive_batch_normalization_memory_desc(
       dims[4] = 1;
     }
   }
-  auto data_type = src_desc.get_desc().data_type();
+  auto data_type = src_desc.get_desc().get_data_type();
   if (data_type == ::dnnl::memory::data_type::f16) {
     data_type = ::dnnl::memory::data_type::f32;
   }
-  if (src_desc.get_desc().data.format_desc.blocking.inner_blks[0] == 4) {
+  if (!inner_blks.empty() && inner_blks[0] == 4) {
     desc.set_desc(::dnnl::memory::desc(dims, data_type,
                                        ::dnnl::memory::format_tag::nChw4c));
-  } else if (src_desc.get_desc().data.format_desc.blocking.inner_blks[0] ==
-             32) {
+  } else if (!inner_blks.empty() && inner_blks[0] == 32) {
     desc.set_desc(::dnnl::memory::desc(dims, data_type,
                                        ::dnnl::memory::format_tag::nChw32c));
   } else {
@@ -2286,7 +2291,6 @@ sycl::event engine_ext::execute_primitive(
     const std::vector<output_argument_info> &output_args,
     const std::vector<void *> &device_ptrs) {
   std::vector<void *> caches;
-  sycl::event final_event, final_cache_event;
   int output_arg_num = output_args.size();
   for (int i = 0; i < output_arg_num; i++) {
     if (output_args[i]._beta != 0.f) {
@@ -2593,8 +2597,8 @@ sycl::event engine_ext::batch_normalization_forward_internal(
                                       reordered_dst ? reordered_dst : dst}});
 
   if (!is_infer && running_var) {
-    auto src_ndim = src_desc.get_desc().data.ndims;
-    auto src_dims = src_desc.get_desc().dims();
+    auto src_ndim = src_desc.get_desc().get_ndims();
+    auto src_dims = src_desc.get_desc().get_dims();
     int element_num = src_dims[0];
     if (mode == batch_normalization_mode::spatial) {
       for (int index = 2; index < src_ndim; index++) {
@@ -2654,7 +2658,7 @@ template <typename primitive_type, typename... args_type>
 typename primitive_type::primitive_desc
 engine_ext::create_forward_primitive_desc(args_type &&...args) {
   return typename primitive_type::primitive_desc(
-      {std::forward<args_type>(args)...}, _eng);
+      _eng, std::forward<args_type>(args)...);
 }
 
 template <bool use_attr, typename primitive_type, typename attr_type,
@@ -2664,10 +2668,10 @@ engine_ext::create_forward_primitive_desc(attr_type &&attr,
                                           args_type &&...args) {
   if constexpr (use_attr) {
     return typename primitive_type::primitive_desc(
-        {std::forward<args_type>(args)...}, attr, _eng);
+        _eng, std::forward<args_type>(args)..., attr);
   }
   return typename primitive_type::primitive_desc(
-      {std::forward<args_type>(args)...}, _eng);
+      _eng, std::forward<args_type>(args)...);
 }
 
 template <typename primitive_type, typename forward_primitive_type,
@@ -2676,7 +2680,7 @@ primitive_type *
 engine_ext::create_backward_primitive(forward_primitive_type &&fp,
                                       args_type &&...args) {
   return new primitive_type(typename primitive_type::primitive_desc(
-      {std::forward<args_type>(args)...}, _eng,
+      _eng, std::forward<args_type>(args)...,
       std::forward<forward_primitive_type>(fp)));
 }
 
@@ -2785,7 +2789,7 @@ void engine_ext::lrn_backward(lrn_desc &desc, float alpha,
 // DPCT_CODE
 sycl::event engine_ext::async_fill(const memory_desc_ext &src_desc, void *src,
                              const void *valuePtr) {
-  ::dnnl::memory::data_type dt = src_desc.get_desc().data_type();
+  ::dnnl::memory::data_type dt = src_desc.get_desc().get_data_type();
   unsigned mem_size = src_desc.get_size();
   switch (dt) {
   case ::dnnl::memory::data_type::f32:
@@ -2857,21 +2861,8 @@ sycl::event engine_ext::async_scale(float alpha, const memory_desc_ext &src_desc
 sycl::event engine_ext::async_sum(float alpha, const memory_desc_ext &src_desc,
                             void *src, float beta,
                             const memory_desc_ext &dst_desc, void *dst) {
-  if (alpha == 0.f && beta == 1.f) {
-    return sycl::event();
-  }
-  auto primitive = new ::dnnl::sum(::dnnl::sum::primitive_desc(
-      {beta, alpha}, {src_desc.get_desc(), dst_desc.get_desc()}, _eng));
-
-  auto args = new std::unordered_map<int, ::dnnl::memory>{
-      {DNNL_ARG_DST, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)},
-      {DNNL_ARG_MULTIPLE_SRC + 1,
-       ::dnnl::memory(src_desc.get_desc(), _eng, src)},
-      {DNNL_ARG_MULTIPLE_SRC, ::dnnl::memory(dst_desc.get_desc(), _eng, dst)}};
-
-  auto e = ::dnnl::sycl_interop::execute(*primitive, _s, *args);
-  async_free(_q, e, primitive, args);
-  return e;
+  return async_binary(binary_op::add, beta, dst_desc, dst,
+    alpha, src_desc, src, 0.f, dst_desc, dst);
 }
 // DPCT_LABEL_END
 
@@ -3092,7 +3083,7 @@ sycl::event engine_ext::async_pooling_forward(pooling_desc &desc, float alpha,
   int pooling_dim = desc.get_stride().size();
   std::vector<int64_t> dilation(pooling_dim, 0);
   auto primitive_desc =
-      create_forward_primitive_desc<::dnnl::pooling_v2_forward>(
+      create_forward_primitive_desc<::dnnl::pooling_forward>(
           ::dnnl::prop_kind::forward_training, desc.get_algorithm(),
           src_desc.get_desc(), dst_desc.get_desc(), desc.get_stride(),
           desc.get_kernel(), dilation, desc.get_padding(), desc.get_padding());
@@ -3107,7 +3098,7 @@ sycl::event engine_ext::async_pooling_forward(pooling_desc &desc, float alpha,
   } else {
     insert_workspace(src, ws_mem);
   }
-  auto primitive = new ::dnnl::pooling_v2_forward(primitive_desc);
+  auto primitive = new ::dnnl::pooling_forward(primitive_desc);
   return execute_primitive(primitive, execution_args,
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
@@ -3129,8 +3120,8 @@ sycl::event engine_ext::async_pooling_backward(
   }
   int pooling_dim = desc.get_stride().size();
   std::vector<int64_t> dilation(pooling_dim, 0);
-  auto primitive = create_backward_primitive<::dnnl::pooling_v2_backward>(
-      create_forward_primitive_desc<::dnnl::pooling_v2_forward>(
+  auto primitive = create_backward_primitive<::dnnl::pooling_backward>(
+      create_forward_primitive_desc<::dnnl::pooling_forward>(
           ::dnnl::prop_kind::forward_training, desc.get_algorithm(),
           src_desc.get_desc(), dst_desc.get_desc(), desc.get_stride(),
           desc.get_kernel(), dilation, desc.get_padding(), desc.get_padding()),
@@ -3184,7 +3175,7 @@ sycl::event engine_ext::async_softmax_forward(softmax_algorithm alg,
   if (alg == softmax_algorithm::log) {
     softmax_alg = ::dnnl::algorithm::softmax_log;
   }
-  auto primitive = create_forward_primitive<::dnnl::softmax_v2_forward>(
+  auto primitive = create_forward_primitive<::dnnl::softmax_forward>(
       ::dnnl::prop_kind::forward, softmax_alg, help_src_desc, 
       help_dst_desc, 1);
 
@@ -3228,8 +3219,8 @@ sycl::event engine_ext::async_softmax_backward(
     softmax_alg = ::dnnl::algorithm::softmax_log;
   }
 
-  auto primitive = create_backward_primitive<::dnnl::softmax_v2_backward>(
-      create_forward_primitive_desc<::dnnl::softmax_v2_forward>(
+  auto primitive = create_backward_primitive<::dnnl::softmax_backward>(
+      create_forward_primitive_desc<::dnnl::softmax_forward>(
           ::dnnl::prop_kind::forward, softmax_alg, help_diff_src_desc, 
           help_dst_desc, 1),
       softmax_alg, help_diff_src_desc, help_diff_dst_desc, help_dst_desc, 1);
@@ -3635,7 +3626,7 @@ sycl::event engine_ext::async_convolution_forward(
   auto help_weight_desc =
       get_group_weight_desc(desc.get_group_count(), weight_desc);
   ::dnnl::memory::desc help_bias_desc = {{channel_num},
-                                         bias_desc.get_desc().data_type(),
+                                         bias_desc.get_desc().get_data_type(),
                                          ::dnnl::memory::format_tag::a};
   auto primitive = create_forward_primitive<::dnnl::convolution_forward>(
       ::dnnl::prop_kind::forward_training, alg, src_desc.get_desc(),
@@ -3649,18 +3640,18 @@ sycl::event engine_ext::async_convolution_forward(
   void *cache = nullptr;
   if (alpha_0 != 1.f) {
     cache = allocate(help_weight_desc);
-    //_q->memcpy(cache, weight, weight_desc.get_size());
-    async_reorder(alpha_0, help_weight_desc, weight, 0.f, help_weight_desc, cache);
+    _q->memcpy(cache, weight, weight_desc.get_size());
+    async_scale(alpha_0, help_weight_desc, cache);
     execution_args->insert(
         {DNNL_ARG_WEIGHTS, {::dnnl::memory(help_weight_desc, _eng, cache)}});
+    execute_primitive(primitive, execution_args,
+                        {{1.f, 0.f, DNNL_ARG_DST, dst_desc, dst}}, {cache});
   } else {
     execution_args->insert(
         {DNNL_ARG_WEIGHTS, {::dnnl::memory(help_weight_desc, _eng, weight)}});
+    execute_primitive(primitive, execution_args,
+                        {{1.f, 0.f, DNNL_ARG_DST, dst_desc, dst}});
   }
-
-  auto e =
-      execute_primitive(primitive, execution_args,
-                        {{1.f, 0.f, DNNL_ARG_DST, dst_desc, dst}}, {cache});
   async_sum(alpha_1, summand_desc, summand, 1.f, dst_desc, dst);
   return async_activation_forward(adesc, 1.f, dst_desc, dst, 0.f, dst_desc, dst);
 }
