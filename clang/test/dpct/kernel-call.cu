@@ -919,3 +919,4 @@ void run_foo18(uchar4 *param0, const int param1, const int param2,
 //CHECK-NEXT:  });
   my_kernel9<float><<<1, 1>>>(param0, param1, param2, param3, (float)param4, (float)param5, (float)param6, (float)param7, (float)param8, param9, param10, param11);
 }
+
