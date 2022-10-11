@@ -2868,35 +2868,37 @@ bool TypeInDeclRule::isCapturedByLambda(const TypeLoc *TL) {
   return false;
 }
 
-bool TypeInDeclRule::processConstFFTHandleType(const DeclaratorDecl *DD) {
+void TypeInDeclRule::processConstFFTHandleType(const DeclaratorDecl *DD,
+                                               SourceLocation BeginLoc,
+                                               SourceLocation EndLoc,
+                                               bool HasGlobalNSPrefix) {
+  std::string Repl = (HasGlobalNSPrefix ? "::" : "") +
+                     MapNames::getDpctNamespace() + "fft::fft_engine*";
+  requestFeature(HelperFeatureEnum::FftUtils_fft_engine, DD->getBeginLoc());
+  SrcAPIStaticsMap[Repl]++;
+
   clang::SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
   Token Tok;
   Lexer::getRawToken(DD->getBeginLoc(), Tok, SM, LangOptions());
   auto Tok2Ptr = Lexer::findNextToken(DD->getBeginLoc(), SM, LangOptions());
   if (Tok2Ptr.hasValue()) {
     auto Tok2 = Tok2Ptr.getValue();
-    std::string TypeStr = Tok.getRawIdentifier().str();
     if (Tok.getKind() == tok::raw_identifier &&
-        Tok.getRawIdentifier() == "const") {
-      // const cufftHandle
-      TypeStr = Tok2.getRawIdentifier().str();
-      if (Tok.getKind() == tok::raw_identifier && TypeStr == "cufftHandle") {
-        requestFeature(HelperFeatureEnum::FftUtils_fft_engine,
-                       Tok2.getLocation());
-        SrcAPIStaticsMap[MapNames::getDpctNamespace() + "fft::fft_engine*"]++;
-        emplaceTransformation(
-            new ReplaceText(Tok.getLocation(),
-                            Tok2.getLocation().getRawEncoding() -
-                                Tok.getLocation().getRawEncoding(),
-                            ""));
-        emplaceTransformation(
-            new ReplaceToken(Tok2.getLocation(), MapNames::getDpctNamespace() +
-                                                     "fft::fft_engine* const"));
-        return true;
-      }
+        Tok.getRawIdentifier().str() == "const") {
+      emplaceTransformation(
+          new ReplaceText(Tok.getLocation(),
+                          Tok2.getLocation().getRawEncoding() -
+                              Tok.getLocation().getRawEncoding(),
+                          ""));
+      Repl = Repl + " const";
     }
   }
-  return false;
+  auto Len =
+      Lexer::MeasureTokenLength(EndLoc, DpctGlobalInfo::getSourceManager(),
+                                DpctGlobalInfo::getContext().getLangOpts());
+  Len +=
+      SM.getDecomposedLoc(EndLoc).second - SM.getDecomposedLoc(BeginLoc).second;
+  emplaceTransformation(new ReplaceText(BeginLoc, Len, std::move(Repl)));
 }
 
 void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -3183,10 +3185,14 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       DD = VarD;
     } else if (FieldD) {
       DD = FieldD;
+    } else if (FD) {
+      DD = FD;
     }
 
-    if (TypeStr == "cufftHandle") {
-      if (TL->getType().isConstQualified() && processConstFFTHandleType(DD)) {
+    if (TypeStr == "cufftHandle" || TypeStr == "::cufftHandle") {
+      if (TL->getType().isConstQualified()) {
+        processConstFFTHandleType(DD, BeginLoc, EndLoc,
+                                  TypeStr == "::cufftHandle");
         return;
       }
     }

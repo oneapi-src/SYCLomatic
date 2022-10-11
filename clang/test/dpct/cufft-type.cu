@@ -329,3 +329,12 @@ void bar3(cufftHandle const aaa) {}
 void bar4(const cufftHandle aaa) {}
 void bar5(cufftHandle const *aaa) {}
 void bar6(const cufftHandle *aaa) {}
+
+class MyStruct {
+//     CHECK: ::dpct::fft::fft_engine* handle;
+//CHECK-NEXT: ::dpct::fft::fft_engine* & foo() { return handle; }
+//CHECK-NEXT: ::dpct::fft::fft_engine* const & foo() const { return handle; }
+  ::cufftHandle handle;
+  ::cufftHandle & foo() { return handle; }
+  const ::cufftHandle & foo() const { return handle; }
+};
