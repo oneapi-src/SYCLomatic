@@ -1305,7 +1305,7 @@ public:
     auto LocInfo = SM->getDecomposedLoc(SM->getExpansionLoc(Loc));
     auto AbsPath = getAbsolutePath(LocInfo.first);
     if (AbsPath)
-      return std::make_pair(AbsPath.getValue(), LocInfo.second);
+      return std::make_pair(AbsPath.value(), LocInfo.second);
     if (IsInvalid)
       *IsInvalid = true;
     return std::make_pair("", 0);

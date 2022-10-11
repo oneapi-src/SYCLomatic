@@ -127,7 +127,7 @@ int IncludesCallbacks::findPoundSign(SourceLocation DirectiveStart) {
   llvm::Optional<llvm::MemoryBufferRef> Buffer =
       Entry.getFile().getContentCache().getBufferOrNone(
           SM.getDiagnostics(), SM.getFileManager(), SourceLocation());
-  if (!Buffer.hasValue())
+  if (!Buffer.has_value())
     return -1;
   const char *BufferStart = Buffer->getBufferStart();
   const char *Pos = BufferStart + LocInfo.second - 1;
@@ -1235,10 +1235,10 @@ void IterationSpaceBuiltinRule::runRule(
       return;
 
     const auto Tok2Ptr = Lexer::findNextToken(End, SM, LangOptions());
-    if (!Tok2Ptr.hasValue())
+    if (!Tok2Ptr.has_value())
       return;
 
-    const auto Tok2 = Tok2Ptr.getValue();
+    const auto Tok2 = Tok2Ptr.value();
     if (Tok2.getKind() == tok::raw_identifier) {
       std::string TypeStr = Tok2.getRawIdentifier().str();
       const char *StartPos = SM.getCharacterData(Begin);
@@ -2578,7 +2578,7 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
   auto TypeNameStr = Tok.getRawIdentifier().str();
   // skip to the next identifier after keyword "typename" or "const"
   if (TypeNameStr == "typename" || TypeNameStr == "const") {
-    Tok = Lexer::findNextToken(BeginLoc, *SM, LOpts).getValue();
+    Tok = Lexer::findNextToken(BeginLoc, *SM, LOpts).value();
     BeginLoc = Tok.getLocation();
   }
   auto LAngleLoc = TSL.getLAngleLoc();
@@ -4026,7 +4026,7 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (Search == PropNamesMap.end()) {
     return;
   }
-  if (auto *ICE = Parents[0].get<clang::ImplicitCastExpr>()) {
+  if (Parents[0].get<clang::ImplicitCastExpr>()) {
     // migrate to get_XXX() eg. "b=a.minor" to "b=a.get_minor_version()"
     requestFeature(PropToGetFeatureMap.at(MemberName), ME);
     std::string TmplArg = "";
@@ -7652,7 +7652,7 @@ void SOLVERFunctionCallRule::getParameterEnd(
   Optional<Token> TokSharedPtr;
   TokSharedPtr = Lexer::findNextToken(ParameterEnd, *(Result.SourceManager),
                                       LangOptions());
-  Token TokComma = TokSharedPtr.getValue();
+  Token TokComma = TokSharedPtr.value();
   if (TokComma.getKind() == tok::comma) {
     ParameterEndAfterComma = TokComma.getEndLoc();
   } else {
@@ -9631,7 +9631,7 @@ void KernelCallRule::removeTrailingSemicolon(
     const ast_matchers::MatchFinder::MatchResult &Result) {
   const auto &SM = (*Result.Context).getSourceManager();
   auto KELoc = getTheLastCompleteImmediateRange(KCall->getBeginLoc(), KCall->getEndLoc()).second;
-  auto Tok = Lexer::findNextToken(KELoc, SM, LangOptions()).getValue();
+  auto Tok = Lexer::findNextToken(KELoc, SM, LangOptions()).value();
   if (Tok.is(tok::TokenKind::semi))
     emplaceTransformation(new ReplaceToken(Tok.getLocation(), ""));
 }
@@ -9792,7 +9792,7 @@ void DeviceFunctionDeclRule::runRule(
       Token Tok;
       Tok = Lexer::findNextToken(
                 End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts())
-                .getValue();
+                .value();
       End = Tok.getLocation();
 
       auto Length = SM.getFileOffset(End) - SM.getFileOffset(Begin);
@@ -13960,9 +13960,9 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
                       CE, Name, CE->getArg(0), true,
                       RenameWithSuffix("set", MethodName), Value));
       Optional<std::string> Result = Rewriter->rewrite();
-      if (Result.hasValue())
+      if (Result.has_value())
         emplaceTransformation(
-            new ReplaceStmt(CE, true, std::move(Result).getValue()));
+            new ReplaceStmt(CE, true, std::move(Result).value()));
       return;
     }
     if (Name == "cudaCreateChannelDesc") {
@@ -14489,7 +14489,7 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       Repl += Iter->second;
       auto NextTok = Lexer::findNextToken(
           End, SM, DpctGlobalInfo::getContext().getLangOpts());
-      if (!NextTok.hasValue() || !NextTok.getValue().is(tok::semi)) {
+      if (!NextTok.has_value() || !NextTok.value().is(tok::semi)) {
         Repl += ";";
       }
       emplaceTransformation(new ReplaceText(Beg, Len, std::move(Repl)));
@@ -14520,7 +14520,7 @@ void RemoveBaseClassRule::runRule(const MatchFinder::MatchResult &Result) {
         ColonFound = true;
         break;
       }
-      Tok = Lexer::findNextToken(Tok.getLocation(), *SM, LOpts).getValue();
+      Tok = Lexer::findNextToken(Tok.getLocation(), *SM, LOpts).value();
       Loc = Tok.getLocation();
     }
     if (ColonFound)
@@ -15182,8 +15182,8 @@ void CudaArchMacroRule::runRule(
     auto Beg = Global.getLocInfo(BeginLoc);
     auto End = Global.getLocInfo(EndLoc);
     auto T = Lexer::findNextToken(EndLoc, SM, LangOptions());
-    if (T.hasValue() && T.getValue().is(tok::TokenKind::semi)) {
-      End = Global.getLocInfo(T.getValue().getLocation());
+    if (T.has_value() && T.value().is(tok::TokenKind::semi)) {
+      End = Global.getLocInfo(T.value().getLocation());
     }
     auto FileInfo = DpctGlobalInfo::getInstance().insertFile(Beg.first);
     std::string &FileContent = FileInfo->getFileContent();
