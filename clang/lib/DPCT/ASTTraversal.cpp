@@ -3324,61 +3324,59 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   }
   if (auto CRD = getNodeAsType<CXXRecordDecl>(Result, "inheritanceType")) {
-    for (auto ItBase = CRD->bases_begin(); ItBase != CRD->bases_end();
-         ItBase++) {
-      std::string TypeName = ItBase->getBaseTypeInfo()->getType().getAsString();
-      if (MapNames::SupportedVectorTypes.find(TypeName) ==
-          MapNames::SupportedVectorTypes.end())
-        return;
-      auto Begin = ItBase->getSourceRange().getBegin();
-      auto End = ItBase->getSourceRange().getEnd();
-      if (Begin.isInvalid()) {
-        return;
-      }
-      if (*(TypeName.end() - 1) == '1') {
-        if (Begin.isMacroID() &&
-            (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin)) ||
-             SM->isWrittenInScratchSpace(SM->getSpellingLoc(End)))) {
-          // Macro concatenate --> use immediateExpansion
-          // Make (Begin, End) be the range of "##1"
-          Begin = SM->getImmediateExpansionRange(Begin).getBegin();
-          End = SM->getImmediateExpansionRange(End).getEnd();
-          Begin = SM->getSpellingLoc(Begin);
-          End = SM->getSpellingLoc(End);
-          Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
-              Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-          End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-              End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-          report(Begin, Comments::VECTYPE_INHERITATED, false);
-        } else {
-          // Make (Begin, End) be the range of "1"
-          Begin = SM->getSpellingLoc(Begin);
-          End = SM->getSpellingLoc(End);
-          Begin = Begin.getLocWithOffset(
-              Lexer::MeasureTokenLength(
-                  Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()) -
-              1);
-          End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-              End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-        }
-        auto Length = SM->getFileOffset(End) - SM->getFileOffset(Begin);
-        return emplaceTransformation(new ReplaceText(Begin, Length, ""));
-      }
-
-      if (Begin.isInvalid())
-        return;
-
-      if (Begin.isMacroID()) {
-        // Macro concatenate --> use immediateExpansion
-        // Make Begin being the begin of "MACROARG##1"
-        if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin))) {
-          Begin = SM->getImmediateExpansionRange(Begin).getBegin();
-        }
-        Begin = SM->getSpellingLoc(Begin);
-      }
-      return emplaceTransformation(
-          new InsertText(Begin, MapNames::getClNamespace()));
+    const auto *Base = CRD->bases_begin();
+    std::string TypeName = Base->getBaseTypeInfo()->getType().getAsString();
+    if (MapNames::SupportedVectorTypes.find(TypeName) ==
+        MapNames::SupportedVectorTypes.end())
+      return;
+    auto Begin = Base->getSourceRange().getBegin();
+    auto End = Base->getSourceRange().getEnd();
+    if (Begin.isInvalid()) {
+      return;
     }
+    if (*(TypeName.end() - 1) == '1') {
+      if (Begin.isMacroID() &&
+          (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin)) ||
+            SM->isWrittenInScratchSpace(SM->getSpellingLoc(End)))) {
+        // Macro concatenate --> use immediateExpansion
+        // Make (Begin, End) be the range of "##1"
+        Begin = SM->getImmediateExpansionRange(Begin).getBegin();
+        End = SM->getImmediateExpansionRange(End).getEnd();
+        Begin = SM->getSpellingLoc(Begin);
+        End = SM->getSpellingLoc(End);
+        Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
+            Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+            End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+        report(Begin, Comments::VECTYPE_INHERITATED, false);
+      } else {
+        // Make (Begin, End) be the range of "1"
+        Begin = SM->getSpellingLoc(Begin);
+        End = SM->getSpellingLoc(End);
+        Begin = Begin.getLocWithOffset(
+            Lexer::MeasureTokenLength(
+                Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()) -
+            1);
+        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+            End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+      }
+      auto Length = SM->getFileOffset(End) - SM->getFileOffset(Begin);
+      return emplaceTransformation(new ReplaceText(Begin, Length, ""));
+    }
+
+    if (Begin.isInvalid())
+      return;
+
+    if (Begin.isMacroID()) {
+      // Macro concatenate --> use immediateExpansion
+      // Make Begin being the begin of "MACROARG##1"
+      if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin))) {
+        Begin = SM->getImmediateExpansionRange(Begin).getBegin();
+      }
+      Begin = SM->getSpellingLoc(Begin);
+    }
+    return emplaceTransformation(
+        new InsertText(Begin, MapNames::getClNamespace()));
   }
 }
 
