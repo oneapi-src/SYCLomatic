@@ -35,7 +35,7 @@ expected to be similar to the daily releases.
   * Windows: `Visual Studio` version 15.7 preview 4 or later -
     [Download](https://visualstudio.microsoft.com/downloads/)
 
-#### Create SYCLomatic workspace
+### Create SYCLomatic workspace
 
 Throughout this document `SYCLOMATIC_HOME` denotes the path to the local directory
 created as SYCLomatic workspace. It might be useful to
@@ -93,7 +93,7 @@ cmake -G Ninja -DCMAKE_INSTALL_PREFIX=%PATH_TO_C2S_INSTALL_FOLDER%  -DCMAKE_BUIL
 ninja install-c2s
 ```
 
-#### Deployment
+### Deployment
 
 **Linux**:
 ```bash
@@ -135,7 +135,6 @@ dpct is an alias command for c2s.
 
 
 ## Useful Links
-* [SYCLomatic getting started](GetStartedGuide.md)
 * More information about how to use SYCLomatic can be found in Intel(R) DPC++ Compatibility Tool documentation, which is the Intel product version of SYCLomatic:
     * [Get Started](https://software.intel.com/content/www/us/en/develop/documentation/get-started-with-intel-dpcpp-compatibility-tool/top.html)
     * [Developer Guide and Reference](https://software.intel.com/content/www/us/en/develop/documentation/intel-dpcpp-compatibility-tool-user-guide/top.html)
