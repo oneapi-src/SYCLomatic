@@ -1,7 +1,6 @@
 
 # SYCLomatic
 
-## Table of contents
   - [Introduction](#Introduction)
   - [Releases](#Releases)
   - [Build from source code](#build-from-source-code)
@@ -10,7 +9,6 @@
   - [Useful Links](#Useful-links)
   - [License](#License)
   - [Contributing](#Contributing)
-
 
 ## Introduction
 
