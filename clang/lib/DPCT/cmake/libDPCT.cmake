@@ -34,12 +34,15 @@ macro(build_lib_dpct)
     AutoComplete.cpp
     LIBCUAPIMigration.cpp
     CUBAPIMigration.cpp
+    MemberExprRewriter.cpp
+    MigrationRuleManager.cpp
+    MigrationAction.cpp
 
     DEPENDS
     ClangDriverOptions
     dpct_helper_headers_and_inc
     genconfusable
-  
+
     LINK_LIBS
     clangBasic
     clangLex

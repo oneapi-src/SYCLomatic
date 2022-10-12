@@ -10,3 +10,4 @@ int main() {
   cudaStream_t stream;
   return 0;
 }
+

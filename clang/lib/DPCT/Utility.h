@@ -417,7 +417,9 @@ bool isAssigned(const clang::Stmt *S);
 
 std::string getTempNameForExpr(const clang::Expr *E, bool HandleLiteral = false,
                                bool KeepLastUnderline = true,
-                               bool IsInMacroDefine = false);
+                               bool IsInMacroDefine = false,
+                               clang::SourceLocation CallBegin = clang::SourceLocation(),
+                               clang::SourceLocation CallEnd = clang::SourceLocation());
 bool isOuterMostMacro(const clang::Stmt *E);
 bool isSameLocation(const clang::SourceLocation L1,
                     const clang::SourceLocation L2);

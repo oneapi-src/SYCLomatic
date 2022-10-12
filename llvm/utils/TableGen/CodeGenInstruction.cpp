@@ -511,9 +511,9 @@ FlattenAsmStringVariants(StringRef Cur, unsigned Variant) {
   return Res;
 }
 
-bool CodeGenInstruction::isOperandImpl(unsigned i,
+bool CodeGenInstruction::isOperandImpl(StringRef OpListName, unsigned i,
                                        StringRef PropertyName) const {
-  DagInit *ConstraintList = TheDef->getValueAsDag("InOperandList");
+  DagInit *ConstraintList = TheDef->getValueAsDag(OpListName);
   if (!ConstraintList || i >= ConstraintList->getNumArgs())
     return false;
 
@@ -632,8 +632,8 @@ bool CodeGenInstAlias::tryAliasOpMatch(DagInit *Result, unsigned AliasOpNo,
     if (!BI->isComplete())
       return false;
     // Convert the bits init to an integer and use that for the result.
-    IntInit *II =
-      dyn_cast_or_null<IntInit>(BI->convertInitializerTo(IntRecTy::get()));
+    IntInit *II = dyn_cast_or_null<IntInit>(
+        BI->convertInitializerTo(IntRecTy::get(BI->getRecordKeeper())));
     if (!II)
       return false;
     ResOp = ResultOperand(II->getValue());

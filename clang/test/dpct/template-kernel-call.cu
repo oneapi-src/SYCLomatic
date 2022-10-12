@@ -394,7 +394,7 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 
   void run_naive() {
     val_t *dresult;
-// CHECK:dresult = (cuda::spmv_driver<V>::val_t *)dpct::dpct_malloc(sizeof(val_t));
+// CHECK:dresult = (val_t *)dpct::dpct_malloc(sizeof(val_t));
     cudaMalloc((void **)&dresult, sizeof(val_t));
 // CHECK:q_ct1.submit(
 // CHECK-NEXT:  [&](sycl::handler &cgh) {

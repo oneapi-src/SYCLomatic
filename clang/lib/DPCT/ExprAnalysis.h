@@ -377,7 +377,8 @@ public:
   std::set<HelperFeatureEnum> getHelperFeatureSet() { return HelperFeatureSet; }
 
   virtual ~ExprAnalysis() = default;
-
+  SourceLocation CallSpellingBegin;
+  SourceLocation CallSpellingEnd;
 private:
   SourceLocation getExprLocation(SourceLocation Loc);
   size_t getOffset(SourceLocation Loc) {
@@ -628,6 +629,7 @@ protected:
   void analyzeExpr(const IfStmt *IS);
   void analyzeExpr(const DeclStmt *DS);
   void analyzeExpr(const ConstantExpr *CE);
+  void analyzeExpr(const IntegerLiteral *IL);
 
   inline void analyzeType(const TypeSourceInfo *TSI,
                           const Expr *CSCE = nullptr) {
@@ -747,6 +749,11 @@ public:
     CallSpellingEnd = CallSpellingBegin.getLocWithOffset(LocInfo.second);
   }
 
+  inline void setCallSpelling(SourceLocation Begin, SourceLocation End) {
+    CallSpellingBegin = Begin;
+    CallSpellingEnd = End;
+  }
+
   std::string getRewriteString();
 
   std::pair<SourceLocation, SourceLocation> getLocInCallSpelling(const Expr *E);
@@ -769,8 +776,6 @@ protected:
 
 private:
   static const std::string &getDefaultArgument(const Expr *E);
-  SourceLocation CallSpellingBegin;
-  SourceLocation CallSpellingEnd;
   using DefaultArgMapTy = std::map<const Expr *, std::string>;
   static DefaultArgMapTy DefaultArgMap;
 };

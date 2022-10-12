@@ -12,8 +12,9 @@
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
+#include "mlir/Dialect/Bufferization/IR/Bufferization.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
-#include "mlir/Dialect/GPU/GPUDialect.h"
+#include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/Linalg/Passes.h"
 #include "mlir/Dialect/Linalg/Transforms/HoistPadding.h"
@@ -32,13 +33,16 @@ using namespace mlir::linalg;
 
 namespace {
 struct TestLinalgTransforms
-    : public PassWrapper<TestLinalgTransforms, OperationPass<FuncOp>> {
+    : public PassWrapper<TestLinalgTransforms, OperationPass<func::FuncOp>> {
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(TestLinalgTransforms)
+
   TestLinalgTransforms() = default;
   TestLinalgTransforms(const TestLinalgTransforms &pass) : PassWrapper(pass) {}
 
   void getDependentDialects(DialectRegistry &registry) const override {
     // clang-format off
     registry.insert<AffineDialect,
+                    bufferization::BufferizationDialect,
                     memref::MemRefDialect,
                     scf::SCFDialect,
                     linalg::LinalgDialect,
@@ -58,21 +62,6 @@ struct TestLinalgTransforms
   Option<bool> testPatterns{*this, "test-patterns",
                             llvm::cl::desc("Test a mixed set of patterns"),
                             llvm::cl::init(false)};
-  Option<bool> testMatmulToVectorPatterns1dTiling{
-      *this, "test-matmul-to-vector-patterns-tile-1d",
-      llvm::cl::desc(
-          "Test a fused pass that applies patterns from matmul to vectors via "
-          "1-d tiling"),
-      llvm::cl::init(false)};
-  Option<bool> testMatmulToVectorPatterns2dTiling{
-      *this, "test-matmul-to-vector-patterns-tile-2d",
-      llvm::cl::desc(
-          "Test a fused pass that applies patterns from matmul to vectors via "
-          "2-d tiling"),
-      llvm::cl::init(false)};
-  Option<bool> testPromotionOptions{*this, "test-linalg-promotion-options",
-                                    llvm::cl::desc("Test promotion options"),
-                                    llvm::cl::init(false)};
   Option<bool> testTileAndDistributionOptions{
       *this, "test-tile-and-distribute-options",
       llvm::cl::desc("Test tile and distribute options"),
@@ -108,8 +97,8 @@ struct TestLinalgTransforms
       llvm::cl::init(false)};
   Option<bool> testSwapSubTensorPadTensor{
       *this, "test-swap-subtensor-padtensor",
-      llvm::cl::desc("Test rewrite of subtensor(pad_tensor) into "
-                     "pad_tensor(subtensor)"),
+      llvm::cl::desc("Test rewrite of subtensor(tensor.pad) into "
+                     "tensor.pad(subtensor)"),
       llvm::cl::init(false)};
   Option<bool> testSplitReduction{
       *this, "test-split-reduction",
@@ -117,12 +106,10 @@ struct TestLinalgTransforms
       llvm::cl::init(false)};
   ListOption<int64_t> peeledLoops{
       *this, "peeled-loops",
-      llvm::cl::desc("Loops to be peeled when test-tile-pattern"),
-      llvm::cl::ZeroOrMore};
+      llvm::cl::desc("Loops to be peeled when test-tile-pattern")};
   ListOption<int64_t> tileSizes{
       *this, "tile-sizes",
-      llvm::cl::desc("Linalg tile sizes for test-tile-pattern"),
-      llvm::cl::ZeroOrMore};
+      llvm::cl::desc("Linalg tile sizes for test-tile-pattern")};
   Option<bool> skipPartial{
       *this, "skip-partial",
       llvm::cl::desc("Skip loops inside partial iterations during peeling"),
@@ -140,7 +127,7 @@ struct TestLinalgTransforms
 };
 } // namespace
 
-static void applyPatterns(FuncOp funcOp) {
+static void applyPatterns(func::FuncOp funcOp) {
   MLIRContext *ctx = funcOp.getContext();
   RewritePatternSet patterns(ctx);
 
@@ -243,40 +230,6 @@ static void applyPatterns(FuncOp funcOp) {
                .addOpFilter<MatmulOp, FillOp, GenericOp>());
   patterns.add<CopyVectorizationPattern>(ctx);
 
-  //===--------------------------------------------------------------------===//
-  // Linalg generic interchange pattern.
-  //===--------------------------------------------------------------------===//
-  patterns.add<GenericOpInterchangePattern>(
-      ctx,
-      /*interchangeVector=*/ArrayRef<unsigned>{1, 2, 0},
-      LinalgTransformationFilter(ArrayRef<StringAttr>{},
-                                 StringAttr::get(ctx, "PERMUTED")));
-
-  //===--------------------------------------------------------------------===//
-  // Linalg subview operands promotion.
-  //===--------------------------------------------------------------------===//
-  patterns.add<LinalgPromotionPattern<MatmulOp>>(
-      ctx, LinalgPromotionOptions().setUseFullTileBuffersByDefault(true),
-      LinalgTransformationFilter(StringAttr::get(ctx, "_promote_views_"),
-                                 StringAttr::get(ctx, "_views_promoted_")));
-  patterns.add<LinalgPromotionPattern<MatmulOp>>(
-      ctx,
-      LinalgPromotionOptions()
-          .setOperandsToPromote({0})
-          .setUseFullTileBuffersByDefault(true),
-      LinalgTransformationFilter(
-          StringAttr::get(ctx, "_promote_first_view_"),
-          StringAttr::get(ctx, "_first_view_promoted_")));
-  patterns.add<LinalgPromotionPattern<FillOp>>(
-      ctx,
-      LinalgPromotionOptions()
-          .setOperandsToPromote({1})
-          .setUseFullTileBuffers({false, true})
-          .setAlignment(32),
-      LinalgTransformationFilter(
-          StringAttr::get(ctx, "_promote_views_aligned_"),
-          StringAttr::get(ctx, "_views_aligned_promoted_")));
-
   (void)applyPatternsAndFoldGreedily(funcOp, std::move(patterns));
 
   // Drop the marker.
@@ -285,107 +238,18 @@ static void applyPatterns(FuncOp funcOp) {
   });
 }
 
-static void fillL1TilingAndMatmulToVectorPatterns(
-    FuncOp funcOp, StringRef startMarker,
-    SmallVectorImpl<RewritePatternSet> &patternsVector) {
-  MLIRContext *ctx = funcOp.getContext();
-  patternsVector.emplace_back(
-      ctx, std::make_unique<LinalgTilingPattern>(
-               MatmulOp::getOperationName(), ctx,
-               LinalgTilingOptions()
-                   .setTileSizes({8, 12, 16})
-                   .setInterchange({1, 0, 2}),
-               LinalgTransformationFilter(StringAttr::get(ctx, startMarker),
-                                          StringAttr::get(ctx, "L1"))));
-
-  patternsVector.emplace_back(
-      ctx,
-      std::make_unique<LinalgPromotionPattern<MatmulOp>>(
-          ctx, LinalgPromotionOptions().setUseFullTileBuffersByDefault(true),
-          LinalgTransformationFilter(StringAttr::get(ctx, "L1"),
-                                     StringAttr::get(ctx, "VEC"))));
-
-  patternsVector.emplace_back(
-      ctx, std::make_unique<LinalgVectorizationPattern>(
-               MatmulOp::getOperationName(), ctx, LinalgVectorizationOptions(),
-               LinalgTransformationFilter(StringAttr::get(ctx, "VEC"))));
-  patternsVector.back().add<LinalgVectorizationPattern>(
-      ctx, LinalgTransformationFilter().addOpFilter<FillOp>());
-  patternsVector.back().add<CopyVectorizationPattern>(ctx);
-}
-
-//===----------------------------------------------------------------------===//
-// Test promotion callbacks
-//===----------------------------------------------------------------------===//
-
-// Allocation call back
-static Optional<Value> allocCallBackFn(OpBuilder &b, memref::SubViewOp subView,
-                                       ArrayRef<Value> boundingSubViewSize,
-                                       DataLayout &layout) {
-  SmallVector<int64_t, 4> shape(boundingSubViewSize.size(), -1);
-  return b
-      .create<memref::AllocOp>(
-          subView.getLoc(),
-          MemRefType::get(shape, subView.getType().getElementType(),
-                          /*affineMapComposition =*/{}, 3),
-          boundingSubViewSize)
-      .getResult();
-}
-
-// Deallocation callback
-static LogicalResult deallocCallBackFn(OpBuilder &b, Value buffer) {
-  b.create<memref::DeallocOp>(buffer.getLoc(), buffer);
-  return success();
-}
-
-// Copy in call back
-static LogicalResult copyCallBackFn(OpBuilder &b, Value src, Value dst,
-                                    bool isOutput) {
-  auto floatType = src.getType().cast<MemRefType>().getElementType();
-  if (!floatType.isa<FloatType>())
-    return failure();
-  if (!isOutput) {
-    Value cst = b.create<arith::ConstantOp>(src.getLoc(),
-                                            FloatAttr::get(floatType, 42.0));
-    b.create<FillOp>(src.getLoc(), cst, dst);
-  }
-  b.create<memref::CopyOp>(src.getLoc(), src, dst);
-  return success();
-}
-
-static void fillPromotionCallBackPatterns(MLIRContext *ctx,
-                                          RewritePatternSet &patterns) {
-  patterns.add<LinalgTilingPattern>(
-      MatmulOp::getOperationName(), ctx,
-      LinalgTilingOptions().setTileSizes({16, 16, 16}),
-      LinalgTransformationFilter(StringAttr::get(ctx, "START"),
-                                 StringAttr::get(ctx, "PROMOTE")));
-  patterns.add<LinalgPromotionPattern<MatmulOp>>(
-      ctx,
-      LinalgPromotionOptions()
-          .setOperandsToPromote({0, 2})
-          .setUseFullTileBuffers({false, false})
-          .setAllocationDeallocationFns(allocCallBackFn, deallocCallBackFn)
-          .setCopyInOutFns(
-              [](OpBuilder &b, Value src, Value dst) -> LogicalResult {
-                return copyCallBackFn(b, src, dst, false);
-              },
-              [](OpBuilder &b, Value src, Value dst) -> LogicalResult {
-                return copyCallBackFn(b, src, dst, true);
-              }),
-      LinalgTransformationFilter(StringAttr::get(ctx, "PROMOTE")));
-}
-
 template <typename IdOp, typename NProcsOp>
 static SmallVector<ProcInfo, 2>
-getGpuProcIds(OpBuilder &b, Location loc, ArrayRef<Range> parallelLoopRanges) {
+getGpuProcIds(OpBuilder &b, Location loc, ArrayRef<Range> parallelLoopRanges,
+              ArrayRef<linalg::DistributionMethod> distributionMethod) {
   size_t count = std::min<size_t>(3, parallelLoopRanges.size());
   SmallVector<ProcInfo, 2> procInfo(count);
   Type indexType = b.getIndexType();
   for (unsigned i = 0; i < count; ++i) {
     gpu::Dimension dim = *gpu::symbolizeDimension(i);
     procInfo[count - 1 - i] = {b.create<IdOp>(loc, indexType, dim),
-                               b.create<NProcsOp>(loc, indexType, dim)};
+                               b.create<NProcsOp>(loc, indexType, dim),
+                               distributionMethod[count - 1 - i]};
   }
   return procInfo;
 }
@@ -394,10 +258,15 @@ static void fillTileAndDistributePatterns(MLIRContext *context,
                                           RewritePatternSet &patterns) {
   {
     LinalgLoopDistributionOptions cyclicNprocsEqNiters;
-    cyclicNprocsEqNiters.distributionMethod.resize(
-        2, DistributionMethod::CyclicNumProcsEqNumIters);
+    SmallVector<linalg::DistributionMethod> distributionMethod = {
+        DistributionMethod::CyclicNumProcsEqNumIters,
+        DistributionMethod::CyclicNumProcsEqNumIters};
     cyclicNprocsEqNiters.procInfo =
-        getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>;
+        [distributionMethod](OpBuilder &b, Location loc,
+                             ArrayRef<Range> parallelLoopRanges) {
+          return getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>(
+              b, loc, parallelLoopRanges, distributionMethod);
+        };
     patterns.add<LinalgTilingPattern>(
         MatmulOp::getOperationName(), context,
         LinalgTilingOptions()
@@ -411,10 +280,15 @@ static void fillTileAndDistributePatterns(MLIRContext *context,
 
   {
     LinalgLoopDistributionOptions cyclicNprocsGeNiters;
-    cyclicNprocsGeNiters.distributionMethod.resize(
-        2, DistributionMethod::CyclicNumProcsGeNumIters);
+    SmallVector<linalg::DistributionMethod> distributionMethod = {
+        DistributionMethod::CyclicNumProcsGeNumIters,
+        DistributionMethod::CyclicNumProcsGeNumIters};
     cyclicNprocsGeNiters.procInfo =
-        getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>;
+        [distributionMethod](OpBuilder &b, Location loc,
+                             ArrayRef<Range> parallelLoopRanges) {
+          return getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>(
+              b, loc, parallelLoopRanges, distributionMethod);
+        };
     patterns.add<LinalgTilingPattern>(
         MatmulOp::getOperationName(), context,
         LinalgTilingOptions()
@@ -428,10 +302,14 @@ static void fillTileAndDistributePatterns(MLIRContext *context,
 
   {
     LinalgLoopDistributionOptions cyclicNprocsDefault;
-    cyclicNprocsDefault.distributionMethod.resize(2,
-                                                  DistributionMethod::Cyclic);
+    SmallVector<linalg::DistributionMethod> distributionMethod = {
+        DistributionMethod::Cyclic, DistributionMethod::Cyclic};
     cyclicNprocsDefault.procInfo =
-        getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>;
+        [distributionMethod](OpBuilder &b, Location loc,
+                             ArrayRef<Range> parallelLoopRanges) {
+          return getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>(
+              b, loc, parallelLoopRanges, distributionMethod);
+        };
     patterns.add<LinalgTilingPattern>(
         MatmulOp::getOperationName(), context,
         LinalgTilingOptions()
@@ -445,10 +323,15 @@ static void fillTileAndDistributePatterns(MLIRContext *context,
 
   {
     LinalgLoopDistributionOptions cyclicNprocsMixed1;
-    cyclicNprocsMixed1.distributionMethod = {
+    SmallVector<linalg::DistributionMethod> distributionMethod = {
         DistributionMethod::CyclicNumProcsEqNumIters,
         DistributionMethod::CyclicNumProcsGeNumIters};
-    cyclicNprocsMixed1.procInfo = getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>;
+    cyclicNprocsMixed1.procInfo =
+        [distributionMethod](OpBuilder &b, Location loc,
+                             ArrayRef<Range> parallelLoopRanges) {
+          return getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>(
+              b, loc, parallelLoopRanges, distributionMethod);
+        };
     patterns.add<LinalgTilingPattern>(
         MatmulOp::getOperationName(), context,
         LinalgTilingOptions()
@@ -462,10 +345,15 @@ static void fillTileAndDistributePatterns(MLIRContext *context,
 
   {
     LinalgLoopDistributionOptions cyclicNprocsMixed2;
-    cyclicNprocsMixed2.distributionMethod = {
+    SmallVector<linalg::DistributionMethod> distributionMethod = {
         DistributionMethod::CyclicNumProcsGeNumIters,
         DistributionMethod::Cyclic};
-    cyclicNprocsMixed2.procInfo = getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>;
+    cyclicNprocsMixed2.procInfo =
+        [distributionMethod](OpBuilder &b, Location loc,
+                             ArrayRef<Range> parallelLoopRanges) {
+          return getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>(
+              b, loc, parallelLoopRanges, distributionMethod);
+        };
     patterns.add<LinalgTilingPattern>(
         MatmulOp::getOperationName(), context,
         LinalgTilingOptions()
@@ -479,10 +367,15 @@ static void fillTileAndDistributePatterns(MLIRContext *context,
 
   {
     LinalgLoopDistributionOptions cyclicNprocsMixed3;
-    cyclicNprocsMixed3.distributionMethod = {
+    SmallVector<linalg::DistributionMethod> distributionMethod = {
         DistributionMethod::Cyclic,
         DistributionMethod::CyclicNumProcsEqNumIters};
-    cyclicNprocsMixed3.procInfo = getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>;
+    cyclicNprocsMixed3.procInfo =
+        [distributionMethod](OpBuilder &b, Location loc,
+                             ArrayRef<Range> parallelLoopRanges) {
+          return getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>(
+              b, loc, parallelLoopRanges, distributionMethod);
+        };
 
     patterns.add<LinalgTilingPattern>(
         MatmulOp::getOperationName(), context,
@@ -497,10 +390,14 @@ static void fillTileAndDistributePatterns(MLIRContext *context,
 
   {
     LinalgLoopDistributionOptions cyclicNprocsEqNiters;
-    cyclicNprocsEqNiters.distributionMethod.resize(2,
-                                                   DistributionMethod::Cyclic);
+    SmallVector<linalg::DistributionMethod> distributionMethod = {
+        DistributionMethod::Cyclic, DistributionMethod::Cyclic};
     cyclicNprocsEqNiters.procInfo =
-        getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>;
+        [distributionMethod](OpBuilder &b, Location loc,
+                             ArrayRef<Range> parallelLoopRanges) {
+          return getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>(
+              b, loc, parallelLoopRanges, distributionMethod);
+        };
     patterns.add<LinalgTilingPattern>(
         MatmulOp::getOperationName(), context,
         LinalgTilingOptions()
@@ -516,8 +413,14 @@ static void fillTileAndDistributePatterns(MLIRContext *context,
 static void fillTileFuseAndDistributePatterns(MLIRContext *context,
                                               RewritePatternSet &patterns) {
   LinalgLoopDistributionOptions cyclicNprocsEqNiters;
-  cyclicNprocsEqNiters.distributionMethod.resize(2, DistributionMethod::Cyclic);
-  cyclicNprocsEqNiters.procInfo = getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>;
+  SmallVector<linalg::DistributionMethod> distributionMethod = {
+      DistributionMethod::Cyclic, DistributionMethod::Cyclic};
+  cyclicNprocsEqNiters.procInfo =
+      [distributionMethod](OpBuilder &b, Location loc,
+                           ArrayRef<Range> parallelLoopRanges) {
+        return getGpuProcIds<gpu::BlockIdOp, gpu::GridDimOp>(
+            b, loc, parallelLoopRanges, distributionMethod);
+      };
   patterns.add<LinalgTileAndFuseTensorOpsPattern>(
       MatmulOp::getOperationName(), context,
       LinalgTilingAndFusionOptions()
@@ -528,48 +431,14 @@ static void fillTileFuseAndDistributePatterns(MLIRContext *context,
           StringAttr::get(context, "tensors_after_fuse_distribute1")));
 }
 
-static void
-applyMatmulToVectorPatterns(FuncOp funcOp,
-                            bool testMatmulToVectorPatterns1dTiling,
-                            bool testMatmulToVectorPatterns2dTiling) {
-  MLIRContext *ctx = funcOp.getContext();
-  SmallVector<RewritePatternSet, 4> stage1Patterns;
-  if (testMatmulToVectorPatterns1dTiling) {
-    fillL1TilingAndMatmulToVectorPatterns(funcOp, "START", stage1Patterns);
-  } else if (testMatmulToVectorPatterns2dTiling) {
-    stage1Patterns.emplace_back(
-        ctx, std::make_unique<LinalgTilingPattern>(
-                 MatmulOp::getOperationName(), ctx,
-                 LinalgTilingOptions()
-                     .setTileSizes({768, 264, 768})
-                     .setInterchange({1, 2, 0}),
-                 LinalgTransformationFilter(StringAttr::get(ctx, "START"),
-                                            StringAttr::get(ctx, "L2"))));
-    fillL1TilingAndMatmulToVectorPatterns(funcOp, "L2", stage1Patterns);
-  }
-  {
-    // Canonicalization patterns
-    RewritePatternSet canonicalizationPatterns(funcOp.getContext());
-    vector::populateVectorTransferPermutationMapLoweringPatterns(
-        canonicalizationPatterns);
-    vector::populateVectorReductionToContractPatterns(canonicalizationPatterns);
-    stage1Patterns.push_back(std::move(canonicalizationPatterns));
-  }
-  SmallVector<FrozenRewritePatternSet, 4> frozenStage1Patterns;
-  llvm::move(stage1Patterns, std::back_inserter(frozenStage1Patterns));
-  FrozenRewritePatternSet stage2Patterns =
-      getLinalgTilingCanonicalizationPatterns(ctx);
-  (void)applyStagedPatterns(funcOp, frozenStage1Patterns, stage2Patterns);
-}
-
-static void applyVectorTransferForwardingPatterns(FuncOp funcOp) {
+static void applyVectorTransferForwardingPatterns(func::FuncOp funcOp) {
   RewritePatternSet forwardPattern(funcOp.getContext());
   forwardPattern.add<LinalgCopyVTRForwardingPattern>(funcOp.getContext());
   forwardPattern.add<LinalgCopyVTWForwardingPattern>(funcOp.getContext());
   (void)applyPatternsAndFoldGreedily(funcOp, std::move(forwardPattern));
 }
 
-static void applyLinalgToVectorPatterns(FuncOp funcOp) {
+static void applyLinalgToVectorPatterns(func::FuncOp funcOp) {
   RewritePatternSet patterns(funcOp.getContext());
   auto *ctx = funcOp.getContext();
   patterns.add<LinalgVectorizationPattern>(
@@ -581,25 +450,25 @@ static void applyLinalgToVectorPatterns(FuncOp funcOp) {
   (void)applyPatternsAndFoldGreedily(funcOp, std::move(patterns));
 }
 
-static void applyPadTensorToGenericPatterns(FuncOp funcOp) {
+static void applyPadTensorToGenericPatterns(func::FuncOp funcOp) {
   RewritePatternSet patterns(funcOp.getContext());
   patterns.add<PadOpTransformationPattern>(funcOp.getContext());
   (void)applyPatternsAndFoldGreedily(funcOp, std::move(patterns));
 }
 
-static void applyGeneralizePadTensorPatterns(FuncOp funcOp) {
+static void applyGeneralizePadTensorPatterns(func::FuncOp funcOp) {
   RewritePatternSet patterns(funcOp.getContext());
   patterns.add<GeneralizePadOpPattern>(funcOp.getContext());
   (void)applyPatternsAndFoldGreedily(funcOp, std::move(patterns));
 }
 
-static void applyExtractSliceOfPadTensorSwapPattern(FuncOp funcOp) {
+static void applyExtractSliceOfPadTensorSwapPattern(func::FuncOp funcOp) {
   RewritePatternSet patterns(funcOp.getContext());
   patterns.add<ExtractSliceOfPadTensorSwapPattern>(funcOp.getContext());
   (void)applyPatternsAndFoldGreedily(funcOp, std::move(patterns));
 }
 
-static void applyTilePattern(FuncOp funcOp, const std::string &loopType,
+static void applyTilePattern(func::FuncOp funcOp, const std::string &loopType,
                              ArrayRef<int64_t> tileSizes,
                              ArrayRef<int64_t> peeledLoops,
                              bool scalarizeDynamicDims) {
@@ -626,7 +495,7 @@ static void applyTilePattern(FuncOp funcOp, const std::string &loopType,
   (void)applyPatternsAndFoldGreedily(funcOp, std::move(tilingPattern));
 }
 
-static void applySplitReduction(FuncOp funcOp) {
+static void applySplitReduction(func::FuncOp funcOp) {
   RewritePatternSet patterns(funcOp.getContext());
   linalg::populateSplitReductionPattern(
       patterns,
@@ -640,7 +509,7 @@ static void applySplitReduction(FuncOp funcOp) {
   (void)applyPatternsAndFoldGreedily(funcOp, std::move(patterns));
 }
 
-static void applyBubbleUpExtractSliceOpPattern(FuncOp funcOp) {
+static void applyBubbleUpExtractSliceOpPattern(func::FuncOp funcOp) {
   RewritePatternSet patterns(funcOp.getContext());
   populateBubbleUpExtractSliceOpPatterns(patterns);
   (void)applyPatternsAndFoldGreedily(funcOp, std::move(patterns));
@@ -655,12 +524,6 @@ void TestLinalgTransforms::runOnOperation() {
   };
   std::unique_ptr<void, decltype(lambda)> cleanupGuard{(void *)1, lambda};
 
-  if (testPromotionOptions) {
-    RewritePatternSet patterns(&getContext());
-    fillPromotionCallBackPatterns(&getContext(), patterns);
-    (void)applyPatternsAndFoldGreedily(getOperation(), std::move(patterns));
-    return;
-  }
   if (testTileAndDistributionOptions) {
     RewritePatternSet patterns(&getContext());
     fillTileAndDistributePatterns(&getContext(), patterns);
@@ -675,10 +538,6 @@ void TestLinalgTransforms::runOnOperation() {
   }
   if (testPatterns)
     return applyPatterns(getOperation());
-  if (testMatmulToVectorPatterns1dTiling || testMatmulToVectorPatterns2dTiling)
-    return applyMatmulToVectorPatterns(getOperation(),
-                                       testMatmulToVectorPatterns1dTiling,
-                                       testMatmulToVectorPatterns2dTiling);
   if (testVectorTransferForwardingPatterns)
     return applyVectorTransferForwardingPatterns(getOperation());
   if (testGenericToVectorPattern)

@@ -13,7 +13,7 @@
 #include "Error.h"
 #include "ExprAnalysis.h"
 #include "ExtReplacements.h"
-#include "FFTAPIMigration.h"
+#include "LibraryAPIMigration.h"
 #include "Rules.h"
 #include "SaveNewFiles.h"
 #include "Statics.h"
@@ -270,7 +270,7 @@ public:
 
   std::string Str = "";
   FormatInfo FormatInformation;
-  int ColumnLimit;
+  int ColumnLimit = 80;
 };
 
 struct StmtWithWarning {
@@ -582,27 +582,12 @@ public:
     return HostRandomEngineTypeMap;
   }
 
-  std::map<unsigned int, FFTDescriptorTypeInfo> &getFFTDescriptorTypeMap() {
-    return FFTDescriptorTypeMap;
-  }
-  std::map<unsigned int, FFTPlanAPIInfo> &getFFTPlanAPIInfoMap() {
-    return FFTPlanAPIInfoMap;
-  }
-  std::map<unsigned int, FFTExecAPIInfo> &getFFTExecAPIInfoMap() {
-    return FFTExecAPIInfoMap;
-  }
-
   std::map<unsigned int, EventSyncTypeInfo> &getEventSyncTypeMap() {
     return EventSyncTypeMap;
   }
 
   std::map<unsigned int, TimeStubTypeInfo> &getTimeStubTypeMap() {
     return TimeStubTypeMap;
-  }
-
-  std::unordered_map<std::string, FFTSetStreamAPIInfo> &
-  getFFTSetStreamAPIInfoMap() {
-    return FFTSetStreamAPIInfoMap;
   }
 
   std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
@@ -681,11 +666,8 @@ private:
   std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
            HostRandomDistrInfo>
       HostRandomDistrMap;
-  std::map<unsigned int, FFTDescriptorTypeInfo> FFTDescriptorTypeMap;
   std::map<unsigned int, EventSyncTypeInfo> EventSyncTypeMap;
-  std::map<unsigned int, FFTPlanAPIInfo> FFTPlanAPIInfoMap;
   std::map<unsigned int, TimeStubTypeInfo> TimeStubTypeMap;
-  std::map<unsigned int, FFTExecAPIInfo> FFTExecAPIInfoMap;
   std::map<unsigned int, BuiltinVarInfo> BuiltinVarInfoMap;
   GlobalMap<MemVarInfo> MemVarMap;
   GlobalMap<DeviceFunctionDecl> FuncMap;
@@ -697,21 +679,6 @@ private:
   std::unordered_set<std::shared_ptr<TextModification>> ConstantMacroTMSet;
   std::unordered_map<std::string, std::tuple<unsigned int, std::string, bool>>
       AtomicMap;
-  // Key is the begin location offset of the CompoundStmt and the begin location
-  // offset of the plan handle VarDecl/FieldDecl.
-  // Value is the stream name.
-  // Example:
-  // TranslationUnitDecl
-  // `-FunctionDecl
-  //   `-CompoundStmt #1
-  //     `-IfStmt
-  //       |-CXXBoolLiteralExpr
-  //       `-CompoundStmt #2 ==> node as key
-  //         `-CompoundStmt
-  //           `-CallExpr
-  // If we can evaluate the value of "CXXBoolLiteralExpr" is always true, then
-  // the #1 will be used as key.
-  std::unordered_map<std::string, FFTSetStreamAPIInfo> FFTSetStreamAPIInfoMap;
   std::shared_ptr<ExtReplacements> Repls;
   size_t FileSize = 0;
   std::vector<SourceLineInfo> Lines;
@@ -945,10 +912,6 @@ public:
     const static std::string Hash = getHashAsString(getInRoot()).substr(0, 6);
     return Hash;
   }
-  static void setCompilerInstance(CompilerInstance &C) {
-    CI = &C;
-    setContext(C.getASTContext());
-  }
   static void setContext(ASTContext &C) {
     Context = &C;
     SM = &(Context->getSourceManager());
@@ -956,10 +919,6 @@ public:
     Context->getParentMapContext().setTraversalKind(TK_AsIs);
   }
   static void setRuleFile(const std::string &Path) { RuleFile = Path; }
-  static CompilerInstance &getCompilerInstance() {
-    assert(CI);
-    return *CI;
-  }
   static ASTContext &getContext() {
     assert(Context);
     return *Context;
@@ -1174,9 +1133,6 @@ public:
   inline static std::unordered_set<std::string> &getPrecAndDomPairSet() {
     return PrecAndDomPairSet;
   }
-  inline static std::unordered_set<FFTTypeEnum> &getFFTTypeSet() {
-    return FFTTypeSet;
-  }
 
   inline static bool isMKLHeaderUsed() { return IsMLKHeaderUsed; }
   inline static void setMKLHeaderUsed(bool Used = true) {
@@ -1219,7 +1175,7 @@ public:
 
   static std::string getStringForRegexReplacement(StringRef);
 
-  inline static void setCodeFormatStyle(clang::format::FormatStyle Style) {
+  inline static void setCodeFormatStyle(const clang::format::FormatStyle &Style) {
     CodeFormatStyle = Style;
   }
   inline static clang::format::FormatStyle getCodeFormatStyle() {
@@ -1453,17 +1409,7 @@ public:
 
   // Build kernel and device function declaration replacements and store
   // them.
-  void buildReplacements() {
-    // add PriorityRepl into ReplMap and execute related action, e.g.,
-    // request feature or emit warning.
-    for (auto &ReplInfo : PriorityReplInfoMap) {
-      for (auto &Repl : ReplInfo.second->Repls) {
-        addReplacement(Repl);
-      }
-      for (auto &Action : ReplInfo.second->RelatedAction) {
-        Action();
-      }
-    }
+  void buildKernelInfo() {
     for (auto &File : FileMap)
       File.second->buildKernelInfo();
 
@@ -1491,6 +1437,19 @@ public:
         File.second->buildUnionFindSet();
       for (auto &File : FileMap)
         File.second->buildUnionFindSetForUncalledFunc();
+    }
+  }
+
+  void buildReplacements() {
+    // add PriorityRepl into ReplMap and execute related action, e.g.,
+    // request feature or emit warning.
+    for (auto &ReplInfo : PriorityReplInfoMap) {
+      for (auto &Repl : ReplInfo.second->Repls) {
+        addReplacement(Repl);
+      }
+      for (auto &Action : ReplInfo.second->RelatedAction) {
+        Action();
+      }
     }
 
     for (auto &File : FileMap)
@@ -1559,14 +1518,6 @@ public:
     }
   }
 
-  void insertFFTDescriptorTypeInfo(SourceLocation SL, unsigned int Length) {
-    auto LocInfo = getLocInfo(SL);
-    auto FileInfo = insertFile(LocInfo.first);
-    auto &M = FileInfo->getFFTDescriptorTypeMap();
-    if (M.find(LocInfo.second) == M.end()) {
-      M.insert(std::make_pair(LocInfo.second, FFTDescriptorTypeInfo(Length)));
-    }
-  }
   void
   insertHostDeviceFuncCallInfo(std::string &&FuncName,
                                std::pair<std::string, unsigned int> &&Info) {
@@ -1590,8 +1541,6 @@ public:
     return CudaArchMacroRepl;
   }
   CudaArchDefMap &getCudaArchDefinedMap() { return CudaArchDefinedMap; }
-  void insertFFTPlanAPIInfo(SourceLocation SL, FFTPlanAPIInfo Info);
-  void insertFFTExecAPIInfo(SourceLocation SL, FFTExecAPIInfo Info);
 
   void insertReplInfoFromYAMLToFileInfo(
       std::string FilePath,
@@ -1753,45 +1702,6 @@ public:
         std::get<2>(Iter->second) = false;
         return;
       }
-    }
-  }
-
-  void updateFFTSetStreamAPIInfoMap(SourceLocation CompoundStmtBeginSL,
-                                    SourceLocation PlanHandleDeclBeginSL,
-                                    SourceLocation SetStreamAPIBeginSL,
-                                    std::string StreamStr) {
-    auto LocInfo = getLocInfo(CompoundStmtBeginSL);
-    auto FileInfo = insertFile(LocInfo.first);
-    auto &M = FileInfo->getFFTSetStreamAPIInfoMap();
-
-    std::string Key = std::to_string(LocInfo.second) + ":" +
-                      std::to_string(getLocInfo(PlanHandleDeclBeginSL).second);
-    auto Iter = M.find(Key);
-    if (Iter == M.end()) {
-      FFTSetStreamAPIInfo Info;
-      Info.Streams.push_back(
-          std::make_pair(getLocInfo(SetStreamAPIBeginSL).second, StreamStr));
-      M.insert(std::make_pair(Key, Info));
-    } else {
-      Iter->second.Streams.push_back(
-          std::make_pair(getLocInfo(SetStreamAPIBeginSL).second, StreamStr));
-    }
-  }
-
-  std::string getRelatedFFTStream(std::string FilePath,
-                                  unsigned int CompoundStmtBeginOffset,
-                                  unsigned int PlanHandleDeclBeginOffset,
-                                  unsigned int ExecAPIBeginOffset) {
-    auto FileInfo = insertFile(FilePath);
-    auto &M = FileInfo->getFFTSetStreamAPIInfoMap();
-
-    std::string Key = std::to_string(CompoundStmtBeginOffset) + ":" +
-                      std::to_string(PlanHandleDeclBeginOffset);
-    auto Iter = M.find(Key);
-    if (Iter == M.end()) {
-      return "";
-    } else {
-      return Iter->second.getLatestStream(ExecAPIBeginOffset);
     }
   }
 
@@ -1961,44 +1871,6 @@ public:
     CurrentFileInfo->insertIncludedFilesInfo(IncludedFileInfo);
   }
 
-  static void insertOrUpdateFFTHandleInfo(const std::string &FileAndOffset,
-                                          const FFTDirectionType Direction,
-                                          const FFTPlacementType Placement) {
-    auto I = FFTHandleInfoMap.find(FileAndOffset);
-    if (I == FFTHandleInfoMap.end()) {
-      FFTHandleInfo Info;
-      Info.Direction = Direction;
-      Info.Placement = Placement;
-      FFTHandleInfoMap.insert(std::make_pair(FileAndOffset, Info));
-    } else {
-      I->second.updateDirectionFromExec(Direction);
-      I->second.updatePlacementFromExec(Placement);
-    }
-  }
-  static void insertOrUpdateFFTHandleInfo(const std::string &FileAndOffset,
-                                          bool MayNeedReset,
-                                          std::string InputDistance,
-                                          std::string OutputDistance,
-                                          std::string InembedStr,
-                                          std::string OnembedStr) {
-    auto I = FFTHandleInfoMap.find(FileAndOffset);
-    if (I == FFTHandleInfoMap.end()) {
-      FFTHandleInfo Info;
-      Info.MayNeedReset = MayNeedReset;
-      Info.InputDistance = InputDistance;
-      Info.OutputDistance = OutputDistance;
-      Info.InembedStr = InembedStr;
-      Info.OnembedStr = OnembedStr;
-      FFTHandleInfoMap.insert(std::make_pair(FileAndOffset, Info));
-    } else {
-      I->second.updateResetInfo(MayNeedReset, InputDistance, OutputDistance,
-                                InembedStr, OnembedStr);
-    }
-  }
-  static std::unordered_map<std::string, FFTHandleInfo> &getFFTHandleInfoMap() {
-    return FFTHandleInfoMap;
-  }
-
   static unsigned int getCudaKernelDimDFIIndexThenInc() {
     unsigned int Res = CudaKernelDimDFIIndex;
     ++CudaKernelDimDFIIndex;
@@ -2072,7 +1944,8 @@ public:
     }
     return Res;
   }
-  unsigned int getColorOption() { return ColorOption; }
+  static unsigned int getColorOption() { return ColorOption; }
+  static void setColorOption(unsigned Color)  { ColorOption = Color; }
   std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>> &
   getCubPlaceholderIndexMap() {
     return CubPlaceholderIndexMap;
@@ -2203,7 +2076,6 @@ private:
   static HelperFilesCustomizationLevel HelperFilesCustomizationLvl;
   static std::string CustomHelperFileName;
   static std::unordered_set<std::string> PrecAndDomPairSet;
-  static std::unordered_set<FFTTypeEnum> FFTTypeSet;
   static std::unordered_set<std::string> HostRNGEngineTypeSet;
   static format::FormatRange FmtRng;
   static DPCTFormatStyle FmtST;
@@ -2218,7 +2090,6 @@ private:
   // " --report-type=all" is specified to get the migration status report, while
   // dpct namespace is not enabled.
   static bool TempEnableDPCTNamespace;
-  static CompilerInstance *CI;
   static ASTContext *Context;
   static SourceManager *SM;
   static FileManager *FM;
@@ -2267,10 +2138,6 @@ private:
   static bool UsingGenericSpace;
   static bool UsingThisItem;
   static bool SpBLASUnsupportedMatrixTypeFlag;
-  // Key: the FFT handle declaration "FilePath:Offset"
-  // Value: a struct including placement and direction
-  static std::unordered_map<std::string, FFTExecAPIInfo> FFTExecAPIInfoMap;
-  static std::unordered_map<std::string, FFTHandleInfo> FFTHandleInfoMap;
   static unsigned int CudaKernelDimDFIIndex;
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
       CudaKernelDimDFIMap;
@@ -3083,7 +2950,7 @@ public:
       M.second->setBaseName(Name);
     }
   }
-  void addParamDeclReplacement() { return; }
+  void addParamDeclReplacement() override { return; }
   void merge(std::shared_ptr<TextureObjectInfo> Target) override {
     if (auto T =
             std::dynamic_pointer_cast<StructureTextureObjectInfo>(Target)) {
@@ -3596,7 +3463,7 @@ public:
   std::string getTemplateArguments(bool WrittenArgsOnly = true,
                                    bool WithScalarWrapped = false);
 
-  inline virtual std::string getExtraArguments();
+  virtual std::string getExtraArguments();
 
   std::shared_ptr<TextureObjectInfo>
   addTextureObjectArgInfo(unsigned ArgIdx,
@@ -3707,6 +3574,8 @@ public:
       return LinkTemplateDecl(FTD);
     else if (FTD = FD->getDescribedFunctionTemplate())
       return LinkTemplateDecl(FTD);
+    else if (auto Decl = FD->getInstantiatedFromMemberFunction())
+      FD = Decl;
     return LinkDeclRange(FD->redecls(), getFunctionName(FD));
   }
   inline static std::shared_ptr<DeviceFunctionInfo>
@@ -3880,6 +3749,10 @@ public:
 
   bool ConstructGraphVisited = false;
 
+  std::shared_ptr<CallFunctionExpr> findCallee(const CallExpr *C) {
+    auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
+    return findObject(CallExprMap, CallLocInfo.second);
+  }
   template <class CallT>
   inline std::shared_ptr<CallFunctionExpr> addCallee(const CallT *C) {
     auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
@@ -4107,9 +3980,10 @@ private:
           ArgSize =
               MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Default);
       }
-
       if (IsRedeclareRequired || IsPointer || BASE->IsInMacroDefine) {
-        IdString = getTempNameForExpr(Arg, false, true, BASE->IsInMacroDefine);
+        IdString = getTempNameForExpr(Arg, false, true, BASE->IsInMacroDefine,
+                                      Analysis.CallSpellingBegin,
+                                      Analysis.CallSpellingEnd);
       }
     }
 
@@ -4257,6 +4131,9 @@ private:
                                   const Expr *ArgsArray) {}
   void buildArgsInfo(const CallExpr *CE) {
     KernelArgumentAnalysis Analysis(IsInMacroDefine);
+    auto KCallSpellingRange =
+        getTheLastCompleteImmediateRange(CE->getBeginLoc(), CE->getEndLoc());
+    Analysis.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
     auto &TexList = getTextureObjectList();
 
     for (unsigned Idx = 0; Idx < CE->getNumArgs(); ++Idx) {
@@ -4286,7 +4163,8 @@ private:
   void buildNeedBracesInfo(const CallExpr *KernelCall);
   void buildLocationInfo(const CallExpr *KernelCall);
   template <class ArgsRange>
-  void buildExecutionConfig(const ArgsRange &ConfigArgs);
+  void buildExecutionConfig(const ArgsRange &ConfigArgs,
+                            const CallExpr *KernelCall);
 
   void removeExtraIndent() {
     DpctGlobalInfo::getInstance().addReplacement(
@@ -4631,7 +4509,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
     // before the CL/sycl.hpp are included, so the FileInfo is set
     // to hold a boolean that'll indicate whether to insert them when
     // the #include CL/sycl.cpp is added later
-    if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution)
+    if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution || Type == HT_Dnnl)
       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_AlwaysLeft);
     else if (Type == HT_SYCL) 
       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Left);

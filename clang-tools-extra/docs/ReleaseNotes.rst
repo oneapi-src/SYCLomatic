@@ -81,7 +81,7 @@ Miscellaneous
 Improvements to clang-doc
 -------------------------
 
-The improvements are...
+- The default executor was changed to standalone to match other tools.
 
 Improvements to clang-query
 ---------------------------
@@ -96,49 +96,57 @@ The improvements are...
 Improvements to clang-tidy
 --------------------------
 
-- Added trace code to help narrow down any checks and the relevant source code
-  that result in crashes.
-
-- Clang-tidy now consideres newlines as separators of single elements in the `Checks` section in
-  `.clang-tidy` configuration files. Where previously a comma had to be used to distinguish elements in
-  this list from each other, newline characters now also work as separators in the parsed YAML. That
-  means it is advised to use YAML's block style initiated by the pipe character `|` for the `Checks`
-  section in order to benefit from the easier syntax that works without commas.
-
 New checks
 ^^^^^^^^^^
 
-- New :doc:`bugprone-shared-ptr-array-mismatch <clang-tidy/checks/bugprone-shared-ptr-array-mismatch>` check.
+- New :doc:`cppcoreguidelines-avoid-const-or-ref-data-members
+  <clang-tidy/checks/cppcoreguidelines/avoid-const-or-ref-data-members>` check.
 
-  Finds initializations of C++ shared pointers to non-array type that are initialized with an array.
-
-- New :doc:`modernize-macro-to-enum
-  <clang-tidy/checks/modernize-macro-to-enum>` check.
-
-  Replaces groups of adjacent macros with an unscoped anonymous enum.
+  Warns when a struct or class uses const or reference (lvalue or rvalue) data members.
 
 New check aliases
 ^^^^^^^^^^^^^^^^^
 
-- New alias :doc:`cppcoreguidelines-macro-to-enum
-  <clang-tidy/checks/cppcoreguidelines-macro-to-enum>` to :doc:`modernize-macro-to-enum
-  <clang-tidy/checks/modernize-macro-to-enum>` was added.
+- New alias :doc:`cert-msc54-cpp
+  <clang-tidy/checks/cert/msc54-cpp>` to
+  :doc:`bugprone-signal-handler
+  <clang-tidy/checks/bugprone/signal-handler>` was added.
+
 
 Changes in existing checks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- Fixed a false positive in :doc:`readability-non-const-parameter
-  <clang-tidy/checks/readability-non-const-parameter>` when the parameter is referenced by an lvalue
+- Fixed a false positive in :doc:`bugprone-assignment-in-if-condition
+  <clang-tidy/checks/bugprone/assignment-in-if-condition>` check when there
+  was an assignement in a lambda found in the condition of an ``if``.
 
-- Fixed a crash in :doc:`readability-const-return-type
-  <clang-tidy/checks/readability-const-return-type>` when a pure virtual function
-  overrided has a const return type. Removed the fix for a virtual function.
+- Improved :doc:`bugprone-signal-handler
+  <clang-tidy/checks/bugprone/signal-handler>` check. Partial
+  support for C++14 signal handler rules was added. Bug report generation was
+  improved.
 
-- Fixed a false positive in :doc:`misc-redundant-expression <clang-tidy/checks/misc-redundant-expression>`
-  involving overloaded comparison operators.
+- Fixed a false positive in :doc:`cppcoreguidelines-pro-type-member-init
+  <clang-tidy/checks/cppcoreguidelines/pro-type-member-init>` when warnings
+  would be emitted for uninitialized members of an anonymous union despite
+  there being an initializer for one of the other members.
 
-- Fixed a crash in :doc:`bugprone-sizeof-expression <clang-tidy/checks/bugprone-sizeof-expression>` when
-  `sizeof(...)` is compared agains a `__int128_t`.
+- Improved :doc:`modernize-use-emplace <clang-tidy/checks/modernize/use-emplace>`
+  check.
+
+  The check now supports detecting inefficient invocations of ``push`` and
+  ``push_front`` on STL-style containers and replacing them with ``emplace``
+  or ``emplace_front``.
+
+  The check now supports detecting alias cases of ``push_back`` ``push`` and
+  ``push_front`` on STL-style containers and replacing them with ``emplace_back``,
+  ``emplace`` or ``emplace_front``.
+
+- Improved :doc:`modernize-use-equals-default <clang-tidy/checks/modernize/use-equals-default>`
+  check.
+
+  The check now skips unions since in this case a default constructor with empty body
+  is not equivalent to the explicitly defaulted one. The check also skips copy assignment
+  operators with nonstandard return types. The check is restricted to c++11-or-later.
 
 Removed checks
 ^^^^^^^^^^^^^^
@@ -160,8 +168,6 @@ The improvements are...
 
 Improvements to pp-trace
 ------------------------
-
-The improvements are...
 
 Clang-tidy Visual Studio plugin
 -------------------------------

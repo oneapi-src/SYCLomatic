@@ -123,6 +123,28 @@ void SPIRVToOCL20Base::visitCallSPIRVControlBarrier(CallInst *CI) {
       &NewAttrs);
 }
 
+void SPIRVToOCL20Base::visitCallSPIRVSplitBarrierINTEL(CallInst *CI, Op OC) {
+  AttributeList Attrs = CI->getCalledFunction()->getAttributes();
+  mutateCallInstOCL(
+      M, CI,
+      [=](CallInst *, std::vector<Value *> &Args) {
+        auto GetArg = [=](unsigned I) {
+          return cast<ConstantInt>(Args[I])->getZExtValue();
+        };
+        Value *MemScope =
+            getInt32(M, rmap<OCLScopeKind>(static_cast<Scope>(GetArg(1))));
+        Value *MemFenceFlags =
+            SPIRV::transSPIRVMemorySemanticsIntoOCLMemFenceFlags(Args[2], CI);
+
+        Args.resize(2);
+        Args[0] = MemFenceFlags;
+        Args[1] = MemScope;
+
+        return OCLSPIRVBuiltinMap::rmap(OC);
+      },
+      &Attrs);
+}
+
 std::string SPIRVToOCL20Base::mapFPAtomicName(Op OC) {
   assert(isFPAtomicOpCode(OC) && "Not intended to handle other opcodes than "
                                  "AtomicF{Add/Min/Max}EXT!");
@@ -183,9 +205,7 @@ Instruction *SPIRVToOCL20Base::visitCallSPIRVAtomicIncDec(CallInst *CI, Op OC) {
         // = 1.
         auto Name = OCLSPIRVBuiltinMap::rmap(
             OC == OpAtomicIIncrement ? OpAtomicIAdd : OpAtomicISub);
-        auto Ptr = findFirstPtr(Args);
-        Type *ValueTy =
-            cast<PointerType>(Args[Ptr]->getType())->getPointerElementType();
+        Type *ValueTy = CI->getType();
         assert(ValueTy->isIntegerTy());
         Args.insert(Args.begin() + 1, llvm::ConstantInt::get(ValueTy, 1));
         return Name;
@@ -241,6 +261,8 @@ Instruction *SPIRVToOCL20Base::visitCallSPIRVAtomicCmpExchg(CallInst *CI) {
   AttributeList Attrs = CI->getCalledFunction()->getAttributes();
   Instruction *PInsertBefore = CI;
 
+  Type *MemTy = CI->getType();
+
   return mutateCallInstOCL(
       M, CI,
       [=](CallInst *, std::vector<Value *> &Args, Type *&RetTy) {
@@ -250,13 +272,12 @@ Instruction *SPIRVToOCL20Base::visitCallSPIRVAtomicCmpExchg(CallInst *CI) {
         // OCL built-ins returns boolean value and stores a new/original
         // value by pointer passed as 2nd argument (aka expected) while SPIR-V
         // instructions returns this new/original value as a resulting value.
-        AllocaInst *PExpected = new AllocaInst(CI->getType(), 0, "expected",
+        AllocaInst *PExpected = new AllocaInst(MemTy, 0, "expected",
                                                &(*PInsertBefore->getParent()
                                                       ->getParent()
                                                       ->getEntryBlock()
                                                       .getFirstInsertionPt()));
-        PExpected->setAlignment(
-            Align(CI->getType()->getScalarSizeInBits() / 8));
+        PExpected->setAlignment(Align(MemTy->getScalarSizeInBits() / 8));
         new StoreInst(Args[1], PExpected, PInsertBefore);
         unsigned AddrSpc = SPIRAS_Generic;
         Type *PtrTyAS = PointerType::getWithSamePointeeType(
@@ -276,9 +297,8 @@ Instruction *SPIRVToOCL20Base::visitCallSPIRVAtomicCmpExchg(CallInst *CI) {
         // returning it has to be loaded from the memory where 'expected'
         // value is stored. This memory must contain the needed value after a
         // call to OCL built-in is completed.
-        return new LoadInst(
-            CI->getArgOperand(1)->getType()->getPointerElementType(),
-            CI->getArgOperand(1), "original", PInsertBefore);
+        return new LoadInst(MemTy, CI->getArgOperand(1), "original",
+                            PInsertBefore);
       },
       &Attrs);
 }

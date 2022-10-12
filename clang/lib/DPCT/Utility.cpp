@@ -1429,12 +1429,33 @@ bool isAssigned(const Stmt *S) {
 /// \return A temporary variable name
 
 std::string getTempNameForExpr(const Expr *E, bool HandleLiteral,
-                               bool KeepLastUnderline, bool IsInMacroDefine) {
+                               bool KeepLastUnderline, bool IsInMacroDefine,
+                               SourceLocation CallBegin, SourceLocation CallEnd) {
   SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
   E = E->IgnoreCasts();
-  dpct::ArgumentAnalysis EA(E, IsInMacroDefine);
-  auto TokenBegin = EA.getExprBeginSrcLoc();
-  auto ExprEndLoc = EA.getExprEndSrcLoc();
+  bool RangeInCall = false;
+  SourceLocation TokenBegin;
+  SourceLocation ExprEndLoc;
+  if (CallBegin.isValid() && CallEnd.isValid()) {
+    auto Range = getRangeInRange(E, CallBegin, CallEnd);
+    auto DLBegin = SM.getDecomposedLoc(Range.first);
+    auto DLEnd = SM.getDecomposedLoc(Range.second);
+    if (DLBegin.first == DLEnd.first &&
+        DLBegin.second <= DLEnd.second) {
+      TokenBegin = Range.first;
+      ExprEndLoc = Range.second;
+      RangeInCall = true;
+    }
+  }
+  // Fallback to Range while CallBegin/End is not valid or getRangeInRange dose
+  // not return a valid range
+  if (!RangeInCall) {
+    auto Range =
+        getTheLastCompleteImmediateRange(E->getBeginLoc(), E->getEndLoc());
+    TokenBegin = Range.first;
+    ExprEndLoc = Range.second;
+  }
+
   std::string IdString;
   llvm::raw_string_ostream OS(IdString);
   Token Tok;
@@ -2469,65 +2490,6 @@ SourceLocation getImmSpellingLocRecursive(const SourceLocation Loc) {
   return Loc;
 }
 
-clang::dpct::FFTTypeEnum getFFTTypeFromValue(std::int64_t Value) {
-  switch (Value) {
-  case 0x2a:
-    return clang::dpct::FFTTypeEnum::R2C;
-  case 0x2c:
-    return clang::dpct::FFTTypeEnum::C2R;
-  case 0x29:
-    return clang::dpct::FFTTypeEnum::C2C;
-  case 0x6a:
-    return clang::dpct::FFTTypeEnum::D2Z;
-  case 0x6c:
-    return clang::dpct::FFTTypeEnum::Z2D;
-  case 0x69:
-    return clang::dpct::FFTTypeEnum::Z2Z;
-  default:
-    return clang::dpct::FFTTypeEnum::Unknown;
-  }
-}
-
-std::string getPrecAndDomainStrFromValue(std::int64_t Value) {
-  std::string PrecAndDomain;
-  std::string Prec, Domain;
-  if (Value == 0x2a || Value == 0x2c) {
-    Prec = "oneapi::mkl::dft::precision::SINGLE";
-    Domain = "oneapi::mkl::dft::domain::REAL";
-  } else if (Value == 0x29) {
-    Prec = "oneapi::mkl::dft::precision::SINGLE";
-    Domain = "oneapi::mkl::dft::domain::COMPLEX";
-  } else if (Value == 0x6a || Value == 0x6c) {
-    Prec = "oneapi::mkl::dft::precision::DOUBLE";
-    Domain = "oneapi::mkl::dft::domain::REAL";
-  } else {
-    Prec = "oneapi::mkl::dft::precision::DOUBLE";
-    Domain = "oneapi::mkl::dft::domain::COMPLEX";
-  }
-  PrecAndDomain = Prec + ", " + Domain;
-  return PrecAndDomain;
-}
-
-std::string getPrecAndDomainStrFromExecFuncName(std::string ExecFuncName) {
-  std::string PrecAndDomain;
-  std::string Prec, Domain;
-  if (ExecFuncName == "cufftExecR2C" || ExecFuncName == "cufftExecC2R") {
-    Prec = "oneapi::mkl::dft::precision::SINGLE";
-    Domain = "oneapi::mkl::dft::domain::REAL";
-  } else if (ExecFuncName == "cufftExecC2C") {
-    Prec = "oneapi::mkl::dft::precision::SINGLE";
-    Domain = "oneapi::mkl::dft::domain::COMPLEX";
-  } else if (ExecFuncName == "cufftExecD2Z" || ExecFuncName == "cufftExecZ2D") {
-    Prec = "oneapi::mkl::dft::precision::DOUBLE";
-    Domain = "oneapi::mkl::dft::domain::REAL";
-  } else {
-    Prec = "oneapi::mkl::dft::precision::DOUBLE";
-    Domain = "oneapi::mkl::dft::domain::COMPLEX";
-  }
-  PrecAndDomain = Prec + ", " + Domain;
-  return PrecAndDomain;
-}
-
 bool getTypeRange(const clang::VarDecl *PVD, clang::SourceRange &SR) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   auto BeginLoc = SM.getExpansionLoc(PVD->getBeginLoc());
@@ -2611,7 +2573,6 @@ SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
 
   // if there is still either one of begin/end is macro arg expansion
   if (SM.isMacroArgExpansion(Begin) || SM.isMacroArgExpansion(End)) {
-
     // In cases like CALL(FUNC_NAME CALL(ARGS))
     // If the Begin location is always the 1st token of macro defines,
     // it's safe to use the expansion location as the begin location.

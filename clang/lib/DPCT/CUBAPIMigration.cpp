@@ -9,6 +9,8 @@
 #include "CUBAPIMigration.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
+#include "MigrationRuleManager.h"
+
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/Expr.h"
@@ -32,11 +34,13 @@ using namespace dpct;
 using namespace tooling;
 using namespace ast_matchers;
 
+namespace {
 auto parentStmt = []() {
   return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
                hasParent(whileStmt()), hasParent(doStmt()),
                hasParent(ifStmt()));
 };
+} // namespace
 
 /// Check if expression is one of NULL(0)/nullptr/__null
 static bool isNullPointerConstant(const Expr *E) {
@@ -1358,4 +1362,4 @@ void CubRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
     processTypeLoc(TL);
   }
 }
-REGISTER_RULE(CubRule)
+REGISTER_RULE(CubRule, PassKind::PK_Analysis)

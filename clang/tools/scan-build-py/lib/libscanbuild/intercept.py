@@ -131,7 +131,12 @@ def capture(args):
         exit_code = 0
         entries = []
         if args.parse_build_log:
-            entries = parse_build_log(args.parse_build_log)
+            if hasattr(args, 'work_directory'):
+                work_directory = args.work_directory
+            else:
+                work_directory = os.path.dirname(os.path.abspath(args.parse_build_log))
+
+            entries = parse_build_log(args.parse_build_log, work_directory)
         else:
             # run the build command
             environment = setup_environment(args, tmp_dir)

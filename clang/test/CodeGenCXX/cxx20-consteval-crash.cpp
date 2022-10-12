@@ -1,4 +1,5 @@
-// RUN: %clang_cc1 -triple x86_64-unknown-linux-gnu -std=c++20 %s -emit-llvm -o - | FileCheck %s
+// RUN: %clang_cc1 -no-opaque-pointers -triple x86_64-unknown-linux-gnu -std=c++20 %s -emit-llvm -o - | FileCheck %s
+// RUN: %clang_cc1 -emit-obj -debug-info-kind=constructor -std=c++20 %s -o -
 
 namespace PR50787 {
 // This code would previously cause a crash.
@@ -9,7 +10,7 @@ auto x2 = X();
 
 // CHECK: @_ZN7PR507872x_E = external global i32, align 4
 // CHECK-NEXT: @_ZN7PR507872x1E = constant i32* @_ZN7PR507872x_E, align 8
-// CHECK-NEXT: @_ZN7PR507872x2E = global i32* @_ZN7PR507872x_E, align 4
+// CHECK-NEXT: @_ZN7PR507872x2E = global i32 0, align 4
 }
 
 namespace PR51484 {
@@ -18,7 +19,7 @@ struct X { int val; };
 consteval X g() { return {0}; }
 void f() { g(); }
 
-// CHECK: define dso_local void @_ZN7PR514841fEv() #0 {
+// CHECK: define dso_local void @_ZN7PR514841fEv() #1 {
 // CHECK: entry:
 // CHECK-NOT: call i32 @_ZN7PR514841gEv()
 // CHECK:  ret void
@@ -56,3 +57,38 @@ int foo() {
 // CHECK: define{{.*}} signext i8 @_ZN10Issue545782f2IcEEcT_(
 // CHECK: ret i8 4
 }
+
+namespace Issue55871 {
+struct Item {
+  consteval Item(char c) :_char{c}{}
+  char _char;
+};
+
+int function(const Item& item1, const Item& item2) {
+  return 0;
+}
+
+int foo() {
+  return function(Item{'a'}, Item{'a'});
+}
+} // namespace Issue58871
+
+namespace Issue55065 {
+struct Base {
+  consteval virtual int Get() const = 0;
+};
+
+struct Derived : Base {
+  consteval int Get() const override {
+    return 42;
+  }
+};
+
+int foo() {
+  constexpr Derived a;
+
+  auto val = a.Get();
+  return val;
+}
+} // namespace Issue55065
+

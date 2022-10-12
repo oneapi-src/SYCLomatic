@@ -53,7 +53,6 @@ HelperFilesCustomizationLevel DpctGlobalInfo::HelperFilesCustomizationLvl =
     HelperFilesCustomizationLevel::HFCL_None;
 std::string DpctGlobalInfo::CustomHelperFileName = "dpct";
 std::unordered_set<std::string> DpctGlobalInfo::PrecAndDomPairSet;
-std::unordered_set<FFTTypeEnum> DpctGlobalInfo::FFTTypeSet;
 std::unordered_set<std::string> DpctGlobalInfo::HostRNGEngineTypeSet;
 format::FormatRange DpctGlobalInfo::FmtRng = format::FormatRange::none;
 DPCTFormatStyle DpctGlobalInfo::FmtST = DPCTFormatStyle::FS_LLVM;
@@ -63,7 +62,6 @@ bool DpctGlobalInfo::GenBuildScript = false;
 bool DpctGlobalInfo::EnableComments = false;
 bool DpctGlobalInfo::TempEnableDPCTNamespace = false;
 bool DpctGlobalInfo::IsMLKHeaderUsed = false;
-CompilerInstance *DpctGlobalInfo::CI = nullptr;
 ASTContext *DpctGlobalInfo::Context = nullptr;
 SourceManager *DpctGlobalInfo::SM = nullptr;
 FileManager *DpctGlobalInfo::FM = nullptr;
@@ -114,9 +112,6 @@ std::unordered_map<std::string, int> DpctGlobalInfo::TempVariableHandledMap;
 bool DpctGlobalInfo::UsingDRYPattern = true;
 bool DpctGlobalInfo::UsingGenericSpace = true;
 bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
-std::unordered_map<std::string, FFTExecAPIInfo>
-    DpctGlobalInfo::FFTExecAPIInfoMap;
-std::unordered_map<std::string, FFTHandleInfo> DpctGlobalInfo::FFTHandleInfoMap;
 unsigned int DpctGlobalInfo::CudaKernelDimDFIIndex = 1;
 std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CudaKernelDimDFIMap;
@@ -267,7 +262,6 @@ public:
 void DpctGlobalInfo::resetInfo() {
   FileMap.clear();
   PrecAndDomPairSet.clear();
-  FFTTypeSet.clear();
   HostRNGEngineTypeSet.clear();
   KCIndentWidthMap.clear();
   LocationInitIndexMap.clear();
@@ -293,8 +287,6 @@ void DpctGlobalInfo::resetInfo() {
   TempVariableHandledMap.clear();
   UsingDRYPattern = true;
   SpBLASUnsupportedMatrixTypeFlag = false;
-  FFTExecAPIInfoMap.clear();
-  FFTHandleInfoMap.clear();
   NeedRunAgain = false;
   SpellingLocToDFIsMapForAssumeNDRange.clear();
   DFIToSpellingLocsMapForAssumeNDRange.clear();
@@ -308,7 +300,6 @@ DpctGlobalInfo::DpctGlobalInfo() {
   tooling::SetGetRunRound(DpctGlobalInfo::getRunRound);
   tooling::SetReProcessFile(DpctGlobalInfo::ReProcessFile);
   tooling::SetProcessedFile(DpctGlobalInfo::ProcessedFile);
-  tooling::SetColorOptionPtr(DpctGlobalInfo::ColorOption);
   tooling::SetIsExcludePathHandler(DpctGlobalInfo::isExcluded);
 }
 
@@ -328,29 +319,8 @@ DpctGlobalInfo::buildLaunchKernelInfo(const CallExpr *LaunchKernelCall) {
   return KernelInfo;
 }
 
-void DpctGlobalInfo::insertFFTPlanAPIInfo(SourceLocation SL,
-                                          FFTPlanAPIInfo Info) {
-  auto LocInfo = getLocInfo(SL);
-  auto FileInfo = insertFile(LocInfo.first);
-  auto &M = FileInfo->getFFTPlanAPIInfoMap();
-  if (M.find(LocInfo.second) == M.end()) {
-    Info.FilePath = LocInfo.first;
-    M.insert(std::make_pair(LocInfo.second, Info));
-  }
-}
-
-void DpctGlobalInfo::insertFFTExecAPIInfo(SourceLocation SL,
-                                          FFTExecAPIInfo Info) {
-  auto LocInfo = getLocInfo(SL);
-  auto FileInfo = insertFile(LocInfo.first);
-  auto &M = FileInfo->getFFTExecAPIInfoMap();
-  if (M.find(LocInfo.second) == M.end()) {
-    Info.FilePath = LocInfo.first;
-    M.insert(std::make_pair(LocInfo.second, Info));
-  }
-}
-
 bool DpctFileInfo::isInAnalysisScope() { return DpctGlobalInfo::isInAnalysisScope(FilePath); }
+
 // TODO: implement one of this for each source language.
 bool DpctFileInfo::isInCudaPath() {
   return DpctGlobalInfo::isInCudaPath(FilePath);
@@ -407,6 +377,11 @@ void DpctFileInfo::buildUnionFindSetForUncalledFunc() {
 void DpctFileInfo::buildKernelInfo() {
   for (auto &Kernel : KernelMap)
     Kernel.second->buildInfo();
+  
+  for (auto &D : FuncMap){
+    if(auto I = D.second->getFuncInfo())
+      I->buildInfo();
+  }
 }
 void DpctFileInfo::postProcess() {
   if (!isInAnalysisScope())
@@ -502,20 +477,8 @@ void DpctFileInfo::buildReplacements() {
                                false, std::get<1>(AtomicInfo.second));
   }
 
-  for (auto &DescInfo : FFTDescriptorTypeMap) {
-    DescInfo.second.buildInfo(FilePath, DescInfo.first);
-  }
-
   for (auto &DescInfo : EventSyncTypeMap) {
     DescInfo.second.buildInfo(FilePath, DescInfo.first);
-  }
-
-  for (auto &PlanInfo : FFTPlanAPIInfoMap) {
-    PlanInfo.second.buildInfo();
-  }
-
-  for (auto &ExecInfo : FFTExecAPIInfoMap) {
-    ExecInfo.second.buildInfo();
   }
 
   const auto &TimeStubBounds = getTimeStubBounds();
@@ -614,7 +577,10 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
     case HT_Time:
       return insertHeader(HeaderType::HT_Time, LastIncludeOffset, "<time.h>");
     case HT_Dnnl:
-      return insertHeader(HeaderType::HT_Dnnl, LastIncludeOffset,
+      if (this != DpctGlobalInfo::getInstance().getMainFile().get())
+        return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+            HT_Dnnl);
+      return insertHeader(HeaderType::HT_Dnnl, FirstIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
                               "/dnnl_utils.hpp>");
     case HT_MKL_BLAS_Solver:
@@ -640,8 +606,9 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
       return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
                           "<oneapi/mkl.hpp>");
     case HT_MKL_FFT:
-      return insertHeader(HeaderType::HT_MKL_FFT, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>");
+      return insertHeader(
+          HeaderType::HT_MKL_FFT, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          "<" + getCustomMainHelperFileName() + "/fft_utils.hpp>");
     case HT_Numeric:
       return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
                           "<numeric>");
@@ -793,14 +760,17 @@ int KernelCallExpr::calculateOriginArgsSize() const {
 }
 
 template <class ArgsRange>
-void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
+void KernelCallExpr::buildExecutionConfig(
+    const ArgsRange &ConfigArgs, const CallExpr *KernelCall) {
   bool NeedTypeCast = true;
   int Idx = 0;
+  auto KCallSpellingRange = getTheLastCompleteImmediateRange(
+      KernelCall->getBeginLoc(), KernelCall->getEndLoc());
   for (auto Arg : ConfigArgs) {
     KernelConfigAnalysis A(IsInMacroDefine);
+    A.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
     A.analyze(Arg, Idx, Idx < 2);
     ExecutionConfig.Config[Idx] = A.getReplacedString();
-
     if (Idx == 0) {
       ExecutionConfig.GroupDirectRef = A.isDirectRef();
     } else if (Idx == 1) {
@@ -868,7 +838,7 @@ void KernelCallExpr::buildExecutionConfig(const ArgsRange &ConfigArgs) {
 
 void KernelCallExpr::buildKernelInfo(const CUDAKernelCallExpr *KernelCall) {
   buildLocationInfo(KernelCall);
-  buildExecutionConfig(KernelCall->getConfig()->arguments());
+  buildExecutionConfig(KernelCall->getConfig()->arguments(), KernelCall);
   buildNeedBracesInfo(KernelCall);
 }
 
@@ -1387,7 +1357,7 @@ std::shared_ptr<KernelCallExpr> KernelCallExpr::buildFromCudaLaunchKernel(
     Kernel->buildCalleeInfo(Callee);
     Kernel->buildLocationInfo(CE);
     Kernel->buildExecutionConfig(ArrayRef<const Expr *>{
-        CE->getArg(1), CE->getArg(2), CE->getArg(4), CE->getArg(5)});
+        CE->getArg(1), CE->getArg(2), CE->getArg(4), CE->getArg(5)}, CE);
     Kernel->buildNeedBracesInfo(CE);
     auto FD =
         dyn_cast_or_null<FunctionDecl>(Callee->getReferencedDeclOfCallee());
@@ -2325,6 +2295,8 @@ void DeviceFunctionInfo::mergeCalledTexObj(
     const std::vector<std::shared_ptr<TextureObjectInfo>> &TexObjList) {
   for (auto &Obj : TexObjList) {
     if (!Obj)
+      continue;
+    if(Obj->getParamIdx() >= TextureObjectList.size())
       continue;
     if (auto &Parm = TextureObjectList[Obj->getParamIdx()]) {
       Parm->merge(Obj);

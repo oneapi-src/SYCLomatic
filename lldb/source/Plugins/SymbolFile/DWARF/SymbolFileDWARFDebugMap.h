@@ -22,7 +22,7 @@ class SymbolFileDWARF;
 class DWARFDebugAranges;
 class DWARFDeclContext;
 
-class SymbolFileDWARFDebugMap : public lldb_private::SymbolFile {
+class SymbolFileDWARFDebugMap : public lldb_private::SymbolFileCommon {
   /// LLVM RTTI support.
   static char ID;
 
@@ -30,7 +30,7 @@ public:
   /// LLVM RTTI support.
   /// \{
   bool isA(const void *ClassID) const override {
-    return ClassID == &ID || SymbolFile::isA(ClassID);
+    return ClassID == &ID || SymbolFileCommon::isA(ClassID);
   }
   static bool classof(const SymbolFile *obj) { return obj->isA(&ID); }
   /// \}
@@ -109,9 +109,8 @@ public:
   void FindGlobalVariables(const lldb_private::RegularExpression &regex,
                            uint32_t max_matches,
                            lldb_private::VariableList &variables) override;
-  void FindFunctions(lldb_private::ConstString name,
+  void FindFunctions(const lldb_private::Module::LookupInfo &lookup_info,
                      const lldb_private::CompilerDeclContext &parent_decl_ctx,
-                     lldb::FunctionNameType name_type_mask,
                      bool include_inlines,
                      lldb_private::SymbolContextList &sc_list) override;
   void FindFunctions(const lldb_private::RegularExpression &regex,

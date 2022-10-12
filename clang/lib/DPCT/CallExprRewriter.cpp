@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "CallExprRewriter.h"
+#include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "BLASAPIMigration.h"
 #include "ExprAnalysis.h"
@@ -401,14 +402,14 @@ std::string MathFuncNameRewriter::getNewFuncName() {
         // 2) using int_t = int;
         const TypedefType *TT0 = nullptr, *TT1 = nullptr;
         if (!BT0) {
-          TT0 = dyn_cast<TypedefType>(Arg0->getType());
+          TT0 = Arg0->getType()->getAs<TypedefType>();
           if (TT0)
-            BT0 = dyn_cast<BuiltinType>(TT0->desugar().getTypePtr());
+            BT0 = dyn_cast<BuiltinType>(TT0->getCanonicalTypeUnqualified().getTypePtr());
         }
         if (!BT1) {
-          TT1 = dyn_cast<TypedefType>(Arg1->getType());
+          TT1 = Arg1->getType()->getAs<TypedefType>();
           if (TT1)
-            BT1 = dyn_cast<BuiltinType>(TT1->desugar().getTypePtr());
+            BT1 = dyn_cast<BuiltinType>(TT1->getCanonicalTypeUnqualified().getTypePtr());
         }
         if (BT0 && BT1) {
           auto K0 = BT0->getKind();
@@ -460,7 +461,8 @@ std::string MathFuncNameRewriter::getNewFuncName() {
               // otherwise, do not migrate them. Overflow is not considered.
               const BuiltinType *UnsignedType;
               const TypedefType *UnsignedTypedefType;
-              BuiltinType::Kind UnsignedKind, SignedKind;
+              BuiltinType::Kind UnsignedKind = BuiltinType::Kind::Void;
+              BuiltinType::Kind SignedKind = BuiltinType::Kind::Void;
               if (BT0->isSignedInteger() && BT1->isUnsignedInteger()) {
                 UnsignedType = BT1;
                 UnsignedTypedefType = TT1;
@@ -716,12 +718,18 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       !ContextFD->hasAttr<CUDAGlobalAttr>())
     return Base::rewrite();
 
-  // Do need to report warnings for pow or funnelshift migrations
-  if (SourceCalleeName != "pow" && SourceCalleeName != "powf" &&
-      SourceCalleeName != "__powf" && SourceCalleeName != "__funnelshift_l" &&
-      SourceCalleeName != "__funnelshift_lc" &&
-      SourceCalleeName != "__funnelshift_r" &&
-      SourceCalleeName != "__funnelshift_rc")
+  // Do not need to report warnings for pow, funnelshift, or drcp migrations
+  if (SourceCalleeName != "pow"                     && 
+      SourceCalleeName != "powf"                    &&
+      SourceCalleeName != "__powf"                  && 
+      SourceCalleeName != "__funnelshift_l"         &&
+      SourceCalleeName != "__funnelshift_lc"        &&
+      SourceCalleeName != "__funnelshift_r"         &&
+      SourceCalleeName != "__funnelshift_rc"        &&
+      SourceCalleeName != "__drcp_rd"               &&
+      SourceCalleeName != "__drcp_rn"               &&
+      SourceCalleeName != "__drcp_ru"               &&
+      SourceCalleeName != "__drcp_rz")
     report(Diagnostics::MATH_EMULATION, false,
            MapNames::ITFName.at(SourceCalleeName.str()), TargetCalleeName);
 
@@ -1053,20 +1061,27 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     OS << TargetCalleeName << "(" << MigratedArg0 << ", " << getMigratedArg(1)
        << ")"
        << "+" << getMigratedArg(2);
-  } else if (FuncName == "__drcp_rd" || FuncName == "__drcp_rn" ||
-             FuncName == "__drcp_ru" || FuncName == "__drcp_rz") {
+  } else if (FuncName == "__drcp_rd" || 
+             FuncName == "__drcp_rn" ||
+             FuncName == "__drcp_ru" || 
+             FuncName == "__drcp_rz") {
     auto Arg0 = Call->getArg(0);
-    auto T0 = Arg0->IgnoreCasts()->getType().getAsString(
-        PrintingPolicy(LangOptions()));
+    auto T0 = Arg0->IgnoreCasts()->getType();
     auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
     report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, false);
-    OS << TargetCalleeName;
-    if (T0 != "float") {
+    if (T0->isSpecificBuiltinType(BuiltinType::Double)) {
+      if (DRE0)
+        OS << "(1.0/" << MigratedArg0 << ")";
+      else
+        OS << "(1.0/(" << MigratedArg0 << "))";
+    } else if (T0->isSpecificBuiltinType(BuiltinType::Float)) {
+      OS << TargetCalleeName;
       if (DRE0)
         OS << "((float)" << MigratedArg0 << ")";
       else
         OS << "((float)(" << MigratedArg0 << "))";
     } else {
+      OS << TargetCalleeName;
       OS << "(" << MigratedArg0 << ")";
     }
   } else if (FuncName == "norm") {
@@ -1404,16 +1419,26 @@ makeExtendStr(unsigned Idx, const std::string Suffix) {
   };
 }
 
+namespace {
+std::string registerAndGetQueueStr(const CallExpr *C, std::string Prefix) {
+  int Index = getPlaceholderIdx(C);
+  if (Index == 0) {
+    Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+  }
+  buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
+  return Prefix + "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+}
+}
+
 std::function<std::string(const CallExpr *)> makeQueueStr() {
   return [=](const CallExpr *C) -> std::string {
-    int Index = getPlaceholderIdx(C);
-    if (Index == 0) {
-      Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-    }
+    return registerAndGetQueueStr(C, "");
+  };
+}
 
-    buildTempVariableMap(Index, C, HelperFuncType::HFT_DefaultQueue);
-    std::string S = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
-    return S;
+std::function<std::string(const CallExpr *)> makeQueuePtrStr() {
+  return [=](const CallExpr *C) -> std::string {
+    return registerAndGetQueueStr(C, "&");
   };
 }
 
@@ -1501,6 +1526,20 @@ makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
   return MemberCallPrinterCreator<BaseT, CallArgsT...>(BaseFunc, IsArrow,
                                                        Member, Args...);
 }
+
+template <class BaseT, class MemberT>
+std::function<
+    MemberCallPrinter<BaseT, MemberT>(const CallExpr *)>
+makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
+                      bool IsArrow,
+                      std::function<MemberT(const CallExpr *)> Member) {
+
+  return PrinterCreator<MemberCallPrinter<BaseT, MemberT>,
+    std::function<BaseT(const CallExpr *)>, bool,
+    std::function<MemberT(const CallExpr *)>>(BaseFunc, IsArrow,
+                                              Member);
+}
+
 
 template <class... StmtT>
 std::function<
@@ -1631,6 +1670,36 @@ makeCallExprCreator(std::string Callee,
                                                                        Args...);
 }
 
+std::function<std::string(const CallExpr *)>
+makeFuncNameFromDevAttrCreator(unsigned idx) {
+  return [=](const CallExpr *CE) -> std::string {
+    auto Arg = CE->getArg(idx)->IgnoreImplicitAsWritten();
+    if (auto DRE = dyn_cast<DeclRefExpr>(Arg)) {
+      auto ArgName = DRE->getNameInfo().getAsString();
+      auto Search = EnumConstantRule::EnumNamesMap.find(ArgName);
+      if (Search != EnumConstantRule::EnumNamesMap.end()) {
+        requestHelperFeatureForEnumNames(ArgName, CE);
+        return Search->second->NewName;
+      }
+    }
+    return "";
+  };
+}
+std::function<std::string(const CallExpr *)> getWorkGroupDim(unsigned index) {
+  return [=](const CallExpr * C) {
+    auto Arg = dyn_cast<DeclRefExpr>(C->getArg(index)->
+                IgnoreImplicitAsWritten())->getNameInfo().getAsString();
+    if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X")
+      return "0";
+    else if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y") {
+      return "1";
+    } else if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z") {
+      return "2";
+    }
+    return "";
+  };
+}
+
 std::function<std::string(const CallExpr *)> makeLiteral(std::string Str) {
   return [=](const CallExpr *) { return Str; };
 }
@@ -1703,6 +1772,13 @@ std::function<TypenameExprPrinter<SubExprT>(const CallExpr *)>
 makeTypenameExprCreator(
                    std::function<SubExprT(const CallExpr *)> SubExpr) {
   return PrinterCreator<TypenameExprPrinter<SubExprT>,
+                        std::function<SubExprT(const CallExpr *)>>(SubExpr);
+}
+
+template <class SubExprT>
+std::function<ZeroInitializerPrinter<SubExprT>(const CallExpr *)>
+makeZeroInitializerCreator(std::function<SubExprT(const CallExpr *)> SubExpr) {
+  return PrinterCreator<ZeroInitializerPrinter<SubExprT>,
                         std::function<SubExprT(const CallExpr *)>>(SubExpr);
 }
 
@@ -1921,6 +1997,16 @@ std::function<bool(const CallExpr *C)> checkIsCallExprOnly() {
     if (parentStmt != nullptr && (dyn_cast<CompoundStmt>(parentStmt) ||
                           dyn_cast<ExprWithCleanups>(parentStmt)))
       return true;
+    return false;
+    };
+}
+
+std::function<bool(const CallExpr *C)> checkIsGetWorkGroupDim(size_t index) {
+  return [=](const CallExpr *C) -> bool {
+    if (getStmtSpelling(C->getArg(index)).
+          find("CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_") != std::string::npos) {
+      return true;
+    }
     return false;
     };
 }
@@ -2330,6 +2416,24 @@ class TextureReadRewriterFactory : public CallExprRewriterFactoryBase {
   std::string Source;
   int TexType;
 
+  template <class BaseT>
+  std::shared_ptr<CallExprRewriter>
+  createRewriter(const CallExpr *C, bool RetAssign, BaseT Base) const {
+    const static std::string MemberName = "read";
+    using ReaderPrinter = decltype(makeMemberCallCreator(
+        std::declval<std::function<BaseT(const CallExpr *)>>(), false,
+        MemberName, makeCallArgCreator(Idx)...)(C));
+    if (RetAssign) {
+      return std::make_shared<PrinterRewriter<
+          BinaryOperatorPrinter<BO_Assign, DerefExpr, ReaderPrinter>>>(
+          C, Source, DerefExpr::create(C->getArg(0), C),
+          ReaderPrinter(std::move(Base), false, MemberName,
+                        C->getArg(Idx + 1)...));
+    }
+    return std::make_shared<PrinterRewriter<ReaderPrinter>>(
+        C, Source, Base, false, MemberName, C->getArg(Idx)...);
+  }
+
 public:
   TextureReadRewriterFactory(std::string Name, int Tex)
       : Source(std::move(Name)), TexType(Tex) {}
@@ -2363,19 +2467,7 @@ public:
           MemberInfo->setType(DpctGlobalInfo::getUnqualifiedTypeName(TargetType),
             TexType);
           SourceName = MemberInfo->getName();
-          if (RetAssign) {
-            return creatBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(
-                       Source, makeDerefExprCreator(0),
-                       makeMemberCallCreator(makeLiteral(SourceName.str()),
-                                             false, "read",
-                                             makeCallArgCreator(Idx + 1)...))
-                ->create(Call);
-          } else {
-            return createMemberCallExprRewriterFactory(
-                       Source, makeLiteral(SourceName.str()), false, "read",
-                       makeCallArgCreator(Idx)...)
-                ->create(Call);
-          }
+          return createRewriter(Call, RetAssign, SourceName);
         }
       } else if (auto DRE = dyn_cast<DeclRefExpr>(SourceExpr)) {
         auto TexInfo = CallInfo->addTextureObjectArg(SourceIdx, DRE, false);
@@ -2385,21 +2477,8 @@ public:
         }
       }
     }
-    
-    if (RetAssign) {
-      static std::shared_ptr<CallExprRewriterFactoryBase> Factory =
-          creatBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(
-              Source, makeDerefExprCreator(0),
-              makeMemberCallCreator(makeCallArgCreator(1), false, "read",
-                                    makeCallArgCreator(Idx + 1)...));
-      return Factory->create(Call);
-    } else {
-      static std::shared_ptr<CallExprRewriterFactoryBase> Factory =
-          createMemberCallExprRewriterFactory(Source, makeCallArgCreator(0),
-                                              false, "read",
-                                              makeCallArgCreator(Idx)...);
-      return Factory->create(Call);
-    }
+
+    return createRewriter(Call, RetAssign, Call->getArg(RetAssign & 0x01));
   }
 };
 
@@ -2615,7 +2694,7 @@ template <class F, class S> class CheckOr {
   S Sec;
 
 public:
-  CheckOr(F Fir, S Sec) : Fir(Fir), Sec(Sec) {}
+  CheckOr(const F &Fir, const S &Sec) : Fir(Fir), Sec(Sec) {}
   bool operator()(const CallExpr *C) { return Fir(C) || Sec(C); }
 };
 
@@ -2623,7 +2702,7 @@ template <class F, class S> CheckAnd<F, S> makeCheckAnd(F Fir, S Sec) {
   return CheckAnd<F, S>(Fir, Sec);
 }
 
-template <class F, class S> CheckOr<F, S> makeCheckOr(F Fir, S Sec) {
+template <class F, class S> CheckOr<F, S> makeCheckOr(const F &Fir, const S &Sec) {
   return CheckOr<F, S>(Fir, Sec);
 }
 
@@ -2791,6 +2870,7 @@ std::function<bool(const CallExpr *C)> hasManagedAttr(int Idx) {
   makeBLASEnumCallArgCreator(x, BLAS_ENUM_TYPE)
 #define EXTENDSTR(idx, str) makeExtendStr(idx, str)
 #define QUEUESTR makeQueueStr()
+#define QUEUEPTRSTR makeQueuePtrStr()
 #define BO(Op, L, R) makeBinaryOperatorCreator<Op>(L, R)
 #define MEMBER_CALL(...) makeMemberCallCreator(__VA_ARGS__)
 #define MEMBER_EXPR(...) makeMemberExprCreator(__VA_ARGS__)
@@ -2807,6 +2887,7 @@ std::function<bool(const CallExpr *C)> hasManagedAttr(int Idx) {
                                         DOES_FIRST_LEVEL_POINTER_NEED_CONST)
 #define NEW(...) makeNewExprCreator(__VA_ARGS__)
 #define TYPENAME(SUBEXPR) makeTypenameExprCreator(SUBEXPR)
+#define ZERO_INITIALIZER(SUBEXPR) makeZeroInitializerCreator(SUBEXPR)
 #define SUBGROUP                                                               \
   std::function<SubGroupPrinter(const CallExpr *)>(SubGroupPrinter::create)
 #define NDITEM std::function<ItemPrinter(const CallExpr *)>(ItemPrinter::create)

@@ -1,0 +1,11 @@
+// CHECK: #include <sycl/sycl.hpp>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
+// CHECK-NEXT: #include "test.cuh"
+// CHECK-NEXT: #ifdef AAA
+// CHECK-NEXT: dpct::constant_memory<const float, 0> bbb(1.0);
+// CHECK-NEXT: #else
+// CHECK-NEXT: dpct::constant_memory<const float, 0> ccc(1.0);
+// CHECK-NEXT: #endif
+// CHECK-NEXT: int main() {
+// CHECK-NEXT:   return 0;
+// CHECK-NEXT: }
