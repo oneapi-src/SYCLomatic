@@ -211,9 +211,8 @@ public:
       typename std::conditional<Memory == constant, const T, T>::type;
   using value_t = typename std::remove_cv<T>::type;
   template <size_t Dimension = 1>
-  using accessor_t = std::conditional<
-      Memory == local,
-      sycl::local_accessor<value_t, Dimension>,
+  using accessor_t = typename std::conditional<
+      Memory == local, sycl::local_accessor<value_t, Dimension>,
       sycl::accessor<T, Dimension, mode, target>>::type;
   using pointer_t = T *;
 };
