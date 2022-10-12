@@ -989,7 +989,7 @@ private:
   mutable std::mutex m_mutex;
   dev_mgr() {
     sycl::device default_device =
-        sycl::device(sycl::default_selector{});
+        sycl::device(sycl::default_selector_v);
     _devs.push_back(std::make_shared<device_ext>(default_device));
 
     std::vector<sycl::device> sycl_all_devs =

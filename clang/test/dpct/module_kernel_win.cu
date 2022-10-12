@@ -31,7 +31,7 @@ __global__ void foo(float* k, float* y);
 //CHECK-NEXT: }
 //CHECK-NEXT: queue.submit(
 //CHECK-NEXT:   [&](sycl::handler &cgh) {
-//CHECK-NEXT:     sycl::accessor<uint8_t, 1, sycl::access_mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(localMemSize), cgh);
+//CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(localMemSize), cgh);
 //CHECK:     cgh.parallel_for(
 //CHECK-NEXT: nr,
 //CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) {
@@ -50,7 +50,7 @@ __global__ void foo(float* k, float* y){
 //CHECK-NEXT:     float *a, *b;
 //CHECK-NEXT:     dpct::get_default_queue().submit(
 //CHECK-NEXT:       [&](sycl::handler &cgh) {
-//CHECK-NEXT:         sycl::accessor<uint8_t, 1, sycl::access_mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(0), cgh);
+//CHECK-NEXT:         sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(0), cgh);
 
 //CHECK:         cgh.parallel_for(
 //CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)), 
