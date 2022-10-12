@@ -141,11 +141,12 @@ public:
   /// Getting element num from a ND memory.
   /// \return The element number.
   size_t get_element_num() const {
-    if (_desc.get_dims().empty()) {
+    auto dims = _desc.get_dims();
+    if (dims.empty()) {
       return 0;
     }
     size_t result = 1;
-    for (auto &dim : _desc.get_dims()) {
+    for (auto &dim : dims) {
       result *= dim;
     }
     return result;
@@ -385,7 +386,7 @@ public:
   /// \param [out] out_w Width of images.
   void get_forward_output_dim(const memory_desc_ext &desc, int *out_n,
                               int *out_c, int *out_h, int *out_w) const {
-    auto dims = desc.get_desc().get_dims();
+    auto dims = desc.get_dims();
     *out_n = dims[0];
     *out_c = dims[1];
     *out_h = 1 + (dims[2] + 2 * _padding[0] - _kernel[0]) / _stride[0];
@@ -400,7 +401,7 @@ public:
   void get_forward_output_dim(const memory_desc_ext &desc, int ndims,
                               int out_dims[]) const {
     assert(ndims >= 4 && "ndims is at least 4.");
-    auto dims = desc.get_desc().get_dims();
+    auto dims = desc.get_dims();
     out_dims[0] = dims[0];
     out_dims[1] = dims[1];
     for (int i = 2; i < ndims; i++) {
@@ -533,8 +534,8 @@ public:
   void get_forward_output_dim(const memory_desc_ext &desc,
                               const memory_desc_ext &weight_desc, int *out_n,
                               int *out_c, int *out_h, int *out_w) const {
-    auto dims = desc.get_desc().get_dims();
-    auto weight_dims = weight_desc.get_desc().get_dims();
+    auto dims = desc.get_dims();
+    auto weight_dims = weight_desc.get_dims();
     *out_n = dims[0];
     *out_c = weight_dims[0];
     *out_h = 1 + (dims[2] + 2 * _paddings[0] -
@@ -555,8 +556,8 @@ public:
                               const memory_desc_ext &weight_desc, int ndims,
                               int out_dims[]) const {
     assert(ndims >= 4 && "ndims is at least 4.");
-    auto dims = desc.get_desc().get_dims();
-    auto weight_dims = weight_desc.get_desc().get_dims();
+    auto dims = desc.get_dims();
+    auto weight_dims = weight_desc.get_dims();
     out_dims[0] = dims[0];
     out_dims[1] = weight_dims[1];
     for (int i = 2; i < ndims; i++) {
@@ -625,26 +626,14 @@ class engine_ext {
   template <typename primitive_type, typename... args_type>
   primitive_type *create_forward_primitive(args_type &&...args);
 
-  template <bool use_attr, typename primitive_type, typename attr_type,
-            typename... args_type>
-  primitive_type *create_forward_primitive(attr_type &&attr,
-                                                      args_type &&...args);
-
   template <typename primitive_type, typename... args_type>
   typename primitive_type::primitive_desc
   create_forward_primitive_desc(args_type &&...args);
 
-  template <bool use_attr, typename primitive_type, typename attr_type,
-            typename... args_type>
-  typename primitive_type::primitive_desc
-  create_forward_primitive_desc(attr_type &&attr,
-                                            args_type &&...args);
-
-  template <typename primitive_type, typename forward_primitive_type,
-            typename... args_type>
+  template <typename primitive_type, typename... args_type>
   primitive_type *
-  create_backward_primitive(forward_primitive_type &&fp,
-                                        args_type &&...args);
+  create_backward_primitive(args_type &&...args);
+
   template <typename primitive_type, typename args_type>
   void async_free(sycl::queue *q, sycl::event e, primitive_type *primitive,
                   args_type *args, std::vector<void *> device_ptrs = {}) {
@@ -1815,7 +1804,7 @@ engine_ext::get_group_weight_desc(int group_count,
                              "blocked weight memory unimplemented.");
   }
   std::vector<int64_t> new_size;
-  auto old_size = weight_desc.get_desc().get_dims();
+  auto old_size = weight_desc.get_dims();
   new_size.push_back(group_count);
   new_size.push_back(old_size[0] / group_count);
   for (int index = 1; index < old_size.size(); index++) {
@@ -1847,13 +1836,14 @@ engine_ext::get_group_weight_desc(int group_count,
 ::dnnl::memory::desc engine_ext::compress_spatial_dimensions_to_channel(
     const ::dnnl::memory::desc &desc) {
   int ndims = desc.get_ndims();
+  auto dims = desc.get_dims();
   auto inner_blks = desc.get_inner_blks();
   assert(ndims >= 4 && "ndims is at least 4.");
   std::vector<int64_t> compressed_dims(ndims);
-  compressed_dims[0] = desc.get_dims()[0];
-  compressed_dims[1] = desc.get_dims()[1];
+  compressed_dims[0] = dims[0];
+  compressed_dims[1] = dims[1];
   for (int index = 2; index < ndims; index++) {
-    compressed_dims[1] = compressed_dims[1] * desc.get_dims()[index];
+    compressed_dims[1] = compressed_dims[1] * dims[index];
     compressed_dims[index] = 1;
   }
   if (!inner_blks.empty() && inner_blks[0] == 4) {
@@ -1873,13 +1863,14 @@ engine_ext::get_group_weight_desc(int group_count,
 engine_ext::get_bn_scale_bias_mean_var_desc(const ::dnnl::memory::desc &desc,
                                             batch_normalization_mode mode) {
   int ndims = desc.get_ndims();
+  auto dims = desc.get_dims();
   assert(ndims >= 4 && "ndims is at least 4.");
   int channel_number = 1;
   if (mode == batch_normalization_mode::spatial) {
-    channel_number = desc.get_dims()[1];
+    channel_number = dims[1];
   } else {
     for (int index = 1; index < ndims; index++) {
-      channel_number = channel_number * desc.get_dims()[index];
+      channel_number = channel_number * dims[index];
     }
   }
   return ::dnnl::memory::desc({channel_number}, desc.get_data_type(),
@@ -1950,7 +1941,7 @@ void engine_ext::derive_batch_normalization_memory_desc(
     throw std::runtime_error("derive_batch_normalization_memory_desc: only 4d "
                              "and 5d memory descriptor supported.");
   }
-  std::vector<int64_t> dims = src_desc.get_desc().get_dims();
+  std::vector<int64_t> dims = src_desc.get_dims();
   dims[0] = 1;
   if (mode == batch_normalization_mode::spatial) {
     dims[2] = 1;
@@ -2121,10 +2112,10 @@ sycl::event engine_ext::batch_normalization_backward_internal(
               ::dnnl::normalization_flags::use_shift);
   auto primitive =
       create_backward_primitive<::dnnl::batch_normalization_backward>(
-          forward_primitive, ::dnnl::prop_kind::backward, help_diff_src_desc,
+          ::dnnl::prop_kind::backward, help_diff_src_desc,
           help_src_desc, epsilon,
           ::dnnl::normalization_flags::use_scale |
-              ::dnnl::normalization_flags::use_shift);
+              ::dnnl::normalization_flags::use_shift, forward_primitive);
 
   void *dst_cache = nullptr;
   if (!saved_mean && !saved_var) {
@@ -2293,7 +2284,7 @@ sycl::event engine_ext::batch_normalization_forward_internal(
 
   if (!is_infer && running_var) {
     auto src_ndim = src_desc.get_desc().get_ndims();
-    auto src_dims = src_desc.get_desc().get_dims();
+    auto src_dims = src_desc.get_dims();
     int element_num = src_dims[0];
     if (mode == batch_normalization_mode::spatial) {
       for (int index = 2; index < src_ndim; index++) {
@@ -2337,18 +2328,6 @@ primitive_type *engine_ext::create_forward_primitive(args_type &&...args) {
       std::forward<args_type>(args)...));
 }
 
-template <bool use_attr, typename primitive_type, typename attr_type,
-          typename... args_type>
-primitive_type *engine_ext::create_forward_primitive(attr_type &&attr,
-                                                    args_type &&...args) {
-  if constexpr (use_attr) {
-    return new primitive_type(create_forward_primitive_desc<true, primitive_type>(
-        attr, std::forward<args_type>(args)...));
-  }
-  return new primitive_type(create_forward_primitive_desc<primitive_type>(
-      std::forward<args_type>(args)...));
-}
-
 template <typename primitive_type, typename... args_type>
 typename primitive_type::primitive_desc
 engine_ext::create_forward_primitive_desc(args_type &&...args) {
@@ -2356,27 +2335,11 @@ engine_ext::create_forward_primitive_desc(args_type &&...args) {
       _eng, std::forward<args_type>(args)...);
 }
 
-template <bool use_attr, typename primitive_type, typename attr_type,
-          typename... args_type>
-typename primitive_type::primitive_desc
-engine_ext::create_forward_primitive_desc(attr_type &&attr,
-                                          args_type &&...args) {
-  if constexpr (use_attr) {
-    return typename primitive_type::primitive_desc(
-        _eng, std::forward<args_type>(args)..., attr);
-  }
-  return typename primitive_type::primitive_desc(
-      _eng, std::forward<args_type>(args)...);
-}
-
-template <typename primitive_type, typename forward_primitive_type,
-          typename... args_type>
+template <typename primitive_type, typename... args_type>
 primitive_type *
-engine_ext::create_backward_primitive(forward_primitive_type &&fp,
-                                      args_type &&...args) {
+engine_ext::create_backward_primitive(args_type &&...args) {
   return new primitive_type(typename primitive_type::primitive_desc(
-      _eng, std::forward<args_type>(args)...,
-      std::forward<forward_primitive_type>(fp)));
+      _eng, std::forward<args_type>(args)...));
 }
 
 void engine_ext::fill(const memory_desc_ext &src_desc, void *src,
@@ -2595,9 +2558,9 @@ sycl::event engine_ext::async_binary(binary_op op, float alpha_0,
   if (alpha_1 != 1.f) {
     attr.set_scales(DNNL_ARG_SRC_1, 0, {alpha_1});
   }
-  auto primitive = create_forward_primitive<true, ::dnnl::binary>(
-      attr, onednn_algorithm, src_desc_0.get_desc(), src_desc_1.get_desc(),
-      dst_desc.get_desc());
+  auto primitive = create_forward_primitive<::dnnl::binary>(
+      onednn_algorithm, src_desc_0.get_desc(), src_desc_1.get_desc(),
+      dst_desc.get_desc(), attr);
 
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_SRC_0, ::dnnl::memory(src_desc_0.get_desc(), _eng, src_0)},
@@ -2696,11 +2659,11 @@ sycl::event engine_ext::async_activation_backward(
     return sycl::event();
   }
   auto primitive = create_backward_primitive<::dnnl::eltwise_backward>(
+      desc.get_algorithm(), diff_src_desc.get_desc(), src_desc.get_desc(),
+      desc.get_alpha(), desc.get_beta(),
       create_forward_primitive_desc<::dnnl::eltwise_forward>(
           ::dnnl::prop_kind::forward, desc.get_algorithm(), src_desc.get_desc(),
-          desc.get_alpha(), desc.get_beta()),
-      desc.get_algorithm(), diff_src_desc.get_desc(), src_desc.get_desc(),
-      desc.get_alpha(), desc.get_beta());
+          desc.get_alpha(), desc.get_beta()));
 
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_DST, {::dnnl::memory(dst_desc.get_desc(), _eng, dst)}},
@@ -2756,13 +2719,13 @@ sycl::event engine_ext::async_pooling_backward(
   int pooling_dim = desc.get_stride().size();
   std::vector<int64_t> dilation(pooling_dim, 0);
   auto primitive = create_backward_primitive<::dnnl::pooling_backward>(
+      desc.get_algorithm(), diff_src_desc.get_desc(), diff_dst_desc.get_desc(),
+      desc.get_stride(), desc.get_kernel(), dilation, desc.get_padding(),
+      desc.get_padding(),
       create_forward_primitive_desc<::dnnl::pooling_forward>(
           ::dnnl::prop_kind::forward_training, desc.get_algorithm(),
           src_desc.get_desc(), dst_desc.get_desc(), desc.get_stride(),
-          desc.get_kernel(), dilation, desc.get_padding(), desc.get_padding()),
-      desc.get_algorithm(), diff_src_desc.get_desc(), diff_dst_desc.get_desc(),
-      desc.get_stride(), desc.get_kernel(), dilation, desc.get_padding(),
-      desc.get_padding());
+          desc.get_kernel(), dilation, desc.get_padding(), desc.get_padding()));
 
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_DST, {::dnnl::memory(dst_desc.get_desc(), _eng, dst)}},
@@ -2843,10 +2806,10 @@ sycl::event engine_ext::async_softmax_backward(
   }
 
   auto primitive = create_backward_primitive<::dnnl::softmax_backward>(
+      softmax_alg, help_diff_src_desc, help_diff_dst_desc, help_dst_desc, 1,
       create_forward_primitive_desc<::dnnl::softmax_forward>(
-          ::dnnl::prop_kind::forward, softmax_alg, help_diff_src_desc, 
-          help_dst_desc, 1),
-      softmax_alg, help_diff_src_desc, help_diff_dst_desc, help_dst_desc, 1);
+          ::dnnl::prop_kind::forward, softmax_alg, help_diff_src_desc,
+          help_dst_desc, 1));
   return execute_primitive(primitive, execution_args,
                            {{alpha, beta, DNNL_ARG_DIFF_SRC,
                              memory_desc_ext(help_diff_src_desc), diff_src}});
@@ -2892,14 +2855,14 @@ engine_ext::async_lrn_backward(lrn_desc &desc, float alpha,
     return sycl::event();
   }
   auto primitive = create_backward_primitive<::dnnl::lrn_backward>(
+      ::dnnl::algorithm::lrn_across_channels, src_desc.get_desc(),
+      diff_src_desc.get_desc(), desc.get_local_size(), desc.get_alpha(),
+      desc.get_beta(), desc.get_k(),
       create_forward_primitive_desc<::dnnl::lrn_forward>(
           ::dnnl::prop_kind::forward_training,
           ::dnnl::algorithm::lrn_across_channels, src_desc.get_desc(),
           desc.get_local_size(), desc.get_alpha(), desc.get_beta(),
-          desc.get_k()),
-      ::dnnl::algorithm::lrn_across_channels, src_desc.get_desc(),
-      diff_src_desc.get_desc(), desc.get_local_size(), desc.get_alpha(),
-      desc.get_beta(), desc.get_k());
+          desc.get_k()));
 
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_DST, {::dnnl::memory(dst_desc.get_desc(), _eng, dst)}},
@@ -3220,10 +3183,10 @@ sycl::event engine_ext::async_convolution_backward_data(
           desc.get_dilate(), desc.get_padding(), desc.get_padding());
 
   auto primitive = create_backward_primitive<::dnnl::convolution_backward_data>(
-      forward_primitive, ::dnnl::algorithm::convolution_auto,
-      diff_src_desc.get_desc(), help_weight_desc, diff_dst_desc.get_desc(),
-      desc.get_stride(), desc.get_dilate(), desc.get_padding(),
-      desc.get_padding());
+      ::dnnl::algorithm::convolution_auto, diff_src_desc.get_desc(),
+      help_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
+      desc.get_dilate(), desc.get_padding(), desc.get_padding(),
+      forward_primitive);
 
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_DIFF_DST,
@@ -3256,10 +3219,10 @@ sycl::event engine_ext::async_convolution_backward_weight(
 
   auto primitive =
       create_backward_primitive<::dnnl::convolution_backward_weights>(
-          forward_primitive, ::dnnl::algorithm::convolution_auto,
-          src_desc.get_desc(), help_diff_weight_desc, diff_dst_desc.get_desc(),
-          desc.get_stride(), desc.get_dilate(), desc.get_padding(),
-          desc.get_padding());
+          ::dnnl::algorithm::convolution_auto, src_desc.get_desc(),
+          help_diff_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
+          desc.get_dilate(), desc.get_padding(), desc.get_padding(),
+          forward_primitive);
 
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_SRC, {::dnnl::memory(src_desc.get_desc(), _eng, src)}},
