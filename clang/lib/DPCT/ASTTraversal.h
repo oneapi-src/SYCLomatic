@@ -596,16 +596,6 @@ private:
   static const char NamespaceName[];
 };
 
-/// Migration rule for vector type constructor and make_<vector type>()
-class VectorTypeCtorRule : public NamedMigrationRule<VectorTypeCtorRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-
-private:
-  std::string getReplaceTypeName(const std::string &TypeName);
-};
-
 class ReplaceDim3CtorRule : public NamedMigrationRule<ReplaceDim3CtorRule> {
   ReplaceDim3Ctor *getReplaceDim3Modification(
       const ast_matchers::MatchFinder::MatchResult &Result);
