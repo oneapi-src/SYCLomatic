@@ -9,6 +9,8 @@ struct a{
     cudaStream_t s9;
     // CHECK: dpct::queue_ptr s10 = &dpct::get_default_queue(), s11, s12{&dpct::get_default_queue()};
     cudaStream_t s10 = 0, s11, s12{0};
+    // CHECK: dpct::queue_ptr sarr[2] = {&dpct::get_default_queue(), &dpct::get_default_queue()};
+    cudaStream_t sarr[2] = {0, NULL};
 };
 
 void foo(){
@@ -39,6 +41,9 @@ int main(){
 
   // CHECK: dpct::queue_ptr s8 =  &q_ct1;
   cudaStream_t s8 = NULL;
+
+  // CHECK: dpct::queue_ptr sarr[2] = {&q_ct1, &q_ct1};
+  cudaStream_t sarr[2] = {0, NULL};
 
 }
 
