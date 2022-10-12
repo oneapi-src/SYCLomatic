@@ -1,6 +1,17 @@
 
 # SYCLomatic
 
+## Table of contents
+  - [Introduction](#Introduction)
+  - [Releases](#Releases)
+  - [Build from source code](#build-from-source-code)
+  - [Run SYCLomatic](#Run-SYCLomatic)
+  - [Known Issues and Limitations](#known-issues-and-limitations)
+  - [Useful Links](#Useful-links)
+  - [License](#License)
+  - [Contributing](#Contributing)
+
+
 ## Introduction
 
 SYCLomatic is a project to assist developers in migrating their existing code written in different programming languages to the SYCL\* C++ heterogeneous programming model. Final code editing and verification is a manual process done by the developer.
