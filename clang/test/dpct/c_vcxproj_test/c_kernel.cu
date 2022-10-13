@@ -1,8 +1,11 @@
 // UNSUPPORTED: -linux-
 // RUN: cat %S/proj_c.vcxproj > %T/proj_c.vcxproj
+// RUN: cat %S/CuTmp_1.cu > %T/CuTmp_1.cu
+// RUN: cat %S/c_kernel.cu > %T/c_kernel.cu
+// RUN: cat %S/readme_3.txt > %T/readme_3.txt
 // RUN: cd %T
 
-// RUN: dpct --format-range=none  --vcxprojfile=%T/proj_c.vcxproj  -in-root=%S -out-root=%T  %s %S/CuTmp_1.cu --cuda-include-path="%cuda-path/include"
+// RUN: dpct --format-range=none  --vcxprojfile=%T/proj_c.vcxproj  -in-root=%T -out-root=%T/out  %T/c_kernel.cu %T/CuTmp_1.cu --cuda-include-path="%cuda-path/include"
 
 // RUN: cat %S/CuTmp_1.cu > %T/CuTmp_1.dp.cpp
 // RUN: cat %S/check_compilation_ref.txt  >%T/check_compilation_db.txt
@@ -10,7 +13,7 @@
 // RUN: FileCheck --match-full-lines --input-file %T/check_compilation_db.txt %T/check_compilation_db.txt
 // RUN: FileCheck %S/CuTmp_1.cu --match-full-lines --input-file %T/CuTmp_1.dp.cpp
 
-// RUN: dpct -output-file=output-file.txt --format-range=none -in-root=%S -out-root=%T/2 -p %S --process-all --cuda-include-path="%cuda-path/include"
+// RUN: dpct -output-file=output-file.txt --format-range=none -in-root=%T -out-root=%T/2 -p %T --process-all --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/2/c_kernel.dp.cpp --match-full-lines %S/c_kernel.cu
 // RUN: FileCheck --match-full-lines --input-file %T/2/readme_3.txt %T/2/readme_3.txt
 
