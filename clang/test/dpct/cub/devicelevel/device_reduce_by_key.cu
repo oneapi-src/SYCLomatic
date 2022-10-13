@@ -16,29 +16,8 @@ struct CustomMin {
     }
 };
 
-
-// CHECK:void test_1() {
-// CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.default_queue();
-// CHECK-NEXT:  int n = 8;
-// CHECK-NEXT:  CustomMin op;
-// CHECK-NEXT:  int unq[n], agg[n], num;
-// CHECK-NEXT:  int key[] = {0, 2, 2, 9, 5, 5, 5, 8};
-// CHECK-NEXT:  int val[] = {0, 7, 1, 6, 2, 5, 3, 4};
-// CHECK-NEXT:  int *d_key, *d_val, *d_unq, *d_agg, *d_num;
-// CHECK-NEXT:  d_key = (int *)sycl::malloc_device(sizeof(key), q_ct1);
-// CHECK-NEXT:  d_val = (int *)sycl::malloc_device(sizeof(val), q_ct1);
-// CHECK-NEXT:  d_unq = (int *)sycl::malloc_device(sizeof(key), q_ct1);
-// CHECK-NEXT:  d_agg = (int *)sycl::malloc_device(sizeof(key), q_ct1);
-// CHECK-NEXT:  d_num = sycl::malloc_device<int>(1, q_ct1);
-// CHECK-NEXT:  q_ct1.memcpy(d_key, key, sizeof(key)){{.*}};
-// CHECK-NEXT:  q_ct1.memcpy(d_val, val, sizeof(val)){{.*}};
-// CHECK-NEXT:  DPCT1026{{.*}}
-// CHECK-NEXT:  q_ct1.fill(d_num, std::distance(d_unq, oneapi::dpl::reduce_by_key(oneapi::dpl::execution::device_policy(q_ct1), d_key, d_key + n, d_val, d_unq, d_agg, std::equal_to<typename std::iterator_traits<decltype(d_key)>::value_type>(), op).first), 1).wait();
-// CHECK-NEXT:  q_ct1.memcpy(&num, d_num, sizeof(int)){{.*}};
-// CHECK-NEXT:  q_ct1.memcpy(unq, d_unq, sizeof(int) * num){{.*}};
-// CHECK-NEXT:  q_ct1.memcpy(agg, d_agg, sizeof(int) * num){{.*}};
-// CHECK-NEXT:}
+// CHECK:  DPCT1026{{.*}}
+// CHECK:  q_ct1.fill(d_num, std::distance(d_unq, oneapi::dpl::reduce_by_key(oneapi::dpl::execution::device_policy(q_ct1), d_key, d_key + n, d_val, d_unq, d_agg, std::equal_to<typename std::iterator_traits<decltype(d_key)>::value_type>(), op).first), 1).wait();
 void test_1() {
   int n = 8;
   CustomMin op;
@@ -63,29 +42,9 @@ void test_1() {
   cudaMemcpy(agg, d_agg, sizeof(int) * num, cudaMemcpyDeviceToHost);
 }
 
-// CHECK:void test_2() {
-// CHECK-NEXT:  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK-NEXT:  sycl::queue &q_ct1 = dev_ct1.default_queue();
-// CHECK-NEXT:  int n = 8;
-// CHECK-NEXT:  CustomMin op;
-// CHECK-NEXT:  int unq[n], agg[n], num;
-// CHECK-NEXT:  int key[] = {0, 2, 2, 9, 5, 5, 5, 8};
-// CHECK-NEXT:  int val[] = {0, 7, 1, 6, 2, 5, 3, 4};
-// CHECK-NEXT:  int *d_key, *d_val, *d_unq, *d_agg, *d_num;
-// CHECK-NEXT:  d_key = (int *)sycl::malloc_device(sizeof(key), q_ct1);
-// CHECK-NEXT:  d_val = (int *)sycl::malloc_device(sizeof(val), q_ct1);
-// CHECK-NEXT:  d_unq = (int *)sycl::malloc_device(sizeof(key), q_ct1);
-// CHECK-NEXT:  d_agg = (int *)sycl::malloc_device(sizeof(key), q_ct1);
-// CHECK-NEXT:  d_num = sycl::malloc_device<int>(1, q_ct1);
-// CHECK-NEXT:  q_ct1.memcpy(d_key, key, sizeof(key)){{.*}};
-// CHECK-NEXT:  q_ct1.memcpy(d_val, val, sizeof(val)){{.*}};
-// CHECK-NEXT:  DPCT1026{{.*}}
-// CHECK-NEXT:  0, 0;
-// CHECK-NEXT:  q_ct1.fill(d_num, std::distance(d_unq, oneapi::dpl::reduce_by_key(oneapi::dpl::execution::device_policy(q_ct1), d_key, d_key + n, d_val, d_unq, d_agg, std::equal_to<typename std::iterator_traits<decltype(d_key)>::value_type>(), op).first), 1).wait();
-// CHECK-NEXT:  q_ct1.memcpy(&num, d_num, sizeof(int)){{.*}};
-// CHECK-NEXT:  q_ct1.memcpy(unq, d_unq, sizeof(int) * num){{.*}};
-// CHECK-NEXT:  q_ct1.memcpy(agg, d_agg, sizeof(int) * num){{.*}};
-// CHECK-NEXT:}
+// CHECK: PCT1026{{.*}}
+// CHECK: 0, 0;
+// CHECK: q_ct1.fill(d_num, std::distance(d_unq, oneapi::dpl::reduce_by_key(oneapi::dpl::execution::device_policy(q_ct1), d_key, d_key + n, d_val, d_unq, d_agg, std::equal_to<typename std::iterator_traits<decltype(d_key)>::value_type>(), op).first), 1).wait();
 void test_2() {
   int n = 8;
   CustomMin op;
@@ -105,6 +64,34 @@ void test_2() {
   cub::DeviceReduce::ReduceByKey(tmp, n_tmp, d_key, d_unq, d_val, d_agg, d_num, op, n), 0;
   cudaMalloc(&tmp, n_tmp);
   cub::DeviceReduce::ReduceByKey(tmp, n_tmp, d_key, d_unq, d_val, d_agg, d_num, op, n);
+  cudaMemcpy(&num, d_num, sizeof(int), cudaMemcpyDeviceToHost);
+  cudaMemcpy(unq, d_unq, sizeof(int) * num, cudaMemcpyDeviceToHost);
+  cudaMemcpy(agg, d_agg, sizeof(int) * num, cudaMemcpyDeviceToHost);
+}
+
+// CHECK: dpct::queue_ptr stream = (dpct::queue_ptr)(void *)(uintptr_t)5;
+// CHECK: DPCT1026{{.*}}
+// CHECK: stream->fill(d_num, std::distance(d_unq, oneapi::dpl::reduce_by_key(oneapi::dpl::execution::device_policy(*stream), d_key, d_key + n, d_val, d_unq, d_agg, std::equal_to<typename std::iterator_traits<decltype(d_key)>::value_type>(), op).first), 1).wait();
+void test_3() {
+  int n = 8;
+  CustomMin op;
+  int unq[n], agg[n], num;
+  int key[] = {0, 2, 2, 9, 5, 5, 5, 8};
+  int val[] = {0, 7, 1, 6, 2, 5, 3, 4};
+  int *d_key, *d_val, *d_unq, *d_agg, *d_num;
+  cudaMalloc(&d_key, sizeof(key));
+  cudaMalloc(&d_val, sizeof(val));
+  cudaMalloc(&d_unq, sizeof(key));
+  cudaMalloc(&d_agg, sizeof(key));
+  cudaMalloc(&d_num, sizeof(int));
+  cudaMemcpy(d_key, key, sizeof(key), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_val, val, sizeof(val), cudaMemcpyHostToDevice);
+  void *tmp = nullptr;
+  size_t n_tmp = 0;
+  cudaStream_t stream = (cudaStream_t)(void *)(uintptr_t)5;
+  cub::DeviceReduce::ReduceByKey(tmp, n_tmp, d_key, d_unq, d_val, d_agg, d_num, op, n, stream);
+  cudaMalloc(&tmp, n_tmp);
+  cub::DeviceReduce::ReduceByKey(tmp, n_tmp, d_key, d_unq, d_val, d_agg, d_num, op, n, stream);
   cudaMemcpy(&num, d_num, sizeof(int), cudaMemcpyDeviceToHost);
   cudaMemcpy(unq, d_unq, sizeof(int) * num, cudaMemcpyDeviceToHost);
   cudaMemcpy(agg, d_agg, sizeof(int) * num, cudaMemcpyDeviceToHost);

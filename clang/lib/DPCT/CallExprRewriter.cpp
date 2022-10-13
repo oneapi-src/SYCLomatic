@@ -2606,6 +2606,21 @@ public:
   bool operator()(const CallExpr *C) { return C->getNumArgs() == Count; }
 };
 
+class CheckArgCountGreaterThan {
+  unsigned Count;
+public:
+  CheckArgCountGreaterThan(unsigned I) : Count(I) {}
+  bool operator()(const CallExpr *C) {
+    unsigned DefaultArgNum = 0;
+    llvm::ArrayRef<const Expr *> Args(C->getArgs(), C->getNumArgs());
+    for (const Expr *Arg : Args) {
+      if (Arg->isDefaultArgument())
+        ++DefaultArgNum;
+    }
+    return C->getNumArgs() - DefaultArgNum > Count;
+  }
+};
+
 class CheckBaseType {
   std::string TypeName;
 
@@ -2661,6 +2676,16 @@ public:
       return true;
     }
     return false;
+  }
+};
+
+class CheckArgIsDefaultCudaStream {
+  unsigned ArgIndex;
+
+public:
+  CheckArgIsDefaultCudaStream(unsigned ArgIndex) : ArgIndex(ArgIndex) {}
+  bool operator()(const CallExpr *C) const {
+    return isDefaultStream(C->getArg(ArgIndex));
   }
 };
 
