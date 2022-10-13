@@ -130,9 +130,19 @@ namespace A2 {
   namespace B2 = A1::B1;
 }
 
+template<class T> void explicit_template(T a) {}
+
 void foo4(){
   // CHECK: A2B2();
   A2::B2::A1B1();
+  // CHECK: A2B2();
+  ::A2::B2::A1B1();
+
+  int a;
+  // CHECK: ET(a);
+  explicit_template<int>(a);
+  // CHECK: explicit_template(a);
+  explicit_template(a);
 }
 template<typename T>struct OldType{};
 // CHECK: void foo5() { NewType<int> *cu_st; }
