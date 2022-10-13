@@ -1708,8 +1708,8 @@ bool isContainMacro(const Expr *E) {
     }
     auto Tok = Lexer::findNextToken(
         Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
-    if (Tok.hasValue())
-      Loc = Tok.getValue().getLocation();
+    if (Tok.has_value())
+      Loc = Tok.value().getLocation();
     else
       return false;
   }

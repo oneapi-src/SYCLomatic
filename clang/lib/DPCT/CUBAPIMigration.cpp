@@ -349,8 +349,8 @@ void removeVarDecl(const VarDecl *VD) {
               TypeTemp = TypeTemp->getPointeeType();
             };
             auto tok = Lexer::findNextToken(End, SM, Context.getLangOpts());
-            if (tok.hasValue() && tok.getValue().is(tok::comma)) {
-              End = tok.getValue().getLocation();
+            if (tok.has_value() && tok.value().is(tok::comma)) {
+              End = tok.value().getLocation();
             } else {
               return;
             }
@@ -702,7 +702,7 @@ void CubRule::processDeviceLevelFuncCall(const CallExpr *CE,
   if (!HasFuncName)
     return;
   
-  std::string FuncName = HasFuncName.getValue();
+  std::string FuncName = HasFuncName.value();
 
    // Check if the RewriteMap has initialized
   if (!CallExprRewriterFactoryBase::RewriterMap)
