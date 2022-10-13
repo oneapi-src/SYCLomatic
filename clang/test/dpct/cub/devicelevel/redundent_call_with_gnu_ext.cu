@@ -10,27 +10,10 @@
 #include <iostream>
 #include <cassert>
 
-// CHECK:void test_1() {
-// CHECK:dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK:sycl::queue &q_ct1 = dev_ct1.default_queue();
-// CHECK:int n = 10;
-// CHECK:int *device_in = nullptr;
-// CHECK:int *device_out = nullptr;
-// CHECK:int host_in[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-// CHECK:int host_out[10];
-// CHECK:device_in = sycl::malloc_device<int>(n, q_ct1);
-// CHECK:device_out = sycl::malloc_device<int>(n, q_ct1);
-// CHECK:q_ct1.memcpy(device_in, (void *)host_in, sizeof(host_in)).wait();
 // CHECK:DPCT1026:{{.*}}
 // CHECK:DPCT1026:{{.*}}
 // CHECK:DPCT1026:{{.*}}
 // CHECK:DPCT1026:{{.*}}
-// CHECK:q_ct1.fill(device_out, oneapi::dpl::reduce(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, typename std::iterator_traits<decltype(device_out)>::value_type{}), 1).wait();
-// CHECK:q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out)).wait();
-// CHECK:sycl::free(device_in, q_ct1);
-// CHECK:sycl::free(device_out, q_ct1);
-// CHECK:assert(host_out[0] == 55);
-// CHECK:}
 void test_1() {
   int n = 10;
   int *device_in = nullptr;
