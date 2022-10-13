@@ -61,8 +61,8 @@ template <typename T> inline auto get_memory(T *x) {
   return x;
 #endif
 }
-}
 // DPCT_LABEL_END
+}
 // DPCT_LABEL_BEGIN|version_field|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
