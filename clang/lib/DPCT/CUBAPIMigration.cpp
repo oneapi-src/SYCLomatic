@@ -42,11 +42,9 @@ auto parentStmt = []() {
 };
 } // namespace
 
-/// Check if expression is one of NULL(0)/nullptr/__null
-static bool isNullPointerConstant(const Expr *E) {
-  if (!E)
-    return false;
-  return E->isNullPointerConstant(DpctGlobalInfo::getContext(),
+static bool isNullPointerConstant(const clang::Expr *E) {
+  assert(E && "Expr can not be nullptr");
+  return E->isNullPointerConstant(clang::dpct::DpctGlobalInfo::getContext(),
                                   Expr::NPC_ValueDependentIsNull) !=
          Expr::NPCK_NotNull;
 }
@@ -349,8 +347,8 @@ void removeVarDecl(const VarDecl *VD) {
               TypeTemp = TypeTemp->getPointeeType();
             };
             auto tok = Lexer::findNextToken(End, SM, Context.getLangOpts());
-            if (tok.hasValue() && tok.getValue().is(tok::comma)) {
-              End = tok.getValue().getLocation();
+            if (tok.has_value() && tok.value().is(tok::comma)) {
+              End = tok.value().getLocation();
             } else {
               return;
             }
@@ -702,7 +700,7 @@ void CubRule::processDeviceLevelFuncCall(const CallExpr *CE,
   if (!HasFuncName)
     return;
   
-  std::string FuncName = HasFuncName.getValue();
+  std::string FuncName = HasFuncName.value();
 
    // Check if the RewriteMap has initialized
   if (!CallExprRewriterFactoryBase::RewriterMap)

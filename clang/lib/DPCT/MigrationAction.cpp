@@ -38,7 +38,7 @@ void DpctConsumer::Initialize(ASTContext &Context) {
   assert(Path && "Can not find absolute path");
   DpctGlobalInfo::getInstance().setMainFile(
       Info->MainFile =
-          DpctGlobalInfo::getInstance().insertFile(Path.getValue()));
+          DpctGlobalInfo::getInstance().insertFile(Path.value()));
 }
 
 void DpctConsumer::HandleCXXExplicitFunctionInstantiation(
