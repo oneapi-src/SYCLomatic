@@ -666,31 +666,31 @@ public:
     if (_input_type == library_data_t::complex_float &&
         _output_type == library_data_t::complex_float) {
       auto data = dpct::detail::get_memory(reinterpret_cast<float *>(ptr));
-#if __INTEL_MKL_BUILD_DATE > 20220920
-      _desc_sc->set_workspace(data);
-#endif
+      if (_q->get_device().is_gpu()) {
+        _desc_sc->set_workspace(data);
+      }
     } else if (_input_type == library_data_t::complex_double &&
                _output_type == library_data_t::complex_double) {
       auto data = dpct::detail::get_memory(reinterpret_cast<double *>(ptr));
-#if __INTEL_MKL_BUILD_DATE > 20220920
-      _desc_dc->set_workspace(data);
-#endif
+      if (_q->get_device().is_gpu()) {
+        _desc_dc->set_workspace(data);
+      }
     } else if ((_input_type == library_data_t::real_float &&
                 _output_type == library_data_t::complex_float) ||
                (_input_type == library_data_t::complex_float &&
                 _output_type == library_data_t::real_float)) {
       auto data = dpct::detail::get_memory(reinterpret_cast<float *>(ptr));
-#if __INTEL_MKL_BUILD_DATE > 20220920
-      _desc_sr->set_workspace(data);
-#endif
+      if (_q->get_device().is_gpu()) {
+        _desc_sr->set_workspace(data);
+      }
     } else if ((_input_type == library_data_t::real_double &&
                 _output_type == library_data_t::complex_double) ||
                (_input_type == library_data_t::complex_double &&
                 _output_type == library_data_t::real_double)) {
       auto data = dpct::detail::get_memory(reinterpret_cast<double *>(ptr));
-#if __INTEL_MKL_BUILD_DATE > 20220920
-      _desc_dr->set_workspace(data);
-#endif
+      if (_q->get_device().is_gpu()) {
+        _desc_dr->set_workspace(data);
+      }
     } else {
       throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                             "invalid fft type");
@@ -759,21 +759,21 @@ private:
         _desc_sc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
       if (_use_external_workspace) {
-#if __INTEL_MKL_BUILD_DATE > 20220920
-        _desc_sc->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
-                            oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
-#endif
+        if (_q->get_device().is_gpu()) {
+          _desc_sc->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
+                              oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+        }
       }
       if (_is_estimate_call) {
-#if __INTEL_MKL_BUILD_DATE > 20220920
-        _desc_sc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
-                            &_workspace_estimate_bytes);
-#endif
+        if (_q->get_device().is_gpu()) {
+          _desc_sc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
+                              &_workspace_estimate_bytes);
+        }
       } else {
         _desc_sc->commit(*_q);
-#if __INTEL_MKL_BUILD_DATE > 20220920
-        _desc_sc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
-#endif
+        if (_q->get_device().is_gpu()) {
+          _desc_sc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
+        }
       }
     } else if (_input_type == library_data_t::complex_double &&
                _output_type == library_data_t::complex_double) {
@@ -798,21 +798,21 @@ private:
         _desc_dc->set_value(oneapi::mkl::dft::config_param::PLACEMENT,
                             DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);
       if (_use_external_workspace) {
-#if __INTEL_MKL_BUILD_DATE > 20220920
-        _desc_dc->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
-                            oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
-#endif
+        if (_q->get_device().is_gpu()) {
+          _desc_dc->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
+                              oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+        }
       }
       if (_is_estimate_call) {
-#if __INTEL_MKL_BUILD_DATE > 20220920
-        _desc_dc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
-                            &_workspace_estimate_bytes);
-#endif
+        if (_q->get_device().is_gpu()) {
+          _desc_dc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
+                              &_workspace_estimate_bytes);
+        }
       } else {
         _desc_dc->commit(*_q);
-#if __INTEL_MKL_BUILD_DATE > 20220920
-        _desc_dc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
-#endif
+        if (_q->get_device().is_gpu()) {
+          _desc_dc->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
+        }
       }
     } else if ((_input_type == library_data_t::real_float &&
                 _output_type == library_data_t::complex_float) ||
@@ -838,21 +838,21 @@ private:
         set_stride_and_distance_basic<false>(_desc_sr);
       }
       if (_use_external_workspace) {
-#if __INTEL_MKL_BUILD_DATE > 20220920
-        _desc_sr->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
-                            oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
-#endif
+        if (_q->get_device().is_gpu()) {
+          _desc_sr->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
+                              oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+        }
       }
       if (_is_estimate_call) {
-#if __INTEL_MKL_BUILD_DATE > 20220920
-        _desc_sr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
-                            &_workspace_estimate_bytes);
-#endif
+        if (_q->get_device().is_gpu()) {
+          _desc_sr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
+                              &_workspace_estimate_bytes);
+        }
       } else {
         _desc_sr->commit(*_q);
-#if __INTEL_MKL_BUILD_DATE > 20220920
-        _desc_sr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
-#endif
+        if (_q->get_device().is_gpu()) {
+          _desc_sr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
+        }
       }
     } else if ((_input_type == library_data_t::real_double &&
                 _output_type == library_data_t::complex_double) ||
@@ -878,21 +878,21 @@ private:
         set_stride_and_distance_basic<false>(_desc_dr);
       }
       if (_use_external_workspace) {
-#if __INTEL_MKL_BUILD_DATE > 20220920
-        _desc_dr->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
-                            oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
-#endif
+        if (_q->get_device().is_gpu()) {
+          _desc_dr->set_value(oneapi::mkl::dft::config_param::WORKSPACE,
+                              oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);
+        }
       }
       if (_is_estimate_call) {
-#if __INTEL_MKL_BUILD_DATE > 20220920
-        _desc_dr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
-                            &_workspace_estimate_bytes);
-#endif
+        if (_q->get_device().is_gpu()) {
+          _desc_dr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,
+                              &_workspace_estimate_bytes);
+        }
       } else {
         _desc_dr->commit(*_q);
-#if __INTEL_MKL_BUILD_DATE > 20220920
-        _desc_dr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
-#endif
+        if (_q->get_device().is_gpu()) {
+          _desc_dr->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES, &_workspace_bytes);
+        }
       }
     } else {
       throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
@@ -901,56 +901,40 @@ private:
   }
 
   void config_and_commit_advanced() {
-#if __INTEL_MKL_BUILD_DATE > 20220920
-#define CONFIG_AND_COMMIT(DESC, PREC, DOM, TYPE)                               \
-  {                                                                            \
-    DESC = std::make_shared<oneapi::mkl::dft::descriptor<                      \
-        oneapi::mkl::dft::precision::PREC, oneapi::mkl::dft::domain::DOM>>(    \
-        _n);                                                                   \
-    set_stride_advanced(DESC);                                                 \
-    DESC->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, _fwd_dist);  \
-    DESC->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);  \
-    DESC->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,      \
-                    _batch);                                                   \
-    if (_is_user_specified_dir_and_placement && _is_inplace)                   \
-      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
-                      DFTI_CONFIG_VALUE::DFTI_INPLACE);                        \
-    else                                                                       \
-      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
-                      DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);                    \
-    if (_use_external_workspace) {                                             \
-      DESC->set_value(oneapi::mkl::dft::config_param::WORKSPACE,               \
-                      oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);     \
-    }                                                                          \
-    if (_is_estimate_call) {                                                   \
-      DESC->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES,\
-                      &_workspace_estimate_bytes);                             \
-    } else {                                                                   \
-      DESC->commit(*_q);                                                       \
-      DESC->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES,         \
-                      &_workspace_bytes);                                      \
-    }                                                                          \
+#define CONFIG_AND_COMMIT(DESC, PREC, DOM, TYPE)                                  \
+  {                                                                               \
+    DESC = std::make_shared<oneapi::mkl::dft::descriptor<                         \
+        oneapi::mkl::dft::precision::PREC, oneapi::mkl::dft::domain::DOM>>(       \
+        _n);                                                                      \
+    set_stride_advanced(DESC);                                                    \
+    DESC->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, _fwd_dist);     \
+    DESC->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);     \
+    DESC->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,         \
+                    _batch);                                                      \
+    if (_is_user_specified_dir_and_placement && _is_inplace)                      \
+      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,                  \
+                      DFTI_CONFIG_VALUE::DFTI_INPLACE);                           \
+    else                                                                          \
+      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,                  \
+                      DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);                       \
+    if (_use_external_workspace) {                                                \
+      DESC->set_value(oneapi::mkl::dft::config_param::WORKSPACE,                  \
+                      oneapi::mkl::dft::config_value::WORKSPACE_EXTERNAL);        \
+    }                                                                             \
+    if (_is_estimate_call) {                                                      \
+      if (_q->get_device().is_gpu()) {                                            \
+        DESC->get_value(oneapi::mkl::dft::config_param::WORKSPACE_ESTIMATE_BYTES, \
+                        &_workspace_estimate_bytes);                              \
+      }                                                                           \
+    } else {                                                                      \
+      DESC->commit(*_q);                                                          \
+      if (_is_estimate_call) {                                                    \
+        DESC->get_value(oneapi::mkl::dft::config_param::WORKSPACE_BYTES,          \
+                        &_workspace_bytes);                                       \
+      }                                                                           \
+    }                                                                             \
   }
-#else
-#define CONFIG_AND_COMMIT(DESC, PREC, DOM, TYPE)                               \
-  {                                                                            \
-    DESC = std::make_shared<oneapi::mkl::dft::descriptor<                      \
-        oneapi::mkl::dft::precision::PREC, oneapi::mkl::dft::domain::DOM>>(    \
-        _n);                                                                   \
-    set_stride_advanced(DESC);                                                 \
-    DESC->set_value(oneapi::mkl::dft::config_param::FWD_DISTANCE, _fwd_dist);  \
-    DESC->set_value(oneapi::mkl::dft::config_param::BWD_DISTANCE, _bwd_dist);  \
-    DESC->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,      \
-                    _batch);                                                   \
-    if (_is_user_specified_dir_and_placement && _is_inplace)                   \
-      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
-                      DFTI_CONFIG_VALUE::DFTI_INPLACE);                        \
-    else                                                                       \
-      DESC->set_value(oneapi::mkl::dft::config_param::PLACEMENT,               \
-                      DFTI_CONFIG_VALUE::DFTI_NOT_INPLACE);                    \
-    DESC->commit(*_q);                                                         \
-  }
-#endif
+
     if (_input_type == library_data_t::complex_float &&
         _output_type == library_data_t::complex_float) {
       CONFIG_AND_COMMIT(_desc_sc, SINGLE, COMPLEX, float);
