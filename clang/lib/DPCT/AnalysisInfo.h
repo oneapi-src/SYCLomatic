@@ -157,9 +157,9 @@ struct FormatInfo {
   FormatInfo() : EnableFormat(false), IsAllParamsOneLine(true) {}
   bool EnableFormat;
   bool IsAllParamsOneLine;
-  bool IsEachParamNL;
-  int CurrentLength;
-  int NewLineIndentLength;
+  bool IsEachParamNL = false;
+  int CurrentLength = 0;
+  int NewLineIndentLength = 0;
   std::string NewLineIndentStr;
   bool IsFirstArg = false;
 };
@@ -271,6 +271,7 @@ public:
   std::string Str = "";
   FormatInfo FormatInformation;
   int ColumnLimit = 80;
+
 };
 
 struct StmtWithWarning {
@@ -1305,7 +1306,7 @@ public:
     auto LocInfo = SM->getDecomposedLoc(SM->getExpansionLoc(Loc));
     auto AbsPath = getAbsolutePath(LocInfo.first);
     if (AbsPath)
-      return std::make_pair(AbsPath.getValue(), LocInfo.second);
+      return std::make_pair(AbsPath.value(), LocInfo.second);
     if (IsInvalid)
       *IsInvalid = true;
     return std::make_pair("", 0);
@@ -3664,7 +3665,7 @@ protected:
   unsigned ReplaceLength;
   bool IsReplaceFollowedByPP = false;
   unsigned NonDefaultParamNum;
-  bool IsDefFilePathNeeded;
+  bool IsDefFilePathNeeded = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   FormatInfo FormatInformation;
 
@@ -4037,7 +4038,7 @@ private:
     }
 
     ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr *BASE)
-        : Texture(Obj) {
+        : IsUsedAsLvalueAfterMalloc(false), Texture(Obj) {
       IsPointer = false;
       IsRedeclareRequired = false;
       TypeString = "";

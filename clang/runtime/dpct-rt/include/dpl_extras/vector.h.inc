@@ -85,6 +85,7 @@ struct is_iterator<T *> : std::true_type {};
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasMemory|device_iterator
 // DplExtrasMemory|device_reference
+// DplExtrasMemory|__buffer_allocator
 // DplExtrasVector|is_iterator
 // Device|get_default_queue
 // Device|get_default_context
@@ -409,10 +410,10 @@ public:
 
 #else
 
-template <typename T, typename Allocator = sycl::buffer_allocator>
+template <typename T, typename Allocator = detail::__buffer_allocator<T>>
 class device_vector {
   static_assert(
-      std::is_same<Allocator, sycl::buffer_allocator>::value,
+      std::is_same<Allocator, detail::__buffer_allocator<T>>::value,
       "device_vector doesn't support custom allocator when USM is not used.");
 
 public:

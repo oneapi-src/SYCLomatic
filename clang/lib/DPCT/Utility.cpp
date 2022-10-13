@@ -1708,8 +1708,8 @@ bool isContainMacro(const Expr *E) {
     }
     auto Tok = Lexer::findNextToken(
         Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
-    if (Tok.hasValue())
-      Loc = Tok.getValue().getLocation();
+    if (Tok.has_value())
+      Loc = Tok.value().getLocation();
     else
       return false;
   }
@@ -1736,7 +1736,7 @@ const CXXRecordDecl *getParentRecordDecl(const ValueDecl *DD) {
   return nullptr;
 }
 
-/// Get sibling Decls for a VarDecl or a FieldDecl
+/// Get All Decls for a VarDecl or a FieldDecl
 /// E.g for a VarDecl:
 /// |-DeclStmt
 ///   |-VarDecl
@@ -1745,24 +1745,22 @@ const CXXRecordDecl *getParentRecordDecl(const ValueDecl *DD) {
 /// |-CXXRecordDecl
 ///   |-FieldDecl
 ///   |-FieldDecl
-std::vector<const DeclaratorDecl *> getSiblingDecls(const DeclaratorDecl *DD) {
+std::vector<const DeclaratorDecl *> getAllDecls(const DeclaratorDecl *DD) {
   std::vector<const DeclaratorDecl *> Decls;
-  // For VarDecl, sibling VarDecls share the same parent DeclStmt with it
+  // For VarDecl, All VarDecls share the same parent DeclStmt with it
   if (auto P = getParentStmt(DD)) {
     if (auto DS = dyn_cast<DeclStmt>(P)) {
       for (auto It = DS->decl_begin(); It != DS->decl_end(); ++It) {
         if (auto DD2 = dyn_cast<DeclaratorDecl>(*It))
-          if (DD2 != DD)
             Decls.push_back(DD2);
       }
     }
   }
-  // For FieldDecl, sibling FieldDecls share the same BeginLoc with it
+  // For FieldDecl, All FieldDecls share the same BeginLoc with it
   else if (auto P = getParentRecordDecl(DD)) {
     for (auto It = P->decls_begin(); It != P->decls_end(); ++It) {
       if (auto DD2 = dyn_cast<DeclaratorDecl>(*It))
         if (DD2->getBeginLoc() == DD->getBeginLoc())
-          if (DD2 != DD)
             Decls.push_back(DD2);
     }
   }
@@ -3118,7 +3116,7 @@ bool isModifiedRef(const clang::DeclRefExpr *DRE) {
 }
 
 bool isDefaultStream(const Expr *StreamArg) {
-  auto Arg = StreamArg->IgnoreImpCasts();
+  auto Arg = StreamArg->IgnoreCasts();
   bool IsDefaultStream = false;
   // Need queue for default stream or stream 0, 1 and 2
   if (Arg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
