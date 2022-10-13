@@ -2875,6 +2875,46 @@ bool TypeInDeclRule::isCapturedByLambda(const TypeLoc *TL) {
   return false;
 }
 
+void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
+  auto SD = getAllDecls(DD);
+
+  auto replaceInitParam = [&](const clang::Expr *replExpr) {
+    if (replExpr == nullptr)
+      return;
+    if (isDefaultStream(replExpr)) {
+      int Index = getPlaceholderIdx(replExpr);
+      if (Index == 0) {
+        Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      }
+      buildTempVariableMap(Index, replExpr, HelperFuncType::HFT_DefaultQueue);
+      std::string Repl = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}";
+      emplaceTransformation(new ReplaceStmt(replExpr, "&" + Repl));
+    }
+  };
+
+  for (auto It = SD.begin(); It != SD.end(); ++It) {
+    const clang::Expr *replExpr = nullptr;
+    if (const auto VD = dyn_cast<clang::VarDecl>(*It))
+      replExpr = VD->getInit();
+    else if (const auto FD = dyn_cast<clang::FieldDecl>(*It))
+      replExpr = FD->getInClassInitializer();
+
+    if (!replExpr)
+      continue;
+
+    if (const auto VarInitExpr = dyn_cast<InitListExpr>(replExpr)) {
+      auto arrayReplEXpr = VarInitExpr->inits();
+      for (auto replExprPtr = arrayReplEXpr.begin();
+           replExprPtr < arrayReplEXpr.end(); replExprPtr++) {
+        replaceInitParam(*replExprPtr);
+      }
+      return;
+    }
+
+    replaceInitParam(replExpr);
+  }
+}
+
 void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
   SourceManager *SM = Result.SourceManager;
   auto LOpts = Result.Context->getLangOpts();
@@ -3159,6 +3199,26 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       DD = VarD;
     } else if (FieldD) {
       DD = FieldD;
+    }
+
+    if (DD) {
+      if (TL->getType().getCanonicalType()->isPointerType()) {
+        const auto *PtrTy =
+            TL->getType().getCanonicalType()->getAs<PointerType>();
+        if (PtrTy == nullptr)
+          return;
+        if (PtrTy->getPointeeType()->isRecordType()) {
+          const auto *RecordTy = PtrTy->getPointeeType()->getAs<RecordType>();
+          if (RecordTy == nullptr)
+            return;
+          const auto *RD = RecordTy->getAsRecordDecl();
+          if (RD == nullptr)
+            return;
+          if (RD->getName() == "CUstream_st" &&
+              DpctGlobalInfo::isInCudaPath(RD->getBeginLoc()))
+            processCudaStreamType(DD);
+        }
+      }
     }
 
     if (!Str.empty()) {

@@ -431,7 +431,7 @@ bool isExprStraddle(const clang::Stmt *S);
 bool isContainMacro(const clang::Expr *E);
 std::string getDrefName(const clang::Expr *E);
 std::vector<const clang::DeclaratorDecl *>
-getSiblingDecls(const clang::DeclaratorDecl *DD);
+getAllDecls(const clang::DeclaratorDecl *DD);
 std::string deducePointerType(const clang::DeclaratorDecl *DD,
                               std::string TypeName);
 bool isAnIdentifierOrLiteral(const clang::Expr *E);
