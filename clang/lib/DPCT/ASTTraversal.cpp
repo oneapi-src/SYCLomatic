@@ -9570,6 +9570,8 @@ void KernelCallRule::runRule(
   if (auto KCall =
           getAssistNodeAsType<CUDAKernelCallExpr>(Result, "kernelCall")) {
     auto FD = getAssistNodeAsType<FunctionDecl>(Result, "callContext");
+    if (!FD)
+      return;
     const auto &SM = (*Result.Context).getSourceManager();
 
     if (SM.isMacroArgExpansion(KCall->getCallee()->getBeginLoc())) {
@@ -9619,9 +9621,6 @@ void KernelCallRule::runRule(
         }
       }
     }
-
-    if (!FD)
-      return;
 
     // Filter out compiler generated methods
     if (const CXXMethodDecl *CXXMDecl = dyn_cast<CXXMethodDecl>(FD)) {
@@ -9957,6 +9956,8 @@ void MemVarRule::processTypeDeclaredLocal(const VarDecl *MemVar,
                                           std::shared_ptr<MemVarInfo> Info) {
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto DS = Info->getDeclStmtOfVarType();
+  if (!DS)
+    return;
   // this token is ';'
   auto InsertSL = SM.getExpansionLoc(DS->getEndLoc()).getLocWithOffset(1);
   auto GenDeclStmt = [=, &SM](
@@ -10241,6 +10242,7 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
       emplaceTransformation(ReplaceVarDecl::getVarDeclReplacement(
           MemVar, Info->getDeclarationReplacement(MemVar)));
     }
+    return;
   }
   auto MemVarRef = getNodeAsType<DeclRefExpr>(Result, "used");
   auto Func = getAssistNodeAsType<FunctionDecl>(Result, "func");
@@ -14284,7 +14286,7 @@ std::string TextureRule::getMemberAssignedValue(const Stmt *AssignStmt,
 
 bool TextureRule::SettersMerger::applyResult() {
   class ResultMapInserter {
-    unsigned LastIndex;
+    unsigned LastIndex = 0;
     std::vector<const Stmt *> LatestStmts;
     std::vector<const Stmt *> DuplicatedStmts;
     TextureRule *Rule;
@@ -14777,13 +14779,11 @@ void DriverModuleAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void DriverModuleAPIRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call");
   if (!CE) {
     if (!(CE = getNodeAsType<CallExpr>(Result, "callUsed"))) {
       return;
     }
-    IsAssigned = true;
   }
 
   std::string APIName = "";
