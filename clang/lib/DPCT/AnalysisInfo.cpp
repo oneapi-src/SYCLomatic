@@ -344,7 +344,7 @@ void DpctFileInfo::buildLinesInfo() {
   }
   auto RawBuffer =
       Content.getBufferOrNone(SM.getDiagnostics(), SM.getFileManager())
-          .getValueOr(llvm::MemoryBufferRef())
+          .value_or(llvm::MemoryBufferRef())
           .getBuffer();
   if (RawBuffer.empty())
     return;
