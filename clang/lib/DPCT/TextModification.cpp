@@ -184,8 +184,8 @@ ReplaceStmt::removeStmtWithCleanups(const SourceManager &SM) const {
     TokSharedPtr = Lexer::findNextToken(StmtEndLoc, SM, LangOptions());
   }
 
-  if (TokSharedPtr.hasValue()) {
-    Token Tok = TokSharedPtr.getValue();
+  if (TokSharedPtr.has_value()) {
+    Token Tok = TokSharedPtr.value();
     // If TheStmt has a trailing semicolon
     if (Tok.is(tok::TokenKind::semi)) {
       auto PostSemiLoc = Tok.getLocation().getLocWithOffset(1);

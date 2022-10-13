@@ -255,8 +255,8 @@ public:
 
   Optional<std::string> rewrite() override {
     Optional<std::string> &&Result = Inner->rewrite();
-    if (Result.hasValue() && IsAssigned)
-      return "(" + Result.getValue() + ", 0)";
+    if (Result.has_value() && IsAssigned)
+      return "(" + Result.value() + ", 0)";
     return Result;
   }
 };
@@ -275,8 +275,8 @@ public:
 
   Optional<std::string> rewrite() override {
     Optional<std::string> &&Result = Inner->rewrite();
-    if (Result.hasValue())
-      return Prefix + Result.getValue() + Suffix;
+    if (Result.has_value())
+      return Prefix + Result.value() + Suffix;
     return Result;
   }
 };
@@ -326,10 +326,10 @@ public:
     Optional<std::string> &&PredStr = Pred->rewrite();
     Optional<std::string> &&IfBlockStr = IfBlock->rewrite();
     Optional<std::string> &&ElseBlockStr = ElseBlock->rewrite();
-    return "if(" + PredStr.getValue() + "){" + NL.str() + Indent.str() +
-           Indent.str() + IfBlockStr.getValue() + ";" + NL.str() +
+    return "if(" + PredStr.value() + "){" + NL.str() + Indent.str() +
+           Indent.str() + IfBlockStr.value() + ";" + NL.str() +
            Indent.str() + "} else {" + NL.str() + Indent.str() + Indent.str() +
-           ElseBlockStr.getValue() + ";" + NL.str() + Indent.str() + "}";
+           ElseBlockStr.value() + ";" + NL.str() + Indent.str() + "}";
   }
 };
 

@@ -15,10 +15,19 @@
 // device_pointer, device_reference, swap, device_iterator, malloc_device,
 // device_new, free_device, device_delete
 namespace dpct {
+namespace detail {
+template <typename _DataT>
+using __buffer_allocator =
+#if __LIBSYCL_VERSION >= 50707
+    sycl::buffer_allocator<_DataT>;
+#else
+    sycl::buffer_allocator;
+#endif
+} // namespace detail
 
 #ifdef DPCT_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,
-          typename Allocator = sycl::buffer_allocator>
+          typename Allocator = detail::__buffer_allocator<T>>
 class device_pointer;
 #else
 template <typename T> class device_pointer;
@@ -450,7 +459,7 @@ public:
 
 #ifdef DPCT_USM_LEVEL_NONE
 template <typename T, sycl::access_mode Mode = sycl::access_mode::read_write,
-          typename Allocator = sycl::buffer_allocator>
+          typename Allocator = detail::__buffer_allocator<T>>
 class device_iterator : public device_pointer<T, Mode, Allocator> {
   using Base = device_pointer<T, Mode, Allocator>;
 

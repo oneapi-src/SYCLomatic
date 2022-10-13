@@ -481,8 +481,7 @@ private:
   // Used to prevent them from being processed multiple times
   std::unordered_set<TypeLoc, TypeLocHash, TypeLocEqual> ProcessedTypeLocs;
 
-  void processCudaStreamType(const DeclaratorDecl *DD, const SourceManager *SM,
-                             bool &SpecialCaseHappened);
+  void processCudaStreamType(const DeclaratorDecl *DD);
   bool replaceTemplateSpecialization(SourceManager *SM, LangOptions &LOpts,
                                      SourceLocation BeginLoc,
                                      const TemplateSpecializationTypeLoc TSL);
@@ -594,16 +593,6 @@ private:
 
 private:
   static const char NamespaceName[];
-};
-
-/// Migration rule for vector type constructor and make_<vector type>()
-class VectorTypeCtorRule : public NamedMigrationRule<VectorTypeCtorRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-
-private:
-  std::string getReplaceTypeName(const std::string &TypeName);
 };
 
 class ReplaceDim3CtorRule : public NamedMigrationRule<ReplaceDim3CtorRule> {

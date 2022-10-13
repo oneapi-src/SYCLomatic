@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "CallExprRewriter.h"
+#include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "BLASAPIMigration.h"
 #include "ExprAnalysis.h"
@@ -353,9 +354,15 @@ std::string MathFuncNameRewriter::getNewFuncName() {
     }
     // For host functions
     else {
-      // Insert "#include <cmath>" to migrated code
-      DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_Math);
-      NewFuncName = SourceCalleeName.str();
+      // The vector type constructors (e.g. make_double3) are available in
+      // the host, but should not need to include cmath nor be migrated to
+      // SourceCalleeName.
+      if (!SourceCalleeName.startswith("make_")) {
+	// Insert "#include <cmath>" to migrated code
+        DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_Math);
+        NewFuncName = SourceCalleeName.str();
+      }
+
       if (SourceCalleeName == "abs") {
         auto *BT =
             dyn_cast<BuiltinType>(Call->getArg(0)->IgnoreImpCasts()->getType());
@@ -1048,16 +1055,15 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
              FuncName == "__drcp_ru" || 
              FuncName == "__drcp_rz") {
     auto Arg0 = Call->getArg(0);
-    auto T0 = Arg0->IgnoreCasts()->getType().getAsString(
-        PrintingPolicy(LangOptions()));
+    auto T0 = Arg0->IgnoreCasts()->getType();
     auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
     report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, false);
-    if (T0 == "double") {
+    if (T0->isSpecificBuiltinType(BuiltinType::Double)) {
       if (DRE0)
         OS << "(1.0/" << MigratedArg0 << ")";
       else
         OS << "(1.0/(" << MigratedArg0 << "))";
-    } else if (T0 != "float") {
+    } else if (T0->isSpecificBuiltinType(BuiltinType::Float)) {
       OS << TargetCalleeName;
       if (DRE0)
         OS << "((float)" << MigratedArg0 << ")";
@@ -1510,6 +1516,20 @@ makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
                                                        Member, Args...);
 }
 
+template <class BaseT, class MemberT>
+std::function<
+    MemberCallPrinter<BaseT, MemberT>(const CallExpr *)>
+makeMemberCallCreator(std::function<BaseT(const CallExpr *)> BaseFunc,
+                      bool IsArrow,
+                      std::function<MemberT(const CallExpr *)> Member) {
+
+  return PrinterCreator<MemberCallPrinter<BaseT, MemberT>,
+    std::function<BaseT(const CallExpr *)>, bool,
+    std::function<MemberT(const CallExpr *)>>(BaseFunc, IsArrow,
+                                              Member);
+}
+
+
 template <class... StmtT>
 std::function<
     LambdaPrinter<StmtT...>(const CallExpr *)>
@@ -1637,6 +1657,36 @@ makeCallExprCreator(std::string Callee,
   return PrinterCreator<CallExprPrinter<StringRef, CallArgsT...>, std::string,
                         std::function<CallArgsT(const CallExpr *)>...>(Callee,
                                                                        Args...);
+}
+
+std::function<std::string(const CallExpr *)>
+makeFuncNameFromDevAttrCreator(unsigned idx) {
+  return [=](const CallExpr *CE) -> std::string {
+    auto Arg = CE->getArg(idx)->IgnoreImplicitAsWritten();
+    if (auto DRE = dyn_cast<DeclRefExpr>(Arg)) {
+      auto ArgName = DRE->getNameInfo().getAsString();
+      auto Search = EnumConstantRule::EnumNamesMap.find(ArgName);
+      if (Search != EnumConstantRule::EnumNamesMap.end()) {
+        requestHelperFeatureForEnumNames(ArgName, CE);
+        return Search->second->NewName;
+      }
+    }
+    return "";
+  };
+}
+std::function<std::string(const CallExpr *)> getWorkGroupDim(unsigned index) {
+  return [=](const CallExpr * C) {
+    auto Arg = dyn_cast<DeclRefExpr>(C->getArg(index)->
+                IgnoreImplicitAsWritten())->getNameInfo().getAsString();
+    if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X")
+      return "0";
+    else if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y") {
+      return "1";
+    } else if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z") {
+      return "2";
+    }
+    return "";
+  };
 }
 
 std::function<std::string(const CallExpr *)> makeLiteral(std::string Str) {
@@ -1936,6 +1986,16 @@ std::function<bool(const CallExpr *C)> checkIsCallExprOnly() {
     if (parentStmt != nullptr && (dyn_cast<CompoundStmt>(parentStmt) ||
                           dyn_cast<ExprWithCleanups>(parentStmt)))
       return true;
+    return false;
+    };
+}
+
+std::function<bool(const CallExpr *C)> checkIsGetWorkGroupDim(size_t index) {
+  return [=](const CallExpr *C) -> bool {
+    if (getStmtSpelling(C->getArg(index)).
+          find("CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_") != std::string::npos) {
+      return true;
+    }
     return false;
     };
 }
