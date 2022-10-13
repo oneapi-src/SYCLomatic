@@ -277,7 +277,15 @@ public:
 // Device|device_info
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  void set_name(const char *name) { std::strncpy(_name, name, 256); }
+  void set_name(const char* name) {
+    size_t length = strlen(name);
+    if (length < 256) {
+      std::memcpy(_name, name, length + 1);
+    } else {
+      std::memcpy(_name, name, 255);
+      _name[255] = '\0';
+    }
+  }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_set_max_work_item_sizes|dpct
 // DPCT_PARENT_FEATURE|device_info

@@ -1072,8 +1072,8 @@ void TypePrinter::printTypeSpec(NamedDecl *D, raw_ostream &OS) {
   Optional<std::string> Name;
   if (getReplacedNamePtr)
     Name = getReplacedNamePtr(D);
-  if (Name.hasValue()) {
-    OS << Name.getValue();
+  if (Name.has_value()) {
+    OS << Name.value();
     spaceBeforePlaceHolder(OS);
     return;
   }
@@ -1378,11 +1378,11 @@ void TypePrinter::printTag(TagDecl *D, raw_ostream &OS) {
   // Compute the full nested-name-specifier for this type.
   // In C, this will always be empty except when the type
   // being printed is anonymous within other Record.
-  if (!Name.hasValue() && !Policy.SuppressScope)
+  if (!Name.has_value() && !Policy.SuppressScope)
     AppendScope(D->getDeclContext(), OS, D->getDeclName());
 
-  if (Name.hasValue())
-    OS << Name.getValue();
+  if (Name.has_value())
+    OS << Name.value();
   else
 #else
   // Compute the full nested-name-specifier for this type.

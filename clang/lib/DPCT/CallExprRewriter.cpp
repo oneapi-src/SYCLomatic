@@ -371,9 +371,15 @@ std::string MathFuncNameRewriter::getNewFuncName() {
     }
     // For host functions
     else {
-      // Insert "#include <cmath>" to migrated code
-      DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_Math);
-      NewFuncName = SourceCalleeName.str();
+      // The vector type constructors (e.g. make_double3) are available in
+      // the host, but should not need to include cmath nor be migrated to
+      // SourceCalleeName.
+      if (!SourceCalleeName.startswith("make_")) {
+	// Insert "#include <cmath>" to migrated code
+        DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), HT_Math);
+        NewFuncName = SourceCalleeName.str();
+      }
+
       if (SourceCalleeName == "abs") {
         auto *BT =
             dyn_cast<BuiltinType>(Call->getArg(0)->IgnoreImpCasts()->getType());
@@ -1066,16 +1072,15 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
              FuncName == "__drcp_ru" || 
              FuncName == "__drcp_rz") {
     auto Arg0 = Call->getArg(0);
-    auto T0 = Arg0->IgnoreCasts()->getType().getAsString(
-        PrintingPolicy(LangOptions()));
+    auto T0 = Arg0->IgnoreCasts()->getType();
     auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
     report(Diagnostics::ROUNDING_MODE_UNSUPPORTED, false);
-    if (T0 == "double") {
+    if (T0->isSpecificBuiltinType(BuiltinType::Double)) {
       if (DRE0)
         OS << "(1.0/" << MigratedArg0 << ")";
       else
         OS << "(1.0/(" << MigratedArg0 << "))";
-    } else if (T0 != "float") {
+    } else if (T0->isSpecificBuiltinType(BuiltinType::Float)) {
       OS << TargetCalleeName;
       if (DRE0)
         OS << "((float)" << MigratedArg0 << ")";
@@ -2601,6 +2606,21 @@ public:
   bool operator()(const CallExpr *C) { return C->getNumArgs() == Count; }
 };
 
+class CheckArgCountGreaterThan {
+  unsigned Count;
+public:
+  CheckArgCountGreaterThan(unsigned I) : Count(I) {}
+  bool operator()(const CallExpr *C) {
+    unsigned DefaultArgNum = 0;
+    llvm::ArrayRef<const Expr *> Args(C->getArgs(), C->getNumArgs());
+    for (const Expr *Arg : Args) {
+      if (Arg->isDefaultArgument())
+        ++DefaultArgNum;
+    }
+    return C->getNumArgs() - DefaultArgNum > Count;
+  }
+};
+
 class CheckBaseType {
   std::string TypeName;
 
@@ -2656,6 +2676,16 @@ public:
       return true;
     }
     return false;
+  }
+};
+
+class CheckArgIsDefaultCudaStream {
+  unsigned ArgIndex;
+
+public:
+  CheckArgIsDefaultCudaStream(unsigned ArgIndex) : ArgIndex(ArgIndex) {}
+  bool operator()(const CallExpr *C) const {
+    return isDefaultStream(C->getArg(ArgIndex));
   }
 };
 

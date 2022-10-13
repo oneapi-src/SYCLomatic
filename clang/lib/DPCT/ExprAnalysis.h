@@ -782,8 +782,8 @@ private:
 
 class KernelArgumentAnalysis : public ArgumentAnalysis {
 public:
-  bool IsRedeclareRequired;
-  bool IsPointer;
+  bool IsRedeclareRequired = false;
+  bool IsPointer = false;
   bool TryGetBuffer = false;
   bool IsDoublePointer = false;
 

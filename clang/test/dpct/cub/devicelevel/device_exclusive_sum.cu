@@ -9,23 +9,8 @@
 #include <cub/cub.cuh>
 #include <stdio.h>
 
-// CHECK:void test_1() {
-// CHECK:dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK:sycl::queue &q_ct1 = dev_ct1.default_queue();
-// CHECK:int n = 10;
-// CHECK:int *device_in = nullptr;
-// CHECK:int *device_out = nullptr;
-// CHECK:int host_in[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-// CHECK:int host_out[10];
-// CHECK:device_in = sycl::malloc_device<int>(n, q_ct1);
-// CHECK:device_out = sycl::malloc_device<int>(n, q_ct1);
-// CHECK:q_ct1.memcpy(device_in, (void *)host_in, sizeof(host_in)).wait();
 // CHECK:DPCT1026:{{.*}}
 // CHECK:oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_out, typename std::iterator_traits<decltype(device_in)>::value_type{});
-// CHECK:q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out)).wait();
-// CHECK:sycl::free(device_in, q_ct1);
-// CHECK:sycl::free(device_out, q_ct1);
-// CHECK:}
 void test_1() {
   int n = 10;
   int *device_in = nullptr;
@@ -46,24 +31,9 @@ void test_1() {
   cudaFree(device_tmp);
 }
 
-// CHECK:void test_2() {
-// CHECK:dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK:sycl::queue &q_ct1 = dev_ct1.default_queue();
-// CHECK:int n = 10;
-// CHECK:int *device_in = nullptr;
-// CHECK:int *device_out = nullptr;
-// CHECK:int host_in[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-// CHECK:int host_out[10];
-// CHECK:device_in = sycl::malloc_device<int>(n, q_ct1);
-// CHECK:device_out = sycl::malloc_device<int>(n, q_ct1);
-// CHECK:q_ct1.memcpy(device_in, (void *)host_in, sizeof(host_in)).wait();
-// CHECK:DPCT1027:{{.*}}
-// CHECK:0, 0;
-// CHECK:oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_out, typename std::iterator_traits<decltype(device_in)>::value_type{});
-// CHECK:q_ct1.memcpy((void *)host_out, (void *)device_out, sizeof(host_out)).wait();
-// CHECK:sycl::free(device_in, q_ct1);
-// CHECK:sycl::free(device_out, q_ct1);
-// CHECK:}
+// CHECK: DPCT1027:{{.*}}
+// CHECK: 0, 0;
+// CHECK: oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(q_ct1), device_in, device_in + n, device_out, typename std::iterator_traits<decltype(device_in)>::value_type{});
 void test_2() {
   int n = 10;
   int *device_in = nullptr;
@@ -78,6 +48,30 @@ void test_2() {
   cub::DeviceScan::ExclusiveSum(device_tmp, n_device_tmp, device_in, device_out, n), 0;
   cudaMalloc((void **)&device_tmp, n_device_tmp);
   cub::DeviceScan::ExclusiveSum((void *)device_tmp, n_device_tmp, device_in, device_out, n);
+  cudaMemcpy((void *)host_out, (void *)device_out, sizeof(host_out), cudaMemcpyDeviceToHost);
+  cudaFree(device_in);
+  cudaFree(device_out);
+  cudaFree(device_tmp);
+}
+
+// CHECK: dpct::queue_ptr stream = (dpct::queue_ptr)(void *)(uintptr_t)5;
+// CHECK: DPCT1026:{{.*}}
+// CHECK: oneapi::dpl::exclusive_scan(oneapi::dpl::execution::device_policy(*stream), device_in, device_in + n, device_out, typename std::iterator_traits<decltype(device_in)>::value_type{});
+void test_3() {
+  int n = 10;
+  int *device_in = nullptr;
+  int *device_out = nullptr;
+  int *device_tmp = nullptr;
+  size_t n_device_tmp = 0;
+  int host_in[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  int host_out[10];
+  cudaMalloc((void **)&device_in, n * sizeof(int));
+  cudaMalloc((void **)&device_out, n * sizeof(int));
+  cudaMemcpy(device_in, (void *)host_in, sizeof(host_in), cudaMemcpyHostToDevice);
+  cudaStream_t stream = (cudaStream_t)(void *)(uintptr_t)5;
+  cub::DeviceScan::ExclusiveSum(device_tmp, n_device_tmp, device_in, device_out, n, stream);
+  cudaMalloc((void **)&device_tmp, n_device_tmp);
+  cub::DeviceScan::ExclusiveSum((void *)device_tmp, n_device_tmp, device_in, device_out, n, stream);
   cudaMemcpy((void *)host_out, (void *)device_out, sizeof(host_out), cudaMemcpyDeviceToHost);
   cudaFree(device_in);
   cudaFree(device_out);
