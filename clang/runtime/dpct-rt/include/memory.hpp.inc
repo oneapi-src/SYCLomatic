@@ -1968,6 +1968,10 @@ template <class T, size_t Dimension>
 using shared_memory = detail::device_memory<T, shared, Dimension>;
 // DPCT_LABEL_END
 
+// dpct::deprecated:: is for functionality that was introduced for compatibility
+// purpose, but relies on deprecated C++ features, which are either removed or
+// will be removed in the future standards.
+// Direct use of deprecated functionality in this namespace should be avoided.
 namespace deprecated {
 
 // DPCT_LABEL_BEGIN|usm_host_allocator_alias|dpct
