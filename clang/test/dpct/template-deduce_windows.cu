@@ -36,7 +36,7 @@ template<class T> __global__ void template_kernel4() {
 
 template<class T1, class T2, size_t S> void template_host() {
 
-    // CHECK:  sycl::accessor<TemplateClass<T2, T1>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::local_accessor<TemplateClass<T2, T1>, 1> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -45,7 +45,7 @@ template<class T1, class T2, size_t S> void template_host() {
     // CHECK-NEXT:    });
     template_kernel1<T2, T1><<<1,1>>>();
 
-    // CHECK:  sycl::accessor<TemplateClass<T2, int>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::local_accessor<TemplateClass<T2, int>, 1> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -54,7 +54,7 @@ template<class T1, class T2, size_t S> void template_host() {
     // CHECK-NEXT:    });
     template_kernel2<T2><<<1,1>>>();
 
-    // CHECK:  sycl::accessor<TemplateClass<T1, T1>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(S), cgh);
+    // CHECK:  sycl::local_accessor<TemplateClass<T1, T1>, 1> a_acc_ct1(sycl::range<1>(S), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -63,7 +63,7 @@ template<class T1, class T2, size_t S> void template_host() {
     // CHECK-NEXT:    });
     template_kernel3<T1, S><<<1,1>>>();
 
-    // CHECK:  sycl::accessor<TemplateClass<T2, float>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(3), cgh);
+    // CHECK:  sycl::local_accessor<TemplateClass<T2, float>, 1> a_acc_ct1(sycl::range<1>(3), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -75,7 +75,7 @@ template<class T1, class T2, size_t S> void template_host() {
 
 int main() {
 
-    // CHECK:  sycl::accessor<TemplateClass<sycl::float4, int>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::local_accessor<TemplateClass<sycl::float4, int>, 1> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -84,7 +84,7 @@ int main() {
     // CHECK-NEXT:    });
     template_kernel1<float4, int><<<1,1>>>();
 
-    // CHECK:  sycl::accessor<TemplateClass<sycl::float2, int>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+    // CHECK:  sycl::local_accessor<TemplateClass<sycl::float2, int>, 1> a_acc_ct1(sycl::range<1>(10), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -93,7 +93,7 @@ int main() {
     // CHECK-NEXT:    });
     template_kernel2<float2><<<1,1>>>();
 
-    // CHECK:  sycl::accessor<TemplateClass<sycl::float2, sycl::float2>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(3), cgh);
+    // CHECK:  sycl::local_accessor<TemplateClass<sycl::float2, sycl::float2>, 1> a_acc_ct1(sycl::range<1>(3), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -102,7 +102,7 @@ int main() {
     // CHECK-NEXT:    });
     template_kernel3<float2, 3><<<1,1>>>();
 
-    // CHECK:  sycl::accessor<TemplateClass<sycl::float2, float>, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(3), cgh);
+    // CHECK:  sycl::local_accessor<TemplateClass<sycl::float2, float>, 1> a_acc_ct1(sycl::range<1>(3), cgh);
     // CHECK-EMPTY:
     // CHECK-NEXT:  cgh.parallel_for(
     // CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
