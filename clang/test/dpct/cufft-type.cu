@@ -58,8 +58,8 @@ int main() {
   fftt = CUFFT_Z2D;
   fftt = CUFFT_Z2Z;
 
-  //CHECK:dpct::fft::fft_engine* ffth;
-  //CHECK-NEXT:size = sizeof(dpct::fft::fft_engine*);
+  //CHECK:dpct::fft::fft_engine_ptr ffth;
+  //CHECK-NEXT:size = sizeof(dpct::fft::fft_engine_ptr);
   cufftHandle ffth;
   size = sizeof(cufftHandle);
 
@@ -119,7 +119,7 @@ int main() {
 //CHECK-NEXT:typename F = sycl::double2,
 //CHECK-NEXT:typename G = dpct::fft::fft_type,
 //CHECK-NEXT:typename H = dpct::fft::fft_type,
-//CHECK-NEXT:typename I = dpct::fft::fft_engine*,
+//CHECK-NEXT:typename I = dpct::fft::fft_engine_ptr,
 //CHECK-NEXT:typename J = int,
 //CHECK-NEXT:typename K = int>
 //CHECK-NEXT:void foo1(
@@ -131,7 +131,7 @@ int main() {
 //CHECK-NEXT:sycl::double2 f,
 //CHECK-NEXT:dpct::fft::fft_type g,
 //CHECK-NEXT:dpct::fft::fft_type h,
-//CHECK-NEXT:dpct::fft::fft_engine* i,
+//CHECK-NEXT:dpct::fft::fft_engine_ptr i,
 //CHECK-NEXT:int j,
 //CHECK-NEXT:int k
 //CHECK-NEXT:){}
@@ -303,7 +303,7 @@ template<typename T>
 cufftType foo10(){}
 
 //CHECK:template<typename T>
-//CHECK-NEXT:dpct::fft::fft_engine* foo11(){}
+//CHECK-NEXT:dpct::fft::fft_engine_ptr foo11(){}
 template<typename T>
 cufftHandle foo11(){}
 

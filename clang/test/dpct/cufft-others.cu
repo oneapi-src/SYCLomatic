@@ -6,7 +6,7 @@
 
 
 int main() {
-  //CHECK:dpct::fft::fft_engine* plan;
+  //CHECK:dpct::fft::fft_engine_ptr plan;
   //CHECK-NEXT:sycl::float2* iodata;
   cufftHandle plan;
   float2* iodata;
@@ -47,7 +47,7 @@ int foo2() {
 }
 
 int foo3(cudaStream_t stream) {
-  //CHECK:dpct::fft::fft_engine* plan;
+  //CHECK:dpct::fft::fft_engine_ptr plan;
   //CHECK-NEXT:sycl::float2* iodata;
   cufftHandle plan;
   float2* iodata;
