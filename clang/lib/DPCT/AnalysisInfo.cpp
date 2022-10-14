@@ -406,7 +406,7 @@ void DpctFileInfo::buildReplacements() {
   // is same with normal global variable's name in host side, if the one is
   // found, postfix "_ct" is added to this __constant__ symbol's name.
   std::unordered_map<unsigned int, std::string> ReplUpdated;
-  for (auto Entry : MemVarMap) {
+  for (const auto &Entry : MemVarMap) {
     if (Entry.second->isIgnore())
       continue;
 
@@ -1931,7 +1931,7 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
       getNamespaceSeq(Context.getParents(*Callee));
 
   auto FDIter = FDNamespaceSeq.begin();
-  for (auto CalleeNamespace : CalleeNamespaceSeq) {
+  for (const auto &CalleeNamespace : CalleeNamespaceSeq) {
     if (FDNamespaceSeq.empty())
       break;
 
@@ -1944,7 +1944,7 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
   }
 
   std::string Result;
-  for (auto I : FDNamespaceSeq) {
+  for (const auto &I : FDNamespaceSeq) {
     // If I is empty, it means this namespace is an unnamed namespace. So its
     // members have internal linkage. So just remove it.
     if (I.empty())
@@ -2264,7 +2264,7 @@ void ExplicitInstantiationDecl::processFunctionTypeLoc(
   auto &SM = DpctGlobalInfo::getSourceManager();
   ExprAnalysis EA;
   processTypeLoc(FTL.getReturnLoc(), EA, SM);
-  for (auto Parm : FTL.getParams()) {
+  for (const auto &Parm : FTL.getParams()) {
     processTypeLoc(Parm->getTypeSourceInfo()->getTypeLoc(), EA, SM);
   }
 }

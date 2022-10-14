@@ -577,7 +577,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           clang::format::setFormatRangeGetterHandler(
               clang::dpct::DpctGlobalInfo::getFormatRange);
           bool FormatResult = true;
-          for (auto Iter : FileRangesMap) {
+          for (const auto &Iter : FileRangesMap) {
             clang::tooling::Replacements FormatChanges;
             FormatResult = formatFile(Iter.first, Iter.second, FormatChanges) &&
                            FormatResult;
