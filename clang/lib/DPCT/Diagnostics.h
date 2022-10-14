@@ -369,7 +369,7 @@ bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
   std::string FileAndLine = clang::dpct::buildString(
       NativeFormPath, ":", Fileinfo->getLineNumber(Offset));
   std::string WarningIDAndMsg = clang::dpct::buildString(
-      std::to_string(static_cast<int>(MsgID)), ":", std::forward<Ts>(Vals)...);
+      std::to_string(static_cast<int>(MsgID)), ":", Vals...);
 
   if (checkDuplicated(FileAndLine, WarningIDAndMsg))
     return false;
@@ -387,7 +387,7 @@ bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
     if (WarningIDs.find((int)MsgID) == WarningIDs.end() &&
         DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end()) {
       reportWarning(SL, DiagnosticIDTable[(int)MsgID], SM.getDiagnostics(),
-                    std::forward<Ts>(Vals)...);
+                    Vals...);
     }
   }
 
