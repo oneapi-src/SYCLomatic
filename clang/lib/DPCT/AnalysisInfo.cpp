@@ -3776,56 +3776,56 @@ const std::string &getDefaultString(HelperFuncType HFT) {
 
 std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
                                                    int Index) {
-  if (HFT != HelperFuncType::HFT_DefaultQueue &&
-      HFT != HelperFuncType::HFT_CurrentDevice) {
-    return "";
-  }
+  if (HFT == HelperFuncType::HFT_DefaultQueue ||
+      HFT == HelperFuncType::HFT_CurrentDevice) {
 
-  if (DpctGlobalInfo::getDeviceChangedFlag() ||
-      !DpctGlobalInfo::getUsingDRYPattern()) {
-    return getDefaultString(HFT);
-  }
-
-  auto HelperFuncReplInfoIter =
-      DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);
-  if (HelperFuncReplInfoIter ==
-      DpctGlobalInfo::getHelperFuncReplInfoMap().end())
-    return getDefaultString(HFT);
-
-  std::string CounterKey =
-      HelperFuncReplInfoIter->second.DeclLocFile + ":" +
-      std::to_string(HelperFuncReplInfoIter->second.DeclLocOffset);
-
-  auto TempVariableDeclCounterIter =
-      DpctGlobalInfo::getTempVariableDeclCounterMap().find(CounterKey);
-  if (TempVariableDeclCounterIter ==
-      DpctGlobalInfo::getTempVariableDeclCounterMap().end()) {
-    return getDefaultString(HFT);
-  }
-
-  // All cases of replacing placeholders:
-  // dev_count  queue_count  dev_decl            queue_decl
-  // 0          1            /                   get_default_queue
-  // 1          0            get_current_device  /
-  // 1          1            get_current_device  get_default_queue
-  // 2          1            dev_ct1             get_default_queue
-  // 1          2            dev_ct1             q_ct1
-  // >=2        >=2          dev_ct1             q_ct1
-  if (HFT == HelperFuncType::HFT_DefaultQueue) {
-    if (!HelperFuncReplInfoIter->second.IsLocationValid ||
-        TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
+    if (DpctGlobalInfo::getDeviceChangedFlag() ||
+        !DpctGlobalInfo::getUsingDRYPattern()) {
       return getDefaultString(HFT);
-    } else {
-      return "q_ct1";
     }
-  } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
-    if (!HelperFuncReplInfoIter->second.IsLocationValid ||
-        (TempVariableDeclCounterIter->second.CurrentDeviceCounter <= 1 &&
-         TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1)) {
+
+    auto HelperFuncReplInfoIter =
+        DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);
+    if (HelperFuncReplInfoIter ==
+        DpctGlobalInfo::getHelperFuncReplInfoMap().end())
       return getDefaultString(HFT);
-    } else {
-      return "dev_ct1";
+
+    std::string CounterKey =
+        HelperFuncReplInfoIter->second.DeclLocFile + ":" +
+        std::to_string(HelperFuncReplInfoIter->second.DeclLocOffset);
+
+    auto TempVariableDeclCounterIter =
+        DpctGlobalInfo::getTempVariableDeclCounterMap().find(CounterKey);
+    if (TempVariableDeclCounterIter ==
+        DpctGlobalInfo::getTempVariableDeclCounterMap().end()) {
+      return getDefaultString(HFT);
     }
+
+    // All cases of replacing placeholders:
+    // dev_count  queue_count  dev_decl            queue_decl
+    // 0          1            /                   get_default_queue
+    // 1          0            get_current_device  /
+    // 1          1            get_current_device  get_default_queue
+    // 2          1            dev_ct1             get_default_queue
+    // 1          2            dev_ct1             q_ct1
+    // >=2        >=2          dev_ct1             q_ct1
+    if (HFT == HelperFuncType::HFT_DefaultQueue) {
+      if (!HelperFuncReplInfoIter->second.IsLocationValid ||
+          TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
+        return getDefaultString(HFT);
+      } else {
+        return "q_ct1";
+      }
+    } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
+      if (!HelperFuncReplInfoIter->second.IsLocationValid ||
+          (TempVariableDeclCounterIter->second.CurrentDeviceCounter <= 1 &&
+          TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1)) {
+        return getDefaultString(HFT);
+      } else {
+        return "dev_ct1";
+      }
+    }
+  
   }
   return "";
 }
