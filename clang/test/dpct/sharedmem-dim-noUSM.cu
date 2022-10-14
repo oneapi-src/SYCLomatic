@@ -41,7 +41,7 @@ int main(void)
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::accessor<int, 4, sycl::access_mode::read_write, sycl::access::target::local> sha2_mem_acc_ct1(sycl::range<4>(10, 10, 10, 10), cgh);
+// CHECK-NEXT: sycl::local_accessor<int, 4> sha2_mem_acc_ct1(sycl::range<4>(10, 10, 10, 10), cgh);
 
   staticReverse<<<10,10>>>();
 
@@ -51,7 +51,7 @@ int main(void)
 // CHECK: /*
 // CHECK-NEXT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
 // CHECK-NEXT: */
-// CHECK-NEXT: sycl::accessor<uint8_t, 4, sycl::access_mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<4>(16*sizeof(int), 2, 2, 2), cgh);
+// CHECK-NEXT: sycl::local_accessor<uint8_t, 4> dpct_local_acc_ct1(sycl::range<4>(16*sizeof(int), 2, 2, 2), cgh);
 
   dynamicReverse<<<10,10,16*sizeof(int)>>>();
   return 0;
@@ -86,6 +86,6 @@ void foo3() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(36/*sizeof(float3) * 3*/), cgh);
+  // CHECK-NEXT: sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(36/*sizeof(float3) * 3*/), cgh);
   kernel3<<<1, 1>>>();
 }

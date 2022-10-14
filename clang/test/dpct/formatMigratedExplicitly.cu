@@ -107,7 +107,7 @@ typedef struct
 //CHECK-NEXT:                                 const int loop_trip,
 //CHECK-NEXT:                                 cl::sycl::nd_item<3> item_ct1, float *sp_lj,
 //CHECK-NEXT:                                 float *sp_coul, int *ljd,
-//CHECK-NEXT:                                 cl::sycl::accessor<double, 2, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> la) {
+//CHECK-NEXT:                                 cl::sycl::local_accessor<double, 2> la) {
 template <int EFLAG>
 __global__ void k_mdppp_outer_nn(const int * __restrict__ pos,
                                  const float * __restrict__ q,

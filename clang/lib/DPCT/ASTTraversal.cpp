@@ -1129,7 +1129,7 @@ void MigrationRule::print(llvm::raw_ostream &OS) {
 
   OS << "[" << getName() << "]" << getNL();
   constexpr char Indent[] = "  ";
-  for (auto TM : EmittedTransformations) {
+  for (const auto &TM : EmittedTransformations) {
     OS << Indent;
     TM->print(OS, DpctGlobalInfo::getContext(),
               /* Print parent */ false);
@@ -1144,7 +1144,7 @@ void MigrationRule::printStatistics(llvm::raw_ostream &OS) {
 
   OS << "<Statistics of " << getName() << ">" << getNL();
   std::unordered_map<std::string, size_t> TMNameCountMap;
-  for (auto TM : EmittedTransformations) {
+  for (const auto &TM : EmittedTransformations) {
     const std::string Name = TM->getName();
     if (TMNameCountMap.count(Name) == 0) {
       TMNameCountMap.emplace(std::make_pair(Name, 1));
@@ -3393,61 +3393,59 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   }
   if (auto CRD = getNodeAsType<CXXRecordDecl>(Result, "inheritanceType")) {
-    for (auto ItBase = CRD->bases_begin(); ItBase != CRD->bases_end();
-         ItBase++) {
-      std::string TypeName = ItBase->getBaseTypeInfo()->getType().getAsString();
-      if (MapNames::SupportedVectorTypes.find(TypeName) ==
-          MapNames::SupportedVectorTypes.end())
-        return;
-      auto Begin = ItBase->getSourceRange().getBegin();
-      auto End = ItBase->getSourceRange().getEnd();
-      if (Begin.isInvalid()) {
-        return;
-      }
-      if (*(TypeName.end() - 1) == '1') {
-        if (Begin.isMacroID() &&
-            (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin)) ||
-             SM->isWrittenInScratchSpace(SM->getSpellingLoc(End)))) {
-          // Macro concatenate --> use immediateExpansion
-          // Make (Begin, End) be the range of "##1"
-          Begin = SM->getImmediateExpansionRange(Begin).getBegin();
-          End = SM->getImmediateExpansionRange(End).getEnd();
-          Begin = SM->getSpellingLoc(Begin);
-          End = SM->getSpellingLoc(End);
-          Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
-              Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-          End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-              End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-          report(Begin, Comments::VECTYPE_INHERITATED, false);
-        } else {
-          // Make (Begin, End) be the range of "1"
-          Begin = SM->getSpellingLoc(Begin);
-          End = SM->getSpellingLoc(End);
-          Begin = Begin.getLocWithOffset(
-              Lexer::MeasureTokenLength(
-                  Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()) -
-              1);
-          End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-              End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-        }
-        auto Length = SM->getFileOffset(End) - SM->getFileOffset(Begin);
-        return emplaceTransformation(new ReplaceText(Begin, Length, ""));
-      }
-
-      if (Begin.isInvalid())
-        return;
-
-      if (Begin.isMacroID()) {
-        // Macro concatenate --> use immediateExpansion
-        // Make Begin being the begin of "MACROARG##1"
-        if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin))) {
-          Begin = SM->getImmediateExpansionRange(Begin).getBegin();
-        }
-        Begin = SM->getSpellingLoc(Begin);
-      }
-      return emplaceTransformation(
-          new InsertText(Begin, MapNames::getClNamespace()));
+    const auto *Base = CRD->bases_begin();
+    std::string TypeName = Base->getBaseTypeInfo()->getType().getAsString();
+    if (MapNames::SupportedVectorTypes.find(TypeName) ==
+        MapNames::SupportedVectorTypes.end())
+      return;
+    auto Begin = Base->getSourceRange().getBegin();
+    auto End = Base->getSourceRange().getEnd();
+    if (Begin.isInvalid()) {
+      return;
     }
+    if (*(TypeName.end() - 1) == '1') {
+      if (Begin.isMacroID() &&
+          (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin)) ||
+            SM->isWrittenInScratchSpace(SM->getSpellingLoc(End)))) {
+        // Macro concatenate --> use immediateExpansion
+        // Make (Begin, End) be the range of "##1"
+        Begin = SM->getImmediateExpansionRange(Begin).getBegin();
+        End = SM->getImmediateExpansionRange(End).getEnd();
+        Begin = SM->getSpellingLoc(Begin);
+        End = SM->getSpellingLoc(End);
+        Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
+            Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+            End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+        report(Begin, Comments::VECTYPE_INHERITATED, false);
+      } else {
+        // Make (Begin, End) be the range of "1"
+        Begin = SM->getSpellingLoc(Begin);
+        End = SM->getSpellingLoc(End);
+        Begin = Begin.getLocWithOffset(
+            Lexer::MeasureTokenLength(
+                Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()) -
+            1);
+        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+            End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+      }
+      auto Length = SM->getFileOffset(End) - SM->getFileOffset(Begin);
+      return emplaceTransformation(new ReplaceText(Begin, Length, ""));
+    }
+
+    if (Begin.isInvalid())
+      return;
+
+    if (Begin.isMacroID()) {
+      // Macro concatenate --> use immediateExpansion
+      // Make Begin being the begin of "MACROARG##1"
+      if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin))) {
+        Begin = SM->getImmediateExpansionRange(Begin).getBegin();
+      }
+      Begin = SM->getSpellingLoc(Begin);
+    }
+    return emplaceTransformation(
+        new InsertText(Begin, MapNames::getClNamespace()));
   }
 }
 
@@ -5654,6 +5652,14 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
 }
 
 void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
+  auto getArgWithTypeCast = [&](const Expr* E, const std::string& CastType) {
+    if (auto Cast = dyn_cast<CStyleCastExpr>(E->IgnoreImpCasts())) {
+      return "(" + CastType + ")" + ExprAnalysis::ref(Cast->getSubExpr());
+    } else {
+      return "(" + CastType + ")" + ExprAnalysis::ref(E);
+    }
+  };
+
   bool IsAssigned = false;
   bool IsInitializeVarDecl = false;
   bool HasDeviceAttr = false;
@@ -5842,18 +5848,18 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     } else {
       if (FuncName == "cublasCdgmm") {
         CallExprArguReplVec[4] =
-            "(std::complex<float>*)" + CallExprArguReplVec[4];
+            getArgWithTypeCast(CE->getArg(4), "std::complex<float>*");
         CallExprArguReplVec[6] =
-            "(std::complex<float>*)" + CallExprArguReplVec[6];
+            getArgWithTypeCast(CE->getArg(6), "std::complex<float>*");
         CallExprArguReplVec[8] =
-            "(std::complex<float>*)" + CallExprArguReplVec[8];
+            getArgWithTypeCast(CE->getArg(8), "std::complex<float>*");
       } else if (FuncName == "cublasZdgmm") {
         CallExprArguReplVec[4] =
-            "(std::complex<double>*)" + CallExprArguReplVec[4];
+            getArgWithTypeCast(CE->getArg(4), "std::complex<double>*");
         CallExprArguReplVec[6] =
-            "(std::complex<double>*)" + CallExprArguReplVec[6];
+            getArgWithTypeCast(CE->getArg(6), "std::complex<double>*");
         CallExprArguReplVec[8] =
-            "(std::complex<double>*)" + CallExprArguReplVec[8];
+            getArgWithTypeCast(CE->getArg(8), "std::complex<double>*");
       }
     }
 
@@ -6197,8 +6203,8 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                          "std::complex<float>" ||
                      ReplInfo.BufferTypeInfo[IndexTemp] ==
                          "std::complex<double>") {
-            CurrentArgumentRepl = "(" + ReplInfo.BufferTypeInfo[IndexTemp] +
-                                  "*)" + ExprAnalysis::ref(CE->getArg(i));
+            CurrentArgumentRepl = getArgWithTypeCast(
+                CE->getArg(i), ReplInfo.BufferTypeInfo[IndexTemp] + "*");
           } else {
             CurrentArgumentRepl = ExprAnalysis::ref(CE->getArg(i));
           }
@@ -6342,9 +6348,10 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
                          "std::complex<float>" ||
                      ReplInfo.BufferTypeInfo[IndexTemp] ==
                          "std::complex<double>") {
-            CallExprReplStr = CallExprReplStr + ", (" +
-                              ReplInfo.BufferTypeInfo[IndexTemp] + "*)" +
-                              ParamsStrsVec[i];
+            CallExprReplStr =
+                CallExprReplStr + ", " +
+                getArgWithTypeCast(CE->getArg(i),
+                                   ReplInfo.BufferTypeInfo[IndexTemp] + "*");
           } else {
             CallExprReplStr = CallExprReplStr + ", " + ParamsStrsVec[i];
           }
@@ -8248,7 +8255,7 @@ bool EventQueryTraversal::traverseFunction(const FunctionDecl *FD,
   ResultTy Result;
   auto Ret = traverseStmt(FD->getBody(), VD, Result) && QueryCallUsed;
 
-  for (auto R : Result) {
+  for (const auto &R : Result) {
     Rule->ExprCache[R.first] = Ret;
     if (Ret)
       Rule->emplaceTransformation(R.second);
@@ -9762,6 +9769,9 @@ void DeviceFunctionDeclRule::runRule(
                                              Param->isReferenced());
       ParamCounter++;
     }
+  }
+  if (isLambda(FD) && !FuncInfo->isLambda()) {
+    FuncInfo->setLambda();
   }
 
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr")) {
@@ -14339,7 +14349,7 @@ bool TextureRule::SettersMerger::applyResult() {
   ResultMapInserter Inserter(MethodNames.size(), Rule);
   std::vector<std::string> ArgsList(MethodNames.size());
   unsigned ActualArgs = 0;
-  for (auto R : Result) {
+  for (const auto &R : Result) {
     if (ArgsList[R.first].empty())
       ++ActualArgs;
     Inserter.update(R.first, R.second);
@@ -14494,7 +14504,7 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
         }
       } else if (auto TS =
                      DpctGlobalInfo::findAncestor<TranslationUnitDecl>(UD)) {
-        for (auto child : TS->decls()) {
+        for (const auto &child : TS->decls()) {
           if (child == UD) {
             continue;
           } else if (auto USD = dyn_cast<UsingShadowDecl>(child)) {

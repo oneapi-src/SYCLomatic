@@ -1086,7 +1086,7 @@ bool isConditionOfFlowControl(const clang::CallExpr *CE,
   for (auto CondtionNode : CondtionNodes) {
     if (CondtionNode == nullptr)
       continue;
-    for (auto Node : AncestorNodes) {
+    for (const auto &Node : AncestorNodes) {
       if (Node.get<Stmt>() && Node.get<Stmt>() == CondtionNode) {
         // if the expression in else if, we can only use lambda
         auto P = getParentStmt(AncestorNodes[AncestorNodes.size() - 1]);
@@ -1196,7 +1196,7 @@ bool isConditionOfFlowControl(const clang::Expr *E,
   for (auto CondtionNode : CondtionNodes) {
     if (CondtionNode == nullptr)
       continue;
-    for (auto Node : AncestorNodes) {
+    for (const auto &Node : AncestorNodes) {
       if (Node.get<Stmt>() && Node.get<Stmt>() == CondtionNode)
         return true;
     }
@@ -1345,7 +1345,7 @@ calculateRangesWithFlag(const clang::tooling::Replacements &Repls,
   std::vector<clang::tooling::Range> Ranges;
 
   int Diff = 0;
-  for (auto R : Repls) {
+  for (const auto &R : Repls) {
     Ranges.emplace_back(/*offset*/ R.getOffset() + Diff,
                         /*length*/ R.getReplacementText().size());
     Diff = Diff + R.getReplacementText().size() - R.getLength();
@@ -1366,7 +1366,7 @@ calculateRangesWithFlag(const clang::tooling::Replacements &Repls,
 std::vector<clang::tooling::Range>
 calculateRangesWithFormatFlag(const clang::tooling::Replacements &Repls) {
   std::vector<bool> FormatFlags;
-  for (auto R : Repls) {
+  for (const auto &R : Repls) {
     if (R.getNotFormatFlag())
       FormatFlags.push_back(false);
     else
@@ -1382,7 +1382,7 @@ std::vector<clang::tooling::Range> calculateRangesWithBlockLevelFormatFlag(
     const clang::tooling::Replacements &Repls) {
   std::vector<bool> BlockLevelFormatFlags;
 
-  for (auto R : Repls) {
+  for (const auto &R : Repls) {
     if (R.getBlockLevelFormatFlag())
       BlockLevelFormatFlags.push_back(true);
     else
@@ -1401,7 +1401,7 @@ std::vector<clang::tooling::Range>
 calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
                        const std::vector<clang::tooling::Range> &Ranges) {
   std::vector<clang::tooling::Range> Result;
-  for (auto R : Ranges) {
+  for (const auto &R : Ranges) {
     unsigned int BOffset = Repls.getShiftedCodePosition(R.getOffset());
     unsigned int EOffset =
         Repls.getShiftedCodePosition(R.getOffset() + R.getLength());
@@ -2355,7 +2355,7 @@ bool isIncludedFile(const std::string &CurrentFile,
     } else if (Q.front() == CheckingFileInfo) {
       return true;
     } else {
-      for (auto IncludeFile : Q.front()->getIncludedFilesInfoSet()) {
+      for (const auto &IncludeFile : Q.front()->getIncludedFilesInfoSet()) {
         if (InsertedFile.find(IncludeFile) == InsertedFile.end()) {
           Q.insert(Q.end(), IncludeFile);
           InsertedFile.insert(IncludeFile);
@@ -4013,4 +4013,11 @@ std::string getFunctionName(const clang::UnresolvedLookupExpr *Node) {
 }
 std::string getFunctionName(const clang::FunctionTemplateDecl *Node) {
   return getFunctionName(Node->getTemplatedDecl());
+}
+bool isLambda(const clang::FunctionDecl *FD) {
+  if (const auto *CMD = dyn_cast<clang::CXXMethodDecl>(FD)) {
+    const CXXRecordDecl *CRD = CMD->getParent();
+    return CRD->isLambda();
+  }
+  return false;
 }

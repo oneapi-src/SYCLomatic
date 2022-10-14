@@ -146,7 +146,7 @@ public:
   void setBlockLevelFormatFlag(bool Flag = true) { BlockLevelFormatFlag = Flag; }
   bool getBlockLevelFormatFlag() const { return BlockLevelFormatFlag; }
   void setNotFormatFlag() { NotFormatFlag = true; }
-  bool getNotFormatFlag() { return NotFormatFlag; }
+  bool getNotFormatFlag() const { return NotFormatFlag; }
   dpct::ConstantFlagType getConstantFlag() const { return ConstantFlag; }
   void setConstantFlag(dpct::ConstantFlagType F) { ConstantFlag = F; }
   unsigned int getConstantOffset() const { return ConstantOffset; }
