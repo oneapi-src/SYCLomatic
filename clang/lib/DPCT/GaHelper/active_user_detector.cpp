@@ -145,7 +145,7 @@ void ActiveUserDetector::dumpStat(){
     std::cout << "\tm_should_save: " << m_should_save << "\n";
     std::cout << "\tis_active_user: " << is_active_user() << "\n";
     std::cout << "\tcontent of m_last_active_dates: \n";
-    for (auto i : m_last_active_dates) {
+    for (const auto &i : m_last_active_dates) {
         std::cout << "\t\t" << i.year << i.mon << i.day << "\n";
     }
 }
