@@ -9760,6 +9760,9 @@ void DeviceFunctionDeclRule::runRule(
       ParamCounter++;
     }
   }
+  if (isLambda(FD) && !FuncInfo->isLambda()) {
+    FuncInfo->setLambda();
+  }
 
   if (auto CE = getAssistNodeAsType<CallExpr>(Result, "callExpr")) {
     FuncInfo->addCallee(CE);

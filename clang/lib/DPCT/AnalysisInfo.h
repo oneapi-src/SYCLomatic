@@ -3745,7 +3745,7 @@ public:
       : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
         IsBuilt(false),
         TextureObjectList(ParamsNum, std::shared_ptr<TextureObjectInfo>()),
-        FunctionName(FunctionName) {
+        FunctionName(FunctionName), IsLambda(false) {
     ParametersProps.resize(ParamsNum);
   }
 
@@ -3782,6 +3782,9 @@ public:
 
   inline bool isBuilt() { return IsBuilt; }
   inline void setBuilt() { IsBuilt = true; }
+
+  inline bool isLambda() { return IsLambda; }
+  inline void setLambda() { IsLambda = true; }
 
   inline std::string
   getExtraParameters(const std::string &Path,
@@ -3859,6 +3862,7 @@ private:
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::vector<ParameterProps> ParametersProps;
   std::string FunctionName;
+  bool IsLambda;
 };
 
 class KernelPrinter {

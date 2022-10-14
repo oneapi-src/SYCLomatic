@@ -2167,8 +2167,21 @@ void CallFunctionExpr::buildInfo() {
     return;
 
   const std::string &DefFilePath = FuncInfo->getDefinitionFilePath();
+  // SYCL_EXTERNAL macro is not needed if the device function is lambda
+  // expression, becuase 'sycl_device' attribute cannot be applied or will be
+  // ignored.
+  //
+  // e.g.,
+  // [] (T a, T b ) -> SYCL_EXTERNAL T { return a * b; }
+  // [] (T a, T b ) SYCL_EXTERNAL { return a * b; }
+  //
+  // Intel(R) oneAPI DPC++ Compiler emits warning of ignoring SYCL_EXTERNAL in
+  // the first example and emits error when compiling the second example.
+  //
+  // TODO: Need to revisit the condition to add SYCL_EXTERNAL macro if issues
+  // are observed in the future.
   if (!DefFilePath.empty() && DefFilePath != getFilePath() &&
-      !isIncludedFile(getFilePath(), DefFilePath)) {
+      !isIncludedFile(getFilePath(), DefFilePath) && !FuncInfo->isLambda()) {
     FuncInfo->setNeedSyclExternMacro();
   }
 
