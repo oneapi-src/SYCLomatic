@@ -23,7 +23,7 @@ function(install_symlink name target outdir)
   endif()
   execute_process(
     COMMAND "${CMAKE_COMMAND}" -E ${LLVM_LINK_OR_COPY} "${target}" "${name}"
-    WORKING_DIRECTORY "${bindir}" ERROR_VARIABLE has_err)
+    WORKING_DIRECTORY "${outdir}" ERROR_VARIABLE has_err)
 # SYCLomatic_CUSTOMIZATION else
   # execute_process(
   #   COMMAND "${CMAKE_COMMAND}" -E create_symlink "${target}" "${name}"
