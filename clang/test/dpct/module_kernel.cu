@@ -38,7 +38,7 @@ __constant__ unsigned int const_data[3] = {1, 2, 3};
 //CHECK-NEXT:  [&](sycl::handler &cgh) {
 //CHECK-NEXT:    const_data.init(queue);
 //CHECK:    auto const_data_ptr_ct1 = const_data.get_ptr();
-//CHECK:    sycl::accessor<uint8_t, 1, sycl::access_mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(localMemSize), cgh);
+//CHECK:    sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(localMemSize), cgh);
 //CHECK:    cgh.parallel_for(
 //CHECK-NEXT:      nr,
 //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
@@ -60,7 +60,7 @@ __global__ void foo(float* k, float* y){
 //CHECK-NEXT:       [&](sycl::handler &cgh) {
 //CHECK-NEXT:         const_data.init();
 //CHECK:         auto const_data_ptr_ct1 = const_data.get_ptr();
-//CHECK:         sycl::accessor<uint8_t, 1, sycl::access_mode::read_write, sycl::access::target::local> dpct_local_acc_ct1(sycl::range<1>(0), cgh);
+//CHECK:         sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(0), cgh);
 //CHECK:         cgh.parallel_for(
 //CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 2)), 
 //CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
