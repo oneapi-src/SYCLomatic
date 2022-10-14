@@ -516,7 +516,7 @@ public:
                ::clang::ast_matchers::internal::ASTMatchFinder *Finder,
                ::clang::ast_matchers::internal::BoundNodesTreeBuilder *Builder)
       const override {
-    return (!HasExplicitTemplateArgs || Node.hasExplicitTemplateArgs()) &&
+    return (!Node.hasExplicitTemplateArgs() || HasExplicitTemplateArgs) &&
            matchName(Node, Finder->getASTContext());
   }
 };

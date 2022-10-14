@@ -1458,7 +1458,7 @@ public:
     if (!Call)
       return std::shared_ptr<UserDefinedRewriter>();
 
-    if (HasExplicitTemplateArgs && !hasExplicitTemplateArgs(Call))
+    if (hasExplicitTemplateArgs(Call) && !HasExplicitTemplateArgs)
       return std::make_shared<NullRewriter>(Call, "");
 
     for (auto &Header : Includes)
