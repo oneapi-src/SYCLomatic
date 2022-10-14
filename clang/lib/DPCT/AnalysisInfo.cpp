@@ -3093,34 +3093,37 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
 std::string MemVarInfo::getSyclAccessorType() {
   std::string Ret;
   llvm::raw_string_ostream OS(Ret);
-  OS << MapNames::getClNamespace() << "accessor<";
-  OS << getAccessorDataType() << ", ";
-  OS << getType()->getDimension() << ", ";
+  if (getAttr() == MemVarInfo::VarAttrKind::Shared) {
+    OS << MapNames::getClNamespace() << "local_accessor<";
+    OS << getAccessorDataType() << ", ";
+    OS << getType()->getDimension() << ">";
+  } else {
+    OS << MapNames::getClNamespace() << "accessor<";
+    OS << getAccessorDataType() << ", ";
+    OS << getType()->getDimension() << ", ";
+  
+    OS << MapNames::getClNamespace() << "access_mode::";
+    if (getAttr() == MemVarInfo::VarAttrKind::Constant)
+      OS << "read";
+    else
+      OS << "read_write";
+    OS << ", ";
+  
+    OS << MapNames::getClNamespace() << "access::target::";
+    switch (getAttr()) {
+    case VarAttrKind::Constant:
+      OS << "constant_buffer";
+      break;
+    case VarAttrKind::Device:
+    case VarAttrKind::Managed:
+      OS << "device";
+      break;
+    default:
+      break;
+    }
 
-  OS << MapNames::getClNamespace() << "access_mode::";
-  if (getAttr() == MemVarInfo::VarAttrKind::Constant)
-    OS << "read";
-  else
-    OS << "read_write";
-  OS << ", ";
-
-  OS << MapNames::getClNamespace() << "access::target::";
-  switch (getAttr()) {
-  case VarAttrKind::Constant:
-    OS << "constant_buffer";
-    break;
-  case VarAttrKind::Shared:
-    OS << "local";
-    break;
-  case VarAttrKind::Device:
-  case VarAttrKind::Managed:
-    OS << "device";
-    break;
-  default:
-    break;
+    OS << ">";
   }
-
-  OS << ">";
   return OS.str();
 }
 void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,

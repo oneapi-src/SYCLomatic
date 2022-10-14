@@ -28,7 +28,7 @@ void foo() {
   float *input = NULL;
   //CHECK:dpct::get_default_queue().submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
-  //CHECK-NEXT:    sycl::accessor<float, 1, sycl::access_mode::read_write, sycl::access::target::local> smem_acc_ct1(sycl::range<1>(128), cgh);
+  //CHECK-NEXT:    sycl::local_accessor<float, 1> smem_acc_ct1(sycl::range<1>(128), cgh);
   //CHECK-NEXT:    dpct::access_wrapper<float *> input_acc_ct0(input, cgh);
   //CHECK-EMPTY:
   //CHECK-NEXT:    cgh.parallel_for(
