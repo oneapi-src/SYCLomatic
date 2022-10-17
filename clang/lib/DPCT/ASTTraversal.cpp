@@ -2879,7 +2879,7 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
   auto SD = getAllDecls(DD);
 
   auto replaceInitParam = [&](const clang::Expr *replExpr) {
-    if (replExpr == nullptr)
+    if (!replExpr)
       return;
     if (isDefaultStream(replExpr)) {
       int Index = getPlaceholderIdx(replExpr);
@@ -2904,9 +2904,8 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
 
     if (const auto VarInitExpr = dyn_cast<InitListExpr>(replExpr)) {
       auto arrayReplEXpr = VarInitExpr->inits();
-      for (auto replExprPtr = arrayReplEXpr.begin();
-           replExprPtr < arrayReplEXpr.end(); replExprPtr++) {
-        replaceInitParam(*replExprPtr);
+      for (auto replExpr : arrayReplEXpr) {
+        replaceInitParam(replExpr);
       }
       return;
     }
@@ -3205,14 +3204,14 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       if (TL->getType().getCanonicalType()->isPointerType()) {
         const auto *PtrTy =
             TL->getType().getCanonicalType()->getAs<PointerType>();
-        if (PtrTy == nullptr)
+        if (!PtrTy)
           return;
         if (PtrTy->getPointeeType()->isRecordType()) {
           const auto *RecordTy = PtrTy->getPointeeType()->getAs<RecordType>();
-          if (RecordTy == nullptr)
+          if (!RecordTy)
             return;
           const auto *RD = RecordTy->getAsRecordDecl();
-          if (RD == nullptr)
+          if (!RD)
             return;
           if (RD->getName() == "CUstream_st" &&
               DpctGlobalInfo::isInCudaPath(RD->getBeginLoc()))
