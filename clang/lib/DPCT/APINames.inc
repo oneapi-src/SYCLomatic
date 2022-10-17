@@ -1519,7 +1519,6 @@ ENTRY(cuStreamIsCapturing, cuStreamIsCapturing, false, NO_FLAG, P4, "comment")
 ENTRY(cuThreadExchangeStreamCaptureMode, cuThreadExchangeStreamCaptureMode, false, NO_FLAG, P4, "comment")
 ENTRY(cuWaitExternalSemaphoresAsync, cuWaitExternalSemaphoresAsync, false, NO_FLAG, P4, "comment")
 
-
 //add runtime APIs for cuda-11.7
 ENTRY(cudaGraphMemAttrReservedMemCurrent, cudaGraphMemAttrReservedMemCurrent, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphMemAttrReservedMemHigh, cudaGraphMemAttrReservedMemHigh, false, NO_FLAG, P4, "comment")
