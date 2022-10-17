@@ -58,7 +58,7 @@ struct attr{
 // CHECK: /*
 // CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized. You may need to adjust the code.
 // CHECK-NEXT: */
-// CHECK_NEXT: cudaDeviceGetAttribute(&result, attr1.attr, dev_id);
+// CHECK-NEXT: cudaDeviceGetAttribute(&val, attr1.attr, dev_id);
 cudaDeviceGetAttribute(&val, attr1.attr, dev_id);
 
 // CHECK: int attr2 = 86;
@@ -91,7 +91,7 @@ cudaDeviceGetAttribute(&val, attr4, dev_id);
 // CHECK-NEXT: /*
 // CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized. You may need to adjust the code.
 // CHECK-NEXT: */
-// CHECK_NEXT: cudaDeviceGetAttribute(&result, attr5, dev_id);
+// CHECK-NEXT: cudaDeviceGetAttribute(&val, attr5, dev_id);
 cudaDeviceAttr attr5;
 int somecondition;
 attr5 = cudaDevAttrHostNativeAtomicSupported;
@@ -110,7 +110,7 @@ checkError(cudaDeviceGetAttribute(&val, attr5, dev_id));
 // CHECK: /*
 // CHECK-NEXT: DPCT1076:{{[0-9]+}}: The device attribute was not recognized. You may need to adjust the code.
 // CHECK-NEXT: */
-// CHECK_NEXT: cudaDeviceGetAttribute(&result, attr6, dev_id);
+// CHECK-NEXT: cudaDeviceGetAttribute(&val, attr6, dev_id);
 cudaDeviceGetAttribute(&val, attr6, dev_id);
 
 int computeMode = -1, minor = 0;

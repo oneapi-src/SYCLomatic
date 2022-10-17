@@ -1086,7 +1086,7 @@ bool isConditionOfFlowControl(const clang::CallExpr *CE,
   for (auto CondtionNode : CondtionNodes) {
     if (CondtionNode == nullptr)
       continue;
-    for (auto Node : AncestorNodes) {
+    for (const auto &Node : AncestorNodes) {
       if (Node.get<Stmt>() && Node.get<Stmt>() == CondtionNode) {
         // if the expression in else if, we can only use lambda
         auto P = getParentStmt(AncestorNodes[AncestorNodes.size() - 1]);
@@ -1196,7 +1196,7 @@ bool isConditionOfFlowControl(const clang::Expr *E,
   for (auto CondtionNode : CondtionNodes) {
     if (CondtionNode == nullptr)
       continue;
-    for (auto Node : AncestorNodes) {
+    for (const auto &Node : AncestorNodes) {
       if (Node.get<Stmt>() && Node.get<Stmt>() == CondtionNode)
         return true;
     }
@@ -1345,7 +1345,7 @@ calculateRangesWithFlag(const clang::tooling::Replacements &Repls,
   std::vector<clang::tooling::Range> Ranges;
 
   int Diff = 0;
-  for (auto R : Repls) {
+  for (const auto &R : Repls) {
     Ranges.emplace_back(/*offset*/ R.getOffset() + Diff,
                         /*length*/ R.getReplacementText().size());
     Diff = Diff + R.getReplacementText().size() - R.getLength();
@@ -1366,7 +1366,7 @@ calculateRangesWithFlag(const clang::tooling::Replacements &Repls,
 std::vector<clang::tooling::Range>
 calculateRangesWithFormatFlag(const clang::tooling::Replacements &Repls) {
   std::vector<bool> FormatFlags;
-  for (auto R : Repls) {
+  for (const auto &R : Repls) {
     if (R.getNotFormatFlag())
       FormatFlags.push_back(false);
     else
@@ -1382,7 +1382,7 @@ std::vector<clang::tooling::Range> calculateRangesWithBlockLevelFormatFlag(
     const clang::tooling::Replacements &Repls) {
   std::vector<bool> BlockLevelFormatFlags;
 
-  for (auto R : Repls) {
+  for (const auto &R : Repls) {
     if (R.getBlockLevelFormatFlag())
       BlockLevelFormatFlags.push_back(true);
     else
@@ -1401,7 +1401,7 @@ std::vector<clang::tooling::Range>
 calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
                        const std::vector<clang::tooling::Range> &Ranges) {
   std::vector<clang::tooling::Range> Result;
-  for (auto R : Ranges) {
+  for (const auto &R : Ranges) {
     unsigned int BOffset = Repls.getShiftedCodePosition(R.getOffset());
     unsigned int EOffset =
         Repls.getShiftedCodePosition(R.getOffset() + R.getLength());
@@ -1708,8 +1708,8 @@ bool isContainMacro(const Expr *E) {
     }
     auto Tok = Lexer::findNextToken(
         Loc, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
-    if (Tok.hasValue())
-      Loc = Tok.getValue().getLocation();
+    if (Tok.has_value())
+      Loc = Tok.value().getLocation();
     else
       return false;
   }
@@ -1736,7 +1736,7 @@ const CXXRecordDecl *getParentRecordDecl(const ValueDecl *DD) {
   return nullptr;
 }
 
-/// Get sibling Decls for a VarDecl or a FieldDecl
+/// Get All Decls for a VarDecl or a FieldDecl
 /// E.g for a VarDecl:
 /// |-DeclStmt
 ///   |-VarDecl
@@ -1745,24 +1745,22 @@ const CXXRecordDecl *getParentRecordDecl(const ValueDecl *DD) {
 /// |-CXXRecordDecl
 ///   |-FieldDecl
 ///   |-FieldDecl
-std::vector<const DeclaratorDecl *> getSiblingDecls(const DeclaratorDecl *DD) {
+std::vector<const DeclaratorDecl *> getAllDecls(const DeclaratorDecl *DD) {
   std::vector<const DeclaratorDecl *> Decls;
-  // For VarDecl, sibling VarDecls share the same parent DeclStmt with it
+  // For VarDecl, All VarDecls share the same parent DeclStmt with it
   if (auto P = getParentStmt(DD)) {
     if (auto DS = dyn_cast<DeclStmt>(P)) {
       for (auto It = DS->decl_begin(); It != DS->decl_end(); ++It) {
         if (auto DD2 = dyn_cast<DeclaratorDecl>(*It))
-          if (DD2 != DD)
             Decls.push_back(DD2);
       }
     }
   }
-  // For FieldDecl, sibling FieldDecls share the same BeginLoc with it
+  // For FieldDecl, All FieldDecls share the same BeginLoc with it
   else if (auto P = getParentRecordDecl(DD)) {
     for (auto It = P->decls_begin(); It != P->decls_end(); ++It) {
       if (auto DD2 = dyn_cast<DeclaratorDecl>(*It))
         if (DD2->getBeginLoc() == DD->getBeginLoc())
-          if (DD2 != DD)
             Decls.push_back(DD2);
     }
   }
@@ -2326,7 +2324,7 @@ bool isIncludedFile(const std::string &CurrentFile,
     } else if (Q.front() == CheckingFileInfo) {
       return true;
     } else {
-      for (auto IncludeFile : Q.front()->getIncludedFilesInfoSet()) {
+      for (const auto &IncludeFile : Q.front()->getIncludedFilesInfoSet()) {
         if (InsertedFile.find(IncludeFile) == InsertedFile.end()) {
           Q.insert(Q.end(), IncludeFile);
           InsertedFile.insert(IncludeFile);
@@ -3989,4 +3987,11 @@ std::string getFunctionName(const clang::UnresolvedLookupExpr *Node) {
 }
 std::string getFunctionName(const clang::FunctionTemplateDecl *Node) {
   return getFunctionName(Node->getTemplatedDecl());
+}
+bool isLambda(const clang::FunctionDecl *FD) {
+  if (const auto *CMD = dyn_cast<clang::CXXMethodDecl>(FD)) {
+    const CXXRecordDecl *CRD = CMD->getParent();
+    return CRD->isLambda();
+  }
+  return false;
 }

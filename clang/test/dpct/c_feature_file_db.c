@@ -18,6 +18,7 @@
 //CHECK:#include <sycl/sycl.hpp>
 //CHECK:#include <dpct/dpct.hpp>
 #include "cuda_runtime.h"
+#include <stdio.h>
 
 void func(int N, double re[][1<<N]) {
   printf("Hello from bindArraysToStackComplexMatrixN\n");

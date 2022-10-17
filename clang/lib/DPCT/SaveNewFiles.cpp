@@ -577,7 +577,7 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           clang::format::setFormatRangeGetterHandler(
               clang::dpct::DpctGlobalInfo::getFormatRange);
           bool FormatResult = true;
-          for (auto Iter : FileRangesMap) {
+          for (const auto &Iter : FileRangesMap) {
             clang::tooling::Replacements FormatChanges;
             FormatResult = formatFile(Iter.first, Iter.second, FormatChanges) &&
                            FormatResult;
@@ -716,7 +716,7 @@ void loadYAMLIntoFileInfo(std::string Path) {
   auto PreTU = std::make_shared<clang::tooling::TranslationUnitReplacements>();
   if (fs::exists(YamlFilePath)) {
     if (clang::dpct::DpctGlobalInfo::isIncMigration()) {
-      if (loadFromYaml(std::move(YamlFilePath), *PreTU, false) == 0) {
+      if (loadFromYaml(YamlFilePath, *PreTU, false) == 0) {
         DpctGlobalInfo::getInstance().insertReplInfoFromYAMLToFileInfo(
             OriginPath, PreTU);
       } else {

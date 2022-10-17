@@ -37,9 +37,10 @@ enum class CudaVersion {
 #ifdef SYCLomatic_CUSTOMIZATION
   CUDA_116,
   CUDA_117,
-  FULLY_SUPPORTED = CUDA_117,
+  CUDA_118,
+  FULLY_SUPPORTED = CUDA_118,
   PARTIALLY_SUPPORTED =
-      CUDA_117, // Partially supported. Proceed with a warning.
+      CUDA_118, // Partially supported. Proceed with a warning.
   NEW = 10000,  // Too new. Issue a warning, but allow using it.
 #else
   FULLY_SUPPORTED = CUDA_115,
@@ -106,9 +107,16 @@ enum class CudaArch {
   GFX1034,
   GFX1035,
   GFX1036,
+  GFX1100,
+  GFX1101,
+  GFX1102,
+  GFX1103,
   Generic, // A processor model named 'generic' if the target backend defines a
            // public one.
   LAST,
+
+  CudaDefault = CudaArch::SM_35,
+  HIPDefault = CudaArch::GFX803,
 };
 
 static inline bool IsNVIDIAGpuArch(CudaArch A) {

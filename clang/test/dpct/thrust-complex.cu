@@ -100,7 +100,7 @@ int main() {
   bar(reinterpret_cast<thrust::complex<double> *>(cdp));
 // CHECK:   q_ct1.submit(
 // CHECK-NEXT:     [&](sycl::handler &cgh) {
-// CHECK-NEXT:       sycl::accessor<std::complex<sycl::double2>, 1, sycl::access_mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(10), cgh);
+// CHECK-NEXT:       sycl::local_accessor<std::complex<sycl::double2>, 1> s_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:       auto static_cast_thrust_complex_double_cdp_ct1 = static_cast<std::complex<double>>(*cdp);
 // CHECK-NEXT:       auto thrust_raw_pointer_cast_dc_ptr_ct2 = dpct::get_raw_pointer(dc_ptr);
@@ -116,7 +116,7 @@ int main() {
   int *d_i;
 // CHECK:   q_ct1.submit(
 // CHECK-NEXT:     [&](sycl::handler &cgh) {
-// CHECK-NEXT:       sycl::accessor<std::complex<int>, 1, sycl::access_mode::read_write, sycl::access::target::local> s_acc_ct1(sycl::range<1>(10), cgh);
+// CHECK-NEXT:       sycl::local_accessor<std::complex<int>, 1> s_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:       cgh.parallel_for(
 // CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 256), sycl::range<3>(1, 1, 256)),

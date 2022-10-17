@@ -863,7 +863,7 @@ define void @test_gather_not_profitable_pr48429(i32 %d, float* readonly noalias 
 ; AVX512-NEXT:    [[TMP1:%.*]] = add nsw i64 [[TMP0]], -4
 ; AVX512-NEXT:    [[TMP2:%.*]] = lshr i64 [[TMP1]], 2
 ; AVX512-NEXT:    [[TMP3:%.*]] = add nuw nsw i64 [[TMP2]], 1
-; AVX512-NEXT:    [[MIN_ITERS_CHECK:%.*]] = icmp ult i64 [[TMP3]], 16
+; AVX512-NEXT:    [[MIN_ITERS_CHECK:%.*]] = icmp ult i64 [[TMP3]], 32
 ; AVX512-NEXT:    br i1 [[MIN_ITERS_CHECK]], label [[SCALAR_PH:%.*]], label [[VECTOR_MEMCHECK:%.*]]
 ; AVX512:       vector.memcheck:
 ; AVX512-NEXT:    [[TMP4:%.*]] = shl nsw i64 [[IDX_EXT]], 2
@@ -895,7 +895,7 @@ define void @test_gather_not_profitable_pr48429(i32 %d, float* readonly noalias 
 ; AVX512-NEXT:    [[N_VEC:%.*]] = sub i64 [[TMP3]], [[N_MOD_VF]]
 ; AVX512-NEXT:    [[IND_END:%.*]] = getelementptr float, float* [[PTR]], i64 [[N_VEC]]
 ; AVX512-NEXT:    [[TMP12:%.*]] = mul i64 [[N_VEC]], 16
-; AVX512-NEXT:    [[IND_END14:%.*]] = getelementptr float, float* [[DEST]], i64 [[TMP12]]
+; AVX512-NEXT:    [[IND_END13:%.*]] = getelementptr float, float* [[DEST]], i64 [[TMP12]]
 ; AVX512-NEXT:    br label [[VECTOR_BODY:%.*]]
 ; AVX512:       vector.body:
 ; AVX512-NEXT:    [[POINTER_PHI:%.*]] = phi float* [ [[DEST]], [[VECTOR_PH]] ], [ [[PTR_IND:%.*]], [[VECTOR_BODY]] ]
@@ -922,11 +922,11 @@ define void @test_gather_not_profitable_pr48429(i32 %d, float* readonly noalias 
 ; AVX512-NEXT:    br i1 [[CMP_N]], label [[FOR_END]], label [[SCALAR_PH]]
 ; AVX512:       scalar.ph:
 ; AVX512-NEXT:    [[BC_RESUME_VAL:%.*]] = phi float* [ [[IND_END]], [[MIDDLE_BLOCK]] ], [ [[PTR]], [[FOR_BODY_LR_PH]] ], [ [[PTR]], [[VECTOR_MEMCHECK]] ]
-; AVX512-NEXT:    [[BC_RESUME_VAL13:%.*]] = phi float* [ [[IND_END14]], [[MIDDLE_BLOCK]] ], [ [[DEST]], [[FOR_BODY_LR_PH]] ], [ [[DEST]], [[VECTOR_MEMCHECK]] ]
+; AVX512-NEXT:    [[BC_RESUME_VAL14:%.*]] = phi float* [ [[IND_END13]], [[MIDDLE_BLOCK]] ], [ [[DEST]], [[FOR_BODY_LR_PH]] ], [ [[DEST]], [[VECTOR_MEMCHECK]] ]
 ; AVX512-NEXT:    br label [[FOR_BODY:%.*]]
 ; AVX512:       for.body:
 ; AVX512-NEXT:    [[PTR_ADDR_012:%.*]] = phi float* [ [[BC_RESUME_VAL]], [[SCALAR_PH]] ], [ [[INCDEC_PTR:%.*]], [[FOR_BODY]] ]
-; AVX512-NEXT:    [[DEST_ADDR_011:%.*]] = phi float* [ [[BC_RESUME_VAL13]], [[SCALAR_PH]] ], [ [[ADD_PTR6:%.*]], [[FOR_BODY]] ]
+; AVX512-NEXT:    [[DEST_ADDR_011:%.*]] = phi float* [ [[BC_RESUME_VAL14]], [[SCALAR_PH]] ], [ [[ADD_PTR6:%.*]], [[FOR_BODY]] ]
 ; AVX512-NEXT:    [[ARRAYIDX:%.*]] = getelementptr inbounds float, float* [[PTR_ADDR_012]], i64 [[IDXPROM]]
 ; AVX512-NEXT:    [[TMP22:%.*]] = load float, float* [[ARRAYIDX]], align 4
 ; AVX512-NEXT:    store float [[TMP22]], float* [[DEST_ADDR_011]], align 4
@@ -987,7 +987,7 @@ define void @test_gather_not_profitable_pr48429(i32 %d, float* readonly noalias 
 ; FVW2-NEXT:    [[N_VEC:%.*]] = sub i64 [[TMP3]], [[N_MOD_VF]]
 ; FVW2-NEXT:    [[IND_END:%.*]] = getelementptr float, float* [[PTR]], i64 [[N_VEC]]
 ; FVW2-NEXT:    [[TMP12:%.*]] = mul i64 [[N_VEC]], 16
-; FVW2-NEXT:    [[IND_END14:%.*]] = getelementptr float, float* [[DEST]], i64 [[TMP12]]
+; FVW2-NEXT:    [[IND_END13:%.*]] = getelementptr float, float* [[DEST]], i64 [[TMP12]]
 ; FVW2-NEXT:    br label [[VECTOR_BODY:%.*]]
 ; FVW2:       vector.body:
 ; FVW2-NEXT:    [[INDEX:%.*]] = phi i64 [ 0, [[VECTOR_PH]] ], [ [[INDEX_NEXT:%.*]], [[VECTOR_BODY]] ]
@@ -1024,11 +1024,11 @@ define void @test_gather_not_profitable_pr48429(i32 %d, float* readonly noalias 
 ; FVW2-NEXT:    br i1 [[CMP_N]], label [[FOR_END]], label [[SCALAR_PH]]
 ; FVW2:       scalar.ph:
 ; FVW2-NEXT:    [[BC_RESUME_VAL:%.*]] = phi float* [ [[IND_END]], [[MIDDLE_BLOCK]] ], [ [[PTR]], [[FOR_BODY_LR_PH]] ], [ [[PTR]], [[VECTOR_MEMCHECK]] ]
-; FVW2-NEXT:    [[BC_RESUME_VAL13:%.*]] = phi float* [ [[IND_END14]], [[MIDDLE_BLOCK]] ], [ [[DEST]], [[FOR_BODY_LR_PH]] ], [ [[DEST]], [[VECTOR_MEMCHECK]] ]
+; FVW2-NEXT:    [[BC_RESUME_VAL14:%.*]] = phi float* [ [[IND_END13]], [[MIDDLE_BLOCK]] ], [ [[DEST]], [[FOR_BODY_LR_PH]] ], [ [[DEST]], [[VECTOR_MEMCHECK]] ]
 ; FVW2-NEXT:    br label [[FOR_BODY:%.*]]
 ; FVW2:       for.body:
 ; FVW2-NEXT:    [[PTR_ADDR_012:%.*]] = phi float* [ [[BC_RESUME_VAL]], [[SCALAR_PH]] ], [ [[INCDEC_PTR:%.*]], [[FOR_BODY]] ]
-; FVW2-NEXT:    [[DEST_ADDR_011:%.*]] = phi float* [ [[BC_RESUME_VAL13]], [[SCALAR_PH]] ], [ [[ADD_PTR6:%.*]], [[FOR_BODY]] ]
+; FVW2-NEXT:    [[DEST_ADDR_011:%.*]] = phi float* [ [[BC_RESUME_VAL14]], [[SCALAR_PH]] ], [ [[ADD_PTR6:%.*]], [[FOR_BODY]] ]
 ; FVW2-NEXT:    [[ARRAYIDX:%.*]] = getelementptr inbounds float, float* [[PTR_ADDR_012]], i64 [[IDXPROM]]
 ; FVW2-NEXT:    [[TMP30:%.*]] = load float, float* [[ARRAYIDX]], align 4
 ; FVW2-NEXT:    store float [[TMP30]], float* [[DEST_ADDR_011]], align 4

@@ -47,6 +47,8 @@ const char *CudaVersionToString(CudaVersion V) {
     return "11.6";
   case CudaVersion::CUDA_117:
     return "11.7";
+  case CudaVersion::CUDA_118:
+    return "11.8";
 #endif
   case CudaVersion::NEW:
     return "";
@@ -74,6 +76,7 @@ CudaVersion CudaStringToVersion(const llvm::Twine &S) {
 #ifdef SYCLomatic_CUSTOMIZATION
       .Case("11.6", CudaVersion::CUDA_116)
       .Case("11.7", CudaVersion::CUDA_117)
+      .Case("11.8", CudaVersion::CUDA_118)
 #endif
       .Default(CudaVersion::UNKNOWN);
 }
@@ -135,6 +138,10 @@ static const CudaArchToStringMap arch_names[] = {
     GFX(1034), // gfx1034
     GFX(1035), // gfx1035
     GFX(1036), // gfx1036
+    GFX(1100), // gfx1100
+    GFX(1101), // gfx1101
+    GFX(1102), // gfx1102
+    GFX(1103), // gfx1103
     {CudaArch::Generic, "generic", ""},
     // clang-format on
 };
@@ -226,8 +233,7 @@ CudaVersion MaxVersionForCudaArch(CudaArch A) {
 }
 
 CudaVersion ToCudaVersion(llvm::VersionTuple Version) {
-  int IVer =
-      Version.getMajor() * 10 + Version.getMinor().getValueOr(0);
+  int IVer = Version.getMajor() * 10 + Version.getMinor().value_or(0);
   switch(IVer) {
   case 70:
     return CudaVersion::CUDA_70;
@@ -264,6 +270,8 @@ CudaVersion ToCudaVersion(llvm::VersionTuple Version) {
     return CudaVersion::CUDA_116;
   case 117:
     return CudaVersion::CUDA_117;
+  case 118:
+    return CudaVersion::CUDA_118;
 #endif
   default:
     return CudaVersion::UNKNOWN;

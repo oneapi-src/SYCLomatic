@@ -45,7 +45,7 @@ TemplateDependentStringInfo::TemplateDependentStringInfo(
     const std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
         &InTDRs)
     : SourceStr(SrcStr) {
-  for (auto TDR : InTDRs)
+  for (const auto &TDR : InTDRs)
     TDRs.emplace_back(TDR.second->alterSource(SourceStr));
 }
 
@@ -382,7 +382,7 @@ void ExprAnalysis::initSourceRange(const SourceRange &Range) {
         getOffsetAndLength(Range.getBegin(), Range.getEnd());
     if (auto FileBuffer = SM.getBufferOrNone(FileId)) {
       ReplSet.init(std::string(
-          FileBuffer.getValue().getBuffer().data() + SrcBegin, SrcLength));
+          FileBuffer.value().getBuffer().data() + SrcBegin, SrcLength));
       return;
     }
   }
@@ -669,9 +669,9 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
     if (Itr != MemberExprRewriterFactoryBase::MemberExprRewriterMap->end()) {
       auto Rewriter = Itr->second->create(ME);
       auto Result = Rewriter->rewrite();
-      if (Result.hasValue()) {
-        auto ResultStr = Result.getValue();
-        addReplacement(ME->getBeginLoc(), ME->getEndLoc(), Result.getValue());
+      if (Result.has_value()) {
+        auto ResultStr = Result.value();
+        addReplacement(ME->getBeginLoc(), ME->getEndLoc(), Result.value());
       }
       return;
     }
@@ -749,10 +749,17 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
         MapNames::findReplacedName(MapNames::Dim3MemberNamesMap,
                                    ME->getMemberNameInfo().getAsString()));
   } else if (BaseType == "cudaDeviceProp") {
-    std::string ReplacementStr = MapNames::findReplacedName(
-        DeviceInfoVarRule::PropNamesMap, ME->getMemberNameInfo().getAsString());
+    auto MemberName = ME->getMemberNameInfo().getAsString();
+
+    std::string ReplacementStr = MapNames::findReplacedName(DeviceInfoVarRule::PropNamesMap, MemberName);
     if (!ReplacementStr.empty()) {
-      addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + "()");
+      std::string TmplArg = "";
+      if (MemberName == "maxGridSize" ||
+          MemberName == "maxThreadsDim") {
+        // Similar code in ASTTraversal.cpp
+        TmplArg = "<int *>";
+      }
+      addReplacement(ME->getMemberLoc(), "get_" + ReplacementStr + TmplArg + "()");
       requestFeature(
           PropToGetFeatureMap.at(ME->getMemberNameInfo().getAsString()), ME);
     }
@@ -837,16 +844,16 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
       // if the function is NoRewrite
       // Only change the function name in the spelling loc and
       // applyAllSubExprRepl
-      if (Result.hasValue()) {
-        auto ResultStr = Result.getValue();
+      if (Result.has_value()) {
+        auto ResultStr = Result.value();
         addExtReplacement(std::make_shared<ExtReplacement>(
             SM, SM.getSpellingLoc(CE->getBeginLoc()), getCalleeName(CE).size(),
             ResultStr, nullptr));
         Rewriter->Analyzer.applyAllSubExprRepl();
       }
     } else {
-      if (Result.hasValue()) {
-        auto ResultStr = Result.getValue();
+      if (Result.has_value()) {
+        auto ResultStr = Result.value();
         auto LocStr =
             getCombinedStrFromLoc(SM.getSpellingLoc(CE->getBeginLoc()));
         auto &FCIMMR =
@@ -899,6 +906,17 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   // If the callee does not need rewrite, analyze the args
   for (auto Arg : CE->arguments())
     analyzeArgument(Arg);
+
+  if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
+    if (auto F = DpctGlobalInfo::getInstance().findDeviceFunctionDecl(FD)) {
+      if (auto C = F->getFuncInfo()->findCallee(CE)) {
+        auto Extra = C->getExtraArguments();
+        if (Extra.empty())
+          return;
+        addReplacement(CE->getRParenLoc(), Extra);
+      }
+    }
+  }
 }
 
 void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
@@ -915,8 +933,8 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
       if (Itr != CallExprRewriterFactoryBase::MethodRewriterMap->end()) {
         auto Rewriter = Itr->second->create(CMCE);
         auto Result = Rewriter->rewrite();
-        if (Result.hasValue()) {
-          auto ResultStr = Result.getValue();
+        if (Result.has_value()) {
+          auto ResultStr = Result.value();
           addReplacement(CMCE, ResultStr);
           Rewriter->Analyzer.applyAllSubExprRepl();
           return;
@@ -1025,8 +1043,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
     if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
       auto Rewriter = Itr->second->create(TSTL);
       auto Result = Rewriter->rewrite();
-      if (Result.hasValue()) {
-        auto ResultStr = Result.getValue();
+      if (Result.has_value()) {
+        auto ResultStr = Result.value();
         // Since Parser splits ">>" or ">>>" to ">" when parse template
         // the SR.getEnd location might be a "scratch space" location.
         // Therfore, need to apply SM.getExpansionLoc before call addReplacement.

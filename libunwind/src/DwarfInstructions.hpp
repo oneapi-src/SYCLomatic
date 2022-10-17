@@ -25,7 +25,7 @@
 namespace libunwind {
 
 
-/// DwarfInstructions maps abtract DWARF unwind instructions to a particular
+/// DwarfInstructions maps abstract DWARF unwind instructions to a particular
 /// architecture
 template <typename A, typename R>
 class DwarfInstructions {
@@ -72,6 +72,10 @@ private:
     assert(0 && "getCFA(): unknown location");
     __builtin_unreachable();
   }
+#if defined(_LIBUNWIND_TARGET_AARCH64)
+  static bool getRA_SIGN_STATE(A &addressSpace, R registers, pint_t cfa,
+                               PrologInfo &prolog);
+#endif
 };
 
 template <typename R>
@@ -166,6 +170,21 @@ v128 DwarfInstructions<A, R>::getSavedVectorRegister(
   }
   _LIBUNWIND_ABORT("unsupported restore location for vector register");
 }
+#if defined(_LIBUNWIND_TARGET_AARCH64)
+template <typename A, typename R>
+bool DwarfInstructions<A, R>::getRA_SIGN_STATE(A &addressSpace, R registers,
+                                               pint_t cfa, PrologInfo &prolog) {
+  pint_t raSignState;
+  auto regloc = prolog.savedRegisters[UNW_AARCH64_RA_SIGN_STATE];
+  if (regloc.location == CFI_Parser<A>::kRegisterUnused)
+    raSignState = static_cast<pint_t>(regloc.value);
+  else
+    raSignState = getSavedRegister(addressSpace, registers, cfa, regloc);
+
+  // Only bit[0] is meaningful.
+  return raSignState & 0x01;
+}
+#endif
 
 template <typename A, typename R>
 int DwarfInstructions<A, R>::stepWithDwarf(A &addressSpace, pint_t pc,
@@ -194,9 +213,10 @@ int DwarfInstructions<A, R>::stepWithDwarf(A &addressSpace, pint_t pc,
       newRegisters.setSP(cfa);
 
       pint_t returnAddress = 0;
-      const int lastReg = R::lastDwarfRegNum();
-      assert(static_cast<int>(CFI_Parser<A>::kMaxRegisterNumber) >= lastReg &&
-             "register range too large");
+      constexpr int lastReg = R::lastDwarfRegNum();
+      static_assert(static_cast<int>(CFI_Parser<A>::kMaxRegisterNumber) >=
+                        lastReg,
+                    "register range too large");
       assert(lastReg >= (int)cieInfo.returnAddressRegister &&
              "register range does not contain return address register");
       for (int i = 0; i <= lastReg; ++i) {
@@ -221,7 +241,7 @@ int DwarfInstructions<A, R>::stepWithDwarf(A &addressSpace, pint_t pc,
             return UNW_EBADREG;
         } else if (i == (int)cieInfo.returnAddressRegister) {
             // Leaf function keeps the return address in register and there is no
-            // explicit intructions how to restore it.
+            // explicit instructions how to restore it.
             returnAddress = registers.getRegister(cieInfo.returnAddressRegister);
         }
       }
@@ -235,7 +255,7 @@ int DwarfInstructions<A, R>::stepWithDwarf(A &addressSpace, pint_t pc,
       // restored. autia1716 is used instead of autia as autia1716 assembles
       // to a NOP on pre-v8.3a architectures.
       if ((R::getArch() == REGISTERS_ARM64) &&
-          prolog.savedRegisters[UNW_AARCH64_RA_SIGN_STATE].value &&
+          getRA_SIGN_STATE(addressSpace, registers, cfa, prolog) &&
           returnAddress != 0) {
 #if !defined(_LIBUNWIND_IS_NATIVE_ONLY)
         return UNW_ECROSSRASIGNING;
@@ -311,7 +331,7 @@ int DwarfInstructions<A, R>::stepWithDwarf(A &addressSpace, pint_t pc,
 #endif
 
       // Return address is address after call site instruction, so setting IP to
-      // that does simualates a return.
+      // that does simulates a return.
       newRegisters.setIP(returnAddress);
 
       // Simulate the step by replacing the register set with the new ones.
@@ -615,7 +635,7 @@ DwarfInstructions<A, R>::evaluateExpression(pint_t expression, A &addressSpace,
       svalue = (sint_t)*sp;
       *sp = (pint_t)(svalue >> value);
       if (log)
-        fprintf(stderr, "shift left arithmetric\n");
+        fprintf(stderr, "shift left arithmetic\n");
       break;
 
     case DW_OP_xor:

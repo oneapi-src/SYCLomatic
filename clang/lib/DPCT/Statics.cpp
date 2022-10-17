@@ -31,7 +31,7 @@ std::map<std::string, unsigned int> SrcAPIStaticsMap;
 int VerboseLevel = VL_NonVerbose;
 
 void StaticsInfo::printMigrationRules(
-    const std::vector<std::unique_ptr<ASTTraversal>> &TRs) {
+    const std::vector<std::unique_ptr<MigrationRule>> &TRs) {
 #ifdef DPCT_DEBUG_BUILD
   auto print = [&]() {
     DpctDiags() << "Migration Rules:\n";
@@ -44,10 +44,8 @@ void StaticsInfo::printMigrationRules(
 
     size_t NumRules = 0;
     for (auto &TR : TRs) {
-      if (auto I = dyn_cast<MigrationRule>(&*TR)) {
-        DpctDiags() << Indent << I->getName() << "\n";
-        ++NumRules;
-      }
+      DpctDiags() << Indent << TR->getName() << "\n";
+      ++NumRules;
     }
     DpctDiags() << "# of MigrationRules: " << NumRules << "\n";
   };
@@ -62,22 +60,18 @@ void StaticsInfo::printMigrationRules(
 #ifdef DPCT_DEBUG_BUILD
 // Start of debug build
 static void printMatchedRulesStaticsImpl(
-    const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules) {
+    const std::vector<std::unique_ptr<MigrationRule>> &MatchedRules) {
   // Verbose level lower than "High" doesn't show migration rules' information
   if (VerboseLevel < VL_VerboseHigh) {
     return;
   }
 
   for (auto &MR : MatchedRules) {
-    if (auto TR = dyn_cast<MigrationRule>(&*MR)) {
-      TR->print(DpctDiags());
-    }
+    MR->print(DpctDiags());
   }
 
   for (auto &MR : MatchedRules) {
-    if (auto TR = dyn_cast<MigrationRule>(&*MR)) {
-      TR->printStatistics(DpctDiags());
-    }
+    MR->printStatistics(DpctDiags());
   }
 }
 
@@ -119,7 +113,7 @@ static void printReplacementsStaticsImpl(const TransformSetTy &TS,
 #endif
 
 void StaticsInfo::printMatchedRules(
-    const std::vector<std::unique_ptr<ASTTraversal>> &MatchedRules) {
+    const std::vector<std::unique_ptr<MigrationRule>> &MatchedRules) {
 #ifdef DPCT_DEBUG_BUILD // Debug build
   printMatchedRulesStaticsImpl(MatchedRules);
 #endif

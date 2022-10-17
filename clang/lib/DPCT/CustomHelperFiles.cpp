@@ -295,7 +295,8 @@ getHelperFileContent(const clang::dpct::HelperFileEnum File,
     addDependencyIncludeDirectives(File, ContentVec);
   }
 
-  auto CompareAsc = [](clang::dpct::HelperFunc A, clang::dpct::HelperFunc B) {
+  auto CompareAsc = [](const clang::dpct::HelperFunc &A,
+                       const clang::dpct::HelperFunc &B) {
     return A.PositionIdx < B.PositionIdx;
   };
   std::sort(ContentVec.begin(), ContentVec.end(), CompareAsc);
@@ -837,7 +838,7 @@ void updateTUR(clang::tooling::TranslationUnitReplacements &TUR) {
     }
   };
 
-  for (auto Entry : HelperNameContentMap) {
+  for (const auto &Entry : HelperNameContentMap) {
     if (Entry.second.IsCalled) {
       std::string FileName = HelperFileNameMap[Entry.first.first];
       if (Entry.second.ParentFeature.first == HelperFileEnum::Unknown &&
@@ -847,7 +848,7 @@ void updateTUR(clang::tooling::TranslationUnitReplacements &TUR) {
             Entry.second.IsCalled;
         TUR.FeatureMap[FileName][Entry.first.second].CallerSrcFiles.clear();
 
-        for (auto CallerFileName : Entry.second.CallerSrcFiles) {
+        for (const auto &CallerFileName : Entry.second.CallerSrcFiles) {
           TUR.FeatureMap[FileName][Entry.first.second].CallerSrcFiles.push_back(
               CallerFileName);
         }
@@ -864,7 +865,7 @@ void updateTUR(clang::tooling::TranslationUnitReplacements &TUR) {
             .SubFeatureMap[Entry.first.second]
             .CallerSrcFiles.clear();
 
-        for (auto CallerFileName : Entry.second.CallerSrcFiles) {
+        for (const auto &CallerFileName : Entry.second.CallerSrcFiles) {
           TUR.FeatureMap[FileName][ParentFeatureName]
               .SubFeatureMap[Entry.first.second]
               .CallerSrcFiles.push_back(CallerFileName);

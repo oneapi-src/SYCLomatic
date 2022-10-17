@@ -120,17 +120,15 @@ static inline std::string getMessagePrefix(int ID) {
 
 template <typename... Ts>
 void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
-                   const CompilerInstance &CI, Ts &&...Vals) {
+                   DiagnosticsEngine &Engine, Ts &&...Vals) {
   // Do not emit diagnostic message for source location outside --in-root
   if (!DpctGlobalInfo::isInRoot(SL))
     return;
-  DiagnosticsEngine &DiagEngine = CI.getDiagnostics();
   std::string Message = getMessagePrefix(Msg.ID) + Msg.Msg;
-
   if (OutputVerbosity != OutputVerbosityLevel::OVL_Silent) {
-    unsigned ID = DiagEngine.getDiagnosticIDs()->getCustomDiagID(
+    unsigned ID = Engine.getDiagnosticIDs()->getCustomDiagID(
         (DiagnosticIDs::Level)Msg.Category, Message);
-    auto B = DiagEngine.Report(SL, ID);
+    auto B = Engine.Report(SL, ID);
     applyReport<Ts...>(B, Vals...);
   }
 }
@@ -185,10 +183,10 @@ bool checkDuplicated(const std::string &FileAndLine,
 template <typename... Ts>
 TextModification *insertCommentPrevLine(SourceLocation SL,
                                         const DiagnosticsMessage &Msg,
-                                        const CompilerInstance &CI,
+                                        const SourceManager &SM,
                                         bool UseTextBegin, Ts &&...Vals) {
   auto StartLoc =
-      getStartOfLine(SL, CI.getSourceManager(), LangOptions(), UseTextBegin);
+      getStartOfLine(SL, SM, LangOptions(), UseTextBegin);
   auto Formatted = llvm::formatv(Msg.Msg, std::forward<Ts>(Vals)...);
   std::string Str;
   llvm::raw_string_ostream OS(Str);
@@ -287,25 +285,10 @@ private:
       ReportedWarning;
 };
 
-template <typename... Ts>
-void reportWarning(SourceLocation SL, const DiagnosticsMessage &Msg,
-                   DiagnosticsEngine &Engine, Ts &&...Vals) {
-  std::string Message = getMessagePrefix(Msg.ID) + Msg.Msg;
-
-  if (OutputVerbosity != OutputVerbosityLevel::OVL_Silent) {
-    unsigned ID = Engine.getDiagnosticIDs()->getCustomDiagID(
-        (DiagnosticIDs::Level)Msg.Category, Message);
-    auto B = Engine.Report(SL, ID);
-    applyReport<Ts...>(B, Vals...);
-  }
-}
-
 // Emits a warning/error/note and/or comment depending on MsgID. For details
 template <typename IDTy, typename... Ts>
-bool report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
+bool report(SourceLocation SL, IDTy MsgID, const SourceManager &SM,
             TransformSetTy *TS, bool UseTextBegin, Ts &&...Vals) {
-  auto &SM = clang::dpct::DpctGlobalInfo::getSourceManager();
-
   SmallString<4096> FileName(SM.getFilename(SL));
   makeCanonical(FileName);
   // Convert path to the native form.
@@ -324,12 +307,12 @@ bool report(SourceLocation SL, IDTy MsgID, const CompilerInstance &CI,
     // Only report warnings that are not suppressed
     if (WarningIDs.find((int)MsgID) == WarningIDs.end() &&
         DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end()) {
-      reportWarning(SL, DiagnosticIDTable[(int)MsgID], CI,
+      reportWarning(SL, DiagnosticIDTable[(int)MsgID], SM.getDiagnostics(),
                     std::forward<Ts>(Vals)...);
     }
   }
   if (TS && CommentIDTable.find((int)MsgID) != CommentIDTable.end()) {
-    TS->emplace_back(insertCommentPrevLine(SL, CommentIDTable[(int)MsgID], CI,
+    TS->emplace_back(insertCommentPrevLine(SL, CommentIDTable[(int)MsgID], SM,
                                            UseTextBegin,
                                            std::forward<Ts>(Vals)...));
   }
@@ -386,7 +369,7 @@ bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
   std::string FileAndLine = clang::dpct::buildString(
       NativeFormPath, ":", Fileinfo->getLineNumber(Offset));
   std::string WarningIDAndMsg = clang::dpct::buildString(
-      std::to_string(static_cast<int>(MsgID)), ":", std::forward<Ts>(Vals)...);
+      std::to_string(static_cast<int>(MsgID)), ":", Vals...);
 
   if (checkDuplicated(FileAndLine, WarningIDAndMsg))
     return false;
@@ -404,7 +387,7 @@ bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
     if (WarningIDs.find((int)MsgID) == WarningIDs.end() &&
         DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end()) {
       reportWarning(SL, DiagnosticIDTable[(int)MsgID], SM.getDiagnostics(),
-                    std::forward<Ts>(Vals)...);
+                    Vals...);
     }
   }
 

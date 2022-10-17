@@ -1,0 +1,2 @@
+// CHECK: Warning: The file '{{(.+)}}test.cu' has been changed during incremental migration.
+// CHECK: Warning: Failed to load {{(.+)}}.yaml. Migration continues with incremental migration disabled. See https://software.intel.com/content/www/us/en/develop/documentation/intel-dpcpp-compatibility-tool-user-guide/top.html for more details.

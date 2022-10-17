@@ -165,11 +165,6 @@ Preprocessor::Preprocessor(std::shared_ptr<PreprocessorOptions> PPOpts,
   if (this->PPOpts->GeneratePreamble)
     PreambleConditionalStack.startRecording();
 
-  ExcludedConditionalDirectiveSkipMappings =
-      this->PPOpts->ExcludedConditionalDirectiveSkipMappings;
-  if (ExcludedConditionalDirectiveSkipMappings)
-    ExcludedConditionalDirectiveSkipMappings->clear();
-
   MaxTokens = LangOpts.MaxTokens;
 }
 
@@ -218,6 +213,18 @@ void Preprocessor::Initialize(const TargetInfo &Target,
 
   // Initialize the __FTL_EVAL_METHOD__ macro to the TargetInfo.
   setTUFPEvalMethod(getTargetInfo().getFPEvalMethod());
+
+  if (getLangOpts().getFPEvalMethod() == LangOptions::FEM_UnsetOnCommandLine)
+    // Use setting from TargetInfo.
+    setCurrentFPEvalMethod(SourceLocation(), Target.getFPEvalMethod());
+  else
+    // Set initial value of __FLT_EVAL_METHOD__ from the command line.
+    setCurrentFPEvalMethod(SourceLocation(), getLangOpts().getFPEvalMethod());
+  // When `-ffast-math` option is enabled, it triggers several driver math
+  // options to be enabled. Among those, only one the following two modes
+  // affect the eval-method:  reciprocal or reassociate.
+  if (getLangOpts().AllowFPReassoc || getLangOpts().AllowRecip)
+    setCurrentFPEvalMethod(SourceLocation(), LangOptions::FEM_Indeterminable);
 }
 
 void Preprocessor::InitializeForModelFile() {
@@ -239,8 +246,10 @@ void Preprocessor::FinalizeForModelFile() {
 }
 
 void Preprocessor::DumpToken(const Token &Tok, bool DumpFlags) const {
-  llvm::errs() << tok::getTokenName(Tok.getKind()) << " '"
-               << getSpelling(Tok) << "'";
+  llvm::errs() << tok::getTokenName(Tok.getKind());
+
+  if (!Tok.isAnnotation())
+    llvm::errs() << " '" << getSpelling(Tok) << "'";
 
   if (!DumpFlags) return;
 
@@ -387,7 +396,9 @@ StringRef Preprocessor::getLastMacroWithSpelling(
 
 void Preprocessor::recomputeCurLexerKind() {
   if (CurLexer)
-    CurLexerKind = CLK_Lexer;
+    CurLexerKind = CurLexer->isDependencyDirectivesLexer()
+                       ? CLK_DependencyDirectivesLexer
+                       : CLK_Lexer;
   else if (CurTokenLexer)
     CurLexerKind = CLK_TokenLexer;
   else
@@ -653,6 +664,9 @@ void Preprocessor::SkipTokensWhileUsingPCH() {
     case CLK_CachingLexer:
       CachingLex(Tok);
       break;
+    case CLK_DependencyDirectivesLexer:
+      CurLexer->LexDependencyDirectiveToken(Tok);
+      break;
     case CLK_LexAfterModuleImport:
       LexAfterModuleImport(Tok);
       break;
@@ -769,29 +783,6 @@ void Preprocessor::HandlePoisonedIdentifier(Token & Identifier) {
     Diag(Identifier,it->second) << Identifier.getIdentifierInfo();
 }
 
-/// Returns a diagnostic message kind for reporting a future keyword as
-/// appropriate for the identifier and specified language.
-static diag::kind getFutureCompatDiagKind(const IdentifierInfo &II,
-                                          const LangOptions &LangOpts) {
-  assert(II.isFutureCompatKeyword() && "diagnostic should not be needed");
-
-  if (LangOpts.CPlusPlus)
-    return llvm::StringSwitch<diag::kind>(II.getName())
-#define CXX11_KEYWORD(NAME, FLAGS)                                             \
-        .Case(#NAME, diag::warn_cxx11_keyword)
-#define CXX20_KEYWORD(NAME, FLAGS)                                             \
-        .Case(#NAME, diag::warn_cxx20_keyword)
-#include "clang/Basic/TokenKinds.def"
-        // char8_t is not modeled as a CXX20_KEYWORD because it's not
-        // unconditionally enabled in C++20 mode. (It can be disabled
-        // by -fno-char8_t.)
-        .Case("char8_t", diag::warn_cxx20_keyword)
-        ;
-
-  llvm_unreachable(
-      "Keyword not known to come from a newer Standard or proposed Standard");
-}
-
 void Preprocessor::updateOutOfDateIdentifier(IdentifierInfo &II) const {
   assert(II.isOutOfDate() && "not out of date");
   getExternalSource()->updateOutOfDateIdentifier(II);
@@ -858,7 +849,7 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
   }
 
 #ifdef SYCLomatic_CUSTOMIZATION
-  if (II.getName() == "__CUDA_ARCH__" && IsInAnalysisScopeFunc(Identifier.getLocation())) {
+  if (LangOpts.CUDA && II.getName() == "__CUDA_ARCH__" && IsInAnalysisScopeFunc(Identifier.getLocation())) {
     // Make a MacroDefinition for __CUDA_ARCH__
     MacroInfo *MI = AllocateMacroInfo(SourceLocation());
     MI->setIsBuiltinMacro();
@@ -890,7 +881,7 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
   // FIXME: This warning is disabled in cases where it shouldn't be, like
   //   "#define constexpr constexpr", "int constexpr;"
   if (II.isFutureCompatKeyword() && !DisableMacroExpansion) {
-    Diag(Identifier, getFutureCompatDiagKind(II, getLangOpts()))
+    Diag(Identifier, getIdentifierTable().getFutureCompatDiagKind(II, getLangOpts()))
         << II.getName();
     // Don't diagnose this keyword again in this translation unit.
     II.setIsFutureCompatKeyword(false);
@@ -941,6 +932,9 @@ void Preprocessor::Lex(Token &Result) {
       CachingLex(Result);
       ReturnedToken = true;
       break;
+    case CLK_DependencyDirectivesLexer:
+      ReturnedToken = CurLexer->LexDependencyDirectiveToken(Result);
+      break;
     case CLK_LexAfterModuleImport:
       ReturnedToken = LexAfterModuleImport(Result);
       break;
@@ -960,6 +954,9 @@ void Preprocessor::Lex(Token &Result) {
 
   // Update ImportSeqState to track our position within a C++20 import-seq
   // if this token is being produced as a result of phase 4 of translation.
+  // Update TrackGMFState to decide if we are currently in a Global Module
+  // Fragment. GMF state updates should precede ImportSeq ones, since GMF state
+  // depends on the prevailing ImportSeq state in two cases.
   if (getLangOpts().CPlusPlusModules && LexLevel == 1 &&
       !Result.getFlag(Token::IsReinjected)) {
     switch (Result.getKind()) {
@@ -972,7 +969,11 @@ void Preprocessor::Lex(Token &Result) {
     case tok::r_brace:
       ImportSeqState.handleCloseBrace();
       break;
+    // This token is injected to represent the translation of '#include "a.h"'
+    // into "import a.h;". Mimic the notional ';'.
+    case tok::annot_module_include:
     case tok::semi:
+      TrackGMFState.handleSemi();
       ImportSeqState.handleSemi();
       break;
     case tok::header_name:
@@ -980,10 +981,12 @@ void Preprocessor::Lex(Token &Result) {
       ImportSeqState.handleHeaderName();
       break;
     case tok::kw_export:
+      TrackGMFState.handleExport();
       ImportSeqState.handleExport();
       break;
     case tok::identifier:
       if (Result.getIdentifierInfo()->isModulesImport()) {
+        TrackGMFState.handleImport(ImportSeqState.afterTopLevelSeq());
         ImportSeqState.handleImport();
         if (ImportSeqState.afterImportSeq()) {
           ModuleImportLoc = Result.getLocation();
@@ -992,9 +995,13 @@ void Preprocessor::Lex(Token &Result) {
           CurLexerKind = CLK_LexAfterModuleImport;
         }
         break;
+      } else if (Result.getIdentifierInfo() == getIdentifierInfo("module")) {
+        TrackGMFState.handleModule(ImportSeqState.afterTopLevelSeq());
+        break;
       }
-      LLVM_FALLTHROUGH;
+      [[fallthrough]];
     default:
+      TrackGMFState.handleMisc();
       ImportSeqState.handleMisc();
       break;
     }
@@ -1238,9 +1245,10 @@ bool Preprocessor::LexAfterModuleImport(Token &Result) {
       Suffix.back().setLocation(SemiLoc);
       Suffix.back().setAnnotationEndLoc(SemiLoc);
       Suffix.back().setAnnotationValue(Action.ModuleForHeader);
-      LLVM_FALLTHROUGH;
+      [[fallthrough]];
 
     case ImportAction::ModuleImport:
+    case ImportAction::HeaderUnitImport:
     case ImportAction::SkippedModuleImport:
       // We chose to import (or textually enter) the file. Convert the
       // header-name token into a header unit annotation token.
@@ -1384,7 +1392,7 @@ bool Preprocessor::FinishLexStringLiteral(Token &Result, std::string &String,
 
   // Concatenate and parse the strings.
   StringLiteralParser Literal(StrToks, *this);
-  assert(Literal.isAscii() && "Didn't allow wide strings in");
+  assert(Literal.isOrdinary() && "Didn't allow wide strings in");
 
   if (Literal.hadError)
     return false;

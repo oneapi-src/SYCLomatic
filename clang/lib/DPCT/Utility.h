@@ -431,7 +431,7 @@ bool isExprStraddle(const clang::Stmt *S);
 bool isContainMacro(const clang::Expr *E);
 std::string getDrefName(const clang::Expr *E);
 std::vector<const clang::DeclaratorDecl *>
-getSiblingDecls(const clang::DeclaratorDecl *DD);
+getAllDecls(const clang::DeclaratorDecl *DD);
 std::string deducePointerType(const clang::DeclaratorDecl *DD,
                               std::string TypeName);
 bool isAnIdentifierOrLiteral(const clang::Expr *E);
@@ -570,4 +570,5 @@ std::string getArgTypeStr(const clang::CallExpr *CE, unsigned int Idx);
 std::string getFunctionName(const clang::FunctionDecl *Node);
 std::string getFunctionName(const clang::UnresolvedLookupExpr *Node);
 std::string getFunctionName(const clang::FunctionTemplateDecl *Node);
+bool isLambda(const clang::FunctionDecl *FD);
 #endif // DPCT_UTILITY_H

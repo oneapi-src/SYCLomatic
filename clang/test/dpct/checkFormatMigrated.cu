@@ -109,7 +109,7 @@ typedef struct
 //CHECK-NEXT:                                 const int loop_trip,
 //CHECK-NEXT:                                 cl::sycl::nd_item<3> item_ct1, float *sp_lj,
 //CHECK-NEXT:                                 float *sp_coul, int *ljd,
-//CHECK-NEXT:                                 cl::sycl::accessor<double, 2, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> la) {
+//CHECK-NEXT:                                 cl::sycl::local_accessor<double, 2> la) {
 template <int EFLAG>
 __global__ void k_mdppp_outer_nn(const int * __restrict__ pos,
                                  const float * __restrict__ q,
@@ -154,7 +154,7 @@ void test() {
 
      //CHECK:void k_mdppp_outer_n0(cl::sycl::nd_item<3> item_ct1, float *sp_lj,
 //CHECK-NEXT:                      float *sp_coul, int *ljd,
-//CHECK-NEXT:                      cl::sycl::accessor<double, 2, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> la) {
+//CHECK-NEXT:                      cl::sycl::local_accessor<double, 2> la) {
 __global__ void k_mdppp_outer_n0() {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
@@ -166,7 +166,7 @@ __global__ void k_mdppp_outer_n0() {
      //CHECK:void k_mdppp_outer_n1(const int * __restrict__ pos,
 //CHECK-NEXT:                      cl::sycl::nd_item<3> item_ct1, float *sp_lj,
 //CHECK-NEXT:                      float *sp_coul, int *ljd,
-//CHECK-NEXT:                      cl::sycl::accessor<double, 2, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> la) {
+//CHECK-NEXT:                      cl::sycl::local_accessor<double, 2> la) {
 __global__ void k_mdppp_outer_n1(const int * __restrict__ pos) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
@@ -181,7 +181,7 @@ __global__ void k_mdppp_outer_n1(const int * __restrict__ pos) {
 //CHECK-NEXT:                                 float *sp_lj,
 //CHECK-NEXT:                                 float *sp_coul,
 //CHECK-NEXT:                                 int *ljd,
-//CHECK-NEXT:                                 cl::sycl::accessor<double, 2, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> la) {
+//CHECK-NEXT:                                 cl::sycl::local_accessor<double, 2> la) {
 __global__ void k_mdppp_outer_22(const int * __restrict__ pos,
                                  const float * __restrict__ q) {
   __shared__ float sp_lj[4];
@@ -195,7 +195,7 @@ __global__ void k_mdppp_outer_22(const int * __restrict__ pos,
      //CHECK:void k_mdppp_outer_n2(const int * __restrict__ pos, const float * __restrict__ q,
 //CHECK-NEXT:                      cl::sycl::nd_item<3> item_ct1, float *sp_lj,
 //CHECK-NEXT:                      float *sp_coul, int *ljd,
-//CHECK-NEXT:                      cl::sycl::accessor<double, 2, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> la) {
+//CHECK-NEXT:                      cl::sycl::local_accessor<double, 2> la) {
 void __device__ k_mdppp_outer_n2(const int * __restrict__ pos, const float * __restrict__ q) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
@@ -209,7 +209,7 @@ void __device__ k_mdppp_outer_n2(const int * __restrict__ pos, const float * __r
      //CHECK:void k_mdppp_outer_n3(const int * __restrict__ pos, const float * __restrict__ q,
 //CHECK-NEXT:                      cl::sycl::nd_item<3> item_ct1, float *sp_lj,
 //CHECK-NEXT:                      float *sp_coul, int *ljd,
-//CHECK-NEXT:                      cl::sycl::accessor<double, 2, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> la) {
+//CHECK-NEXT:                      cl::sycl::local_accessor<double, 2> la) {
 __device__
 void k_mdppp_outer_n3(const int * __restrict__ pos, const float * __restrict__ q) {
   __shared__ float sp_lj[4];
@@ -223,8 +223,7 @@ void k_mdppp_outer_n3(const int * __restrict__ pos, const float * __restrict__ q
 #define BBB const float * __restrict__ q
 
      //CHECK:void foo1(AAA, BBB, cl::sycl::nd_item<3> item_ct1, float *sp_lj, float *sp_coul,
-//CHECK-NEXT:          int *ljd,
-//CHECK-NEXT:          cl::sycl::accessor<double, 2, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> la) {
+//CHECK-NEXT:          int *ljd, cl::sycl::local_accessor<double, 2> la) {
 __device__ void foo1(AAA, BBB) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
@@ -235,7 +234,7 @@ __device__ void foo1(AAA, BBB) {
 
      //CHECK:void foo2(const int * __restrict__ pos, BBB, cl::sycl::nd_item<3> item_ct1,
 //CHECK-NEXT:          float *sp_lj, float *sp_coul, int *ljd,
-//CHECK-NEXT:          cl::sycl::accessor<double, 2, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> la) {
+//CHECK-NEXT:          cl::sycl::local_accessor<double, 2> la) {
 __device__ void foo2(const int * __restrict__ pos, BBB) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
@@ -246,7 +245,7 @@ __device__ void foo2(const int * __restrict__ pos, BBB) {
 
      //CHECK:void foo3(AAA, const float * __restrict__ q, cl::sycl::nd_item<3> item_ct1,
 //CHECK-NEXT:          float *sp_lj, float *sp_coul, int *ljd,
-//CHECK-NEXT:          cl::sycl::accessor<double, 2, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> la) {
+//CHECK-NEXT:          cl::sycl::local_accessor<double, 2> la) {
 __device__ void foo3(AAA, const float * __restrict__ q) {
   __shared__ float sp_lj[4];
   __shared__ float sp_coul[4];
@@ -255,7 +254,7 @@ __device__ void foo3(AAA, const float * __restrict__ q) {
   const int tid = threadIdx.x;
 }
 
-//CHECK:#define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, cl::sycl::nd_item<3> item_ct1, float *sp_lj, float *sp_coul, int *ljd, cl::sycl::accessor<double, 2, cl::sycl::access_mode::read_write, cl::sycl::access::target::local> la)
+//CHECK:#define FFFFF(aaa,bbb) void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb, cl::sycl::nd_item<3> item_ct1, float *sp_lj, float *sp_coul, int *ljd, cl::sycl::local_accessor<double, 2> la)
 #define FFFFF(aaa,bbb) __device__ void foo4(const int * __restrict__ aaa, const float * __restrict__ bbb)
 
 FFFFF(pos, q)

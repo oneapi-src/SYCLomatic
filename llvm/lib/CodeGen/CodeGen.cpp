@@ -24,6 +24,7 @@ void llvm::initializeCodeGen(PassRegistry &Registry) {
   initializeBranchFolderPassPass(Registry);
   initializeBranchRelaxationPass(Registry);
   initializeCFGuardLongjmpPass(Registry);
+  initializeCFIFixupPass(Registry);
   initializeCFIInstrInserterPass(Registry);
   initializeCheckDebugMachineModulePass(Registry);
   initializeCodeGenPreparePass(Registry);
@@ -35,6 +36,7 @@ void llvm::initializeCodeGen(PassRegistry &Registry) {
   initializeEarlyIfPredicatorPass(Registry);
   initializeEarlyMachineLICMPass(Registry);
   initializeEarlyTailDuplicatePass(Registry);
+  initializeExpandLargeDivRemLegacyPassPass(Registry);
   initializeExpandMemCmpPassPass(Registry);
   initializeExpandPostRAPass(Registry);
   initializeFEntryInserterPass(Registry);
@@ -106,6 +108,7 @@ void llvm::initializeCodeGen(PassRegistry &Registry) {
   initializeRemoveRedundantDebugValuesPass(Registry);
   initializeRenameIndependentSubregsPass(Registry);
   initializeSafeStackLegacyPassPass(Registry);
+  initializeSelectOptimizePass(Registry);
   initializeShadowStackGCLoweringPass(Registry);
   initializeShrinkWrapPass(Registry);
   initializeSjLjEHPreparePass(Registry);

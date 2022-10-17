@@ -94,7 +94,17 @@ int loadFromYaml(StringRef Input,
   llvm::yaml::Input YAMLIn(Buffer.get()->getBuffer());
   YAMLIn >> TU;
 
-  if (YAMLIn.error()) {
+  bool IsSrcFileChanged = false;
+  for (const auto &digest: TU.MainSourceFilesDigest) {
+    auto Hash = llvm::sys::fs::md5_contents(digest.first);
+    if (Hash && Hash->digest().c_str() != digest.second) {
+      llvm::errs() << "Warning: The file '" << digest.first
+                   << "' has been changed during incremental migration.\n";
+      IsSrcFileChanged = true;
+    }
+  }
+
+  if (IsSrcFileChanged || YAMLIn.error()) {
     // File doesn't appear to be a header change description. Ignore it.
     TU = clang::tooling::TranslationUnitReplacements();
     return -1;
@@ -158,10 +168,12 @@ int mergeExternalReps(std::string InRootSrcFilePath,
   std::vector<clang::tooling::Replacement> Repls(Replaces.begin(),
                                                  Replaces.end());
 
-  std::vector<std::pair<std::string, std::string>> MainSrcFilesDigest;
+  auto Hash = llvm::sys::fs::md5_contents(InRootSrcFilePath);
+  std::pair<std::string, std::string> FileDigest = {InRootSrcFilePath,
+                                                    Hash->digest().c_str()};
   std::map<std::string, std::vector<clang::tooling::CompilationInfo>>
       CompileTargets;
   save2Yaml(std::move(YamlFile), std::move(OutRootSrcFilePath), Repls,
-            MainSrcFilesDigest, CompileTargets);
+            {FileDigest}, CompileTargets);
   return 0;
 }

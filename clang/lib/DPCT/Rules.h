@@ -84,8 +84,9 @@ public:
   std::vector<std::string> Includes;
   std::vector<std::shared_ptr<ClassField>> Fields;
   std::vector<std::shared_ptr<ClassMethod>> Methods;
-  bool ReturnErrorCode;
-  MetaRuleObject() {}
+  bool ReturnErrorCode = false;
+  MetaRuleObject()
+      : Priority(RulePriority::Default), Kind(RuleKind::API) {}
   MetaRuleObject(std::string id, RulePriority priority, RuleKind kind)
       : RuleId(id), Priority(priority), Kind(kind) {}
   static void setRuleFiles(std::string File) { RuleFiles.push_back(File); }

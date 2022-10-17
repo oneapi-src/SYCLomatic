@@ -386,17 +386,9 @@ private:
 template <class T, memory_region Memory, size_t Dimension> class accessor;
 template <memory_region Memory, class T = byte_t> class memory_traits {
 public:
-  static constexpr sycl::access::address_space asp =
-      (Memory == local)
-          ? sycl::access::address_space::local_space
-          : ((Memory == constant)
-                 ? sycl::access::address_space::constant_space
-                 : sycl::access::address_space::global_space);
   static constexpr sycl::access::target target =
-      (Memory == local)
-          ? sycl::access::target::local
-          : ((Memory == constant) ? sycl::access::target::constant_buffer
-                                  : sycl::access::target::device);
+      (Memory == constant) ? sycl::access::target::constant_buffer
+                           : sycl::access::target::device;
   static constexpr sycl::access_mode mode =
       (Memory == constant) ? sycl::access_mode::read
                            : sycl::access_mode::read_write;
@@ -405,7 +397,9 @@ public:
       typename std::conditional<Memory == constant, const T, T>::type;
   using value_t = typename std::remove_cv<T>::type;
   template <size_t Dimension = 1>
-  using accessor_t = sycl::accessor<T, Dimension, mode, target>;
+  using accessor_t = typename std::conditional<
+      Memory == local, sycl::local_accessor<value_t, Dimension>,
+      sycl::accessor<T, Dimension, mode, target>>::type;
   using pointer_t = T *;
 };
 // DPCT_LABEL_END

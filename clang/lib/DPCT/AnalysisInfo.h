@@ -157,9 +157,9 @@ struct FormatInfo {
   FormatInfo() : EnableFormat(false), IsAllParamsOneLine(true) {}
   bool EnableFormat;
   bool IsAllParamsOneLine;
-  bool IsEachParamNL;
-  int CurrentLength;
-  int NewLineIndentLength;
+  bool IsEachParamNL = false;
+  int CurrentLength = 0;
+  int NewLineIndentLength = 0;
   std::string NewLineIndentStr;
   bool IsFirstArg = false;
 };
@@ -270,7 +270,8 @@ public:
 
   std::string Str = "";
   FormatInfo FormatInformation;
-  int ColumnLimit;
+  int ColumnLimit = 80;
+
 };
 
 struct StmtWithWarning {
@@ -912,10 +913,6 @@ public:
     const static std::string Hash = getHashAsString(getInRoot()).substr(0, 6);
     return Hash;
   }
-  static void setCompilerInstance(CompilerInstance &C) {
-    CI = &C;
-    setContext(C.getASTContext());
-  }
   static void setContext(ASTContext &C) {
     Context = &C;
     SM = &(Context->getSourceManager());
@@ -923,10 +920,6 @@ public:
     Context->getParentMapContext().setTraversalKind(TK_AsIs);
   }
   static void setRuleFile(const std::string &Path) { RuleFile = Path; }
-  static CompilerInstance &getCompilerInstance() {
-    assert(CI);
-    return *CI;
-  }
   static ASTContext &getContext() {
     assert(Context);
     return *Context;
@@ -1183,7 +1176,7 @@ public:
 
   static std::string getStringForRegexReplacement(StringRef);
 
-  inline static void setCodeFormatStyle(clang::format::FormatStyle Style) {
+  inline static void setCodeFormatStyle(const clang::format::FormatStyle &Style) {
     CodeFormatStyle = Style;
   }
   inline static clang::format::FormatStyle getCodeFormatStyle() {
@@ -1313,7 +1306,7 @@ public:
     auto LocInfo = SM->getDecomposedLoc(SM->getExpansionLoc(Loc));
     auto AbsPath = getAbsolutePath(LocInfo.first);
     if (AbsPath)
-      return std::make_pair(AbsPath.getValue(), LocInfo.second);
+      return std::make_pair(AbsPath.value(), LocInfo.second);
     if (IsInvalid)
       *IsInvalid = true;
     return std::make_pair("", 0);
@@ -1417,17 +1410,7 @@ public:
 
   // Build kernel and device function declaration replacements and store
   // them.
-  void buildReplacements() {
-    // add PriorityRepl into ReplMap and execute related action, e.g.,
-    // request feature or emit warning.
-    for (auto &ReplInfo : PriorityReplInfoMap) {
-      for (auto &Repl : ReplInfo.second->Repls) {
-        addReplacement(Repl);
-      }
-      for (auto &Action : ReplInfo.second->RelatedAction) {
-        Action();
-      }
-    }
+  void buildKernelInfo() {
     for (auto &File : FileMap)
       File.second->buildKernelInfo();
 
@@ -1455,6 +1438,19 @@ public:
         File.second->buildUnionFindSet();
       for (auto &File : FileMap)
         File.second->buildUnionFindSetForUncalledFunc();
+    }
+  }
+
+  void buildReplacements() {
+    // add PriorityRepl into ReplMap and execute related action, e.g.,
+    // request feature or emit warning.
+    for (auto &ReplInfo : PriorityReplInfoMap) {
+      for (auto &Repl : ReplInfo.second->Repls) {
+        addReplacement(Repl);
+      }
+      for (auto &Action : ReplInfo.second->RelatedAction) {
+        Action();
+      }
     }
 
     for (auto &File : FileMap)
@@ -1671,7 +1667,7 @@ public:
     auto LocInfo = getLocInfo(SL);
     auto FileInfo = insertFile(LocInfo.first);
     auto &S = FileInfo->getConstantMacroTMSet();
-    for (auto TM : S) {
+    for (const auto &TM : S) {
       if (TM->getConstantOffset() == LocInfo.second) {
         return TM;
       }
@@ -1941,7 +1937,7 @@ public:
       return Res;
     }
 
-    for (auto SpellingLoc : IterOfD2L->second) {
+    for (const auto &SpellingLoc : IterOfD2L->second) {
       auto IterOfL2D = SpellingLocToDFIsMapForAssumeNDRange.find(SpellingLoc);
       if (IterOfL2D != SpellingLocToDFIsMapForAssumeNDRange.end()) {
         Res.insert(IterOfL2D->second.begin(), IterOfL2D->second.end());
@@ -1949,7 +1945,8 @@ public:
     }
     return Res;
   }
-  unsigned int getColorOption() { return ColorOption; }
+  static unsigned int getColorOption() { return ColorOption; }
+  static void setColorOption(unsigned Color)  { ColorOption = Color; }
   std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>> &
   getCubPlaceholderIndexMap() {
     return CubPlaceholderIndexMap;
@@ -2094,7 +2091,6 @@ private:
   // " --report-type=all" is specified to get the migration status report, while
   // dpct namespace is not enabled.
   static bool TempEnableDPCTNamespace;
-  static CompilerInstance *CI;
   static ASTContext *Context;
   static SourceManager *SM;
   static FileManager *FM;
@@ -2955,7 +2951,7 @@ public:
       M.second->setBaseName(Name);
     }
   }
-  void addParamDeclReplacement() { return; }
+  void addParamDeclReplacement() override { return; }
   void merge(std::shared_ptr<TextureObjectInfo> Target) override {
     if (auto T =
             std::dynamic_pointer_cast<StructureTextureObjectInfo>(Target)) {
@@ -3286,7 +3282,7 @@ private:
   template <class T, CallOrDecl COD>
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
                                               const GlobalMap<T> &VarMap) {
-    for (auto VI : VarMap) {
+    for (const auto &VI : VarMap) {
       if (PS.FormatInformation.EnableFormat) {
         ParameterStream TPS;
         GetArgOrParam<T, COD>()(TPS, VI.second);
@@ -3468,7 +3464,7 @@ public:
   std::string getTemplateArguments(bool WrittenArgsOnly = true,
                                    bool WithScalarWrapped = false);
 
-  inline virtual std::string getExtraArguments();
+  virtual std::string getExtraArguments();
 
   std::shared_ptr<TextureObjectInfo>
   addTextureObjectArgInfo(unsigned ArgIdx,
@@ -3536,10 +3532,11 @@ private:
         }
       }
       if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
-        addTextureObjectArg(Idx++, DRE, IsKernel);
+        addTextureObjectArg(Idx, DRE, IsKernel);
       else if (auto ASE =
                    dyn_cast<ArraySubscriptExpr>(Arg->IgnoreImpCasts()))
-        addTextureObjectArg(Idx++, ASE, IsKernel);
+        addTextureObjectArg(Idx, ASE, IsKernel);
+      Idx++;
       ArgItr++;
     }
   }
@@ -3669,7 +3666,7 @@ protected:
   unsigned ReplaceLength;
   bool IsReplaceFollowedByPP = false;
   unsigned NonDefaultParamNum;
-  bool IsDefFilePathNeeded;
+  bool IsDefFilePathNeeded = false;
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   FormatInfo FormatInformation;
 
@@ -3748,12 +3745,16 @@ public:
       : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
         IsBuilt(false),
         TextureObjectList(ParamsNum, std::shared_ptr<TextureObjectInfo>()),
-        FunctionName(FunctionName) {
+        FunctionName(FunctionName), IsLambda(false) {
     ParametersProps.resize(ParamsNum);
   }
 
   bool ConstructGraphVisited = false;
 
+  std::shared_ptr<CallFunctionExpr> findCallee(const CallExpr *C) {
+    auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
+    return findObject(CallExprMap, CallLocInfo.second);
+  }
   template <class CallT>
   inline std::shared_ptr<CallFunctionExpr> addCallee(const CallT *C) {
     auto CallLocInfo = DpctGlobalInfo::getLocInfo(C);
@@ -3781,6 +3782,9 @@ public:
 
   inline bool isBuilt() { return IsBuilt; }
   inline void setBuilt() { IsBuilt = true; }
+
+  inline bool isLambda() { return IsLambda; }
+  inline void setLambda() { IsLambda = true; }
 
   inline std::string
   getExtraParameters(const std::string &Path,
@@ -3858,6 +3862,7 @@ private:
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::vector<ParameterProps> ParametersProps;
   std::string FunctionName;
+  bool IsLambda;
 };
 
 class KernelPrinter {
@@ -4034,7 +4039,7 @@ private:
     }
 
     ArgInfo(std::shared_ptr<TextureObjectInfo> Obj, KernelCallExpr *BASE)
-        : Texture(Obj) {
+        : IsUsedAsLvalueAfterMalloc(false), Texture(Obj) {
       IsPointer = false;
       IsRedeclareRequired = false;
       TypeString = "";
@@ -4510,7 +4515,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
     // before the CL/sycl.hpp are included, so the FileInfo is set
     // to hold a boolean that'll indicate whether to insert them when
     // the #include CL/sycl.cpp is added later
-    if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution)
+    if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution || Type == HT_Dnnl)
       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_AlwaysLeft);
     else if (Type == HT_SYCL) 
       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Left);
