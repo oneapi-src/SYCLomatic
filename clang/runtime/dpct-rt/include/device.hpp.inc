@@ -586,9 +586,9 @@ public:
         get_info<sycl::info::device::max_work_item_sizes<3>>());
 #endif
     prop.set_host_unified_memory(
-        get_current_device().has(sycl::aspect::usm_host_allocations) ||
-        get_current_device().has(sycl::aspect::usm_shared_allocations) ||
-        get_current_device().has(sycl::aspect::usm_system_allocations));
+        this->has(sycl::aspect::usm_host_allocations) ||
+        this->has(sycl::aspect::usm_shared_allocations) ||
+        this->has(sycl::aspect::usm_system_allocations));
 
     // max_clock_frequency parameter is not supported on host device
     if (is_host()) {
