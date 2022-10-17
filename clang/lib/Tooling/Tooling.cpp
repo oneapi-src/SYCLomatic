@@ -716,7 +716,7 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
                     << ". Compile command for this file not found in "
                         "compile_commands.json.\n";
         FileSkipped = true;
-        return -1;
+        return -1 /*MigrationError*/;
       }
       // Now fill the in-memory VFS with the relative file mappings so it will
       // have the correct relative paths. We never remove mappings but that
