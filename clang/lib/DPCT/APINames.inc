@@ -1518,3 +1518,19 @@ ENTRY(cuStreamGetCaptureInfo, cuStreamGetCaptureInfo, false, NO_FLAG, P4, "comme
 ENTRY(cuStreamIsCapturing, cuStreamIsCapturing, false, NO_FLAG, P4, "comment")
 ENTRY(cuThreadExchangeStreamCaptureMode, cuThreadExchangeStreamCaptureMode, false, NO_FLAG, P4, "comment")
 ENTRY(cuWaitExternalSemaphoresAsync, cuWaitExternalSemaphoresAsync, false, NO_FLAG, P4, "comment")
+
+
+//add runtime APIs for cuda-11.7
+ENTRY(cudaGraphMemAttrReservedMemCurrent, cudaGraphMemAttrReservedMemCurrent, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphMemAttrReservedMemHigh, cudaGraphMemAttrReservedMemHigh, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphMemAttrUsedMemCurrent, cudaGraphMemAttrUsedMemCurrent, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphMemAttrUsedMemHigh, cudaGraphMemAttrUsedMemHigh, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphMemAttributeType, cudaGraphMemAttributeType, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphNodeTypeExtSemaphoreSignal, cudaGraphNodeTypeExtSemaphoreSignal, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphNodeTypeExtSemaphoreWait, cudaGraphNodeTypeExtSemaphoreWait, false, NO_FLAG, P4, "comment")
+ENTRY(cudaGraphUserObjectMove, cudaGraphUserObjectMove, false, NO_FLAG, P4, "comment")
+ENTRY(cudaLimitStackSize, cudaLimitStackSize, false, NO_FLAG, P4, "comment")
+ENTRY(cudaMemoryTypeManaged, cudaMemoryTypeManaged, false, NO_FLAG, P4, "comment")
+ENTRY(cudaUserObjectFlags, cudaUserObjectFlags, false, NO_FLAG, P4, "comment")
+ENTRY(cudaUserObjectNoDestructorSync, cudaUserObjectNoDestructorSync, false, NO_FLAG, P4, "comment")
+ENTRY(cudaUserObjectRetainFlags, cudaUserObjectRetainFlags, false, NO_FLAG, P4, "comment")
