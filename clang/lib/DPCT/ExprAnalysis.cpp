@@ -1586,8 +1586,12 @@ void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
 void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
   dispatch(LE->getBody());
   Base::RemoveCUDADeviceAttr(LE);
+  // Lambda function can be passed to kernel function directly.
+  // So, not need to redeclare a variable for lambda function passed to kernel
+  // function
   IsRedeclareRequired = false;
 }
+
 
 void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
   if (UO->getOpcode() == UO_Deref) {
