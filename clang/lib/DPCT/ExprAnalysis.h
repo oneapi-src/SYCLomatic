@@ -801,12 +801,10 @@ private:
   inline void analyzeExpr(const MemberExpr *Arg);
   inline void analyzeExpr(const CallExpr *Arg) {
     IsRedeclareRequired = true;
-    printf("KernelArgumentAnalysis 000 ...\n");
     ExprAnalysis::analyzeExpr(Arg);
   }
   inline void analyzeExpr(const ArraySubscriptExpr *Arg) {
     IsRedeclareRequired = true;
-    printf("KernelArgumentAnalysis 111 ...\n");
     ExprAnalysis::analyzeExpr(Arg);
   }
   inline void analyzeExpr(const UnaryOperator *Arg);
