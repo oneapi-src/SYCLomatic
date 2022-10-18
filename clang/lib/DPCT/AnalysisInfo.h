@@ -725,10 +725,14 @@ public:
 
   class MacroDefRecord {
   public:
-    SourceLocation NameTokenLoc;
+    std::string FilePath;
+    unsigned Offset;
     bool IsInAnalysisScope;
-    MacroDefRecord(SourceLocation NTL, bool IIAS)
-        : NameTokenLoc(NTL), IsInAnalysisScope(IIAS) {}
+    MacroDefRecord(SourceLocation NTL, bool IIAS) : IsInAnalysisScope(IIAS) {
+      auto LocInfo = DpctGlobalInfo::getLocInfo(NTL);
+      FilePath = LocInfo.first;
+      Offset = LocInfo.second;
+    }
   };
 
   class MacroExpansionRecord {
