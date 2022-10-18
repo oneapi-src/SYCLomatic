@@ -2624,7 +2624,7 @@ auto UseLogicalGroup = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useLogicalGroup();
 };
 auto UseCAndCXXStandardLibrariesExt = [](const CallExpr *C) -> bool {
-  return DpctGlobalInfo::UseCAndCXXStandardLibrariesExt();
+  return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
 };
 
 class CheckDerefedTypeBeforeCast {

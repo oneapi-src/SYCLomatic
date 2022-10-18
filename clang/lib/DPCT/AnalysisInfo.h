@@ -998,13 +998,22 @@ public:
     CustomHelperFileName = Name;
   }
 
-  inline static bool getUsingExtension(DPCPPExtensions Ext) {
-    return ExtensionFlag & static_cast<unsigned>(Ext);
+  inline static bool getUsingExtensionDE(DPCPPExtensionsDefaultEnabled Ext) {
+    return ExtensionDEFlag & static_cast<unsigned>(Ext);
   }
-  inline static void setExtensionUnused(DPCPPExtensions Ext) {
-    ExtensionFlag &= (~static_cast<unsigned>(Ext));
+  inline static void setExtensionDEUnused(DPCPPExtensionsDefaultEnabled Ext) {
+    ExtensionDEFlag &= (~static_cast<unsigned>(Ext));
   }
-  inline static unsigned getExtensionFlag() { return ExtensionFlag; }
+  inline static unsigned getExtensionDEFlag() { return ExtensionDEFlag; }
+
+  inline static bool getUsingExtensionDD(DPCPPExtensionsDefaultDisabled Ext) {
+    return ExtensionDDFlag & static_cast<unsigned>(Ext);
+  }
+  inline static void setExtensionDDUsed(DPCPPExtensionsDefaultDisabled Ext) {
+    ExtensionDDFlag |= static_cast<unsigned>(Ext);
+  }
+  inline static unsigned getExtensionDDFlag() { return ExtensionDDFlag; }
+
 
   template <ExperimentalFeatures Exp> static bool getUsingExperimental() {
     return ExperimentalFlag & (1 << static_cast<unsigned>(Exp));
@@ -1844,10 +1853,10 @@ public:
     return getUsingExperimental<ExperimentalFeatures::Exp_LogicalGroup>();
   }
   static bool useEnqueueBarrier() {
-    return getUsingExtension(DPCPPExtensions::Ext_EnqueueBarrier);
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
-  static bool UseCAndCXXStandardLibrariesExt() {
-    return getUsingExtension(DPCPPExtensions::Ext_CCXXStandardLibrary);
+  static bool useCAndCXXStandardLibrariesExt() {
+    return getUsingExtensionDD(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
   }
 
   static bool getSpBLASUnsupportedMatrixTypeFlag() {
@@ -2165,7 +2174,8 @@ private:
   static std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
                             std::unordered_set<std::string>>
       DFIToSpellingLocsMapForAssumeNDRange;
-  static unsigned ExtensionFlag;
+  static unsigned ExtensionDEFlag;
+  static unsigned ExtensionDDFlag;
   static unsigned ExperimentalFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
