@@ -587,6 +587,28 @@ void ExprAnalysis::analyzeExpr(const IntegerLiteral *IL) {
   }
 }
 
+void ExprAnalysis::analyzeExpr(const InitListExpr *ILE) {
+  if (const CXXFunctionalCastExpr *CFCE =
+          DpctGlobalInfo::findParent<CXXFunctionalCastExpr>(ILE)) {
+    if (CFCE->isListInitialization() && CFCE->getType()->isIntegerType() &&
+        ILE->getNumInits() == 1 &&
+        !ILE->getInit(0)->isIntegerConstantExpr(Context)) {
+      // Replace initializer list with explicit type conversion (e.g.,
+      // 'int64_t{d3[2]}' to 'int64_t(d3[2])') to slience narrowing error (e.g.,
+      // 'size_t -> int64_t (alias to long)') for non-constant-expression in
+      // initializer list.
+      // E.g.,
+      // dim3 d3; int64_t{d3.x};
+      // will be migratd to
+      // sycl::range<3> d3; int64_t(d3[2]);
+      addReplacement(ILE->getLBraceLoc(), "(");
+      addReplacement(ILE->getRBraceLoc(), ")");
+    }
+  }
+  for (const auto &Init : ILE->inits())
+    dispatch(Init);
+}
+
 void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
   analyzeType(Ctor->getTypeSourceInfo()->getTypeLoc());
   for (auto It = Ctor->arg_begin(); It != Ctor->arg_end(); It++) {
@@ -744,6 +766,9 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       }
     }
   } else if (BaseType == "dim3") {
+    if (ME->isArrow()) {
+      addReplacement(ME->getBase(), "(" + getDrefName(ME->getBase()) + ")");
+    }
     addReplacement(
         ME->getOperatorLoc(), ME->getMemberLoc(),
         MapNames::findReplacedName(MapNames::Dim3MemberNamesMap,
