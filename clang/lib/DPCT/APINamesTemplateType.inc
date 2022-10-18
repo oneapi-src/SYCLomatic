@@ -49,3 +49,17 @@ TYPE_REWRITE_ENTRY("cub::TransformInputIterator",
                        HeaderType::HT_DPL_Iterator,
                        TYPE_FACTORY(STR("oneapi::dpl::transform_iterator"),
                                     TEMPLATE_ARG(2), TEMPLATE_ARG(1))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Memory_usm_host_allocator_alias,
+    TYPE_REWRITE_ENTRY("thrust::system::cuda::experimental::pinned_allocator",
+                       TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                        "deprecated::usm_host_allocator"),
+                                    TEMPLATE_ARG(0))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Memory_usm_host_allocator_alias,
+    TYPE_REWRITE_ENTRY("thrust::cuda::experimental::pinned_allocator",
+                       TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
+                                        "deprecated::usm_host_allocator"),
+                                    TEMPLATE_ARG(0))))

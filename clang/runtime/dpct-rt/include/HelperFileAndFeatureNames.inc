@@ -173,6 +173,7 @@ HELPER_FEATURE_MAP_TO_APINAME(Memory, "dpct_accessor", "accessor")
 HELPER_FEATURE_MAP_TO_APINAME(Memory, "global_memory_alias", "global_memory")
 HELPER_FEATURE_MAP_TO_APINAME(Memory, "constant_memory_alias", "constant_memory")
 HELPER_FEATURE_MAP_TO_APINAME(Memory, "shared_memory_alias", "shared_memory")
+HELPER_FEATURE_MAP_TO_APINAME(Memory, "usm_host_allocator_alias", "usm_host_allocator")
 // sub-features
 HELPER_FEATURE_MAP_TO_APINAME(Memory, "pitched_data_get_data_ptr", "pitched_data::get_data_ptr")
 HELPER_FEATURE_MAP_TO_APINAME(Memory, "pitched_data_set_data_ptr", "pitched_data::set_data_ptr")

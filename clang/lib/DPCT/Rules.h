@@ -84,7 +84,7 @@ public:
   std::vector<std::string> Includes;
   std::vector<std::shared_ptr<ClassField>> Fields;
   std::vector<std::shared_ptr<ClassMethod>> Methods;
-  bool ReturnErrorCode = false;
+  bool HasExplicitTemplateArgs = false;
   MetaRuleObject()
       : Priority(RulePriority::Default), Kind(RuleKind::API) {}
   MetaRuleObject(std::string id, RulePriority priority, RuleKind kind)
@@ -140,6 +140,7 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapOptional("EnumName", Doc->EnumName);
     Io.mapOptional("Prefix", Doc->Prefix);
     Io.mapOptional("Postfix", Doc->Postfix);
+    Io.mapOptional("HasExplicitTemplateArgs", Doc->HasExplicitTemplateArgs);
   }
 };
 
@@ -174,6 +175,7 @@ public:
   std::string Out;
   clang::dpct::HelperFeatureEnum HelperFeature;
   std::vector<std::string> Includes;
+
   RuleBase(
       std::string Id, RulePriority Priority, RuleKind Kind, std::string In,
       std::string Out, clang::dpct::HelperFeatureEnum HelperFeature,

@@ -15339,7 +15339,8 @@ void TemplateSpecializationTypeLocRule::registerMatcher(
   auto TargetTypeName = [&]() {
     return hasAnyName("thrust::not_equal_to", "thrust::constant_iterator",
                       "cub::CountingInputIterator",
-                      "cub::TransformInputIterator");
+                      "cub::TransformInputIterator",
+                      "thrust::system::cuda::experimental::pinned_allocator");
   };
 
   MF.addMatcher(typeLoc(
