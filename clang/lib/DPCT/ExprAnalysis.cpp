@@ -45,7 +45,7 @@ TemplateDependentStringInfo::TemplateDependentStringInfo(
     const std::map<size_t, std::shared_ptr<TemplateDependentReplacement>>
         &InTDRs)
     : SourceStr(SrcStr) {
-  for (auto TDR : InTDRs)
+  for (const auto &TDR : InTDRs)
     TDRs.emplace_back(TDR.second->alterSource(SourceStr));
 }
 
@@ -858,15 +858,6 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
             getCombinedStrFromLoc(SM.getSpellingLoc(CE->getBeginLoc()));
         auto &FCIMMR =
             dpct::DpctGlobalInfo::getFunctionCallInMacroMigrateRecord();
-        if (auto UDRFactory =
-                std::dynamic_pointer_cast<UserDefinedRewriterFactory>(
-                    Itr->second)) {
-          for (auto ItHeader = UDRFactory->Includes.begin();
-               ItHeader != UDRFactory->Includes.end(); ItHeader++) {
-            DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(),
-                                                       *ItHeader);
-          }
-        }
         if (FCIMMR.find(LocStr) != FCIMMR.end() &&
             FCIMMR.find(LocStr)->second.compare(ResultStr) &&
             !isExprStraddle(CE)) {

@@ -13,24 +13,8 @@
 
 #define N 8
 
-// CHECK:void test_1() {
-// CHECK:dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK:sycl::queue &q_ct1 = dev_ct1.default_queue();
-// CHECK:int h_in[N] = {0, 2, 2, 9, 5, 5, 5, 8};
-// CHECK:int h_out[N] = {0};
-// CHECK:int *d_in = nullptr;
-// CHECK:int *d_out = nullptr;
-// CHECK:int *d_selected_num = nullptr;
-// CHECK:int h_selected_num = 0;
-// CHECK:d_in = (int *)sycl::malloc_device(sizeof(h_in), q_ct1);
-// CHECK:d_out = (int *)sycl::malloc_device(sizeof(h_out), q_ct1);
-// CHECK:d_selected_num = sycl::malloc_device<int>(1, q_ct1);
-// CHECK:q_ct1.memcpy((void *)d_in, (void *)h_in, sizeof(h_in)).wait();
-// CHECK:DPCT1026{{.*}}
-// CHECK:q_ct1.fill(d_selected_num, std::distance(d_out, oneapi::dpl::unique_copy(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_in + N, d_out)), 1).wait();
-// CHECK:q_ct1.memcpy((void *)&h_selected_num, (void *)d_selected_num, sizeof(int)){{.*}};
-// CHECK:q_ct1.memcpy((void *)h_out, (void *)d_out, h_selected_num * sizeof(int)).wait();
-// CHECK:}
+// CHECK: DPCT1026{{.*}}
+// CHECK: q_ct1.fill(d_selected_num, std::distance(d_out, oneapi::dpl::unique_copy(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_in + N, d_out)), 1).wait();
 void test_1() {
   int h_in[N] = {0, 2, 2, 9, 5, 5, 5, 8};
   int h_out[N] = {0};
@@ -58,25 +42,9 @@ void test_1() {
   cudaFree(d_selected_num);
 }
 
-// CHECK:void test_2() {
-// CHECK:dpct::device_ext &dev_ct1 = dpct::get_current_device();
-// CHECK:sycl::queue &q_ct1 = dev_ct1.default_queue();
-// CHECK:int h_in[N] = {0, 2, 2, 9, 5, 5, 5, 8};
-// CHECK:int h_out[N] = {0};
-// CHECK:int *d_in = nullptr;
-// CHECK:int *d_out = nullptr;
-// CHECK:int *d_selected_num = nullptr;
-// CHECK:int h_selected_num = 0;
-// CHECK:d_in = (int *)sycl::malloc_device(sizeof(h_in), q_ct1);
-// CHECK:d_out = (int *)sycl::malloc_device(sizeof(h_out), q_ct1);
-// CHECK:d_selected_num = sycl::malloc_device<int>(1, q_ct1);
-// CHECK:q_ct1.memcpy((void *)d_in, (void *)h_in, sizeof(h_in)).wait();
-// CHECK:DPCT1027:{{.*}}
-// CHECK:0, 0;
-// CHECK:q_ct1.fill(d_selected_num, std::distance(d_out, oneapi::dpl::unique_copy(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_in + N, d_out)), 1).wait();
-// CHECK:q_ct1.memcpy((void *)&h_selected_num, (void *)d_selected_num, sizeof(int)){{.*}};
-// CHECK:q_ct1.memcpy((void *)h_out, (void *)d_out, h_selected_num * sizeof(int)).wait();
-// }
+// CHECK: DPCT1027:{{.*}}
+// CHECK: 0, 0;
+// CHECK: q_ct1.fill(d_selected_num, std::distance(d_out, oneapi::dpl::unique_copy(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_in + N, d_out)), 1).wait();
 void test_2() {
   int h_in[N] = {0, 2, 2, 9, 5, 5, 5, 8};
   int h_out[N] = {0};
@@ -93,6 +61,37 @@ void test_2() {
   cub::DeviceSelect::Unique(nullptr, d_temp_size, d_in, d_out, d_selected_num, N), 0;
   cudaMalloc((void **)&d_temp, d_temp_size);
   cub::DeviceSelect::Unique((void *)d_temp, d_temp_size, d_in, d_out, d_selected_num, N);
+  cudaMemcpy((void *)&h_selected_num, (void *)d_selected_num, sizeof(int), cudaMemcpyDeviceToHost);
+  cudaMemcpy((void *)h_out, (void *)d_out, h_selected_num * sizeof(int), cudaMemcpyDeviceToHost);
+  printf("%d\n", h_selected_num);
+  for (int i = 0; i < h_selected_num; ++i)
+    printf("%d\n", h_out[i]);
+  cudaFree(d_in);
+  cudaFree(d_out);
+  cudaFree(d_temp);
+  cudaFree(d_selected_num);
+}
+
+// CHECK: dpct::queue_ptr stream = (dpct::queue_ptr)(void *)(uintptr_t)5;
+// CHECK: DPCT1026{{.*}}
+// CHECK: stream->fill(d_selected_num, std::distance(d_out, oneapi::dpl::unique_copy(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + N, d_out)), 1).wait();
+void test_3() {
+  int h_in[N] = {0, 2, 2, 9, 5, 5, 5, 8};
+  int h_out[N] = {0};
+  int *d_in = nullptr;
+  int *d_out = nullptr;
+  int *d_temp = nullptr;
+  int *d_selected_num = nullptr;
+  int h_selected_num = 0;
+  size_t d_temp_size = 0;
+  cudaMalloc((void **)&d_in, sizeof(h_in));
+  cudaMalloc((void **)&d_out, sizeof(h_out));
+  cudaMalloc((void **)&d_selected_num, sizeof(int));
+  cudaMemcpy((void *)d_in, (void *)h_in, sizeof(h_in), cudaMemcpyHostToDevice);
+  cudaStream_t stream = (cudaStream_t)(void *)(uintptr_t)5;
+  cub::DeviceSelect::Unique(nullptr, d_temp_size, d_in, d_out, d_selected_num, N, stream);
+  cudaMalloc((void **)&d_temp, d_temp_size);
+  cub::DeviceSelect::Unique((void *)d_temp, d_temp_size, d_in, d_out, d_selected_num, N, stream);
   cudaMemcpy((void *)&h_selected_num, (void *)d_selected_num, sizeof(int), cudaMemcpyDeviceToHost);
   cudaMemcpy((void *)h_out, (void *)d_out, h_selected_num * sizeof(int), cudaMemcpyDeviceToHost);
   printf("%d\n", h_selected_num);

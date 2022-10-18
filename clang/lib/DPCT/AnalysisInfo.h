@@ -1668,7 +1668,7 @@ public:
     auto LocInfo = getLocInfo(SL);
     auto FileInfo = insertFile(LocInfo.first);
     auto &S = FileInfo->getConstantMacroTMSet();
-    for (auto TM : S) {
+    for (const auto &TM : S) {
       if (TM->getConstantOffset() == LocInfo.second) {
         return TM;
       }
@@ -1941,7 +1941,7 @@ public:
       return Res;
     }
 
-    for (auto SpellingLoc : IterOfD2L->second) {
+    for (const auto &SpellingLoc : IterOfD2L->second) {
       auto IterOfL2D = SpellingLocToDFIsMapForAssumeNDRange.find(SpellingLoc);
       if (IterOfL2D != SpellingLocToDFIsMapForAssumeNDRange.end()) {
         Res.insert(IterOfL2D->second.begin(), IterOfL2D->second.end());
@@ -3286,7 +3286,7 @@ private:
   template <class T, CallOrDecl COD>
   static void getArgumentsOrParametersFromMap(ParameterStream &PS,
                                               const GlobalMap<T> &VarMap) {
-    for (auto VI : VarMap) {
+    for (const auto &VI : VarMap) {
       if (PS.FormatInformation.EnableFormat) {
         ParameterStream TPS;
         GetArgOrParam<T, COD>()(TPS, VI.second);
@@ -3536,10 +3536,11 @@ private:
         }
       }
       if (auto DRE = dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts()))
-        addTextureObjectArg(Idx++, DRE, IsKernel);
+        addTextureObjectArg(Idx, DRE, IsKernel);
       else if (auto ASE =
                    dyn_cast<ArraySubscriptExpr>(Arg->IgnoreImpCasts()))
-        addTextureObjectArg(Idx++, ASE, IsKernel);
+        addTextureObjectArg(Idx, ASE, IsKernel);
+      Idx++;
       ArgItr++;
     }
   }
@@ -3748,7 +3749,7 @@ public:
       : ParamsNum(ParamsNum), NonDefaultParamNum(NonDefaultParamNum),
         IsBuilt(false),
         TextureObjectList(ParamsNum, std::shared_ptr<TextureObjectInfo>()),
-        FunctionName(FunctionName) {
+        FunctionName(FunctionName), IsLambda(false) {
     ParametersProps.resize(ParamsNum);
   }
 
@@ -3785,6 +3786,9 @@ public:
 
   inline bool isBuilt() { return IsBuilt; }
   inline void setBuilt() { IsBuilt = true; }
+
+  inline bool isLambda() { return IsLambda; }
+  inline void setLambda() { IsLambda = true; }
 
   inline std::string
   getExtraParameters(const std::string &Path,
@@ -3862,6 +3866,7 @@ private:
   std::vector<std::shared_ptr<TextureObjectInfo>> TextureObjectList;
   std::vector<ParameterProps> ParametersProps;
   std::string FunctionName;
+  bool IsLambda;
 };
 
 class KernelPrinter {

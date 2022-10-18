@@ -344,7 +344,7 @@ void DpctFileInfo::buildLinesInfo() {
   }
   auto RawBuffer =
       Content.getBufferOrNone(SM.getDiagnostics(), SM.getFileManager())
-          .getValueOr(llvm::MemoryBufferRef())
+          .value_or(llvm::MemoryBufferRef())
           .getBuffer();
   if (RawBuffer.empty())
     return;
@@ -406,7 +406,7 @@ void DpctFileInfo::buildReplacements() {
   // is same with normal global variable's name in host side, if the one is
   // found, postfix "_ct" is added to this __constant__ symbol's name.
   std::unordered_map<unsigned int, std::string> ReplUpdated;
-  for (auto Entry : MemVarMap) {
+  for (const auto &Entry : MemVarMap) {
     if (Entry.second->isIgnore())
       continue;
 
@@ -1934,7 +1934,7 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
       getNamespaceSeq(Context.getParents(*Callee));
 
   auto FDIter = FDNamespaceSeq.begin();
-  for (auto CalleeNamespace : CalleeNamespaceSeq) {
+  for (const auto &CalleeNamespace : CalleeNamespaceSeq) {
     if (FDNamespaceSeq.empty())
       break;
 
@@ -1947,7 +1947,7 @@ std::string CallFunctionExpr::getNameWithNamespace(const FunctionDecl *FD,
   }
 
   std::string Result;
-  for (auto I : FDNamespaceSeq) {
+  for (const auto &I : FDNamespaceSeq) {
     // If I is empty, it means this namespace is an unnamed namespace. So its
     // members have internal linkage. So just remove it.
     if (I.empty())
@@ -2170,8 +2170,21 @@ void CallFunctionExpr::buildInfo() {
     return;
 
   const std::string &DefFilePath = FuncInfo->getDefinitionFilePath();
+  // SYCL_EXTERNAL macro is not needed if the device function is lambda
+  // expression, becuase 'sycl_device' attribute cannot be applied or will be
+  // ignored.
+  //
+  // e.g.,
+  // [] (T a, T b ) -> SYCL_EXTERNAL T { return a * b; }
+  // [] (T a, T b ) SYCL_EXTERNAL { return a * b; }
+  //
+  // Intel(R) oneAPI DPC++ Compiler emits warning of ignoring SYCL_EXTERNAL in
+  // the first example and emits error when compiling the second example.
+  //
+  // TODO: Need to revisit the condition to add SYCL_EXTERNAL macro if issues
+  // are observed in the future.
   if (!DefFilePath.empty() && DefFilePath != getFilePath() &&
-      !isIncludedFile(getFilePath(), DefFilePath)) {
+      !isIncludedFile(getFilePath(), DefFilePath) && !FuncInfo->isLambda()) {
     FuncInfo->setNeedSyclExternMacro();
   }
 
@@ -2267,7 +2280,7 @@ void ExplicitInstantiationDecl::processFunctionTypeLoc(
   auto &SM = DpctGlobalInfo::getSourceManager();
   ExprAnalysis EA;
   processTypeLoc(FTL.getReturnLoc(), EA, SM);
-  for (auto Parm : FTL.getParams()) {
+  for (const auto &Parm : FTL.getParams()) {
     processTypeLoc(Parm->getTypeSourceInfo()->getTypeLoc(), EA, SM);
   }
 }
@@ -3096,34 +3109,37 @@ std::string MemVarInfo::getDeclarationReplacement(const VarDecl *VD) {
 std::string MemVarInfo::getSyclAccessorType() {
   std::string Ret;
   llvm::raw_string_ostream OS(Ret);
-  OS << MapNames::getClNamespace() << "accessor<";
-  OS << getAccessorDataType() << ", ";
-  OS << getType()->getDimension() << ", ";
+  if (getAttr() == MemVarInfo::VarAttrKind::Shared) {
+    OS << MapNames::getClNamespace() << "local_accessor<";
+    OS << getAccessorDataType() << ", ";
+    OS << getType()->getDimension() << ">";
+  } else {
+    OS << MapNames::getClNamespace() << "accessor<";
+    OS << getAccessorDataType() << ", ";
+    OS << getType()->getDimension() << ", ";
+  
+    OS << MapNames::getClNamespace() << "access_mode::";
+    if (getAttr() == MemVarInfo::VarAttrKind::Constant)
+      OS << "read";
+    else
+      OS << "read_write";
+    OS << ", ";
+  
+    OS << MapNames::getClNamespace() << "access::target::";
+    switch (getAttr()) {
+    case VarAttrKind::Constant:
+      OS << "constant_buffer";
+      break;
+    case VarAttrKind::Device:
+    case VarAttrKind::Managed:
+      OS << "device";
+      break;
+    default:
+      break;
+    }
 
-  OS << MapNames::getClNamespace() << "access_mode::";
-  if (getAttr() == MemVarInfo::VarAttrKind::Constant)
-    OS << "read";
-  else
-    OS << "read_write";
-  OS << ", ";
-
-  OS << MapNames::getClNamespace() << "access::target::";
-  switch (getAttr()) {
-  case VarAttrKind::Constant:
-    OS << "constant_buffer";
-    break;
-  case VarAttrKind::Shared:
-    OS << "local";
-    break;
-  case VarAttrKind::Device:
-  case VarAttrKind::Managed:
-    OS << "device";
-    break;
-  default:
-    break;
+    OS << ">";
   }
-
-  OS << ">";
   return OS.str();
 }
 void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
@@ -3705,7 +3721,9 @@ std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
 std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   unsigned Index = 0;
   char Method = MatchedStr[RegexPrefix.length()];
-  MatchedStr.substr(RegexPrefix.length() + 1).consumeInteger(10, Index);
+  bool HasError =
+      MatchedStr.substr(RegexPrefix.length() + 1).consumeInteger(10, Index);
+  assert(!HasError && "Must consume an integer");
   // D: device, used for pretty code
   // Q: queue, used for pretty code
   // R: range dim, used for built-in variables (threadIdx.x,...) migration
@@ -3779,56 +3797,56 @@ const std::string &getDefaultString(HelperFuncType HFT) {
 
 std::string getStringForRegexDefaultQueueAndDevice(HelperFuncType HFT,
                                                    int Index) {
-  if (HFT != HelperFuncType::HFT_DefaultQueue &&
-      HFT != HelperFuncType::HFT_CurrentDevice) {
-    return "";
-  }
+  if (HFT == HelperFuncType::HFT_DefaultQueue ||
+      HFT == HelperFuncType::HFT_CurrentDevice) {
 
-  if (DpctGlobalInfo::getDeviceChangedFlag() ||
-      !DpctGlobalInfo::getUsingDRYPattern()) {
-    return getDefaultString(HFT);
-  }
-
-  auto HelperFuncReplInfoIter =
-      DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);
-  if (HelperFuncReplInfoIter ==
-      DpctGlobalInfo::getHelperFuncReplInfoMap().end())
-    return getDefaultString(HFT);
-
-  std::string CounterKey =
-      HelperFuncReplInfoIter->second.DeclLocFile + ":" +
-      std::to_string(HelperFuncReplInfoIter->second.DeclLocOffset);
-
-  auto TempVariableDeclCounterIter =
-      DpctGlobalInfo::getTempVariableDeclCounterMap().find(CounterKey);
-  if (TempVariableDeclCounterIter ==
-      DpctGlobalInfo::getTempVariableDeclCounterMap().end()) {
-    return getDefaultString(HFT);
-  }
-
-  // All cases of replacing placeholders:
-  // dev_count  queue_count  dev_decl            queue_decl
-  // 0          1            /                   get_default_queue
-  // 1          0            get_current_device  /
-  // 1          1            get_current_device  get_default_queue
-  // 2          1            dev_ct1             get_default_queue
-  // 1          2            dev_ct1             q_ct1
-  // >=2        >=2          dev_ct1             q_ct1
-  if (HFT == HelperFuncType::HFT_DefaultQueue) {
-    if (!HelperFuncReplInfoIter->second.IsLocationValid ||
-        TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
+    if (DpctGlobalInfo::getDeviceChangedFlag() ||
+        !DpctGlobalInfo::getUsingDRYPattern()) {
       return getDefaultString(HFT);
-    } else {
-      return "q_ct1";
     }
-  } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
-    if (!HelperFuncReplInfoIter->second.IsLocationValid ||
-        (TempVariableDeclCounterIter->second.CurrentDeviceCounter <= 1 &&
-         TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1)) {
+
+    auto HelperFuncReplInfoIter =
+        DpctGlobalInfo::getHelperFuncReplInfoMap().find(Index);
+    if (HelperFuncReplInfoIter ==
+        DpctGlobalInfo::getHelperFuncReplInfoMap().end())
       return getDefaultString(HFT);
-    } else {
-      return "dev_ct1";
+
+    std::string CounterKey =
+        HelperFuncReplInfoIter->second.DeclLocFile + ":" +
+        std::to_string(HelperFuncReplInfoIter->second.DeclLocOffset);
+
+    auto TempVariableDeclCounterIter =
+        DpctGlobalInfo::getTempVariableDeclCounterMap().find(CounterKey);
+    if (TempVariableDeclCounterIter ==
+        DpctGlobalInfo::getTempVariableDeclCounterMap().end()) {
+      return getDefaultString(HFT);
     }
+
+    // All cases of replacing placeholders:
+    // dev_count  queue_count  dev_decl            queue_decl
+    // 0          1            /                   get_default_queue
+    // 1          0            get_current_device  /
+    // 1          1            get_current_device  get_default_queue
+    // 2          1            dev_ct1             get_default_queue
+    // 1          2            dev_ct1             q_ct1
+    // >=2        >=2          dev_ct1             q_ct1
+    if (HFT == HelperFuncType::HFT_DefaultQueue) {
+      if (!HelperFuncReplInfoIter->second.IsLocationValid ||
+          TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1) {
+        return getDefaultString(HFT);
+      } else {
+        return "q_ct1";
+      }
+    } else if (HFT == HelperFuncType::HFT_CurrentDevice) {
+      if (!HelperFuncReplInfoIter->second.IsLocationValid ||
+          (TempVariableDeclCounterIter->second.CurrentDeviceCounter <= 1 &&
+          TempVariableDeclCounterIter->second.DefaultQueueCounter <= 1)) {
+        return getDefaultString(HFT);
+      } else {
+        return "dev_ct1";
+      }
+    }
+  
   }
   return "";
 }

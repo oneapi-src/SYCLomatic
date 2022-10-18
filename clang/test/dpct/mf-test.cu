@@ -50,7 +50,7 @@ void test() {
 
   // CHECK:          q_ct1.submit(
   // CHECK-NEXT:       [&](sycl::handler &cgh) {
-  // CHECK-NEXT:         sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(360), cgh);
+  // CHECK-NEXT:         sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(360), cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:         cgh.parallel_for<dpct_kernel_name<class kernel_extern_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:           sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),

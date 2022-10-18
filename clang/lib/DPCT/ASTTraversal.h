@@ -213,7 +213,7 @@ private:
 
   // Check if the location has been replaced by the same rule.
   bool isReplaced(SourceRange &SR) {
-    for (auto RR : Replaced) {
+    for (const auto &RR : Replaced) {
       if (SR == RR)
         return true;
     }
@@ -504,9 +504,12 @@ public:
 class UserDefinedAPIRule
     : public clang::dpct::NamedMigrationRule<UserDefinedAPIRule> {
   std::string APIName;
+  bool HasExplicitTemplateArgs;
 
 public:
-  UserDefinedAPIRule(std::string APIName) : APIName(APIName){};
+  UserDefinedAPIRule(std::string APIName, bool HasExplicitTemplateArguments)
+      : APIName(std::move(APIName)),
+        HasExplicitTemplateArgs(HasExplicitTemplateArguments){};
   void registerMatcher(clang::ast_matchers::MatchFinder &MF) override;
   void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
 };

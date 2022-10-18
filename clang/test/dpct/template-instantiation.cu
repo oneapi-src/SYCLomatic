@@ -69,7 +69,7 @@ int main() {
 
 // CHECK:      q_ct1.submit(
 // CHECK-NEXT:   [&](sycl::handler &cgh) {
-// CHECK-NEXT:     sycl::accessor<sycl::float2, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+// CHECK-NEXT:     sycl::local_accessor<sycl::float2, 1> a_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -81,7 +81,7 @@ int main() {
 
 // CHECK:      q_ct1.submit(
 // CHECK-NEXT:   [&](sycl::handler &cgh) {
-// CHECK-NEXT:     sycl::accessor<sycl::int4, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+// CHECK-NEXT:     sycl::local_accessor<sycl::int4, 1> a_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -93,7 +93,7 @@ int main() {
     
 // CHECK:      q_ct1.submit(
 // CHECK-NEXT:   [&](sycl::handler &cgh) {
-// CHECK-NEXT:     sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(10), cgh);
+// CHECK-NEXT:     sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK-EMPTY:     
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -105,8 +105,8 @@ int main() {
     
 // CHECK:      q_ct1.submit(
 // CHECK-NEXT:   [&](sycl::handler &cgh) {
-// CHECK-NEXT:     sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> a1_acc_ct1(sycl::range<1>(10), cgh);
-// CHECK-NEXT:     sycl::accessor<sycl::float2, 1, sycl::access_mode::read_write, sycl::access::target::local> a2_acc_ct1(sycl::range<1>(10), cgh);
+// CHECK-NEXT:     sycl::local_accessor<int, 1> a1_acc_ct1(sycl::range<1>(10), cgh);
+// CHECK-NEXT:     sycl::local_accessor<sycl::float2, 1> a2_acc_ct1(sycl::range<1>(10), cgh);
 // CHECK-EMPTY:     
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -118,7 +118,7 @@ int main() {
     
 // CHECK:      q_ct1.submit(
 // CHECK-NEXT:   [&](sycl::handler &cgh) {
-// CHECK-NEXT:     sycl::accessor<int, 1, sycl::access_mode::read_write, sycl::access::target::local> a_acc_ct1(sycl::range<1>(20), cgh);
+// CHECK-NEXT:     sycl::local_accessor<int, 1> a_acc_ct1(sycl::range<1>(20), cgh);
 // CHECK-EMPTY:     
 // CHECK-NEXT:     cgh.parallel_for(
 // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
