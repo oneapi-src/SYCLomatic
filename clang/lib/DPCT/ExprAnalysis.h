@@ -631,7 +631,7 @@ protected:
   void analyzeExpr(const ConstantExpr *CE);
   void analyzeExpr(const IntegerLiteral *IL);
 
-  void RemoveCUDADeviceAttr(const LambdaExpr *LE);
+  void removeCUDADeviceAttr(const LambdaExpr *LE);
 
   inline void analyzeType(const TypeSourceInfo *TSI,
                           const Expr *CSCE = nullptr) {

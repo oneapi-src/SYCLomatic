@@ -953,7 +953,7 @@ void ExprAnalysis::analyzeExpr(const ReturnStmt *RS) {
 }
 
 
-void ExprAnalysis::RemoveCUDADeviceAttr(const LambdaExpr *LE) {
+void ExprAnalysis::removeCUDADeviceAttr(const LambdaExpr *LE) {
   // E.g.,
   // my_kernel<<<1, 1>>>([=] __device__(int idx) { idx++; });
   // The "__device__" attribute need to be removed.
@@ -967,7 +967,7 @@ void ExprAnalysis::RemoveCUDADeviceAttr(const LambdaExpr *LE) {
 }
 
 void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
-  RemoveCUDADeviceAttr(LE);
+  removeCUDADeviceAttr(LE);
   // TODO: Need to handle capture ([=] in lambda) if required in the future
   for (const auto &Param : LE->getCallOperator()->parameters()) {
     analyzeType(Param->getTypeSourceInfo()->getTypeLoc(), LE);
@@ -1584,8 +1584,8 @@ void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
 }
 
 void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
-  dispatch(LE->getBody());
-  Base::RemoveCUDADeviceAttr(LE);
+  Base::analyzeExpr(LE);
+  Base::removeCUDADeviceAttr(LE);
   // Lambda function can be passed to kernel function directly.
   // So, not need to redeclare a variable for lambda function passed to kernel
   // function
