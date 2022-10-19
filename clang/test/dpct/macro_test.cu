@@ -21,6 +21,20 @@
 
 #include "macro_test.h"
 
+
+#include <thrust/inner_product.h>
+#include <thrust/extrema.h>
+#include <thrust/host_vector.h>
+#include <thrust/gather.h>
+#include <thrust/scatter.h>
+#include <thrust/tuple.h>
+#include <thrust/device_ptr.h>
+#include <thrust/copy.h>
+#include <thrust/device_vector.h>
+#include <thrust/execution_policy.h>
+#include <thrust/random.h>
+#include <thrust/reduce.h>
+
 #define CUDA_NUM_THREADS 1024+32
 #define GET_BLOCKS(n,t)  1+n+t-1
 #define GET_BLOCKS2(n,t) 1+n+t
@@ -281,11 +295,11 @@ int b;
     #endif
   );
 
-  #define SIZE    (100*1024*1024)
+  #define SIZE3    (100*1024*1024)
   unsigned char *dev_buffer;
   unsigned char *buffer = (unsigned char*)malloc(500);
-  //CHECK: q_ct1.memcpy(dev_buffer, buffer, SIZE).wait();
-  cudaMemcpy( dev_buffer, buffer, SIZE, cudaMemcpyHostToDevice);
+  //CHECK: q_ct1.memcpy(dev_buffer, buffer, SIZE3).wait();
+  cudaMemcpy( dev_buffer, buffer, SIZE3, cudaMemcpyHostToDevice);
 }
 
 #define MMM(x)
@@ -681,16 +695,16 @@ real v5 = POW3(vx[id], 2);
 }
 
 //CHECK: #define CALL(call) call;
-//CHECK-NEXT: #define SIZE 8
+//CHECK-NEXT: #define SIZE2 8
 //CHECK-NEXT: void foo13(){
 //CHECK-NEXT:   int *a;
-//CHECK-NEXT:   CALL(a = sycl::malloc_device<int>(SIZE * 10, dpct::get_default_queue()));
+//CHECK-NEXT:   CALL(a = sycl::malloc_device<int>(SIZE2 * 10, dpct::get_default_queue()));
 //CHECK-NEXT: }
 #define CALL(call) call;
-#define SIZE 8
+#define SIZE2 8
 void foo13(){
   int *a;
-  CALL(cudaMalloc(&a, SIZE * 10 * sizeof(int)));
+  CALL(cudaMalloc(&a, SIZE2 * 10 * sizeof(int)));
 }
 
 //CHECK: #define CONST const
@@ -983,10 +997,10 @@ __device__ void doo(float f) {
 }
 
 //CHECK: void foo22(const sycl::stream &stream_ct1) {
-//CHECK-NEXT:   FUNCNAME(doo)<float, PASS(1 +) 2, SIZE>(PASS(1 +) 0.0f, stream_ct1);
+//CHECK-NEXT:   FUNCNAME(doo)<float, PASS(1 +) 2, SIZE2>(PASS(1 +) 0.0f, stream_ct1);
 //CHECK-NEXT: }
 __global__ void foo22() {
-  FUNCNAME(doo)<float, PASS(1 +) 2, SIZE>(PASS(1 +) 0.0f);
+  FUNCNAME(doo)<float, PASS(1 +) 2, SIZE2>(PASS(1 +) 0.0f);
 }
 
 //CHECK: static __inline__ void __attribute__((__always_inline__, __nodebug__, __target__("mmx")))
