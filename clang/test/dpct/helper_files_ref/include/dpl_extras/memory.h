@@ -650,9 +650,11 @@ template <typename T>
 device_pointer<T> malloc_device(const std::size_t num_elements) {
   return device_pointer<T>(num_elements * sizeof(T));
 }
+#ifndef DPCT_USM_LEVEL_NONE
 static inline device_pointer<void> malloc_device(const std::size_t num_bytes) {
   return device_pointer<void>(num_bytes);
 }
+#endif
 template <typename T>
 device_pointer<T> device_new(device_pointer<T> p, const T &value,
                              const std::size_t count = 1) {

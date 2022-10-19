@@ -736,9 +736,11 @@ template <typename T>
 device_pointer<T> malloc_device(const std::size_t num_elements) {
   return device_pointer<T>(num_elements * sizeof(T));
 }
+#ifndef DPCT_USM_LEVEL_NONE
 static inline device_pointer<void> malloc_device(const std::size_t num_bytes) {
   return device_pointer<void>(num_bytes);
 }
+#endif
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_new|dpct
 // DPCT_DEPENDENCY_BEGIN
