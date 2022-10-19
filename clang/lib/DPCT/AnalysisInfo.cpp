@@ -1735,7 +1735,9 @@ void deduceTemplateArgumentFromType(std::vector<TemplateArgumentInfo> &TAIList,
   ParmType = ParmType.getCanonicalType();
   if (!ParmType->isDependentType())
     return;
-
+  if (TL) {
+    TL = TL.getUnqualifiedLoc();
+  }
   switch (ParmType->getTypeClass()) {
   case Type::TemplateTypeParm:
     if (TL) {
