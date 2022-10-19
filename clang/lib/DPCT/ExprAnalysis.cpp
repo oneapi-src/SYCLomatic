@@ -1585,7 +1585,6 @@ void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
 
 void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
   Base::analyzeExpr(LE);
-  Base::removeCUDADeviceAttr(LE);
   // Lambda function can be passed to kernel function directly.
   // So, not need to redeclare a variable for lambda function passed to kernel
   // function
