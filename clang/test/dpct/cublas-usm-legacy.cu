@@ -121,9 +121,9 @@ int main() {
   //CHECK:oneapi::mkl::blas::column_major::rotm(*dpct::get_current_device().get_saved_queue(), n, result_D, n, result_D, n, const_cast<double*>(x_D)).wait();
   cublasDrotm(n, result_D, n, result_D, n, x_D);
 
-  // CHECK: oneapi::mkl::blas::column_major::rot(*dpct::get_current_device().get_saved_queue(), n, (std::complex<float>*)(sycl::float2 *)x_C, incx, (std::complex<float>*)(sycl::float2 *)y_C, incy, *x_S, std::complex<float>((*y_C).x(),(*y_C).y())).wait();
+  // CHECK: oneapi::mkl::blas::column_major::rot(*dpct::get_current_device().get_saved_queue(), n, (std::complex<float>*)x_C, incx, (std::complex<float>*)y_C, incy, *x_S, std::complex<float>((*y_C).x(),(*y_C).y())).wait();
   cublasCrot(n, (float2 *)x_C, incx, (float2 *)y_C, incy, *x_S, *y_C);
-  // CHECK: oneapi::mkl::blas::column_major::rot(*dpct::get_current_device().get_saved_queue(), n, (std::complex<double>*)(sycl::double2 *)x_Z, incx, (std::complex<double>*)(sycl::double2 *)y_Z, incy, *x_D, std::complex<double>((*y_Z).x(),(*y_Z).y())).wait();
+  // CHECK: oneapi::mkl::blas::column_major::rot(*dpct::get_current_device().get_saved_queue(), n, (std::complex<double>*)x_Z, incx, (std::complex<double>*)y_Z, incy, *x_D, std::complex<double>((*y_Z).x(),(*y_Z).y())).wait();
   cublasZrot(n, (double2 *)x_Z, incx, (double2 *)y_Z, incy, *x_D, *y_Z);
 
   // CHECK:oneapi::mkl::blas::column_major::copy(*dpct::get_current_device().get_saved_queue(), n, x_S, incx, result_S, incy).wait();
