@@ -332,12 +332,12 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<DPCPPExtensionsDefaultDisab
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("c_cxx_standard_library",
                                      int(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary),
-                                     "A set of functions from the C and C++ standard libraries which is allowed to\n"
+                                     "A set of functions from the C and C++ standard libraries that are allowed to\n"
                                      "be used in SYCL device code.",
                                      false)
            ),
-           llvm::cl::desc("Comma separated list of extensions will be used in migrated code.\n"
-           "By default, these extensions will not be used in migrated code."),
+           llvm::cl::desc("A comma separated list of extensions to be used in migrated code.\n"
+           "By default, these extensions are not used in migrated code."),
            llvm::cl::CommaSeparated, llvm::cl::value_desc("value"), llvm::cl::cat(DPCTCat), llvm::cl::ZeroOrMore,
            llvm::cl::cb<void, DPCPPExtensionsDefaultDisabled>(DpctGlobalInfo::setExtensionDDUsed))
 
