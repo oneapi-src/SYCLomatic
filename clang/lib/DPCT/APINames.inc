@@ -1457,7 +1457,7 @@ ENTRY(cudaGraphExecKernelNodeSetParams, cudaGraphExecKernelNodeSetParams, false,
 ENTRY(cudaGraphExecMemcpyNodeSetParams, cudaGraphExecMemcpyNodeSetParams, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphExecMemsetNodeSetParams, cudaGraphExecMemsetNodeSetParams, false, NO_FLAG, P4, "comment")
 ENTRY(cudaGraphExecUpdate, cudaGraphExecUpdate, false, NO_FLAG, P4, "comment")
-ENTRY(cudaStreamGetCaptureInfo, cudaStreamGetCaptureInfo, false, NO_FLAG, P4, "comment")
+ENTRY(cudaStreamGetCaptureInfo, cudaStreamGetCaptureInfo_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cudaThreadExchangeStreamCaptureMode, cudaThreadExchangeStreamCaptureMode, false, NO_FLAG, P4, "comment")
 
 //add runtime APIs for v11.7
@@ -1548,7 +1548,6 @@ ENTRY(cudaMipmappedArrayGetSparseProperties, cudaMipmappedArrayGetSparseProperti
 ENTRY(cudaOccupancyAvailableDynamicSMemPerBlock, cudaOccupancyAvailableDynamicSMemPerBlock, false, NO_FLAG, P4, "comment")
 ENTRY(cudaStreamCopyAttributes, cudaStreamCopyAttributes, false, NO_FLAG, P4, "comment")
 ENTRY(cudaStreamGetAttribute, cudaStreamGetAttribute, false, NO_FLAG, P7, "comment")
-ENTRY(cudaStreamGetCaptureInfo, cudaStreamGetCaptureInfo_v2, false, NO_FLAG, P4, "comment")
 ENTRY(cudaStreamSetAttribute, cudaStreamSetAttribute, false, NO_FLAG, P7, "comment")
 ENTRY(cudaStreamUpdateCaptureDependencies, cudaStreamUpdateCaptureDependencies, false, NO_FLAG, P4, "comment")
 ENTRY(cudaUserObjectCreate, cudaUserObjectCreate, false, NO_FLAG, P4, "comment")
