@@ -62,11 +62,11 @@ DpctFrontEndAction::CreateASTConsumer(CompilerInstance &CI, StringRef InFile) {
   return std::make_unique<DpctConsumer>(Info, CI.getPreprocessor());
 }
 
-DpctToolAction::DpctToolAction(ReplTy &Replacements,
+DpctToolAction::DpctToolAction(llvm::raw_ostream &DS, ReplTy &Replacements,
                                const std::string &RuleNames,
                                std::vector<PassKind> Passes)
     : Global(DpctGlobalInfo::getInstance()), Repls(Replacements),
-      Passes(std::move(Passes)) {
+      Passes(std::move(Passes)), DiagnosticStream(DS) {
   if (RuleNames.empty())
     return;
   auto Names = split(RuleNames, ',');
@@ -100,7 +100,7 @@ void DpctToolAction::runPass(PassKind Pass) {
     auto &Transforms = Info->Transforms;
     auto &IncludeMap = Info->IncludeMapSet;
     auto DiagClient = new TextDiagnosticPrinter(
-        DpctTerm(), &Info->AST->getDiagnostics().getDiagnosticOptions());
+        DiagnosticStream, &Info->AST->getDiagnostics().getDiagnosticOptions());
     Info->AST->getDiagnostics().setClient(DiagClient);
     DiagClient->BeginSourceFile(Context.getLangOpts(),
                                 &Info->AST->getPreprocessor());
