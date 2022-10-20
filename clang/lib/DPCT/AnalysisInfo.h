@@ -4044,6 +4044,7 @@ private:
         IsDoublePointer = S->containsVirtualPointer();
       }
       ArgString = Obj->getName();
+      IdString = ArgString + "_";
       ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Texture);
     }
 
