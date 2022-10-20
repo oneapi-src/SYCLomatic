@@ -12401,7 +12401,7 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
-   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "math");
+   const CallExpr *CE = getAssistNodeAsType<CallExpr>(Result, "math");
    if (!CE)
      CE = getNodeAsType<CallExpr>(Result, "unresolved");
    if (!CE)
