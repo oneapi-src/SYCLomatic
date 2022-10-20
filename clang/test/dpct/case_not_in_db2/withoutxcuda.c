@@ -7,9 +7,23 @@
 // RUN: dpct --format-range=none -in-root=%T -out-root=%T/out -p %T withoutxcuda.c --format-range=none --cuda-include-path="%cuda-path/include" &> %T/notFound || echo "test"
 // RUN: FileCheck %T/ref --match-full-lines --input-file %T/notFound
 
-#include <cuda_runtime.h>
-__constant__ float const_angle[360];
-__global__ void simple_kernel(float *d_array) {
+// CHECK: #include <sycl/sycl.hpp>
+// CHECK-NEXT: #include <dpct/dpct.hpp>
+#include <sycl/sycl.hpp>
+#include <dpct/dpct.hpp>
+
+// CHECK: dpct::constant_memory<float, 1> const_angle(360);
+// CHECK-NEXT: void simple_kernel(float *d_array, float *const_angle) {
+// CHECK-NEXT:   d_array[0] = const_angle[0];
+// CHECK-NEXT:   return;
+// CHECK-NEXT: }
+
+dpct::constant_memory<float, 1> const_angle(360);
+void simple_kernel(float *d_array,
+                   float *const_angle) {
   d_array[0] = const_angle[0];
   return;
 }
+#ifdef DTEST
+__constant__ float const_angle[360];
+#endif

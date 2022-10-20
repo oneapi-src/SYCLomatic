@@ -235,6 +235,30 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
                                                                ErrorMessage);
 #endif // SYCLomatic_CUSTOMIZATION
     }
+
+    if (Compilations && !SourcePaths.empty()) {
+      std::string SourceFilePath = "";
+      for (std::string &SourcePath : SourcePaths) {
+        bool IsDBItem = false;
+        for (std::string &File : Compilations->getAllFiles()) {
+            if (getAbsolutePath(SourcePath) == File) {
+              IsDBItem = true;
+              break;
+            }
+        }
+        if (!IsDBItem) {
+          if (!BuildPath.empty()) {
+            const std::string Msg =
+              "warning: " + getAbsolutePath(SourcePath) +
+                  " file not found in compile_commands.json\n";
+            DoPrintHandle(Msg, false);
+          }
+          Compilations = nullptr;
+          break;
+        }
+      }
+    }
+
     if (!Compilations) {
 #ifdef SYCLomatic_CUSTOMIZATION
       if (SourcePaths.size() == 0 && !BuildPath.getValue().empty()){
