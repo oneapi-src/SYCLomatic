@@ -346,7 +346,6 @@ ENTRY(cusolverRfSetNumericProperties, cusolverRfSetNumericProperties, false, NO_
 ENTRY(cusolverRfSetResetValuesFastMode, cusolverRfSetResetValuesFastMode, false, NO_FLAG, P4, "comment")
 ENTRY(cusolverRfSetAlgs, cusolverRfSetAlgs, false, NO_FLAG, P4, "comment")
 ENTRY(cusolverRfSolve, cusolverRfSolve, false, NO_FLAG, P4, "comment")
-
 ENTRY(cusolverRfBatchSetupHost, cusolverRfBatchSetupHost, false, NO_FLAG, P4, "comment")
 ENTRY(cusolverRfBatchAnalyze, cusolverRfBatchAnalyze, false, NO_FLAG, P4, "comment")
 ENTRY(cusolverRfBatchResetValues, cusolverRfBatchResetValues, false, NO_FLAG, P4, "comment")
