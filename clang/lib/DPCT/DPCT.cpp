@@ -992,7 +992,8 @@ int runDPCT(int argc, const char **argv) {
       DeviceFunctionDecl::reset();
     }
     DpctGlobalInfo::setRunRound(RunCount++);
-    DpctToolAction Action(Tool.getReplacements(), Passes,
+    DpctToolAction Action(OutputFile.empty() ? llvm::errs() : DpctTerm(),
+                          Tool.getReplacements(), Passes,
                           {PassKind::PK_Analysis, PassKind::PK_Migration});
 
     if (ProcessAllFlag) {
