@@ -3720,6 +3720,7 @@ std::string DpctGlobalInfo::getStringForRegexReplacement(StringRef MatchedStr) {
   bool HasError =
       MatchedStr.substr(RegexPrefix.length() + 1).consumeInteger(10, Index);
   assert(!HasError && "Must consume an integer");
+  (void) HasError;
   // D: device, used for pretty code
   // Q: queue, used for pretty code
   // R: range dim, used for built-in variables (threadIdx.x,...) migration
