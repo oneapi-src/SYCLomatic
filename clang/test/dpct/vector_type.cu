@@ -1445,31 +1445,31 @@ int main_long4() {
   return 0;
 }
 
-// CHECK: void func3_longlong1(long long a, long long b, long long c) {
+// CHECK: void func3_longlong1(int64_t a, int64_t b, int64_t c) {
 void func3_longlong1(longlong1 a, longlong1 b, longlong1 c) {
 }
-// CHECK: void func_longlong1(long long a) {
+// CHECK: void func_longlong1(int64_t a) {
 void func_longlong1(longlong1 a) {
 }
-// CHECK: void kernel_longlong1(long long *a, long long *b) {
+// CHECK: void kernel_longlong1(int64_t *a, int64_t *b) {
 __global__ void kernel_longlong1(longlong1 *a, longlong1 *b) {
 }
 
 int main_longlong1() {
   // range default constructor does the right thing.
-  // CHECK: long long longlong1_a;
+  // CHECK: int64_t longlong1_a;
   longlong1 longlong1_a;
-  // CHECK: long long longlong1_b = long long(1);
+  // CHECK: int64_t longlong1_b = int64_t(1);
   longlong1 longlong1_b = make_longlong1(1);
-  // CHECK: long long longlong1_c = long long(longlong1_b);
+  // CHECK: int64_t longlong1_c = int64_t(longlong1_b);
   longlong1 longlong1_c = longlong1(longlong1_b);
-  // CHECK: long long longlong1_d(longlong1_c);
+  // CHECK: int64_t longlong1_d(longlong1_c);
   longlong1 longlong1_d(longlong1_c);
-  // CHECK: func3_longlong1(longlong1_b, long long(longlong1_b), (long long)longlong1_b);
+  // CHECK: func3_longlong1(longlong1_b, int64_t(longlong1_b), (int64_t)longlong1_b);
   func3_longlong1(longlong1_b, longlong1(longlong1_b), (longlong1)longlong1_b);
-  // CHECK: long long *longlong1_e;
+  // CHECK: int64_t *longlong1_e;
   longlong1 *longlong1_e;
-  // CHECK: long long *longlong1_f;
+  // CHECK: int64_t *longlong1_f;
   longlong1 *longlong1_f;
   // CHECK: long long longlong1_g = longlong1_c;
   long long longlong1_g = longlong1_c.x;
@@ -1477,21 +1477,21 @@ int main_longlong1() {
   longlong1_a.x = longlong1_d.x;
   // CHECK: if (longlong1_b == longlong1_d) {}
   if (longlong1_b.x == longlong1_d.x) {}
-  // CHECK: long long longlong1_h[16];
+  // CHECK: int64_t longlong1_h[16];
   longlong1 longlong1_h[16];
-  // CHECK: long long longlong1_i[32];
+  // CHECK: int64_t longlong1_i[32];
   longlong1 longlong1_i[32];
   // CHECK: if (longlong1_h[12] == longlong1_i[12]) {}
   if (longlong1_h[12].x == longlong1_i[12].x) {}
-  // CHECK: longlong1_f = (long long *)longlong1_i;
+  // CHECK: longlong1_f = (int64_t *)longlong1_i;
   longlong1_f = (longlong1 *)longlong1_i;
-  // CHECK: longlong1_a = (long long)longlong1_c;
+  // CHECK: longlong1_a = (int64_t)longlong1_c;
   longlong1_a = (longlong1)longlong1_c;
-  // CHECK: longlong1_b = long long(longlong1_b);
+  // CHECK: longlong1_b = int64_t(longlong1_b);
   longlong1_b = longlong1(longlong1_b);
-  // CHECK: long long longlong1_j, longlong1_k, longlong1_l, longlong1_m[16], *longlong1_n[32];
+  // CHECK: int64_t longlong1_j, longlong1_k, longlong1_l, longlong1_m[16], *longlong1_n[32];
   longlong1 longlong1_j, longlong1_k, longlong1_l, longlong1_m[16], *longlong1_n[32];
-  // CHECK: int longlong1_o = sizeof(long long);
+  // CHECK: int longlong1_o = sizeof(int64_t);
   int longlong1_o = sizeof(longlong1);
   // CHECK: int long long_p = sizeof(long long);
   int long long_p = sizeof(long long);
@@ -1500,8 +1500,8 @@ int main_longlong1() {
   int *longlong1_cast;
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<long long *> longlong1_e_acc_ct0(longlong1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<long long *> longlong1_cast_acc_ct1((long long *)longlong1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<int64_t *> longlong1_e_acc_ct0(longlong1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<int64_t *> longlong1_cast_acc_ct1((int64_t *)longlong1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_longlong1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -1510,8 +1510,8 @@ int main_longlong1() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel_longlong1<<<1,1>>>(longlong1_e, (longlong1 *)longlong1_cast);
-  // CHECK: long long longlong1_r = (long long){1};
-  // CHECK-NEXT: auto longlong1_s = (long long){1};
+  // CHECK: int64_t longlong1_r = (int64_t){1};
+  // CHECK-NEXT: auto longlong1_s = (int64_t){1};
   longlong1 longlong1_r = (longlong1){1};
   auto longlong1_s = (longlong1){1};
   return 0;
@@ -2021,31 +2021,31 @@ int main_short4() {
   return 0;
 }
 
-// CHECK: void func3_uchar1(unsigned char a, unsigned char b, unsigned char c) {
+// CHECK: void func3_uchar1(uint8_t a, uint8_t b, uint8_t c) {
 void func3_uchar1(uchar1 a, uchar1 b, uchar1 c) {
 }
-// CHECK: void func_uchar1(unsigned char a) {
+// CHECK: void func_uchar1(uint8_t a) {
 void func_uchar1(uchar1 a) {
 }
-// CHECK: void kernel_uchar1(unsigned char *a, unsigned char *b) {
+// CHECK: void kernel_uchar1(uint8_t *a, uint8_t *b) {
 __global__ void kernel_uchar1(uchar1 *a, uchar1 *b) {
 }
 
 int main_uchar1() {
   // range default constructor does the right thing.
-  // CHECK: unsigned char uchar1_a;
+  // CHECK: uint8_t uchar1_a;
   uchar1 uchar1_a;
-  // CHECK: unsigned char uchar1_b = unsigned char(1);
+  // CHECK: uint8_t uchar1_b = uint8_t(1);
   uchar1 uchar1_b = make_uchar1(1);
-  // CHECK: unsigned char uchar1_c = unsigned char(uchar1_b);
+  // CHECK: uint8_t uchar1_c = uint8_t(uchar1_b);
   uchar1 uchar1_c = uchar1(uchar1_b);
-  // CHECK: unsigned char uchar1_d(uchar1_c);
+  // CHECK: uint8_t uchar1_d(uchar1_c);
   uchar1 uchar1_d(uchar1_c);
-  // CHECK: func3_uchar1(uchar1_b, unsigned char(uchar1_b), (unsigned char)uchar1_b);
+  // CHECK: func3_uchar1(uchar1_b, uint8_t(uchar1_b), (uint8_t)uchar1_b);
   func3_uchar1(uchar1_b, uchar1(uchar1_b), (uchar1)uchar1_b);
-  // CHECK: unsigned char *uchar1_e;
+  // CHECK: uint8_t *uchar1_e;
   uchar1 *uchar1_e;
-  // CHECK: unsigned char *uchar1_f;
+  // CHECK: uint8_t *uchar1_f;
   uchar1 *uchar1_f;
   // CHECK: unsigned char uchar1_g = uchar1_c;
   unsigned char uchar1_g = uchar1_c.x;
@@ -2053,21 +2053,21 @@ int main_uchar1() {
   uchar1_a.x = uchar1_d.x;
   // CHECK: if (uchar1_b == uchar1_d) {}
   if (uchar1_b.x == uchar1_d.x) {}
-  // CHECK: unsigned char uchar1_h[16];
+  // CHECK: uint8_t uchar1_h[16];
   uchar1 uchar1_h[16];
-  // CHECK: unsigned char uchar1_i[32];
+  // CHECK: uint8_t uchar1_i[32];
   uchar1 uchar1_i[32];
   // CHECK: if (uchar1_h[12] == uchar1_i[12]) {}
   if (uchar1_h[12].x == uchar1_i[12].x) {}
-  // CHECK: uchar1_f = (unsigned char *)uchar1_i;
+  // CHECK: uchar1_f = (uint8_t *)uchar1_i;
   uchar1_f = (uchar1 *)uchar1_i;
-  // CHECK: uchar1_a = (unsigned char)uchar1_c;
+  // CHECK: uchar1_a = (uint8_t)uchar1_c;
   uchar1_a = (uchar1)uchar1_c;
-  // CHECK: uchar1_b = unsigned char(uchar1_b);
+  // CHECK: uchar1_b = uint8_t(uchar1_b);
   uchar1_b = uchar1(uchar1_b);
-  // CHECK: unsigned char uchar1_j, uchar1_k, uchar1_l, uchar1_m[16], *uchar1_n[32];
+  // CHECK: uint8_t uchar1_j, uchar1_k, uchar1_l, uchar1_m[16], *uchar1_n[32];
   uchar1 uchar1_j, uchar1_k, uchar1_l, uchar1_m[16], *uchar1_n[32];
-  // CHECK: int uchar1_o = sizeof(unsigned char);
+  // CHECK: int uchar1_o = sizeof(uint8_t);
   int uchar1_o = sizeof(uchar1);
   // CHECK: int unsigned char_p = sizeof(unsigned char);
   int unsigned char_p = sizeof(unsigned char);
@@ -2076,8 +2076,8 @@ int main_uchar1() {
   int *uchar1_cast;
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<unsigned char *> uchar1_e_acc_ct0(uchar1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<unsigned char *> uchar1_cast_acc_ct1((unsigned char *)uchar1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<uint8_t *> uchar1_e_acc_ct0(uchar1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<uint8_t *> uchar1_cast_acc_ct1((uint8_t *)uchar1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_uchar1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2086,8 +2086,8 @@ int main_uchar1() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel_uchar1<<<1,1>>>(uchar1_e, (uchar1 *)uchar1_cast);
-  // CHECK: unsigned char uchar1_r = (unsigned char){1};
-  // CHECK-NEXT: auto uchar1_s = (unsigned char){1};
+  // CHECK: uint8_t uchar1_r = (uint8_t){1};
+  // CHECK-NEXT: auto uchar1_s = (uint8_t){1};
   uchar1 uchar1_r = (uchar1){1};
   auto uchar1_s = (uchar1){1};
   return 0;
@@ -2309,31 +2309,31 @@ int main_uchar4() {
   return 0;
 }
 
-// CHECK: void func3_uint1(unsigned int a, unsigned int b, unsigned int c) {
+// CHECK: void func3_uint1(uint32_t a, uint32_t b, uint32_t c) {
 void func3_uint1(uint1 a, uint1 b, uint1 c) {
 }
-// CHECK: void func_uint1(unsigned int a) {
+// CHECK: void func_uint1(uint32_t a) {
 void func_uint1(uint1 a) {
 }
-// CHECK: void kernel_uint1(unsigned int *a, unsigned int *b) {
+// CHECK: void kernel_uint1(uint32_t *a, uint32_t *b) {
 __global__ void kernel_uint1(uint1 *a, uint1 *b) {
 }
 
 int main_uint1() {
   // range default constructor does the right thing.
-  // CHECK: unsigned int uint1_a;
+  // CHECK: uint32_t uint1_a;
   uint1 uint1_a;
-  // CHECK: unsigned int uint1_b = unsigned int(1);
+  // CHECK: uint32_t uint1_b = uint32_t(1);
   uint1 uint1_b = make_uint1(1);
-  // CHECK: unsigned int uint1_c = unsigned int(uint1_b);
+  // CHECK: uint32_t uint1_c = uint32_t(uint1_b);
   uint1 uint1_c = uint1(uint1_b);
-  // CHECK: unsigned int uint1_d(uint1_c);
+  // CHECK: uint32_t uint1_d(uint1_c);
   uint1 uint1_d(uint1_c);
-  // CHECK: func3_uint1(uint1_b, unsigned int(uint1_b), (unsigned int)uint1_b);
+  // CHECK: func3_uint1(uint1_b, uint32_t(uint1_b), (uint32_t)uint1_b);
   func3_uint1(uint1_b, uint1(uint1_b), (uint1)uint1_b);
-  // CHECK: unsigned int *uint1_e;
+  // CHECK: uint32_t *uint1_e;
   uint1 *uint1_e;
-  // CHECK: unsigned int *uint1_f;
+  // CHECK: uint32_t *uint1_f;
   uint1 *uint1_f;
   // CHECK: unsigned int uint1_g = uint1_c;
   unsigned int uint1_g = uint1_c.x;
@@ -2341,21 +2341,21 @@ int main_uint1() {
   uint1_a.x = uint1_d.x;
   // CHECK: if (uint1_b == uint1_d) {}
   if (uint1_b.x == uint1_d.x) {}
-  // CHECK: unsigned int uint1_h[16];
+  // CHECK: uint32_t uint1_h[16];
   uint1 uint1_h[16];
-  // CHECK: unsigned int uint1_i[32];
+  // CHECK: uint32_t uint1_i[32];
   uint1 uint1_i[32];
   // CHECK: if (uint1_h[12] == uint1_i[12]) {}
   if (uint1_h[12].x == uint1_i[12].x) {}
-  // CHECK: uint1_f = (unsigned int *)uint1_i;
+  // CHECK: uint1_f = (uint32_t *)uint1_i;
   uint1_f = (uint1 *)uint1_i;
-  // CHECK: uint1_a = (unsigned int)uint1_c;
+  // CHECK: uint1_a = (uint32_t)uint1_c;
   uint1_a = (uint1)uint1_c;
-  // CHECK: uint1_b = unsigned int(uint1_b);
+  // CHECK: uint1_b = uint32_t(uint1_b);
   uint1_b = uint1(uint1_b);
-  // CHECK: unsigned int uint1_j, uint1_k, uint1_l, uint1_m[16], *uint1_n[32];
+  // CHECK: uint32_t uint1_j, uint1_k, uint1_l, uint1_m[16], *uint1_n[32];
   uint1 uint1_j, uint1_k, uint1_l, uint1_m[16], *uint1_n[32];
-  // CHECK: int uint1_o = sizeof(unsigned int);
+  // CHECK: int uint1_o = sizeof(uint32_t);
   int uint1_o = sizeof(uint1);
   // CHECK: int unsigned int_p = sizeof(unsigned int);
   int unsigned int_p = sizeof(unsigned int);
@@ -2364,8 +2364,8 @@ int main_uint1() {
   int *uint1_cast;
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<unsigned int *> uint1_e_acc_ct0(uint1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<unsigned int *> uint1_cast_acc_ct1((unsigned int *)uint1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<uint32_t *> uint1_e_acc_ct0(uint1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<uint32_t *> uint1_cast_acc_ct1((uint32_t *)uint1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_uint1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2374,8 +2374,8 @@ int main_uint1() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel_uint1<<<1,1>>>(uint1_e, (uint1 *)uint1_cast);
-  // CHECK: unsigned int uint1_r = (unsigned int){1};
-  // CHECK-NEXT: auto uint1_s = (unsigned int){1};
+  // CHECK: uint32_t uint1_r = (uint32_t){1};
+  // CHECK-NEXT: auto uint1_s = (uint32_t){1};
   uint1 uint1_r = (uint1){1};
   auto uint1_s = (uint1){1};
   return 0;
@@ -2597,31 +2597,31 @@ int main_uint4() {
   return 0;
 }
 
-// CHECK: void func3_ulong1(unsigned long a, unsigned long b, unsigned long c) {
+// CHECK: void func3_ulong1(uint64_t a, uint64_t b, uint64_t c) {
 void func3_ulong1(ulong1 a, ulong1 b, ulong1 c) {
 }
-// CHECK: void func_ulong1(unsigned long a) {
+// CHECK: void func_ulong1(uint64_t a) {
 void func_ulong1(ulong1 a) {
 }
-// CHECK: void kernel_ulong1(unsigned long *a, unsigned long *b) {
+// CHECK: void kernel_ulong1(uint64_t *a, uint64_t *b) {
 __global__ void kernel_ulong1(ulong1 *a, ulong1 *b) {
 }
 
 int main_ulong1() {
   // range default constructor does the right thing.
-  // CHECK: unsigned long ulong1_a;
+  // CHECK: uint64_t ulong1_a;
   ulong1 ulong1_a;
-  // CHECK: unsigned long ulong1_b = unsigned long(1);
+  // CHECK: uint64_t ulong1_b = uint64_t(1);
   ulong1 ulong1_b = make_ulong1(1);
-  // CHECK: unsigned long ulong1_c = unsigned long(ulong1_b);
+  // CHECK: uint64_t ulong1_c = uint64_t(ulong1_b);
   ulong1 ulong1_c = ulong1(ulong1_b);
-  // CHECK: unsigned long ulong1_d(ulong1_c);
+  // CHECK: uint64_t ulong1_d(ulong1_c);
   ulong1 ulong1_d(ulong1_c);
-  // CHECK: func3_ulong1(ulong1_b, unsigned long(ulong1_b), (unsigned long)ulong1_b);
+  // CHECK: func3_ulong1(ulong1_b, uint64_t(ulong1_b), (uint64_t)ulong1_b);
   func3_ulong1(ulong1_b, ulong1(ulong1_b), (ulong1)ulong1_b);
-  // CHECK: unsigned long *ulong1_e;
+  // CHECK: uint64_t *ulong1_e;
   ulong1 *ulong1_e;
-  // CHECK: unsigned long *ulong1_f;
+  // CHECK: uint64_t *ulong1_f;
   ulong1 *ulong1_f;
   // CHECK: unsigned long ulong1_g = ulong1_c;
   unsigned long ulong1_g = ulong1_c.x;
@@ -2629,21 +2629,21 @@ int main_ulong1() {
   ulong1_a.x = ulong1_d.x;
   // CHECK: if (ulong1_b == ulong1_d) {}
   if (ulong1_b.x == ulong1_d.x) {}
-  // CHECK: unsigned long ulong1_h[16];
+  // CHECK: uint64_t ulong1_h[16];
   ulong1 ulong1_h[16];
-  // CHECK: unsigned long ulong1_i[32];
+  // CHECK: uint64_t ulong1_i[32];
   ulong1 ulong1_i[32];
   // CHECK: if (ulong1_h[12] == ulong1_i[12]) {}
   if (ulong1_h[12].x == ulong1_i[12].x) {}
-  // CHECK: ulong1_f = (unsigned long *)ulong1_i;
+  // CHECK: ulong1_f = (uint64_t *)ulong1_i;
   ulong1_f = (ulong1 *)ulong1_i;
-  // CHECK: ulong1_a = (unsigned long)ulong1_c;
+  // CHECK: ulong1_a = (uint64_t)ulong1_c;
   ulong1_a = (ulong1)ulong1_c;
-  // CHECK: ulong1_b = unsigned long(ulong1_b);
+  // CHECK: ulong1_b = uint64_t(ulong1_b);
   ulong1_b = ulong1(ulong1_b);
-  // CHECK: unsigned long ulong1_j, ulong1_k, ulong1_l, ulong1_m[16], *ulong1_n[32];
+  // CHECK: uint64_t ulong1_j, ulong1_k, ulong1_l, ulong1_m[16], *ulong1_n[32];
   ulong1 ulong1_j, ulong1_k, ulong1_l, ulong1_m[16], *ulong1_n[32];
-  // CHECK: int ulong1_o = sizeof(unsigned long);
+  // CHECK: int ulong1_o = sizeof(uint64_t);
   int ulong1_o = sizeof(ulong1);
   // CHECK: int unsigned long_p = sizeof(unsigned long);
   int unsigned long_p = sizeof(unsigned long);
@@ -2652,8 +2652,8 @@ int main_ulong1() {
   int *ulong1_cast;
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<unsigned long *> ulong1_e_acc_ct0(ulong1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<unsigned long *> ulong1_cast_acc_ct1((unsigned long *)ulong1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<uint64_t *> ulong1_e_acc_ct0(ulong1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<uint64_t *> ulong1_cast_acc_ct1((uint64_t *)ulong1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ulong1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2662,8 +2662,8 @@ int main_ulong1() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel_ulong1<<<1,1>>>(ulong1_e, (ulong1 *)ulong1_cast);
-  // CHECK: unsigned long ulong1_r = (unsigned long){1};
-  // CHECK-NEXT: auto ulong1_s = (unsigned long){1};
+  // CHECK: uint64_t ulong1_r = (uint64_t){1};
+  // CHECK-NEXT: auto ulong1_s = (uint64_t){1};
   ulong1 ulong1_r = (ulong1){1};
   auto ulong1_s = (ulong1){1};
   return 0;
@@ -2885,31 +2885,31 @@ int main_ulong4() {
   return 0;
 }
 
-// CHECK: void func3_ulonglong1(unsigned long long a, unsigned long long b, unsigned long long c) {
+// CHECK: void func3_ulonglong1(uint64_t a, uint64_t b, uint64_t c) {
 void func3_ulonglong1(ulonglong1 a, ulonglong1 b, ulonglong1 c) {
 }
-// CHECK: void func_ulonglong1(unsigned long long a) {
+// CHECK: void func_ulonglong1(uint64_t a) {
 void func_ulonglong1(ulonglong1 a) {
 }
-// CHECK: void kernel_ulonglong1(unsigned long long *a, unsigned long long *b) {
+// CHECK: void kernel_ulonglong1(uint64_t *a, uint64_t *b) {
 __global__ void kernel_ulonglong1(ulonglong1 *a, ulonglong1 *b) {
 }
 
 int main_ulonglong1() {
   // range default constructor does the right thing.
-  // CHECK: unsigned long long ulonglong1_a;
+  // CHECK: uint64_t ulonglong1_a;
   ulonglong1 ulonglong1_a;
-  // CHECK: unsigned long long ulonglong1_b = unsigned long long(1);
+  // CHECK: uint64_t ulonglong1_b = uint64_t(1);
   ulonglong1 ulonglong1_b = make_ulonglong1(1);
-  // CHECK: unsigned long long ulonglong1_c = unsigned long long(ulonglong1_b);
+  // CHECK: uint64_t ulonglong1_c = uint64_t(ulonglong1_b);
   ulonglong1 ulonglong1_c = ulonglong1(ulonglong1_b);
-  // CHECK: unsigned long long ulonglong1_d(ulonglong1_c);
+  // CHECK: uint64_t ulonglong1_d(ulonglong1_c);
   ulonglong1 ulonglong1_d(ulonglong1_c);
-  // CHECK: func3_ulonglong1(ulonglong1_b, unsigned long long(ulonglong1_b), (unsigned long long)ulonglong1_b);
+  // CHECK: func3_ulonglong1(ulonglong1_b, uint64_t(ulonglong1_b), (uint64_t)ulonglong1_b);
   func3_ulonglong1(ulonglong1_b, ulonglong1(ulonglong1_b), (ulonglong1)ulonglong1_b);
-  // CHECK: unsigned long long *ulonglong1_e;
+  // CHECK: uint64_t *ulonglong1_e;
   ulonglong1 *ulonglong1_e;
-  // CHECK: unsigned long long *ulonglong1_f;
+  // CHECK: uint64_t *ulonglong1_f;
   ulonglong1 *ulonglong1_f;
   // CHECK: unsigned long long ulonglong1_g = ulonglong1_c;
   unsigned long long ulonglong1_g = ulonglong1_c.x;
@@ -2917,21 +2917,21 @@ int main_ulonglong1() {
   ulonglong1_a.x = ulonglong1_d.x;
   // CHECK: if (ulonglong1_b == ulonglong1_d) {}
   if (ulonglong1_b.x == ulonglong1_d.x) {}
-  // CHECK: unsigned long long ulonglong1_h[16];
+  // CHECK: uint64_t ulonglong1_h[16];
   ulonglong1 ulonglong1_h[16];
-  // CHECK: unsigned long long ulonglong1_i[32];
+  // CHECK: uint64_t ulonglong1_i[32];
   ulonglong1 ulonglong1_i[32];
   // CHECK: if (ulonglong1_h[12] == ulonglong1_i[12]) {}
   if (ulonglong1_h[12].x == ulonglong1_i[12].x) {}
-  // CHECK: ulonglong1_f = (unsigned long long *)ulonglong1_i;
+  // CHECK: ulonglong1_f = (uint64_t *)ulonglong1_i;
   ulonglong1_f = (ulonglong1 *)ulonglong1_i;
-  // CHECK: ulonglong1_a = (unsigned long long)ulonglong1_c;
+  // CHECK: ulonglong1_a = (uint64_t)ulonglong1_c;
   ulonglong1_a = (ulonglong1)ulonglong1_c;
-  // CHECK: ulonglong1_b = unsigned long long(ulonglong1_b);
+  // CHECK: ulonglong1_b = uint64_t(ulonglong1_b);
   ulonglong1_b = ulonglong1(ulonglong1_b);
-  // CHECK: unsigned long long ulonglong1_j, ulonglong1_k, ulonglong1_l, ulonglong1_m[16], *ulonglong1_n[32];
+  // CHECK: uint64_t ulonglong1_j, ulonglong1_k, ulonglong1_l, ulonglong1_m[16], *ulonglong1_n[32];
   ulonglong1 ulonglong1_j, ulonglong1_k, ulonglong1_l, ulonglong1_m[16], *ulonglong1_n[32];
-  // CHECK: int ulonglong1_o = sizeof(unsigned long long);
+  // CHECK: int ulonglong1_o = sizeof(uint64_t);
   int ulonglong1_o = sizeof(ulonglong1);
   // CHECK: int unsigned long long_p = sizeof(unsigned long long);
   int unsigned long long_p = sizeof(unsigned long long);
@@ -2940,8 +2940,8 @@ int main_ulonglong1() {
   int *ulonglong1_cast;
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<unsigned long long *> ulonglong1_e_acc_ct0(ulonglong1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<unsigned long long *> ulonglong1_cast_acc_ct1((unsigned long long *)ulonglong1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<uint64_t *> ulonglong1_e_acc_ct0(ulonglong1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<uint64_t *> ulonglong1_cast_acc_ct1((uint64_t *)ulonglong1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ulonglong1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -2950,8 +2950,8 @@ int main_ulonglong1() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel_ulonglong1<<<1,1>>>(ulonglong1_e, (ulonglong1 *)ulonglong1_cast);
-  // CHECK: unsigned long long ulonglong1_r = (unsigned long long){1};
-  // CHECK-NEXT: auto ulonglong1_s = (unsigned long long){1};
+  // CHECK: uint64_t ulonglong1_r = (uint64_t){1};
+  // CHECK-NEXT: auto ulonglong1_s = (uint64_t){1};
   ulonglong1 ulonglong1_r = (ulonglong1){1};
   auto ulonglong1_s = (ulonglong1){1};
   return 0;
@@ -3173,31 +3173,31 @@ int main_ulonglong4() {
   return 0;
 }
 
-// CHECK: void func3_ushort1(unsigned short a, unsigned short b, unsigned short c) {
+// CHECK: void func3_ushort1(uint16_t a, uint16_t b, uint16_t c) {
 void func3_ushort1(ushort1 a, ushort1 b, ushort1 c) {
 }
-// CHECK: void func_ushort1(unsigned short a) {
+// CHECK: void func_ushort1(uint16_t a) {
 void func_ushort1(ushort1 a) {
 }
-// CHECK: void kernel_ushort1(unsigned short *a, unsigned short *b) {
+// CHECK: void kernel_ushort1(uint16_t *a, uint16_t *b) {
 __global__ void kernel_ushort1(ushort1 *a, ushort1 *b) {
 }
 
 int main_ushort1() {
   // range default constructor does the right thing.
-  // CHECK: unsigned short ushort1_a;
+  // CHECK: uint16_t ushort1_a;
   ushort1 ushort1_a;
-  // CHECK: unsigned short ushort1_b = unsigned short(1);
+  // CHECK: uint16_t ushort1_b = uint16_t(1);
   ushort1 ushort1_b = make_ushort1(1);
-  // CHECK: unsigned short ushort1_c = unsigned short(ushort1_b);
+  // CHECK: uint16_t ushort1_c = uint16_t(ushort1_b);
   ushort1 ushort1_c = ushort1(ushort1_b);
-  // CHECK: unsigned short ushort1_d(ushort1_c);
+  // CHECK: uint16_t ushort1_d(ushort1_c);
   ushort1 ushort1_d(ushort1_c);
-  // CHECK: func3_ushort1(ushort1_b, unsigned short(ushort1_b), (unsigned short)ushort1_b);
+  // CHECK: func3_ushort1(ushort1_b, uint16_t(ushort1_b), (uint16_t)ushort1_b);
   func3_ushort1(ushort1_b, ushort1(ushort1_b), (ushort1)ushort1_b);
-  // CHECK: unsigned short *ushort1_e;
+  // CHECK: uint16_t *ushort1_e;
   ushort1 *ushort1_e;
-  // CHECK: unsigned short *ushort1_f;
+  // CHECK: uint16_t *ushort1_f;
   ushort1 *ushort1_f;
   // CHECK: unsigned short ushort1_g = ushort1_c;
   unsigned short ushort1_g = ushort1_c.x;
@@ -3205,21 +3205,21 @@ int main_ushort1() {
   ushort1_a.x = ushort1_d.x;
   // CHECK: if (ushort1_b == ushort1_d) {}
   if (ushort1_b.x == ushort1_d.x) {}
-  // CHECK: unsigned short ushort1_h[16];
+  // CHECK: uint16_t ushort1_h[16];
   ushort1 ushort1_h[16];
-  // CHECK: unsigned short ushort1_i[32];
+  // CHECK: uint16_t ushort1_i[32];
   ushort1 ushort1_i[32];
   // CHECK: if (ushort1_h[12] == ushort1_i[12]) {}
   if (ushort1_h[12].x == ushort1_i[12].x) {}
-  // CHECK: ushort1_f = (unsigned short *)ushort1_i;
+  // CHECK: ushort1_f = (uint16_t *)ushort1_i;
   ushort1_f = (ushort1 *)ushort1_i;
-  // CHECK: ushort1_a = (unsigned short)ushort1_c;
+  // CHECK: ushort1_a = (uint16_t)ushort1_c;
   ushort1_a = (ushort1)ushort1_c;
-  // CHECK: ushort1_b = unsigned short(ushort1_b);
+  // CHECK: ushort1_b = uint16_t(ushort1_b);
   ushort1_b = ushort1(ushort1_b);
-  // CHECK: unsigned short ushort1_j, ushort1_k, ushort1_l, ushort1_m[16], *ushort1_n[32];
+  // CHECK: uint16_t ushort1_j, ushort1_k, ushort1_l, ushort1_m[16], *ushort1_n[32];
   ushort1 ushort1_j, ushort1_k, ushort1_l, ushort1_m[16], *ushort1_n[32];
-  // CHECK: int ushort1_o = sizeof(unsigned short);
+  // CHECK: int ushort1_o = sizeof(uint16_t);
   int ushort1_o = sizeof(ushort1);
   // CHECK: int unsigned short_p = sizeof(unsigned short);
   int unsigned short_p = sizeof(unsigned short);
@@ -3228,8 +3228,8 @@ int main_ushort1() {
   int *ushort1_cast;
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
-  // CHECK-NEXT:     dpct::access_wrapper<unsigned short *> ushort1_e_acc_ct0(ushort1_e, cgh);
-  // CHECK-NEXT:     dpct::access_wrapper<unsigned short *> ushort1_cast_acc_ct1((unsigned short *)ushort1_cast, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<uint16_t *> ushort1_e_acc_ct0(ushort1_e, cgh);
+  // CHECK-NEXT:     dpct::access_wrapper<uint16_t *> ushort1_cast_acc_ct1((uint16_t *)ushort1_cast, cgh);
   // CHECK-EMPTY:
   // CHECK-NEXT:     cgh.parallel_for<dpct_kernel_name<class kernel_ushort1_{{[a-f0-9]+}}>>(
   // CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
@@ -3238,8 +3238,8 @@ int main_ushort1() {
   // CHECK-NEXT:       });
   // CHECK-NEXT:   });
   kernel_ushort1<<<1,1>>>(ushort1_e, (ushort1 *)ushort1_cast);
-  // CHECK: unsigned short ushort1_r = (unsigned short){1};
-  // CHECK-NEXT: auto ushort1_s = (unsigned short){1};
+  // CHECK: uint16_t ushort1_r = (uint16_t){1};
+  // CHECK-NEXT: auto ushort1_s = (uint16_t){1};
   ushort1 ushort1_r = (ushort1){1};
   auto ushort1_s = (ushort1){1};
   return 0;
@@ -3494,7 +3494,7 @@ std::vector<char2> foo_char2(std::vector<char2> a);
 std::vector<char3> foo_char3(std::vector<char3> a);
 std::vector<char4> foo_char4(std::vector<char4> a);
 
-// CHECK: std::vector<const unsigned char> const foo_uchar1(std::vector<const unsigned char> a);
+// CHECK: std::vector<const uint8_t> const foo_uchar1(std::vector<const uint8_t> a);
 // CHECK-NEXT: std::vector<sycl::uchar2> foo_uchar2(std::vector<sycl::uchar2> a);
 // CHECK-NEXT: std::vector<sycl::uchar3> foo_uchar3(std::vector<sycl::uchar3> a);
 // CHECK-NEXT: std::vector<sycl::uchar4> foo_uchar4(std::vector<sycl::uchar4> a);
@@ -3512,7 +3512,7 @@ std::vector<short2> foo_short2(std::vector<short2> a);
 std::vector<short3> foo_short3(std::vector<short3> a);
 std::vector<short4> foo_short4(std::vector<short4> a);
 
-// CHECK: std::vector<const unsigned short> const foo_ushort1(std::vector<const unsigned short> a);
+// CHECK: std::vector<const uint16_t> const foo_ushort1(std::vector<const uint16_t> a);
 // CHECK-NEXT: std::vector<sycl::ushort2> foo_ushort2(std::vector<sycl::ushort2> a);
 // CHECK-NEXT: std::vector<sycl::ushort3> foo_ushort3(std::vector<sycl::ushort3> a);
 // CHECK-NEXT: std::vector<sycl::ushort4> foo_ushort4(std::vector<sycl::ushort4> a);
@@ -3530,7 +3530,7 @@ std::vector<int2> foo_int2(std::vector<int2> a);
 std::vector<int3> foo_int3(std::vector<int3> a);
 std::vector<int4> foo_int4(std::vector<int4> a);
 
-// CHECK: std::vector<const unsigned int> const foo_uint1(std::vector<const unsigned int> a);
+// CHECK: std::vector<const uint32_t> const foo_uint1(std::vector<const uint32_t> a);
 // CHECK-NEXT: std::vector<sycl::uint2> foo_uint2(std::vector<sycl::uint2> a);
 // CHECK-NEXT: std::vector<sycl::uint3> foo_uint3(std::vector<sycl::uint3> a);
 // CHECK-NEXT: std::vector<sycl::uint4> foo_uint4(std::vector<sycl::uint4> a);
@@ -3548,7 +3548,7 @@ std::vector<long2> foo_long2(std::vector<long2> a);
 std::vector<long3> foo_long3(std::vector<long3> a);
 std::vector<long4> foo_long4(std::vector<long4> a);
 
-// CHECK: std::vector<const unsigned long> const foo_ulong1(std::vector<const unsigned long> a);
+// CHECK: std::vector<const uint64_t> const foo_ulong1(std::vector<const uint64_t> a);
 // CHECK-NEXT: std::vector<sycl::ulong2> foo_ulong2(std::vector<sycl::ulong2> a);
 // CHECK-NEXT: std::vector<sycl::ulong3> foo_ulong3(std::vector<sycl::ulong3> a);
 // CHECK-NEXT: std::vector<sycl::ulong4> foo_ulong4(std::vector<sycl::ulong4> a);
@@ -3566,7 +3566,7 @@ std::vector<float2> foo_float2(std::vector<float2> a);
 std::vector<float3> foo_float3(std::vector<float3> a);
 std::vector<float4> foo_float4(std::vector<float4> a);
 
-// CHECK: std::vector<const long long> const foo_longlong1(std::vector<const long long> a);
+// CHECK: std::vector<const int64_t> const foo_longlong1(std::vector<const int64_t> a);
 // CHECK-NEXT: std::vector<sycl::longlong2> foo_longlong2(std::vector<sycl::longlong2> a);
 // CHECK-NEXT: std::vector<sycl::longlong3> foo_longlong3(std::vector<sycl::longlong3> a);
 // CHECK-NEXT: std::vector<sycl::longlong4> foo_longlong4(std::vector<sycl::longlong4> a);
@@ -3575,7 +3575,7 @@ std::vector<longlong2> foo_longlong2(std::vector<longlong2> a);
 std::vector<longlong3> foo_longlong3(std::vector<longlong3> a);
 std::vector<longlong4> foo_longlong4(std::vector<longlong4> a);
 
-// CHECK: std::vector<const unsigned long long> const foo_ulonglong1(std::vector<const unsigned long long> a);
+// CHECK: std::vector<const uint64_t> const foo_ulonglong1(std::vector<const uint64_t> a);
 // CHECK-NEXT: std::vector<sycl::ulonglong2> foo_ulonglong2(std::vector<sycl::ulonglong2> a);
 // CHECK-NEXT: std::vector<sycl::ulonglong3> foo_ulonglong3(std::vector<sycl::ulonglong3> a);
 // CHECK-NEXT: std::vector<sycl::ulonglong4> foo_ulonglong4(std::vector<sycl::ulonglong4> a);
