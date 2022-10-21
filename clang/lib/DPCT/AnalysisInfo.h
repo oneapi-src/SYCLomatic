@@ -794,9 +794,7 @@ public:
   }
 
   inline static bool isInRoot(SourceLocation SL) {
-    return isInRoot(getSourceManager()
-                        .getFilename(getSourceManager().getExpansionLoc(SL))
-                        .str());
+    return isInRoot(DpctGlobalInfo::getLocInfo(SL).first);
   }
   static bool isInRoot(const std::string &FilePath,
                        bool IsChildRelative = true) {
@@ -817,9 +815,7 @@ public:
     }
   }
   inline static bool isInAnalysisScope(SourceLocation SL) {
-    return isInAnalysisScope(getSourceManager()
-                        .getFilename(getSourceManager().getExpansionLoc(SL))
-                        .str());
+    return isInAnalysisScope(DpctGlobalInfo::getLocInfo(SL).first);
   }
   static bool isInAnalysisScope(const std::string &FilePath,
                                 bool IsChildRelative = true) {
@@ -1301,7 +1297,7 @@ public:
   static inline std::pair<std::string, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
     if (SM->isMacroArgExpansion(Loc)) {
-      Loc = SM->getSpellingLoc(Loc);
+      Loc = SM->getImmediateSpellingLoc(Loc);
     }
     auto LocInfo = SM->getDecomposedLoc(SM->getExpansionLoc(Loc));
     auto AbsPath = getAbsolutePath(LocInfo.first);
