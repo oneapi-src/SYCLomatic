@@ -481,6 +481,10 @@ private:
   // Used to prevent them from being processed multiple times
   std::unordered_set<TypeLoc, TypeLocHash, TypeLocEqual> ProcessedTypeLocs;
 
+  void processConstFFTHandleType(const DeclaratorDecl *DD,
+                                 SourceLocation BeginLoc,
+                                 SourceLocation EndLoc,
+                                 bool HasGlobalNSPrefix);
   void processCudaStreamType(const DeclaratorDecl *DD);
   bool replaceTemplateSpecialization(SourceManager *SM, LangOptions &LOpts,
                                      SourceLocation BeginLoc,
