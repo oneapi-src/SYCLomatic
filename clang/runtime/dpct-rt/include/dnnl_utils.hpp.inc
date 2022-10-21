@@ -2965,10 +2965,13 @@ sycl::event engine_ext::async_reduction(reduction_op op, float alpha,
   auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
       {DNNL_ARG_SRC, ::dnnl::memory(src_desc.get_desc(), _eng, src)}};
 
-  auto e =
-      execute_primitive(primitive, execution_args,
-                        {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}}, {cache});
-  return e;
+  if (cache) {
+    return execute_primitive(primitive, execution_args,
+                             {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}},
+                             {cache});
+  }
+  return execute_primitive(primitive, execution_args,
+                           {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
 // DPCT_LABEL_END
 
