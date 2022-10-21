@@ -1452,6 +1452,9 @@ public:
     for (auto &File : FileMap)
       File.second->buildReplacements();
   }
+  std::set<std::string> &getProcessedFile() {
+    return ProcessedFile;
+  }
   void postProcess() {
     for (auto &File : FileMap) {
       File.second->postProcess();

@@ -108,6 +108,7 @@ void DpctToolAction::runPass(PassKind Pass) {
     DpctGlobalInfo::setContext(Context);
     DpctGlobalInfo::getInstance().setMainFile(Info->MainFile);
     MigrationRuleManager MRM(Pass, Transforms);
+    Global.getProcessedFile().insert(Info->MainFile->getFilePath());
     MRM.matchAST(Context, MigrationRuleNames);
     for (const auto &I : Transforms) {
       auto Repl = I->getReplacement(Context);
