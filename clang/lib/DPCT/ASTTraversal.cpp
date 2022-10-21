@@ -10307,6 +10307,29 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
     if (isCubVar(Decl)) {
       return;
     }
+    const auto *Parent = getParentStmt(MemVarRef);
+    // Handle assigning a 2 or more dimensions array pointer to a variable.
+    if (const auto *const ICE = dyn_cast_or_null<ImplicitCastExpr>(Parent)) {
+      if (const auto *arrType = MemVarRef->getType()->getAsArrayTypeUnsafe()) {
+        if (ICE->getCastKind() == CK_ArrayToPointerDecay &&
+            arrType->getElementType()->isArrayType() &&
+            isAssignOperator(getParentStmt(Parent))) {
+          std::string Replacement = buildString("(", ICE->getType(), ")",
+                                                Decl->getName(), ".get_ptr()");
+          auto Range = getDefinitionRange(MemVarRef->getBeginLoc(),
+                                          MemVarRef->getEndLoc());
+          auto &SM = DpctGlobalInfo::getSourceManager();
+          auto Begin = Range.getBegin();
+          auto End = Range.getEnd();
+          auto Length = Lexer::MeasureTokenLength(
+              End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+          Length += SM.getDecomposedLoc(End).second -
+                    SM.getDecomposedLoc(Begin).second;
+          emplaceTransformation(
+              new ReplaceText(Begin, Length, std::move(Replacement)));
+        }
+      }
+    }
     auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
     if (Func->isImplicit() ||
         Func->getTemplateSpecializationKind() == TSK_ImplicitInstantiation)
