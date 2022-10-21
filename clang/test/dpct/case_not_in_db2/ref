@@ -1,1 +1,1 @@
-// CHECK: dpct exited with code: 1 (Migration not necessary; no CUDA code detected)
+// CHECK: warning: file {{(.+)}} is not found in {{(.+)}}.json

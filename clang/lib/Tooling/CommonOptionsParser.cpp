@@ -239,14 +239,20 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
     if (Compilations && !SourcePaths.empty()) {
       std::string SourceFilePath = "";
       for (std::string &SourcePath : SourcePaths) {
+        if (!llvm::sys::fs::exists(SourcePath)) break;
         bool IsDBItem = false;
-        for (std::string &File : Compilations->getAllFiles()) {
-            if (getAbsolutePath(SourcePath) == File) {
-              IsDBItem = true;
-              break;
-            }
+        bool IsDBDirAccess = true;
+        for (CompileCommand &Cmd : Compilations->getAllCompileCommands()) {
+          if (!llvm::sys::fs::exists(Cmd.Directory)) {
+            IsDBDirAccess = false;
+            break;
+          }
+          if (getAbsolutePath(SourcePath) == Cmd.Filename) {
+            IsDBItem = true;
+            break;
+          }
         }
-        if (!IsDBItem) {
+        if (!IsDBItem && IsDBDirAccess) {
           if (!BuildPath.empty()) {
             const std::string Msg =
               "warning: " + getAbsolutePath(SourcePath) +
