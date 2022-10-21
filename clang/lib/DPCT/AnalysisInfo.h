@@ -2282,6 +2282,7 @@ public:
   }
   std::set<HelperFeatureEnum> getHelperFeatureSet() { return HelperFeatureSet; }
   inline bool containSizeofType() { return ContainSizeofType; }
+  inline std::vector<std::string> getArraySizeOriginExprs() { return ArraySizeOriginExprs; }
 
 private:
   // For ConstantArrayType, size in generated code is folded as an integer.
@@ -2301,8 +2302,9 @@ private:
     if (TL.getSizeExpr()->getStmtClass() == Stmt::IntegerLiteralClass &&
         TL.getSizeExpr()->getBeginLoc().isFileID())
       return toString(TL.getTypePtr()->getSize(), 10, false, false);
+    ArraySizeOriginExprs.push_back(getStmtSpelling(TL.getSizeExpr()));
     return buildString(toString(TL.getTypePtr()->getSize(), 10, false, false),
-                       "/*", getStmtSpelling(TL.getSizeExpr()), "*/");
+                       "/*", ArraySizeOriginExprs.back(), "*/");
   }
 
   // Get original array size expression.
@@ -2349,6 +2351,7 @@ private:
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
   std::set<HelperFeatureEnum> HelperFeatureSet;
   bool ContainSizeofType = false;
+  std::vector<std::string> ArraySizeOriginExprs{};
 };
 
 // variable info includes name, type and location.
