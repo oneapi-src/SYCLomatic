@@ -50,12 +50,12 @@
 // DPCT_LABEL_END
 namespace dpct {
 namespace detail {
-template <typename T>
 // DPCT_LABEL_BEGIN|make_allocatable|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // Memory|typedef_byte_t
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+template <typename T>
 struct make_allocatable
 {
   using type = T;
