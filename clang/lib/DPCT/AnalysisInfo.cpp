@@ -299,7 +299,6 @@ DpctGlobalInfo::DpctGlobalInfo() {
   RecordTokenSplit = DpctGlobalInfo::recordTokenSplit;
   tooling::SetGetRunRound(DpctGlobalInfo::getRunRound);
   tooling::SetReProcessFile(DpctGlobalInfo::ReProcessFile);
-  tooling::SetProcessedFile(DpctGlobalInfo::ProcessedFile);
   tooling::SetIsExcludePathHandler(DpctGlobalInfo::isExcluded);
 }
 

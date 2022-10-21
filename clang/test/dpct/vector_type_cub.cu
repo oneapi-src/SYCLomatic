@@ -54,14 +54,14 @@ __global__ void test_make_char4() {
 }
 
 __device__ uchar1 operator+(uchar1 a, uchar1 b) {
-  // CHECK: return unsigned char(a + b);
+  // CHECK: return uint8_t(a + b);
   return make_uchar1(a.x + b.x);
 }
 
 __global__ void test_make_uchar1() {
   typedef cub::BlockReduce<uchar1, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: unsigned char res = sycl::reduce_over_group({{.+}}, unsigned char(1.), {{.+}});
+  // CHECK: uint8_t res = sycl::reduce_over_group({{.+}}, uint8_t(1.), {{.+}});
   uchar1 res = BlockReduce(smem_storage).Sum(make_uchar1(1.));
 }
 
@@ -150,14 +150,14 @@ __global__ void test_make_short4() {
 }
 
 __device__ ushort1 operator+(ushort1 a, ushort1 b) {
-  // CHECK: return unsigned short(a + b);
+  // CHECK: return uint16_t(a + b);
   return make_ushort1(a.x + b.x);
 }
 
 __global__ void test_make_ushort1() {
   typedef cub::BlockReduce<ushort1, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: unsigned short res = sycl::reduce_over_group({{.+}}, unsigned short(1.), {{.+}});
+  // CHECK: uint16_t res = sycl::reduce_over_group({{.+}}, uint16_t(1.), {{.+}});
   ushort1 res = BlockReduce(smem_storage).Sum(make_ushort1(1.));
 }
 
@@ -246,14 +246,14 @@ __global__ void test_make_int4() {
 }
 
 __device__ uint1 operator+(uint1 a, uint1 b) {
-  // CHECK: return unsigned int(a + b);
+  // CHECK: return uint32_t(a + b);
   return make_uint1(a.x + b.x);
 }
 
 __global__ void test_make_uint1() {
   typedef cub::BlockReduce<uint1, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: unsigned int res = sycl::reduce_over_group({{.+}}, unsigned int(1.), {{.+}});
+  // CHECK: uint32_t res = sycl::reduce_over_group({{.+}}, uint32_t(1.), {{.+}});
   uint1 res = BlockReduce(smem_storage).Sum(make_uint1(1.));
 }
 
@@ -342,14 +342,14 @@ __global__ void test_make_long4() {
 }
 
 __device__ ulong1 operator+(ulong1 a, ulong1 b) {
-  // CHECK: return unsigned long(a + b);
+  // CHECK: return uint64_t(a + b);
   return make_ulong1(a.x + b.x);
 }
 
 __global__ void test_make_ulong1() {
   typedef cub::BlockReduce<ulong1, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: unsigned long res = sycl::reduce_over_group({{.+}}, unsigned long(1.), {{.+}});
+  // CHECK: uint64_t res = sycl::reduce_over_group({{.+}}, uint64_t(1.), {{.+}});
   ulong1 res = BlockReduce(smem_storage).Sum(make_ulong1(1.));
 }
 
@@ -390,14 +390,14 @@ __global__ void test_make_ulong4() {
 }
 
 __device__ longlong1 operator+(longlong1 a, longlong1 b) {
-  // CHECK: return long long(a + b);
+  // CHECK: return int64_t(a + b);
   return make_longlong1(a.x + b.x);
 }
 
 __global__ void test_make_longlong1() {
   typedef cub::BlockReduce<longlong1, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: long long res = sycl::reduce_over_group({{.+}}, long long(1.), {{.+}});
+  // CHECK: int64_t res = sycl::reduce_over_group({{.+}}, int64_t(1.), {{.+}});
   longlong1 res = BlockReduce(smem_storage).Sum(make_longlong1(1.));
 }
 
@@ -438,14 +438,14 @@ __global__ void test_make_longlong4() {
 }
 
 __device__ ulonglong1 operator+(ulonglong1 a, ulonglong1 b) {
-  // CHECK: return unsigned long long(a + b);
+  // CHECK: return uint64_t(a + b);
   return make_ulonglong1(a.x + b.x);
 }
 
 __global__ void test_make_ulonglong1() {
   typedef cub::BlockReduce<ulonglong1, 128> BlockReduce;
   __shared__ typename BlockReduce::TempStorage smem_storage;
-  // CHECK: unsigned long long res = sycl::reduce_over_group({{.+}}, unsigned long long(1.), {{.+}});
+  // CHECK: uint64_t res = sycl::reduce_over_group({{.+}}, uint64_t(1.), {{.+}});
   ulonglong1 res = BlockReduce(smem_storage).Sum(make_ulonglong1(1.));
 }
 
