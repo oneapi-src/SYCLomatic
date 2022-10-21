@@ -44,7 +44,8 @@ enum class ConstantFlagType : int {
   Default = 0,
   Host = 1,
   Device = 2,
-  HostDevice = 3
+  HostDevice = 3,
+  HostDeviceInOnePass = 4
 };
 enum class HelperFileEnum : unsigned int;
 }
