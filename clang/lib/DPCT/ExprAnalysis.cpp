@@ -951,7 +951,8 @@ void ExprAnalysis::analyzeExpr(const ReturnStmt *RS) {
   dispatch(RS->getRetValue());
 }
 
-void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
+
+void ExprAnalysis::removeCUDADeviceAttr(const LambdaExpr *LE) {
   // E.g.,
   // my_kernel<<<1, 1>>>([=] __device__(int idx) { idx++; });
   // The "__device__" attribute need to be removed.
@@ -962,6 +963,10 @@ void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
       }
     }
   }
+}
+
+void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
+  removeCUDADeviceAttr(LE);
   // TODO: Need to handle capture ([=] in lambda) if required in the future
   for (const auto &Param : LE->getCallOperator()->parameters()) {
     analyzeType(Param->getTypeSourceInfo()->getTypeLoc(), LE);
@@ -1461,6 +1466,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(UnaryOperator)
     ANALYZE_EXPR(CXXDependentScopeMemberExpr)
     ANALYZE_EXPR(MaterializeTemporaryExpr)
+    ANALYZE_EXPR(LambdaExpr)
   default:
     return ExprAnalysis::dispatch(Expression);
   }
@@ -1577,6 +1583,15 @@ void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
   }
   Base::analyzeExpr(ME);
 }
+
+void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
+  Base::analyzeExpr(LE);
+  // Lambda function can be passed to kernel function directly.
+  // So, not need to redeclare a variable for lambda function passed to kernel
+  // function
+  IsRedeclareRequired = false;
+}
+
 
 void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
   if (UO->getOpcode() == UO_Deref) {
