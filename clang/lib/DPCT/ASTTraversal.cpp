@@ -15385,6 +15385,7 @@ void TemplateSpecializationTypeLocRule::registerMatcher(
     return hasAnyName("thrust::not_equal_to", "thrust::constant_iterator",
                       "cub::CountingInputIterator",
                       "cub::TransformInputIterator",
+                      "cub::ConstantInputIterator",
                       "thrust::system::cuda::experimental::pinned_allocator");
   };
 
