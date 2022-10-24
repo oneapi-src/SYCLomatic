@@ -3085,24 +3085,20 @@ bool isModifiedRef(const clang::DeclRefExpr *DRE) {
 }
 
 bool isDefaultStream(const Expr *StreamArg) {
-  auto Arg = StreamArg->IgnoreCasts();
-  if (Arg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
+  if (StreamArg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
     return true;
   }
-  if (auto Paren = dyn_cast<ParenExpr>(Arg)) {
-    Arg = Paren->getSubExpr()->IgnoreImpCasts();
+  if (auto Paren = dyn_cast<ParenExpr>(StreamArg)) {
+    StreamArg = Paren->getSubExpr()->IgnoreImpCasts();
   }
-  if (auto TypeCast = dyn_cast<ExplicitCastExpr>(Arg)) {
-    Arg = TypeCast->getSubExpr()->IgnoreImpCasts();
-  }
+  StreamArg = StreamArg->IgnoreCasts();
   Expr::EvalResult Result;
-  if (!Arg->isValueDependent() &&
-      Arg->EvaluateAsInt(Result, dpct::DpctGlobalInfo::getContext())) {
+  if (!StreamArg->isValueDependent() &&
+      StreamArg->EvaluateAsInt(Result, dpct::DpctGlobalInfo::getContext())) {
     return Result.Val.getInt() < APSInt::get(3); // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
                     // all migrated to default queue;
   }
-  if (dyn_cast<CXXNullPtrLiteralExpr>(Arg->IgnoreImplicit())) {
-    // default stream can be used as NULL, __null, nullptr
+  if (dyn_cast<CXXNullPtrLiteralExpr>(StreamArg)) {
     return true;
   }
   return false;
