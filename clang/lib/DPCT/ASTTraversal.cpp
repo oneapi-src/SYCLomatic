@@ -357,9 +357,17 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     if (auto TM = DpctGlobalInfo::getInstance().findConstantMacroTMInfo(Loc)) {
       TM->setLineBeginOffset(getOffsetOfLineBegin(Loc, SM));
       if (MI->getNumTokens() == 0) {
-        TM->setConstantFlag(dpct::ConstantFlagType::Host);
+        if (TM->getConstantFlag() == dpct::ConstantFlagType::Default ||
+            TM->getConstantFlag() == dpct::ConstantFlagType::Host)
+          TM->setConstantFlag(dpct::ConstantFlagType::Host);
+        else
+          TM->setConstantFlag(dpct::ConstantFlagType::HostDeviceInOnePass);
       } else {
-        TM->setConstantFlag(dpct::ConstantFlagType::Device);
+        if (TM->getConstantFlag() == dpct::ConstantFlagType::Default ||
+            TM->getConstantFlag() == dpct::ConstantFlagType::Device)
+          TM->setConstantFlag(dpct::ConstantFlagType::Device);
+        else
+          TM->setConstantFlag(dpct::ConstantFlagType::HostDeviceInOnePass);
       }
     }
   }
@@ -10081,7 +10089,8 @@ bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
   for (auto &TM : S) {
     if (TM == nullptr)
       continue;
-    if (TM->getConstantFlag() == dpct::ConstantFlagType::Device &&
+    if ((TM->getConstantFlag() == dpct::ConstantFlagType::Device ||
+         TM->getConstantFlag() == dpct::ConstantFlagType::HostDeviceInOnePass) &&
         TM->getLineBeginOffset() == OffsetOfLineBegin) {
       TM->setIgnoreTM(true);
       // current __constant__ variable used in device, using
@@ -10094,7 +10103,8 @@ bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
       auto &M = FileInfo->getRepls()->getReplMap();
       bool RemoveWarning = false;
       for (auto &R : M) {
-        if (R.second->getConstantFlag() == dpct::ConstantFlagType::Host &&
+        if ((R.second->getConstantFlag() == dpct::ConstantFlagType::Host ||
+             R.second->getConstantFlag() == dpct::ConstantFlagType::HostDeviceInOnePass) &&
             R.second->getConstantOffset() == TM->getConstantOffset()) {
           // using flag and the offset of __constant__ to link
           // R(dcpt::constant_memery)  and R(reomving __constant__) from
@@ -10193,7 +10203,8 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
   for (auto &TM : S) {
     if (TM == nullptr)
       continue;
-    if (TM->getConstantFlag() == dpct::ConstantFlagType::Host &&
+    if ((TM->getConstantFlag() == dpct::ConstantFlagType::Host ||
+         TM->getConstantFlag() == dpct::ConstantFlagType::HostDeviceInOnePass) &&
         TM->getLineBeginOffset() == OffsetOfLineBegin) {
       // current __constant__ variable used in host, using OffsetOfLineBegin
       // link the R(reomving __constant__) and here
@@ -10204,7 +10215,8 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
         return false;
       auto &M = FileInfo->getRepls()->getReplMap();
       for (auto &R : M) {
-        if (R.second->getConstantFlag() == dpct::ConstantFlagType::Device &&
+        if ((R.second->getConstantFlag() == dpct::ConstantFlagType::Device ||
+             R.second->getConstantFlag() == dpct::ConstantFlagType::HostDeviceInOnePass) &&
             R.second->getConstantOffset() == TM->getConstantOffset()) {
           // using flag and the offset of __constant__ to link previous
           // execution of previous is device, current is host:

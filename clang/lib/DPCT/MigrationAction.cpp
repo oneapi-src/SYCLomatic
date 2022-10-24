@@ -137,6 +137,7 @@ void DpctToolAction::runPass(PassKind Pass) {
 
       StaticsInfo::printReplacements(Transforms, Context);
     }
+    Transforms.clear();
   }
   if (Pass == PassKind::PK_Analysis) {
     int RetJmp = 0;
