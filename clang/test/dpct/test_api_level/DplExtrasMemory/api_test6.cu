@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasMemory/api_test6_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasMemory/api_test6_out
 
-// CHECK: 24
+// CHECK: 25
 // TEST_FEATURE: DplExtrasMemory_malloc_device
 
 #include <thrust/device_ptr.h>

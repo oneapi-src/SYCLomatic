@@ -27,4 +27,48 @@ CONDITIONAL_FACTORY_ENTRY(
     CALL_FACTORY_ENTRY("rsqrt",
                        CALL(MapNames::getClNamespace(false, true) + "rsqrt",
                             CAST_IF_NEED(makeLiteral("double"), ARG(0)))),
-    NO_REWRITE_FUNCNAME_FACTORY_ENTRY("rsqrt", ""))
+    NO_REWRITE_FUNCNAME_FACTORY_ENTRY("rsqrt", "rsqrt"))
+
+CONDITIONAL_FACTORY_ENTRY(
+    makeCheckOr(
+        makeCheckAnd(
+            HasDirectCallee(),
+            makeCheckAnd(
+                IsDirectCalleeHasAttribute<CUDADeviceAttr>(),
+                makeCheckNot(IsDirectCalleeHasAttribute<CUDAHostAttr>()))),
+        makeCheckOr(IsContextCallHasAttribute<CUDADeviceAttr>(),
+                    IsContextCallHasAttribute<CUDAGlobalAttr>())),
+    CONDITIONAL_FACTORY_ENTRY(
+        UseCAndCXXStandardLibrariesExt,
+        HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, CALL_FACTORY_ENTRY("std::abs", CALL("std::abs", ARG(0)))),
+        CONDITIONAL_FACTORY_ENTRY(
+            IsIntegerType(0),
+            CALL_FACTORY_ENTRY(
+                "std::abs",
+                CALL(MapNames::getClNamespace(false, true) + "abs", ARG(0))),
+            CALL_FACTORY_ENTRY(
+                "std::abs",
+                CALL(MapNames::getClNamespace(false, true) + "fabs", ARG(0))))),
+    HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, NO_REWRITE_FUNCNAME_FACTORY_ENTRY("std::abs", "std::abs")))
+
+CONDITIONAL_FACTORY_ENTRY(
+    makeCheckOr(
+        makeCheckAnd(
+            HasDirectCallee(),
+            makeCheckAnd(
+                IsDirectCalleeHasAttribute<CUDADeviceAttr>(),
+                makeCheckNot(IsDirectCalleeHasAttribute<CUDAHostAttr>()))),
+        makeCheckOr(IsContextCallHasAttribute<CUDADeviceAttr>(),
+                    IsContextCallHasAttribute<CUDAGlobalAttr>())),
+    CONDITIONAL_FACTORY_ENTRY(
+        UseCAndCXXStandardLibrariesExt,
+        HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, CALL_FACTORY_ENTRY("abs", CALL("std::abs", ARG(0)))),
+        CONDITIONAL_FACTORY_ENTRY(
+            IsIntegerType(0),
+            CALL_FACTORY_ENTRY(
+                "abs",
+                CALL(MapNames::getClNamespace(false, true) + "abs", ARG(0))),
+            CALL_FACTORY_ENTRY(
+                "abs",
+                CALL(MapNames::getClNamespace(false, true) + "fabs", ARG(0))))),
+    HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, NO_REWRITE_FUNCNAME_FACTORY_ENTRY("abs", "std::abs")))
