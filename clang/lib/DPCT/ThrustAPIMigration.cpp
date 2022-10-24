@@ -19,16 +19,28 @@ using namespace clang;
 using namespace clang::dpct;
 using namespace clang::ast_matchers;
 
-
 void ThrustRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  auto LIBCUAPIHasNames = [&]() {
-      return hasAnyName("cuda::atomic_thread_fence",
-                        "cuda::std::atomic_thread_fence");
+  auto ThrustAPIHasNames = [&]() {
+    return hasAnyName("log10", "sqrt", "pow", "sin", "cos", "tan", "asin",
+                      "acos", "atan", "sinh", "cosh", "tanh", "asinh", "acosh",
+                      "atanh", "abs");
   };
+  MF.addMatcher(callExpr(callee(functionDecl(allOf(
+                             hasDeclContext(namespaceDecl(hasName("thrust"))),
+                             ThrustAPIHasNames()))))
+                    .bind("thrustFuncCall"),
+                this);
 }
 
 void ThrustRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
-
+  ExprAnalysis EA;
+  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall")) {
+    EA.analyze(CE);
+  } else {
+    return ;
+  }
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 } // namespace dpct
 } // namespace clang
