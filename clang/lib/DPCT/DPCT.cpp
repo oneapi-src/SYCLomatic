@@ -910,9 +910,12 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_ExplicitClNamespace,
                      ExplicitClNamespace,
                      NoClNamespaceInline.getNumOccurrences());
-    setValueToOptMap(clang::dpct::OPTION_ExtensionFlag,
-                     DpctGlobalInfo::getExtensionFlag(),
+    setValueToOptMap(clang::dpct::OPTION_ExtensionDEFlag,
+                     DpctGlobalInfo::getExtensionDEFlag(),
                      NoDPCPPExtensions.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_ExtensionDDFlag,
+                     DpctGlobalInfo::getExtensionDDFlag(),
+                     UseDPCPPExtensions.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_NoDRYPattern, NoDRYPatternFlag,
                      NoDRYPattern.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_NoUseGenericSpace,

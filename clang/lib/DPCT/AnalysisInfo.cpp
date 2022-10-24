@@ -139,7 +139,8 @@ std::unordered_map<std::string,
 std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
                    std::unordered_set<std::string>>
     DpctGlobalInfo::DFIToSpellingLocsMapForAssumeNDRange;
-unsigned DpctGlobalInfo::ExtensionFlag = static_cast<unsigned>(-1);
+unsigned DpctGlobalInfo::ExtensionDEFlag = static_cast<unsigned>(-1);
+unsigned DpctGlobalInfo::ExtensionDDFlag = 0;
 unsigned DpctGlobalInfo::ExperimentalFlag = 0;
 unsigned int DpctGlobalInfo::ColorOption = 1;
 std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
@@ -687,6 +688,9 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
     case HT_DPL_Iterator:
       return insertHeader(HeaderType::HT_DPL_Iterator, LastIncludeOffset,
                           "<oneapi/dpl/iterator>");
+    case HT_STDLIB:
+      return insertHeader(HeaderType::HT_STDLIB, LastIncludeOffset,
+                          "<cstdlib>");
     }
   }
 

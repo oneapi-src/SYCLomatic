@@ -208,7 +208,6 @@ ENTRY_RENAMED("__uint_as_float", MapNames::getClNamespace(false, true) + "bit_ca
 
 // Device: int => sycl::abs, (float, double) => sycl::fabs
 // Host:   int => abs, float => fabsf, double => fabs, long double => fabsl
-ENTRY_RENAMED("abs", MapNames::getClNamespace(false, true) + "abs")
 ENTRY_RENAMED("labs", MapNames::getClNamespace(false, true) + "abs")
 ENTRY_RENAMED("llabs", MapNames::getClNamespace(false, true) + "abs")
 
@@ -600,6 +599,7 @@ ENTRY_RENAMED("mul24", MapNames::getClNamespace(false, true) + "mul24")
 
 // impl with new rewriter
 ENTRY_REWRITE("rsqrt")
+ENTRY_REWRITE("abs")
 
 // vector types
 ENTRY_RENAMED("make_char1", "char")

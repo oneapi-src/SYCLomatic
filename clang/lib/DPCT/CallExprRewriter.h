@@ -153,7 +153,10 @@ public:
       if (ItMatch !=
           dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
         if (ItMatch->second->IsInAnalysisScope) {
-          SL = ItMatch->second->NameTokenLoc;
+          DiagnosticsUtils::report<IDTy, Ts...>(
+              ItMatch->second->FilePath, ItMatch->second->Offset, MsgID, true,
+              UseTextBegin, std::forward<Ts>(Vals)...);
+          return;
         }
       }
     }
@@ -488,18 +491,18 @@ protected:
   friend MathFuncNameRewriterFactory;
 };
 
-/// The rewriter for renaming math function calls
-class NoRewriteFuncNameRewriter : public MathFuncNameRewriter {
-protected:
-  NoRewriteFuncNameRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                            StringRef TargetCalleeName)
-      : MathFuncNameRewriter(Call, SourceCalleeName, TargetCalleeName) {
+class NoRewriteFuncNameRewriter : public CallExprRewriter {
+  std::string NewFuncName;
+
+public:
+  NoRewriteFuncNameRewriter(const CallExpr *Call, StringRef SourceName,
+                            StringRef NewName)
+      : CallExprRewriter(Call, SourceCalleeName) {
+    NewFuncName = NewName.str();
     NoRewrite = true;
   }
 
-public:
-  virtual Optional<std::string> rewrite() override;
-  friend NoRewriteFuncNameRewriterFactory;
+  Optional<std::string> rewrite() override { return NewFuncName; }
 };
 
 /// The rewriter for warning on unsupported math functions

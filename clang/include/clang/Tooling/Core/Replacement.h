@@ -44,7 +44,14 @@ enum class ConstantFlagType : int {
   Default = 0,
   Host = 1,
   Device = 2,
-  HostDevice = 3
+  /// HostDevice means this constant flag is used in both host code and device code.
+  /// It has been processed by the AST matcher step and all the related replacement
+  /// or warning has been generated yet.
+  HostDevice = 3,
+  /// HostDeviceInOnePass means in PPCallback step, the tool detected this constant
+  /// flag is used in both host code and device code. But it has not been processed
+  /// in AST matcher step yet.
+  HostDeviceInOnePass = 4
 };
 enum class HelperFileEnum : unsigned int;
 }
