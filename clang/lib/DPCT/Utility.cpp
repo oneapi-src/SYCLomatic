@@ -3085,21 +3085,21 @@ bool isModifiedRef(const clang::DeclRefExpr *DRE) {
 }
 
 bool isDefaultStream(const Expr *StreamArg) {
-  if (StreamArg->getStmtClass() == Stmt::CXXDefaultArgExprClass) {
+  StreamArg = StreamArg->IgnoreCasts();
+  if (isa<CXXNullPtrLiteralExpr>(StreamArg)) {
     return true;
   }
-  if (auto Paren = dyn_cast<ParenExpr>(StreamArg)) {
-    StreamArg = Paren->getSubExpr()->IgnoreImpCasts();
+  else if (auto DAE = dyn_cast<CXXDefaultArgExpr>(StreamArg)) {
+    return isDefaultStream(DAE->getExpr());
   }
-  StreamArg = StreamArg->IgnoreCasts();
+  else if (auto Paren = dyn_cast<ParenExpr>(StreamArg)) {
+    return isDefaultStream(Paren->getSubExpr());
+  }
   Expr::EvalResult Result;
   if (!StreamArg->isValueDependent() &&
       StreamArg->EvaluateAsInt(Result, dpct::DpctGlobalInfo::getContext())) {
     return Result.Val.getInt() < APSInt::get(3); // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
                     // all migrated to default queue;
-  }
-  if (dyn_cast<CXXNullPtrLiteralExpr>(StreamArg)) {
-    return true;
   }
   return false;
 }
