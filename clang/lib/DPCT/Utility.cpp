@@ -3101,8 +3101,7 @@ bool isDefaultStream(const Expr *StreamArg) {
     return Result.Val.getInt() < APSInt::get(3); // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
                     // all migrated to default queue;
   }
-  if (dyn_cast<GNUNullExpr>(Arg->IgnoreImplicit()) ||
-             dyn_cast<CXXNullPtrLiteralExpr>(Arg->IgnoreImplicit())) {
+  if (dyn_cast<CXXNullPtrLiteralExpr>(Arg->IgnoreImplicit())) {
     // default stream can be used as NULL, __null, nullptr
     return true;
   }
