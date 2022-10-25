@@ -179,6 +179,10 @@ static llvm::cl::opt<AutoCompletePrinter, true, llvm::cl::parser<std::string>> A
   "autocomplete", llvm::cl::desc("List all options or enums which have the specified prefix.\n"),
   llvm::cl::cat(DPCTCat), llvm::cl::ReallyHidden, llvm::cl::location(AutoCompletePrinterInstance));
 #endif
+static llvm::cl::opt<std::string> QueryApiMapping("query-api-mapping",
+                    llvm::cl::desc("Outputs to stdout functionally compatible SYCL API mapping for CUDA API."),
+                    llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat),
+                    llvm::cl::Optional, llvm::cl::ReallyHidden);
 // clang-format on
 
 // TODO: implement one of this for each source language.
