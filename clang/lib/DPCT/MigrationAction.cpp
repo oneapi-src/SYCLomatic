@@ -62,11 +62,11 @@ DpctFrontEndAction::CreateASTConsumer(CompilerInstance &CI, StringRef InFile) {
   return std::make_unique<DpctConsumer>(Info, CI.getPreprocessor());
 }
 
-DpctToolAction::DpctToolAction(ReplTy &Replacements,
+DpctToolAction::DpctToolAction(llvm::raw_ostream &DS, ReplTy &Replacements,
                                const std::string &RuleNames,
                                std::vector<PassKind> Passes)
     : Global(DpctGlobalInfo::getInstance()), Repls(Replacements),
-      Passes(std::move(Passes)) {
+      Passes(std::move(Passes)), DiagnosticStream(DS) {
   if (RuleNames.empty())
     return;
   auto Names = split(RuleNames, ',');
@@ -100,7 +100,7 @@ void DpctToolAction::runPass(PassKind Pass) {
     auto &Transforms = Info->Transforms;
     auto &IncludeMap = Info->IncludeMapSet;
     auto DiagClient = new TextDiagnosticPrinter(
-        DpctTerm(), &Info->AST->getDiagnostics().getDiagnosticOptions());
+        DiagnosticStream, &Info->AST->getDiagnostics().getDiagnosticOptions());
     Info->AST->getDiagnostics().setClient(DiagClient);
     DiagClient->BeginSourceFile(Context.getLangOpts(),
                                 &Info->AST->getPreprocessor());
@@ -108,6 +108,7 @@ void DpctToolAction::runPass(PassKind Pass) {
     DpctGlobalInfo::setContext(Context);
     DpctGlobalInfo::getInstance().setMainFile(Info->MainFile);
     MigrationRuleManager MRM(Pass, Transforms);
+    Global.getProcessedFile().insert(Info->MainFile->getFilePath());
     MRM.matchAST(Context, MigrationRuleNames);
     for (const auto &I : Transforms) {
       auto Repl = I->getReplacement(Context);
@@ -136,6 +137,7 @@ void DpctToolAction::runPass(PassKind Pass) {
 
       StaticsInfo::printReplacements(Transforms, Context);
     }
+    Transforms.clear();
   }
   if (Pass == PassKind::PK_Analysis) {
     int RetJmp = 0;

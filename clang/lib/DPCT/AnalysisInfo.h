@@ -358,6 +358,7 @@ enum HeaderType {
   HT_DPL_Algorithm,
   HT_DPL_Execution,
   HT_DPL_Iterator,
+  HT_STDLIB,
 };
 
 enum UsingType {
@@ -725,10 +726,14 @@ public:
 
   class MacroDefRecord {
   public:
-    SourceLocation NameTokenLoc;
+    std::string FilePath;
+    unsigned Offset;
     bool IsInAnalysisScope;
-    MacroDefRecord(SourceLocation NTL, bool IIAS)
-        : NameTokenLoc(NTL), IsInAnalysisScope(IIAS) {}
+    MacroDefRecord(SourceLocation NTL, bool IIAS) : IsInAnalysisScope(IIAS) {
+      auto LocInfo = DpctGlobalInfo::getLocInfo(NTL);
+      FilePath = LocInfo.first;
+      Offset = LocInfo.second;
+    }
   };
 
   class MacroExpansionRecord {
@@ -794,9 +799,7 @@ public:
   }
 
   inline static bool isInRoot(SourceLocation SL) {
-    return isInRoot(getSourceManager()
-                        .getFilename(getSourceManager().getExpansionLoc(SL))
-                        .str());
+    return isInRoot(DpctGlobalInfo::getLocInfo(SL).first);
   }
   static bool isInRoot(const std::string &FilePath,
                        bool IsChildRelative = true) {
@@ -817,9 +820,7 @@ public:
     }
   }
   inline static bool isInAnalysisScope(SourceLocation SL) {
-    return isInAnalysisScope(getSourceManager()
-                        .getFilename(getSourceManager().getExpansionLoc(SL))
-                        .str());
+    return isInAnalysisScope(DpctGlobalInfo::getLocInfo(SL).first);
   }
   static bool isInAnalysisScope(const std::string &FilePath,
                                 bool IsChildRelative = true) {
@@ -997,13 +998,22 @@ public:
     CustomHelperFileName = Name;
   }
 
-  inline static bool getUsingExtension(DPCPPExtensions Ext) {
-    return ExtensionFlag & static_cast<unsigned>(Ext);
+  inline static bool getUsingExtensionDE(DPCPPExtensionsDefaultEnabled Ext) {
+    return ExtensionDEFlag & static_cast<unsigned>(Ext);
   }
-  inline static void setExtensionUnused(DPCPPExtensions Ext) {
-    ExtensionFlag &= (~static_cast<unsigned>(Ext));
+  inline static void setExtensionDEUnused(DPCPPExtensionsDefaultEnabled Ext) {
+    ExtensionDEFlag &= (~static_cast<unsigned>(Ext));
   }
-  inline static unsigned getExtensionFlag() { return ExtensionFlag; }
+  inline static unsigned getExtensionDEFlag() { return ExtensionDEFlag; }
+
+  inline static bool getUsingExtensionDD(DPCPPExtensionsDefaultDisabled Ext) {
+    return ExtensionDDFlag & static_cast<unsigned>(Ext);
+  }
+  inline static void setExtensionDDUsed(DPCPPExtensionsDefaultDisabled Ext) {
+    ExtensionDDFlag |= static_cast<unsigned>(Ext);
+  }
+  inline static unsigned getExtensionDDFlag() { return ExtensionDDFlag; }
+
 
   template <ExperimentalFeatures Exp> static bool getUsingExperimental() {
     return ExperimentalFlag & (1 << static_cast<unsigned>(Exp));
@@ -1301,7 +1311,7 @@ public:
   static inline std::pair<std::string, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
     if (SM->isMacroArgExpansion(Loc)) {
-      Loc = SM->getSpellingLoc(Loc);
+      Loc = SM->getImmediateSpellingLoc(Loc);
     }
     auto LocInfo = SM->getDecomposedLoc(SM->getExpansionLoc(Loc));
     auto AbsPath = getAbsolutePath(LocInfo.first);
@@ -1455,6 +1465,9 @@ public:
 
     for (auto &File : FileMap)
       File.second->buildReplacements();
+  }
+  std::set<std::string> &getProcessedFile() {
+    return ProcessedFile;
   }
   void postProcess() {
     for (auto &File : FileMap) {
@@ -1843,7 +1856,10 @@ public:
     return getUsingExperimental<ExperimentalFeatures::Exp_LogicalGroup>();
   }
   static bool useEnqueueBarrier() {
-    return getUsingExtension(DPCPPExtensions::Ext_EnqueueBarrier);
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
+  }
+  static bool useCAndCXXStandardLibrariesExt() {
+    return getUsingExtensionDD(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
   }
 
   static bool getSpBLASUnsupportedMatrixTypeFlag() {
@@ -2161,7 +2177,8 @@ private:
   static std::unordered_map<std::shared_ptr<DeviceFunctionInfo>,
                             std::unordered_set<std::string>>
       DFIToSpellingLocsMapForAssumeNDRange;
-  static unsigned ExtensionFlag;
+  static unsigned ExtensionDEFlag;
+  static unsigned ExtensionDDFlag;
   static unsigned ExperimentalFlag;
   static unsigned int ColorOption;
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
@@ -4048,6 +4065,7 @@ private:
         IsDoublePointer = S->containsVirtualPointer();
       }
       ArgString = Obj->getName();
+      IdString = ArgString + "_";
       ArgSize = MapNames::KernelArgTypeSizeMap.at(KernelArgType::KAT_Texture);
     }
 

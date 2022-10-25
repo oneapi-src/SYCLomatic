@@ -91,3 +91,16 @@
   In: OldType
   Out: NewType
   Includes: []
+- Rule: explicit_template_rule_default
+  Kind: API
+  Priority: Takeover
+  In: explicit_template_default
+  Out: ET($1)
+  Includes: []
+- Rule: explicit_template_rule
+  Kind: API
+  Priority: Takeover
+  In: explicit_template
+  Out: ET($1)
+  HasExplicitTemplateArgs: true
+  Includes: []

@@ -184,7 +184,7 @@ bool printOptions(
       if ("true" == Value)
         Opts.emplace_back("--no-cl-namespace-inline");
     }
-    if (Key == clang::dpct::OPTION_ExtensionFlag && Specified) {
+    if (Key == clang::dpct::OPTION_ExtensionDEFlag && Specified) {
       std::string MaxValueStr = std::to_string(static_cast<unsigned>(-1));
       if (Value.empty() || Value.length() > MaxValueStr.length() ||
           !isOnlyContainDigit(Value)) {
@@ -194,10 +194,34 @@ bool printOptions(
         return false;
       }
       unsigned int UValue = std::stoul(Value);
+      std::string Str = "";
       if (UValue < static_cast<unsigned>(-1)) {
         if (!(UValue &
-              static_cast<unsigned>(DPCPPExtensions::Ext_EnqueueBarrier)))
-          Opts.emplace_back("--no-dpcpp-extensions=enqueued_barriers");
+              static_cast<unsigned>(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier)))
+          Str = Str + "enqueued_barriers,";
+      }
+      if (!Str.empty()) {
+        Str = "--no-dpcpp-extensions=" + Str;
+        Opts.emplace_back(Str.substr(0, Str.size() - 1));
+      }
+    }
+    if (Key == clang::dpct::OPTION_ExtensionDDFlag && Specified) {
+      std::string MaxValueStr = std::to_string(static_cast<unsigned>(-1));
+      if (Value.empty() || Value.length() > MaxValueStr.length() ||
+          !isOnlyContainDigit(Value)) {
+        return false;
+      }
+      if ((Value.length() == MaxValueStr.length()) && (Value > MaxValueStr)) {
+        return false;
+      }
+      unsigned int UValue = std::stoul(Value);
+      std::string Str = "";
+      if (UValue &
+          (1 << static_cast<unsigned>(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary)))
+        Str = Str + "free-function-queries,";
+      if (!Str.empty()) {
+        Str = "--use-dpcpp-extensions=" + Str;
+        Opts.emplace_back(Str.substr(0, Str.size() - 1));
       }
     }
     if (Key == clang::dpct::OPTION_NoDRYPattern) {
@@ -303,7 +327,7 @@ bool printOptions(
       for (const auto &Item : ValueVec)
         Opts.emplace_back("--rule-file=\"" + Item + "\"");
     }
-    if (Key == clang::dpct::OPTION_AnalysisScopePath && Specified) {
+    if (Key == clang::dpct::OPTION_AnalysisScopePath) {
       Opts.emplace_back("--analysis-scope-path=\"" + Value + "\"");
     }
   }

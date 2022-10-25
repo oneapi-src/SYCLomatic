@@ -44,18 +44,14 @@ template <typename Foo> __global__ void my_kernel2(const Foo &foo) {
   curand_init(std::get<0>(seeds), idx, std::get<1>(seeds), &state);
   foo(&state);
 }
+
 //     CHECK:inline void run_foo2() {
-//CHECK-NEXT:  dpct::get_default_queue().submit(
-//CHECK-NEXT:    [&](sycl::handler &cgh) {
-//CHECK-NEXT:      auto __device___curandStatePhilox4_32_10_t_state_return_curand_uniform2_double_state_ct0 = [] (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> * state) {
+//CHECK-NEXT:  dpct::get_default_queue().parallel_for<dpct_kernel_name<class my_kernel2_{{[0-9a-z]+}}, class lambda_{{[0-9a-z]+}}>>(
+//CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+//CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:      my_kernel2([] (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> * state) {
 //CHECK-NEXT:    return state->generate<oneapi::mkl::rng::device::uniform<double>, 2>();
-//CHECK-NEXT:  };
-//CHECK-EMPTY:
-//CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class my_kernel2_{{[0-9a-z]+}}, class lambda_{{[0-9a-z]+}}>>(
-//CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-//CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:          my_kernel2(__device___curandStatePhilox4_32_10_t_state_return_curand_uniform2_double_state_ct0, item_ct1);
-//CHECK-NEXT:        });
+//CHECK-NEXT:  }, item_ct1);
 //CHECK-NEXT:    });
 //CHECK-NEXT:}
 inline void run_foo2() {

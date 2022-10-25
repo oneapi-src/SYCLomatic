@@ -132,7 +132,9 @@ protected:
       if (ItMatch !=
           dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
         if (ItMatch->second->IsInAnalysisScope) {
-          SL = ItMatch->second->NameTokenLoc;
+          return DiagnosticsUtils::report<IDTy, Ts...>(
+              ItMatch->second->FilePath, ItMatch->second->Offset, MsgID, true,
+              UseTextBegin, std::forward<Ts>(Vals)...);
         }
       }
     }
@@ -481,6 +483,10 @@ private:
   // Used to prevent them from being processed multiple times
   std::unordered_set<TypeLoc, TypeLocHash, TypeLocEqual> ProcessedTypeLocs;
 
+  void processConstFFTHandleType(const DeclaratorDecl *DD,
+                                 SourceLocation BeginLoc,
+                                 SourceLocation EndLoc,
+                                 bool HasGlobalNSPrefix);
   void processCudaStreamType(const DeclaratorDecl *DD);
   bool replaceTemplateSpecialization(SourceManager *SM, LangOptions &LOpts,
                                      SourceLocation BeginLoc,
@@ -504,9 +510,12 @@ public:
 class UserDefinedAPIRule
     : public clang::dpct::NamedMigrationRule<UserDefinedAPIRule> {
   std::string APIName;
+  bool HasExplicitTemplateArgs;
 
 public:
-  UserDefinedAPIRule(std::string APIName) : APIName(APIName){};
+  UserDefinedAPIRule(std::string APIName, bool HasExplicitTemplateArguments)
+      : APIName(std::move(APIName)),
+        HasExplicitTemplateArgs(HasExplicitTemplateArguments){};
   void registerMatcher(clang::ast_matchers::MatchFinder &MF) override;
   void runRule(const clang::ast_matchers::MatchFinder::MatchResult &Result);
 };

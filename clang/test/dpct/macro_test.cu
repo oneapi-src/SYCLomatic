@@ -21,6 +21,20 @@
 
 #include "macro_test.h"
 
+
+#include <thrust/inner_product.h>
+#include <thrust/extrema.h>
+#include <thrust/host_vector.h>
+#include <thrust/gather.h>
+#include <thrust/scatter.h>
+#include <thrust/tuple.h>
+#include <thrust/device_ptr.h>
+#include <thrust/copy.h>
+#include <thrust/device_vector.h>
+#include <thrust/execution_policy.h>
+#include <thrust/random.h>
+#include <thrust/reduce.h>
+
 #define CUDA_NUM_THREADS 1024+32
 #define GET_BLOCKS(n,t)  1+n+t-1
 #define GET_BLOCKS2(n,t) 1+n+t
@@ -281,11 +295,11 @@ int b;
     #endif
   );
 
-  #define SIZE    (100*1024*1024)
+  #define SIZE3    (100*1024*1024)
   unsigned char *dev_buffer;
   unsigned char *buffer = (unsigned char*)malloc(500);
-  //CHECK: q_ct1.memcpy(dev_buffer, buffer, SIZE).wait();
-  cudaMemcpy( dev_buffer, buffer, SIZE, cudaMemcpyHostToDevice);
+  //CHECK: q_ct1.memcpy(dev_buffer, buffer, SIZE3).wait();
+  cudaMemcpy( dev_buffer, buffer, SIZE3, cudaMemcpyHostToDevice);
 }
 
 #define MMM(x)
@@ -681,16 +695,16 @@ real v5 = POW3(vx[id], 2);
 }
 
 //CHECK: #define CALL(call) call;
-//CHECK-NEXT: #define SIZE 8
+//CHECK-NEXT: #define SIZE2 8
 //CHECK-NEXT: void foo13(){
 //CHECK-NEXT:   int *a;
-//CHECK-NEXT:   CALL(a = sycl::malloc_device<int>(SIZE * 10, dpct::get_default_queue()));
+//CHECK-NEXT:   CALL(a = sycl::malloc_device<int>(SIZE2 * 10, dpct::get_default_queue()));
 //CHECK-NEXT: }
 #define CALL(call) call;
-#define SIZE 8
+#define SIZE2 8
 void foo13(){
   int *a;
-  CALL(cudaMalloc(&a, SIZE * 10 * sizeof(int)));
+  CALL(cudaMalloc(&a, SIZE2 * 10 * sizeof(int)));
 }
 
 //CHECK: #define CONST const
@@ -983,10 +997,10 @@ __device__ void doo(float f) {
 }
 
 //CHECK: void foo22(const sycl::stream &stream_ct1) {
-//CHECK-NEXT:   FUNCNAME(doo)<float, PASS(1 +) 2, SIZE>(PASS(1 +) 0.0f, stream_ct1);
+//CHECK-NEXT:   FUNCNAME(doo)<float, PASS(1 +) 2, SIZE2>(PASS(1 +) 0.0f, stream_ct1);
 //CHECK-NEXT: }
 __global__ void foo22() {
-  FUNCNAME(doo)<float, PASS(1 +) 2, SIZE>(PASS(1 +) 0.0f);
+  FUNCNAME(doo)<float, PASS(1 +) 2, SIZE2>(PASS(1 +) 0.0f);
 }
 
 //CHECK: static __inline__ void __attribute__((__always_inline__, __nodebug__, __target__("mmx")))
@@ -1179,25 +1193,27 @@ int foo31(){
   VA_CALL( ([&]{ template_kernel<int><<<1,1,0>>>(10); }) );
 }
 
+class ArgClass{};
 
-//CHECK: #define VACALL4(...) __VA_ARGS__()
-//CHECK-NEXT: #define VACALL3(...) VACALL4(__VA_ARGS__)
-//CHECK-NEXT: #define VACALL2(...) VACALL3(__VA_ARGS__)
-//CHECK-NEXT: #define VACALL(x)                                                              \
-//CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
-//CHECK-NEXT:     auto i_ct0 = i;                                                            \
-//CHECK-NEXT:                                                                                \
-//CHECK-NEXT:     cgh.parallel_for(                                                          \
-//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 1)),   \
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo32(i_ct0); });                     \
-//CHECK-NEXT:   });
+// CHECK: #define VACALL4(...) __VA_ARGS__()
+// CHECK-NEXT: #define VACALL3(...) VACALL4(__VA_ARGS__)
+// CHECK-NEXT: #define VACALL2(...) VACALL3(__VA_ARGS__)
+// CHECK-NEXT: #define VACALL(x)                                                              \
+// CHECK-NEXT:  dpct::get_default_queue().submit([&](sycl::handler &cgh) {                    \
+// CHECK-NEXT:   auto i_ct0 = i;                                                              \
+// CHECK-NEXT:   auto ac_ct0 = ac;                                                            \
+// CHECK:   cgh.parallel_for(                                                            \
+// CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 1)),     \
+// CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) { foo32(i_ct0, ac_ct0); });               \
+// CHECK-NEXT:  });
 #define VACALL4(...) __VA_ARGS__()
 #define VACALL3(...) VACALL4(__VA_ARGS__)
 #define VACALL2(...) VACALL3(__VA_ARGS__)
-#define VACALL(x) foo32<<<2,1,0>>>(i)
-__global__ void foo32(int a){}
+#define VACALL(x) foo32<<<2,1,0>>>(i, ac)
+__global__ void foo32(int a, ArgClass ac){}
 
 // CHECK: int foo33(){
+// CHECK-NEXT:   ArgClass ac;
 // CHECK-NEXT:   int i;
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1038:{{[0-9]+}}: When the kernel function name is used as a macro argument, the
@@ -1208,6 +1224,40 @@ __global__ void foo32(int a){}
 // CHECK-NEXT:   });
 // CHECK-NEXT: }
 int foo33(){
+  ArgClass ac;
   int i;
   VACALL2([&]{VACALL(0);});
+}
+
+
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
+#include <thrust/unique.h>
+
+void foo34() {
+
+  int *ptr;
+  thrust::host_vector<int> h_keys, h_values;
+  thrust::device_vector<int> d_keys, d_values;
+  thrust::equal_to<int> binary_pred;
+
+  auto dummy_dev = thrust::device_ptr<int>(ptr);
+  int numel = 1;
+  using index_t = int;
+  VACALL3([&]() {
+    int64_t num_of_segments;
+    {
+      auto sorted_indices_dev = thrust::device_ptr<index_t>(ptr);
+      auto dummy_dev = thrust::device_ptr<index_t>(ptr);
+      //CHECK: auto ends = dpct::unique_copy(
+      //CHECK-NEXT:   oneapi::dpl::execution::make_device_policy(dpct::get_default_queue()),
+      //CHECK-NEXT:   sorted_indices_dev, sorted_indices_dev + numel,
+      //CHECK-NEXT:   dpct::make_counting_iterator(0), dummy_dev,
+      //CHECK-NEXT:   dpct::device_pointer<index_t>(ptr));
+      auto ends = thrust::unique_by_key_copy(
+          thrust::device, sorted_indices_dev, sorted_indices_dev + numel,
+          thrust::make_counting_iterator(0), dummy_dev,
+          thrust::device_ptr<index_t>(ptr));
+    }
+  });
 }

@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasMemory/api_test3_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasMemory/api_test3_out
 
-// CHECK: 15
+// CHECK: 16
 // TEST_FEATURE: DplExtrasMemory_free_device
 
 #include <thrust/device_ptr.h>

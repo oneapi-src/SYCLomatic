@@ -153,7 +153,10 @@ public:
       if (ItMatch !=
           dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
         if (ItMatch->second->IsInAnalysisScope) {
-          SL = ItMatch->second->NameTokenLoc;
+          DiagnosticsUtils::report<IDTy, Ts...>(
+              ItMatch->second->FilePath, ItMatch->second->Offset, MsgID, true,
+              UseTextBegin, std::forward<Ts>(Vals)...);
+          return;
         }
       }
     }
@@ -488,18 +491,18 @@ protected:
   friend MathFuncNameRewriterFactory;
 };
 
-/// The rewriter for renaming math function calls
-class NoRewriteFuncNameRewriter : public MathFuncNameRewriter {
-protected:
-  NoRewriteFuncNameRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                            StringRef TargetCalleeName)
-      : MathFuncNameRewriter(Call, SourceCalleeName, TargetCalleeName) {
+class NoRewriteFuncNameRewriter : public CallExprRewriter {
+  std::string NewFuncName;
+
+public:
+  NoRewriteFuncNameRewriter(const CallExpr *Call, StringRef SourceName,
+                            StringRef NewName)
+      : CallExprRewriter(Call, SourceCalleeName) {
+    NewFuncName = NewName.str();
     NoRewrite = true;
   }
 
-public:
-  virtual Optional<std::string> rewrite() override;
-  friend NoRewriteFuncNameRewriterFactory;
+  Optional<std::string> rewrite() override { return NewFuncName; }
 };
 
 /// The rewriter for warning on unsupported math functions
@@ -1410,10 +1413,33 @@ class UserDefinedRewriterFactory : public CallExprRewriterFactoryBase {
   // Information for building the result string from the original function call
   OutputBuilder OB;
   std::string OutStr;
+  std::vector<std::string> &Includes;
+  bool HasExplicitTemplateArgs = false;
+
+  struct NullRewriter : public CallExprRewriter {
+    NullRewriter(const CallExpr *C, StringRef Name)
+        : CallExprRewriter(C, Name) {}
+
+    Optional<std::string> rewrite() override { return {}; }
+  };
+
+public:
+  static bool hasExplicitTemplateArgs(const CallExpr *C) {
+    auto Callee = C->getCallee();
+    if (!Callee)
+      return false;
+
+    Callee = Callee->IgnoreImpCasts();
+    if (auto DRE = clang::dyn_cast<DeclRefExpr>(Callee))
+      return DRE->hasExplicitTemplateArgs();
+
+    return false;
+  }
 
 public:
   UserDefinedRewriterFactory(MetaRuleObject &R)
-      : OutStr(R.Out), Includes(R.Includes) {
+      : OutStr(R.Out), Includes(R.Includes),
+        HasExplicitTemplateArgs(R.HasExplicitTemplateArgs) {
     Priority = R.Priority;
     OB.Kind = OutputBuilder::Kind::Top;
     OB.RuleName = R.RuleId;
@@ -1435,9 +1461,14 @@ public:
     if (!Call)
       return std::shared_ptr<UserDefinedRewriter>();
 
+    if (hasExplicitTemplateArgs(Call) && !HasExplicitTemplateArgs)
+      return std::make_shared<NullRewriter>(Call, "");
+
+    for (auto &Header : Includes)
+      DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), Header);
+
     return std::make_shared<UserDefinedRewriter>(Call, OB);
   }
-  std::vector<std::string> &Includes;
 };
 
 std::shared_ptr<CallExprRewriterFactoryBase>
