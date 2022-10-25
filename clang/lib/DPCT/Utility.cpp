@@ -3088,18 +3088,19 @@ bool isDefaultStream(const Expr *StreamArg) {
   StreamArg = StreamArg->IgnoreCasts();
   if (isa<CXXNullPtrLiteralExpr>(StreamArg)) {
     return true;
-  }
-  else if (auto DAE = dyn_cast<CXXDefaultArgExpr>(StreamArg)) {
+  } else if (auto DAE = dyn_cast<CXXDefaultArgExpr>(StreamArg)) {
     return isDefaultStream(DAE->getExpr());
-  }
-  else if (auto Paren = dyn_cast<ParenExpr>(StreamArg)) {
+  } else if (auto Paren = dyn_cast<ParenExpr>(StreamArg)) {
     return isDefaultStream(Paren->getSubExpr());
   }
   Expr::EvalResult Result;
   if (!StreamArg->isValueDependent() &&
       StreamArg->EvaluateAsInt(Result, dpct::DpctGlobalInfo::getContext())) {
-    return Result.Val.getInt() < APSInt::get(3); // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
-                    // all migrated to default queue;
+    // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
+                   // all migrated to default queue;
+    return Result.Val.getInt() <
+           APSInt::get(
+               3); 
   }
   return false;
 }
