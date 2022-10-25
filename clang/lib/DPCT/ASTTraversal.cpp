@@ -889,8 +889,6 @@ void IncludesCallbacks::InclusionDirective(
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_BLAS_Solver);
-      requestFeature(HelperFeatureEnum::BlasUtils_non_local_include_dependency,
-                     HashLoc);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(
           HashLoc, HT_MKL_BLAS_Solver_Without_Util);
@@ -913,8 +911,6 @@ void IncludesCallbacks::InclusionDirective(
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_RNG);
-      requestFeature(HelperFeatureEnum::RngUtils_non_local_include_dependency,
-                     HashLoc);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
                                                  HT_MKL_RNG_Without_Util);
@@ -935,8 +931,6 @@ void IncludesCallbacks::InclusionDirective(
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_SPBLAS);
-      requestFeature(HelperFeatureEnum::BlasUtils_non_local_include_dependency,
-                     HashLoc);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
                                                  HT_MKL_SPBLAS_Without_Util);
@@ -957,8 +951,6 @@ void IncludesCallbacks::InclusionDirective(
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_FFT);
-      requestFeature(HelperFeatureEnum::FftUtils_non_local_include_dependency,
-                     HashLoc);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
                                                  HT_MKL_FFT_Without_Util);
