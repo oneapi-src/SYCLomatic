@@ -10887,7 +10887,7 @@ void MemoryMigrationRule::mallocMigration(
         new ReplaceCalleeName(C, MapNames::getDpctNamespace() + "dpct_malloc"));
     emplaceTransformation(removeArg(C, 0, *Result.SourceManager));
     std::ostringstream OS2;
-    printDerefOp(OS2, C->getArg(1)->IgnoreCasts()->IgnoreParens());
+    printDerefOp(OS2, C->getArg(1));
     if (Name == "cudaMallocPitch") {
       emplaceTransformation(new ReplaceStmt(C->getArg(1), OS2.str()));
     }
