@@ -388,7 +388,7 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), NoIncrementalMig
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisScope, "analysis-scope-path",
         llvm::cl::desc("The directory path for the analysis scope of the source tree that "
              "needs to be migrated.\n"
-             "Default: the value of --in-root"),
+             "Default: the value of --in-root."),
         llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat))
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT
