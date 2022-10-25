@@ -222,6 +222,8 @@ void testCommas() {
   int sz;
   // CHECK: d_A = (float *)dpct::dpct_malloc(*((size_t *)&size), size, size);
   cudaMallocPitch((void **)&d_A, (size_t *)&size, size, size);
+  // CHECK: d_A = (float *)dpct::dpct_malloc(*((size_t *)&sz), size, size);
+  cudaMallocPitch((void **)&d_A, (size_t *)&sz, size, size);
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
