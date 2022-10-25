@@ -360,10 +360,10 @@ int main() {
   //CHECK-NEXT:sycl::float2* odata_m1d_C2C;
   //CHECK-NEXT:sycl::float2* idata_m1d_C2C;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m1d_C2C->commit(&q_ct1, 10, dpct::fft::fft_type::complex_float_to_complex_float, 3, work_size);
   //CHECK-NEXT:plan_m1d_C2C->compute<sycl::float2, sycl::float2>(idata_m1d_C2C, odata_m1d_C2C, dpct::fft::fft_direction::forward);
@@ -377,10 +377,10 @@ int main() {
   //CHECK-NEXT:float* odata_m1d_C2R;
   //CHECK-NEXT:sycl::float2* idata_m1d_C2R;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m1d_C2R->commit(&q_ct1, 10, dpct::fft::fft_type::complex_float_to_real_float, 3, work_size);
   //CHECK-NEXT:plan_m1d_C2R->compute<sycl::float2, float>(idata_m1d_C2R, odata_m1d_C2R, dpct::fft::fft_direction::backward);
@@ -394,10 +394,10 @@ int main() {
   //CHECK-NEXT:sycl::float2* odata_m1d_R2C;
   //CHECK-NEXT:float* idata_m1d_R2C;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m1d_R2C->commit(&q_ct1, 10, dpct::fft::fft_type::real_float_to_complex_float, 3, work_size);
   //CHECK-NEXT:plan_m1d_R2C->compute<float, sycl::float2>(idata_m1d_R2C, odata_m1d_R2C, dpct::fft::fft_direction::forward);
@@ -411,10 +411,10 @@ int main() {
   //CHECK-NEXT:sycl::double2* odata_m1d_Z2Z;
   //CHECK-NEXT:sycl::double2* idata_m1d_Z2Z;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m1d_Z2Z->commit(&q_ct1, 10, dpct::fft::fft_type::complex_double_to_complex_double, 3, work_size);
   //CHECK-NEXT:plan_m1d_Z2Z->compute<sycl::double2, sycl::double2>(idata_m1d_Z2Z, odata_m1d_Z2Z, dpct::fft::fft_direction::backward);
@@ -428,10 +428,10 @@ int main() {
   //CHECK-NEXT:double* odata_m1d_Z2D;
   //CHECK-NEXT:sycl::double2* idata_m1d_Z2D;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m1d_Z2D->commit(&q_ct1, 10, dpct::fft::fft_type::complex_double_to_real_double, 3, work_size);
   //CHECK-NEXT:plan_m1d_Z2D->compute<sycl::double2, double>(idata_m1d_Z2D, odata_m1d_Z2D, dpct::fft::fft_direction::backward);
@@ -445,10 +445,10 @@ int main() {
   //CHECK-NEXT:sycl::double2* odata_m1d_D2Z;
   //CHECK-NEXT:double* idata_m1d_D2Z;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m1d_D2Z->commit(&q_ct1, 10, dpct::fft::fft_type::real_double_to_complex_double, 3, work_size);
   //CHECK-NEXT:plan_m1d_D2Z->compute<double, sycl::double2>(idata_m1d_D2Z, odata_m1d_D2Z, dpct::fft::fft_direction::forward);
@@ -462,10 +462,10 @@ int main() {
   //CHECK-NEXT:sycl::float2* odata_m2d_C2C;
   //CHECK-NEXT:sycl::float2* idata_m2d_C2C;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m2d_C2C->commit(&q_ct1, 10, 20, dpct::fft::fft_type::complex_float_to_complex_float, work_size);
   //CHECK-NEXT:plan_m2d_C2C->compute<sycl::float2, sycl::float2>(idata_m2d_C2C, odata_m2d_C2C, dpct::fft::fft_direction::forward);
@@ -479,10 +479,10 @@ int main() {
   //CHECK-NEXT:float* odata_m2d_C2R;
   //CHECK-NEXT:sycl::float2* idata_m2d_C2R;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m2d_C2R->commit(&q_ct1, 10, 20, dpct::fft::fft_type::complex_float_to_real_float, work_size);
   //CHECK-NEXT:plan_m2d_C2R->compute<sycl::float2, float>(idata_m2d_C2R, odata_m2d_C2R, dpct::fft::fft_direction::backward);
@@ -496,10 +496,10 @@ int main() {
   //CHECK-NEXT:sycl::float2* odata_m2d_R2C;
   //CHECK-NEXT:float* idata_m2d_R2C;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m2d_R2C->commit(&q_ct1, 10, 20, dpct::fft::fft_type::real_float_to_complex_float, work_size);
   //CHECK-NEXT:plan_m2d_R2C->compute<float, sycl::float2>(idata_m2d_R2C, odata_m2d_R2C, dpct::fft::fft_direction::forward);
@@ -513,10 +513,10 @@ int main() {
   //CHECK-NEXT:sycl::double2* odata_m2d_Z2Z;
   //CHECK-NEXT:sycl::double2* idata_m2d_Z2Z;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m2d_Z2Z->commit(&q_ct1, 10, 20, dpct::fft::fft_type::complex_double_to_complex_double, work_size);
   //CHECK-NEXT:plan_m2d_Z2Z->compute<sycl::double2, sycl::double2>(idata_m2d_Z2Z, odata_m2d_Z2Z, dpct::fft::fft_direction::backward);
@@ -530,10 +530,10 @@ int main() {
   //CHECK-NEXT:double* odata_m2d_Z2D;
   //CHECK-NEXT:sycl::double2* idata_m2d_Z2D;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m2d_Z2D->commit(&q_ct1, 10, 20, dpct::fft::fft_type::complex_double_to_real_double, work_size);
   //CHECK-NEXT:plan_m2d_Z2D->compute<sycl::double2, double>(idata_m2d_Z2D, odata_m2d_Z2D, dpct::fft::fft_direction::backward);
@@ -547,10 +547,10 @@ int main() {
   //CHECK-NEXT:sycl::double2* odata_m2d_D2Z;
   //CHECK-NEXT:double* idata_m2d_D2Z;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m2d_D2Z->commit(&q_ct1, 10, 20, dpct::fft::fft_type::real_double_to_complex_double, work_size);
   //CHECK-NEXT:plan_m2d_D2Z->compute<double, sycl::double2>(idata_m2d_D2Z, odata_m2d_D2Z, dpct::fft::fft_direction::forward);
@@ -564,10 +564,10 @@ int main() {
   //CHECK-NEXT:sycl::float2* odata_m3d_C2C;
   //CHECK-NEXT:sycl::float2* idata_m3d_C2C;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m3d_C2C->commit(&q_ct1, 10, 20, 30, dpct::fft::fft_type::complex_float_to_complex_float, work_size);
   //CHECK-NEXT:plan_m3d_C2C->compute<sycl::float2, sycl::float2>(idata_m3d_C2C, odata_m3d_C2C, dpct::fft::fft_direction::forward);
@@ -581,10 +581,10 @@ int main() {
   //CHECK-NEXT:float* odata_m3d_C2R;
   //CHECK-NEXT:sycl::float2* idata_m3d_C2R;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m3d_C2R->commit(&q_ct1, 10, 20, 30, dpct::fft::fft_type::complex_float_to_real_float, work_size);
   //CHECK-NEXT:plan_m3d_C2R->compute<sycl::float2, float>(idata_m3d_C2R, odata_m3d_C2R, dpct::fft::fft_direction::backward);
@@ -598,10 +598,10 @@ int main() {
   //CHECK-NEXT:sycl::float2* odata_m3d_R2C;
   //CHECK-NEXT:float* idata_m3d_R2C;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m3d_R2C->commit(&q_ct1, 10, 20, 30, dpct::fft::fft_type::real_float_to_complex_float, work_size);
   //CHECK-NEXT:plan_m3d_R2C->compute<float, sycl::float2>(idata_m3d_R2C, odata_m3d_R2C, dpct::fft::fft_direction::forward);
@@ -615,10 +615,10 @@ int main() {
   //CHECK-NEXT:sycl::double2* odata_m3d_Z2Z;
   //CHECK-NEXT:sycl::double2* idata_m3d_Z2Z;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m3d_Z2Z->commit(&q_ct1, 10, 20, 30, dpct::fft::fft_type::complex_double_to_complex_double, work_size);
   //CHECK-NEXT:plan_m3d_Z2Z->compute<sycl::double2, sycl::double2>(idata_m3d_Z2Z, odata_m3d_Z2Z, dpct::fft::fft_direction::backward);
@@ -632,10 +632,10 @@ int main() {
   //CHECK-NEXT:double* odata_m3d_Z2D;
   //CHECK-NEXT:sycl::double2* idata_m3d_Z2D;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m3d_Z2D->commit(&q_ct1, 10, 20, 30, dpct::fft::fft_type::complex_double_to_real_double, work_size);
   //CHECK-NEXT:plan_m3d_Z2D->compute<sycl::double2, double>(idata_m3d_Z2D, odata_m3d_Z2D, dpct::fft::fft_direction::backward);
@@ -649,10 +649,10 @@ int main() {
   //CHECK-NEXT:sycl::double2* odata_m3d_D2Z;
   //CHECK-NEXT:double* idata_m3d_D2Z;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_m3d_D2Z->commit(&q_ct1, 10, 20, 30, dpct::fft::fft_type::real_double_to_complex_double, work_size);
   //CHECK-NEXT:plan_m3d_D2Z->compute<double, sycl::double2>(idata_m3d_D2Z, odata_m3d_D2Z, dpct::fft::fft_direction::forward);
@@ -673,10 +673,10 @@ int main() {
   //CHECK-NEXT:sycl::float2* odata_mmany_C2C;
   //CHECK-NEXT:sycl::float2* idata_mmany_C2C;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany_C2C->commit(&q_ct1, 3, n_mmany_C2C, inembed_mmany_C2C, istride_mmany_C2C, idist_mmany_C2C, onembed_mmany_C2C, ostride_mmany_C2C, odist_mmany_C2C, dpct::fft::fft_type::complex_float_to_complex_float, 12, work_size);
   //CHECK-NEXT:plan_mmany_C2C->compute<sycl::float2, sycl::float2>(idata_mmany_C2C, odata_mmany_C2C, dpct::fft::fft_direction::forward);
@@ -704,10 +704,10 @@ int main() {
   //CHECK-NEXT:float* odata_mmany_C2R;
   //CHECK-NEXT:sycl::float2* idata_mmany_C2R;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany_C2R->commit(&q_ct1, 3, n_mmany_C2R, inembed_mmany_C2R, istride_mmany_C2R, idist_mmany_C2R, onembed_mmany_C2R, ostride_mmany_C2R, odist_mmany_C2R, dpct::fft::fft_type::complex_float_to_real_float, 12, work_size);
   //CHECK-NEXT:plan_mmany_C2R->compute<sycl::float2, float>(idata_mmany_C2R, odata_mmany_C2R, dpct::fft::fft_direction::backward);
@@ -735,10 +735,10 @@ int main() {
   //CHECK-NEXT:sycl::float2* odata_mmany_R2C;
   //CHECK-NEXT:float* idata_mmany_R2C;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany_R2C->commit(&q_ct1, 3, n_mmany_R2C, inembed_mmany_R2C, istride_mmany_R2C, idist_mmany_R2C, onembed_mmany_R2C, ostride_mmany_R2C, odist_mmany_R2C, dpct::fft::fft_type::real_float_to_complex_float, 12, work_size);
   //CHECK-NEXT:plan_mmany_R2C->compute<float, sycl::float2>(idata_mmany_R2C, odata_mmany_R2C, dpct::fft::fft_direction::forward);
@@ -766,10 +766,10 @@ int main() {
   //CHECK-NEXT:sycl::double2* odata_mmany_Z2Z;
   //CHECK-NEXT:sycl::double2* idata_mmany_Z2Z;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany_Z2Z->commit(&q_ct1, 3, n_mmany_Z2Z, inembed_mmany_Z2Z, istride_mmany_Z2Z, idist_mmany_Z2Z, onembed_mmany_Z2Z, ostride_mmany_Z2Z, odist_mmany_Z2Z, dpct::fft::fft_type::complex_double_to_complex_double, 12, work_size);
   //CHECK-NEXT:plan_mmany_Z2Z->compute<sycl::double2, sycl::double2>(idata_mmany_Z2Z, odata_mmany_Z2Z, dpct::fft::fft_direction::backward);
@@ -797,10 +797,10 @@ int main() {
   //CHECK-NEXT:double* odata_mmany_Z2D;
   //CHECK-NEXT:sycl::double2* idata_mmany_Z2D;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany_Z2D->commit(&q_ct1, 3, n_mmany_Z2D, inembed_mmany_Z2D, istride_mmany_Z2D, idist_mmany_Z2D, onembed_mmany_Z2D, ostride_mmany_Z2D, odist_mmany_Z2D, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);
   //CHECK-NEXT:plan_mmany_Z2D->compute<sycl::double2, double>(idata_mmany_Z2D, odata_mmany_Z2D, dpct::fft::fft_direction::backward);
@@ -828,10 +828,10 @@ int main() {
   //CHECK-NEXT:sycl::double2* odata_mmany_D2Z;
   //CHECK-NEXT:double* idata_mmany_D2Z;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany_D2Z->commit(&q_ct1, 3, n_mmany_D2Z, inembed_mmany_D2Z, istride_mmany_D2Z, idist_mmany_D2Z, onembed_mmany_D2Z, ostride_mmany_D2Z, odist_mmany_D2Z, dpct::fft::fft_type::real_double_to_complex_double, 12, work_size);
   //CHECK-NEXT:plan_mmany_D2Z->compute<double, sycl::double2>(idata_mmany_D2Z, odata_mmany_D2Z, dpct::fft::fft_direction::forward);
@@ -859,10 +859,10 @@ int main() {
   //CHECK-NEXT:sycl::float2* odata_mmany64_C2C;
   //CHECK-NEXT:sycl::float2* idata_mmany64_C2C;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_C2C->commit(&q_ct1, 3, n_mmany64_C2C, inembed_mmany64_C2C, istride_mmany64_C2C, idist_mmany64_C2C, onembed_mmany64_C2C, ostride_mmany64_C2C, odist_mmany64_C2C, dpct::fft::fft_type::complex_float_to_complex_float, 12, work_size);
   //CHECK-NEXT:plan_mmany64_C2C->compute<sycl::float2, sycl::float2>(idata_mmany64_C2C, odata_mmany64_C2C, dpct::fft::fft_direction::forward);
@@ -890,10 +890,10 @@ int main() {
   //CHECK-NEXT:float* odata_mmany64_C2R;
   //CHECK-NEXT:sycl::float2* idata_mmany64_C2R;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_C2R->commit(&q_ct1, 3, n_mmany64_C2R, inembed_mmany64_C2R, istride_mmany64_C2R, idist_mmany64_C2R, onembed_mmany64_C2R, ostride_mmany64_C2R, odist_mmany64_C2R, dpct::fft::fft_type::complex_float_to_real_float, 12, work_size);
   //CHECK-NEXT:plan_mmany64_C2R->compute<sycl::float2, float>(idata_mmany64_C2R, odata_mmany64_C2R, dpct::fft::fft_direction::backward);
@@ -921,10 +921,10 @@ int main() {
   //CHECK-NEXT:sycl::float2* odata_mmany64_R2C;
   //CHECK-NEXT:float* idata_mmany64_R2C;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_R2C->commit(&q_ct1, 3, n_mmany64_R2C, inembed_mmany64_R2C, istride_mmany64_R2C, idist_mmany64_R2C, onembed_mmany64_R2C, ostride_mmany64_R2C, odist_mmany64_R2C, dpct::fft::fft_type::real_float_to_complex_float, 12, work_size);
   //CHECK-NEXT:plan_mmany64_R2C->compute<float, sycl::float2>(idata_mmany64_R2C, odata_mmany64_R2C, dpct::fft::fft_direction::forward);
@@ -952,10 +952,10 @@ int main() {
   //CHECK-NEXT:sycl::double2* odata_mmany64_Z2Z;
   //CHECK-NEXT:sycl::double2* idata_mmany64_Z2Z;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_Z2Z->commit(&q_ct1, 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, dpct::fft::fft_type::complex_double_to_complex_double, 12, work_size);
   //CHECK-NEXT:plan_mmany64_Z2Z->compute<sycl::double2, sycl::double2>(idata_mmany64_Z2Z, odata_mmany64_Z2Z, dpct::fft::fft_direction::backward);
@@ -983,10 +983,10 @@ int main() {
   //CHECK-NEXT:double* odata_mmany64_Z2D;
   //CHECK-NEXT:sycl::double2* idata_mmany64_Z2D;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_Z2D->commit(&q_ct1, 3, n_mmany64_Z2D, inembed_mmany64_Z2D, istride_mmany64_Z2D, idist_mmany64_Z2D, onembed_mmany64_Z2D, ostride_mmany64_Z2D, odist_mmany64_Z2D, dpct::fft::fft_type::complex_double_to_real_double, 12, work_size);
   //CHECK-NEXT:plan_mmany64_Z2D->compute<sycl::double2, double>(idata_mmany64_Z2D, odata_mmany64_Z2D, dpct::fft::fft_direction::backward);
@@ -1014,10 +1014,10 @@ int main() {
   //CHECK-NEXT:sycl::double2* odata_mmany64_D2Z;
   //CHECK-NEXT:double* idata_mmany64_D2Z;
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library is only supported for GPU devices. Use internal workspace if the code should run on non-GPU devices.
+  //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
   //CHECK-NEXT:*/
   //CHECK-NEXT:/*
-  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in function "commit" is correct.
+  //CHECK-NEXT:DPCT1099:{{[0-9]+}}: Verify if the default value of the direction and placement used in the function "commit" is correct.
   //CHECK-NEXT:*/
   //CHECK-NEXT:plan_mmany64_D2Z->commit(&q_ct1, 3, n_mmany64_D2Z, inembed_mmany64_D2Z, istride_mmany64_D2Z, idist_mmany64_D2Z, onembed_mmany64_D2Z, ostride_mmany64_D2Z, odist_mmany64_D2Z, dpct::fft::fft_type::real_double_to_complex_double, 12, work_size);
   //CHECK-NEXT:plan_mmany64_D2Z->compute<double, sycl::double2>(idata_mmany64_D2Z, odata_mmany64_D2Z, dpct::fft::fft_direction::forward);
