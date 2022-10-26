@@ -1,13 +1,23 @@
 // RUN: dpct --format-range=none --use-custom-helper=api -out-root %T/BlasUtils/api_test1_out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: grep "IsCalled" %T/BlasUtils/api_test1_out/MainSourceFiles.yaml | wc -l > %T/BlasUtils/api_test1_out/count.txt
-// RUN: FileCheck --input-file %T/BlasUtils/api_test1_out/count.txt --match-full-lines %s
+// RUN: FileCheck --input-file %T/BlasUtils/api_test1_out/count.txt --match-full-lines %s -check-prefix=FEATURE_NUMBER
+// RUN: FileCheck --input-file %T/BlasUtils/api_test1_out/api_test1.dp.cpp --match-full-lines %s -check-prefix=CODE
 // RUN: rm -rf %T/BlasUtils/api_test1_out
 
-// CHECK: 22
+// FEATURE_NUMBER: 22
 
+// CODE: // AAA
+// CODE-NEXT:#include <sycl/sycl.hpp>
+// CODE-NEXT:#include <dpct/dpct.hpp>
+// CODE-NEXT:#include <oneapi/mkl.hpp>
+// CODE-NEXT:// BBB
+
+// AAA
 #include "cublas_v2.h"
+// BBB
 
 // TEST_FEATURE: BlasUtils_geqrf_batch_wrapper
+// TEST_FEATURE: BlasUtils_non_local_include_dependency
 
 int main() {
   cublasHandle_t handle;
