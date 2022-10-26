@@ -50,13 +50,33 @@
 // DPCT_LABEL_END
 namespace dpct {
 namespace detail {
+// DPCT_LABEL_BEGIN|make_allocatable|dpct::detail
+// DPCT_DEPENDENCY_BEGIN
+// Memory|typedef_byte_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T>
+struct make_allocatable
+{
+  using type = T;
+};
+
+template <>
+struct make_allocatable<void>
+{
+  using type = dpct::byte_t;
+};
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|__buffer_allocator|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasMemory|make_allocatable
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _DataT>
 using __buffer_allocator =
 #if __LIBSYCL_VERSION >= 50707
-    sycl::buffer_allocator<_DataT>;
+    sycl::buffer_allocator<typename make_allocatable<_DataT>::type>;
 #else
     sycl::buffer_allocator;
 #endif

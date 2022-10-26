@@ -16,10 +16,22 @@
 // device_new, free_device, device_delete
 namespace dpct {
 namespace detail {
+template <typename T>
+struct make_allocatable
+{
+  using type = T;
+};
+
+template <>
+struct make_allocatable<void>
+{
+  using type = dpct::byte_t;
+};
+
 template <typename _DataT>
 using __buffer_allocator =
 #if __LIBSYCL_VERSION >= 50707
-    sycl::buffer_allocator<_DataT>;
+    sycl::buffer_allocator<typename make_allocatable<_DataT>::type>;
 #else
     sycl::buffer_allocator;
 #endif

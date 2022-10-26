@@ -316,3 +316,21 @@ cufftResult_t foo12(){}
 //CHECK-NEXT:int foo13(){}
 template<typename T>
 cufftResult foo13(){}
+
+//     CHECK:void bar1(dpct::fft::fft_engine* const &aaa) {}
+//CHECK-NEXT:void bar2(dpct::fft::fft_engine* const &aaa) {}
+//CHECK-NEXT:void bar3(dpct::fft::fft_engine* const aaa) {}
+//CHECK-NEXT:void bar4(dpct::fft::fft_engine* const aaa) {}
+void bar1(cufftHandle const &aaa) {}
+void bar2(const cufftHandle &aaa) {}
+void bar3(cufftHandle const aaa) {}
+void bar4(const cufftHandle aaa) {}
+
+class MyStruct {
+//     CHECK: ::dpct::fft::fft_engine* handle;
+//CHECK-NEXT: ::dpct::fft::fft_engine* & foo() { return handle; }
+//CHECK-NEXT: ::dpct::fft::fft_engine* const & foo() const { return handle; }
+  ::cufftHandle handle;
+  ::cufftHandle & foo() { return handle; }
+  const ::cufftHandle & foo() const { return handle; }
+};

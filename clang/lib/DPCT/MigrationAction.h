@@ -52,7 +52,8 @@ private:
 
 class DpctToolAction : public tooling::ToolAction {
 public:
-  DpctToolAction(ReplTy &Replacements, const std::string &RuleNames, std::vector<PassKind> Passes);
+  DpctToolAction(llvm::raw_ostream &DS, ReplTy &Replacements,
+                 const std::string &RuleNames, std::vector<PassKind> Passes);
   /// Perform an action for an invocation.
   bool runInvocation(std::shared_ptr<CompilerInvocation> Invocation,
                      FileManager *Files,
@@ -69,6 +70,7 @@ private:
   std::vector<std::string> MigrationRuleNames;
   std::vector<PassKind> Passes;
   std::vector<std::unique_ptr<TranslationUnitInfo>> ASTs;
+  llvm::raw_ostream &DiagnosticStream;
 };
 
 } // namespace dpct

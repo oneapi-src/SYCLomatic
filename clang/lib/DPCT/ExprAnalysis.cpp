@@ -619,7 +619,6 @@ void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   std::string CtorClassName =
       Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
-
   if (CtorClassName.find("thrust::") == 0) {
     // Distinguish CXXTemporaryObjectExpr from other copy ctor before migrating
     // the ctor. Ex. foo(thrust::minus<int>());
@@ -888,34 +887,33 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
             !isExprStraddle(CE)) {
           Rewriter->report(Diagnostics::CANNOT_UNIFY_FUNCTION_CALL_IN_MACOR,
                            false, RefString);
-        } else {
-          FCIMMR[LocStr] = ResultStr;
-          // When migrating thrust API with usmnone and raw-ptr,
-          // the CallExpr will be rewritten into an if-else stmt,
-          // DPCT needs to remove the following semicolon.
-          std::string EndBracket =
-              "}" + std::string(
-                        getNL(getStmtExpansionSourceRange(CE).getBegin(), SM));
-          if (ResultStr.length() > EndBracket.length() &&
-              ResultStr.substr(ResultStr.length() - EndBracket.length(),
-                               EndBracket.length()) == EndBracket) {
-            auto EndLoc = Lexer::getLocForEndOfToken(
-                getStmtExpansionSourceRange(CE).getEnd(), 0, SM,
-                DpctGlobalInfo::getContext().getLangOpts());
-            Token Tok;
-            Lexer::getRawToken(EndLoc, Tok, SM,
-                               DpctGlobalInfo::getContext().getLangOpts(),
-                               true);
-            if (Tok.getKind() == tok::semi) {
-              DpctGlobalInfo::getInstance().addReplacement(
-                  std::make_shared<ExtReplacement>(SM, EndLoc, 1, "", nullptr));
-            }
-          }
-
-          addReplacement(CE, ResultStr);
-          Rewriter->Analyzer.applyAllSubExprRepl();
-          return;
         }
+        FCIMMR[LocStr] = ResultStr;
+        // When migrating thrust API with usmnone and raw-ptr,
+        // the CallExpr will be rewritten into an if-else stmt,
+        // DPCT needs to remove the following semicolon.
+        std::string EndBracket =
+            "}" + std::string(
+                      getNL(getStmtExpansionSourceRange(CE).getBegin(), SM));
+        if (ResultStr.length() > EndBracket.length() &&
+            ResultStr.substr(ResultStr.length() - EndBracket.length(),
+                             EndBracket.length()) == EndBracket) {
+          auto EndLoc = Lexer::getLocForEndOfToken(
+              getStmtExpansionSourceRange(CE).getEnd(), 0, SM,
+              DpctGlobalInfo::getContext().getLangOpts());
+          Token Tok;
+          Lexer::getRawToken(EndLoc, Tok, SM,
+                             DpctGlobalInfo::getContext().getLangOpts(),
+                             true);
+          if (Tok.getKind() == tok::semi) {
+            DpctGlobalInfo::getInstance().addReplacement(
+                std::make_shared<ExtReplacement>(SM, EndLoc, 1, "", nullptr));
+          }
+        }
+
+        addReplacement(CE, ResultStr);
+        Rewriter->Analyzer.applyAllSubExprRepl();
+        return;
       }
     }
   }
@@ -977,7 +975,8 @@ void ExprAnalysis::analyzeExpr(const ReturnStmt *RS) {
   dispatch(RS->getRetValue());
 }
 
-void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
+
+void ExprAnalysis::removeCUDADeviceAttr(const LambdaExpr *LE) {
   // E.g.,
   // my_kernel<<<1, 1>>>([=] __device__(int idx) { idx++; });
   // The "__device__" attribute need to be removed.
@@ -988,6 +987,10 @@ void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
       }
     }
   }
+}
+
+void ExprAnalysis::analyzeExpr(const LambdaExpr *LE) {
+  removeCUDADeviceAttr(LE);
   // TODO: Need to handle capture ([=] in lambda) if required in the future
   for (const auto &Param : LE->getCallOperator()->parameters()) {
     analyzeType(Param->getTypeSourceInfo()->getTypeLoc(), LE);
@@ -1095,12 +1098,14 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
       requestHelperFeatureForTypeNames(TyName, SR.getBegin());
     }
   }
+
+  auto Range = getDefinitionRange(SR.getBegin(), SR.getEnd());
   if (MapNames::replaceName(MapNames::TypeNamesMap, TyName)) {
-    addReplacement(SR.getBegin(), SR.getEnd(), CSCE, TyName);
+    addReplacement(Range.getBegin(), Range.getEnd(), CSCE, TyName);
   } else if (MapNames::replaceName(MapNames::CuDNNTypeNamesMap, TyName)) {
-    addReplacement(SR.getBegin(), SR.getEnd(), CSCE, TyName);
+    addReplacement(Range.getBegin(), Range.getEnd(), CSCE, TyName);
   } else if (getFinalCastTypeNameStr(TyName) != TyName) {
-    addReplacement(SR.getBegin(), SR.getEnd(), CSCE,
+    addReplacement(Range.getBegin(), Range.getEnd(), CSCE,
                    getFinalCastTypeNameStr(TyName));
   }
 }
@@ -1485,6 +1490,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(UnaryOperator)
     ANALYZE_EXPR(CXXDependentScopeMemberExpr)
     ANALYZE_EXPR(MaterializeTemporaryExpr)
+    ANALYZE_EXPR(LambdaExpr)
   default:
     return ExprAnalysis::dispatch(Expression);
   }
@@ -1601,6 +1607,15 @@ void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
   }
   Base::analyzeExpr(ME);
 }
+
+void KernelArgumentAnalysis::analyzeExpr(const LambdaExpr *LE) {
+  Base::analyzeExpr(LE);
+  // Lambda function can be passed to kernel function directly.
+  // So, not need to redeclare a variable for lambda function passed to kernel
+  // function
+  IsRedeclareRequired = false;
+}
+
 
 void KernelArgumentAnalysis::analyzeExpr(const UnaryOperator *UO) {
   if (UO->getOpcode() == UO_Deref) {

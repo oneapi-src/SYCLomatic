@@ -247,7 +247,7 @@ public:
         get_info<sycl::info::device::max_work_item_sizes<3>>());
 #endif
     prop.set_host_unified_memory(
-        get_info<sycl::info::device::host_unified_memory>());
+        this->has(sycl::aspect::usm_host_allocations));
 
     // max_clock_frequency parameter is not supported on host device
     if (is_host()) {

@@ -52,3 +52,7 @@ ENTRY(ncclGroupStart, ncclGroupStart, false, NO_FLAG, P4, "comment")
 ENTRY(ncclGroupEnd, ncclGroupEnd, false, NO_FLAG, P4, "comment")
 ENTRY(ncclSend, ncclSend, false, NO_FLAG, P4, "comment")
 ENTRY(ncclRecv, ncclRecv, false, NO_FLAG, P4, "comment")
+
+ENTRY(ncclGetLastError, ncclGetLastError, false, NO_FLAG, P4, "comment")
+ENTRY(ncclRedOpCreatePreMulSum, ncclRedOpCreatePreMulSum, false, NO_FLAG, P4, "comment")
+ENTRY(ncclRedOpDestroy, ncclRedOpDestroy, false, NO_FLAG, P4, "comment")

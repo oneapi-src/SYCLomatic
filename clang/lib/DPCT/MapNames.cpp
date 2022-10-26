@@ -42,7 +42,7 @@ std::map<std::string /*Original API*/, HelperFeatureEnum>
 MapNames::ThrustMapTy MapNames::ThrustFuncNamesMap;
 std::map<std::string /*Original API*/, HelperFeatureEnum>
     MapNames::ThrustFuncNamesHelperFeaturesMap;
-MapNames::MapTy MapNames::MathRewriterMap;
+MapNames::MapTy MapNames::MathFuncNameMap;
 std::unordered_map<std::string, std::string> MapNames::AtomicFuncNamesMap;
 MapNames::MapTy MapNames::ITFName;
 std::map<std::string, MapNames::BLASFuncReplInfo> MapNames::BLASFuncReplInfoMap;
@@ -147,7 +147,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"long2", std::make_shared<TypeNameRule>(getClNamespace() + "long2")},
       {"long3", std::make_shared<TypeNameRule>(getClNamespace() + "long3")},
       {"long4", std::make_shared<TypeNameRule>(getClNamespace() + "long4")},
-      {"longlong1", std::make_shared<TypeNameRule>("long long")},
+      {"longlong1", std::make_shared<TypeNameRule>("int64_t")},
       {"longlong2",
        std::make_shared<TypeNameRule>(getClNamespace() + "longlong2")},
       {"longlong3",
@@ -158,26 +158,26 @@ void MapNames::setExplicitNamespaceMap() {
       {"short2", std::make_shared<TypeNameRule>(getClNamespace() + "short2")},
       {"short3", std::make_shared<TypeNameRule>(getClNamespace() + "short3")},
       {"short4", std::make_shared<TypeNameRule>(getClNamespace() + "short4")},
-      {"uchar1", std::make_shared<TypeNameRule>("unsigned char")},
+      {"uchar1", std::make_shared<TypeNameRule>("uint8_t")},
       {"uchar2", std::make_shared<TypeNameRule>(getClNamespace() + "uchar2")},
       {"uchar3", std::make_shared<TypeNameRule>(getClNamespace() + "uchar3")},
       {"uchar4", std::make_shared<TypeNameRule>(getClNamespace() + "uchar4")},
-      {"uint1", std::make_shared<TypeNameRule>("unsigned int")},
+      {"uint1", std::make_shared<TypeNameRule>("uint32_t")},
       {"uint2", std::make_shared<TypeNameRule>(getClNamespace() + "uint2")},
       {"uint3", std::make_shared<TypeNameRule>(getClNamespace() + "uint3")},
       {"uint4", std::make_shared<TypeNameRule>(getClNamespace() + "uint4")},
-      {"ulong1", std::make_shared<TypeNameRule>("unsigned long")},
+      {"ulong1", std::make_shared<TypeNameRule>("uint64_t")},
       {"ulong2", std::make_shared<TypeNameRule>(getClNamespace() + "ulong2")},
       {"ulong3", std::make_shared<TypeNameRule>(getClNamespace() + "ulong3")},
       {"ulong4", std::make_shared<TypeNameRule>(getClNamespace() + "ulong4")},
-      {"ulonglong1", std::make_shared<TypeNameRule>("unsigned long long")},
+      {"ulonglong1", std::make_shared<TypeNameRule>("uint64_t")},
       {"ulonglong2",
        std::make_shared<TypeNameRule>(getClNamespace() + "ulonglong2")},
       {"ulonglong3",
        std::make_shared<TypeNameRule>(getClNamespace() + "ulonglong3")},
       {"ulonglong4",
        std::make_shared<TypeNameRule>(getClNamespace() + "ulonglong4")},
-      {"ushort1", std::make_shared<TypeNameRule>("unsigned short")},
+      {"ushort1", std::make_shared<TypeNameRule>("uint16_t")},
       {"ushort2", std::make_shared<TypeNameRule>(getClNamespace() + "ushort2")},
       {"ushort3", std::make_shared<TypeNameRule>(getClNamespace() + "ushort3")},
       {"ushort4", std::make_shared<TypeNameRule>(getClNamespace() + "ushort4")},
@@ -1525,8 +1525,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"}};
 
-
-  MathRewriterMap = {
+  // This map now is only used to migrate using declaration
+  MathFuncNameMap = {
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   {SOURCEAPINAME, TARGETAPINAME},
 #define ENTRY_RENAMED_NO_REWRITE(SOURCEAPINAME, TARGETAPINAME)                 \
@@ -1550,6 +1550,7 @@ void MapNames::setExplicitNamespaceMap() {
 #undef ENTRY_TYPECAST
 #undef ENTRY_UNSUPPORTED
 #undef ENTRY_REWRITE
+  {"abs", MapNames::getClNamespace(false, true) + "abs"},
   };
 }
 

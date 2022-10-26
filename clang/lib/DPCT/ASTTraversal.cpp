@@ -357,9 +357,17 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     if (auto TM = DpctGlobalInfo::getInstance().findConstantMacroTMInfo(Loc)) {
       TM->setLineBeginOffset(getOffsetOfLineBegin(Loc, SM));
       if (MI->getNumTokens() == 0) {
-        TM->setConstantFlag(dpct::ConstantFlagType::Host);
+        if (TM->getConstantFlag() == dpct::ConstantFlagType::Default ||
+            TM->getConstantFlag() == dpct::ConstantFlagType::Host)
+          TM->setConstantFlag(dpct::ConstantFlagType::Host);
+        else
+          TM->setConstantFlag(dpct::ConstantFlagType::HostDeviceInOnePass);
       } else {
-        TM->setConstantFlag(dpct::ConstantFlagType::Device);
+        if (TM->getConstantFlag() == dpct::ConstantFlagType::Default ||
+            TM->getConstantFlag() == dpct::ConstantFlagType::Device)
+          TM->setConstantFlag(dpct::ConstantFlagType::Device);
+        else
+          TM->setConstantFlag(dpct::ConstantFlagType::HostDeviceInOnePass);
       }
     }
   }
@@ -2875,6 +2883,38 @@ bool TypeInDeclRule::isCapturedByLambda(const TypeLoc *TL) {
   return false;
 }
 
+void TypeInDeclRule::processConstFFTHandleType(const DeclaratorDecl *DD,
+                                               SourceLocation BeginLoc,
+                                               SourceLocation EndLoc,
+                                               bool HasGlobalNSPrefix) {
+  std::string Repl = (HasGlobalNSPrefix ? "::" : "") +
+                     MapNames::getDpctNamespace() + "fft::fft_engine*";
+  requestFeature(HelperFeatureEnum::FftUtils_fft_engine, DD->getBeginLoc());
+  SrcAPIStaticsMap[Repl]++;
+
+  clang::SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
+  Token Tok;
+  Lexer::getRawToken(DD->getBeginLoc(), Tok, SM, LangOptions());
+  auto Tok2Ptr = Lexer::findNextToken(DD->getBeginLoc(), SM, LangOptions());
+  if (Tok2Ptr.hasValue()) {
+    auto Tok2 = Tok2Ptr.getValue();
+    if (Tok.getKind() == tok::raw_identifier &&
+        Tok.getRawIdentifier().str() == "const") {
+      emplaceTransformation(
+          new ReplaceText(Tok.getLocation(),
+                          Tok2.getLocation().getRawEncoding() -
+                              Tok.getLocation().getRawEncoding(),
+                          ""));
+      Repl = Repl + " const";
+    }
+  }
+  auto Len =
+      Lexer::MeasureTokenLength(EndLoc, DpctGlobalInfo::getSourceManager(),
+                                DpctGlobalInfo::getContext().getLangOpts());
+  Len +=
+      SM.getDecomposedLoc(EndLoc).second - SM.getDecomposedLoc(BeginLoc).second;
+  emplaceTransformation(new ReplaceText(BeginLoc, Len, std::move(Repl)));
+}
 void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
   auto SD = getAllDecls(DD);
 
@@ -3199,6 +3239,19 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       DD = VarD;
     } else if (FieldD) {
       DD = FieldD;
+    } else if (FD) {
+      DD = FD;
+    }
+
+    if (TypeStr == "cufftHandle" || TypeStr == "::cufftHandle") {
+      if (TL->getType().isConstQualified()) {
+        clang::SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
+        if (SM.getDecomposedLoc(EndLoc).second >= SM.getDecomposedLoc(BeginLoc).second) {
+          processConstFFTHandleType(DD, BeginLoc, EndLoc,
+                                    TypeStr == "::cufftHandle");
+          return;
+        }
+      }
     }
 
     if (DD) {
@@ -10005,7 +10058,8 @@ bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
   for (auto &TM : S) {
     if (TM == nullptr)
       continue;
-    if (TM->getConstantFlag() == dpct::ConstantFlagType::Device &&
+    if ((TM->getConstantFlag() == dpct::ConstantFlagType::Device ||
+         TM->getConstantFlag() == dpct::ConstantFlagType::HostDeviceInOnePass) &&
         TM->getLineBeginOffset() == OffsetOfLineBegin) {
       TM->setIgnoreTM(true);
       // current __constant__ variable used in device, using
@@ -10018,7 +10072,8 @@ bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
       auto &M = FileInfo->getRepls()->getReplMap();
       bool RemoveWarning = false;
       for (auto &R : M) {
-        if (R.second->getConstantFlag() == dpct::ConstantFlagType::Host &&
+        if ((R.second->getConstantFlag() == dpct::ConstantFlagType::Host ||
+             R.second->getConstantFlag() == dpct::ConstantFlagType::HostDeviceInOnePass) &&
             R.second->getConstantOffset() == TM->getConstantOffset()) {
           // using flag and the offset of __constant__ to link
           // R(dcpt::constant_memery)  and R(reomving __constant__) from
@@ -10117,7 +10172,8 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
   for (auto &TM : S) {
     if (TM == nullptr)
       continue;
-    if (TM->getConstantFlag() == dpct::ConstantFlagType::Host &&
+    if ((TM->getConstantFlag() == dpct::ConstantFlagType::Host ||
+         TM->getConstantFlag() == dpct::ConstantFlagType::HostDeviceInOnePass) &&
         TM->getLineBeginOffset() == OffsetOfLineBegin) {
       // current __constant__ variable used in host, using OffsetOfLineBegin
       // link the R(reomving __constant__) and here
@@ -10128,7 +10184,8 @@ bool MemVarRule::currentIsHost(const VarDecl *VD, std::string VarName) {
         return false;
       auto &M = FileInfo->getRepls()->getReplMap();
       for (auto &R : M) {
-        if (R.second->getConstantFlag() == dpct::ConstantFlagType::Device &&
+        if ((R.second->getConstantFlag() == dpct::ConstantFlagType::Device ||
+             R.second->getConstantFlag() == dpct::ConstantFlagType::HostDeviceInOnePass) &&
             R.second->getConstantOffset() == TM->getConstantOffset()) {
           // using flag and the offset of __constant__ to link previous
           // execution of previous is device, current is host:
@@ -10230,6 +10287,29 @@ void MemVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (MemVarRef && Func && Decl) {
     if (isCubVar(Decl)) {
       return;
+    }
+    const auto *Parent = getParentStmt(MemVarRef);
+    // Handle assigning a 2 or more dimensions array pointer to a variable.
+    if (const auto *const ICE = dyn_cast_or_null<ImplicitCastExpr>(Parent)) {
+      if (const auto *arrType = MemVarRef->getType()->getAsArrayTypeUnsafe()) {
+        if (ICE->getCastKind() == CK_ArrayToPointerDecay &&
+            arrType->getElementType()->isArrayType() &&
+            isAssignOperator(getParentStmt(Parent))) {
+          std::string Replacement = buildString("(", ICE->getType(), ")",
+                                                Decl->getName(), ".get_ptr()");
+          auto Range = getDefinitionRange(MemVarRef->getBeginLoc(),
+                                          MemVarRef->getEndLoc());
+          auto &SM = DpctGlobalInfo::getSourceManager();
+          auto Begin = Range.getBegin();
+          auto End = Range.getEnd();
+          auto Length = Lexer::MeasureTokenLength(
+              End, SM, dpct::DpctGlobalInfo::getContext().getLangOpts());
+          Length += SM.getDecomposedLoc(End).second -
+                    SM.getDecomposedLoc(Begin).second;
+          emplaceTransformation(
+              new ReplaceText(Begin, Length, std::move(Replacement)));
+        }
+      }
     }
     auto VD = dyn_cast<VarDecl>(MemVarRef->getDecl());
     if (Func->isImplicit() ||
@@ -10776,7 +10856,7 @@ void MemoryMigrationRule::mallocMigration(
         new ReplaceCalleeName(C, MapNames::getDpctNamespace() + "dpct_malloc"));
     emplaceTransformation(removeArg(C, 0, *Result.SourceManager));
     std::ostringstream OS2;
-    printDerefOp(OS2, C->getArg(1)->IgnoreCasts()->IgnoreParens());
+    printDerefOp(OS2, C->getArg(1));
     if (Name == "cudaMallocPitch") {
       emplaceTransformation(new ReplaceStmt(C->getArg(1), OS2.str()));
     }
@@ -12370,7 +12450,7 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
-   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "math");
+   const CallExpr *CE = getAssistNodeAsType<CallExpr>(Result, "math");
    if (!CE)
      CE = getNodeAsType<CallExpr>(Result, "unresolved");
    if (!CE)
@@ -14489,8 +14569,8 @@ void NamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     Toklen = Lexer::MeasureTokenLength(
         End, SM, DpctGlobalInfo::getContext().getLangOpts());
     Len = SM.getFileOffset(End) - SM.getFileOffset(Beg) + Toklen;
-    auto Iter = MapNames::MathRewriterMap.find(UD->getNameAsString());
-    if (Iter != MapNames::MathRewriterMap.end()) {
+    auto Iter = MapNames::MathFuncNameMap.find(UD->getNameAsString());
+    if (Iter != MapNames::MathFuncNameMap.end()) {
       DpctGlobalInfo::getInstance().insertHeader(UD->getBeginLoc(), HT_Math);
       std::string Repl{"using "};
       Repl += Iter->second;

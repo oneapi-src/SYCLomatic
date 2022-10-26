@@ -1,4 +1,3 @@
-// UNSUPPORTED: -linux-
 // UNSUPPORTED: -windows-
 // RUN: cd %T
 // RUN: mkdir d_hd_constant_db
