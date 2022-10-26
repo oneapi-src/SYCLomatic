@@ -954,10 +954,18 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   if (FileName.compare(StringRef("cufft.h")) == 0) {
+    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+            HelperFilesCustomizationLevel::HFCL_None ||
+        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+            HelperFilesCustomizationLevel::HFCL_All) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_FFT);
+    } else {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc,
+                                                 HT_MKL_FFT_Without_Util);
+    }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
 
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_FFT);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),

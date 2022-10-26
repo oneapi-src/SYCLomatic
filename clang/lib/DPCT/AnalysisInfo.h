@@ -346,6 +346,7 @@ enum HeaderType {
   HT_MKL_SPBLAS,
   HT_MKL_SPBLAS_Without_Util,
   HT_MKL_FFT,
+  HT_MKL_FFT_Without_Util,
   HT_Chrono,
   HT_DL,
   HT_STD_Numeric_Limits,
