@@ -609,6 +609,9 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
       return insertHeader(
           HeaderType::HT_MKL_FFT, LastIncludeOffset, "<oneapi/mkl.hpp>",
           "<" + getCustomMainHelperFileName() + "/fft_utils.hpp>");
+    case HT_MKL_FFT_Without_Util:
+      return insertHeader(
+          HeaderType::HT_MKL_FFT_Without_Util, LastIncludeOffset, "<oneapi/mkl.hpp>");
     case HT_Numeric:
       return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
                           "<numeric>");

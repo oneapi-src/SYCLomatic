@@ -955,10 +955,18 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   if (FileName.compare(StringRef("cufft.h")) == 0) {
+    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+            HelperFilesCustomizationLevel::HFCL_None ||
+        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+            HelperFilesCustomizationLevel::HFCL_All) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_FFT);
+    } else {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc,
+                                                 HT_MKL_FFT_Without_Util);
+    }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
 
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_FFT);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -2898,8 +2906,8 @@ void TypeInDeclRule::processConstFFTHandleType(const DeclaratorDecl *DD,
   Token Tok;
   Lexer::getRawToken(DD->getBeginLoc(), Tok, SM, LangOptions());
   auto Tok2Ptr = Lexer::findNextToken(DD->getBeginLoc(), SM, LangOptions());
-  if (Tok2Ptr.hasValue()) {
-    auto Tok2 = Tok2Ptr.getValue();
+  if (Tok2Ptr.has_value()) {
+    auto Tok2 = Tok2Ptr.value();
     if (Tok.getKind() == tok::raw_identifier &&
         Tok.getRawIdentifier().str() == "const") {
       emplaceTransformation(
