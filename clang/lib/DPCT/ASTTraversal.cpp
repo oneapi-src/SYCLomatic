@@ -2904,8 +2904,8 @@ void TypeInDeclRule::processConstFFTHandleType(const DeclaratorDecl *DD,
   Token Tok;
   Lexer::getRawToken(DD->getBeginLoc(), Tok, SM, LangOptions());
   auto Tok2Ptr = Lexer::findNextToken(DD->getBeginLoc(), SM, LangOptions());
-  if (Tok2Ptr.hasValue()) {
-    auto Tok2 = Tok2Ptr.getValue();
+  if (Tok2Ptr.has_value()) {
+    auto Tok2 = Tok2Ptr.value();
     if (Tok.getKind() == tok::raw_identifier &&
         Tok.getRawIdentifier().str() == "const") {
       emplaceTransformation(
