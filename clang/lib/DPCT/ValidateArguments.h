@@ -56,9 +56,13 @@ enum class ExplicitNamespace : unsigned int {
   EN_SYCL_Math = 3,
   EN_DPCT = 4
 };
-enum class DPCPPExtensions : unsigned int {
-  Ext_EnqueueBarrier = 0x01,
-  Ext_DPCPPExtensionsEnumSize
+enum class DPCPPExtensionsDefaultEnabled : unsigned int {
+  ExtDE_EnqueueBarrier = 0x01,
+  ExtDE_DPCPPExtensionsDefaultEnabledEnumSize
+};
+enum class DPCPPExtensionsDefaultDisabled : unsigned int {
+  ExtDD_CCXXStandardLibrary = 0x01,
+  ExtDD_DPCPPExtensionsDefaultDisabledEnumSize
 };
 enum class ExperimentalFeatures : unsigned int {
   Exp_NdRangeBarrier = 1, // Using nd_range_barrier.

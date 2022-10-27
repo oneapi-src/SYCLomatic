@@ -1,5 +1,4 @@
 // UNSUPPORTED: -linux-
-// UNSUPPORTED: -windows-
 // RUN: cd %T
 // RUN: mkdir h_dh_constant_db_win
 // RUN: cd h_dh_constant_db_win

@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasMemory/api_test2_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasMemory/api_test2_out
 
-// CHECK: 23
+// CHECK: 24
 // TEST_FEATURE: DplExtrasMemory_device_ptr
 // TEST_FEATURE: DplExtrasMemory_device_pointer_forward_decl
 

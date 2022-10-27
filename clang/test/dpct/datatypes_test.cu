@@ -24,10 +24,10 @@ char1 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: unsigned char var1;
-// CHECK-NEXT: unsigned char *var2;
-// CHECK-NEXT: unsigned char &var3 = var1;
-// CHECK-NEXT: unsigned char &&var4 = std::move(var1);
+// CHECK: uint8_t var1;
+// CHECK-NEXT: uint8_t *var2;
+// CHECK-NEXT: uint8_t &var3 = var1;
+// CHECK-NEXT: uint8_t &&var4 = std::move(var1);
 uchar1 var1;
 uchar1 *var2;
 uchar1 &var3 = var1;
@@ -112,10 +112,10 @@ short1 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: unsigned short var1;
-// CHECK-NEXT: unsigned short *var2;
-// CHECK-NEXT: unsigned short &var3 = var1;
-// CHECK-NEXT: unsigned short &&var4 = std::move(var1);
+// CHECK: uint16_t var1;
+// CHECK-NEXT: uint16_t *var2;
+// CHECK-NEXT: uint16_t &var3 = var1;
+// CHECK-NEXT: uint16_t &&var4 = std::move(var1);
 ushort1 var1;
 ushort1 *var2;
 ushort1 &var3 = var1;
@@ -200,10 +200,10 @@ int1 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: unsigned int var1;
-// CHECK-NEXT: unsigned int *var2;
-// CHECK-NEXT: unsigned int &var3 = var1;
-// CHECK-NEXT: unsigned int &&var4 = std::move(var1);
+// CHECK: uint32_t var1;
+// CHECK-NEXT: uint32_t *var2;
+// CHECK-NEXT: uint32_t &var3 = var1;
+// CHECK-NEXT: uint32_t &&var4 = std::move(var1);
 uint1 var1;
 uint1 *var2;
 uint1 &var3 = var1;
@@ -288,10 +288,10 @@ long1 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: unsigned long var1;
-// CHECK-NEXT: unsigned long *var2;
-// CHECK-NEXT: unsigned long &var3 = var1;
-// CHECK-NEXT: unsigned long &&var4 = std::move(var1);
+// CHECK: uint64_t var1;
+// CHECK-NEXT: uint64_t *var2;
+// CHECK-NEXT: uint64_t &var3 = var1;
+// CHECK-NEXT: uint64_t &&var4 = std::move(var1);
 ulong1 var1;
 ulong1 *var2;
 ulong1 &var3 = var1;
@@ -409,10 +409,10 @@ float4 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: long long var1;
-// CHECK-NEXT: long long *var2;
-// CHECK-NEXT: long long &var3 = var1;
-// CHECK-NEXT: long long &&var4 = std::move(var1);
+// CHECK: int64_t var1;
+// CHECK-NEXT: int64_t *var2;
+// CHECK-NEXT: int64_t &var3 = var1;
+// CHECK-NEXT: int64_t &&var4 = std::move(var1);
 longlong1 var1;
 longlong1 *var2;
 longlong1 &var3 = var1;
@@ -420,10 +420,10 @@ longlong1 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: unsigned long long var1;
-// CHECK-NEXT: unsigned long long *var2;
-// CHECK-NEXT: unsigned long long &var3 = var1;
-// CHECK-NEXT: unsigned long long &&var4 = std::move(var1);
+// CHECK: uint64_t var1;
+// CHECK-NEXT: uint64_t *var2;
+// CHECK-NEXT: uint64_t &var3 = var1;
+// CHECK-NEXT: uint64_t &&var4 = std::move(var1);
 ulonglong1 var1;
 ulonglong1 *var2;
 ulonglong1 &var3 = var1;
@@ -550,8 +550,8 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new unsigned char();
-// CHECK-NEXT:  new unsigned char *();
+// CHECK:  new uint8_t();
+// CHECK-NEXT:  new uint8_t *();
   new uchar1();
   new uchar1 *();
 }
@@ -606,8 +606,8 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new unsigned short();
-// CHECK-NEXT:  new unsigned short *();
+// CHECK:  new uint16_t();
+// CHECK-NEXT:  new uint16_t *();
   new ushort1();
   new ushort1 *();
 }
@@ -662,8 +662,8 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new unsigned int();
-// CHECK-NEXT:  new unsigned int *();
+// CHECK:  new uint32_t();
+// CHECK-NEXT:  new uint32_t *();
   new uint1();
   new uint1 *();
 }
@@ -718,8 +718,8 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new unsigned long();
-// CHECK-NEXT:  new unsigned long *();
+// CHECK:  new uint64_t();
+// CHECK-NEXT:  new uint64_t *();
   new ulong1();
   new ulong1 *();
 }
@@ -795,15 +795,15 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new long long();
-// CHECK-NEXT:  new long long *();
+// CHECK:  new int64_t();
+// CHECK-NEXT:  new int64_t *();
   new longlong1();
   new longlong1 *();
 }
 
 {
-// CHECK:  new unsigned long long();
-// CHECK-NEXT:  new unsigned long long *();
+// CHECK:  new uint64_t();
+// CHECK-NEXT:  new uint64_t *();
   new ulonglong1();
   new ulonglong1 *();
 }
@@ -888,9 +888,9 @@ char1 foo0();
 char1 *foo1();
 char1 &foo2();
 
-// CHECK: unsigned char foo3();
-// CHECK-NEXT: unsigned char *foo4();
-// CHECK-NEXT: unsigned char &foo5();
+// CHECK: uint8_t foo3();
+// CHECK-NEXT: uint8_t *foo4();
+// CHECK-NEXT: uint8_t &foo5();
 uchar1 foo3();
 uchar1 *foo4();
 uchar1 &foo5();
@@ -944,9 +944,9 @@ short1 foo24();
 short1 *foo25();
 short1 &foo26();
 
-// CHECK: unsigned short foo27();
-// CHECK-NEXT: unsigned short *foo28();
-// CHECK-NEXT: unsigned short &foo29();
+// CHECK: uint16_t foo27();
+// CHECK-NEXT: uint16_t *foo28();
+// CHECK-NEXT: uint16_t &foo29();
 ushort1 foo27();
 ushort1 *foo28();
 ushort1 &foo29();
@@ -1000,9 +1000,9 @@ int1 foo48();
 int1 *foo49();
 int1 &foo50();
 
-// CHECK: unsigned int foo51();
-// CHECK-NEXT: unsigned int *foo52();
-// CHECK-NEXT: unsigned int &foo53();
+// CHECK: uint32_t foo51();
+// CHECK-NEXT: uint32_t *foo52();
+// CHECK-NEXT: uint32_t &foo53();
 uint1 foo51();
 uint1 *foo52();
 uint1 &foo53();
@@ -1056,9 +1056,9 @@ long1 foo72();
 long1 *foo73();
 long1 &foo74();
 
-// CHECK: unsigned long foo75();
-// CHECK-NEXT: unsigned long *foo76();
-// CHECK-NEXT: unsigned long &foo77();
+// CHECK: uint64_t foo75();
+// CHECK-NEXT: uint64_t *foo76();
+// CHECK-NEXT: uint64_t &foo77();
 ulong1 foo75();
 ulong1 *foo76();
 ulong1 &foo77();
@@ -1133,16 +1133,16 @@ float4 foo105();
 float4 *foo106();
 float4 &foo107();
 
-// CHECK: long long foo108();
-// CHECK-NEXT: long long *foo109();
-// CHECK-NEXT: long long &foo110();
+// CHECK: int64_t foo108();
+// CHECK-NEXT: int64_t *foo109();
+// CHECK-NEXT: int64_t &foo110();
 longlong1 foo108();
 longlong1 *foo109();
 longlong1 &foo110();
 
-// CHECK: unsigned long long foo111();
-// CHECK-NEXT: unsigned long long *foo112();
-// CHECK-NEXT: unsigned long long &foo113();
+// CHECK: uint64_t foo111();
+// CHECK-NEXT: uint64_t *foo112();
+// CHECK-NEXT: uint64_t &foo113();
 ulonglong1 foo111();
 ulonglong1 *foo112();
 ulonglong1 &foo113();
@@ -1229,10 +1229,10 @@ template <> struct S<char1 *> {};
 template <> struct S<char1 &> {};
 template <> struct S<char1 &&> {};
 
-// CHECK: template <> struct S<unsigned char> {};
-// CHECK-NEXT: template <> struct S<unsigned char *> {};
-// CHECK-NEXT: template <> struct S<unsigned char &> {};
-// CHECK-NEXT: template <> struct S<unsigned char &&> {};
+// CHECK: template <> struct S<uint8_t> {};
+// CHECK-NEXT: template <> struct S<uint8_t *> {};
+// CHECK-NEXT: template <> struct S<uint8_t &> {};
+// CHECK-NEXT: template <> struct S<uint8_t &&> {};
 template <> struct S<uchar1> {};
 template <> struct S<uchar1 *> {};
 template <> struct S<uchar1 &> {};
@@ -1301,10 +1301,10 @@ template <> struct S<short1 *> {};
 template <> struct S<short1 &> {};
 template <> struct S<short1 &&> {};
 
-// CHECK: template <> struct S<unsigned short> {};
-// CHECK-NEXT: template <> struct S<unsigned short *> {};
-// CHECK-NEXT: template <> struct S<unsigned short &> {};
-// CHECK-NEXT: template <> struct S<unsigned short &&> {};
+// CHECK: template <> struct S<uint16_t> {};
+// CHECK-NEXT: template <> struct S<uint16_t *> {};
+// CHECK-NEXT: template <> struct S<uint16_t &> {};
+// CHECK-NEXT: template <> struct S<uint16_t &&> {};
 template <> struct S<ushort1> {};
 template <> struct S<ushort1 *> {};
 template <> struct S<ushort1 &> {};
@@ -1373,10 +1373,10 @@ template <> struct S<int1 *> {};
 template <> struct S<int1 &> {};
 template <> struct S<int1 &&> {};
 
-// CHECK: template <> struct S<unsigned int> {};
-// CHECK-NEXT: template <> struct S<unsigned int *> {};
-// CHECK-NEXT: template <> struct S<unsigned int &> {};
-// CHECK-NEXT: template <> struct S<unsigned int &&> {};
+// CHECK: template <> struct S<uint32_t> {};
+// CHECK-NEXT: template <> struct S<uint32_t *> {};
+// CHECK-NEXT: template <> struct S<uint32_t &> {};
+// CHECK-NEXT: template <> struct S<uint32_t &&> {};
 template <> struct S<uint1> {};
 template <> struct S<uint1 *> {};
 template <> struct S<uint1 &> {};
@@ -1445,10 +1445,10 @@ template <> struct S<long1 *> {};
 template <> struct S<long1 &> {};
 template <> struct S<long1 &&> {};
 
-// CHECK: template <> struct S<unsigned long> {};
-// CHECK-NEXT: template <> struct S<unsigned long *> {};
-// CHECK-NEXT: template <> struct S<unsigned long &> {};
-// CHECK-NEXT: template <> struct S<unsigned long &&> {};
+// CHECK: template <> struct S<uint64_t> {};
+// CHECK-NEXT: template <> struct S<uint64_t *> {};
+// CHECK-NEXT: template <> struct S<uint64_t &> {};
+// CHECK-NEXT: template <> struct S<uint64_t &&> {};
 template <> struct S<ulong1> {};
 template <> struct S<ulong1 *> {};
 template <> struct S<ulong1 &> {};
@@ -1544,19 +1544,19 @@ template <> struct S<float4 *> {};
 template <> struct S<float4 &> {};
 template <> struct S<float4 &&> {};
 
-// CHECK: template <> struct S<long long> {};
-// CHECK-NEXT: template <> struct S<long long *> {};
-// CHECK-NEXT: template <> struct S<long long &> {};
-// CHECK-NEXT: template <> struct S<long long &&> {};
+// CHECK: template <> struct S<int64_t> {};
+// CHECK-NEXT: template <> struct S<int64_t *> {};
+// CHECK-NEXT: template <> struct S<int64_t &> {};
+// CHECK-NEXT: template <> struct S<int64_t &&> {};
 template <> struct S<longlong1> {};
 template <> struct S<longlong1 *> {};
 template <> struct S<longlong1 &> {};
 template <> struct S<longlong1 &&> {};
 
-// CHECK: template <> struct S<unsigned long long> {};
-// CHECK-NEXT: template <> struct S<unsigned long long *> {};
-// CHECK-NEXT: template <> struct S<unsigned long long &> {};
-// CHECK-NEXT: template <> struct S<unsigned long long &&> {};
+// CHECK: template <> struct S<uint64_t> {};
+// CHECK-NEXT: template <> struct S<uint64_t *> {};
+// CHECK-NEXT: template <> struct S<uint64_t &> {};
+// CHECK-NEXT: template <> struct S<uint64_t &&> {};
 template <> struct S<ulonglong1> {};
 template <> struct S<ulonglong1 *> {};
 template <> struct S<ulonglong1 &> {};
@@ -1666,10 +1666,10 @@ template_foo<char1 *>();
 template_foo<char1 &>();
 template_foo<char1 &&>();
 
-// CHECK: template_foo<unsigned char>();
-// CHECK-NEXT: template_foo<unsigned char *>();
-// CHECK-NEXT: template_foo<unsigned char &>();
-// CHECK-NEXT: template_foo<unsigned char &&>();
+// CHECK: template_foo<uint8_t>();
+// CHECK-NEXT: template_foo<uint8_t *>();
+// CHECK-NEXT: template_foo<uint8_t &>();
+// CHECK-NEXT: template_foo<uint8_t &&>();
 template_foo<uchar1>();
 template_foo<uchar1 *>();
 template_foo<uchar1 &>();
@@ -1738,10 +1738,10 @@ template_foo<short1 *>();
 template_foo<short1 &>();
 template_foo<short1 &&>();
 
-// CHECK: template_foo<unsigned short>();
-// CHECK-NEXT: template_foo<unsigned short *>();
-// CHECK-NEXT: template_foo<unsigned short &>();
-// CHECK-NEXT: template_foo<unsigned short &&>();
+// CHECK: template_foo<uint16_t>();
+// CHECK-NEXT: template_foo<uint16_t *>();
+// CHECK-NEXT: template_foo<uint16_t &>();
+// CHECK-NEXT: template_foo<uint16_t &&>();
 template_foo<ushort1>();
 template_foo<ushort1 *>();
 template_foo<ushort1 &>();
@@ -1810,10 +1810,10 @@ template_foo<int1 *>();
 template_foo<int1 &>();
 template_foo<int1 &&>();
 
-// CHECK: template_foo<unsigned int>();
-// CHECK-NEXT: template_foo<unsigned int *>();
-// CHECK-NEXT: template_foo<unsigned int &>();
-// CHECK-NEXT: template_foo<unsigned int &&>();
+// CHECK: template_foo<uint32_t>();
+// CHECK-NEXT: template_foo<uint32_t *>();
+// CHECK-NEXT: template_foo<uint32_t &>();
+// CHECK-NEXT: template_foo<uint32_t &&>();
 template_foo<uint1>();
 template_foo<uint1 *>();
 template_foo<uint1 &>();
@@ -1882,10 +1882,10 @@ template_foo<long1 *>();
 template_foo<long1 &>();
 template_foo<long1 &&>();
 
-// CHECK: template_foo<unsigned long>();
-// CHECK-NEXT: template_foo<unsigned long *>();
-// CHECK-NEXT: template_foo<unsigned long &>();
-// CHECK-NEXT: template_foo<unsigned long &&>();
+// CHECK: template_foo<uint64_t>();
+// CHECK-NEXT: template_foo<uint64_t *>();
+// CHECK-NEXT: template_foo<uint64_t &>();
+// CHECK-NEXT: template_foo<uint64_t &&>();
 template_foo<ulong1>();
 template_foo<ulong1 *>();
 template_foo<ulong1 &>();
@@ -1981,19 +1981,19 @@ template_foo<float4 *>();
 template_foo<float4 &>();
 template_foo<float4 &&>();
 
-// CHECK: template_foo<long long>();
-// CHECK-NEXT: template_foo<long long *>();
-// CHECK-NEXT: template_foo<long long &>();
-// CHECK-NEXT: template_foo<long long &&>();
+// CHECK: template_foo<int64_t>();
+// CHECK-NEXT: template_foo<int64_t *>();
+// CHECK-NEXT: template_foo<int64_t &>();
+// CHECK-NEXT: template_foo<int64_t &&>();
 template_foo<longlong1>();
 template_foo<longlong1 *>();
 template_foo<longlong1 &>();
 template_foo<longlong1 &&>();
 
-// CHECK: template_foo<unsigned long long>();
-// CHECK-NEXT: template_foo<unsigned long long *>();
-// CHECK-NEXT: template_foo<unsigned long long &>();
-// CHECK-NEXT: template_foo<unsigned long long &&>();
+// CHECK: template_foo<uint64_t>();
+// CHECK-NEXT: template_foo<uint64_t *>();
+// CHECK-NEXT: template_foo<uint64_t &>();
+// CHECK-NEXT: template_foo<uint64_t &&>();
 template_foo<ulonglong1>();
 template_foo<ulonglong1 *>();
 template_foo<ulonglong1 &>();
@@ -2102,10 +2102,10 @@ using UT1 = char1 *;
 using UT2 = char1 &;
 using UT3 = char1 &&;
 
-// CHECK: using UT4 = unsigned char;
-// CHECK-NEXT: using UT5 = unsigned char *;
-// CHECK-NEXT: using UT6 = unsigned char &;
-// CHECK-NEXT: using UT7 = unsigned char &&;
+// CHECK: using UT4 = uint8_t;
+// CHECK-NEXT: using UT5 = uint8_t *;
+// CHECK-NEXT: using UT6 = uint8_t &;
+// CHECK-NEXT: using UT7 = uint8_t &&;
 using UT4 = uchar1;
 using UT5 = uchar1 *;
 using UT6 = uchar1 &;
@@ -2174,10 +2174,10 @@ using UT33 = short1 *;
 using UT34 = short1 &;
 using UT35 = short1 &&;
 
-// CHECK: using UT36 = unsigned short;
-// CHECK-NEXT: using UT37 = unsigned short *;
-// CHECK-NEXT: using UT38 = unsigned short &;
-// CHECK-NEXT: using UT39 = unsigned short &&;
+// CHECK: using UT36 = uint16_t;
+// CHECK-NEXT: using UT37 = uint16_t *;
+// CHECK-NEXT: using UT38 = uint16_t &;
+// CHECK-NEXT: using UT39 = uint16_t &&;
 using UT36 = ushort1;
 using UT37 = ushort1 *;
 using UT38 = ushort1 &;
@@ -2246,10 +2246,10 @@ using UT65 = int1 *;
 using UT66 = int1 &;
 using UT67 = int1 &&;
 
-// CHECK: using UT68 = unsigned int;
-// CHECK-NEXT: using UT69 = unsigned int *;
-// CHECK-NEXT: using UT70 = unsigned int &;
-// CHECK-NEXT: using UT71 = unsigned int &&;
+// CHECK: using UT68 = uint32_t;
+// CHECK-NEXT: using UT69 = uint32_t *;
+// CHECK-NEXT: using UT70 = uint32_t &;
+// CHECK-NEXT: using UT71 = uint32_t &&;
 using UT68 = uint1;
 using UT69 = uint1 *;
 using UT70 = uint1 &;
@@ -2318,10 +2318,10 @@ using UT97 = long1 *;
 using UT98 = long1 &;
 using UT99 = long1 &&;
 
-// CHECK: using UT100 = unsigned long;
-// CHECK-NEXT: using UT101 = unsigned long *;
-// CHECK-NEXT: using UT102 = unsigned long &;
-// CHECK-NEXT: using UT103 = unsigned long &&;
+// CHECK: using UT100 = uint64_t;
+// CHECK-NEXT: using UT101 = uint64_t *;
+// CHECK-NEXT: using UT102 = uint64_t &;
+// CHECK-NEXT: using UT103 = uint64_t &&;
 using UT100 = ulong1;
 using UT101 = ulong1 *;
 using UT102 = ulong1 &;
@@ -2417,19 +2417,19 @@ using UT141 = float4 *;
 using UT142 = float4 &;
 using UT143 = float4 &&;
 
-// CHECK: using UT144 = long long;
-// CHECK-NEXT: using UT145 = long long *;
-// CHECK-NEXT: using UT146 = long long &;
-// CHECK-NEXT: using UT147 = long long &&;
+// CHECK: using UT144 = int64_t;
+// CHECK-NEXT: using UT145 = int64_t *;
+// CHECK-NEXT: using UT146 = int64_t &;
+// CHECK-NEXT: using UT147 = int64_t &&;
 using UT144 = longlong1;
 using UT145 = longlong1 *;
 using UT146 = longlong1 &;
 using UT147 = longlong1 &&;
 
-// CHECK: using UT148 = unsigned long long;
-// CHECK-NEXT: using UT149 = unsigned long long *;
-// CHECK-NEXT: using UT150 = unsigned long long &;
-// CHECK-NEXT: using UT151 = unsigned long long &&;
+// CHECK: using UT148 = uint64_t;
+// CHECK-NEXT: using UT149 = uint64_t *;
+// CHECK-NEXT: using UT150 = uint64_t &;
+// CHECK-NEXT: using UT151 = uint64_t &&;
 using UT148 = ulonglong1;
 using UT149 = ulonglong1 *;
 using UT150 = ulonglong1 &;
@@ -2537,10 +2537,10 @@ typedef char1* T1;
 typedef char1& T2;
 typedef char1&& T3;
 
-// CHECK: typedef unsigned char T4;
-// CHECK-NEXT: typedef unsigned char* T5;
-// CHECK-NEXT: typedef unsigned char& T6;
-// CHECK-NEXT: typedef unsigned char&& T7;
+// CHECK: typedef uint8_t T4;
+// CHECK-NEXT: typedef uint8_t* T5;
+// CHECK-NEXT: typedef uint8_t& T6;
+// CHECK-NEXT: typedef uint8_t&& T7;
 typedef uchar1 T4;
 typedef uchar1* T5;
 typedef uchar1& T6;
@@ -2609,10 +2609,10 @@ typedef short1* T33;
 typedef short1& T34;
 typedef short1&& T35;
 
-// CHECK: typedef unsigned short T36;
-// CHECK-NEXT: typedef unsigned short* T37;
-// CHECK-NEXT: typedef unsigned short& T38;
-// CHECK-NEXT: typedef unsigned short&& T39;
+// CHECK: typedef uint16_t T36;
+// CHECK-NEXT: typedef uint16_t* T37;
+// CHECK-NEXT: typedef uint16_t& T38;
+// CHECK-NEXT: typedef uint16_t&& T39;
 typedef ushort1 T36;
 typedef ushort1* T37;
 typedef ushort1& T38;
@@ -2681,10 +2681,10 @@ typedef int1* T65;
 typedef int1& T66;
 typedef int1&& T67;
 
-// CHECK: typedef unsigned int T68;
-// CHECK-NEXT: typedef unsigned int* T69;
-// CHECK-NEXT: typedef unsigned int& T70;
-// CHECK-NEXT: typedef unsigned int&& T71;
+// CHECK: typedef uint32_t T68;
+// CHECK-NEXT: typedef uint32_t* T69;
+// CHECK-NEXT: typedef uint32_t& T70;
+// CHECK-NEXT: typedef uint32_t&& T71;
 typedef uint1 T68;
 typedef uint1* T69;
 typedef uint1& T70;
@@ -2753,10 +2753,10 @@ typedef long1* T97;
 typedef long1& T98;
 typedef long1&& T99;
 
-// CHECK: typedef unsigned long T100;
-// CHECK-NEXT: typedef unsigned long* T101;
-// CHECK-NEXT: typedef unsigned long& T102;
-// CHECK-NEXT: typedef unsigned long&& T103;
+// CHECK: typedef uint64_t T100;
+// CHECK-NEXT: typedef uint64_t* T101;
+// CHECK-NEXT: typedef uint64_t& T102;
+// CHECK-NEXT: typedef uint64_t&& T103;
 typedef ulong1 T100;
 typedef ulong1* T101;
 typedef ulong1& T102;
@@ -2852,19 +2852,19 @@ typedef float4* T141;
 typedef float4& T142;
 typedef float4&& T143;
 
-// CHECK: typedef long long T144;
-// CHECK-NEXT: typedef long long* T145;
-// CHECK-NEXT: typedef long long& T146;
-// CHECK-NEXT: typedef long long&& T147;
+// CHECK: typedef int64_t T144;
+// CHECK-NEXT: typedef int64_t* T145;
+// CHECK-NEXT: typedef int64_t& T146;
+// CHECK-NEXT: typedef int64_t&& T147;
 typedef longlong1 T144;
 typedef longlong1* T145;
 typedef longlong1& T146;
 typedef longlong1&& T147;
 
-// CHECK: typedef unsigned long long T148;
-// CHECK-NEXT: typedef unsigned long long* T149;
-// CHECK-NEXT: typedef unsigned long long& T150;
-// CHECK-NEXT: typedef unsigned long long&& T151;
+// CHECK: typedef uint64_t T148;
+// CHECK-NEXT: typedef uint64_t* T149;
+// CHECK-NEXT: typedef uint64_t& T150;
+// CHECK-NEXT: typedef uint64_t&& T151;
 typedef ulonglong1 T148;
 typedef ulonglong1* T149;
 typedef ulonglong1& T150;
@@ -2986,10 +2986,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_4 unsigned char
-// CHECK-NEXT: #define T8_5 unsigned char *
-// CHECK-NEXT: #define T8_6 unsigned char &
-// CHECK-NEXT: #define T8_7 unsigned char &&
+// CHECK: #define T8_4 uint8_t
+// CHECK-NEXT: #define T8_5 uint8_t *
+// CHECK-NEXT: #define T8_6 uint8_t &
+// CHECK-NEXT: #define T8_7 uint8_t &&
 // CHECK-NEXT:     T8_4 a1;
 // CHECK-NEXT:     T8_5 a2;
 // CHECK-NEXT:     T8_6 a3=a1;
@@ -3146,10 +3146,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_36 unsigned short
-// CHECK-NEXT: #define T8_37 unsigned short *
-// CHECK-NEXT: #define T8_38 unsigned short &
-// CHECK-NEXT: #define T8_39 unsigned short &&
+// CHECK: #define T8_36 uint16_t
+// CHECK-NEXT: #define T8_37 uint16_t *
+// CHECK-NEXT: #define T8_38 uint16_t &
+// CHECK-NEXT: #define T8_39 uint16_t &&
 // CHECK-NEXT:     T8_36 a1;
 // CHECK-NEXT:     T8_37 a2;
 // CHECK-NEXT:     T8_38 a3=a1;
@@ -3306,10 +3306,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_68 unsigned int
-// CHECK-NEXT: #define T8_69 unsigned int *
-// CHECK-NEXT: #define T8_70 unsigned int &
-// CHECK-NEXT: #define T8_71 unsigned int &&
+// CHECK: #define T8_68 uint32_t
+// CHECK-NEXT: #define T8_69 uint32_t *
+// CHECK-NEXT: #define T8_70 uint32_t &
+// CHECK-NEXT: #define T8_71 uint32_t &&
 // CHECK-NEXT:     T8_68 a1;
 // CHECK-NEXT:     T8_69 a2;
 // CHECK-NEXT:     T8_70 a3=a1;
@@ -3466,10 +3466,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_100 unsigned long
-// CHECK-NEXT: #define T8_101 unsigned long *
-// CHECK-NEXT: #define T8_102 unsigned long &
-// CHECK-NEXT: #define T8_103 unsigned long &&
+// CHECK: #define T8_100 uint64_t
+// CHECK-NEXT: #define T8_101 uint64_t *
+// CHECK-NEXT: #define T8_102 uint64_t &
+// CHECK-NEXT: #define T8_103 uint64_t &&
 // CHECK-NEXT:     T8_100 a1;
 // CHECK-NEXT:     T8_101 a2;
 // CHECK-NEXT:     T8_102 a3=a1;
@@ -3686,10 +3686,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_144 long long
-// CHECK-NEXT: #define T8_145 long long *
-// CHECK-NEXT: #define T8_146 long long &
-// CHECK-NEXT: #define T8_147 long long &&
+// CHECK: #define T8_144 int64_t
+// CHECK-NEXT: #define T8_145 int64_t *
+// CHECK-NEXT: #define T8_146 int64_t &
+// CHECK-NEXT: #define T8_147 int64_t &&
 // CHECK-NEXT:     T8_144 a1;
 // CHECK-NEXT:     T8_145 a2;
 // CHECK-NEXT:     T8_146 a3=a1;
@@ -3706,10 +3706,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_148 unsigned long long
-// CHECK-NEXT: #define T8_149 unsigned long long *
-// CHECK-NEXT: #define T8_150 unsigned long long &
-// CHECK-NEXT: #define T8_151 unsigned long long &&
+// CHECK: #define T8_148 uint64_t
+// CHECK-NEXT: #define T8_149 uint64_t *
+// CHECK-NEXT: #define T8_150 uint64_t &
+// CHECK-NEXT: #define T8_151 uint64_t &&
 // CHECK-NEXT:     T8_148 a1;
 // CHECK-NEXT:     T8_149 a2;
 // CHECK-NEXT:     T8_150 a3=a1;
@@ -3943,10 +3943,10 @@ template <> void foo2(char1){}
 template <> void foo3(char1){}
 template <> void foo4(char1){}
 
-// CHECK: template <> void foo1(unsigned char){}
-// CHECK-NEXT: template <> void foo2(unsigned char){}
-// CHECK-NEXT: template <> void foo3(unsigned char){}
-// CHECK-NEXT: template <> void foo4(unsigned char){}
+// CHECK: template <> void foo1(uint8_t){}
+// CHECK-NEXT: template <> void foo2(uint8_t){}
+// CHECK-NEXT: template <> void foo3(uint8_t){}
+// CHECK-NEXT: template <> void foo4(uint8_t){}
 template <> void foo1(uchar1){}
 template <> void foo2(uchar1){}
 template <> void foo3(uchar1){}
@@ -4015,10 +4015,10 @@ template <> void foo2(short1){}
 template <> void foo3(short1){}
 template <> void foo4(short1){}
 
-// CHECK: template <> void foo1(unsigned short){}
-// CHECK-NEXT: template <> void foo2(unsigned short){}
-// CHECK-NEXT: template <> void foo3(unsigned short){}
-// CHECK-NEXT: template <> void foo4(unsigned short){}
+// CHECK: template <> void foo1(uint16_t){}
+// CHECK-NEXT: template <> void foo2(uint16_t){}
+// CHECK-NEXT: template <> void foo3(uint16_t){}
+// CHECK-NEXT: template <> void foo4(uint16_t){}
 template <> void foo1(ushort1){}
 template <> void foo2(ushort1){}
 template <> void foo3(ushort1){}
@@ -4087,10 +4087,10 @@ template <> void foo2(int1){}
 template <> void foo3(int1){}
 template <> void foo4(int1){}
 
-// CHECK: template <> void foo1(unsigned int){}
-// CHECK-NEXT: template <> void foo2(unsigned int){}
-// CHECK-NEXT: template <> void foo3(unsigned int){}
-// CHECK-NEXT: template <> void foo4(unsigned int){}
+// CHECK: template <> void foo1(uint32_t){}
+// CHECK-NEXT: template <> void foo2(uint32_t){}
+// CHECK-NEXT: template <> void foo3(uint32_t){}
+// CHECK-NEXT: template <> void foo4(uint32_t){}
 template <> void foo1(uint1){}
 template <> void foo2(uint1){}
 template <> void foo3(uint1){}
@@ -4159,10 +4159,10 @@ template <> void foo2(long1){}
 template <> void foo3(long1){}
 template <> void foo4(long1){}
 
-// CHECK: template <> void foo1(unsigned long){}
-// CHECK-NEXT: template <> void foo2(unsigned long){}
-// CHECK-NEXT: template <> void foo3(unsigned long){}
-// CHECK-NEXT: template <> void foo4(unsigned long){}
+// CHECK: template <> void foo1(uint64_t){}
+// CHECK-NEXT: template <> void foo2(uint64_t){}
+// CHECK-NEXT: template <> void foo3(uint64_t){}
+// CHECK-NEXT: template <> void foo4(uint64_t){}
 template <> void foo1(ulong1){}
 template <> void foo2(ulong1){}
 template <> void foo3(ulong1){}
@@ -4258,19 +4258,19 @@ template <> void foo2(float4){}
 template <> void foo3(float4){}
 template <> void foo4(float4){}
 
-// CHECK: template <> void foo1(long long){}
-// CHECK-NEXT: template <> void foo2(long long){}
-// CHECK-NEXT: template <> void foo3(long long){}
-// CHECK-NEXT: template <> void foo4(long long){}
+// CHECK: template <> void foo1(int64_t){}
+// CHECK-NEXT: template <> void foo2(int64_t){}
+// CHECK-NEXT: template <> void foo3(int64_t){}
+// CHECK-NEXT: template <> void foo4(int64_t){}
 template <> void foo1(longlong1){}
 template <> void foo2(longlong1){}
 template <> void foo3(longlong1){}
 template <> void foo4(longlong1){}
 
-// CHECK: template <> void foo1(unsigned long long){}
-// CHECK-NEXT: template <> void foo2(unsigned long long){}
-// CHECK-NEXT: template <> void foo3(unsigned long long){}
-// CHECK-NEXT: template <> void foo4(unsigned long long){}
+// CHECK: template <> void foo1(uint64_t){}
+// CHECK-NEXT: template <> void foo2(uint64_t){}
+// CHECK-NEXT: template <> void foo3(uint64_t){}
+// CHECK-NEXT: template <> void foo4(uint64_t){}
 template <> void foo1(ulonglong1){}
 template <> void foo2(ulonglong1){}
 template <> void foo3(ulonglong1){}

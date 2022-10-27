@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasVector/api_test1_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasVector/api_test1_out
 
-// CHECK: 37
+// CHECK: 38
 // TEST_FEATURE: DplExtrasVector_device_vector
 
 #include <thrust/device_vector.h>

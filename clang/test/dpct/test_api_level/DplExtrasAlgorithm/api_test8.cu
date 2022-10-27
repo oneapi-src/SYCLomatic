@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasAlgorithm/api_test8_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasAlgorithm/api_test8_out
 
-// CHECK: 38
+// CHECK: 39
 // TEST_FEATURE: DplExtrasAlgorithm_scatter
 
 #include <thrust/scatter.h>

@@ -146,16 +146,16 @@ int main() {
     DECLAREI
     DECLARELD
 
-    // CHECK: f_a = fabsf(f_a);
+    // CHECK: f_a = std::abs(f_a);
     f_a = abs(f_a);
 
-    // CHECK: d_a = fabs(d_a);
+    // CHECK: d_a = std::abs(d_a);
     d_a = abs(d_a);
 
-    // CHECK: i_a = abs(i_a);
+    // CHECK: i_a = std::abs(i_a);
     i_a = abs(i_a);
 
-    // CHECK: ld_a = fabsl(ld_a);
+    // CHECK: ld_a = std::abs(ld_a);
     ld_a = abs(ld_a);
 
     // TODO: Check more primitive type and vector types

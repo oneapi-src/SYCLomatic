@@ -631,6 +631,8 @@ protected:
   void analyzeExpr(const ConstantExpr *CE);
   void analyzeExpr(const IntegerLiteral *IL);
 
+  void removeCUDADeviceAttr(const LambdaExpr *LE);
+
   inline void analyzeType(const TypeSourceInfo *TSI,
                           const Expr *CSCE = nullptr) {
     analyzeType(TSI->getTypeLoc(), CSCE);
@@ -808,6 +810,7 @@ private:
   inline void analyzeExpr(const UnaryOperator *Arg);
   inline void analyzeExpr(const CXXDependentScopeMemberExpr *Arg);
   inline void analyzeExpr(const MaterializeTemporaryExpr *MTE);
+  inline void analyzeExpr(const LambdaExpr *LE);
 
   bool isNullPtr(const Expr *);
 

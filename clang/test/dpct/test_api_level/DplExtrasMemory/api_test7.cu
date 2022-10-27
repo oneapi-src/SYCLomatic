@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasMemory/api_test7_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasMemory/api_test7_out
 
-// CHECK: 15
+// CHECK: 16
 // TEST_FEATURE: DplExtrasMemory_get_raw_pointer
 
 #include <thrust/device_ptr.h>

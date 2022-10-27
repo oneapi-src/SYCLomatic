@@ -79,7 +79,6 @@ static StringRef InRoot;
 static StringRef OutRoot;
 static FileProcessType FileProcessHandle = nullptr;
 static std::set<std::string> *ReProcessFilePtr = nullptr;
-static std::set<std::string> *ProcessedFilePtr = nullptr;
 static std::function<unsigned int()> GetRunRoundPtr;
 static std::set<std::string> *ModuleFiles = nullptr;
 static std::function<bool(const std::string &, bool)> IsExcludePathPtr;
@@ -133,10 +132,6 @@ bool isFileProcessAllSet() {
   return FileProcessHandle != nullptr;
 }
 
-void SetProcessedFile(std::set<std::string> &ProcessedFile){
-  ProcessedFilePtr = &ProcessedFile;
-}
-
 void SetReProcessFile(std::set<std::string> &ReProcessFile){
   ReProcessFilePtr = &ReProcessFile;
 }
@@ -150,12 +145,6 @@ unsigned int DoGetRunRound(){
     return GetRunRoundPtr();
   }
   return 0;
-}
-
-void CollectProcessedFile(std::string File){
-  if(ProcessedFilePtr){
-    (*ProcessedFilePtr).insert(File);
-  }
 }
 
 std::set<std::string> GetReProcessFile(){
@@ -905,8 +894,6 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
         if(StopOnParseErrTooling)
             break;
       }
-      CollectProcessedFile(getRealFilePath(File.str(), Files.get()));
-
     }
     //collect the errror counter info.
     ErrorCnt[File.str()] =(CurFileSigErrCnt<<32) | CurFileParseErrCnt;
