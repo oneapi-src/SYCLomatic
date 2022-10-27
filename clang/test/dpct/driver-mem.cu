@@ -72,6 +72,13 @@ int main(){
     // CHECK: r = (stream->memcpy(f_D, f_D2, size), 0);
     r = cuMemcpyAsync(f_D, f_D2, size, stream);
 
+    // CHECK: q_ct1.memcpy(f_D, f_D2, size);
+    cuMemcpyAsync(f_D, f_D2, size, 0);
+    // CHECK: CALL(q_ct1.memcpy(f_D, f_D2, size));
+    CALL(cuMemcpyAsync(f_D, f_D2, size, 0));
+    // CHECK: r = (q_ct1.memcpy(f_D, f_D2, size), 0);
+    r = cuMemcpyAsync(f_D, f_D2, size, 0);
+
     // CHECK: dpct::pitched_data cpy_from_data_ct1, cpy_to_data_ct1;
     // CHECK: sycl::id<3> cpy_from_pos_ct1(0, 0, 0), cpy_to_pos_ct1(0, 0, 0);
     // CHECK: sycl::range<3> cpy_size_ct1(1, 1, 1);
