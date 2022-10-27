@@ -11703,7 +11703,8 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemHostGetDevicePointer_v2", "cuMemcpyDtoDAsync_v2",
         "cuMemcpyDtoD_v2", "cuMemAllocPitch_v2", "cuMemPrefetchAsync",
         "cuMemFree_v2", "cuDeviceTotalMem_v2", "cuMemHostGetFlags",
-        "cuMemHostRegister_v2", "cuMemHostUnregister");
+        "cuMemHostRegister_v2", "cuMemHostUnregister",
+	"cuMemcpy", "cuMemcpyAsync");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -11790,7 +11791,9 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemHostUnregister") &&
         Name.compare("cuMemHostRegister_v2") &&
         Name.compare("cudaHostGetFlags") &&
-        Name.compare("cuMemHostGetFlags")) {
+        Name.compare("cuMemHostGetFlags") &&
+	Name.compare("cuMemcpy") &&
+	Name.compare("cuMemcpyAsync")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
@@ -11927,7 +11930,9 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cuMemAllocPitch_v2", &MemoryMigrationRule::mallocMigration},
           {"cuMemGetInfo_v2", &MemoryMigrationRule::miscMigration},
           {"cudaMemGetInfo", &MemoryMigrationRule::miscMigration},
-          {"cuDeviceTotalMem_v2", &MemoryMigrationRule::miscMigration}};
+          {"cuDeviceTotalMem_v2", &MemoryMigrationRule::miscMigration},
+	  {"cuMemcpy", &MemoryMigrationRule::memcpyMigration},
+	  {"cuMemcpyAsync", &MemoryMigrationRule::memcpyMigration}};
 
   for (auto &P : Dispatcher)
     MigrationDispatcher[P.first] =
