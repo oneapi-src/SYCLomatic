@@ -1012,7 +1012,6 @@ CALL_FACTORY_ENTRY("thrust::swap",  CALL("std::swap",  ARG(0), ARG(1)))
 // thrust::make_pair
 CALL_FACTORY_ENTRY("thrust::make_pair",  CALL("std::make_pair",  ARG(0), ARG(1)))
 
-
 // thrust::stable_sort_by_key
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_stable_sort,
   CONDITIONAL_FACTORY_ENTRY(
