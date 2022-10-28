@@ -1781,24 +1781,33 @@ CALL_FACTORY_ENTRY("thrust::acos", CALL("std::acos", ARG(0)))
 CALL_FACTORY_ENTRY("thrust::atan", CALL("std::atan", ARG(0)))
 
 // thrust::sinh
-CALL_FACTORY_ENTRY("thrust::sinh", CALL("thrust::sinh", ARG(0)))
+CALL_FACTORY_ENTRY("thrust::sinh", CALL("std::sinh", ARG(0)))
 
 // thrust::cosh
-CALL_FACTORY_ENTRY("thrust::cosh", CALL("thrust::cosh", ARG(0)))
+CALL_FACTORY_ENTRY("thrust::cosh", CALL("std::cosh", ARG(0)))
 
 // thrust::tanh
-CALL_FACTORY_ENTRY("thrust::tanh", CALL("thrust::tanh", ARG(0)))
+CALL_FACTORY_ENTRY("thrust::tanh", CALL("std::tanh", ARG(0)))
 
 // thrust::asinh
-CALL_FACTORY_ENTRY("thrust::asinh", CALL("thrust::asinh", ARG(0)))
+CALL_FACTORY_ENTRY("thrust::asinh", CALL("std::asinh", ARG(0)))
 
 // thrust::acosh
-CALL_FACTORY_ENTRY("thrust::acosh", CALL("thrust::acosh", ARG(0)))
+CALL_FACTORY_ENTRY("thrust::acosh", CALL("std::acosh", ARG(0)))
 
 // thrust::atanh
-CALL_FACTORY_ENTRY("thrust::atanh", CALL("thrust::atanh", ARG(0)))
+CALL_FACTORY_ENTRY("thrust::atanh", CALL("std::atanh", ARG(0)))
 
 // thrust::abs
-CALL_FACTORY_ENTRY("thrust::abs", CALL("thrust::abs", ARG(0)))
+CALL_FACTORY_ENTRY("thrust::abs", CALL("std::abs", ARG(0)))
+
+// thrust::polar
+CALL_FACTORY_ENTRY("thrust::polar", CALL("std::polar", ARG(0),ARG(1)))
+
+// thrust::exp
+CALL_FACTORY_ENTRY("thrust::exp", CALL("std::exp", ARG(0)))
+
+// thrust::log
+CALL_FACTORY_ENTRY("thrust::log", CALL("std::log", ARG(0)))
 
 

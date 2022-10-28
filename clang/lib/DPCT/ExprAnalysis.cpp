@@ -464,6 +464,14 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
     }
+    // for thrust::log10 and thrust::sinh ...
+    // log10 is a math function
+    if (Qualifier->getAsNamespace()->getName() == "thrust" &&
+        dpct::DpctGlobalInfo::isInCudaPath(
+            Qualifier->getAsNamespace()->getBeginLoc())) {
+      CTSName = getNestedNameSpecifierString(Qualifier) +
+                DRE->getNameInfo().getAsString();
+    }
   }
 
   if (!CTSName.empty()) {

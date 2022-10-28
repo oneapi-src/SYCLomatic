@@ -20,24 +20,36 @@ using namespace clang::dpct;
 using namespace clang::ast_matchers;
 
 void ThrustRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  // API register
   auto ThrustAPIHasNames = [&]() {
     return hasAnyName("log10", "sqrt", "pow", "sin", "cos", "tan", "asin",
                       "acos", "atan", "sinh", "cosh", "tanh", "asinh", "acosh",
-                      "atanh", "abs");
+                      "atanh", "abs", "polar", "exp", "log");
   };
   MF.addMatcher(callExpr(callee(functionDecl(allOf(
                              hasDeclContext(namespaceDecl(hasName("thrust"))),
                              ThrustAPIHasNames()))))
                     .bind("thrustFuncCall"),
                 this);
+
+  // // TYPE register
+  // auto ThrustTypeHasNames = [&]() { return hasAnyName("thrust::complex"); };
+  // MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
+  //                           hasDeclaration(namedDecl(ThrustTypeHasNames()))))))
+  //                   .bind("thrustTypeLoc"),
+  //               this);
+  // else if (auto TL = getNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
+  //   EA.analyze(*TL);
+
+  // }
 }
 
 void ThrustRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   ExprAnalysis EA;
-  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "FuncCall")) {
+  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
     EA.analyze(CE);
-  } else {
-    return ;
+  }  else {
+    return;
   }
   emplaceTransformation(EA.getReplacement());
   EA.applyAllSubExprRepl();

@@ -21,6 +21,7 @@
 #include "LIBCUAPIMigration.h"
 #include "SaveNewFiles.h"
 #include "TextModification.h"
+#include "ThrustAPIMigration.h"
 #include "Utility.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Stmt.h"
@@ -1040,27 +1041,33 @@ void IncludesCallbacks::InclusionDirective(
   // Extra process thrust headers, map to PSTL mapping headers in runtime.
   // For multi thrust header files, only insert once for PSTL mapping header.
   if (FileName.find("thrust/") != std::string::npos) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Utils);
-    requestFeature(HelperFeatureEnum::DplUtils_non_local_include_dependency,
-                   HashLoc);
-    TransformSet.emplace_back(new ReplaceInclude(
-        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                        /*IsTokenRange=*/false),
-        ""));
-    Updater.update(false);
+    // thrust::commplex ==> std::complex
+    // it not in DPL
+    if (FileName.compare(StringRef("thrust/complex.h")) == 0) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Complex);
+    } else {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Utils);
+      requestFeature(HelperFeatureEnum::DplUtils_non_local_include_dependency,
+                     HashLoc);
+      TransformSet.emplace_back(new ReplaceInclude(
+          CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                          /*IsTokenRange=*/false),
+          ""));
+      Updater.update(false);
 
-    // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
-    // previously added here.  However, due to some unfortunate include
-    // dependencies introduced with the PSTL/TBB headers from the
-    // gcc-9.3.0 include files, those two headers must now be included
-    // before the CL/sycl.hpp are included, so the FileInfo is set
-    // to hold a boolean that'll indicate whether to insert them when
-    // the #include CL/sycl.cpp is added later
-    auto BeginLocInfo = DpctGlobalInfo::getLocInfo(FilenameRange.getBegin());
-    auto FileInfo =
-        DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
-    FileInfo->insertHeader(HeaderType::HT_DPL_Execution);
-    FileInfo->insertHeader(HeaderType::HT_DPL_Algorithm);
+      // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
+      // previously added here.  However, due to some unfortunate include
+      // dependencies introduced with the PSTL/TBB headers from the
+      // gcc-9.3.0 include files, those two headers must now be included
+      // before the CL/sycl.hpp are included, so the FileInfo is set
+      // to hold a boolean that'll indicate whether to insert them when
+      // the #include CL/sycl.cpp is added later
+      auto BeginLocInfo = DpctGlobalInfo::getLocInfo(FilenameRange.getBegin());
+      auto FileInfo =
+          DpctGlobalInfo::getInstance().insertFile(BeginLocInfo.first);
+      FileInfo->insertHeader(HeaderType::HT_DPL_Execution);
+      FileInfo->insertHeader(HeaderType::HT_DPL_Algorithm);
+    }
   }
 
   //  TODO: implement one of this for each source language.
@@ -2435,7 +2442,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
           loc(qualType(hasDeclaration(namedDecl(
               hasAnyName(
                   "cudaError", "curandStatus", "cublasStatus", "CUstream",
-                  "CUstream_st", "thrust::complex", "thrust::device_vector",
+                  "CUstream_st", "thrust::device_vector",
                   "thrust::device_ptr", "thrust::host_vector", "cublasHandle_t",
                   "CUevent_st", "__half", "half", "__half2", "half2",
                   "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",
@@ -15366,6 +15373,8 @@ REGISTER_RULE(CuDNNAPIRule, PassKind::PK_Migration)
 REGISTER_RULE(NCCLRule, PassKind::PK_Migration)
 
 REGISTER_RULE(LIBCURule, PassKind::PK_Migration)
+
+REGISTER_RULE(ThrustRule, PassKind::PK_Migration)
 
 void ComplexAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ComplexAPI = [&]() {

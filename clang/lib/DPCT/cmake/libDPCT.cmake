@@ -37,6 +37,8 @@ macro(build_lib_dpct)
     MemberExprRewriter.cpp
     MigrationRuleManager.cpp
     MigrationAction.cpp
+    ThrustAPIMigration.cpp
+    
 
     DEPENDS
     ClangDriverOptions
