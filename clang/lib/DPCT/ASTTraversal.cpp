@@ -3939,16 +3939,37 @@ REGISTER_RULE(ReplaceDim3CtorRule, PassKind::PK_Migration)
 void Dim3MemberFieldsRule::registerMatcher(MatchFinder &MF) {
   // dim3->x/y/z => dim3->operator[](0)/(1)/(2)
   // dim3.x/y/z => dim3[0]/[1]/[2]
-  MF.addMatcher(memberExpr(anyOf(has(implicitCastExpr(hasType(
-                                     pointsTo(typedefDecl(hasName("dim3")))))),
-                                 hasObjectExpression(hasType(qualType(
-                                     hasCanonicalType(recordType(hasDeclaration(
-                                         cxxRecordDecl(hasName("dim3"))))))))))
-                    .bind("Dim3MemberExpr"),
-                this);
+  auto Dim3MemberExpr = [&]() {
+    return memberExpr(anyOf(
+        has(implicitCastExpr(hasType(pointsTo(typedefDecl(hasName("dim3")))))),
+        hasObjectExpression(hasType(qualType(hasCanonicalType(
+            recordType(hasDeclaration(cxxRecordDecl(hasName("dim3"))))))))));
+  };
+  MF.addMatcher(Dim3MemberExpr().bind("Dim3MemberExpr"), this);
+  MF.addMatcher(
+      cxxFunctionalCastExpr(
+          allOf(hasTypeLoc(loc(hasCanonicalType(asString("long")))),
+                hasDescendant(
+                    initListExpr(hasInit(0, ignoringImplicit(Dim3MemberExpr())))
+                        .bind("InitListExpr")))),
+      this);
 }
 
 void Dim3MemberFieldsRule::runRule(const MatchFinder::MatchResult &Result) {
+  if (const InitListExpr *ILE =
+          getNodeAsType<InitListExpr>(Result, "InitListExpr")) {
+    // E.g.
+    // dim3 *pd3, d3;
+    // int64_t{d3.x}, long{pd3->x};
+    // will migrate to:
+    // sycl::range<3> *pd3, d3;
+    // int64_t(d3[0]), long((*pd3)[0]);
+    ExprAnalysis EA;
+    EA.analyze(ILE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  }
   if (const MemberExpr *ME =
           getNodeAsType<MemberExpr>(Result, "Dim3MemberExpr")) {
     // E.g.

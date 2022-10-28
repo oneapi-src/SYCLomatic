@@ -591,18 +591,32 @@ void ExprAnalysis::analyzeExpr(const InitListExpr *ILE) {
   if (const CXXFunctionalCastExpr *CFCE =
           DpctGlobalInfo::findParent<CXXFunctionalCastExpr>(ILE)) {
     if (CFCE->isListInitialization() && CFCE->getType()->isIntegerType() &&
-        ILE->getNumInits() == 1 &&
-        !ILE->getInit(0)->isIntegerConstantExpr(Context)) {
-      // Replace initializer list with explicit type conversion (e.g.,
-      // 'int64_t{d3[2]}' to 'int64_t(d3[2])') to slience narrowing error (e.g.,
-      // 'size_t -> int64_t (alias to long)') for non-constant-expression in
-      // initializer list.
-      // E.g.,
-      // dim3 d3; int64_t{d3.x};
-      // will be migratd to
-      // sycl::range<3> d3; int64_t(d3[2]);
-      addReplacement(ILE->getLBraceLoc(), "(");
-      addReplacement(ILE->getRBraceLoc(), ")");
+        DpctGlobalInfo::getUnqualifiedTypeName(
+            CFCE->getType()->getCanonicalTypeUnqualified()) == "long" &&
+        ILE->getNumInits() == 1) {
+      if (const auto *ICE = dyn_cast<ImplicitCastExpr>(ILE->getInit(0))) {
+        if (const auto *ME = dyn_cast<MemberExpr>(ICE->getSubExprAsWritten())) {
+          if (!ME->isIntegerConstantExpr(Context)) {
+            auto QT = ME->getBase()->getType();
+            if (QT->isPointerType()) {
+              QT = QT->getPointeeType();
+            }
+            if (DpctGlobalInfo::getUnqualifiedTypeName(
+                    QT->getCanonicalTypeUnqualified()) == "dim3") {
+              // Replace initializer list with explicit type conversion (e.g.,
+              // 'int64_t{d3[2]}' to 'int64_t(d3[2])') to slience narrowing
+              // error (e.g., 'size_t -> int64_t (alias to long)') for
+              // non-constant-expression in int64_t initializer list.
+              // E.g.,
+              // dim3 d3; int64_t{d3.x};
+              // will be migratd to
+              // sycl::range<3> d3; int64_t(d3[2]);
+              addReplacement(ILE->getLBraceLoc(), "(");
+              addReplacement(ILE->getRBraceLoc(), ")");
+            }
+          }
+        }
+      }
     }
   }
   for (const auto &Init : ILE->inits())

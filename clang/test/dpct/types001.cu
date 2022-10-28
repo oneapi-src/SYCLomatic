@@ -647,4 +647,12 @@ void foo_4() {
   int row_size = 16;
   // CHECK: sycl::range<3> grid_2(1, 1, std::min<int>(maxGridDim, ceil_div(row_size, int(threads[1]))));
   dim3 grid_2(std::min<int>(maxGridDim, ceil_div(row_size, int(threads.y))));
+
+  // CHECK: int64_t m = int64_t(threads[1]);
+  int64_t m = int64_t{threads.y};
+  // CHECK: m = long(threads[1]);
+  m = long{threads.y};
+  using INT64 = int64_t;
+  // CHECK: m = std::min(long(threads[2]), INT64(threads[0]));
+  m = std::min(long{threads.x}, INT64{threads.z});
 }
