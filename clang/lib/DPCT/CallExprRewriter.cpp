@@ -2874,6 +2874,17 @@ std::function<bool(const CallExpr *C)> hasManagedAttr(int Idx) {
   };
 }
 
+class IsDefinedInCUDA {
+public:
+  IsDefinedInCUDA() {}
+  bool operator()(const CallExpr *C) {
+    auto FD = C->getDirectCallee();
+    if (!FD)
+      return false;
+    return dpct::DpctGlobalInfo::isInCudaPath(FD->getLocation());
+  }
+};
+
 #define REMOVE_CUB_TEMP_STORAGE_FACTORY(INNER)                                 \
   createRemoveCubTempStorageFactory(INNER 0),
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
