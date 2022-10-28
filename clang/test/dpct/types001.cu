@@ -655,4 +655,20 @@ void foo_4() {
   using INT64 = int64_t;
   // CHECK: m = std::min(long(threads[2]), INT64(threads[0]));
   m = std::min(long{threads.x}, INT64{threads.z});
+
+  int num = 1024;
+  // CHECK: m = long{num};
+  m = long{num};
+  // CHECK: m = std::min(long(threads[2]), INT64{num});
+  m = std::min(long{threads.x}, INT64{num});
+
+  struct CFoo {
+    int64_t a = 0;
+    CFoo(int64_t b) : a(b) {}
+    operator int64_t() { return a; }
+  };
+  // CHECK: CFoo cfoo{num};
+  CFoo cfoo{num};
+  // CHECK: m = std::min(long(threads[2]), int64_t{cfoo});
+  m = std::min(long{threads.x}, int64_t{cfoo});
 }
