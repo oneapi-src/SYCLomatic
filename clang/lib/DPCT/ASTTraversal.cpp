@@ -14784,9 +14784,92 @@ void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 }
 
+std::string getAsmLop3Expr(const llvm::SmallVector<std::string, 5> &Operands) {
+  if (Operands.size() != 5) {
+    return "";
+  }
+  const auto &d = Operands[0];
+  const auto &a = Operands[1];
+  const auto &b = Operands[2];
+  const auto &c = Operands[3];
+  auto imm = std::stoi(Operands[4], 0, 16);
+  if (imm == 0x00) {
+    return buildString(d, " = 0");
+  }
+  std::ostringstream OS;
+  OS << d << " =";
+  if (imm & 0x01)
+    OS << " (~" << a << " & ~" << b << " & ~" << c << ") |";
+  if (imm & 0x02)
+    OS << " (~" << a << " & ~" << b << " & " << c << ") |";
+  if (imm & 0x04)
+    OS << " (~" << a << " & " << b << " & ~" << c << ") |";
+  if (imm & 0x08)
+    OS << " (~" << a << " & " << b << " & " << c << ") |";
+  if (imm & 0x10)
+    OS << " (" << a << " & ~" << b << " & ~" << c << ") |";
+  if (imm & 0x20)
+    OS << " (" << a << " & ~" << b << " & " << c << ") |";
+  if (imm & 0x40)
+    OS << " (" << a << " & " << b << " & ~" << c << ") |";
+  if (imm & 0x80)
+    OS << " (" << a << " & " << b << " & " << c << ") |";
+  auto ret = OS.str();
+  return ret.replace(ret.length() - 2, 2, "");
+}
+
 void AsmRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (auto E = getNodeAsType<Stmt>(Result, "asm")) {
-    report(E->getBeginLoc(), Diagnostics::DEVICE_ASM, true);
+  if (auto AS = getNodeAsType<AsmStmt>(Result, "asm")) {
+    auto AsmString = AS->generateAsmString(*Result.Context);
+    auto TemplateString = StringRef(AsmString).substr(0, AsmString.find(';'));
+    auto CurrIndex = TemplateString.find(' ');
+    auto OpCode = TemplateString.substr(0, CurrIndex);
+    if (OpCode == "lop3.b32") {
+      // ASM instruction pattern: lop3.b32 d, a, b, c, immLut;
+      llvm::SmallVector<std::string, 4> Args;
+      for (const auto *const it : AS->children()) {
+        ExprAnalysis EA;
+        EA.analyze(cast<Expr>(it));
+        if (isa<IntegerLiteral>(it) || isa<DeclRefExpr>(it) ||
+            isa<ImplicitCastExpr>(it)) {
+          Args.push_back(EA.getReplacedString());
+        } else {
+          Args.push_back("(" + EA.getReplacedString() + ")");
+        }
+      }
+      llvm::SmallVector<std::string, 5> Operands;
+      auto PreIndex = CurrIndex;
+      CurrIndex = TemplateString.find(",", PreIndex);
+      // Clang will generate the ASM instruction into a string like this:
+      // Cuda code: asm("lop3.b32 %0, %1*%1, %1, 3, 0x1A;" : "=r"(b) : "r"(a));
+      // TemplateString: "lop3.b32 $0, $1*$1,$ 1, 3, 0x1A"
+      while (PreIndex != StringRef::npos) {
+        auto TempStr =
+            TemplateString.substr(PreIndex + 1, CurrIndex - PreIndex - 1).str();
+        // Replace all args, example: the "$1*$1" will be replace by "(a*a)".
+        if (TempStr.find('$') != TempStr.length() - 2 && Operands.size() != 4) {
+          // When the operands only contain a register, or is the last imm, not
+          // need add the paren.
+          TempStr = "(" + TempStr + ")";
+        }
+        auto ArgIndex = TempStr.find('$');
+        while (ArgIndex != std::string::npos) {
+          // The PTX Instructions has mostly 4 parameters, so just use the char
+          // after '$'.
+          auto ArgNo = TempStr[ArgIndex + 1] - '0';
+          TempStr.replace(ArgIndex, 2, Args[ArgNo]);
+          ArgIndex = TempStr.find('$');
+        }
+        Operands.push_back(std::move(TempStr));
+        PreIndex = CurrIndex;
+        CurrIndex = TemplateString.find(",", PreIndex + 1);
+      }
+      auto Replacement = getAsmLop3Expr(Operands);
+      if (!Replacement.empty()) {
+        return emplaceTransformation(new ReplaceStmt(AS, Replacement));
+      }
+    }
+    report(AS->getAsmLoc(), Diagnostics::DEVICE_ASM, true);
   }
   return;
 }
