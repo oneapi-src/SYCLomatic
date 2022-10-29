@@ -22,6 +22,8 @@
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/Support/raw_ostream.h"
 #include "MemberExprRewriter.h"
 
 extern std::string DpctInstallPath;
@@ -590,31 +592,32 @@ void ExprAnalysis::analyzeExpr(const IntegerLiteral *IL) {
 void ExprAnalysis::analyzeExpr(const InitListExpr *ILE) {
   if (const CXXFunctionalCastExpr *CFCE =
           DpctGlobalInfo::findParent<CXXFunctionalCastExpr>(ILE)) {
+    // 'int64_t' might be alias to 'long'(LP64) or 'long long'(LLP64)
+    std::string Int64CanonicalType = DpctGlobalInfo::getUnqualifiedTypeName(
+        Context.getIntTypeForBitwidth(64, true)->getCanonicalTypeUnqualified());
+    std::string CastType = DpctGlobalInfo::getUnqualifiedTypeName(
+        CFCE->getType()->getCanonicalTypeUnqualified());
     if (CFCE->isListInitialization() && CFCE->getType()->isIntegerType() &&
-        DpctGlobalInfo::getUnqualifiedTypeName(
-            CFCE->getType()->getCanonicalTypeUnqualified()) == "long" &&
         ILE->getNumInits() == 1) {
-      if (const auto *ICE = dyn_cast<ImplicitCastExpr>(ILE->getInit(0))) {
-        if (const auto *ME = dyn_cast<MemberExpr>(ICE->getSubExprAsWritten())) {
-          if (!ME->isIntegerConstantExpr(Context)) {
-            auto QT = ME->getBase()->getType();
-            if (QT->isPointerType()) {
-              QT = QT->getPointeeType();
-            }
-            if (DpctGlobalInfo::getUnqualifiedTypeName(
-                    QT->getCanonicalTypeUnqualified()) == "dim3") {
-              // Replace initializer list with explicit type conversion (e.g.,
-              // 'int64_t{d3[2]}' to 'int64_t(d3[2])') to slience narrowing
-              // error (e.g., 'size_t -> int64_t (alias to long)') for
-              // non-constant-expression in int64_t initializer list.
-              // E.g.,
-              // dim3 d3; int64_t{d3.x};
-              // will be migratd to
-              // sycl::range<3> d3; int64_t(d3[2]);
-              addReplacement(ILE->getLBraceLoc(), "(");
-              addReplacement(ILE->getRBraceLoc(), ")");
-            }
-          }
+      const auto *ME = dyn_cast<MemberExpr>(ILE->getInit(0)->IgnoreImplicit());
+      if (CastType == Int64CanonicalType && ME &&
+          !ME->isIntegerConstantExpr(Context)) {
+        auto QT = ME->getBase()->getType();
+        if (QT->isPointerType()) {
+          QT = QT->getPointeeType();
+        }
+        if (DpctGlobalInfo::getUnqualifiedTypeName(
+                QT->getCanonicalTypeUnqualified()) == "dim3") {
+          // Replace initializer list with explicit type conversion (e.g.,
+          // 'int64_t{d3[2]}' to 'int64_t(d3[2])') to slience narrowing
+          // error (e.g., 'size_t -> int64_t') for
+          // non-constant-expression in int64_t initializer list.
+          // E.g.,
+          // dim3 d3; int64_t{d3.x};
+          // will be migratd to
+          // sycl::range<3> d3; int64_t(d3[2]);
+          addReplacement(ILE->getLBraceLoc(), "(");
+          addReplacement(ILE->getRBraceLoc(), ")");
         }
       }
     }

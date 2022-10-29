@@ -3937,8 +3937,10 @@ REGISTER_RULE(ReplaceDim3CtorRule, PassKind::PK_Migration)
 
 // rule for dim3 types member fields replacements.
 void Dim3MemberFieldsRule::registerMatcher(MatchFinder &MF) {
-  // dim3->x/y/z => dim3->operator[](0)/(1)/(2)
+  // dim3->x/y/z => (*dim3)[0]/[1]/[2]
   // dim3.x/y/z => dim3[0]/[1]/[2]
+  // int64_t{dim3->x/y/z} => int64_t((*dim3)[0]/[1]/[2])
+  // int64_t{dim3.x/y/z} => int64_t(dim3[0]/[1]/[2])
   auto Dim3MemberExpr = [&]() {
     return memberExpr(anyOf(
         has(implicitCastExpr(hasType(pointsTo(typedefDecl(hasName("dim3")))))),
@@ -3948,7 +3950,7 @@ void Dim3MemberFieldsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(Dim3MemberExpr().bind("Dim3MemberExpr"), this);
   MF.addMatcher(
       cxxFunctionalCastExpr(
-          allOf(hasTypeLoc(loc(hasCanonicalType(asString("long")))),
+          allOf(hasTypeLoc(loc(isSignedInteger())),
                 hasDescendant(
                     initListExpr(hasInit(0, ignoringImplicit(Dim3MemberExpr())))
                         .bind("InitListExpr")))),
@@ -3960,10 +3962,10 @@ void Dim3MemberFieldsRule::runRule(const MatchFinder::MatchResult &Result) {
           getNodeAsType<InitListExpr>(Result, "InitListExpr")) {
     // E.g.
     // dim3 *pd3, d3;
-    // int64_t{d3.x}, long{pd3->x};
+    // int64_t{d3.x}, int64_t{pd3->x};
     // will migrate to:
     // sycl::range<3> *pd3, d3;
-    // int64_t(d3[0]), long((*pd3)[0]);
+    // int64_t(d3[0]), int64_t((*pd3)[0]);
     ExprAnalysis EA;
     EA.analyze(ILE);
     emplaceTransformation(EA.getReplacement());

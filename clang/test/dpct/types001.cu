@@ -9,6 +9,7 @@
 #include <cufft.h>
 #include <stdio.h>
 #include <vector>
+#include <algorithm>
 
 // CHECK: dpct::device_info deviceProp;
 cudaDeviceProp deviceProp;
@@ -650,17 +651,17 @@ void foo_4() {
 
   // CHECK: int64_t m = int64_t(threads[1]);
   int64_t m = int64_t{threads.y};
-  // CHECK: m = long(threads[1]);
-  m = long{threads.y};
-  using INT64 = int64_t;
-  // CHECK: m = std::min(long(threads[2]), INT64(threads[0]));
-  m = std::min(long{threads.x}, INT64{threads.z});
+  // CHECK: m = int64_t(threads[1]);
+  m = int64_t{threads.y};
+  typedef int64_t MY_INT64;
+  // CHECK: m = std::min(int64_t(threads[2]), MY_INT64(threads[0]));
+  m = std::min(int64_t{threads.x}, MY_INT64{threads.z});
 
   int num = 1024;
-  // CHECK: m = long{num};
-  m = long{num};
-  // CHECK: m = std::min(long(threads[2]), INT64{num});
-  m = std::min(long{threads.x}, INT64{num});
+  // CHECK: m = int64_t{num};
+  m = int64_t{num};
+  // CHECK: m = std::min(int64_t(threads[2]), MY_INT64{num});
+  m = std::min(int64_t{threads.x}, MY_INT64{num});
 
   struct CFoo {
     int64_t a = 0;
@@ -669,6 +670,6 @@ void foo_4() {
   };
   // CHECK: CFoo cfoo{num};
   CFoo cfoo{num};
-  // CHECK: m = std::min(long(threads[2]), int64_t{cfoo});
-  m = std::min(long{threads.x}, int64_t{cfoo});
+  // CHECK: m = std::min(int64_t(threads[2]), int64_t{cfoo});
+  m = std::min(int64_t{threads.x}, int64_t{cfoo});
 }
