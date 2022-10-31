@@ -51,6 +51,7 @@ std::map<std::string, MapNames::BLASGemmExTypeInfo>
 std::unordered_map<std::string, std::pair<std::string, std::string>>
     MapNames::MathTypeCastingMap;
 MapNames::MapTy MapNames::BLASComputingAPIWithRewriter;
+std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
 
 void MapNames::setExplicitNamespaceMap() {
 
@@ -1524,6 +1525,25 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"}};
+
+  SOLVERAPIWithRewriter = {"cusolverDnSetStream",
+                           "cusolverDnGetStream",
+                           "cusolverDnSpotrfBatched",
+                           "cusolverDnDpotrfBatched",
+                           "cusolverDnCpotrfBatched",
+                           "cusolverDnZpotrfBatched",
+                           "cusolverDnSpotrsBatched",
+                           "cusolverDnDpotrsBatched",
+                           "cusolverDnCpotrsBatched",
+                           "cusolverDnZpotrsBatched",
+                           "cusolverDnSsygvd",
+                           "cusolverDnDsygvd",
+                           "cusolverDnSsygvd_bufferSize",
+                           "cusolverDnDsygvd_bufferSize",
+                           "cusolverDnChegvd",
+                           "cusolverDnZhegvd",
+                           "cusolverDnChegvd_bufferSize",
+                           "cusolverDnZhegvd_bufferSize"};
 
   // This map now is only used to migrate using declaration
   MathFuncNameMap = {
