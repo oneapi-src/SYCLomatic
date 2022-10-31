@@ -49,7 +49,11 @@ CONDITIONAL_FACTORY_ENTRY(
             CALL_FACTORY_ENTRY(
                 "std::abs",
                 CALL(MapNames::getClNamespace(false, true) + "fabs", ARG(0))))),
-    HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, NO_REWRITE_FUNCNAME_FACTORY_ENTRY("std::abs", "std::abs")))
+    CONDITIONAL_FACTORY_ENTRY(
+        IsDefinedInCUDA(),
+        HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, NO_REWRITE_FUNCNAME_FACTORY_ENTRY("std::abs", "std::abs")),
+        NO_REWRITE_FUNCNAME_FACTORY_ENTRY("std::abs", "std::abs")
+    ))
 
 CONDITIONAL_FACTORY_ENTRY(
     makeCheckOr(
@@ -71,4 +75,8 @@ CONDITIONAL_FACTORY_ENTRY(
             CALL_FACTORY_ENTRY(
                 "abs",
                 CALL(MapNames::getClNamespace(false, true) + "fabs", ARG(0))))),
-    HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, NO_REWRITE_FUNCNAME_FACTORY_ENTRY("abs", "std::abs")))
+    CONDITIONAL_FACTORY_ENTRY(
+        IsDefinedInCUDA(),
+        HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, NO_REWRITE_FUNCNAME_FACTORY_ENTRY("abs", "std::abs")),
+        NO_REWRITE_FUNCNAME_FACTORY_ENTRY("abs", "abs")
+    ))
