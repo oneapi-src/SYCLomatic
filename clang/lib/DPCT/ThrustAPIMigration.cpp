@@ -32,23 +32,22 @@ void ThrustRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                     .bind("thrustFuncCall"),
                 this);
 
-  // // TYPE register
-  // auto ThrustTypeHasNames = [&]() { return hasAnyName("thrust::complex"); };
-  // MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
-  //                           hasDeclaration(namedDecl(ThrustTypeHasNames()))))))
-  //                   .bind("thrustTypeLoc"),
-  //               this);
-  // else if (auto TL = getNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
-  //   EA.analyze(*TL);
-
-  // }
+  // TYPE register
+  auto ThrustTypeHasNames = [&]() { return hasAnyName("thrust::complex"); };
+  MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
+                            hasDeclaration(namedDecl(ThrustTypeHasNames()))))))
+                    .bind("thrustTypeLoc"),
+                this);
+  
 }
 
 void ThrustRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   ExprAnalysis EA;
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
     EA.analyze(CE);
-  }  else {
+  }  else if (auto TL = getNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
+    EA.analyze(*TL);
+  }else {
     return;
   }
   emplaceTransformation(EA.getReplacement());

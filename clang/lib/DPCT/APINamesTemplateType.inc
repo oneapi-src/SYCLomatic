@@ -63,3 +63,6 @@ FEATURE_REQUEST_FACTORY(
                        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
                                         "deprecated::usm_host_allocator"),
                                     TEMPLATE_ARG(0))))
+
+TYPE_REWRITE_ENTRY("thrust::complex",TYPE_FACTORY(STR("std::complex"),
+                     TEMPLATE_ARG(0)))
