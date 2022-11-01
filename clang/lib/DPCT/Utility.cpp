@@ -2102,14 +2102,10 @@ getTheLastCompleteImmediateRange(clang::SourceLocation BeginLoc,
   auto EndLevel = calculateExpansionLevel(EndLoc, false);
   while ((BeginLevel > 0 || EndLevel > 0) &&
          (isLocationStraddle(BeginLoc, EndLoc) ||
-          ((BeginLoc.isMacroID() &&
-            !dpct::DpctGlobalInfo::isInAnalysisScope(
-                dpct::DpctGlobalInfo::getLocInfo(SM.getSpellingLoc(BeginLoc))
-                    .first.c_str())) ||
-           (EndLoc.isMacroID() &&
-            !dpct::DpctGlobalInfo::isInAnalysisScope(
-                dpct::DpctGlobalInfo::getLocInfo(SM.getSpellingLoc(EndLoc))
-                    .first.c_str()))))) {
+          ((BeginLoc.isMacroID() && !dpct::DpctGlobalInfo::isInAnalysisScope(
+                                        SM.getSpellingLoc(BeginLoc))) ||
+           (EndLoc.isMacroID() && !dpct::DpctGlobalInfo::isInAnalysisScope(
+                                      SM.getSpellingLoc(EndLoc)))))) {
     if (BeginLevel > EndLevel) {
       BeginLoc = SM.getImmediateExpansionRange(BeginLoc).getBegin();
       BeginLevel--;
@@ -3160,7 +3156,7 @@ bool isTypeInAnalysisScope(const clang::Type *TypePtr) {
   if (const auto *ND = getNamedDecl(TypePtr)) {
     auto Loc = ND->getBeginLoc();
     auto Path = dpct::DpctGlobalInfo::getLocInfo(Loc).first;
-    if (dpct::DpctGlobalInfo::isInAnalysisScope(Path, true))
+    if (dpct::DpctGlobalInfo::isInAnalysisScope(Loc))
       IsInAnalysisScope = true;
   }
   return IsInAnalysisScope;

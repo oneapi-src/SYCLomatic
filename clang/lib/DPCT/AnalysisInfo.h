@@ -823,9 +823,10 @@ public:
   inline static bool isInAnalysisScope(SourceLocation SL) {
     return isInAnalysisScope(DpctGlobalInfo::getLocInfo(SL).first);
   }
-  static bool isInAnalysisScope(const std::string &FilePath,
+  // Input Arg needs to be an absolute file path
+  static bool isInAnalysisScope(const std::string &AbsFilePath,
                                 bool IsChildRelative = true) {
-    return isChildPath(AnalysisScope, FilePath, IsChildRelative);
+    return isChildPath(AnalysisScope, AbsFilePath, IsChildRelative);
   }
 
   static bool isExcluded(const std::string &FilePath, bool IsRelative = true) {
