@@ -89,28 +89,6 @@ auto exception_handler = [](sycl::exception_list exceptions) {
 typedef sycl::event *event_ptr;
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|typedef_queue_ptr|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-// typedef sycl::queue *queue_ptr;
-class queue_ptr {
-  sycl::queue* _q;
-public:
-  queue_ptr(sycl::queue* _p)
-    : _q(_p ? _p : &dpct::get_default_queue())
-  {}
-  queue_ptr()
-    : queue_ptr(0)
-  {}
-  operator sycl::queue* () {
-    return _q;
-  }
-  sycl::queue* operator->() {
-    return _q;
-  }
-};
-// DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|destroy_event|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|typedef_event_ptr
@@ -1074,6 +1052,30 @@ private:
 static inline sycl::queue &get_default_queue() {
   return dev_mgr::instance().current_device().default_queue();
 }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|typedef_queue_ptr|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+// typedef sycl::queue *queue_ptr;
+class queue_ptr {
+  sycl::queue* _q;
+public:
+  queue_ptr(sycl::queue* _p)
+    : _q(_p ? _p : &get_default_queue())
+  {}
+  queue_ptr()
+    : queue_ptr(0)
+  {}
+  operator sycl::queue* () {
+    return _q;
+  }
+  sycl::queue* operator->() {
+    return _q;
+  }
+};
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|get_current_device_id|dpct
