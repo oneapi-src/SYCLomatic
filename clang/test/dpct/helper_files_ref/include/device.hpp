@@ -249,17 +249,8 @@ public:
     prop.set_host_unified_memory(
         this->has(sycl::aspect::usm_host_allocations));
 
-    // max_clock_frequency parameter is not supported on host device
-    if (is_host()) {
-      // This code may need to be updated. Currently max_clock_frequency for
-      // host device is initialized with 1, in assumption that if other devices
-      // exist and they are being selected based on this parameter, other
-      // devices would have higher priority.
-      prop.set_max_clock_frequency(1);
-    } else {
-      prop.set_max_clock_frequency(
-          get_info<sycl::info::device::max_clock_frequency>());
-    }
+    prop.set_max_clock_frequency(
+        get_info<sycl::info::device::max_clock_frequency>());
 
     prop.set_max_compute_units(
         get_info<sycl::info::device::max_compute_units>());
