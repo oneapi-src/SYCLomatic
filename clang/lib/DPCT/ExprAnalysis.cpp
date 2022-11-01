@@ -591,15 +591,14 @@ void ExprAnalysis::analyzeExpr(const InitListExpr *ILE) {
   if (const CXXFunctionalCastExpr *CFCE =
           DpctGlobalInfo::findParent<CXXFunctionalCastExpr>(ILE)) {
     // 'int64_t' might be alias to 'long'(LP64) or 'long long'(LLP64)
-    std::string Int64CanonicalType = DpctGlobalInfo::getUnqualifiedTypeName(
-        Context.getIntTypeForBitwidth(64, true)->getCanonicalTypeUnqualified());
-    std::string CastType = DpctGlobalInfo::getUnqualifiedTypeName(
-        CFCE->getType()->getCanonicalTypeUnqualified());
-    if (CFCE->isListInitialization() && CFCE->getType()->isIntegerType() &&
-        ILE->getNumInits() == 1) {
+    if (CFCE->isListInitialization() && ILE->getNumInits() == 1 &&
+        CFCE->getType()->isIntegerType() &&
+        (CFCE->getType()->getAs<BuiltinType>()->getKind() ==
+         Context.getIntTypeForBitwidth(64, true)
+             ->getAs<BuiltinType>()
+             ->getKind())) {
       const auto *ME = dyn_cast<MemberExpr>(ILE->getInit(0)->IgnoreImplicit());
-      if (CastType == Int64CanonicalType && ME &&
-          !ME->isIntegerConstantExpr(Context)) {
+      if (ME) {
         auto QT = ME->getBase()->getType();
         if (QT->isPointerType()) {
           QT = QT->getPointeeType();
