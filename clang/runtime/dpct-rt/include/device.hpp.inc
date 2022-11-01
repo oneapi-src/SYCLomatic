@@ -1059,23 +1059,19 @@ static inline sycl::queue &get_default_queue() {
 // Device|get_default_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-// typedef sycl::queue *queue_ptr;
+
 class queue_ptr {
   sycl::queue* _q;
 public:
   queue_ptr(sycl::queue* _p)
-    : _q(_p ? _p : &get_default_queue())
-  {}
+    : _q(_p ? _p : &get_default_queue()) {}
   queue_ptr()
-    : queue_ptr(0)
-  {}
-  operator sycl::queue* () {
-    return _q;
-  }
-  sycl::queue* operator->() {
-    return _q;
-  }
+    : queue_ptr(0) {}
+  operator sycl::queue*  () const { return _q; }
+  operator sycl::queue*& ()       { return _q; }
+  sycl::queue* operator->() const { return _q; }
 };
+
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|get_current_device_id|dpct
