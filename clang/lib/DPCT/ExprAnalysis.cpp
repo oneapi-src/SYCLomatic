@@ -22,8 +22,6 @@
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/Support/raw_ostream.h"
 #include "MemberExprRewriter.h"
 
 extern std::string DpctInstallPath;
