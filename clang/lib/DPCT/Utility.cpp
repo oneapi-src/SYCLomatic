@@ -2104,10 +2104,12 @@ getTheLastCompleteImmediateRange(clang::SourceLocation BeginLoc,
          (isLocationStraddle(BeginLoc, EndLoc) ||
           ((BeginLoc.isMacroID() &&
             !dpct::DpctGlobalInfo::isInAnalysisScope(
-                SM.getFilename(SM.getSpellingLoc(BeginLoc)).str())) ||
+                dpct::DpctGlobalInfo::getLocInfo(SM.getSpellingLoc(BeginLoc))
+                    .first.c_str())) ||
            (EndLoc.isMacroID() &&
             !dpct::DpctGlobalInfo::isInAnalysisScope(
-                SM.getFilename(SM.getSpellingLoc(EndLoc)).str()))))) {
+                dpct::DpctGlobalInfo::getLocInfo(SM.getSpellingLoc(EndLoc))
+                    .first.c_str()))))) {
     if (BeginLevel > EndLevel) {
       BeginLoc = SM.getImmediateExpansionRange(BeginLoc).getBegin();
       BeginLevel--;
