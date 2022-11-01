@@ -462,7 +462,7 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
                          isCGAPI(DRE->getNameInfo().getAsString());
                          // for thrust::log10 and thrust::sinh ...
     // log10 is a math function
-    if (IsNamespaceOrAlias &&
+    if (Qualifier->getAsNamespace() &&
         Qualifier->getAsNamespace()->getName() == "thrust" &&
         dpct::DpctGlobalInfo::isInCudaPath(
             Qualifier->getAsNamespace()->getBeginLoc())) {

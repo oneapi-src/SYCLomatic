@@ -2442,7 +2442,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
           loc(qualType(hasDeclaration(namedDecl(
               hasAnyName(
                   "cudaError", "curandStatus", "cublasStatus", "CUstream",
-                  "CUstream_st", "thrust::device_vector",
+                  "CUstream_st", "thrust::complex", "thrust::device_vector",
                   "thrust::device_ptr", "thrust::host_vector", "cublasHandle_t",
                   "CUevent_st", "__half", "half", "__half2", "half2",
                   "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",

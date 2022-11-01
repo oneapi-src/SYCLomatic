@@ -31,23 +31,13 @@ void ThrustRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                              ThrustAPIHasNames()))))
                     .bind("thrustFuncCall"),
                 this);
-
-  // TYPE register
-  auto ThrustTypeHasNames = [&]() { return hasAnyName("thrust::complex"); };
-  MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
-                            hasDeclaration(namedDecl(ThrustTypeHasNames()))))))
-                    .bind("thrustTypeLoc"),
-                this);
-  
 }
 
 void ThrustRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   ExprAnalysis EA;
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
     EA.analyze(CE);
-  }  else if (auto TL = getNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
-    EA.analyze(*TL);
-  }else {
+  } else {
     return;
   }
   emplaceTransformation(EA.getReplacement());
