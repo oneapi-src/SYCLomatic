@@ -92,7 +92,23 @@ typedef sycl::event *event_ptr;
 // DPCT_LABEL_BEGIN|typedef_queue_ptr|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-typedef sycl::queue *queue_ptr;
+// typedef sycl::queue *queue_ptr;
+class queue_ptr {
+  sycl::queue* _q;
+public:
+  queue_ptr(sycl::queue& _p)
+    : _q(_p ? _p : &dpct::get_default_queue())
+  {}
+  queue_ptr()
+    : queue_ptr(0)
+  {}
+  operator sycl::queue* () {
+    return _q;
+  }
+  sycl::queue* operator->() {
+    return _q;
+  }
+};
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|destroy_event|dpct
