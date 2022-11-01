@@ -96,7 +96,7 @@ typedef sycl::event *event_ptr;
 class queue_ptr {
   sycl::queue* _q;
 public:
-  queue_ptr(sycl::queue& _p)
+  queue_ptr(sycl::queue* _p)
     : _q(_p ? _p : &dpct::get_default_queue())
   {}
   queue_ptr()
