@@ -2613,7 +2613,7 @@ SourceRange getDefinitionRange(SourceLocation Begin, SourceLocation End) {
   // If the begin/end are not in the same macro arg, no precise range available.
   // Using PreBegin/PreEnd because they contain the info of the last func-like
   // macro.
-  if (SM.isMacroArgExpansion(PreBegin) && SM.isMacroArgExpansion(PreEnd) && !isLocInSameMacroArg(PreBegin, PreEnd)) {
+  if (!isLocInSameMacroArg(PreBegin, PreEnd)) {
     return SourceRange(SM.getSpellingLoc(Begin), SM.getSpellingLoc(Begin));
   }
 
