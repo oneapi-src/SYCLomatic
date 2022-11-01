@@ -3958,33 +3958,25 @@ void Dim3MemberFieldsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void Dim3MemberFieldsRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (const InitListExpr *ILE =
-          getNodeAsType<InitListExpr>(Result, "InitListExpr")) {
-    // E.g.
-    // dim3 *pd3, d3;
-    // int64_t{d3.x}, int64_t{pd3->x};
-    // will migrate to:
-    // sycl::range<3> *pd3, d3;
-    // int64_t(d3[0]), int64_t((*pd3)[0]);
-    ExprAnalysis EA;
+  // E.g.
+  // dim3 *pd3, d3;
+  // pd3->z; d3.z;
+  // int64_t{d3.x}, int64_t{pd3->x};
+  // will migrate to:
+  // (*pd3)[0]; d3[0];
+  // sycl::range<3> *pd3, d3;
+  // int64_t(d3[0]), int64_t((*pd3)[0]);
+  ExprAnalysis EA;
+  if (const auto *ILE = getNodeAsType<InitListExpr>(Result, "InitListExpr")) {
     EA.analyze(ILE);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
+  } else if (const auto *ME =
+                 getNodeAsType<MemberExpr>(Result, "Dim3MemberExpr")) {
+    EA.analyze(ME);
+  } else {
     return;
   }
-  if (const MemberExpr *ME =
-          getNodeAsType<MemberExpr>(Result, "Dim3MemberExpr")) {
-    // E.g.
-    // dim3 *pd3, d3;
-    // pd3->z; d3.z;
-    // will migrate to:
-    // sycl::range<3> *pd3, d3;
-    // (*pd3)[0]; d3[0];
-    ExprAnalysis EA;
-    EA.analyze(ME);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-  }
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 
 REGISTER_RULE(Dim3MemberFieldsRule, PassKind::PK_Migration)

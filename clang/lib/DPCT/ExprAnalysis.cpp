@@ -591,14 +591,13 @@ void ExprAnalysis::analyzeExpr(const InitListExpr *ILE) {
   if (const CXXFunctionalCastExpr *CFCE =
           DpctGlobalInfo::findParent<CXXFunctionalCastExpr>(ILE)) {
     // 'int64_t' might be alias to 'long'(LP64) or 'long long'(LLP64)
+    const auto *BT0 =
+        Context.getIntTypeForBitwidth(64, true)->getAs<BuiltinType>();
+    const auto *BT1 = CFCE->getType()->getAs<BuiltinType>();
     if (CFCE->isListInitialization() && ILE->getNumInits() == 1 &&
-        CFCE->getType()->isIntegerType() &&
-        (CFCE->getType()->getAs<BuiltinType>()->getKind() ==
-         Context.getIntTypeForBitwidth(64, true)
-             ->getAs<BuiltinType>()
-             ->getKind())) {
-      const auto *ME = dyn_cast<MemberExpr>(ILE->getInit(0)->IgnoreImplicit());
-      if (ME) {
+        (BT0 && BT1 && BT0->getKind() == BT1->getKind())) {
+      if (const auto *ME =
+              dyn_cast<MemberExpr>(ILE->getInit(0)->IgnoreImplicit())) {
         auto QT = ME->getBase()->getType();
         if (QT->isPointerType()) {
           QT = QT->getPointeeType();
