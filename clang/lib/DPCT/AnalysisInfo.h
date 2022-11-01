@@ -2010,6 +2010,12 @@ public:
   getMainSourceYamlTUR() {
     return MainSourceYamlTUR;
   }
+  static inline void setStopOnInternalError(bool Flag) {
+    StopOnInternalError = Flag;
+  }
+  static inline bool isStopOnInternalError() {
+    return StopOnInternalError;
+  }
 
 private:
   DpctGlobalInfo();
@@ -2189,6 +2195,7 @@ private:
       PriorityReplInfoMap;
   static std::unordered_map<std::string, bool> ExcludePath;
   static std::map<std::string, clang::tooling::OptionInfo> CurrentOptMap;
+  static bool StopOnInternalError;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

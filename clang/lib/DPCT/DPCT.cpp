@@ -547,9 +547,6 @@ int runDPCT(int argc, const char **argv) {
     std::cout << CtHelpHint;
     return MigrationErrorShowHelp;
   }
-#if defined(__linux__) || defined(_WIN32)
-  InstallSignalHandle();
-#endif
 
 #if defined(_WIN32)
   // To support wildcard "*" in source file name in windows.
@@ -595,6 +592,12 @@ int runDPCT(int argc, const char **argv) {
         });
     dpct::ShowStatus(MigrationOptionParsingError);
     dpctExit(MigrationOptionParsingError);
+  }
+  DpctGlobalInfo::setStopOnInternalError(StopOnInternalError);
+  if (!DpctGlobalInfo::isStopOnInternalError()) {
+#if defined(__linux__) || defined(_WIN32)
+    InstallSignalHandle();
+#endif
   }
 
   if (!OutputFile.empty()) {
@@ -815,7 +818,6 @@ int runDPCT(int argc, const char **argv) {
       getInsertArgumentAdjuster("-Xclang", ArgumentInsertPosition::BEGIN));
 
   DpctGlobalInfo::setInRoot(InRoot);
-  DpctGlobalInfo::setOutRoot(OutRoot);
   DpctGlobalInfo::setAnalysisScope(AnalysisScope);
   DpctGlobalInfo::setCudaPath(CudaPath);
   DpctGlobalInfo::setKeepOriginCode(KeepOriginalCodeFlag);

@@ -146,9 +146,13 @@ void DpctToolAction::runPass(PassKind Pass) {
       try {
         Global.buildKernelInfo();
       } catch (std::exception &) {
-        std::string FaultMsg = "Error: dpct internal error. dpct tries to "
-                               "recover and write the migration result.\n";
-        llvm::errs() << FaultMsg;
+        if (DpctGlobalInfo::isStopOnInternalError()) {
+          throw;
+        } else {
+          std::string FaultMsg = "Error: dpct internal error. dpct tries to "
+                                 "recover and write the migration result.\n";
+          llvm::errs() << FaultMsg;
+        }
       }
     }
 
@@ -169,9 +173,13 @@ void DpctToolAction::runPasses() {
       Global.postProcess();
       Global.emplaceReplacements(Repls);
     } catch (std::exception &) {
-      std::string FaultMsg = "Error: dpct internal error. dpct tries to "
-                             "recover and write the migration result.\n";
-      llvm::errs() << FaultMsg;
+      if (DpctGlobalInfo::isStopOnInternalError()) {
+        throw;
+      } else {
+        std::string FaultMsg = "Error: dpct internal error. dpct tries to "
+                               "recover and write the migration result.\n";
+        llvm::errs() << FaultMsg;
+      }
     }
   }
 

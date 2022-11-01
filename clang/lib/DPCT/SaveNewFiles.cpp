@@ -610,9 +610,13 @@ int saveNewFiles(clang::tooling::RefactoringTool &Tool, StringRef InRoot,
           }
         }
       } catch (std::exception &e) {
-        std::string FaultMsg = "Error: dpct internal error. Formatting of the "
-                               "code skipped. Migration continues.\n";
-        llvm::errs() << FaultMsg;
+        if (DpctGlobalInfo::isStopOnInternalError()) {
+          throw;
+        } else {
+          std::string FaultMsg = "Error: dpct internal error. Formatting of the "
+                                 "code skipped. Migration continues.\n";
+          llvm::errs() << FaultMsg;
+        }
       }
     }
     CHECKPOINT_FORMATTING_CODE_EXIT();

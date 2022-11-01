@@ -149,6 +149,7 @@ std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
     DpctGlobalInfo::PriorityReplInfoMap;
 std::unordered_map<std::string, bool> DpctGlobalInfo::ExcludePath = {};
 std::map<std::string, clang::tooling::OptionInfo> DpctGlobalInfo::CurrentOptMap;
+bool DpctGlobalInfo::StopOnInternalError = false;
 
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after

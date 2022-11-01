@@ -37,6 +37,24 @@
 #include <utility>
 #include <vector>
 
+#ifdef SYCLomatic_CUSTOMIZATION
+namespace clang {
+namespace tooling {
+static std::function<bool()> IsStopOnErrorPtr;
+void SetIsStopOnErrorHandler(std::function<bool()> Func){
+  IsStopOnErrorPtr = Func;
+}
+
+bool isStopOnError() {
+  if(IsStopOnErrorPtr) {
+    return IsStopOnErrorPtr();
+  } else {
+    return false;
+  }
+}
+}
+}
+#endif // SYCLomatic_CUSTOMIZATION
 using namespace clang;
 using namespace tooling;
 
@@ -656,9 +674,13 @@ bool applyAllReplacements(const Replacements &Replaces, Rewriter &Rewrite) {
       Result = I->apply(Rewrite) && Result;
 #ifdef SYCLomatic_CUSTOMIZATION
       } catch (std::exception &e) {
-        std::string FaultMsg =
-            "Error: dpct internal error. dpct tries to recover and write the migration result.\n";
-        llvm::errs() << FaultMsg;
+        if (clang::tooling::isStopOnError()) {
+          throw;
+        } else {
+          std::string FaultMsg =
+              "Error: dpct internal error. dpct tries to recover and write the migration result.\n";
+          llvm::errs() << FaultMsg;
+        }
       }
 #endif // SYCLomatic_CUSTOMIZATION
     } else {

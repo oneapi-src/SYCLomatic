@@ -253,10 +253,14 @@ public:
     try {
       static_cast<T *>(this)->runRule(Result);
     } catch (std::exception &e) {
-      std::string FaultMsg =
-          "Error: dpct internal error. Migration rule causing the error "
-          "skipped. Migration continues.\n";
-      llvm::errs() << FaultMsg;
+      if (DpctGlobalInfo::isStopOnInternalError()) {
+        throw;
+      } else {
+        std::string FaultMsg =
+            "Error: dpct internal error. Migration rule causing the error "
+            "skipped. Migration continues.\n";
+        llvm::errs() << FaultMsg;
+      }
     }
     return;
   }

@@ -199,6 +199,7 @@ bool isExcludePath(const std::string &Path, bool IsRelative) {
   }
 }
 
+bool isStopOnError();
 } // namespace tooling
 } // namespace clang
 #if defined(__linux__)
@@ -898,9 +899,13 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
     //collect the errror counter info.
     ErrorCnt[File.str()] =(CurFileSigErrCnt<<32) | CurFileParseErrCnt;
     } catch (std::exception &e) {
-      std::string FaultMsg =
-          "Error: dpct internal error. Current file skipped. Migration continues.\n";
-      llvm::errs() << FaultMsg;
+      if (clang::tooling::isStopOnError()) {
+        throw;
+      } else {
+        std::string FaultMsg =
+            "Error: dpct internal error. Current file skipped. Migration continues.\n";
+        llvm::errs() << FaultMsg;
+      }
     }
     return 0;
 }
