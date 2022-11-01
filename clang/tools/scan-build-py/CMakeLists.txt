@@ -145,9 +145,16 @@ if (SYCLomatic_CUSTOMIZATION)
     )
     target_include_directories(ear PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}/lib/libear/)
-    target_link_libraries(ear PRIVATE
-      "-ldl -lpthread -shared -Wl,-soname,libear.so")
+
+    set(LIBEAR_LINKER_FLAGS "-ldl -lpthread -shared -Wl,-soname,libear.so")
+    check_c_compiler_flag("-static-intel" C_SUPPORTS_STATIC_INTEL_FLAG)
+    if( C_SUPPORTS_STATIC_INTEL_FLAG )
+      set(LIBEAR_LINKER_FLAGS "${LIBEAR_LINKER_FLAGS} -static-intel")
+    endif()
+
+    target_link_libraries(ear PRIVATE ${LIBEAR_LINKER_FLAGS})
     target_compile_options(ear PRIVATE "-std=c99")
+
     install(TARGETS ear
             LIBRARY
             DESTINATION lib/libear
