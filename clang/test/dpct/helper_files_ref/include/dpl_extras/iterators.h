@@ -146,7 +146,7 @@ template <typename KeyTp, typename _ValueTp> struct make_key_value_pair {
   }
 };
 
-} // namespace detail
+} // end namespace detail
 
 // arg_index_input_iterator is an iterator over a input iterator, with a index.
 // When dereferenced, it returns a key_value_pair, which can be interrogated for

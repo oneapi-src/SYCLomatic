@@ -175,6 +175,8 @@ constant_iterator<_Tp> make_constant_iterator(_Tp __value) {
 // DPCT_LABEL_BEGIN|key_value_pair|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
+// key_value_pair class to represent a key and value, specifically a
+// dereferenced arg_index_input_iterator
 template <typename _KeyTp, typename _ValueTp> class key_value_pair {
 public:
   key_value_pair(const _KeyTp &_key, const _ValueTp &_value)
@@ -211,7 +213,6 @@ template <typename KeyTp, typename _ValueTp> struct make_key_value_pair {
 // DPCT_LABEL_END
 
 } // end namespace detail
-
 
 // DPCT_LABEL_BEGIN|arg_index_input_iterator|dpct
 // DPCT_DEPENDENCY_BEGIN
