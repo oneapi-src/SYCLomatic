@@ -195,7 +195,7 @@ public:
 
 namespace detail {
 
-// DPCT_LABEL_BEGIN|make_key_value_pair|dpct
+// DPCT_LABEL_BEGIN|make_key_value_pair|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasIterators|key_value_pair
 // DPCT_DEPENDENCY_END
