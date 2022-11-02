@@ -3155,7 +3155,6 @@ bool isTypeInAnalysisScope(const clang::Type *TypePtr) {
   bool IsInAnalysisScope = false;
   if (const auto *ND = getNamedDecl(TypePtr)) {
     auto Loc = ND->getBeginLoc();
-    auto Path = dpct::DpctGlobalInfo::getLocInfo(Loc).first;
     if (dpct::DpctGlobalInfo::isInAnalysisScope(Loc))
       IsInAnalysisScope = true;
   }
