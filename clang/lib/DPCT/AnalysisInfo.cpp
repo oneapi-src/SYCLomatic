@@ -570,6 +570,9 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
     case HT_Complex:
       return insertHeader(HeaderType::HT_Complex, LastIncludeOffset,
                           "<complex>");
+    case HT_Functional:
+      return insertHeader(HeaderType::HT_Functional, LastIncludeOffset,
+                          "<functional>");
     case HT_Thread:
       return insertHeader(HeaderType::HT_Thread, LastIncludeOffset, "<thread>");
     case HT_Future:

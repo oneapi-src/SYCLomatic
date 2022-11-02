@@ -24,12 +24,23 @@ void ThrustRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ThrustAPIHasNames = [&]() {
     return hasAnyName("log10", "sqrt", "pow", "sin", "cos", "tan", "asin",
                       "acos", "atan", "sinh", "cosh", "tanh", "asinh", "acosh",
-                      "atanh", "abs", "polar", "exp", "log");
+                      "atanh", "abs", "polar", "exp", "log", "distance");
   };
   MF.addMatcher(callExpr(callee(functionDecl(allOf(
                              hasDeclContext(namespaceDecl(hasName("thrust"))),
                              ThrustAPIHasNames()))))
                     .bind("thrustFuncCall"),
+                this);
+
+  // TYPE register
+  auto ThrustTypeHasNames = [&]() {
+    return hasAnyName("thrust::greater_equal", "thrust::less_equal",
+                      "thrust::logical_and", "thrust::bit_and",
+                      "thrust::bit_or", "thrust::minimum", "thrust::bit_xor");
+  };
+  MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
+                            hasDeclaration(namedDecl(ThrustTypeHasNames()))))))
+                    .bind("thrustTypeLoc"),
                 this);
 }
 
@@ -37,6 +48,8 @@ void ThrustRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   ExprAnalysis EA;
   if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
     EA.analyze(CE);
+  } else if (auto TL = getNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
+    EA.analyze(*TL);
   } else {
     return;
   }
