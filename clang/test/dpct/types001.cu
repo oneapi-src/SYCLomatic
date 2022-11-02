@@ -9,6 +9,7 @@
 #include <cufft.h>
 #include <stdio.h>
 #include <vector>
+#include <algorithm>
 
 // CHECK: dpct::device_info deviceProp;
 cudaDeviceProp deviceProp;
@@ -610,4 +611,65 @@ void foo_2(cudaDataType_t a1, cudaDataType a2, cublasDataType_t a3, cublasComput
   cudaDataType b2 = a2;
   cublasDataType_t b3 = a3;
   cublasComputeType_t b4 = a4;
+}
+
+__device__ void foo_3() {
+  // CHECK: sycl::range<3> d3 = {3, 2, 1}, *pd3 = &d3;
+  dim3 d3 = {1, 2, 3}, *pd3 = &d3;
+  int64_t m = 0;
+  // CHECK: m = sycl::min(m, int64_t((*pd3)[2]));
+  // CHECK-NEXT: m = sycl::min(m, int64_t((*pd3)[1]));
+  // CHECK-NEXT: m = sycl::min(m, int64_t((*pd3)[0]));
+  // CHECK-NEXT: m = sycl::min(m, int64_t(d3[2]));
+  // CHECK-NEXT: m = sycl::min(m, int64_t(d3[1]));
+  // CHECK-NEXT: m = sycl::min(m, int64_t(d3[0]));
+  m = std::min(m, int64_t{pd3->x});
+  m = std::min(m, int64_t{pd3->y});
+  m = std::min(m, int64_t{pd3->z});
+  m = std::min(m, int64_t{d3.x});
+  m = std::min(m, int64_t{d3.y});
+  m = std::min(m, int64_t{d3.z});
+}
+
+template <typename integer>
+constexpr inline integer ceil_div(integer n, integer m) {
+  return (n + m - 1) / m;
+}
+
+void foo_4() {
+  const int64_t num_irows = 32;
+  const int64_t num_orows = 32;
+  // CHECK: sycl::range<3> threads(1, 1, 32);
+  dim3 threads(32);
+  int64_t maxGridDim = 1024;
+  // CHECK: sycl::range<3> grid_1(1, std::min(maxGridDim, ceil_div(num_irows, int64_t(threads[2]))), std::min(maxGridDim, num_orows));
+  dim3 grid_1(std::min(maxGridDim, num_orows), std::min(maxGridDim, ceil_div(num_irows, int64_t{threads.x})));
+
+  int row_size = 16;
+  // CHECK: sycl::range<3> grid_2(1, 1, std::min<int>(maxGridDim, ceil_div(row_size, int(threads[1]))));
+  dim3 grid_2(std::min<int>(maxGridDim, ceil_div(row_size, int(threads.y))));
+
+  // CHECK: int64_t m = int64_t(threads[1]);
+  int64_t m = int64_t{threads.y};
+  // CHECK: m = int64_t(threads[1]);
+  m = int64_t{threads.y};
+  typedef int64_t MY_INT64;
+  // CHECK: m = std::min(int64_t(threads[2]), MY_INT64(threads[0]));
+  m = std::min(int64_t{threads.x}, MY_INT64{threads.z});
+
+  int num = 1024;
+  // CHECK: m = int64_t{num};
+  m = int64_t{num};
+  // CHECK: m = std::min(int64_t(threads[2]), MY_INT64{num});
+  m = std::min(int64_t{threads.x}, MY_INT64{num});
+
+  struct CFoo {
+    int64_t a = 0;
+    CFoo(int64_t b) : a(b) {}
+    operator int64_t() { return a; }
+  };
+  // CHECK: CFoo cfoo{num};
+  CFoo cfoo{num};
+  // CHECK: m = std::min(int64_t(threads[2]), int64_t{cfoo});
+  m = std::min(int64_t{threads.x}, int64_t{cfoo});
 }

@@ -618,10 +618,6 @@ class Dim3MemberFieldsRule : public NamedMigrationRule<Dim3MemberFieldsRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-
-private:
-  void FieldsRename(const ast_matchers::MatchFinder::MatchResult &Result,
-                    std::string Str, const MemberExpr *ME);
 };
 
 /// Migration rule for return types replacements.

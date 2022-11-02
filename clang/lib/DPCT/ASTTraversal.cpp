@@ -3943,64 +3943,48 @@ void ReplaceDim3CtorRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(ReplaceDim3CtorRule, PassKind::PK_Migration)
 
-void Dim3MemberFieldsRule::FieldsRename(const MatchFinder::MatchResult &Result,
-                                        std::string Str, const MemberExpr *ME) {
-  auto SM = Result.SourceManager;
-
-  SourceLocation MemberLoc, OptLoc;
-  MemberLoc = SM->getSpellingLoc(ME->getMemberLoc());
-  OptLoc = SM->getSpellingLoc(ME->getOperatorLoc());
-  bool isArrow = ME->isArrow();
-  if (isArrow)
-    emplaceTransformation(new ReplaceText(OptLoc, 2, ""));
-  else
-    emplaceTransformation(new ReplaceText(OptLoc, 1, ""));
-
-  auto Search =
-      MapNames::Dim3MemberNamesMap.find(ME->getMemberNameInfo().getAsString());
-  if (Search != MapNames::Dim3MemberNamesMap.end()) {
-    std::string NewString = Search->second;
-    emplaceTransformation(new ReplaceText(MemberLoc, 1, std::move(NewString)));
-  }
-}
-
 // rule for dim3 types member fields replacements.
 void Dim3MemberFieldsRule::registerMatcher(MatchFinder &MF) {
-  // dim3->x/y/z => dim3->operator[](0)/(1)/(2)
-  MF.addMatcher(
-      memberExpr(
-          has(implicitCastExpr(hasType(pointsTo(typedefDecl(hasName("dim3")))))
-                  .bind("ImplCast")))
-          .bind("Dim3MemberPointerExpr"),
-      this);
-
+  // dim3->x/y/z => (*dim3)[0]/[1]/[2]
   // dim3.x/y/z => dim3[0]/[1]/[2]
+  // int64_t{dim3->x/y/z} => int64_t((*dim3)[0]/[1]/[2])
+  // int64_t{dim3.x/y/z} => int64_t(dim3[0]/[1]/[2])
+  auto Dim3MemberExpr = [&]() {
+    return memberExpr(anyOf(
+        has(implicitCastExpr(hasType(pointsTo(typedefDecl(hasName("dim3")))))),
+        hasObjectExpression(hasType(qualType(hasCanonicalType(
+            recordType(hasDeclaration(cxxRecordDecl(hasName("dim3"))))))))));
+  };
+  MF.addMatcher(Dim3MemberExpr().bind("Dim3MemberExpr"), this);
   MF.addMatcher(
-      memberExpr(
-          hasObjectExpression(hasType(qualType(hasCanonicalType(
-              recordType(hasDeclaration(cxxRecordDecl(hasName("dim3")))))))))
-          .bind("Dim3MemberDotExpr"),
+      cxxFunctionalCastExpr(
+          allOf(hasTypeLoc(loc(isSignedInteger())),
+                hasDescendant(
+                    initListExpr(hasInit(0, ignoringImplicit(Dim3MemberExpr())))
+                        .bind("InitListExpr")))),
       this);
 }
 
 void Dim3MemberFieldsRule::runRule(const MatchFinder::MatchResult &Result) {
-  if (const MemberExpr *ME =
-          getNodeAsType<MemberExpr>(Result, "Dim3MemberPointerExpr")) {
-    // E.g.
-    // dim3 *pd3;
-    // pd3->x;
-    // will migrate to:
-    // sycl::range<3> *pd3;
-    // (*pd3)[0];
-    auto Impl = getAssistNodeAsType<ImplicitCastExpr>(Result, "ImplCast");
-    insertAroundStmt(Impl, "(*", ")");
-    FieldsRename(Result, "->", ME);
+  // E.g.
+  // dim3 *pd3, d3;
+  // pd3->z; d3.z;
+  // int64_t{d3.x}, int64_t{pd3->x};
+  // will migrate to:
+  // (*pd3)[0]; d3[0];
+  // sycl::range<3> *pd3, d3;
+  // int64_t(d3[0]), int64_t((*pd3)[0]);
+  ExprAnalysis EA;
+  if (const auto *ILE = getNodeAsType<InitListExpr>(Result, "InitListExpr")) {
+    EA.analyze(ILE);
+  } else if (const auto *ME =
+                 getNodeAsType<MemberExpr>(Result, "Dim3MemberExpr")) {
+    EA.analyze(ME);
+  } else {
+    return;
   }
-
-  if (const MemberExpr *ME =
-          getNodeAsType<MemberExpr>(Result, "Dim3MemberDotExpr")) {
-    FieldsRename(Result, ".", ME);
-  }
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 
 REGISTER_RULE(Dim3MemberFieldsRule, PassKind::PK_Migration)

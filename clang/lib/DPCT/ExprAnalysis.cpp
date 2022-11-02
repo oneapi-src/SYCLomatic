@@ -587,6 +587,41 @@ void ExprAnalysis::analyzeExpr(const IntegerLiteral *IL) {
   }
 }
 
+void ExprAnalysis::analyzeExpr(const InitListExpr *ILE) {
+  if (const CXXFunctionalCastExpr *CFCE =
+          DpctGlobalInfo::findParent<CXXFunctionalCastExpr>(ILE)) {
+    // 'int64_t' might be alias to 'long'(LP64) or 'long long'(LLP64)
+    const auto *BT0 =
+        Context.getIntTypeForBitwidth(64, true)->getAs<BuiltinType>();
+    const auto *BT1 = CFCE->getType()->getAs<BuiltinType>();
+    if (CFCE->isListInitialization() && ILE->getNumInits() == 1 &&
+        (BT0 && BT1 && BT0->getKind() == BT1->getKind())) {
+      if (const auto *ME =
+              dyn_cast<MemberExpr>(ILE->getInit(0)->IgnoreImplicit())) {
+        auto QT = ME->getBase()->getType();
+        if (QT->isPointerType()) {
+          QT = QT->getPointeeType();
+        }
+        if (DpctGlobalInfo::getUnqualifiedTypeName(
+                QT->getCanonicalTypeUnqualified()) == "dim3") {
+          // Replace initializer list with explicit type conversion (e.g.,
+          // 'int64_t{d3[2]}' to 'int64_t(d3[2])') to slience narrowing
+          // error (e.g., 'size_t -> int64_t') for
+          // non-constant-expression in int64_t initializer list.
+          // E.g.,
+          // dim3 d3; int64_t{d3.x};
+          // will be migratd to
+          // sycl::range<3> d3; int64_t(d3[2]);
+          addReplacement(ILE->getLBraceLoc(), "(");
+          addReplacement(ILE->getRBraceLoc(), ")");
+        }
+      }
+    }
+  }
+  for (const auto &Init : ILE->inits())
+    dispatch(Init);
+}
+
 void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
   analyzeType(Ctor->getTypeSourceInfo()->getTypeLoc());
   for (auto It = Ctor->arg_begin(); It != Ctor->arg_end(); It++) {
@@ -743,6 +778,9 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       }
     }
   } else if (BaseType == "dim3") {
+    if (ME->isArrow()) {
+      addReplacement(ME->getBase(), "(" + getDrefName(ME->getBase()) + ")");
+    }
     addReplacement(
         ME->getOperatorLoc(), ME->getMemberLoc(),
         MapNames::findReplacedName(MapNames::Dim3MemberNamesMap,
