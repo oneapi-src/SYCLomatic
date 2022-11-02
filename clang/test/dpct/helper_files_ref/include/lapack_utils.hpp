@@ -28,10 +28,9 @@ namespace lapack {
 /// \param [in] lda The leading dimension of matrix A.
 /// \param [in,out] b The symmetric matrix B.
 /// \param [in] ldb The leading dimension of matrix B.
-/// \param [in] w Buffer, size at least n. If info = 0, contains the eigenvalues
-/// of the matrix A in ascending order.
-/// \param [in] scratchpad Buffer holding scratchpad memory to be used by the
-/// routine for storing intermediate results.
+/// \param [out] w Eigen values.
+/// \param [in] scratchpad Scratchpad memory to be used by the routine
+/// for storing intermediate results.
 /// \param [in] scratchpad_size Size of scratchpad memory as a number of
 /// floating point elements of type T.
 /// \param [out] info The memory pointed by \p info is set to 0.
@@ -41,11 +40,11 @@ inline void sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
                   T *w, T *scratchpad, int scratchpad_size, int *info) {
 #ifdef DPCT_USM_LEVEL_NONE
   auto a_buffer = get_buffer<T>(a);
-  auto B_buffer = get_buffer<T>(b);
-  auto W_buffer = get_buffer<T>(w);
+  auto b_buffer = get_buffer<T>(b);
+  auto w_buffer = get_buffer<T>(w);
   auto scratchpad_buffer = get_buffer<T>(scratchpad);
-  oneapi::mkl::lapack::sygvd(queue, itype, jobz, uplo, n, A_buffer, lda,
-                             B_buffer, ldb, W_buffer, scratchpad_buffer,
+  oneapi::mkl::lapack::sygvd(queue, itype, jobz, uplo, n, a_buffer, lda,
+                             b_buffer, ldb, w_buffer, scratchpad_buffer,
                              scratchpad_size);
   auto info_buf = get_buffer<int>(info);
   queue.submit([&](sycl::handler &cgh) {
@@ -72,22 +71,21 @@ inline void sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
 /// \param [in] lda The leading dimension of matrix A.
 /// \param [in,out] b The Hermitian matrix B.
 /// \param [in] ldb The leading dimension of matrix B.
-/// \param [in] w Buffer, size at least n. If info = 0, contains the eigenvalues
-/// of the matrix A in ascending order.
-/// \param [in] scratchpad Buffer holding scratchpad memory to be used by the
-/// routine for storing intermediate results.
+/// \param [out] w Eigen values.
+/// \param [in] scratchpad Scratchpad memory to be used by the routine
+/// for storing intermediate results.
 /// \param [in] scratchpad_size Size of scratchpad memory as a number of
 /// floating point elements of type T.
 /// \param [out] info The memory pointed by \p info is set to 0.
-template <typename T>
+template <typename T, typename Tw>
 inline void hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
                   oneapi::mkl::uplo uplo, int n, T *a, int lda, T *b, int ldb,
-                  float *w, T *scratchpad, int scratchpad_size, int *info) {
+                  Tw *w, T *scratchpad, int scratchpad_size, int *info) {
   using Ty = typename DataType<T>::T2;
 #ifdef DPCT_USM_LEVEL_NONE
   auto a_buffer = get_buffer<Ty>(a);
   auto b_buffer = get_buffer<Ty>(b);
-  auto w_buffer = get_buffer<Ty>(w);
+  auto w_buffer = get_buffer<Tw>(w);
   auto scratchpad_buffer = get_buffer<Ty>(scratchpad);
   oneapi::mkl::lapack::hegvd(queue, itype, jobz, uplo, n, a_buffer, lda,
                              b_buffer, ldb, w_buffer, scratchpad_buffer,
@@ -99,8 +97,8 @@ inline void hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
         [=]() { info_acc[0] = 0; });
   });
 #else
-  oneapi::mkl::lapack::hegvd(queue, itype, jobz, uplo, n, (Ty *)A, lda, (Ty *)B,
-                             ldb, (Ty *)W, (Ty *)scratchpad, scratchpad_size);
+  oneapi::mkl::lapack::hegvd(queue, itype, jobz, uplo, n, (Ty *)a, lda, (Ty *)b,
+                             ldb, w, (Ty *)scratchpad, scratchpad_size);
   queue.memset(info, 0, sizeof(int));
 #endif
 }
