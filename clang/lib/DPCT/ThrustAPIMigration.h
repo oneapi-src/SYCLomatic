@@ -19,6 +19,12 @@ class ThrustRule : public NamedMigrationRule<ThrustRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+private:
+  std::set<SourceLocation> SortULExpr;
+  void thrustFuncMigration(const ast_matchers::MatchFinder::MatchResult &Result,
+                           const CallExpr *C,
+                           const UnresolvedLookupExpr *ULExpr = NULL);
+  void replacePlaceHolderExpr(const CXXConstructExpr *CE);
 };
 } // namespace dpct
 } // namespace clang
