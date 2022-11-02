@@ -2448,7 +2448,7 @@ inline void DeviceFunctionDecl::emplaceReplacement() {
 
 inline void DeviceFunctionDeclInModule::emplaceReplacement() {
   DeviceFunctionDecl::emplaceReplacement();
-  insertWrapper();
+  if(GenerateWrapper) { insertWrapper(); }
 }
 
 void DeviceFunctionDeclInModule::buildParameterInfo(const FunctionDecl *FD) {
@@ -2459,6 +2459,9 @@ void DeviceFunctionDeclInModule::buildParameterInfo(const FunctionDecl *FD) {
 }
 
 void DeviceFunctionDeclInModule::buildWrapperInfo(const FunctionDecl *FD) {
+  GenerateWrapper =
+    (FD->getLanguageLinkage() == CLanguageLinkage
+     && FD->hasAttr<CUDAGlobalAttr>());
   auto &SM = DpctGlobalInfo::getSourceManager();
   const FunctionDecl *Def;
   HasBody = FD->hasBody(Def);

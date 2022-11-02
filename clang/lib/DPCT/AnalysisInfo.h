@@ -3720,6 +3720,7 @@ private:
 class DeviceFunctionDeclInModule : public DeviceFunctionDecl {
   void insertWrapper();
   bool HasBody = false;
+  bool GenerateWrapper;
   size_t DeclEnd;
   std::string FuncName;
   std::vector<std::pair<std::string, std::string>> ParametersInfo;
