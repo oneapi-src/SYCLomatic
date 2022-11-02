@@ -1,3 +1,6 @@
+// DPCT_LABEL_BEGIN|License|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 //==---- lapack_utils.hpp -------------------------*- C++ -*----------------==//
 //
 // Copyright (C) Intel Corporation
@@ -5,15 +8,54 @@
 // See https://llvm.org/LICENSE.txt for license information.
 //
 //===----------------------------------------------------------------------===//
+// DPCT_LABEL_END
 
+#ifndef __DPCT_LAPACK_UTILS_HPP__
+#define __DPCT_LAPACK_UTILS_HPP__
+// DPCT_COMMENT
+// DPCT_COMMENT Example1:
+// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
+// DPCT_COMMENT // DPCT_DEPENDENCY_EMPTY
+// DPCT_COMMENT // DPCT_CODE
+// DPCT_COMMENT some code
+// DPCT_COMMENT // DPCT_LABEL_END
+// DPCT_COMMENT
+// DPCT_COMMENT Example2:
+// DPCT_COMMENT // DPCT_LABEL_BEGIN|FeatureNameDef|[Namespace]
+// DPCT_COMMENT // DPCT_DEPENDENCY_BEGIN
+// DPCT_COMMENT // FileID|FeatureNameRef
+// DPCT_COMMENT [// FileID|FeatureNameRef]
+// DPCT_COMMENT ...
+// DPCT_COMMENT // DPCT_DEPENDENCY_END
+// DPCT_COMMENT // DPCT_CODE
+// DPCT_COMMENT some code
+// DPCT_COMMENT // DPCT_LABEL_END
+// DPCT_COMMENT
+// DPCT_COMMENT For header file including dependency, please use predefined feature name:
+// DPCT_COMMENT   local_include_dependency: dpct helper files
+// DPCT_COMMENT   non_local_include_dependency: other header files
+
+// DPCT_LABEL_BEGIN|local_include_dependency|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+// DPCT_LABEL_END
 #include "memory.hpp"
 #include "util.hpp"
 
+// DPCT_LABEL_BEGIN|non_local_include_dependency|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 #include <oneapi/mkl.hpp>
 #include <sycl/sycl.hpp>
+// DPCT_LABEL_END
 
 namespace dpct {
 namespace lapack {
+// DPCT_LABEL_BEGIN|sygvd|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// Memory|get_buffer_T|UsmNone
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 /// Computes all eigenvalues and, optionally, eigenvectors of a real generalized
 /// symmetric definite eigenproblem using a divide and conquer method.
 /// \param [in] queue Device queue where calculations will be performed.
@@ -56,6 +98,14 @@ inline void sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
   queue.memset(info, 0, sizeof(int));
 #endif
 }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|hegvd|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// Memory|get_buffer_T|UsmNone
+// Util|DataType
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 /// Computes all the eigenvalues, and optionally, the eigenvectors of a complex
 /// generalized Hermitian positive-definite eigenproblem using a divide and
 /// conquer method.
@@ -100,6 +150,13 @@ inline void hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
   queue.memset(info, 0, sizeof(int));
 #endif
 }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|potrf_batch|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// Util|DataType
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 /// Computes the Cholesky factorizations of a batch of symmetric (or Hermitian,
 /// for complex data) positive-definite matrices.
 /// \param [in] queue Device queue where calculations will be performed.
@@ -144,6 +201,13 @@ inline void potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   queue.memset(info, 0, group_size * sizeof(int));
 #endif
 }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|potrs_batch|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// Util|DataType
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 /// Solves a batch of systems of linear equations with a Cholesky-factored
 /// symmetric (Hermitian) positive-definite coefficient matrices.
 /// \param [in] queue Device queue where calculations will be performed.
@@ -198,6 +262,8 @@ inline void potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   queue.memset(info, 0, group_size * sizeof(int));
 #endif
 }
-
+// DPCT_LABEL_END
 } // namespace lapack
 } // namespace dpct
+
+#endif // __DPCT_LAPACK_UTILS_HPP__
