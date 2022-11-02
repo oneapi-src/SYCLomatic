@@ -3347,8 +3347,7 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     // To skip user-defined type.
     if (const auto *ND = getNamedDecl(TL->getTypePtr())) {
       auto Loc = ND->getBeginLoc();
-      auto Path = dpct::DpctGlobalInfo::getLocInfo(Loc).first;
-      if (DpctGlobalInfo::isInAnalysisScope(Path, true))
+      if (DpctGlobalInfo::isInAnalysisScope(Loc))
         return;
     }
 
@@ -4374,10 +4373,7 @@ void ManualMigrateEnumsRule::runRule(const MatchFinder::MatchResult &Result) {
   if (const DeclRefExpr *DE =
           getNodeAsType<DeclRefExpr>(Result, "NCCLConstants")) {
     auto *ECD = cast<EnumConstantDecl>(DE->getDecl());
-    std::string FilePath = DpctGlobalInfo::getSourceManager()
-                               .getFilename(ECD->getBeginLoc())
-                               .str();
-    if (DpctGlobalInfo::isInAnalysisScope(FilePath)) {
+    if (DpctGlobalInfo::isInAnalysisScope(ECD->getBeginLoc())) {
       return;
     }
     report(dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
