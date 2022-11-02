@@ -3347,7 +3347,6 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     // To skip user-defined type.
     if (const auto *ND = getNamedDecl(TL->getTypePtr())) {
       auto Loc = ND->getBeginLoc();
-      auto Path = dpct::DpctGlobalInfo::getLocInfo(Loc).first;
       if (DpctGlobalInfo::isInAnalysisScope(Loc))
         return;
     }
