@@ -1,5 +1,4 @@
-//===--------------- ThrustAPIMigration.cpp
-//---------------------------------===//
+//===--------------- ThrustAPIMigration.cpp--------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -21,7 +20,7 @@ using namespace clang::ast_matchers;
 
 void ThrustRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   // API register
-  auto functionName = [&]() { return hasAnyName("on"); };
+  auto functionName = [&]() { return hasAnyName("exp","log"); };
   MF.addMatcher(callExpr(callee(functionDecl(anyOf(
                              hasDeclContext(namespaceDecl(hasName("thrust"))),
                              functionName()))))
@@ -45,7 +44,7 @@ void ThrustRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                             hasDeclaration(namedDecl(ThrustTypeHasNames()))))))
                     .bind("thrustTypeLoc"),
                 this);
-  
+
   // CTOR register
   auto hasAnyThrustRecord = []() {
     return cxxRecordDecl(hasName("complex"),
@@ -84,40 +83,21 @@ void ThrustRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
             getAssistNodeAsType<CallExpr>(Result, "thrustApiCallExpr"))
       thrustFuncMigration(Result, CE, ULExpr);
   } else if (const CallExpr *CE =
-                 getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
+                 getAssistNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
     thrustFuncMigration(Result, CE);
   } else if (auto TL = getNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
     EA.analyze(*TL);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   } else if (const CXXConstructExpr *CE =
-          getNodeAsType<CXXConstructExpr>(Result, "thrustCtorExpr")) {
-    // handle constructor expressions for thrust::complex
-    std::string ExprStr = getStmtSpelling(CE);
-    if (ExprStr.substr(0, 8) != "thrust::") {
-      return;
-    }
-    auto P = ExprStr.find('<');
-    if (P != std::string::npos) {
-      auto ReplInfo = MapNames::ThrustFuncNamesMap.find(ExprStr);
-      if (ReplInfo == MapNames::ThrustFuncNamesMap.end()) {
-        return;
-      }
-      std::string ReplName = ReplInfo->second.ReplName;
-      if (ReplName == "std::complex") {
-        DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(),
-                                                   HT_Complex);
-      }
-      emplaceTransformation(
-          new ReplaceText(CE->getBeginLoc(), P, std::move(ReplName)));
-    }
+                 getNodeAsType<CXXConstructExpr>(Result, "thrustCtorExpr")) {
+    thrustCtorMigration(CE);
   } else if (const CXXConstructExpr *CE = getNodeAsType<CXXConstructExpr>(
                  Result, "thrustCtorPlaceHolder")) {
     // handle constructor expressions with placeholders (_1, _2, etc)
     replacePlaceHolderExpr(CE);
   } else if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr")) {
     auto VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
-
     if (DRE->hasQualifier()) {
 
       auto Namespace = DRE->getQualifierLoc()
@@ -134,7 +114,6 @@ void ThrustRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
           MapNames::findReplacedName(MapNames::TypeNamesMap, ThrustVarName);
       insertHeaderForTypeRule(ThrustVarName, DRE->getBeginLoc());
       requestHelperFeatureForTypeNames(ThrustVarName, DRE);
-
       if (Replacement == "oneapi::dpl::execution::dpcpp_default")
         Replacement = makeDevicePolicy(DRE);
 
@@ -147,8 +126,6 @@ void ThrustRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
     return;
   }
 }
-
-
 
 void ThrustRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
                                      const CallExpr *CE,
@@ -170,7 +147,6 @@ void ThrustRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
   } else {
     ThrustFuncName = CE->getCalleeDecl()->getAsFunction()->getNameAsString();
   }
-
   // Process API: "thrust::cuda::par(thrust_allocator).on(stream)"
   const CXXMemberCallExpr *CMCE = dyn_cast_or_null<CXXMemberCallExpr>(CE);
   if (CMCE) {
@@ -446,6 +422,27 @@ void ThrustRule::replacePlaceHolderExpr(const CXXConstructExpr *CE) {
   emplaceTransformation(new InsertBeforeStmt(CE, std::move(LambdaPrefix)));
   std::string LambdaPostfix = ";}";
   emplaceTransformation(new InsertAfterStmt(CE, std::move(LambdaPostfix)));
+}
+
+void ThrustRule::thrustCtorMigration(const CXXConstructExpr *CE) {
+  // handle constructor expressions for thrust::complex
+  std::string ExprStr = getStmtSpelling(CE);
+  if (ExprStr.substr(0, 8) != "thrust::") {
+    return;
+  }
+  auto P = ExprStr.find('<');
+  if (P != std::string::npos) {
+    auto ReplInfo = MapNames::ThrustFuncNamesMap.find(ExprStr);
+    if (ReplInfo == MapNames::ThrustFuncNamesMap.end()) {
+      return;
+    }
+    std::string ReplName = ReplInfo->second.ReplName;
+    if (ReplName == "std::complex") {
+      DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), HT_Complex);
+    }
+    emplaceTransformation(
+        new ReplaceText(CE->getBeginLoc(), P, std::move(ReplName)));
+  }
 }
 
 } // namespace dpct

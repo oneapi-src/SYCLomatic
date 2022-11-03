@@ -1,4 +1,4 @@
-//===--------------- ThrustAPIMigration.h --------------------------------------===//
+//===--------------- ThrustAPIMigration.h-----------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -19,11 +19,13 @@ class ThrustRule : public NamedMigrationRule<ThrustRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+
 private:
   std::set<SourceLocation> SortULExpr;
   void thrustFuncMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                            const CallExpr *C,
                            const UnresolvedLookupExpr *ULExpr = NULL);
+  void thrustCtorMigration(const CXXConstructExpr *CE);
   void replacePlaceHolderExpr(const CXXConstructExpr *CE);
 };
 } // namespace dpct
