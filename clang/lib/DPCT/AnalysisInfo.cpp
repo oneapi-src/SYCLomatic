@@ -583,13 +583,17 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
       return insertHeader(HeaderType::HT_Dnnl, FirstIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
                               "/dnnl_utils.hpp>");
-    case HT_MKL_BLAS_Solver:
+    case HT_MKL_Without_Util:
       return insertHeader(
-          HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          HeaderType::HT_MKL_Without_Util, LastIncludeOffset, "<oneapi/mkl.hpp>");
+    case HT_MKL_BLAS:
+      return insertHeader(
+          HeaderType::HT_MKL_BLAS, LastIncludeOffset, "<oneapi/mkl.hpp>",
           "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
-    case HT_MKL_BLAS_Solver_Without_Util:
-      return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>");
+    case HT_MKL_Solver:
+      return insertHeader(HeaderType::HT_MKL_Solver, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>",
+          "<" + getCustomMainHelperFileName() + "/lapack_utils.hpp>");
     case HT_MKL_RNG:
       return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
                           "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>",
@@ -600,18 +604,12 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
                           "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>");
     case HT_MKL_SPBLAS:
       return insertHeader(
-          HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          HeaderType::HT_MKL_BLAS, LastIncludeOffset, "<oneapi/mkl.hpp>",
           "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
-    case HT_MKL_SPBLAS_Without_Util:
-      return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>");
     case HT_MKL_FFT:
       return insertHeader(
           HeaderType::HT_MKL_FFT, LastIncludeOffset, "<oneapi/mkl.hpp>",
           "<" + getCustomMainHelperFileName() + "/fft_utils.hpp>");
-    case HT_MKL_FFT_Without_Util:
-      return insertHeader(
-          HeaderType::HT_MKL_FFT_Without_Util, LastIncludeOffset, "<oneapi/mkl.hpp>");
     case HT_Numeric:
       return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
                           "<numeric>");

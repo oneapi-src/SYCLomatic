@@ -937,6 +937,7 @@ std::map<HelperFeatureIDTy, clang::dpct::HelperFunc> HelperNameContentMap {
 #include "clang/DPCT/kernel.inc"
 #include "clang/DPCT/lib_common_utils.inc"
 #include "clang/DPCT/fft_utils.inc"
+#include "clang/DPCT/lapack_utils.inc"
 #include "clang/DPCT/memory.inc"
 #include "clang/DPCT/rng_utils.inc"
 #include "clang/DPCT/util.inc"
