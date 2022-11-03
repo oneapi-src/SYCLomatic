@@ -1,4 +1,6 @@
-// RUN: dpct --extra-arg="--ptx" --out-root=%T/module_wrapper_gen %s
+// RUN: dpct --extra-arg="--ptx" \
+// RUN:      --out-root=%T/module_wrapper_gen \
+// RUN:      --cuda-include-path="%cuda-path/include" %s
 // RUN: FileCheck %s --input-file=%T/module_wrapper_gen/module_wrapper_gen.dp.cpp
 
 // START
