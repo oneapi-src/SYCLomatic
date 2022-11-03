@@ -508,22 +508,18 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     if (!ReplEnum.empty())
       addReplacement(DRE, ReplEnum);
     else {
-      auto &ReplBLASEnum = MapNames::findReplacedName(MapNames::BLASEnumsMap,
-                                                      ECD->getName().str());
-      if (!ReplBLASEnum.empty())
-        addReplacement(DRE, ReplBLASEnum);
-      else {
-        auto &ReplFuncAttrEnum = MapNames::findReplacedName(
-            MapNames::FunctionAttrMap, ECD->getName().str());
-        if (!ReplFuncAttrEnum.empty())
-          addReplacement(DRE, ReplFuncAttrEnum);
-        else {
-          auto &CuDNNEnum = MapNames::findReplacedName(
-              CuDNNTypeRule::CuDNNEnumNamesMap, ECD->getName().str());
-          if (!CuDNNEnum.empty())
-            addReplacement(DRE, CuDNNEnum);
-        }
-      }
+#define REPLACE_ENUM(MAP)                                                      \
+  do {                                                                         \
+    auto &Repl = MapNames::findReplacedName(MAP, ECD->getName().str());        \
+    if (!Repl.empty())                                                         \
+      addReplacement(DRE, Repl);                                               \
+  } while (0)
+      REPLACE_ENUM(MapNames::BLASEnumsMap);
+      REPLACE_ENUM(MapNames::FunctionAttrMap);
+      REPLACE_ENUM(CuDNNTypeRule::CuDNNEnumNamesMap);
+      REPLACE_ENUM(MapNames::SOLVEREnumsMap);
+      REPLACE_ENUM(MapNames::SPBLASEnumsMap);
+#undef REPLACE_ENUM
     }
   } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
     if (RefString == "warpSize" &&
