@@ -1160,6 +1160,277 @@ partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   return stable_partition(std::forward<Policy>(policy), first, last, mask, p);
 }
 // DPCT_LABEL_END
+namespace internal {
+
+// DPCT_LABEL_BEGIN|transform_and_sort|dpct::internal
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasFunctional|translate_key
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+// Transforms key to a specific bit range and sorts the transformed key
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
+          typename transformed_key_t>
+inline void transform_and_sort(_ExecutionPolicy &&policy, key_t keys_in,
+                               key_out_t keys_out, int64_t n, bool descending,
+                               int begin_bit, int end_bit) {
+  using key_t_value_t = typename std::iterator_traits<key_t>::value_type;
+  auto trans_key =
+      translate_key<key_t_value_t, transformed_key_t>(begin_bit, end_bit);
+
+  // Use of the comparison operator that is not simply std::greater() or
+  // std::less() will result in
+  //  not using radix sort which will cost some performance.  However, this is
+  //  necessary to provide the transformation of the key to the bitrange
+  //  desired.
+  auto partial_sort_with_comp = [&](const auto &comp) {
+    return oneapi::dpl::partial_sort_copy(
+        std::forward<_ExecutionPolicy>(policy), keys_in, keys_in + n, keys_out,
+        keys_out + n, [=](const auto a, const auto b) {
+          return comp(trans_key(a), trans_key(b));
+        });
+  };
+  if (descending)
+    partial_sort_with_comp(::std::greater<transformed_key_t>());
+  else
+    partial_sort_with_comp(::std::less<transformed_key_t>());
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|sort_only|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
+inline void sort_only(_ExecutionPolicy &&policy, key_t keys_in,
+                      key_out_t keys_out, int64_t n, bool descending) {
+  using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
+
+  if constexpr (::std::is_floating_point<key_t_value_t>::value) {
+    if (descending) {
+      // Comparison operator that is not std::greater() ensures stability of
+      // -0.0 and 0.0
+      // at the cost of some performance because radix sort will not be used.
+      auto comp_descending = [=](const auto a, const auto b) { return a > b; };
+
+      oneapi::dpl::partial_sort_copy(::std::forward<_ExecutionPolicy>(policy),
+                                     keys_in, keys_in + n, keys_out,
+                                     keys_out + n, comp_descending);
+    } else {
+      // Comparison operator that is not std::less() ensures stability of -0.0
+      // and 0.0
+      // at the cost of some performance because radix sort will not be used.
+      auto comp_ascending = [=](const auto a, const auto b) { return a < b; };
+
+      oneapi::dpl::partial_sort_copy(::std::forward<_ExecutionPolicy>(policy),
+                                     keys_in, keys_in + n, keys_out,
+                                     keys_out + n, comp_ascending);
+    }
+  } else {
+    if (descending) {
+      oneapi::dpl::partial_sort_copy(
+          ::std::forward<_ExecutionPolicy>(policy), keys_in, keys_in + n,
+          keys_out, keys_out + n, ::std::greater<key_t_value_t>());
+    } else {
+
+      oneapi::dpl::partial_sort_copy(::std::forward<_ExecutionPolicy>(policy),
+                                     keys_in, keys_in + n, keys_out,
+                                     keys_out + n);
+    }
+  }
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|transform_and_sort_pairs|dpct::internal
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasFunctional|translate_key
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+// Transforms key from a pair to a specific bit range and sorts the pairs by the
+// transformed key
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
+          typename transform_key_t, typename value_t, typename value_out_t>
+inline void transform_and_sort_pairs(_ExecutionPolicy &&policy, key_t keys_in,
+                                     key_out_t keys_out, value_t values_in,
+                                     value_out_t values_out, int64_t n,
+                                     bool descending, int begin_bit,
+                                     int end_bit) {
+  using key_t_value_t = typename std::iterator_traits<key_t>::value_type;
+  auto zip_input = oneapi::dpl::zip_iterator(keys_in, values_in);
+  auto zip_output = oneapi::dpl::zip_iterator(keys_out, values_out);
+  auto trans_key =
+      translate_key<key_t_value_t, transform_key_t>(begin_bit, end_bit);
+
+  // Use of the comparison operator that is not simply std::greater() or
+  // std::less() will result in
+  //  not using radix sort which will cost some performance.  However, this is
+  //  necessary to provide the transformation of the key to the bitrange desired
+  //  and also to select the key from the zipped pair.
+  auto load_val = [=](const auto a) { return trans_key(std::get<0>(a)); };
+
+  auto partial_sort_with_comp = [&](const auto &comp) {
+    return oneapi::dpl::partial_sort_copy(
+        std::forward<_ExecutionPolicy>(policy), zip_input, zip_input + n,
+        zip_output, zip_output + n, [=](const auto a, const auto b) {
+          return comp(load_val(a), load_val(b));
+        });
+  };
+  if (descending)
+    partial_sort_with_comp(::std::greater<key_t_value_t>());
+  else
+    partial_sort_with_comp(::std::less<key_t_value_t>());
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|sort_only_pairs|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
+          typename value_t, typename value_out_t>
+inline void sort_only_pairs(_ExecutionPolicy &&policy, key_t keys_in,
+                            key_out_t keys_out, value_t values_in,
+                            value_out_t values_out, int64_t n,
+                            bool descending) {
+  using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
+  auto zip_input = oneapi::dpl::zip_iterator(keys_in, values_in);
+  auto zip_output = oneapi::dpl::zip_iterator(keys_out, values_out);
+
+  // Use of the comparison operator that is not simply std::greater() or
+  // std::less() will result in
+  //  not using radix sort which will cost some performance.  However, this is
+  //  necessary to select the key from the zipped pair.
+  auto load_val = [=](const auto a) { return std::get<0>(a); };
+
+  auto partial_sort_with_comp = [&](const auto &comp) {
+    return oneapi::dpl::partial_sort_copy(
+        std::forward<_ExecutionPolicy>(policy), zip_input, zip_input + n,
+        zip_output, zip_output + n, [=](const auto a, const auto b) {
+          return comp(load_val(a), load_val(b));
+        });
+  };
+  if (descending)
+    partial_sort_with_comp(::std::greater<key_t_value_t>());
+  else
+    partial_sort_with_comp(::std::less<key_t_value_t>());
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|sort_pairs_impl|dpct::internal
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|transform_and_sort_pairs
+// DplExtrasAlgorithm|sort_only_pairs
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+// overload for key_out_t != std::nullptr_t
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
+          typename value_t, typename value_out_t>
+typename ::std::enable_if<!::std::is_null_pointer<key_out_t>::value>::type
+sort_pairs_impl(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+                value_t values_in, value_out_t values_out, int64_t n,
+                bool descending, int begin_bit, int end_bit) {
+  using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
+
+  int clipped_begin_bit = ::std::max(begin_bit, 0);
+  int clipped_end_bit =
+      ::std::min((::std::uint64_t)end_bit, sizeof(key_t_value_t) * 8);
+  int num_bytes = (clipped_end_bit - clipped_begin_bit - 1) / 8 + 1;
+
+  auto transform_and_sort_pairs_f = [&](auto x) {
+    using T = typename ::std::decay_t<decltype(x)>;
+    internal::transform_and_sort_pairs<decltype(policy), key_t, key_out_t, T,
+                                       value_t, value_out_t>(
+        ::std::forward<_ExecutionPolicy>(policy), keys_in, keys_out, values_in,
+        values_out, n, descending, clipped_begin_bit, clipped_end_bit);
+  };
+
+  if (clipped_end_bit - clipped_begin_bit == sizeof(key_t_value_t) * 8) {
+    internal::sort_only_pairs(::std::forward<_ExecutionPolicy>(policy), keys_in,
+                              keys_out, values_in, values_out, n, descending);
+  } else if (num_bytes == 1) {
+    transform_and_sort_pairs_f.template operator()<uint8_t>(0);
+  } else if (num_bytes == 2) {
+    transform_and_sort_pairs_f.template operator()<uint16_t>(0);
+  } else if (num_bytes <= 4) {
+    transform_and_sort_pairs_f.template operator()<uint32_t>(0);
+  } else // if (num_bytes <= 8)
+  {
+    transform_and_sort_pairs_f.template operator()<uint64_t>(0);
+  }
+}
+
+// overload for key_out_t == std::nullptr_t
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
+          typename value_t, typename value_out_t>
+typename ::std::enable_if<::std::is_null_pointer<key_out_t>::value>::type
+sort_pairs_impl(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+                value_t values_in, value_out_t values_out, int64_t n,
+                bool descending, int begin_bit, int end_bit) {
+  // create temporary keys_out to discard, memory footprint could be improved by
+  // a specialized iterator with a single
+  // unchanging dummy key_t element
+  using key_t_value_t = typename std::iterator_traits<key_t>::value_type;
+  auto temp_keys_out = sycl::malloc_device<key_t_value_t>(n, policy.queue());
+  internal::sort_pairs_impl(std::forward<_ExecutionPolicy>(policy), keys_in,
+                            temp_keys_out, values_in, values_out, n, descending,
+                            begin_bit, end_bit);
+  sycl::free(temp_keys_out, policy.queue());
+}
+// DPCT_LABEL_END
+
+} // end namespace internal
+
+// DPCT_LABEL_BEGIN|sort_pairs|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|sort_pairs_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
+          typename value_t, typename value_out_t>
+void sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+                value_t values_in, value_out_t values_out, int64_t n,
+                bool descending, int begin_bit, int end_bit) {
+  internal::sort_pairs_impl(std::forward<_ExecutionPolicy>(policy), keys_in,
+                            keys_out, values_in, values_out, n, descending,
+                            begin_bit, end_bit);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|sort_keys|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|transform_and_sort
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
+inline void sort_keys(_ExecutionPolicy &&policy, key_t keys_in,
+                      key_out_t keys_out, int64_t n, bool descending,
+                      int begin_bit, int end_bit) {
+  using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
+
+  int clipped_begin_bit = ::std::max(begin_bit, 0);
+  int clipped_end_bit =
+      ::std::min((::std::uint64_t)end_bit, sizeof(key_t_value_t) * 8);
+  int num_bytes = (clipped_end_bit - clipped_begin_bit - 1) / 8 + 1;
+
+  auto transform_and_sort_f = [&](auto x) {
+    using T = typename ::std::decay_t<decltype(x)>;
+    internal::transform_and_sort<decltype(policy), key_t, key_out_t, T>(
+        ::std::forward<_ExecutionPolicy>(policy), keys_in, keys_out, n,
+        descending, clipped_begin_bit, clipped_end_bit);
+  };
+
+  if (clipped_end_bit - clipped_begin_bit == sizeof(key_t_value_t) * 8) {
+    internal::sort_only(::std::forward<_ExecutionPolicy>(policy), keys_in,
+                        keys_out, n, descending);
+  } else if (num_bytes == 1) {
+    transform_and_sort_f.template operator()<uint8_t>(0);
+  } else if (num_bytes == 2) {
+    transform_and_sort_f.template operator()<uint16_t>(0);
+  } else if (num_bytes <= 4) {
+    transform_and_sort_f.template operator()<uint32_t>(0);
+  } else // if (num_bytes <= 8)
+  {
+    transform_and_sort_f.template operator()<uint64_t>(0);
+  }
+}
+// DPCT_LABEL_END
 
 } // end namespace dpct
 
