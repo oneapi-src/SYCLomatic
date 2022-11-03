@@ -1,6 +1,6 @@
 ====================================================================================================================
 
-**Current libcurl version: curl-7.85.0**
+**Current libcurl version: curl-7.86.0**
 
 ====================================================================================================================
 * Steps to update libcurl
@@ -19,15 +19,15 @@
 3  Windows build
 ```
    a. start Visual Studio X64 command line
-   b. cd curl-7.85.0\winbuild
+   b. cd curl-7.86.0\winbuild
    c. change /MD to /MT and /MDd to /MTd in file winbuild\MakefileBuild.vc in line404 and line405
    e. nmake /f Makefile.vc mode=static ENABLE_SSPI=no ENABLE_IPV6=no ENABLE_IDN=no  ENABLE_SCHANNEL=no
-   f. check the result in curl-7.85.0\builds folder
+   f. check the result in curl-7.86.0\builds folder
 ```
 
 4. Update header files
 ```
-   a. Copy header files from curl-7.85.0\builds\libcurl-vc-x64-release-static\include to clang/lib/DPCT/libcurl/include folder
+   a. Copy header files from curl-7.86.0\builds\libcurl-vc-x64-release-static\include to clang/lib/DPCT/libcurl/include folder
 ```
 
 5. Update static library
