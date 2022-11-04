@@ -18,9 +18,9 @@ using namespace clang;
 using namespace clang::dpct;
 using namespace clang::ast_matchers;
 
-void ThrustRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   // API register
-  auto functionName = [&]() { return hasAnyName("exp","log"); };
+  auto functionName = [&]() { return hasAnyName("on"); };
   MF.addMatcher(callExpr(callee(functionDecl(anyOf(
                              hasDeclContext(namespaceDecl(hasName("thrust"))),
                              functionName()))))
@@ -33,49 +33,10 @@ void ThrustRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                            hasParent(callExpr().bind("thrustApiCallExpr")))
           .bind("unresolvedThrustAPILookupExpr"),
       this);
-
-  // TYPE register
-  auto ThrustTypeHasNames = [&]() {
-    return hasAnyName("thrust::greater_equal", "thrust::less_equal",
-                      "thrust::logical_and", "thrust::bit_and",
-                      "thrust::bit_or", "thrust::minimum", "thrust::bit_xor");
-  };
-  MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
-                            hasDeclaration(namedDecl(ThrustTypeHasNames()))))))
-                    .bind("thrustTypeLoc"),
-                this);
-
-  // CTOR register
-  auto hasAnyThrustRecord = []() {
-    return cxxRecordDecl(hasName("complex"),
-                         hasDeclContext(namespaceDecl(hasName("thrust"))));
-  };
-
-  MF.addMatcher(
-      cxxConstructExpr(hasType(hasAnyThrustRecord())).bind("thrustCtorExpr"),
-      this);
-
-  auto hasFunctionalActor = []() {
-    return hasType(qualType(hasDeclaration(
-        cxxRecordDecl(hasName("thrust::detail::functional::actor")))));
-  };
-
-  MF.addMatcher(
-      cxxConstructExpr(anyOf(hasFunctionalActor(),
-                             hasType(qualType(hasDeclaration(
-                                 typedefNameDecl(hasFunctionalActor()))))))
-          .bind("thrustCtorPlaceHolder"),
-      this);
-
-  // Var register
-  auto hasPolicyName = [&]() { return hasAnyName("seq", "host", "device"); };
-
-  MF.addMatcher(declRefExpr(to(varDecl(hasPolicyName()).bind("varDecl")))
-                    .bind("declRefExpr"),
-                this);
 }
 
-void ThrustRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
+void ThrustAPIRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
   ExprAnalysis EA;
   if (const auto ULExpr = getAssistNodeAsType<UnresolvedLookupExpr>(
           Result, "unresolvedThrustAPILookupExpr")) {
@@ -83,53 +44,16 @@ void ThrustRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
             getAssistNodeAsType<CallExpr>(Result, "thrustApiCallExpr"))
       thrustFuncMigration(Result, CE, ULExpr);
   } else if (const CallExpr *CE =
-                 getAssistNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
+                 getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
     thrustFuncMigration(Result, CE);
-  } else if (auto TL = getNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
-    EA.analyze(*TL);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-  } else if (const CXXConstructExpr *CE =
-                 getNodeAsType<CXXConstructExpr>(Result, "thrustCtorExpr")) {
-    thrustCtorMigration(CE);
-  } else if (const CXXConstructExpr *CE = getNodeAsType<CXXConstructExpr>(
-                 Result, "thrustCtorPlaceHolder")) {
-    // handle constructor expressions with placeholders (_1, _2, etc)
-    replacePlaceHolderExpr(CE);
-  } else if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr")) {
-    auto VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
-    if (DRE->hasQualifier()) {
-
-      auto Namespace = DRE->getQualifierLoc()
-                           .getNestedNameSpecifier()
-                           ->getAsNamespace()
-                           ->getNameAsString();
-
-      if (Namespace != "thrust")
-        return;
-
-      const std::string ThrustVarName = Namespace + "::" + VD->getName().str();
-
-      std::string Replacement =
-          MapNames::findReplacedName(MapNames::TypeNamesMap, ThrustVarName);
-      insertHeaderForTypeRule(ThrustVarName, DRE->getBeginLoc());
-      requestHelperFeatureForTypeNames(ThrustVarName, DRE);
-      if (Replacement == "oneapi::dpl::execution::dpcpp_default")
-        Replacement = makeDevicePolicy(DRE);
-
-      if (!Replacement.empty()) {
-        emplaceTransformation(new ReplaceToken(
-            DRE->getBeginLoc(), DRE->getEndLoc(), std::move(Replacement)));
-      }
-    }
   } else {
     return;
   }
 }
 
-void ThrustRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
-                                     const CallExpr *CE,
-                                     const UnresolvedLookupExpr *ULExpr) {
+void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
+                                        const CallExpr *CE,
+                                        const UnresolvedLookupExpr *ULExpr) {
 
   auto &SM = DpctGlobalInfo::getSourceManager();
 
@@ -378,7 +302,85 @@ void ThrustRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
   }
 }
 
-void ThrustRule::replacePlaceHolderExpr(const CXXConstructExpr *CE) {
+void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  // TYPE register
+  auto ThrustTypeHasNames = [&]() {
+    return hasAnyName("thrust::greater_equal", "thrust::less_equal",
+                      "thrust::logical_and", "thrust::bit_and",
+                      "thrust::bit_or", "thrust::minimum", "thrust::bit_xor",
+                      "thrust::complex");
+  };
+  MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
+                            hasDeclaration(namedDecl(ThrustTypeHasNames()))))))
+                    .bind("thrustTypeLoc"),
+                this);
+
+  auto hasFunctionalActor = []() {
+    return hasType(qualType(hasDeclaration(
+        cxxRecordDecl(hasName("thrust::detail::functional::actor")))));
+  };
+
+  MF.addMatcher(
+      cxxConstructExpr(anyOf(hasFunctionalActor(),
+                             hasType(qualType(hasDeclaration(
+                                 typedefNameDecl(hasFunctionalActor()))))))
+          .bind("thrustCtorPlaceHolder"),
+      this);
+
+  // Var register
+  auto hasPolicyName = [&]() { return hasAnyName("seq", "host", "device"); };
+
+  MF.addMatcher(declRefExpr(to(varDecl(hasPolicyName()).bind("varDecl")))
+                    .bind("declRefExpr"),
+                this);
+}
+
+void ThrustTypeRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  ExprAnalysis EA;
+  if (auto TL = getNodeAsType<TypeLoc>(Result, "thrustTypeLoc")) {
+    EA.analyze(*TL);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+  } else if (const CXXConstructExpr *CE =
+                 getNodeAsType<CXXConstructExpr>(Result, "thrustCtorExpr")) {
+    thrustCtorMigration(CE);
+  } else if (const CXXConstructExpr *CE = getNodeAsType<CXXConstructExpr>(
+                 Result, "thrustCtorPlaceHolder")) {
+    // handle constructor expressions with placeholders (_1, _2, etc)
+    replacePlaceHolderExpr(CE);
+  } else if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr")) {
+    auto VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
+    if (DRE->hasQualifier()) {
+
+      auto Namespace = DRE->getQualifierLoc()
+                           .getNestedNameSpecifier()
+                           ->getAsNamespace()
+                           ->getNameAsString();
+
+      if (Namespace != "thrust")
+        return;
+
+      const std::string ThrustVarName = Namespace + "::" + VD->getName().str();
+
+      std::string Replacement =
+          MapNames::findReplacedName(MapNames::TypeNamesMap, ThrustVarName);
+      insertHeaderForTypeRule(ThrustVarName, DRE->getBeginLoc());
+      requestHelperFeatureForTypeNames(ThrustVarName, DRE);
+      if (Replacement == "oneapi::dpl::execution::dpcpp_default")
+        Replacement = makeDevicePolicy(DRE);
+
+      if (!Replacement.empty()) {
+        emplaceTransformation(new ReplaceToken(
+            DRE->getBeginLoc(), DRE->getEndLoc(), std::move(Replacement)));
+      }
+    }
+  } else {
+    return;
+  }
+}
+
+void ThrustTypeRule::replacePlaceHolderExpr(const CXXConstructExpr *CE) {
   unsigned PlaceholderCount = 0;
 
   auto placeholderStr = [](unsigned Num) {
@@ -424,7 +426,7 @@ void ThrustRule::replacePlaceHolderExpr(const CXXConstructExpr *CE) {
   emplaceTransformation(new InsertAfterStmt(CE, std::move(LambdaPostfix)));
 }
 
-void ThrustRule::thrustCtorMigration(const CXXConstructExpr *CE) {
+void ThrustTypeRule::thrustCtorMigration(const CXXConstructExpr *CE) {
   // handle constructor expressions for thrust::complex
   std::string ExprStr = getStmtSpelling(CE);
   if (ExprStr.substr(0, 8) != "thrust::") {

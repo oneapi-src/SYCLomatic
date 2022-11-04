@@ -15,7 +15,7 @@
 namespace clang {
 namespace dpct {
 
-class ThrustRule : public NamedMigrationRule<ThrustRule> {
+class ThrustAPIRule : public NamedMigrationRule<ThrustAPIRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
@@ -25,9 +25,18 @@ private:
   void thrustFuncMigration(const ast_matchers::MatchFinder::MatchResult &Result,
                            const CallExpr *C,
                            const UnresolvedLookupExpr *ULExpr = NULL);
+};
+
+class ThrustTypeRule : public NamedMigrationRule<ThrustTypeRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+
+private:
   void thrustCtorMigration(const CXXConstructExpr *CE);
   void replacePlaceHolderExpr(const CXXConstructExpr *CE);
 };
+
 } // namespace dpct
 } // namespace clang
 
