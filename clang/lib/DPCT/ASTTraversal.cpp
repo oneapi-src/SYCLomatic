@@ -1053,6 +1053,7 @@ void IncludesCallbacks::InclusionDirective(
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Complex);
     } else if(FileName.compare(StringRef("thrust/functional.h")) == 0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Functional);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Utils);
       requestFeature(HelperFeatureEnum::DplUtils_non_local_include_dependency,
@@ -2065,10 +2066,11 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
       typeLoc(
           loc(qualType(hasDeclaration(namedDecl(hasAnyName(
               "cudaError", "curandStatus", "cublasStatus", "CUstream",
-              "CUstream_st", "thrust::device_vector", "thrust::device_ptr",
-              "thrust::host_vector", "cublasHandle_t", "CUevent_st", "__half",
-              "half", "__half2", "half2", "cudaMemoryAdvise", "cudaError_enum",
-              "cudaDeviceProp", "cudaPitchedPtr", "thrust::counting_iterator",
+              "CUstream_st", "thrust::complex", "thrust::device_vector",
+              "thrust::device_ptr", "thrust::host_vector", "cublasHandle_t",
+              "CUevent_st", "__half", "half", "__half2", "half2",
+              "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",
+              "cudaPitchedPtr", "thrust::counting_iterator",
               "thrust::transform_iterator", "thrust::permutation_iterator",
               "thrust::iterator_difference", "cusolverDnHandle_t",
               "thrust::device_malloc_allocator", "thrust::divides",

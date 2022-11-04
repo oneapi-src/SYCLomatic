@@ -98,5 +98,3 @@ TYPE_REWRITE_ENTRY(
     "thrust::bit_xor",
     TYPE_FACTORY(STR("std::bit_xor"), TEMPLATE_ARG(0)))
 
-TYPE_REWRITE_ENTRY("thrust::complex",TYPE_FACTORY(STR("std::complex"),
-                     TEMPLATE_ARG(0)))

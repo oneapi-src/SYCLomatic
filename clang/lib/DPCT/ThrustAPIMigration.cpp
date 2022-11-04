@@ -307,13 +307,22 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ThrustTypeHasNames = [&]() {
     return hasAnyName("thrust::greater_equal", "thrust::less_equal",
                       "thrust::logical_and", "thrust::bit_and",
-                      "thrust::bit_or", "thrust::minimum", "thrust::bit_xor",
-                      "thrust::complex");
+                      "thrust::bit_or", "thrust::minimum", "thrust::bit_xor");
   };
   MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
                             hasDeclaration(namedDecl(ThrustTypeHasNames()))))))
                     .bind("thrustTypeLoc"),
                 this);
+
+  // CTOR register
+  auto hasAnyThrustRecord = []() {
+    return cxxRecordDecl(hasName("complex"),
+                         hasDeclContext(namespaceDecl(hasName("thrust"))));
+  };
+
+  MF.addMatcher(
+      cxxConstructExpr(hasType(hasAnyThrustRecord())).bind("thrustCtorExpr"),
+      this);
 
   auto hasFunctionalActor = []() {
     return hasType(qualType(hasDeclaration(
