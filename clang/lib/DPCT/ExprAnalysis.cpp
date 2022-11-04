@@ -263,6 +263,15 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
   auto LastTokenLength =
       Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
 
+  Token Tok2;
+  Lexer::getRawToken(EndLoc, Tok2, SM, Context.getLangOpts());
+  // if the last token is ">>" or ">>>",
+  // since DPCT does not support nested template type migration,
+  // the last token should be treated as ">"
+  if (Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)) {
+    LastTokenLength = 1;
+  }
+
   auto DecompLoc = SM.getDecomposedLoc(BeginLoc);
   FileId = DecompLoc.first;
   // The offset of Expr used in ExprAnalysis is related to SrcBegin not
@@ -460,7 +469,15 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
             clang::NestedNameSpecifier::SpecifierKind::NamespaceAlias;
     bool IsSpecicalAPI = isMathFunction(DRE->getNameInfo().getAsString()) ||
                          isCGAPI(DRE->getNameInfo().getAsString());
-    if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
+                         // for thrust::log10 and thrust::sinh ...
+    // log10 is a math function
+    if (Qualifier->getAsNamespace() &&
+        Qualifier->getAsNamespace()->getName() == "thrust" &&
+        dpct::DpctGlobalInfo::isInCudaPath(
+            Qualifier->getAsNamespace()->getBeginLoc())) {
+      CTSName = getNestedNameSpecifierString(Qualifier) +
+                DRE->getNameInfo().getAsString();
+    } else if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
     }
