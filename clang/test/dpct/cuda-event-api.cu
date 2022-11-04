@@ -27,8 +27,6 @@ int main(int argc, char* argv[]) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: dpct::event_ptr start, stop;
-  // CHECK: std::chrono::time_point<std::chrono::steady_clock> start_ct1;
-  // CHECK: std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
   // CHECK-EMPTY:
   // CHECK: start = new sycl::event();
   // CHECK: stop = new sycl::event();
@@ -71,10 +69,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:         });
   kernelFunc<<<blocks,threads>>>();
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: start_ct1 = std::chrono::steady_clock::now();
+  // CHECK:   *start = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(start, 0);
 
   // kernel call without sync
@@ -85,31 +80,17 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:         });
   kernelFunc<<<blocks,threads>>>();
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: start_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT: *start = q_ct1.ext_oneapi_submit_barrier();
+
+  // CHECK: *start = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(start, 0);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1012:{{[0-9a-f]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: start_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT: MY_ERROR_CHECKER((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
+  // CHECK: MY_ERROR_CHECKER((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
   MY_ERROR_CHECKER(cudaEventRecord(start, 0));
 
   // CHECK: if (0)
   // CHECK-NEXT:   /*
-  // CHECK-NEXT:   DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-  // CHECK-NEXT:   */
-  // CHECK-NEXT:   /*
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:   */
-  // CHECK-NEXT:   start_ct1 = std::chrono::steady_clock::now();
   // CHECK-NEXT:   MY_ERROR_CHECKER((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
   if (0)
     MY_ERROR_CHECKER(cudaEventRecord(start, 0));
@@ -128,31 +109,14 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:         });
   kernelFunc<<<blocks,threads>>>();
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
+  // CHECK:   *stop = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(stop, 0);
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: /*
-  // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT: MY_ERROR_CHECKER((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
+  // CHECK: MY_ERROR_CHECKER((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
   MY_ERROR_CHECKER(cudaEventRecord(stop, 0));
 
-  // CHECK: if (1)
-  // CHECK-NEXT:   /*
-  // CHECK-NEXT:   DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-  // CHECK-NEXT:   */
-  // CHECK-NEXT:   /*
-  // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
-  // CHECK-NEXT:   */
-  // CHECK-NEXT:   stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT:   MY_ERROR_CHECKER((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
+
+  // CHECK:   MY_ERROR_CHECKER((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
   if (1)
     MY_ERROR_CHECKER(cudaEventRecord(stop, 0));
 
@@ -164,35 +128,24 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:         });
   kernelFunc<<<blocks,threads>>>();
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1012:{{[a-f0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
+  // CHECK: *stop = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(stop, 0);
 
   // CHECK: /*
-  // CHECK-NEXT: DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-  // CHECK-NEXT: */
-  // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
   // CHECK-NEXT: MY_ERROR_CHECKER((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
   MY_ERROR_CHECKER(cudaEventRecord(stop, 0));
 
   // CHECK: if (0)
   // CHECK-NEXT:   /*
-  // CHECK-NEXT:   DPCT1012:{{[0-9a-z]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-  // CHECK-NEXT:   */
-  // CHECK-NEXT:   /*
   // CHECK-NEXT:   DPCT1024:{{[0-9a-f]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:   */
-  // CHECK-NEXT:   start_ct1 = std::chrono::steady_clock::now();
   // CHECK-NEXT:   MY_ERROR_CHECKER((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
   if (0)
     MY_ERROR_CHECKER(cudaEventRecord(start, 0));
 
-  // CHECK:  MY_ERROR_CHECKER(0);
+  // CHECK:  MY_ERROR_CHECKER((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
   MY_ERROR_CHECKER(cudaEventRecord(start));
 
   // kernel call without sync
@@ -205,9 +158,9 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:        });
   kernelFunc<<<blocks,threads>>>();
 
-  // CHECK:  dpct::get_current_device().queues_wait_and_throw();
-  // CHECK-NEXT:  stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT:  elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+  // CHECK:  *stop = q_ct1.ext_oneapi_submit_barrier();
+  // CHECK-NEXT:  stop->wait_and_throw();
+  // CHECK-NEXT:  elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
   cudaEventRecord(stop, 0);
   cudaEventSynchronize(stop);
   cudaEventElapsedTime(&elapsed_time, start, stop);
@@ -215,7 +168,7 @@ int main(int argc, char* argv[]) {
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9a-z]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: MY_ERROR_CHECKER((elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count(), 0));
+  // CHECK-NEXT: MY_ERROR_CHECKER((elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f, 0));
   MY_ERROR_CHECKER(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   // kernel call without sync
@@ -316,28 +269,24 @@ void foo() {
 
   int blocks = 32, threads = 32;
 
-  // CHECK: start_ct1 = std::chrono::steady_clock::now();
-  // CHECK: MY_CHECKER(0);
+  // CHECK:  MY_CHECKER((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
   MY_CHECKER(cudaEventRecord(start, 0));
   kernelFunc<<<blocks,threads>>>();
-  // CHECK: stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK: MY_CHECKER(0);
+  // CHECK: MY_CHECKER((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
   MY_CHECKER(cudaEventRecord(stop, 0));
 
   cudaEventSynchronize(stop);
 
-  // CHECK: MY_CHECKER((elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count(), 0));
+  // CHECK: MY_CHECKER((elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f, 0));
   MY_CHECKER(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   cudaEventDestroy(start);
   cudaEventDestroy(stop);
 
   {
-    // CHECK: start_ct1 = std::chrono::steady_clock::now();
-    // CHECK-NEXT: int err = (*start = q_ct1.ext_oneapi_submit_barrier(), 0);
+    // CHECK: int err = (*start = q_ct1.ext_oneapi_submit_barrier(), 0);
     cudaError_t err = cudaEventRecord(start, 0);
-    // CHECK: stop_ct1 = std::chrono::steady_clock::now();
-    // CHECK-NEXT: err = (*stop = q_ct1.ext_oneapi_submit_barrier(), 0);
+    // CHECK: err = (*stop = q_ct1.ext_oneapi_submit_barrier(), 0);
     err = cudaEventRecord(stop, 0);
     if (cudaSuccess != err) {
       printf("%s\n", cudaGetErrorString( err));
@@ -359,16 +308,14 @@ void bar() {
 
   int blocks = 32, threads = 32;
 
-  // CHECK: start_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT: fun(0);
+  // CHECK: fun((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
   fun(cudaEventRecord(start, 0));
   kernelFunc<<<blocks,threads>>>();
-  // CHECK: stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK: fun(0);
+  // CHECK: fun((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
   fun(cudaEventRecord(stop, 0));
 
   cudaEventSynchronize(stop);
-  // CHECK: fun((elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count(), 0));
+  // CHECK: fun((elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f, 0));
   fun(cudaEventElapsedTime(&elapsed_time, start, stop));
 
   cudaEventDestroy(start);
@@ -377,192 +324,170 @@ void bar() {
 
 struct Node {
  // CHECK: dpct::event_ptr start;
- // CHECK: std::chrono::time_point<std::chrono::steady_clock> start_ct1;
  cudaEvent_t start;
  // CHECK: dpct::event_ptr end;
- // CHECK: std::chrono::time_point<std::chrono::steady_clock> end_ct1;
  cudaEvent_t end;
  // CHECK: dpct::event_ptr *ev[100];
- // CHECK: std::chrono::time_point<std::chrono::steady_clock> ev_ct1[100];
  cudaEvent_t *ev[100];
  // CHECK: dpct::event_ptr events[100];
- // CHECK: std::chrono::time_point<std::chrono::steady_clock> events_ct1[100];
  cudaEvent_t events[100];
  // CHECK: dpct::event_ptr *p_events;
- // CHECK: std::chrono::time_point<std::chrono::steady_clock> p_events_ct1_0;
- // CHECK: std::chrono::time_point<std::chrono::steady_clock> p_events_ct1_1;
- // CHECK: std::chrono::time_point<std::chrono::steady_clock> p_events_ct1_2;
- // CHECK: std::chrono::time_point<std::chrono::steady_clock> p_events_ct1_3;
  cudaEvent_t *p_events;
 };
 
 void foo2(Node *n) {
   float elapsed_time;
 
-  // CHECK: n->start_ct1 = std::chrono::steady_clock::now();
+  // CHECK: *n->start = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(n->start, 0);
-  // CHECK: n->start_ct1 = std::chrono::steady_clock::now();
+  // CHECK: *n->start = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(n->start, 0);
   // do something
-  // CHECK: n->end_ct1 = std::chrono::steady_clock::now();
+  // CHECK: *n->end = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(n->end, 0);
-  // CHECK: n->end_ct1 = std::chrono::steady_clock::now();
+  // CHECK: *n->end = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(n->end, 0);
-  // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(n->end_ct1 - n->start_ct1).count();
+  // CHECK: elapsed_time = (n->end->get_profiling_info<sycl::info::event_profiling::command_end>() - n->start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
   cudaEventElapsedTime(&elapsed_time, n->start, n->end);
   {
     int errorCode;
-    // CHECK: n->start_ct1 = std::chrono::steady_clock::now();
     // CHECK: MY_CHECKER((*n->start = q_ct1.ext_oneapi_submit_barrier(), 0));
     MY_CHECKER(cudaEventRecord(n->start, 0));
-    // CHECK: n->start_ct1 = std::chrono::steady_clock::now();
     // CHECK: errorCode = (*n->start = q_ct1.ext_oneapi_submit_barrier(), 0);
     errorCode = cudaEventRecord(n->start, 0);
   }
 
   Node node;
-  // CHECK: node.start_ct1 = std::chrono::steady_clock::now();
+  // CHECK: *node.start = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(node.start, 0);
-  // CHECK: node.start_ct1 = std::chrono::steady_clock::now();
+  // CHECK: *node.start = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(node.start, 0);
   // do something
-  // CHECK: node.end_ct1 = std::chrono::steady_clock::now();
+  // CHECK: *node.end = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(node.end, 0);
-  // CHECK: node.end_ct1 = std::chrono::steady_clock::now();
+  // CHECK: *node.end = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(node.end, 0);
-  // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(node.end_ct1 - node.start_ct1).count();
+  // CHECK: elapsed_time = (node.end->get_profiling_info<sycl::info::event_profiling::command_end>() - node.start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
   cudaEventElapsedTime(&elapsed_time, node.start, node.end);
   {
     int errorCode;
-    // CHECK: node.start_ct1 = std::chrono::steady_clock::now();
     // CHECK: MY_CHECKER((*node.start = q_ct1.ext_oneapi_submit_barrier(), 0));
     MY_CHECKER(cudaEventRecord(node.start, 0));
-    // CHECK: node.start_ct1 = std::chrono::steady_clock::now();
     // CHECK: errorCode = (*node.start = q_ct1.ext_oneapi_submit_barrier(), 0);
     errorCode = cudaEventRecord(node.start, 0);
   }
 
   {
-    // CHECK: node.events_ct1[0] = std::chrono::steady_clock::now();
+    // CHECK: *node.events[0] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(node.events[0]);
-    // CHECK: node.events_ct1[0] = std::chrono::steady_clock::now();
+    // CHECK: *node.events[0] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(node.events[0]);
-    // CHECK: node.events_ct1[23] = std::chrono::steady_clock::now();
+    // CHECK: *node.events[23] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(node.events[23]);
-    // CHECK: node.events_ct1[23] = std::chrono::steady_clock::now();
+    // CHECK: *node.events[23] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(node.events[23]);
-    // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(node.events_ct1[23] - node.events_ct1[0]).count();
+    // CHECK: elapsed_time = (node.events[23]->get_profiling_info<sycl::info::event_profiling::command_end>() - node.events[0]->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventElapsedTime(&elapsed_time, node.events[0], node.events[23]);
   }
 
   {
-    // CHECK: node.ev_ct1[0] = std::chrono::steady_clock::now();
+    // CHECK: **node.ev[0] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*node.ev[0]);
-    // CHECK: node.ev_ct1[0] = std::chrono::steady_clock::now();
+    // CHECK: **node.ev[0] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*node.ev[0]);
-    // CHECK: node.ev_ct1[23] = std::chrono::steady_clock::now();
+    // CHECK: **node.ev[23] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*node.ev[23]);
-    // CHECK: node.ev_ct1[23] = std::chrono::steady_clock::now();
+    // CHECK: **node.ev[23] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*node.ev[23]);
-    // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(node.ev_ct1[23] - node.ev_ct1[0]).count();
+    // CHECK: elapsed_time = (*node.ev[23]->get_profiling_info<sycl::info::event_profiling::command_end>() - *node.ev[0]->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventElapsedTime(&elapsed_time, *node.ev[0], *node.ev[23]);
   }
 
   {
-    // CHECK: (&node)->ev_ct1[0] = std::chrono::steady_clock::now();
+    // CHECK: **(&node)->ev[0] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*(&node)->ev[0]);
-    // CHECK: (&node)->ev_ct1[0] = std::chrono::steady_clock::now();
+    // CHECK: **(&node)->ev[0] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*(&node)->ev[0]);
-    // CHECK: (&node)->ev_ct1[23] = std::chrono::steady_clock::now();
+    // CHECK: **(&node)->ev[23] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*(&node)->ev[23]);
-    // CHECK: (&node)->ev_ct1[23] = std::chrono::steady_clock::now();
+    // CHECK: **(&node)->ev[23] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(*(&node)->ev[23]);
-    // CHECK: elapsed_time = std::chrono::duration<float, std::milli>((&node)->ev_ct1[23] - (&node)->ev_ct1[0]).count();
+    // CHECK:  elapsed_time = (*(&node)->ev[23]->get_profiling_info<sycl::info::event_profiling::command_end>() - *(&node)->ev[0]->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventElapsedTime(&elapsed_time, *(&node)->ev[0], *(&node)->ev[23]);
   }
 
   {
-    // CHECK: n->p_events_ct1_0 = std::chrono::steady_clock::now();
+    // CHECK: *n->p_events[0] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(n->p_events[0]);
-    // CHECK: n->p_events_ct1_1 = std::chrono::steady_clock::now();
+    // CHECK: *n->p_events[1] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(n->p_events[1]);
-    // CHECK: n->p_events_ct1_2 = std::chrono::steady_clock::now();
+    // CHECK:  *n->p_events[2] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(n->p_events[2]);
-    // CHECK: n->p_events_ct1_3 = std::chrono::steady_clock::now();
+    // CHECK:  *n->p_events[3] = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(n->p_events[3]);
   }
 }
 
 class C {
   // CHECK: dpct::event_ptr start, stop;
-  // CHECK-NEXT: std::chrono::time_point<std::chrono::steady_clock> start_ct1;
-  // CHECK-NEXT: std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
   cudaEvent_t start, stop;
   float elapsed_time;
   void a() {
-    // CHECK: start_ct1 = std::chrono::steady_clock::now();
+    // CHECK: *start = dpct::get_default_queue().ext_oneapi_submit_barrier();
     cudaEventRecord(start, 0);
   }
   void b() {
-    // CHECK: stop_ct1 = std::chrono::steady_clock::now();
+    // CHECK: *stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
     cudaEventRecord(stop, 0);
-    // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+    // CHECK: elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventElapsedTime(&elapsed_time, start, stop);
   }
   void c() {
     cudaEventRecord(start, 0);
   }
   void d() {
-    // CHECK: stop_ct1 = std::chrono::steady_clock::now();
+    // CHECK: *stop = dpct::get_default_queue().ext_oneapi_submit_barrier();
     cudaEventRecord(stop, 0);
-    // CHECK: elapsed_time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+    // CHECK: elapsed_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventElapsedTime(&elapsed_time, start, stop);
   }
 };
 
 struct S {
   cudaEvent_t *events;
-  // CHECK: std::chrono::time_point<std::chrono::steady_clock> events_ct1_0;
-  // CHECK: std::chrono::time_point<std::chrono::steady_clock> events_ct1_1;
-  // CHECK: std::chrono::time_point<std::chrono::steady_clock> events_ct1_2;
-  // CHECK: std::chrono::time_point<std::chrono::steady_clock> events_ct1_3;
 };
 
 void foo(int n) {
   // CHECK: dpct::event_ptr *events = new dpct::event_ptr[n];
   cudaEvent_t *events = new cudaEvent_t[n];
-  // CHECK: std::chrono::time_point<std::chrono::steady_clock> events_ct1_0;
-  // CHECK: std::chrono::time_point<std::chrono::steady_clock> events_ct1_1;
-  // CHECK: std::chrono::time_point<std::chrono::steady_clock> events_ct1_2;
-  // CHECK: std::chrono::time_point<std::chrono::steady_clock> events_ct1_3;
 
-  // CHECK: events_ct1_0 = std::chrono::steady_clock::now();
+  // CHECK: *events[0] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(events[0]);
-  // CHECK: events_ct1_1 = std::chrono::steady_clock::now();
+  // CHECK: *events[1] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(events[1]);
-  // CHECK: events_ct1_2 = std::chrono::steady_clock::now();
+  // CHECK: *events[2] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(events[2]);
-  // CHECK: events_ct1_3 = std::chrono::steady_clock::now();
+  // CHECK: *events[3] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(events[3]);
 
   S s;
-  // CHECK: s.events_ct1_0 = std::chrono::steady_clock::now();
+  // CHECK: *s.events[0] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(s.events[0]);
-  // CHECK: s.events_ct1_1 = std::chrono::steady_clock::now();
+  // CHECK: *s.events[1] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(s.events[1]);
-  // CHECK: s.events_ct1_2 = std::chrono::steady_clock::now();
+  // CHECK: *s.events[2] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(s.events[2]);
-  // CHECK: s.events_ct1_3 = std::chrono::steady_clock::now();
+  // CHECK: *s.events[3] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(s.events[3]);
 
   S *s2 = new S;
-  // CHECK: s2->events_ct1_0 = std::chrono::steady_clock::now();
+  // CHECK: *s2->events[0] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(s2->events[0]);
-  // CHECK: s2->events_ct1_1 = std::chrono::steady_clock::now();
+  // CHECK: *s2->events[1] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(s2->events[1]);
-  // CHECK: s2->events_ct1_2 = std::chrono::steady_clock::now();
+  // CHECK: *s2->events[2] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(s2->events[2]);
-  // CHECK: s2->events_ct1_3 = std::chrono::steady_clock::now();
+  // CHECK: *s2->events[3] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord(s2->events[3]);
 }
 
@@ -576,25 +501,22 @@ void barr(int maxCalls) {
     time[i] = 0.0;
   }
 
-  // CHECK: evtStart_ct1[0] = std::chrono::steady_clock::now();
+  // CHECK: *evtStart[0] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord( evtStart[0], 0 );
-  // CHECK: evtEnd[0]->wait();
   kernelFunc<<<1, 1>>>();
-  // CHECK: evtEnd_ct1[0] = std::chrono::steady_clock::now();
+  // CHECK: *evtEnd[0] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord( evtEnd[0], 0 );
 
-  // CHECK: evtStart_ct1[1] = std::chrono::steady_clock::now();
+  // CHECK: *evtStart[1] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord( evtStart[1], 0 );
-  // CHECK: evtEnd[1]->wait();
   kernelFunc<<<1, 1>>>();
-  // CHECK: evtEnd_ct1[1] = std::chrono::steady_clock::now();
+  // CHECK: *evtEnd[1] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord( evtEnd[1], 0 );
 
-  // CHECK: evtStart_ct1[2] = std::chrono::steady_clock::now();
+  // CHECK: *evtStart[2] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord( evtStart[2], 0 );
-  // CHECK: evtEnd[2]->wait();
   kernelFunc<<<1, 1>>>();
-  // CHECK: evtEnd_ct1[2] = std::chrono::steady_clock::now();
+  // CHECK: *evtEnd[2] = q_ct1.ext_oneapi_submit_barrier();
   cudaEventRecord( evtEnd[2], 0 );
 
   // CHECK: dev_ct1.queues_wait_and_throw();

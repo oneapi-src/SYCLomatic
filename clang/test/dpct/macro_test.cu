@@ -902,14 +902,11 @@ void foo19(){
 
 //     CHECK:#define CMC_PROFILING_BEGIN()                                                  \
 //CHECK-NEXT:  dpct::event_ptr start;                                                         \
-//CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> start_ct1;                \
 //CHECK-NEXT:  dpct::event_ptr stop;                                                          \
-//CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> stop_ct1;                 \
 //CHECK-NEXT:  if (CMC_profile)                                                             \
 //CHECK-NEXT:  {                                                                            \
 //CHECK-NEXT:    start = new sycl::event();                                                 \
 //CHECK-NEXT:    stop = new sycl::event();                                                  \
-//CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();                              \
 //CHECK-NEXT:    *start = q_ct1.ext_oneapi_submit_barrier();                                \
 //CHECK-NEXT:  }
 #define CMC_PROFILING_BEGIN()                                                                                      \
@@ -923,20 +920,22 @@ void foo19(){
     cudaEventRecord(start);                                                                                        \
   }
 
-
 //     CHECK:#define CMC_PROFILING_END(lineno)                                              \
 //CHECK-NEXT:  if (CMC_profile)                                                             \
 //CHECK-NEXT:  {                                                                            \
-//CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();                               \
 //CHECK-NEXT:    *stop = q_ct1.ext_oneapi_submit_barrier();                                 \
 //CHECK-NEXT:    stop->wait_and_throw();                                                    \
 //CHECK-NEXT:    float time = 0.0f;                                                         \
-//CHECK-NEXT:    time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1)      \
-//CHECK-NEXT:               .count();                                                       \
+//CHECK-NEXT:    time = (stop->get_profiling_info<                                          \
+//CHECK-NEXT:                sycl::info::event_profiling::command_end>() -                  \
+//CHECK-NEXT:            start->get_profiling_info<                                         \
+//CHECK-NEXT:                sycl::info::event_profiling::command_start>()) /               \
+//CHECK-NEXT:           1000000.0f;                                                         \
 //CHECK-NEXT:    dpct::destroy_event(start);                                                \
 //CHECK-NEXT:    dpct::destroy_event(stop);                                                 \
 //CHECK-NEXT:  }                                                                            \
 //CHECK-NEXT:  int error = 0;
+
 #define CMC_PROFILING_END(lineno)                                                                          \
   if (CMC_profile)                                                                                         \
   {                                                                                                        \

@@ -30,8 +30,7 @@ int main() {
     cudaStream_t stream;
 
     int ha[N], hb[N];
-    // CHECK: std::chrono::time_point<std::chrono::steady_clock> start_ct1;
-    // CHECK: std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
+    // CHECK: dpct::event_ptr start, stop;
     cudaEvent_t start, stop;
     cudaError_t cudaStatus;
 
@@ -49,7 +48,7 @@ int main() {
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
-    // CHECK: start_ct1 = std::chrono::steady_clock::now();
+    // *start = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(start, 0);
 
     // CHECK: dpct::async_dpct_memcpy(da, ha, N*sizeof(int), dpct::host_to_device);
@@ -59,10 +58,9 @@ int main() {
     // CHECK: dpct::async_dpct_memcpy(da, ha, N*sizeof(int), dpct::host_to_device, *stream);
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, stream);
 
-    // CHECK: stream->wait();
-    // CHECK: q_ct1.wait();
-    // CHECK: stop_ct1 = std::chrono::steady_clock::now();
-    // CHECK: elapsedTime = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+    // CHECK:    *stop = q_ct1.ext_oneapi_submit_barrier();
+    // CHECK:    stop->wait_and_throw();
+    // CHECK:    elapsedTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&elapsedTime, start, stop);
@@ -97,7 +95,6 @@ void foo_test_1() {
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
-// CHECK:    start_ct1 = std::chrono::steady_clock::now();
 // CHECK:    *start = q_ct1.ext_oneapi_submit_barrier();
 // CHECK-NEXT:        for (int i=0; i<4; i++) {
 // CHECK-NEXT:            q_ct1.parallel_for<dpct_kernel_name<class kernel_foo_{{[a-z0-9]+}}>>(
@@ -144,9 +141,7 @@ void foo_test_2() {
     kernel<<<grid, block>>>(d_a, value);
     CHECK(cudaMemcpyAsync(h_a, d_a, nbytes, cudaMemcpyDeviceToHost));
 
-    // CHECK:    q_ct1.wait();
-    // CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-    // CHECK-NEXT:    CHECK(0);
+    // CHECK:    CHECK((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
     CHECK(cudaEventRecord(stop));
 
     // have CPU do some work while waiting for stage 1 to finish
@@ -216,23 +211,25 @@ void foo_test_3() {
     // CHECK-NEXT:                          dpct::device_to_host, *(stream[i])), 0));
     CHECK(cudaMemcpyAsync(&gpuRef[ioffset], &d_C[ioffset], iBytes,
                           cudaMemcpyDeviceToHost, stream[i]));
+  }
 
-  // CHECK:  }
-  // CHECK-NEXT:    /*
-  // CHECK-NEXT:  DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-  // CHECK-NEXT:  */
-  // CHECK-NEXT:  /*
+  // CHECK:  /*
   // CHECK-NEXT:  DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:  */
-  // CHECK: dpct::get_current_device().queues_wait_and_throw();
-  // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT: CHECK((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
-  // CHECK-NEXT: CHECK(0);
-  }
-  CHECK(cudaEventRecord(stop, 0));
-  CHECK(cudaEventSynchronize(stop));
-  float execution_time;
-  CHECK(cudaEventElapsedTime(&execution_time, start, stop));
+  // CHECK-NEXT:  CHECK((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1003:59: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  CHECK((stop->wait_and_throw(), 0));
+  // CHECK-NEXT:  float execution_time;
+  // CHECK-NEXT:  /*
+  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:  */
+  // CHECK-NEXT:  CHECK((execution_time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f, 0));  
+    CHECK(cudaEventRecord(stop, 0));
+    CHECK(cudaEventSynchronize(stop));
+    float execution_time;
+    CHECK(cudaEventElapsedTime(&execution_time, start, stop));
 }
 
 #define SAFE_CALL(call)                                                   \
@@ -251,12 +248,10 @@ void foo_usm() {
   // CHECK:  SAFE_CALL((dpct::async_dpct_memcpy(gpu_t, host_t, n * sizeof(int), dpct::host_to_device, *s1), 0));
   SAFE_CALL(cudaMemcpyAsync(gpu_t, host_t, n * sizeof(int), cudaMemcpyHostToDevice, s1));
 
-  // CHECK:  s1->wait();
-  // CHECK-NEXT:  stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK-NEXT:  SAFE_CALL(0);
-  // CHECK-NEXT:  SAFE_CALL(0);
-  // CHECK-NEXT:  float Time = 0.0f;
-  // CHECK-NEXT:  Time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+  // CHECK:  SAFE_CALL((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
+  // CHECK:  SAFE_CALL((stop->wait_and_throw(), 0));
+  // CHECK:  float Time = 0.0f;
+  // CHECK:  Time = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
   SAFE_CALL(cudaEventRecord(stop, 0));
   SAFE_CALL(cudaEventSynchronize(stop));
   float Time = 0.0f;
@@ -339,12 +334,9 @@ void foo()
                                                     width);
             }
 
-// CHECK:            DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-// CHECK-NEXT:            */
-// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:            *stop = q_ct1.ext_oneapi_submit_barrier();
-// CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+// CHECK:            *stop = q_ct1.ext_oneapi_submit_barrier();
+// CHECK-NEXT:             stop->wait_and_throw();
+// CHECK-NEXT:             t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
             cudaEventElapsedTime(&t, start, stop);
@@ -374,12 +366,9 @@ void foo()
                         (kernelRepFactor, d_out);
             }
 
-// CHECK:            DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-// CHECK-NEXT:             */
-// CHECK-NEXT:             dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:             stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:             *stop = q_ct1.ext_oneapi_submit_barrier();
-// CHECK-NEXT:             t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+// CHECK:             *stop = q_ct1.ext_oneapi_submit_barrier();
+// CHECK-NEXT:            stop->wait_and_throw();
+// CHECK-NEXT:            t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
             cudaEventElapsedTime(&t, start, stop);
@@ -410,12 +399,10 @@ void foo()
                                 (kernelRepFactor, d_out, width, height);
             }
 
-// CHECK:             DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-// CHECK-NEXT:            */
-// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:            stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:            *stop = q_ct1.ext_oneapi_submit_barrier();
-// CHECK-NEXT:            t = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+
+// CHECK:            *stop = q_ct1.ext_oneapi_submit_barrier();
+// CHECK-NEXT:            stop->wait_and_throw();
+// CHECK-NEXT:            t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
             cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
             cudaEventElapsedTime(&t, start, stop);
@@ -456,8 +443,6 @@ int foo_test_4()
 
     // create events
 // CHECK:    dpct::event_ptr start, stop;
-// CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> start_ct1;
-// CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
     cudaEvent_t start, stop;
     CHECK(cudaEventCreate(&start));
     CHECK(cudaEventCreate(&stop));
@@ -466,14 +451,8 @@ int foo_test_4()
     kernelEvent = (cudaEvent_t *) malloc(n_streams * sizeof(cudaEvent_t));
 
 
-
-
-// CHECK:    DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
+// CHECK:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
 // CHECK-NEXT:    */
-// CHECK:    /*
-// CHECK-NEXT:    DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
-// CHECK-NEXT:    */
-// CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:    CHECK((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
 // record start event
     CHECK(cudaEventRecord(start, 0));
@@ -493,17 +472,15 @@ int foo_test_4()
         foo_kernel_3<<<grid, block, 0, streams[i]>>>();
         foo_kernel_4<<<grid, block, 0, streams[i]>>>();
 
-// CHECK:        kernelEvent_ct1_i = std::chrono::steady_clock::now();
-// CHECK-NEXT:        CHECK((*kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier(), 0));
+// CHECK:        CHECK((*kernelEvent[i] = streams[i]->ext_oneapi_submit_barrier(), 0));
 // CHECK-NEXT:        streams[n_streams - 1]->ext_oneapi_submit_barrier({*kernelEvent[i]});
         CHECK(cudaEventRecord(kernelEvent[i], streams[i]));
         cudaStreamWaitEvent(streams[n_streams - 1], kernelEvent[i], 0);
     }
 
-// CHECK:    dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    CHECK((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
-// CHECK-NEXT:    CHECK(0);
+
+// CHECK:    CHECK((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
+// CHECK:    CHECK((stop->wait_and_throw(), 0));
     CHECK(cudaEventRecord(stop, 0));
     CHECK(cudaEventSynchronize(stop));
     CHECK(cudaEventElapsedTime(&elapsed_time, start, stop));
@@ -605,8 +582,6 @@ void test_1999(void* ref_image, void* cur_image,
     unsigned short* d_sads = NULL;
 
 // CHECK:     dpct::event_ptr sad_calc_start, sad_calc_stop;
-// CHECK-NEXT:     std::chrono::time_point<std::chrono::steady_clock> sad_calc_start_ct1;
-// CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> sad_calc_stop_ct1;
     cudaEvent_t sad_calc_start, sad_calc_stop;
     cudaEventCreate(&sad_calc_start);
     cudaEventCreate(&sad_calc_stop);
@@ -632,13 +607,10 @@ void test_1999(void* ref_image, void* cur_image,
                                                   image_height_macroblocks,
                                                   imgRef);
 
-// CHECK:    dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:    sad_calc_stop_ct1 = std::chrono::steady_clock::now();
+// CHECK:    *sad_calc_stop = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(sad_calc_stop);
 
 // CHECK:    dpct::event_ptr sad_calc_8_start, sad_calc_8_stop;
-// CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> sad_calc_8_start_ct1;
-// CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> sad_calc_8_stop_ct1;
     cudaEvent_t sad_calc_8_start, sad_calc_8_stop;
 
     cudaEventCreate(&sad_calc_8_start);
@@ -661,13 +633,11 @@ void test_1999(void* ref_image, void* cur_image,
       foo_kernel_2_blocks_in_grid,
       foo_kernel_2_threads_in_block>>>(d_sads, image_width_macroblocks,
                                             image_height_macroblocks);
-// CHECK:    dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:    sad_calc_8_stop_ct1 = std::chrono::steady_clock::now();
+// CHECK:    *sad_calc_8_stop = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(sad_calc_8_stop);
 
 
 // CHECK:    dpct::event_ptr sad_calc_16_start, sad_calc_16_stop;
-// CHECK-NEXT:    std::chrono::time_point<std::chrono::steady_clock> sad_calc_16_start_ct1;
     cudaEvent_t sad_calc_16_start, sad_calc_16_stop;
 
     cudaEventCreate(&sad_calc_16_start);
@@ -690,8 +660,7 @@ void test_1999(void* ref_image, void* cur_image,
       foo_kernel_3_blocks_in_grid,
       foo_kernel_3_threads_in_block>>>(d_sads, image_width_macroblocks,
                                              image_height_macroblocks);
-// CHECK:    dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:    sad_calc_16_stop_ct1 = std::chrono::steady_clock::now();
+// CHECK:    *sad_calc_16_stop = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(sad_calc_16_stop);
 
     cudaMallocHost((void **)h_sads, nsads * sizeof(unsigned short));
@@ -700,9 +669,9 @@ void test_1999(void* ref_image, void* cur_image,
     cudaFree(d_cur_image);
     cudaFree(imgRef);
 
-// CHECK:    *(sad_calc_ms) = std::chrono::duration<float, std::milli>(sad_calc_stop_ct1 - sad_calc_start_ct1).count();
-// CHECK-NEXT:    *(sad_calc_8_ms) = std::chrono::duration<float, std::milli>(sad_calc_8_stop_ct1 - sad_calc_8_start_ct1).count();
-// CHECK-NEXT:    *(sad_calc_16_ms) = std::chrono::duration<float, std::milli>(sad_calc_16_stop_ct1 - sad_calc_16_start_ct1).count();
+// CHECK:    *(sad_calc_ms) = (sad_calc_stop->get_profiling_info<sycl::info::event_profiling::command_end>() - sad_calc_start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
+// CHECK-NEXT:    *(sad_calc_8_ms) = (sad_calc_8_stop->get_profiling_info<sycl::info::event_profiling::command_end>() - sad_calc_8_start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
+// CHECK-NEXT:    *(sad_calc_16_ms) = (sad_calc_16_stop->get_profiling_info<sycl::info::event_profiling::command_end>() - sad_calc_16_start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     cudaEventElapsedTime(sad_calc_ms, sad_calc_start, sad_calc_stop);
     cudaEventElapsedTime(sad_calc_8_ms, sad_calc_8_start, sad_calc_8_stop);
     cudaEventElapsedTime(sad_calc_16_ms, sad_calc_16_start, sad_calc_16_stop);
@@ -722,13 +691,11 @@ void foo_test_1983() {
 
   for (int i = 0; i < repeat; i++) {
     kernel<<<1, 1, 0, stream1>>>();
-// CHECK:    event1_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    *event1 = stream1->ext_oneapi_submit_barrier();
+// CHECK:    *event1 = stream1->ext_oneapi_submit_barrier();
     cudaEventRecord(event1, stream1);
     kernel<<<1, 1, 0, stream2>>>();
 
-// CHECK:    event2_ct1 = std::chrono::steady_clock::now();
-// CHECK-NEXT:    *event2 = stream2->ext_oneapi_submit_barrier();
+// CHECK:    *event2 = stream2->ext_oneapi_submit_barrier();
 // CHECK-NEXT:    event1->wait_and_throw();
 // CHECK-NEXT:    event2->wait_and_throw();
     cudaEventRecord(event2, stream2);
@@ -748,25 +715,19 @@ void foo_test_2184() {
   float *d_a = 0;
 
   // CHECK: dpct::event_ptr stop, start;
-  // CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> start_ct1;
-  // CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> stop_ct1;
   // CHECK:  CHECK((start = new sycl::event(), 0));
   // CHECK:  CHECK((stop = new sycl::event(), 0));
   cudaEvent_t stop, start;
   CHECK(cudaEventCreate(&start));
   CHECK(cudaEventCreate(&stop));
 
-  // CHECK:  start_ct1 = std::chrono::steady_clock::now();
-  // CHECK:  CHECK(0);
+  // CHECK:  CHECK((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
   CHECK(cudaEventRecord(start));
   CHECK(cudaMemcpyAsync(d_a, h_a, nbytes, cudaMemcpyHostToDevice));
   kernel_test_2184<<<1, 1>>>();
   CHECK(cudaMemcpyAsync(h_a, d_a, nbytes, cudaMemcpyDeviceToHost));
 
-  // CHECK:  dpct::get_current_device().queues_wait_and_throw();
-  // CHECK:  q_ct1.wait();
-  // CHECK:  stop_ct1 = std::chrono::steady_clock::now();
-  // CHECK:  CHECK(0);
+  // CHECK:  CHECK((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
   CHECK(cudaEventRecord(stop));
 
   unsigned long int counter = 0;
@@ -798,11 +759,11 @@ template <class T, class vecT> void foo_test_2131() {
       reduce<T, 256>
           <<<num_blocks, num_threads, smem_size>>>(d_idata, d_block_sums, size);
     }
-    // CHECK: dpct::get_current_device().queues_wait_and_throw();
-    // CHECK-NEXT: stop_ct1 = std::chrono::steady_clock::now();
-    // CHECK-NEXT: SAFE_CALL((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
-    // CHECK-NEXT: SAFE_CALL(0);
-    // CHECK-NEXT: totalScanTime = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1).count();
+
+
+    // CHECK:    SAFE_CALL((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
+    // CHECK:    SAFE_CALL((stop->wait_and_throw(), 0));
+    // CHECK:    totalScanTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
     SAFE_CALL(cudaEventRecord(stop, 0));
     SAFE_CALL(cudaEventSynchronize(stop));
     cudaEventElapsedTime(&totalScanTime, start, stop);
