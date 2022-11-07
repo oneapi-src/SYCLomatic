@@ -3067,6 +3067,8 @@ __device__ void foo1() {
 
   // CHECK: i = sycl::mul24(i, i);
   i = mul24(i, i);
+  // CHECK: f = sycl::clamp(f, 0.0f, 1.0f);
+  f = saturate(f);
 }
 
 __device__ void test_recursive_unary() {

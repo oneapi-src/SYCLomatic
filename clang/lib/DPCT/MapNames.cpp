@@ -1551,6 +1551,7 @@ void MapNames::setExplicitNamespaceMap() {
 #undef ENTRY_UNSUPPORTED
 #undef ENTRY_REWRITE
   {"abs", MapNames::getClNamespace(false, true) + "abs"},
+  {"saturate", MapNames::getClNamespace(false, true) + "clamp"},
   };
 }
 
