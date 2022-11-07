@@ -2927,7 +2927,7 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
   auto SD = getAllDecls(DD);
 
   auto replaceInitParam = [&](const clang::Expr *replExpr) {
-    if (replExpr == nullptr)
+    if (!replExpr)
       return;
     if (isDefaultStream(replExpr)) {
       int Index = getPlaceholderIdx(replExpr);
@@ -2952,9 +2952,8 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
 
     if (const auto VarInitExpr = dyn_cast<InitListExpr>(replExpr)) {
       auto arrayReplEXpr = VarInitExpr->inits();
-      for (auto replExprPtr = arrayReplEXpr.begin();
-           replExprPtr < arrayReplEXpr.end(); replExprPtr++) {
-        replaceInitParam(*replExprPtr);
+      for (auto replExpr : arrayReplEXpr) {
+        replaceInitParam(replExpr);
       }
       return;
     }
@@ -3266,14 +3265,14 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       if (TL->getType().getCanonicalType()->isPointerType()) {
         const auto *PtrTy =
             TL->getType().getCanonicalType()->getAs<PointerType>();
-        if (PtrTy == nullptr)
+        if (!PtrTy)
           return;
         if (PtrTy->getPointeeType()->isRecordType()) {
           const auto *RecordTy = PtrTy->getPointeeType()->getAs<RecordType>();
-          if (RecordTy == nullptr)
+          if (!RecordTy)
             return;
           const auto *RD = RecordTy->getAsRecordDecl();
-          if (RD == nullptr)
+          if (!RD)
             return;
           if (RD->getName() == "CUstream_st" &&
               DpctGlobalInfo::isInCudaPath(RD->getBeginLoc()))
@@ -10971,7 +10970,7 @@ void MemoryMigrationRule::memcpyMigration(
     size_t QueueIndex = NameRef.compare("cudaMemcpy") ? 3 : 4;
     if (C->getNumArgs() > QueueIndex &&
         !C->getArg(QueueIndex)->isDefaultArgument()) {
-      if (!isPredefinedStreamHandle(C->getArg(QueueIndex)))
+      if (!isDefaultStream(C->getArg(QueueIndex)))
         AsyncQueue = ExprAnalysis::ref(C->getArg(QueueIndex));
     }
     replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
@@ -11170,7 +11169,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
     }
   } else {
     if (C->getNumArgs() == 6 && !C->getArg(5)->isDefaultArgument()) {
-      if (!isPredefinedStreamHandle(C->getArg(5))) {
+      if (!isDefaultStream(C->getArg(5))) {
         StreamStr = ExprAnalysis::ref(C->getArg(5));
       }
     }
@@ -11363,7 +11362,7 @@ void MemoryMigrationRule::memsetMigration(
       if (auto ICE = dyn_cast<ImplicitCastExpr>(C->getArg(3)))
         NeedTypeCast = ICE->getCastKind() != clang::CK_LValueToRValue;
 
-      if (!isPredefinedStreamHandle(C->getArg(3)))
+      if (!isDefaultStream(C->getArg(3)))
         AsyncQueue = ExprAnalysis::ref(C->getArg(3));
     }
     replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
@@ -11442,7 +11441,7 @@ void MemoryMigrationRule::prefetchMigration(
     auto StmtStrArg2 = EA.getReplacedString();
     std::string StmtStrArg3;
     if (C->getNumArgs() == 4 && !C->getArg(3)->isDefaultArgument()) {
-      if (!isPredefinedStreamHandle(C->getArg(3)))
+      if (!isDefaultStream(C->getArg(3)))
         StmtStrArg3 = ExprAnalysis::ref(C->getArg(3));
     } else {
       StmtStrArg3 = "0";
@@ -12005,7 +12004,7 @@ void MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
         emplaceTransformation(new InsertBeforeStmt(
             StreamExpr, "(" + MapNames::getClNamespace() + "queue *)"));
       }
-    } else if (isPredefinedStreamHandle(StreamExpr)) {
+    } else if (isDefaultStream(StreamExpr)) {
       emplaceTransformation(removeArg(C, i, *Result.SourceManager));
       return;
     } else if (!isa<DeclRefExpr>(StreamExpr)) {
