@@ -1061,15 +1061,25 @@ static inline sycl::queue &get_default_queue() {
 // DPCT_CODE
 
 class queue_ptr {
-  sycl::queue* _q;
+  sycl::queue *_q;
 public:
-  queue_ptr(sycl::queue* _p)
+  queue_ptr(sycl::queue *_p)
     : _q(_p ? _p : &get_default_queue()) {}
+#define CAST(x) reinterpret_cast<sycl::queue*>(x)
+  queue_ptr(int _p)                : queue_ptr(CAST(_p)) {}
+  queue_ptr(unsigned int _p)       : queue_ptr(CAST(_p)) {}
+  queue_ptr(long _p)               : queue_ptr(CAST(_p)) {}
+  queue_ptr(unsigned long _p)      : queue_ptr(CAST(_p)) {}
+  queue_ptr(long long _p)          : queue_ptr(CAST(_p)) {}
+  queue_ptr(unsigned long long _p) : queue_ptr(CAST(_p)) {}
+#undef CAST
   queue_ptr()
     : queue_ptr(0) {}
-  operator sycl::queue*  () const { return _q; }
-  operator sycl::queue*& ()       { return _q; }
+
+  sycl::queue& operator*() const { return *_q; }
   sycl::queue* operator->() const { return _q; }
+  operator unsigned long long() const
+  { return reinterpret_cast<unsigned long long>(_q); }
 };
 
 // DPCT_LABEL_END
