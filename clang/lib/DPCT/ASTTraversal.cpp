@@ -7277,7 +7277,14 @@ void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusolverDnCheevd_bufferSize", "cusolverDnZheevd_bufferSize",
         "cusolverDnDsyevd", "cusolverDnSsyevd", "cusolverDnCheevd",
         "cusolverDnZheevd",
-        "cusolverDnSsygvd", "cusolverDnSsygvd_bufferSize");
+        "cusolverDnSpotrfBatched", "cusolverDnDpotrfBatched",
+        "cusolverDnCpotrfBatched", "cusolverDnZpotrfBatched",
+        "cusolverDnSpotrsBatched", "cusolverDnDpotrsBatched",
+        "cusolverDnCpotrsBatched", "cusolverDnZpotrsBatched",
+        "cusolverDnSsygvd", "cusolverDnDsygvd",
+        "cusolverDnSsygvd_bufferSize", "cusolverDnDsygvd_bufferSize",
+        "cusolverDnChegvd", "cusolverDnZhegvd",
+        "cusolverDnChegvd_bufferSize", "cusolverDnZhegvd_bufferSize");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),

@@ -61,6 +61,12 @@ int main(int argc, char *argv[])
     // CHECK-NEXT: int b = sizeof(sycl::queue*);
     int a = sizeof(cublasStatus_t);
     int b = sizeof(cusolverDnHandle_t);
+
+    cudaStream_t stream;
+    // CHECK: status = (stream = handle, 0);
+    // CHECK: status = (handle = stream, 0);
+    status = cusolverDnGetStream(handle, &stream);
+    status = cusolverDnSetStream(handle, stream);
 }
 
 
