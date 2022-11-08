@@ -43,49 +43,42 @@ inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
                  T *w, T *scratchpad, int scratchpad_size, int *info) {
 #ifdef DPCT_USM_LEVEL_NONE
   auto info_buf = get_buffer<int>(info);
-  queue.submit([&](sycl::handler &cgh) {
-    auto info_acc = info_buf.get_access<sycl::access_mode::write>(cgh);
-    cgh.single_task<dpct_kernel_name<class sygvd_init_info, T>>(
-        [=]() { info_acc[0] = 0; });
-  });
   auto a_buffer = get_buffer<T>(a);
   auto b_buffer = get_buffer<T>(b);
   auto w_buffer = get_buffer<T>(w);
   auto scratchpad_buffer = get_buffer<T>(scratchpad);
+  int info_val = 0;
+  int ret_val = 0;
   try {
     oneapi::mkl::lapack::sygvd(queue, itype, jobz, uplo, n, a_buffer, lda,
                                b_buffer, ldb, w_buffer, scratchpad_buffer,
                                scratchpad_size);
   } catch (oneapi::mkl::lapack::exception const& e) {
-    std::cerr << "Caught synchronous SYCL exception:" << std::endl
+    std::cerr << "Unexpected exception caught during call to LAPACK API: sygvd"
+              << std::endl
               << "reason: " << e.what() << std::endl
               << "info: " << e.info() << std::endl;
-    int info_val = static_cast<int>(e.info());
-    
-    queue.submit([&](sycl::handler &cgh) {
-      auto info_acc = info_buf.get_access<sycl::access_mode::write>(cgh);
-      cgh.single_task<dpct_kernel_name<class sygvd_set_err_info, T>>(
-          [=]() { info_acc[0] = info_val; });
-    }).wait();
-    return 1;
+    info_val = static_cast<int>(e.info());
+    ret_val = 1;
   } catch (sycl::exception const& e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
-    queue.submit([&](sycl::handler &cgh) {
-      auto info_acc = info_buf.get_access<sycl::access_mode::write>(cgh);
-      cgh.single_task<dpct_kernel_name<class sygvd_set_err_info_dft_val, T>>(
-          [=]() { info_acc[0] = -1; });
-    }).wait();
-    return 1;
+    info_val = -1;
+    ret_val = 1;
   }
-  return 0;
+  queue.submit([&, info_val](sycl::handler &cgh) {
+    auto info_acc = info_buf.get_access<sycl::access_mode::write>(cgh);
+    cgh.single_task<dpct_kernel_name<class sygvd_init_info, T>>(
+        [=]() { info_acc[0] = info_val; });
+  });
+  return ret_val;
 #else
-  queue.memset(info, 0, sizeof(int));
   try {
     oneapi::mkl::lapack::sygvd(queue, itype, jobz, uplo, n, a, lda, b, ldb, w,
                                scratchpad, scratchpad_size);
   } catch (oneapi::mkl::lapack::exception const& e) {
-    std::cerr << "Caught synchronous SYCL exception:" << std::endl
+    std::cerr << "Unexpected exception caught during call to LAPACK API: sygvd"
+              << std::endl
               << "reason: " << e.what() << std::endl
               << "info: " << e.info() << std::endl;
     int info_val = static_cast<int>(e.info());
@@ -98,6 +91,7 @@ inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
     queue.memcpy(info, &info_val, sizeof(int)).wait();
     return 1;
   }
+  queue.memset(info, 0, sizeof(int));
   return 0;
 #endif
 }
