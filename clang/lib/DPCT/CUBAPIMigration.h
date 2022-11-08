@@ -22,7 +22,6 @@ public:
 
   static bool CanMappingToSyclNativeBinaryOp(StringRef OpTypeName);
   static bool CanMappingToSyclBinaryOp(StringRef OpTypeName);
-  static Optional<StringRef> GetMappingToSyclBinaryOp(StringRef OpTypeName);
 };
 
 class CubDeviceLevelRule : public NamedMigrationRule<CubDeviceLevelRule> {

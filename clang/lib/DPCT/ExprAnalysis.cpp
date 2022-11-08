@@ -650,9 +650,14 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   }
 
   if (StringRef(CtorClassName).startswith("cub::") &&
-      CubTypeRule::CanMappingToSyclBinaryOp(CtorClassName))
-    addReplacement(Ctor,
-                   CubTypeRule::GetMappingToSyclBinaryOp(CtorClassName)->str());
+      CubTypeRule::CanMappingToSyclBinaryOp(CtorClassName) && isa<CXXTemporaryObjectExpr>(Ctor)) {
+    const CXXTemporaryObjectExpr *Temp = dyn_cast<CXXTemporaryObjectExpr>(Ctor);
+    const TypeLoc TL = Temp->getTypeSourceInfo()->getTypeLoc();
+    ExprAnalysis EA;
+    EA.analyze(TL);
+    addReplacement(Ctor, EA.getExprLength(), EA.getReplacedString());
+    return;
+  }
 
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string ArgsString;
@@ -1061,9 +1066,19 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
         TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
     break;
   case TypeLoc::Builtin:
-  case TypeLoc::Record:
-    TyName += DpctGlobalInfo::getTypeName(TL.getType());
+  case TypeLoc::Record: {
+    if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
+      return;
+    TyName = DpctGlobalInfo::getTypeName(TL.getType());
+    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
+    if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
+      auto Rewriter = Itr->second->create(TL);
+      auto Result = Rewriter->rewrite();
+      addReplacement(SM.getExpansionLoc(SR.getBegin()),
+                       SM.getExpansionLoc(SR.getEnd()), CSCE, Result.value());
+    }
     break;
+  }
   case TypeLoc::TemplateTypeParm:
     if (auto D = TYPELOC_CAST(TemplateTypeParmTypeLoc).getDecl()) {
       return addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,

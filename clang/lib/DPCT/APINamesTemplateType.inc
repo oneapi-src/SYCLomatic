@@ -54,22 +54,19 @@ TYPE_REWRITE_ENTRY("cub::ConstantInputIterator",
                    HEADER_INSERTION_FACTORY(HeaderType::HT_DPL_Utils,
                    TYPE_FACTORY(STR("dpct::constant_iterator"), TEMPLATE_ARG(0))))
 
-TYPE_REWRITE_ENTRY("cub::Sum", TYPE_FACTORY(STR(MapNames::getClNamespace() +
-                                                "ext::oneapi::plus"),
-                                            STR("")))
-
-TYPE_REWRITE_ENTRY("cub::Min", TYPE_FACTORY(STR(MapNames::getClNamespace() +
-                                                "ext::oneapi::minimum"),
-                                            STR("")))
-
-TYPE_REWRITE_ENTRY("cub::Max", TYPE_FACTORY(STR(MapNames::getClNamespace() +
-                                                "ext::oneapi::maximum"),
-                                            STR("")))
-
-TYPE_REWRITE_ENTRY("cub::Equality",
-                   TYPE_FACTORY(STR(MapNames::getClNamespace() +
-                                    "ext::oneapi::equal_to"),
+TYPE_REWRITE_ENTRY("cub::Sum",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "plus"),
                                 STR("")))
+
+TYPE_REWRITE_ENTRY("cub::Min",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "minimum"),
+                                STR("")))
+
+TYPE_REWRITE_ENTRY("cub::Max",
+                   TYPE_FACTORY(STR(MapNames::getClNamespace() + "maximum"),
+                                STR("")))
+
+TYPE_REWRITE_ENTRY("cub::Equality", TYPE_FACTORY(STR("std::equal_to"), STR("")))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Memory_usm_host_allocator_alias,

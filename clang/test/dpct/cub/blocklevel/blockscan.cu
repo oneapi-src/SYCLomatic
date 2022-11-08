@@ -31,7 +31,7 @@ void print_data(int* data, int num) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::exclusive_scan_over_group(item_ct1.get_group(), input, 0, sycl::ext::oneapi::plus<>());
+//CHECK-NEXT:  output = sycl::exclusive_scan_over_group(item_ct1.get_group(), input, 0, sycl::plus<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void ExclusiveScanKernel(int* data) {
@@ -54,7 +54,7 @@ __global__ void ExclusiveScanKernel(int* data) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::exclusive_scan_over_group(item_ct1.get_group(), input, 0, sycl::ext::oneapi::plus<>());
+//CHECK-NEXT:  output = sycl::exclusive_scan_over_group(item_ct1.get_group(), input, 0, sycl::plus<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void ExclusiveSumKernel(int* data) {
@@ -77,7 +77,7 @@ __global__ void ExclusiveSumKernel(int* data) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(item_ct1.get_group(), input, sycl::ext::oneapi::plus<>());
+//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(item_ct1.get_group(), input, sycl::plus<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void InclusiveScanKernel(int* data) {
@@ -100,7 +100,7 @@ __global__ void InclusiveScanKernel(int* data) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(item_ct1.get_group(), input, sycl::ext::oneapi::plus<>());
+//CHECK-NEXT:  output = sycl::inclusive_scan_over_group(item_ct1.get_group(), input, sycl::plus<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void InclusiveSumKernel(int* data) {

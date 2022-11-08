@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "CUBAPIMigration.h"
+#include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "CallExprRewriter.h"
 #include "MigrationRuleManager.h"
@@ -30,6 +31,7 @@
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
+#include <iterator>
 
 using namespace clang;
 using namespace dpct;
@@ -44,11 +46,11 @@ auto parentStmt = []() {
 };
 } // namespace
 
-static constexpr std::pair<StringRef, StringRef> CubBinaryOperators[]{
-    {"cub::Sum", "sycl::ext::oneapi::plus<>"},
-    {"cub::Max", "sycl::ext::oneapi::maximum<>"},
-    {"cub::Min", "sycl::ext::oneapi::minimum<>"},
-    {"cub::Equality", "std::equal_to<>"}};
+REGISTER_RULE(CubTypeRule, PassKind::PK_Analysis)
+REGISTER_RULE(CubDeviceLevelRule, PassKind::PK_Analysis)
+
+static constexpr StringRef CubBinaryOperators[] = {"cub::Sum", "cub::Max",
+                                                   "cub::Min", "cub::Equality"};
 
 static constexpr StringRef CubDeviceFuncNames[] = {
     "Sum",           "Min",          "Max",          "Reduce",
@@ -88,19 +90,8 @@ bool CubTypeRule::CanMappingToSyclNativeBinaryOp(StringRef OpTypeName) {
 }
 
 bool CubTypeRule::CanMappingToSyclBinaryOp(StringRef OpTypeName) {
-  return GetMappingToSyclBinaryOp(OpTypeName).has_value();
-}
-
-Optional<StringRef>
-CubTypeRule::GetMappingToSyclBinaryOp(StringRef OpTypeName) {
-  const auto *Iter =
-      llvm::find_if(CubBinaryOperators,
-                    [=](const std::pair<StringRef, StringRef> &P) -> bool {
-                      return P.first == OpTypeName;
-                    });
-  if (Iter != std::end(CubBinaryOperators))
-    return Iter->second;
-  return None;
+  return llvm::find(CubBinaryOperators, OpTypeName) !=
+         std::end(CubBinaryOperators);
 }
 
 void CubDeviceLevelRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -621,7 +612,7 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 std::string CubRule::getOpRepl(const Expr *Operator) {
   std::string OpRepl;
   if (!Operator) {
-    return MapNames::getClNamespace() + "ext::oneapi::plus<>()";
+    return MapNames::getClNamespace() + "plus<>()";
   }
   if (auto Op = dyn_cast<CXXConstructExpr>(Operator)) {
     auto CtorArg = Op->getArg(0)->IgnoreImplicitAsWritten();
@@ -639,11 +630,11 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
       std::string OpType =
           CXXTempObj->getType().getCanonicalType().getAsString();
       if (OpType == "struct cub::Sum") {
-        OpRepl = MapNames::getClNamespace() + "ext::oneapi::plus<>()";
+        OpRepl = MapNames::getClNamespace() + "plus<>()";
       } else if (OpType == "struct cub::Max") {
-        OpRepl = MapNames::getClNamespace() + "ext::oneapi::maximum<>()";
+        OpRepl = MapNames::getClNamespace() + "maximum<>()";
       } else if (OpType == "struct cub::Min") {
-        OpRepl = MapNames::getClNamespace() + "ext::oneapi::minimum<>()";
+        OpRepl = MapNames::getClNamespace() + "minimum<>()";
       }
     }
   }

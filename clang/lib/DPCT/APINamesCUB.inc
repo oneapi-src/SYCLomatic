@@ -479,8 +479,9 @@ CONDITIONAL_FACTORY_ENTRY(
                                      "device::segmented_reduce",
                                  LITERAL("128")),
                              STREAM(9), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                             CALL(TEMPLATED_CALLEE(MapNames::getClNamespace() +
-                                                   "ext::oneapi::plus")),
+                             CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                 MapNames::getClNamespace() + "plus",
+                                 LITERAL(""))),
                              ZERO_INITIALIZER(TYPENAME(STATIC_MEMBER_EXPR(
                                  TEMPLATED_NAME("std::iterator_traits",
                                                 CALL("decltype", ARG(2))),
@@ -492,8 +493,9 @@ CONDITIONAL_FACTORY_ENTRY(
                                      "device::segmented_reduce",
                                  LITERAL("128")),
                              QUEUESTR, ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                             CALL(TEMPLATED_CALLEE(MapNames::getClNamespace() +
-                                                   "ext::oneapi::plus")),
+                             CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                 MapNames::getClNamespace() + "plus",
+                                 LITERAL(""))),
                              ZERO_INITIALIZER(TYPENAME(STATIC_MEMBER_EXPR(
                                  TEMPLATED_NAME("std::iterator_traits",
                                                 CALL("decltype", ARG(2))),
@@ -524,8 +526,9 @@ CONDITIONAL_FACTORY_ENTRY(
                                      LITERAL("128")),
                                  STREAM(9), ARG(2), ARG(3), ARG(4), ARG(5),
                                  ARG(6),
-                                 CALL(TEMPLATED_CALLEE(
-                                     MapNames::getClNamespace() + "ext::oneapi::minimum")),
+                                 CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                     MapNames::getClNamespace() + "minimum",
+                                     LITERAL(""))),
                                  CALL(STATIC_MEMBER_EXPR(
                                      TEMPLATED_NAME(
                                          "std::numeric_limits",
@@ -543,8 +546,9 @@ CONDITIONAL_FACTORY_ENTRY(
                                      LITERAL("128")),
                                  QUEUESTR, ARG(2), ARG(3), ARG(4), ARG(5),
                                  ARG(6),
-                                 CALL(TEMPLATED_CALLEE(
-                                     MapNames::getClNamespace() + "ext::oneapi::minimum")),
+                                 CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                     MapNames::getClNamespace() + "minimum",
+                                     LITERAL(""))),
                                  CALL(STATIC_MEMBER_EXPR(
                                      TEMPLATED_NAME(
                                          "std::numeric_limits",
@@ -580,8 +584,9 @@ CONDITIONAL_FACTORY_ENTRY(
                                      LITERAL("128")),
                                  STREAM(9), ARG(2), ARG(3), ARG(4), ARG(5),
                                  ARG(6),
-                                 CALL(TEMPLATED_CALLEE(
-                                     MapNames::getClNamespace() + "ext::oneapi::maximum")),
+                                 CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                     MapNames::getClNamespace() + "maximum",
+                                     LITERAL(""))),
                                  CALL(STATIC_MEMBER_EXPR(
                                      TEMPLATED_NAME(
                                          "std::numeric_limits",
@@ -599,8 +604,9 @@ CONDITIONAL_FACTORY_ENTRY(
                                      LITERAL("128")),
                                  QUEUESTR, ARG(2), ARG(3), ARG(4), ARG(5),
                                  ARG(6),
-                                 CALL(TEMPLATED_CALLEE(
-                                     MapNames::getClNamespace() + "ext::oneapi::minimum")),
+                                 CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                     MapNames::getClNamespace() + "minimum",
+                                     LITERAL(""))),
                                  CALL(STATIC_MEMBER_EXPR(
                                      TEMPLATED_NAME(
                                          "std::numeric_limits",
@@ -611,4 +617,3 @@ CONDITIONAL_FACTORY_ENTRY(
                                              LITERAL("value_type")))),
                                      LITERAL("max")))))),
                     Diagnostics::REDUCE_PERFORMANCE_TUNE))))))
-
