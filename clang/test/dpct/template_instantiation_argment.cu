@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-8.0
+// UNSUPPORTED: v8.0
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/template_instantiation_argment %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/template_instantiation_argment/template_instantiation_argment.dp.cpp
 
