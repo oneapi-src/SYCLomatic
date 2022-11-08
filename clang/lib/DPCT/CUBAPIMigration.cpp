@@ -790,8 +790,8 @@ void CubRule::processDeviceLevelFuncCall(const CallExpr *CE,
 
   CubParamAs << QueueRepl << InputEA.getReplacedString()
              << OutputEA.getReplacedString() << SegmentNumEA.getReplacedString()
-             << ("(unsigned int *)(" + OffsetBegEA.getReplacedString() + ")")
-             << ("(unsigned int *)(" + OffsetEndEA.getReplacedString() + ")")
+             << OffsetBegEA.getReplacedString()
+             << OffsetEndEA.getReplacedString()
              << OpRepl << InitRepl;
   if (FuncCallUsed) {
     Repl = "(" + MapNames::getDpctNamespace() + "device::segmented_reduce<" +

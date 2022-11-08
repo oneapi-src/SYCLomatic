@@ -608,20 +608,20 @@ template <typename... _Args> constexpr auto __joint_reduce(_Args... __args) {
 /// that are one past the last element in each segment \param binary_op functor
 /// that implements the binary operation used to perform the scan. \param init
 /// initial value of the reduction for each segment.
-template <int GROUP_SIZE, typename T, class BinaryOperation>
+template <int GROUP_SIZE, typename T, typename Ptr, class BinaryOperation>
 void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
-                      size_t segment_count, uint32_t *begin_offsets,
-                      uint32_t *end_offsets, BinaryOperation binary_op,
-                      T init) {
+                      size_t segment_count, Ptr begin_offsets, Ptr end_offsets,
+                      BinaryOperation binary_op, T init) {
 
   sycl::range<1> global_size(segment_count * GROUP_SIZE);
   sycl::range<1> local_size(GROUP_SIZE);
+  typedef std::remove_pointer_t<Ptr> OffsetT;
 
   queue.submit([&](sycl::handler &cgh) {
     cgh.parallel_for(
         sycl::nd_range<1>(global_size, local_size), [=](sycl::nd_item<1> item) {
-          uint32_t segment_begin = begin_offsets[item.get_group_linear_id()];
-          uint32_t segment_end = end_offsets[item.get_group_linear_id()];
+          OffsetT segment_begin = begin_offsets[item.get_group_linear_id()];
+          OffsetT segment_end = end_offsets[item.get_group_linear_id()];
           if (segment_begin == segment_end) {
             if (item.get_local_linear_id() == 0) {
               outputs[item.get_group_linear_id()] = init;

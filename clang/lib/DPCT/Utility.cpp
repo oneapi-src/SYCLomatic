@@ -3096,7 +3096,7 @@ bool isDefaultStream(const Expr *StreamArg) {
       StreamArg->EvaluateAsInt(Result, dpct::DpctGlobalInfo::getContext())) {
     // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
     // all migrated to default queue;
-    return Result.Val.getInt() < APSInt::get(3);
+    return Result.Val.getInt().getZExtValue() < APSInt::get(3);
   }
   return false;
 }
