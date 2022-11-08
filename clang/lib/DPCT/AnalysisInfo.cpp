@@ -2288,6 +2288,37 @@ void ExplicitInstantiationDecl::processFunctionTypeLoc(
   }
 }
 
+void ExplicitInstantiationDecl::processTemplateArgumentList(
+    const TemplateArgumentListInfo &TAList) {
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  ExprAnalysis EA;
+  for (const clang::TemplateArgumentLoc &ArgLoc : TAList.arguments()) {
+    EA.analyze(ArgLoc);
+    if (EA.hasReplacement()) {
+      auto SR = getDefinitionRange(ArgLoc.getSourceRange().getBegin(),
+                                   ArgLoc.getSourceRange().getEnd());
+      auto BeginInfo = clang::dpct::DpctGlobalInfo::getLocInfo(SR.getBegin());
+      auto EndInfo = clang::dpct::DpctGlobalInfo::getLocInfo(SR.getEnd());
+      Token Tok2;
+      Lexer::getRawToken(ArgLoc.getSourceRange().getEnd(), Tok2, SM,
+                         DpctGlobalInfo::getContext().getLangOpts());
+      // if the last token is ">>" or ">>>",
+      // since DPCT does not support nested template type migration,
+      // the last token should be treated as ">"
+      if (Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)) {
+        EndInfo.second += 1;
+      } else {
+        EndInfo.second += Tok2.getLength();
+      }
+
+      DpctGlobalInfo::getInstance().addReplacement(
+          std::make_shared<ExtReplacement>(SM, SR.getBegin(),
+                                           EndInfo.second - BeginInfo.second,
+                                           EA.getReplacedString(), nullptr));
+    }
+  }
+}
+
 void DeviceFunctionInfo::merge(std::shared_ptr<DeviceFunctionInfo> Other) {
   if (this == Other.get())
     return;
