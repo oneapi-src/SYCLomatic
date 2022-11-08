@@ -50,6 +50,10 @@ TYPE_REWRITE_ENTRY("cub::TransformInputIterator",
                        TYPE_FACTORY(STR("oneapi::dpl::transform_iterator"),
                                     TEMPLATE_ARG(2), TEMPLATE_ARG(1))))
 
+TYPE_REWRITE_ENTRY("cub::ConstantInputIterator",
+                   HEADER_INSERTION_FACTORY(HeaderType::HT_DPL_Utils,
+                   TYPE_FACTORY(STR("dpct::constant_iterator"), TEMPLATE_ARG(0))))
+
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::Memory_usm_host_allocator_alias,
     TYPE_REWRITE_ENTRY("thrust::system::cuda::experimental::pinned_allocator",
