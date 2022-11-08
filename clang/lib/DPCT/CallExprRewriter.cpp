@@ -16,8 +16,10 @@
 #include "CUBAPIMigration.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
+#include "clang/AST/Type.h"
 #include "clang/Basic/LangOptions.h"
 #include <cstdarg>
+#include <cstddef>
 
 namespace clang {
 namespace dpct {
@@ -1991,6 +1993,16 @@ std::function<bool(const CallExpr *C)> checkIsArgIntegerLiteral(size_t index) {
       }
     }
     return Arg2Expr->getStmtClass() == Stmt::IntegerLiteralClass;
+  };
+}
+
+std::function<bool(const CallExpr *)>
+checkArgCanMappingToSyclNativeBinaryOp(size_t ArgIdx) {
+  return [=](const CallExpr *C) -> bool {
+    const Expr *Arg = C->getArg(ArgIdx);
+    QualType CanTy = Arg->getType().getCanonicalType();
+    std::string TypeName = CanTy.getAsString();
+    return CubTypeRule::CanMappingToSyclNativeBinaryOp(TypeName);
   };
 }
 

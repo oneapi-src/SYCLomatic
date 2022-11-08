@@ -24,6 +24,7 @@
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/None.h"
 #include "llvm/ADT/Optional.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Casting.h"
@@ -36,11 +37,87 @@ using namespace ast_matchers;
 
 namespace {
 auto parentStmt = []() {
-  return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
-               hasParent(whileStmt()), hasParent(doStmt()),
-               hasParent(ifStmt()));
+  return anyOf(hasAncestor(compoundStmt()), hasAncestor(forStmt()),
+               hasAncestor(whileStmt()), hasAncestor(doStmt()),
+               hasAncestor(ifStmt()));
 };
 } // namespace
+
+static constexpr StringRef CubDeviceFuncNames[] = {
+    "Sum",           "Min",          "Max",          "Reduce",
+    "ReduceByKey",   "ExclusiveSum", "InclusiveSum", "InclusiveScan",
+    "ExclusiveScan", "Flagged",      "Unique",       "Encode"};
+
+static constexpr StringRef CubDeviceRecordNames[] = {
+    "DeviceSegmentedReduce", "DeviceReduce", "DeviceScan", "DeviceSelect",
+    "DeviceRunLengthEncode"};
+
+void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  auto TargetTypeName = [&]() {
+    return hasAnyName("cub::Sum", "cub::Max", "cub::Min", "cub::Equality",
+                      "cub::CountingInputIterator",
+                      "cub::TransformInputIterator",
+                      "cub::ConstantInputIterator");
+  };
+
+  MF.addMatcher(
+      typeLoc(loc(qualType(hasDeclaration(namedDecl(TargetTypeName())))))
+          .bind("loc"),
+      this);
+}
+
+void CubTypeRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (const TypeLoc *TL = getAssistNodeAsType<TypeLoc>(Result, "loc")) {
+    ExprAnalysis EA;
+    EA.analyze(*TL);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+  }
+}
+
+bool CubTypeRule::CanMappingToSyclNativeBinaryOp(StringRef OpTypeName) {
+  return OpTypeName == "cub::Sum" || OpTypeName == "cub::Max" ||
+         OpTypeName == "cub::Min";
+}
+
+void CubDeviceLevelRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(
+      callExpr(
+          allOf(callee(functionDecl(allOf(
+                    hasAnyName(CubDeviceFuncNames),
+                    hasParent(functionTemplateDecl(allOf(
+                        hasAnyName(CubDeviceFuncNames),
+                        hasAncestor(cxxRecordDecl(allOf(
+                            hasAnyName(CubDeviceRecordNames),
+                            hasParent(namespaceDecl(hasName("cub")))))))))))),
+                parentStmt()))
+
+          .bind("FuncCall"),
+      this);
+}
+
+void CubDeviceLevelRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (const auto *CE = getNodeAsType<CallExpr>(Result, "FuncCall")) {
+    const auto *Fn = CE->getDirectCallee();
+    std::string FuncName;
+    llvm::raw_string_ostream SS(FuncName);
+    Fn->printNestedNameSpecifier(SS, DpctGlobalInfo::getContext().getPrintingPolicy());
+    SS << Fn->getName();
+
+    // Check if the RewriteMap has initialized
+    if (!CallExprRewriterFactoryBase::RewriterMap)
+      return;
+
+    auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
+    if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+      ExprAnalysis EA;
+      EA.analyze(CE);
+      emplaceTransformation(EA.getReplacement());
+      EA.applyAllSubExprRepl();
+      return;
+    }
+  }
+}
 
 static bool isNullPointerConstant(const clang::Expr *E) {
   assert(E && "Expr can not be nullptr");
@@ -55,17 +132,11 @@ static bool isCudaMemoryAPIName(StringRef FuncName) {
 }
 
 static bool isCubDeviceFuncName(StringRef FuncName) {
-  return FuncName == "Reduce" || FuncName == "ReduceByKey" ||
-         FuncName == "Min" || FuncName == "Max" || FuncName == "Sum" ||
-         FuncName == "ExclusiveSum" || FuncName == "InclusiveSum" ||
-         FuncName == "InclusiveScan" || FuncName == "ExclusiveScan" ||
-         FuncName == "Flagged" || FuncName == "Unique" || FuncName == "Encode";
+  return llvm::find(CubDeviceFuncNames, FuncName);
 }
 
 static bool isCubDeviceCXXRecordName(StringRef CXXRDName) {
-  return CXXRDName == "DeviceSegmentedReduce" || CXXRDName == "DeviceReduce" ||
-         CXXRDName == "DeviceScan" || CXXRDName == "DeviceSelect" ||
-         CXXRDName == "DeviceRunLengthEncode";
+  return llvm::find(CubDeviceRecordNames, CXXRDName);
 }
 
 static llvm::Optional<std::string>
