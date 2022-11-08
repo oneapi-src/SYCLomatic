@@ -84,6 +84,6 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     IsDefinedInCUDA(),
     CALL_FACTORY_ENTRY("saturate",
-                       CALL(MapNames::getClNamespace(false, true) + "clamp",
+                       CALL(MapNames::getClNamespace(false, true) + "clamp<float>",
                             ARG(0), ARG("0.0f"), ARG("1.0f"))),
     NO_REWRITE_FUNCNAME_FACTORY_ENTRY("saturate", "saturate"))
