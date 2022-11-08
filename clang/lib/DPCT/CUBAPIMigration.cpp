@@ -25,6 +25,7 @@
 #include "llvm/ADT/None.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Casting.h"
@@ -42,6 +43,12 @@ auto parentStmt = []() {
                hasAncestor(ifStmt()));
 };
 } // namespace
+
+static constexpr std::pair<StringRef, StringRef> CubBinaryOperators[]{
+    {"cub::Sum", "sycl::ext::oneapi::plus<>"},
+    {"cub::Max", "sycl::ext::oneapi::maximum<>"},
+    {"cub::Min", "sycl::ext::oneapi::minimum<>"},
+    {"cub::Equality", "std::equal_to<>"}};
 
 static constexpr StringRef CubDeviceFuncNames[] = {
     "Sum",           "Min",          "Max",          "Reduce",
@@ -78,6 +85,22 @@ void CubTypeRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) 
 bool CubTypeRule::CanMappingToSyclNativeBinaryOp(StringRef OpTypeName) {
   return OpTypeName == "cub::Sum" || OpTypeName == "cub::Max" ||
          OpTypeName == "cub::Min";
+}
+
+bool CubTypeRule::CanMappingToSyclBinaryOp(StringRef OpTypeName) {
+  return GetMappingToSyclBinaryOp(OpTypeName).has_value();
+}
+
+Optional<StringRef>
+CubTypeRule::GetMappingToSyclBinaryOp(StringRef OpTypeName) {
+  const auto *Iter =
+      llvm::find_if(CubBinaryOperators,
+                    [=](const std::pair<StringRef, StringRef> &P) -> bool {
+                      return P.first == OpTypeName;
+                    });
+  if (Iter != std::end(CubBinaryOperators))
+    return Iter->second;
+  return None;
 }
 
 void CubDeviceLevelRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -132,11 +155,13 @@ static bool isCudaMemoryAPIName(StringRef FuncName) {
 }
 
 static bool isCubDeviceFuncName(StringRef FuncName) {
-  return llvm::find(CubDeviceFuncNames, FuncName);
+  return llvm::find(CubDeviceFuncNames, FuncName) !=
+         std::end(CubDeviceFuncNames);
 }
 
 static bool isCubDeviceCXXRecordName(StringRef CXXRDName) {
-  return llvm::find(CubDeviceRecordNames, CXXRDName);
+  return llvm::find(CubDeviceRecordNames, CXXRDName) !=
+         std::end(CubDeviceRecordNames);
 }
 
 static llvm::Optional<std::string>

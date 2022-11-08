@@ -10,6 +10,7 @@
 #define CLANG_DPCT_CUBAPIMIGRATION_H
 
 #include "ASTTraversal.h"
+#include "llvm/ADT/StringRef.h"
 
 namespace clang {
 namespace dpct {
@@ -20,6 +21,8 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
   static bool CanMappingToSyclNativeBinaryOp(StringRef OpTypeName);
+  static bool CanMappingToSyclBinaryOp(StringRef OpTypeName);
+  static Optional<StringRef> GetMappingToSyclBinaryOp(StringRef OpTypeName);
 };
 
 class CubDeviceLevelRule : public NamedMigrationRule<CubDeviceLevelRule> {

@@ -10,6 +10,7 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
+#include "CUBAPIMigration.h"
 #include "CallExprRewriter.h"
 #include "DNNAPIMigration.h"
 #include "TypeLocRewriters.h"
@@ -647,6 +648,11 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
       addReplacement(Ctor, TypeLen, Replacement);
     }
   }
+
+  if (StringRef(CtorClassName).startswith("cub::") &&
+      CubTypeRule::CanMappingToSyclBinaryOp(CtorClassName))
+    addReplacement(Ctor,
+                   CubTypeRule::GetMappingToSyclBinaryOp(CtorClassName)->str());
 
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
     std::string ArgsString;
