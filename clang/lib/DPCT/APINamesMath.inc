@@ -600,6 +600,7 @@ ENTRY_RENAMED("mul24", MapNames::getClNamespace(false, true) + "mul24")
 // impl with new rewriter
 ENTRY_REWRITE("rsqrt")
 ENTRY_REWRITE("abs")
+ENTRY_REWRITE("saturate")
 
 // vector types
 ENTRY_RENAMED("make_char1", "char")

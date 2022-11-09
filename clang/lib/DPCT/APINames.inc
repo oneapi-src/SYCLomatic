@@ -1449,6 +1449,7 @@ ENTRY(nvrtcGetTypeName, nvrtcGetTypeName, false, NO_FLAG, P4, "comment")
 
 // crt wrapper API
 ENTRY(mul24, mul24, true, NO_FLAG, P0, "Successful")
+ENTRY(saturate, saturate, true, NO_FLAG, P0, "Successful")
 
 //add the 8 missing ones
 ENTRY(cudaDeviceGetNvSciSyncAttributes, cudaDeviceGetNvSciSyncAttributes, false, NO_FLAG, P4, "comment")
