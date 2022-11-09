@@ -2444,7 +2444,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
               hasAnyName(
                   "cudaError", "curandStatus", "cublasStatus", "CUstream",
                   "CUstream_st", "thrust::complex", "thrust::device_vector",
-                  "thrust::device_ptr", "thrust::host_vector", "cublasHandle_t",
+                  "thrust::device_ptr", "thrust::device_reference",
+		  "thrust::host_vector", "cublasHandle_t",
                   "CUevent_st", "__half", "half", "__half2", "half2",
                   "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",
                   "cudaPitchedPtr", "thrust::counting_iterator",

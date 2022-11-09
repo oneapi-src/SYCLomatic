@@ -228,6 +228,9 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "device_pointer",
            HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl)},
+      {"thrust::device_reference",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "device_reference",
+				      HelperFeatureEnum::DplExtrasMemory_device_reference)},
       {"thrust::device_vector",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "device_vector",

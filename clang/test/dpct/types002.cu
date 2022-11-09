@@ -27,6 +27,15 @@ int main(int argc, char **argv) {
   a = sizeof(device_p);
   a = sizeof device_p;
 
+  //CHECK:dpct::device_reference<int> device_ref = device_vec[0];
+  //CHECK-NEXT:a = sizeof(dpct::device_reference<int>);
+  //CHECK-NEXT:a = sizeof(device_ref);
+  //CHECK-NEXT:a = sizeof device_ref;
+  thrust::device_reference<int> device_ref = device_vec[0];
+  a = sizeof(thrust::device_reference<int>);
+  a = sizeof(device_ref);
+  a = sizeof device_ref;
+
   //CHECK:std::vector<int> host_vec;
   //CHECK-NEXT:a = sizeof(std::vector<int>);
   //CHECK-NEXT:a = sizeof(host_vec);
@@ -36,6 +45,18 @@ int main(int argc, char **argv) {
   a = sizeof(host_vec);
   a = sizeof host_vec;
 }
+
+template <typename T>
+struct alloc {
+  // CHECK:      typedef dpct::device_pointer<T> pointer;
+  // CHECK-NEXT: typedef dpct::device_pointer<const T> const_pointer;
+  // CHECK-NEXT: typedef dpct::device_reference<T> reference;
+  // CHECK-NEXT: typedef dpct::device_reference<const T> const_reference;
+  typedef thrust::device_ptr<T> pointer;
+  typedef thrust::device_ptr<const T> const_pointer;
+  typedef thrust::device_reference<T> reference;
+  typedef thrust::device_reference<const T> const_reference;
+};
 
 template <typename type>
 struct bar
