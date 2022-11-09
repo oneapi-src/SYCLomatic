@@ -484,7 +484,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                  LITERAL(""))),
                              ZERO_INITIALIZER(TYPENAME(STATIC_MEMBER_EXPR(
                                  TEMPLATED_NAME("std::iterator_traits",
-                                                CALL("decltype", ARG(2))),
+                                                CALL("decltype", ARG(3))),
                                  LITERAL("value_type")))))),
                     CALL_FACTORY_ENTRY(
                         "cub::DeviceSegmentedReduce::Sum",
@@ -498,7 +498,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                  LITERAL(""))),
                              ZERO_INITIALIZER(TYPENAME(STATIC_MEMBER_EXPR(
                                  TEMPLATED_NAME("std::iterator_traits",
-                                                CALL("decltype", ARG(2))),
+                                                CALL("decltype", ARG(3))),
                                  LITERAL("value_type"))))))),
                 Diagnostics::REDUCE_PERFORMANCE_TUNE)))))
 
@@ -535,7 +535,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                          TYPENAME(STATIC_MEMBER_EXPR(
                                              TEMPLATED_NAME(
                                                  "std::iterator_traits",
-                                                 CALL("decltype", ARG(2))),
+                                                 CALL("decltype", ARG(3))),
                                              LITERAL("value_type")))),
                                      LITERAL("max"))))),
                         CALL_FACTORY_ENTRY(
@@ -555,7 +555,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                          TYPENAME(STATIC_MEMBER_EXPR(
                                              TEMPLATED_NAME(
                                                  "std::iterator_traits",
-                                                 CALL("decltype", ARG(2))),
+                                                 CALL("decltype", ARG(3))),
                                              LITERAL("value_type")))),
                                      LITERAL("max")))))),
                     Diagnostics::REDUCE_PERFORMANCE_TUNE))))))
@@ -593,7 +593,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                          TYPENAME(STATIC_MEMBER_EXPR(
                                              TEMPLATED_NAME(
                                                  "std::iterator_traits",
-                                                 CALL("decltype", ARG(2))),
+                                                 CALL("decltype", ARG(3))),
                                              LITERAL("value_type")))),
                                      LITERAL("lowest"))))),
                         CALL_FACTORY_ENTRY(
@@ -605,7 +605,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                  QUEUESTR, ARG(2), ARG(3), ARG(4), ARG(5),
                                  ARG(6),
                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                                     MapNames::getClNamespace() + "minimum",
+                                     MapNames::getClNamespace() + "maximum",
                                      LITERAL(""))),
                                  CALL(STATIC_MEMBER_EXPR(
                                      TEMPLATED_NAME(
@@ -613,7 +613,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                          TYPENAME(STATIC_MEMBER_EXPR(
                                              TEMPLATED_NAME(
                                                  "std::iterator_traits",
-                                                 CALL("decltype", ARG(2))),
+                                                 CALL("decltype", ARG(3))),
                                              LITERAL("value_type")))),
-                                     LITERAL("max")))))),
+                                     LITERAL("lowest")))))),
                     Diagnostics::REDUCE_PERFORMANCE_TUNE))))))

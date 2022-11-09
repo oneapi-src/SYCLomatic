@@ -1,7 +1,10 @@
 // UNSUPPORTED: cuda-8.0, cuda-9.0, cuda-9.1, cuda-9.2, cuda-10.0, cuda-10.1, cuda-10.2
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0, v10.1, v10.2
 // RUN: dpct --format-range=none -in-root %S -out-root %T/devicelevel/devicesegmentedreduce %S/devicesegmentedreduce.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp --match-full-lines %s
+// RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1091
+// RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1092
+// RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1026
+// RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1027
 
 #include <iostream>
 #include <vector>
@@ -64,9 +67,7 @@ struct UserMin
 //CHECK:    int          *device_out;
 //CHECK:    UserMin      min_op;
 //CHECK:    int          initial_value = INT_MAX;
-
 //CHECK:    int expect[DATA_NUM] = {0, 10, 20, 30, 40, 50, 60, 70, 80, 90};
-
 //CHECK:    device_offsets = sycl::malloc_shared<int>((num_segments + 1), q_ct1);
 //CHECK:    device_in = sycl::malloc_shared<int>(DATA_NUM, q_ct1);
 //CHECK:    device_out = sycl::malloc_shared<int>(num_segments, q_ct1);
@@ -74,19 +75,11 @@ struct UserMin
 //CHECK:    for(int i = 0; i < num_segments + 1; i++) {
 //CHECK:      device_offsets[i] = i * 10;
 //CHECK:    }
-
-
-//CHECK:    /*
-//CHECK:    DPCT1091:{{[0-9]+}}: The function dpct::segmented_reduce only supports DPC++ native binary operation. Replace "dpct_placeholder" with a DPC++ native binary operation.
-//CHECK:    */
-//CHECK:    /*
-//CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
-//CHECK:    */
-//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), dpct_placeholder, initial_value);
-
-
+//CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
+//CHECK-DPCT1091:    DPCT1091:{{[0-9]+}}: The function dpct::segmented_reduce only supports DPC++ native binary operation. Replace "dpct_placeholder" with a DPC++ native binary operation.
+//CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Reduce was removed because this call is redundant in SYCL.
+//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, dpct_placeholder, initial_value);
 //CHECK:    dev_ct1.queues_wait_and_throw();
-
 //CHECK:    if(!verify_data(device_out, expect, num_segments)) {
 //CHECK:      std::cout << "Reduce" << " verify failed" << std::endl;
 //CHECK:      std::cout << "expect:" << std::endl;
@@ -153,10 +146,9 @@ bool test_reduce_1(){
 //CHECK:      device_offsets[i] = i * 10;
 //CHECK:    }
 
-//CHECK:    /*
-//CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
-//CHECK:    */
-//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::minimum<>(), initial_value);
+//CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
+//CHECK-DPCT1027:    DPCT1027:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Reduce was replaced with 0 because this call is redundant in SYCL.
+//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::minimum<>(), initial_value);
 
 //CHECK:    dev_ct1.queues_wait_and_throw();
 
@@ -230,10 +222,8 @@ bool test_reduce_3(){
   }
   // case 1:
   // CHECK: for(int i = 0; i < 10; i++) {
-  // CHECK:   /*
-  // CHECK:   DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
-  // CHECK:   */
-  // CHECK:   dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::minimum<>(), initial_value);
+  // CHECK-DPCT1092:   DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
+  // CHECK:   dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::minimum<>(), initial_value);
   // CHECK:   temp_storage = (void *)sycl::malloc_device(temp_storage_size, q_ct1);
   // CHECK: }
   for(int i = 0; i < 10; i++) {
@@ -245,11 +235,10 @@ bool test_reduce_3(){
   // case 2:
   // CHECK:  for(int i = 0; i < 10; i++) {
   // CHECK:    temp_storage = nullptr;
+  // CHECK-DPCT1027:    DPCT1027:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Reduce was replaced with 0 because this call is redundant in SYCL.
   // CHECK:    temp_storage = (void *)sycl::malloc_device(temp_storage_size, q_ct1);
-  // CHECK:    /*
-  // CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
-  // CHECK:    */
-  // CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::minimum<>(), initial_value);
+  // CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
+  // CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::minimum<>(), initial_value);
   // CHECK:  }
   for(int i = 0; i < 10; i++) {
     temp_storage = nullptr;
@@ -266,15 +255,11 @@ bool test_reduce_3(){
   // CHECK:  for(int i = 0; i < 10; i++) {
   // CHECK:    temp_storage = nullptr;
   // CHECK:    temp_storage = (void *)sycl::malloc_device(temp_storage_size, q_ct1);
-  // CHECK:    /*
-  // CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
-  // CHECK:    */
-  // CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::minimum<>(), initial_value);
+  // CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
+  // CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::minimum<>(), initial_value);
   // CHECK:    temp_storage = (void *)sycl::malloc_device(temp_storage_size, q_ct1);
-  // CHECK:    /*
-  // CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
-  // CHECK:    */
-  // CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::minimum<>(), initial_value);
+  // CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
+  // CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::minimum<>(), initial_value);
   // CHECK:  }
   for(int i = 0; i < 10; i++) {
     temp_storage = nullptr;
@@ -290,10 +275,8 @@ bool test_reduce_3(){
   }
 
   // CHECK: temp_storage = (void *)sycl::malloc_device(temp_storage_size, q_ct1);
-  // CHECK: /*
-  // CHECK: DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
-  // CHECK: */
-  // CHECK: dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::minimum<>(), initial_value);
+  // CHECK-DPCT1092: DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
+  // CHECK: dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::minimum<>(), initial_value);
 
   cudaMalloc(&temp_storage, temp_storage_size);
 
@@ -330,11 +313,9 @@ bool test_reduce_3(){
 //CHECK:      for(int i = 0; i < num_segments + 1; i++) {
 //CHECK:        device_offsets[i] = i * 10;
 //CHECK:      }
-
-//CHECK:      /*
-//CHECK:      DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
-//CHECK:      */
-//CHECK:      dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::plus<>(), 0);
+//CHECK-DPCT1026:      DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Sum was removed because this call is redundant in SYCL.
+//CHECK-DPCT1092:      DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
+//CHECK:      dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::plus<>(), typename std::iterator_traits<decltype(device_out)>::value_type{});
 
 //CHECK:      dev_ct1.queues_wait_and_throw();
 
@@ -404,10 +385,9 @@ bool test_sum_1(){
 //CHECK:    }
 //CHECK:    device_offsets[1] = 20;
 
-//CHECK:    /*
-//CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
-//CHECK:    */
-//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::plus<>(), 0);
+//CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Sum was removed because this call is redundant in SYCL.
+//CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
+//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::plus<>(), typename std::iterator_traits<decltype(device_out)>::value_type{});
 
 //CHECK:    dev_ct1.queues_wait_and_throw();
 
@@ -476,10 +456,9 @@ bool test_sum_2(){
 //CHECK:      device_offsets[i] = i * 10;
 //CHECK:    }
 
-//CHECK:    /*
-//CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
-//CHECK:    */
-//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::minimum<>(), std::numeric_limits<int>::max());
+//CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Min was removed because this call is redundant in SYCL.
+//CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
+//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::minimum<>(), std::numeric_limits<typename std::iterator_traits<decltype(device_out)>::value_type>::max());
 
 //CHECK:    dev_ct1.queues_wait_and_throw();
 
@@ -548,10 +527,9 @@ bool test_min(){
 //CHECK:      device_offsets[i] = i * 10;
 //CHECK:    }
 
-//CHECK:    /*
-//CHECK:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
-//CHECK:    */
-//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, (unsigned int *)(device_offsets), (unsigned int *)(device_offsets + 1), sycl::maximum<>(), std::numeric_limits<int>::lowest());
+//CHECK-DPCT1026:    DPCT1026:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Max was removed because this call is redundant in SYCL.
+//CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
+//CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::maximum<>(), std::numeric_limits<typename std::iterator_traits<decltype(device_out)>::value_type>::lowest());
 
 //CHECK:    dev_ct1.queues_wait_and_throw();
 
