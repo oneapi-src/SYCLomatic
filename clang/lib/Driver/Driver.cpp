@@ -5605,7 +5605,11 @@ class OffloadingActionBuilder final {
               C.getDriver().Diag(clang::diag::err_drv_bad_target_id) << ArchStr;
               continue;
             }
+#ifdef SYCLomatic_CUSTOMIZATION
             auto CanId = getCanonicalTargetID(Arch.value(), Features);
+#else
+            auto CanId = getCanonicalTargetID(Arch.getValue(), Features);
+#endif
             ArchStr = Args.MakeArgStringRef(CanId);
           }
           ParsedArg->claim();
