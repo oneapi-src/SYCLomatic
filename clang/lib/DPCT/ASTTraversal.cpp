@@ -14901,8 +14901,10 @@ void DriverModuleAPIRule::runRule(
     return;
   }
 
-  if (APIName == "cuModuleLoad" || APIName == "cuModuleLoadData") {
-    report(CE->getBeginLoc(), Diagnostics::MODULE_FILENAME_MANUAL_FIX, false);
+  if (APIName == "cuModuleLoad") {
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD, false);
+  }  else if (APIName == "cuModuleLoadData") {
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA, false);
   }
 
   ExprAnalysis EA;

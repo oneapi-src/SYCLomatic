@@ -6,45 +6,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifdef _WIN32
-
 ASSIGN_FACTORY_ENTRY(
     "cuModuleLoad", DEREF(0),
-    CALL("LoadLibraryA",
-         ARG("dpct_placeholder/*Fix the module file name manually*/")))
+    CALL("dpct::load_sycl_lib", ARG(1)))
 
 ASSIGN_FACTORY_ENTRY(
     "cuModuleLoadData", DEREF(0),
-    CALL("LoadLibraryA",
-         ARG("dpct_placeholder/*Fix the module file name manually*/")))
+    CALL("dpct::load_sycl_lib_mem", ARG(1)))
 
 ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
-                     CALL("(dpct::kernel_functor)GetProcAddress", ARG(1),
-                          EXTENDSTR(2, "_wrapper")))
-
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
-                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                            "cuModuleGetTexRef", DEREF(0),
-                            CALL("(dpct::image_wrapper_base_p)GetProcAddress",
-                                 ARG(1), ARG(2)))))
-
-CALL_FACTORY_ENTRY("cuModuleUnload", CALL("FreeLibrary", ARG(0)))
-
-#else
-
-ASSIGN_FACTORY_ENTRY(
-    "cuModuleLoad", DEREF(0),
-    CALL("dlopen", ARG("dpct_placeholder/*Fix the module file name manually*/"),
-         ARG("RTLD_LAZY")))
-
-ASSIGN_FACTORY_ENTRY(
-    "cuModuleLoadData", DEREF(0),
-    CALL("dlopen", ARG("dpct_placeholder/*Fix the module file name manually*/"),
-         ARG("RTLD_LAZY")))
-
-ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
-                     CALL("(dpct::kernel_functor)dlsym", ARG(1),
-                          EXTENDSTR(2, "_wrapper")))
+                     CALL("dpct::get_kernel_function", ARG(1), ARG(2)))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
@@ -53,8 +24,6 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
                                  ARG(2)))))
 
 CALL_FACTORY_ENTRY("cuModuleUnload", CALL("dlclose", ARG(0)))
-
-#endif
 
 #define RANGES_CTOR(RangeType, ...)                                            \
   CALL(DpctGlobalInfo::getCtadClass(                                           \
@@ -65,9 +34,10 @@ CALL_FACTORY_ENTRY("cuModuleUnload", CALL("dlclose", ARG(0)))
 #define RANGE_CTOR(Arg0, Arg1, Arg2) RANGES_CTOR("range", Arg0, Arg1, Arg2)
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cuLaunchKernel", CALL(ARG(0), STREAM(8),
-                           NDRANGE_CTOR(RANGE_CTOR(ARG(3), ARG(2), ARG(1)),
-                                        RANGE_CTOR(ARG(6), ARG(5), ARG(4))),
+    "cuLaunchKernel", CALL("dpct::invoke_kernel_function",
+                           ARG(0), STREAM(8),
+                           RANGE_CTOR(ARG(3), ARG(2), ARG(1)),
+                           RANGE_CTOR(ARG(6), ARG(5), ARG(4)),
                            ARG(7), ARG(9), ARG(10))))
 
 #undef NDRANGE_CTOR
