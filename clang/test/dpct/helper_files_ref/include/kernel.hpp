@@ -60,9 +60,24 @@ static uint64_t get_size_from_elf(char const *const blob) {
   if (blob[5] != 0x01)
     throw std::runtime_error("Only little-endian headers are supported");
 
-  uint64_t e_shoff     = *(reinterpret_cast<const uint64_t *>(blob+0x28));
-  uint16_t e_shentsize = *(reinterpret_cast<const uint16_t *>(blob+0x3A));
-  uint16_t e_shnum     = *(reinterpret_cast<const uint16_t *>(blob+0x3C));
+  unsigned char const *const ublob = reinterpret_cast<unsigned char const *const>(blob);
+  uint64_t e_shoff = 0;
+  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 0]) << 0;
+  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 1]) << 8;
+  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 2]) << 16;
+  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 3]) << 24;
+  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 4]) << 32;
+  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 5]) << 40;
+  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 6]) << 48;
+  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 7]) << 56;
+
+  uint16_t e_shentsize = 0;
+  e_shentsize |= ublob[0x3A + 0] << 0;
+  e_shentsize |= ublob[0x3A + 1] << 8;
+
+  uint16_t e_shnum = 0;
+  e_shnum |= ublob[0x3C + 0] << 0;
+  e_shnum |= ublob[0x3C + 1] << 8;
 
   return e_shoff + (e_shentsize * e_shnum);
 }
