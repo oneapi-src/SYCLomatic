@@ -96,14 +96,8 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
   if (ReplInfo == MapNames::ThrustFuncNamesMap.end()) {
     dpct::ExprAnalysis EA;
     EA.analyze(CE);
-    auto Range = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
-    auto Len = Lexer::MeasureTokenLength(
-        Range.getEnd(), SM, DpctGlobalInfo::getContext().getLangOpts());
-    Len += SM.getDecomposedLoc(Range.getEnd()).second -
-           SM.getDecomposedLoc(Range.getBegin()).second;
-    auto ReplStr = EA.getReplacedString();
-    emplaceTransformation(
-        new ReplaceText(Range.getBegin(), Len, std::move(ReplStr)));
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
     return;
   }
 
@@ -126,7 +120,7 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
   bool PolicyProcessed = false;
 
   if (ThrustFuncName == "sort") {
-    auto ExprLoc = SM.getSpellingLoc(CE->getBeginLoc());
+    auto ExprLoc = SM.getExpansionLoc(CE->getBeginLoc());
     if (SortULExpr.count(ExprLoc) != 0)
       return;
     else if (ULExpr) {
@@ -178,17 +172,17 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
   // All the thrust APIs (such as thrust::copy, thrust::fill,
   // thrust::count, thrust::equal) called in device function , should be
   // migrated to oneapi::dpl APIs without a policy on the SYCL side
-  if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
-    if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
-      if (ThrustFuncName == "sort") {
-        report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-               "thrust::" + ThrustFuncName);
-        return;
-      } else if (hasExecutionPolicy) {
-        emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
-      }
-    }
-  }
+  // if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
+  //   if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
+  //     if (ThrustFuncName == "sort") {
+  //       report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+  //              "thrust::" + ThrustFuncName);
+  //       return;
+  //     } else if (hasExecutionPolicy) {
+  //       emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
+  //     }
+  //   }
+  // }
 
   if (ThrustFuncName == "binary_search" &&
       (NumArgs <= 4 || (NumArgs == 5 && hasExecutionPolicy))) {
@@ -362,15 +356,14 @@ void ThrustTypeRule::runRule(
     auto VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
     if (DRE->hasQualifier()) {
 
-      auto Namespace = DRE->getQualifierLoc()
+      auto ND = DRE->getQualifierLoc()
                            .getNestedNameSpecifier()
-                           ->getAsNamespace()
-                           ->getNameAsString();
+                           ->getAsNamespace();
 
-      if (Namespace != "thrust")
+      if (!ND||ND->getName() != "thrust")
         return;
 
-      const std::string ThrustVarName = Namespace + "::" + VD->getName().str();
+      const std::string ThrustVarName = ND->getNameAsString() + "::" + VD->getName().str();
 
       std::string Replacement =
           MapNames::findReplacedName(MapNames::TypeNamesMap, ThrustVarName);

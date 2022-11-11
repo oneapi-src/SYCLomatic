@@ -260,17 +260,16 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
   }
   // Calculate offset and length from SourceLocation
   auto End = getOffset(EndLoc);
-  auto LastTokenLength =
-      Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
 
   Token Tok2;
   Lexer::getRawToken(EndLoc, Tok2, SM, Context.getLangOpts());
   // if the last token is ">>" or ">>>",
   // since DPCT does not support nested template type migration,
   // the last token should be treated as ">"
-  if (Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)) {
-    LastTokenLength = 1;
-  }
+  auto LastTokenLength =
+      Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)
+          ? 1
+          : Tok2.getLength();
 
   auto DecompLoc = SM.getDecomposedLoc(BeginLoc);
   FileId = DecompLoc.first;
