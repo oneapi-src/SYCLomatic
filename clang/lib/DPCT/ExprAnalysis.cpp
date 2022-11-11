@@ -1935,14 +1935,14 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
   if (IsInMacroDefine && SM.isMacroArgExpansion(E->getBeginLoc())) {
     Reversed = false;
     DirectRef = true;
-    if (ArgIndex == 3 && isPredefinedStreamHandle(E)) {
+    if (ArgIndex == 3 && isDefaultStream(E)) {
       addReplacement("0");
       return;
     }
   }
 
   DoReverse = ReverseIfNeed;
-  if (ArgIndex == 3 && isPredefinedStreamHandle(E)) {
+  if (ArgIndex == 3 && isDefaultStream(E)) {
     addReplacement("0");
     return;
   }

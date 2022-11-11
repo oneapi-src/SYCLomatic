@@ -2064,45 +2064,50 @@ REGISTER_RULE(AtomicFunctionRule, PassKind::PK_Migration)
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       typeLoc(
-          loc(qualType(hasDeclaration(namedDecl(hasAnyName(
-              "cudaError", "curandStatus", "cublasStatus", "CUstream",
-              "CUstream_st", "thrust::complex", "thrust::device_vector",
-              "thrust::device_ptr", "thrust::host_vector", "cublasHandle_t",
-              "CUevent_st", "__half", "half", "__half2", "half2",
-              "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",
-              "cudaPitchedPtr", "thrust::counting_iterator",
-              "thrust::transform_iterator", "thrust::permutation_iterator",
-              "thrust::iterator_difference", "cusolverDnHandle_t",
-              "thrust::device_malloc_allocator", "thrust::divides",
-              "thrust::tuple", "thrust::maximum", "thrust::multiplies",
-              "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
-              "CUdevice", "cudaEvent_t", "cublasStatus_t", "cuComplex",
-              "cuFloatComplex", "cuDoubleComplex", "CUevent",
-              "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
-              "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
-              "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
-              "cusparseStatus_t", "cusparseDiagType_t", "cusparseFillMode_t",
-              "cusparseIndexBase_t", "cusparseMatrixType_t",
-              "cusparseOperation_t", "cusparseMatDescr_t", "cusparseHandle_t",
-              "CUcontext", "cublasPointerMode_t", "cusparsePointerMode_t",
-              "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t", "cudaDataType",
-              "cublasDataType_t", "curandState_t", "curandState",
-              "curandStateXORWOW_t", "curandStateXORWOW",
-              "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
-              "curandStateMRG32k3a_t", "curandStateMRG32k3a", "thrust::minus",
-              "thrust::negate", "thrust::logical_or", "thrust::identity",
-              "thrust::equal_to", "thrust::less", "cudaSharedMemConfig",
-              "curandGenerator_t", "cufftHandle", "cufftReal",
-              "cufftDoubleReal", "cufftComplex", "cufftDoubleComplex",
-              "cufftResult_t", "cufftResult", "cufftType_t", "cufftType",
-              "thrust::pair", "CUdeviceptr", "cudaDeviceAttr", "CUmodule",
-              "CUfunction", "cudaMemcpyKind", "cudaComputeMode",
-              "__nv_bfloat16", "cooperative_groups::__v1::thread_block_tile",
-              "cooperative_groups::__v1::thread_block", "libraryPropertyType_t",
-              "libraryPropertyType", "cudaDataType_t", "cudaDataType",
-              "cublasComputeType_t", "cublasAtomicsMode_t", "CUmem_advise_enum",
-              "CUmem_advise", "thrust::tuple_element", "thrust::tuple_size",
-              "cudaPointerAttributes"))))))
+          loc(qualType(hasDeclaration(namedDecl(
+              hasAnyName(
+                  "cudaError", "curandStatus", "cublasStatus", "CUstream",
+                  "CUstream_st", "thrust::complex", "thrust::device_vector",
+                  "thrust::device_ptr", "thrust::device_reference",
+		  "thrust::host_vector", "cublasHandle_t",
+                  "CUevent_st", "__half", "half", "__half2", "half2",
+                  "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",
+                  "cudaPitchedPtr", "thrust::counting_iterator",
+                  "thrust::transform_iterator", "thrust::permutation_iterator",
+                  "thrust::iterator_difference", "cusolverDnHandle_t",
+                  "thrust::device_malloc_allocator", "thrust::divides",
+                  "thrust::tuple", "thrust::maximum", "thrust::multiplies",
+                  "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
+                  "CUdevice", "cudaEvent_t", "cublasStatus_t", "cuComplex",
+                  "cuFloatComplex", "cuDoubleComplex", "CUevent",
+                  "cublasFillMode_t", "cublasDiagType_t", "cublasSideMode_t",
+                  "cublasOperation_t", "cusolverStatus_t", "cusolverEigType_t",
+                  "cusolverEigMode_t", "curandStatus_t", "cudaStream_t",
+                  "cusparseStatus_t", "cusparseDiagType_t",
+                  "cusparseFillMode_t", "cusparseIndexBase_t",
+                  "cusparseMatrixType_t", "cusparseOperation_t",
+                  "cusparseMatDescr_t", "cusparseHandle_t", "CUcontext",
+                  "cublasPointerMode_t", "cusparsePointerMode_t",
+                  "cublasGemmAlgo_t", "cusparseSolveAnalysisInfo_t",
+                  "cudaDataType", "cublasDataType_t", "curandState_t",
+                  "curandState", "curandStateXORWOW_t", "curandStateXORWOW",
+                  "curandStatePhilox4_32_10_t", "curandStatePhilox4_32_10",
+                  "curandStateMRG32k3a_t", "curandStateMRG32k3a",
+                  "thrust::minus", "thrust::negate", "thrust::logical_or",
+                  "thrust::identity", "thrust::equal_to", "thrust::less",
+                  "cudaSharedMemConfig", "curandGenerator_t", "cufftHandle",
+                  "cufftReal", "cufftDoubleReal", "cufftComplex",
+                  "cufftDoubleComplex", "cufftResult_t", "cufftResult",
+                  "cufftType_t", "cufftType", "thrust::pair", "CUdeviceptr",
+                  "cudaDeviceAttr", "CUmodule", "CUfunction", "cudaMemcpyKind",
+                  "cudaComputeMode", "__nv_bfloat16",
+                  "cooperative_groups::__v1::thread_block_tile",
+                  "cooperative_groups::__v1::thread_block",
+                  "libraryPropertyType_t", "libraryPropertyType",
+                  "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
+                  "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
+                  "thrust::tuple_element", "thrust::tuple_size", "cudaPointerAttributes")
+              )))))
           .bind("cudaTypeDef"),
       this);
   MF.addMatcher(varDecl(hasType(classTemplateSpecializationDecl(
@@ -2547,7 +2552,7 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
   auto SD = getAllDecls(DD);
 
   auto replaceInitParam = [&](const clang::Expr *replExpr) {
-    if (replExpr == nullptr)
+    if (!replExpr)
       return;
     if (isDefaultStream(replExpr)) {
       int Index = getPlaceholderIdx(replExpr);
@@ -2572,9 +2577,8 @@ void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
 
     if (const auto VarInitExpr = dyn_cast<InitListExpr>(replExpr)) {
       auto arrayReplEXpr = VarInitExpr->inits();
-      for (auto replExprPtr = arrayReplEXpr.begin();
-           replExprPtr < arrayReplEXpr.end(); replExprPtr++) {
-        replaceInitParam(*replExprPtr);
+      for (auto replExpr : arrayReplEXpr) {
+        replaceInitParam(replExpr);
       }
       return;
     }
@@ -2886,14 +2890,14 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       if (TL->getType().getCanonicalType()->isPointerType()) {
         const auto *PtrTy =
             TL->getType().getCanonicalType()->getAs<PointerType>();
-        if (PtrTy == nullptr)
+        if (!PtrTy)
           return;
         if (PtrTy->getPointeeType()->isRecordType()) {
           const auto *RecordTy = PtrTy->getPointeeType()->getAs<RecordType>();
-          if (RecordTy == nullptr)
+          if (!RecordTy)
             return;
           const auto *RD = RecordTy->getAsRecordDecl();
-          if (RD == nullptr)
+          if (!RD)
             return;
           if (RD->getName() == "CUstream_st" &&
               DpctGlobalInfo::isInCudaPath(RD->getBeginLoc()))
@@ -10591,7 +10595,7 @@ void MemoryMigrationRule::memcpyMigration(
     size_t QueueIndex = NameRef.compare("cudaMemcpy") ? 3 : 4;
     if (C->getNumArgs() > QueueIndex &&
         !C->getArg(QueueIndex)->isDefaultArgument()) {
-      if (!isPredefinedStreamHandle(C->getArg(QueueIndex)))
+      if (!isDefaultStream(C->getArg(QueueIndex)))
         AsyncQueue = ExprAnalysis::ref(C->getArg(QueueIndex));
     }
     replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
@@ -10790,7 +10794,7 @@ void MemoryMigrationRule::memcpySymbolMigration(
     }
   } else {
     if (C->getNumArgs() == 6 && !C->getArg(5)->isDefaultArgument()) {
-      if (!isPredefinedStreamHandle(C->getArg(5))) {
+      if (!isDefaultStream(C->getArg(5))) {
         StreamStr = ExprAnalysis::ref(C->getArg(5));
       }
     }
@@ -10983,7 +10987,7 @@ void MemoryMigrationRule::memsetMigration(
       if (auto ICE = dyn_cast<ImplicitCastExpr>(C->getArg(3)))
         NeedTypeCast = ICE->getCastKind() != clang::CK_LValueToRValue;
 
-      if (!isPredefinedStreamHandle(C->getArg(3)))
+      if (!isDefaultStream(C->getArg(3)))
         AsyncQueue = ExprAnalysis::ref(C->getArg(3));
     }
     replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
@@ -11062,7 +11066,7 @@ void MemoryMigrationRule::prefetchMigration(
     auto StmtStrArg2 = EA.getReplacedString();
     std::string StmtStrArg3;
     if (C->getNumArgs() == 4 && !C->getArg(3)->isDefaultArgument()) {
-      if (!isPredefinedStreamHandle(C->getArg(3)))
+      if (!isDefaultStream(C->getArg(3)))
         StmtStrArg3 = ExprAnalysis::ref(C->getArg(3));
     } else {
       StmtStrArg3 = "0";
@@ -11303,7 +11307,8 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemHostGetDevicePointer_v2", "cuMemcpyDtoDAsync_v2",
         "cuMemcpyDtoD_v2", "cuMemAllocPitch_v2", "cuMemPrefetchAsync",
         "cuMemFree_v2", "cuDeviceTotalMem_v2", "cuMemHostGetFlags",
-        "cuMemHostRegister_v2", "cuMemHostUnregister");
+        "cuMemHostRegister_v2", "cuMemHostUnregister",
+	"cuMemcpy", "cuMemcpyAsync");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -11390,7 +11395,9 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemHostUnregister") &&
         Name.compare("cuMemHostRegister_v2") &&
         Name.compare("cudaHostGetFlags") &&
-        Name.compare("cuMemHostGetFlags")) {
+        Name.compare("cuMemHostGetFlags") &&
+	Name.compare("cuMemcpy") &&
+	Name.compare("cuMemcpyAsync")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
@@ -11527,7 +11534,9 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cuMemAllocPitch_v2", &MemoryMigrationRule::mallocMigration},
           {"cuMemGetInfo_v2", &MemoryMigrationRule::miscMigration},
           {"cudaMemGetInfo", &MemoryMigrationRule::miscMigration},
-          {"cuDeviceTotalMem_v2", &MemoryMigrationRule::miscMigration}};
+          {"cuDeviceTotalMem_v2", &MemoryMigrationRule::miscMigration},
+	  {"cuMemcpy", &MemoryMigrationRule::memcpyMigration},
+	  {"cuMemcpyAsync", &MemoryMigrationRule::memcpyMigration}};
 
   for (auto &P : Dispatcher)
     MigrationDispatcher[P.first] =
@@ -11625,7 +11634,7 @@ void MemoryMigrationRule::handleAsync(const CallExpr *C, unsigned i,
         emplaceTransformation(new InsertBeforeStmt(
             StreamExpr, "(" + MapNames::getClNamespace() + "queue *)"));
       }
-    } else if (isPredefinedStreamHandle(StreamExpr)) {
+    } else if (isDefaultStream(StreamExpr)) {
       emplaceTransformation(removeArg(C, i, *Result.SourceManager));
       return;
     } else if (!isa<DeclRefExpr>(StreamExpr)) {
