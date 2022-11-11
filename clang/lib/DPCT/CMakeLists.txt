@@ -17,6 +17,7 @@ set(CONT_FILES
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/rng_utils.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/lib_common_utils.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/ccl_utils.hpp.inc
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/sparse_utils.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/fft_utils.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_extras/algorithm.h.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_extras/functional.h.inc
@@ -55,6 +56,7 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/rng_utils.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/lib_common_utils.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/ccl_utils.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/sparse_utils.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/fft_utils.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/atomic.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/blas_utils.inc
@@ -69,6 +71,7 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/rng_utils.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/lib_common_utils.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/ccl_utils.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/sparse_utils.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/fft_utils.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/HelperFeatureEnum.inc
 )

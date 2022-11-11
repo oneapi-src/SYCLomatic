@@ -127,6 +127,7 @@ extern const std::string UtilAllContentStr;
 extern const std::string RngUtilsAllContentStr;
 extern const std::string LibCommonUtilsAllContentStr;
 extern const std::string CclUtilsAllContentStr;
+extern const std::string SparseUtilsAllContentStr;
 extern const std::string FftUtilsAllContentStr;
 extern const std::string DplExtrasAlgorithmAllContentStr;
 extern const std::string DplExtrasFunctionalAllContentStr;
