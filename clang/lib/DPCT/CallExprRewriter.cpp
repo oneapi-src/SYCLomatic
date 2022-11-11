@@ -2608,6 +2608,9 @@ auto UseLogicalGroup = [](const CallExpr *C) -> bool {
 auto UseCAndCXXStandardLibrariesExt = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
 };
+auto GetUsingGenericSpace = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::getUsingGenericSpace();
+};
 
 class CheckDerefedTypeBeforeCast {
   unsigned Idx;

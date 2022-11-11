@@ -87,3 +87,14 @@ CONDITIONAL_FACTORY_ENTRY(
                        CALL(MapNames::getClNamespace(false, true) + "clamp<float>",
                             ARG(0), ARG("0.0f"), ARG("1.0f"))),
     NO_REWRITE_FUNCNAME_FACTORY_ENTRY("saturate", "saturate"))
+
+CONDITIONAL_FACTORY_ENTRY(
+    GetUsingGenericSpace,
+    CALL_FACTORY_ENTRY(
+        "atomicAdd",
+        CALL(MapNames::getDpctNamespace() + "atomic_fetch_add", ARG(0), ARG(1))),
+    /* TODO: Handle case where (GetUsingGenericSpace == false) */
+    CALL_FACTORY_ENTRY(
+        "atomicAdd",
+        CALL(MapNames::getDpctNamespace() + "atomic_fetch_add", ARG(0), ARG(1)))
+)
