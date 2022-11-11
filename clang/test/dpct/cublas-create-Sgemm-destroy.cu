@@ -15,7 +15,7 @@ cublasStatus_t bar (cublasStatus_t s){
   return s;
 }
 
-// CHECK: extern sycl::queue* handle2;
+// CHECK: extern dpct::queue_ptr handle2;
 extern cublasHandle_t handle2;
 
 // CHECK: int foo2(dpct::library_data_t DT)  try {
@@ -23,7 +23,7 @@ int foo2(cudaDataType DT) {
   // CHECK: dpct::device_ext &dev_ct1 = dpct::get_current_device();
   // CHECK-NEXT: sycl::queue &q_ct1 = dev_ct1.default_queue();
   // CHECK: int status;
-  // CHECK-NEXT: sycl::queue* handle;
+  // CHECK-NEXT: dpct::queue_ptr handle;
   // CHECK-NEXT: handle = &q_ct1;
   // CHECK-NEXT: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.

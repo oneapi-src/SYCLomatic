@@ -2445,7 +2445,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cudaError", "curandStatus", "cublasStatus", "CUstream",
                   "CUstream_st", "thrust::complex", "thrust::device_vector",
                   "thrust::device_ptr", "thrust::device_reference",
-		  "thrust::host_vector", "cublasHandle_t",
+                  "thrust::host_vector", "cublasHandle_t",
                   "CUevent_st", "__half", "half", "__half2", "half2",
                   "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",
                   "cudaPitchedPtr", "thrust::counting_iterator",
@@ -3239,10 +3239,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (FD &&
         (FD->hasAttr<CUDADeviceAttr>() || FD->hasAttr<CUDAGlobalAttr>())) {
       if (TL->getType().getAsString().find("cublasHandle_t") !=
-          std::string::npos)
+          std::string::npos) {
         report(BeginLoc, Diagnostics::HANDLE_IN_DEVICE, false, TypeStr);
+        return;
+      }
     }
-    
     if (VarD) {
       DD = VarD;
     } else if (FieldD) {
@@ -11684,7 +11685,7 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemcpyDtoD_v2", "cuMemAllocPitch_v2", "cuMemPrefetchAsync",
         "cuMemFree_v2", "cuDeviceTotalMem_v2", "cuMemHostGetFlags",
         "cuMemHostRegister_v2", "cuMemHostUnregister",
-	"cuMemcpy", "cuMemcpyAsync");
+        "cuMemcpy", "cuMemcpyAsync");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -11772,8 +11773,8 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemHostRegister_v2") &&
         Name.compare("cudaHostGetFlags") &&
         Name.compare("cuMemHostGetFlags") &&
-	Name.compare("cuMemcpy") &&
-	Name.compare("cuMemcpyAsync")) {
+        Name.compare("cuMemcpy") &&
+        Name.compare("cuMemcpyAsync")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
@@ -11911,8 +11912,8 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cuMemGetInfo_v2", &MemoryMigrationRule::miscMigration},
           {"cudaMemGetInfo", &MemoryMigrationRule::miscMigration},
           {"cuDeviceTotalMem_v2", &MemoryMigrationRule::miscMigration},
-	  {"cuMemcpy", &MemoryMigrationRule::memcpyMigration},
-	  {"cuMemcpyAsync", &MemoryMigrationRule::memcpyMigration}};
+          {"cuMemcpy", &MemoryMigrationRule::memcpyMigration},
+          {"cuMemcpyAsync", &MemoryMigrationRule::memcpyMigration}};
 
   for (auto &P : Dispatcher)
     MigrationDispatcher[P.first] =
