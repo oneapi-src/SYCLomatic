@@ -561,12 +561,13 @@ public:
   void get_memory_info(size_t &free_memory, size_t &total_memory) {
 #if (defined(__SYCL_COMPILER_VERSION) && __SYCL_COMPILER_VERSION >= 20221105)
     if (!has(sycl::aspect::ext_intel_free_memory)) {
-      std::cerr << "ext_intel_free_memory is not supported." << std::endl;
+      std::cerr << "get_memory_info: ext_intel_free_memory is not supported." << std::endl;
       free_memory = 0;
     } else {
       free_memory = get_info<sycl::ext::intel::info::device::free_memory>();
     }
 #else
+    std::cerr << "get_memory_info: ext_intel_free_memory is not supported." << std::endl;
     free_memory = 0;
 #if defined(_MSC_VER) && !defined(__clang__)
 #pragma message("Querying the number of bytes of free memory is not supported")
