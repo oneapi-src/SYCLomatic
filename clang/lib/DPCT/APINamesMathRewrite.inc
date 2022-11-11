@@ -778,3 +778,13 @@ MATH_API_REWRITER_DEVICE_OVERLOAD(
                                                       "ext::intel::math::hadd",
                                                   ARG(0), ARG(1)))),
             EMPTY_FACTORY_ENTRY("__hadd"), EMPTY_FACTORY_ENTRY("__hadd"))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    GetUsingGenericSpace,
+    CALL_FACTORY_ENTRY(
+        "atomicAdd",
+        CALL(MapNames::getDpctNamespace() + "atomic_fetch_add", ARG(0), ARG(1))),
+    /* TODO: Handle case where (GetUsingGenericSpace == false) */
+    CALL_FACTORY_ENTRY(
+        "atomicAdd",
+        CALL(MapNames::getDpctNamespace() + "atomic_fetch_add", ARG(0), ARG(1))))
