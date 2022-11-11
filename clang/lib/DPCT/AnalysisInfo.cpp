@@ -2302,9 +2302,10 @@ void ExplicitInstantiationDecl::processTemplateArgumentList(
       Token Tok2;
       Lexer::getRawToken(ArgLoc.getSourceRange().getEnd(), Tok2, SM,
                          DpctGlobalInfo::getContext().getLangOpts());
-      // if the last token is ">>" or ">>>",
-      // since DPCT does not support nested template type migration,
-      // the last token should be treated as ">"
+      // since the raw token has not been splitted to multiple ">"s by the parser 
+      // and no shift operator ">>" will used in template args, 
+      // we simply assume the ">>" or ">>>" are the end token of nested template args. 
+      // Therefore, the token length is 1.
       if (Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)) {
         EndInfo.second += 1;
       } else {
