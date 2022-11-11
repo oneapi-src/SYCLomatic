@@ -3160,6 +3160,14 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
     OS << "cgh)";
     OS << ";";
     StmtWithWarning AccDecl(OS.str());
+    for (const auto &OriginExpr : getType()->getArraySizeOriginExprs()) {
+      DiagnosticsUtils::report(getFilePath(), getOffset(),
+                               Diagnostics::MACRO_EXPR_REPLACED, false, false,
+                               OriginExpr);
+      AccDecl.Warnings.push_back(
+          DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+              Diagnostics::MACRO_EXPR_REPLACED, OriginExpr));
+    }
     if ((isExtern() && ExternEmitWarning) || getType()->containSizeofType()) {
       DiagnosticsUtils::report(getFilePath(), getOffset(),
                                Diagnostics::SIZEOF_WARNING, false, false);
