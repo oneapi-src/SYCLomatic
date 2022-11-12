@@ -2000,8 +2000,8 @@ std::function<bool(const CallExpr *)>
 checkArgCanMappingToSyclNativeBinaryOp(size_t ArgIdx) {
   return [=](const CallExpr *C) -> bool {
     const Expr *Arg = C->getArg(ArgIdx);
-    QualType CanTy = Arg->getType().getCanonicalType();
-    std::string TypeName = CanTy.getAsString();
+    std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
+        Arg->getType().getCanonicalType());
     return CubTypeRule::CanMappingToSyclNativeBinaryOp(TypeName);
   };
 }

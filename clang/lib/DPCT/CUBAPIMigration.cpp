@@ -87,8 +87,8 @@ void CubTypeRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) 
 /// Remove this function when the support for user-define operator in
 /// reduce_over_group() is available
 bool CubTypeRule::CanMappingToSyclNativeBinaryOp(StringRef OpTypeName) {
-  return OpTypeName == "struct cub::Sum" || OpTypeName == "struct cub::Max" ||
-         OpTypeName == "struct cub::Min";
+  return OpTypeName == "cub::Sum" || OpTypeName == "cub::Max" ||
+         OpTypeName == "cub::Min";
 }
 
 bool CubTypeRule::CanMappingToSyclBinaryOp(StringRef OpTypeName) {
@@ -564,19 +564,17 @@ void CubRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(hasAnyName(
                          "ShuffleIndex", "ThreadLoad", "ThreadStore", "Sum",
-                         "Min", "Max", "Reduce", "ReduceByKey", "ExclusiveSum",
-                         "InclusiveSum", "InclusiveScan", "ExclusiveScan",
-                         "Flagged", "Unique", "Encode"))),
+                         "Reduce", "ExclusiveSum", "InclusiveSum",
+                         "InclusiveScan", "ExclusiveScan"))),
                      parentStmt()))
           .bind("FuncCall"),
       this);
 
   MF.addMatcher(
       callExpr(allOf(callee(functionDecl(hasAnyName(
-                         "Sum", "Min", "Max", "Reduce", "ReduceByKey",
-                         "ThreadLoad", "ShuffleIndex", "ExclusiveSum",
-                         "InclusiveSum", "InclusiveScan", "ExclusiveScan",
-                         "Flagged", "Unique", "Encode"))),
+                         "Sum", "Reduce", "ThreadLoad", "ShuffleIndex",
+                         "ExclusiveSum", "InclusiveSum", "InclusiveScan",
+                         "ExclusiveScan"))),
                      unless(parentStmt())))
           .bind("FuncCallUsed"),
       this);
@@ -593,20 +591,20 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
       auto D = DRE->getDecl();
       if (!D)
         return OpRepl;
-      std::string OpType = D->getType().getCanonicalType().getAsString();
-      if (OpType == "struct cub::Sum" || OpType == "struct cub::Max" ||
-          OpType == "struct cub::Min") {
+      std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(D->getType().getCanonicalType());
+      if (OpType == "cub::Sum" || OpType == "cub::Max" ||
+          OpType == "cub::Min") {
         ExprAnalysis EA(Operator);
         OpRepl = EA.getReplacedString();
       }
     } else if (auto CXXTempObj = dyn_cast<CXXTemporaryObjectExpr>(CtorArg)) {
-      std::string OpType =
-          CXXTempObj->getType().getCanonicalType().getAsString();
-      if (OpType == "struct cub::Sum") {
+      std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
+          CXXTempObj->getType().getCanonicalType());
+      if (OpType == "cub::Sum") {
         OpRepl = MapNames::getClNamespace() + "plus<>()";
-      } else if (OpType == "struct cub::Max") {
+      } else if (OpType == "cub::Max") {
         OpRepl = MapNames::getClNamespace() + "maximum<>()";
-      } else if (OpType == "struct cub::Min") {
+      } else if (OpType == "cub::Min") {
         OpRepl = MapNames::getClNamespace() + "minimum<>()";
       }
     }

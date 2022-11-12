@@ -630,6 +630,18 @@ void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
   }
 }
 
+void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
+  std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
+      Temp->getType().getCanonicalType());
+  if (StringRef(TypeName).startswith("cub::") &&
+      CubTypeRule::CanMappingToSyclBinaryOp(TypeName)) {
+    analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
+    return;
+  }
+
+  analyzeExpr(dyn_cast<CXXConstructExpr>(Temp));
+}
+
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   std::string CtorClassName =
       Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
@@ -647,16 +659,6 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
       getThrustReplStrAndLength(CtorClassName, Replacement, TypeLen);
       addReplacement(Ctor, TypeLen, Replacement);
     }
-  }
-
-  if (StringRef(CtorClassName).startswith("cub::") &&
-      CubTypeRule::CanMappingToSyclBinaryOp(CtorClassName) && isa<CXXTemporaryObjectExpr>(Ctor)) {
-    const CXXTemporaryObjectExpr *Temp = dyn_cast<CXXTemporaryObjectExpr>(Ctor);
-    const TypeLoc TL = Temp->getTypeSourceInfo()->getTypeLoc();
-    ExprAnalysis EA;
-    EA.analyze(TL);
-    addReplacement(Ctor, EA.getExprLength(), EA.getReplacedString());
-    return;
   }
 
   if (Ctor->getConstructor()->getDeclName().getAsString() == "dim3") {
@@ -1067,14 +1069,13 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
     break;
   case TypeLoc::Builtin:
   case TypeLoc::Record: {
-    if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
-      return;
     TyName = DpctGlobalInfo::getTypeName(TL.getType());
     auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
     if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
       auto Rewriter = Itr->second->create(TL);
       auto Result = Rewriter->rewrite();
-      addReplacement(SM.getExpansionLoc(SR.getBegin()),
+      if (Result.has_value())
+        addReplacement(SM.getExpansionLoc(SR.getBegin()),
                        SM.getExpansionLoc(SR.getEnd()), CSCE, Result.value());
     }
     break;
