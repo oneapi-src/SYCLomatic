@@ -114,24 +114,11 @@ void CubDeviceLevelRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void CubDeviceLevelRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const auto *CE = getNodeAsType<CallExpr>(Result, "FuncCall")) {
-    const auto *Fn = CE->getDirectCallee();
-    std::string FuncName;
-    llvm::raw_string_ostream SS(FuncName);
-    Fn->printNestedNameSpecifier(SS, DpctGlobalInfo::getContext().getPrintingPolicy());
-    SS << Fn->getName();
-
-    // Check if the RewriteMap has initialized
-    if (!CallExprRewriterFactoryBase::RewriterMap)
-      return;
-
-    auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(FuncName);
-    if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
       ExprAnalysis EA;
       EA.analyze(CE);
       emplaceTransformation(EA.getReplacement());
       EA.applyAllSubExprRepl();
       return;
-    }
   }
 }
 
