@@ -11,6 +11,10 @@ __device__ float2 operator+(float2 a, float2 b) {
 
 extern "C" __device__ void externCNonKernel() {}
 
+__device__ void deviceFun() {}
+
+__global__ void nonExternCKernel() {}
+
 extern "C" __global__ void exampleKernel() {
   float2 x;
   float2 y;
