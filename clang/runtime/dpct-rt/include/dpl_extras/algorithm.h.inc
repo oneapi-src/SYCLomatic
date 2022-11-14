@@ -1384,9 +1384,12 @@ sort_pairs_impl(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t>
-void sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
-                value_t values_in, value_out_t values_out, int64_t n,
-                bool descending, int begin_bit, int end_bit) {
+void sort_pairs(
+    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+    value_t values_in, value_out_t values_out, int64_t n, bool descending,
+    int begin_bit = 0,
+    int end_bit = sizeof(typename std::iterator_traits<key_t>::value_type) *
+                  8) {
   internal::sort_pairs_impl(std::forward<_ExecutionPolicy>(policy), keys_in,
                             keys_out, values_in, values_out, n, descending,
                             begin_bit, end_bit);
@@ -1399,9 +1402,11 @@ void sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
-inline void sort_keys(_ExecutionPolicy &&policy, key_t keys_in,
-                      key_out_t keys_out, int64_t n, bool descending,
-                      int begin_bit, int end_bit) {
+inline void sort_keys(
+    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, int64_t n,
+    bool descending, int begin_bit = 0,
+    int end_bit = sizeof(typename std::iterator_traits<key_t>::value_type) *
+                  8) {
   using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
 
   int clipped_begin_bit = ::std::max(begin_bit, 0);
