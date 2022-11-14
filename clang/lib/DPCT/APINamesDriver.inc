@@ -14,6 +14,10 @@ ASSIGN_FACTORY_ENTRY(
     "cuModuleLoadData", DEREF(0),
     CALL("dpct::load_sycl_lib_mem", ARG(1)))
 
+ASSIGN_FACTORY_ENTRY(
+    "cuModuleLoadDataEx", DEREF(0),
+    CALL("dpct::load_sycl_lib_mem", ARG(1)))
+
 ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
                      CALL("dpct::get_kernel_function", ARG(1), ARG(2)))
 

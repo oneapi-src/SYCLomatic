@@ -14866,7 +14866,10 @@ REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration)
 
 void DriverModuleAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DriverModuleAPI = [&]() {
-    return hasAnyName("cuModuleLoad", "cuModuleLoadData", "cuModuleUnload",
+    return hasAnyName("cuModuleLoad",
+                      "cuModuleLoadData",
+                      "cuModuleLoadDataEx",
+                      "cuModuleUnload",
                       "cuModuleGetFunction", "cuLaunchKernel",
                       "cuModuleGetTexRef");
   };
@@ -14905,6 +14908,8 @@ void DriverModuleAPIRule::runRule(
     report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD, false);
   }  else if (APIName == "cuModuleLoadData") {
     report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA, false);
+  }  else if (APIName == "cuModuleLoadDataEx") {
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA_EX, false);
   }
 
   ExprAnalysis EA;
