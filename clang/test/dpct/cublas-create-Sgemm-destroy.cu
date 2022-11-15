@@ -294,3 +294,10 @@ void foo4() {
   cublasCdgmm(handle, CUBLAS_SIDE_LEFT, 2, 2, a_c, 2, x_c, 1, c_c, 2);
   cublasZdgmm(handle, CUBLAS_SIDE_LEFT, 2, 2, a_z, 2, x_z, 1, c_z, 2);
 }
+
+void foo() {
+  //CHECK:const dpct::queue_ptr h_c = nullptr;
+  //CHECK-NEXT:dpct::queue_ptr h = h_c;
+  const cublasHandle_t h_c = nullptr;
+  cublasHandle_t h = h_c;
+}
