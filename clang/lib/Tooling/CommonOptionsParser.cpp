@@ -107,6 +107,56 @@ std::vector<CompileCommand> ArgumentsAdjustingCompilations::adjustCommands(
   return Commands;
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+std::vector<CompileCommand>
+MergeCompilationDatabase::getAllCompileCommands() const {
+  return CompilationDB;
+}
+
+std::vector<CompileCommand>
+MergeCompilationDatabase::getCompileCommands(StringRef FilePath) const {
+  std::vector<CompileCommand> Command;
+  if (JSONCompilations->getCompileCommands(FilePath).empty()) {
+    DoPrintHandle("Warning: file " +  FilePath.str() +
+          " is not found in compile_commands.json."
+          " Migrate it directly.\n", false);
+  }
+  for(auto DBItem : CompilationDB) {
+    auto Filename= DBItem.Filename;
+    if(!llvm::sys::path::is_absolute(Filename)) {
+      // To convert the relative path to absolute path.
+      llvm::SmallString<128> AbsPath(Filename);
+      llvm::sys::fs::make_absolute(AbsPath);
+      llvm::sys::path::remove_dots(AbsPath, /*remove_dot_dot=*/true);
+      Filename = std::string(AbsPath.str());
+    }
+    if (Filename == FilePath) {
+      Command.push_back(DBItem);
+      return Command;
+    }
+  }
+  return Command;
+}
+
+void MergeCompilationDatabase::mergeAllCompileCommands() {
+  CompilationDB = JSONCompilations->getAllCompileCommands();
+  Files = JSONCompilations->getAllFiles();
+  for (auto &SourcePath : SourcePaths) {
+    StringRef StrRef(SourcePath);
+    if (JSONCompilations->getCompileCommands(StrRef).empty()) {
+      std::vector<CompileCommand> DB;
+      DB = FixedCompilations->getCompileCommands(StrRef);
+      CompilationDB.insert(CompilationDB.end(), DB.begin(), DB.end());
+      Files.push_back(SourcePath);
+    }
+  }
+}
+
+std::vector<std::string> MergeCompilationDatabase::getAllFiles() const {
+  return Files;
+}
+#endif
+
 llvm::Error CommonOptionsParser::init(
     int &argc, const char **argv, cl::OptionCategory &Category,
     llvm::cl::NumOccurrencesFlag OccurrencesFlag, const char *Overview) {
@@ -236,35 +286,6 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 #endif // SYCLomatic_CUSTOMIZATION
     }
 
-    if (Compilations && !SourcePaths.empty()) {
-      std::string SourceFilePath = "";
-      for (std::string &SourcePath : SourcePaths) {
-        if (!llvm::sys::fs::exists(SourcePath)) break;
-        bool IsDBItem = false;
-        bool IsDBDirAccess = true;
-        for (CompileCommand &Cmd : Compilations->getAllCompileCommands()) {
-          if (!llvm::sys::fs::exists(Cmd.Directory)) {
-            IsDBDirAccess = false;
-            break;
-          }
-          if (getAbsolutePath(SourcePath) == Cmd.Filename) {
-            IsDBItem = true;
-            break;
-          }
-        }
-        if (!IsDBItem && IsDBDirAccess) {
-          if (!BuildPath.empty()) {
-            const std::string Msg =
-              "warning: " + getAbsolutePath(SourcePath) +
-                  " file not found in compile_commands.json\n";
-            DoPrintHandle(Msg, false);
-          }
-          Compilations = nullptr;
-          break;
-        }
-      }
-    }
-
     if (!Compilations) {
 #ifdef SYCLomatic_CUSTOMIZATION
       if (SourcePaths.size() == 0 && !BuildPath.getValue().empty()){
@@ -362,6 +383,14 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
           new FixedCompilationDatabase(".", std::vector<std::string>()));
     }
   }
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (!SourcePathList.empty() && Compilations->getAllCompileCommands().size() != 0) {
+    auto FixedCompilations = std::make_unique<FixedCompilationDatabase>(
+      ".", std::vector<std::string>());
+    Compilations = std::make_unique<MergeCompilationDatabase>(
+      std::move(Compilations), std::move(FixedCompilations), SourcePathList);
+  }
+#endif
   auto AdjustingCompilations =
       std::make_unique<ArgumentsAdjustingCompilations>(
           std::move(Compilations));

@@ -165,10 +165,16 @@ class JSONCompilationDatabasePlugin : public CompilationDatabasePlugin {
     llvm::sys::path::append(JSONDatabasePath, "compile_commands.json");
     auto Base = JSONCompilationDatabase::loadFromFile(
         JSONDatabasePath, ErrorMessage, JSONCommandLineSyntax::AutoDetect);
+#ifdef SYCLomatic_CUSTOMIZATION
+    return Base ? inferTargetAndDriverMode(expandResponseFiles(
+                          std::move(Base), llvm::vfs::getRealFileSystem()))
+                : nullptr;
+#else
     return Base ? inferTargetAndDriverMode(
                       inferMissingCompileCommands(expandResponseFiles(
                           std::move(Base), llvm::vfs::getRealFileSystem())))
                 : nullptr;
+#endif
   }
 };
 

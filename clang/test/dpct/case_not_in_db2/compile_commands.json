@@ -1,7 +1,0 @@
-[
-        {
-    "command": "cc -c  t2.c",
-    "directory": ".",
-    "file": "."
-}
-]

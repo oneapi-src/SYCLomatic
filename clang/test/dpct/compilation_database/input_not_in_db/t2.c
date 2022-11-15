@@ -17,7 +17,7 @@
 // CHECK-NEXT:   d_array[0] = const_angle[0];
 // CHECK-NEXT:   return;
 // CHECK-NEXT: }
-#ifndef DTEST
+#ifdef TEST
 __constant__ float const_angle[360];
 __global__ void simple_kernel(float *d_array) {
   d_array[0] = const_angle[0];

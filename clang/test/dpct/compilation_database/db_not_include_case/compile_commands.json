@@ -1,0 +1,7 @@
+[
+    {
+    "command": "cc -c -DTEST case_in_db.c",
+    "directory": ".",
+    "file": "./case_in_db.c"
+    }
+]

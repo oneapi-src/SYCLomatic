@@ -155,6 +155,39 @@ private:
 };
 
 #ifdef SYCLomatic_CUSTOMIZATION
+// The MergeCompilationDatabase merges the command line
+// option into the JSONCompilationdatabase if needed. And
+// The tool will skip the heuristic compilation database construct.
+class MergeCompilationDatabase : public CompilationDatabase {
+public:
+  MergeCompilationDatabase(
+      std::unique_ptr<CompilationDatabase> Compilations,
+      std::unique_ptr<CompilationDatabase> FixedDB,
+      std::vector<std::string> &SourcePaths)
+      : JSONCompilations(std::move(Compilations)),
+        FixedCompilations(std::move(FixedDB)),
+        SourcePaths(SourcePaths) {
+        mergeAllCompileCommands();
+      }
+
+  std::vector<CompileCommand>
+  getCompileCommands(StringRef FilePath) const override;
+
+  std::vector<std::string> getAllFiles() const override;
+
+  std::vector<CompileCommand> getAllCompileCommands() const override;
+
+private:
+  void mergeAllCompileCommands();
+  std::vector<CompileCommand> CompilationDB;
+  std::vector<std::string> Files;
+  std::unique_ptr<CompilationDatabase> JSONCompilations;
+  std::unique_ptr<CompilationDatabase> FixedCompilations;
+  std::vector<std::string> SourcePaths;
+};
+#endif
+
+#ifdef SYCLomatic_CUSTOMIZATION
 #ifdef _WIN32
 using FunPtrParserType = void (*)(std::string &, std::string &);
 void SetParserHandle(FunPtrParserType FPParser);
