@@ -10165,8 +10165,15 @@ bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
       // replacement
       Info->setIgnoreFlag(false);
       TM->setIgnoreTM(true);
-      auto RVD = ReplaceVarDecl::getVarDeclReplacement(
-          MemVar, Info->getDeclarationReplacement(MemVar));
+      auto ReplaceStr = Info->getDeclarationReplacement(MemVar);
+      auto SourceFileType = GetSourceFileType(Info->getFilePath());
+      if ((SourceFileType == SPT_CudaHeader ||
+           SourceFileType == SPT_CppHeader) &&
+          !Info->isStatic()) {
+        ReplaceStr = "inline " + ReplaceStr;
+      }
+      auto RVD =
+          ReplaceVarDecl::getVarDeclReplacement(MemVar, std::move(ReplaceStr));
       if (!RVD)
         return true;
       RVD->setConstantFlag(TM->getConstantFlag());
