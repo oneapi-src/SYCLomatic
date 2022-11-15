@@ -52,10 +52,7 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 #endif
-#if defined(_WIN64)
-#define NOMINMAX
-#include <windows.h>
-#endif
+
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
