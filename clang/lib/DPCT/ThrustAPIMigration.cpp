@@ -172,17 +172,17 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
   // All the thrust APIs (such as thrust::copy, thrust::fill,
   // thrust::count, thrust::equal) called in device function , should be
   // migrated to oneapi::dpl APIs without a policy on the SYCL side
-  // if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
-  //   if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
-  //     if (ThrustFuncName == "sort") {
-  //       report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-  //              "thrust::" + ThrustFuncName);
-  //       return;
-  //     } else if (hasExecutionPolicy) {
-  //       emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
-  //     }
-  //   }
-  // }
+  if (auto FD = DpctGlobalInfo::getParentFunction(CE)) {
+    if (FD->hasAttr<CUDAGlobalAttr>() || FD->hasAttr<CUDADeviceAttr>()) {
+      if (ThrustFuncName == "sort") {
+        report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
+               "thrust::" + ThrustFuncName);
+        return;
+      } else if (hasExecutionPolicy) {
+        emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
+      }
+    }
+  }
 
   if (ThrustFuncName == "binary_search" &&
       (NumArgs <= 4 || (NumArgs == 5 && hasExecutionPolicy))) {
@@ -207,7 +207,10 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
     report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
            "thrust::" + ThrustFuncName);
     return;
-  } else if (ThrustFuncName == "sort") {
+  } 
+
+  if (ThrustFuncName == "sort") {
+    
     // Rule of thrust::sort migration
     // #. thrust API
     //   dpcpp API
@@ -230,25 +233,12 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
 
     auto IteratorArg = CE->getArg(1);
     auto IteratorType = IteratorArg->getType().getAsString();
-    if (ULExpr) {
-      if (PolicyProcessed) {
-        auto BeginLoc = ULExpr->getBeginLoc();
-        auto EndLoc = ULExpr->hasExplicitTemplateArgs()
-                          ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
-                          : ULExpr->getEndLoc();
-        emplaceTransformation(
-            new ReplaceToken(BeginLoc, EndLoc, std::move(NewName)));
-        return;
-      } else if (hasExecutionPolicy) {
-        emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
-      }
-    } else if (IteratorType.find("device_ptr") == std::string::npos) {
-      NewName = "std::sort";
+    if (IteratorType.find("device_ptr") == std::string::npos) {
       if (hasExecutionPolicy) {
         emplaceTransformation(new ReplaceStmt(
             CE->getArg(0), "oneapi::dpl::execution::par_unseq"));
       }
-      emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
+      emplaceTransformation(new ReplaceCalleeName(CE, std::move("std::sort")));
       return;
     } else {
       if (PolicyProcessed) {
@@ -263,6 +253,9 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
   }
 
   if (ULExpr) {
+    if (hasExecutionPolicy && ThrustFuncName == "sort") {
+      emplaceTransformation(removeArg(CE, 0, *Result.SourceManager));
+    }
     auto BeginLoc = ULExpr->getBeginLoc();
     auto EndLoc = ULExpr->hasExplicitTemplateArgs()
                       ? ULExpr->getLAngleLoc().getLocWithOffset(-1)
@@ -272,6 +265,7 @@ void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
   } else {
     emplaceTransformation(new ReplaceCalleeName(CE, std::move(NewName)));
   }
+  
   if (CE->getNumArgs() <= 0)
     return;
   auto ExtraParam = ReplInfo->second.ExtraParam;
