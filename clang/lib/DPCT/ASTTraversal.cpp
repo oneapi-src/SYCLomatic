@@ -3238,8 +3238,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     const FunctionDecl *FD = DpctGlobalInfo::findAncestor<FunctionDecl>(TL);
     if (FD &&
         (FD->hasAttr<CUDADeviceAttr>() || FD->hasAttr<CUDAGlobalAttr>())) {
-      if (TL->getType().getAsString().find("cublasHandle_t") !=
-          std::string::npos) {
+      if (DpctGlobalInfo::getUnqualifiedTypeName(TL->getType()) == "cublasHandle_t") {
         report(BeginLoc, Diagnostics::HANDLE_IN_DEVICE, false, TypeStr);
         return;
       }
