@@ -639,7 +639,7 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
     return;
   }
 
-  analyzeExpr(dyn_cast<CXXConstructExpr>(Temp));
+  analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
