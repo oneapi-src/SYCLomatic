@@ -1,8 +1,7 @@
 [
     {
-    "command": "cc -c -DTEST t2.c",
+    "command": "cc -c -DTEST case_in_db.c",
     "directory": ".",
-    "file": "./t2.c"
+    "file": "./case_in_db.c"
     }
 ]
-
