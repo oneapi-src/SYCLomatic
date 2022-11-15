@@ -10,7 +10,11 @@
 #define __DPCT_KERNEL_HPP__
 
 #include <sycl/sycl.hpp>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <dlfcn.h>
+#endif
 
 namespace dpct {
 
@@ -97,7 +101,11 @@ void *ptr;
 static module load_dl_from_vector(const std::vector<char> &blob) {
   const std::string name = std::tmpnam(nullptr);
   write_vector_to_file(name, blob);
+#ifdef _WIN32
+  void *so = LoadLibraryA(name.c_str());
+#else
   void *so = dlopen(name.c_str(), RTLD_LAZY);
+#endif
   if (so == nullptr)
     throw std::runtime_error("Failed to load module");
   return so;
@@ -131,7 +139,11 @@ static module load_sycl_lib_mem(char const *const image) {
   };
 
 static dpct::kernel_function get_kernel_function(module &module, const std::string &name) {
+#ifdef _WIN32
+  dpct::kernel_functor fn = (dpct::kernel_functor) GetProcAddress(static_cast<HMODULE>(module.get_ptr()), (name + std::string("_wrapper")).c_str());
+#else
   dpct::kernel_functor fn = (dpct::kernel_functor) dlsym(module.get_ptr(), (name + std::string("_wrapper")).c_str());
+#endif
   if (fn == nullptr)
     throw std::runtime_error("Failed to get function");
   return fn;
