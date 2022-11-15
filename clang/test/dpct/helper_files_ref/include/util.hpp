@@ -548,7 +548,7 @@ struct get_nth_parameter<N, R(T, Ts...)> : get_nth_parameter<N-1, R(Ts...)> {};
 template <int i, typename T>
 using get_nth_parameter_t = get_nth_parameter<i, T>::type;
 
-void *get_args_ptr(void **extra) {
+inline void *get_args_ptr(void **extra) {
   for (; (std::size_t) *extra != 0; ++extra) {
     if ((std::size_t) *extra == 1) {
       return *(extra+1);
