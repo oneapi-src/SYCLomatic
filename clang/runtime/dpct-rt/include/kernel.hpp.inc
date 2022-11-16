@@ -92,7 +92,8 @@ static kernel_function_info get_kernel_function_info(const void *function) {
 // DPCT_LABEL_END
 
 static std::vector<char> read_file_to_vector(const std::string &name) {
-  std::ifstream ifs(name);
+  std::ifstream ifs;
+  ifs.open(name, std::ios::in | std::ios::binary);
   std::vector<char> content((std::istreambuf_iterator<char>(ifs)),
                             (std::istreambuf_iterator<char>()));
   return content;
