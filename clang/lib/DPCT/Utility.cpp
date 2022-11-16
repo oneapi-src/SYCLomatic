@@ -2147,7 +2147,7 @@ getRangeInRange(const Stmt *E, SourceLocation RangeBegin,
                          IncludeLastToken);
 }
 
-bool TraversePossibleLocations(const SourceLocation &SL,
+bool traversePossibleLocations(const SourceLocation &SL,
                                const SourceLocation &RangeBegin,
                                const SourceLocation &RangeEnd,
                                SourceLocation &Result, bool IsBegin) {
@@ -2161,15 +2161,15 @@ bool TraversePossibleLocations(const SourceLocation &SL,
     }
     return false;
   }
-  if (TraversePossibleLocations(SM.getImmediateSpellingLoc(SL), RangeBegin,
+  if (traversePossibleLocations(SM.getImmediateSpellingLoc(SL), RangeBegin,
                                 RangeEnd, Result, IsBegin))
     return true;
   if (IsBegin) {
-    return TraversePossibleLocations(
+    return traversePossibleLocations(
         SM.getImmediateExpansionRange(SL).getBegin(), RangeBegin, RangeEnd,
         Result, IsBegin);
   }
-  return TraversePossibleLocations(SM.getImmediateExpansionRange(SL).getEnd(),
+  return traversePossibleLocations(SM.getImmediateExpansionRange(SL).getEnd(),
                                    RangeBegin, RangeEnd, Result, IsBegin);
 }
 
@@ -2181,9 +2181,9 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
   SourceLocation ResultBegin = SourceLocation();
   SourceLocation ResultEnd = SourceLocation();
 
-  if (TraversePossibleLocations(Range.getBegin(), SearchRangeBegin,
+  if (traversePossibleLocations(Range.getBegin(), SearchRangeBegin,
                                 SearchRangeEnd, ResultBegin, true) &&
-      TraversePossibleLocations(Range.getEnd(), SearchRangeBegin,
+      traversePossibleLocations(Range.getEnd(), SearchRangeBegin,
                                 SearchRangeEnd, ResultEnd, false)) {
     if (isSameLocation(ResultBegin, ResultEnd)) {
       auto It = dpct::DpctGlobalInfo::getExpansionRangeBeginMap().find(
