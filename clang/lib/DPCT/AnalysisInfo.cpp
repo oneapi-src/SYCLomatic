@@ -2290,33 +2290,12 @@ void ExplicitInstantiationDecl::processFunctionTypeLoc(
 
 void ExplicitInstantiationDecl::processTemplateArgumentList(
     const TemplateArgumentListInfo &TAList) {
-  auto &SM = DpctGlobalInfo::getSourceManager();
   ExprAnalysis EA;
   for (const clang::TemplateArgumentLoc &ArgLoc : TAList.arguments()) {
     EA.analyze(ArgLoc);
-    if (EA.hasReplacement()) {
-      auto SR = getDefinitionRange(ArgLoc.getSourceRange().getBegin(),
-                                   ArgLoc.getSourceRange().getEnd());
-      auto BeginInfo = clang::dpct::DpctGlobalInfo::getLocInfo(SR.getBegin());
-      auto EndInfo = clang::dpct::DpctGlobalInfo::getLocInfo(SR.getEnd());
-      Token Tok2;
-      Lexer::getRawToken(ArgLoc.getSourceRange().getEnd(), Tok2, SM,
-                         DpctGlobalInfo::getContext().getLangOpts());
-      // since the raw token has not been splitted to multiple ">"s by the parser 
-      // and no shift operator ">>" will used in template args, 
-      // we simply assume the ">>" or ">>>" are the end token of nested template args. 
-      // Therefore, the token length is 1.
-      if (Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)) {
-        EndInfo.second += 1;
-      } else {
-        EndInfo.second += Tok2.getLength();
-      }
-
+    if (EA.hasReplacement())
       DpctGlobalInfo::getInstance().addReplacement(
-          std::make_shared<ExtReplacement>(SM, SR.getBegin(),
-                                           EndInfo.second - BeginInfo.second,
-                                           EA.getReplacedString(), nullptr));
-    }
+          EA.getReplacement()->getReplacement(DpctGlobalInfo::getContext()));    
   }
 }
 
