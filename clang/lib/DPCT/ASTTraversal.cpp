@@ -14905,11 +14905,11 @@ void DriverModuleAPIRule::runRule(
   }
 
   if (APIName == "cuModuleLoad") {
-    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD, false);
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD,         false, getStmtSpelling(CE->getArg(1)));
   }  else if (APIName == "cuModuleLoadData") {
-    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA, false);
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA,    false, getStmtSpelling(CE->getArg(1)));
   }  else if (APIName == "cuModuleLoadDataEx") {
-    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA_EX, false);
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA_EX, false, getStmtSpelling(CE->getArg(1)));
   }
 
   ExprAnalysis EA;

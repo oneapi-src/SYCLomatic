@@ -11,12 +11,12 @@ int main(){
     CUfunction F;
     std::string Path, FunctionName, Data;
     //CHECK: /*
-    //CHECK-NEXT: DPCT1102:{{[0-9]+}}: User must prepare a dynamic-library for dpct::load_sycl_lib to load.  This dynamic-library should supply "wrapped" kernel-functions.
+    //CHECK-NEXT: DPCT1102:{{[0-9]+}}: 'Path.c_str()' should be a dynamic library.  The dynamic-library should supply "wrapped" kernel-functions.
     //CHECK-NEXT: */
     //CHECK-NEXT: M = dpct::load_sycl_lib(Path.c_str());
     cuModuleLoad(&M, Path.c_str());
     //CHECK: /*
-    //CHECK-NEXT: DPCT1103:{{[0-9]+}}: User must prepare a dynamic-library that the application code will copy to memory.  This dynamic-library should supply "wrapped" kernel-functions. dpct::load_sycl_lib_mem will "load" this memory for use as a library. This function creates a temporary file and can introduce a security issue.
+    //CHECK-NEXT: DPCT1103:{{[0-9]+}}: 'Data.c_str()' should point to a dynamic library loaded in memory.  The dynamic-library should supply "wrapped" kernel-functions.
     //CHECK-NEXT: */
     //CHECK-NEXT: M = dpct::load_sycl_lib_mem(Data.c_str());
     cuModuleLoadData(&M, Data.c_str());
