@@ -40,9 +40,9 @@ using namespace ast_matchers;
 
 namespace {
 auto parentStmt = []() {
-  return anyOf(hasAncestor(compoundStmt()), hasAncestor(forStmt()),
-               hasAncestor(whileStmt()), hasAncestor(doStmt()),
-               hasAncestor(ifStmt()));
+  return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
+               hasParent(whileStmt()), hasParent(doStmt()),
+               hasParent(ifStmt()));
 };
 } // namespace
 
@@ -98,15 +98,13 @@ bool CubTypeRule::CanMappingToSyclBinaryOp(StringRef OpTypeName) {
 
 void CubDeviceLevelRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
-      callExpr(
-          allOf(callee(functionDecl(allOf(
-                    hasAnyName(CubDeviceFuncNames),
-                    hasParent(functionTemplateDecl(allOf(
-                        hasAnyName(CubDeviceFuncNames),
-                        hasAncestor(cxxRecordDecl(allOf(
-                            hasAnyName(CubDeviceRecordNames),
-                            hasParent(namespaceDecl(hasName("cub")))))))))))),
-                parentStmt()))
+      callExpr(callee(functionDecl(allOf(
+                   hasAnyName(CubDeviceFuncNames),
+                   hasParent(functionTemplateDecl(allOf(
+                       hasAnyName(CubDeviceFuncNames),
+                       hasAncestor(cxxRecordDecl(allOf(
+                           hasAnyName(CubDeviceRecordNames),
+                           hasParent(namespaceDecl(hasName("cub")))))))))))))
 
           .bind("FuncCall"),
       this);
