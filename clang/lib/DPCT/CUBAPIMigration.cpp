@@ -105,7 +105,6 @@ void CubDeviceLevelRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                        hasAncestor(cxxRecordDecl(allOf(
                            hasAnyName(CubDeviceRecordNames),
                            hasParent(namespaceDecl(hasName("cub")))))))))))))
-
           .bind("FuncCall"),
       this);
 }
