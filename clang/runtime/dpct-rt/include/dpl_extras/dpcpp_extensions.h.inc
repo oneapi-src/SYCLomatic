@@ -677,14 +677,13 @@ template <typename... _Args> constexpr auto __joint_reduce(_Args... __args) {
 /// that are one past the last element in each segment \param binary_op functor
 /// that implements the binary operation used to perform the scan. \param init
 /// initial value of the reduction for each segment.
-template <int GROUP_SIZE, typename T, typename Ptr, class BinaryOperation>
+template <int GROUP_SIZE, typename T, typename OffsetT, class BinaryOperation>
 void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
-                      size_t segment_count, Ptr begin_offsets, Ptr end_offsets,
-                      BinaryOperation binary_op, T init) {
+                      size_t segment_count, OffsetT *begin_offsets,
+                      OffsetT *end_offsets, BinaryOperation binary_op, T init) {
 
   sycl::range<1> global_size(segment_count * GROUP_SIZE);
   sycl::range<1> local_size(GROUP_SIZE);
-  typedef std::remove_pointer_t<Ptr> OffsetT;
 
   queue.submit([&](sycl::handler &cgh) {
     cgh.parallel_for(
