@@ -180,8 +180,8 @@ static module load_sycl_lib_mem(char const *const image) {
     kernel_function()                         : ptr{nullptr} {}
     kernel_function(dpct::kernel_functor ptr) : ptr{ptr}     {}
 
-    void kernel_function::operator()(sycl::queue &q, const sycl::nd_range<3> &range,
-                                     unsigned int a, void **args, void **extra) {
+    void operator()(sycl::queue &q, const sycl::nd_range<3> &range,
+                    unsigned int a, void **args, void **extra) {
       ptr(q,range,a,args,extra);
     }
 
