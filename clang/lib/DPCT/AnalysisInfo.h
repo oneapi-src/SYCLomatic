@@ -1864,6 +1864,10 @@ public:
     return getUsingExtensionDD(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
   }
 
+  static bool useDeviceInfo() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
+  }
+
   static bool getSpBLASUnsupportedMatrixTypeFlag() {
     return SpBLASUnsupportedMatrixTypeFlag;
   }
