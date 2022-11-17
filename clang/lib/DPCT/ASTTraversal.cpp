@@ -14910,6 +14910,15 @@ void DriverModuleAPIRule::runRule(
     report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA_EX, false, getStmtSpelling(CE->getArg(1)));
   }
 
+  if (isAssigned(CE) &&
+      (APIName == "cuModuleLoad" ||
+       APIName == "cuModuleLoadData" ||
+       APIName == "cuModuleLoadDataEx" ||
+       APIName == "cuModuleGetFunction")) {
+    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    insertAroundStmt(CE, "(", ", 0)");
+  }
+
   ExprAnalysis EA;
   EA.analyze(CE);
   emplaceTransformation(EA.getReplacement());
