@@ -63,7 +63,7 @@ namespace internal {
 // int a[] = {0, 1, 2, 3, 4};
 // int* p = a;
 // auto f = [](auto v) {return v*v;};
-// auto tr_out = make_transform_output_iterator(p+1, f);
+// auto tr_out = dpct::make_transform_output_iterator(p+1, f);
 // auto wrap = *tr_out;         // wrap is a transform_output_ref_wrapper
 // std::cout<<*(p+1)<<std::endl;  // '1'
 // wrap = 2;                    // apply function, store 2*2=4
