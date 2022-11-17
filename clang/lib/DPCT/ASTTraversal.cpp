@@ -14898,8 +14898,6 @@ void DriverModuleAPIRule::runRule(
   if (auto DC = CE->getDirectCallee()) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     APIName = DC->getNameAsString();
-    DpctGlobalInfo::getInstance().insertHeader(
-        SM.getExpansionLoc(CE->getBeginLoc()), HT_DL);
   } else {
     return;
   }
