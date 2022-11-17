@@ -10292,7 +10292,9 @@ void printDerefOp(std::ostream &OS, const Expr *E, std::string *DerefType) {
   }
   ExprAnalysis EA(E);
   EA.analyze();
-  OS << EA.getReplacedString();
+  const auto & strRepl = EA.getReplacedString();
+  OS << strRepl;
+
 
   if (DerefType) {
     QualType DerefQT;
