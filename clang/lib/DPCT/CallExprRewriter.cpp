@@ -1675,9 +1675,12 @@ makeFuncNameFromDevAttrCreator(unsigned idx) {
   };
 }
 std::function<std::string(const CallExpr *)> getWorkGroupDim(unsigned index) {
-  return [=](const CallExpr * C) {
-    auto Arg = dyn_cast<DeclRefExpr>(C->getArg(index)->
-                IgnoreImplicitAsWritten())->getNameInfo().getAsString();
+  return [=](const CallExpr *C) {
+    const auto *const DRE =
+        dyn_cast<DeclRefExpr>(C->getArg(index)->IgnoreImplicitAsWritten());
+    if (!DRE)
+      return "";
+    auto Arg = DRE->getNameInfo().getAsString();
     if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X")
       return "0";
     else if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y") {

@@ -298,7 +298,7 @@ bool report(SourceLocation SL, IDTy MsgID, const SourceManager &SM,
   std::string FileAndLine = clang::dpct::buildString(
       FileName.str(), ":", SM.getPresumedLineNumber(SL));
   std::string WarningIDAndMsg = clang::dpct::buildString(
-      std::to_string(static_cast<int>(MsgID)), ":", std::forward<Ts>(Vals)...);
+      std::to_string(static_cast<int>(MsgID)), ":", Vals...);
 
   if (checkDuplicated(FileAndLine, WarningIDAndMsg))
     return false;
@@ -308,13 +308,13 @@ bool report(SourceLocation SL, IDTy MsgID, const SourceManager &SM,
     if (WarningIDs.find((int)MsgID) == WarningIDs.end() &&
         DiagnosticIDTable.find((int)MsgID) != DiagnosticIDTable.end()) {
       reportWarning(SL, DiagnosticIDTable[(int)MsgID], SM.getDiagnostics(),
-                    std::forward<Ts>(Vals)...);
+                    Vals...);
     }
   }
   if (TS && CommentIDTable.find((int)MsgID) != CommentIDTable.end()) {
     TS->emplace_back(insertCommentPrevLine(SL, CommentIDTable[(int)MsgID], SM,
                                            UseTextBegin,
-                                           std::forward<Ts>(Vals)...));
+                                           Vals...));
   }
   UniqueID++;
   return true;
