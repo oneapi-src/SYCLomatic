@@ -115,27 +115,15 @@ MergeCompilationDatabase::getAllCompileCommands() const {
 
 std::vector<CompileCommand>
 MergeCompilationDatabase::getCompileCommands(StringRef FilePath) const {
-  std::vector<CompileCommand> Command;
-  if (JSONCompilations->getCompileCommands(FilePath).empty()) {
-    DoPrintHandle("Warning: file " +  FilePath.str() +
-          " is not found in compile_commands.json."
-          " Migrate it directly.\n", false);
-  }
-  for(auto DBItem : CompilationDB) {
-    auto Filename= DBItem.Filename;
-    if(!llvm::sys::path::is_absolute(Filename)) {
-      // To convert the relative path to absolute path.
-      llvm::SmallString<128> AbsPath(Filename);
-      llvm::sys::fs::make_absolute(AbsPath);
-      llvm::sys::path::remove_dots(AbsPath, /*remove_dot_dot=*/true);
-      Filename = std::string(AbsPath.str());
-    }
-    if (Filename == FilePath) {
-      Command.push_back(DBItem);
-      return Command;
-    }
-  }
-  return Command;
+  std::vector<CompileCommand> Command =
+      JSONCompilations->getCompileCommands(FilePath);
+  if (!Command.empty())
+    return Command;
+  DoPrintHandle("Warning: file " +  FilePath.str() +
+        " is not found in compile_commands.json."
+        " Migrate it directly.\n", false);
+
+  return FixedCompilations->getCompileCommands(FilePath);
 }
 
 void MergeCompilationDatabase::mergeAllCompileCommands() {
@@ -385,6 +373,11 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
   }
 #ifdef SYCLomatic_CUSTOMIZATION
   if (!SourcePathList.empty() && Compilations->getAllCompileCommands().size() != 0) {
+    for (auto Path : SourcePathList) {
+      if (Compilations->getCompileCommands(Path).empty())
+        IsCudaFile = true;
+        break;
+    }
     auto FixedCompilations = std::make_unique<FixedCompilationDatabase>(
       ".", std::vector<std::string>());
     Compilations = std::make_unique<MergeCompilationDatabase>(

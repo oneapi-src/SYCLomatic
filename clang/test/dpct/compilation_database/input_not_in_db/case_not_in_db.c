@@ -12,7 +12,7 @@
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 #include <cuda_runtime.h>
 
-// CHECK: float const_angle[240];
+// CHECK: dpct::constant_memory<float, 1> const_angle(240);
 #ifdef TEST
 __constant__ float const_angle[360];
 __global__ void simple_kernel(float *d_array) {
