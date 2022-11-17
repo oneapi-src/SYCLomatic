@@ -2488,12 +2488,12 @@ void DeviceFunctionDeclInModule::buildCallInfo(const FunctionDecl *FD) {
 
 bool isModuleFunction(const FunctionDecl *FD) {
   auto &SM = DpctGlobalInfo::getSourceManager();
-  if (DpctGlobalInfo::getModuleFiles().find(
+  return
+    FD->getLanguageLinkage() == CLanguageLinkage
+    && FD->hasAttr<CUDAGlobalAttr>()
+    && DpctGlobalInfo::getModuleFiles().find(
           DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(FD->getBeginLoc()))
-              .first) != DpctGlobalInfo::getModuleFiles().end()) {
-    return true;
-  }
-  return false;
+              .first) != DpctGlobalInfo::getModuleFiles().end();
 }
 
 DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
