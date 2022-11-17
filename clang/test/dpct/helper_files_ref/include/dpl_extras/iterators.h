@@ -339,8 +339,8 @@ template <typename IterT> struct io_iterator_pair {
 
 template <typename _Iter, typename _UnaryFunc>
 auto make_transform_output_iterator(_Iter __it, _UnaryFunc __unary_func) {
-  return transform_iterator(__it,
-                            internal::_Unary_Out<_UnaryFunc>(__unary_func));
+  return oneapi::dpl::transform_iterator(
+      __it, internal::_Unary_Out<_UnaryFunc>(__unary_func));
 }
 
 } // end namespace dpct
