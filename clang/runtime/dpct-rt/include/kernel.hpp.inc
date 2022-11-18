@@ -72,6 +72,8 @@ public:
   kernel_function()                         : ptr{nullptr} {}
   kernel_function(dpct::kernel_functor ptr) : ptr{ptr}     {}
 
+  operator void *() const { return ((void *)ptr); }
+
   void operator()(sycl::queue &q, const sycl::nd_range<3> &range,
                   unsigned int a, void **args, void **extra) {
     ptr(q,range,a,args,extra);
@@ -155,6 +157,8 @@ class module {
 public:
   module()          : ptr{nullptr} {}
   module(void *ptr) : ptr{ptr}     {}
+
+  operator void *() const { return ptr; }
 
 void *get_ptr() {
   return(ptr);
