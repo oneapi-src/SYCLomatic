@@ -359,43 +359,41 @@ CONDITIONAL_FACTORY_ENTRY(
                         "cub::DeviceRunLengthEncode::Encode",
                         MEMBER_CALL(
                             ARG(7), true, "fill", ARG(5),
-                            CALL(
-                                "std::distance", ARG(3),
-                                MEMBER_EXPR(
-                                    CALL("oneapi::dpl::reduce_by_segment",
-                                         CALL("oneapi::dpl::execution::device_"
-                                              "policy",
-                                              STREAM(7)),
-                                         ARG(2),
-                                         BO(BinaryOperatorKind::BO_Add, ARG(2),
-                                            ARG(6)),
-                                         MEMBER_CALL(
-                                             CALL("dpct::device_vector<size_t>",
-                                                  ARG(6), LITERAL("1")),
-                                             false, "begin"),
-                                         ARG(3), ARG(4)),
-                                    false, LITERAL("first"))),
+                            CALL("std::distance", ARG(3),
+                                 MEMBER_EXPR(
+                                     CALL("oneapi::dpl::reduce_by_segment",
+                                          CALL("oneapi::dpl::execution::device_"
+                                               "policy",
+                                               STREAM(7)),
+                                          ARG(2),
+                                          BO(BinaryOperatorKind::BO_Add, ARG(2),
+                                             ARG(6)),
+                                          CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                                   "dpct::constant_iterator",
+                                                   LITERAL("size_t")),
+                                               LITERAL("1")),
+                                          ARG(3), ARG(4)),
+                                     false, LITERAL("first"))),
                             LITERAL("1")),
                         false, "wait"),
                     MEMBER_CALL_FACTORY_ENTRY(
                         "cub::DeviceRunLengthEncode::Encode",
                         MEMBER_CALL(
                             QUEUESTR, false, "fill", ARG(5),
-                            CALL(
-                                "std::distance", ARG(3),
-                                MEMBER_EXPR(
-                                    CALL("oneapi::dpl::reduce_by_segment",
-                                         CALL("oneapi::dpl::execution::device_"
-                                              "policy",
-                                              QUEUESTR),
-                                         ARG(2),
-                                         BO(BinaryOperatorKind::BO_Add, ARG(2),
-                                            ARG(6)),
-                                         MEMBER_CALL(
-                                             CALL("dpct::device_vector<size_t>",
-                                                  ARG(6), LITERAL("1")),
-                                             false, "begin"),
-                                         ARG(3), ARG(4)),
-                                    false, LITERAL("first"))),
+                            CALL("std::distance", ARG(3),
+                                 MEMBER_EXPR(
+                                     CALL("oneapi::dpl::reduce_by_segment",
+                                          CALL("oneapi::dpl::execution::device_"
+                                               "policy",
+                                               QUEUESTR),
+                                          ARG(2),
+                                          BO(BinaryOperatorKind::BO_Add, ARG(2),
+                                             ARG(6)),
+                                          CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                                   "dpct::constant_iterator",
+                                                   LITERAL("size_t")),
+                                               LITERAL("1")),
+                                          ARG(3), ARG(4)),
+                                     false, LITERAL("first"))),
                             LITERAL("1")),
                         false, "wait")))))))

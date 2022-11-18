@@ -15,7 +15,7 @@
 #define N 8
 
 // CHECK: DPCT1026:{{.*}}
-// CHECK: q_ct1.fill(d_selected_num, std::distance(d_unique, oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_in + N, dpct::device_vector<size_t>(N, 1).begin(), d_unique, d_counts).first), 1).wait();
+// CHECK: q_ct1.fill(d_selected_num, std::distance(d_unique, oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_in + N, dpct::constant_iterator<size_t>(1), d_unique, d_counts).first), 1).wait();
 void test_1() {
   int h_in[N] = {0, 2, 2, 9, 5, 5, 5, 8};
   int h_unique[N] = {0};
@@ -54,7 +54,7 @@ void test_1() {
 
 // CHECK: DPCT1027:{{.*}}
 // CHECK: 0, 0;
-// CHECK: q_ct1.fill(d_selected_num, std::distance(d_unique, oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_in + N, dpct::device_vector<size_t>(N, 1).begin(), d_unique, d_counts).first), 1).wait();
+// CHECK: q_ct1.fill(d_selected_num, std::distance(d_unique, oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::device_policy(q_ct1), d_in, d_in + N, dpct::constant_iterator<size_t>(1), d_unique, d_counts).first), 1).wait();
 void test_2() {
   int h_in[N] = {0, 2, 2, 9, 5, 5, 5, 8};
   int h_unique[N] = {0};
@@ -93,7 +93,7 @@ void test_2() {
 
 // CHECK: dpct::queue_ptr stream = (dpct::queue_ptr)(void *)(uintptr_t)5;
 // CHECK: DPCT1026:{{.*}}
-// CHECK: stream->fill(d_selected_num, std::distance(d_unique, oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + N, dpct::device_vector<size_t>(N, 1).begin(), d_unique, d_counts).first), 1).wait();
+// CHECK: stream->fill(d_selected_num, std::distance(d_unique, oneapi::dpl::reduce_by_segment(oneapi::dpl::execution::device_policy(*stream), d_in, d_in + N, dpct::constant_iterator<size_t>(1), d_unique, d_counts).first), 1).wait();
 void test_3() {
   int h_in[N] = {0, 2, 2, 9, 5, 5, 5, 8};
   int h_unique[N] = {0};
