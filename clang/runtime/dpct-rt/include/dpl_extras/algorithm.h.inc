@@ -1160,6 +1160,35 @@ partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
   return stable_partition(std::forward<Policy>(policy), first, last, mask, p);
 }
 // DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|sort_pairs|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|sort_pairs_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
+          typename value_t, typename value_out_t>
+void sort_pairs(
+    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+    value_t values_in, value_out_t values_out, int64_t n,
+    bool descending = false, int begin_bit = 0,
+    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
+                  8);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|sort_keys|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|transform_and_sort
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
+inline void sort_keys(
+    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, int64_t n,
+    bool descending = false, int begin_bit = 0,
+    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
+                  8);
+// DPCT_LABEL_END
+
 namespace internal {
 
 // DPCT_LABEL_BEGIN|transform_and_sort|dpct::internal
@@ -1375,6 +1404,153 @@ sort_pairs_impl(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|segmented_sort_pairs_by_parallel_sorts|dpct::internal
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|sort_pairs
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename value_t,
+          typename OffsetIteratorT>
+inline void segmented_sort_pairs_by_parallel_sorts(
+    _ExecutionPolicy &&policy, key_t keys_in, key_t keys_out, value_t values_in,
+    value_t values_out, int64_t n, int64_t nsegments,
+    OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
+    bool descending = false, int begin_bit = 0,
+    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
+                  8) {
+  using offset_type =
+      typename ::std::iterator_traits<OffsetIteratorT>::value_type;
+  auto host_accessible_offset_starts =
+      sycl::malloc_shared<offset_type>(nsegments, policy.queue());
+  auto host_accessible_offset_ends =
+      sycl::malloc_shared<offset_type>(nsegments, policy.queue());
+  // make offsets accessible on host
+  ::std::copy(::std::forward<_ExecutionPolicy>(policy), begin_offsets,
+              begin_offsets + nsegments, host_accessible_offset_starts);
+  ::std::copy(::std::forward<_ExecutionPolicy>(policy), end_offsets,
+              end_offsets + nsegments, host_accessible_offset_ends);
+
+  for (int i = 0; i < nsegments; i++) {
+    uint64_t segment_begin = host_accessible_offset_starts[i];
+    uint64_t segment_end =
+        ::std::min(n, (int64_t)host_accessible_offset_ends[i]);
+    if (segment_begin < segment_end) {
+      ::dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy),
+                         keys_in + segment_begin, keys_out + segment_begin,
+                         values_in + segment_begin, values_out + segment_begin,
+                         segment_end - segment_begin, descending, begin_bit,
+                         end_bit);
+    }
+  }
+  sycl::free(host_accessible_offset_starts, policy.queue());
+  sycl::free(host_accessible_offset_ends, policy.queue());
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|segmented_sort_pairs_by_parallel_for_of_sorts|dpct::internal
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|sort_pairs
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename value_t,
+          typename OffsetIteratorT>
+inline void segmented_sort_pairs_by_parallel_for_of_sorts(
+    _ExecutionPolicy &&policy, key_t keys_in, key_t keys_out, value_t values_in,
+    value_t values_out, int64_t n, int64_t nsegments,
+    OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
+    bool descending = false, int begin_bit = 0,
+    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
+                  8) {
+  policy.queue().submit([&](sycl::handler &cgh) {
+    cgh.parallel_for(nsegments, [=](sycl::id<1> i) {
+      uint64_t segment_begin = begin_offsets[(int)i];
+      uint64_t segment_end = ::std::min(n, (int64_t)end_offsets[(int)i]);
+      if (segment_begin == segment_end) {
+        return;
+      }
+      ::dpct::sort_pairs(::std::execution::seq, keys_in + segment_begin,
+                         keys_out + segment_begin, values_in + segment_begin,
+                         values_out + segment_begin,
+                         segment_end - segment_begin, descending, begin_bit,
+                         end_bit);
+    });
+  });
+  policy.queue().wait();
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|segmented_sort_pairs_by_two_pair_sorts|dpct::internal
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|sort_pairs
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename value_t,
+          typename OffsetIteratorT>
+inline void segmented_sort_pairs_by_two_pair_sorts(
+    _ExecutionPolicy &&policy, key_t keys_in, key_t keys_out, value_t values_in,
+    value_t values_out, int64_t n, int64_t nsegments,
+    OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
+    bool descending = false, int begin_bit = 0,
+    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
+                  8) {
+  using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
+  using value_t_value_t = typename ::std::iterator_traits<value_t>::value_type;
+  int *segments = sycl::malloc_device<int>(n, policy.queue());
+  int *segments_sorted = sycl::malloc_device<int>(n, policy.queue());
+  auto keys_temp = sycl::malloc_device<key_t_value_t>(n, policy.queue());
+  auto values_temp = sycl::malloc_device<value_t_value_t>(n, policy.queue());
+
+  // create a list of segment indexes
+  if (nsegments > n / nsegments) {
+    policy.queue()
+        .submit([&](sycl::handler &h) {
+          h.parallel_for(nsegments, ([=](sycl::id<1> seg) {
+                           for (int i = begin_offsets[seg];
+                                i < end_offsets[seg]; i++) {
+                             segments[i] = seg;
+                           }
+                         }));
+        })
+        .wait();
+  } else {
+    // probably better off setting block size based on characteristics of device
+    int block_size = n / nsegments;
+    policy.queue()
+        .submit([&](sycl::handler &h) {
+          h.parallel_for(block_size, ([=](sycl::id<1> id) {
+                           for (int seg = 0; seg < nsegments; seg++) {
+                             int i = begin_offsets[seg];
+                             int end = end_offsets[seg];
+                             while (i + id < end) {
+                               segments[i + id] = seg;
+                               i += block_size;
+                             }
+                           }
+                         }));
+        })
+        .wait();
+  }
+
+  auto zip_seg_vals = oneapi::dpl::make_zip_iterator(segments, values_in);
+  auto zip_seg_vals_out =
+      oneapi::dpl::make_zip_iterator(segments_sorted, values_temp);
+  // first sort by keys keeping track of which segment were in...
+  dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy), keys_in, keys_temp,
+                   zip_seg_vals, zip_seg_vals_out, n, descending);
+
+  auto zip_keys_vals = oneapi::dpl::make_zip_iterator(keys_temp, values_temp);
+  auto zip_keys_vals_out = oneapi::dpl::make_zip_iterator(keys_out, values_out);
+  // then sort the segments with a stable sort to get back sorted segments.
+  dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy), segments_sorted,
+                   segments, zip_keys_vals, zip_keys_vals_out, n, false);
+
+  sycl::free(segments, policy.queue());
+  sycl::free(segments_sorted, policy.queue());
+  sycl::free(keys_temp, policy.queue());
+  sycl::free(values_temp, policy.queue());
+}
+// DPCT_LABEL_END
+
 } // end namespace internal
 
 // DPCT_LABEL_BEGIN|sort_pairs|dpct
@@ -1384,12 +1560,9 @@ sort_pairs_impl(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t>
-void sort_pairs(
-    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
-    value_t values_in, value_out_t values_out, int64_t n, bool descending,
-    int begin_bit = 0,
-    int end_bit = sizeof(typename std::iterator_traits<key_t>::value_type) *
-                  8) {
+void sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+                value_t values_in, value_out_t values_out, int64_t n,
+                bool descending, int begin_bit, int end_bit) {
   internal::sort_pairs_impl(std::forward<_ExecutionPolicy>(policy), keys_in,
                             keys_out, values_in, values_out, n, descending,
                             begin_bit, end_bit);
@@ -1402,11 +1575,9 @@ void sort_pairs(
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
-inline void sort_keys(
-    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, int64_t n,
-    bool descending, int begin_bit = 0,
-    int end_bit = sizeof(typename std::iterator_traits<key_t>::value_type) *
-                  8) {
+inline void sort_keys(_ExecutionPolicy &&policy, key_t keys_in,
+                      key_out_t keys_out, int64_t n, bool descending,
+                      int begin_bit, int end_bit) {
   using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
 
   int clipped_begin_bit = ::std::max(begin_bit, 0);
@@ -1433,6 +1604,56 @@ inline void sort_keys(
   } else // if (num_bytes <= 8)
   {
     transform_and_sort_f.template operator()<uint64_t>(0);
+  }
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|segmented_sort_pairs|dpct
+// DPCT_DEPENDENCY_BEGIN 
+// DplExtrasAlgorithm|segmented_sort_pairs_by_parallel_sorts
+// DplExtrasAlgorithm|segmented_sort_pairs_by_parallel_for_of_sorts
+// DplExtrasAlgorithm|segmented_sort_pairs_by_two_pair_sorts
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename value_t,
+          typename OffsetIteratorT>
+inline void segmented_sort_pairs(
+    _ExecutionPolicy &&policy, key_t keys_in, key_t keys_out, value_t values_in,
+    value_t values_out, int64_t n, int64_t nsegments,
+    OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
+    bool descending = false, int begin_bit = 0,
+    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
+                  8) {
+  int compute_units =
+      policy.queue()
+          .get_device()
+          .template get_info<sycl::info::device::max_compute_units>();
+  auto sg_sizes = policy.queue()
+                      .get_device()
+                      .template get_info<sycl::info::device::sub_group_sizes>();
+  int subgroup_size = sg_sizes.empty() ? 1 : sg_sizes.back();
+  int compute_unit_threads =
+      policy.queue().get_device().is_gpu() ? subgroup_size : 1;
+  // parallel for of serial sorts when we have sufficient number of segments for
+  // load balance
+  if (nsegments > compute_units * compute_unit_threads) {
+    dpct::internal::segmented_sort_pairs_by_parallel_for_of_sorts(
+        ::std::forward<_ExecutionPolicy>(policy), keys_in, keys_out, values_in,
+        values_out, n, nsegments, begin_offsets, end_offsets, descending,
+        begin_bit, end_bit);
+  } else if (nsegments < 500) // for loop of parallel sorts when we have a small
+                              // number of total sorts to limit total overhead
+  {
+    dpct::internal::segmented_sort_pairs_by_parallel_sorts(
+        ::std::forward<_ExecutionPolicy>(policy), keys_in, keys_out, values_in,
+        values_out, n, nsegments, begin_offsets, end_offsets, descending,
+        begin_bit, end_bit);
+  } else // decent catch using 2 full sorts
+  {
+    dpct::internal::segmented_sort_pairs_by_two_pair_sorts(
+        ::std::forward<_ExecutionPolicy>(policy), keys_in, keys_out, values_in,
+        values_out, n, nsegments, begin_offsets, end_offsets, descending,
+        begin_bit, end_bit);
   }
 }
 // DPCT_LABEL_END
