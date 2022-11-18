@@ -2830,7 +2830,7 @@ public:
 class CheckCubRedundantFunctionCall {
 public:
   bool operator()(const CallExpr *C) {
-    return CubRule::isRedundantCallExpr(C);
+    return CubDeviceLevelRule::isRedundantCallExpr(C);
   }
 };
 
@@ -2845,7 +2845,7 @@ public:
 
 std::shared_ptr<CallExprRewriter>
 RemoveCubTempStorageFactory::create(const CallExpr *C) const {
-  CubRule::removeRedundantTempVar(C);
+  CubDeviceLevelRule::removeRedundantTempVar(C);
   return Inner->create(C);
 }
 

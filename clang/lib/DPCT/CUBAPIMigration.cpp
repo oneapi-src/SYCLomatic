@@ -1,4 +1,4 @@
-//===--------------- CUBAPIMigration.cpp ------------------------------------------===//
+//===--------------- CUBAPIMigration.cpp ----------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -44,22 +44,30 @@ auto parentStmt = []() {
                hasParent(whileStmt()), hasParent(doStmt()),
                hasParent(ifStmt()));
 };
+
+auto isDeviceFuncCallExpr = []() {
+  auto hasDeviceFuncName = []() {
+    return hasAnyName("Sum", "Min", "Max", "Reduce", "ReduceByKey",
+                      "ExclusiveSum", "InclusiveSum", "InclusiveScan",
+                      "ExclusiveScan", "Flagged", "Unique", "Encode");
+  };
+  auto hasDeviceRecordName = []() {
+    return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
+                      "DeviceSelect", "DeviceRunLengthEncode");
+  };
+  return callExpr(callee(functionDecl(
+      allOf(hasDeviceFuncName(),
+            hasParent(functionTemplateDecl(
+                allOf(hasDeviceFuncName(),
+                      hasAncestor(cxxRecordDecl(allOf(
+                          hasDeviceRecordName(),
+                          hasParent(namespaceDecl(hasName("cub")))))))))))));
+};
+
 } // namespace
 
 REGISTER_RULE(CubTypeRule, PassKind::PK_Analysis)
 REGISTER_RULE(CubDeviceLevelRule, PassKind::PK_Analysis)
-
-static constexpr StringRef CubBinaryOperators[] = {"cub::Sum", "cub::Max",
-                                                   "cub::Min", "cub::Equality"};
-
-static constexpr StringRef CubDeviceFuncNames[] = {
-    "Sum",           "Min",          "Max",          "Reduce",
-    "ReduceByKey",   "ExclusiveSum", "InclusiveSum", "InclusiveScan",
-    "ExclusiveScan", "Flagged",      "Unique",       "Encode"};
-
-static constexpr StringRef CubDeviceRecordNames[] = {
-    "DeviceSegmentedReduce", "DeviceReduce", "DeviceScan", "DeviceSelect",
-    "DeviceRunLengthEncode"};
 
 void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
@@ -75,7 +83,8 @@ void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 }
 
-void CubTypeRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
+void CubTypeRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const TypeLoc *TL = getAssistNodeAsType<TypeLoc>(Result, "loc")) {
     ExprAnalysis EA;
     EA.analyze(*TL);
@@ -92,30 +101,22 @@ bool CubTypeRule::CanMappingToSyclNativeBinaryOp(StringRef OpTypeName) {
 }
 
 bool CubTypeRule::CanMappingToSyclBinaryOp(StringRef OpTypeName) {
-  return llvm::find(CubBinaryOperators, OpTypeName) !=
-         std::end(CubBinaryOperators);
+  return CanMappingToSyclNativeBinaryOp(OpTypeName) ||
+         OpTypeName == "cub::Equality";
 }
 
 void CubDeviceLevelRule::registerMatcher(ast_matchers::MatchFinder &MF) {
-  MF.addMatcher(
-      callExpr(callee(functionDecl(allOf(
-                   hasAnyName(CubDeviceFuncNames),
-                   hasParent(functionTemplateDecl(allOf(
-                       hasAnyName(CubDeviceFuncNames),
-                       hasAncestor(cxxRecordDecl(allOf(
-                           hasAnyName(CubDeviceRecordNames),
-                           hasParent(namespaceDecl(hasName("cub")))))))))))))
-          .bind("FuncCall"),
-      this);
+  MF.addMatcher(isDeviceFuncCallExpr().bind("FuncCall"), this);
 }
 
-void CubDeviceLevelRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
+void CubDeviceLevelRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
   if (const auto *CE = getNodeAsType<CallExpr>(Result, "FuncCall")) {
-      ExprAnalysis EA;
-      EA.analyze(CE);
-      emplaceTransformation(EA.getReplacement());
-      EA.applyAllSubExprRepl();
-      return;
+    ExprAnalysis EA;
+    EA.analyze(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
   }
 }
 
@@ -126,43 +127,21 @@ static bool isNullPointerConstant(const clang::Expr *E) {
          Expr::NPCK_NotNull;
 }
 
-static bool isCudaMemoryAPIName(StringRef FuncName) {
-  return FuncName == "cudaMalloc" || FuncName == "cuMemAlloc_v2" ||
-         FuncName == "cudaFree";
-}
-
-static bool isCubDeviceFuncName(StringRef FuncName) {
-  return llvm::find(CubDeviceFuncNames, FuncName) !=
-         std::end(CubDeviceFuncNames);
-}
-
-static bool isCubDeviceCXXRecordName(StringRef CXXRDName) {
-  return llvm::find(CubDeviceRecordNames, CXXRDName) !=
-         std::end(CubDeviceRecordNames);
-}
-
 static bool isCubDeviceFunctionCallExpr(const CallExpr *C) {
   if (!C)
     return false;
-  if (const auto *DC = C->getDirectCallee()) {
-    const auto *MaybeNS = DC->getDeclContext();
-    if (const auto *CXXRD = llvm::dyn_cast<CXXRecordDecl>(MaybeNS)) {
-      if (!isCubDeviceCXXRecordName(CXXRD->getName()))
-        return false;
-      MaybeNS = CXXRD->getDeclContext();
-    }
-    if (const auto *ND = llvm::dyn_cast<NamespaceDecl>(MaybeNS))
-      return ND->getName() == "cub";
-  }
-  return false;
+  return !ast_matchers::match(isDeviceFuncCallExpr(), *C,
+                              DpctGlobalInfo::getContext())
+              .empty();
 }
 
 static bool isCudaMemoryAPICallExpr(const CallExpr *C) {
   if (!C)
     return false;
-  if (const auto *FD = C->getDirectCallee()) {
-    return isCudaMemoryAPIName(FD->getName());
-  }
+
+  if (const auto *FD = C->getDirectCallee())
+    return FD->getName() == "cudaMalloc" || FD->getName() == "cuMemAlloc_v2" ||
+           FD->getName() == "cudaFree";
   return false;
 }
 
@@ -197,7 +176,7 @@ static void findLoop(const NodeType *Node, std::vector<const Stmt *> &LoopList,
   }
 }
 
-bool CubRule::isRedundantCallExpr(const CallExpr *CE) {
+bool CubDeviceLevelRule::isRedundantCallExpr(const CallExpr *CE) {
   const auto *FuncArgs = CE->getArgs();
   const auto *TempStorage = FuncArgs[0]->IgnoreCasts();
   SourceLocation InitLoc;
@@ -420,7 +399,7 @@ void removeVarDecl(const VarDecl *VD) {
   }
 }
 
-void CubRule::removeRedundantTempVar(const CallExpr *CE) {
+void CubDeviceLevelRule::removeRedundantTempVar(const CallExpr *CE) {
   if (!CE || CE->getNumArgs() < 2)
     return;
   const auto *FuncArgs = CE->getArgs();
@@ -575,7 +554,8 @@ std::string CubRule::getOpRepl(const Expr *Operator) {
       auto D = DRE->getDecl();
       if (!D)
         return OpRepl;
-      std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(D->getType().getCanonicalType());
+      std::string OpType = DpctGlobalInfo::getUnqualifiedTypeName(
+          D->getType().getCanonicalType());
       if (OpType == "cub::Sum" || OpType == "cub::Max" ||
           OpType == "cub::Min") {
         ExprAnalysis EA(Operator);
@@ -1236,7 +1216,8 @@ void CubRule::processCubMemberCall(const CXXMemberCallExpr *MC) {
 
 void CubRule::processTypeLoc(const TypeLoc *TL) {
   auto TD = DpctGlobalInfo::findAncestor<TypedefDecl>(TL);
-  if (TD || isTypeInAnalysisScope(TL->getType().getCanonicalType().getTypePtr()))
+  if (TD ||
+      isTypeInAnalysisScope(TL->getType().getCanonicalType().getTypePtr()))
     return;
   auto &SM = DpctGlobalInfo::getSourceManager();
   auto Range = getDefinitionRange(TL->getBeginLoc(), TL->getEndLoc());
