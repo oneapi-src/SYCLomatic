@@ -1,5 +1,5 @@
 // UNSUPPORTED: -windows-
-// RUN: dpct --format-range=none -out-root %T/math_functions_test %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/math_functions_test %s --cuda-include-path="%cuda-path/include" --optimize-migration -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/math_functions_test/math_functions_test.dp.cpp --match-full-lines %s
 
 #include <cuda.h>
@@ -68,10 +68,10 @@ float test_sqrt(float in) { return sqrt(in); }
 // CHECK: float test_pow(float a, float b) { return pow(a, b); }
 float test_pow(float a, float b) { return pow(a, b); }
 
-// CHECK: float test_pow(float a, int b) { return pow(a, b); }
+// CHECK: float test_pow(float a, int b) { return sycl::pown(a, b); }
 float test_pow(float a, int b) { return pow(a, b); }
 
-// CHECK: double test_pow(double a, int b) { return pow(a, b); }
+// CHECK: double test_pow(double a, int b) { return sycl::pown(a, b); }
 double test_pow(double a, int b) { return pow(a, b); }
 
 // CHECK: float test_powif(float a, int b) { return powif(a, b); }

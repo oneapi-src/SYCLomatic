@@ -201,7 +201,7 @@ while(0)
 
 HANDLE_GPU_ERROR(0);
 
-// CHECK: #define cbrt(x) pow((double)x,(double)(1.0/3.0))
+// CHECK: #define cbrt(x) std::pow((double)x, (double)(1.0 / 3.0))
 // CHECK-NEXT: double DD = sqrt(cbrt(5.9)) / sqrt(cbrt(3.2));
 #define cbrt(x) pow((double)x,(double)(1.0/3.0))
   double DD = sqrt(cbrt(5.9)) / sqrt(cbrt(3.2));

@@ -12474,75 +12474,37 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 }
 
 void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
-  const CallExpr *CE = getAssistNodeAsType<CallExpr>(Result, "math");
-  const FunctionDecl *FD = nullptr;
-  const UnresolvedLookupExpr *ULE = nullptr;
-  std::string Name;
-  if (CE) {
-    FD = CE->getDirectCallee();
-    if (!FD)
-      return;
-  } else if (CE = getNodeAsType<CallExpr>(Result, "unresolved")) {
-    ULE = dyn_cast_or_null<UnresolvedLookupExpr>(CE->getCallee());
-    if (!ULE)
-      return;
-  }
-  if (!CE)
-    return;
-
-  auto IsCudaAPI = [](SourceLocation Loc) {
-    SourceLocation DeclLoc =
-        dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(Loc);
-    std::string DeclLocFilePath =
-        dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
-    makeCanonical(DeclLocFilePath);
-    return (isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
-            isChildPath(DpctInstallPath, DeclLocFilePath));
-  };
-
-  auto IsDeviceCall = [](const CallExpr *CE, const FunctionDecl *FD) {
-    if (FD) {
-      if (FD->hasAttr<CUDADeviceAttr>() && !(FD->hasAttr<CUDAHostAttr>()))
-        return true;
-    }
-    const FunctionDecl *ContextFD = getImmediateOuterFuncDecl(CE);
-    if (!ContextFD)
-      return false;
-    if (ContextFD->hasAttr<CUDADeviceAttr>() ||
-        ContextFD->hasAttr<CUDAGlobalAttr>())
-      return true;
-    return false;
-  };
-
-  if (FD) {
-    if (!IsDeviceCall(CE, FD) && !IsCudaAPI(FD->getBeginLoc())) {
-      return;
-    }
-    Name = FD->getNameInfo().getName().getAsString();
-  } else if (ULE) {
-    if (!IsDeviceCall(CE, nullptr)) {
-      return;
-    }
-    Name = ULE->getName().getAsString();
-    ;
-  }
+   const CallExpr *CE = getAssistNodeAsType<CallExpr>(Result, "math");
+   if (!CE)
+     CE = getNodeAsType<CallExpr>(Result, "unresolved");
+   if (!CE)
+     return;
 
   ExprAnalysis EA(CE);
   EA.applyAllSubExprRepl();
 
-  if (Name == "__brev" || Name == "__brevll") {
-    requestFeature(HelperFeatureEnum::Util_reverse_bits, CE);
-  } else if (Name == "__vmaxs4" || Name == "__vmaxu2") {
-    requestFeature(HelperFeatureEnum::Util_vectorized_max, CE);
-  } else if (Name == "__vminu2") {
-    requestFeature(HelperFeatureEnum::Util_vectorized_min, CE);
-  } else if (Name == "__vcmpgtu2") {
-    requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_T, CE);
-    requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_unsigned, CE);
-  } else if (Name == "__byte_perm") {
-    requestFeature(HelperFeatureEnum::Util_byte_level_permute, CE);
-  } else if (Name == "__ffs" || Name == "__ffsll") {
-    requestFeature(HelperFeatureEnum::Util_ffs, CE);
+  auto FD = CE->getDirectCallee();
+  if (FD) {
+    std::string Name = FD->getNameInfo().getName().getAsString();
+    std::cout << Name << " FD loc:" << FD->getLocation().printToString(DpctGlobalInfo::getSourceManager()) << std::endl;
+    std::cout << "has device attr:" << FD->hasAttr<CUDADeviceAttr>() << std::endl;
+    std::cout << "has host attr:" << FD->hasAttr<CUDAHostAttr>() << std::endl;
+
+    if (Name == "__brev" || Name == "__brevll") {
+      requestFeature(HelperFeatureEnum::Util_reverse_bits, CE);
+    } else if (Name == "__vmaxs4" || Name == "__vmaxu2") {
+      requestFeature(HelperFeatureEnum::Util_vectorized_max, CE);
+    } else if (Name == "__vminu2") {
+      requestFeature(HelperFeatureEnum::Util_vectorized_min, CE);
+    } else if (Name == "__vcmpgtu2") {
+      requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_T, CE);
+      requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_unsigned,
+                     CE);
+    } else if (Name == "__byte_perm") {
+      requestFeature(HelperFeatureEnum::Util_byte_level_permute, CE);
+    } else if (Name == "__ffs" || Name == "__ffsll") {
+      requestFeature(HelperFeatureEnum::Util_ffs, CE);
+    }
   }
 }
 

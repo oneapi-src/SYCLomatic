@@ -19,6 +19,7 @@
 #include "clang/Basic/LangOptions.h"
 #include <cstdarg>
 
+extern std::string DpctInstallPath; // Installation directory for this tool
 namespace clang {
 namespace dpct {
 
@@ -2605,9 +2606,6 @@ auto UseNDRangeBarrier = [](const CallExpr *C) -> bool {
 auto UseLogicalGroup = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useLogicalGroup();
 };
-auto UseCAndCXXStandardLibrariesExt = [](const CallExpr *C) -> bool {
-  return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
-};
 
 class CheckDerefedTypeBeforeCast {
   unsigned Idx;
@@ -2856,17 +2854,6 @@ std::function<bool(const CallExpr *C)> hasManagedAttr(int Idx) {
   };
 }
 
-class IsDefinedInCUDA {
-public:
-  IsDefinedInCUDA() {}
-  bool operator()(const CallExpr *C) {
-    auto FD = C->getDirectCallee();
-    if (!FD)
-      return false;
-    return dpct::DpctGlobalInfo::isInCudaPath(FD->getLocation());
-  }
-};
-
 #define REMOVE_CUB_TEMP_STORAGE_FACTORY(INNER)                                 \
   createRemoveCubTempStorageFactory(INNER 0),
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
@@ -2948,6 +2935,114 @@ public:
   {FuncName, createToStringExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define REMOVE_API_FACTORY_ENTRY(FuncName)                                  \
   {FuncName, createRemoveAPIRewriterFactory(FuncName)},
+
+
+namespace math {
+class IsDefinedInCUDA {
+public:
+  IsDefinedInCUDA() {}
+  bool operator()(const CallExpr *C) {
+    auto FD = C->getDirectCallee();
+    if (!FD)
+      return false;
+    SourceLocation DeclLoc =
+        dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(FD->getLocation());
+    std::string DeclLocFilePath =
+        dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
+    makeCanonical(DeclLocFilePath);
+    return (isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
+            isChildPath(DpctInstallPath, DeclLocFilePath));
+  }
+};
+class UseCAndCXXStandardLibrariesExt {
+  std::string FuncName;
+public:
+  UseCAndCXXStandardLibrariesExt(std::string FuncName)
+      : FuncName(FuncName) {}
+  bool operator()(const CallExpr *C) {
+    return (DpctGlobalInfo::useCAndCXXStandardLibrariesExt() &&
+            (MapNames::CAndCXXStandardLibrariesExtAPISet.find(FuncName) !=
+             MapNames::CAndCXXStandardLibrariesExtAPISet.end()));
+  }
+};
+class UseExprStdVersion {
+  std::string FuncName;
+public:
+  UseExprStdVersion(std::string FuncName)
+      : FuncName(FuncName) {}
+  bool operator()(const CallExpr *C) {
+    return true;
+  }
+};
+auto IsPureHost = makeCheckAnd(
+    HasDirectCallee(),
+    makeCheckNot(IsDirectCalleeHasAttribute<CUDADeviceAttr>()));
+auto IsPureDevice = makeCheckAnd(
+    HasDirectCallee(),
+    makeCheckAnd(IsDirectCalleeHasAttribute<CUDADeviceAttr>(),
+                 makeCheckNot(IsDirectCalleeHasAttribute<CUDAHostAttr>())));
+auto IsHostDevice = makeCheckAnd(
+    HasDirectCallee(),
+    makeCheckAnd(IsDirectCalleeHasAttribute<CUDADeviceAttr>(),
+                 IsDirectCalleeHasAttribute<CUDAHostAttr>()));
+auto IsDirectCallerPureDevice = makeCheckOr(
+    makeCheckAnd(IsContextCallHasAttribute<CUDADeviceAttr>(),
+                 makeCheckNot(IsContextCallHasAttribute<CUDAHostAttr>())),
+    IsContextCallHasAttribute<CUDAGlobalAttr>());
+auto NeedDoOptimizedMigration = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::isOptimizeMigration();
+};
+
+class HasSideEffects {
+  int Idx;
+public:
+  HasSideEffects(int Idx) : Idx(Idx) {}
+  bool operator()(const CallExpr *C) {
+    SideEffectsAnalysis SEA(C->getArg(Idx));
+    return SEA.hasSideEffects();
+  }
+};
+}
+
+#define MATH_API_REWRITER_WITH_OPT(NAME, END1, END2, END3, END4, END5)         \
+  createConditionalFactory(                                                    \
+      math::IsPureHost,                                                        \
+      createConditionalFactory(                                                \
+          math::NeedDoOptimizedMigration,                                      \
+          END1 createConditionalFactory(                                       \
+              math::IsDefinedInCUDA(),                                         \
+              END2 createConditionalFactory(                                   \
+                  math::UseCAndCXXStandardLibrariesExt(NAME),                  \
+                  END3 createConditionalFactory(math::UseExprStdVersion(NAME), \
+                                                END4 END5 0)))),               \
+      createConditionalFactory(                                                \
+          math::IsPureDevice,                                                  \
+          createConditionalFactory(                                            \
+              math::IsDefinedInCUDA(),                                         \
+              createConditionalFactory(                                        \
+                  math::UseCAndCXXStandardLibrariesExt(NAME),                  \
+                  END3 createConditionalFactory(math::UseExprStdVersion(NAME), \
+                                                END4 END5 0)),                 \
+              NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                \
+          createConditionalFactory(                                            \
+              math::IsHostDevice,                                              \
+              createConditionalFactory(                                        \
+                  math::IsDirectCallerPureDevice,                              \
+                  createConditionalFactory(                                    \
+                      math::IsDefinedInCUDA(),                                 \
+                      createConditionalFactory(                                \
+                          math::UseCAndCXXStandardLibrariesExt(NAME),          \
+                          END3 createConditionalFactory(                       \
+                              math::UseExprStdVersion(NAME), END4 END5 0)),    \
+                      NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),        \
+                  createConditionalFactory(                                    \
+                      math::UseCAndCXXStandardLibrariesExt(NAME),              \
+                      END3 createConditionalFactory(                           \
+                          math::UseExprStdVersion(NAME), END4 END5 0))),       \
+              createConditionalFactory(                                        \
+                  math::UseCAndCXXStandardLibrariesExt(NAME),                  \
+                  END3 createConditionalFactory(math::UseExprStdVersion(NAME), \
+                                                END4 END5 0))))),
 
 ///***************************************************************
 /// Examples:
@@ -3052,28 +3147,28 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   BIND_TEXTURE_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
 #define ENTRY_TEMPLATED(SOURCEAPINAME, ...)                                    \
   TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
-#include "APINamesCUB.inc"
-#include "APINamesCUBLAS.inc"
-#include "APINamesCUFFT.inc"
-#include "APINamesCURAND.inc"
-#include "APINamesComplex.inc"
-#include "APINamesDriver.inc"
-#include "APINamesMemory.inc"
-#include "APINamesNccl.inc"
-#include "APINamesStream.inc"
-#include "APINamesTexture.inc"
-#include "APINamesThrust.inc"
-#include "APINamesWarp.inc"
-#include "APINamesCUDNN.inc"
-#include "APINamesErrorHandling.inc"
+//#include "APINamesCUB.inc"
+//#include "APINamesCUBLAS.inc"
+//#include "APINamesCUFFT.inc"
+//#include "APINamesCURAND.inc"
+//#include "APINamesComplex.inc"
+//#include "APINamesDriver.inc"
+//#include "APINamesMemory.inc"
+//#include "APINamesNccl.inc"
+//#include "APINamesStream.inc"
+//#include "APINamesTexture.inc"
+//#include "APINamesThrust.inc"
+//#include "APINamesWarp.inc"
+//#include "APINamesCUDNN.inc"
+//#include "APINamesErrorHandling.inc"
 #include "APINamesMathRewrite.inc"
-#include "APINamesLIBCU.inc"
-#include "APINamesEvent.inc"
-#define FUNCTION_CALL
-#define CLASS_METHOD_CALL
-#include "APINamesCooperativeGroups.inc"
-#undef FUNCTION_CALL
-#undef CLASS_METHOD_CALL
+//#include "APINamesLIBCU.inc"
+//#include "APINamesEvent.inc"
+//#define FUNCTION_CALL
+//#define CLASS_METHOD_CALL
+//#include "APINamesCooperativeGroups.inc"
+//#undef FUNCTION_CALL
+//#undef CLASS_METHOD_CALL
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED

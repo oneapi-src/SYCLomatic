@@ -264,8 +264,6 @@ ENTRY_EMULATED("rhypotf", MapNames::getClNamespace(false, true) + "hypot")
 ENTRY_EMULATED("sincosf", MapNames::getClNamespace(false, true) + "sincos")
 ENTRY_EMULATED("sincospif", MapNames::getClNamespace(false, true) + "sincos")
 ENTRY_EMULATED("__sincosf", MapNames::getClNamespace(false, true) + "sincos")
-ENTRY_EMULATED("powf", MapNames::getClNamespace(false, true) + "pow<float>")
-ENTRY_EMULATED("__powf", MapNames::getClNamespace(false, true) + "pow<float>")
 
 // Double Precision Mathematical Functions
 ENTRY_EMULATED("frexp", MapNames::getClNamespace(false, true) + "frexp")
@@ -276,7 +274,6 @@ ENTRY_EMULATED("remquo", MapNames::getClNamespace(false, true) + "remquo")
 ENTRY_EMULATED("rhypot", MapNames::getClNamespace(false, true) + "hypot")
 ENTRY_EMULATED("sincos", MapNames::getClNamespace(false, true) + "sincos")
 ENTRY_EMULATED("sincospi", MapNames::getClNamespace(false, true) + "sincos")
-ENTRY_EMULATED("pow", MapNames::getClNamespace(false, true) + "pow<double>")
 
 // Emulated Version 2
 ENTRY_EMULATED("erfcx", MapNames::getClNamespace(false, true) + "erfc")
@@ -601,6 +598,9 @@ ENTRY_RENAMED("mul24", MapNames::getClNamespace(false, true) + "mul24")
 ENTRY_REWRITE("rsqrt")
 ENTRY_REWRITE("abs")
 ENTRY_REWRITE("saturate")
+ENTRY_REWRITE("powf")
+ENTRY_REWRITE("__powf")
+ENTRY_REWRITE("pow")
 
 // vector types
 ENTRY_RENAMED("make_char1", "char")

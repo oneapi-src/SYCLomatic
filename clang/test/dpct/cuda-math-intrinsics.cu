@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none -out-root %T/cuda-math-intrinsics %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
+// RUN: dpct --format-range=none -out-root %T/cuda-math-intrinsics %s --cuda-include-path="%cuda-path/include" --optimize-migration -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/cuda-math-intrinsics/cuda-math-intrinsics.dp.cpp --match-full-lines %s
 
 #include <cmath>

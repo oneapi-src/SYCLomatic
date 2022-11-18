@@ -1555,6 +1555,9 @@ void MapNames::setExplicitNamespaceMap() {
 #undef ENTRY_REWRITE
   {"abs", MapNames::getClNamespace(false, true) + "abs"},
   {"saturate", MapNames::getClNamespace(false, true) + "clamp"},
+  {"pow", MapNames::getClNamespace(false, true) + "pow"},
+  {"powf", MapNames::getClNamespace(false, true) + "pow"},
+  {"__powf", MapNames::getClNamespace(false, true) + "pow"},
   };
 }
 
@@ -3974,6 +3977,9 @@ const MapNames::SetTy MapNames::HostAllocSet{
     "cudaHostAllocPortable",        "cudaHostAllocWriteCombined",
     "CU_MEMHOSTALLOC_PORTABLE",     "CU_MEMHOSTALLOC_DEVICEMAP",
     "CU_MEMHOSTALLOC_WRITECOMBINED"};
+const MapNames::SetTy MapNames::CAndCXXStandardLibrariesExtAPISet = {
+    "pow", "powf", "__powf", "abs", "std::abs"
+  };
 
 // Function Attributes names migration
 const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{
