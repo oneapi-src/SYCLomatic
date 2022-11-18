@@ -54,7 +54,7 @@ FEATURE_REQUEST_FACTORY(
                             makeMemberExprCreator(
                                 CALL(MapNames::getDpctNamespace() +
                                     "get_kernel_function_info",
-                                    CAST(ARG("const void *"), ARG(2))),
+                                    ARG(2)),
                                 false,
                                 ARG(1)))))
 

@@ -67,6 +67,20 @@ struct kernel_function_info {
 };
 // DPCT_LABEL_END
 
+class kernel_function {
+public:
+  kernel_function()                         : ptr{nullptr} {}
+  kernel_function(dpct::kernel_functor ptr) : ptr{ptr}     {}
+
+  void operator()(sycl::queue &q, const sycl::nd_range<3> &range,
+                  unsigned int a, void **args, void **extra) {
+    ptr(q,range,a,args,extra);
+  }
+
+private:
+  dpct::kernel_functor ptr;
+};
+
 // DPCT_LABEL_BEGIN|get_kernel_function_info|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Kernel|kernel_function_info
@@ -75,13 +89,13 @@ struct kernel_function_info {
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 static void get_kernel_function_info(kernel_function_info *kernel_info,
-                                     const void *function) {
+                                     const kernel_function &function) {
   kernel_info->max_work_group_size =
       dpct::dev_mgr::instance()
           .current_device()
           .get_info<sycl::info::device::max_work_group_size>();
 }
-static kernel_function_info get_kernel_function_info(const void *function) {
+static kernel_function_info get_kernel_function_info(const kernel_function &function) {
   kernel_function_info kernel_info;
   kernel_info.max_work_group_size =
       dpct::dev_mgr::instance()
@@ -174,20 +188,6 @@ static module load_sycl_lib_mem(char const *const image) {
   std::memcpy(blob.data(), image, size);
   return load_dl_from_vector(blob);
 };
-
-  class kernel_function {
-  public:
-    kernel_function()                         : ptr{nullptr} {}
-    kernel_function(dpct::kernel_functor ptr) : ptr{ptr}     {}
-
-    void operator()(sycl::queue &q, const sycl::nd_range<3> &range,
-                    unsigned int a, void **args, void **extra) {
-      ptr(q,range,a,args,extra);
-    }
-
-  private:
-    dpct::kernel_functor ptr;
-  };
 
 static dpct::kernel_function get_kernel_function(module &module, const std::string &name) {
 #ifdef _WIN32
