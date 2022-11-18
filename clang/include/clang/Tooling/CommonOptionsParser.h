@@ -155,9 +155,9 @@ private:
 };
 
 #ifdef SYCLomatic_CUSTOMIZATION
-// The MergeCompilationDatabase merges the command line
-// option into the JSONCompilationdatabase if needed. And
-// The tool will skip the heuristic compilation database construct.
+// MergeCompilationDatabsae merges the FixedCompilations and
+// JSONCompilations. And Compability tool follows the compilation database
+// normal process to do the migration.
 class MergeCompilationDatabase : public CompilationDatabase {
 public:
   MergeCompilationDatabase(
