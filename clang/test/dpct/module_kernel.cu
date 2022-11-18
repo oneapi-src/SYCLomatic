@@ -23,30 +23,13 @@ __constant__ unsigned int const_data[3] = {1, 2, 3};
 //CHECK-NEXT: int a = item_ct1.get_local_id(2);
 //CHECK-NEXT: }
 
+
 // CHECK:      extern "C" {
 // CHECK-NEXT:   void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra) {
-// CHECK-NEXT:     using foo_type = decltype(foo);
-// CHECK-NEXT:     using k_type = dpct::get_nth_parameter_t<0, foo_type>;
-// CHECK-NEXT:     using y_type = dpct::get_nth_parameter_t<1, foo_type>;
-
-// CHECK:          k_type *k_ptr;
-// CHECK-NEXT:     y_type *y_ptr;
-// CHECK-NEXT:     if (kernelParams) {
-// CHECK-NEXT:       k_ptr = static_cast<k_type *>(kernelParams[0]);
-// CHECK-NEXT:       y_ptr = static_cast<y_type *>(kernelParams[1]);
-// CHECK-NEXT:     } else {
-// CHECK-NEXT:       struct Args {
-// CHECK-NEXT:         k_type k;
-// CHECK-NEXT:         y_type y;
-// CHECK-NEXT:       };
-// CHECK-NEXT:       auto args_ptr = static_cast<Args *>(dpct::get_args_ptr(extra));
-// CHECK-NEXT:       k_ptr = &args_ptr->k;
-// CHECK-NEXT:       y_ptr = &args_ptr->y;
-// CHECK-NEXT:     }
-// CHECK-NEXT:     k_type& k = *k_ptr;
-// CHECK-NEXT:     y_type& y = *y_ptr;
-
-// CHECK:          queue.submit(
+// CHECK-NEXT:     args_selector<decltype(foo)> selector(kernelParams, extra);
+// CHECK-NEXT:     auto& k = selector.get<0>();
+// CHECK-NEXT:     auto& y = selector.get<1>();
+// CHECK-NEXT:     queue.submit(
 // CHECK-NEXT:       [&](sycl::handler &cgh) {
 // CHECK-NEXT:         const_data.init(queue);
 // CHECK:              auto const_data_ptr_ct1 = const_data.get_ptr();

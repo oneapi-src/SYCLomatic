@@ -2379,7 +2379,7 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
 	for (int i = 0;
 	     it != getParametersInfo().end();
 	     ++it, ++i) {
-	  F(i, *it);
+	  F(i, it->second);
 	}
       };
 
@@ -2387,71 +2387,13 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
       {
         auto BodyBlock = Printer.block();
         Printer.newLine();
-
-	// Print type aliases for the wrapped function type
-	// e.g. 'using kernel_type = decltype(kernel);'
-	Printer.line("using " + FuncName
-		     + "_type = decltype(" + FuncName + ");");
-
-	// Print type aliases for the wrapped function's parameters
-	// e.g. 'using foo_type = dpct::get_nth_parameter_t<i, kernel_type>;'
-	requestFeature(HelperFeatureEnum::Util_get_nth_parameter, FilePath);
+	Printer.line("args_selector<decltype(" + FuncName
+		     + ")> selector(kernelParams, extra);");
 	for_each_parameter([&](auto&& i, auto&& p) {
-	  Printer.line("using " + p.second
-		       + "_type = dpct::get_nth_parameter_t<"
-		       + std::to_string(i)
-		       + ", " + FuncName + "_type>;");
+	  Printer.line("auto& " + p
+		       + " = selector.get<"
+		       + std::to_string(i) + ">();");
 	});
-	Printer.newLine();
-
-	// Declare a pointer for each parameter
-	// e.g. 'foo_type *foo_ptr;'
-	for_each_parameter([&](auto&&, auto&& p) {
-	  Printer.line(p.second + "_type *" + p.second + "_ptr;");
-	});
-
-        Printer.line("if (kernelParams) {");
-	{
-	  auto IfBlock = Printer.block();
-	  for_each_parameter([&](auto&& i, auto&&p) {
-	    // Initialize the parameter pointers from kernelParams
-	    // e.g. 'foo_ptr = *static_cast<foo_type*>(kernelParams[i])'
-	    Printer.line(p.second + "_ptr = "
-			 + "static_cast<" + p.second + "_type *>"
-			 + "(kernelParams[" + std::to_string(i) + "]);");
-	  });
-	}
-        Printer.line("} else {");
-        {
-          auto ElseBlock = Printer.block();
-	  // Declare a struct of all the parameters in order
-	  // to define the layout of the extra params
-	  Printer.line("struct Args {");
-	  {
-	    auto StructBlock = Printer.block();
-	    for_each_parameter([&](auto&&, auto&& p) {
-	      // e.g. 'foo_type foo;'
-	      Printer.line(p.second + "_type " + p.second + ";");
-	    });
-	  }
-	  Printer.line("};");
-	  requestFeature(HelperFeatureEnum::Util_get_args_ptr, FilePath);
-	  Printer.line("auto args_ptr = static_cast<Args *>(dpct::get_args_ptr(extra));");
-	  for_each_parameter([&](auto&&, auto&& p) {
-	    // Initialize the parameter pointers from extra
-	    // e.g. 'foo_ptr = &args_ptr->foo;'
-	    Printer.line(p.second + "_ptr = &args_ptr->" + p.second + ";");
-	  });
-        }
-        Printer.line("}");
-
-	for_each_parameter([&](auto&&, auto&& p) {
-	  // Bind references for each parameter
-	  // e.g. foo_type& foo = *foo_ptr;
-	  Printer.line(p.second + "_type& " + p.second + " = *"
-		       + p.second + "_ptr;");
-	});
-	Printer.newLine();
 
         Kernel->buildInfo();
         Printer.line(Kernel->getReplacement());
