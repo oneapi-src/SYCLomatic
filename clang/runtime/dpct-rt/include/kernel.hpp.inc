@@ -44,6 +44,10 @@
 #else
 #include <dlfcn.h>
 #endif
+
+#include <filesystem>
+#include <cstdio>
+
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
@@ -167,8 +171,36 @@ private:
 void *ptr;
 };
 
+static char *mkfilename()
+{
+  time_t rawtime;
+  char buffer[80];
+
+  time (&rawtime);
+  sprintf(buffer,"%lld\n",(unsigned long long) rawtime);
+
+  std::string str(buffer);
+  std::hash<std::string> hasher;
+
+  int i = hasher(str);
+
+  sprintf(buffer,"%08X",i);
+
+  static char tempfile[200];
+
+  sprintf(tempfile,
+#ifdef _WIN32
+          "%sdpct%s",
+#else
+          "%s/dpct%s",
+#endif
+          std::filesystem::temp_directory_path().string().c_str(),
+          buffer);
+  return(tempfile);
+}
+
 static module load_dl_from_vector(const std::vector<char> &blob) {
-  const std::string name = std::tmpnam(nullptr);
+  const std::string name = mkfilename();
   write_vector_to_file(name, blob);
 #ifdef _WIN32
   void *so = LoadLibraryA(name.c_str());
@@ -177,6 +209,9 @@ static module load_dl_from_vector(const std::vector<char> &blob) {
 #endif
   if (so == nullptr)
     throw std::runtime_error("Failed to load module");
+
+  std::remove(name.c_str());
+
   return so;
 }
 
