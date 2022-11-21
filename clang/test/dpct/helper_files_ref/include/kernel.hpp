@@ -75,6 +75,105 @@ static void write_vector_to_file(const std::string &name, const std::vector<char
   file.close();
 }
 
+static uint16_t extract16(unsigned char const *const ptr) {
+  uint16_t ret = 0;
+
+  ret |= static_cast<uint16_t>(ptr[0]) <<  0;
+  ret |= static_cast<uint16_t>(ptr[1]) <<  8;
+
+  return(ret);
+}
+
+static uint32_t extract32(unsigned char const *const ptr) {
+  uint32_t ret = 0;
+
+  ret |= static_cast<uint32_t>(ptr[0]) <<  0;
+  ret |= static_cast<uint32_t>(ptr[1]) <<  8;
+  ret |= static_cast<uint32_t>(ptr[2]) << 16;
+  ret |= static_cast<uint32_t>(ptr[3]) << 24;
+
+  return(ret);
+}
+
+static uint64_t extract64(unsigned char const *const ptr) {
+  uint64_t ret = 0;
+
+  ret |= static_cast<uint64_t>(ptr[0]) <<  0;
+  ret |= static_cast<uint64_t>(ptr[1]) <<  8;
+  ret |= static_cast<uint64_t>(ptr[2]) << 16;
+  ret |= static_cast<uint64_t>(ptr[3]) << 24;
+  ret |= static_cast<uint64_t>(ptr[4]) << 32;
+  ret |= static_cast<uint64_t>(ptr[5]) << 40;
+  ret |= static_cast<uint64_t>(ptr[6]) << 48;
+  ret |= static_cast<uint64_t>(ptr[7]) << 56;
+
+  return(ret);
+}
+
+#ifdef _WIN32
+static uint64_t get_size_from_dll(char const *const blob) {
+  // See https://en.wikipedia.org/wiki/Portable_Executable
+  // and https://learn.microsoft.com/en-us/windows/win32/debug/pe-format
+  // to understand the layout of a DLL header
+
+  ///////////////////////////////////////////////////////////////////////
+  unsigned char const *const ublob = reinterpret_cast<unsigned char const *const>(blob);
+  // Aanalyze DOS stub
+  if (ublob[0] != 0x4d ||
+      ublob[1] != 0x5a) {
+    throw std::runtime_error("Blob is not a Windows DLL.");
+  }
+  uint32_t pe_header_offset = extract32(ublob+0x3c);
+
+  ///////////////////////////////////////////////////////////////////////
+  // Ananlyze PE-header
+  unsigned char const *const pe_header = ublob + pe_header_offset;
+
+  // signature
+  uint32_t pe_signature = extract32(pe_header+0);
+  if (pe_signature!=0x00004550) {
+    throw std::runtime_error("PE-header signature is not 0x00004550");
+  }
+
+  // machine
+  uint16_t machine  = extract16(pe_header+4);
+  if (machine!=0x8664) {
+    throw std::runtime_error("Only DLLs for x64 supported");
+  }
+
+  // number of sections
+  uint16_t number_of_sections  = extract16(pe_header+6);
+
+  // sizeof optional header
+  uint16_t sizeof_optional_header = extract16(pe_header+20);
+
+  //magic
+  uint16_t magic = extract16(pe_header+24);
+  if (magic!=0x10b &&
+      magic!=0x20b) {
+    throw std::runtime_error("MAGIC is not 0x010b or 0x020b");
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  // Analyze tail of optional header
+  constexpr int coff_header_size = 24;
+
+  unsigned char const *const tail_of_optional_header = pe_header + coff_header_size + sizeof_optional_header;
+  if (extract64(tail_of_optional_header-8)!=0) {
+    throw std::runtime_error("Optional header not zero-padded");
+  }
+
+  ///////////////////////////////////////////////////////////////////////
+  // Analyze last section header
+  constexpr int section_header_size = 40;
+  unsigned char const *const last_section_header = tail_of_optional_header + section_header_size*(number_of_sections-1);
+
+  uint32_t sizeof_raw_data     = extract32(last_section_header+16);
+  uint32_t pointer_to_raw_data = extract32(last_section_header+20);
+
+  return sizeof_raw_data + pointer_to_raw_data;
+}
+#else
 static uint64_t get_size_from_elf(char const *const blob) {
   if (blob[0] != 0x7F || blob[1] != 'E' || blob[2] != 'L' || blob[3] != 'F')
     throw std::runtime_error("Blob is not in ELF format");
@@ -86,27 +185,13 @@ static uint64_t get_size_from_elf(char const *const blob) {
     throw std::runtime_error("Only little-endian headers are supported");
 
   unsigned char const *const ublob = reinterpret_cast<unsigned char const *const>(blob);
-  uint64_t e_shoff = 0;
-  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 0]) << 0;
-  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 1]) << 8;
-  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 2]) << 16;
-  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 3]) << 24;
-  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 4]) << 32;
-  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 5]) << 40;
-  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 6]) << 48;
-  e_shoff |= static_cast<uint64_t>(ublob[0x28 + 7]) << 56;
-
-  uint16_t e_shentsize = 0;
-  e_shentsize |= ublob[0x3A + 0] << 0;
-  e_shentsize |= ublob[0x3A + 1] << 8;
-
-  uint16_t e_shnum = 0;
-  e_shnum |= ublob[0x3C + 0] << 0;
-  e_shnum |= ublob[0x3C + 1] << 8;
+  uint64_t e_shoff     = extract64(ublob+0x28);
+  uint16_t e_shentsize = extract16(ublob+0x3A);
+  uint16_t e_shnum     = extract16(ublob+0x3C);
 
   return e_shoff + (e_shentsize * e_shnum);
 }
-
+#endif
 class module {
 public:
   module()          : ptr{nullptr} {}
@@ -171,7 +256,11 @@ static module load_sycl_lib(const std::string &name) {
 };
 
 static module load_sycl_lib_mem(char const *const image) {
+#ifdef _WIN32
+  const size_t size = get_size_from_dll(image);
+#else
   const size_t size = get_size_from_elf(image);
+#endif
 
   std::vector<char> blob(size);
   std::memcpy(blob.data(), image, size);
