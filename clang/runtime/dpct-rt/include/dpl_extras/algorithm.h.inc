@@ -1174,10 +1174,8 @@ void sort_pairs(
                   8);
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|sort_keys|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasAlgorithm|transform_and_sort
-// DPCT_DEPENDENCY_END
+// DPCT_LABEL_BEGIN|sort_keys_forward_decl|dpct
+// DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
 inline void sort_keys(
@@ -1571,6 +1569,7 @@ void sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
 // DPCT_LABEL_BEGIN|sort_keys|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasAlgorithm|transform_and_sort
+// DplExtrasAlgorithm|sort_keys_forward_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
