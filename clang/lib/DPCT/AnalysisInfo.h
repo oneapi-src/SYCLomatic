@@ -3717,6 +3717,7 @@ public:
     initTemplateArgumentList(TAList, Specialization);
   }
   static void processFunctionTypeLoc(const FunctionTypeLoc &);
+  static void processTemplateArgumentList(const TemplateArgumentListInfo &);
 
 private:
   void initTemplateArgumentList(const TemplateArgumentListInfo &TAList,

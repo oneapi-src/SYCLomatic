@@ -2236,17 +2236,6 @@ std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,
 void ExplicitInstantiationDecl::initTemplateArgumentList(
     const TemplateArgumentListInfo &TAList,
     const FunctionDecl *Specialization) {
-  ExprAnalysis EA;
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  for (auto &ArgLoc : TAList.arguments()) {
-    EA.analyze(ArgLoc);
-    if (EA.hasReplacement()) {
-      DpctGlobalInfo::getInstance().addReplacement(
-          std::make_shared<ExtReplacement>(SM, &ArgLoc, EA.getReplacedString(),
-                                           nullptr));
-    }
-  }
-
   if (Specialization->getTemplateSpecializationArgs() == nullptr)
     return;
   for (auto &Arg : Specialization->getTemplateSpecializationArgs()->asArray()) {
@@ -2285,6 +2274,17 @@ void ExplicitInstantiationDecl::processFunctionTypeLoc(
   processTypeLoc(FTL.getReturnLoc(), EA, SM);
   for (const auto &Parm : FTL.getParams()) {
     processTypeLoc(Parm->getTypeSourceInfo()->getTypeLoc(), EA, SM);
+  }
+}
+
+void ExplicitInstantiationDecl::processTemplateArgumentList(
+    const TemplateArgumentListInfo &TAList) {
+  ExprAnalysis EA;
+  for (const clang::TemplateArgumentLoc &ArgLoc : TAList.arguments()) {
+    EA.analyze(ArgLoc);
+    if (EA.hasReplacement())
+      DpctGlobalInfo::getInstance().addReplacement(
+          EA.getReplacement()->getReplacement(DpctGlobalInfo::getContext()));    
   }
 }
 
