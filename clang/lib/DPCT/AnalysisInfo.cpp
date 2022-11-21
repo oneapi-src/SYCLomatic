@@ -14,6 +14,7 @@
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Tooling/Tooling.h"
 #include <algorithm>
 #include <deque>
@@ -3332,6 +3333,62 @@ void CtTypeInfo::setArrayInfo(const ConstantArrayTypeLoc &TL,
     Range.emplace_back(getUnfoldedArraySize(TL));
   }
   setTypeInfo(TL.getElementLoc(), NeedSizeFold);
+}
+
+std::string CtTypeInfo::getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
+  const auto *const SizeExpr = TL.getSizeExpr();
+
+  auto IsContainMacro =
+      isContainMacro(SizeExpr) || !TL.getSizeExpr()->getBeginLoc().isFileID();
+
+  auto DREMatcher = ast_matchers::findAll(ast_matchers::declRefExpr());
+  auto DREMatchedResults =
+      ast_matchers::match(DREMatcher, *SizeExpr, DpctGlobalInfo::getContext());
+  bool IsContainDRE = !DREMatchedResults.empty();
+
+  bool IsContainSizeOfUserDefinedType = false;
+  auto SOMatcher = ast_matchers::findAll(
+      ast_matchers::unaryExprOrTypeTraitExpr(ast_matchers::ofKind(UETT_SizeOf))
+          .bind("so"));
+  auto SOMatchedResults =
+      ast_matchers::match(SOMatcher, *SizeExpr, DpctGlobalInfo::getContext());
+  for (const auto &Res : SOMatchedResults) {
+    const auto *UETT = Res.getNodeAs<UnaryExprOrTypeTraitExpr>("so");
+    if (UETT->isArgumentType()) {
+      const auto *const RD =
+          UETT->getArgumentType().getCanonicalType()->getAsRecordDecl();
+      if (MapNames::SupportedVectorTypes.count(RD->getNameAsString()) == 0) {
+        IsContainSizeOfUserDefinedType = true;
+        break;
+      }
+    }
+  }
+
+  // We need not fold the size expression in these cases.
+  if (!IsContainMacro && !IsContainDRE && !IsContainSizeOfUserDefinedType) {
+    return getUnfoldedArraySize(TL);
+  }
+
+  auto TLRange = getDefinitionRange(TL.getBeginLoc(), TL.getEndLoc());
+  auto SizeExprRange = getRangeInRange(SizeExpr->getSourceRange(),
+                                       TLRange.getBegin(), TLRange.getEnd());
+  auto SizeExprBegin = SizeExprRange.first;
+  auto SizeExprEnd = SizeExprRange.second;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  size_t Length =
+      SM.getCharacterData(SizeExprEnd) - SM.getCharacterData(SizeExprBegin);
+  auto DL = SM.getDecomposedLoc(SizeExprBegin);
+  auto OriginalStr =
+      std::string(SM.getBufferData(DL.first).substr(DL.second, Length));
+
+  // When it is a literal in macro, we also need not fold.
+  auto LiteralStr = toString(TL.getTypePtr()->getSize(), 10, false, false);
+  if (OriginalStr == LiteralStr) {
+    return getUnfoldedArraySize(TL);
+  }
+
+  ArraySizeOriginExprs.push_back(std::move(OriginalStr));
+  return buildString(LiteralStr, "/*", ArraySizeOriginExprs.back(), "*/");
 }
 
 std::string CtTypeInfo::getUnfoldedArraySize(const ConstantArrayTypeLoc &TL) {
