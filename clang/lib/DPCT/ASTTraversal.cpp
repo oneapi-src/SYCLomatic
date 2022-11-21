@@ -12486,10 +12486,6 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
   auto FD = CE->getDirectCallee();
   if (FD) {
     std::string Name = FD->getNameInfo().getName().getAsString();
-    std::cout << Name << " FD loc:" << FD->getLocation().printToString(DpctGlobalInfo::getSourceManager()) << std::endl;
-    std::cout << "has device attr:" << FD->hasAttr<CUDADeviceAttr>() << std::endl;
-    std::cout << "has host attr:" << FD->hasAttr<CUDAHostAttr>() << std::endl;
-
     if (Name == "__brev" || Name == "__brevll") {
       requestFeature(HelperFeatureEnum::Util_reverse_bits, CE);
     } else if (Name == "__vmaxs4" || Name == "__vmaxu2") {

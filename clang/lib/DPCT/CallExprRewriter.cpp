@@ -1244,7 +1244,7 @@ public:
     if (ArgType.getAsString() != TypeInfo) {
       Stream << "(" << TypeInfo << ")";
     }
-    dpct::print(Stream, SubExpr);
+    printWithParens(Stream, SubExpr);
   }
 };
 
@@ -2634,11 +2634,27 @@ class CheckArgIsConstantIntWithValue {
 public:
   CheckArgIsConstantIntWithValue(int idx, int val) : value(val), index(idx) {}
   bool operator()(const CallExpr *C) {
-    auto Arg = C->getArg(index);
-    Expr::EvalResult Result;
+    auto Arg = C->getArg(index)->IgnoreImpCasts();
+    Expr::EvalResult ResultInt;
     if (!Arg->isValueDependent() &&
-        Arg->EvaluateAsInt(Result, DpctGlobalInfo::getContext()) &&
-        Result.Val.getInt().getSExtValue() == value) {
+        Arg->EvaluateAsInt(ResultInt, DpctGlobalInfo::getContext()) &&
+        ResultInt.Val.getInt().getSExtValue() == value) {
+      return true;
+    }
+    llvm::APFloat ResultFloat(float(0));
+    llvm::APFloat FloatRHS((float)value);
+    if (!Arg->isValueDependent() &&
+        Arg->EvaluateAsFloat(ResultFloat, DpctGlobalInfo::getContext()) &&
+        (&ResultFloat.getSemantics() == &FloatRHS.getSemantics()) &&
+        (ResultFloat.compare(FloatRHS) == llvm::APFloatBase::cmpResult::cmpEqual)) {
+      return true;
+    }
+    llvm::APFloat ResultDouble(double(0));
+    llvm::APFloat DoubleRHS((double)value);
+    if (!Arg->isValueDependent() &&
+        Arg->EvaluateAsFloat(ResultDouble, DpctGlobalInfo::getContext()) &&
+        (&ResultDouble.getSemantics() == &DoubleRHS.getSemantics()) &&
+        (ResultDouble.compare(DoubleRHS) == llvm::APFloatBase::cmpResult::cmpEqual)) {
       return true;
     }
     return false;
@@ -2820,12 +2836,21 @@ public:
   }
 };
 
-class IsIntegerType {
+class IsParameterIntegerType {
   unsigned Idx;
 public:
-  IsIntegerType(unsigned Idx) : Idx(Idx) {}
+  IsParameterIntegerType(unsigned Idx) : Idx(Idx) {}
   bool operator()(const CallExpr *C) {
     return C->getArg(Idx)->getType()->isIntegerType();
+  }
+};
+
+class IsArgumentIntegerType {
+  unsigned Idx;
+public:
+  IsArgumentIntegerType(unsigned Idx) : Idx(Idx) {}
+  bool operator()(const CallExpr *C) {
+    return C->getArg(Idx)->IgnoreImpCasts()->getType()->isIntegerType();
   }
 };
 
@@ -2954,29 +2979,57 @@ public:
             isChildPath(DpctInstallPath, DeclLocFilePath));
   }
 };
-class UseCAndCXXStandardLibrariesExt {
-  std::string FuncName;
+enum class MathFuncMappingType {
+  HostPerf,
+  CAndCXXStandardLibrariesExt,
+  MathLibDevice,
+  DeviceTestedStd
+};
+
+class UseMappingType {
+  MathFuncMappingType MFMT;
 public:
-  UseCAndCXXStandardLibrariesExt(std::string FuncName)
-      : FuncName(FuncName) {}
+  UseMappingType(MathFuncMappingType MFMT) : MFMT(MFMT) {}
   bool operator()(const CallExpr *C) {
-    return (DpctGlobalInfo::useCAndCXXStandardLibrariesExt() &&
-            (MapNames::CAndCXXStandardLibrariesExtAPISet.find(FuncName) !=
-             MapNames::CAndCXXStandardLibrariesExtAPISet.end()));
+    switch (MFMT) {
+    case MathFuncMappingType::HostPerf: {
+      return DpctGlobalInfo::isOptimizeMigration();
+    }
+    case MathFuncMappingType::CAndCXXStandardLibrariesExt: {
+      return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
+    }
+    case MathFuncMappingType::MathLibDevice: {
+      return false; /*new option needed*/
+    }
+    case MathFuncMappingType::DeviceTestedStd: {
+      return false; /*new option needed*/
+    }
+    default: {
+      return false;
+    }
+    }
   }
 };
-class UseExprStdVersion {
-  std::string FuncName;
-public:
-  UseExprStdVersion(std::string FuncName)
-      : FuncName(FuncName) {}
-  bool operator()(const CallExpr *C) {
+auto IsPureHost = [](const CallExpr *C) -> bool {
+  const FunctionDecl *FD = C->getDirectCallee();
+  if (!FD)
+    return false;
+  if (!(FD->hasAttr<CUDADeviceAttr>()))
+    return true;
+
+  SourceLocation DeclLoc =
+      dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
+          FD->getLocation());
+  std::string DeclLocFilePath = dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
+  makeCanonical(DeclLocFilePath);
+
+  if (FD->getAttr<CUDADeviceAttr>()->isImplicit() &&
+      FD->isConstexprSpecified() &&
+      !isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath)) {
     return true;
   }
+  return false;
 };
-auto IsPureHost = makeCheckAnd(
-    HasDirectCallee(),
-    makeCheckNot(IsDirectCalleeHasAttribute<CUDADeviceAttr>()));
 auto IsPureDevice = makeCheckAnd(
     HasDirectCallee(),
     makeCheckAnd(IsDirectCalleeHasAttribute<CUDADeviceAttr>(),
@@ -2989,9 +3042,6 @@ auto IsDirectCallerPureDevice = makeCheckOr(
     makeCheckAnd(IsContextCallHasAttribute<CUDADeviceAttr>(),
                  makeCheckNot(IsContextCallHasAttribute<CUDAHostAttr>())),
     IsContextCallHasAttribute<CUDAGlobalAttr>());
-auto NeedDoOptimizedMigration = [](const CallExpr *C) -> bool {
-  return DpctGlobalInfo::isOptimizeMigration();
-};
 
 class HasSideEffects {
   int Idx;
@@ -2999,50 +3049,117 @@ public:
   HasSideEffects(int Idx) : Idx(Idx) {}
   bool operator()(const CallExpr *C) {
     SideEffectsAnalysis SEA(C->getArg(Idx));
+    SEA.analyze();
     return SEA.hasSideEffects();
   }
 };
+
+template <class T>
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createStdLibDeviceFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&STD_LIBDEVICE,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&DEVICE_NORMAL,
+    T) {
+  return createConditionalFactory(
+      UseMappingType(MathFuncMappingType::CAndCXXStandardLibrariesExt),
+      std::move(STD_LIBDEVICE),
+      std::move(DEVICE_NORMAL));
+}
+template <class T>
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathLibDeviceFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&MATH_LIBDEVICE,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&DEVICE_NORMAL,
+    T) {
+  return createConditionalFactory(
+      UseMappingType(MathFuncMappingType::MathLibDevice),
+      std::move(MATH_LIBDEVICE),
+      std::move(DEVICE_NORMAL));
+}
+template <class T>
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createDeviceTestedStdFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&DEVICE_TESTED_STD,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&DEVICE_NORMAL,
+    T) {
+  return createConditionalFactory(
+      UseMappingType(MathFuncMappingType::DeviceTestedStd),
+      std::move(DEVICE_TESTED_STD),
+      std::move(DEVICE_NORMAL));
+}
+template <class T>
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createDeviceNormalFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&DEVICE_NORMAL,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&STUB,
+    T) {
+  return std::move(DEVICE_NORMAL);
+}
 }
 
-#define MATH_API_REWRITER_WITH_OPT(NAME, END1, END2, END3, END4, END5)         \
-  createConditionalFactory(                                                    \
-      math::IsPureHost,                                                        \
-      createConditionalFactory(                                                \
-          math::NeedDoOptimizedMigration,                                      \
-          END1 createConditionalFactory(                                       \
-              math::IsDefinedInCUDA(),                                         \
-              END2 createConditionalFactory(                                   \
-                  math::UseCAndCXXStandardLibrariesExt(NAME),                  \
-                  END3 createConditionalFactory(math::UseExprStdVersion(NAME), \
-                                                END4 END5 0)))),               \
-      createConditionalFactory(                                                \
-          math::IsPureDevice,                                                  \
-          createConditionalFactory(                                            \
-              math::IsDefinedInCUDA(),                                         \
-              createConditionalFactory(                                        \
-                  math::UseCAndCXXStandardLibrariesExt(NAME),                  \
-                  END3 createConditionalFactory(math::UseExprStdVersion(NAME), \
-                                                END4 END5 0)),                 \
-              NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                \
-          createConditionalFactory(                                            \
-              math::IsHostDevice,                                              \
-              createConditionalFactory(                                        \
-                  math::IsDirectCallerPureDevice,                              \
-                  createConditionalFactory(                                    \
-                      math::IsDefinedInCUDA(),                                 \
-                      createConditionalFactory(                                \
-                          math::UseCAndCXXStandardLibrariesExt(NAME),          \
-                          END3 createConditionalFactory(                       \
-                              math::UseExprStdVersion(NAME), END4 END5 0)),    \
-                      NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),        \
-                  createConditionalFactory(                                    \
-                      math::UseCAndCXXStandardLibrariesExt(NAME),              \
-                      END3 createConditionalFactory(                           \
-                          math::UseExprStdVersion(NAME), END4 END5 0))),       \
-              createConditionalFactory(                                        \
-                  math::UseCAndCXXStandardLibrariesExt(NAME),                  \
-                  END3 createConditionalFactory(math::UseExprStdVersion(NAME), \
-                                                END4 END5 0))))),
+// clang-format off
+#define MATH_API_REWRITER_WITH_HOST_PERF(NAME, DEVICE_FACTORY_FUNC, HOST_PERF,            \
+                                         HOST_NORMAL, SPECIAL_DEVICE_FORM, DEVICE_NORMAL) \
+  createConditionalFactory(                                                               \
+      math::IsPureHost,                                                                   \
+      createConditionalFactory(                                                           \
+          math::UseMappingType(math::MathFuncMappingType::HostPerf),                      \
+          HOST_PERF                                                                       \
+          createConditionalFactory(                                                       \
+              math::IsDefinedInCUDA(),                                                    \
+              HOST_NORMAL                                                                 \
+              NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0)),                          \
+      createConditionalFactory(                                                           \
+          math::IsPureDevice,                                                             \
+          createConditionalFactory(                                                       \
+              math::IsDefinedInCUDA(),                                                    \
+              DEVICE_FACTORY_FUNC(SPECIAL_DEVICE_FORM DEVICE_NORMAL 0),                   \
+              NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                           \
+          createConditionalFactory(                                                       \
+              math::IsHostDevice,                                                         \
+              createConditionalFactory(                                                   \
+                  math::IsDirectCallerPureDevice,                                         \
+                  createConditionalFactory(                                               \
+                      math::IsDefinedInCUDA(),                                            \
+                      DEVICE_FACTORY_FUNC(SPECIAL_DEVICE_FORM DEVICE_NORMAL 0),           \
+                      NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                   \
+                  DEVICE_FACTORY_FUNC(SPECIAL_DEVICE_FORM DEVICE_NORMAL 0)),              \
+              DEVICE_FACTORY_FUNC(SPECIAL_DEVICE_FORM DEVICE_NORMAL 0)))),
+
+#define MATH_API_REWRITER_WITHOUT_HOST_NORMAL(NAME, DEVICE_FACTORY_FUNC, HOST_NORMAL, \
+                                              SPECIAL_DEVICE_FORM, DEVICE_NORMAL)     \
+  createConditionalFactory(                                                           \
+      math::IsPureHost,                                                               \
+      createConditionalFactory(                                                       \
+              math::IsDefinedInCUDA(),                                                \
+              HOST_NORMAL                                                             \
+              NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                       \
+      createConditionalFactory(                                                       \
+          math::IsPureDevice,                                                         \
+          createConditionalFactory(                                                   \
+              math::IsDefinedInCUDA(),                                                \
+              DEVICE_FACTORY_FUNC(SPECIAL_DEVICE_FORM DEVICE_NORMAL 0),               \
+              NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                       \
+          createConditionalFactory(                                                   \
+              math::IsHostDevice,                                                     \
+              createConditionalFactory(                                               \
+                  math::IsDirectCallerPureDevice,                                     \
+                  createConditionalFactory(                                           \
+                      math::IsDefinedInCUDA(),                                        \
+                      DEVICE_FACTORY_FUNC(SPECIAL_DEVICE_FORM DEVICE_NORMAL 0),       \
+                      NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),               \
+                  DEVICE_FACTORY_FUNC(SPECIAL_DEVICE_FORM DEVICE_NORMAL 0)),          \
+              DEVICE_FACTORY_FUNC(SPECIAL_DEVICE_FORM DEVICE_NORMAL 0)))),
+
+// clang-format on
 
 ///***************************************************************
 /// Examples:
@@ -3147,28 +3264,28 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   BIND_TEXTURE_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
 #define ENTRY_TEMPLATED(SOURCEAPINAME, ...)                                    \
   TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
-//#include "APINamesCUB.inc"
-//#include "APINamesCUBLAS.inc"
-//#include "APINamesCUFFT.inc"
-//#include "APINamesCURAND.inc"
-//#include "APINamesComplex.inc"
-//#include "APINamesDriver.inc"
-//#include "APINamesMemory.inc"
-//#include "APINamesNccl.inc"
-//#include "APINamesStream.inc"
-//#include "APINamesTexture.inc"
-//#include "APINamesThrust.inc"
-//#include "APINamesWarp.inc"
-//#include "APINamesCUDNN.inc"
-//#include "APINamesErrorHandling.inc"
+#include "APINamesCUB.inc"
+#include "APINamesCUBLAS.inc"
+#include "APINamesCUFFT.inc"
+#include "APINamesCURAND.inc"
+#include "APINamesComplex.inc"
+#include "APINamesDriver.inc"
+#include "APINamesMemory.inc"
+#include "APINamesNccl.inc"
+#include "APINamesStream.inc"
+#include "APINamesTexture.inc"
+#include "APINamesThrust.inc"
+#include "APINamesWarp.inc"
+#include "APINamesCUDNN.inc"
+#include "APINamesErrorHandling.inc"
 #include "APINamesMathRewrite.inc"
-//#include "APINamesLIBCU.inc"
-//#include "APINamesEvent.inc"
-//#define FUNCTION_CALL
-//#define CLASS_METHOD_CALL
-//#include "APINamesCooperativeGroups.inc"
-//#undef FUNCTION_CALL
-//#undef CLASS_METHOD_CALL
+#include "APINamesLIBCU.inc"
+#include "APINamesEvent.inc"
+#define FUNCTION_CALL
+#define CLASS_METHOD_CALL
+#include "APINamesCooperativeGroups.inc"
+#undef FUNCTION_CALL
+#undef CLASS_METHOD_CALL
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED

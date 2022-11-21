@@ -3977,9 +3977,6 @@ const MapNames::SetTy MapNames::HostAllocSet{
     "cudaHostAllocPortable",        "cudaHostAllocWriteCombined",
     "CU_MEMHOSTALLOC_PORTABLE",     "CU_MEMHOSTALLOC_DEVICEMAP",
     "CU_MEMHOSTALLOC_WRITECOMBINED"};
-const MapNames::SetTy MapNames::CAndCXXStandardLibrariesExtAPISet = {
-    "pow", "powf", "__powf", "abs", "std::abs"
-  };
 
 // Function Attributes names migration
 const MapNames::MapTy KernelFunctionInfoRule::AttributesNamesMap{

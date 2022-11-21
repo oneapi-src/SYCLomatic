@@ -201,7 +201,7 @@ while(0)
 
 HANDLE_GPU_ERROR(0);
 
-// CHECK: #define cbrt(x) std::pow((double)x, (double)(1.0 / 3.0))
+// CHECK: #define cbrt(x) pow((double)x,(double)(1.0/3.0))
 // CHECK-NEXT: double DD = sqrt(cbrt(5.9)) / sqrt(cbrt(3.2));
 #define cbrt(x) pow((double)x,(double)(1.0/3.0))
   double DD = sqrt(cbrt(5.9)) / sqrt(cbrt(3.2));
@@ -662,8 +662,8 @@ __global__ void foo11(){
 VECTOR_TYPE_DEF(int)
 
 //CHECK: typedef float real;
-//CHECK-NEXT: #define POW(x, y) sycl::pow<float>(x, y)
-//CHECK-NEXT: #define POW2(x, y) vx[id] * vx[id]
+//CHECK-NEXT: #define POW(x, y) x *x
+//CHECK-NEXT: #define POW2(x, y) x *x
 //CHECK-NEXT: /*
 //CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated pow call is used in a macro definition and is not valid
 //CHECK-NEXT: for all macro uses. Adjust the code.

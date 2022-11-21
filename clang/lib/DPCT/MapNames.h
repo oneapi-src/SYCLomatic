@@ -416,7 +416,6 @@ public:
   static const MapNames::MapTy MemberNamesMap;
   static const MapNames::MapTy FunctionAttrMap;
   static const MapNames::SetTy HostAllocSet;
-  static const MapNames::SetTy CAndCXXStandardLibrariesExtAPISet;
   static MapNames::MapTy MathFuncNameMap;
 
   static std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
