@@ -575,6 +575,68 @@ public:
   int get_integrated() const { return get_device_info().get_integrated(); }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_get_max_sub_group_size|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_max_sub_group_size
+// Device|device_info_get_max_sub_group_size
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  int get_max_sub_group_size() const {
+    return get_device_info().get_max_sub_group_size();
+  }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_get_max_work_group_size|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_max_work_group_size
+// Device|device_info_get_max_work_group_size
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  int get_max_work_group_size() const {
+    return get_device_info().get_max_work_group_size();
+  }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_get_mem_base_addr_align|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_mem_base_addr_align
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  int get_mem_base_addr_align() const {
+    return get_info<sycl::info::device::mem_base_addr_align>();
+  }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_is_deivce_can_access_host|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_is_deivce_can_access_host
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  int is_deivce_can_access_host() const {
+    return this->has(sycl::aspect::usm_host_allocations);
+  }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_get_global_mem_size|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_global_mem_size
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  int get_global_mem_size() const {
+    return get_device_info().get_global_mem_size();
+  }
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|device_ext_get_memory_info|dpct
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN

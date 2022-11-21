@@ -232,6 +232,26 @@ public:
 
   int get_integrated() const { return get_device_info().get_integrated(); }
 
+  int get_max_sub_group_size() const {
+    return get_device_info().get_max_sub_group_size();
+  }
+
+  int get_max_work_group_size() const {
+    return get_device_info().get_max_work_group_size();
+  }
+
+  int get_mem_base_addr_align() const {
+    return get_info<sycl::info::device::mem_base_addr_align>();
+  }
+
+  int is_deivce_can_access_host() const {
+    return this->has(sycl::aspect::usm_host_allocations);
+  }
+
+  int get_global_mem_size() const {
+    return get_device_info().get_global_mem_size();
+  }
+
   /// Get the number of bytes of free and total memory on the SYCL device.
   /// \param [out] free_memory The number of bytes of free memory on the SYCL device.
   /// \param [out] total_memory The number of bytes of total memory on the SYCL device.
