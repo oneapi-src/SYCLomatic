@@ -725,16 +725,28 @@ inline queue_ptr int_as_queue_ptr(uintptr_t x) {
 // DPCT_LABEL_BEGIN|args_selector|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-  template <typename T>
+  template <int n_nondefault_params, int n_default_params, typename T>
   struct args_selector;
 
-  template <typename R, typename... Ts>
-  class args_selector<R(Ts...)> {
+  template <int n_nondefault_params, int n_default_params,
+	    typename R, typename... Ts>
+  class args_selector<n_nondefault_params, n_default_params, R(Ts...)> {
     void **kernel_params;
     char *args_buffer;
 
     template <int i>
-    using arg_type = std::tuple_element_t<i, std::tuple<Ts...>>;
+    static constexpr int account_for_default_params() {
+      static constexpr int n_total_params = sizeof...(Ts);
+      if constexpr (i >= n_nondefault_params) {
+	return n_total_params - n_default_params + (i - n_nondefault_params);
+      } else {
+	return i;
+      }
+    }    
+
+    template <int i>
+    using arg_type = std::tuple_element_t<account_for_default_params<i>(),
+					  std::tuple<Ts...>>;
     
     template <int i>
     static constexpr int get_offset() {

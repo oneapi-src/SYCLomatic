@@ -26,7 +26,7 @@ __constant__ unsigned int const_data[3] = {1, 2, 3};
 
 // CHECK:      extern "C" {
 // CHECK-NEXT:   void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra) {
-// CHECK-NEXT:     args_selector<decltype(foo)> selector(kernelParams, extra);
+// CHECK-NEXT:     args_selector<2, 0, decltype(foo)> selector(kernelParams, extra);
 // CHECK-NEXT:     auto& k = selector.get<0>();
 // CHECK-NEXT:     auto& y = selector.get<1>();
 // CHECK-NEXT:     queue.submit(
@@ -43,6 +43,38 @@ __constant__ unsigned int const_data[3] = {1, 2, 3};
 // CHECK-NEXT:   }
 // CHECK-NEXT: }
 __global__ void foo(float* k, float* y){
+    extern __shared__ int s[];
+    unsigned int cd = const_data[2];
+    int a = threadIdx.x;
+}
+
+//CHECK: void foo2(float* k, float* y, sycl::nd_item<3> item_ct1, uint8_t *dpct_local,
+//CHECK-NEXT:     unsigned int *const_data, sycl::int2 x=sycl::int2(1, 2)){
+//CHECK-NEXT: auto s = (int *)dpct_local;
+//CHECK-NEXT: unsigned int cd = const_data[2];
+//CHECK-NEXT: int a = item_ct1.get_local_id(2);
+//CHECK-NEXT: }
+
+// CHECK:      extern "C" {
+// CHECK-NEXT:   void foo2_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra) {
+// CHECK-NEXT:     args_selector<2, 1, decltype(foo2)> selector(kernelParams, extra);
+// CHECK-NEXT:     auto& k = selector.get<0>();
+// CHECK-NEXT:     auto& y = selector.get<1>();
+// CHECK-NEXT:     auto& x = selector.get<2>();
+// CHECK-NEXT:     queue.submit(
+// CHECK-NEXT:       [&](sycl::handler &cgh) {
+// CHECK-NEXT:         const_data.init(queue);
+// CHECK:              auto const_data_ptr_ct1 = const_data.get_ptr();
+// CHECK:              sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(localMemSize), cgh);
+// CHECK:              cgh.parallel_for(
+// CHECK-NEXT:           nr,
+// CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:             foo2(k, y, item_ct1, dpct_local_acc_ct1.get_pointer(), const_data_ptr_ct1, x);
+// CHECK-NEXT:           });
+// CHECK-NEXT:       });
+// CHECK-NEXT:   }
+// CHECK-NEXT: }
+__global__ void foo2(float* k, float* y, int2 x=make_int2(1, 2)){
     extern __shared__ int s[];
     unsigned int cd = const_data[2];
     int a = threadIdx.x;

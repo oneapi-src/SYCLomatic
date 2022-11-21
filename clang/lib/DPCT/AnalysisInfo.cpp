@@ -2387,7 +2387,10 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
       {
         auto BodyBlock = Printer.block();
         Printer.newLine();
-	Printer.line("args_selector<decltype(" + FuncName
+	Printer.line("args_selector<"
+		     + std::to_string(NonDefaultParamNum) + ", "
+		     + std::to_string(ParamsNum-NonDefaultParamNum) + ", "
+		     + "decltype(" + FuncName
 		     + ")> selector(kernelParams, extra);");
 	for_each_parameter([&](auto&& i, auto&& p) {
 	  Printer.line("auto& " + p
