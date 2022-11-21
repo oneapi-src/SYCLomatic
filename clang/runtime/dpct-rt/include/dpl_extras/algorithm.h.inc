@@ -1161,10 +1161,8 @@ partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|sort_pairs|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasAlgorithm|sort_pairs_impl
-// DPCT_DEPENDENCY_END
+// DPCT_LABEL_BEGIN|sort_pairs_forward_decl|dpct
+// DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t>
@@ -1556,6 +1554,7 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
 // DPCT_LABEL_BEGIN|sort_pairs|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasAlgorithm|sort_pairs_impl
+// DplExtrasAlgorithm|sort_pairs_forward_decl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
