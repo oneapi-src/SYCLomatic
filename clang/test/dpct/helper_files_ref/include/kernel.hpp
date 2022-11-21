@@ -140,7 +140,7 @@ static char *mkfilename()
 
   sprintf(tempfile,
 #ifdef _WIN32
-          "%sdpct%s",
+          "%sdpct%s.dll",
 #else
           "%s/dpct%s",
 #endif
