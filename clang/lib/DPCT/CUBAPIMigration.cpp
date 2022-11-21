@@ -57,11 +57,9 @@ auto isDeviceFuncCallExpr = []() {
   };
   return callExpr(callee(functionDecl(
       allOf(hasDeviceFuncName(),
-            hasParent(functionTemplateDecl(
-                allOf(hasDeviceFuncName(),
-                      hasAncestor(cxxRecordDecl(allOf(
-                          hasDeviceRecordName(),
-                          hasParent(namespaceDecl(hasName("cub")))))))))))));
+            hasDeclContext(cxxRecordDecl(
+                allOf(hasDeviceRecordName(),
+                      hasDeclContext(namespaceDecl(hasName("cub"))))))))));
 };
 
 } // namespace
