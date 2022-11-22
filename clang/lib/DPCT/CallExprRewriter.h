@@ -976,7 +976,6 @@ public:
   BinaryOperatorPrinter(LValueT &&L, RValueT &&R)
       : LVal(std::forward<LValueT>(L)), RVal(std::forward<RValueT>(R)) {}
   template <class StreamT> void print(StreamT &Stream) const {
-    //dpct::print(Stream, LVal);
     printWithParens(Stream, LVal);
     Stream << " " << OpStr << " ";
     printWithParens(Stream, RVal);
