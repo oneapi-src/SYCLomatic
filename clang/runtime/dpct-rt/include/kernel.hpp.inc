@@ -109,6 +109,21 @@ static kernel_function_info get_kernel_function_info(const kernel_function &func
           .get_info<sycl::info::device::max_work_group_size>();
   return kernel_info;
 }
+static void get_kernel_function_info(kernel_function_info *kernel_info,
+                                     const void *function) {
+  kernel_info->max_work_group_size =
+      dpct::dev_mgr::instance()
+          .current_device()
+          .get_info<sycl::info::device::max_work_group_size>();
+}
+static kernel_function_info get_kernel_function_info(const void *function) {
+  kernel_function_info kernel_info;
+  kernel_info.max_work_group_size =
+      dpct::dev_mgr::instance()
+          .current_device()
+          .get_info<sycl::info::device::max_work_group_size>();
+  return kernel_info;
+}
 // DPCT_LABEL_END
 
 static std::vector<char> read_file_to_vector(const std::string &name) {
