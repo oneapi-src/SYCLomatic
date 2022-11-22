@@ -232,8 +232,7 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
-    if (SrcBeginLoc.isInvalid())
-      SrcBeginLoc = BeginLoc;
+    SrcBeginLoc = BeginLoc;
 
     // Avoid illegal range which will cause SIGABRT
     if (End.first + End.second < Begin) {
@@ -1915,14 +1914,14 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
   if (IsInMacroDefine && SM.isMacroArgExpansion(E->getBeginLoc())) {
     Reversed = false;
     DirectRef = true;
-    if (ArgIndex == 3 && isPredefinedStreamHandle(E)) {
+    if (ArgIndex == 3 && isDefaultStream(E)) {
       addReplacement("0");
       return;
     }
   }
 
   DoReverse = ReverseIfNeed;
-  if (ArgIndex == 3 && isPredefinedStreamHandle(E)) {
+  if (ArgIndex == 3 && isDefaultStream(E)) {
     addReplacement("0");
     return;
   }

@@ -183,7 +183,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"ushort3", std::make_shared<TypeNameRule>(getClNamespace() + "ushort3")},
       {"ushort4", std::make_shared<TypeNameRule>(getClNamespace() + "ushort4")},
       {"cublasHandle_t",
-       std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "queue_ptr",
+       HelperFeatureEnum::Device_typedef_queue_ptr)},
       {"cublasStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cublasStatus", std::make_shared<TypeNameRule>("int")},
       {"cublasGemmAlgo_t", std::make_shared<TypeNameRule>("int")},
@@ -229,6 +230,9 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "device_pointer",
            HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl)},
+      {"thrust::device_reference",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "device_reference",
+				      HelperFeatureEnum::DplExtrasMemory_device_reference)},
       {"thrust::device_vector",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "device_vector",
@@ -1555,6 +1559,7 @@ void MapNames::setExplicitNamespaceMap() {
 #undef ENTRY_UNSUPPORTED
 #undef ENTRY_REWRITE
   {"abs", MapNames::getClNamespace(false, true) + "abs"},
+  {"saturate", MapNames::getClNamespace(false, true) + "clamp"},
   };
 }
 

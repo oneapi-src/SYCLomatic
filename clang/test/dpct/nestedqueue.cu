@@ -9,7 +9,7 @@ __host__ __device__ void foo1(){
   // CHECK: /*
   // CHECK-NEXT: DPCT1021:{{[0-9]+}}: Migration of cublasHandle_t in __global__ or __device__ function is not supported. You may need to redesign the code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::queue* handle;
+  // CHECK-NEXT: cublasHandle_t handle;
   cublasHandle_t handle;
   int n=1;
   float* x_S=0;
@@ -26,7 +26,7 @@ __device__ void foo2(){
   // CHECK: /*
   // CHECK-NEXT: DPCT1021:{{[0-9]+}}: Migration of cublasHandle_t in __global__ or __device__ function is not supported. You may need to redesign the code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::queue* handle;
+  // CHECK-NEXT: cublasHandle_t handle;
   cublasHandle_t handle;
   int n=1;
   float* x_S=0;
@@ -43,7 +43,7 @@ __global__ void foo3(){
   // CHECK: /*
   // CHECK-NEXT: DPCT1021:{{[0-9]+}}: Migration of cublasHandle_t in __global__ or __device__ function is not supported. You may need to redesign the code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: sycl::queue* handle;
+  // CHECK-NEXT: cublasHandle_t handle;
   cublasHandle_t handle;
   int n=1;
   float* x_S=0;
@@ -57,7 +57,7 @@ __global__ void foo3(){
 }
 
 __host__ void foo4(){
-  // CHECK: sycl::queue* handle;
+  // CHECK: dpct::queue_ptr handle;
   cublasHandle_t handle;
   int n=1;
   float* x_S=0;

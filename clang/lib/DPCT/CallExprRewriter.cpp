@@ -1195,24 +1195,6 @@ DerefExpr DerefExpr::create(const Expr *E, const CallExpr * C = nullptr) {
 class DerefStreamExpr {
   const Expr *E;
 
-  bool isDefaultStream() const {
-    auto Expression = E->IgnoreImpCasts();
-    if (auto Paren = dyn_cast<ParenExpr>(Expression)) {
-      Expression = Paren->getSubExpr()->IgnoreImpCasts();
-    }
-    if (auto TypeCast = dyn_cast<ExplicitCastExpr>(Expression)) {
-      Expression = TypeCast->getSubExpr()->IgnoreImpCasts();
-    }
-    Expr::EvalResult Result;
-    if (!Expression->isValueDependent() &&
-        Expression->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
-      auto Val = Result.Val.getInt().getZExtValue();
-      return Val < 3; // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
-                      // all migrated to default queue;
-    }
-    return false;
-  }
-
   template <class StreamT> void printDefaultQueue(StreamT &Stream) const {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     buildTempVariableMap(Index, E, HelperFuncType::HFT_DefaultQueue);
@@ -1222,13 +1204,13 @@ class DerefStreamExpr {
 public:
   template <class StreamT>
   void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
-    if (isDefaultStream())
+    if (isDefaultStream(E))
       printDefaultQueue(Stream);
     else
       DerefExpr::create(E).printArg(Stream, A);
   }
   template <class StreamT> void printMemberBase(StreamT &Stream) const {
-    if (isDefaultStream()) {
+    if (isDefaultStream(E)) {
       printDefaultQueue(Stream);
       Stream << ".";
     } else {
@@ -1237,7 +1219,7 @@ public:
   }
 
   template <class StreamT> void print(StreamT &Stream) const {
-    if (isDefaultStream())
+    if (isDefaultStream(E))
       printDefaultQueue(Stream);
     else
       DerefExpr::create(E).print(Stream);
@@ -1969,7 +1951,7 @@ std::function<bool(const CallExpr *C)> checkIsUSM() {
 
 std::function<bool(const CallExpr *C)> checkIsArgStream(size_t index) {
   return [=](const CallExpr *C) -> bool {
-    return !(isPredefinedStreamHandle(C->getArg(index)));
+    return !(isDefaultStream(C->getArg(index)));
   };
 }
 
