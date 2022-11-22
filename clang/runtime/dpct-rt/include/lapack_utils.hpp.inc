@@ -107,7 +107,7 @@ inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
   }
   queue.submit([&, info_val](sycl::handler &cgh) {
     auto info_acc = info_buf.get_access<sycl::access_mode::write>(cgh);
-    cgh.single_task<dpct_kernel_name<class sygvd_init_info, T>>(
+    cgh.single_task<dpct_kernel_name<class sygvd_set_info, T>>(
         [=]() { info_acc[0] = info_val; });
   });
   return ret_val;
