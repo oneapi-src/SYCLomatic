@@ -16,8 +16,10 @@
 #include "CUBAPIMigration.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
+#include "clang/AST/Type.h"
 #include "clang/Basic/LangOptions.h"
 #include <cstdarg>
+#include <cstddef>
 
 namespace clang {
 namespace dpct {
@@ -1997,6 +1999,16 @@ std::function<bool(const CallExpr *C)> checkIsArgIntegerLiteral(size_t index) {
   };
 }
 
+std::function<bool(const CallExpr *)>
+checkArgCanMappingToSyclNativeBinaryOp(size_t ArgIdx) {
+  return [=](const CallExpr *C) -> bool {
+    const Expr *Arg = C->getArg(ArgIdx);
+    std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
+        Arg->getType().getCanonicalType());
+    return CubTypeRule::CanMappingToSyclNativeBinaryOp(TypeName);
+  };
+}
+
 template <size_t Idx>
 std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createFactoryWithSubGroupSizeRequest(
@@ -2821,7 +2833,7 @@ public:
 class CheckCubRedundantFunctionCall {
 public:
   bool operator()(const CallExpr *C) {
-    return CubRule::isRedundantCallExpr(C);
+    return CubDeviceLevelRule::isRedundantCallExpr(C);
   }
 };
 
@@ -2836,7 +2848,7 @@ public:
 
 std::shared_ptr<CallExprRewriter>
 RemoveCubTempStorageFactory::create(const CallExpr *C) const {
-  CubRule::removeRedundantTempVar(C);
+  CubDeviceLevelRule::removeRedundantTempVar(C);
   return Inner->create(C);
 }
 

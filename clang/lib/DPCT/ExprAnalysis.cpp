@@ -10,6 +10,7 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
+#include "CUBAPIMigration.h"
 #include "CallExprRewriter.h"
 #include "DNNAPIMigration.h"
 #include "TypeLocRewriters.h"
@@ -628,6 +629,18 @@ void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
   }
 }
 
+void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
+  std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
+      Temp->getType().getCanonicalType());
+  if (StringRef(TypeName).startswith("cub::") &&
+      CubTypeRule::CanMappingToSyclBinaryOp(TypeName)) {
+    analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
+    return;
+  }
+
+  analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
+}
+
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
   std::string CtorClassName =
       Ctor->getConstructor()->getParent()->getQualifiedNameAsString();
@@ -1054,9 +1067,18 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
         TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
     break;
   case TypeLoc::Builtin:
-  case TypeLoc::Record:
-    TyName += DpctGlobalInfo::getTypeName(TL.getType());
+  case TypeLoc::Record: {
+    TyName = DpctGlobalInfo::getTypeName(TL.getType());
+    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
+    if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
+      auto Rewriter = Itr->second->create(TL);
+      auto Result = Rewriter->rewrite();
+      if (Result.has_value())
+        addReplacement(SM.getExpansionLoc(SR.getBegin()),
+                       SM.getExpansionLoc(SR.getEnd()), CSCE, Result.value());
+    }
     break;
+  }
   case TypeLoc::TemplateTypeParm:
     if (auto D = TYPELOC_CAST(TemplateTypeParmTypeLoc).getDecl()) {
       return addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,
