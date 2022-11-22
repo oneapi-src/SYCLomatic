@@ -21,34 +21,25 @@ using namespace clang::ast_matchers;
 void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   // API register
   auto functionName = [&]() { return hasAnyName("on"); };
-  MF.addMatcher(callExpr(callee(functionDecl(anyOf(
-                             hasDeclContext(namespaceDecl(hasName("thrust"))),
-                             functionName()))))
-                    .bind("thrustFuncCall"),
-                this);
-
   MF.addMatcher(
-      unresolvedLookupExpr(hasAnyDeclaration(namedDecl(hasDeclContext(
-                               namespaceDecl(hasName("thrust"))))),
-                           hasParent(callExpr().bind("thrustApiCallExpr")))
-          .bind("unresolvedThrustAPILookupExpr"),
+      callExpr(anyOf(callee(functionDecl(
+                         anyOf(hasDeclContext(namespaceDecl(hasName("thrust"))),
+                               functionName()))),
+                     callee(unresolvedLookupExpr(hasAnyDeclaration(namedDecl(
+                         hasDeclContext(namespaceDecl(hasName("thrust")))))))))
+          .bind("thrustFuncCall"),
       this);
+
 }
 
 void ThrustAPIRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  ExprAnalysis EA;
-  if (const auto ULExpr = getAssistNodeAsType<UnresolvedLookupExpr>(
-          Result, "unresolvedThrustAPILookupExpr")) {
-    if (const auto CE =
-            getAssistNodeAsType<CallExpr>(Result, "thrustApiCallExpr"))
-      thrustFuncMigration(Result, CE, ULExpr);
-  } else if (const CallExpr *CE =
-                 getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
-    thrustFuncMigration(Result, CE);
-  } else {
-    return;
-  }
+  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "thrustFuncCall")) {
+    if(const UnresolvedLookupExpr * ULE = dyn_cast_or_null<UnresolvedLookupExpr>(CE->getCallee()))
+      thrustFuncMigration(Result, CE, ULE);
+    else
+      thrustFuncMigration(Result, CE);
+  } 
 }
 
 void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
