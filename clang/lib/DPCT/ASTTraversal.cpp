@@ -15572,3 +15572,35 @@ void TemplateSpecializationTypeLocRule::runRule(
 }
 
 REGISTER_RULE(TemplateSpecializationTypeLocRule, PassKind::PK_Migration)
+
+void CudaStreamCastRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(
+    castExpr(hasType(
+      typedefDecl(hasAnyName("CUstream", "cudaStream_t")))).bind("cast"),
+    this);
+}
+
+void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto CE = getNodeAsType<CastExpr>(Result, "cast")) {
+    if (CE->getCastKind() == clang::CK_LValueToRValue
+	|| CE->getCastKind() == clang::CK_NoOp)
+      return;
+    
+    if (isDefaultStream(CE->getSubExpr())) {
+      if (isPlaceholderIdxDuplicated(CE))
+        return;
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
+      emplaceTransformation(
+        new ReplaceStmt(CE, "&{{NEEDREPLACEQ" + std::to_string(Index) + "}}"));
+    } else if (auto DRE = dyn_cast<DeclRefExpr>(CE->getSubExpr())) {
+      emplaceTransformation(
+        new ReplaceStmt(
+          CE,
+	  "dpct::default_queue_or_cast("+ DRE->getNameInfo().getAsString()+")"));
+    }
+  }
+}
+
+
+REGISTER_RULE(CudaStreamCastRule, PassKind::PK_Migration)

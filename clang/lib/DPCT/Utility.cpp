@@ -3084,7 +3084,7 @@ bool isModifiedRef(const clang::DeclRefExpr *DRE) {
 
 bool isDefaultStream(const Expr *StreamArg) {
   StreamArg = StreamArg->IgnoreCasts();
-  if (isa<CXXNullPtrLiteralExpr>(StreamArg)) {
+  if (isa<CXXNullPtrLiteralExpr>(StreamArg) || isa<GNUNullExpr>(StreamArg)) {
     return true;
   } else if (auto DAE = dyn_cast<CXXDefaultArgExpr>(StreamArg)) {
     return isDefaultStream(DAE->getExpr());

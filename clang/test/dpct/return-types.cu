@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 // CHECK: #define DEF_BAR dpct::queue_ptr bar() { \
-// CHECK-NEXT:   return 0; \
+// CHECK-NEXT:   return &dpct::get_default_queue(); \
 // CHECK-NEXT: }
 #define DEF_BAR cudaStream_t bar() { \
   return 0; \
@@ -25,7 +25,7 @@ DEF_BAR2
 
 // CHECK: template <typename T>
 // CHECK-NEXT: dpct::queue_ptr bar() {
-// CHECK-NEXT:   return 0;
+// CHECK-NEXT:   return &dpct::get_default_queue();
 // CHECK-NEXT: }
 template <typename T>
 cudaStream_t bar() {
@@ -43,7 +43,7 @@ cudaEvent_t bar2() {
 
 // CHECK: dpct::queue_ptr foo() {
 cudaStream_t foo() {
-  return 0;
+  return &dpct::get_default_queue();
 }
 
 // CHECK: dpct::event_ptr foo2() {
@@ -54,7 +54,7 @@ cudaEvent_t foo2() {
 class S {
   // CHECK: dpct::queue_ptr foo() {
   cudaStream_t foo() {
-    return 0;
+    return &dpct::get_default_queue();
   }
 
   // CHECK: dpct::event_ptr foo2() {
@@ -66,7 +66,7 @@ class S {
 class C {
   // CHECK: dpct::queue_ptr foo() {
   cudaStream_t foo() {
-    return 0;
+    return &dpct::get_default_queue();
   }
 
   // CHECK: dpct::event_ptr foo2() {
