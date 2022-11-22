@@ -99,9 +99,8 @@ MATH_API_REWRITER_WITH_HOST_PERF(
         CONDITIONAL_FACTORY_ENTRY(
             IsArgumentIntegerType(1),
             CALL_FACTORY_ENTRY(
-                "pow", CALL(MapNames::getClNamespace(false, true) + "pown",
-                            CAST_IF_NEED(makeLiteral("double"), ARG(0)),
-                            CAST_IF_NEED(makeLiteral("int"), ARG(1)))),
+                "pow", CALL(MapNames::getClNamespace(false, true) + "pown<double>",
+                            ARG(0), ARG(1))),
             NO_REWRITE_FUNCNAME_FACTORY_ENTRY("pow", "pow"))),
     HEADER_INSERT_FACTORY(HeaderType::HT_Math,
                           CALL_FACTORY_ENTRY("pow",
@@ -118,9 +117,8 @@ MATH_API_REWRITER_WITH_HOST_PERF(
         CONDITIONAL_FACTORY_ENTRY(
             IsArgumentIntegerType(1),
             CALL_FACTORY_ENTRY(
-                "pow", CALL(MapNames::getClNamespace(false, true) + "pown",
-                            CAST_IF_NEED(makeLiteral("double"), ARG(0)),
-                            CAST_IF_NEED(makeLiteral("int"), ARG(1)))),
+                "pow", CALL(MapNames::getClNamespace(false, true) + "pown<double>",
+                            ARG(0), ARG(1))),
             CALL_FACTORY_ENTRY("pow",
                                CALL(MapNames::getClNamespace(false, true) +
                                         "pow<double>",
@@ -137,9 +135,8 @@ MATH_API_REWRITER_WITH_HOST_PERF(
         CONDITIONAL_FACTORY_ENTRY(
             IsArgumentIntegerType(1),
             CALL_FACTORY_ENTRY(
-                "powf", CALL(MapNames::getClNamespace(false, true) + "pown",
-                             CAST_IF_NEED(makeLiteral("float"), ARG(0)),
-                             CAST_IF_NEED(makeLiteral("int"), ARG(1)))),
+                "powf", CALL(MapNames::getClNamespace(false, true) + "pown<float>",
+                             ARG(0), ARG(1))),
             NO_REWRITE_FUNCNAME_FACTORY_ENTRY("powf", "powf"))),
     HEADER_INSERT_FACTORY(HeaderType::HT_Math,
                           CALL_FACTORY_ENTRY("powf",
@@ -156,9 +153,8 @@ MATH_API_REWRITER_WITH_HOST_PERF(
         CONDITIONAL_FACTORY_ENTRY(
             IsArgumentIntegerType(1),
             CALL_FACTORY_ENTRY(
-                "powf", CALL(MapNames::getClNamespace(false, true) + "pown",
-                             CAST_IF_NEED(makeLiteral("float"), ARG(0)),
-                             CAST_IF_NEED(makeLiteral("int"), ARG(1)))),
+                "powf", CALL(MapNames::getClNamespace(false, true) + "pown<float>",
+                             ARG(0), ARG(1))),
             CALL_FACTORY_ENTRY("powf",
                                CALL(MapNames::getClNamespace(false, true) +
                                         "pow<float>",
@@ -175,9 +171,8 @@ MATH_API_REWRITER_WITH_HOST_PERF(
         CONDITIONAL_FACTORY_ENTRY(
             IsArgumentIntegerType(1),
             CALL_FACTORY_ENTRY(
-                "__powf", CALL(MapNames::getClNamespace(false, true) + "pown",
-                               CAST_IF_NEED(makeLiteral("float"), ARG(0)),
-                               CAST_IF_NEED(makeLiteral("int"), ARG(1)))),
+                "__powf", CALL(MapNames::getClNamespace(false, true) + "pown<float>",
+                               ARG(0), ARG(1))),
             NO_REWRITE_FUNCNAME_FACTORY_ENTRY("__powf", "__powf"))),
     HEADER_INSERT_FACTORY(HeaderType::HT_Math,
                           CALL_FACTORY_ENTRY("__powf",
@@ -194,9 +189,8 @@ MATH_API_REWRITER_WITH_HOST_PERF(
         CONDITIONAL_FACTORY_ENTRY(
             IsArgumentIntegerType(1),
             CALL_FACTORY_ENTRY(
-                "__powf", CALL(MapNames::getClNamespace(false, true) + "pown",
-                               CAST_IF_NEED(makeLiteral("float"), ARG(0)),
-                               CAST_IF_NEED(makeLiteral("int"), ARG(1)))),
+                "__powf", CALL(MapNames::getClNamespace(false, true) + "pown<float>",
+                               ARG(0), ARG(1))),
             CALL_FACTORY_ENTRY("__powf",
                                CALL(MapNames::getClNamespace(false, true) +
                                         "pow<float>",

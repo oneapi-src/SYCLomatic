@@ -1,5 +1,5 @@
 // UNSUPPORTED: -linux-
-// RUN: dpct --format-range=none -out-root %T/math_functions_test_win %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/math_functions_test_win %s --cuda-include-path="%cuda-path/include" --optimize-migration -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/math_functions_test_win/math_functions_test_win.dp.cpp --match-full-lines %s
 
 #include <cuda.h>

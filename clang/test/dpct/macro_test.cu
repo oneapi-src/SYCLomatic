@@ -668,7 +668,7 @@ VECTOR_TYPE_DEF(int)
 //CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated pow call is used in a macro definition and is not valid
 //CHECK-NEXT: for all macro uses. Adjust the code.
 //CHECK-NEXT: */
-//CHECK-NEXT: #define POW3(x, y) sycl::pow<double>(x, y)
+//CHECK-NEXT: #define POW3(x, y) sycl::pow<double>(vx[id], 3.0)
 //CHECK-NEXT: #define SQRT(x) sycl::sqrt(x)
 //CHECK-NEXT: void foo12(){
 //CHECK-NEXT: real *vx;
