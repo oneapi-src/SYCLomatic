@@ -3251,18 +3251,18 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       DD = FD;
     }
 
-    if (TypeStr == "cufftHandle" || TypeStr == "::cufftHandle") {
-      if (TL->getType().isConstQualified()) {
-        clang::SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
-        if (SM.getDecomposedLoc(EndLoc).second >= SM.getDecomposedLoc(BeginLoc).second) {
-          processConstFFTHandleType(DD, BeginLoc, EndLoc,
-                                    TypeStr == "::cufftHandle");
-          return;
+    if (DD) {
+      if (TypeStr == "cufftHandle" || TypeStr == "::cufftHandle") {
+        if (TL->getType().isConstQualified()) {
+          clang::SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
+          if (SM.getDecomposedLoc(EndLoc).second >= SM.getDecomposedLoc(BeginLoc).second) {
+            processConstFFTHandleType(DD, BeginLoc, EndLoc,
+                                      TypeStr == "::cufftHandle");
+            return;
+          }
         }
       }
-    }
 
-    if (DD) {
       if (TL->getType().getCanonicalType()->isPointerType()) {
         const auto *PtrTy =
             TL->getType().getCanonicalType()->getAs<PointerType>();
