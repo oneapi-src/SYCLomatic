@@ -102,7 +102,6 @@ inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
   } catch (sycl::exception const& e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
-    info_val = -1;
     ret_val = 1;
   }
   queue.submit([&, info_val](sycl::handler &cgh) {
@@ -126,8 +125,7 @@ inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
   } catch (sycl::exception const& e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
-    int info_val = -1;
-    queue.memcpy(info, &info_val, sizeof(int)).wait();
+    queue.memset(info, 0, sizeof(int)).wait();
     return 1;
   }
   queue.memset(info, 0, sizeof(int));
