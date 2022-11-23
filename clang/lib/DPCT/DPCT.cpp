@@ -656,6 +656,27 @@ int runDPCT(int argc, const char **argv) {
     ApiMappingEntry::printMappingDesc(llvm::outs(), QueryApiMapping);
     dpctExit(MigrationSucceeded);
   }
+
+  auto ExtensionStr = ChangeExtension.getValue();
+  ExtensionStr.erase(std::remove(ExtensionStr.begin(), ExtensionStr.end(), ' '),
+                     ExtensionStr.end());
+  auto Extensions = split(ExtensionStr, ',');
+  for (auto &Extension : Extensions) {
+    bool Legal = true;
+    const auto len = Extension.length();
+    if (len < 2 || len > 5 || Extension[0] != '.') {
+      ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
+      dpctExit(MigrationErrorInvalidChangeFilenameExtension, false);
+    }
+    for (size_t i = 1; i < len; ++i) {
+      if (!std::isalpha(Extension[i])) {
+        ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
+        dpctExit(MigrationErrorInvalidChangeFilenameExtension, false);
+      }
+    }
+    DpctGlobalInfo::addChangeExtensions(Extension);
+  }
+
   if (InRoot.empty() && ProcessAllFlag) {
     ShowStatus(MigrationErrorNoExplicitInRoot);
     dpctExit(MigrationErrorNoExplicitInRoot);

@@ -397,4 +397,12 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisS
              "Default: the value of --in-root."),
         llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat))
 
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), ChangeExtension,
+    "change-filename-extension",
+    llvm::cl::desc("Specifies which extensions of migrated files will be changed, "
+                   "split by comma. Default:\n"
+                   ".cu, .cuh, .cpp, .cxx, .cc, .c, .C"),
+    llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
+
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT

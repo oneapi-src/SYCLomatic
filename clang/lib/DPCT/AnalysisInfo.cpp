@@ -44,6 +44,7 @@ namespace dpct {
 std::string DpctGlobalInfo::InRoot = std::string();
 std::string DpctGlobalInfo::OutRoot = std::string();
 std::string DpctGlobalInfo::AnalysisScope = std::string();
+std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
 // TODO: implement one of this for each source language.
 std::string DpctGlobalInfo::CudaPath = std::string();
 std::string DpctGlobalInfo::RuleFile = std::string();
