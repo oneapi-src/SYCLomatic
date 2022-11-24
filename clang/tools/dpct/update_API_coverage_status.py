@@ -134,14 +134,8 @@ def do_update(args):
     res = False
     DPCT_tools_path = os.path.dirname(__file__)
     DPCT_lib_path = os.path.join(DPCT_tools_path,'..','..','lib','DPCT')
-    if args.output_path is not None:
-        output_path = args.output_path
-    else:
-        output_path = DPCT_tools_path
-    if args.output_filename is not None:
-        output_name = args.output_filename
-    else:
-        output_name = 'DPCT_API_COVERAGE'
+    output_path = args.output_path
+    output_name = args.output_filename
     if os.path.exists(output_path) is False :
         warnings.warn("output path is not exist")
         return False
@@ -174,10 +168,10 @@ def do_update(args):
 
 def main():
     parser = argparse.ArgumentParser(prog=os.path.basename(__file__),
-                                     description="script to get the API coverage status in DPC++ Compatibility Tools",
+                                     description="A script to get the API coverage status in DPC++ Compatibility Tools",
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--output-path",help="Set the path of the output file")
-    parser.add_argument("--output-filename",help="Set the name of the output file")
+    parser.add_argument("--output-path",help="Set the path of the output file",default=os.path.dirname(__file__))
+    parser.add_argument("--output-filename",help="Set the name of the output file",default='DPCT_API_COVERAGE')
 
     args = parser.parse_args()
     return do_update(args)
