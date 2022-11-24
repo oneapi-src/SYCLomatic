@@ -1244,7 +1244,7 @@ public:
     if (ArgType.getAsString() != TypeInfo) {
       Stream << "(" << TypeInfo << ")";
     }
-    printWithParens(Stream, SubExpr);
+    dpct::print(Stream, SubExpr);
   }
 };
 
