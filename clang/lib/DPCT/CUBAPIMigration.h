@@ -21,7 +21,7 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
   static bool CanMappingToSyclNativeBinaryOp(StringRef OpTypeName);
-  static bool CanMappingToSyclBinaryOp(StringRef OpTypeName);
+  static bool CanMappingToSyclType(StringRef OpTypeName);
 };
 
 class CubDeviceLevelRule : public NamedMigrationRule<CubDeviceLevelRule> {

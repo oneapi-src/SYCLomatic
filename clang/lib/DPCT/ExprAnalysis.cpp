@@ -633,7 +633,7 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
   std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
       Temp->getType().getCanonicalType());
   if (StringRef(TypeName).startswith("cub::") &&
-      CubTypeRule::CanMappingToSyclBinaryOp(TypeName)) {
+      CubTypeRule::CanMappingToSyclType(TypeName)) {
     analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
     return;
   }
@@ -1525,6 +1525,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(CXXDependentScopeMemberExpr)
     ANALYZE_EXPR(MaterializeTemporaryExpr)
     ANALYZE_EXPR(LambdaExpr)
+    ANALYZE_EXPR(CXXTemporaryObjectExpr)
   default:
     return ExprAnalysis::dispatch(Expression);
   }
@@ -1561,6 +1562,10 @@ KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
 
 void KernelArgumentAnalysis::analyzeExpr(const MaterializeTemporaryExpr *MTE) {
   KernelArgumentAnalysis::dispatch(MTE->getSubExpr());
+}
+
+void KernelArgumentAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
+  ExprAnalysis::dispatch(Temp);
 }
 
 void KernelArgumentAnalysis::analyzeExpr(
