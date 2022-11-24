@@ -63,10 +63,10 @@ int main(int argc, char *argv[])
     int b = sizeof(cusolverDnHandle_t);
 
     cudaStream_t stream;
-    // CHECK: status = (stream = handle, 0);
-    // CHECK: status = (handle = stream, 0);
-    status = cusolverDnGetStream(handle, &stream);
-    status = cusolverDnSetStream(handle, stream);
+    // CHECK: status = (stream = cusolverH, 0);
+    // CHECK: status = (cusolverH = stream, 0);
+    status = cusolverDnGetStream(cusolverH, &stream);
+    status = cusolverDnSetStream(cusolverH, stream);
 }
 
 

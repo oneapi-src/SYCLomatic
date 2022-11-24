@@ -7229,6 +7229,7 @@ REGISTER_RULE(SOLVEREnumsRule, PassKind::PK_Migration)
 void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName(
+        "cusolverDnGetStream", "cusolverDnSetStream",
         "cusolverDnCreate", "cusolverDnDestroy", "cusolverDnSpotrf_bufferSize",
         "cusolverDnDpotrf_bufferSize", "cusolverDnCpotrf_bufferSize",
         "cusolverDnZpotrf_bufferSize", "cusolverDnSpotri_bufferSize",
