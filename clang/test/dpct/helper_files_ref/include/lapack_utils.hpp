@@ -228,7 +228,7 @@ inline void potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   } catch (sycl::exception const &e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
-    queue.memset(info, 0, group_size * sizeof(int));
+    queue.memset(info, 0, group_size * sizeof(int)).wait();
     if (scratchpad)
       sycl::free(scratchpad, queue);
     return 1;
@@ -310,7 +310,7 @@ inline void potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   } catch (sycl::exception const &e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
-    queue.memset(info, 0, group_size * sizeof(int));
+    queue.memset(info, 0, group_size * sizeof(int)).wait();
     if (scratchpad)
       sycl::free(scratchpad, queue);
     return 1;
