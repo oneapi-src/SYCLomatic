@@ -49,11 +49,14 @@ auto isDeviceFuncCallExpr = []() {
   auto hasDeviceFuncName = []() {
     return hasAnyName("Sum", "Min", "Max", "Reduce", "ReduceByKey",
                       "ExclusiveSum", "InclusiveSum", "InclusiveScan",
-                      "ExclusiveScan", "Flagged", "Unique", "Encode");
+                      "ExclusiveScan", "Flagged", "Unique", "Encode",
+                      "SortKeys", "SortKeysDescending", "SortPairs",
+                      "SortPairsDescending");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
-                      "DeviceSelect", "DeviceRunLengthEncode");
+                      "DeviceSelect", "DeviceRunLengthEncode",
+                      "DeviceRadixSort");
   };
   return callExpr(callee(functionDecl(
       allOf(hasDeviceFuncName(),
