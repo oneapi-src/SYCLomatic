@@ -161,9 +161,9 @@ inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
 /// returned from info() method of the exception is set to \p info. If other
 /// SYCL synchronous exception is caught, -1 is set to \p info.
 template <typename T>
-inline void hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
-                  oneapi::mkl::uplo uplo, int n, T *a, int lda, T *b, int ldb,
-                  float *w, T *scratchpad, int scratchpad_size, int *info) {
+inline int hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
+                 oneapi::mkl::uplo uplo, int n, T *a, int lda, T *b, int ldb,
+                 float *w, T *scratchpad, int scratchpad_size, int *info) {
   using Ty = typename DataType<T>::T2;
 #ifdef DPCT_USM_LEVEL_NONE
   auto info_buf = get_buffer<int>(info);
@@ -197,8 +197,8 @@ inline void hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
   return ret_val;
 #else
   try {
-    oneapi::mkl::lapack::hegvd(queue, itype, jobz, uplo, n, (Ty *)A, lda, (Ty *)B,
-                               ldb, (Ty *)W, (Ty *)scratchpad, scratchpad_size);
+    oneapi::mkl::lapack::hegvd(queue, itype, jobz, uplo, n, (Ty *)a, lda, (Ty *)b,
+                               ldb, (Ty *)w, (Ty *)scratchpad, scratchpad_size);
   } catch (oneapi::mkl::lapack::exception const& e) {
     std::cerr << "Unexpected exception caught during call to LAPACK API: sygvd"
               << std::endl
@@ -237,8 +237,8 @@ inline void hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
 /// SYCL synchronous exception is caught, -1 is set to \p info.
 /// \param [in] group_size The batch size.
 template <typename T>
-inline void potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
-                        T *a[], int lda, int *info, int group_size) {
+inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
+                       T *a[], int lda, int *info, int group_size) {
 #ifdef DPCT_USM_LEVEL_NONE
   throw std::runtime_error("this API is unsupported when USM level is none");
 #else
@@ -319,9 +319,9 @@ inline void potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 /// SYCL synchronous exception is caught, -1 is set to \p info.
 /// \param [in] group_size The batch size.
 template <typename T>
-inline void potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
-                        int nrhs, T *a[], int lda, T *b[], int ldb, int *info,
-                        int group_size) {
+inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
+                       int nrhs, T *a[], int lda, T *b[], int ldb, int *info,
+                       int group_size) {
 #ifdef DPCT_USM_LEVEL_NONE
   throw std::runtime_error("this API is unsupported when USM level is none");
 #else
