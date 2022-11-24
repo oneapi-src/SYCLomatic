@@ -3089,6 +3089,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesCooperativeGroups.inc"
 #undef FUNCTION_CALL
 #undef CLASS_METHOD_CALL
+#include "APINamesCUSOLVER.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED

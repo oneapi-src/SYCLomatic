@@ -887,19 +887,16 @@ void IncludesCallbacks::InclusionDirective(
     DpctGlobalInfo::getInstance().setAlgorithmHeaderInserted(HashLoc, true);
   }
 
-  // Replace with
-  // <mkl_blas_sycl.hpp>, <mkl_lapack_sycl.hpp> and <mkl_sycl_types.hpp>
   if ((FileName.compare(StringRef("cublas_v2.h")) == 0) ||
-      (FileName.compare(StringRef("cublas.h")) == 0) ||
-      (FileName.compare(StringRef("cusolverDn.h")) == 0)) {
+      (FileName.compare(StringRef("cublas.h")) == 0)) {
     if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_BLAS_Solver);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_BLAS);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(
-          HashLoc, HT_MKL_BLAS_Solver_Without_Util);
+          HashLoc, HT_MKL_Without_Util);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -941,7 +938,7 @@ void IncludesCallbacks::InclusionDirective(
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_SPBLAS);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_SPBLAS_Without_Util);
+                                                 HT_MKL_Without_Util);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -961,7 +958,27 @@ void IncludesCallbacks::InclusionDirective(
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_FFT);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_FFT_Without_Util);
+                                                 HT_MKL_Without_Util);
+    }
+
+    DpctGlobalInfo::setMKLHeaderUsed(true);
+
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
+    Updater.update(false);
+  }
+
+  if (FileName.compare(StringRef("cusolverDn.h")) == 0) {
+    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+            HelperFilesCustomizationLevel::HFCL_None ||
+        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+            HelperFilesCustomizationLevel::HFCL_All) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_Solver);
+    } else {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc,
+                                                 HT_MKL_Without_Util);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -7259,7 +7276,8 @@ void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusolverDnDsyevd_bufferSize", "cusolverDnSsyevd_bufferSize",
         "cusolverDnCheevd_bufferSize", "cusolverDnZheevd_bufferSize",
         "cusolverDnDsyevd", "cusolverDnSsyevd", "cusolverDnCheevd",
-        "cusolverDnZheevd");
+        "cusolverDnZheevd",
+        "cusolverDnSsygvd", "cusolverDnSsygvd_bufferSize");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -7400,7 +7418,13 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   }
 
-  if (MapNames::SOLVERFuncReplInfoMap.find(FuncName) !=
+  if (MapNames::SOLVERAPIWithRewriter.find(FuncName) !=
+      MapNames::SOLVERAPIWithRewriter.end()) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  } else if (MapNames::SOLVERFuncReplInfoMap.find(FuncName) !=
       MapNames::SOLVERFuncReplInfoMap.end()) {
     // Find replacement string
     auto ReplInfoPair = MapNames::SOLVERFuncReplInfoMap.find(FuncName);
