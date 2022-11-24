@@ -2234,17 +2234,6 @@ std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,
 void ExplicitInstantiationDecl::initTemplateArgumentList(
     const TemplateArgumentListInfo &TAList,
     const FunctionDecl *Specialization) {
-  ExprAnalysis EA;
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  for (auto &ArgLoc : TAList.arguments()) {
-    EA.analyze(ArgLoc);
-    if (EA.hasReplacement()) {
-      DpctGlobalInfo::getInstance().addReplacement(
-          std::make_shared<ExtReplacement>(SM, &ArgLoc, EA.getReplacedString(),
-                                           nullptr));
-    }
-  }
-
   if (Specialization->getTemplateSpecializationArgs() == nullptr)
     return;
   for (auto &Arg : Specialization->getTemplateSpecializationArgs()->asArray()) {
@@ -2283,6 +2272,17 @@ void ExplicitInstantiationDecl::processFunctionTypeLoc(
   processTypeLoc(FTL.getReturnLoc(), EA, SM);
   for (const auto &Parm : FTL.getParams()) {
     processTypeLoc(Parm->getTypeSourceInfo()->getTypeLoc(), EA, SM);
+  }
+}
+
+void ExplicitInstantiationDecl::processTemplateArgumentList(
+    const TemplateArgumentListInfo &TAList) {
+  ExprAnalysis EA;
+  for (const clang::TemplateArgumentLoc &ArgLoc : TAList.arguments()) {
+    EA.analyze(ArgLoc);
+    if (EA.hasReplacement())
+      DpctGlobalInfo::getInstance().addReplacement(
+          EA.getReplacement()->getReplacement(DpctGlobalInfo::getContext()));    
   }
 }
 
@@ -2486,12 +2486,12 @@ void DeviceFunctionDeclInModule::buildCallInfo(const FunctionDecl *FD) {
 
 bool isModuleFunction(const FunctionDecl *FD) {
   auto &SM = DpctGlobalInfo::getSourceManager();
-  if (DpctGlobalInfo::getModuleFiles().find(
+  return
+    FD->getLanguageLinkage() == CLanguageLinkage
+    && FD->hasAttr<CUDAGlobalAttr>()
+    && DpctGlobalInfo::getModuleFiles().find(
           DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(FD->getBeginLoc()))
-              .first) != DpctGlobalInfo::getModuleFiles().end()) {
-    return true;
-  }
-  return false;
+              .first) != DpctGlobalInfo::getModuleFiles().end();
 }
 
 DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
@@ -3158,6 +3158,14 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
     OS << "cgh)";
     OS << ";";
     StmtWithWarning AccDecl(OS.str());
+    for (const auto &OriginExpr : getType()->getArraySizeOriginExprs()) {
+      DiagnosticsUtils::report(getFilePath(), getOffset(),
+                               Diagnostics::MACRO_EXPR_REPLACED, false, false,
+                               OriginExpr);
+      AccDecl.Warnings.push_back(
+          DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+              Diagnostics::MACRO_EXPR_REPLACED, OriginExpr));
+    }
     if ((isExtern() && ExternEmitWarning) || getType()->containSizeofType()) {
       DiagnosticsUtils::report(getFilePath(), getOffset(),
                                Diagnostics::SIZEOF_WARNING, false, false);

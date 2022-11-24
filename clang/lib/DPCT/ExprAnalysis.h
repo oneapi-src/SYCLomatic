@@ -616,6 +616,7 @@ protected:
   }
 
   void analyzeExpr(const CXXConstructExpr *Ctor);
+  void analyzeExpr(const CXXTemporaryObjectExpr *Temp);
   void analyzeExpr(const CXXUnresolvedConstructExpr *Ctor);
   void analyzeExpr(const MemberExpr *ME);
   void analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT);

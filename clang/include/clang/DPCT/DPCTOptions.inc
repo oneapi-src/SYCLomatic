@@ -320,7 +320,11 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::list<DPCPPExtensionsDefaultEnabl
              DPCT_OPT_ENUM("enqueued_barriers",
                                      int(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier),
                                      "Enqueued barriers extension.",
-                                     false)
+                                     false),
+             DPCT_OPT_ENUM("device_info",
+                                     int(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo),
+                                     "Intel's Extensions for Device Information.",
+                                     false)                            
            ),
            llvm::cl::desc("Comma separated list of extensions not to be used in migrated "
            "code.\n"

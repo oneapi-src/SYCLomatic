@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Util/api_test11_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Util/api_test11_out
 
-// CHECK: 31
+// CHECK: 32
 
 // TEST_FEATURE: Util_matrix_mem_copy_T
 

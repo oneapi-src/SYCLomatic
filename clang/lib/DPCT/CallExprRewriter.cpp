@@ -16,8 +16,10 @@
 #include "CUBAPIMigration.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
+#include "clang/AST/Type.h"
 #include "clang/Basic/LangOptions.h"
 #include <cstdarg>
+#include <cstddef>
 
 namespace clang {
 namespace dpct {
@@ -1195,24 +1197,6 @@ DerefExpr DerefExpr::create(const Expr *E, const CallExpr * C = nullptr) {
 class DerefStreamExpr {
   const Expr *E;
 
-  bool isDefaultStream() const {
-    auto Expression = E->IgnoreImpCasts();
-    if (auto Paren = dyn_cast<ParenExpr>(Expression)) {
-      Expression = Paren->getSubExpr()->IgnoreImpCasts();
-    }
-    if (auto TypeCast = dyn_cast<ExplicitCastExpr>(Expression)) {
-      Expression = TypeCast->getSubExpr()->IgnoreImpCasts();
-    }
-    Expr::EvalResult Result;
-    if (!Expression->isValueDependent() &&
-        Expression->EvaluateAsInt(Result, DpctGlobalInfo::getContext())) {
-      auto Val = Result.Val.getInt().getZExtValue();
-      return Val < 3; // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
-                      // all migrated to default queue;
-    }
-    return false;
-  }
-
   template <class StreamT> void printDefaultQueue(StreamT &Stream) const {
     int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
     buildTempVariableMap(Index, E, HelperFuncType::HFT_DefaultQueue);
@@ -1222,13 +1206,13 @@ class DerefStreamExpr {
 public:
   template <class StreamT>
   void printArg(StreamT &Stream, ArgumentAnalysis &A) const {
-    if (isDefaultStream())
+    if (isDefaultStream(E))
       printDefaultQueue(Stream);
     else
       DerefExpr::create(E).printArg(Stream, A);
   }
   template <class StreamT> void printMemberBase(StreamT &Stream) const {
-    if (isDefaultStream()) {
+    if (isDefaultStream(E)) {
       printDefaultQueue(Stream);
       Stream << ".";
     } else {
@@ -1237,7 +1221,7 @@ public:
   }
 
   template <class StreamT> void print(StreamT &Stream) const {
-    if (isDefaultStream())
+    if (isDefaultStream(E))
       printDefaultQueue(Stream);
     else
       DerefExpr::create(E).print(Stream);
@@ -1675,9 +1659,12 @@ makeFuncNameFromDevAttrCreator(unsigned idx) {
   };
 }
 std::function<std::string(const CallExpr *)> getWorkGroupDim(unsigned index) {
-  return [=](const CallExpr * C) {
-    auto Arg = dyn_cast<DeclRefExpr>(C->getArg(index)->
-                IgnoreImplicitAsWritten())->getNameInfo().getAsString();
+  return [=](const CallExpr *C) {
+    const auto *const DRE =
+        dyn_cast<DeclRefExpr>(C->getArg(index)->IgnoreImplicitAsWritten());
+    if (!DRE)
+      return "";
+    auto Arg = DRE->getNameInfo().getAsString();
     if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X")
       return "0";
     else if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y") {
@@ -1969,7 +1956,7 @@ std::function<bool(const CallExpr *C)> checkIsUSM() {
 
 std::function<bool(const CallExpr *C)> checkIsArgStream(size_t index) {
   return [=](const CallExpr *C) -> bool {
-    return !(isPredefinedStreamHandle(C->getArg(index)));
+    return !(isDefaultStream(C->getArg(index)));
   };
 }
 
@@ -2009,6 +1996,16 @@ std::function<bool(const CallExpr *C)> checkIsArgIntegerLiteral(size_t index) {
       }
     }
     return Arg2Expr->getStmtClass() == Stmt::IntegerLiteralClass;
+  };
+}
+
+std::function<bool(const CallExpr *)>
+checkArgCanMappingToSyclNativeBinaryOp(size_t ArgIdx) {
+  return [=](const CallExpr *C) -> bool {
+    const Expr *Arg = C->getArg(ArgIdx);
+    std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
+        Arg->getType().getCanonicalType());
+    return CubTypeRule::CanMappingToSyclNativeBinaryOp(TypeName);
   };
 }
 
@@ -2836,7 +2833,7 @@ public:
 class CheckCubRedundantFunctionCall {
 public:
   bool operator()(const CallExpr *C) {
-    return CubRule::isRedundantCallExpr(C);
+    return CubDeviceLevelRule::isRedundantCallExpr(C);
   }
 };
 
@@ -2851,7 +2848,7 @@ public:
 
 std::shared_ptr<CallExprRewriter>
 RemoveCubTempStorageFactory::create(const CallExpr *C) const {
-  CubRule::removeRedundantTempVar(C);
+  CubDeviceLevelRule::removeRedundantTempVar(C);
   return Inner->create(C);
 }
 

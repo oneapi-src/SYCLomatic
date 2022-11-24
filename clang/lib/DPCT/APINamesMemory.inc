@@ -310,6 +310,30 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
         "cuMemcpyHtoD_v2", CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
         ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic")))))
 
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    checkIsUSM(),
+    MEMBER_CALL_FACTORY_ENTRY(
+        "cuMemcpy", MEMBER_CALL(QUEUESTR, false, "memcpy", ARG(0), ARG(1), ARG(2)), false, "wait"),
+    CALL_FACTORY_ENTRY(
+        "cuMemcpy", CALL(MapNames::getDpctNamespace() + "dpct_memcpy",
+	ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic")))))
+
+ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+    checkIsUSM(),
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsArgStream(3),
+        MEMBER_CALL_FACTORY_ENTRY(
+            "cuMemcpyAsync", ARG(3), true, "memcpy", ARG(0), ARG(1), ARG(2)),
+        MEMBER_CALL_FACTORY_ENTRY(
+            "cuMemcpyAsync", QUEUESTR, false, "memcpy", ARG(0), ARG(1), ARG(2))),
+    CONDITIONAL_FACTORY_ENTRY(
+        checkIsArgStream(3),
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyAsync", CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
+            ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic"), STREAM(3))),
+        CALL_FACTORY_ENTRY(
+            "cuMemcpyAsync", CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
+            ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic"))))))
 
 CONDITIONAL_FACTORY_ENTRY(
     checkIsCallExprOnly(),

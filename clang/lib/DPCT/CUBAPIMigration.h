@@ -1,4 +1,4 @@
-//===--------------- CUBAPIMigration.h --------------------------------------------===//
+//===--------------- CUBAPIMigration.h-------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -10,46 +10,25 @@
 #define CLANG_DPCT_CUBAPIMIGRATION_H
 
 #include "ASTTraversal.h"
+#include "llvm/ADT/StringRef.h"
 
 namespace clang {
 namespace dpct {
 
-class CubRule : public NamedMigrationRule<CubRule> {
+class CubTypeRule : public NamedMigrationRule<CubTypeRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
-private:
-  struct ParamAssembler {
-    std::string &ParamListRef;
-    ParamAssembler(std::string &List) : ParamListRef(List){};
-    ParamAssembler &operator<<(std::string Param) {
-      if (Param.empty()) {
-        return *this;
-      }
-      if (ParamListRef.empty()) {
-        ParamListRef = Param;
-      } else {
-        ParamListRef += ", " + Param;
-      }
-      return *this;
-    };
-  };
-  static int PlaceholderIndex;
-  std::string getOpRepl(const Expr *Operator);
-  void processCubDeclStmt(const DeclStmt *DS);
-  void processCubTypeDef(const TypedefDecl *TD);
-  void processCubFuncCall(const CallExpr *CE, bool FuncCallUsed = false);
-  void processCubMemberCall(const CXXMemberCallExpr *MC);
-  void processTypeLoc(const TypeLoc *TL);
+  static bool CanMappingToSyclNativeBinaryOp(StringRef OpTypeName);
+  static bool CanMappingToSyclBinaryOp(StringRef OpTypeName);
+};
 
-  void processDeviceLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
-  void processThreadLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
-  void processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
-  void processBlockLevelMemberCall(const CXXMemberCallExpr *MC);
-  void processWarpLevelMemberCall(const CXXMemberCallExpr *MC);
-
+class CubDeviceLevelRule : public NamedMigrationRule<CubDeviceLevelRule> {
 public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+
   /// Pseudo code:
   /// loop_1 {
   ///   ...
@@ -93,6 +72,42 @@ public:
   /// (2) No modified reference in loop_j or deeper loop.
   /// The redundant callexpr can be remove safely.
   static void removeRedundantTempVar(const CallExpr *CE);
+};
+
+class CubRule : public NamedMigrationRule<CubRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+
+private:
+  struct ParamAssembler {
+    std::string &ParamListRef;
+    ParamAssembler(std::string &List) : ParamListRef(List){};
+    ParamAssembler &operator<<(std::string Param) {
+      if (Param.empty()) {
+        return *this;
+      }
+      if (ParamListRef.empty()) {
+        ParamListRef = Param;
+      } else {
+        ParamListRef += ", " + Param;
+      }
+      return *this;
+    };
+  };
+  static int PlaceholderIndex;
+  std::string getOpRepl(const Expr *Operator);
+  void processCubDeclStmt(const DeclStmt *DS);
+  void processCubTypeDef(const TypedefDecl *TD);
+  void processCubFuncCall(const CallExpr *CE, bool FuncCallUsed = false);
+  void processCubMemberCall(const CXXMemberCallExpr *MC);
+  void processTypeLoc(const TypeLoc *TL);
+
+  void processDeviceLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
+  void processThreadLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
+  void processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
+  void processBlockLevelMemberCall(const CXXMemberCallExpr *MC);
+  void processWarpLevelMemberCall(const CXXMemberCallExpr *MC);
 };
 
 } // namespace dpct

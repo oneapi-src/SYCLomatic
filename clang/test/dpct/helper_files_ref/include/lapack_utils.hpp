@@ -63,12 +63,11 @@ inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
   } catch (sycl::exception const& e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
-    info_val = -1;
     ret_val = 1;
   }
   queue.submit([&, info_val](sycl::handler &cgh) {
     auto info_acc = info_buf.get_access<sycl::access_mode::write>(cgh);
-    cgh.single_task<dpct_kernel_name<class sygvd_init_info, T>>(
+    cgh.single_task<dpct_kernel_name<class sygvd_set_info, T>>(
         [=]() { info_acc[0] = info_val; });
   });
   return ret_val;
@@ -87,8 +86,7 @@ inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
   } catch (sycl::exception const& e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
-    int info_val = -1;
-    queue.memcpy(info, &info_val, sizeof(int)).wait();
+    queue.memset(info, 0, sizeof(int)).wait();
     return 1;
   }
   queue.memset(info, 0, sizeof(int));
@@ -143,12 +141,11 @@ inline void hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
   } catch (sycl::exception const& e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
-    info_val = -1;
     ret_val = 1;
   }
   queue.submit([&, info_val](sycl::handler &cgh) {
     auto info_acc = info_buf.get_access<sycl::access_mode::write>(cgh);
-    cgh.single_task<dpct_kernel_name<class hegvd_init_info, T>>(
+    cgh.single_task<dpct_kernel_name<class hegvd_set_info, T>>(
         [=]() { info_acc[0] = info_val; });
   });
   return ret_val;
@@ -167,8 +164,7 @@ inline void hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
   } catch (sycl::exception const& e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
-    int info_val = -1;
-    queue.memcpy(info, &info_val, sizeof(int)).wait();
+    queue.memset(info, 0, sizeof(int)).wait();
     return 1;
   }
   queue.memset(info, 0, sizeof(int));
@@ -232,8 +228,7 @@ inline void potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   } catch (sycl::exception const &e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
-    std::vector<int> info_vec(group_size, -1);
-    queue.memcpy(info, info_vec.data(), group_size * sizeof(int)).wait();
+    queue.memset(info, 0, group_size * sizeof(int));
     if (scratchpad)
       sycl::free(scratchpad, queue);
     return 1;
@@ -315,8 +310,7 @@ inline void potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   } catch (sycl::exception const &e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
-    std::vector<int> info_vec(group_size, -1);
-    queue.memcpy(info, info_vec.data(), group_size * sizeof(int)).wait();
+    queue.memset(info, 0, group_size * sizeof(int));
     if (scratchpad)
       sycl::free(scratchpad, queue);
     return 1;
