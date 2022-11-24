@@ -6,6 +6,8 @@ import time
 import string
 
 output_file_suffix = '.md'
+keep_only_ask_once = False
+keep_file = True
 
 def get_user_answer(msg:str):
     msg += ' Are you sure? [y/n]'
@@ -18,18 +20,21 @@ def get_user_answer(msg:str):
 
 def get_output_filename(path_str:str,filename:str,keep_filename:bool):
     if keep_filename is True:
-        print("Output file is "+os.path.join(path_str,filename+output_file_suffix))
         return os.path.join(path_str,filename+output_file_suffix)
-    new_file_name=filename+time.strftime('%Y-%m-%d %H:%M:%S')+output_file_suffix
+    new_file_name=filename+'_'+time.strftime('%Y-%m-%d %H:%M:%S')+output_file_suffix
     return get_output_filename(path_str, new_file_name,True)
 
 
 def open_output_file(path_str:str,filename:str):
-    keep_file = True
+    global keep_only_ask_once
+    global keep_file
     filename_with_path = os.path.join(path_str,filename+output_file_suffix)
-    if os.path.exists(filename_with_path) is True:
-        keep_file = get_user_answer("Output file is existed, whether it can be overridden?")
-    filename_with_path = get_output_filename(path_str,filename,keep_file)
+    if os.path.exists(filename_with_path) is True :
+        if keep_only_ask_once is False:
+            keep_file = get_user_answer('output files is existed, whether it can be overridden?')
+            keep_only_ask_once = True
+        filename_with_path = get_output_filename(path_str,filename,keep_file)
+    print("Output file is "+filename_with_path)
     fout = open(filename_with_path,'w')
     return fout
 
@@ -46,33 +51,6 @@ def format_lib(lib_name:str,APIs_list:list):
     return lib_str
 
 
-
-def update_remove(file_lib:str,fout):
-    remove_help_msg = '_API calls from the original application, \
-    which do not have functionally compatible SYCL API calls are removed \
-        if the Intel® DPC++ Compatibility Tool determines \
-            that it should not affect the program logic._'
-    APIs_list=[]
-    with open(file_lib,'r') as flib:
-        for line in flib.readlines():
-            img_file = line.strip()
-            if(img_file=="" or img_file[0:5]!="ENTRY"):
-                continue
-            img_file=img_file.translate(str.maketrans('"()', ',,,'))
-            img_list=img_file.split(',')
-            API_list=[img_list[1]]
-            API_list.append("YES")
-            API_list.append(img_list[-3])
-            APIs_list.append(API_list)
-    lib_str = format_lib("removed API",APIs_list)
-    if(fout.writable()):
-        fout.write(lib_str)
-        fout.write(remove_help_msg)
-        return True
-    else:
-        warnings.warn("output file can not write, lost status information about removed")
-        return False
-
 def parse_macro_entry(line:str):
     line_list=line.split()
     API_list=[line_list[1]]
@@ -81,7 +59,7 @@ def parse_macro_entry(line:str):
     elif (line_list[3]=="false"):
         API_list.append("NO")
     else:
-        warnings.warn("internal error: can not tell whether API is supported")
+        warnings.warn("internal error: can not tell whether API is supported, please contact developer")
         API_list.append("UNKNOW")
     if(line_list[-1][0:4]== 'DPCT'):
         API_list.append(line_list[-1])
@@ -107,7 +85,8 @@ def parse_macro_entry_member_function(line:str):
 
 
 
-def update_lib(lib:str,file_lib:str,fout):
+def update_lib(lib:str,file_lib:str,output_path:str):
+    output_filename = lib+'_API_migration_status'
     APIs_list=[]
     with open(file_lib,'r') as flib:
         for line in flib.readlines():
@@ -121,32 +100,31 @@ def update_lib(lib:str,file_lib:str,fout):
                 API_list = parse_macro_entry(img_file)
             APIs_list.append(API_list)
     lib_str = format_lib(lib,APIs_list)
+    fout = open_output_file(output_path,output_filename)
     if(fout.writable()):
         fout.write(lib_str)
+        fout.close()
         return True
     else:
         warnings.warn("output file can not write, lost status information about "+lib)
+        fout.close()
         return False
 
 
 
 def do_update(args):
-    res = False
-    DPCT_tools_path = os.path.dirname(__file__)
-    DPCT_lib_path = os.path.join(DPCT_tools_path,'..','..','lib','DPCT')
+    res = True
     output_path = args.output_path
-    output_name = args.output_filename
+    SYCLomatic_path=args.SYClomatic_path
+    DPCT_lib_path = os.path.join(SYCLomatic_path,'clang','lib','DPCT')
     if os.path.exists(output_path) is False :
         warnings.warn("output path is not exist")
         return False
-    fout = open_output_file(output_path,output_name)
-    title_msg = '# The API Coverage Of DPC++ Compatibility Tools\n'
-    fout.write(title_msg)
-    lib_names = ['runtime and driver','CUB','cuBLAS','cuDNN','cuFFT','cuGRAPH','cuRAND','cuSOLVER','cuSPARSE','NCCL','nvJPEG','NVML','thrust','removed']
+    lib_names = ['runtime_and_driver','CUB','cuBLAS','cuDNN','cuFFT','cuGRAPH','cuRAND','cuSOLVER','cuSPARSE','NCCL','nvJPEG','NVML','thrust']
     # lib file name = APINames_$(libname).inc
     # runtime and drive is an exception
     for lib_name in lib_names:
-        if lib_name == 'runtime and driver':
+        if lib_name == 'runtime_and_driver':
             lib_record_file = 'APINames.inc'
         else:
             lib_record_file = 'APINames'+'_'+lib_name+'.inc'
@@ -154,12 +132,7 @@ def do_update(args):
         if os.path.exists(lib_file) is False :
             warnings.warn(lib_file+" is not exist")
             continue
-        if lib_name == "removed" :
-            update_remove(lib_file,fout)
-        else:
-            update_lib(lib_name,lib_file,fout)
-    fout.close()
-    res = True
+        res= res&update_lib(lib_name,lib_file,output_path)
     return res
 
 
@@ -168,10 +141,10 @@ def do_update(args):
 
 def main():
     parser = argparse.ArgumentParser(prog=os.path.basename(__file__),
-                                     description="A script to get the API coverage status in DPC++ Compatibility Tools",
+                                     description="A script to get the API migration status in DPC++ Compatibility Tools",
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--output-path",help="Set the path of the output file",default=os.path.dirname(__file__))
-    parser.add_argument("--output-filename",help="Set the name of the output file",default='DPCT_API_COVERAGE')
+    parser.add_argument("--output-path",help="Set the path of the output file",default=os.getcwd())
+    parser.add_argument("--SYClomatic-path",help="Set the path of the SYCLomatic",default=os.path.join(os.path.dirname(__file__),'..','..','..'))
 
     args = parser.parse_args()
     return do_update(args)
