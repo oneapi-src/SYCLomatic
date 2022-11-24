@@ -339,14 +339,13 @@ enum HeaderType {
   HT_Future,
   HT_Thread,
   HT_Numeric,
-  HT_MKL_BLAS_Solver,
-  HT_MKL_BLAS_Solver_Without_Util,
+  HT_MKL_Without_Util,
+  HT_MKL_BLAS,
+  HT_MKL_Solver,
+  HT_MKL_SPBLAS,
+  HT_MKL_FFT,
   HT_MKL_RNG,
   HT_MKL_RNG_Without_Util,
-  HT_MKL_SPBLAS,
-  HT_MKL_SPBLAS_Without_Util,
-  HT_MKL_FFT,
-  HT_MKL_FFT_Without_Util,
   HT_Chrono,
   HT_DL,
   HT_STD_Numeric_Limits,
@@ -1862,6 +1861,10 @@ public:
   }
   static bool useCAndCXXStandardLibrariesExt() {
     return getUsingExtensionDD(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
+  }
+
+  static bool useDeviceInfo() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
   }
 
   static bool getSpBLASUnsupportedMatrixTypeFlag() {
@@ -3713,6 +3716,7 @@ public:
     initTemplateArgumentList(TAList, Specialization);
   }
   static void processFunctionTypeLoc(const FunctionTypeLoc &);
+  static void processTemplateArgumentList(const TemplateArgumentListInfo &);
 
 private:
   void initTemplateArgumentList(const TemplateArgumentListInfo &TAList,

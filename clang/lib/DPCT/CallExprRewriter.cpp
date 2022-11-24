@@ -16,8 +16,10 @@
 #include "CUBAPIMigration.h"
 #include "clang/AST/Attr.h"
 #include "clang/AST/Expr.h"
+#include "clang/AST/Type.h"
 #include "clang/Basic/LangOptions.h"
 #include <cstdarg>
+#include <cstddef>
 
 extern std::string DpctInstallPath; // Installation directory for this tool
 namespace clang {
@@ -1658,9 +1660,12 @@ makeFuncNameFromDevAttrCreator(unsigned idx) {
   };
 }
 std::function<std::string(const CallExpr *)> getWorkGroupDim(unsigned index) {
-  return [=](const CallExpr * C) {
-    auto Arg = dyn_cast<DeclRefExpr>(C->getArg(index)->
-                IgnoreImplicitAsWritten())->getNameInfo().getAsString();
+  return [=](const CallExpr *C) {
+    const auto *const DRE =
+        dyn_cast<DeclRefExpr>(C->getArg(index)->IgnoreImplicitAsWritten());
+    if (!DRE)
+      return "";
+    auto Arg = DRE->getNameInfo().getAsString();
     if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X")
       return "0";
     else if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y") {
@@ -1992,6 +1997,16 @@ std::function<bool(const CallExpr *C)> checkIsArgIntegerLiteral(size_t index) {
       }
     }
     return Arg2Expr->getStmtClass() == Stmt::IntegerLiteralClass;
+  };
+}
+
+std::function<bool(const CallExpr *)>
+checkArgCanMappingToSyclNativeBinaryOp(size_t ArgIdx) {
+  return [=](const CallExpr *C) -> bool {
+    const Expr *Arg = C->getArg(ArgIdx);
+    std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
+        Arg->getType().getCanonicalType());
+    return CubTypeRule::CanMappingToSyclNativeBinaryOp(TypeName);
   };
 }
 
@@ -2832,7 +2847,7 @@ public:
 class CheckCubRedundantFunctionCall {
 public:
   bool operator()(const CallExpr *C) {
-    return CubRule::isRedundantCallExpr(C);
+    return CubDeviceLevelRule::isRedundantCallExpr(C);
   }
 };
 
@@ -2856,7 +2871,7 @@ public:
 
 std::shared_ptr<CallExprRewriter>
 RemoveCubTempStorageFactory::create(const CallExpr *C) const {
-  CubRule::removeRedundantTempVar(C);
+  CubDeviceLevelRule::removeRedundantTempVar(C);
   return Inner->create(C);
 }
 
@@ -3389,6 +3404,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #include "APINamesCooperativeGroups.inc"
 #undef FUNCTION_CALL
 #undef CLASS_METHOD_CALL
+#include "APINamesCUSOLVER.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED

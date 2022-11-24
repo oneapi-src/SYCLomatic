@@ -51,6 +51,7 @@ std::map<std::string, MapNames::BLASGemmExTypeInfo>
 std::unordered_map<std::string, std::pair<std::string, std::string>>
     MapNames::MathTypeCastingMap;
 MapNames::MapTy MapNames::BLASComputingAPIWithRewriter;
+std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
 
 void MapNames::setExplicitNamespaceMap() {
 
@@ -182,7 +183,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"ushort3", std::make_shared<TypeNameRule>(getClNamespace() + "ushort3")},
       {"ushort4", std::make_shared<TypeNameRule>(getClNamespace() + "ushort4")},
       {"cublasHandle_t",
-       std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "queue_ptr",
+       HelperFeatureEnum::Device_typedef_queue_ptr)},
       {"cublasStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cublasStatus", std::make_shared<TypeNameRule>("int")},
       {"cublasGemmAlgo_t", std::make_shared<TypeNameRule>("int")},
@@ -1527,6 +1529,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"}};
+
+  SOLVERAPIWithRewriter = {"cusolverDnSsygvd",
+                           "cusolverDnSsygvd_bufferSize"};
 
   // This map now is only used to migrate using declaration
   MathFuncNameMap = {

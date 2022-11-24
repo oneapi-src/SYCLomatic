@@ -887,19 +887,16 @@ void IncludesCallbacks::InclusionDirective(
     DpctGlobalInfo::getInstance().setAlgorithmHeaderInserted(HashLoc, true);
   }
 
-  // Replace with
-  // <mkl_blas_sycl.hpp>, <mkl_lapack_sycl.hpp> and <mkl_sycl_types.hpp>
   if ((FileName.compare(StringRef("cublas_v2.h")) == 0) ||
-      (FileName.compare(StringRef("cublas.h")) == 0) ||
-      (FileName.compare(StringRef("cusolverDn.h")) == 0)) {
+      (FileName.compare(StringRef("cublas.h")) == 0)) {
     if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_BLAS_Solver);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_BLAS);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(
-          HashLoc, HT_MKL_BLAS_Solver_Without_Util);
+          HashLoc, HT_MKL_Without_Util);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -941,7 +938,7 @@ void IncludesCallbacks::InclusionDirective(
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_SPBLAS);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_SPBLAS_Without_Util);
+                                                 HT_MKL_Without_Util);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -961,7 +958,27 @@ void IncludesCallbacks::InclusionDirective(
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_FFT);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_FFT_Without_Util);
+                                                 HT_MKL_Without_Util);
+    }
+
+    DpctGlobalInfo::setMKLHeaderUsed(true);
+
+    TransformSet.emplace_back(new ReplaceInclude(
+        CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
+                        /*IsTokenRange=*/false),
+        ""));
+    Updater.update(false);
+  }
+
+  if (FileName.compare(StringRef("cusolverDn.h")) == 0) {
+    if (DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+            HelperFilesCustomizationLevel::HFCL_None ||
+        DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
+            HelperFilesCustomizationLevel::HFCL_All) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_Solver);
+    } else {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc,
+                                                 HT_MKL_Without_Util);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -2445,7 +2462,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cudaError", "curandStatus", "cublasStatus", "CUstream",
                   "CUstream_st", "thrust::complex", "thrust::device_vector",
                   "thrust::device_ptr", "thrust::device_reference",
-		  "thrust::host_vector", "cublasHandle_t",
+                  "thrust::host_vector", "cublasHandle_t",
                   "CUevent_st", "__half", "half", "__half2", "half2",
                   "cudaMemoryAdvise", "cudaError_enum", "cudaDeviceProp",
                   "cudaPitchedPtr", "thrust::counting_iterator",
@@ -3238,11 +3255,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     const FunctionDecl *FD = DpctGlobalInfo::findAncestor<FunctionDecl>(TL);
     if (FD &&
         (FD->hasAttr<CUDADeviceAttr>() || FD->hasAttr<CUDAGlobalAttr>())) {
-      if (TL->getType().getAsString().find("cublasHandle_t") !=
-          std::string::npos)
+      if (DpctGlobalInfo::getUnqualifiedTypeName(TL->getType()) == "cublasHandle_t") {
         report(BeginLoc, Diagnostics::HANDLE_IN_DEVICE, false, TypeStr);
+        return;
+      }
     }
-    
     if (VarD) {
       DD = VarD;
     } else if (FieldD) {
@@ -3251,18 +3268,18 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       DD = FD;
     }
 
-    if (TypeStr == "cufftHandle" || TypeStr == "::cufftHandle") {
-      if (TL->getType().isConstQualified()) {
-        clang::SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
-        if (SM.getDecomposedLoc(EndLoc).second >= SM.getDecomposedLoc(BeginLoc).second) {
-          processConstFFTHandleType(DD, BeginLoc, EndLoc,
-                                    TypeStr == "::cufftHandle");
-          return;
+    if (DD) {
+      if (TypeStr == "cufftHandle" || TypeStr == "::cufftHandle") {
+        if (TL->getType().isConstQualified()) {
+          clang::SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
+          if (SM.getDecomposedLoc(EndLoc).second >= SM.getDecomposedLoc(BeginLoc).second) {
+            processConstFFTHandleType(DD, BeginLoc, EndLoc,
+                                      TypeStr == "::cufftHandle");
+            return;
+          }
         }
       }
-    }
 
-    if (DD) {
       if (TL->getType().getCanonicalType()->isPointerType()) {
         const auto *PtrTy =
             TL->getType().getCanonicalType()->getAs<PointerType>();
@@ -7259,7 +7276,8 @@ void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusolverDnDsyevd_bufferSize", "cusolverDnSsyevd_bufferSize",
         "cusolverDnCheevd_bufferSize", "cusolverDnZheevd_bufferSize",
         "cusolverDnDsyevd", "cusolverDnSsyevd", "cusolverDnCheevd",
-        "cusolverDnZheevd");
+        "cusolverDnZheevd",
+        "cusolverDnSsygvd", "cusolverDnSsygvd_bufferSize");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
@@ -7400,7 +7418,13 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
   }
 
-  if (MapNames::SOLVERFuncReplInfoMap.find(FuncName) !=
+  if (MapNames::SOLVERAPIWithRewriter.find(FuncName) !=
+      MapNames::SOLVERAPIWithRewriter.end()) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  } else if (MapNames::SOLVERFuncReplInfoMap.find(FuncName) !=
       MapNames::SOLVERFuncReplInfoMap.end()) {
     // Find replacement string
     auto ReplInfoPair = MapNames::SOLVERFuncReplInfoMap.find(FuncName);
@@ -10165,8 +10189,15 @@ bool MemVarRule::currentIsDevice(const VarDecl *MemVar,
       // replacement
       Info->setIgnoreFlag(false);
       TM->setIgnoreTM(true);
-      auto RVD = ReplaceVarDecl::getVarDeclReplacement(
-          MemVar, Info->getDeclarationReplacement(MemVar));
+      auto ReplaceStr = Info->getDeclarationReplacement(MemVar);
+      auto SourceFileType = GetSourceFileType(Info->getFilePath());
+      if ((SourceFileType == SPT_CudaHeader ||
+           SourceFileType == SPT_CppHeader) &&
+          !Info->isStatic()) {
+        ReplaceStr = "inline " + ReplaceStr;
+      }
+      auto RVD =
+          ReplaceVarDecl::getVarDeclReplacement(MemVar, std::move(ReplaceStr));
       if (!RVD)
         return true;
       RVD->setConstantFlag(TM->getConstantFlag());
@@ -11516,47 +11547,68 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
     emplaceTransformation(new ReplaceStmt(C, OS.str()));
     requestFeature(HelperFeatureEnum::Image_image_matrix_get_channel, C);
   } else if (Name == "cuMemGetInfo_v2" || Name == "cudaMemGetInfo") {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    std::ostringstream OS;
-    if (IsAssigned)
+    if (DpctGlobalInfo::useDeviceInfo()) {
+      std::ostringstream OS;
+      if (IsAssigned)
+        OS << "(";
+      OS << MapNames::getDpctNamespace() + "get_current_device().get_memory_info";
       OS << "(";
-    auto SecArg = C->getArg(1);
-    printDerefOp(OS, SecArg);
-    OS << " = " << MapNames::getDpctNamespace()
-       << "get_current_device().get_device_info()"
-          ".get_global_mem_size()";
-    requestFeature(HelperFeatureEnum::Device_get_current_device, C);
-    requestFeature(
-        HelperFeatureEnum::Device_device_ext_get_device_info_return_info, C);
-    requestFeature(HelperFeatureEnum::Device_device_info_get_global_mem_size,
-                   C);
-    if (IsAssigned) {
-      OS << ", 0)";
-      report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      printDerefOp(OS, C->getArg(0));
+      OS << ", ";
+      printDerefOp(OS, C->getArg(1));
+      OS << ")";
+
+      emplaceTransformation(new ReplaceStmt(C, OS.str()));
+      if (IsAssigned) {
+        OS << ", 0)";
+        report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      }
+      emplaceTransformation(new ReplaceStmt(C, OS.str()));
+      requestFeature(HelperFeatureEnum::Device_device_ext_get_memory_info, C);
+    } else {
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      std::ostringstream OS;
+      if (IsAssigned)
+        OS << "(";
+
+      auto SecondArg = C->getArg(1);
+      printDerefOp(OS, SecondArg);
+      OS << " = " << MapNames::getDpctNamespace()
+         << "get_current_device().get_device_info()"
+            ".get_global_mem_size()";
+      requestFeature(HelperFeatureEnum::Device_get_current_device, C);
+      requestFeature(
+          HelperFeatureEnum::Device_device_ext_get_device_info_return_info, C);
+      requestFeature(HelperFeatureEnum::Device_device_info_get_global_mem_size,
+                     C);
+      if (IsAssigned) {
+        OS << ", 0)";
+        report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      }
+      SourceLocation CallBegin(C->getBeginLoc());
+      SourceLocation CallEnd(C->getEndLoc());
+
+      bool IsMacroArg =
+          SM.isMacroArgExpansion(CallBegin) && SM.isMacroArgExpansion(CallEnd);
+
+      if (CallBegin.isMacroID() && IsMacroArg) {
+        CallBegin = SM.getImmediateSpellingLoc(CallBegin);
+        CallBegin = SM.getExpansionLoc(CallBegin);
+      } else if (CallBegin.isMacroID()) {
+        CallBegin = SM.getExpansionLoc(CallBegin);
+      }
+
+      if (CallEnd.isMacroID() && IsMacroArg) {
+        CallEnd = SM.getImmediateSpellingLoc(CallEnd);
+        CallEnd = SM.getExpansionLoc(CallEnd);
+      } else if (CallEnd.isMacroID()) {
+        CallEnd = SM.getExpansionLoc(CallEnd);
+      }
+      CallEnd = CallEnd.getLocWithOffset(1);
+
+      emplaceTransformation(replaceText(CallBegin, CallEnd, OS.str(), SM));
+      report(C->getBeginLoc(), Diagnostics::UNSUPPORT_FREE_MEMORY_SIZE, false);
     }
-    SourceLocation CallBegin(C->getBeginLoc());
-    SourceLocation CallEnd(C->getEndLoc());
-
-    bool IsMacroArg =
-        SM.isMacroArgExpansion(CallBegin) && SM.isMacroArgExpansion(CallEnd);
-
-    if (CallBegin.isMacroID() && IsMacroArg) {
-      CallBegin = SM.getImmediateSpellingLoc(CallBegin);
-      CallBegin = SM.getExpansionLoc(CallBegin);
-    } else if (CallBegin.isMacroID()) {
-      CallBegin = SM.getExpansionLoc(CallBegin);
-    }
-
-    if (CallEnd.isMacroID() && IsMacroArg) {
-      CallEnd = SM.getImmediateSpellingLoc(CallEnd);
-      CallEnd = SM.getExpansionLoc(CallEnd);
-    } else if (CallEnd.isMacroID()) {
-      CallEnd = SM.getExpansionLoc(CallEnd);
-    }
-    CallEnd = CallEnd.getLocWithOffset(1);
-
-    emplaceTransformation(replaceText(CallBegin, CallEnd, OS.str(), SM));
-    report(C->getBeginLoc(), Diagnostics::UNSUPPORT_FREE_MEMORY_SIZE, false);
   } else {
     auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(Name);
     if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
@@ -11684,7 +11736,7 @@ void MemoryMigrationRule::registerMatcher(MatchFinder &MF) {
         "cuMemcpyDtoD_v2", "cuMemAllocPitch_v2", "cuMemPrefetchAsync",
         "cuMemFree_v2", "cuDeviceTotalMem_v2", "cuMemHostGetFlags",
         "cuMemHostRegister_v2", "cuMemHostUnregister",
-	"cuMemcpy", "cuMemcpyAsync");
+        "cuMemcpy", "cuMemcpyAsync");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(memoryAPI())), parentStmt()))
@@ -11772,8 +11824,8 @@ void MemoryMigrationRule::runRule(const MatchFinder::MatchResult &Result) {
         Name.compare("cuMemHostRegister_v2") &&
         Name.compare("cudaHostGetFlags") &&
         Name.compare("cuMemHostGetFlags") &&
-	Name.compare("cuMemcpy") &&
-	Name.compare("cuMemcpyAsync")) {
+        Name.compare("cuMemcpy") &&
+        Name.compare("cuMemcpyAsync")) {
       report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       insertAroundStmt(C, "(", ", 0)");
     } else if (IsAssigned && !Name.compare("cudaMemAdvise") &&
@@ -11911,8 +11963,8 @@ MemoryMigrationRule::MemoryMigrationRule() {
           {"cuMemGetInfo_v2", &MemoryMigrationRule::miscMigration},
           {"cudaMemGetInfo", &MemoryMigrationRule::miscMigration},
           {"cuDeviceTotalMem_v2", &MemoryMigrationRule::miscMigration},
-	  {"cuMemcpy", &MemoryMigrationRule::memcpyMigration},
-	  {"cuMemcpyAsync", &MemoryMigrationRule::memcpyMigration}};
+          {"cuMemcpy", &MemoryMigrationRule::memcpyMigration},
+          {"cuMemcpyAsync", &MemoryMigrationRule::memcpyMigration}};
 
   for (auto &P : Dispatcher)
     MigrationDispatcher[P.first] =
@@ -15388,9 +15440,6 @@ void TemplateSpecializationTypeLocRule::registerMatcher(
     ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
     return hasAnyName("thrust::not_equal_to", "thrust::constant_iterator",
-                      "cub::CountingInputIterator",
-                      "cub::TransformInputIterator",
-                      "cub::ConstantInputIterator",
                       "thrust::system::cuda::experimental::pinned_allocator");
   };
 

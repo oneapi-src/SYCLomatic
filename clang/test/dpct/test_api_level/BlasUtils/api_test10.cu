@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/BlasUtils/api_test10_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/BlasUtils/api_test10_out
 
-// CHECK: 36
+// CHECK: 37
 
 #include "cublas_v2.h"
 

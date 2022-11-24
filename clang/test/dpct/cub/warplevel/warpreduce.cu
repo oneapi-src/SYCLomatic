@@ -32,7 +32,7 @@ void print_data(int* data, int num) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::ext::oneapi::plus<>());
+//CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::plus<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void SumKernel(int* data) {
@@ -55,7 +55,7 @@ __global__ void SumKernel(int* data) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int input = data[threadid];
 //CHECK-NEXT:  int output = 0;
-//CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::ext::oneapi::plus<>());
+//CHECK-NEXT:  output = sycl::reduce_over_group(item_ct1.get_sub_group(), input, sycl::plus<>());
 //CHECK-NEXT:  data[threadid] = output;
 //CHECK-NEXT:}
 __global__ void ReduceKernel(int* data) {

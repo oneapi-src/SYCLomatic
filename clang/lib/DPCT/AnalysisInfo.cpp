@@ -583,13 +583,17 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
       return insertHeader(HeaderType::HT_Dnnl, FirstIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
                               "/dnnl_utils.hpp>");
-    case HT_MKL_BLAS_Solver:
+    case HT_MKL_Without_Util:
       return insertHeader(
-          HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          HeaderType::HT_MKL_Without_Util, LastIncludeOffset, "<oneapi/mkl.hpp>");
+    case HT_MKL_BLAS:
+      return insertHeader(
+          HeaderType::HT_MKL_BLAS, LastIncludeOffset, "<oneapi/mkl.hpp>",
           "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
-    case HT_MKL_BLAS_Solver_Without_Util:
-      return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>");
+    case HT_MKL_Solver:
+      return insertHeader(HeaderType::HT_MKL_Solver, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>",
+          "<" + getCustomMainHelperFileName() + "/lapack_utils.hpp>");
     case HT_MKL_RNG:
       return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
                           "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>",
@@ -600,18 +604,12 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
                           "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>");
     case HT_MKL_SPBLAS:
       return insertHeader(
-          HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          HeaderType::HT_MKL_BLAS, LastIncludeOffset, "<oneapi/mkl.hpp>",
           "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
-    case HT_MKL_SPBLAS_Without_Util:
-      return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>");
     case HT_MKL_FFT:
       return insertHeader(
           HeaderType::HT_MKL_FFT, LastIncludeOffset, "<oneapi/mkl.hpp>",
           "<" + getCustomMainHelperFileName() + "/fft_utils.hpp>");
-    case HT_MKL_FFT_Without_Util:
-      return insertHeader(
-          HeaderType::HT_MKL_FFT_Without_Util, LastIncludeOffset, "<oneapi/mkl.hpp>");
     case HT_Numeric:
       return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
                           "<numeric>");
@@ -2236,17 +2234,6 @@ std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,
 void ExplicitInstantiationDecl::initTemplateArgumentList(
     const TemplateArgumentListInfo &TAList,
     const FunctionDecl *Specialization) {
-  ExprAnalysis EA;
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  for (auto &ArgLoc : TAList.arguments()) {
-    EA.analyze(ArgLoc);
-    if (EA.hasReplacement()) {
-      DpctGlobalInfo::getInstance().addReplacement(
-          std::make_shared<ExtReplacement>(SM, &ArgLoc, EA.getReplacedString(),
-                                           nullptr));
-    }
-  }
-
   if (Specialization->getTemplateSpecializationArgs() == nullptr)
     return;
   for (auto &Arg : Specialization->getTemplateSpecializationArgs()->asArray()) {
@@ -2285,6 +2272,17 @@ void ExplicitInstantiationDecl::processFunctionTypeLoc(
   processTypeLoc(FTL.getReturnLoc(), EA, SM);
   for (const auto &Parm : FTL.getParams()) {
     processTypeLoc(Parm->getTypeSourceInfo()->getTypeLoc(), EA, SM);
+  }
+}
+
+void ExplicitInstantiationDecl::processTemplateArgumentList(
+    const TemplateArgumentListInfo &TAList) {
+  ExprAnalysis EA;
+  for (const clang::TemplateArgumentLoc &ArgLoc : TAList.arguments()) {
+    EA.analyze(ArgLoc);
+    if (EA.hasReplacement())
+      DpctGlobalInfo::getInstance().addReplacement(
+          EA.getReplacement()->getReplacement(DpctGlobalInfo::getContext()));    
   }
 }
 
@@ -2488,12 +2486,12 @@ void DeviceFunctionDeclInModule::buildCallInfo(const FunctionDecl *FD) {
 
 bool isModuleFunction(const FunctionDecl *FD) {
   auto &SM = DpctGlobalInfo::getSourceManager();
-  if (DpctGlobalInfo::getModuleFiles().find(
+  return
+    FD->getLanguageLinkage() == CLanguageLinkage
+    && FD->hasAttr<CUDAGlobalAttr>()
+    && DpctGlobalInfo::getModuleFiles().find(
           DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(FD->getBeginLoc()))
-              .first) != DpctGlobalInfo::getModuleFiles().end()) {
-    return true;
-  }
-  return false;
+              .first) != DpctGlobalInfo::getModuleFiles().end();
 }
 
 DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,

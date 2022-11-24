@@ -369,6 +369,7 @@ void generateAllHelperFiles() {
   GENERATE_ALL_FILE_CONTENT(LibCommonUtils)
   GENERATE_ALL_FILE_CONTENT(CclUtils)
   GENERATE_ALL_FILE_CONTENT(FftUtils)
+  GENERATE_ALL_FILE_CONTENT(LapackUtils)
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasAlgorithm)
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasFunctional)
   GENERATE_DPL_EXTRAS_ALL_FILE_CONTENT(DplExtrasIterators)
@@ -465,6 +466,7 @@ void generateHelperFunctions() {
   std::vector<clang::dpct::HelperFunc> LibCommonUtilsFileContent;
   std::vector<clang::dpct::HelperFunc> CclUtilsFileContent;
   std::vector<clang::dpct::HelperFunc> FftUtilsFileContent;
+  std::vector<clang::dpct::HelperFunc> LapackUtilsFileContent;
   std::vector<clang::dpct::HelperFunc> DplExtrasAlgorithmFileContent;
   std::vector<clang::dpct::HelperFunc> DplExtrasFunctionalFileContent;
   std::vector<clang::dpct::HelperFunc> DplExtrasIteratorsFileContent;
@@ -580,6 +582,7 @@ void generateHelperFunctions() {
       UPDATE_FILE(LibCommonUtils)
       UPDATE_FILE(CclUtils)
       UPDATE_FILE(FftUtils)
+      UPDATE_FILE(LapackUtils)
       UPDATE_FILE(DplExtrasAlgorithm)
       UPDATE_FILE(DplExtrasFunctional)
       UPDATE_FILE(DplExtrasIterators)
@@ -677,6 +680,7 @@ void generateHelperFunctions() {
   ADD_INCLUDE_DIRECTIVE(LibCommonUtils)
   ADD_INCLUDE_DIRECTIVE(CclUtils)
   ADD_INCLUDE_DIRECTIVE(FftUtils)
+  ADD_INCLUDE_DIRECTIVE(LapackUtils)
 #undef ADD_INCLUDE_DIRECTIVE
 
   auto Item = HelperNameContentMap.at(std::make_pair(
@@ -721,6 +725,7 @@ void generateHelperFunctions() {
   GENERATE_FILE(LibCommonUtils)
   GENERATE_FILE(CclUtils)
   GENERATE_FILE(FftUtils)
+  GENERATE_FILE(LapackUtils)
   GENERATE_DPL_EXTRAS_FILE(DplExtrasAlgorithm)
   GENERATE_DPL_EXTRAS_FILE(DplExtrasFunctional)
   GENERATE_DPL_EXTRAS_FILE(DplExtrasIterators)
@@ -932,6 +937,7 @@ std::map<HelperFeatureIDTy, clang::dpct::HelperFunc> HelperNameContentMap {
 #include "clang/DPCT/kernel.inc"
 #include "clang/DPCT/lib_common_utils.inc"
 #include "clang/DPCT/fft_utils.inc"
+#include "clang/DPCT/lapack_utils.inc"
 #include "clang/DPCT/memory.inc"
 #include "clang/DPCT/rng_utils.inc"
 #include "clang/DPCT/util.inc"
@@ -955,6 +961,7 @@ std::unordered_map<clang::dpct::HelperFileEnum, std::string> HelperFileNameMap{
     {clang::dpct::HelperFileEnum::LibCommonUtils, "lib_common_utils.hpp"},
     {clang::dpct::HelperFileEnum::CclUtils, "ccl_utils.hpp"},
     {clang::dpct::HelperFileEnum::FftUtils, "fft_utils.hpp"},
+    {clang::dpct::HelperFileEnum::LapackUtils, "lapack_utils.hpp"},
     {clang::dpct::HelperFileEnum::DplExtrasAlgorithm, "algorithm.h"},
     {clang::dpct::HelperFileEnum::DplExtrasFunctional, "functional.h"},
     {clang::dpct::HelperFileEnum::DplExtrasIterators, "iterators.h"},
@@ -979,6 +986,7 @@ std::unordered_map<std::string, clang::dpct::HelperFileEnum> HelperFileIDMap{
     {"lib_common_utils.hpp", clang::dpct::HelperFileEnum::LibCommonUtils},
     {"ccl_utils.hpp", clang::dpct::HelperFileEnum::CclUtils},
     {"fft_utils.hpp", clang::dpct::HelperFileEnum::FftUtils},
+    {"lapack_utils.hpp", clang::dpct::HelperFileEnum::LapackUtils},
     {"algorithm.h", clang::dpct::HelperFileEnum::DplExtrasAlgorithm},
     {"functional.h", clang::dpct::HelperFileEnum::DplExtrasFunctional},
     {"iterators.h", clang::dpct::HelperFileEnum::DplExtrasIterators},
@@ -1005,6 +1013,7 @@ const std::unordered_map<clang::dpct::HelperFileEnum, std::string>
          "__DPCT_LIB_COMMON_UTILS_HPP__"},
         {clang::dpct::HelperFileEnum::CclUtils, "__DPCT_CCL_UTILS_HPP__"},
         {clang::dpct::HelperFileEnum::FftUtils, "__DPCT_FFT_UTILS_HPP__"},
+        {clang::dpct::HelperFileEnum::LapackUtils, "__DPCT_LAPACK_UTILS_HPP__"},
         {clang::dpct::HelperFileEnum::DplExtrasAlgorithm,
          "__DPCT_ALGORITHM_H__"},
         {clang::dpct::HelperFileEnum::DplExtrasFunctional,
@@ -1067,6 +1076,9 @@ const std::string CclUtilsAllContentStr =
     ;
 const std::string FftUtilsAllContentStr =
 #include "clang/DPCT/fft_utils.all.inc"
+    ;
+const std::string LapackUtilsAllContentStr =
+#include "clang/DPCT/lapack_utils.all.inc"
     ;
 const std::string DplExtrasAlgorithmAllContentStr =
 #include "clang/DPCT/dpl_extras/algorithm.all.inc"

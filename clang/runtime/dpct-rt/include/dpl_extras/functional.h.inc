@@ -54,6 +54,12 @@
 // DPCT_CODE
 // DPCT_LABEL_END
 
+#ifdef __NVCC__
+#define CONSTEXPR_IF_NOT_NVCC
+#else // __NVCC__
+#define CONSTEXPR_IF_NOT_NVCC constexpr
+#endif // __NVCC__
+
 namespace dpct {
 
 namespace internal {
@@ -399,6 +405,98 @@ private:
   BinaryOperation op;
 };
 // DPCT_LABEL_END
+
+// This following code is similar to a section of code in
+// oneDPL/include/oneapi/dpl/pstl/hetero/dpcpp/parallel_backend_sycl_radix_sort.h
+// It has a similar approach, and could be consolidated.
+// Outside of some differences in approach, there are two significant
+// differences in function.
+//
+// 1) This code allows the output type of the bit range translation to be fit
+// into to the minimal type required to provide that many bits. The code in
+// oneDPL to calculate the bucket for the radix is similar but its output is
+// always std::uint32_t.  The assumption that the bit range desired will fit in
+// 32 bits is not true for this code.
+//
+// 2) This code ensures that for floating point type, -0.0f and 0.0f map to the
+// same value.  This allows the output of this translation to be used to provide
+// a sort which ensures the stability of these values for floating point types.
+
+// DPCT_LABEL_BEGIN|uint_byte_map|dpct::internal
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+template <int N> struct uint_byte_map {};
+template <> struct uint_byte_map<1> { using type = uint8_t; };
+template <> struct uint_byte_map<2> { using type = uint16_t; };
+template <> struct uint_byte_map<4> { using type = uint32_t; };
+template <> struct uint_byte_map<8> { using type = uint64_t; };
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|uint_map|dpct::internal
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasFunctional|uint_byte_map
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T> struct uint_map {
+  using type = typename uint_byte_map<sizeof(T)>::type;
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|translate_key|dpct::internal
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasFunctional|uint_map
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename T, typename OutKeyT> class translate_key {
+  using uint_type_t = typename uint_map<T>::type;
+
+public:
+  translate_key(int begin_bit, int end_bit) {
+    shift = begin_bit;
+    mask = ~OutKeyT(0); // all ones
+    mask = mask >> (sizeof(OutKeyT) * 8 -
+                    (end_bit - begin_bit));           // setup appropriate mask
+    flip_sign = 1UL << (sizeof(uint_type_t) * 8 - 1); // sign bit
+    flip_key = ~uint_type_t(0);                       // 0xF...F
+  }
+
+  inline OutKeyT operator()(const T &key) const {
+    uint_type_t intermediate;
+    if
+      CONSTEXPR_IF_NOT_NVCC(std::is_floating_point<T>::value) {
+        // normal case (both -0.0f and 0.0f equal -0.0f)
+        if (key != T(-0.0f)) {
+          uint_type_t is_negative =
+              reinterpret_cast<const uint_type_t &>(key) >>
+              (sizeof(uint_type_t) * 8 - 1);
+          intermediate = reinterpret_cast<const uint_type_t &>(key) ^
+                         ((is_negative * flip_key) | flip_sign);
+        } else // special case for -0.0f to keep stability with 0.0f
+        {
+          T negzero = T(-0.0f);
+          intermediate = reinterpret_cast<const uint_type_t &>(negzero);
+        }
+      }
+    else if
+      CONSTEXPR_IF_NOT_NVCC(std::is_signed<T>::value) {
+        intermediate = reinterpret_cast<const uint_type_t &>(key) ^ flip_sign;
+      }
+    else {
+      intermediate = key;
+    }
+
+    return static_cast<OutKeyT>(intermediate >> shift) &
+           mask; // shift, cast, and mask
+  }
+
+private:
+  uint8_t shift;
+  OutKeyT mask;
+  uint_type_t flip_sign;
+  uint_type_t flip_key;
+};
+// DPCT_LABEL_END
+
 } // end namespace internal
 
 } // end namespace dpct
