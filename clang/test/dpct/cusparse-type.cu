@@ -26,11 +26,11 @@ int main(){
   a3 = CUSPARSE_INDEX_BASE_ZERO;
   a3 = CUSPARSE_INDEX_BASE_ONE;
 
-  //CHECK: int a4;
-  //CHECK-NEXT: a4 = 0;
-  //CHECK-NEXT: a4 = 1;
-  //CHECK-NEXT: a4 = 2;
-  //CHECK-NEXT: a4 = 3;
+  //CHECK: dpct::sparse::sparse_matrix_info::matrix_type a4;
+  //CHECK-NEXT: a4 = dpct::sparse::sparse_matrix_info::matrix_type::ge;
+  //CHECK-NEXT: a4 = dpct::sparse::sparse_matrix_info::matrix_type::sy;
+  //CHECK-NEXT: a4 = dpct::sparse::sparse_matrix_info::matrix_type::he;
+  //CHECK-NEXT: a4 = dpct::sparse::sparse_matrix_info::matrix_type::tr;
   cusparseMatrixType_t a4;
   a4 = CUSPARSE_MATRIX_TYPE_GENERAL;
   a4 = CUSPARSE_MATRIX_TYPE_SYMMETRIC;
@@ -70,9 +70,9 @@ int main(){
   a6 = CUSPARSE_STATUS_ZERO_PIVOT;
 
 #define VAL(x) NULL
-  //CHECK: oneapi::mkl::index_base a7;
-  //CHECK-NEXT: oneapi::mkl::index_base descrL;
-  //CHECK-NEXT: oneapi::mkl::index_base descrU;
+  //CHECK: std::shared_ptr<dpct::sparse::sparse_matrix_info> a7;
+  //CHECK-NEXT: std::shared_ptr<dpct::sparse::sparse_matrix_info> descrL=VAL(1);
+  //CHECK-NEXT: std::shared_ptr<dpct::sparse::sparse_matrix_info> descrU=NULL;
   cusparseMatDescr_t a7;
   cusparseMatDescr_t descrL=VAL(1);
   cusparseMatDescr_t descrU=NULL;
@@ -84,10 +84,10 @@ int main(){
 //CHECK: void foo(oneapi::mkl::uplo a1,
 //CHECK-NEXT:     oneapi::mkl::diag a2,
 //CHECK-NEXT:     oneapi::mkl::index_base a3,
-//CHECK-NEXT:     int a4,
+//CHECK-NEXT:     dpct::sparse::sparse_matrix_info::matrix_type a4,
 //CHECK-NEXT:     oneapi::mkl::transpose a5,
 //CHECK-NEXT:     int a6,
-//CHECK-NEXT:     oneapi::mkl::index_base a7,
+//CHECK-NEXT:     std::shared_ptr<dpct::sparse::sparse_matrix_info> a7,
 //CHECK-NEXT:     sycl::queue* a8);
 void foo(cusparseFillMode_t a1,
          cusparseDiagType_t a2,
@@ -101,10 +101,10 @@ void foo(cusparseFillMode_t a1,
 //CHECK:oneapi::mkl::uplo foo1();
 //CHECK-NEXT:oneapi::mkl::diag foo2();
 //CHECK-NEXT:oneapi::mkl::index_base foo3();
-//CHECK-NEXT:int foo4();
+//CHECK-NEXT:dpct::sparse::sparse_matrix_info::matrix_type foo4();
 //CHECK-NEXT:oneapi::mkl::transpose foo5();
 //CHECK-NEXT:int foo6();
-//CHECK-NEXT:oneapi::mkl::index_base foo7();
+//CHECK-NEXT:std::shared_ptr<dpct::sparse::sparse_matrix_info> foo7();
 //CHECK-NEXT:sycl::queue* foo8();
 cusparseFillMode_t foo1();
 cusparseDiagType_t foo2();
@@ -119,10 +119,10 @@ cusparseHandle_t foo8();
 //CHECK-NEXT:void bar1(oneapi::mkl::uplo a1,
 //CHECK-NEXT:          oneapi::mkl::diag a2,
 //CHECK-NEXT:          oneapi::mkl::index_base a3,
-//CHECK-NEXT:          int a4,
+//CHECK-NEXT:          dpct::sparse::sparse_matrix_info::matrix_type a4,
 //CHECK-NEXT:          oneapi::mkl::transpose a5,
 //CHECK-NEXT:          int a6,
-//CHECK-NEXT:          oneapi::mkl::index_base a7,
+//CHECK-NEXT:          std::shared_ptr<dpct::sparse::sparse_matrix_info> a7,
 //CHECK-NEXT:          sycl::queue* a8){}
 template<typename T>
 void bar1(cusparseFillMode_t a1,
@@ -138,10 +138,10 @@ void bar1(cusparseFillMode_t a1,
 //CHECK-NEXT:void bar2(oneapi::mkl::uplo a1,
 //CHECK-NEXT:          oneapi::mkl::diag a2,
 //CHECK-NEXT:          oneapi::mkl::index_base a3,
-//CHECK-NEXT:          int a4,
+//CHECK-NEXT:          dpct::sparse::sparse_matrix_info::matrix_type a4,
 //CHECK-NEXT:          oneapi::mkl::transpose a5,
 //CHECK-NEXT:          int a6,
-//CHECK-NEXT:          oneapi::mkl::index_base a7,
+//CHECK-NEXT:          std::shared_ptr<dpct::sparse::sparse_matrix_info> a7,
 //CHECK-NEXT:          sycl::queue* a8){}
 template<typename T>
 void bar2(cusparseFillMode_t a1,
@@ -158,10 +158,10 @@ void bar2(cusparseFillMode_t a1,
 //CHECK-NEXT:void bar2<double>(oneapi::mkl::uplo a1,
 //CHECK-NEXT:             oneapi::mkl::diag a2,
 //CHECK-NEXT:             oneapi::mkl::index_base a3,
-//CHECK-NEXT:             int a4,
+//CHECK-NEXT:             dpct::sparse::sparse_matrix_info::matrix_type a4,
 //CHECK-NEXT:             oneapi::mkl::transpose a5,
 //CHECK-NEXT:             int a6,
-//CHECK-NEXT:             oneapi::mkl::index_base a7,
+//CHECK-NEXT:             std::shared_ptr<dpct::sparse::sparse_matrix_info> a7,
 //CHECK-NEXT:             sycl::queue* a8){}
 template<>
 void bar2<double>(cusparseFillMode_t a1,
@@ -174,9 +174,14 @@ void bar2<double>(cusparseFillMode_t a1,
                   cusparseHandle_t a8){}
 
 
-//explicit instantiation
-//TODO: Since the parameter location of the explicit instantiation is same as the parameter in the primary template,
-//tool currently cannot cover this case.
+//CHECK: template void bar2<int>(oneapi::mkl::uplo a1,
+//CHECK-NEXT:                   oneapi::mkl::diag a2,
+//CHECK-NEXT:                   oneapi::mkl::index_base a3,
+//CHECK-NEXT:                   dpct::sparse::sparse_matrix_info::matrix_type a4,
+//CHECK-NEXT:                   oneapi::mkl::transpose a5,
+//CHECK-NEXT:                   int a6,
+//CHECK-NEXT:                   std::shared_ptr<dpct::sparse::sparse_matrix_info> a7,
+//CHECK-NEXT:                   sycl::queue* a8);
 template void bar2<int>(cusparseFillMode_t a1,
                   cusparseDiagType_t a2,
                   cusparseIndexBase_t a3,
@@ -186,15 +191,6 @@ template void bar2<int>(cusparseFillMode_t a1,
                   cusparseMatDescr_t a7,
                   cusparseHandle_t a8);
 
-//TODO: If the variables are non-local variables, the AST is like:
-//TranslationUnitDecl 0x55bbd2993ba8 <<invalid sloc>> <invalid sloc>
-//|-VarDecl 0x55888acd49e0 <test4.cu:5:1, col:24> col:20 b 'cusparseMatDescr_t':'struct cusparseMatDescr *' cinit
-//| `-ImplicitCastExpr 0x55888acd4a60 <col:24> 'cusparseMatDescr_t':'struct cusparseMatDescr *' <NullToPointer>
-//|   `-IntegerLiteral 0x55888acd4a40 <col:24> 'int' 0
-//`-VarDecl 0x55888acd4a88 <col:1, col:31> col:27 c 'cusparseMatDescr_t':'struct cusparseMatDescr *' cinit
-//  `-ImplicitCastExpr 0x55888acd4b08 <col:31> 'cusparseMatDescr_t':'struct cusparseMatDescr *' <NullToPointer>
-//    `-IntegerLiteral 0x55888acd4ae8 <col:31> 'int' 0
-//There is no DeclStmt node as these two VarDecl nodes' parent.
-//Currently, tool cannot cover this case.
+//CHECK: std::shared_ptr<dpct::sparse::sparse_matrix_info> b = 0, c = 0;
 cusparseMatDescr_t b = 0, c = 0;
 

@@ -3216,38 +3216,38 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           TL->getEndLoc(), ""));
     }
 
-    const DeclStmt *DS = DpctGlobalInfo::findAncestor<DeclStmt>(TL);
-    if (TypeStr == "cusparseMatDescr_t" && DS) {
-      for (auto I : DS->decls()) {
-        const VarDecl *VDI = dyn_cast<VarDecl>(I);
-        if (VDI && VDI->hasInit()) {
-          if (VDI->getInitStyle() == VarDecl::InitializationStyle::CInit) {
-            const Expr *IE = VDI->getInit();
-            // cusparseMatDescr_t descr = InitExpr ;
-            //                         |          |
-            //                       Begin       End
-            auto End = SM->getExpansionRange(IE->getEndLoc()).getEnd();
-            End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-                End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-            SourceLocation Begin =
-                SM->getExpansionRange(IE->getBeginLoc()).getBegin();
-
-            auto C = SM->getCharacterData(Begin);
-            int Offset = 0;
-            while (*C != '=') {
-              C--;
-              Offset--;
-            }
-            Begin = Begin.getLocWithOffset(Offset);
-
-            int Len = SM->getDecomposedLoc(End).second -
-                      SM->getDecomposedLoc(Begin).second;
-            assert(Len > 0);
-            emplaceTransformation(new ReplaceText(Begin, Len, ""));
-          }
-        }
-      }
-    }
+//    const DeclStmt *DS = DpctGlobalInfo::findAncestor<DeclStmt>(TL);
+//    if (TypeStr == "cusparseMatDescr_t" && DS) {
+//      for (auto I : DS->decls()) {
+//        const VarDecl *VDI = dyn_cast<VarDecl>(I);
+//        if (VDI && VDI->hasInit()) {
+//          if (VDI->getInitStyle() == VarDecl::InitializationStyle::CInit) {
+//            const Expr *IE = VDI->getInit();
+//            // cusparseMatDescr_t descr = InitExpr ;
+//            //                         |          |
+//            //                       Begin       End
+//            auto End = SM->getExpansionRange(IE->getEndLoc()).getEnd();
+//            End = End.getLocWithOffset(Lexer::MeasureTokenLength(
+//                End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
+//            SourceLocation Begin =
+//                SM->getExpansionRange(IE->getBeginLoc()).getBegin();
+//
+//            auto C = SM->getCharacterData(Begin);
+//            int Offset = 0;
+//            while (*C != '=') {
+//              C--;
+//              Offset--;
+//            }
+//            Begin = Begin.getLocWithOffset(Offset);
+//
+//            int Len = SM->getDecomposedLoc(End).second -
+//                      SM->getDecomposedLoc(Begin).second;
+//            assert(Len > 0);
+//            emplaceTransformation(new ReplaceText(Begin, Len, ""));
+//          }
+//        }
+//      }
+//    }
 
     const DeclaratorDecl *DD = nullptr;
     const VarDecl *VarD = DpctGlobalInfo::findAncestor<VarDecl>(TL);
@@ -4494,13 +4494,13 @@ void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName(
                       "(CUSPARSE_STATUS.*)|("
-                      "CUSPARSE_POINTER_MODE.*)|(CUSPARSE_MATRIX_TYPE.*)"))))
+                      "CUSPARSE_POINTER_MODE.*)"))))
           .bind("SPBLASStatusConstants"),
       this);
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName(
                       "(CUSPARSE_OPERATION.*)|(CUSPARSE_FILL_MODE.*)|(CUSPARSE_"
-                      "DIAG_TYPE.*)|(CUSPARSE_INDEX_BASE.*)"))))
+                      "DIAG_TYPE.*)|(CUSPARSE_INDEX_BASE.*)|(CUSPARSE_MATRIX_TYPE.*)"))))
           .bind("SPBLASNamedValueConstants"),
       this);
 }
@@ -4630,9 +4630,14 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   initVars(CE, nullptr, nullptr, Flags, ReplaceStrs, Locations);
   Flags.IsAssigned = IsAssigned;
 
-  std::string Msg = "this call is redundant in SYCL.";
-  if (FuncName == "cusparseCreate" || FuncName == "cusparseDestroy" ||
-      FuncName == "cusparseSetStream" || FuncName == "cusparseGetStream") {
+  if (MapNames::SPARSEAPIWithRewriter.find(FuncName) !=
+      MapNames::SPARSEAPIWithRewriter.end()) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  } else if (FuncName == "cusparseCreate" || FuncName == "cusparseDestroy" ||
+             FuncName == "cusparseSetStream" || FuncName == "cusparseGetStream") {
     Flags.NeedUseLambda = false;
     if (FuncName == "cusparseCreate") {
       std::string LHS = getDrefName(CE->getArg(0));
@@ -4659,80 +4664,24 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     Flags.NeedUseLambda = false;
     std::string LHS = getDrefName(CE->getArg(0));
     ReplaceStrs.Repl = LHS + " = oneapi::mkl::index_base::zero";
-  } else if (FuncName == "cusparseDestroyMatDescr" ||
-             FuncName == "cusparseGetPointerMode" ||
+  } else if (FuncName == "cusparseGetPointerMode" ||
              FuncName == "cusparseSetPointerMode" ||
              FuncName == "cusparseScsrsv_analysis" ||
              FuncName == "cusparseDcsrsv_analysis" ||
              FuncName == "cusparseCcsrsv_analysis" ||
              FuncName == "cusparseZcsrsv_analysis" ||
              FuncName == "cusparseCreateSolveAnalysisInfo" ||
-             FuncName == "cusparseDestroySolveAnalysisInfo" ||
-             FuncName == "cusparseSetMatType" ||
-             FuncName == "cusparseGetMatType" ||
-             FuncName == "cusparseSetMatDiagType" ||
-             FuncName == "cusparseGetMatDiagType" ||
-             FuncName == "cusparseSetMatFillMode" ||
-             FuncName == "cusparseGetMatFillMode") {
-    if (FuncName == "cusparseSetMatType") {
-      Expr::EvalResult ER;
-      if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
-        int64_t Value = ER.Val.getInt().getExtValue();
-        if (Value != 0) {
-          DpctGlobalInfo::setSpBLASUnsupportedMatrixTypeFlag(true);
-        }
-      } else {
-        DpctGlobalInfo::setSpBLASUnsupportedMatrixTypeFlag(true);
-      }
-    }
-
+             FuncName == "cusparseDestroySolveAnalysisInfo") {
+    std::string Msg = "this call is redundant in SYCL.";
     if (IsAssigned) {
       report(Locations.PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false,
              FuncName, Msg);
-      if (FuncName == "cusparseGetMatDiagType")
-        emplaceTransformation(
-            new ReplaceStmt(CE, false, "(oneapi::mkl::diag)0"));
-      else if (FuncName == "cusparseGetMatFillMode")
-        emplaceTransformation(
-            new ReplaceStmt(CE, false, "(oneapi::mkl::uplo)0"));
-      else
-        emplaceTransformation(new ReplaceStmt(CE, false, "0"));
+      emplaceTransformation(new ReplaceStmt(CE, false, "0"));
     } else {
       report(Locations.PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED, false,
              FuncName, Msg);
       emplaceTransformation(new ReplaceStmt(CE, false, ""));
     }
-    return;
-  } else if (FuncName == "cusparseSetMatIndexBase" ||
-             FuncName == "cusparseGetMatIndexBase") {
-    Flags.NeedUseLambda = false;
-    ExprAnalysis EA0(CE->getArg(0));
-    bool IsSet = FuncNameRef.startswith("cusparseSet");
-    ExprAnalysis EA1;
-    if (IsSet) {
-      ReplaceStrs.Repl = EA0.getReplacedString() + " = ";
-      EA1.analyze(CE->getArg(1));
-      Expr::EvalResult ER;
-      if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
-        int64_t Value = ER.Val.getInt().getExtValue();
-        if (Value == 0)
-          ReplaceStrs.Repl = ReplaceStrs.Repl + "oneapi::mkl::index_base::zero";
-        else
-          ReplaceStrs.Repl = ReplaceStrs.Repl + "oneapi::mkl::index_base::one";
-      } else {
-        ReplaceStrs.Repl = ReplaceStrs.Repl + EA1.getReplacedString();
-      }
-    } else {
-      ReplaceStrs.Repl = EA0.getReplacedString();
-    }
-
-    // Get API do not return status, so return directly.
-    if (IsAssigned && IsSet) {
-      insertAroundStmt(CE, "(", ", 0)");
-      report(Locations.PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP,
-             true);
-    }
-    emplaceTransformation(new ReplaceStmt(CE, true, ReplaceStrs.Repl));
     return;
   } else if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv" ||
              FuncName == "cusparseCcsrmv" || FuncName == "cusparseZcsrmv") {
@@ -5017,11 +4966,11 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
   if (FuncNameRef.endswith("csrmv") || FuncNameRef.endswith("csrmm")) {
     if (Flags.NeedUseLambda && Flags.CanAvoidUsingLambda && !Flags.IsMacroArg) {
-      DpctGlobalInfo::getInstance().insertSpBLASWarningLocOffset(
-          Locations.OuterInsertLoc);
+      report(Locations.OuterInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
+             false);
     } else {
-      DpctGlobalInfo::getInstance().insertSpBLASWarningLocOffset(
-          Locations.PrefixInsertLoc);
+      report(Locations.PrefixInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE,
+             true, false);
     }
   }
 

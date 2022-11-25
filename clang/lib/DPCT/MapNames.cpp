@@ -52,6 +52,7 @@ std::unordered_map<std::string, std::pair<std::string, std::string>>
     MapNames::MathTypeCastingMap;
 MapNames::MapTy MapNames::BLASComputingAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
+std::unordered_set<std::string> MapNames::SPARSEAPIWithRewriter;
 
 void MapNames::setExplicitNamespaceMap() {
 
@@ -222,7 +223,9 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::mkl::diag")},
       {"cusparseIndexBase_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::index_base")},
-      {"cusparseMatrixType_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseMatrixType_t", std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "sparse::sparse_matrix_info::matrix_type",
+           HelperFeatureEnum::SparseUtils_sparse_matrix_info)},
       {"cusparseOperation_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
       {"cusparseSolveAnalysisInfo_t", std::make_shared<TypeNameRule>("int")},
@@ -313,7 +316,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"curandStatus", std::make_shared<TypeNameRule>("int")},
       {"cusparseStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseMatDescr_t",
-       std::make_shared<TypeNameRule>("oneapi::mkl::index_base")},
+       std::make_shared<TypeNameRule>(
+        "std::shared_ptr<" + getDpctNamespace() + "sparse::sparse_matrix_info>",
+        HelperFeatureEnum::SparseUtils_sparse_matrix_info)},
       {"cusparseHandle_t",
        std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
       {"cudaMemoryAdvise", std::make_shared<TypeNameRule>("int")},
@@ -1532,6 +1537,11 @@ void MapNames::setExplicitNamespaceMap() {
 
   SOLVERAPIWithRewriter = {"cusolverDnSsygvd",
                            "cusolverDnSsygvd_bufferSize"};
+  SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",  "cusparseDestroyMatDescr",
+                           "cusparseSetMatType",      "cusparseGetMatType",
+                           "cusparseSetMatIndexBase", "cusparseGetMatIndexBase",
+                           "cusparseSetMatDiagType",  "cusparseGetMatDiagType",
+                           "cusparseSetMatFillMode",  "cusparseGetMatFillMode"};
 
   // This map now is only used to migrate using declaration
   MathFuncNameMap = {
@@ -1651,6 +1661,10 @@ const MapNames::MapTy MapNames::SPBLASEnumsMap{
     {"CUSPARSE_DIAG_TYPE_UNIT", "oneapi::mkl::diag::unit"},
     {"CUSPARSE_INDEX_BASE_ZERO", "oneapi::mkl::index_base::zero"},
     {"CUSPARSE_INDEX_BASE_ONE", "oneapi::mkl::index_base::one"},
+    {"CUSPARSE_MATRIX_TYPE_GENERAL", "dpct::sparse::sparse_matrix_info::matrix_type::ge"},
+    {"CUSPARSE_MATRIX_TYPE_SYMMETRIC", "dpct::sparse::sparse_matrix_info::matrix_type::sy"},
+    {"CUSPARSE_MATRIX_TYPE_HERMITIAN", "dpct::sparse::sparse_matrix_info::matrix_type::he"},
+    {"CUSPARSE_MATRIX_TYPE_TRIANGULAR", "dpct::sparse::sparse_matrix_info::matrix_type::tr"},
 };
 
 // SOLVER enums mapping

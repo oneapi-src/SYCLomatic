@@ -47,7 +47,7 @@ ENTRY(cusparseGetMatIndexBase, cusparseGetMatIndexBase, true, NO_FLAG, P4, "Succ
 ENTRY(cusparseGetMatType, cusparseGetMatType, true, API_CALL_REMOVED, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY(cusparseGetPointerMode, cusparseGetPointerMode, true, API_CALL_REMOVED, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY(cusparseGetVersion, cusparseGetVersion, false, NO_FLAG, P4, "comment")
-ENTRY(cusparseSetMatDiagType, cusparseSetMatDiagType, true, API_CALL_REMOVED, P4, "Successful: DPCT1026/DPCT1027")
+ENTRY(cusparseSetMatDiagType, cusparseSetMatDiagType, true, NO_FLAG, P4, "Successful")
 ENTRY(cusparseSetMatFillMode, cusparseSetMatFillMode, true, API_CALL_REMOVED, P4, "Successful: DPCT1026/DPCT1027")
 ENTRY(cusparseSetMatIndexBase, cusparseSetMatIndexBase, true, NO_FLAG, P4, "Successful")
 ENTRY(cusparseSetMatType, cusparseSetMatType, true, API_CALL_REMOVED, P4, "Successful: DPCT1026/DPCT1027")

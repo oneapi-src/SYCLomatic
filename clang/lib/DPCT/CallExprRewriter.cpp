@@ -3090,6 +3090,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
 #undef FUNCTION_CALL
 #undef CLASS_METHOD_CALL
 #include "APINamesCUSOLVER.inc"
+#include "APINamesCUSPARSE.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_TEXTURE
 #undef ENTRY_UNSUPPORTED
