@@ -948,7 +948,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         auto Extra = C->getExtraArguments();
         if (Extra.empty())
           return;
-        addReplacement(CE->getRParenLoc(), Extra);
+        addReplacement(C->getExtraArgLoc() - SrcBegin, 0, Extra);
       }
     }
   }
