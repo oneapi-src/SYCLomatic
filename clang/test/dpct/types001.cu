@@ -363,8 +363,8 @@ int main(int argc, char **argv) {
   a = sizeof(event_st);
   a = sizeof event_st;
 
-  //CHECK:sycl::queue *blashandle;
-  //CHECK-NEXT:a = sizeof(sycl::queue *);
+  //CHECK:dpct::queue_ptr blashandle;
+  //CHECK-NEXT:a = sizeof(dpct::queue_ptr);
   //CHECK-NEXT:a = sizeof(blashandle);
   //CHECK-NEXT:a = sizeof blashandle;
   cublasHandle_t blashandle;

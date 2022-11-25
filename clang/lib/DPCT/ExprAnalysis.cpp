@@ -10,6 +10,7 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
+#include "CUBAPIMigration.h"
 #include "CallExprRewriter.h"
 #include "DNNAPIMigration.h"
 #include "TypeLocRewriters.h"
@@ -232,8 +233,7 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
-    if (SrcBeginLoc.isInvalid())
-      SrcBeginLoc = BeginLoc;
+    SrcBeginLoc = BeginLoc;
 
     // Avoid illegal range which will cause SIGABRT
     if (End.first + End.second < Begin) {
@@ -508,22 +508,18 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     if (!ReplEnum.empty())
       addReplacement(DRE, ReplEnum);
     else {
-      auto &ReplBLASEnum = MapNames::findReplacedName(MapNames::BLASEnumsMap,
-                                                      ECD->getName().str());
-      if (!ReplBLASEnum.empty())
-        addReplacement(DRE, ReplBLASEnum);
-      else {
-        auto &ReplFuncAttrEnum = MapNames::findReplacedName(
-            MapNames::FunctionAttrMap, ECD->getName().str());
-        if (!ReplFuncAttrEnum.empty())
-          addReplacement(DRE, ReplFuncAttrEnum);
-        else {
-          auto &CuDNNEnum = MapNames::findReplacedName(
-              CuDNNTypeRule::CuDNNEnumNamesMap, ECD->getName().str());
-          if (!CuDNNEnum.empty())
-            addReplacement(DRE, CuDNNEnum);
-        }
-      }
+#define REPLACE_ENUM(MAP)                                                      \
+  do {                                                                         \
+    auto &Repl = MapNames::findReplacedName(MAP, ECD->getName().str());        \
+    if (!Repl.empty())                                                         \
+      addReplacement(DRE, Repl);                                               \
+  } while (0)
+      REPLACE_ENUM(MapNames::BLASEnumsMap);
+      REPLACE_ENUM(MapNames::FunctionAttrMap);
+      REPLACE_ENUM(CuDNNTypeRule::CuDNNEnumNamesMap);
+      REPLACE_ENUM(MapNames::SOLVEREnumsMap);
+      REPLACE_ENUM(MapNames::SPBLASEnumsMap);
+#undef REPLACE_ENUM
     }
   } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
     if (RefString == "warpSize" &&
@@ -627,6 +623,18 @@ void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
   for (auto It = Ctor->arg_begin(); It != Ctor->arg_end(); It++) {
     dispatch(*It);
   }
+}
+
+void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
+  std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
+      Temp->getType().getCanonicalType());
+  if (StringRef(TypeName).startswith("cub::") &&
+      CubTypeRule::CanMappingToSyclBinaryOp(TypeName)) {
+    analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
+    return;
+  }
+
+  analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
@@ -1055,9 +1063,18 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
         TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
     break;
   case TypeLoc::Builtin:
-  case TypeLoc::Record:
-    TyName += DpctGlobalInfo::getTypeName(TL.getType());
+  case TypeLoc::Record: {
+    TyName = DpctGlobalInfo::getTypeName(TL.getType());
+    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
+    if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
+      auto Rewriter = Itr->second->create(TL);
+      auto Result = Rewriter->rewrite();
+      if (Result.has_value())
+        addReplacement(SM.getExpansionLoc(SR.getBegin()),
+                       SM.getExpansionLoc(SR.getEnd()), CSCE, Result.value());
+    }
     break;
+  }
   case TypeLoc::TemplateTypeParm:
     if (auto D = TYPELOC_CAST(TemplateTypeParmTypeLoc).getDecl()) {
       return addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,

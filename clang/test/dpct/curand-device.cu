@@ -76,6 +76,9 @@ int main(int argc, char **argv) {
   int *dOut;
   //CHECK:q_ct1.submit(
   //CHECK-NEXT:  [&](sycl::handler &cgh) {
+  //CHECK-NEXT:    /*
+  //CHECK-NEXT:    DPCT1101:{{[0-9]+}}: 'WARP_SIZE' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.
+  //CHECK-NEXT:    */
   //CHECK-NEXT:    sycl::local_accessor<int, 1> counter_acc_ct1(sycl::range<1>(32/*WARP_SIZE*/), cgh);
   //CHECK-NEXT:    dpct::access_wrapper<int *> dOut_acc_ct0(dOut, cgh);
   //CHECK-EMPTY:
