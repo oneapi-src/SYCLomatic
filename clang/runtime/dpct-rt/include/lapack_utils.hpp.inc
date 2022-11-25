@@ -200,7 +200,7 @@ inline int hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
     oneapi::mkl::lapack::hegvd(queue, itype, jobz, uplo, n, (Ty *)a, lda, (Ty *)b,
                                ldb, w, (Ty *)scratchpad, scratchpad_size);
   } catch (oneapi::mkl::lapack::exception const& e) {
-    std::cerr << "Unexpected exception caught during call to LAPACK API: sygvd"
+    std::cerr << "Unexpected exception caught during call to LAPACK API: hegvd"
               << std::endl
               << "reason: " << e.what() << std::endl
               << "info: " << e.info() << std::endl;
@@ -358,7 +358,7 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
         scratchpad, scratchpad_size);
   } catch (oneapi::mkl::lapack::exception const &e) {
     std::cerr << "Unexpected exception caught during call to LAPACK API: "
-                 "potrf_batch_scratchpad_size/potrf_batch"
+                 "potrs_batch_scratchpad_size/potrs_batch"
               << std::endl
               << "reason: " << e.what() << std::endl
               << "info: " << e.info() << std::endl;
