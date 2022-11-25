@@ -3216,39 +3216,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           TL->getEndLoc(), ""));
     }
 
-//    const DeclStmt *DS = DpctGlobalInfo::findAncestor<DeclStmt>(TL);
-//    if (TypeStr == "cusparseMatDescr_t" && DS) {
-//      for (auto I : DS->decls()) {
-//        const VarDecl *VDI = dyn_cast<VarDecl>(I);
-//        if (VDI && VDI->hasInit()) {
-//          if (VDI->getInitStyle() == VarDecl::InitializationStyle::CInit) {
-//            const Expr *IE = VDI->getInit();
-//            // cusparseMatDescr_t descr = InitExpr ;
-//            //                         |          |
-//            //                       Begin       End
-//            auto End = SM->getExpansionRange(IE->getEndLoc()).getEnd();
-//            End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-//                End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-//            SourceLocation Begin =
-//                SM->getExpansionRange(IE->getBeginLoc()).getBegin();
-//
-//            auto C = SM->getCharacterData(Begin);
-//            int Offset = 0;
-//            while (*C != '=') {
-//              C--;
-//              Offset--;
-//            }
-//            Begin = Begin.getLocWithOffset(Offset);
-//
-//            int Len = SM->getDecomposedLoc(End).second -
-//                      SM->getDecomposedLoc(Begin).second;
-//            assert(Len > 0);
-//            emplaceTransformation(new ReplaceText(Begin, Len, ""));
-//          }
-//        }
-//      }
-//    }
-
     const DeclaratorDecl *DD = nullptr;
     const VarDecl *VarD = DpctGlobalInfo::findAncestor<VarDecl>(TL);
     const FieldDecl *FieldD = DpctGlobalInfo::findAncestor<FieldDecl>(TL);
