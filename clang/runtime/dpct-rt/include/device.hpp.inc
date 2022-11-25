@@ -468,7 +468,7 @@ public:
                             sycl::property::queue::in_order()};
 #ifdef DPCT_USM_LEVEL_NONE
     _queues.push_back(
-        std::make_shared<sycl::queue>(_ctx, base, exception_handler), property);
+        std::make_shared<sycl::queue>(_ctx, base, exception_handler, property);
 #else
     _queues.push_back(
         std::make_shared<sycl::queue>(_ctx, base, exception_handler, property));
