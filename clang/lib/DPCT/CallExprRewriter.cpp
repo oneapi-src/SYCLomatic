@@ -3275,7 +3275,7 @@ createDeviceNormalFactory(
       createConditionalFactory(                                                           \
           math::IsDefinedInCUDA(),                                                        \
           HOST_NORMAL                                                                     \
-          NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0))
+          NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0)),
 
 // clang-format on
 
