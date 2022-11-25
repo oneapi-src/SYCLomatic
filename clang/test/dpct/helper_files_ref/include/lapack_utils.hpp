@@ -114,16 +114,16 @@ inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
 /// \param [out] info If lapack synchronous exception is caught, the value
 /// returned from info() method of the exception is set to \p info. If other
 /// SYCL synchronous exception is caught, -1 is set to \p info.
-template <typename T>
+template <typename T, typename Tw>
 inline int hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
                  oneapi::mkl::uplo uplo, int n, T *a, int lda, T *b, int ldb,
-                 float *w, T *scratchpad, int scratchpad_size, int *info) {
+                 Tw *w, T *scratchpad, int scratchpad_size, int *info) {
   using Ty = typename DataType<T>::T2;
 #ifdef DPCT_USM_LEVEL_NONE
   auto info_buf = get_buffer<int>(info);
   auto a_buffer = get_buffer<Ty>(a);
   auto b_buffer = get_buffer<Ty>(b);
-  auto w_buffer = get_buffer<Ty>(w);
+  auto w_buffer = get_buffer<Tw>(w);
   auto scratchpad_buffer = get_buffer<Ty>(scratchpad);
   int info_val = 0;
   int ret_val = 0;
@@ -152,7 +152,7 @@ inline int hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
 #else
   try {
     oneapi::mkl::lapack::hegvd(queue, itype, jobz, uplo, n, (Ty *)a, lda, (Ty *)b,
-                               ldb, (Ty *)w, (Ty *)scratchpad, scratchpad_size);
+                               ldb, w, (Ty *)scratchpad, scratchpad_size);
   } catch (oneapi::mkl::lapack::exception const& e) {
     std::cerr << "Unexpected exception caught during call to LAPACK API: sygvd"
               << std::endl
