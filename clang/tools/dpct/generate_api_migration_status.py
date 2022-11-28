@@ -115,7 +115,7 @@ def update_lib(lib:str,file_lib:str,output_path:str):
 def do_update(args):
     res = True
     output_path = args.output_path
-    SYCLomatic_path=args.SYClomatic_path
+    SYCLomatic_path=args.SYCLomatic_path
     DPCT_lib_path = os.path.join(SYCLomatic_path,'clang','lib','DPCT')
     if os.path.exists(output_path) is False :
         warnings.warn("output path is not exist")
@@ -144,7 +144,7 @@ def main():
                                      description="A script to get the API migration status in DPC++ Compatibility Tools",
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--output-path",help="Set the path of the output file",default=os.getcwd())
-    parser.add_argument("--SYClomatic-path",help="Set the path of the SYCLomatic",default=os.path.join(os.path.dirname(__file__),'..','..','..'))
+    parser.add_argument("--SYCLomatic-path",help="Set the path of the SYCLomatic",default=os.path.join(os.path.dirname(__file__),'..','..','..'))
 
     args = parser.parse_args()
     return do_update(args)
