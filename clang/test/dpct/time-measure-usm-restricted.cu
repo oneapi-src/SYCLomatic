@@ -90,13 +90,14 @@ void foo_usm() {
   // CHECK-NEXT:SAFE_CALL((s1->memcpy(gpu_t, host_t, n * sizeof(int)), 0));
   SAFE_CALL(cudaMemcpyAsync(gpu_t, host_t, n * sizeof(int), cudaMemcpyHostToDevice, s1));
 
-  // CHECK:  DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
+  // CHECK:  /*
+  // CHECK-NEXT:  DPCT1024:{{[0-9]+}}: The original code returned the error code that was further consumed by the program logic. This original code was replaced with 0. You may need to rewrite the program logic consuming the error code.
   // CHECK-NEXT:  */
-  // CHECK:  SAFE_CALL((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
+  // CHECK-NEXT:  SAFE_CALL((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
   // CHECK-NEXT:  /*
-  // CHECK-NEXT:  DPCT1003:25: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
-  // CHECK-NEXT:  SAFE_CALL((stop->wait_and_throw(), 0));
+  // CHECK-NEXT:   SAFE_CALL((stop->wait_and_throw(), 0));
   SAFE_CALL(cudaEventRecord(stop, 0));
   SAFE_CALL(cudaEventSynchronize(stop));
   float Time = 0.0f;

@@ -218,7 +218,7 @@ void foo_test_3() {
   // CHECK-NEXT:  */
   // CHECK-NEXT:  CHECK((*stop = q_ct1.ext_oneapi_submit_barrier(), 0));
   // CHECK-NEXT:  /*
-  // CHECK-NEXT:  DPCT1003:59: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+  // CHECK-NEXT:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:  */
   // CHECK-NEXT:  CHECK((stop->wait_and_throw(), 0));
   // CHECK-NEXT:  float execution_time;

@@ -246,7 +246,7 @@ void foo_test_1() {
 // CHECK-NEXT:    */
 // CHECK-NEXT:  ret = ((stop->wait_and_throw(), 0));
 // CHECK-NEXT:  /*
-// CHECK-NEXT:    DPCT1003:46: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+// CHECK-NEXT:    DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:    */
 // CHECK-NEXT:  int a = ((stop->wait_and_throw(), 0));
 // CHECK-NEXT:  et = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;

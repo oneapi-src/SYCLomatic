@@ -1220,16 +1220,10 @@ public:
                          const ast_matchers::MatchFinder::MatchResult &Result,
                          bool IsAssigned);
   void handleEventElapsedTime(bool IsAssigned);
-  void handleKernelCalls(const Stmt *Parent, const CUDAKernelCallExpr *KCall);
-  void handleOrdinaryCalls(const CallExpr *Call);
-  bool IsEventArgArraySubscriptExpr(const Expr *E);
-  const Expr *findNextRecordedEvent(const Stmt *Parent, unsigned KCallLoc);
 
   static EventQueryTraversal getEventQueryTraversal();
 
 private:
-  const clang::Stmt *getRedundantParenExpr(const CallExpr *Call);
-  bool isEventElapsedTimeFollowed(const CallExpr *Expr);
   // Since the state of a rule is shared between multiple matches, it is
   // necessary to clear the previous migration status.
   // The call is supposed to be called whenever a migration on time measurement

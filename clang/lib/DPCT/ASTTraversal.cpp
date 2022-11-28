@@ -8182,19 +8182,13 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     handleEventElapsedTime(IsAssigned);
   } else if (FuncName == "cudaEventSynchronize" ||
              FuncName == "cuEventSynchronize") {
-    bool NeedReport = false;
     std::string ReplStr{getStmtSpelling(CE->getArg(0))};
     ReplStr += "->wait_and_throw()";
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
-      NeedReport = true;
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
     }
-
-    auto &Context = dpct::DpctGlobalInfo::getContext();
-    const auto &TM = ReplaceStmt(CE, ReplStr);
-    const auto R = TM.getReplacement(Context);
-    DpctGlobalInfo::getInstance().insertEventSyncTypeInfo(R, NeedReport,
-                                                          IsAssigned);
+    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
   } else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected function name: " << FuncName;
@@ -8305,8 +8299,6 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
   auto StreamName = getStmtSpelling(StreamArg);
   auto ArgName = getStmtSpelling(CE->getArg(0));
   bool IsDefaultStream = isDefaultStream(StreamArg);
-  auto IndentLoc = CE->getBeginLoc();
-  auto &Context = dpct::DpctGlobalInfo::getContext();
 
   if (IsAssigned) {
 
@@ -8382,149 +8374,6 @@ void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
            false);
   }
   emplaceTransformation(new ReplaceStmt(TimeElapsedCE, std::move(Repl.str())));
-}
-
-bool EventAPICallRule::IsEventArgArraySubscriptExpr(const Expr *E) {
-  E = E->IgnoreImpCasts();
-  if (auto UO = dyn_cast<UnaryOperator>(E))
-    return IsEventArgArraySubscriptExpr(UO->getSubExpr());
-  if (auto PE = dyn_cast<ParenExpr>(E))
-    return IsEventArgArraySubscriptExpr(PE->getSubExpr());
-  if (dyn_cast<ArraySubscriptExpr>(E))
-    return true;
-  return false;
-}
-
-void EventAPICallRule::handleKernelCalls(const Stmt *Node,
-                                         const CUDAKernelCallExpr *KCall) {
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  auto KCallLoc = SM.getExpansionLoc(KCall->getBeginLoc()).getRawEncoding();
-  auto K = DpctGlobalInfo::getInstance().insertKernelCallExpr(KCall);
-  auto EventExpr = findNextRecordedEvent(Node, KCallLoc);
-  if (!EventExpr && TimeElapsedCE->getNumArgs() == 3)
-    EventExpr = TimeElapsedCE->getArg(2);
-
-  auto ArgName = ExprAnalysis::ref(EventExpr);
-  // Skip statements before RecordBeginLoc or after RecordEndLoc
-  if (KCallLoc < RecordBeginLoc || KCallLoc > RecordEndLoc)
-    return;
-
-  if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-    bool NeedWait = false;
-    // In usm none mode, if cudaThreadSynchronize apears after kernel call,
-    // kernel wait is not needed.
-    NeedWait = ThreadSyncLoc > KCallLoc;
-
-    if (KCallLoc > RecordBeginLoc && !NeedWait) {
-      if (IsKernelSync) {
-        K->setEvent(ArgName);
-        K->setSync();
-      } else {
-        Queues2Wait.emplace_back(MapNames::getDpctNamespace() +
-                                     "get_current_device()."
-                                     "queues_wait_and_throw();",
-                                 nullptr);
-        requestFeature(HelperFeatureEnum::Device_get_current_device, KCall);
-        requestFeature(
-            HelperFeatureEnum::Device_device_ext_queues_wait_and_throw, KCall);
-      }
-    }
-  }
-
-  if (USMLevel == UsmLevel::UL_Restricted) {
-    if (KCallLoc > RecordBeginLoc) {
-      if (!IsKernelInLoopStmt && !IsKernelSync) {
-        K->setEvent(ArgName);
-        Events2Wait.push_back(ArgName + "->wait();");
-      } else if (IsKernelSync) {
-        K->setEvent(ArgName);
-        K->setSync();
-        // Events2Wait.push_back("(" + ArgName + ")" + ".wait();");
-      } else {
-        std::string WaitQueue = MapNames::getDpctNamespace() +
-                                "get_current_device()."
-                                "queues_wait_and_throw();";
-        Events2Wait.push_back(WaitQueue);
-        requestFeature(HelperFeatureEnum::Device_get_current_device, KCall);
-        requestFeature(
-            HelperFeatureEnum::Device_device_ext_queues_wait_and_throw, KCall);
-      }
-    }
-  }
-}
-
-void EventAPICallRule::handleOrdinaryCalls(const CallExpr *Call) {
-  auto Callee = Call->getDirectCallee();
-  if (!Callee)
-    return;
-  auto CalleeName = Callee->getName();
-  if (CalleeName.startswith("cudaMemcpy") && CalleeName.endswith("Async")) {
-    auto StreamArg = Call->getArg(Call->getNumArgs() - 1);
-    bool IsDefaultStream = isDefaultStream(StreamArg);
-    bool NeedStreamWait = false;
-
-    if (StreamArg->IgnoreImpCasts()->getStmtClass() ==
-        Stmt::ArraySubscriptExprClass)
-      NeedStreamWait = true;
-
-    if (USMLevel == UsmLevel::UL_Restricted) {
-      // std::string EventName = getTempNameForExpr(TimeElapsedCE->getArg(2));
-      std::string EventName;
-      if (TimeElapsedCE->getNumArgs() == 3) {
-        EventName = getTempNameForExpr(TimeElapsedCE->getArg(2));
-      } else {
-        EventName = getTempNameForExpr(TimeElapsedCE->getArg(0));
-      }
-      std::string QueueName =
-          IsDefaultStream ? "q_ct1_" : getTempNameForExpr(StreamArg);
-      std::string NewEventName =
-          EventName + QueueName + std::to_string(++QueueCounter[QueueName]);
-      Events2Wait.push_back(NewEventName + ".wait();");
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      std::ostringstream SyncStmt;
-      SyncStmt << MapNames::getClNamespace() << "event " << NewEventName << ";"
-               << getNL()
-               << getIndent(SM.getExpansionLoc(RecordBegin->getBeginLoc()), SM)
-                      .str();
-      emplaceTransformation(new InsertText(
-          SM.getExpansionLoc(RecordBegin->getBeginLoc()), SyncStmt.str()));
-
-      auto TM = new InsertBeforeStmt(Call, NewEventName + " = ");
-      TM->setInsertPosition(IP_Right);
-      emplaceTransformation(TM);
-    } else {
-      std::tuple<bool, std::string, const CallExpr *> T;
-      if (IsDefaultStream && !DefaultQueueAdded) {
-        DefaultQueueAdded = true;
-        if (isPlaceholderIdxDuplicated(Call))
-          return;
-        int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-        auto &SM = DpctGlobalInfo::getSourceManager();
-        std::ostringstream SyncStmt;
-        SyncStmt << "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.wait();"
-                 << getNL()
-                 << getIndent(SM.getExpansionLoc(RecordEnd->getBeginLoc()), SM)
-                        .str();
-        buildTempVariableMap(Index, Call, HelperFuncType::HFT_DefaultQueue);
-
-        emplaceTransformation(new InsertText(
-            SM.getExpansionLoc(RecordEnd->getBeginLoc()), SyncStmt.str()));
-      } else if (!IsDefaultStream) {
-        if (NeedStreamWait) {
-          Queues2Wait.emplace_back(MapNames::getDpctNamespace() +
-                                       "get_current_device()."
-                                       "queues_wait_and_throw();",
-                                   nullptr);
-          requestFeature(HelperFeatureEnum::Device_get_current_device, Call);
-          requestFeature(
-              HelperFeatureEnum::Device_device_ext_queues_wait_and_throw, Call);
-        } else {
-          auto ArgName = getStmtSpelling(StreamArg);
-          Queues2Wait.emplace_back(ArgName + "->wait();", nullptr);
-        }
-      }
-    }
-  }
 }
 
 REGISTER_RULE(EventAPICallRule, PassKind::PK_Migration)
@@ -8703,28 +8552,23 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cuStreamWaitEvent") {
     std::string ReplStr;
     auto StmtStr1 = getStmtSpelling(CE->getArg(1));
-    if (!DpctGlobalInfo::useEnqueueBarrier()) {
-      // ext_oneapi_submit_barrier is specified in the value of option
-      // --no-dpcpp-extensions.
-      ReplStr = StmtStr1 + "->wait()";
-    } else {
-      StmtStr1 = "*" + StmtStr1;
-      auto StreamArg = CE->getArg(0);
-      bool IsDefaultStream = isDefaultStream(StreamArg);
-      std::string StmtStr0;
-      if (IsDefaultStream) {
-        if (isPlaceholderIdxDuplicated(CE))
-          return;
-        int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-        buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
+    StmtStr1 = "*" + StmtStr1;
+    auto StreamArg = CE->getArg(0);
+    bool IsDefaultStream = isDefaultStream(StreamArg);
+    std::string StmtStr0;
+    if (IsDefaultStream) {
+      if (isPlaceholderIdxDuplicated(CE))
+        return;
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
 
-        StmtStr0 = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.";
-      } else {
-        StmtStr0 = getStmtSpelling(CE->getArg(0)) + "->";
-      }
-      ReplStr = StmtStr0 + "ext_oneapi_submit_barrier({" +
-                StmtStr1 + "})";
+      StmtStr0 = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.";
+    } else {
+      StmtStr0 = getStmtSpelling(CE->getArg(0)) + "->";
     }
+    ReplStr = StmtStr0 + "ext_oneapi_submit_barrier({" +
+              StmtStr1 + "})";
+
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);

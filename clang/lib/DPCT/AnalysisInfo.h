@@ -116,31 +116,6 @@ struct HostRandomDistrInfo {
   std::string IndentStr;
 };
 
-struct EventSyncTypeInfo {
-  EventSyncTypeInfo(unsigned int Length, std::string ReplText, bool NeedReport,
-                    bool IsAssigned)
-      : Length(Length), ReplText(ReplText), NeedReport(NeedReport),
-        IsAssigned(IsAssigned) {}
-  void buildInfo(std::string FilePath, unsigned int Offset);
-
-  unsigned int Length;
-  std::string ReplText;
-  bool NeedReport = false;
-  bool IsAssigned = false;
-};
-
-struct TimeStubTypeInfo {
-  TimeStubTypeInfo(unsigned int Length, std::string StrWithSB,
-                   std::string StrWithoutSB)
-      : Length(Length), StrWithSB(StrWithSB), StrWithoutSB(StrWithoutSB) {}
-
-  void buildInfo(std::string FilePath, unsigned int Offset,
-                 bool isReplTxtWithSB);
-
-  unsigned int Length;
-  std::string StrWithSB;
-  std::string StrWithoutSB;
-};
 
 struct BuiltinVarInfo {
   BuiltinVarInfo(unsigned int Len, std::string Repl,
@@ -585,14 +560,6 @@ public:
     return HostRandomEngineTypeMap;
   }
 
-  std::map<unsigned int, EventSyncTypeInfo> &getEventSyncTypeMap() {
-    return EventSyncTypeMap;
-  }
-
-  std::map<unsigned int, TimeStubTypeInfo> &getTimeStubTypeMap() {
-    return TimeStubTypeMap;
-  }
-
   std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
            HostRandomDistrInfo> &
   getHostRandomDistrMap() {
@@ -669,8 +636,6 @@ private:
   std::map<std::tuple<unsigned int, std::string, std::string, std::string>,
            HostRandomDistrInfo>
       HostRandomDistrMap;
-  std::map<unsigned int, EventSyncTypeInfo> EventSyncTypeMap;
-  std::map<unsigned int, TimeStubTypeInfo> TimeStubTypeMap;
   std::map<unsigned int, BuiltinVarInfo> BuiltinVarInfoMap;
   GlobalMap<MemVarInfo> MemVarMap;
   GlobalMap<DeviceFunctionDecl> FuncMap;
@@ -1592,73 +1557,6 @@ public:
       Name = Iter->second.DistrName;
     }
     return Name;
-  }
-
-  void insertEventSyncTypeInfo(
-      const std::shared_ptr<clang::dpct::ExtReplacement> Repl,
-      bool NeedReport = false, bool IsAssigned = false) {
-    std::string FilePath = Repl->getFilePath().str();
-    unsigned int Offset = Repl->getOffset();
-    unsigned int Length = Repl->getLength();
-    const std::string ReplText = Repl->getReplacementText().str();
-
-    auto FileInfo = insertFile(FilePath);
-    auto &M = FileInfo->getEventSyncTypeMap();
-    auto Iter = M.find(Offset);
-    if (Iter == M.end()) {
-      M.insert(std::make_pair(
-          Offset, EventSyncTypeInfo(Length, ReplText, NeedReport, IsAssigned)));
-    } else {
-      Iter->second.IsAssigned = IsAssigned;
-    }
-  }
-
-  void updateEventSyncTypeInfo(
-      const std::shared_ptr<clang::dpct::ExtReplacement> Repl) {
-    std::string FilePath = Repl->getFilePath().str();
-    unsigned int Offset = Repl->getOffset();
-    unsigned int Length = Repl->getLength();
-    const std::string ReplText = Repl->getReplacementText().str();
-
-    auto FileInfo = insertFile(FilePath);
-    auto &M = FileInfo->getEventSyncTypeMap();
-    auto Iter = M.find(Offset);
-    if (Iter != M.end()) {
-      Iter->second.ReplText = ReplText;
-      Iter->second.NeedReport = false;
-    } else {
-      M.insert(std::make_pair(
-          Offset, EventSyncTypeInfo(Length, ReplText, false, false)));
-    }
-  }
-
-  void insertTimeStubTypeInfo(
-      const std::shared_ptr<clang::dpct::ExtReplacement> ReplWithSB,
-      const std::shared_ptr<clang::dpct::ExtReplacement> ReplWithoutSB) {
-
-    std::string FilePath = ReplWithSB->getFilePath().str();
-    unsigned int Offset = ReplWithSB->getOffset();
-    unsigned int Length = ReplWithSB->getLength();
-    std::string StrWithSubmitBarrier = ReplWithSB->getReplacementText().str();
-    std::string StrWithoutSubmitBarrier =
-        ReplWithoutSB->getReplacementText().str();
-
-    auto FileInfo = insertFile(FilePath);
-    auto &M = FileInfo->getTimeStubTypeMap();
-    M.insert(
-        std::make_pair(Offset, TimeStubTypeInfo(Length, StrWithSubmitBarrier,
-                                                StrWithoutSubmitBarrier)));
-  }
-
-  void updateTimeStubTypeInfo(SourceLocation BeginLoc, SourceLocation EndLoc) {
-
-    auto LocInfo = getLocInfo(BeginLoc);
-    auto FileInfo = insertFile(LocInfo.first);
-
-    size_t Begin = getLocInfo(BeginLoc).second;
-    size_t End = getLocInfo(EndLoc).second;
-    auto &TimeStubBounds = FileInfo->getTimeStubBounds();
-    TimeStubBounds.push_back(std::make_pair(Begin, End));
   }
 
   void insertBuiltinVarInfo(SourceLocation SL, unsigned int Len,

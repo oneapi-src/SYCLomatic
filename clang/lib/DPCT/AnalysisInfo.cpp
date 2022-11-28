@@ -478,23 +478,6 @@ void DpctFileInfo::buildReplacements() {
                                false, std::get<1>(AtomicInfo.second));
   }
 
-  for (auto &DescInfo : EventSyncTypeMap) {
-    DescInfo.second.buildInfo(FilePath, DescInfo.first);
-  }
-
-  const auto &TimeStubBounds = getTimeStubBounds();
-  if (TimeStubBounds.empty()) {
-    for (auto &DescInfo : TimeStubTypeMap) {
-      DescInfo.second.buildInfo(FilePath, DescInfo.first,
-                                /*bool isReplTxtWithSB*/ true);
-    }
-  } else {
-    for (auto &DescInfo : TimeStubTypeMap) {
-      bool isReplTxtWithSB = isReplTxtWithSubmitBarrier(DescInfo.first);
-      DescInfo.second.buildInfo(FilePath, DescInfo.first, isReplTxtWithSB);
-    }
-  }
-
   // insert header file of user defined rules
   std::string InsertHeaderStr;
   llvm::raw_string_ostream HeaderOS(InsertHeaderStr);
@@ -3492,18 +3475,6 @@ void RandomEngineInfo::buildInfo() {
   }
 }
 
-void TimeStubTypeInfo::buildInfo(std::string FilePath, unsigned int Offset,
-                                 bool isReplTxtWithSB) {
-  if (isReplTxtWithSB)
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, Length, StrWithSB,
-                                         nullptr));
-  else
-    DpctGlobalInfo::getInstance().addReplacement(
-        std::make_shared<ExtReplacement>(FilePath, Offset, Length, StrWithoutSB,
-                                         nullptr));
-}
-
 void HostRandomEngineTypeInfo::buildInfo(std::string FilePath,
                                          unsigned int Offset) {
   // The warning of unsupported engine type is emitted in the generator
@@ -3547,19 +3518,6 @@ void HostRandomDistrInfo::buildInfo(std::string FilePath, unsigned int Offset,
                 DistrArg + ");" + getNL() + IndentStr;
   DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
       FilePath, Offset, 0, InsertStr, nullptr));
-}
-
-void EventSyncTypeInfo::buildInfo(std::string FilePath, unsigned int Offset) {
-  if (NeedReport)
-    DiagnosticsUtils::report(FilePath, Offset,
-                             Diagnostics::NOERROR_RETURN_COMMA_OP, true, false);
-
-  if (IsAssigned && ReplText.empty()) {
-    ReplText = "0";
-  }
-
-  DpctGlobalInfo::getInstance().addReplacement(std::make_shared<ExtReplacement>(
-      FilePath, Offset, Length, ReplText, nullptr));
 }
 
 void BuiltinVarInfo::buildInfo(std::string FilePath, unsigned int Offset,
