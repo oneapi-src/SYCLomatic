@@ -235,11 +235,12 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   }
   queue.submit([&](sycl::handler &cgh) {
     cgh.depends_on(e);
-    cgh.host_task([=] { std::free(matrix_info); });
+    cgh.host_task([=] {
+      std::free(matrix_info);
+      sycl::free(scratchpad, queue);
+    });
   });
   queue.memset(info, 0, group_size * sizeof(int));
-  std::vector<void *> ptrs{scratchpad};
-  async_dpct_free(ptrs, {e}, queue);
   return 0;
 #endif
 }
@@ -317,11 +318,12 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   }
   queue.submit([&](sycl::handler &cgh) {
     cgh.depends_on(e);
-    cgh.host_task([=] { std::free(matrix_info); });
+    cgh.host_task([=] {
+      std::free(matrix_info);
+      sycl::free(scratchpad, queue);
+    });
   });
   queue.memset(info, 0, group_size * sizeof(int));
-  std::vector<void *> ptrs{scratchpad};
-  async_dpct_free(ptrs, {e}, queue);
   return 0;
 #endif
 }
