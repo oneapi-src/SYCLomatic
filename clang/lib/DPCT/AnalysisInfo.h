@@ -3476,6 +3476,7 @@ public:
   }
 
   void emplaceReplacement();
+  unsigned getExtraArgLoc() { return ExtraArgLoc; }
   inline bool hasArgs() { return HasArgs; }
   inline bool hasTemplateArgs() { return !TemplateArgs.empty(); }
   inline bool hasWrittenTemplateArgs() {
