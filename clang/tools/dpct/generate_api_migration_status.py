@@ -42,7 +42,7 @@ def format_sing_line(API_list:list):
     return '|'+'{0: <60}'.format(API_list[0]) +'|'+'{0: ^10}'.format(API_list[1])+'|'+'{0: ^150}'.format(API_list[2])+'|\n'
 
 def format_lib(lib_name:str,APIs_list:list):
-    lib_str='## '+lib_name+'\n'
+    lib_str='# '+lib_name+'\n'
     lib_str += '| CUDA API | Migration support or not | Diagnostic message|\n'
     lib_str += '| :---- | :----: | :----: |\n'
     for API_list in APIs_list:
@@ -120,11 +120,11 @@ def do_update(args):
     if os.path.exists(output_path) is False :
         warnings.warn("output path is not exist")
         return False
-    lib_names = ['runtime_and_driver','CUB','cuBLAS','cuDNN','cuFFT','cuGRAPH','cuRAND','cuSOLVER','cuSPARSE','NCCL','nvJPEG','NVML','thrust']
+    lib_names = ['Runtime_and_Driver','CUB','cuBLAS','cuDNN','cuFFT','cuGRAPH','cuRAND','cuSOLVER','cuSPARSE','NCCL','nvJPEG','NVML','thrust']
     # lib file name = APINames_$(libname).inc
     # runtime and drive is an exception
     for lib_name in lib_names:
-        if lib_name == 'runtime_and_driver':
+        if lib_name == 'Runtime_and_Driver':
             lib_record_file = 'APINames.inc'
         else:
             lib_record_file = 'APINames'+'_'+lib_name+'.inc'
