@@ -221,7 +221,6 @@ inline int hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
 // DPCT_LABEL_BEGIN|potrf_batch|dpct::lapack
 // DPCT_DEPENDENCY_BEGIN
 // Util|DataType|UsmRestricted
-// Memory|async_dpct_free|UsmRestricted
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Computes the Cholesky factorizations of a batch of symmetric (or Hermitian,
@@ -301,7 +300,6 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 // DPCT_LABEL_BEGIN|potrs_batch|dpct::lapack
 // DPCT_DEPENDENCY_BEGIN
 // Util|DataType|UsmRestricted
-// Memory|async_dpct_free|UsmRestricted
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Solves a batch of systems of linear equations with a Cholesky-factored
