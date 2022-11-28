@@ -4706,26 +4706,27 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       ReplaceStrs.PrefixInsertStr =
           ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
           MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
-          CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] + ", " +
-          CSRRowPtrA + ", " + CSRColIndA + ", " + CSRValA + ");" + getNL() +
-          ReplaceStrs.IndentStr;
+          CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
+          "->get<oneapi::mkl::index_base>(), " + CSRRowPtrA + ", " +
+          CSRColIndA + ", " + CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
     } else {
       if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv")
         ReplaceStrs.PrefixInsertStr =
             ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
             MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
-            ", const_cast<int*>(" + CSRRowPtrA + "), const_cast<int*>(" +
-            CSRColIndA + "), const_cast<" + BufferType + "*>(" + CSRValA +
-            "));" + getNL() + ReplaceStrs.IndentStr;
+            "->get<oneapi::mkl::index_base>(), const_cast<int*>(" + CSRRowPtrA +
+            "), const_cast<int*>(" + CSRColIndA + "), const_cast<" +
+            BufferType + "*>(" + CSRValA + "));" + getNL() +
+            ReplaceStrs.IndentStr;
       else
         ReplaceStrs.PrefixInsertStr =
             ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
             MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
-            ", const_cast<int*>(" + CSRRowPtrA + "), const_cast<int*>(" +
-            CSRColIndA + "), (" + BufferType + "*)" + CSRValA + ");" + getNL() +
-            ReplaceStrs.IndentStr;
+            "->get<oneapi::mkl::index_base>(), const_cast<int*>(" + CSRRowPtrA +
+            "), const_cast<int*>(" + CSRColIndA + "), (" + BufferType + "*)" +
+            CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
     }
     ReplaceStrs.SuffixInsertStr =
         ReplaceStrs.SuffixInsertStr + getNL() + ReplaceStrs.IndentStr +
@@ -4843,26 +4844,27 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       ReplaceStrs.PrefixInsertStr =
           ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
           MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
-          CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] + ", " +
-          CSRRowPtrA + ", " + CSRColIndA + ", " + CSRValA + ");" + getNL() +
-          ReplaceStrs.IndentStr;
+          CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] +
+          "->get<oneapi::mkl::index_base>(), " + CSRRowPtrA + ", " +
+          CSRColIndA + ", " + CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
     } else {
       if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm")
         ReplaceStrs.PrefixInsertStr =
             ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
             MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] +
-            ", const_cast<int*>(" + CSRRowPtrA + "), const_cast<int*>(" +
-            CSRColIndA + "), const_cast<" + BufferType + "*>(" + CSRValA +
-            "));" + getNL() + ReplaceStrs.IndentStr;
+            "->get<oneapi::mkl::index_base>(), const_cast<int*>(" + CSRRowPtrA +
+            "), const_cast<int*>(" + CSRColIndA + "), const_cast<" +
+            BufferType + "*>(" + CSRValA + "));" + getNL() +
+            ReplaceStrs.IndentStr;
       else
         ReplaceStrs.PrefixInsertStr =
             ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
             MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] +
-            ", const_cast<int*>(" + CSRRowPtrA + "), const_cast<int*>(" +
-            CSRColIndA + "), (" + BufferType + "*)" + CSRValA + ");" + getNL() +
-            ReplaceStrs.IndentStr;
+            "->get<oneapi::mkl::index_base>(), const_cast<int*>(" + CSRRowPtrA +
+            "), const_cast<int*>(" + CSRColIndA + "), (" + BufferType + "*)" +
+            CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
     }
     ReplaceStrs.SuffixInsertStr =
         ReplaceStrs.SuffixInsertStr + getNL() + ReplaceStrs.IndentStr +
