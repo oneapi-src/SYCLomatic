@@ -405,6 +405,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"ncclComm_t",
        std::make_shared<TypeNameRule>("oneapi::ccl::communicator *",
                                       HelperFeatureEnum::CclUtils_create_kvs)},
+      {"ncclRedOp_t", std::make_shared<TypeNameRule>("oneapi::ccl::reduction")},
+      {"ncclDataType_t", std::make_shared<TypeNameRule>("oneapi::ccl::datatype")},
       // ...
   };
 
@@ -1074,6 +1076,25 @@ void MapNames::setExplicitNamespaceMap() {
                         getDpctNamespace() +
                             "fft::fft_type::complex_double_to_complex_double",
                         HelperFeatureEnum::FftUtils_fft_type)},
+      {"ncclSum", std::make_shared<EnumNameRule>("sum")},
+      {"ncclProd", std::make_shared<EnumNameRule>("prod")},
+      {"ncclMin", std::make_shared<EnumNameRule>("min")},
+      {"ncclMax", std::make_shared<EnumNameRule>("max")},
+      {"ncclInt8", std::make_shared<EnumNameRule>("int8")},
+      {"ncclChar", std::make_shared<EnumNameRule>("int8")},
+      {"ncclUInt8", std::make_shared<EnumNameRule>("uint8")},
+      {"ncclInt32", std::make_shared<EnumNameRule>("int32")},
+      {"ncclInt", std::make_shared<EnumNameRule>("int32")},
+      {"ncclUInt32", std::make_shared<EnumNameRule>("uint32")},
+      {"ncclInt64", std::make_shared<EnumNameRule>("int64")},
+      {"ncclUInt64", std::make_shared<EnumNameRule>("uint64")},
+      {"ncclUFloat16", std::make_shared<EnumNameRule>("float16")},
+      {"ncclHalf", std::make_shared<EnumNameRule>("float16")},
+      {"ncclFloat32", std::make_shared<EnumNameRule>("float32")},
+      {"ncclFloat", std::make_shared<EnumNameRule>("float32")},
+      {"ncclFloat64", std::make_shared<EnumNameRule>("float64")},
+      {"ncclDouble", std::make_shared<EnumNameRule>("float64")},
+      {"ncclBfloat16", std::make_shared<EnumNameRule>("bfloat16")},
       // ...
   };
 

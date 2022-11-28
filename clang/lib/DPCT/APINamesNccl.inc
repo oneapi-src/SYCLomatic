@@ -24,3 +24,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::CclUtils_create_kvs,
                                                                  ARG(1), ARG(3),
                                                                  CALL(MapNames::getDpctNamespace() + "ccl::create_kvs",
                                                                       ARG(2)))))))
+
+ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("ncclCommCount", DEREF(1),
+                                        CALL(MapNames::getDpctNamespace() +
+                                             "ccl::create_kvs_address")))
