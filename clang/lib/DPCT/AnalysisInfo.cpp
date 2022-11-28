@@ -605,7 +605,7 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
     case HT_MKL_SPBLAS:
       return insertHeader(
           HeaderType::HT_MKL_BLAS, LastIncludeOffset, "<oneapi/mkl.hpp>",
-          "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
+          "<" + getCustomMainHelperFileName() + "/sparse_utils.hpp>");
     case HT_MKL_FFT:
       return insertHeader(
           HeaderType::HT_MKL_FFT, LastIncludeOffset, "<oneapi/mkl.hpp>",
