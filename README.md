@@ -1,14 +1,24 @@
 
 # SYCLomatic
 
-  - [Introduction](#Introduction)
-  - [Releases](#Releases)
+- [SYCLomatic](#syclomatic)
+  - [Introduction](#introduction)
+  - [Releases](#releases)
   - [Build from source code](#build-from-source-code)
-  - [Run SYCLomatic](#Run-SYCLomatic)
+    - [Prerequisites](#prerequisites)
+    - [Create SYCLomatic workspace](#create-syclomatic-workspace)
+    - [Build SYCLomatic](#build-syclomatic)
+    - [Deployment](#deployment)
+    - [Test SYCLomatic](#test-syclomatic)
+      - [Run in-tree LIT tests](#run-in-tree-lit-tests)
+      - [Run E2E test suite](#run-e2e-test-suite)
+  - [Run SYCLomatic](#run-syclomatic)
+    - [Run c2s command](#run-c2s-command)
   - [Known Issues and Limitations](#known-issues-and-limitations)
-  - [Useful Links](#Useful-links)
-  - [License](#License)
-  - [Contributing](#Contributing)
+  - [Useful Links](#useful-links)
+  - [License](#license)
+  - [Contributing](#contributing)
+  - [Trademarks information](#trademarks-information)
 
 ## Introduction
 
@@ -120,8 +130,8 @@ SET CPATH=%PATH_TO_C2S_INSTALL_FOLDER%\include;%CPATH%
 ### Test SYCLomatic
 #### Run in-tree LIT tests
 
-Note: Certain CUDA header files may need to be accessible to the tool.
-After build the SYCLomatic, you can run the list test by: 
+Note: Certain CUDA SDK, CCL and DNN header files need to be accessible to the tool. And the tool supports version 11.8 SDK header files.
+After build the SYCLomatic, you can run the list test by:
 
 ninja check-clang-c2s
 
