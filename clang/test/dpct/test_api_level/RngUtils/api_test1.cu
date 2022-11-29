@@ -13,7 +13,6 @@
 // CODE-NEXT:#define DPCT_USM_LEVEL_NONE
 // CODE-NEXT:#include <sycl/sycl.hpp>
 // CODE-NEXT:#include <dpct/dpct.hpp>
-// CODE-NEXT:#include <oneapi/mkl.hpp>
 // CODE-NEXT:#include <oneapi/mkl/rng/device.hpp>
 // CODE-NEXT:// BBB
 
