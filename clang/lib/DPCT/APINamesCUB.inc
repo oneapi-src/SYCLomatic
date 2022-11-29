@@ -267,7 +267,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
     REMOVE_API_FACTORY_ENTRY("cub::DeviceSelect::Flagged"),
     HEADER_INSERT_FACTORY(
-        HeaderType::HT_DPL_Utils,
+        HeaderType::HT_DPCT_DPL_Utils,
         REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
             makeCheckAnd(CheckArgCountGreaterThan(7),
                          makeCheckNot(CheckArgIsDefaultCudaStream(7))),
@@ -347,7 +347,7 @@ CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
     REMOVE_API_FACTORY_ENTRY("cub::DeviceRunLengthEncode::Encode"),
     HEADER_INSERT_FACTORY(
-        HeaderType::HT_DPL_Utils,
+        HeaderType::HT_DPCT_DPL_Utils,
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPL_Execution,
             HEADER_INSERT_FACTORY(
@@ -407,7 +407,7 @@ CONDITIONAL_FACTORY_ENTRY(
     REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::DplExtrasDpcppExtensions_segmented_reduce,
         HEADER_INSERT_FACTORY(
-            HeaderType::HT_DPL_Utils,
+            HeaderType::HT_DPCT_DPL_Utils,
             WARNING_FACTORY_ENTRY(
                 "cub::DeviceSegmentedReduce::Reduce",
                 CONDITIONAL_FACTORY_ENTRY(
@@ -466,7 +466,7 @@ CONDITIONAL_FACTORY_ENTRY(
     REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::DplExtrasDpcppExtensions_segmented_reduce,
         HEADER_INSERT_FACTORY(
-            HeaderType::HT_DPL_Utils,
+            HeaderType::HT_DPCT_DPL_Utils,
             WARNING_FACTORY_ENTRY(
                 "cub::DeviceSegmentedReduce::Sum",
                 CONDITIONAL_FACTORY_ENTRY(
@@ -509,9 +509,9 @@ CONDITIONAL_FACTORY_ENTRY(
     REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::DplExtrasDpcppExtensions_segmented_reduce,
         HEADER_INSERT_FACTORY(
-            HeaderType::HT_DPL_Utils,
+            HeaderType::HT_DPCT_DPL_Utils,
             HEADER_INSERT_FACTORY(
-                HeaderType::HT_STD_Numeric_Limits,
+                HeaderType::HT_Limits,
                 WARNING_FACTORY_ENTRY(
                     "cub::DeviceSegmentedReduce::Min",
                     CONDITIONAL_FACTORY_ENTRY(
@@ -567,9 +567,9 @@ CONDITIONAL_FACTORY_ENTRY(
     REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::DplExtrasDpcppExtensions_segmented_reduce,
         HEADER_INSERT_FACTORY(
-            HeaderType::HT_DPL_Utils,
+            HeaderType::HT_DPCT_DPL_Utils,
             HEADER_INSERT_FACTORY(
-                HeaderType::HT_STD_Numeric_Limits,
+                HeaderType::HT_Limits,
                 WARNING_FACTORY_ENTRY(
                     "cub::DeviceSegmentedReduce::Max",
                     CONDITIONAL_FACTORY_ENTRY(

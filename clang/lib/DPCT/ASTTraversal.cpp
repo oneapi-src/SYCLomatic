@@ -893,10 +893,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_BLAS);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(
-          HashLoc, HT_MKL_Without_Util);
+          HashLoc, HT_MKL_Mkl);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -915,10 +915,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_RNG);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_RNG_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_RNG_Without_Util);
+                                                 HT_MKL_RNG);
     }
     DpctGlobalInfo::setMKLHeaderUsed(true);
     TransformSet.emplace_back(new ReplaceInclude(
@@ -935,10 +935,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_SPBLAS);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Without_Util);
+                                                 HT_MKL_Mkl);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -955,10 +955,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_FFT);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_FFT_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Without_Util);
+                                                 HT_MKL_Mkl);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -975,10 +975,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_Solver);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_LAPACK_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Without_Util);
+                                                 HT_MKL_Mkl);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -991,7 +991,7 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   if (FileName.compare(StringRef("nccl.h")) == 0) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_CCL);
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_CCL_Utils);
     requestFeature(HelperFeatureEnum::CclUtils_create_kvs_address, HashLoc);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
@@ -1003,7 +1003,7 @@ void IncludesCallbacks::InclusionDirective(
     if (isChildOrSamePath(AnalysisScope, DirPath)) {
       return;
     }
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Dnnl);
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_DNNL_Utils);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -1013,7 +1013,7 @@ void IncludesCallbacks::InclusionDirective(
 
   if (FileName.compare(StringRef("cuda/atomic")) == 0||
       FileName.compare(StringRef("cuda/std/atomic")) == 0) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Atomic);
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_Atomic);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -1065,7 +1065,7 @@ void IncludesCallbacks::InclusionDirective(
   // Extra process thrust headers, map to PSTL mapping headers in runtime.
   // For multi thrust header files, only insert once for PSTL mapping header.
   if (FileName.find("thrust/") != std::string::npos) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Utils);
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_DPL_Utils);
     requestFeature(HelperFeatureEnum::DplUtils_non_local_include_dependency,
                    HashLoc);
     TransformSet.emplace_back(new ReplaceInclude(
@@ -3192,7 +3192,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     // Add '#include <oneapi/mkl/bfloat16.hpp>' directive to the file only once
     if (TypeStr == "__nv_bfloat16") {
-      DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_BFloat16);
+      DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_MKL_BFloat16);
     }
     // Add '#include <dpct/lib_common_utils.hpp>' directive to the file only
     // once
@@ -3204,7 +3204,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
               HelperFilesCustomizationLevel::HFCL_All) {
         DpctGlobalInfo::getInstance().insertHeader(BeginLoc,
-                                                   HT_Lib_Common_Utils);
+                                                   HT_DPCT_COMMON_Utils);
       }
     }
 
@@ -4258,7 +4258,7 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
           DpctGlobalInfo::getInstance().insertHeader(
               DpctGlobalInfo::getSourceManager().getExpansionLoc(
                   E->getBeginLoc()),
-              HT_Lib_Common_Utils);
+              HT_DPCT_COMMON_Utils);
         }
       }
     }
@@ -6980,7 +6980,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
               HelperFilesCustomizationLevel::HFCL_All) {
         DpctGlobalInfo::getInstance().insertHeader(
-            SM->getExpansionLoc(CE->getBeginLoc()), HT_Lib_Common_Utils);
+            SM->getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
       }
     }
 
@@ -14951,7 +14951,7 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
       DpctGlobalInfo::getInstance().insertHeader(
-          SM.getExpansionLoc(CE->getBeginLoc()), HT_Lib_Common_Utils);
+          SM.getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
     }
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());

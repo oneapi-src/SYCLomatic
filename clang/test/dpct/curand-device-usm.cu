@@ -3,8 +3,6 @@
 
 //CHECK: #include <sycl/sycl.hpp>
 //CHECK-NEXT: #include <dpct/dpct.hpp>
-//CHECK-NEXT: #include <oneapi/mkl.hpp>
-//CHECK-NEXT: #include <oneapi/mkl/rng/device.hpp>
 //CHECK-NEXT: #include <dpct/rng_utils.hpp>
 //CHECK-NEXT: #include <cstdio>
 //CHECK-NEXT: #include <tuple>

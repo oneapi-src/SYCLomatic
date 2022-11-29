@@ -845,7 +845,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                 HelperFeatureEnum::DplExtrasDpcppExtensions_exclusive_scan,
                 BlockMC);
             DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
-                                                       HT_DPL_Utils);
+                                                       HT_DPCT_DPL_Utils);
             IsReferenceOutput = true;
           } else {
             report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
@@ -876,7 +876,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
                 HelperFeatureEnum::DplExtrasDpcppExtensions_exclusive_scan,
                 BlockMC);
             DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
-                                                       HT_DPL_Utils);
+                                                       HT_DPCT_DPL_Utils);
           }
         }
       } else if (NumArgs == 5) {
@@ -895,7 +895,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
               HelperFeatureEnum::DplExtrasDpcppExtensions_exclusive_scan,
               BlockMC);
           DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
-                                                     HT_DPL_Utils);
+                                                     HT_DPCT_DPL_Utils);
         } else {
           report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
                  "cub::" + FuncName);
@@ -915,7 +915,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
               HelperFeatureEnum::DplExtrasDpcppExtensions_inclusive_scan,
               BlockMC);
           DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
-                                                     HT_DPL_Utils);
+                                                     HT_DPCT_DPL_Utils);
           IsReferenceOutput = true;
         } else {
           OpRepl = getOpRepl(FuncArgs[2]);
@@ -940,7 +940,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
             HelperFeatureEnum::DplExtrasDpcppExtensions_exclusive_scan,
             BlockMC);
         DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
-                                                   HT_DPL_Utils);
+                                                   HT_DPCT_DPL_Utils);
       }
     } else if (FuncName == "ExclusiveSum") {
       if (NumArgs == 2) {
@@ -955,7 +955,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
               HelperFeatureEnum::DplExtrasDpcppExtensions_exclusive_scan,
               BlockMC);
           DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
-                                                     HT_DPL_Utils);
+                                                     HT_DPCT_DPL_Utils);
           GroupOrWorkitem = DpctGlobalInfo::getItem(BlockMC);
           IsReferenceOutput = true;
         } else {
@@ -985,7 +985,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
               HelperFeatureEnum::DplExtrasDpcppExtensions_exclusive_scan,
               BlockMC);
           DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
-                                                     HT_DPL_Utils);
+                                                     HT_DPCT_DPL_Utils);
         } else {
           report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
                  "cub::" + FuncName);
@@ -1005,7 +1005,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
               HelperFeatureEnum::DplExtrasDpcppExtensions_inclusive_scan,
               BlockMC);
           DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
-                                                     HT_DPL_Utils);
+                                                     HT_DPCT_DPL_Utils);
           IsReferenceOutput = true;
         } else {
           OpRepl = getOpRepl(nullptr);
@@ -1030,7 +1030,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
             HelperFeatureEnum::DplExtrasDpcppExtensions_inclusive_scan,
             BlockMC);
         DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
-                                                   HT_DPL_Utils);
+                                                   HT_DPCT_DPL_Utils);
       }
     } else {
       report(BlockMC->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
@@ -1059,7 +1059,7 @@ void CubRule::processBlockLevelMemberCall(const CXXMemberCallExpr *BlockMC) {
       requestFeature(HelperFeatureEnum::DplExtrasDpcppExtensions_reduce,
                      BlockMC);
       DpctGlobalInfo::getInstance().insertHeader(BlockMC->getBeginLoc(),
-                                                 HT_DPL_Utils);
+                                                 HT_DPCT_DPL_Utils);
     } else {
       NewFuncName = MapNames::getClNamespace() + "reduce_over_group";
     }

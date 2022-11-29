@@ -5,7 +5,7 @@
 // CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: #include <cstdio>
-// CHECK: #include <oneapi/mkl.hpp>
+// CHECK: #include <dpct/blas_utils.hpp>
 #include <cstdio>
 #include "cublas_v2.h"
 #include <cuda_runtime.h>

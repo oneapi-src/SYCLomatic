@@ -555,145 +555,88 @@ void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
     Repls->emplaceIntoReplSet(ReplSet[FilePath]);
 }
 
-void DpctFileInfo::insertHeader(HeaderType Type) {
-    switch (Type) {
-    case HT_SYCL:
-      return insertHeader(HeaderType::HT_SYCL, FirstIncludeOffset,
-                          "<sycl/sycl.hpp>",
-                          "<" + getCustomMainHelperFileName() + "/" +
-                              getCustomMainHelperFileName() + ".hpp>");
-    case HT_Math:
-      return insertHeader(HeaderType::HT_Math, LastIncludeOffset, "<cmath>");
-    case HT_Algorithm:
-      return insertHeader(HeaderType::HT_Algorithm, LastIncludeOffset,
-                          "<algorithm>");
-    case HT_Complex:
-      return insertHeader(HeaderType::HT_Complex, LastIncludeOffset,
-                          "<complex>");
-    case HT_Thread:
-      return insertHeader(HeaderType::HT_Thread, LastIncludeOffset, "<thread>");
-    case HT_Future:
-      return insertHeader(HeaderType::HT_Future, LastIncludeOffset, "<future>");
-    case HT_Time:
-      return insertHeader(HeaderType::HT_Time, LastIncludeOffset, "<time.h>");
-    case HT_Dnnl:
-      if (this != DpctGlobalInfo::getInstance().getMainFile().get())
-        return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-            HT_Dnnl);
-      return insertHeader(HeaderType::HT_Dnnl, FirstIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/dnnl_utils.hpp>");
-    case HT_MKL_Without_Util:
-      return insertHeader(
-          HeaderType::HT_MKL_Without_Util, LastIncludeOffset, "<oneapi/mkl.hpp>");
-    case HT_MKL_BLAS:
-      return insertHeader(
-          HeaderType::HT_MKL_BLAS, LastIncludeOffset, "<oneapi/mkl.hpp>",
-          "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
-    case HT_MKL_Solver:
-      return insertHeader(HeaderType::HT_MKL_Solver, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>",
-          "<" + getCustomMainHelperFileName() + "/lapack_utils.hpp>");
-    case HT_MKL_RNG:
-      return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>",
-                          "<" + getCustomMainHelperFileName() +
-                              "/rng_utils.hpp>");
-    case HT_MKL_RNG_Without_Util:
-      return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>");
-    case HT_MKL_SPBLAS:
-      return insertHeader(
-          HeaderType::HT_MKL_BLAS, LastIncludeOffset, "<oneapi/mkl.hpp>",
-          "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
-    case HT_MKL_FFT:
-      return insertHeader(
-          HeaderType::HT_MKL_FFT, LastIncludeOffset, "<oneapi/mkl.hpp>",
-          "<" + getCustomMainHelperFileName() + "/fft_utils.hpp>");
-    case HT_Numeric:
-      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
-                          "<numeric>");
-    case HT_Chrono:
-      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
-                          "<chrono>");
-    case HT_DL:
-#ifdef _WIN32
-      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
-                          "<libloaderapi.h>");
-#else
-      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
-                          "<dlfcn.h>");
-#endif
-    case HT_STD_Numeric_Limits:
-      return insertHeader(HeaderType::HT_STD_Numeric_Limits, LastIncludeOffset,
-                          "<limits>");
-    case HT_DPL_Utils:
-      // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
-      // <oneapi/dpl/algorithm>, so we have to make sure that
-      // <oneapi/dpl/execution> and <oneapi/dpl/algorithm> are inserted before
-      // <CL/sycl.hpp>
-      // e.g.
-      // #include <CL/sycl.hpp>
-      // #include <dpct/dpct.hpp>
-      // #include <dpct/dpl_utils.hpp>
-      // ...
-      // This will cause compilation error due to onedpl header dependence
-      // The order we expect is:
-      // e.g.
-      // #include <oneapi/dpl/execution>
-      // #include <oneapi/dpl/algorithm>
-      // #include <CL/sycl.hpp>
-      // #include <dpct/dpct.hpp>
-      // #include <dpct/dpl_utils.hpp>
-      //
-      // We will insert <oneapi/dpl/execution> and <oneapi/dpl/algorithm> at the
-      // begining of the main file
-      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-          HT_DPL_Execution);
-      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-            HT_DPL_Algorithm);
-      return insertHeader(HeaderType::HT_DPL_Utils, LastIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/dpl_utils.hpp>");
-    case HT_BFloat16:
-      return insertHeader(HeaderType::HT_BFloat16, LastIncludeOffset,
-                          "<oneapi/mkl/bfloat16.hpp>");
-    case HT_Lib_Common_Utils:
-      return insertHeader(HeaderType::HT_Lib_Common_Utils, LastIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/lib_common_utils.hpp>");
-    case HT_CCL:
-      return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/ccl_utils.hpp>");
-    case HT_Atomic:
-      return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/atomic.hpp>");
-    case HT_DPL_Algorithm:
-      // Make sure <oneapi/dpl/algorithm> int the front of <CL/sycl.hpp>, also
-      // when crossing files
-      if (this != DpctGlobalInfo::getInstance().getMainFile().get())
-        return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-            HT_DPL_Algorithm);
-      return insertHeader(HeaderType::HT_DPL_Algorithm, FirstIncludeOffset,
-                          "<oneapi/dpl/algorithm>");
-    case HT_DPL_Execution:
-      // Make sure <oneapi/dpl/execution> int the front of <CL/sycl.hpp>, also
-      // when crossing files
-      if (this != DpctGlobalInfo::getInstance().getMainFile().get())
-        return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-            HT_DPL_Execution);
-      return insertHeader(HeaderType::HT_DPL_Execution, FirstIncludeOffset,
-                          "<oneapi/dpl/execution>");
-    case HT_DPL_Iterator:
-      return insertHeader(HeaderType::HT_DPL_Iterator, LastIncludeOffset,
-                          "<oneapi/dpl/iterator>");
-    case HT_STDLIB:
-      return insertHeader(HeaderType::HT_STDLIB, LastIncludeOffset,
-                          "<cstdlib>");
+static constexpr StringRef HeaderSpellings[] = {
+#define HEADER(X, Y) Y,
+#include "HeaderTypes.inc"
+};
+
+StringRef DpctFileInfo::getHeaderSpelling(HeaderType Type) {
+  if (Type < NUM_HEADERS)
+    return HeaderSpellings[Type];
+  llvm_unreachable("unknown HeaderType");
+}
+
+std::optional<HeaderType> DpctFileInfo::findHeaderType(StringRef Header) {
+  const auto *Pos = llvm::find_if(
+      HeaderSpellings, [Header](StringRef H) -> bool { return Header == H; });
+  if (Pos == std::end(HeaderSpellings))
+    return std::nullopt;
+  return static_cast<HeaderType>(std::distance(HeaderSpellings, Pos));
+}
+
+void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
+  if (HeaderInsertedBitMap[Type])
+    return;
+  HeaderInsertedBitMap[Type] = true;
+  std::string ReplStr;
+  llvm::raw_string_ostream OS(ReplStr);
+
+  // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
+  // previously added here.  However, due to some unfortunate include
+  // dependencies introduced with the PSTL/TBB headers from the
+  // gcc-9.3.0 include files, those two headers must now be included
+  // before the CL/sycl.hpp are included, so the FileInfo is set
+  // to hold a boolean that'll indicate whether to insert them when
+  // the #include CL/sycl.cpp is added later
+  switch (Type) {
+  case HT_DPL_Algorithm:
+  case HT_DPL_Execution:
+  case HT_DPCT_DNNL_Utils:
+    if (this != DpctGlobalInfo::getInstance().getMainFile().get())
+      return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+          Type, FirstIncludeOffset);
+    concatHeader(OS, getHeaderSpelling(Type));
+    return insertHeader(OS.str(), FirstIncludeOffset,
+                        InsertPosition::IP_AlwaysLeft);
+  case HT_SYCL:
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
+      OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
+    concatHeader(OS, getHeaderSpelling(Type));
+    concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
+    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+            ExplicitNamespace::EN_DPCT) ||
+        DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
+      OS << "using namespace dpct;" << getNL();
     }
+    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+            ExplicitNamespace::EN_SYCL) &&
+        !DpctGlobalInfo::getExplicitNamespaceSet().count(
+            ExplicitNamespace::EN_CL)) {
+      OS << "using namespace sycl;" << getNL();
+    }
+    return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Left);
+  case HT_DPCT_DPL_Utils:
+    insertHeader(HT_DPL_Execution, FirstIncludeOffset);
+    insertHeader(HT_DPL_Algorithm, FirstIncludeOffset);
+    [[fallthrough]];
+  default:
+    if (Offset != FirstIncludeOffset)
+      OS << getNL();
+    concatHeader(OS, getHeaderSpelling(Type));
+    return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right);
   }
+}
+
+void DpctFileInfo::insertHeader(HeaderType Type) {
+  switch (Type) {
+#define HEADER(X, Y)                                                           \
+  case HT_##X:                                                                 \
+    return insertHeader(HT_##X, LastIncludeOffset);
+#include "HeaderTypes.inc"
+  default:
+    return;
+  }
+}
 
 void DpctGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
   if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(0)))

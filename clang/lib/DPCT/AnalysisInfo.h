@@ -331,34 +331,9 @@ insertObject(MapType &Map, const typename MapType::key_type &Key,
 }
 
 enum HeaderType {
-  HT_SYCL = 0,
-  HT_Math,
-  HT_Algorithm,
-  HT_Time,
-  HT_Complex,
-  HT_Future,
-  HT_Thread,
-  HT_Numeric,
-  HT_MKL_Without_Util,
-  HT_MKL_BLAS,
-  HT_MKL_Solver,
-  HT_MKL_SPBLAS,
-  HT_MKL_FFT,
-  HT_MKL_RNG,
-  HT_MKL_RNG_Without_Util,
-  HT_Chrono,
-  HT_DL,
-  HT_STD_Numeric_Limits,
-  HT_DPL_Utils,
-  HT_BFloat16,
-  HT_Lib_Common_Utils,
-  HT_Dnnl,
-  HT_CCL,
-  HT_Atomic,
-  HT_DPL_Algorithm,
-  HT_DPL_Execution,
-  HT_DPL_Iterator,
-  HT_STDLIB,
+#define HEADER(X,Y) HT_ ## X,
+#include "HeaderTypes.inc"
+  NUM_HEADERS
 };
 
 enum UsingType {
@@ -474,17 +449,29 @@ public:
     concatHeader(OS, std::forward<Args>(Arguments)...);
   }
 
+  std::optional<HeaderType> findHeaderType(StringRef Header);
+  StringRef getHeaderSpelling(HeaderType Type);
+
   // Insert one or more header inclusion directives at a specified offset
-  void insertHeader(std::string &&Repl, unsigned Offset,
-                    InsertPosition InsertPos = IP_Left) {
+  template <typename ReplacementT>
+  void insertHeader(
+      ReplacementT &&Repl, unsigned Offset, InsertPosition InsertPos = IP_Left,
+      std::enable_if_t<std::is_convertible_v<ReplacementT, std::string>> * =
+          nullptr) {
     auto R =
-        std::make_shared<ExtReplacement>(FilePath, Offset, 0, Repl, nullptr);
+        std::make_shared<ExtReplacement>(FilePath, Offset, 0, std::forward<ReplacementT>(Repl), nullptr);
     R->setSYCLHeaderNeeded(false);
     R->setInsertPosition(InsertPos);
     IncludeDirectiveInsertions.push_back(R);
   }
 
-  void insertCustomizedHeader(std::string &&Repl) {
+  template <typename ReplacementT>
+  void insertCustomizedHeader(
+      ReplacementT &&Repl,
+      std::enable_if_t<std::is_convertible_v<ReplacementT, std::string>> * =
+          nullptr) {
+    if (auto Type = findHeaderType(Repl))
+      return insertHeader(Type.value());
     if (std::find(InsertedHeaders.begin(), InsertedHeaders.end(), Repl) ==
         InsertedHeaders.end()) {
       InsertedHeaders.push_back(Repl);
@@ -494,7 +481,11 @@ public:
   // Insert one or more header inclusion directives at first or last inclusion
   // locations
   template <typename... T>
-  void insertHeader(HeaderType Type, unsigned Offset, T... Args);
+  void insertHeader(T &&... Type) {
+    return (insertHeader(std::forward<T>(Type)), ...);
+  }
+
+  void insertHeader(HeaderType Type, unsigned Offset);
   void insertHeader(HeaderType Type);
 
   // Record line info in file.
@@ -4502,55 +4493,55 @@ private:
   bool IsRealCreate = true;
 };
 
-template <class... T>
-void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
-  if (!HeaderInsertedBitMap[Type]) {
-    HeaderInsertedBitMap[Type] = true;
-    std::string ReplStr;
-    llvm::raw_string_ostream RSO(ReplStr);
-    // Start a new line if we're not inserting at the first inclusion offset
-    if (Offset != FirstIncludeOffset) {
-      RSO << getNL();
-    }
+// template <class... T>
+// void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
+//   if (!HeaderInsertedBitMap[Type]) {
+//     HeaderInsertedBitMap[Type] = true;
+//     std::string ReplStr;
+//     llvm::raw_string_ostream RSO(ReplStr);
+//     // Start a new line if we're not inserting at the first inclusion offset
+//     if (Offset != FirstIncludeOffset) {
+//       RSO << getNL();
+//     }
 
-    if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) &&
-        (Type == HT_SYCL)) {
-      RSO << "#define DPCT_USM_LEVEL_NONE" << getNL();
-    }
+//     if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) &&
+//         (Type == HT_SYCL)) {
+//       RSO << "#define DPCT_USM_LEVEL_NONE" << getNL();
+//     }
 
-    concatHeader(RSO, std::forward<T>(Args)...);
+//     concatHeader(RSO, std::forward<T>(Args)...);
 
-    // We only add these things when inserting HT_SYCL, because we have to make
-    // sure that these things are only added once
-    if (Type == HeaderType::HT_SYCL) {
-      if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-              ExplicitNamespace::EN_DPCT) ||
-          DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
-        RSO << "using namespace dpct;" << getNL();
-      }
-      if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-              ExplicitNamespace::EN_SYCL) &&
-          !DpctGlobalInfo::getExplicitNamespaceSet().count(
-              ExplicitNamespace::EN_CL)) {
-        RSO << "using namespace sycl;" << getNL();
-      }
-    }
+//     // We only add these things when inserting HT_SYCL, because we have to make
+//     // sure that these things are only added once
+//     if (Type == HeaderType::HT_SYCL) {
+//       if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+//               ExplicitNamespace::EN_DPCT) ||
+//           DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
+//         RSO << "using namespace dpct;" << getNL();
+//       }
+//       if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+//               ExplicitNamespace::EN_SYCL) &&
+//           !DpctGlobalInfo::getExplicitNamespaceSet().count(
+//               ExplicitNamespace::EN_CL)) {
+//         RSO << "using namespace sycl;" << getNL();
+//       }
+//     }
 
-    // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
-    // previously added here.  However, due to some unfortunate include
-    // dependencies introduced with the PSTL/TBB headers from the
-    // gcc-9.3.0 include files, those two headers must now be included
-    // before the CL/sycl.hpp are included, so the FileInfo is set
-    // to hold a boolean that'll indicate whether to insert them when
-    // the #include CL/sycl.cpp is added later
-    if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution || Type == HT_Dnnl)
-      insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_AlwaysLeft);
-    else if (Type == HT_SYCL) 
-      insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Left);
-    else
-      insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Right);
-  }
-}
+//     // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
+//     // previously added here.  However, due to some unfortunate include
+//     // dependencies introduced with the PSTL/TBB headers from the
+//     // gcc-9.3.0 include files, those two headers must now be included
+//     // before the CL/sycl.hpp are included, so the FileInfo is set
+//     // to hold a boolean that'll indicate whether to insert them when
+//     // the #include CL/sycl.cpp is added later
+//     if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution || Type == HT_Dnnl)
+//       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_AlwaysLeft);
+//     else if (Type == HT_SYCL) 
+//       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Left);
+//     else
+//       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Right);
+//   }
+// }
 
 /// Find the innermost FunctionDecl's child node (CompoundStmt node) where \S
 /// is located. If there is no CompoundStmt of FunctionDecl out of \S, return

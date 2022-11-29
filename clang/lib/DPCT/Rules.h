@@ -19,6 +19,10 @@ enum RuleKind { API, DataType, Macro, Header, TypeRule, Class, Enum };
 
 enum RulePriority { Takeover, Default, Fallback };
 
+enum RuleAttribute { 
+  CalleeNameOnly,     // Only replace callee name 
+};
+
 struct TypeNameRule {
   std::string NewName;
   clang::dpct::HelperFeatureEnum RequestFeature;
@@ -71,6 +75,13 @@ public:
     std::string Out;
     ClassMethod() {}
   };
+
+  class Attribute {
+  public:
+    RuleAttribute Kind;
+    std::string Value;
+  };
+
   static std::vector<std::string> RuleFiles;
   std::string RuleFile;
   std::string RuleId;
@@ -84,12 +95,21 @@ public:
   std::vector<std::string> Includes;
   std::vector<std::shared_ptr<ClassField>> Fields;
   std::vector<std::shared_ptr<ClassMethod>> Methods;
+  std::vector<std::shared_ptr<Attribute>> Attributes;
   bool HasExplicitTemplateArgs = false;
   MetaRuleObject()
       : Priority(RulePriority::Default), Kind(RuleKind::API) {}
   MetaRuleObject(std::string id, RulePriority priority, RuleKind kind)
       : RuleId(id), Priority(priority), Kind(kind) {}
   static void setRuleFiles(std::string File) { RuleFiles.push_back(File); }
+
+  bool hasAttribute(RuleAttribute Kind) const {
+    return llvm::find_if(
+               Attributes,
+               [Kind](const std::shared_ptr<Attribute> &Attr) -> bool {
+                 return Attr->Kind == Kind;
+               }) != Attributes.end();
+  }
 };
 
 template <class T>
@@ -125,6 +145,12 @@ template <> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
   }
 };
 
+template <> struct llvm::yaml::ScalarEnumerationTraits<RuleAttribute> {
+  static void enumeration(llvm::yaml::IO &Io, RuleAttribute &Value) {
+    Io.enumCase(Value, "CalleeNameOnly", RuleAttribute::CalleeNameOnly);
+  }
+};
+
 template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
   static void mapping(llvm::yaml::IO &Io,
                       std::shared_ptr<MetaRuleObject> &Doc) {
@@ -141,6 +167,7 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapOptional("Prefix", Doc->Prefix);
     Io.mapOptional("Postfix", Doc->Postfix);
     Io.mapOptional("HasExplicitTemplateArgs", Doc->HasExplicitTemplateArgs);
+    Io.mapOptional("Attribute", Doc->Attributes);
   }
 };
 
@@ -163,6 +190,15 @@ struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::ClassMethod>> {
     Doc = std::make_shared<MetaRuleObject::ClassMethod>();
     Io.mapRequired("In", Doc->In);
     Io.mapRequired("Out", Doc->Out);
+  }
+};
+
+template<>
+struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::Attribute>> {
+  static void mapping(llvm::yaml::IO &Io, std::shared_ptr<MetaRuleObject::Attribute> &Doc) {
+    Doc= std::make_shared<MetaRuleObject::Attribute>();
+    Io.mapRequired("Kind", Doc->Kind);
+    Io.mapRequired("Value", Doc->Value);
   }
 };
 

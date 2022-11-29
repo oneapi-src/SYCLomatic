@@ -51,7 +51,7 @@ TYPE_REWRITE_ENTRY("cub::TransformInputIterator",
                                     TEMPLATE_ARG(2), TEMPLATE_ARG(1))))
 
 TYPE_REWRITE_ENTRY("cub::ConstantInputIterator",
-                   HEADER_INSERTION_FACTORY(HeaderType::HT_DPL_Utils,
+                   HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_DPL_Utils,
                    TYPE_FACTORY(STR("dpct::constant_iterator"), TEMPLATE_ARG(0))))
 
 TYPE_REWRITE_ENTRY("cub::Sum",
