@@ -1,4 +1,5 @@
-//===--------------- NCCLMigration.cpp --------------------------------------===//
+//===--------------- NCCLMigration.cpp
+//--------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -18,12 +19,14 @@ using namespace clang::ast_matchers;
 
 void clang::dpct::NCCLRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(typeLoc(loc(qualType(hasDeclaration(namedDecl(
-                            hasAnyName("ncclUniqueId", "ncclComm_t"))))))
+                            hasAnyName("ncclUniqueId", "ncclComm_t",
+                                       "ncclRedOp_t", "ncclDataType_t"))))))
                     .bind("type"),
                 this);
   MF.addMatcher(
       callExpr(callee(functionDecl(hasAnyName(
-                   "ncclGetVersion", "ncclGetUniqueId", "ncclCommInitRank"))))
+                   "ncclGetVersion", "ncclGetUniqueId", "ncclCommInitRank",
+                   "ncclCommCount", "ncclCommCuDevice", "ncclAllReduce"))))
           .bind("call"),
       this);
 }

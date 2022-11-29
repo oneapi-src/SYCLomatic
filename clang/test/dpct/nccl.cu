@@ -7,7 +7,7 @@
 int check(ncclResult_t);
 
 int main() {
-    int version, nranks, rank;
+    int version, nranks, rank, count;
     // CHECK: oneapi::ccl::kvs::address_type id;
     ncclUniqueId id;
     // CHECK: oneapi::ccl::communicator * comm;
@@ -30,6 +30,18 @@ int main() {
 
     // CHECK: check((comm = new oneapi::ccl::communicator(oneapi::ccl::create_communicator(nranks, rank, dpct::ccl::create_kvs(id))), 0));    
     check(ncclCommInitRank(&comm, nranks, id, rank));
+
+    // CHECK: count = comm.size();
+    ncclCommCount(comm, &count);
+
+    // CHECK: check((count = comm.size(), 0));
+    check(ncclCommCount(comm, &count));
+
+    // CHECK: count = comm.get_device();
+    ncclCommCuDevice(comm, &count);
+
+    // CHECK: check((count = comm.get_device(), 0));
+    check(ncclCommCuDevice(comm, &count));
 
     void *buff;
     size_t count;
