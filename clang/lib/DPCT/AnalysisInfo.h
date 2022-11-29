@@ -21,6 +21,7 @@
 #include "ValidateArguments.h"
 #include <bitset>
 #include <unordered_set>
+#include <optional>
 #include <vector>
 
 #include "clang/AST/Attr.h"
