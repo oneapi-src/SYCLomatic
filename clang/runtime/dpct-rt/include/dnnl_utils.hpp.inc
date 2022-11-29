@@ -4337,7 +4337,10 @@ sycl::event engine_ext::execute_rnn_forward_primitive(
     if (kind == ::dnnl::prop_kind::forward_training) {
       if (workspace_size) {
         *workspace_size += (src_desc.get_size() + dst_desc.get_size() +
-                            iter_desc.get_size() + iter_c_desc.get_size());
+                            iter_desc.get_size());
+        if (mode == rnn_mode::lstm) {
+          *workspace_size += iter_c_desc.get_size();
+        }
       } else {
         _q->memcpy((uint8_t *)(data[7]) + offset[5], in_cache,
                    src_desc.get_size());
@@ -4391,7 +4394,7 @@ sycl::event engine_ext::rnn_forward_internal(
     return sycl::event();
   }
 
-  if (!is_get_execution_args) {
+  if (!is_get_execution_args || !is_weight) {
     auto src_layer_dims = src_desc.get_dims();
     seq_length = src_layer_dims[0];
     batch_size = src_layer_dims[1];
@@ -4701,7 +4704,6 @@ sycl::event engine_ext::execute_rnn_backward_primitive(
         {DNNL_ARG_DIFF_WEIGHTS_LAYER,
          {::dnnl::memory(weight_layer_desc, _eng,
                          (uint8_t *)(data[14]) - offset[8])}});
-
     if (i == iter_num - 1) {
       e = execute_primitive(p, execution_args, false);
     } else {
@@ -4751,10 +4753,6 @@ engine_ext::async_rnn_backward(const rnn_desc &desc, const memory_desc_ext &src_
       (uint8_t *)diff_src_iter_c + iter_c_desc.get_size(),
       (uint8_t *)diff_dst_iter_c + iter_c_desc.get_size(),
       (uint8_t *)diff_weight + weight_size};
-  std::cout << iter_desc.get_size() << std::endl;
-  std::cout << iter_c_desc.get_size() << std::endl;
-    std::cout << weight_size << std::endl;
-      std::cout << workspace_size << std::endl;
 
   desc.get(&mode, &bias_mode, &direction, &input_mode, &dt, &input_size,
            &hidden_size, &projection_size, &layer_size);
