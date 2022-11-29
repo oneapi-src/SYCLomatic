@@ -1631,7 +1631,7 @@ void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
   }
 
   if (auto RD = ME->getBase()->getType()->getAsCXXRecordDecl()) {
-    if (!RD->isStandardLayout()) {
+    if (!RD->isTriviallyCopyable()) {
       IsRedeclareRequired = true;
     }
   }
