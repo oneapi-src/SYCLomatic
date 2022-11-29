@@ -1,0 +1,11 @@
+- Rule: rule_foo
+  Kind: API
+  Priority: Takeover
+  In: cub::DeviceScan::InclusiveSum
+  Out: cub::DeviceScan::InclusiveSum
+  Attribute:
+    - Kind: CalleeNameOnly
+  Includes: [
+    '<oneapi/dpl/execution>',
+    '<oneapi/dpl/algorithm>'
+    ]

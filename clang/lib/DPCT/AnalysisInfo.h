@@ -456,10 +456,10 @@ public:
   template <typename ReplacementT>
   void insertHeader(
       ReplacementT &&Repl, unsigned Offset, InsertPosition InsertPos = IP_Left,
-      std::enable_if_t<std::is_convertible_v<ReplacementT, std::string>> * =
-          nullptr) {
-    auto R =
-        std::make_shared<ExtReplacement>(FilePath, Offset, 0, std::forward<ReplacementT>(Repl), nullptr);
+      std::enable_if_t<std::is_convertible_v<std::remove_cv_t<ReplacementT>,
+                                             std::string>> * = nullptr) {
+    auto R = std::make_shared<ExtReplacement>(
+        FilePath, Offset, 0, std::forward<ReplacementT>(Repl), nullptr);
     R->setSYCLHeaderNeeded(false);
     R->setInsertPosition(InsertPos);
     IncludeDirectiveInsertions.push_back(R);
@@ -468,21 +468,14 @@ public:
   template <typename ReplacementT>
   void insertCustomizedHeader(
       ReplacementT &&Repl,
-      std::enable_if_t<std::is_convertible_v<ReplacementT, std::string>> * =
-          nullptr) {
+      std::enable_if_t<std::is_convertible_v<std::remove_cv_t<ReplacementT>,
+                                             std::string>> * = nullptr) {
     if (auto Type = findHeaderType(Repl))
       return insertHeader(Type.value());
     if (std::find(InsertedHeaders.begin(), InsertedHeaders.end(), Repl) ==
         InsertedHeaders.end()) {
       InsertedHeaders.push_back(Repl);
     }
-  }
-
-  // Insert one or more header inclusion directives at first or last inclusion
-  // locations
-  template <typename... T>
-  void insertHeader(T &&... Type) {
-    return (insertHeader(std::forward<T>(Type)), ...);
   }
 
   void insertHeader(HeaderType Type, unsigned Offset);

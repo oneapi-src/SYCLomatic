@@ -79,7 +79,6 @@ public:
   class Attribute {
   public:
     RuleAttribute Kind;
-    std::string Value;
   };
 
   static std::vector<std::string> RuleFiles;
@@ -198,7 +197,6 @@ struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::Attribute>> {
   static void mapping(llvm::yaml::IO &Io, std::shared_ptr<MetaRuleObject::Attribute> &Doc) {
     Doc= std::make_shared<MetaRuleObject::Attribute>();
     Io.mapRequired("Kind", Doc->Kind);
-    Io.mapRequired("Value", Doc->Value);
   }
 };
 
