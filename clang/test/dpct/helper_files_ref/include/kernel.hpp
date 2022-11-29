@@ -221,7 +221,7 @@ private:
 void *ptr;
 };
 
-static char *mkfilename()
+static std::string mkfilename()
 {
   time_t rawtime;
   char buffer[80];
@@ -236,17 +236,16 @@ static char *mkfilename()
 
   sprintf(buffer,"%08X",i);
 
-  static char tempfile[200];
-
-  sprintf(tempfile,
-#ifdef _WIN32
-          "%sdpct%s.dll",
-#else
-          "%s/dpct%s",
+  return std::filesystem::temp_directory_path().string()
+#ifndef _WIN32
+         + "/"
 #endif
-          std::filesystem::temp_directory_path().string().c_str(),
-          buffer);
-  return(tempfile);
+         + "dpct"
+         + buffer
+#ifdef _WIN32
+         + ".dll"
+#endif
+         ;
 }
 
 static module load_dl_from_vector(const std::vector<char> &blob) {
