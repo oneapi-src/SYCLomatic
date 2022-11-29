@@ -23,6 +23,7 @@
 #include <oneapi/dnnl/dnnl.hpp>
 #include <oneapi/dnnl/dnnl_sycl.hpp>
 #include <unordered_map>
+#include <algorithm>
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|local_include_dependency|
@@ -43,9 +44,18 @@ namespace dnnl {
 enum class memory_format_tag { nchw, nhwc, nchw_blocked };
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|rnn_memory_format_tag|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// An enum class representing RNN data memory layout. Used by
+/// memory_desc_ext to create a memory with pre-defined layout.
+enum class rnn_memory_format_tag { tnc, ntc };
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|memory_desc_ext|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|memory_format_tag
+// DnnlUtils|rnn_memory_format_tag
 // LibCommonUtils|library_data_t
 // DnnlUtils|memory_desc_ext_def
 // DPCT_DEPENDENCY_END
@@ -53,14 +63,6 @@ enum class memory_format_tag { nchw, nhwc, nchw_blocked };
 /// A class holding the description of an N-dimensions memory.
 class memory_desc_ext {
   ::dnnl::memory::desc _desc;
-  /// Convert dpct::library_data_t to dnnl::memory::data_type.
-  static ::dnnl::memory::data_type to_dnnl_data_type(dpct::library_data_t dt);
-  /// Convert dnnl::memory::data_type to dpct::library_data_t.
-  static dpct::library_data_t
-  to_dpct_library_data_t(::dnnl::memory::data_type dt, unsigned block_size);
-  /// Convert dpct::dnnl::memory_format_tag to dnnl::memory::format_tag.
-  static ::dnnl::memory::format_tag to_dnnl_format_tag(dpct::library_data_t dt,
-                                                       memory_format_tag tag);
 
 public:
   memory_desc_ext() = default;
@@ -75,6 +77,13 @@ public:
   /// \param [in] w Width of images.
   void set(memory_format_tag tag, dpct::library_data_t dt, int n, int c, int h,
            int w);
+  /// Setting a 3D RNN data memory with given parameters.
+  /// \param [in] tag RNN data format tag.
+  /// \param [in] dt Data type.
+  /// \param [in] t Number of sequence length.
+  /// \param [in] n Number of batch.
+  /// \param [in] c Height of input channel.
+  void set(rnn_memory_format_tag tag, dpct::library_data_t dt, int t, int n, int c);
   /// Setting a 4D memory with given parameters.
   /// \param [in] dt Data type.
   /// \param [in] n Number of images.
@@ -174,6 +183,15 @@ public:
     }
     return result;
   }
+  static size_t get_data_type_size(dpct::library_data_t dt);
+  /// Convert dpct::library_data_t to dnnl::memory::data_type.
+  static ::dnnl::memory::data_type to_dnnl_data_type(dpct::library_data_t dt);
+  /// Convert dnnl::memory::data_type to dpct::library_data_t.
+  static dpct::library_data_t
+  to_dpct_library_data_t(::dnnl::memory::data_type dt, unsigned block_size);
+  /// Convert dpct::dnnl::memory_format_tag to dnnl::memory::format_tag.
+  static ::dnnl::memory::format_tag to_dnnl_format_tag(dpct::library_data_t dt,
+                                                       memory_format_tag tag);
 };
 // DPCT_LABEL_END
 
@@ -632,6 +650,71 @@ public:
 };
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|rnn_mode|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// An enum class representing rnn mode.
+enum class rnn_mode { vanilla_relu, vanilla_tanh, lstm, gru };
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|rnn_bias_mode|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// An enum class representing rnn bias mode.
+enum class rnn_bias_mode { none, single };
+enum class rnn_direction {unidirectional, bidirectional};
+enum class rnn_input_mode {skip, linear};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|rnn_desc|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|rnn_mode
+// DnnlUtils|rnn_bias_mode
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// A class holding description for a convolution operation.
+class rnn_desc {
+  rnn_mode _mode;
+  rnn_bias_mode _bias_mode;
+  rnn_direction _direction;
+  rnn_input_mode _input_mode;
+  dpct::library_data_t _dt;
+  int _input_size;
+  int _hidden_size;
+  int _projection_size;
+  int _layer_size;
+
+public:
+  void set(rnn_mode mode, rnn_bias_mode bias_mode, rnn_direction direction,
+           rnn_input_mode input_mode, dpct::library_data_t dt, int input_size,
+           int hidden_size, int projection_size, int layer_size) {
+    _mode = mode;
+    _bias_mode = bias_mode;
+    _direction = direction;
+    _input_size = input_size;
+    _input_mode = input_mode;
+    _hidden_size = hidden_size;
+    _projection_size = projection_size;
+    _layer_size = layer_size;
+    _dt = dt;
+  }
+  void get(rnn_mode *mode, rnn_bias_mode *bias_mode, rnn_direction *direction,
+           rnn_input_mode *input_mode, dpct::library_data_t *dt,
+           int *input_size, int *hidden_size, int *projection_size,
+           int *layer_size) const {
+    *mode = _mode;
+    *bias_mode = _bias_mode;
+    *direction = _direction;
+    *input_mode = _input_mode;
+    *input_size = _input_size;
+    *hidden_size = _hidden_size;
+    *projection_size = _projection_size;
+    *layer_size = _layer_size;
+    *dt = _dt;
+  }
+};
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|engine_ext|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext_1
@@ -701,11 +784,35 @@ class engine_ext {
 
   template <typename primitive_type, typename... args_type>
   typename primitive_type::primitive_desc
-  create_forward_primitive_desc(args_type &&...args);
+  create_primitive_desc(args_type &&...args);
 
   template <typename primitive_type, typename... args_type>
   primitive_type *
   create_backward_primitive(args_type &&...args);
+
+  sycl::event execute_rnn_forward_primitive(
+      rnn_mode mode, ::dnnl::prop_kind kind, ::dnnl::rnn_direction direction,
+      rnn_bias_mode bias_mode, ::dnnl::memory::data_type dt, int seq_length,
+      int batch_size, int src_c, int dst_c, int layer_size, int direction_num,
+      int hidden_size, int gate_num, int projection_size,
+      std::vector<void *> &data, std::vector<int> &offset, int iter_num,
+      size_t *weight_size = nullptr, size_t *workspace_size = nullptr);
+
+  sycl::event rnn_forward_internal(
+    const rnn_desc &desc, ::dnnl::prop_kind kind,
+    const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
+    void *dst, const memory_desc_ext &iter_desc, void *src_iter, void *dst_iter,
+    const memory_desc_ext &iter_c_desc, void *src_iter_c, void *dst_iter_c,
+    size_t weight_size, void *weight, size_t workspace_size, void *workspace,
+    bool is_get_execution_args, bool is_weight, size_t *size);
+
+sycl::event execute_rnn_backward_primitive(
+    rnn_mode mode, ::dnnl::rnn_direction direction,
+    rnn_bias_mode bias_mode, ::dnnl::memory::data_type dt, int seq_length,
+    int batch_size, int src_c, int dst_c, int layer_size, int direction_num,
+    int hidden_size, int gate_num, int projection_size,
+    std::vector<void *> &data, std::vector<int> &offset, int iter_num,
+    int weight_size, int workspace_size);
 
   template <typename primitive_type, typename args_type>
   void async_free(sycl::queue *q, sycl::event e, primitive_type *primitive,
@@ -732,6 +839,10 @@ class engine_ext {
   execute_primitive(primitive_type *primitive, args_type *args,
                     const std::vector<output_argument_info> &extra_args,
                     const std::vector<void *> &device_ptrs = {});
+  template <typename primitive_type, typename args_type>
+  sycl::event
+  execute_primitive(primitive_type *primitive, args_type *args,
+                    bool preserve = true);
   template <typename T>
   sycl::event fill_with_type(sycl::queue *q, void *src, const void *value,
                              size_t size_with_byte) {
@@ -1861,6 +1972,127 @@ public:
                                         void *diff_bias);
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|rnn_get_weight_space_size_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|rnn_mode
+// DnnlUtils|rnn_bias_mode
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Getting the required weight space size for specified rnn operation.  
+  /// \param [in] desc RNN descriptor.
+  /// \param [out] weight_space_size Size of required weight space.
+  void rnn_get_weight_space_size(const rnn_desc &desc,
+                                 size_t *weight_space_size);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|rnn_get_workspace_size_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|rnn_mode
+// DnnlUtils|rnn_bias_mode
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Getting the required workspace size for specified rnn operation.  
+  /// \param [in] desc RNN descriptor.
+  /// \param [in] kind Propagation kind.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [out] workspace_size Size of required workspace.
+  void rnn_get_workspace_size(const rnn_desc &desc, ::dnnl::prop_kind kind,
+                              const memory_desc_ext &src_desc,
+                              size_t *workspace_size);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|async_rnn_forward_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|rnn_mode
+// DnnlUtils|rnn_bias_mode
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+
+void get_rnn_weight_params(
+    const rnn_desc &desc, int layer, size_t weight_space_size,
+    const void *weight_space, int type, memory_desc_ext &sub_weight_desc,
+    void **sub_weight, memory_desc_ext &sub_bias_desc, void **sub_bias);
+
+sycl::event async_rnn_forward_bidirectional(
+    const rnn_desc &desc, ::dnnl::prop_kind kind,
+    const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
+    void *dst, const memory_desc_ext &iter_desc, void *src_iter, void *dst_iter,
+    const memory_desc_ext &iter_c_desc, void *src_iter_c, void *dst_iter_c,
+    size_t weight_size, void *weight, size_t workspace_size, void *workspace);
+
+  /// Computing a specified rnn function value asynchronously.
+  /// \param [in] desc RNN descriptor.
+  /// \param [in] kind Propagation kind.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [out] dst Pointer to destination data.
+  /// \param [in] iter_desc Recurrent hidden state data memory descriptor.
+  /// \param [in] src_iter Pointer to input recurrent hidden state data.
+  /// \param [in] dst_iter Pointer to output recurrent hidden state data.
+  /// \param [in] iter_c_desc Recurrent cell state data memory descriptor.
+  /// \param [in] src_c_iter Pointer to input recurrent cell state data.
+  /// \param [in] dst_c_iter Pointer to output recurrent cell state data.
+  /// \param [in] weight_size Size of weight memory.
+  /// \param [in] weight Pointer to weight data.
+  /// \param [in] workspace_size Size of workspace memory.
+  /// \param [in] workspace Pointer to workspace data.
+  /// \returns An event representing the rnn forward operations.
+  sycl::event async_rnn_forward(const rnn_desc &desc, ::dnnl::prop_kind kind,
+                               const memory_desc_ext &src_desc, void *src,
+                               const memory_desc_ext &dst_desc, void *dst,
+                               const memory_desc_ext &iter_desc, void *src_iter,
+                               void *dst_iter,
+                               const memory_desc_ext &iter_c_desc,
+                               void *src_iter_c, void *dst_iter_c,
+                               size_t weight_size, void *weight,
+                               size_t workspace_size, void *workspace);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|async_rnn_backward_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|rnn_mode
+// DnnlUtils|rnn_bias_mode
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Computing the bias gradient of a specified rnn function
+  /// asynchronously.
+  /// \param [in] desc RNN descriptor.
+  /// \param [in] kind Propagation kind.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data.
+  /// \param [out] diff_src Pointer to differential source data.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [in] dst Pointer to destination data.
+  /// \param [in] diff_dst Pointer to differential destination data.
+  /// \param [in] iter_desc Recurrent hidden state data memory descriptor.
+  /// \param [in] src_iter Pointer to input recurrent hidden state data.
+  /// \param [out] diff_src_iter Pointer to differential input recurrent hidden state data.
+  /// \param [in] diff_dst_iter Pointer to differential output recurrent hidden state data.
+  /// \param [in] iter_c_desc Recurrent cell state data memory descriptor.
+  /// \param [in] src_c_iter Pointer to input recurrent cell state data.
+  /// \param [out] diff_src_c_iter Pointer to differential input recurrent cell state data.
+  /// \param [in] diff_dst_c_iter Pointer to differential output recurrent cell state data.
+  /// \param [in] weight_size Size of weight memory.
+  /// \param [in] weight Pointer to weight data.
+  /// \param [out] diff_weight Pointer to differential weight data.
+  /// \param [in] workspace_size Size of workspace memory.
+  /// \param [in] workspace Pointer to workspace data.
+  /// \returns An event representing the rnn backward operations.
+  sycl::event async_rnn_backward(
+      const rnn_desc &desc, const memory_desc_ext &src_desc, void *src,
+      void *diff_src, const memory_desc_ext &dst_desc, void *dst,
+      void *diff_dst, const memory_desc_ext &iter_desc, void *src_iter,
+      void *diff_src_iter, void *diff_dst_iter,
+      const memory_desc_ext &iter_c_desc, void *src_iter_c,
+      void *diff_src_iter_c, void *diff_dst_iter_c, size_t weight_size,
+      void *weight, void *diff_weight, size_t workspace_size, void *workspace);
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|engine_ext_1|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -1953,6 +2185,31 @@ memory_desc_ext::to_dnnl_format_tag(dpct::library_data_t dt,
   }
 }
 
+size_t memory_desc_ext::get_data_type_size(dpct::library_data_t dt) {
+  switch (dt) {
+  case dpct::library_data_t::real_double:
+    return 8;
+  case dpct::library_data_t::real_float:
+    return 4;
+  case dpct::library_data_t::real_bfloat16:
+    return 2;
+  case dpct::library_data_t::real_int8:
+    return 1;
+  case dpct::library_data_t::real_uint8:
+    return 1;
+  case dpct::library_data_t::real_int16:
+    return 2;
+  case dpct::library_data_t::real_uint16:
+    return 2;
+  case dpct::library_data_t::real_int32:
+    return 4;
+  case dpct::library_data_t::real_uint32:
+    return 4;
+  default:
+    throw std::runtime_error("get_data_type_size: unsupported data type.");
+  };
+}
+
 void memory_desc_ext::set(memory_format_tag tag, dpct::library_data_t dt, int n,
                           int c, int h, int w) {
   _desc = ::dnnl::memory::desc({n, c, h, w}, to_dnnl_data_type(dt),
@@ -1976,6 +2233,17 @@ void memory_desc_ext::set(memory_format_tag tag, dpct::library_data_t dt,
                           int ndims, const int dims[]) {
   _desc = ::dnnl::memory::desc({dims, dims + ndims}, to_dnnl_data_type(dt),
                                to_dnnl_format_tag(dt, tag));
+}
+
+void memory_desc_ext::set(rnn_memory_format_tag tag, dpct::library_data_t dt,
+                          int t, int n, int c) {
+  if (tag == rnn_memory_format_tag::tnc) {
+    _desc = ::dnnl::memory::desc({t, n, c}, to_dnnl_data_type(dt),
+                                 ::dnnl::memory::format_tag::tnc);
+  } else if (tag == rnn_memory_format_tag::ntc) {
+    _desc = ::dnnl::memory::desc({n, t, c}, to_dnnl_data_type(dt),
+                                 ::dnnl::memory::format_tag::ntc);
+  }
 }
 
 void memory_desc_ext::get(dpct::library_data_t *dt, int *n, int *c, int *h,
@@ -2170,15 +2438,15 @@ engine_ext::get_bn_scale_bias_mean_var_desc(const ::dnnl::memory::desc &desc,
   int ndims = desc.get_ndims();
   auto dims = desc.get_dims();
   assert(ndims >= 4 && "ndims is at least 4.");
-  int channel_number = 1;
+  int channel_num = 1;
   if (mode == batch_normalization_mode::spatial) {
-    channel_number = dims[1];
+    channel_num = dims[1];
   } else {
     for (int index = 1; index < ndims; index++) {
-      channel_number = channel_number * dims[index];
+      channel_num = channel_num * dims[index];
     }
   }
-  return ::dnnl::memory::desc({channel_number}, desc.get_data_type(),
+  return ::dnnl::memory::desc({channel_num}, desc.get_data_type(),
                               ::dnnl::memory::format_tag::a);
 }
 
@@ -2316,6 +2584,19 @@ sycl::event engine_ext::execute_primitive(
   return e;
 }
 
+template <typename primitive_type, typename args_type>
+sycl::event engine_ext::execute_primitive(primitive_type *primitive, args_type *args,
+                                          bool preserve_primitive)
+{
+  auto e = ::dnnl::sycl_interop::execute(*primitive, _s, *args);
+  primitive_type *p = primitive;
+  if(preserve_primitive) {
+    p = nullptr;
+  }
+  async_free(_q, e, p, args);
+  return e;
+}
+
 ::dnnl::memory::desc engine_ext::bn_reorder_memory_to_channel_major_format(
     bool is_input, ::dnnl::memory::desc &desc, void *src, void **cache,
     std::vector<void *> &caches) {
@@ -2411,7 +2692,7 @@ sycl::event engine_ext::batch_normalization_backward_internal(
       get_bn_scale_bias_mean_var_desc(help_mean_var_desc, mode);
 
   auto forward_primitive =
-      create_forward_primitive_desc<::dnnl::batch_normalization_forward>(
+      create_primitive_desc<::dnnl::batch_normalization_forward>(
           ::dnnl::prop_kind::forward_training, help_src_desc, epsilon,
           ::dnnl::normalization_flags::use_scale |
               ::dnnl::normalization_flags::use_shift);
@@ -2629,13 +2910,13 @@ sycl::event engine_ext::batch_normalization_forward_internal(
 
 template <typename primitive_type, typename... args_type>
 primitive_type *engine_ext::create_forward_primitive(args_type &&...args) {
-  return new primitive_type(create_forward_primitive_desc<primitive_type>(
+  return new primitive_type(create_primitive_desc<primitive_type>(
       std::forward<args_type>(args)...));
 }
 
 template <typename primitive_type, typename... args_type>
 typename primitive_type::primitive_desc
-engine_ext::create_forward_primitive_desc(args_type &&...args) {
+engine_ext::create_primitive_desc(args_type &&...args) {
   return typename primitive_type::primitive_desc(
       _eng, std::forward<args_type>(args)...);
 }
@@ -3017,7 +3298,7 @@ sycl::event engine_ext::async_activation_backward(
   auto primitive = create_backward_primitive<::dnnl::eltwise_backward>(
       desc.get_algorithm(), diff_src_desc.get_desc(), src_desc.get_desc(),
       desc.get_alpha(), desc.get_beta(),
-      create_forward_primitive_desc<::dnnl::eltwise_forward>(
+      create_primitive_desc<::dnnl::eltwise_forward>(
           ::dnnl::prop_kind::forward, desc.get_algorithm(), src_desc.get_desc(),
           desc.get_alpha(), desc.get_beta()));
 
@@ -3049,7 +3330,7 @@ sycl::event engine_ext::async_pooling_forward(pooling_desc &desc, float alpha,
   int pooling_dim = desc.get_stride().size();
   std::vector<int64_t> dilation(pooling_dim, 0);
   auto primitive_desc =
-      create_forward_primitive_desc<::dnnl::pooling_forward>(
+      create_primitive_desc<::dnnl::pooling_forward>(
           ::dnnl::prop_kind::forward_training, desc.get_algorithm(),
           src_desc.get_desc(), dst_desc.get_desc(), desc.get_stride(),
           desc.get_kernel(), dilation, desc.get_padding(), desc.get_padding());
@@ -3090,7 +3371,7 @@ sycl::event engine_ext::async_pooling_backward(
       desc.get_algorithm(), diff_src_desc.get_desc(), diff_dst_desc.get_desc(),
       desc.get_stride(), desc.get_kernel(), dilation, desc.get_padding(),
       desc.get_padding(),
-      create_forward_primitive_desc<::dnnl::pooling_forward>(
+      create_primitive_desc<::dnnl::pooling_forward>(
           ::dnnl::prop_kind::forward_training, desc.get_algorithm(),
           src_desc.get_desc(), dst_desc.get_desc(), desc.get_stride(),
           desc.get_kernel(), dilation, desc.get_padding(), desc.get_padding()));
@@ -3187,7 +3468,7 @@ sycl::event engine_ext::async_softmax_backward(
 
   auto primitive = create_backward_primitive<::dnnl::softmax_backward>(
       softmax_alg, help_diff_src_desc, help_diff_dst_desc, help_dst_desc, 1,
-      create_forward_primitive_desc<::dnnl::softmax_forward>(
+      create_primitive_desc<::dnnl::softmax_forward>(
           ::dnnl::prop_kind::forward, softmax_alg, help_diff_src_desc,
           help_dst_desc, 1));
   return execute_primitive(primitive, execution_args,
@@ -3209,7 +3490,7 @@ sycl::event engine_ext::async_lrn_forward(lrn_desc &desc, float alpha,
   if (scale_parameter_preprocess({{alpha, beta, dst_desc, dst}})) {
     return sycl::event();
   }
-  auto primitive_desc = create_forward_primitive_desc<::dnnl::lrn_forward>(
+  auto primitive_desc = create_primitive_desc<::dnnl::lrn_forward>(
       ::dnnl::prop_kind::forward_training,
       ::dnnl::algorithm::lrn_across_channels, src_desc.get_desc(),
       desc.get_local_size(), desc.get_alpha(), desc.get_beta(), desc.get_k());
@@ -3250,7 +3531,7 @@ engine_ext::async_lrn_backward(lrn_desc &desc, float alpha,
       ::dnnl::algorithm::lrn_across_channels, src_desc.get_desc(),
       diff_src_desc.get_desc(), desc.get_local_size(), desc.get_alpha(),
       desc.get_beta(), desc.get_k(),
-      create_forward_primitive_desc<::dnnl::lrn_forward>(
+      create_primitive_desc<::dnnl::lrn_forward>(
           ::dnnl::prop_kind::forward_training,
           ::dnnl::algorithm::lrn_across_channels, src_desc.get_desc(),
           desc.get_local_size(), desc.get_alpha(), desc.get_beta(),
@@ -3640,7 +3921,7 @@ sycl::event engine_ext::async_convolution_backward_data(
   auto help_weight_desc =
       get_group_weight_desc(desc.get_group_count(), weight_desc);
   auto forward_primitive =
-      create_forward_primitive_desc<::dnnl::convolution_forward>(
+      create_primitive_desc<::dnnl::convolution_forward>(
           ::dnnl::prop_kind::forward_training,
           ::dnnl::algorithm::convolution_auto, diff_src_desc.get_desc(),
           help_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
@@ -3681,7 +3962,7 @@ sycl::event engine_ext::async_convolution_backward_weight(
   auto help_diff_weight_desc =
       get_group_weight_desc(desc.get_group_count(), diff_weight_desc);
   auto forward_primitive =
-      create_forward_primitive_desc<::dnnl::convolution_forward>(
+      create_primitive_desc<::dnnl::convolution_forward>(
           ::dnnl::prop_kind::forward_training,
           ::dnnl::algorithm::convolution_auto, src_desc.get_desc(),
           help_diff_weight_desc, diff_dst_desc.get_desc(), desc.get_stride(),
@@ -3718,6 +3999,1041 @@ sycl::event engine_ext::async_convolution_backward_bias(
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|rnn_get_weight_space_size|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|rnn_get_weight_space_size_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+void engine_ext::rnn_get_weight_space_size(const rnn_desc &desc,
+                                           size_t *weight_space_size) {
+  *weight_space_size = 0;
+  rnn_forward_internal(desc, ::dnnl::prop_kind::forward_inference,
+                       memory_desc_ext(), nullptr, memory_desc_ext(), nullptr,
+                       memory_desc_ext(), nullptr, nullptr, memory_desc_ext(),
+                       nullptr, nullptr, 0, nullptr, 0, nullptr, true, true,
+                       weight_space_size);
+  return;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|rnn_get_workspace_size|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|rnn_get_workspace_size_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+void engine_ext::rnn_get_workspace_size(const rnn_desc &desc,
+                                        ::dnnl::prop_kind kind,
+                                        const memory_desc_ext &src_desc,
+                                        size_t *workspace_size)
+{
+  *workspace_size = 0;
+  if (kind == ::dnnl::prop_kind::forward_inference)
+  {
+    return;
+  }
+  rnn_forward_internal(desc, kind, src_desc,
+                       nullptr, memory_desc_ext(), nullptr, memory_desc_ext(),
+                       nullptr, nullptr, memory_desc_ext(), nullptr, nullptr, 0,
+                       nullptr, 0, nullptr, true, false, workspace_size);
+  return;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|async_rnn_forward|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|async_rnn_forward_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+void engine_ext::get_rnn_weight_params(
+    const rnn_desc &desc, int layer, size_t weight_space_size,
+    const void *weight_space, int type, memory_desc_ext &sub_weight_desc,
+    void **sub_weight, memory_desc_ext &sub_bias_desc, void **sub_bias) {
+/*
+  rnn_mode mode;
+  rnn_bias_mode bias_mode;
+  rnn_direction direction;
+  dpct::library_data_t dt;
+  int direction_num = 1;
+  int hidden_size = 0;
+  int projection_size = 0;
+  int layer_size = 0;
+  int gate_num = 1;
+  int output_size = 0;
+  int data_type_size = 1;
+  int projection_enabled = 0;
+  uint8_t *sub_weight_base = nullptr;
+  uint8_t *sub_bias_base = nullptr;
+  int layer_id = 0, gate_id = 0, reverse = 0;
+
+  desc.get(&mode, &bias_mode, &direction, &dt, &hidden_size, &projection_size,
+           &layer_size);
+
+  data_type_size = memory_desc_ext::get_data_type_size(dt);
+
+  if (projection_size != hidden_size) {
+    output_size = projection_size;
+    projection_enabled = 1;
+  } else {
+    output_size = hidden_size;
+  }
+
+  if (mode == rnn_mode::lstm) {
+    gate_num = 4;
+  } else if (mode == rnn_mode::gru) {
+    gate_num = 3;
+  }
+
+  std::vector<int> w_dims = {layer_size, direction_num, gate_num, hidden_size, output_size};
+  std::vector<int> w_strides(5);
+  w_strides[4] = 1;
+  for(int i = 3; i >= 0; i--) {
+    w_strides[i] = w_strides[i + 1] * w_dims[i + 1];
+  }
+  int w_size = w_dims[0] * w_strides[0];
+
+  std::vector<int> b_dims = {layer_size, direction_num, gate_num, output_size};
+  std::vector<int> b_strides(4);
+  b_strides[3] = 1;
+  for(int i = 2; i >= 0; i--) {
+    b_strides[i] = b_strides[i + 1] * b_dims[i + 1];
+  }
+  int b_size = b_dims[0] * b_strides[0];
+
+  std::vector<int> p_dims = {layer_size, direction_num, hidden_size, output_size};
+  std::vector<int> p_strides(4);
+  p_strides[3] = 1;
+  for(int i = 2; i >= 0; i--) {
+    p_strides[i] = p_strides[i + 1] * p_dims[i + 1];
+  }
+  int p_size = projection_enabled ? p_dims[0] * p_strides[0] : 0;
+
+  if (direction == ::dnnl::rnn_direction::bidirectional_concat ||
+      direction == ::dnnl::rnn_direction::bidirectional_sum) {
+    reverse = (layer % 2 == 0 ? 0 : 1);
+    layer_id = layer / 2;
+  } else {
+    layer_id = layer;
+  }
+
+  int single_direction_size = 2 * w_size + (projection_enabled ? p_size : 0) +
+                              (bias_mode == rnn_bias_mode::single ? b_size : 0);
+  sub_bias_base = (uint8_t *)weight_space +
+                  (2 * w_size + (projection_enabled ? p_size : 0) +
+                   reverse * single_direction_size) *
+                      data_type_size;
+
+  if (mode == rnn_mode::vanilla_relu || mode == rnn_mode::vanilla_tanh) {
+    gate_id = 0;
+    sub_weight_base =
+        (uint8_t *)weight_space +
+        (type * w_size + reverse * single_direction_size) * data_type_size;
+  } else if (mode == rnn_mode::gru) {
+    gate_id = type % 3;
+    sub_weight_base = (uint8_t *)weight_space +
+                      ((type / 3) * w_size + reverse * single_direction_size) *
+                          data_type_size;
+  } else if (mode == rnn_mode::lstm) {
+    gate_id = type % 4;
+    sub_weight_base = (uint8_t *)weight_space +
+                      ((type / 4) * w_size + reverse * single_direction_size) *
+                          data_type_size;
+  }
+
+  if (bias_mode == rnn_bias_mode::none) {
+    sub_bias_base = nullptr;
+  }
+
+  if (sub_weight_base) {
+    if (type != 8) {
+      *sub_weight = (void *)(sub_weight_base + (layer_id * w_strides[0] +
+                                                gate_id * w_strides[2]) *
+                                                   data_type_size);
+      sub_weight_desc.set(rnn_memory_format_tag::tnc, dt, 1, w_dims[3],
+                          w_dims[4]);
+    } else {
+      *sub_weight = (void *)(sub_weight_base + (layer_id * p_strides[0] +
+                                                gate_id * p_strides[2]) *
+                                                   data_type_size);
+      sub_weight_desc.set(rnn_memory_format_tag::tnc, dt, 1, p_dims[2],
+                          p_dims[3]);
+    }
+  } else {
+    *sub_weight = nullptr;
+    sub_weight_desc.set(rnn_memory_format_tag::tnc, dt, 1, 0, 0);
+  }
+
+  if (sub_bias_base) {
+    *sub_bias = (void *)(sub_bias_base +
+                         (layer_id * b_strides[0] + gate_id * b_strides[2]) *
+                             data_type_size);
+    sub_bias_desc.set(rnn_memory_format_tag::tnc, dt, 1, b_dims[2], b_dims[3]);
+  } else {
+    *sub_bias = nullptr;
+    sub_bias_desc.set(rnn_memory_format_tag::tnc, dt, 1, 0, 0);
+  }
+  */
+}
+
+sycl::event engine_ext::execute_rnn_forward_primitive(
+    rnn_mode mode, ::dnnl::prop_kind kind, ::dnnl::rnn_direction direction,
+    rnn_bias_mode bias_mode, ::dnnl::memory::data_type dt, int seq_length,
+    int batch_size, int src_c, int dst_c, int layer_size, int direction_num,
+    int hidden_size, int gate_num, int projection_size,
+    std::vector<void *> &data, std::vector<int> &offset, int iter_num,
+    size_t *weight_size, size_t *workspace_size) {
+
+  sycl::event e;
+  ::dnnl::primitive *p = nullptr;
+  std::unordered_map<int, ::dnnl::memory> *execution_args;
+  ::dnnl::memory::desc bias_desc(
+      {layer_size, direction_num, gate_num, hidden_size}, dt,
+      ::dnnl::memory::format_tag::ldgo);
+  ::dnnl::memory::desc weight_layer_desc(
+      {layer_size, direction_num,
+       projection_size ? projection_size : hidden_size, gate_num, hidden_size},
+      dt, ::dnnl::memory::format_tag::ldigo);
+  ::dnnl::memory::desc weight_iter_desc(
+      {layer_size, direction_num,
+       projection_size ? projection_size : hidden_size, gate_num, hidden_size},
+      dt, ::dnnl::memory::format_tag::ldigo);
+  ::dnnl::memory::desc projection_desc;
+  if (projection_size) {
+    projection_desc = ::dnnl::memory::desc(
+        {layer_size, direction_num, hidden_size, projection_size}, dt,
+        ::dnnl::memory::format_tag::ldio);
+  }
+
+  if (weight_size) {
+    *weight_size +=
+        (weight_layer_desc.get_size() + weight_iter_desc.get_size() +
+         projection_desc.get_size() + bias_desc.get_size()) *
+        iter_num;
+    return e;
+  }
+
+  ::dnnl::memory::desc src_desc({seq_length, batch_size, src_c}, dt,
+                                ::dnnl::memory::format_tag::tnc);
+  ::dnnl::memory::desc dst_desc({seq_length, batch_size, dst_c}, dt,
+                                ::dnnl::memory::format_tag::tnc);
+  ::dnnl::memory::desc iter_desc(
+      {layer_size, direction_num, batch_size,
+       projection_size ? projection_size : hidden_size},
+      dt, ::dnnl::memory::format_tag::ldnc);
+  ::dnnl::memory::desc iter_c_desc(
+      {layer_size, direction_num, batch_size, hidden_size}, dt,
+      ::dnnl::memory::format_tag::ldnc);
+
+  ::dnnl::memory::desc workspace_desc;
+
+  if (mode == rnn_mode::vanilla_relu || mode == rnn_mode::vanilla_tanh) {
+    auto pd = create_primitive_desc<::dnnl::vanilla_rnn_forward>(
+        kind,
+        mode == rnn_mode::vanilla_relu ? ::dnnl::algorithm::eltwise_relu
+                                       : ::dnnl::algorithm::eltwise_tanh,
+        direction, src_desc, iter_desc, weight_layer_desc, weight_iter_desc,
+        bias_desc, dst_desc, iter_desc);
+    workspace_desc = pd.workspace_desc();
+    if (workspace_size) {
+      *workspace_size += workspace_desc.get_size() * iter_num;
+    } else {
+      p = new ::dnnl::vanilla_rnn_forward(pd);
+    }
+  } else if (mode == rnn_mode::gru) {
+    auto pd = create_primitive_desc<::dnnl::gru_forward>(
+        kind, direction, src_desc, iter_desc, weight_layer_desc,
+        weight_iter_desc, bias_desc, dst_desc, iter_desc);
+    workspace_desc = pd.workspace_desc();
+    if (workspace_size) {
+      *workspace_size += workspace_desc.get_size() * iter_num;
+    } else {
+      p = new ::dnnl::gru_forward(pd);
+    }
+  } else if (mode == rnn_mode::lstm) {
+    auto pd = create_primitive_desc<::dnnl::lstm_forward>(
+        kind, direction, src_desc, iter_desc, iter_c_desc, weight_layer_desc,
+        weight_iter_desc, ::dnnl::memory::desc(), projection_desc, bias_desc,
+        dst_desc, iter_desc, iter_c_desc);
+    workspace_desc = pd.workspace_desc();
+    if (workspace_size) {
+      *workspace_size += workspace_desc.get_size() * iter_num;
+    } else {
+      p = new ::dnnl::lstm_forward(pd);
+    }
+  }
+
+  for (int i = 0; i < iter_num; i++) {
+    void *in_cache = data[0], *out_cache = data[1], *dst_iter_c_cache = nullptr,
+         *dst_iter_cache = ((uint8_t *)(data[3]) + offset[1]);
+    if (mode == rnn_mode::lstm) {
+      dst_iter_c_cache = (uint8_t *)(data[4]) + offset[2];
+    }
+    if (!workspace_size) {
+      execution_args = new std::unordered_map<int, ::dnnl::memory>();
+      execution_args->insert(
+          {DNNL_ARG_SRC_LAYER, {::dnnl::memory(src_desc, _eng, data[0])}});
+      execution_args->insert(
+          {DNNL_ARG_DST_LAYER, {::dnnl::memory(dst_desc, _eng, data[1])}});
+      execution_args->insert(
+          {DNNL_ARG_SRC_ITER,
+           {::dnnl::memory(iter_desc, _eng,
+                           (uint8_t *)(data[2]) + offset[0])}});
+      offset[0] += iter_desc.get_size();
+      execution_args->insert(
+          {DNNL_ARG_DST_ITER,
+           {::dnnl::memory(iter_desc, _eng,
+                           (uint8_t *)(data[3]) + offset[1])}});
+      offset[1] += iter_desc.get_size();
+      if (mode == rnn_mode::lstm) {
+        execution_args->insert(
+            {DNNL_ARG_SRC_ITER_C,
+             {::dnnl::memory(iter_c_desc, _eng,
+                             (uint8_t *)(data[4]) + offset[2])}});
+        offset[2] += iter_c_desc.get_size();
+        execution_args->insert(
+            {DNNL_ARG_DST_ITER_C,
+             {::dnnl::memory(iter_c_desc, _eng,
+                             (uint8_t *)(data[5]) + offset[3])}});
+        offset[3] += iter_c_desc.get_size();
+      }
+      execution_args->insert(
+          {DNNL_ARG_WEIGHTS_LAYER,
+           {::dnnl::memory(weight_layer_desc, _eng,
+                           (uint8_t *)(data[6]) + offset[4])}});
+      offset[4] += weight_layer_desc.get_size();
+      execution_args->insert(
+          {DNNL_ARG_WEIGHTS_ITER,
+           {::dnnl::memory(weight_iter_desc, _eng,
+                           (uint8_t *)(data[6]) + offset[4])}});
+      offset[4] += weight_iter_desc.get_size();
+      if (projection_size) {
+        execution_args->insert(
+            {DNNL_ARG_WEIGHTS_PROJECTION,
+             {::dnnl::memory(projection_desc, _eng,
+                             (uint8_t *)(data[6]) + offset[4])}});
+        offset[4] += projection_desc.get_size();
+      }
+      execution_args->insert(
+          {DNNL_ARG_BIAS,
+           {::dnnl::memory(bias_desc, _eng,
+                           (uint8_t *)(data[6]) + offset[4])}});
+      if (bias_mode == rnn_bias_mode::none) {
+        _q->memset((uint8_t *)(data[6]) + offset[4], 0, bias_desc.get_size());
+      }
+      offset[4] += bias_desc.get_size();
+      if (kind == ::dnnl::prop_kind::forward_training) {
+        execution_args->insert(
+            {DNNL_ARG_WORKSPACE,
+             {::dnnl::memory(workspace_desc, _eng,
+                             (uint8_t *)(data[7]) + offset[5])}});
+        offset[5] += workspace_desc.get_size();
+      }
+      if (i == iter_num - 1) {
+        e = execute_primitive(p, execution_args, false);
+      } else {
+        execute_primitive(p, execution_args);
+        std::swap(data[0], data[1]);
+      }
+    }
+    if (kind == ::dnnl::prop_kind::forward_training) {
+      if (workspace_size) {
+        *workspace_size += (src_desc.get_size() + dst_desc.get_size() +
+                            iter_desc.get_size() + iter_c_desc.get_size());
+      } else {
+        _q->memcpy((uint8_t *)(data[7]) + offset[5], in_cache,
+                   src_desc.get_size());
+        offset[5] += src_desc.get_size();
+        _q->memcpy((uint8_t *)(data[7]) + offset[5], out_cache,
+                   dst_desc.get_size());
+        offset[5] += dst_desc.get_size();
+        _q->memcpy((uint8_t *)(data[7]) + offset[5], dst_iter_cache,
+                   iter_desc.get_size());
+        offset[5] += iter_desc.get_size();
+        if (mode == rnn_mode::lstm) {
+          _q->memcpy((uint8_t *)(data[7]) + offset[5], dst_iter_c_cache,
+                     iter_c_desc.get_size());
+          offset[5] += iter_c_desc.get_size();
+        }
+      }
+    }
+  }
+  return e;
+};
+
+sycl::event engine_ext::rnn_forward_internal(
+    const rnn_desc &desc, ::dnnl::prop_kind kind,
+    const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
+    void *dst, const memory_desc_ext &iter_desc, void *src_iter, void *dst_iter,
+    const memory_desc_ext &iter_c_desc, void *src_iter_c, void *dst_iter_c,
+    size_t weight_size, void *weight, size_t workspace_size, void *workspace,
+    bool is_get_execution_args, bool is_weight, size_t *size) {
+
+  ::dnnl::memory::data_type src_dt;
+  rnn_mode mode;
+  rnn_bias_mode bias_mode;
+  rnn_direction direction;
+  rnn_input_mode input_mode;
+  dpct::library_data_t dt;
+  int direction_num = 1, input_size = 0, hidden_size = 0, projection_size = 0,
+      layer_size = 0, gate_num = 1, output_size = 0, data_type_size = 0,
+      seq_length = 1, batch_size = 1;
+  bool projection_enabled = false;
+  std::vector<void *> data = {src,        dst,        src_iter, dst_iter,
+                              src_iter_c, dst_iter_c, weight,   workspace};
+  std::vector<int> offset(6, 0);
+  void *input_layer_cache = nullptr;
+  void *hidden_layer_cache = nullptr;
+  sycl::event e;
+
+  desc.get(&mode, &bias_mode, &direction, &input_mode, &dt, &input_size,
+           &hidden_size, &projection_size, &layer_size);
+
+  if (layer_size <= 0) {
+    return sycl::event();
+  }
+
+  if (!is_get_execution_args) {
+    auto src_layer_dims = src_desc.get_dims();
+    seq_length = src_layer_dims[0];
+    batch_size = src_layer_dims[1];
+  }
+
+  src_dt = memory_desc_ext::to_dnnl_data_type(dt);
+
+  size_t *weight_size_ptr = nullptr, *workspace_size_ptr = nullptr;
+
+  if (is_get_execution_args) {
+    *size = 0;
+    if (is_weight) {
+      weight_size_ptr = size;
+    } else {
+      workspace_size_ptr = size;
+    }
+  }
+
+  if (direction == rnn_direction::bidirectional) {
+    direction_num = 2;
+  }
+
+  if (projection_size != hidden_size) {
+    projection_enabled = true;
+    output_size = projection_size;
+  } else {
+    output_size = hidden_size;
+  }
+
+  if (mode == rnn_mode::lstm) {
+    gate_num = 4;
+  } else if (mode == rnn_mode::gru) {
+    gate_num = 3;
+  }
+
+  if (direction == rnn_direction::bidirectional) {
+    if (layer_size > 1) {
+      if (!is_get_execution_args) {
+        input_layer_cache = allocate(src_desc);
+        hidden_layer_cache = allocate(src_desc);
+        _q->memcpy(input_layer_cache, src, src_desc.get_size());
+      }
+      data[0] = input_layer_cache;
+      data[1] = hidden_layer_cache;
+      e = execute_rnn_forward_primitive(
+          mode, kind, ::dnnl::rnn_direction::bidirectional_sum, bias_mode,
+          src_dt, seq_length, batch_size, output_size, output_size, 1,
+          direction_num, hidden_size, gate_num,
+          projection_enabled ? projection_size : 0, data, offset,
+          layer_size - 1, weight_size_ptr, workspace_size_ptr);
+      data[0] =
+          ((layer_size - 1) % 2 == 0) ? input_layer_cache : hidden_layer_cache;
+      data[1] = dst;
+    }
+    e = execute_rnn_forward_primitive(
+        mode, kind, ::dnnl::rnn_direction::bidirectional_concat, bias_mode,
+        src_dt, seq_length, batch_size, output_size, 2 * output_size, 1,
+        direction_num, hidden_size, gate_num,
+        projection_enabled ? projection_size : 0, data, offset, 1,
+        weight_size_ptr, workspace_size_ptr);
+  } else {
+    e = execute_rnn_forward_primitive(
+        mode, kind, ::dnnl::rnn_direction::unidirectional_left2right, bias_mode,
+        src_dt, seq_length, batch_size, output_size, output_size, layer_size,
+        direction_num, hidden_size, gate_num,
+        projection_enabled ? projection_size : 0, data, offset, 1,
+        weight_size_ptr, workspace_size_ptr);
+  }
+
+  if (is_get_execution_args) {
+    return e;
+  }
+
+  _q->submit([&](sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] {
+      if (input_layer_cache) {
+        sycl::free(input_layer_cache, *_q);
+      }
+      if (hidden_layer_cache) {
+        sycl::free(hidden_layer_cache, *_q);
+      }
+    });
+  });
+  return e;
+}
+
+sycl::event engine_ext::async_rnn_forward(
+    const rnn_desc &desc, ::dnnl::prop_kind kind,
+    const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
+    void *dst, const memory_desc_ext &iter_desc, void *src_iter, void *dst_iter,
+    const memory_desc_ext &iter_c_desc, void *src_iter_c, void *dst_iter_c,
+    size_t weight_size, void *weight, size_t workspace_size, void *workspace) {
+
+  return rnn_forward_internal(desc, kind, src_desc, src, dst_desc, dst,
+                              iter_desc, src_iter, dst_iter, iter_c_desc,
+                              src_iter_c, dst_iter_c, weight_size, weight,
+                              workspace_size, workspace, false, false, nullptr);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|async_rnn_backward|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|async_rnn_backward_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+sycl::event engine_ext::execute_rnn_backward_primitive(
+    rnn_mode mode, ::dnnl::rnn_direction direction,
+    rnn_bias_mode bias_mode, ::dnnl::memory::data_type dt, int seq_length,
+    int batch_size, int src_c, int dst_c, int layer_size, int direction_num,
+    int hidden_size, int gate_num, int projection_size,
+    std::vector<void *> &data, std::vector<int> &offset, int iter_num,
+    int weight_size, int workspace_size) {
+
+  sycl::event e;
+  ::dnnl::primitive *p = nullptr;
+  ::dnnl::prop_kind fkind = ::dnnl::prop_kind::forward_training;
+  ::dnnl::prop_kind bkind = ::dnnl::prop_kind::backward;
+  ::dnnl::memory::desc bias_desc(
+      {layer_size, direction_num, gate_num, hidden_size}, dt,
+      ::dnnl::memory::format_tag::ldgo);
+  ::dnnl::memory::desc weight_layer_desc(
+      {layer_size, direction_num,
+       projection_size ? projection_size : hidden_size, gate_num, hidden_size},
+      dt, ::dnnl::memory::format_tag::ldigo);
+  ::dnnl::memory::desc weight_iter_desc(
+      {layer_size, direction_num,
+       projection_size ? projection_size : hidden_size, gate_num, hidden_size},
+      dt, ::dnnl::memory::format_tag::ldigo);
+  ::dnnl::memory::desc diff_weight_layer_desc(
+      {layer_size, direction_num,
+       projection_size ? projection_size : hidden_size, gate_num, hidden_size},
+      dt, ::dnnl::memory::format_tag::ldgoi);
+  ::dnnl::memory::desc diff_weight_iter_desc(
+      {layer_size, direction_num,
+       projection_size ? projection_size : hidden_size, gate_num, hidden_size},
+      dt, ::dnnl::memory::format_tag::ldgoi);
+  ::dnnl::memory::desc projection_desc, diff_projection_desc;
+  if (projection_size) {
+    projection_desc = ::dnnl::memory::desc(
+        {layer_size, direction_num, hidden_size, projection_size}, dt,
+        ::dnnl::memory::format_tag::ldio);
+    diff_projection_desc = ::dnnl::memory::desc(
+        {layer_size, direction_num, hidden_size, projection_size}, dt,
+        ::dnnl::memory::format_tag::ldoi);
+  }
+
+  ::dnnl::memory::desc src_desc({seq_length, batch_size, src_c}, dt,
+                                ::dnnl::memory::format_tag::tnc);
+  ::dnnl::memory::desc dst_desc({seq_length, batch_size, dst_c}, dt,
+                                ::dnnl::memory::format_tag::tnc);
+  ::dnnl::memory::desc iter_desc(
+      {layer_size, direction_num, batch_size,
+       projection_size ? projection_size : hidden_size},
+      dt, ::dnnl::memory::format_tag::ldnc);
+  ::dnnl::memory::desc iter_c_desc(
+      {layer_size, direction_num, batch_size, hidden_size}, dt,
+      ::dnnl::memory::format_tag::ldnc);
+
+  ::dnnl::memory::desc workspace_desc;
+
+  if (mode == rnn_mode::vanilla_relu || mode == rnn_mode::vanilla_tanh) {
+    auto fpd = create_primitive_desc<::dnnl::vanilla_rnn_forward>(
+        fkind,
+        mode == rnn_mode::vanilla_relu ? ::dnnl::algorithm::eltwise_relu
+                                       : ::dnnl::algorithm::eltwise_tanh,
+        direction, src_desc, iter_desc, weight_layer_desc, weight_iter_desc,
+        bias_desc, dst_desc, iter_desc);
+    auto pd = create_primitive_desc<::dnnl::vanilla_rnn_backward>(
+        bkind,
+        mode == rnn_mode::vanilla_relu ? ::dnnl::algorithm::eltwise_relu
+                                       : ::dnnl::algorithm::eltwise_tanh,
+        direction, src_desc, iter_desc, diff_weight_layer_desc,
+        diff_weight_iter_desc, bias_desc, dst_desc, iter_desc, src_desc,
+        iter_desc, weight_layer_desc, weight_iter_desc, bias_desc, dst_desc,
+        iter_desc, fpd);
+    workspace_desc = pd.workspace_desc();
+    p = new ::dnnl::vanilla_rnn_backward(pd);
+  } else if (mode == rnn_mode::gru) {
+    auto fpd = create_primitive_desc<::dnnl::gru_forward>(
+        fkind, direction, src_desc, iter_desc, weight_layer_desc,
+        weight_iter_desc, bias_desc, dst_desc, iter_desc);
+    auto pd = create_primitive_desc<::dnnl::gru_backward>(
+        bkind, direction, src_desc, iter_desc, diff_weight_layer_desc,
+        diff_weight_iter_desc, bias_desc, dst_desc, iter_desc, src_desc, iter_desc,
+        weight_layer_desc, weight_iter_desc, bias_desc, dst_desc, iter_desc,
+        fpd);
+    workspace_desc = pd.workspace_desc();
+    p = new ::dnnl::gru_backward(pd);
+  } else if (mode == rnn_mode::lstm) {
+    auto fpd = create_primitive_desc<::dnnl::lstm_forward>(
+        fkind, direction, src_desc, iter_desc, iter_c_desc, weight_layer_desc,
+        weight_iter_desc, ::dnnl::memory::desc(), projection_desc, bias_desc,
+        dst_desc, iter_desc, iter_c_desc);
+    auto pd = create_primitive_desc<::dnnl::lstm_backward>(
+        bkind, direction, src_desc, iter_desc, iter_c_desc, diff_weight_layer_desc,
+        diff_weight_iter_desc, ::dnnl::memory::desc(), diff_projection_desc, bias_desc,
+        dst_desc, iter_desc, iter_c_desc, src_desc, iter_desc, iter_c_desc,
+        weight_layer_desc, weight_iter_desc, ::dnnl::memory::desc(),
+        projection_desc, bias_desc, dst_desc, iter_desc, iter_c_desc, fpd);
+    workspace_desc = pd.workspace_desc();
+    p = new ::dnnl::lstm_backward(pd);
+  }
+  for (int i = 0; i < iter_num; i++) {
+    auto execution_args = new std::unordered_map<int, ::dnnl::memory>();
+    if (mode == rnn_mode::lstm) {
+      offset[0] += iter_c_desc.get_size();
+      execution_args->insert(
+          {DNNL_ARG_DST_ITER_C,
+           {::dnnl::memory(iter_c_desc, _eng,
+                           (uint8_t *)(data[7]) - offset[0])}});
+      offset[2] += iter_c_desc.get_size();
+      execution_args->insert(
+          {DNNL_ARG_SRC_ITER_C,
+           {::dnnl::memory(iter_c_desc, _eng,
+                           (uint8_t *)(data[4]) - offset[2])}});
+    }
+    offset[0] += iter_desc.get_size();
+    execution_args->insert(
+        {DNNL_ARG_DST_ITER,
+         {::dnnl::memory(iter_desc, _eng, (uint8_t *)(data[7]) - offset[0])}});
+    offset[0] += dst_desc.get_size();
+    execution_args->insert(
+        {DNNL_ARG_DST_LAYER,
+         {::dnnl::memory(dst_desc, _eng, (uint8_t *)(data[7]) - offset[0])}});
+    offset[0] += src_desc.get_size();
+    execution_args->insert(
+        {DNNL_ARG_SRC_LAYER,
+         {::dnnl::memory(src_desc, _eng, (uint8_t *)(data[7]) - offset[0])}});
+    offset[0] += workspace_desc.get_size();
+    execution_args->insert(
+        {DNNL_ARG_WORKSPACE,
+         {::dnnl::memory(workspace_desc, _eng,
+                         (uint8_t *)(data[7]) - offset[0])}});
+    offset[1] += iter_desc.get_size();
+    execution_args->insert(
+        {DNNL_ARG_SRC_ITER,
+         {::dnnl::memory(iter_desc, _eng, (uint8_t *)(data[2]) - offset[1])}});
+    offset[3] += bias_desc.get_size();
+    execution_args->insert(
+        {DNNL_ARG_BIAS,
+         {::dnnl::memory(bias_desc, _eng, (uint8_t *)(data[6]) - offset[3])}});
+    if (projection_size) {
+      offset[3] += diff_projection_desc.get_size();
+      execution_args->insert(
+          {DNNL_ARG_WEIGHTS_PROJECTION,
+           {::dnnl::memory(diff_projection_desc, _eng,
+                           (uint8_t *)(data[6]) - offset[3])}});
+    }
+    offset[3] += diff_weight_iter_desc.get_size();
+    execution_args->insert(
+        {DNNL_ARG_WEIGHTS_ITER,
+         {::dnnl::memory(diff_weight_iter_desc, _eng,
+                         (uint8_t *)(data[6]) - offset[3])}});
+    offset[3] += diff_weight_layer_desc.get_size();
+    execution_args->insert(
+        {DNNL_ARG_WEIGHTS_LAYER,
+         {::dnnl::memory(diff_weight_layer_desc, _eng,
+                         (uint8_t *)(data[6]) - offset[3])}});
+
+    // differential data
+    execution_args->insert(
+        {DNNL_ARG_DIFF_SRC_LAYER, {::dnnl::memory(src_desc, _eng, data[8])}});
+    execution_args->insert(
+        {DNNL_ARG_DIFF_DST_LAYER, {::dnnl::memory(dst_desc, _eng, data[9])}});
+    offset[4] += iter_desc.get_size();
+    execution_args->insert(
+        {DNNL_ARG_DIFF_SRC_ITER,
+         {::dnnl::memory(iter_desc, _eng, (uint8_t *)(data[10]) - offset[4])}});
+    offset[5] += iter_desc.get_size();
+    execution_args->insert(
+        {DNNL_ARG_DIFF_DST_ITER,
+         {::dnnl::memory(iter_desc, _eng, (uint8_t *)(data[11]) - offset[5])}});
+    if (mode == rnn_mode::lstm) {
+      offset[6] += iter_c_desc.get_size();
+      execution_args->insert(
+          {DNNL_ARG_DIFF_SRC_ITER_C,
+           {::dnnl::memory(iter_c_desc, _eng,
+                           (uint8_t *)(data[12]) - offset[6])}});
+      offset[7] += iter_c_desc.get_size();
+      execution_args->insert(
+          {DNNL_ARG_DIFF_DST_ITER_C,
+           {::dnnl::memory(iter_c_desc, _eng,
+                           (uint8_t *)(data[13]) - offset[7])}});
+    }
+    offset[8] += bias_desc.get_size();
+    execution_args->insert(
+        {DNNL_ARG_DIFF_BIAS,
+         {::dnnl::memory(bias_desc, _eng, (uint8_t *)(data[14]) - offset[8])}});
+    if (bias_mode == rnn_bias_mode::none) {
+      _q->memset((uint8_t *)(data[14]) - offset[8], 0, bias_desc.get_size());
+    }
+    if (projection_size) {
+      offset[8] += projection_desc.get_size();
+      execution_args->insert(
+          {DNNL_ARG_DIFF_WEIGHTS_PROJECTION,
+           {::dnnl::memory(projection_desc, _eng,
+                           (uint8_t *)(data[14]) - offset[8])}});
+    }
+    offset[8] += weight_iter_desc.get_size();
+    execution_args->insert(
+        {DNNL_ARG_DIFF_WEIGHTS_ITER,
+         {::dnnl::memory(weight_iter_desc, _eng,
+                         (uint8_t *)(data[14]) - offset[8])}});
+    offset[8] += weight_layer_desc.get_size();
+    execution_args->insert(
+        {DNNL_ARG_DIFF_WEIGHTS_LAYER,
+         {::dnnl::memory(weight_layer_desc, _eng,
+                         (uint8_t *)(data[14]) - offset[8])}});
+
+    if (i == iter_num - 1) {
+      e = execute_primitive(p, execution_args, false);
+    } else {
+      execute_primitive(p, execution_args);
+      std::swap(data[8], data[9]);
+    }
+  }
+  return e;
+};
+
+sycl::event
+engine_ext::async_rnn_backward(const rnn_desc &desc, const memory_desc_ext &src_desc,
+                   void *src, void *diff_src, const memory_desc_ext &dst_desc,
+                   void *dst, void *diff_dst, const memory_desc_ext &iter_desc,
+                   void *src_iter, void *diff_src_iter,
+                   void *diff_dst_iter, const memory_desc_ext &iter_c_desc,
+                   void *src_iter_c, void *diff_src_iter_c,
+                   void *diff_dst_iter_c, size_t weight_size, void *weight,
+                   void *diff_weight, size_t workspace_size, void *workspace) {
+  ::dnnl::memory::data_type src_dt;
+  rnn_mode mode;
+  rnn_bias_mode bias_mode;
+  rnn_direction direction;
+  rnn_input_mode input_mode;
+  dpct::library_data_t dt;
+  int direction_num = 1, input_size = 0, hidden_size = 0, projection_size = 0,
+      layer_size = 0, gate_num = 1, output_size = 0, data_type_size = 0,
+      seq_length = 1, batch_size = 1;
+  bool projection_enabled = false;
+  void *last_layer_cache = nullptr;
+  void *hidden_layer_cache = nullptr;
+  sycl::event e;
+  std::vector<int> offset(9, 0);
+  std::vector<void *> data = {
+      src,
+      dst,
+      (uint8_t *)src_iter + iter_desc.get_size(),
+      nullptr,
+      (uint8_t *)src_iter_c + iter_c_desc.get_size(),
+      nullptr,
+      (uint8_t *)weight + weight_size,
+      (uint8_t *)workspace + workspace_size,
+      diff_src,
+      diff_dst,
+      (uint8_t *)diff_src_iter + iter_desc.get_size(),
+      (uint8_t *)diff_dst_iter + iter_desc.get_size(),
+      (uint8_t *)diff_src_iter_c + iter_c_desc.get_size(),
+      (uint8_t *)diff_dst_iter_c + iter_c_desc.get_size(),
+      (uint8_t *)diff_weight + weight_size};
+  std::cout << iter_desc.get_size() << std::endl;
+  std::cout << iter_c_desc.get_size() << std::endl;
+    std::cout << weight_size << std::endl;
+      std::cout << workspace_size << std::endl;
+
+  desc.get(&mode, &bias_mode, &direction, &input_mode, &dt, &input_size,
+           &hidden_size, &projection_size, &layer_size);
+
+  if (layer_size <= 0) {
+    return sycl::event();
+  }
+
+  auto src_layer_dims = src_desc.get_dims();
+  seq_length = src_layer_dims[0];
+  batch_size = src_layer_dims[1];
+
+  src_dt = memory_desc_ext::to_dnnl_data_type(dt);
+
+  if (direction == rnn_direction::bidirectional) {
+    direction_num = 2;
+  }
+
+  if (projection_size != hidden_size) {
+    projection_enabled = true;
+    output_size = projection_size;
+  } else {
+    output_size = hidden_size;
+  }
+
+  if (mode == rnn_mode::lstm) {
+    gate_num = 4;
+  } else if (mode == rnn_mode::gru) {
+    gate_num = 3;
+  }
+
+  if (direction == rnn_direction::bidirectional) {
+    if(layer_size > 1) {
+      last_layer_cache = allocate(src_desc);
+      hidden_layer_cache = allocate(src_desc);
+      data[8] = last_layer_cache;
+    }
+    e = execute_rnn_backward_primitive(
+        mode, ::dnnl::rnn_direction::bidirectional_concat, bias_mode,
+        src_dt, seq_length, batch_size, output_size, 2 * output_size, 1,
+        direction_num, hidden_size, gate_num,
+        projection_enabled ? projection_size : 0, data, offset, 1, weight_size,
+        workspace_size);
+    if (layer_size > 1) {
+      data[8] = hidden_layer_cache;
+      data[9] = last_layer_cache;
+      e = execute_rnn_backward_primitive(
+          mode, ::dnnl::rnn_direction::bidirectional_sum, bias_mode,
+          src_dt, seq_length, batch_size, output_size, output_size, 1,
+          direction_num, hidden_size, gate_num,
+          projection_enabled ? projection_size : 0, data, offset,
+          layer_size - 1, weight_size, workspace_size);
+      _q->memcpy(diff_src,
+                 ((layer_size - 1) % 2 == 0) ? last_layer_cache
+                                             : hidden_layer_cache,
+                 src_desc.get_size());
+    }
+  } else {
+    e = execute_rnn_backward_primitive(
+        mode, ::dnnl::rnn_direction::unidirectional_left2right, bias_mode,
+        src_dt, seq_length, batch_size, output_size, output_size, layer_size,
+        direction_num, hidden_size, gate_num,
+        projection_enabled ? projection_size : 0, data, offset, 1, weight_size,
+        workspace_size);
+  }
+
+  _q->submit([&](sycl::handler &cgh) {
+    cgh.depends_on(e);
+    cgh.host_task([=] {
+      if (last_layer_cache) {
+        sycl::free(last_layer_cache, *_q);
+      }
+      if (hidden_layer_cache) {
+        sycl::free(hidden_layer_cache, *_q);
+      }
+    });
+  });
+  return e;
+}
+/*
+sycl::event
+engine_ext::async_rnn_backward(const rnn_desc &desc, const memory_desc_ext &src_desc,
+                   void *src, void *diff_src, const memory_desc_ext &dst_desc,
+                   void *dst, void *diff_dst, const memory_desc_ext &iter_desc,
+                   void *src_iter, void *diff_src_iter,
+                   void *diff_dst_iter, const memory_desc_ext &iter_c_desc,
+                   void *src_iter_c, void *diff_src_iter_c,
+                   void *diff_dst_iter_c, size_t weight_size, void *weight,
+                   void *diff_weight, size_t workspace_size, void *workspace) {
+
+  rnn_mode mode;
+  rnn_bias_mode bias_mode;
+  ::dnnl::rnn_direction direction;
+  dpct::library_data_t dt;
+  int direction_num = 1;
+  int hidden_size = 0;
+  int projection_size = 0;
+  int layer_size = 0;
+  int gate_num = 1;
+  int output_size = 0;
+  ::dnnl::primitive *primitive = nullptr;
+  auto src_dims = src_desc.get_dims();
+  ::dnnl::memory::desc workspace_desc;
+
+  desc.get(&mode, &bias_mode, &direction, &dt, &hidden_size, &projection_size,
+           &layer_size);
+
+  if (projection_size != hidden_size) {
+    output_size = projection_size;
+  } else {
+    output_size = hidden_size;
+  }
+
+  if (direction == ::dnnl::rnn_direction::bidirectional_concat ||
+    direction == ::dnnl::rnn_direction::bidirectional_sum) {
+    direction_num = 2;
+  }
+
+  if (mode == rnn_mode::lstm) {
+    gate_num = 4;
+  } else if (mode == rnn_mode::gru) {
+    gate_num = 3;
+  }
+
+  ::dnnl::memory::desc iter_split_d_desc = {
+      {layer_size, direction_num, src_dims[1], src_dims[2]},
+      iter_desc.get_desc().get_data_type(),
+      ::dnnl::memory::format_tag::ldnc};
+
+  ::dnnl::memory::desc bias_desc = {
+      {layer_size, direction_num, gate_num, output_size},
+      src_desc.get_desc().get_data_type(),
+      ::dnnl::memory::format_tag::ldgo};
+
+  ::dnnl::memory::desc weight_desc = {
+      {layer_size, direction_num, hidden_size, gate_num, output_size},
+      src_desc.get_desc().get_data_type(),
+      ::dnnl::memory::format_tag::ldigo};
+
+  ::dnnl::memory::desc back_weight_desc = {
+      {layer_size, direction_num, hidden_size, gate_num, output_size},
+      src_desc.get_desc().get_data_type(),
+      ::dnnl::memory::format_tag::ldgoi};
+
+  auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
+      {DNNL_ARG_SRC_LAYER, {::dnnl::memory(src_desc.get_desc(), _eng, src)}},
+      {DNNL_ARG_DIFF_SRC_LAYER,
+       {::dnnl::memory(src_desc.get_desc(), _eng, diff_src)}},
+      {DNNL_ARG_DST_LAYER, {::dnnl::memory(src_desc.get_desc(), _eng, dst)}},
+      {DNNL_ARG_DIFF_DST_LAYER,
+       {::dnnl::memory(src_desc.get_desc(), _eng, diff_dst)}},
+      {DNNL_ARG_BIAS,
+       {::dnnl::memory(bias_desc, _eng,
+                       bias_mode == rnn_bias_mode::none
+                           ? DNNL_MEMORY_NONE
+                           : (uint8_t *)weight + 2 * weight_desc.get_size())}},
+      {DNNL_ARG_DIFF_BIAS,
+       {::dnnl::memory(bias_desc, _eng,
+                       bias_mode == rnn_bias_mode::none
+                           ? DNNL_MEMORY_NONE
+                           : (uint8_t *)diff_weight +
+                                 2 * weight_desc.get_size())}},
+      {DNNL_ARG_WEIGHTS_LAYER, {::dnnl::memory(back_weight_desc, _eng, weight)}},
+      {DNNL_ARG_WEIGHTS_ITER,
+       {::dnnl::memory(back_weight_desc, _eng,
+                       (uint8_t *)weight + back_weight_desc.get_size())}},
+      {DNNL_ARG_DIFF_WEIGHTS_LAYER,
+       {::dnnl::memory(weight_desc, _eng, diff_weight)}},
+      {DNNL_ARG_DIFF_WEIGHTS_ITER,
+       {::dnnl::memory(weight_desc, _eng,
+                       (uint8_t *)diff_weight + weight_desc.get_size())}},
+      {DNNL_ARG_SRC_ITER, {::dnnl::memory(iter_split_d_desc, _eng, src_iter)}},
+      {DNNL_ARG_DST_ITER, {::dnnl::memory(iter_split_d_desc, _eng, DNNL_MEMORY_NONE)}},
+      {DNNL_ARG_DIFF_SRC_ITER,
+       {::dnnl::memory(iter_split_d_desc, _eng, diff_src_iter)}},
+      {DNNL_ARG_DIFF_DST_ITER,
+       {::dnnl::memory(iter_split_d_desc, _eng, diff_dst_iter)}}};
+
+  if (mode == rnn_mode::vanilla_relu || mode == rnn_mode::vanilla_tanh) {
+    ::dnnl::algorithm activation_alg = mode == rnn_mode::vanilla_relu
+                                           ? ::dnnl::algorithm::eltwise_relu
+                                           : ::dnnl::algorithm::eltwise_tanh;
+    auto primitive_desc = create_primitive_desc<::dnnl::vanilla_rnn_forward>(
+        ::dnnl::prop_kind::forward_training, activation_alg, direction,
+        src_desc.get_desc(), iter_split_d_desc, weight_desc, weight_desc,
+        bias_desc, dst_desc.get_desc(), iter_split_d_desc);
+
+    auto backward_primitive_desc =
+        create_primitive_desc<::dnnl::vanilla_rnn_backward>(
+            ::dnnl::prop_kind::backward, activation_alg, direction,
+            src_desc.get_desc(), iter_split_d_desc, back_weight_desc, back_weight_desc,
+            bias_desc, dst_desc.get_desc(), iter_split_d_desc,
+            src_desc.get_desc(), iter_split_d_desc, weight_desc, weight_desc,
+            bias_desc, dst_desc.get_desc(), iter_split_d_desc, primitive_desc);
+
+    primitive = new ::dnnl::vanilla_rnn_backward(backward_primitive_desc);
+    workspace_desc = backward_primitive_desc.workspace_desc();
+  } else if (mode == rnn_mode::gru) {
+    auto primitive_desc = create_primitive_desc<::dnnl::gru_forward>(
+        ::dnnl::prop_kind::forward_training, direction, src_desc.get_desc(),
+        iter_split_d_desc, weight_desc, weight_desc, bias_desc,
+        dst_desc.get_desc(), iter_split_d_desc);
+
+    auto backward_primitive_desc = create_primitive_desc<::dnnl::gru_backward>(
+        ::dnnl::prop_kind::backward, direction, src_desc.get_desc(),
+        iter_split_d_desc, back_weight_desc, back_weight_desc, bias_desc,
+        dst_desc.get_desc(), iter_split_d_desc, src_desc.get_desc(),
+        iter_split_d_desc, weight_desc, weight_desc, bias_desc,
+        dst_desc.get_desc(), iter_split_d_desc, primitive_desc);
+
+    primitive = new ::dnnl::gru_backward(backward_primitive_desc);
+    workspace_desc = backward_primitive_desc.workspace_desc();
+  } else if (mode == rnn_mode::lstm) {
+    ::dnnl::memory::desc projection_desc;
+    ::dnnl::memory::desc back_projection_desc;
+    if (projection_size != hidden_size) {
+      projection_desc = {{layer_size, direction_num, hidden_size, output_size},
+                         src_desc.get_desc().get_data_type(),
+                         ::dnnl::memory::format_tag::ldio};
+      back_projection_desc = {{layer_size, direction_num, hidden_size, output_size},
+                         src_desc.get_desc().get_data_type(),
+                         ::dnnl::memory::format_tag::ldoi};
+      execution_args->insert(
+          {DNNL_ARG_WEIGHTS_PROJECTION,
+           {::dnnl::memory(back_projection_desc, _eng,
+                           (uint8_t *)weight + (bias_mode == rnn_bias_mode::none
+                               ? 2 * back_weight_desc.get_size()
+                               : 2 * back_weight_desc.get_size() +
+                                     bias_desc.get_size()))}});
+      execution_args->insert(
+          {DNNL_ARG_DIFF_WEIGHTS_PROJECTION,
+           {::dnnl::memory(projection_desc, _eng,
+                           (uint8_t *)diff_weight + (bias_mode == rnn_bias_mode::none
+                               ? 2 * weight_desc.get_size()
+                               : 2 * weight_desc.get_size() +
+                                     bias_desc.get_size()))}});
+    }
+
+    auto primitive_desc = create_primitive_desc<::dnnl::lstm_forward>(
+        ::dnnl::prop_kind::forward_training, direction, src_desc.get_desc(),
+        iter_split_d_desc, iter_split_d_desc, weight_desc, weight_desc,
+        ::dnnl::memory::desc(), projection_desc, bias_desc, dst_desc.get_desc(),
+        iter_split_d_desc, iter_split_d_desc);
+
+    auto backward_primitive_desc = create_primitive_desc<::dnnl::lstm_backward>(
+        ::dnnl::prop_kind::backward, direction, src_desc.get_desc(),
+        iter_split_d_desc, iter_split_d_desc, back_weight_desc, back_weight_desc,
+        ::dnnl::memory::desc(), projection_desc, bias_desc, dst_desc.get_desc(),
+        iter_split_d_desc, iter_split_d_desc, src_desc.get_desc(),
+        iter_split_d_desc, iter_split_d_desc, weight_desc, weight_desc,
+        ::dnnl::memory::desc(), projection_desc, bias_desc, dst_desc.get_desc(),
+        iter_split_d_desc, iter_split_d_desc, primitive_desc);
+
+    primitive = new ::dnnl::lstm_backward(backward_primitive_desc);
+    workspace_desc = backward_primitive_desc.workspace_desc();
+
+    execution_args->insert(
+        {DNNL_ARG_SRC_ITER_C,
+         {::dnnl::memory(iter_split_d_desc, _eng, src_iter_c)}});
+    execution_args->insert(
+        {DNNL_ARG_DIFF_SRC_ITER_C,
+         {::dnnl::memory(iter_split_d_desc, _eng, diff_src_iter_c)}});
+    execution_args->insert(
+        {DNNL_ARG_DST_ITER_C,
+         {::dnnl::memory(iter_split_d_desc, _eng, DNNL_MEMORY_NONE)}});
+    execution_args->insert(
+        {DNNL_ARG_DIFF_DST_ITER_C,
+         {::dnnl::memory(iter_split_d_desc, _eng, diff_dst_iter_c)}});
+  }
+
+  execution_args->insert(
+        {DNNL_ARG_WORKSPACE, {::dnnl::memory(workspace_desc, _eng, workspace)}});
+
+  return execute_primitive(primitive, execution_args, {});
+  
+  return sycl::event();
+}
+*/
+// DPCT_LABEL_END
 } // namespace dnnl
 } // namespace dpct
 
