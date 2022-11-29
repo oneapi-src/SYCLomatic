@@ -74,8 +74,7 @@ namespace lapack {
 /// \param [in] scratchpad_size Size of scratchpad memory as a number of
 /// floating point elements of type T.
 /// \param [out] info If lapack synchronous exception is caught, the value
-/// returned from info() method of the exception is set to \p info. If other
-/// SYCL synchronous exception is caught, -1 is set to \p info.
+/// returned from info() method of the exception is set to \p info.
 template <typename T>
 inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
                  oneapi::mkl::uplo uplo, int n, T *a, int lda, T *b, int ldb,
@@ -158,8 +157,7 @@ inline int sygvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
 /// \param [in] scratchpad_size Size of scratchpad memory as a number of
 /// floating point elements of type T.
 /// \param [out] info If lapack synchronous exception is caught, the value
-/// returned from info() method of the exception is set to \p info. If other
-/// SYCL synchronous exception is caught, -1 is set to \p info.
+/// returned from info() method of the exception is set to \p info.
 template <typename T, typename Tw>
 inline int hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
                  oneapi::mkl::uplo uplo, int n, T *a, int lda, T *b, int ldb,
@@ -232,8 +230,7 @@ inline int hegvd(sycl::queue &queue, std::int64_t itype, oneapi::mkl::job jobz,
 /// \param [in,out] a Array of pointers to matrix A.
 /// \param [in] lda The leading dimension of matrix A.
 /// \param [out] info If lapack synchronous exception is caught, the value
-/// returned from info() method of the exception is set to \p info. If other
-/// SYCL synchronous exception is caught, -1 is set to \p info.
+/// returned from info() method of the exception is set to \p info.
 /// \param [in] group_size The batch size.
 template <typename T>
 inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
@@ -274,6 +271,7 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
               << "info: " << e.info() << std::endl;
     std::vector<int> info_vec(group_size, static_cast<int>(e.info()));
     queue.memcpy(info, info_vec.data(), group_size * sizeof(int)).wait();
+    std::free(matrix_info);
     if (scratchpad)
       sycl::free(scratchpad, queue);
     return 1;
@@ -281,6 +279,7 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
     queue.memset(info, 0, group_size * sizeof(int)).wait();
+    std::free(matrix_info);
     if (scratchpad)
       sycl::free(scratchpad, queue);
     return 1;
@@ -314,8 +313,7 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 /// \param [in,out] b Array of pointers to matrix B.
 /// \param [in] ldb The leading dimension of matrix B.
 /// \param [out] info If lapack synchronous exception is caught, the value
-/// returned from info() method of the exception is set to \p info. If other
-/// SYCL synchronous exception is caught, -1 is set to \p info.
+/// returned from info() method of the exception is set to \p info.
 /// \param [in] group_size The batch size.
 template <typename T>
 inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
@@ -363,6 +361,7 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
               << "info: " << e.info() << std::endl;
     std::vector<int> info_vec(group_size, static_cast<int>(e.info()));
     queue.memcpy(info, info_vec.data(), group_size * sizeof(int)).wait();
+    std::free(matrix_info);
     if (scratchpad)
       sycl::free(scratchpad, queue);
     return 1;
@@ -370,6 +369,7 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
     queue.memset(info, 0, group_size * sizeof(int)).wait();
+    std::free(matrix_info);
     if (scratchpad)
       sycl::free(scratchpad, queue);
     return 1;
