@@ -4493,56 +4493,6 @@ private:
   bool IsRealCreate = true;
 };
 
-// template <class... T>
-// void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
-//   if (!HeaderInsertedBitMap[Type]) {
-//     HeaderInsertedBitMap[Type] = true;
-//     std::string ReplStr;
-//     llvm::raw_string_ostream RSO(ReplStr);
-//     // Start a new line if we're not inserting at the first inclusion offset
-//     if (Offset != FirstIncludeOffset) {
-//       RSO << getNL();
-//     }
-
-//     if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) &&
-//         (Type == HT_SYCL)) {
-//       RSO << "#define DPCT_USM_LEVEL_NONE" << getNL();
-//     }
-
-//     concatHeader(RSO, std::forward<T>(Args)...);
-
-//     // We only add these things when inserting HT_SYCL, because we have to make
-//     // sure that these things are only added once
-//     if (Type == HeaderType::HT_SYCL) {
-//       if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-//               ExplicitNamespace::EN_DPCT) ||
-//           DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
-//         RSO << "using namespace dpct;" << getNL();
-//       }
-//       if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
-//               ExplicitNamespace::EN_SYCL) &&
-//           !DpctGlobalInfo::getExplicitNamespaceSet().count(
-//               ExplicitNamespace::EN_CL)) {
-//         RSO << "using namespace sycl;" << getNL();
-//       }
-//     }
-
-//     // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
-//     // previously added here.  However, due to some unfortunate include
-//     // dependencies introduced with the PSTL/TBB headers from the
-//     // gcc-9.3.0 include files, those two headers must now be included
-//     // before the CL/sycl.hpp are included, so the FileInfo is set
-//     // to hold a boolean that'll indicate whether to insert them when
-//     // the #include CL/sycl.cpp is added later
-//     if (Type == HT_DPL_Algorithm || Type == HT_DPL_Execution || Type == HT_Dnnl)
-//       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_AlwaysLeft);
-//     else if (Type == HT_SYCL) 
-//       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Left);
-//     else
-//       insertHeader(std::move(RSO.str()), Offset, InsertPosition::IP_Right);
-//   }
-// }
-
 /// Find the innermost FunctionDecl's child node (CompoundStmt node) where \S
 /// is located. If there is no CompoundStmt of FunctionDecl out of \S, return
 /// nullptr.

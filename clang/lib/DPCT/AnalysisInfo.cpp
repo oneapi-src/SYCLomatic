@@ -615,6 +615,27 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
       OS << "using namespace sycl;" << getNL();
     }
     return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Left);
+  
+  // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
+  // <oneapi/dpl/algorithm>, so we have to make sure that
+  // <oneapi/dpl/execution> and <oneapi/dpl/algorithm> are inserted before
+  // <sycl/sycl.hpp>
+  // e.g.
+  // #include <sycl/sycl.hpp>
+  // #include <dpct/dpct.hpp>
+  // #include <dpct/dpl_utils.hpp>
+  // ...
+  // This will cause compilation error due to onedpl header dependence
+  // The order we expect is:
+  // e.g.
+  // #include <oneapi/dpl/execution>
+  // #include <oneapi/dpl/algorithm>
+  // #include <CL/sycl.hpp>
+  // #include <dpct/dpct.hpp>
+  // #include <dpct/dpl_utils.hpp>
+  //
+  // We will insert <oneapi/dpl/execution> and <oneapi/dpl/algorithm> at the
+  // begining of the main file
   case HT_DPCT_DPL_Utils:
     insertHeader(HT_DPL_Execution, FirstIncludeOffset);
     insertHeader(HT_DPL_Algorithm, FirstIncludeOffset);
