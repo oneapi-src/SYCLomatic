@@ -155,17 +155,15 @@ private:
 };
 
 #ifdef SYCLomatic_CUSTOMIZATION
-// MergeCompilationDatabsae merges the FixedCompilations and
-// JSONCompilations. And Compability tool follows the compilation database
-// normal process to do the migration.
-class MergeCompilationDatabase : public CompilationDatabase {
+// FullCompilationDatabase adds the SourcePaths into JSONCompilations
+// if the source not in JSON. And Compability tool follows the compilation
+// database normal process to do migration.
+class FullCompilationDatabase : public CompilationDatabase {
 public:
-  MergeCompilationDatabase(
+  FullCompilationDatabase(
       std::unique_ptr<CompilationDatabase> Compilations,
-      std::unique_ptr<CompilationDatabase> FixedDB,
       std::vector<std::string> &SourcePaths)
       : JSONCompilations(std::move(Compilations)),
-        FixedCompilations(std::move(FixedDB)),
         SourcePaths(SourcePaths) {
         mergeAllCompileCommands();
       }
@@ -180,9 +178,9 @@ public:
 private:
   void mergeAllCompileCommands();
   std::vector<CompileCommand> CompilationDB;
+  std::unique_ptr<CompilationDatabase> FixedCompilations;
   std::vector<std::string> Files;
   std::unique_ptr<CompilationDatabase> JSONCompilations;
-  std::unique_ptr<CompilationDatabase> FixedCompilations;
   std::vector<std::string> SourcePaths;
 };
 #endif

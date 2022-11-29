@@ -109,12 +109,12 @@ std::vector<CompileCommand> ArgumentsAdjustingCompilations::adjustCommands(
 
 #ifdef SYCLomatic_CUSTOMIZATION
 std::vector<CompileCommand>
-MergeCompilationDatabase::getAllCompileCommands() const {
+FullCompilationDatabase::getAllCompileCommands() const {
   return CompilationDB;
 }
 
 std::vector<CompileCommand>
-MergeCompilationDatabase::getCompileCommands(StringRef FilePath) const {
+FullCompilationDatabase::getCompileCommands(StringRef FilePath) const {
   std::vector<CompileCommand> Command =
       JSONCompilations->getCompileCommands(FilePath);
   if (!Command.empty())
@@ -126,7 +126,9 @@ MergeCompilationDatabase::getCompileCommands(StringRef FilePath) const {
   return FixedCompilations->getCompileCommands(FilePath);
 }
 
-void MergeCompilationDatabase::mergeAllCompileCommands() {
+void FullCompilationDatabase::mergeAllCompileCommands() {
+  FixedCompilations = std::make_unique<FixedCompilationDatabase>(
+      ".", std::vector<std::string>());
   CompilationDB = JSONCompilations->getAllCompileCommands();
   Files = JSONCompilations->getAllFiles();
   for (auto &SourcePath : SourcePaths) {
@@ -140,7 +142,7 @@ void MergeCompilationDatabase::mergeAllCompileCommands() {
   }
 }
 
-std::vector<std::string> MergeCompilationDatabase::getAllFiles() const {
+std::vector<std::string> FullCompilationDatabase::getAllFiles() const {
   return Files;
 }
 #endif
@@ -381,10 +383,10 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
         break;
       }
     }
-    auto FixedCompilations = std::make_unique<FixedCompilationDatabase>(
-      ".", std::vector<std::string>());
-    Compilations = std::make_unique<MergeCompilationDatabase>(
-      std::move(Compilations), std::move(FixedCompilations), SourcePathList);
+    if (IsCudaFile) {
+      Compilations = std::make_unique<FullCompilationDatabase>(
+        std::move(Compilations), SourcePathList);
+    }
   }
 #endif
   auto AdjustingCompilations =
