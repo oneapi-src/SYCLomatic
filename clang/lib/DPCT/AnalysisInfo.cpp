@@ -581,14 +581,14 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
   std::string ReplStr;
   llvm::raw_string_ostream OS(ReplStr);
 
-  // The #include of oneapi/dpl/execution and oneapi/dpl/algorithm were
-  // previously added here.  However, due to some unfortunate include
-  // dependencies introduced with the PSTL/TBB headers from the
-  // gcc-9.3.0 include files, those two headers must now be included
-  // before the CL/sycl.hpp are included, so the FileInfo is set
-  // to hold a boolean that'll indicate whether to insert them when
-  // the #include CL/sycl.cpp is added later
   switch (Type) {
+  // The #include of <oneapi/dpl/execution> and <oneapi/dpl/algorithm> were
+  // previously added here.  However, due to some unfortunate include
+  // dependencies introduced with the PSTL/TBB headers from the gcc-9.3.0
+  // include files, those two headers must now be included before the
+  // <sycl/sycl.hpp> are included, so the FileInfo is set to hold a boolean
+  // that'll indicate whether to insert them when the #include <sycl/sycl.cpp>
+  // is added later
   case HT_DPL_Algorithm:
   case HT_DPL_Execution:
   case HT_DPCT_DNNL_Utils:
