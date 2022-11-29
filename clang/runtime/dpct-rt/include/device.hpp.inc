@@ -613,14 +613,14 @@ public:
   }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|device_ext_is_deivce_can_access_host|dpct
+// DPCT_LABEL_BEGIN|device_ext_is_usm_host_allocations|dpct
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
 // Device|device_ext
-// Device|device_ext_is_deivce_can_access_host
+// Device|device_ext_is_usm_host_allocations
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  int is_deivce_can_access_host() const {
+  int is_usm_host_allocations() const {
     return this->has(sycl::aspect::usm_host_allocations);
   }
 // DPCT_LABEL_END

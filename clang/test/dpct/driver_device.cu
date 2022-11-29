@@ -42,7 +42,7 @@ void test() {
   // CHECK: cuDeviceGetAttribute(&result4,CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, device);
   cuDeviceGetAttribute(&result4,CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, device);
   std::cout << " result4 " << result4 << std::endl;
-  // CHECK: result5 = dpct::dev_mgr::instance().get_device(device).is_deivce_can_access_host();
+  // CHECK: result5 = dpct::dev_mgr::instance().get_device(device).is_usm_host_allocations();
   cuDeviceGetAttribute(&result5,CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY, device);
   std::cout << " result5 " << result5 << std::endl;
 }

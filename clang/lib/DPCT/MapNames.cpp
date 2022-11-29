@@ -829,8 +829,8 @@ void MapNames::setExplicitNamespaceMap() {
            HelperFeatureEnum::Device_device_ext_get_minor_version)},
       {"CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY",
        std::make_shared<EnumNameRule>(
-           "is_deivce_can_access_host",
-           HelperFeatureEnum::Device_device_ext_is_deivce_can_access_host)},
+           "is_usm_host_allocations",
+           HelperFeatureEnum::Device_device_ext_is_usm_host_allocations)},
       {"CU_DEVICE_ATTRIBUTE_WARP_SIZE",
        std::make_shared<EnumNameRule>(
            "get_max_sub_group_size",

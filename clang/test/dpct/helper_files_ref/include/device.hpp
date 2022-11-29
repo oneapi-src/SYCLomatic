@@ -244,7 +244,7 @@ public:
     return get_info<sycl::info::device::mem_base_addr_align>();
   }
 
-  int is_deivce_can_access_host() const {
+  int is_usm_host_allocations() const {
     return this->has(sycl::aspect::usm_host_allocations);
   }
 
