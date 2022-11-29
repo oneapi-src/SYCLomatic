@@ -196,16 +196,16 @@ public:
   }
   device_ext(const sycl::device &base)
       : sycl::device(base), _ctx(*this) {
+#ifdef DPCT_USM_LEVEL_NONE
+    auto property =
+        sycl::property_list{sycl::property::queue::enable_profiling()};
+#else
     auto property =
         sycl::property_list{sycl::property::queue::enable_profiling(),
                             sycl::property::queue::in_order()};
-#ifdef DPCT_USM_LEVEL_NONE
-    _queues.push_back(
-        std::make_shared<sycl::queue>(_ctx, base, exception_handler, property));
-#else
-    _queues.push_back(
-        std::make_shared<sycl::queue>(_ctx, base, exception_handler, property));
 #endif
+    _queues.push_back(
+        std::make_shared<sycl::queue>(_ctx, base, exception_handler, property));
     _saved_queue = _default_queue = _queues[0].get();
   }
 
@@ -350,13 +350,16 @@ public:
       eh = exception_handler;
     }
 #ifdef DPCT_USM_LEVEL_NONE
-    _queues.push_back(std::make_shared<sycl::queue>(
-        _ctx, *this, eh));
+    auto property =
+        sycl::property_list{sycl::property::queue::enable_profiling()};
 #else
-    _queues.push_back(std::make_shared<sycl::queue>(
-        _ctx, *this, eh,
-        sycl::property::queue::in_order()));
+    auto property =
+        sycl::property_list{sycl::property::queue::enable_profiling(),
+                            sycl::property::queue::in_order()};
 #endif
+    _queues.push_back(std::make_shared<sycl::queue>(
+        _ctx, *this, eh, property));
+
     return _queues.back().get();
   }
   void destroy_queue(sycl::queue *&queue) {
