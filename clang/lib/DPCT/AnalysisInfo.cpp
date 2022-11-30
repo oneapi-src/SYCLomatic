@@ -607,6 +607,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
       OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
     concatHeader(OS, getHeaderSpelling(Type));
     concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
+    HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
     if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
             ExplicitNamespace::EN_DPCT) ||
         DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
