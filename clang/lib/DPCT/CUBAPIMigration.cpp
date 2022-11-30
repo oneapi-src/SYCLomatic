@@ -73,9 +73,11 @@ REGISTER_RULE(CubDeviceLevelRule, PassKind::PK_Analysis)
 void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto TargetTypeName = [&]() {
     return hasAnyName("cub::Sum", "cub::Max", "cub::Min", "cub::Equality",
+                      "cub::KeyValuePair",
                       "cub::CountingInputIterator",
                       "cub::TransformInputIterator",
-                      "cub::ConstantInputIterator");
+                      "cub::ConstantInputIterator",
+                      "cub::ArgIndexInputIterator");
   };
 
   MF.addMatcher(
@@ -101,9 +103,12 @@ bool CubTypeRule::CanMappingToSyclNativeBinaryOp(StringRef OpTypeName) {
          OpTypeName == "cub::Min";
 }
 
-bool CubTypeRule::CanMappingToSyclBinaryOp(StringRef OpTypeName) {
+bool CubTypeRule::CanMappingToSyclType(StringRef OpTypeName) {
   return CanMappingToSyclNativeBinaryOp(OpTypeName) ||
-         OpTypeName == "cub::Equality";
+         OpTypeName == "cub::Equality" || 
+
+         // Ignore template arguments, .e.g cub::KeyValuePair<int, int>
+         OpTypeName.startswith("cub::KeyValuePair");
 }
 
 void CubDeviceLevelRule::registerMatcher(ast_matchers::MatchFinder &MF) {
