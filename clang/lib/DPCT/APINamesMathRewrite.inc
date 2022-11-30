@@ -88,7 +88,7 @@ CONDITIONAL_FACTORY_ENTRY(
                             ARG(0), ARG("0.0f"), ARG("1.0f"))),
     NO_REWRITE_FUNCNAME_FACTORY_ENTRY("saturate", "saturate"))
 
-MATH_API_REWRITER_HOSTDEVICE_4(
+MATH_API_REWRITER_HOSTDEVICE_2(
     "pow",
     HEADER_INSERT_FACTORY(HeaderType::HT_Math,
                           CALL_FACTORY_ENTRY("pow",
@@ -121,13 +121,9 @@ MATH_API_REWRITER_HOSTDEVICE_4(
                                CALL(MapNames::getClNamespace(false, true) +
                                         "pown<double>",
                                     ARG(0), ARG(1))),
-            NO_REWRITE_FUNCNAME_FACTORY_ENTRY("pow", "pow"))),
-    math::createStdLibDeviceFactory,
-    HEADER_INSERT_FACTORY(HeaderType::HT_Math,
-                          CALL_FACTORY_ENTRY("pow",
-                                             CALL("std::pow", ARG(0), ARG(1)))))
+            NO_REWRITE_FUNCNAME_FACTORY_ENTRY("pow", "pow"))))
 
-MATH_API_REWRITER_HOSTDEVICE_4(
+MATH_API_REWRITER_HOSTDEVICE_2(
     "powf",
     HEADER_INSERT_FACTORY(HeaderType::HT_Math,
                           CALL_FACTORY_ENTRY("powf",
@@ -160,13 +156,9 @@ MATH_API_REWRITER_HOSTDEVICE_4(
                                CALL(MapNames::getClNamespace(false, true) +
                                         "pown<float>",
                                     ARG(0), ARG(1))),
-            NO_REWRITE_FUNCNAME_FACTORY_ENTRY("powf", "powf"))),
-    math::createStdLibDeviceFactory,
-    HEADER_INSERT_FACTORY(HeaderType::HT_Math,
-                          CALL_FACTORY_ENTRY("powf",
-                                             CALL("std::pow", ARG(0), ARG(1)))))
+            NO_REWRITE_FUNCNAME_FACTORY_ENTRY("powf", "powf"))))
 
-MATH_API_REWRITER_DEVICE_2(
+MATH_API_REWRITER_DEVICE_1(
     "__powf",
     CONDITIONAL_FACTORY_ENTRY(
         makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
@@ -183,8 +175,4 @@ MATH_API_REWRITER_DEVICE_2(
             CALL_FACTORY_ENTRY("__powf",
                                CALL(MapNames::getClNamespace(false, true) +
                                         "pow<float>",
-                                    ARG(0), ARG(1))))),
-    math::createStdLibDeviceFactory,
-    HEADER_INSERT_FACTORY(HeaderType::HT_Math,
-                          CALL_FACTORY_ENTRY("__powf",
-                                             CALL("std::pow", ARG(0), ARG(1)))))
+                                    ARG(0), ARG(1))))))
