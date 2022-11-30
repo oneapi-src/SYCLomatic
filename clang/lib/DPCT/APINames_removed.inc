@@ -40,6 +40,7 @@ ENTRY(cudaEventCreateWithFlags,        "this call is redundant in SYCL.")
 ENTRY(cudaEventDestroy,                "this call is redundant in SYCL.")
 ENTRY(cuEventDestroy_v2,               "this call is redundant in SYCL.")
 ENTRY(cuEventCreate,                   "this call is redundant in SYCL.")
+ENTRY(cuModuleUnload,                  "this call is redundant in SYCL.")
 
 ENTRY(cudaStreamAttachMemAsync,        "SYCL currently does not support associating USM with a specific queue.")
 ENTRY(cuStreamAttachMemAsync,          "SYCL currently does not support associating USM with a specific queue.")
