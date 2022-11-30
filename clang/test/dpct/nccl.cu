@@ -46,19 +46,41 @@ int main() {
     void *buff;
     void * recvbuff;
     size_t count;
-    ncclDataType_t datatype = ncclInt8;
+    // CHECK: oneapi::ccl::reduction op = oneapi::ccl::sum;
+    ncclRedOp_t op = ncclSum;
+    // CHECK: op = oneapi::ccl::prod;
+    op = ncclProd;
+    // CHECK: op = oneapi::ccl::min;
+    op = ncclMin;
+    // CHECK: op = oneapi::ccl::max;
+    op = ncclMax;
+    // CHECK: oneapi::ccl::datatype datatype = oneapi::ccl::int8;
+    ncclDataType_t datatype = ncclChar;
+    // CHECK: datatype = oneapi::ccl::int8;
     datatype = ncclChar;
+    // CHECK: datatype = oneapi::ccl::uint8;
     datatype = ncclUint8;
+    // CHECK: datatype = oneapi::ccl::int32;
     datatype = ncclInt32;
+    // CHECK: datatype = oneapi::ccl::int32;
     datatype = ncclInt;
+    // CHECK: datatype = oneapi::ccl::uint32;
     datatype = ncclUint32;
+    // CHECK: datatype = oneapi::ccl::int64;
     datatype = ncclInt64;
+    // CHECK: datatype = oneapi::ccl::uint64;
     datatype = ncclUint64;
+    // CHECK: datatype = oneapi::ccl::float16;
     datatype = ncclFloat16;
+    // CHECK: datatype = oneapi::ccl::float16;
     datatype = ncclHalf;
+    // CHECK: datatype = oneapi::ccl::float32;
     datatype = ncclFloat32;
+    // CHECK: datatype = oneapi::ccl::float32;
     datatype = ncclFloat;
+    // CHECK: datatype = oneapi::ccl::float64;
     datatype = ncclFloat64;
+    // CHECK: datatype = oneapi::ccl::float64;
     datatype = ncclDouble;
 
     int peer;
@@ -82,4 +104,7 @@ int main() {
     // CHECK-NEXT: DPCT1007:3: Migration of ncclGroupEnd is not supported.
     // CHECK-NEXT: */
     ncclGroupEnd();
+
+    // CHECK: oneapi::ccl::allreduce(buff, recvbuff, count, oneapi::ccl::int8, oneapi::ccl::sum, comm, oneapi::ccl::create_stream(*stream));
+    ncclAllReduce(buff, recvbuff, count, ncclChar, ncclSum, comm, stream);
 }

@@ -36,5 +36,6 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("ncclCommCuDevice", DEREF(1),
                                                     LITERAL("get_device"))))
 
 CALL_FACTORY_ENTRY("ncclAllReduce",
-                   CALL("ccl::allreduce", ARG(0), ARG(1), ARG(2), ARG(3),
-                        ARG(4), ARG(5), ARG(6)))
+                   CALL("oneapi::ccl::allreduce", ARG(0), ARG(1), ARG(2),
+                        ARG(3), ARG(4), ARG(5),
+                        CALL("oneapi::ccl::create_stream", STREAM(6))))

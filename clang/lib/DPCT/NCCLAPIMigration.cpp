@@ -12,8 +12,6 @@
 #include "ASTTraversal.h"
 #include "ExprAnalysis.h"
 
-#include <iostream>
-
 using namespace clang::dpct;
 using namespace clang::ast_matchers;
 
@@ -29,6 +27,15 @@ void clang::dpct::NCCLRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                    "ncclCommCount", "ncclCommCuDevice", "ncclAllReduce"))))
           .bind("call"),
       this);
+  MF.addMatcher(
+      declRefExpr(
+          to(enumConstantDecl(hasAnyName(
+              "ncclChar", "ncclUint8", "ncclInt32", "ncclInt", "ncclUint32",
+              "ncclInt64", "ncclUint64", "ncclFloat16", "ncclHalf",
+              "ncclFloat32", "ncclFloat", "ncclFloat64", "ncclDouble",
+              "ncclBfloat16", "ncclSum", "ncclProd", "ncclMin", "ncclMax"))))
+          .bind("enum"),
+      this);
 }
 
 void clang::dpct::NCCLRule::runRule(
@@ -38,7 +45,10 @@ void clang::dpct::NCCLRule::runRule(
     EA.analyze(*TL);
   } else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
     EA.analyze(CE);
-  } else {
+  } else if (const DeclRefExpr *DRE =
+          getNodeAsType<DeclRefExpr>(Result, "enum")) {
+    EA.analyze(DRE);
+  }else {
     return;
   }
   emplaceTransformation(EA.getReplacement());
