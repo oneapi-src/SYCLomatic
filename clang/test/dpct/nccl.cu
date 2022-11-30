@@ -7,7 +7,7 @@
 int check(ncclResult_t);
 
 int main() {
-    int version, nranks, rank, count;
+    int version, nranks, rank, device;
     // CHECK: oneapi::ccl::kvs::address_type id;
     ncclUniqueId id;
     // CHECK: oneapi::ccl::communicator * comm;
@@ -31,21 +31,36 @@ int main() {
     // CHECK: check((comm = new oneapi::ccl::communicator(oneapi::ccl::create_communicator(nranks, rank, dpct::ccl::create_kvs(id))), 0));    
     check(ncclCommInitRank(&comm, nranks, id, rank));
 
-    // CHECK: count = comm.size();
-    ncclCommCount(comm, &count);
+    // CHECK: device = comm.size();
+    ncclCommCount(comm, &device);
 
-    // CHECK: check((count = comm.size(), 0));
-    check(ncclCommCount(comm, &count));
+    // CHECK: check((device = comm.size(), 0));
+    check(ncclCommCount(comm, &device));
 
-    // CHECK: count = comm.get_device();
-    ncclCommCuDevice(comm, &count);
+    // CHECK: device = comm.get_device();
+    ncclCommCuDevice(comm, &device);
 
-    // CHECK: check((count = comm.get_device(), 0));
-    check(ncclCommCuDevice(comm, &count));
+    // CHECK: check((device = comm.get_device(), 0));
+    check(ncclCommCuDevice(comm, &device));
 
     void *buff;
+    void * recvbuff;
     size_t count;
-    ncclDataType_t datatype;
+    ncclDataType_t datatype = ncclInt8;
+    datatype = ncclChar;
+    datatype = ncclUint8;
+    datatype = ncclInt32;
+    datatype = ncclInt;
+    datatype = ncclUint32;
+    datatype = ncclInt64;
+    datatype = ncclUint64;
+    datatype = ncclFloat16;
+    datatype = ncclHalf;
+    datatype = ncclFloat32;
+    datatype = ncclFloat;
+    datatype = ncclFloat64;
+    datatype = ncclDouble;
+
     int peer;
     cudaStream_t stream;
     // CHECK:     /*
