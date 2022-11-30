@@ -38,7 +38,7 @@ struct b {
 struct b2 {
   // CHECK: b2(dpct::queue_ptr s = &dpct::get_default_queue()) {}
   b2(CUstream s = 0) {}
-}
+};
 
 void foo(){
   // CHECK: dpct::queue_ptr s13 = &dpct::get_default_queue();
@@ -144,3 +144,7 @@ int main2(){
   [](CUstream&&) {}(0);
 }
 
+void CopyToHost(void *buf, void *host, int N, int stream) {
+  // CHECK: dpct::queue_ptr_from_integer(stream)->memcpy(buf, host, N*sizeof(float));
+  cudaMemcpyAsync(buf, host, N*sizeof(float), cudaMemcpyDeviceToHost, (cudaStream_t)stream);
+}
