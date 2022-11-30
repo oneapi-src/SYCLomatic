@@ -107,4 +107,9 @@ int main() {
 
     // CHECK: oneapi::ccl::allreduce(buff, recvbuff, count, oneapi::ccl::int8, oneapi::ccl::sum, comm, oneapi::ccl::create_stream(*stream));
     ncclAllReduce(buff, recvbuff, count, ncclChar, ncclSum, comm, stream);
+
+    // CHECK:     /*
+    // CHECK-NEXT: DPCT1067:4: The 'ncclAvg' parameter could not be migrated. You may need to update the code manually.
+    // CHECK-NEXT: */
+    ncclAllReduce(buff, recvbuff, count, ncclChar, ncclAvg, comm, stream);
 }

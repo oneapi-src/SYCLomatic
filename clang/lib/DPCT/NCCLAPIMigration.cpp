@@ -1,11 +1,10 @@
-//===--------------- NCCLMigration.cpp
-//--------------------------------------===//
+//===-------------- NCCLMigration.cpp-----------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-//===----------------------------------------------------------------------===//
+//===--------------------------------------------------------------------===//
 
 #include "NCCLAPIMigration.h"
 
@@ -46,9 +45,9 @@ void clang::dpct::NCCLRule::runRule(
   } else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
     EA.analyze(CE);
   } else if (const DeclRefExpr *DRE =
-          getNodeAsType<DeclRefExpr>(Result, "enum")) {
+                 getNodeAsType<DeclRefExpr>(Result, "enum")) {
     EA.analyze(DRE);
-  }else {
+  } else {
     return;
   }
   emplaceTransformation(EA.getReplacement());

@@ -35,7 +35,11 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("ncclCommCuDevice", DEREF(1),
                                         MEMBER_CALL(ARG(0), false,
                                                     LITERAL("get_device"))))
 
-CALL_FACTORY_ENTRY("ncclAllReduce",
-                   CALL("oneapi::ccl::allreduce", ARG(0), ARG(1), ARG(2),
-                        ARG(3), ARG(4), ARG(5),
-                        CALL("oneapi::ccl::create_stream", STREAM(6))))
+CONDITIONAL_FACTORY_ENTRY(
+    CheckArgStr(4, "ncclAvg"),
+    UNSUPPORT_FACTORY_ENTRY("ncclAllReduce", Diagnostics::UNSUPPORTED_PARAM,
+                            ARG(4)),
+    CALL_FACTORY_ENTRY("ncclAllReduce",
+                       CALL("oneapi::ccl::allreduce", ARG(0), ARG(1), ARG(2),
+                            ARG(3), ARG(4), ARG(5),
+                            CALL("oneapi::ccl::create_stream", STREAM(6)))))

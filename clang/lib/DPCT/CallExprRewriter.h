@@ -1492,6 +1492,21 @@ public:
   }
 };
 
+class CheckArgStr {
+  unsigned Idx;
+  std::string ArgValueStr;
+
+public:
+  CheckArgStr(unsigned I, const std::string &ArgValue)
+      : Idx(I), ArgValueStr(ArgValue) {}
+  bool operator()(const CallExpr *C) {
+    if (C->getNumArgs() <= Idx)
+      return false;
+    std::string  ArgValue = getStmtSpelling(C->getArg(Idx));
+    return ArgValue == ArgValueStr;
+  }
+};
+
 template<class BO>
 class CheckIntergerTemplateArgValue {
   unsigned Idx;
