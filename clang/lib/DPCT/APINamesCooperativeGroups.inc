@@ -292,6 +292,8 @@ FEATURE_REQUEST_FACTORY(
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_left",
                                     SUBGROUP, ARG(0), ARG(1), ARG("16"))))
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base<32>.shfl_down",
+                                MemberExprBase(), false, "shuffle_down", ARG(0), ARG(1))
 // === cuda header file <= 10.2 === end ===
 // === cuda header file >= 11.0 === begin ===
 FEATURE_REQUEST_FACTORY(
@@ -324,5 +326,7 @@ FEATURE_REQUEST_FACTORY(
                                CALL(MapNames::getDpctNamespace() +
                                         "shift_sub_group_left",
                                     SUBGROUP, ARG(0), ARG(1), ARG("16"))))
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__static_size_thread_block_tile_base<32>.shfl_down",
+                                MemberExprBase(), false, "shuffle_down", ARG(0), ARG(1))
 // === cuda header file >= 11.0 === end ===
 #endif

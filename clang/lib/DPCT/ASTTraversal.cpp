@@ -1116,7 +1116,7 @@ void IncludesCallbacks::InclusionDirective(
   // Thus CL/* headers must be kept
   if (FileName.startswith("CL/"))
     return;
-  
+
   // Replace the complete include directive with an empty string.
   // Also remove the trailing spaces to end of the line.
   TransformSet.emplace_back(new ReplaceInclude(
@@ -12654,13 +12654,14 @@ void CooperativeGroupsFunctionRule::runRule(
 
     // unsupported case for shfl_down
     if (FuncName == "shfl_down") {
-      // support thread_block_tile<1,2,4,8,16> in case 1
+      // support thread_block_tile<1,2,4,8,16,32> in case 1
       static const std::set<std::string> SupportedBaseType = {
           "cooperative_groups::__v1::thread_block_tile<1>",
           "cooperative_groups::__v1::thread_block_tile<2>",
           "cooperative_groups::__v1::thread_block_tile<4>",
           "cooperative_groups::__v1::thread_block_tile<8>",
-          "cooperative_groups::__v1::thread_block_tile<16>"};
+          "cooperative_groups::__v1::thread_block_tile<16>",
+          "cooperative_groups::__v1::thread_block_tile<32>"};
       if (!SupportedBaseType.count(getBaseTypeStr(CE))) {
         return;
       }
