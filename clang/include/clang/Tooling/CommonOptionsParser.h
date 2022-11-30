@@ -163,9 +163,8 @@ public:
   FullCompilationDatabase(
       std::unique_ptr<CompilationDatabase> Compilations,
       std::vector<std::string> &SourcePaths)
-      : JSONCompilations(std::move(Compilations)),
-        SourcePaths(SourcePaths) {
-        mergeAllCompileCommands();
+      : JSONCompilations(std::move(Compilations)) {
+        mergeAllCompileCommands(SourcePaths);
       }
 
   std::vector<CompileCommand>
@@ -176,7 +175,7 @@ public:
   std::vector<CompileCommand> getAllCompileCommands() const override;
 
 private:
-  void mergeAllCompileCommands();
+  void mergeAllCompileCommands(std::vector<std::string> &SourcePaths);
   std::vector<CompileCommand> CompilationDB;
   std::unique_ptr<CompilationDatabase> FixedCompilations;
   std::vector<std::string> Files;

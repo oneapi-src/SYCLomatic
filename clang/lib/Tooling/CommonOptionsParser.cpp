@@ -126,7 +126,8 @@ FullCompilationDatabase::getCompileCommands(StringRef FilePath) const {
   return FixedCompilations->getCompileCommands(FilePath);
 }
 
-void FullCompilationDatabase::mergeAllCompileCommands() {
+void FullCompilationDatabase::mergeAllCompileCommands(
+      std::vector<std::string> &SourcePaths) {
   FixedCompilations = std::make_unique<FixedCompilationDatabase>(
       ".", std::vector<std::string>());
   CompilationDB = JSONCompilations->getAllCompileCommands();
