@@ -2301,14 +2301,7 @@ private:
   // __device__ int a[24];
   // will be migrated to:
   // dpct::global_memory<int, 1> a(24);
-  inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
-    if (TL.getSizeExpr()->getStmtClass() == Stmt::IntegerLiteralClass &&
-        TL.getSizeExpr()->getBeginLoc().isFileID())
-      return toString(TL.getTypePtr()->getSize(), 10, false, false);
-    ArraySizeOriginExprs.push_back(getStmtSpelling(TL.getSizeExpr()));
-    return buildString(toString(TL.getTypePtr()->getSize(), 10, false, false),
-                       "/*", ArraySizeOriginExprs.back(), "*/");
-  }
+  inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL);
 
   // Get original array size expression.
   std::string getUnfoldedArraySize(const ConstantArrayTypeLoc &TL);
@@ -3476,6 +3469,7 @@ public:
   }
 
   void emplaceReplacement();
+  unsigned getExtraArgLoc() { return ExtraArgLoc; }
   inline bool hasArgs() { return HasArgs; }
   inline bool hasTemplateArgs() { return !TemplateArgs.empty(); }
   inline bool hasWrittenTemplateArgs() {
