@@ -3615,6 +3615,34 @@ void VectorTypeMemberAccessRule::runRule(
   }
 
   if (auto ME = getNodeAsType<MemberExpr>(Result, "DerivedVecMemberExpr")) {
+    const auto *MD = DpctGlobalInfo::findAncestor<CXXMethodDecl>(ME);
+    if (MD && MD->isVolatile()) {
+      const auto BaseType =
+          ME->getBase()->getBestDynamicClassTypeExpr()->getType();
+      const bool BaseAndThisSameType =
+          BaseType->getCanonicalTypeUnqualified() ==
+          MD->getThisType()->getCanonicalTypeUnqualified();
+      const bool BaseIsVolatile =
+          BaseType->getPointeeType().isVolatileQualified();
+      const auto *SM = Result.SourceManager;
+      const SourceLocation Loc = SM->getExpansionLoc(ME->getBeginLoc());
+      const std::string TypeName =
+          BaseType->getPointeeType().getUnqualifiedType().getAsString();
+      if (ME->isImplicitAccess()) {
+        const std::string VolatileCast =
+            std::string("const_cast<") + TypeName + " *>(this)->";
+        report(Loc, Diagnostics::VOLATILE_VECTOR_ACCESS, false);
+        emplaceTransformation(
+            new InsertText(ME->getBeginLoc(), VolatileCast.c_str()));
+      } else if (BaseAndThisSameType && BaseIsVolatile) {
+        const std::string VolatileCast =
+            std::string("const_cast<") + TypeName + " *>(";
+        report(Loc, Diagnostics::VOLATILE_VECTOR_ACCESS, false);
+        emplaceTransformation(
+            new InsertText(ME->getBase()->getBeginLoc(), VolatileCast.c_str()));
+        emplaceTransformation(new InsertText(ME->getOperatorLoc(), ")"));
+      }
+    }
     renameMemberField(ME);
   }
 
