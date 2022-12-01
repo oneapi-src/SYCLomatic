@@ -71,6 +71,10 @@ public:
     std::string Out;
     ClassMethod() {}
   };
+  class Attribute {
+  public:
+    bool ReplaceCalleeNameOnly = false;
+  };
   static std::vector<std::string> RuleFiles;
   std::string RuleFile;
   std::string RuleId;
@@ -81,6 +85,7 @@ public:
   std::string EnumName;
   std::string Prefix;
   std::string Postfix;
+  Attribute RuleAttribute;
   std::vector<std::string> Includes;
   std::vector<std::shared_ptr<ClassField>> Fields;
   std::vector<std::shared_ptr<ClassMethod>> Methods;
@@ -141,6 +146,7 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapOptional("Prefix", Doc->Prefix);
     Io.mapOptional("Postfix", Doc->Postfix);
     Io.mapOptional("HasExplicitTemplateArgs", Doc->HasExplicitTemplateArgs);
+    Io.mapOptional("Attribute", Doc->RuleAttribute);
   }
 };
 
@@ -163,6 +169,13 @@ struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::ClassMethod>> {
     Doc = std::make_shared<MetaRuleObject::ClassMethod>();
     Io.mapRequired("In", Doc->In);
     Io.mapRequired("Out", Doc->Out);
+  }
+};
+
+template<>
+struct llvm::yaml::MappingTraits<MetaRuleObject::Attribute> {
+  static void mapping(llvm::yaml::IO &Io, MetaRuleObject::Attribute &Doc) {
+    Io.mapRequired("ReplaceCalleeNameOnly", Doc.ReplaceCalleeNameOnly);
   }
 };
 
