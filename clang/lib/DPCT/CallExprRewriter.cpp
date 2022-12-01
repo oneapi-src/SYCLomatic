@@ -2600,6 +2600,9 @@ public:
   }
 };
 
+template <typename T>
+CheckArgCount(unsigned I, T Comp, bool IncludeDefaultArg) -> CheckArgCount<T>;
+
 class CheckBaseType {
   std::string TypeName;
 
