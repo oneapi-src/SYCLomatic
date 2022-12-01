@@ -175,7 +175,7 @@ struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::ClassMethod>> {
 template<>
 struct llvm::yaml::MappingTraits<MetaRuleObject::Attribute> {
   static void mapping(llvm::yaml::IO &Io, MetaRuleObject::Attribute &Doc) {
-    Io.mapRequired("ReplaceCalleeNameOnly", Doc.ReplaceCalleeNameOnly);
+    Io.mapOptional("ReplaceCalleeNameOnly", Doc.ReplaceCalleeNameOnly);
   }
 };
 

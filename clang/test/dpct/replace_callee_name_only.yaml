@@ -1,4 +1,12 @@
-- Rule: replace_callee_name_rule
+- Rule: rule0
+  Kind: API
+  Priority: Takeover
+  In: cub::DeviceReduce::Sum
+  Out: REPLACE_CALLEE_NAME_ONLY
+  Includes: []
+  Attribute:                                                                    
+    ReplaceCalleeNameOnly: true
+- Rule: rule1
   Kind: API
   Priority: Takeover
   In: cub::DeviceScan::InclusiveSum
@@ -6,3 +14,11 @@
   Includes: []
   Attribute:                                                                    
     ReplaceCalleeNameOnly: true
+- Rule: rule2
+  Kind: API
+  Priority: Takeover
+  In: cub::DeviceScan::ExclusiveSum
+  Out: cub::DeviceScan::ExclusiveSum(REPLACE_ALL_CALL_EXPR)
+  Includes: []
+  Attribute: {}
+

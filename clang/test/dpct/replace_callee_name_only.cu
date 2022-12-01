@@ -21,12 +21,17 @@ size_t tmp_size;
   func(temp_storage, temp_storage_bytes, __VA_ARGS__);                    \
 } while (false)
 
+void test0() {
+  // CHECK: CUB_WRAPPER(REPLACE_CALLEE_NAME_ONLY, d_in, d_out, n);
+  CUB_WRAPPER(cub::DeviceReduce::Sum, d_in, d_out, n);
+}
+
 void test1() {
   // CHECK: CUB_WRAPPER(cub::DeviceScan::InclusiveSum, d_in, d_out, n);
   CUB_WRAPPER(cub::DeviceScan::InclusiveSum, d_in, d_out, n);
 }
 
 void test2() {
-  // CHECK: cub::DeviceScan::InclusiveSum(tmp, tmp_size, d_in, d_out, n);
-  cub::DeviceScan::InclusiveSum(tmp, tmp_size, d_in, d_out, n);
+  // CHECK: cub::DeviceScan::ExclusiveSum(REPLACE_ALL_CALL_EXPR);
+  cub::DeviceScan::ExclusiveSum(tmp, tmp_size, d_in, d_out, n);
 }
