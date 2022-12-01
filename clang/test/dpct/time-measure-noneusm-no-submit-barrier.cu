@@ -99,13 +99,13 @@ void foo_test_1() {
 
 // CHECK:    start_ct1 = std::chrono::steady_clock::now();
 // CHECK-NEXT:        for (int i=0; i<4; i++) {
-// CHECK-NEXT:            dpct::get_default_queue().parallel_for<dpct_kernel_name<class kernel_foo_{{[a-z0-9]+}}>>(
+// CHECK-NEXT:            q_ct1.parallel_for<dpct_kernel_name<class kernel_foo_{{[a-z0-9]+}}>>(
 // CHECK-NEXT:                  sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 // CHECK-NEXT:                  [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:                    kernel_foo();
 // CHECK-NEXT:                  });
 // CHECK-NEXT:        }
-// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:    dev_ct1.queues_wait_and_throw();
     cudaEventRecord( start, 0 );
         for (int i=0; i<4; i++) {
             kernel_foo<<<1, 1>>>();
@@ -196,7 +196,7 @@ void foo_test_3() {
   cudaStream_t stream[NSTREAM];
 
   for (int i = 0; i < NSTREAM; ++i) {
-    // CHECK:    CHECK((stream[i] = dpct::get_current_device().create_queue(), 0));
+    // CHECK:    CHECK((stream[i] = dev_ct1.create_queue(), 0));
     CHECK(cudaStreamCreate(&stream[i]));
   }
 
@@ -539,7 +539,7 @@ void RunTest()
         SAFE_CALL(cudaEventRecord(start, 0));
         for (int j = 0; j < iters; j++)
         {
-// CHECK:          dpct::get_default_queue().submit(
+// CHECK:          q_ct1.submit(
 // CHECK-NEXT:            [&](sycl::handler &cgh) {
 // CHECK-NEXT:              dpct::access_wrapper<T *> d_idata_acc_ct0(d_idata, cgh);
 // CHECK-NEXT:              dpct::access_wrapper<T *> d_block_sums_acc_ct1(d_block_sums, cgh);

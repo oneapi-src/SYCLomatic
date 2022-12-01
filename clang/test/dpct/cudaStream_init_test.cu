@@ -145,6 +145,6 @@ int main2(){
 }
 
 void CopyToHost(void *buf, void *host, int N, int stream) {
-  // CHECK: dpct::queue_ptr_from_integer(stream)->memcpy(buf, host, N*sizeof(float));
+  // CHECK: dpct::int_as_queue_ptr(stream)->memcpy(buf, host, N*sizeof(float));
   cudaMemcpyAsync(buf, host, N*sizeof(float), cudaMemcpyDeviceToHost, (cudaStream_t)stream);
 }

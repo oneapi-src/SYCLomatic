@@ -42,6 +42,7 @@
 #include <complex>
 #include <type_traits>
 #include <cassert>
+#include <cstdint>
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
@@ -704,7 +705,21 @@ public:
 // DPCT_CODE
 };
 // DPCT_LABEL_END
+} // namespace experimental
+
+// DPCT_LABEL_BEGIN|int_as_queue_ptr|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|typedef_queue_ptr
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+inline queue_ptr int_as_queue_ptr(uintptr_t x) {
+  return x <= 2 ?
+  &get_default_queue()
+  : reinterpret_cast<queue_ptr>(x);
 }
+// DPCT_LABEL_END
+
 } // namespace dpct
 
 

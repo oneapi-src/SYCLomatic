@@ -15614,13 +15614,13 @@ void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &R
       buildTempVariableMap(Index, CE->getSubExpr(), HelperFuncType::HFT_DefaultQueue);
       emplaceTransformation(
         new ReplaceStmt(CE, "&{{NEEDREPLACEQ" + std::to_string(Index) + "}}"));
-    } else if (auto DRE = dyn_cast<DeclRefExpr>(CE->getSubExpr())) {
+    } else if (CE->getSubExpr()->getType()->isIntegerType()) {
       emplaceTransformation(
         new ReplaceStmt(
           CE,
 	  MapNames::getDpctNamespace() 
 	  + "int_as_queue_ptr("
-	  + DRE->getNameInfo().getAsString()
+	  + ExprAnalysis::ref(CE->getSubExpr())
 	  + ")"));
     }
   }

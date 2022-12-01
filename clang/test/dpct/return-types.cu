@@ -43,7 +43,8 @@ cudaEvent_t bar2() {
 
 // CHECK: dpct::queue_ptr foo() {
 cudaStream_t foo() {
-  return &dpct::get_default_queue();
+  // CHECK: return &dpct::get_default_queue();
+  return 0;
 }
 
 // CHECK: dpct::event_ptr foo2() {
@@ -54,7 +55,8 @@ cudaEvent_t foo2() {
 class S {
   // CHECK: dpct::queue_ptr foo() {
   cudaStream_t foo() {
-    return &dpct::get_default_queue();
+    // CHECK: return &dpct::get_default_queue();
+    return 0;
   }
 
   // CHECK: dpct::event_ptr foo2() {
@@ -66,7 +68,8 @@ class S {
 class C {
   // CHECK: dpct::queue_ptr foo() {
   cudaStream_t foo() {
-    return &dpct::get_default_queue();
+    // CHECK: return &dpct::get_default_queue();
+    return 0;
   }
 
   // CHECK: dpct::event_ptr foo2() {
