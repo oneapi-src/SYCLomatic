@@ -31,7 +31,7 @@ def open_output_file(path_str:str,filename:str):
     filename_with_path = os.path.join(path_str,filename+output_file_suffix)
     if os.path.exists(filename_with_path) is True :
         if keep_only_ask_once is False:
-            keep_file = get_user_answer('output file is existed, whether it can be overridden?')
+            keep_file = get_user_answer('output files are existed, whether it can be overridden?')
             keep_only_ask_once = True
         filename_with_path = get_output_filename(path_str,filename,keep_file)
     print("Output file is "+filename_with_path)
