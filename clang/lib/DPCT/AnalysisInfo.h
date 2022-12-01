@@ -1000,19 +1000,15 @@ public:
   }
 
   inline static bool getUsingExtensionDE(DPCPPExtensionsDefaultEnabled Ext) {
-    return ExtensionDEFlag & static_cast<unsigned>(Ext);
+    return ExtensionDEFlag & (1 << static_cast<unsigned>(Ext));
   }
-  inline static void setExtensionDEUnused(DPCPPExtensionsDefaultEnabled Ext) {
-    ExtensionDEFlag &= (~static_cast<unsigned>(Ext));
-  }
+  inline static void setExtensionDEFlag(unsigned Flag) { ExtensionDEFlag = Flag; }
   inline static unsigned getExtensionDEFlag() { return ExtensionDEFlag; }
 
   inline static bool getUsingExtensionDD(DPCPPExtensionsDefaultDisabled Ext) {
-    return ExtensionDDFlag & static_cast<unsigned>(Ext);
+    return ExtensionDDFlag & (1 << static_cast<unsigned>(Ext));
   }
-  inline static void setExtensionDDUsed(DPCPPExtensionsDefaultDisabled Ext) {
-    ExtensionDDFlag |= static_cast<unsigned>(Ext);
-  }
+  inline static void setExtensionDDFlag(unsigned Flag) { ExtensionDDFlag = Flag; }
   inline static unsigned getExtensionDDFlag() { return ExtensionDDFlag; }
 
 
