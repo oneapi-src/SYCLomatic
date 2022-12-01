@@ -661,21 +661,6 @@ bool isArgMigratedToAccessor(const CallExpr *Call, unsigned Index) {
   return false;
 }
 
-std::string getTypecastName(const CallExpr *Call) {
-  auto Arg0TypeName = Call->getArg(0)->getType().getAsString();
-  auto Arg1TypeName = Call->getArg(1)->getType().getAsString();
-  auto RetTypeName = Call->getType().getAsString();
-  bool B0 = isArgMigratedToAccessor(Call, 0);
-  bool B1 = isArgMigratedToAccessor(Call, 1);
-  if (B0 && !B1)
-    return Arg1TypeName;
-  if (!B0 && B1)
-    return Arg0TypeName;
-  if (B0 && B1)
-    return RetTypeName;
-  return {};
-}
-
 Optional<std::string> MathSimulatedRewriter::rewrite() {
   std::string NamespaceStr;
   auto DRE = dyn_cast<DeclRefExpr>(Call->getCallee()->IgnoreImpCasts());
@@ -710,11 +695,8 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
       !ContextFD->hasAttr<CUDAGlobalAttr>())
     return Base::rewrite();
 
-  // Do not need to report warnings for pow, funnelshift, or drcp migrations
-  if (SourceCalleeName != "pow"                     && 
-      SourceCalleeName != "powf"                    &&
-      SourceCalleeName != "__powf"                  && 
-      SourceCalleeName != "__funnelshift_l"         &&
+  // Do not need to report warnings for funnelshift, or drcp migrations
+  if (SourceCalleeName != "__funnelshift_l"         &&
       SourceCalleeName != "__funnelshift_lc"        &&
       SourceCalleeName != "__funnelshift_r"         &&
       SourceCalleeName != "__funnelshift_rc"        &&
@@ -935,80 +917,6 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
     auto MigratedArg1 = getMigratedArg(1);
     OS << "1 / " + MapNames::getClNamespace(false, true) + "hypot("
        << MigratedArg0 << ", " << MigratedArg1 << ")";
-  } else if (SourceCalleeName == "pow" || SourceCalleeName == "powf" ||
-             SourceCalleeName == "__powf") {
-    RewriteArgList = getMigratedArgs();
-    if (Call->getNumArgs() != 2) {
-      TargetCalleeName = SourceCalleeName.str();
-      return buildRewriteString();
-    }
-    auto &Context = dpct::DpctGlobalInfo::getContext();
-    auto PP = Context.getPrintingPolicy();
-    PP.PrintCanonicalTypes = 1;
-    auto Arg0 = Call->getArg(0);
-    auto Arg1 = Call->getArg(1);
-
-    std::string T0, T1;
-    if (auto CXXFCE = dyn_cast<CXXFunctionalCastExpr>(Call->getArg(0))) {
-      T0 = CXXFCE->getType().getAsString(PP);
-    } else {
-      T0 = Arg0->IgnoreCasts()->getType().getAsString(PP);
-    }
-
-    if (auto CXXFCE = dyn_cast<CXXFunctionalCastExpr>(Call->getArg(1))) {
-      T1 = CXXFCE->getType().getAsString(PP);
-    } else {
-      T1 = Arg1->IgnoreCasts()->getType().getAsString(PP);
-    }
-
-    auto IL1 = dyn_cast<IntegerLiteral>(Arg1->IgnoreCasts());
-    auto FL1 = dyn_cast<FloatingLiteral>(Arg1->IgnoreCasts());
-    auto DRE0 = dyn_cast<DeclRefExpr>(Arg0->IgnoreCasts());
-    // For integer literal 2 or floating literal 2.0/2.0f, expand pow to
-    // multiply expression:
-    // pow(x, 2) ==> x * x, if x is an expression that has no side effects.
-    // pow(x, 2.0) ==> x * x, if x is an expression that has no side effects.
-    // pow(x, 2.0f) ==> x * x, if x is an expression that has no side effects.
-    bool IsExponentTwo = false;
-    if (IL1) {
-      if (IL1->getValue().getZExtValue() == 2)
-        IsExponentTwo = true;
-    } else if (FL1) {
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      if (!FL1->getBeginLoc().isMacroID() && !FL1->getEndLoc().isMacroID()) {
-        auto B = SM.getCharacterData(FL1->getBeginLoc());
-        auto E = SM.getCharacterData(
-            Lexer::getLocForEndOfToken(FL1->getEndLoc(), 0, SM, LangOptions()));
-        std::string Exponent(B, E);
-        if (Exponent == "2.0" || Exponent == "2.0f")
-          IsExponentTwo = true;
-      }
-    }
-    SideEffectsAnalysis SEA(Arg0);
-    SEA.analyze();
-    bool Arg0HasSideEffects = SEA.hasSideEffects();
-    if (!Arg0HasSideEffects && IsExponentTwo) {
-      auto Arg0Str = SEA.getReplacedString();
-      if (!needExtraParens(Arg0))
-        return Arg0Str + " * " + Arg0Str;
-      else
-        return "(" + Arg0Str + ") * (" + Arg0Str + ")";
-    }
-    if (IL1 || T1 == "int" || T1 == "unsigned int" || T1 == "char" ||
-        T1 == "unsigned char" || T1 == "short" || T1 == "unsigned short") {
-      if (T0 == "int") {
-        if (DRE0) {
-          RewriteArgList[0] = "(float)" + RewriteArgList[0];
-        } else {
-          RewriteArgList[0] = "(float)(" + RewriteArgList[0] + ")";
-        }
-      }
-      if (T1 != "int") {
-        RewriteArgList[1] = "(int)" + RewriteArgList[1];
-      }
-      TargetCalleeName = MapNames::getClNamespace(false, true) + "pown";
-    }
-    return buildRewriteString();
   } else if (FuncName == "erfcx" || FuncName == "erfcxf") {
     OS << MapNames::getClNamespace(false, true) << "exp(" << MigratedArg0 << "*"
        << MigratedArg0 << ")*" << TargetCalleeName << "(" << MigratedArg0
