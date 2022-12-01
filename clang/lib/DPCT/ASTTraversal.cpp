@@ -784,6 +784,18 @@ void IncludesCallbacks::InclusionDirective(
     bool IsAngled, CharSourceRange FilenameRange, Optional<FileEntryRef> File,
     StringRef SearchPath, StringRef RelativePath, const Module *Imported,
     SrcMgr::CharacteristicKind FileType) {
+  if (!File) {
+    auto emitWarning = [](std::string PackageName) {
+     llvm::errs() << "Warning: Could not detect path to " << PackageName<<
+                    " header files. Please set up the header files correctly.";
+    };
+    std::string PackageName = "";
+    if (FileName.compare(StringRef("nccl.h")) == 0) {
+      emitWarning("NCCL");
+    } else if(FileName.compare(StringRef("cudnn.h")) == 0) {
+      emitWarning("cuDNN");
+    }
+  }
   // Record the locations of the first and last inclusion directives in a file
   DpctGlobalInfo::getInstance().setFirstIncludeLocation(HashLoc);
   LastInclusionLocationUpdater Updater{FilenameRange.getEnd()};
