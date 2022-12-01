@@ -31,56 +31,56 @@ int main() {
     // CHECK: check((comm = new oneapi::ccl::communicator(oneapi::ccl::create_communicator(nranks, rank, dpct::ccl::create_kvs(id))), 0));    
     check(ncclCommInitRank(&comm, nranks, id, rank));
 
-    // CHECK: device = comm.size();
+    // CHECK: device = comm->size();
     ncclCommCount(comm, &device);
 
-    // CHECK: check((device = comm.size(), 0));
+    // CHECK: check((device = comm->size(), 0));
     check(ncclCommCount(comm, &device));
 
-    // CHECK: device = comm.get_device();
+    // CHECK: device = dpct::dev_mgr::instance().get_device_id(comm->get_device().get_native());
     ncclCommCuDevice(comm, &device);
 
-    // CHECK: check((device = comm.get_device(), 0));
+    // CHECK: check((device = dpct::dev_mgr::instance().get_device_id(comm->get_device().get_native()), 0));
     check(ncclCommCuDevice(comm, &device));
 
     void *buff;
     void * recvbuff;
     size_t count;
-    // CHECK: oneapi::ccl::reduction op = oneapi::ccl::sum;
+    // CHECK: oneapi::ccl::reduction op = oneapi::ccl::reduction::sum;
     ncclRedOp_t op = ncclSum;
-    // CHECK: op = oneapi::ccl::prod;
+    // CHECK: op = oneapi::ccl::reduction::prod;
     op = ncclProd;
-    // CHECK: op = oneapi::ccl::min;
+    // CHECK: op = oneapi::ccl::reduction::min;
     op = ncclMin;
-    // CHECK: op = oneapi::ccl::max;
+    // CHECK: op = oneapi::ccl::reduction::max;
     op = ncclMax;
-    // CHECK: oneapi::ccl::datatype datatype = oneapi::ccl::int8;
+    // CHECK: oneapi::ccl::datatype datatype = oneapi::ccl::datatype::int8;
     ncclDataType_t datatype = ncclChar;
-    // CHECK: datatype = oneapi::ccl::int8;
+    // CHECK: datatype = oneapi::ccl::datatype::int8;
     datatype = ncclChar;
-    // CHECK: datatype = oneapi::ccl::uint8;
+    // CHECK: datatype = oneapi::ccl::datatype::uint8;
     datatype = ncclUint8;
-    // CHECK: datatype = oneapi::ccl::int32;
+    // CHECK: datatype = oneapi::ccl::datatype::int32;
     datatype = ncclInt32;
-    // CHECK: datatype = oneapi::ccl::int32;
+    // CHECK: datatype = oneapi::ccl::datatype::int32;
     datatype = ncclInt;
-    // CHECK: datatype = oneapi::ccl::uint32;
+    // CHECK: datatype = oneapi::ccl::datatype::uint32;
     datatype = ncclUint32;
-    // CHECK: datatype = oneapi::ccl::int64;
+    // CHECK: datatype = oneapi::ccl::datatype::int64;
     datatype = ncclInt64;
-    // CHECK: datatype = oneapi::ccl::uint64;
+    // CHECK: datatype = oneapi::ccl::datatype::uint64;
     datatype = ncclUint64;
-    // CHECK: datatype = oneapi::ccl::float16;
+    // CHECK: datatype = oneapi::ccl::datatype::float16;
     datatype = ncclFloat16;
-    // CHECK: datatype = oneapi::ccl::float16;
+    // CHECK: datatype = oneapi::ccl::datatype::float16;
     datatype = ncclHalf;
-    // CHECK: datatype = oneapi::ccl::float32;
+    // CHECK: datatype = oneapi::ccl::datatype::float32;
     datatype = ncclFloat32;
-    // CHECK: datatype = oneapi::ccl::float32;
+    // CHECK: datatype = oneapi::ccl::datatype::float32;
     datatype = ncclFloat;
-    // CHECK: datatype = oneapi::ccl::float64;
+    // CHECK: datatype = oneapi::ccl::datatype::float64;
     datatype = ncclFloat64;
-    // CHECK: datatype = oneapi::ccl::float64;
+    // CHECK: datatype = oneapi::ccl::datatype::float64;
     datatype = ncclDouble;
 
     int peer;
@@ -105,7 +105,7 @@ int main() {
     // CHECK-NEXT: */
     ncclGroupEnd();
 
-    // CHECK: oneapi::ccl::allreduce(buff, recvbuff, count, oneapi::ccl::int8, oneapi::ccl::sum, comm, oneapi::ccl::create_stream(*stream));
+    // CHECK: oneapi::ccl::allreduce(buff, recvbuff, count, oneapi::ccl::datatype::int8, oneapi::ccl::reduction::sum, *comm, oneapi::ccl::create_stream(*stream));
     ncclAllReduce(buff, recvbuff, count, ncclChar, ncclSum, comm, stream);
 
     // CHECK:     /*

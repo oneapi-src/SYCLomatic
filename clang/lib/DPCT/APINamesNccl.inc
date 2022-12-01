@@ -28,12 +28,20 @@ FEATURE_REQUEST_FACTORY(
                       ARG(2)))))))
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("ncclCommCount", DEREF(1),
-                                        MEMBER_CALL(ARG(0), false,
+                                        MEMBER_CALL(ARG(0), true,
                                                     LITERAL("size"))))
 
-ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("ncclCommCuDevice", DEREF(1),
-                                        MEMBER_CALL(ARG(0), false,
-                                                    LITERAL("get_device"))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Device_dev_mgr_2,
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::Device_dev_mgr_get_device_id,
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+            "ncclCommCuDevice", DEREF(1),
+            MEMBER_CALL(
+                CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false,
+                "get_device_id",
+                MEMBER_CALL(MEMBER_CALL(ARG(0), true, LITERAL("get_device")),
+                            false, LITERAL("get_native")))))))
 
 CONDITIONAL_FACTORY_ENTRY(
     CheckArgStr(4, "ncclAvg"),
@@ -41,5 +49,5 @@ CONDITIONAL_FACTORY_ENTRY(
                             ARG(4)),
     CALL_FACTORY_ENTRY("ncclAllReduce",
                        CALL("oneapi::ccl::allreduce", ARG(0), ARG(1), ARG(2),
-                            ARG(3), ARG(4), ARG(5),
+                            ARG(3), ARG(4), DEREF(5),
                             CALL("oneapi::ccl::create_stream", STREAM(6)))))
