@@ -39,7 +39,7 @@ CONDITIONAL_FACTORY_ENTRY(
         makeCheckOr(IsContextCallHasAttribute<CUDADeviceAttr>(),
                     IsContextCallHasAttribute<CUDAGlobalAttr>())),
     CONDITIONAL_FACTORY_ENTRY(
-        math::UseMappingType(math::MathFuncMappingType::CAndCXXStandardLibrariesExt),
+        math::UseCAndCXXStandardLibrariesExt,
         HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, CALL_FACTORY_ENTRY("std::abs", CALL("std::abs", ARG(0)))),
         CONDITIONAL_FACTORY_ENTRY(
             IsParameterIntegerType(0),
@@ -65,7 +65,7 @@ CONDITIONAL_FACTORY_ENTRY(
         makeCheckOr(IsContextCallHasAttribute<CUDADeviceAttr>(),
                     IsContextCallHasAttribute<CUDAGlobalAttr>())),
     CONDITIONAL_FACTORY_ENTRY(
-        math::UseMappingType(math::MathFuncMappingType::CAndCXXStandardLibrariesExt),
+        math::UseCAndCXXStandardLibrariesExt,
         HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, CALL_FACTORY_ENTRY("abs", CALL("std::abs", ARG(0)))),
         CONDITIONAL_FACTORY_ENTRY(
             IsParameterIntegerType(0),

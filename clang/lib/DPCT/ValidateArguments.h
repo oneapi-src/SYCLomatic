@@ -63,6 +63,7 @@ enum class DPCPPExtensionsDefaultEnabled : unsigned int {
 };
 enum class DPCPPExtensionsDefaultDisabled : unsigned int {
   ExtDD_CCXXStandardLibrary = 0x01,
+  ExtDD_IntelDeviceMath,
   ExtDD_DPCPPExtensionsDefaultDisabledEnumSize
 };
 enum class ExperimentalFeatures : unsigned int {

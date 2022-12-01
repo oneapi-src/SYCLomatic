@@ -155,20 +155,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
     auto ContextFD = getImmediateOuterFuncDecl(Call);
     if (NamespaceStr == "std" &&
         (SourceCalleeName == "min" || SourceCalleeName == "max")) {
-      auto getImmediateOuterLambdaExpr =
-          [](const FunctionDecl *FuncDecl) -> const LambdaExpr * {
-        if (FuncDecl && FuncDecl->hasAttr<CUDADeviceAttr>() &&
-            FuncDecl->getAttr<CUDADeviceAttr>()->isImplicit() &&
-            FuncDecl->hasAttr<CUDAHostAttr>() &&
-            FuncDecl->getAttr<CUDAHostAttr>()->isImplicit()) {
-          auto *LE = DpctGlobalInfo::findAncestor<LambdaExpr>(FuncDecl);
-          if (LE && LE->getLambdaClass() && LE->getLambdaClass()->isLambda() &&
-              isLexicallyInLocalScope(LE->getLambdaClass())) {
-            return LE;
-          }
-        }
-        return nullptr;
-      };
       while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
         ContextFD = getImmediateOuterFuncDecl(LE);
       }
@@ -2710,6 +2696,9 @@ public:
   IsContextCallHasAttribute() {}
   bool operator()(const CallExpr *C) {
     const FunctionDecl *ContextFD = getImmediateOuterFuncDecl(C);
+    while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
+      ContextFD = getImmediateOuterFuncDecl(LE);
+    }
     if (!ContextFD)
       return false;
     return ContextFD->hasAttr<Attr>();
@@ -2902,36 +2891,14 @@ public:
             isChildPath(DpctInstallPath, DeclLocFilePath));
   }
 };
-enum class MathFuncMappingType {
-  HostPerf,
-  CAndCXXStandardLibrariesExt,
-  MathLibDevice,
-  DeviceTestedStd
+auto UseCAndCXXStandardLibrariesExt = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
 };
-
-class UseMappingType {
-  MathFuncMappingType MFMT;
-public:
-  UseMappingType(MathFuncMappingType MFMT) : MFMT(MFMT) {}
-  bool operator()(const CallExpr *C) {
-    switch (MFMT) {
-    case MathFuncMappingType::HostPerf: {
-      return DpctGlobalInfo::isOptimizeMigration();
-    }
-    case MathFuncMappingType::CAndCXXStandardLibrariesExt: {
-      return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
-    }
-    case MathFuncMappingType::MathLibDevice: {
-      return false; /*new option needed*/
-    }
-    case MathFuncMappingType::DeviceTestedStd: {
-      return false; /*new option needed*/
-    }
-    default: {
-      return false;
-    }
-    }
-  }
+auto UseIntelDeviceMathExt = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useIntelDeviceMath();
+};
+auto UseOptmizeMigration = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::isOptimizeMigration();
 };
 auto IsPureHost = [](const CallExpr *C) -> bool {
   const FunctionDecl *FD = C->getDirectCallee();
@@ -2961,7 +2928,7 @@ auto IsHostDevice = makeCheckAnd(
     HasDirectCallee(),
     makeCheckAnd(IsDirectCalleeHasAttribute<CUDADeviceAttr>(),
                  IsDirectCalleeHasAttribute<CUDAHostAttr>()));
-auto IsDirectCallerPureDevice = makeCheckOr(
+auto IsContextPureDevice = makeCheckOr(
     makeCheckAnd(IsContextCallHasAttribute<CUDADeviceAttr>(),
                  makeCheckNot(IsContextCallHasAttribute<CUDAHostAttr>())),
     IsContextCallHasAttribute<CUDAGlobalAttr>());
@@ -2986,7 +2953,7 @@ createStdLibDeviceFactory(
         &&DEVICE_NORMAL,
     T) {
   return createConditionalFactory(
-      UseMappingType(MathFuncMappingType::CAndCXXStandardLibrariesExt),
+      UseCAndCXXStandardLibrariesExt,
       std::move(STD_LIBDEVICE),
       std::move(DEVICE_NORMAL));
 }
@@ -2999,32 +2966,9 @@ createMathLibDeviceFactory(
         &&DEVICE_NORMAL,
     T) {
   return createConditionalFactory(
-      UseMappingType(MathFuncMappingType::MathLibDevice),
+      UseIntelDeviceMathExt,
       std::move(MATH_LIBDEVICE),
       std::move(DEVICE_NORMAL));
-}
-template <class T>
-std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-createDeviceTestedStdFactory(
-    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-        &&DEVICE_TESTED_STD,
-    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-        &&DEVICE_NORMAL,
-    T) {
-  return createConditionalFactory(
-      UseMappingType(MathFuncMappingType::DeviceTestedStd),
-      std::move(DEVICE_TESTED_STD),
-      std::move(DEVICE_NORMAL));
-}
-template <class T>
-std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-createDeviceNormalFactory(
-    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-        &&DEVICE_NORMAL,
-    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-        &&STUB,
-    T) {
-  return std::move(DEVICE_NORMAL);
 }
 }
 
@@ -3043,21 +2987,18 @@ createDeviceNormalFactory(
               DEVICE_NORMAL                                                               \
               NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                           \
           createConditionalFactory(                                                       \
-              math::IsHostDevice,                                                         \
+              math::IsContextPureDevice,                                                  \
               createConditionalFactory(                                                   \
-                  math::IsDirectCallerPureDevice,                                         \
-                  createConditionalFactory(                                               \
-                      math::IsDefinedInCUDA(),                                            \
-                      DEVICE_NORMAL                                                       \
-                      NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                   \
-                  DEVICE_NORMAL 0),                                                       \
+                  math::IsDefinedInCUDA(),                                                \
+                  DEVICE_NORMAL                                                           \
+                  NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                       \
               DEVICE_NORMAL 0))),
 
 #define MATH_API_REWRITER_HOSTDEVICE_2(NAME, HOST_NORMAL, DEVICE_NORMAL, HOST_PERF)       \
   createConditionalFactory(                                                               \
       math::IsPureHost,                                                                   \
       createConditionalFactory(                                                           \
-          math::UseMappingType(math::MathFuncMappingType::HostPerf),                      \
+          math::UseOptmizeMigration,                                                      \
           HOST_PERF                                                                       \
           createConditionalFactory(                                                       \
               math::IsDefinedInCUDA(),                                                    \
@@ -3070,14 +3011,11 @@ createDeviceNormalFactory(
               DEVICE_NORMAL                                                               \
               NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                           \
           createConditionalFactory(                                                       \
-              math::IsHostDevice,                                                         \
+              math::IsContextPureDevice,                                                  \
               createConditionalFactory(                                                   \
-                  math::IsDirectCallerPureDevice,                                         \
-                  createConditionalFactory(                                               \
-                      math::IsDefinedInCUDA(),                                            \
-                      DEVICE_NORMAL                                                       \
-                      NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                   \
-                  DEVICE_NORMAL 0),                                                       \
+                  math::IsDefinedInCUDA(),                                                \
+                  DEVICE_NORMAL                                                           \
+                  NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                       \
               DEVICE_NORMAL 0))),
 
 #define MATH_API_REWRITER_HOSTDEVICE_3(NAME, HOST_NORMAL, DEVICE_NORMAL,                  \
@@ -3095,14 +3033,11 @@ createDeviceNormalFactory(
               DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0),             \
               NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                           \
           createConditionalFactory(                                                       \
-              math::IsHostDevice,                                                         \
+              math::IsContextPureDevice,                                                  \
               createConditionalFactory(                                                   \
-                  math::IsDirectCallerPureDevice,                                         \
-                  createConditionalFactory(                                               \
-                      math::IsDefinedInCUDA(),                                            \
-                      DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0),     \
-                      NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                   \
-                  DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0)),        \
+                  math::IsDefinedInCUDA(),                                                \
+                  DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0),         \
+                  NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                       \
               DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0)))),
 
 #define MATH_API_REWRITER_HOSTDEVICE_4(NAME, HOST_NORMAL, DEVICE_NORMAL, HOST_PERF,       \
@@ -3110,7 +3045,7 @@ createDeviceNormalFactory(
   createConditionalFactory(                                                               \
       math::IsPureHost,                                                                   \
       createConditionalFactory(                                                           \
-          math::UseMappingType(math::MathFuncMappingType::HostPerf),                      \
+          math::UseOptmizeMigration,                                                      \
           HOST_PERF                                                                       \
           createConditionalFactory(                                                       \
               math::IsDefinedInCUDA(),                                                    \
@@ -3123,14 +3058,11 @@ createDeviceNormalFactory(
               DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0),             \
               NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                           \
           createConditionalFactory(                                                       \
-              math::IsHostDevice,                                                         \
+              math::IsContextPureDevice,                                                  \
               createConditionalFactory(                                                   \
-                  math::IsDirectCallerPureDevice,                                         \
-                  createConditionalFactory(                                               \
-                      math::IsDefinedInCUDA(),                                            \
-                      DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0),     \
-                      NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                   \
-                  DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0)),        \
+                  math::IsDefinedInCUDA(),                                                \
+                  DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0),         \
+                  NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                       \
               DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0)))),
 
 #define MATH_API_REWRITER_DEVICE_1(NAME, DEVICE_NORMAL)                                   \
@@ -3141,14 +3073,11 @@ createDeviceNormalFactory(
             DEVICE_NORMAL                                                                 \
             NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                             \
         createConditionalFactory(                                                         \
-            math::IsHostDevice,                                                           \
+            math::IsContextPureDevice,                                                    \
             createConditionalFactory(                                                     \
-                math::IsDirectCallerPureDevice,                                           \
-                createConditionalFactory(                                                 \
-                    math::IsDefinedInCUDA(),                                              \
-                    DEVICE_NORMAL                                                         \
-                    NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                     \
-                DEVICE_NORMAL 0),                                                         \
+                math::IsDefinedInCUDA(),                                                  \
+                DEVICE_NORMAL                                                             \
+                NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                         \
             DEVICE_NORMAL 0)),
 
 #define MATH_API_REWRITER_DEVICE_2(NAME, DEVICE_NORMAL, DEVICE_FACTORY_FUNC,              \
@@ -3160,14 +3089,11 @@ createDeviceNormalFactory(
           DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0),                 \
           NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                               \
       createConditionalFactory(                                                           \
-          math::IsHostDevice,                                                             \
+          math::IsContextPureDevice,                                                      \
           createConditionalFactory(                                                       \
-              math::IsDirectCallerPureDevice,                                             \
-              createConditionalFactory(                                                   \
-                  math::IsDefinedInCUDA(),                                                \
-                  DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0),         \
-                  NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                       \
-              DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0)),            \
+              math::IsDefinedInCUDA(),                                                    \
+              DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0),             \
+              NO_REWRITE_FUNCNAME_FACTORY_ENTRY(NAME, NAME) 0),                           \
           DEVICE_FACTORY_FUNC(DEVICE_EXTENSION_REWIRTER DEVICE_NORMAL 0))),
 
 #define MATH_API_REWRITER_HOST_1(NAME, HOST_NORMAL)                                       \
@@ -3178,7 +3104,7 @@ createDeviceNormalFactory(
 
 #define MATH_API_REWRITER_HOST_2(NAME, HOST_NORMAL, HOST_PERF)                            \
   createConditionalFactory(                                                               \
-      math::UseMappingType(math::MathFuncMappingType::HostPerf),                          \
+      math::UseOptmizeMigration,                                                          \
       HOST_PERF                                                                           \
       createConditionalFactory(                                                           \
           math::IsDefinedInCUDA(),                                                        \

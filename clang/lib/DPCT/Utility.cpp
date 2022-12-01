@@ -3986,3 +3986,17 @@ bool isLambda(const clang::FunctionDecl *FD) {
   }
   return false;
 }
+const clang::LambdaExpr *
+getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl) {
+  if (FuncDecl && FuncDecl->hasAttr<clang::CUDADeviceAttr>() &&
+      FuncDecl->getAttr<clang::CUDADeviceAttr>()->isImplicit() &&
+      FuncDecl->hasAttr<clang::CUDAHostAttr>() &&
+      FuncDecl->getAttr<clang::CUDAHostAttr>()->isImplicit()) {
+    auto *LE = dpct::DpctGlobalInfo::findAncestor<clang::LambdaExpr>(FuncDecl);
+    if (LE && LE->getLambdaClass() && LE->getLambdaClass()->isLambda() &&
+        isLexicallyInLocalScope(LE->getLambdaClass())) {
+      return LE;
+    }
+  }
+  return nullptr;
+}

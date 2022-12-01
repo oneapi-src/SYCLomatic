@@ -571,4 +571,6 @@ std::string getFunctionName(const clang::FunctionDecl *Node);
 std::string getFunctionName(const clang::UnresolvedLookupExpr *Node);
 std::string getFunctionName(const clang::FunctionTemplateDecl *Node);
 bool isLambda(const clang::FunctionDecl *FD);
+const clang::LambdaExpr *
+getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl);
 #endif // DPCT_UTILITY_H

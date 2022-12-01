@@ -1862,6 +1862,9 @@ public:
   static bool useCAndCXXStandardLibrariesExt() {
     return getUsingExtensionDD(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
   }
+  static bool useIntelDeviceMath() {
+    return getUsingExtensionDD(DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
+  }
 
   static bool useDeviceInfo() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
