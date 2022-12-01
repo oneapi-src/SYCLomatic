@@ -14,8 +14,8 @@ __global__ void picount(int *totals) {
   __shared__ int counter[WARP_SIZE];
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
-  // CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> rng;
-  // CHECK: rng = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>(clock64(), {1234, static_cast<std::uint64_t>(tid * 8)});
+  // CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng;
+  // CHECK: rng = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(clock64(), {1234, static_cast<std::uint64_t>(tid * 8)});
   curandState_t rng;
   curand_init(clock64(), tid, 1234, &rng);
 
@@ -43,11 +43,11 @@ int main(int argc, char **argv) {
   picount<<<NBLOCKS, WARP_SIZE>>>(dOut);
 
   int size = 10;
-  //CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> *RandomStates;
+  //CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *RandomStates;
   curandState *RandomStates;
-  //CHECK: RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> *)sycl::malloc_device(size * sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>) * 10, q_ct1);
+  //CHECK: RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *)sycl::malloc_device(size * sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>) * 10, q_ct1);
   cudaMalloc((void**)&RandomStates, size * sizeof(curandState) * 10);
-  //CHECK: RandomStates = sycl::malloc_device<dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>>(size, q_ct1);
+  //CHECK: RandomStates = sycl::malloc_device<dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>>(size, q_ct1);
   cudaMalloc((void**)&RandomStates, size * sizeof(curandState));
 
   return 0;

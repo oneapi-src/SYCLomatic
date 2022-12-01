@@ -159,8 +159,8 @@ int main() {
 
 
     float * __restrict__ d_data;
-    //CHECK:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
-    //CHECK-NEXT:curandErrCheck((rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(dpct::get_default_queue(), 1337ull), 0));
+    //CHECK:std::shared_ptr<oneapi::mkl::rng::mcg59> rng;
+    //CHECK-NEXT:curandErrCheck((rng = std::make_shared<oneapi::mkl::rng::mcg59>(dpct::get_default_queue(), 1337ull), 0));
     //CHECK-NEXT:/*
     //CHECK-NEXT:DPCT1027:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was replaced with 0 because this call is redundant in SYCL.
     //CHECK-NEXT:*/

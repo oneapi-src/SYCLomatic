@@ -5533,7 +5533,7 @@ void DeviceRandomFunctionCallRule::runRule(
 
     std::string Factor = "8";
     if (GeneratorType == "dpct::rng::device::rng_generator<oneapi::"
-                         "mkl::rng::device::philox4x32x10<4>>" &&
+                         "mkl::rng::device::philox4x32x10<1>>" &&
         (DRefArg3Type == "curandStatePhilox4_32_10_t" ||
          DRefArg3Type == "curandStatePhilox4_32_10")) {
       Factor = "4";

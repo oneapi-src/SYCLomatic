@@ -232,8 +232,8 @@ void bar1(){
 //CHECK-NEXT:DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to
 //CHECK-NEXT:adjust the code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
-//CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(
+//CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::mcg59> rng;
+//CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::mcg59>(
 //CHECK-NEXT:    dpct::get_default_queue(), 1337ull);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed
