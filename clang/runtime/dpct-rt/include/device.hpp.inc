@@ -668,19 +668,19 @@ public:
     prop.set_global_mem_size(
         get_info<sycl::info::device::global_mem_size>());
     prop.set_local_mem_size(get_info<sycl::info::device::local_mem_size>());
-    if (this->has(aspect::ext_intel_memory_clock_rate))
+    if (this->has(sycl::aspect::ext_intel_memory_clock_rate))
     {
       prop.set_memory_clock_rate(
-          this->get_info<ext::intel::info::device::memory_clock_rate>());
+          this->get_info<sycl::ext::intel::info::device::memory_clock_rate>());
     }
     else
     {
       prop.set_memory_clock_rate(0);
     }
-    if (this->has(aspect::ext_intel_memory_bus_width))
+    if (this->has(sycl::aspect::ext_intel_memory_bus_width))
     {
       prop.set_memory_bus_width(
-          this->get_info<ext::intel::info::device::memory_bus_width>());
+          this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
     }
     else
     {
