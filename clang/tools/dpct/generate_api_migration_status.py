@@ -10,7 +10,7 @@ keep_only_ask_once = False
 keep_file = True
 
 def get_user_answer(msg:str):
-    msg += ' Are you sure? [y/n]'
+    msg += ' [y/n]'
     while(True):
         ans = str(input(msg))
         if ans =='y' or ans =='Y':
@@ -21,7 +21,7 @@ def get_user_answer(msg:str):
 def get_output_filename(path_str:str,filename:str,keep_filename:bool):
     if keep_filename is True:
         return os.path.join(path_str,filename+output_file_suffix)
-    new_file_name = filename+'_'+time.strftime('%Y-%m-%d %H:%M:%S')+output_file_suffix
+    new_file_name = filename + '_'+time.strftime('%Y-%m-%d %H:%M:%S')+output_file_suffix
     return get_output_filename(path_str, new_file_name,True)
 
 
@@ -31,7 +31,7 @@ def open_output_file(path_str:str,filename:str):
     filename_with_path = os.path.join(path_str,filename+output_file_suffix)
     if os.path.exists(filename_with_path) is True :
         if keep_only_ask_once is False:
-            keep_file = get_user_answer('output files are existed, whether it can be overridden?')
+            keep_file = get_user_answer('output files exist, whether it can be overridden?')
             keep_only_ask_once = True
         filename_with_path = get_output_filename(path_str,filename,keep_file)
     print("Output file is "+filename_with_path)
@@ -39,7 +39,7 @@ def open_output_file(path_str:str,filename:str):
     return fout
 
 def format_sing_line(API_list:list):
-    return '|'+'{0: <60}'.format(API_list[0]) +'|'+'{0: ^10}'.format(API_list[1])+'|'+'{0: ^150}'.format(API_list[2])+'|\n'
+    return '|' + '{0: <60}'.format(API_list[0]) + '|' + '{0: ^10}'.format(API_list[1]) + '|' + '{0: ^150}'.format(API_list[2]) + '|\n'
 
 def format_lib(lib_name:str,APIs_list:list):
     lib_str = '# '+lib_name+'\n'
@@ -59,7 +59,7 @@ def parse_macro_entry(line:str):
     elif (line_list[3] == "false"):
         API_list.append("NO")
     else:
-        warnings.warn("internal error: can not tell whether API is supported, please contact developer")
+        warnings.warn("internal error: can not tell whether API is supported or not.")
         API_list.append("UNKNOW")
     if(line_list[-1][0:4] == 'DPCT'):
         API_list.append(line_list[-1])
@@ -75,7 +75,7 @@ def parse_macro_entry_member_function(line:str):
     elif (line_list[4] =="false"):
         API_list.append("NO")
     else:
-        warnings.warn("internal error: can not tell whether API is supported")
+        warnings.warn("internal error: can not tell whether API is supported or not.")
         API_list.append("UNKNOW")
     if(line_list[-1][0:4] == 'DPCT'):
         API_list.append(line_list[-1])
@@ -87,13 +87,13 @@ def parse_macro_entry_member_function(line:str):
 
 def update_lib(lib:str,file_lib:str,output_path:str):
     output_filename = lib+'_API_migration_status'
-    APIs_list=[]
+    APIs_list = []
     with open(file_lib,'r') as flib:
         for line in flib.readlines():
             img_file = line.strip()
-            if(img_file=="" or img_file[0:5]!="ENTRY"):
+            if(img_file == "" or img_file[0:5]!="ENTRY"):
                 continue
-            img_file=img_file.translate(str.maketrans('"(),', '    '))
+            img_file = img_file.translate(str.maketrans('"(),', '    '))
             if img_file[0:21] == 'ENTRY_MEMBER_FUNCTION':
                 API_list = parse_macro_entry_member_function(img_file)
             elif img_file[0:5] == "ENTRY":
@@ -106,7 +106,7 @@ def update_lib(lib:str,file_lib:str,output_path:str):
         fout.close()
         return True
     else:
-        warnings.warn("output file can not write, lost status information about "+lib)
+        warnings.warn("output file can not be generated, lost status information about "+lib)
         fout.close()
         return False
 
@@ -122,7 +122,6 @@ def do_update(args):
         return False
     lib_names = ['Runtime_and_Driver','CUB','cuBLAS','cuDNN','cuFFT','cuGRAPH','cuRAND','cuSOLVER','cuSPARSE','NCCL','nvJPEG','NVML','thrust']
     # lib file name = APINames_$(libname).inc
-    # runtime and drive is an exception
     for lib_name in lib_names:
         if lib_name == 'Runtime_and_Driver':
             lib_record_file = 'APINames.inc'
@@ -141,7 +140,7 @@ def do_update(args):
 
 def main():
     parser = argparse.ArgumentParser(prog=os.path.basename(__file__),
-                                     description="A script to get the API migration status in DPC++ Compatibility Tools",
+                                     description="A script to get the API migration support status in Compatibility Tools",
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--output-path",help="Set the path of the output file",default=os.getcwd())
     parser.add_argument("--SYCLomatic-path",help="Set the path of the SYCLomatic",default=os.path.join(os.path.dirname(__file__),'..','..','..'))
