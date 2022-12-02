@@ -24,7 +24,7 @@ namespace device {
 template <typename engine_t> class rng_generator {
   static_assert(
       std::is_same_v<engine_t, oneapi::mkl::rng::device::mrg32k3a<1>> ||
-          std::is_same_v<engine_t, oneapi::mkl::rng::device::mcg59<1> ||
+          std::is_same_v<engine_t, oneapi::mkl::rng::device::mcg59<1>> ||
           std::is_same_v<engine_t, oneapi::mkl::rng::device::philox4x32x10<1>>,
       "engine_t can only be oneapi::mkl::rng::device::mrg32k3a<1> or "
       "oneapi::mkl::rng::device::mcg59<1> or "
