@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <curand.h>
 
-//CHECK: void update(float* randvals, std::shared_ptr<oneapi::mkl::rng::mcg59> rng, long long nx, long long ny) {
+//CHECK: void update(float* randvals, std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng, long long nx, long long ny) {
 //CHECK-NEXT:   oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
 //CHECK-NEXT:   oneapi::mkl::rng::generate(distr_ct{{[0-9]+}}, *rng, nx*ny/2, randvals);
 //CHECK-NEXT: }
