@@ -37,6 +37,10 @@ template <> struct llvm::yaml::MappingTraits<pattern::Rule> {
   }
 };
 
+template <> struct llvm::yaml::SequenceElementTraits<pattern::Rule> {
+  static const bool flow = false;
+};
+
 static std::string readFile(const std::string &Name) {
   std::ifstream Stream(Name, std::ios::in | std::ios::binary);
   std::string Contents((std::istreambuf_iterator<char>(Stream)),
@@ -73,21 +77,20 @@ int main(int argc, char *argv[]) {
       "o", llvm::cl::desc("Specify output filename"),
       llvm::cl::value_desc("filename"), llvm::cl::Required);
 
-  llvm::cl::opt<std::string> RuleSetFilename(
-      "r", llvm::cl::desc("Specify rule set filename"),
+  llvm::cl::opt<std::string> RulesFilename(
+      "r", llvm::cl::desc("Specify rules filename"),
       llvm::cl::value_desc("filename"), llvm::cl::Required);
 
   llvm::cl::ParseCommandLineOptions(argc, argv);
 
-  const auto RuleSetFile = fixLineEndings(readFile(RuleSetFilename.getValue()));
-  llvm::yaml::Input RuleSetParser(RuleSetFile);
-  std::map<std::string, pattern::Rule> RuleSet;
-  RuleSetParser >> RuleSet;
-
   const auto Input = fixLineEndings(readFile(InputFilename.getValue()));
+  const auto RulesFile = fixLineEndings(readFile(RulesFilename.getValue()));
+  llvm::yaml::Input RulesParser(RulesFile);
+  std::vector<pattern::Rule> Rules;
+  RulesParser >> Rules;
 
   std::string Output = Input;
-  for (const auto &[Name, Rule] : RuleSet) {
+  for (const auto &Rule : Rules) {
     Output = pattern::applyRule(Rule, Output);
   }
   writeFile(OutputFilename.getValue(), Output);

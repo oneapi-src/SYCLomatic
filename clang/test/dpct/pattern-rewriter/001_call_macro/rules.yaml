@@ -1,3 +1,8 @@
-call_arity_2:
-  match: CALL(${function}, ${arg0}, ${arg1})
-  rewrite: ${function}(${arg0}, ${arg1})
+- match: "#define CALL(func, ...)"
+  rewrite: "#define TEMP_MACRO_NAME(func, ...)"
+
+- match: CALL(${function}, ${args})
+  rewrite: ${function}(${args})
+
+- match: "#define TEMP_MACRO_NAME(func, ...)"
+  rewrite: "#define CALL(func, ...)"

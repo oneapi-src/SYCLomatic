@@ -1,5 +1,4 @@
-root:
-  match: |+
+- match: |+
     if (${condition} != 0) {
       ${body}
     }
