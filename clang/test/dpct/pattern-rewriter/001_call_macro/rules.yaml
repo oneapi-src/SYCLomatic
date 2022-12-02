@@ -1,0 +1,3 @@
+call_arity_2:
+  match: CALL(${function}, ${arg0}, ${arg1})
+  rewrite: ${function}(${arg0}, ${arg1})

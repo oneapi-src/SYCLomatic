@@ -1,0 +1,15 @@
+root:
+  match: |+
+    struct ${name} {
+      ${body}
+    };
+  rewrite: |+
+    struct ${name} {
+      ${body}
+    };
+  subrules:
+    body:
+      match: float ${id};
+      rewrite: |+
+        float ${id}_;
+        float &${id}() { return ${id}_; }
