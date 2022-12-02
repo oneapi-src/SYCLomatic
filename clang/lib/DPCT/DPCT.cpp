@@ -882,7 +882,6 @@ int runDPCT(int argc, const char **argv) {
 
   MapNames::setExplicitNamespaceMap();
   CallExprRewriterFactoryBase::initRewriterMap();
-  CallExprRewriterFactoryBase::initMethodRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
   if (!RuleFile.empty()) {

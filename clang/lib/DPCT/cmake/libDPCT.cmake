@@ -3,6 +3,25 @@ macro(build_lib_dpct)
     ASTTraversal.cpp
     AnalysisInfo.cpp
     CallExprRewriter.cpp
+    CallExprRewriterCUB.cpp
+    CallExprRewriterCUFFT.cpp
+    CallExprRewriterCUBLAS.cpp
+    CallExprRewriterCURAND.cpp
+    CallExprRewriterCUSOLVER.cpp
+    CallExprRewriterComplex.cpp
+    CallExprRewriterDriver.cpp
+    CallExprRewriterMemory.cpp
+    CallExprRewriterNccl.cpp
+    CallExprRewriterStream.cpp
+    CallExprRewriterTexture.cpp
+    CallExprRewriterThrust.cpp
+    CallExprRewriterWarp.cpp
+    CallExprRewriterCUDNN.cpp
+    CallExprRewriterErrorHandling.cpp
+    CallExprRewriterLIBCU.cpp
+    CallExprRewriterEvent.cpp
+    CallExprRewriterMath.cpp
+    CallExprRewriterCG.cpp
     Diagnostics.cpp
     Error.cpp
     Statics.cpp
