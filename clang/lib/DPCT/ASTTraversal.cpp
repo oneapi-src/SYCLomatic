@@ -8299,6 +8299,11 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
   auto StreamName = getStmtSpelling(StreamArg);
   auto ArgName = getStmtSpelling(CE->getArg(0));
   bool IsDefaultStream = isDefaultStream(StreamArg);
+  auto IndentLoc = CE->getBeginLoc();
+  auto &SM = DpctGlobalInfo::getSourceManager();
+
+  if (IndentLoc.isMacroID())
+    IndentLoc = SM.getExpansionLoc(IndentLoc);
 
   if (IsAssigned) {
 
@@ -8308,12 +8313,67 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
       buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
+      std::string Str;
+      if (!DpctGlobalInfo::useEnqueueBarrier()) {
+        // ext_oneapi_submit_barrier is specified in the value of option
+        // --no-dpcpp-extensions.
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
 
-      std::string Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
-                        "}}.ext_oneapi_submit_barrier()";
+          Str = "dpct::get_current_device().queues_wait_and_throw();";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          std::string SubStr = "{{NEEDREPLACEQ" + std::to_string(Index) +
+                 "}}.single_task([=](){});";
+          SubStr = "*" + ArgName + " = " + SubStr;
+          Str += SubStr;
+
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          Str += "dpct::get_current_device().queues_wait_and_throw();";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          Str += "return 0;";
+
+          Str = "[](){" + Str + "}()";
+          emplaceTransformation(new ReplaceStmt(CE, std::move(Str)));
+          return;
+
+        } else {
+          Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
+                "}}.single_task([=](){})";
+        }
+
+      } else {
+        Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
+              "}}.ext_oneapi_submit_barrier()";
+      }
       StmtStr = "*" + ArgName + " = " + Str;
     } else {
-      std::string Str = StreamName + "->" + "ext_oneapi_submit_barrier()";
+      std::string Str;
+      if (!DpctGlobalInfo::useEnqueueBarrier()) {
+        // ext_oneapi_submit_barrier is specified in the value of option
+        // --no-dpcpp-extensions.
+
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+
+          Str = "dpct::get_current_device().queues_wait_and_throw();";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          Str += StreamName + "->" + "single_task([=](){});";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          Str += "dpct::get_current_device().queues_wait_and_throw()";
+
+          Str = "[](){" + Str + "}()";
+          emplaceTransformation(new ReplaceStmt(CE, std::move(Str)));
+          return;
+        } else {
+          Str = StreamName + "->" + "single_task([=](){})";
+        }
+
+      } else {
+        Str = StreamName + "->" + "ext_oneapi_submit_barrier()";
+      }
       StmtStr = "*" + ArgName + " = " + Str;
     }
     StmtStr = "(" + StmtStr + ", 0)";
@@ -8329,15 +8389,58 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
         return;
       int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
       buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
+      std::string Str;
+      if (!DpctGlobalInfo::useEnqueueBarrier()) {
+        // ext_oneapi_submit_barrier is specified in the value of option
+        // --no-dpcpp-extensions.
 
-      std::string Str = "*" + ArgName + " = {{NEEDREPLACEQ" +
-                        std::to_string(Index) +
-                        "}}.ext_oneapi_submit_barrier()";
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
 
+          Str = "dpct::get_current_device().queues_wait_and_throw();";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          Str += "*" + ArgName + " = {{NEEDREPLACEQ" + std::to_string(Index) +
+                 "}}.single_task([=](){});";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          Str += "dpct::get_current_device().queues_wait_and_throw()";
+
+        } else {
+          Str = "*" + ArgName + " = {{NEEDREPLACEQ" + std::to_string(Index) +
+                "}}.single_task([=](){})";
+        }
+
+      } else {
+        Str = "*" + ArgName + " = {{NEEDREPLACEQ" + std::to_string(Index) +
+              "}}.ext_oneapi_submit_barrier()";
+      }
       ReplStr += Str;
     } else {
-      std::string Str =
-          "*" + ArgName + " = " + StreamName + "->ext_oneapi_submit_barrier()";
+
+      std::string Str;
+      if (!DpctGlobalInfo::useEnqueueBarrier()) {
+        // ext_oneapi_submit_barrier is specified in the value of option
+        // --no-dpcpp-extensions.
+
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+
+          Str = "dpct::get_current_device().queues_wait_and_throw();";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+
+          Str += "*" + ArgName + " = " + StreamName + "->single_task([=](){});";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          Str += "dpct::get_current_device().queues_wait_and_throw()";
+
+        } else {
+          Str = "*" + ArgName + " = " + StreamName + "->single_task([=](){})";
+        }
+
+      } else {
+        Str = "*" + ArgName + " = " + StreamName +
+              "->ext_oneapi_submit_barrier()";
+      }
       ReplStr += Str;
     }
 
@@ -8552,23 +8655,28 @@ void StreamAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cuStreamWaitEvent") {
     std::string ReplStr;
     auto StmtStr1 = getStmtSpelling(CE->getArg(1));
-    StmtStr1 = "*" + StmtStr1;
-    auto StreamArg = CE->getArg(0);
-    bool IsDefaultStream = isDefaultStream(StreamArg);
-    std::string StmtStr0;
-    if (IsDefaultStream) {
-      if (isPlaceholderIdxDuplicated(CE))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
-
-      StmtStr0 = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.";
+    if (!DpctGlobalInfo::useEnqueueBarrier()) {
+      // ext_oneapi_submit_barrier is specified in the value of option
+      // --no-dpcpp-extensions.
+      ReplStr = StmtStr1 + "->wait()";
     } else {
-      StmtStr0 = getStmtSpelling(CE->getArg(0)) + "->";
-    }
-    ReplStr = StmtStr0 + "ext_oneapi_submit_barrier({" +
-              StmtStr1 + "})";
+      StmtStr1 = "*" + StmtStr1;
+      auto StreamArg = CE->getArg(0);
+      bool IsDefaultStream = isDefaultStream(StreamArg);
+      std::string StmtStr0;
+      if (IsDefaultStream) {
+        if (isPlaceholderIdxDuplicated(CE))
+          return;
+        int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+        buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
 
+        StmtStr0 = "{{NEEDREPLACEQ" + std::to_string(Index) + "}}.";
+      } else {
+        StmtStr0 = getStmtSpelling(CE->getArg(0)) + "->";
+      }
+      ReplStr = StmtStr0 + "ext_oneapi_submit_barrier({" +
+                StmtStr1 + "})";
+    }
     if (IsAssigned) {
       ReplStr = "(" + ReplStr + ", 0)";
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
