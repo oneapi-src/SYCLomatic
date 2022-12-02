@@ -3960,6 +3960,8 @@ const MapNames::MapTy DeviceInfoVarRule::PropNamesMap{
     {"sharedMemPerMultiprocessor", "local_mem_size"},
     {"maxGridSize", "max_nd_range_size"},
     {"maxThreadsDim", "max_work_item_sizes"},
+    {"memoryClockRate", "memory_clock_rate"},
+    {"memoryBusWidth", "memory_bus_width"},
     // ...
 };
 

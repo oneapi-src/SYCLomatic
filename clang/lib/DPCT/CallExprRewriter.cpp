@@ -18,7 +18,6 @@
 #include "clang/AST/Expr.h"
 #include "clang/AST/Type.h"
 #include "clang/Basic/LangOptions.h"
-#include <cstdarg>
 #include <cstddef>
 
 namespace clang {

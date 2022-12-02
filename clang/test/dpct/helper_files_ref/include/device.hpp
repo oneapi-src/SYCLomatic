@@ -114,6 +114,8 @@ public:
   }
   size_t get_global_mem_size() const { return _global_mem_size; }
   size_t get_local_mem_size() const { return _local_mem_size; }
+  int get_memory_clock_rate() const { return _memory_clock_rate; }
+  int get_memory_bus_width() const { return _memory_bus_width; }
   // set interface
   void set_name(const char* name) {
     size_t length = strlen(name);
@@ -161,6 +163,12 @@ public:
       _max_nd_range_size_i[i] = max_nd_range_size[i];
     }
   }
+  void set_memory_clock_rate(int memory_clock_rate){
+    _memory_clock_rate = memory_clock_rate;
+  }
+  void set_memory_bus_width(int memory_bus_width){
+    _memory_bus_width = memory_bus_width;
+  }
 
 private:
   char _name[256];
@@ -171,6 +179,8 @@ private:
   int _minor;
   int _integrated = 0;
   int _frequency;
+  int _memory_clock_rate;
+  int _memory_bus_width;
   int _max_compute_units;
   int _max_work_group_size;
   int _max_sub_group_size;
@@ -282,6 +292,24 @@ public:
     prop.set_global_mem_size(
         get_info<sycl::info::device::global_mem_size>());
     prop.set_local_mem_size(get_info<sycl::info::device::local_mem_size>());
+    if (this->has(aspect::ext_intel_memory_clock_rate))
+    {
+      prop.set_memory_clock_rate(
+          this->get_info<ext::intel::info::device::memory_clock_rate>());
+    }
+    else
+    {
+      prop.set_memory_clock_rate(0);
+    }
+    if (this->has(aspect::ext_intel_memory_bus_width))
+    {
+      prop.set_memory_bus_width(
+          this->get_info<ext::intel::info::device::memory_bus_width>());
+    }
+    else
+    {
+      prop.set_memory_bus_width(0);
+    }
 
     size_t max_sub_group_size = 1;
     std::vector<size_t> sub_group_sizes =

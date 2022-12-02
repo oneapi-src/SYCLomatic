@@ -68,6 +68,12 @@ int main(int argc, char **argv) {
   // CHECK: count = deviceProp.get_max_work_group_size();
   count = deviceProp.maxThreadsPerBlock;
 
+  // CHECK: int freq = deviceProp.get_memory_clock_rate();
+  int freq = deviceProp.memoryClockRate;
+
+  // CHECK: int buswidth = deviceProp.get_memory_bus_width();
+  int buswidth = deviceProp.memoryBusWidth;
+
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1022:{{[0-9]+}}: There is no exact match between the maxGridSize and the max_nd_range size. Verify the correctness of the code.
   // CHECK-NEXT:  */
@@ -199,6 +205,12 @@ cudaDeviceProp* getcudaDevicePropPtr() {
 void test4() {
   //CHECK:int a1 = getcudaDevicePropPtr()->get_max_compute_units();
   int a1 = getcudaDevicePropPtr()->multiProcessorCount;
+
+  //CHECK: a1 = getcudaDevicePropPtr()->get_memory_clock_rate();
+  a1 = getcudaDevicePropPtr()->memoryClockRate;
+
+  //CHECK: a1 = getcudaDevicePropPtr()->get_memory_bus_width();
+  a1 = getcudaDevicePropPtr()->memoryBusWidth;
 }
 
 __device__ void test5() {
@@ -227,6 +239,10 @@ __device__ void test5() {
     a = std::min(pDeviceProp->clockRate, 1000);
     //CHECK:a = sycl::min(pDeviceProp->get_max_compute_units(), 1000);
     a = std::min(pDeviceProp->multiProcessorCount, 1000);
+    //CHECK:a = sycl::min(pDeviceProp->get_memory_clock_rate(), 1000);
+    a = std::min(pDeviceProp->memoryClockRate, 1000);
+    //CHECK:a = sycl::min(pDeviceProp->get_memory_bus_width(), 1000);
+    a = std::min(pDeviceProp->memoryBusWidth, 1000);
     //CHECK:a = sycl::min(pDeviceProp->get_max_sub_group_size(), 1000);
     a = std::min(pDeviceProp->warpSize, 1000);
     //CHECK:a = sycl::min(pDeviceProp->get_max_work_group_size(), 1000);
