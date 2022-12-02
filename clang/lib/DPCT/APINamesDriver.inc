@@ -27,16 +27,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
                             CALL("(dpct::image_wrapper_base_p)dlsym", ARG(1),
                                  ARG(2)))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    checkIsCallExprOnly(),
-    WARNING_FACTORY_ENTRY("cuModuleUnload",
-        TOSTRING_FACTORY_ENTRY("cuModuleUnload", LITERAL("")),
-         Diagnostics::FUNC_CALL_REMOVED,
-        std::string("cuModuleUnload"), getRemovedAPIWarningMessage("cuModuleUnload")),
-    WARNING_FACTORY_ENTRY("cuModuleUnload",
-        TOSTRING_FACTORY_ENTRY("cuModuleUnload", LITERAL("0")),
-        Diagnostics::FUNC_CALL_REMOVED_0,
-        std::string("cuModuleUnload"), getRemovedAPIWarningMessage("cuModuleUnload")))
+CALL_FACTORY_ENTRY("cuModuleUnload", CALL("dlclose", ARG(0)))
 
 #define RANGES_CTOR(RangeType, ...)                                            \
   CALL(DpctGlobalInfo::getCtadClass(                                           \

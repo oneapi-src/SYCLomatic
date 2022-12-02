@@ -257,11 +257,10 @@ static uint64_t get_size_from_elf(char const *const blob) {
   return e_shoff + (e_shentsize * e_shnum);
 }
 #endif
-class module_data {
+class module {
 public:
-  module_data()          : ptr{nullptr} {}
-  module_data(void *ptr) : ptr{ptr}     {}
-  ~module_data()                        { if (ptr) dlclose(ptr); }
+  module()          : ptr{nullptr} {}
+  module(void *ptr) : ptr{ptr}     {}
 
   operator void *() const { return ptr; }
 
@@ -271,8 +270,6 @@ void *get_ptr() {
 private:
 void *ptr;
 };
-
-typedef std::shared_ptr<module_data> module;
 
 static std::string mkfilename()
 {
@@ -314,8 +311,7 @@ static module load_dl_from_vector(const std::vector<char> &blob) {
 
   std::remove(name.c_str());
 
-  module ret = std::make_shared<module_data>(so);
-  return ret;
+  return so;
 }
 
 static module load_sycl_lib(const std::string &name) {
@@ -337,9 +333,9 @@ static module load_sycl_lib_mem(char const *const image) {
 
 static dpct::kernel_function get_kernel_function(module &module, const std::string &name) {
 #ifdef _WIN32
-  dpct::kernel_functor fn = (dpct::kernel_functor) GetProcAddress(static_cast<HMODULE>(module->get_ptr()), (name + std::string("_wrapper")).c_str());
+  dpct::kernel_functor fn = (dpct::kernel_functor) GetProcAddress(static_cast<HMODULE>(module.get_ptr()), (name + std::string("_wrapper")).c_str());
 #else
-  dpct::kernel_functor fn = (dpct::kernel_functor) dlsym(module->get_ptr(), (name + std::string("_wrapper")).c_str());
+  dpct::kernel_functor fn = (dpct::kernel_functor) dlsym(module.get_ptr(), (name + std::string("_wrapper")).c_str());
 #endif
   if (fn == nullptr)
     throw std::runtime_error("Failed to get function");

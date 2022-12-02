@@ -36,16 +36,7 @@ int main(){
     CUtexref tex;
     cuModuleGetTexRef(&tex, M, "tex");
 
-    //CHECK: /*
-    //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuModuleUnload was removed because this call is redundant in SYCL.
-    //CHECK-NEXT: */
+    //CHECK: dlclose(M);
     cuModuleUnload(M);
-
-    //CHECK: /*
-    //CHECK-NEXT: DPCT1027:{{[0-9]+}}: The call to cuModuleUnload was replaced with 0 because this call is redundant in SYCL.
-    //CHECK-NEXT: */
-    //CHECK-NEXT: if (0) exit(0);
-    if (cuModuleUnload(M)) exit(0);
-
     return 0;
 }
