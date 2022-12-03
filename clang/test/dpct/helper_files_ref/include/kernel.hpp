@@ -125,8 +125,8 @@ static uint64_t extract64(unsigned char const *const ptr) {
   return(ret);
 }
 
+static uint64_t get_lib_size(char const *const blob) {
 #ifdef _WIN32
-static uint64_t get_size_from_dll(char const *const blob) {
   // See https://en.wikipedia.org/wiki/Portable_Executable
   // and https://learn.microsoft.com/en-us/windows/win32/debug/pe-format
   // to understand the layout of a DLL header
@@ -187,9 +187,7 @@ static uint64_t get_size_from_dll(char const *const blob) {
   uint32_t pointer_to_raw_data = extract32(last_section_header+20);
 
   return sizeof_raw_data + pointer_to_raw_data;
-}
 #else
-static uint64_t get_size_from_elf(char const *const blob) {
   if (blob[0] != 0x7F || blob[1] != 'E' || blob[2] != 'L' || blob[3] != 'F')
     throw std::runtime_error("Blob is not in ELF format");
 
@@ -205,8 +203,9 @@ static uint64_t get_size_from_elf(char const *const blob) {
   uint16_t e_shnum     = extract16(ublob+0x3C);
 
   return e_shoff + (e_shentsize * e_shnum);
-}
 #endif
+}
+
 class module {
 public:
   module()          : ptr{nullptr} {}
@@ -270,11 +269,7 @@ static module load_sycl_lib(const std::string &name) {
 };
 
 static module load_sycl_lib_mem(char const *const image) {
-#ifdef _WIN32
-  const size_t size = get_size_from_dll(image);
-#else
-  const size_t size = get_size_from_elf(image);
-#endif
+  const size_t size = get_lib_size(image);
 
   std::vector<char> blob(size);
   std::memcpy(blob.data(), image, size);
