@@ -76,6 +76,8 @@ static kernel_function_info get_kernel_function_info(const void *function) {
   return kernel_info;
 }
 
+namespace detail {
+
 static std::vector<char> read_file_to_vector(const std::string &name) {
   std::ifstream ifs;
   ifs.open(name, std::ios::in | std::ios::binary);
@@ -133,7 +135,7 @@ static uint64_t get_lib_size(char const *const blob) {
 
   ///////////////////////////////////////////////////////////////////////
   unsigned char const *const ublob = reinterpret_cast<unsigned char const *const>(blob);
-  // Aanalyze DOS stub
+  // Analyze DOS stub
   if (ublob[0] != 0x4d ||
       ublob[1] != 0x5a) {
     throw std::runtime_error("Blob is not a Windows DLL.");
@@ -206,6 +208,8 @@ static uint64_t get_lib_size(char const *const blob) {
 #endif
 }
 
+} // namespace detail
+
 class module {
 public:
   module()          : ptr{nullptr} {}
@@ -219,6 +223,8 @@ void *get_ptr() {
 private:
 void *ptr;
 };
+
+namespace detail {
 
 static std::string mkfilename()
 {
@@ -263,17 +269,19 @@ static module load_dl_from_vector(const std::vector<char> &blob) {
   return so;
 }
 
+} // namespace detail
+
 static module load_sycl_lib(const std::string &name) {
-  const auto blob = read_file_to_vector(name);
-  return load_dl_from_vector(blob);
+  const auto blob = detail::read_file_to_vector(name);
+  return detail::load_dl_from_vector(blob);
 };
 
 static module load_sycl_lib_mem(char const *const image) {
-  const size_t size = get_lib_size(image);
+  const size_t size = detail::get_lib_size(image);
 
   std::vector<char> blob(size);
   std::memcpy(blob.data(), image, size);
-  return load_dl_from_vector(blob);
+  return detail::load_dl_from_vector(blob);
 };
 
 static void unload_sycl_lib(module &module) {
