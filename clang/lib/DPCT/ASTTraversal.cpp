@@ -14911,9 +14911,10 @@ void DriverModuleAPIRule::runRule(
   }
 
   if (isAssigned(CE) &&
-      (APIName == "cuModuleLoad" ||
-       APIName == "cuModuleLoadData" ||
+      (APIName == "cuModuleLoad"       ||
+       APIName == "cuModuleLoadData"   ||
        APIName == "cuModuleLoadDataEx" ||
+       APIName == "cuModuleUnload"     ||
        APIName == "cuModuleGetFunction")) {
     report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
     insertAroundStmt(CE, "(", ", 0)");

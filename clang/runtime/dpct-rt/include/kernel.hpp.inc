@@ -331,6 +331,10 @@ static module load_sycl_lib_mem(char const *const image) {
   return load_dl_from_vector(blob);
 };
 
+static void unload_sycl_lib(module &module) {
+  dlclose(module.get_ptr());
+};
+
 static dpct::kernel_function get_kernel_function(module &module, const std::string &name) {
 #ifdef _WIN32
   dpct::kernel_functor fn = (dpct::kernel_functor) GetProcAddress(static_cast<HMODULE>(module.get_ptr()), (name + std::string("_wrapper")).c_str());

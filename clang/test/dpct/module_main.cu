@@ -36,7 +36,16 @@ int main(){
     CUtexref tex;
     cuModuleGetTexRef(&tex, M, "tex");
 
-    //CHECK: dlclose(M);
+    //CHECK: dpct::unload_sycl_lib(M);
     cuModuleUnload(M);
+
+    //CHECK: /*
+    //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    //CHECK-NEXT: */
+    //CHECK-NEXT: if ((dpct::unload_sycl_lib(M), 0)==0) {
+    if (cuModuleUnload(M)==0) {
+      printf("unload failed\n");
+    }
+
     return 0;
 }

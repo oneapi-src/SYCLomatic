@@ -27,7 +27,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
                             CALL("(dpct::image_wrapper_base_p)dlsym", ARG(1),
                                  ARG(2)))))
 
-CALL_FACTORY_ENTRY("cuModuleUnload", CALL("dlclose", ARG(0)))
+CALL_FACTORY_ENTRY("cuModuleUnload", CALL("dpct::unload_sycl_lib", ARG(0)))
 
 #define RANGES_CTOR(RangeType, ...)                                            \
   CALL(DpctGlobalInfo::getCtadClass(                                           \
