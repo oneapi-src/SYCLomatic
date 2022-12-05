@@ -9,7 +9,7 @@ CUtexref tex;
 //CHECK-NEXT:     uint8_t *dpct_local, unsigned int *const_data);
 
 //CHECK:extern "C" {
-//CHECK-NEXT:void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra);
+//CHECK-NEXT: DPCT_EXPORT void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra);
 //CHECK-NEXT:}
 extern "C" __global__ void foo(float* k, float* y);
 
@@ -25,7 +25,7 @@ __constant__ unsigned int const_data[3] = {1, 2, 3};
 
 
 // CHECK:      extern "C" {
-// CHECK-NEXT:   void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra) {
+// CHECK-NEXT:   DPCT_EXPORT void foo_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra) {
 // CHECK-NEXT:     args_selector<2, 0, decltype(foo)> selector(kernelParams, extra);
 // CHECK-NEXT:     auto& k = selector.get<0>();
 // CHECK-NEXT:     auto& y = selector.get<1>();
@@ -56,7 +56,7 @@ __global__ void foo(float* k, float* y){
 //CHECK-NEXT: }
 
 // CHECK:      extern "C" {
-// CHECK-NEXT:   void foo2_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra) {
+// CHECK-NEXT:   DPCT_EXPORT void foo2_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra) {
 // CHECK-NEXT:     args_selector<2, 1, decltype(foo2)> selector(kernelParams, extra);
 // CHECK-NEXT:     auto& k = selector.get<0>();
 // CHECK-NEXT:     auto& y = selector.get<1>();

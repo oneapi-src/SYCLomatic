@@ -2,10 +2,12 @@
 // RUN: dpct --use-custom-helper=api --out-root=%T/Util/api_test26_out \
 // RUN:      --cuda-include-path="%cuda-path/include" \
 // RUN:      %s -- -x cuda -ptx
-// RUN: [ 1 -eq $(grep "get_nth_parameter:" %T/Util/api_test26_out/MainSourceFiles.yaml | wc -l) ]
-// RUN: [ 1 -eq $(grep "get_args_ptr:" %T/Util/api_test26_out/MainSourceFiles.yaml | wc -l) ]
+// RUN: grep "args_selector:" %T/Util/api_test26_out/MainSourceFiles.yaml \
+// RUN: | python -c "len(input().splitlines()) == 1"
+// RUN: grep "dpct_export_define:" %T/Util/api_test26_out/MainSourceFiles.yaml \
+// RUN: | python -c "len(input().splitlines()) == 1"
 
-// TEST_FEATURE: Util_get_args_ptr
-// TEST_FEATURE: Util_get_nth_parameter
+// TEST_FEATURE: Util_args_selector
+// TEST_FEATURE: Kernel_dpct_export_define
 
 extern "C" __global__ void kernel(int *x, short y) {}

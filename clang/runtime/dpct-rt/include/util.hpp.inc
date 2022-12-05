@@ -725,75 +725,75 @@ inline queue_ptr int_as_queue_ptr(uintptr_t x) {
 // DPCT_LABEL_BEGIN|args_selector|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-  template <int n_nondefault_params, int n_default_params, typename T>
-  struct args_selector;
+template <int n_nondefault_params, int n_default_params, typename T>
+struct args_selector;
 
-  template <int n_nondefault_params, int n_default_params,
-	    typename R, typename... Ts>
-  class args_selector<n_nondefault_params, n_default_params, R(Ts...)> {
-    void **kernel_params;
-    char *args_buffer;
+template <int n_nondefault_params, int n_default_params,
+   typename R, typename... Ts>
+class args_selector<n_nondefault_params, n_default_params, R(Ts...)> {
+  void **kernel_params;
+  char *args_buffer;
 
-    template <int i>
-    static constexpr int account_for_default_params() {
-      static constexpr int n_total_params = sizeof...(Ts);
-      if constexpr (i >= n_nondefault_params) {
-	return n_total_params - n_default_params + (i - n_nondefault_params);
-      } else {
-	return i;
-      }
-    }    
+  template <int i>
+  static constexpr int account_for_default_params() {
+    static constexpr int n_total_params = sizeof...(Ts);
+    if constexpr (i >= n_nondefault_params) {
+      return n_total_params - n_default_params + (i - n_nondefault_params);
+    } else {
+      return i;
+    }
+  }    
 
-    template <int i>
-    using arg_type = std::tuple_element_t<account_for_default_params<i>(),
+  template <int i>
+  using arg_type = std::tuple_element_t<account_for_default_params<i>(),
 					  std::tuple<Ts...>>;
     
-    template <int i>
-    static constexpr int get_offset() {
-      if constexpr (i == 0) {
-	// we can assume args_buffer is properly aligned to the
-	// first argument
-	return 0;
-      } else {
-	constexpr int prev_off = get_offset<i-1>();
-	constexpr int prev_past_end = prev_off + sizeof(arg_type<i-1>);
-	using T = arg_type<i>;
-	// is the past-the-end of the i-1st element properly aligned
-	// with the ith element's alignment?
-	if constexpr (prev_past_end % alignof(T) == 0) {
-	  return prev_past_end;
-	}
-	// otherwise bump prev_past_end to match alignment
-	else {
-	  return prev_past_end + (alignof(T) - (prev_past_end % alignof(T)));
-	}
+  template <int i>
+  static constexpr int get_offset() {
+    if constexpr (i == 0) {
+      // we can assume args_buffer is properly aligned to the
+      // first argument
+      return 0;
+    } else {
+      constexpr int prev_off = get_offset<i-1>();
+      constexpr int prev_past_end = prev_off + sizeof(arg_type<i-1>);
+      using T = arg_type<i>;
+      // is the past-the-end of the i-1st element properly aligned
+      // with the ith element's alignment?
+      if constexpr (prev_past_end % alignof(T) == 0) {
+	return prev_past_end;
+      }
+      // otherwise bump prev_past_end to match alignment
+      else {
+	return prev_past_end + (alignof(T) - (prev_past_end % alignof(T)));
       }
     }
+  }
 
-    static char *get_args_buffer(void **extra) {
-      for (; (std::size_t) *extra != 0; ++extra) {
-	if ((std::size_t) *extra == 1) {
-	  return static_cast<char*>(*(extra+1));
-	}
-      }
-      return nullptr;
-    }
-    
-  public:
-    args_selector(void **kernel_params, void **extra)
-      : kernel_params(kernel_params),
-	args_buffer(get_args_buffer(extra))
-    {}
-    
-    template <int i>    
-    arg_type<i> &get() {
-      if (kernel_params) {
-	return *static_cast<arg_type<i>*>(kernel_params[i]);
-      } else {
-	return *reinterpret_cast<arg_type<i>*>(args_buffer + get_offset<i>());
+  static char *get_args_buffer(void **extra) {
+    for (; (std::size_t) *extra != 0; ++extra) {
+      if ((std::size_t) *extra == 1) {
+	return static_cast<char*>(*(extra+1));
       }
     }
-  };
+    return nullptr;
+  }
+    
+public:
+  args_selector(void **kernel_params, void **extra)
+    : kernel_params(kernel_params),
+      args_buffer(get_args_buffer(extra))
+  {}
+    
+  template <int i>    
+  arg_type<i> &get() {
+    if (kernel_params) {
+      return *static_cast<arg_type<i>*>(kernel_params[i]);
+    } else {
+      return *reinterpret_cast<arg_type<i>*>(args_buffer + get_offset<i>());
+    }
+  }
+};
 // DPCT_LABEL_END
 
 } // namespace dpct
