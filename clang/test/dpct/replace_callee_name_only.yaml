@@ -1,16 +1,8 @@
-- Rule: rule0
-  Kind: API
-  Priority: Takeover
-  In: cub::DeviceReduce::Sum
-  Out: REPLACE_CALLEE_NAME_ONLY
-  Includes: []
-  Attribute:                                                                    
-    ReplaceCalleeNameOnly: true
 - Rule: rule1
   Kind: API
   Priority: Takeover
-  In: cub::DeviceScan::InclusiveSum
-  Out: cub::DeviceScan::InclusiveSum
+  In: cub::DeviceReduce::Sum
+  Out: dummy_func
   Includes: []
   Attribute:                                                                    
     ReplaceCalleeNameOnly: true
@@ -18,7 +10,7 @@
   Kind: API
   Priority: Takeover
   In: cub::DeviceScan::ExclusiveSum
-  Out: cub::DeviceScan::ExclusiveSum(REPLACE_ALL_CALL_EXPR)
+  Out: dummy_func(d_in, d_out, n)
   Includes: []
   Attribute: {}
 
