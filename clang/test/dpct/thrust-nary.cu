@@ -2,11 +2,8 @@
 // UNSUPPORTED: v8.0, v9.0, v9.1, v9.2, v10.0
 // RUN: dpct --format-range=none -out-root %T/thrust-nary %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only --std=c++14
 // RUN: FileCheck --input-file %T/thrust-nary/thrust-nary.dp.cpp --match-full-lines %s
-// CHECK: #include <oneapi/dpl/execution>
-// CHECK-NEXT: #include <oneapi/dpl/algorithm>
-// CHECK-NEXT: #include <sycl/sycl.hpp>
+// CHECK: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
-// CHECK-NEXT: #include <dpct/dpl_utils.hpp>
 #include <thrust/functional.h>
 
 // CHECK: /*

@@ -97,3 +97,38 @@ FEATURE_REQUEST_FACTORY(
                        TYPE_FACTORY(STR(MapNames::getDpctNamespace() +
                                         "deprecated::usm_host_allocator"),
                                     TEMPLATE_ARG(0))))
+
+// thrust::greater_equal
+TYPE_REWRITE_ENTRY(
+    "thrust::greater_equal",
+    TYPE_FACTORY(STR("std::greater_equal"), TEMPLATE_ARG(0)))
+
+// thrust::less_equal
+TYPE_REWRITE_ENTRY(
+    "thrust::less_equal",
+    TYPE_FACTORY(STR("std::less_equal"), TEMPLATE_ARG(0)))
+
+// logical_and
+TYPE_REWRITE_ENTRY(
+    "thrust::logical_and",
+    TYPE_FACTORY(STR("std::logical_and"), TEMPLATE_ARG(0)))
+
+// thrust::bit_and
+TYPE_REWRITE_ENTRY(
+    "thrust::bit_and",
+    TYPE_FACTORY(STR("std::bit_and"), TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY(
+    "thrust::bit_or",
+    TYPE_FACTORY(STR("std::bit_or"), TEMPLATE_ARG(0)))
+
+// thrust::bit_or
+TYPE_REWRITE_ENTRY(
+    "thrust::minimum",
+    TYPE_FACTORY(STR("oneapi::dpl::minimum"), TEMPLATE_ARG(0)))
+
+//thrust::bit_xor
+TYPE_REWRITE_ENTRY(
+    "thrust::bit_xor",
+    TYPE_FACTORY(STR("std::bit_xor"), TEMPLATE_ARG(0)))
+
