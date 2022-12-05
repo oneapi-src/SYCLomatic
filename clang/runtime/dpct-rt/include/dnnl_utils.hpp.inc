@@ -63,6 +63,7 @@ enum class rnn_memory_format_tag { tnc, ntc };
 /// A class holding the description of an N-dimensions memory.
 class memory_desc_ext {
   ::dnnl::memory::desc _desc;
+public:
   /// Convert dpct::library_data_t to dnnl::memory::data_type.
   static ::dnnl::memory::data_type to_dnnl_data_type(dpct::library_data_t dt);
   /// Convert dnnl::memory::data_type to dpct::library_data_t.
@@ -71,7 +72,6 @@ class memory_desc_ext {
   /// Convert dpct::dnnl::memory_format_tag to dnnl::memory::format_tag.
   static ::dnnl::memory::format_tag to_dnnl_format_tag(dpct::library_data_t dt,
                                                        memory_format_tag tag);
-public:
   memory_desc_ext() = default;
   memory_desc_ext(::dnnl::memory::desc &desc) : _desc(desc) {}
   memory_desc_ext(::dnnl::memory::desc &&desc) : _desc(std::move(desc)) {}
@@ -807,13 +807,13 @@ class engine_ext {
     size_t weight_size, void *weight, size_t workspace_size, void *workspace,
     bool is_get_execution_args, bool is_weight, size_t *size);
 
-sycl::event execute_rnn_backward_primitive(
-    rnn_mode mode, ::dnnl::rnn_direction direction,
-    rnn_bias_mode bias_mode, ::dnnl::memory::data_type dt, int seq_length,
-    int batch_size, int src_c, int dst_c, int layer_size, int direction_num,
-    int hidden_size, int gate_num, int projection_size,
-    std::vector<void *> &data, std::vector<int> &offset, int iter_num,
-    int weight_size, int workspace_size);
+  sycl::event execute_rnn_backward_primitive(
+      rnn_mode mode, ::dnnl::rnn_direction direction, rnn_bias_mode bias_mode,
+      ::dnnl::memory::data_type dt, ::dnnl::memory::format_tag tag,
+      int seq_length, int batch_size, int src_c, int dst_c, int layer_size,
+      int direction_num, int hidden_size, int gate_num, int projection_size,
+      std::vector<void *> &data, std::vector<int> &offset, int iter_num,
+      int weight_size, int workspace_size);
 
   template <typename primitive_type, typename args_type>
   void async_free(sycl::queue *q, sycl::event e, primitive_type *primitive,
@@ -868,6 +868,14 @@ sycl::event execute_rnn_backward_primitive(
   void transform_no_zero(const memory_desc_ext &desc, void *src, void *dst);
   ::dnnl::memory::desc get_group_weight_desc(int group_count,
                                              const memory_desc_ext &weight_desc);
+  void get_rnn_configuration(const ::dnnl::memory::desc &desc,
+                             rnn_direction direction, rnn_mode mode,
+                             dpct::library_data_t dt,
+                             ::dnnl::memory::data_type *dnnl_dt,
+                             ::dnnl::memory::format_tag *tag, int *hidden_size,
+                             int *projection_size, int *output_size,
+                             int *seq_length, int *batch_size,
+                             int *direction_num, int *gate_num);
   static ::dnnl::primitive_attr generate_scaling_attr(float alpha, float beta);
 public:
   engine_ext() {}
@@ -2014,19 +2022,6 @@ public:
 // DnnlUtils|rnn_direction
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-
-void get_rnn_weight_params(
-    const rnn_desc &desc, int layer, size_t weight_space_size,
-    const void *weight_space, int type, memory_desc_ext &sub_weight_desc,
-    void **sub_weight, memory_desc_ext &sub_bias_desc, void **sub_bias);
-
-sycl::event async_rnn_forward_bidirectional(
-    const rnn_desc &desc, ::dnnl::prop_kind kind,
-    const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
-    void *dst, const memory_desc_ext &iter_desc, void *src_iter, void *dst_iter,
-    const memory_desc_ext &iter_c_desc, void *src_iter_c, void *dst_iter_c,
-    size_t weight_size, void *weight, size_t workspace_size, void *workspace);
-
   /// Computing a specified rnn function value asynchronously.
   /// \param [in] desc RNN descriptor.
   /// \param [in] kind Propagation kind.
@@ -2220,9 +2215,11 @@ void memory_desc_ext::set(rnn_memory_format_tag tag, dpct::library_data_t dt,
   if (tag == rnn_memory_format_tag::tnc) {
     _desc = ::dnnl::memory::desc({t, n, c}, to_dnnl_data_type(dt),
                                  ::dnnl::memory::format_tag::tnc);
-  } else if (tag == rnn_memory_format_tag::ntc) {
-    _desc = ::dnnl::memory::desc({n, t, c}, to_dnnl_data_type(dt),
+  } else if(tag == rnn_memory_format_tag::ntc) {
+    _desc = ::dnnl::memory::desc({t, n, c}, to_dnnl_data_type(dt),
                                  ::dnnl::memory::format_tag::ntc);
+  } else {
+    throw std::runtime_error("set: unsupported memory format tag.");
   }
 }
 
@@ -2314,6 +2311,46 @@ void memory_desc_ext::get(int requested_ndims, dpct::library_data_t *dt,
 // DPCT_LABEL_BEGIN|engine_ext_2|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
+void engine_ext::get_rnn_configuration(
+    const ::dnnl::memory::desc &desc, rnn_direction direction, rnn_mode mode,
+    dpct::library_data_t dt, ::dnnl::memory::data_type *dnnl_dt,
+    ::dnnl::memory::format_tag *tag, int *hidden_size, int *projection_size,
+    int *output_size, int *seq_length, int *batch_size, int *direction_num,
+    int *gate_num) {
+  if (!desc.is_zero()) {
+    auto dims = desc.get_dims();
+    auto strides = desc.get_strides();
+    if (strides[0] > strides[1]) {
+      *tag = ::dnnl::memory::format_tag::tnc;
+      *seq_length = dims[0];
+      *batch_size = dims[1];
+    } else {
+      *tag = ::dnnl::memory::format_tag::ntc;
+      *seq_length = dims[1];
+      *batch_size = dims[0];
+    }
+  }
+  if (direction == rnn_direction::bidirectional) {
+    *direction_num = 2;
+  } else {
+    *direction_num = 1;
+  }
+  if (mode == rnn_mode::lstm) {
+    *gate_num = 4;
+  } else if (mode == rnn_mode::gru) {
+    *gate_num = 3;
+  } else {
+    *gate_num = 1;
+  }
+  if (*projection_size != *hidden_size) {
+    *output_size = *projection_size;
+  } else {
+    *projection_size = 0;
+    *output_size = *hidden_size;
+  }
+  *dnnl_dt = memory_desc_ext::to_dnnl_data_type(dt);
+}
+
 void *engine_ext::allocate(const memory_desc_ext &data_desc, int count) const {
   size_t mem_size = data_desc.get_size();
   void *mem = sycl::malloc_device(mem_size * count, *_q);
@@ -2895,8 +2932,8 @@ sycl::event engine_ext::rnn_forward_internal(
     const memory_desc_ext &iter_c_desc, void *src_iter_c, void *dst_iter_c,
     size_t weight_size, void *weight, size_t workspace_size, void *workspace,
     bool is_get_execution_args, bool is_weight, size_t *size) {
-
   ::dnnl::memory::data_type src_dt;
+  ::dnnl::memory::format_tag src_format_tag;
   rnn_mode mode;
   rnn_bias_mode bias_mode;
   rnn_direction direction;
@@ -2904,30 +2941,20 @@ sycl::event engine_ext::rnn_forward_internal(
   int direction_num = 1, input_size = 0, hidden_size = 0, projection_size = 0,
       layer_size = 0, gate_num = 1, output_size = 0, data_type_size = 0,
       seq_length = 1, batch_size = 1;
-  bool projection_enabled = false;
   std::vector<void *> data = {src,        dst,        src_iter, dst_iter,
                               src_iter_c, dst_iter_c, weight,   workspace};
   std::vector<int> offset(6, 0);
-  void *input_layer_cache = nullptr;
-  void *hidden_layer_cache = nullptr;
+  void *input_layer_cache = nullptr, *hidden_layer_cache = nullptr;
+  size_t *weight_size_ptr = nullptr, *workspace_size_ptr = nullptr;
   sycl::event e;
 
-  desc.get(&mode, &bias_mode, &direction, &dt, &input_size,
-           &hidden_size, &projection_size, &layer_size);
+  desc.get(&mode, &bias_mode, &direction, &dt, &input_size, &hidden_size,
+           &projection_size, &layer_size);
 
-  if (layer_size <= 0) {
-    return sycl::event();
-  }
-
-  if (!is_get_execution_args || !is_weight) {
-    auto src_layer_dims = src_desc.get_dims();
-    seq_length = src_layer_dims[0];
-    batch_size = src_layer_dims[1];
-  }
-
-  src_dt = memory_desc_ext::to_dnnl_data_type(dt);
-
-  size_t *weight_size_ptr = nullptr, *workspace_size_ptr = nullptr;
+  get_rnn_configuration(src_desc.get_desc(), direction, mode, dt, &src_dt,
+                        &src_format_tag, &hidden_size, &projection_size,
+                        &output_size, &seq_length, &batch_size, &direction_num,
+                        &gate_num);
 
   if (is_get_execution_args) {
     *size = 0;
@@ -2936,23 +2963,6 @@ sycl::event engine_ext::rnn_forward_internal(
     } else {
       workspace_size_ptr = size;
     }
-  }
-
-  if (direction == rnn_direction::bidirectional) {
-    direction_num = 2;
-  }
-
-  if (projection_size != hidden_size) {
-    projection_enabled = true;
-    output_size = projection_size;
-  } else {
-    output_size = hidden_size;
-  }
-
-  if (mode == rnn_mode::lstm) {
-    gate_num = 4;
-  } else if (mode == rnn_mode::gru) {
-    gate_num = 3;
   }
 
   if (direction == rnn_direction::bidirectional) {
@@ -2966,50 +2976,45 @@ sycl::event engine_ext::rnn_forward_internal(
       data[1] = hidden_layer_cache;
       e = execute_rnn_forward_primitive(
           mode, kind, ::dnnl::rnn_direction::bidirectional_sum, bias_mode,
-          src_dt, seq_length, batch_size, output_size, output_size, 1,
-          direction_num, hidden_size, gate_num,
-          projection_enabled ? projection_size : 0, data, offset,
-          layer_size - 1, weight_size_ptr, workspace_size_ptr);
+          src_dt, format_tag, seq_length, batch_size, output_size, output_size,
+          1, direction_num, hidden_size, gate_num, projection_size, data,
+          offset, layer_size - 1, weight_size_ptr, workspace_size_ptr);
       data[0] =
           ((layer_size - 1) % 2 == 0) ? input_layer_cache : hidden_layer_cache;
       data[1] = dst;
     }
     e = execute_rnn_forward_primitive(
         mode, kind, ::dnnl::rnn_direction::bidirectional_concat, bias_mode,
-        src_dt, seq_length, batch_size, output_size, 2 * output_size, 1,
-        direction_num, hidden_size, gate_num,
-        projection_enabled ? projection_size : 0, data, offset, 1,
-        weight_size_ptr, workspace_size_ptr);
+        src_dt, format_tag, seq_length, batch_size, output_size,
+        2 * output_size, 1, direction_num, hidden_size, gate_num,
+        projection_size, data, offset, 1, weight_size_ptr, workspace_size_ptr);
   } else {
     e = execute_rnn_forward_primitive(
         mode, kind, ::dnnl::rnn_direction::unidirectional_left2right, bias_mode,
-        src_dt, seq_length, batch_size, output_size, output_size, layer_size,
-        direction_num, hidden_size, gate_num,
-        projection_enabled ? projection_size : 0, data, offset, 1,
-        weight_size_ptr, workspace_size_ptr);
+        src_dt, format_tag, seq_length, batch_size, output_size, output_size,
+        layer_size, direction_num, hidden_size, gate_num, projection_size, data,
+        offset, 1, weight_size_ptr, workspace_size_ptr);
   }
 
   if (is_get_execution_args) {
     return e;
   }
 
-  _q->submit([&](sycl::handler &cgh) {
-    cgh.depends_on(e);
-    cgh.host_task([=] {
-      if (input_layer_cache) {
+  if (input_layer_cache && hidden_layer_cache) {
+    _q->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(e);
+      cgh.host_task([=] {
         sycl::free(input_layer_cache, *_q);
-      }
-      if (hidden_layer_cache) {
         sycl::free(hidden_layer_cache, *_q);
-      }
+      });
     });
-  });
+  }
   return e;
 }
 
 sycl::event engine_ext::execute_rnn_forward_primitive(
     rnn_mode mode, ::dnnl::prop_kind kind, ::dnnl::rnn_direction direction,
-    rnn_bias_mode bias_mode, ::dnnl::memory::data_type dt, int seq_length,
+    rnn_bias_mode bias_mode, ::dnnl::memory::data_type dt, ::dnnl::memory::format_tag tag, int seq_length,
     int batch_size, int src_c, int dst_c, int layer_size, int direction_num,
     int hidden_size, int gate_num, int projection_size,
     std::vector<void *> &data, std::vector<int> &offset, int iter_num,
@@ -3044,10 +3049,8 @@ sycl::event engine_ext::execute_rnn_forward_primitive(
     return e;
   }
 
-  ::dnnl::memory::desc src_desc({seq_length, batch_size, src_c}, dt,
-                                ::dnnl::memory::format_tag::tnc);
-  ::dnnl::memory::desc dst_desc({seq_length, batch_size, dst_c}, dt,
-                                ::dnnl::memory::format_tag::tnc);
+  ::dnnl::memory::desc src_desc({seq_length, batch_size, src_c}, dt, tag);
+  ::dnnl::memory::desc dst_desc({seq_length, batch_size, dst_c}, dt, tag);
   ::dnnl::memory::desc iter_desc(
       {layer_size, direction_num, batch_size,
        projection_size ? projection_size : hidden_size},
@@ -3093,7 +3096,12 @@ sycl::event engine_ext::execute_rnn_forward_primitive(
       p = new ::dnnl::lstm_forward(pd);
     }
   }
-
+  auto insert_args = [&](int arg_name, ::dnnl::memory::desc &d, void *data,
+                         int &offset) {
+    execution_args->insert(
+        {arg_name, {::dnnl::memory(d, _eng, (uint8_t *)data + offset)}});
+    offset += d.get_size();
+  };
   for (int i = 0; i < iter_num; i++) {
     void *in_cache = data[0], *out_cache = data[1], *dst_iter_c_cache = nullptr,
          *dst_iter_cache = ((uint8_t *)(data[3]) + offset[1]);
@@ -3101,64 +3109,29 @@ sycl::event engine_ext::execute_rnn_forward_primitive(
       dst_iter_c_cache = (uint8_t *)(data[4]) + offset[2];
     }
     if (!workspace_size) {
-      execution_args = new std::unordered_map<int, ::dnnl::memory>();
-      execution_args->insert(
-          {DNNL_ARG_SRC_LAYER, {::dnnl::memory(src_desc, _eng, data[0])}});
-      execution_args->insert(
-          {DNNL_ARG_DST_LAYER, {::dnnl::memory(dst_desc, _eng, data[1])}});
-      execution_args->insert(
-          {DNNL_ARG_SRC_ITER,
-           {::dnnl::memory(iter_desc, _eng,
-                           (uint8_t *)(data[2]) + offset[0])}});
-      offset[0] += iter_desc.get_size();
-      execution_args->insert(
-          {DNNL_ARG_DST_ITER,
-           {::dnnl::memory(iter_desc, _eng,
-                           (uint8_t *)(data[3]) + offset[1])}});
-      offset[1] += iter_desc.get_size();
+      execution_args = new std::unordered_map<int, ::dnnl::memory>{
+          {DNNL_ARG_SRC_LAYER, {::dnnl::memory(src_desc, _eng, data[0])}},
+          {DNNL_ARG_DST_LAYER, {::dnnl::memory(dst_desc, _eng, data[1])}}};
+      insert_args(DNNL_ARG_SRC_ITER, iter_desc, data[2], offset[0]);
+      insert_args(DNNL_ARG_DST_ITER, iter_desc, data[3], offset[1]);
+
       if (mode == rnn_mode::lstm) {
-        execution_args->insert(
-            {DNNL_ARG_SRC_ITER_C,
-             {::dnnl::memory(iter_c_desc, _eng,
-                             (uint8_t *)(data[4]) + offset[2])}});
-        offset[2] += iter_c_desc.get_size();
-        execution_args->insert(
-            {DNNL_ARG_DST_ITER_C,
-             {::dnnl::memory(iter_c_desc, _eng,
-                             (uint8_t *)(data[5]) + offset[3])}});
-        offset[3] += iter_c_desc.get_size();
+        insert_args(DNNL_ARG_SRC_ITER_C, iter_c_desc, data[4], offset[2]);
+        insert_args(DNNL_ARG_DST_ITER_C, iter_c_desc, data[5], offset[3]);
       }
-      execution_args->insert(
-          {DNNL_ARG_WEIGHTS_LAYER,
-           {::dnnl::memory(weight_layer_desc, _eng,
-                           (uint8_t *)(data[6]) + offset[4])}});
-      offset[4] += weight_layer_desc.get_size();
-      execution_args->insert(
-          {DNNL_ARG_WEIGHTS_ITER,
-           {::dnnl::memory(weight_iter_desc, _eng,
-                           (uint8_t *)(data[6]) + offset[4])}});
-      offset[4] += weight_iter_desc.get_size();
+      insert_args(DNNL_ARG_WEIGHTS_LAYER, weight_layer_desc, data[6],
+                  offset[4]);
+      insert_args(DNNL_ARG_WEIGHTS_ITER, weight_iter_desc, data[6], offset[4]);
       if (projection_size) {
-        execution_args->insert(
-            {DNNL_ARG_WEIGHTS_PROJECTION,
-             {::dnnl::memory(projection_desc, _eng,
-                             (uint8_t *)(data[6]) + offset[4])}});
-        offset[4] += projection_desc.get_size();
+        insert_args(DNNL_ARG_WEIGHTS_PROJECTION, projection_desc, data[6],
+                    offset[4]);
       }
-      execution_args->insert(
-          {DNNL_ARG_BIAS,
-           {::dnnl::memory(bias_desc, _eng,
-                           (uint8_t *)(data[6]) + offset[4])}});
       if (bias_mode == rnn_bias_mode::none) {
         _q->memset((uint8_t *)(data[6]) + offset[4], 0, bias_desc.get_size());
       }
-      offset[4] += bias_desc.get_size();
+      insert_args(DNNL_ARG_BIAS, bias_desc, data[6], offset[4]);
       if (kind == ::dnnl::prop_kind::forward_training) {
-        execution_args->insert(
-            {DNNL_ARG_WORKSPACE,
-             {::dnnl::memory(workspace_desc, _eng,
-                             (uint8_t *)(data[7]) + offset[5])}});
-        offset[5] += workspace_desc.get_size();
+        insert_args(DNNL_ARG_WORKSPACE, workspace_desc, data[7], offset[5]);
       }
       if (i == iter_num - 1) {
         e = execute_primitive(p, execution_args, false);
@@ -3197,10 +3170,11 @@ sycl::event engine_ext::execute_rnn_forward_primitive(
 
 sycl::event engine_ext::execute_rnn_backward_primitive(
     rnn_mode mode, ::dnnl::rnn_direction direction, rnn_bias_mode bias_mode,
-    ::dnnl::memory::data_type dt, int seq_length, int batch_size, int src_c,
-    int dst_c, int layer_size, int direction_num, int hidden_size, int gate_num,
-    int projection_size, std::vector<void *> &data, std::vector<int> &offset,
-    int iter_num, int weight_size, int workspace_size) {
+    ::dnnl::memory::data_type dt, ::dnnl::memory::format_tag tag,
+    int seq_length, int batch_size, int src_c, int dst_c, int layer_size,
+    int direction_num, int hidden_size, int gate_num, int projection_size,
+    std::vector<void *> &data, std::vector<int> &offset, int iter_num,
+    int weight_size, int workspace_size) {
 
   sycl::event e;
   ::dnnl::primitive *p = nullptr;
@@ -3235,10 +3209,8 @@ sycl::event engine_ext::execute_rnn_backward_primitive(
         ::dnnl::memory::format_tag::ldoi);
   }
 
-  ::dnnl::memory::desc src_desc({seq_length, batch_size, src_c}, dt,
-                                ::dnnl::memory::format_tag::tnc);
-  ::dnnl::memory::desc dst_desc({seq_length, batch_size, dst_c}, dt,
-                                ::dnnl::memory::format_tag::tnc);
+  ::dnnl::memory::desc src_desc({seq_length, batch_size, src_c}, dt, tag);
+  ::dnnl::memory::desc dst_desc({seq_length, batch_size, dst_c}, dt, tag);
   ::dnnl::memory::desc iter_desc(
       {layer_size, direction_num, batch_size,
        projection_size ? projection_size : hidden_size},
@@ -3292,112 +3264,54 @@ sycl::event engine_ext::execute_rnn_backward_primitive(
     workspace_desc = pd.workspace_desc();
     p = new ::dnnl::lstm_backward(pd);
   }
-  for (int i = 0; i < iter_num; i++) {
-    auto execution_args = new std::unordered_map<int, ::dnnl::memory>();
-    if (mode == rnn_mode::lstm) {
-      offset[0] += iter_c_desc.get_size();
-      execution_args->insert(
-          {DNNL_ARG_DST_ITER_C,
-           {::dnnl::memory(iter_c_desc, _eng,
-                           (uint8_t *)(data[7]) - offset[0])}});
-      offset[2] += iter_c_desc.get_size();
-      execution_args->insert(
-          {DNNL_ARG_SRC_ITER_C,
-           {::dnnl::memory(iter_c_desc, _eng,
-                           (uint8_t *)(data[4]) - offset[2])}});
-    }
-    offset[0] += iter_desc.get_size();
-    execution_args->insert(
-        {DNNL_ARG_DST_ITER,
-         {::dnnl::memory(iter_desc, _eng, (uint8_t *)(data[7]) - offset[0])}});
-    offset[0] += dst_desc.get_size();
-    execution_args->insert(
-        {DNNL_ARG_DST_LAYER,
-         {::dnnl::memory(dst_desc, _eng, (uint8_t *)(data[7]) - offset[0])}});
-    offset[0] += src_desc.get_size();
-    execution_args->insert(
-        {DNNL_ARG_SRC_LAYER,
-         {::dnnl::memory(src_desc, _eng, (uint8_t *)(data[7]) - offset[0])}});
-    offset[0] += workspace_desc.get_size();
-    execution_args->insert(
-        {DNNL_ARG_WORKSPACE,
-         {::dnnl::memory(workspace_desc, _eng,
-                         (uint8_t *)(data[7]) - offset[0])}});
-    offset[1] += iter_desc.get_size();
-    execution_args->insert(
-        {DNNL_ARG_SRC_ITER,
-         {::dnnl::memory(iter_desc, _eng, (uint8_t *)(data[2]) - offset[1])}});
-    offset[3] += bias_desc.get_size();
-    execution_args->insert(
-        {DNNL_ARG_BIAS,
-         {::dnnl::memory(bias_desc, _eng, (uint8_t *)(data[6]) - offset[3])}});
-    if (projection_size) {
-      offset[3] += diff_projection_desc.get_size();
-      execution_args->insert(
-          {DNNL_ARG_WEIGHTS_PROJECTION,
-           {::dnnl::memory(diff_projection_desc, _eng,
-                           (uint8_t *)(data[6]) - offset[3])}});
-    }
-    offset[3] += diff_weight_iter_desc.get_size();
-    execution_args->insert(
-        {DNNL_ARG_WEIGHTS_ITER,
-         {::dnnl::memory(diff_weight_iter_desc, _eng,
-                         (uint8_t *)(data[6]) - offset[3])}});
-    offset[3] += diff_weight_layer_desc.get_size();
-    execution_args->insert(
-        {DNNL_ARG_WEIGHTS_LAYER,
-         {::dnnl::memory(diff_weight_layer_desc, _eng,
-                         (uint8_t *)(data[6]) - offset[3])}});
 
-    // differential data
+  auto insert_args = [&](int arg_name, ::dnnl::memory::desc &d, void *data,
+                         int &offset) {
+    offset += d.get_size();
     execution_args->insert(
-        {DNNL_ARG_DIFF_SRC_LAYER, {::dnnl::memory(src_desc, _eng, data[8])}});
-    execution_args->insert(
-        {DNNL_ARG_DIFF_DST_LAYER, {::dnnl::memory(dst_desc, _eng, data[9])}});
-    offset[4] += iter_desc.get_size();
-    execution_args->insert(
-        {DNNL_ARG_DIFF_SRC_ITER,
-         {::dnnl::memory(iter_desc, _eng, (uint8_t *)(data[10]) - offset[4])}});
-    offset[5] += iter_desc.get_size();
-    execution_args->insert(
-        {DNNL_ARG_DIFF_DST_ITER,
-         {::dnnl::memory(iter_desc, _eng, (uint8_t *)(data[11]) - offset[5])}});
+        {arg_name, {::dnnl::memory(d, _eng, (uint8_t *)data - offset)}});
+  };
+
+  for (int i = 0; i < iter_num; i++) {
+    auto execution_args = new std::unordered_map<int, ::dnnl::memory>{
+        {DNNL_ARG_DIFF_SRC_LAYER, {::dnnl::memory(src_desc, _eng, data[8])}},
+        {DNNL_ARG_DIFF_DST_LAYER, {::dnnl::memory(dst_desc, _eng, data[9])}}};
     if (mode == rnn_mode::lstm) {
-      offset[6] += iter_c_desc.get_size();
-      execution_args->insert(
-          {DNNL_ARG_DIFF_SRC_ITER_C,
-           {::dnnl::memory(iter_c_desc, _eng,
-                           (uint8_t *)(data[12]) - offset[6])}});
-      offset[7] += iter_c_desc.get_size();
-      execution_args->insert(
-          {DNNL_ARG_DIFF_DST_ITER_C,
-           {::dnnl::memory(iter_c_desc, _eng,
-                           (uint8_t *)(data[13]) - offset[7])}});
+      insert_args(DNNL_ARG_DST_ITER_C, iter_c_desc, data[7], offset[0]);
+      insert_args(DNNL_ARG_SRC_ITER_C, iter_c_desc, data[4], offset[2]);
     }
-    offset[8] += bias_desc.get_size();
-    execution_args->insert(
-        {DNNL_ARG_DIFF_BIAS,
-         {::dnnl::memory(bias_desc, _eng, (uint8_t *)(data[14]) - offset[8])}});
+    insert_args(DNNL_ARG_DST_ITER, iter_desc, data[7], offset[0]);
+    insert_args(DNNL_ARG_DST_LAYER, dst_desc, data[7], offset[0]);
+    insert_args(DNNL_ARG_SRC_LAYER, src_desc, data[7], offset[0]);
+    insert_args(DNNL_ARG_WORKSPACE, workspace_desc, data[7], offset[0]);
+    insert_args(DNNL_ARG_SRC_ITER, iter_desc, data[2], offset[1]);
+    insert_args(DNNL_ARG_BIAS, bias_desc, data[6], offset[3]);
+    if (projection_size) {
+      insert_args(DNNL_ARG_WEIGHTS_PROJECTION, diff_projection_desc, data[6],
+                  offset[3]);
+    }
+    insert_args(DNNL_ARG_WEIGHTS_ITER, diff_weight_iter_desc, data[6],
+                offset[3]);
+    insert_args(DNNL_ARG_WEIGHTS_LAYER, diff_weight_layer_desc, data[6],
+                offset[3]);
+    insert_args(DNNL_ARG_DIFF_SRC_ITER, iter_desc, data[10], offset[4]);
+    insert_args(DNNL_ARG_DIFF_DST_ITER, iter_desc, data[11], offset[5]);
+    if (mode == rnn_mode::lstm) {
+      insert_args(DNNL_ARG_DIFF_SRC_ITER_C, iter_c_desc, data[12], offset[6]);
+      insert_args(DNNL_ARG_DIFF_DST_ITER_C, iter_c_desc, data[13], offset[7]);
+    }
+    insert_args(DNNL_ARG_DIFF_BIAS, bias_desc, data[14], offset[8]);
     if (bias_mode == rnn_bias_mode::none) {
       _q->memset((uint8_t *)(data[14]) - offset[8], 0, bias_desc.get_size());
     }
     if (projection_size) {
-      offset[8] += projection_desc.get_size();
-      execution_args->insert(
-          {DNNL_ARG_DIFF_WEIGHTS_PROJECTION,
-           {::dnnl::memory(projection_desc, _eng,
-                           (uint8_t *)(data[14]) - offset[8])}});
+      insert_args(DNNL_ARG_DIFF_WEIGHTS_PROJECTION, projection_desc, data[14],
+                  offset[8]);
     }
-    offset[8] += weight_iter_desc.get_size();
-    execution_args->insert(
-        {DNNL_ARG_DIFF_WEIGHTS_ITER,
-         {::dnnl::memory(weight_iter_desc, _eng,
-                         (uint8_t *)(data[14]) - offset[8])}});
-    offset[8] += weight_layer_desc.get_size();
-    execution_args->insert(
-        {DNNL_ARG_DIFF_WEIGHTS_LAYER,
-         {::dnnl::memory(weight_layer_desc, _eng,
-                         (uint8_t *)(data[14]) - offset[8])}});
+    insert_args(DNNL_ARG_DIFF_WEIGHTS_ITER, weight_iter_desc, data[14],
+                offset[8]);
+    insert_args(DNNL_ARG_DIFF_WEIGHTS_LAYER, weight_layer_desc, data[14],
+                offset[8]);
     if (i == iter_num - 1) {
       e = execute_primitive(p, execution_args, false);
     } else {
@@ -3405,7 +3319,7 @@ sycl::event engine_ext::execute_rnn_backward_primitive(
       std::swap(data[8], data[9]);
     }
   }
-  return e;
+return e;
 }
 
 template <typename primitive_type, typename... args_type>
@@ -4569,14 +4483,15 @@ sycl::event engine_ext::async_rnn_backward(
     void *diff_src_iter_c, void *diff_dst_iter_c, size_t weight_size,
     void *weight, void *diff_weight, size_t workspace_size, void *workspace) {
   ::dnnl::memory::data_type src_dt;
+  ::dnnl::memory::format_tag src_format_tag;
   rnn_mode mode;
+  rnn_memory_format_tag format_tag;
   rnn_bias_mode bias_mode;
   rnn_direction direction;
   dpct::library_data_t dt;
   int direction_num = 1, input_size = 0, hidden_size = 0, projection_size = 0,
       layer_size = 0, gate_num = 1, output_size = 0, data_type_size = 0,
       seq_length = 1, batch_size = 1;
-  bool projection_enabled = false;
   void *last_layer_cache = nullptr;
   void *hidden_layer_cache = nullptr;
   sycl::event e;
@@ -4598,35 +4513,13 @@ sycl::event engine_ext::async_rnn_backward(
       (uint8_t *)diff_dst_iter_c + iter_c_desc.get_size(),
       (uint8_t *)diff_weight + weight_size};
 
-  desc.get(&mode, &bias_mode, &direction, &dt, &input_size,
-           &hidden_size, &projection_size, &layer_size);
+  desc.get(&mode, &bias_mode, &direction, &dt, &input_size, &hidden_size,
+           &projection_size, &layer_size);
 
-  if (layer_size <= 0) {
-    return sycl::event();
-  }
-
-  auto src_layer_dims = src_desc.get_dims();
-  seq_length = src_layer_dims[0];
-  batch_size = src_layer_dims[1];
-
-  src_dt = memory_desc_ext::to_dnnl_data_type(dt);
-
-  if (direction == rnn_direction::bidirectional) {
-    direction_num = 2;
-  }
-
-  if (projection_size != hidden_size) {
-    projection_enabled = true;
-    output_size = projection_size;
-  } else {
-    output_size = hidden_size;
-  }
-
-  if (mode == rnn_mode::lstm) {
-    gate_num = 4;
-  } else if (mode == rnn_mode::gru) {
-    gate_num = 3;
-  }
+  get_rnn_configuration(src_desc.get_desc(), direction, mode, dt, &src_dt,
+                        &src_format_tag, &hidden_size, &projection_size,
+                        &output_size, &seq_length, &batch_size, &direction_num,
+                        &gate_num);
 
   if (direction == rnn_direction::bidirectional) {
     if (layer_size > 1) {
@@ -4636,17 +4529,17 @@ sycl::event engine_ext::async_rnn_backward(
     }
     e = execute_rnn_backward_primitive(
         mode, ::dnnl::rnn_direction::bidirectional_concat, bias_mode, src_dt,
-        seq_length, batch_size, output_size, 2 * output_size, 1, direction_num,
-        hidden_size, gate_num, projection_enabled ? projection_size : 0, data,
-        offset, 1, weight_size, workspace_size);
+        src_format_tag, seq_length, batch_size, output_size, 2 * output_size, 1,
+        direction_num, hidden_size, gate_num, projection_size, data, offset, 1,
+        weight_size, workspace_size);
     if (layer_size > 1) {
       data[8] = hidden_layer_cache;
       data[9] = last_layer_cache;
       e = execute_rnn_backward_primitive(
           mode, ::dnnl::rnn_direction::bidirectional_sum, bias_mode, src_dt,
-          seq_length, batch_size, output_size, output_size, 1, direction_num,
-          hidden_size, gate_num, projection_enabled ? projection_size : 0, data,
-          offset, layer_size - 1, weight_size, workspace_size);
+          src_format_tag, seq_length, batch_size, output_size, output_size, 1,
+          direction_num, hidden_size, gate_num, projection_size, data, offset,
+          layer_size - 1, weight_size, workspace_size);
       _q->memcpy(diff_src,
                  ((layer_size - 1) % 2 == 0) ? last_layer_cache
                                              : hidden_layer_cache,
@@ -4655,23 +4548,20 @@ sycl::event engine_ext::async_rnn_backward(
   } else {
     e = execute_rnn_backward_primitive(
         mode, ::dnnl::rnn_direction::unidirectional_left2right, bias_mode,
-        src_dt, seq_length, batch_size, output_size, output_size, layer_size,
-        direction_num, hidden_size, gate_num,
-        projection_enabled ? projection_size : 0, data, offset, 1, weight_size,
-        workspace_size);
+        src_dt, src_format_tag, seq_length, batch_size, output_size,
+        output_size, layer_size, direction_num, hidden_size, gate_num,
+        projection_size, data, offset, 1, weight_size, workspace_size);
   }
 
-  _q->submit([&](sycl::handler &cgh) {
-    cgh.depends_on(e);
-    cgh.host_task([=] {
-      if (last_layer_cache) {
+  if (last_layer_cache && hidden_layer_cache) {
+    _q->submit([&](sycl::handler &cgh) {
+      cgh.depends_on(e);
+      cgh.host_task([=] {
         sycl::free(last_layer_cache, *_q);
-      }
-      if (hidden_layer_cache) {
         sycl::free(hidden_layer_cache, *_q);
-      }
+      });
     });
-  });
+  }
   return e;
 }
 // DPCT_LABEL_END
