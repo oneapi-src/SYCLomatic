@@ -684,12 +684,15 @@ public:
     _queues.clear();
     // create new default queue.
 #ifdef DPCT_USM_LEVEL_NONE
-    _queues.push_back(
-        std::make_shared<sycl::queue>(_ctx, *this, exception_handler));
+    auto property =
+        sycl::property_list{sycl::property::queue::enable_profiling()};
 #else
-    _queues.push_back(std::make_shared<sycl::queue>(
-        _ctx, *this, exception_handler, sycl::property::queue::in_order()));
+    auto property =
+        sycl::property_list{sycl::property::queue::enable_profiling(),
+                            sycl::property::queue::in_order()};
 #endif
+    _queues.push_back(std::make_shared<sycl::queue>(
+        _ctx, *this, exception_handler, property));
     _saved_queue = _default_queue = _queues.front().get();
   }
 // DPCT_LABEL_END
