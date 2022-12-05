@@ -2387,7 +2387,7 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
         auto BodyBlock = Printer.block();
         Printer.newLine();
 	requestFeature(HelperFeatureEnum::Util_args_selector, FilePath);
-	Printer.line("args_selector<"
+	Printer.line(MapNames::getDpctNamespace() + "args_selector<"
 		     + std::to_string(NonDefaultParamNum) + ", "
 		     + std::to_string(ParamsNum-NonDefaultParamNum) + ", "
 		     + "decltype(" + FuncName
