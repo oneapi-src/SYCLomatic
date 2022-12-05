@@ -835,6 +835,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<EnumNameRule>(
            "get_max_sub_group_size",
            HelperFeatureEnum::Device_device_ext_get_max_sub_group_size)},
+      {"CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK",
+       std::make_shared<EnumNameRule>(
+        "get_max_register_size_per_work_group",
+        HelperFeatureEnum::Device_device_ext_get_max_register_size_per_work_group)},
       {"CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK",
        std::make_shared<EnumNameRule>(
            "get_max_work_group_size",

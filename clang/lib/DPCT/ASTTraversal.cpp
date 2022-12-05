@@ -15116,7 +15116,8 @@ void DriverDeviceAPIRule::runRule(
         return;
       }
       if (AttributeName == "CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY" ||
-          AttributeName == "CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT") {
+          AttributeName == "CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT" ||
+          AttributeName == "CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK") {
         report(CE->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
           AttributeName, Search->second->NewName);
       }

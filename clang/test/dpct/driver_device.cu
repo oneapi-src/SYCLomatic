@@ -37,9 +37,9 @@ void test() {
   cuDeviceGetAttribute(&result3,CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT, device);
   std::cout << " result3 " << result3 << std::endl;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1028:{{[0-9]+}}: The cuDeviceGetAttribute was not migrated because parameter CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK is unsupported.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK. It was migrated to get_max_register_size_per_work_group. You may need to rewrite the code.
   // CHECK-NEXT: */
-  // CHECK: cuDeviceGetAttribute(&result4,CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, device);
+  // CHECK: result4 = dpct::dev_mgr::instance().get_device(device).get_max_register_size_per_work_group();
   cuDeviceGetAttribute(&result4,CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, device);
   std::cout << " result4 " << result4 << std::endl;
   // CHECK: result5 = dpct::dev_mgr::instance().get_device(device).is_usm_host_allocations();
