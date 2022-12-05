@@ -1375,7 +1375,7 @@ inline void segmented_sort_pairs(
         ::std::forward<_ExecutionPolicy>(policy), keys_in, keys_out, values_in,
         values_out, n, nsegments, begin_offsets, end_offsets, descending,
         begin_bit, end_bit);
-  } else if (nsegments < 500) // for loop of parallel sorts when we have a small
+  } else if (nsegments < 512) // for loop of parallel sorts when we have a small
                               // number of total sorts to limit total overhead
   {
     dpct::internal::segmented_sort_pairs_by_parallel_sorts(
