@@ -1288,13 +1288,13 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
   auto zip_seg_vals = oneapi::dpl::make_zip_iterator(segments, values_in);
   auto zip_seg_vals_out =
       oneapi::dpl::make_zip_iterator(segments_sorted, values_temp);
-  // first sort by keys keeping track of which segment were in...
+  // Part 1: Sort by keys keeping track of which segment were in
   dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy), keys_in, keys_temp,
                    zip_seg_vals, zip_seg_vals_out, n, descending);
 
   auto zip_keys_vals = oneapi::dpl::make_zip_iterator(keys_temp, values_temp);
   auto zip_keys_vals_out = oneapi::dpl::make_zip_iterator(keys_out, values_out);
-  // then sort the segments with a stable sort to get back sorted segments.
+  // Part 2: Sort the segments with a stable sort to get back sorted segments.
   dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy), segments_sorted,
                    segments, zip_keys_vals, zip_keys_vals_out, n, false);
 
@@ -1382,7 +1382,7 @@ inline void segmented_sort_pairs(
         ::std::forward<_ExecutionPolicy>(policy), keys_in, keys_out, values_in,
         values_out, n, nsegments, begin_offsets, end_offsets, descending,
         begin_bit, end_bit);
-  } else // decent catch using 2 full sorts
+  } else // decent catch all using 2 full sorts
   {
     dpct::internal::segmented_sort_pairs_by_two_pair_sorts(
         ::std::forward<_ExecutionPolicy>(policy), keys_in, keys_out, values_in,
