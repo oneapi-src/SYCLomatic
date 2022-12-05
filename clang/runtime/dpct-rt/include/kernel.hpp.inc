@@ -95,21 +95,6 @@ private:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 static void get_kernel_function_info(kernel_function_info *kernel_info,
-                                     const kernel_function &function) {
-  kernel_info->max_work_group_size =
-      dpct::dev_mgr::instance()
-          .current_device()
-          .get_info<sycl::info::device::max_work_group_size>();
-}
-static kernel_function_info get_kernel_function_info(const kernel_function &function) {
-  kernel_function_info kernel_info;
-  kernel_info.max_work_group_size =
-      dpct::dev_mgr::instance()
-          .current_device()
-          .get_info<sycl::info::device::max_work_group_size>();
-  return kernel_info;
-}
-static void get_kernel_function_info(kernel_function_info *kernel_info,
                                      const void *function) {
   kernel_info->max_work_group_size =
       dpct::dev_mgr::instance()
@@ -179,13 +164,9 @@ static uint64_t extract64(unsigned char const *const ptr) {
 
 static uint64_t get_lib_size(char const *const blob) {
 #ifdef _WIN32
-  // See https://en.wikipedia.org/wiki/Portable_Executable
-  // and https://learn.microsoft.com/en-us/windows/win32/debug/pe-format
-  // to understand the layout of a DLL header
-
   ///////////////////////////////////////////////////////////////////////
-  unsigned char const *const ublob = reinterpret_cast<unsigned char const *const>(blob);
   // Analyze DOS stub
+  unsigned char const *const ublob = reinterpret_cast<unsigned char const *const>(blob);
   if (ublob[0] != 0x4d ||
       ublob[1] != 0x5a) {
     throw std::runtime_error("Blob is not a Windows DLL.");
@@ -335,7 +316,11 @@ static module load_sycl_lib_mem(char const *const image) {
 };
 
 static void unload_sycl_lib(module &module) {
+#ifdef _WIN32
+  FreeLibrary(module.get_ptr());
+#else
   dlclose(module.get_ptr());
+#endif
 };
 
 static dpct::kernel_function get_kernel_function(module &module, const std::string &name) {
