@@ -1366,11 +1366,12 @@ inline void segmented_sort_pairs(
                       .get_device()
                       .template get_info<sycl::info::device::sub_group_sizes>();
   int subgroup_size = sg_sizes.empty() ? 1 : sg_sizes.back();
-  int compute_unit_threads =
-      policy.queue().get_device().is_gpu() ? subgroup_size : 1;
   // parallel for of serial sorts when we have sufficient number of segments for
-  // load balance
-  if (nsegments > compute_units * compute_unit_threads) {
+  // load balance when number of segments is large as compared to our target 
+  // compute capability
+  if (nsegments >
+      compute_units *
+          (policy.queue().get_device().is_gpu() ? subgroup_size : 1)) {
     dpct::internal::segmented_sort_pairs_by_parallel_for_of_sorts(
         ::std::forward<_ExecutionPolicy>(policy), keys_in, keys_out, values_in,
         values_out, n, nsegments, begin_offsets, end_offsets, descending,
