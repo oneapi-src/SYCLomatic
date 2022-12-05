@@ -43,7 +43,7 @@ static bool isWhitespace(char Character) {
   return Character == ' ' || Character == '\t' || Character == '\n';
 }
 
-static bool isRightDelimeter(char Character) {
+static bool isRightDelimiter(char Character) {
   return Character == '}' || Character == ']' || Character == ')';
 }
 
@@ -61,27 +61,27 @@ static int detectIndentation(const std::string &Input, int Start) {
 }
 
 static std::vector<std::string> split(const std::string &Input,
-                                      char Seperator) {
+                                      char Separator) {
   std::vector<std::string> Output;
   const int Size = Input.size();
   int Index = 0;
-  int Start = 0;
   while (Index < Size) {
-    char Character = Input[Index];
-    if (Character == Seperator) {
-      Output.push_back(Input.substr(Start, Index - Start));
-      Start = Index + 1;
+    const auto Next = Input.find(Separator, Index);
+    if (Next != std::string::npos) {
+      Output.push_back(Input.substr(Index, Next - Index));
+      Index = Next + 1;
+    } else {
+      break;
     }
-    Index++;
   }
-  if (Start < Index) {
-    Output.push_back(Input.substr(Start, Index - Start));
+  if (Index < Size) {
+    Output.push_back(Input.substr(Index, Size - Index));
   }
   return Output;
 }
 
 static std::string join(const std::vector<std::string> Lines,
-                        const std::string &Seperator) {
+                        const std::string &Separator) {
   if (Lines.size() == 0) {
     return "";
   }
@@ -89,7 +89,7 @@ static std::string join(const std::vector<std::string> Lines,
   const int Count = Lines.size();
   for (int i = 0; i < Count - 1; i++) {
     OutputStream << Lines[i];
-    OutputStream << Seperator;
+    OutputStream << Separator;
   }
   OutputStream << Lines.back();
   return OutputStream.str();
@@ -111,13 +111,9 @@ static std::string trim(const std::string &Input) {
   return Input.substr(Index, End + 1);
 }
 
-static std::string indent(const std::string Input, int Indentation) {
+static std::string indent(const std::string &Input, int Indentation) {
   std::vector<std::string> Output;
-  std::stringstream IndentStream;
-  for (int i = 0; i < Indentation; i++) {
-    IndentStream << " ";
-  }
-  const auto Indent = IndentStream.str();
+  const auto Indent = std::string(Indentation, ' ');
   const auto Lines = split(Input, '\n');
   for (const auto &Line : Lines) {
     Output.push_back((trim(Line).size() > 0) ? (Indent + Line) : "");
@@ -146,6 +142,26 @@ static std::string dedent(const std::string &Input, int Indentation) {
   return OutputStream.str();
 }
 
+/*
+Determines the number of pattern elements that form the suffix of a code
+element. The suffix of a code element extends up to the next code element, an
+unbalanced right Delimiter, or the end of the pattern. Example:
+
+Pattern:
+  if (${a} == ${b}) ${body}
+
+${a}:
+  Suffix: [Spacing, '=', '=', Spacing]
+  SuffixLength: 4
+
+${b}:
+  Suffix: [')']
+  SuffixLength: 1
+
+${body}:
+  Suffix: []
+  SuffixLength: 0
+*/
 static void adjustSuffixLengths(MatchPattern &Pattern) {
   int SuffixTerminator = Pattern.size() - 1;
   for (int i = Pattern.size() - 1; i >= 0; i--) {
@@ -160,7 +176,7 @@ static void adjustSuffixLengths(MatchPattern &Pattern) {
 
     if (std::holds_alternative<LiteralElement>(Element)) {
       auto &Literal = std::get<LiteralElement>(Element);
-      if (isRightDelimeter(Literal.Value)) {
+      if (isRightDelimiter(Literal.Value)) {
         SuffixTerminator = i;
       }
       continue;
@@ -195,18 +211,13 @@ static MatchPattern parseMatchPattern(std::string Pattern) {
     if (Index < (Size - 1) && Character == '$' && Pattern[Index + 1] == '{') {
       Index += 2;
 
-      std::stringstream NameStream;
-      while (Index < Size && Pattern[Index] != '}') {
-        NameStream << Pattern[Index];
-        Index++;
-      }
-
-      if (Index == Size) {
+      const auto RightCurly = Pattern.find('}', Index);
+      if (RightCurly == std::string::npos) {
         throw std::runtime_error("Invalid match pattern expression");
       }
-      Index++;
+      std::string Name = Pattern.substr(Index, RightCurly - Index);
+      Index = RightCurly + 1;
 
-      std::string Name = NameStream.str();
       Result.push_back(CodeElement{Name});
       continue;
     }
@@ -227,12 +238,12 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
 static int parseCodeElement(const MatchPattern &Suffix,
                             const std::string &Input, const int Start);
 
-static int parseBlock(char LeftDelimeter, char RightDelimeter,
+static int parseBlock(char LeftDelimiter, char RightDelimiter,
                       const std::string &Input, const int Start) {
   const int Size = Input.size();
   int Index = Start;
 
-  if (Index >= Size || Input[Index] != LeftDelimeter) {
+  if (Index >= Size || Input[Index] != LeftDelimiter) {
     return -1;
   }
   Index++;
@@ -242,7 +253,7 @@ static int parseBlock(char LeftDelimeter, char RightDelimeter,
     return -1;
   }
 
-  if (Index >= Size || Input[Index] != RightDelimeter) {
+  if (Index >= Size || Input[Index] != RightDelimiter) {
     return -1;
   }
   Index++;
@@ -262,7 +273,7 @@ static int parseCodeElement(const MatchPattern &Suffix,
         return Index;
       }
 
-      if (isRightDelimeter(Character) || Index == Size - 1) {
+      if (isRightDelimiter(Character) || Index == Size - 1) {
         return -1;
       }
     }
@@ -282,9 +293,15 @@ static int parseCodeElement(const MatchPattern &Suffix,
       continue;
     }
 
-    if (isRightDelimeter(Input[Index])) {
+    if (isRightDelimiter(Input[Index])) {
       break;
     }
+
+    /*
+    The following parsers skip character literals, string literals, and
+    comments. These tokens are skipped since they may contain unbalanced
+    delimiters.
+    */
 
     if (Character == '\'') {
       Index++;
@@ -295,6 +312,8 @@ static int parseCodeElement(const MatchPattern &Suffix,
       if (Index >= Size) {
         return -1;
       }
+      Index++;
+      continue;
     }
 
     if (Character == '"') {
@@ -308,7 +327,6 @@ static int parseCodeElement(const MatchPattern &Suffix,
       }
       Index++;
       continue;
-      ;
     }
 
     if (Character == '/' && Index < (Size - 1) && Input[Index + 1] == '/') {
@@ -400,7 +418,7 @@ static std::optional<MatchResult> findMatch(const MatchPattern &Pattern,
       continue;
     }
 
-    PatternIndex++;
+    throw std::runtime_error("Internal error: invalid pattern element");
   }
 
   Result.Start = Start;
@@ -412,6 +430,7 @@ static void instantiateTemplate(
     const std::string &Template,
     const std::unordered_map<std::string, std::string> &Bindings,
     const int Indentation, std::ostream &OutputStream) {
+  const auto LeadingSpace = std::string(Indentation, ' ');
   const int Size = Template.size();
   int Index = 0;
 
@@ -431,23 +450,19 @@ static void instantiateTemplate(
       const int BindingStart = Index;
       Index += 2;
 
-      std::stringstream NameStream;
-      while (Index < Size && Template[Index] != '}') {
-        NameStream << Template[Index];
-        Index++;
-      }
-
-      if (Index == Size) {
+      const auto RightCurly = Template.find('}', Index);
+      if (RightCurly == std::string::npos) {
         throw std::runtime_error("Invalid rewrite pattern expression");
       }
-      Index++;
+      std::string Name = Template.substr(Index, RightCurly - Index);
+      Index = RightCurly + 1;
 
-      std::string Name = NameStream.str();
-      if (Bindings.count(Name) > 0) {
+      const auto &BindingIterator = Bindings.find(Name);
+      if (BindingIterator != Bindings.end()) {
         const int BindingIndentation =
             detectIndentation(Template, BindingStart) + Indentation;
         const std::string Contents =
-            indent(Bindings.at(Name), BindingIndentation);
+            indent(BindingIterator->second, BindingIndentation);
         OutputStream << Contents;
       }
       continue;
@@ -455,8 +470,7 @@ static void instantiateTemplate(
 
     OutputStream << Character;
     if (Character == '\n') {
-      for (int i = 0; i < Indentation; i++)
-        OutputStream << " ";
+      OutputStream << LeadingSpace;
     }
 
     Index++;
@@ -475,8 +489,9 @@ std::string applyRule(const Rule &Rule, const std::string &Input) {
     if (Result.has_value()) {
       auto &Match = Result.value();
       for (const auto &[Name, Value] : Match.Bindings) {
-        if (Rule.Subrules.count(Name)) {
-          Match.Bindings[Name] = applyRule(Rule.Subrules.at(Name), Value);
+        const auto &SubruleIterator = Rule.Subrules.find(Name);
+        if (SubruleIterator != Rule.Subrules.end()) {
+          Match.Bindings[Name] = applyRule(SubruleIterator->second, Value);
         }
       }
 

@@ -24,8 +24,9 @@ struct llvm::yaml::CustomMappingTraits<std::map<std::string, pattern::Rule>> {
   }
 
   static void output(IO &IO, std::map<std::string, pattern::Rule> &V) {
-    for (auto &P : V)
+    for (auto &P : V) {
       IO.mapRequired(P.first.c_str(), P.second);
+    }
   }
 };
 
