@@ -2320,7 +2320,7 @@ void engine_ext::get_rnn_configuration(
   if (!desc.is_zero()) {
     auto dims = desc.get_dims();
     auto strides = desc.get_strides();
-    if (strides[0] > strides[1]) {
+    if (strides[0] >= strides[1]) {
       *tag = ::dnnl::memory::format_tag::tnc;
       *seq_length = dims[0];
       *batch_size = dims[1];
