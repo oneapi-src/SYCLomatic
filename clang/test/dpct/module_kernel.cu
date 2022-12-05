@@ -1,4 +1,3 @@
-// UNSUPPORTED: -windows-
 // RUN: dpct --format-range=none -out-root %T/module_kernel %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only -ptx
 // RUN: FileCheck %s --match-full-lines --input-file %T/module_kernel/module_kernel.dp.cpp
 
@@ -48,12 +47,9 @@ __global__ void foo(float* k, float* y){
     int a = threadIdx.x;
 }
 
-//CHECK: void foo2(float* k, float* y, sycl::nd_item<3> item_ct1, uint8_t *dpct_local,
-//CHECK-NEXT:     unsigned int *const_data, sycl::int2 x=sycl::int2(1, 2)){
-//CHECK-NEXT: auto s = (int *)dpct_local;
-//CHECK-NEXT: unsigned int cd = const_data[2];
-//CHECK-NEXT: int a = item_ct1.get_local_id(2);
-//CHECK-NEXT: }
+// CHECK: extern "C" void foo2(float* k, float* y, sycl::nd_item<3> item_ct1, sycl::int2 x=sycl::int2(1, 2)) {
+// CHECK-NEXT: (void)item_ct1.get_local_id(2);
+// CHECK-NEXT: }
 
 // CHECK:      extern "C" {
 // CHECK-NEXT:   DPCT_EXPORT void foo2_wrapper(sycl::queue &queue, const sycl::nd_range<3> &nr, unsigned int localMemSize, void **kernelParams, void **extra) {
@@ -61,23 +57,14 @@ __global__ void foo(float* k, float* y){
 // CHECK-NEXT:     auto& k = selector.get<0>();
 // CHECK-NEXT:     auto& y = selector.get<1>();
 // CHECK-NEXT:     auto& x = selector.get<2>();
-// CHECK-NEXT:     queue.submit(
-// CHECK-NEXT:       [&](sycl::handler &cgh) {
-// CHECK-NEXT:         const_data.init(queue);
-// CHECK:              auto const_data_ptr_ct1 = const_data.get_ptr();
-// CHECK:              sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(localMemSize), cgh);
-// CHECK:              cgh.parallel_for(
+// CHECK-NEXT:     queue.parallel_for(
 // CHECK-NEXT:           nr,
 // CHECK-NEXT:           [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:             foo2(k, y, item_ct1, dpct_local_acc_ct1.get_pointer(), const_data_ptr_ct1, x);
+// CHECK-NEXT:             foo2(k, y, item_ct1, x);
 // CHECK-NEXT:           });
-// CHECK-NEXT:       });
-// CHECK-NEXT:   }
 // CHECK-NEXT: }
-__global__ void foo2(float* k, float* y, int2 x=make_int2(1, 2)){
-    extern __shared__ int s[];
-    unsigned int cd = const_data[2];
-    int a = threadIdx.x;
+extern "C" __global__ void foo2(float* k, float* y, int2 x=make_int2(1, 2)) {
+  (void)threadIdx.x;
 }
 
 
