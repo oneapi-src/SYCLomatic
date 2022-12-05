@@ -155,17 +155,13 @@ private:
 };
 
 #ifdef SYCLomatic_CUSTOMIZATION
-// FullCompilationDatabase adds the SourcePaths into JSONCompilations
-// if the source not in JSON. And Compability tool follows the compilation
-// database normal process to do migration.
-class FullCompilationDatabase : public CompilationDatabase {
+// ExpandedCompilationDatabase returns the fixed compilation commands if
+// migration candidate is not in the json compilation database.
+class ExpandedCompilationDatabase : public CompilationDatabase {
 public:
-  FullCompilationDatabase(
-      std::unique_ptr<CompilationDatabase> Compilations,
-      std::vector<std::string> &SourcePaths)
-      : JSONCompilations(std::move(Compilations)) {
-        mergeAllCompileCommands(SourcePaths);
-      }
+  ExpandedCompilationDatabase(
+      std::unique_ptr<CompilationDatabase> Compilations)
+      : JSONCompilations(std::move(Compilations)) {}
 
   std::vector<CompileCommand>
   getCompileCommands(StringRef FilePath) const override;
@@ -175,12 +171,10 @@ public:
   std::vector<CompileCommand> getAllCompileCommands() const override;
 
 private:
-  void mergeAllCompileCommands(std::vector<std::string> &SourcePaths);
-  std::vector<CompileCommand> CompilationDB;
-  std::unique_ptr<CompilationDatabase> FixedCompilations;
-  std::vector<std::string> Files;
+  std::unique_ptr<CompilationDatabase> FixedCompilations =
+        std::make_unique<FixedCompilationDatabase>(".",
+           std::vector<std::string>());
   std::unique_ptr<CompilationDatabase> JSONCompilations;
-  std::vector<std::string> SourcePaths;
 };
 #endif
 

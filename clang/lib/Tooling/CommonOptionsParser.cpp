@@ -109,12 +109,12 @@ std::vector<CompileCommand> ArgumentsAdjustingCompilations::adjustCommands(
 
 #ifdef SYCLomatic_CUSTOMIZATION
 std::vector<CompileCommand>
-FullCompilationDatabase::getAllCompileCommands() const {
-  return CompilationDB;
+ExpandedCompilationDatabase::getAllCompileCommands() const {
+  return JSONCompilations->getAllCompileCommands();
 }
 
 std::vector<CompileCommand>
-FullCompilationDatabase::getCompileCommands(StringRef FilePath) const {
+ExpandedCompilationDatabase::getCompileCommands(StringRef FilePath) const {
   std::vector<CompileCommand> Command =
       JSONCompilations->getCompileCommands(FilePath);
   if (!Command.empty())
@@ -126,25 +126,9 @@ FullCompilationDatabase::getCompileCommands(StringRef FilePath) const {
   return FixedCompilations->getCompileCommands(FilePath);
 }
 
-void FullCompilationDatabase::mergeAllCompileCommands(
-      std::vector<std::string> &SourcePaths) {
-  FixedCompilations = std::make_unique<FixedCompilationDatabase>(
-      ".", std::vector<std::string>());
-  CompilationDB = JSONCompilations->getAllCompileCommands();
-  Files = JSONCompilations->getAllFiles();
-  for (auto &SourcePath : SourcePaths) {
-    StringRef StrRef(SourcePath);
-    if (JSONCompilations->getCompileCommands(StrRef).empty()) {
-      std::vector<CompileCommand> DB;
-      DB = FixedCompilations->getCompileCommands(StrRef);
-      CompilationDB.insert(CompilationDB.end(), DB.begin(), DB.end());
-      Files.push_back(SourcePath);
-    }
-  }
-}
 
-std::vector<std::string> FullCompilationDatabase::getAllFiles() const {
-  return Files;
+std::vector<std::string> ExpandedCompilationDatabase::getAllFiles() const {
+  return JSONCompilations->getAllFiles();
 }
 #endif
 
@@ -385,8 +369,8 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
       }
     }
     if (IsCudaFile) {
-      Compilations = std::make_unique<FullCompilationDatabase>(
-        std::move(Compilations), SourcePathList);
+      Compilations = std::make_unique<ExpandedCompilationDatabase>(
+                                                      std::move(Compilations));
     }
   }
 #endif
