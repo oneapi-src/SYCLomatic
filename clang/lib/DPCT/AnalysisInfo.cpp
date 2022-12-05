@@ -558,13 +558,13 @@ void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
 }
 
 static constexpr StringRef HeaderSpellings[] = {
-#define HEADER(X, Y) Y,
+#define HEADER(Name, Spelling) Spelling,
 #include "HeaderTypes.inc"
 };
 
-StringRef DpctFileInfo::getHeaderSpelling(HeaderType Type) {
-  if (Type < NUM_HEADERS)
-    return HeaderSpellings[Type];
+StringRef DpctFileInfo::getHeaderSpelling(HeaderType Value) {
+  if (Value < NUM_HEADERS)
+    return HeaderSpellings[Value];
   llvm_unreachable("unknown HeaderType");
 }
 
@@ -595,7 +595,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
   case HT_DPL_Execution:
   case HT_DPCT_DNNL_Utils:
     if (this != DpctGlobalInfo::getInstance().getMainFile().get())
-      return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
+      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
           Type, FirstIncludeOffset);
     concatHeader(OS, getHeaderSpelling(Type));
     return insertHeader(OS.str(), FirstIncludeOffset,
@@ -655,9 +655,9 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
 
 void DpctFileInfo::insertHeader(HeaderType Type) {
   switch (Type) {
-#define HEADER(X, Y)                                                           \
-  case HT_##X:                                                                 \
-    return insertHeader(HT_##X, LastIncludeOffset);
+#define HEADER(Name, Spelling)                                                           \
+  case HT_##Name:                                                                 \
+    return insertHeader(HT_##Name, LastIncludeOffset);
 #include "HeaderTypes.inc"
   default:
     return;

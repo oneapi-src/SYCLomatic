@@ -11,7 +11,5 @@
 
 // CHECK: #include <oneapi/dpl/execution>
 // CHECK: #include <oneapi/dpl/algorithm>
-// CHECK: #include <sycl/sycl.hpp>
-#include <cub/cub.cuh>
 #include <stddef.h>
 #include "user_define_rule_header_order1.h"

@@ -622,7 +622,7 @@ CONDITIONAL_FACTORY_ENTRY(
     REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
         HEADER_INSERT_FACTORY(
-            HeaderType::HT_DPL_Utils,
+            HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                 makeCheckAnd(CheckArgCount(8, std::greater_equal<>(),
                                            /* IncludeDefaultArg */ false),
@@ -668,7 +668,7 @@ CONDITIONAL_FACTORY_ENTRY(
     REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
         HEADER_INSERT_FACTORY(
-            HeaderType::HT_DPL_Utils,
+            HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                 makeCheckAnd(CheckArgCount(8, std::greater_equal<>(),
                                            /* IncludeDefaultArg */ false),
@@ -714,7 +714,7 @@ CONDITIONAL_FACTORY_ENTRY(
     REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::DplExtrasAlgorithm_sort_pairs,
         HEADER_INSERT_FACTORY(
-            HeaderType::HT_DPL_Utils,
+            HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                 makeCheckAnd(CheckArgCount(10, std::greater_equal<>(),
                                            /* IncludeDefaultArg */ false),
@@ -760,7 +760,7 @@ CONDITIONAL_FACTORY_ENTRY(
     REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::DplExtrasAlgorithm_sort_pairs,
         HEADER_INSERT_FACTORY(
-            HeaderType::HT_DPL_Utils,
+            HeaderType::HT_DPCT_DPL_Utils,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
                 makeCheckAnd(CheckArgCount(10, std::greater_equal<>(),
                                            /* IncludeDefaultArg */ false),

@@ -266,7 +266,7 @@ ExtReplacements::mergeReplsAtSameOffset() {
       Insert = mergeAtSameOffset(Insert, Repl);
     }
   }
-  if (Insert || Replace) {
+  if (Insert || Replace || InsertLeft || InsertRight) {
     ReplsList.emplace_back(mergeAtSameOffset(
         mergeAtSameOffset(InsertLeft, mergeAtSameOffset(Insert, InsertRight)),
         Replace));

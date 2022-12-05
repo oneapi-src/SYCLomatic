@@ -332,7 +332,7 @@ insertObject(MapType &Map, const typename MapType::key_type &Key,
 }
 
 enum HeaderType {
-#define HEADER(X,Y) HT_ ## X,
+#define HEADER(Name, Spelling) HT_ ## Name,
 #include "HeaderTypes.inc"
   NUM_HEADERS
 };

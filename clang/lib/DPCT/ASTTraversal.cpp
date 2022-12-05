@@ -1075,7 +1075,7 @@ void IncludesCallbacks::InclusionDirective(
     } else {
       if(FileName.compare(StringRef("thrust/functional.h")) == 0)
         DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Functional);
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Utils);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_DPL_Utils);
       requestFeature(HelperFeatureEnum::DplUtils_non_local_include_dependency,
                      HashLoc);
       TransformSet.emplace_back(new ReplaceInclude(

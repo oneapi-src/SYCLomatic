@@ -7,23 +7,23 @@
 //===----------------------------------------------------------------------===//
 
 #ifndef HEADER
-#define HEADER(X, Y)
+#define HEADER(Name, Spelling)
 #endif
 
 #ifndef STD_HEADER
-#define STD_HEADER(X, Y) HEADER(X, Y)
+#define STD_HEADER(Name, Spelling) HEADER(Name, Spelling)
 #endif
 
 #ifndef ONEDPL_HEADER
-#define ONEDPL_HEADER(X, Y) HEADER(DPL_ ## X, Y)
+#define ONEDPL_HEADER(Name, Spelling) HEADER(DPL_ ## Name, Spelling)
 #endif
 
 #ifndef MKL_HEADER
-#define MKL_HEADER(X, Y) HEADER(MKL_ ## X, Y)
+#define MKL_HEADER(Name, Spelling) HEADER(MKL_ ## Name, Spelling)
 #endif
 
 #ifndef DPCT_HEADER
-#define DPCT_HEADER(X, Y) HEADER(DPCT_ ## X, Y)
+#define DPCT_HEADER(Name, Spelling) HEADER(DPCT_ ## Name, Spelling)
 #endif
 
 STD_HEADER(SYCL, "<sycl/sycl.hpp>")
@@ -37,6 +37,7 @@ STD_HEADER(Stdlib, "<cstdlib>")
 STD_HEADER(Chrono, "<chrono>")
 STD_HEADER(Limits, "<limits>")
 STD_HEADER(Numeric, "<numeric>")
+STD_HEADER(Functional, "<functional>")
 #ifdef _WIN32
 STD_HEADER(DL, "<libloaderapi.h>")
 #else
