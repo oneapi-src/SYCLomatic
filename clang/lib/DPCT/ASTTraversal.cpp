@@ -6880,6 +6880,7 @@ REGISTER_RULE(SOLVEREnumsRule, PassKind::PK_Migration)
 void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName(
+        "cusolverDnGetStream", "cusolverDnSetStream",
         "cusolverDnCreate", "cusolverDnDestroy", "cusolverDnSpotrf_bufferSize",
         "cusolverDnDpotrf_bufferSize", "cusolverDnCpotrf_bufferSize",
         "cusolverDnZpotrf_bufferSize", "cusolverDnSpotri_bufferSize",
@@ -6928,7 +6929,14 @@ void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusolverDnCheevd_bufferSize", "cusolverDnZheevd_bufferSize",
         "cusolverDnDsyevd", "cusolverDnSsyevd", "cusolverDnCheevd",
         "cusolverDnZheevd",
-        "cusolverDnSsygvd", "cusolverDnSsygvd_bufferSize");
+        "cusolverDnSpotrfBatched", "cusolverDnDpotrfBatched",
+        "cusolverDnCpotrfBatched", "cusolverDnZpotrfBatched",
+        "cusolverDnSpotrsBatched", "cusolverDnDpotrsBatched",
+        "cusolverDnCpotrsBatched", "cusolverDnZpotrsBatched",
+        "cusolverDnSsygvd", "cusolverDnDsygvd",
+        "cusolverDnSsygvd_bufferSize", "cusolverDnDsygvd_bufferSize",
+        "cusolverDnChegvd", "cusolverDnZhegvd",
+        "cusolverDnChegvd_bufferSize", "cusolverDnZhegvd_bufferSize");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
