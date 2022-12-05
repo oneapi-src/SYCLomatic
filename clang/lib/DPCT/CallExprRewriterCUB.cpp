@@ -30,27 +30,25 @@ std::function<bool(const CallExpr *)>
 checkArgCanMappingToSyclNativeBinaryOp(size_t ArgIdx) {
   return [=](const CallExpr *C) -> bool {
     const Expr *Arg = C->getArg(ArgIdx);
-    std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
-        Arg->getType().getCanonicalType());
+    std::string TypeName =
+    DpctGlobalInfo::getUnqualifiedTypeName(Arg->getType().getCanonicalType());
     return CubTypeRule::CanMappingToSyclNativeBinaryOp(TypeName);
   };
 }
 
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createRemoveCubTempStorageFactory(
-    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-        &&Input) {
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>> &&Input) {
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
-      std::move(Input.first),
-      std::make_shared<RemoveCubTempStorageFactory>(Input.second));
+  std::move(Input.first),
+  std::make_shared<RemoveCubTempStorageFactory>(Input.second));
 }
 
 template <class T>
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createRemoveCubTempStorageFactory(
-    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-        &&Input,
-    T) {
+std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>> &&Input,
+T) {
   return createRemoveCubTempStorageFactory(std::move(Input));
 }
 

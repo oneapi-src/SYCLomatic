@@ -26,7 +26,7 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
     PP.PrintCanonicalTypes = true;
     return QT.getUnqualifiedType().getAsString(PP);
   };
-  auto getMehtodName = [](const ValueDecl* VD) -> std::string {
+  auto getMehtodName = [](const ValueDecl *VD) -> std::string {
     if (!VD)
       return "";
     if (VD->getIdentifier()) {
@@ -50,11 +50,10 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
       }
     } else if (auto MTE = dyn_cast<MaterializeTemporaryExpr>(E)) {
       if (auto CMCE = dyn_cast_or_null<CXXMemberCallExpr>(
-              MTE->getSubExpr()->IgnoreImpCasts())) {
+          MTE->getSubExpr()->IgnoreImpCasts())) {
         auto BaseType = getBaseType(CMCE->getObjectType());
         auto MethodName = getMehtodName(CMCE->getMethodDecl());
-        if (BaseType == "thrust::cuda_cub::par_t" &&
-            MethodName == "on") {
+        if (BaseType == "thrust::cuda_cub::par_t" && MethodName == "on") {
           return "oneapi::dpl::execution::make_device_policy(" +
                  getDrefName(CMCE->getArg(0)) + ")";
         }
@@ -63,8 +62,7 @@ makeMappedThrustPolicyEnum(unsigned Idx) {
       if (auto ME = dyn_cast_or_null<MemberExpr>(CE->getCallee())) {
         auto BaseType = getBaseType(ME->getBase()->getType());
         auto MethodName = getMehtodName(ME->getMemberDecl());
-        if (BaseType == "thrust::cuda_cub::par_t" &&
-            MethodName == "on") {
+        if (BaseType == "thrust::cuda_cub::par_t" && MethodName == "on") {
           return "oneapi::dpl::execution::make_device_policy(" +
                  getDrefName(CE->getArg(0)) + ")";
         }

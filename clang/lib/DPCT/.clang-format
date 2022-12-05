@@ -1,0 +1,5 @@
+BasedOnStyle: LLVM
+ContinuationIndentWidth: 0
+# BreakBeforeBraces: Allman
+BreakConstructorInitializersBeforeComma: true
+AllowShortBlocksOnASingleLine: false
