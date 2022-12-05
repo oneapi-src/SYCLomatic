@@ -211,13 +211,26 @@ inline int potrf_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
         queue, &(matrix_info->uplo_info), &(matrix_info->n_info), (Ty **)a,
         &(matrix_info->lda_info), 1, &(matrix_info->group_size_info),
         scratchpad, scratchpad_size);
-  } catch (oneapi::mkl::lapack::exception const &e) {
+  } catch (oneapi::mkl::lapack::batch_error const &be) {
     std::cerr << "Unexpected exception caught during call to LAPACK API: "
                  "potrf_batch_scratchpad_size/potrf_batch"
               << std::endl
-              << "reason: " << e.what() << std::endl
-              << "info: " << e.info() << std::endl;
-    std::vector<int> info_vec(group_size, static_cast<int>(e.info()));
+              << "reason: " << be.what() << std::endl
+              << "number: " << be.info() << std::endl;
+    int i = 0;
+    auto &ids = be.ids();
+    std::vector<int> info_vec(group_size);
+    for (auto const &e : be.exceptions()) {
+      try {
+        std::rethrow_exception(e);
+      } catch (oneapi::mkl::lapack::exception &e) {
+        std::cerr << "Exception " << ids[i] << std::endl
+                  << "reason: " << e.what() << std::endl
+                  << "info: " << e.info() << std::endl;
+        info_vec[i] = e.info();
+        i++;
+      }
+    }
     queue.memcpy(info, info_vec.data(), group_size * sizeof(int)).wait();
     std::free(matrix_info);
     if (scratchpad)
@@ -295,13 +308,26 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
         &(matrix_info->nrhs_info), (Ty **)a, &(matrix_info->lda_info), (Ty **)b,
         &(matrix_info->ldb_info), 1, &(matrix_info->group_size_info),
         scratchpad, scratchpad_size);
-  } catch (oneapi::mkl::lapack::exception const &e) {
+  } catch (oneapi::mkl::lapack::batch_error const &be) {
     std::cerr << "Unexpected exception caught during call to LAPACK API: "
                  "potrs_batch_scratchpad_size/potrs_batch"
               << std::endl
-              << "reason: " << e.what() << std::endl
-              << "info: " << e.info() << std::endl;
-    std::vector<int> info_vec(group_size, static_cast<int>(e.info()));
+              << "reason: " << be.what() << std::endl
+              << "number: " << be.info() << std::endl;
+    int i = 0;
+    auto &ids = be.ids();
+    std::vector<int> info_vec(group_size);
+    for (auto const &e : be.exceptions()) {
+      try {
+        std::rethrow_exception(e);
+      } catch (oneapi::mkl::lapack::exception &e) {
+        std::cerr << "Exception " << ids[i] << std::endl
+                  << "reason: " << e.what() << std::endl
+                  << "info: " << e.info() << std::endl;
+        info_vec[i] = e.info();
+        i++;
+      }
+    }
     queue.memcpy(info, info_vec.data(), group_size * sizeof(int)).wait();
     std::free(matrix_info);
     if (scratchpad)
