@@ -260,32 +260,35 @@ namespace detail {
 static std::string mkfilename()
 {
   time_t rawtime;
-  char buffer[80];
-
   time (&rawtime);
-  sprintf(buffer,"%lld\n",(unsigned long long) rawtime);
 
-  std::string str(buffer);
+  std::stringstream buffer;
+  buffer << static_cast<unsigned long long>(rawtime);
+
   std::hash<std::string> hasher;
+  int i = hasher(buffer.str());
+  static int cnt;
 
-  int i = hasher(str);
+  std::stringstream filename;
 
-  sprintf(buffer,"%08X",i);
-
-  return std::filesystem::temp_directory_path().string()
+  filename << std::filesystem::temp_directory_path().string();
 #ifndef _WIN32
-         + "/"
+  filename << "/dpct";
+#else
+  filename <<  "dpct";
 #endif
-         + "dpct"
-         + buffer
+  filename << std::setfill('0') << std::setw(2) << std::right << std::hex << ++cnt;
+  filename << std::setfill('0') << std::setw(8) << std::right << std::hex << i;
 #ifdef _WIN32
-         + ".dll"
+  filename << ".dll";
 #endif
-         ;
+
+  return(filename.str());
 }
 
 static module load_dl_from_vector(const std::vector<char> &blob) {
   const std::string name = mkfilename();
+
   write_vector_to_file(name, blob);
 #ifdef _WIN32
   void *so = LoadLibraryA(name.c_str());
