@@ -952,6 +952,8 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
                      OptimizeMigration.getValue(),
                      OptimizeMigration.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_EnablepProfiling,
+                     EnablepProfilingFlag, EnablepProfilingFlag);
     setValueToOptMap(clang::dpct::OPTION_RuleFile, MetaRuleObject::RuleFiles,
                      RuleFile.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
