@@ -14866,11 +14866,8 @@ REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration)
 
 void DriverModuleAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DriverModuleAPI = [&]() {
-    return hasAnyName("cuModuleLoad",
-                      "cuModuleLoadData",
-                      "cuModuleLoadDataEx",
-                      "cuModuleUnload",
-                      "cuModuleGetFunction", "cuLaunchKernel",
+    return hasAnyName("cuModuleLoad", "cuModuleLoadData", "cuModuleLoadDataEx",
+                      "cuModuleUnload", "cuModuleGetFunction", "cuLaunchKernel",
                       "cuModuleGetTexRef");
   };
 
@@ -14903,18 +14900,19 @@ void DriverModuleAPIRule::runRule(
   }
 
   if (APIName == "cuModuleLoad") {
-    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD,         false, getStmtSpelling(CE->getArg(1)));
-  }  else if (APIName == "cuModuleLoadData") {
-    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA,    false, getStmtSpelling(CE->getArg(1)));
-  }  else if (APIName == "cuModuleLoadDataEx") {
-    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA_EX, false, getStmtSpelling(CE->getArg(1)));
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD, false,
+           getStmtSpelling(CE->getArg(1)));
+  } else if (APIName == "cuModuleLoadData") {
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA, false,
+           getStmtSpelling(CE->getArg(1)));
+  } else if (APIName == "cuModuleLoadDataEx") {
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA_EX, false,
+           getStmtSpelling(CE->getArg(1)));
   }
 
   if (isAssigned(CE) &&
-      (APIName == "cuModuleLoad"       ||
-       APIName == "cuModuleLoadData"   ||
-       APIName == "cuModuleLoadDataEx" ||
-       APIName == "cuModuleUnload"     ||
+      (APIName == "cuModuleLoad" || APIName == "cuModuleLoadData" ||
+       APIName == "cuModuleLoadDataEx" || APIName == "cuModuleUnload" ||
        APIName == "cuModuleGetFunction")) {
     report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
     insertAroundStmt(CE, "(", ", 0)");

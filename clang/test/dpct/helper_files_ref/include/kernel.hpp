@@ -16,8 +16,8 @@
 #include <dlfcn.h>
 #endif
 
-#include <filesystem>
 #include <cstdio>
+#include <filesystem>
 
 
 namespace dpct {
@@ -31,14 +31,14 @@ struct kernel_function_info {
 
 class kernel_function {
 public:
-  kernel_function()                         : ptr{nullptr} {}
-  kernel_function(dpct::kernel_functor ptr) : ptr{ptr}     {}
+  kernel_function() : ptr{nullptr} {}
+  kernel_function(dpct::kernel_functor ptr) : ptr{ptr} {}
 
   operator void *() const { return ((void *)ptr); }
 
   void operator()(sycl::queue &q, const sycl::nd_range<3> &range,
                   unsigned int a, void **args, void **extra) {
-    ptr(q,range,a,args,extra);
+    ptr(q, range, a, args, extra);
   }
 
 private:
@@ -63,39 +63,38 @@ static kernel_function_info get_kernel_function_info(const void *function) {
 
 namespace detail {
 
-static void write_data_to_file(const std::string &name,
-                               char const *const  data,
-                               size_t             size) {
+static void write_data_to_file(const std::string &name, char const *const data,
+                               size_t size) {
   auto file = std::fstream(name, std::ios::out | std::ios::binary);
-  file.write(data,size);
+  file.write(data, size);
   file.close();
 }
 
 static uint16_t extract16(unsigned char const *const ptr) {
   uint16_t ret = 0;
 
-  ret |= static_cast<uint16_t>(ptr[0]) <<  0;
-  ret |= static_cast<uint16_t>(ptr[1]) <<  8;
+  ret |= static_cast<uint16_t>(ptr[0]) << 0;
+  ret |= static_cast<uint16_t>(ptr[1]) << 8;
 
-  return(ret);
+  return (ret);
 }
 
 static uint32_t extract32(unsigned char const *const ptr) {
   uint32_t ret = 0;
 
-  ret |= static_cast<uint32_t>(ptr[0]) <<  0;
-  ret |= static_cast<uint32_t>(ptr[1]) <<  8;
+  ret |= static_cast<uint32_t>(ptr[0]) << 0;
+  ret |= static_cast<uint32_t>(ptr[1]) << 8;
   ret |= static_cast<uint32_t>(ptr[2]) << 16;
   ret |= static_cast<uint32_t>(ptr[3]) << 24;
 
-  return(ret);
+  return (ret);
 }
 
 static uint64_t extract64(unsigned char const *const ptr) {
   uint64_t ret = 0;
 
-  ret |= static_cast<uint64_t>(ptr[0]) <<  0;
-  ret |= static_cast<uint64_t>(ptr[1]) <<  8;
+  ret |= static_cast<uint64_t>(ptr[0]) << 0;
+  ret |= static_cast<uint64_t>(ptr[1]) << 8;
   ret |= static_cast<uint64_t>(ptr[2]) << 16;
   ret |= static_cast<uint64_t>(ptr[3]) << 24;
   ret |= static_cast<uint64_t>(ptr[4]) << 32;
@@ -103,46 +102,45 @@ static uint64_t extract64(unsigned char const *const ptr) {
   ret |= static_cast<uint64_t>(ptr[6]) << 48;
   ret |= static_cast<uint64_t>(ptr[7]) << 56;
 
-  return(ret);
+  return (ret);
 }
 
 static uint64_t get_lib_size(char const *const blob) {
 #ifdef _WIN32
   ///////////////////////////////////////////////////////////////////////
   // Analyze DOS stub
-  unsigned char const *const ublob = reinterpret_cast<unsigned char const *const>(blob);
-  if (ublob[0] != 0x4d ||
-      ublob[1] != 0x5a) {
+  unsigned char const *const ublob =
+      reinterpret_cast<unsigned char const *const>(blob);
+  if (ublob[0] != 0x4d || ublob[1] != 0x5a) {
     throw std::runtime_error("Blob is not a Windows DLL.");
   }
-  uint32_t pe_header_offset = extract32(ublob+0x3c);
+  uint32_t pe_header_offset = extract32(ublob + 0x3c);
 
   ///////////////////////////////////////////////////////////////////////
   // Ananlyze PE-header
   unsigned char const *const pe_header = ublob + pe_header_offset;
 
   // signature
-  uint32_t pe_signature = extract32(pe_header+0);
-  if (pe_signature!=0x00004550) {
+  uint32_t pe_signature = extract32(pe_header + 0);
+  if (pe_signature != 0x00004550) {
     throw std::runtime_error("PE-header signature is not 0x00004550");
   }
 
   // machine
-  uint16_t machine  = extract16(pe_header+4);
-  if (machine!=0x8664) {
+  uint16_t machine = extract16(pe_header + 4);
+  if (machine != 0x8664) {
     throw std::runtime_error("Only DLLs for x64 supported");
   }
 
   // number of sections
-  uint16_t number_of_sections  = extract16(pe_header+6);
+  uint16_t number_of_sections = extract16(pe_header + 6);
 
   // sizeof optional header
-  uint16_t sizeof_optional_header = extract16(pe_header+20);
+  uint16_t sizeof_optional_header = extract16(pe_header + 20);
 
-  //magic
-  uint16_t magic = extract16(pe_header+24);
-  if (magic!=0x10b &&
-      magic!=0x20b) {
+  // magic
+  uint16_t magic = extract16(pe_header + 24);
+  if (magic != 0x10b && magic != 0x20b) {
     throw std::runtime_error("MAGIC is not 0x010b or 0x020b");
   }
 
@@ -150,18 +148,20 @@ static uint64_t get_lib_size(char const *const blob) {
   // Analyze tail of optional header
   constexpr int coff_header_size = 24;
 
-  unsigned char const *const tail_of_optional_header = pe_header + coff_header_size + sizeof_optional_header;
-  if (extract64(tail_of_optional_header-8)!=0) {
+  unsigned char const *const tail_of_optional_header =
+      pe_header + coff_header_size + sizeof_optional_header;
+  if (extract64(tail_of_optional_header - 8) != 0) {
     throw std::runtime_error("Optional header not zero-padded");
   }
 
   ///////////////////////////////////////////////////////////////////////
   // Analyze last section header
   constexpr int section_header_size = 40;
-  unsigned char const *const last_section_header = tail_of_optional_header + section_header_size*(number_of_sections-1);
+  unsigned char const *const last_section_header =
+      tail_of_optional_header + section_header_size * (number_of_sections - 1);
 
-  uint32_t sizeof_raw_data     = extract32(last_section_header+16);
-  uint32_t pointer_to_raw_data = extract32(last_section_header+20);
+  uint32_t sizeof_raw_data = extract32(last_section_header + 16);
+  uint32_t pointer_to_raw_data = extract32(last_section_header + 20);
 
   return sizeof_raw_data + pointer_to_raw_data;
 #else
@@ -174,10 +174,11 @@ static uint64_t get_lib_size(char const *const blob) {
   if (blob[5] != 0x01)
     throw std::runtime_error("Only little-endian headers are supported");
 
-  unsigned char const *const ublob = reinterpret_cast<unsigned char const *const>(blob);
-  uint64_t e_shoff     = extract64(ublob+0x28);
-  uint16_t e_shentsize = extract16(ublob+0x3A);
-  uint16_t e_shnum     = extract16(ublob+0x3C);
+  unsigned char const *const ublob =
+      reinterpret_cast<unsigned char const *const>(blob);
+  uint64_t e_shoff = extract64(ublob + 0x28);
+  uint16_t e_shentsize = extract16(ublob + 0x3A);
+  uint16_t e_shnum = extract16(ublob + 0x3C);
 
   return e_shoff + (e_shentsize * e_shnum);
 #endif
@@ -187,24 +188,22 @@ static uint64_t get_lib_size(char const *const blob) {
 
 class module {
 public:
-  module()          : ptr{nullptr} {}
-  module(void *ptr) : ptr{ptr}     {}
+  module() : ptr{nullptr} {}
+  module(void *ptr) : ptr{ptr} {}
 
   operator void *() const { return ptr; }
 
-void *get_ptr() {
-  return(ptr);
-}
+  void *get_ptr() { return (ptr); }
+
 private:
-void *ptr;
+  void *ptr;
 };
 
 namespace detail {
 
-static std::string mkfilename()
-{
+static std::string mkfilename() {
   time_t rawtime;
-  time (&rawtime);
+  time(&rawtime);
 
   std::stringstream buffer;
   buffer << static_cast<unsigned long long>(rawtime);
@@ -219,19 +218,19 @@ static std::string mkfilename()
 #ifndef _WIN32
   filename << "/dpct";
 #else
-  filename <<  "dpct";
+  filename << "dpct";
 #endif
-  filename << std::setfill('0') << std::setw(2) << std::right << std::hex << ++cnt;
+  filename << std::setfill('0') << std::setw(2) << std::right << std::hex
+           << ++cnt;
   filename << std::setfill('0') << std::setw(8) << std::right << std::hex << i;
 #ifdef _WIN32
   filename << ".dll";
 #endif
 
-  return(filename.str());
+  return (filename.str());
 }
 
-static module load_dl_from_data(char const *const data,
-                                size_t            size) {
+static module load_dl_from_data(char const *const data, size_t size) {
   const std::string name = mkfilename();
 
   write_data_to_file(name, data, size);
@@ -256,13 +255,13 @@ static module load_sycl_lib(const std::string &name) {
 
   std::stringstream buffer;
   buffer << ifs.rdbuf();
-  return detail::load_dl_from_data(buffer.str().c_str(),buffer.str().size());
+  return detail::load_dl_from_data(buffer.str().c_str(), buffer.str().size());
 };
 
 static module load_sycl_lib_mem(char const *const image) {
   const size_t size = detail::get_lib_size(image);
 
-  return detail::load_dl_from_data(image,size);
+  return detail::load_dl_from_data(image, size);
 };
 
 static void unload_sycl_lib(module &module) {
@@ -273,24 +272,27 @@ static void unload_sycl_lib(module &module) {
 #endif
 };
 
-static dpct::kernel_function get_kernel_function(module &module, const std::string &name) {
+static dpct::kernel_function get_kernel_function(module &module,
+                                                 const std::string &name) {
 #ifdef _WIN32
-  dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(GetProcAddress(static_cast<HMODULE>(module.get_ptr()), (name + std::string("_wrapper")).c_str()));
+  dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(
+      GetProcAddress(static_cast<HMODULE>(module.get_ptr()),
+                     (name + std::string("_wrapper")).c_str()));
 #else
-  dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(dlsym(module.get_ptr(), (name + std::string("_wrapper")).c_str()));
+  dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(
+      dlsym(module.get_ptr(), (name + std::string("_wrapper")).c_str()));
 #endif
   if (fn == nullptr)
     throw std::runtime_error("Failed to get function");
   return fn;
 }
 
-static void invoke_kernel_function(dpct::kernel_function &function, sycl::queue &queue,
-                                   sycl::range<3> a,
-                                   sycl::range<3> b,
-                                   unsigned int localMemSize, void **kernelParams, void **extra) {
-  function(queue,
-           sycl::nd_range<3>(a*b,b),
-           localMemSize,kernelParams,extra);
+static void invoke_kernel_function(dpct::kernel_function &function,
+                                   sycl::queue &queue, sycl::range<3> a,
+                                   sycl::range<3> b, unsigned int localMemSize,
+                                   void **kernelParams, void **extra) {
+  function(queue, sycl::nd_range<3>(a * b, b), localMemSize, kernelParams,
+           extra);
 }
 
 } // namespace dpct
