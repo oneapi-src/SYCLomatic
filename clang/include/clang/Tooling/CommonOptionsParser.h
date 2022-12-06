@@ -155,30 +155,6 @@ private:
 };
 
 #ifdef SYCLomatic_CUSTOMIZATION
-// ExpandedCompilationDatabase returns the fixed compilation commands if
-// migration candidate is not in the json compilation database.
-class ExpandedCompilationDatabase : public CompilationDatabase {
-public:
-  ExpandedCompilationDatabase(
-      std::unique_ptr<CompilationDatabase> Compilations)
-      : JSONCompilations(std::move(Compilations)) {}
-
-  std::vector<CompileCommand>
-  getCompileCommands(StringRef FilePath) const override;
-
-  std::vector<std::string> getAllFiles() const override;
-
-  std::vector<CompileCommand> getAllCompileCommands() const override;
-
-private:
-  std::unique_ptr<CompilationDatabase> FixedCompilations =
-        std::make_unique<FixedCompilationDatabase>(".",
-           std::vector<std::string>());
-  std::unique_ptr<CompilationDatabase> JSONCompilations;
-};
-#endif
-
-#ifdef SYCLomatic_CUSTOMIZATION
 #ifdef _WIN32
 using FunPtrParserType = void (*)(std::string &, std::string &);
 void SetParserHandle(FunPtrParserType FPParser);

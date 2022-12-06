@@ -107,31 +107,6 @@ std::vector<CompileCommand> ArgumentsAdjustingCompilations::adjustCommands(
   return Commands;
 }
 
-#ifdef SYCLomatic_CUSTOMIZATION
-std::vector<CompileCommand>
-ExpandedCompilationDatabase::getAllCompileCommands() const {
-  return JSONCompilations->getAllCompileCommands();
-}
-
-std::vector<CompileCommand>
-ExpandedCompilationDatabase::getCompileCommands(StringRef FilePath) const {
-  std::vector<CompileCommand> Command =
-      JSONCompilations->getCompileCommands(FilePath);
-  if (!Command.empty())
-    return Command;
-  DoPrintHandle("Warning: file " +  FilePath.str() +
-        " is not found in compile_commands.json."
-        " Migrate it directly.\n", false);
-
-  return FixedCompilations->getCompileCommands(FilePath);
-}
-
-
-std::vector<std::string> ExpandedCompilationDatabase::getAllFiles() const {
-  return JSONCompilations->getAllFiles();
-}
-#endif
-
 llvm::Error CommonOptionsParser::init(
     int &argc, const char **argv, cl::OptionCategory &Category,
     llvm::cl::NumOccurrencesFlag OccurrencesFlag, const char *Overview) {
