@@ -725,9 +725,13 @@ inline queue_ptr int_as_queue_ptr(uintptr_t x) {
 // DPCT_LABEL_BEGIN|args_selector|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-template <int n_nondefault_params, int n_default_params, typename T>
-struct args_selector;
 
+template <int n_nondefault_params, int n_default_params, typename T>
+class args_selector;
+
+/// args_selector is a helper class for extracting arguments from an
+/// array of pointers to arguments or buffer of arguments to pass to a
+/// kernel function.
 template <int n_nondefault_params, int n_default_params,
    typename R, typename... Ts>
 class args_selector<n_nondefault_params, n_default_params, R(Ts...)> {
@@ -746,6 +750,9 @@ private:
   }    
 
 public:
+  /// Get the type of the ith argument of R(Ts...)
+  /// \param [in] i Index of parameter to get
+  /// \returns Type of ith parameter
   template <int i>
   using arg_type = std::tuple_element_t<account_for_default_params<i>(),
 					  std::tuple<Ts...>>;
@@ -784,11 +791,21 @@ private:
   }
     
 public:
+  /// If kernel_params is nonnull, then args_selector will
+  /// extract arguments from kernel_params. Otherwise, it
+  /// will extract them from extra.
+  /// \param [in] kernel_params Array of pointers to arguments
+  /// a or null pointer.
+  /// \param [in] extra Array containing pointer to argument buffer.
   args_selector(void **kernel_params, void **extra)
     : kernel_params(kernel_params),
       args_buffer(get_args_buffer(extra))
   {}
-    
+
+  /// Get a reference to the ith argument extracted from kernel_params
+  /// or extra.
+  /// \param [in] i Index of argument to get
+  /// \returns Reference to the ith argument
   template <int i>    
   arg_type<i> &get() {
     if (kernel_params) {
