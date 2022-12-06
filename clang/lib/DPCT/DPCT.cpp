@@ -118,6 +118,7 @@ bool KeepOriginalCodeFlag = false;
 bool SuppressWarningsAllFlag = false;
 bool StopOnParseErr = false;
 bool CheckUnicodeSecurityFlag = false;
+bool EnablepProfilingFlag = false;
 bool SyclNamedLambdaFlag = false;
 bool ExplicitClNamespace = false;
 bool NoDRYPatternFlag = false;
@@ -828,6 +829,7 @@ int runDPCT(int argc, const char **argv) {
                           "may be removed in the future.\n");
   }
   DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
+  DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfilingFlag);
   DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
   if (CustomHelperFileName.getNumOccurrences()) {
     clang::dpct::PrintMsg("Note: Option --custom-helper-name is deprecated and "

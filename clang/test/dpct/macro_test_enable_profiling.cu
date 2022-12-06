@@ -1,13 +1,13 @@
 // UNSUPPORTED: cuda-8.0
 // UNSUPPORTED: v8.0
-// RUN: cat %s > %T/macro_test.cu
+// RUN: cat %s > %T/macro_test_enable_profiling.cu
 // RUN: cat %S/macro_test.h > %T/macro_test.h
 // RUN: cd %T
-// RUN: rm -rf %T/macro_test_output
-// RUN: mkdir %T/macro_test_output
-// RUN: dpct -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
-// RUN: FileCheck --input-file %T/macro_test_output/macro_test.dp.cpp --match-full-lines macro_test.cu
-// RUN: FileCheck --input-file %T/macro_test_output/macro_test.h --match-full-lines macro_test.h
+// RUN: rm -rf %T/macro_test_enable_profiling
+// RUN: mkdir %T/macro_test_enable_profiling
+// RUN: dpct --enable-profiling  -out-root %T/macro_test_enable_profiling macro_test_enable_profiling.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: FileCheck --input-file %T/macro_test_enable_profiling/macro_test_enable_profiling.dp.cpp --match-full-lines macro_test_enable_profiling.cu
+// RUN: FileCheck --input-file %T/macro_test_enable_profiling/macro_test.h --match-full-lines macro_test.h
 #include <math.h>
 #include <iostream>
 #include <cmath>
@@ -231,10 +231,9 @@ MACRO_KC
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
 //CHECK-NEXT:     auto c_ct0 = c;                                                            \
 //CHECK-NEXT:     auto d_ct1 = d;                                                            \
-//CHECK:     cgh.parallel_for(                                                          \
-//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, a) * sycl::range<3>(1, 1, b),   \
-//CHECK-NEXT:                           sycl::range<3>(1, 1, b)),                            \
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });               \
+//CHECK-NEXT:                                                                                \
+//CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(a * b, b),                              \
+//CHECK-NEXT:                      [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });  \
 //CHECK-NEXT:   });
 //CHECK-NEXT: /*
 //CHECK-NEXT: DPCT1038:{{[0-9]+}}: When the kernel function name is used as a macro argument, the
@@ -670,7 +669,7 @@ VECTOR_TYPE_DEF(int)
 //CHECK-NEXT: for all macro uses. Adjust the code.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define POW3(x, y) sycl::pow<double>(x, y)
-//CHECK: #define SQRT(x) sycl::sqrt(x)
+//CHECK-NEXT: #define SQRT(x) sycl::sqrt(x)
 //CHECK-NEXT: void foo12(){
 //CHECK-NEXT: real *vx;
 //CHECK-NEXT: real *vy;
@@ -902,14 +901,11 @@ void foo19(){
 
 //     CHECK:#define CMC_PROFILING_BEGIN()                                                  \
 //CHECK-NEXT:  dpct::event_ptr start;                                                         \
-//CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> start_ct1;                \
 //CHECK-NEXT:  dpct::event_ptr stop;                                                          \
-//CHECK-NEXT:  std::chrono::time_point<std::chrono::steady_clock> stop_ct1;                 \
 //CHECK-NEXT:  if (CMC_profile)                                                             \
 //CHECK-NEXT:  {                                                                            \
 //CHECK-NEXT:    start = new sycl::event();                                                 \
 //CHECK-NEXT:    stop = new sycl::event();                                                  \
-//CHECK-NEXT:    start_ct1 = std::chrono::steady_clock::now();                              \
 //CHECK-NEXT:    *start = q_ct1.ext_oneapi_submit_barrier();                                \
 //CHECK-NEXT:  }
 #define CMC_PROFILING_BEGIN()                                                                                      \
@@ -923,20 +919,22 @@ void foo19(){
     cudaEventRecord(start);                                                                                        \
   }
 
-
 //     CHECK:#define CMC_PROFILING_END(lineno)                                              \
 //CHECK-NEXT:  if (CMC_profile)                                                             \
 //CHECK-NEXT:  {                                                                            \
-//CHECK-NEXT:    stop_ct1 = std::chrono::steady_clock::now();                               \
 //CHECK-NEXT:    *stop = q_ct1.ext_oneapi_submit_barrier();                                 \
 //CHECK-NEXT:    stop->wait_and_throw();                                                    \
 //CHECK-NEXT:    float time = 0.0f;                                                         \
-//CHECK-NEXT:    time = std::chrono::duration<float, std::milli>(stop_ct1 - start_ct1)      \
-//CHECK-NEXT:               .count();                                                       \
+//CHECK-NEXT:    time = (stop->get_profiling_info<                                          \
+//CHECK-NEXT:                sycl::info::event_profiling::command_end>() -                  \
+//CHECK-NEXT:            start->get_profiling_info<                                         \
+//CHECK-NEXT:                sycl::info::event_profiling::command_start>()) /               \
+//CHECK-NEXT:           1000000.0f;                                                         \
 //CHECK-NEXT:    dpct::destroy_event(start);                                                \
 //CHECK-NEXT:    dpct::destroy_event(stop);                                                 \
 //CHECK-NEXT:  }                                                                            \
 //CHECK-NEXT:  int error = 0;
+
 #define CMC_PROFILING_END(lineno)                                                                          \
   if (CMC_profile)                                                                                         \
   {                                                                                                        \
@@ -1201,25 +1199,21 @@ int foo31(){
 
 class ArgClass{};
 
-
-#define SIZE 256
-//CHECK: #define VACALL4(...) __VA_ARGS__()
-//CHECK-NEXT: #define VACALL3(...) VACALL4(__VA_ARGS__)
-//CHECK-NEXT: #define VACALL2(...) VACALL3(__VA_ARGS__)
-//CHECK-NEXT: #define VACALL(x)                                                              \
-//CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
-//CHECK-NEXT:     auto i_ct0 = i;                                                            \
-//CHECK-NEXT:     auto ac_ct0 = ac;                                                          \
-//CHECK:     cgh.parallel_for(                                                          \
-//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2) *                            \
-//CHECK-NEXT:                               sycl::range<3>(1, 1, SIZE),                      \
-//CHECK-NEXT:                           sycl::range<3>(1, 1, SIZE)),                         \
-//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo32(i_ct0, ac_ct0); });             \
-//CHECK-NEXT:   });
+// CHECK: #define VACALL4(...) __VA_ARGS__()
+// CHECK-NEXT: #define VACALL3(...) VACALL4(__VA_ARGS__)
+// CHECK-NEXT: #define VACALL2(...) VACALL3(__VA_ARGS__)
+// CHECK-NEXT: #define VACALL(x)                                                              \
+// CHECK-NEXT:  dpct::get_default_queue().submit([&](sycl::handler &cgh) {                    \
+// CHECK-NEXT:   auto i_ct0 = i;                                                              \
+// CHECK-NEXT:   auto ac_ct0 = ac;                                                            \
+// CHECK:   cgh.parallel_for(                                                            \
+// CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 1)),     \
+// CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) { foo32(i_ct0, ac_ct0); });               \
+// CHECK-NEXT:  });
 #define VACALL4(...) __VA_ARGS__()
 #define VACALL3(...) VACALL4(__VA_ARGS__)
 #define VACALL2(...) VACALL3(__VA_ARGS__)
-#define VACALL(x) foo32<<<2,SIZE,0>>>(i, ac)
+#define VACALL(x) foo32<<<2,1,0>>>(i, ac)
 __global__ void foo32(int a, ArgClass ac){}
 
 // CHECK: int foo33(){

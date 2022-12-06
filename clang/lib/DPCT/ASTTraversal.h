@@ -1220,10 +1220,26 @@ public:
                          const ast_matchers::MatchFinder::MatchResult &Result,
                          bool IsAssigned);
   void handleEventElapsedTime(bool IsAssigned);
+  void handleTimeMeasurement();
+  void handleTargetCalls(const Stmt *Parent, const Stmt *Last = nullptr);
+  void handleKernelCalls(const Stmt *Parent, const CUDAKernelCallExpr *KCall);
+  void handleOrdinaryCalls(const CallExpr *Call);
+  bool IsEventArgArraySubscriptExpr(const Expr *E);
+  const Expr *findNextRecordedEvent(const Stmt *Parent, unsigned KCallLoc);
 
   static EventQueryTraversal getEventQueryTraversal();
 
 private:
+  void findEventAPI(const Stmt *Node, const CallExpr *&Call,
+                    const std::string EventAPIName);
+  void processAsyncJob(const Stmt *Node);
+  void updateAsyncRange(const Stmt *FuncBody, const std::string EventAPIName);
+  void updateAsyncRangRecursive(const Stmt *Node, const CallExpr *AsyncCE,
+                                const std::string EventAPIName);
+
+  void findThreadSyncLocation(const Stmt *Node);
+  const clang::Stmt *getRedundantParenExpr(const CallExpr *Call);
+  bool isEventElapsedTimeFollowed(const CallExpr *Expr);
   // Since the state of a rule is shared between multiple matches, it is
   // necessary to clear the previous migration status.
   // The call is supposed to be called whenever a migration on time measurement

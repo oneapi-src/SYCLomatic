@@ -196,6 +196,7 @@ public:
   }
   device_ext(const sycl::device &base)
       : sycl::device(base), _ctx(*this) {
+#ifdef DPCT_PROFILING_ENABLED
 #ifdef DPCT_USM_LEVEL_NONE
     auto property =
         sycl::property_list{sycl::property::queue::enable_profiling()};
@@ -206,6 +207,15 @@ public:
 #endif
     _queues.push_back(
         std::make_shared<sycl::queue>(_ctx, base, exception_handler, property));
+#else
+#ifdef DPCT_USM_LEVEL_NONE
+    _queues.push_back(
+        std::make_shared<sycl::queue>(_ctx, base, exception_handler));
+#else
+    _queues.push_back(std::make_shared<sycl::queue>(
+        _ctx, base, exception_handler, sycl::property::queue::in_order()));
+#endif
+#endif
     _saved_queue = _default_queue = _queues[0].get();
   }
 
@@ -320,6 +330,7 @@ public:
     // destroy a queue immediately. This is a synchronization point in SYCL.
     _queues.clear();
     // create new default queue.
+#ifdef DPCT_PROFILING_ENABLED
 #ifdef DPCT_USM_LEVEL_NONE
     auto property =
         sycl::property_list{sycl::property::queue::enable_profiling()};
@@ -330,6 +341,15 @@ public:
 #endif
     _queues.push_back(std::make_shared<sycl::queue>(
         _ctx, *this, exception_handler, property));
+#else
+#ifdef DPCT_USM_LEVEL_NONE
+    _queues.push_back(
+        std::make_shared<sycl::queue>(_ctx, *this, exception_handler));
+#else
+    _queues.push_back(std::make_shared<sycl::queue>(
+        _ctx, *this, exception_handler, sycl::property::queue::in_order()));
+#endif
+#endif
     _saved_queue = _default_queue = _queues.front().get();
   }
 
@@ -352,6 +372,7 @@ public:
     if (enable_exception_handler) {
       eh = exception_handler;
     }
+#ifdef DPCT_PROFILING_ENABLED
 #ifdef DPCT_USM_LEVEL_NONE
     auto property =
         sycl::property_list{sycl::property::queue::enable_profiling()};
@@ -362,7 +383,16 @@ public:
 #endif
     _queues.push_back(std::make_shared<sycl::queue>(
         _ctx, *this, eh, property));
-
+#else
+#ifdef DPCT_USM_LEVEL_NONE
+    _queues.push_back(std::make_shared<sycl::queue>(
+        _ctx, *this, eh));
+#else
+    _queues.push_back(std::make_shared<sycl::queue>(
+        _ctx, *this, eh,
+        sycl::property::queue::in_order()));
+#endif
+#endif
     return _queues.back().get();
   }
   void destroy_queue(sycl::queue *&queue) {

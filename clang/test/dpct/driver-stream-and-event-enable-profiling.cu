@@ -1,5 +1,5 @@
-// RUN: dpct -out-root %T/driver-stream-and-event %s --cuda-include-path="%cuda-path/include"
-// RUN: FileCheck --match-full-lines --input-file %T/driver-stream-and-event/driver-stream-and-event.dp.cpp %s
+// RUN: dpct --enable-profiling  -out-root %T/driver-stream-and-event-enable-profiling %s --cuda-include-path="%cuda-path/include"
+// RUN: FileCheck --match-full-lines --input-file %T/driver-stream-and-event-enable-profiling/driver-stream-and-event-enable-profiling.dp.cpp %s
 
 #include<vector>
 // CHECK: #include <future>
@@ -29,11 +29,7 @@ void foo(){
   cuEventCreate(&e, CU_EVENT_DEFAULT);
   cuStreamWaitEvent(s, e, 0);
 
-  //CHECK: /*
-  //CHECK-NEXT: DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: e_ct1 = std::chrono::steady_clock::now();
-  //CHECK-NEXT: *e = s->ext_oneapi_submit_barrier();
+  //CHECK: *e = s->ext_oneapi_submit_barrier();
   //CHECK-NEXT: e->wait_and_throw();
   cuEventRecord(e, s);
   cuEventSynchronize(e);
@@ -44,18 +40,12 @@ void foo(){
   r = cuEventQuery(e);
 
   //CHECK: dpct::event_ptr start, end;
-  //CHECK-NEXT: std::chrono::time_point<std::chrono::steady_clock> start_ct1;
-  //CHECK-NEXT: std::chrono::time_point<std::chrono::steady_clock> end_ct1;
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: start_ct1 = std::chrono::steady_clock::now();
-  //CHECK-NEXT: /*
-  //CHECK-NEXT: DPCT1012:{{[0-9]+}}: Detected kernel execution time measurement pattern and generated an initial code for time measurements in SYCL. You can change the way time is measured depending on your goals.
-  //CHECK-NEXT: */
-  //CHECK-NEXT: end_ct1 = std::chrono::steady_clock::now();
-  //CHECK-NEXT: float result_time;
-  //CHECK-NEXT: result_time = std::chrono::duration<float, std::milli>(end_ct1 - start_ct1).count();
+  //CHECK: *start = s->ext_oneapi_submit_barrier();
+  //CHECK: *end = s->ext_oneapi_submit_barrier();
+  //CHECK: start->wait_and_throw();
+  //CHECK: end->wait_and_throw();
+  //CHECK: float result_time;
+  //CHECK: result_time = (end->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
   CUevent start, end;
   cuEventRecord(start, s);
   cuEventRecord(end, s);
