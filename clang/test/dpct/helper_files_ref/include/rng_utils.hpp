@@ -18,17 +18,28 @@ namespace rng {
 namespace device {
 /// The random number generator on device.
 /// \tparam engine_t The device random number generator engine. It can only be
-/// oneapi::mkl::rng::device::mrg32k3a<1> or
-/// oneapi::mkl::rng::device::mcg59<1> or
-/// oneapi::mkl::rng::device::philox4x32x10<1>.
+/// oneapi::mkl::rng::device::mrg32k3a<1> or oneapi::mkl::rng::device::mrg32k3a<4> or
+/// oneapi::mkl::rng::device::mcg59<1> or oneapi::mkl::rng::device::mcg59<4> or
+/// oneapi::mkl::rng::device::philox4x32x10<1> or oneapi::mkl::rng::device::philox4x32x10<4>.
 template <typename engine_t> class rng_generator {
   static_assert(
       std::is_same_v<engine_t, oneapi::mkl::rng::device::mrg32k3a<1>> ||
+          std::is_same_v<engine_t, oneapi::mkl::rng::device::mrg32k3a<4>> ||
           std::is_same_v<engine_t, oneapi::mkl::rng::device::mcg59<1>> ||
-          std::is_same_v<engine_t, oneapi::mkl::rng::device::philox4x32x10<1>>,
+          std::is_same_v<engine_t, oneapi::mkl::rng::device::mcg59<4>> ||
+          std::is_same_v<engine_t,
+                         oneapi::mkl::rng::device::philox4x32x10<1>> ||
+          std::is_same_v<engine_t, oneapi::mkl::rng::device::philox4x32x10<4>>,
       "engine_t can only be oneapi::mkl::rng::device::mrg32k3a<1> or "
+      "oneapi::mkl::rng::device::mrg32k3a<4> or "
       "oneapi::mkl::rng::device::mcg59<1> or "
-      "oneapi::mkl::rng::device::philox4x32x10<1>.");
+      "oneapi::mkl::rng::device::mcg59<4> or "
+      "oneapi::mkl::rng::device::philox4x32x10<1> or "
+      "oneapi::mkl::rng::device::philox4x32x10<4>.");
+  static constexpr bool _is_engine_vec_size_one =
+      std::is_same_v<engine_t, oneapi::mkl::rng::device::mrg32k3a<1>> ||
+      std::is_same_v<engine_t, oneapi::mkl::rng::device::mcg59<1>> ||
+      std::is_same_v<engine_t, oneapi::mkl::rng::device::philox4x32x10<1>>;
   static constexpr std::uint64_t default_seed = 0;
   oneapi::mkl::rng::device::bits<std::uint32_t> _distr_bits;
   oneapi::mkl::rng::device::gaussian<float> _distr_gaussian_float;
@@ -137,14 +148,34 @@ private:
       distr.param(pt);
     }
     if constexpr (vec_size == 4) {
-      return oneapi::mkl::rng::device::generate(distr, _engine);
+      if constexpr (_is_engine_vec_size_one) {
+        sycl::vec<typename distr_t::result_type, 4> res;
+        res.x() = oneapi::mkl::rng::device::generate(distr, _engine);
+        res.y() = oneapi::mkl::rng::device::generate(distr, _engine);
+        res.z() = oneapi::mkl::rng::device::generate(distr, _engine);
+        res.w() = oneapi::mkl::rng::device::generate(distr, _engine);
+        return res;
+      } else {
+        return oneapi::mkl::rng::device::generate(distr, _engine);
+      }
     } else if constexpr (vec_size == 1) {
-      return oneapi::mkl::rng::device::generate_single(distr, _engine);
+      if constexpr (_is_engine_vec_size_one) {
+        return oneapi::mkl::rng::device::generate(distr, _engine);
+      } else {
+        return oneapi::mkl::rng::device::generate_single(distr, _engine);
+      }
     } else if constexpr (vec_size == 2) {
-      sycl::vec<typename distr_t::result_type, 2> res;
-      res.x() = oneapi::mkl::rng::device::generate_single(distr, _engine);
-      res.y() = oneapi::mkl::rng::device::generate_single(distr, _engine);
-      return res;
+      if constexpr (_is_engine_vec_size_one) {
+        sycl::vec<typename distr_t::result_type, 2> res;
+        res.x() = oneapi::mkl::rng::device::generate(distr, _engine);
+        res.y() = oneapi::mkl::rng::device::generate(distr, _engine);
+        return res;
+      } else {
+        sycl::vec<typename distr_t::result_type, 2> res;
+        res.x() = oneapi::mkl::rng::device::generate_single(distr, _engine);
+        res.y() = oneapi::mkl::rng::device::generate_single(distr, _engine);
+        return res;
+      }
     }
   }
 };
