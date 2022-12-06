@@ -116,7 +116,8 @@ static std::string indent(const std::string &Input, int Indentation) {
   const auto Indent = std::string(Indentation, ' ');
   const auto Lines = split(Input, '\n');
   for (const auto &Line : Lines) {
-    Output.push_back((trim(Line).size() > 0) ? (Indent + Line) : "");
+    const bool ContainsNonWhitespace = (trim(Line).size() > 0);
+    Output.push_back(ContainsNonWhitespace ? (Indent + Line) : "");
   }
   return trim(join(Output, "\n"));
 }
