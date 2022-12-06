@@ -325,9 +325,9 @@ static void unload_sycl_lib(module &module) {
 
 static dpct::kernel_function get_kernel_function(module &module, const std::string &name) {
 #ifdef _WIN32
-  dpct::kernel_functor fn = (dpct::kernel_functor) GetProcAddress(static_cast<HMODULE>(module.get_ptr()), (name + std::string("_wrapper")).c_str());
+  dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(GetProcAddress(static_cast<HMODULE>(module.get_ptr()), (name + std::string("_wrapper")).c_str()));
 #else
-  dpct::kernel_functor fn = (dpct::kernel_functor) dlsym(module.get_ptr(), (name + std::string("_wrapper")).c_str());
+  dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(dlsym(module.get_ptr(), (name + std::string("_wrapper")).c_str()));
 #endif
   if (fn == nullptr)
     throw std::runtime_error("Failed to get function");
