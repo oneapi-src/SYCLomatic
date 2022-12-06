@@ -234,8 +234,8 @@ private:
 };
 
 #ifdef SYCLomatic_CUSTOMIZATION
-// ExpandedCompilationDatabase returns the fixed compilation commands if
-// migration candidate is not in the json compilation database.
+// ExpandedCompilationDatabase returns a single command line if
+// migration candidate is not in json compilation database.
 class ExpandedCompilationDatabase : public CompilationDatabase {
 public:
   ExpandedCompilationDatabase(
