@@ -870,9 +870,9 @@ class engine_ext {
                                              const memory_desc_ext &weight_desc);
   void get_rnn_configuration(const ::dnnl::memory::desc &desc,
                              rnn_direction direction, rnn_mode mode,
-                             dpct::library_data_t dt,
+                             dpct::library_data_t dt, int hidden_size,
                              ::dnnl::memory::data_type *dnnl_dt,
-                             ::dnnl::memory::format_tag *tag, int *hidden_size,
+                             ::dnnl::memory::format_tag *tag,
                              int *projection_size, int *output_size,
                              int *seq_length, int *batch_size,
                              int *direction_num, int *gate_num);
@@ -2311,12 +2311,14 @@ void memory_desc_ext::get(int requested_ndims, dpct::library_data_t *dt,
 // DPCT_LABEL_BEGIN|engine_ext_2|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-void engine_ext::get_rnn_configuration(
-    const ::dnnl::memory::desc &desc, rnn_direction direction, rnn_mode mode,
-    dpct::library_data_t dt, ::dnnl::memory::data_type *dnnl_dt,
-    ::dnnl::memory::format_tag *tag, int *hidden_size, int *projection_size,
-    int *output_size, int *seq_length, int *batch_size, int *direction_num,
-    int *gate_num) {
+void engine_ext::get_rnn_configuration(const ::dnnl::memory::desc &desc,
+                                       rnn_direction direction, rnn_mode mode,
+                                       dpct::library_data_t dt, int hidden_size,
+                                       ::dnnl::memory::data_type *dnnl_dt,
+                                       ::dnnl::memory::format_tag *tag,
+                                       int *projection_size, int *output_size,
+                                       int *seq_length, int *batch_size,
+                                       int *direction_num, int *gate_num) {
   if (!desc.is_zero()) {
     auto dims = desc.get_dims();
     auto strides = desc.get_strides();
@@ -2342,11 +2344,11 @@ void engine_ext::get_rnn_configuration(
   } else {
     *gate_num = 1;
   }
-  if (*projection_size != *hidden_size) {
+  if (*projection_size != hidden_size) {
     *output_size = *projection_size;
   } else {
     *projection_size = 0;
-    *output_size = *hidden_size;
+    *output_size = hidden_size;
   }
   *dnnl_dt = memory_desc_ext::to_dnnl_data_type(dt);
 }
@@ -2951,8 +2953,8 @@ sycl::event engine_ext::rnn_forward_internal(
   desc.get(&mode, &bias_mode, &direction, &dt, &input_size, &hidden_size,
            &projection_size, &layer_size);
 
-  get_rnn_configuration(src_desc.get_desc(), direction, mode, dt, &src_dt,
-                        &src_format_tag, &hidden_size, &projection_size,
+  get_rnn_configuration(src_desc.get_desc(), direction, mode, dt, hidden_size,
+                        &src_dt, &src_format_tag, &projection_size,
                         &output_size, &seq_length, &batch_size, &direction_num,
                         &gate_num);
 
@@ -3319,7 +3321,7 @@ sycl::event engine_ext::execute_rnn_backward_primitive(
       std::swap(data[8], data[9]);
     }
   }
-return e;
+  return e;
 }
 
 template <typename primitive_type, typename... args_type>
@@ -4516,8 +4518,8 @@ sycl::event engine_ext::async_rnn_backward(
   desc.get(&mode, &bias_mode, &direction, &dt, &input_size, &hidden_size,
            &projection_size, &layer_size);
 
-  get_rnn_configuration(src_desc.get_desc(), direction, mode, dt, &src_dt,
-                        &src_format_tag, &hidden_size, &projection_size,
+  get_rnn_configuration(src_desc.get_desc(), direction, mode, dt, hidden_size,
+                        &src_dt, &src_format_tag, &projection_size,
                         &output_size, &seq_length, &batch_size, &direction_num,
                         &gate_num);
 
