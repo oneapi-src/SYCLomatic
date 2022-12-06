@@ -286,7 +286,6 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   if (IsInMacroDefine) {
     // If the expr is in macro define, and the CallSpellingBegin/End is set,
     // we can use the CallSpellingBegin/End to get a more precise range.
-    bool RangeInCall = false;
     if (CallSpellingBegin.isValid() && CallSpellingEnd.isValid()) {
       auto Range = getRangeInRange(E, CallSpellingBegin, CallSpellingEnd);
       auto DLBegin = SM.getDecomposedLoc(Range.first);
@@ -296,7 +295,6 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
         BeginLoc = Range.first;
         EndLoc = Range.second;
         End = getOffset(EndLoc);
-        RangeInCall = true;
       }
     }
   } else {
@@ -2000,7 +1998,6 @@ std::string ArgumentAnalysis::getRewriteString() {
           SubRepl->getLength(), SubRepl->getReplacementText().str());
     }
   }
-
   return SRs.getReplacedString();
 }
 

@@ -2147,30 +2147,41 @@ getRangeInRange(const Stmt *E, SourceLocation RangeBegin,
                          IncludeLastToken);
 }
 
-bool traversePossibleLocations(const SourceLocation &SL,
+void traversePossibleLocations(const SourceLocation &SL,
                                const SourceLocation &RangeBegin,
                                const SourceLocation &RangeEnd,
                                SourceLocation &Result, bool IsBegin) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   if (!SL.isValid())
-    return false;
+    return;
+
   if (!SL.isMacroID()) {
     if (isInRange(RangeBegin, RangeEnd, SL)) {
+      if (Result.isValid()) {
+        if (IsBegin && SM.getDecomposedLoc(Result).second <
+                           SM.getDecomposedLoc(SL).second) {
+          Result = SL;
+        } else if (!IsBegin && SM.getDecomposedLoc(Result).second >
+                                   SM.getDecomposedLoc(SL).second) {
+          Result = SL;
+        } else {
+          return;
+        }
+      }
       Result = SL;
-      return true;
     }
-    return false;
+    return;
   }
-  if (traversePossibleLocations(SM.getImmediateSpellingLoc(SL), RangeBegin,
-                                RangeEnd, Result, IsBegin))
-    return true;
+
   if (IsBegin) {
-    return traversePossibleLocations(
-        SM.getImmediateExpansionRange(SL).getBegin(), RangeBegin, RangeEnd,
-        Result, IsBegin);
+    traversePossibleLocations(SM.getImmediateExpansionRange(SL).getBegin(),
+                              RangeBegin, RangeEnd, Result, IsBegin);
+  } else {
+    traversePossibleLocations(SM.getImmediateExpansionRange(SL).getEnd(),
+                              RangeBegin, RangeEnd, Result, IsBegin);
   }
-  return traversePossibleLocations(SM.getImmediateExpansionRange(SL).getEnd(),
-                                   RangeBegin, RangeEnd, Result, IsBegin);
+  traversePossibleLocations(SM.getImmediateSpellingLoc(SL), RangeBegin,
+                            RangeEnd, Result, IsBegin);
 }
 
 std::pair<SourceLocation, SourceLocation>
@@ -2180,11 +2191,11 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
   auto &Context = dpct::DpctGlobalInfo::getContext();
   SourceLocation ResultBegin = SourceLocation();
   SourceLocation ResultEnd = SourceLocation();
-
-  if (traversePossibleLocations(Range.getBegin(), SearchRangeBegin,
-                                SearchRangeEnd, ResultBegin, true) &&
-      traversePossibleLocations(Range.getEnd(), SearchRangeBegin,
-                                SearchRangeEnd, ResultEnd, false)) {
+  traversePossibleLocations(Range.getBegin(), SearchRangeBegin, SearchRangeEnd,
+                            ResultBegin, true);
+  traversePossibleLocations(Range.getEnd(), SearchRangeBegin, SearchRangeEnd,
+                            ResultEnd, false);
+  if (ResultBegin.isValid() && ResultEnd.isValid()) {
     if (isSameLocation(ResultBegin, ResultEnd)) {
       auto It = dpct::DpctGlobalInfo::getExpansionRangeBeginMap().find(
           getCombinedStrFromLoc(ResultBegin));
