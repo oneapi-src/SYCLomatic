@@ -336,6 +336,7 @@ enum HeaderType {
   HT_Algorithm,
   HT_Time,
   HT_Complex,
+  HT_Functional,
   HT_Future,
   HT_Thread,
   HT_Numeric,

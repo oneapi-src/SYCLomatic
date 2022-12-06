@@ -1530,8 +1530,24 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"}};
 
-  SOLVERAPIWithRewriter = {"cusolverDnSsygvd",
-                           "cusolverDnSsygvd_bufferSize"};
+  SOLVERAPIWithRewriter = {"cusolverDnSetStream",
+                           "cusolverDnGetStream",
+                           "cusolverDnSpotrfBatched",
+                           "cusolverDnDpotrfBatched",
+                           "cusolverDnCpotrfBatched",
+                           "cusolverDnZpotrfBatched",
+                           "cusolverDnSpotrsBatched",
+                           "cusolverDnDpotrsBatched",
+                           "cusolverDnCpotrsBatched",
+                           "cusolverDnZpotrsBatched",
+                           "cusolverDnSsygvd",
+                           "cusolverDnDsygvd",
+                           "cusolverDnSsygvd_bufferSize",
+                           "cusolverDnDsygvd_bufferSize",
+                           "cusolverDnChegvd",
+                           "cusolverDnZhegvd",
+                           "cusolverDnChegvd_bufferSize",
+                           "cusolverDnZhegvd_bufferSize"};
 
   // This map now is only used to migrate using declaration
   MathFuncNameMap = {
