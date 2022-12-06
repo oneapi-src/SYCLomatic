@@ -113,17 +113,11 @@ static kernel_function_info get_kernel_function_info(const void *function) {
 
 namespace detail {
 
-static std::vector<char> read_file_to_vector(const std::string &name) {
-  std::ifstream ifs;
-  ifs.open(name, std::ios::in | std::ios::binary);
-  std::vector<char> content((std::istreambuf_iterator<char>(ifs)),
-                            (std::istreambuf_iterator<char>()));
-  return content;
-}
-
-static void write_vector_to_file(const std::string &name, const std::vector<char> &blob) {
+static void write_data_to_file(const std::string &name,
+                               char const *const  data,
+                               size_t             size) {
   auto file = std::fstream(name, std::ios::out | std::ios::binary);
-  file.write(blob.data(), blob.size());
+  file.write(data,size);
   file.close();
 }
 
@@ -286,10 +280,11 @@ static std::string mkfilename()
   return(filename.str());
 }
 
-static module load_dl_from_vector(const std::vector<char> &blob) {
+static module load_dl_from_data(char const *const data,
+                                size_t            size) {
   const std::string name = mkfilename();
 
-  write_vector_to_file(name, blob);
+  write_data_to_file(name, data, size);
 #ifdef _WIN32
   void *so = LoadLibraryA(name.c_str());
 #else
@@ -306,16 +301,18 @@ static module load_dl_from_vector(const std::vector<char> &blob) {
 } // namespace detail
 
 static module load_sycl_lib(const std::string &name) {
-  const auto blob = detail::read_file_to_vector(name);
-  return detail::load_dl_from_vector(blob);
+  std::ifstream ifs;
+  ifs.open(name, std::ios::in | std::ios::binary);
+
+  std::stringstream buffer;
+  buffer << ifs.rdbuf();
+  return detail::load_dl_from_data(buffer.str().c_str(),buffer.str().size());
 };
 
 static module load_sycl_lib_mem(char const *const image) {
   const size_t size = detail::get_lib_size(image);
 
-  std::vector<char> blob(size);
-  std::memcpy(blob.data(), image, size);
-  return detail::load_dl_from_vector(blob);
+  return detail::load_dl_from_data(image,size);
 };
 
 static void unload_sycl_lib(module &module) {
