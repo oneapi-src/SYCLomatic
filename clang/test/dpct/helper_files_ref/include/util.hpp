@@ -87,8 +87,8 @@ inline int cast_double_to_int(double d, bool use_high32 = true) {
   sycl::vec<double, 1> v0{d};
   auto v1 = v0.as<sycl::int2>();
   if (use_high32)
-    return v1[0];
-  return v1[1];
+    return v1[1];
+  return v1[0];
 }
 
 /// Combine two integers, the first as the high 32 bits and the second
@@ -96,7 +96,7 @@ inline int cast_double_to_int(double d, bool use_high32 = true) {
 /// \param [in] high32 The integer as the high 32 bits
 /// \param [in] low32 The integer as the low 32 bits
 inline double cast_ints_to_double(int high32, int low32) {
-  sycl::int2 v0{high32, low32};
+  sycl::int2 v0{low32, high32};
   auto v1 = v0.as<sycl::vec<double, 1>>();
   return v1;
 }
