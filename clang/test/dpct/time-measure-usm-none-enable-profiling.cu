@@ -1,5 +1,12 @@
 // RUN: dpct --enable-profiling  --format-range=none -usm-level=none -out-root %T/time-measure-usm-none-enable-profiling %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/time-measure-usm-none-enable-profiling/time-measure-usm-none-enable-profiling.dp.cpp --match-full-lines %s
+
+// CHECK:#define DPCT_PROFILING_ENABLED
+// CHECK-NEXT:#define DPCT_USM_LEVEL_NONE
+// CHECK-NEXT:#include <sycl/sycl.hpp>
+// CHECK-NEXT:#include <dpct/dpct.hpp>
+// CHECK-NEXT:#include <stdio.h>
+// CHECK-NEXT:#include <cmath>
 #include <stdio.h>
 
 #define N 1000
@@ -51,11 +58,8 @@ int main() {
     // *start = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(start, 0);
 
-    // CHECK: dpct::async_dpct_memcpy(da, ha, N*sizeof(int), dpct::host_to_device);
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice);
-    // CHECK: dpct::async_dpct_memcpy(da, ha, N*sizeof(int), dpct::host_to_device);
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, 0);
-    // CHECK: dpct::async_dpct_memcpy(da, ha, N*sizeof(int), dpct::host_to_device, *stream);
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, stream);
 
     // CHECK:    *stop = q_ct1.ext_oneapi_submit_barrier();
@@ -110,6 +114,10 @@ void foo_test_1() {
         }
     cudaThreadSynchronize();
 
+// CHECK:    *stop = q_ct1.ext_oneapi_submit_barrier() ;
+// CHECK-NEXT:    stop->wait_and_throw() ;
+// CHECK-NEXT:    float   elapsedTime;
+// CHECK-NEXT:    elapsedTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f ;
     cudaEventRecord( stop, 0 ) ;
     cudaEventSynchronize( stop ) ;
     float   elapsedTime;
@@ -196,6 +204,7 @@ void foo_test_3() {
     CHECK(cudaStreamCreate(&stream[i]));
   }
 
+// CHECK:  CHECK((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
   CHECK(cudaEventRecord(start, 0));
 
   // initiate all work on the device asynchronously in depth-first order
@@ -241,6 +250,8 @@ void foo_usm() {
   cudaStream_t s1, s2;
   int *gpu_t, *host_t, n = 10;
   cudaEvent_t start, stop;
+
+// CHECK: SAFE_CALL((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
   SAFE_CALL(cudaEventRecord(start, 0));
 
   // CHECK:  DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -313,7 +324,7 @@ void foo()
         {
             // Test 1: Repeated Linear Access
             float t = 0.0f;
-
+// CHECK:            *start = q_ct1.ext_oneapi_submit_barrier();
             cudaEventRecord(start, 0);
             // read texels from texture
             for (int iter = 0; iter < iterations; iter++)
@@ -347,6 +358,7 @@ void foo()
                     cudaMemcpyDeviceToHost);
 
             // Test 2 Repeated Cache Access
+// CHECK:            *start = q_ct1.ext_oneapi_submit_barrier();
             cudaEventRecord(start, 0);
             for (int iter = 0; iter < iterations; iter++)
             {
@@ -378,6 +390,7 @@ void foo()
                     cudaMemcpyDeviceToHost);
 
             // Test 3 Repeated "Random" Access
+// CHECK:            *start = q_ct1.ext_oneapi_submit_barrier();
             cudaEventRecord(start, 0);
 
             // read texels from texture
@@ -523,6 +536,8 @@ void RunTest()
     for (int k = 0; k < passes; k++)
     {
         float totalScanTime = 0.0f;
+
+// CHECK:         SAFE_CALL((*start = q_ct1.ext_oneapi_submit_barrier(), 0));
         SAFE_CALL(cudaEventRecord(start, 0));
         for (int j = 0; j < iters; j++)
         {
@@ -585,6 +600,7 @@ void test_1999(void* ref_image, void* cur_image,
     cudaEvent_t sad_calc_start, sad_calc_stop;
     cudaEventCreate(&sad_calc_start);
     cudaEventCreate(&sad_calc_stop);
+// CHECK:    *sad_calc_start = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(sad_calc_start);
     dim3 foo_kernel_1_threads_in_block;
     dim3 foo_kernel_1_blocks_in_grid;
@@ -615,6 +631,7 @@ void test_1999(void* ref_image, void* cur_image,
 
     cudaEventCreate(&sad_calc_8_start);
     cudaEventCreate(&sad_calc_8_stop);
+// CHECK:     *sad_calc_8_start = q_ct1.ext_oneapi_submit_barrier();
     cudaEventRecord(sad_calc_8_start);
     dim3 foo_kernel_2_threads_in_block;
     dim3 foo_kernel_2_blocks_in_grid;

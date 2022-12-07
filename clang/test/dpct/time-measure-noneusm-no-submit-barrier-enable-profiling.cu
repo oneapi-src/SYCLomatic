@@ -1,5 +1,12 @@
 // RUN: dpct --enable-profiling  --no-dpcpp-extensions=enqueued_barriers --format-range=none -usm-level=none -out-root %T/time-measure-noneusm-no-submit-barrier-enable-profiling %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/time-measure-noneusm-no-submit-barrier-enable-profiling/time-measure-noneusm-no-submit-barrier-enable-profiling.dp.cpp --match-full-lines %s
+
+// CHECK:#define DPCT_PROFILING_ENABLED
+// CHECK-NEXT:#define DPCT_USM_LEVEL_NONE
+// CHECK-NEXT:#include <sycl/sycl.hpp>
+// CHECK-NEXT:#include <dpct/dpct.hpp>
+// CHECK-NEXT:#include <stdio.h>
+// CHECK-NEXT:#include <cmath>
 #include <stdio.h>
 
 #define N 1000
@@ -47,13 +54,13 @@ int main() {
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
+    // CHECK:   dpct::get_current_device().queues_wait_and_throw();
+    // CHECK-NEXT:    *start = q_ct1.single_task([=](){});
+    // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
     cudaEventRecord(start, 0);
 
-    // CHECK: dpct::async_dpct_memcpy(da, ha, N*sizeof(int), dpct::host_to_device);
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice);
-    // CHECK: dpct::async_dpct_memcpy(da, ha, N*sizeof(int), dpct::host_to_device);
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, 0);
-    // CHECK: dpct::async_dpct_memcpy(da, ha, N*sizeof(int), dpct::host_to_device, *stream);
     cudaMemcpyAsync(da, ha, N*sizeof(int), cudaMemcpyHostToDevice, stream);
 
     // CHECK:    dpct::get_current_device().queues_wait_and_throw();
@@ -98,20 +105,19 @@ void foo_test_1() {
 // CHECK:    dpct::get_current_device().queues_wait_and_throw();
 // CHECK-NEXT:    *start = q_ct1.single_task([=](){});
 // CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:        for (int i=0; i<4; i++) {
-// CHECK-NEXT:            q_ct1.parallel_for<dpct_kernel_name<class kernel_foo_{{[a-z0-9]+}}>>(
-// CHECK-NEXT:                  sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-// CHECK-NEXT:                  [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                    kernel_foo();
-// CHECK-NEXT:                  });
-// CHECK-NEXT:        }
-// CHECK-NEXT:    dev_ct1.queues_wait_and_throw();
     cudaEventRecord( start, 0 );
+
         for (int i=0; i<4; i++) {
             kernel_foo<<<1, 1>>>();
         }
     cudaThreadSynchronize();
 
+// CHECK:    dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:    *stop = q_ct1.single_task([=](){});
+// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw() ;
+// CHECK-NEXT:    stop->wait_and_throw() ;
+// CHECK-NEXT:    float   elapsedTime;
+// CHECK-NEXT:    elapsedTime = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f ;
     cudaEventRecord( stop, 0 ) ;
     cudaEventSynchronize( stop ) ;
     float   elapsedTime;
@@ -197,10 +203,14 @@ void foo_test_3() {
   cudaStream_t stream[NSTREAM];
 
   for (int i = 0; i < NSTREAM; ++i) {
-    // CHECK:    CHECK((stream[i] = dev_ct1.create_queue(), 0));
+// CHECK:    CHECK((stream[i] = dev_ct1.create_queue(), 0));
     CHECK(cudaStreamCreate(&stream[i]));
   }
 
+// CHECK:  CHECK([](){dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:  *start = q_ct1.single_task([=](){});
+// CHECK-NEXT:  dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:  return 0;}());
   CHECK(cudaEventRecord(start, 0));
 
   // initiate all work on the device asynchronously in depth-first order
@@ -240,6 +250,12 @@ void foo_test_3() {
 void foo_usm() {
   cudaStream_t s1, s2;
   int *gpu_t, *host_t, n = 10;
+
+  // CHECK:  dpct::event_ptr start, stop;
+  // CHECK-NEXT:  SAFE_CALL([](){dpct::get_current_device().queues_wait_and_throw();
+  // CHECK-NEXT:  *start = q_ct1.single_task([=](){});
+  // CHECK-NEXT:  dpct::get_current_device().queues_wait_and_throw();
+  // CHECK-NEXT:  return 0;}());
   cudaEvent_t start, stop;
   SAFE_CALL(cudaEventRecord(start, 0));
 
@@ -320,24 +336,13 @@ void foo()
             // Test 1: Repeated Linear Access
             float t = 0.0f;
 
+// CHECK:            dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:            *start = q_ct1.single_task([=](){});
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
             cudaEventRecord(start, 0);
             // read texels from texture
-            for (int iter = 0; iter < iterations; iter++)
-            {
-// CHECK:                DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
-// CHECK-NEXT:                */
-// CHECK-NEXT:                  q_ct1.submit(
-// CHECK-NEXT:                    [&](sycl::handler &cgh) {
-// CHECK-NEXT:                      auto d_out_acc_ct1 = dpct::get_access(d_out, cgh);
-// CHECK-EMPTY:
-// CHECK-NEXT:                      cgh.parallel_for<dpct_kernel_name<class readTexels_{{[a-z0-9]+}}>>(
-// CHECK-NEXT:                        sycl::nd_range<3>(gridSize * blockSize, blockSize),
-// CHECK-NEXT:                        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                          readTexels(kernelRepFactor, (float *)(&d_out_acc_ct1[0]), width);
-// CHECK-NEXT:                        });
-// CHECK-NEXT:                    });
-                readTexels<<<gridSize, blockSize>>>(kernelRepFactor, d_out,
-                                                    width);
+            for (int iter = 0; iter < iterations; iter++) {
+                readTexels<<<gridSize, blockSize>>>(kernelRepFactor, d_out, width);
             }
 
 // CHECK:             dpct::get_current_device().queues_wait_and_throw();
@@ -355,31 +360,16 @@ void foo()
                     cudaMemcpyDeviceToHost);
 
             // Test 2 Repeated Cache Access
+// CHECK:            dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:            *start = q_ct1.single_task([=](){});
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
             cudaEventRecord(start, 0);
-            for (int iter = 0; iter < iterations; iter++)
-            {
-// CHECK:                DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
-// CHECK-NEXT:                */
-// CHECK-NEXT:                  q_ct1.submit(
-// CHECK-NEXT:                    [&](sycl::handler &cgh) {
-// CHECK-NEXT:                      auto d_out_acc_ct1 = dpct::get_access(d_out, cgh);
-// CHECK-EMPTY:
-// CHECK-NEXT:                      cgh.parallel_for<dpct_kernel_name<class readTexelsFoo1_{{[a-z0-9]+}}>>(
-// CHECK-NEXT:                        sycl::nd_range<3>(gridSize * blockSize, blockSize),
-// CHECK-NEXT:                        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                          readTexelsFoo1(kernelRepFactor, (float *)(&d_out_acc_ct1[0]));
-// CHECK-NEXT:                        });
-// CHECK-NEXT:                    });
-                readTexelsFoo1<<<gridSize, blockSize>>>
-                        (kernelRepFactor, d_out);
+            for (int iter = 0; iter < iterations; iter++) {
+                readTexelsFoo1<<<gridSize, blockSize>>> (kernelRepFactor, d_out);
             }
 
-// CHECK:            dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:            *stop = q_ct1.single_task([=](){});
-// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
-// CHECK-NEXT:            stop->wait_and_throw();
+// CHECK:            stop->wait_and_throw();
 // CHECK-NEXT:            t = (stop->get_profiling_info<sycl::info::event_profiling::command_end>() - start->get_profiling_info<sycl::info::event_profiling::command_start>()) / 1000000.0f;
-            cudaEventRecord(stop, 0);
             cudaEventSynchronize(stop);
             cudaEventElapsedTime(&t, start, stop);
 
@@ -388,25 +378,14 @@ void foo()
                     cudaMemcpyDeviceToHost);
 
             // Test 3 Repeated "Random" Access
+// CHECK:            dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:            *start = q_ct1.single_task([=](){});
+// CHECK-NEXT:            dpct::get_current_device().queues_wait_and_throw();
             cudaEventRecord(start, 0);
 
             // read texels from texture
-            for (int iter = 0; iter < iterations; iter++)
-            {
-// CHECK:                DPCT1049:{{[0-9]+}}: The work-group size passed to the SYCL kernel may exceed the limit. To get the device limit, query info::device::max_work_group_size. Adjust the work-group size if needed.
-// CHECK-NEXT:                */
-// CHECK-NEXT:                  q_ct1.submit(
-// CHECK-NEXT:                    [&](sycl::handler &cgh) {
-// CHECK-NEXT:                      auto d_out_acc_ct1 = dpct::get_access(d_out, cgh);
-// CHECK-EMPTY:
-// CHECK-NEXT:                      cgh.parallel_for<dpct_kernel_name<class readTexelsFoo2_{{[a-z0-9]+}}>>(
-// CHECK-NEXT:                        sycl::nd_range<3>(gridSize * blockSize, blockSize),
-// CHECK-NEXT:                        [=](sycl::nd_item<3> item_ct1) {
-// CHECK-NEXT:                          readTexelsFoo2(kernelRepFactor, (float *)(&d_out_acc_ct1[0]), width, height);
-// CHECK-NEXT:                        });
-// CHECK-NEXT:                    });
-                readTexelsFoo2<<<gridSize, blockSize>>>
-                                (kernelRepFactor, d_out, width, height);
+            for (int iter = 0; iter < iterations; iter++){
+                readTexelsFoo2<<<gridSize, blockSize>>>(kernelRepFactor, d_out, width, height);
             }
 
 // CHECK:            dpct::get_current_device().queues_wait_and_throw();
@@ -454,8 +433,6 @@ int foo_test_4()
 
     // creat events
 // CHECK:    dpct::event_ptr start, stop;
-// CHECK:    CHECK((start = new sycl::event(), 0));
-// CHECK:    CHECK((stop = new sycl::event(), 0));
     cudaEvent_t start, stop;
     CHECK(cudaEventCreate(&start));
     CHECK(cudaEventCreate(&stop));
@@ -547,6 +524,10 @@ void RunTest()
     for (int k = 0; k < passes; k++)
     {
         float totalScanTime = 0.0f;
+// CHECK:         SAFE_CALL([](){dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:        *start = q_ct1.single_task([=](){});
+// CHECK-NEXT:        dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:        return 0;}());
         SAFE_CALL(cudaEventRecord(start, 0));
         for (int j = 0; j < iters; j++)
         {
@@ -609,6 +590,9 @@ void test_1999(void* ref_image, void* cur_image,
     cudaEvent_t sad_calc_start, sad_calc_stop;
     cudaEventCreate(&sad_calc_start);
     cudaEventCreate(&sad_calc_stop);
+// CHECK:    dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:    *sad_calc_start = q_ct1.single_task([=](){});
+// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
     cudaEventRecord(sad_calc_start);
     dim3 foo_kernel_1_threads_in_block;
     dim3 foo_kernel_1_blocks_in_grid;
@@ -641,6 +625,9 @@ void test_1999(void* ref_image, void* cur_image,
 
     cudaEventCreate(&sad_calc_8_start);
     cudaEventCreate(&sad_calc_8_stop);
+// CHECK:        dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:    *sad_calc_8_start = q_ct1.single_task([=](){});
+// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
     cudaEventRecord(sad_calc_8_start);
     dim3 foo_kernel_2_threads_in_block;
     dim3 foo_kernel_2_blocks_in_grid;
@@ -670,6 +657,9 @@ void test_1999(void* ref_image, void* cur_image,
 
     cudaEventCreate(&sad_calc_16_start);
     cudaEventCreate(&sad_calc_16_stop);
+// CHECK:        dpct::get_current_device().queues_wait_and_throw();
+// CHECK-NEXT:    *sad_calc_16_start = q_ct1.single_task([=](){});
+// CHECK-NEXT:    dpct::get_current_device().queues_wait_and_throw();
     cudaEventRecord(sad_calc_16_start);
     dim3 foo_kernel_3_threads_in_block;
     dim3 foo_kernel_3_blocks_in_grid;
