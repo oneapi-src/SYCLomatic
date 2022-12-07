@@ -9,12 +9,12 @@ int main(){
     CUfunction F;
     std::string Path, FunctionName, Data;
     //CHECK: /*
-    //CHECK-NEXT: DPCT1102:{{[0-9]+}}: 'Path.c_str()' should be a dynamic library. The dynamic library should supply "wrapped" kernel functions.
+    //CHECK-NEXT: DPCT1102:{{[0-9]+}}: 'Path.c_str()' should be a dynamic library. The dynamic library should supply "wrapped" kernel functions. load_sycl_lib calls tmpnam and may introduce a security issue.
     //CHECK-NEXT: */
     //CHECK-NEXT: M = dpct::experimental::load_sycl_lib(Path.c_str());
     cuModuleLoad(&M, Path.c_str());
     //CHECK: /*
-    //CHECK-NEXT: DPCT1103:{{[0-9]+}}: 'Data.c_str()' should point to a dynamic library loaded in memory. The dynamic library should supply "wrapped" kernel functions.
+    //CHECK-NEXT: DPCT1103:{{[0-9]+}}: 'Data.c_str()' should point to a dynamic library loaded in memory. The dynamic library should supply "wrapped" kernel functions. load_sycl_lib_mem calls tmpnam and may introduce a security issue.
     //CHECK-NEXT: */
     //CHECK-NEXT: M = dpct::experimental::load_sycl_lib_mem(Data.c_str());
     cuModuleLoadData(&M, Data.c_str());
