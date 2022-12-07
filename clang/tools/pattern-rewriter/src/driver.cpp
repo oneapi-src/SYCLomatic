@@ -84,13 +84,12 @@ int main(int argc, char *argv[]) {
 
   llvm::cl::ParseCommandLineOptions(argc, argv);
 
-  const auto Input = fixLineEndings(readFile(InputFilename.getValue()));
   const auto RulesFile = fixLineEndings(readFile(RulesFilename.getValue()));
   llvm::yaml::Input RulesParser(RulesFile);
   std::vector<pattern::Rule> Rules;
   RulesParser >> Rules;
 
-  std::string Output = Input;
+  std::string Output = fixLineEndings(readFile(InputFilename.getValue()));;
   for (const auto &Rule : Rules) {
     Output = pattern::applyRule(Rule, Output);
   }
