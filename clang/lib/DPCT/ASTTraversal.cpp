@@ -8202,7 +8202,10 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     if (getEventQueryTraversal().startFromQuery(CE))
       return;
 
-    if (!isEventElapsedTimeFollowed(CE) && !DpctGlobalInfo::getEnablepProfilingFlag()) {
+    // Pattern-based solution for migration of time measurement code is enabled
+    // only when option '--enable-profiling' is enabled.
+    if (!isEventElapsedTimeFollowed(CE) &&
+        !DpctGlobalInfo::getEnablepProfilingFlag()) {
       auto FD = getImmediateOuterFuncDecl(CE);
       if (!FD)
         return;
@@ -8244,6 +8247,7 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cudaEventSynchronize" ||
              FuncName == "cuEventSynchronize") {
     if(DpctGlobalInfo::getEnablepProfilingFlag()) {
+      // Option '--enable-profiling' is enabled
       std::string ReplStr{getStmtSpelling(CE->getArg(0))};
       ReplStr += "->wait_and_throw()";
       if (IsAssigned) {
@@ -8252,6 +8256,7 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
       }
       emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
     } else {
+      // Option '--enable-profiling' is not enabled
       bool NeedReport = false;
       std::string ReplStr{getStmtSpelling(CE->getArg(0))};
       ReplStr += "->wait_and_throw()";
@@ -8384,6 +8389,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
                                          const MatchFinder::MatchResult &Result,
                                          bool IsAssigned) {
   if(DpctGlobalInfo::getEnablepProfilingFlag()) {
+    // Option '--enable-profiling' is enabled
     const ValueDecl *MD = getDecl(CE->getArg(0));
     if (!MD)
       return;
@@ -8540,7 +8546,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
       emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
     }
   } else {
-
+    // Option '--enable-profiling' is not enabled
     report(CE->getBeginLoc(), Diagnostics::TIME_MEASUREMENT_FOUND, false);
     DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), HT_Chrono);
     std::ostringstream Repl;
@@ -8664,6 +8670,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
 
 void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
   if(DpctGlobalInfo::getEnablepProfilingFlag()) {
+    // Option '--enable-profiling' is enabled
     auto StmtStrArg0 = getStmtSpelling(TimeElapsedCE->getArg(0));
     auto StmtStrArg1 = getStmtSpelling(TimeElapsedCE->getArg(1));
     auto StmtStrArg2 = getStmtSpelling(TimeElapsedCE->getArg(2));
@@ -8691,6 +8698,7 @@ void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
     }
     emplaceTransformation(new ReplaceStmt(TimeElapsedCE, std::move(Repl.str())));
   } else {
+    // Option '--enable-profiling' is not enabled
     auto StmtStrArg0 = getStmtSpelling(TimeElapsedCE->getArg(0));
     auto StmtStrArg1 = getTimePointNameForEvent(TimeElapsedCE->getArg(1), false);
     auto StmtStrArg2 = getTimePointNameForEvent(TimeElapsedCE->getArg(2), false);
