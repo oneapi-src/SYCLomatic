@@ -1492,18 +1492,23 @@ public:
   }
 };
 
-class CheckArgStr {
+class CheckEnumArgStr {
   unsigned Idx;
-  std::string ArgValueStr;
+  std::string EnumArgValueStr;
 
 public:
-  CheckArgStr(unsigned I, const std::string &ArgValue)
-      : Idx(I), ArgValueStr(ArgValue) {}
+  CheckEnumArgStr(unsigned I, const std::string &EnumArgValue)
+      : Idx(I), EnumArgValueStr(EnumArgValue) {}
   bool operator()(const CallExpr *C) {
     if (C->getNumArgs() <= Idx)
       return false;
-    std::string  ArgValue = getStmtSpelling(C->getArg(Idx));
-    return ArgValue == ArgValueStr;
+
+    if (auto DRE = dyn_cast<DeclRefExpr>(C->getArg(Idx))) {
+      if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
+        return ECD->getNameAsString() == EnumArgValueStr;
+      }
+    }
+    return false;
   }
 };
 

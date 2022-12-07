@@ -32,19 +32,15 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("ncclCommCount", DEREF(1),
                                                     LITERAL("size"))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Device_dev_mgr_2,
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::Device_dev_mgr_get_device_id,
-        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-            "ncclCommCuDevice", DEREF(1),
-            MEMBER_CALL(
-                CALL(MapNames::getDpctNamespace() + "dev_mgr::instance"), false,
-                "get_device_id",
-                MEMBER_CALL(MEMBER_CALL(ARG(0), true, LITERAL("get_device")),
-                            false, LITERAL("get_native")))))))
+    HelperFeatureEnum::Device_get_device_id,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "ncclCommCuDevice", DEREF(1),
+        CALL(MapNames::getDpctNamespace() + "get_device_id",
+             MEMBER_CALL(MEMBER_CALL(ARG(0), true, LITERAL("get_device")),
+                         false, LITERAL("get_native"))))))
 
 CONDITIONAL_FACTORY_ENTRY(
-    CheckArgStr(4, "ncclAvg"),
+    CheckEnumArgStr(4, "ncclAvg"),
     UNSUPPORT_FACTORY_ENTRY("ncclAllReduce", Diagnostics::UNSUPPORTED_PARAM,
                             ARG(4)),
     CALL_FACTORY_ENTRY("ncclAllReduce",

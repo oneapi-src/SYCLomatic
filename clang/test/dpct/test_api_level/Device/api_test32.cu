@@ -5,9 +5,8 @@
 
 #include <nccl.h>
 
-// CHECK: 14
-// TEST_FEATURE: Device_dev_mgr_2
-// TEST_FEATURE: Device_dev_mgr_get_device_id
+// CHECK: 15
+// TEST_FEATURE: Device_get_device_id
 int main() {
   int  device;
   ncclComm_t comm;

@@ -37,10 +37,10 @@ int main() {
     // CHECK: check((device = comm->size(), 0));
     check(ncclCommCount(comm, &device));
 
-    // CHECK: device = dpct::dev_mgr::instance().get_device_id(comm->get_device().get_native());
+    // CHECK: device = dpct::get_device_id(comm->get_device().get_native());
     ncclCommCuDevice(comm, &device);
 
-    // CHECK: check((device = dpct::dev_mgr::instance().get_device_id(comm->get_device().get_native()), 0));
+    // CHECK: check((device = dpct::get_device_id(comm->get_device().get_native()), 0));
     check(ncclCommCuDevice(comm, &device));
 
     void *buff;
