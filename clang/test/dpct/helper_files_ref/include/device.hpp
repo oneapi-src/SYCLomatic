@@ -163,10 +163,10 @@ public:
       _max_nd_range_size_i[i] = max_nd_range_size[i];
     }
   }
-  void set_memory_clock_rate(int memory_clock_rate){
+  void set_memory_clock_rate(int memory_clock_rate) {
     _memory_clock_rate = memory_clock_rate;
   }
-  void set_memory_bus_width(int memory_bus_width){
+  void set_memory_bus_width(int memory_bus_width) {
     _memory_bus_width = memory_bus_width;
   }
 
@@ -292,22 +292,16 @@ public:
     prop.set_global_mem_size(
         get_info<sycl::info::device::global_mem_size>());
     prop.set_local_mem_size(get_info<sycl::info::device::local_mem_size>());
-    if (this->has(sycl::aspect::ext_intel_memory_clock_rate))
-    {
+    if (this->has(sycl::aspect::ext_intel_memory_clock_rate)) {
       prop.set_memory_clock_rate(
           this->get_info<sycl::ext::intel::info::device::memory_clock_rate>());
-    }
-    else
-    {
+    } else {
       prop.set_memory_clock_rate(0);
     }
-    if (this->has(sycl::aspect::ext_intel_memory_bus_width))
-    {
+    if (this->has(sycl::aspect::ext_intel_memory_bus_width)) {
       prop.set_memory_bus_width(
           this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
-    }
-    else
-    {
+    } else {
       prop.set_memory_bus_width(0);
     }
 
@@ -576,7 +570,7 @@ static inline device_ext &cpu_device() {
   return dev_mgr::instance().cpu_device();
 }
 
-static inline unsigned int select_device(unsigned int id){
+static inline unsigned int select_device(unsigned int id) {
   dev_mgr::instance().select_device(id);
   return id;
 }
