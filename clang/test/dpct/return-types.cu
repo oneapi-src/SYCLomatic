@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/return-types %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/return-types %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/return-types/return-types.dp.cpp --match-full-lines %s
 
 // CHECK: #include <sycl/sycl.hpp>
@@ -23,6 +23,8 @@
 DEF_BAR
 DEF_BAR2
 
+// need -fno-delayed-template-parsing on windows for
+// this migration to pass
 // CHECK: template <typename T>
 // CHECK-NEXT: dpct::queue_ptr bar() {
 // CHECK-NEXT:   return &dpct::get_default_queue();
