@@ -1242,7 +1242,7 @@ class UserDefinedRewriter : public CallExprRewriter {
 
 public:
   UserDefinedRewriter(const CallExpr *CE, const OutputBuilder &OB,
-                      const MetaRuleObject::Attribute &RuleAttribute = {})
+                      const MetaRuleObject::Attributes &RuleAttribute = {})
       : CallExprRewriter(CE, "") {
     NoRewrite = RuleAttribute.ReplaceCalleeNameOnly;
     // build result string with call
@@ -1324,8 +1324,7 @@ class UserDefinedRewriterFactory : public CallExprRewriterFactoryBase {
   OutputBuilder OB;
   std::string OutStr;
   std::vector<std::string> &Includes;
-  bool HasExplicitTemplateArgs = false;
-  MetaRuleObject::Attribute RuleAttribute;
+  MetaRuleObject::Attributes RuleAttribute;
 
   struct NullRewriter : public CallExprRewriter {
     NullRewriter(const CallExpr *C, StringRef Name)
@@ -1350,7 +1349,6 @@ public:
 public:
   UserDefinedRewriterFactory(MetaRuleObject &R)
       : OutStr(R.Out), Includes(R.Includes),
-        HasExplicitTemplateArgs(R.HasExplicitTemplateArgs),
         RuleAttribute(R.RuleAttribute) {
     Priority = R.Priority;
     OB.Kind = OutputBuilder::Kind::Top;
@@ -1373,7 +1371,7 @@ public:
     if (!Call)
       return std::shared_ptr<UserDefinedRewriter>();
 
-    if (hasExplicitTemplateArgs(Call) && !HasExplicitTemplateArgs)
+    if (hasExplicitTemplateArgs(Call) && !RuleAttribute.HasExplicitTemplateArgs)
       return std::make_shared<NullRewriter>(Call, "");
 
     for (auto &Header : Includes)

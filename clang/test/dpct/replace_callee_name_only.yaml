@@ -4,7 +4,7 @@
   In: cub::DeviceReduce::Sum
   Out: dummy_func
   Includes: []
-  Attribute:                                                                    
+  Attributes:                                                                    
     ReplaceCalleeNameOnly: true
 - Rule: rule2
   Kind: API
@@ -12,5 +12,5 @@
   In: cub::DeviceScan::ExclusiveSum
   Out: dummy_func(d_in, d_out, n)
   Includes: []
-  Attribute: {}
+  Attributes: {}
 

@@ -57,23 +57,21 @@ struct EnumNameRule : public TypeNameRule {
 // Record all information of imported rules
 class MetaRuleObject {
 public:
-  class ClassField {
-  public:
+  struct ClassField {
     std::string In;
     std::string Out;
     std::string OutGetter;
     std::string OutSetter;
     ClassField() {}
   };
-  class ClassMethod {
-  public:
+  struct ClassMethod {
     std::string In;
     std::string Out;
     ClassMethod() {}
   };
-  class Attribute {
-  public:
+  struct Attributes {
     bool ReplaceCalleeNameOnly = false;
+    bool HasExplicitTemplateArgs = false;
   };
   static std::vector<std::string> RuleFiles;
   std::string RuleFile;
@@ -85,11 +83,10 @@ public:
   std::string EnumName;
   std::string Prefix;
   std::string Postfix;
-  Attribute RuleAttribute;
+  Attributes RuleAttribute;
   std::vector<std::string> Includes;
   std::vector<std::shared_ptr<ClassField>> Fields;
   std::vector<std::shared_ptr<ClassMethod>> Methods;
-  bool HasExplicitTemplateArgs = false;
   MetaRuleObject()
       : Priority(RulePriority::Default), Kind(RuleKind::API) {}
   MetaRuleObject(std::string id, RulePriority priority, RuleKind kind)
@@ -145,8 +142,7 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapOptional("EnumName", Doc->EnumName);
     Io.mapOptional("Prefix", Doc->Prefix);
     Io.mapOptional("Postfix", Doc->Postfix);
-    Io.mapOptional("HasExplicitTemplateArgs", Doc->HasExplicitTemplateArgs);
-    Io.mapOptional("Attribute", Doc->RuleAttribute);
+    Io.mapOptional("Attributes", Doc->RuleAttribute);
   }
 };
 
@@ -173,9 +169,10 @@ struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::ClassMethod>> {
 };
 
 template<>
-struct llvm::yaml::MappingTraits<MetaRuleObject::Attribute> {
-  static void mapping(llvm::yaml::IO &Io, MetaRuleObject::Attribute &Doc) {
+struct llvm::yaml::MappingTraits<MetaRuleObject::Attributes> {
+  static void mapping(llvm::yaml::IO &Io, MetaRuleObject::Attributes &Doc) {
     Io.mapOptional("ReplaceCalleeNameOnly", Doc.ReplaceCalleeNameOnly);
+    Io.mapOptional("HasExplicitTemplateArgs", Doc.HasExplicitTemplateArgs);
   }
 };
 

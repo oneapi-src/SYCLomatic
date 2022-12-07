@@ -102,5 +102,6 @@
   Priority: Takeover
   In: explicit_template
   Out: ET($1)
-  HasExplicitTemplateArgs: true
   Includes: []
+  Attributes:
+    HasExplicitTemplateArgs: true
