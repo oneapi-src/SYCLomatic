@@ -6,7 +6,7 @@
 #include <cuda_runtime.h>
 #include <cassert>
 
-     //CHECK:void testDevice(const int *K) {
+//CHECK:void testDevice(const int *K) {
 //CHECK-NEXT:  int t = K[0];
 //CHECK-NEXT:}
 __device__ void testDevice(const int *K) {
