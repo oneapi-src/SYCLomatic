@@ -14,6 +14,7 @@
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Tooling/Tooling.h"
 #include <algorithm>
 #include <deque>
@@ -68,7 +69,7 @@ FileManager *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
-std::unordered_set<std::string> DpctGlobalInfo::ExpansionRangeBeginSet;
+std::unordered_map<std::string, SourceRange> DpctGlobalInfo::ExpansionRangeBeginMap;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
 std::tuple<unsigned int, std::string, SourceRange>
@@ -570,6 +571,9 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
     case HT_Complex:
       return insertHeader(HeaderType::HT_Complex, LastIncludeOffset,
                           "<complex>");
+    case HT_Functional:
+      return insertHeader(HeaderType::HT_Functional, LastIncludeOffset,
+                          "<functional>");
     case HT_Thread:
       return insertHeader(HeaderType::HT_Thread, LastIncludeOffset, "<thread>");
     case HT_Future:
@@ -779,11 +783,11 @@ void KernelCallExpr::buildExecutionConfig(
       ExecutionConfig.GroupDirectRef = A.isDirectRef();
     } else if (Idx == 1) {
       ExecutionConfig.LocalDirectRef = A.isDirectRef();
-
       // Using another analysis because previous analysis may return directly
       // when in macro is true.
       // Here set the argument of KFA as false, so it will not return directly.
       KernelConfigAnalysis KFA(false);
+      KFA.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
       KFA.analyze(Arg, 1, true);
       if (KFA.isNeedEmitWGSizeWarning())
         DiagnosticsUtils::report(getFilePath(), getBegin(),
@@ -3330,6 +3334,62 @@ void CtTypeInfo::setArrayInfo(const ConstantArrayTypeLoc &TL,
     Range.emplace_back(getUnfoldedArraySize(TL));
   }
   setTypeInfo(TL.getElementLoc(), NeedSizeFold);
+}
+
+std::string CtTypeInfo::getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
+  const auto *const SizeExpr = TL.getSizeExpr();
+
+  auto IsContainMacro =
+      isContainMacro(SizeExpr) || !TL.getSizeExpr()->getBeginLoc().isFileID();
+
+  auto DREMatcher = ast_matchers::findAll(ast_matchers::declRefExpr());
+  auto DREMatchedResults =
+      ast_matchers::match(DREMatcher, *SizeExpr, DpctGlobalInfo::getContext());
+  bool IsContainDRE = !DREMatchedResults.empty();
+
+  bool IsContainSizeOfUserDefinedType = false;
+  auto SOMatcher = ast_matchers::findAll(
+      ast_matchers::unaryExprOrTypeTraitExpr(ast_matchers::ofKind(UETT_SizeOf))
+          .bind("so"));
+  auto SOMatchedResults =
+      ast_matchers::match(SOMatcher, *SizeExpr, DpctGlobalInfo::getContext());
+  for (const auto &Res : SOMatchedResults) {
+    const auto *UETT = Res.getNodeAs<UnaryExprOrTypeTraitExpr>("so");
+    if (UETT->isArgumentType()) {
+      const auto *const RD =
+          UETT->getArgumentType().getCanonicalType()->getAsRecordDecl();
+      if (MapNames::SupportedVectorTypes.count(RD->getNameAsString()) == 0) {
+        IsContainSizeOfUserDefinedType = true;
+        break;
+      }
+    }
+  }
+
+  // We need not fold the size expression in these cases.
+  if (!IsContainMacro && !IsContainDRE && !IsContainSizeOfUserDefinedType) {
+    return getUnfoldedArraySize(TL);
+  }
+
+  auto TLRange = getDefinitionRange(TL.getBeginLoc(), TL.getEndLoc());
+  auto SizeExprRange = getRangeInRange(SizeExpr->getSourceRange(),
+                                       TLRange.getBegin(), TLRange.getEnd());
+  auto SizeExprBegin = SizeExprRange.first;
+  auto SizeExprEnd = SizeExprRange.second;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  size_t Length =
+      SM.getCharacterData(SizeExprEnd) - SM.getCharacterData(SizeExprBegin);
+  auto DL = SM.getDecomposedLoc(SizeExprBegin);
+  auto OriginalStr =
+      std::string(SM.getBufferData(DL.first).substr(DL.second, Length));
+
+  // When it is a literal in macro, we also need not fold.
+  auto LiteralStr = toString(TL.getTypePtr()->getSize(), 10, false, false);
+  if (OriginalStr == LiteralStr) {
+    return getUnfoldedArraySize(TL);
+  }
+
+  ArraySizeOriginExprs.push_back(std::move(OriginalStr));
+  return buildString(LiteralStr, "/*", ArraySizeOriginExprs.back(), "*/");
 }
 
 std::string CtTypeInfo::getUnfoldedArraySize(const ConstantArrayTypeLoc &TL) {

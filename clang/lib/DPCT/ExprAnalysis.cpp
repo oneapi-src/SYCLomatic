@@ -260,8 +260,16 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
   }
   // Calculate offset and length from SourceLocation
   auto End = getOffset(EndLoc);
+
+  Token Tok2;
+  Lexer::getRawToken(EndLoc, Tok2, SM, Context.getLangOpts());
+  // if the last token is ">>" or ">>>",
+  // since DPCT does not support nested template type migration,
+  // the last token should be treated as ">"
   auto LastTokenLength =
-      Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
+      Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)
+          ? 1
+          : Tok2.getLength();
 
   auto DecompLoc = SM.getDecomposedLoc(BeginLoc);
   FileId = DecompLoc.first;
@@ -278,7 +286,6 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   if (IsInMacroDefine) {
     // If the expr is in macro define, and the CallSpellingBegin/End is set,
     // we can use the CallSpellingBegin/End to get a more precise range.
-    bool RangeInCall = false;
     if (CallSpellingBegin.isValid() && CallSpellingEnd.isValid()) {
       auto Range = getRangeInRange(E, CallSpellingBegin, CallSpellingEnd);
       auto DLBegin = SM.getDecomposedLoc(Range.first);
@@ -288,33 +295,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
         BeginLoc = Range.first;
         EndLoc = Range.second;
         End = getOffset(EndLoc);
-        RangeInCall = true;
       }
-    }
-    // In cases like:
-    // #define CCC <<<1,1>>>()
-    // #define KERNEL foo CCC
-    // The getRangeInRange cannot find the correct range,
-    // fallback to use heuristics.
-    if (!RangeInCall) {
-      if (SM.isMacroArgExpansion(E->getBeginLoc())) {
-        BeginLoc = SM.getSpellingLoc(
-            SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
-        EndLoc = SM.getSpellingLoc(
-            SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
-      } else {
-        BeginLoc =
-            SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
-        EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getEndLoc()));
-        if (isExprStraddle(E)) {
-          auto Range = getTheOneBeforeLastImmediateExapansion(E->getBeginLoc(),
-                                                              E->getEndLoc());
-          BeginLoc = SM.getImmediateSpellingLoc(Range.first);
-          EndLoc = SM.getImmediateSpellingLoc(Range.second);
-        }
-      }
-      End = getOffset(EndLoc) +
-            Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
     }
   } else {
     // If the Expr is FileID or is macro arg
@@ -460,7 +441,15 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
             clang::NestedNameSpecifier::SpecifierKind::NamespaceAlias;
     bool IsSpecicalAPI = isMathFunction(DRE->getNameInfo().getAsString()) ||
                          isCGAPI(DRE->getNameInfo().getAsString());
-    if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
+                         // for thrust::log10 and thrust::sinh ...
+    // log10 is a math function
+    if (Qualifier->getAsNamespace() &&
+        Qualifier->getAsNamespace()->getName() == "thrust" &&
+        dpct::DpctGlobalInfo::isInCudaPath(
+            Qualifier->getAsNamespace()->getBeginLoc())) {
+      CTSName = getNestedNameSpecifierString(Qualifier) +
+                DRE->getNameInfo().getAsString();
+    } else if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
     }
@@ -629,7 +618,7 @@ void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
   std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
       Temp->getType().getCanonicalType());
   if (StringRef(TypeName).startswith("cub::") &&
-      CubTypeRule::CanMappingToSyclBinaryOp(TypeName)) {
+      CubTypeRule::CanMappingToSyclType(TypeName)) {
     analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
     return;
   }
@@ -948,7 +937,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         auto Extra = C->getExtraArguments();
         if (Extra.empty())
           return;
-        addReplacement(CE->getRParenLoc(), Extra);
+        addReplacement(C->getExtraArgLoc() - SrcBegin, 0, Extra);
       }
     }
   }
@@ -1521,6 +1510,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(CXXDependentScopeMemberExpr)
     ANALYZE_EXPR(MaterializeTemporaryExpr)
     ANALYZE_EXPR(LambdaExpr)
+    ANALYZE_EXPR(CXXTemporaryObjectExpr)
   default:
     return ExprAnalysis::dispatch(Expression);
   }
@@ -1557,6 +1547,10 @@ KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
 
 void KernelArgumentAnalysis::analyzeExpr(const MaterializeTemporaryExpr *MTE) {
   KernelArgumentAnalysis::dispatch(MTE->getSubExpr());
+}
+
+void KernelArgumentAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
+  ExprAnalysis::dispatch(Temp);
 }
 
 void KernelArgumentAnalysis::analyzeExpr(
@@ -1631,7 +1625,7 @@ void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
   }
 
   if (auto RD = ME->getBase()->getType()->getAsCXXRecordDecl()) {
-    if (!RD->isStandardLayout()) {
+    if (!RD->isTriviallyCopyable()) {
       IsRedeclareRequired = true;
     }
   }
@@ -1912,7 +1906,10 @@ void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
           SM.getExpansionRange(Ctor->getEndLoc()).getEnd(),
           CtorString.replace(CtorString.length() - 2, 2, ")"));
     }
-    return addReplacement(Ctor,
+
+    auto Range =
+        getRangeInRange(Ctor, CallSpellingBegin, CallSpellingEnd, false);
+    return addReplacement(Range.first, Range.second,
                           CtorString.replace(CtorString.length() - 2, 2, ")"));
   }
   return ArgumentAnalysis::analyzeExpr(Ctor);
@@ -2001,7 +1998,6 @@ std::string ArgumentAnalysis::getRewriteString() {
           SubRepl->getLength(), SubRepl->getReplacementText().str());
     }
   }
-
   return SRs.getReplacedString();
 }
 

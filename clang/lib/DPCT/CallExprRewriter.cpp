@@ -1954,12 +1954,6 @@ std::function<bool(const CallExpr *C)> checkIsUSM() {
   };
 }
 
-std::function<bool(const CallExpr *C)> checkIsArgStream(size_t index) {
-  return [=](const CallExpr *C) -> bool {
-    return !(isDefaultStream(C->getArg(index)));
-  };
-}
-
 std::function<bool(const CallExpr *C)> checkArgSpelling(size_t index,
                                                         std::string str) {
   return [=](const CallExpr *C) -> bool {
@@ -2578,28 +2572,30 @@ public:
   }
 };
 
-class CheckArgCount {
+template <typename Compare = std::equal_to<>> class CheckArgCount {
   unsigned Count;
+  Compare Comp;
+  bool IncludeDefaultArg;
 
 public:
-  CheckArgCount(unsigned I) : Count(I) {}
-  bool operator()(const CallExpr *C) { return C->getNumArgs() == Count; }
-};
-
-class CheckArgCountGreaterThan {
-  unsigned Count;
-public:
-  CheckArgCountGreaterThan(unsigned I) : Count(I) {}
+  CheckArgCount(unsigned I, Compare Comp = Compare(),
+                bool IncludeDefaultArg = true)
+      : Count(I), Comp(Comp), IncludeDefaultArg(IncludeDefaultArg) {}
   bool operator()(const CallExpr *C) {
     unsigned DefaultArgNum = 0;
     llvm::ArrayRef<const Expr *> Args(C->getArgs(), C->getNumArgs());
-    for (const Expr *Arg : Args) {
-      if (Arg->isDefaultArgument())
-        ++DefaultArgNum;
+    if (!IncludeDefaultArg) {
+      DefaultArgNum =
+          std::count_if(Args.begin(), Args.end(), [](const Expr *Arg) -> bool {
+            return Arg->isDefaultArgument();
+          });
     }
-    return C->getNumArgs() - DefaultArgNum > Count;
+    return Comp(C->getNumArgs() - DefaultArgNum, Count);
   }
 };
+
+template <typename T>
+CheckArgCount(unsigned I, T Comp, bool IncludeDefaultArg) -> CheckArgCount<T>;
 
 class CheckBaseType {
   std::string TypeName;

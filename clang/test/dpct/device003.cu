@@ -71,13 +71,13 @@ void get_version(void) {
     // CHECK: /*
     // CHECK-NEXT:  DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK-NEXT:  */
-    // CHECK-NEXT:  driverVersion = dpct::get_current_device().get_info<sycl::info::device::version>();
+    // CHECK-NEXT:  driverVersion = dpct::get_current_device().get_major_version();
     cudaDriverGetVersion(&driverVersion);
 
     // CHECK:  /*
     // CHECK-NEXT:  DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK-NEXT:  */
-    // CHECK-NEXT:  runtimeVersion = dpct::get_current_device().get_info<sycl::info::device::version>();
+    // CHECK-NEXT:  runtimeVersion = dpct::get_current_device().get_major_version();
     cudaRuntimeGetVersion(&runtimeVersion);
 
     // CHECK:    /*
@@ -86,7 +86,7 @@ void get_version(void) {
     // CHECK-NEXT:    /*
     // CHECK-NEXT:    DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK-NEXT:    */
-    // CHECK-NEXT:    int error_code_1 = (driverVersion = dpct::get_current_device().get_info<sycl::info::device::version>(), 0);
+    // CHECK-NEXT:    int error_code_1 = (driverVersion = dpct::get_current_device().get_major_version(), 0);
     cudaError_t error_code_1 = cudaDriverGetVersion(&driverVersion);
 
     // CHECK:    /*
@@ -95,7 +95,7 @@ void get_version(void) {
     // CHECK-NEXT:    /*
     // CHECK-NEXT:    DPCT1043:{{[0-9]+}}: The version-related API is different in SYCL. An initial code was generated, but you need to adjust it.
     // CHECK-NEXT:    */
-    // CHECK-NEXT:    int error_code_2 = (runtimeVersion = dpct::get_current_device().get_info<sycl::info::device::version>(), 0);
+    // CHECK-NEXT:    int error_code_2 = (runtimeVersion = dpct::get_current_device().get_major_version(), 0);
     cudaError_t error_code_2 = cudaRuntimeGetVersion(&runtimeVersion);
 }
 

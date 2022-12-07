@@ -197,10 +197,11 @@ bool printOptions(
       std::string Str = "";
       if (UValue < static_cast<unsigned>(-1)) {
         if (!(UValue &
-              static_cast<unsigned>(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier)))
+              (1 << static_cast<unsigned>(
+                   DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier))))
           Str = Str + "enqueued_barriers,";
-        if (!(UValue &
-              static_cast<unsigned>(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo)))
+        if (!(UValue & (1 << static_cast<unsigned>(
+                            DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo))))
           Str += "device_info,";
       }
       if (!Str.empty()) {
@@ -221,7 +222,7 @@ bool printOptions(
       std::string Str = "";
       if (UValue &
           (1 << static_cast<unsigned>(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary)))
-        Str = Str + "free-function-queries,";
+        Str = Str + "c_cxx_standard_library,";
       if (!Str.empty()) {
         Str = "--use-dpcpp-extensions=" + Str;
         Opts.emplace_back(Str.substr(0, Str.size() - 1));
