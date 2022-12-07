@@ -16,9 +16,6 @@
 #include <dlfcn.h>
 #endif
 
-#include <cstdio>
-#include <filesystem>
-
 
 namespace dpct {
 
@@ -27,22 +24,6 @@ typedef void (*kernel_functor)(sycl::queue &, const sycl::nd_range<3> &,
 
 struct kernel_function_info {
   int max_work_group_size = 0;
-};
-
-class kernel_function {
-public:
-  kernel_function() : ptr{nullptr} {}
-  kernel_function(dpct::kernel_functor ptr) : ptr{ptr} {}
-
-  operator void *() const { return ((void *)ptr); }
-
-  void operator()(sycl::queue &q, const sycl::nd_range<3> &range,
-                  unsigned int a, void **args, void **extra) {
-    ptr(q, range, a, args, extra);
-  }
-
-private:
-  dpct::kernel_functor ptr;
 };
 
 static void get_kernel_function_info(kernel_function_info *kernel_info,
@@ -60,6 +41,8 @@ static kernel_function_info get_kernel_function_info(const void *function) {
           .get_info<sycl::info::device::max_work_group_size>();
   return kernel_info;
 }
+
+namespace experimental {
 
 namespace detail {
 
@@ -201,37 +184,8 @@ private:
 
 namespace detail {
 
-static std::string mkfilename() {
-  time_t rawtime;
-  time(&rawtime);
-
-  std::stringstream buffer;
-  buffer << static_cast<unsigned long long>(rawtime);
-
-  std::hash<std::string> hasher;
-  int i = hasher(buffer.str());
-  static int cnt;
-
-  std::stringstream filename;
-
-  filename << std::filesystem::temp_directory_path().string();
-#ifndef _WIN32
-  filename << "/dpct";
-#else
-  filename << "dpct";
-#endif
-  filename << std::setfill('0') << std::setw(2) << std::right << std::hex
-           << ++cnt;
-  filename << std::setfill('0') << std::setw(8) << std::right << std::hex << i;
-#ifdef _WIN32
-  filename << ".dll";
-#endif
-
-  return (filename.str());
-}
-
 static module load_dl_from_data(char const *const data, size_t size) {
-  const std::string name = mkfilename();
+  const std::string name{std::tmpnam(NULL)};
 
   write_data_to_file(name, data, size);
 #ifdef _WIN32
@@ -272,8 +226,24 @@ static void unload_sycl_lib(module &module) {
 #endif
 };
 
-static dpct::kernel_function get_kernel_function(module &module,
-                                                 const std::string &name) {
+class kernel_function {
+public:
+  kernel_function() : ptr{nullptr} {}
+  kernel_function(dpct::kernel_functor ptr) : ptr{ptr} {}
+
+  operator void *() const { return ((void *)ptr); }
+
+  void operator()(sycl::queue &q, const sycl::nd_range<3> &range,
+                  unsigned int a, void **args, void **extra) {
+    ptr(q, range, a, args, extra);
+  }
+
+private:
+  dpct::kernel_functor ptr;
+};
+
+static dpct::experimental::kernel_function get_kernel_function(module &module,
+                                                               const std::string &name) {
 #ifdef _WIN32
   dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(
       GetProcAddress(static_cast<HMODULE>(module.get_ptr()),
@@ -287,13 +257,15 @@ static dpct::kernel_function get_kernel_function(module &module,
   return fn;
 }
 
-static void invoke_kernel_function(dpct::kernel_function &function,
+static void invoke_kernel_function(dpct::experimental::kernel_function &function,
                                    sycl::queue &queue, sycl::range<3> a,
                                    sycl::range<3> b, unsigned int localMemSize,
                                    void **kernelParams, void **extra) {
   function(queue, sycl::nd_range<3>(a * b, b), localMemSize, kernelParams,
            extra);
 }
+
+} // namespace experimental
 
 } // namespace dpct
 #endif // __DPCT_KERNEL_HPP__

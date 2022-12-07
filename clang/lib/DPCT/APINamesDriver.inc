@@ -8,18 +8,18 @@
 
 ASSIGN_FACTORY_ENTRY(
     "cuModuleLoad", DEREF(0),
-    CALL("dpct::load_sycl_lib", ARG(1)))
+    CALL("dpct::experimental::load_sycl_lib", ARG(1)))
 
 ASSIGN_FACTORY_ENTRY(
     "cuModuleLoadData", DEREF(0),
-    CALL("dpct::load_sycl_lib_mem", ARG(1)))
+    CALL("dpct::experimental::load_sycl_lib_mem", ARG(1)))
 
 ASSIGN_FACTORY_ENTRY(
     "cuModuleLoadDataEx", DEREF(0),
-    CALL("dpct::load_sycl_lib_mem", ARG(1)))
+    CALL("dpct::experimental::load_sycl_lib_mem", ARG(1)))
 
 ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
-                     CALL("dpct::get_kernel_function", ARG(1), ARG(2)))
+                     CALL("dpct::experimental::get_kernel_function", ARG(1), ARG(2)))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
@@ -27,7 +27,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
                             CALL("(dpct::image_wrapper_base_p)dlsym", ARG(1),
                                  ARG(2)))))
 
-CALL_FACTORY_ENTRY("cuModuleUnload", CALL("dpct::unload_sycl_lib", ARG(0)))
+CALL_FACTORY_ENTRY("cuModuleUnload", CALL("dpct::experimental::unload_sycl_lib", ARG(0)))
 
 #define RANGES_CTOR(RangeType, ...)                                            \
   CALL(DpctGlobalInfo::getCtadClass(                                           \
@@ -38,7 +38,7 @@ CALL_FACTORY_ENTRY("cuModuleUnload", CALL("dpct::unload_sycl_lib", ARG(0)))
 #define RANGE_CTOR(Arg0, Arg1, Arg2) RANGES_CTOR("range", Arg0, Arg1, Arg2)
 
 ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cuLaunchKernel", CALL("dpct::invoke_kernel_function",
+    "cuLaunchKernel", CALL("dpct::experimental::invoke_kernel_function",
                            ARG(0), STREAM(8),
                            RANGE_CTOR(ARG(3), ARG(2), ARG(1)),
                            RANGE_CTOR(ARG(6), ARG(5), ARG(4)),
