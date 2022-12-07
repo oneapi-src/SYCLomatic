@@ -11037,6 +11037,7 @@ void MemoryMigrationRule::memcpyMigration(
       else if (auto Cast = dyn_cast<CastExpr>(StreamArg);
 	       Cast && Cast->getCastKind() != clang::CK_LValueToRValue
 	       && Cast->getSubExpr()->getType()->isIntegerType()) {
+	requestFeature(HelperFeatureEnum::Util_int_as_queue_ptr, Cast->getSubExpr());
 	AsyncQueue =
 	  MapNames::getDpctNamespace()
 	  + "int_as_queue_ptr("
@@ -15615,6 +15616,7 @@ void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &R
       emplaceTransformation(
         new ReplaceStmt(CE, "&{{NEEDREPLACEQ" + std::to_string(Index) + "}}"));
     } else if (CE->getSubExpr()->getType()->isIntegerType()) {
+      requestFeature(HelperFeatureEnum::Util_int_as_queue_ptr, CE->getSubExpr());
       emplaceTransformation(
         new ReplaceStmt(
           CE,

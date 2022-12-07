@@ -526,6 +526,8 @@ public:
 };
 } // namespace experimental
 
+/// If x <= 2, then return a pointer to the deafult queue;
+/// otherwise, return x reinterpreted as a dpct::queue_ptr.
 inline queue_ptr int_as_queue_ptr(uintptr_t x) {
   return x <= 2 ?
   &get_default_queue()

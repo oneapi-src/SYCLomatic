@@ -147,4 +147,18 @@ int main2(){
 void CopyToHost(void *buf, void *host, int N, int stream) {
   // CHECK: dpct::int_as_queue_ptr(stream)->memcpy(buf, host, N*sizeof(float));
   cudaMemcpyAsync(buf, host, N*sizeof(float), cudaMemcpyDeviceToHost, (cudaStream_t)stream);
+  // CHECK: auto s = dpct::int_as_queue_ptr(stream);
+  auto s = (cudaStream_t) stream;
+  // CHECK: s->memcpy(buf, host, N*sizeof(float));
+  cudaMemcpyAsync(buf, host, N*sizeof(float), cudaMemcpyDeviceToHost, s);
 }
+
+void CopyToHost2(void *buf, void *host, int N, int stream) {
+  // CHECK: dpct::int_as_queue_ptr(stream)->memcpy(buf, host, N*sizeof(float));
+  cudaMemcpyAsync(buf, host, N*sizeof(float), cudaMemcpyDeviceToHost, (CUstream)stream);
+  // CHECK: auto s = dpct::int_as_queue_ptr(stream);
+  auto s = (cudaStream_t) stream;
+  // CHECK: s->memcpy(buf, host, N*sizeof(float));
+  cudaMemcpyAsync(buf, host, N*sizeof(float), cudaMemcpyDeviceToHost, s);
+}
+
