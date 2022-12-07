@@ -557,23 +557,28 @@ void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
     Repls->emplaceIntoReplSet(ReplSet[FilePath]);
 }
 
-static constexpr StringRef HeaderSpellings[] = {
-#define HEADER(Name, Spelling) Spelling,
+static const std::pair<HeaderType, StringRef> HeaderSpellings[] = {
+#define HEADER(Name, Spelling) {HT_##Name, Spelling},
 #include "HeaderTypes.inc"
 };
 
 StringRef DpctFileInfo::getHeaderSpelling(HeaderType Value) {
   if (Value < NUM_HEADERS)
-    return HeaderSpellings[Value];
-  llvm_unreachable("unknown HeaderType");
+    return HeaderSpellings[Value].second;
+
+  // Only assertion in debug
+  assert(false && "unknown HeaderType");
+  return "";
 }
 
 std::optional<HeaderType> DpctFileInfo::findHeaderType(StringRef Header) {
   const auto *Pos = llvm::find_if(
-      HeaderSpellings, [Header](StringRef H) -> bool { return Header == H; });
+      HeaderSpellings, [=](const std::pair<HeaderType, StringRef> &p) -> bool {
+        return p.second == Header;
+      });
   if (Pos == std::end(HeaderSpellings))
     return std::nullopt;
-  return static_cast<HeaderType>(std::distance(HeaderSpellings, Pos));
+  return Pos->first;
 }
 
 void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
@@ -642,15 +647,20 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
   // We will insert <oneapi/dpl/execution> and <oneapi/dpl/algorithm> at the
   // begining of the main file
   case HT_DPCT_DPL_Utils:
-    insertHeader(HT_DPL_Execution, FirstIncludeOffset);
-    insertHeader(HT_DPL_Algorithm, FirstIncludeOffset);
-    [[fallthrough]];
+    insertHeader(HT_DPL_Execution);
+    insertHeader(HT_DPL_Algorithm);
+    break;
+  case HT_MKL_RNG:
+    insertHeader(HT_MKL_Mkl);
+    break;
   default:
-    if (Offset != FirstIncludeOffset)
-      OS << getNL();
-    concatHeader(OS, getHeaderSpelling(Type));
-    return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right);
+    break;
   }
+
+  if (Offset != FirstIncludeOffset)
+    OS << getNL();
+  concatHeader(OS, getHeaderSpelling(Type));
+  return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right);
 }
 
 void DpctFileInfo::insertHeader(HeaderType Type) {
