@@ -260,9 +260,13 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     } else {
       HashKey = "InvalidLoc";
     }
+    auto DefRange = Range;
+    if(Range.getBegin().isMacroID() || Range.getEnd().isMacroID()) {
+      DefRange = getDefinitionRange(Range.getBegin(), Range.getEnd());
+    }
 
-    dpct::DpctGlobalInfo::getExpansionRangeBeginSet().insert(
-        getCombinedStrFromLoc(Range.getBegin()));
+    dpct::DpctGlobalInfo::getExpansionRangeBeginMap()[getCombinedStrFromLoc(DefRange.getBegin())] =
+        SourceRange(MI->getReplacementToken(0).getLocation(), MI->getDefinitionEndLoc());
     if (dpct::DpctGlobalInfo::getMacroDefines().find(HashKey) ==
         dpct::DpctGlobalInfo::getMacroDefines().end()) {
       // Record all processed macro definition
