@@ -264,7 +264,6 @@ static void invoke_kernel_function(dpct::experimental::kernel_function &function
   function(queue, sycl::nd_range<3>(a * b, b), localMemSize, kernelParams,
            extra);
 }
-
 } // namespace experimental
 
 } // namespace dpct

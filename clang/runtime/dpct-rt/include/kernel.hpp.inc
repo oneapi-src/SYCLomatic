@@ -93,6 +93,11 @@ static kernel_function_info get_kernel_function_info(const void *function) {
 // DPCT_LABEL_END
 
 namespace experimental {
+// DPCT_LABEL_BEGIN|module|dpct::experimental
+// DPCT_DEPENDENCY_BEGIN
+// Kernel|kernel_functor
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 
 namespace detail {
 
@@ -314,7 +319,7 @@ static void invoke_kernel_function(dpct::experimental::kernel_function &function
   function(queue, sycl::nd_range<3>(a * b, b), localMemSize, kernelParams,
            extra);
 }
-
+// DPCT_LABEL_END
 } // namespace experimental
 
 } // namespace dpct
