@@ -209,7 +209,9 @@ static module load_sycl_lib(const std::string &name) {
 
   std::stringstream buffer;
   buffer << ifs.rdbuf();
-  return detail::load_dl_from_data(buffer.str().c_str(), buffer.str().size());
+
+  const std::string buffer_string = buffer.str();
+  return detail::load_dl_from_data(buffer_string.c_str(), buffer_string.size());
 };
 
 static module load_sycl_lib_mem(char const *const image) {
