@@ -293,8 +293,6 @@ public:
         get_info<sycl::info::device::global_mem_size>());
     prop.set_local_mem_size(get_info<sycl::info::device::local_mem_size>());
 
-    prop.set_memory_clock_rate(0);
-    prop.set_memory_bus_width(0);
 #if(defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 6)
     if (this->has(sycl::aspect::ext_intel_memory_clock_rate)) {
       prop.set_memory_clock_rate(

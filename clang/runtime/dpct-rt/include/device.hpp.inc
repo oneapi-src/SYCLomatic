@@ -271,7 +271,6 @@ public:
   size_t get_local_mem_size() const { return _local_mem_size; }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_get_memory_clock_rate|dpct
-// DPCT_PARENT_FEATURE|device_info
 // DPCT_DEPENDENCY_BEGIN
 // Device|device_info
 // DPCT_DEPENDENCY_END
@@ -279,7 +278,6 @@ public:
   int get_memory_clock_rate() const { return _memory_clock_rate; }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_get_memory_bus_width|dpct
-// DPCT_PARENT_FEATURE|device_info
 // DPCT_DEPENDENCY_BEGIN
 // Device|device_info
 // DPCT_DEPENDENCY_END
@@ -432,7 +430,6 @@ public:
   }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_set_memory_clock_rate|dpct
-// DPCT_PARENT_FEATURE|device_info
 // DPCT_DEPENDENCY_BEGIN
 // Device|device_info
 // DPCT_DEPENDENCY_END
@@ -442,7 +439,6 @@ public:
   }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_set_memory_bus_width|dpct
-// DPCT_PARENT_FEATURE|device_info
 // DPCT_DEPENDENCY_BEGIN
 // Device|device_info
 // DPCT_DEPENDENCY_END
@@ -669,8 +665,6 @@ public:
         get_info<sycl::info::device::global_mem_size>());
     prop.set_local_mem_size(get_info<sycl::info::device::local_mem_size>());
 
-    prop.set_memory_clock_rate(0);
-    prop.set_memory_bus_width(0);
 #if(defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 6)
     if (this->has(sycl::aspect::ext_intel_memory_clock_rate)) {
       prop.set_memory_clock_rate(
