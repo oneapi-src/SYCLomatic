@@ -169,10 +169,10 @@ static uint64_t get_lib_size(char const *const blob) {
 
 } // namespace detail
 
-class module {
+class kernel_library {
 public:
-  module() : ptr{nullptr} {}
-  module(void *ptr) : ptr{ptr} {}
+  kernel_library() : ptr{nullptr} {}
+  kernel_library(void *ptr) : ptr{ptr} {}
 
   operator void *() const { return ptr; }
 
@@ -182,7 +182,7 @@ private:
 
 namespace detail {
 
-static module load_dl_from_data(char const *const data, size_t size) {
+static kernel_library load_dl_from_data(char const *const data, size_t size) {
   const std::string name{std::tmpnam(NULL)};
 
   write_data_to_file(name, data, size);
@@ -203,7 +203,7 @@ static module load_dl_from_data(char const *const data, size_t size) {
 
  /// Load kernel library and return a handle to use the library.
  /// \param [in] name The name of the library.
-static module load_sycl_lib(const std::string &name) {
+static kernel_library load_kernel_library(const std::string &name) {
   std::ifstream ifs;
   ifs.open(name, std::ios::in | std::ios::binary);
 
@@ -216,19 +216,19 @@ static module load_sycl_lib(const std::string &name) {
 
  /// Load kernel library whose image is alreay in memory and return a handle to use the library.
  /// \param [in] image A pointer to the image in memory.
-static module load_sycl_lib_mem(char const *const image) {
+static kernel_library load_kernel_library_mem(char const *const image) {
   const size_t size = detail::get_lib_size(image);
 
   return detail::load_dl_from_data(image, size);
 };
 
  /// Unload kernel library.
- /// \param [in,out] module Handle to the library to be closed.
-static void unload_sycl_lib(const module &module) {
+ /// \param [in,out] library Handle to the library to be closed.
+static void unload_kernel_library(const kernel_library &library) {
 #ifdef _WIN32
-  FreeLibrary(module);
+  FreeLibrary(library);
 #else
-  dlclose(module);
+  dlclose(library);
 #endif
 };
 
@@ -248,18 +248,18 @@ private:
   dpct::kernel_functor ptr;
 };
 
- /// Find SYCL kernel function in a kernel library and return its address.
- /// \param [in] module Handle to the kernel library.
+ /// Find kernel function in a kernel library and return its address.
+ /// \param [in] library Handle to the kernel library.
  /// \param [in] name Name of the kernel function.
-static dpct::experimental::kernel_function get_kernel_function(module &module,
+static dpct::experimental::kernel_function get_kernel_function(kernel_library &library,
                                                                const std::string &name) {
 #ifdef _WIN32
   dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(
-      GetProcAddress(static_cast<HMODULE>(module),
+      GetProcAddress(static_cast<HMODULE>(library),
                      (name + std::string("_wrapper")).c_str()));
 #else
   dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(
-      dlsym(module, (name + std::string("_wrapper")).c_str()));
+      dlsym(library, (name + std::string("_wrapper")).c_str()));
 #endif
   if (fn == nullptr)
     throw std::runtime_error("Failed to get function");
@@ -271,7 +271,7 @@ static dpct::experimental::kernel_function get_kernel_function(module &module,
  /// \param [in] queue SYCL queue used to execute kernel
  /// \param [in] groupRange SYCL group range
  /// \param [in] localRange SYCL local range
- /// \param [in] localMemSize The size of local memory required by the kernel.
+ /// \param [in] localMemSize The size of local memory required by the kernel function.
  /// \param [in] kernelParams Array of pointers to kernel arguments.
  /// \param [in] extra Extra arguments.
 static void invoke_kernel_function(dpct::experimental::kernel_function &function,

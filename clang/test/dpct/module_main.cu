@@ -3,20 +3,20 @@
 
 #include <string>
 int main(){
-    //CHECK: dpct::experimental::module M;
+    //CHECK: dpct::experimental::kernel_library M;
     CUmodule M;
     //CHECK: dpct::experimental::kernel_function F;
     CUfunction F;
     std::string Path, FunctionName, Data;
     //CHECK: /*
-    //CHECK-NEXT: DPCT1102:{{[0-9]+}}: 'Path.c_str()' should be a dynamic library. The dynamic library should supply "wrapped" kernel functions. load_sycl_lib calls tmpnam and may introduce a security issue.
+    //CHECK-NEXT: DPCT1102:{{[0-9]+}}: 'Path.c_str()' should be a dynamic library. The dynamic library should supply "wrapped" kernel functions. load_kernel_library calls tmpnam and may introduce a security issue.
     //CHECK-NEXT: */
-    //CHECK-NEXT: M = dpct::experimental::load_sycl_lib(Path.c_str());
+    //CHECK-NEXT: M = dpct::experimental::load_kernel_library(Path.c_str());
     cuModuleLoad(&M, Path.c_str());
     //CHECK: /*
-    //CHECK-NEXT: DPCT1103:{{[0-9]+}}: 'Data.c_str()' should point to a dynamic library loaded in memory. The dynamic library should supply "wrapped" kernel functions. load_sycl_lib_mem calls tmpnam and may introduce a security issue.
+    //CHECK-NEXT: DPCT1103:{{[0-9]+}}: 'Data.c_str()' should point to a dynamic library loaded in memory. The dynamic library should supply "wrapped" kernel functions. load_kernel_library_mem calls tmpnam and may introduce a security issue.
     //CHECK-NEXT: */
-    //CHECK-NEXT: M = dpct::experimental::load_sycl_lib_mem(Data.c_str());
+    //CHECK-NEXT: M = dpct::experimental::load_kernel_library_mem(Data.c_str());
     cuModuleLoadData(&M, Data.c_str());
     //CHECK: F = dpct::experimental::get_kernel_function(M, FunctionName.c_str());
     cuModuleGetFunction(&F, M, FunctionName.c_str());
@@ -36,13 +36,13 @@ int main(){
     CUtexref tex;
     cuModuleGetTexRef(&tex, M, "tex");
 
-    //CHECK: dpct::experimental::unload_sycl_lib(M);
+    //CHECK: dpct::experimental::unload_kernel_library(M);
     cuModuleUnload(M);
 
     //CHECK: /*
     //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
     //CHECK-NEXT: */
-    //CHECK-NEXT: if ((dpct::experimental::unload_sycl_lib(M), 0)==0) {
+    //CHECK-NEXT: if ((dpct::experimental::unload_kernel_library(M), 0)==0) {
     if (cuModuleUnload(M)==0) {
       printf("unload failed\n");
     }

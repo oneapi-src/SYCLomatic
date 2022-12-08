@@ -4,7 +4,7 @@
 // RUN: rm -rf %T/Kernel/api_test4_out
 
 // CHECK: 3
-// TEST_FEATURE: Kernel_module
+// TEST_FEATURE: Kernel_kernel_library
 
 int main() {
   CUmodule module;

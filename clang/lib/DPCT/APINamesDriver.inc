@@ -6,21 +6,21 @@
 //
 //===----------------------------------------------------------------------===//
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_module, ASSIGNABLE_FACTORY(
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     ASSIGN_FACTORY_ENTRY("cuModuleLoad", DEREF(0),
-                         CALL("dpct::experimental::load_sycl_lib", ARG(1)))))
+                         CALL("dpct::experimental::load_kernel_library", ARG(1)))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_module, ASSIGNABLE_FACTORY(
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     ASSIGN_FACTORY_ENTRY("cuModuleLoadData", DEREF(0),
-                         CALL("dpct::experimental::load_sycl_lib_mem",
+                         CALL("dpct::experimental::load_kernel_library_mem",
                               ARG(1)))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_module, ASSIGNABLE_FACTORY(
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     ASSIGN_FACTORY_ENTRY("cuModuleLoadDataEx", DEREF(0),
-                         CALL("dpct::experimental::load_sycl_lib_mem",
+                         CALL("dpct::experimental::load_kernel_library_mem",
                               ARG(1)))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_module, ASSIGNABLE_FACTORY(
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
                          CALL("dpct::experimental::get_kernel_function", ARG(1),
                               ARG(2)))))
@@ -31,9 +31,9 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
                             CALL("(dpct::image_wrapper_base_p)dlsym", ARG(1),
                                  ARG(2)))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_module, ASSIGNABLE_FACTORY(
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     CALL_FACTORY_ENTRY("cuModuleUnload",
-                       CALL("dpct::experimental::unload_sycl_lib", ARG(0)))))
+                       CALL("dpct::experimental::unload_kernel_library", ARG(0)))))
 
 #define RANGES_CTOR(RangeType, ...)                                            \
   CALL(DpctGlobalInfo::getCtadClass(                                           \
@@ -43,7 +43,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_module, ASSIGNABLE_FACTORY(
   RANGES_CTOR("nd_range", BO(BinaryOperatorKind::BO_Mul, Arg0, Arg1), Arg1)
 #define RANGE_CTOR(Arg0, Arg1, Arg2) RANGES_CTOR("range", Arg0, Arg1, Arg2)
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_module, ASSIGNABLE_FACTORY(
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     CALL_FACTORY_ENTRY(
         "cuLaunchKernel",
         CALL("dpct::experimental::invoke_kernel_function", ARG(0), STREAM(8),
