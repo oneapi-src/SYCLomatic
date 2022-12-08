@@ -292,6 +292,7 @@ public:
     prop.set_global_mem_size(
         get_info<sycl::info::device::global_mem_size>());
     prop.set_local_mem_size(get_info<sycl::info::device::local_mem_size>());
+#if(defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 6)
     if (this->has(sycl::aspect::ext_intel_memory_clock_rate)) {
       prop.set_memory_clock_rate(
           this->get_info<sycl::ext::intel::info::device::memory_clock_rate>());
@@ -304,6 +305,10 @@ public:
     } else {
       prop.set_memory_bus_width(0);
     }
+#else
+    prop.set_memory_clock_rate(0);
+    prop.set_memory_bus_width(0);
+#endif
 
     size_t max_sub_group_size = 1;
     std::vector<size_t> sub_group_sizes =
