@@ -247,7 +247,7 @@ static module load_dl_from_data(char const *const data, size_t size) {
   void *so = dlopen(name.c_str(), RTLD_LAZY);
 #endif
   if (so == nullptr)
-    throw std::runtime_error("Failed to load module");
+    throw std::runtime_error("Failed to load kernel library");
 
   std::remove(name.c_str());
 
@@ -256,6 +256,8 @@ static module load_dl_from_data(char const *const data, size_t size) {
 
 } // namespace detail
 
+ /// Load kernel library and return a handle to use the library.
+ /// \param [in] name The name of the library.
 static module load_sycl_lib(const std::string &name) {
   std::ifstream ifs;
   ifs.open(name, std::ios::in | std::ios::binary);
@@ -267,13 +269,17 @@ static module load_sycl_lib(const std::string &name) {
   return detail::load_dl_from_data(buffer_string.c_str(), buffer_string.size());
 };
 
+ /// Load kernel library whose image is alreay in memory and return a handle to use the library.
+ /// \param [in] image A pointer to the image in memory.
 static module load_sycl_lib_mem(char const *const image) {
   const size_t size = detail::get_lib_size(image);
 
   return detail::load_dl_from_data(image, size);
 };
 
-static void unload_sycl_lib(module &module) {
+ /// Unload kernel library.
+ /// \param [in,out] module Handle to the library to be closed.
+static void unload_sycl_lib(const module &module) {
 #ifdef _WIN32
   FreeLibrary(module);
 #else
@@ -297,6 +303,9 @@ private:
   dpct::kernel_functor ptr;
 };
 
+ /// Find SYCL kernel function in a kernel library and return its address.
+ /// \param [in] module Handle to the kernel library.
+ /// \param [in] name Name of the kernel function.
 static dpct::experimental::kernel_function get_kernel_function(module &module,
                                                                const std::string &name) {
 #ifdef _WIN32
@@ -312,6 +321,14 @@ static dpct::experimental::kernel_function get_kernel_function(module &module,
   return fn;
 }
 
+ /// Invoke a kernel function.
+ /// \param [in] function kernel function.
+ /// \param [in] queue SYCL queue used to execute kernel
+ /// \param [in] groupRange SYCL group range
+ /// \param [in] localRange SYCL local range
+ /// \param [in] localMemSize The size of local memory required by the kernel.
+ /// \param [in] kernelParams Array of pointers to kernel arguments.
+ /// \param [in] extra Extra arguments.
 static void invoke_kernel_function(dpct::experimental::kernel_function &function,
                                    sycl::queue &queue, sycl::range<3> groupRange,
                                    sycl::range<3> localRange, unsigned int localMemSize,
