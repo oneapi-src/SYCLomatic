@@ -65,7 +65,7 @@ private:
   size_type _min_capacity() const { return size_type(1); }
 
 public:
-  template <typename OtherA> operator const std::vector<T, OtherA>() & {
+  template <typename OtherA> operator std::vector<T, OtherA>() const {
     auto __tmp = std::vector<T, OtherA>(this->size());
     std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
               this->begin(), this->end(), __tmp.begin());
