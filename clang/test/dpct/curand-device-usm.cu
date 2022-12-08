@@ -23,8 +23,8 @@ __global__ void picount(int *totals) {
   __shared__ int counter[WARP_SIZE];
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
-  //CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng;
-  //CHECK: rng = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(clock64(), {0, static_cast<std::uint64_t>(tid * 8)});
+  //CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng;
+  //CHECK: rng = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(clock64(), {0, static_cast<std::uint64_t>(tid * 8)});
   curandState_t rng;
   curand_init(clock64(), tid, 0, &rng);
 
@@ -46,7 +46,7 @@ __global__ void picount(int *totals) {
   }
 }
 
-//CHECK: void cuda_kernel_initRND(unsigned long seed, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *States,
+//CHECK: void cuda_kernel_initRND(unsigned long seed, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *States,
 //CHECK-NEXT:                     sycl::nd_item<3> item_ct1)
 __global__ void cuda_kernel_initRND(unsigned long seed, curandState *States)
 {
@@ -56,11 +56,11 @@ __global__ void cuda_kernel_initRND(unsigned long seed, curandState *States)
   int id    = bid*32 + tid;
   int pixel = bid*32 + tid;
 
-  //CHECK: States[id] = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>(seed, {0, static_cast<std::uint64_t>(pixel * 8)});
+  //CHECK: States[id] = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(seed, {0, static_cast<std::uint64_t>(pixel * 8)});
   curand_init(seed, pixel, 0, &States[id]);
 }
 
-//CHECK: void cuda_kernel_RNDnormalDitribution(double *Image, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *States,
+//CHECK: void cuda_kernel_RNDnormalDitribution(double *Image, dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *States,
 //CHECK-NEXT:                                  sycl::nd_item<3> item_ct1)
 __global__ void cuda_kernel_RNDnormalDitribution(double *Image, curandState *States)
 {
@@ -91,16 +91,16 @@ int main(int argc, char **argv) {
 
   int size = 10;
   double *Image;
-  //CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *RandomStates;
+  //CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *RandomStates;
   curandState *RandomStates;
   void *dev;
-  //CHECK: dev = (void *)sycl::malloc_device(size * sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>), q_ct1);
+  //CHECK: dev = (void *)sycl::malloc_device(size * sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>), q_ct1);
   cudaMalloc((void**)&dev, size * sizeof(curandState));
-  //CHECK: RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>*)dev;
+  //CHECK: RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>*)dev;
   RandomStates = (curandState*)dev;
-  //CHECK: RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *)sycl::malloc_device(size * sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>) * 10, q_ct1);
+  //CHECK: RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *)sycl::malloc_device(size * sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>) * 10, q_ct1);
   cudaMalloc((void**)&RandomStates, size * sizeof(curandState) * 10);
-  //CHECK: RandomStates = sycl::malloc_device<dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>>(size, q_ct1);
+  //CHECK: RandomStates = sycl::malloc_device<dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>>(size, q_ct1);
   cudaMalloc((void**)&RandomStates, size * sizeof(curandState));
 
   cuda_kernel_initRND<<<16,32>>>(1234, RandomStates);
@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
 
   //CHECK: CHECK((dOut = sycl::malloc_device<int>(10, q_ct1), 0));
   CHECK(cudaMalloc((void **)&dOut, sizeof(int) * 10));
-  //CHECK: CHECK((RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> *)sycl::malloc_device(sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>>) * 10 * 10, q_ct1), 0));
+  //CHECK: CHECK((RandomStates = (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> *)sycl::malloc_device(sizeof(dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>) * 10 * 10, q_ct1), 0));
   CHECK(cudaMalloc((void **)&RandomStates, sizeof(curandState) * 10 * 10));
   //CHECK: sycl::range<3> grid(1, 1, 10);
   dim3 grid(10, 1);

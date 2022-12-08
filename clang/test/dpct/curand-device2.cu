@@ -209,13 +209,13 @@ __global__ void kernel3() {
 }
 
 __global__ void type_test() {
-  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng1;
+  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng1;
   curandStateXORWOW_t rng1;
-  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng2;
+  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng2;
   curandStateXORWOW rng2;
-  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng3;
+  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng3;
   curandState_t rng3;
-  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::mcg59<1>> rng4;
+  //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng4;
   curandState rng4;
   //CHECK:dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> rng5;
   curandStatePhilox4_32_10_t rng5;

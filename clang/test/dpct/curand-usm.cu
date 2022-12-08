@@ -207,8 +207,8 @@ void bar1(){
 //CHECK:/*
 //CHECK-NEXT:DPCT1032:{{[0-9]+}}: A different random number generator is used. You may need to adjust the code.
 //CHECK-NEXT:*/
-//CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::mcg59> rng;
-//CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::mcg59>(dpct::get_default_queue(), 1337ull);
+//CHECK-NEXT:std::shared_ptr<oneapi::mkl::rng::philox4x32x10> rng;
+//CHECK-NEXT:rng = std::make_shared<oneapi::mkl::rng::philox4x32x10>(dpct::get_default_queue(), 1337ull);
 //CHECK-NEXT:/*
 //CHECK-NEXT:DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
 //CHECK-NEXT:*/
@@ -302,12 +302,12 @@ int bar5(){
 
 void bar6(float *x_gpu, size_t n) {
   //CHECK: oneapi::mkl::rng::uniform<float> distr_ct{{[0-9]+}};
-  //CHECK-NEXT: static std::shared_ptr<oneapi::mkl::rng::mcg59> gen[16];
+  //CHECK-NEXT: static std::shared_ptr<oneapi::mkl::rng::philox4x32x10> gen[16];
   static curandGenerator_t gen[16];
   static int init[16] = {0};
   int i = 0;
   if(!init[i]) {
-    //CHECK: gen[i] = std::make_shared<oneapi::mkl::rng::mcg59>(dpct::get_default_queue(), 1234);
+    //CHECK: gen[i] = std::make_shared<oneapi::mkl::rng::philox4x32x10>(dpct::get_default_queue(), 1234);
     //CHECK-NEXT: /*
     //CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to curandSetPseudoRandomGeneratorSeed was removed because this call is redundant in SYCL.
     //CHECK-NEXT: */
