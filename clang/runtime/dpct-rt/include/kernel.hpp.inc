@@ -313,10 +313,10 @@ static dpct::experimental::kernel_function get_kernel_function(module &module,
 }
 
 static void invoke_kernel_function(dpct::experimental::kernel_function &function,
-                                   sycl::queue &queue, sycl::range<3> a,
-                                   sycl::range<3> b, unsigned int localMemSize,
+                                   sycl::queue &queue, sycl::range<3> groupRange,
+                                   sycl::range<3> localRange, unsigned int localMemSize,
                                    void **kernelParams, void **extra) {
-  function(queue, sycl::nd_range<3>(a * b, b), localMemSize, kernelParams,
+  function(queue, sycl::nd_range<3>(groupRange * localRange, localRange), localMemSize, kernelParams,
            extra);
 }
 // DPCT_LABEL_END
