@@ -1954,12 +1954,6 @@ std::function<bool(const CallExpr *C)> checkIsUSM() {
   };
 }
 
-std::function<bool(const CallExpr *C)> checkIsArgStream(size_t index) {
-  return [=](const CallExpr *C) -> bool {
-    return !(isDefaultStream(C->getArg(index)));
-  };
-}
-
 std::function<bool(const CallExpr *C)> checkArgSpelling(size_t index,
                                                         std::string str) {
   return [=](const CallExpr *C) -> bool {

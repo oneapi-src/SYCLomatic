@@ -260,9 +260,13 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     } else {
       HashKey = "InvalidLoc";
     }
+    auto DefRange = Range;
+    if(Range.getBegin().isMacroID() || Range.getEnd().isMacroID()) {
+      DefRange = getDefinitionRange(Range.getBegin(), Range.getEnd());
+    }
 
-    dpct::DpctGlobalInfo::getExpansionRangeBeginSet().insert(
-        getCombinedStrFromLoc(Range.getBegin()));
+    dpct::DpctGlobalInfo::getExpansionRangeBeginMap()[getCombinedStrFromLoc(DefRange.getBegin())] =
+        SourceRange(MI->getReplacementToken(0).getLocation(), MI->getDefinitionEndLoc());
     if (dpct::DpctGlobalInfo::getMacroDefines().find(HashKey) ==
         dpct::DpctGlobalInfo::getMacroDefines().end()) {
       // Record all processed macro definition
@@ -7631,12 +7635,12 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         new InsertBeforeStmt(CE, Prefix + ResultVarName + " = "));
 
     std::string ReplStr =
-        MapNames::getDpctNamespace() + "get_current_device().get_info<" +
-        MapNames::getClNamespace() + "info::device::version>()";
-
+        MapNames::getDpctNamespace() + "get_current_device()." +
+          "get_major_version()";
     emplaceTransformation(new ReplaceStmt(CE, ReplStr + Suffix));
     report(CE->getBeginLoc(), Warnings::TYPE_MISMATCH, false);
     requestFeature(HelperFeatureEnum::Device_get_current_device, CE);
+    requestFeature(HelperFeatureEnum::Device_device_ext_get_major_version, CE);
   } else if (FuncName == "cudaDeviceReset" || FuncName == "cudaThreadExit") {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);

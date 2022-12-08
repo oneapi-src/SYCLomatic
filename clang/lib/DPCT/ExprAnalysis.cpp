@@ -286,7 +286,6 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   if (IsInMacroDefine) {
     // If the expr is in macro define, and the CallSpellingBegin/End is set,
     // we can use the CallSpellingBegin/End to get a more precise range.
-    bool RangeInCall = false;
     if (CallSpellingBegin.isValid() && CallSpellingEnd.isValid()) {
       auto Range = getRangeInRange(E, CallSpellingBegin, CallSpellingEnd);
       auto DLBegin = SM.getDecomposedLoc(Range.first);
@@ -296,33 +295,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
         BeginLoc = Range.first;
         EndLoc = Range.second;
         End = getOffset(EndLoc);
-        RangeInCall = true;
       }
-    }
-    // In cases like:
-    // #define CCC <<<1,1>>>()
-    // #define KERNEL foo CCC
-    // The getRangeInRange cannot find the correct range,
-    // fallback to use heuristics.
-    if (!RangeInCall) {
-      if (SM.isMacroArgExpansion(E->getBeginLoc())) {
-        BeginLoc = SM.getSpellingLoc(
-            SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
-        EndLoc = SM.getSpellingLoc(
-            SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
-      } else {
-        BeginLoc =
-            SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
-        EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getEndLoc()));
-        if (isExprStraddle(E)) {
-          auto Range = getTheOneBeforeLastImmediateExapansion(E->getBeginLoc(),
-                                                              E->getEndLoc());
-          BeginLoc = SM.getImmediateSpellingLoc(Range.first);
-          EndLoc = SM.getImmediateSpellingLoc(Range.second);
-        }
-      }
-      End = getOffset(EndLoc) +
-            Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
     }
   } else {
     // If the Expr is FileID or is macro arg
@@ -1933,7 +1906,10 @@ void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
           SM.getExpansionRange(Ctor->getEndLoc()).getEnd(),
           CtorString.replace(CtorString.length() - 2, 2, ")"));
     }
-    return addReplacement(Ctor,
+
+    auto Range =
+        getRangeInRange(Ctor, CallSpellingBegin, CallSpellingEnd, false);
+    return addReplacement(Range.first, Range.second,
                           CtorString.replace(CtorString.length() - 2, 2, ")"));
   }
   return ArgumentAnalysis::analyzeExpr(Ctor);
@@ -2022,7 +1998,6 @@ std::string ArgumentAnalysis::getRewriteString() {
           SubRepl->getLength(), SubRepl->getReplacementText().str());
     }
   }
-
   return SRs.getReplacedString();
 }
 
