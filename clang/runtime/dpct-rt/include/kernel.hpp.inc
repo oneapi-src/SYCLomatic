@@ -231,8 +231,6 @@ public:
 
   operator void *() const { return ptr; }
 
-  void *get_ptr() { return (ptr); }
-
 private:
   void *ptr;
 };
@@ -277,9 +275,9 @@ static module load_sycl_lib_mem(char const *const image) {
 
 static void unload_sycl_lib(module &module) {
 #ifdef _WIN32
-  FreeLibrary(module.get_ptr());
+  FreeLibrary(module);
 #else
-  dlclose(module.get_ptr());
+  dlclose(module);
 #endif
 };
 
@@ -303,11 +301,11 @@ static dpct::experimental::kernel_function get_kernel_function(module &module,
                                                                const std::string &name) {
 #ifdef _WIN32
   dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(
-      GetProcAddress(static_cast<HMODULE>(module.get_ptr()),
+      GetProcAddress(static_cast<HMODULE>(module),
                      (name + std::string("_wrapper")).c_str()));
 #else
   dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(
-      dlsym(module.get_ptr(), (name + std::string("_wrapper")).c_str()));
+      dlsym(module, (name + std::string("_wrapper")).c_str()));
 #endif
   if (fn == nullptr)
     throw std::runtime_error("Failed to get function");
