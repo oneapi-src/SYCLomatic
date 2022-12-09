@@ -334,11 +334,10 @@ public:
 #else
 #ifdef DPCT_USM_LEVEL_NONE
     auto property =
-        sycl::property_list{sycl::property::queue::enable_profiling()};
+        sycl::property_list{};
 #else
     auto property =
-        sycl::property_list{sycl::property::queue::enable_profiling(),
-                            sycl::property::queue::in_order()};
+        sycl::property_list{sycl::property::queue::in_order()};
 #endif
 #endif
     return property;
