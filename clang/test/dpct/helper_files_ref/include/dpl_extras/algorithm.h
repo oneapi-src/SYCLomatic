@@ -1264,7 +1264,7 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
   auto sg_sizes = policy.queue()
                       .get_device()
                       .template get_info<sycl::info::device::sub_group_sizes>();
-  ::std::size_t subgroup_size = sg_sizes.empty() ? 0 : sg_sizes.back();
+  ::std::size_t sub_group_size = sg_sizes.empty() ? 0 : sg_sizes.back();
 
   float avg_seg_size = (float)n / (float)nsegments;
   if (avg_seg_size > work_group_size) {
