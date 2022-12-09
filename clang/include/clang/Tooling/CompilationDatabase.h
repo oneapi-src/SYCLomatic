@@ -233,6 +233,27 @@ private:
   std::vector<CompileCommand> CompileCommands;
 };
 
+#ifdef SYCLomatic_CUSTOMIZATION
+// ExpandedCompilationDatabase returns a single command line if
+// migration candidate is not in json compilation database.
+class ExpandedCompilationDatabase : public CompilationDatabase {
+public:
+  ExpandedCompilationDatabase(
+      std::unique_ptr<CompilationDatabase> Compilations)
+      : BaseCompilations(std::move(Compilations)) {}
+
+  std::vector<CompileCommand>
+  getCompileCommands(StringRef FilePath) const override;
+
+  std::vector<std::string> getAllFiles() const override;
+
+  std::vector<CompileCommand> getAllCompileCommands() const override;
+
+private:
+  std::unique_ptr<CompilationDatabase> BaseCompilations;
+};
+#endif
+
 /// Transforms a compile command so that it applies the same configuration to
 /// a different file. Most args are left intact, but tweaks may be needed
 /// to certain flags (-x, -std etc).

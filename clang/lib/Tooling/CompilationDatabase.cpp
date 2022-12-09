@@ -469,6 +469,36 @@ FixedCompilationDatabase::getCompileCommands(StringRef FilePath) const {
   return Result;
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+std::vector<CompileCommand>
+ExpandedCompilationDatabase::getAllCompileCommands() const {
+  return BaseCompilations->getAllCompileCommands();
+}
+
+std::vector<CompileCommand>
+ExpandedCompilationDatabase::getCompileCommands(StringRef FilePath) const {
+  std::vector<CompileCommand> Command =
+      BaseCompilations->getCompileCommands(FilePath);
+  if (!Command.empty())
+    return Command;
+  DoPrintHandle("Warning: file " +  FilePath.str() +
+        " is not found in compile_commands.json."
+        " Migrate it directly.\n", false);
+
+  std::vector<std::string> ToolCommandLine(1, GetClangToolCommand());
+  Command.push_back(CompileCommand(".", StringRef(),
+                               std::move(ToolCommandLine),
+                               StringRef()));
+  Command[0].CommandLine.push_back(std::string(FilePath));
+  Command[0].Filename = std::string(FilePath);
+  return Command;
+}
+
+std::vector<std::string> ExpandedCompilationDatabase::getAllFiles() const {
+  return BaseCompilations->getAllFiles();
+}
+#endif
+
 namespace {
 
 class FixedCompilationDatabasePlugin : public CompilationDatabasePlugin {
