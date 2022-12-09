@@ -268,9 +268,9 @@ void foo(cudaStream_t stream) {
   thrust::reduce_by_key(d.begin(), d.end(), d.begin(), d.end(), d.begin());
 
   {
-    //CHECK:std::vector<int> h_keys,h_values;
-    //CHECK-NEXT:dpct::device_vector<int> d_keys, d_values;
-    //CHECK-NEXT:oneapi::dpl::equal_to<int> binary_pred;
+// CHECK:std::vector<int> h_keys,h_values;
+// CHECK-NEXT:dpct::device_vector<int> d_keys, d_values;
+// CHECK-NEXT:oneapi::dpl::equal_to<int> binary_pred;
     thrust::host_vector<int> h_keys,h_values;
     thrust::device_vector<int> d_keys, d_values;
     thrust::equal_to<int> binary_pred;
@@ -278,18 +278,18 @@ void foo(cudaStream_t stream) {
     int A[N]; // keys
     int B[N]; // values
 
-    //CHECK:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), binary_pred);
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), binary_pred);
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin());
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin());
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
+// CHECK:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), binary_pred);
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), binary_pred);
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin());
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin());
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
     thrust::unique_by_key(thrust::host, h_keys.begin(), h_keys.end(), h_values.begin());
     thrust::unique_by_key(h_keys.begin(), h_keys.end(), h_values.begin());
     thrust::unique_by_key(thrust::host, h_keys.begin(), h_keys.end(),h_values.begin(), binary_pred);
@@ -304,4 +304,61 @@ void foo(cudaStream_t stream) {
     thrust::unique_by_key(A, A + N, B, binary_pred);
 
   }
+}
+
+
+struct key_value
+	{
+		int key;
+		int value;
+		__host__ __device__ 
+		bool operator!=( struct key_value &tmp)  {
+			if (this->key != tmp.key||this->value != tmp.value) {
+				return true;
+			}
+			else {
+				return false;
+			}
+
+		}
+	};
+
+struct compare_key_value
+	{
+		__host__ __device__
+			bool operator()(key_value lhs, key_value rhs) {
+			return lhs.key < rhs.key;
+		}
+	};
+
+void minmax_element_test() {
+	const int N = 6;
+	int data[N] = { 1, 0, 2, 2, 1, 3 };
+	thrust::host_vector<int> h_values(data, data + N);
+	thrust::device_vector<int> d_values(data, data + N);
+
+// CHECK:  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.end());
+// CHECK-NEXT:	oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.end());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.begin() + 4, compare_key_value());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.begin() + 4, compare_key_value());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end(), compare_key_value());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end(), compare_key_value());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N);
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N);
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N, compare_key_value());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N, compare_key_value());
+  thrust::minmax_element(thrust::host, h_values.begin(), h_values.end());
+	thrust::minmax_element(h_values.begin(), h_values.end());
+  thrust::minmax_element(thrust::host, h_values.begin(), h_values.begin() + 4, compare_key_value());
+  thrust::minmax_element(h_values.begin(), h_values.begin() + 4, compare_key_value());
+  thrust::minmax_element(thrust::device, d_values.begin(), d_values.end());
+  thrust::minmax_element(d_values.begin(), d_values.end());
+  thrust::minmax_element(thrust::device, d_values.begin(), d_values.end(), compare_key_value());
+  thrust::minmax_element(d_values.begin(), d_values.end(), compare_key_value());
+  thrust::minmax_element(thrust::host, data, data+N);
+  thrust::minmax_element(data, data+N);
+  thrust::minmax_element(thrust::host, data, data+N, compare_key_value());
+  thrust::minmax_element(data, data+N, compare_key_value());
 }

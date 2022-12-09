@@ -741,5 +741,61 @@ void foo()
   thrust::unique_by_key(A, A + N, B);
   thrust::unique_by_key(thrust::host, A, A + N, B, binary_pred);
   thrust::unique_by_key(A, A + N, B, binary_pred);
-
 }
+
+struct key_value
+	{
+		int key;
+		int value;
+		__host__ __device__
+		bool operator!=( struct key_value &tmp)  {
+			if (this->key != tmp.key||this->value != tmp.value) {
+				return true;
+			}
+			else {
+				return false;
+			}
+
+		}
+	};
+
+struct compare_key_value
+	{
+		__host__ __device__
+			bool operator()(key_value lhs, key_value rhs) {
+			return lhs.key < rhs.key;
+		}
+	};
+
+void minmax_element_test() {
+	const int N = 6;
+	int data[N] = { 1, 0, 2, 2, 1, 3 };
+	thrust::host_vector<int> h_values(data, data + N);
+	thrust::device_vector<int> d_values(data, data + N);
+
+//CHECK:  if (dpct::is_device_ptr(data)) {
+//CHECK-NEXT:    oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data + N));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data + N);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data + N)) {
+//CHECK-NEXT:    oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data + N);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data)) {
+//CHECK-NEXT:    oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), compare_key_value());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data + N, compare_key_value());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(data + N)) {
+//CHECK-NEXT:    oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(data), dpct::device_pointer<int>(data + N), compare_key_value());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data + N, compare_key_value());
+//CHECK-NEXT:  };
+  thrust::minmax_element(thrust::host, data, data+N);
+  thrust::minmax_element(data, data+N);
+  thrust::minmax_element(thrust::host, data, data+N, compare_key_value());
+  thrust::minmax_element(data, data+N, compare_key_value());
+}
+
