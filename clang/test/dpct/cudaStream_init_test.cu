@@ -99,6 +99,16 @@ int main(){
   [](const cudaStream_t&) {}(0);
   // CHECK: [](dpct::queue_ptr&&) {}(&q_ct1);
   [](cudaStream_t&&) {}(0);
+
+  // CHECK: dpct::queue_ptr legacy = &q_ct1;
+  cudaStream_t legacy = cudaStreamLegacy;
+  // CHECK: dpct::queue_ptr perThread = &q_ct1;
+  cudaStream_t perThread = cudaStreamPerThread;
+
+  // CHECK: dpct::queue_ptr legacy2 = &q_ct1;
+  cudaStream_t legacy2 = reinterpret_cast<cudaStream_t>(1);
+  // CHECK: dpct::queue_ptr perThread2 = &q_ct1;
+  cudaStream_t perThread2 = reinterpret_cast<cudaStream_t>(2);
 }
 
 int main2(){
@@ -142,6 +152,17 @@ int main2(){
   [](const CUstream&) {}(0);
   // CHECK: [](dpct::queue_ptr&&) {}(&q_ct1);
   [](CUstream&&) {}(0);
+
+
+  // CHECK: dpct::queue_ptr legacy = &q_ct1;
+  CUsream legacy = CU_STREAM_LEGACY;
+  // CHECK: dpct::queue_ptr perThread = &q_ct1;
+  CUstream perThread = CU_STREAM_PER_THREAD;
+
+  // CHECK: dpct::queue_ptr legacy2 = &q_ct1;
+  CUstream legacy2 = reinterpret_cast<CUstream>(1);
+  // CHECK: dpct::queue_ptr perThread2 = &q_ct1;
+  CUstream perThread2 = reinterpret_cast<CUstream>(2);
 }
 
 void CopyToHost(void *buf, void *host, int N, int stream) {
