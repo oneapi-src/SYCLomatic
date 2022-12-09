@@ -60,7 +60,7 @@ void registerAPIRule(MetaRuleObject &R) {
   // register rule
   reisterMigrationRule(R.RuleId, [=] {
     return std::make_unique<clang::dpct::UserDefinedAPIRule>(
-        R.In, R.RuleAttribute.HasExplicitTemplateArgs);
+        R.In, R.RuleAttributes.HasExplicitTemplateArgs);
   });
   // create and register rewriter
   // RewriterMap contains entries like {"FunctionName", RewriterFactory}
@@ -76,7 +76,7 @@ void registerAPIRule(MetaRuleObject &R) {
   auto &Entry = (*CallExprRewriterFactoryBase::RewriterMap)[R.In];
   if (!Entry) {
     Entry = Factory;
-  } else if (R.RuleAttribute.HasExplicitTemplateArgs) {
+  } else if (R.RuleAttributes.HasExplicitTemplateArgs) {
     Entry = std::make_shared<ConditionalRewriterFactory>(
         UserDefinedRewriterFactory::hasExplicitTemplateArgs, Factory, Entry);
   } else if (Entry->Priority > R.Priority) {
