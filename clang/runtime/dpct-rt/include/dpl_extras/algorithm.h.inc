@@ -1491,36 +1491,80 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
                   8) {
   using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
   using value_t_value_t = typename ::std::iterator_traits<value_t>::value_type;
-  int *segments = sycl::malloc_device<int>(n, policy.queue());
-  int *segments_sorted = sycl::malloc_device<int>(n, policy.queue());
+  ::std::size_t *segments =
+      sycl::malloc_device<::std::size_t>(n, policy.queue());
+  ::std::size_t *segments_sorted =
+      sycl::malloc_device<::std::size_t>(n, policy.queue());
   auto keys_temp = sycl::malloc_device<key_t_value_t>(n, policy.queue());
   auto values_temp = sycl::malloc_device<value_t_value_t>(n, policy.queue());
 
-  // create a list of segment indexes
-  if (nsegments > n / nsegments) {
+  ::std::size_t work_group_size =
+      policy.queue()
+          .get_device()
+          .template get_info<sycl::info::device::max_work_group_size>();
+
+  auto sg_sizes = policy.queue()
+                      .get_device()
+                      .template get_info<sycl::info::device::sub_group_sizes>();
+  ::std::size_t subgroup_size = sg_sizes.empty() ? 0 : sg_sizes.back();
+
+  float avg_seg_size = (float)n / (float)nsegments;
+  if (avg_seg_size > work_group_size) {
+    // If average segment size is larger than workgroup, use workgroup to
+    // coordinate to mark segments
     policy.queue()
         .submit([&](sycl::handler &h) {
-          h.parallel_for(nsegments, ([=](sycl::id<1> seg) {
-                           for (int i = begin_offsets[seg];
-                                i < end_offsets[seg]; i++) {
-                             segments[i] = seg;
+          h.parallel_for(work_group_size, ([=](sycl::id<1> id) {
+                           for (::std::size_t seg = 0; seg < nsegments; seg++) {
+                             ::std::size_t i = begin_offsets[seg];
+                             ::std::size_t end = end_offsets[seg];
+                             while (i + id < end) {
+                               segments[i + id] = seg;
+                               i += work_group_size;
+                             }
+                           }
+                         }));
+        })
+        .wait();
+  } else if (sub_group_size > 0 && avg_seg_size > sub_group_size / 2) {
+    // If average segment size is larger than half a subgroup, use subgroup to
+    // coordinate to mark segments
+    policy.queue()
+        .submit([&](sycl::handler &h) {
+          h.parallel_for(sycl::nd_range<1>{work_group_size, work_group_size},
+                         ([=](sycl::nd_item<1> __item) {
+                           auto __sub_group = __item.get_sub_group();
+                           ::std::size_t __num_subgroups =
+                               __sub_group.get_group_range().size();
+                           ::std::size_t __local_size =
+                               __sub_group.get_local_range().size();
+
+                           ::std::size_t __sub_group_id =
+                               __sub_group.get_group_id();
+                           while (__sub_group_id < nsegments) {
+                             ::std::size_t __subgroup_local_id =
+                                 __sub_group.get_local_id();
+                             std::size_t i = begin_offsets[__sub_group_id];
+                             std::size_t end = end_offsets[__sub_group_id];
+                             while (i + __subgroup_local_id < end) {
+                               segments[i + __subgroup_local_id] =
+                                   __sub_group_id;
+                               i += __local_size;
+                             }
+                             __sub_group_id += __num_subgroups;
                            }
                          }));
         })
         .wait();
   } else {
-    // probably better off setting block size based on characteristics of device
-    int block_size = n / nsegments;
+    // If average segment size is small as compared to subgroup, use single
+    // work item to mark each segment
     policy.queue()
         .submit([&](sycl::handler &h) {
-          h.parallel_for(block_size, ([=](sycl::id<1> id) {
-                           for (int seg = 0; seg < nsegments; seg++) {
-                             int i = begin_offsets[seg];
-                             int end = end_offsets[seg];
-                             while (i + id < end) {
-                               segments[i + id] = seg;
-                               i += block_size;
-                             }
+          h.parallel_for(nsegments, ([=](sycl::id<1> seg) {
+                           for (std::size_t i = begin_offsets[seg];
+                                i < end_offsets[seg]; i++) {
+                             segments[i] = seg;
                            }
                          }));
         })
@@ -1530,13 +1574,13 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
   auto zip_seg_vals = oneapi::dpl::make_zip_iterator(segments, values_in);
   auto zip_seg_vals_out =
       oneapi::dpl::make_zip_iterator(segments_sorted, values_temp);
-  // first sort by keys keeping track of which segment were in...
+  // Part 1: Sort by keys keeping track of which segment were in
   dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy), keys_in, keys_temp,
                    zip_seg_vals, zip_seg_vals_out, n, descending);
 
   auto zip_keys_vals = oneapi::dpl::make_zip_iterator(keys_temp, values_temp);
   auto zip_keys_vals_out = oneapi::dpl::make_zip_iterator(keys_out, values_out);
-  // then sort the segments with a stable sort to get back sorted segments.
+  // Part 2: Sort the segments with a stable sort to get back sorted segments.
   dpct::sort_pairs(::std::forward<_ExecutionPolicy>(policy), segments_sorted,
                    segments, zip_keys_vals, zip_keys_vals_out, n, false);
 
@@ -1630,23 +1674,24 @@ inline void segmented_sort_pairs(
                       .get_device()
                       .template get_info<sycl::info::device::sub_group_sizes>();
   int subgroup_size = sg_sizes.empty() ? 1 : sg_sizes.back();
-  int compute_unit_threads =
-      policy.queue().get_device().is_gpu() ? subgroup_size : 1;
   // parallel for of serial sorts when we have sufficient number of segments for
-  // load balance
-  if (nsegments > compute_units * compute_unit_threads) {
+  // load balance when number of segments is large as compared to our target
+  // compute capability
+  if (nsegments >
+      compute_units *
+          (policy.queue().get_device().is_gpu() ? subgroup_size : 1)) {
     dpct::internal::segmented_sort_pairs_by_parallel_for_of_sorts(
         ::std::forward<_ExecutionPolicy>(policy), keys_in, keys_out, values_in,
         values_out, n, nsegments, begin_offsets, end_offsets, descending,
         begin_bit, end_bit);
-  } else if (nsegments < 500) // for loop of parallel sorts when we have a small
+  } else if (nsegments < 512) // for loop of parallel sorts when we have a small
                               // number of total sorts to limit total overhead
   {
     dpct::internal::segmented_sort_pairs_by_parallel_sorts(
         ::std::forward<_ExecutionPolicy>(policy), keys_in, keys_out, values_in,
         values_out, n, nsegments, begin_offsets, end_offsets, descending,
         begin_bit, end_bit);
-  } else // decent catch using 2 full sorts
+  } else // decent catch all using 2 full sorts
   {
     dpct::internal::segmented_sort_pairs_by_two_pair_sorts(
         ::std::forward<_ExecutionPolicy>(policy), keys_in, keys_out, values_in,
