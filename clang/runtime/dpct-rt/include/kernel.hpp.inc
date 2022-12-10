@@ -45,6 +45,9 @@
 #include <dlfcn.h>
 #endif
 
+#include <filesystem>
+#include <random>
+
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
@@ -101,11 +104,77 @@ namespace experimental {
 
 namespace detail {
 
-static void write_data_to_file(const std::string &name, char const *const data,
-                               size_t size) {
-  auto file = std::fstream(name, std::ios::out | std::ios::binary);
-  file.write(data, size);
-  file.close();
+static std::filesystem::path write_data_to_file(char const *const data,
+                                                size_t size) {
+  std::error_code ec;
+
+  // random number generator
+  std::random_device dev;
+  std::mt19937 prng(dev());
+  std::uniform_int_distribution<uint64_t> rand(0);
+
+  // find temporary directory
+  auto tmp_dir = std::filesystem::temp_directory_path(ec);
+  if (ec)
+    throw std::runtime_error("could not find temporary directory");
+
+  // create private directory
+  std::stringstream directory;
+  std::filesystem::path directory_path;
+  constexpr int max_attempts = 5;
+  int i;
+
+  for (i = 0; i < max_attempts; i++) {
+    directory << std::hex << rand(prng);
+    directory_path = tmp_dir / directory.str();
+    if (std::filesystem::create_directory(directory_path)) {
+      break;
+    }
+  }
+  if (i == max_attempts)
+    throw std::runtime_error("could not create directory");
+
+  // only allow owner permissions to private directory
+  std::filesystem::permissions(directory_path,
+                               std::filesystem::perms::owner_all, ec);
+  if (ec)
+    throw std::runtime_error("could not set directory permissions");
+
+  // random filename in private directory
+  std::stringstream filename;
+  filename << std::hex << rand(prng);
+  auto filepath = directory_path / filename.str();
+
+  // write data to temporary file
+  auto outfile = std::ofstream(filepath, std::ios::out | std::ios::binary);
+  if (outfile) {
+    outfile.write(data, size);
+    outfile.close();
+  }
+  if (!outfile || outfile.bad())
+    throw std::runtime_error("could not write data");
+
+  // set permissions to temporary file
+  std::filesystem::permissions(filepath,
+                               std::filesystem::perms::owner_read |
+                                   std::filesystem::perms::owner_exec,
+                               ec);
+  if (ec)
+    throw std::runtime_error("could not set permissions");
+
+  // check temporary file contents
+  auto infile = std::ifstream(filepath, std::ios::in | std::ios::binary);
+  if (infile) {
+    for (auto i = 0; i < size; i++) {
+      char c;
+      infile.get(c);
+      if (c != data[i])
+        throw std::runtime_error("file contents not written correctly");
+    }
+  } else
+    throw std::runtime_error("could not validate file");
+
+  return filepath;
 }
 
 static uint16_t extract16(unsigned char const *const ptr) {
@@ -238,18 +307,28 @@ private:
 namespace detail {
 
 static kernel_library load_dl_from_data(char const *const data, size_t size) {
-  const std::string name{std::tmpnam(NULL)};
-
-  write_data_to_file(name, data, size);
+  std::filesystem::path filename = write_data_to_file(data, size);
 #ifdef _WIN32
-  void *so = LoadLibraryA(name.c_str());
+  void *so = LoadLibraryA(filename.c_str());
 #else
-  void *so = dlopen(name.c_str(), RTLD_LAZY);
+  void *so = dlopen(filename.c_str(), RTLD_LAZY);
 #endif
   if (so == nullptr)
     throw std::runtime_error("Failed to load kernel library");
 
-  std::remove(name.c_str());
+  std::error_code ec;
+
+  // make temporary file writable so that it can be deleted.  Necessary on
+  // Windows
+  std::filesystem::permissions(filename, std::filesystem::perms::owner_all, ec);
+  if (ec)
+    throw std::runtime_error("could not set permissions");
+
+  if (std::filesystem::remove_all(filename.remove_filename()) != 2)
+    // one directory and one temporary file should have been deleted
+    throw std::runtime_error("Directory delete failed");
+  if (ec)
+    throw std::runtime_error("Directory delete failed");
 
   return so;
 }
