@@ -255,10 +255,6 @@ public:
     return get_info<sycl::info::device::mem_base_addr_align>();
   }
 
-  int is_usm_host_allocations() const {
-    return this->has(sycl::aspect::usm_host_allocations);
-  }
-
   int get_global_mem_size() const {
     return get_device_info().get_global_mem_size();
   }
@@ -363,9 +359,14 @@ public:
     int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
     prop.set_max_nd_range_size(max_nd_range_size);
 
-    //(Work group size / mini sub group size) * (each hardware thread resgiters size)
+    // Simulate the max register size per work group = (max work group size /
+    // min sub group size) * (each hardware thread register num *
+    // each register size).
+    // The hardware thread register num 128 and the register size 32 bytes are
+    // based on the Xe architecture graphics EU. Feel free to update the value
+    // according to device properties.
     prop.set_max_register_size_per_work_group(
-      (get_info<sycl::info::device::max_work_group_size>() / 8) * 128 * 32);
+      (get_info<sycl::info::device::max_work_group_size>() / 8) * (128 * 32));
 
     out = prop;
   }
