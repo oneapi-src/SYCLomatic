@@ -12394,7 +12394,6 @@ void CooperativeGroupsFunctionRule::runRule(
 
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
-    std::cout<<EA.getReplacedString();
     EA.applyAllSubExprRepl();
     RUW.NeedReport = false;
   } else if (FuncName == "this_thread_block") {
