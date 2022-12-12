@@ -83,6 +83,9 @@ namespace dpct {
 llvm::cl::OptionCategory &DPCTCat = llvm::cl::getDPCTCategory();
 void initWarningIDs();
 } // namespace dpct
+namespace frontend {
+void setSDKIncludePathForLex(const std::string &Path);
+} // namespace frontend
 } // namespace clang
 
 // clang-format off
@@ -790,6 +793,7 @@ int runDPCT(int argc, const char **argv) {
       getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
 
   SetSDKIncludePath(CudaPath);
+  clang::frontend::setSDKIncludePathForLex(CudaPath);
 
 #ifdef _WIN32
   if ((SDKVersionMajor == 11 && SDKVersionMinor == 2) ||
