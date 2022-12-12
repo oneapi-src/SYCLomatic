@@ -69,7 +69,7 @@ FileManager *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
-std::unordered_set<std::string> DpctGlobalInfo::ExpansionRangeBeginSet;
+std::unordered_map<std::string, SourceRange> DpctGlobalInfo::ExpansionRangeBeginMap;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
 std::tuple<unsigned int, std::string, SourceRange>
@@ -571,6 +571,9 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
     case HT_Complex:
       return insertHeader(HeaderType::HT_Complex, LastIncludeOffset,
                           "<complex>");
+    case HT_Functional:
+      return insertHeader(HeaderType::HT_Functional, LastIncludeOffset,
+                          "<functional>");
     case HT_Thread:
       return insertHeader(HeaderType::HT_Thread, LastIncludeOffset, "<thread>");
     case HT_Future:
@@ -780,11 +783,11 @@ void KernelCallExpr::buildExecutionConfig(
       ExecutionConfig.GroupDirectRef = A.isDirectRef();
     } else if (Idx == 1) {
       ExecutionConfig.LocalDirectRef = A.isDirectRef();
-
       // Using another analysis because previous analysis may return directly
       // when in macro is true.
       // Here set the argument of KFA as false, so it will not return directly.
       KernelConfigAnalysis KFA(false);
+      KFA.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
       KFA.analyze(Arg, 1, true);
       if (KFA.isNeedEmitWGSizeWarning())
         DiagnosticsUtils::report(getFilePath(), getBegin(),

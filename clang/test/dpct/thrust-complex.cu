@@ -75,16 +75,16 @@ int main() {
 //  CC<thrust::complex, double> c4;
 
 // Check that no warnings are issued when using complex operators
-// CHECK:   cf = cf + 1.0;
-  cf = cf + 1.0;
-// CHECK:   cf = cf - 1.0;
-  cf = cf - 1.0;
-// CHECK:   cf = cf * 1.0;
-  cf = cf * 1.0;
-// CHECK:   cf = cf / 1.0;
-  cf = cf / 1.0;
-// CHECK:   bool b1 = (cf == 1.0);
-  bool b1 = (cf == 1.0);
+// CHECK:   cf = cf + 1.0f;
+  cf = cf + 1.0f;
+// CHECK:   cf = cf - 1.0f;
+  cf = cf - 1.0f;
+// CHECK:   cf = cf * 1.0f;
+  cf = cf * 1.0f;
+// CHECK:   cf = cf / 1.0f;
+  cf = cf / 1.0f;
+// CHECK:   bool b1 = (cf == 1.0f);
+  bool b1 = (cf == 1.0f);
 // CHECK:  std::complex<float> cf2;
 // CHECK-NEXT:   bool b2 = (cf != cf2);
   thrust::complex<float> cf2;

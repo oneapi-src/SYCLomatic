@@ -197,10 +197,11 @@ bool printOptions(
       std::string Str = "";
       if (UValue < static_cast<unsigned>(-1)) {
         if (!(UValue &
-              static_cast<unsigned>(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier)))
+              (1 << static_cast<unsigned>(
+                   DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier))))
           Str = Str + "enqueued_barriers,";
-        if (!(UValue &
-              static_cast<unsigned>(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo)))
+        if (!(UValue & (1 << static_cast<unsigned>(
+                            DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo))))
           Str += "device_info,";
       }
       if (!Str.empty()) {

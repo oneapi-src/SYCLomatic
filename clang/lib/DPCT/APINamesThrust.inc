@@ -1012,9 +1012,6 @@ CALL_FACTORY_ENTRY("thrust::swap",  CALL("std::swap",  ARG(0), ARG(1)))
 // thrust::make_pair
 CALL_FACTORY_ENTRY("thrust::make_pair",  CALL("std::make_pair",  ARG(0), ARG(1)))
 
-// thrust::make_pair
-CALL_FACTORY_ENTRY("thrust::make_pair",  CALL("std::make_pair",  ARG(0), ARG(1)))
-
 // thrust::stable_sort_by_key
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_stable_sort,
   CONDITIONAL_FACTORY_ENTRY(
@@ -1754,3 +1751,74 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_unique_copy,
     )
   )
 )
+
+// thrust::log10
+CALL_FACTORY_ENTRY("thrust::log10", CALL("std::log10", ARG(0)))
+
+// thrust::sqrt
+CALL_FACTORY_ENTRY("thrust::sqrt", CALL("std::sqrt", ARG(0)))
+
+// thrust::pow
+CALL_FACTORY_ENTRY("thrust::pow", CALL("std::pow", ARG(0), ARG(1)))
+
+// thrust::sin
+CALL_FACTORY_ENTRY("thrust::sin", CALL("std::sin", ARG(0)))
+
+// thrust::cos
+CALL_FACTORY_ENTRY("thrust::cos", CALL("std::cos", ARG(0)))
+
+// thrust::tan
+CALL_FACTORY_ENTRY("thrust::tan", CALL("std::tan", ARG(0)))
+
+// thrust::asin
+CALL_FACTORY_ENTRY("thrust::asin", CALL("std::asin", ARG(0)))
+
+// thrust::acos
+CALL_FACTORY_ENTRY("thrust::acos", CALL("std::acos", ARG(0)))
+
+// thrust::atan
+CALL_FACTORY_ENTRY("thrust::atan", CALL("std::atan", ARG(0)))
+
+// thrust::sinh
+CALL_FACTORY_ENTRY("thrust::sinh", CALL("std::sinh", ARG(0)))
+
+// thrust::cosh
+CALL_FACTORY_ENTRY("thrust::cosh", CALL("std::cosh", ARG(0)))
+
+// thrust::tanh
+CALL_FACTORY_ENTRY("thrust::tanh", CALL("std::tanh", ARG(0)))
+
+// thrust::asinh
+CALL_FACTORY_ENTRY("thrust::asinh", CALL("std::asinh", ARG(0)))
+
+// thrust::acosh
+CALL_FACTORY_ENTRY("thrust::acosh", CALL("std::acosh", ARG(0)))
+
+// thrust::atanh
+CALL_FACTORY_ENTRY("thrust::atanh", CALL("std::atanh", ARG(0)))
+
+// thrust::abs
+CALL_FACTORY_ENTRY("thrust::abs", CALL("std::abs", ARG(0)))
+
+// thrust::polar
+CALL_FACTORY_ENTRY("thrust::polar", CALL("std::polar", ARG(0), ARG(1)))
+
+// thrust::exp
+CALL_FACTORY_ENTRY("thrust::exp", CALL("std::exp", ARG(0)))
+
+// thrust::log
+CALL_FACTORY_ENTRY("thrust::log", CALL("std::log", ARG(0)))
+
+// thrust::distance
+CALL_FACTORY_ENTRY("thrust::distance",
+                   CALL("oneapi::dpl::distance", ARG(0), ARG(1)))
+
+// thrust::make_permutation_iterator
+CALL_FACTORY_ENTRY("thrust::make_permutation_iterator",
+                   CALL("oneapi::dpl::make_permutation_iterator", ARG(0),
+                        ARG(1)))
+
+// thrust::make_transform_iterator
+CALL_FACTORY_ENTRY("thrust::make_transform_iterator",
+                   CALL("oneapi::dpl::make_transform_iterator", ARG(0),
+                        ARG(1)))

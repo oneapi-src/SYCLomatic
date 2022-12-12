@@ -1172,7 +1172,7 @@ std::unique_ptr<ASTUnit> buildASTFromCodeWithArgs(
 
   if (!Invocation.run())
     return nullptr;
- 
+
   assert(ASTs.size() == 1);
   return std::move(ASTs[0]);
 }
