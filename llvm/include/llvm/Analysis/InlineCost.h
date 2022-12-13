@@ -20,6 +20,7 @@
 #include "llvm/IR/PassManager.h"
 #include <cassert>
 #include <climits>
+#include <optional>
 
 namespace llvm {
 class AssumptionCache;
@@ -95,34 +96,41 @@ class InlineCost {
   /// The adjusted threshold against which this cost was computed.
   int Threshold = 0;
 
+  /// The amount of StaticBonus that has been applied.
+  int StaticBonusApplied = 0;
+
   /// Must be set for Always and Never instances.
   const char *Reason = nullptr;
 
   /// The cost-benefit pair computed by cost-benefit analysis.
-  Optional<CostBenefitPair> CostBenefit = None;
+  Optional<CostBenefitPair> CostBenefit = std::nullopt;
 
   // Trivial constructor, interesting logic in the factory functions below.
-  InlineCost(int Cost, int Threshold, const char *Reason = nullptr,
-             Optional<CostBenefitPair> CostBenefit = None)
-      : Cost(Cost), Threshold(Threshold), Reason(Reason),
+  InlineCost(int Cost, int Threshold, int StaticBonusApplied,
+             const char *Reason = nullptr,
+             Optional<CostBenefitPair> CostBenefit = std::nullopt)
+      : Cost(Cost), Threshold(Threshold),
+        StaticBonusApplied(StaticBonusApplied), Reason(Reason),
         CostBenefit(CostBenefit) {
     assert((isVariable() || Reason) &&
            "Reason must be provided for Never or Always");
   }
 
 public:
-  static InlineCost get(int Cost, int Threshold) {
+  static InlineCost get(int Cost, int Threshold, int StaticBonus = 0) {
     assert(Cost > AlwaysInlineCost && "Cost crosses sentinel value");
     assert(Cost < NeverInlineCost && "Cost crosses sentinel value");
-    return InlineCost(Cost, Threshold);
+    return InlineCost(Cost, Threshold, StaticBonus);
   }
-  static InlineCost getAlways(const char *Reason,
-                              Optional<CostBenefitPair> CostBenefit = None) {
-    return InlineCost(AlwaysInlineCost, 0, Reason, CostBenefit);
+  static InlineCost
+  getAlways(const char *Reason,
+            Optional<CostBenefitPair> CostBenefit = std::nullopt) {
+    return InlineCost(AlwaysInlineCost, 0, 0, Reason, CostBenefit);
   }
-  static InlineCost getNever(const char *Reason,
-                             Optional<CostBenefitPair> CostBenefit = None) {
-    return InlineCost(NeverInlineCost, 0, Reason, CostBenefit);
+  static InlineCost
+  getNever(const char *Reason,
+           Optional<CostBenefitPair> CostBenefit = std::nullopt) {
+    return InlineCost(NeverInlineCost, 0, 0, Reason, CostBenefit);
   }
 
   /// Test whether the inline cost is low enough for inlining.
@@ -143,6 +151,12 @@ public:
   int getThreshold() const {
     assert(isVariable() && "Invalid access of InlineCost");
     return Threshold;
+  }
+
+  /// Get the amount of StaticBonus applied.
+  int getStaticBonusApplied() const {
+    assert(isVariable() && "Invalid access of InlineCost");
+    return StaticBonusApplied;
   }
 
   /// Get the cost-benefit pair which was computed by cost-benefit analysis
@@ -216,13 +230,13 @@ struct InlineParams {
   Optional<int> ColdCallSiteThreshold;
 
   /// Compute inline cost even when the cost has exceeded the threshold.
-  Optional<bool> ComputeFullInlineCost;
+  std::optional<bool> ComputeFullInlineCost;
 
   /// Indicate whether we should allow inline deferral.
-  Optional<bool> EnableDeferral;
+  std::optional<bool> EnableDeferral;
 
   /// Indicate whether we allow inlining for recursive call.
-  Optional<bool> AllowRecursiveCall = false;
+  std::optional<bool> AllowRecursiveCall = false;
 };
 
 Optional<int> getStringFnAttrAsInt(CallBase &CB, StringRef AttrKind);

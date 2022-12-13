@@ -13,7 +13,7 @@
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "llvm/ADT/MapVector.h"
-#include "llvm/ADT/SetVector.h"
+#include "llvm/ADT/StringSet.h"
 
 namespace mlir {
 class AffineExpr;
@@ -41,9 +41,11 @@ bool hasOnlyScalarElementwiseOp(Region &r);
 /// Check if a LinalgOp is an element-wise operation.
 bool isElementwise(LinalgOp op);
 
-/// Check if `permutation` is a permutation of the range
-/// `[0, permutation.size())`.
-bool isPermutation(ArrayRef<int64_t> permutation);
+/// Check if iterator type has "parallel" semantics.
+bool isParallelIterator(utils::IteratorType iteratorType);
+
+/// Check if iterator type  has "reduction" semantics.
+bool isReductionIterator(utils::IteratorType iteratorType);
 
 /// Helper function that creates a memref::DimOp or tensor::DimOp depending on
 /// the type of `source`.
@@ -135,6 +137,10 @@ GenericOp makeMemRefCopyOp(OpBuilder &b, Location loc, Value from, Value to);
 Optional<SmallVector<ReassociationIndices>>
 getReassociationMapForFoldingUnitDims(ArrayRef<OpFoldResult> mixedSizes);
 
+/// Return the identity numeric value associated to the give op. Return
+/// llvm::None if there is no known neutral element.
+Optional<Attribute> getNeutralElement(Operation *op);
+
 //===----------------------------------------------------------------------===//
 // Fusion / Tiling utilities
 //===----------------------------------------------------------------------===//
@@ -186,15 +192,6 @@ SmallVector<Type> getTensorOutputTypes(LinalgOp op, ValueRange operands);
 SmallVector<Value> insertSlicesBack(OpBuilder &builder, Location loc,
                                     LinalgOp op, ValueRange operands,
                                     ValueRange results);
-
-/// Turns an OpFoldResult into a value, creating an index-typed constant if
-/// necessary.
-Value materializeOpFoldResult(ImplicitLocOpBuilder &builder,
-                              OpFoldResult opFoldResult);
-Value materializeOpFoldResult(OpBuilder &b, Location loc,
-                              OpFoldResult opFoldResult);
-Value materializeOpFoldResult(OpBuilder &b, Location loc,
-                              ArrayRef<OpFoldResult> opFoldResults);
 
 /// A struct containg offsets-sizes-strides arguments of the tiled shape.
 struct SliceParameters {
@@ -448,14 +445,6 @@ private:
   DenseMap<Operation *, SmallVector<int64_t>> tiledRootAndFusedOpsLoops;
 };
 
-/// Tiles `consumerOp` and fuses its dependencies if possible. Uses the
-/// `tileSizes`, `tileInterchange`, and `tileDistribution` parameters to control
-/// the tiling.
-FailureOr<TileLoopNest> tileConsumerAndFuseProducers(
-    OpBuilder &b, LinalgOp consumerOp, ArrayRef<int64_t> tileSizes,
-    ArrayRef<int64_t> tileInterchange,
-    const Optional<LinalgLoopDistributionOptions> &tileDistribution);
-
 //===----------------------------------------------------------------------===//
 // Generic op region utilities
 //===----------------------------------------------------------------------===//
@@ -491,12 +480,30 @@ struct RegionMatcher {
 template <typename LoopTy>
 struct GenerateLoopNest {
   static void doit(OpBuilder &b, Location loc, ArrayRef<Range> loopRanges,
-                   LinalgOp linalgOp, ArrayRef<Attribute> iteratorTypes,
+                   LinalgOp linalgOp,
+                   ArrayRef<utils::IteratorType> iteratorTypes,
                    function_ref<scf::ValueVector(OpBuilder &, Location,
                                                  ValueRange, ValueRange)>
                        bodyBuilderFn,
                    ArrayRef<linalg::ProcInfo> procInfo = {});
 };
+
+/// Returns an attribute list that excludes pre-defined attributes.
+template <typename OpTy>
+SmallVector<NamedAttribute> getPrunedAttributeList(OpTy op) {
+  llvm::StringSet<> elidedAttrs;
+  elidedAttrs.insert(op.getAttributeNames().begin(),
+                     op.getAttributeNames().end());
+  if (isa<linalg::LinalgOp>(op.getOperation()))
+    elidedAttrs.insert(LinalgDialect::kMemoizedIndexingMapsAttrName);
+  SmallVector<NamedAttribute> attrs;
+  for (auto attr : op->getAttrs()) {
+    if (elidedAttrs.count(attr.getName()))
+      continue;
+    attrs.push_back(attr);
+  }
+  return attrs;
+}
 
 } // namespace linalg
 } // namespace mlir

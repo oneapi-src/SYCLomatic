@@ -32,7 +32,7 @@ static Optional<lsp::Location> getLocationFromLoc(StringRef uriScheme,
     lsp::Logger::error("Failed to create URI for file `{0}`: {1}",
                        loc.getFilename(),
                        llvm::toString(sourceURI.takeError()));
-    return llvm::None;
+    return std::nullopt;
   }
 
   lsp::Position position;
@@ -140,7 +140,7 @@ static Optional<unsigned> getResultNumberFromLoc(SMLoc loc) {
   // Check to see if this location indexes into the result group, via `#`. If it
   // doesn't, we can't extract a sub result number.
   if (*curPtr != '#')
-    return llvm::None;
+    return std::nullopt;
 
   // Compute the sub result number from the remaining portion of the string.
   const char *numberStart = ++curPtr;
@@ -156,7 +156,7 @@ static Optional<unsigned> getResultNumberFromLoc(SMLoc loc) {
 /// If the range is invalid, returns None.
 static Optional<StringRef> getTextFromRange(SMRange range) {
   if (!range.isValid())
-    return None;
+    return std::nullopt;
   const char *startPtr = range.Start.getPointer();
   return StringRef(startPtr, range.End.getPointer() - startPtr);
 }
@@ -319,6 +319,10 @@ struct MLIRDocument {
   /// The container for the IR parsed from the input file.
   Block parsedIR;
 
+  /// A collection of external resources, which we want to propagate up to the
+  /// user.
+  FallbackAsmResourceMap fallbackResourceMap;
+
   /// The source manager containing the contents of the input file.
   llvm::SourceMgr sourceMgr;
 };
@@ -338,11 +342,14 @@ MLIRDocument::MLIRDocument(MLIRContext &context, const lsp::URIForFile &uri,
     return;
   }
 
+  ParserConfig config(&context, /*verifyAfterParse=*/true,
+                      &fallbackResourceMap);
   sourceMgr.AddNewSourceBuffer(std::move(memBuffer), SMLoc());
-  if (failed(parseAsmSourceFile(sourceMgr, &parsedIR, &context, &asmState))) {
+  if (failed(parseAsmSourceFile(sourceMgr, &parsedIR, config, &asmState))) {
     // If parsing failed, clear out any of the current state.
     parsedIR.clear();
     asmState = AsmParserState();
+    fallbackResourceMap = FallbackAsmResourceMap();
     return;
   }
 }
@@ -483,7 +490,7 @@ Optional<lsp::Hover> MLIRDocument::findHover(const lsp::URIForFile &uri,
           hoverRange, block.block->getArgument(arg.index()), block);
     }
   }
-  return llvm::None;
+  return std::nullopt;
 }
 
 Optional<lsp::Hover> MLIRDocument::buildHoverForOperation(
@@ -875,9 +882,11 @@ MLIRDocument::convertToBytecode() {
 
   lsp::MLIRConvertBytecodeResult result;
   {
+    BytecodeWriterConfig writerConfig(fallbackResourceMap);
+
     std::string rawBytecodeBuffer;
     llvm::raw_string_ostream os(rawBytecodeBuffer);
-    writeBytecodeToFile(&parsedIR.front(), os);
+    writeBytecodeToFile(&parsedIR.front(), os, writerConfig);
     result.output = llvm::encodeBase64(rawBytecodeBuffer);
   }
   return result;
@@ -1218,7 +1227,7 @@ void lsp::MLIRServer::addOrUpdateDocument(
 Optional<int64_t> lsp::MLIRServer::removeDocument(const URIForFile &uri) {
   auto it = impl->files.find(uri.file());
   if (it == impl->files.end())
-    return llvm::None;
+    return std::nullopt;
 
   int64_t version = it->second->getVersion();
   impl->files.erase(it);
@@ -1246,7 +1255,7 @@ Optional<lsp::Hover> lsp::MLIRServer::findHover(const URIForFile &uri,
   auto fileIt = impl->files.find(uri.file());
   if (fileIt != impl->files.end())
     return fileIt->second->findHover(uri, hoverPos);
-  return llvm::None;
+  return std::nullopt;
 }
 
 void lsp::MLIRServer::findDocumentSymbols(
@@ -1284,11 +1293,16 @@ lsp::MLIRServer::convertFromBytecode(const URIForFile &uri) {
       &tempContext,
       [&](mlir::Diagnostic &diag) { errorMsg += diag.str() + "\n"; });
 
+  // Handling for external resources, which we want to propagate up to the user.
+  FallbackAsmResourceMap fallbackResourceMap;
+
+  // Setup the parser config.
+  ParserConfig parserConfig(&tempContext, /*verifyAfterParse=*/true,
+                            &fallbackResourceMap);
+
   // Try to parse the given source file.
-  // TODO: This won't preserve external resources or the producer, we should try
-  // to fix this.
   Block parsedBlock;
-  if (failed(parseSourceFile(uri.file(), &parsedBlock, &tempContext))) {
+  if (failed(parseSourceFile(uri.file(), &parsedBlock, parserConfig))) {
     return llvm::make_error<lsp::LSPError>(
         "failed to parse bytecode source file: " + errorMsg,
         lsp::ErrorCode::RequestFailed);
@@ -1310,8 +1324,11 @@ lsp::MLIRServer::convertFromBytecode(const URIForFile &uri) {
     OwningOpRef<Operation *> topOp = &parsedBlock.front();
     (*topOp)->remove();
 
+    AsmState state(*topOp, OpPrintingFlags().enableDebugInfo().assumeVerified(),
+                   /*locationMap=*/nullptr, &fallbackResourceMap);
+
     llvm::raw_string_ostream os(result.output);
-    (*topOp)->print(os, OpPrintingFlags().enableDebugInfo().assumeVerified());
+    (*topOp)->print(os, state);
   }
   return std::move(result);
 }

@@ -58,7 +58,6 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/ADT/StringSwitch.h"
 #include "llvm/Support/Capacity.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -172,12 +171,6 @@ Preprocessor::~Preprocessor() {
   assert(BacktrackPositions.empty() && "EnableBacktrack/Backtrack imbalance!");
 
   IncludeMacroStack.clear();
-
-  // Destroy any macro definitions.
-  while (MacroInfoChain *I = MIChainHead) {
-    MIChainHead = I->Next;
-    I->~MacroInfoChain();
-  }
 
   // Free any cached macro expanders.
   // This populates MacroArgCache, so all TokenLexers need to be destroyed
@@ -545,6 +538,13 @@ Module *Preprocessor::getCurrentModule() {
   return getHeaderSearchInfo().lookupModule(getLangOpts().CurrentModule);
 }
 
+Module *Preprocessor::getCurrentModuleImplementation() {
+  if (!getLangOpts().isCompilingModuleImplementation())
+    return nullptr;
+
+  return getHeaderSearchInfo().lookupModule(getLangOpts().ModuleName);
+}
+
 //===----------------------------------------------------------------------===//
 // Preprocessor Initialization Methods
 //===----------------------------------------------------------------------===//
@@ -908,7 +908,7 @@ bool Preprocessor::HandleIdentifier(Token &Identifier) {
       (getLangOpts().Modules || getLangOpts().DebuggerSupport) &&
       CurLexerKind != CLK_CachingLexer) {
     ModuleImportLoc = Identifier.getLocation();
-    ModuleImportPath.clear();
+    NamedModuleImportPath.clear();
     ModuleImportExpectsIdentifier = true;
     CurLexerKind = CLK_LexAfterModuleImport;
   }
@@ -952,57 +952,57 @@ void Preprocessor::Lex(Token &Result) {
     Result.setIdentifierInfo(nullptr);
   }
 
-  // Update ImportSeqState to track our position within a C++20 import-seq
+  // Update StdCXXImportSeqState to track our position within a C++20 import-seq
   // if this token is being produced as a result of phase 4 of translation.
   // Update TrackGMFState to decide if we are currently in a Global Module
-  // Fragment. GMF state updates should precede ImportSeq ones, since GMF state
-  // depends on the prevailing ImportSeq state in two cases.
+  // Fragment. GMF state updates should precede StdCXXImportSeq ones, since GMF state
+  // depends on the prevailing StdCXXImportSeq state in two cases.
   if (getLangOpts().CPlusPlusModules && LexLevel == 1 &&
       !Result.getFlag(Token::IsReinjected)) {
     switch (Result.getKind()) {
     case tok::l_paren: case tok::l_square: case tok::l_brace:
-      ImportSeqState.handleOpenBracket();
+      StdCXXImportSeqState.handleOpenBracket();
       break;
     case tok::r_paren: case tok::r_square:
-      ImportSeqState.handleCloseBracket();
+      StdCXXImportSeqState.handleCloseBracket();
       break;
     case tok::r_brace:
-      ImportSeqState.handleCloseBrace();
+      StdCXXImportSeqState.handleCloseBrace();
       break;
     // This token is injected to represent the translation of '#include "a.h"'
     // into "import a.h;". Mimic the notional ';'.
     case tok::annot_module_include:
     case tok::semi:
       TrackGMFState.handleSemi();
-      ImportSeqState.handleSemi();
+      StdCXXImportSeqState.handleSemi();
       break;
     case tok::header_name:
     case tok::annot_header_unit:
-      ImportSeqState.handleHeaderName();
+      StdCXXImportSeqState.handleHeaderName();
       break;
     case tok::kw_export:
       TrackGMFState.handleExport();
-      ImportSeqState.handleExport();
+      StdCXXImportSeqState.handleExport();
       break;
     case tok::identifier:
       if (Result.getIdentifierInfo()->isModulesImport()) {
-        TrackGMFState.handleImport(ImportSeqState.afterTopLevelSeq());
-        ImportSeqState.handleImport();
-        if (ImportSeqState.afterImportSeq()) {
+        TrackGMFState.handleImport(StdCXXImportSeqState.afterTopLevelSeq());
+        StdCXXImportSeqState.handleImport();
+        if (StdCXXImportSeqState.afterImportSeq()) {
           ModuleImportLoc = Result.getLocation();
-          ModuleImportPath.clear();
+          NamedModuleImportPath.clear();
           ModuleImportExpectsIdentifier = true;
           CurLexerKind = CLK_LexAfterModuleImport;
         }
         break;
       } else if (Result.getIdentifierInfo() == getIdentifierInfo("module")) {
-        TrackGMFState.handleModule(ImportSeqState.afterTopLevelSeq());
+        TrackGMFState.handleModule(StdCXXImportSeqState.afterTopLevelSeq());
         break;
       }
       [[fallthrough]];
     default:
       TrackGMFState.handleMisc();
-      ImportSeqState.handleMisc();
+      StdCXXImportSeqState.handleMisc();
       break;
     }
   }
@@ -1183,7 +1183,7 @@ bool Preprocessor::LexAfterModuleImport(Token &Result) {
   // For now, we only support header-name imports in C++20 mode.
   // FIXME: Should we allow this in all language modes that support an import
   // declaration as an extension?
-  if (ModuleImportPath.empty() && getLangOpts().CPlusPlusModules) {
+  if (NamedModuleImportPath.empty() && getLangOpts().CPlusPlusModules) {
     if (LexHeaderName(Result))
       return true;
   } else {
@@ -1279,7 +1279,7 @@ bool Preprocessor::LexAfterModuleImport(Token &Result) {
   if (ModuleImportExpectsIdentifier && Result.getKind() == tok::identifier) {
     // We expected to see an identifier here, and we did; continue handling
     // identifiers.
-    ModuleImportPath.push_back(std::make_pair(Result.getIdentifierInfo(),
+    NamedModuleImportPath.push_back(std::make_pair(Result.getIdentifierInfo(),
                                               Result.getLocation()));
     ModuleImportExpectsIdentifier = false;
     CurLexerKind = CLK_LexAfterModuleImport;
@@ -1296,7 +1296,7 @@ bool Preprocessor::LexAfterModuleImport(Token &Result) {
   }
 
   // If we didn't recognize a module name at all, this is not a (valid) import.
-  if (ModuleImportPath.empty() || Result.is(tok::eof))
+  if (NamedModuleImportPath.empty() || Result.is(tok::eof))
     return true;
 
   // Consume the pp-import-suffix and expand any macros in it now, if we're not
@@ -1319,28 +1319,28 @@ bool Preprocessor::LexAfterModuleImport(Token &Result) {
   // FIXME: Is this the right level to be performing this transformation?
   std::string FlatModuleName;
   if (getLangOpts().ModulesTS || getLangOpts().CPlusPlusModules) {
-    for (auto &Piece : ModuleImportPath) {
+    for (auto &Piece : NamedModuleImportPath) {
       if (!FlatModuleName.empty())
         FlatModuleName += ".";
       FlatModuleName += Piece.first->getName();
     }
-    SourceLocation FirstPathLoc = ModuleImportPath[0].second;
-    ModuleImportPath.clear();
-    ModuleImportPath.push_back(
+    SourceLocation FirstPathLoc = NamedModuleImportPath[0].second;
+    NamedModuleImportPath.clear();
+    NamedModuleImportPath.push_back(
         std::make_pair(getIdentifierInfo(FlatModuleName), FirstPathLoc));
   }
 
   Module *Imported = nullptr;
   if (getLangOpts().Modules) {
     Imported = TheModuleLoader.loadModule(ModuleImportLoc,
-                                          ModuleImportPath,
+                                          NamedModuleImportPath,
                                           Module::Hidden,
                                           /*IsInclusionDirective=*/false);
     if (Imported)
       makeModuleVisible(Imported, SemiLoc);
   }
   if (Callbacks)
-    Callbacks->moduleImport(ModuleImportLoc, ModuleImportPath, Imported);
+    Callbacks->moduleImport(ModuleImportLoc, NamedModuleImportPath, Imported);
 
   if (!Suffix.empty()) {
     EnterTokens(Suffix);

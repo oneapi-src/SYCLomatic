@@ -6,11 +6,14 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+
 #ifndef _LIBCPP___RANGES_TAKE_VIEW_H
 #define _LIBCPP___RANGES_TAKE_VIEW_H
 
 #include <__algorithm/min.h>
 #include <__algorithm/ranges_min.h>
+#include <__concepts/constructible.h>
+#include <__concepts/convertible_to.h>
 #include <__config>
 #include <__functional/bind_back.h>
 #include <__fwd/span.h>
@@ -34,7 +37,6 @@
 #include <__utility/auto_cast.h>
 #include <__utility/forward.h>
 #include <__utility/move.h>
-#include <concepts>
 #include <type_traits>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
@@ -226,6 +228,7 @@ struct __passthrough_type<basic_string_view<_CharT, _Traits>> {
 };
 
 template <class _Iter, class _Sent, subrange_kind _Kind>
+  requires requires{typename subrange<_Iter>;}
 struct __passthrough_type<subrange<_Iter, _Sent, _Kind>> {
   using type = subrange<_Iter>;
 };

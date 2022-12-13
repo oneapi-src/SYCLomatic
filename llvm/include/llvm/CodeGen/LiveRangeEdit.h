@@ -210,12 +210,14 @@ public:
 
   /// rematerializeAt - Rematerialize RM.ParentVNI into DestReg by inserting an
   /// instruction into MBB before MI. The new instruction is mapped, but
-  /// liveness is not updated.
+  /// liveness is not updated. If ReplaceIndexMI is not null it will be replaced
+  /// by new MI in the index map.
   /// Return the SlotIndex of the new instruction.
   SlotIndex rematerializeAt(MachineBasicBlock &MBB,
                             MachineBasicBlock::iterator MI, unsigned DestReg,
                             const Remat &RM, const TargetRegisterInfo &,
-                            bool Late = false);
+                            bool Late = false, unsigned SubIdx = 0,
+                            MachineInstr *ReplaceIndexMI = nullptr);
 
   /// markRematerialized - explicitly mark a value as rematerialized after doing
   /// it manually.
@@ -239,7 +241,7 @@ public:
   /// allocator.  These registers should not be split into new intervals
   /// as currently those new intervals are not guaranteed to spill.
   void eliminateDeadDefs(SmallVectorImpl<MachineInstr *> &Dead,
-                         ArrayRef<Register> RegsBeingSpilled = None);
+                         ArrayRef<Register> RegsBeingSpilled = std::nullopt);
 
   /// calculateRegClassAndHint - Recompute register class and hint for each new
   /// register.

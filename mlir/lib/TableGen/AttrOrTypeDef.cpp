@@ -22,7 +22,7 @@ using namespace mlir::tblgen;
 
 Optional<StringRef> AttrOrTypeBuilder::getReturnType() const {
   Optional<StringRef> type = def->getValueAsOptionalString("returnType");
-  return type && !type->empty() ? type : llvm::None;
+  return type && !type->empty() ? type : std::nullopt;
 }
 
 bool AttrOrTypeBuilder::hasInferredContextParameter() const {
@@ -277,14 +277,12 @@ StringRef AttrOrTypeParameter::getSyntax() const {
 }
 
 bool AttrOrTypeParameter::isOptional() const {
-  // Parameters with default values are automatically optional.
-  return getDefValue<llvm::BitInit>("isOptional").value_or(false) ||
-         getDefaultValue();
+  return getDefaultValue().has_value();
 }
 
 Optional<StringRef> AttrOrTypeParameter::getDefaultValue() const {
   Optional<StringRef> result = getDefValue<llvm::StringInit>("defaultValue");
-  return result && !result->empty() ? result : llvm::None;
+  return result && !result->empty() ? result : std::nullopt;
 }
 
 llvm::Init *AttrOrTypeParameter::getDef() const { return def->getArg(index); }

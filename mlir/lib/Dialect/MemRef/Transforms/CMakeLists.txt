@@ -1,6 +1,8 @@
 add_mlir_dialect_library(MLIRMemRefTransforms
   ComposeSubView.cpp
   ExpandOps.cpp
+  ExpandStridedMetadata.cpp
+  EmulateWideInt.cpp
   FoldMemRefAliasOps.cpp
   MultiBuffer.cpp
   NormalizeMemRefs.cpp
@@ -15,7 +17,8 @@ add_mlir_dialect_library(MLIRMemRefTransforms
   LINK_LIBS PUBLIC
   MLIRAffineDialect
   MLIRAffineUtils
-  MLIRArithmeticDialect
+  MLIRArithDialect
+  MLIRArithTransforms
   MLIRFuncDialect
   MLIRInferTypeOpInterface
   MLIRLoopLikeInterface
