@@ -275,7 +275,8 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto ThrustTypeHasNames = [&]() {
     return hasAnyName("thrust::greater_equal", "thrust::less_equal",
                       "thrust::logical_and", "thrust::bit_and",
-                      "thrust::bit_or", "thrust::minimum", "thrust::bit_xor");
+                      "thrust::bit_or", "thrust::minimum", "thrust::bit_xor",
+                      "thrust::modulus");
   };
   MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
                             hasDeclaration(namedDecl(ThrustTypeHasNames()))))))

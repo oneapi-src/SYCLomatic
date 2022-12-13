@@ -1822,3 +1822,12 @@ CALL_FACTORY_ENTRY("thrust::make_permutation_iterator",
 CALL_FACTORY_ENTRY("thrust::make_transform_iterator",
                    CALL("oneapi::dpl::make_transform_iterator", ARG(0),
                         ARG(1)))
+
+// thrust::norm
+CALL_FACTORY_ENTRY("thrust::norm", CALL("std::norm", ARG(0)))
+
+// thrust::conj
+CALL_FACTORY_ENTRY("thrust::conj", CALL("std::conj", ARG(0)))
+
+// thrust::proj
+CALL_FACTORY_ENTRY("thrust::proj", CALL("std::proj", ARG(0)))

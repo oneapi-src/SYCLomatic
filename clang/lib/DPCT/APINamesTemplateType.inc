@@ -118,11 +118,12 @@ TYPE_REWRITE_ENTRY(
     "thrust::bit_and",
     TYPE_FACTORY(STR("std::bit_and"), TEMPLATE_ARG(0)))
 
+// thrust::bit_or
 TYPE_REWRITE_ENTRY(
     "thrust::bit_or",
     TYPE_FACTORY(STR("std::bit_or"), TEMPLATE_ARG(0)))
 
-// thrust::bit_or
+// thrust::minimum
 TYPE_REWRITE_ENTRY(
     "thrust::minimum",
     TYPE_FACTORY(STR("oneapi::dpl::minimum"), TEMPLATE_ARG(0)))
@@ -131,4 +132,9 @@ TYPE_REWRITE_ENTRY(
 TYPE_REWRITE_ENTRY(
     "thrust::bit_xor",
     TYPE_FACTORY(STR("std::bit_xor"), TEMPLATE_ARG(0)))
+
+//thrust::modulus
+TYPE_REWRITE_ENTRY(
+    "thrust::modulus",
+    TYPE_FACTORY(STR("std::modulus"), TEMPLATE_ARG(0)))
 
