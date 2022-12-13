@@ -385,15 +385,62 @@ void is_sorted_test() {
 // CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas+N);
 // CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas+N, comp);
 // CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas+N, comp);
-    thrust::is_sorted(thrust::host, h_v.begin(), h_v.end());
-    thrust::is_sorted( h_v.begin(), h_v.end());
-    thrust::is_sorted(thrust::host, v.begin(), v.end(),comp);
-    thrust::is_sorted( h_v.begin(), h_v.end(),comp);
-    thrust::is_sorted(thrust::device, d_v.begin(), d_v.end());
-    thrust::is_sorted(thrust::device, d_v.begin(), d_v.end(),comp);
-    thrust::is_sorted( d_v.begin(), d_v.end(),comp);
-    thrust::is_sorted(thrust::host, datas, datas+N);
-    thrust::is_sorted( datas, datas+N);
-    thrust::is_sorted(thrust::host,datas, datas+N,comp);
-    thrust::is_sorted(datas, datas+N,comp);
+  thrust::is_sorted(thrust::host, h_v.begin(), h_v.end());
+  thrust::is_sorted( h_v.begin(), h_v.end());
+  thrust::is_sorted(thrust::host, v.begin(), v.end(),comp);
+  thrust::is_sorted( h_v.begin(), h_v.end(),comp);
+  thrust::is_sorted(thrust::device, d_v.begin(), d_v.end());
+  thrust::is_sorted(thrust::device, d_v.begin(), d_v.end(),comp);
+  thrust::is_sorted( d_v.begin(), d_v.end(),comp);
+  thrust::is_sorted(thrust::host, datas, datas+N);
+  thrust::is_sorted( datas, datas+N);
+  thrust::is_sorted(thrust::host,datas, datas+N,comp);
+  thrust::is_sorted(datas, datas+N,comp);
+}
+
+struct is_even
+{
+  __host__ __device__
+  bool operator()(const int &x)
+  {
+    return (x % 2) == 0;
+  }
+};
+void is_partition_test() {
+  int datas[]={1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  int ans[]={2, 4, 6, 8, 10, 1, 3, 5, 7, 9};
+  const int N=sizeof(datas)/sizeof(int);
+  int stencil[N]={1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+  thrust::host_vector<int> h_vdata(datas,datas+N);
+  thrust::host_vector<int> h_vstencil(stencil,stencil+N);
+  thrust::device_vector<int> d_v(datas,datas+N);
+  thrust::host_vector<int> h_v(datas,datas+N);
+  thrust::device_vector<int> d_vdata(datas,datas+N);
+  thrust::device_vector<int> d_vstencil(stencil,stencil+N);
+
+// CHECK:  oneapi::dpl::partition(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, h_vdata.begin(), h_vdata.end(), h_vstencil.begin(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, h_vdata.begin(), h_vdata.end(), h_vstencil.begin(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_vdata.begin(), d_vdata.end(), d_vstencil.begin(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_vdata.begin(), d_vdata.end(), d_vstencil.begin(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, h_stencil, is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, h_stencil, is_even());
+  thrust::partition(thrust::host, h_v.begin(), h_v.end(),is_even());
+  thrust::partition( h_v.begin(), h_v.end(),is_even());
+  thrust::partition(thrust::host, h_vdata.begin(), h_vdata.end(),h_vstencil.begin(),is_even());
+  thrust::partition(h_vdata.begin(), h_vdata.end(),h_vstencil.begin(),is_even());
+  thrust::partition(thrust::device, d_v.begin(), d_v.end(),is_even());
+  thrust::partition( d_v.begin(), d_v.end(),is_even());
+  thrust::partition(thrust::device, d_vdata.begin(), d_vdata.end(),d_vstencil.begin(),is_even());
+  thrust::partition( d_vdata.begin(), d_vdata.end(),d_vstencil.begin(),is_even());
+  thrust::partition(thrust::host, datas, datas+N,is_even());
+  thrust::partition( datas, datas+N,is_even());
+  thrust::partition(thrust::host,  datas, datas+N,h_stencil,is_even());
+  thrust::partition( datas, datas+N,h_stencil,is_even());
 }
