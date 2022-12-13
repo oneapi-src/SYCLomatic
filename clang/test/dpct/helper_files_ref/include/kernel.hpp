@@ -45,7 +45,6 @@ static kernel_function_info get_kernel_function_info(const void *function) {
   return kernel_info;
 }
 
-namespace experimental {
 
 namespace detail {
 
@@ -330,8 +329,8 @@ private:
  /// Find kernel function in a kernel library and return its address.
  /// \param [in] library Handle to the kernel library.
  /// \param [in] name Name of the kernel function.
-static dpct::experimental::kernel_function get_kernel_function(kernel_library &library,
-                                                               const std::string &name) {
+static dpct::kernel_function get_kernel_function(kernel_library &library,
+                                                 const std::string &name) {
 #ifdef _WIN32
   dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(
       GetProcAddress(static_cast<HMODULE>(library),
@@ -353,14 +352,13 @@ static dpct::experimental::kernel_function get_kernel_function(kernel_library &l
  /// \param [in] localMemSize The size of local memory required by the kernel function.
  /// \param [in] kernelParams Array of pointers to kernel arguments.
  /// \param [in] extra Extra arguments.
-static void invoke_kernel_function(dpct::experimental::kernel_function &function,
+static void invoke_kernel_function(dpct::kernel_function &function,
                                    sycl::queue &queue, sycl::range<3> groupRange,
                                    sycl::range<3> localRange, unsigned int localMemSize,
                                    void **kernelParams, void **extra) {
   function(queue, sycl::nd_range<3>(groupRange * localRange, localRange), localMemSize, kernelParams,
            extra);
 }
-} // namespace experimental
 
 } // namespace dpct
 #endif // __DPCT_KERNEL_HPP__

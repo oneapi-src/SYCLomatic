@@ -8,21 +8,21 @@
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     ASSIGN_FACTORY_ENTRY("cuModuleLoad", DEREF(0),
-                         CALL("dpct::experimental::load_kernel_library", ARG(1)))))
+                         CALL("dpct::load_kernel_library", ARG(1)))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     ASSIGN_FACTORY_ENTRY("cuModuleLoadData", DEREF(0),
-                         CALL("dpct::experimental::load_kernel_library_mem",
+                         CALL("dpct::load_kernel_library_mem",
                               ARG(1)))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     ASSIGN_FACTORY_ENTRY("cuModuleLoadDataEx", DEREF(0),
-                         CALL("dpct::experimental::load_kernel_library_mem",
+                         CALL("dpct::load_kernel_library_mem",
                               ARG(1)))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
-                         CALL("dpct::experimental::get_kernel_function", ARG(1),
+                         CALL("dpct::get_kernel_function", ARG(1),
                               ARG(2)))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
@@ -33,7 +33,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     CALL_FACTORY_ENTRY("cuModuleUnload",
-                       CALL("dpct::experimental::unload_kernel_library", ARG(0)))))
+                       CALL("dpct::unload_kernel_library", ARG(0)))))
 
 #define RANGES_CTOR(RangeType, ...)                                            \
   CALL(DpctGlobalInfo::getCtadClass(                                           \
@@ -46,7 +46,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FAC
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     CALL_FACTORY_ENTRY(
         "cuLaunchKernel",
-        CALL("dpct::experimental::invoke_kernel_function", ARG(0), STREAM(8),
+        CALL("dpct::invoke_kernel_function", ARG(0), STREAM(8),
              RANGE_CTOR(ARG(3), ARG(2), ARG(1)),
              RANGE_CTOR(ARG(6), ARG(5), ARG(4)), ARG(7), ARG(9), ARG(10)))))
 
