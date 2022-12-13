@@ -260,35 +260,41 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
 
   if (Extension == ".cu") {
     return SPT_CudaSource;
-  } else if (Extension == ".cuh") {
+  }
+  if (Extension == ".cuh") {
     return SPT_CudaHeader;
-  } else if (Extension == ".cpp" || Extension == ".cxx" || Extension == ".cc" ||
-             Extension == ".c" || Extension == ".C") {
-    return SPT_CppSource;
-  } else if (Extension == ".hpp" || Extension == ".hxx" || Extension == ".h" ||
-             Extension == ".hh" || Extension == ".inl" || Extension == ".inc" ||
-             Extension == ".INL" || Extension == ".INC" ||
-             Extension == ".TPP" || Extension == ".tpp") {
-    return SPT_CppHeader;
-  } else {
-    // clang-format off
-    // For unknown file extensions, determine the file type according to:
-    // A. If it shows up in the compilation database as single migration
-    //    file, then treat it as a main source file.
-    // B. If it is included by another source file, then treat it as a header
-    //    file.
-    // C. If both A and B hold, then default to A.
-    // clang-format on
-    auto &FileSetInDB = dpct::DpctGlobalInfo::getFileSetInCompiationDB();
-    if (FileSetInDB.find(SourcePath.str()) != end(FileSetInDB)) {
-      return SPT_CppSource;
-    }
-    auto &IncludingFileSet = dpct::DpctGlobalInfo::getIncludingFileSet();
-    if (IncludingFileSet.find(SourcePath.str()) != end(IncludingFileSet)) {
-      return SPT_CppHeader;
-    }
+  }
+  // the database check and including check need before the extension check.
+  // Because the header file "xxx.cc" without CUDA syntax will not change file
+  // name, but the "include" statement will change file name when this check is
+  // after the extension check.
+  // clang-format off
+  // For unknown file extensions, determine the file type according to:
+  // A. If it shows up in the compilation database as single migration
+  //    file, then treat it as a main source file.
+  // B. If it is included by another source file, then treat it as a header
+  //    file.
+  // C. If both A and B hold, then default to A.
+  // clang-format on
+  auto &FileSetInDB = dpct::DpctGlobalInfo::getFileSetInCompiationDB();
+  if (FileSetInDB.find(SourcePath.str()) != end(FileSetInDB)) {
     return SPT_CppSource;
   }
+  auto &IncludingFileSet = dpct::DpctGlobalInfo::getIncludingFileSet();
+  if (IncludingFileSet.find(SourcePath.str()) != end(IncludingFileSet)) {
+    return SPT_CppHeader;
+  }
+  if (Extension == ".cpp" || Extension == ".cxx" || Extension == ".cc" ||
+      Extension == ".c" || Extension == ".C") {
+    return SPT_CppSource;
+  }
+  if (Extension == ".hpp" || Extension == ".hxx" || Extension == ".h" ||
+      Extension == ".hh" || Extension == ".inl" || Extension == ".inc" ||
+      Extension == ".INL" || Extension == ".INC" || Extension == ".TPP" ||
+      Extension == ".tpp") {
+    return SPT_CppHeader;
+  }
+  return SPT_CppSource;
 }
 
 const std::string SpacesForStatement = "        "; // Eight spaces

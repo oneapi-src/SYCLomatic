@@ -1029,41 +1029,15 @@ void IncludesCallbacks::InclusionDirective(
   if (!isChildPath(CudaPath, IncludePath) &&
       IncludePath.compare(0, 15, "/usr/local/cuda", 15)) {
 
-    // Replace "#include "*.cuh"" with "include "*.dp.hpp""
-    if (NeedMigrate && FileName.endswith(".cuh")) {
+    // Replace "#include "*"" if needed
+    if (NeedMigrate) {
+      SmallString<512> NewFileName = FileName;
+      rewriteFileName(NewFileName, FilePath);
       CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                                   /* IsTokenRange */ false);
-      std::string NewFileName = "#include \"" +
-                                FileName.drop_back(strlen(".cuh")).str() +
-                                ".dp.hpp\"";
-      TransformSet.emplace_back(
-          new ReplaceInclude(InsertRange, std::move(NewFileName)));
+      TransformSet.emplace_back(new ReplaceInclude(
+          InsertRange, buildString("#include \"", NewFileName, "\"")));
       return;
-    }
-
-    // Replace "#include "*.cu"" with "include "*.dp.cpp""
-    if (FileName.endswith(".cu")) {
-      CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                                  /* IsTokenRange */ false);
-      std::string NewFileName =
-          "#include \"" + FileName.drop_back(strlen(".cu")).str() + ".dp.cpp\"";
-      TransformSet.emplace_back(
-          new ReplaceInclude(InsertRange, std::move(NewFileName)));
-      return;
-    }
-
-    // To generate replacement of replacing "#include "*.c"" with "include
-    // "*.c.dp.cpp"".
-    if (NeedMigrate && FileName.endswith(".c")) {
-      CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                                  /* IsTokenRange */ false);
-      std::string NewFileName = "#include \"" + FileName.str() + ".dp.cpp\"";
-
-      // For file path in preprocessing stage may be different with the one in
-      // syntax analysis stage, here only file name is used as the key.
-      const std::string Name = llvm::sys::path::filename(FileName).str();
-      IncludeMapSet[Name].push_back(std::make_unique<ReplaceInclude>(
-          InsertRange, std::move(NewFileName)));
     }
   }
 
