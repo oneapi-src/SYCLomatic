@@ -455,10 +455,8 @@ public:
 
   // Insert one or more header inclusion directives at a specified offset
   template <typename ReplacementT>
-  void insertHeader(
-      ReplacementT &&Repl, unsigned Offset, InsertPosition InsertPos = IP_Left,
-      std::enable_if_t<std::is_convertible_v<std::remove_cv_t<ReplacementT>,
-                                             std::string>> * = nullptr) {
+  void insertHeader(ReplacementT &&Repl, unsigned Offset,
+                    InsertPosition InsertPos = IP_Left) {
     auto R = std::make_shared<ExtReplacement>(
         FilePath, Offset, 0, std::forward<ReplacementT>(Repl), nullptr);
     R->setSYCLHeaderNeeded(false);
@@ -467,10 +465,7 @@ public:
   }
 
   template <typename ReplacementT>
-  void insertCustomizedHeader(
-      ReplacementT &&Repl,
-      std::enable_if_t<std::is_convertible_v<std::remove_cv_t<ReplacementT>,
-                                             std::string>> * = nullptr) {
+  void insertCustomizedHeader(ReplacementT &&Repl) {
     if (auto Type = findHeaderType(Repl))
       return insertHeader(Type.value());
     if (std::find(InsertedHeaders.begin(), InsertedHeaders.end(), Repl) ==
