@@ -362,3 +362,38 @@ void minmax_element_test() {
   thrust::minmax_element(thrust::host, data, data+N, compare_key_value());
   thrust::minmax_element(data, data+N, compare_key_value());
 }
+
+void is_sorted_test() {
+    const int N=6;
+    int datas[N]={1,4,2,8,5,7};
+
+// CHECK:    std::vector<int> h_v(datas,datas+N);
+// CHECK-NEXT:    dpct::device_vector<int> d_v(datas,datas+N);
+// CHECK-NEXT:    std::greater<int> comp;
+    thrust::host_vector<int> h_v(datas,datas+N);
+    thrust::device_vector<int> d_v(datas,datas+N);
+    thrust::greater<int> comp;
+
+// CHECK:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, v.begin(), v.end(), comp);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), comp);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end());
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), comp);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), comp);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas+N);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas+N);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas+N, comp);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas+N, comp);
+    thrust::is_sorted(thrust::host, h_v.begin(), h_v.end());
+    thrust::is_sorted( h_v.begin(), h_v.end());
+    thrust::is_sorted(thrust::host, v.begin(), v.end(),comp);
+    thrust::is_sorted( h_v.begin(), h_v.end(),comp);
+    thrust::is_sorted(thrust::device, d_v.begin(), d_v.end());
+    thrust::is_sorted(thrust::device, d_v.begin(), d_v.end(),comp);
+    thrust::is_sorted( d_v.begin(), d_v.end(),comp);
+    thrust::is_sorted(thrust::host, datas, datas+N);
+    thrust::is_sorted( datas, datas+N);
+    thrust::is_sorted(thrust::host,datas, datas+N,comp);
+    thrust::is_sorted(datas, datas+N,comp);
+}
