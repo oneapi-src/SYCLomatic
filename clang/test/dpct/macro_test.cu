@@ -241,7 +241,7 @@ MACRO_KC
 //CHECK-NEXT: migration result may be incorrect. You need to verify the definition of the
 //CHECK-NEXT: macro.
 //CHECK-NEXT: */
-//CHECK-NEXT: HARD_KC(foo3, sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 2), 1, 0)
+//CHECK-NEXT: HARD_KC(foo3, 3, 2, 1, 0)
 #define HARD_KC(NAME,a,b,c,d) NAME<<<a,b,0>>>(c,d);
 HARD_KC(foo3,3,2,1,0)
 
@@ -262,13 +262,10 @@ dim3 threaddim = 32;
 // CHECK: MACRO_KC2(griddim,threaddim,1,0)
 MACRO_KC2(griddim,threaddim,1,0)
 
-// [Note] Since 3 and 2 are migrated to sycl::range<3>, if they are used in macro as native numbers,
-// there might be some issues in the migrated code.
-// Since this is a corner case, not to emit warning message here.
-// CHECK: MACRO_KC2(sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 2), 1, 0)
+// CHECK: MACRO_KC2(3,2,1,0)
 MACRO_KC2(3,2,1,0)
 
-// CHECK: MACRO_KC2(sycl::range<3>(3, 4, 5), sycl::range<3>(1, 1, 2), 1, 0)
+// CHECK: MACRO_KC2(sycl::range<3>(5, 4, 3), 2, 1, 0)
 MACRO_KC2(dim3(5,4,3),2,1,0)
 
 int *a;
@@ -562,7 +559,7 @@ __global__ void templatefoo(){
   int y = b;
 }
 //CHECK: #define AAA 15 + 3
-//CHECK-NEXT: #define CCC <<<sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)>>>()
+//CHECK-NEXT: #define CCC <<<1,1>>>()
 //CHECK-NEXT: #define KERNEL(A, B)                                                           \
 //CHECK-NEXT:   dpct::get_default_queue().parallel_for(                                      \
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),   \
@@ -1201,7 +1198,7 @@ int foo31(){
 
 class ArgClass{};
 
-
+//CHECK: #define SIZE 256
 #define SIZE 256
 //CHECK: #define VACALL4(...) __VA_ARGS__()
 //CHECK-NEXT: #define VACALL3(...) VACALL4(__VA_ARGS__)
