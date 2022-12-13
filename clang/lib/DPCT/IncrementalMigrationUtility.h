@@ -38,6 +38,7 @@ const std::string OPTION_ExperimentalFlag = "ExperimentalFlag";
 const std::string OPTION_ExplicitNamespace = "ExplicitNamespace";
 const std::string OPTION_UsmLevel = "UsmLevel";
 const std::string OPTION_OptimizeMigration = "OptimizeMigration";
+const std::string OPTION_UseTestedStandardCXXAPI = "UseTestedStandardCXXAPI";
 const std::string OPTION_RuleFile = "RuleFile";
 const std::string OPTION_AnalysisScopePath = "AnalysisScopePath";
 

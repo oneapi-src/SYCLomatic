@@ -2002,6 +2002,13 @@ public:
   }
   static bool isOptimizeMigration() { return OptimizeMigrationFlag; }
 
+  static void setUseTestedStandardCXXAPIFlag(bool Flag) {
+    UseTestedStandardCXXAPIFlag = Flag;
+  }
+  static bool isUsingTestedStandardCXXAPI() {
+    return UseTestedStandardCXXAPIFlag;
+  }
+
   static inline std::map<std::string, clang::tooling::OptionInfo> &
   getCurrentOptMap() {
     return CurrentOptMap;
@@ -2189,6 +2196,7 @@ private:
   static std::unordered_map<int, std::shared_ptr<DeviceFunctionInfo>>
       CubPlaceholderIndexMap;
   static bool OptimizeMigrationFlag;
+  static bool UseTestedStandardCXXAPIFlag;
   static std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
       PriorityReplInfoMap;
   static std::unordered_map<std::string, bool> ExcludePath;

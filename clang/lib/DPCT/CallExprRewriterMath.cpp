@@ -192,20 +192,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
     auto ContextFD = getImmediateOuterFuncDecl(Call);
     if (NamespaceStr == "std" &&
         (SourceCalleeName == "min" || SourceCalleeName == "max")) {
-      auto getImmediateOuterLambdaExpr =
-          [](const FunctionDecl *FuncDecl) -> const LambdaExpr * {
-        if (FuncDecl && FuncDecl->hasAttr<CUDADeviceAttr>() &&
-            FuncDecl->getAttr<CUDADeviceAttr>()->isImplicit() &&
-            FuncDecl->hasAttr<CUDAHostAttr>() &&
-            FuncDecl->getAttr<CUDAHostAttr>()->isImplicit()) {
-          auto *LE = DpctGlobalInfo::findAncestor<LambdaExpr>(FuncDecl);
-          if (LE && LE->getLambdaClass() && LE->getLambdaClass()->isLambda() &&
-              isLexicallyInLocalScope(LE->getLambdaClass())) {
-            return LE;
-          }
-        }
-        return nullptr;
-      };
       while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
         ContextFD = getImmediateOuterFuncDecl(LE);
       }
@@ -1151,15 +1137,15 @@ enum class MathFuncDeviceExtType {
 };
 
 bool isStdLibdevice() {
-  return true; // Need impl
+  return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
 }
 
 bool isMathLibdevice() {
-  return true; // Need impl
+  return DpctGlobalInfo::useIntelDeviceMath();
 }
 
 bool isTestedStdDevice() {
-  return true; // Need impl
+  return DpctGlobalInfo::isUsingTestedStandardCXXAPI();
 }
 
 auto IsPerf = [](const CallExpr *C) -> bool {
@@ -1196,10 +1182,20 @@ auto IsPureDevice = makeCheckAnd(
                  makeCheckNot(IsDirectCalleeHasAttribute<CUDAHostAttr>())));
 
 auto IsDirectCallerPureDevice = [](const CallExpr *C) -> bool {
-  return false; //need impl
+  auto ContextFD = getImmediateOuterFuncDecl(C);
+  while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
+    ContextFD = getImmediateOuterFuncDecl(LE);
+  }
+  if (!ContextFD)
+    return false;
+  if (ContextFD->getAttr<CUDADeviceAttr>() &&
+      !ContextFD->getAttr<CUDAHostAttr>()) {
+    return true;
+  }
+  return false;
 };
-auto IsUnresolvedExpr = [](const CallExpr *C) -> bool {
-  return false; //need impl
+auto IsUnresolvedLookupExpr = [](const CallExpr *C) -> bool {
+  return dyn_cast_or_null<UnresolvedLookupExpr>(C->getCallee());
 };
 
 class HasSideEffects {
@@ -1292,7 +1288,7 @@ createMathAPIRewriterDevice(
               {NAME,
                std::make_shared<NoRewriteFuncNameRewriterFactory>(NAME, NAME)}),
           createConditionalFactory(
-              math::IsUnresolvedExpr,
+              math::IsUnresolvedLookupExpr,
               std::move(createMathAPIRewriterDeviceImpl(
                   NAME, PerfPred, std::move(DEVICE_PERF), DEVICE_NODES)),
               createConditionalFactory(
@@ -1324,7 +1320,7 @@ createMathAPIRewriterDevice(
               {NAME,
                std::make_shared<NoRewriteFuncNameRewriterFactory>(NAME, NAME)}),
           createConditionalFactory(
-              math::IsUnresolvedExpr,
+              math::IsUnresolvedLookupExpr,
               std::move(createMathAPIRewriterDeviceImpl(NAME, DEVICE_NODES)),
               createConditionalFactory(
                   math::IsDefinedInCUDA(),

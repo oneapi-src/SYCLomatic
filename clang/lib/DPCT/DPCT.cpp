@@ -848,6 +848,7 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
+  DpctGlobalInfo::setUseTestedStandardCXXAPIFlag(UseTestedStandardCXXAPI.getValue());
   StopOnParseErrTooling = StopOnParseErr;
   InRootTooling = InRoot;
 
@@ -950,6 +951,9 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
                      OptimizeMigration.getValue(),
                      OptimizeMigration.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_UseTestedStandardCXXAPI,
+                     UseTestedStandardCXXAPI.getValue(),
+                     UseTestedStandardCXXAPI.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_RuleFile, MetaRuleObject::RuleFiles,
                      RuleFile.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,
