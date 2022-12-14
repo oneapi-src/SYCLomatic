@@ -31,11 +31,9 @@ enum class DwarfLinkerClient { Dsymutil, LLD, General };
 
 /// The kind of accelerator tables we should emit.
 enum class DwarfLinkerAccelTableKind : uint8_t {
-  None,
-  Apple,   ///< .apple_names, .apple_namespaces, .apple_types, .apple_objc.
-  Dwarf,   ///< DWARF v5 .debug_names.
-  Default, ///< Dwarf for DWARF5 or later, Apple otherwise.
-  Pub,     ///< .debug_pubnames, .debug_pubtypes
+  Apple,     ///< .apple_names, .apple_namespaces, .apple_types, .apple_objc.
+  Pub,       ///< .debug_pubnames, .debug_pubtypes
+  DebugNames ///< .debug_names.
 };
 
 /// AddressesMap represents information about valid addresses used
@@ -284,9 +282,11 @@ public:
   /// Use specified number of threads for parallel files linking.
   void setNumThreads(unsigned NumThreads) { Options.Threads = NumThreads; }
 
-  /// Set kind of accelerator tables to be generated.
-  void setAccelTableKind(DwarfLinkerAccelTableKind Kind) {
-    Options.TheAccelTableKind = Kind;
+  /// Add kind of accelerator tables to be generated.
+  void addAccelTableKind(DwarfLinkerAccelTableKind Kind) {
+    assert(std::find(Options.AccelTables.begin(), Options.AccelTables.end(),
+                     Kind) == Options.AccelTables.end());
+    Options.AccelTables.emplace_back(Kind);
   }
 
   /// Set prepend path for clang modules.
@@ -321,6 +321,17 @@ public:
   /// Set prefix map for objects.
   void setObjectPrefixMap(objectPrefixMap *Map) {
     Options.ObjectPrefixMap = Map;
+  }
+
+  /// Set target DWARF version.
+  Error setTargetDWARFVersion(uint16_t TargetDWARFVersion) {
+    if (TargetDWARFVersion < 1 || TargetDWARFVersion > 5)
+      return createStringError(std::errc::invalid_argument,
+                               "unsupported DWARF version: %d",
+                               TargetDWARFVersion);
+
+    Options.TargetDWARFVersion = TargetDWARFVersion;
+    return Error::success();
   }
 
 private:
@@ -397,15 +408,6 @@ private:
     if (Options.ErrorHandler != nullptr)
       Options.ErrorHandler(Warning, File.FileName, DIE);
   }
-
-  /// Remembers the oldest and newest DWARF version we've seen in a unit.
-  void updateDwarfVersion(unsigned Version) {
-    MaxDwarfVersion = std::max(MaxDwarfVersion, Version);
-    MinDwarfVersion = std::min(MinDwarfVersion, Version);
-  }
-
-  /// Remembers the kinds of accelerator tables we've seen in a unit.
-  void updateAccelKind(DWARFContext &Dwarf);
 
   /// Emit warnings as Dwarf compile units to leave a trail after linking.
   bool emitPaperTrailWarnings(const DWARFFile &File,
@@ -730,9 +732,6 @@ private:
 
   /// Emit the accelerator entries for \p Unit.
   void emitAcceleratorEntriesForUnit(CompileUnit &Unit);
-  void emitDwarfAcceleratorEntriesForUnit(CompileUnit &Unit);
-  void emitAppleAcceleratorEntriesForUnit(CompileUnit &Unit);
-  void emitPubAcceleratorEntriesForUnit(CompileUnit &Unit);
 
   /// Patch the frame info for an object file and emit it.
   void patchFrameInfoForObject(const DWARFFile &, RangesTy &Ranges,
@@ -758,12 +757,6 @@ private:
 
   DwarfEmitter *TheDwarfEmitter;
   std::vector<LinkContext> ObjectContexts;
-
-  unsigned MaxDwarfVersion = 0;
-  unsigned MinDwarfVersion = std::numeric_limits<unsigned>::max();
-
-  bool AtLeastOneAppleAccelTable = false;
-  bool AtLeastOneDwarfAccelTable = false;
 
   /// The CIEs that have been emitted in the output section. The actual CIE
   /// data serves a the key to this StringMap, this takes care of comparing the
@@ -793,6 +786,9 @@ private:
 
   /// linking options
   struct DWARFLinkerOptions {
+    /// DWARF version for the output.
+    uint16_t TargetDWARFVersion = 0;
+
     /// Generate processing log to the standard output.
     bool Verbose = false;
 
@@ -818,9 +814,8 @@ private:
     /// Number of threads.
     unsigned Threads = 1;
 
-    /// The accelerator table kind
-    DwarfLinkerAccelTableKind TheAccelTableKind =
-        DwarfLinkerAccelTableKind::Default;
+    /// The accelerator table kinds
+    SmallVector<DwarfLinkerAccelTableKind, 1> AccelTables;
 
     /// Prepend path for the clang modules.
     std::string PrependPath;

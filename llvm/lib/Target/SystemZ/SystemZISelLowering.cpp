@@ -25,6 +25,7 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/KnownBits.h"
 #include <cctype>
+#include <optional>
 
 using namespace llvm;
 
@@ -842,7 +843,7 @@ bool SystemZTargetLowering::isFPImmLegal(const APFloat &Imm, EVT VT,
 }
 
 /// Returns true if stack probing through inline assembly is requested.
-bool SystemZTargetLowering::hasInlineStackProbe(MachineFunction &MF) const {
+bool SystemZTargetLowering::hasInlineStackProbe(const MachineFunction &MF) const {
   // If the function specifically requests inline stack probes, emit them.
   if (MF.getFunction().hasFnAttribute("probe-stack"))
     return MF.getFunction().getFnAttribute("probe-stack").getValueAsString() ==
@@ -861,12 +862,12 @@ bool SystemZTargetLowering::isLegalAddImmediate(int64_t Imm) const {
 }
 
 bool SystemZTargetLowering::allowsMisalignedMemoryAccesses(
-    EVT VT, unsigned, Align, MachineMemOperand::Flags, bool *Fast) const {
+    EVT VT, unsigned, Align, MachineMemOperand::Flags, unsigned *Fast) const {
   // Unaligned accesses should never be slower than the expanded version.
   // We check specifically for aligned accesses in the few cases where
   // they are required.
   if (Fast)
-    *Fast = true;
+    *Fast = 1;
   return true;
 }
 
@@ -1450,7 +1451,7 @@ static SDValue lowerGR128ToI128(SelectionDAG &DAG, SDValue In) {
 
 bool SystemZTargetLowering::splitValueIntoRegisterParts(
     SelectionDAG &DAG, const SDLoc &DL, SDValue Val, SDValue *Parts,
-    unsigned NumParts, MVT PartVT, Optional<CallingConv::ID> CC) const {
+    unsigned NumParts, MVT PartVT, std::optional<CallingConv::ID> CC) const {
   EVT ValueVT = Val.getValueType();
   assert((ValueVT != MVT::i128 ||
           ((NumParts == 1 && PartVT == MVT::Untyped) ||
@@ -1466,7 +1467,7 @@ bool SystemZTargetLowering::splitValueIntoRegisterParts(
 
 SDValue SystemZTargetLowering::joinRegisterPartsIntoValue(
     SelectionDAG &DAG, const SDLoc &DL, const SDValue *Parts, unsigned NumParts,
-    MVT PartVT, EVT ValueVT, Optional<CallingConv::ID> CC) const {
+    MVT PartVT, EVT ValueVT, std::optional<CallingConv::ID> CC) const {
   assert((ValueVT != MVT::i128 ||
           ((NumParts == 1 && PartVT == MVT::Untyped) ||
            (NumParts == 2 && PartVT == MVT::i64))) &&
@@ -1854,10 +1855,7 @@ SystemZTargetLowering::LowerCall(CallLoweringInfo &CLI,
   Glue = Chain.getValue(1);
 
   // Mark the end of the call, which is glued to the call itself.
-  Chain = DAG.getCALLSEQ_END(Chain,
-                             DAG.getConstant(NumBytes, DL, PtrVT, true),
-                             DAG.getConstant(0, DL, PtrVT, true),
-                             Glue, DL);
+  Chain = DAG.getCALLSEQ_END(Chain, NumBytes, 0, Glue, DL);
   Glue = Chain.getValue(1);
 
   // Assign locations to each value returned by this call.
@@ -7041,6 +7039,8 @@ SDValue SystemZTargetLowering::combineGET_CCMASK(
   int CCMaskVal = CCMask->getZExtValue();
 
   SDValue Select = N->getOperand(0);
+  if (Select->getOpcode() == ISD::TRUNCATE)
+    Select = Select->getOperand(0);
   if (Select->getOpcode() != SystemZISD::SELECT_CCMASK)
     return SDValue();
 
@@ -7055,9 +7055,9 @@ SDValue SystemZTargetLowering::combineGET_CCMASK(
   auto *FalseVal = dyn_cast<ConstantSDNode>(Select->getOperand(1));
   if (!TrueVal || !FalseVal)
     return SDValue();
-  if (TrueVal->getZExtValue() != 0 && FalseVal->getZExtValue() == 0)
+  if (TrueVal->getZExtValue() == 1 && FalseVal->getZExtValue() == 0)
     ;
-  else if (TrueVal->getZExtValue() == 0 && FalseVal->getZExtValue() != 0)
+  else if (TrueVal->getZExtValue() == 0 && FalseVal->getZExtValue() == 1)
     SelectCCMaskVal ^= SelectCCValidVal;
   else
     return SDValue();
@@ -7442,7 +7442,7 @@ SystemZTargetLowering::ComputeNumSignBitsForTargetNode(
 }
 
 unsigned
-SystemZTargetLowering::getStackProbeSize(MachineFunction &MF) const {
+SystemZTargetLowering::getStackProbeSize(const MachineFunction &MF) const {
   const TargetFrameLowering *TFI = Subtarget.getFrameLowering();
   unsigned StackAlign = TFI->getStackAlignment();
   assert(StackAlign >=1 && isPowerOf2_32(StackAlign) &&

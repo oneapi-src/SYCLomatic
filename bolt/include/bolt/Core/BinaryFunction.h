@@ -34,19 +34,25 @@
 #include "bolt/Core/JumpTable.h"
 #include "bolt/Core/MCPlus.h"
 #include "bolt/Utils/NameResolver.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/iterator.h"
+#include "llvm/ADT/iterator_range.h"
 #include "llvm/BinaryFormat/Dwarf.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCDwarf.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCSymbol.h"
 #include "llvm/Object/ObjectFile.h"
+#include "llvm/Support/RWMutex.h"
 #include "llvm/Support/raw_ostream.h"
 #include <algorithm>
+#include <iterator>
 #include <limits>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 using namespace llvm::object;
@@ -142,7 +148,8 @@ public:
     uint64_t Action;
   };
 
-  using CallSitesType = SmallVector<CallSite, 0>;
+  using CallSitesList = SmallVector<std::pair<FragmentNum, CallSite>, 0>;
+  using CallSitesRange = iterator_range<CallSitesList::const_iterator>;
 
   using IslandProxiesType =
       std::map<BinaryFunction *, std::map<const MCSymbol *, MCSymbol *>>;
@@ -382,6 +389,9 @@ private:
   /// Original LSDA address for the function.
   uint64_t LSDAAddress{0};
 
+  /// Original LSDA type encoding
+  unsigned LSDATypeEncoding{dwarf::DW_EH_PE_omit};
+
   /// Containing compilation unit for the function.
   DWARFUnit *DwarfUnit{nullptr};
 
@@ -492,8 +502,7 @@ private:
   DenseMap<int32_t, SmallVector<int32_t, 4>> FrameRestoreEquivalents;
 
   // For tracking exception handling ranges.
-  CallSitesType CallSites;
-  CallSitesType ColdCallSites;
+  CallSitesList CallSites;
 
   /// Binary blobs representing action, type, and type index tables for this
   /// function' LSDA (exception handling).
@@ -507,9 +516,9 @@ private:
   /// addressing.
   LSDATypeTableTy LSDATypeAddressTable;
 
-  /// Marking for the beginning of language-specific data area for the function.
-  MCSymbol *LSDASymbol{nullptr};
-  MCSymbol *ColdLSDASymbol{nullptr};
+  /// Marking for the beginnings of language-specific data areas for each
+  /// fragment of the function.
+  SmallVector<MCSymbol *, 0> LSDASymbols;
 
   /// Map to discover which CFIs are attached to a given instruction offset.
   /// Maps an instruction offset into a FrameInstructions offset.
@@ -716,7 +725,6 @@ private:
       BB->releaseCFG();
 
     clearList(CallSites);
-    clearList(ColdCallSites);
     clearList(LSDATypeTable);
     clearList(LSDATypeAddressTable);
 
@@ -972,7 +980,7 @@ public:
       if (Callback(StringRef(Name)))
         return StringRef(Name);
 
-    return NoneType();
+    return std::nullopt;
   }
 
   /// Check if (possibly one out of many) function name matches the given
@@ -1067,6 +1075,14 @@ public:
     return N;
   }
 
+  /// Return true if function has instructions to emit.
+  bool hasNonPseudoInstructions() const {
+    for (const BinaryBasicBlock &BB : blocks())
+      if (BB.getNumNonPseudos() > 0)
+        return true;
+    return false;
+  }
+
   /// Return MC symbol associated with the function.
   /// All references to the function should use this symbol.
   MCSymbol *getSymbol(const FragmentNum Fragment = FragmentNum::main()) {
@@ -1151,7 +1167,7 @@ public:
 
     MCSymbol *&FunctionEndLabel = FunctionEndLabels[LabelIndex];
     if (!FunctionEndLabel) {
-      std::unique_lock<std::shared_timed_mutex> Lock(BC.CtxMutex);
+      std::unique_lock<llvm::sys::RWMutex> Lock(BC.CtxMutex);
       if (Fragment == FragmentNum::main())
         FunctionEndLabel = BC.Ctx->createNamedTempSymbol("func_end");
       else
@@ -1302,7 +1318,7 @@ public:
   /// Return the name of the section this function originated from.
   Optional<StringRef> getOriginSectionName() const {
     if (!OriginSection)
-      return NoneType();
+      return std::nullopt;
     return OriginSection->getName();
   }
 
@@ -1418,13 +1434,23 @@ public:
 
   uint8_t getPersonalityEncoding() const { return PersonalityEncoding; }
 
-  const CallSitesType &getCallSites() const { return CallSites; }
+  CallSitesRange getCallSites(const FragmentNum F) const {
+    return make_range(std::equal_range(CallSites.begin(), CallSites.end(),
+                                       std::make_pair(F, CallSite()),
+                                       llvm::less_first()));
+  }
 
-  const CallSitesType &getColdCallSites() const { return ColdCallSites; }
+  void
+  addCallSites(const ArrayRef<std::pair<FragmentNum, CallSite>> NewCallSites) {
+    llvm::copy(NewCallSites, std::back_inserter(CallSites));
+    llvm::stable_sort(CallSites, llvm::less_first());
+  }
 
   ArrayRef<uint8_t> getLSDAActionTable() const { return LSDAActionTable; }
 
   const LSDATypeTableTy &getLSDATypeTable() const { return LSDATypeTable; }
+
+  unsigned getLSDATypeEncoding() const { return LSDATypeEncoding; }
 
   const LSDATypeTableTy &getLSDATypeAddressTable() const {
     return LSDATypeAddressTable;
@@ -1465,7 +1491,7 @@ public:
   std::unique_ptr<BinaryBasicBlock>
   createBasicBlock(MCSymbol *Label = nullptr) {
     if (!Label) {
-      std::unique_lock<std::shared_timed_mutex> Lock(BC.CtxMutex);
+      std::unique_lock<llvm::sys::RWMutex> Lock(BC.CtxMutex);
       Label = BC.Ctx->createNamedTempSymbol("BB");
     }
     auto BB =
@@ -1759,6 +1785,7 @@ public:
     return *this;
   }
 
+  Align getAlign() const { return Align(Alignment); }
   uint16_t getAlignment() const { return Alignment; }
 
   BinaryFunction &setMaxAlignmentBytes(uint16_t MaxAlignBytes) {
@@ -1822,9 +1849,11 @@ public:
     return *this;
   }
 
-  /// Set LSDA symbol for the function.
+  /// Set main LSDA symbol for the function.
   BinaryFunction &setLSDASymbol(MCSymbol *Symbol) {
-    LSDASymbol = Symbol;
+    if (LSDASymbols.empty())
+      LSDASymbols.resize(1);
+    LSDASymbols.front() = Symbol;
     return *this;
   }
 
@@ -1848,30 +1877,25 @@ public:
   uint64_t getLSDAAddress() const { return LSDAAddress; }
 
   /// Return symbol pointing to function's LSDA.
-  MCSymbol *getLSDASymbol() {
-    if (LSDASymbol)
-      return LSDASymbol;
-    if (CallSites.empty())
+  MCSymbol *getLSDASymbol(const FragmentNum F) {
+    if (F.get() < LSDASymbols.size() && LSDASymbols[F.get()] != nullptr)
+      return LSDASymbols[F.get()];
+    if (getCallSites(F).empty())
       return nullptr;
 
-    LSDASymbol = BC.Ctx->getOrCreateSymbol(
-        Twine("GCC_except_table") + Twine::utohexstr(getFunctionNumber()));
+    if (F.get() >= LSDASymbols.size())
+      LSDASymbols.resize(F.get() + 1);
 
-    return LSDASymbol;
-  }
+    SmallString<256> SymbolName;
+    if (F == FragmentNum::main())
+      SymbolName = formatv("GCC_except_table{0:x-}", getFunctionNumber());
+    else
+      SymbolName = formatv("GCC_cold_except_table{0:x-}.{1}",
+                           getFunctionNumber(), F.get());
 
-  /// Return symbol pointing to function's LSDA for the cold part.
-  MCSymbol *getColdLSDASymbol(const FragmentNum Fragment) {
-    if (ColdLSDASymbol)
-      return ColdLSDASymbol;
-    if (ColdCallSites.empty())
-      return nullptr;
+    LSDASymbols[F.get()] = BC.Ctx->getOrCreateSymbol(SymbolName);
 
-    ColdLSDASymbol =
-        BC.Ctx->getOrCreateSymbol(formatv("GCC_cold_except_table{0:x-}.{1}",
-                                          getFunctionNumber(), Fragment.get()));
-
-    return ColdLSDASymbol;
+    return LSDASymbols[F.get()];
   }
 
   void setOutputDataAddress(uint64_t Address) { OutputDataOffset = Address; }
@@ -2100,6 +2124,12 @@ public:
   /// Return true upon successful processing, or false if the control flow
   /// cannot be statically evaluated for any given indirect branch.
   bool postProcessIndirectBranches(MCPlusBuilder::AllocatorIdTy AllocId);
+
+  /// Validate that all data references to function offsets are claimed by
+  /// recognized jump tables. Register externally referenced blocks as entry
+  /// points. Returns true if there are no unclaimed externally referenced
+  /// offsets.
+  bool validateExternallyReferencedOffsets();
 
   /// Return all call site profile info for this function.
   IndirectCallSiteProfile &getAllCallSites() { return AllCallSites; }

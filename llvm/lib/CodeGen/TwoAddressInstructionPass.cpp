@@ -1706,6 +1706,7 @@ bool TwoAddressInstructionPass::processStatepoint(
       LiveVariables::VarInfo &SrcInfo = LV->getVarInfo(RegB);
       LiveVariables::VarInfo &DstInfo = LV->getVarInfo(RegA);
       SrcInfo.AliveBlocks |= DstInfo.AliveBlocks;
+      DstInfo.AliveBlocks.clear();
       for (auto *KillMI : DstInfo.Kills)
         LV->addVirtualRegisterKilled(RegB, *KillMI, false);
     }
@@ -1887,11 +1888,6 @@ void TwoAddressInstructionPass::
 eliminateRegSequence(MachineBasicBlock::iterator &MBBI) {
   MachineInstr &MI = *MBBI;
   Register DstReg = MI.getOperand(0).getReg();
-  if (MI.getOperand(0).getSubReg() || DstReg.isPhysical() ||
-      !(MI.getNumOperands() & 1)) {
-    LLVM_DEBUG(dbgs() << "Illegal REG_SEQUENCE instruction:" << MI);
-    llvm_unreachable(nullptr);
-  }
 
   SmallVector<Register, 4> OrigRegs;
   if (LIS) {

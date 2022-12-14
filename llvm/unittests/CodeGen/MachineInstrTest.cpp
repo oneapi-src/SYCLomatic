@@ -10,6 +10,7 @@
 #include "llvm/ADT/Triple.h"
 #include "llvm/CodeGen/MachineBasicBlock.h"
 #include "llvm/CodeGen/MachineFunction.h"
+#include "llvm/CodeGen/MachineInstrBuilder.h"
 #include "llvm/CodeGen/MachineMemOperand.h"
 #include "llvm/CodeGen/MachineModuleInfo.h"
 #include "llvm/CodeGen/TargetFrameLowering.h"
@@ -25,6 +26,7 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 using namespace llvm;
@@ -269,8 +271,8 @@ TEST(MachineInstrExtraInfo, AddExtraInfo) {
   MMOs.push_back(MMO);
   MCSymbol *Sym1 = MC->createTempSymbol("pre_label", false);
   MCSymbol *Sym2 = MC->createTempSymbol("post_label", false);
-  MDNode *HAM = MDNode::getDistinct(Ctx, None);
-  MDNode *PCS = MDNode::getDistinct(Ctx, None);
+  MDNode *HAM = MDNode::getDistinct(Ctx, std::nullopt);
+  MDNode *PCS = MDNode::getDistinct(Ctx, std::nullopt);
 
   ASSERT_TRUE(MI->memoperands_empty());
   ASSERT_FALSE(MI->getPreInstrSymbol());
@@ -329,8 +331,8 @@ TEST(MachineInstrExtraInfo, ChangeExtraInfo) {
   MMOs.push_back(MMO);
   MCSymbol *Sym1 = MC->createTempSymbol("pre_label", false);
   MCSymbol *Sym2 = MC->createTempSymbol("post_label", false);
-  MDNode *HAM = MDNode::getDistinct(Ctx, None);
-  MDNode *PCS = MDNode::getDistinct(Ctx, None);
+  MDNode *HAM = MDNode::getDistinct(Ctx, std::nullopt);
+  MDNode *PCS = MDNode::getDistinct(Ctx, std::nullopt);
 
   MI->setMemRefs(*MF, MMOs);
   MI->setPreInstrSymbol(*MF, Sym1);
@@ -371,8 +373,8 @@ TEST(MachineInstrExtraInfo, RemoveExtraInfo) {
   MMOs.push_back(MMO);
   MCSymbol *Sym1 = MC->createTempSymbol("pre_label", false);
   MCSymbol *Sym2 = MC->createTempSymbol("post_label", false);
-  MDNode *HAM = MDNode::getDistinct(Ctx, None);
-  MDNode *PCS = MDNode::getDistinct(Ctx, None);
+  MDNode *HAM = MDNode::getDistinct(Ctx, std::nullopt);
+  MDNode *PCS = MDNode::getDistinct(Ctx, std::nullopt);
 
   MI->setMemRefs(*MF, MMOs);
   MI->setPreInstrSymbol(*MF, Sym1);
@@ -442,7 +444,34 @@ TEST(MachineInstrDebugValue, AddDebugValueOperand) {
   }
 }
 
-static_assert(std::is_trivially_copyable<MCOperand>::value,
-              "trivially copyable");
+MATCHER_P(HasMIMetadata, MIMD, "") {
+  return arg->getDebugLoc() == MIMD.getDL() &&
+         arg->getPCSections() == MIMD.getPCSections();
+}
+
+TEST(MachineInstrBuilder, BuildMI) {
+  LLVMContext Ctx;
+  MDNode *PCS = MDNode::getDistinct(Ctx, std::nullopt);
+  MDNode *DI = MDNode::getDistinct(Ctx, std::nullopt);
+  DebugLoc DL(DI);
+  MIMetadata MIMD(DL, PCS);
+  EXPECT_EQ(MIMD.getDL(), DL);
+  EXPECT_EQ(MIMD.getPCSections(), PCS);
+  // Check common BuildMI() overloads propagate MIMetadata.
+  Module Mod("Module", Ctx);
+  auto MF = createMachineFunction(Ctx, Mod);
+  auto MBB = MF->CreateMachineBasicBlock();
+  MCInstrDesc MCID = {0, 0, 0, 0, 0, 0, 0, nullptr, nullptr, nullptr};
+  EXPECT_THAT(BuildMI(*MF, MIMD, MCID), HasMIMetadata(MIMD));
+  EXPECT_THAT(BuildMI(*MF, MIMD, MCID), HasMIMetadata(MIMD));
+  EXPECT_THAT(BuildMI(*MBB, MBB->end(), MIMD, MCID), HasMIMetadata(MIMD));
+  EXPECT_THAT(BuildMI(*MBB, MBB->end(), MIMD, MCID), HasMIMetadata(MIMD));
+  EXPECT_THAT(BuildMI(*MBB, MBB->instr_end(), MIMD, MCID), HasMIMetadata(MIMD));
+  EXPECT_THAT(BuildMI(*MBB, *MBB->begin(), MIMD, MCID), HasMIMetadata(MIMD));
+  EXPECT_THAT(BuildMI(*MBB, &*MBB->begin(), MIMD, MCID), HasMIMetadata(MIMD));
+  EXPECT_THAT(BuildMI(MBB, MIMD, MCID), HasMIMetadata(MIMD));
+}
+
+static_assert(std::is_trivially_copyable_v<MCOperand>, "trivially copyable");
 
 } // end namespace

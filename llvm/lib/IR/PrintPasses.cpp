@@ -146,6 +146,8 @@ bool llvm::isPassInPrintList(StringRef PassName) {
   return Set.empty() || Set.count(std::string(PassName));
 }
 
+bool llvm::isFilterPassesEmpty() { return FilterPasses.empty(); }
+
 bool llvm::isFunctionInPrintList(StringRef FunctionName) {
   static std::unordered_set<std::string> PrintFuncNames(PrintFuncsList.begin(),
                                                         PrintFuncsList.end());
@@ -196,8 +198,9 @@ std::string llvm::doSystemDiff(StringRef Before, StringRef After,
 
   StringRef Args[] = {DiffBinary, "-w", "-d",        OLF,
                       NLF,        ULF,  FileName[0], FileName[1]};
-  Optional<StringRef> Redirects[] = {None, StringRef(FileName[2]), None};
-  int Result = sys::ExecuteAndWait(*DiffExe, Args, None, Redirects);
+  std::optional<StringRef> Redirects[] = {std::nullopt, StringRef(FileName[2]),
+                                          std::nullopt};
+  int Result = sys::ExecuteAndWait(*DiffExe, Args, std::nullopt, Redirects);
   if (Result < 0)
     return "Error executing system diff.";
   std::string Diff;

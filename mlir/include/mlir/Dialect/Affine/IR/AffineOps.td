@@ -13,7 +13,7 @@
 #ifndef AFFINE_OPS
 #define AFFINE_OPS
 
-include "mlir/Dialect/Arithmetic/IR/ArithmeticBase.td"
+include "mlir/Dialect/Arith/IR/ArithBase.td"
 include "mlir/Dialect/Affine/IR/AffineMemoryOpInterfaces.td"
 include "mlir/Interfaces/ControlFlowInterfaces.td"
 include "mlir/Interfaces/LoopLikeInterface.td"
@@ -23,9 +23,7 @@ def Affine_Dialect : Dialect {
   let name = "affine";
   let cppNamespace = "mlir";
   let hasConstantMaterializer = 1;
-  let dependentDialects = ["arith::ArithmeticDialect"];
-
-  let emitAccessorPrefix = kEmitAccessorPrefix_Prefixed;
+  let dependentDialects = ["arith::ArithDialect"];
 }
 
 // Base class for Affine dialect ops.
@@ -36,7 +34,7 @@ class Affine_Op<string mnemonic, list<Trait> traits = []> :
 def ImplicitAffineTerminator
     : SingleBlockImplicitTerminator<"AffineYieldOp">;
 
-def AffineApplyOp : Affine_Op<"apply", [NoSideEffect]> {
+def AffineApplyOp : Affine_Op<"apply", [Pure]> {
   let summary = "affine apply operation";
   let description = [{
     The affine.apply operation applies an [affine mapping](#affine-expressions)
@@ -107,8 +105,8 @@ def AffineApplyOp : Affine_Op<"apply", [NoSideEffect]> {
 }
 
 def AffineForOp : Affine_Op<"for",
-    [AutomaticAllocationScope, ImplicitAffineTerminator, RecursiveSideEffects,
-     DeclareOpInterfaceMethods<LoopLikeOpInterface,
+    [AutomaticAllocationScope, ImplicitAffineTerminator, ConditionallySpeculatable,
+     RecursiveMemoryEffects, DeclareOpInterfaceMethods<LoopLikeOpInterface,
      ["getSingleInductionVar", "getSingleLowerBound", "getSingleStep",
       "getSingleUpperBound"]>,
      DeclareOpInterfaceMethods<RegionBranchOpInterface,
@@ -342,6 +340,9 @@ def AffineForOp : Affine_Op<"for",
     /// Returns true if both the lower and upper bound have the same operand
     /// lists (same operands in the same order).
     bool matchingBoundOperandList();
+
+    /// Interface method for ConditionallySpeculatable.
+    Speculation::Speculatability getSpeculatability();
   }];
 
   let hasCanonicalizer = 1;
@@ -351,8 +352,10 @@ def AffineForOp : Affine_Op<"for",
 }
 
 def AffineIfOp : Affine_Op<"if",
-                           [ImplicitAffineTerminator, RecursiveSideEffects,
-                            NoRegionArguments]> {
+                           [ImplicitAffineTerminator, RecursivelySpeculatable,
+                            RecursiveMemoryEffects, NoRegionArguments,
+                            DeclareOpInterfaceMethods<RegionBranchOpInterface>
+                           ]> {
   let summary = "if-then-else operation";
   let description = [{
     Syntax:
@@ -557,14 +560,14 @@ class AffineMinMaxOpBase<string mnemonic, list<Trait> traits = []> :
   let extraClassDeclaration = [{
     static StringRef getMapAttrStrName() { return "map"; }
     AffineMap getAffineMap() { return getMap(); }
-    ValueRange getMapOperands() { return operands(); }
+    ValueRange getMapOperands() { return getOperands(); }
     ValueRange getDimOperands() {
-      return OperandRange{operands().begin(),
-                        operands().begin() + getMap().getNumDims()};
+      return OperandRange{getOperands().begin(),
+                          getOperands().begin() + getMap().getNumDims()};
     }
     ValueRange getSymbolOperands() {
-      return OperandRange{operands().begin() + getMap().getNumDims(),
-                        operands().end()};
+      return OperandRange{getOperands().begin() + getMap().getNumDims(),
+                          getOperands().end()};
     }
   }];
   let hasCustomAssemblyFormat = 1;
@@ -573,7 +576,7 @@ class AffineMinMaxOpBase<string mnemonic, list<Trait> traits = []> :
   let hasVerifier = 1;
 }
 
-def AffineMinOp : AffineMinMaxOpBase<"min", [NoSideEffect]> {
+def AffineMinOp : AffineMinMaxOpBase<"min", [Pure]> {
   let summary = "min operation";
   let description = [{
     Syntax:
@@ -597,7 +600,7 @@ def AffineMinOp : AffineMinMaxOpBase<"min", [NoSideEffect]> {
   }];
 }
 
-def AffineMaxOp : AffineMinMaxOpBase<"max", [NoSideEffect]> {
+def AffineMaxOp : AffineMinMaxOpBase<"max", [Pure]> {
   let summary = "max operation";
   let description = [{
     The "max" operation computes the maximum value result from a multi-result
@@ -612,8 +615,9 @@ def AffineMaxOp : AffineMinMaxOpBase<"max", [NoSideEffect]> {
 }
 
 def AffineParallelOp : Affine_Op<"parallel",
-    [AutomaticAllocationScope, ImplicitAffineTerminator, RecursiveSideEffects,
-     DeclareOpInterfaceMethods<LoopLikeOpInterface>, MemRefsNormalizable]> {
+    [AutomaticAllocationScope, ImplicitAffineTerminator, RecursivelySpeculatable,
+     RecursiveMemoryEffects, DeclareOpInterfaceMethods<LoopLikeOpInterface>,
+     MemRefsNormalizable]> {
   let summary = "multi-index parallel band operation";
   let description = [{
     The "affine.parallel" operation represents a hyper-rectangular affine
@@ -719,7 +723,6 @@ def AffineParallelOp : Affine_Op<"parallel",
 
     /// Sets elements of the loop lower bound.
     void setLowerBounds(ValueRange operands, AffineMap map);
-    void setLowerBoundsMap(AffineMap map);
 
     /// Returns elements of the loop upper bound.
     AffineMap getUpperBoundMap(unsigned pos);
@@ -728,7 +731,6 @@ def AffineParallelOp : Affine_Op<"parallel",
 
     /// Sets elements fo the loop upper bound.
     void setUpperBounds(ValueRange operands, AffineMap map);
-    void setUpperBoundsMap(AffineMap map);
 
     void setSteps(ArrayRef<int64_t> newSteps);
 
@@ -904,7 +906,7 @@ def AffineStoreOp : AffineStoreOpBase<"store"> {
   let hasVerifier = 1;
 }
 
-def AffineYieldOp : Affine_Op<"yield", [NoSideEffect, Terminator, ReturnLike,
+def AffineYieldOp : Affine_Op<"yield", [Pure, Terminator, ReturnLike,
     MemRefsNormalizable]> {
   let summary = "Yield values to parent operation";
   let description = [{
@@ -1066,7 +1068,7 @@ def AffineVectorStoreOp : AffineStoreOpBase<"vector_store"> {
 //===----------------------------------------------------------------------===//
 
 def AffineDelinearizeIndexOp : Affine_Op<"delinearize_index",
-    [NoSideEffect]> {
+    [Pure]> {
   let summary = "delinearize an index";
   let description = [{
     The `affine.delinearize_index` operation takes a single index value and

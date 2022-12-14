@@ -309,7 +309,7 @@ int collectStats(MlirOperation operation) {
   // clang-format off
   // CHECK-LABEL: @stats
   // CHECK: Number of operations: 12
-  // CHECK: Number of attributes: 4
+  // CHECK: Number of attributes: 5
   // CHECK: Number of blocks: 3
   // CHECK: Number of regions: 3
   // CHECK: Number of values: 9
@@ -467,7 +467,7 @@ static void printFirstOfEach(MlirContext ctx, MlirOperation operation) {
   MlirOpPrintingFlags flags = mlirOpPrintingFlagsCreate();
   mlirOpPrintingFlagsElideLargeElementsAttrs(flags, 2);
   mlirOpPrintingFlagsPrintGenericOpForm(flags);
-  mlirOpPrintingFlagsEnableDebugInfo(flags, /*prettyForm=*/0);
+  mlirOpPrintingFlagsEnableDebugInfo(flags, /*enable=*/1, /*prettyForm=*/0);
   mlirOpPrintingFlagsUseLocalScope(flags);
   fprintf(stderr, "Op print with all flags: ");
   mlirOperationPrintWithFlags(operation, flags, printToStderr, NULL);
@@ -1219,6 +1219,20 @@ int printBuiltinAttributes(MlirContext ctx) {
       fabsf(mlirDenseF32ArrayGetElement(floatArray, 1) - 1.0f) > 1E-6f ||
       fabs(mlirDenseF64ArrayGetElement(doubleArray, 1) - 1.0) > 1E-6)
     return 21;
+
+  int64_t layoutStrides[3] = {5, 7, 13};
+  MlirAttribute stridedLayoutAttr =
+      mlirStridedLayoutAttrGet(ctx, 42, 3, &layoutStrides[0]);
+
+  // CHECK: strided<[5, 7, 13], offset: 42>
+  mlirAttributeDump(stridedLayoutAttr);
+
+  if (mlirStridedLayoutAttrGetOffset(stridedLayoutAttr) != 42 ||
+      mlirStridedLayoutAttrGetNumStrides(stridedLayoutAttr) != 3 ||
+      mlirStridedLayoutAttrGetStride(stridedLayoutAttr, 0) != 5 ||
+      mlirStridedLayoutAttrGetStride(stridedLayoutAttr, 1) != 7 ||
+      mlirStridedLayoutAttrGetStride(stridedLayoutAttr, 2) != 13)
+    return 22;
 
   return 0;
 }

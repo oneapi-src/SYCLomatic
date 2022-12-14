@@ -154,7 +154,7 @@ private:
   void emitCFIInstruction(const MCCFIInstruction &Inst) const;
 
   /// Emit exception handling ranges for the function.
-  void emitLSDA(BinaryFunction &BF, bool EmitColdPart);
+  void emitLSDA(BinaryFunction &BF, const FunctionFragment &FF);
 
   /// Emit line number information corresponding to \p NewLoc. \p PrevLoc
   /// provides a context for de-duplication of line number info.
@@ -211,8 +211,6 @@ void BinaryEmitter::emitAll(StringRef OrgSecPrefix) {
   }
 
   emitDataSections(OrgSecPrefix);
-
-  Streamer.emitLabel(BC.Ctx->getOrCreateSymbol("_end"));
 }
 
 void BinaryEmitter::emitFunctions() {
@@ -287,6 +285,11 @@ bool BinaryEmitter::emitFunction(BinaryFunction &Function,
   if (Function.getState() == BinaryFunction::State::Empty)
     return false;
 
+  // Avoid emitting function without instructions when overwriting the original
+  // function in-place. Otherwise, emit the empty function to define the symbol.
+  if (!BC.HasRelocations && !Function.hasNonPseudoInstructions())
+    return false;
+
   MCSection *Section =
       BC.getCodeSection(Function.getCodeSectionName(FF.getFragmentNum()));
   Streamer.switchSection(Section);
@@ -297,18 +300,16 @@ bool BinaryEmitter::emitFunction(BinaryFunction &Function,
     // Set section alignment to at least maximum possible object alignment.
     // We need this to support LongJmp and other passes that calculates
     // tentative layout.
-    if (Section->getAlignment() < opts::AlignFunctions)
-      Section->setAlignment(Align(opts::AlignFunctions));
+    Section->ensureMinAlignment(Align(opts::AlignFunctions));
 
-    Streamer.emitCodeAlignment(BinaryFunction::MinAlign, &*BC.STI);
+    Streamer.emitCodeAlignment(Align(BinaryFunction::MinAlign), &*BC.STI);
     uint16_t MaxAlignBytes = FF.isSplitFragment()
                                  ? Function.getMaxColdAlignmentBytes()
                                  : Function.getMaxAlignmentBytes();
     if (MaxAlignBytes > 0)
-      Streamer.emitCodeAlignment(Function.getAlignment(), &*BC.STI,
-                                 MaxAlignBytes);
+      Streamer.emitCodeAlignment(Function.getAlign(), &*BC.STI, MaxAlignBytes);
   } else {
-    Streamer.emitCodeAlignment(Function.getAlignment(), &*BC.STI);
+    Streamer.emitCodeAlignment(Function.getAlign(), &*BC.STI);
   }
 
   MCContext &Context = Streamer.getContext();
@@ -333,9 +334,7 @@ bool BinaryEmitter::emitFunction(BinaryFunction &Function,
     if (Function.getPersonalityFunction() != nullptr)
       Streamer.emitCFIPersonality(Function.getPersonalityFunction(),
                                   Function.getPersonalityEncoding());
-    MCSymbol *LSDASymbol = FF.isSplitFragment()
-                               ? Function.getColdLSDASymbol(FF.getFragmentNum())
-                               : Function.getLSDASymbol();
+    MCSymbol *LSDASymbol = Function.getLSDASymbol(FF.getFragmentNum());
     if (LSDASymbol)
       Streamer.emitCFILsda(LSDASymbol, BC.LSDAEncoding);
     else
@@ -394,7 +393,7 @@ bool BinaryEmitter::emitFunction(BinaryFunction &Function,
     emitLineInfoEnd(Function, EndSymbol);
 
   // Exception handling info for the function.
-  emitLSDA(Function, FF.isSplitFragment());
+  emitLSDA(Function, FF);
 
   if (FF.isMainFragment() && opts::JumpTables > JTS_NONE)
     emitJumpTables(Function);
@@ -426,7 +425,7 @@ void BinaryEmitter::emitFunctionBody(BinaryFunction &BF, FunctionFragment &FF,
   for (BinaryBasicBlock *const BB : FF) {
     if ((opts::AlignBlocks || opts::PreserveBlocksAlignment) &&
         BB->getAlignment() > 1)
-      Streamer.emitCodeAlignment(BB->getAlignment(), &*BC.STI,
+      Streamer.emitCodeAlignment(BB->getAlign(), &*BC.STI,
                                  BB->getAlignmentMaxBytes());
     Streamer.emitLabel(BB->getLabel());
     if (!EmitCodeOnly) {
@@ -515,7 +514,7 @@ void BinaryEmitter::emitConstantIslands(BinaryFunction &BF, bool EmitColdPart,
   const uint16_t Alignment = OnBehalfOf
                                  ? OnBehalfOf->getConstantIslandAlignment()
                                  : BF.getConstantIslandAlignment();
-  Streamer.emitCodeAlignment(Alignment, &*BC.STI);
+  Streamer.emitCodeAlignment(Align(Alignment), &*BC.STI);
 
   if (!OnBehalfOf) {
     if (!EmitColdPart)
@@ -739,10 +738,12 @@ void BinaryEmitter::emitJumpTables(const BinaryFunction &BF) {
 
   for (auto &JTI : BF.jumpTables()) {
     JumpTable &JT = *JTI.second;
+    // Only emit shared jump tables once, when processing the first parent
+    if (JT.Parents.size() > 1 && JT.Parents[0] != &BF)
+      continue;
     if (opts::PrintJumpTables)
       JT.print(outs());
-    if ((opts::JumpTables == JTS_BASIC || !BF.isSimple()) &&
-        BC.HasRelocations) {
+    if (opts::JumpTables == JTS_BASIC && BC.HasRelocations) {
       JT.updateOriginal();
     } else {
       MCSection *HotSection, *ColdSection;
@@ -793,18 +794,19 @@ void BinaryEmitter::emitJumpTable(const JumpTable &JT, MCSection *HotSection,
     LabelCounts[CurrentLabel] = CurrentLabelCount;
   } else {
     Streamer.switchSection(JT.Count > 0 ? HotSection : ColdSection);
-    Streamer.emitValueToAlignment(JT.EntrySize);
+    Streamer.emitValueToAlignment(Align(JT.EntrySize));
   }
   MCSymbol *LastLabel = nullptr;
   uint64_t Offset = 0;
   for (MCSymbol *Entry : JT.Entries) {
     auto LI = JT.Labels.find(Offset);
     if (LI != JT.Labels.end()) {
-      LLVM_DEBUG(dbgs() << "BOLT-DEBUG: emitting jump table "
-                        << LI->second->getName()
-                        << " (originally was at address 0x"
-                        << Twine::utohexstr(JT.getAddress() + Offset)
-                        << (Offset ? "as part of larger jump table\n" : "\n"));
+      LLVM_DEBUG({
+        dbgs() << "BOLT-DEBUG: emitting jump table " << LI->second->getName()
+               << " (originally was at address 0x"
+               << Twine::utohexstr(JT.getAddress() + Offset)
+               << (Offset ? ") as part of larger jump table\n" : ")\n");
+      });
       if (!LabelCounts.empty()) {
         LLVM_DEBUG(dbgs() << "BOLT-DEBUG: jump table count: "
                           << LabelCounts[LI->second] << '\n');
@@ -812,9 +814,27 @@ void BinaryEmitter::emitJumpTable(const JumpTable &JT, MCSection *HotSection,
           Streamer.switchSection(HotSection);
         else
           Streamer.switchSection(ColdSection);
-        Streamer.emitValueToAlignment(JT.EntrySize);
+        Streamer.emitValueToAlignment(Align(JT.EntrySize));
       }
-      Streamer.emitLabel(LI->second);
+      // Emit all labels registered at the address of this jump table
+      // to sync with our global symbol table.  We may have two labels
+      // registered at this address if one label was created via
+      // getOrCreateGlobalSymbol() (e.g. LEA instructions referencing
+      // this location) and another via getOrCreateJumpTable().  This
+      // creates a race where the symbols created by these two
+      // functions may or may not be the same, but they are both
+      // registered in our symbol table at the same address. By
+      // emitting them all here we make sure there is no ambiguity
+      // that depends on the order that these symbols were created, so
+      // whenever this address is referenced in the binary, it is
+      // certain to point to the jump table identified at this
+      // address.
+      if (BinaryData *BD = BC.getBinaryDataByName(LI->second->getName())) {
+        for (MCSymbol *S : BD->getSymbols())
+          Streamer.emitLabel(S);
+      } else {
+        Streamer.emitLabel(LI->second);
+      }
       LastLabel = LI->second;
     }
     if (JT.Type == JumpTable::JTT_NORMAL) {
@@ -880,10 +900,10 @@ void BinaryEmitter::emitCFIInstruction(const MCCFIInstruction &Inst) const {
 }
 
 // The code is based on EHStreamer::emitExceptionTable().
-void BinaryEmitter::emitLSDA(BinaryFunction &BF, bool EmitColdPart) {
-  const BinaryFunction::CallSitesType *Sites =
-      EmitColdPart ? &BF.getColdCallSites() : &BF.getCallSites();
-  if (Sites->empty())
+void BinaryEmitter::emitLSDA(BinaryFunction &BF, const FunctionFragment &FF) {
+  const BinaryFunction::CallSitesRange Sites =
+      BF.getCallSites(FF.getFragmentNum());
+  if (Sites.empty())
     return;
 
   // Calculate callsite table size. Size of each callsite entry is:
@@ -893,29 +913,26 @@ void BinaryEmitter::emitLSDA(BinaryFunction &BF, bool EmitColdPart) {
   // or
   //
   //  sizeof(dwarf::DW_EH_PE_data4) * 3 + sizeof(uleb128(action))
-  uint64_t CallSiteTableLength = Sites->size() * 4 * 3;
-  for (const BinaryFunction::CallSite &CallSite : *Sites)
-    CallSiteTableLength += getULEB128Size(CallSite.Action);
+  uint64_t CallSiteTableLength = llvm::size(Sites) * 4 * 3;
+  for (const auto &FragmentCallSite : Sites)
+    CallSiteTableLength += getULEB128Size(FragmentCallSite.second.Action);
 
   Streamer.switchSection(BC.MOFI->getLSDASection());
 
-  const unsigned TTypeEncoding = BC.TTypeEncoding;
+  const unsigned TTypeEncoding = BF.getLSDATypeEncoding();
   const unsigned TTypeEncodingSize = BC.getDWARFEncodingSize(TTypeEncoding);
   const uint16_t TTypeAlignment = 4;
 
   // Type tables have to be aligned at 4 bytes.
-  Streamer.emitValueToAlignment(TTypeAlignment);
+  Streamer.emitValueToAlignment(Align(TTypeAlignment));
 
   // Emit the LSDA label.
-  MCSymbol *LSDASymbol = EmitColdPart
-                             ? BF.getColdLSDASymbol(FragmentNum::cold())
-                             : BF.getLSDASymbol();
+  MCSymbol *LSDASymbol = BF.getLSDASymbol(FF.getFragmentNum());
   assert(LSDASymbol && "no LSDA symbol set");
   Streamer.emitLabel(LSDASymbol);
 
   // Corresponding FDE start.
-  const MCSymbol *StartSymbol =
-      BF.getSymbol(EmitColdPart ? FragmentNum::cold() : FragmentNum::main());
+  const MCSymbol *StartSymbol = BF.getSymbol(FF.getFragmentNum());
 
   // Emit the LSDA header.
 
@@ -976,10 +993,11 @@ void BinaryEmitter::emitLSDA(BinaryFunction &BF, bool EmitColdPart) {
                        TTypeBaseOffset;      // TType base offset
   unsigned SizeAlign = (4 - TotalSize) & 3;
 
-  // Account for any extra padding that will be added to the call site table
-  // length.
-  Streamer.emitULEB128IntValue(TTypeBaseOffset,
-                               /*PadTo=*/TTypeBaseOffsetSize + SizeAlign);
+  if (TTypeEncoding != dwarf::DW_EH_PE_omit)
+    // Account for any extra padding that will be added to the call site table
+    // length.
+    Streamer.emitULEB128IntValue(TTypeBaseOffset,
+                                 /*PadTo=*/TTypeBaseOffsetSize + SizeAlign);
 
   // Emit the landing pad call site table. We use signed data4 since we can emit
   // a landing pad in a different part of the split function that could appear
@@ -987,7 +1005,8 @@ void BinaryEmitter::emitLSDA(BinaryFunction &BF, bool EmitColdPart) {
   Streamer.emitIntValue(dwarf::DW_EH_PE_sdata4, 1);
   Streamer.emitULEB128IntValue(CallSiteTableLength);
 
-  for (const BinaryFunction::CallSite &CallSite : *Sites) {
+  for (const auto &FragmentCallSite : Sites) {
+    const BinaryFunction::CallSite &CallSite = FragmentCallSite.second;
     const MCSymbol *BeginLabel = CallSite.Start;
     const MCSymbol *EndLabel = CallSite.End;
 
@@ -1138,14 +1157,11 @@ void BinaryEmitter::emitDebugLineInfoForUnprocessedCUs() {
 
 void BinaryEmitter::emitDataSections(StringRef OrgSecPrefix) {
   for (BinarySection &Section : BC.sections()) {
-    if (!Section.hasRelocations() || !Section.hasSectionRef())
+    if (!Section.hasRelocations())
       continue;
 
-    StringRef SectionName = Section.getName();
-    std::string EmitName = Section.isReordered()
-                               ? std::string(Section.getOutputName())
-                               : OrgSecPrefix.str() + std::string(SectionName);
-    Section.emitAsData(Streamer, EmitName);
+    StringRef Prefix = Section.hasSectionRef() ? OrgSecPrefix : "";
+    Section.emitAsData(Streamer, Prefix + Section.getName());
     Section.clearRelocations();
   }
 }
