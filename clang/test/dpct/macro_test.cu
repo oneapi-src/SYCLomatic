@@ -5,7 +5,7 @@
 // RUN: cd %T
 // RUN: rm -rf %T/macro_test_output
 // RUN: mkdir %T/macro_test_output
-// RUN: dpct -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
+// RUN: dpct -out-root %T/macro_test_output macro_test.cu --cuda-include-path="%cuda-path/include" --optimize-migration -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.dp.cpp --match-full-lines macro_test.cu
 // RUN: FileCheck --input-file %T/macro_test_output/macro_test.h --match-full-lines macro_test.h
 #include <math.h>
@@ -669,7 +669,7 @@ VECTOR_TYPE_DEF(int)
 //CHECK-NEXT: DPCT1064:{{[0-9]+}}: Migrated pow call is used in a macro definition and is not valid
 //CHECK-NEXT: for all macro uses. Adjust the code.
 //CHECK-NEXT: */
-//CHECK-NEXT: #define POW3(x, y) sycl::pow<double>(x, y)
+//CHECK-NEXT: #define POW3(x, y) sycl::pow<double>(vx[id], 3.0)
 //CHECK: #define SQRT(x) sycl::sqrt(x)
 //CHECK-NEXT: void foo12(){
 //CHECK-NEXT: real *vx;
