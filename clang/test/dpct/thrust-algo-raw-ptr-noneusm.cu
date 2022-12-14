@@ -185,3 +185,15 @@ void unique_copy_test() {
   thrust::unique_copy(thrust::host,A, A + N, B, thrust::equal_to<int>());
   thrust::unique_copy(A, A + N, B, thrust::equal_to<int>());
 }
+
+
+void stable_sort_test() {
+  const int N=6;
+  int datas[N]={1, 4, 2, 8, 5, 7};
+  int ans[N]={1, 2, 4, 5, 7, 8};
+
+  thrust::stable_sort(thrust::host, datas,datas+N);
+  thrust::stable_sort(datas,datas+N);
+  thrust::stable_sort(thrust::host, datas,datas+N, thrust::greater<int>());
+  thrust::stable_sort(datas,datas+N, thrust::greater<int>());
+}

@@ -483,3 +483,34 @@ void unique_copy_test() {
   thrust::unique_copy(A, A + N, B, thrust::equal_to<int>());
 }
 
+void stable_sort_test() {
+  const int N=6;
+  int datas[N]={1, 4, 2, 8, 5, 7};
+  int ans[N]={1, 2, 4, 5, 7, 8};
+  thrust::host_vector<int> h_v(datas,datas+N);
+  thrust::device_vector<int> d_v(datas,datas+N);
+// CHECK:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas+N);
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas+N);
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas+N, std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas+N, std::greater<int>());
+  thrust::stable_sort(thrust::host, h_v.begin(), h_v.end());
+  thrust::stable_sort(h_v.begin(), h_v.end());
+  thrust::stable_sort(thrust::host, h_v.begin(), h_v.end(), thrust::greater<int>());
+  thrust::stable_sort(h_v.begin(), h_v.end(), thrust::greater<int>());
+  thrust::stable_sort(thrust::device, d_v.begin(), d_v.end());
+  thrust::stable_sort(d_v.begin(), d_v.end());
+  thrust::stable_sort(thrust::device, d_v.begin(), d_v.end(), thrust::greater<int>());
+  thrust::stable_sort(d_v.begin(), d_v.end(), thrust::greater<int>());
+  thrust::stable_sort(thrust::host, datas,datas+N);
+  thrust::stable_sort(datas,datas+N);
+  thrust::stable_sort(thrust::host, datas,datas+N, thrust::greater<int>());
+  thrust::stable_sort(datas,datas+N, thrust::greater<int>());
+}
