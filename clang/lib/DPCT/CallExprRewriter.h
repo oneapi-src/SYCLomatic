@@ -11,6 +11,7 @@
 
 #include "Diagnostics.h"
 
+
 namespace clang {
 namespace dpct {
 
@@ -44,8 +45,28 @@ public:
       std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
       MethodRewriterMap;
   static void initRewriterMap();
-  static void initMethodRewriterMap();
   RulePriority Priority = RulePriority::Fallback;
+private:
+  static void initRewriterMapCUB();
+  static void initRewriterMapCUFFT();
+  static void initRewriterMapCUBLAS();
+  static void initRewriterMapCURAND();
+  static void initRewriterMapCUSOLVER();
+  static void initRewriterMapComplex();
+  static void initRewriterMapDriver();
+  static void initRewriterMapMemory();
+  static void initRewriterMapNccl();
+  static void initRewriterMapStream();
+  static void initRewriterMapTexture();
+  static void initRewriterMapThrust();
+  static void initRewriterMapWarp();
+  static void initRewriterMapCUDNN();
+  static void initRewriterMapErrorHandling();
+  static void initRewriterMapLIBCU();
+  static void initRewriterMapEvent();
+  static void initRewriterMapMath();
+  static void initRewriterMapCooperativeGroups();
+  static void initMethodRewriterMap();
 };
 
 /// Abstract factory for all rewriter factories
@@ -76,20 +97,6 @@ public:
 
 using FuncCallExprRewriterFactory =
     CallExprRewriterFactory<FuncCallExprRewriter, std::string>;
-using MathFuncNameRewriterFactory =
-    CallExprRewriterFactory<MathFuncNameRewriter, std::string>;
-using NoRewriteFuncNameRewriterFactory =
-    CallExprRewriterFactory<NoRewriteFuncNameRewriter, std::string>;
-using MathUnsupportedRewriterFactory =
-    CallExprRewriterFactory<MathUnsupportedRewriter, std::string>;
-using MathSimulatedRewriterFactory =
-    CallExprRewriterFactory<MathSimulatedRewriter, std::string>;
-using MathTypeCastRewriterFactory =
-    CallExprRewriterFactory<MathTypeCastRewriter, std::string>;
-using MathBinaryOperatorRewriterFactory =
-    CallExprRewriterFactory<MathBinaryOperatorRewriter, BinaryOperatorKind>;
-using WarpFunctionRewriterFactory =
-    CallExprRewriterFactory<WarpFunctionRewriter, std::string>;
 template <class... MsgArgs>
 using UnsupportFunctionRewriterFactory =
     CallExprRewriterFactory<UnsupportFunctionRewriter<MsgArgs...>, Diagnostics,
@@ -461,36 +468,6 @@ protected:
   void setTargetCalleeName(const std::string &Str) { TargetCalleeName = Str; }
 };
 
-/// Base class for rewriting math function calls
-class MathCallExprRewriter : public FuncCallExprRewriter {
-public:
-  virtual Optional<std::string> rewrite() override;
-
-protected:
-  MathCallExprRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                       StringRef TargetCalleeName)
-      : FuncCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
-
-  void reportUnsupportedRoundingMode();
-};
-
-/// The rewriter for renaming math function calls
-class MathFuncNameRewriter : public MathCallExprRewriter {
-protected:
-  MathFuncNameRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                       StringRef TargetCalleeName)
-      : MathCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
-
-public:
-  virtual Optional<std::string> rewrite() override;
-
-protected:
-  std::string getNewFuncName();
-  static const std::vector<std::string> SingleFuctions;
-  static const std::vector<std::string> DoubleFuctions;
-  friend MathFuncNameRewriterFactory;
-};
-
 class NoRewriteFuncNameRewriter : public CallExprRewriter {
   std::string NewFuncName;
 
@@ -503,75 +480,6 @@ public:
   }
 
   Optional<std::string> rewrite() override { return NewFuncName; }
-};
-
-/// The rewriter for warning on unsupported math functions
-class MathUnsupportedRewriter : public MathCallExprRewriter {
-protected:
-  using Base = MathCallExprRewriter;
-  MathUnsupportedRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                          StringRef TargetCalleeName)
-      : Base(Call, SourceCalleeName, TargetCalleeName) {}
-
-  virtual Optional<std::string> rewrite() override;
-
-  friend MathUnsupportedRewriterFactory;
-};
-
-/// The rewriter for replacing math function calls with type casting expressions
-class MathTypeCastRewriter : public MathCallExprRewriter {
-protected:
-  using Base = MathCallExprRewriter;
-  MathTypeCastRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                       StringRef TargetCalleeName)
-      : Base(Call, SourceCalleeName, TargetCalleeName) {}
-
-  virtual Optional<std::string> rewrite() override;
-
-  friend MathTypeCastRewriterFactory;
-};
-
-/// The rewriter for replacing math function calls with emulations
-class MathSimulatedRewriter : public MathCallExprRewriter {
-protected:
-  using Base = MathCallExprRewriter;
-  MathSimulatedRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                        StringRef TargetCalleeName)
-      : Base(Call, SourceCalleeName, TargetCalleeName) {}
-
-  virtual Optional<std::string> rewrite() override;
-
-  friend MathSimulatedRewriterFactory;
-};
-
-/// The rewriter for replacing math function calls with binary operator
-/// expressions
-class MathBinaryOperatorRewriter : public MathCallExprRewriter {
-  std::string LHS, RHS;
-  BinaryOperatorKind Op;
-
-protected:
-  MathBinaryOperatorRewriter(const CallExpr *Call, StringRef SourceCalleeName,
-                             BinaryOperatorKind Op)
-      : MathCallExprRewriter(Call, SourceCalleeName, ""), Op(Op) {}
-
-public:
-  virtual ~MathBinaryOperatorRewriter() {}
-
-  virtual Optional<std::string> rewrite() override;
-
-protected:
-  void setLHS(std::string L) { LHS = L; }
-  void setRHS(std::string R) { RHS = R; }
-
-  // Build string which is used to replace original expression.
-  inline Optional<std::string> buildRewriteString() {
-    if (LHS == "")
-      return buildString(BinaryOperator::getOpcodeStr(Op), RHS);
-    return buildString(LHS, " ", BinaryOperator::getOpcodeStr(Op), " ", RHS);
-  }
-
-  friend MathBinaryOperatorRewriterFactory;
 };
 
 struct ThrustFunctor {
@@ -739,7 +647,7 @@ public:
     }
   }
 
-  static DerefExpr create(const Expr *E, const CallExpr * C);
+  static DerefExpr create(const Expr *E, const CallExpr * C = nullptr);
 };
 
 template <class StreamT>

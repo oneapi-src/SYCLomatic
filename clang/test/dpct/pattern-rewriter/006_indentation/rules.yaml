@@ -1,0 +1,14 @@
+- match: |+
+    {
+      ${body}
+    }
+  rewrite: |+
+    {
+      ${body}
+      {
+        ${body}
+        {
+          ${body}
+        }
+      }
+    }
