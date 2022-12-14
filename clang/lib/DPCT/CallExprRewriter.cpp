@@ -10,7 +10,6 @@
 #include "CallExprRewriterCommon.h"
 #include <memory>
 
-
 namespace clang {
 namespace dpct {
 
