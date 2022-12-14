@@ -13,8 +13,11 @@
 #ifndef VECTOR_OPS
 #define VECTOR_OPS
 
+include "mlir/Dialect/Vector/Interfaces/MaskableOpInterface.td"
+include "mlir/Dialect/Vector/Interfaces/MaskingOpInterface.td"
 include "mlir/IR/EnumAttr.td"
 include "mlir/Interfaces/ControlFlowInterfaces.td"
+include "mlir/Interfaces/DestinationStyleOpInterface.td"
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/Interfaces/VectorInterfaces.td"
@@ -26,8 +29,7 @@ def Vector_Dialect : Dialect {
 
   let useDefaultAttributePrinterParser = 1;
   let hasConstantMaterializer = 1;
-  let dependentDialects = ["arith::ArithmeticDialect"];
-  let emitAccessorPrefix = kEmitAccessorPrefix_Prefixed;
+  let dependentDialects = ["arith::ArithDialect"];
 }
 
 // Base class for Vector dialect ops.
@@ -58,22 +60,34 @@ def CombiningKind : I32BitEnumAttr<
   let genSpecializedAttr = 0;
 }
 
-def Vector_CombiningKindAttr : DialectAttr<
-    Vector_Dialect,
-    CPred<"$_self.isa<::mlir::vector::CombiningKindAttr>()">,
-    "Kind of combining function for contractions and reductions"> {
-  let storageType = "::mlir::vector::CombiningKindAttr";
-  let returnType = "::mlir::vector::CombiningKind";
-  let convertFromStorage = "$_self.getKind()";
-  let constBuilderCall =
-          "::mlir::vector::CombiningKindAttr::get($0, $_builder.getContext())";
+/// An attribute that specifies the combining function for `vector.contract`,
+/// and `vector.reduction`.
+def Vector_CombiningKindAttr : EnumAttr<Vector_Dialect, CombiningKind, "kind"> {
+  let assemblyFormat = "`<` $value `>`";
 }
+
+def Vector_IteratorType : I32EnumAttr<"IteratorType", "Iterator type", [
+  I32EnumAttrCase<"parallel", 0>,
+  I32EnumAttrCase<"reduction", 1>
+]> {
+    let genSpecializedAttr = 0;
+    let cppNamespace = "::mlir::vector";
+}
+
+def Vector_IteratorTypeEnum
+    : EnumAttr<Vector_Dialect, Vector_IteratorType, "iterator_type"> {
+    let assemblyFormat = "`<` $value `>`";
+}
+
+def Vector_IteratorTypeArrayAttr
+    : TypedArrayAttrBase<Vector_IteratorTypeEnum,
+                         "Iterator type should be an enum.">;
 
 // TODO: Add an attribute to specify a different algebra with operators other
 // than the current set: {*, +}.
 def Vector_ContractionOp :
   Vector_Op<"contract", [
-      NoSideEffect,
+      Pure,
       PredOpTrait<"lhs and rhs have same element type", TCopVTEtIsSameAs<0, 1>>,
       PredOpTrait<"third operand acc and result have same element type",
                   TCresVTEtIsSameAsOpBase<0, 2>>,
@@ -82,7 +96,7 @@ def Vector_ContractionOp :
     Arguments<(ins AnyVector:$lhs, AnyVector:$rhs, AnyType:$acc,
                Variadic<VectorOf<[I1]>>:$masks,
                ArrayAttr:$indexing_maps,
-               ArrayAttr:$iterator_types,
+               Vector_IteratorTypeArrayAttr:$iterator_types,
                DefaultValuedAttr<Vector_CombiningKindAttr,
                                  "CombiningKind::ADD">:$kind)>,
     Results<(outs AnyType)> {
@@ -102,22 +116,23 @@ def Vector_ContractionOp :
     An iterator type attribute list must be specified, where each element of
     the list represents an iterator with one of the following types:
 
-    *) "reduction": reduction dimensions are present in the lhs and rhs
-                    arguments but not in the output (and accumulator
-                    argument). These are the dimensions along which the vector
-                    contraction op computes the sum of products, and
-                    contracting dimension pair dimension sizes must match
-                    between lhs/rhs.
-    *) "parallel": Batch dimensions are iterator type "parallel", and
-                   are non-contracting dimensions present in the lhs, rhs and
-                   output. The lhs/rhs co-iterate along the batch dimensions,
-                   which should be expressed in their indexing maps.
+    *   "reduction": reduction dimensions are present in the lhs and rhs
+        arguments but not in the output (and accumulator
+        argument). These are the dimensions along which the vector
+        contraction op computes the sum of products, and
+        contracting dimension pair dimension sizes must match
+        between lhs/rhs.
 
-                   Free dimensions are iterator type "parallel", and are
-                   non-contraction, non-batch dimensions accessed by either the
-                   lhs or rhs (but not both). The lhs and rhs free dimensions
-                   are unrelated to each other and do not co-iterate, which
-                   should be expressed in their indexing maps.
+    *   "parallel": Batch dimensions are iterator type "parallel", and
+        are non-contracting dimensions present in the lhs, rhs and
+        output. The lhs/rhs co-iterate along the batch dimensions,
+        which should be expressed in their indexing maps.
+
+        Free dimensions are iterator type "parallel", and are
+        non-contraction, non-batch dimensions accessed by either the
+        lhs or rhs (but not both). The lhs and rhs free dimensions
+        are unrelated to each other and do not co-iterate, which
+        should be expressed in their indexing maps.
 
     An indexing map attribute list must be specified with an entry for lhs, rhs
     and acc arguments. An indexing map attribute specifies a mapping from each
@@ -207,7 +222,7 @@ def Vector_ContractionOp :
       "ArrayAttr":$indexingMaps, "ArrayAttr":$iteratorTypes)>,
     OpBuilder<(ins "Value":$lhs, "Value":$rhs, "Value":$acc,
       "ArrayRef<ArrayRef<AffineExpr>>":$indexingExprs,
-      "ArrayRef<StringRef>":$iteratorTypes)>,
+      "ArrayRef<IteratorType>":$iteratorTypes)>,
     OpBuilder<(ins "Value":$lhs, "Value":$rhs, "Value":$acc,
       "ArrayAttr":$indexingMaps, "ArrayAttr":$iteratorTypes,
       "CombiningKind":$kind)>
@@ -229,7 +244,7 @@ def Vector_ContractionOp :
       return getOperand(4).getType().cast<VectorType>();
     }
     Type getResultType() { return getResult().getType(); }
-    ArrayRef<StringRef> getTraitAttrNames();
+    SmallVector<StringRef> getTraitAttrNames();
     static unsigned getAccOperandIndex() { return 2; }
 
     llvm::SmallVector<::mlir::AffineMap, 4> getIndexingMapsArray() {
@@ -250,10 +265,15 @@ def Vector_ContractionOp :
     std::vector<std::pair<int64_t, int64_t>> getContractingDimMap();
     std::vector<std::pair<int64_t, int64_t>> getBatchDimMap();
 
-    static constexpr StringRef getKindAttrStrName() { return "kind"; }
-
     static CombiningKind getDefaultKind() {
       return CombiningKind::ADD;
+    }
+
+    SmallVector<IteratorType> getIteratorTypesArray() {
+      auto range =
+          getIteratorTypes()
+              .template getAsValueRange<IteratorTypeAttr, IteratorType>();
+      return {range.begin(), range.end()};
     }
   }];
 
@@ -263,9 +283,10 @@ def Vector_ContractionOp :
 }
 
 def Vector_ReductionOp :
-  Vector_Op<"reduction", [NoSideEffect,
+  Vector_Op<"reduction", [Pure,
      PredOpTrait<"source operand and result have same element type",
                  TCresVTEtIsSameAsOpBase<0, 0>>,
+     DeclareOpInterfaceMethods<MaskableOpInterface>,
      DeclareOpInterfaceMethods<VectorUnrollOpInterface,
                                ["getShapeForUnroll"]>]>,
     Arguments<(ins Vector_CombiningKindAttr:$kind,
@@ -313,7 +334,7 @@ def Vector_ReductionOp :
 }
 
 def Vector_MultiDimReductionOp :
-  Vector_Op<"multi_reduction", [NoSideEffect,
+  Vector_Op<"multi_reduction", [Pure,
      AllTypesMatch<["dest", "acc"]>,
      PredOpTrait<"source operand and result have same element type",
                  TCresVTEtIsSameAsOpBase<0, 0>>,
@@ -343,7 +364,7 @@ def Vector_MultiDimReductionOp :
   }];
   let builders = [
     OpBuilder<(ins "Value":$source, "Value":$acc,
-                   "ArrayRef<bool>":$reductionMask, "CombiningKind":$kind)>                   
+                   "ArrayRef<bool>":$reductionMask, "CombiningKind":$kind)>
   ];
   let extraClassDeclaration = [{
     static StringRef getKindAttrStrName() { return "kind"; }
@@ -379,11 +400,12 @@ def Vector_MultiDimReductionOp :
   let assemblyFormat =
     "$kind `,` $source `,` $acc attr-dict $reduction_dims `:` type($source) `to` type($dest)";
   let hasFolder = 1;
+  let hasCanonicalizer = 1;
   let hasVerifier = 1;
 }
 
 def Vector_BroadcastOp :
-  Vector_Op<"broadcast", [NoSideEffect,
+  Vector_Op<"broadcast", [Pure,
      PredOpTrait<"source operand and result have same element type",
                  TCresVTEtIsSameAsOpBase<0, 0>>]>,
     Arguments<(ins AnyType:$source)>,
@@ -423,6 +445,27 @@ def Vector_BroadcastOp :
     VectorType getVectorType() {
       return getVector().getType().cast<VectorType>();
     }
+
+    /// Return the dimensions of the result vector that were formerly ones in the
+    /// source tensor and thus correspond to "dim-1" broadcasting.
+    llvm::SetVector<int64_t> computeBroadcastedUnitDims();
+
+    /// Broadcast `value` to a vector of `dstShape`, knowing that exactly the 
+    /// `broadcastedDims` dimensions in the dstShape are broadcasted.
+    /// This requires (and asserts) that the broadcast is free of dim-1 
+    /// broadcasting.
+    /// Since vector.broadcast only allows expanding leading dimensions, an extra
+    /// vector.transpose may be inserted to make the broadcast possible.
+    /// `value`, `dstShape` and `broadcastedDims` must be properly specified or 
+    /// the helper will assert. This means:
+    ///   1. `dstShape` must not be empty.
+    ///   2. `broadcastedDims` must be confined to [0 .. rank(value.getVectorType)]
+    ///   2. `dstShape` trimmed of the dimensions specified in `broadcastedDims`
+    //       must match the `value` shape.
+    static Value createOrFoldBroadcastOp(
+      OpBuilder &b, Value value,
+      ArrayRef<int64_t> dstShape,
+      const llvm::SetVector<int64_t> &broadcastedDims);
   }];
   let assemblyFormat = "$source attr-dict `:` type($source) `to` type($vector)";
   let hasFolder = 1;
@@ -431,7 +474,7 @@ def Vector_BroadcastOp :
 }
 
 def Vector_ShuffleOp :
-  Vector_Op<"shuffle", [NoSideEffect,
+  Vector_Op<"shuffle", [Pure,
      PredOpTrait<"first operand v1 and result have same element type",
                  TCresVTEtIsSameAsOpBase<0, 0>>,
      PredOpTrait<"second operand v2 and result have same element type",
@@ -497,7 +540,7 @@ def Vector_ShuffleOp :
 }
 
 def Vector_ExtractElementOp :
-  Vector_Op<"extractelement", [NoSideEffect,
+  Vector_Op<"extractelement", [Pure,
      TypesMatchWith<"result type matches element type of vector operand",
                     "vector", "result",
                     "$_self.cast<ShapedType>().getElementType()">]>,
@@ -545,7 +588,7 @@ def Vector_ExtractElementOp :
 }
 
 def Vector_ExtractOp :
-  Vector_Op<"extract", [NoSideEffect,
+  Vector_Op<"extract", [Pure,
      PredOpTrait<"operand and result have same element type",
                  TCresVTEtIsSameAsOpBase<0, 0>>,
      DeclareOpInterfaceMethods<InferTypeOpInterface>]>,
@@ -582,78 +625,9 @@ def Vector_ExtractOp :
   let hasVerifier = 1;
 }
 
-def Vector_ExtractMapOp :
-  Vector_Op<"extract_map", [NoSideEffect]>,
-    Arguments<(ins AnyVector:$vector, Variadic<Index>:$ids)>,
-    Results<(outs AnyVector)> {
-  let summary = "vector extract map operation";
-  let description = [{
-    Takes an N-D vector and extracts a sub-part of the vector starting at id
-    along each dimension.
-
-    The dimension associated to each element of `ids` used to extract are
-    implicitly deduced from the destination type. For each dimension the
-    multiplicity is the destination dimension size divided by the source
-    dimension size, each dimension with a multiplicity greater than 1 is
-    associated to the next id, following ids order.
-    For example if the source type is `vector<64x4x32xf32>` and the destination
-    type is `vector<4x4x2xf32>`, the first id maps to dimension 0 and the second
-    id to dimension 2.
-
-    Similarly to vector.tuple_get, this operation is used for progressive
-    lowering and should be folded away before converting to LLVM.
-
-    It is different than `vector.extract_slice` and
-    `vector.extract_strided_slice` as it takes a Value as index instead of an
-    attribute. Also in the future it is meant to support extracting along any
-    dimensions and not only the most major ones.
-
-    For instance:
-    ```
-    // dynamic computation producing the value 0 of index type
-    %idx0 = ... : index
-    // dynamic computation producing the value 1 of index type
-    %idx1 = ... : index
-    %0 = arith.constant dense<0, 1, 2, 3>: vector<4xi32>
-    // extracts values [0, 1]
-    %1 = vector.extract_map %0[%idx0] : vector<4xi32> to vector<2xi32>
-    // extracts values [1, 2]
-    %2 = vector.extract_map %0[%idx1] : vector<4xi32> to vector<2xi32>
-    ```
-
-    Example:
-
-    ```mlir
-    %ev = vector.extract_map %v[%id] : vector<32xf32> to vector<1xf32>
-    %ev1 = vector.extract_map %v1[%id1, %id2] : vector<64x4x32xf32>
-      to vector<4x4x2xf32>
-    ```
-  }];
-  let builders = [
-    OpBuilder<(ins "Value":$vector, "ValueRange":$ids,
-                  "ArrayRef<int64_t>":$multiplicity,
-                  "AffineMap":$map)>];
-  let extraClassDeclaration = [{
-    VectorType getSourceVectorType() {
-      return getVector().getType().cast<VectorType>();
-    }
-    VectorType getResultType() {
-      return getResult().getType().cast<VectorType>();
-    }
-    void getMultiplicity(SmallVectorImpl<int64_t> &multiplicity);
-    AffineMap map();
-  }];
-  let assemblyFormat = [{
-    $vector `[` $ids `]` attr-dict `:` type($vector) `to` type(results)
-  }];
-
-  let hasFolder = 1;
-  let hasVerifier = 1;
-}
-
 def Vector_FMAOp :
   Op<Vector_Dialect, "fma", [
-       NoSideEffect, AllTypesMatch<["lhs", "rhs", "acc", "result"]>,
+       Pure, AllTypesMatch<["lhs", "rhs", "acc", "result"]>,
        DeclareOpInterfaceMethods<VectorUnrollOpInterface, ["getShapeForUnroll"]>
      ] # ElementwiseMappable.traits>,
     Arguments<(ins AnyVectorOfAnyRank:$lhs,
@@ -683,7 +657,7 @@ def Vector_FMAOp :
 }
 
 def Vector_InsertElementOp :
-  Vector_Op<"insertelement", [NoSideEffect,
+  Vector_Op<"insertelement", [Pure,
      TypesMatchWith<"source operand type matches element type of result",
                     "result", "source",
                     "$_self.cast<ShapedType>().getElementType()">,
@@ -731,7 +705,7 @@ def Vector_InsertElementOp :
 }
 
 def Vector_InsertOp :
-  Vector_Op<"insert", [NoSideEffect,
+  Vector_Op<"insert", [Pure,
      PredOpTrait<"source operand and result have same element type",
                  TCresVTEtIsSameAsOpBase<0, 0>>,
      AllTypesMatch<["dest", "res"]>]>,
@@ -773,74 +747,116 @@ def Vector_InsertOp :
   let hasVerifier = 1;
 }
 
-def Vector_InsertMapOp :
-  Vector_Op<"insert_map", [NoSideEffect, AllTypesMatch<["dest", "result"]>]>,
-    Arguments<(ins AnyVector:$vector, AnyVector:$dest, Variadic<Index>:$ids)>,
-    Results<(outs AnyVector:$result)> {
-  let summary = "vector insert map operation";
+def Vector_ScalableInsertOp :
+  Vector_Op<"scalable.insert", [Pure,
+       AllElementTypesMatch<["source", "dest"]>,
+       AllTypesMatch<["dest", "res"]>,
+       PredOpTrait<"position is a multiple of the source length.",
+        CPred<
+          "(getPos() % getSourceVectorType().getNumElements()) == 0"
+        >>]>,
+     Arguments<(ins VectorOfRank<[1]>:$source,
+                    ScalableVectorOfRank<[1]>:$dest,
+                    I64Attr:$pos)>,
+     Results<(outs ScalableVectorOfRank<[1]>:$res)> {
+  let summary = "insert subvector into scalable vector operation";
+  // NOTE: This operation is designed to map to `llvm.vector.insert`, and its
+  //       documentation should be kept aligned with LLVM IR:
+  //       https://llvm.org/docs/LangRef.html#llvm-vector-insert-intrinsic
   let description = [{
-    Inserts a N-D vector and within a larger vector starting at id. The new
-    vector created will have the same size as the destination operand vector.
+    This operations takes a rank-1 fixed-length or scalable subvector and
+    inserts it within the destination scalable vector starting from the
+    position specificed by `pos`. If the source vector is scalable, the
+    insertion position will be scaled by the runtime scaling factor of the
+    source subvector.
 
-    The dimension associated to each element of `ids` used to insert is
-    implicitly deduced from the source type (see `ExtractMapOp` for details).
-    For example if source type is `vector<4x4x2xf32>` and the destination type
-    is `vector<64x4x32xf32>`, the first id maps to dimension 0 and the second id
-    to dimension 2.
+    The insertion position must be a multiple of the minimum size of the source
+    vector. For the operation to be well defined, the source vector must fit in
+    the destination vector from the specified position. Since the destination
+    vector is scalable and its runtime length is unknown, the validity of the
+    operation can't be verified nor guaranteed at compile time.
 
-    Similarly to vector.tuple_get, this operation is used for progressive
-    lowering and should be folded away before converting to LLVM.
-
-    It is different than `vector.insert` and `vector.insert_strided_slice` as it
-    takes a Value as index instead of an attribute. Also in the future it is
-    meant to support inserting along any dimensions and not only the most major
-    ones.
-
-    This operations is meant to be used in combination with vector.extract_map.
-
-    For instance:
-    ```
-    // dynamic computation producing the value 0 of index type
-    %idx0 = ... : index
-    // dynamic computation producing the value 1 of index type
-    %idx1 = ... : index /
-    %0 = arith.constant dense<0, 1, 2, 3>: vector<4xi32>
-    // extracts values [0, 1]
-    %1 = vector.extract_map %0[%idx0] : vector<4xi32> to vector<2xi32>
-    // extracts values [1, 2]
-    %2 = vector.extract_map %0[%idx1] : vector<4xi32> to vector<2xi32>
-    // insert [0, 1] into [x, x, x, x] and produce [0, 1, x, x]
-    %3 = vector.insert_map %1, %0[%idx0] : vector<2xi32> into vector<4xi32>
-    // insert [1, 2] into [x, x, x, x] and produce [x, 1, 2, x]
-    %4 = vector.insert_map %2, %0[%idx1] : vector<2xi32> into vector<4xi32>
-    ```
     Example:
 
     ```mlir
-    %v = vector.insert_map %ev %v[%id] : vector<1xf32> into vector<32xf32>
-    %v1 = vector.insert_map %ev1, %v1[%arg0, %arg1] : vector<2x4x1xf32>
-      into vector<64x4x32xf32>
+    %2 = vector.scalable.insert %0, %1[8] : vector<4xf32> into vector<[16]xf32>
+    %5 = vector.scalable.insert %3, %4[0] : vector<8xf32> into vector<[4]xf32>
+    %8 = vector.scalable.insert %6, %7[0] : vector<[4]xf32> into vector<[8]xf32>
+    ```
+
+    Invalid example:
+    ```mlir
+    %2 = vector.scalable.insert %0, %1[5] : vector<4xf32> into vector<[16]xf32>
     ```
   }];
+
+  let assemblyFormat = [{
+    $source `,` $dest `[` $pos `]` attr-dict `:` type($source) `into` type($dest)
+  }];
+
   let extraClassDeclaration = [{
     VectorType getSourceVectorType() {
-      return getVector().getType().cast<VectorType>();
+      return getSource().getType().cast<VectorType>();
     }
-    VectorType getResultType() {
-      return getResult().getType().cast<VectorType>();
+    VectorType getDestVectorType() {
+      return getDest().getType().cast<VectorType>();
     }
-    // Return a map indicating the dimension mapping to the given ids.
-    AffineMap map();
   }];
+}
+
+def Vector_ScalableExtractOp :
+  Vector_Op<"scalable.extract", [Pure,
+       AllElementTypesMatch<["source", "res"]>,
+       PredOpTrait<"position is a multiple of the result length.",
+        CPred<
+          "(getPos() % getResultVectorType().getNumElements()) == 0"
+        >>]>,
+     Arguments<(ins ScalableVectorOfRank<[1]>:$source,
+                    I64Attr:$pos)>,
+     Results<(outs VectorOfRank<[1]>:$res)> {
+  let summary = "extract subvector from scalable vector operation";
+  // NOTE: This operation is designed to map to `llvm.vector.extract`, and its
+  //       documentation should be kept aligned with LLVM IR:
+  //       https://llvm.org/docs/LangRef.html#llvm-vector-extract-intrinsic
+  let description = [{
+    Takes rank-1 source vector and a position `pos` within the source
+    vector, and extracts a subvector starting from that position.
+
+    The extraction position must be a multiple of the minimum size of the result
+    vector. For the operation to be well defined, the destination vector must
+    fit within the source vector from the specified position. Since the source
+    vector is scalable and its runtime length is unknown, the validity of the
+    operation can't be verified nor guaranteed at compile time.
+
+    Example:
+
+    ```mlir
+    %1 = vector.scalable.extract %0[8] : vector<4xf32> from vector<[8]xf32>
+    %3 = vector.scalable.extract %2[0] : vector<[4]xf32> from vector<[8]xf32>
+    ```
+
+    Invalid example:
+    ```mlir
+    %1 = vector.scalable.extract %0[5] : vector<4xf32> from vector<[16]xf32>
+    ```
+  }];
+
   let assemblyFormat = [{
-    $vector `,` $dest `[` $ids `]` attr-dict
-      `:` type($vector) `into` type($result)
+    $source `[` $pos `]` attr-dict `:` type($res) `from` type($source)
   }];
-  let hasVerifier = 1;
+
+  let extraClassDeclaration = [{
+    VectorType getSourceVectorType() {
+      return getSource().getType().cast<VectorType>();
+    }
+    VectorType getResultVectorType() {
+      return getRes().getType().cast<VectorType>();
+    }
+  }];
 }
 
 def Vector_InsertStridedSliceOp :
-  Vector_Op<"insert_strided_slice", [NoSideEffect,
+  Vector_Op<"insert_strided_slice", [Pure,
     PredOpTrait<"operand #0 and result have same element type",
                  TCresVTEtIsSameAsOpBase<0, 0>>,
     AllTypesMatch<["dest", "res"]>]>,
@@ -899,7 +915,7 @@ def Vector_InsertStridedSliceOp :
 }
 
 def Vector_OuterProductOp :
-  Vector_Op<"outerproduct", [NoSideEffect,
+  Vector_Op<"outerproduct", [Pure,
     PredOpTrait<"lhs operand and result have same element type",
                 TCresVTEtIsSameAsOpBase<0, 0>>,
     PredOpTrait<"rhs operand and result have same element type",
@@ -969,7 +985,7 @@ def Vector_OuterProductOp :
       return getRhs().getType();
     }
     VectorType getOperandVectorTypeACC() {
-      return (llvm::size(getAcc()) == 0)
+      return getAcc().empty()
         ? VectorType()
         : (*getAcc().begin()).getType().cast<VectorType>();
     }
@@ -990,7 +1006,7 @@ def Vector_OuterProductOp :
 // TODO: Add transformation which decomposes ReshapeOp into an optimized
 // sequence of vector rotate/shuffle/select operations.
 def Vector_ReshapeOp :
-  Vector_Op<"reshape", [AttrSizedOperandSegments, NoSideEffect]>,
+  Vector_Op<"reshape", [AttrSizedOperandSegments, Pure]>,
     Arguments<(ins AnyVector:$vector, Variadic<Index>:$input_shape,
                Variadic<Index>:$output_shape,
                I64ArrayAttr:$fixed_vector_sizes)>,
@@ -1110,7 +1126,7 @@ def Vector_ReshapeOp :
 }
 
 def Vector_ExtractStridedSliceOp :
-  Vector_Op<"extract_strided_slice", [NoSideEffect,
+  Vector_Op<"extract_strided_slice", [Pure,
     PredOpTrait<"operand and result have same element type",
                  TCresVTEtIsSameAsOpBase<0, 0>>]>,
     Arguments<(ins AnyVector:$vector, I64ArrayAttr:$offsets,
@@ -1167,6 +1183,7 @@ def Vector_TransferReadOp :
   Vector_Op<"transfer_read", [
       DeclareOpInterfaceMethods<VectorTransferOpInterface>,
       DeclareOpInterfaceMethods<VectorUnrollOpInterface, ["getShapeForUnroll"]>,
+      DeclareOpInterfaceMethods<MaskableOpInterface>,
       DeclareOpInterfaceMethods<MemoryEffectsOpInterface>,
       AttrSizedOperandSegments
     ]>,
@@ -1207,9 +1224,11 @@ def Vector_TransferReadOp :
     provided to specify a fallback value in the case of out-of-bounds accesses
     and/or masking.
 
-    An optional SSA value `mask` of the same shape as the vector type may be
-    specified to mask out elements. Such elements will be replaces with
-    `padding`. Elements whose corresponding mask element is `0` are masked out.
+    An optional SSA value `mask` may be specified to mask out elements read from
+    the MemRef/Tensor. The `mask` type is an `i1` vector with a shape that
+    matches how elements are read from the MemRef/Tensor, *before* any
+    permutation or broadcasting. Elements whose corresponding mask element is
+    `0` are masked out and replaced with `padding`.
 
     An optional boolean array attribute `in_bounds` specifies for every vector
     dimension if the transfer is guaranteed to be within the source bounds.
@@ -1363,6 +1382,12 @@ def Vector_TransferReadOp :
                    "ValueRange":$indices,
                    CArg<"Optional<ArrayRef<bool>>", "::llvm::None">:$inBounds)>,
   ];
+
+  let extraClassDeclaration = [{
+    // MaskableOpInterface methods.
+    bool supportsPassthru() { return true; }
+  }];
+
   let hasCanonicalizer = 1;
   let hasCustomAssemblyFormat = 1;
   let hasFolder = 1;
@@ -1373,8 +1398,10 @@ def Vector_TransferWriteOp :
   Vector_Op<"transfer_write", [
       DeclareOpInterfaceMethods<VectorTransferOpInterface>,
       DeclareOpInterfaceMethods<VectorUnrollOpInterface, ["getShapeForUnroll"]>,
+      DeclareOpInterfaceMethods<MaskableOpInterface>,
       DeclareOpInterfaceMethods<MemoryEffectsOpInterface>,
-      AttrSizedOperandSegments
+      AttrSizedOperandSegments,
+      DestinationStyleOpInterface
   ]>,
     Arguments<(ins AnyVectorOfAnyRank:$vector,
                    AnyShaped:$source,
@@ -1410,6 +1437,12 @@ def Vector_TransferWriteOp :
     write ops cannot have broadcast dimensions.
 
     The size of the slice is specified by the size of the vector.
+
+    An optional SSA value `mask` may be specified to mask out elements written
+    to the MemRef/Tensor. The `mask` type is an `i1` vector with a shape that
+    matches how elements are written into the MemRef/Tensor, *after* applying
+    any permutation. Elements whose corresponding mask element is `0` are
+    masked out.
 
     An optional SSA value `mask` of the same shape as the vector type may be
     specified to mask out elements. Elements whose corresponding mask element
@@ -1497,6 +1530,10 @@ def Vector_TransferWriteOp :
     /// This method is added to maintain uniformity with load/store
     ///  ops of other dialects.
     Value getValue() { return getVector(); }
+
+    std::pair<int64_t, int64_t> getDpsInitsPositionRange() {
+      return {1, 2};  // `source` operand
+    }
   }];
 
   let hasFolder = 1;
@@ -2018,7 +2055,7 @@ def Vector_CompressStoreOp :
 }
 
 def Vector_ShapeCastOp :
-  Vector_Op<"shape_cast", [NoSideEffect]>,
+  Vector_Op<"shape_cast", [Pure]>,
     Arguments<(ins AnyVector:$source)>,
     Results<(outs AnyVector:$result)> {
   let summary = "shape_cast casts between vector shapes";
@@ -2070,7 +2107,7 @@ def Vector_ShapeCastOp :
 }
 
 def Vector_BitCastOp :
-  Vector_Op<"bitcast", [NoSideEffect, AllRanksMatch<["source", "result"]>]>,
+  Vector_Op<"bitcast", [Pure, AllRanksMatch<["source", "result"]>]>,
     Arguments<(ins AnyVectorOfAnyRank:$source)>,
     Results<(outs AnyVectorOfAnyRank:$result)>{
   let summary = "bitcast casts between vectors";
@@ -2110,7 +2147,7 @@ def Vector_BitCastOp :
 }
 
 def Vector_TypeCastOp :
-  Vector_Op<"type_cast", [NoSideEffect, ViewLikeOpInterface]>,
+  Vector_Op<"type_cast", [Pure, ViewLikeOpInterface]>,
     Arguments<(ins StaticShapeMemRefOf<[AnyType]>:$memref)>,
     Results<(outs AnyMemRef:$result)> {
   let summary = "type_cast op converts a scalar memref to a vector memref";
@@ -2157,7 +2194,7 @@ def Vector_TypeCastOp :
 }
 
 def Vector_ConstantMaskOp :
-  Vector_Op<"constant_mask", [NoSideEffect]>,
+  Vector_Op<"constant_mask", [Pure]>,
     Arguments<(ins I64ArrayAttr:$mask_dim_sizes)>,
     Results<(outs VectorOfAnyRankOf<[I1]>)> {
   let summary = "creates a constant vector mask";
@@ -2199,7 +2236,7 @@ def Vector_ConstantMaskOp :
 }
 
 def Vector_CreateMaskOp :
-  Vector_Op<"create_mask", [NoSideEffect]>,
+  Vector_Op<"create_mask", [Pure]>,
     Arguments<(ins Variadic<Index>:$operands)>,
     Results<(outs VectorOfAnyRankOf<[I1]>)> {
   let summary = "creates a vector mask";
@@ -2237,8 +2274,82 @@ def Vector_CreateMaskOp :
   let assemblyFormat = "$operands attr-dict `:` type(results)";
 }
 
+def Vector_MaskOp : Vector_Op<"mask", [
+  SingleBlockImplicitTerminator<"vector::YieldOp">,
+  DeclareOpInterfaceMethods<MaskingOpInterface>,
+  RecursiveMemoryEffects, NoRegionArguments
+]> {
+  let summary = "Predicates a maskable vector operation";
+  let description = [{
+    The `vector.mask` is a `MaskingOpInterface` operation that predicates the
+    execution of another operation. It takes an `i1` vector mask and an
+    optional passthru vector as arguments.
+    A `vector.yield`-terminated region encloses the operation to be masked.
+    Values used within the region are captured from above. Only one *maskable*
+    operation can be masked with a `vector.mask` operation at a time. An
+    operation is *maskable* if it implements the `MaskableOpInterface`.
+
+    The vector mask argument holds a bit for each vector lane and determines
+    which vector lanes should execute the maskable operation and which ones
+    should not. The `vector.mask` operation returns the value produced by the
+    masked execution of the nested operation, if any. The masked-off lanes in
+    the result vector are taken from the corresponding lanes of the pass-thru
+    argument, if provided, or left unmodified, otherwise.
+
+    The `vector.mask` operation does not prescribe how a maskable operation
+    should be masked or how a masked operation should be lowered. Masking
+    constraints and some semantic details are provided by each maskable
+    operation through the `MaskableOpInterface`. Lowering of masked operations
+    is implementation defined. For instance, scalarizing the masked operation
+    or executing the operation for the masked-off lanes are valid lowerings as
+    long as the execution of masked-off lanes does not change the observable
+    behavior of the program.
+
+    Examples:
+
+    ```
+      %0 = vector.mask %mask { vector.reduction <add>, %a : vector<8xi32> into i32 } : vector<8xi1> -> i32
+    ```
+
+    ```
+      %0 = vector.mask %mask, %passthru { arith.divsi %a, %b : vector<8xi32> } : vector<8xi1> -> vector<8xi32>
+    ```
+
+    ```
+      vector.mask %mask { vector.transfer_write %val, %t0[%idx] : vector<16xf32>, memref<?xf32> } : vector<16xi1>
+    ```
+  }];
+
+  // TODO: Support multiple results and passthru values.
+  let arguments = (ins VectorOf<[I1]>:$mask,
+                   Optional<AnyType>:$passthru);
+  let results = (outs Optional<AnyType>:$results);
+  let regions = (region SizedRegion<1>:$maskRegion);
+
+  let skipDefaultBuilders = 1;
+  let builders = [
+    OpBuilder<(ins "Value":$mask,
+                   CArg<"function_ref<void(OpBuilder &, Location)>",
+                        "buildTerminatedBody">:$maskRegion)>,
+    OpBuilder<(ins "Type":$resultType, "Value":$mask,
+                   CArg<"function_ref<void(OpBuilder &, Location)>",
+                        "buildTerminatedBody">:$maskRegion)>,
+    OpBuilder<(ins "Type":$resultType, "Value":$mask,
+                   "Value":$passthru,
+                   CArg<"function_ref<void(OpBuilder &, Location)>",
+                        "buildTerminatedBody">:$maskRegion)>
+  ];
+
+  let extraClassDeclaration = [{
+    static void ensureTerminator(Region &region, Builder &builder, Location loc);
+  }];
+
+  let hasCustomAssemblyFormat = 1;
+  let hasVerifier = 1;
+}
+
 def Vector_TransposeOp :
-  Vector_Op<"transpose", [NoSideEffect,
+  Vector_Op<"transpose", [Pure,
     DeclareOpInterfaceMethods<VectorUnrollOpInterface, ["getShapeForUnroll"]>,
     PredOpTrait<"operand and result have same element type",
                  TCresVTEtIsSameAsOpBase<0, 0>>]>,
@@ -2335,7 +2446,7 @@ def Vector_PrintOp :
 /// This may seem redundant with vector.contract but it serves the purposes of
 /// more progressive lowering and localized type conversion on the path:
 ///   `vector<...x...xf32> -> vector<...xf32> -> !llvm<... x float>`.
-def Vector_MatmulOp : Vector_Op<"matrix_multiply", [NoSideEffect,
+def Vector_MatmulOp : Vector_Op<"matrix_multiply", [Pure,
         PredOpTrait<"lhs operand and result have same element type",
                     TCresVTEtIsSameAsOpBase<0, 0>>,
         PredOpTrait<"rhs operand and result have same element type",
@@ -2399,7 +2510,7 @@ def Vector_MatmulOp : Vector_Op<"matrix_multiply", [NoSideEffect,
 /// This may seem redundant with vector.transpose but it serves the purposes of
 /// more progressive lowering and localized type conversion on the path:
 ///   `vector<...x...xf32> -> vector<...xf32> -> !llvm<... x float>`.
-def Vector_FlatTransposeOp : Vector_Op<"flat_transpose", [NoSideEffect,
+def Vector_FlatTransposeOp : Vector_Op<"flat_transpose", [Pure,
   PredOpTrait<"source operand and result have same element type",
                  TCresVTEtIsSameAsOpBase<0, 0>>]>,
     Arguments<(
@@ -2442,7 +2553,7 @@ def Vector_FlatTransposeOp : Vector_Op<"flat_transpose", [NoSideEffect,
 //===----------------------------------------------------------------------===//
 
 def Vector_SplatOp : Vector_Op<"splat", [
-    NoSideEffect,
+    Pure,
     TypesMatchWith<"operand type matches element type of result",
                    "aggregate", "input",
                    "$_self.cast<VectorType>().getElementType()">
@@ -2485,7 +2596,7 @@ def Vector_SplatOp : Vector_Op<"splat", [
 //       call to the function. For that, it might be useful to have a
 //       'vector.scale.global' and a 'vector.scale.local' operation.
 def VectorScaleOp : Vector_Op<"vscale",
-                 [NoSideEffect]> {
+                 [Pure]> {
   let summary = "Load vector scale size";
   let description = [{
     The `vscale` op returns the scale of the scalable vectors, a positive
@@ -2508,7 +2619,7 @@ def VectorScaleOp : Vector_Op<"vscale",
 //===----------------------------------------------------------------------===//
 
 def Vector_ScanOp :
-  Vector_Op<"scan", [NoSideEffect,
+  Vector_Op<"scan", [Pure,
     AllTypesMatch<["source", "dest"]>,
     AllTypesMatch<["initial_value", "accumulated_value"]> ]>,
     Arguments<(ins Vector_CombiningKindAttr:$kind,
@@ -2563,7 +2674,7 @@ def Vector_ScanOp :
 }
 
 def Vector_YieldOp : Vector_Op<"yield", [
-    NoSideEffect, ReturnLike, Terminator]> {
+    Pure, ReturnLike, Terminator]> {
   let summary = "Terminates and yields values from vector regions.";
   let description = [{
     "vector.yield" yields an SSA value from the Vector dialect op region and
@@ -2587,7 +2698,7 @@ def Vector_YieldOp : Vector_Op<"yield", [
 def Vector_WarpExecuteOnLane0Op : Vector_Op<"warp_execute_on_lane_0",
       [DeclareOpInterfaceMethods<RegionBranchOpInterface, ["areTypesCompatible"]>,
        SingleBlockImplicitTerminator<"vector::YieldOp">,
-       RecursiveSideEffects]> {
+       RecursiveMemoryEffects]> {
   let summary = "Executes operations in the associated region on thread #0 of a"
                 "SPMD program";
   let description = [{

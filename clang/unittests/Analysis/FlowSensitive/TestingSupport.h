@@ -344,6 +344,7 @@ checkDataflow(AnalysisInputs<AnalysisT> AI,
         llvm::any_cast<typename AnalysisT::Lattice>(&State.Lattice.Value);
     auto [_, InsertSuccess] =
         AnnotationStates.insert({It->second, StateT{*Lattice, State.Env}});
+    (void)_;
     (void)InsertSuccess;
     assert(InsertSuccess);
   };
@@ -354,97 +355,6 @@ checkDataflow(AnalysisInputs<AnalysisT> AI,
       [&VerifyResults, &AnnotationStates](const AnalysisOutputs &AO) {
         VerifyResults(AnnotationStates, AO);
       });
-}
-
-// Deprecated.
-// FIXME: Remove this function after usage has been updated to the overload
-// which uses the `AnalysisInputs` struct.
-//
-/// Runs dataflow specified from `MakeAnalysis` on the body of the function that
-/// matches `TargetFuncMatcher` in `Code`. Given the state computed at each
-/// annotated statement, `VerifyResults` checks that the results from the
-/// analysis are correct.
-///
-/// Requirements:
-///
-///   `AnalysisT` contains a type `Lattice`.
-///
-///   `Code`, `TargetFuncMatcher`, `MakeAnalysis` and `VerifyResults` must be
-///   provided.
-///
-///   Any annotations appearing in `Code` must come after a statement.
-///
-///   There can be at most one annotation attached per statement.
-///
-///   Annotations must not be repeated.
-template <typename AnalysisT>
-llvm::Error checkDataflow(
-    llvm::StringRef Code,
-    ast_matchers::internal::Matcher<FunctionDecl> TargetFuncMatcher,
-    std::function<AnalysisT(ASTContext &, Environment &)> MakeAnalysis,
-    std::function<void(
-        llvm::ArrayRef<std::pair<
-            std::string, DataflowAnalysisState<typename AnalysisT::Lattice>>>,
-        ASTContext &)>
-        VerifyResults,
-    ArrayRef<std::string> Args,
-    const tooling::FileContentMappings &VirtualMappedFiles = {}) {
-  return checkDataflow<AnalysisT>(
-      AnalysisInputs<AnalysisT>(Code, std::move(TargetFuncMatcher),
-                                std::move(MakeAnalysis))
-          .withASTBuildArgs(std::move(Args))
-          .withASTBuildVirtualMappedFiles(std::move(VirtualMappedFiles)),
-      [&VerifyResults](const llvm::StringMap<DataflowAnalysisState<
-                           typename AnalysisT::Lattice>> &AnnotationStates,
-                       const AnalysisOutputs &AO) {
-        std::vector<std::pair<
-            std::string, DataflowAnalysisState<typename AnalysisT::Lattice>>>
-            AnnotationStatesAsVector;
-        for (const auto &P : AnnotationStates) {
-          AnnotationStatesAsVector.push_back(
-              std::make_pair(P.first().str(), std::move(P.second)));
-        }
-        llvm::sort(AnnotationStatesAsVector,
-                   [](auto a, auto b) { return a.first < b.first; });
-
-        VerifyResults(AnnotationStatesAsVector, AO.ASTCtx);
-      });
-}
-
-// Deprecated.
-// FIXME: Remove this function after usage has been updated to the overload
-// which uses the `AnalysisInputs` struct.
-//
-/// Runs dataflow specified from `MakeAnalysis` on the body of the function
-/// named `TargetFun` in `Code`. Given the state computed at each annotated
-/// statement, `VerifyResults` checks that the results from the analysis are
-/// correct.
-///
-/// Requirements:
-///
-///   `AnalysisT` contains a type `Lattice`.
-///
-///   Any annotations appearing in `Code` must come after a statement.
-///
-///   `Code`, `TargetFun`, `MakeAnalysis` and `VerifyResults` must be provided.
-///
-///   There can be at most one annotation attached per statement.
-///
-///   Annotations must not be repeated.
-template <typename AnalysisT>
-llvm::Error checkDataflow(
-    llvm::StringRef Code, llvm::StringRef TargetFun,
-    std::function<AnalysisT(ASTContext &, Environment &)> MakeAnalysis,
-    std::function<void(
-        llvm::ArrayRef<std::pair<
-            std::string, DataflowAnalysisState<typename AnalysisT::Lattice>>>,
-        ASTContext &)>
-        VerifyResults,
-    ArrayRef<std::string> Args,
-    const tooling::FileContentMappings &VirtualMappedFiles = {}) {
-  return checkDataflow<AnalysisT>(
-      Code, ast_matchers::hasName(TargetFun), std::move(MakeAnalysis),
-      std::move(VerifyResults), Args, VirtualMappedFiles);
 }
 
 /// Returns the `ValueDecl` for the given identifier.
@@ -460,6 +370,12 @@ public:
   // Creates an atomic boolean value.
   BoolValue *atom() {
     Vals.push_back(std::make_unique<AtomicBoolValue>());
+    return Vals.back().get();
+  }
+
+  // Creates an instance of the Top boolean value.
+  BoolValue *top() {
+    Vals.push_back(std::make_unique<TopBoolValue>());
     return Vals.back().get();
   }
 

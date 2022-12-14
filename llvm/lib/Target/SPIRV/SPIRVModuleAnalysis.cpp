@@ -304,7 +304,7 @@ void SPIRVModuleAnalysis::collectFuncNames(MachineInstr &MI,
     Register GlobalReg = MAI.getRegisterAlias(MI.getMF(), Reg);
     assert(GlobalReg.isValid());
     // TODO: check that it does not conflict with existing entries.
-    MAI.FuncNameMap[F.getGlobalIdentifier()] = GlobalReg;
+    MAI.FuncNameMap[getFunctionGlobalIdentifier(&F)] = GlobalReg;
   }
 }
 
@@ -751,6 +751,7 @@ void addInstrRequirements(const MachineInstr &MI,
     break;
   case SPIRV::OpTypeDeviceEvent:
   case SPIRV::OpTypeQueue:
+  case SPIRV::OpBuildNDRange:
     Reqs.addCapability(SPIRV::Capability::DeviceEnqueue);
     break;
   case SPIRV::OpDecorate:

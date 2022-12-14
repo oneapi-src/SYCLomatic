@@ -12,13 +12,16 @@
 // RUN:   --target=x86_64-linux-gnu %t.o 2>&1 \
 // RUN:   | FileCheck -check-prefixes=ROCM-PATH %s
 
-// Test detecting latest /opt/rocm-{release} directory.
-// RUN: rm -rf %T/opt
-// RUN: mkdir -p %T/opt
-// RUN: cp -r %S/Inputs/rocm %T/opt/rocm-3.9.0-1234
-// RUN: cp -r %S/Inputs/rocm %T/opt/rocm-3.10.0
 // RUN: %clang -### --hip-link --target=x86_64-linux-gnu \
-// RUN:   --sysroot=%T %t.o 2>&1 \
+// RUN:   --rocm-path=%S/Inputs/rocm %t.o --offload-add-rpath 2>&1 \
+// RUN:   | FileCheck -check-prefixes=ROCM-RPATH %s
+
+// Test detecting latest /opt/rocm-{release} directory.
+// RUN: rm -rf %t && mkdir -p %t/opt
+// RUN: cp -r %S/Inputs/rocm %t/opt/rocm-3.9.0-1234
+// RUN: cp -r %S/Inputs/rocm %t/opt/rocm-3.10.0
+// RUN: %clang -### --hip-link --target=x86_64-linux-gnu \
+// RUN:   --sysroot=%t %t.o 2>&1 \
 // RUN:   | FileCheck -check-prefixes=ROCM-REL %s
 
 // Test HIP runtime lib is not linked without --hip-link.
@@ -36,8 +39,9 @@
 // RUN:   --rocm-path=%S/Inputs/rocm %t.o 2>&1 \
 // RUN:   | FileCheck -check-prefixes=NOHIPRT %s
 
-// ROCM-PATH: "-L[[HIPRT:.*/Inputs/rocm/lib]]" "-rpath" "[[HIPRT]]" "-lamdhip64"
-// ROCM-REL: "-L[[HIPRT:.*/opt/rocm-3.10.0/lib]]" "-rpath" "[[HIPRT]]" "-lamdhip64"
+// ROCM-PATH: "-L[[HIPRT:.*/Inputs/rocm/lib]]" "-lamdhip64"
+// ROCM-RPATH: "-L[[HIPRT:.*/Inputs/rocm/lib]]" "-rpath" "[[HIPRT]]" "-lamdhip64"
+// ROCM-REL: "-L[[HIPRT:.*/opt/rocm-3.10.0/lib]]" "-lamdhip64"
 // NOHIPRT-NOT: "-L{{.*/Inputs/rocm/lib}}"
 // NOHIPRT-NOT: "-rpath" "{{.*/Inputs/rocm/lib}}"
 // NOHIPRT-NOT: "-lamdhip64"

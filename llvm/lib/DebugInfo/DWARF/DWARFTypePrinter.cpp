@@ -35,7 +35,7 @@ void DWARFTypePrinter::appendArrayType(const DWARFDie &D) {
         if ((DefaultLB =
                  LanguageLowerBound(static_cast<dwarf::SourceLanguage>(*LC))))
           if (LB && *LB == *DefaultLB)
-            LB = None;
+            LB = std::nullopt;
     if (!LB && !Count && !UB)
       OS << "[]";
     else if (!LB && (Count || UB) && DefaultLB)
@@ -282,13 +282,27 @@ void DWARFTypePrinter::appendUnqualifiedNameAfter(
   }
 }
 
+/// Returns True if the DIE TAG is one of the ones that is scopped.
+static bool scopedTAGs(dwarf::Tag Tag) {
+  switch (Tag) {
+  case dwarf::DW_TAG_structure_type:
+  case dwarf::DW_TAG_class_type:
+  case dwarf::DW_TAG_union_type:
+  case dwarf::DW_TAG_namespace:
+  case dwarf::DW_TAG_enumeration_type:
+    return true;
+  default:
+    break;
+  }
+  return false;
+}
 void DWARFTypePrinter::appendQualifiedName(DWARFDie D) {
-  if (D)
+  if (D && scopedTAGs(D.getTag()))
     appendScopes(D.getParent());
   appendUnqualifiedName(D);
 }
 DWARFDie DWARFTypePrinter::appendQualifiedNameBefore(DWARFDie D) {
-  if (D)
+  if (D && scopedTAGs(D.getTag()))
     appendScopes(D.getParent());
   return appendUnqualifiedNameBefore(D);
 }

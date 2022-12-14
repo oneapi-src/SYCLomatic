@@ -1,0 +1,2 @@
+# Ensure that all tests in this directory use Linux line endings
+*.hpp text eol=lf

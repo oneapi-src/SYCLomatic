@@ -385,8 +385,25 @@ pi_result cuda_piEventRetain(pi_event event);
 
 /// \endcond
 
+void _pi_queue::compute_stream_wait_for_barrier_if_needed(CUstream stream,
+                                                          pi_uint32 stream_i) {
+  if (barrier_event_ && !compute_applied_barrier_[stream_i]) {
+    PI_CHECK_ERROR(cuStreamWaitEvent(stream, barrier_event_, 0));
+    compute_applied_barrier_[stream_i] = true;
+  }
+}
+
+void _pi_queue::transfer_stream_wait_for_barrier_if_needed(CUstream stream,
+                                                           pi_uint32 stream_i) {
+  if (barrier_event_ && !transfer_applied_barrier_[stream_i]) {
+    PI_CHECK_ERROR(cuStreamWaitEvent(stream, barrier_event_, 0));
+    transfer_applied_barrier_[stream_i] = true;
+  }
+}
+
 CUstream _pi_queue::get_next_compute_stream(pi_uint32 *stream_token) {
   pi_uint32 stream_i;
+  pi_uint32 token;
   while (true) {
     if (num_compute_streams_ < compute_streams_.size()) {
       // the check above is for performance - so as not to lock mutex every time
@@ -398,20 +415,23 @@ CUstream _pi_queue::get_next_compute_stream(pi_uint32 *stream_token) {
             cuStreamCreate(&compute_streams_[num_compute_streams_++], flags_));
       }
     }
-    stream_i = compute_stream_idx_++;
+    token = compute_stream_idx_++;
+    stream_i = token % compute_streams_.size();
     // if a stream has been reused before it was next selected round-robin
     // fashion, we want to delay its next use and instead select another one
     // that is more likely to have completed all the enqueued work.
-    if (delay_compute_[stream_i % compute_streams_.size()]) {
-      delay_compute_[stream_i % compute_streams_.size()] = false;
+    if (delay_compute_[stream_i]) {
+      delay_compute_[stream_i] = false;
     } else {
       break;
     }
   }
   if (stream_token) {
-    *stream_token = stream_i;
+    *stream_token = token;
   }
-  return compute_streams_[stream_i % compute_streams_.size()];
+  CUstream res = compute_streams_[stream_i];
+  compute_stream_wait_for_barrier_if_needed(res, stream_i);
+  return res;
 }
 
 CUstream _pi_queue::get_next_compute_stream(pi_uint32 num_events_in_wait_list,
@@ -419,19 +439,22 @@ CUstream _pi_queue::get_next_compute_stream(pi_uint32 num_events_in_wait_list,
                                             _pi_stream_guard &guard,
                                             pi_uint32 *stream_token) {
   for (pi_uint32 i = 0; i < num_events_in_wait_list; i++) {
-    pi_uint32 token = event_wait_list[i]->get_stream_token();
+    pi_uint32 token = event_wait_list[i]->get_compute_stream_token();
     if (event_wait_list[i]->get_queue() == this && can_reuse_stream(token)) {
       std::unique_lock<std::mutex> compute_sync_guard(
           compute_stream_sync_mutex_);
       // redo the check after lock to avoid data races on
       // last_sync_compute_streams_
       if (can_reuse_stream(token)) {
-        delay_compute_[token % delay_compute_.size()] = true;
+        pi_uint32 stream_i = token % delay_compute_.size();
+        delay_compute_[stream_i] = true;
         if (stream_token) {
           *stream_token = token;
         }
         guard = _pi_stream_guard{std::move(compute_sync_guard)};
-        return event_wait_list[i]->get_stream();
+        CUstream res = event_wait_list[i]->get_stream();
+        compute_stream_wait_for_barrier_if_needed(res, stream_i);
+        return res;
       }
     }
   }
@@ -453,7 +476,10 @@ CUstream _pi_queue::get_next_transfer_stream() {
           cuStreamCreate(&transfer_streams_[num_transfer_streams_++], flags_));
     }
   }
-  return transfer_streams_[transfer_stream_idx_++ % transfer_streams_.size()];
+  pi_uint32 stream_i = transfer_stream_idx_++ % transfer_streams_.size();
+  CUstream res = transfer_streams_[stream_i];
+  transfer_stream_wait_for_barrier_if_needed(res, stream_i);
+  return res;
 }
 
 _pi_event::_pi_event(pi_command_type type, pi_context context, pi_queue queue,
@@ -1301,7 +1327,7 @@ pi_result cuda_piDeviceGetInfo(pi_device device, pi_device_info param_name,
     return getInfo(param_value_size, param_value, param_value_size_ret,
                    capabilities);
   }
-  case PI_EXT_ONEAPI_DEVICE_INFO_BFLOAT16: {
+  case PI_EXT_ONEAPI_DEVICE_INFO_BFLOAT16_MATH_FUNCTIONS: {
     int major = 0;
     sycl::detail::pi::assertion(
         cuDeviceGetAttribute(&major,
@@ -1900,8 +1926,28 @@ pi_result cuda_piDeviceGetInfo(pi_device device, pi_device_info param_name,
     return getInfo(param_value_size, param_value, param_value_size_ret,
                    FreeMemory);
   }
+  case PI_EXT_INTEL_DEVICE_INFO_MEMORY_CLOCK_RATE: {
+    int value = 0;
+    sycl::detail::pi::assertion(
+        cuDeviceGetAttribute(&value, CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE,
+                             device->get()) == CUDA_SUCCESS);
+    sycl::detail::pi::assertion(value >= 0);
+    // Convert kilohertz to megahertz when returning.
+    return getInfo(param_value_size, param_value, param_value_size_ret,
+                   value / 1000);
+  }
+  case PI_EXT_INTEL_DEVICE_INFO_MEMORY_BUS_WIDTH: {
+    int value = 0;
+    sycl::detail::pi::assertion(
+        cuDeviceGetAttribute(&value,
+                             CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH,
+                             device->get()) == CUDA_SUCCESS);
+    sycl::detail::pi::assertion(value >= 0);
+    return getInfo(param_value_size, param_value, param_value_size_ret, value);
+  }
 
     // TODO: Investigate if this information is available on CUDA.
+  case PI_DEVICE_INFO_DEVICE_ID:
   case PI_DEVICE_INFO_PCI_ADDRESS:
   case PI_DEVICE_INFO_GPU_EU_COUNT:
   case PI_DEVICE_INFO_GPU_EU_SIMD_WIDTH:
@@ -2497,6 +2543,27 @@ pi_result cuda_piQueueGetInfo(pi_queue command_queue, pi_queue_info param_name,
   case PI_QUEUE_INFO_PROPERTIES:
     return getInfo(param_value_size, param_value, param_value_size_ret,
                    command_queue->properties_);
+  case PI_EXT_ONEAPI_QUEUE_INFO_EMPTY: {
+    try {
+      bool IsReady = command_queue->all_of([](CUstream s) -> bool {
+        const CUresult ret = cuStreamQuery(s);
+        if (ret == CUDA_SUCCESS)
+          return true;
+
+        if (ret == CUDA_ERROR_NOT_READY)
+          return false;
+
+        PI_CHECK_ERROR(ret);
+        return false;
+      });
+      return getInfo(param_value_size, param_value, param_value_size_ret,
+                     IsReady);
+    } catch (pi_result err) {
+      return err;
+    } catch (...) {
+      return PI_ERROR_OUT_OF_RESOURCES;
+    }
+  }
   default:
     __SYCL_PI_HANDLE_UNKNOWN_PARAM_NAME(param_name);
   }
@@ -2549,7 +2616,7 @@ pi_result cuda_piQueueFinish(pi_queue command_queue) {
            nullptr); // need PI_ERROR_INVALID_EXTERNAL_HANDLE error code
     ScopedContext active(command_queue->get_context());
 
-    command_queue->sync_streams([&result](CUstream s) {
+    command_queue->sync_streams</*ResetUsed=*/true>([&result](CUstream s) {
       result = PI_CHECK_ERROR(cuStreamSynchronize(s));
     });
 
@@ -2960,6 +3027,11 @@ pi_result cuda_piEnqueueKernelLaunch(
   assert(global_work_offset != nullptr);
   assert(work_dim > 0);
   assert(work_dim < 4);
+
+  if (*global_work_size == 0) {
+    return cuda_piEnqueueEventsWaitWithBarrier(
+        command_queue, num_events_in_wait_list, event_wait_list, event);
+  }
 
   // Set the number of threads per block to the number of threads per warp
   // by default unless user has provided a better number
@@ -3875,35 +3947,70 @@ pi_result cuda_piEnqueueEventsWaitWithBarrier(pi_queue command_queue,
                                               pi_uint32 num_events_in_wait_list,
                                               const pi_event *event_wait_list,
                                               pi_event *event) {
+  // This function makes one stream work on the previous work (or work
+  // represented by input events) and then all future work waits on that stream.
   if (!command_queue) {
     return PI_ERROR_INVALID_QUEUE;
   }
 
+  pi_result result;
+
   try {
     ScopedContext active(command_queue->get_context());
-
-    if (event_wait_list) {
-      auto result =
-          forLatestEvents(event_wait_list, num_events_in_wait_list,
-                          [command_queue](pi_event event) -> pi_result {
-                            if (event->get_queue()->has_been_synchronized(
-                                    event->get_stream_token())) {
-                              return PI_SUCCESS;
-                            } else {
-                              return enqueueEventWait(command_queue, event);
-                            }
-                          });
-
-      if (result != PI_SUCCESS) {
-        return result;
+    pi_uint32 stream_token;
+    _pi_stream_guard guard;
+    CUstream cuStream = command_queue->get_next_compute_stream(
+        num_events_in_wait_list, event_wait_list, guard, &stream_token);
+    {
+      std::lock_guard<std::mutex> guard(command_queue->barrier_mutex_);
+      if (command_queue->barrier_event_ == nullptr) {
+        PI_CHECK_ERROR(cuEventCreate(&command_queue->barrier_event_,
+                                     CU_EVENT_DISABLE_TIMING));
       }
+      if (num_events_in_wait_list == 0) { //  wait on all work
+        if (command_queue->barrier_tmp_event_ == nullptr) {
+          PI_CHECK_ERROR(cuEventCreate(&command_queue->barrier_tmp_event_,
+                                       CU_EVENT_DISABLE_TIMING));
+        }
+        command_queue->sync_streams(
+            [cuStream,
+             tmp_event = command_queue->barrier_tmp_event_](CUstream s) {
+              if (cuStream != s) {
+                // record a new CUDA event on every stream and make one stream
+                // wait for these events
+                PI_CHECK_ERROR(cuEventRecord(tmp_event, s));
+                PI_CHECK_ERROR(cuStreamWaitEvent(cuStream, tmp_event, 0));
+              }
+            });
+      } else { // wait just on given events
+        forLatestEvents(event_wait_list, num_events_in_wait_list,
+                        [cuStream](pi_event event) -> pi_result {
+                          if (event->get_queue()->has_been_synchronized(
+                                  event->get_compute_stream_token())) {
+                            return PI_SUCCESS;
+                          } else {
+                            return PI_CHECK_ERROR(
+                                cuStreamWaitEvent(cuStream, event->get(), 0));
+                          }
+                        });
+      }
+
+      result = PI_CHECK_ERROR(
+          cuEventRecord(command_queue->barrier_event_, cuStream));
+      for (unsigned int i = 0;
+           i < command_queue->compute_applied_barrier_.size(); i++) {
+        command_queue->compute_applied_barrier_[i] = false;
+      }
+      for (unsigned int i = 0;
+           i < command_queue->transfer_applied_barrier_.size(); i++) {
+        command_queue->transfer_applied_barrier_[i] = false;
+      }
+    }
+    if (result != PI_SUCCESS) {
+      return result;
     }
 
     if (event) {
-      pi_uint32 stream_token;
-      _pi_stream_guard guard;
-      CUstream cuStream = command_queue->get_next_compute_stream(
-          num_events_in_wait_list, event_wait_list, guard, &stream_token);
       *event = _pi_event::make_native(PI_COMMAND_TYPE_MARKER, command_queue,
                                       cuStream, stream_token);
       (*event)->start();

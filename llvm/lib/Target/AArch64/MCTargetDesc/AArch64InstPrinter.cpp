@@ -63,6 +63,11 @@ void AArch64InstPrinter::printRegName(raw_ostream &OS, unsigned RegNo) const {
   OS << markup("<reg:") << getRegisterName(RegNo) << markup(">");
 }
 
+void AArch64InstPrinter::printRegName(raw_ostream &OS, unsigned RegNo,
+                                      unsigned AltIdx) const {
+  OS << markup("<reg:") << getRegisterName(RegNo, AltIdx) << markup(">");
+}
+
 void AArch64InstPrinter::printInst(const MCInst *MI, uint64_t Address,
                                    StringRef Annot, const MCSubtargetInfo &STI,
                                    raw_ostream &O) {
@@ -75,6 +80,18 @@ void AArch64InstPrinter::printInst(const MCInst *MI, uint64_t Address,
       printAnnotation(O, Annot);
       return;
     }
+
+  if (Opcode == AArch64::SYSPxt || Opcode == AArch64::SYSPxt_XZR)
+    if (printSyspAlias(MI, STI, O)) {
+      printAnnotation(O, Annot);
+      return;
+    }
+
+  // RPRFM overlaps PRFM (reg), so try to print it as RPRFM here.
+  if ((Opcode == AArch64::PRFMroX) || (Opcode == AArch64::PRFMroW)) {
+    if (printRangePrefetchAlias(MI, STI, O, Annot))
+      return;
+  }
 
   // SBFM/UBFM should print to a nicer aliased form if possible.
   if (Opcode == AArch64::SBFMXri || Opcode == AArch64::SBFMWri ||
@@ -112,8 +129,10 @@ void AArch64InstPrinter::printInst(const MCInst *MI, uint64_t Address,
       }
 
       if (AsmMnemonic) {
-        O << '\t' << AsmMnemonic << '\t' << getRegisterName(Op0.getReg())
-          << ", " << getRegisterName(getWRegFromXReg(Op1.getReg()));
+        O << '\t' << AsmMnemonic << '\t';
+        printRegName(O, Op0.getReg());
+        O << ", ";
+        printRegName(O, getWRegFromXReg(Op1.getReg()));
         printAnnotation(O, Annot);
         return;
       }
@@ -160,19 +179,23 @@ void AArch64InstPrinter::printInst(const MCInst *MI, uint64_t Address,
 
     // SBFIZ/UBFIZ aliases
     if (Op2.getImm() > Op3.getImm()) {
-      O << '\t' << (IsSigned ? "sbfiz" : "ubfiz") << '\t'
-        << getRegisterName(Op0.getReg()) << ", "
-        << getRegisterName(Op1.getReg()) << ", " << markup("<imm:") << "#"
-        << (Is64Bit ? 64 : 32) - Op2.getImm() << markup(">") << ", "
-        << markup("<imm:") << "#" << Op3.getImm() + 1 << markup(">");
+      O << '\t' << (IsSigned ? "sbfiz" : "ubfiz") << '\t';
+      printRegName(O, Op0.getReg());
+      O << ", ";
+      printRegName(O, Op1.getReg());
+      O << ", " << markup("<imm:") << "#" << (Is64Bit ? 64 : 32) - Op2.getImm()
+        << markup(">") << ", " << markup("<imm:") << "#" << Op3.getImm() + 1
+        << markup(">");
       printAnnotation(O, Annot);
       return;
     }
 
     // Otherwise SBFX/UBFX is the preferred form
-    O << '\t' << (IsSigned ? "sbfx" : "ubfx") << '\t'
-      << getRegisterName(Op0.getReg()) << ", " << getRegisterName(Op1.getReg())
-      << ", " << markup("<imm:") << "#" << Op2.getImm() << markup(">") << ", "
+    O << '\t' << (IsSigned ? "sbfx" : "ubfx") << '\t';
+    printRegName(O, Op0.getReg());
+    O << ", ";
+    printRegName(O, Op1.getReg());
+    O << ", " << markup("<imm:") << "#" << Op2.getImm() << markup(">") << ", "
       << markup("<imm:") << "#" << Op3.getImm() - Op2.getImm() + 1
       << markup(">");
     printAnnotation(O, Annot);
@@ -193,9 +216,10 @@ void AArch64InstPrinter::printInst(const MCInst *MI, uint64_t Address,
       int LSB = (BitWidth - ImmR) % BitWidth;
       int Width = ImmS + 1;
 
-      O << "\tbfc\t" << getRegisterName(Op0.getReg()) << ", " << markup("<imm:")
-        << "#" << LSB << markup(">") << ", " << markup("<imm:") << "#" << Width
-        << markup(">");
+      O << "\tbfc\t";
+      printRegName(O, Op0.getReg());
+      O << ", " << markup("<imm:") << "#" << LSB << markup(">") << ", "
+        << markup("<imm:") << "#" << Width << markup(">");
       printAnnotation(O, Annot);
       return;
     } else if (ImmS < ImmR) {
@@ -204,10 +228,12 @@ void AArch64InstPrinter::printInst(const MCInst *MI, uint64_t Address,
       int LSB = (BitWidth - ImmR) % BitWidth;
       int Width = ImmS + 1;
 
-      O << "\tbfi\t" << getRegisterName(Op0.getReg()) << ", "
-        << getRegisterName(Op2.getReg()) << ", " << markup("<imm:") << "#"
-        << LSB << markup(">") << ", " << markup("<imm:") << "#" << Width
-        << markup(">");
+      O << "\tbfi\t";
+      printRegName(O, Op0.getReg());
+      O << ", ";
+      printRegName(O, Op2.getReg());
+      O << ", " << markup("<imm:") << "#" << LSB << markup(">") << ", "
+        << markup("<imm:") << "#" << Width << markup(">");
       printAnnotation(O, Annot);
       return;
     }
@@ -215,9 +241,12 @@ void AArch64InstPrinter::printInst(const MCInst *MI, uint64_t Address,
     int LSB = ImmR;
     int Width = ImmS - ImmR + 1;
     // Otherwise BFXIL the preferred form
-    O << "\tbfxil\t" << getRegisterName(Op0.getReg()) << ", "
-      << getRegisterName(Op2.getReg()) << ", " << markup("<imm:") << "#" << LSB
-      << markup(">") << ", " << markup("<imm:") << "#" << Width << markup(">");
+    O << "\tbfxil\t";
+    printRegName(O, Op0.getReg());
+    O << ", ";
+    printRegName(O, Op2.getReg());
+    O << ", " << markup("<imm:") << "#" << LSB << markup(">") << ", "
+      << markup("<imm:") << "#" << Width << markup(">");
     printAnnotation(O, Annot);
     return;
   }
@@ -233,8 +262,8 @@ void AArch64InstPrinter::printInst(const MCInst *MI, uint64_t Address,
     else
       O << "\tmovn\t";
 
-    O << getRegisterName(MI->getOperand(0).getReg()) << ", " << markup("<imm:")
-      << "#";
+    printRegName(O, MI->getOperand(0).getReg());
+    O << ", " << markup("<imm:") << "#";
     MI->getOperand(1).getExpr()->print(O, &MAI);
     O << markup(">");
     return;
@@ -242,8 +271,9 @@ void AArch64InstPrinter::printInst(const MCInst *MI, uint64_t Address,
 
   if ((Opcode == AArch64::MOVKXi || Opcode == AArch64::MOVKWi) &&
       MI->getOperand(2).isExpr()) {
-    O << "\tmovk\t" << getRegisterName(MI->getOperand(0).getReg()) << ", "
-      << markup("<imm:") << "#";
+    O << "\tmovk\t";
+    printRegName(O, MI->getOperand(0).getReg());
+    O << ", " << markup("<imm:") << "#";
     MI->getOperand(2).getExpr()->print(O, &MAI);
     O << markup(">");
     return;
@@ -262,9 +292,10 @@ void AArch64InstPrinter::printInst(const MCInst *MI, uint64_t Address,
 
     if (AArch64_AM::isMOVZMovAlias(Value, Shift,
                                    Opcode == AArch64::MOVZXi ? 64 : 32)) {
-      O << "\tmov\t" << getRegisterName(MI->getOperand(0).getReg()) << ", "
-        << markup("<imm:") << "#" << formatImm(SignExtend64(Value, RegWidth))
-        << markup(">");
+      O << "\tmov\t";
+      printRegName(O, MI->getOperand(0).getReg());
+      O << ", " << markup("<imm:") << "#"
+        << formatImm(SignExtend64(Value, RegWidth)) << markup(">");
       return;
     }
   }
@@ -278,9 +309,10 @@ void AArch64InstPrinter::printInst(const MCInst *MI, uint64_t Address,
       Value = Value & 0xffffffff;
 
     if (AArch64_AM::isMOVNMovAlias(Value, Shift, RegWidth)) {
-      O << "\tmov\t" << getRegisterName(MI->getOperand(0).getReg()) << ", "
-        << markup("<imm:") << "#" << formatImm(SignExtend64(Value, RegWidth))
-        << markup(">");
+      O << "\tmov\t";
+      printRegName(O, MI->getOperand(0).getReg());
+      O << ", " << markup("<imm:") << "#"
+        << formatImm(SignExtend64(Value, RegWidth)) << markup(">");
       return;
     }
   }
@@ -293,9 +325,10 @@ void AArch64InstPrinter::printInst(const MCInst *MI, uint64_t Address,
     uint64_t Value = AArch64_AM::decodeLogicalImmediate(
         MI->getOperand(2).getImm(), RegWidth);
     if (!AArch64_AM::isAnyMOVWMovAlias(Value, RegWidth)) {
-      O << "\tmov\t" << getRegisterName(MI->getOperand(0).getReg()) << ", "
-        << markup("<imm:") << "#" << formatImm(SignExtend64(Value, RegWidth))
-        << markup(">");
+      O << "\tmov\t";
+      printRegName(O, MI->getOperand(0).getReg());
+      O << ", " << markup("<imm:") << "#"
+        << formatImm(SignExtend64(Value, RegWidth)) << markup(">");
       return;
     }
   }
@@ -737,14 +770,15 @@ void AArch64AppleInstPrinter::printInst(const MCInst *MI, uint64_t Address,
 
   bool IsTbx;
   if (isTblTbxInstruction(MI->getOpcode(), Layout, IsTbx)) {
-    O << "\t" << (IsTbx ? "tbx" : "tbl") << Layout << '\t'
-      << getRegisterName(MI->getOperand(0).getReg(), AArch64::vreg) << ", ";
+    O << "\t" << (IsTbx ? "tbx" : "tbl") << Layout << '\t';
+    printRegName(O, MI->getOperand(0).getReg(), AArch64::vreg);
+    O << ", ";
 
     unsigned ListOpNum = IsTbx ? 2 : 1;
     printVectorList(MI, ListOpNum, STI, O, "");
 
-    O << ", "
-      << getRegisterName(MI->getOperand(ListOpNum + 1).getReg(), AArch64::vreg);
+    O << ", ";
+    printRegName(O, MI->getOperand(ListOpNum + 1).getReg(), AArch64::vreg);
     printAnnotation(O, Annot);
     return;
   }
@@ -762,14 +796,17 @@ void AArch64AppleInstPrinter::printInst(const MCInst *MI, uint64_t Address,
 
     // Next the address: [xN]
     unsigned AddrReg = MI->getOperand(OpNum++).getReg();
-    O << ", [" << getRegisterName(AddrReg) << ']';
+    O << ", [";
+    printRegName(O, AddrReg);
+    O << ']';
 
     // Finally, there might be a post-indexed offset.
     if (LdStDesc->NaturalOffset != 0) {
       unsigned Reg = MI->getOperand(OpNum++).getReg();
-      if (Reg != AArch64::XZR)
-        O << ", " << getRegisterName(Reg);
-      else {
+      if (Reg != AArch64::XZR) {
+        O << ", ";
+        printRegName(O, Reg);
+      } else {
         assert(LdStDesc->NaturalOffset && "no offset on post-inc instruction?");
         O << ", " << markup("<imm:") << "#" << LdStDesc->NaturalOffset
           << markup(">");
@@ -781,6 +818,56 @@ void AArch64AppleInstPrinter::printInst(const MCInst *MI, uint64_t Address,
   }
 
   AArch64InstPrinter::printInst(MI, Address, Annot, STI, O);
+}
+
+bool AArch64InstPrinter::printRangePrefetchAlias(const MCInst *MI,
+                                                 const MCSubtargetInfo &STI,
+                                                 raw_ostream &O,
+                                                 StringRef Annot) {
+  unsigned Opcode = MI->getOpcode();
+
+#ifndef NDEBUG
+  assert(((Opcode == AArch64::PRFMroX) || (Opcode == AArch64::PRFMroW)) &&
+         "Invalid opcode for RPRFM alias!");
+#endif
+
+  unsigned PRFOp = MI->getOperand(0).getImm();
+  unsigned Mask = 0x18; // 0b11000
+  if ((PRFOp & Mask) != Mask)
+    return false; // Rt != '11xxx', it's a PRFM instruction.
+
+  unsigned Rm = MI->getOperand(2).getReg();
+
+  // "Rm" must be a 64-bit GPR for RPRFM.
+  if (MRI.getRegClass(AArch64::GPR32RegClassID).contains(Rm))
+    Rm = MRI.getMatchingSuperReg(Rm, AArch64::sub_32,
+                                 &MRI.getRegClass(AArch64::GPR64RegClassID));
+
+  unsigned SignExtend = MI->getOperand(3).getImm(); // encoded in "option<2>".
+  unsigned Shift = MI->getOperand(4).getImm();      // encoded in "S".
+
+  assert((SignExtend <= 1) && "sign extend should be a single bit!");
+  assert((Shift <= 1) && "Shift should be a single bit!");
+
+  unsigned Option0 = (Opcode == AArch64::PRFMroX) ? 1 : 0;
+
+  // encoded in "option<2>:option<0>:S:Rt<2:0>".
+  unsigned RPRFOp =
+      (SignExtend << 5) | (Option0 << 4) | (Shift << 3) | (PRFOp & 0x7);
+
+  O << "\trprfm ";
+  if (auto RPRFM = AArch64RPRFM::lookupRPRFMByEncoding(RPRFOp))
+    O << RPRFM->Name << ", ";
+  else
+    O << "#" << formatImm(RPRFOp) << ", ";
+  O << getRegisterName(Rm);
+  O << ", [";
+  printOperand(MI, 1, STI, O); // "Rn".
+  O << "]";
+
+  printAnnotation(O, Annot);
+
+  return true;
 }
 
 bool AArch64InstPrinter::printSysAlias(const MCInst *MI,
@@ -890,8 +977,70 @@ bool AArch64InstPrinter::printSysAlias(const MCInst *MI,
   std::transform(Str.begin(), Str.end(), Str.begin(), ::tolower);
 
   O << '\t' << Str;
-  if (NeedsReg)
-    O << ", " << getRegisterName(MI->getOperand(4).getReg());
+  if (NeedsReg) {
+    O << ", ";
+    printRegName(O, MI->getOperand(4).getReg());
+  }
+
+  return true;
+}
+
+bool AArch64InstPrinter::printSyspAlias(const MCInst *MI,
+                                        const MCSubtargetInfo &STI,
+                                        raw_ostream &O) {
+#ifndef NDEBUG
+  unsigned Opcode = MI->getOpcode();
+  assert((Opcode == AArch64::SYSPxt || Opcode == AArch64::SYSPxt_XZR) &&
+         "Invalid opcode for SYSP alias!");
+#endif
+
+  const MCOperand &Op1 = MI->getOperand(0);
+  const MCOperand &Cn = MI->getOperand(1);
+  const MCOperand &Cm = MI->getOperand(2);
+  const MCOperand &Op2 = MI->getOperand(3);
+
+  unsigned Op1Val = Op1.getImm();
+  unsigned CnVal = Cn.getImm();
+  unsigned CmVal = Cm.getImm();
+  unsigned Op2Val = Op2.getImm();
+
+  uint16_t Encoding = Op2Val;
+  Encoding |= CmVal << 3;
+  Encoding |= CnVal << 7;
+  Encoding |= Op1Val << 11;
+
+  std::string Ins;
+  std::string Name;
+
+  if (CnVal == 8 || CnVal == 9) {
+    // TLBIP aliases
+
+    if (CnVal == 9) {
+      if (!STI.hasFeature(AArch64::FeatureXS))
+        return false;
+      Encoding &= ~(1 << 7);
+    }
+
+    const AArch64TLBI::TLBI *TLBI = AArch64TLBI::lookupTLBIByEncoding(Encoding);
+    if (!TLBI || !TLBI->haveFeatures(STI.getFeatureBits()))
+      return false;
+
+    Ins = "tlbip\t";
+    Name = std::string(TLBI->Name);
+    if (CnVal == 9)
+      Name += "nXS";
+  } else
+    return false;
+
+  std::string Str = Ins + Name;
+  std::transform(Str.begin(), Str.end(), Str.begin(), ::tolower);
+
+  O << '\t' << Str;
+  O << ", ";
+  if (MI->getOperand(4).getReg() == AArch64::XZR)
+    printSyspXzrPair(MI, 4, STI, O);
+  else
+    printGPRSeqPairsClassOperand<64>(MI, 4, STI, O);
 
   return true;
 }
@@ -1023,7 +1172,7 @@ void AArch64InstPrinter::printVRegOperand(const MCInst *MI, unsigned OpNo,
   const MCOperand &Op = MI->getOperand(OpNo);
   assert(Op.isReg() && "Non-register vreg operand!");
   unsigned Reg = Op.getReg();
-  O << getRegisterName(Reg, AArch64::vreg);
+  printRegName(O, Reg, AArch64::vreg);
 }
 
 void AArch64InstPrinter::printSysCROperand(const MCInst *MI, unsigned OpNo,
@@ -1166,6 +1315,35 @@ void AArch64InstPrinter::printRegWithShiftExtend(const MCInst *MI,
   }
 }
 
+template <int EltSize>
+void AArch64InstPrinter::printPredicateAsCounter(const MCInst *MI,
+                                                 unsigned OpNum,
+                                                 const MCSubtargetInfo &STI,
+                                                 raw_ostream &O) {
+  unsigned Reg = MI->getOperand(OpNum).getReg();
+
+  assert(Reg <= AArch64::P15 && "Unsupported predicate register");
+  O << "pn" << (Reg - AArch64::P0);
+  switch (EltSize) {
+  case 0:
+    break;
+  case 8:
+    O << ".b";
+    break;
+  case 16:
+    O << ".h";
+    break;
+  case 32:
+    O << ".s";
+    break;
+  case 64:
+    O << ".d";
+    break;
+  default:
+    llvm_unreachable("Unsupported element size");
+  }
+}
+
 void AArch64InstPrinter::printCondCode(const MCInst *MI, unsigned OpNum,
                                        const MCSubtargetInfo &STI,
                                        raw_ostream &O) {
@@ -1183,15 +1361,26 @@ void AArch64InstPrinter::printInverseCondCode(const MCInst *MI, unsigned OpNum,
 void AArch64InstPrinter::printAMNoIndex(const MCInst *MI, unsigned OpNum,
                                         const MCSubtargetInfo &STI,
                                         raw_ostream &O) {
-  O << '[' << getRegisterName(MI->getOperand(OpNum).getReg()) << ']';
+  O << '[';
+  printRegName(O, MI->getOperand(OpNum).getReg());
+  O << ']';
 }
 
-template<int Scale>
+template <int Scale>
 void AArch64InstPrinter::printImmScale(const MCInst *MI, unsigned OpNum,
                                        const MCSubtargetInfo &STI,
                                        raw_ostream &O) {
   O << markup("<imm:") << '#'
     << formatImm(Scale * MI->getOperand(OpNum).getImm()) << markup(">");
+}
+
+template <int Scale, int Offset>
+void AArch64InstPrinter::printImmRangeScale(const MCInst *MI, unsigned OpNum,
+                                            const MCSubtargetInfo &STI,
+                                            raw_ostream &O) {
+  unsigned FirstImm = Scale * MI->getOperand(OpNum).getImm();
+  O << formatImm(FirstImm);
+  O << ":" << formatImm(FirstImm + Offset);
 }
 
 void AArch64InstPrinter::printUImm12Offset(const MCInst *MI, unsigned OpNum,
@@ -1209,7 +1398,8 @@ void AArch64InstPrinter::printUImm12Offset(const MCInst *MI, unsigned OpNum,
 void AArch64InstPrinter::printAMIndexedWB(const MCInst *MI, unsigned OpNum,
                                           unsigned Scale, raw_ostream &O) {
   const MCOperand MO1 = MI->getOperand(OpNum + 1);
-  O << '[' << getRegisterName(MI->getOperand(OpNum).getReg());
+  O << '[';
+  printRegName(O, MI->getOperand(OpNum).getReg());
   if (MO1.isImm()) {
     O << ", " << markup("<imm:") << "#" << formatImm(MO1.getImm() * Scale)
       << markup(">");
@@ -1219,6 +1409,18 @@ void AArch64InstPrinter::printAMIndexedWB(const MCInst *MI, unsigned OpNum,
     MO1.getExpr()->print(O, &MAI);
   }
   O << ']';
+}
+
+void AArch64InstPrinter::printRPRFMOperand(const MCInst *MI, unsigned OpNum,
+                                           const MCSubtargetInfo &STI,
+                                           raw_ostream &O) {
+  unsigned prfop = MI->getOperand(OpNum).getImm();
+  if (auto PRFM = AArch64RPRFM::lookupRPRFMByEncoding(prfop)) {
+    O << PRFM->Name;
+    return;
+  }
+
+  O << '#' << formatImm(prfop);
 }
 
 template <bool IsSVEPrefetch>
@@ -1347,6 +1549,23 @@ static unsigned getNextVectorRegister(unsigned Reg, unsigned Stride = 1) {
     case AArch64::Z31:
       Reg = AArch64::Z0;
       break;
+    case AArch64::P0:  Reg = AArch64::P1;  break;
+    case AArch64::P1:  Reg = AArch64::P2;  break;
+    case AArch64::P2:  Reg = AArch64::P3;  break;
+    case AArch64::P3:  Reg = AArch64::P4;  break;
+    case AArch64::P4:  Reg = AArch64::P5;  break;
+    case AArch64::P5:  Reg = AArch64::P6;  break;
+    case AArch64::P6:  Reg = AArch64::P7;  break;
+    case AArch64::P7:  Reg = AArch64::P8;  break;
+    case AArch64::P8:  Reg = AArch64::P9;  break;
+    case AArch64::P9:  Reg = AArch64::P10; break;
+    case AArch64::P10: Reg = AArch64::P11; break;
+    case AArch64::P11: Reg = AArch64::P12; break;
+    case AArch64::P12: Reg = AArch64::P13; break;
+    case AArch64::P13: Reg = AArch64::P14; break;
+    case AArch64::P14: Reg = AArch64::P15; break;
+    // Vector lists can wrap around.
+    case AArch64::P15: Reg = AArch64::P0; break;
     }
   }
   return Reg;
@@ -1366,7 +1585,9 @@ void AArch64InstPrinter::printGPRSeqPairsClassOperand(const MCInst *MI,
 
   unsigned Even = MRI.getSubReg(Reg,  Sube);
   unsigned Odd = MRI.getSubReg(Reg,  Subo);
-  O << getRegisterName(Even) << ", " << getRegisterName(Odd);
+  printRegName(O, Even);
+  O << ", ";
+  printRegName(O, Odd);
 }
 
 void AArch64InstPrinter::printMatrixTileList(const MCInst *MI, unsigned OpNum,
@@ -1407,7 +1628,9 @@ void AArch64InstPrinter::printVectorList(const MCInst *MI, unsigned OpNum,
   unsigned NumRegs = 1;
   if (MRI.getRegClass(AArch64::DDRegClassID).contains(Reg) ||
       MRI.getRegClass(AArch64::ZPR2RegClassID).contains(Reg) ||
-      MRI.getRegClass(AArch64::QQRegClassID).contains(Reg))
+      MRI.getRegClass(AArch64::QQRegClassID).contains(Reg) ||
+      MRI.getRegClass(AArch64::PPR2RegClassID).contains(Reg) ||
+      MRI.getRegClass(AArch64::ZPR2StridedRegClassID).contains(Reg))
     NumRegs = 2;
   else if (MRI.getRegClass(AArch64::DDDRegClassID).contains(Reg) ||
            MRI.getRegClass(AArch64::ZPR3RegClassID).contains(Reg) ||
@@ -1415,8 +1638,15 @@ void AArch64InstPrinter::printVectorList(const MCInst *MI, unsigned OpNum,
     NumRegs = 3;
   else if (MRI.getRegClass(AArch64::DDDDRegClassID).contains(Reg) ||
            MRI.getRegClass(AArch64::ZPR4RegClassID).contains(Reg) ||
-           MRI.getRegClass(AArch64::QQQQRegClassID).contains(Reg))
+           MRI.getRegClass(AArch64::QQQQRegClassID).contains(Reg) ||
+           MRI.getRegClass(AArch64::ZPR4StridedRegClassID).contains(Reg))
     NumRegs = 4;
+
+  unsigned Stride = 1;
+  if (MRI.getRegClass(AArch64::ZPR2StridedRegClassID).contains(Reg))
+    Stride = 8;
+  else if (MRI.getRegClass(AArch64::ZPR4StridedRegClassID).contains(Reg))
+    Stride = 4;
 
   // Now forget about the list and find out what the first register is.
   if (unsigned FirstReg = MRI.getSubReg(Reg, AArch64::dsub0))
@@ -1424,6 +1654,8 @@ void AArch64InstPrinter::printVectorList(const MCInst *MI, unsigned OpNum,
   else if (unsigned FirstReg = MRI.getSubReg(Reg, AArch64::qsub0))
     Reg = FirstReg;
   else if (unsigned FirstReg = MRI.getSubReg(Reg, AArch64::zsub0))
+    Reg = FirstReg;
+  else if (unsigned FirstReg = MRI.getSubReg(Reg, AArch64::psub0))
     Reg = FirstReg;
 
   // If it's a D-reg, we need to promote it to the equivalent Q-reg before
@@ -1434,16 +1666,35 @@ void AArch64InstPrinter::printVectorList(const MCInst *MI, unsigned OpNum,
     Reg = MRI.getMatchingSuperReg(Reg, AArch64::dsub, &FPR128RC);
   }
 
-  for (unsigned i = 0; i < NumRegs; ++i, Reg = getNextVectorRegister(Reg)) {
-    if (MRI.getRegClass(AArch64::ZPRRegClassID).contains(Reg))
-      O << getRegisterName(Reg) << LayoutSuffix;
-    else
-      O << getRegisterName(Reg, AArch64::vreg) << LayoutSuffix;
-
-    if (i + 1 != NumRegs)
-      O << ", ";
+  if ((MRI.getRegClass(AArch64::ZPRRegClassID).contains(Reg) ||
+       MRI.getRegClass(AArch64::PPRRegClassID).contains(Reg)) &&
+      NumRegs > 1 && Stride == 1 &&
+      // Do not print the range when the last register is lower than the first.
+      // Because it is a wrap-around register.
+      Reg < getNextVectorRegister(Reg, NumRegs - 1)) {
+    printRegName(O, Reg);
+    O << LayoutSuffix;
+    if (NumRegs > 1) {
+      // Set of two sve registers should be separated by ','
+      StringRef split_char = NumRegs == 2 ? ", " : " - ";
+      O << split_char;
+      printRegName(O, (getNextVectorRegister(Reg, NumRegs - 1)));
+      O << LayoutSuffix;
+    }
+  } else {
+    for (unsigned i = 0; i < NumRegs;
+         ++i, Reg = getNextVectorRegister(Reg, Stride)) {
+      // wrap-around sve register
+      if (MRI.getRegClass(AArch64::ZPRRegClassID).contains(Reg) ||
+          MRI.getRegClass(AArch64::PPRRegClassID).contains(Reg))
+        printRegName(O, Reg);
+      else
+        printRegName(O, Reg, AArch64::vreg);
+      O << LayoutSuffix;
+      if (i + 1 != NumRegs)
+        O << ", ";
+    }
   }
-
   O << " }";
 }
 
@@ -1468,10 +1719,11 @@ void AArch64InstPrinter::printTypedVectorList(const MCInst *MI, unsigned OpNum,
   printVectorList(MI, OpNum, STI, O, Suffix);
 }
 
+template <unsigned Scale>
 void AArch64InstPrinter::printVectorIndex(const MCInst *MI, unsigned OpNum,
                                           const MCSubtargetInfo &STI,
                                           raw_ostream &O) {
-  O << "[" << MI->getOperand(OpNum).getImm() << "]";
+  O << "[" << Scale * MI->getOperand(OpNum).getImm() << "]";
 }
 
 void AArch64InstPrinter::printMatrixIndex(const MCInst *MI, unsigned OpNum,
@@ -1504,7 +1756,7 @@ void AArch64InstPrinter::printAlignedLabel(const MCInst *MI, uint64_t Address,
       dyn_cast<MCConstantExpr>(MI->getOperand(OpNum).getExpr());
   int64_t TargetAddress;
   if (BranchTarget && BranchTarget->evaluateAsAbsolute(TargetAddress)) {
-    O << formatHex(TargetAddress);
+    O << formatHex((uint64_t)TargetAddress);
   } else {
     // Otherwise, just print the expression.
     MI->getOperand(OpNum).getExpr()->print(O, &MAI);
@@ -1687,6 +1939,21 @@ void AArch64InstPrinter::printSVEPattern(const MCInst *MI, unsigned OpNum,
     O << markup("<imm:") << '#' << formatImm(Val) << markup(">");
 }
 
+void AArch64InstPrinter::printSVEVecLenSpecifier(const MCInst *MI,
+                                                 unsigned OpNum,
+                                                 const MCSubtargetInfo &STI,
+                                                 raw_ostream &O) {
+  unsigned Val = MI->getOperand(OpNum).getImm();
+  // Pattern has only 1 bit
+  if (Val > 1)
+    llvm_unreachable("Invalid vector length specifier");
+  if (auto Pat =
+          AArch64SVEVecLenSpecifier::lookupSVEVECLENSPECIFIERByEncoding(Val))
+    O << Pat->Name;
+  else
+    llvm_unreachable("Invalid vector length specifier");
+}
+
 template <char suffix>
 void AArch64InstPrinter::printSVERegOp(const MCInst *MI, unsigned OpNum,
                                        const MCSubtargetInfo &STI,
@@ -1811,4 +2078,13 @@ void AArch64InstPrinter::printGPR64x8(const MCInst *MI, unsigned OpNum,
                                       raw_ostream &O) {
   unsigned Reg = MI->getOperand(OpNum).getReg();
   printRegName(O, MRI.getSubReg(Reg, AArch64::x8sub_0));
+}
+
+void AArch64InstPrinter::printSyspXzrPair(const MCInst *MI, unsigned OpNum,
+                                          const MCSubtargetInfo &STI,
+                                          raw_ostream &O) {
+  unsigned Reg = MI->getOperand(OpNum).getReg();
+  assert(Reg == AArch64::XZR &&
+         "MC representation of SyspXzrPair should be XZR");
+  O << getRegisterName(Reg) << ", " << getRegisterName(Reg);
 }
