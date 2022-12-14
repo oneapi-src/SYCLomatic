@@ -1214,10 +1214,10 @@ inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createMathAPIRewriterDeviceImpl(
     const std::string &NAME, std::function<bool(const CallExpr *)> PerfPred,
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
-        &&DEVICE_PERF,
+        DEVICE_PERF,
     std::vector<
         std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
-        DEVICE_NODES) { // &&?
+        DEVICE_NODES) {
   bool CanUseStdLibdevice = math::isStdLibdevice() && !(DEVICE_NODES[1].second);
   bool CanUseMathLibdevice =
       math::isMathLibdevice() && !(DEVICE_NODES[2].second);
@@ -1228,13 +1228,16 @@ createMathAPIRewriterDeviceImpl(
                                     std::move(DEVICE_PERF),
                                     std::move(DEVICE_NODES[2]));
   } else if (CanUseStdLibdevice) {
-    return createConditionalFactory(math::IsPerf, std::move(DEVICE_PERF),
+    return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
+                                    std::move(DEVICE_PERF),
                                     std::move(DEVICE_NODES[1]));
   } else if (CanUseTestedStdDevice) {
-    return createConditionalFactory(math::IsPerf, std::move(DEVICE_PERF),
+    return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
+                                    std::move(DEVICE_PERF),
                                     std::move(DEVICE_NODES[3]));
   } else {
-    return createConditionalFactory(math::IsPerf, std::move(DEVICE_PERF),
+    return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
+                                    std::move(DEVICE_PERF),
                                     std::move(DEVICE_NODES[0]));
   }
 }
@@ -1244,7 +1247,7 @@ createMathAPIRewriterDeviceImpl(
     const std::string &NAME,
     std::vector<
         std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
-        DEVICE_NODES) { // &&?
+        DEVICE_NODES) {
   bool CanUseStdLibdevice = math::isStdLibdevice() && !(DEVICE_NODES[1].second);
   bool CanUseMathLibdevice =
       math::isMathLibdevice() && !(DEVICE_NODES[2].second);
@@ -1268,15 +1271,15 @@ createMathAPIRewriterDevice(
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         &&DEVICE_PERF,
     T,
-    std::vector<
+    const std::vector<
         std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
-        DEVICE_NODES) { // &&?
+        &DEVICE_NODES) {
   return createConditionalFactory(
       math::IsPureDevice,
       createConditionalFactory(
           math::IsDefinedInCUDA(),
-          std::move(createMathAPIRewriterDeviceImpl(
-              NAME, PerfPred, std::move(DEVICE_PERF), DEVICE_NODES)),
+          std::move(createMathAPIRewriterDeviceImpl(NAME, PerfPred, DEVICE_PERF,
+                                                    DEVICE_NODES)),
           {NAME,
            std::make_shared<NoRewriteFuncNameRewriterFactory>(NAME, NAME)}),
       createConditionalFactory(
@@ -1284,17 +1287,17 @@ createMathAPIRewriterDevice(
           createConditionalFactory(
               math::IsDefinedInCUDA(),
               std::move(createMathAPIRewriterDeviceImpl(
-                  NAME, PerfPred, std::move(DEVICE_PERF), DEVICE_NODES)),
+                  NAME, PerfPred, DEVICE_PERF, DEVICE_NODES)),
               {NAME,
                std::make_shared<NoRewriteFuncNameRewriterFactory>(NAME, NAME)}),
           createConditionalFactory(
               math::IsUnresolvedLookupExpr,
               std::move(createMathAPIRewriterDeviceImpl(
-                  NAME, PerfPred, std::move(DEVICE_PERF), DEVICE_NODES)),
+                  NAME, PerfPred, DEVICE_PERF, DEVICE_NODES)),
               createConditionalFactory(
                   math::IsDefinedInCUDA(),
                   std::move(createMathAPIRewriterDeviceImpl(
-                      NAME, PerfPred, std::move(DEVICE_PERF), DEVICE_NODES)),
+                      NAME, PerfPred, DEVICE_PERF, DEVICE_NODES)),
                   {NAME, std::make_shared<NoRewriteFuncNameRewriterFactory>(
                              NAME, NAME)}))));
 }
@@ -1302,9 +1305,9 @@ createMathAPIRewriterDevice(
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createMathAPIRewriterDevice(
     const std::string &NAME,
-    std::vector<
+    const std::vector<
         std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
-        DEVICE_NODES) { // &&?
+        &DEVICE_NODES) {
   return createConditionalFactory(
       math::IsPureDevice,
       createConditionalFactory(
@@ -1359,9 +1362,8 @@ createMathAPIRewriterHost(
       {NAME, std::make_shared<NoRewriteFuncNameRewriterFactory>(NAME, NAME)});
 }
 
-#define EMPTY_FACTORY_ENTRY                                                    \
-  std::make_pair(std::string(""),                                              \
-                 std::shared_ptr<CallExprRewriterFactoryBase>(nullptr))
+#define EMPTY_FACTORY_ENTRY(NAME)                                              \
+  std::make_pair(NAME, std::shared_ptr<CallExprRewriterFactoryBase>(nullptr))
 
 #define MATH_API_REWRITER_DEVICE_1(NAME, PerfPred, DEVICE_PERF, ...)           \
   createMathAPIRewriterDevice(NAME, PerfPred, DEVICE_PERF 0, __VA_ARGS__),

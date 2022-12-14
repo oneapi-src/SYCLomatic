@@ -124,12 +124,12 @@ MATH_API_REWRITER_HOST_DEVICE(
                 CALL_FACTORY_ENTRY(
                     "pow", CALL(MapNames::getClNamespace(false, true) + "pow<double>",
                                    ARG(0), ARG(1))))
-            EMPTY_FACTORY_ENTRY,
+            EMPTY_FACTORY_ENTRY("pow"),
             CALL_FACTORY_ENTRY(
                 "pow", CALL(MapNames::getClNamespace(false, true) +
                                    "ext::intel::math::pow",
                                ARG(0), ARG(1)))
-            EMPTY_FACTORY_ENTRY
+            EMPTY_FACTORY_ENTRY("pow")
         }
     )
 )
@@ -170,12 +170,12 @@ MATH_API_REWRITER_HOST_DEVICE(
                 CALL_FACTORY_ENTRY(
                     "powf", CALL(MapNames::getClNamespace(false, true) + "pow<float>",
                                    ARG(0), ARG(1))))
-            EMPTY_FACTORY_ENTRY,
+            EMPTY_FACTORY_ENTRY("powf"),
             CALL_FACTORY_ENTRY(
                 "powf", CALL(MapNames::getClNamespace(false, true) +
                                    "ext::intel::math::powf",
                                ARG(0), ARG(1)))
-            EMPTY_FACTORY_ENTRY
+            EMPTY_FACTORY_ENTRY("powf")
         }
     )
 )
@@ -197,11 +197,11 @@ MATH_API_REWRITER_DEVICE_1(
             CALL_FACTORY_ENTRY(
                 "__powf", CALL(MapNames::getClNamespace(false, true) + "pow<float>",
                                ARG(0), ARG(1))))
-        EMPTY_FACTORY_ENTRY,
+        EMPTY_FACTORY_ENTRY("__powf"),
         CALL_FACTORY_ENTRY(
             "__powf", CALL(MapNames::getClNamespace(false, true) +
                                "ext::intel::math::powf",
                            ARG(0), ARG(1)))
-        EMPTY_FACTORY_ENTRY
+        EMPTY_FACTORY_ENTRY("__powf")
     }
 )
