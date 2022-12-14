@@ -3941,13 +3941,13 @@ std::string getArgTypeStr(const CallExpr *CE, unsigned int Idx) {
 std::string getFunctionName(const clang::FunctionDecl *Node) {
   std::string FunctionName;
   llvm::raw_string_ostream OS(FunctionName);
+  auto PP = dpct::DpctGlobalInfo::getContext().getPrintingPolicy();
   if (const auto *CMD = dyn_cast<clang::CXXMethodDecl>(Node)) {
     const CXXRecordDecl *CRD = CMD->getParent();
-    CRD->printName(OS);
+    CRD->printName(OS, PP);
     OS << "::";
   }
-  Node->getNameInfo().printName(
-      OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
+  Node->getNameInfo().printName(OS, PP);
   OS.flush();
   return FunctionName;
 }

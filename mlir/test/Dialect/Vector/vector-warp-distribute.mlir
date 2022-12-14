@@ -73,7 +73,7 @@ func.func @rewrite_warp_op_to_scf_if(%laneid: index,
 //     CHECK-D:   vector.yield %{{.*}}, %{{.*}} : vector<64xf32>, vector<32xf32>
 // CHECK-D-DAG: vector.transfer_write %[[R]]#1, %{{.*}}[%{{.*}}] {in_bounds = [true]} : vector<1xf32>, memref<128xf32
 // CHECK-D-DAG: %[[ID1:.*]] = affine.apply #[[MAP1]]()[%{{.*}}]
-// CHECK-D-DAG: vector.transfer_write %[[R]]#0, %2[%[[ID1]]] {in_bounds = [true]} : vector<2xf32>, memref<128xf32
+// CHECK-D-DAG: vector.transfer_write %[[R]]#0, %{{.*}}[%[[ID1]]] {in_bounds = [true]} : vector<2xf32>, memref<128xf32
 
 // CHECK-DIST-AND-PROP-NOT: vector.warp_execute_on_lane_0
 // CHECK-DIST-AND-PROP: vector.transfer_read {{.*}} vector<1xf32>
@@ -85,24 +85,23 @@ func.func @rewrite_warp_op_to_scf_if(%laneid: index,
 // CHECK-DIST-AND-PROP: vector.transfer_write {{.*}} : vector<1xf32>
 // CHECK-DIST-AND-PROP: vector.transfer_write {{.*}} : vector<2xf32>
 
-#map0 =  affine_map<(d0)[s0] -> (d0 + s0)>
 func.func @warp(%laneid: index, %arg1: memref<1024xf32>, %arg2: memref<1024xf32>,
            %arg3: memref<1024xf32>, %gid : index) {
   vector.warp_execute_on_lane_0(%laneid)[32] {
-    %sa = memref.subview %arg1[%gid] [128] [1] : memref<1024xf32> to memref<128xf32, #map0>
-    %sb = memref.subview %arg2[%gid] [128] [1] : memref<1024xf32> to memref<128xf32, #map0>
-    %sc = memref.subview %arg3[%gid] [128] [1] : memref<1024xf32> to memref<128xf32, #map0>
+    %sa = memref.subview %arg1[%gid] [128] [1] : memref<1024xf32> to memref<128xf32, strided<[1], offset: ?>>
+    %sb = memref.subview %arg2[%gid] [128] [1] : memref<1024xf32> to memref<128xf32, strided<[1], offset: ?>>
+    %sc = memref.subview %arg3[%gid] [128] [1] : memref<1024xf32> to memref<128xf32, strided<[1], offset: ?>>
     %c0 = arith.constant 0 : index
     %c32 = arith.constant 32 : index
     %cst = arith.constant 0.000000e+00 : f32
-    %2 = vector.transfer_read %sa[%c0], %cst : memref<128xf32, #map0>, vector<32xf32>
-    %3 = vector.transfer_read %sa[%c32], %cst : memref<128xf32, #map0>, vector<32xf32>
-    %4 = vector.transfer_read %sb[%c0], %cst : memref<128xf32, #map0>, vector<64xf32>
-    %5 = vector.transfer_read %sb[%c32], %cst : memref<128xf32, #map0>, vector<64xf32>
+    %2 = vector.transfer_read %sa[%c0], %cst : memref<128xf32, strided<[1], offset: ?>>, vector<32xf32>
+    %3 = vector.transfer_read %sa[%c32], %cst : memref<128xf32, strided<[1], offset: ?>>, vector<32xf32>
+    %4 = vector.transfer_read %sb[%c0], %cst : memref<128xf32, strided<[1], offset: ?>>, vector<64xf32>
+    %5 = vector.transfer_read %sb[%c32], %cst : memref<128xf32, strided<[1], offset: ?>>, vector<64xf32>
     %6 = arith.addf %2, %3 : vector<32xf32>
     %7 = arith.addf %4, %5 : vector<64xf32>
-    vector.transfer_write %6, %sc[%c0] : vector<32xf32>, memref<128xf32, #map0>
-    vector.transfer_write %7, %sc[%c32] : vector<64xf32>, memref<128xf32, #map0>
+    vector.transfer_write %6, %sc[%c0] : vector<32xf32>, memref<128xf32, strided<[1], offset: ?>>
+    vector.transfer_write %7, %sc[%c32] : vector<64xf32>, memref<128xf32, strided<[1], offset: ?>>
   }
   return
 }
@@ -340,6 +339,40 @@ func.func @warp_scf_for(%arg0: index) {
     %ini = "some_def"() : () -> (vector<128xf32>)
     %3 = scf.for %arg3 = %c0 to %c128 step %c1 iter_args(%arg4 = %ini) -> (vector<128xf32>) {
       %acc = "some_def"(%arg4) : (vector<128xf32>) -> (vector<128xf32>)
+      scf.yield %acc : vector<128xf32>
+    }
+    vector.yield %3 : vector<128xf32>
+  }
+  "some_use"(%0) : (vector<4xf32>) -> ()
+  return
+}
+
+// -----
+
+// CHECK-PROP-LABEL:   func @warp_scf_for_use_from_above(
+// CHECK-PROP: %[[INI:.*]]:2 = vector.warp_execute_on_lane_0(%{{.*}})[32] -> (vector<4xf32>, vector<4xf32>) {
+// CHECK-PROP:   %[[INI1:.*]] = "some_def"() : () -> vector<128xf32>
+// CHECK-PROP:   %[[USE:.*]] = "some_def_above"() : () -> vector<128xf32>
+// CHECK-PROP:   vector.yield %[[INI1]], %[[USE]] : vector<128xf32>, vector<128xf32>
+// CHECK-PROP: }
+// CHECK-PROP: %[[F:.*]] = scf.for %{{.*}} = %{{.*}} to %{{.*}} step %{{.*}} iter_args(%[[FARG:.*]] = %[[INI]]#0) -> (vector<4xf32>) {
+// CHECK-PROP:   %[[W:.*]] = vector.warp_execute_on_lane_0(%{{.*}})[32] args(%[[FARG]], %[[INI]]#1 : vector<4xf32>, vector<4xf32>) -> (vector<4xf32>) {
+// CHECK-PROP:    ^bb0(%[[ARG0:.*]]: vector<128xf32>, %[[ARG1:.*]]: vector<128xf32>):
+// CHECK-PROP:      %[[ACC:.*]] = "some_def"(%[[ARG0]], %[[ARG1]]) : (vector<128xf32>, vector<128xf32>) -> vector<128xf32>
+// CHECK-PROP:      vector.yield %[[ACC]] : vector<128xf32>
+// CHECK-PROP:   }
+// CHECK-PROP:   scf.yield %[[W]] : vector<4xf32>
+// CHECK-PROP: }
+// CHECK-PROP: "some_use"(%[[F]]) : (vector<4xf32>) -> ()
+func.func @warp_scf_for_use_from_above(%arg0: index) {
+  %c128 = arith.constant 128 : index
+  %c1 = arith.constant 1 : index
+  %c0 = arith.constant 0 : index
+  %0 = vector.warp_execute_on_lane_0(%arg0)[32] -> (vector<4xf32>) {
+    %ini = "some_def"() : () -> (vector<128xf32>)
+    %use_from_above = "some_def_above"() : () -> (vector<128xf32>)
+    %3 = scf.for %arg3 = %c0 to %c128 step %c1 iter_args(%arg4 = %ini) -> (vector<128xf32>) {
+      %acc = "some_def"(%arg4, %use_from_above) : (vector<128xf32>, vector<128xf32>) -> (vector<128xf32>)
       scf.yield %acc : vector<128xf32>
     }
     vector.yield %3 : vector<128xf32>
@@ -633,12 +666,56 @@ func.func @vector_extract_simple(%laneid: index) -> (f32) {
 
 // -----
 
+// CHECK-PROP-LABEL: func.func @vector_extractelement_0d(
+//       CHECK-PROP:   %[[R:.*]] = vector.warp_execute_on_lane_0(%{{.*}})[32] -> (vector<f32>) {
+//       CHECK-PROP:     %[[V:.*]] = "some_def"() : () -> vector<f32>
+//       CHECK-PROP:     vector.yield %[[V]] : vector<f32>
+//       CHECK-PROP:   }
+//       CHECK-PROP:   %[[E:.*]] = vector.extractelement %[[R]][] : vector<f32>
+//       CHECK-PROP:   return %[[E]] : f32
+func.func @vector_extractelement_0d(%laneid: index) -> (f32) {
+  %r = vector.warp_execute_on_lane_0(%laneid)[32] -> (f32) {
+    %0 = "some_def"() : () -> (vector<f32>)
+    %1 = vector.extractelement %0[] : vector<f32>
+    vector.yield %1 : f32
+  }
+  return %r : f32
+}
+
+// -----
+
+//       CHECK-PROP: #[[$map:.*]] = affine_map<()[s0] -> (s0 ceildiv 3)>
+//       CHECK-PROP: #[[$map1:.*]] = affine_map<()[s0] -> (s0 mod 3)>
+// CHECK-PROP-LABEL: func.func @vector_extractelement_1d(
+//  CHECK-PROP-SAME:     %[[LANEID:.*]]: index, %[[POS:.*]]: index
+//   CHECK-PROP-DAG:   %[[C32:.*]] = arith.constant 32 : i32
+//       CHECK-PROP:   %[[W:.*]] = vector.warp_execute_on_lane_0(%{{.*}})[32] -> (vector<3xf32>) {
+//       CHECK-PROP:     %[[V:.*]] = "some_def"
+//       CHECK-PROP:     vector.yield %[[V]] : vector<96xf32>
+//       CHECK-PROP:   }
+//       CHECK-PROP:   %[[FROM_LANE:.*]] = affine.apply #[[$map]]()[%[[POS]]]
+//       CHECK-PROP:   %[[DISTR_POS:.*]] = affine.apply #[[$map1]]()[%[[POS]]]
+//       CHECK-PROP:   %[[EXTRACTED:.*]] = vector.extractelement %[[W]][%[[DISTR_POS]] : index] : vector<3xf32>
+//       CHECK-PROP:   %[[FROM_LANE_I32:.*]] = arith.index_cast %[[FROM_LANE]] : index to i32
+//       CHECK-PROP:   %[[SHUFFLED:.*]], %{{.*}} = gpu.shuffle  idx %[[EXTRACTED]], %[[FROM_LANE_I32]], %[[C32]] : f32
+//       CHECK-PROP:   return %[[SHUFFLED]]
+func.func @vector_extractelement_1d(%laneid: index, %pos: index) -> (f32) {
+  %r = vector.warp_execute_on_lane_0(%laneid)[32] -> (f32) {
+    %0 = "some_def"() : () -> (vector<96xf32>)
+    %1 = vector.extractelement %0[%pos : index] : vector<96xf32>
+    vector.yield %1 : f32
+  }
+  return %r : f32
+}
+
+// -----
+
 // CHECK-PROP:   func @lane_dependent_warp_propagate_read
 //  CHECK-PROP-SAME:   %[[ID:.*]]: index
 func.func @lane_dependent_warp_propagate_read(
     %laneid: index, %src: memref<1x1024xf32>, %dest: memref<1x1024xf32>) {
   // CHECK-PROP-DAG: %[[C0:.*]] = arith.constant 0 : index
-  // CHECK-PROP-NOT: lane_dependent_warp_propagate_read
+  // CHECK-PROP-NOT: vector.warp_execute_on_lane_0
   // CHECK-PROP-DAG: %[[R0:.*]] = vector.transfer_read %arg1[%[[C0]], %[[ID]]], %{{.*}} : memref<1x1024xf32>, vector<1x1xf32>
   // CHECK-PROP: vector.transfer_write %[[R0]], {{.*}} : vector<1x1xf32>, memref<1x1024xf32>
   %c0 = arith.constant 0 : index
@@ -649,4 +726,130 @@ func.func @lane_dependent_warp_propagate_read(
   }
   vector.transfer_write %r, %dest[%c0, %laneid] : vector<1x1xf32>, memref<1x1024xf32>
   return
+}
+
+// -----
+
+// CHECK-PROP:   func @dont_duplicate_read
+func.func @dont_duplicate_read(
+  %laneid: index, %src: memref<1024xf32>) -> vector<1xf32> {
+  %c0 = arith.constant 0 : index
+  %cst = arith.constant 0.000000e+00 : f32
+//       CHECK-PROP:   vector.warp_execute_on_lane_0(%{{.*}})[32] -> (vector<1xf32>) {
+//  CHECK-PROP-NEXT:     vector.transfer_read
+//  CHECK-PROP-NEXT:     "blocking_use"
+//  CHECK-PROP-NEXT:     vector.yield
+  %r = vector.warp_execute_on_lane_0(%laneid)[32] -> (vector<1xf32>) {
+    %2 = vector.transfer_read %src[%c0], %cst : memref<1024xf32>, vector<32xf32>
+    "blocking_use"(%2) : (vector<32xf32>) -> ()
+    vector.yield %2 : vector<32xf32>
+  }
+  return %r : vector<1xf32>
+}
+
+// -----
+
+// CHECK-PROP:   func @dedup
+func.func @dedup(%laneid: index, %v0: vector<4xf32>, %v1: vector<4xf32>)
+    -> (vector<1xf32>, vector<1xf32>) {
+
+  // CHECK-PROP: %[[SINGLE_RES:.*]] = vector.warp_execute_on_lane_0{{.*}} -> (vector<1xf32>) {
+  %r:2 = vector.warp_execute_on_lane_0(%laneid)[32]
+      args(%v0, %v1 : vector<4xf32>, vector<4xf32>) -> (vector<1xf32>, vector<1xf32>) {
+    ^bb0(%arg0: vector<128xf32>, %arg1: vector<128xf32>):
+
+    // CHECK-PROP: %[[SINGLE_VAL:.*]] = "some_def"(%{{.*}}) : (vector<128xf32>) -> vector<32xf32>
+    %2 = "some_def"(%arg0) : (vector<128xf32>) -> vector<32xf32>
+
+    // CHECK-PROP: vector.yield %[[SINGLE_VAL]] : vector<32xf32>
+    vector.yield %2, %2 : vector<32xf32>, vector<32xf32>
+  }
+
+  // CHECK-PROP: return %[[SINGLE_RES]], %[[SINGLE_RES]] : vector<1xf32>, vector<1xf32>
+  return %r#0, %r#1 : vector<1xf32>, vector<1xf32>
+}
+
+// -----
+
+// CHECK-SCF-IF:   func @warp_execute_has_broadcast_semantics
+func.func @warp_execute_has_broadcast_semantics(%laneid: index, %s0: f32, %v0: vector<f32>, %v1: vector<1xf32>, %v2: vector<1x1xf32>)
+    -> (f32, vector<f32>, vector<1xf32>, vector<1x1xf32>) {
+  // CHECK-SCF-IF-DAG: %[[C0:.*]] = arith.constant 0 : index
+
+  // CHECK-SCF-IF: scf.if{{.*}}{
+  %r:4 = vector.warp_execute_on_lane_0(%laneid)[32]
+      args(%s0, %v0, %v1, %v2 : f32, vector<f32>, vector<1xf32>, vector<1x1xf32>) -> (f32, vector<f32>, vector<1xf32>, vector<1x1xf32>) {
+    ^bb0(%bs0: f32, %bv0: vector<f32>, %bv1: vector<1xf32>, %bv2: vector<1x1xf32>):
+
+      // CHECK-SCF-IF: vector.transfer_read {{.*}}[%[[C0]], %[[C0]]]{{.*}} {in_bounds = [true, true]} : memref<1x1xf32, 3>, vector<1x1xf32>
+      // CHECK-SCF-IF: vector.transfer_read {{.*}}[%[[C0]]]{{.*}} {in_bounds = [true]} : memref<1xf32, 3>, vector<1xf32>
+      // CHECK-SCF-IF: vector.transfer_read {{.*}}[]{{.*}} : memref<f32, 3>, vector<f32>
+      // CHECK-SCF-IF: memref.load {{.*}}[%[[C0]]] : memref<1xf32, 3>
+      // CHECK-SCF-IF: "some_def_0"(%{{.*}}) : (f32) -> f32
+      // CHECK-SCF-IF: "some_def_1"(%{{.*}}) : (vector<f32>) -> vector<f32>
+      // CHECK-SCF-IF: "some_def_1"(%{{.*}}) : (vector<1xf32>) -> vector<1xf32>
+      // CHECK-SCF-IF: "some_def_1"(%{{.*}}) : (vector<1x1xf32>) -> vector<1x1xf32>
+      // CHECK-SCF-IF: memref.store {{.*}}[%[[C0]]] : memref<1xf32, 3>
+      // CHECK-SCF-IF: vector.transfer_write {{.*}}[] : vector<f32>, memref<f32, 3>
+      // CHECK-SCF-IF: vector.transfer_write {{.*}}[%[[C0]]] {in_bounds = [true]} : vector<1xf32>, memref<1xf32, 3>
+      // CHECK-SCF-IF: vector.transfer_write {{.*}}[%[[C0]], %[[C0]]] {in_bounds = [true, true]} : vector<1x1xf32>, memref<1x1xf32, 3>
+
+      %rs0 = "some_def_0"(%bs0) : (f32) -> f32
+      %rv0 = "some_def_1"(%bv0) : (vector<f32>) -> vector<f32>
+      %rv1 = "some_def_1"(%bv1) : (vector<1xf32>) -> vector<1xf32>
+      %rv2 = "some_def_1"(%bv2) : (vector<1x1xf32>) -> vector<1x1xf32>
+
+      // CHECK-SCF-IF-NOT: vector.yield
+      vector.yield %rs0, %rv0, %rv1, %rv2 : f32, vector<f32>, vector<1xf32>, vector<1x1xf32>
+  }
+
+  // CHECK-SCF-IF: gpu.barrier
+  // CHECK-SCF-IF: %[[RV2:.*]] = vector.transfer_read {{.*}}[%[[C0]], %[[C0]]]{{.*}} {in_bounds = [true, true]} : memref<1x1xf32, 3>, vector<1x1xf32>
+  // CHECK-SCF-IF: %[[RV1:.*]] = vector.transfer_read {{.*}}[%[[C0]]]{{.*}} {in_bounds = [true]} : memref<1xf32, 3>, vector<1xf32>
+  // CHECK-SCF-IF: %[[RV0:.*]] = vector.transfer_read {{.*}}[]{{.*}} : memref<f32, 3>, vector<f32>
+  // CHECK-SCF-IF: %[[RS0:.*]] = memref.load {{.*}}[%[[C0]]] : memref<1xf32, 3>
+  // CHECK-SCF-IF: return %[[RS0]], %[[RV0]], %[[RV1]], %[[RV2]] : f32, vector<f32>, vector<1xf32>, vector<1x1xf32>
+  return %r#0, %r#1, %r#2, %r#3 : f32, vector<f32>, vector<1xf32>, vector<1x1xf32>
+}
+
+// -----
+
+// CHECK-SCF-IF-DAG: #[[$TIMES2:.*]] = affine_map<()[s0] -> (s0 * 2)>
+
+// CHECK-SCF-IF:   func @warp_execute_nd_distribute
+// CHECK-SCF-IF-SAME: (%[[LANEID:.*]]: index
+func.func @warp_execute_nd_distribute(%laneid: index, %v0: vector<1x64x1xf32>, %v1: vector<1x2x128xf32>)
+    -> (vector<1x64x1xf32>, vector<1x2x128xf32>) {
+  // CHECK-SCF-IF-DAG: %[[C0:.*]] = arith.constant 0 : index
+
+  // CHECK-SCF-IF:  vector.transfer_write %{{.*}}, %{{.*}}[%[[LANEID]], %c0, %c0] {in_bounds = [true, true, true]} : vector<1x64x1xf32>, memref<32x64x1xf32, 3>
+  // CHECK-SCF-IF:  %[[RID:.*]] = affine.apply #[[$TIMES2]]()[%[[LANEID]]]
+  // CHECK-SCF-IF:  vector.transfer_write %{{.*}}, %{{.*}}[%[[C0]], %[[RID]], %[[C0]]] {in_bounds = [true, true, true]} : vector<1x2x128xf32>, memref<1x64x128xf32, 3>
+  // CHECK-SCF-IF:  gpu.barrier
+
+  // CHECK-SCF-IF: scf.if{{.*}}{
+  %r:2 = vector.warp_execute_on_lane_0(%laneid)[32]
+      args(%v0, %v1 : vector<1x64x1xf32>, vector<1x2x128xf32>) -> (vector<1x64x1xf32>, vector<1x2x128xf32>) {
+    ^bb0(%arg0: vector<32x64x1xf32>, %arg1: vector<1x64x128xf32>):
+
+  // CHECK-SCF-IF-DAG: %[[SR0:.*]] = vector.transfer_read %{{.*}}[%[[C0]], %[[C0]], %[[C0]]], %{{.*}} {in_bounds = [true, true, true]} : memref<32x64x1xf32, 3>, vector<32x64x1xf32>
+  // CHECK-SCF-IF-DAG: %[[SR1:.*]] = vector.transfer_read %{{.*}}[%[[C0]], %[[C0]], %[[C0]]], %{{.*}} {in_bounds = [true, true, true]} : memref<1x64x128xf32, 3>, vector<1x64x128xf32>
+  //     CHECK-SCF-IF: %[[W0:.*]] = "some_def_0"(%[[SR0]]) : (vector<32x64x1xf32>) -> vector<32x64x1xf32>
+  //     CHECK-SCF-IF: %[[W1:.*]] = "some_def_1"(%[[SR1]]) : (vector<1x64x128xf32>) -> vector<1x64x128xf32>
+  // CHECK-SCF-IF-DAG: vector.transfer_write %[[W0]], %{{.*}}[%[[C0]], %[[C0]], %[[C0]]] {in_bounds = [true, true, true]} : vector<32x64x1xf32>, memref<32x64x1xf32, 3>
+  // CHECK-SCF-IF-DAG: vector.transfer_write %[[W1]], %{{.*}}[%[[C0]], %[[C0]], %[[C0]]] {in_bounds = [true, true, true]} : vector<1x64x128xf32>, memref<1x64x128xf32, 3>
+
+      %r0 = "some_def_0"(%arg0) : (vector<32x64x1xf32>) -> vector<32x64x1xf32>
+      %r1 = "some_def_1"(%arg1) : (vector<1x64x128xf32>) -> vector<1x64x128xf32>
+
+      // CHECK-SCF-IF-NOT: vector.yield
+      vector.yield %r0, %r1 : vector<32x64x1xf32>, vector<1x64x128xf32>
+  }
+
+  //     CHECK-SCF-IF: gpu.barrier
+  //     CHECK-SCF-IF: %[[WID:.*]] = affine.apply #[[$TIMES2]]()[%[[LANEID]]]
+  // CHECK-SCF-IF-DAG: %[[R0:.*]] = vector.transfer_read %{{.*}}[%[[LANEID]], %[[C0]], %[[C0]]], %cst {in_bounds = [true, true, true]} : memref<32x64x1xf32, 3>, vector<1x64x1xf32>
+  // CHECK-SCF-IF-DAG: %[[R1:.*]] = vector.transfer_read %{{.*}}[%[[C0]], %[[WID]], %[[C0]]], %cst {in_bounds = [true, true, true]} : memref<1x64x128xf32, 3>, vector<1x2x128xf32>
+  //     CHECK-SCF-IF: return %[[R0]], %[[R1]] : vector<1x64x1xf32>, vector<1x2x128xf32>
+  return %r#0, %r#1 : vector<1x64x1xf32>, vector<1x2x128xf32>
 }

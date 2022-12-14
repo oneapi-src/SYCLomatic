@@ -159,7 +159,7 @@ struct ProgramPoint
   ProgramPoint(ParentTy point = nullptr) : ParentTy(point) {}
   /// Allow implicit conversions from operation wrappers.
   /// TODO: For Windows only. Find a better solution.
-  template <typename OpT, typename = typename std::enable_if_t<
+  template <typename OpT, typename = std::enable_if_t<
                               std::is_convertible<OpT, Operation *>::value &&
                               !std::is_same<OpT, Operation *>::value>>
   ProgramPoint(OpT op) : ParentTy(op) {}
@@ -290,9 +290,6 @@ public:
 
   /// Returns the program point this static is located at.
   ProgramPoint getPoint() const { return point; }
-
-  /// Returns true if the analysis state is uninitialized.
-  virtual bool isUninitialized() const = 0;
 
   /// Print the contents of the analysis state.
   virtual void print(raw_ostream &os) const = 0;

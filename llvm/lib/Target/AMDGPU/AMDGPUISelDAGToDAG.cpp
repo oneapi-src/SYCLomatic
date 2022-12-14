@@ -43,7 +43,6 @@ using namespace llvm;
 //===----------------------------------------------------------------------===//
 
 namespace {
-
 static SDValue stripBitcast(SDValue Val) {
   return Val.getOpcode() == ISD::BITCAST ? Val.getOperand(0) : Val;
 }
@@ -96,7 +95,7 @@ static SDValue stripExtractLoElt(SDValue In) {
   return In;
 }
 
-}  // end anonymous namespace
+} // end anonymous namespace
 
 INITIALIZE_PASS_BEGIN(AMDGPUDAGToDAGISel, "amdgpu-isel",
                       "AMDGPU DAG->DAG Pattern Instruction Selection", false, false)
@@ -315,17 +314,6 @@ void AMDGPUDAGToDAGISel::PreprocessISelDAG() {
     LLVM_DEBUG(dbgs() << "After PreProcess:\n";
                CurDAG->dump(););
   }
-}
-
-bool AMDGPUDAGToDAGISel::isNoNanSrc(SDValue N) const {
-  if (TM.Options.NoNaNsFPMath)
-    return true;
-
-  // TODO: Move into isKnownNeverNaN
-  if (N->getFlags().hasNoNaNs())
-    return true;
-
-  return CurDAG->isKnownNeverNaN(N);
 }
 
 bool AMDGPUDAGToDAGISel::isInlineImmediate(const SDNode *N,
@@ -1009,7 +997,7 @@ void AMDGPUDAGToDAGISel::SelectMAD_64_32(SDNode *N) {
   SDLoc SL(N);
   bool Signed = N->getOpcode() == AMDGPUISD::MAD_I64_I32;
   unsigned Opc;
-  if (Subtarget->getGeneration() == AMDGPUSubtarget::GFX11)
+  if (Subtarget->hasMADIntraFwdBug())
     Opc = Signed ? AMDGPU::V_MAD_I64_I32_gfx11_e64
                  : AMDGPU::V_MAD_U64_U32_gfx11_e64;
   else
@@ -1027,7 +1015,7 @@ void AMDGPUDAGToDAGISel::SelectMUL_LOHI(SDNode *N) {
   SDLoc SL(N);
   bool Signed = N->getOpcode() == ISD::SMUL_LOHI;
   unsigned Opc;
-  if (Subtarget->getGeneration() == AMDGPUSubtarget::GFX11)
+  if (Subtarget->hasMADIntraFwdBug())
     Opc = Signed ? AMDGPU::V_MAD_I64_I32_gfx11_e64
                  : AMDGPU::V_MAD_U64_U32_gfx11_e64;
   else
@@ -2380,6 +2368,19 @@ void AMDGPUDAGToDAGISel::SelectDSAppendConsume(SDNode *N, unsigned IntrID) {
   CurDAG->setNodeMemRefs(cast<MachineSDNode>(Selected), {MMO});
 }
 
+// We need to handle this here because tablegen doesn't support matching
+// instructions with multiple outputs.
+void AMDGPUDAGToDAGISel::SelectDSBvhStackIntrinsic(SDNode *N) {
+  unsigned Opc = AMDGPU::DS_BVH_STACK_RTN_B32;
+  SDValue Ops[] = {N->getOperand(2), N->getOperand(3), N->getOperand(4),
+                   N->getOperand(5), N->getOperand(0)};
+
+  MemIntrinsicSDNode *M = cast<MemIntrinsicSDNode>(N);
+  MachineMemOperand *MMO = M->getMemOperand();
+  SDNode *Selected = CurDAG->SelectNodeTo(N, Opc, N->getVTList(), Ops);
+  CurDAG->setNodeMemRefs(cast<MachineSDNode>(Selected), {MMO});
+}
+
 static unsigned gwsIntrinToOpcode(unsigned IntrID) {
   switch (IntrID) {
   case Intrinsic::amdgcn_ds_gws_init:
@@ -2532,6 +2533,9 @@ void AMDGPUDAGToDAGISel::SelectINTRINSIC_W_CHAIN(SDNode *N) {
     SelectDSAppendConsume(N, IntrID);
     return;
   }
+  case Intrinsic::amdgcn_ds_bvh_stack_rtn:
+    SelectDSBvhStackIntrinsic(N);
+    return;
   }
 
   SelectCode(N);
@@ -2628,7 +2632,7 @@ bool AMDGPUDAGToDAGISel::SelectVOP3BMods(SDValue In, SDValue &Src,
 bool AMDGPUDAGToDAGISel::SelectVOP3Mods_NNaN(SDValue In, SDValue &Src,
                                              SDValue &SrcMods) const {
   SelectVOP3Mods(In, Src, SrcMods);
-  return isNoNanSrc(Src);
+  return CurDAG->isKnownNeverNaN(Src);
 }
 
 bool AMDGPUDAGToDAGISel::SelectVOP3NoMods(SDValue In, SDValue &Src) const {
@@ -2704,7 +2708,7 @@ bool AMDGPUDAGToDAGISel::SelectVOP3PMods(SDValue In, SDValue &Src,
     Src = Src.getOperand(0);
   }
 
-  if (Src.getOpcode() == ISD::BUILD_VECTOR &&
+  if (Src.getOpcode() == ISD::BUILD_VECTOR && Src.getNumOperands() == 2 &&
       (!IsDOT || !Subtarget->hasDOTOpSelHazard())) {
     unsigned VecMods = Mods;
 

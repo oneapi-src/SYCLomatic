@@ -176,14 +176,12 @@ CudaVersion getCudaVersion(uint32_t raw_version) {
     return CudaVersion::CUDA_114;
   if (raw_version < 11060)
     return CudaVersion::CUDA_115;
-#ifdef SYCLomatic_CUSTOMIZATION
   if (raw_version < 11070)
     return CudaVersion::CUDA_116;
   if (raw_version < 11080)
     return CudaVersion::CUDA_117;
   if (raw_version < 11090)
     return CudaVersion::CUDA_118;
-#endif // SYCLomatic_CUSTOMIZATION
   return CudaVersion::NEW;
 }
 
@@ -192,7 +190,7 @@ CudaVersion parseCudaHFile(llvm::StringRef Input) {
   // None otherwise.
   auto StartsWithWords =
       [](llvm::StringRef Line,
-         const SmallVector<StringRef, 3> words) -> llvm::Optional<StringRef> {
+         const SmallVector<StringRef, 3> words) -> std::optional<StringRef> {
     for (StringRef word : words) {
       if (!Line.consume_front(word))
         return {};
@@ -877,6 +875,9 @@ void NVPTX::getNVPTXTargetFeatures(const Driver &D, const llvm::Triple &Triple,
   case CudaVersion::CUDA_##CUDA_VER:                                           \
     PtxFeature = "+ptx" #PTX_VER;                                              \
     break;
+    CASE_CUDA_VERSION(118, 78);
+    CASE_CUDA_VERSION(117, 77);
+    CASE_CUDA_VERSION(116, 76);
     CASE_CUDA_VERSION(115, 75);
     CASE_CUDA_VERSION(114, 74);
     CASE_CUDA_VERSION(113, 73);
@@ -930,8 +931,8 @@ std::string CudaToolChain::getInputFilename(const InputInfo &Input) const {
 // Windows
 static const char *getLibSpirvTargetName(const ToolChain &HostTC) {
   if (HostTC.getTriple().isOSWindows())
-    return "remangled-l32-signed_char.libspirv-nvptx64--nvidiacl.bc";
-  return "remangled-l64-signed_char.libspirv-nvptx64--nvidiacl.bc";
+    return "remangled-l32-signed_char.libspirv-nvptx64-nvidia-cuda.bc";
+  return "remangled-l64-signed_char.libspirv-nvptx64-nvidia-cuda.bc";
 }
 
 void CudaToolChain::addClangTargetOptions(

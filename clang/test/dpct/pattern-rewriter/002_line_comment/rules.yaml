@@ -1,0 +1,9 @@
+- match: |+
+    if (${condition} != 0) {
+      ${body}
+    }
+  rewrite: |+
+    if (${condition}) {
+      ${body}
+    }
+    ${body}

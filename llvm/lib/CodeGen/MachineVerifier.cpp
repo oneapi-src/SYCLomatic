@@ -73,6 +73,7 @@
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/LowLevelTypeImpl.h"
 #include "llvm/Support/MathExtras.h"
+#include "llvm/Support/ModRef.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetMachine.h"
 #include <algorithm>
@@ -294,6 +295,7 @@ namespace {
 
     void getAnalysisUsage(AnalysisUsage &AU) const override {
       AU.addUsedIfAvailable<LiveStacks>();
+      AU.addUsedIfAvailable<LiveVariables>();
       AU.setPreservesAll();
       MachineFunctionPass::getAnalysisUsage(AU);
     }
@@ -1309,17 +1311,38 @@ void MachineVerifier::verifyPreISelGenericInstruction(const MachineInstr *MI) {
     break;
   }
   case TargetOpcode::G_UNMERGE_VALUES: {
+    unsigned NumDsts = MI->getNumOperands() - 1;
     LLT DstTy = MRI->getType(MI->getOperand(0).getReg());
-    LLT SrcTy = MRI->getType(MI->getOperand(MI->getNumOperands()-1).getReg());
-    // For now G_UNMERGE can split vectors.
-    for (unsigned i = 0; i < MI->getNumOperands()-1; ++i) {
-      if (MRI->getType(MI->getOperand(i).getReg()) != DstTy)
+    for (unsigned i = 1; i < NumDsts; ++i) {
+      if (MRI->getType(MI->getOperand(i).getReg()) != DstTy) {
         report("G_UNMERGE_VALUES destination types do not match", MI);
+        break;
+      }
     }
-    if (SrcTy.getSizeInBits() !=
-        (DstTy.getSizeInBits() * (MI->getNumOperands() - 1))) {
-      report("G_UNMERGE_VALUES source operand does not cover dest operands",
-             MI);
+
+    LLT SrcTy = MRI->getType(MI->getOperand(NumDsts).getReg());
+    if (DstTy.isVector()) {
+      // This case is the converse of G_CONCAT_VECTORS.
+      if (!SrcTy.isVector() || SrcTy.getScalarType() != DstTy.getScalarType() ||
+          SrcTy.getNumElements() != NumDsts * DstTy.getNumElements())
+        report("G_UNMERGE_VALUES source operand does not match vector "
+               "destination operands",
+               MI);
+    } else if (SrcTy.isVector()) {
+      // This case is the converse of G_BUILD_VECTOR, but relaxed to allow
+      // mismatched types as long as the total size matches:
+      //   %0:_(s64), %1:_(s64) = G_UNMERGE_VALUES %2:_(<4 x s32>)
+      if (SrcTy.getSizeInBits() != NumDsts * DstTy.getSizeInBits())
+        report("G_UNMERGE_VALUES vector source operand does not match scalar "
+               "destination operands",
+               MI);
+    } else {
+      // This case is the converse of G_MERGE_VALUES.
+      if (SrcTy.getSizeInBits() != NumDsts * DstTy.getSizeInBits()) {
+        report("G_UNMERGE_VALUES scalar source operand does not match scalar "
+               "destination operands",
+               MI);
+      }
     }
     break;
   }
@@ -1473,10 +1496,9 @@ void MachineVerifier::verifyPreISelGenericInstruction(const MachineInstr *MI) {
     bool NoSideEffects = MI->getOpcode() == TargetOpcode::G_INTRINSIC;
     unsigned IntrID = IntrIDOp.getIntrinsicID();
     if (IntrID != 0 && IntrID < Intrinsic::num_intrinsics) {
-      AttributeList Attrs
-        = Intrinsic::getAttributes(MF->getFunction().getContext(),
-                                   static_cast<Intrinsic::ID>(IntrID));
-      bool DeclHasSideEffects = !Attrs.hasFnAttr(Attribute::ReadNone);
+      AttributeList Attrs = Intrinsic::getAttributes(
+          MF->getFunction().getContext(), static_cast<Intrinsic::ID>(IntrID));
+      bool DeclHasSideEffects = !Attrs.getMemoryEffects().doesNotAccessMemory();
       if (NoSideEffects && DeclHasSideEffects) {
         report("G_INTRINSIC used with intrinsic that accesses memory", MI);
         break;
@@ -1713,16 +1735,11 @@ void MachineVerifier::verifyPreISelGenericInstruction(const MachineInstr *MI) {
       report("Incorrect floating-point class set (operand 2)", MI);
       break;
     }
-    const MachineOperand &SemanticsMO = MI->getOperand(3);
-    if (!SemanticsMO.isImm()) {
-      report("floating-point semantics (operand 3) must be an immediate", MI);
-      break;
-    }
-    int64_t Semantics = SemanticsMO.getImm();
-    if (Semantics < 0 || Semantics > APFloat::S_MaxSemantics) {
-      report("Incorrect floating-point semantics (operand 3)", MI);
-      break;
-    }
+    break;
+  }
+  case TargetOpcode::G_ASSERT_ALIGN: {
+    if (MI->getOperand(2).getImm() < 1)
+      report("alignment immediate must be >= 1", MI);
     break;
   }
   default:
@@ -1923,6 +1940,36 @@ void MachineVerifier::visitMachineInstrBefore(const MachineInstr *MI) {
       break;
     }
   } break;
+  case TargetOpcode::REG_SEQUENCE: {
+    unsigned NumOps = MI->getNumOperands();
+    if (!(NumOps & 1)) {
+      report("Invalid number of operands for REG_SEQUENCE", MI);
+      break;
+    }
+
+    for (unsigned I = 1; I != NumOps; I += 2) {
+      const MachineOperand &RegOp = MI->getOperand(I);
+      const MachineOperand &SubRegOp = MI->getOperand(I + 1);
+
+      if (!RegOp.isReg())
+        report("Invalid register operand for REG_SEQUENCE", &RegOp, I);
+
+      if (!SubRegOp.isImm() || SubRegOp.getImm() == 0 ||
+          SubRegOp.getImm() >= TRI->getNumSubRegIndices()) {
+        report("Invalid subregister index operand for REG_SEQUENCE",
+               &SubRegOp, I + 1);
+      }
+    }
+
+    Register DstReg = MI->getOperand(0).getReg();
+    if (DstReg.isPhysical())
+      report("REG_SEQUENCE does not support physical register results", MI);
+
+    if (MI->getOperand(0).getSubReg())
+      report("Invalid subreg result for REG_SEQUENCE", MI);
+
+    break;
+  }
   }
 }
 

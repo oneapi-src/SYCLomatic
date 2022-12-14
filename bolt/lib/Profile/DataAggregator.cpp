@@ -78,6 +78,8 @@ MaxSamples("max-samples",
   cl::Hidden,
   cl::cat(AggregatorCategory));
 
+extern cl::opt<opts::ProfileFormatKind> ProfileFormat;
+
 cl::opt<bool> ReadPreAggregated(
     "pa", cl::desc("skip perf and read data from a pre-aggregated file format"),
     cl::cat(AggregatorCategory));
@@ -244,8 +246,8 @@ void DataAggregator::launchPerfProcess(StringRef Name, PerfProcessInfo &PPI,
   }
   TempFiles.push_back(PPI.StderrPath.data());
 
-  Optional<StringRef> Redirects[] = {
-      llvm::None,                        // Stdin
+  std::optional<StringRef> Redirects[] = {
+      std::nullopt,                      // Stdin
       StringRef(PPI.StdoutPath.data()),  // Stdout
       StringRef(PPI.StderrPath.data())}; // Stderr
 
@@ -259,9 +261,9 @@ void DataAggregator::launchPerfProcess(StringRef Name, PerfProcessInfo &PPI,
 
   if (Wait)
     PPI.PI.ReturnCode = sys::ExecuteAndWait(PerfPath.data(), Argv,
-                                            /*envp*/ llvm::None, Redirects);
+                                            /*envp*/ std::nullopt, Redirects);
   else
-    PPI.PI = sys::ExecuteNoWait(PerfPath.data(), Argv, /*envp*/ llvm::None,
+    PPI.PI = sys::ExecuteNoWait(PerfPath.data(), Argv, /*envp*/ std::nullopt,
                                 Redirects);
 
   free(WritableArgsString);
@@ -610,7 +612,8 @@ Error DataAggregator::readProfile(BinaryContext &BC) {
     convertBranchData(Function);
   }
 
-  if (opts::AggregateOnly) {
+  if (opts::AggregateOnly &&
+      opts::ProfileFormat == opts::ProfileFormatKind::PF_Fdata) {
     if (std::error_code EC = writeAggregatedFile(opts::OutputFilename))
       report_error("cannot create output data file", EC);
   }
@@ -940,7 +943,7 @@ DataAggregator::getFallthroughsInTrace(BinaryFunction &BF,
   SmallVector<std::pair<uint64_t, uint64_t>, 16> Res;
 
   if (!recordTrace(BF, FirstLBR, SecondLBR, Count, &Res))
-    return NoneType();
+    return std::nullopt;
 
   return Res;
 }
@@ -1051,6 +1054,10 @@ void DataAggregator::consumeRestOfLine() {
   ParsingBuf = ParsingBuf.drop_front(LineEnd + 1);
   Col = 0;
   Line += 1;
+}
+
+bool DataAggregator::checkNewLine() {
+  return ParsingBuf[0] == '\n';
 }
 
 ErrorOr<DataAggregator::PerfBranchSample> DataAggregator::parseBranchSample() {
@@ -1813,13 +1820,13 @@ Optional<int32_t> DataAggregator::parseCommExecEvent() {
   if (LineEnd == StringRef::npos) {
     reportError("expected rest of line");
     Diag << "Found: " << ParsingBuf << "\n";
-    return NoneType();
+    return std::nullopt;
   }
   StringRef Line = ParsingBuf.substr(0, LineEnd);
 
   size_t Pos = Line.find("PERF_RECORD_COMM exec");
   if (Pos == StringRef::npos)
-    return NoneType();
+    return std::nullopt;
   Line = Line.drop_front(Pos);
 
   // Line:
@@ -1829,7 +1836,7 @@ Optional<int32_t> DataAggregator::parseCommExecEvent() {
   if (PIDStr.getAsInteger(10, PID)) {
     reportError("expected PID");
     Diag << "Found: " << PIDStr << "in '" << Line << "'\n";
-    return NoneType();
+    return std::nullopt;
   }
 
   return PID;
@@ -1843,7 +1850,7 @@ Optional<uint64_t> parsePerfTime(const StringRef TimeStr) {
   uint64_t USecTime;
   if (SecTimeStr.getAsInteger(10, SecTime) ||
       USecTimeStr.getAsInteger(10, USecTime))
-    return NoneType();
+    return std::nullopt;
   return SecTime * 1000000ULL + USecTime;
 }
 }
@@ -1856,14 +1863,14 @@ Optional<DataAggregator::ForkInfo> DataAggregator::parseForkEvent() {
   if (LineEnd == StringRef::npos) {
     reportError("expected rest of line");
     Diag << "Found: " << ParsingBuf << "\n";
-    return NoneType();
+    return std::nullopt;
   }
   StringRef Line = ParsingBuf.substr(0, LineEnd);
 
   size_t Pos = Line.find("PERF_RECORD_FORK");
   if (Pos == StringRef::npos) {
     consumeRestOfLine();
-    return NoneType();
+    return std::nullopt;
   }
 
   ForkInfo FI;
@@ -1882,14 +1889,14 @@ Optional<DataAggregator::ForkInfo> DataAggregator::parseForkEvent() {
   if (ChildPIDStr.getAsInteger(10, FI.ChildPID)) {
     reportError("expected PID");
     Diag << "Found: " << ChildPIDStr << "in '" << Line << "'\n";
-    return NoneType();
+    return std::nullopt;
   }
 
   const StringRef ParentPIDStr = Line.rsplit('(').second.split(':').first;
   if (ParentPIDStr.getAsInteger(10, FI.ParentPID)) {
     reportError("expected PID");
     Diag << "Found: " << ParentPIDStr << "in '" << Line << "'\n";
-    return NoneType();
+    return std::nullopt;
   }
 
   consumeRestOfLine();
@@ -2140,16 +2147,17 @@ DataAggregator::parseNameBuildIDPair() {
 
   ErrorOr<StringRef> BuildIDStr = parseString(FieldSeparator, true);
   if (std::error_code EC = BuildIDStr.getError())
-    return NoneType();
+    return std::nullopt;
 
   // If one of the strings is missing, don't issue a parsing error, but still
   // do not return a value.
-  if (ParsingBuf[0] == '\n')
-    return NoneType();
+  consumeAllRemainingFS();
+  if (checkNewLine())
+    return std::nullopt;
 
   ErrorOr<StringRef> NameStr = parseString(FieldSeparator, true);
   if (std::error_code EC = NameStr.getError())
-    return NoneType();
+    return std::nullopt;
 
   consumeRestOfLine();
   return std::make_pair(NameStr.get(), BuildIDStr.get());
@@ -2197,7 +2205,7 @@ DataAggregator::getFileNameForBuildID(StringRef FileBuildID) {
   if (!FileName.empty())
     return FileName;
 
-  return NoneType();
+  return std::nullopt;
 }
 
 std::error_code
@@ -2225,7 +2233,7 @@ DataAggregator::writeAggregatedFile(StringRef OutputFilename) const {
     OutFile << "boltedcollection\n";
   if (opts::BasicAggregation) {
     OutFile << "no_lbr";
-    for (const StringMapEntry<NoneType> &Entry : EventNames)
+    for (const StringMapEntry<std::nullopt_t> &Entry : EventNames)
       OutFile << " " << Entry.getKey();
     OutFile << "\n";
 

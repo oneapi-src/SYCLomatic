@@ -20,6 +20,7 @@ if (current_toolchain == default_toolchain) {
       "_LIBCPP_ABI_FORCE_MICROSOFT=",
       "_LIBCPP_EXTRA_SITE_DEFINES=",
       "_LIBCPP_HAS_NO_FILESYSTEM_LIBRARY=",
+      "_LIBCPP_HAS_NO_FSTREAM=",
       "_LIBCPP_HAS_NO_THREADS=",
       "_LIBCPP_HAS_NO_MONOTONIC_CLOCK=",
       "_LIBCPP_HAS_MUSL_LIBC=",
@@ -37,7 +38,6 @@ if (current_toolchain == default_toolchain) {
       "_LIBCPP_HAS_NO_WIDE_CHARACTERS=",
       "_LIBCPP_ABI_DEFINES=",
       "_LIBCPP_ENABLE_ASSERTIONS_DEFAULT=",
-      "_LIBCPP_ENABLE_DEBUG_MODE=",
     ]
     if (libcxx_abi_version != 1) {
       values += [ "_LIBCPP_ABI_VERSION=$libcxx_abi_version" ]
@@ -47,7 +47,12 @@ if (current_toolchain == default_toolchain) {
     if (libcxx_abi_namespace != "") {
       values += [ "_LIBCPP_ABI_NAMESPACE=$libcxx_abi_namespace" ]
     } else {
-      values += [ "_LIBCPP_ABI_NAMESPACE=" ]
+      values += [ "_LIBCPP_ABI_NAMESPACE=__" + libcxx_abi_version ]
+    }
+    if (libcxx_enable_debug_mode) {
+      values += [ "_LIBCPP_ENABLE_DEBUG_MODE=1" ]
+    } else {
+      values += [ "_LIBCPP_ENABLE_DEBUG_MODE=" ]
     }
   }
 
@@ -60,6 +65,7 @@ if (current_toolchain == default_toolchain) {
       # An empty value here means the feature is supported.
       # Unsupported values should be set to `$no`.
       "requires_LIBCXX_ENABLE_FILESYSTEM=",
+      "requires_LIBCXX_ENABLE_FSTREAM=",
       "requires_LIBCXX_ENABLE_LOCALIZATION=",
       "requires_LIBCXX_ENABLE_THREADS=",
       "requires_LIBCXX_ENABLE_WIDE_CHARACTERS=",
@@ -273,15 +279,20 @@ if (current_toolchain == default_toolchain) {
       "__charconv/to_chars_result.h",
       "__chrono/calendar.h",
       "__chrono/convert_to_timespec.h",
+      "__chrono/convert_to_tm.h",
       "__chrono/day.h",
       "__chrono/duration.h",
       "__chrono/file_clock.h",
+      "__chrono/formatter.h",
       "__chrono/hh_mm_ss.h",
       "__chrono/high_resolution_clock.h",
       "__chrono/literals.h",
       "__chrono/month.h",
       "__chrono/month_weekday.h",
       "__chrono/monthday.h",
+      "__chrono/ostream.h",
+      "__chrono/parser_std_format_spec.h",
+      "__chrono/statically_widen.h",
       "__chrono/steady_clock.h",
       "__chrono/system_clock.h",
       "__chrono/time_point.h",
@@ -352,12 +363,14 @@ if (current_toolchain == default_toolchain) {
       "__format/buffer.h",
       "__format/concepts.h",
       "__format/enable_insertable.h",
+      "__format/escaped_output_table.h",
       "__format/extended_grapheme_cluster_table.h",
       "__format/format_arg.h",
       "__format/format_arg_store.h",
       "__format/format_args.h",
       "__format/format_context.h",
       "__format/format_error.h",
+      "__format/format_functions.h",
       "__format/format_fwd.h",
       "__format/format_parse_context.h",
       "__format/format_string.h",
@@ -404,8 +417,10 @@ if (current_toolchain == default_toolchain) {
       "__fwd/array.h",
       "__fwd/get.h",
       "__fwd/hash.h",
+      "__fwd/memory_resource.h",
       "__fwd/pair.h",
       "__fwd/span.h",
+      "__fwd/string.h",
       "__fwd/string_view.h",
       "__fwd/tuple.h",
       "__hash_table",
@@ -456,6 +471,7 @@ if (current_toolchain == default_toolchain) {
       "__memory/allocation_guard.h",
       "__memory/allocator.h",
       "__memory/allocator_arg_t.h",
+      "__memory/allocator_destructor.h",
       "__memory/allocator_traits.h",
       "__memory/assume_aligned.h",
       "__memory/auto_ptr.h",
@@ -475,7 +491,14 @@ if (current_toolchain == default_toolchain) {
       "__memory/uninitialized_algorithms.h",
       "__memory/unique_ptr.h",
       "__memory/uses_allocator.h",
+      "__memory/uses_allocator_construction.h",
       "__memory/voidify.h",
+      "__memory_resource/memory_resource.h",
+      "__memory_resource/monotonic_buffer_resource.h",
+      "__memory_resource/polymorphic_allocator.h",
+      "__memory_resource/pool_options.h",
+      "__memory_resource/synchronized_pool_resource.h",
+      "__memory_resource/unsynchronized_pool_resource.h",
       "__mutex_base",
       "__node_handle",
       "__numeric/accumulate.h",
@@ -537,12 +560,14 @@ if (current_toolchain == default_toolchain) {
       "__ranges/dangling.h",
       "__ranges/data.h",
       "__ranges/drop_view.h",
+      "__ranges/drop_while_view.h",
       "__ranges/empty.h",
       "__ranges/empty_view.h",
       "__ranges/enable_borrowed_range.h",
       "__ranges/enable_view.h",
       "__ranges/filter_view.h",
       "__ranges/iota_view.h",
+      "__ranges/istream_view.h",
       "__ranges/join_view.h",
       "__ranges/lazy_split_view.h",
       "__ranges/non_propagating_cache.h",
@@ -556,6 +581,7 @@ if (current_toolchain == default_toolchain) {
       "__ranges/size.h",
       "__ranges/subrange.h",
       "__ranges/take_view.h",
+      "__ranges/take_while_view.h",
       "__ranges/transform_view.h",
       "__ranges/view_interface.h",
       "__ranges/views.h",
@@ -576,7 +602,6 @@ if (current_toolchain == default_toolchain) {
       "__support/solaris/floatingpoint.h",
       "__support/solaris/wchar.h",
       "__support/solaris/xlocale.h",
-      "__support/win32/limits_msvc_win32.h",
       "__support/win32/locale_win32.h",
       "__support/xlocale/__nop_locale_mgmt.h",
       "__support/xlocale/__posix_l_fallback.h",
@@ -585,7 +610,6 @@ if (current_toolchain == default_toolchain) {
       "__thread/timed_backoff_policy.h",
       "__threading_support",
       "__tree",
-      "__tuple",
       "__tuple/apply_cv.h",
       "__tuple/make_tuple_types.h",
       "__tuple/sfinae_helpers.h",
@@ -837,6 +861,7 @@ if (current_toolchain == default_toolchain) {
       "map",
       "math.h",
       "memory",
+      "memory_resource",
       "mutex",
       "new",
       "numbers",

@@ -41,7 +41,7 @@ Optional<MCFixupKind> RISCVAsmBackend::getFixupKind(StringRef Name) const {
     if (Type != -1u)
       return static_cast<MCFixupKind>(FirstLiteralRelocationKind + Type);
   }
-  return None;
+  return std::nullopt;
 }
 
 const MCFixupKindInfo &
@@ -94,7 +94,7 @@ RISCVAsmBackend::getFixupKindInfo(MCFixupKind Kind) const {
       {"fixup_riscv_set_6b", 2, 6, 0},
       {"fixup_riscv_sub_6b", 2, 6, 0},
   };
-  static_assert((array_lengthof(Infos)) == RISCV::NumTargetFixupKinds,
+  static_assert((std::size(Infos)) == RISCV::NumTargetFixupKinds,
                 "Not all fixup kinds added to Infos array");
 
   // Fixup kinds from .reloc directive are like R_RISCV_NONE. They
@@ -365,10 +365,11 @@ bool RISCVAsmBackend::writeNopData(raw_ostream &OS, uint64_t Count,
     Count -= 1;
   }
 
+  bool HasStdExtC = STI->getFeatureBits()[RISCV::FeatureStdExtC];
+  bool HasStdExtZca = STI->getFeatureBits()[RISCV::FeatureExtZca];
   // The canonical nop on RVC is c.nop.
   if (Count % 4 == 2) {
-    OS.write(STI->getFeatureBits()[RISCV::FeatureStdExtC] ? "\x01\0" : "\0\0",
-             2);
+    OS.write((HasStdExtC || HasStdExtZca) ? "\x01\0" : "\0\0", 2);
     Count -= 2;
   }
 
@@ -595,8 +596,9 @@ bool RISCVAsmBackend::shouldInsertExtraNopBytesForCodeAlign(
   if (!STI->getFeatureBits()[RISCV::FeatureRelax])
     return false;
 
-  bool HasStdExtC = STI->getFeatureBits()[RISCV::FeatureStdExtC];
-  unsigned MinNopLen = HasStdExtC ? 2 : 4;
+  bool UseCompressedNop = STI->getFeatureBits()[RISCV::FeatureStdExtC] ||
+                          STI->getFeatureBits()[RISCV::FeatureExtZca];
+  unsigned MinNopLen = UseCompressedNop ? 2 : 4;
 
   if (AF.getAlignment() <= MinNopLen) {
     return false;

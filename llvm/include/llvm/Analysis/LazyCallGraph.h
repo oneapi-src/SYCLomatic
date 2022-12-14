@@ -49,6 +49,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include <cassert>
 #include <iterator>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -311,7 +312,7 @@ public:
   /// The node works much like an optional in order to lazily populate the
   /// edges of each node. Until populated, there are no edges. Once populated,
   /// you can access the edges by dereferencing the node or using the `->`
-  /// operator as if the node was an `Optional<EdgeSequence>`.
+  /// operator as if the node was an `std::optional<EdgeSequence>`.
   class Node {
     friend class LazyCallGraph;
     friend class LazyCallGraph::RefSCC;
@@ -378,7 +379,7 @@ public:
     int DFSNumber = 0;
     int LowLink = 0;
 
-    Optional<EdgeSequence> Edges;
+    std::optional<EdgeSequence> Edges;
 
     /// Basic constructor implements the scanning of F into Edges and
     /// EdgeIndexMap.
@@ -533,6 +534,14 @@ public:
   /// are necessarily within some actual SCC that nests within it. Since
   /// a direct call *is* a reference, there will always be at least one RefSCC
   /// around any SCC.
+  ///
+  /// Spurious ref edges, meaning ref edges that still exist in the call graph
+  /// even though the corresponding IR reference no longer exists, are allowed.
+  /// This is mostly to support argument promotion, which can modify a caller to
+  /// no longer pass a function. The only place that needs to specially handle
+  /// this is deleting a dead function/node, otherwise the dead ref edges are
+  /// automatically removed when visiting the function/node no longer containing
+  /// the ref edge.
   class RefSCC {
     friend class LazyCallGraph;
     friend class LazyCallGraph::Node;
@@ -823,8 +832,8 @@ public:
     /// effort has been made to minimize the overhead of common cases such as
     /// self-edges and edge removals which result in a spanning tree with no
     /// more cycles.
-    SmallVector<RefSCC *, 1> removeInternalRefEdge(Node &SourceN,
-                                                   ArrayRef<Node *> TargetNs);
+    [[nodiscard]] SmallVector<RefSCC *, 1>
+    removeInternalRefEdge(Node &SourceN, ArrayRef<Node *> TargetNs);
 
     /// A convenience wrapper around the above to handle trivial cases of
     /// inserting a new call edge.

@@ -37,6 +37,7 @@ from functools import wraps
 import gc
 import glob
 import io
+import json
 import os.path
 import re
 import shutil
@@ -282,11 +283,14 @@ class ValueCheck:
 
         test_base.assertSuccess(val.GetError())
 
+        # Python 3.6 doesn't declare a `re.Pattern` type, get the dynamic type.
+        pattern_type = type(re.compile(''))
+
         if self.expect_name:
             test_base.assertEqual(self.expect_name, val.GetName(),
                                   this_error_msg)
         if self.expect_value:
-            if isinstance(self.expect_value, re.Pattern):
+            if isinstance(self.expect_value, pattern_type):
                 test_base.assertRegex(val.GetValue(), self.expect_value,
                                       this_error_msg)
             else:
@@ -296,7 +300,7 @@ class ValueCheck:
             test_base.assertEqual(self.expect_type, val.GetDisplayTypeName(),
                                   this_error_msg)
         if self.expect_summary:
-            if isinstance(self.expect_summary, re.Pattern):
+            if isinstance(self.expect_summary, pattern_type):
                 test_base.assertRegex(val.GetSummary(), self.expect_summary,
                                       this_error_msg)
             else:
@@ -1411,7 +1415,8 @@ class Base(unittest2.TestCase):
             debug_info=None,
             architecture=None,
             compiler=None,
-            dictionary=None):
+            dictionary=None,
+            make_targets=None):
         """Platform specific way to build binaries."""
         if not architecture and configuration.arch:
             architecture = configuration.arch
@@ -1426,7 +1431,7 @@ class Base(unittest2.TestCase):
 
         module = builder_module()
         command = builder_module().getBuildCommand(debug_info, architecture,
-                compiler, dictionary, testdir, testname)
+                compiler, dictionary, testdir, testname, make_targets)
         if command is None:
             raise Exception("Don't know how to build binary")
 
@@ -1638,6 +1643,19 @@ class Base(unittest2.TestCase):
         err = platform.Run(shell_command)
         return (err, shell_command.GetStatus(), shell_command.GetOutput())
 
+    def get_stats(self, options=None):
+        """
+            Get the output of the "statistics dump" with optional extra options
+            and return the JSON as a python dictionary.
+        """
+        return_obj = lldb.SBCommandReturnObject()
+        command = "statistics dump "
+        if options is not None:
+            command += options
+        self.ci.HandleCommand(command, return_obj, False)
+        metrics_json = return_obj.GetOutput()
+        return json.loads(metrics_json)
+
 # Metaclass for TestBase to change the list of test metods when a new TestCase is loaded.
 # We change the test methods to create a new test method for each test for each debug info we are
 # testing. The name of the new test method will be '<original-name>_<debug-info>' and with adding
@@ -1663,14 +1681,16 @@ class LLDBTestCaseFactory(type):
                 # If any debug info categories were explicitly tagged, assume that list to be
                 # authoritative.  If none were specified, try with all debug
                 # info formats.
-                all_dbginfo_categories = set(test_categories.debug_info_categories)
+                all_dbginfo_categories = set(test_categories.debug_info_categories.keys())
                 categories = set(
                     getattr(
                         attrvalue,
                         "categories",
                         [])) & all_dbginfo_categories
                 if not categories:
-                    categories = all_dbginfo_categories
+                    categories = [category for category, can_replicate \
+                                  in test_categories.debug_info_categories.items() \
+                                  if can_replicate]
 
                 for cat in categories:
                     @decorators.add_test_categories([cat])
@@ -2355,7 +2375,7 @@ FileCheck output:
             start = 0
             for substr in substrs:
                 index = output[start:].find(substr)
-                start = start + index if ordered and matching else 0
+                start = start + index + len(substr) if ordered and matching else 0
                 matched = index != -1
                 log_lines.append("{} sub string: \"{}\" ({})".format(
                         expecting_str, substr, found_str(matched)))
@@ -2468,6 +2488,13 @@ FileCheck output:
     def assertSuccess(self, obj, msg=None):
         if not obj.Success():
             error = obj.GetCString()
+            self.fail(self._formatMessage(msg,
+                "'{}' is not success".format(error)))
+
+    """Assert that a command return object is successful"""
+    def assertCommandReturn(self, obj, msg=None):
+        if not obj.Succeeded():
+            error = obj.GetError()
             self.fail(self._formatMessage(msg,
                 "'{}' is not success".format(error)))
 

@@ -1,0 +1,8 @@
+- match: "#define CALL(func, ...)"
+  rewrite: "#define TEMP_MACRO_NAME(func, ...)"
+
+- match: CALL(${function}, ${args})
+  rewrite: ${function}(${args})
+
+- match: "#define TEMP_MACRO_NAME(func, ...)"
+  rewrite: "#define CALL(func, ...)"
