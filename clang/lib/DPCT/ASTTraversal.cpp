@@ -2080,6 +2080,30 @@ void AtomicFunctionRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(AtomicFunctionRule, PassKind::PK_Migration)
 
+void ZeroLengthArrayDetectorRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(typeLoc(loc(constantArrayType())).bind("ConstantArrayType"),
+                this);
+}
+void ZeroLengthArrayDetectorRule::runRule(
+    const MatchFinder::MatchResult &Result) {
+  auto TL = getNodeAsType<TypeLoc>(Result, "ConstantArrayType");
+  if (!TL)
+    return;
+  const ConstantArrayType *CAT =
+      dyn_cast_or_null<ConstantArrayType>(TL->getTypePtr());
+  if (!CAT)
+    return;
+  if (!(CAT->getSize().isZero()))
+    return;
+  const clang::FunctionDecl *FD = DpctGlobalInfo::getParentFunction(TL);
+  if (!FD)
+    return;
+  if (FD->getAttr<CUDADeviceAttr>() || FD->getAttr<CUDAGlobalAttr>()) {
+    report(TL->getBeginLoc(), Diagnostics::ZERO_LENGTH_ARRAY, false);
+  }
+}
+REGISTER_RULE(ZeroLengthArrayDetectorRule, PassKind::PK_Migration)
+
 // Rule for types migration in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
