@@ -151,19 +151,27 @@ static std::filesystem::path write_data_to_file(char const *const data,
   // write data to temporary file
   auto outfile = std::ofstream(filepath, std::ios::out | std::ios::binary);
   if (outfile) {
+    // only allow program to write file
+    std::filesystem::permissions(filepath,
+                                 std::filesystem::perms::owner_write,
+                                 ec);
+    if (ec)
+      throw std::runtime_error("could not set permissions");
+
     outfile.write(data, size);
     outfile.close();
-  }
-  if (!outfile || outfile.bad())
-    throw std::runtime_error("could not write data");
+    if (outfile.bad())
+      throw std::runtime_error("could not write data");
 
-  // set permissions to temporary file
-  std::filesystem::permissions(filepath,
-                               std::filesystem::perms::owner_read |
-                                   std::filesystem::perms::owner_exec,
-                               ec);
-  if (ec)
-    throw std::runtime_error("could not set permissions");
+    // only allow program to read/execute file
+    std::filesystem::permissions(filepath,
+                                 std::filesystem::perms::owner_read |
+                                 std::filesystem::perms::owner_exec,
+                                 ec);
+    if (ec)
+      throw std::runtime_error("could not set permissions");
+  } else
+    throw std::runtime_error("could not write data");
 
   // check temporary file contents
   auto infile = std::ifstream(filepath, std::ios::in | std::ios::binary);
