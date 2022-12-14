@@ -153,3 +153,35 @@ void is_partition_test() {
   thrust::partition( datas, datas+N,h_stencil,is_even());
 }
 
+void unique_copy_test() {
+  const int N=7;
+  int A[N]={1, 3, 3, 3, 2, 2, 1};
+  int B[N];
+  const int M=N-3;
+  int ans[M]={1, 3, 2, 1};
+
+//CHECK:  if (dpct::is_device_ptr(A)) {
+//CHECK-NEXT:    oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A + N, B));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(A + N)) {
+//CHECK-NEXT:    oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(A)) {
+//CHECK-NEXT:    oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B), oneapi::dpl::equal_to<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B, oneapi::dpl::equal_to<int>());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(A + N)) {
+//CHECK-NEXT:    oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B), oneapi::dpl::equal_to<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B, oneapi::dpl::equal_to<int>());
+//CHECK-NEXT:  };
+  thrust::unique_copy(thrust::host,A, A + N, B);
+  thrust::unique_copy(A, A + N, B);
+  thrust::unique_copy(thrust::host,A, A + N, B, thrust::equal_to<int>());
+  thrust::unique_copy(A, A + N, B, thrust::equal_to<int>());
+}

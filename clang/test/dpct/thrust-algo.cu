@@ -13,7 +13,7 @@
 #include <thrust/extrema.h>
 #include <thrust/gather.h>
 #include <thrust/binary_search.h>
-
+#include <thrust/unique.h>
 #include <thrust/find.h>
 #include <thrust/sort.h>
 #include <thrust/host_vector.h>
@@ -444,3 +444,42 @@ void is_partition_test() {
   thrust::partition(thrust::host,  datas, datas+N,h_stencil,is_even());
   thrust::partition( datas, datas+N,h_stencil,is_even());
 }
+
+
+void unique_copy_test() {
+  const int N=7;
+  int A[N]={1, 3, 3, 3, 2, 2, 1};
+  int B[N];
+  const int M=N-3;
+  int ans[M]={1, 3, 2, 1};
+  thrust::host_vector<int> h_V(A,A+N);
+  thrust::device_vector<int> d_V(A,A+N);
+  thrust::host_vector<int> h_result(B,B+M);
+  thrust::device_vector<int> d_result(B,B+M);
+
+// CHECK:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin(), oneapi::dpl::equal_to<int>());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin(), oneapi::dpl::equal_to<int>());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin(), oneapi::dpl::equal_to<int>());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin(), oneapi::dpl::equal_to<int>());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B);
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B);
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B, oneapi::dpl::equal_to<int>());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B, oneapi::dpl::equal_to<int>());
+  thrust::unique_copy(thrust::host, h_V.begin(), h_V.end(), h_result.begin());
+  thrust::unique_copy(h_V.begin(), h_V.end(), h_result.begin());
+  thrust::unique_copy(thrust::host, h_V.begin(), h_V.end(), h_result.begin(), thrust::equal_to<int>());
+  thrust::unique_copy(h_V.begin(), h_V.end(), h_result.begin(), thrust::equal_to<int>());
+  thrust::unique_copy(thrust::device, d_V.begin(), d_V.end(), d_result.begin());
+  thrust::unique_copy(d_V.begin(), d_V.end(), d_result.begin());
+  thrust::unique_copy(thrust::device, d_V.begin(), d_V.end(), d_result.begin(), thrust::equal_to<int>());
+  thrust::unique_copy(d_V.begin(), d_V.end(), d_result.begin(), thrust::equal_to<int>());
+  thrust::unique_copy(thrust::host,A, A + N, B);
+  thrust::unique_copy(A, A + N, B);
+  thrust::unique_copy(thrust::host,A, A + N, B, thrust::equal_to<int>());
+  thrust::unique_copy(A, A + N, B, thrust::equal_to<int>());
+}
+
