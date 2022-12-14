@@ -7709,6 +7709,13 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string ReplStr{ResultVarName};
     auto StmtStrArg2 = getStmtSpelling(CE->getArg(2));
 
+    if (AttributeName == "cudaDevAttrConcurrentManagedAccess" &
+        DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+        report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
+               false);
+        return;
+    }
+
     if (AttributeName == "cudaDevAttrComputeMode") {
       report(CE->getBeginLoc(), Diagnostics::COMPUTE_MODE, false);
       ReplStr += " = 1";
