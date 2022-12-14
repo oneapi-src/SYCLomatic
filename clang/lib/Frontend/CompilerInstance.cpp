@@ -41,6 +41,7 @@
 #include "clang/Serialization/InMemoryModuleCache.h"
 #include "llvm/ADT/ScopeExit.h"
 #include "llvm/ADT/Statistic.h"
+#include "llvm/Config/llvm-config.h"
 #include "llvm/Support/BuryPointer.h"
 #include "llvm/Support/CrashRecoveryContext.h"
 #include "llvm/Support/Errc.h"
@@ -254,7 +255,8 @@ static void collectIncludePCH(CompilerInstance &CI,
     // used here since we're not interested in validating the PCH at this time,
     // but only to check whether this is a file containing an AST.
     if (!ASTReader::readASTFileControlBlock(
-            Dir->path(), FileMgr, CI.getPCHContainerReader(),
+            Dir->path(), FileMgr, CI.getModuleCache(),
+            CI.getPCHContainerReader(),
             /*FindModuleFileExtensions=*/false, Validator,
             /*ValidateDiagnosticOptions=*/false))
       MDC->addFile(Dir->path());
@@ -426,7 +428,7 @@ static void InitializeFileRemapping(DiagnosticsEngine &Diags,
   // Remap files in the source manager (with other files).
   for (const auto &RF : InitOpts.RemappedFiles) {
     // Find the file that we're mapping to.
-    auto ToFile = FileMgr.getFile(RF.second);
+    Optional<FileEntryRef> ToFile = FileMgr.getOptionalFileRef(RF.second);
     if (!ToFile) {
       Diags.Report(diag::err_fe_remap_missing_to_file) << RF.first << RF.second;
       continue;
@@ -434,7 +436,7 @@ static void InitializeFileRemapping(DiagnosticsEngine &Diags,
 
     // Create the file entry for the file that we're mapping from.
     const FileEntry *FromFile =
-        FileMgr.getVirtualFile(RF.first, (*ToFile)->getSize(), 0);
+        FileMgr.getVirtualFile(RF.first, ToFile->getSize(), 0);
     if (!FromFile) {
       Diags.Report(diag::err_fe_remap_missing_from_file) << RF.first;
       continue;
@@ -784,12 +786,7 @@ void CompilerInstance::clearOutputFiles(bool EraseFiles) {
       continue;
     }
 
-    // If '-working-directory' was passed, the output filename should be
-    // relative to that.
-    SmallString<128> NewOutFile(OF.Filename);
-    FileMgr->FixupRelativePath(NewOutFile);
-
-    llvm::Error E = OF.File->keep(NewOutFile);
+    llvm::Error E = OF.File->keep(OF.Filename);
     if (!E)
       continue;
 
@@ -851,6 +848,15 @@ CompilerInstance::createOutputFileImpl(StringRef OutputPath, bool Binary,
                                        bool CreateMissingDirectories) {
   assert((!CreateMissingDirectories || UseTemporary) &&
          "CreateMissingDirectories is only allowed when using temporary files");
+
+  // If '-working-directory' was passed, the output filename should be
+  // relative to that.
+  Optional<SmallString<128>> AbsPath;
+  if (OutputPath != "-" && !llvm::sys::path::is_absolute(OutputPath)) {
+    AbsPath.emplace(OutputPath);
+    FileMgr->FixupRelativePath(*AbsPath);
+    OutputPath = *AbsPath;
+  }
 
   std::unique_ptr<llvm::raw_fd_ostream> OS;
   Optional<StringRef> OSFile;
@@ -1022,9 +1028,9 @@ bool CompilerInstance::ExecuteAction(FrontendAction &Act) {
 
   // Validate/process some options.
   if (getHeaderSearchOpts().Verbose)
-    OS << "clang -cc1 version " CLANG_VERSION_STRING
-       << " based upon " << BACKEND_PACKAGE_STRING
-       << " default target " << llvm::sys::getDefaultTargetTriple() << "\n";
+    OS << "clang -cc1 version " CLANG_VERSION_STRING << " based upon LLVM "
+       << LLVM_VERSION_STRING << " default target "
+       << llvm::sys::getDefaultTargetTriple() << "\n";
 
   if (getCodeGenOpts().TimePasses)
     createFrontendTimer();
@@ -1282,19 +1288,17 @@ compileModuleImpl(CompilerInstance &ImportingInstance, SourceLocation ImportLoc,
          Instance.getFrontendOpts().AllowPCMWithCompilerErrors;
 }
 
-static const FileEntry *getPublicModuleMap(const FileEntry *File,
-                                           FileManager &FileMgr) {
-  StringRef Filename = llvm::sys::path::filename(File->getName());
-  SmallString<128> PublicFilename(File->getDir()->getName());
+static Optional<FileEntryRef> getPublicModuleMap(FileEntryRef File,
+                                                 FileManager &FileMgr) {
+  StringRef Filename = llvm::sys::path::filename(File.getName());
+  SmallString<128> PublicFilename(File.getDir().getName());
   if (Filename == "module_private.map")
     llvm::sys::path::append(PublicFilename, "module.map");
   else if (Filename == "module.private.modulemap")
     llvm::sys::path::append(PublicFilename, "module.modulemap");
   else
-    return nullptr;
-  if (auto FE = FileMgr.getFile(PublicFilename))
-    return *FE;
-  return nullptr;
+    return std::nullopt;
+  return FileMgr.getOptionalFileRef(PublicFilename);
 }
 
 /// Compile a module file for the given module in a separate compiler instance,
@@ -1310,19 +1314,16 @@ static bool compileModule(CompilerInstance &ImportingInstance,
   ModuleMap &ModMap
     = ImportingInstance.getPreprocessor().getHeaderSearchInfo().getModuleMap();
   bool Result;
-  if (const FileEntry *ModuleMapFile =
+  if (Optional<FileEntryRef> ModuleMapFile =
           ModMap.getContainingModuleMapFile(Module)) {
     // Canonicalize compilation to start with the public module map. This is
     // vital for submodules declarations in the private module maps to be
     // correctly parsed when depending on a top level module in the public one.
-    if (const FileEntry *PublicMMFile = getPublicModuleMap(
-            ModuleMapFile, ImportingInstance.getFileManager()))
+    if (Optional<FileEntryRef> PublicMMFile = getPublicModuleMap(
+            *ModuleMapFile, ImportingInstance.getFileManager()))
       ModuleMapFile = PublicMMFile;
 
-    // FIXME: Update header search to keep FileEntryRef rather than rely on
-    // getLastRef().
-    StringRef ModuleMapFilePath =
-        ModuleMapFile->getLastRef().getNameAsRequested();
+    StringRef ModuleMapFilePath = ModuleMapFile->getNameAsRequested();
 
     // Use the module map where this module resides.
     Result = compileModuleImpl(
@@ -1350,7 +1351,7 @@ static bool compileModule(CompilerInstance &ImportingInstance,
         [&](CompilerInstance &Instance) {
       std::unique_ptr<llvm::MemoryBuffer> ModuleMapBuffer =
           llvm::MemoryBuffer::getMemBuffer(InferredModuleMapContent);
-      ModuleMapFile = Instance.getFileManager().getVirtualFile(
+      const FileEntry *ModuleMapFile = Instance.getFileManager().getVirtualFile(
           FakeModuleMapFile, InferredModuleMapContent.size(), 0);
       Instance.getSourceManager().overrideFileContents(
           ModuleMapFile, std::move(ModuleMapBuffer));
@@ -2039,7 +2040,7 @@ CompilerInstance::loadModule(SourceLocation ImportLoc,
         Sub = loadModule(ImportLoc, PrivPath, Visibility, IsInclusionDirective);
       if (Sub) {
         MapPrivateSubModToTopLevel = true;
-        PP->markModuleAsAffecting(Module);
+        PP->markClangModuleAsAffecting(Module);
         if (!getDiagnostics().isIgnored(
                 diag::warn_no_priv_submodule_use_toplevel, ImportLoc)) {
           getDiagnostics().Report(Path[I].second,

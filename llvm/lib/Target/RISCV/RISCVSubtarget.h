@@ -54,14 +54,10 @@ private:
   bool HasStdExtZba = false;
   bool HasStdExtZbb = false;
   bool HasStdExtZbc = false;
-  bool HasStdExtZbe = false;
-  bool HasStdExtZbf = false;
-  bool HasStdExtZbm = false;
-  bool HasStdExtZbp = false;
-  bool HasStdExtZbr = false;
   bool HasStdExtZbs = false;
-  bool HasStdExtZbt = false;
   bool HasStdExtZca = false;
+  bool HasStdExtZcd = false;
+  bool HasStdExtZcf = false;
   bool HasStdExtV = false;
   bool HasStdExtZve32x = false;
   bool HasStdExtZve32f = false;
@@ -91,7 +87,12 @@ private:
   bool HasStdExtZicbom = false;
   bool HasStdExtZicboz = false;
   bool HasStdExtZicbop = false;
+  bool HasStdExtSvnapot = false;
+  bool HasStdExtSvinval = false;
   bool HasStdExtZmmul = false;
+  bool HasStdExtZawrs = false;
+  bool HasStdExtZtso = false;
+  bool HasVendorXVentanaCondOps = false;
   bool HasRV32 = false;
   bool HasRV64 = false;
   bool IsRV32E = false;
@@ -100,8 +101,10 @@ private:
   bool EnableDefaultUnroll = true;
   bool EnableSaveRestore = false;
   bool EnableUnalignedScalarMem = false;
+  bool HasShortForwardBranchOpt = false;
   bool HasLUIADDIFusion = false;
   bool HasForcedAtomics = false;
+  bool HasOptimizedZeroStrideLoad = true;
   unsigned XLen = 32;
   unsigned ZvlLen = 0;
   MVT XLenVT = MVT::i32;
@@ -157,20 +160,17 @@ public:
   bool hasStdExtF() const { return HasStdExtF; }
   bool hasStdExtD() const { return HasStdExtD; }
   bool hasStdExtC() const { return HasStdExtC; }
+  bool hasStdExtCOrZca() const { return HasStdExtC || HasStdExtZca; }
   bool hasStdExtV() const { return HasStdExtV; }
   bool hasStdExtZihintpause() const { return HasStdExtZihintpause; }
   bool hasStdExtZihintntl() const { return HasStdExtZihintntl; }
   bool hasStdExtZba() const { return HasStdExtZba; }
   bool hasStdExtZbb() const { return HasStdExtZbb; }
   bool hasStdExtZbc() const { return HasStdExtZbc; }
-  bool hasStdExtZbe() const { return HasStdExtZbe; }
-  bool hasStdExtZbf() const { return HasStdExtZbf; }
-  bool hasStdExtZbm() const { return HasStdExtZbm; }
-  bool hasStdExtZbp() const { return HasStdExtZbp; }
-  bool hasStdExtZbr() const { return HasStdExtZbr; }
   bool hasStdExtZbs() const { return HasStdExtZbs; }
-  bool hasStdExtZbt() const { return HasStdExtZbt; }
   bool hasStdExtZca() const { return HasStdExtZca; }
+  bool hasStdExtZcd() const { return HasStdExtZcd; }
+  bool hasStdExtZcf() const { return HasStdExtZcf; }
   bool hasStdExtZvl() const { return ZvlLen != 0; }
   bool hasStdExtZvfh() const { return HasStdExtZvfh; }
   bool hasStdExtZfhmin() const { return HasStdExtZfhmin; }
@@ -191,16 +191,23 @@ public:
   bool hasStdExtZicbom() const { return HasStdExtZicbom; }
   bool hasStdExtZicboz() const { return HasStdExtZicboz; }
   bool hasStdExtZicbop() const { return HasStdExtZicbop; }
+  bool hasStdExtSvnapot() const { return HasStdExtSvnapot; }
+  bool hasStdExtSvinval() const { return HasStdExtSvinval; }
+  bool hasStdExtZawrs() const { return HasStdExtZawrs; }
   bool hasStdExtZmmul() const { return HasStdExtZmmul; }
+  bool hasStdExtZtso() const { return HasStdExtZtso; }
+  bool hasVendorXVentanaCondOps() const { return HasVendorXVentanaCondOps; }
   bool is64Bit() const { return HasRV64; }
   bool isRV32E() const { return IsRV32E; }
   bool enableLinkerRelax() const { return EnableLinkerRelax; }
   bool enableRVCHintInstrs() const { return EnableRVCHintInstrs; }
   bool enableDefaultUnroll() const { return EnableDefaultUnroll; }
   bool enableSaveRestore() const { return EnableSaveRestore; }
+  bool hasShortForwardBranchOpt() const { return HasShortForwardBranchOpt; }
   bool enableUnalignedScalarMem() const { return EnableUnalignedScalarMem; }
   bool hasLUIADDIFusion() const { return HasLUIADDIFusion; }
   bool hasForcedAtomics() const { return HasForcedAtomics; }
+  bool hasOptimizedZeroStrideLoad() const { return HasOptimizedZeroStrideLoad; }
   MVT getXLenVT() const { return XLenVT; }
   unsigned getXLen() const { return XLen; }
   unsigned getFLen() const {

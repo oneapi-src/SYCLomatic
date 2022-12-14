@@ -138,6 +138,7 @@ add_entrypoint_object(
     ../tanf.h
   DEPENDS
     .range_reduction
+    .sincosf_utils
     libc.include.math
     libc.src.errno.errno
     libc.src.__support.FPUtil.fenv_impl
@@ -549,7 +550,26 @@ add_entrypoint_object(
   HDRS
     ../exp2f.h
   DEPENDS
-    .common_constants
+    .explogxf
+    libc.src.__support.FPUtil.fenv_impl
+    libc.src.__support.FPUtil.fp_bits
+    libc.src.__support.FPUtil.multiply_add
+    libc.src.__support.FPUtil.nearest_integer
+    libc.src.__support.FPUtil.polyeval
+    libc.include.errno
+    libc.src.errno.errno
+    libc.include.math
+  COMPILE_OPTIONS
+    -O3
+)
+
+add_entrypoint_object(
+  exp10f
+  SRCS
+    exp10f.cpp
+  HDRS
+    ../exp10f.h
+  DEPENDS
     .explogxf
     libc.src.__support.FPUtil.fenv_impl
     libc.src.__support.FPUtil.fp_bits
@@ -1289,6 +1309,52 @@ add_object_library(
 )
 
 add_entrypoint_object(
+  asinf
+  SRCS
+    asinf.cpp
+  HDRS
+    ../asinf.h
+  DEPENDS
+    libc.src.__support.FPUtil.except_value_utils
+    libc.src.__support.FPUtil.fp_bits
+    libc.src.__support.FPUtil.multiply_add
+    libc.src.__support.FPUtil.polyeval
+    libc.src.__support.FPUtil.sqrt
+    .inv_trigf_utils
+  COMPILE_OPTIONS
+    -O3
+)
+
+add_entrypoint_object(
+  asin
+  SRCS
+    asin.cpp
+  HDRS
+    ../asin.h
+  DEPENDS
+    .asinf
+  COMPILE_OPTIONS
+    -O3
+)
+
+add_entrypoint_object(
+  acosf
+  SRCS
+    acosf.cpp
+  HDRS
+    ../acosf.h
+  DEPENDS
+    libc.src.__support.FPUtil.except_value_utils
+    libc.src.__support.FPUtil.fp_bits
+    libc.src.__support.FPUtil.multiply_add
+    libc.src.__support.FPUtil.polyeval
+    libc.src.__support.FPUtil.sqrt
+    .inv_trigf_utils
+  COMPILE_OPTIONS
+    -O3
+)
+
+add_entrypoint_object(
   atanf
   SRCS
     atanf.cpp
@@ -1302,3 +1368,15 @@ add_entrypoint_object(
     -O3
 )
 
+add_entrypoint_object(
+  pow
+  SRCS
+    pow.cpp
+  HDRS
+    ../pow.h
+  DEPENDS
+    .expf
+    .logf
+  COMPILE_OPTIONS
+    -O3
+)

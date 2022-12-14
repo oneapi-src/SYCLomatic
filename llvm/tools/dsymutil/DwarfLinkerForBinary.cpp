@@ -94,6 +94,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <system_error>
 #include <tuple>
@@ -506,7 +507,7 @@ void DwarfLinkerForBinary::copySwiftReflectionMetadata(
   if (auto *MO = dyn_cast<llvm::object::MachOObjectFile>(OF->getBinary())) {
     // Collect the swift reflection sections before emitting them. This is
     // done so we control the order they're emitted.
-    std::array<Optional<object::SectionRef>,
+    std::array<std::optional<object::SectionRef>,
                Swift5ReflectionSectionKind::last + 1>
         SwiftSections;
     for (auto &Section : MO->sections()) {
@@ -578,7 +579,6 @@ bool DwarfLinkerForBinary::link(const DebugMap &Map) {
   GeneralLinker.setNoODR(Options.NoODR);
   GeneralLinker.setUpdate(Options.Update);
   GeneralLinker.setNumThreads(Options.Threads);
-  GeneralLinker.setAccelTableKind(Options.TheAccelTableKind);
   GeneralLinker.setPrependPath(Options.PrependPath);
   GeneralLinker.setKeepFunctionForStatic(Options.KeepFunctionForStatic);
   if (Options.Translator)
@@ -661,6 +661,12 @@ bool DwarfLinkerForBinary::link(const DebugMap &Map) {
                                   SectionToOffsetInDwarf, RelocationsToApply);
   }
 
+  uint16_t MaxDWARFVersion = 0;
+  std::function<void(const DWARFUnit &Unit)> OnCUDieLoaded =
+      [&MaxDWARFVersion](const DWARFUnit &Unit) {
+        MaxDWARFVersion = std::max(Unit.getVersion(), MaxDWARFVersion);
+      };
+
   for (const auto &Obj : Map.objects()) {
     // N_AST objects (swiftmodule files) should get dumped directly into the
     // appropriate DWARF section.
@@ -704,13 +710,41 @@ bool DwarfLinkerForBinary::link(const DebugMap &Map) {
     }
 
     if (auto ErrorOrObj = loadObject(*Obj, Map, RL))
-      GeneralLinker.addObjectFile(*ErrorOrObj, Loader);
+      GeneralLinker.addObjectFile(*ErrorOrObj, Loader, OnCUDieLoaded);
     else {
       ObjectsForLinking.push_back(std::make_unique<DWARFFile>(
           Obj->getObjectFilename(), nullptr, nullptr,
           Obj->empty() ? Obj->getWarnings() : EmptyWarnings));
       GeneralLinker.addObjectFile(*ObjectsForLinking.back());
     }
+  }
+
+  // If we haven't seen any CUs, pick an arbitrary valid Dwarf version anyway.
+  if (MaxDWARFVersion == 0)
+    MaxDWARFVersion = 3;
+
+  if (Error E = GeneralLinker.setTargetDWARFVersion(MaxDWARFVersion))
+    return error(toString(std::move(E)));
+
+  switch (Options.TheAccelTableKind) {
+  case DsymutilAccelTableKind::Apple:
+    GeneralLinker.addAccelTableKind(DwarfLinkerAccelTableKind::Apple);
+    break;
+  case DsymutilAccelTableKind::Dwarf:
+    GeneralLinker.addAccelTableKind(DwarfLinkerAccelTableKind::DebugNames);
+    break;
+  case DsymutilAccelTableKind::Pub:
+    GeneralLinker.addAccelTableKind(DwarfLinkerAccelTableKind::Pub);
+    break;
+  case DsymutilAccelTableKind::Default:
+    if (MaxDWARFVersion >= 5)
+      GeneralLinker.addAccelTableKind(DwarfLinkerAccelTableKind::DebugNames);
+    else
+      GeneralLinker.addAccelTableKind(DwarfLinkerAccelTableKind::Apple);
+    break;
+  case DsymutilAccelTableKind::None:
+    // Nothing to do.
+    break;
   }
 
   // link debug info for loaded object files.

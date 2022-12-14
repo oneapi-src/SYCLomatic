@@ -1535,8 +1535,24 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"}};
 
-  SOLVERAPIWithRewriter = {"cusolverDnSsygvd",
-                           "cusolverDnSsygvd_bufferSize"};
+  SOLVERAPIWithRewriter = {"cusolverDnSetStream",
+                           "cusolverDnGetStream",
+                           "cusolverDnSpotrfBatched",
+                           "cusolverDnDpotrfBatched",
+                           "cusolverDnCpotrfBatched",
+                           "cusolverDnZpotrfBatched",
+                           "cusolverDnSpotrsBatched",
+                           "cusolverDnDpotrsBatched",
+                           "cusolverDnCpotrsBatched",
+                           "cusolverDnZpotrsBatched",
+                           "cusolverDnSsygvd",
+                           "cusolverDnDsygvd",
+                           "cusolverDnSsygvd_bufferSize",
+                           "cusolverDnDsygvd_bufferSize",
+                           "cusolverDnChegvd",
+                           "cusolverDnZhegvd",
+                           "cusolverDnChegvd_bufferSize",
+                           "cusolverDnZhegvd_bufferSize"};
   SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",  "cusparseDestroyMatDescr",
                            "cusparseSetMatType",      "cusparseGetMatType",
                            "cusparseSetMatIndexBase", "cusparseGetMatIndexBase",

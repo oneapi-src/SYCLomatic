@@ -390,6 +390,26 @@ SPIRVGlobalRegistry::getOrCreateConsIntArray(uint64_t Val,
                                        LLVMArrTy->getNumElements());
 }
 
+Register
+SPIRVGlobalRegistry::getOrCreateConstNullPtr(MachineIRBuilder &MIRBuilder,
+                                             SPIRVType *SpvType) {
+  const Type *LLVMTy = getTypeForSPIRVType(SpvType);
+  const PointerType *LLVMPtrTy = cast<PointerType>(LLVMTy);
+  // Find a constant in DT or build a new one.
+  Constant *CP = ConstantPointerNull::get(const_cast<PointerType *>(LLVMPtrTy));
+  Register Res = DT.find(CP, CurMF);
+  if (!Res.isValid()) {
+    LLT LLTy = LLT::pointer(LLVMPtrTy->getAddressSpace(), PointerSize);
+    Res = CurMF->getRegInfo().createGenericVirtualRegister(LLTy);
+    assignSPIRVTypeToVReg(SpvType, Res, *CurMF);
+    MIRBuilder.buildInstr(SPIRV::OpConstantNull)
+        .addDef(Res)
+        .addUse(getSPIRVTypeID(SpvType));
+    DT.add(CP, CurMF, Res);
+  }
+  return Res;
+}
+
 Register SPIRVGlobalRegistry::buildConstantSampler(
     Register ResReg, unsigned AddrMode, unsigned Param, unsigned FilerMode,
     MachineIRBuilder &MIRBuilder, SPIRVType *SpvType) {
@@ -544,26 +564,6 @@ SPIRVType *SPIRVGlobalRegistry::getOpTypeStruct(const StructType *Ty,
   return MIB;
 }
 
-static bool isOpenCLBuiltinType(const StructType *SType) {
-  return SType->isOpaque() && SType->hasName() &&
-         SType->getName().startswith("opencl.");
-}
-
-static bool isSPIRVBuiltinType(const StructType *SType) {
-  return SType->isOpaque() && SType->hasName() &&
-         SType->getName().startswith("spirv.");
-}
-
-static bool isSpecialType(const Type *Ty) {
-  if (auto PType = dyn_cast<PointerType>(Ty)) {
-    if (!PType->isOpaque())
-      Ty = PType->getNonOpaquePointerElementType();
-  }
-  if (auto SType = dyn_cast<StructType>(Ty))
-    return isOpenCLBuiltinType(SType) || isSPIRVBuiltinType(SType);
-  return false;
-}
-
 SPIRVType *SPIRVGlobalRegistry::getOrCreateSpecialType(
     const Type *Ty, MachineIRBuilder &MIRBuilder,
     SPIRV::AccessQualifier::AccessQualifier AccQual) {
@@ -574,7 +574,7 @@ SPIRVType *SPIRVGlobalRegistry::getOrCreateSpecialType(
     Ty = PType->getNonOpaquePointerElementType();
   }
   auto SType = cast<StructType>(Ty);
-  assert(isOpenCLBuiltinType(SType) || isSPIRVBuiltinType(SType));
+  assert(isSpecialOpaqueType(SType) && "Not a special opaque builtin type");
   return SPIRV::lowerBuiltinType(SType, AccQual, MIRBuilder, this);
 }
 
@@ -639,7 +639,7 @@ Register SPIRVGlobalRegistry::getSPIRVTypeID(const SPIRVType *SpirvType) const {
 SPIRVType *SPIRVGlobalRegistry::createSPIRVType(
     const Type *Ty, MachineIRBuilder &MIRBuilder,
     SPIRV::AccessQualifier::AccessQualifier AccQual, bool EmitIR) {
-  if (isSpecialType(Ty))
+  if (isSpecialOpaqueType(Ty))
     return getOrCreateSpecialType(Ty, MIRBuilder, AccQual);
   auto &TypeToSPIRVTypeMap = DT.getTypes()->getAllUses();
   auto t = TypeToSPIRVTypeMap.find(Ty);
@@ -725,7 +725,7 @@ SPIRVType *SPIRVGlobalRegistry::restOfCreateSPIRVType(
   // Do not add OpTypeForwardPointer to DT, a corresponding normal pointer type
   // will be added later. For special types it is already added to DT.
   if (SpirvType->getOpcode() != SPIRV::OpTypeForwardPointer && !Reg.isValid() &&
-      !isSpecialType(Ty))
+      !isSpecialOpaqueType(Ty))
     DT.add(Ty, &MIRBuilder.getMF(), getSPIRVTypeID(SpirvType));
 
   return SpirvType;
@@ -745,7 +745,7 @@ SPIRVType *SPIRVGlobalRegistry::getOrCreateSPIRVType(
     const Type *Ty, MachineIRBuilder &MIRBuilder,
     SPIRV::AccessQualifier::AccessQualifier AccessQual, bool EmitIR) {
   Register Reg = DT.find(Ty, &MIRBuilder.getMF());
-  if (Reg.isValid() && !isSpecialType(Ty))
+  if (Reg.isValid() && !isSpecialOpaqueType(Ty))
     return getSPIRVTypeForVReg(Reg);
   TypesInProcessing.clear();
   SPIRVType *STy = restOfCreateSPIRVType(Ty, MIRBuilder, AccessQual, EmitIR);
@@ -865,6 +865,16 @@ SPIRVType *SPIRVGlobalRegistry::getOrCreateOpTypePipe(
   return MIRBuilder.buildInstr(SPIRV::OpTypePipe)
       .addDef(ResVReg)
       .addImm(AccessQual);
+}
+
+SPIRVType *SPIRVGlobalRegistry::getOrCreateOpTypeDeviceEvent(
+    MachineIRBuilder &MIRBuilder) {
+  SPIRV::DeviceEventTypeDescriptor TD;
+  if (auto *Res = checkSpecialInstr(TD, MIRBuilder))
+    return Res;
+  Register ResVReg = createTypeVReg(MIRBuilder);
+  DT.add(TD, &MIRBuilder.getMF(), ResVReg);
+  return MIRBuilder.buildInstr(SPIRV::OpTypeDeviceEvent).addDef(ResVReg);
 }
 
 SPIRVType *SPIRVGlobalRegistry::getOrCreateOpTypeSampledImage(

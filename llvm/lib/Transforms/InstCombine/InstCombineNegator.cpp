@@ -395,7 +395,7 @@ std::array<Value *, 2> Negator::getSortedOperandsOfBinOp(Instruction *I) {
       return Builder.CreateShl(NegOp0, I->getOperand(1), I->getName() + ".neg");
     // Otherwise, `shl %x, C` can be interpreted as `mul %x, 1<<C`.
     auto *Op1C = dyn_cast<Constant>(I->getOperand(1));
-    if (!Op1C) // Early return.
+    if (!Op1C || !IsTrulyNegation)
       return nullptr;
     return Builder.CreateMul(
         I->getOperand(0),
@@ -522,7 +522,7 @@ std::array<Value *, 2> Negator::getSortedOperandsOfBinOp(Instruction *I) {
     // endless combine looping.
     for (Instruction *I : llvm::reverse(NewInstructions))
       I->eraseFromParent();
-    return llvm::None;
+    return std::nullopt;
   }
   return std::make_pair(ArrayRef<Instruction *>(NewInstructions), Negated);
 }

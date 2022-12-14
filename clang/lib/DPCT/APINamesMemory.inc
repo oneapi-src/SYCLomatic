@@ -190,13 +190,13 @@ ASSIGNABLE_FACTORY(
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),
     CONDITIONAL_FACTORY_ENTRY(
-        checkIsArgStream(3),
+        makeCheckNot(CheckArgIsDefaultCudaStream(3)),
         MEMBER_CALL_FACTORY_ENTRY(
             "cuMemcpyDtoDAsync_v2", ARG(3), true, "memcpy", ARG(0), ARG(1), ARG(2)),
         MEMBER_CALL_FACTORY_ENTRY(
             "cuMemcpyDtoDAsync_v2", QUEUESTR, false, "memcpy", ARG(0), ARG(1), ARG(2))),
     CONDITIONAL_FACTORY_ENTRY(
-        checkIsArgStream(3),
+        makeCheckNot(CheckArgIsDefaultCudaStream(3)),
         CALL_FACTORY_ENTRY(
             "cuMemcpyDtoDAsync_v2", CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
             ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic"), STREAM(3))),
@@ -218,7 +218,7 @@ ASSIGNABLE_FACTORY(
         CAST(getDerefedType(0), CALL(MapNames::getDpctNamespace() + "dpct_malloc", DEREF(makeCallArgCreatorWithCall(1)), ARG(2), ARG(3)))))
 
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-    checkIsArgStream(3),
+    makeCheckNot(CheckArgIsDefaultCudaStream(3)),
     MEMBER_CALL_FACTORY_ENTRY(
         "cuMemPrefetchAsync", ARG(3), true, "prefetch", ARG(0), ARG(1)),
     FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Device_dev_mgr_get_device,
@@ -288,13 +288,13 @@ ASSIGNABLE_FACTORY(
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),
     CONDITIONAL_FACTORY_ENTRY(
-        checkIsArgStream(3),
+        makeCheckNot(CheckArgIsDefaultCudaStream(3)),
         MEMBER_CALL_FACTORY_ENTRY(
             "cuMemcpyHtoDAsync_v2", ARG(3), true, "memcpy", ARG(0), ARG(1), ARG(2)),
         MEMBER_CALL_FACTORY_ENTRY(
             "cuMemcpyHtoDAsync_v2", QUEUESTR, false, "memcpy", ARG(0), ARG(1), ARG(2))),
     CONDITIONAL_FACTORY_ENTRY(
-        checkIsArgStream(3),
+        makeCheckNot(CheckArgIsDefaultCudaStream(3)),
         CALL_FACTORY_ENTRY(
             "cuMemcpyHtoDAsync_v2", CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
             ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic"), STREAM(3))),
@@ -321,13 +321,13 @@ ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
 ASSIGNABLE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
     checkIsUSM(),
     CONDITIONAL_FACTORY_ENTRY(
-        checkIsArgStream(3),
+        makeCheckNot(CheckArgIsDefaultCudaStream(3)),
         MEMBER_CALL_FACTORY_ENTRY(
             "cuMemcpyAsync", ARG(3), true, "memcpy", ARG(0), ARG(1), ARG(2)),
         MEMBER_CALL_FACTORY_ENTRY(
             "cuMemcpyAsync", QUEUESTR, false, "memcpy", ARG(0), ARG(1), ARG(2))),
     CONDITIONAL_FACTORY_ENTRY(
-        checkIsArgStream(3),
+        makeCheckNot(CheckArgIsDefaultCudaStream(3)),
         CALL_FACTORY_ENTRY(
             "cuMemcpyAsync", CALL(MapNames::getDpctNamespace() + "async_dpct_memcpy",
             ARG(0), ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "automatic"), STREAM(3))),

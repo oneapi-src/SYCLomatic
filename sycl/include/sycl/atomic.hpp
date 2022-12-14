@@ -29,7 +29,8 @@ namespace sycl {
 __SYCL_INLINE_VER_NAMESPACE(_V1) {
 
 // Forward declaration
-template <typename pointerT, access::address_space addressSpace>
+template <typename pointerT, access::address_space addressSpace,
+          access::decorated isDecorated>
 class multi_ptr;
 
 namespace detail {
@@ -183,13 +184,22 @@ class __SYCL2020_DEPRECATED(
   static constexpr auto SpirvScope =
       detail::GetSpirvMemoryScope<addressSpace>::scope;
 
+  template <typename pointerT, access::decorated IsDecorated>
+  static auto
+  GetDecoratedPtr(multi_ptr<pointerT, addressSpace, IsDecorated> ptr) {
+    if constexpr (IsDecorated == access::decorated::legacy)
+      return ptr.get();
+    else
+      return ptr.get_decorated();
+  }
+
 public:
-  template <typename pointerT>
+  template <typename pointerT, access::decorated IsDecorated>
 #ifdef __SYCL_DEVICE_ONLY__
-  atomic(multi_ptr<pointerT, addressSpace> ptr)
-      : Ptr(ptr.get())
+  atomic(multi_ptr<pointerT, addressSpace, IsDecorated> ptr)
+      : Ptr(GetDecoratedPtr(ptr))
 #else
-  atomic(multi_ptr<pointerT, addressSpace> ptr)
+  atomic(multi_ptr<pointerT, addressSpace, IsDecorated> ptr)
       : Ptr(reinterpret_cast<std::atomic<T> *>(ptr.get()))
 #endif
   {
@@ -200,7 +210,7 @@ public:
 #ifdef __ENABLE_USM_ADDR_SPACE__
   // Create atomic in global_space with one from ext_intel_global_device_space
   template <access::address_space _Space = addressSpace,
-            typename = typename detail::enable_if_t<
+            typename = typename std::enable_if_t<
                 _Space == addressSpace &&
                 addressSpace == access::address_space::global_space>>
   atomic(const atomic<T, access::address_space::ext_intel_global_device_space>
@@ -209,7 +219,7 @@ public:
   }
 
   template <access::address_space _Space = addressSpace,
-            typename = typename detail::enable_if_t<
+            typename = typename std::enable_if_t<
                 _Space == addressSpace &&
                 addressSpace == access::address_space::global_space>>
   atomic(
@@ -225,17 +235,16 @@ public:
 
 #ifdef __SYCL_DEVICE_ONLY__
   template <typename T2 = T>
-  detail::enable_if_t<!std::is_same<cl_float, T2>::value, T>
+  std::enable_if_t<!std::is_same<cl_float, T2>::value, T>
   load(memory_order Order = memory_order::relaxed) const {
     return __spirv_AtomicLoad(Ptr, SpirvScope,
                               detail::getSPIRVMemorySemanticsMask(Order));
   }
   template <typename T2 = T>
-  detail::enable_if_t<std::is_same<cl_float, T2>::value, T>
+  std::enable_if_t<std::is_same<cl_float, T2>::value, T>
   load(memory_order Order = memory_order::relaxed) const {
-    auto *TmpPtr =
-        reinterpret_cast<typename multi_ptr<cl_int, addressSpace>::pointer_t>(
-            Ptr);
+    auto *TmpPtr = reinterpret_cast<typename multi_ptr<
+        cl_int, addressSpace, access::decorated::yes>::pointer>(Ptr);
     cl_int TmpVal = __spirv_AtomicLoad(
         TmpPtr, SpirvScope, detail::getSPIRVMemorySemanticsMask(Order));
     cl_float ResVal = bit_cast<cl_float>(TmpVal);

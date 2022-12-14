@@ -176,9 +176,24 @@ __global__ void foo2() {
   foo1(tb, tbt32);
 }
 
+__global__ void foo_tile32() {
+// CHECK: auto ttb = item_ct1.get_group();
+// CHECK-NEXT: sycl::sub_group tile32 = item_ct1.get_sub_group();
+// CHECK-NEXT: double rowThreadSum = 0.0;
+// CHECK-NEXT: int offset= 32;
+// CHECK-NEXT: tile32.shuffle_down(rowThreadSum, offset);
+// CHECK-NEXT: item_ct1.get_sub_group().get_local_linear_id();
+  cg::thread_block ttb = cg::this_thread_block();
+  cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(ttb);
+  double rowThreadSum = 0.0;
+  int offset= 32;
+  tile32.shfl_down(rowThreadSum, offset);
+  tile32.thread_rank();
+}
+
 int foo3() {
 //CHECK: dpct::get_default_queue().parallel_for(
-//CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+//CHECK-NEXT:   sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:   [=](sycl::nd_item<3> item_ct1) {{\[\[}}intel::reqd_sub_group_size(32){{\]\]}} {
 //CHECK-NEXT:     foo2(item_ct1);
 //CHECK-NEXT:   });

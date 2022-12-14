@@ -7,8 +7,8 @@
 // CHECK-NEXT: #include <sycl/sycl.hpp>
 // CHECK-NEXT: #include <dpct/dpct.hpp>
 // CHECK-NEXT: using namespace dpct;
-// CHECK-NEXT: #include <dpct/dpl_utils.hpp>
 // CHECK-NEXT: #include <complex>
+// CHECK-NEXT: #include <dpct/dpl_utils.hpp>
 // CHECK-EMPTY:
 #include <thrust/complex.h>
 #include <thrust/device_ptr.h>

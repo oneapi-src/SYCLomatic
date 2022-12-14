@@ -24,7 +24,6 @@
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/MapVector.h"
 #include "llvm/ADT/STLExtras.h"
-#include "llvm/ADT/StringSwitch.h"
 #include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/raw_ostream.h"
 #include <numeric>
@@ -254,7 +253,7 @@ void FuncOp::build(OpBuilder &builder, OperationState &state, StringRef name,
     return;
   assert(type.getNumInputs() == argAttrs.size());
   function_interface_impl::addArgAndResultAttrs(builder, state, argAttrs,
-                                                /*resultAttrs=*/llvm::None);
+                                                /*resultAttrs=*/std::nullopt);
 }
 
 ParseResult FuncOp::parse(OpAsmParser &parser, OperationState &result) {

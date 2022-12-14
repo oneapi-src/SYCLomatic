@@ -8,7 +8,7 @@
 
 #include "mlir/Dialect/Tensor/IR/TensorTilingInterfaceImpl.h"
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
-#include "mlir/Dialect/Arithmetic/Utils/Utils.h"
+#include "mlir/Dialect/Arith/Utils/Utils.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/Dialect/Tensor/IR/Tensor.h"
@@ -21,25 +21,10 @@ namespace {
 
 struct PadOpTiling : public TilingInterface::ExternalModel<PadOpTiling, PadOp> {
 
-  SmallVector<Value> getDestinationOperands(Operation *op, OpBuilder &b) const {
-    OpBuilder::InsertionGuard g(b);
-    b.setInsertionPoint(op);
-    ReifiedRankedShapedTypeDims reifiedShapes;
-    ReifyRankedShapedTypeOpInterface reifyShapedTypeInterface =
-        dyn_cast<ReifyRankedShapedTypeOpInterface>(op);
-    (void)reifyShapedTypeInterface.reifyResultShapes(b, reifiedShapes);
-
+  SmallVector<utils::IteratorType> getLoopIteratorTypes(Operation *op) const {
     auto padOp = cast<PadOp>(op);
-    SmallVector<OpFoldResult> mixedSizes = getAsOpFoldResult(reifiedShapes[0]);
-    Value initTensor = b.create<linalg::InitTensorOp>(
-        op->getLoc(), mixedSizes, padOp.getResultType().getElementType());
-    return {initTensor};
-  }
-
-  SmallVector<StringRef> getLoopIteratorTypes(Operation *op) const {
-    auto padOp = cast<PadOp>(op);
-    SmallVector<StringRef> iteratorTypes(padOp.getResultType().getRank(),
-                                         getParallelIteratorTypeName());
+    SmallVector<utils::IteratorType> iteratorTypes(
+        padOp.getResultType().getRank(), utils::IteratorType::parallel);
     return iteratorTypes;
   }
 
@@ -128,7 +113,7 @@ Operation *tensor::bubbleUpPadSlice(OpBuilder &b, tensor::PadOp padOp,
     if (auto constInt = getConstantIntValue(val)) {
       staticIndices.push_back(*constInt);
     } else {
-      staticIndices.push_back(ShapedType::kDynamicSize);
+      staticIndices.push_back(ShapedType::kDynamic);
       dynIndices.push_back(val);
     }
   };
@@ -231,7 +216,7 @@ Operation *tensor::bubbleUpPadSlice(OpBuilder &b, tensor::PadOp padOp,
   // The shape of the result can be obtained from the sizes passed in.
   SmallVector<Value> dynDims;
   SmallVector<int64_t> shape;
-  dispatchIndexOpFoldResults(sizes, dynDims, shape, ShapedType::kDynamicSize);
+  dispatchIndexOpFoldResults(sizes, dynDims, shape, ShapedType::kDynamic);
   RankedTensorType resultType =
       RankedTensorType::get(shape, padOp.getResultType().getElementType());
 
