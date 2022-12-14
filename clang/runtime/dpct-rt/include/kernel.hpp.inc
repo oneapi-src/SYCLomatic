@@ -103,6 +103,10 @@ static kernel_function_info get_kernel_function_info(const void *function) {
 
 namespace detail {
 
+ /// Write data to temporary file and return absolute path to temporary file.
+ /// Temporary file is created in a temporary directory both of which have random names
+ /// with only the user having access permissions.  Only one temporary file will be
+ /// created in the temporary directory.
 static std::filesystem::path write_data_to_file(char const *const data,
                                                 size_t size) {
   std::error_code ec;
@@ -172,6 +176,9 @@ static std::filesystem::path write_data_to_file(char const *const data,
     }
   } else
     throw std::runtime_error("could not validate file");
+
+  if (!filepath.is_absolute())
+    throw std::runtime_error("temporary filepath is not absolute");
 
   return filepath;
 }
@@ -323,7 +330,7 @@ static kernel_library load_dl_from_data(char const *const data, size_t size) {
   if (ec)
     throw std::runtime_error("could not set permissions");
 
-  if (std::filesystem::remove_all(filename.remove_filename()) != 2)
+  if (std::filesystem::remove_all(filename.remove_filename(),ec) != 2 || ec)
     // one directory and one temporary file should have been deleted
     throw std::runtime_error("Directory delete failed");
   if (ec)
