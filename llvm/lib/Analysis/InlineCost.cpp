@@ -44,6 +44,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include <climits>
 #include <limits>
+#include <optional>
 
 using namespace llvm;
 
@@ -167,7 +168,7 @@ Optional<int> getStringFnAttrAsInt(const Attribute &Attr) {
     if (!Attr.getValueAsString().getAsInteger(10, AttrValue))
       return AttrValue;
   }
-  return None;
+  return std::nullopt;
 }
 
 Optional<int> getStringFnAttrAsInt(CallBase &CB, StringRef AttrKind) {
@@ -489,10 +490,10 @@ public:
 
   InlineResult analyze();
 
-  Optional<Constant *> getSimplifiedValue(Instruction *I) {
+  std::optional<Constant *> getSimplifiedValue(Instruction *I) {
     if (SimplifiedValues.find(I) != SimplifiedValues.end())
       return SimplifiedValues[I];
-    return None;
+    return std::nullopt;
   }
 
   // Keep a bunch of stats about the cost savings found so we can print them
@@ -549,6 +550,9 @@ class InlineCostCallAnalyzer final : public CallAnalyzer {
   /// for speculative "expected profit" of the inlining decision.
   int Threshold = 0;
 
+  /// The amount of StaticBonus applied.
+  int StaticBonusApplied = 0;
+
   /// Attempt to evaluate indirect calls to boost its inline cost.
   const bool BoostIndirectCalls;
 
@@ -580,7 +584,7 @@ class InlineCostCallAnalyzer final : public CallAnalyzer {
   bool DecidedByCostBenefit = false;
 
   // The cost-benefit pair computed by cost-benefit analysis.
-  Optional<CostBenefitPair> CostBenefit = None;
+  Optional<CostBenefitPair> CostBenefit = std::nullopt;
 
   bool SingleBB = true;
 
@@ -811,16 +815,16 @@ class InlineCostCallAnalyzer final : public CallAnalyzer {
   // Determine whether we should inline the given call site, taking into account
   // both the size cost and the cycle savings.  Return None if we don't have
   // suficient profiling information to determine.
-  Optional<bool> costBenefitAnalysis() {
+  std::optional<bool> costBenefitAnalysis() {
     if (!CostBenefitAnalysisEnabled)
-      return None;
+      return std::nullopt;
 
     // buildInlinerPipeline in the pass builder sets HotCallSiteThreshold to 0
     // for the prelink phase of the AutoFDO + ThinLTO build.  Honor the logic by
     // falling back to the cost-based metric.
     // TODO: Improve this hacky condition.
     if (Threshold == 0)
-      return None;
+      return std::nullopt;
 
     assert(GetBFI);
     BlockFrequencyInfo *CalleeBFI = &(GetBFI(F));
@@ -1052,16 +1056,24 @@ public:
   Optional<InstructionCostDetail> getCostDetails(const Instruction *I) {
     if (InstructionCostDetailMap.find(I) != InstructionCostDetailMap.end())
       return InstructionCostDetailMap[I];
-    return None;
+    return std::nullopt;
   }
 
   virtual ~InlineCostCallAnalyzer() = default;
   int getThreshold() const { return Threshold; }
   int getCost() const { return Cost; }
+  int getStaticBonusApplied() const { return StaticBonusApplied; }
   Optional<CostBenefitPair> getCostBenefitPair() { return CostBenefit; }
   bool wasDecidedByCostBenefit() const { return DecidedByCostBenefit; }
   bool wasDecidedByCostThreshold() const { return DecidedByCostThreshold; }
 };
+
+// Return true if CB is the sole call to local function Callee.
+static bool isSoleCallToLocalFunction(const CallBase &CB,
+                                      const Function &Callee) {
+  return Callee.hasLocalLinkage() && Callee.hasOneLiveUse() &&
+         &Callee == CB.getCalledFunction();
+}
 
 class InlineCostFeaturesAnalyzer final : public CallAnalyzer {
 private:
@@ -1236,8 +1248,7 @@ private:
         (F.getCallingConv() == CallingConv::Cold));
 
     set(InlineCostFeatureIndex::LastCallToStaticBonus,
-        (F.hasLocalLinkage() && F.hasOneLiveUse() &&
-         &F == CandidateCall.getCalledFunction()));
+        isSoleCallToLocalFunction(CandidateCall, F));
 
     // FIXME: we shouldn't repeat this logic in both the Features and Cost
     // analyzer - instead, we should abstract it to a common method in the
@@ -1782,7 +1793,7 @@ InlineCostCallAnalyzer::getHotCallSiteThreshold(CallBase &Call,
   // Otherwise we need BFI to be available and to have a locally hot callsite
   // threshold.
   if (!CallerBFI || !Params.LocallyHotCallSiteThreshold)
-    return None;
+    return std::nullopt;
 
   // Determine if the callsite is hot relative to caller's entry. We could
   // potentially cache the computation of scaled entry frequency, but the added
@@ -1795,7 +1806,7 @@ InlineCostCallAnalyzer::getHotCallSiteThreshold(CallBase &Call,
     return Params.LocallyHotCallSiteThreshold;
 
   // Otherwise treat it normally.
-  return None;
+  return std::nullopt;
 }
 
 void InlineCostCallAnalyzer::updateThreshold(CallBase &Call, Function &Callee) {
@@ -1913,13 +1924,13 @@ void InlineCostCallAnalyzer::updateThreshold(CallBase &Call, Function &Callee) {
   SingleBBBonus = Threshold * SingleBBBonusPercent / 100;
   VectorBonus = Threshold * VectorBonusPercent / 100;
 
-  bool OnlyOneCallAndLocalLinkage = F.hasLocalLinkage() && F.hasOneLiveUse() &&
-                                    &F == Call.getCalledFunction();
   // If there is only one call of the function, and it has internal linkage,
   // the cost of inlining it drops dramatically. It may seem odd to update
   // Cost in updateThreshold, but the bonus depends on the logic in this method.
-  if (OnlyOneCallAndLocalLinkage)
+  if (isSoleCallToLocalFunction(Call, F)) {
     Cost -= LastCallToStaticBonus;
+    StaticBonusApplied = LastCallToStaticBonus;
+  }
 }
 
 bool CallAnalyzer::visitCmpInst(CmpInst &I) {
@@ -2712,12 +2723,10 @@ InlineResult CallAnalyzer::analyze() {
     onBlockAnalyzed(BB);
   }
 
-  bool OnlyOneCallAndLocalLinkage = F.hasLocalLinkage() && F.hasOneLiveUse() &&
-                                    &F == CandidateCall.getCalledFunction();
   // If this is a noduplicate call, we can still inline as long as
   // inlining this would cause the removal of the caller (so the instruction
   // is not actually duplicated, just moved).
-  if (!OnlyOneCallAndLocalLinkage && ContainsNoDuplicateCall)
+  if (!isSoleCallToLocalFunction(CandidateCall, F) && ContainsNoDuplicateCall)
     return InlineResult::failure("noduplicate");
 
   // If the callee's stack size exceeds the user-specified threshold,
@@ -2841,7 +2850,7 @@ Optional<int> llvm::getInliningCostEstimate(
                             /*IgnoreThreshold*/ true);
   auto R = CA.analyze();
   if (!R.isSuccess())
-    return None;
+    return std::nullopt;
   return CA.getCost();
 }
 
@@ -2854,7 +2863,7 @@ Optional<InlineCostFeatures> llvm::getInliningCostFeatures(
                                  ORE, *Call.getCalledFunction(), Call);
   auto R = CFA.analyze();
   if (!R.isSuccess())
-    return None;
+    return std::nullopt;
   return CFA.features();
 }
 
@@ -2926,7 +2935,7 @@ Optional<InlineResult> llvm::getAttributeBasedInliningDecision(
   if (Call.isNoInline())
     return InlineResult::failure("noinline call site attribute");
 
-  return None;
+  return std::nullopt;
 }
 
 InlineCost llvm::getInlineCost(
@@ -2968,7 +2977,8 @@ InlineCost llvm::getInlineCost(
   }
 
   if (CA.wasDecidedByCostThreshold())
-    return InlineCost::get(CA.getCost(), CA.getThreshold());
+    return InlineCost::get(CA.getCost(), CA.getThreshold(),
+                           CA.getStaticBonusApplied());
 
   // No details on how the decision was made, simply return always or never.
   return ShouldInline.isSuccess()

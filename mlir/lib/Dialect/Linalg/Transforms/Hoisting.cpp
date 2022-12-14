@@ -15,7 +15,7 @@
 #include "mlir/Analysis/SliceAnalysis.h"
 #include "mlir/Dialect/Affine/Analysis/AffineStructures.h"
 #include "mlir/Dialect/Affine/IR/AffineValueMap.h"
-#include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/Linalg/Transforms/Transforms.h"
@@ -57,14 +57,14 @@ struct HoistableRead {
 
 /// Return true if op1 and op2 are the same constant or the same SSA value.
 static bool isEqualOffsetSizeOrStride(OpFoldResult op1, OpFoldResult op2) {
-  auto getConstantIntValue = [](OpFoldResult ofr) -> llvm::Optional<int64_t> {
+  auto getConstantIntValue = [](OpFoldResult ofr) -> std::optional<int64_t> {
     Attribute attr = ofr.dyn_cast<Attribute>();
     // Note: isa+cast-like pattern allows writing the condition below as 1 line.
     if (!attr && ofr.get<Value>().getDefiningOp<arith::ConstantOp>())
       attr = ofr.get<Value>().getDefiningOp<arith::ConstantOp>().getValue();
     if (auto intAttr = attr.dyn_cast_or_null<IntegerAttr>())
       return intAttr.getValue().getSExtValue();
-    return llvm::None;
+    return std::nullopt;
   };
   auto cst1 = getConstantIntValue(op1), cst2 = getConstantIntValue(op2);
   if (cst1 && cst2 && *cst1 == *cst2)
@@ -106,8 +106,10 @@ static HoistableRead findMatchingTransferRead(HoistableWrite write,
   if (write.insertSliceOp)
     LLVM_DEBUG(DBGS() << "findMatchingTransferRead inserSliceOp: "
                       << *write.insertSliceOp.getOperation() << "\n");
-
-  for (Operation *user : srcTensor.getUsers()) {
+  SmallVector<Operation *> users(srcTensor.getUsers().begin(),
+                                 srcTensor.getUsers().end());
+  while (!users.empty()) {
+    Operation *user = users.pop_back_val();
     LLVM_DEBUG(DBGS() << "findMatchingTransferRead inspect user: " << *user
                       << "\n");
 
@@ -153,6 +155,16 @@ static HoistableRead findMatchingTransferRead(HoistableWrite write,
     if (read && read.getIndices() == write.transferWriteOp.getIndices() &&
         read.getVectorType() == write.transferWriteOp.getVectorType())
       return HoistableRead{read, sliceOp};
+
+    if (isa<vector::TransferWriteOp>(user)) {
+      // If we find a write with disjoint indices recurse through its uses.
+      if (vector::isDisjointTransferIndices(
+              cast<VectorTransferOpInterface>(user),
+              cast<VectorTransferOpInterface>(
+                  write.transferWriteOp.getOperation()))) {
+        users.append(user->getUsers().begin(), user->getUsers().end());
+      }
+    }
   }
   return HoistableRead();
 }

@@ -16,6 +16,7 @@
 #include "llvm/BinaryFormat/COFF.h"
 #include "llvm/BinaryFormat/ELF.h"
 #include "llvm/BinaryFormat/MachO.h"
+#include "llvm/Support/ARMTargetParser.h"
 #include "llvm/Support/Compiler.h"
 
 using namespace lldb;
@@ -220,6 +221,11 @@ static const CoreDefinition g_core_definitions[] = {
     {eByteOrderLittle, 8, 2, 4, llvm::Triple::riscv64, ArchSpec::eCore_riscv64,
      "riscv64"},
 
+    {eByteOrderLittle, 4, 4, 4, llvm::Triple::loongarch32,
+     ArchSpec::eCore_loongarch32, "loongarch32"},
+    {eByteOrderLittle, 8, 4, 4, llvm::Triple::loongarch64,
+     ArchSpec::eCore_loongarch64, "loongarch64"},
+
     {eByteOrderLittle, 4, 4, 4, llvm::Triple::UnknownArch,
      ArchSpec::eCore_uknownMach32, "unknown-mach-32"},
     {eByteOrderLittle, 8, 4, 4, llvm::Triple::UnknownArch,
@@ -340,9 +346,9 @@ static const ArchDefinitionEntry g_macho_arch_entries[] = {
     {ArchSpec::eCore_uknownMach64,    llvm::MachO::CPU_ARCH_ABI64,      0,                                      0xFF000000u, 0x00000000u}};
 // clang-format on
 
-static const ArchDefinition g_macho_arch_def = {
-    eArchTypeMachO, llvm::array_lengthof(g_macho_arch_entries),
-    g_macho_arch_entries, "mach-o"};
+static const ArchDefinition g_macho_arch_def = {eArchTypeMachO,
+                                                std::size(g_macho_arch_entries),
+                                                g_macho_arch_entries, "mach-o"};
 
 //===----------------------------------------------------------------------===//
 // A table that gets searched linearly for matches. This table is used to
@@ -406,11 +412,17 @@ static const ArchDefinitionEntry g_elf_arch_entries[] = {
      ArchSpec::eRISCVSubType_riscv32, 0xFFFFFFFFu, 0xFFFFFFFFu}, // riscv32
     {ArchSpec::eCore_riscv64, llvm::ELF::EM_RISCV,
      ArchSpec::eRISCVSubType_riscv64, 0xFFFFFFFFu, 0xFFFFFFFFu}, // riscv64
+    {ArchSpec::eCore_loongarch32, llvm::ELF::EM_LOONGARCH,
+     ArchSpec::eLoongArchSubType_loongarch32, 0xFFFFFFFFu,
+     0xFFFFFFFFu}, // loongarch32
+    {ArchSpec::eCore_loongarch64, llvm::ELF::EM_LOONGARCH,
+     ArchSpec::eLoongArchSubType_loongarch64, 0xFFFFFFFFu,
+     0xFFFFFFFFu}, // loongarch64
 };
 
 static const ArchDefinition g_elf_arch_def = {
     eArchTypeELF,
-    llvm::array_lengthof(g_elf_arch_entries),
+    std::size(g_elf_arch_entries),
     g_elf_arch_entries,
     "elf",
 };
@@ -436,7 +448,7 @@ static const ArchDefinitionEntry g_coff_arch_entries[] = {
 
 static const ArchDefinition g_coff_arch_def = {
     eArchTypeCOFF,
-    llvm::array_lengthof(g_coff_arch_entries),
+    std::size(g_coff_arch_entries),
     g_coff_arch_entries,
     "pe-coff",
 };
@@ -468,7 +480,7 @@ static const CoreDefinition *FindCoreDefinition(llvm::StringRef name) {
 }
 
 static inline const CoreDefinition *FindCoreDefinition(ArchSpec::Core core) {
-  if (core < llvm::array_lengthof(g_core_definitions))
+  if (core < std::size(g_core_definitions))
     return &g_core_definitions[core];
   return nullptr;
 }
@@ -627,7 +639,7 @@ std::string ArchSpec::GetClangTargetCPU() const {
   }
 
   if (GetTriple().isARM())
-    cpu = GetTriple().getARMCPUForArch("").str();
+    cpu = llvm::ARM::getARMCPUForArch(GetTriple(), "").str();
   return cpu;
 }
 
@@ -1468,16 +1480,4 @@ void ArchSpec::DumpTriple(llvm::raw_ostream &s) const {
 
   if (!environ_str.empty())
     s << "-" << environ_str;
-}
-
-void llvm::yaml::ScalarTraits<ArchSpec>::output(const ArchSpec &Val, void *,
-                                                raw_ostream &Out) {
-  Val.DumpTriple(Out);
-}
-
-llvm::StringRef
-llvm::yaml::ScalarTraits<ArchSpec>::input(llvm::StringRef Scalar, void *,
-                                          ArchSpec &Val) {
-  Val = ArchSpec(Scalar);
-  return {};
 }

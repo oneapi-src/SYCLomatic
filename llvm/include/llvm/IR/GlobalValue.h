@@ -198,7 +198,9 @@ public:
 
   GlobalValue(const GlobalValue &) = delete;
 
-  unsigned getAddressSpace() const;
+  unsigned getAddressSpace() const {
+    return getType()->getAddressSpace();
+  }
 
   enum class UnnamedAddr {
     None,
@@ -275,7 +277,11 @@ public:
   bool hasDLLExportStorageClass() const {
     return DllStorageClass == DLLExportStorageClass;
   }
-  void setDLLStorageClass(DLLStorageClassTypes C) { DllStorageClass = C; }
+  void setDLLStorageClass(DLLStorageClassTypes C) {
+    assert((!hasLocalLinkage() || C == DefaultStorageClass) &&
+           "local linkage requires DefaultStorageClass");
+    DllStorageClass = C;
+  }
 
   bool hasSection() const { return !getSection().empty(); }
   StringRef getSection() const;
@@ -524,8 +530,10 @@ public:
   }
 
   void setLinkage(LinkageTypes LT) {
-    if (isLocalLinkage(LT))
+    if (isLocalLinkage(LT)) {
       Visibility = DefaultVisibility;
+      DllStorageClass = DefaultStorageClass;
+    }
     Linkage = LT;
     if (isImplicitDSOLocal())
       setDSOLocal(true);

@@ -359,7 +359,6 @@ struct UpwardsMemoryQuery {
   const Instruction *Inst = nullptr;
   // The MemoryAccess we actually got called with, used to test local domination
   const MemoryAccess *OriginalAccess = nullptr;
-  Optional<AliasResult> AR = AliasResult(AliasResult::MayAlias);
   bool SkipSelfAccess = false;
 
   UpwardsMemoryQuery() = default;
@@ -378,9 +377,10 @@ static bool isUseTriviallyOptimizableToLiveOnEntry(AliasAnalysisType &AA,
                                                    const Instruction *I) {
   // If the memory can't be changed, then loads of the memory can't be
   // clobbered.
-  if (auto *LI = dyn_cast<LoadInst>(I))
+  if (auto *LI = dyn_cast<LoadInst>(I)) {
     return I->hasMetadata(LLVMContext::MD_invariant_load) ||
-           AA.pointsToConstantMemory(MemoryLocation::get(LI));
+           !isModSet(AA.getModRefInfoMask(MemoryLocation::get(LI)));
+  }
   return false;
 }
 
@@ -528,10 +528,6 @@ template <class AliasAnalysisType> class ClobberWalker {
   // List of visited <Access, Location> pairs; we can skip paths already
   // visited with the same memory location.
   DenseSet<ConstMemoryAccessPair> VisitedPhis;
-  // Record if phi translation has been performed during the current phi
-  // optimization walk, as merging alias results after phi translation can
-  // yield incorrect results. Context in PR46156.
-  bool PerformedPhiTranslation = false;
 
   /// Find the nearest def or phi that `From` can legally be optimized to.
   const MemoryAccess *getWalkTarget(const MemoryPhi *From) const {
@@ -603,8 +599,7 @@ template <class AliasAnalysisType> class ClobberWalker {
 
   void addSearches(MemoryPhi *Phi, SmallVectorImpl<ListIndex> &PausedSearches,
                    ListIndex PriorNode) {
-    auto UpwardDefsBegin = upward_defs_begin({Phi, Paths[PriorNode].Loc}, DT,
-                                             &PerformedPhiTranslation);
+    auto UpwardDefsBegin = upward_defs_begin({Phi, Paths[PriorNode].Loc}, DT);
     auto UpwardDefs = make_range(UpwardDefsBegin, upward_defs_end());
     for (const MemoryAccessPair &P : UpwardDefs) {
       PausedSearches.push_back(Paths.size());
@@ -659,16 +654,8 @@ template <class AliasAnalysisType> class ClobberWalker {
       //   - We still cache things for A, so C only needs to walk up a bit.
       // If this behavior becomes problematic, we can fix without a ton of extra
       // work.
-      if (!VisitedPhis.insert({Node.Last, Node.Loc}).second) {
-        if (PerformedPhiTranslation) {
-          // If visiting this path performed Phi translation, don't continue,
-          // since it may not be correct to merge results from two paths if one
-          // relies on the phi translation.
-          TerminatedPath Term{Node.Last, PathIndex};
-          return Term;
-        }
+      if (!VisitedPhis.insert({Node.Last, Node.Loc}).second)
         continue;
-      }
 
       const MemoryAccess *SkipStopWhere = nullptr;
       if (Query->SkipSelfAccess && Node.Loc == Query->StartingLoc) {
@@ -707,7 +694,7 @@ template <class AliasAnalysisType> class ClobberWalker {
       addSearches(cast<MemoryPhi>(Res.Result), PausedSearches, PathIndex);
     }
 
-    return None;
+    return std::nullopt;
   }
 
   template <typename T, typename Walker>
@@ -734,7 +721,7 @@ template <class AliasAnalysisType> class ClobberWalker {
     T &curNode() const { return W->Paths[*N]; }
 
     Walker *W = nullptr;
-    Optional<ListIndex> N = None;
+    Optional<ListIndex> N = std::nullopt;
   };
 
   using def_path_iterator = generic_def_path_iterator<DefPath, ClobberWalker>;
@@ -781,10 +768,10 @@ template <class AliasAnalysisType> class ClobberWalker {
   /// terminates when a MemoryAccess that clobbers said MemoryLocation is found.
   OptznResult tryOptimizePhi(MemoryPhi *Phi, MemoryAccess *Start,
                              const MemoryLocation &Loc) {
-    assert(Paths.empty() && VisitedPhis.empty() && !PerformedPhiTranslation &&
+    assert(Paths.empty() && VisitedPhis.empty() &&
            "Reset the optimization state.");
 
-    Paths.emplace_back(Loc, Start, Phi, None);
+    Paths.emplace_back(Loc, Start, Phi, std::nullopt);
     // Stores how many "valid" optimization nodes we had prior to calling
     // addSearches/getBlockingAccess. Necessary for caching if we had a blocker.
     auto PriorPathsSize = Paths.size();
@@ -937,7 +924,6 @@ template <class AliasAnalysisType> class ClobberWalker {
   void resetPhiOptznState() {
     Paths.clear();
     VisitedPhis.clear();
-    PerformedPhiTranslation = false;
   }
 
 public:
@@ -961,7 +947,7 @@ public:
     if (auto *MU = dyn_cast<MemoryUse>(Start))
       Current = MU->getDefiningAccess();
 
-    DefPath FirstDesc(Q.StartingLoc, Current, Current, None);
+    DefPath FirstDesc(Q.StartingLoc, Current, Current, std::nullopt);
     // Fast path for the overly-common case (no crazy phi optimization
     // necessary)
     UpwardsWalkResult WalkResult = walkToPhiOrClobber(FirstDesc);
@@ -1319,7 +1305,6 @@ private:
     // This is where the last walk for this memory location ended.
     unsigned long LastKill;
     bool LastKillValid;
-    Optional<AliasResult> AR;
   };
 
   void optimizeUsesInBlock(const BasicBlock *, unsigned long &, unsigned long &,
@@ -1472,8 +1457,6 @@ void MemorySSA::OptimizeUses::optimizeUsesInBlock(
       }
       --UpperBound;
     }
-
-    // Note: Phis always have AliasResult AR set to MayAlias ATM.
 
     // At the end of this loop, UpperBound is either a clobber, or lower bound
     // PHI walking may cause it to be < LowerBound, and in fact, < LastKill.
@@ -1773,15 +1756,22 @@ MemoryUseOrDef *MemorySSA::createNewAccess(Instruction *I,
     Def = isa<MemoryDef>(Template);
     Use = isa<MemoryUse>(Template);
 #if !defined(NDEBUG)
-    ModRefInfo ModRef = AAP->getModRefInfo(I, None);
+    ModRefInfo ModRef = AAP->getModRefInfo(I, std::nullopt);
     bool DefCheck, UseCheck;
     DefCheck = isModSet(ModRef) || isOrdered(I);
     UseCheck = isRefSet(ModRef);
-    assert(Def == DefCheck && (Def || Use == UseCheck) && "Invalid template");
+    // Use set is not checked since AA may return better results as a result of
+    // other transforms.
+    // FIXME: Would Def value always be consistent after transforms?
+    assert(Def == DefCheck && "Invalid template");
+    if (!Def && Use != UseCheck) {
+      // New Access should not have more power than template access
+      assert(!UseCheck && "Invalid template");
+    }
 #endif
   } else {
     // Find out what affect this instruction has on memory.
-    ModRefInfo ModRef = AAP->getModRefInfo(I, None);
+    ModRefInfo ModRef = AAP->getModRefInfo(I, std::nullopt);
     // The isOrdered check is used to ensure that volatiles end up as defs
     // (atomics end up as ModRef right now anyway).  Until we separate the
     // ordering chain from the memory chain, this enables people to see at least
@@ -2638,8 +2628,8 @@ void MemoryUse::deleteMe(DerivedUser *Self) {
   delete static_cast<MemoryUse *>(Self);
 }
 
-bool upward_defs_iterator::IsGuaranteedLoopInvariant(Value *Ptr) const {
-  auto IsGuaranteedLoopInvariantBase = [](Value *Ptr) {
+bool upward_defs_iterator::IsGuaranteedLoopInvariant(const Value *Ptr) const {
+  auto IsGuaranteedLoopInvariantBase = [](const Value *Ptr) {
     Ptr = Ptr->stripPointerCasts();
     if (!isa<Instruction>(Ptr))
       return true;

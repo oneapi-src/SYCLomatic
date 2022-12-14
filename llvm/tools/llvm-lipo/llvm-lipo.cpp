@@ -28,8 +28,10 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileOutputBuffer.h"
 #include "llvm/Support/InitLLVM.h"
+#include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/WithColor.h"
 #include "llvm/TextAPI/Architecture.h"
+#include <optional>
 
 using namespace llvm;
 using namespace llvm::object;
@@ -104,7 +106,7 @@ enum class LipoAction {
 };
 
 struct InputFile {
-  Optional<StringRef> ArchType;
+  std::optional<StringRef> ArchType;
   StringRef FileName;
 };
 
@@ -180,7 +182,7 @@ static Config parseLipoOptions(ArrayRef<const char *> ArgsArr) {
     reportError("unknown argument '" + Arg->getAsString(InputArgs) + "'");
 
   for (auto *Arg : InputArgs.filtered(LIPO_INPUT))
-    C.InputFiles.push_back({None, Arg->getValue()});
+    C.InputFiles.push_back({std::nullopt, Arg->getValue()});
   for (auto *Arg : InputArgs.filtered(LIPO_arch)) {
     validateArchitectureName(Arg->getValue(0));
     assert(Arg->getValue(1) && "file_name is missing");
@@ -425,7 +427,7 @@ static void printBinaryArchs(LLVMContext &LLVMCtx, const Binary *Binary,
   Expected<Slice> SliceOrErr = createSliceFromIR(*IR, 0);
   if (!SliceOrErr)
     reportError(IR->getFileName(), SliceOrErr.takeError());
-  
+
   OS << SliceOrErr->getArchString() << " \n";
 }
 
@@ -718,8 +720,12 @@ replaceSlices(LLVMContext &LLVMCtx,
   exit(EXIT_SUCCESS);
 }
 
-int main(int argc, char **argv) {
+int llvm_lipo_main(int argc, char **argv) {
   InitLLVM X(argc, argv);
+  llvm::InitializeAllTargetInfos();
+  llvm::InitializeAllTargetMCs();
+  llvm::InitializeAllAsmParsers();
+
   Config C = parseLipoOptions(makeArrayRef(argv + 1, argc - 1));
   LLVMContext LLVMCtx;
   SmallVector<OwningBinary<Binary>, 1> InputBinaries =

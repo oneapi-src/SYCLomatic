@@ -49,7 +49,7 @@ struct RTLInfoTy {
   typedef int32_t(data_exchange_ty)(int32_t, void *, int32_t, void *, int64_t);
   typedef int32_t(data_exchange_async_ty)(int32_t, void *, int32_t, void *,
                                           int64_t, __tgt_async_info *);
-  typedef int32_t(data_delete_ty)(int32_t, void *);
+  typedef int32_t(data_delete_ty)(int32_t, void *, int32_t);
   typedef int32_t(run_region_ty)(int32_t, void *, void **, ptrdiff_t *,
                                  int32_t);
   typedef int32_t(run_region_async_ty)(int32_t, void *, void **, ptrdiff_t *,
@@ -169,6 +169,9 @@ struct RTLsTy {
   // (i.e. the library attempts to load the RTLs (plugins) only once).
   std::once_flag InitFlag;
   void loadRTLs(); // not thread-safe
+
+private:
+  static bool attemptLoadRTL(const std::string &RTLName, RTLInfoTy &RTL);
 };
 
 /// Map between the host entry begin and the translation table. Each

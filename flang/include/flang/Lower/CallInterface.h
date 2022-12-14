@@ -159,6 +159,10 @@ public:
     bool mayBeModifiedByCall() const;
     /// Can the argument be read by the callee ?
     bool mayBeReadByCall() const;
+    /// Is the argument INTENT(OUT)
+    bool isIntentOut() const;
+    /// Does the argument have the CONTIGUOUS attribute or have explicit shape ?
+    bool mustBeMadeContiguous() const;
     /// How entity is passed by.
     PassEntityBy passBy;
     /// What is the entity (SymbolRef for callee/ActualArgument* for caller)
@@ -280,6 +284,14 @@ public:
   /// procedure.
   bool isIndirectCall() const;
 
+  /// Returns true if this is a call of a type-bound procedure with a
+  /// polymorphic entity.
+  bool requireDispatchCall() const;
+
+  /// Get the passed-object argument index. nullopt if there is no passed-object
+  /// index.
+  std::optional<unsigned> getPassArgIndex() const;
+
   /// Return the procedure symbol if this is a call to a user defined
   /// procedure.
   const Fortran::semantics::Symbol *getProcedureSymbol() const;
@@ -367,6 +379,10 @@ public:
   /// On the callee side it does not matter whether the procedure is
   /// called through pointers or not.
   bool isIndirectCall() const { return false; }
+
+  /// On the callee side it does not matter whether the procedure is called
+  /// through dynamic dispatch or not.
+  bool requireDispatchCall() const { return false; };
 
   /// Return the procedure symbol if this is a call to a user defined
   /// procedure.

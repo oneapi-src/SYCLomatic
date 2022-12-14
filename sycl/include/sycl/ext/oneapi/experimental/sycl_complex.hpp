@@ -814,16 +814,15 @@ arg(const complex<_Tp> &__c) {
 }
 
 template <class _Tp>
-SYCL_EXTERNAL _SYCL_EXT_CPLX_INLINE_VISIBILITY
-    typename enable_if<is_integral<_Tp>::value || is_same<_Tp, double>::value,
-                       double>::type
-    arg(_Tp __re) {
+SYCL_EXTERNAL _SYCL_EXT_CPLX_INLINE_VISIBILITY typename std::enable_if<
+    is_integral<_Tp>::value || is_same<_Tp, double>::value, double>::type
+arg(_Tp __re) {
   return sycl::atan2(0., __re);
 }
 
 template <class _Tp>
 SYCL_EXTERNAL _SYCL_EXT_CPLX_INLINE_VISIBILITY
-    typename enable_if<is_same<_Tp, float>::value, float>::type
+    typename std::enable_if<is_same<_Tp, float>::value, float>::type
     arg(_Tp __re) {
   return sycl::atan2(0.F, __re);
 }
@@ -877,7 +876,7 @@ proj(const complex<_Tp> &__c) {
 }
 
 template <class _Tp>
-SYCL_EXTERNAL _SYCL_EXT_CPLX_INLINE_VISIBILITY typename enable_if<
+SYCL_EXTERNAL _SYCL_EXT_CPLX_INLINE_VISIBILITY typename std::enable_if<
     is_floating_point<_Tp>::value,
     typename __libcpp_complex_overload_traits<_Tp>::_ComplexType>::type
 proj(_Tp __re) {
@@ -887,7 +886,7 @@ proj(_Tp __re) {
 }
 
 template <class _Tp>
-SYCL_EXTERNAL _SYCL_EXT_CPLX_INLINE_VISIBILITY typename enable_if<
+SYCL_EXTERNAL _SYCL_EXT_CPLX_INLINE_VISIBILITY typename std::enable_if<
     is_integral<_Tp>::value,
     typename __libcpp_complex_overload_traits<_Tp>::_ComplexType>::type
 proj(_Tp __re) {
@@ -998,8 +997,8 @@ SYCL_EXTERNAL
 template <class _Tp, class _Up,
           class = std::enable_if<is_gencomplex<_Tp>::value>>
 SYCL_EXTERNAL _SYCL_EXT_CPLX_INLINE_VISIBILITY
-    typename enable_if<is_genfloat<_Up>::value,
-                       complex<typename __promote<_Tp, _Up>::type>>::type
+    typename std::enable_if<is_genfloat<_Up>::value,
+                            complex<typename __promote<_Tp, _Up>::type>>::type
     pow(const complex<_Tp> &__x, const _Up &__y) {
   typedef complex<typename __promote<_Tp, _Up>::type> result_type;
   return sycl::ext::oneapi::experimental::pow(result_type(__x),
@@ -1009,8 +1008,8 @@ SYCL_EXTERNAL _SYCL_EXT_CPLX_INLINE_VISIBILITY
 template <class _Tp, class _Up,
           class = std::enable_if<is_gencomplex<_Tp>::value>>
 SYCL_EXTERNAL _SYCL_EXT_CPLX_INLINE_VISIBILITY
-    typename enable_if<is_genfloat<_Up>::value,
-                       complex<typename __promote<_Tp, _Up>::type>>::type
+    typename std::enable_if<is_genfloat<_Up>::value,
+                            complex<typename __promote<_Tp, _Up>::type>>::type
     pow(const _Tp &__x, const complex<_Up> &__y) {
   typedef complex<typename __promote<_Tp, _Up>::type> result_type;
   return sycl::ext::oneapi::experimental::pow(result_type(__x),
@@ -1029,7 +1028,7 @@ _SYCL_EXT_CPLX_INLINE_VISIBILITY complex<_Tp> __sqr(const complex<_Tp> &__x) {
 
 template <class _Tp, class = std::enable_if<is_gencomplex<_Tp>::value>>
 SYCL_EXTERNAL complex<_Tp> asinh(const complex<_Tp> &__x) {
-  const _Tp __pi(sycl::atan2(+0., -0.));
+  const _Tp __pi(sycl::atan2(_Tp(+0.), _Tp(-0.)));
   if (sycl::isinf(__x.real())) {
     if (sycl::isnan(__x.imag()))
       return __x;
@@ -1057,7 +1056,7 @@ SYCL_EXTERNAL complex<_Tp> asinh(const complex<_Tp> &__x) {
 
 template <class _Tp, class = std::enable_if<is_gencomplex<_Tp>::value>>
 SYCL_EXTERNAL complex<_Tp> acosh(const complex<_Tp> &__x) {
-  const _Tp __pi(sycl::atan2(+0., -0.));
+  const _Tp __pi(sycl::atan2(_Tp(+0.), _Tp(-0.)));
   if (sycl::isinf(__x.real())) {
     if (sycl::isnan(__x.imag()))
       return complex<_Tp>(sycl::fabs(__x.real()), __x.imag());
@@ -1090,7 +1089,7 @@ SYCL_EXTERNAL complex<_Tp> acosh(const complex<_Tp> &__x) {
 
 template <class _Tp, class = std::enable_if<is_gencomplex<_Tp>::value>>
 SYCL_EXTERNAL complex<_Tp> atanh(const complex<_Tp> &__x) {
-  const _Tp __pi(sycl::atan2(+0., -0.));
+  const _Tp __pi(sycl::atan2(_Tp(+0.), _Tp(-0.)));
   if (sycl::isinf(__x.imag())) {
     return complex<_Tp>(sycl::copysign(_Tp(0), __x.real()),
                         sycl::copysign(__pi / _Tp(2), __x.imag()));
@@ -1180,7 +1179,7 @@ SYCL_EXTERNAL complex<_Tp> asin(const complex<_Tp> &__x) {
 
 template <class _Tp, class = std::enable_if<is_gencomplex<_Tp>::value>>
 SYCL_EXTERNAL complex<_Tp> acos(const complex<_Tp> &__x) {
-  const _Tp __pi(sycl::atan2(+0., -0.));
+  const _Tp __pi(sycl::atan2(_Tp(+0.), _Tp(-0.)));
   if (sycl::isinf(__x.real())) {
     if (sycl::isnan(__x.imag()))
       return complex<_Tp>(__x.imag(), __x.real());

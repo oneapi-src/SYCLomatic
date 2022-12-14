@@ -3,7 +3,6 @@
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/Specifiers.h"
 #include "clang/Lex/Lexer.h"
-#include "llvm/ADT/StringSwitch.h"
 
 using namespace clang;
 
@@ -531,6 +530,14 @@ JSONNodeDumper::createCXXBaseSpecifier(const CXXBaseSpecifier &BS) {
 
 void JSONNodeDumper::VisitTypedefType(const TypedefType *TT) {
   JOS.attribute("decl", createBareDeclRef(TT->getDecl()));
+  if (!TT->typeMatchesDecl())
+    JOS.attribute("type", createQualType(TT->desugar()));
+}
+
+void JSONNodeDumper::VisitUsingType(const UsingType *TT) {
+  JOS.attribute("decl", createBareDeclRef(TT->getFoundDecl()));
+  if (!TT->typeMatchesDecl())
+    JOS.attribute("type", createQualType(TT->desugar()));
 }
 
 void JSONNodeDumper::VisitFunctionType(const FunctionType *T) {
@@ -683,6 +690,18 @@ void JSONNodeDumper::VisitTemplateTypeParmType(
   JOS.attribute("decl", createBareDeclRef(TTPT->getDecl()));
 }
 
+void JSONNodeDumper::VisitSubstTemplateTypeParmType(
+    const SubstTemplateTypeParmType *STTPT) {
+  JOS.attribute("index", STTPT->getIndex());
+  if (auto PackIndex = STTPT->getPackIndex())
+    JOS.attribute("pack_index", *PackIndex);
+}
+
+void JSONNodeDumper::VisitSubstTemplateTypeParmPackType(
+    const SubstTemplateTypeParmPackType *T) {
+  JOS.attribute("index", T->getIndex());
+}
+
 void JSONNodeDumper::VisitAutoType(const AutoType *AT) {
   JOS.attribute("undeduced", !AT->isDeduced());
   switch (AT->getKeyword()) {
@@ -775,6 +794,7 @@ void JSONNodeDumper::VisitTypeAliasDecl(const TypeAliasDecl *TAD) {
 void JSONNodeDumper::VisitNamespaceDecl(const NamespaceDecl *ND) {
   VisitNamedDecl(ND);
   attributeOnlyIfTrue("isInline", ND->isInline());
+  attributeOnlyIfTrue("isNested", ND->isNested());
   if (!ND->isOriginalNamespace())
     JOS.attribute("originalNamespace",
                   createBareDeclRef(ND->getOriginalNamespace()));
@@ -894,6 +914,11 @@ void JSONNodeDumper::VisitCXXRecordDecl(const CXXRecordDecl *RD) {
         JOS.value(createCXXBaseSpecifier(Spec));
     });
   }
+}
+
+void JSONNodeDumper::VisitHLSLBufferDecl(const HLSLBufferDecl *D) {
+  VisitNamedDecl(D);
+  JOS.attribute("bufferKind", D->isCBuffer() ? "cbuffer" : "tbuffer");
 }
 
 void JSONNodeDumper::VisitTemplateTypeParmDecl(const TemplateTypeParmDecl *D) {

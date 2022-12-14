@@ -2949,19 +2949,11 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     if (!TST)
       return;
 
-    bool HasUnremovedPreviousArg = 0;
-    for (unsigned i = 0; i < TST->getNumArgs(); i++) {
-      if (!dpct::DpctGlobalInfo::getTypeName(TST->getArg(0).getAsType())
-               .compare("thrust::use_default")) {
-        auto ArgBeginLoc = TSTL.getArgLoc(i).getSourceRange().getBegin();
-        auto ArgEndLoc = TSTL.getArgLoc(i).getSourceRange().getEnd();
-        if (HasUnremovedPreviousArg && i < TST->getNumArgs() - 1) {
-          ArgEndLoc = TSTL.getArgLoc(i - 1).getSourceRange().getBegin();
-        }
-        emplaceTransformation(new ReplaceToken(ArgBeginLoc, ArgEndLoc, ""));
-      } else {
-        HasUnremovedPreviousArg = 1;
-      }
+    if (!DpctGlobalInfo::getTypeName(TST->template_arguments()[0].getAsType())
+            .compare("thrust::use_default")) {
+      auto ArgBeginLoc = TSTL.getArgLoc(0).getSourceRange().getBegin();
+      auto ArgEndLoc = TSTL.getArgLoc(0).getSourceRange().getEnd();
+      emplaceTransformation(new ReplaceToken(ArgBeginLoc, ArgEndLoc, ""));
     }
   }
 }
@@ -13633,13 +13625,12 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
         TST->getTemplateName().getAsTemplateDecl()->getNameAsString();
 
     if (Name == "texture") {
-      auto ArgNum = TST->getNumArgs();
+      auto Args = TST->template_arguments();
 
-      if (!isa<ParmVarDecl>(VD) || ArgNum != 3)
+      if (!isa<ParmVarDecl>(VD) || Args.size() != 3)
         return;
 
-      auto Arg2 = TST->getArg(2);
-      if (getStmtSpelling(Arg2.getAsExpr()) == "cudaReadModeNormalizedFloat")
+      if (getStmtSpelling(Args[2].getAsExpr()) == "cudaReadModeNormalizedFloat")
         report(VD->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_NORM_READ_MODE,
                true);
 
@@ -13650,11 +13641,10 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
     if (!TST)
       return;
 
-    auto ArgNum = TST->getNumArgs();
+    auto Args = TST->template_arguments();
 
-    if (ArgNum == 3) {
-      auto Arg2 = TST->getArg(2);
-      if (getStmtSpelling(Arg2.getAsExpr()) == "cudaReadModeNormalizedFloat")
+    if (Args.size() == 3) {
+      if (getStmtSpelling(Args[2].getAsExpr()) == "cudaReadModeNormalizedFloat")
         report(VD->getBeginLoc(), Diagnostics::UNSUPPORTED_IMAGE_NORM_READ_MODE,
                true);
     }

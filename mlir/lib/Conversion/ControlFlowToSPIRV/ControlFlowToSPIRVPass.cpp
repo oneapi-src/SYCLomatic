@@ -40,8 +40,8 @@ void ConvertControlFlowToSPIRVPass::runOnOperation() {
   std::unique_ptr<ConversionTarget> target =
       SPIRVConversionTarget::get(targetAttr);
 
-  SPIRVTypeConverter::Options options;
-  options.emulateNon32BitScalarTypes = this->emulateNon32BitScalarTypes;
+  SPIRVConversionOptions options;
+  options.emulateLT32BitScalarTypes = this->emulateLT32BitScalarTypes;
   SPIRVTypeConverter typeConverter(targetAttr, options);
 
   RewritePatternSet patterns(context);
