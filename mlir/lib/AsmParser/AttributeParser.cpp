@@ -357,7 +357,7 @@ static Optional<APInt> buildAttributeAPInt(Type type, bool isNegative,
   APInt result;
   bool isHex = spelling.size() > 1 && spelling[1] == 'x';
   if (spelling.getAsInteger(isHex ? 0 : 10, result))
-    return llvm::None;
+    return std::nullopt;
 
   // Extend or truncate the bitwidth to the right size.
   unsigned width = type.isIndex() ? IndexType::kInternalStorageBitWidth
@@ -369,7 +369,7 @@ static Optional<APInt> buildAttributeAPInt(Type type, bool isNegative,
     // The parser can return an unnecessarily wide result with leading zeros.
     // This isn't a problem, but truncating off bits is bad.
     if (result.countLeadingZeros() < result.getBitWidth() - width)
-      return llvm::None;
+      return std::nullopt;
 
     result = result.trunc(width);
   }
@@ -378,18 +378,18 @@ static Optional<APInt> buildAttributeAPInt(Type type, bool isNegative,
     // 0 bit integers cannot be negative and manipulation of their sign bit will
     // assert, so short-cut validation here.
     if (isNegative)
-      return llvm::None;
+      return std::nullopt;
   } else if (isNegative) {
     // The value is negative, we have an overflow if the sign bit is not set
     // in the negated apInt.
     result.negate();
     if (!result.isSignBitSet())
-      return llvm::None;
+      return std::nullopt;
   } else if ((type.isSignedInteger() || type.isIndex()) &&
              result.isSignBitSet()) {
     // The value is a positive signed integer or index,
     // we have an overflow if the sign bit is set.
-    return llvm::None;
+    return std::nullopt;
   }
 
   return result;
@@ -1066,12 +1066,12 @@ ShapedType Parser::parseElementsLiteralType(Type type) {
       return nullptr;
   }
 
-  if (!type.isa<RankedTensorType, VectorType>()) {
-    emitError("elements literal must be a ranked tensor or vector type");
+  auto sType = type.dyn_cast<ShapedType>();
+  if (!sType) {
+    emitError("elements literal must be a shaped type");
     return nullptr;
   }
 
-  auto sType = type.cast<ShapedType>();
   if (!sType.hasStaticShape())
     return (emitError("elements literal type must have static shape"), nullptr);
 
@@ -1170,13 +1170,15 @@ Attribute Parser::parseStridedLayoutAttr() {
   // fit into int64_t limits.
   auto parseStrideOrOffset = [&]() -> Optional<int64_t> {
     if (consumeIf(Token::question))
-      return ShapedType::kDynamicStrideOrOffset;
+      return ShapedType::kDynamic;
 
     SMLoc loc = getToken().getLoc();
     auto emitWrongTokenError = [&] {
-      emitError(loc, "expected a non-negative 64-bit signed integer or '?'");
-      return llvm::None;
+      emitError(loc, "expected a 64-bit signed integer or '?'");
+      return std::nullopt;
     };
+
+    bool negative = consumeIf(Token::minus);
 
     if (getToken().is(Token::integer)) {
       Optional<uint64_t> value = getToken().getUInt64IntegerValue();
@@ -1184,7 +1186,11 @@ Attribute Parser::parseStridedLayoutAttr() {
           *value > static_cast<uint64_t>(std::numeric_limits<int64_t>::max()))
         return emitWrongTokenError();
       consumeToken();
-      return static_cast<int64_t>(*value);
+      auto result = static_cast<int64_t>(*value);
+      if (negative)
+        result = -result;
+
+      return result;
     }
 
     return emitWrongTokenError();

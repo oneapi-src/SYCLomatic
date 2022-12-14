@@ -66,12 +66,26 @@ protected:
   /// This is a helper for \a grow() that's out of line to reduce code
   /// duplication.  This function will report a fatal error if it can't grow at
   /// least to \p MinSize.
-  void *mallocForGrow(size_t MinSize, size_t TSize, size_t &NewCapacity);
+  void *mallocForGrow(void *FirstEl, size_t MinSize, size_t TSize,
+                      size_t &NewCapacity);
 
   /// This is an implementation of the grow() method which only works
   /// on POD-like data types and is out of line to reduce code duplication.
   /// This function will report a fatal error if it cannot increase capacity.
   void grow_pod(void *FirstEl, size_t MinSize, size_t TSize);
+
+  /// If vector was first created with capacity 0, getFirstEl() points to the
+  /// memory right after, an area unallocated. If a subsequent allocation,
+  /// that grows the vector, happens to return the same pointer as getFirstEl(),
+  /// get a new allocation, otherwise isSmall() will falsely return that no
+  /// allocation was done (true) and the memory will not be freed in the
+  /// destructor. If a VSize is given (vector size), also copy that many
+  /// elements to the new allocation - used if realloca fails to increase
+  /// space, and happens to allocate precisely at BeginX.
+  /// This is unlikely to be called often, but resolves a memory leak when the
+  /// situation does occur.
+  void *replaceAllocation(void *NewElts, size_t TSize, size_t NewCapacity,
+                          size_t VSize = 0);
 
 public:
   size_t size() const { return Size; }
@@ -110,6 +124,7 @@ class SmallVectorTemplateCommon
     : public SmallVectorBase<SmallVectorSizeType<T>> {
   using Base = SmallVectorBase<SmallVectorSizeType<T>>;
 
+protected:
   /// Find the address of the first element.  For this pointer math to be valid
   /// with small-size of 0 for T with lots of alignment, it's important that
   /// SmallVectorStorage is properly-aligned even for small-size of 0.
@@ -120,7 +135,6 @@ class SmallVectorTemplateCommon
   }
   // Space after 'FirstEl' is clobbered, do not add any instance vars after it.
 
-protected:
   SmallVectorTemplateCommon(size_t Size) : Base(getFirstEl(), Size) {}
 
   void grow_pod(size_t MinSize, size_t TSize) {
@@ -312,8 +326,8 @@ public:
 /// copy these types with memcpy, there is no way for the type to observe this.
 /// This catches the important case of std::pair<POD, POD>, which is not
 /// trivially assignable.
-template <typename T, bool = (std::is_trivially_copy_constructible<T>::value) &&
-                             (std::is_trivially_move_constructible<T>::value) &&
+template <typename T, bool = (is_trivially_copy_constructible<T>::value) &&
+                             (is_trivially_move_constructible<T>::value) &&
                              std::is_trivially_destructible<T>::value>
 class SmallVectorTemplateBase : public SmallVectorTemplateCommon<T> {
   friend class SmallVectorTemplateCommon<T>;
@@ -352,11 +366,7 @@ protected:
 
   /// Create a new allocation big enough for \p MinSize and pass back its size
   /// in \p NewCapacity. This is the first section of \a grow().
-  T *mallocForGrow(size_t MinSize, size_t &NewCapacity) {
-    return static_cast<T *>(
-        SmallVectorBase<SmallVectorSizeType<T>>::mallocForGrow(
-            MinSize, sizeof(T), NewCapacity));
-  }
+  T *mallocForGrow(size_t MinSize, size_t &NewCapacity);
 
   /// Move existing elements over to the new allocation \p NewElts, the middle
   /// section of \a grow().
@@ -430,6 +440,14 @@ void SmallVectorTemplateBase<T, TriviallyCopyable>::grow(size_t MinSize) {
   takeAllocationForGrow(NewElts, NewCapacity);
 }
 
+template <typename T, bool TriviallyCopyable>
+T *SmallVectorTemplateBase<T, TriviallyCopyable>::mallocForGrow(
+    size_t MinSize, size_t &NewCapacity) {
+  return static_cast<T *>(
+      SmallVectorBase<SmallVectorSizeType<T>>::mallocForGrow(
+          this->getFirstEl(), MinSize, sizeof(T), NewCapacity));
+}
+
 // Define this out-of-line to dissuade the C++ compiler from inlining it.
 template <typename T, bool TriviallyCopyable>
 void SmallVectorTemplateBase<T, TriviallyCopyable>::moveElementsForGrow(
@@ -468,8 +486,7 @@ protected:
 
   /// Either const T& or T, depending on whether it's cheap enough to take
   /// parameters by value.
-  using ValueParamT =
-      typename std::conditional<TakesParamByValue, T, const T &>::type;
+  using ValueParamT = std::conditional_t<TakesParamByValue, T, const T &>;
 
   SmallVectorTemplateBase(size_t Size) : SmallVectorTemplateCommon<T>(Size) {}
 
@@ -1294,6 +1311,12 @@ SmallVector<Out, Size> to_vector_of(R &&Range) {
 template <typename Out, typename R> SmallVector<Out> to_vector_of(R &&Range) {
   return {std::begin(Range), std::end(Range)};
 }
+
+// Explicit instantiations
+extern template class llvm::SmallVectorBase<uint32_t>;
+#if SIZE_MAX > UINT32_MAX
+extern template class llvm::SmallVectorBase<uint64_t>;
+#endif
 
 } // end namespace llvm
 

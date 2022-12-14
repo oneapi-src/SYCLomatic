@@ -1641,6 +1641,7 @@ void deduceTemplateArgumentFromTemplateSpecialization(
     std::vector<TemplateArgumentInfo> &TAIList, QualType ParmType,
     QualType ArgType, TypeLoc TL = TypeLoc()) {
   auto ParmTST = dyn_cast<TemplateSpecializationType>(ParmType);
+  auto ParmArgs = ParmTST->template_arguments();
   switch (ArgType->getTypeClass()) {
   case Type::Record:
     if (auto CTSD = dyn_cast<ClassTemplateSpecializationDecl>(
@@ -1658,7 +1659,7 @@ void deduceTemplateArgumentFromTemplateSpecialization(
         auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
         for (unsigned i = 0; i < TSTL.getNumArgs(); ++i) {
           deduceTemplateArgumentFromTemplateArgs(
-              TAIList, ParmTST->getArg(i), TSTL.getArgLoc(i).getArgument(),
+              TAIList, ParmArgs[i], TSTL.getArgLoc(i).getArgument(),
               TSTL.getArgLoc(i));
         }
       }
@@ -1684,22 +1685,22 @@ void deduceTemplateArgumentFromTemplateSpecialization(
         auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
         unsigned i;
         // Parm uses template parameter pack, return
-        if (TSTL.getNumArgs() > ParmTST->getNumArgs()) {
+        if (TSTL.getNumArgs() > ParmArgs.size()) {
           return;
         }
         for (i = 0; i < TSTL.getNumArgs(); ++i) {
           deduceTemplateArgumentFromTemplateArgs(
-              TAIList, ParmTST->getArg(i), TSTL.getArgLoc(i).getArgument(),
+              TAIList, ParmArgs[i], TSTL.getArgLoc(i).getArgument(),
               TSTL.getArgLoc(i));
         }
       } else {
+        auto Args = TST->template_arguments();
         // Parm uses template parameter pack, return
-        if (TST->getNumArgs() > ParmTST->getNumArgs()) {
+        if (Args.size() > ParmArgs.size()) {
           return;
         }
-        for (unsigned i = 0; i < TST->getNumArgs(); ++i) {
-          deduceTemplateArgumentFromTemplateArgs(TAIList, ParmTST->getArg(i),
-                                                 TST->getArg(i));
+        for (unsigned i = 0; i < Args.size(); ++i) {
+          deduceTemplateArgumentFromTemplateArgs(TAIList, ParmArgs[i], Args[i]);
         }
       }
     }

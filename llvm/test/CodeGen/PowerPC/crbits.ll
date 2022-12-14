@@ -322,7 +322,7 @@ define signext i32 @exttest7(i32 signext %a) #0 {
 ; CHECK-LABEL: exttest7:
 ; CHECK:       # %bb.0: # %entry
 ; CHECK-NEXT:    li 4, 8
-; CHECK-NEXT:    cmpwi 3, 5
+; CHECK-NEXT:    cmplwi 3, 5
 ; CHECK-NEXT:    li 3, 7
 ; CHECK-NEXT:    iseleq 3, 3, 4
 ; CHECK-NEXT:    blr
@@ -330,7 +330,7 @@ define signext i32 @exttest7(i32 signext %a) #0 {
 ; CHECK-NO-ISEL-LABEL: exttest7:
 ; CHECK-NO-ISEL:       # %bb.0: # %entry
 ; CHECK-NO-ISEL-NEXT:    li 4, 8
-; CHECK-NO-ISEL-NEXT:    cmpwi 3, 5
+; CHECK-NO-ISEL-NEXT:    cmplwi 3, 5
 ; CHECK-NO-ISEL-NEXT:    li 3, 7
 ; CHECK-NO-ISEL-NEXT:    bclr 12, 2, 0
 ; CHECK-NO-ISEL-NEXT:  # %bb.1: # %entry
@@ -339,7 +339,7 @@ define signext i32 @exttest7(i32 signext %a) #0 {
 ;
 ; CHECK-P10-LABEL: exttest7:
 ; CHECK-P10:       # %bb.0: # %entry
-; CHECK-P10-NEXT:    cmpwi r3, 5
+; CHECK-P10-NEXT:    cmplwi r3, 5
 ; CHECK-P10-NEXT:    li r3, 8
 ; CHECK-P10-NEXT:    li r4, 7
 ; CHECK-P10-NEXT:    iseleq r3, r4, r3
@@ -386,7 +386,7 @@ define zeroext i32 @exttest8() #0 {
 ; CHECK-P10-NEXT:    clrldi r3, r3, 32
 ; CHECK-P10-NEXT:    blr
 entry:
-  %v0 = load i64, i64* undef, align 8
+  %v0 = load i64, ptr undef, align 8
   %sub = sub i64 80, %v0
   %div = lshr i64 %sub, 1
   %conv13 = trunc i64 %div to i32

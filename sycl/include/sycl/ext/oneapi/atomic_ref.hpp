@@ -23,8 +23,7 @@
 
 namespace sycl {
 __SYCL_INLINE_VER_NAMESPACE(_V1) {
-namespace ext {
-namespace oneapi {
+namespace ext::oneapi {
 namespace detail {
 
 // Import from detail:: into ext::oneapi::detail:: to improve readability later
@@ -44,16 +43,16 @@ template <typename T> struct IsValidAtomicRefType {
 };
 
 template <sycl::access::address_space AS>
-using IsValidAtomicAddressSpace =
-    bool_constant<AS == access::address_space::global_space ||
-                  AS == access::address_space::local_space ||
-                  AS == access::address_space::ext_intel_global_device_space>;
+using IsValidAtomicAddressSpace = std::bool_constant<
+    AS == access::address_space::global_space ||
+    AS == access::address_space::local_space ||
+    AS == access::address_space::ext_intel_global_device_space>;
 
 // DefaultOrder parameter is limited to read-modify-write orders
 template <memory_order Order>
-using IsValidDefaultOrder = bool_constant<Order == memory_order::relaxed ||
-                                          Order == memory_order::acq_rel ||
-                                          Order == memory_order::seq_cst>;
+using IsValidDefaultOrder = std::bool_constant<Order == memory_order::relaxed ||
+                                               Order == memory_order::acq_rel ||
+                                               Order == memory_order::seq_cst>;
 
 template <memory_order ReadModifyWriteOrder> struct memory_order_traits;
 
@@ -91,7 +90,7 @@ inline constexpr memory_order getLoadOrder(memory_order order) {
 template <typename T, typename = void> struct bit_equal;
 
 template <typename T>
-struct bit_equal<T, typename detail::enable_if_t<std::is_integral<T>::value>> {
+struct bit_equal<T, typename std::enable_if_t<std::is_integral<T>::value>> {
   bool operator()(const T &lhs, const T &rhs) { return lhs == rhs; }
 };
 
@@ -145,7 +144,8 @@ public:
   }
 
 #ifdef __SYCL_DEVICE_ONLY__
-  explicit atomic_ref_base(T &ref) : ptr(multi_ptr<T, AddressSpace>(&ref)) {}
+  explicit atomic_ref_base(T &ref)
+      : ptr(address_space_cast<AddressSpace, access::decorated::yes>(&ref)) {}
 #else
   // FIXME: This reinterpret_cast is UB, but happens to work for now
   explicit atomic_ref_base(T &ref)
@@ -246,7 +246,7 @@ public:
 
 protected:
 #ifdef __SYCL_DEVICE_ONLY__
-  multi_ptr<T, AddressSpace> ptr;
+  multi_ptr<T, AddressSpace, access::decorated::yes> ptr;
 #else
   std::atomic<T> *ptr;
 #endif
@@ -266,7 +266,7 @@ public:
 template <typename T, memory_order DefaultOrder, memory_scope DefaultScope,
           access::address_space AddressSpace>
 class atomic_ref_impl<T, DefaultOrder, DefaultScope, AddressSpace,
-                      typename detail::enable_if_t<std::is_integral<T>::value>>
+                      typename std::enable_if_t<std::is_integral<T>::value>>
     : public atomic_ref_base<T, DefaultOrder, DefaultScope, AddressSpace> {
 
 public:
@@ -414,7 +414,7 @@ template <typename T, memory_order DefaultOrder, memory_scope DefaultScope,
           access::address_space AddressSpace>
 class atomic_ref_impl<
     T, DefaultOrder, DefaultScope, AddressSpace,
-    typename detail::enable_if_t<std::is_floating_point<T>::value>>
+    typename std::enable_if_t<std::is_floating_point<T>::value>>
     : public atomic_ref_base<T, DefaultOrder, DefaultScope, AddressSpace> {
 
 public:
@@ -667,8 +667,7 @@ public:
                                 AddressSpace>::operator=;
 };
 
-} // namespace oneapi
-} // namespace ext
+} // namespace ext::oneapi
 
 } // __SYCL_INLINE_VER_NAMESPACE(_V1)
 } // namespace sycl

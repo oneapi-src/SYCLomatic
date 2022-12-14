@@ -2743,8 +2743,9 @@ public:
     } else {
       auto TST = VD->getType()->getAs<TemplateSpecializationType>();
       if (TST) {
-        auto Arg0 = TST->getArg(0);
-        auto Arg1 = TST->getArg(1);
+        auto Args = TST->template_arguments();
+        auto Arg0 = Args[0];
+        auto Arg1 = Args[1];
 
         if (Arg1.getKind() == clang::TemplateArgument::Expression) {
           auto DataTy = Arg0.getAsType();
