@@ -141,6 +141,8 @@ public:
 
   PathMappingList &GetSourcePathMap() const;
 
+  bool GetAutoSourceMapRelative() const;
+
   FileSpecList GetExecutableSearchPaths();
 
   void AppendExecutableSearchPaths(const FileSpec &);
@@ -780,6 +782,9 @@ public:
 
   bool RemoveBreakpointByID(lldb::break_id_t break_id);
 
+  /// Resets the hit count of all breakpoints.
+  void ResetBreakpointHitCounts();
+
   // The flag 'end_to_end', default to true, signifies that the operation is
   // performed end to end, for both the debugger and the debuggee.
 
@@ -1114,11 +1119,12 @@ public:
 
   PathMappingList &GetImageSearchPathList();
 
-  llvm::Expected<TypeSystem &>
+  llvm::Expected<lldb::TypeSystemSP>
   GetScratchTypeSystemForLanguage(lldb::LanguageType language,
                                   bool create_on_demand = true);
 
-  std::vector<TypeSystem *> GetScratchTypeSystems(bool create_on_demand = true);
+  std::vector<lldb::TypeSystemSP>
+  GetScratchTypeSystems(bool create_on_demand = true);
 
   PersistentExpressionState *
   GetPersistentExpressionStateForLanguage(lldb::LanguageType language);

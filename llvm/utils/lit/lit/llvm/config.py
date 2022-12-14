@@ -94,6 +94,7 @@ class LLVMConfig(object):
         # part of the standard header.  But currently they aren't)
         host_triple = getattr(config, 'host_triple', None)
         target_triple = getattr(config, 'target_triple', None)
+        features.add('target=%s' % target_triple)
         if host_triple and host_triple == target_triple:
             features.add('native')
 
@@ -112,6 +113,9 @@ class LLVMConfig(object):
         have_zlib = getattr(config, 'have_zlib', None)
         if have_zlib:
             features.add('zlib')
+        have_zstd = getattr(config, 'have_zstd', None)
+        if have_zstd:
+            features.add('zstd')
 
         # Check if we should run long running tests.
         long_tests = lit_config.params.get('run_long_tests', None)
@@ -541,6 +545,8 @@ class LLVMConfig(object):
                         extra_args=['--driver-mode=cpp']+additional_flags),
               ToolSubst('%clang_cl', command=self.config.clang,
                         extra_args=['--driver-mode=cl']+additional_flags),
+              ToolSubst('%clang_dxc', command=self.config.clang,
+                        extra_args=['--driver-mode=dxc']+additional_flags),
               ToolSubst('%clangxx', command=self.config.clang,
                         extra_args=['--driver-mode=g++']+additional_flags),
               ]
@@ -639,7 +645,7 @@ class LLVMConfig(object):
         self.with_environment('PATH', paths, append_path=True)
 
         lib_dir_props = [self.config.name.lower() + '_libs_dir',
-                         'lld_libs_dir', 'llvm_libs_dir']
+                         'lld_libs_dir', 'llvm_shlib_dir', 'llvm_libs_dir']
         lib_paths = [getattr(self.config, pp) for pp in lib_dir_props
                      if getattr(self.config, pp, None)]
 

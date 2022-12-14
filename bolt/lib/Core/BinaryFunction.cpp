@@ -619,13 +619,16 @@ void BinaryFunction::print(raw_ostream &OS, std::string Annotation,
   // Dump new exception ranges for the function.
   if (!CallSites.empty()) {
     OS << "EH table:\n";
-    for (const CallSite &CSI : CallSites) {
-      OS << "  [" << *CSI.Start << ", " << *CSI.End << ") landing pad : ";
-      if (CSI.LP)
-        OS << *CSI.LP;
-      else
-        OS << "0";
-      OS << ", action : " << CSI.Action << '\n';
+    for (const FunctionFragment &FF : getLayout().fragments()) {
+      for (const auto &FCSI : getCallSites(FF.getFragmentNum())) {
+        const CallSite &CSI = FCSI.second;
+        OS << "  [" << *CSI.Start << ", " << *CSI.End << ") landing pad : ";
+        if (CSI.LP)
+          OS << *CSI.LP;
+        else
+          OS << "0";
+        OS << ", action : " << CSI.Action << '\n';
+      }
     }
     OS << '\n';
   }
@@ -1044,16 +1047,11 @@ void BinaryFunction::handlePCRelOperand(MCInst &Instruction, uint64_t Address,
   uint64_t TargetOffset;
   std::tie(TargetSymbol, TargetOffset) =
       BC.handleAddressRef(TargetAddress, *this, /*IsPCRel*/ true);
-  const MCExpr *Expr =
-      MCSymbolRefExpr::create(TargetSymbol, MCSymbolRefExpr::VK_None, *BC.Ctx);
-  if (TargetOffset) {
-    const MCConstantExpr *Offset =
-        MCConstantExpr::create(TargetOffset, *BC.Ctx);
-    Expr = MCBinaryExpr::createAdd(Expr, Offset, *BC.Ctx);
-  }
-  MIB->replaceMemOperandDisp(Instruction,
-                             MCOperand::createExpr(BC.MIB->getTargetExprFor(
-                                 Instruction, Expr, *BC.Ctx, 0)));
+
+  bool ReplaceSuccess = MIB->replaceMemOperandDisp(
+      Instruction, TargetSymbol, static_cast<int64_t>(TargetOffset), &*BC.Ctx);
+  (void)ReplaceSuccess;
+  assert(ReplaceSuccess && "Failed to replace mem operand with symbol+off.");
 }
 
 MCSymbol *BinaryFunction::handleExternalReference(MCInst &Instruction,
@@ -1219,7 +1217,7 @@ bool BinaryFunction::disassemble() {
     // Check integrity of LLVM assembler/disassembler.
     if (opts::CheckEncoding && !BC.MIB->isBranch(Instruction) &&
         !BC.MIB->isCall(Instruction) && !BC.MIB->isNoop(Instruction)) {
-      if (!BC.validateEncoding(Instruction, FunctionData.slice(Offset, Size))) {
+      if (!BC.validateInstructionEncoding(FunctionData.slice(Offset, Size))) {
         errs() << "BOLT-WARNING: mismatching LLVM encoding detected in "
                << "function " << *this << " for instruction :\n";
         BC.printInstruction(errs(), Instruction, AbsoluteInstrAddr);
@@ -1235,15 +1233,10 @@ bool BinaryFunction::disassemble() {
         break;
       }
 
-      // Disassemble again without the symbolizer and check that the disassembly
-      // matches the assembler output.
-      MCInst TempInst;
-      BC.DisAsm->getInstruction(TempInst, Size, FunctionData.slice(Offset),
-                                AbsoluteInstrAddr, nulls());
-      if (!BC.validateEncoding(TempInst, FunctionData.slice(Offset, Size))) {
+      if (!BC.validateInstructionEncoding(FunctionData.slice(Offset, Size))) {
         errs() << "BOLT-WARNING: internal assembler/disassembler error "
                   "detected for AVX512 instruction:\n";
-        BC.printInstruction(errs(), TempInst, AbsoluteInstrAddr);
+        BC.printInstruction(errs(), Instruction, AbsoluteInstrAddr);
         errs() << " in function " << *this << '\n';
         setIgnored();
         break;
@@ -1745,6 +1738,43 @@ void BinaryFunction::postProcessJumpTables() {
   TakenBranches.erase(NewEnd, TakenBranches.end());
 }
 
+bool BinaryFunction::validateExternallyReferencedOffsets() {
+  SmallPtrSet<MCSymbol *, 4> JTTargets;
+  for (const JumpTable *JT : llvm::make_second_range(JumpTables))
+    JTTargets.insert(JT->Entries.begin(), JT->Entries.end());
+
+  bool HasUnclaimedReference = false;
+  for (uint64_t Destination : ExternallyReferencedOffsets) {
+    // Ignore __builtin_unreachable().
+    if (Destination == getSize())
+      continue;
+    // Ignore constant islands
+    if (isInConstantIsland(Destination + getAddress()))
+      continue;
+
+    if (BinaryBasicBlock *BB = getBasicBlockAtOffset(Destination)) {
+      // Check if the externally referenced offset is a recognized jump table
+      // target.
+      if (JTTargets.contains(BB->getLabel()))
+        continue;
+
+      if (opts::Verbosity >= 1) {
+        errs() << "BOLT-WARNING: unclaimed data to code reference (possibly "
+               << "an unrecognized jump table entry) to " << BB->getName()
+               << " in " << *this << "\n";
+      }
+      auto L = BC.scopeLock();
+      addEntryPoint(*BB);
+    } else {
+      errs() << "BOLT-WARNING: unknown data to code reference to offset "
+             << Twine::utohexstr(Destination) << " in " << *this << "\n";
+      setIgnored();
+    }
+    HasUnclaimedReference = true;
+  }
+  return !HasUnclaimedReference;
+}
+
 bool BinaryFunction::postProcessIndirectBranches(
     MCPlusBuilder::AllocatorIdTy AllocId) {
   auto addUnknownControlFlow = [&](BinaryBasicBlock &BB) {
@@ -1864,6 +1894,14 @@ bool BinaryFunction::postProcessIndirectBranches(
 
   if (HasFixedIndirectBranch)
     return false;
+
+  // Validate that all data references to function offsets are claimed by
+  // recognized jump tables. Register externally referenced blocks as entry
+  // points.
+  if (!opts::StrictMode && hasInternalReference()) {
+    if (!validateExternallyReferencedOffsets())
+      return false;
+  }
 
   if (HasUnknownControlFlow && !BC.HasRelocations)
     return false;

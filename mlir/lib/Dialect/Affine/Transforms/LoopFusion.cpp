@@ -442,7 +442,7 @@ public:
     for (Block::iterator it = std::next(Block::iterator(srcNodeInst));
          it != Block::iterator(dstNodeInst); ++it) {
       Operation *op = &(*it);
-      if (srcDepInsts.count(op) > 0 && firstSrcDepPos == None)
+      if (srcDepInsts.count(op) > 0 && firstSrcDepPos == std::nullopt)
         firstSrcDepPos = pos;
       if (dstDepInsts.count(op) > 0)
         lastDstDepPos = pos;
@@ -803,18 +803,11 @@ bool MemRefDependenceGraph::init(func::FuncOp f) {
         Node node(nextNodeId++, &op);
         nodes.insert({node.id, node});
       }
-    } else if (auto effectInterface = dyn_cast<MemoryEffectOpInterface>(op)) {
+    } else if (hasEffect<MemoryEffects::Write, MemoryEffects::Free>(&op)) {
       // Create graph node for top-level op, which could have a memory write
       // side effect.
-      SmallVector<MemoryEffects::EffectInstance, 1> effects;
-      effectInterface.getEffects(effects);
-      if (llvm::any_of(effects, [](const MemoryEffects::EffectInstance &it) {
-            return isa<MemoryEffects::Write, MemoryEffects::Free>(
-                it.getEffect());
-          })) {
-        Node node(nextNodeId++, &op);
-        nodes.insert({node.id, node});
-      }
+      Node node(nextNodeId++, &op);
+      nodes.insert({node.id, node});
     }
   }
 

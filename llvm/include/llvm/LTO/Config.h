@@ -25,6 +25,7 @@
 #include "llvm/Target/TargetOptions.h"
 
 #include <functional>
+#include <optional>
 
 namespace llvm {
 
@@ -43,15 +44,16 @@ struct Config {
     ELF,
   };
   // Note: when adding fields here, consider whether they need to be added to
-  // computeCacheKey in LTO.cpp.
+  // computeLTOCacheKey in LTO.cpp.
   std::string CPU;
   TargetOptions Options;
   std::vector<std::string> MAttrs;
+  std::vector<std::string> MllvmArgs;
   std::vector<std::string> PassPlugins;
   /// For adding passes that run right before codegen.
   std::function<void(legacy::PassManager &)> PreCodeGenPassesHook;
-  Optional<Reloc::Model> RelocModel = Reloc::PIC_;
-  Optional<CodeModel::Model> CodeModel = None;
+  std::optional<Reloc::Model> RelocModel = Reloc::PIC_;
+  std::optional<CodeModel::Model> CodeModel = std::nullopt;
   CodeGenOpt::Level CGOptLevel = CodeGenOpt::Default;
   CodeGenFileType CGFileType = CGFT_ObjectFile;
   unsigned OptLevel = 2;

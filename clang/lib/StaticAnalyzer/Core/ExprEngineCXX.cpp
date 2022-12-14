@@ -10,15 +10,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "clang/StaticAnalyzer/Core/PathSensitive/ExprEngine.h"
-#include "clang/Analysis/ConstructionContext.h"
 #include "clang/AST/DeclCXX.h"
-#include "clang/AST/StmtCXX.h"
 #include "clang/AST/ParentMap.h"
+#include "clang/AST/StmtCXX.h"
+#include "clang/Analysis/ConstructionContext.h"
 #include "clang/Basic/PrettyStackTrace.h"
 #include "clang/StaticAnalyzer/Core/CheckerManager.h"
 #include "clang/StaticAnalyzer/Core/PathSensitive/AnalysisManager.h"
 #include "clang/StaticAnalyzer/Core/PathSensitive/CallEvent.h"
+#include "clang/StaticAnalyzer/Core/PathSensitive/ExprEngine.h"
+#include "clang/StaticAnalyzer/Core/PathSensitive/SVals.h"
 
 using namespace clang;
 using namespace ento;
@@ -111,9 +112,15 @@ SVal ExprEngine::makeElementRegion(ProgramStateRef State, SVal LValue,
   return LValue;
 }
 
+// In case when the prvalue is returned from the function (kind is one of
+// SimpleReturnedValueKind, CXX17ElidedCopyReturnedValueKind), then
+// it's materialization happens in context of the caller.
+// We pass BldrCtx explicitly, as currBldrCtx always refers to callee's context.
 SVal ExprEngine::computeObjectUnderConstruction(
-    const Expr *E, ProgramStateRef State, const LocationContext *LCtx,
-    const ConstructionContext *CC, EvalCallOptions &CallOpts, unsigned Idx) {
+    const Expr *E, ProgramStateRef State, const NodeBuilderContext *BldrCtx,
+    const LocationContext *LCtx, const ConstructionContext *CC,
+    EvalCallOptions &CallOpts, unsigned Idx) {
+
   SValBuilder &SVB = getSValBuilder();
   MemRegionManager &MRMgr = SVB.getRegionManager();
   ASTContext &ACtx = SVB.getContext();
@@ -210,8 +217,11 @@ SVal ExprEngine::computeObjectUnderConstruction(
           CallerLCtx = CallerLCtx->getParent();
           assert(!isa<BlockInvocationContext>(CallerLCtx));
         }
+
+        NodeBuilderContext CallerBldrCtx(getCoreEngine(),
+                                         SFC->getCallSiteBlock(), CallerLCtx);
         return computeObjectUnderConstruction(
-            cast<Expr>(SFC->getCallSite()), State, CallerLCtx,
+            cast<Expr>(SFC->getCallSite()), State, &CallerBldrCtx, CallerLCtx,
             RTC->getConstructionContext(), CallOpts);
       } else {
         // We are on the top frame of the analysis. We do not know where is the
@@ -251,7 +261,7 @@ SVal ExprEngine::computeObjectUnderConstruction(
       EvalCallOptions PreElideCallOpts = CallOpts;
 
       SVal V = computeObjectUnderConstruction(
-          TCC->getConstructorAfterElision(), State, LCtx,
+          TCC->getConstructorAfterElision(), State, BldrCtx, LCtx,
           TCC->getConstructionContextAfterElision(), CallOpts);
 
       // FIXME: This definition of "copy elision has not failed" is unreliable.
@@ -319,11 +329,11 @@ SVal ExprEngine::computeObjectUnderConstruction(
       CallEventManager &CEMgr = getStateManager().getCallEventManager();
       auto getArgLoc = [&](CallEventRef<> Caller) -> Optional<SVal> {
         const LocationContext *FutureSFC =
-            Caller->getCalleeStackFrame(currBldrCtx->blockCount());
+            Caller->getCalleeStackFrame(BldrCtx->blockCount());
         // Return early if we are unable to reliably foresee
         // the future stack frame.
         if (!FutureSFC)
-          return None;
+          return std::nullopt;
 
         // This should be equivalent to Caller->getDecl() for now, but
         // FutureSFC->getDecl() is likely to support better stuff (like
@@ -332,15 +342,15 @@ SVal ExprEngine::computeObjectUnderConstruction(
 
         // FIXME: Support for variadic arguments is not implemented here yet.
         if (CallEvent::isVariadic(CalleeD))
-          return None;
+          return std::nullopt;
 
         // Operator arguments do not correspond to operator parameters
         // because this-argument is implemented as a normal argument in
         // operator call expressions but not in operator declarations.
         const TypedValueRegion *TVR = Caller->getParameterLocation(
-            *Caller->getAdjustedParameterIndex(Idx), currBldrCtx->blockCount());
+            *Caller->getAdjustedParameterIndex(Idx), BldrCtx->blockCount());
         if (!TVR)
-          return None;
+          return std::nullopt;
 
         return loc::MemRegionVal(TVR);
       };
@@ -643,8 +653,8 @@ void ExprEngine::handleConstructor(const Expr *E,
     }
 
     // The target region is found from construction context.
-    std::tie(State, Target) =
-        handleConstructionContext(CE, State, LCtx, CC, CallOpts, Idx);
+    std::tie(State, Target) = handleConstructionContext(
+        CE, State, currBldrCtx, LCtx, CC, CallOpts, Idx);
     break;
   }
   case CXXConstructExpr::CK_VirtualBase: {
@@ -944,6 +954,11 @@ void ExprEngine::VisitCXXNewAllocatorCall(const CXXNewExpr *CNE,
     // skip it for now.
     ProgramStateRef State = I->getState();
     SVal RetVal = State->getSVal(CNE, LCtx);
+    // [basic.stc.dynamic.allocation] (on the return value of an allocation
+    // function):
+    // "The order, contiguity, and initial value of storage allocated by
+    // successive calls to an allocation function are unspecified."
+    State = State->bindDefaultInitial(RetVal, UndefinedVal{}, LCtx);
 
     // If this allocation function is not declared as non-throwing, failures
     // /must/ be signalled by exceptions, and thus the return value will never

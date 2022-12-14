@@ -294,14 +294,12 @@ struct IfOpInterface
       return thenBufferType;
 
     // Memory space mismatch.
-    if (thenBufferType.getMemorySpaceAsInt() !=
-        elseBufferType.getMemorySpaceAsInt())
+    if (thenBufferType.getMemorySpace() != elseBufferType.getMemorySpace())
       return op->emitError("inconsistent memory space on then/else branches");
 
     // Layout maps are different: Promote to fully dynamic layout map.
     return getMemRefTypeWithFullyDynamicLayout(
-        opResult.getType().cast<TensorType>(),
-        thenBufferType.getMemorySpaceAsInt());
+        opResult.getType().cast<TensorType>(), thenBufferType.getMemorySpace());
   }
 
   BufferRelation bufferRelation(Operation *op, OpResult opResult,
@@ -445,13 +443,21 @@ static FailureOr<BaseMemRefType> computeLoopRegionIterArgBufferType(
   auto iterRanked = initArgBufferType->cast<MemRefType>();
   assert(llvm::equal(yieldedRanked.getShape(), iterRanked.getShape()) &&
          "expected same shape");
-  assert(yieldedRanked.getMemorySpaceAsInt() ==
-             iterRanked.getMemorySpaceAsInt() &&
+  assert(yieldedRanked.getMemorySpace() == iterRanked.getMemorySpace() &&
          "expected same memory space");
 #endif // NDEBUG
   return getMemRefTypeWithFullyDynamicLayout(
       iterArg.getType().cast<RankedTensorType>(),
-      yieldedRanked.getMemorySpaceAsInt());
+      yieldedRanked.getMemorySpace());
+}
+
+/// Return `true` if the given loop may have 0 iterations.
+bool mayHaveZeroIterations(scf::ForOp forOp) {
+  Optional<int64_t> lb = getConstantIntValue(forOp.getLowerBound());
+  Optional<int64_t> ub = getConstantIntValue(forOp.getUpperBound());
+  if (!lb.has_value() || !ub.has_value())
+    return true;
+  return *ub <= *lb;
 }
 
 /// Bufferization of scf.for. Replace with a new scf.for that operates on
@@ -461,9 +467,15 @@ struct ForOpInterface
                                                     scf::ForOp> {
   bool bufferizesToMemoryRead(Operation *op, OpOperand &opOperand,
                               const AnalysisState &state) const {
+    auto forOp = cast<scf::ForOp>(op);
+
+    // If the loop has zero iterations, the results of the op are their
+    // corresponding init_args, meaning that the init_args bufferize to a read.
+    if (mayHaveZeroIterations(forOp))
+      return true;
+
     // scf::ForOp alone doesn't bufferize to a memory read, one of the uses of
     // its matching bbArg may.
-    auto forOp = cast<scf::ForOp>(op);
     return state.isValueRead(forOp.getRegionIterArgForOpOperand(opOperand));
   }
 
@@ -601,8 +613,13 @@ struct ForOpInterface
     SmallVector<Value> castedInitArgs;
     for (const auto &it : llvm::enumerate(initArgs)) {
       Value initArg = it.value();
-      auto targetType =
-          bufferization::getBufferType(forOp->getResult(it.index()), options);
+      Value result = forOp->getResult(it.index());
+      // If the type is not a tensor, bufferization doesn't need to touch it.
+      if (!result.getType().isa<TensorType>()) {
+        castedInitArgs.push_back(initArg);
+        continue;
+      }
+      auto targetType = bufferization::getBufferType(result, options);
       if (failed(targetType))
         return failure();
       castedInitArgs.push_back(castBuffer(rewriter, initArg, *targetType));
@@ -757,13 +774,6 @@ struct WhileOpInterface
     OpBuilder::InsertionGuard g(rewriter);
     auto whileOp = cast<scf::WhileOp>(op);
     auto conditionOp = whileOp.getConditionOp();
-    auto yieldOp = whileOp.getYieldOp();
-
-    // Indices of all bbArgs that have tensor type. These are the ones that
-    // are bufferized. The "before" and "after" regions may have different args.
-    DenseSet<int64_t> indicesBefore = getTensorIndices(whileOp.getInits());
-    DenseSet<int64_t> indicesAfter =
-        getTensorIndices(whileOp.getAfterArguments());
 
     // For every yielded value, is the value equivalent to its corresponding
     // bbArg?
@@ -778,8 +788,9 @@ struct WhileOpInterface
     for (int64_t idx = 0;
          idx < static_cast<int64_t>(conditionOp.getArgs().size()); ++idx) {
       Value value = conditionOp.getArgs()[idx];
-      if (!indicesBefore.contains(idx) ||
-          equivalentYieldsBefore.contains(idx)) {
+      if (!value.getType().isa<TensorType>() ||
+          (equivalentYieldsAfter.contains(idx) &&
+           equivalentYieldsBefore.contains(idx))) {
         beforeYieldValues.push_back(value);
         continue;
       }
@@ -792,27 +803,6 @@ struct WhileOpInterface
     }
     rewriter.updateRootInPlace(conditionOp, [&]() {
       conditionOp.getArgsMutable().assign(beforeYieldValues);
-    });
-
-    // Update "after" region.
-    rewriter.setInsertionPoint(yieldOp);
-    SmallVector<Value> afterYieldValues;
-    for (int64_t idx = 0;
-         idx < static_cast<int64_t>(yieldOp.getResults().size()); ++idx) {
-      Value value = yieldOp.getResults()[idx];
-      if (!indicesAfter.contains(idx) || equivalentYieldsAfter.contains(idx)) {
-        afterYieldValues.push_back(value);
-        continue;
-      }
-      FailureOr<Value> alloc =
-          allocateTensorForShapedValue(rewriter, yieldOp.getLoc(), value,
-                                       /*escape=*/true, state.getOptions());
-      if (failed(alloc))
-        return failure();
-      afterYieldValues.push_back(*alloc);
-    }
-    rewriter.updateRootInPlace(yieldOp, [&]() {
-      yieldOp.getResultsMutable().assign(afterYieldValues);
     });
 
     return success();
@@ -846,8 +836,13 @@ struct WhileOpInterface
     SmallVector<Value> castedInitArgs;
     for (const auto &it : llvm::enumerate(initArgs)) {
       Value initArg = it.value();
-      auto targetType = bufferization::getBufferType(
-          whileOp.getBeforeArguments()[it.index()], options);
+      Value beforeArg = whileOp.getBeforeArguments()[it.index()];
+      // If the type is not a tensor, bufferization doesn't need to touch it.
+      if (!beforeArg.getType().isa<TensorType>()) {
+        castedInitArgs.push_back(initArg);
+        continue;
+      }
+      auto targetType = bufferization::getBufferType(beforeArg, options);
       if (failed(targetType))
         return failure();
       castedInitArgs.push_back(castBuffer(rewriter, initArg, *targetType));
@@ -856,6 +851,8 @@ struct WhileOpInterface
     // The result types of a WhileOp are the same as the "after" bbArg types.
     SmallVector<Type> argsTypesAfter = llvm::to_vector(
         llvm::map_range(whileOp.getAfterArguments(), [&](BlockArgument bbArg) {
+          if (!bbArg.getType().isa<TensorType>())
+            return bbArg.getType();
           // TODO: error handling
           return bufferization::getBufferType(bbArg, options)->cast<Type>();
         }));
@@ -906,7 +903,7 @@ struct WhileOpInterface
     assert(value.getType().isa<TensorType>() && "expected tensor type");
 
     // Case 1: Block argument of the "before" region.
-    if (auto bbArg = value.cast<BlockArgument>()) {
+    if (auto bbArg = value.dyn_cast<BlockArgument>()) {
       if (bbArg.getOwner()->getParent() == &whileOp.getBefore()) {
         Value initArg = whileOp.getInits()[bbArg.getArgNumber()];
         auto yieldOp = whileOp.getYieldOp();
@@ -1054,6 +1051,19 @@ struct YieldOpInterface
   }
 };
 
+/// Return `true` if the given loop may have 0 iterations.
+bool mayHaveZeroIterations(scf::ForeachThreadOp foreachThreadOp) {
+  int64_t p = 1;
+  for (Value v : foreachThreadOp.getNumThreads()) {
+    if (Optional<int64_t> c = getConstantIntValue(v)) {
+      p *= *c;
+    } else {
+      return true;
+    }
+  }
+  return p == 0;
+}
+
 /// Bufferization of ForeachThreadOp. This also bufferizes the terminator of the
 /// region. There are op interfaces for the terminators (PerformConcurrentlyOp
 /// and ParallelInsertSliceOp), but these are only used during analysis. Not
@@ -1063,9 +1073,16 @@ struct ForeachThreadOpInterface
                                                     ForeachThreadOp> {
   bool bufferizesToMemoryRead(Operation *op, OpOperand &opOperand,
                               const AnalysisState &state) const {
+    auto foreachThreadOp = cast<ForeachThreadOp>(op);
+
+    // If the loop has zero iterations, the results of the op are their
+    // corresponding shared_outs, meaning that the shared_outs bufferize to a
+    // read.
+    if (mayHaveZeroIterations(foreachThreadOp))
+      return true;
+
     // scf::ForeachThreadOp alone doesn't bufferize to a memory read, one of the
     // uses of its matching bbArg may.
-    auto foreachThreadOp = cast<ForeachThreadOp>(op);
     return state.isValueRead(foreachThreadOp.getTiedBlockArgument(&opOperand));
   }
 
@@ -1121,10 +1138,11 @@ struct ForeachThreadOpInterface
     // Create new ForeachThreadOp without any results and drop the automatically
     // introduced terminator.
     rewriter.setInsertionPoint(foreachThreadOp);
-    auto newForeachThreadOp = rewriter.create<ForeachThreadOp>(
+    ForeachThreadOp newForeachThreadOp;
+    newForeachThreadOp = rewriter.create<ForeachThreadOp>(
         foreachThreadOp.getLoc(), /*outputs=*/ValueRange(),
-        foreachThreadOp.getNumThreads(),
-        extractFromI64ArrayAttr(foreachThreadOp.getThreadDimMapping()));
+        foreachThreadOp.getNumThreads(), foreachThreadOp.getMapping());
+
     newForeachThreadOp.getBody()->getTerminator()->erase();
 
     // Move over block contents of the old op.
@@ -1163,11 +1181,9 @@ struct ForeachThreadOpInterface
   bool isRepetitiveRegion(Operation *op, unsigned index) const {
     auto foreachThreadOp = cast<ForeachThreadOp>(op);
     // This op is not repetitive if it has just a single thread.
-    if (llvm::all_of(foreachThreadOp.getNumThreads(), [](Value v) {
-          return getConstantIntValue(v) == static_cast<int64_t>(1);
-        }))
-      return false;
-    return true;
+    return !llvm::all_of(foreachThreadOp.getNumThreads(), [](Value v) {
+      return getConstantIntValue(v) == static_cast<int64_t>(1);
+    });
   }
 };
 

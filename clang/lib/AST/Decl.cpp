@@ -187,8 +187,8 @@ static bool usesTypeVisibility(const NamedDecl *D) {
 
 /// Does the given declaration have member specialization information,
 /// and if so, is it an explicit specialization?
-template <class T> static typename
-std::enable_if<!std::is_base_of<RedeclarableTemplateDecl, T>::value, bool>::type
+template <class T>
+static std::enable_if_t<!std::is_base_of_v<RedeclarableTemplateDecl, T>, bool>
 isExplicitMemberSpecialization(const T *D) {
   if (const MemberSpecializationInfo *member =
         D->getMemberSpecializationInfo()) {
@@ -235,7 +235,7 @@ static Optional<Visibility> getVisibilityOf(const NamedDecl *D,
     return getVisibilityFromAttr(A);
   }
 
-  return None;
+  return std::nullopt;
 }
 
 LinkageInfo LinkageComputer::getLVForType(const Type &T,
@@ -834,6 +834,15 @@ LinkageComputer::getLVForNamespaceScopeDecl(const NamedDecl *D,
     if (Function->getStorageClass() == SC_PrivateExtern)
       LV.mergeVisibility(HiddenVisibility, true);
 
+    // OpenMP target declare device functions are not callable from the host so
+    // they should not be exported from the device image. This applies to all
+    // functions as the host-callable kernel functions are emitted at codegen.
+    if (Context.getLangOpts().OpenMP && Context.getLangOpts().OpenMPIsDevice &&
+        ((Context.getTargetInfo().getTriple().isAMDGPU() ||
+          Context.getTargetInfo().getTriple().isNVPTX()) ||
+         OMPDeclareTargetDeclAttr::isDeclareTargetDeclaration(Function)))
+      LV.mergeVisibility(HiddenVisibility, /*newExplicit=*/false);
+
     // Note that Sema::MergeCompatibleFunctionDecls already takes care of
     // merging storage classes and visibility attributes, so we don't have to
     // look at previous decls in here.
@@ -1185,11 +1194,11 @@ getExplicitVisibilityAux(const NamedDecl *ND,
     const auto *TD = spec->getSpecializedTemplate()->getTemplatedDecl();
     while (TD != nullptr) {
       auto Vis = getVisibilityOf(TD, kind);
-      if (Vis != None)
+      if (Vis != std::nullopt)
         return Vis;
       TD = TD->getPreviousDecl();
     }
-    return None;
+    return std::nullopt;
   }
 
   // Use the most recent declaration.
@@ -1210,7 +1219,7 @@ getExplicitVisibilityAux(const NamedDecl *ND,
       return getVisibilityOf(VTSD->getSpecializedTemplate()->getTemplatedDecl(),
                              kind);
 
-    return None;
+    return std::nullopt;
   }
   // Also handle function template specializations.
   if (const auto *fn = dyn_cast<FunctionDecl>(ND)) {
@@ -1227,14 +1236,14 @@ getExplicitVisibilityAux(const NamedDecl *ND,
     if (InstantiatedFrom)
       return getVisibilityOf(InstantiatedFrom, kind);
 
-    return None;
+    return std::nullopt;
   }
 
   // The visibility of a template is stored in the templated decl.
   if (const auto *TD = dyn_cast<TemplateDecl>(ND))
     return getVisibilityOf(TD->getTemplatedDecl(), kind);
 
-  return None;
+  return std::nullopt;
 }
 
 Optional<Visibility>
@@ -1252,8 +1261,13 @@ LinkageInfo LinkageComputer::getLVForClosure(const DeclContext *DC,
   else if (isa<ParmVarDecl>(ContextDecl))
     Owner =
         dyn_cast<NamedDecl>(ContextDecl->getDeclContext()->getRedeclContext());
-  else
+  else if (isa<ImplicitConceptSpecializationDecl>(ContextDecl)) {
+    // Replace with the concept's owning decl, which is either a namespace or a
+    // TU, so this needs a dyn_cast.
+    Owner = dyn_cast<NamedDecl>(ContextDecl->getDeclContext());
+  } else {
     Owner = cast<NamedDecl>(ContextDecl);
+  }
 
   if (!Owner)
     return LinkageInfo::none();
@@ -1601,8 +1615,12 @@ Module *Decl::getOwningModuleForLinkage(bool IgnoreLinkage) const {
   llvm_unreachable("unknown module kind");
 }
 
-void NamedDecl::printName(raw_ostream &os) const {
-  os << Name;
+void NamedDecl::printName(raw_ostream &OS, const PrintingPolicy&) const {
+  OS << Name;
+}
+
+void NamedDecl::printName(raw_ostream &OS) const {
+  printName(OS, getASTContext().getPrintingPolicy());
 }
 
 std::string NamedDecl::getQualifiedNameAsString(bool WithGlobalNsPrefix) const {
@@ -1621,7 +1639,7 @@ void NamedDecl::printQualifiedName(raw_ostream &OS, const PrintingPolicy &P,
                                    bool WithGlobalNsPrefix) const {
   if (getDeclContext()->isFunctionOrMethod()) {
     // We do not print '(anonymous)' for function parameters without name.
-    printName(OS);
+    printName(OS, P);
     return;
   }
   printNestedNameSpecifier(OS, P, WithGlobalNsPrefix);
@@ -1632,7 +1650,7 @@ void NamedDecl::printQualifiedName(raw_ostream &OS, const PrintingPolicy &P,
     // fall back to "(anonymous)".
     SmallString<64> NameBuffer;
     llvm::raw_svector_ostream NameOS(NameBuffer);
-    printName(NameOS);
+    printName(NameOS, P);
     if (NameBuffer.empty())
       OS << "(anonymous)";
     else
@@ -1758,7 +1776,7 @@ void NamedDecl::getNameForDiagnostic(raw_ostream &OS,
   if (Qualified)
     printQualifiedName(OS, Policy);
   else
-    printName(OS);
+    printName(OS, Policy);
 }
 
 template<typename T> static bool isRedeclarableImpl(Redeclarable<T> *) {
@@ -2584,7 +2602,7 @@ bool VarDecl::isNonEscapingByref() const {
 
 bool VarDecl::hasDependentAlignment() const {
   QualType T = getType();
-  return T->isDependentType() || T->isUndeducedAutoType() ||
+  return T->isDependentType() || T->isUndeducedType() ||
          llvm::any_of(specific_attrs<AlignedAttr>(), [](const AlignedAttr *AA) {
            return AA->isAlignmentDependent();
          });
@@ -2974,6 +2992,7 @@ FunctionDecl::FunctionDecl(Kind DK, ASTContext &C, DeclContext *DC,
   FunctionDeclBits.IsMultiVersion = false;
   FunctionDeclBits.IsCopyDeductionCandidate = false;
   FunctionDeclBits.HasODRHash = false;
+  FunctionDeclBits.FriendConstraintRefersToEnclosingTemplate = false;
   if (TrailingRequiresClause)
     setTrailingRequiresClause(TrailingRequiresClause);
 }
@@ -4472,6 +4491,25 @@ void TagDecl::setQualifierInfo(NestedNameSpecifierLoc QualifierLoc) {
   }
 }
 
+void TagDecl::printName(raw_ostream &OS, const PrintingPolicy &Policy) const {
+  DeclarationName Name = getDeclName();
+#ifndef SYCLomatic_CUSTOMIZATION
+  // If the name is supposed to have an identifier but does not have one, then
+  // the tag is anonymous and we should print it differently.
+  if (Name.isIdentifier() && !Name.getAsIdentifierInfo()) {
+    // If the caller wanted to print a qualified name, they've already printed
+    // the scope. And if the caller doesn't want that, the scope information
+    // is already printed as part of the type.
+    PrintingPolicy Copy(Policy);
+    Copy.SuppressScope = true;
+    getASTContext().getTagDeclType(this).print(OS, Copy);
+    return;
+  }
+#endif // !SYCLomatic_CUSTOMIZATION
+  // Otherwise, do the normal printing.
+  Name.print(OS, Policy);
+}
+
 void TagDecl::setTemplateParameterListsInfo(
     ASTContext &Context, ArrayRef<TemplateParameterList *> TPLists) {
   assert(!TPLists.empty());
@@ -5098,8 +5136,9 @@ IndirectFieldDecl::Create(ASTContext &C, DeclContext *DC, SourceLocation L,
 
 IndirectFieldDecl *IndirectFieldDecl::CreateDeserialized(ASTContext &C,
                                                          unsigned ID) {
-  return new (C, ID) IndirectFieldDecl(C, nullptr, SourceLocation(),
-                                       DeclarationName(), QualType(), None);
+  return new (C, ID)
+      IndirectFieldDecl(C, nullptr, SourceLocation(), DeclarationName(),
+                        QualType(), std::nullopt);
 }
 
 SourceRange EnumConstantDecl::getSourceRange() const {
@@ -5204,6 +5243,29 @@ FileScopeAsmDecl *FileScopeAsmDecl::CreateDeserialized(ASTContext &C,
                                       SourceLocation());
 }
 
+void TopLevelStmtDecl::anchor() {}
+
+TopLevelStmtDecl *TopLevelStmtDecl::Create(ASTContext &C, Stmt *Statement) {
+  assert(Statement);
+  assert(C.getLangOpts().IncrementalExtensions &&
+         "Must be used only in incremental mode");
+
+  SourceLocation BeginLoc = Statement->getBeginLoc();
+  DeclContext *DC = C.getTranslationUnitDecl();
+
+  return new (C, DC) TopLevelStmtDecl(DC, BeginLoc, Statement);
+}
+
+TopLevelStmtDecl *TopLevelStmtDecl::CreateDeserialized(ASTContext &C,
+                                                       unsigned ID) {
+  return new (C, ID)
+      TopLevelStmtDecl(/*DC=*/nullptr, SourceLocation(), /*S=*/nullptr);
+}
+
+SourceRange TopLevelStmtDecl::getSourceRange() const {
+  return SourceRange(getLocation(), Statement->getEndLoc());
+}
+
 void EmptyDecl::anchor() {}
 
 EmptyDecl *EmptyDecl::Create(ASTContext &C, DeclContext *DC, SourceLocation L) {
@@ -5212,6 +5274,40 @@ EmptyDecl *EmptyDecl::Create(ASTContext &C, DeclContext *DC, SourceLocation L) {
 
 EmptyDecl *EmptyDecl::CreateDeserialized(ASTContext &C, unsigned ID) {
   return new (C, ID) EmptyDecl(nullptr, SourceLocation());
+}
+
+HLSLBufferDecl::HLSLBufferDecl(DeclContext *DC, bool CBuffer,
+                               SourceLocation KwLoc, IdentifierInfo *ID,
+                               SourceLocation IDLoc, SourceLocation LBrace)
+    : NamedDecl(Decl::Kind::HLSLBuffer, DC, IDLoc, DeclarationName(ID)),
+      DeclContext(Decl::Kind::HLSLBuffer), LBraceLoc(LBrace), KwLoc(KwLoc),
+      IsCBuffer(CBuffer) {}
+
+HLSLBufferDecl *HLSLBufferDecl::Create(ASTContext &C,
+                                       DeclContext *LexicalParent, bool CBuffer,
+                                       SourceLocation KwLoc, IdentifierInfo *ID,
+                                       SourceLocation IDLoc,
+                                       SourceLocation LBrace) {
+  // For hlsl like this
+  // cbuffer A {
+  //     cbuffer B {
+  //     }
+  // }
+  // compiler should treat it as
+  // cbuffer A {
+  // }
+  // cbuffer B {
+  // }
+  // FIXME: support nested buffers if required for back-compat.
+  DeclContext *DC = LexicalParent;
+  HLSLBufferDecl *Result =
+      new (C, DC) HLSLBufferDecl(DC, CBuffer, KwLoc, ID, IDLoc, LBrace);
+  return Result;
+}
+
+HLSLBufferDecl *HLSLBufferDecl::CreateDeserialized(ASTContext &C, unsigned ID) {
+  return new (C, ID) HLSLBufferDecl(nullptr, false, SourceLocation(), nullptr,
+                                    SourceLocation(), SourceLocation());
 }
 
 //===----------------------------------------------------------------------===//
@@ -5273,7 +5369,7 @@ ImportDecl *ImportDecl::CreateDeserialized(ASTContext &C, unsigned ID,
 
 ArrayRef<SourceLocation> ImportDecl::getIdentifierLocs() const {
   if (!isImportComplete())
-    return None;
+    return std::nullopt;
 
   const auto *StoredLocs = getTrailingObjects<SourceLocation>();
   return llvm::makeArrayRef(StoredLocs,

@@ -43,10 +43,6 @@ public:
                          SmallVectorImpl<MCFixup> &Fixups,
                          const MCSubtargetInfo &STI) const override;
 
-  void expandFunctionCall(const MCInst &MI, raw_ostream &OS,
-                          SmallVectorImpl<MCFixup> &Fixups,
-                          const MCSubtargetInfo &STI) const;
-
   /// TableGen'erated function for getting the binary encoding for an
   /// instruction.
   uint64_t getBinaryCodeForInstr(const MCInst &MI,
@@ -263,6 +259,9 @@ LoongArchMCCodeEmitter::getExprOpValue(const MCInst &MI, const MCOperand &MO,
     case LoongArch::BCNEZ:
       FixupKind = LoongArch::fixup_loongarch_b21;
       break;
+    case LoongArch::B:
+      FixupKind = LoongArch::fixup_loongarch_b26;
+      break;
     }
   }
 
@@ -274,26 +273,12 @@ LoongArchMCCodeEmitter::getExprOpValue(const MCInst &MI, const MCOperand &MO,
   return 0;
 }
 
-void LoongArchMCCodeEmitter::expandFunctionCall(
-    const MCInst &MI, raw_ostream &OS, SmallVectorImpl<MCFixup> &Fixups,
-    const MCSubtargetInfo &STI) const {
-  MCOperand Func = MI.getOperand(0);
-  MCInst TmpInst = Func.isExpr()
-                       ? MCInstBuilder(LoongArch::BL).addExpr(Func.getExpr())
-                       : MCInstBuilder(LoongArch::BL).addImm(Func.getImm());
-  uint32_t Binary = getBinaryCodeForInstr(TmpInst, Fixups, STI);
-  support::endian::write(OS, Binary, support::little);
-}
-
 void LoongArchMCCodeEmitter::encodeInstruction(
     const MCInst &MI, raw_ostream &OS, SmallVectorImpl<MCFixup> &Fixups,
     const MCSubtargetInfo &STI) const {
   const MCInstrDesc &Desc = MCII.get(MI.getOpcode());
   // Get byte count of instruction.
   unsigned Size = Desc.getSize();
-
-  if (MI.getOpcode() == LoongArch::PseudoCALL)
-    return expandFunctionCall(MI, OS, Fixups, STI);
 
   switch (Size) {
   default:

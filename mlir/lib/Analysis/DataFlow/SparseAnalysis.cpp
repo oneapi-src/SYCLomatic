@@ -95,7 +95,8 @@ void AbstractSparseDataFlowAnalysis::visitOperation(Operation *op) {
   // The results of a region branch operation are determined by control-flow.
   if (auto branch = dyn_cast<RegionBranchOpInterface>(op)) {
     return visitRegionSuccessors({branch}, branch,
-                                 /*successorIndex=*/llvm::None, resultLattices);
+                                 /*successorIndex=*/std::nullopt,
+                                 resultLattices);
   }
 
   // The results of a call operation are determined by the callgraph.
@@ -117,9 +118,6 @@ void AbstractSparseDataFlowAnalysis::visitOperation(Operation *op) {
   for (Value operand : op->getOperands()) {
     AbstractSparseLattice *operandLattice = getLatticeElement(operand);
     operandLattice->useDefSubscribe(this);
-    // If any of the operand states are not initialized, bail out.
-    if (operandLattice->isUninitialized())
-      return;
     operandLattices.push_back(operandLattice);
   }
 
