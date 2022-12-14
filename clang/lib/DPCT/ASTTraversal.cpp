@@ -33,6 +33,7 @@
 #include "llvm/ADT/StringSet.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
+#include "MemberExprRewriter.h"
 
 #include <algorithm>
 #include <iostream>
@@ -239,7 +240,7 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
                    MapNames::VectorTypeMigratedTypeSizeMap.end()) {
       DiagnosticsUtils::report(
           MacroNameTok.getLocation(), Diagnostics::MACRO_SAME_AS_SYCL_TYPE,
-          dpct::DpctGlobalInfo::getSourceManager(), &TransformSet, false,
+          &TransformSet, false,
           MacroNameTok.getIdentifierInfo()->getName().str());
     }
   }
@@ -468,7 +469,6 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
         TransformSet.emplace_back(new ReplaceToken(Range.getBegin(), "0"));
         DiagnosticsUtils::report(Range.getBegin(),
                                  Diagnostics::HOSTALLOCMACRO_NO_MEANING,
-                                 dpct::DpctGlobalInfo::getSourceManager(),
                                  &TransformSet, false, Name.str());
       }
     }
@@ -3709,14 +3709,20 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (Parents.size() < 1)
     return;
   auto MemberName = ME->getMemberNameInfo().getAsString();
-  if (DpctGlobalInfo::getUnqualifiedTypeName(
-        ME->getBase()->getType()).find("cudaPointerAttributes") !=
-          std::string::npos) {
-    ExprAnalysis EA;
-    EA.analyze(ME);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-    return;
+
+  auto TypeName = ME->getBase()->getType();
+  if (TypeName->isPointerType()) {
+    TypeName = TypeName->getPointeeType();
+  }
+  std::string MemberExprName = DpctGlobalInfo::getTypeName(TypeName)
+                               + "." + MemberName;
+  if (MemberExprRewriterFactoryBase::MemberExprRewriterMap->find(MemberExprName)
+        != MemberExprRewriterFactoryBase::MemberExprRewriterMap->end()) {
+      ExprAnalysis EA;
+      EA.analyze(ME);
+      emplaceTransformation(EA.getReplacement());
+      EA.applyAllSubExprRepl();
+      return;
   }
   // unmigrated properties
   if (MemberName == "regsPerBlock") {
@@ -3751,12 +3757,6 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
            MemberName, "INT_MAX");
     emplaceTransformation(
         new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "INT_MAX"));
-    return;
-  } else if (MemberName == "totalConstMem") {
-    report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
-           MemberName, "0");
-    emplaceTransformation(
-        new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "0"));
     return;
   } else if (MemberName == "textureAlignment") {
     requestFeature(HelperFeatureEnum::Device_get_current_device, ME);
