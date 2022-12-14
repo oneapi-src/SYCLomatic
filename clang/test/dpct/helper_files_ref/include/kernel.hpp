@@ -121,12 +121,17 @@ static std::filesystem::path write_data_to_file(char const *const data,
   // check temporary file contents
   auto infile = std::ifstream(filepath, std::ios::in | std::ios::binary);
   if (infile) {
-    for (auto i = 0; i < size; i++) {
+    bool mismatch = false;
+    int  cnt=0;
+
+    while (1) {
       char c;
       infile.get(c);
-      if (c != data[i])
-        throw std::runtime_error("file contents not written correctly");
+      if (infile.eof()) break;
+      if (c != data[cnt++]) mismatch = true;
     }
+    if (cnt!=size || mismatch)
+      throw std::runtime_error("file contents not written correctly");
   } else
     throw std::runtime_error("could not validate file");
 
