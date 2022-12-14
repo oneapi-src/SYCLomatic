@@ -68,6 +68,9 @@ public:
   // normal calls, so they need a different mask to represent this.
   const uint32_t *getTLSCallPreservedMask() const;
 
+  const uint32_t *getSMStartStopCallPreservedMask() const;
+  const uint32_t *SMEABISupportRoutinesCallPreservedMaskFromX0() const;
+
   // Funclets on ARM64 Windows don't preserve any registers.
   const uint32_t *getNoPreservedMask() const override;
 
@@ -91,6 +94,9 @@ public:
 
   BitVector getStrictlyReservedRegs(const MachineFunction &MF) const;
   BitVector getReservedRegs(const MachineFunction &MF) const override;
+  llvm::Optional<std::string>
+  explainReservedReg(const MachineFunction &MF,
+                     MCRegister PhysReg) const override;
   bool isAsmClobberable(const MachineFunction &MF,
                        MCRegister PhysReg) const override;
   const TargetRegisterClass *
@@ -110,7 +116,7 @@ public:
                                         int64_t Offset) const override;
   void resolveFrameIndex(MachineInstr &MI, Register BaseReg,
                          int64_t Offset) const override;
-  void eliminateFrameIndex(MachineBasicBlock::iterator II, int SPAdj,
+  bool eliminateFrameIndex(MachineBasicBlock::iterator II, int SPAdj,
                            unsigned FIOperandNum,
                            RegScavenger *RS = nullptr) const override;
   bool cannotEliminateFrame(const MachineFunction &MF) const;

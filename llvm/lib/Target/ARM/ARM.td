@@ -672,6 +672,10 @@ def HasV8_8aOps   : SubtargetFeature<"v8.8a", "HasV8_8aOps", "true",
                                    "Support ARM v8.8a instructions",
                                    [HasV8_7aOps]>;
 
+def HasV8_9aOps   : SubtargetFeature<"v8.9a", "HasV8_9aOps", "true",
+                                   "Support ARM v8.9a instructions",
+                                   [HasV8_8aOps]>;
+
 def HasV9_0aOps   : SubtargetFeature<"v9a", "HasV9_0aOps", "true",
                                    "Support ARM v9a instructions",
                                    [HasV8_5aOps]>;
@@ -687,6 +691,10 @@ def HasV9_2aOps   : SubtargetFeature<"v9.2a", "HasV9_2aOps", "true",
 def HasV9_3aOps   : SubtargetFeature<"v9.3a", "HasV9_3aOps", "true",
                                    "Support ARM v9.3a instructions",
                                    [HasV8_8aOps, HasV9_2aOps]>;
+
+def HasV9_4aOps   : SubtargetFeature<"v9.4a", "HasV9_4aOps", "true",
+                                   "Support ARM v9.4a instructions",
+                                   [HasV8_9aOps, HasV9_3aOps]>;
 
 def HasV8_1MMainlineOps : SubtargetFeature<
                "v8.1m.main", "HasV8_1MMainlineOps", "true",
@@ -855,14 +863,6 @@ class ProcNoItin<string Name, list<SubtargetFeature> Features>
 //===----------------------------------------------------------------------===//
 // ARM architectures
 //
-
-def ARMv2     : Architecture<"armv2",     "ARMv2",    []>;
-
-def ARMv2a    : Architecture<"armv2a",    "ARMv2a",   []>;
-
-def ARMv3     : Architecture<"armv3",     "ARMv3",    []>;
-
-def ARMv3m    : Architecture<"armv3m",    "ARMv3m",   []>;
 
 def ARMv4     : Architecture<"armv4",     "ARMv4",    []>;
 
@@ -1056,6 +1056,19 @@ def ARMv88a   : Architecture<"armv8.8-a", "ARMv88a",  [HasV8_8aOps,
                                                        FeatureCRC,
                                                        FeatureRAS,
                                                        FeatureDotProd]>;
+def ARMv89a   : Architecture<"armv8.9-a", "ARMv89a",  [HasV8_9aOps,
+                                                       FeatureAClass,
+                                                       FeatureDB,
+                                                       FeatureFPARMv8,
+                                                       FeatureNEON,
+                                                       FeatureDSP,
+                                                       FeatureTrustZone,
+                                                       FeatureMP,
+                                                       FeatureVirtualization,
+                                                       FeatureCrypto,
+                                                       FeatureCRC,
+                                                       FeatureRAS,
+                                                       FeatureDotProd]>;
 
 def ARMv9a   : Architecture<"armv9-a", "ARMv9a",       [HasV9_0aOps,
                                                        FeatureAClass,
@@ -1103,6 +1116,18 @@ def ARMv93a   : Architecture<"armv9.3-a", "ARMv93a",  [HasV9_3aOps,
                                                        FeatureMP,
                                                        FeatureVirtualization,
                                                        FeatureCrypto,
+                                                       FeatureCRC,
+                                                       FeatureRAS,
+                                                       FeatureDotProd]>;
+def ARMv94a   : Architecture<"armv9.4-a", "ARMv94a",  [HasV9_4aOps,
+                                                       FeatureAClass,
+                                                       FeatureDB,
+                                                       FeatureFPARMv8,
+                                                       FeatureNEON,
+                                                       FeatureDSP,
+                                                       FeatureTrustZone,
+                                                       FeatureMP,
+                                                       FeatureVirtualization,
                                                        FeatureCRC,
                                                        FeatureRAS,
                                                        FeatureDotProd]>;

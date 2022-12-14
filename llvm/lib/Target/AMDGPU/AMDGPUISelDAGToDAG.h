@@ -110,7 +110,6 @@ protected:
 
 private:
   std::pair<SDValue, SDValue> foldFrameIndex(SDValue N) const;
-  bool isNoNanSrc(SDValue N) const;
   bool isInlineImmediate(const SDNode *N, bool Negated = false) const;
   bool isNegInlineImmediate(const SDNode *N) const {
     return isInlineImmediate(N, true);
@@ -268,6 +267,7 @@ private:
   void SelectBRCOND(SDNode *N);
   void SelectFMAD_FMA(SDNode *N);
   void SelectDSAppendConsume(SDNode *N, unsigned IntrID);
+  void SelectDSBvhStackIntrinsic(SDNode *N);
   void SelectDS_GWS(SDNode *N, unsigned IntrID);
   void SelectInterpP1F16(SDNode *N);
   void SelectINTRINSIC_W_CHAIN(SDNode *N);

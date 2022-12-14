@@ -480,9 +480,8 @@ ProgramStateRef ExprEngine::setIndexOfElementToConstruct(
 Optional<unsigned> ExprEngine::getPendingInitLoop(ProgramStateRef State,
                                                   const CXXConstructExpr *E,
                                                   const LocationContext *LCtx) {
-
-  return Optional<unsigned>::create(
-      State->get<PendingInitLoop>({E, LCtx->getStackFrame()}));
+  const unsigned *V = State->get<PendingInitLoop>({E, LCtx->getStackFrame()});
+  return V ? Optional(*V) : std::nullopt;
 }
 
 ProgramStateRef ExprEngine::removePendingInitLoop(ProgramStateRef State,
@@ -509,9 +508,9 @@ Optional<unsigned>
 ExprEngine::getIndexOfElementToConstruct(ProgramStateRef State,
                                          const CXXConstructExpr *E,
                                          const LocationContext *LCtx) {
-
-  return Optional<unsigned>::create(
-      State->get<IndexOfElementToConstruct>({E, LCtx->getStackFrame()}));
+  const unsigned *V =
+      State->get<IndexOfElementToConstruct>({E, LCtx->getStackFrame()});
+  return V ? Optional(*V) : std::nullopt;
 }
 
 ProgramStateRef
@@ -529,8 +528,9 @@ ExprEngine::getPendingArrayDestruction(ProgramStateRef State,
                                        const LocationContext *LCtx) {
   assert(LCtx && "LocationContext shouldn't be null!");
 
-  return Optional<unsigned>::create(
-      State->get<PendingArrayDestruction>(LCtx->getStackFrame()));
+  const unsigned *V =
+      State->get<PendingArrayDestruction>(LCtx->getStackFrame());
+  return V ? Optional(*V) : std::nullopt;
 }
 
 ProgramStateRef ExprEngine::setPendingArrayDestruction(
@@ -599,7 +599,8 @@ ExprEngine::getObjectUnderConstruction(ProgramStateRef State,
                                        const ConstructionContextItem &Item,
                                        const LocationContext *LC) {
   ConstructedObjectKey Key(Item, LC->getStackFrame());
-  return Optional<SVal>::create(State->get<ObjectsUnderConstruction>(Key));
+  const SVal *V = State->get<ObjectsUnderConstruction>(Key);
+  return V ? Optional(*V) : std::nullopt;
 }
 
 ProgramStateRef
@@ -912,9 +913,9 @@ static void printStateTraitWithLocationContextJson(
 
   // Try to do as much compile time checking as possible.
   // FIXME: check for invocable instead of function?
-  static_assert(std::is_function<std::remove_pointer_t<Printer>>::value,
+  static_assert(std::is_function_v<std::remove_pointer_t<Printer>>,
                 "Printer is not a function!");
-  static_assert(std::is_convertible<Printer, RequiredType>::value,
+  static_assert(std::is_convertible_v<Printer, RequiredType>,
                 "Printer doesn't have the required type!");
 
   if (LCtx && !State->get<Trait>().isEmpty()) {
@@ -1241,6 +1242,7 @@ ExprEngine::prepareStateForArrayDestruction(const ProgramStateRef State,
                                             const QualType &ElementTy,
                                             const LocationContext *LCtx,
                                             SVal *ElementCountVal) {
+  assert(Region != nullptr && "Not-null region expected");	
 
   QualType Ty = ElementTy.getDesugaredType(getContext());
   while (const auto *NTy = dyn_cast<ArrayType>(Ty))
@@ -1378,10 +1380,10 @@ void ExprEngine::ProcessAutomaticObjDtor(const CFGAutomaticObjDtor Dtor,
                                   "Prepare for object destruction");
   PreImplicitCall PP(DtorDecl, varDecl->getLocation(), LCtx, &PT);
   Pred = Bldr.generateNode(PP, state, Pred);
-  Bldr.takeNodes(Pred);
 
   if (!Pred)
     return;
+  Bldr.takeNodes(Pred);
 
   VisitCXXDestructor(varType, Region, Dtor.getTriggerStmt(),
                      /*IsBase=*/false, Pred, Dst, CallOpts);
@@ -1420,31 +1422,32 @@ void ExprEngine::ProcessDeleteDtor(const CFGDeleteDtor Dtor,
   const MemRegion *ArgR = ArgVal.getAsRegion();
 
   if (DE->isArrayForm()) {
-    SVal ElementCount;
-    std::tie(State, Idx) =
-        prepareStateForArrayDestruction(State, ArgR, DTy, LCtx, &ElementCount);
-
     CallOpts.IsArrayCtorOrDtor = true;
     // Yes, it may even be a multi-dimensional array.
     while (const auto *AT = getContext().getAsArrayType(DTy))
       DTy = AT->getElementType();
 
-    // If we're about to destruct a 0 length array, don't run any of the
-    // destructors.
-    if (ElementCount.isConstant() &&
-        ElementCount.getAsInteger()->getLimitedValue() == 0) {
+    if (ArgR) {
+      SVal ElementCount;
+      std::tie(State, Idx) = prepareStateForArrayDestruction(
+          State, ArgR, DTy, LCtx, &ElementCount);
 
-      static SimpleProgramPointTag PT(
-          "ExprEngine", "Skipping 0 length array delete destruction");
-      PostImplicitCall PP(getDtorDecl(DTy), DE->getBeginLoc(), LCtx, &PT);
-      NodeBuilder Bldr(Pred, Dst, *currBldrCtx);
-      Bldr.generateNode(PP, Pred->getState(), Pred);
-      return;
-    }
+      // If we're about to destruct a 0 length array, don't run any of the
+      // destructors.
+      if (ElementCount.isConstant() &&
+          ElementCount.getAsInteger()->getLimitedValue() == 0) {
 
-    if (ArgR)
+        static SimpleProgramPointTag PT(
+            "ExprEngine", "Skipping 0 length array delete destruction");
+        PostImplicitCall PP(getDtorDecl(DTy), DE->getBeginLoc(), LCtx, &PT);
+        NodeBuilder Bldr(Pred, Dst, *currBldrCtx);
+        Bldr.generateNode(PP, Pred->getState(), Pred);
+        return;
+      }
+
       ArgR = State->getLValue(DTy, svalBuilder.makeArrayIndex(Idx), ArgVal)
                  .getAsRegion();
+    }
   }
 
   NodeBuilder Bldr(Pred, Dst, getBuilderContext());
@@ -1452,10 +1455,10 @@ void ExprEngine::ProcessDeleteDtor(const CFGDeleteDtor Dtor,
                                   "Prepare for object destruction");
   PreImplicitCall PP(getDtorDecl(DTy), DE->getBeginLoc(), LCtx, &PT);
   Pred = Bldr.generateNode(PP, State, Pred);
-  Bldr.takeNodes(Pred);
 
   if (!Pred)
     return;
+  Bldr.takeNodes(Pred);
 
   VisitCXXDestructor(DTy, ArgR, DE, /*IsBase=*/false, Pred, Dst, CallOpts);
 }
@@ -1528,10 +1531,10 @@ void ExprEngine::ProcessMemberDtor(const CFGMemberDtor D,
                                   "Prepare for object destruction");
   PreImplicitCall PP(DtorDecl, Member->getLocation(), LCtx, &PT);
   Pred = Bldr.generateNode(PP, State, Pred);
-  Bldr.takeNodes(Pred);
 
   if (!Pred)
     return;
+  Bldr.takeNodes(Pred);
 
   VisitCXXDestructor(T, FieldVal.getAsRegion(), CurDtor->getBody(),
                      /*IsBase=*/false, Pred, Dst, CallOpts);
@@ -1744,6 +1747,7 @@ void ExprEngine::Visit(const Stmt *S, ExplodedNode *Pred,
     case Stmt::OMPTaskyieldDirectiveClass:
     case Stmt::OMPBarrierDirectiveClass:
     case Stmt::OMPTaskwaitDirectiveClass:
+    case Stmt::OMPErrorDirectiveClass:
     case Stmt::OMPTaskgroupDirectiveClass:
     case Stmt::OMPFlushDirectiveClass:
     case Stmt::OMPDepobjDirectiveClass:
@@ -2713,7 +2717,7 @@ assumeCondition(const Stmt *Condition, ExplodedNode *N) {
 
   // If the condition is still unknown, give up.
   if (X.isUnknownOrUndef())
-    return None;
+    return std::nullopt;
 
   DefinedSVal V = X.castAs<DefinedSVal>();
 
@@ -3163,6 +3167,12 @@ void ExprEngine::VisitCommonDeclRefExpr(const Expr *Ex, const NamedDecl *D,
     return;
   }
 
+  if (const auto *TPO = dyn_cast<TemplateParamObjectDecl>(D)) {
+    // FIXME: We should meaningfully implement this.
+    (void)TPO;
+    return;
+  }
+
   llvm_unreachable("Support for this Decl not implemented.");
 }
 
@@ -3358,6 +3368,14 @@ void ExprEngine::VisitMemberExpr(const MemberExpr *M, ExplodedNode *Pred,
                                             /*OutRegionWithAdjustments=*/&MR);
       SVal baseExprVal =
           MR ? loc::MemRegionVal(MR) : state->getSVal(BaseExpr, LCtx);
+
+      // FIXME: Copied from RegionStoreManager::bind()
+      if (const auto *SR =
+              dyn_cast_or_null<SymbolicRegion>(baseExprVal.getAsRegion())) {
+        QualType T = SR->getPointeeStaticType();
+        baseExprVal =
+            loc::MemRegionVal(getStoreManager().GetElementZeroRegion(SR, T));
+      }
 
       const auto *field = cast<FieldDecl>(Member);
       SVal L = state->getLValue(field, baseExprVal);

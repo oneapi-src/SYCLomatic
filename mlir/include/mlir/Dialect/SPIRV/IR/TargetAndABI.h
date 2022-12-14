@@ -79,15 +79,16 @@ InterfaceVarABIAttr getInterfaceVarABIAttr(unsigned descriptorSet,
                                            MLIRContext *context);
 
 /// Returns whether the given SPIR-V target (described by TargetEnvAttr) needs
-/// ABI attributes for interface variables (spv.interface_var_abi).
+/// ABI attributes for interface variables (spirv.interface_var_abi).
 bool needsInterfaceVarABIAttrs(TargetEnvAttr targetAttr);
 
 /// Returns the attribute name for specifying entry point information.
 StringRef getEntryPointABIAttrName();
 
 /// Gets the EntryPointABIAttr given its fields.
-EntryPointABIAttr getEntryPointABIAttr(ArrayRef<int32_t> localSize,
-                                       MLIRContext *context);
+EntryPointABIAttr getEntryPointABIAttr(MLIRContext *context,
+                                       ArrayRef<int32_t> workgroupSize = {},
+                                       llvm::Optional<int> subgroupSize = {});
 
 /// Queries the entry point ABI on the nearest function-like op containing the
 /// given `op`. Returns null attribute if not found.
@@ -96,7 +97,7 @@ EntryPointABIAttr lookupEntryPointABI(Operation *op);
 /// Queries the local workgroup size from entry point ABI on the nearest
 /// function-like op containing the given `op`. Returns null attribute if not
 /// found.
-DenseIntElementsAttr lookupLocalWorkGroupSize(Operation *op);
+DenseI32ArrayAttr lookupLocalWorkGroupSize(Operation *op);
 
 /// Returns a default resource limits attribute that uses numbers from
 /// "Table 46. Required Limits" of the Vulkan spec.

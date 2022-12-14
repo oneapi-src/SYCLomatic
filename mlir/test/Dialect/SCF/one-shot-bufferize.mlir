@@ -8,11 +8,9 @@
 // Test bufferization using memref types that have no layout map.
 // RUN: mlir-opt %s -allow-unregistered-dialect -one-shot-bufferize="allow-return-allocs unknown-type-conversion=identity-layout-map function-boundary-type-conversion=identity-layout-map bufferize-function-boundaries" -buffer-deallocation -split-input-file -o /dev/null
 
-// CHECK-DAG: #[[$map_1d_dyn:.*]] = affine_map<(d0)[s0, s1] -> (d0 * s1 + s0)>
-
 // CHECK-LABEL: func @scf_for_yield_only(
-//  CHECK-SAME:   %[[A:[a-zA-Z0-9]*]]: memref<?xf32, #[[$map_1d_dyn]]>,
-//  CHECK-SAME:   %[[t:[a-zA-Z0-9]*]]: memref<?xf32, #[[$map_1d_dyn]]>
+//  CHECK-SAME:   %[[A:[a-zA-Z0-9]*]]: memref<?xf32, strided<[?], offset: ?>>,
+//  CHECK-SAME:   %[[t:[a-zA-Z0-9]*]]: memref<?xf32, strided<[?], offset: ?>>
 //  CHECK-SAME:   ) -> memref<?xf32> {
 func.func @scf_for_yield_only(
     %A : tensor<?xf32> {bufferization.writable = false},
@@ -40,6 +38,32 @@ func.func @scf_for_yield_only(
 
 // -----
 
+// CHECK-LABEL: func @scf_for_is_reading(
+//  CHECK-SAME:     %[[A:.*]]: memref<?xf32, strided<[?], offset: ?>>, %[[B:.*]]: memref<?xf32, strided<[?], offset: ?>>
+func.func @scf_for_is_reading(%A : tensor<?xf32>, %B : tensor<?xf32>,
+                              %lb : index, %ub : index)
+  -> (f32, f32)
+{
+  %c1 = arith.constant 1 : index
+  %cst = arith.constant 0.0 : f32
+
+  // This is a regression test to make sure that an alloc + copy is emitted.
+
+  // CHECK: %[[alloc:.*]] = memref.alloc
+  // CHECK: memref.copy %[[A]], %[[alloc]]
+  // CHECK: %[[clone:.*]] = bufferization.clone %[[alloc]]
+  // CHECK: scf.for {{.*}} iter_args(%{{.*}} = %[[clone]])
+  %0 = scf.for %iv = %lb to %ub step %c1 iter_args(%1 = %A) -> tensor<?xf32> {
+    %r = linalg.fill ins(%cst : f32) outs(%1 : tensor<?xf32>) -> tensor<?xf32>
+    scf.yield %B : tensor<?xf32>
+  }
+  %1 = tensor.extract %0[%c1] : tensor<?xf32>
+  %2 = tensor.extract %A[%c1] : tensor<?xf32>
+  return %1, %2 : f32, f32
+}
+
+// -----
+
 // Ensure that the function bufferizes without error. This tests pre-order
 // traversal of scf.for loops during bufferization. No need to check the IR,
 // just want to make sure that it does not crash.
@@ -62,12 +86,10 @@ func.func @nested_scf_for(%A : tensor<?xf32> {bufferization.writable = true},
 
 // -----
 
-// CHECK-DAG: #[[$map_1d_dyn:.*]] = affine_map<(d0)[s0, s1] -> (d0 * s1 + s0)>
-
 // CHECK-LABEL: func @scf_for_with_tensor.insert_slice
-//  CHECK-SAME:   %[[A:[a-zA-Z0-9]*]]: memref<?xf32, #[[$map_1d_dyn]]>
-//  CHECK-SAME:   %[[B:[a-zA-Z0-9]*]]: memref<?xf32, #[[$map_1d_dyn]]>
-//  CHECK-SAME:   %[[C:[a-zA-Z0-9]*]]: memref<4xf32, #[[$map_1d_dyn]]>
+//  CHECK-SAME:   %[[A:[a-zA-Z0-9]*]]: memref<?xf32, strided<[?], offset: ?>>
+//  CHECK-SAME:   %[[B:[a-zA-Z0-9]*]]: memref<?xf32, strided<[?], offset: ?>>
+//  CHECK-SAME:   %[[C:[a-zA-Z0-9]*]]: memref<4xf32, strided<[?], offset: ?>>
 func.func @scf_for_with_tensor.insert_slice(
     %A : tensor<?xf32> {bufferization.writable = false},
     %B : tensor<?xf32> {bufferization.writable = true},
@@ -292,7 +314,7 @@ func.func @scf_for_yield_allocation(%t: tensor<?xf32>, %lb : index, %ub : index,
 // 2 allocs and 2 copies).
 
 // CHECK-LABEL: func @scf_for_swapping_yields(
-//  CHECK-SAME:     %[[A:.*]]: memref<?xf32, #{{.*}}>, %[[B:.*]]: memref<?xf32, #{{.*}}>
+//  CHECK-SAME:     %[[A:.*]]: memref<?xf32, strided{{.*}}>, %[[B:.*]]: memref<?xf32, strided{{.*}}>
 func.func @scf_for_swapping_yields(
     %A : tensor<?xf32>, %B : tensor<?xf32> {bufferization.writable = true},
     %C : tensor<4xf32>, %lb : index, %ub : index, %step : index)
@@ -341,16 +363,17 @@ func.func @scf_for_swapping_yields(
 // -----
 
 // CHECK-LABEL: func @scf_while(
-//  CHECK-SAME:     %[[arg0:.*]]: memref<?xi1, #{{.*}}>
+//  CHECK-SAME:     %[[arg0:.*]]: memref<?xi1, strided{{.*}}>
 func.func @scf_while(%arg0: tensor<?xi1>, %idx: index) -> tensor<?xi1> {
   // CHECK: scf.while : () -> () {
-  %res = scf.while (%arg1 = %arg0) : (tensor<?xi1>) -> tensor<?xi1> {
+  %res:2 = scf.while (%arg1 = %arg0, %i = %idx) :
+      (tensor<?xi1>, index) -> (tensor<?xi1>, index) {
     // CHECK: %[[condition:.*]] = memref.load %[[arg0]]
     // CHECK: scf.condition(%[[condition]])
     %condition = tensor.extract %arg1[%idx] : tensor<?xi1>
-    scf.condition(%condition) %arg1 : tensor<?xi1>
+    scf.condition(%condition) %arg1, %idx : tensor<?xi1>, index
   } do {
-  ^bb0(%arg2: tensor<?xi1>):
+  ^bb0(%arg2: tensor<?xi1>, %i: index):
     // CHECK: } do {
     // CHECK: memref.store %{{.*}}, %[[arg0]]
     // CHECK: scf.yield
@@ -358,11 +381,11 @@ func.func @scf_while(%arg0: tensor<?xi1>, %idx: index) -> tensor<?xi1> {
     %pos = "dummy.some_op"() : () -> (index)
     %val = "dummy.another_op"() : () -> (i1)
     %1 = tensor.insert %val into %arg2[%pos] : tensor<?xi1>
-    scf.yield %1 : tensor<?xi1>
+    scf.yield %1, %i : tensor<?xi1>, index
   }
 
   // CHECK: return
-  return %res : tensor<?xi1>
+  return %res#0 : tensor<?xi1>
 }
 
 // -----
@@ -370,7 +393,7 @@ func.func @scf_while(%arg0: tensor<?xi1>, %idx: index) -> tensor<?xi1> {
 // The loop condition yields non-equivalent buffers.
 
 // CHECK-LABEL: func @scf_while_non_equiv_condition(
-//  CHECK-SAME:     %[[arg0:.*]]: memref<5xi1, #{{.*}}>, %[[arg1:.*]]: memref<5xi1, #{{.*}}>
+//  CHECK-SAME:     %[[arg0:.*]]: memref<5xi1, strided{{.*}}>, %[[arg1:.*]]: memref<5xi1, strided{{.*}}>
 func.func @scf_while_non_equiv_condition(%arg0: tensor<5xi1>,
                                          %arg1: tensor<5xi1>,
                                          %idx: index)
@@ -400,8 +423,8 @@ func.func @scf_while_non_equiv_condition(%arg0: tensor<5xi1>,
     // CHECK: } do {
     // CHECK: ^bb0(%[[b0:.*]]: memref<5xi1>, %[[b1:.*]]: memref<5xi1>):
     // CHECK: memref.store %{{.*}}, %[[b0]]
-    // CHECK: %[[casted0:.*]] = memref.cast %[[b0]] : memref<5xi1> to memref<5xi1, #{{.*}}>
-    // CHECK: %[[casted1:.*]] = memref.cast %[[b1]] : memref<5xi1> to memref<5xi1, #{{.*}}>
+    // CHECK: %[[casted0:.*]] = memref.cast %[[b0]] : memref<5xi1> to memref<5xi1, strided{{.*}}>
+    // CHECK: %[[casted1:.*]] = memref.cast %[[b1]] : memref<5xi1> to memref<5xi1, strided{{.*}}>
     // CHECK: %[[cloned2:.*]] = bufferization.clone %[[casted1]]
     // CHECK: memref.dealloc %[[b1]]
     // CHECK: %[[cloned3:.*]] = bufferization.clone %[[casted0]]
@@ -423,14 +446,14 @@ func.func @scf_while_non_equiv_condition(%arg0: tensor<5xi1>,
 // Both the loop condition and the loop buffer yield non-equivalent buffers.
 
 // CHECK-LABEL: func @scf_while_non_equiv_condition_and_body(
-//  CHECK-SAME:     %[[arg0:.*]]: memref<5xi1, #{{.*}}>, %[[arg1:.*]]: memref<5xi1, #{{.*}}>
+//  CHECK-SAME:     %[[arg0:.*]]: memref<5xi1, strided{{.*}}>, %[[arg1:.*]]: memref<5xi1, strided{{.*}}>
 func.func @scf_while_non_equiv_condition_and_body(%arg0: tensor<5xi1>,
                                                   %arg1: tensor<5xi1>,
                                                   %idx: index)
   -> (tensor<5xi1>, tensor<5xi1>)
 {
-  // CHECK: %[[clone1:.*]] = bufferization.clone %[[arg1]]
-  // CHECK: %[[clone0:.*]] = bufferization.clone %[[arg0]]
+  // CHECK-DAG: %[[clone1:.*]] = bufferization.clone %[[arg1]]
+  // CHECK-DAG: %[[clone0:.*]] = bufferization.clone %[[arg0]]
   // CHECK: %[[loop:.*]]:2 = scf.while (%[[w0:.*]] = %[[clone0]], %[[w1:.*]] = %[[clone1]]) {{.*}} {
   %r0, %r1 = scf.while (%w0 = %arg0, %w1 = %arg1)
       : (tensor<5xi1>, tensor<5xi1>) -> (tensor<5xi1>, tensor<5xi1>) {
@@ -453,19 +476,13 @@ func.func @scf_while_non_equiv_condition_and_body(%arg0: tensor<5xi1>,
     // CHECK: } do {
     // CHECK: ^bb0(%[[b0:.*]]: memref<5xi1>, %[[b1:.*]]: memref<5xi1>):
     // CHECK: memref.store %{{.*}}, %[[b0]]
-    // CHECK: %[[a3:.*]] = memref.alloc() {{.*}} : memref<5xi1>
-    // CHECK: memref.copy %[[b1]], %[[a3]]
+    // CHECK: %[[casted1:.*]] = memref.cast %[[b1]]
+    // CHECK: %[[casted0:.*]] = memref.cast %[[b0]]
+    // CHECK: %[[cloned1:.*]] = bufferization.clone %[[casted1]]
     // CHECK: memref.dealloc %[[b1]]
-    // CHECK: %[[a2:.*]] = memref.alloc() {{.*}} : memref<5xi1>
-    // CHECK: memref.copy %[[b0]], %[[a2]]
+    // CHECK: %[[cloned0:.*]] = bufferization.clone %[[casted0]]
     // CHECK: memref.dealloc %[[b0]]
-    // CHECK: %[[casted3:.*]] = memref.cast %[[a3]]
-    // CHECK: %[[casted2:.*]] = memref.cast %[[a2]]
-    // CHECK: %[[cloned2:.*]] = bufferization.clone %[[casted2]]
-    // CHECK: memref.dealloc %[[a2]]
-    // CHECK: %[[cloned3:.*]] = bufferization.clone %[[casted3]]
-    // CHECK: memref.dealloc %[[a3]]
-    // CHECK: scf.yield %[[cloned3]], %[[cloned2]]
+    // CHECK: scf.yield %[[cloned1]], %[[cloned0]]
     // CHECK: }
     %pos = "dummy.some_op"() : () -> (index)
     %val = "dummy.another_op"() : () -> (i1)
@@ -480,9 +497,9 @@ func.func @scf_while_non_equiv_condition_and_body(%arg0: tensor<5xi1>,
 // -----
 
 // CHECK-LABEL: func @scf_while_iter_arg_result_mismatch(
-//  CHECK-SAME:     %[[arg0:.*]]: memref<5xi1, #{{.*}}>, %[[arg1:.*]]: memref<5xi1, #{{.*}}>
+//  CHECK-SAME:     %[[arg0:.*]]: memref<5xi1, strided{{.*}}>, %[[arg1:.*]]: memref<5xi1, strided{{.*}}>
 //       CHECK:   %[[clone:.*]] = bufferization.clone %[[arg1]]
-//       CHECK:   scf.while (%[[arg3:.*]] = %[[clone]]) : (memref<5xi1, #{{.*}}) -> () {
+//       CHECK:   scf.while (%[[arg3:.*]] = %[[clone]]) : (memref<5xi1, strided{{.*}}) -> () {
 //   CHECK-DAG:     memref.dealloc %[[arg3]]
 //   CHECK-DAG:     %[[load:.*]] = memref.load %[[arg0]]
 //       CHECK:     scf.condition(%[[load]])
@@ -490,7 +507,7 @@ func.func @scf_while_non_equiv_condition_and_body(%arg0: tensor<5xi1>,
 //       CHECK:     %[[alloc2:.*]] = memref.alloc() {{.*}} : memref<5xi1>
 //       CHECK:     memref.copy %[[arg0]], %[[alloc2]]
 //       CHECK:     memref.store %{{.*}}, %[[alloc2]]
-//       CHECK:     %[[casted:.*]] = memref.cast %[[alloc2]] : memref<5xi1> to memref<5xi1, #{{.*}}>
+//       CHECK:     %[[casted:.*]] = memref.cast %[[alloc2]] : memref<5xi1> to memref<5xi1, strided{{.*}}>
 //       CHECK:     %[[cloned:.*]] = bufferization.clone %[[casted]]
 //       CHECK:     memref.dealloc %[[alloc2]]
 //       CHECK:     scf.yield %[[cloned]]
@@ -514,8 +531,8 @@ func.func @scf_while_iter_arg_result_mismatch(%arg0: tensor<5xi1>,
 
 // CHECK-LABEL: func.func @parallel_insert_slice_no_conflict(
 //  CHECK-SAME:     %[[idx:.*]]: index, %[[idx2:.*]]: index,
-//  CHECK-SAME:     %[[arg1:.*]]: memref<?xf32, #{{.*}}>,
-//  CHECK-SAME:     %[[arg2:.*]]: memref<?xf32, #{{.*}}>
+//  CHECK-SAME:     %[[arg1:.*]]: memref<?xf32, strided{{.*}}>,
+//  CHECK-SAME:     %[[arg2:.*]]: memref<?xf32, strided{{.*}}>
 func.func @parallel_insert_slice_no_conflict(
     %idx: index,
     %idx2: index,
@@ -554,11 +571,11 @@ func.func @parallel_insert_slice_no_conflict(
 
 // CHECK-LABEL: func.func @parallel_insert_slice_with_conflict(
 //  CHECK-SAME:     %[[idx:.*]]: index, %[[idx2:.*]]: index,
-//  CHECK-SAME:     %[[arg1:.*]]: memref<?xf32, #{{.*}}>,
-//  CHECK-SAME:     %[[arg2:.*]]: memref<?xf32, #{{.*}}>
+//  CHECK-SAME:     %[[arg1:.*]]: memref<?xf32, strided{{.*}}>,
+//  CHECK-SAME:     %[[arg2:.*]]: memref<?xf32, strided{{.*}}>
 func.func @parallel_insert_slice_with_conflict(
-    %idx: index, 
-    %idx2: index, 
+    %idx: index,
+    %idx2: index,
     %arg1: tensor<?xf32> {bufferization.writable = true},
     %arg2: tensor<?xf32> {bufferization.writable = true}) -> (f32, f32)
 {
@@ -606,8 +623,6 @@ func.func @parallel_insert_slice_with_conflict(
 #map0 = affine_map<(d0) -> (d0 * 4)>
 #map1 = affine_map<(d0) -> (d0 * 2)>
 
-// CHECK: #[[$DYN_LAYOUT_MAP:.*]] = affine_map<(d0, d1)[s0, s1, s2] -> (d0 * s1 + s0 + d1 * s2)>
-
 // CHECK-LABEL: func.func @matmul
 func.func @matmul(%arg0: tensor<8x8xf32>, %arg1: tensor<8x8xf32>, %arg2: tensor<8x8xf32> {bufferization.writable = true}) -> tensor<8x8xf32> {
   %c2 = arith.constant 2 : index
@@ -621,7 +636,7 @@ func.func @matmul(%arg0: tensor<8x8xf32>, %arg1: tensor<8x8xf32>, %arg2: tensor<
     %6 = tensor.extract_slice %arg1[0, %4] [8, 4] [1, 1] : tensor<8x8xf32> to tensor<8x4xf32>
     %7 = tensor.extract_slice %o[%1, %4] [4, 4] [1, 1] : tensor<8x8xf32> to tensor<4x4xf32>
 
-    //      CHECK: linalg.matmul ins({{.*}}memref<4x8xf32, #[[$DYN_LAYOUT_MAP]]>, memref<8x4xf32, #[[$DYN_LAYOUT_MAP]]>) outs({{.*}} : memref<4x4xf32, #[[$DYN_LAYOUT_MAP]]>)
+    //      CHECK: linalg.matmul ins({{.*}}memref<4x8xf32, strided<[?, ?], offset: ?>>, memref<8x4xf32, strided<[?, ?], offset: ?>>) outs({{.*}} : memref<4x4xf32, strided<[?, ?], offset: ?>>)
     %8 = linalg.matmul ins(%3, %6 : tensor<4x8xf32>, tensor<8x4xf32>) outs(%7 : tensor<4x4xf32>) -> tensor<4x4xf32>
     scf.foreach_thread.perform_concurrently {
       tensor.parallel_insert_slice %8 into %o[%1, %4] [4, 4] [1, 1] : tensor<4x4xf32> into tensor<8x8xf32>
@@ -702,7 +717,7 @@ func.func @scf_if_memory_space(%c: i1, %f: f32) -> (f32, f32)
 {
   %c0 = arith.constant 0 : index
   // CHECK: %[[alloc:.*]] = memref.alloc() {{.*}} : memref<5xf32, 1>
-  %0 = bufferization.alloc_tensor() {memory_space = 1 : ui64} : tensor<5xf32>
+  %0 = bufferization.alloc_tensor() {memory_space = 1 : i64} : tensor<5xf32>
   // CHECK: scf.if %{{.*}} -> (memref<5xf32, 1>) {
   %1 = scf.if %c -> tensor<5xf32> {
     // CHECK: %[[cloned:.*]] = bufferization.clone %[[alloc]]
@@ -732,7 +747,7 @@ func.func @scf_if_memory_space(%c: i1, %f: f32) -> (f32, f32)
 func.func @scf_execute_region_memory_space(%f: f32) -> f32 {
   %c0 = arith.constant 0 : index
   %0 = scf.execute_region -> tensor<5xf32> {
-    %1 = bufferization.alloc_tensor() {memory_space = 1 : ui64} : tensor<5xf32>
+    %1 = bufferization.alloc_tensor() {memory_space = 1 : i64} : tensor<5xf32>
     %2 = tensor.insert %f into %1[%c0] : tensor<5xf32>
     scf.yield %2 : tensor<5xf32>
   }
@@ -752,8 +767,8 @@ func.func @scf_for_swapping_yields_memory_space(
 {
   // CHECK: memref.alloc(%{{.*}}) {{.*}} : memref<?xf32, 1>
   // CHECK: memref.alloc(%{{.*}}) {{.*}} : memref<?xf32, 1>
-  %A = bufferization.alloc_tensor(%sz) {memory_space = 1 : ui64} : tensor<?xf32>
-  %B = bufferization.alloc_tensor(%sz) {memory_space = 1 : ui64} : tensor<?xf32>
+  %A = bufferization.alloc_tensor(%sz) {memory_space = 1 : i64} : tensor<?xf32>
+  %B = bufferization.alloc_tensor(%sz) {memory_space = 1 : i64} : tensor<?xf32>
 
   // CHECK: scf.for {{.*}} {
   %r0:2 = scf.for %i = %lb to %ub step %step iter_args(%tA = %A, %tB = %B)
@@ -852,4 +867,61 @@ func.func @scf_while_buffer_type_mismatch(%sz: index, %sz2: index) -> f32 {
   }
   %x = tensor.extract %r[%c1] : tensor<?xf32>
   return %x : f32
+}
+
+// -----
+
+// CHECK-LABEL: func @non_tensor_for_arg
+func.func @non_tensor_for_arg(%A : tensor<?xf32> {bufferization.writable = true})
+    -> tensor<?xf32> {
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %c2 = arith.constant 2.0 : f32
+  %c10 = arith.constant 10 : index
+  %r1:2 = scf.for %i = %c0 to %c10 step %c1 iter_args(%idx = %c1, %t = %A) -> (index, tensor<?xf32>) {
+    %t2 = tensor.insert %c2 into %t[%idx] : tensor<?xf32>
+    scf.yield %idx, %t2 : index, tensor<?xf32>
+  }
+  return %r1#1 : tensor<?xf32>
+}
+
+// -----
+
+// This is a regression test. Just check that the IR bufferizes.
+
+// CHECK-LABEL: func @buffer_type_of_collapse_shape
+func.func @buffer_type_of_collapse_shape(%arg0: tensor<f64>) {
+  %true = arith.constant true
+  %0 = scf.while (%arg1 = %arg0) : (tensor<f64>) -> (tensor<f64>) {
+    scf.condition(%true) %arg1 : tensor<f64>
+  } do {
+  ^bb0(%_: tensor<f64>):
+    %3 = bufferization.alloc_tensor() : tensor<1xf64>
+    %16 = tensor.collapse_shape %3 [] : tensor<1xf64> into tensor<f64>
+    scf.yield %16 : tensor<f64>
+  }
+  return
+}
+
+// -----
+
+// This is a regression test. Just check that the IR bufferizes.
+
+// CHECK-LABEL: func @non_block_argument_yield
+func.func @non_block_argument_yield() {
+  %true = arith.constant true
+  %0 = bufferization.alloc_tensor() : tensor<i32>
+  %1 = scf.while (%arg0 = %0) : (tensor<i32>) -> (tensor<i32>) {
+    scf.condition(%true) %arg0 : tensor<i32>
+  } do {
+  ^bb0(%arg0: tensor<i32>):
+    %ret = scf.while (%arg1 = %0) : (tensor<i32>) -> (tensor<i32>) {
+      scf.condition(%true) %arg1 : tensor<i32>
+    } do {
+    ^bb0(%arg7: tensor<i32>):
+      scf.yield %0 : tensor<i32>
+    }
+    scf.yield %ret : tensor<i32>
+  }
+  return
 }
