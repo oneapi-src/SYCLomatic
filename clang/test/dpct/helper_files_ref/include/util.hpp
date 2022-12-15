@@ -195,6 +195,24 @@ vectorized_isgreater<sycl::ushort2, unsigned>(unsigned a, unsigned b) {
   return v0;
 }
 
+/// Compute vectorized isgreater for two unsigned int values, with each value
+/// treated as a vector of four unsigned char.
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \returns The vectorized greater than of the two values
+template<>
+inline unsigned
+vectorized_isgreater<sycl::uchar4, unsigned>(unsigned a, unsigned b) {
+  sycl::vec<unsigned, 1> v0{a}, v1{b};
+  auto v2 = v0.template as<sycl::uchar4>();
+  auto v3 = v1.template as<sycl::uchar4>();
+  sycl::uchar4 v4;
+  v4[0] = v2[0] > v3[0];
+  v4[1] = v2[1] > v3[1];
+  v0 = v4.template as<sycl::vec<unsigned, 1>>();
+  return v0;
+}
+
 /// Reverse the bit order of an unsigned integer
 /// \param [in] a Input unsigned integer value
 /// \returns Value of a with the bit order reversed

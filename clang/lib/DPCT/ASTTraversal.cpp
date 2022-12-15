@@ -12471,9 +12471,9 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
       requestFeature(HelperFeatureEnum::Util_reverse_bits, CE);
     } else if (Name == "__vmaxs4" || Name == "__vmaxu2") {
       requestFeature(HelperFeatureEnum::Util_vectorized_max, CE);
-    } else if (Name == "__vminu2") {
+    } else if (Name == "__vminu2" || Name == "__vminu4") {
       requestFeature(HelperFeatureEnum::Util_vectorized_min, CE);
-    } else if (Name == "__vcmpgtu2") {
+    } else if (Name == "__vcmpgtu2" || Name == "__vcmpgtu4") {
       requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_T, CE);
       requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_unsigned,
                      CE);
@@ -15460,7 +15460,7 @@ void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &R
     if (CE->getCastKind() == clang::CK_LValueToRValue
 	|| CE->getCastKind() == clang::CK_NoOp)
       return;
-    
+
     if (isDefaultStream(CE->getSubExpr())) {
       if (isPlaceholderIdxDuplicated(CE->getSubExpr()))
         return;
@@ -15473,7 +15473,7 @@ void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &R
       emplaceTransformation(
         new ReplaceStmt(
           CE,
-	  MapNames::getDpctNamespace() 
+	  MapNames::getDpctNamespace()
 	  + "int_as_queue_ptr("
 	  + ExprAnalysis::ref(CE->getSubExpr())
 	  + ")"));
