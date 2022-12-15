@@ -442,7 +442,7 @@ private:
   }
 
 public:
-  template <typename OtherA> operator const std::vector<T, OtherA>() & {
+  template <typename OtherA> operator std::vector<T, OtherA>() const {
     auto __tmp = std::vector<T, OtherA>(this->size());
     std::copy(oneapi::dpl::execution::dpcpp_default, this->begin(), this->end(),
               __tmp.begin());
