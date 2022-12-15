@@ -43,7 +43,7 @@ int main() {
 
   void *args[2] = { &d_data, &tex };
 
-  // CHECK: dpct::get_default_queue().submit(
+  // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     dpct::access_wrapper<int *> d_acc_ct0(*(int **)args[0], cgh);
   // CHECK-EMPTY:
@@ -80,7 +80,7 @@ int main() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cudaLaunchKernel is not supported.
   // CHECK-NEXT: */
-  // CHECK-NEXT: cudaLaunchKernel(kernel_func, sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16), args, 0, 0);
+  // CHECK-NEXT: cudaLaunchKernel(kernel_func, sycl::range<3>(1, 1, 16), sycl::range<3>(1, 1, 16), args, 0, &q_ct1);
   cudaLaunchKernel(kernel_func, dim3(16), dim3(16), args, 0, 0);
 
   cudaStreamDestroy(stream);

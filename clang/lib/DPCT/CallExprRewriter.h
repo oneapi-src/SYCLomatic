@@ -1403,6 +1403,26 @@ public:
   }
 };
 
+class CheckEnumArgStr {
+  unsigned Idx;
+  std::string EnumArgValueStr;
+
+public:
+  CheckEnumArgStr(unsigned I, const std::string &EnumArgValue)
+      : Idx(I), EnumArgValueStr(EnumArgValue) {}
+  bool operator()(const CallExpr *C) {
+    if (C->getNumArgs() <= Idx)
+      return false;
+
+    if (auto DRE = dyn_cast<DeclRefExpr>(C->getArg(Idx))) {
+      if (auto ECD = dyn_cast<EnumConstantDecl>(DRE->getDecl())) {
+        return ECD->getNameAsString() == EnumArgValueStr;
+      }
+    }
+    return false;
+  }
+};
+
 template<class BO>
 class CheckIntergerTemplateArgValue {
   unsigned Idx;
