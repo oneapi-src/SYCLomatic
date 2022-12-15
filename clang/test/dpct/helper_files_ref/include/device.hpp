@@ -553,6 +553,10 @@ static inline unsigned int select_device(unsigned int id){
   return id;
 }
 
+static inline unsigned int get_device_id(const sycl::device &dev){
+  return dev_mgr::instance().get_device_id(dev);
+}
+
 } // namespace dpct
 
 #endif // __DPCT_DEVICE_HPP__

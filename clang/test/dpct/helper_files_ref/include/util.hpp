@@ -13,6 +13,7 @@
 #include <complex>
 #include <type_traits>
 #include <cassert>
+#include <cstdint>
 
 namespace dpct {
 
@@ -523,7 +524,16 @@ public:
     return _group_linear_range_in_parent;
   }
 };
+} // namespace experimental
+
+/// If x <= 2, then return a pointer to the deafult queue;
+/// otherwise, return x reinterpreted as a dpct::queue_ptr.
+inline queue_ptr int_as_queue_ptr(uintptr_t x) {
+  return x <= 2 ?
+  &get_default_queue()
+  : reinterpret_cast<queue_ptr>(x);
 }
+
 } // namespace dpct
 
 
