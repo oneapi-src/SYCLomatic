@@ -1929,8 +1929,22 @@ size_t Platform::GetSoftwareBreakpointTrapOpcode(Target &target,
   case llvm::Triple::riscv32:
   case llvm::Triple::riscv64: {
     static const uint8_t g_riscv_opcode[] = {0x73, 0x00, 0x10, 0x00}; // ebreak
-    trap_opcode = g_riscv_opcode;
-    trap_opcode_size = sizeof(g_riscv_opcode);
+    static const uint8_t g_riscv_opcode_c[] = {0x02, 0x90}; // c.ebreak
+    if (arch.GetFlags() & ArchSpec::eRISCV_rvc) {
+      trap_opcode = g_riscv_opcode_c;
+      trap_opcode_size = sizeof(g_riscv_opcode_c);
+    } else {
+      trap_opcode = g_riscv_opcode;
+      trap_opcode_size = sizeof(g_riscv_opcode);
+    }
+  } break;
+
+  case llvm::Triple::loongarch32:
+  case llvm::Triple::loongarch64: {
+    static const uint8_t g_loongarch_opcode[] = {0x05, 0x00, 0x2a,
+                                                 0x00}; // break 0x5
+    trap_opcode = g_loongarch_opcode;
+    trap_opcode_size = sizeof(g_loongarch_opcode);
   } break;
 
   default:
@@ -2078,4 +2092,22 @@ PlatformSP PlatformList::Create(llvm::StringRef name) {
   PlatformSP platform_sp = Platform::Create(name);
   m_platforms.push_back(platform_sp);
   return platform_sp;
+}
+
+bool PlatformList::LoadPlatformBinaryAndSetup(Process *process,
+                                              lldb::addr_t addr, bool notify) {
+  std::lock_guard<std::recursive_mutex> guard(m_mutex);
+
+  PlatformCreateInstance create_callback;
+  for (int idx = 0;
+       (create_callback = PluginManager::GetPlatformCreateCallbackAtIndex(idx));
+       ++idx) {
+    ArchSpec arch;
+    PlatformSP platform_sp = create_callback(true, &arch);
+    if (platform_sp) {
+      if (platform_sp->LoadPlatformBinaryAndSetup(process, addr, notify))
+        return true;
+    }
+  }
+  return false;
 }

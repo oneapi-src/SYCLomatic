@@ -14,6 +14,7 @@ int main(){
     size_t result1, result2;
     int size = 32;
     float* f_A;
+    CUresult r;
     // CHECK: f_A = (float *)malloc(size);
     cuMemHostAlloc((void **)&f_A, size, CU_MEMHOSTALLOC_DEVICEMAP);
 
@@ -46,6 +47,27 @@ int main(){
     cuMemcpyDtoDAsync(f_D, f_D2, size, 0);
     // CHECK: dpct::dpct_memcpy(f_D, f_D2, size, dpct::automatic);
     cuMemcpyDtoD(f_D, f_D2, size);
+
+    // CHECK: dpct::dpct_memcpy(f_D, f_D2, size, dpct::automatic);
+    cuMemcpy(f_D, f_D2, size);
+    // CHECK: CALL(dpct::dpct_memcpy(f_D, f_D2, size, dpct::automatic));
+    CALL(cuMemcpy(f_D, f_D2, size));
+    // CHECK: r = (dpct::dpct_memcpy(f_D, f_D2, size, dpct::automatic), 0);
+    r = cuMemcpy(f_D, f_D2, size);
+
+    // CHECK: dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic, *stream);
+    cuMemcpyAsync(f_D, f_D2, size, stream);
+    // CHECK: CALL(dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic, *stream));
+    CALL(cuMemcpyAsync(f_D, f_D2, size, stream));
+    // CHECK: r = (dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic, *stream), 0);
+    r = cuMemcpyAsync(f_D, f_D2, size, stream);
+
+    // CHECK: dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic);
+    cuMemcpyAsync(f_D, f_D2, size, 0);
+    // CHECK: CALL(dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic));
+    CALL(cuMemcpyAsync(f_D, f_D2, size, 0));
+    // CHECK: r = (dpct::async_dpct_memcpy(f_D, f_D2, size, dpct::automatic), 0);
+    r = cuMemcpyAsync(f_D, f_D2, size, 0);
 
     // CHECK: dpct::pitched_data cpy_from_data_ct1, cpy_to_data_ct1;
     // CHECK: sycl::id<3> cpy_from_pos_ct1(0, 0, 0), cpy_to_pos_ct1(0, 0, 0);

@@ -3,7 +3,10 @@
 # See PR8397.
 
 # SYCLomatic_CUSTOMIZATION begin
-# include(GNUInstallDirs)
+# Set to an arbitrary directory to silence GNUInstallDirs warnings
+# regarding being unable to determine libdir.
+set(CMAKE_INSTALL_LIBDIR "lib")
+include(GNUInstallDirs)
 # SYCLomatic_CUSTOMIZATION end
 
 function(install_symlink name target outdir)

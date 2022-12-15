@@ -54,16 +54,11 @@
 #include "llvm/Support/raw_ostream.h"
 #include <cassert>
 #include <cstdlib>
+#include <optional>
 #include <tuple>
 #include <utility>
 
 using namespace llvm;
-
-static cl::opt<char*>
-AsSecureLogFileName("as-secure-log-file-name",
-        cl::desc("As secure log file name (initialized from "
-                 "AS_SECURE_LOG_FILE env variable)"),
-        cl::init(getenv("AS_SECURE_LOG_FILE")), cl::Hidden);
 
 static void defaultDiagHandler(const SMDiagnostic &SMD, bool, const SourceMgr &,
                                std::vector<const MDNode *> &) {
@@ -80,7 +75,7 @@ MCContext::MCContext(const Triple &TheTriple, const MCAsmInfo *mai,
       InlineAsmUsedLabelNames(Allocator),
       CurrentDwarfLoc(0, 0, 0, DWARF2_FLAG_IS_STMT, 0, 0),
       AutoReset(DoAutoReset), TargetOptions(TargetOpts) {
-  SecureLogFile = AsSecureLogFileName;
+  SecureLogFile = TargetOptions ? TargetOptions->AsSecureLogFile : "";
 
   if (SrcMgr && SrcMgr->getNumBuffers())
     MainFileName = std::string(SrcMgr->getMemoryBuffer(SrcMgr->getMainFileID())
@@ -564,8 +559,37 @@ MCSectionELF *MCContext::getELFSection(const Twine &Section, unsigned Type,
     Kind = SectionKind::getExecuteOnly();
   else if (Flags & ELF::SHF_EXECINSTR)
     Kind = SectionKind::getText();
-  else
+  else if (~Flags & ELF::SHF_WRITE)
     Kind = SectionKind::getReadOnly();
+  else if (Flags & ELF::SHF_TLS)
+    Kind = (Type & ELF::SHT_NOBITS) ? SectionKind::getThreadBSS()
+                                    : SectionKind::getThreadData();
+  else
+    // Default to `SectionKind::getText()`. This is the default for gas as
+    // well. The condition that falls into this case is where we do not have any
+    // section flags and must infer a classification rather than where we have
+    // section flags (i.e. this is not that SHF_EXECINSTR is unset bur rather it
+    // is unknown).
+    Kind = llvm::StringSwitch<SectionKind>(CachedName)
+               .Case(".bss", SectionKind::getBSS())
+               .StartsWith(".bss.", SectionKind::getBSS())
+               .StartsWith(".gnu.linkonce.b.", SectionKind::getBSS())
+               .StartsWith(".llvm.linkonce.b.", SectionKind::getBSS())
+               .Case(".data", SectionKind::getData())
+               .Case(".data1", SectionKind::getData())
+               .Case(".data.rel.ro", SectionKind::getReadOnlyWithRel())
+               .Case(".rodata", SectionKind::getReadOnly())
+               .Case(".rodata1", SectionKind::getReadOnly())
+               .Case(".tbss", SectionKind::getThreadBSS())
+               .StartsWith(".tbss.", SectionKind::getThreadData())
+               .StartsWith(".gnu.linkonce.tb.", SectionKind::getThreadData())
+               .StartsWith(".llvm.linkonce.tb.", SectionKind::getThreadData())
+               .Case(".tdata", SectionKind::getThreadData())
+               .StartsWith(".tdata.", SectionKind::getThreadData())
+               .StartsWith(".gnu.linkonce.td.", SectionKind::getThreadData())
+               .StartsWith(".llvm.linkonce.td.", SectionKind::getThreadData())
+               .StartsWith(".debug_", SectionKind::getMetadata())
+               .Default(SectionKind::getText());
 
   MCSectionELF *Result =
       createELFSectionImpl(CachedName, Type, Flags, Kind, EntrySize, GroupSym,
@@ -616,7 +640,8 @@ Optional<unsigned> MCContext::getELFUniqueIDForEntsize(StringRef SectionName,
                                                        unsigned EntrySize) {
   auto I = ELFEntrySizeMap.find(
       MCContext::ELFEntrySizeKey{SectionName, Flags, EntrySize});
-  return (I != ELFEntrySizeMap.end()) ? Optional<unsigned>(I->second) : None;
+  return (I != ELFEntrySizeMap.end()) ? Optional<unsigned>(I->second)
+                                      : std::nullopt;
 }
 
 MCSectionGOFF *MCContext::getGOFFSection(StringRef Section, SectionKind Kind,
@@ -805,6 +830,14 @@ MCSectionXCOFF *MCContext::getXCOFFSection(
   if (Begin)
     Begin->setFragment(F);
 
+  // We might miss calculating the symbols difference as absolute value before
+  // adding fixups when symbol_A without the fragment set is the csect itself
+  // and symbol_B is in it.
+  // TODO: Currently we only set the fragment for XMC_PR csects because we don't
+  // have other cases that hit this problem yet.
+  if (!IsDwarfSec && CsectProp->MappingClass == XCOFF::XMC_PR)
+    QualName->setFragment(F);
+
   return Result;
 }
 
@@ -929,7 +962,7 @@ void MCContext::setGenDwarfRootFile(StringRef InputFileName, StringRef Buffer) {
       FileName = FileName.drop_front();
   assert(!FileName.empty());
   setMCLineTableRootFile(
-      /*CUID=*/0, getCompilationDir(), FileName, Cksum, None);
+      /*CUID=*/0, getCompilationDir(), FileName, Cksum, std::nullopt);
 }
 
 /// getDwarfFile - takes a file name and number to place in the dwarf file and
@@ -940,7 +973,7 @@ Expected<unsigned> MCContext::getDwarfFile(StringRef Directory,
                                            StringRef FileName,
                                            unsigned FileNumber,
                                            Optional<MD5::MD5Result> Checksum,
-                                           Optional<StringRef> Source,
+                                           std::optional<StringRef> Source,
                                            unsigned CUID) {
   MCDwarfLineTable &Table = MCDwarfLineTablesCUMap[CUID];
   return Table.tryGetFile(Directory, FileName, Checksum, Source, DwarfVersion,

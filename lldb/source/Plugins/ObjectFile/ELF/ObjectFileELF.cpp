@@ -121,6 +121,8 @@ public:
 
   static unsigned RelocAddend64(const ELFRelocation &rel);
 
+  bool IsRela() { return (reloc.is<ELFRela *>()); }
+
 private:
   typedef llvm::PointerUnion<ELFRel *, ELFRela *> RelocUnion;
 
@@ -318,6 +320,18 @@ static uint32_t ppc64VariantFromElfFlags(const elf::ELFHeader &header) {
     return ArchSpec::eCore_ppc64_generic;
 }
 
+static uint32_t loongarchVariantFromElfFlags(const elf::ELFHeader &header) {
+  uint32_t fileclass = header.e_ident[EI_CLASS];
+  switch (fileclass) {
+  case llvm::ELF::ELFCLASS32:
+    return ArchSpec::eLoongArchSubType_loongarch32;
+  case llvm::ELF::ELFCLASS64:
+    return ArchSpec::eLoongArchSubType_loongarch64;
+  default:
+    return ArchSpec::eLoongArchSubType_unknown;
+  }
+}
+
 static uint32_t subTypeFromElfHeader(const elf::ELFHeader &header) {
   if (header.e_machine == llvm::ELF::EM_MIPS)
     return mipsVariantFromElfFlags(header);
@@ -325,6 +339,8 @@ static uint32_t subTypeFromElfHeader(const elf::ELFHeader &header) {
     return ppc64VariantFromElfFlags(header);
   else if (header.e_machine == llvm::ELF::EM_RISCV)
     return riscvVariantFromElfFlags(header);
+  else if (header.e_machine == llvm::ELF::EM_LOONGARCH)
+    return loongarchVariantFromElfFlags(header);
 
   return LLDB_INVALID_CPUTYPE;
 }
@@ -2597,25 +2613,46 @@ unsigned ObjectFileELF::ApplyRelocations(
   }
 
   for (unsigned i = 0; i < num_relocations; ++i) {
-    if (!rel.Parse(rel_data, &offset))
+    if (!rel.Parse(rel_data, &offset)) {
+      GetModule()->ReportError(".rel%s[%d] failed to parse relocation",
+                               rel_section->GetName().AsCString(), i);
       break;
-
+    }
     Symbol *symbol = nullptr;
 
     if (hdr->Is32Bit()) {
       switch (reloc_type(rel)) {
       case R_386_32:
+        symbol = symtab->FindSymbolByID(reloc_symbol(rel));
+        if (symbol) {
+          addr_t f_offset =
+              rel_section->GetFileOffset() + ELFRelocation::RelocOffset32(rel);
+          DataBufferSP &data_buffer_sp = debug_data.GetSharedDataBuffer();
+          // ObjectFileELF creates a WritableDataBuffer in CreateInstance.
+          WritableDataBuffer *data_buffer =
+              llvm::cast<WritableDataBuffer>(data_buffer_sp.get());
+          uint32_t *dst = reinterpret_cast<uint32_t *>(
+              data_buffer->GetBytes() + f_offset);
+
+          addr_t value = symbol->GetAddressRef().GetFileAddress();
+          if (rel.IsRela()) {
+            value += ELFRelocation::RelocAddend32(rel);
+          } else {
+            value += *dst;
+          }
+          *dst = value;
+        } else {
+          GetModule()->ReportError(".rel%s[%u] unknown symbol id: %d",
+                                   rel_section->GetName().AsCString(), i,
+                                   reloc_symbol(rel));
+        }
+        break;
       case R_386_PC32:
       default:
-        // FIXME: This asserts with this input:
-        //
-        // foo.cpp
-        // int main(int argc, char **argv) { return 0; }
-        //
-        // clang++.exe --target=i686-unknown-linux-gnu -g -c foo.cpp -o foo.o
-        //
-        // and running this on the foo.o module.
-        assert(false && "unexpected relocation type");
+        GetModule()->ReportError("unsupported 32-bit relocation:"
+                                 " .rel%s[%u], type %u",
+                                 rel_section->GetName().AsCString(), i,
+                                 reloc_type(rel));
       }
     } else {
       switch (reloc_type(rel)) {

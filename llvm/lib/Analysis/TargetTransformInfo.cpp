@@ -20,6 +20,7 @@
 #include "llvm/IR/PatternMatch.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Support/CommandLine.h"
+#include <optional>
 #include <utility>
 
 using namespace llvm;
@@ -273,6 +274,10 @@ unsigned TargetTransformInfo::getAssumedAddrSpace(const Value *V) const {
   return TTIImpl->getAssumedAddrSpace(V);
 }
 
+bool TargetTransformInfo::isSingleThreaded() const {
+  return TTIImpl->isSingleThreaded();
+}
+
 std::pair<const Value *, unsigned>
 TargetTransformInfo::getPredicatedAddrSpace(const Value *V) const {
   return TTIImpl->getPredicatedAddrSpace(V);
@@ -304,20 +309,20 @@ PredicationStyle TargetTransformInfo::emitGetActiveLaneMask() const {
   return TTIImpl->emitGetActiveLaneMask();
 }
 
-Optional<Instruction *>
+std::optional<Instruction *>
 TargetTransformInfo::instCombineIntrinsic(InstCombiner &IC,
                                           IntrinsicInst &II) const {
   return TTIImpl->instCombineIntrinsic(IC, II);
 }
 
-Optional<Value *> TargetTransformInfo::simplifyDemandedUseBitsIntrinsic(
+std::optional<Value *> TargetTransformInfo::simplifyDemandedUseBitsIntrinsic(
     InstCombiner &IC, IntrinsicInst &II, APInt DemandedMask, KnownBits &Known,
     bool &KnownBitsComputed) const {
   return TTIImpl->simplifyDemandedUseBitsIntrinsic(IC, II, DemandedMask, Known,
                                                    KnownBitsComputed);
 }
 
-Optional<Value *> TargetTransformInfo::simplifyDemandedVectorEltsIntrinsic(
+std::optional<Value *> TargetTransformInfo::simplifyDemandedVectorEltsIntrinsic(
     InstCombiner &IC, IntrinsicInst &II, APInt DemandedElts, APInt &UndefElts,
     APInt &UndefElts2, APInt &UndefElts3,
     std::function<void(Instruction *, unsigned, APInt, APInt &)>
@@ -451,10 +456,6 @@ bool TargetTransformInfo::hasDivRemOp(Type *DataType, bool IsSigned) const {
   return TTIImpl->hasDivRemOp(DataType, IsSigned);
 }
 
-unsigned TargetTransformInfo::maxLegalDivRemBitWidth() const {
-  return TTIImpl->maxLegalDivRemBitWidth();
-}
-
 bool TargetTransformInfo::hasVolatileVariant(Instruction *I,
                                              unsigned AddrSpace) const {
   return TTIImpl->hasVolatileVariant(I, AddrSpace);
@@ -546,6 +547,10 @@ TargetTransformInfo::enableMemCmpExpansion(bool OptSize, bool IsZeroCmp) const {
   return TTIImpl->enableMemCmpExpansion(OptSize, IsZeroCmp);
 }
 
+bool TargetTransformInfo::enableSelectOptimize() const {
+  return TTIImpl->enableSelectOptimize();
+}
+
 bool TargetTransformInfo::enableInterleavedAccessVectorization() const {
   return TTIImpl->enableInterleavedAccessVectorization();
 }
@@ -558,11 +563,12 @@ bool TargetTransformInfo::isFPVectorizationPotentiallyUnsafe() const {
   return TTIImpl->isFPVectorizationPotentiallyUnsafe();
 }
 
-bool TargetTransformInfo::allowsMisalignedMemoryAccesses(LLVMContext &Context,
-                                                         unsigned BitWidth,
-                                                         unsigned AddressSpace,
-                                                         Align Alignment,
-                                                         bool *Fast) const {
+bool
+TargetTransformInfo::allowsMisalignedMemoryAccesses(LLVMContext &Context,
+                                                    unsigned BitWidth,
+                                                    unsigned AddressSpace,
+                                                    Align Alignment,
+                                                    unsigned *Fast) const {
   return TTIImpl->allowsMisalignedMemoryAccesses(Context, BitWidth,
                                                  AddressSpace, Alignment, Fast);
 }
@@ -649,11 +655,11 @@ unsigned TargetTransformInfo::getMinVectorRegisterBitWidth() const {
   return TTIImpl->getMinVectorRegisterBitWidth();
 }
 
-Optional<unsigned> TargetTransformInfo::getMaxVScale() const {
+std::optional<unsigned> TargetTransformInfo::getMaxVScale() const {
   return TTIImpl->getMaxVScale();
 }
 
-Optional<unsigned> TargetTransformInfo::getVScaleForTuning() const {
+std::optional<unsigned> TargetTransformInfo::getVScaleForTuning() const {
   return TTIImpl->getVScaleForTuning();
 }
 
@@ -688,12 +694,12 @@ unsigned TargetTransformInfo::getCacheLineSize() const {
                                                : TTIImpl->getCacheLineSize();
 }
 
-llvm::Optional<unsigned>
+std::optional<unsigned>
 TargetTransformInfo::getCacheSize(CacheLevel Level) const {
   return TTIImpl->getCacheSize(Level);
 }
 
-llvm::Optional<unsigned>
+std::optional<unsigned>
 TargetTransformInfo::getCacheAssociativity(CacheLevel Level) const {
   return TTIImpl->getCacheAssociativity(Level);
 }
@@ -730,9 +736,13 @@ TargetTransformInfo::getOperandInfo(const Value *V) {
   OperandValueKind OpInfo = OK_AnyValue;
   OperandValueProperties OpProps = OP_None;
 
-  if (const auto *CI = dyn_cast<ConstantInt>(V)) {
-    if (CI->getValue().isPowerOf2())
-      OpProps = OP_PowerOf2;
+  if (isa<ConstantInt>(V) || isa<ConstantFP>(V)) {
+    if (const auto *CI = dyn_cast<ConstantInt>(V)) {
+      if (CI->getValue().isPowerOf2())
+        OpProps = OP_PowerOf2;
+      else if (CI->getValue().isNegatedPowerOf2())
+        OpProps = OP_NegatedPowerOf2;
+    }
     return {OK_UniformConstantValue, OpProps};
   }
 
@@ -751,18 +761,26 @@ TargetTransformInfo::getOperandInfo(const Value *V) {
     OpInfo = OK_NonUniformConstantValue;
     if (Splat) {
       OpInfo = OK_UniformConstantValue;
-      if (auto *CI = dyn_cast<ConstantInt>(Splat))
+      if (auto *CI = dyn_cast<ConstantInt>(Splat)) {
         if (CI->getValue().isPowerOf2())
           OpProps = OP_PowerOf2;
+        else if (CI->getValue().isNegatedPowerOf2())
+          OpProps = OP_NegatedPowerOf2;
+      }
     } else if (const auto *CDS = dyn_cast<ConstantDataSequential>(V)) {
-      OpProps = OP_PowerOf2;
+      bool AllPow2 = true, AllNegPow2 = true;
       for (unsigned I = 0, E = CDS->getNumElements(); I != E; ++I) {
-        if (auto *CI = dyn_cast<ConstantInt>(CDS->getElementAsConstant(I)))
-          if (CI->getValue().isPowerOf2())
+        if (auto *CI = dyn_cast<ConstantInt>(CDS->getElementAsConstant(I))) {
+          AllPow2 &= CI->getValue().isPowerOf2();
+          AllNegPow2 &= CI->getValue().isNegatedPowerOf2();
+          if (AllPow2 || AllNegPow2)
             continue;
-        OpProps = OP_None;
+        }
+        AllPow2 = AllNegPow2 = false;
         break;
       }
+      OpProps = AllPow2 ? OP_PowerOf2 : OpProps;
+      OpProps = AllNegPow2 ? OP_NegatedPowerOf2 : OpProps;
     }
   }
 
@@ -987,7 +1005,7 @@ InstructionCost TargetTransformInfo::getMemcpyCost(const Instruction *I) const {
 }
 
 InstructionCost TargetTransformInfo::getArithmeticReductionCost(
-    unsigned Opcode, VectorType *Ty, Optional<FastMathFlags> FMF,
+    unsigned Opcode, VectorType *Ty, std::optional<FastMathFlags> FMF,
     TTI::TargetCostKind CostKind) const {
   InstructionCost Cost =
       TTIImpl->getArithmeticReductionCost(Opcode, Ty, FMF, CostKind);
@@ -1006,7 +1024,7 @@ InstructionCost TargetTransformInfo::getMinMaxReductionCost(
 
 InstructionCost TargetTransformInfo::getExtendedReductionCost(
     unsigned Opcode, bool IsUnsigned, Type *ResTy, VectorType *Ty,
-    Optional<FastMathFlags> FMF, TTI::TargetCostKind CostKind) const {
+    std::optional<FastMathFlags> FMF, TTI::TargetCostKind CostKind) const {
   return TTIImpl->getExtendedReductionCost(Opcode, IsUnsigned, ResTy, Ty, FMF,
                                            CostKind);
 }
@@ -1039,7 +1057,7 @@ Value *TargetTransformInfo::getOrCreateResultFromMemIntrinsic(
 Type *TargetTransformInfo::getMemcpyLoopLoweringType(
     LLVMContext &Context, Value *Length, unsigned SrcAddrSpace,
     unsigned DestAddrSpace, unsigned SrcAlign, unsigned DestAlign,
-    Optional<uint32_t> AtomicElementSize) const {
+    std::optional<uint32_t> AtomicElementSize) const {
   return TTIImpl->getMemcpyLoopLoweringType(Context, Length, SrcAddrSpace,
                                             DestAddrSpace, SrcAlign, DestAlign,
                                             AtomicElementSize);
@@ -1049,7 +1067,7 @@ void TargetTransformInfo::getMemcpyLoopResidualLoweringType(
     SmallVectorImpl<Type *> &OpsOut, LLVMContext &Context,
     unsigned RemainingBytes, unsigned SrcAddrSpace, unsigned DestAddrSpace,
     unsigned SrcAlign, unsigned DestAlign,
-    Optional<uint32_t> AtomicCpySize) const {
+    std::optional<uint32_t> AtomicCpySize) const {
   TTIImpl->getMemcpyLoopResidualLoweringType(
       OpsOut, Context, RemainingBytes, SrcAddrSpace, DestAddrSpace, SrcAlign,
       DestAlign, AtomicCpySize);
@@ -1131,6 +1149,10 @@ bool TargetTransformInfo::preferInLoopReduction(unsigned Opcode, Type *Ty,
 bool TargetTransformInfo::preferPredicatedReductionSelect(
     unsigned Opcode, Type *Ty, ReductionFlags Flags) const {
   return TTIImpl->preferPredicatedReductionSelect(Opcode, Ty, Flags);
+}
+
+bool TargetTransformInfo::preferEpilogueVectorization() const {
+  return TTIImpl->preferEpilogueVectorization();
 }
 
 TargetTransformInfo::VPLegalization

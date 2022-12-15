@@ -3,7 +3,7 @@
 // RUN: cd %T/test_helpapi_stats_with_replacetext
 // RUN: dpct --format-range=none -out-root %T/test_helpapi_stats_with_replacetext %s --cuda-include-path="%cuda-path/include"  --report-type=stats -- -x cuda --cuda-host-only > stats.txt
 // RUN: echo "// `perl -e 'print "CH","ECK"'`: File name, LOC migrated to SYCL, LOC migrated to helper functions, LOC not needed to migrate, LOC not able to migrate" > %T/test_helpapi_stats_with_replacetext/test_helpapi_stats_with_replacetext_ref.txt
-// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: {{(.+)}}/test_helpapi_stats_with_replacetext.cu, 14, 16, 47, 0" >> %T/test_helpapi_stats_with_replacetext/test_helpapi_stats_with_replacetext_ref.txt
+// RUN: echo "// `perl -e 'print "CH","ECK-NEXT"'`: {{(.+)}}/test_helpapi_stats_with_replacetext.cu, 13, 17, 47, 0" >> %T/test_helpapi_stats_with_replacetext/test_helpapi_stats_with_replacetext_ref.txt
 // RUN: FileCheck --match-full-lines --input-file %T/test_helpapi_stats_with_replacetext/stats.txt %T/test_helpapi_stats_with_replacetext/test_helpapi_stats_with_replacetext_ref.txt
 // RUN: cd ..
 // RUN: rm -rf ./test_helpapi_stats_with_replacetext

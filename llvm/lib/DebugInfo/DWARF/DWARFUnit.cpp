@@ -192,7 +192,7 @@ DWARFUnit::DWARFUnit(DWARFContext &DC, const DWARFSection &Section,
                      bool IsDWO, const DWARFUnitVector &UnitVector)
     : Context(DC), InfoSection(Section), Header(Header), Abbrev(DA),
       RangeSection(RS), LineSection(LS), StringSection(SS),
-      StringOffsetSection(SOS), AddrOffsetSection(AOS), isLittleEndian(LE),
+      StringOffsetSection(SOS), AddrOffsetSection(AOS), IsLittleEndian(LE),
       IsDWO(IsDWO), UnitVector(UnitVector) {
   clear();
 }
@@ -200,7 +200,7 @@ DWARFUnit::DWARFUnit(DWARFContext &DC, const DWARFSection &Section,
 DWARFUnit::~DWARFUnit() = default;
 
 DWARFDataExtractor DWARFUnit::getDebugInfoExtractor() const {
-  return DWARFDataExtractor(Context.getDWARFObj(), InfoSection, isLittleEndian,
+  return DWARFDataExtractor(Context.getDWARFObj(), InfoSection, IsLittleEndian,
                             getAddressByteSize());
 }
 
@@ -215,14 +215,14 @@ DWARFUnit::getAddrOffsetSectionItem(uint32_t Index) const {
     if (IsDWO && hasSingleElement(R))
       return (*R.begin())->getAddrOffsetSectionItem(Index);
 
-    return None;
+    return std::nullopt;
   }
 
   uint64_t Offset = *AddrOffsetSectionBase + Index * getAddressByteSize();
   if (AddrOffsetSection->Data.size() < Offset + getAddressByteSize())
-    return None;
+    return std::nullopt;
   DWARFDataExtractor DA(Context.getDWARFObj(), *AddrOffsetSection,
-                        isLittleEndian, getAddressByteSize());
+                        IsLittleEndian, getAddressByteSize());
   uint64_t Section;
   uint64_t Address = DA.getRelocatedAddress(&Offset, &Section);
   return {{Address, Section}};
@@ -240,7 +240,7 @@ Expected<uint64_t> DWARFUnit::getStringOffsetSectionItem(uint32_t Index) const {
                                        ", which is too large",
                                    inconvertibleErrorCode());
   DWARFDataExtractor DA(Context.getDWARFObj(), StringOffsetSection,
-                        isLittleEndian, 0);
+                        IsLittleEndian, 0);
   return DA.getRelocatedValue(ItemSize, &Offset);
 }
 
@@ -367,7 +367,7 @@ Error DWARFUnit::extractRangeList(uint64_t RangeListOffset,
   // Require that compile unit is extracted.
   assert(!DieArray.empty());
   DWARFDataExtractor RangesData(Context.getDWARFObj(), *RangeSection,
-                                isLittleEndian, getAddressByteSize());
+                                IsLittleEndian, getAddressByteSize());
   uint64_t ActualRangeListOffset = RangeSectionBase + RangeListOffset;
   return RangeList.extract(RangesData, &ActualRangeListOffset);
 }
@@ -377,7 +377,7 @@ void DWARFUnit::clear() {
   BaseAddr.reset();
   RangeSectionBase = 0;
   LocSectionBase = 0;
-  AddrOffsetSectionBase = None;
+  AddrOffsetSectionBase = std::nullopt;
   SU = nullptr;
   clearDIEs(false);
   AddrDieMap.clear();
@@ -502,7 +502,7 @@ Error DWARFUnit::tryExtractDIEsIfNeeded(bool CUDieOnly) {
   if (Optional<uint64_t> DWOId = toUnsigned(UnitDie.find(DW_AT_GNU_dwo_id)))
     Header.setDWOId(*DWOId);
   if (!IsDWO) {
-    assert(AddrOffsetSectionBase == None);
+    assert(AddrOffsetSectionBase == std::nullopt);
     assert(RangeSectionBase == 0);
     assert(LocSectionBase == 0);
     AddrOffsetSectionBase = toSectionOffset(UnitDie.find(DW_AT_addr_base));
@@ -521,7 +521,7 @@ Error DWARFUnit::tryExtractDIEsIfNeeded(bool CUDieOnly) {
   // In both cases we need to determine the format of the contribution,
   // which may differ from the unit's format.
   DWARFDataExtractor DA(Context.getDWARFObj(), StringOffsetSection,
-                        isLittleEndian, 0);
+                        IsLittleEndian, 0);
   if (IsDWO || getVersion() >= 5) {
     auto StringOffsetOrError =
         IsDWO ? determineStringOffsetsTableContributionDWO(DA)
@@ -566,7 +566,7 @@ Error DWARFUnit::tryExtractDIEsIfNeeded(bool CUDieOnly) {
               Header.getVersion() >= 5 ? DW_SECT_LOCLISTS : DW_SECT_EXT_LOC))
         Data = Data.substr(C->Offset, C->Length);
 
-    DWARFDataExtractor DWARFData(Data, isLittleEndian, getAddressByteSize());
+    DWARFDataExtractor DWARFData(Data, IsLittleEndian, getAddressByteSize());
     LocTable =
         std::make_unique<DWARFDebugLoclists>(DWARFData, Header.getVersion());
     LocSectionBase = DWARFListTableHeader::getHeaderSize(Header.getFormat());
@@ -574,12 +574,12 @@ Error DWARFUnit::tryExtractDIEsIfNeeded(bool CUDieOnly) {
     LocTable = std::make_unique<DWARFDebugLoclists>(
         DWARFDataExtractor(Context.getDWARFObj(),
                            Context.getDWARFObj().getLoclistsSection(),
-                           isLittleEndian, getAddressByteSize()),
+                           IsLittleEndian, getAddressByteSize()),
         getVersion());
   } else {
     LocTable = std::make_unique<DWARFDebugLoc>(DWARFDataExtractor(
         Context.getDWARFObj(), Context.getDWARFObj().getLocSection(),
-        isLittleEndian, getAddressByteSize()));
+        IsLittleEndian, getAddressByteSize()));
   }
 
   // Don't fall back to DW_AT_GNU_ranges_base: it should be ignored for
@@ -587,7 +587,7 @@ Error DWARFUnit::tryExtractDIEsIfNeeded(bool CUDieOnly) {
   return Error::success();
 }
 
-bool DWARFUnit::parseDWO() {
+bool DWARFUnit::parseDWO(StringRef DWOAlternativeLocation) {
   if (IsDWO)
     return false;
   if (DWO.get())
@@ -611,8 +611,17 @@ bool DWARFUnit::parseDWO() {
   if (!DWOId)
     return false;
   auto DWOContext = Context.getDWOContext(AbsolutePath);
-  if (!DWOContext)
-    return false;
+  if (!DWOContext) {
+    // Use the alternative location to get the DWARF context for the DWO object.
+    if (DWOAlternativeLocation.empty())
+      return false;
+    // If the alternative context does not correspond to the original DWO object
+    // (different hashes), the below 'getDWOCompileUnitForHash' call will catch
+    // the issue, with a returned null context.
+    DWOContext = Context.getDWOContext(DWOAlternativeLocation);
+    if (!DWOContext)
+      return false;
+  }
 
   DWARFCompileUnit *DWOCU = DWOContext->getDWOCompileUnitForHash(*DWOId);
   if (!DWOCU)
@@ -650,7 +659,7 @@ DWARFUnit::findRnglistFromOffset(uint64_t Offset) {
     return RangeList.getAbsoluteRanges(getBaseAddress());
   }
   DWARFDataExtractor RangesData(Context.getDWARFObj(), *RangeSection,
-                                isLittleEndian, Header.getAddressByteSize());
+                                IsLittleEndian, Header.getAddressByteSize());
   DWARFDebugRnglistTable RnglistTable;
   auto RangeListOrError = RnglistTable.findList(RangesData, Offset);
   if (RangeListOrError)
@@ -1129,7 +1138,7 @@ DWARFUnit::determineStringOffsetsTableContribution(DWARFDataExtractor &DA) {
   assert(!IsDWO);
   auto OptOffset = toSectionOffset(getUnitDIE().find(DW_AT_str_offsets_base));
   if (!OptOffset)
-    return None;
+    return std::nullopt;
   auto DescOrError =
       parseDWARFStringOffsetsTableHeader(DA, Header.getFormat(), *OptOffset);
   if (!DescOrError)
@@ -1148,7 +1157,7 @@ DWARFUnit::determineStringOffsetsTableContributionDWO(DWARFDataExtractor & DA) {
     Offset = C->Offset;
   if (getVersion() >= 5) {
     if (DA.getData().data() == nullptr)
-      return None;
+      return std::nullopt;
     Offset += Header.getFormat() == dwarf::DwarfFormat::DWARF32 ? 8 : 16;
     // Look for a valid contribution at the given offset.
     auto DescOrError = parseDWARFStringOffsetsTableHeader(DA, Header.getFormat(), Offset);
@@ -1167,7 +1176,7 @@ DWARFUnit::determineStringOffsetsTableContributionDWO(DWARFDataExtractor & DA) {
     Desc = StrOffsetsContributionDescriptor(0, StringOffsetSection.Data.size(),
                                             4, Header.getFormat());
   else
-    return None;
+    return std::nullopt;
   auto DescOrError = Desc.validateContributionSize(DA);
   if (!DescOrError)
     return DescOrError.takeError();
@@ -1175,19 +1184,19 @@ DWARFUnit::determineStringOffsetsTableContributionDWO(DWARFDataExtractor & DA) {
 }
 
 Optional<uint64_t> DWARFUnit::getRnglistOffset(uint32_t Index) {
-  DataExtractor RangesData(RangeSection->Data, isLittleEndian,
+  DataExtractor RangesData(RangeSection->Data, IsLittleEndian,
                            getAddressByteSize());
   DWARFDataExtractor RangesDA(Context.getDWARFObj(), *RangeSection,
-                              isLittleEndian, 0);
+                              IsLittleEndian, 0);
   if (Optional<uint64_t> Off = llvm::DWARFListTableHeader::getOffsetEntry(
           RangesData, RangeSectionBase, getFormat(), Index))
     return *Off + RangeSectionBase;
-  return None;
+  return std::nullopt;
 }
 
 Optional<uint64_t> DWARFUnit::getLoclistOffset(uint32_t Index) {
   if (Optional<uint64_t> Off = llvm::DWARFListTableHeader::getOffsetEntry(
           LocTable->getData(), LocSectionBase, getFormat(), Index))
     return *Off + LocSectionBase;
-  return None;
+  return std::nullopt;
 }

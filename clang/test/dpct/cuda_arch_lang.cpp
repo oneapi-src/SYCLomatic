@@ -1,4 +1,4 @@
-// RUN: mkdir -p %T/cuda_arch_lang
+// RUN: rm -rf %T/cuda_arch_lang && mkdir -p %T/cuda_arch_lang
 // RUN: not dpct --format-range=none --out-root=%T/cuda_arch_lang --stop-on-parse-err --cuda-include-path="%cuda-path/include" %s -- -x c++ > %T/cuda_arch_lang/output 2>&1
 // RUN: cat %T/cuda_arch_lang/output
 // RUN: python -c "assert 'no CUDA code detected' in input()" < %T/cuda_arch_lang/output

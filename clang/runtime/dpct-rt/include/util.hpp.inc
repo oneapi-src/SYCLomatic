@@ -42,6 +42,7 @@
 #include <complex>
 #include <type_traits>
 #include <cassert>
+#include <cstdint>
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
@@ -150,8 +151,8 @@ inline int cast_double_to_int(double d, bool use_high32 = true) {
   sycl::vec<double, 1> v0{d};
   auto v1 = v0.as<sycl::int2>();
   if (use_high32)
-    return v1[0];
-  return v1[1];
+    return v1[1];
+  return v1[0];
 }
 // DPCT_LABEL_END
 
@@ -163,7 +164,7 @@ inline int cast_double_to_int(double d, bool use_high32 = true) {
 /// \param [in] high32 The integer as the high 32 bits
 /// \param [in] low32 The integer as the low 32 bits
 inline double cast_ints_to_double(int high32, int low32) {
-  sycl::int2 v0{high32, low32};
+  sycl::int2 v0{low32, high32};
   auto v1 = v0.as<sycl::vec<double, 1>>();
   return v1;
 }
@@ -704,7 +705,23 @@ public:
 // DPCT_CODE
 };
 // DPCT_LABEL_END
+} // namespace experimental
+
+// DPCT_LABEL_BEGIN|int_as_queue_ptr|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|typedef_queue_ptr
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// If x <= 2, then return a pointer to the deafult queue;
+/// otherwise, return x reinterpreted as a dpct::queue_ptr.
+inline queue_ptr int_as_queue_ptr(uintptr_t x) {
+  return x <= 2 ?
+  &get_default_queue()
+  : reinterpret_cast<queue_ptr>(x);
 }
+// DPCT_LABEL_END
+
 } // namespace dpct
 
 

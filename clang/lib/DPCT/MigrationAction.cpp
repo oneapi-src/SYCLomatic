@@ -47,6 +47,7 @@ void DpctConsumer::HandleCXXExplicitFunctionInstantiation(
   if (!FTL || !Specialization)
     return;
   ExplicitInstantiationDecl::processFunctionTypeLoc(FTL);
+  ExplicitInstantiationDecl::processTemplateArgumentList(TAList);
   if (Specialization->getTemplateSpecializationKind() !=
       TSK_ExplicitInstantiationDefinition)
     return;

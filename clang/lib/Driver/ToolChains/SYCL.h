@@ -105,6 +105,23 @@ public:
                     const char *LinkingOutput) const override;
 };
 
+StringRef resolveGenDevice(StringRef DeviceName);
+SmallString<64> getGenDeviceMacro(StringRef DeviceName);
+
+// // Prefix for GPU specific targets used for -fsycl-targets
+constexpr char IntelGPU[] = "intel_gpu_";
+constexpr char NvidiaGPU[] = "nvidia_gpu_";
+constexpr char AmdGPU[] = "amd_gpu_";
+
+template <auto GPUArh> llvm::Optional<StringRef> isGPUTarget(StringRef Target) {
+  // Handle target specifications that resemble '(intel, nvidia, amd)_gpu_*'
+  // here.
+  if (Target.startswith(GPUArh)) {
+    return resolveGenDevice(Target);
+  }
+  return llvm::None;
+}
+
 } // end namespace gen
 
 namespace x86_64 {
@@ -146,10 +163,12 @@ public:
                          Action::OffloadKind DeviceOffloadKind) const override;
   void AddImpliedTargetArgs(const llvm::Triple &Triple,
                             const llvm::opt::ArgList &Args,
-                            llvm::opt::ArgStringList &CmdArgs) const;
+                            llvm::opt::ArgStringList &CmdArgs,
+                            const JobAction &JA) const;
   void TranslateBackendTargetArgs(const llvm::Triple &Triple,
                                   const llvm::opt::ArgList &Args,
-                                  llvm::opt::ArgStringList &CmdArgs) const;
+                                  llvm::opt::ArgStringList &CmdArgs,
+                                  StringRef Device = "") const;
   void TranslateLinkerTargetArgs(const llvm::Triple &Triple,
                                  const llvm::opt::ArgList &Args,
                                  llvm::opt::ArgStringList &CmdArgs) const;
@@ -180,8 +199,13 @@ protected:
 
 private:
   void TranslateTargetOpt(const llvm::opt::ArgList &Args,
-      llvm::opt::ArgStringList &CmdArgs, llvm::opt::OptSpecifier Opt,
-      llvm::opt::OptSpecifier Opt_EQ) const;
+                          llvm::opt::ArgStringList &CmdArgs,
+                          llvm::opt::OptSpecifier Opt,
+                          llvm::opt::OptSpecifier Opt_EQ,
+                          StringRef Device) const;
+  void TranslateGPUTargetOpt(const llvm::opt::ArgList &Args,
+                             llvm::opt::ArgStringList &CmdArgs,
+                             llvm::opt::OptSpecifier Opt_EQ) const;
 };
 
 } // end namespace toolchains

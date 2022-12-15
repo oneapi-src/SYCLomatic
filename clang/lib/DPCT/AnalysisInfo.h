@@ -336,17 +336,17 @@ enum HeaderType {
   HT_Algorithm,
   HT_Time,
   HT_Complex,
+  HT_Functional,
   HT_Future,
   HT_Thread,
   HT_Numeric,
-  HT_MKL_BLAS_Solver,
-  HT_MKL_BLAS_Solver_Without_Util,
+  HT_MKL_Without_Util,
+  HT_MKL_BLAS,
+  HT_MKL_Solver,
+  HT_MKL_SPBLAS,
+  HT_MKL_FFT,
   HT_MKL_RNG,
   HT_MKL_RNG_Without_Util,
-  HT_MKL_SPBLAS,
-  HT_MKL_SPBLAS_Without_Util,
-  HT_MKL_FFT,
-  HT_MKL_FFT_Without_Util,
   HT_Chrono,
   HT_DL,
   HT_STD_Numeric_Limits,
@@ -1001,19 +1001,15 @@ public:
   }
 
   inline static bool getUsingExtensionDE(DPCPPExtensionsDefaultEnabled Ext) {
-    return ExtensionDEFlag & static_cast<unsigned>(Ext);
+    return ExtensionDEFlag & (1 << static_cast<unsigned>(Ext));
   }
-  inline static void setExtensionDEUnused(DPCPPExtensionsDefaultEnabled Ext) {
-    ExtensionDEFlag &= (~static_cast<unsigned>(Ext));
-  }
+  inline static void setExtensionDEFlag(unsigned Flag) { ExtensionDEFlag = Flag; }
   inline static unsigned getExtensionDEFlag() { return ExtensionDEFlag; }
 
   inline static bool getUsingExtensionDD(DPCPPExtensionsDefaultDisabled Ext) {
-    return ExtensionDDFlag & static_cast<unsigned>(Ext);
+    return ExtensionDDFlag & (1 << static_cast<unsigned>(Ext));
   }
-  inline static void setExtensionDDUsed(DPCPPExtensionsDefaultDisabled Ext) {
-    ExtensionDDFlag |= static_cast<unsigned>(Ext);
-  }
+  inline static void setExtensionDDFlag(unsigned Flag) { ExtensionDDFlag = Flag; }
   inline static unsigned getExtensionDDFlag() { return ExtensionDDFlag; }
 
 
@@ -1761,8 +1757,8 @@ public:
     insertFile(LocInfo.first)->insertCustomizedHeader(std::move(HeaderName));
   }
 
-  static std::unordered_set<std::string> &getExpansionRangeBeginSet() {
-    return ExpansionRangeBeginSet;
+  static std::unordered_map<std::string, SourceRange> &getExpansionRangeBeginMap() {
+    return ExpansionRangeBeginMap;
   }
 
   static std::map<std::string, std::shared_ptr<MacroExpansionRecord>> &
@@ -1862,6 +1858,10 @@ public:
   }
   static bool useCAndCXXStandardLibrariesExt() {
     return getUsingExtensionDD(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
+  }
+
+  static bool useDeviceInfo() {
+    return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
   }
 
   static bool getSpBLASUnsupportedMatrixTypeFlag() {
@@ -2118,7 +2118,7 @@ private:
   static unsigned int IndentWidth;
   static std::map<unsigned int, unsigned int> KCIndentWidthMap;
   static std::unordered_map<std::string, int> LocationInitIndexMap;
-  static std::unordered_set<std::string> ExpansionRangeBeginSet;
+  static std::unordered_map<std::string, SourceRange> ExpansionRangeBeginMap;
   static bool CheckUnicodeSecurityFlag;
   static std::map<std::string,
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
@@ -2282,6 +2282,7 @@ public:
   }
   std::set<HelperFeatureEnum> getHelperFeatureSet() { return HelperFeatureSet; }
   inline bool containSizeofType() { return ContainSizeofType; }
+  inline std::vector<std::string> getArraySizeOriginExprs() { return ArraySizeOriginExprs; }
 
 private:
   // For ConstantArrayType, size in generated code is folded as an integer.
@@ -2297,13 +2298,7 @@ private:
   // __device__ int a[24];
   // will be migrated to:
   // dpct::global_memory<int, 1> a(24);
-  inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
-    if (TL.getSizeExpr()->getStmtClass() == Stmt::IntegerLiteralClass &&
-        TL.getSizeExpr()->getBeginLoc().isFileID())
-      return toString(TL.getTypePtr()->getSize(), 10, false, false);
-    return buildString(toString(TL.getTypePtr()->getSize(), 10, false, false),
-                       "/*", getStmtSpelling(TL.getSizeExpr()), "*/");
-  }
+  inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL);
 
   // Get original array size expression.
   std::string getUnfoldedArraySize(const ConstantArrayTypeLoc &TL);
@@ -2349,6 +2344,7 @@ private:
   std::shared_ptr<TemplateDependentStringInfo> TDSI;
   std::set<HelperFeatureEnum> HelperFeatureSet;
   bool ContainSizeofType = false;
+  std::vector<std::string> ArraySizeOriginExprs{};
 };
 
 // variable info includes name, type and location.
@@ -2736,8 +2732,9 @@ public:
     } else {
       auto TST = VD->getType()->getAs<TemplateSpecializationType>();
       if (TST) {
-        auto Arg0 = TST->getArg(0);
-        auto Arg1 = TST->getArg(1);
+        auto Args = TST->template_arguments();
+        auto Arg0 = Args[0];
+        auto Arg1 = Args[1];
 
         if (Arg1.getKind() == clang::TemplateArgument::Expression) {
           auto DataTy = Arg0.getAsType();
@@ -3470,6 +3467,7 @@ public:
   }
 
   void emplaceReplacement();
+  unsigned getExtraArgLoc() { return ExtraArgLoc; }
   inline bool hasArgs() { return HasArgs; }
   inline bool hasTemplateArgs() { return !TemplateArgs.empty(); }
   inline bool hasWrittenTemplateArgs() {
@@ -3710,6 +3708,7 @@ public:
     initTemplateArgumentList(TAList, Specialization);
   }
   static void processFunctionTypeLoc(const FunctionTypeLoc &);
+  static void processTemplateArgumentList(const TemplateArgumentListInfo &);
 
 private:
   void initTemplateArgumentList(const TemplateArgumentListInfo &TAList,

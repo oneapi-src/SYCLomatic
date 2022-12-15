@@ -288,7 +288,7 @@ private:
 // Emits a warning/error/note and/or comment depending on MsgID. For details
 template <typename IDTy, typename... Ts>
 bool report(SourceLocation SL, IDTy MsgID, const SourceManager &SM,
-            TransformSetTy *TS, bool UseTextBegin, Ts &&...Vals) {
+            TransformSetTy *TS, bool UseTextBegin, Ts &&... Vals) {
   SmallString<4096> FileName(SM.getFilename(SL));
   makeCanonical(FileName);
   // Convert path to the native form.
@@ -313,8 +313,7 @@ bool report(SourceLocation SL, IDTy MsgID, const SourceManager &SM,
   }
   if (TS && CommentIDTable.find((int)MsgID) != CommentIDTable.end()) {
     TS->emplace_back(insertCommentPrevLine(SL, CommentIDTable[(int)MsgID], SM,
-                                           UseTextBegin,
-                                           Vals...));
+                                           UseTextBegin, Vals...));
   }
   UniqueID++;
   return true;

@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/BlasUtils/api_test3_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/BlasUtils/api_test3_out
 
-// CHECK: 8
+// CHECK: 9
 
 // TEST_FEATURE: BlasUtils_get_value
 

@@ -7,19 +7,9 @@ macro(pythonize_bool var)
   endif()
 endmacro()
 
-if (NOT DEFINED LIBCXX_ENABLE_SHARED)
-  set(LIBCXX_ENABLE_SHARED ON)
-endif()
-
 pythonize_bool(LIBUNWIND_ENABLE_CET)
-pythonize_bool(LIBCXX_ENABLE_SHARED)
-pythonize_bool(LIBUNWIND_ENABLE_SHARED)
 pythonize_bool(LIBUNWIND_ENABLE_THREADS)
 pythonize_bool(LIBUNWIND_USES_ARM_EHABI)
-pythonize_bool(LIBUNWIND_USE_COMPILER_RT)
-pythonize_bool(LIBUNWIND_BUILD_EXTERNAL_THREAD_LIBRARY)
-set(LIBUNWIND_TARGET_INFO "libcxx.test.target_info.LocalTI" CACHE STRING
-    "TargetInfo to use when setting up test environment.")
 set(LIBUNWIND_EXECUTOR "${Python3_EXECUTABLE} ${LIBUNWIND_LIBCXX_PATH}/utils/run.py" CACHE STRING
     "Executor to use when running tests.")
 
@@ -39,7 +29,7 @@ endif()
 if (CMAKE_CXX_COMPILER_TARGET)
   serialize_lit_param(target_triple "\"${CMAKE_CXX_COMPILER_TARGET}\"")
 else()
-  serialize_lit_param(target_triple "\"${LLVM_DEFAULT_TARGET_TRIPLE}\"")
+  serialize_lit_param(target_triple "\"${LLVM_TARGET_TRIPLE}\"")
 endif()
 
 foreach(param IN LISTS LIBUNWIND_TEST_PARAMS)

@@ -956,7 +956,7 @@ std::error_code SampleProfileReaderExtBinaryBase::decompressSection(
 
   uint8_t *Buffer = Allocator.Allocate<uint8_t>(DecompressBufSize);
   size_t UCSize = DecompressBufSize;
-  llvm::Error E = compression::zlib::uncompress(
+  llvm::Error E = compression::zlib::decompress(
       makeArrayRef(Data, *CompressSize), Buffer, UCSize);
   if (E)
     return sampleprof_error::uncompress_failed;
@@ -1824,7 +1824,7 @@ Optional<StringRef>
 SampleProfileReaderItaniumRemapper::lookUpNameInProfile(StringRef Fname) {
   if (auto Key = Remappings->lookup(Fname))
     return NameMap.lookup(Key);
-  return None;
+  return std::nullopt;
 }
 
 /// Prepare a memory buffer for the contents of \p Filename.

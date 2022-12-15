@@ -80,3 +80,10 @@ CONDITIONAL_FACTORY_ENTRY(
         HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, NO_REWRITE_FUNCNAME_FACTORY_ENTRY("abs", "std::abs")),
         NO_REWRITE_FUNCNAME_FACTORY_ENTRY("abs", "abs")
     ))
+
+CONDITIONAL_FACTORY_ENTRY(
+    IsDefinedInCUDA(),
+    CALL_FACTORY_ENTRY("saturate",
+                       CALL(MapNames::getClNamespace(false, true) + "clamp<float>",
+                            ARG(0), ARG("0.0f"), ARG("1.0f"))),
+    NO_REWRITE_FUNCNAME_FACTORY_ENTRY("saturate", "saturate"))

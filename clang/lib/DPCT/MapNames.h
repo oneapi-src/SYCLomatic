@@ -369,6 +369,7 @@ public:
       FFTPlanAPINeedParenIdxMap;
 
   static MapTy BLASComputingAPIWithRewriter;
+  static std::unordered_set<std::string> SOLVERAPIWithRewriter;
 
   static const std::unordered_set<std::string> CooperativeGroupsAPISet;
 
