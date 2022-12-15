@@ -52,7 +52,7 @@ void test3(void) {
 void test4(void) {
   void *temp_storage;
   size_t temp_storage_size;
-  cudaStream_t s = (cudaStream_t)(uintptr_t)0x80;
+  cudaStream_t s = 0;
   cub::DeviceRadixSort::SortKeys(nullptr, temp_storage_size, d_keys_in, d_keys_out, n, 1, 4, s);
   cudaMalloc(&temp_storage, temp_storage_size);
   cub::DeviceRadixSort::SortKeys(temp_storage, temp_storage_size, d_keys_in, d_keys_out, n, 1, 4, s);
@@ -60,7 +60,7 @@ void test4(void) {
 // CHECK-NOT: void *temp_storage;
 // CHECK-NOT: size_t temp_storage_size;
 // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-// CHECK: dpct::queue_ptr s = (dpct::queue_ptr)(uintptr_t)0x80;
+// CHECK: dpct::queue_ptr s = &q_ct1;
 // CHECK: DPCT1026:{{.*}}
 // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(*s), d_keys_in, d_keys_out, n, false, 1, 4);
 }
@@ -110,7 +110,7 @@ void test7(void) {
 void test8(void) {
   void *temp_storage;
   size_t temp_storage_size;
-  cudaStream_t s = (cudaStream_t)(uintptr_t)0x80;
+  cudaStream_t s = 0;
   cub::DeviceRadixSort::SortKeysDescending(nullptr, temp_storage_size, d_keys_in, d_keys_out, n, 1, 4, s);
   cudaMalloc(&temp_storage, temp_storage_size);
   cub::DeviceRadixSort::SortKeysDescending(temp_storage, temp_storage_size, d_keys_in, d_keys_out, n, 1, 4, s);
@@ -118,7 +118,7 @@ void test8(void) {
 // CHECK-NOT: void *temp_storage;
 // CHECK-NOT: size_t temp_storage_size;
 // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-// CHECK: dpct::queue_ptr s = (dpct::queue_ptr)(uintptr_t)0x80;
+// CHECK: dpct::queue_ptr s = &q_ct1;
 // CHECK: DPCT1026:{{.*}}
 // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(*s), d_keys_in, d_keys_out, n, true, 1, 4);
 }
@@ -168,7 +168,7 @@ void test11(void) {
 void test12(void) {
   void *temp_storage;
   size_t temp_storage_size;
-  cudaStream_t s = (cudaStream_t)(uintptr_t)0x80;
+  cudaStream_t s = 0;
   cub::DeviceRadixSort::SortPairs(nullptr, temp_storage_size, d_keys_in, d_keys_out, d_values_in, d_values_out, n, 1, 4, s);
   cudaMalloc(&temp_storage, temp_storage_size);
   cub::DeviceRadixSort::SortPairs(temp_storage, temp_storage_size, d_keys_in, d_keys_out, d_values_in, d_values_out, n, 1, 4, s);
@@ -176,7 +176,7 @@ void test12(void) {
 // CHECK-NOT: void *temp_storage;
 // CHECK-NOT: size_t temp_storage_size;
 // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-// CHECK: dpct::queue_ptr s = (dpct::queue_ptr)(uintptr_t)0x80;
+// CHECK: dpct::queue_ptr s = &q_ct1;
 // CHECK: DPCT1026:{{.*}}
 // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(*s), d_keys_in, d_keys_out, d_values_in, d_values_out, n, false, 1, 4);
 }
@@ -226,7 +226,7 @@ void test15(void) {
 void test16(void) {
   void *temp_storage;
   size_t temp_storage_size;
-  cudaStream_t s = (cudaStream_t)(uintptr_t)0x80;
+  cudaStream_t s = 0;
   cub::DeviceRadixSort::SortPairsDescending(nullptr, temp_storage_size, d_keys_in, d_keys_out, d_values_in, d_values_out, n, 1, 4, s);
   cudaMalloc(&temp_storage, temp_storage_size);
   cub::DeviceRadixSort::SortPairsDescending(temp_storage, temp_storage_size, d_keys_in, d_keys_out, d_values_in, d_values_out, n, 1, 4, s);
@@ -234,7 +234,7 @@ void test16(void) {
 // CHECK-NOT: void *temp_storage;
 // CHECK-NOT: size_t temp_storage_size;
 // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-// CHECK: dpct::queue_ptr s = (dpct::queue_ptr)(uintptr_t)0x80;
+// CHECK: dpct::queue_ptr s = &q_ct1;
 // CHECK: DPCT1026:{{.*}}
 // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(*s), d_keys_in, d_keys_out, d_values_in, d_values_out, n, true, 1, 4);
 }
