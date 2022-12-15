@@ -1678,6 +1678,16 @@ void MatchFinder::matchAST(ASTContext &Context) {
   Visitor.onEndOfTranslationUnit();
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+void MatchFinder::traverseDecl(Decl* D,ASTContext&Context) {
+  internal::MatchASTVisitor Visitor(&Matchers, Options);
+  internal::MatchASTVisitor::TraceReporter StackTrace(Visitor);
+  Visitor.set_active_ast_context(&Context);
+  Visitor.TraverseDecl(D);
+}
+#endif // SYCLomatic_CUSTOMIZATION
+
+
 void MatchFinder::registerTestCallbackAfterParsing(
     MatchFinder::ParsingDoneTestCallback *NewParsingDone) {
   ParsingDone = NewParsingDone;

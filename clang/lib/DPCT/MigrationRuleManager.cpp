@@ -48,7 +48,11 @@ void MigrationRuleManager::matchAST(ASTContext &Context,
 
   StaticsInfo::printMigrationRules(Storage);
 
-  Matchers.matchAST(Context);
+  for (auto D : Context.getTranslationUnitDecl()->decls()) {
+    if (DpctGlobalInfo::isInAnalysisScope(D->getBeginLoc())) {
+      Matchers.traverseDecl(D, Context);
+    }
+  }
 
   StaticsInfo::printMatchedRules(Storage);
 }
