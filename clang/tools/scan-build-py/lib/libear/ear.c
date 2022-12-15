@@ -1160,13 +1160,19 @@ char *replace_binary_name(const char *src, const char *pos, int compiler_idx,
     perror("bear: realpath\n");
     exit(EXIT_FAILURE);
   }
-  if ((strlen(file_path) + strlen("lib/libear/intercept-stub") -
-       strlen("bin/dpct")) >= PATH_MAX) {
+
+  char* dest = strrchr(file_path, '/');
+
+  if ((strlen(dest) + strlen("/../share/dpct/lib/libear/intercept-stub")) >= PATH_MAX) {
     perror("bear: strcpy overflow, path to dpct is too long.\n");
     exit(EXIT_FAILURE);
   }
-  strcpy(file_path + strlen(file_path) - strlen("bin/dpct"),
-         "lib/libear/intercept-stub");
+
+  strcpy(dest, "/../share/dpct/lib/libear/intercept-stub");
+  if (access(file_path, F_OK) != 0) {
+    // file_path does not exists
+    strcpy(dest, "/../lib/libear/intercept-stub");
+  }
 
   // To malloc required size of physical memory it really needs may fail in
   // some case, so malloc 4K bytes (one physical page) instead.

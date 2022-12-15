@@ -129,5 +129,10 @@ DIAGUTIL_PATH=$(prepend_path "$DPCT_BUNDLE_ROOT/sys_check/sys_check.sh" "${DIAGU
 PATH=$(prepend_path "${DPCT_BUNDLE_ROOT}/bin" "${PATH:-}") ; export PATH
 CPATH=$(prepend_path "${DPCT_BUNDLE_ROOT}/include" "${CPATH:-}") ; export CPATH
 if [ -n "${BASH_VERSION:-}" ] ; then
-  source "${DPCT_BUNDLE_ROOT}/env/bash-autocomplete.sh" ;
+  BASH_AUTOCOMPLETE_SCRIPT=${DPCT_BUNDLE_ROOT}/env/bash-autocomplete.sh
+  if [[ -f "$BASH_AUTOCOMPLETE_SCRIPT" ]]; then
+    source "${BASH_AUTOCOMPLETE_SCRIPT}"
+  else
+    source "${DPCT_BUNDLE_ROOT}/dpct/bash-autocomplete.sh" ;
+  fi
 fi

@@ -55,25 +55,51 @@ macro(install_dpct)
 
   endif()
 
-  install(
-    FILES ${dpct_vars_script}
-    COMPONENT dpct-vars
-    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    DESTINATION ./env)
+  if(INTEL_DEPLOY_UNIFIED_LAYOUT)
 
-  if(UNIX)
-  install(
-    FILES ${dpct_syscheck_script}
-    COMPONENT dpct-syscheck
-    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    DESTINATION ./sys_check)
+    install(
+      FILES ${dpct_vars_script}
+      COMPONENT dpct-vars
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+      DESTINATION etc/dpct)
+
+    if(UNIX)
+    install(
+      FILES ${dpct_syscheck_script}
+      COMPONENT dpct-syscheck
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+      DESTINATION etc/dpct)
+    endif()
+
+    install(
+      FILES ${dpct_modulefiles_script}
+      COMPONENT dpct-modulefiles
+      PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
+      DESTINATION etc/dpct/modulefiles)
+
+  else()
+
+    install(
+      FILES ${dpct_vars_script}
+      COMPONENT dpct-vars
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+      DESTINATION ./env)
+
+    if(UNIX)
+    install(
+      FILES ${dpct_syscheck_script}
+      COMPONENT dpct-syscheck
+      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+      DESTINATION ./sys_check)
+    endif()
+
+    install(
+      FILES ${dpct_modulefiles_script}
+      COMPONENT dpct-modulefiles
+      PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
+      DESTINATION ./modulefiles)
+
   endif()
-
-  install(
-    FILES ${dpct_modulefiles_script}
-    COMPONENT dpct-modulefiles
-    PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
-    DESTINATION ./modulefiles)
 
   if (NOT CMAKE_CONFIGURATION_TYPES) # don't add this for IDE's.
     add_llvm_install_targets(install-dpct-vars
@@ -95,12 +121,21 @@ macro(install_dpct)
   endif()
 
   if(UNIX)
-    install(
-      FILES ${dpct_autocomplete_script}
-      COMPONENT dpct-autocomplete
-      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-      DESTINATION ./env)
-    if (NOT CMAKE_CONFIGURATION_TYPES)
+    if(INTEL_DEPLOY_UNIFIED_LAYOUT)
+      install(
+              FILES ${dpct_autocomplete_script}
+              COMPONENT dpct-autocomplete
+              PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+              DESTINATION ./etc/dpct)
+    else()
+      install(
+              FILES ${dpct_autocomplete_script}
+              COMPONENT dpct-autocomplete
+              PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+              DESTINATION ./env)
+    endif()
+
+      if (NOT CMAKE_CONFIGURATION_TYPES)
       add_llvm_install_targets(install-dpct-autocomplete
                                COMPONENT dpct-autocomplete)
     endif()
