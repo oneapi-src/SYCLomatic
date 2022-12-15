@@ -1290,26 +1290,26 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
     policy.queue()
         .submit([&](sycl::handler &h) {
           h.parallel_for(sycl::nd_range<1>{work_group_size, work_group_size},
-                         ([=](sycl::nd_item<1> __item) {
-                           auto __sub_group = __item.get_sub_group();
-                           ::std::size_t __num_subgroups =
-                               __sub_group.get_group_range().size();
-                           ::std::size_t __local_size =
-                               __sub_group.get_local_range().size();
+                         ([=](sycl::nd_item<1> item) {
+                           auto sub_group = item.get_sub_group();
+                           ::std::size_t num_subgroups =
+                               sub_group.get_group_range().size();
+                           ::std::size_t local_size =
+                               sub_group.get_local_range().size();
 
-                           ::std::size_t __sub_group_id =
-                               __sub_group.get_group_id();
-                           while (__sub_group_id < nsegments) {
-                             ::std::size_t __subgroup_local_id =
-                                 __sub_group.get_local_id();
-                             std::size_t i = begin_offsets[__sub_group_id];
-                             std::size_t end = end_offsets[__sub_group_id];
-                             while (i + __subgroup_local_id < end) {
-                               segments[i + __subgroup_local_id] =
-                                   __sub_group_id;
-                               i += __local_size;
+                           ::std::size_t sub_group_id =
+                               sub_group.get_group_id();
+                           while (sub_group_id < nsegments) {
+                             ::std::size_t subgroup_local_id =
+                                 sub_group.get_local_id();
+                             std::size_t i = begin_offsets[sub_group_id];
+                             std::size_t end = end_offsets[sub_group_id];
+                             while (i + subgroup_local_id < end) {
+                               segments[i + subgroup_local_id] =
+                                   sub_group_id;
+                               i += local_size;
                              }
-                             __sub_group_id += __num_subgroups;
+                             sub_group_id += num_subgroups;
                            }
                          }));
         })
