@@ -58,7 +58,6 @@ using FileProcessType = void (*)(StringRef, StringRef,
 
 void SetPrintHandle(PrintType Handle);
 void DoPrintHandle(const std::string &Msg, bool IsPrintOnNormal);
-void SetSDKIncludePath(const std::string &Path);
 void SetDiagnosticOutput(llvm::raw_ostream &OStream);
 void SetFileSetInCompiationDB(std::set<std::string> &FileSetInCompiationDB);
 void SetCompileTargetsMap(

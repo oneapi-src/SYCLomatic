@@ -73,6 +73,7 @@ using namespace llvm::cl;
 
 namespace clang {
 namespace tooling {
+void setSDKIncludePathForTooling(const std::string &Path);
 std::string getFormatSearchPath();
 extern std::string ClangToolOutputMessage;
 #ifdef _WIN32
@@ -87,6 +88,13 @@ namespace frontend {
 void setSDKIncludePathForLex(const std::string &Path);
 } // namespace frontend
 } // namespace clang
+
+namespace {
+void setSDKIncludePathForDeps(const std::string &Path) {
+  clang::tooling::setSDKIncludePathForTooling(Path);
+  clang::frontend::setSDKIncludePathForLex(Path);
+}
+}
 
 // clang-format off
 const char *const CtHelpMessage =
@@ -792,8 +800,7 @@ int runDPCT(int argc, const char **argv) {
   Tool.appendArgumentsAdjuster(
       getInsertArgumentAdjuster("-D__NVCC__", ArgumentInsertPosition::BEGIN));
 
-  SetSDKIncludePath(CudaPath);
-  clang::frontend::setSDKIncludePathForLex(CudaPath);
+  setSDKIncludePathForDeps(CudaPath);
 
 #ifdef _WIN32
   if ((SDKVersionMajor == 11 && SDKVersionMinor == 2) ||
