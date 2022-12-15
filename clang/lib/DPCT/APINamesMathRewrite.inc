@@ -91,117 +91,118 @@ CONDITIONAL_FACTORY_ENTRY(
 MATH_API_REWRITER_HOST_DEVICE(
     MATH_API_REWRITER_HOST_1(
         "pow",
-        makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
-                     makeCheckNot(math::HasSideEffects(0))),
-        BINARY_OP_FACTORY_ENTRY("pow", BinaryOperatorKind::BO_Mul,
-                                makeCallArgCreatorWithCall(0),
-                                makeCallArgCreatorWithCall(0)),
+        makeCheckOr(IsArgumentIntegerType(1),
+                    makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
+                                 makeCheckNot(math::HasSideEffects(0)))),
         CONDITIONAL_FACTORY_ENTRY(
-            IsArgumentIntegerType(1),
+            makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
+                         makeCheckNot(math::HasSideEffects(0))),
+            BINARY_OP_FACTORY_ENTRY("pow", BinaryOperatorKind::BO_Mul,
+                                    makeCallArgCreatorWithCall(0),
+                                    makeCallArgCreatorWithCall(0)),
             CALL_FACTORY_ENTRY("pow",
                                CALL(MapNames::getClNamespace(false, true) +
                                         "pown<double>",
-                                    ARG(0), ARG(1))),
-            CALL_FACTORY_ENTRY("pow",
-                               CALL(MapNames::getClNamespace(false, true) +
-                                        "pow<double>",
-                                    ARG(0), ARG(1))))
-    ),
+                                    ARG(0), ARG(1)))),
+        CALL_FACTORY_ENTRY("pow", CALL(MapNames::getClNamespace(false, true) +
+                                           "pow<double>",
+                                       ARG(0), ARG(1)))),
     MATH_API_REWRITER_DEVICE_1(
         "pow",
-        makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
-                     makeCheckNot(math::HasSideEffects(0))),
-        BINARY_OP_FACTORY_ENTRY("pow", BinaryOperatorKind::BO_Mul,
-                                makeCallArgCreatorWithCall(0),
-                                makeCallArgCreatorWithCall(0)),
+        makeCheckOr(IsArgumentIntegerType(1),
+                    makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
+                                 makeCheckNot(math::HasSideEffects(0)))),
+        CONDITIONAL_FACTORY_ENTRY(
+            makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
+                         makeCheckNot(math::HasSideEffects(0))),
+            BINARY_OP_FACTORY_ENTRY("pow", BinaryOperatorKind::BO_Mul,
+                                    makeCallArgCreatorWithCall(0),
+                                    makeCallArgCreatorWithCall(0)),
+            CALL_FACTORY_ENTRY("pow",
+                               CALL(MapNames::getClNamespace(false, true) +
+                                        "pown<double>",
+                                    ARG(0), ARG(1)))),
         {
-            CONDITIONAL_FACTORY_ENTRY(
-                IsArgumentIntegerType(1),
-                CALL_FACTORY_ENTRY("pow",
-                                   CALL(MapNames::getClNamespace(false, true) +
-                                            "pown<double>",
-                                        ARG(0), ARG(1))),
-                CALL_FACTORY_ENTRY(
-                    "pow", CALL(MapNames::getClNamespace(false, true) + "pow<double>",
-                                   ARG(0), ARG(1))))
-            EMPTY_FACTORY_ENTRY("pow"),
             CALL_FACTORY_ENTRY(
-                "pow", CALL(MapNames::getClNamespace(false, true) +
-                                   "ext::intel::math::pow",
-                               ARG(0), ARG(1)))
+                "pow", CALL(MapNames::getClNamespace(false, true) + "pow<double>",
+                            ARG(0), ARG(1)))
+            EMPTY_FACTORY_ENTRY("pow"),
+            CALL_FACTORY_ENTRY("pow", CALL(MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::pow",
+                                        ARG(0), ARG(1)))
             EMPTY_FACTORY_ENTRY("pow")
         }
-    )
-)
+))
 
 MATH_API_REWRITER_HOST_DEVICE(
     MATH_API_REWRITER_HOST_1(
         "powf",
-        makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
-                     makeCheckNot(math::HasSideEffects(0))),
-        BINARY_OP_FACTORY_ENTRY("powf", BinaryOperatorKind::BO_Mul,
-                                makeCallArgCreatorWithCall(0),
-                                makeCallArgCreatorWithCall(0)),
+        makeCheckOr(IsArgumentIntegerType(1),
+                    makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
+                                 makeCheckNot(math::HasSideEffects(0)))),
         CONDITIONAL_FACTORY_ENTRY(
-            IsArgumentIntegerType(1),
+            makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
+                         makeCheckNot(math::HasSideEffects(0))),
+            BINARY_OP_FACTORY_ENTRY("powf", BinaryOperatorKind::BO_Mul,
+                                    makeCallArgCreatorWithCall(0),
+                                    makeCallArgCreatorWithCall(0)),
             CALL_FACTORY_ENTRY("powf",
                                CALL(MapNames::getClNamespace(false, true) +
                                         "pown<float>",
-                                    ARG(0), ARG(1))),
-            CALL_FACTORY_ENTRY("powf",
-                               CALL(MapNames::getClNamespace(false, true) +
-                                        "pow<float>",
-                                    ARG(0), ARG(1))))
-    ),
+                                    ARG(0), ARG(1)))),
+        CALL_FACTORY_ENTRY("powf", CALL(MapNames::getClNamespace(false, true) +
+                                           "pow<float>",
+                                       ARG(0), ARG(1)))),
     MATH_API_REWRITER_DEVICE_1(
         "powf",
-        makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
-                     makeCheckNot(math::HasSideEffects(0))),
-        BINARY_OP_FACTORY_ENTRY("powf", BinaryOperatorKind::BO_Mul,
-                                makeCallArgCreatorWithCall(0),
-                                makeCallArgCreatorWithCall(0)),
+        makeCheckOr(IsArgumentIntegerType(1),
+                    makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
+                                 makeCheckNot(math::HasSideEffects(0)))),
+        CONDITIONAL_FACTORY_ENTRY(
+            makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
+                         makeCheckNot(math::HasSideEffects(0))),
+            BINARY_OP_FACTORY_ENTRY("powf", BinaryOperatorKind::BO_Mul,
+                                    makeCallArgCreatorWithCall(0),
+                                    makeCallArgCreatorWithCall(0)),
+            CALL_FACTORY_ENTRY("powf",
+                               CALL(MapNames::getClNamespace(false, true) +
+                                        "pown<float>",
+                                    ARG(0), ARG(1)))),
         {
-            CONDITIONAL_FACTORY_ENTRY(
-                IsArgumentIntegerType(1),
-                CALL_FACTORY_ENTRY("powf",
-                                   CALL(MapNames::getClNamespace(false, true) +
-                                            "pown<float>",
-                                        ARG(0), ARG(1))),
-                CALL_FACTORY_ENTRY(
-                    "powf", CALL(MapNames::getClNamespace(false, true) + "pow<float>",
-                                   ARG(0), ARG(1))))
-            EMPTY_FACTORY_ENTRY("powf"),
             CALL_FACTORY_ENTRY(
-                "powf", CALL(MapNames::getClNamespace(false, true) +
-                                   "ext::intel::math::powf",
-                               ARG(0), ARG(1)))
+                "powf", CALL(MapNames::getClNamespace(false, true) + "pow<float>",
+                            ARG(0), ARG(1)))
+            EMPTY_FACTORY_ENTRY("powf"),
+            CALL_FACTORY_ENTRY("powf", CALL(MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::pow",
+                                        ARG(0), ARG(1)))
             EMPTY_FACTORY_ENTRY("powf")
         }
-    )
-)
+))
 
 MATH_API_REWRITER_DEVICE_1(
     "__powf",
-    makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
-                 makeCheckNot(math::HasSideEffects(0))),
-    BINARY_OP_FACTORY_ENTRY("__powf", BinaryOperatorKind::BO_Mul,
-                            makeCallArgCreatorWithCall(0),
-                            makeCallArgCreatorWithCall(0)),
+    makeCheckOr(IsArgumentIntegerType(1),
+                makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
+                             makeCheckNot(math::HasSideEffects(0)))),
+    CONDITIONAL_FACTORY_ENTRY(
+        makeCheckAnd(CheckArgIsConstantIntWithValue(1, 2),
+                     makeCheckNot(math::HasSideEffects(0))),
+        BINARY_OP_FACTORY_ENTRY("__powf", BinaryOperatorKind::BO_Mul,
+                                makeCallArgCreatorWithCall(0),
+                                makeCallArgCreatorWithCall(0)),
+        CALL_FACTORY_ENTRY("__powf",
+                           CALL(MapNames::getClNamespace(false, true) +
+                                    "pown<float>",
+                                ARG(0), ARG(1)))),
     {
-        CONDITIONAL_FACTORY_ENTRY(
-            IsArgumentIntegerType(1),
-            CALL_FACTORY_ENTRY("__powf",
-                               CALL(MapNames::getClNamespace(false, true) +
-                                        "pown<float>",
-                                    ARG(0), ARG(1))),
-            CALL_FACTORY_ENTRY(
-                "__powf", CALL(MapNames::getClNamespace(false, true) + "pow<float>",
-                               ARG(0), ARG(1))))
-        EMPTY_FACTORY_ENTRY("__powf"),
         CALL_FACTORY_ENTRY(
-            "__powf", CALL(MapNames::getClNamespace(false, true) +
-                               "ext::intel::math::powf",
-                           ARG(0), ARG(1)))
+            "__powf", CALL(MapNames::getClNamespace(false, true) + "pow<float>",
+                        ARG(0), ARG(1)))
+        EMPTY_FACTORY_ENTRY("__powf"),
+        CALL_FACTORY_ENTRY("__powf", CALL(MapNames::getClNamespace(false, true) +
+                                        "ext::intel::math::pow",
+                                    ARG(0), ARG(1)))
         EMPTY_FACTORY_ENTRY("__powf")
     }
 )
