@@ -2098,9 +2098,15 @@ void ZeroLengthArrayDetectorRule::runRule(
   const clang::FunctionDecl *FD = DpctGlobalInfo::getParentFunction(TL);
   if (!FD)
     return;
-  if (FD->getAttr<CUDADeviceAttr>() || FD->getAttr<CUDAGlobalAttr>()) {
-    report(TL->getBeginLoc(), Diagnostics::ZERO_LENGTH_ARRAY, false);
-  }
+  if (!(FD->getAttr<CUDADeviceAttr>()) && !(FD->getAttr<CUDAGlobalAttr>()))
+    return;
+
+  // For zero-sized shared memory declaration, we do not emit warning.
+  const VarDecl* VD = DpctGlobalInfo::findAncestor<VarDecl>(TL);
+  if (VD && VD->getAttr<CUDASharedAttr>())
+    return;
+
+  report(TL->getBeginLoc(), Diagnostics::ZERO_LENGTH_ARRAY, false);
 }
 REGISTER_RULE(ZeroLengthArrayDetectorRule, PassKind::PK_Migration)
 

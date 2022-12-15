@@ -3,22 +3,24 @@
 
 #include <stdio.h>
 
-// CHECK: void k() {
+// CHECK: void k(int *arr2) {
 // CHECK-NEXT:   /*
 // CHECK-NEXT:   DPCT1102:{{[0-9]+}}: Zero-length arrays are not permitted in SYCL device code.
 // CHECK-NEXT:   */
 // CHECK-NEXT:   int arr0[0];
 // CHECK-NEXT:   int arr1[1];
+// CHECK-NEXT:   // zero-sized local_accessor is allowed in SYCL
 // CHECK-NEXT: }
 __global__ void k() {
   int arr0[0];
   int arr1[1];
+  __shared__ int arr2[0];// zero-sized local_accessor is allowed in SYCL
 }
 
 // CHECK: int main() {
 // CHECK-NEXT:   int arr0[0];
 // CHECK-NEXT:   int arr1[1];
-// CHECK-NEXT:   dpct::get_default_queue().parallel_for(
+// CHECK-NEXT:   dpct::get_default_queue().submit(
 int main() {
   int arr0[0];
   int arr1[1];
