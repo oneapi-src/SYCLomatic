@@ -10650,16 +10650,37 @@ void MemoryMigrationRule::memcpyMigration(
     std::string AsyncQueue;
     bool NeedTypeCast = false;
 
-    if (C->getNumArgs() > 4 && !C->getArg(4)->isDefaultArgument())
-      if (auto ICE = dyn_cast<ImplicitCastExpr>(C->getArg(4)))
-        NeedTypeCast = ICE->getCastKind() != clang::CK_LValueToRValue;
-
-    size_t QueueIndex = NameRef.compare("cudaMemcpy") ? 3 : 4;
-    if (C->getNumArgs() > QueueIndex &&
-        !C->getArg(QueueIndex)->isDefaultArgument()) {
-      if (!isDefaultStream(C->getArg(QueueIndex)))
-        AsyncQueue = ExprAnalysis::ref(C->getArg(QueueIndex));
+    size_t StreamIndex = NameRef.compare("cudaMemcpy") ? 3 : 4;
+    if (StreamIndex < C->getNumArgs()) {
+      auto StreamArg = C->getArg(StreamIndex);
+      // Is the stream argument a default stream handle we recognize?
+      // Note: the value for the default stream argument in
+      // cudaMemcpyAsync is 0, aka the default stream
+      if (StreamArg->isDefaultArgument()
+	  || isDefaultStream(StreamArg)) {
+	AsyncQueue = "";
+      }
+      // Are we casting from an integer?
+      else if (auto Cast = dyn_cast<CastExpr>(StreamArg);
+	       Cast && Cast->getCastKind() != clang::CK_LValueToRValue
+	       && Cast->getSubExpr()->getType()->isIntegerType()) {
+	requestFeature(HelperFeatureEnum::Util_int_as_queue_ptr, Cast->getSubExpr());
+	AsyncQueue =
+	  MapNames::getDpctNamespace()
+	  + "int_as_queue_ptr("
+	  + ExprAnalysis::ref(Cast->getSubExpr())
+	  + ")";
+      }
+      else {
+	// If we are implicitly casting from something other than
+	// an int (e.g. a user defined class), we need to explicitly
+	// insert that cast in the migration to use member access (->).
+	if (auto ICE = dyn_cast<ImplicitCastExpr>(StreamArg))
+	  NeedTypeCast = ICE->getCastKind() != clang::CK_LValueToRValue;
+	AsyncQueue = ExprAnalysis::ref(StreamArg);
+      }
     }
+
     replaceMemAPIArg(C->getArg(0), Result, AsyncQueue);
     replaceMemAPIArg(C->getArg(1), Result, AsyncQueue);
     if (USMLevel == UsmLevel::UL_Restricted) {
@@ -15159,3 +15180,40 @@ void TemplateSpecializationTypeLocRule::runRule(
 }
 
 REGISTER_RULE(TemplateSpecializationTypeLocRule, PassKind::PK_Migration)
+
+void CudaStreamCastRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(
+    castExpr(
+      hasType(typedefDecl(hasAnyName("CUstream", "cudaStream_t"))))
+    .bind("cast"),
+    this);
+}
+
+void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (auto CE = getNodeAsType<CastExpr>(Result, "cast")) {
+    if (CE->getCastKind() == clang::CK_LValueToRValue
+	|| CE->getCastKind() == clang::CK_NoOp)
+      return;
+    
+    if (isDefaultStream(CE->getSubExpr())) {
+      if (isPlaceholderIdxDuplicated(CE->getSubExpr()))
+        return;
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE->getSubExpr(), HelperFuncType::HFT_DefaultQueue);
+      emplaceTransformation(
+        new ReplaceStmt(CE, "&{{NEEDREPLACEQ" + std::to_string(Index) + "}}"));
+    } else if (CE->getSubExpr()->getType()->isIntegerType()) {
+      requestFeature(HelperFeatureEnum::Util_int_as_queue_ptr, CE->getSubExpr());
+      emplaceTransformation(
+        new ReplaceStmt(
+          CE,
+	  MapNames::getDpctNamespace() 
+	  + "int_as_queue_ptr("
+	  + ExprAnalysis::ref(CE->getSubExpr())
+	  + ")"));
+    }
+  }
+}
+
+
+REGISTER_RULE(CudaStreamCastRule, PassKind::PK_Migration)
