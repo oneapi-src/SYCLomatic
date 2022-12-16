@@ -70,6 +70,7 @@ bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
 std::unordered_map<std::string, SourceRange> DpctGlobalInfo::ExpansionRangeBeginMap;
+bool DpctGlobalInfo::EnablepProfilingFlag = false;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
 std::tuple<unsigned int, std::string, SourceRange>

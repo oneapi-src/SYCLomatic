@@ -949,6 +949,12 @@ public:
   inline static bool getCheckUnicodeSecurityFlag() {
     return CheckUnicodeSecurityFlag;
   }
+  inline static void setEnablepProfilingFlag(bool EP) {
+    EnablepProfilingFlag = EP;
+  }
+  inline static bool getEnablepProfilingFlag() {
+    return EnablepProfilingFlag;
+  }
   inline static bool getGuessIndentWidthMatcherFlag() {
     return GuessIndentWidthMatcherFlag;
   }
@@ -2120,6 +2126,7 @@ private:
   static std::unordered_map<std::string, int> LocationInitIndexMap;
   static std::unordered_map<std::string, SourceRange> ExpansionRangeBeginMap;
   static bool CheckUnicodeSecurityFlag;
+  static bool EnablepProfilingFlag;
   static std::map<std::string,
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
@@ -4502,6 +4509,10 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
     // Start a new line if we're not inserting at the first inclusion offset
     if (Offset != FirstIncludeOffset) {
       RSO << getNL();
+    }
+
+    if(DpctGlobalInfo::getEnablepProfilingFlag() && (Type == HT_SYCL)) {
+      RSO << "#define DPCT_PROFILING_ENABLED" << getNL();
     }
 
     if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) &&
