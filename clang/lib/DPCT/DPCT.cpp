@@ -850,6 +850,8 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
   DpctGlobalInfo::setUsingGenericSpace(!NoUseGenericSpaceFlag);
   DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
+  DpctGlobalInfo::setExtensionDEFlag(~(NoDPCPPExtensions.getBits()));
+  DpctGlobalInfo::setExtensionDDFlag(UseDPCPPExtensions.getBits());
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
@@ -889,7 +891,6 @@ int runDPCT(int argc, const char **argv) {
 
   MapNames::setExplicitNamespaceMap();
   CallExprRewriterFactoryBase::initRewriterMap();
-  CallExprRewriterFactoryBase::initMethodRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
   if (!RuleFile.empty()) {

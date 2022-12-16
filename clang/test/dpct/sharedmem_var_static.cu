@@ -82,7 +82,22 @@ void testTemplate() {
 
   // CHECK: dpct::get_default_queue().submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     /*
+  // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size * 2' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.
+  // CHECK-NEXT:     */
+  // CHECK-NEXT:     /*
+  // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size * 4' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.
+  // CHECK-NEXT:     */
   // CHECK-NEXT:     sycl::local_accessor<T, 2> s_acc_ct1(sycl::range<2>(64/*size * 2*/, 128/*size * 4*/), cgh);
+  // CHECK-NEXT:     /*
+  // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size * 2' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.
+  // CHECK-NEXT:     */
+  // CHECK-NEXT:     /*
+  // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size * 4' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.
+  // CHECK-NEXT:     */
+  // CHECK-NEXT:     /*
+  // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.
+  // CHECK-NEXT:     */
   // CHECK-NEXT:     sycl::local_accessor<T, 3> s3_acc_ct1(sycl::range<3>(64/*size * 2*/, 128/*size * 4*/, 32/*size*/), cgh);
   // CHECK-NEXT:     dpct::access_wrapper<T *> d_d_acc_ct0(d_d, cgh);
   // CHECK-EMPTY:
@@ -119,6 +134,9 @@ int main(void) {
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     sycl::local_accessor<int, 0> a0_acc_ct1(cgh);
+  // CHECK-NEXT:     /*
+  // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.
+  // CHECK-NEXT:     */
   // CHECK-NEXT:     sycl::local_accessor<int, 1> s_acc_ct1(sycl::range<1>(64/*size*/), cgh);
   // CHECK-NEXT:     auto d_d_acc_ct0 = dpct::get_access(d_d, cgh);
   // CHECK-EMPTY:
@@ -133,7 +151,22 @@ int main(void) {
 
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
+  // CHECK-NEXT:     /*
+  // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size * 2' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.
+  // CHECK-NEXT:     */
+  // CHECK-NEXT:     /*
+  // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size * 4' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.
+  // CHECK-NEXT:     */
   // CHECK-NEXT:     sycl::local_accessor<int, 2> s_acc_ct1(sycl::range<2>(64/*size * 2*/, 128/*size * 4*/), cgh);
+  // CHECK-NEXT:     /*
+  // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size * 2' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.
+  // CHECK-NEXT:     */
+  // CHECK-NEXT:     /*
+  // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size * 4' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.
+  // CHECK-NEXT:     */
+  // CHECK-NEXT:     /*
+  // CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'size' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.
+  // CHECK-NEXT:     */
   // CHECK-NEXT:     sycl::local_accessor<int, 3> s3_acc_ct1(sycl::range<3>(64/*size * 2*/, 128/*size * 4*/, 32/*size*/), cgh);
   // CHECK-NEXT:     auto d_d_acc_ct0 = dpct::get_access(d_d, cgh);
   // CHECK-EMPTY:

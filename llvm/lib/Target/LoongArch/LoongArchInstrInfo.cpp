@@ -13,6 +13,10 @@
 #include "LoongArchInstrInfo.h"
 #include "LoongArch.h"
 #include "LoongArchMachineFunctionInfo.h"
+#include "LoongArchRegisterInfo.h"
+#include "MCTargetDesc/LoongArchMCTargetDesc.h"
+#include "MCTargetDesc/LoongArchMatInt.h"
+#include "llvm/CodeGen/RegisterScavenging.h"
 
 using namespace llvm;
 
@@ -21,7 +25,8 @@ using namespace llvm;
 
 LoongArchInstrInfo::LoongArchInstrInfo(LoongArchSubtarget &STI)
     : LoongArchGenInstrInfo(LoongArch::ADJCALLSTACKDOWN,
-                            LoongArch::ADJCALLSTACKUP) {}
+                            LoongArch::ADJCALLSTACKUP),
+      STI(STI) {}
 
 void LoongArchInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
                                      MachineBasicBlock::iterator MBBI,
@@ -31,6 +36,21 @@ void LoongArchInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
     BuildMI(MBB, MBBI, DL, get(LoongArch::OR), DstReg)
         .addReg(SrcReg, getKillRegState(KillSrc))
         .addReg(LoongArch::R0);
+    return;
+  }
+
+  // GPR->CFR copy.
+  if (LoongArch::CFRRegClass.contains(DstReg) &&
+      LoongArch::GPRRegClass.contains(SrcReg)) {
+    BuildMI(MBB, MBBI, DL, get(LoongArch::MOVGR2CF), DstReg)
+        .addReg(SrcReg, getKillRegState(KillSrc));
+    return;
+  }
+  // CFR->GPR copy.
+  if (LoongArch::GPRRegClass.contains(DstReg) &&
+      LoongArch::CFRRegClass.contains(SrcReg)) {
+    BuildMI(MBB, MBBI, DL, get(LoongArch::MOVCF2GR), DstReg)
+        .addReg(SrcReg, getKillRegState(KillSrc));
     return;
   }
 
@@ -68,6 +88,8 @@ void LoongArchInstrInfo::storeRegToStackSlot(
     Opcode = LoongArch::FST_S;
   else if (LoongArch::FPR64RegClass.hasSubClassEq(RC))
     Opcode = LoongArch::FST_D;
+  else if (LoongArch::CFRRegClass.hasSubClassEq(RC))
+    Opcode = LoongArch::PseudoST_CFR;
   else
     llvm_unreachable("Can't store this register to stack slot");
 
@@ -101,6 +123,8 @@ void LoongArchInstrInfo::loadRegFromStackSlot(
     Opcode = LoongArch::FLD_S;
   else if (LoongArch::FPR64RegClass.hasSubClassEq(RC))
     Opcode = LoongArch::FLD_D;
+  else if (LoongArch::CFRRegClass.hasSubClassEq(RC))
+    Opcode = LoongArch::PseudoLD_CFR;
   else
     llvm_unreachable("Can't load this register from stack slot");
 
@@ -114,7 +138,49 @@ void LoongArchInstrInfo::loadRegFromStackSlot(
       .addMemOperand(MMO);
 }
 
+void LoongArchInstrInfo::movImm(MachineBasicBlock &MBB,
+                                MachineBasicBlock::iterator MBBI,
+                                const DebugLoc &DL, Register DstReg,
+                                uint64_t Val, MachineInstr::MIFlag Flag) const {
+  Register SrcReg = LoongArch::R0;
+
+  if (!STI.is64Bit() && !isInt<32>(Val))
+    report_fatal_error("Should only materialize 32-bit constants for LA32");
+
+  auto Seq = LoongArchMatInt::generateInstSeq(Val);
+  assert(!Seq.empty());
+
+  for (auto &Inst : Seq) {
+    switch (Inst.Opc) {
+    case LoongArch::LU12I_W:
+      BuildMI(MBB, MBBI, DL, get(Inst.Opc), DstReg)
+          .addImm(Inst.Imm)
+          .setMIFlag(Flag);
+      break;
+    case LoongArch::ADDI_W:
+    case LoongArch::ORI:
+    case LoongArch::LU32I_D: // "rj" is needed due to InstrInfo pattern
+    case LoongArch::LU52I_D:
+      BuildMI(MBB, MBBI, DL, get(Inst.Opc), DstReg)
+          .addReg(SrcReg, RegState::Kill)
+          .addImm(Inst.Imm)
+          .setMIFlag(Flag);
+      break;
+    default:
+      assert(false && "Unknown insn emitted by LoongArchMatInt");
+    }
+
+    // Only the first instruction has $zero as its source.
+    SrcReg = DstReg;
+  }
+}
+
 unsigned LoongArchInstrInfo::getInstSizeInBytes(const MachineInstr &MI) const {
+  if (MI.getOpcode() == TargetOpcode::INLINEASM) {
+    const MachineFunction *MF = MI.getParent()->getParent();
+    const MCAsmInfo *MAI = MF->getTarget().getMCAsmInfo();
+    return getInlineAsmLength(MI.getOperand(0).getSymbolName(), *MAI);
+  }
   return MI.getDesc().getSize();
 }
 
@@ -198,6 +264,29 @@ bool LoongArchInstrInfo::analyzeBranch(MachineBasicBlock &MBB,
   return true;
 }
 
+bool LoongArchInstrInfo::isBranchOffsetInRange(unsigned BranchOp,
+                                               int64_t BrOffset) const {
+  switch (BranchOp) {
+  default:
+    llvm_unreachable("Unknown branch instruction!");
+  case LoongArch::BEQ:
+  case LoongArch::BNE:
+  case LoongArch::BLT:
+  case LoongArch::BGE:
+  case LoongArch::BLTU:
+  case LoongArch::BGEU:
+    return isInt<18>(BrOffset);
+  case LoongArch::BEQZ:
+  case LoongArch::BNEZ:
+  case LoongArch::BCEQZ:
+  case LoongArch::BCNEZ:
+    return isInt<23>(BrOffset);
+  case LoongArch::B:
+  case LoongArch::PseudoBR:
+    return isInt<28>(BrOffset);
+  }
+}
+
 unsigned LoongArchInstrInfo::removeBranch(MachineBasicBlock &MBB,
                                           int *BytesRemoved) const {
   if (BytesRemoved)
@@ -269,6 +358,71 @@ unsigned LoongArchInstrInfo::insertBranch(
   return 2;
 }
 
+void LoongArchInstrInfo::insertIndirectBranch(MachineBasicBlock &MBB,
+                                              MachineBasicBlock &DestBB,
+                                              MachineBasicBlock &RestoreBB,
+                                              const DebugLoc &DL,
+                                              int64_t BrOffset,
+                                              RegScavenger *RS) const {
+  assert(RS && "RegScavenger required for long branching");
+  assert(MBB.empty() &&
+         "new block should be inserted for expanding unconditional branch");
+  assert(MBB.pred_size() == 1);
+
+  MachineFunction *MF = MBB.getParent();
+  MachineRegisterInfo &MRI = MF->getRegInfo();
+  const TargetRegisterInfo *TRI = MF->getSubtarget().getRegisterInfo();
+  LoongArchMachineFunctionInfo *LAFI =
+      MF->getInfo<LoongArchMachineFunctionInfo>();
+
+  if (!isInt<32>(BrOffset))
+    report_fatal_error(
+        "Branch offsets outside of the signed 32-bit range not supported");
+
+  Register ScratchReg = MRI.createVirtualRegister(&LoongArch::GPRRegClass);
+  auto II = MBB.end();
+
+  MachineInstr &PCALAU12I =
+      *BuildMI(MBB, II, DL, get(LoongArch::PCALAU12I), ScratchReg)
+           .addMBB(&DestBB, LoongArchII::MO_PCREL_HI);
+  MachineInstr &ADDI =
+      *BuildMI(MBB, II, DL,
+               get(STI.is64Bit() ? LoongArch::ADDI_D : LoongArch::ADDI_W),
+               ScratchReg)
+           .addReg(ScratchReg)
+           .addMBB(&DestBB, LoongArchII::MO_PCREL_LO);
+  BuildMI(MBB, II, DL, get(LoongArch::PseudoBRIND))
+      .addReg(ScratchReg, RegState::Kill)
+      .addImm(0);
+
+  RS->enterBasicBlockEnd(MBB);
+  Register Scav = RS->scavengeRegisterBackwards(
+      LoongArch::GPRRegClass, PCALAU12I.getIterator(), /*RestoreAfter=*/false,
+      /*SPAdj=*/0, /*AllowSpill=*/false);
+  if (Scav != LoongArch::NoRegister)
+    RS->setRegUsed(Scav);
+  else {
+    // When there is no scavenged register, it needs to specify a register.
+    // Specify t8 register because it won't be used too often.
+    Scav = LoongArch::R20;
+    int FrameIndex = LAFI->getBranchRelaxationSpillFrameIndex();
+    if (FrameIndex == -1)
+      report_fatal_error("The function size is incorrectly estimated.");
+    storeRegToStackSlot(MBB, PCALAU12I, Scav, /*IsKill=*/true, FrameIndex,
+                        &LoongArch::GPRRegClass, TRI);
+    TRI->eliminateFrameIndex(std::prev(PCALAU12I.getIterator()),
+                             /*SpAdj=*/0, /*FIOperandNum=*/1);
+    PCALAU12I.getOperand(1).setMBB(&RestoreBB);
+    ADDI.getOperand(2).setMBB(&RestoreBB);
+    loadRegFromStackSlot(RestoreBB, RestoreBB.end(), Scav, FrameIndex,
+                         &LoongArch::GPRRegClass, TRI);
+    TRI->eliminateFrameIndex(RestoreBB.back(),
+                             /*SpAdj=*/0, /*FIOperandNum=*/1);
+  }
+  MRI.replaceRegWith(ScratchReg, Scav);
+  MRI.clearVirtRegs();
+}
+
 static unsigned getOppositeBranchOpc(unsigned Opc) {
   switch (Opc) {
   default:
@@ -301,4 +455,29 @@ bool LoongArchInstrInfo::reverseBranchCondition(
   assert((Cond.size() && Cond.size() <= 3) && "Invalid branch condition!");
   Cond[0].setImm(getOppositeBranchOpc(Cond[0].getImm()));
   return false;
+}
+
+std::pair<unsigned, unsigned>
+LoongArchInstrInfo::decomposeMachineOperandsTargetFlags(unsigned TF) const {
+  return std::make_pair(TF, 0u);
+}
+
+ArrayRef<std::pair<unsigned, const char *>>
+LoongArchInstrInfo::getSerializableDirectMachineOperandTargetFlags() const {
+  using namespace LoongArchII;
+  // TODO: Add more target flags.
+  static const std::pair<unsigned, const char *> TargetFlags[] = {
+      {MO_CALL, "loongarch-call"},
+      {MO_CALL_PLT, "loongarch-call-plt"},
+      {MO_PCREL_HI, "loongarch-pcrel-hi"},
+      {MO_PCREL_LO, "loongarch-pcrel-lo"},
+      {MO_GOT_PC_HI, "loongarch-got-pc-hi"},
+      {MO_GOT_PC_LO, "loongarch-got-pc-lo"},
+      {MO_LE_HI, "loongarch-le-hi"},
+      {MO_LE_LO, "loongarch-le-lo"},
+      {MO_IE_PC_HI, "loongarch-ie-pc-hi"},
+      {MO_IE_PC_LO, "loongarch-ie-pc-lo"},
+      {MO_LD_PC_HI, "loongarch-ld-pc-hi"},
+      {MO_GD_PC_HI, "loongarch-gd-pc-hi"}};
+  return makeArrayRef(TargetFlags);
 }

@@ -12,7 +12,6 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 def Test_Dialect : Dialect {
   let name = "test";
   let cppNamespace = "NS";
-  let emitAccessorPrefix = kEmitAccessorPrefix_Prefixed;
 }
 class NS_Op<string mnemonic, list<Trait> traits> :
     Op<Test_Dialect, mnemonic, traits>;
@@ -110,9 +109,9 @@ def NS_AOp : NS_Op<"a_op", [IsolatedFromAbove, IsolatedFromAbove]> {
 // DEFS-LABEL: NS::AOp definitions
 
 // DEFS: AOpAdaptor::AOpAdaptor(::mlir::ValueRange values, ::mlir::DictionaryAttr attrs, ::mlir::RegionRange regions) : odsOperands(values), odsAttrs(attrs), odsRegions(regions)
-// DEFS: ::mlir::RegionRange AOpAdaptor::getRegions()
 // DEFS: ::mlir::RegionRange AOpAdaptor::getSomeRegions()
 // DEFS-NEXT: return odsRegions.drop_front(1);
+// DEFS: ::mlir::RegionRange AOpAdaptor::getRegions()
 
 // Check AttrSizedOperandSegments
 // ---

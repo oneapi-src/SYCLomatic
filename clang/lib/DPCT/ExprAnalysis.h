@@ -616,6 +616,7 @@ protected:
   }
 
   void analyzeExpr(const CXXConstructExpr *Ctor);
+  void analyzeExpr(const CXXTemporaryObjectExpr *Temp);
   void analyzeExpr(const CXXUnresolvedConstructExpr *Ctor);
   void analyzeExpr(const MemberExpr *ME);
   void analyzeExpr(const UnaryExprOrTypeTraitExpr *UETT);
@@ -630,6 +631,7 @@ protected:
   void analyzeExpr(const DeclStmt *DS);
   void analyzeExpr(const ConstantExpr *CE);
   void analyzeExpr(const IntegerLiteral *IL);
+  void analyzeExpr(const InitListExpr *ILE);
 
   void removeCUDADeviceAttr(const LambdaExpr *LE);
 
@@ -808,6 +810,7 @@ private:
     ExprAnalysis::analyzeExpr(Arg);
   }
   inline void analyzeExpr(const UnaryOperator *Arg);
+  inline void analyzeExpr(const CXXTemporaryObjectExpr *Temp);
   inline void analyzeExpr(const CXXDependentScopeMemberExpr *Arg);
   inline void analyzeExpr(const MaterializeTemporaryExpr *MTE);
   inline void analyzeExpr(const LambdaExpr *LE);

@@ -231,9 +231,10 @@ MACRO_KC
 //CHECK-NEXT:   q_ct1.submit([&](sycl::handler &cgh) {                                       \
 //CHECK-NEXT:     auto c_ct0 = c;                                                            \
 //CHECK-NEXT:     auto d_ct1 = d;                                                            \
-//CHECK-NEXT:                                                                                \
-//CHECK-NEXT:     cgh.parallel_for(sycl::nd_range<3>(a * b, b),                              \
-//CHECK-NEXT:                      [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });  \
+//CHECK:     cgh.parallel_for(                                                          \
+//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, a) * sycl::range<3>(1, 1, b),   \
+//CHECK-NEXT:                           sycl::range<3>(1, 1, b)),                            \
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo3(c_ct0, d_ct1); });               \
 //CHECK-NEXT:   });
 //CHECK-NEXT: /*
 //CHECK-NEXT: DPCT1038:{{[0-9]+}}: When the kernel function name is used as a macro argument, the
@@ -669,7 +670,7 @@ VECTOR_TYPE_DEF(int)
 //CHECK-NEXT: for all macro uses. Adjust the code.
 //CHECK-NEXT: */
 //CHECK-NEXT: #define POW3(x, y) sycl::pow<double>(x, y)
-//CHECK-NEXT: #define SQRT(x) sycl::sqrt(x)
+//CHECK: #define SQRT(x) sycl::sqrt(x)
 //CHECK-NEXT: void foo12(){
 //CHECK-NEXT: real *vx;
 //CHECK-NEXT: real *vy;
@@ -1153,8 +1154,13 @@ template<class T1, class T2, int N> __global__ void foo31();
 #define FOO31(DIMS) foo31<unsigned int, float, DIMS><<<1,1>>>();
 
 //CHECK:   q_ct1.submit([&](sycl::handler &cgh) {
+//CHECK-NEXT:     /*
+//CHECK-NEXT:     DPCT1101:{{[0-9]+}}: 'BLOCK_PAIR / SIMD_SIZE' expression was replaced with a
+//CHECK-NEXT:     value. Modify the code to use original expression, provided in comments,
+//CHECK-NEXT:     if it is correct.
+//CHECK-NEXT:     */
 //CHECK-NEXT:     sycl::local_accessor<double, 2> red_acc_acc_ct1(
-//CHECK-NEXT:         sycl::range<2>(8 /*8*/, 8 /*BLOCK_PAIR / SIMD_SIZE*/), cgh);
+//CHECK-NEXT:         sycl::range<2>(8, 8 /*BLOCK_PAIR / SIMD_SIZE*/), cgh);
 
 //CHECK:     cgh.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -1195,21 +1201,25 @@ int foo31(){
 
 class ArgClass{};
 
-// CHECK: #define VACALL4(...) __VA_ARGS__()
-// CHECK-NEXT: #define VACALL3(...) VACALL4(__VA_ARGS__)
-// CHECK-NEXT: #define VACALL2(...) VACALL3(__VA_ARGS__)
-// CHECK-NEXT: #define VACALL(x)                                                              \
-// CHECK-NEXT:  dpct::get_default_queue().submit([&](sycl::handler &cgh) {                    \
-// CHECK-NEXT:   auto i_ct0 = i;                                                              \
-// CHECK-NEXT:   auto ac_ct0 = ac;                                                            \
-// CHECK:   cgh.parallel_for(                                                            \
-// CHECK-NEXT:       sycl::nd_range<3>(sycl::range<3>(1, 1, 2), sycl::range<3>(1, 1, 1)),     \
-// CHECK-NEXT:       [=](sycl::nd_item<3> item_ct1) { foo32(i_ct0, ac_ct0); });               \
-// CHECK-NEXT:  });
+
+#define SIZE 256
+//CHECK: #define VACALL4(...) __VA_ARGS__()
+//CHECK-NEXT: #define VACALL3(...) VACALL4(__VA_ARGS__)
+//CHECK-NEXT: #define VACALL2(...) VACALL3(__VA_ARGS__)
+//CHECK-NEXT: #define VACALL(x)                                                              \
+//CHECK-NEXT:   dpct::get_default_queue().submit([&](sycl::handler &cgh) {                   \
+//CHECK-NEXT:     auto i_ct0 = i;                                                            \
+//CHECK-NEXT:     auto ac_ct0 = ac;                                                          \
+//CHECK:     cgh.parallel_for(                                                          \
+//CHECK-NEXT:         sycl::nd_range<3>(sycl::range<3>(1, 1, 2) *                            \
+//CHECK-NEXT:                               sycl::range<3>(1, 1, SIZE),                      \
+//CHECK-NEXT:                           sycl::range<3>(1, 1, SIZE)),                         \
+//CHECK-NEXT:         [=](sycl::nd_item<3> item_ct1) { foo32(i_ct0, ac_ct0); });             \
+//CHECK-NEXT:   });
 #define VACALL4(...) __VA_ARGS__()
 #define VACALL3(...) VACALL4(__VA_ARGS__)
 #define VACALL2(...) VACALL3(__VA_ARGS__)
-#define VACALL(x) foo32<<<2,1,0>>>(i, ac)
+#define VACALL(x) foo32<<<2,SIZE,0>>>(i, ac)
 __global__ void foo32(int a, ArgClass ac){}
 
 // CHECK: int foo33(){

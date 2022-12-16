@@ -14,6 +14,7 @@
 
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/ExprCXX.h"
+#include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/Tooling/Tooling.h"
 #include <algorithm>
 #include <deque>
@@ -68,7 +69,7 @@ FileManager *DpctGlobalInfo::FM = nullptr;
 bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
-std::unordered_set<std::string> DpctGlobalInfo::ExpansionRangeBeginSet;
+std::unordered_map<std::string, SourceRange> DpctGlobalInfo::ExpansionRangeBeginMap;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
 std::tuple<unsigned int, std::string, SourceRange>
@@ -570,6 +571,9 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
     case HT_Complex:
       return insertHeader(HeaderType::HT_Complex, LastIncludeOffset,
                           "<complex>");
+    case HT_Functional:
+      return insertHeader(HeaderType::HT_Functional, LastIncludeOffset,
+                          "<functional>");
     case HT_Thread:
       return insertHeader(HeaderType::HT_Thread, LastIncludeOffset, "<thread>");
     case HT_Future:
@@ -583,13 +587,17 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
       return insertHeader(HeaderType::HT_Dnnl, FirstIncludeOffset,
                           "<" + getCustomMainHelperFileName() +
                               "/dnnl_utils.hpp>");
-    case HT_MKL_BLAS_Solver:
+    case HT_MKL_Without_Util:
       return insertHeader(
-          HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          HeaderType::HT_MKL_Without_Util, LastIncludeOffset, "<oneapi/mkl.hpp>");
+    case HT_MKL_BLAS:
+      return insertHeader(
+          HeaderType::HT_MKL_BLAS, LastIncludeOffset, "<oneapi/mkl.hpp>",
           "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
-    case HT_MKL_BLAS_Solver_Without_Util:
-      return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>");
+    case HT_MKL_Solver:
+      return insertHeader(HeaderType::HT_MKL_Solver, LastIncludeOffset,
+                          "<oneapi/mkl.hpp>",
+          "<" + getCustomMainHelperFileName() + "/lapack_utils.hpp>");
     case HT_MKL_RNG:
       return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
                           "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>",
@@ -600,18 +608,12 @@ void DpctFileInfo::insertHeader(HeaderType Type) {
                           "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>");
     case HT_MKL_SPBLAS:
       return insertHeader(
-          HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset, "<oneapi/mkl.hpp>",
+          HeaderType::HT_MKL_BLAS, LastIncludeOffset, "<oneapi/mkl.hpp>",
           "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
-    case HT_MKL_SPBLAS_Without_Util:
-      return insertHeader(HeaderType::HT_MKL_BLAS_Solver, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>");
     case HT_MKL_FFT:
       return insertHeader(
           HeaderType::HT_MKL_FFT, LastIncludeOffset, "<oneapi/mkl.hpp>",
           "<" + getCustomMainHelperFileName() + "/fft_utils.hpp>");
-    case HT_MKL_FFT_Without_Util:
-      return insertHeader(
-          HeaderType::HT_MKL_FFT_Without_Util, LastIncludeOffset, "<oneapi/mkl.hpp>");
     case HT_Numeric:
       return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
                           "<numeric>");
@@ -781,11 +783,11 @@ void KernelCallExpr::buildExecutionConfig(
       ExecutionConfig.GroupDirectRef = A.isDirectRef();
     } else if (Idx == 1) {
       ExecutionConfig.LocalDirectRef = A.isDirectRef();
-
       // Using another analysis because previous analysis may return directly
       // when in macro is true.
       // Here set the argument of KFA as false, so it will not return directly.
       KernelConfigAnalysis KFA(false);
+      KFA.setCallSpelling(KCallSpellingRange.first, KCallSpellingRange.second);
       KFA.analyze(Arg, 1, true);
       if (KFA.isNeedEmitWGSizeWarning())
         DiagnosticsUtils::report(getFilePath(), getBegin(),
@@ -1638,6 +1640,7 @@ void deduceTemplateArgumentFromTemplateSpecialization(
     std::vector<TemplateArgumentInfo> &TAIList, QualType ParmType,
     QualType ArgType, TypeLoc TL = TypeLoc()) {
   auto ParmTST = dyn_cast<TemplateSpecializationType>(ParmType);
+  auto ParmArgs = ParmTST->template_arguments();
   switch (ArgType->getTypeClass()) {
   case Type::Record:
     if (auto CTSD = dyn_cast<ClassTemplateSpecializationDecl>(
@@ -1655,7 +1658,7 @@ void deduceTemplateArgumentFromTemplateSpecialization(
         auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
         for (unsigned i = 0; i < TSTL.getNumArgs(); ++i) {
           deduceTemplateArgumentFromTemplateArgs(
-              TAIList, ParmTST->getArg(i), TSTL.getArgLoc(i).getArgument(),
+              TAIList, ParmArgs[i], TSTL.getArgLoc(i).getArgument(),
               TSTL.getArgLoc(i));
         }
       }
@@ -1681,22 +1684,22 @@ void deduceTemplateArgumentFromTemplateSpecialization(
         auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
         unsigned i;
         // Parm uses template parameter pack, return
-        if (TSTL.getNumArgs() > ParmTST->getNumArgs()) {
+        if (TSTL.getNumArgs() > ParmArgs.size()) {
           return;
         }
         for (i = 0; i < TSTL.getNumArgs(); ++i) {
           deduceTemplateArgumentFromTemplateArgs(
-              TAIList, ParmTST->getArg(i), TSTL.getArgLoc(i).getArgument(),
+              TAIList, ParmArgs[i], TSTL.getArgLoc(i).getArgument(),
               TSTL.getArgLoc(i));
         }
       } else {
+        auto Args = TST->template_arguments();
         // Parm uses template parameter pack, return
-        if (TST->getNumArgs() > ParmTST->getNumArgs()) {
+        if (Args.size() > ParmArgs.size()) {
           return;
         }
-        for (unsigned i = 0; i < TST->getNumArgs(); ++i) {
-          deduceTemplateArgumentFromTemplateArgs(TAIList, ParmTST->getArg(i),
-                                                 TST->getArg(i));
+        for (unsigned i = 0; i < Args.size(); ++i) {
+          deduceTemplateArgumentFromTemplateArgs(TAIList, ParmArgs[i], Args[i]);
         }
       }
     }
@@ -2236,17 +2239,6 @@ std::string CallFunctionExpr::getTemplateArguments(bool WrittenArgsOnly,
 void ExplicitInstantiationDecl::initTemplateArgumentList(
     const TemplateArgumentListInfo &TAList,
     const FunctionDecl *Specialization) {
-  ExprAnalysis EA;
-  auto &SM = DpctGlobalInfo::getSourceManager();
-  for (auto &ArgLoc : TAList.arguments()) {
-    EA.analyze(ArgLoc);
-    if (EA.hasReplacement()) {
-      DpctGlobalInfo::getInstance().addReplacement(
-          std::make_shared<ExtReplacement>(SM, &ArgLoc, EA.getReplacedString(),
-                                           nullptr));
-    }
-  }
-
   if (Specialization->getTemplateSpecializationArgs() == nullptr)
     return;
   for (auto &Arg : Specialization->getTemplateSpecializationArgs()->asArray()) {
@@ -2285,6 +2277,17 @@ void ExplicitInstantiationDecl::processFunctionTypeLoc(
   processTypeLoc(FTL.getReturnLoc(), EA, SM);
   for (const auto &Parm : FTL.getParams()) {
     processTypeLoc(Parm->getTypeSourceInfo()->getTypeLoc(), EA, SM);
+  }
+}
+
+void ExplicitInstantiationDecl::processTemplateArgumentList(
+    const TemplateArgumentListInfo &TAList) {
+  ExprAnalysis EA;
+  for (const clang::TemplateArgumentLoc &ArgLoc : TAList.arguments()) {
+    EA.analyze(ArgLoc);
+    if (EA.hasReplacement())
+      DpctGlobalInfo::getInstance().addReplacement(
+          EA.getReplacement()->getReplacement(DpctGlobalInfo::getContext()));    
   }
 }
 
@@ -2488,12 +2491,12 @@ void DeviceFunctionDeclInModule::buildCallInfo(const FunctionDecl *FD) {
 
 bool isModuleFunction(const FunctionDecl *FD) {
   auto &SM = DpctGlobalInfo::getSourceManager();
-  if (DpctGlobalInfo::getModuleFiles().find(
+  return
+    FD->getLanguageLinkage() == CLanguageLinkage
+    && FD->hasAttr<CUDAGlobalAttr>()
+    && DpctGlobalInfo::getModuleFiles().find(
           DpctGlobalInfo::getLocInfo(SM.getExpansionLoc(FD->getBeginLoc()))
-              .first) != DpctGlobalInfo::getModuleFiles().end()) {
-    return true;
-  }
-  return false;
+              .first) != DpctGlobalInfo::getModuleFiles().end();
 }
 
 DeviceFunctionDecl::DeviceFunctionDecl(unsigned Offset,
@@ -3160,6 +3163,14 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
     OS << "cgh)";
     OS << ";";
     StmtWithWarning AccDecl(OS.str());
+    for (const auto &OriginExpr : getType()->getArraySizeOriginExprs()) {
+      DiagnosticsUtils::report(getFilePath(), getOffset(),
+                               Diagnostics::MACRO_EXPR_REPLACED, false, false,
+                               OriginExpr);
+      AccDecl.Warnings.push_back(
+          DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
+              Diagnostics::MACRO_EXPR_REPLACED, OriginExpr));
+    }
     if ((isExtern() && ExternEmitWarning) || getType()->containSizeofType()) {
       DiagnosticsUtils::report(getFilePath(), getOffset(),
                                Diagnostics::SIZEOF_WARNING, false, false);
@@ -3324,6 +3335,62 @@ void CtTypeInfo::setArrayInfo(const ConstantArrayTypeLoc &TL,
     Range.emplace_back(getUnfoldedArraySize(TL));
   }
   setTypeInfo(TL.getElementLoc(), NeedSizeFold);
+}
+
+std::string CtTypeInfo::getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
+  const auto *const SizeExpr = TL.getSizeExpr();
+
+  auto IsContainMacro =
+      isContainMacro(SizeExpr) || !TL.getSizeExpr()->getBeginLoc().isFileID();
+
+  auto DREMatcher = ast_matchers::findAll(ast_matchers::declRefExpr());
+  auto DREMatchedResults =
+      ast_matchers::match(DREMatcher, *SizeExpr, DpctGlobalInfo::getContext());
+  bool IsContainDRE = !DREMatchedResults.empty();
+
+  bool IsContainSizeOfUserDefinedType = false;
+  auto SOMatcher = ast_matchers::findAll(
+      ast_matchers::unaryExprOrTypeTraitExpr(ast_matchers::ofKind(UETT_SizeOf))
+          .bind("so"));
+  auto SOMatchedResults =
+      ast_matchers::match(SOMatcher, *SizeExpr, DpctGlobalInfo::getContext());
+  for (const auto &Res : SOMatchedResults) {
+    const auto *UETT = Res.getNodeAs<UnaryExprOrTypeTraitExpr>("so");
+    if (UETT->isArgumentType()) {
+      const auto *const RD =
+          UETT->getArgumentType().getCanonicalType()->getAsRecordDecl();
+      if (MapNames::SupportedVectorTypes.count(RD->getNameAsString()) == 0) {
+        IsContainSizeOfUserDefinedType = true;
+        break;
+      }
+    }
+  }
+
+  // We need not fold the size expression in these cases.
+  if (!IsContainMacro && !IsContainDRE && !IsContainSizeOfUserDefinedType) {
+    return getUnfoldedArraySize(TL);
+  }
+
+  auto TLRange = getDefinitionRange(TL.getBeginLoc(), TL.getEndLoc());
+  auto SizeExprRange = getRangeInRange(SizeExpr->getSourceRange(),
+                                       TLRange.getBegin(), TLRange.getEnd());
+  auto SizeExprBegin = SizeExprRange.first;
+  auto SizeExprEnd = SizeExprRange.second;
+  auto &SM = DpctGlobalInfo::getSourceManager();
+  size_t Length =
+      SM.getCharacterData(SizeExprEnd) - SM.getCharacterData(SizeExprBegin);
+  auto DL = SM.getDecomposedLoc(SizeExprBegin);
+  auto OriginalStr =
+      std::string(SM.getBufferData(DL.first).substr(DL.second, Length));
+
+  // When it is a literal in macro, we also need not fold.
+  auto LiteralStr = toString(TL.getTypePtr()->getSize(), 10, false, false);
+  if (OriginalStr == LiteralStr) {
+    return getUnfoldedArraySize(TL);
+  }
+
+  ArraySizeOriginExprs.push_back(std::move(OriginalStr));
+  return buildString(LiteralStr, "/*", ArraySizeOriginExprs.back(), "*/");
 }
 
 std::string CtTypeInfo::getUnfoldedArraySize(const ConstantArrayTypeLoc &TL) {

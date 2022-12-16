@@ -235,6 +235,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
                                                                ErrorMessage);
 #endif // SYCLomatic_CUSTOMIZATION
     }
+
     if (!Compilations) {
 #ifdef SYCLomatic_CUSTOMIZATION
       if (SourcePaths.size() == 0 && !BuildPath.getValue().empty()){
@@ -332,6 +333,22 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
           new FixedCompilationDatabase(".", std::vector<std::string>()));
     }
   }
+#ifdef SYCLomatic_CUSTOMIZATION
+  if (!SourcePathList.empty() &&
+              Compilations->getAllCompileCommands().size() != 0) {
+    for (auto Path : SourcePathList) {
+      // Add the -x cuda for the case not in database.
+      if (Compilations->getCompileCommands(Path).empty()) {
+        IsCudaFile = true;
+        break;
+      }
+    }
+    if (IsCudaFile) {
+      Compilations = std::make_unique<ExpandedCompilationDatabase>(
+                                                      std::move(Compilations));
+    }
+  }
+#endif
   auto AdjustingCompilations =
       std::make_unique<ArgumentsAdjustingCompilations>(
           std::move(Compilations));

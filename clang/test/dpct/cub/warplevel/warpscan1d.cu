@@ -28,7 +28,7 @@ void print_data(int* data, int num) {
 //CHECK: template<typename ScanTy, typename DataTy>
 //CHECK-NEXT: void Scan1(ScanTy &s) {
 //CHECK-NEXT:  DataTy d;
-//CHECK-NEXT:  d = sycl::inclusive_scan_over_group(s, d, sycl::ext::oneapi::plus<>());
+//CHECK-NEXT:  d = sycl::inclusive_scan_over_group(s, d, sycl::plus<>());
 //CHECK-NEXT: }
 template<typename ScanTy, typename DataTy>
 __device__ void Scan1(ScanTy &s) {

@@ -38,6 +38,9 @@ RUN apt-get update && apt-get install -y bash curl
 # Install various tools used by the build or the test suite
 RUN apt-get update && apt-get install -y ninja-build python3 python3-sphinx python3-distutils python3-psutil git gdb
 
+# Install dependencies required to run the LLDB data formatter tests
+RUN apt-get update && apt-get install -y python3 python3-dev libpython3-dev uuid-dev libncurses5-dev swig3.0 libxml2-dev libedit-dev
+
 # Locales for gdb and localization tests
 RUN apt-get update && apt-get install -y language-pack-en language-pack-fr \
                                          language-pack-ja language-pack-ru \
@@ -80,6 +83,9 @@ RUN ln -s /usr/bin/git-clang-format-14 /usr/bin/git-clang-format && [ -e $(readl
 # TODO LLVM 16 remove hard-coded version 14 and the symlink
 RUN apt-get update && apt-get install -y clang-tidy-$(($LLVM_HEAD_VERSION - 1)) clang-tidy-$LLVM_HEAD_VERSION clang-tidy-14
 RUN ln -s /usr/bin/clang-tidy-14 /usr/bin/clang-tidy && [ -e $(readlink /usr/bin/clang-tidy) ]
+
+# Install llvm-dev to compile custom clang-tidy checks
+RUN apt-get update && apt-get install llvm-$(($LLVM_HEAD_VERSION - 1))-dev llvm-$(($LLVM_HEAD_VERSION - 2))-dev
 
 # Install clang-tools
 RUN apt-get update && apt-get install -y clang-tools-$(($LLVM_HEAD_VERSION - 1)) clang-tools-$LLVM_HEAD_VERSION

@@ -4,7 +4,7 @@
 // RUN: FileCheck --input-file %T/BlasUtils/api_test1_out/api_test1.dp.cpp --match-full-lines %s -check-prefix=CODE
 // RUN: rm -rf %T/BlasUtils/api_test1_out
 
-// FEATURE_NUMBER: 22
+// FEATURE_NUMBER: 23
 
 // CODE: // AAA
 // CODE-NEXT:#include <sycl/sycl.hpp>

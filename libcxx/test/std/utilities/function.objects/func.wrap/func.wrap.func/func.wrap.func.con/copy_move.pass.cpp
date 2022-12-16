@@ -10,6 +10,8 @@
 // allocations.
 // XFAIL: target=x86_64-pc-windows-msvc && stdlib=libc++
 
+// UNSUPPORTED: c++03
+
 // <functional>
 
 // class function<R(ArgTypes...)>
@@ -17,13 +19,11 @@
 // function(const function&  f);
 // function(function&& f); // noexcept in C++20
 
-// This test runs in C++03, but we have deprecated using std::function in C++03.
-// ADDITIONAL_COMPILE_FLAGS: -D_LIBCPP_DISABLE_DEPRECATION_WARNINGS -D_LIBCPP_ENABLE_CXX03_FUNCTION
-
 #include <functional>
 #include <memory>
 #include <cstdlib>
 #include <cassert>
+#include <utility>
 
 #include "test_macros.h"
 #include "count_new.h"

@@ -20,6 +20,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "mach-o/compact_unwind_encoding.h"
+
 namespace lld::macho {
 LLVM_ENABLE_BITMASK_ENUMS_IN_NAMESPACE();
 
@@ -27,7 +29,16 @@ class Symbol;
 class Defined;
 class DylibSymbol;
 class InputSection;
-class ConcatInputSection;
+class ObjFile;
+
+static_assert(static_cast<uint32_t>(UNWIND_X86_64_MODE_MASK) ==
+                  static_cast<uint32_t>(UNWIND_X86_MODE_MASK) &&
+              static_cast<uint32_t>(UNWIND_ARM64_MODE_MASK) ==
+                  static_cast<uint32_t>(UNWIND_X86_64_MODE_MASK));
+
+// Since the mode masks have the same value on all targets, define
+// a common one for convenience.
+constexpr uint32_t UNWIND_MODE_MASK = UNWIND_X86_64_MODE_MASK;
 
 class TargetInfo {
 public:
@@ -52,7 +63,8 @@ public:
 
   // Write code for lazy binding. See the comments on StubsSection for more
   // details.
-  virtual void writeStub(uint8_t *buf, const Symbol &) const = 0;
+  virtual void writeStub(uint8_t *buf, const Symbol &,
+                         uint64_t pointerVA) const = 0;
   virtual void writeStubHelperHeader(uint8_t *buf) const = 0;
   virtual void writeStubHelperEntry(uint8_t *buf, const Symbol &,
                                     uint64_t entryAddr) const = 0;
@@ -97,8 +109,7 @@ public:
     llvm_unreachable("Unsupported architecture for dtrace symbols");
   }
 
-  virtual void applyOptimizationHints(uint8_t *buf,
-                                      const ConcatInputSection *) const {};
+  virtual void applyOptimizationHints(uint8_t *, const ObjFile &) const {};
 
   uint32_t magic;
   llvm::MachO::CPUType cpuType;

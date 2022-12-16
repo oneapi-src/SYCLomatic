@@ -121,7 +121,7 @@ pdl.pattern : benefit(1) {
 pdl.pattern : benefit(1) {
   // expected-error@below {{expected the same number of attribute values and attribute names, got 1 names and 0 values}}
   %op = "pdl.operation"() {
-    attributeNames = ["attr"],
+    attributeValueNames = ["attr"],
     operand_segment_sizes = array<i32: 0, 0, 0>
   } : () -> (!pdl.operation)
   rewrite %op with "rewriter"
@@ -232,6 +232,23 @@ pdl.pattern : benefit(1) {
     "pdl.replace"(%root, %newOp, %newResult) {
       operand_segment_sizes = array<i32: 1, 1, 1>
     } : (!pdl.operation, !pdl.operation, !pdl.value) -> ()
+  }
+}
+
+// -----
+
+//===----------------------------------------------------------------------===//
+// pdl::RangeOp
+//===----------------------------------------------------------------------===//
+
+pdl.pattern : benefit(1) {
+  %operand = pdl.operand
+  %resultType = pdl.type
+  %root = pdl.operation "baz.op"(%operand : !pdl.value) -> (%resultType : !pdl.type)
+
+  rewrite %root {
+    // expected-error @below {{expected operand to have element type '!pdl.value', but got '!pdl.type'}}
+    %range = pdl.range %operand, %resultType : !pdl.value, !pdl.type
   }
 }
 

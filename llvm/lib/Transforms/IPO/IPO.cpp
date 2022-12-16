@@ -23,7 +23,6 @@
 using namespace llvm;
 
 void llvm::initializeIPO(PassRegistry &Registry) {
-  initializeOpenMPOptCGSCCLegacyPassPass(Registry);
   initializeAnnotation2MetadataLegacyPass(Registry);
   initializeCalledValuePropagationLegacyPassPass(Registry);
   initializeConstantMergeLegacyPassPass(Registry);
@@ -51,7 +50,6 @@ void llvm::initializeIPO(PassRegistry &Registry) {
   initializeAttributorCGSCCLegacyPassPass(Registry);
   initializePostOrderFunctionAttrsLegacyPassPass(Registry);
   initializeReversePostOrderFunctionAttrsLegacyPassPass(Registry);
-  initializePruneEHPass(Registry);
   initializeIPSCCPLegacyPassPass(Registry);
   initializeStripDeadPrototypesLegacyPassPass(Registry);
   initializeStripSymbolsPass(Registry);
@@ -96,10 +94,6 @@ void LLVMAddGlobalDCEPass(LLVMPassManagerRef PM) {
 
 void LLVMAddGlobalOptimizerPass(LLVMPassManagerRef PM) {
   unwrap(PM)->add(createGlobalOptimizerPass());
-}
-
-void LLVMAddPruneEHPass(LLVMPassManagerRef PM) {
-  unwrap(PM)->add(createPruneEHPass());
 }
 
 void LLVMAddIPSCCPPass(LLVMPassManagerRef PM) {

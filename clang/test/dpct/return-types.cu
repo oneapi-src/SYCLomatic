@@ -1,4 +1,4 @@
-// RUN: dpct --format-range=none --usm-level=none -out-root %T/return-types %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
+// RUN: dpct --format-range=none --usm-level=none -out-root %T/return-types %s --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only -fno-delayed-template-parsing
 // RUN: FileCheck --input-file %T/return-types/return-types.dp.cpp --match-full-lines %s
 
 // CHECK: #include <sycl/sycl.hpp>
@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 // CHECK: #define DEF_BAR dpct::queue_ptr bar() { \
-// CHECK-NEXT:   return 0; \
+// CHECK-NEXT:   return &dpct::get_default_queue(); \
 // CHECK-NEXT: }
 #define DEF_BAR cudaStream_t bar() { \
   return 0; \
@@ -23,9 +23,11 @@
 DEF_BAR
 DEF_BAR2
 
+// need -fno-delayed-template-parsing on windows for
+// this migration to pass
 // CHECK: template <typename T>
 // CHECK-NEXT: dpct::queue_ptr bar() {
-// CHECK-NEXT:   return 0;
+// CHECK-NEXT:   return &dpct::get_default_queue();
 // CHECK-NEXT: }
 template <typename T>
 cudaStream_t bar() {
@@ -43,6 +45,7 @@ cudaEvent_t bar2() {
 
 // CHECK: dpct::queue_ptr foo() {
 cudaStream_t foo() {
+  // CHECK: return &dpct::get_default_queue();
   return 0;
 }
 
@@ -54,6 +57,7 @@ cudaEvent_t foo2() {
 class S {
   // CHECK: dpct::queue_ptr foo() {
   cudaStream_t foo() {
+    // CHECK: return &dpct::get_default_queue();
     return 0;
   }
 
@@ -66,6 +70,7 @@ class S {
 class C {
   // CHECK: dpct::queue_ptr foo() {
   cudaStream_t foo() {
+    // CHECK: return &dpct::get_default_queue();
     return 0;
   }
 

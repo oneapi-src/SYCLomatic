@@ -350,9 +350,8 @@ ESIMD_INLINE
                                     detail::uint_type_t<sizeof(T)>>;
     using Treal = __raw_t<T>;
     simd<Tint, N> vals_int = bitcast<Tint, Treal, N>(std::move(vals).data());
-    using PromoT =
-        typename sycl::detail::conditional_t<std::is_signed<Tint>::value,
-                                             int32_t, uint32_t>;
+    using PromoT = typename std::conditional_t<std::is_signed<Tint>::value,
+                                               int32_t, uint32_t>;
     const simd<PromoT, N> promo_vals = convert<PromoT>(std::move(vals_int));
     __esimd_scatter_scaled<PromoT, N, decltype(si), TypeSizeLog2, scale>(
         mask.data(), si, glob_offset, offsets.data(), promo_vals.data());
@@ -388,9 +387,8 @@ gather_impl(AccessorTy acc, simd<uint32_t, N> offsets, uint32_t glob_offset,
     using Treal = __raw_t<T>;
     static_assert(std::is_integral<Tint>::value,
                   "only integral 1- & 2-byte types are supported");
-    using PromoT =
-        typename sycl::detail::conditional_t<std::is_signed<Tint>::value,
-                                             int32_t, uint32_t>;
+    using PromoT = typename std::conditional_t<std::is_signed<Tint>::value,
+                                               int32_t, uint32_t>;
     const simd<PromoT, N> promo_vals =
         __esimd_gather_masked_scaled2<PromoT, N, decltype(si), TypeSizeLog2,
                                       scale>(si, glob_offset, offsets.data(),
@@ -841,8 +839,8 @@ __ESIMD_API simd<Tx, N> atomic_update(Tx *p, simd<unsigned, N> offset,
 /// @tparam N The number of memory locations to update.
 /// @param p The USM pointer.
 /// @param offset The vector of 32-bit offsets in bytes.
-/// @param src0 The first additional argument (expected value).
-/// @param src1 The second additional argument (new value).
+/// @param src0 The first additional argument (new value).
+/// @param src1 The second additional argument (expected value).
 /// @param mask Operation mask, only locations with non-zero in the
 ///   corresponding mask element are updated.
 /// @return A vector of the old values at the memory locations before the

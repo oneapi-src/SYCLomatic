@@ -46,6 +46,7 @@
 #include "clang/Sema/TemplateInstCallback.h"
 #include "clang/Sema/TypoCorrection.h"
 #include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/Support/TimeProfiler.h"
 
@@ -195,9 +196,9 @@ Sema::Sema(Preprocessor &pp, ASTContext &ctxt, ASTConsumer &consumer,
       VtorDispStack(LangOpts.getVtorDispMode()),
       AlignPackStack(AlignPackInfo(getLangOpts().XLPragmaPack)),
       DataSegStack(nullptr), BSSSegStack(nullptr), ConstSegStack(nullptr),
-      CodeSegStack(nullptr), FpPragmaStack(FPOptionsOverride()),
-      CurInitSeg(nullptr), VisContext(nullptr),
-      PragmaAttributeCurrentTargetDecl(nullptr),
+      CodeSegStack(nullptr), StrictGuardStackCheckStack(false),
+      FpPragmaStack(FPOptionsOverride()), CurInitSeg(nullptr),
+      VisContext(nullptr), PragmaAttributeCurrentTargetDecl(nullptr),
       IsBuildingRecoveryCallExpr(false), LateTemplateParser(nullptr),
       LateTemplateParserCleanup(nullptr), OpaqueParser(nullptr), IdResolver(pp),
       StdExperimentalNamespaceCache(nullptr), StdInitializerList(nullptr),
@@ -603,10 +604,7 @@ void Sema::diagnoseNullableToNonnullConversion(QualType DstType,
   Diag(Loc, diag::warn_nullability_lost) << SrcType << DstType;
 }
 
-void Sema::diagnoseZeroToNullptrConversion(CastKind Kind, const Expr* E) {
-  if (Diags.isIgnored(diag::warn_zero_as_null_pointer_constant,
-                      E->getBeginLoc()))
-    return;
+void Sema::diagnoseZeroToNullptrConversion(CastKind Kind, const Expr *E) {
   // nullptr only exists from C++11 on, so don't warn on its absence earlier.
   if (!getLangOpts().CPlusPlus11)
     return;
@@ -616,12 +614,22 @@ void Sema::diagnoseZeroToNullptrConversion(CastKind Kind, const Expr* E) {
   if (E->IgnoreParenImpCasts()->getType()->isNullPtrType())
     return;
 
+  if (Diags.isIgnored(diag::warn_zero_as_null_pointer_constant,
+                      E->getBeginLoc()))
+    return;
+
   // Don't diagnose the conversion from a 0 literal to a null pointer argument
   // in a synthesized call to operator<=>.
   if (!CodeSynthesisContexts.empty() &&
       CodeSynthesisContexts.back().Kind ==
           CodeSynthesisContext::RewritingOperatorAsSpaceship)
     return;
+
+  // Ignore null pointers in defaulted comparison operators.
+  FunctionDecl *FD = getCurFunctionDecl();
+  if (FD && FD->isDefaulted()) {
+    return;
+  }
 
   // If it is a macro from system header, and if the macro name is not "NULL",
   // do not warn.
@@ -2565,7 +2573,7 @@ bool Sema::tryExprAsCall(Expr &E, QualType &ZeroArgCallReturnTy,
   if (IsMemExpr && !E.isTypeDependent()) {
     Sema::TentativeAnalysisScope Trap(*this);
     ExprResult R = BuildCallToMemberFunction(nullptr, &E, SourceLocation(),
-                                             None, SourceLocation());
+                                             std::nullopt, SourceLocation());
     if (R.isUsable()) {
       ZeroArgCallReturnTy = R.get()->getType();
       return true;
@@ -2715,7 +2723,7 @@ bool Sema::tryToRecoverWithCall(ExprResult &E, const PartialDiagnostic &PD,
 
       // FIXME: Try this before emitting the fixit, and suppress diagnostics
       // while doing so.
-      E = BuildCallExpr(nullptr, E.get(), Range.getEnd(), None,
+      E = BuildCallExpr(nullptr, E.get(), Range.getEnd(), std::nullopt,
                         Range.getEnd().getLocWithOffset(1));
       return true;
     }
@@ -2775,4 +2783,27 @@ Sema::FPFeaturesStateRAII::~FPFeaturesStateRAII() {
   S.CurFPFeatures = OldFPFeaturesState;
   S.FpPragmaStack.CurrentValue = OldOverrides;
   S.PP.setCurrentFPEvalMethod(OldFPPragmaLocation, OldEvalMethod);
+}
+
+bool Sema::isDeclaratorFunctionLike(Declarator &D) {
+  assert(D.getCXXScopeSpec().isSet() &&
+         "can only be called for qualified names");
+
+  auto LR = LookupResult(*this, D.getIdentifier(), D.getBeginLoc(),
+                         LookupOrdinaryName, forRedeclarationInCurContext());
+  DeclContext *DC = computeDeclContext(D.getCXXScopeSpec(),
+                                       !D.getDeclSpec().isFriendSpecified());
+  if (!DC)
+    return false;
+
+  LookupQualifiedName(LR, DC);
+  bool Result = std::all_of(LR.begin(), LR.end(), [](Decl *Dcl) {
+    if (NamedDecl *ND = dyn_cast<NamedDecl>(Dcl)) {
+      ND = ND->getUnderlyingDecl();
+      return isa<FunctionDecl>(ND) || isa<FunctionTemplateDecl>(ND) ||
+             isa<UsingDecl>(ND);
+    }
+    return false;
+  });
+  return Result;
 }

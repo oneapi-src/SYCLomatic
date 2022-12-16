@@ -49,7 +49,7 @@ void print_data(T* data, int num) {
 //CHECK:    input[2] = data[4 * threadid + 2];
 //CHECK:    input[3] = data[4 * threadid + 3];
 //CHECK:    int output = 0;
-//CHECK:    output = dpct::group::reduce(item_ct1, input, sycl::ext::oneapi::plus<>());
+//CHECK:    output = dpct::group::reduce(item_ct1, input, sycl::plus<>());
 //CHECK:    data[4 * threadid] = output;
 //CHECK:    data[4 * threadid + 1] = 0;
 //CHECK:    data[4 * threadid + 2] = 0;
@@ -92,7 +92,7 @@ __global__ void SumKernel(int* data) {
 //CHECK:    input[2] = data[4 * threadid + 2];
 //CHECK:    input[3] = data[4 * threadid + 3];
 //CHECK:    int output = 0;
-//CHECK:    output = dpct::group::reduce(item_ct1, input, sycl::ext::oneapi::plus<>());
+//CHECK:    output = dpct::group::reduce(item_ct1, input, sycl::plus<>());
 //CHECK:    data[4 * threadid] = output;
 //CHECK:    data[4 * threadid + 1] = 0;
 //CHECK:    data[4 * threadid + 2] = 0;

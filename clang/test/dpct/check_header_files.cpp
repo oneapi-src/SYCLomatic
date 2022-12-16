@@ -70,6 +70,11 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
 
 // RUN: echo "begin" > %T/check_header_files/diff_res.txt
+// RUN: diff %S/helper_files_ref/include/lapack_utils.hpp  %T/../../../runtime/dpct-rt/include/lapack_utils.hpp >> %T/check_header_files/diff_res.txt
+// RUN: echo "end" >> %T/check_header_files/diff_res.txt
+// RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
+
+// RUN: echo "begin" > %T/check_header_files/diff_res.txt
 // RUN: diff %S/helper_files_ref/include/dpl_extras/algorithm.h  %T/../../../runtime/dpct-rt/include/dpl_extras/algorithm.h >> %T/check_header_files/diff_res.txt
 // RUN: echo "end" >> %T/check_header_files/diff_res.txt
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt

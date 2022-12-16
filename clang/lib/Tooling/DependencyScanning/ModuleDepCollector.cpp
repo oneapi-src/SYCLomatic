@@ -97,8 +97,15 @@ ModuleDepCollector::makeInvocationForModuleBuildWithoutOutputs(
   // units.
   CI.getFrontendOpts().Inputs.clear();
   CI.getFrontendOpts().OutputFile.clear();
+
+  // TODO: Figure out better way to set options to their default value.
   CI.getCodeGenOpts().MainFileName.clear();
   CI.getCodeGenOpts().DwarfDebugFlags.clear();
+  if (!CI.getLangOpts()->ModulesCodegen) {
+    CI.getCodeGenOpts().DebugCompilationDir.clear();
+    CI.getCodeGenOpts().CoverageCompilationDir.clear();
+  }
+
   // Map output paths that affect behaviour to "-" so their existence is in the
   // context hash. The final path will be computed in addOutputPaths.
   if (!CI.getDiagnosticOpts().DiagnosticSerializationFile.empty())
@@ -116,8 +123,33 @@ ModuleDepCollector::makeInvocationForModuleBuildWithoutOutputs(
                                InputKind::Format::ModuleMap);
   CI.getFrontendOpts().Inputs.emplace_back(Deps.ClangModuleMapFile,
                                            ModuleMapInputKind);
-  CI.getFrontendOpts().ModuleMapFiles = Deps.ModuleMapFileDeps;
-  addModuleMapFiles(CI, Deps.ClangModuleDeps);
+
+  auto CurrentModuleMapEntry =
+      ScanInstance.getFileManager().getFile(Deps.ClangModuleMapFile);
+  assert(CurrentModuleMapEntry && "module map file entry not found");
+
+  auto DepModuleMapFiles = collectModuleMapFiles(Deps.ClangModuleDeps);
+  for (StringRef ModuleMapFile : Deps.ModuleMapFileDeps) {
+    // TODO: Track these as `FileEntryRef` to simplify the equality check below.
+    auto ModuleMapEntry = ScanInstance.getFileManager().getFile(ModuleMapFile);
+    assert(ModuleMapEntry && "module map file entry not found");
+
+    // Don't report module maps describing eagerly-loaded dependency. This
+    // information will be deserialized from the PCM.
+    // TODO: Verify this works fine when modulemap for module A is eagerly
+    // loaded from A.pcm, and module map passed on the command line contains
+    // definition of a submodule: "explicit module A.Private { ... }".
+    if (EagerLoadModules && DepModuleMapFiles.contains(*ModuleMapEntry))
+      continue;
+
+    // Don't report module map file of the current module unless it also
+    // describes a dependency (for symmetry).
+    if (*ModuleMapEntry == *CurrentModuleMapEntry &&
+        !DepModuleMapFiles.contains(*ModuleMapEntry))
+      continue;
+
+    CI.getFrontendOpts().ModuleMapFiles.emplace_back(ModuleMapFile);
+  }
 
   // Report the prebuilt modules this module uses.
   for (const auto &PrebuiltModule : Deps.PrebuiltModuleDeps)
@@ -147,6 +179,20 @@ ModuleDepCollector::makeInvocationForModuleBuildWithoutOutputs(
   CI.getHeaderSearchOpts().ModulesStrictContextHash = true;
 
   return CI;
+}
+
+llvm::DenseSet<const FileEntry *> ModuleDepCollector::collectModuleMapFiles(
+    ArrayRef<ModuleID> ClangModuleDeps) const {
+  llvm::DenseSet<const FileEntry *> ModuleMapFiles;
+  for (const ModuleID &MID : ClangModuleDeps) {
+    ModuleDeps *MD = ModuleDepsByID.lookup(MID);
+    assert(MD && "Inconsistent dependency info");
+    // TODO: Track ClangModuleMapFile as `FileEntryRef`.
+    auto FE = ScanInstance.getFileManager().getFile(MD->ClangModuleMapFile);
+    assert(FE && "Missing module map file that was previously found");
+    ModuleMapFiles.insert(*FE);
+  }
+  return ModuleMapFiles;
 }
 
 void ModuleDepCollector::addModuleMapFiles(
@@ -189,12 +235,23 @@ void ModuleDepCollector::applyDiscoveredDependencies(CompilerInvocation &CI) {
   CI.clearImplicitModuleBuildOptions();
 
   if (llvm::any_of(CI.getFrontendOpts().Inputs, needsModules)) {
+    Preprocessor &PP = ScanInstance.getPreprocessor();
+    if (Module *CurrentModule = PP.getCurrentModuleImplementation())
+      if (Optional<FileEntryRef> CurrentModuleMap =
+              PP.getHeaderSearchInfo()
+                  .getModuleMap()
+                  .getModuleMapFileForUniquing(CurrentModule))
+        CI.getFrontendOpts().ModuleMapFiles.emplace_back(
+            CurrentModuleMap->getName());
+
     SmallVector<ModuleID> DirectDeps;
     for (const auto &KV : ModularDeps)
       if (KV.second->ImportedByMainFile)
         DirectDeps.push_back(KV.second->ID);
 
+    // TODO: Report module maps the same way it's done for modular dependencies.
     addModuleMapFiles(CI, DirectDeps);
+
     addModuleFiles(CI, DirectDeps);
 
     for (const auto &KV : DirectPrebuiltModularDeps)
@@ -317,7 +374,7 @@ void ModuleDepCollectorPP::EndOfMainFile() {
     MDC.addFileDep(MDC.ScanInstance.getPreprocessorOpts().ImplicitPCHInclude);
 
   for (const Module *M :
-       MDC.ScanInstance.getPreprocessor().getAffectingModules())
+       MDC.ScanInstance.getPreprocessor().getAffectingClangModules())
     if (!MDC.isPrebuiltModule(M))
       DirectModularDeps.insert(M);
 
@@ -359,15 +416,14 @@ ModuleID ModuleDepCollectorPP::handleTopLevelModule(const Module *M) {
   MD.ImplicitModulePCMPath = std::string(M->getASTFile()->getName());
   MD.IsSystem = M->IsSystem;
 
-  const FileEntry *ModuleMap = MDC.ScanInstance.getPreprocessor()
-                                   .getHeaderSearchInfo()
-                                   .getModuleMap()
-                                   .getModuleMapFileForUniquing(M);
+  ModuleMap &ModMapInfo =
+      MDC.ScanInstance.getPreprocessor().getHeaderSearchInfo().getModuleMap();
+
+  Optional<FileEntryRef> ModuleMap = ModMapInfo.getModuleMapFileForUniquing(M);
 
   if (ModuleMap) {
-    StringRef Path = ModuleMap->tryGetRealPathName();
-    if (Path.empty())
-      Path = ModuleMap->getName();
+    SmallString<128> Path = ModuleMap->getNameAsRequested();
+    ModMapInfo.canonicalizeModuleMapPath(Path);
     MD.ClangModuleMapFile = std::string(Path);
   }
 
@@ -388,52 +444,17 @@ ModuleID ModuleDepCollectorPP::handleTopLevelModule(const Module *M) {
         MDC.addFileDep(MD, IF.getFile()->getName());
       });
 
-  // We usually don't need to list the module map files of our dependencies when
-  // building a module explicitly: their semantics will be deserialized from PCM
-  // files.
-  //
-  // However, some module maps loaded implicitly during the dependency scan can
-  // describe anti-dependencies. That happens when this module, let's call it
-  // M1, is marked as '[no_undeclared_includes]' and tries to access a header
-  // "M2/M2.h" from another module, M2, but doesn't have a 'use M2;'
-  // declaration. The explicit build needs the module map for M2 so that it
-  // knows that textually including "M2/M2.h" is not allowed.
-  // E.g., '__has_include("M2/M2.h")' should return false, but without M2's
-  // module map the explicit build would return true.
-  //
-  // An alternative approach would be to tell the explicit build what its
-  // textual dependencies are, instead of having it re-discover its
-  // anti-dependencies. For example, we could create and use an `-ivfs-overlay`
-  // with `fall-through: false` that explicitly listed the dependencies.
-  // However, that's more complicated to implement and harder to reason about.
-  if (M->NoUndeclaredIncludes) {
-    // We don't have a good way to determine which module map described the
-    // anti-dependency (let alone what's the corresponding top-level module
-    // map). We simply specify all the module maps in the order they were loaded
-    // during the implicit build during scan.
-    // TODO: Resolve this by serializing and only using Module::UndeclaredUses.
-    MDC.ScanInstance.getASTReader()->visitTopLevelModuleMaps(
-        *MF, [&](const FileEntry *FE) {
-          if (FE->getName().endswith("__inferred_module.map"))
-            return;
-          // The top-level modulemap of this module will be the input file. We
-          // don't need to specify it as a module map.
-          if (FE == ModuleMap)
-            return;
-          MD.ModuleMapFileDeps.push_back(FE->getName().str());
-        });
-  }
+  llvm::DenseSet<const Module *> SeenDeps;
+  addAllSubmodulePrebuiltDeps(M, MD, SeenDeps);
+  addAllSubmoduleDeps(M, MD, SeenDeps);
+  addAllAffectingClangModules(M, MD, SeenDeps);
 
-  // Add direct prebuilt module dependencies now, so that we can use them when
-  // creating a CompilerInvocation and computing context hash for this
-  // ModuleDeps instance.
-  // TODO: Squash these.
-  llvm::DenseSet<const Module *> SeenModules;
-  addAllSubmodulePrebuiltDeps(M, MD, SeenModules);
-  llvm::DenseSet<const Module *> AddedModules;
-  addAllSubmoduleDeps(M, MD, AddedModules);
-  llvm::DenseSet<const Module *> ProcessedModules;
-  addAllAffectingModules(M, MD, ProcessedModules);
+  MDC.ScanInstance.getASTReader()->visitTopLevelModuleMaps(
+      *MF, [&](FileEntryRef FE) {
+        if (FE.getNameAsRequested().endswith("__inferred_module.map"))
+          return;
+        MD.ModuleMapFileDeps.emplace_back(FE.getNameAsRequested());
+      });
 
   CompilerInvocation CI = MDC.makeInvocationForModuleBuildWithoutOutputs(
       MD, [&](CompilerInvocation &BuildInvocation) {
@@ -509,19 +530,19 @@ void ModuleDepCollectorPP::addModuleDep(
   }
 }
 
-void ModuleDepCollectorPP::addAllAffectingModules(
+void ModuleDepCollectorPP::addAllAffectingClangModules(
     const Module *M, ModuleDeps &MD,
     llvm::DenseSet<const Module *> &AddedModules) {
-  addAffectingModule(M, MD, AddedModules);
+  addAffectingClangModule(M, MD, AddedModules);
 
   for (const Module *SubM : M->submodules())
-    addAllAffectingModules(SubM, MD, AddedModules);
+    addAllAffectingClangModules(SubM, MD, AddedModules);
 }
 
-void ModuleDepCollectorPP::addAffectingModule(
+void ModuleDepCollectorPP::addAffectingClangModule(
     const Module *M, ModuleDeps &MD,
     llvm::DenseSet<const Module *> &AddedModules) {
-  for (const Module *Affecting : M->AffectingModules) {
+  for (const Module *Affecting : M->AffectingClangModules) {
     assert(Affecting == Affecting->getTopLevelModule() &&
            "Not quite import not top-level module");
     if (Affecting != M->getTopLevelModule() &&
@@ -559,23 +580,25 @@ bool ModuleDepCollector::isPrebuiltModule(const Module *M) {
   return true;
 }
 
-static StringRef makeAbsolute(CompilerInstance &CI, StringRef Path,
-                              SmallVectorImpl<char> &Storage) {
-  if (llvm::sys::path::is_absolute(Path))
+static StringRef makeAbsoluteAndPreferred(CompilerInstance &CI, StringRef Path,
+                                          SmallVectorImpl<char> &Storage) {
+  if (llvm::sys::path::is_absolute(Path) &&
+      !llvm::sys::path::is_style_windows(llvm::sys::path::Style::native))
     return Path;
   Storage.assign(Path.begin(), Path.end());
   CI.getFileManager().makeAbsolutePath(Storage);
+  llvm::sys::path::make_preferred(Storage);
   return StringRef(Storage.data(), Storage.size());
 }
 
 void ModuleDepCollector::addFileDep(StringRef Path) {
   llvm::SmallString<256> Storage;
-  Path = makeAbsolute(ScanInstance, Path, Storage);
+  Path = makeAbsoluteAndPreferred(ScanInstance, Path, Storage);
   FileDeps.push_back(std::string(Path));
 }
 
 void ModuleDepCollector::addFileDep(ModuleDeps &MD, StringRef Path) {
   llvm::SmallString<256> Storage;
-  Path = makeAbsolute(ScanInstance, Path, Storage);
+  Path = makeAbsoluteAndPreferred(ScanInstance, Path, Storage);
   MD.FileDeps.insert(Path);
 }

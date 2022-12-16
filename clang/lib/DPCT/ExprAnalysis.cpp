@@ -10,6 +10,7 @@
 
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
+#include "CUBAPIMigration.h"
 #include "CallExprRewriter.h"
 #include "DNNAPIMigration.h"
 #include "TypeLocRewriters.h"
@@ -232,8 +233,7 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc,
 
     auto Begin = getOffset(getExprLocation(BeginLoc));
     auto End = getOffsetAndLength(EndLoc);
-    if (SrcBeginLoc.isInvalid())
-      SrcBeginLoc = BeginLoc;
+    SrcBeginLoc = BeginLoc;
 
     // Avoid illegal range which will cause SIGABRT
     if (End.first + End.second < Begin) {
@@ -260,8 +260,16 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
   }
   // Calculate offset and length from SourceLocation
   auto End = getOffset(EndLoc);
+
+  Token Tok2;
+  Lexer::getRawToken(EndLoc, Tok2, SM, Context.getLangOpts());
+  // if the last token is ">>" or ">>>",
+  // since DPCT does not support nested template type migration,
+  // the last token should be treated as ">"
   auto LastTokenLength =
-      Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
+      Tok2.is(tok::greatergreater) || Tok2.is(tok::greatergreatergreater)
+          ? 1
+          : Tok2.getLength();
 
   auto DecompLoc = SM.getDecomposedLoc(BeginLoc);
   FileId = DecompLoc.first;
@@ -278,7 +286,6 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   if (IsInMacroDefine) {
     // If the expr is in macro define, and the CallSpellingBegin/End is set,
     // we can use the CallSpellingBegin/End to get a more precise range.
-    bool RangeInCall = false;
     if (CallSpellingBegin.isValid() && CallSpellingEnd.isValid()) {
       auto Range = getRangeInRange(E, CallSpellingBegin, CallSpellingEnd);
       auto DLBegin = SM.getDecomposedLoc(Range.first);
@@ -288,33 +295,7 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
         BeginLoc = Range.first;
         EndLoc = Range.second;
         End = getOffset(EndLoc);
-        RangeInCall = true;
       }
-    }
-    // In cases like:
-    // #define CCC <<<1,1>>>()
-    // #define KERNEL foo CCC
-    // The getRangeInRange cannot find the correct range,
-    // fallback to use heuristics.
-    if (!RangeInCall) {
-      if (SM.isMacroArgExpansion(E->getBeginLoc())) {
-        BeginLoc = SM.getSpellingLoc(
-            SM.getImmediateExpansionRange(E->getBeginLoc()).getBegin());
-        EndLoc = SM.getSpellingLoc(
-            SM.getImmediateExpansionRange(E->getEndLoc()).getEnd());
-      } else {
-        BeginLoc =
-            SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getBeginLoc()));
-        EndLoc = SM.getExpansionLoc(SM.getImmediateSpellingLoc(E->getEndLoc()));
-        if (isExprStraddle(E)) {
-          auto Range = getTheOneBeforeLastImmediateExapansion(E->getBeginLoc(),
-                                                              E->getEndLoc());
-          BeginLoc = SM.getImmediateSpellingLoc(Range.first);
-          EndLoc = SM.getImmediateSpellingLoc(Range.second);
-        }
-      }
-      End = getOffset(EndLoc) +
-            Lexer::MeasureTokenLength(EndLoc, SM, Context.getLangOpts());
     }
   } else {
     // If the Expr is FileID or is macro arg
@@ -460,7 +441,15 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
             clang::NestedNameSpecifier::SpecifierKind::NamespaceAlias;
     bool IsSpecicalAPI = isMathFunction(DRE->getNameInfo().getAsString()) ||
                          isCGAPI(DRE->getNameInfo().getAsString());
-    if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
+                         // for thrust::log10 and thrust::sinh ...
+    // log10 is a math function
+    if (Qualifier->getAsNamespace() &&
+        Qualifier->getAsNamespace()->getName() == "thrust" &&
+        dpct::DpctGlobalInfo::isInCudaPath(
+            Qualifier->getAsNamespace()->getBeginLoc())) {
+      CTSName = getNestedNameSpecifierString(Qualifier) +
+                DRE->getNameInfo().getAsString();
+    } else if (!IsNamespaceOrAlias || !IsSpecicalAPI) {
       CTSName = getNestedNameSpecifierString(Qualifier) +
                 DRE->getNameInfo().getAsString();
     }
@@ -508,22 +497,18 @@ void ExprAnalysis::analyzeExpr(const DeclRefExpr *DRE) {
     if (!ReplEnum.empty())
       addReplacement(DRE, ReplEnum);
     else {
-      auto &ReplBLASEnum = MapNames::findReplacedName(MapNames::BLASEnumsMap,
-                                                      ECD->getName().str());
-      if (!ReplBLASEnum.empty())
-        addReplacement(DRE, ReplBLASEnum);
-      else {
-        auto &ReplFuncAttrEnum = MapNames::findReplacedName(
-            MapNames::FunctionAttrMap, ECD->getName().str());
-        if (!ReplFuncAttrEnum.empty())
-          addReplacement(DRE, ReplFuncAttrEnum);
-        else {
-          auto &CuDNNEnum = MapNames::findReplacedName(
-              CuDNNTypeRule::CuDNNEnumNamesMap, ECD->getName().str());
-          if (!CuDNNEnum.empty())
-            addReplacement(DRE, CuDNNEnum);
-        }
-      }
+#define REPLACE_ENUM(MAP)                                                      \
+  do {                                                                         \
+    auto &Repl = MapNames::findReplacedName(MAP, ECD->getName().str());        \
+    if (!Repl.empty())                                                         \
+      addReplacement(DRE, Repl);                                               \
+  } while (0)
+      REPLACE_ENUM(MapNames::BLASEnumsMap);
+      REPLACE_ENUM(MapNames::FunctionAttrMap);
+      REPLACE_ENUM(CuDNNTypeRule::CuDNNEnumNamesMap);
+      REPLACE_ENUM(MapNames::SOLVEREnumsMap);
+      REPLACE_ENUM(MapNames::SPBLASEnumsMap);
+#undef REPLACE_ENUM
     }
   } else if (auto VD = dyn_cast<VarDecl>(DRE->getDecl())) {
     if (RefString == "warpSize" &&
@@ -587,11 +572,58 @@ void ExprAnalysis::analyzeExpr(const IntegerLiteral *IL) {
   }
 }
 
+void ExprAnalysis::analyzeExpr(const InitListExpr *ILE) {
+  if (const CXXFunctionalCastExpr *CFCE =
+          DpctGlobalInfo::findParent<CXXFunctionalCastExpr>(ILE)) {
+    // 'int64_t' might be alias to 'long'(LP64) or 'long long'(LLP64)
+    const auto *BT0 =
+        Context.getIntTypeForBitwidth(64, true)->getAs<BuiltinType>();
+    const auto *BT1 = CFCE->getType()->getAs<BuiltinType>();
+    if (CFCE->isListInitialization() && ILE->getNumInits() == 1 &&
+        (BT0 && BT1 && BT0->getKind() == BT1->getKind())) {
+      if (const auto *ME =
+              dyn_cast<MemberExpr>(ILE->getInit(0)->IgnoreImplicit())) {
+        auto QT = ME->getBase()->getType();
+        if (QT->isPointerType()) {
+          QT = QT->getPointeeType();
+        }
+        if (DpctGlobalInfo::getUnqualifiedTypeName(
+                QT->getCanonicalTypeUnqualified()) == "dim3") {
+          // Replace initializer list with explicit type conversion (e.g.,
+          // 'int64_t{d3[2]}' to 'int64_t(d3[2])') to slience narrowing
+          // error (e.g., 'size_t -> int64_t') for
+          // non-constant-expression in int64_t initializer list.
+          // E.g.,
+          // dim3 d3; int64_t{d3.x};
+          // will be migratd to
+          // sycl::range<3> d3; int64_t(d3[2]);
+          addReplacement(ILE->getLBraceLoc(), "(");
+          addReplacement(ILE->getRBraceLoc(), ")");
+        }
+      }
+    }
+  }
+  for (const auto &Init : ILE->inits())
+    dispatch(Init);
+}
+
 void ExprAnalysis::analyzeExpr(const CXXUnresolvedConstructExpr *Ctor) {
   analyzeType(Ctor->getTypeSourceInfo()->getTypeLoc());
   for (auto It = Ctor->arg_begin(); It != Ctor->arg_end(); It++) {
     dispatch(*It);
   }
+}
+
+void ExprAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
+  std::string TypeName = DpctGlobalInfo::getUnqualifiedTypeName(
+      Temp->getType().getCanonicalType());
+  if (StringRef(TypeName).startswith("cub::") &&
+      CubTypeRule::CanMappingToSyclType(TypeName)) {
+    analyzeType(Temp->getTypeSourceInfo()->getTypeLoc());
+    return;
+  }
+
+  analyzeExpr(static_cast<const CXXConstructExpr *>(Temp));
 }
 
 void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
@@ -743,6 +775,9 @@ void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
       }
     }
   } else if (BaseType == "dim3") {
+    if (ME->isArrow()) {
+      addReplacement(ME->getBase(), "(" + getDrefName(ME->getBase()) + ")");
+    }
     addReplacement(
         ME->getOperatorLoc(), ME->getMemberLoc(),
         MapNames::findReplacedName(MapNames::Dim3MemberNamesMap,
@@ -902,7 +937,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
         auto Extra = C->getExtraArguments();
         if (Extra.empty())
           return;
-        addReplacement(CE->getRParenLoc(), Extra);
+        addReplacement(C->getExtraArgLoc() - SrcBegin, 0, Extra);
       }
     }
   }
@@ -1017,9 +1052,18 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
         TYPELOC_CAST(TypedefTypeLoc).getTypedefNameDecl()->getName().str();
     break;
   case TypeLoc::Builtin:
-  case TypeLoc::Record:
-    TyName += DpctGlobalInfo::getTypeName(TL.getType());
+  case TypeLoc::Record: {
+    TyName = DpctGlobalInfo::getTypeName(TL.getType());
+    auto Itr = TypeLocRewriterFactoryBase::TypeLocRewriterMap->find(TyName);
+    if (Itr != TypeLocRewriterFactoryBase::TypeLocRewriterMap->end()) {
+      auto Rewriter = Itr->second->create(TL);
+      auto Result = Rewriter->rewrite();
+      if (Result.has_value())
+        addReplacement(SM.getExpansionLoc(SR.getBegin()),
+                       SM.getExpansionLoc(SR.getEnd()), CSCE, Result.value());
+    }
     break;
+  }
   case TypeLoc::TemplateTypeParm:
     if (auto D = TYPELOC_CAST(TemplateTypeParmTypeLoc).getDecl()) {
       return addReplacement(TL.getBeginLoc(), TL.getEndLoc(), CSCE,
@@ -1466,6 +1510,7 @@ void KernelArgumentAnalysis::dispatch(const Stmt *Expression) {
     ANALYZE_EXPR(CXXDependentScopeMemberExpr)
     ANALYZE_EXPR(MaterializeTemporaryExpr)
     ANALYZE_EXPR(LambdaExpr)
+    ANALYZE_EXPR(CXXTemporaryObjectExpr)
   default:
     return ExprAnalysis::dispatch(Expression);
   }
@@ -1502,6 +1547,10 @@ KernelConfigAnalysis::calculateWorkgroupSize(const CXXConstructExpr *Ctor) {
 
 void KernelArgumentAnalysis::analyzeExpr(const MaterializeTemporaryExpr *MTE) {
   KernelArgumentAnalysis::dispatch(MTE->getSubExpr());
+}
+
+void KernelArgumentAnalysis::analyzeExpr(const CXXTemporaryObjectExpr *Temp) {
+  ExprAnalysis::dispatch(Temp);
 }
 
 void KernelArgumentAnalysis::analyzeExpr(
@@ -1576,7 +1625,7 @@ void KernelArgumentAnalysis::analyzeExpr(const MemberExpr *ME) {
   }
 
   if (auto RD = ME->getBase()->getType()->getAsCXXRecordDecl()) {
-    if (!RD->isStandardLayout()) {
+    if (!RD->isTriviallyCopyable()) {
       IsRedeclareRequired = true;
     }
   }
@@ -1857,7 +1906,10 @@ void KernelConfigAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
           SM.getExpansionRange(Ctor->getEndLoc()).getEnd(),
           CtorString.replace(CtorString.length() - 2, 2, ")"));
     }
-    return addReplacement(Ctor,
+
+    auto Range =
+        getRangeInRange(Ctor, CallSpellingBegin, CallSpellingEnd, false);
+    return addReplacement(Range.first, Range.second,
                           CtorString.replace(CtorString.length() - 2, 2, ")"));
   }
   return ArgumentAnalysis::analyzeExpr(Ctor);
@@ -1881,14 +1933,14 @@ void KernelConfigAnalysis::analyze(const Expr *E, unsigned int Idx,
   if (IsInMacroDefine && SM.isMacroArgExpansion(E->getBeginLoc())) {
     Reversed = false;
     DirectRef = true;
-    if (ArgIndex == 3 && isPredefinedStreamHandle(E)) {
+    if (ArgIndex == 3 && isDefaultStream(E)) {
       addReplacement("0");
       return;
     }
   }
 
   DoReverse = ReverseIfNeed;
-  if (ArgIndex == 3 && isPredefinedStreamHandle(E)) {
+  if (ArgIndex == 3 && isDefaultStream(E)) {
     addReplacement("0");
     return;
   }
@@ -1946,7 +1998,6 @@ std::string ArgumentAnalysis::getRewriteString() {
           SubRepl->getLength(), SubRepl->getReplacementText().str());
     }
   }
-
   return SRs.getReplacedString();
 }
 

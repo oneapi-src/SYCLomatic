@@ -215,3 +215,5 @@ DEF_WARNING(FFT_DIRECTION_AND_PLACEMENT, 1099, "Verify if the default value of t
 DEF_COMMENT(FFT_DIRECTION_AND_PLACEMENT, 1099, "Verify if the default value of the direction and placement used in the function \"{0}\" is correct.")
 DEF_WARNING(FFT_EXTERNAL_WORKSPACE, 1100, "Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.")
 DEF_COMMENT(FFT_EXTERNAL_WORKSPACE, 1100, "Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.")
+DEF_WARNING(MACRO_EXPR_REPLACED, 1101, "'%0' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.")
+DEF_COMMENT(MACRO_EXPR_REPLACED, 1101, "'{0}' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.")

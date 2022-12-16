@@ -572,15 +572,15 @@ for.body:                                         ; preds = %for.body, %entry
 ; void load_gap_reverse(struct pair *P1, struct pair *P2, int X) {
 ;   for (int i = 1023; i >= 0; i--) {
 ;     int a = X + i;
-;     int b = A[i].y - i;
-;     B[i].x = a;
+;     int b = B[i].y - i;
+;     A[i].x = a;
 ;     B[i].y = b;
 ;   }
 ; }
 
 
 %pair = type { i64, i64 }
-define void @load_gap_reverse(%pair* noalias nocapture readonly %P1, %pair* noalias nocapture readonly %P2, i64 %X) {
+define void @load_gap_reverse(%pair* noalias nocapture %P1, %pair* noalias nocapture %P2, i64 %X) {
 ; CHECK-LABEL: @load_gap_reverse(
 ; CHECK-NEXT:  entry:
 ; CHECK-NEXT:    br i1 false, label [[SCALAR_PH:%.*]], label [[VECTOR_PH:%.*]]
@@ -1306,7 +1306,7 @@ define void @PR27626_4(i32 *%a, i32 %x, i32 %y, i32 %z, i64 %n) {
 ; CHECK-NEXT:    [[MIN_ITERS_CHECK:%.*]] = icmp ult i64 [[TMP0]], 6
 ; CHECK-NEXT:    br i1 [[MIN_ITERS_CHECK]], label [[SCALAR_PH:%.*]], label [[VECTOR_PH:%.*]]
 ; CHECK:       vector.ph:
-; CHECK-NEXT:    [[N_VEC:%.*]] = and i64 [[TMP2]], 9223372036854775804
+; CHECK-NEXT:    [[N_VEC:%.*]] = and i64 [[TMP2]], -4
 ; CHECK-NEXT:    [[IND_END:%.*]] = shl nuw i64 [[N_VEC]], 1
 ; CHECK-NEXT:    [[BROADCAST_SPLATINSERT:%.*]] = insertelement <4 x i32> poison, i32 [[Y:%.*]], i64 0
 ; CHECK-NEXT:    [[BROADCAST_SPLAT:%.*]] = shufflevector <4 x i32> [[BROADCAST_SPLATINSERT]], <4 x i32> poison, <4 x i32> zeroinitializer
@@ -1396,7 +1396,7 @@ define void @PR27626_5(i32 *%a, i32 %x, i32 %y, i32 %z, i64 %n) {
 ; CHECK-NEXT:    [[MIN_ITERS_CHECK:%.*]] = icmp ult i64 [[TMP0]], 6
 ; CHECK-NEXT:    br i1 [[MIN_ITERS_CHECK]], label [[SCALAR_PH:%.*]], label [[VECTOR_PH:%.*]]
 ; CHECK:       vector.ph:
-; CHECK-NEXT:    [[N_VEC:%.*]] = and i64 [[TMP2]], 9223372036854775804
+; CHECK-NEXT:    [[N_VEC:%.*]] = and i64 [[TMP2]], -4
 ; CHECK-NEXT:    [[TMP3:%.*]] = shl nuw i64 [[N_VEC]], 1
 ; CHECK-NEXT:    [[IND_END:%.*]] = or i64 [[TMP3]], 3
 ; CHECK-NEXT:    br label [[VECTOR_BODY:%.*]]
