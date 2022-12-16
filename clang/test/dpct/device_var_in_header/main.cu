@@ -1,3 +1,5 @@
+// UNSUPPORTED: -linux-
+// UNSUPPORTED: -windows-
 // RUN: dpct --process-all -in-root %S -out-root %T --cuda-include-path="%cuda-path/include"
 // RUN: FileCheck --input-file %T/common.dp.hpp --match-full-lines %S/common.cuh
 // RUN: FileCheck --input-file %T/f.dp.cpp --match-full-lines %S/f.cu
