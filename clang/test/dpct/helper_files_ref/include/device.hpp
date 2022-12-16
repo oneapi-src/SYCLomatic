@@ -321,34 +321,13 @@ public:
     // Guard the destruct of current_queues to make sure the ref count is safe.
     lock.lock();
   }
-  sycl::property_list get_property_list() const {
-#ifdef DPCT_PROFILING_ENABLED
-#ifdef DPCT_USM_LEVEL_NONE
-    auto property =
-        sycl::property_list{sycl::property::queue::enable_profiling()};
-#else
-    auto property =
-        sycl::property_list{sycl::property::queue::enable_profiling(),
-                            sycl::property::queue::in_order()};
-#endif
-#else
-#ifdef DPCT_USM_LEVEL_NONE
-    auto property =
-        sycl::property_list{};
-#else
-    auto property =
-        sycl::property_list{sycl::property::queue::in_order()};
-#endif
-#endif
-    return property;
-  }
   sycl::queue *create_queue(bool enable_exception_handler = false) {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     sycl::async_handler eh = {};
     if (enable_exception_handler) {
       eh = exception_handler;
     }
-    auto property = get_property_list();
+    auto property = get_default_property_list_for_queue();
     _queues.push_back(std::make_shared<sycl::queue>(
         _ctx, *this, eh, property));
 
@@ -374,6 +353,27 @@ public:
   sycl::context get_context() const { return _ctx; }
 
 private:
+  sycl::property_list get_default_property_list_for_queue() const {
+#ifdef DPCT_PROFILING_ENABLED
+#ifdef DPCT_USM_LEVEL_NONE
+    auto property =
+        sycl::property_list{sycl::property::queue::enable_profiling()};
+#else
+    auto property =
+        sycl::property_list{sycl::property::queue::enable_profiling(),
+                            sycl::property::queue::in_order()};
+#endif
+#else
+#ifdef DPCT_USM_LEVEL_NONE
+    auto property =
+        sycl::property_list{};
+#else
+    auto property =
+        sycl::property_list{sycl::property::queue::in_order()};
+#endif
+#endif
+    return property;
+  }
   void get_version(int &major, int &minor) const {
     // Version string has the following format:
     // a. OpenCL<space><major.minor><space><vendor-specific-information>

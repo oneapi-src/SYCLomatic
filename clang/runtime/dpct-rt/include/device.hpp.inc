@@ -703,36 +703,16 @@ public:
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
 // Device|device_ext
+// Device|device_ext_get_default_property_list_for_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  sycl::property_list get_property_list() const {
-#ifdef DPCT_PROFILING_ENABLED
-#ifdef DPCT_USM_LEVEL_NONE
-    auto property =
-        sycl::property_list{sycl::property::queue::enable_profiling()};
-#else
-    auto property =
-        sycl::property_list{sycl::property::queue::enable_profiling(),
-                            sycl::property::queue::in_order()};
-#endif
-#else
-#ifdef DPCT_USM_LEVEL_NONE
-    auto property =
-        sycl::property_list{};
-#else
-    auto property =
-        sycl::property_list{sycl::property::queue::in_order()};
-#endif
-#endif
-    return property;
-  }
   sycl::queue *create_queue(bool enable_exception_handler = false) {
     std::lock_guard<std::recursive_mutex> lock(m_mutex);
     sycl::async_handler eh = {};
     if (enable_exception_handler) {
       eh = exception_handler;
     }
-    auto property = get_property_list();
+    auto property = get_default_property_list_for_queue();
     _queues.push_back(std::make_shared<sycl::queue>(
         _ctx, *this, eh, property));
 
@@ -793,6 +773,34 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 private:
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_ext_get_default_property_list_for_queue|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  sycl::property_list get_default_property_list_for_queue() const {
+#ifdef DPCT_PROFILING_ENABLED
+#ifdef DPCT_USM_LEVEL_NONE
+    auto property =
+        sycl::property_list{sycl::property::queue::enable_profiling()};
+#else
+    auto property =
+        sycl::property_list{sycl::property::queue::enable_profiling(),
+                            sycl::property::queue::in_order()};
+#endif
+#else
+#ifdef DPCT_USM_LEVEL_NONE
+    auto property =
+        sycl::property_list{};
+#else
+    auto property =
+        sycl::property_list{sycl::property::queue::in_order()};
+#endif
+#endif
+    return property;
+  }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_ext_get_version|dpct
 // DPCT_PARENT_FEATURE|device_ext
