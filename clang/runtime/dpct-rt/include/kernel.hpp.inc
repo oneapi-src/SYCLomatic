@@ -328,7 +328,7 @@ namespace detail {
 static kernel_library load_dl_from_data(char const *const data, size_t size) {
   std::filesystem::path filename = write_data_to_file(data, size);
 #ifdef _WIN32
-  void *so = LoadLibraryA(filename.c_str());
+  void *so = LoadLibraryA(filename.string().c_str());
 #else
   void *so = dlopen(filename.c_str(), RTLD_LAZY);
 #endif
@@ -379,7 +379,7 @@ static kernel_library load_kernel_library_mem(char const *const image) {
  /// \param [in,out] library Handle to the library to be closed.
 static void unload_kernel_library(const kernel_library &library) {
 #ifdef _WIN32
-  FreeLibrary(library);
+  FreeLibrary(static_cast<HMODULE>(static_cast<void *>(library)));
 #else
   dlclose(library);
 #endif
@@ -408,7 +408,7 @@ static dpct::kernel_function get_kernel_function(kernel_library &library,
                                                  const std::string &name) {
 #ifdef _WIN32
   dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(
-      GetProcAddress(static_cast<HMODULE>(library),
+      GetProcAddress(static_cast<HMODULE>(static_cast<void *>(library)),
                      (name + std::string("_wrapper")).c_str()));
 #else
   dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(
