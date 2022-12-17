@@ -146,7 +146,11 @@ static std::filesystem::path write_data_to_file(char const *const data,
   // random filename in private directory
   std::stringstream filename;
   filename << std::hex << rand(prng);
+#ifdef _WIN32
+  auto filepath = directory_path / (filename.str() + ".dll");
+#else
   auto filepath = directory_path / filename.str();
+#endif
 
   // write data to temporary file
   auto outfile = std::ofstream(filepath, std::ios::out | std::ios::binary);
@@ -335,19 +339,16 @@ static kernel_library load_dl_from_data(char const *const data, size_t size) {
   if (so == nullptr)
     throw std::runtime_error("Failed to load kernel library");
 
+#ifndef _WIN32
   std::error_code ec;
 
-  // make temporary file writable so that it can be deleted.  Necessary on
-  // Windows
-  std::filesystem::permissions(filename, std::filesystem::perms::owner_all, ec);
-  if (ec)
-    throw std::runtime_error("could not set permissions");
-
+  // Windows DLL cannot be deleted while in use
   if (std::filesystem::remove_all(filename.remove_filename(),ec) != 2 || ec)
     // one directory and one temporary file should have been deleted
     throw std::runtime_error("Directory delete failed");
   if (ec)
     throw std::runtime_error("Directory delete failed");
+#endif
 
   return so;
 }
