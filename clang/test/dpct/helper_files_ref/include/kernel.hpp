@@ -11,6 +11,7 @@
 
 #include <sycl/sycl.hpp>
 #ifdef _WIN32
+#include <unordered_set>
 #include <windows.h>
 #else
 #include <dlfcn.h>
@@ -259,6 +260,33 @@ static uint64_t get_lib_size(char const *const blob) {
 #endif
 }
 
+#ifdef _WIN32
+class path_lib_record {
+public:
+  void operator=(const path_lib_record &) = delete;
+  ~path_lib_record() {
+    for (void *lib : libraries) {
+      FreeLibrary(static_cast<HMODULE>(lib));
+    }
+    for (std::filesystem::path path : paths) {
+      std::filesystem::permissions(path, std::filesystem::perms::owner_all);
+      std::filesystem::remove_all(path.remove_filename());
+    }
+  }
+  static void record_lib_path(std::filesystem::path path, void *library) {
+    paths.push_back(path);
+    libraries.insert(library);
+  }
+  static void remove_lib(void *library) {
+    libraries.erase(static_cast<void *>(library));
+  }
+
+private:
+  inline static std::vector<std::filesystem::path> paths;
+  inline static std::unordered_set<void *> libraries;
+};
+#endif
+
 } // namespace detail
 
 class kernel_library {
@@ -270,6 +298,9 @@ public:
 
 private:
   void *ptr;
+#ifdef _WIN32
+  inline static detail::path_lib_record single_instance_to_trigger_destructor;
+#endif
 };
 
 namespace detail {
@@ -284,7 +315,9 @@ static kernel_library load_dl_from_data(char const *const data, size_t size) {
   if (so == nullptr)
     throw std::runtime_error("Failed to load kernel library");
 
-#ifndef _WIN32
+#ifdef _WIN32
+  detail::path_lib_record::record_lib_path(filename, so);
+#else
   std::error_code ec;
 
   // Windows DLL cannot be deleted while in use
@@ -326,6 +359,7 @@ static kernel_library load_kernel_library_mem(char const *const image) {
 static void unload_kernel_library(const kernel_library &library) {
 #ifdef _WIN32
   FreeLibrary(static_cast<HMODULE>(static_cast<void *>(library)));
+  detail::path_lib_record::remove_lib(library);
 #else
   dlclose(library);
 #endif
