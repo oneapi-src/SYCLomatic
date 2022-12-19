@@ -259,3 +259,38 @@ void set_difference_by_key_test() {
   thrust::set_difference_by_key(thrust::host,Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue, thrust::greater<int>());
   thrust::set_difference_by_key(Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue, thrust::greater<int>());
 }
+
+
+void set_difference_test() {
+  const int N=7,M=5,P=3;
+  int A[N]={0, 1, 3, 4, 5, 6, 9};
+  int B[M]={1, 3, 5, 7, 9};
+  int C[P];
+  int ans[P]={0,4,6};
+
+
+//CHECK:  if (dpct::is_device_ptr(A)) {
+//CHECK-NEXT:    oneapi::dpl::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A + N, B, B + M, C));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A + N, B, B + M, C);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(A + N)) {
+//CHECK-NEXT:    oneapi::dpl::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B), dpct::device_pointer<int>(B + M), dpct::device_pointer<int>(C));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A + N, B, B + M, C);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(A)) {
+//CHECK-NEXT:    oneapi::dpl::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B), dpct::device_pointer<int>(B + M), dpct::device_pointer<int>(C), std::greater<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A + N, B, B + M, C, std::greater<int>());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(A + N)) {
+//CHECK-NEXT:    oneapi::dpl::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<int>(B), dpct::device_pointer<int>(B + M), dpct::device_pointer<int>(C), std::greater<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A + N, B, B + M, C, std::greater<int>());
+//CHECK-NEXT:  };
+  thrust::set_difference(thrust::host, A,A+N,B,B+M,C);
+  thrust::set_difference( A,A+N,B,B+M,C);
+  thrust::set_difference(thrust::host, A,A+N,B,B+M,C, thrust::greater<int>());
+  thrust::set_difference( A,A+N,B,B+M,C, thrust::greater<int>());
+}
