@@ -8550,8 +8550,11 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
   auto &SM = DpctGlobalInfo::getSourceManager();
   const ValueDecl *MD = getDecl(CE->getArg(0));
   std::string InsertStr;
+  bool IsParmVarDecl = isa<ParmVarDecl>(MD);
 
-  report(CE->getBeginLoc(), Diagnostics::TIME_MEASUREMENT_FOUND, false);
+  if (!IsParmVarDecl)
+    report(CE->getBeginLoc(), Diagnostics::TIME_MEASUREMENT_FOUND, false);
+
   DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), HT_Chrono);
 
   if (isInMacroDefinition(MD->getBeginLoc(), MD->getEndLoc())) {
@@ -8565,13 +8568,17 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
   auto Pair = std::make_pair(MD, InsertStr);
   if (DeclDupFilter.find(Pair) == DeclDupFilter.end()) {
     DeclDupFilter.insert(Pair);
-    emplaceTransformation(new InsertAfterDecl(MD, std::move(InsertStr)));
+    if (!IsParmVarDecl)
+      emplaceTransformation(new InsertAfterDecl(MD, std::move(InsertStr)));
   }
 
   std::ostringstream Repl;
   // Replace event recording with std::chrono timing
-  Repl << getTimePointNameForEvent(CE->getArg(0), false)
-       << " = std::chrono::steady_clock::now()";
+  if (!IsParmVarDecl) {
+    Repl << getTimePointNameForEvent(CE->getArg(0), false)
+        << " = std::chrono::steady_clock::now()";
+  }
+
   const std::string Name =
       CE->getCalleeDecl()->getAsFunction()->getNameAsString();
 
@@ -8612,13 +8619,20 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
       DpctGlobalInfo::getInstance().insertTimeStubTypeInfo(
           ReplWithSubmitBarrier, ReplWithoutSubmitBarrier);
     }
+    if (!IsParmVarDecl)
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO, false);
 
-    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO, false);
     auto OuterStmt = findNearestNonExprNonDeclAncestorStmt(CE);
-    Repl << "; ";
+
+    if (!IsParmVarDecl)
+      Repl << "; ";
+
     if (IndentLoc.isMacroID())
       IndentLoc = SM.getExpansionLoc(IndentLoc);
-    Repl << getNL() << getIndent(IndentLoc, SM).str();
+
+    if (!IsParmVarDecl)
+      Repl << getNL() << getIndent(IndentLoc, SM).str();
+
     auto TM = new InsertText(SM.getExpansionLoc(OuterStmt->getBeginLoc()),
                              std::move(Repl.str()));
     TM->setInsertPosition(IP_Right);
