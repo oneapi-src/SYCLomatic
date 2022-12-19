@@ -514,3 +514,63 @@ void stable_sort_test() {
   thrust::stable_sort(thrust::host, datas,datas+N, thrust::greater<int>());
   thrust::stable_sort(datas,datas+N, thrust::greater<int>());
 }
+
+void set_difference_by_key_test() {
+  const int N=7,M=5,P=3;
+  int Akey[N]={0, 1, 3, 4, 5, 6, 9};
+  int Avalue[N]={0, 0, 0, 0, 0, 0, 0};
+  int Bkey[M]={1, 3, 5, 7, 9};
+  int Bvalue[N]={1, 1, 1, 1, 1 };
+
+  int Ckey[P];
+  int Cvalue[P];
+  int anskey[P]={0,4,6};
+  int ansvalue[P]={0,0,0};
+  int Ckey[P];
+  int Cvalue[P];
+  int anskey[P]={0,4,6};
+  int ansvalue[P]={0,0,0};
+  thrust::host_vector<int> h_VAkey(Akey,Akey+N);
+  thrust::host_vector<int> h_VAvalue(Avalue,Avalue+N);
+
+  thrust::host_vector<int> h_VBkey(Bkey,Bkey+M);
+  thrust::host_vector<int> h_VBvalue(Bvalue,Bvalue+M);
+
+  thrust::host_vector<int> h_VCkey(Ckey,Ckey+P);
+  thrust::host_vector<int> h_VCvalue(Cvalue,Cvalue+P);
+  typedef thrust::pair<thrust::host_vector<int>::iterator, thrust::host_vector<int>::iterator> h_iter_pair;
+  thrust::device_vector<int> d_VAkey(Akey,Akey+N);
+  thrust::device_vector<int> d_VAvalue(Avalue,Avalue+N);
+
+  thrust::device_vector<int> d_VBkey(Bkey,Bkey+M);
+  thrust::device_vector<int> d_VBvalue(Bvalue,Bvalue+M);
+
+  thrust::device_vector<int> d_VCkey(Ckey,Ckey+P);
+  thrust::device_vector<int> d_VCvalue(Cvalue,Cvalue+P);
+  typedef thrust::pair<thrust::device_vector<int>::iterator, thrust::device_vector<int>::iterator> d_iter_pair;
+
+// CHECK:  dpct::set_difference(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+// CHECK-NEXT:  thrust::set_difference_by_key(thrust::device, d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(),
+// CHECK-NEXT:  thrust::set_difference_by_key( d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), thrust::greater<int>());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey+N, Bkey, Bkey+M, Avalue, Bvalue, Ckey, Cvalue);
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey+N, Bkey, Bkey+M, Avalue, Bvalue, Ckey, Cvalue);
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey+N, Bkey, Bkey+M, Avalue, Bvalue, Ckey, Cvalue, std::greater<int>());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey+N, Bkey, Bkey+M, Avalue, Bvalue, Ckey, Cvalue, std::greater<int>());
+  thrust::set_difference_by_key(thrust::host, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+  thrust::set_difference_by_key(h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+  thrust::set_difference_by_key(thrust::host, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_difference_by_key(h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_difference_by_key(thrust::device, d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+  thrust::set_difference_by_key(d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+  thrust::set_difference_by_key(thrust::device, d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(),
+  thrust::set_difference_by_key( d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_difference_by_key(thrust::host,Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue);
+  thrust::set_difference_by_key(Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue);
+  thrust::set_difference_by_key(thrust::host,Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue, thrust::greater<int>());
+  thrust::set_difference_by_key(Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue, thrust::greater<int>());
+}

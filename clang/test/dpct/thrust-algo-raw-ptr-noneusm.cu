@@ -192,8 +192,70 @@ void stable_sort_test() {
   int datas[N]={1, 4, 2, 8, 5, 7};
   int ans[N]={1, 2, 4, 5, 7, 8};
 
+//CHECK:  if (dpct::is_device_ptr(datas)) {
+//CHECK-NEXT:    oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(datas + N));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas + N);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(datas + N)) {
+//CHECK-NEXT:    oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(datas), dpct::device_pointer<int>(datas + N));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas + N);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(datas)) {
+//CHECK-NEXT:    oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(datas), dpct::device_pointer<int>(datas + N), std::greater<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas + N, std::greater<int>());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(datas + N)) {
+//CHECK-NEXT:    oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(datas), dpct::device_pointer<int>(datas + N), std::greater<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas + N, std::greater<int>());
+//CHECK-NEXT:  };
   thrust::stable_sort(thrust::host, datas,datas+N);
   thrust::stable_sort(datas,datas+N);
   thrust::stable_sort(thrust::host, datas,datas+N, thrust::greater<int>());
   thrust::stable_sort(datas,datas+N, thrust::greater<int>());
+}
+
+void set_difference_by_key_test() {
+  const int N=7,M=5,P=3;
+  int Akey[N]={0, 1, 3, 4, 5, 6, 9};
+  int Avalue[N]={0, 0, 0, 0, 0, 0, 0};
+  int Bkey[M]={1, 3, 5, 7, 9};
+  int Bvalue[N]={1, 1, 1, 1, 1 };
+
+  int Ckey[P];
+  int Cvalue[P];
+  int anskey[P]={0,4,6};
+  int ansvalue[P]={0,0,0};
+  int Ckey[P];
+  int Cvalue[P];
+  int anskey[P]={0,4,6};
+  int ansvalue[P]={0,0,0};
+
+//CHECK:  if (dpct::is_device_ptr(Akey)) {
+//CHECK-NEXT:    dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(Akey + N, Bkey, Bkey + M, Avalue, Bvalue, Ckey, Cvalue));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Bvalue, Ckey, Cvalue);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(Akey + N)) {
+//CHECK-NEXT:    dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(Akey), dpct::device_pointer<int>(Akey + N), dpct::device_pointer<int>(Bkey), dpct::device_pointer<int>(Bkey + M), dpct::device_pointer<int>(Avalue), dpct::device_pointer<int>(Bvalue), dpct::device_pointer<int>(Ckey), dpct::device_pointer<int>(Cvalue));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Bvalue, Ckey, Cvalue);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(Akey)) {
+//CHECK-NEXT:    dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(Akey), dpct::device_pointer<int>(Akey + N), dpct::device_pointer<int>(Bkey), dpct::device_pointer<int>(Bkey + M), dpct::device_pointer<int>(Avalue), dpct::device_pointer<int>(Bvalue), dpct::device_pointer<int>(Ckey), dpct::device_pointer<int>(Cvalue), std::greater<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Bvalue, Ckey, Cvalue, std::greater<int>());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(Akey + N)) {
+//CHECK-NEXT:    dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(Akey), dpct::device_pointer<int>(Akey + N), dpct::device_pointer<int>(Bkey), dpct::device_pointer<int>(Bkey + M), dpct::device_pointer<int>(Avalue), dpct::device_pointer<int>(Bvalue), dpct::device_pointer<int>(Ckey), dpct::device_pointer<int>(Cvalue), std::greater<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Bvalue, Ckey, Cvalue, std::greater<int>());
+//CHECK-NEXT:  };
+  thrust::set_difference_by_key(thrust::host,Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue);
+  thrust::set_difference_by_key(Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue);
+  thrust::set_difference_by_key(thrust::host,Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue, thrust::greater<int>());
+  thrust::set_difference_by_key(Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue, thrust::greater<int>());
 }
