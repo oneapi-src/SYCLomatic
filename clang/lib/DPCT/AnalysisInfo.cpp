@@ -2366,8 +2366,6 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
   {
     auto FunctionBlock = Printer.block();
     Printer.indent();
-    requestFeature(HelperFeatureEnum::Kernel_dpct_export_define,
-                   FilePath);
     Printer << "DPCT_EXPORT void " << FuncName << "_wrapper(" << MapNames::getClNamespace()
             << "queue &queue, const " << MapNames::getClNamespace()
             << "nd_range<3> &nr, unsigned int localMemSize, void "

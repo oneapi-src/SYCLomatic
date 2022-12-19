@@ -4,10 +4,7 @@
 // RUN:      %s -- -x cuda -ptx
 // RUN: grep "args_selector:" %T/Util/api_test26_out/MainSourceFiles.yaml \
 // RUN: | python -c "len(input().splitlines()) == 1"
-// RUN: grep "dpct_export_define:" %T/Util/api_test26_out/MainSourceFiles.yaml \
-// RUN: | python -c "len(input().splitlines()) == 1"
 
 // TEST_FEATURE: Util_args_selector
-// TEST_FEATURE: Kernel_dpct_export_define
 
 extern "C" __global__ void kernel(int *x, short y) {}

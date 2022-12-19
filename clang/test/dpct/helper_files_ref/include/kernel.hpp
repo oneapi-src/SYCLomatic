@@ -36,11 +36,5 @@ static kernel_function_info get_kernel_function_info(const void *function) {
   return kernel_info;
 }
 
-#ifdef _WIN32
-#define DPCT_EXPORT __declspec(dllexport)
-#else
-#define DPCT_EXPORT
-#endif
-
 } // namespace dpct
 #endif // __DPCT_KERNEL_HPP__

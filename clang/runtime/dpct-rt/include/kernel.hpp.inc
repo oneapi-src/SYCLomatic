@@ -86,15 +86,5 @@ static kernel_function_info get_kernel_function_info(const void *function) {
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|dpct_export_define|dpct
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-#ifdef _WIN32
-#define DPCT_EXPORT __declspec(dllexport)
-#else
-#define DPCT_EXPORT
-#endif
-// DPCT_LABEL_END
-
 } // namespace dpct
 #endif // __DPCT_KERNEL_HPP__
