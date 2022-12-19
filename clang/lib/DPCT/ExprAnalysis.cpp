@@ -880,9 +880,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
       // applyAllSubExprRepl
       if (Result.has_value()) {
         auto ResultStr = Result.value();
-        addExtReplacement(std::make_shared<ExtReplacement>(
-            SM, SM.getSpellingLoc(CE->getBeginLoc()), getCalleeName(CE).size(),
-            ResultStr, nullptr));
+        addReplacement(CE->getCallee(), ResultStr);
         Rewriter->Analyzer.applyAllSubExprRepl();
       }
     } else {

@@ -1,3 +1,4 @@
+---
 - Rule: rule1
   Kind: API
   Priority: Takeover
@@ -13,4 +14,17 @@
   Out: dummy_func(d_in, d_out, n)
   Includes: []
   Attributes: {}
-
+- Rule: rule3
+  Kind: API
+  Priority: Takeover
+  In: cub::DeviceSegmentedReduce::Reduce
+  Out: dummy_func
+  Includes: []
+  Attributes:
+    ReplaceCalleeNameOnly: true
+- Rule: rule4
+  Kind: API
+  Priority: Takeover
+  In: getCudaStream
+  Out: getXpuStream()
+  Includes: []

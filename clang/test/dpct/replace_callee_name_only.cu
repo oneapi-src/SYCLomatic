@@ -5,13 +5,26 @@
 // RUN: cd %T
 // RUN: rm -rf %T/replace_callee_name_only_output
 // RUN: mkdir %T/replace_callee_name_only_output
-// RUN: dpct -out-root %T/replace_callee_name_only_output replace_callee_name_only.cu --cuda-include-path="%cuda-path/include" --usm-level=none --rule-file=replace_callee_name_only.yaml -- -x cuda --cuda-host-only
+// RUN: dpct --format-range=none -out-root %T/replace_callee_name_only_output replace_callee_name_only.cu --cuda-include-path="%cuda-path/include" --usm-level=none --rule-file=replace_callee_name_only.yaml -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/replace_callee_name_only_output/replace_callee_name_only.dp.cpp --match-full-lines replace_callee_name_only.cu
 
 #include <cub/cub.cuh>
 #include <stddef.h>
 
-int n, *d_in, *d_out;
+struct CustomMin {
+  template <typename OutputT>
+  __host__ __device__ __forceinline__ OutputT
+  operator()(const OutputT& a, const OutputT& b) const {
+    if (std::isnan(a)) {
+      return a;
+    } else if (std::isnan(b)) {
+      return b;
+    }
+    return std::min<OutputT>(a, b);
+  }
+} min_op;
+
+int n, initial_value, *d_in, *d_out, *d_offsets;
 void *tmp;
 size_t tmp_size;
 
@@ -23,6 +36,9 @@ size_t tmp_size;
 
 void dummy_func(int *, int *, int) {}
 void dummy_func(void *, size_t, int *, int *, int) {}
+void dummy_func(void *, size_t, int *, int *, int, int *, int *, CustomMin, int, cudaStream_t) {}
+cudaStream_t getCudaStream() { return nullptr; }
+cudaStream_t getXpuStream() { return nullptr; }
 
 void test0() {
   // CHECK: CUB_WRAPPER(dummy_func, d_in, d_out, n);
@@ -32,4 +48,10 @@ void test0() {
 void test1() {
   // CHECK: dummy_func(d_in, d_out, n);
   cub::DeviceScan::ExclusiveSum(tmp, tmp_size, d_in, d_out, n);
+}
+
+void test2() {
+  // CHECK: dummy_func(tmp, tmp_size, d_in, d_out, n, d_offsets, d_offsets, min_op, initial_value, getXpuStream());
+  cub::DeviceSegmentedReduce::Reduce(tmp, tmp_size, d_in, d_out, n, d_offsets, d_offsets, min_op, initial_value, getCudaStream());
+  return c;
 }

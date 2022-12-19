@@ -12427,6 +12427,7 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
      return;
 
   ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
   EA.applyAllSubExprRepl();
 
   auto FD = CE->getDirectCallee();
