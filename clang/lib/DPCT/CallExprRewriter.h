@@ -1242,9 +1242,9 @@ class UserDefinedRewriter : public CallExprRewriter {
 
 public:
   UserDefinedRewriter(const CallExpr *CE, const OutputBuilder &OB,
-                      const MetaRuleObject::Attributes &RuleAttribute = {})
+                      const MetaRuleObject::Attributes &RuleAttributes = {})
       : CallExprRewriter(CE, "") {
-    NoRewrite = RuleAttribute.ReplaceCalleeNameOnly;
+    NoRewrite = RuleAttributes.ReplaceCalleeNameOnly;
     // build result string with call
     llvm::raw_string_ostream OS(ResultStr);
     buildRewriterStr(Call, OS, OB);
@@ -1324,7 +1324,7 @@ class UserDefinedRewriterFactory : public CallExprRewriterFactoryBase {
   OutputBuilder OB;
   std::string OutStr;
   std::vector<std::string> &Includes;
-  MetaRuleObject::Attributes RuleAttribute;
+  MetaRuleObject::Attributes RuleAttributes;
 
   struct NullRewriter : public CallExprRewriter {
     NullRewriter(const CallExpr *C, StringRef Name)
@@ -1349,7 +1349,7 @@ public:
 public:
   UserDefinedRewriterFactory(MetaRuleObject &R)
       : OutStr(R.Out), Includes(R.Includes),
-        RuleAttribute(R.RuleAttributes) {
+        RuleAttributes(R.RuleAttributes) {
     Priority = R.Priority;
     OB.Kind = OutputBuilder::Kind::Top;
     OB.RuleName = R.RuleId;
@@ -1371,13 +1371,13 @@ public:
     if (!Call)
       return std::shared_ptr<UserDefinedRewriter>();
 
-    if (hasExplicitTemplateArgs(Call) && !RuleAttribute.HasExplicitTemplateArgs)
+    if (hasExplicitTemplateArgs(Call) && !RuleAttributes.HasExplicitTemplateArgs)
       return std::make_shared<NullRewriter>(Call, "");
 
     for (auto &Header : Includes)
       DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), Header);
 
-    return std::make_shared<UserDefinedRewriter>(Call, OB, RuleAttribute);
+    return std::make_shared<UserDefinedRewriter>(Call, OB, RuleAttributes);
   }
 };
 
