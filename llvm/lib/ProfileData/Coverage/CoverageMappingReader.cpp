@@ -129,7 +129,7 @@ Error RawCoverageFilenamesReader::read(CovMapVersion Version) {
     // Read compressed filenames.
     StringRef CompressedFilenames = Data.substr(0, CompressedLen);
     Data = Data.substr(CompressedLen);
-    auto Err = compression::zlib::uncompress(
+    auto Err = compression::zlib::decompress(
         arrayRefFromStringRef(CompressedFilenames), StorageBuf,
         UncompressedLen);
     if (Err) {
@@ -817,8 +817,8 @@ static Error readCoverageMappingData(
   // In Version4, function records are not affixed to coverage headers. Read
   // the records from their dedicated section.
   if (Version >= CovMapVersion::Version4)
-    return Reader->readFunctionRecords(FuncRecBuf, FuncRecBufEnd, None, nullptr,
-                                       nullptr);
+    return Reader->readFunctionRecords(FuncRecBuf, FuncRecBufEnd, std::nullopt,
+                                       nullptr, nullptr);
   return Error::success();
 }
 

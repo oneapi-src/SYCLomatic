@@ -70,6 +70,7 @@
 #include "llvm/ADT/StringSet.h"
 #include "llvm/ADT/Triple.h"
 #include "llvm/ADT/iterator.h"
+#include "llvm/Analysis/GlobalsModRef.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Argument.h"
@@ -544,7 +545,8 @@ class DataFlowSanitizer {
 public:
   DataFlowSanitizer(const std::vector<std::string> &ABIListFiles);
 
-  bool runImpl(Module &M, ModuleAnalysisManager *AM = nullptr);
+  bool runImpl(Module &M,
+               llvm::function_ref<TargetLibraryInfo &(Function &)> GetTLI);
 };
 
 struct DFSanFunction {
@@ -553,7 +555,7 @@ struct DFSanFunction {
   DominatorTree DT;
   bool IsNativeABI;
   bool IsForceZeroLabels;
-  TargetLibraryInfo *TLI = nullptr;
+  TargetLibraryInfo &TLI;
   AllocaInst *LabelReturnAlloca = nullptr;
   AllocaInst *OriginReturnAlloca = nullptr;
   DenseMap<Value *, Value *> ValShadowMap;
@@ -585,7 +587,7 @@ struct DFSanFunction {
   DenseMap<Value *, std::set<Value *>> ShadowElements;
 
   DFSanFunction(DataFlowSanitizer &DFS, Function *F, bool IsNativeABI,
-                bool IsForceZeroLabels, TargetLibraryInfo *TLI)
+                bool IsForceZeroLabels, TargetLibraryInfo &TLI)
       : DFS(DFS), F(F), IsNativeABI(IsNativeABI),
         IsForceZeroLabels(IsForceZeroLabels), TLI(TLI) {
     DT.recalculate(*F);
@@ -1085,8 +1087,8 @@ bool DataFlowSanitizer::initializeModule(Module &M) {
                                 Type::getInt8PtrTy(*Ctx), IntptrTy};
   DFSanSetLabelFnTy = FunctionType::get(Type::getVoidTy(*Ctx),
                                         DFSanSetLabelArgs, /*isVarArg=*/false);
-  DFSanNonzeroLabelFnTy =
-      FunctionType::get(Type::getVoidTy(*Ctx), None, /*isVarArg=*/false);
+  DFSanNonzeroLabelFnTy = FunctionType::get(Type::getVoidTy(*Ctx), std::nullopt,
+                                            /*isVarArg=*/false);
   DFSanVarargWrapperFnTy = FunctionType::get(
       Type::getVoidTy(*Ctx), Type::getInt8PtrTy(*Ctx), /*isVarArg=*/false);
   DFSanConditionalCallbackFnTy =
@@ -1232,19 +1234,22 @@ DataFlowSanitizer::buildWrapperFunction(Function *F, StringRef NewFName,
 
 // Initialize DataFlowSanitizer runtime functions and declare them in the module
 void DataFlowSanitizer::initializeRuntimeFunctions(Module &M) {
+  LLVMContext &C = M.getContext();
   {
     AttributeList AL;
-    AL = AL.addFnAttribute(M.getContext(), Attribute::NoUnwind);
-    AL = AL.addFnAttribute(M.getContext(), Attribute::ReadOnly);
-    AL = AL.addRetAttribute(M.getContext(), Attribute::ZExt);
+    AL = AL.addFnAttribute(C, Attribute::NoUnwind);
+    AL = AL.addFnAttribute(
+        C, Attribute::getWithMemoryEffects(C, MemoryEffects::readOnly()));
+    AL = AL.addRetAttribute(C, Attribute::ZExt);
     DFSanUnionLoadFn =
         Mod->getOrInsertFunction("__dfsan_union_load", DFSanUnionLoadFnTy, AL);
   }
   {
     AttributeList AL;
-    AL = AL.addFnAttribute(M.getContext(), Attribute::NoUnwind);
-    AL = AL.addFnAttribute(M.getContext(), Attribute::ReadOnly);
-    AL = AL.addRetAttribute(M.getContext(), Attribute::ZExt);
+    AL = AL.addFnAttribute(C, Attribute::NoUnwind);
+    AL = AL.addFnAttribute(
+        C, Attribute::getWithMemoryEffects(C, MemoryEffects::readOnly()));
+    AL = AL.addRetAttribute(C, Attribute::ZExt);
     DFSanLoadLabelAndOriginFn = Mod->getOrInsertFunction(
         "__dfsan_load_label_and_origin", DFSanLoadLabelAndOriginFnTy, AL);
   }
@@ -1375,7 +1380,8 @@ void DataFlowSanitizer::injectMetadataGlobals(Module &M) {
   });
 }
 
-bool DataFlowSanitizer::runImpl(Module &M, ModuleAnalysisManager *AM) {
+bool DataFlowSanitizer::runImpl(
+    Module &M, llvm::function_ref<TargetLibraryInfo &(Function &)> GetTLI) {
   initializeModule(M);
 
   if (ABIList.isIn(M, "skip"))
@@ -1467,8 +1473,8 @@ bool DataFlowSanitizer::runImpl(Module &M, ModuleAnalysisManager *AM) {
     }
   }
 
-  ReadOnlyNoneAttrs.addAttribute(Attribute::ReadOnly)
-      .addAttribute(Attribute::ReadNone);
+  // TODO: This could be more precise.
+  ReadOnlyNoneAttrs.addAttribute(Attribute::Memory);
 
   // First, change the ABI of every function in the module.  ABI-listed
   // functions keep their original ABI and get a wrapper function.
@@ -1577,18 +1583,8 @@ bool DataFlowSanitizer::runImpl(Module &M, ModuleAnalysisManager *AM) {
 
     removeUnreachableBlocks(*F);
 
-    // TODO: Use reference instead of pointer, TLI should not be optional.
-    // Using a pointer here is a hack so that DFSan run from legacy
-    // pass manager can skip getting the TargetLibraryAnalysis.
-    TargetLibraryInfo *TLI = nullptr;
-    if (AM) {
-      auto &FAM =
-          AM->getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
-      TLI = &FAM.getResult<TargetLibraryAnalysis>(*F);
-    }
-
     DFSanFunction DFSF(*this, F, FnsWithNativeABI.count(F),
-                       FnsWithForceZeroLabel.count(F), TLI);
+                       FnsWithForceZeroLabel.count(F), GetTLI(*F));
 
     // DFSanVisitor may create new basic blocks, which confuses df_iterator.
     // Build a copy of the list before iterating over it.
@@ -2469,7 +2465,7 @@ void DFSanFunction::storePrimitiveShadowOrigin(Value *Addr, uint64_t Size,
   if (LeftSize >= ShadowVecSize) {
     auto *ShadowVecTy =
         FixedVectorType::get(DFS.PrimitiveShadowTy, ShadowVecSize);
-    Value *ShadowVec = UndefValue::get(ShadowVecTy);
+    Value *ShadowVec = PoisonValue::get(ShadowVecTy);
     for (unsigned I = 0; I != ShadowVecSize; ++I) {
       ShadowVec = IRB.CreateInsertElement(
           ShadowVec, PrimitiveShadow,
@@ -3199,7 +3195,7 @@ void DFSanVisitor::visitCallBase(CallBase &CB) {
     return;
 
   LibFunc LF;
-  if (DFSF.TLI->getLibFunc(CB, LF)) {
+  if (DFSF.TLI.getLibFunc(CB, LF)) {
     // libatomic.a functions need to have special handling because there isn't
     // a good way to intercept them or compile the library with
     // instrumentation.
@@ -3336,38 +3332,20 @@ void DFSanVisitor::visitPHINode(PHINode &PN) {
   DFSF.PHIFixups.push_back({&PN, ShadowPN, OriginPN});
 }
 
-namespace {
-class DataFlowSanitizerLegacyPass : public ModulePass {
-private:
-  std::vector<std::string> ABIListFiles;
-
-public:
-  static char ID;
-
-  DataFlowSanitizerLegacyPass(
-      const std::vector<std::string> &ABIListFiles = std::vector<std::string>())
-      : ModulePass(ID), ABIListFiles(ABIListFiles) {}
-
-  bool runOnModule(Module &M) override {
-    return DataFlowSanitizer(ABIListFiles).runImpl(M);
-  }
-};
-} // namespace
-
-char DataFlowSanitizerLegacyPass::ID;
-
-INITIALIZE_PASS(DataFlowSanitizerLegacyPass, "dfsan",
-                "DataFlowSanitizer: dynamic data flow analysis.", false, false)
-
-ModulePass *llvm::createDataFlowSanitizerLegacyPassPass(
-    const std::vector<std::string> &ABIListFiles) {
-  return new DataFlowSanitizerLegacyPass(ABIListFiles);
-}
-
 PreservedAnalyses DataFlowSanitizerPass::run(Module &M,
                                              ModuleAnalysisManager &AM) {
-  if (DataFlowSanitizer(ABIListFiles).runImpl(M, &AM)) {
-    return PreservedAnalyses::none();
-  }
-  return PreservedAnalyses::all();
+  auto GetTLI = [&](Function &F) -> TargetLibraryInfo & {
+    auto &FAM =
+        AM.getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
+    return FAM.getResult<TargetLibraryAnalysis>(F);
+  };
+  if (!DataFlowSanitizer(ABIListFiles).runImpl(M, GetTLI))
+    return PreservedAnalyses::all();
+
+  PreservedAnalyses PA = PreservedAnalyses::none();
+  // GlobalsAA is considered stateless and does not get invalidated unless
+  // explicitly invalidated; PreservedAnalyses::none() is not enough. Sanitizers
+  // make changes that require GlobalsAA to be invalidated.
+  PA.abandon<GlobalsAA>();
+  return PA;
 }

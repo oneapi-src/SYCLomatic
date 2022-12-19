@@ -336,6 +336,7 @@ enum HeaderType {
   HT_Algorithm,
   HT_Time,
   HT_Complex,
+  HT_Functional,
   HT_Future,
   HT_Thread,
   HT_Numeric,
@@ -948,6 +949,12 @@ public:
   inline static bool getCheckUnicodeSecurityFlag() {
     return CheckUnicodeSecurityFlag;
   }
+  inline static void setEnablepProfilingFlag(bool EP) {
+    EnablepProfilingFlag = EP;
+  }
+  inline static bool getEnablepProfilingFlag() {
+    return EnablepProfilingFlag;
+  }
   inline static bool getGuessIndentWidthMatcherFlag() {
     return GuessIndentWidthMatcherFlag;
   }
@@ -1000,19 +1007,15 @@ public:
   }
 
   inline static bool getUsingExtensionDE(DPCPPExtensionsDefaultEnabled Ext) {
-    return ExtensionDEFlag & static_cast<unsigned>(Ext);
+    return ExtensionDEFlag & (1 << static_cast<unsigned>(Ext));
   }
-  inline static void setExtensionDEUnused(DPCPPExtensionsDefaultEnabled Ext) {
-    ExtensionDEFlag &= (~static_cast<unsigned>(Ext));
-  }
+  inline static void setExtensionDEFlag(unsigned Flag) { ExtensionDEFlag = Flag; }
   inline static unsigned getExtensionDEFlag() { return ExtensionDEFlag; }
 
   inline static bool getUsingExtensionDD(DPCPPExtensionsDefaultDisabled Ext) {
-    return ExtensionDDFlag & static_cast<unsigned>(Ext);
+    return ExtensionDDFlag & (1 << static_cast<unsigned>(Ext));
   }
-  inline static void setExtensionDDUsed(DPCPPExtensionsDefaultDisabled Ext) {
-    ExtensionDDFlag |= static_cast<unsigned>(Ext);
-  }
+  inline static void setExtensionDDFlag(unsigned Flag) { ExtensionDDFlag = Flag; }
   inline static unsigned getExtensionDDFlag() { return ExtensionDDFlag; }
 
 
@@ -1760,8 +1763,8 @@ public:
     insertFile(LocInfo.first)->insertCustomizedHeader(std::move(HeaderName));
   }
 
-  static std::unordered_set<std::string> &getExpansionRangeBeginSet() {
-    return ExpansionRangeBeginSet;
+  static std::unordered_map<std::string, SourceRange> &getExpansionRangeBeginMap() {
+    return ExpansionRangeBeginMap;
   }
 
   static std::map<std::string, std::shared_ptr<MacroExpansionRecord>> &
@@ -2121,8 +2124,9 @@ private:
   static unsigned int IndentWidth;
   static std::map<unsigned int, unsigned int> KCIndentWidthMap;
   static std::unordered_map<std::string, int> LocationInitIndexMap;
-  static std::unordered_set<std::string> ExpansionRangeBeginSet;
+  static std::unordered_map<std::string, SourceRange> ExpansionRangeBeginMap;
   static bool CheckUnicodeSecurityFlag;
+  static bool EnablepProfilingFlag;
   static std::map<std::string,
                   std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
       ExpansionRangeToMacroRecord;
@@ -2301,14 +2305,7 @@ private:
   // __device__ int a[24];
   // will be migrated to:
   // dpct::global_memory<int, 1> a(24);
-  inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL) {
-    if (TL.getSizeExpr()->getStmtClass() == Stmt::IntegerLiteralClass &&
-        TL.getSizeExpr()->getBeginLoc().isFileID())
-      return toString(TL.getTypePtr()->getSize(), 10, false, false);
-    ArraySizeOriginExprs.push_back(getStmtSpelling(TL.getSizeExpr()));
-    return buildString(toString(TL.getTypePtr()->getSize(), 10, false, false),
-                       "/*", ArraySizeOriginExprs.back(), "*/");
-  }
+  inline std::string getFoldedArraySize(const ConstantArrayTypeLoc &TL);
 
   // Get original array size expression.
   std::string getUnfoldedArraySize(const ConstantArrayTypeLoc &TL);
@@ -2742,8 +2739,9 @@ public:
     } else {
       auto TST = VD->getType()->getAs<TemplateSpecializationType>();
       if (TST) {
-        auto Arg0 = TST->getArg(0);
-        auto Arg1 = TST->getArg(1);
+        auto Args = TST->template_arguments();
+        auto Arg0 = Args[0];
+        auto Arg1 = Args[1];
 
         if (Arg1.getKind() == clang::TemplateArgument::Expression) {
           auto DataTy = Arg0.getAsType();
@@ -4511,6 +4509,10 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset, T... Args) {
     // Start a new line if we're not inserting at the first inclusion offset
     if (Offset != FirstIncludeOffset) {
       RSO << getNL();
+    }
+
+    if(DpctGlobalInfo::getEnablepProfilingFlag() && (Type == HT_SYCL)) {
+      RSO << "#define DPCT_PROFILING_ENABLED" << getNL();
     }
 
     if ((DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) &&

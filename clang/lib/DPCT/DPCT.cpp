@@ -118,6 +118,7 @@ bool KeepOriginalCodeFlag = false;
 bool SuppressWarningsAllFlag = false;
 bool StopOnParseErr = false;
 bool CheckUnicodeSecurityFlag = false;
+bool EnablepProfilingFlag = false;
 bool SyclNamedLambdaFlag = false;
 bool ExplicitClNamespace = false;
 bool NoDRYPatternFlag = false;
@@ -828,6 +829,7 @@ int runDPCT(int argc, const char **argv) {
                           "may be removed in the future.\n");
   }
   DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
+  DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfilingFlag);
   DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
   if (CustomHelperFileName.getNumOccurrences()) {
     clang::dpct::PrintMsg("Note: Option --custom-helper-name is deprecated and "
@@ -843,6 +845,8 @@ int runDPCT(int argc, const char **argv) {
   DpctGlobalInfo::setUsingDRYPattern(!NoDRYPatternFlag);
   DpctGlobalInfo::setUsingGenericSpace(!NoUseGenericSpaceFlag);
   DpctGlobalInfo::setExperimentalFlag(Experimentals.getBits());
+  DpctGlobalInfo::setExtensionDEFlag(~(NoDPCPPExtensions.getBits()));
+  DpctGlobalInfo::setExtensionDDFlag(UseDPCPPExtensions.getBits());
   DpctGlobalInfo::setAssumedNDRangeDim(
       (NDRangeDim == AssumedNDRangeDimEnum::ARE_Dim1) ? 1 : 3);
   DpctGlobalInfo::setOptimizeMigrationFlag(OptimizeMigration.getValue());
@@ -882,7 +886,6 @@ int runDPCT(int argc, const char **argv) {
 
   MapNames::setExplicitNamespaceMap();
   CallExprRewriterFactoryBase::initRewriterMap();
-  CallExprRewriterFactoryBase::initMethodRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
   if (!RuleFile.empty()) {
@@ -949,6 +952,8 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
                      OptimizeMigration.getValue(),
                      OptimizeMigration.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_EnablepProfiling,
+                     EnablepProfilingFlag, EnablepProfilingFlag);
     setValueToOptMap(clang::dpct::OPTION_RuleFile, MetaRuleObject::RuleFiles,
                      RuleFile.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,

@@ -57,20 +57,20 @@ enum class ExplicitNamespace : unsigned int {
   EN_DPCT = 4
 };
 enum class DPCPPExtensionsDefaultEnabled : unsigned int {
-  ExtDE_EnqueueBarrier = 0x01,
-  ExtDE_DeviceInfo = 0x02,
+  ExtDE_EnqueueBarrier = 0,
+  ExtDE_DeviceInfo,
   ExtDE_DPCPPExtensionsDefaultEnabledEnumSize
 };
 enum class DPCPPExtensionsDefaultDisabled : unsigned int {
-  ExtDD_CCXXStandardLibrary = 0x01,
+  ExtDD_CCXXStandardLibrary = 0,
   ExtDD_DPCPPExtensionsDefaultDisabledEnumSize
 };
 enum class ExperimentalFeatures : unsigned int {
-  Exp_NdRangeBarrier = 1, // Using nd_range_barrier.
-  Exp_FreeQueries = 2,    // Using free queries functions, like this_nd_item,
+  Exp_NdRangeBarrier = 0, // Using nd_range_barrier.
+  Exp_FreeQueries,        // Using free queries functions, like this_nd_item,
                           // this_group, this_subgroup.
-  Exp_GroupSharedMemory = 3,
-  Exp_LogicalGroup = 4,
+  Exp_GroupSharedMemory,
+  Exp_LogicalGroup,
   Exp_ExperimentalFeaturesEnumSize
 };
 

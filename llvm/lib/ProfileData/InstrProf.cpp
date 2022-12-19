@@ -506,7 +506,7 @@ Error readPGOFuncNameStrings(StringRef NameStrings, InstrProfSymtab &Symtab) {
       if (!llvm::compression::zlib::isAvailable())
         return make_error<InstrProfError>(instrprof_error::zlib_unavailable);
 
-      if (Error E = compression::zlib::uncompress(
+      if (Error E = compression::zlib::decompress(
               makeArrayRef(P, CompressedSize), UncompressedNameStrings,
               UncompressedSize)) {
         consumeError(std::move(E));
@@ -1210,6 +1210,7 @@ void createProfileFileNameVar(Module &M, StringRef InstrProfileOutput) {
   GlobalVariable *ProfileNameVar = new GlobalVariable(
       M, ProfileNameConst->getType(), true, GlobalValue::WeakAnyLinkage,
       ProfileNameConst, INSTR_PROF_QUOTE(INSTR_PROF_PROFILE_NAME_VAR));
+  ProfileNameVar->setVisibility(GlobalValue::HiddenVisibility);
   Triple TT(M.getTargetTriple());
   if (TT.supportsCOMDAT()) {
     ProfileNameVar->setLinkage(GlobalValue::ExternalLinkage);
@@ -1350,7 +1351,7 @@ uint64_t Header::formatVersion() const {
 
 Expected<Header> Header::readFromBuffer(const unsigned char *Buffer) {
   using namespace support;
-  static_assert(std::is_standard_layout<Header>::value,
+  static_assert(std::is_standard_layout_v<Header>,
                 "The header should be standard layout type since we use offset "
                 "of fields to read.");
   Header H;

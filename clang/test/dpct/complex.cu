@@ -276,3 +276,39 @@ int main() {
     return 0;
 }
   
+void testRemoveVolatile() {
+  struct Complex : cuFloatComplex {
+
+    inline float real() const volatile {
+      // CHECK: /*
+      // CHECK-NEXT: DPCT1052:{{[0-9]+}}: SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
+      // CHECK-NEXT: */
+      // CHECK-NEXT: return const_cast<struct Complex *>(this)->x();
+      return x;
+    }
+
+    inline float imag() const volatile {
+      // CHECK: /*
+      // CHECK-NEXT: DPCT1052:{{[0-9]+}}: SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
+      // CHECK-NEXT: */
+      // CHECK-NEXT: return const_cast<struct Complex *>(this)->y();
+      return y;
+    }
+
+    inline void testExplicit() const volatile {
+      // CHECK: /*
+      // CHECK-NEXT: DPCT1052:{{[0-9]+}}: SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
+      // CHECK-NEXT: */
+      // CHECK-NEXT: const_cast<struct Complex *>(this)->y();
+      this->y;
+
+      auto self = this;
+      // CHECK: /*
+      // CHECK-NEXT: DPCT1052:{{[0-9]+}}: SYCL does not support the member access for a volatile qualified vector type. The volatile qualifier was removed. You may need to rewrite the code.
+      // CHECK-NEXT: */
+      // CHECK-NEXT: const_cast<struct Complex *>(self)->y();
+      self->y;
+    }
+
+  };
+}

@@ -165,10 +165,16 @@ class JSONCompilationDatabasePlugin : public CompilationDatabasePlugin {
     llvm::sys::path::append(JSONDatabasePath, "compile_commands.json");
     auto Base = JSONCompilationDatabase::loadFromFile(
         JSONDatabasePath, ErrorMessage, JSONCommandLineSyntax::AutoDetect);
+#ifdef SYCLomatic_CUSTOMIZATION
+    return Base ? inferTargetAndDriverMode(expandResponseFiles(
+                          std::move(Base), llvm::vfs::getRealFileSystem()))
+                : nullptr;
+#else
     return Base ? inferTargetAndDriverMode(
                       inferMissingCompileCommands(expandResponseFiles(
                           std::move(Base), llvm::vfs::getRealFileSystem())))
                 : nullptr;
+#endif
   }
 };
 
@@ -460,17 +466,16 @@ bool JSONCompilationDatabase::parse(std::string &ErrorMessage) {
     SmallString<128> NativeFilePath;
     if (llvm::sys::path::is_relative(FileName)) {
       SmallString<8> DirectoryStorage;
-      SmallString<128> AbsolutePath(
-          Directory->getValue(DirectoryStorage));
+      SmallString<128> AbsolutePath(Directory->getValue(DirectoryStorage));
       llvm::sys::path::append(AbsolutePath, FileName);
 #ifdef SYCLomatic_CUSTOMIZATION
       llvm::sys::fs::make_absolute(AbsolutePath);
 #endif // SYCLomatic_CUSTOMIZATION
-      llvm::sys::path::remove_dots(AbsolutePath, /*remove_dot_dot=*/ true);
       llvm::sys::path::native(AbsolutePath, NativeFilePath);
     } else {
       llvm::sys::path::native(FileName, NativeFilePath);
     }
+    llvm::sys::path::remove_dots(NativeFilePath, /*remove_dot_dot=*/true);
     auto Cmd = CompileCommandRef(Directory, File, *Command, Output);
     IndexByFile[NativeFilePath].push_back(Cmd);
     AllCommands.push_back(Cmd);

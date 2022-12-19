@@ -405,6 +405,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"ncclComm_t",
        std::make_shared<TypeNameRule>("oneapi::ccl::communicator *",
                                       HelperFeatureEnum::CclUtils_create_kvs)},
+      {"ncclRedOp_t", std::make_shared<TypeNameRule>("oneapi::ccl::reduction")},
+      {"ncclDataType_t", std::make_shared<TypeNameRule>("oneapi::ccl::datatype")},
       // ...
   };
 
@@ -1074,6 +1076,25 @@ void MapNames::setExplicitNamespaceMap() {
                         getDpctNamespace() +
                             "fft::fft_type::complex_double_to_complex_double",
                         HelperFeatureEnum::FftUtils_fft_type)},
+      {"ncclSum", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::sum")},
+      {"ncclProd", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::prod")},
+      {"ncclMin", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::min")},
+      {"ncclMax", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::max")},
+      {"ncclInt8", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int8")},
+      {"ncclChar", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int8")},
+      {"ncclUint8", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint8")},
+      {"ncclInt32", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int32")},
+      {"ncclInt", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int32")},
+      {"ncclUint32", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint32")},
+      {"ncclInt64", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int64")},
+      {"ncclUint64", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint64")},
+      {"ncclFloat16", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float16")},
+      {"ncclHalf", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float16")},
+      {"ncclFloat32", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float32")},
+      {"ncclFloat", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float32")},
+      {"ncclFloat64", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float64")},
+      {"ncclDouble", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float64")},
+      {"ncclBfloat16", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::bfloat16")},
       // ...
   };
 
@@ -1530,8 +1551,24 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"}};
 
-  SOLVERAPIWithRewriter = {"cusolverDnSsygvd",
-                           "cusolverDnSsygvd_bufferSize"};
+  SOLVERAPIWithRewriter = {"cusolverDnSetStream",
+                           "cusolverDnGetStream",
+                           "cusolverDnSpotrfBatched",
+                           "cusolverDnDpotrfBatched",
+                           "cusolverDnCpotrfBatched",
+                           "cusolverDnZpotrfBatched",
+                           "cusolverDnSpotrsBatched",
+                           "cusolverDnDpotrsBatched",
+                           "cusolverDnCpotrsBatched",
+                           "cusolverDnZpotrsBatched",
+                           "cusolverDnSsygvd",
+                           "cusolverDnDsygvd",
+                           "cusolverDnSsygvd_bufferSize",
+                           "cusolverDnDsygvd_bufferSize",
+                           "cusolverDnChegvd",
+                           "cusolverDnZhegvd",
+                           "cusolverDnChegvd_bufferSize",
+                           "cusolverDnZhegvd_bufferSize"};
 
   // This map now is only used to migrate using declaration
   MathFuncNameMap = {

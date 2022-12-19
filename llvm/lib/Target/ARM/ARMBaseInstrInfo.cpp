@@ -115,7 +115,7 @@ static const ARM_MLxEntry ARM_MLxTable[] = {
 ARMBaseInstrInfo::ARMBaseInstrInfo(const ARMSubtarget& STI)
   : ARMGenInstrInfo(ARM::ADJCALLSTACKDOWN, ARM::ADJCALLSTACKUP),
     Subtarget(STI) {
-  for (unsigned i = 0, e = array_lengthof(ARM_MLxTable); i != e; ++i) {
+  for (unsigned i = 0, e = std::size(ARM_MLxTable); i != e; ++i) {
     if (!MLxEntryMap.insert(std::make_pair(ARM_MLxTable[i].MLxOpc, i)).second)
       llvm_unreachable("Duplicated entries?");
     MLxHazardOpcodes.insert(ARM_MLxTable[i].AddSubOpc);
@@ -1065,7 +1065,7 @@ ARMBaseInstrInfo::isCopyInstrImpl(const MachineInstr &MI) const {
   if (!MI.isMoveReg() ||
       (MI.getOpcode() == ARM::VORRq &&
        MI.getOperand(1).getReg() != MI.getOperand(2).getReg()))
-    return None;
+    return std::nullopt;
   return DestSourcePair{MI.getOperand(0), MI.getOperand(1)};
 }
 
@@ -1094,7 +1094,7 @@ ARMBaseInstrInfo::describeLoadedValue(const MachineInstr &MI,
     // We need to produce a fragment description (the call site value of s1 is
     // /not/ just d8).
     if (DstReg != Reg)
-      return None;
+      return std::nullopt;
   }
   return TargetInstrInfo::describeLoadedValue(MI, Reg);
 }
@@ -2979,20 +2979,38 @@ static bool isOptimizeCompareCandidate(MachineInstr *MI, bool &IsThumb1) {
   case ARM::t2SBCri:
   case ARM::ANDrr:
   case ARM::ANDri:
+  case ARM::ANDrsr:
+  case ARM::ANDrsi:
   case ARM::t2ANDrr:
   case ARM::t2ANDri:
+  case ARM::t2ANDrs:
   case ARM::ORRrr:
   case ARM::ORRri:
+  case ARM::ORRrsr:
+  case ARM::ORRrsi:
   case ARM::t2ORRrr:
   case ARM::t2ORRri:
+  case ARM::t2ORRrs:
   case ARM::EORrr:
   case ARM::EORri:
+  case ARM::EORrsr:
+  case ARM::EORrsi:
   case ARM::t2EORrr:
   case ARM::t2EORri:
+  case ARM::t2EORrs:
+  case ARM::BICri:
+  case ARM::BICrr:
+  case ARM::BICrsi:
+  case ARM::BICrsr:
+  case ARM::t2BICri:
+  case ARM::t2BICrr:
+  case ARM::t2BICrs:
   case ARM::t2LSRri:
   case ARM::t2LSRrr:
   case ARM::t2LSLri:
   case ARM::t2LSLrr:
+  case ARM::MOVsr:
+  case ARM::MOVsi:
     return true;
   }
 }
@@ -3266,8 +3284,9 @@ bool ARMBaseInstrInfo::optimizeCompareInstr(
   // Toggle the optional operand to CPSR (if it exists - in Thumb1 we always
   // set CPSR so this is represented as an explicit output)
   if (!IsThumb1) {
-    MI->getOperand(5).setReg(ARM::CPSR);
-    MI->getOperand(5).setIsDef(true);
+    unsigned CPSRRegNum = MI->getNumExplicitOperands() - 1;
+    MI->getOperand(CPSRRegNum).setReg(ARM::CPSR);
+    MI->getOperand(CPSRRegNum).setIsDef(true);
   }
   assert(!isPredicated(*MI) && "Can't use flags from predicated instruction");
   CmpInstr.eraseFromParent();
@@ -5546,19 +5565,19 @@ Optional<RegImmPair> ARMBaseInstrInfo::isAddImmediate(const MachineInstr &MI,
   // destination register.
   const MachineOperand &Op0 = MI.getOperand(0);
   if (!Op0.isReg() || Reg != Op0.getReg())
-    return None;
+    return std::nullopt;
 
   // We describe SUBri or ADDri instructions.
   if (Opcode == ARM::SUBri)
     Sign = -1;
   else if (Opcode != ARM::ADDri)
-    return None;
+    return std::nullopt;
 
   // TODO: Third operand can be global address (usually some string). Since
   //       strings can be relocated we cannot calculate their offsets for
   //       now.
   if (!MI.getOperand(1).isReg() || !MI.getOperand(2).isImm())
-    return None;
+    return std::nullopt;
 
   Offset = MI.getOperand(2).getImm() * Sign;
   return RegImmPair{MI.getOperand(1).getReg(), Offset};

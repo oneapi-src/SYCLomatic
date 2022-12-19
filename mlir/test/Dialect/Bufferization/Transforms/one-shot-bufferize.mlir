@@ -5,6 +5,9 @@
 // RUN: mlir-opt %s -one-shot-bufferize="test-analysis-only analysis-fuzzer-seed=59" -split-input-file -o /dev/null
 // RUN: mlir-opt %s -one-shot-bufferize="test-analysis-only analysis-fuzzer-seed=91" -split-input-file -o /dev/null
 
+// Run with top-down analysis.
+// RUN: mlir-opt %s -one-shot-bufferize="allow-unknown-ops analysis-heuristic=top-down" -split-input-file | FileCheck %s --check-prefix=CHECK-TOP-DOWN-ANALYSIS
+
 // Test without analysis: Insert a copy on every buffer write.
 // RUN: mlir-opt %s -allow-unregistered-dialect -one-shot-bufferize="allow-unknown-ops copy-before-write" -split-input-file | FileCheck %s --check-prefix=CHECK-COPY-BEFORE-WRITE
 
@@ -134,12 +137,12 @@ func.func @copy_deallocated() -> tensor<10xf32> {
 // CHECK-LABEL: func @select_different_tensors(
 //  CHECK-SAME:     %[[t:.*]]: tensor<?xf32>
 func.func @select_different_tensors(%t: tensor<?xf32>, %sz: index, %c: i1) -> tensor<?xf32> {
-  // CHECK-DAG: %[[m:.*]] = bufferization.to_memref %[[t]] : memref<?xf32, #{{.*}}>
+  // CHECK-DAG: %[[m:.*]] = bufferization.to_memref %[[t]] : memref<?xf32, strided{{.*}}>
   // CHECK-DAG: %[[alloc:.*]] = memref.alloc(%{{.*}}) {{.*}} : memref<?xf32>
   %0 = bufferization.alloc_tensor(%sz) : tensor<?xf32>
 
   // A cast must be inserted because %t and %0 have different memref types.
-  // CHECK: %[[casted:.*]] = memref.cast %[[alloc]] : memref<?xf32> to memref<?xf32, #{{.*}}>
+  // CHECK: %[[casted:.*]] = memref.cast %[[alloc]] : memref<?xf32> to memref<?xf32, strided{{.*}}>
   // CHECK: arith.select %{{.*}}, %[[casted]], %[[m]]
   %1 = arith.select %c, %0, %t : tensor<?xf32>
   return %1 : tensor<?xf32>
@@ -168,9 +171,30 @@ func.func @alloc_tensor_with_copy(%t: tensor<5xf32>) -> tensor<5xf32> {
 // CHECK-LABEL: func @alloc_tensor_with_memory_space()
 func.func @alloc_tensor_with_memory_space() -> tensor<5xf32> {
   // CHECK: %[[alloc:.*]] = memref.alloc() {{.*}} : memref<5xf32, 1>
-  %0 = bufferization.alloc_tensor() {memory_space = 1 : ui64} : tensor<5xf32>
+  %0 = bufferization.alloc_tensor() {memory_space = 1 : i64} : tensor<5xf32>
   // CHECK: %[[r:.*]] = bufferization.to_tensor %[[alloc]]
   // CHECK: memref.dealloc %[[alloc]]
   // CHECK: return %[[r]]
   return %0 : tensor<5xf32>
+}
+
+// -----
+
+// CHECK-LABEL: func @read_of_alias
+// CHECK-TOP-DOWN-ANALYSIS-LABEL: func @read_of_alias
+func.func @read_of_alias(%t: tensor<100xf32>, %pos1: index, %pos2: index,
+                         %pos3: index, %pos4: index, %sz: index, %f: f32)
+  -> (f32, f32)
+{
+  // CHECK: %[[alloc:.*]] = memref.alloc
+  // CHECK: memref.copy
+  // CHECK: memref.store %{{.*}}, %[[alloc]]
+  // CHECK-TOP-DOWN-ANALYSIS: %[[alloc:.*]] = memref.alloc
+  // CHECK-TOP-DOWN-ANALYSIS: memref.copy
+  // CHECK-TOP-DOWN-ANALYSIS: memref.store %{{.*}}, %[[alloc]]
+  %0 = tensor.insert %f into %t[%pos1] : tensor<100xf32>
+  %1 = tensor.extract_slice %t[%pos2][%sz][1] : tensor<100xf32> to tensor<?xf32>
+  %2 = tensor.extract %1[%pos3] : tensor<?xf32>
+  %3 = tensor.extract %0[%pos3] : tensor<100xf32>
+  return %2, %3 : f32, f32
 }

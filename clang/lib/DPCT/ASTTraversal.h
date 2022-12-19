@@ -438,28 +438,7 @@ private:
                          const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-/// Migration rule for thrust functions
-class ThrustFunctionRule : public NamedMigrationRule<ThrustFunctionRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 
-private:
-  std::set<SourceLocation> SortULExpr;
-  void thrustFuncMigration(const ast_matchers::MatchFinder::MatchResult &Result,
-                           const CallExpr *C,
-                           const UnresolvedLookupExpr *ULExpr = NULL);
-};
-
-/// Migration rule for thrust constructor expressions
-class ThrustCtorExprRule : public NamedMigrationRule<ThrustCtorExprRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-
-private:
-  void replacePlaceHolderExpr(const CXXConstructExpr *CE);
-};
 
 /// Migration rule for types replacements in var. declarations.
 class TypeInDeclRule : public NamedMigrationRule<TypeInDeclRule> {
@@ -1251,6 +1230,12 @@ public:
   static EventQueryTraversal getEventQueryTraversal();
 
 private:
+  void handleEventRecordWithProfilingEnabled(
+      const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
+      bool IsAssigned);
+  void handleEventRecordWithProfilingDisabled(
+      const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
+      bool IsAssigned);
   void findEventAPI(const Stmt *Node, const CallExpr *&Call,
                     const std::string EventAPIName);
   void processAsyncJob(const Stmt *Node);
@@ -1753,12 +1738,6 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-class ThrustVarRule : public NamedMigrationRule<ThrustVarRule> {
-public:
-  void registerMatcher(ast_matchers::MatchFinder &MF) override;
-  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
-};
-
 class PreDefinedStreamHandleRule
     : public NamedMigrationRule<PreDefinedStreamHandleRule> {
 public:
@@ -1807,8 +1786,17 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+class CudaStreamCastRule : public NamedMigrationRule<CudaStreamCastRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 TextModification *replaceText(SourceLocation Begin, SourceLocation End,
                               std::string &&Str, const SourceManager &SM);
+
+TextModification *removeArg(const CallExpr *C, unsigned n,
+                            const SourceManager &SM) ;
 } // namespace dpct
 } // namespace clang
 #endif // DPCT_AST_TRAVERSAL_H

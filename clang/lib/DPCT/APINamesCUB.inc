@@ -15,7 +15,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPL_Algorithm,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-                makeCheckAnd(CheckArgCountGreaterThan(5),
+                makeCheckAnd(CheckArgCount(6, std::greater_equal<>(), /* IncludeDefaultArg */false),
                              makeCheckNot(CheckArgIsDefaultCudaStream(5))),
                 MEMBER_CALL_FACTORY_ENTRY(
                     "cub::DeviceReduce::Sum",
@@ -57,7 +57,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPL_Algorithm,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-                makeCheckAnd(CheckArgCountGreaterThan(7),
+                makeCheckAnd(CheckArgCount(8, std::greater_equal<>(), /* IncludeDefaultArg */false),
                              makeCheckNot(CheckArgIsDefaultCudaStream(7))),
                 MEMBER_CALL_FACTORY_ENTRY(
                     "cub::DeviceReduce::Reduce",
@@ -93,7 +93,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPL_Algorithm,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-                makeCheckAnd(CheckArgCountGreaterThan(9),
+                makeCheckAnd(CheckArgCount(10, std::greater_equal<>(), /* IncludeDefaultArg */false),
                              makeCheckNot(CheckArgIsDefaultCudaStream(9))),
                 MEMBER_CALL_FACTORY_ENTRY(
                     "cub::DeviceReduce::ReduceByKey",
@@ -159,7 +159,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPL_Algorithm,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-                makeCheckAnd(CheckArgCountGreaterThan(5),
+                makeCheckAnd(CheckArgCount(6, std::greater_equal<>(), /* IncludeDefaultArg */false),
                              makeCheckNot(CheckArgIsDefaultCudaStream(5))),
                 CALL_FACTORY_ENTRY(
                     "cub::DeviceScan::ExclusiveSum",
@@ -193,7 +193,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPL_Algorithm,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-                makeCheckAnd(CheckArgCountGreaterThan(5),
+                makeCheckAnd(CheckArgCount(6, std::greater_equal<>(), /* IncludeDefaultArg */false),
                              makeCheckNot(CheckArgIsDefaultCudaStream(5))),
                 CALL_FACTORY_ENTRY(
                     "cub::DeviceScan::InclusiveSum",
@@ -219,7 +219,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPL_Algorithm,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-                makeCheckAnd(CheckArgCountGreaterThan(7),
+                makeCheckAnd(CheckArgCount(8, std::greater_equal<>(), /* IncludeDefaultArg */false),
                              makeCheckNot(CheckArgIsDefaultCudaStream(7))),
                 CALL_FACTORY_ENTRY(
                     "cub::DeviceScan::ExclusiveScan",
@@ -245,7 +245,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPL_Algorithm,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-                makeCheckAnd(CheckArgCountGreaterThan(6),
+                makeCheckAnd(CheckArgCount(7, std::greater_equal<>(), /* IncludeDefaultArg */false),
                              makeCheckNot(CheckArgIsDefaultCudaStream(6))),
                 CALL_FACTORY_ENTRY(
                     "cub::DeviceScan::InclusiveScan",
@@ -269,7 +269,7 @@ CONDITIONAL_FACTORY_ENTRY(
     HEADER_INSERT_FACTORY(
         HeaderType::HT_DPL_Utils,
         REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-            makeCheckAnd(CheckArgCountGreaterThan(7),
+            makeCheckAnd(CheckArgCount(8, std::greater_equal<>(), /* IncludeDefaultArg */false),
                          makeCheckNot(CheckArgIsDefaultCudaStream(7))),
             MEMBER_CALL_FACTORY_ENTRY(
                 "cub::DeviceSelect::Flagged",
@@ -311,7 +311,7 @@ CONDITIONAL_FACTORY_ENTRY(
         HEADER_INSERT_FACTORY(
             HeaderType::HT_DPL_Algorithm,
             REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-                makeCheckAnd(CheckArgCountGreaterThan(6),
+                makeCheckAnd(CheckArgCount(7, std::greater_equal<>(), /* IncludeDefaultArg */false),
                              makeCheckNot(CheckArgIsDefaultCudaStream(6))),
                 MEMBER_CALL_FACTORY_ENTRY(
                     "cub::DeviceSelect::Unique",
@@ -353,50 +353,48 @@ CONDITIONAL_FACTORY_ENTRY(
             HEADER_INSERT_FACTORY(
                 HeaderType::HT_DPL_Algorithm,
                 REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-                    makeCheckAnd(CheckArgCountGreaterThan(7),
+                    makeCheckAnd(CheckArgCount(8, std::greater_equal<>(), /* IncludeDefaultArg */false),
                                  makeCheckNot(CheckArgIsDefaultCudaStream(7))),
                     MEMBER_CALL_FACTORY_ENTRY(
                         "cub::DeviceRunLengthEncode::Encode",
                         MEMBER_CALL(
                             ARG(7), true, "fill", ARG(5),
-                            CALL(
-                                "std::distance", ARG(3),
-                                MEMBER_EXPR(
-                                    CALL("oneapi::dpl::reduce_by_segment",
-                                         CALL("oneapi::dpl::execution::device_"
-                                              "policy",
-                                              STREAM(7)),
-                                         ARG(2),
-                                         BO(BinaryOperatorKind::BO_Add, ARG(2),
-                                            ARG(6)),
-                                         MEMBER_CALL(
-                                             CALL("dpct::device_vector<size_t>",
-                                                  ARG(6), LITERAL("1")),
-                                             false, "begin"),
-                                         ARG(3), ARG(4)),
-                                    false, LITERAL("first"))),
+                            CALL("std::distance", ARG(3),
+                                 MEMBER_EXPR(
+                                     CALL("oneapi::dpl::reduce_by_segment",
+                                          CALL("oneapi::dpl::execution::device_"
+                                               "policy",
+                                               STREAM(7)),
+                                          ARG(2),
+                                          BO(BinaryOperatorKind::BO_Add, ARG(2),
+                                             ARG(6)),
+                                          CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                                   "dpct::constant_iterator",
+                                                   LITERAL("size_t")),
+                                               LITERAL("1")),
+                                          ARG(3), ARG(4)),
+                                     false, LITERAL("first"))),
                             LITERAL("1")),
                         false, "wait"),
                     MEMBER_CALL_FACTORY_ENTRY(
                         "cub::DeviceRunLengthEncode::Encode",
                         MEMBER_CALL(
                             QUEUESTR, false, "fill", ARG(5),
-                            CALL(
-                                "std::distance", ARG(3),
-                                MEMBER_EXPR(
-                                    CALL("oneapi::dpl::reduce_by_segment",
-                                         CALL("oneapi::dpl::execution::device_"
-                                              "policy",
-                                              QUEUESTR),
-                                         ARG(2),
-                                         BO(BinaryOperatorKind::BO_Add, ARG(2),
-                                            ARG(6)),
-                                         MEMBER_CALL(
-                                             CALL("dpct::device_vector<size_t>",
-                                                  ARG(6), LITERAL("1")),
-                                             false, "begin"),
-                                         ARG(3), ARG(4)),
-                                    false, LITERAL("first"))),
+                            CALL("std::distance", ARG(3),
+                                 MEMBER_EXPR(
+                                     CALL("oneapi::dpl::reduce_by_segment",
+                                          CALL("oneapi::dpl::execution::device_"
+                                               "policy",
+                                               QUEUESTR),
+                                          ARG(2),
+                                          BO(BinaryOperatorKind::BO_Add, ARG(2),
+                                             ARG(6)),
+                                          CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                                   "dpct::constant_iterator",
+                                                   LITERAL("size_t")),
+                                               LITERAL("1")),
+                                          ARG(3), ARG(4)),
+                                     false, LITERAL("first"))),
                             LITERAL("1")),
                         false, "wait")))))))
 
@@ -411,7 +409,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "cub::DeviceSegmentedReduce::Reduce",
                 CONDITIONAL_FACTORY_ENTRY(
-                    makeCheckAnd(CheckArgCountGreaterThan(9),
+                    makeCheckAnd(CheckArgCount(10, std::greater_equal<>(), /* IncludeDefaultArg */false),
                                  makeCheckNot(CheckArgIsDefaultCudaStream(9))),
                     CONDITIONAL_FACTORY_ENTRY(
                         checkArgCanMappingToSyclNativeBinaryOp(7),
@@ -470,7 +468,7 @@ CONDITIONAL_FACTORY_ENTRY(
             WARNING_FACTORY_ENTRY(
                 "cub::DeviceSegmentedReduce::Sum",
                 CONDITIONAL_FACTORY_ENTRY(
-                    makeCheckAnd(CheckArgCountGreaterThan(9),
+                    makeCheckAnd(CheckArgCount(10, std::greater_equal<>(), /* IncludeDefaultArg */false),
                                  makeCheckNot(CheckArgIsDefaultCudaStream(9))),
                     CALL_FACTORY_ENTRY(
                         "cub::DeviceSegmentedReduce::Sum",
@@ -516,7 +514,7 @@ CONDITIONAL_FACTORY_ENTRY(
                     "cub::DeviceSegmentedReduce::Min",
                     CONDITIONAL_FACTORY_ENTRY(
                         makeCheckAnd(
-                            CheckArgCountGreaterThan(9),
+                            CheckArgCount(10, std::greater_equal<>(), /* IncludeDefaultArg */false),
                             makeCheckNot(CheckArgIsDefaultCudaStream(9))),
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceSegmentedReduce::Min",
@@ -574,7 +572,7 @@ CONDITIONAL_FACTORY_ENTRY(
                     "cub::DeviceSegmentedReduce::Max",
                     CONDITIONAL_FACTORY_ENTRY(
                         makeCheckAnd(
-                            CheckArgCountGreaterThan(9),
+                            CheckArgCount(10, std::greater_equal<>(), /* IncludeDefaultArg */false),
                             makeCheckNot(CheckArgIsDefaultCudaStream(9))),
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceSegmentedReduce::Max",
@@ -617,3 +615,187 @@ CONDITIONAL_FACTORY_ENTRY(
                                              LITERAL("value_type")))),
                                      LITERAL("lowest")))))),
                     Diagnostics::REDUCE_PERFORMANCE_TUNE))))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortKeys"),
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Utils,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+                makeCheckAnd(CheckArgCount(8, std::greater_equal<>(),
+                                           /* IncludeDefaultArg */ false),
+                             makeCheckNot(CheckArgIsDefaultCudaStream(7))),
+                CALL_FACTORY_ENTRY(
+                    "cub::DeviceRadixSort::SortKeys",
+                    CALL("dpct::sort_keys",
+                         CALL("oneapi::dpl::execution::device_policy",
+                              STREAM(7)),
+                         ARG(2), ARG(3), ARG(4), LITERAL("false"), ARG(5),
+                         ARG(6))),
+                CONDITIONAL_FACTORY_ENTRY(
+                    CheckArgCount(7, std::greater_equal<>(),
+                                  /* IncludeDefaultArg */ false),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceRadixSort::SortKeys",
+                        CALL("dpct::sort_keys",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), LITERAL("false"), ARG(5),
+                             ARG(6))),
+                    CONDITIONAL_FACTORY_ENTRY(
+                        CheckArgCount(6, std::greater_equal<>(),
+                                      /* IncludeDefaultArg */ false),
+                        CALL_FACTORY_ENTRY(
+                            "cub::DeviceRadixSort::SortKeys",
+                            CALL("dpct::sort_keys",
+                                 CALL("oneapi::dpl::execution::device_policy",
+                                      QUEUESTR),
+                                 ARG(2), ARG(3), ARG(4), LITERAL("false"),
+                                 ARG(5))),
+                        CALL_FACTORY_ENTRY(
+                            "cub::DeviceRadixSort::SortKeys",
+                            CALL("dpct::sort_keys",
+                                 CALL("oneapi::dpl::execution::device_policy",
+                                      QUEUESTR),
+                                 ARG(2), ARG(3), ARG(4),
+                                 LITERAL("false")))))))))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortKeysDescending"),
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Utils,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+                makeCheckAnd(CheckArgCount(8, std::greater_equal<>(),
+                                           /* IncludeDefaultArg */ false),
+                             makeCheckNot(CheckArgIsDefaultCudaStream(7))),
+                CALL_FACTORY_ENTRY(
+                    "cub::DeviceRadixSort::SortKeysDescending",
+                    CALL("dpct::sort_keys",
+                         CALL("oneapi::dpl::execution::device_policy",
+                              STREAM(7)),
+                         ARG(2), ARG(3), ARG(4), LITERAL("true"), ARG(5),
+                         ARG(6))),
+                CONDITIONAL_FACTORY_ENTRY(
+                    CheckArgCount(7, std::greater_equal<>(),
+                                  /* IncludeDefaultArg */ false),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceRadixSort::SortKeysDescending",
+                        CALL("dpct::sort_keys",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), LITERAL("true"), ARG(5),
+                             ARG(6))),
+                    CONDITIONAL_FACTORY_ENTRY(
+                        CheckArgCount(6, std::greater_equal<>(),
+                                      /* IncludeDefaultArg */ false),
+                        CALL_FACTORY_ENTRY(
+                            "cub::DeviceRadixSort::SortKeysDescending",
+                            CALL("dpct::sort_keys",
+                                 CALL("oneapi::dpl::execution::device_policy",
+                                      QUEUESTR),
+                                 ARG(2), ARG(3), ARG(4), LITERAL("true"),
+                                 ARG(5))),
+                        CALL_FACTORY_ENTRY(
+                            "cub::DeviceRadixSort::SortKeysDescending",
+                            CALL("dpct::sort_keys",
+                                 CALL("oneapi::dpl::execution::device_policy",
+                                      QUEUESTR),
+                                 ARG(2), ARG(3), ARG(4),
+                                 LITERAL("true")))))))))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortPairs"),
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::DplExtrasAlgorithm_sort_pairs,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Utils,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+                makeCheckAnd(CheckArgCount(10, std::greater_equal<>(),
+                                           /* IncludeDefaultArg */ false),
+                             makeCheckNot(CheckArgIsDefaultCudaStream(9))),
+                CALL_FACTORY_ENTRY(
+                    "cub::DeviceRadixSort::SortPairs",
+                    CALL("dpct::sort_pairs",
+                         CALL("oneapi::dpl::execution::device_policy",
+                              STREAM(9)),
+                         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                         LITERAL("false"), ARG(7), ARG(8))),
+                CONDITIONAL_FACTORY_ENTRY(
+                    CheckArgCount(9, std::greater_equal<>(),
+                                  /* IncludeDefaultArg */ false),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceRadixSort::SortPairs",
+                        CALL("dpct::sort_pairs",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                             LITERAL("false"), ARG(7), ARG(8))),
+                    CONDITIONAL_FACTORY_ENTRY(
+                        CheckArgCount(8, std::greater_equal<>(),
+                                      /* IncludeDefaultArg */ false),
+                        CALL_FACTORY_ENTRY(
+                            "cub::DeviceRadixSort::SortPairs",
+                            CALL("dpct::sort_pairs",
+                                 CALL("oneapi::dpl::execution::device_policy",
+                                      QUEUESTR),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                                 LITERAL("false"), ARG(7))),
+                        CALL_FACTORY_ENTRY(
+                            "cub::DeviceRadixSort::SortPairs",
+                            CALL("dpct::sort_pairs",
+                                 CALL("oneapi::dpl::execution::device_policy",
+                                      QUEUESTR),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                                 LITERAL("false")))))))))))
+
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortPairsDescending"),
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::DplExtrasAlgorithm_sort_pairs,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Utils,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+                makeCheckAnd(CheckArgCount(10, std::greater_equal<>(),
+                                           /* IncludeDefaultArg */ false),
+                             makeCheckNot(CheckArgIsDefaultCudaStream(9))),
+                CALL_FACTORY_ENTRY(
+                    "cub::DeviceRadixSort::SortPairsDescending",
+                    CALL("dpct::sort_pairs",
+                         CALL("oneapi::dpl::execution::device_policy",
+                              STREAM(9)),
+                         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                         LITERAL("true"), ARG(7), ARG(8))),
+                CONDITIONAL_FACTORY_ENTRY(
+                    CheckArgCount(9, std::greater_equal<>(),
+                                  /* IncludeDefaultArg */ false),
+                    CALL_FACTORY_ENTRY(
+                        "cub::DeviceRadixSort::SortPairsDescending",
+                        CALL("dpct::sort_pairs",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                             LITERAL("true"), ARG(7), ARG(8))),
+                    CONDITIONAL_FACTORY_ENTRY(
+                        CheckArgCount(8, std::greater_equal<>(),
+                                      /* IncludeDefaultArg */ false),
+                        CALL_FACTORY_ENTRY(
+                            "cub::DeviceRadixSort::SortPairsDescending",
+                            CALL("dpct::sort_pairs",
+                                 CALL("oneapi::dpl::execution::device_policy",
+                                      QUEUESTR),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                                 LITERAL("true"), ARG(7))),
+                        CALL_FACTORY_ENTRY(
+                            "cub::DeviceRadixSort::SortPairsDescending",
+                            CALL("dpct::sort_pairs",
+                                 CALL("oneapi::dpl::execution::device_policy",
+                                      QUEUESTR),
+                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                                 LITERAL("true")))))))))))

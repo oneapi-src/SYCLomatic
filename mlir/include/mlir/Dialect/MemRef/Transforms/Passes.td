@@ -28,6 +28,22 @@ def FoldMemRefAliasOps : Pass<"fold-memref-alias-ops"> {
   ];
 }
 
+def MemRefEmulateWideInt : Pass<"memref-emulate-wide-int"> {
+  let summary = "Emulate 2*N-bit integer operations using N-bit operations";
+  let description = [{
+    Emulate memref integer operations that use too wide integer types with
+    equivalent operations on supported narrow integer types. This is done by
+    splitting original integer values into two halves.
+
+    Currently, only power-of-two integer bitwidths are supported.
+  }];
+  let options = [
+    Option<"widestIntSupported", "widest-int-supported", "unsigned",
+           /*default=*/"32", "Widest integer type supported by the target">,
+  ];
+  let dependentDialects = ["vector::VectorDialect"];
+}
+
 def NormalizeMemRefs : Pass<"normalize-memrefs", "ModuleOp"> {
   let summary = "Normalize memrefs";
    let description = [{
@@ -173,5 +189,19 @@ def ResolveShapedTypeResultDims : Pass<"resolve-shaped-type-result-dims"> {
   ];
 }
 
+def ExpandStridedMetadata : Pass<"expand-strided-metadata"> {
+  let summary = "Expand memref operations into easier to analyze constructs";
+  let description = [{
+    The pass expands memref operations that modify the metadata of a memref
+    (sizes, offset, strides) into a sequence of easier to analyze constructs.
+    In particular, this pass transforms operations into explicit sequence of
+    operations that model the effect of this operation on the different metadata.
+    This pass uses affine constructs to materialize these effects.
+  }];
+  let constructor = "mlir::memref::createExpandStridedMetadataPass()";
+  let dependentDialects = [
+      "AffineDialect", "memref::MemRefDialect"
+  ];
+}
 #endif // MLIR_DIALECT_MEMREF_TRANSFORMS_PASSES
 

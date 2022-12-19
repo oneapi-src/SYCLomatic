@@ -34,6 +34,7 @@
 #include "llvm/IR/Constant.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DataLayout.h"
+#include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/GlobalVariable.h"
@@ -71,6 +72,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -135,7 +137,7 @@ Instruction *InstCombinerImpl::SimplifyAnyMemTransfer(AnyMemTransferInst *MI) {
   // If we have a store to a location which is known constant, we can conclude
   // that the store must be storing the constant value (else the memory
   // wouldn't be constant), and this must be a noop.
-  if (AA->pointsToConstantMemory(MI->getDest())) {
+  if (!isModSet(AA->getModRefInfoMask(MI->getDest()))) {
     // Set the size of the copy to 0, it will be deleted on the next iteration.
     MI->setLength(Constant::getNullValue(MI->getLength()->getType()));
     return MI;
@@ -223,6 +225,7 @@ Instruction *InstCombinerImpl::SimplifyAnyMemTransfer(AnyMemTransferInst *MI) {
     S->setMetadata(LLVMContext::MD_mem_parallel_loop_access, LoopMemParallelMD);
   if (AccessGroupMD)
     S->setMetadata(LLVMContext::MD_access_group, AccessGroupMD);
+  S->copyMetadata(*MI, LLVMContext::MD_DIAssignID);
 
   if (auto *MT = dyn_cast<MemTransferInst>(MI)) {
     // non-atomics can be volatile
@@ -252,7 +255,7 @@ Instruction *InstCombinerImpl::SimplifyAnyMemSet(AnyMemSetInst *MI) {
   // If we have a store to a location which is known constant, we can conclude
   // that the store must be storing the constant value (else the memory
   // wouldn't be constant), and this must be a noop.
-  if (AA->pointsToConstantMemory(MI->getDest())) {
+  if (!isModSet(AA->getModRefInfoMask(MI->getDest()))) {
     // Set the size of the copy to 0, it will be deleted on the next iteration.
     MI->setLength(Constant::getNullValue(MI->getLength()->getType()));
     return MI;
@@ -294,9 +297,15 @@ Instruction *InstCombinerImpl::SimplifyAnyMemSet(AnyMemSetInst *MI) {
     Dest = Builder.CreateBitCast(Dest, NewDstPtrTy);
 
     // Extract the fill value and store.
-    uint64_t Fill = FillC->getZExtValue()*0x0101010101010101ULL;
-    StoreInst *S = Builder.CreateStore(ConstantInt::get(ITy, Fill), Dest,
-                                       MI->isVolatile());
+    const uint64_t Fill = FillC->getZExtValue()*0x0101010101010101ULL;
+    Constant *FillVal = ConstantInt::get(ITy, Fill);
+    StoreInst *S = Builder.CreateStore(FillVal, Dest, MI->isVolatile());
+    S->copyMetadata(*MI, LLVMContext::MD_DIAssignID);
+    for (auto *DAI : at::getAssignmentMarkers(S)) {
+      if (any_of(DAI->location_ops(), [&](Value *V) { return V == FillC; }))
+        DAI->replaceVariableLocationOp(FillC, FillVal);
+    }
+
     S->setAlignment(Alignment);
     if (isa<AtomicMemSetInst>(MI))
       S->setOrdering(AtomicOrdering::Unordered);
@@ -328,7 +337,7 @@ Value *InstCombinerImpl::simplifyMaskedLoad(IntrinsicInst &II) {
   // If we can unconditionally load from this address, replace with a
   // load/select idiom. TODO: use DT for context sensitive query
   if (isDereferenceablePointer(LoadPtr, II.getType(),
-                               II.getModule()->getDataLayout(), &II, nullptr)) {
+                               II.getModule()->getDataLayout(), &II, &AC)) {
     LoadInst *LI = Builder.CreateAlignedLoad(II.getType(), LoadPtr, Alignment,
                                              "unmaskedload");
     LI->copyMetadata(II);
@@ -1297,6 +1306,8 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
     Value *I0 = II->getArgOperand(0), *I1 = II->getArgOperand(1);
     // umin(x, 1) == zext(x != 0)
     if (match(I1, m_One())) {
+      assert(II->getType()->getScalarSizeInBits() != 1 &&
+             "Expected simplify of umin with max constant");
       Value *Zero = Constant::getNullValue(I0->getType());
       Value *Cmp = Builder.CreateICmpNE(I0, Zero);
       return CastInst::Create(Instruction::ZExt, Cmp, II->getType());
@@ -1829,6 +1840,63 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
 
     break;
   }
+  case Intrinsic::matrix_multiply: {
+    // Optimize negation in matrix multiplication.
+
+    // -A * -B -> A * B
+    Value *A, *B;
+    if (match(II->getArgOperand(0), m_FNeg(m_Value(A))) &&
+        match(II->getArgOperand(1), m_FNeg(m_Value(B)))) {
+      replaceOperand(*II, 0, A);
+      replaceOperand(*II, 1, B);
+      return II;
+    }
+
+    Value *Op0 = II->getOperand(0);
+    Value *Op1 = II->getOperand(1);
+    Value *OpNotNeg, *NegatedOp;
+    unsigned NegatedOpArg, OtherOpArg;
+    if (match(Op0, m_FNeg(m_Value(OpNotNeg)))) {
+      NegatedOp = Op0;
+      NegatedOpArg = 0;
+      OtherOpArg = 1;
+    } else if (match(Op1, m_FNeg(m_Value(OpNotNeg)))) {
+      NegatedOp = Op1;
+      NegatedOpArg = 1;
+      OtherOpArg = 0;
+    } else
+      // Multiplication doesn't have a negated operand.
+      break;
+
+    // Only optimize if the negated operand has only one use.
+    if (!NegatedOp->hasOneUse())
+      break;
+
+    Value *OtherOp = II->getOperand(OtherOpArg);
+    VectorType *RetTy = cast<VectorType>(II->getType());
+    VectorType *NegatedOpTy = cast<VectorType>(NegatedOp->getType());
+    VectorType *OtherOpTy = cast<VectorType>(OtherOp->getType());
+    ElementCount NegatedCount = NegatedOpTy->getElementCount();
+    ElementCount OtherCount = OtherOpTy->getElementCount();
+    ElementCount RetCount = RetTy->getElementCount();
+    // (-A) * B -> A * (-B), if it is cheaper to negate B and vice versa.
+    if (ElementCount::isKnownGT(NegatedCount, OtherCount) &&
+        ElementCount::isKnownLT(OtherCount, RetCount)) {
+      Value *InverseOtherOp = Builder.CreateFNeg(OtherOp);
+      replaceOperand(*II, NegatedOpArg, OpNotNeg);
+      replaceOperand(*II, OtherOpArg, InverseOtherOp);
+      return II;
+    }
+    // (-A) * B -> -(A * B), if it is cheaper to negate the result
+    if (ElementCount::isKnownGT(NegatedCount, RetCount)) {
+      SmallVector<Value *, 5> NewArgs(II->args());
+      NewArgs[NegatedOpArg] = OpNotNeg;
+      Instruction *NewMul =
+          Builder.CreateIntrinsic(II->getType(), IID, NewArgs, II);
+      return replaceInstUsesWith(*II, Builder.CreateFNegFMF(NewMul, II));
+    }
+    break;
+  }
   case Intrinsic::fmuladd: {
     // Canonicalize fast fmuladd to the separate fmul + fadd.
     if (II->isFast()) {
@@ -1979,7 +2047,64 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
     }
     break;
   }
+  case Intrinsic::ptrauth_auth:
+  case Intrinsic::ptrauth_resign: {
+    // (sign|resign) + (auth|resign) can be folded by omitting the middle
+    // sign+auth component if the key and discriminator match.
+    bool NeedSign = II->getIntrinsicID() == Intrinsic::ptrauth_resign;
+    Value *Key = II->getArgOperand(1);
+    Value *Disc = II->getArgOperand(2);
 
+    // AuthKey will be the key we need to end up authenticating against in
+    // whatever we replace this sequence with.
+    Value *AuthKey = nullptr, *AuthDisc = nullptr, *BasePtr;
+    if (auto CI = dyn_cast<CallBase>(II->getArgOperand(0))) {
+      BasePtr = CI->getArgOperand(0);
+      if (CI->getIntrinsicID() == Intrinsic::ptrauth_sign) {
+        if (CI->getArgOperand(1) != Key || CI->getArgOperand(2) != Disc)
+          break;
+      } else if (CI->getIntrinsicID() == Intrinsic::ptrauth_resign) {
+        if (CI->getArgOperand(3) != Key || CI->getArgOperand(4) != Disc)
+          break;
+        AuthKey = CI->getArgOperand(1);
+        AuthDisc = CI->getArgOperand(2);
+      } else
+        break;
+    } else
+      break;
+
+    unsigned NewIntrin;
+    if (AuthKey && NeedSign) {
+      // resign(0,1) + resign(1,2) = resign(0, 2)
+      NewIntrin = Intrinsic::ptrauth_resign;
+    } else if (AuthKey) {
+      // resign(0,1) + auth(1) = auth(0)
+      NewIntrin = Intrinsic::ptrauth_auth;
+    } else if (NeedSign) {
+      // sign(0) + resign(0, 1) = sign(1)
+      NewIntrin = Intrinsic::ptrauth_sign;
+    } else {
+      // sign(0) + auth(0) = nop
+      replaceInstUsesWith(*II, BasePtr);
+      eraseInstFromFunction(*II);
+      return nullptr;
+    }
+
+    SmallVector<Value *, 4> CallArgs;
+    CallArgs.push_back(BasePtr);
+    if (AuthKey) {
+      CallArgs.push_back(AuthKey);
+      CallArgs.push_back(AuthDisc);
+    }
+
+    if (NeedSign) {
+      CallArgs.push_back(II->getArgOperand(3));
+      CallArgs.push_back(II->getArgOperand(4));
+    }
+
+    Function *NewFn = Intrinsic::getDeclaration(II->getModule(), NewIntrin);
+    return CallInst::Create(NewFn, CallArgs);
+  }
   case Intrinsic::arm_neon_vtbl1:
   case Intrinsic::aarch64_neon_tbl1:
     if (Value *V = simplifyNeonTbl1(*II, Builder))
@@ -2221,7 +2346,7 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
         Pred == ICmpInst::ICMP_NE && LHS->getOpcode() == Instruction::Load &&
         LHS->getType()->isPointerTy() &&
         isValidAssumeForContext(II, LHS, &DT)) {
-      MDNode *MD = MDNode::get(II->getContext(), None);
+      MDNode *MD = MDNode::get(II->getContext(), std::nullopt);
       LHS->setMetadata(LLVMContext::MD_nonnull, MD);
       return RemoveConditionFromAssume(II);
 
@@ -2703,7 +2828,7 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
   }
   default: {
     // Handle target specific intrinsics
-    Optional<Instruction *> V = targetInstCombineIntrinsic(*II);
+    std::optional<Instruction *> V = targetInstCombineIntrinsic(*II);
     if (V)
       return V.value();
     break;
@@ -3116,8 +3241,7 @@ Instruction *InstCombinerImpl::visitCallBase(CallBase &Call) {
 
         if (FunctionType &&
             FunctionType->getZExtValue() != ExpectedType->getZExtValue())
-          dbgs() << Call.getModule()->getName() << ":"
-                 << Call.getDebugLoc().getLine()
+          dbgs() << Call.getModule()->getName()
                  << ": warning: kcfi: " << Call.getCaller()->getName()
                  << ": call to " << CalleeF->getName()
                  << " using a mismatching function pointer type\n";
@@ -3336,6 +3460,10 @@ bool InstCombinerImpl::transformConstExprCastCall(CallBase &Call) {
 
     if (CallerPAL.hasParamAttr(i, Attribute::SwiftError))
       return false;
+
+    if (CallerPAL.hasParamAttr(i, Attribute::ByVal) !=
+        Callee->getAttributes().hasParamAttr(i, Attribute::ByVal))
+      return false; // Cannot transform to or from byval.
 
     // If the parameter is passed as a byval argument, then we have to have a
     // sized type and the sized type has to have the same size as the old type.
