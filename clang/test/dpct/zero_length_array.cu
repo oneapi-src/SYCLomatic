@@ -9,12 +9,12 @@
 // CHECK-NEXT:   */
 // CHECK-NEXT:   int arr0[0];
 // CHECK-NEXT:   int arr1[1];
-// CHECK-NEXT:   // zero-sized local_accessor is allowed in SYCL
+// CHECK-NEXT:   // The zero-sized shared array will be migrated to zero-sized local_accessor which is allowed in SYCL
 // CHECK-NEXT: }
 __global__ void k() {
   int arr0[0];
   int arr1[1];
-  __shared__ int arr2[0];// zero-sized local_accessor is allowed in SYCL
+  __shared__ int arr2[0];// The zero-sized shared array will be migrated to zero-sized local_accessor which is allowed in SYCL
 }
 
 // CHECK: int main() {
