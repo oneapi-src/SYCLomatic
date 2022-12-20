@@ -320,25 +320,30 @@ class path_lib_record {
 public:
   void operator=(const path_lib_record &) = delete;
   ~path_lib_record() {
-    for (void *lib : libraries) {
-      FreeLibrary(static_cast<HMODULE>(lib));
-    }
-    for (std::filesystem::path path : paths) {
-      std::filesystem::permissions(path, std::filesystem::perms::owner_all);
-      std::filesystem::remove_all(path.remove_filename());
+    for (auto entry : lib_to_path) {
+      FreeLibrary(static_cast<HMODULE>(entry.first));
+      std::filesystem::permissions(entry.second, std::filesystem::perms::owner_all);
+      std::filesystem::remove_all(entry.second.remove_filename());
     }
   }
   static void record_lib_path(std::filesystem::path path, void *library) {
-    paths.push_back(path);
-    libraries.insert(library);
+    lib_to_path[library] = path;
   }
   static void remove_lib(void *library) {
-    libraries.erase(static_cast<void *>(library));
+    auto path = lib_to_path[library];
+    std::error_code ec;
+
+    FreeLibrary(static_cast<HMODULE>(library));
+    std::filesystem::permissions(path, std::filesystem::perms::owner_all);
+    if (std::filesystem::remove_all(path.remove_filename(),ec) != 2 || ec)
+      // one directory and one temporary file should have been deleted
+      throw std::runtime_error("Directory delete failed");
+
+    lib_to_path.erase(library);
   }
 
 private:
-  inline static std::vector<std::filesystem::path> paths;
-  inline static std::unordered_set<void *> libraries;
+  inline static std::unordered_map<void *,std::filesystem::path> lib_to_path;
 };
 #endif
 
@@ -379,8 +384,6 @@ static kernel_library load_dl_from_data(char const *const data, size_t size) {
   if (std::filesystem::remove_all(filename.remove_filename(),ec) != 2 || ec)
     // one directory and one temporary file should have been deleted
     throw std::runtime_error("Directory delete failed");
-  if (ec)
-    throw std::runtime_error("Directory delete failed");
 #endif
 
   return so;
@@ -413,7 +416,6 @@ static kernel_library load_kernel_library_mem(char const *const image) {
  /// \param [in,out] library Handle to the library to be closed.
 static void unload_kernel_library(const kernel_library &library) {
 #ifdef _WIN32
-  FreeLibrary(static_cast<HMODULE>(static_cast<void *>(library)));
   detail::path_lib_record::remove_lib(library);
 #else
   dlclose(library);
