@@ -26,16 +26,9 @@ macro(set_dpct_package)
 endmacro()
 
 macro(install_dpct)
-  if(UNIX)
-    set(LIBCURL ${CMAKE_SOURCE_DIR}/../clang/lib/DPCT/libcurl/lib/linux/libcurl.a)
-  else()
-    set(LIBCURL ${CMAKE_SOURCE_DIR}/../clang/lib/DPCT/libcurl/lib/win/libcurl_a.lib)
-  endif()
-
   target_link_libraries(dpct-binary
     PRIVATE
     DPCT
-    ${LIBCURL}
     )
 
   add_clang_symlink(c2s dpct-binary)

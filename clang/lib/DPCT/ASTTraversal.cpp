@@ -13,7 +13,6 @@
 #include "CustomHelperFiles.h"
 #include "ExprAnalysis.h"
 #include "FFTAPIMigration.h"
-#include "GAnalytics.h"
 #include "Homoglyph.h"
 #include "MigrationRuleManager.h"
 #include "MisleadingBidirectional.h"
@@ -13020,7 +13019,6 @@ void RecognizeAPINameRule::processMemberFuncCall(const CXXMemberCallExpr *MC) {
   SrcAPIStaticsMap[getFunctionSignature(MD, ObjName)]++;
 
   if (!MigrationStatistics::IsMigrated(APIName)) {
-    GAnalytics(getFunctionSignature(MC->getMethodDecl(), ObjName));
     const SourceManager &SM = DpctGlobalInfo::getSourceManager();
     const SourceLocation FileLoc = SM.getFileLoc(MC->getBeginLoc());
 
@@ -13069,7 +13067,6 @@ void RecognizeAPINameRule::processFuncCall(const CallExpr *CE,
     // branch. If code goes here, we treat the API is user-defined, just return.
     return;
   } else if (!MigrationStatistics::IsMigrated(APIName)) {
-    GAnalytics(getFunctionSignature(CE->getCalleeDecl()->getAsFunction(), ""));
     const SourceManager &SM = DpctGlobalInfo::getSourceManager();
     const SourceLocation FileLoc = SM.getFileLoc(CE->getBeginLoc());
 
