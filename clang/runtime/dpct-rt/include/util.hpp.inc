@@ -722,7 +722,7 @@ inline queue_ptr int_as_queue_ptr(uintptr_t x) {
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|args_selector|dpct
+// DPCT_LABEL_BEGIN|kernel_wrapper|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <int n_nondefault_params, int n_default_params, typename T>

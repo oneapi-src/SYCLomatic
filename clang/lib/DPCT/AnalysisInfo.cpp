@@ -2366,6 +2366,7 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
   {
     auto FunctionBlock = Printer.block();
     Printer.indent();
+    requestFeature(HelperFeatureEnum::Util_kernel_wrapper, FilePath);
     Printer << "DPCT_EXPORT void " << FuncName << "_wrapper(" << MapNames::getClNamespace()
             << "queue &queue, const " << MapNames::getClNamespace()
             << "nd_range<3> &nr, unsigned int localMemSize, void "
@@ -2384,7 +2385,6 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
       {
         auto BodyBlock = Printer.block();
         Printer.newLine();
-	requestFeature(HelperFeatureEnum::Util_args_selector, FilePath);
 	Printer.line(MapNames::getDpctNamespace() + "args_selector<"
 		     + std::to_string(NonDefaultParamNum) + ", "
 		     + std::to_string(ParamsNum-NonDefaultParamNum) + ", "
