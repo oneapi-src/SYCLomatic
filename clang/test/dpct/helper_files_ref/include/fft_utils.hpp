@@ -612,6 +612,9 @@ public:
   /// Specify the external workspace.
   /// \param [in] ptr Pointer to the workspace.
   void set_workspace(void *ptr) {
+    if (!_use_external_workspace) {
+      return;
+    }
     if (_input_type == library_data_t::complex_float &&
         _output_type == library_data_t::complex_float) {
       auto data = dpct::detail::get_memory(reinterpret_cast<float *>(ptr));
