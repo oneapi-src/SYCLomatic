@@ -17,7 +17,8 @@ struct CustomMin {
   operator()(const OutputT& a, const OutputT& b) const {
     if (std::isnan(a)) {
       return a;
-    } else if (std::isnan(b)) {
+    }
+    if (std::isnan(b)) {
       return b;
     }
     return std::min<OutputT>(a, b);
@@ -53,5 +54,10 @@ void test1() {
 void test2() {
   // CHECK: dummy_func(tmp, tmp_size, d_in, d_out, n, d_offsets, d_offsets, min_op, initial_value, getXpuStream());
   cub::DeviceSegmentedReduce::Reduce(tmp, tmp_size, d_in, d_out, n, d_offsets, d_offsets, min_op, initial_value, getCudaStream());
-  return c;
+  return;
+}
+
+void test3() {
+  // CHECK: CUB_WRAPPER(dummy_func, d_in, d_out, n, d_offsets, d_offsets, min_op, initial_value, getXpuStream());
+  CUB_WRAPPER(cub::DeviceSegmentedReduce::Reduce, d_in, d_out, n, d_offsets, d_offsets, min_op, initial_value, getCudaStream());
 }
