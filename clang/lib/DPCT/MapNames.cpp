@@ -3862,22 +3862,22 @@ const MapNames::MapTy MapNames::RandomEngineTypeMap{
 // Device Random Generator Type mapping
 const MapNames::MapTy MapNames::DeviceRandomGeneratorTypeMap{
     {"curandStateXORWOW_t", "dpct::rng::device::rng_generator<oneapi::"
-                            "mkl::rng::device::philox4x32x10<4>>"},
+                            "mkl::rng::device::philox4x32x10<1>>"},
     {"curandStateXORWOW", "dpct::rng::device::rng_generator<oneapi::"
-                          "mkl::rng::device::philox4x32x10<4>>"},
+                          "mkl::rng::device::philox4x32x10<1>>"},
     {"curandState_t", "dpct::rng::device::rng_generator<oneapi::mkl::"
-                      "rng::device::philox4x32x10<4>>"},
+                      "rng::device::philox4x32x10<1>>"},
     {"curandState", "dpct::rng::device::rng_generator<oneapi::mkl::"
-                    "rng::device::philox4x32x10<4>>"},
+                    "rng::device::philox4x32x10<1>>"},
     {"curandStatePhilox4_32_10_t",
      "dpct::rng::device::rng_generator<oneapi::mkl::rng::device::"
-     "philox4x32x10<4>>"},
+     "philox4x32x10<1>>"},
     {"curandStatePhilox4_32_10", "dpct::rng::device::rng_generator<"
-                                 "oneapi::mkl::rng::device::philox4x32x10<4>>"},
+                                 "oneapi::mkl::rng::device::philox4x32x10<1>>"},
     {"curandStateMRG32k3a_t", "dpct::rng::device::rng_generator<"
-                              "oneapi::mkl::rng::device::mrg32k3a<4>>"},
+                              "oneapi::mkl::rng::device::mrg32k3a<1>>"},
     {"curandStateMRG32k3a", "dpct::rng::device::rng_generator<oneapi::"
-                            "mkl::rng::device::mrg32k3a<4>>"},
+                            "mkl::rng::device::mrg32k3a<1>>"},
 };
 
 const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>

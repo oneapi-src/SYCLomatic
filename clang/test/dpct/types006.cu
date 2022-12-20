@@ -4,7 +4,7 @@
 #include <curand_kernel.h>
 
 void foo() {
-// CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> bar;
+// CHECK: dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> bar;
 // CHECK-NEXT: auto lambda = [&bar] () {
 // CHECK-NEXT:   return bar.generate<oneapi::mkl::rng::device::uniform<float>, 1>();
 // CHECK-NEXT: };
