@@ -418,3 +418,20 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
         CALL(MapNames::getDpctNamespace() + "geqrf_batch_wrapper", DEREF(makeDerefArgCreatorWithCall(0)),
              ARG(1), ARG(2), DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(3), BOOL(false), BOOL(false)), ARG(4),
              DOUBLE_POINTER_CONST_CAST(makeLiteral(MapNames::getClNamespace() + "double2"), ARG(5), BOOL(false), BOOL(false)), ARG(6), ARG(7)))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_rot,
+    CALL_FACTORY_ENTRY("cublasCrot_v2",
+                       CALL(MapNames::getDpctNamespace() + "rot", DEREF(makeDerefArgCreatorWithCall(0)),
+                            ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"), ARG(3), ARG(4),
+                            ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
+                            ARG(5), ARG(6), ARG(7), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float")))))
+
+ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::BlasUtils_rot,
+    CALL_FACTORY_ENTRY("cublasZrot_v2",
+                       CALL(MapNames::getDpctNamespace() + "rot", DEREF(makeDerefArgCreatorWithCall(0)),
+                            ARG(1), ARG(2), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"), ARG(3), ARG(4),
+                            ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double"),
+                            ARG(5), ARG(6), ARG(7), ARG(MapNames::getDpctNamespace() + "library_data_t::complex_double")))))
+
