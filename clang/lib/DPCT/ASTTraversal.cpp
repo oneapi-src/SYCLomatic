@@ -2080,11 +2080,11 @@ void AtomicFunctionRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(AtomicFunctionRule, PassKind::PK_Migration)
 
-void ZeroLengthArrayDetectorRule::registerMatcher(MatchFinder &MF) {
+void ZeroLengthArrayRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(typeLoc(loc(constantArrayType())).bind("ConstantArrayType"),
                 this);
 }
-void ZeroLengthArrayDetectorRule::runRule(
+void ZeroLengthArrayRule::runRule(
     const MatchFinder::MatchResult &Result) {
   auto TL = getNodeAsType<TypeLoc>(Result, "ConstantArrayType");
   if (!TL)
@@ -2093,22 +2093,26 @@ void ZeroLengthArrayDetectorRule::runRule(
       dyn_cast_or_null<ConstantArrayType>(TL->getTypePtr());
   if (!CAT)
     return;
+
+  // Check the array length
   if (!(CAT->getSize().isZero()))
     return;
+
+  // Check if the array is in device code
   const clang::FunctionDecl *FD = DpctGlobalInfo::getParentFunction(TL);
   if (!FD)
     return;
   if (!(FD->getAttr<CUDADeviceAttr>()) && !(FD->getAttr<CUDAGlobalAttr>()))
     return;
 
-  // For zero-sized shared memory declaration, we do not emit warning.
+  // Check if the array is a shared variable
   const VarDecl* VD = DpctGlobalInfo::findAncestor<VarDecl>(TL);
   if (VD && VD->getAttr<CUDASharedAttr>())
     return;
 
   report(TL->getBeginLoc(), Diagnostics::ZERO_LENGTH_ARRAY, false);
 }
-REGISTER_RULE(ZeroLengthArrayDetectorRule, PassKind::PK_Migration)
+REGISTER_RULE(ZeroLengthArrayRule, PassKind::PK_Migration)
 
 // Rule for types migration in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {

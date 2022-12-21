@@ -438,8 +438,8 @@ private:
                          const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-class ZeroLengthArrayDetectorRule
-    : public NamedMigrationRule<ZeroLengthArrayDetectorRule> {
+class ZeroLengthArrayRule
+    : public NamedMigrationRule<ZeroLengthArrayRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
