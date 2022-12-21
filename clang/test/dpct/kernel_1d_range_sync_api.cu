@@ -18,6 +18,9 @@ __global__ void global1() {
 
   // CHECK: auto b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
   cg::thread_block b0 = cg::this_thread_block(), b1 = cg::this_thread_block();
+  
+  // CHECK: int GroupSize = item_ct1.get_group().get_local_linear_range();
+  int GroupSize = block.size();
 }
 
 // CHECK: #define TB(b) auto b = item_ct1.get_group();

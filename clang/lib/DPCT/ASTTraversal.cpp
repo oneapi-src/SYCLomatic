@@ -12605,7 +12605,8 @@ void CooperativeGroupsFunctionRule::runRule(
           "cooperative_groups::__v1::thread_block_tile<4>",
           "cooperative_groups::__v1::thread_block_tile<8>",
           "cooperative_groups::__v1::thread_block_tile<16>",
-          "cooperative_groups::__v1::thread_block_tile<32>"};
+          "cooperative_groups::__v1::thread_block_tile<32>",
+          "cooperative_groups::__v1::thread_block"};
       if (!SupportedBaseType.count(getBaseTypeStr(CE))) {
         return;
       }
