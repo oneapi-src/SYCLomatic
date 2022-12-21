@@ -1235,6 +1235,12 @@ public:
   static EventQueryTraversal getEventQueryTraversal();
 
 private:
+  void handleEventRecordWithProfilingEnabled(
+      const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
+      bool IsAssigned);
+  void handleEventRecordWithProfilingDisabled(
+      const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
+      bool IsAssigned);
   void findEventAPI(const Stmt *Node, const CallExpr *&Call,
                     const std::string EventAPIName);
   void processAsyncJob(const Stmt *Node);

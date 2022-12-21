@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Device/api_test3_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test3_out
 
-// CHECK: 17
+// CHECK: 18
 
 // TEST_FEATURE: Device_device_ext_create_queue
 
