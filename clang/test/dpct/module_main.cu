@@ -9,18 +9,18 @@ int main(){
     CUfunction F;
     std::string Path, FunctionName, Data;
     //CHECK: /*
-    //CHECK-NEXT: DPCT1102:{{[0-9]+}}: 'Path.c_str()' should be a dynamic library. The dynamic library should supply "wrapped" kernel functions.
+    //CHECK-NEXT: DPCT1103:{{[0-9]+}}: 'Path.c_str()' should be a dynamic library. The dynamic library should supply "wrapped" kernel functions.
     //CHECK-NEXT: */
     //CHECK-NEXT: M = dpct::load_kernel_library(Path.c_str());
     cuModuleLoad(&M, Path.c_str());
     //CHECK: /*
-    //CHECK-NEXT: DPCT1103:{{[0-9]+}}: 'Data.c_str()' should point to a dynamic library loaded in memory. The dynamic library should supply "wrapped" kernel functions.
+    //CHECK-NEXT: DPCT1104:{{[0-9]+}}: 'Data.c_str()' should point to a dynamic library loaded in memory. The dynamic library should supply "wrapped" kernel functions.
     //CHECK-NEXT: */
     //CHECK-NEXT: M = dpct::load_kernel_library_mem(Data.c_str());
     cuModuleLoadData(&M, Data.c_str());
 
     //CHECK: /*
-    //CHECK-NEXT: DPCT1104:{{[0-9]+}}: 'Data.c_str()' should point to a dynamic library loaded in memory. The dynamic library should supply "wrapped" kernel functions. Compilation options passed to cuModuleLoadDataEx are not migrated.
+    //CHECK-NEXT: DPCT1105:{{[0-9]+}}: 'Data.c_str()' should point to a dynamic library loaded in memory. The dynamic library should supply "wrapped" kernel functions. Compilation options passed to cuModuleLoadDataEx are not migrated.
     //CHECK-NEXT: */
     //CHECK-NEXT: M = dpct::load_kernel_library_mem(Data.c_str());
     cuModuleLoadDataEx(&M, Data.c_str(), 0, NULL, NULL);
