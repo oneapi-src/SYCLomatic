@@ -159,6 +159,9 @@ static llvm::cl::opt<std::string> Passes(
          "Only the specified passes are applied."),
     llvm::cl::value_desc("IterationSpaceBuiltinRule,..."), llvm::cl::cat(DPCTCat),
                llvm::cl::Hidden);
+static llvm::cl::opt<std::string> QueryApiMapping ("query-api-mapping",
+        llvm::cl::desc("Outputs to stdout functionally compatible SYCL API mapping for CUDA API."),
+        llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional, llvm::cl::ReallyHidden);
 #ifdef DPCT_DEBUG_BUILD
 static llvm::cl::opt<std::string>
     DiagsContent("report-diags-content",
