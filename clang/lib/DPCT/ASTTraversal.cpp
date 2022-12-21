@@ -898,10 +898,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_BLAS);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(
-          HashLoc, HT_MKL_Without_Util);
+          HashLoc, HT_MKL_Mkl);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -920,10 +920,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_RNG);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_RNG_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_RNG_Without_Util);
+                                                 HT_MKL_RNG);
     }
     DpctGlobalInfo::setMKLHeaderUsed(true);
     TransformSet.emplace_back(new ReplaceInclude(
@@ -940,10 +940,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_SPBLAS);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Without_Util);
+                                                 HT_MKL_Mkl);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -960,10 +960,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_FFT);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_FFT_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Without_Util);
+                                                 HT_MKL_Mkl);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -980,10 +980,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_Solver);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_LAPACK_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Without_Util);
+                                                 HT_MKL_Mkl);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -996,7 +996,7 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   if (FileName.compare(StringRef("nccl.h")) == 0) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_CCL);
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_CCL_Utils);
     requestFeature(HelperFeatureEnum::CclUtils_create_kvs_address, HashLoc);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
@@ -1008,7 +1008,7 @@ void IncludesCallbacks::InclusionDirective(
     if (isChildOrSamePath(AnalysisScope, DirPath)) {
       return;
     }
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Dnnl);
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_DNNL_Utils);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -1018,7 +1018,7 @@ void IncludesCallbacks::InclusionDirective(
 
   if (FileName.compare(StringRef("cuda/atomic")) == 0||
       FileName.compare(StringRef("cuda/std/atomic")) == 0) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Atomic);
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_Atomic);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -1075,7 +1075,7 @@ void IncludesCallbacks::InclusionDirective(
     } else {
       if(FileName.compare(StringRef("thrust/functional.h")) == 0)
         DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Functional);
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Utils);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_DPL_Utils);
       requestFeature(HelperFeatureEnum::DplUtils_non_local_include_dependency,
                      HashLoc);
       TransformSet.emplace_back(new ReplaceInclude(
@@ -2819,7 +2819,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     // Add '#include <oneapi/mkl/bfloat16.hpp>' directive to the file only once
     if (TypeStr == "__nv_bfloat16") {
-      DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_BFloat16);
+      DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_MKL_BFloat16);
     }
     // Add '#include <dpct/lib_common_utils.hpp>' directive to the file only
     // once
@@ -2831,7 +2831,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
               HelperFilesCustomizationLevel::HFCL_All) {
         DpctGlobalInfo::getInstance().insertHeader(BeginLoc,
-                                                   HT_Lib_Common_Utils);
+                                                   HT_DPCT_COMMON_Utils);
       }
     }
 
@@ -3905,7 +3905,7 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
           DpctGlobalInfo::getInstance().insertHeader(
               DpctGlobalInfo::getSourceManager().getExpansionLoc(
                   E->getBeginLoc()),
-              HT_Lib_Common_Utils);
+              HT_DPCT_COMMON_Utils);
         }
       }
     }
@@ -5152,7 +5152,7 @@ void DeviceRandomFunctionCallRule::runRule(
 
     std::string Factor = "8";
     if (GeneratorType == "dpct::rng::device::rng_generator<oneapi::"
-                         "mkl::rng::device::philox4x32x10<4>>" &&
+                         "mkl::rng::device::philox4x32x10<1>>" &&
         (DRefArg3Type == "curandStatePhilox4_32_10_t" ||
          DRefArg3Type == "curandStatePhilox4_32_10")) {
       Factor = "4";
@@ -6627,7 +6627,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
               HelperFilesCustomizationLevel::HFCL_All) {
         DpctGlobalInfo::getInstance().insertHeader(
-            SM->getExpansionLoc(CE->getBeginLoc()), HT_Lib_Common_Utils);
+            SM->getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
       }
     }
 
@@ -8175,6 +8175,7 @@ bool EventAPICallRule::isEventElapsedTimeFollowed(const CallExpr *Expr) {
   }
   return IsMeasureTime;
 }
+
 void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
   bool IsAssigned = false;
   const CallExpr *CE = getNodeAsType<CallExpr>(Result, "eventAPICall");
@@ -8201,7 +8202,10 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     if (getEventQueryTraversal().startFromQuery(CE))
       return;
 
-    if (!isEventElapsedTimeFollowed(CE)) {
+    // Pattern-based solution for migration of time measurement code is enabled
+    // only when option '--enable-profiling' is disabled.
+    if (!isEventElapsedTimeFollowed(CE) &&
+        !DpctGlobalInfo::getEnablepProfilingFlag()) {
       auto FD = getImmediateOuterFuncDecl(CE);
       if (!FD)
         return;
@@ -8242,19 +8246,31 @@ void EventAPICallRule::runRule(const MatchFinder::MatchResult &Result) {
     handleEventElapsedTime(IsAssigned);
   } else if (FuncName == "cudaEventSynchronize" ||
              FuncName == "cuEventSynchronize") {
-    bool NeedReport = false;
-    std::string ReplStr{getStmtSpelling(CE->getArg(0))};
-    ReplStr += "->wait_and_throw()";
-    if (IsAssigned) {
-      ReplStr = "(" + ReplStr + ", 0)";
-      NeedReport = true;
-    }
+    if(DpctGlobalInfo::getEnablepProfilingFlag()) {
+      // Option '--enable-profiling' is enabled
+      std::string ReplStr{getStmtSpelling(CE->getArg(0))};
+      ReplStr += "->wait_and_throw()";
+      if (IsAssigned) {
+        ReplStr = "(" + ReplStr + ", 0)";
+        report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+      }
+      emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+    } else {
+      // Option '--enable-profiling' is not enabled
+      bool NeedReport = false;
+      std::string ReplStr{getStmtSpelling(CE->getArg(0))};
+      ReplStr += "->wait_and_throw()";
+      if (IsAssigned) {
+        ReplStr = "(" + ReplStr + ", 0)";
+        NeedReport = true;
+      }
 
-    auto &Context = dpct::DpctGlobalInfo::getContext();
-    const auto &TM = ReplaceStmt(CE, ReplStr);
-    const auto R = TM.getReplacement(Context);
-    DpctGlobalInfo::getInstance().insertEventSyncTypeInfo(R, NeedReport,
-                                                          IsAssigned);
+      auto &Context = dpct::DpctGlobalInfo::getContext();
+      const auto &TM = ReplaceStmt(CE, ReplStr);
+      const auto R = TM.getReplacement(Context);
+      DpctGlobalInfo::getInstance().insertEventSyncTypeInfo(R, NeedReport,
+                                                            IsAssigned);
+    }
   } else {
     llvm::dbgs() << "[" << getName()
                  << "] Unexpected function name: " << FuncName;
@@ -8369,20 +8385,175 @@ void EventAPICallRule::findEventAPI(const Stmt *Node, const CallExpr *&Call,
   }
 }
 
-void EventAPICallRule::handleEventRecord(const CallExpr *CE,
-                                         const MatchFinder::MatchResult &Result,
-                                         bool IsAssigned) {
-  report(CE->getBeginLoc(), Diagnostics::TIME_MEASUREMENT_FOUND, false);
-  DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), HT_Chrono);
-  std::ostringstream Repl;
+void EventAPICallRule::handleEventRecordWithProfilingEnabled(
+    const CallExpr *CE, const MatchFinder::MatchResult &Result,
+    bool IsAssigned) {
+  auto StreamArg = CE->getArg(CE->getNumArgs() - 1);
+  auto StreamName = getStmtSpelling(StreamArg);
+  auto ArgName = getStmtSpelling(CE->getArg(0));
+  bool IsDefaultStream = isDefaultStream(StreamArg);
+  auto IndentLoc = CE->getBeginLoc();
+  auto &SM = DpctGlobalInfo::getSourceManager();
 
-  const ValueDecl *MD = getDecl(CE->getArg(0));
-  if (!MD)
-    return;
+  if (IndentLoc.isMacroID())
+    IndentLoc = SM.getExpansionLoc(IndentLoc);
+
+  if (IsAssigned) {
+
+    std::string StmtStr;
+    if (IsDefaultStream) {
+      if (isPlaceholderIdxDuplicated(CE))
+        return;
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
+      std::string Str;
+      if (!DpctGlobalInfo::useEnqueueBarrier()) {
+        // ext_oneapi_submit_barrier is specified in the value of option
+        // --no-dpcpp-extensions.
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+
+          Str = "dpct::get_current_device().queues_wait_and_throw();";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          std::string SubStr = "{{NEEDREPLACEQ" + std::to_string(Index) +
+                               "}}.single_task([=](){});";
+          SubStr = "*" + ArgName + " = " + SubStr;
+          Str += SubStr;
+
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          Str += "dpct::get_current_device().queues_wait_and_throw();";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          Str += "return 0;";
+
+          Str = "[](){" + Str + "}()";
+          emplaceTransformation(new ReplaceStmt(CE, std::move(Str)));
+          return;
+
+        } else {
+          Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
+                "}}.single_task([=](){})";
+        }
+
+      } else {
+        Str = "{{NEEDREPLACEQ" + std::to_string(Index) +
+              "}}.ext_oneapi_submit_barrier()";
+      }
+      StmtStr = "*" + ArgName + " = " + Str;
+    } else {
+      std::string Str;
+      if (!DpctGlobalInfo::useEnqueueBarrier()) {
+        // ext_oneapi_submit_barrier is specified in the value of option
+        // --no-dpcpp-extensions.
+
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+
+          Str = "dpct::get_current_device().queues_wait_and_throw();";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          Str += StreamName + "->" + "single_task([=](){});";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          Str += "dpct::get_current_device().queues_wait_and_throw()";
+
+          Str = "[](){" + Str + "}()";
+          emplaceTransformation(new ReplaceStmt(CE, std::move(Str)));
+          return;
+        } else {
+          Str = StreamName + "->" + "single_task([=](){})";
+        }
+
+      } else {
+        Str = StreamName + "->" + "ext_oneapi_submit_barrier()";
+      }
+      StmtStr = "*" + ArgName + " = " + Str;
+    }
+    StmtStr = "(" + StmtStr + ", 0)";
+
+    emplaceTransformation(new ReplaceStmt(CE, std::move(StmtStr)));
+
+    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO, false);
+
+  } else {
+    std::string ReplStr;
+    if (IsDefaultStream) {
+      if (isPlaceholderIdxDuplicated(CE))
+        return;
+      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
+      buildTempVariableMap(Index, CE, HelperFuncType::HFT_DefaultQueue);
+      std::string Str;
+      if (!DpctGlobalInfo::useEnqueueBarrier()) {
+        // ext_oneapi_submit_barrier is specified in the value of option
+        // --no-dpcpp-extensions.
+
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+
+          Str = "dpct::get_current_device().queues_wait_and_throw();";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          Str += "*" + ArgName + " = {{NEEDREPLACEQ" + std::to_string(Index) +
+                 "}}.single_task([=](){});";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          Str += "dpct::get_current_device().queues_wait_and_throw()";
+
+        } else {
+          Str = "*" + ArgName + " = {{NEEDREPLACEQ" + std::to_string(Index) +
+                "}}.single_task([=](){})";
+        }
+
+      } else {
+        Str = "*" + ArgName + " = {{NEEDREPLACEQ" + std::to_string(Index) +
+              "}}.ext_oneapi_submit_barrier()";
+      }
+      ReplStr += Str;
+    } else {
+
+      std::string Str;
+      if (!DpctGlobalInfo::useEnqueueBarrier()) {
+        // ext_oneapi_submit_barrier is specified in the value of option
+        // --no-dpcpp-extensions.
+
+        if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+
+          Str = "dpct::get_current_device().queues_wait_and_throw();";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+
+          Str += "*" + ArgName + " = " + StreamName + "->single_task([=](){});";
+          Str += getNL();
+          Str += getIndent(IndentLoc, SM).str();
+          Str += "dpct::get_current_device().queues_wait_and_throw()";
+
+        } else {
+          Str = "*" + ArgName + " = " + StreamName + "->single_task([=](){})";
+        }
+
+      } else {
+        Str = "*" + ArgName + " = " + StreamName +
+              "->ext_oneapi_submit_barrier()";
+      }
+      ReplStr += Str;
+    }
+
+    emplaceTransformation(new ReplaceStmt(CE, std::move(ReplStr)));
+  }
+}
+
+void EventAPICallRule::handleEventRecordWithProfilingDisabled(
+    const CallExpr *CE, const MatchFinder::MatchResult &Result,
+    bool IsAssigned) {
+
   // Insert the helper variable right after the event variables
   static std::set<std::pair<const Decl *, std::string>> DeclDupFilter;
   auto &SM = DpctGlobalInfo::getSourceManager();
+  const ValueDecl *MD = getDecl(CE->getArg(0));
   std::string InsertStr;
+
+  report(CE->getBeginLoc(), Diagnostics::TIME_MEASUREMENT_FOUND, false);
+  DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), HT_Chrono);
+
   if (isInMacroDefinition(MD->getBeginLoc(), MD->getEndLoc())) {
     InsertStr += "\\";
   }
@@ -8397,6 +8568,7 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
     emplaceTransformation(new InsertAfterDecl(MD, std::move(InsertStr)));
   }
 
+  std::ostringstream Repl;
   // Replace event recording with std::chrono timing
   Repl << getTimePointNameForEvent(CE->getArg(0), false)
        << " = std::chrono::steady_clock::now()";
@@ -8478,8 +8650,8 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
         ReplStr += getIndent(IndentLoc, SM).str();
         ReplStr += Str;
       } else {
-        std::string Str =
-            "*" + ArgName + " = " + StreamName + "->ext_oneapi_submit_barrier()";
+        std::string Str = "*" + ArgName + " = " + StreamName +
+                          "->ext_oneapi_submit_barrier()";
         ReplStr += getNL();
         ReplStr += getIndent(IndentLoc, SM).str();
         ReplStr += Str;
@@ -8492,29 +8664,75 @@ void EventAPICallRule::handleEventRecord(const CallExpr *CE,
   }
 }
 
+void EventAPICallRule::handleEventRecord(const CallExpr *CE,
+                                         const MatchFinder::MatchResult &Result,
+                                         bool IsAssigned) {
+  if (!getDecl(CE->getArg(0)))
+    return;
+
+  if (DpctGlobalInfo::getEnablepProfilingFlag()) {
+    // Option '--enable-profiling' is enabled
+    handleEventRecordWithProfilingEnabled(CE, Result, IsAssigned);
+  } else {
+    // Option '--enable-profiling' is disabled
+    handleEventRecordWithProfilingDisabled(CE, Result, IsAssigned);
+  }
+}
+
 void EventAPICallRule::handleEventElapsedTime(bool IsAssigned) {
-  auto StmtStrArg0 = getStmtSpelling(TimeElapsedCE->getArg(0));
-  auto StmtStrArg1 = getTimePointNameForEvent(TimeElapsedCE->getArg(1), false);
-  auto StmtStrArg2 = getTimePointNameForEvent(TimeElapsedCE->getArg(2), false);
-  std::ostringstream Repl;
-  std::string Assginee = "*(" + StmtStrArg0 + ")";
-  if (auto UO = dyn_cast<UnaryOperator>(TimeElapsedCE->getArg(0))) {
-    if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf)
-      Assginee = getStmtSpelling(UO->getSubExpr());
+  if(DpctGlobalInfo::getEnablepProfilingFlag()) {
+    // Option '--enable-profiling' is enabled
+    auto StmtStrArg0 = getStmtSpelling(TimeElapsedCE->getArg(0));
+    auto StmtStrArg1 = getStmtSpelling(TimeElapsedCE->getArg(1));
+    auto StmtStrArg2 = getStmtSpelling(TimeElapsedCE->getArg(2));
+
+    std::ostringstream Repl;
+    std::string Assginee = "*(" + StmtStrArg0 + ")";
+    if (auto UO = dyn_cast<UnaryOperator>(TimeElapsedCE->getArg(0))) {
+      if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf)
+        Assginee = getStmtSpelling(UO->getSubExpr());
+    }
+
+    auto StartTimeStr = StmtStrArg1 + "->get_profiling_info<"
+                            "sycl::info::event_profiling::command_start>()";
+    auto StopTimeStr =  StmtStrArg2 + "->get_profiling_info<"
+                            "sycl::info::event_profiling::command_end>()";
+
+    Repl << Assginee << " = ("
+        << StopTimeStr << " - " << StartTimeStr << ") / 1000000.0f";
+    if (IsAssigned) {
+      std::ostringstream Temp;
+      Temp << "(" << Repl.str() << ", 0)";
+      Repl = std::move(Temp);
+      report(TimeElapsedCE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP,
+            false);
+    }
+    emplaceTransformation(new ReplaceStmt(TimeElapsedCE, std::move(Repl.str())));
+  } else {
+    // Option '--enable-profiling' is not enabled
+    auto StmtStrArg0 = getStmtSpelling(TimeElapsedCE->getArg(0));
+    auto StmtStrArg1 = getTimePointNameForEvent(TimeElapsedCE->getArg(1), false);
+    auto StmtStrArg2 = getTimePointNameForEvent(TimeElapsedCE->getArg(2), false);
+    std::ostringstream Repl;
+    std::string Assginee = "*(" + StmtStrArg0 + ")";
+    if (auto UO = dyn_cast<UnaryOperator>(TimeElapsedCE->getArg(0))) {
+      if (UO->getOpcode() == UnaryOperatorKind::UO_AddrOf)
+        Assginee = getStmtSpelling(UO->getSubExpr());
+    }
+    Repl << Assginee << " = std::chrono::duration<float, std::milli>("
+        << StmtStrArg2 << " - " << StmtStrArg1 << ").count()";
+    if (IsAssigned) {
+      std::ostringstream Temp;
+      Temp << "(" << Repl.str() << ", 0)";
+      Repl = std::move(Temp);
+      report(TimeElapsedCE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP,
+            false);
+    }
+    const std::string Name =
+        TimeElapsedCE->getCalleeDecl()->getAsFunction()->getNameAsString();
+    emplaceTransformation(new ReplaceStmt(TimeElapsedCE, std::move(Repl.str())));
+    handleTimeMeasurement();
   }
-  Repl << Assginee << " = std::chrono::duration<float, std::milli>("
-       << StmtStrArg2 << " - " << StmtStrArg1 << ").count()";
-  if (IsAssigned) {
-    std::ostringstream Temp;
-    Temp << "(" << Repl.str() << ", 0)";
-    Repl = std::move(Temp);
-    report(TimeElapsedCE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP,
-           false);
-  }
-  const std::string Name =
-      TimeElapsedCE->getCalleeDecl()->getAsFunction()->getNameAsString();
-  emplaceTransformation(new ReplaceStmt(TimeElapsedCE, std::move(Repl.str())));
-  handleTimeMeasurement();
 }
 
 bool EventAPICallRule::IsEventArgArraySubscriptExpr(const Expr *E) {
@@ -12209,6 +12427,7 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
      return;
 
   ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
   EA.applyAllSubExprRepl();
 
   auto FD = CE->getDirectCallee();
@@ -14584,7 +14803,7 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
       DpctGlobalInfo::getInstance().insertHeader(
-          SM.getExpansionLoc(CE->getBeginLoc()), HT_Lib_Common_Utils);
+          SM.getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
     }
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
