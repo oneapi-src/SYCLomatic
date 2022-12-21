@@ -224,14 +224,16 @@ public:
   // nullptr, caller need to use temp variable to save the return value, then
   // check. Don't call twice for same Replacement.
   inline TextModification *getReplacement() {
+    bool hasRepl = hasReplacement();
+    std::string Repl = getReplacedString();
     if (E) {
-      return hasReplacement() ? new ReplaceStmt(E, true, getReplacedString())
-                              : nullptr;
+      auto Range = getDefinitionRange(E->getBeginLoc(), E->getEndLoc());
+      if (!isSameLocation(Range.getBegin(), Range.getEnd())) {
+        return hasRepl ? new ReplaceStmt(E, true, Repl) : nullptr;
+      }
     }
-
-    return hasReplacement() ? new ReplaceText(SrcBeginLoc, SrcLength,
-                                              std::string(getReplacedString()))
-                            : nullptr;
+    return hasRepl ? new ReplaceText(SrcBeginLoc, SrcLength, std::move(Repl))
+                   : nullptr;
   }
 
   inline void clearReplacement() { ReplSet.reset(); }
@@ -419,7 +421,7 @@ protected:
                                                SourceLocation End,
                                                const Expr *Parent);
   std::pair<size_t, size_t> getOffsetAndLength(SourceLocation SL);
-  std::pair<size_t, size_t> getOffsetAndLength(const Expr *);
+  std::pair<size_t, size_t> getOffsetAndLength(const Expr *, SourceLocation *Loc = nullptr);
 
   // Replace a token with its begin location
   inline void addReplacement(SourceLocation SL, std::string Text) {
