@@ -27,16 +27,6 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 
-#ifdef SYCLomatic_CUSTOMIZATION
-namespace clang {
-namespace frontend {
-static std::string SDKIncludePathForLex = "";
-void setSDKIncludePathForLex(const std::string &Path) {
-  SDKIncludePathForLex = Path;
-}
-}
-}
-#endif // SYCLomatic_CUSTOMIZATION
 using namespace clang;
 using namespace clang::frontend;
 
@@ -554,17 +544,8 @@ static unsigned RemoveDuplicates(std::vector<DirectoryLookupInfo> &SearchList,
 
       // If the first dir in the search path is a non-system dir, zap it
       // instead of the system one.
-#ifdef SYCLomatic_CUSTOMIZATION
-      // But if the first dir is passed from --cuda-include-path, we prefer
-      // to remove the later one in order to keep the original order.
-      if ((SearchList[FirstDir].Lookup.getDirCharacteristic() ==
-           SrcMgr::C_User) &&
-          (SearchList[FirstDir].Lookup.getName().str() != SDKIncludePathForLex))
-        DirToRemove = FirstDir;
-#else // SYCLomatic_CUSTOMIZATION
       if (SearchList[FirstDir].Lookup.getDirCharacteristic() == SrcMgr::C_User)
         DirToRemove = FirstDir;
-#endif // SYCLomatic_CUSTOMIZATION
     }
 
     if (Verbose) {
