@@ -174,15 +174,18 @@ bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
 }
 
 void rewriteFileName(SmallString<512> &FileName) {
+  const auto Extension = path::extension(FileName);
   SourceProcessType FileType = GetSourceFileType(FileName.str());
-
-  if (FileType & SPT_CudaSource) {
-    path::replace_extension(FileName, "dp.cpp");
-  } else if (FileType & SPT_CppSource) {
-    auto Extension = path::extension(FileName);
-    path::replace_extension(FileName, Extension + ".dp.cpp");
-  } else if (FileType & SPT_CudaHeader) {
-    path::replace_extension(FileName, "dp.hpp");
+  // If user does not specify which extension need be changed, we change all the
+  // SPT_CudaSource, SPT_CppSource and SPT_CudaHeader files.
+  if (DpctGlobalInfo::getChangeExtensions().empty() ||
+      DpctGlobalInfo::getChangeExtensions().count(Extension.str())) {
+    if (FileType & SPT_CudaSource)
+      path::replace_extension(FileName, "dp.cpp");
+    else if (FileType & SPT_CppSource)
+      path::replace_extension(FileName, Extension + ".dp.cpp");
+    else if (FileType & SPT_CudaHeader)
+      path::replace_extension(FileName, "dp.hpp");
   }
 }
 
