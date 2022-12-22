@@ -1,36 +1,41 @@
-// UNSUPPORTED: -windows-
 // RUN: dpct --format-range=none -out-root %T/module_main %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/module_main/module_main.dp.cpp
 
-//CHECK: #include <dlfcn.h>
 #include <string>
 int main(){
-    //CHECK: void * M;
+    //CHECK: dpct::kernel_library M;
     CUmodule M;
-    //CHECK: dpct::kernel_functor F;
+    //CHECK: dpct::kernel_function F;
     CUfunction F;
     std::string Path, FunctionName, Data;
     //CHECK: /*
-    //CHECK-NEXT: DPCT1079:{{[0-9]+}}: Replace "dpct_placeholder" with the file path of the dynamic library.
+    //CHECK-NEXT: DPCT1103:{{[0-9]+}}: 'Path.c_str()' should be a dynamic library. The dynamic library should supply "wrapped" kernel functions.
     //CHECK-NEXT: */
-    //CHECK-NEXT: M = dlopen(dpct_placeholder/*Fix the module file name manually*/, RTLD_LAZY);
+    //CHECK-NEXT: M = dpct::load_kernel_library(Path.c_str());
     cuModuleLoad(&M, Path.c_str());
     //CHECK: /*
-    //CHECK-NEXT: DPCT1079:{{[0-9]+}}: Replace "dpct_placeholder" with the file path of the dynamic library.
+    //CHECK-NEXT: DPCT1104:{{[0-9]+}}: 'Data.c_str()' should point to a dynamic library loaded in memory. The dynamic library should supply "wrapped" kernel functions.
     //CHECK-NEXT: */
-    //CHECK-NEXT: M = dlopen(dpct_placeholder/*Fix the module file name manually*/, RTLD_LAZY);
+    //CHECK-NEXT: M = dpct::load_kernel_library_mem(Data.c_str());
     cuModuleLoadData(&M, Data.c_str());
-    //CHECK: F = (dpct::kernel_functor)dlsym(M, (std::string(FunctionName.c_str()) + "_wrapper").c_str());
+
+    //CHECK: /*
+    //CHECK-NEXT: DPCT1105:{{[0-9]+}}: 'Data.c_str()' should point to a dynamic library loaded in memory. The dynamic library should supply "wrapped" kernel functions. Compilation options passed to cuModuleLoadDataEx are not migrated.
+    //CHECK-NEXT: */
+    //CHECK-NEXT: M = dpct::load_kernel_library_mem(Data.c_str());
+    cuModuleLoadDataEx(&M, Data.c_str(), 0, NULL, NULL);
+
+    //CHECK: F = dpct::get_kernel_function(M, FunctionName.c_str());
     cuModuleGetFunction(&F, M, FunctionName.c_str());
 
     int sharedSize;
     CUstream s;
     void **param, **extra;
-    //CHECK:  F(*s, sycl::nd_range<3>(sycl::range<3>(32, 16, 1) * sycl::range<3>(64, 32, 4), sycl::range<3>(64, 32, 4)), sharedSize, param, extra);
+    //CHECK:  dpct::invoke_kernel_function(F, *s, sycl::range<3>(32, 16, 1), sycl::range<3>(64, 32, 4), sharedSize, param, extra);
     cuLaunchKernel(F, 1, 16, 32, 4, 32, 64, sharedSize, s, param, extra);
-    //CHECK:  F(q_ct1, sycl::nd_range<3>(sycl::range<3>(32, 16, 1) * sycl::range<3>(64, 32, 4), sycl::range<3>(64, 32, 4)), sharedSize, param, extra);
+    //CHECK:  dpct::invoke_kernel_function(F, q_ct1, sycl::range<3>(32, 16, 1), sycl::range<3>(64, 32, 4), sharedSize, param, extra);
     cuLaunchKernel(F, 1, 16, 32, 4, 32, 64, sharedSize, 0, param, extra);
-    //CHECK:  F(q_ct1, sycl::nd_range<3>(sycl::range<3>(32, 16, 1) * sycl::range<3>(64, 32, 4), sycl::range<3>(64, 32, 4)), sharedSize, param, extra);
+    //CHECK:  dpct::invoke_kernel_function(F, q_ct1, sycl::range<3>(32, 16, 1), sycl::range<3>(64, 32, 4), sharedSize, param, extra);
     cuLaunchKernel(F, 1, 16, 32, 4, 32, 64, sharedSize, CU_STREAM_LEGACY, param, extra);
 
     //CHECK: dpct::image_wrapper_base_p tex;
@@ -38,7 +43,16 @@ int main(){
     CUtexref tex;
     cuModuleGetTexRef(&tex, M, "tex");
 
-    //CHECK: dlclose(M);
+    //CHECK: dpct::unload_kernel_library(M);
     cuModuleUnload(M);
+
+    //CHECK: /*
+    //CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
+    //CHECK-NEXT: */
+    //CHECK-NEXT: if ((dpct::unload_kernel_library(M), 0)==0) {
+    if (cuModuleUnload(M)==0) {
+      printf("unload failed\n");
+    }
+
     return 0;
 }

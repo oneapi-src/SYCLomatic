@@ -2080,6 +2080,40 @@ void AtomicFunctionRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(AtomicFunctionRule, PassKind::PK_Migration)
 
+void ZeroLengthArrayRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(typeLoc(loc(constantArrayType())).bind("ConstantArrayType"),
+                this);
+}
+void ZeroLengthArrayRule::runRule(
+    const MatchFinder::MatchResult &Result) {
+  auto TL = getNodeAsType<TypeLoc>(Result, "ConstantArrayType");
+  if (!TL)
+    return;
+  const ConstantArrayType *CAT =
+      dyn_cast_or_null<ConstantArrayType>(TL->getTypePtr());
+  if (!CAT)
+    return;
+
+  // Check the array length
+  if (!(CAT->getSize().isZero()))
+    return;
+
+  // Check if the array is in device code
+  const clang::FunctionDecl *FD = DpctGlobalInfo::getParentFunction(TL);
+  if (!FD)
+    return;
+  if (!(FD->getAttr<CUDADeviceAttr>()) && !(FD->getAttr<CUDAGlobalAttr>()))
+    return;
+
+  // Check if the array is a shared variable
+  const VarDecl* VD = DpctGlobalInfo::findAncestor<VarDecl>(TL);
+  if (VD && VD->getAttr<CUDASharedAttr>())
+    return;
+
+  report(TL->getBeginLoc(), Diagnostics::ZERO_LENGTH_ARRAY, false);
+}
+REGISTER_RULE(ZeroLengthArrayRule, PassKind::PK_Migration)
+
 // Rule for types migration in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
@@ -12571,7 +12605,8 @@ void CooperativeGroupsFunctionRule::runRule(
           "cooperative_groups::__v1::thread_block_tile<4>",
           "cooperative_groups::__v1::thread_block_tile<8>",
           "cooperative_groups::__v1::thread_block_tile<16>",
-          "cooperative_groups::__v1::thread_block_tile<32>"};
+          "cooperative_groups::__v1::thread_block_tile<32>",
+          "cooperative_groups::__v1::thread_block"};
       if (!SupportedBaseType.count(getBaseTypeStr(CE))) {
         return;
       }
@@ -14842,8 +14877,8 @@ REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration)
 
 void DriverModuleAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DriverModuleAPI = [&]() {
-    return hasAnyName("cuModuleLoad", "cuModuleLoadData", "cuModuleUnload",
-                      "cuModuleGetFunction", "cuLaunchKernel",
+    return hasAnyName("cuModuleLoad", "cuModuleLoadData", "cuModuleLoadDataEx",
+                      "cuModuleUnload", "cuModuleGetFunction", "cuLaunchKernel",
                       "cuModuleGetTexRef");
   };
 
@@ -14871,14 +14906,26 @@ void DriverModuleAPIRule::runRule(
   if (auto DC = CE->getDirectCallee()) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     APIName = DC->getNameAsString();
-    DpctGlobalInfo::getInstance().insertHeader(
-        SM.getExpansionLoc(CE->getBeginLoc()), HT_DL);
   } else {
     return;
   }
 
-  if (APIName == "cuModuleLoad" || APIName == "cuModuleLoadData") {
-    report(CE->getBeginLoc(), Diagnostics::MODULE_FILENAME_MANUAL_FIX, false);
+  if (APIName == "cuModuleLoad") {
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD, false,
+           getStmtSpelling(CE->getArg(1)));
+  } else if (APIName == "cuModuleLoadData") {
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA, false,
+           getStmtSpelling(CE->getArg(1)));
+  } else if (APIName == "cuModuleLoadDataEx") {
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA_EX, false,
+           getStmtSpelling(CE->getArg(1)));
+  }
+
+  if (isAssigned(CE) &&
+      (APIName == "cuModuleLoad" || APIName == "cuModuleLoadData" ||
+       APIName == "cuModuleLoadDataEx" || APIName == "cuModuleGetFunction")) {
+    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    insertAroundStmt(CE, "(", ", 0)");
   }
 
   ExprAnalysis EA;
