@@ -17,6 +17,7 @@
 // DASH-NEXT: --cuda-include-path
 // DASH-NEXT: --custom-helper-name
 // DASH-NEXT: --enable-ctad
+// DASH-NEXT: --enable-profiling
 // DASH-NEXT: --extra-arg
 // DASH-NEXT: --format-range=
 // DASH-NEXT: --format-style=
@@ -34,7 +35,6 @@
 // DASH-NEXT: --output-file
 // DASH-NEXT: --output-verbosity=
 // DASH-NEXT: --process-all
-// DASH-NEXT: --query-api-mapping
 // DASH-NEXT: --report-file-prefix
 // DASH-NEXT: --report-format=
 // DASH-NEXT: --report-only

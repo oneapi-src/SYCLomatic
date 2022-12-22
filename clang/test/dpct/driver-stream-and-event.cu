@@ -65,7 +65,7 @@ void foo(){
   cuEventElapsedTime(&result_time, start, end);
 
   int rr;
-  //CHECK: rr = dpct::get_kernel_function_info((const void *)f).max_work_group_size;
+  //CHECK: rr = dpct::get_kernel_function_info(f).max_work_group_size;
   cuFuncGetAttribute(&rr, CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, f);
 
   cuEventDestroy(start);
