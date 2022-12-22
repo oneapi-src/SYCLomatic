@@ -217,3 +217,5 @@ DEF_WARNING(FFT_EXTERNAL_WORKSPACE, 1100, "Currently the DFT external workspace 
 DEF_COMMENT(FFT_EXTERNAL_WORKSPACE, 1100, "Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.")
 DEF_WARNING(MACRO_EXPR_REPLACED, 1101, "'%0' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.")
 DEF_COMMENT(MACRO_EXPR_REPLACED, 1101, "'{0}' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.")
+DEF_WARNING(COMPLETE_ARGUMENT, 1102, "Data gradient and weight gradient can't compute seperately. Replace \"dpct_placeholder\" with the proper argument.")
+DEF_COMMENT(COMPLETE_ARGUMENT, 1102, "Data gradient and weight gradient can't compute seperately. Replace \"dpct_placeholder\" with the proper argument.")

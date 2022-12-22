@@ -40,7 +40,9 @@ void CuDNNTypeRule::registerMatcher(MatchFinder &MF) {
               "cudnnBatchNormOps_t", "cudnnBatchNormMode_t", "cudnnNormMode_t",
               "cudnnNormOps_t", "cudnnConvolutionDescriptor_t",
               "cudnnConvolutionFwdAlgo_t", "cudnnConvolutionBwdDataAlgo_t",
-              "cudnnConvolutionBwdFilterAlgo_t", "cudnnFilterDescriptor_t"))))))
+              "cudnnConvolutionBwdFilterAlgo_t", "cudnnFilterDescriptor_t",
+              "cudnnRNNMode_t", "cudnnRNNBiasMode_t", "cudnnDirectionMode_t",
+              "cudnnRNNDescriptor_t", "cudnnForwardMode_t"))))))
           .bind("CuDNNType"),
       this);
   MF.addMatcher(declRefExpr(to(enumConstantDecl(matchesName("CUDNN_.*"))))
@@ -163,7 +165,12 @@ void CuDNNAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cudnnConvolutionBackwardBias", "cudnnConvolutionBackwardFilter",
         "cudnnGetConvolutionForwardWorkspaceSize", "cudnnGetConvolutionBackwardDataWorkspaceSize",
         "cudnnGetConvolutionBackwardFilterWorkspaceSize",
-        "cudnnGetNormalizationBackwardWorkspaceSize");
+        "cudnnGetNormalizationBackwardWorkspaceSize",
+        "cudnnCreateRNNDescriptor", "cudnnCreateRNNDataDescriptor", "cudnnDestroyRNNDescriptor",
+        "cudnnDestroyRNNDataDescriptor", "cudnnSetRNNDataDescriptor", "cudnnGetRNNDataDescriptor",
+        "cudnnSetRNNDescriptor_v8", "cudnnGetRNNDescriptor_v8", "cudnnGetRNNWeightSpaceSize",
+        "cudnnGetRNNTempSpaceSizes", "cudnnRNNForward", "cudnnRNNBackwardData_v8",
+        "cudnnRNNBackwardWeights_v8");
   };
 
   MF.addMatcher(callExpr(callee(functionDecl(CuDNNAPI()))).bind("call"), this);
