@@ -662,6 +662,7 @@ public:
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
 // Device|device_ext
+// Device|device_ext_create_queue
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void reset() {
