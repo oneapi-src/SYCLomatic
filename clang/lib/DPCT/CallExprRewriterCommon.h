@@ -369,7 +369,7 @@ getTemplateArgsList(const CallExpr *C) {
     Ret.emplace_back(Arg, C->getSourceRange());
   }
   return Ret;
-};
+}
 
 inline std::function<TemplatedNamePrinter<
     StringRef, std::vector<TemplateArgumentInfo>>(const CallExpr *)>

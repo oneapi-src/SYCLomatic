@@ -4,7 +4,53 @@
 // RUN: dpct --autocomplete=,
 // RUN: dpct --autocomplete==
 // RUN: dpct --autocomplete=,,
-// RUN: dpct --autocomplete=-
+// RUN: dpct --autocomplete=- | FileCheck %s -check-prefix=DASH
+// Notice: When modify DASH prefix check, need modify behavior_tests/src/bt-autocomplete/do_test.py
+// in SYCLomatic-test repo too.
+// DASH: --always-use-async-handler
+// DASH-NEXT: --analysis-scope-path
+// DASH-NEXT: --assume-nd-range-dim=
+// DASH-NEXT: --build-script-file
+// DASH-NEXT: --change-filename-extension
+// DASH-NEXT: --check-unicode-security
+// DASH-NEXT: --comments
+// DASH-NEXT: --cuda-include-path
+// DASH-NEXT: --custom-helper-name
+// DASH-NEXT: --enable-ctad
+// DASH-NEXT: --enable-profiling
+// DASH-NEXT: --extra-arg
+// DASH-NEXT: --format-range=
+// DASH-NEXT: --format-style=
+// DASH-NEXT: --gen-build-script
+// DASH-NEXT: --help
+// DASH-NEXT: --in-root
+// DASH-NEXT: --in-root-exclude
+// DASH-NEXT: --keep-original-code
+// DASH-NEXT: --no-cl-namespace-inline
+// DASH-NEXT: --no-dpcpp-extensions=
+// DASH-NEXT: --no-dry-pattern
+// DASH-NEXT: --no-incremental-migration
+// DASH-NEXT: --optimize-migration
+// DASH-NEXT: --out-root
+// DASH-NEXT: --output-file
+// DASH-NEXT: --output-verbosity=
+// DASH-NEXT: --process-all
+// DASH-NEXT: --report-file-prefix
+// DASH-NEXT: --report-format=
+// DASH-NEXT: --report-only
+// DASH-NEXT: --report-type=
+// DASH-NEXT: --rule-file
+// DASH-NEXT: --stop-on-parse-err
+// DASH-NEXT: --suppress-warnings
+// DASH-NEXT: --suppress-warnings-all
+// DASH-NEXT: --sycl-named-lambda
+// DASH-NEXT: --use-custom-helper=
+// DASH-NEXT: --use-dpcpp-extensions=
+// DASH-NEXT: --use-experimental-features=
+// DASH-NEXT: --use-explicit-namespace=
+// DASH-NEXT: --usm-level=
+// DASH-NEXT: --version
+// DASH-NEXT: -p
 // RUN: dpct --autocomplete=##
 // RUN: dpct --autocomplete=#
 
