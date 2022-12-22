@@ -279,7 +279,7 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
   return std::pair<size_t, size_t>(Begin, End - Begin + LastTokenLength);
 }
 
-std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
+std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, SourceLocation *Loc) {
   SourceLocation BeginLoc, EndLoc;
   size_t End;
 
@@ -318,6 +318,8 @@ std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E) {
   auto RewritePostfixLength =
       SM.getCharacterData(EndLoc) - SM.getCharacterData(EndLocWithoutPostfix);
 
+  if (Loc)
+    *Loc = BeginLoc;
   ExprBeginLoc = BeginLoc;
   ExprEndLoc = EndLoc;
   RewritePrefix =
@@ -347,7 +349,7 @@ void ExprAnalysis::initExpression(const Expr *Expression) {
   E = Expression;
   SrcBegin = 0;
   if (E && E->getBeginLoc().isValid()) {
-    std::tie(SrcBegin, SrcLength) = getOffsetAndLength(E);
+    std::tie(SrcBegin, SrcLength) = getOffsetAndLength(E, &SrcBeginLoc);
     ReplSet.init(
         std::string(SM.getBufferData(FileId).substr(SrcBegin, SrcLength)));
   } else {
@@ -880,9 +882,7 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
       // applyAllSubExprRepl
       if (Result.has_value()) {
         auto ResultStr = Result.value();
-        addExtReplacement(std::make_shared<ExtReplacement>(
-            SM, SM.getSpellingLoc(CE->getBeginLoc()), getCalleeName(CE).size(),
-            ResultStr, nullptr));
+        addReplacement(CE->getCallee(), ResultStr);
         Rewriter->Analyzer.applyAllSubExprRepl();
       }
     } else {

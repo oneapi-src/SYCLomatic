@@ -217,3 +217,5 @@ DEF_WARNING(FFT_EXTERNAL_WORKSPACE, 1100, "Currently the DFT external workspace 
 DEF_COMMENT(FFT_EXTERNAL_WORKSPACE, 1100, "Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.")
 DEF_WARNING(MACRO_EXPR_REPLACED, 1101, "'%0' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.")
 DEF_COMMENT(MACRO_EXPR_REPLACED, 1101, "'{0}' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.")
+DEF_WARNING(ZERO_LENGTH_ARRAY, 1102, "Zero-length arrays are not permitted in SYCL device code.")
+DEF_COMMENT(ZERO_LENGTH_ARRAY, 1102, "Zero-length arrays are not permitted in SYCL device code.")

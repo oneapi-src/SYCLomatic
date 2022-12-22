@@ -125,6 +125,9 @@ CONDITIONAL_FACTORY_ENTRY(
 
 // T.size()
 // === cuda header file <= 10.2 === begin ===
+MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::thread_block.size", GROUP,
+                          false, "get_local_linear_range")
+
 MEMBER_CALL_FACTORY_ENTRY("cooperative_groups::__v1::__thread_block_tile_base<32>.size", SUBGROUP, false, "get_local_linear_range")
 CONDITIONAL_FACTORY_ENTRY(
     UseLogicalGroup,
