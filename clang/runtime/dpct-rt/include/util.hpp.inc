@@ -731,6 +731,21 @@ class args_selector;
 /// args_selector is a helper class for extracting arguments from an
 /// array of pointers to arguments or buffer of arguments to pass to a
 /// kernel function.
+///
+/// \param R(Ts...) The type of the kernel
+/// \param n_nondefault_params The number of nondefault parameters of the kernel
+/// (excluding parameters that like sycl::nd_item, etc.)
+/// \param n_default_params The number of default parameters of the kernel
+///
+/// Example usage:
+/// With the following kernel:
+///   void foo(sycl::float2 *x, int n, sycl::nd_item<3> item_ct1, float f=.1) {}
+/// and with the declaration:
+///   args_selector<2, 1, decltype(foo)> selector(kernelParams, extra);
+/// we have:
+///   selector.get<0>() returns a reference to sycl::float*,
+///   selector.get<1>() returns a reference to int,
+///   selector.get<2>() returns a reference to float
 template <int n_nondefault_params, int n_default_params,
    typename R, typename... Ts>
 class args_selector<n_nondefault_params, n_default_params, R(Ts...)> {

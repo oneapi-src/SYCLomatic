@@ -2385,11 +2385,14 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
       {
         auto BodyBlock = Printer.block();
         Printer.newLine();
-	Printer.line(MapNames::getDpctNamespace() + "args_selector<"
-		     + std::to_string(NonDefaultParamNum) + ", "
-		     + std::to_string(ParamsNum-NonDefaultParamNum) + ", "
-		     + "decltype(" + FuncName
-		     + ")> selector(kernelParams, extra);");
+	auto DefaultParamNum = ParamsNum-NonDefaultParamNum;
+	Printer.line(llvm::formatv(
+           "// {0} non-default parameters, {1} default parameters",
+           NonDefaultParamNum, DefaultParamNum));
+	Printer.line(llvm::formatv(
+           "{0}args_selector<{1}, {2}, decltype({3})> selector(kernelParams, extra);",
+           MapNames::getDpctNamespace(),
+           NonDefaultParamNum, DefaultParamNum, FuncName));
 	for_each_parameter([&](auto&& i, auto&& p) {
 	  Printer.line("auto& " + p
 		       + " = selector.get<"
