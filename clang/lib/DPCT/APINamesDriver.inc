@@ -6,45 +6,24 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifdef _WIN32
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY("cuModuleLoad", DEREF(0),
+                         CALL("dpct::load_kernel_library", ARG(1)))))
 
-ASSIGN_FACTORY_ENTRY(
-    "cuModuleLoad", DEREF(0),
-    CALL("LoadLibraryA",
-         ARG("dpct_placeholder/*Fix the module file name manually*/")))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY("cuModuleLoadData", DEREF(0),
+                         CALL("dpct::load_kernel_library_mem",
+                              ARG(1)))))
 
-ASSIGN_FACTORY_ENTRY(
-    "cuModuleLoadData", DEREF(0),
-    CALL("LoadLibraryA",
-         ARG("dpct_placeholder/*Fix the module file name manually*/")))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY("cuModuleLoadDataEx", DEREF(0),
+                         CALL("dpct::load_kernel_library_mem",
+                              ARG(1)))))
 
-ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
-                     CALL("(dpct::kernel_functor)GetProcAddress", ARG(1),
-                          EXTENDSTR(2, "_wrapper")))
-
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
-                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                            "cuModuleGetTexRef", DEREF(0),
-                            CALL("(dpct::image_wrapper_base_p)GetProcAddress",
-                                 ARG(1), ARG(2)))))
-
-CALL_FACTORY_ENTRY("cuModuleUnload", CALL("FreeLibrary", ARG(0)))
-
-#else
-
-ASSIGN_FACTORY_ENTRY(
-    "cuModuleLoad", DEREF(0),
-    CALL("dlopen", ARG("dpct_placeholder/*Fix the module file name manually*/"),
-         ARG("RTLD_LAZY")))
-
-ASSIGN_FACTORY_ENTRY(
-    "cuModuleLoadData", DEREF(0),
-    CALL("dlopen", ARG("dpct_placeholder/*Fix the module file name manually*/"),
-         ARG("RTLD_LAZY")))
-
-ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
-                     CALL("(dpct::kernel_functor)dlsym", ARG(1),
-                          EXTENDSTR(2, "_wrapper")))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
+    ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
+                         CALL("dpct::get_kernel_function", ARG(1),
+                              ARG(2)))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
                         ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
@@ -52,9 +31,9 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
                             CALL("(dpct::image_wrapper_base_p)dlsym", ARG(1),
                                  ARG(2)))))
 
-CALL_FACTORY_ENTRY("cuModuleUnload", CALL("dlclose", ARG(0)))
-
-#endif
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
+    CALL_FACTORY_ENTRY("cuModuleUnload",
+                       CALL("dpct::unload_kernel_library", ARG(0)))))
 
 #define RANGES_CTOR(RangeType, ...)                                            \
   CALL(DpctGlobalInfo::getCtadClass(                                           \
@@ -64,11 +43,12 @@ CALL_FACTORY_ENTRY("cuModuleUnload", CALL("dlclose", ARG(0)))
   RANGES_CTOR("nd_range", BO(BinaryOperatorKind::BO_Mul, Arg0, Arg1), Arg1)
 #define RANGE_CTOR(Arg0, Arg1, Arg2) RANGES_CTOR("range", Arg0, Arg1, Arg2)
 
-ASSIGNABLE_FACTORY(CALL_FACTORY_ENTRY(
-    "cuLaunchKernel", CALL(ARG(0), STREAM(8),
-                           NDRANGE_CTOR(RANGE_CTOR(ARG(3), ARG(2), ARG(1)),
-                                        RANGE_CTOR(ARG(6), ARG(5), ARG(4))),
-                           ARG(7), ARG(9), ARG(10))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
+    CALL_FACTORY_ENTRY(
+        "cuLaunchKernel",
+        CALL("dpct::invoke_kernel_function", ARG(0), STREAM(8),
+             RANGE_CTOR(ARG(3), ARG(2), ARG(1)),
+             RANGE_CTOR(ARG(6), ARG(5), ARG(4)), ARG(7), ARG(9), ARG(10)))))
 
 #undef NDRANGE_CTOR
 #undef RANGE_CTOR
@@ -80,7 +60,7 @@ FEATURE_REQUEST_FACTORY(
                             makeMemberExprCreator(
                                 CALL(MapNames::getDpctNamespace() +
                                     "get_kernel_function_info",
-                                    CAST(ARG("const void *"), ARG(2))),
+                                    ARG(2)),
                                 false,
                                 ARG(1)))))
 

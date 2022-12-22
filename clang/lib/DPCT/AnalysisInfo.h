@@ -863,6 +863,13 @@ public:
     assert(!AnalysisScope.empty());
     return AnalysisScope;
   }
+  static inline void addChangeExtensions(const std::string &Extension) {
+    assert(!Extension.empty());
+    ChangeExtensions.insert(Extension);
+  }
+  static inline const std::unordered_set<std::string> &getChangeExtensions() {
+    return ChangeExtensions;
+  }
   // TODO: implement one of this for each source language.
   static void setCudaPath(const std::string &InputCudaPath) {
     CudaPath = InputCudaPath;
@@ -2071,6 +2078,7 @@ private:
   static std::string InRoot;
   static std::string OutRoot;
   static std::string AnalysisScope;
+  static std::unordered_set<std::string> ChangeExtensions;
   // TODO: implement one of this for each source language.
   static std::string CudaPath;
   static std::string RuleFile;
