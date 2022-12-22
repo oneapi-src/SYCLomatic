@@ -664,9 +664,7 @@ int runDPCT(int argc, const char **argv) {
     ApiMappingEntry::printMappingDesc(llvm::outs(), QueryApiMapping);
     dpctExit(MigrationSucceeded);
   }
-<<<<<<< HEAD
   */
-=======
 
   auto ExtensionStr = ChangeExtension.getValue();
   ExtensionStr.erase(std::remove(ExtensionStr.begin(), ExtensionStr.end(), ' '),
@@ -688,7 +686,6 @@ int runDPCT(int argc, const char **argv) {
     DpctGlobalInfo::addChangeExtensions(Extension);
   }
 
->>>>>>> SYCLomatic/SYCLomatic
   if (InRoot.empty() && ProcessAllFlag) {
     ShowStatus(MigrationErrorNoExplicitInRoot);
     dpctExit(MigrationErrorNoExplicitInRoot);

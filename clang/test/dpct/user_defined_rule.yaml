@@ -102,11 +102,6 @@
   Priority: Takeover
   In: explicit_template
   Out: ET($1)
-<<<<<<< HEAD
-  HasExplicitTemplateArgs: true
-  Includes: []
-=======
   Includes: []
   Attributes:
     HasExplicitTemplateArgs: true
->>>>>>> SYCLomatic/SYCLomatic
