@@ -138,19 +138,19 @@ void is_partition_test() {
 //CHECK-NEXT:    oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas + N, is_even());
 //CHECK-NEXT:  };
 //CHECK-NEXT:  if (dpct::is_device_ptr(datas)) {
-//CHECK-NEXT:    oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(datas), dpct::device_pointer<int>(datas + N), dpct::device_pointer<>(h_stencil), is_even());
+//CHECK-NEXT:    oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(datas), dpct::device_pointer<int>(datas + N), dpct::device_pointer<int>(stencil), is_even());
 //CHECK-NEXT:  } else {
-//CHECK-NEXT:    oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas + N, h_stencil, is_even());
+//CHECK-NEXT:    oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas + N, stencil, is_even());
 //CHECK-NEXT:  };
 //CHECK-NEXT:  if (dpct::is_device_ptr(datas + N)) {
-//CHECK-NEXT:    oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(datas), dpct::device_pointer<int>(datas + N), dpct::device_pointer<>(h_stencil), is_even());
+//CHECK-NEXT:    oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(datas), dpct::device_pointer<int>(datas + N), dpct::device_pointer<int>(stencil), is_even());
 //CHECK-NEXT:  } else {
-//CHECK-NEXT:    oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas + N, h_stencil, is_even());
+//CHECK-NEXT:    oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas + N, stencil, is_even());
 //CHECK-NEXT:  };
   thrust::partition(thrust::host, datas, datas+N,is_even());
-  thrust::partition( datas, datas+N,is_even());
-  thrust::partition(thrust::host,  datas, datas+N,h_stencil,is_even());
-  thrust::partition( datas, datas+N,h_stencil,is_even());
+  thrust::partition( datas, datas+N, is_even());
+  thrust::partition(thrust::host,  datas, datas+N, stencil,is_even());
+  thrust::partition( datas, datas+N, stencil,is_even());
 }
 
 void unique_copy_test() {
@@ -229,10 +229,6 @@ void set_difference_by_key_test() {
   int Cvalue[P];
   int anskey[P]={0,4,6};
   int ansvalue[P]={0,0,0};
-  int Ckey[P];
-  int Cvalue[P];
-  int anskey[P]={0,4,6};
-  int ansvalue[P]={0,0,0};
 
 //CHECK:  if (dpct::is_device_ptr(Akey)) {
 //CHECK-NEXT:    dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(Akey + N, Bkey, Bkey + M, Avalue, Bvalue, Ckey, Cvalue));
@@ -293,4 +289,55 @@ void set_difference_test() {
   thrust::set_difference( A,A+N,B,B+M,C);
   thrust::set_difference(thrust::host, A,A+N,B,B+M,C, thrust::greater<int>());
   thrust::set_difference( A,A+N,B,B+M,C, thrust::greater<int>());
+}
+
+void tabulate_test() {
+  const int N=10;
+  int A[N];
+  int ans[N]={0, -1, -2, -3, -4, -5, -6, -7, -8, -9};
+  thrust::host_vector<int> h_V(A,A+N);
+  thrust::device_vector<int> d_V(A,A+N);
+
+//CHECK:  if (dpct::is_device_ptr(A)) {
+//CHECK-NEXT:    dpct::for_each_index(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), std::negate<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::for_each_index(oneapi::dpl::execution::seq, A, A + N, std::negate<int>());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(A + N)) {
+//CHECK-NEXT:    dpct::for_each_index(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<>(std::negate<int>()));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::for_each_index(oneapi::dpl::execution::seq, A, A + N, std::negate<int>());
+//CHECK-NEXT:  };
+  thrust::tabulate(thrust::host, A,A+N, thrust::negate<int>());
+  thrust::tabulate(A,A+N, thrust::negate<int>());
+}
+
+struct add_functor
+{
+  void operator()(int & x)
+  {
+    x++;
+  }
+};
+void for_each_n_test() {
+  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  sycl::queue &q_ct1 = dev_ct1.default_queue();
+  const int N=3;
+  int A[N]={0,1,2};
+  int ans[N]={1,2,3};
+  std::vector<int> h_V(A,A+N);
+  dpct::device_vector<int> d_V(A,A+N);
+
+//CHECK:  if (dpct::is_device_ptr(A)) {
+//CHECK-NEXT:    oneapi::dpl::for_each_n(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), N, add_functor());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, A, N, add_functor());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(N)) {
+//CHECK-NEXT:    oneapi::dpl::for_each_n(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), N, add_functor());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, A, N, add_functor());
+//CHECK-NEXT:  };
+  thrust::for_each_n(thrust::host, A, N, add_functor());
+  thrust::for_each_n(A, N, add_functor());
 }

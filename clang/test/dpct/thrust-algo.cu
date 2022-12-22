@@ -429,8 +429,8 @@ void is_partition_test() {
 // CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_vdata.begin(), d_vdata.end(), d_vstencil.begin(), is_even());
 // CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, is_even());
 // CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, is_even());
-// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, h_stencil, is_even());
-// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, h_stencil, is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, stencil, is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, stencil, is_even());
   thrust::partition(thrust::host, h_v.begin(), h_v.end(),is_even());
   thrust::partition( h_v.begin(), h_v.end(),is_even());
   thrust::partition(thrust::host, h_vdata.begin(), h_vdata.end(),h_vstencil.begin(),is_even());
@@ -441,8 +441,8 @@ void is_partition_test() {
   thrust::partition( d_vdata.begin(), d_vdata.end(),d_vstencil.begin(),is_even());
   thrust::partition(thrust::host, datas, datas+N,is_even());
   thrust::partition( datas, datas+N,is_even());
-  thrust::partition(thrust::host,  datas, datas+N,h_stencil,is_even());
-  thrust::partition( datas, datas+N,h_stencil,is_even());
+  thrust::partition(thrust::host,  datas, datas+N, stencil,is_even());
+  thrust::partition( datas, datas+N, stencil,is_even());
 }
 
 
@@ -612,4 +612,56 @@ void set_difference_test() {
   thrust::set_difference( A,A+N,B,B+M,C);
   thrust::set_difference(thrust::host, A,A+N,B,B+M,C, thrust::greater<int>());
   thrust::set_difference( A,A+N,B,B+M,C, thrust::greater<int>());
+}
+
+
+struct add_functor
+{
+  __host__ __device__
+  void operator()(int & x)
+  {
+    x++;
+  }
+};
+void for_each_n_test() {
+  const int N=3;
+  int A[N]={0,1,2};
+  int ans[N]={1,2,3};
+  thrust::host_vector<int> h_V(A,A+N);
+  thrust::device_vector<int> d_V(A,A+N);
+
+// CHECK:  oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, h_V.begin(), h_V.size(), add_functor());
+// CHECK-NEXT:  oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, h_V.begin(), h_V.size(), add_functor());
+// CHECK-NEXT:  oneapi::dpl::for_each_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.size(), add_functor());
+// CHECK-NEXT:  oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, d_V.begin(), d_V.size(), add_functor());
+// CHECK-NEXT:  oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, A, N, add_functor());
+// CHECK-NEXT:  oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, A, N, add_functor());
+  thrust::for_each_n(thrust::host, h_V.begin(), h_V.size(), add_functor());
+  thrust::for_each_n(h_V.begin(), h_V.size(), add_functor());
+  thrust::for_each_n(thrust::ded_Vice, d_V.begin(), d_V.size(), add_functor());
+  thrust::for_each_n(d_V.begin(), d_V.size(), add_functor());
+  thrust::for_each_n(thrust::host, A, N, add_functor());
+  thrust::for_each_n(A, N, add_functor());
+}
+
+
+void tabulate_test() {
+  const int N=10;
+  int A[N];
+  int ans[N]={0, -1, -2, -3, -4, -5, -6, -7, -8, -9};
+  thrust::host_vector<int> h_V(A,A+N);
+  thrust::device_vector<int> d_V(A,A+N);
+
+// CHECK:  dpct::for_each_index(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), std::negate<int>());
+// CHECK-NEXT:  dpct::for_each_index(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), std::negate<int>());
+// CHECK-NEXT:  dpct::for_each_index(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), std::negate<int>());
+// CHECK-NEXT:  dpct::for_each_index(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), std::negate<int>());
+// CHECK-NEXT:  dpct::for_each_index(oneapi::dpl::execution::seq, A, A+N, std::negate<int>());
+// CHECK-NEXT:  dpct::for_each_index(oneapi::dpl::execution::seq, A, A+N, std::negate<int>());
+  thrust::tabulate(thrust::host, h_V.begin(), h_V.end(), thrust::negate<int>());
+  thrust::tabulate( h_V.begin(), h_V.end(), thrust::negate<int>());
+  thrust::tabulate(thrust::device, d_V.begin(), d_V.end(), thrust::negate<int>());
+  thrust::tabulate(d_V.begin(), d_V.end(), thrust::negate<int>());
+  thrust::tabulate(thrust::host, A,A+N, thrust::negate<int>());
+  thrust::tabulate(A,A+N, thrust::negate<int>());
 }

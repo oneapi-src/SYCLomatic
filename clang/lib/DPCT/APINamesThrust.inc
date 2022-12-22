@@ -1849,16 +1849,16 @@ CONDITIONAL_FACTORY_ENTRY(
                                 CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
                                 CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
                                 CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
-                                ARG(3)))),
+                                THRUST_FUNCTOR(3)))),
       CALL_FACTORY_ENTRY("thrust::minmax_element",
                         CALL("oneapi::dpl::minmax_element",
                               ARG("oneapi::dpl::execution::seq"),
-                              ARG(1), ARG(2), ARG(3)))),
+                              ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
     // Handling case: thrust::unique_by_key(thrust::device, d_values.begin(), d_output_keys.end(), d_output_values.begin(), comp);
     CALL_FACTORY_ENTRY("thrust::minmax_element",
                       CALL("oneapi::dpl::minmax_element",
                             makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3)))
+                            ARG(1), ARG(2), THRUST_FUNCTOR(3)))
   ),
   CONDITIONAL_FACTORY_ENTRY(
     CheckArgCount(2),
@@ -1942,7 +1942,7 @@ CONDITIONAL_FACTORY_ENTRY(
           CALL_FACTORY_ENTRY("thrust::minmax_element",
                               CALL("oneapi::dpl::minmax_element",
                                   ARG("oneapi::dpl::execution::seq"),
-                                  ARG(0), ARG(1), ARG(2)))))
+                                  ARG(0), ARG(1), THRUST_FUNCTOR(2)))))
     )
   )
 )
@@ -2800,5 +2800,123 @@ CONDITIONAL_FACTORY_ENTRY(
                             CALL("oneapi::dpl::transform_exclusive_scan",
                               ARG("oneapi::dpl::execution::seq"),
                               ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))
+    )
+)
+
+// thrust::tabulate
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(4),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::tabulate(policy, ptr, ptr, ptr, val);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::tabulate",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::tabulate", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::tabulate",
+                          CALL("dpct::for_each_index",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                ARG(3)))),
+      CALL_FACTORY_ENTRY("thrust::tabulate",
+                        CALL("dpct::for_each_index",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3)))),
+    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, val);
+    CALL_FACTORY_ENTRY("thrust::tabulate",
+                      CALL("dpct::for_each_index",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3)))
+  ),
+
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::tabulate(ptr, ptr, ptr, ptr);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::tabulate",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::tabulate", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::tabulate",
+                            CALL("dpct::for_each_index",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2))))),
+        CALL_FACTORY_ENTRY("thrust::tabulate",
+                          CALL("dpct::for_each_index",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::tabulate(iterator, iterator, iterator, iterator);
+        CALL_FACTORY_ENTRY("thrust::tabulate",
+                            CALL("dpct::for_each_index",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), ARG(2))),
+        CALL_FACTORY_ENTRY("thrust::tabulate",
+                            CALL("dpct::for_each_index",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2))))
+    )
+)
+
+// thrust::for_each_n
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(4),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::for_each_n(policy, ptr, ptr, ptr, val);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::for_each_n",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::for_each_n", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::for_each_n",
+                          CALL("oneapi::dpl::for_each_n",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                ARG(2), THRUST_FUNCTOR(3)))),
+      CALL_FACTORY_ENTRY("thrust::for_each_n",
+                        CALL("oneapi::dpl::for_each_n",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
+    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, val);
+    CALL_FACTORY_ENTRY("thrust::for_each_n",
+                      CALL("oneapi::dpl::for_each_n",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), THRUST_FUNCTOR(3)))
+  ),
+
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(0), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::for_each_n(ptr, ptr, ptr);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::for_each_n",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::for_each_n", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::for_each_n",
+                            CALL("oneapi::dpl::for_each_n",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  ARG(1), THRUST_FUNCTOR(2)))),
+        CALL_FACTORY_ENTRY("thrust::for_each_n",
+                          CALL("oneapi::dpl::for_each_n",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), THRUST_FUNCTOR(2)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::for_each_n(iterator, iterator, iterator);
+        CALL_FACTORY_ENTRY("thrust::for_each_n",
+                            CALL("oneapi::dpl::for_each_n",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), THRUST_FUNCTOR(2))),
+        CALL_FACTORY_ENTRY("thrust::for_each_n",
+                            CALL("oneapi::dpl::for_each_n",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), THRUST_FUNCTOR(2))))
     )
 )
