@@ -402,7 +402,4 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisS
              "Default: the value of --in-root."),
         llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat))
 
-DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(llvm::cl::opt<bool>), UseTestedStandardCXXAPI, "use-tested-standard-cxx-api",
-        llvm::cl::desc("Uses tested C++ standard API instead of SYCL API for migration. Default: off."),
-        llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT

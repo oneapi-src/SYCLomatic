@@ -120,7 +120,6 @@ unsigned int DpctGlobalInfo::RunRound = 0;
 bool DpctGlobalInfo::NeedRunAgain = false;
 std::set<std::string> DpctGlobalInfo::ModuleFiles;
 bool DpctGlobalInfo::OptimizeMigrationFlag = false;
-bool DpctGlobalInfo::UseTestedStandardCXXAPIFlag = false;
 
 std::unordered_map<std::string, std::shared_ptr<DeviceFunctionInfo>>
     DeviceFunctionDecl::FuncInfoMap;

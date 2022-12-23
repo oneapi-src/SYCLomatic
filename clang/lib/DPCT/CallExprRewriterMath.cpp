@@ -1132,8 +1132,7 @@ public:
 };
 enum class MathFuncDeviceExtType {
   STD_LIBDEVICE,
-  MATH_LIBDEVICE,
-  TESTED_STD_DEVICE
+  MATH_LIBDEVICE
 };
 
 bool isStdLibdevice() {
@@ -1142,10 +1141,6 @@ bool isStdLibdevice() {
 
 bool isMathLibdevice() {
   return DpctGlobalInfo::useIntelDeviceMath();
-}
-
-bool isTestedStdDevice() {
-  return DpctGlobalInfo::isUsingTestedStandardCXXAPI();
 }
 
 auto IsPerf = [](const CallExpr *C) -> bool {
@@ -1221,8 +1216,6 @@ createMathAPIRewriterDeviceImpl(
   bool CanUseStdLibdevice = math::isStdLibdevice() && !(DEVICE_NODES[1].second);
   bool CanUseMathLibdevice =
       math::isMathLibdevice() && !(DEVICE_NODES[2].second);
-  bool CanUseTestedStdDevice =
-      math::isTestedStdDevice() && !(DEVICE_NODES[3].second);
   if (CanUseMathLibdevice) {
     return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
                                     std::move(DEVICE_PERF),
@@ -1231,10 +1224,6 @@ createMathAPIRewriterDeviceImpl(
     return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
                                     std::move(DEVICE_PERF),
                                     std::move(DEVICE_NODES[1]));
-  } else if (CanUseTestedStdDevice) {
-    return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
-                                    std::move(DEVICE_PERF),
-                                    std::move(DEVICE_NODES[3]));
   } else {
     return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
                                     std::move(DEVICE_PERF),
@@ -1251,14 +1240,10 @@ createMathAPIRewriterDeviceImpl(
   bool CanUseStdLibdevice = math::isStdLibdevice() && !(DEVICE_NODES[1].second);
   bool CanUseMathLibdevice =
       math::isMathLibdevice() && !(DEVICE_NODES[2].second);
-  bool CanUseTestedStdDevice =
-      math::isTestedStdDevice() && !(DEVICE_NODES[3].second);
   if (CanUseMathLibdevice) {
     return std::move(DEVICE_NODES[2]);
   } else if (CanUseStdLibdevice) {
     return std::move(DEVICE_NODES[1]);
-  } else if (CanUseTestedStdDevice) {
-    return std::move(DEVICE_NODES[3]);
   } else {
     return std::move(DEVICE_NODES[0]);
   }
