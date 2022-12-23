@@ -340,13 +340,14 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultDisab
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("c_cxx_standard_library",
                                      int(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary),
-                                     "A set of functions in std namespace from the C and C++ standard libraries that are\n"
-                                     "allowed to be used in SYCL device code.",
+                                     "When no SYCL standard API is available, use functions from std namespace from\n"
+                                     "libdevice or C/C++ standard library if allowed. If this option is used together with\n"
+                                     "intel_device_math extension option, intel_device_math functions take precedence.",
                                      false),
              DPCT_OPT_ENUM("intel_device_math",
                                      int(DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath),
-                                     "A set of functions in sycl::ext::intel::math namespace from the libdevice that are\n"
-                                     "allowed to be used in SYCL device code.",
+                                     "When no SYCL standard API is available, use functions from sycl::ext::intel::math\n"
+                                     "namespace.",
                                      false)
            ),
            llvm::cl::desc("A comma separated list of extensions to be used in migrated code.\n"

@@ -1213,22 +1213,33 @@ createMathAPIRewriterDeviceImpl(
     std::vector<
         std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
         DEVICE_NODES) {
-  bool CanUseStdLibdevice = math::isStdLibdevice() && !(DEVICE_NODES[1].second);
-  bool CanUseMathLibdevice =
-      math::isMathLibdevice() && !(DEVICE_NODES[2].second);
-  if (CanUseMathLibdevice) {
-    return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
-                                    std::move(DEVICE_PERF),
-                                    std::move(DEVICE_NODES[2]));
-  } else if (CanUseStdLibdevice) {
-    return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
-                                    std::move(DEVICE_PERF),
-                                    std::move(DEVICE_NODES[1]));
-  } else {
+  if (DEVICE_NODES[0].second) {
+    // DEVICE_NORMAL
     return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
                                     std::move(DEVICE_PERF),
                                     std::move(DEVICE_NODES[0]));
   }
+  if (DEVICE_NODES[1].second) {
+    // MATH_LIBDEVICE
+    if (math::isMathLibdevice()) {
+      return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
+                                      std::move(DEVICE_PERF),
+                                      std::move(DEVICE_NODES[1]));
+    }
+  }
+  if (DEVICE_NODES[2].second) {
+    // DEVICE_STD
+    if (math::isStdLibdevice()) {
+      return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
+                                      std::move(DEVICE_PERF),
+                                      std::move(DEVICE_NODES[2]));
+    }
+  }
+  // report unsupport
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      {DEVICE_NODES[0].first,
+       std::make_shared<UnsupportFunctionRewriterFactory<>>(
+           DEVICE_NODES[0].first, Diagnostics::API_NOT_MIGRATED)});
 }
 
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -1237,16 +1248,27 @@ createMathAPIRewriterDeviceImpl(
     std::vector<
         std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
         DEVICE_NODES) {
-  bool CanUseStdLibdevice = math::isStdLibdevice() && !(DEVICE_NODES[1].second);
-  bool CanUseMathLibdevice =
-      math::isMathLibdevice() && !(DEVICE_NODES[2].second);
-  if (CanUseMathLibdevice) {
-    return std::move(DEVICE_NODES[2]);
-  } else if (CanUseStdLibdevice) {
-    return std::move(DEVICE_NODES[1]);
-  } else {
+  if (DEVICE_NODES[0].second) {
+    // DEVICE_NORMAL
     return std::move(DEVICE_NODES[0]);
   }
+  if (DEVICE_NODES[1].second) {
+    // MATH_LIBDEVICE
+    if (math::isMathLibdevice()) {
+      return std::move(DEVICE_NODES[1]);
+    }
+  }
+  if (DEVICE_NODES[2].second) {
+    // DEVICE_STD
+    if (math::isStdLibdevice()) {
+      return std::move(DEVICE_NODES[2]);
+    }
+  }
+  // report unsupport
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      {DEVICE_NODES[0].first,
+       std::make_shared<UnsupportFunctionRewriterFactory<>>(
+           DEVICE_NODES[0].first, Diagnostics::API_NOT_MIGRATED)});
 }
 
 template <class T>
