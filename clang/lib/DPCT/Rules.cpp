@@ -218,6 +218,11 @@ void registerEnumRule(MetaRuleObject &R) {
   }
 }
 
+void deregisterAPIRule(MetaRuleObject &R) {
+  using namespace clang::dpct;
+  CallExprRewriterFactoryBase::RewriterMap->erase(R.In);
+}
+
 void importRules(llvm::cl::list<std::string> &RuleFiles) {
   for (auto &RuleFile : RuleFiles) {
     makeCanonical(RuleFile);
@@ -267,6 +272,9 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
         break;
       case (RuleKind::Enum):
         registerEnumRule(*r);
+        break;
+      case (RuleKind::DisableExistingRule):
+        deregisterAPIRule(*r);
         break;
       default:
         break;
