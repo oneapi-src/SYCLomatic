@@ -841,9 +841,6 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
-      } else {
-        std::string IncludeOptionStr = std::string("-I") + SDKIncludePath;
-        CommandLine = getInsertArgumentAdjuster((std::string("-I") + SDKIncludePath).c_str())(CommandLine, "");
       }
 #else
       if (!CommandLine.empty() && CommandLine[0].size() >= 4 &&
@@ -854,11 +851,11 @@ int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
         CudaArgsAdjuster = combineAdjusters(
             std::move(CudaArgsAdjuster),
             getInsertArgumentAdjuster("-x", ArgumentInsertPosition::BEGIN));
-      } else {
-        std::string IncludeOptionStr = std::string("-I") + SDKIncludePath;
-        CommandLine = getInsertArgumentAdjuster((std::string("-I") + SDKIncludePath).c_str())(CommandLine, "");
       }
 #endif
+      CommandLine = getInsertArgumentAdjuster(
+          (std::string("-I") + SDKIncludePath).c_str(),
+          ArgumentInsertPosition::BEGIN)(CommandLine, "");
       if (CudaArgsAdjuster)
         CommandLine = CudaArgsAdjuster(CommandLine, CompileCommand.Filename);
 

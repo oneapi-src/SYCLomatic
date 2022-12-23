@@ -2160,7 +2160,8 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "libraryPropertyType_t", "libraryPropertyType",
                   "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
                   "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
-                  "thrust::tuple_element", "thrust::tuple_size", "cudaPointerAttributes")
+                  "thrust::tuple_element", "thrust::tuple_size", "cublasMath_t",
+                  "cudaPointerAttributes")
               )))))
           .bind("cudaTypeDef"),
       this);
@@ -5243,6 +5244,7 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasGetMatrixAsync", "cublasSetStream_v2", "cublasGetStream_v2",
         "cublasGetPointerMode_v2", "cublasSetPointerMode_v2",
         "cublasGetAtomicsMode", "cublasSetAtomicsMode", "cublasGetVersion_v2",
+        "cublasGetMathMode", "cublasSetMathMode",
         /*Regular level 1*/
         "cublasIsamax_v2", "cublasIdamax_v2", "cublasIcamax_v2",
         "cublasIzamax_v2", "cublasIsamin_v2", "cublasIdamin_v2",
@@ -5253,7 +5255,8 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasSdot_v2", "cublasDdot_v2", "cublasCdotu_v2", "cublasCdotc_v2",
         "cublasZdotu_v2", "cublasZdotc_v2", "cublasSnrm2_v2", "cublasDnrm2_v2",
         "cublasScnrm2_v2", "cublasDznrm2_v2", "cublasSrot_v2", "cublasDrot_v2",
-        "cublasCsrot_v2", "cublasZdrot_v2", "cublasSrotg_v2", "cublasDrotg_v2",
+        "cublasCsrot_v2", "cublasZdrot_v2", "cublasCrot_v2", "cublasZrot_v2",
+        "cublasSrotg_v2", "cublasDrotg_v2",
         "cublasCrotg_v2", "cublasZrotg_v2", "cublasSrotm_v2", "cublasDrotm_v2",
         "cublasSrotmg_v2", "cublasDrotmg_v2", "cublasSscal_v2",
         "cublasDscal_v2", "cublasCscal_v2", "cublasCsscal_v2", "cublasZscal_v2",
@@ -5266,7 +5269,9 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasZgeru_v2", "cublasZgerc_v2", "cublasSsbmv_v2", "cublasDsbmv_v2",
         "cublasSspmv_v2", "cublasDspmv_v2", "cublasSspr_v2", "cublasDspr_v2",
         "cublasSspr2_v2", "cublasDspr2_v2", "cublasSsymv_v2", "cublasDsymv_v2",
+        "cublasCsymv_v2", "cublasZsymv_v2",
         "cublasSsyr_v2", "cublasDsyr_v2", "cublasSsyr2_v2", "cublasDsyr2_v2",
+        "cublasCsyr_v2", "cublasZsyr_v2", "cublasCsyr2_v2", "cublasZsyr2_v2",
         "cublasStbmv_v2", "cublasDtbmv_v2", "cublasCtbmv_v2", "cublasZtbmv_v2",
         "cublasStbsv_v2", "cublasDtbsv_v2", "cublasCtbsv_v2", "cublasZtbsv_v2",
         "cublasStpmv_v2", "cublasDtpmv_v2", "cublasCtpmv_v2", "cublasZtpmv_v2",
@@ -5304,7 +5309,8 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasNrm2Ex", "cublasDotEx", "cublasDotcEx", "cublasScalEx",
         "cublasAxpyEx", "cublasRotEx", "cublasGemmBatchedEx",
         "cublasGemmStridedBatchedEx", "cublasSdgmm", "cublasDdgmm",
-        "cublasCdgmm", "cublasZdgmm",
+        "cublasCdgmm", "cublasZdgmm", "cublasSgeam", "cublasDgeam",
+        "cublasCgeam", "cublasZgeam",
         /*Legacy API*/
         "cublasInit", "cublasShutdown", "cublasGetError",
         "cublasSetKernelStream", "cublasGetVersion",
@@ -5319,7 +5325,8 @@ void BLASFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cublasIdamax", "cublasIcamax", "cublasIzamax", "cublasIsamin",
         "cublasIdamin", "cublasIcamin", "cublasIzamin", "cublasSasum",
         "cublasDasum", "cublasScasum", "cublasDzasum", "cublasSrot",
-        "cublasDrot", "cublasCsrot", "cublasZdrot", "cublasSrotg",
+        "cublasDrot", "cublasCsrot", "cublasZdrot", "cublasCrot",
+        "cublasZrot", "cublasSrotg",
         "cublasDrotg", "cublasSrotm", "cublasDrotm", "cublasSrotmg",
         "cublasDrotmg",
         /*level 2*/
@@ -6488,7 +6495,9 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   } else if (FuncName == "cublasGetPointerMode_v2" ||
              FuncName == "cublasSetPointerMode_v2" ||
              FuncName == "cublasGetAtomicsMode" ||
-             FuncName == "cublasSetAtomicsMode") {
+             FuncName == "cublasSetAtomicsMode" ||
+             FuncName == "cublasGetMathMode" ||
+             FuncName == "cublasSetMathMode") {
     std::string Msg = "this call is redundant in SYCL.";
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::FUNC_CALL_REMOVED_0, false,
@@ -14797,7 +14806,12 @@ void FFTFunctionCallRule::registerMatcher(MatchFinder &MF) {
                       "cufftExecC2R", "cufftExecZ2Z", "cufftExecZ2D",
                       "cufftExecD2Z", "cufftCreate", "cufftDestroy",
                       "cufftSetStream", "cufftGetVersion", "cufftGetProperty",
-                      "cufftXtMakePlanMany", "cufftXtExec");
+                      "cufftXtMakePlanMany", "cufftXtExec", "cufftGetSize1d",
+                      "cufftGetSize2d", "cufftGetSize3d", "cufftGetSizeMany",
+                      "cufftGetSize", "cufftEstimate1d", "cufftEstimate2d",
+                      "cufftEstimate3d", "cufftEstimateMany",
+                      "cufftSetAutoAllocation", "cufftGetSizeMany64",
+                      "cufftSetWorkArea");
   };
   MF.addMatcher(callExpr(callee(functionDecl(functionName()))).bind("FuncCall"),
                 this);
@@ -14854,7 +14868,13 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
              FuncName == "cufftExecC2C" || FuncName == "cufftExecZ2Z" ||
              FuncName == "cufftExecC2R" || FuncName == "cufftExecR2C" ||
              FuncName == "cufftExecZ2D" || FuncName == "cufftExecD2Z" ||
-             FuncName == "cufftXtExec") {
+             FuncName == "cufftXtExec" || FuncName == "cufftGetSize1d" ||
+             FuncName == "cufftGetSize2d" || FuncName == "cufftGetSize3d" ||
+             FuncName == "cufftGetSizeMany" || FuncName == "cufftGetSize" ||
+             FuncName == "cufftEstimate1d" || FuncName == "cufftEstimate2d" ||
+             FuncName == "cufftEstimate3d" || FuncName == "cufftEstimateMany" ||
+             FuncName == "cufftSetAutoAllocation" || FuncName == "cufftGetSizeMany64" ||
+             FuncName == "cufftSetWorkArea") {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
