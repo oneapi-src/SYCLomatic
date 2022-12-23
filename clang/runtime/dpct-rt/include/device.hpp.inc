@@ -445,6 +445,7 @@ private:
 // DPCT_LABEL_BEGIN|device_ext|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|exception_handler
+// Device|device_ext_create_queue
 // Device|device_ext_2
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
