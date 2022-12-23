@@ -1191,10 +1191,12 @@ void CudaToolChain::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
   }
   HostTC.AddClangSystemIncludeArgs(DriverArgs, CC1Args);
 
+#ifndef SYCLomatic_CUSTOMIZATION
   if (!DriverArgs.hasArg(options::OPT_nogpuinc) && CudaInstallation.isValid())
     CC1Args.append(
         {"-internal-isystem",
          DriverArgs.MakeArgString(CudaInstallation.getIncludePath())});
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 void CudaToolChain::AddClangCXXStdlibIncludeArgs(const ArgList &Args,
