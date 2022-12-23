@@ -57,14 +57,24 @@ namespace device {
 // DPCT_CODE
 /// The random number generator on device.
 /// \tparam engine_t The device random number generator engine. It can only be
+/// oneapi::mkl::rng::device::mrg32k3a<1> or
 /// oneapi::mkl::rng::device::mrg32k3a<4> or
+/// oneapi::mkl::rng::device::philox4x32x10<1> or
 /// oneapi::mkl::rng::device::philox4x32x10<4>.
 template <typename engine_t> class rng_generator {
   static_assert(
-      std::is_same_v<engine_t, oneapi::mkl::rng::device::mrg32k3a<4>> ||
-          std::is_same_v<engine_t, oneapi::mkl::rng::device::philox4x32x10<4>>,
-      "engine_t can only be oneapi::mkl::rng::device::mrg32k3a<4> or "
+      std::disjunction_v<
+          std::is_same<engine_t, oneapi::mkl::rng::device::mrg32k3a<1>>,
+          std::is_same<engine_t, oneapi::mkl::rng::device::mrg32k3a<4>>,
+          std::is_same<engine_t, oneapi::mkl::rng::device::philox4x32x10<1>>,
+          std::is_same<engine_t, oneapi::mkl::rng::device::philox4x32x10<4>>>,
+      "engine_t can only be oneapi::mkl::rng::device::mrg32k3a<1> or "
+      "oneapi::mkl::rng::device::mrg32k3a<4> or "
+      "oneapi::mkl::rng::device::philox4x32x10<1> or "
       "oneapi::mkl::rng::device::philox4x32x10<4>.");
+  static constexpr bool _is_engine_vec_size_one = std::disjunction_v<
+      std::is_same<engine_t, oneapi::mkl::rng::device::mrg32k3a<1>>,
+      std::is_same<engine_t, oneapi::mkl::rng::device::philox4x32x10<1>>>;
   static constexpr std::uint64_t default_seed = 0;
   oneapi::mkl::rng::device::bits<std::uint32_t> _distr_bits;
   oneapi::mkl::rng::device::gaussian<float> _distr_gaussian_float;
@@ -116,20 +126,17 @@ public:
     static_assert(vec_size == 1 || vec_size == 2 || vec_size == 4,
                   "vec_size is not supported.");
     static_assert(
-        std::is_same_v<distr_t,
-                       oneapi::mkl::rng::device::bits<std::uint32_t>> ||
-            std::is_same_v<distr_t,
-                           oneapi::mkl::rng::device::gaussian<float>> ||
-            std::is_same_v<distr_t,
-                           oneapi::mkl::rng::device::gaussian<double>> ||
-            std::is_same_v<distr_t,
-                           oneapi::mkl::rng::device::lognormal<float>> ||
-            std::is_same_v<distr_t,
-                           oneapi::mkl::rng::device::lognormal<double>> ||
-            std::is_same_v<distr_t,
-                           oneapi::mkl::rng::device::poisson<std::uint32_t>> ||
-            std::is_same_v<distr_t, oneapi::mkl::rng::device::uniform<float>> ||
-            std::is_same_v<distr_t, oneapi::mkl::rng::device::uniform<double>>,
+        std::disjunction_v<
+            std::is_same<distr_t,
+                         oneapi::mkl::rng::device::bits<std::uint32_t>>,
+            std::is_same<distr_t, oneapi::mkl::rng::device::gaussian<float>>,
+            std::is_same<distr_t, oneapi::mkl::rng::device::gaussian<double>>,
+            std::is_same<distr_t, oneapi::mkl::rng::device::lognormal<float>>,
+            std::is_same<distr_t, oneapi::mkl::rng::device::lognormal<double>>,
+            std::is_same<distr_t,
+                         oneapi::mkl::rng::device::poisson<std::uint32_t>>,
+            std::is_same<distr_t, oneapi::mkl::rng::device::uniform<float>>,
+            std::is_same<distr_t, oneapi::mkl::rng::device::uniform<double>>>,
         "distribution is not supported.");
 
     if constexpr (std::is_same_v<
@@ -192,14 +199,34 @@ private:
       distr.param(pt);
     }
     if constexpr (vec_size == 4) {
-      return oneapi::mkl::rng::device::generate(distr, _engine);
+      if constexpr (_is_engine_vec_size_one) {
+        sycl::vec<typename distr_t::result_type, 4> res;
+        res.x() = oneapi::mkl::rng::device::generate(distr, _engine);
+        res.y() = oneapi::mkl::rng::device::generate(distr, _engine);
+        res.z() = oneapi::mkl::rng::device::generate(distr, _engine);
+        res.w() = oneapi::mkl::rng::device::generate(distr, _engine);
+        return res;
+      } else {
+        return oneapi::mkl::rng::device::generate(distr, _engine);
+      }
     } else if constexpr (vec_size == 1) {
-      return oneapi::mkl::rng::device::generate_single(distr, _engine);
+      if constexpr (_is_engine_vec_size_one) {
+        return oneapi::mkl::rng::device::generate(distr, _engine);
+      } else {
+        return oneapi::mkl::rng::device::generate_single(distr, _engine);
+      }
     } else if constexpr (vec_size == 2) {
-      sycl::vec<typename distr_t::result_type, 2> res;
-      res.x() = oneapi::mkl::rng::device::generate_single(distr, _engine);
-      res.y() = oneapi::mkl::rng::device::generate_single(distr, _engine);
-      return res;
+      if constexpr (_is_engine_vec_size_one) {
+        sycl::vec<typename distr_t::result_type, 2> res;
+        res.x() = oneapi::mkl::rng::device::generate(distr, _engine);
+        res.y() = oneapi::mkl::rng::device::generate(distr, _engine);
+        return res;
+      } else {
+        sycl::vec<typename distr_t::result_type, 2> res;
+        res.x() = oneapi::mkl::rng::device::generate_single(distr, _engine);
+        res.y() = oneapi::mkl::rng::device::generate_single(distr, _engine);
+        return res;
+      }
     }
   }
 // DPCT_LABEL_END

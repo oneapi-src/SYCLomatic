@@ -340,8 +340,8 @@ makeLambdaCreator(bool IsCaptureRef,
                         IsCaptureRef, Stmts...);
 }
 
-auto getTemplateArgsList =
-    [](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
+inline std::vector<TemplateArgumentInfo>
+getTemplateArgsList(const CallExpr *C) {
   ArrayRef<TemplateArgumentLoc> TemplateArgsList;
   std::vector<TemplateArgumentInfo> Ret;
   auto Callee = C->getCallee()->IgnoreImplicitAsWritten();
@@ -354,7 +354,7 @@ auto getTemplateArgsList =
     Ret.emplace_back(Arg, C->getSourceRange());
   }
   return Ret;
-};
+}
 
 inline std::function<TemplatedNamePrinter<
     StringRef, std::vector<TemplateArgumentInfo>>(const CallExpr *)>

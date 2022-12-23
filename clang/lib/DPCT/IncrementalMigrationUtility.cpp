@@ -330,6 +330,10 @@ bool printOptions(
       if ("true" == Value)
         Opts.emplace_back("--optimize-migration");
     }
+    if (Key == clang::dpct::OPTION_EnablepProfiling) {
+      if ("true" == Value)
+        Opts.emplace_back("--enable-profiling");
+    }
     if (Key == clang::dpct::OPTION_RuleFile && Specified) {
       for (const auto &Item : ValueVec)
         Opts.emplace_back("--rule-file=\"" + Item + "\"");

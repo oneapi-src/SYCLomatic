@@ -3,7 +3,6 @@
 
 //CHECK:#include <sycl/sycl.hpp>
 //CHECK-NEXT:#include <dpct/dpct.hpp>
-//CHECK-NEXT:#include <oneapi/mkl.hpp>
 //CHECK-NEXT:#include <dpct/lapack_utils.hpp>
 #include "cusolverDn.h"
 
