@@ -491,15 +491,26 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudnnConvolutionBwdFilterAlgo_t",
        std::make_shared<TypeNameRule>("dnnl::algorithm")},
       {"cudnnRNNMode_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::rnn_mode")},
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::rnn_mode",
+                                      HelperFeatureEnum::DnnlUtils_rnn_mode)},
       {"cudnnRNNBiasMode_t", std::make_shared<TypeNameRule>(
-                                 getDpctNamespace() + "dnnl::rnn_bias_mode")},
+                                 getDpctNamespace() + "dnnl::rnn_bias_mode",
+                                 HelperFeatureEnum::DnnlUtils_rnn_bias_mode)},
       {"cudnnDirectionMode_t", std::make_shared<TypeNameRule>(
-                                   getDpctNamespace() + "dnnl::rnn_direction")},
+                                   getDpctNamespace() + "dnnl::rnn_direction",
+                                   HelperFeatureEnum::DnnlUtils_rnn_direction)},
       {"cudnnRNNDescriptor_t",
-       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::rnn_desc")},
-      {"cudnnForwardMode_t",
-       std::make_shared<TypeNameRule>("dnnl::prop_kind")},
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::rnn_desc",
+                                      HelperFeatureEnum::DnnlUtils_rnn_desc)},
+      {"cudnnForwardMode_t", std::make_shared<TypeNameRule>("dnnl::prop_kind")},
+      {"cudnnRNNDataDescriptor_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::memory_desc_ext",
+           HelperFeatureEnum::DnnlUtils_memory_desc_ext)},
+      {"cudnnRNNDataLayout_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::rnn_memory_format_tag",
+           HelperFeatureEnum::DnnlUtils_rnn_memory_format_tag)},
   };
 
   // CuDNN Enum constants name mapping.
@@ -647,6 +658,8 @@ void MapNames::setExplicitNamespaceMap() {
        "dnnl::prop_kind::forward_inference"},
       {"CUDNN_FWD_MODE_TRAINING",
        "dnnl::prop_kind::forward_training"},
+      {"CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED",
+       getDpctNamespace() + "dnnl::rnn_memory_format_tag::tnc"},
   };
 
   // CuDNN Enum constants name to helper feature mapping.
@@ -720,6 +733,8 @@ void MapNames::setExplicitNamespaceMap() {
        HelperFeatureEnum::DnnlUtils_rnn_direction},
       {"CUDNN_BIDIRECTIONAL",
        HelperFeatureEnum::DnnlUtils_rnn_direction},
+      {"CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED",
+       HelperFeatureEnum::DnnlUtils_rnn_memory_format_tag},
   };
 
   // Enum constants name mapping.

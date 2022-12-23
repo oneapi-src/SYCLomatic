@@ -1681,15 +1681,15 @@ public:
   void rnn_get_weight_space_size(const rnn_desc &desc,
                                  size_t *weight_space_size);
 
-  /// Getting the required workspace size and scratchpad size for specified rnn operation.  
+  /// Getting the required scratchpad size and workspace size for specified rnn operation.  
   /// \param [in] desc RNN descriptor.
   /// \param [in] kind Propagation kind.
   /// \param [in] src_desc Source memory descriptor.
-  /// \param [out] workspace_size Size of required workspace.
   /// \param [out] scratchpad_size Size of required scratchpad.
-  void rnn_get_workspace_scratchpad_size(const rnn_desc &desc, ::dnnl::prop_kind kind,
+  /// \param [out] workspace_size Size of required workspace.
+  void rnn_get_scratchpad_workspace_size(const rnn_desc &desc, ::dnnl::prop_kind kind,
                               const memory_desc_ext &src_desc,
-                              size_t *workspace_size, size_t *scratchpad_size);
+                              size_t *scratchpad_size, size_t *workspace_size);
 
   /// Computing a specified rnn function value asynchronously.
   /// \param [in] desc RNN descriptor.
@@ -1927,9 +1927,9 @@ void memory_desc_ext::get(dpct::library_data_t *dt, rnn_memory_format_tag *tag,
   auto strides = _desc.get_strides();
 
   if (strides[0] >= strides[1]) {
-    *tag = ::dnnl::memory::format_tag::tnc;
+    *tag = rnn_memory_format_tag::tnc;
   } else {
-    *tag = ::dnnl::memory::format_tag::ntc;
+    *tag = rnn_memory_format_tag::ntc;
   }
 
   *dt = to_dpct_library_data_t(_desc.get_data_type(), 1);
@@ -3988,10 +3988,10 @@ void engine_ext::rnn_get_weight_space_size(const rnn_desc &desc,
   return;
 }
 
-void engine_ext::rnn_get_workspace_scratchpad_size(
+void engine_ext::rnn_get_scratchpad_workspace_size(
     const rnn_desc &desc, ::dnnl::prop_kind kind,
-    const memory_desc_ext &src_desc, size_t *workspace_size,
-    size_t *scratchpad_size) {
+    const memory_desc_ext &src_desc, size_t *scratchpad_size,
+    size_t *workspace_size) {
   *workspace_size = 0;
   *scratchpad_size = 0;
   rnn_forward_internal(desc, kind, src_desc, nullptr, memory_desc_ext(),

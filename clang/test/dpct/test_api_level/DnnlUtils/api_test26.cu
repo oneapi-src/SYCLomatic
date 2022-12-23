@@ -9,8 +9,9 @@
 // TEST_FEATURE: DnnlUtils_rnn_direction
 // TEST_FEATURE: DnnlUtils_async_rnn_forward
 // TEST_FEATURE: DnnlUtils_async_rnn_backward
-// TEST_FEATURE: DnnlUtils_rnn_get_workspace_scratchpad_size
+// TEST_FEATURE: DnnlUtils_rnn_get_scratchpad_workspace_size
 // TEST_FEATURE: DnnlUtils_rnn_get_weight_space_size
+// TEST_FEATURE: DnnlUtils_rnn_memory_format_tag
 // TEST_FEATURE: DnnlUtils_rnn_desc
 
 #include <cuda_runtime.h>

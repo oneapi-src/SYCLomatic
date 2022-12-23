@@ -39,13 +39,16 @@ int main() {
     cudnnHandle_t handle;
 
     cudnnCreate(&handle);
-
+// CHECK:    dpct::dnnl::rnn_desc rnnDesc;
+// CHECK:    dpct::dnnl::memory_desc_ext xDesc;
+// CHECK:    dpct::dnnl::memory_desc_ext yDesc;
+// CHECK:    dpct::dnnl::memory_desc_ext hDesc;
+// CHECK:    dpct::dnnl::memory_desc_ext cDesc;
     cudnnRNNDescriptor_t rnnDesc;
     cudnnRNNDataDescriptor_t xDesc;
     cudnnRNNDataDescriptor_t yDesc;
     cudnnTensorDescriptor_t hDesc;
     cudnnTensorDescriptor_t cDesc;
-    cudnnDropoutDescriptor_t dropoutDesc;
     cudnnCreateRNNDescriptor(&rnnDesc);
     cudnnCreateRNNDataDescriptor(&xDesc);
     cudnnCreateRNNDataDescriptor(&yDesc);
@@ -79,7 +82,7 @@ int main() {
     seqLenArray[0] = maxSeqLength;
     seqLenArray[1] = maxSeqLength;
     seqLenArray[2] = maxSeqLength;
-// CHECK: p = (xDesc.set(CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED, dpct::library_data_t::real_float, xDim[0], xDim[1], xDim[2]), 0);
+// CHECK: p = (xDesc.set(dpct::dnnl::rnn_memory_format_tag::tnc, dpct::library_data_t::real_float, xDim[0], xDim[1], xDim[2]), 0);
     p = cudnnSetRNNDataDescriptor(xDesc, 
         CUDNN_DATA_FLOAT, 
         CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED,
@@ -89,7 +92,7 @@ int main() {
         seqLenArray, // seqLengthArray
         NULL
     );
-// CHECK: p = (yDesc.set(CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED, dpct::library_data_t::real_float, yDim[0], yDim[1], yDim[2]), 0);
+// CHECK: p = (yDesc.set(dpct::dnnl::rnn_memory_format_tag::tnc, dpct::library_data_t::real_float, yDim[0], yDim[1], yDim[2]), 0);
     p = cudnnSetRNNDataDescriptor(yDesc,
         CUDNN_DATA_FLOAT,
         CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED,
@@ -103,7 +106,7 @@ int main() {
     size_t weightsSpaceSize, workSpaceSize, reserveSpaceSize;
     // CHECK: handle.rnn_get_weight_space_size(rnnDesc, &weightsSpaceSize);
     cudnnGetRNNWeightSpaceSize(handle, rnnDesc, &weightsSpaceSize);
-    // CHECK: handle.rnn_get_workspace_scratchpad_size(rnnDesc, dnnl::prop_kind::forward_training, xDesc, &workSpaceSize, &reserveSpaceSize);
+    // CHECK: handle.rnn_get_scratchpad_workspace_size(rnnDesc, dnnl::prop_kind::forward_training, xDesc, &workSpaceSize, &reserveSpaceSize);
     cudnnGetRNNTempSpaceSizes(handle, 
         rnnDesc, 
         CUDNN_FWD_MODE_TRAINING,

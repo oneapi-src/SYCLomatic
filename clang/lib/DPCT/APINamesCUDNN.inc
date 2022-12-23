@@ -677,7 +677,7 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_rnn_get_weight_space_size,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_rnn_get_weight_space_size,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
                             "cudnnGetRNNTempSpaceSizes", ARG_WC(0), false,
-                            "rnn_get_workspace_scratchpad_size", ARG_WC(1),
+                            "rnn_get_scratchpad_workspace_size", ARG_WC(1),
                             ARG_WC(2), ARG_WC(3), ARG_WC(4), ARG_WC(5))))
 
 FEATURE_REQUEST_FACTORY(
