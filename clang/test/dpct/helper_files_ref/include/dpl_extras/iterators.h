@@ -252,6 +252,26 @@ public:
   }
 };
 
+template <typename IterT> struct io_iterator_pair {
+  inline io_iterator_pair() : __selector(false) {}
+
+  inline io_iterator_pair(const IterT &first_input, const IterT &first_output)
+      : __selector(false) {
+    __iter[0] = first_input;
+    __iter[1] = first_output;
+  }
+
+  inline IterT input() const { return __selector ? __iter[1] : __iter[0]; }
+
+  inline IterT output() const { return __selector ? __iter[0] : __iter[1]; }
+
+  inline void swap() { __selector = !__selector; }
+
+  bool __selector;
+
+  IterT __iter[2];
+};
+
 } // end namespace dpct
 
 #endif

@@ -1360,6 +1360,18 @@ void sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
                             begin_bit, end_bit);
 }
 
+template <typename _ExecutionPolicy, typename key_t, typename value_t>
+inline void sort_pairs(
+    _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys,
+    io_iterator_pair<value_t> &values, int64_t n, bool descending,
+    int begin_bit = 0,
+    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
+                  8) {
+  sort_pairs(::std::forward<_ExecutionPolicy>(policy), keys.input(),
+             keys.output(), values.input(), values.output(), n, descending,
+             begin_bit, end_bit);
+}
+
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
 inline void sort_keys(_ExecutionPolicy &&policy, key_t keys_in,
                       key_out_t keys_out, int64_t n, bool descending,
@@ -1434,6 +1446,16 @@ inline void segmented_sort_pairs(
         values_out, n, nsegments, begin_offsets, end_offsets, descending,
         begin_bit, end_bit);
   }
+}
+
+template <typename _ExecutionPolicy, typename key_t>
+inline void sort_keys(
+    _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys, int64_t n,
+    bool descending, int begin_bit = 0,
+    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
+                  8) {
+  sort_keys(std::forward<_ExecutionPolicy>(policy), keys.input(), keys.output(),
+            n, descending, begin_bit, end_bit);
 }
 
 } // end namespace dpct
