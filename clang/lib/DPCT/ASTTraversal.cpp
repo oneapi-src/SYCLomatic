@@ -898,10 +898,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_BLAS);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(
-          HashLoc, HT_MKL_Without_Util);
+          HashLoc, HT_MKL_Mkl);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -920,10 +920,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_RNG);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_RNG_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_RNG_Without_Util);
+                                                 HT_MKL_RNG);
     }
     DpctGlobalInfo::setMKLHeaderUsed(true);
     TransformSet.emplace_back(new ReplaceInclude(
@@ -940,10 +940,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_SPBLAS);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Without_Util);
+                                                 HT_MKL_Mkl);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -960,10 +960,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_FFT);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_FFT_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Without_Util);
+                                                 HT_MKL_Mkl);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -980,10 +980,10 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_MKL_Solver);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_LAPACK_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
-                                                 HT_MKL_Without_Util);
+                                                 HT_MKL_Mkl);
     }
 
     DpctGlobalInfo::setMKLHeaderUsed(true);
@@ -996,7 +996,7 @@ void IncludesCallbacks::InclusionDirective(
   }
 
   if (FileName.compare(StringRef("nccl.h")) == 0) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_CCL);
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_CCL_Utils);
     requestFeature(HelperFeatureEnum::CclUtils_create_kvs_address, HashLoc);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
@@ -1008,7 +1008,7 @@ void IncludesCallbacks::InclusionDirective(
     if (isChildOrSamePath(AnalysisScope, DirPath)) {
       return;
     }
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Dnnl);
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_DNNL_Utils);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -1018,7 +1018,7 @@ void IncludesCallbacks::InclusionDirective(
 
   if (FileName.compare(StringRef("cuda/atomic")) == 0||
       FileName.compare(StringRef("cuda/std/atomic")) == 0) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Atomic);
+    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_Atomic);
     TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
@@ -1075,7 +1075,7 @@ void IncludesCallbacks::InclusionDirective(
     } else {
       if(FileName.compare(StringRef("thrust/functional.h")) == 0)
         DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Functional);
-      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPL_Utils);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_DPL_Utils);
       requestFeature(HelperFeatureEnum::DplUtils_non_local_include_dependency,
                      HashLoc);
       TransformSet.emplace_back(new ReplaceInclude(
@@ -2080,6 +2080,40 @@ void AtomicFunctionRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(AtomicFunctionRule, PassKind::PK_Migration)
 
+void ZeroLengthArrayRule::registerMatcher(MatchFinder &MF) {
+  MF.addMatcher(typeLoc(loc(constantArrayType())).bind("ConstantArrayType"),
+                this);
+}
+void ZeroLengthArrayRule::runRule(
+    const MatchFinder::MatchResult &Result) {
+  auto TL = getNodeAsType<TypeLoc>(Result, "ConstantArrayType");
+  if (!TL)
+    return;
+  const ConstantArrayType *CAT =
+      dyn_cast_or_null<ConstantArrayType>(TL->getTypePtr());
+  if (!CAT)
+    return;
+
+  // Check the array length
+  if (!(CAT->getSize().isZero()))
+    return;
+
+  // Check if the array is in device code
+  const clang::FunctionDecl *FD = DpctGlobalInfo::getParentFunction(TL);
+  if (!FD)
+    return;
+  if (!(FD->getAttr<CUDADeviceAttr>()) && !(FD->getAttr<CUDAGlobalAttr>()))
+    return;
+
+  // Check if the array is a shared variable
+  const VarDecl* VD = DpctGlobalInfo::findAncestor<VarDecl>(TL);
+  if (VD && VD->getAttr<CUDASharedAttr>())
+    return;
+
+  report(TL->getBeginLoc(), Diagnostics::ZERO_LENGTH_ARRAY, false);
+}
+REGISTER_RULE(ZeroLengthArrayRule, PassKind::PK_Migration)
+
 // Rule for types migration in var declarations and field declarations
 void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
@@ -2820,7 +2854,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     // Add '#include <oneapi/mkl/bfloat16.hpp>' directive to the file only once
     if (TypeStr == "__nv_bfloat16") {
-      DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_BFloat16);
+      DpctGlobalInfo::getInstance().insertHeader(BeginLoc, HT_MKL_BFloat16);
     }
     // Add '#include <dpct/lib_common_utils.hpp>' directive to the file only
     // once
@@ -2832,7 +2866,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
               HelperFilesCustomizationLevel::HFCL_All) {
         DpctGlobalInfo::getInstance().insertHeader(BeginLoc,
-                                                   HT_Lib_Common_Utils);
+                                                   HT_DPCT_COMMON_Utils);
       }
     }
 
@@ -3906,7 +3940,7 @@ void EnumConstantRule::runRule(const MatchFinder::MatchResult &Result) {
           DpctGlobalInfo::getInstance().insertHeader(
               DpctGlobalInfo::getSourceManager().getExpansionLoc(
                   E->getBeginLoc()),
-              HT_Lib_Common_Utils);
+              HT_DPCT_COMMON_Utils);
         }
       }
     }
@@ -6636,7 +6670,7 @@ void BLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
               HelperFilesCustomizationLevel::HFCL_All) {
         DpctGlobalInfo::getInstance().insertHeader(
-            SM->getExpansionLoc(CE->getBeginLoc()), HT_Lib_Common_Utils);
+            SM->getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
       }
     }
 
@@ -12436,6 +12470,7 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
      return;
 
   ExprAnalysis EA(CE);
+  emplaceTransformation(EA.getReplacement());
   EA.applyAllSubExprRepl();
 
   auto FD = CE->getDirectCallee();
@@ -12579,7 +12614,8 @@ void CooperativeGroupsFunctionRule::runRule(
           "cooperative_groups::__v1::thread_block_tile<4>",
           "cooperative_groups::__v1::thread_block_tile<8>",
           "cooperative_groups::__v1::thread_block_tile<16>",
-          "cooperative_groups::__v1::thread_block_tile<32>"};
+          "cooperative_groups::__v1::thread_block_tile<32>",
+          "cooperative_groups::__v1::thread_block"};
       if (!SupportedBaseType.count(getBaseTypeStr(CE))) {
         return;
       }
@@ -14816,7 +14852,7 @@ void FFTFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
       DpctGlobalInfo::getInstance().insertHeader(
-          SM.getExpansionLoc(CE->getBeginLoc()), HT_Lib_Common_Utils);
+          SM.getExpansionLoc(CE->getBeginLoc()), HT_DPCT_COMMON_Utils);
     }
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
@@ -14850,8 +14886,8 @@ REGISTER_RULE(FFTFunctionCallRule, PassKind::PK_Migration)
 
 void DriverModuleAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto DriverModuleAPI = [&]() {
-    return hasAnyName("cuModuleLoad", "cuModuleLoadData", "cuModuleUnload",
-                      "cuModuleGetFunction", "cuLaunchKernel",
+    return hasAnyName("cuModuleLoad", "cuModuleLoadData", "cuModuleLoadDataEx",
+                      "cuModuleUnload", "cuModuleGetFunction", "cuLaunchKernel",
                       "cuModuleGetTexRef");
   };
 
@@ -14879,14 +14915,26 @@ void DriverModuleAPIRule::runRule(
   if (auto DC = CE->getDirectCallee()) {
     auto &SM = DpctGlobalInfo::getSourceManager();
     APIName = DC->getNameAsString();
-    DpctGlobalInfo::getInstance().insertHeader(
-        SM.getExpansionLoc(CE->getBeginLoc()), HT_DL);
   } else {
     return;
   }
 
-  if (APIName == "cuModuleLoad" || APIName == "cuModuleLoadData") {
-    report(CE->getBeginLoc(), Diagnostics::MODULE_FILENAME_MANUAL_FIX, false);
+  if (APIName == "cuModuleLoad") {
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD, false,
+           getStmtSpelling(CE->getArg(1)));
+  } else if (APIName == "cuModuleLoadData") {
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA, false,
+           getStmtSpelling(CE->getArg(1)));
+  } else if (APIName == "cuModuleLoadDataEx") {
+    report(CE->getBeginLoc(), Diagnostics::MODULE_LOAD_DATA_EX, false,
+           getStmtSpelling(CE->getArg(1)));
+  }
+
+  if (isAssigned(CE) &&
+      (APIName == "cuModuleLoad" || APIName == "cuModuleLoadData" ||
+       APIName == "cuModuleLoadDataEx" || APIName == "cuModuleGetFunction")) {
+    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
+    insertAroundStmt(CE, "(", ", 0)");
   }
 
   ExprAnalysis EA;

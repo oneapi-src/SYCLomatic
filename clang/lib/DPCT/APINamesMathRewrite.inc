@@ -40,7 +40,7 @@ CONDITIONAL_FACTORY_ENTRY(
                     IsContextCallHasAttribute<CUDAGlobalAttr>())),
     CONDITIONAL_FACTORY_ENTRY(
         UseCAndCXXStandardLibrariesExt,
-        HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, CALL_FACTORY_ENTRY("std::abs", CALL("std::abs", ARG(0)))),
+        HEADER_INSERT_FACTORY(HeaderType::HT_Stdlib, CALL_FACTORY_ENTRY("std::abs", CALL("std::abs", ARG(0)))),
         CONDITIONAL_FACTORY_ENTRY(
             IsIntegerType(0),
             CALL_FACTORY_ENTRY(
@@ -51,7 +51,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 CALL(MapNames::getClNamespace(false, true) + "fabs", ARG(0))))),
     CONDITIONAL_FACTORY_ENTRY(
         IsDefinedInCUDA(),
-        HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, NO_REWRITE_FUNCNAME_FACTORY_ENTRY("std::abs", "std::abs")),
+        HEADER_INSERT_FACTORY(HeaderType::HT_Stdlib, NO_REWRITE_FUNCNAME_FACTORY_ENTRY("std::abs", "std::abs")),
         NO_REWRITE_FUNCNAME_FACTORY_ENTRY("std::abs", "std::abs")
     ))
 
@@ -66,7 +66,7 @@ CONDITIONAL_FACTORY_ENTRY(
                     IsContextCallHasAttribute<CUDAGlobalAttr>())),
     CONDITIONAL_FACTORY_ENTRY(
         UseCAndCXXStandardLibrariesExt,
-        HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, CALL_FACTORY_ENTRY("abs", CALL("std::abs", ARG(0)))),
+        HEADER_INSERT_FACTORY(HeaderType::HT_Stdlib, CALL_FACTORY_ENTRY("abs", CALL("std::abs", ARG(0)))),
         CONDITIONAL_FACTORY_ENTRY(
             IsIntegerType(0),
             CALL_FACTORY_ENTRY(
@@ -77,7 +77,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 CALL(MapNames::getClNamespace(false, true) + "fabs", ARG(0))))),
     CONDITIONAL_FACTORY_ENTRY(
         IsDefinedInCUDA(),
-        HEADER_INSERT_FACTORY(HeaderType::HT_STDLIB, NO_REWRITE_FUNCNAME_FACTORY_ENTRY("abs", "std::abs")),
+        HEADER_INSERT_FACTORY(HeaderType::HT_Stdlib, NO_REWRITE_FUNCNAME_FACTORY_ENTRY("abs", "std::abs")),
         NO_REWRITE_FUNCNAME_FACTORY_ENTRY("abs", "abs")
     ))
 

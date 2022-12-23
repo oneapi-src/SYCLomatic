@@ -392,10 +392,24 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), NoIncrementalMig
                    "Default: off (incremental migration happens)."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
+/*
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), QueryApiMapping, "query-api-mapping",
+        llvm::cl::desc("Outputs to stdout functionally compatible SYCL API mapping for CUDA API."),
+        llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
+*/
+
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisScope, "analysis-scope-path",
         llvm::cl::desc("The directory path for the analysis scope of the source tree that "
              "needs to be migrated.\n"
              "Default: the value of --in-root."),
         llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat))
+
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), ChangeExtension,
+    "change-filename-extension",
+    llvm::cl::desc("Specifies which extensions of migrated files will be changed, "
+                   "split by comma. Default:\n"
+                   ".cu, .cuh, .cpp, .cxx, .cc, .c, .C"),
+    llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT

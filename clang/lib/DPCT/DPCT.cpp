@@ -159,6 +159,9 @@ static llvm::cl::opt<std::string> Passes(
          "Only the specified passes are applied."),
     llvm::cl::value_desc("IterationSpaceBuiltinRule,..."), llvm::cl::cat(DPCTCat),
                llvm::cl::Hidden);
+static llvm::cl::opt<std::string> QueryApiMapping ("query-api-mapping",
+        llvm::cl::desc("Outputs to stdout functionally compatible SYCL API mapping for CUDA API."),
+        llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional, llvm::cl::ReallyHidden);
 #ifdef DPCT_DEBUG_BUILD
 static llvm::cl::opt<std::string>
     DiagsContent("report-diags-content",
@@ -179,10 +182,6 @@ static llvm::cl::opt<AutoCompletePrinter, true, llvm::cl::parser<std::string>> A
   "autocomplete", llvm::cl::desc("List all options or enums which have the specified prefix.\n"),
   llvm::cl::cat(DPCTCat), llvm::cl::ReallyHidden, llvm::cl::location(AutoCompletePrinterInstance));
 #endif
-static llvm::cl::opt<std::string> QueryApiMapping("query-api-mapping",
-                    llvm::cl::desc("Outputs to stdout functionally compatible SYCL API mapping for CUDA API."),
-                    llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat),
-                    llvm::cl::Optional, llvm::cl::ReallyHidden);
 // clang-format on
 
 // TODO: implement one of this for each source language.
@@ -662,6 +661,27 @@ int runDPCT(int argc, const char **argv) {
     dpctExit(MigrationSucceeded);
   }
   */
+
+  auto ExtensionStr = ChangeExtension.getValue();
+  ExtensionStr.erase(std::remove(ExtensionStr.begin(), ExtensionStr.end(), ' '),
+                     ExtensionStr.end());
+  auto Extensions = split(ExtensionStr, ',');
+  for (auto &Extension : Extensions) {
+    bool Legal = true;
+    const auto len = Extension.length();
+    if (len < 2 || len > 5 || Extension[0] != '.') {
+      ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
+      dpctExit(MigrationErrorInvalidChangeFilenameExtension, false);
+    }
+    for (size_t i = 1; i < len; ++i) {
+      if (!std::isalpha(Extension[i])) {
+        ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
+        dpctExit(MigrationErrorInvalidChangeFilenameExtension, false);
+      }
+    }
+    DpctGlobalInfo::addChangeExtensions(Extension);
+  }
+
   if (InRoot.empty() && ProcessAllFlag) {
     ShowStatus(MigrationErrorNoExplicitInRoot);
     dpctExit(MigrationErrorNoExplicitInRoot);
