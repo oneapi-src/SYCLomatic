@@ -140,7 +140,7 @@ int main() {
         reserveSpaceData
     );
 // CHECK: /*
-// CHECK: DPCT1102:{{[0-9]+}}: Data gradient and weight gradient can't compute seperately. Replace "dpct_placeholder" with the proper argument.
+// CHECK: DPCT1106:{{[0-9]+}}: Data gradient and weight gradient can't compute seperately. Replace "dpct_placeholder" with the proper argument.
 // CHECK: */
 // CHECK: e = (handle.async_rnn_backward(rnnDesc, yDesc, yData, dyData, xDesc, dpct_placeholder, dxData, hDesc, hxData, dhyData, dhxData, cDesc, cxData, dcyData, dcxData, weightsSpaceSize, weightsData, dpct_placeholder, workSpaceSize, workSpaceData, reserveSpaceSize, reserveSpaceData), 0);
     e = cudnnRNNBackwardData_v8(
@@ -168,12 +168,12 @@ int main() {
         reserveSpaceData
     );
 // CHECK: /*
-// CHECK: DPCT1102:{{[0-9]+}}: Data gradient and weight gradient can't compute seperately. Replace "dpct_placeholder" with the proper argument.
+// CHECK: DPCT1106:{{[0-9]+}}: Data gradient and weight gradient can't compute seperately. Replace "dpct_placeholder" with the proper argument.
 // CHECK: */
-// CHECK: e = (handle.async_rnn_backward(rnnsDesc, yDesc, yData, dpct_placeholder, xDesc, xData, dpct_placeholder, hDesc, hxData, dpct_placeholder, dpct_placeholder, dpct_placeholder, dpct_placeholder, dpct_placeholder, weightsSpaceSize, dpct_placeholder, dweightsData, workSpaceSize, workSpaceData, reserveSpaceSize, reserveSpaceData), 0);
+// CHECK: e = (handle.async_rnn_backward(rnnDesc, yDesc, yData, dpct_placeholder, xDesc, xData, dpct_placeholder, hDesc, hxData, dpct_placeholder, dpct_placeholder, dpct_placeholder, dpct_placeholder, dpct_placeholder, weightsSpaceSize, dpct_placeholder, dweightsData, workSpaceSize, workSpaceData, reserveSpaceSize, reserveSpaceData), 0);
     e = cudnnRNNBackwardWeights_v8(
         handle,
-        rnnsDesc,
+        rnnDesc,
         CUDNN_WGRAD_MODE_ADD,
         seqlenarray,
         xDesc,
