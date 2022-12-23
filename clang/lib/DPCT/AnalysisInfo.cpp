@@ -2341,45 +2341,39 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
   {
     auto FunctionBlock = Printer.block();
     Printer.indent();
-#ifdef _WIN32
-    Printer << "__declspec(dllexport) ";
-#endif
-    Printer << "void " << FuncName << "_wrapper(" << MapNames::getClNamespace()
+    requestFeature(HelperFeatureEnum::Util_kernel_wrapper, FilePath);
+    Printer << "DPCT_EXPORT void " << FuncName << "_wrapper(" << MapNames::getClNamespace()
             << "queue &queue, const " << MapNames::getClNamespace()
             << "nd_range<3> &nr, unsigned int localMemSize, void "
                "**kernelParams, void **extra)";
     if (HasBody) {
-      Printer << "{";
+      auto for_each_parameter = [&](auto F) {
+	auto it = getParametersInfo().begin();
+	for (int i = 0;
+	     it != getParametersInfo().end();
+	     ++it, ++i) {
+	  F(i, it->second);
+	}
+      };
+
+      Printer << " {";
       {
         auto BodyBlock = Printer.block();
         Printer.newLine();
-        for (auto It = getParametersInfo().begin();
-             It != getParametersInfo().end(); It++) {
-          Printer.line(It->first + " " + It->second + ";");
-        }
-        Printer.line("if(kernelParams){");
-        {
-          auto IfBlock = Printer.block();
-          auto Counter = 0;
-          for (auto It = getParametersInfo().begin();
-               It != getParametersInfo().end(); It++) {
-            Printer.line(It->second + " = (" + It->first + ")kernelParams[" +
-                         std::to_string(Counter) + "];");
-            Counter += 1;
-          }
-        }
-        Printer.line("} else {");
-        {
-          auto ElseBlock = Printer.block();
-          std::string ExtraOffsetStr = "sizeof(void*)";
-          for (auto It = getParametersInfo().begin();
-               It != getParametersInfo().end(); It++) {
-            Printer.line(It->second + " = (" + It->first + ")(extra + " +
-                         ExtraOffsetStr + ");");
-            ExtraOffsetStr += " + sizeof(" + It->first + ")";
-          }
-        }
-        Printer.line("}");
+	auto DefaultParamNum = ParamsNum-NonDefaultParamNum;
+	Printer.line(llvm::formatv(
+           "// {0} non-default parameters, {1} default parameters",
+           NonDefaultParamNum, DefaultParamNum));
+	Printer.line(llvm::formatv(
+           "{0}args_selector<{1}, {2}, decltype({3})> selector(kernelParams, extra);",
+           MapNames::getDpctNamespace(),
+           NonDefaultParamNum, DefaultParamNum, FuncName));
+	for_each_parameter([&](auto&& i, auto&& p) {
+	  Printer.line("auto& " + p
+		       + " = selector.get<"
+		       + std::to_string(i) + ">();");
+	});
+
         Kernel->buildInfo();
         Printer.line(Kernel->getReplacement());
       }
