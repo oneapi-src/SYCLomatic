@@ -13,6 +13,6 @@ __global__ void f() {
   printf("%d\n", arr[0]);
 }
 
-__global__ void f() {
+__global__ void g() {
   printf("%d\n", arr2[0]);
 }

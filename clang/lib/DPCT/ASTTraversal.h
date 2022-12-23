@@ -438,7 +438,12 @@ private:
                          const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-
+class ZeroLengthArrayRule
+    : public NamedMigrationRule<ZeroLengthArrayRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
 
 /// Migration rule for types replacements in var. declarations.
 class TypeInDeclRule : public NamedMigrationRule<TypeInDeclRule> {
@@ -1230,6 +1235,12 @@ public:
   static EventQueryTraversal getEventQueryTraversal();
 
 private:
+  void handleEventRecordWithProfilingEnabled(
+      const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
+      bool IsAssigned);
+  void handleEventRecordWithProfilingDisabled(
+      const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
+      bool IsAssigned);
   void findEventAPI(const Stmt *Node, const CallExpr *&Call,
                     const std::string EventAPIName);
   void processAsyncJob(const Stmt *Node);
@@ -1775,6 +1786,12 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 class ComplexAPIRule : public NamedMigrationRule<ComplexAPIRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
+class CudaStreamCastRule : public NamedMigrationRule<CudaStreamCastRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);

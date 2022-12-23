@@ -96,13 +96,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaError", std::make_shared<TypeNameRule>("int")},
       {"CUresult", std::make_shared<TypeNameRule>("int")},
       {"CUcontext", std::make_shared<TypeNameRule>("int")},
-#ifdef _WIN32
-      {"CUmodule", std::make_shared<TypeNameRule>("HMODULE")},
-#else
-      {"CUmodule", std::make_shared<TypeNameRule>("void *")},
-#endif
+      {"CUmodule", std::make_shared<TypeNameRule>(getDpctNamespace() + "kernel_library")},
       {"CUfunction", std::make_shared<TypeNameRule>(
-                         getDpctNamespace() + "kernel_functor",
+                         getDpctNamespace() + "kernel_function",
                          HelperFeatureEnum::Kernel_kernel_functor)},
       {"cudaPointerAttributes",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes",
@@ -215,6 +211,7 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
       {"cublasPointerMode_t", std::make_shared<TypeNameRule>("int")},
       {"cublasAtomicsMode_t", std::make_shared<TypeNameRule>("int")},
+      {"cublasMath_t", std::make_shared<TypeNameRule>("int")},
       {"cusparsePointerMode_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseFillMode_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::uplo")},
@@ -405,6 +402,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"ncclComm_t",
        std::make_shared<TypeNameRule>("oneapi::ccl::communicator *",
                                       HelperFeatureEnum::CclUtils_create_kvs)},
+      {"ncclRedOp_t", std::make_shared<TypeNameRule>("oneapi::ccl::reduction")},
+      {"ncclDataType_t", std::make_shared<TypeNameRule>("oneapi::ccl::datatype")},
       // ...
   };
 
@@ -1074,6 +1073,25 @@ void MapNames::setExplicitNamespaceMap() {
                         getDpctNamespace() +
                             "fft::fft_type::complex_double_to_complex_double",
                         HelperFeatureEnum::FftUtils_fft_type)},
+      {"ncclSum", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::sum")},
+      {"ncclProd", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::prod")},
+      {"ncclMin", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::min")},
+      {"ncclMax", std::make_shared<EnumNameRule>("oneapi::ccl::reduction::max")},
+      {"ncclInt8", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int8")},
+      {"ncclChar", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int8")},
+      {"ncclUint8", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint8")},
+      {"ncclInt32", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int32")},
+      {"ncclInt", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int32")},
+      {"ncclUint32", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint32")},
+      {"ncclInt64", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::int64")},
+      {"ncclUint64", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::uint64")},
+      {"ncclFloat16", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float16")},
+      {"ncclHalf", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float16")},
+      {"ncclFloat32", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float32")},
+      {"ncclFloat", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float32")},
+      {"ncclFloat64", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float64")},
+      {"ncclDouble", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::float64")},
+      {"ncclBfloat16", std::make_shared<EnumNameRule>("oneapi::ccl::datatype::bfloat16")},
       // ...
   };
 
@@ -1453,7 +1471,17 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasDtrsm_v2",
        {std::vector<int>{8, 10}, std::vector<int>{7},
         std::vector<std::string>{"double", "double"}, std::vector<int>{3}, 2, 1,
-        4, "oneapi::mkl::blas::column_major::trsm"}}
+        4, "oneapi::mkl::blas::column_major::trsm"}},
+      {"cublasSgeam",
+         {std::vector<int>{6, 9, 11}, std::vector<int>{5, 8},
+          std::vector<std::string>{"float", "float", "float"},
+          std::vector<int>{1, 2}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::omatadd"}},
+      {"cublasDgeam",
+         {std::vector<int>{6, 9, 11}, std::vector<int>{5, 8},
+          std::vector<std::string>{"double", "double", "double"},
+          std::vector<int>{1, 2}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::omatadd"}}
   };
 
   BLASTGemmExTypeInfoMap = {
@@ -1528,7 +1556,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"cublasSgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasDgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
       {"cublasCgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
-      {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"}};
+      {"cublasZgeqrfBatched", getDpctNamespace() + "geqrf_batch_wrapper"},
+      {"cublasCrot_v2", getDpctNamespace() + "rot"},
+      {"cublasZrot_v2", getDpctNamespace() + "rot"}};
 
   SOLVERAPIWithRewriter = {"cusolverDnSetStream",
                            "cusolverDnGetStream",
@@ -1889,6 +1919,36 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>"}, std::vector<int>{},
           -1, -1, -1, "oneapi::mkl::blas::column_major::gerc"}},
+        {"cublasCsymv_v2",
+          {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
+           std::vector<std::string>{"std::complex<float>", "std::complex<float>", "std::complex<float>"},
+           std::vector<std::string>{"std::complex<float>", "std::complex<float>"}, std::vector<int>{},
+           1, -1, -1, "oneapi::mkl::blas::column_major::symv"}},
+        {"cublasZsymv_v2",
+          {std::vector<int>{4, 6, 9}, std::vector<int>{3, 8},
+           std::vector<std::string>{"std::complex<double>", "std::complex<double>", "std::complex<double>"},
+           std::vector<std::string>{"std::complex<double>", "std::complex<double>"}, std::vector<int>{}, 1, -1, -1,
+           "oneapi::mkl::blas::column_major::symv"}},
+        {"cublasCsyr_v2",
+          {std::vector<int>{4, 6}, std::vector<int>{3},
+           std::vector<std::string>{"std::complex<float>", "std::complex<float>"},
+           std::vector<std::string>{"std::complex<float>"}, std::vector<int>{}, 1, -1,
+           -1, "oneapi::mkl::blas::column_major::syr"}},
+        {"cublasZsyr_v2",
+          {std::vector<int>{4, 6}, std::vector<int>{3},
+           std::vector<std::string>{"std::complex<double>", "std::complex<double>"},
+           std::vector<std::string>{"std::complex<double>"}, std::vector<int>{}, 1, -1,
+           -1, "oneapi::mkl::blas::column_major::syr"}},
+        {"cublasCsyr2_v2",
+          {std::vector<int>{4, 6, 8}, std::vector<int>{3},
+          std::vector<std::string>{"std::complex<float>", "std::complex<float>", "std::complex<float>"},
+          std::vector<std::string>{"std::complex<float>"}, std::vector<int>{},
+          1, -1, -1, "oneapi::mkl::blas::column_major::syr2"}},
+        {"cublasZsyr2_v2",
+          {std::vector<int>{4, 6, 8}, std::vector<int>{3},
+          std::vector<std::string>{"std::complex<double>", "std::complex<double>", "std::complex<double>"},
+          std::vector<std::string>{"std::complex<double>"}, std::vector<int>{}, 1, -1, -1,
+        "oneapi::mkl::blas::column_major::syr2"}},
         {"cublasCtbmv_v2",
          {std::vector<int>{6, 8}, std::vector<int>{},
           std::vector<std::string>{"std::complex<float>",
@@ -2219,7 +2279,22 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
                                    "std::complex<double>"},
           std::vector<std::string>{"std::complex<double>", "double"},
           std::vector<int>{2}, 1, -1, -1,
-          "oneapi::mkl::blas::column_major::her2k"}}
+          "oneapi::mkl::blas::column_major::her2k"}},
+        {"cublasCgeam",
+         {std::vector<int>{6, 9, 11}, std::vector<int>{5, 8},
+          std::vector<std::string>{"std::complex<float>", "std::complex<float>",
+                                   "std::complex<float>"},
+          std::vector<std::string>{"std::complex<float>", "std::complex<float>"},
+          std::vector<int>{1, 2}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::omatadd"}},
+        {"cublasZgeam",
+         {std::vector<int>{6, 9, 11}, std::vector<int>{5, 8},
+          std::vector<std::string>{"std::complex<double>",
+                                   "std::complex<double>",
+                                   "std::complex<double>"},
+          std::vector<std::string>{"std::complex<double>", "std::complex<double>"},
+          std::vector<int>{1, 2}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::omatadd"}}
     };
 
 const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
@@ -2304,6 +2379,18 @@ const std::map<std::string, MapNames::BLASFuncComplexReplInfo>
          {std::vector<int>{1, 3}, std::vector<int>{},
           std::vector<std::string>{"double", "double"},
           std::vector<std::string>{}, std::vector<int>{}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::rot"}},
+        {"cublasCrot",
+         {std::vector<int>{1, 3}, std::vector<int>{6},
+          std::vector<std::string>{"std::complex<float>", "std::complex<float>"},
+          std::vector<std::string>{"std::complex<float>"},
+          std::vector<int>{}, -1, -1, -1,
+          "oneapi::mkl::blas::column_major::rot"}},
+        {"cublasZrot",
+         {std::vector<int>{1, 3}, std::vector<int>{6},
+          std::vector<std::string>{"std::complex<double>", "std::complex<double>"},
+          std::vector<std::string>{"std::complex<double>"},
+          std::vector<int>{}, -1, -1, -1,
           "oneapi::mkl::blas::column_major::rot"}},
         {"cublasSrotg",
          {std::vector<int>{0, 1, 2, 3}, std::vector<int>{},
@@ -3841,22 +3928,22 @@ const MapNames::MapTy MapNames::RandomEngineTypeMap{
 // Device Random Generator Type mapping
 const MapNames::MapTy MapNames::DeviceRandomGeneratorTypeMap{
     {"curandStateXORWOW_t", "dpct::rng::device::rng_generator<oneapi::"
-                            "mkl::rng::device::philox4x32x10<4>>"},
+                            "mkl::rng::device::philox4x32x10<1>>"},
     {"curandStateXORWOW", "dpct::rng::device::rng_generator<oneapi::"
-                          "mkl::rng::device::philox4x32x10<4>>"},
+                          "mkl::rng::device::philox4x32x10<1>>"},
     {"curandState_t", "dpct::rng::device::rng_generator<oneapi::mkl::"
-                      "rng::device::philox4x32x10<4>>"},
+                      "rng::device::philox4x32x10<1>>"},
     {"curandState", "dpct::rng::device::rng_generator<oneapi::mkl::"
-                    "rng::device::philox4x32x10<4>>"},
+                    "rng::device::philox4x32x10<1>>"},
     {"curandStatePhilox4_32_10_t",
      "dpct::rng::device::rng_generator<oneapi::mkl::rng::device::"
-     "philox4x32x10<4>>"},
+     "philox4x32x10<1>>"},
     {"curandStatePhilox4_32_10", "dpct::rng::device::rng_generator<"
-                                 "oneapi::mkl::rng::device::philox4x32x10<4>>"},
+                                 "oneapi::mkl::rng::device::philox4x32x10<1>>"},
     {"curandStateMRG32k3a_t", "dpct::rng::device::rng_generator<"
-                              "oneapi::mkl::rng::device::mrg32k3a<4>>"},
+                              "oneapi::mkl::rng::device::mrg32k3a<1>>"},
     {"curandStateMRG32k3a", "dpct::rng::device::rng_generator<oneapi::"
-                            "mkl::rng::device::mrg32k3a<4>>"},
+                            "mkl::rng::device::mrg32k3a<1>>"},
 };
 
 const std::map<std::string, MapNames::RandomGenerateFuncReplInfo>

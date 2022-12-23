@@ -42,6 +42,7 @@
 #include <complex>
 #include <type_traits>
 #include <cassert>
+#include <cstdint>
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
@@ -704,7 +705,138 @@ public:
 // DPCT_CODE
 };
 // DPCT_LABEL_END
+} // namespace experimental
+
+// DPCT_LABEL_BEGIN|int_as_queue_ptr|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|typedef_queue_ptr
+// Device|get_default_queue
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+/// If x <= 2, then return a pointer to the deafult queue;
+/// otherwise, return x reinterpreted as a dpct::queue_ptr.
+inline queue_ptr int_as_queue_ptr(uintptr_t x) {
+  return x <= 2 ?
+  &get_default_queue()
+  : reinterpret_cast<queue_ptr>(x);
 }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|kernel_wrapper|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+template <int n_nondefault_params, int n_default_params, typename T>
+class args_selector;
+
+/// args_selector is a helper class for extracting arguments from an
+/// array of pointers to arguments or buffer of arguments to pass to a
+/// kernel function.
+///
+/// \param R(Ts...) The type of the kernel
+/// \param n_nondefault_params The number of nondefault parameters of the kernel
+/// (excluding parameters that like sycl::nd_item, etc.)
+/// \param n_default_params The number of default parameters of the kernel
+///
+/// Example usage:
+/// With the following kernel:
+///   void foo(sycl::float2 *x, int n, sycl::nd_item<3> item_ct1, float f=.1) {}
+/// and with the declaration:
+///   args_selector<2, 1, decltype(foo)> selector(kernelParams, extra);
+/// we have:
+///   selector.get<0>() returns a reference to sycl::float*,
+///   selector.get<1>() returns a reference to int,
+///   selector.get<2>() returns a reference to float
+template <int n_nondefault_params, int n_default_params,
+   typename R, typename... Ts>
+class args_selector<n_nondefault_params, n_default_params, R(Ts...)> {
+private:
+  void **kernel_params;
+  char *args_buffer;
+
+  template <int i>
+  static constexpr int account_for_default_params() {
+    constexpr int n_total_params = sizeof...(Ts);
+    if constexpr (i >= n_nondefault_params) {
+      return n_total_params - n_default_params + (i - n_nondefault_params);
+    } else {
+      return i;
+    }
+  }    
+
+public:
+  /// Get the type of the ith argument of R(Ts...)
+  /// \param [in] i Index of parameter to get
+  /// \returns Type of ith parameter
+  template <int i>
+  using arg_type = std::tuple_element_t<account_for_default_params<i>(),
+					  std::tuple<Ts...>>;
+private:
+  template <int i>
+  static constexpr int get_offset() {
+    if constexpr (i == 0) {
+      // we can assume args_buffer is properly aligned to the
+      // first argument
+      return 0;
+    } else {
+      constexpr int prev_off = get_offset<i-1>();
+      constexpr int prev_past_end = prev_off + sizeof(arg_type<i-1>);
+      using T = arg_type<i>;
+      // is the past-the-end of the i-1st element properly aligned
+      // with the ith element's alignment?
+      if constexpr (prev_past_end % alignof(T) == 0) {
+	return prev_past_end;
+      }
+      // otherwise bump prev_past_end to match alignment
+      else {
+	return prev_past_end + (alignof(T) - (prev_past_end % alignof(T)));
+      }
+    }
+  }
+
+  static char *get_args_buffer(void **extra) {
+    if (!extra)
+      return nullptr;
+    for (; (std::size_t) *extra != 0; ++extra) {
+      if ((std::size_t) *extra == 1) {
+	return static_cast<char*>(*(extra+1));
+      }
+    }
+    return nullptr;
+  }
+    
+public:
+  /// If kernel_params is nonnull, then args_selector will
+  /// extract arguments from kernel_params. Otherwise, it
+  /// will extract them from extra.
+  /// \param [in] kernel_params Array of pointers to arguments
+  /// a or null pointer.
+  /// \param [in] extra Array containing pointer to argument buffer.
+  args_selector(void **kernel_params, void **extra)
+    : kernel_params(kernel_params),
+      args_buffer(get_args_buffer(extra))
+  {}
+
+  /// Get a reference to the ith argument extracted from kernel_params
+  /// or extra.
+  /// \param [in] i Index of argument to get
+  /// \returns Reference to the ith argument
+  template <int i>    
+  arg_type<i> &get() {
+    if (kernel_params) {
+      return *static_cast<arg_type<i>*>(kernel_params[i]);
+    } else {
+      return *reinterpret_cast<arg_type<i>*>(args_buffer + get_offset<i>());
+    }
+  }
+};
+
+#ifdef _WIN32
+#define DPCT_EXPORT __declspec(dllexport)
+#else
+#define DPCT_EXPORT
+#endif
+// DPCT_LABEL_END
+
 } // namespace dpct
 
 
