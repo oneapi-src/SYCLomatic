@@ -2218,15 +2218,12 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
         }
       }
     }
+    ResultBegin = SM.getExpansionLoc(ResultBegin);
+    ResultEnd = SM.getExpansionLoc(ResultEnd);
     if (IncludeLastToken) {
-      ResultBegin = SM.getExpansionLoc(ResultBegin);
       auto LastTokenLength =
           Lexer::MeasureTokenLength(ResultEnd, SM, Context.getLangOpts());
-      ResultEnd = SM.getExpansionLoc(ResultEnd);
       ResultEnd = ResultEnd.getLocWithOffset(LastTokenLength);
-    } else {
-      ResultBegin = SM.getExpansionLoc(ResultBegin);
-      ResultEnd = SM.getExpansionLoc(ResultEnd);
     }
     return std::pair<SourceLocation, SourceLocation>(ResultBegin, ResultEnd);
   }
