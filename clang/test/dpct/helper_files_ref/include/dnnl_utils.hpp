@@ -1706,10 +1706,10 @@ public:
   /// \param [in] dst_c_iter Pointer to output recurrent cell state data.
   /// \param [in] weight_size Size of weight memory.
   /// \param [in] weight Pointer to weight data.
-  /// \param [in] workspace_size Size of workspace memory.
-  /// \param [in] workspace Pointer to workspace data.
   /// \param [in] scratchpad_size Size of scratchpad memory.
   /// \param [in] scratchpad Pointer to scratchpad data.
+  /// \param [in] workspace_size Size of workspace memory.
+  /// \param [in] workspace Pointer to workspace data.
   /// \returns An event representing the rnn forward operations.
   sycl::event async_rnn_forward(const rnn_desc &desc, ::dnnl::prop_kind kind,
                                const memory_desc_ext &src_desc, void *src,
@@ -1719,8 +1719,8 @@ public:
                                const memory_desc_ext &iter_c_desc,
                                void *src_iter_c, void *dst_iter_c,
                                size_t weight_size, void *weight,
-                               size_t workspace_size, void *workspace,
-                               size_t scratchpad_size, void *scratchpad);
+                               size_t scratchpad_size, void *scratchpad,
+                               size_t workspace_size, void *workspace);
 
   /// Computing the bias gradient of a specified rnn function
   /// asynchronously.
@@ -1742,10 +1742,10 @@ public:
   /// \param [in] weight_size Size of weight memory.
   /// \param [in] weight Pointer to weight data.
   /// \param [out] diff_weight Pointer to differential weight data.
-  /// \param [in] workspace_size Size of workspace memory.
-  /// \param [in] workspace Pointer to workspace data.
   /// \param [in] scratchpad_size Size of scratchpad memory.
   /// \param [in] scratchpad Pointer to scratchpad data.
+  /// \param [in] workspace_size Size of workspace memory.
+  /// \param [in] workspace Pointer to workspace data.
   /// \returns An event representing the rnn backward operations.
   sycl::event async_rnn_backward(
       const rnn_desc &desc, const memory_desc_ext &dst_desc, void *dst,
@@ -1754,8 +1754,8 @@ public:
       void *diff_src_iter, void *diff_dst_iter,
       const memory_desc_ext &iter_c_desc, void *src_iter_c,
       void *diff_src_iter_c, void *diff_dst_iter_c, size_t weight_size,
-      void *weight, void *diff_weight, size_t workspace_size, void *workspace,
-      size_t scratchpad_size, void *scratchpad);
+      void *weight, void *diff_weight, size_t scratchpad_size, void *scratchpad,
+      size_t workspace_size, void *workspace);
 
 };
 
@@ -4007,8 +4007,8 @@ sycl::event engine_ext::async_rnn_forward(
     const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
     void *dst, const memory_desc_ext &iter_desc, void *src_iter, void *dst_iter,
     const memory_desc_ext &iter_c_desc, void *src_iter_c, void *dst_iter_c,
-    size_t weight_size, void *weight, size_t workspace_size, void *workspace,
-    size_t scratchpad_size, void *scratchpad) {
+    size_t weight_size, void *weight, size_t scratchpad_size, void *scratchpad,
+    size_t workspace_size, void *workspace) {
 
   return rnn_forward_internal(
       desc, kind, src_desc, src, dst_desc, dst, iter_desc, src_iter, dst_iter,
@@ -4023,8 +4023,8 @@ sycl::event engine_ext::async_rnn_backward(
     const memory_desc_ext &iter_desc, void *src_iter, void *diff_src_iter,
     void *diff_dst_iter, const memory_desc_ext &iter_c_desc, void *src_iter_c,
     void *diff_src_iter_c, void *diff_dst_iter_c, size_t weight_size,
-    void *weight, void *diff_weight, size_t workspace_size, void *workspace,
-    size_t scratchpad_size, void *scratchpad) {
+    void *weight, void *diff_weight, size_t scratchpad_size, void *scratchpad,
+    size_t workspace_size, void *workspace) {
   ::dnnl::memory::data_type src_dt;
   ::dnnl::memory::format_tag src_format_tag;
   rnn_mode mode;
