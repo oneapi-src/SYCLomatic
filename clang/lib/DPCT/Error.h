@@ -53,6 +53,7 @@ enum ProcessStatus {
   MigrationErrorInvalidRuleFilePath = -38,
   MigrationErrorCannotParseRuleFile = -39,
   MigrationErrorInvalidAnalysisScope = -40,
+  MigrationErrorInvalidChangeFilenameExtension = -41,
 };
 
 namespace clang {

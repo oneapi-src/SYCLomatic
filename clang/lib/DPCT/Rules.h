@@ -57,19 +57,21 @@ struct EnumNameRule : public TypeNameRule {
 // Record all information of imported rules
 class MetaRuleObject {
 public:
-  class ClassField {
-  public:
+  struct ClassField {
     std::string In;
     std::string Out;
     std::string OutGetter;
     std::string OutSetter;
     ClassField() {}
   };
-  class ClassMethod {
-  public:
+  struct ClassMethod {
     std::string In;
     std::string Out;
     ClassMethod() {}
+  };
+  struct Attributes {
+    bool ReplaceCalleeNameOnly = false;
+    bool HasExplicitTemplateArgs = false;
   };
   static std::vector<std::string> RuleFiles;
   std::string RuleFile;
@@ -81,10 +83,10 @@ public:
   std::string EnumName;
   std::string Prefix;
   std::string Postfix;
+  Attributes RuleAttributes;
   std::vector<std::string> Includes;
   std::vector<std::shared_ptr<ClassField>> Fields;
   std::vector<std::shared_ptr<ClassMethod>> Methods;
-  bool HasExplicitTemplateArgs = false;
   MetaRuleObject()
       : Priority(RulePriority::Default), Kind(RuleKind::API) {}
   MetaRuleObject(std::string id, RulePriority priority, RuleKind kind)
@@ -140,7 +142,7 @@ template <> struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject>> {
     Io.mapOptional("EnumName", Doc->EnumName);
     Io.mapOptional("Prefix", Doc->Prefix);
     Io.mapOptional("Postfix", Doc->Postfix);
-    Io.mapOptional("HasExplicitTemplateArgs", Doc->HasExplicitTemplateArgs);
+    Io.mapOptional("Attributes", Doc->RuleAttributes);
   }
 };
 
@@ -163,6 +165,14 @@ struct llvm::yaml::MappingTraits<std::shared_ptr<MetaRuleObject::ClassMethod>> {
     Doc = std::make_shared<MetaRuleObject::ClassMethod>();
     Io.mapRequired("In", Doc->In);
     Io.mapRequired("Out", Doc->Out);
+  }
+};
+
+template<>
+struct llvm::yaml::MappingTraits<MetaRuleObject::Attributes> {
+  static void mapping(llvm::yaml::IO &Io, MetaRuleObject::Attributes &Doc) {
+    Io.mapOptional("ReplaceCalleeNameOnly", Doc.ReplaceCalleeNameOnly);
+    Io.mapOptional("HasExplicitTemplateArgs", Doc.HasExplicitTemplateArgs);
   }
 };
 

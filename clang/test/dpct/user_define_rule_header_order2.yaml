@@ -1,0 +1,8 @@
+- Rule: rule_foo
+  Kind: API
+  Priority: Takeover
+  In: cudnnDataType_t
+  Out: dpct::library_data_t
+  Includes: [
+    '<dpct/dnnl_utils.hpp>'
+    ]

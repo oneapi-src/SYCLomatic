@@ -51,14 +51,14 @@ TYPE_REWRITE_ENTRY("cub::TransformInputIterator",
                                     TEMPLATE_ARG(2), TEMPLATE_ARG(1))))
 
 TYPE_REWRITE_ENTRY("cub::ConstantInputIterator",
-                   HEADER_INSERTION_FACTORY(HeaderType::HT_DPL_Utils,
+                   HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_DPL_Utils,
                    TYPE_FACTORY(STR("dpct::constant_iterator"), TEMPLATE_ARG(0))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DplExtrasIterators_arg_index_input_iterator,
     TYPE_REWRITE_ENTRY("cub::ArgIndexInputIterator",
                        HEADER_INSERTION_FACTORY(
-                           HeaderType::HT_DPL_Utils,
+                           HeaderType::HT_DPCT_DPL_Utils,
                            TYPE_FACTORY(STR("dpct::arg_index_input_iterator"),
                                         TEMPLATE_ARG(0)))))
 
@@ -80,7 +80,7 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::DplExtrasIterators_key_value_pair,
     TYPE_REWRITE_ENTRY("cub::KeyValuePair",
                        HEADER_INSERTION_FACTORY(
-                           HeaderType::HT_DPL_Utils,
+                           HeaderType::HT_DPCT_DPL_Utils,
                            TYPE_FACTORY(STR("dpct:key_value_pair"),
                                         TEMPLATE_ARG(0), TEMPLATE_ARG(1)))))
 
