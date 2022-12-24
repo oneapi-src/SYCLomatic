@@ -6,28 +6,23 @@
 //
 //===----------------------------------------------------------------------===//
 
-// Policies to migrate math functions with new rewriter:
-// 1) Functions with __device__ attribute but without __host__
-//    attribute are treated as device functions;
-// 2) Functions whose calling functions are augmented with __device__
-//    or __global__ attributes are treated as device functions;
-// 3) Other functions are treated as host functions.
-//    eg. "__host__ __device__ fabs()" falls in 3) if fabs is not called in
-//    device or kernel
-
-CONDITIONAL_FACTORY_ENTRY(
-    makeCheckOr(
-        makeCheckAnd(
-            HasDirectCallee(),
-            makeCheckAnd(
-                IsDirectCalleeHasAttribute<CUDADeviceAttr>(),
-                makeCheckNot(IsDirectCalleeHasAttribute<CUDAHostAttr>()))),
-        makeCheckOr(IsContextCallHasAttribute<CUDADeviceAttr>(),
-                    IsContextCallHasAttribute<CUDAGlobalAttr>())),
-    CALL_FACTORY_ENTRY("rsqrt",
-                       CALL(MapNames::getClNamespace(false, true) + "rsqrt",
-                            CAST_IF_NEED(makeLiteral("double"), ARG(0)))),
-    NO_REWRITE_FUNCNAME_FACTORY_ENTRY("rsqrt", "rsqrt"))
+MATH_API_REWRITER_HOST_DEVICE(
+    MATH_API_REWRITER_HOST_2(
+        "rsqrt",
+        CALL_FACTORY_ENTRY(
+            "rsqrt", CALL(MapNames::getClNamespace(false, true) + "rsqrt",
+                          ARG(0)))),
+    MATH_API_REWRITER_DEVICE_2(
+        "rsqrt",
+        {
+            CALL_FACTORY_ENTRY(
+                "rsqrt", CALL(MapNames::getClNamespace(false, true) + "rsqrt",
+                              ARG(0)))
+            EMPTY_FACTORY_ENTRY("rsqrt"),
+            EMPTY_FACTORY_ENTRY("rsqrt")
+        }
+    )
+)
 
 CONDITIONAL_FACTORY_ENTRY(
     makeCheckOr(
@@ -126,9 +121,7 @@ MATH_API_REWRITER_HOST_DEVICE(
             CALL_FACTORY_ENTRY(
                 "pow", CALL(MapNames::getClNamespace(false, true) + "pow<double>",
                             ARG(0), ARG(1)))
-            CALL_FACTORY_ENTRY("pow", CALL(MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::pow",
-                                        ARG(0), ARG(1)))
+            EMPTY_FACTORY_ENTRY("pow"),
             EMPTY_FACTORY_ENTRY("pow")
         }
 ))
@@ -171,9 +164,7 @@ MATH_API_REWRITER_HOST_DEVICE(
             CALL_FACTORY_ENTRY(
                 "powf", CALL(MapNames::getClNamespace(false, true) + "pow<float>",
                             ARG(0), ARG(1)))
-            CALL_FACTORY_ENTRY("powf", CALL(MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::pow",
-                                        ARG(0), ARG(1)))
+            EMPTY_FACTORY_ENTRY("powf"),
             EMPTY_FACTORY_ENTRY("powf")
         }
 ))
@@ -197,9 +188,7 @@ MATH_API_REWRITER_DEVICE_1(
         CALL_FACTORY_ENTRY(
             "__powf", CALL(MapNames::getClNamespace(false, true) + "pow<float>",
                         ARG(0), ARG(1)))
-        CALL_FACTORY_ENTRY("__powf", CALL(MapNames::getClNamespace(false, true) +
-                                        "ext::intel::math::pow",
-                                    ARG(0), ARG(1)))
+        EMPTY_FACTORY_ENTRY("__powf"),
         EMPTY_FACTORY_ENTRY("__powf")
     }
 )

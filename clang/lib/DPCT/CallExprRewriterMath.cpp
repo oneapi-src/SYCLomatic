@@ -1290,23 +1290,19 @@ createMathAPIRewriterDevice(
           {NAME,
            std::make_shared<NoRewriteFuncNameRewriterFactory>(NAME, NAME)}),
       createConditionalFactory(
-          math::IsDirectCallerPureDevice,
+          math::IsUnresolvedLookupExpr,
           createConditionalFactory(
-              math::IsDefinedInCUDA(),
+              math::IsDirectCallerPureDevice,
               std::move(createMathAPIRewriterDeviceImpl(
                   NAME, PerfPred, DEVICE_PERF, DEVICE_NODES)),
               {NAME,
                std::make_shared<NoRewriteFuncNameRewriterFactory>(NAME, NAME)}),
           createConditionalFactory(
-              math::IsUnresolvedLookupExpr,
+              math::IsDefinedInCUDA(),
               std::move(createMathAPIRewriterDeviceImpl(
                   NAME, PerfPred, DEVICE_PERF, DEVICE_NODES)),
-              createConditionalFactory(
-                  math::IsDefinedInCUDA(),
-                  std::move(createMathAPIRewriterDeviceImpl(
-                      NAME, PerfPred, DEVICE_PERF, DEVICE_NODES)),
-                  {NAME, std::make_shared<NoRewriteFuncNameRewriterFactory>(
-                             NAME, NAME)}))));
+              {NAME, std::make_shared<NoRewriteFuncNameRewriterFactory>(
+                         NAME, NAME)})));
 }
 
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -1323,21 +1319,18 @@ createMathAPIRewriterDevice(
           {NAME,
            std::make_shared<NoRewriteFuncNameRewriterFactory>(NAME, NAME)}),
       createConditionalFactory(
-          math::IsDirectCallerPureDevice,
+          math::IsUnresolvedLookupExpr,
           createConditionalFactory(
-              math::IsDefinedInCUDA(),
+              math::IsDirectCallerPureDevice,
               std::move(createMathAPIRewriterDeviceImpl(NAME, DEVICE_NODES)),
               {NAME,
                std::make_shared<NoRewriteFuncNameRewriterFactory>(NAME, NAME)}),
           createConditionalFactory(
-              math::IsUnresolvedLookupExpr,
-              std::move(createMathAPIRewriterDeviceImpl(NAME, DEVICE_NODES)),
-              createConditionalFactory(
-                  math::IsDefinedInCUDA(),
-                  std::move(
-                      createMathAPIRewriterDeviceImpl(NAME, DEVICE_NODES)),
-                  {NAME, std::make_shared<NoRewriteFuncNameRewriterFactory>(
-                             NAME, NAME)}))));
+              math::IsDefinedInCUDA(),
+              std::move(
+                  createMathAPIRewriterDeviceImpl(NAME, DEVICE_NODES)),
+              {NAME, std::make_shared<NoRewriteFuncNameRewriterFactory>(
+                         NAME, NAME)})));
 }
 
 template <class T>
