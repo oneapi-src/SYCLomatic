@@ -5,8 +5,6 @@
 int main() {
 int concurrentManagedAccess = 0;
 int p_gpuDevice = 0;
-// CHECK: /*
-// CHECK-NEXT:  DPCT1076:{{[0-9]+}}: The device attribute was not recognized. You may need to adjust the code.
-// CHECK-NEXT: */
+// CHECK: int error = (concurrentManagedAccess = false, 0);
 int error = cudaDeviceGetAttribute(&concurrentManagedAccess,  cudaDevAttrConcurrentManagedAccess,  p_gpuDevice);
 }

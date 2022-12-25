@@ -7711,9 +7711,12 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
     if (AttributeName == "cudaDevAttrConcurrentManagedAccess" &
         DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
-        report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
-               false);
-        return;
+      std::string ReplStr = getDrefName(CE->getArg(0));
+      ReplStr += " = false";
+      if (IsAssigned)
+        ReplStr = "(" + ReplStr + ", 0)";
+      emplaceTransformation(new ReplaceStmt(CE, ReplStr));
+      return;
     }
 
     if (AttributeName == "cudaDevAttrComputeMode") {
@@ -15467,7 +15470,7 @@ void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &R
     if (CE->getCastKind() == clang::CK_LValueToRValue
 	|| CE->getCastKind() == clang::CK_NoOp)
       return;
-    
+
     if (isDefaultStream(CE->getSubExpr())) {
       if (isPlaceholderIdxDuplicated(CE->getSubExpr()))
         return;
@@ -15480,7 +15483,7 @@ void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &R
       emplaceTransformation(
         new ReplaceStmt(
           CE,
-	  MapNames::getDpctNamespace() 
+	  MapNames::getDpctNamespace()
 	  + "int_as_queue_ptr("
 	  + ExprAnalysis::ref(CE->getSubExpr())
 	  + ")"));
