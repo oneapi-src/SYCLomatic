@@ -291,7 +291,7 @@ bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
 
 // Emits a warning/error/note and/or comment depending on MsgID. For details
 template <typename IDTy, typename... Ts>
-bool report(SourceLocation SL, IDTy MsgID,
+inline bool report(SourceLocation SL, IDTy MsgID,
             TransformSetTy *TS, bool UseTextBegin, Ts &&... Vals) {
   auto &SM = dpct::DpctGlobalInfo::getSourceManager();
   if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
