@@ -3069,7 +3069,7 @@ bool isDefaultStream(const Expr *StreamArg) {
   } else if (auto Paren = dyn_cast<ParenExpr>(StreamArg)) {
     return isDefaultStream(Paren->getSubExpr());
   }
-  Expr::EvalResult Result;
+  Expr::EvalResult Result{};
   if (!StreamArg->isValueDependent() &&
       StreamArg->EvaluateAsInt(Result, dpct::DpctGlobalInfo::getContext())) {
     // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)
