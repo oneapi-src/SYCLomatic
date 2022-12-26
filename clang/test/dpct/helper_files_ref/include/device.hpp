@@ -290,13 +290,26 @@ public:
     if (this->has(sycl::aspect::ext_intel_memory_clock_rate)) {
       prop.set_memory_clock_rate(
           this->get_info<sycl::ext::intel::info::device::memory_clock_rate>());
+    } else {
+      std::cerr
+          << "Query ext_intel_device_info_memory_clock_rate not supported "
+             "by the device"
+          << std::endl;
+      std::cerr << "memory_clock_rate default value is 0." << std::endl;
     }
     if (this->has(sycl::aspect::ext_intel_memory_bus_width)) {
       prop.set_memory_bus_width(
           this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
+    } else {
+      std::cerr << "Query ext_intel_device_info_memory_bus_width not supported "
+                   "by the device"
+                << std::endl;
+      std::cerr << "memory_bus_width default value is 64." << std::endl;
     }
 #else
-    std::cerr << "get_device_info: query memory_clock_rate and memory_bus_width  is not supported." << std::endl;
+    std::cerr << "get_device_info: query memory_clock_rate and "
+                 "memory_bus_width  is not supported by the compiler."
+              << std::endl;
     std::cerr << "memory_clock_rate default value is 0." << std::endl;
     std::cerr << "memory_bus_width default value is 64." << std::endl;
 #endif
