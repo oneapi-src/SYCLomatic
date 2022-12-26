@@ -211,7 +211,7 @@ vectorized_isgreater<sycl::uchar4, unsigned>(unsigned a, unsigned b) {
   v4[1] = v2[1] > v3[1] ? 0xff : 0;
   v4[2] = v2[2] > v3[2] ? 0xff : 0;
   v4[3] = v2[3] > v3[3] ? 0xff : 0;
-  v0 = v4.template as<sycl::vec<sycl::uchar4, 1>>();
+  v0 = v4.template as<sycl::vec<unsigned, 1>>();
   return v0;
 }
 
