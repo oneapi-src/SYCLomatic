@@ -12,6 +12,7 @@
 #include <thrust/execution_policy.h>
 #include <thrust/sort.h>
 #include <thrust/transform_scan.h>
+#include <thrust/set_operations.h>
 
 struct key_value
 	{
@@ -382,4 +383,56 @@ void transform_exclusive_scan_test() {
 //CHECK-NEXT:  };
   thrust::transform_exclusive_scan(thrust::host, A, A+N, A, unary_op, 4, binary_op);
   thrust::transform_exclusive_scan(A, A+N, A, unary_op, 4, binary_op);
+}
+
+void set_intersection_by_key_test() {
+  const int N = 6, M = 7, P = 3;
+  int Akey[N] = {1, 3, 5, 7, 9, 11};
+  int Avalue[N] = {0, 0, 0, 0, 0, 0};
+  int Bkey[M] = {1, 1, 2, 3, 5, 8, 13};
+
+  int Ckey[P];
+  int Cvalue[P];
+  int anskey[P] = {1, 3, 5};
+  int ansvalue[P] = {0, 0, 0};
+
+  thrust::host_vector<int> h_VAkey(Akey, Akey + N);
+  thrust::host_vector<int> h_VAvalue(Avalue, Avalue + N);
+
+  thrust::host_vector<int> h_VBkey(Bkey, Bkey + M);
+
+  thrust::host_vector<int> h_VCkey(Ckey, Ckey + P);
+  thrust::host_vector<int> h_VCvalue(Cvalue, Cvalue + P);
+  typedef thrust::pair<thrust::host_vector<int>::iterator,
+                       thrust::host_vector<int>::iterator> iter_pair;
+  thrust::device_vector<int> d_VAkey(Akey, Akey + N);
+  thrust::device_vector<int> d_VAvalue(Avalue, Avalue + N);
+  thrust::device_vector<int> d_VBkey(Bkey, Bkey + M);
+  thrust::device_vector<int> d_VCkey(Ckey, Ckey + P);
+  thrust::device_vector<int> d_VCvalue(Cvalue, Cvalue + P);
+
+//CHECK:  if (dpct::is_device_ptr(Akey)) {
+//CHECK-NEXT:    dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(Akey), dpct::device_pointer<int>(Akey + N), dpct::device_pointer<int>(Bkey), dpct::device_pointer<int>(Bkey + M), dpct::device_pointer<int>(Avalue), dpct::device_pointer<int>(Ckey), dpct::device_pointer<int>(Cvalue));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(Akey + N)) {
+//CHECK-NEXT:    dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(Akey), dpct::device_pointer<int>(Akey + N), dpct::device_pointer<int>(Bkey), dpct::device_pointer<int>(Bkey + M), dpct::device_pointer<int>(Avalue), dpct::device_pointer<int>(Ckey), dpct::device_pointer<int>(Cvalue));
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue);
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(Akey)) {
+//CHECK-NEXT:    dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(Akey), dpct::device_pointer<int>(Akey + N), dpct::device_pointer<int>(Bkey), dpct::device_pointer<int>(Bkey + M), dpct::device_pointer<int>(Avalue), dpct::device_pointer<int>(Ckey), dpct::device_pointer<int>(Cvalue), std::greater<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, std::greater<int>());
+//CHECK-NEXT:  };
+//CHECK-NEXT:  if (dpct::is_device_ptr(Akey + N)) {
+//CHECK-NEXT:    dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(Akey), dpct::device_pointer<int>(Akey + N), dpct::device_pointer<int>(Bkey), dpct::device_pointer<int>(Bkey + M), dpct::device_pointer<int>(Avalue), dpct::device_pointer<int>(Ckey), dpct::device_pointer<int>(Cvalue), std::greater<int>());
+//CHECK-NEXT:  } else {
+//CHECK-NEXT:    dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, std::greater<int>());
+//CHECK-NEXT:  };
+  thrust::set_intersection_by_key(thrust::host, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue);
+  thrust::set_intersection_by_key(Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue);
+  thrust::set_intersection_by_key(thrust::host, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, thrust::greater<int>());
+  thrust::set_intersection_by_key(Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, thrust::greater<int>());
 }

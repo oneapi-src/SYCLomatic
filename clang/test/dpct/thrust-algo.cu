@@ -18,6 +18,7 @@
 #include <thrust/sort.h>
 #include <thrust/host_vector.h>
 #include <thrust/transform_scan.h>
+#include <thrust/set_operations.h>
 
 void k() {
   std::vector<int> v, v2, v3, v4;
@@ -707,11 +708,65 @@ void transform_exclusive_scan_test() {
 // CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_V.begin(), 4, binary_op, unary_op);
 // CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_V.begin(), 4, binary_op, unary_op);
 // CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A+N, A, 4, binary_op, unary_op);
- // CHECK-NEXT: oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A+N, A, 4, binary_op, unary_op);
+// CHECK-NEXT: oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A+N, A, 4, binary_op, unary_op);
   thrust::transform_exclusive_scan(thrust::host, h_V.begin(), h_V.end(), h_V.begin(), unary_op, 4, binary_op)
   thrust::transform_exclusive_scan(h_V.begin(), h_V.end(), h_V.begin(), unary_op, 4, binary_op);
   thrust::transform_exclusive_scan(thrust::device, d_V.begin(), d_V.end(), d_V.begin(), unary_op, 4, binary_op);
   thrust::transform_exclusive_scan(d_V.begin(), d_V.end(), d_V.begin(), unary_op, 4, binary_op);
   thrust::transform_exclusive_scan(thrust::host, A, A+N, A, unary_op, 4, binary_op);
   thrust::transform_exclusive_scan(A, A+N, A, unary_op, 4, binary_op);
+}
+
+
+void set_intersection_by_key_test() {
+  const int N = 6, M = 7, P = 3;
+  int Akey[N] = {1, 3, 5, 7, 9, 11};
+  int Avalue[N] = {0, 0, 0, 0, 0, 0};
+  int Bkey[M] = {1, 1, 2, 3, 5, 8, 13};
+
+  int Ckey[P];
+  int Cvalue[P];
+  int anskey[P] = {1, 3, 5};
+  int ansvalue[P] = {0, 0, 0};
+
+  thrust::host_vector<int> h_VAkey(Akey, Akey + N);
+  thrust::host_vector<int> h_VAvalue(Avalue, Avalue + N);
+
+  thrust::host_vector<int> h_VBkey(Bkey, Bkey + M);
+
+  thrust::host_vector<int> h_VCkey(Ckey, Ckey + P);
+  thrust::host_vector<int> h_VCvalue(Cvalue, Cvalue + P);
+  typedef thrust::pair<thrust::host_vector<int>::iterator,
+                       thrust::host_vector<int>::iterator> iter_pair;
+  thrust::device_vector<int> d_VAkey(Akey, Akey + N);
+  thrust::device_vector<int> d_VAvalue(Avalue, Avalue + N);
+  thrust::device_vector<int> d_VBkey(Bkey, Bkey + M);
+  thrust::device_vector<int> d_VCkey(Ckey, Ckey + P);
+  thrust::device_vector<int> d_VCvalue(Cvalue, Cvalue + P);
+
+
+// CHECK:  dpct::set_intersection(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue);
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue);
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, std::greater<int>());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, std::greater<int>());
+  thrust::set_intersection_by_key(thrust::host, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+  thrust::set_intersection_by_key(h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+  thrust::set_intersection_by_key(thrust::host, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_intersection_by_key(h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_intersection_by_key(thrust::device, d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+  thrust::set_intersection_by_key(d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+  thrust::set_intersection_by_key(thrust::device, d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_intersection_by_key(d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_intersection_by_key(thrust::host, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue);
+  thrust::set_intersection_by_key(Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue);
+  thrust::set_intersection_by_key(thrust::host, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, thrust::greater<int>());
+  thrust::set_intersection_by_key(Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, thrust::greater<int>());
 }
