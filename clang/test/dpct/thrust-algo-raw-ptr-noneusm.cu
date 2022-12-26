@@ -195,7 +195,7 @@ void stable_sort_test() {
   int ans[N]={1, 2, 4, 5, 7, 8};
 
 //CHECK:  if (dpct::is_device_ptr(datas)) {
-//CHECK-NEXT:    oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(datas + N));
+//CHECK-NEXT:    oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(datas), dpct::device_pointer<int>(datas + N));
 //CHECK-NEXT:  } else {
 //CHECK-NEXT:    oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas + N);
 //CHECK-NEXT:  };
@@ -305,7 +305,7 @@ void tabulate_test() {
 //CHECK-NEXT:    dpct::for_each_index(oneapi::dpl::execution::seq, A, A + N, std::negate<int>());
 //CHECK-NEXT:  };
 //CHECK-NEXT:  if (dpct::is_device_ptr(A + N)) {
-//CHECK-NEXT:    dpct::for_each_index(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), dpct::device_pointer<>(std::negate<int>()));
+//CHECK-NEXT:    dpct::for_each_index(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), dpct::device_pointer<int>(A + N), std::negate<int>());
 //CHECK-NEXT:  } else {
 //CHECK-NEXT:    dpct::for_each_index(oneapi::dpl::execution::seq, A, A + N, std::negate<int>());
 //CHECK-NEXT:  };
