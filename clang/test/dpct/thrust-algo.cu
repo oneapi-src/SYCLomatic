@@ -17,6 +17,7 @@
 #include <thrust/find.h>
 #include <thrust/sort.h>
 #include <thrust/host_vector.h>
+#include <thrust/transform_scan.h>
 
 void k() {
   std::vector<int> v, v2, v3, v4;
@@ -312,7 +313,7 @@ struct key_value
 		int key;
 		int value;
 		__host__ __device__ 
-		bool operator!=( struct key_value &tmp)  {
+		bool operator!=( struct key_value &tmp) const {
 			if (this->key != tmp.key||this->value != tmp.value) {
 				return true;
 			}
@@ -326,7 +327,7 @@ struct key_value
 struct compare_key_value
 	{
 		__host__ __device__
-			bool operator()(key_value lhs, key_value rhs) {
+			bool operator()(key_value lhs, key_value rhs) const {
 			return lhs.key < rhs.key;
 		}
 	};
@@ -421,16 +422,16 @@ void is_partition_test() {
 
 // CHECK:  oneapi::dpl::partition(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), is_even());
 // CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), is_even());
-// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, h_vdata.begin(), h_vdata.end(), h_vstencil.begin(), is_even());
-// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, h_vdata.begin(), h_vdata.end(), h_vstencil.begin(), is_even());
+// CHECK-NEXT:  dpct::partition(oneapi::dpl::execution::seq, h_vdata.begin(), h_vdata.end(), h_vstencil.begin(), is_even());
+// CHECK-NEXT:  dpct::partition(oneapi::dpl::execution::seq, h_vdata.begin(), h_vdata.end(), h_vstencil.begin(), is_even());
 // CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), is_even());
 // CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), is_even());
-// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_vdata.begin(), d_vdata.end(), d_vstencil.begin(), is_even());
-// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_vdata.begin(), d_vdata.end(), d_vstencil.begin(), is_even());
+// CHECK-NEXT:  dpct::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_vdata.begin(), d_vdata.end(), d_vstencil.begin(), is_even());
+// CHECK-NEXT:  dpct::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_vdata.begin(), d_vdata.end(), d_vstencil.begin(), is_even());
 // CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, is_even());
 // CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, is_even());
-// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, stencil, is_even());
-// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, stencil, is_even());
+// CHECK-NEXT:  dpct::partition(oneapi::dpl::execution::seq, datas, datas+N, stencil, is_even());
+// CHECK-NEXT:  dpct::partition(oneapi::dpl::execution::seq, datas, datas+N, stencil, is_even());
   thrust::partition(thrust::host, h_v.begin(), h_v.end(),is_even());
   thrust::partition( h_v.begin(), h_v.end(),is_even());
   thrust::partition(thrust::host, h_vdata.begin(), h_vdata.end(),h_vstencil.begin(),is_even());
@@ -664,4 +665,53 @@ void tabulate_test() {
   thrust::tabulate(d_V.begin(), d_V.end(), thrust::negate<int>());
   thrust::tabulate(thrust::host, A,A+N, thrust::negate<int>());
   thrust::tabulate(A,A+N, thrust::negate<int>());
+}
+
+void remove_copy_test() {
+  const int N = 6;
+  int A[N] = {-2, 0, -1, 0, 1, 2};
+  int B[N - 2];
+  int ans[N - 2] = {-2, -1, 1, 2};
+  int result[N - 2];
+  int result[N - 2];
+  thrust::host_vector<int> h_V(A, A + N);
+  thrust::host_vector<int> h_result(B, B + N - 2);
+  thrust::device_vector<int> d_V(A, A + N);
+  thrust::device_vector<int> d_result(B, B + N - 2);
+
+// CHECK:  oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin(), 0);
+// CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin(), 0);
+// CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin(), 0);
+// CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin(), 0);
+// CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, V, V + N, result, 0);
+// CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::make_device_policy(q_ct1), V, V + N, result, 0);
+  thrust::remove_copy(thrust::host, h_V.begin(), h_V.end(), h_result.begin(), 0);
+  thrust::remove_copy(h_V.begin(), h_V.end(), h_result.begin(), 0);
+  thrust::remove_copy(thrust::device, d_V.begin(), d_V.end(), d_result.begin(), 0);
+  thrust::remove_copy(d_V.begin(), d_V.end(), d_result.begin(), 0);
+  thrust::remove_copy(thrust::host, V, V + N, result, 0);
+  thrust::remove_copy(V, V + N, result, 0);
+}
+
+void transform_exclusive_scan_test() {
+  const int N=6;
+  int A[N]={1, 0, 2, 2, 1, 3};
+  int ans[N]={4, 3, 3, 1, -1, -2};
+  thrust::host_vector<int> h_V(A,A+N);
+  thrust::device_vector<int> d_V(A,A+N);
+  thrust::negate<int> unary_op;
+  thrust::plus<int> binary_op;
+
+// CHECK:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_V.begin(), 4, binary_op, unary_op)
+// CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_V.begin(), 4, binary_op, unary_op);
+// CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_V.begin(), 4, binary_op, unary_op);
+// CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_V.begin(), 4, binary_op, unary_op);
+// CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A+N, A, 4, binary_op, unary_op);
+ // CHECK-NEXT: oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A+N, A, 4, binary_op, unary_op);
+  thrust::transform_exclusive_scan(thrust::host, h_V.begin(), h_V.end(), h_V.begin(), unary_op, 4, binary_op)
+  thrust::transform_exclusive_scan(h_V.begin(), h_V.end(), h_V.begin(), unary_op, 4, binary_op);
+  thrust::transform_exclusive_scan(thrust::device, d_V.begin(), d_V.end(), d_V.begin(), unary_op, 4, binary_op);
+  thrust::transform_exclusive_scan(d_V.begin(), d_V.end(), d_V.begin(), unary_op, 4, binary_op);
+  thrust::transform_exclusive_scan(thrust::host, A, A+N, A, unary_op, 4, binary_op);
+  thrust::transform_exclusive_scan(A, A+N, A, unary_op, 4, binary_op);
 }
