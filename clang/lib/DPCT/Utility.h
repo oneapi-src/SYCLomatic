@@ -152,7 +152,7 @@ inline bool isChildPath(const std::string &RootAbs, const std::string &Child,
     if (!RealPath.empty()) {
       ChildAbs = RealPath;
     } else {
-      EC = llvm::sys::fs::real_path(Child, ChildAbs);
+      EC = llvm::sys::fs::real_path(Child, ChildAbs, true);
       if ((bool)EC) {
         InChildAbsValid = false;
       } else {
@@ -214,7 +214,7 @@ inline bool isChildOrSamePath(const std::string &RootAbs,
   if (!RealPath.empty()) {
     ChildAbs = RealPath;
   } else {
-    EC = llvm::sys::fs::real_path(Child, ChildAbs);
+    EC = llvm::sys::fs::real_path(Child, ChildAbs, true);
     if ((bool)EC) {
       InChildAbsValid = false;
     } else {

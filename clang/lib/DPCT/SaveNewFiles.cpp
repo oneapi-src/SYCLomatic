@@ -123,17 +123,17 @@ bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
   SmallString<512> FilePathAbs;
   std::error_code EC;
   bool InRootAbsValid = true;
-  EC = llvm::sys::fs::real_path(InRoot, InRootAbs);
+  EC = llvm::sys::fs::real_path(InRoot, InRootAbs, true);
   if ((bool)EC) {
     InRootAbsValid = false;
   }
   bool OutRootAbsValid = true;
-  EC = llvm::sys::fs::real_path(OutRoot, OutRootAbs);
+  EC = llvm::sys::fs::real_path(OutRoot, OutRootAbs, true);
   if ((bool)EC) {
     OutRootAbsValid = false;
   }
   bool FilePathAbsValid = true;
-  EC = llvm::sys::fs::real_path(FilePath, FilePathAbs);
+  EC = llvm::sys::fs::real_path(FilePath, FilePathAbs, true);
   if ((bool)EC) {
     FilePathAbsValid = false;
   }
