@@ -7724,7 +7724,7 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string ReplStr{ResultVarName};
     auto StmtStrArg2 = getStmtSpelling(CE->getArg(2));
 
-    if (AttributeName == "cudaDevAttrConcurrentManagedAccess" &
+    if (AttributeName == "cudaDevAttrConcurrentManagedAccess" &&
         DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
       std::string ReplStr = getDrefName(CE->getArg(0));
       ReplStr += " = false";
