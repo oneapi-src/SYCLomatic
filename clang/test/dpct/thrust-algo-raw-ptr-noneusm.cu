@@ -321,13 +321,11 @@ struct add_functor
   }
 };
 void for_each_n_test() {
-  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  sycl::queue &q_ct1 = dev_ct1.default_queue();
   const int N=3;
   int A[N]={0,1,2};
   int ans[N]={1,2,3};
-  std::vector<int> h_V(A,A+N);
-  dpct::device_vector<int> d_V(A,A+N);
+  thrust::host_vector<int> h_V(A,A+N);
+  thrust::device_vector<int> d_V(A,A+N);
 
 //CHECK:  if (dpct::is_device_ptr(A)) {
 //CHECK-NEXT:    oneapi::dpl::for_each_n(oneapi::dpl::execution::make_device_policy(q_ct1), dpct::device_pointer<int>(A), N, add_functor());

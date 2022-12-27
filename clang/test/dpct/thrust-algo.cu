@@ -378,7 +378,7 @@ void is_sorted_test() {
 
 // CHECK:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
 // CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
-// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, v.begin(), v.end(), comp);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), comp);
 // CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), comp);
 // CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end());
 // CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), comp);
@@ -389,7 +389,7 @@ void is_sorted_test() {
 // CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas+N, comp);
   thrust::is_sorted(thrust::host, h_v.begin(), h_v.end());
   thrust::is_sorted( h_v.begin(), h_v.end());
-  thrust::is_sorted(thrust::host, v.begin(), v.end(),comp);
+  thrust::is_sorted(thrust::host, h_v.begin(), h_v.end(),comp);
   thrust::is_sorted( h_v.begin(), h_v.end(),comp);
   thrust::is_sorted(thrust::device, d_v.begin(), d_v.end());
   thrust::is_sorted(thrust::device, d_v.begin(), d_v.end(),comp);
@@ -528,10 +528,7 @@ void set_difference_by_key_test() {
   int Cvalue[P];
   int anskey[P]={0,4,6};
   int ansvalue[P]={0,0,0};
-  int Ckey[P];
-  int Cvalue[P];
-  int anskey[P]={0,4,6};
-  int ansvalue[P]={0,0,0};
+
   thrust::host_vector<int> h_VAkey(Akey,Akey+N);
   thrust::host_vector<int> h_VAvalue(Avalue,Avalue+N);
 
@@ -557,8 +554,8 @@ void set_difference_by_key_test() {
 // CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), std::greater<int>());
 // CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
 // CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
-// CHECK-NEXT:  thrust::set_difference_by_key(thrust::device, d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(),
-// CHECK-NEXT:  thrust::set_difference_by_key( d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), thrust::greater<int>());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), std::greater<int>());
 // CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey+N, Bkey, Bkey+M, Avalue, Bvalue, Ckey, Cvalue);
 // CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey+N, Bkey, Bkey+M, Avalue, Bvalue, Ckey, Cvalue);
 // CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey+N, Bkey, Bkey+M, Avalue, Bvalue, Ckey, Cvalue, std::greater<int>());
@@ -569,8 +566,8 @@ void set_difference_by_key_test() {
   thrust::set_difference_by_key(h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), thrust::greater<int>());
   thrust::set_difference_by_key(thrust::device, d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
   thrust::set_difference_by_key(d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
-  thrust::set_difference_by_key(thrust::device, d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(),
-  thrust::set_difference_by_key( d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_difference_by_key(thrust::device, d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(),thrust::greater<int>());
+  thrust::set_difference_by_key(d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), thrust::greater<int>());
   thrust::set_difference_by_key(thrust::host,Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue);
   thrust::set_difference_by_key(Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue);
   thrust::set_difference_by_key(thrust::host,Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue, thrust::greater<int>());
@@ -640,7 +637,7 @@ void for_each_n_test() {
 // CHECK-NEXT:  oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, A, N, add_functor());
   thrust::for_each_n(thrust::host, h_V.begin(), h_V.size(), add_functor());
   thrust::for_each_n(h_V.begin(), h_V.size(), add_functor());
-  thrust::for_each_n(thrust::ded_Vice, d_V.begin(), d_V.size(), add_functor());
+  thrust::for_each_n(thrust::deice, d_V.begin(), d_V.size(), add_functor());
   thrust::for_each_n(d_V.begin(), d_V.size(), add_functor());
   thrust::for_each_n(thrust::host, A, N, add_functor());
   thrust::for_each_n(A, N, add_functor());
@@ -674,7 +671,8 @@ void remove_copy_test() {
   int B[N - 2];
   int ans[N - 2] = {-2, -1, 1, 2};
   int result[N - 2];
-  int result[N - 2];
+  int V[N] = {-2, 0, -1, 0, 1, 2};
+
   thrust::host_vector<int> h_V(A, A + N);
   thrust::host_vector<int> h_result(B, B + N - 2);
   thrust::device_vector<int> d_V(A, A + N);
@@ -685,7 +683,7 @@ void remove_copy_test() {
 // CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin(), 0);
 // CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin(), 0);
 // CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, V, V + N, result, 0);
-// CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::make_device_policy(q_ct1), V, V + N, result, 0);
+// CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, V, V + N, result, 0);
   thrust::remove_copy(thrust::host, h_V.begin(), h_V.end(), h_result.begin(), 0);
   thrust::remove_copy(h_V.begin(), h_V.end(), h_result.begin(), 0);
   thrust::remove_copy(thrust::device, d_V.begin(), d_V.end(), d_result.begin(), 0);
