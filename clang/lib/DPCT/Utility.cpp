@@ -419,6 +419,22 @@ const clang::FunctionDecl *getImmediateOuterFuncDecl(const clang::Stmt *S) {
   return nullptr;
 }
 
+const clang::CUDAKernelCallExpr *getParentKernelCall(const clang::Expr *E) {
+  if (!E)
+    return nullptr;
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*E);
+  while (Parents.size() == 1) {
+    if (auto KC = Parents[0].get<clang::CUDAKernelCallExpr>())
+      return KC;
+
+    Parents = Context.getParents(Parents[0]);
+  }
+
+  return nullptr;
+}
+
 bool callingFuncHasDeviceAttr(const CallExpr *CE) {
   auto FD = getImmediateOuterFuncDecl(CE);
   return FD && FD->hasAttr<CUDADeviceAttr>();
