@@ -15,7 +15,7 @@ void CallExprRewriterFactoryBase::initRewriterMapCUDNN() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesCUDNN.inc"
+#include "CallExprRewriterCUDNN.inc"
       }));
 }
 

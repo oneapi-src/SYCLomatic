@@ -148,11 +148,14 @@ void MemberExprRewriterFactoryBase::initMemberExprRewriterMap() {
 #define IS_ARROW isArrow()
 #define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
   createMemberExprFeatureRequestFactory(FEATURE, x 0),
-#include "APINamesMemberExpr.inc"
+#include "MemberExprRewriter.inc"
 #undef FEATURE_REQUEST_FACTORY
 #undef IS_ARROW
 #undef LITERAL
 #undef MEM_CALL
+#undef MEMBER_REWRITE_ENTRY
+#undef WARNING_FACTORY_ENTRY
+#undef MEMBER_FACTORY
 #undef MEM_BASE
 #undef MEMBER_FACTORY
 #undef WARNING_FACTORY_ENTRY

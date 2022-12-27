@@ -16,7 +16,7 @@ void CallExprRewriterFactoryBase::initRewriterMapDriver() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesDriver.inc"
+#include "CallExprRewriterDriver.inc"
       }));
 }
 

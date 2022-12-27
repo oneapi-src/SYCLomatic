@@ -1,4 +1,4 @@
-//===--------------- CallExprRewriterCUFFT.cpp ----------------------------===//
+//===--------------- .cpp ----------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -63,7 +63,7 @@ void CallExprRewriterFactoryBase::initRewriterMapCUFFT() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesCUFFT.inc"
+#include "CallExprRewriterCUFFT.inc"
       }));
 }
 

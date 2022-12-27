@@ -1475,8 +1475,8 @@ void CallExprRewriterFactoryBase::initRewriterMapMath() {
 #define ENTRY_TYPECAST(APINAME) MATH_TYPECAST_FACTORY_ENTRY(APINAME)
 #define ENTRY_UNSUPPORTED(APINAME) MATH_UNSUPPORTED_FUNC_FACTORY_ENTRY(APINAME)
 #define ENTRY_REWRITE(APINAME)
-#include "APINamesMath.inc"
-#include "APINamesMathRewrite.inc"
+#include "CallExprRewriterMath.inc"
+#include "CallExprRewriterMathRewrite.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED_SINGLE
@@ -1499,7 +1499,7 @@ const std::vector<std::string> MathFuncNameRewriter::SingleFuctions = {
 #define ENTRY_TYPECAST(APINAME)
 #define ENTRY_UNSUPPORTED(APINAME)
 #define ENTRY_REWRITE(APINAME)
-#include "APINamesMath.inc"
+#include "CallExprRewriterMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED_SINGLE
@@ -1521,7 +1521,7 @@ const std::vector<std::string> MathFuncNameRewriter::DoubleFuctions = {
 #define ENTRY_TYPECAST(APINAME)
 #define ENTRY_UNSUPPORTED(APINAME)
 #define ENTRY_REWRITE(APINAME)
-#include "APINamesMath.inc"
+#include "CallExprRewriterMath.inc"
 #undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_SINGLE

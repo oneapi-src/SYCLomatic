@@ -15,7 +15,7 @@ void CallExprRewriterFactoryBase::initRewriterMapStream() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesStream.inc"
+#include "CallExprRewriterStream.inc"
       }));
 }
 

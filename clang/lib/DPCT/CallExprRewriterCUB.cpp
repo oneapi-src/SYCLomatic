@@ -68,7 +68,7 @@ void CallExprRewriterFactoryBase::initRewriterMapCUB() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "APINamesCUB.inc"
+#include "CallExprRewriterCUB.inc"
       }));
 }
 

@@ -12005,7 +12005,7 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 #define ENTRY_TYPECAST(APINAME) APINAME,
 #define ENTRY_UNSUPPORTED(APINAME) APINAME,
 #define ENTRY_REWRITE(APINAME) APINAME,
-#include "APINamesMath.inc"
+#include "CallExprRewriterMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED_SINGLE
@@ -12027,7 +12027,7 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 #define ENTRY_TYPECAST(APINAME)
 #define ENTRY_UNSUPPORTED(APINAME)
 #define ENTRY_REWRITE(APINAME) APINAME,
-#include "APINamesMath.inc"
+#include "CallExprRewriterMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED_SINGLE

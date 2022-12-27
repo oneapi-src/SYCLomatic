@@ -209,7 +209,7 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
   createReportWarningTypeLocRewriterFactory(MSGID, ARGS)
 #define ADD_POINTER(CREATOR) \
   makeAddPointerCreator(CREATOR)
-#include "APINamesTemplateType.inc"
+#include "TypeLocRewriterTemplateType.inc"
 #undef WARNING_FACTORY
 #undef ADD_POINTER
 #undef HEADER_INSERTION_FACTORY

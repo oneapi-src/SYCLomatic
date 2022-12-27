@@ -1261,7 +1261,7 @@ void MapNames::setExplicitNamespaceMap() {
 #define ENTRY_HOST(from, to, policy) ENTRY(from, to, policy)
 #define ENTRY_DEVICE(from, to, policy) ENTRY(from, to, policy)
 #define ENTRY_BOTH(from, to, policy) ENTRY(from, to, policy)
-#include "APINamesMapThrust.inc"
+#include "CallExprRewriterMapThrust.inc"
 #undef ENTRY
 #undef ENTRY_HOST
 #undef ENTRY_DEVICE
@@ -1791,7 +1791,7 @@ void MapNames::setExplicitNamespaceMap() {
 #define ENTRY_TYPECAST(SOURCEAPINAME)
 #define ENTRY_UNSUPPORTED(SOURCEAPINAME)
 #define ENTRY_REWRITE(APINAME)
-#include "APINamesMath.inc"
+#include "CallExprRewriterMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED_SINGLE
