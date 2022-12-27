@@ -493,8 +493,12 @@ class RefMatcherInterface
                  clang::ASTContext &Context) const {
     if (!HasQualifier) {
       if (auto FD = clang::dyn_cast<clang::FunctionDecl>(Node.getDecl())) {
+        std::string NS = "";
+        if (Node.getQualifier()) {
+          NS = getNestedNameSpecifierString(Node.getQualifier());
+        }
         if (auto ID = FD->getIdentifier()) {
-          return ID->getName() == Name;
+          return NS + ID->getName().str() == Name;
         }
       }
     } else if (auto Qualifier = Node.getQualifier()) {
