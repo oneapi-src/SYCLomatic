@@ -273,7 +273,7 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
       case (RuleKind::Enum):
         registerEnumRule(*r);
         break;
-      case (RuleKind::DisableAPIRule):
+      case (RuleKind::DisableAPIMigration):
         deregisterAPIRule(*r);
         break;
       default:
