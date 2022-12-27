@@ -19,6 +19,8 @@
 #include <thrust/host_vector.h>
 #include <thrust/transform_scan.h>
 #include <thrust/set_operations.h>
+#include <thrust/tabulate.h>
+#include <thrust/functional.h>
 
 void k() {
   std::vector<int> v, v2, v3, v4;

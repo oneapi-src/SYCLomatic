@@ -13,6 +13,8 @@
 #include <thrust/sort.h>
 #include <thrust/transform_scan.h>
 #include <thrust/set_operations.h>
+#include <thrust/tabulate.h>
+#include <thrust/functional.h>
 
 struct key_value
 	{
