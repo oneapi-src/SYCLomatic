@@ -786,15 +786,16 @@ public:
 template <class NameT, class... TemplateArgsT> class TemplatedNamePrinter {
   NameT Name;
   ArgsPrinter<false, TemplateArgsT...> TAs;
-
 public:
   TemplatedNamePrinter(NameT Name, TemplateArgsT &&...TAs)
       : Name(Name), TAs(std::forward<TemplateArgsT>(TAs)...) {}
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Name);
-    Stream << "<";
-    TAs.print(Stream);
-    Stream << ">";
+    if (sizeof...(TemplateArgsT) != 0) {
+      Stream << "<";
+      TAs.print(Stream);
+      Stream << ">";
+    }
   }
 };
 
