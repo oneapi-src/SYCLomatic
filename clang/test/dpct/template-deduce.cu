@@ -494,3 +494,31 @@ int foo12(){
   std::tuple<int, int, float, int, float> t{1, 1, 3.0f, 2, 2.0f};
   foo11<<<1,1,0>>>(t);
 }
+
+
+#define CALL_KERNEL(TYPE, ...) using scalar_t = TYPE; \
+  __VA_ARGS__()
+
+  template <typename T>
+__global__ void template_kernel5(const T* t){
+  static __shared__ T array[10];
+}
+
+void foo(){
+  //CHECK: CALL_KERNEL(double, [&] {
+  //CHECK-NEXT:   scalar_t* staging_data_ptr;
+  //CHECK-NEXT:   dpct::get_default_queue().submit(
+  //CHECK-NEXT: [&](sycl::handler &cgh) {
+  //CHECK-NEXT:   sycl::local_accessor<scalar_t, 1> array_acc_ct1(sycl::range<1>(10), cgh);
+  //CHECK:   cgh.parallel_for(
+  //CHECK-NEXT:     sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:     [=](sycl::nd_item<3> item_ct1) {
+  //CHECK-NEXT:       template_kernel5(staging_data_ptr, (scalar_t *)array_acc_ct1.get_pointer());
+  //CHECK-NEXT:     });
+  //CHECK-NEXT: });
+  //CHECK-NEXT: });
+  CALL_KERNEL(double, [&] {
+    scalar_t* staging_data_ptr;
+    template_kernel5<<<1, 1, 0>>>(staging_data_ptr);
+  });
+}
