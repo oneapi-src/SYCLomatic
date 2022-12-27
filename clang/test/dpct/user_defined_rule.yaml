@@ -106,7 +106,7 @@
   Attributes:
     HasExplicitTemplateArgs: true
 - Rule: disable_ceil
-  Kind: DisableExistingRule
+  Kind: DisableAPIRule
   Priority: Takeover
   In: ceil
   Out: ""
