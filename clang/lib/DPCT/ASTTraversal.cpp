@@ -14943,7 +14943,6 @@ void DriverModuleAPIRule::runRule(
 
   std::string APIName = "";
   if (auto DC = CE->getDirectCallee()) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
     APIName = DC->getNameAsString();
   } else {
     return;

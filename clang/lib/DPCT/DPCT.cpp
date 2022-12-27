@@ -666,7 +666,6 @@ int runDPCT(int argc, const char **argv) {
                      ExtensionStr.end());
   auto Extensions = split(ExtensionStr, ',');
   for (auto &Extension : Extensions) {
-    bool Legal = true;
     const auto len = Extension.length();
     if (len < 2 || len > 5 || Extension[0] != '.') {
       ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
