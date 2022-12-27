@@ -285,10 +285,28 @@ private:
       ReportedWarning;
 };
 
+template <typename IDTy, typename... Ts>
+bool report(const std::string FileAbsPath, unsigned int Offset, IDTy MsgID,
+            bool IsInsertWarningIntoCode, bool UseTextBegin, Ts &&...Vals);
+
 // Emits a warning/error/note and/or comment depending on MsgID. For details
 template <typename IDTy, typename... Ts>
-bool report(SourceLocation SL, IDTy MsgID, const SourceManager &SM,
+inline bool report(SourceLocation SL, IDTy MsgID,
             TransformSetTy *TS, bool UseTextBegin, Ts &&... Vals) {
+  auto &SM = dpct::DpctGlobalInfo::getSourceManager();
+  if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
+    auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
+        getHashStrFromLoc(SM.getImmediateSpellingLoc(SL)));
+    if (ItMatch !=
+        dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
+      if (ItMatch->second->IsInAnalysisScope) {
+        return DiagnosticsUtils::report<IDTy, Ts...>(
+            ItMatch->second->FilePath, ItMatch->second->Offset, MsgID, true,
+            UseTextBegin, std::forward<Ts>(Vals)...);
+      }
+    }
+  }
+
   SmallString<4096> FileName(SM.getFilename(SL));
   makeCanonical(FileName);
   // Convert path to the native form.

@@ -166,9 +166,9 @@ void test3() {
   //CHECK-NEXT:int a2 = INT_MAX;
   int a2 = deviceProp.memPitch;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with totalConstMem. It was migrated to 0. You may need to rewrite the code.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with totalConstMem. It was migrated to get_global_mem_size. You may need to rewrite the code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:int a3 = 0;
+  //CHECK-NEXT:int a3 = deviceProp.get_global_mem_size();
   int a3 = deviceProp.totalConstMem;
   //CHECK:/*
   //CHECK-NEXT:DPCT1090:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with regsPerBlock. It was not migrated. You need to rewrite the code.

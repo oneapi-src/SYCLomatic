@@ -49,6 +49,12 @@ int main() {
   thrust::exp(thrust::complex<float>(0.0));
   // CHECK: std::log(std::complex<float>(0.0)); 
   thrust::log(thrust::complex<float>(0.0));
+  // CHECK: std::norm(std::complex<float>(0.0));
+  thrust::norm(thrust::complex<float>(0.0));
+  // CHECK: std::conj(std::complex<float>(0.0));
+  thrust::conj(thrust::complex<float>(0.0));
+  // CHECK: std::proj(1);
+  thrust::proj(1);
 
   return 0;
 }
