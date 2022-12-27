@@ -2234,6 +2234,8 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
         }
       }
     }
+    ResultBegin = SM.getExpansionLoc(ResultBegin);
+    ResultEnd = SM.getExpansionLoc(ResultEnd);
     if (IncludeLastToken) {
       auto LastTokenLength =
           Lexer::MeasureTokenLength(ResultEnd, SM, Context.getLangOpts());
