@@ -419,6 +419,22 @@ const clang::FunctionDecl *getImmediateOuterFuncDecl(const clang::Stmt *S) {
   return nullptr;
 }
 
+const clang::CUDAKernelCallExpr *getParentKernelCall(const clang::Expr *E) {
+  if (!E)
+    return nullptr;
+
+  auto &Context = dpct::DpctGlobalInfo::getContext();
+  auto Parents = Context.getParents(*E);
+  while (Parents.size() == 1) {
+    if (auto KC = Parents[0].get<clang::CUDAKernelCallExpr>())
+      return KC;
+
+    Parents = Context.getParents(Parents[0]);
+  }
+
+  return nullptr;
+}
+
 bool callingFuncHasDeviceAttr(const CallExpr *CE) {
   auto FD = getImmediateOuterFuncDecl(CE);
   return FD && FD->hasAttr<CUDADeviceAttr>();
@@ -2218,6 +2234,8 @@ getRangeInRange(SourceRange Range, SourceLocation SearchRangeBegin,
         }
       }
     }
+    ResultBegin = SM.getExpansionLoc(ResultBegin);
+    ResultEnd = SM.getExpansionLoc(ResultEnd);
     if (IncludeLastToken) {
       auto LastTokenLength =
           Lexer::MeasureTokenLength(ResultEnd, SM, Context.getLangOpts());
@@ -3069,7 +3087,7 @@ bool isDefaultStream(const Expr *StreamArg) {
   } else if (auto Paren = dyn_cast<ParenExpr>(StreamArg)) {
     return isDefaultStream(Paren->getSubExpr());
   }
-  Expr::EvalResult Result;
+  Expr::EvalResult Result{};
   if (!StreamArg->isValueDependent() &&
       StreamArg->EvaluateAsInt(Result, dpct::DpctGlobalInfo::getContext())) {
     // 0 or 1 (cudaStreamLegacy) or 2 (cudaStreamPerThread)

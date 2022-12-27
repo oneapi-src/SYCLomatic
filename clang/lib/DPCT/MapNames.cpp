@@ -715,6 +715,9 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<EnumNameRule>(
            "get_integrated",
            HelperFeatureEnum::Device_device_ext_get_integrated)},
+      {"cudaDevAttrConcurrentManagedAccess",
+      std::make_shared<EnumNameRule>(
+        "get_info<sycl::info::device::usm_shared_allocations>")},
       // enum Memcpy Kind
       {"cudaMemcpyHostToHost", std::make_shared<EnumNameRule>(
                                    getDpctNamespace() + "host_to_host",

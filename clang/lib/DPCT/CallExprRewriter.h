@@ -153,23 +153,8 @@ public:
   inline void report(IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
     TransformSetTy TS;
     auto SL = Call->getBeginLoc();
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
-      auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
-          getHashStrFromLoc(SM.getImmediateSpellingLoc(SL)));
-      if (ItMatch !=
-          dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
-        if (ItMatch->second->IsInAnalysisScope) {
-          DiagnosticsUtils::report<IDTy, Ts...>(
-              ItMatch->second->FilePath, ItMatch->second->Offset, MsgID, true,
-              UseTextBegin, std::forward<Ts>(Vals)...);
-          return;
-        }
-      }
-    }
     DiagnosticsUtils::report<IDTy, Ts...>(
-        SL, MsgID, DpctGlobalInfo::getSourceManager(), &TS, UseTextBegin,
-        std::forward<Ts>(Vals)...);
+        SL, MsgID, &TS, UseTextBegin, std::forward<Ts>(Vals)...);
     for (auto &T : TS)
       DpctGlobalInfo::getInstance().addReplacement(
           T->getReplacement(DpctGlobalInfo::getContext()));
@@ -834,7 +819,7 @@ template <class BaseT, class MemberT> class StaticMemberExprPrinter {
 public:
   StaticMemberExprPrinter(BaseT &&Base, MemberT &&Member)
     : Base(std::forward<BaseT>(Base)), Member(std::forward<MemberT>(Member)) {}
-  
+
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Base);
     Stream << "::";
