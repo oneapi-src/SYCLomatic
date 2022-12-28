@@ -270,6 +270,20 @@ public:
 // DPCT_CODE
   size_t get_local_mem_size() const { return _local_mem_size; }
 // DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_memory_clock_rate|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  unsigned int get_memory_clock_rate() const { return _memory_clock_rate; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_memory_bus_width|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  unsigned int get_memory_bus_width() const { return _memory_bus_width; }
+// DPCT_LABEL_END
   // set interface
 // DPCT_LABEL_BEGIN|device_info_set_name|dpct
 // DPCT_PARENT_FEATURE|device_info
@@ -415,6 +429,24 @@ public:
     }
   }
 // DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_memory_clock_rate|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  void set_memory_clock_rate(unsigned int memory_clock_rate) {
+    _memory_clock_rate = memory_clock_rate;
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_memory_bus_width|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  void set_memory_bus_width(unsigned int memory_bus_width) {
+    _memory_bus_width = memory_bus_width;
+  }
+// DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|device_info_1|dpct
 // DPCT_PARENT_FEATURE|device_info
@@ -431,6 +463,8 @@ private:
   int _minor;
   int _integrated = 0;
   int _frequency;
+  unsigned int _memory_clock_rate = 0;
+  unsigned int _memory_bus_width = 64;
   int _max_compute_units;
   int _max_work_group_size;
   int _max_sub_group_size;
@@ -624,6 +658,36 @@ public:
     prop.set_global_mem_size(
         get_info<sycl::info::device::global_mem_size>());
     prop.set_local_mem_size(get_info<sycl::info::device::local_mem_size>());
+
+#if (defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 6)
+    if (this->has(sycl::aspect::ext_intel_memory_clock_rate)) {
+      prop.set_memory_clock_rate(
+          this->get_info<sycl::ext::intel::info::device::memory_clock_rate>());
+    } else {
+      std::cerr << "Querying ext_intel_device_info_memory_clock_rate is not "
+                   "supported "
+                   "by the device"
+                << std::endl;
+      std::cerr << "memory_clock_rate default value is 0." << std::endl;
+    }
+    if (this->has(sycl::aspect::ext_intel_memory_bus_width)) {
+      prop.set_memory_bus_width(
+          this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
+    } else {
+      std::cerr
+          << "Querying ext_intel_device_info_memory_bus_width is not supported "
+             "by the device"
+          << std::endl;
+      std::cerr << "memory_bus_width default value is 64." << std::endl;
+    }
+#else
+    std::cerr
+        << "get_device_info: query memory_clock_rate and memory_bus_width are "
+           "not supported by the compiler you currently used."
+        << std::endl;
+    std::cerr << "memory_clock_rate default value is 0." << std::endl;
+    std::cerr << "memory_bus_width default value is 64." << std::endl;
+#endif
 
     size_t max_sub_group_size = 1;
     std::vector<size_t> sub_group_sizes =
@@ -1154,7 +1218,7 @@ static inline device_ext &cpu_device() {
 // Device|dev_mgr_select_device
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-static inline unsigned int select_device(unsigned int id){
+static inline unsigned int select_device(unsigned int id) {
   dev_mgr::instance().select_device(id);
   return id;
 }
