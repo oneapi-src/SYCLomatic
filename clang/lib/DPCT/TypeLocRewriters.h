@@ -42,6 +42,7 @@ public:
   }
 };
 
+/// Print a `type`. This is useful when print template type.
 template <class TypeNameT, class... TemplateArgsT>
 class TemplateTypeLocRewriter
     : public TypePrinterRewriter<TemplatedNamePrinter<TypeNameT, TemplateArgsT...>> {
@@ -52,6 +53,17 @@ public:
       const std::function<TemplateArgsT(const TypeLoc)> &...TAsCreator)
       : TypePrinterRewriter<TemplatedNamePrinter<TypeNameT, TemplateArgsT...>>(
             TL, TypeNameCreator(TL), TAsCreator(TL)...) {}
+};
+
+/// Print a `type`. This is useful when print no template type.
+template <class TypeNameT>
+struct TypeNameTypeLocRewriter
+    : public TypePrinterRewriter<TypeNamePrinter<TypeNameT>> {
+  TypeNameTypeLocRewriter(
+      const TypeLoc TL,
+      const std::function<TypeNameT(const TypeLoc)> &TypeNameCreator)
+      : TypePrinterRewriter<TypeNamePrinter<TypeNameT>>(TL,
+                                                        TypeNameCreator(TL)) {}
 };
 
 class TypeLocRewriterFactoryBase {

@@ -783,6 +783,7 @@ public:
   }
 };
 
+/// Print a `type`. This is useful when print templated type.
 template <class NameT, class... TemplateArgsT> class TemplatedNamePrinter {
   NameT Name;
   ArgsPrinter<false, TemplateArgsT...> TAs;
@@ -791,11 +792,21 @@ public:
       : Name(Name), TAs(std::forward<TemplateArgsT>(TAs)...) {}
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Name);
-    if (sizeof...(TemplateArgsT) != 0) {
-      Stream << "<";
-      TAs.print(Stream);
-      Stream << ">";
-    }
+    Stream << "<";
+    TAs.print(Stream);
+    Stream << ">";
+  }
+};
+
+/// Print a `type`. This is useful when print no template type.
+template <class NameT> class TypeNamePrinter {
+  NameT Name;
+
+public:
+  TypeNamePrinter(NameT Name) : Name(Name) {}
+
+  template <typename StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Name);
   }
 };
 
