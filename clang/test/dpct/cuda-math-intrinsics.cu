@@ -2385,7 +2385,7 @@ __global__ void testUnsupported() {
   // CHECK: /*
   // CHECK-NEXT: DPCT1098:{{[0-9]+}}: The ((upsample(hi, lo) >> min(shift, 32)) & 0xFFFFFFFF) expression is used instead of the __funnelshift_rc call. These two expressions do not provide the exact same functionality. Check the generated code for potential precision and/or performance issues.
   // CHECK-NEXT: */
-  // CHECK-NEXT: u = ((sycl::upsample<unsigned>(u, u) >> sycl::min(u, 32)) & 0xFFFFFFFF); 
+  // CHECK-NEXT: u = ((sycl::upsample<unsigned>(u, u) >> sycl::min(u, 32)) & 0xFFFFFFFF);
   u = __funnelshift_rc(u, u, u);
   // CHECK: ll = sycl::mul_hi(ll, ll);
   ll = __mul64hi(ll, ll);
@@ -3281,7 +3281,7 @@ __global__ void k2() {
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/d0);
   __drcp_rz(d0);
-  // CHECK: /*  
+  // CHECK: /*
   // CHECK-NEXT: DPCT1013:{{[0-9]+}}: The rounding mode could not be specified and the generated code may have different precision then the original code. Verify the correctness. SYCL math built-ins rounding mode is aligned with OpenCL C 1.2 standard.
   // CHECK-NEXT: */
   // CHECK-NEXT: (1.0/(d0+d0));
@@ -3311,8 +3311,14 @@ __global__ void k2() {
   // CHECK: u = dpct::vectorized_min<sycl::ushort2>(u, u2);
   u = __vminu2(u, u2);
 
+  // CHECK: u = dpct::vectorized_min<sycl::uchar4>(u, u2);
+  u = __vminu4(u, u2);
+
   // CHECK: u = dpct::vectorized_isgreater<sycl::ushort2, unsigned>(u, u2);
   u = __vcmpgtu2(u, u2);
+
+  // CHECK: u = dpct::vectorized_isgreater<sycl::uchar4, unsigned>(u, u2);
+  u = __vcmpgtu4(u, u2);
 
   double *a_d;
   // CHECK: 0;

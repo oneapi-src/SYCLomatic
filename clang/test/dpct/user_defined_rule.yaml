@@ -105,3 +105,9 @@
   Includes: []
   Attributes:
     HasExplicitTemplateArgs: true
+- Rule: disable_ceil
+  Kind: DisableAPIMigration
+  Priority: Takeover
+  In: ceil
+  Out: ""
+  Includes: []

@@ -920,7 +920,6 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
                 std::make_shared<ExtReplacement>(SM, EndLoc, 1, "", nullptr));
           }
         }
-
         addReplacement(CE, ResultStr);
         Rewriter->Analyzer.applyAllSubExprRepl();
         return;

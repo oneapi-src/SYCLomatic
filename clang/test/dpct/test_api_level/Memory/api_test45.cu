@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test45_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test45_out
 
-// CHECK: 19
+// CHECK: 21
 // TEST_FEATURE: Memory_usm_host_allocator_alias
 
 #include <vector>
