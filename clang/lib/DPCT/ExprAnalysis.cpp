@@ -281,7 +281,7 @@ ExprAnalysis::getOffsetAndLength(SourceLocation BeginLoc, SourceLocation EndLoc,
 
 std::pair<size_t, size_t> ExprAnalysis::getOffsetAndLength(const Expr *E, SourceLocation *Loc) {
   SourceLocation BeginLoc, EndLoc;
-  size_t End;
+  size_t End = 0;
 
   if (IsInMacroDefine) {
     // If the expr is in macro define, and the CallSpellingBegin/End is set,
@@ -920,7 +920,6 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
                 std::make_shared<ExtReplacement>(SM, EndLoc, 1, "", nullptr));
           }
         }
-
         addReplacement(CE, ResultStr);
         Rewriter->Analyzer.applyAllSubExprRepl();
         return;

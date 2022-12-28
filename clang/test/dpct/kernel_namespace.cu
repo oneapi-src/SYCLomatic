@@ -11,6 +11,8 @@ __global__ void k2(){}
 
 namespace bbb {
 __global__ void k3(){}
+template<class T>
+__global__ void k5(){}
 } // namespace bbb
 } // namespace aaa
 
@@ -92,3 +94,12 @@ void foo13() {
   k4<<<1,1>>>();
 }
 
+template<class T>
+void foo14(){
+  // CHECK: aaa::bbb::k5<T>();
+  aaa::bbb::k5<T>();
+}
+
+void foo15(){
+  foo14<int>();
+}

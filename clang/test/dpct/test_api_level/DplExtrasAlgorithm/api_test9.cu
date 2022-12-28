@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasAlgorithm/api_test9_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasAlgorithm/api_test9_out
 
-// CHECK: 34
+// CHECK: 36
 // TEST_FEATURE: DplExtrasAlgorithm_unique_copy
 
 #include <thrust/unique.h>

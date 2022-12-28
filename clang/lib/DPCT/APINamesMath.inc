@@ -249,7 +249,9 @@ ENTRY_RENAMED("__urhadd", MapNames::getClNamespace(false, true) + "rhadd")
 ENTRY_RENAMED("__vmaxs4", MapNames::getDpctNamespace() + "vectorized_max<" + MapNames::getClNamespace() + "char4>")
 ENTRY_RENAMED("__vmaxu2", MapNames::getDpctNamespace() + "vectorized_max<" + MapNames::getClNamespace() + "ushort2>")
 ENTRY_RENAMED("__vminu2", MapNames::getDpctNamespace() + "vectorized_min<" + MapNames::getClNamespace() + "ushort2>")
+ENTRY_RENAMED("__vminu4", MapNames::getDpctNamespace() + "vectorized_min<" + MapNames::getClNamespace() + "uchar4>")
 ENTRY_RENAMED("__vcmpgtu2", MapNames::getDpctNamespace() + "vectorized_isgreater<" + MapNames::getClNamespace() + "ushort2, unsigned>")
+ENTRY_RENAMED("__vcmpgtu4", MapNames::getDpctNamespace() + "vectorized_isgreater<" + MapNames::getClNamespace() + "uchar4, unsigned>")
 
 // Renamed No Rewrite
 ENTRY_RENAMED_NO_REWRITE("__umul64hi", MapNames::getClNamespace(false, true) + "mul_hi")
