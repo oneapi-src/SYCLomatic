@@ -527,15 +527,21 @@ getNonImplicitCastNonParenExprParentStmt(const clang::Stmt *S) {
   return nullptr;
 }
 
-const clang::Stmt *getParentStmt(const clang::Stmt *S) {
+const clang::Stmt *getParentStmt(const clang::Stmt *S, bool SkipNonWritten) {
   if (!S)
     return nullptr;
 
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*S);
   assert(Parents.size() >= 1);
-  if (Parents.size() >= 1)
-    return Parents[0].get<Stmt>();
+  if (Parents.size() >= 1) {
+    const auto *P = Parents[0].get<Stmt>();
+    if (SkipNonWritten && P) {
+      if (const auto *CleanUp = dyn_cast<ExprWithCleanups>(P))
+        return getParentStmt(CleanUp, SkipNonWritten);
+    }
+    return P;
+  }
 
   return nullptr;
 }
@@ -1432,7 +1438,7 @@ calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
 /// \param S A Stmt node
 /// \return True if S is assigned and false if S is not assigned
 bool isAssigned(const Stmt *S) {
-  auto P = getParentStmt(S);
+  const auto *P = getParentStmt(S, true);
   return !P || (!dyn_cast<CompoundStmt>(P) && !dyn_cast<ForStmt>(P) &&
                 !dyn_cast<WhileStmt>(P) && !dyn_cast<DoStmt>(P) &&
                 !dyn_cast<IfStmt>(P));
