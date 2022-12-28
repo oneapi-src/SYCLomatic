@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasMemory/api_test11_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasMemory/api_test11_out
 
-// CHECK: 38
+// CHECK: 40
 // TEST_FEATURE: DplExtrasMemory_device_reference
 
 
