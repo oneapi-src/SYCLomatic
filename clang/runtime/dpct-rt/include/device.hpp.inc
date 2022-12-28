@@ -459,6 +459,10 @@ public:
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_set_max_register_size_per_work_group|dpct
 // DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
   void
   set_max_register_size_per_work_group(int max_register_size_per_work_group) {
     _max_register_size_per_work_group = max_register_size_per_work_group;
