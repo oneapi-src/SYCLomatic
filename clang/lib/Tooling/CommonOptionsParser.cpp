@@ -336,7 +336,7 @@ OPT_TYPE OPT_VAR(OPTION_NAME, __VA_ARGS__);
 #ifdef SYCLomatic_CUSTOMIZATION
   if (!SourcePathList.empty() &&
               Compilations->getAllCompileCommands().size() != 0) {
-    for (auto Path : SourcePathList) {
+    for (auto &Path : SourcePathList) {
       // Add the -x cuda for the case not in database.
       if (Compilations->getCompileCommands(Path).empty()) {
         IsCudaFile = true;
