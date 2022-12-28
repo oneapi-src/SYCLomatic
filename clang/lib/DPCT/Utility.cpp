@@ -3478,67 +3478,35 @@ bool analyzeMemcpyOrder(
   return true;
 }
 
-static std::optional<bool> isPassedByReference(const clang::DeclRefExpr *DRE) {
-}
-
-/// Except cudaMalloc
-static std::optional<bool> isPassedByAddress(const clang::DeclRefExpr *DRE) {
-
-}
-
-/// DRE1 is the 1st memcpy's 1st argument (pointer), DRE2 is the 2nd's memcpy's
-/// 2nd argument (pointer).
-/// (1) Variable should be local declared and in the same function where
-///     DRE is used (avoid alias)
-/// (2) Variable itself, it's address and it's reference are not be passed to
-///     other variables or functions (avoid alias)
-/// (3) Not the same Decl
-static bool hasPossibleRelationship(const clang::DeclRefExpr *DRE1,
-                                    const clang::DeclRefExpr *DRE2,
-                                    const clang::CompoundStmt *CS) {
-  if (!DRE1 || !DRE2)
+static bool isDestArgHasDependency(const clang::DeclRefExpr *Pointer,
+                                   const clang::CompoundStmt *CS) {
+  if (!Pointer)
     return true;
 
-  const clang::VarDecl *Decl1 =
-      dyn_cast_or_null<clang::VarDecl>(DRE1->getDecl());
-  const clang::VarDecl *Decl2 =
-      dyn_cast_or_null<clang::VarDecl>(DRE2->getDecl());
-  if (!Decl1 || !Decl2)
-    return true;
-
-  if (!Decl1->isLocalVarDecl() || Decl1->isStaticLocal())
-    return true;
-  if (!Decl2->isLocalVarDecl() || Decl2->isStaticLocal())
-    return true;
-
-  if (!dpct::DpctGlobalInfo::isAncestor(CS, Decl1))
-    return true;
-  if (!dpct::DpctGlobalInfo::isAncestor(CS, Decl2))
+  const clang::Decl *PointerDecl = Pointer->getDecl();
+  if (PointerDecl)
     return true;
 
   auto VarReferenceMatcher = clang::ast_matchers::findAll(
-      clang::ast_matchers::declRefExpr().bind("VarReference"));
+      clang::ast_matchers::declRefExpr().bind("DeclRefExpr"));
   auto MatchedResults = clang::ast_matchers::match(
       VarReferenceMatcher, *CS, clang::dpct::DpctGlobalInfo::getContext());
-  std::vector<const DeclRefExpr *> Refs;
+  std::set<const DeclRefExpr *> AllDREs;
   for (auto &Result : MatchedResults) {
     const DeclRefExpr *MatchedDRE =
-        Result.getNodeAs<DeclRefExpr>("VarReference");
+        Result.getNodeAs<DeclRefExpr>("DeclRefExpr");
     if (!MatchedDRE)
       continue;
-    if (MatchedDRE->getDecl() == Decl1 ||
-        MatchedDRE->getDecl() == Decl2) {
-      auto OptRef = isPassedByReference(MatchedDRE);
-      auto OptAddr = isPassedByAddress(MatchedDRE);
-      if (!OptRef.has_value() || !OptAddr.has_value())
-        return true;
-      if (!OptRef.has_value() || !OptAddr.has_value())
-        return true;
-    }
+    AllDREs.insert(MatchedDRE);
   }
 
-  if (DRE1 == DRE2)
-    return true;
+  std::set<const DeclRefExpr *> RelatedDRESet;
+  std::set<const Decl *> RelatedDeclSet;
+  size_t RelatedDRESetSize = 0;
+  size_t RelatedDeclSetSize = 0;
+  do {
+
+  } while ();
 
   return false;
 }
@@ -3653,11 +3621,13 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
 
         auto FirstDREAfterCurrentCallExprEndLoc = std::lower_bound(
             DREOffsetVec.begin(), DREOffsetVec.end(), CurrentCallExprEndOffset);
-        if (FirstDREAfterCurrentCallExprEndLoc == DREOffsetVec.end())
+        if (FirstDREAfterCurrentCallExprEndLoc == DREOffsetVec.end()) {
+          isDestArgHasDependency();
           return true;
+        }
         if (*FirstDREAfterCurrentCallExprEndLoc <= NextCallExprBeginOffset)
           return false;
-
+        isDestArgHasDependency();
         return true;
       }
     }
