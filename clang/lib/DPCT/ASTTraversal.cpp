@@ -33,6 +33,7 @@
 #include "llvm/ADT/StringSet.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
+#include "MemberExprRewriter.h"
 
 #include <algorithm>
 #include <iostream>
@@ -239,7 +240,7 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
                    MapNames::VectorTypeMigratedTypeSizeMap.end()) {
       DiagnosticsUtils::report(
           MacroNameTok.getLocation(), Diagnostics::MACRO_SAME_AS_SYCL_TYPE,
-          dpct::DpctGlobalInfo::getSourceManager(), &TransformSet, false,
+          &TransformSet, false,
           MacroNameTok.getIdentifierInfo()->getName().str());
     }
   }
@@ -468,7 +469,6 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
         TransformSet.emplace_back(new ReplaceToken(Range.getBegin(), "0"));
         DiagnosticsUtils::report(Range.getBegin(),
                                  Diagnostics::HOSTALLOCMACRO_NO_MEANING,
-                                 dpct::DpctGlobalInfo::getSourceManager(),
                                  &TransformSet, false, Name.str());
       }
     }
@@ -3536,13 +3536,19 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
 ReplaceDim3Ctor *ReplaceDim3CtorRule::getReplaceDim3Modification(
     const MatchFinder::MatchResult &Result) {
   if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3CtorDecl")) {
+    if(auto Kernel = getParentKernelCall(Ctor))
+      return nullptr;
     // dim3 a; or dim3 a(1);
     return new ReplaceDim3Ctor(Ctor, true /*isDecl*/);
   } else if (auto Ctor =
                  getNodeAsType<CXXConstructExpr>(Result, "dim3CtorNoDecl")) {
+    if(auto Kernel = getParentKernelCall(Ctor))
+      return nullptr;
     // deflt = dim3(3);
     return new ReplaceDim3Ctor(Ctor, false /*isDecl*/);
   } else if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3Top")) {
+    if(auto Kernel = getParentKernelCall(Ctor))
+      return nullptr;
     // dim3 d3_6_3 = dim3(ceil(test.x + NUM), NUM + test.y, NUM + test.z + NUM);
     if (auto A = ReplaceDim3Ctor::getConstructExpr(Ctor->getArg(0))) {
       // strip the top CXXConstructExpr, if there's a CXXConstructExpr further
@@ -3710,14 +3716,20 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (Parents.size() < 1)
     return;
   auto MemberName = ME->getMemberNameInfo().getAsString();
-  if (DpctGlobalInfo::getUnqualifiedTypeName(
-        ME->getBase()->getType()).find("cudaPointerAttributes") !=
-          std::string::npos) {
-    ExprAnalysis EA;
-    EA.analyze(ME);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-    return;
+
+  auto TypeName = ME->getBase()->getType();
+  if (TypeName->isPointerType()) {
+    TypeName = TypeName->getPointeeType();
+  }
+  std::string MemberExprName = DpctGlobalInfo::getTypeName(TypeName)
+                               + "." + MemberName;
+  if (MemberExprRewriterFactoryBase::MemberExprRewriterMap->find(MemberExprName)
+        != MemberExprRewriterFactoryBase::MemberExprRewriterMap->end()) {
+      ExprAnalysis EA;
+      EA.analyze(ME);
+      emplaceTransformation(EA.getReplacement());
+      EA.applyAllSubExprRepl();
+      return;
   }
   // unmigrated properties
   if (MemberName == "regsPerBlock") {
@@ -3752,12 +3764,6 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
            MemberName, "INT_MAX");
     emplaceTransformation(
         new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "INT_MAX"));
-    return;
-  } else if (MemberName == "totalConstMem") {
-    report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
-           MemberName, "0");
-    emplaceTransformation(
-        new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "0"));
     return;
   } else if (MemberName == "textureAlignment") {
     requestFeature(HelperFeatureEnum::Device_get_current_device, ME);
@@ -7718,6 +7724,16 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     std::string ReplStr{ResultVarName};
     auto StmtStrArg2 = getStmtSpelling(CE->getArg(2));
 
+    if (AttributeName == "cudaDevAttrConcurrentManagedAccess" &
+        DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+      std::string ReplStr = getDrefName(CE->getArg(0));
+      ReplStr += " = false";
+      if (IsAssigned)
+        ReplStr = "(" + ReplStr + ", 0)";
+      emplaceTransformation(new ReplaceStmt(CE, ReplStr));
+      return;
+    }
+
     if (AttributeName == "cudaDevAttrComputeMode") {
       report(CE->getBeginLoc(), Diagnostics::COMPUTE_MODE, false);
       ReplStr += " = 1";
@@ -8593,8 +8609,11 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
   auto &SM = DpctGlobalInfo::getSourceManager();
   const ValueDecl *MD = getDecl(CE->getArg(0));
   std::string InsertStr;
+  bool IsParmVarDecl = isa<ParmVarDecl>(MD);
 
-  report(CE->getBeginLoc(), Diagnostics::TIME_MEASUREMENT_FOUND, false);
+  if (!IsParmVarDecl)
+    report(CE->getBeginLoc(), Diagnostics::TIME_MEASUREMENT_FOUND, false);
+
   DpctGlobalInfo::getInstance().insertHeader(CE->getBeginLoc(), HT_Chrono);
 
   if (isInMacroDefinition(MD->getBeginLoc(), MD->getEndLoc())) {
@@ -8608,13 +8627,17 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
   auto Pair = std::make_pair(MD, InsertStr);
   if (DeclDupFilter.find(Pair) == DeclDupFilter.end()) {
     DeclDupFilter.insert(Pair);
-    emplaceTransformation(new InsertAfterDecl(MD, std::move(InsertStr)));
+    if (!IsParmVarDecl)
+      emplaceTransformation(new InsertAfterDecl(MD, std::move(InsertStr)));
   }
 
   std::ostringstream Repl;
   // Replace event recording with std::chrono timing
-  Repl << getTimePointNameForEvent(CE->getArg(0), false)
-       << " = std::chrono::steady_clock::now()";
+  if (!IsParmVarDecl) {
+    Repl << getTimePointNameForEvent(CE->getArg(0), false)
+        << " = std::chrono::steady_clock::now()";
+  }
+
   const std::string Name =
       CE->getCalleeDecl()->getAsFunction()->getNameAsString();
 
@@ -8655,13 +8678,20 @@ void EventAPICallRule::handleEventRecordWithProfilingDisabled(
       DpctGlobalInfo::getInstance().insertTimeStubTypeInfo(
           ReplWithSubmitBarrier, ReplWithoutSubmitBarrier);
     }
+    if (!IsParmVarDecl)
+      report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO, false);
 
-    report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_ZERO, false);
     auto OuterStmt = findNearestNonExprNonDeclAncestorStmt(CE);
-    Repl << "; ";
+
+    if (!IsParmVarDecl)
+      Repl << "; ";
+
     if (IndentLoc.isMacroID())
       IndentLoc = SM.getExpansionLoc(IndentLoc);
-    Repl << getNL() << getIndent(IndentLoc, SM).str();
+
+    if (!IsParmVarDecl)
+      Repl << getNL() << getIndent(IndentLoc, SM).str();
+
     auto TM = new InsertText(SM.getExpansionLoc(OuterStmt->getBeginLoc()),
                              std::move(Repl.str()));
     TM->setInsertPosition(IP_Right);
@@ -14913,7 +14943,6 @@ void DriverModuleAPIRule::runRule(
 
   std::string APIName = "";
   if (auto DC = CE->getDirectCallee()) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
     APIName = DC->getNameAsString();
   } else {
     return;
@@ -15480,7 +15509,7 @@ void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &R
     if (CE->getCastKind() == clang::CK_LValueToRValue
 	|| CE->getCastKind() == clang::CK_NoOp)
       return;
-    
+
     if (isDefaultStream(CE->getSubExpr())) {
       if (isPlaceholderIdxDuplicated(CE->getSubExpr()))
         return;
@@ -15493,7 +15522,7 @@ void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &R
       emplaceTransformation(
         new ReplaceStmt(
           CE,
-	  MapNames::getDpctNamespace() 
+	  MapNames::getDpctNamespace()
 	  + "int_as_queue_ptr("
 	  + ExprAnalysis::ref(CE->getSubExpr())
 	  + ")"));

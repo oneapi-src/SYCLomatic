@@ -666,7 +666,6 @@ int runDPCT(int argc, const char **argv) {
                      ExtensionStr.end());
   auto Extensions = split(ExtensionStr, ',');
   for (auto &Extension : Extensions) {
-    bool Legal = true;
     const auto len = Extension.length();
     if (len < 2 || len > 5 || Extension[0] != '.') {
       ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
@@ -823,7 +822,8 @@ int runDPCT(int argc, const char **argv) {
       (SDKVersionMajor == 11 && SDKVersionMinor == 5) ||
       (SDKVersionMajor == 11 && SDKVersionMinor == 6) ||
       (SDKVersionMajor == 11 && SDKVersionMinor == 7) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 8)) {
+      (SDKVersionMajor == 11 && SDKVersionMinor == 8) ||
+      (SDKVersionMajor == 12 && SDKVersionMinor == 0)) {
     Tool.appendArgumentsAdjuster(
         getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
                                   ArgumentInsertPosition::BEGIN));

@@ -808,3 +808,10 @@ template <class T, class vecT> void foo_test_2131() {
     cudaEventElapsedTime(&totalScanTime, start, stop);
   }
 }
+
+// CHECK:void EventRecord( dpct::event_ptr hEvent, dpct::queue_ptr hStream) {
+// CHECK-NEXT:   int result = (*hEvent = hStream->ext_oneapi_submit_barrier(), 0);
+// CHECK-NEXT:}
+void EventRecord( cudaEvent_t hEvent, cudaStream_t hStream) {
+   CUresult result = cuEventRecord( hEvent, hStream);
+}

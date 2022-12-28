@@ -1964,7 +1964,10 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
       buildTemplateArguments(DRE->template_arguments(), Callee->getSourceRange());
     }
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
-    Name = Unresolved->getName().getAsString();
+    Name = "";
+    if(Unresolved->getQualifier())
+      Name = getNestedNameSpecifierString(Unresolved->getQualifier());
+    Name += Unresolved->getName().getAsString();
     setFuncInfo(DeviceFunctionDecl::LinkUnresolved(Unresolved));
     buildTemplateArguments(Unresolved->template_arguments(), Callee->getSourceRange());
   } else if (auto DependentScope =
@@ -2141,7 +2144,6 @@ void CallFunctionExpr::mergeTextureObjectInfo() {
 }
 
 std::string CallFunctionExpr::getName(const NamedDecl *D) {
-
   if (auto ID = D->getIdentifier())
     return ID->getName().str();
   return "";

@@ -715,6 +715,9 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<EnumNameRule>(
            "get_integrated",
            HelperFeatureEnum::Device_device_ext_get_integrated)},
+      {"cudaDevAttrConcurrentManagedAccess",
+      std::make_shared<EnumNameRule>(
+        "get_info<sycl::info::device::usm_shared_allocations>")},
       // enum Memcpy Kind
       {"cudaMemcpyHostToHost", std::make_shared<EnumNameRule>(
                                    getDpctNamespace() + "host_to_host",
@@ -4066,6 +4069,8 @@ const MapNames::MapTy DeviceInfoVarRule::PropNamesMap{
     {"sharedMemPerMultiprocessor", "local_mem_size"},
     {"maxGridSize", "max_nd_range_size"},
     {"maxThreadsDim", "max_work_item_sizes"},
+    {"memoryClockRate", "memory_clock_rate"},
+    {"memoryBusWidth", "memory_bus_width"},
     // ...
 };
 

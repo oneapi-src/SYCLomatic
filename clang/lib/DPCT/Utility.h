@@ -327,6 +327,7 @@ const clang::CompoundStmt *findImmediateBlock(const clang::Stmt *S);
 const clang::CompoundStmt *findImmediateBlock(const clang::ValueDecl *D);
 bool callingFuncHasDeviceAttr(const clang::CallExpr *CE);
 const clang::FunctionDecl *getImmediateOuterFuncDecl(const clang::Stmt *S);
+const clang::CUDAKernelCallExpr *getParentKernelCall(const clang::Expr *E);
 bool isInSameScope(const clang::Stmt *S, const clang::ValueDecl *D);
 const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
 const clang::Stmt *getParentStmt(clang::DynTypedNode Node);
