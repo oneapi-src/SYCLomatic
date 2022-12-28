@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-12.0
+// UNSUPPORTED: v12.0
 // RUN: dpct --format-range=none -out-root %T/comments %s --cuda-include-path="%cuda-path/include" --comments -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck %s --match-full-lines --input-file %T/comments/comments.dp.cpp
 
