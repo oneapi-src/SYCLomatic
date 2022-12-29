@@ -3478,14 +3478,42 @@ bool analyzeMemcpyOrder(
   return true;
 }
 
-static bool isDestArgHasDependency(const clang::DeclRefExpr *Pointer,
-                                   const clang::CompoundStmt *CS) {
-  if (!Pointer)
-    return true;
+bool isDestArgHasDependency(const clang::DeclRefExpr *Var,
+                            const clang::CompoundStmt *CS) {
+  auto IsCompoundAssignOperator =
+      [](const clang::DeclRefExpr *Input) -> const clang::DeclRefExpr * {
+    auto CAO =
+        dpct::DpctGlobalInfo::findAncestor<CompoundAssignOperator>(Input);
+    if (!CAO)
+      return nullptr;
+    if (!dpct::DpctGlobalInfo::isAncestor(CAO->getRHS(), Input))
+      return nullptr;
+    return dyn_cast_or_null<DeclRefExpr>(CAO->getLHS());
+  };
+  auto IsAssignOperator =
+      [](const clang::DeclRefExpr *Input) -> const clang::DeclRefExpr * {
+    auto BO = dpct::DpctGlobalInfo::findAncestor<BinaryOperator>(Input);
+    if (!BO)
+      return nullptr;
+    if (BO->getOpcode() != clang::BinaryOperator::Opcode::BO_Assign)
+      return nullptr;
+    if (!dpct::DpctGlobalInfo::isAncestor(BO->getRHS(), Input))
+      return nullptr;
+    return dyn_cast_or_null<DeclRefExpr>(BO->getLHS());
+  };
+  auto IsInit = [](const clang::DeclRefExpr* Input)  -> const clang::VarDecl * {
+    auto VD = dpct::DpctGlobalInfo::findAncestor<VarDecl>(Input);
+    if (!VD)
+      return nullptr;
+    return VD;
+  };
 
-  const clang::Decl *PointerDecl = Pointer->getDecl();
-  if (PointerDecl)
-    return true;
+  if (!Var)
+    return false;
+
+  const clang::Decl *VarDecl = Var->getDecl();
+  if (!VarDecl)
+    return false;
 
   auto VarReferenceMatcher = clang::ast_matchers::findAll(
       clang::ast_matchers::declRefExpr().bind("DeclRefExpr"));
@@ -3500,15 +3528,48 @@ static bool isDestArgHasDependency(const clang::DeclRefExpr *Pointer,
     AllDREs.insert(MatchedDRE);
   }
 
-  std::set<const DeclRefExpr *> RelatedDRESet;
-  std::set<const Decl *> RelatedDeclSet;
-  size_t RelatedDRESetSize = 0;
-  size_t RelatedDeclSetSize = 0;
+  std::set<const DeclRefExpr *> DRESet;
+  DRESet.insert(Var);
+  std::set<const Decl *> DeclSet;
+  DeclSet.insert(VarDecl);
+  size_t DRESetSize = 0;
+  size_t DeclSetSize = 0;
   do {
+    DRESetSize = DRESet.size();
+    DeclSetSize = DeclSet.size();
+    for (const auto &DRE : DRESet) {
+      if (DRE->getDecl())
+        DeclSet.insert(DRE->getDecl());
+    }
+    
+    for (const auto &DRE : AllDREs) {
+      if (DRE->getDecl() && DeclSet.count(DRE->getDecl())) {
+        DRESet.insert(DRE);
+      } else if (auto LHS = IsCompoundAssignOperator(DRE)) {
+        DRESet.insert(LHS);
+      } else if (auto LHS = IsAssignOperator(DRE)) {
+        DRESet.insert(LHS);
+      } else if (auto LHS = IsInit(DRE)) {
+        DeclSet.insert(LHS);
+      }
+    }
+  } while (DRESetSize < DRESet.size() || DeclSetSize < DeclSet.size());
 
-  } while ();
-
+  for (const auto &DRE : DRESet) {
+    if (DRE != Var)
+      return true;
+  }
   return false;
+}
+
+const clang::DeclRefExpr *getVar(const clang::Expr *E) {
+  E = E->IgnoreCasts();
+  if (auto UO = dyn_cast_or_null<UnaryOperator>(E)) {
+    if (UO->getOpcode() == clang::UnaryOperator::Opcode::UO_AddrOf) {
+      return dyn_cast_or_null<DeclRefExpr>(UO->getSubExpr());
+    }
+  }
+  return nullptr;
 }
 
 /// This function is used to check if the ".wait()" can be omitted in the
@@ -3622,13 +3683,11 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
         auto FirstDREAfterCurrentCallExprEndLoc = std::lower_bound(
             DREOffsetVec.begin(), DREOffsetVec.end(), CurrentCallExprEndOffset);
         if (FirstDREAfterCurrentCallExprEndLoc == DREOffsetVec.end()) {
-          isDestArgHasDependency();
-          return true;
+          return !isDestArgHasDependency(getVar(CE->getArg(0)), CS);
         }
         if (*FirstDREAfterCurrentCallExprEndLoc <= NextCallExprBeginOffset)
           return false;
-        isDestArgHasDependency();
-        return true;
+        return !isDestArgHasDependency(getVar(CE->getArg(0)), CS);
       }
     }
   }
