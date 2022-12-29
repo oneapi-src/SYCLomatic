@@ -786,6 +786,7 @@ public:
 template <class NameT, class... TemplateArgsT> class TemplatedNamePrinter {
   NameT Name;
   ArgsPrinter<false, TemplateArgsT...> TAs;
+
 public:
   TemplatedNamePrinter(NameT Name, TemplateArgsT &&...TAs)
       : Name(Name), TAs(std::forward<TemplateArgsT>(TAs)...) {}
