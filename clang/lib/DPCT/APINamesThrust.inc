@@ -1831,3 +1831,1237 @@ CALL_FACTORY_ENTRY("thrust::conj", CALL("std::conj", ARG(0)))
 
 // thrust::proj
 CALL_FACTORY_ENTRY("thrust::proj", CALL("std::proj", ARG(0)))
+
+
+// thrust::minmax_element
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(4),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::minmax_element(policy, ptr, ptr, comp);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::minmax_element",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::minmax_element", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::minmax_element",
+                          CALL("oneapi::dpl::minmax_element",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                THRUST_FUNCTOR(3)))),
+      CALL_FACTORY_ENTRY("thrust::minmax_element",
+                        CALL("oneapi::dpl::minmax_element",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
+    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, comp);
+    CALL_FACTORY_ENTRY("thrust::minmax_element",
+                      CALL("oneapi::dpl::minmax_element",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), THRUST_FUNCTOR(3)))
+  ),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(2),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::minmax_element(ptr, ptr);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::minmax_element",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::minmax_element", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::minmax_element",
+                            CALL("oneapi::dpl::minmax_element",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1))))),
+        CALL_FACTORY_ENTRY("thrust::minmax_element",
+                          CALL("oneapi::dpl::minmax_element",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::minmax_element(iterator, iterator);
+        CALL_FACTORY_ENTRY("thrust::minmax_element",
+                            CALL("oneapi::dpl::minmax_element",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1))),
+        CALL_FACTORY_ENTRY("thrust::minmax_element",
+                            CALL("oneapi::dpl::minmax_element",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1))))
+    ),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        //Handling case: thrust::minmax_element(policy, ptr, ptr);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::minmax_element",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::minmax_element", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::minmax_element",
+                              CALL("oneapi::dpl::minmax_element",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(2))))),
+          CALL_FACTORY_ENTRY("thrust::minmax_element",
+                            CALL("oneapi::dpl::minmax_element",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(1), ARG(2)))),
+        //Handling case: thrust::minmax_element(ptr, ptr, pred);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::minmax_element",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::minmax_element", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::minmax_element",
+                              CALL("oneapi::dpl::minmax_element",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                    ARG(2)))),
+          CALL_FACTORY_ENTRY("thrust::minmax_element",
+                            CALL("oneapi::dpl::minmax_element",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2))))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        // Handling case: thrust::minmax_element(thrust::device, iterator, iterator);
+        CALL_FACTORY_ENTRY("thrust::minmax_element",
+                            CALL("oneapi::dpl::minmax_element",
+                                makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2))),
+        CONDITIONAL_FACTORY_ENTRY(
+          CheckArgType(1, "thrust::device_ptr"),
+          // Handling case: thrust::minmax_element(iterator, iterator, comp);
+          CALL_FACTORY_ENTRY("thrust::minmax_element",
+                              CALL("oneapi::dpl::minmax_element",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  ARG(0), ARG(1), ARG(2))),
+          CALL_FACTORY_ENTRY("thrust::minmax_element",
+                              CALL("oneapi::dpl::minmax_element",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), THRUST_FUNCTOR(2)))))
+    )
+  )
+)
+
+// thrust::is_sorted
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(4),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::is_sorted(policy, ptr, ptr, comp);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::is_sorted",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::is_sorted", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::is_sorted",
+                          CALL("oneapi::dpl::is_sorted",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                ARG(3)))),
+      CALL_FACTORY_ENTRY("thrust::is_sorted",
+                        CALL("oneapi::dpl::is_sorted",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3)))),
+    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, comp);
+    CALL_FACTORY_ENTRY("thrust::is_sorted",
+                      CALL("oneapi::dpl::is_sorted",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3)))
+  ),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(2),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::is_sorted(ptr, ptr);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::is_sorted",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::is_sorted", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::is_sorted",
+                            CALL("oneapi::dpl::is_sorted",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1))))),
+        CALL_FACTORY_ENTRY("thrust::is_sorted",
+                          CALL("oneapi::dpl::is_sorted",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::is_sorted(iterator, iterator);
+        CALL_FACTORY_ENTRY("thrust::is_sorted",
+                            CALL("oneapi::dpl::is_sorted",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1))),
+        CALL_FACTORY_ENTRY("thrust::is_sorted",
+                            CALL("oneapi::dpl::is_sorted",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1))))
+    ),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        //Handling case: thrust::is_sorted(policy, ptr, ptr);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::is_sorted",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::is_sorted", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::is_sorted",
+                              CALL("oneapi::dpl::is_sorted",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(2))))),
+          CALL_FACTORY_ENTRY("thrust::is_sorted",
+                            CALL("oneapi::dpl::is_sorted",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(1), ARG(2)))),
+        //Handling case: thrust::is_sorted(ptr, ptr, pred);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::is_sorted",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::is_sorted", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::is_sorted",
+                              CALL("oneapi::dpl::is_sorted",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                    ARG(2)))),
+          CALL_FACTORY_ENTRY("thrust::is_sorted",
+                            CALL("oneapi::dpl::is_sorted",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2))))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        // Handling case: thrust::is_sorted(thrust::device, iterator, iterator);
+        CALL_FACTORY_ENTRY("thrust::is_sorted",
+                            CALL("oneapi::dpl::is_sorted",
+                                makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2))),
+        CONDITIONAL_FACTORY_ENTRY(
+          CheckArgType(1, "thrust::device_ptr"),
+          // Handling case: thrust::is_sorted(d_values.begin(), iterator, comp);
+          CALL_FACTORY_ENTRY("thrust::is_sorted",
+                              CALL("oneapi::dpl::is_sorted",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  ARG(0), ARG(1), ARG(2))),
+          CALL_FACTORY_ENTRY("thrust::is_sorted",
+                              CALL("oneapi::dpl::is_sorted",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2)))))
+    )
+  )
+)
+
+// thrust::partition
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(5),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::partition(policy, ptr, ptr, ptr, pred);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::partition",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::partition", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::partition",
+                          CALL("dpct::partition",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                ARG(4)))),
+      CALL_FACTORY_ENTRY("thrust::partition",
+                        CALL("dpct::partition",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3), ARG(4)))),
+    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, pred);
+    CALL_FACTORY_ENTRY("thrust::partition",
+                      CALL("dpct::partition",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3),ARG(4)))
+  ),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(3),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::partition(ptr, ptr, pred);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::partition",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::partition", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::partition",
+                            CALL("oneapi::dpl::partition",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(1)),
+                                  ARG(2)))),
+        CALL_FACTORY_ENTRY("thrust::partition",
+                          CALL("oneapi::dpl::partition",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::partition(iterator, iterator, pred);
+        CALL_FACTORY_ENTRY("thrust::partition",
+                            CALL("oneapi::dpl::partition",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), ARG(2))),
+        CALL_FACTORY_ENTRY("thrust::partition",
+                            CALL("oneapi::dpl::partition",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2))))
+    ),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        //Handling case: thrust::partition(policy, ptr, ptr, pred);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::partition",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::partition", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::partition",
+                              CALL("oneapi::dpl::partition",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                    ARG(3)))),
+          CALL_FACTORY_ENTRY("thrust::partition",
+                            CALL("oneapi::dpl::partition",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(1), ARG(2), ARG(3)))),
+        //Handling case: thrust::partition(ptr, ptr, ptr,  pred);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::partition",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::partition", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::partition",
+                              CALL("dpct::partition",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                    ARG(3)))),
+          CALL_FACTORY_ENTRY("thrust::partition",
+                            CALL("dpct::partition",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2), ARG(3))))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        // Handling case: thrust::partition(thrust::device, iterator, iterator, pred);
+        CALL_FACTORY_ENTRY("thrust::is_sorted",
+                            CALL("oneapi::dpl::partition",
+                                makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2), ARG(3))),
+        CONDITIONAL_FACTORY_ENTRY(
+          CheckArgType(1, "thrust::device_ptr"),
+          // Handling case: thrust::partition(iterator, iterator, iterator, pred);
+          CALL_FACTORY_ENTRY("thrust::partition",
+                              CALL("dpct::partition",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  ARG(0), ARG(1), ARG(2), ARG(3))),
+          CALL_FACTORY_ENTRY("thrust::partition",
+                              CALL("dpct::partition",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2), ARG(3)))))
+    )
+  )
+)
+
+
+// thrust::unique_copy
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(5),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::unique_copy(policy, ptr, ptr, ptr, pred);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::unique_copy",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::unique_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::unique_copy",
+                          CALL("oneapi::dpl::unique_copy",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                ARG(4)))),
+      CALL_FACTORY_ENTRY("thrust::unique_copy",
+                        CALL("oneapi::dpl::unique_copy",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3), ARG(4)))),
+    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, pred);
+    CALL_FACTORY_ENTRY("thrust::unique_copy",
+                      CALL("oneapi::dpl::unique_copy",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3),ARG(4)))
+  ),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(3),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::unique_copy(ptr, ptr, pred);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::unique_copy",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::unique_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::unique_copy",
+                            CALL("oneapi::dpl::unique_copy",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(2))))),
+        CALL_FACTORY_ENTRY("thrust::unique_copy",
+                          CALL("oneapi::dpl::unique_copy",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::unique_copy(iterator, iterator, pred);
+        CALL_FACTORY_ENTRY("thrust::unique_copy",
+                            CALL("oneapi::dpl::unique_copy",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), ARG(2))),
+        CALL_FACTORY_ENTRY("thrust::unique_copy",
+                            CALL("oneapi::dpl::unique_copy",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2))))
+    ),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        //Handling case: thrust::unique_copy(policy, ptr, ptr, pred);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::unique_copy",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::unique_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::unique_copy",
+                              CALL("oneapi::dpl::unique_copy",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3))
+                                    ))),
+          CALL_FACTORY_ENTRY("thrust::unique_copy",
+                            CALL("oneapi::dpl::unique_copy",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(1), ARG(2), ARG(3)))),
+        //Handling case: thrust::unique_copy(ptr, ptr, ptr,  pred);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::unique_copy",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::unique_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::unique_copy",
+                              CALL("oneapi::dpl::unique_copy",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                    ARG(3)))),
+          CALL_FACTORY_ENTRY("thrust::unique_copy",
+                            CALL("oneapi::dpl::unique_copy",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2), ARG(3))))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        // Handling case: thrust::unique_copy(thrust::device, iterator, iterator, pred);
+        CALL_FACTORY_ENTRY("thrust::is_sorted",
+                            CALL("oneapi::dpl::unique_copy",
+                                makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2), ARG(3))),
+        CONDITIONAL_FACTORY_ENTRY(
+          CheckArgType(1, "thrust::device_ptr"),
+          // Handling case: thrust::unique_copy(iterator, iterator, iterator, pred);
+          CALL_FACTORY_ENTRY("thrust::unique_copy",
+                              CALL("oneapi::dpl::unique_copy",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  ARG(0), ARG(1), ARG(2), ARG(3))),
+          CALL_FACTORY_ENTRY("thrust::unique_copy",
+                              CALL("oneapi::dpl::unique_copy",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2), ARG(3)))))
+    )
+  )
+)
+
+// thrust::stable_sort
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(4),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::stable_sort(policy, ptr, ptr, comp);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::stable_sort",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::stable_sort", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::stable_sort",
+                          CALL("oneapi::dpl::stable_sort",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                ARG(3)))),
+      CALL_FACTORY_ENTRY("thrust::stable_sort",
+                        CALL("oneapi::dpl::stable_sort",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3)))),
+    // Handling case: thrust::unique_by_key(thrust::device, d_values.begin(), d_output_keys.end(), d_output_values.begin(), comp);
+    CALL_FACTORY_ENTRY("thrust::stable_sort",
+                      CALL("oneapi::dpl::stable_sort",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3)))
+  ),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(2),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::stable_sort(ptr, ptr);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::stable_sort",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::stable_sort", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::stable_sort",
+                            CALL("oneapi::dpl::stable_sort",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1))))),
+        CALL_FACTORY_ENTRY("thrust::stable_sort",
+                          CALL("oneapi::dpl::stable_sort",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::stable_sort(h_keys.begin(), h_keys.end());
+        CALL_FACTORY_ENTRY("thrust::stable_sort",
+                            CALL("oneapi::dpl::stable_sort",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1))),
+        CALL_FACTORY_ENTRY("thrust::stable_sort",
+                            CALL("oneapi::dpl::stable_sort",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1))))
+    ),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        //Handling case: thrust::stable_sort(policy, ptr, ptr);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::stable_sort",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::stable_sort", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::stable_sort",
+                              CALL("oneapi::dpl::stable_sort",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2))))),
+          CALL_FACTORY_ENTRY("thrust::stable_sort",
+                            CALL("oneapi::dpl::stable_sort",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(1), ARG(2)))),
+        //Handling case: thrust::stable_sort(ptr, ptr, pred);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::stable_sort",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::stable_sort", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::stable_sort",
+                              CALL("oneapi::dpl::stable_sort",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                    ARG(2)))),
+          CALL_FACTORY_ENTRY("thrust::stable_sort",
+                            CALL("oneapi::dpl::stable_sort",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2))))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        // Handling case: thrust::stable_sort(thrust::device, d_values.begin(), d_values.end());
+        CALL_FACTORY_ENTRY("thrust::stable_sort",
+                            CALL("oneapi::dpl::stable_sort",
+                                makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2))),
+        CONDITIONAL_FACTORY_ENTRY(
+          CheckArgType(1, "thrust::device_ptr"),
+          // Handling case: thrust::stable_sort(d_values.begin(), d_values.end(), comp);
+          CALL_FACTORY_ENTRY("thrust::stable_sort",
+                              CALL("oneapi::dpl::stable_sort",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  ARG(0), ARG(1), ARG(2))),
+          CALL_FACTORY_ENTRY("thrust::stable_sort",
+                              CALL("oneapi::dpl::stable_sort",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2)))))
+    )
+  )
+)
+
+
+// thrust::set_difference_by_key
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(10),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::set_difference_by_key(policy, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, comp);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::set_difference_by_key",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::set_difference_by_key", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
+                          CALL("dpct::set_difference",
+                            CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(5)), ARG(5)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(6)), ARG(6)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(7)), ARG(7)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(8)), ARG(8)),
+                            ARG(9)))),
+      CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
+                        CALL("dpct::set_difference",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9)))),
+    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, , iterator, iterator, iterator, iterator, iterator, comp);
+    CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
+                      CALL("dpct::set_difference",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9)))
+  ),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(8),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::set_difference_by_key(ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::set_difference_by_key",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::set_difference_by_key", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
+                            CALL("dpct::set_difference",
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(5)), ARG(5)),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(6)), ARG(6)),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(7)), ARG(7))))),
+        CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
+                          CALL("dpct::set_difference",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::set_difference_by_key(iterator, iterator, iterator, iterator, iterator, iterator, iterator, iterator);
+        CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
+                            CALL("dpct::set_difference",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))),
+        CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
+                            CALL("dpct::set_difference",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))))
+    ),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        //Handling case: thrust::set_difference_by_key(policy, ptr, ptr, ptr, ptr, ptr, ptr ptr, ptr);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::set_difference_by_key",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::set_difference_by_key", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
+                              CALL("dpct::set_difference",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(5)), ARG(5)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(6)), ARG(6)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(7)), ARG(7)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(8)), ARG(8))))),
+          CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
+                            CALL("dpct::set_difference",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))),
+        //Handling case: thrust::set_difference_by_key(ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, pred);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::set_difference_by_key",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::set_difference_by_key", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
+                              CALL("dpct::set_difference",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(5)), ARG(5)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(6)), ARG(6)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(7)), ARG(7)),
+                                ARG(8)))),
+          CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
+                            CALL("dpct::set_difference",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8))))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        // Handling case: thrust::stabsset_difference_by_keyet_difference_by_keyle_sort(thrust::device, iterator, iterator, iterator, iterator, iterator, iterator, iterator, iterator);
+        CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
+                            CALL("dpct::set_difference",
+                                makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8))),
+        CONDITIONAL_FACTORY_ENTRY(
+          CheckArgType(1, "thrust::device_ptr"),
+          // Handling case: thrust::set_difference_by_key(iterator, iterator, iterator, iterator, iterator, iterator, iterator, iterator, comp);
+          CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
+                              CALL("dpct::set_difference",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8))),
+          CALL_FACTORY_ENTRY("thrust::set_difference_by_key",
+                              CALL("dpct::set_difference",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))))
+    )
+  )
+)
+
+// thrust::set_difference
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(7),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::set_difference(policy, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, comp);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::set_difference",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::set_difference", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::set_difference",
+                          CALL("oneapi::dpl::set_difference",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(5)), ARG(5)),
+                                ARG(6)))),
+      CALL_FACTORY_ENTRY("thrust::set_difference",
+                        CALL("oneapi::dpl::set_difference",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))),
+    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, , iterator, iterator, iterator, iterator, iterator, comp);
+    CALL_FACTORY_ENTRY("thrust::set_difference",
+                      CALL("oneapi::dpl::set_difference",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))
+  ),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(5),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::set_difference(ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::set_difference",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::set_difference", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::set_difference",
+                            CALL("oneapi::dpl::set_difference",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4))))),
+        CALL_FACTORY_ENTRY("thrust::set_difference",
+                          CALL("oneapi::dpl::set_difference",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::set_difference(iterator, iterator, iterator, iterator, iterator, iterator, iterator, iterator,);
+        CALL_FACTORY_ENTRY("thrust::set_difference",
+                            CALL("oneapi::dpl::set_difference",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))),
+        CALL_FACTORY_ENTRY("thrust::set_difference",
+                            CALL("oneapi::dpl::set_difference",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2), ARG(3), ARG(4))))
+    ),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        //Handling case: thrust::set_difference(policy, ptr, ptr, ptr, ptr, ptr, ptr,ptr, ptr);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::set_difference",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::set_difference", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::set_difference",
+                              CALL("oneapi::dpl::set_difference",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                                    ARG(5)))),
+            CALL_FACTORY_ENTRY("thrust::set_difference",
+                              CALL("oneapi::dpl::set_difference",
+                                    ARG("oneapi::dpl::execution::seq"),
+                                    ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))),
+        //Handling case: thrust::set_difference(ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, pred);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::set_difference",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::set_difference", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::set_difference",
+                              CALL("oneapi::dpl::set_difference",
+                                    CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                                    ARG(5)))),
+          CALL_FACTORY_ENTRY("thrust::set_difference",
+                            CALL("oneapi::dpl::set_difference",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        // Handling case: thrust::stabsset_difference_by_keyet_difference_by_keyle_sort(thrust::device, iterator, iterator, iterator, iterator, iterator, iterator, iterator, iterator);
+        CALL_FACTORY_ENTRY("thrust::set_difference",
+                            CALL("oneapi::dpl::set_difference",
+                                makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
+        CONDITIONAL_FACTORY_ENTRY(
+          CheckArgType(1, "thrust::device_ptr"),
+          // Handling case: thrust::set_difference(iterator, iterator, iterator, iterator, iterator, iterator, iterator, iterator, comp);
+          CALL_FACTORY_ENTRY("thrust::set_difference",
+                              CALL("oneapi::dpl::set_difference",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5))),
+          CALL_FACTORY_ENTRY("thrust::set_difference",
+                              CALL("oneapi::dpl::set_difference",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5)))))
+    )
+  )
+)
+
+// thrust::remove_copy
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(5),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::remove_copy(policy, ptr, ptr, ptr, val);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::remove_copy",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::remove_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::remove_copy",
+                          CALL("oneapi::dpl::remove_copy",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                ARG(4)))),
+      CALL_FACTORY_ENTRY("thrust::remove_copy",
+                        CALL("oneapi::dpl::remove_copy",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3), ARG(4)))),
+    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, val);
+    CALL_FACTORY_ENTRY("thrust::remove_copy",
+                      CALL("oneapi::dpl::remove_copy",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3), ARG(4)))
+  ),
+
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::remove_copy(ptr, ptr, ptr, val);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::remove_copy",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::remove_copy", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::remove_copy",
+                            CALL("oneapi::dpl::remove_copy",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                  ARG(3)))),
+        CALL_FACTORY_ENTRY("thrust::remove_copy",
+                          CALL("oneapi::dpl::remove_copy",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2), ARG(3)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::remove_copy(iterator, iterator, iterator, val);
+        CALL_FACTORY_ENTRY("thrust::remove_copy",
+                            CALL("oneapi::dpl::remove_copy",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), ARG(2), ARG(3))),
+        CALL_FACTORY_ENTRY("thrust::remove_copy",
+                            CALL("oneapi::dpl::remove_copy",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2), ARG(3))))
+    )
+)
+
+
+
+// thrust::transform_exclusive_scan
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(7),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::transform_exclusive_scan(policy, ptr, ptr, ptr, val);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::transform_exclusive_scan",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
+                          CALL("oneapi::dpl::transform_exclusive_scan",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                ARG(5), ARG(6), ARG(4)))),
+      CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
+                        CALL("oneapi::dpl::transform_exclusive_scan",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3), ARG(5), ARG(6), ARG(4)))),
+    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, val);
+    CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
+                      CALL("oneapi::dpl::transform_exclusive_scan",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3), ARG(5), ARG(6), ARG(4)))
+  ),
+
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::transform_exclusive_scan(ptr, ptr, ptr, ptr);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::transform_exclusive_scan",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
+                            CALL("oneapi::dpl::transform_exclusive_scan",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                  ARG(4), ARG(5), ARG(3)))),
+        CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
+                          CALL("oneapi::dpl::transform_exclusive_scan",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2), ARG(4), ARG(5), ARG(3)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::transform_exclusive_scan(iterator, iterator, iterator, iterator);
+        CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
+                            CALL("oneapi::dpl::transform_exclusive_scan",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), ARG(2), ARG(4), ARG(5), ARG(3))),
+        CALL_FACTORY_ENTRY("thrust::transform_exclusive_scan",
+                            CALL("oneapi::dpl::transform_exclusive_scan",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2), ARG(4), ARG(5), ARG(3))))
+    )
+)
+
+// thrust::tabulate
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(4),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::tabulate(policy, ptr, ptr, val);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::tabulate",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::tabulate", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::tabulate",
+                          CALL("dpct::for_each_index",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                ARG(3)))),
+      CALL_FACTORY_ENTRY("thrust::tabulate",
+                        CALL("dpct::for_each_index",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3)))),
+    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, val);
+    CALL_FACTORY_ENTRY("thrust::tabulate",
+                      CALL("dpct::for_each_index",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3)))
+  ),
+
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::tabulate(ptr, ptr, ptr, ptr);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::tabulate",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::tabulate", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::tabulate",
+                            CALL("dpct::for_each_index",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                  ARG(2)))),
+        CALL_FACTORY_ENTRY("thrust::tabulate",
+                          CALL("dpct::for_each_index",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::tabulate(iterator, iterator, iterator);
+        CALL_FACTORY_ENTRY("thrust::tabulate",
+                            CALL("dpct::for_each_index",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), ARG(2))),
+        CALL_FACTORY_ENTRY("thrust::tabulate",
+                            CALL("dpct::for_each_index",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2))))
+    )
+)
+
+// thrust::for_each_n
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(4),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::for_each_n(policy, ptr, ptr, ptr, val);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::for_each_n",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::for_each_n", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::for_each_n",
+                          CALL("oneapi::dpl::for_each_n",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                ARG(2), THRUST_FUNCTOR(3)))),
+      CALL_FACTORY_ENTRY("thrust::for_each_n",
+                        CALL("oneapi::dpl::for_each_n",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), THRUST_FUNCTOR(3)))),
+    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, val);
+    CALL_FACTORY_ENTRY("thrust::for_each_n",
+                      CALL("oneapi::dpl::for_each_n",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), THRUST_FUNCTOR(3)))
+  ),
+
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(0), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::for_each_n(ptr, ptr, ptr);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::for_each_n",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::for_each_n", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::for_each_n",
+                            CALL("oneapi::dpl::for_each_n",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                  ARG(1), THRUST_FUNCTOR(2)))),
+        CALL_FACTORY_ENTRY("thrust::for_each_n",
+                          CALL("oneapi::dpl::for_each_n",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), THRUST_FUNCTOR(2)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::for_each_n(iterator, iterator, iterator);
+        CALL_FACTORY_ENTRY("thrust::for_each_n",
+                            CALL("oneapi::dpl::for_each_n",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), THRUST_FUNCTOR(2))),
+        CALL_FACTORY_ENTRY("thrust::for_each_n",
+                            CALL("oneapi::dpl::for_each_n",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), THRUST_FUNCTOR(2))))
+    )
+)
+
+
+
+
+// thrust::set_intersection_by_key
+CONDITIONAL_FACTORY_ENTRY(
+  CheckArgCount(9),
+  CONDITIONAL_FACTORY_ENTRY(
+    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+    //Handling case: thrust::set_intersection_by_key(policy, ptr, ptr, ptr, ptr, ptr, ptr, ptr, comp);
+    IFELSE_FACTORY_ENTRY(
+      "thrust::set_intersection_by_key",
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+        CALL_FACTORY_ENTRY("thrust::set_intersection_by_key", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+        CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
+                          CALL("dpct::set_intersection",
+                            CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(5)), ARG(5)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(6)), ARG(6)),
+                            CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(7)), ARG(7)),
+                            ARG(8)))),
+      CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
+                        CALL("dpct::set_intersection",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))),
+    // Handling case: thrust::unique_by_key(thrust::device, iterator, iterator, iterator, iterator, iterator, iterator, iterator, comp);
+    CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
+                      CALL("dpct::set_intersection",
+                            makeMappedThrustPolicyEnum(0),
+                            ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8)))
+  ),
+  CONDITIONAL_FACTORY_ENTRY(
+    CheckArgCount(7),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      //Handling case: thrust::set_intersection_by_key(ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr);
+      IFELSE_FACTORY_ENTRY(
+        "thrust::set_intersection_by_key",
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+          CALL_FACTORY_ENTRY("thrust::set_intersection_by_key", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+          CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
+                            CALL("dpct::set_intersection",
+                              CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(5)), ARG(5)),
+                              CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(6)), ARG(6))))),
+        CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
+                          CALL("dpct::set_intersection",
+                                ARG("oneapi::dpl::execution::seq"),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6)))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CheckArgType(1, "thrust::device_ptr"),
+        // Handling case: thrust::set_intersection_by_key(iterator, iterator, iterator, iterator, iterator, iterator, iterator);
+        CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
+                            CALL("dpct::set_intersection",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))),
+        CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
+                            CALL("dpct::set_intersection",
+                              ARG("oneapi::dpl::execution::seq"),
+                              ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6))))
+    ),
+    CONDITIONAL_FACTORY_ENTRY(
+      makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        //Handling case: thrust::set_intersection_by_key(policy, ptr, ptr, ptr, ptr, ptr, ptr ptr);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::set_intersection_by_key",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::set_intersection_by_key", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
+                              CALL("dpct::set_intersection",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(5)), ARG(5)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(6)), ARG(6)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(7)), ARG(7))))),
+          CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
+                            CALL("dpct::set_intersection",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7)))),
+        //Handling case: thrust::set_intersection_by_key(ptr, ptr, ptr, ptr, ptr, ptr, ptr, pred);
+        IFELSE_FACTORY_ENTRY(
+          "thrust::set_intersection_by_key",
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
+            CALL_FACTORY_ENTRY("thrust::set_intersection_by_key", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
+          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
+            CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
+                              CALL("dpct::set_intersection",
+                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(3)), ARG(3)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(4)), ARG(4)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(5)), ARG(5)),
+                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(6)), ARG(6)),
+                                ARG(7)))),
+          CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
+                            CALL("dpct::set_intersection",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),ARG(7))))),
+      CONDITIONAL_FACTORY_ENTRY(
+        CompareArgType(0, 1),
+        // Handling case: thrust::stabsset_difference_by_keyet_difference_by_keyle_sort(thrust::device, iterator, iterator, iterator, iterator, iterator, iterator, iterator);
+        CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
+                            CALL("dpct::set_intersection",
+                                makeMappedThrustPolicyEnum(0),
+                                ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))),
+        CONDITIONAL_FACTORY_ENTRY(
+          CheckArgType(1, "thrust::device_ptr"),
+          // Handling case: thrust::set_intersection_by_key(iterator, iterator, iterator, iterator, iterator, iterator, iterator, comp);
+          CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
+                              CALL("dpct::set_intersection",
+                                  CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
+                                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7))),
+          CALL_FACTORY_ENTRY("thrust::set_intersection_by_key",
+                              CALL("dpct::set_intersection",
+                                  ARG("oneapi::dpl::execution::seq"),
+                                  ARG(0), ARG(1), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7)))))
+    )
+  )
+)
+
