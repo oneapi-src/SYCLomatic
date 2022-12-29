@@ -128,6 +128,25 @@ void CubDeviceLevelRule::runRule(
   }
 }
 
+void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(
+      cxxMemberCallExpr(
+          allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(
+                    namedDecl(hasName("cub::ArgIndexInputIterator"))))))),
+                callee(cxxMethodDecl(hasName("normalize")))))
+          .bind("ArgIndexInputIterator.normalize"),
+      this);
+}
+
+void CubMemberCallRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (const auto *MC = getNodeAsType<CXXMemberCallExpr>(Result, "ArgIndexInputIterator.normalize")) {
+    ExprAnalysis EA;
+    EA.analyze(MC);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+  }
+}
+
 static bool isNullPointerConstant(const clang::Expr *E) {
   assert(E && "Expr can not be nullptr");
   return E->isNullPointerConstant(clang::dpct::DpctGlobalInfo::getContext(),
