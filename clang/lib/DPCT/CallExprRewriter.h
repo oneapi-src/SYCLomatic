@@ -797,18 +797,6 @@ public:
   }
 };
 
-/// Print a `type`. This is useful when print no template type.
-template <class NameT> class TypeNamePrinter {
-  NameT Name;
-
-public:
-  TypeNamePrinter(NameT Name) : Name(Name) {}
-
-  template <typename StreamT> void print(StreamT &Stream) const {
-    dpct::print(Stream, Name);
-  }
-};
-
 template <class BaseT, class MemberT> class MemberExprPrinter {
   BaseT Base;
   bool IsArrow;
