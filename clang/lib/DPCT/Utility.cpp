@@ -3330,7 +3330,8 @@ bool analyzeMemcpyOrder(
         // Record the first and second argument of memcpy
         SrcDstExprs.insert(CE->getArg(0));
         SrcDstExprs.insert(CE->getArg(1));
-        ExcludeExprs.insert(CE);
+        ExcludeExprs.insert(CE->getArg(0));
+        ExcludeExprs.insert(CE->getArg(1));
         MemcpyCallExprs.insert(CE);
         MemcpyOrderVec.emplace_back(CE,
                                     MemcpyOrderAnalysisNodeKind::MOANK_Memcpy);
@@ -3477,7 +3478,7 @@ bool analyzeMemcpyOrder(
   std::sort(DREOffsetVec.begin(), DREOffsetVec.end());
   return true;
 }
-
+#if 0
 bool isDestArgHasDependency(const clang::DeclRefExpr *Var,
                             const clang::CompoundStmt *CS) {
   auto IsCompoundAssignOperator =
@@ -3571,7 +3572,7 @@ const clang::DeclRefExpr *getVar(const clang::Expr *E) {
   }
   return nullptr;
 }
-
+#endif
 /// This function is used to check if the ".wait()" can be omitted in the
 /// migrated code of cudaMemcpy/cudaMemcpyFromSymbol/cudaMemcpyToSymbol API.
 /// Rule:
@@ -3579,15 +3580,11 @@ const clang::DeclRefExpr *getVar(const clang::Expr *E) {
 /// of WhileStmt/ForStmt/DoStmt/IfStmt/FuncDecl). The analysis result of the
 /// outer scope will not affect the inner scope.
 ///
-/// Traverse all CallExpr nodes between current cudaMemcpy CallExpr and the
-/// next cudaMemcpy CallExpr with pre-order.
-/// If all 3 conditions are met, the ".wait()" for current cudaMemcpy can be
-/// omitted:
-/// (1) all these CallExpr nodes are in the SpecialFuncNameSet (E.g., printf())
-/// (2) current and next cudaMemcpy are not in flow control Stmt
-/// (3) The pointer type DeclRefExpr nodes in the 2nd memcpy API's 2nd argument
-///     are not related to any pointer type DeclRefExpr nodes in the 1st memcpy
-///     API's 1st argument
+/// Traverse all CallExpr nodes between current cudaMemcpy CallExpr and
+/// the next cudaMemcpy CallExpr with pre-order.
+/// If (1) all these CallExpr nodes are in the SpecialFuncNameSet(e.g.,
+/// printf()), and (2) current and next cudaMemcpy are not in flow control
+/// Stmt, then the ".wait()" for current cudaMemcpy can be omitted.
 ///
 /// E.g.,
 /// \code
@@ -3677,17 +3674,17 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
 
         unsigned int CurrentCallExprEndOffset =
             CurrentCallExprEndLoc.getRawEncoding();
-        unsigned int NextCallExprBeginOffset =
-            SM.getExpansionLoc(S.first->getBeginLoc()).getRawEncoding();
+        unsigned int NextCallExprEndOffset =
+            SM.getExpansionLoc(S.first->getEndLoc()).getRawEncoding();
 
         auto FirstDREAfterCurrentCallExprEndLoc = std::lower_bound(
             DREOffsetVec.begin(), DREOffsetVec.end(), CurrentCallExprEndOffset);
-        if (FirstDREAfterCurrentCallExprEndLoc == DREOffsetVec.end()) {
-          return !isDestArgHasDependency(getVar(CE->getArg(0)), CS);
-        }
-        if (*FirstDREAfterCurrentCallExprEndLoc <= NextCallExprBeginOffset)
+        if (FirstDREAfterCurrentCallExprEndLoc == DREOffsetVec.end())
+          return true;
+        if (*FirstDREAfterCurrentCallExprEndLoc <= NextCallExprEndOffset)
           return false;
-        return !isDestArgHasDependency(getVar(CE->getArg(0)), CS);
+
+        return true;
       }
     }
   }
