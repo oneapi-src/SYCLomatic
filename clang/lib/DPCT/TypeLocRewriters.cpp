@@ -45,8 +45,8 @@ public:
   }
 };
 
-// This useful to print a templated type, if explicit template argument number
-// is 0, you must pass at least 1 template argument, .e.g STR("")
+// Print a templated type. Pass a STR("") as a template argument for types with
+// no template argument e.g. MyType<>
 template <class TypeNameT, class... TemplateArgsT>
 std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocRewriterFactory(
     std::function<TypeNameT(const TypeLoc)> TypeNameCreator,
@@ -59,7 +59,7 @@ std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocRewriterFactory(
       std::forward<std::function<TemplateArgsT(const TypeLoc)>>(TAsCreator)...);
 }
 
-// This useful to print a no templat type
+// Print a type with no template.
 template <class TypeNameT>
 std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocRewriterFactory(
     std::function<TypeNameT(const TypeLoc)> TypeNameCreator) {

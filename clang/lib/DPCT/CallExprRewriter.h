@@ -783,7 +783,6 @@ public:
   }
 };
 
-/// Print a `type`. This is useful when print templated type.
 template <class NameT, class... TemplateArgsT> class TemplatedNamePrinter {
   NameT Name;
   ArgsPrinter<false, TemplateArgsT...> TAs;
@@ -798,7 +797,7 @@ public:
   }
 };
 
-/// Print a `type`. This is useful when print no template type.
+// Print a type with no template.
 template <class NameT> class TypeNamePrinter {
   NameT Name;
 
