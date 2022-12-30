@@ -33,6 +33,7 @@
 #include "llvm/ADT/StringSet.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
+#include "MemberExprRewriter.h"
 
 #include <algorithm>
 #include <iostream>
@@ -239,7 +240,7 @@ void IncludesCallbacks::MacroDefined(const Token &MacroNameTok,
                    MapNames::VectorTypeMigratedTypeSizeMap.end()) {
       DiagnosticsUtils::report(
           MacroNameTok.getLocation(), Diagnostics::MACRO_SAME_AS_SYCL_TYPE,
-          dpct::DpctGlobalInfo::getSourceManager(), &TransformSet, false,
+          &TransformSet, false,
           MacroNameTok.getIdentifierInfo()->getName().str());
     }
   }
@@ -468,7 +469,6 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
         TransformSet.emplace_back(new ReplaceToken(Range.getBegin(), "0"));
         DiagnosticsUtils::report(Range.getBegin(),
                                  Diagnostics::HOSTALLOCMACRO_NO_MEANING,
-                                 dpct::DpctGlobalInfo::getSourceManager(),
                                  &TransformSet, false, Name.str());
       }
     }
@@ -3716,14 +3716,20 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
   if (Parents.size() < 1)
     return;
   auto MemberName = ME->getMemberNameInfo().getAsString();
-  if (DpctGlobalInfo::getUnqualifiedTypeName(
-        ME->getBase()->getType()).find("cudaPointerAttributes") !=
-          std::string::npos) {
-    ExprAnalysis EA;
-    EA.analyze(ME);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
-    return;
+
+  auto TypeName = ME->getBase()->getType();
+  if (TypeName->isPointerType()) {
+    TypeName = TypeName->getPointeeType();
+  }
+  std::string MemberExprName = DpctGlobalInfo::getTypeName(TypeName)
+                               + "." + MemberName;
+  if (MemberExprRewriterFactoryBase::MemberExprRewriterMap->find(MemberExprName)
+        != MemberExprRewriterFactoryBase::MemberExprRewriterMap->end()) {
+      ExprAnalysis EA;
+      EA.analyze(ME);
+      emplaceTransformation(EA.getReplacement());
+      EA.applyAllSubExprRepl();
+      return;
   }
   // unmigrated properties
   if (MemberName == "regsPerBlock") {
@@ -3758,12 +3764,6 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
            MemberName, "INT_MAX");
     emplaceTransformation(
         new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "INT_MAX"));
-    return;
-  } else if (MemberName == "totalConstMem") {
-    report(ME->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
-           MemberName, "0");
-    emplaceTransformation(
-        new ReplaceToken(ME->getBeginLoc(), ME->getEndLoc(), "0"));
     return;
   } else if (MemberName == "textureAlignment") {
     requestFeature(HelperFeatureEnum::Device_get_current_device, ME);
@@ -7723,6 +7723,16 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     std::string ReplStr{ResultVarName};
     auto StmtStrArg2 = getStmtSpelling(CE->getArg(2));
+
+    if (AttributeName == "cudaDevAttrConcurrentManagedAccess" &
+        DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None) {
+      std::string ReplStr = getDrefName(CE->getArg(0));
+      ReplStr += " = false";
+      if (IsAssigned)
+        ReplStr = "(" + ReplStr + ", 0)";
+      emplaceTransformation(new ReplaceStmt(CE, ReplStr));
+      return;
+    }
 
     if (AttributeName == "cudaDevAttrComputeMode") {
       report(CE->getBeginLoc(), Diagnostics::COMPUTE_MODE, false);
@@ -12500,9 +12510,9 @@ void MathFunctionsRule::runRule(const MatchFinder::MatchResult &Result) {
       requestFeature(HelperFeatureEnum::Util_reverse_bits, CE);
     } else if (Name == "__vmaxs4" || Name == "__vmaxu2") {
       requestFeature(HelperFeatureEnum::Util_vectorized_max, CE);
-    } else if (Name == "__vminu2") {
+    } else if (Name == "__vminu2" || Name == "__vminu4") {
       requestFeature(HelperFeatureEnum::Util_vectorized_min, CE);
-    } else if (Name == "__vcmpgtu2") {
+    } else if (Name == "__vcmpgtu2" || Name == "__vcmpgtu4") {
       requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_T, CE);
       requestFeature(HelperFeatureEnum::Util_vectorized_isgreater_unsigned,
                      CE);
@@ -14933,7 +14943,6 @@ void DriverModuleAPIRule::runRule(
 
   std::string APIName = "";
   if (auto DC = CE->getDirectCallee()) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
     APIName = DC->getNameAsString();
   } else {
     return;
@@ -15500,7 +15509,7 @@ void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &R
     if (CE->getCastKind() == clang::CK_LValueToRValue
 	|| CE->getCastKind() == clang::CK_NoOp)
       return;
-    
+
     if (isDefaultStream(CE->getSubExpr())) {
       if (isPlaceholderIdxDuplicated(CE->getSubExpr()))
         return;
@@ -15513,7 +15522,7 @@ void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &R
       emplaceTransformation(
         new ReplaceStmt(
           CE,
-	  MapNames::getDpctNamespace() 
+	  MapNames::getDpctNamespace()
 	  + "int_as_queue_ptr("
 	  + ExprAnalysis::ref(CE->getSubExpr())
 	  + ")"));

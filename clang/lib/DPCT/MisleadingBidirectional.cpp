@@ -101,7 +101,7 @@ bool MisleadingBidirectionalHandler::HandleComment(Preprocessor &PP,
   if (containsMisleadingBidi(Text, true)) {
     DiagnosticsUtils::report(
         Range.getBegin(), Diagnostics::MISLEADING_BIDIRECTIONAL,
-        dpct::DpctGlobalInfo::getSourceManager(), &TransformSet, false);
+        &TransformSet, false);
   }
   return false;
 }
