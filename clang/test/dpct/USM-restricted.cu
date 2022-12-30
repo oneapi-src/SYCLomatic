@@ -1059,3 +1059,14 @@ void foo13(float* a, bool flag) {
   MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
   MY_SAFE_CALL3(cudaMemcpy(a, a, 16, cudaMemcpyDeviceToHost));
 }
+
+void foo14() {
+  int h_selected_num;
+  int *d_selected_num;
+  int *h_out;
+  int *d_out;
+  //CHECK:q_ct1.memcpy((void *)&h_selected_num, (void *)d_selected_num, sizeof(int)).wait();
+  //CHECK-NEXT:q_ct1.memcpy((void *)h_out, (void *)d_out, h_selected_num * sizeof(int)).wait();
+  cudaMemcpy((void *)&h_selected_num, (void *)d_selected_num, sizeof(int), cudaMemcpyDeviceToHost);
+  cudaMemcpy((void *)h_out, (void *)d_out, h_selected_num * sizeof(int), cudaMemcpyDeviceToHost);
+}
