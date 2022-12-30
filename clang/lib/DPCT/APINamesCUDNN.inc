@@ -687,32 +687,3 @@ FEATURE_REQUEST_FACTORY(
         ARG_WC(2), ARG_WC(4), ARG_WC(5), ARG_WC(6), ARG_WC(7), ARG_WC(8),
         ARG_WC(9), ARG_WC(10), ARG_WC(11), ARG_WC(12), ARG_WC(13), ARG_WC(14),
         ARG_WC(15), ARG_WC(16), ARG_WC(17), ARG_WC(18), ARG_WC(19))))
-
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_async_rnn_backward,
-    WARNING_FACTORY_ENTRY(
-        "cudnnRNNBackwardData_v8",
-        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-            "cudnnRNNBackwardData_v8", ARG_WC(0), false, "async_rnn_backward",
-            ARG_WC(1), ARG_WC(3), ARG_WC(4), ARG_WC(5), ARG_WC(6),
-            LITERAL("dpct_placeholder"), ARG_WC(7), ARG_WC(8), ARG_WC(9),
-            ARG_WC(10), ARG_WC(11), ARG_WC(12), ARG_WC(13), ARG_WC(14),
-            ARG_WC(15), ARG_WC(16), ARG_WC(17), LITERAL("dpct_placeholder"),
-            ARG_WC(18), ARG_WC(19), ARG_WC(20), ARG_WC(21))),
-        Diagnostics::COMPLETE_ARGUMENT))
-
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_async_rnn_backward,
-    WARNING_FACTORY_ENTRY(
-        "cudnnRNNBackwardWeights_v8",
-        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-            "cudnnRNNBackwardWeights_v8", ARG_WC(0), false,
-            "async_rnn_backward", ARG_WC(1), ARG_WC(8), ARG_WC(9),
-            LITERAL("dpct_placeholder"), ARG_WC(4), ARG_WC(5),
-            LITERAL("dpct_placeholder"), ARG_WC(6), ARG_WC(7),
-            LITERAL("dpct_placeholder"), LITERAL("dpct_placeholder"),
-            LITERAL("dpct_placeholder"), LITERAL("dpct_placeholder"),
-            LITERAL("dpct_placeholder"), ARG_WC(10),
-            LITERAL("dpct_placeholder"), ARG_WC(11), ARG_WC(12), ARG_WC(13),
-            ARG_WC(14), ARG_WC(15))),
-        Diagnostics::COMPLETE_ARGUMENT))

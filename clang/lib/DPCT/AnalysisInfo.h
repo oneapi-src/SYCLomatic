@@ -203,6 +203,17 @@ struct MemcpyOrderAnalysisInfo {
   std::vector<unsigned int> DREOffsetVec;
 };
 
+struct RnnBackwardFuncInfo {
+  std::string FilePath;
+  unsigned int Offset;
+  unsigned int Length;
+  bool isAssigned;
+  bool isDataGradient;
+  std::string CompoundLoc;
+  std::vector<std::string> RnnInputDeclLoc;
+  std::vector<std::string> FuncArgs;
+};
+
 // function name, <file path, Info>
 using HDDefMap =
     std::unordered_multimap<std::string,
@@ -395,6 +406,7 @@ public:
   void buildUnionFindSet();
   void buildUnionFindSetForUncalledFunc();
   void buildKernelInfo();
+  void buildRnnBackwardFuncInfo();
   void postProcess();
 
   // Emplace stored replacements into replacement set.
@@ -609,6 +621,9 @@ public:
   std::vector<std::pair<unsigned int, unsigned int>> &getExternCRanges() {
     return ExternCRanges;
   }
+  std::vector<RnnBackwardFuncInfo> &getRnnBackwardFuncInfo() {
+    return RBFuncInfo;
+  }
 
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
@@ -677,6 +692,7 @@ private:
   bool AddOneDplHeaders = false;
   std::vector<std::shared_ptr<ExtReplacement>> IncludeDirectiveInsertions;
   std::vector<std::pair<unsigned int, unsigned int>> ExternCRanges;
+  std::vector<RnnBackwardFuncInfo> RBFuncInfo;
 };
 template <> inline GlobalMap<MemVarInfo> &DpctFileInfo::getMap() {
   return MemVarMap;
@@ -2006,6 +2022,11 @@ public:
   getMainSourceYamlTUR() {
     return MainSourceYamlTUR;
   }
+  static inline std::unordered_map<
+      std::string, std::unordered_map<std::string, std::vector<unsigned>>> &
+  getRnnInputMap() {
+    return RnnInputMap;
+  }
 
 private:
   DpctGlobalInfo();
@@ -2187,6 +2208,9 @@ private:
       PriorityReplInfoMap;
   static std::unordered_map<std::string, bool> ExcludePath;
   static std::map<std::string, clang::tooling::OptionInfo> CurrentOptMap;
+  static std::unordered_map<
+      std::string, std::unordered_map<std::string, std::vector<unsigned>>>
+      RnnInputMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

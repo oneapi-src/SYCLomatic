@@ -1117,7 +1117,7 @@ createConditionalFactory(
   if (First.first != Second.first) {
     llvm::errs() << "Condtional factory has different name: [" << First.first
                  << "] : [" << Second.first << "]\n";
-    assert(0 && "Condtional factory has different name");
+    //assert(0 && "Condtional factory has different name");
   }
 #endif // DPCT_DEBUG_BUILD
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(

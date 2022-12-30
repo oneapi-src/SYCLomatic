@@ -110,6 +110,12 @@ void CuDNNTypeRule::runRule(const MatchFinder::MatchResult &Result) {
   }
 }
 
+auto AssignedStmt = []() {
+  return anyOf(hasParent(compoundStmt()), hasParent(forStmt()),
+               hasParent(whileStmt()), hasParent(doStmt()),
+               hasParent(ifStmt()));
+};
+
 void CuDNNAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   auto CuDNNAPI = [&]() {
     return hasAnyName(
@@ -174,12 +180,88 @@ void CuDNNAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         "cudnnRNNBackwardWeights_v8");
   };
 
-  MF.addMatcher(callExpr(callee(functionDecl(CuDNNAPI()))).bind("call"), this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(CuDNNAPI())), AssignedStmt()))
+          .bind("Call"),
+      this);
+  MF.addMatcher(
+      callExpr(allOf(callee(functionDecl(CuDNNAPI())), unless(AssignedStmt())))
+          .bind("AssignedCall"),
+      this);
 }
 
 void CuDNNAPIRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "call")) {
+  bool IsAssigned = false;
+  const CallExpr *CE = getNodeAsType<CallExpr>(Result, "Call");
+  if (!CE) {
+    if (!(CE = getNodeAsType<CallExpr>(Result, "AssignedCall")))
+      return;
+    IsAssigned = true;
+  }
+  std::string FuncName;
+  if (auto DC = CE->getDirectCallee()) {
+    FuncName = DC->getNameAsString();
+  }
+  if (FuncName == "cudnnRNNBackwardData_v8" ||
+      FuncName == "cudnnRNNBackwardWeights_v8") {
+    RnnBackwardFuncInfo FuncInfo;
+    auto &Global = DpctGlobalInfo::getInstance();
+    auto CELocInfo = Global.getLocInfo(CE->getBeginLoc());
+    auto FileInfo = Global.insertFile(CELocInfo.first);
+    auto &BackwardFuncInfo = FileInfo->getRnnBackwardFuncInfo();
+    auto &RnnInputMap = DpctGlobalInfo::getRnnInputMap();
+    unsigned RnnDescIndex = 1, HXDataIndex = 9, YDataIndex = 4;
+    ExprAnalysis CEEA(CE);
+    CEEA.analyze();
+    FuncInfo.isAssigned = IsAssigned;
+    FuncInfo.Length = CEEA.getExprLength();
+    FuncInfo.FilePath = CELocInfo.first;
+    FuncInfo.Offset = CELocInfo.second;
+    FuncInfo.isDataGradient = true;
+    unsigned int ArgsNum = CE->getNumArgs();
+    if (auto CS = DpctGlobalInfo::findAncestor<CompoundStmt>(CE)) {
+      auto LocInfo = Global.getLocInfo(CS->getBeginLoc());
+      FuncInfo.CompoundLoc = LocInfo.first + std::to_string(LocInfo.second);
+    }
+    if (FuncName == "cudnnRNNBackwardWeights_v8") {
+      HXDataIndex = 7, YDataIndex = 9;
+      FuncInfo.isDataGradient = false;
+    }
+    std::vector<unsigned> RnnInputArgIndex = {RnnDescIndex, HXDataIndex,
+                                              YDataIndex};
+    for (auto Index : RnnInputArgIndex) {
+      if (auto RnnInputDRE = dyn_cast<DeclRefExpr>(
+              CE->getArg(Index)->IgnoreImplicitAsWritten())) {
+        ExprAnalysis RnnInputArgEA(RnnInputDRE);
+        RnnInputArgEA.analyze();
+        std::string ArgName = RnnInputArgEA.getReplacedString();
+        if (auto RnnInputDecl = RnnInputDRE->getDecl()) {
+          auto DeclLocInfo = Global.getLocInfo(RnnInputDecl->getBeginLoc());
+          std::string MapKey =
+              DeclLocInfo.first + std::to_string(DeclLocInfo.second) + ArgName;
+          if (!RnnInputMap.count(MapKey)) {
+            std::vector<const clang::DeclRefExpr *> MatchResults;
+            findAllVarRef(RnnInputDRE, MatchResults, true);
+            for (auto Result : MatchResults) {
+              auto DRELocInfo = Global.getLocInfo(Result->getBeginLoc());
+              RnnInputMap[MapKey][DRELocInfo.first].push_back(DRELocInfo.second);
+            }
+          }
+          FuncInfo.RnnInputDeclLoc.push_back(MapKey);
+        }
+      }
+    }
+    for (unsigned int ArgIndex = 0; ArgIndex < ArgsNum; ArgIndex++) {
+      if (auto Arg = CE->getArg(ArgIndex)->IgnoreImplicitAsWritten()) {
+        ExprAnalysis ArgEA(Arg);
+        ArgEA.analyze();
+        std::string ArgString = ArgEA.getReplacedString();
+        FuncInfo.FuncArgs.push_back(ArgString);
+      }
+    }
+    BackwardFuncInfo.push_back(FuncInfo);
+  } else {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();

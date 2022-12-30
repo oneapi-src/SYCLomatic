@@ -225,5 +225,3 @@ DEF_WARNING(MODULE_LOAD_DATA, 1104, "'%0' should point to a dynamic library load
 DEF_COMMENT(MODULE_LOAD_DATA, 1104, "'{0}' should point to a dynamic library loaded in memory. The dynamic library should supply \"wrapped\" kernel functions.")
 DEF_WARNING(MODULE_LOAD_DATA_EX, 1105, "'%0' should point to a dynamic library loaded in memory. The dynamic library should supply \"wrapped\" kernel functions. Compilation options passed to cuModuleLoadDataEx are not migrated.")
 DEF_COMMENT(MODULE_LOAD_DATA_EX, 1105, "'{0}' should point to a dynamic library loaded in memory. The dynamic library should supply \"wrapped\" kernel functions. Compilation options passed to cuModuleLoadDataEx are not migrated.")
-DEF_WARNING(COMPLETE_ARGUMENT, 1106, "Data gradient and weight gradient can't compute seperately. Replace \"dpct_placeholder\" with the proper argument.")
-DEF_COMMENT(COMPLETE_ARGUMENT, 1106, "Data gradient and weight gradient can't compute seperately. Replace \"dpct_placeholder\" with the proper argument.")

@@ -117,7 +117,7 @@ int main() {
 
     float *xData, *yData, *hxData, *hyData, *cxData, *cyData, *weightsData, *workSpaceData, *reserveSpaceData;
     float *dxData, *dyData, *dhxData, *dhyData, *dcxData, *dcyData, *dweightsData;
-
+    cudnnWgradMode_t WGMode = CUDNN_WGRAD_MODE_ADD;
     int *seqlenarray;
     // CHECK: auto e = (handle.async_rnn_forward(rnnDesc, dnnl::prop_kind::forward_training, xDesc, xData, yDesc, yData, hDesc, hxData, hyData, cDesc, cxData, cyData, weightsSpaceSize, weightsData, workSpaceSize, workSpaceData, reserveSpaceSize, reserveSpaceData), 0);
     auto e = cudnnRNNForward(
@@ -143,9 +143,9 @@ int main() {
         reserveSpaceData
     );
 // CHECK: /*
-// CHECK: DPCT1106:{{[0-9]+}}: Data gradient and weight gradient can't compute seperately. Replace "dpct_placeholder" with the proper argument.
+// CHECK: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK: */
-// CHECK: e = (handle.async_rnn_backward(rnnDesc, yDesc, yData, dyData, xDesc, dpct_placeholder, dxData, hDesc, hxData, dhyData, dhxData, cDesc, cxData, dcyData, dcxData, weightsSpaceSize, weightsData, dpct_placeholder, workSpaceSize, workSpaceData, reserveSpaceSize, reserveSpaceData), 0);
+// CHECK: e = (handle.async_rnn_backward(rnnDesc, yDesc, yData, dyData, xDesc, xData, dxData, hDesc, hxData, dhyData, dhxData, cDesc, cxData, dcyData, dcxData, weightsSpaceSize, weightsData, dweightsData, workSpaceSize, workSpaceData, reserveSpaceSize, reserveSpaceData), 0);
     e = cudnnRNNBackwardData_v8(
         handle,
         rnnDesc,
@@ -171,13 +171,13 @@ int main() {
         reserveSpaceData
     );
 // CHECK: /*
-// CHECK: DPCT1106:{{[0-9]+}}: Data gradient and weight gradient can't compute seperately. Replace "dpct_placeholder" with the proper argument.
+// CHECK: DPCT1027:{{[0-9]+}}: The call to cudnnRNNBackwardWeights_v8 was replaced with 0 because this call and cudnnRNNBackwardData_v8 are migrated to a single function call async_rnn_backward
 // CHECK: */
-// CHECK: e = (handle.async_rnn_backward(rnnDesc, yDesc, yData, dpct_placeholder, xDesc, xData, dpct_placeholder, hDesc, hxData, dpct_placeholder, dpct_placeholder, dpct_placeholder, dpct_placeholder, dpct_placeholder, weightsSpaceSize, dpct_placeholder, dweightsData, workSpaceSize, workSpaceData, reserveSpaceSize, reserveSpaceData), 0);
+// CHECK: e = 0;
     e = cudnnRNNBackwardWeights_v8(
         handle,
         rnnDesc,
-        CUDNN_WGRAD_MODE_ADD,
+        WGMode,
         seqlenarray,
         xDesc,
         xData,
@@ -192,6 +192,109 @@ int main() {
         reserveSpaceSize, 
         reserveSpaceData
     );
+
+   float *y1Data;
+// CHECK:     /*
+// CHECK:     DPCT1007:{{[0-9]+}}: Migration of cudnnRNNBackwardData_v8 is not supported.
+// CHECK:     */
+    cudnnRNNBackwardData_v8(
+        handle,
+        rnnDesc,
+        seqlenarray,
+        yDesc,
+        y1Data,
+        dyData,
+        xDesc,
+        dxData,
+        hDesc,
+        hxData,
+        dhyData,
+        dhxData,
+        cDesc,
+        cxData,
+        dcyData,
+        dcxData,
+        weightsSpaceSize,
+        weightsData,
+        workSpaceSize, 
+        workSpaceData, 
+        reserveSpaceSize, 
+        reserveSpaceData
+    );
     
+    cudaMalloc(&y1Data, 100);
+// CHECK:     /*
+// CHECK:     DPCT1007:{{[0-9]+}}: Migration of cudnnRNNBackwardWeights_v8 is not supported.
+// CHECK:     */
+    cudnnRNNBackwardWeights_v8(
+        handle,
+        rnnDesc,
+        WGMode,
+        seqlenarray,
+        xDesc,
+        xData,
+        hDesc,
+        hxData,
+        yDesc,
+        y1Data,
+        weightsSpaceSize,
+        dweightsData,
+        workSpaceSize, 
+        workSpaceData, 
+        reserveSpaceSize, 
+        reserveSpaceData
+    );
+
+    float *y2Data;
+// CHECK:     /*
+// CHECK:     DPCT1007:{{[0-9]+}}: Migration of cudnnRNNBackwardData_v8 is not supported.
+// CHECK:     */
+    cudnnRNNBackwardData_v8(
+        handle,
+        rnnDesc,
+        seqlenarray,
+        yDesc,
+        y2Data,
+        dyData,
+        xDesc,
+        dxData,
+        hDesc,
+        hxData,
+        dhyData,
+        dhxData,
+        cDesc,
+        cxData,
+        dcyData,
+        dcxData,
+        weightsSpaceSize,
+        weightsData,
+        workSpaceSize, 
+        workSpaceData, 
+        reserveSpaceSize, 
+        reserveSpaceData
+    );
+
+    float *y3Data;
+// CHECK:     /*
+// CHECK:     DPCT1007:{{[0-9]+}}: Migration of cudnnRNNBackwardWeights_v8 is not supported.
+// CHECK:     */
+    e = cudnnRNNBackwardWeights_v8(
+        handle,
+        rnnDesc,
+        WGMode,
+        seqlenarray,
+        xDesc,
+        xData,
+        hDesc,
+        hxData,
+        yDesc,
+        y3Data,
+        weightsSpaceSize,
+        dweightsData,
+        workSpaceSize, 
+        workSpaceData, 
+        reserveSpaceSize, 
+        reserveSpaceData
+    );
     return 0;
 }

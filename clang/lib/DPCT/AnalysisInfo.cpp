@@ -152,6 +152,9 @@ std::unordered_map<std::string, std::shared_ptr<PriorityReplInfo>>
     DpctGlobalInfo::PriorityReplInfoMap;
 std::unordered_map<std::string, bool> DpctGlobalInfo::ExcludePath = {};
 std::map<std::string, clang::tooling::OptionInfo> DpctGlobalInfo::CurrentOptMap;
+std::unordered_map<std::string,
+                   std::unordered_map<std::string, std::vector<unsigned>>>
+    DpctGlobalInfo::RnnInputMap;
 
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
@@ -398,6 +401,132 @@ void DpctFileInfo::postProcess() {
     }
   }
 }
+void DpctFileInfo::buildRnnBackwardFuncInfo() {
+  std::vector<RnnBackwardFuncInfo> ValidBackwardDataFuncInfo;
+  std::vector<RnnBackwardFuncInfo> ValidBackwardWeightFuncInfo;
+  std::vector<std::pair<RnnBackwardFuncInfo, RnnBackwardFuncInfo>>
+      RnnDataWeightGradientPair;
+  for (auto &Info : RBFuncInfo) {
+    if (!Info.CompoundLoc.empty() && !Info.FuncArgs.empty() &&
+        !Info.RnnInputDeclLoc.empty() && (Info.RnnInputDeclLoc.size() == 3)) {
+      if (Info.isDataGradient) {
+        ValidBackwardDataFuncInfo.emplace_back(Info);
+      } else {
+        ValidBackwardWeightFuncInfo.emplace_back(Info);
+      }
+    } else {
+      DiagnosticsUtils::report(Info.FilePath, Info.Offset,
+                               Diagnostics::API_NOT_MIGRATED, true, false);
+    }
+  }
+
+  for (auto DataIter = ValidBackwardDataFuncInfo.begin();
+       DataIter != ValidBackwardDataFuncInfo.end();) {
+    bool DataPaired = false;
+    for (auto WeightIter = ValidBackwardWeightFuncInfo.begin();
+         WeightIter != ValidBackwardWeightFuncInfo.end(); WeightIter++) {
+      bool WeightPaired = true;
+      for (unsigned InputIndex = 0; InputIndex < 3; InputIndex++) {
+        if (DataIter->RnnInputDeclLoc[InputIndex] !=
+            WeightIter->RnnInputDeclLoc[InputIndex]) {
+          WeightPaired = false;
+          break;
+        }
+      }
+      if (!WeightPaired || ((DataIter->CompoundLoc != WeightIter->CompoundLoc) &&
+                        (DataIter->FilePath != WeightIter->FilePath) &&
+                        (DataIter->Offset >= WeightIter->Offset))) {
+        continue;
+      }
+      for (auto RnnInput : DataIter->RnnInputDeclLoc) {
+        auto &RnnInputRefs =
+            DpctGlobalInfo::getRnnInputMap()[RnnInput][DataIter->FilePath];
+        for (auto &RnnInputRef : RnnInputRefs) {
+          if ((RnnInputRef > (DataIter->Offset + DataIter->Length - 1)) &&
+              RnnInputRef < WeightIter->Offset) {
+            WeightPaired = false;
+            break;
+          }
+        }
+        if (!WeightPaired) {
+          break;
+        }
+      }
+      if (WeightPaired) {
+        DataPaired = true;
+        RnnDataWeightGradientPair.emplace_back(
+            std::make_pair(*DataIter, *WeightIter));
+        ValidBackwardDataFuncInfo.erase(DataIter);
+        ValidBackwardWeightFuncInfo.erase(WeightIter);
+        break;
+      }
+    }
+    if(!DataPaired) {
+      DataIter++;
+    }
+  }
+  for (auto &UnpairedDataFunc : ValidBackwardDataFuncInfo) {
+    DiagnosticsUtils::report(UnpairedDataFunc.FilePath, UnpairedDataFunc.Offset,
+                             Diagnostics::API_NOT_MIGRATED, true, false,
+                             "cudnnRNNBackwardData_v8");
+  }
+  for (auto &UnpairedWeightFunc : ValidBackwardWeightFuncInfo) {
+    DiagnosticsUtils::report(UnpairedWeightFunc.FilePath,
+                             UnpairedWeightFunc.Offset,
+                             Diagnostics::API_NOT_MIGRATED, true, false,
+                             "cudnnRNNBackwardWeights_v8");
+  }
+  for(auto &PairedFunc : RnnDataWeightGradientPair) {
+    std::string DataRepl, WeightRepl;
+    RnnBackwardFuncInfo DataFuncInfo = PairedFunc.first;
+    RnnBackwardFuncInfo WeightFuncInfo = PairedFunc.second;
+    requestFeature(HelperFeatureEnum::DnnlUtils_async_rnn_backward,
+                   DataFuncInfo.FilePath);
+    if (WeightFuncInfo.isAssigned) {
+      DiagnosticsUtils::report(
+          WeightFuncInfo.FilePath, WeightFuncInfo.Offset,
+          Diagnostics::FUNC_CALL_REMOVED_0, true, false,
+          "cudnnRNNBackwardWeights_v8",
+          "this call and cudnnRNNBackwardData_v8 are migrated to a single "
+          "function call async_rnn_backward");
+      WeightRepl = "0";
+    } else {
+      DiagnosticsUtils::report(
+          WeightFuncInfo.FilePath, WeightFuncInfo.Offset,
+          Diagnostics::FUNC_CALL_REMOVED, true, false,
+          "cudnnRNNBackwardWeights_v8",
+          "this call and cudnnRNNBackwardData_v8 are migrated to a single "
+          "function call async_rnn_backward");
+    }
+    if (DataFuncInfo.isAssigned) {
+      DataRepl = "(";
+      DiagnosticsUtils::report(DataFuncInfo.FilePath, DataFuncInfo.Offset,
+                               Diagnostics::NOERROR_RETURN_COMMA_OP, true,
+                               false);
+    }
+    DataRepl += DataFuncInfo.FuncArgs[0] + ".async_rnn_backward(" +
+                DataFuncInfo.FuncArgs[1];
+    for(unsigned int index = 3; index <= 21; index++) {
+      DataRepl += ", " + DataFuncInfo.FuncArgs[index];
+      if(index == 6) {
+        DataRepl += ", " + WeightFuncInfo.FuncArgs[5];
+      } else if(index == 17) {
+        DataRepl += ", " + WeightFuncInfo.FuncArgs[11];
+      }
+    }
+    if(DataFuncInfo.isAssigned) {
+      DataRepl += "), 0)";
+    } else {
+      DataRepl += ")";
+    }
+    addReplacement(std::make_shared<ExtReplacement>(
+        DataFuncInfo.FilePath, DataFuncInfo.Offset, DataFuncInfo.Length,
+        DataRepl, nullptr));
+    addReplacement(std::make_shared<ExtReplacement>(
+        WeightFuncInfo.FilePath, WeightFuncInfo.Offset, WeightFuncInfo.Length,
+        WeightRepl, nullptr));
+  }
+}
 
 void DpctFileInfo::buildReplacements() {
   if (!isInAnalysisScope())
@@ -496,6 +625,8 @@ void DpctFileInfo::buildReplacements() {
       DescInfo.second.buildInfo(FilePath, DescInfo.first, isReplTxtWithSB);
     }
   }
+
+  buildRnnBackwardFuncInfo();
 
   // insert header file of user defined rules
   std::string InsertHeaderStr;
