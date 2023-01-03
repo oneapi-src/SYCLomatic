@@ -789,7 +789,6 @@ public:
 template <class NameT, class... TemplateArgsT> class TemplatedNamePrinter {
   NameT Name;
   ArgsPrinter<false, TemplateArgsT...> TAs;
-
 public:
   TemplatedNamePrinter(NameT Name, TemplateArgsT &&...TAs)
       : Name(Name), TAs(std::forward<TemplateArgsT>(TAs)...) {}
@@ -798,6 +797,18 @@ public:
     Stream << "<";
     TAs.print(Stream);
     Stream << ">";
+  }
+};
+
+// Print a type with no template.
+template <class NameT> class TypeNamePrinter {
+  NameT Name;
+
+public:
+  TypeNamePrinter(NameT Name) : Name(Name) {}
+
+  template <typename StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Name);
   }
 };
 

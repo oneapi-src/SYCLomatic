@@ -240,3 +240,4 @@ ENTRY_MEMBER_FUNCTION(cub::TexRefInputIterator, UnbindTexture, UnbindTexture, fa
 ENTRY(cub::CountingInputIterator, cub::CountingInputIterator, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::TransformInputIterator, cub::TransformInputIterator, true, NO_FLAG, P4, "Successful")
 ENTRY(cub::ConstantInputIterator, cub::ConstantInputIterator, true, NO_FLAG, P4, "Successful")
+ENTRY(cub::DiscardOutputIterator, cub::DiscardOutputIterator, true, NO_FLAG, P4, "Successful")
