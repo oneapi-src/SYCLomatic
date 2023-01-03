@@ -324,8 +324,8 @@ ENTRY_OPERATOR("__hmul2", BinaryOperatorKind::BO_Mul)
 ENTRY_OPERATOR("__hsub", BinaryOperatorKind::BO_Sub)
 ENTRY_OPERATOR("__hsub2", BinaryOperatorKind::BO_Sub)
 
-ENTRY_OPERATOR("__hneg", BinaryOperatorKind::BO_Sub)
-ENTRY_OPERATOR("__hneg2", BinaryOperatorKind::BO_Sub)
+ENTRY_REWRITE("__hneg")
+ENTRY_REWRITE("__hneg2")
 
 // Half Comparison Functions
 ENTRY_OPERATOR("__heq", BinaryOperatorKind::BO_EQ)

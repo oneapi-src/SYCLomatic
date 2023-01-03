@@ -462,3 +462,23 @@ CONDITIONAL_FACTORY_ENTRY(
                                         MapNames::getClNamespace() +
                                             "ext::intel::math::" + "hneu")),
     ENTRY_UNSUPPORTED("__hneu"))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__hneg",
+                           CALL(MapNames::getClNamespace(false, true) +
+                            "ext::intel::math::hneg", ARG(0)))),
+    ENTRY_OPERATOR("__hneg", BinaryOperatorKind::BO_Sub)
+)
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_SYCL_Math,
+        CALL_FACTORY_ENTRY("__hneg2",
+                           CALL(MapNames::getClNamespace(false, true) +
+                            "ext::intel::math::hneg2", ARG(0)))),
+    ENTRY_OPERATOR("__hneg2", BinaryOperatorKind::BO_Sub)
+)
