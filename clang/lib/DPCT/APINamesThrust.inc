@@ -2161,7 +2161,7 @@ CONDITIONAL_FACTORY_ENTRY(
       CONDITIONAL_FACTORY_ENTRY(
         CompareArgType(0, 1),
         // Handling case: thrust::partition(thrust::device, iterator, iterator, pred);
-        CALL_FACTORY_ENTRY("thrust::is_sorted",
+        CALL_FACTORY_ENTRY("thrust::partition",
                             CALL("oneapi::dpl::partition",
                                 makeMappedThrustPolicyEnum(0),
                                 ARG(1), ARG(2), ARG(3))),
@@ -2282,7 +2282,7 @@ CONDITIONAL_FACTORY_ENTRY(
       CONDITIONAL_FACTORY_ENTRY(
         CompareArgType(0, 1),
         // Handling case: thrust::unique_copy(thrust::device, iterator, iterator, pred);
-        CALL_FACTORY_ENTRY("thrust::is_sorted",
+        CALL_FACTORY_ENTRY("thrust::unique_copy",
                             CALL("oneapi::dpl::unique_copy",
                                 makeMappedThrustPolicyEnum(0),
                                 ARG(1), ARG(2), ARG(3))),
