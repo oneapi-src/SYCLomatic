@@ -3717,12 +3717,13 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   auto MemberName = ME->getMemberNameInfo().getAsString();
 
-  auto TypeName = ME->getBase()->getType();
-  if (TypeName->isPointerType()) {
-    TypeName = TypeName->getPointeeType();
+  auto BaseType = ME->getBase()->getType();
+  if (BaseType->isPointerType()) {
+    BaseType = BaseType->getPointeeType();
   }
-  std::string MemberExprName = DpctGlobalInfo::getTypeName(TypeName)
-                               + "." + MemberName;
+  std::string MemberExprName =
+                      DpctGlobalInfo::getTypeName(BaseType.getCanonicalType())
+                        + "." + MemberName;
   if (MemberExprRewriterFactoryBase::MemberExprRewriterMap->find(MemberExprName)
         != MemberExprRewriterFactoryBase::MemberExprRewriterMap->end()) {
       ExprAnalysis EA;
