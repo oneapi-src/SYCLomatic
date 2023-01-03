@@ -1391,6 +1391,9 @@ inline auto UseNDRangeBarrier = [](const CallExpr *C) -> bool {
 inline auto UseLogicalGroup = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useLogicalGroup();
 };
+inline auto UseIntelDeviceMath = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useIntelDeviceMath();
+};
 
 class CheckDerefedTypeBeforeCast {
   unsigned Idx;
