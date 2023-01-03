@@ -69,6 +69,7 @@ auto isDeviceFuncCallExpr = []() {
 } // namespace
 
 REGISTER_RULE(CubTypeRule, PassKind::PK_Analysis)
+REGISTER_RULE(CubMemberCallRule, PassKind::PK_Analysis)
 REGISTER_RULE(CubDeviceLevelRule, PassKind::PK_Analysis)
 
 void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -138,8 +139,10 @@ void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 }
 
-void CubMemberCallRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (const auto *MC = getNodeAsType<CXXMemberCallExpr>(Result, "ArgIndexInputIterator.normalize")) {
+void CubMemberCallRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (const auto *MC = getNodeAsType<CXXMemberCallExpr>(
+          Result, "ArgIndexInputIterator.normalize")) {
     ExprAnalysis EA;
     EA.analyze(MC);
     emplaceTransformation(EA.getReplacement());
