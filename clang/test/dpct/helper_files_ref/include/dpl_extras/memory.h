@@ -30,7 +30,7 @@ struct make_allocatable<void>
 
 template <typename _DataT>
 using __buffer_allocator =
-#if __LIBSYCL_VERSION >= 50707
+#if _ONEDPL_LIBSYCL_VERSION >= 50707
     sycl::buffer_allocator<typename make_allocatable<_DataT>::type>;
 #else
     sycl::buffer_allocator;
