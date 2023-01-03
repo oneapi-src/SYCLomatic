@@ -77,7 +77,8 @@ void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "cub::CountingInputIterator",
                       "cub::TransformInputIterator",
                       "cub::ConstantInputIterator",
-                      "cub::ArgIndexInputIterator");
+                      "cub::ArgIndexInputIterator",
+                      "cub::DiscardOutputIterator");
   };
 
   MF.addMatcher(
