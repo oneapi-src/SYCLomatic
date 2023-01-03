@@ -1733,12 +1733,12 @@ public:
   /// \param [out] diff_src Pointer to differential source data.
   /// \param [in] iter_desc Recurrent hidden state data memory descriptor.
   /// \param [in] src_iter Pointer to input recurrent hidden state data.
-  /// \param [out] diff_src_iter Pointer to differential input recurrent hidden state data.
   /// \param [in] diff_dst_iter Pointer to differential output recurrent hidden state data.
+  /// \param [out] diff_src_iter Pointer to differential input recurrent hidden state data.
   /// \param [in] iter_c_desc Recurrent cell state data memory descriptor.
   /// \param [in] src_c_iter Pointer to input recurrent cell state data.
-  /// \param [out] diff_src_c_iter Pointer to differential input recurrent cell state data.
   /// \param [in] diff_dst_c_iter Pointer to differential output recurrent cell state data.
+  /// \param [out] diff_src_c_iter Pointer to differential input recurrent cell state data.
   /// \param [in] weight_size Size of weight memory.
   /// \param [in] weight Pointer to weight data.
   /// \param [out] diff_weight Pointer to differential weight data.
@@ -1751,9 +1751,9 @@ public:
       const rnn_desc &desc, const memory_desc_ext &dst_desc, void *dst,
       void *diff_dst, const memory_desc_ext &src_desc, void *src,
       void *diff_src, const memory_desc_ext &iter_desc, void *src_iter,
-      void *diff_src_iter, void *diff_dst_iter,
+      void *diff_dst_iter, void *diff_src_iter,
       const memory_desc_ext &iter_c_desc, void *src_iter_c,
-      void *diff_src_iter_c, void *diff_dst_iter_c, size_t weight_size,
+      void *diff_dst_iter_c, void *diff_src_iter_c, size_t weight_size,
       void *weight, void *diff_weight, size_t scratchpad_size, void *scratchpad,
       size_t workspace_size, void *workspace);
 
@@ -4020,9 +4020,9 @@ sycl::event engine_ext::async_rnn_forward(
 sycl::event engine_ext::async_rnn_backward(
     const rnn_desc &desc, const memory_desc_ext &dst_desc, void *dst,
     void *diff_dst, const memory_desc_ext &src_desc, void *src, void *diff_src,
-    const memory_desc_ext &iter_desc, void *src_iter, void *diff_src_iter,
-    void *diff_dst_iter, const memory_desc_ext &iter_c_desc, void *src_iter_c,
-    void *diff_src_iter_c, void *diff_dst_iter_c, size_t weight_size,
+    const memory_desc_ext &iter_desc, void *src_iter, void *diff_dst_iter,
+    void *diff_src_iter, const memory_desc_ext &iter_c_desc, void *src_iter_c,
+    void *diff_dst_iter_c, void *diff_src_iter_c, size_t weight_size,
     void *weight, void *diff_weight, size_t scratchpad_size, void *scratchpad,
     size_t workspace_size, void *workspace) {
   ::dnnl::memory::data_type src_dt;
