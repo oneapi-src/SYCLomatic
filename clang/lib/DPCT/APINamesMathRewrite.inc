@@ -7,12 +7,12 @@
 //===----------------------------------------------------------------------===//
 
 MATH_API_REWRITER_HOST_DEVICE(
-    MATH_API_REWRITER_HOST_2(
+    MATH_API_REWRITER_HOST(
         "rsqrt",
         CALL_FACTORY_ENTRY(
             "rsqrt", CALL(MapNames::getClNamespace(false, true) + "rsqrt",
                           ARG(0)))),
-    MATH_API_REWRITER_DEVICE_2(
+    MATH_API_REWRITER_DEVICE(
         "rsqrt",
         {
             CALL_FACTORY_ENTRY(

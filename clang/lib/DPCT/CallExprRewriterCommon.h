@@ -59,6 +59,21 @@ inline bool isArgMigratedToAccessor(const CallExpr *Call, unsigned Index) {
   return false;
 }
 
+inline std::string getTypecastName(const CallExpr *Call) {
+  auto Arg0TypeName = Call->getArg(0)->getType().getAsString();
+  auto Arg1TypeName = Call->getArg(1)->getType().getAsString();
+  auto RetTypeName = Call->getType().getAsString();
+  bool B0 = isArgMigratedToAccessor(Call, 0);
+  bool B1 = isArgMigratedToAccessor(Call, 1);
+  if (B0 && !B1)
+    return Arg1TypeName;
+  if (!B0 && B1)
+    return Arg0TypeName;
+  if (B0 && B1)
+    return RetTypeName;
+  return {};
+}
+
 // In AST, &SubExpr could be recognized as UnaryOperator or CXXOperatorCallExpr.
 // To get the SubExpr from the original Expr, both cases need to be handled.
 inline const Expr *getDereferencedExpr(const Expr *E) {
@@ -1415,30 +1430,15 @@ public:
 class CheckArgIsConstantIntWithValue {
   int value;
   int index;
+
 public:
   CheckArgIsConstantIntWithValue(int idx, int val) : value(val), index(idx) {}
   bool operator()(const CallExpr *C) {
-    auto Arg = C->getArg(index)->IgnoreImpCasts();
-    Expr::EvalResult ResultInt;
+    auto Arg = C->getArg(index);
+    Expr::EvalResult Result;
     if (!Arg->isValueDependent() &&
-        Arg->EvaluateAsInt(ResultInt, DpctGlobalInfo::getContext()) &&
-        ResultInt.Val.getInt().getSExtValue() == value) {
-      return true;
-    }
-    llvm::APFloat ResultFloat(float(0));
-    llvm::APFloat FloatRHS((float)value);
-    if (!Arg->isValueDependent() &&
-        Arg->EvaluateAsFloat(ResultFloat, DpctGlobalInfo::getContext()) &&
-        (&ResultFloat.getSemantics() == &FloatRHS.getSemantics()) &&
-        (ResultFloat.compare(FloatRHS) == llvm::APFloatBase::cmpResult::cmpEqual)) {
-      return true;
-    }
-    llvm::APFloat ResultDouble(double(0));
-    llvm::APFloat DoubleRHS((double)value);
-    if (!Arg->isValueDependent() &&
-        Arg->EvaluateAsFloat(ResultDouble, DpctGlobalInfo::getContext()) &&
-        (&ResultDouble.getSemantics() == &DoubleRHS.getSemantics()) &&
-        (ResultDouble.compare(DoubleRHS) == llvm::APFloatBase::cmpResult::cmpEqual)) {
+        Arg->EvaluateAsInt(Result, DpctGlobalInfo::getContext()) &&
+        Result.Val.getInt().getSExtValue() == value) {
       return true;
     }
     return false;
