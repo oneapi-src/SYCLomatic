@@ -54,12 +54,6 @@
 // DPCT_CODE
 // DPCT_LABEL_END
 
-#ifdef __NVCC__
-#define CONSTEXPR_IF_NOT_NVCC
-#else // __NVCC__
-#define CONSTEXPR_IF_NOT_NVCC constexpr
-#endif // __NVCC__
-
 namespace dpct {
 
 namespace internal {
@@ -462,12 +456,10 @@ public:
 
   inline OutKeyT operator()(const T &key) const {
     uint_type_t intermediate;
-    if
-      CONSTEXPR_IF_NOT_NVCC(std::is_floating_point<T>::value) {
+    if constexpr (std::is_floating_point<T>::value) {
         // normal case (both -0.0f and 0.0f equal -0.0f)
         if (key != T(-0.0f)) {
-          uint_type_t is_negative =
-              reinterpret_cast<const uint_type_t &>(key) >>
+        uint_type_t is_negative = reinterpret_cast<const uint_type_t &>(key) >>
               (sizeof(uint_type_t) * 8 - 1);
           intermediate = reinterpret_cast<const uint_type_t &>(key) ^
                          ((is_negative * flip_key) | flip_sign);
@@ -476,12 +468,9 @@ public:
           T negzero = T(-0.0f);
           intermediate = reinterpret_cast<const uint_type_t &>(negzero);
         }
-      }
-    else if
-      CONSTEXPR_IF_NOT_NVCC(std::is_signed<T>::value) {
+    } else if constexpr (std::is_signed<T>::value) {
         intermediate = reinterpret_cast<const uint_type_t &>(key) ^ flip_sign;
-      }
-    else {
+    } else {
       intermediate = key;
     }
 
