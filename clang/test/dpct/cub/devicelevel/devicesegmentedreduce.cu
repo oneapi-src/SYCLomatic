@@ -4,7 +4,6 @@
 // RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1091
 // RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1092
 // RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1026
-// RUN: FileCheck --input-file %T/devicelevel/devicesegmentedreduce/devicesegmentedreduce.dp.cpp %s --check-prefixes=CHECK,CHECK-DPCT1027
 
 #include <iostream>
 #include <vector>
@@ -147,7 +146,6 @@ bool test_reduce_1(){
 //CHECK:    }
 
 //CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
-//CHECK-DPCT1027:    DPCT1027:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Reduce was replaced with 0 because this call is redundant in SYCL.
 //CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::minimum<>(), initial_value);
 
 //CHECK:    dev_ct1.queues_wait_and_throw();
@@ -235,7 +233,6 @@ bool test_reduce_3(){
   // case 2:
   // CHECK:  for(int i = 0; i < 10; i++) {
   // CHECK:    temp_storage = nullptr;
-  // CHECK-DPCT1027:    DPCT1027:{{[0-9]+}}: The call to cub::DeviceSegmentedReduce::Reduce was replaced with 0 because this call is redundant in SYCL.
   // CHECK:    temp_storage = (void *)sycl::malloc_device(temp_storage_size, q_ct1);
   // CHECK-DPCT1092:    DPCT1092:{{[0-9]+}}: Consider replacing work-group size 128 with differnt value for specific hardware for better performance.
   // CHECK:    dpct::device::segmented_reduce<128>(q_ct1, device_in, device_out, num_segments, device_offsets, device_offsets + 1, sycl::minimum<>(), initial_value);

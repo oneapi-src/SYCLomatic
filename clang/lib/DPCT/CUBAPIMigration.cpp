@@ -47,11 +47,12 @@ auto parentStmt = []() {
 
 auto isDeviceFuncCallExpr = []() {
   auto hasDeviceFuncName = []() {
-    return hasAnyName("Sum", "Min", "Max", "Reduce", "ReduceByKey",
-                      "ExclusiveSum", "InclusiveSum", "InclusiveScan",
-                      "ExclusiveScan", "Flagged", "Unique", "Encode",
-                      "SortKeys", "SortKeysDescending", "SortPairs",
-                      "SortPairsDescending");
+    return hasAnyName(
+        "Sum", "Min", "Max", "Reduce", "ReduceByKey", "ExclusiveSum",
+        "InclusiveSum", "InclusiveScan", "ExclusiveScan", "InclusiveScanByKey",
+        "InclusiveSumByKey", "ExclusiveScanByKey", "ExclusiveSumByKey",
+        "Flagged", "Unique", "Encode", "SortKeys", "SortKeysDescending",
+        "SortPairs", "SortPairsDescending");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
@@ -77,7 +78,8 @@ void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "cub::CountingInputIterator",
                       "cub::TransformInputIterator",
                       "cub::ConstantInputIterator",
-                      "cub::ArgIndexInputIterator");
+                      "cub::ArgIndexInputIterator",
+                      "cub::DiscardOutputIterator");
   };
 
   MF.addMatcher(

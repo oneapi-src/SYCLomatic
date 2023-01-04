@@ -54,6 +54,16 @@ public:
             TL, TypeNameCreator(TL), TAsCreator(TL)...) {}
 };
 
+template <class TypeNameT>
+struct TypeNameTypeLocRewriter
+    : public TypePrinterRewriter<TypeNamePrinter<TypeNameT>> {
+  TypeNameTypeLocRewriter(
+      const TypeLoc TL,
+      const std::function<TypeNameT(const TypeLoc)> &TypeNameCreator)
+      : TypePrinterRewriter<TypeNamePrinter<TypeNameT>>(TL,
+                                                        TypeNameCreator(TL)) {}
+};
+
 class TypeLocRewriterFactoryBase {
 public:
   virtual std::shared_ptr<TypeLocRewriter> create(const TypeLoc) const = 0;

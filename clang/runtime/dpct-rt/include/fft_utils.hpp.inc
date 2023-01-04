@@ -668,30 +668,30 @@ public:
     }
     if (_input_type == library_data_t::complex_float &&
         _output_type == library_data_t::complex_float) {
-      auto data = dpct::detail::get_memory(reinterpret_cast<float *>(ptr));
       if (_q->get_device().is_gpu()) {
+        auto data = dpct::detail::get_memory(reinterpret_cast<float *>(ptr));
         _desc_sc->set_workspace(data);
       }
     } else if (_input_type == library_data_t::complex_double &&
                _output_type == library_data_t::complex_double) {
-      auto data = dpct::detail::get_memory(reinterpret_cast<double *>(ptr));
       if (_q->get_device().is_gpu()) {
+        auto data = dpct::detail::get_memory(reinterpret_cast<double *>(ptr));
         _desc_dc->set_workspace(data);
       }
     } else if ((_input_type == library_data_t::real_float &&
                 _output_type == library_data_t::complex_float) ||
                (_input_type == library_data_t::complex_float &&
                 _output_type == library_data_t::real_float)) {
-      auto data = dpct::detail::get_memory(reinterpret_cast<float *>(ptr));
       if (_q->get_device().is_gpu()) {
+        auto data = dpct::detail::get_memory(reinterpret_cast<float *>(ptr));
         _desc_sr->set_workspace(data);
       }
     } else if ((_input_type == library_data_t::real_double &&
                 _output_type == library_data_t::complex_double) ||
                (_input_type == library_data_t::complex_double &&
                 _output_type == library_data_t::real_double)) {
-      auto data = dpct::detail::get_memory(reinterpret_cast<double *>(ptr));
       if (_q->get_device().is_gpu()) {
+        auto data = dpct::detail::get_memory(reinterpret_cast<double *>(ptr));
         _desc_dr->set_workspace(data);
       }
     } else {

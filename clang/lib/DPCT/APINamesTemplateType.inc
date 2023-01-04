@@ -62,6 +62,11 @@ FEATURE_REQUEST_FACTORY(
                            TYPE_FACTORY(STR("dpct::arg_index_input_iterator"),
                                         TEMPLATE_ARG(0)))))
 
+TYPE_REWRITE_ENTRY(
+    "cub::DiscardOutputIterator",
+    HEADER_INSERTION_FACTORY(HeaderType::HT_DPL_Iterator,
+                             TYPE_FACTORY(STR("oneapi::dpl::discard_iterator"))))
+
 TYPE_REWRITE_ENTRY("cub::Sum",
                    TYPE_FACTORY(STR(MapNames::getClNamespace() + "plus"),
                                 STR("")))
