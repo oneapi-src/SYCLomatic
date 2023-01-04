@@ -465,20 +465,120 @@ CONDITIONAL_FACTORY_ENTRY(
 
 CONDITIONAL_FACTORY_ENTRY(
     UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(
-        HeaderType::HT_SYCL_Math,
-        CALL_FACTORY_ENTRY("__hneg",
-                           CALL(MapNames::getClNamespace(false, true) +
-                            "ext::intel::math::hneg", ARG(0)))),
-    ENTRY_OPERATOR("__hneg", BinaryOperatorKind::BO_Sub)
-)
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__hneg",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "hneg")),
+    ENTRY_OPERATOR("__hneg", BinaryOperatorKind::BO_Sub))
 
 CONDITIONAL_FACTORY_ENTRY(
     UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(
-        HeaderType::HT_SYCL_Math,
-        CALL_FACTORY_ENTRY("__hneg2",
-                           CALL(MapNames::getClNamespace(false, true) +
-                            "ext::intel::math::hneg2", ARG(0)))),
-    ENTRY_OPERATOR("__hneg2", BinaryOperatorKind::BO_Sub)
-)
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__hneg2",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "hneg2")),
+    ENTRY_OPERATOR("__hneg2", BinaryOperatorKind::BO_Sub))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__hadd2",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "hadd2")),
+    ENTRY_OPERATOR("__hadd2", BinaryOperatorKind::BO_Add))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__h2div",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "h2div")),
+    ENTRY_OPERATOR("__h2div", BinaryOperatorKind::BO_Div))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__hdiv",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "hdiv")),
+    ENTRY_OPERATOR("__hdiv", BinaryOperatorKind::BO_Div))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__hmul",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "hmul")),
+    ENTRY_OPERATOR("__hmul", BinaryOperatorKind::BO_Mul))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__hmul2",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "hmul2")),
+    ENTRY_OPERATOR("__hmul2", BinaryOperatorKind::BO_Mul))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__hsub",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "hsub")),
+    ENTRY_OPERATOR("__hsub", BinaryOperatorKind::BO_Sub))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__hsub2",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "hsub2")),
+    ENTRY_OPERATOR("__hsub2", BinaryOperatorKind::BO_Sub))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__heq",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "heq")),
+    ENTRY_OPERATOR("__heq", BinaryOperatorKind::BO_EQ))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__hne",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "hne")),
+    ENTRY_OPERATOR("__hne", BinaryOperatorKind::BO_NE))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__hge",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "hge")),
+    ENTRY_OPERATOR("__hge", BinaryOperatorKind::BO_GE))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__hgt",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "hgt")),
+    ENTRY_OPERATOR("__hgt", BinaryOperatorKind::BO_GT))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__hle",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "hle")),
+    ENTRY_OPERATOR("__hle", BinaryOperatorKind::BO_LE))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("__hlt",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "hlt")),
+    ENTRY_OPERATOR("__hlt", BinaryOperatorKind::BO_LT))

@@ -311,29 +311,23 @@ ENTRY_EMULATED("__drcp_rz", "(1.0/(X))")
 // Half/Half2 Arithmetic Functions
 ENTRY_RENAMED("__habs", MapNames::getClNamespace(false, true) + "fabs")
 ENTRY_RENAMED("__habs2", MapNames::getClNamespace(false, true) + "fabs")
-
-ENTRY_OPERATOR("__hadd2", BinaryOperatorKind::BO_Add)
-
-ENTRY_OPERATOR("__h2div", BinaryOperatorKind::BO_Div)
-ENTRY_OPERATOR("__hdiv", BinaryOperatorKind::BO_Div)
-
-ENTRY_OPERATOR("__hmul", BinaryOperatorKind::BO_Mul)
-ENTRY_OPERATOR("__hmul2", BinaryOperatorKind::BO_Mul)
-
-
-ENTRY_OPERATOR("__hsub", BinaryOperatorKind::BO_Sub)
-ENTRY_OPERATOR("__hsub2", BinaryOperatorKind::BO_Sub)
-
+ENTRY_REWRITE("__hadd2")
+ENTRY_REWRITE("__h2div")
+ENTRY_REWRITE("__hdiv")
+ENTRY_REWRITE("__hmul")
+ENTRY_REWRITE("__hmul2")
+ENTRY_REWRITE("__hsub")
+ENTRY_REWRITE("__hsub2")
 ENTRY_REWRITE("__hneg")
 ENTRY_REWRITE("__hneg2")
 
 // Half Comparison Functions
-ENTRY_OPERATOR("__heq", BinaryOperatorKind::BO_EQ)
-ENTRY_OPERATOR("__hne", BinaryOperatorKind::BO_NE)
-ENTRY_OPERATOR("__hge", BinaryOperatorKind::BO_GE)
-ENTRY_OPERATOR("__hgt", BinaryOperatorKind::BO_GT)
-ENTRY_OPERATOR("__hle", BinaryOperatorKind::BO_LE)
-ENTRY_OPERATOR("__hlt", BinaryOperatorKind::BO_LT)
+ENTRY_REWRITE("__heq")
+ENTRY_REWRITE("__hne")
+ENTRY_REWRITE("__hge")
+ENTRY_REWRITE("__hgt")
+ENTRY_REWRITE("__hle")
+ENTRY_REWRITE("__hlt")
 
 // Single Precision Mathematical Functions
 ENTRY_OPERATOR("__fadd_rd", BinaryOperatorKind::BO_Add)
