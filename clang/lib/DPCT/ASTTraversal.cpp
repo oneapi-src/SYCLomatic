@@ -312,7 +312,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                        DefRange.getBegin());
         TransformSet.emplace_back(new ReplaceText(
             DefRange.getBegin(), Length,
-            "&" + MapNames::getDpctNamespace() + "get_default_queue()"));
+            "0"));
       }
     }
 
@@ -14612,18 +14612,12 @@ void PreDefinedStreamHandleRule::runRule(
     const MatchFinder::MatchResult &Result) {
   if (auto E = getNodeAsType<Expr>(Result, "stream")) {
     std::string Str = getStmtSpelling(E);
-    if (Str == "cudaStreamDefault" || Str == "cudaStreamLegacy" ||
-        Str == "cudaStreamPerThread") {
+    if (Str == "cudaStreamDefault") {
       auto &SM = DpctGlobalInfo::getSourceManager();
       auto Begin = getStmtExpansionSourceRange(E).getBegin();
       unsigned int Length = Lexer::MeasureTokenLength(
           Begin, SM, DpctGlobalInfo::getContext().getLangOpts());
-      if (isPlaceholderIdxDuplicated(E))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, E, HelperFuncType::HFT_DefaultQueue);
-      emplaceTransformation(new ReplaceText(
-          Begin, Length, "&{{NEEDREPLACEQ" + std::to_string(Index) + "}}"));
+      emplaceTransformation(new ReplaceText(Begin, Length, "0"));
     }
   }
 }
