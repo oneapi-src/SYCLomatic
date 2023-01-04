@@ -275,6 +275,9 @@ public:
 // Device|device_info
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+  /// Returns the maximum clock rate of device's global memory in kHz. If device
+  /// or compiler not support this API then returns 0. If there are several memories on the
+  /// device then the minimum of the clock rate values is returned.
   unsigned int get_memory_clock_rate() const { return _memory_clock_rate; }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_get_memory_bus_width|dpct
@@ -282,6 +285,9 @@ public:
 // Device|device_info
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+  /// Returns the maximum bus width between device and memory in bits. If device
+  /// or compiler not support this API then returns 64.  If there are several
+  /// memories on the device then the minimum of the bus width values is returned.
   unsigned int get_memory_bus_width() const { return _memory_bus_width; }
 // DPCT_LABEL_END
   // set interface
@@ -626,6 +632,8 @@ public:
 // Device|device_info_set_max_sub_group_size
 // Device|device_info_set_max_work_items_per_compute_unit
 // Device|device_info_set_max_nd_range_size
+// Device|device_info_set_memory_clock_rate
+// Device|device_info_set_memory_bus_width
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void get_device_info(device_info &out) const {
@@ -662,31 +670,32 @@ public:
 #if (defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 6)
     if (this->has(sycl::aspect::ext_intel_memory_clock_rate)) {
       prop.set_memory_clock_rate(
-          this->get_info<sycl::ext::intel::info::device::memory_clock_rate>());
+          1000 * this->get_info<sycl::ext::intel::info::device::memory_clock_rate>());
     } else {
       std::cerr << "Querying ext_intel_device_info_memory_clock_rate is not "
-                   "supported "
-                   "by the device"
+                   "supported by the device"
                 << std::endl;
-      std::cerr << "memory_clock_rate default value is 0." << std::endl;
+      std::cerr << "memory_clock_rate default value is 0 kHz." << std::endl;
     }
     if (this->has(sycl::aspect::ext_intel_memory_bus_width)) {
       prop.set_memory_bus_width(
           this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
     } else {
-      std::cerr
-          << "Querying ext_intel_device_info_memory_bus_width is not supported "
-             "by the device"
-          << std::endl;
-      std::cerr << "memory_bus_width default value is 64." << std::endl;
+      std::cerr << "Querying ext_intel_device_info_memory_bus_width is not "
+                   "supported by the device"
+                << std::endl;
+      std::cerr << "memory_bus_width default value is 64 bits." << std::endl;
     }
 #else
-    std::cerr
-        << "get_device_info: query memory_clock_rate and memory_bus_width are "
-           "not supported by the compiler you currently used."
-        << std::endl;
-    std::cerr << "memory_clock_rate default value is 0." << std::endl;
-    std::cerr << "memory_bus_width default value is 64." << std::endl;
+#if defined(_MSC_VER) && !defined(__clang__)
+#pragma message("get_device_info: querying memory_clock_rate and memory_bus_width are"\
+                " not supported by the compiler used.")
+#pragma message("memory_clock_rate default value is 0 kHz.\nmemory_bus_width default value is 64 bits.")
+#else
+#warning "get_device_info: querying memory_bus_width and memory_bus_width are not"\
+         “supported by the compiler used."
+#warning "memory_clock_rate default value is 0 kHz.\nmemory_bus_width default value is 64 bits."
+#endif
 #endif
 
     size_t max_sub_group_size = 1;
