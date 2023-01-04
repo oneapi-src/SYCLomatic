@@ -331,7 +331,7 @@ const clang::CUDAKernelCallExpr *getParentKernelCall(const clang::Expr *E);
 bool isInSameScope(const clang::Stmt *S, const clang::ValueDecl *D);
 const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
 const clang::Stmt *getParentStmt(clang::DynTypedNode Node);
-const clang::Stmt *getParentStmt(const clang::Stmt *S);
+const clang::Stmt *getParentStmt(const clang::Stmt *S, bool SkipNonWritten = false);
 const clang::Stmt *getParentStmt(const clang::Decl *D);
 const clang::Decl *getParentDecl(const clang::Decl *D);
 const clang::Stmt *getNonImplicitCastParentStmt(const clang::Stmt *S);
