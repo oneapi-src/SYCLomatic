@@ -48,11 +48,10 @@
 
 #if (__GNUC__ < 8) && !defined(__llvm__)
 #include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
 #else
 #include <filesystem>
-namespace fs = std::filesystem;
 #endif
+
 #include <random>
 
 // DPCT_LABEL_END
@@ -109,6 +108,12 @@ static kernel_function_info get_kernel_function_info(const void *function) {
 // DPCT_CODE
 
 namespace detail {
+
+#if (__GNUC__ < 8) && !defined(__llvm__)
+namespace fs = std::experimental::filesystem;
+#else
+namespace fs = std::filesystem;
+#endif
 
  /// Write data to temporary file and return absolute path to temporary file.
  /// Temporary file is created in a temporary directory both of which have random names
