@@ -102,5 +102,12 @@
   Priority: Takeover
   In: explicit_template
   Out: ET($1)
-  HasExplicitTemplateArgs: true
+  Includes: []
+  Attributes:
+    HasExplicitTemplateArgs: true
+- Rule: disable_ceil
+  Kind: DisableAPIMigration
+  Priority: Takeover
+  In: ceil
+  Out: ""
   Includes: []

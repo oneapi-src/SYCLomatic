@@ -37,6 +37,7 @@ jobs:
         run: |
           if exist c2s.obj rd /s /q c2s.obj
           if exist c2s.src/build rd /s /q c2s.src/build
+          if exist c2s_obj.7z del /s /q c2s_obj.7z 
         shell: cmd
 
       - name: Process ENV

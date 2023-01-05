@@ -149,6 +149,11 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), CheckUnico
            llvm::cl::desc("Enable detection and warnings about Unicode constructs that can be exploited by using\n"
                    "bi-directional formatting codes and homoglyphs in identifiers. Default: off.\n"),
            llvm::cl::cat(DPCTCat), llvm::cl::location(CheckUnicodeSecurityFlag))
+
+DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), EnablepProfiling, "enable-profiling",
+           llvm::cl::desc("Enable sycl queue profiling in helper functions. Default: off.\n"),
+           llvm::cl::cat(DPCTCat), llvm::cl::location(EnablepProfilingFlag))
+
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool, true>), SyclNamedLambda, "sycl-named-lambda",
            llvm::cl::desc("Generates kernels with the kernel name. Default: off.\n"),
            llvm::cl::cat(DPCTCat), llvm::cl::location(SyclNamedLambdaFlag))
@@ -335,8 +340,14 @@ DPCT_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::bits<DPCPPExtensionsDefaultDisab
            DPCT_OPTION_VALUES(
              DPCT_OPT_ENUM("c_cxx_standard_library",
                                      int(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary),
-                                     "A set of functions from the C and C++ standard libraries that are allowed to\n"
-                                     "be used in SYCL device code.",
+                                     "When no SYCL standard API is available, use functions from std namespace from\n"
+                                     "libdevice or C/C++ standard library if allowed. If this option is used together with\n"
+                                     "intel_device_math extension option, intel_device_math functions take precedence.",
+                                     false),
+             DPCT_OPT_ENUM("intel_device_math",
+                                     int(DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath),
+                                     "When no SYCL standard API is available, use functions from sycl::ext::intel::math\n"
+                                     "namespace.",
                                      false)
            ),
            llvm::cl::desc("A comma separated list of extensions to be used in migrated code.\n"
@@ -387,14 +398,24 @@ DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<bool>), NoIncrementalMig
                    "Default: off (incremental migration happens)."),
         llvm::cl::cat(DPCTCat), llvm::cl::init(false))
 
+/*
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), QueryApiMapping, "query-api-mapping",
         llvm::cl::desc("Outputs to stdout functionally compatible SYCL API mapping for CUDA API."),
         llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
+*/
 
 DPCT_NON_ENUM_OPTION(DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), AnalysisScope, "analysis-scope-path",
         llvm::cl::desc("The directory path for the analysis scope of the source tree that "
              "needs to be migrated.\n"
              "Default: the value of --in-root."),
         llvm::cl::value_desc("dir"), llvm::cl::cat(DPCTCat))
+
+DPCT_NON_ENUM_OPTION(
+    DPCT_OPT_TYPE(static llvm::cl::opt<std::string>), ChangeExtension,
+    "change-filename-extension",
+    llvm::cl::desc("Specifies which extensions of migrated files will be changed, "
+                   "split by comma. Default:\n"
+                   ".cu, .cuh, .cpp, .cxx, .cc, .c, .C"),
+    llvm::cl::value_desc("file"), llvm::cl::cat(DPCTCat), llvm::cl::Optional)
 
 #endif // !DPCT_OPTIONS_IN_CLANG_DPCT

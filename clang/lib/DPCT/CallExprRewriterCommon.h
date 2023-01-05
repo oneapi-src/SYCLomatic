@@ -355,8 +355,8 @@ makeLambdaCreator(bool IsCaptureRef,
                         IsCaptureRef, Stmts...);
 }
 
-auto getTemplateArgsList =
-    [](const CallExpr *C) -> std::vector<TemplateArgumentInfo> {
+inline std::vector<TemplateArgumentInfo>
+getTemplateArgsList(const CallExpr *C) {
   ArrayRef<TemplateArgumentLoc> TemplateArgsList;
   std::vector<TemplateArgumentInfo> Ret;
   auto Callee = C->getCallee()->IgnoreImplicitAsWritten();
@@ -369,7 +369,7 @@ auto getTemplateArgsList =
     Ret.emplace_back(Arg, C->getSourceRange());
   }
   return Ret;
-};
+}
 
 inline std::function<TemplatedNamePrinter<
     StringRef, std::vector<TemplateArgumentInfo>>(const CallExpr *)>
@@ -490,7 +490,9 @@ makeFuncNameFromDevAttrCreator(unsigned idx) {
   };
 }
 inline std::function<std::string(const CallExpr *)> getWorkGroupDim(unsigned index) {
-  return [=](const CallExpr * C) {
+  return [=](const CallExpr *C) {
+    if (!dyn_cast<DeclRefExpr>(C->getArg(index)->IgnoreImplicitAsWritten()))
+      return "";
     auto Arg = dyn_cast<DeclRefExpr>(C->getArg(index)->
                 IgnoreImplicitAsWritten())->getNameInfo().getAsString();
     if (Arg == "CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X")
@@ -1406,6 +1408,9 @@ inline auto UseLogicalGroup = [](const CallExpr *C) -> bool {
 };
 inline auto UseCAndCXXStandardLibrariesExt = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
+};
+inline auto UseIntelDeviceMath = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useIntelDeviceMath();
 };
 
 class CheckDerefedTypeBeforeCast {

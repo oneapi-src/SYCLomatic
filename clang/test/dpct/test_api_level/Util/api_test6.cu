@@ -6,10 +6,12 @@
 // CHECK: 3
 // TEST_FEATURE: Util_vectorized_isgreater_T
 // TEST_FEATURE: Util_vectorized_isgreater_unsigned
+// TEST_FEATURE: Util_vectorized_isgreater_uchar4
 
 __device__ void foo() {
   unsigned u, u2;
   u = __vcmpgtu2(u, u2);
+  u = __vcmpgtu4(u, u2);
 }
 
 int main() {

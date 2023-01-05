@@ -114,6 +114,8 @@ public:
   }
   size_t get_global_mem_size() const { return _global_mem_size; }
   size_t get_local_mem_size() const { return _local_mem_size; }
+  unsigned int get_memory_clock_rate() const { return _memory_clock_rate; }
+  unsigned int get_memory_bus_width() const { return _memory_bus_width; }
   // set interface
   void set_name(const char* name) {
     size_t length = strlen(name);
@@ -161,6 +163,12 @@ public:
       _max_nd_range_size_i[i] = max_nd_range_size[i];
     }
   }
+  void set_memory_clock_rate(unsigned int memory_clock_rate) {
+    _memory_clock_rate = memory_clock_rate;
+  }
+  void set_memory_bus_width(unsigned int memory_bus_width) {
+    _memory_bus_width = memory_bus_width;
+  }
 
 private:
   char _name[256];
@@ -171,6 +179,8 @@ private:
   int _minor;
   int _integrated = 0;
   int _frequency;
+  unsigned int _memory_clock_rate = 0;
+  unsigned int _memory_bus_width = 64;
   int _max_compute_units;
   int _max_work_group_size;
   int _max_sub_group_size;
@@ -186,7 +196,7 @@ class device_ext : public sycl::device {
 public:
   device_ext() : sycl::device(), _ctx(*this) {}
   ~device_ext() {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     for (auto &task : _tasks) {
       if (task.joinable())
         task.join();
@@ -196,14 +206,7 @@ public:
   }
   device_ext(const sycl::device &base)
       : sycl::device(base), _ctx(*this) {
-#ifdef DPCT_USM_LEVEL_NONE
-    _queues.push_back(
-        std::make_shared<sycl::queue>(_ctx, base, exception_handler));
-#else
-    _queues.push_back(std::make_shared<sycl::queue>(
-        _ctx, base, exception_handler, sycl::property::queue::in_order()));
-#endif
-    _saved_queue = _default_queue = _queues[0].get();
+    _saved_queue = _default_queue = create_queue(true);
   }
 
   int is_native_atomic_supported() { return 0; }
@@ -283,6 +286,36 @@ public:
         get_info<sycl::info::device::global_mem_size>());
     prop.set_local_mem_size(get_info<sycl::info::device::local_mem_size>());
 
+#if (defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 6)
+    if (this->has(sycl::aspect::ext_intel_memory_clock_rate)) {
+      prop.set_memory_clock_rate(
+          this->get_info<sycl::ext::intel::info::device::memory_clock_rate>());
+    } else {
+      std::cerr << "Querying ext_intel_device_info_memory_clock_rate is not "
+                   "supported "
+                   "by the device"
+                << std::endl;
+      std::cerr << "memory_clock_rate default value is 0." << std::endl;
+    }
+    if (this->has(sycl::aspect::ext_intel_memory_bus_width)) {
+      prop.set_memory_bus_width(
+          this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
+    } else {
+      std::cerr
+          << "Querying ext_intel_device_info_memory_bus_width is not supported "
+             "by the device"
+          << std::endl;
+      std::cerr << "memory_bus_width default value is 64." << std::endl;
+    }
+#else
+    std::cerr
+        << "get_device_info: query memory_clock_rate and memory_bus_width are "
+           "not supported by the compiler you currently used."
+        << std::endl;
+    std::cerr << "memory_clock_rate default value is 0." << std::endl;
+    std::cerr << "memory_bus_width default value is 64." << std::endl;
+#endif
+
     size_t max_sub_group_size = 1;
     std::vector<size_t> sub_group_sizes =
         get_info<sycl::info::device::sub_group_sizes>();
@@ -309,28 +342,16 @@ public:
   }
 
   void reset() {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    // The queues are shared_ptrs and the ref counts of the shared_ptrs increase
-    // only in wait_and_throw(). If there is no other thread calling
-    // wait_and_throw(), the queues will be destructed. The destructor waits for
-    // all commands executing on the queue to complete. It isn't possible to
-    // destroy a queue immediately. This is a synchronization point in SYCL.
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     _queues.clear();
     // create new default queue.
-#ifdef DPCT_USM_LEVEL_NONE
-    _queues.push_back(
-        std::make_shared<sycl::queue>(_ctx, *this, exception_handler));
-#else
-    _queues.push_back(std::make_shared<sycl::queue>(
-        _ctx, *this, exception_handler, sycl::property::queue::in_order()));
-#endif
-    _saved_queue = _default_queue = _queues.front().get();
+    _saved_queue = _default_queue = create_queue(true);
   }
 
   sycl::queue &default_queue() { return *_default_queue; }
 
   void queues_wait_and_throw() {
-    std::unique_lock<std::mutex> lock(m_mutex);
+    std::unique_lock<std::recursive_mutex> lock(m_mutex);
     std::vector<std::shared_ptr<sycl::queue>> current_queues(
         _queues);
     lock.unlock();
@@ -341,23 +362,19 @@ public:
     lock.lock();
   }
   sycl::queue *create_queue(bool enable_exception_handler = false) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     sycl::async_handler eh = {};
     if (enable_exception_handler) {
       eh = exception_handler;
     }
-#ifdef DPCT_USM_LEVEL_NONE
+    auto property = get_default_property_list_for_queue();
     _queues.push_back(std::make_shared<sycl::queue>(
-        _ctx, *this, eh));
-#else
-    _queues.push_back(std::make_shared<sycl::queue>(
-        _ctx, *this, eh,
-        sycl::property::queue::in_order()));
-#endif
+        _ctx, *this, eh, property));
+
     return _queues.back().get();
   }
   void destroy_queue(sycl::queue *&queue) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     _queues.erase(std::remove_if(_queues.begin(), _queues.end(),
                                   [=](const std::shared_ptr<sycl::queue> &q) -> bool {
                                     return q.get() == queue;
@@ -366,16 +383,37 @@ public:
     queue = nullptr;
   }
   void set_saved_queue(sycl::queue* q) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     _saved_queue = q;
   }
   sycl::queue* get_saved_queue() const {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     return _saved_queue;
   }
   sycl::context get_context() const { return _ctx; }
 
 private:
+  sycl::property_list get_default_property_list_for_queue() const {
+#ifdef DPCT_PROFILING_ENABLED
+#ifdef DPCT_USM_LEVEL_NONE
+    auto property =
+        sycl::property_list{sycl::property::queue::enable_profiling()};
+#else
+    auto property =
+        sycl::property_list{sycl::property::queue::enable_profiling(),
+                            sycl::property::queue::in_order()};
+#endif
+#else
+#ifdef DPCT_USM_LEVEL_NONE
+    auto property =
+        sycl::property_list{};
+#else
+    auto property =
+        sycl::property_list{sycl::property::queue::in_order()};
+#endif
+#endif
+    return property;
+  }
   void get_version(int &major, int &minor) const {
     // Version string has the following format:
     // a. OpenCL<space><major.minor><space><vendor-specific-information>
@@ -398,7 +436,7 @@ private:
     minor = std::stoi(&(ver[i]));
   }
   void add_task(std::thread &&task) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     _tasks.push_back(std::move(task));
   }
   friend void async_dpct_free(std::vector<void *>,
@@ -408,7 +446,7 @@ private:
   sycl::queue *_saved_queue;
   sycl::context _ctx;
   std::vector<std::shared_ptr<sycl::queue>> _queues;
-  mutable std::mutex m_mutex;
+  mutable std::recursive_mutex m_mutex;
   std::vector<std::thread> _tasks;
 };
 
@@ -431,7 +469,7 @@ public:
     return *_devs[dev_id];
   }
   device_ext &cpu_device() const {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     if (_cpu_device == -1) {
       throw std::runtime_error("no valid cpu device");
     } else {
@@ -439,19 +477,19 @@ public:
     }
   }
   device_ext &get_device(unsigned int id) const {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     check_id(id);
     return *_devs[id];
   }
   unsigned int current_device_id() const {
-   std::lock_guard<std::mutex> lock(m_mutex);
+   std::lock_guard<std::recursive_mutex> lock(m_mutex);
    auto it=_thread2dev_map.find(get_tid());
    if(it != _thread2dev_map.end())
       return it->second;
     return DEFAULT_DEVICE_ID;
   }
   void select_device(unsigned int id) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::recursive_mutex> lock(m_mutex);
     check_id(id);
     _thread2dev_map[get_tid()]=id;
   }
@@ -479,7 +517,7 @@ public:
   dev_mgr &operator=(dev_mgr &&) = delete;
 
 private:
-  mutable std::mutex m_mutex;
+  mutable std::recursive_mutex m_mutex;
   dev_mgr() {
     sycl::device default_device =
         sycl::device(sycl::default_selector_v);
@@ -548,7 +586,7 @@ static inline device_ext &cpu_device() {
   return dev_mgr::instance().cpu_device();
 }
 
-static inline unsigned int select_device(unsigned int id){
+static inline unsigned int select_device(unsigned int id) {
   dev_mgr::instance().select_device(id);
   return id;
 }

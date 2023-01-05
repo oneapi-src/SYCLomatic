@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test31_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test31_out
 
-// CHECK: 35
+// CHECK: 37
 // TEST_FEATURE: Memory_get_host_ptr
 
 int main() {

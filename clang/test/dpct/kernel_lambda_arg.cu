@@ -33,8 +33,8 @@ void run_foo1() {
 //CHECK-NEXT:                                        sycl::nd_item<3> item_ct1) {
 //CHECK-NEXT:  std::tuple<unsigned int, unsigned int> seeds = {1, 2};
 //CHECK-NEXT:  int idx = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
-//CHECK-NEXT:  dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> state;
-//CHECK-NEXT:  state = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>>(std::get<0>(seeds), {static_cast<std::uint64_t>(std::get<1>(seeds)), static_cast<std::uint64_t>(idx * 4)});
+//CHECK-NEXT:  dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> state;
+//CHECK-NEXT:  state = dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>>(std::get<0>(seeds), {static_cast<std::uint64_t>(std::get<1>(seeds)), static_cast<std::uint64_t>(idx * 4)});
 //CHECK-NEXT:  foo(&state);
 //CHECK-NEXT:}
 template <typename Foo> __global__ void my_kernel2(const Foo &foo) {
@@ -47,9 +47,9 @@ template <typename Foo> __global__ void my_kernel2(const Foo &foo) {
 
 //     CHECK:inline void run_foo2() {
 //CHECK-NEXT:  dpct::get_default_queue().parallel_for<dpct_kernel_name<class my_kernel2_{{[0-9a-z]+}}, class lambda_{{[0-9a-z]+}}>>(
-//CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)), 
+//CHECK-NEXT:    sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
 //CHECK-NEXT:    [=](sycl::nd_item<3> item_ct1) {
-//CHECK-NEXT:      my_kernel2([] (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<4>> * state) {
+//CHECK-NEXT:      my_kernel2([] (dpct::rng::device::rng_generator<oneapi::mkl::rng::device::philox4x32x10<1>> * state) {
 //CHECK-NEXT:    return state->generate<oneapi::mkl::rng::device::uniform<double>, 2>();
 //CHECK-NEXT:  }, item_ct1);
 //CHECK-NEXT:    });

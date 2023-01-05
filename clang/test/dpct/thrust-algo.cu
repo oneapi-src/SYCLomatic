@@ -13,10 +13,14 @@
 #include <thrust/extrema.h>
 #include <thrust/gather.h>
 #include <thrust/binary_search.h>
-
+#include <thrust/unique.h>
 #include <thrust/find.h>
 #include <thrust/sort.h>
 #include <thrust/host_vector.h>
+#include <thrust/transform_scan.h>
+#include <thrust/set_operations.h>
+#include <thrust/tabulate.h>
+#include <thrust/functional.h>
 
 void k() {
   std::vector<int> v, v2, v3, v4;
@@ -268,9 +272,9 @@ void foo(cudaStream_t stream) {
   thrust::reduce_by_key(d.begin(), d.end(), d.begin(), d.end(), d.begin());
 
   {
-    //CHECK:std::vector<int> h_keys,h_values;
-    //CHECK-NEXT:dpct::device_vector<int> d_keys, d_values;
-    //CHECK-NEXT:oneapi::dpl::equal_to<int> binary_pred;
+// CHECK:std::vector<int> h_keys,h_values;
+// CHECK-NEXT:dpct::device_vector<int> d_keys, d_values;
+// CHECK-NEXT:oneapi::dpl::equal_to<int> binary_pred;
     thrust::host_vector<int> h_keys,h_values;
     thrust::device_vector<int> d_keys, d_values;
     thrust::equal_to<int> binary_pred;
@@ -278,18 +282,18 @@ void foo(cudaStream_t stream) {
     int A[N]; // keys
     int B[N]; // values
 
-    //CHECK:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), binary_pred);
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), binary_pred);
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin());
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin());
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
-    //CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
+// CHECK:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin());
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), binary_pred);
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, h_keys.begin(), h_keys.end(), h_values.begin(), binary_pred);
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin());
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin());
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::make_device_policy(q_ct1), d_keys.begin(), d_keys.end(), d_values.begin(), binary_pred);
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B);
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
+// CHECK-NEXT:dpct::unique(oneapi::dpl::execution::seq, A, A + N, B, binary_pred);
     thrust::unique_by_key(thrust::host, h_keys.begin(), h_keys.end(), h_values.begin());
     thrust::unique_by_key(h_keys.begin(), h_keys.end(), h_values.begin());
     thrust::unique_by_key(thrust::host, h_keys.begin(), h_keys.end(),h_values.begin(), binary_pred);
@@ -304,4 +308,465 @@ void foo(cudaStream_t stream) {
     thrust::unique_by_key(A, A + N, B, binary_pred);
 
   }
+}
+
+
+struct key_value
+	{
+		int key;
+		int value;
+		__host__ __device__ 
+		bool operator!=( struct key_value &tmp) const {
+			if (this->key != tmp.key||this->value != tmp.value) {
+				return true;
+			}
+			else {
+				return false;
+			}
+
+		}
+	};
+
+struct compare_key_value
+	{
+		__host__ __device__
+			bool operator()(key_value lhs, key_value rhs) const {
+			return lhs.key < rhs.key;
+		}
+	};
+
+void minmax_element_test() {
+	const int N = 6;
+	int data[N] = { 1, 0, 2, 2, 1, 3 };
+	thrust::host_vector<int> h_values(data, data + N);
+	thrust::device_vector<int> d_values(data, data + N);
+
+// CHECK:  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.end());
+// CHECK-NEXT:	oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.end());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.begin() + 4, compare_key_value());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, h_values.begin(), h_values.begin() + 4, compare_key_value());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end(), compare_key_value());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::make_device_policy(q_ct1), d_values.begin(), d_values.end(), compare_key_value());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N);
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N);
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N, compare_key_value());
+// CHECK-NEXT:  oneapi::dpl::minmax_element(oneapi::dpl::execution::seq, data, data+N, compare_key_value());
+  thrust::minmax_element(thrust::host, h_values.begin(), h_values.end());
+	thrust::minmax_element(h_values.begin(), h_values.end());
+  thrust::minmax_element(thrust::host, h_values.begin(), h_values.begin() + 4, compare_key_value());
+  thrust::minmax_element(h_values.begin(), h_values.begin() + 4, compare_key_value());
+  thrust::minmax_element(thrust::device, d_values.begin(), d_values.end());
+  thrust::minmax_element(d_values.begin(), d_values.end());
+  thrust::minmax_element(thrust::device, d_values.begin(), d_values.end(), compare_key_value());
+  thrust::minmax_element(d_values.begin(), d_values.end(), compare_key_value());
+  thrust::minmax_element(thrust::host, data, data+N);
+  thrust::minmax_element(data, data+N);
+  thrust::minmax_element(thrust::host, data, data+N, compare_key_value());
+  thrust::minmax_element(data, data+N, compare_key_value());
+}
+
+void is_sorted_test() {
+    const int N=6;
+    int datas[N]={1,4,2,8,5,7};
+
+// CHECK:    std::vector<int> h_v(datas,datas+N);
+// CHECK-NEXT:    dpct::device_vector<int> d_v(datas,datas+N);
+// CHECK-NEXT:    std::greater<int> comp;
+    thrust::host_vector<int> h_v(datas,datas+N);
+    thrust::device_vector<int> d_v(datas,datas+N);
+    thrust::greater<int> comp;
+
+// CHECK:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), comp);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), comp);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end());
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), comp);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), comp);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas+N);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas+N);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas+N, comp);
+// CHECK-NEXT:    oneapi::dpl::is_sorted(oneapi::dpl::execution::seq, datas, datas+N, comp);
+  thrust::is_sorted(thrust::host, h_v.begin(), h_v.end());
+  thrust::is_sorted( h_v.begin(), h_v.end());
+  thrust::is_sorted(thrust::host, h_v.begin(), h_v.end(),comp);
+  thrust::is_sorted( h_v.begin(), h_v.end(),comp);
+  thrust::is_sorted(thrust::device, d_v.begin(), d_v.end());
+  thrust::is_sorted(thrust::device, d_v.begin(), d_v.end(),comp);
+  thrust::is_sorted( d_v.begin(), d_v.end(),comp);
+  thrust::is_sorted(thrust::host, datas, datas+N);
+  thrust::is_sorted( datas, datas+N);
+  thrust::is_sorted(thrust::host,datas, datas+N,comp);
+  thrust::is_sorted(datas, datas+N,comp);
+}
+
+struct is_even
+{
+  __host__ __device__
+  bool operator()(const int &x)
+  {
+    return (x % 2) == 0;
+  }
+};
+void is_partition_test() {
+  int datas[]={1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  int ans[]={2, 4, 6, 8, 10, 1, 3, 5, 7, 9};
+  const int N=sizeof(datas)/sizeof(int);
+  int stencil[N]={1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+  thrust::host_vector<int> h_vdata(datas,datas+N);
+  thrust::host_vector<int> h_vstencil(stencil,stencil+N);
+  thrust::device_vector<int> d_v(datas,datas+N);
+  thrust::host_vector<int> h_v(datas,datas+N);
+  thrust::device_vector<int> d_vdata(datas,datas+N);
+  thrust::device_vector<int> d_vstencil(stencil,stencil+N);
+
+// CHECK:  oneapi::dpl::partition(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), is_even());
+// CHECK-NEXT:  dpct::partition(oneapi::dpl::execution::seq, h_vdata.begin(), h_vdata.end(), h_vstencil.begin(), is_even());
+// CHECK-NEXT:  dpct::partition(oneapi::dpl::execution::seq, h_vdata.begin(), h_vdata.end(), h_vstencil.begin(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), is_even());
+// CHECK-NEXT:  dpct::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_vdata.begin(), d_vdata.end(), d_vstencil.begin(), is_even());
+// CHECK-NEXT:  dpct::partition(oneapi::dpl::execution::make_device_policy(q_ct1), d_vdata.begin(), d_vdata.end(), d_vstencil.begin(), is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, is_even());
+// CHECK-NEXT:  oneapi::dpl::partition(oneapi::dpl::execution::seq, datas, datas+N, is_even());
+// CHECK-NEXT:  dpct::partition(oneapi::dpl::execution::seq, datas, datas+N, stencil, is_even());
+// CHECK-NEXT:  dpct::partition(oneapi::dpl::execution::seq, datas, datas+N, stencil, is_even());
+  thrust::partition(thrust::host, h_v.begin(), h_v.end(),is_even());
+  thrust::partition( h_v.begin(), h_v.end(),is_even());
+  thrust::partition(thrust::host, h_vdata.begin(), h_vdata.end(),h_vstencil.begin(),is_even());
+  thrust::partition(h_vdata.begin(), h_vdata.end(),h_vstencil.begin(),is_even());
+  thrust::partition(thrust::device, d_v.begin(), d_v.end(),is_even());
+  thrust::partition( d_v.begin(), d_v.end(),is_even());
+  thrust::partition(thrust::device, d_vdata.begin(), d_vdata.end(),d_vstencil.begin(),is_even());
+  thrust::partition( d_vdata.begin(), d_vdata.end(),d_vstencil.begin(),is_even());
+  thrust::partition(thrust::host, datas, datas+N,is_even());
+  thrust::partition( datas, datas+N,is_even());
+  thrust::partition(thrust::host,  datas, datas+N, stencil,is_even());
+  thrust::partition( datas, datas+N, stencil,is_even());
+}
+
+
+void unique_copy_test() {
+  const int N=7;
+  int A[N]={1, 3, 3, 3, 2, 2, 1};
+  int B[N];
+  const int M=N-3;
+  int ans[M]={1, 3, 2, 1};
+  thrust::host_vector<int> h_V(A,A+N);
+  thrust::device_vector<int> d_V(A,A+N);
+  thrust::host_vector<int> h_result(B,B+M);
+  thrust::device_vector<int> d_result(B,B+M);
+
+// CHECK:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin(), oneapi::dpl::equal_to<int>());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin(), oneapi::dpl::equal_to<int>());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin(), oneapi::dpl::equal_to<int>());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin(), oneapi::dpl::equal_to<int>());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B);
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B);
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B, oneapi::dpl::equal_to<int>());
+// CHECK-NEXT:  oneapi::dpl::unique_copy(oneapi::dpl::execution::seq, A, A + N, B, oneapi::dpl::equal_to<int>());
+  thrust::unique_copy(thrust::host, h_V.begin(), h_V.end(), h_result.begin());
+  thrust::unique_copy(h_V.begin(), h_V.end(), h_result.begin());
+  thrust::unique_copy(thrust::host, h_V.begin(), h_V.end(), h_result.begin(), thrust::equal_to<int>());
+  thrust::unique_copy(h_V.begin(), h_V.end(), h_result.begin(), thrust::equal_to<int>());
+  thrust::unique_copy(thrust::device, d_V.begin(), d_V.end(), d_result.begin());
+  thrust::unique_copy(d_V.begin(), d_V.end(), d_result.begin());
+  thrust::unique_copy(thrust::device, d_V.begin(), d_V.end(), d_result.begin(), thrust::equal_to<int>());
+  thrust::unique_copy(d_V.begin(), d_V.end(), d_result.begin(), thrust::equal_to<int>());
+  thrust::unique_copy(thrust::host,A, A + N, B);
+  thrust::unique_copy(A, A + N, B);
+  thrust::unique_copy(thrust::host,A, A + N, B, thrust::equal_to<int>());
+  thrust::unique_copy(A, A + N, B, thrust::equal_to<int>());
+}
+
+void stable_sort_test() {
+  const int N=6;
+  int datas[N]={1, 4, 2, 8, 5, 7};
+  int ans[N]={1, 2, 4, 5, 7, 8};
+  thrust::host_vector<int> h_v(datas,datas+N);
+  thrust::device_vector<int> d_v(datas,datas+N);
+// CHECK:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, h_v.begin(), h_v.end());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, h_v.begin(), h_v.end(), std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::make_device_policy(q_ct1), d_v.begin(), d_v.end(), std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas+N);
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas+N);
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas+N, std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::stable_sort(oneapi::dpl::execution::seq, datas, datas+N, std::greater<int>());
+  thrust::stable_sort(thrust::host, h_v.begin(), h_v.end());
+  thrust::stable_sort(h_v.begin(), h_v.end());
+  thrust::stable_sort(thrust::host, h_v.begin(), h_v.end(), thrust::greater<int>());
+  thrust::stable_sort(h_v.begin(), h_v.end(), thrust::greater<int>());
+  thrust::stable_sort(thrust::device, d_v.begin(), d_v.end());
+  thrust::stable_sort(d_v.begin(), d_v.end());
+  thrust::stable_sort(thrust::device, d_v.begin(), d_v.end(), thrust::greater<int>());
+  thrust::stable_sort(d_v.begin(), d_v.end(), thrust::greater<int>());
+  thrust::stable_sort(thrust::host, datas,datas+N);
+  thrust::stable_sort(datas,datas+N);
+  thrust::stable_sort(thrust::host, datas,datas+N, thrust::greater<int>());
+  thrust::stable_sort(datas,datas+N, thrust::greater<int>());
+}
+
+void set_difference_by_key_test() {
+  const int N=7,M=5,P=3;
+  int Akey[N]={0, 1, 3, 4, 5, 6, 9};
+  int Avalue[N]={0, 0, 0, 0, 0, 0, 0};
+  int Bkey[M]={1, 3, 5, 7, 9};
+  int Bvalue[N]={1, 1, 1, 1, 1 };
+
+  int Ckey[P];
+  int Cvalue[P];
+  int anskey[P]={0,4,6};
+  int ansvalue[P]={0,0,0};
+
+  thrust::host_vector<int> h_VAkey(Akey,Akey+N);
+  thrust::host_vector<int> h_VAvalue(Avalue,Avalue+N);
+
+  thrust::host_vector<int> h_VBkey(Bkey,Bkey+M);
+  thrust::host_vector<int> h_VBvalue(Bvalue,Bvalue+M);
+
+  thrust::host_vector<int> h_VCkey(Ckey,Ckey+P);
+  thrust::host_vector<int> h_VCvalue(Cvalue,Cvalue+P);
+  typedef thrust::pair<thrust::host_vector<int>::iterator, thrust::host_vector<int>::iterator> h_iter_pair;
+  thrust::device_vector<int> d_VAkey(Akey,Akey+N);
+  thrust::device_vector<int> d_VAvalue(Avalue,Avalue+N);
+
+  thrust::device_vector<int> d_VBkey(Bkey,Bkey+M);
+  thrust::device_vector<int> d_VBvalue(Bvalue,Bvalue+M);
+
+  thrust::device_vector<int> d_VCkey(Ckey,Ckey+P);
+  thrust::device_vector<int> d_VCvalue(Cvalue,Cvalue+P);
+  typedef thrust::pair<thrust::device_vector<int>::iterator, thrust::device_vector<int>::iterator> d_iter_pair;
+
+// CHECK:  dpct::set_difference(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey+N, Bkey, Bkey+M, Avalue, Bvalue, Ckey, Cvalue);
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey+N, Bkey, Bkey+M, Avalue, Bvalue, Ckey, Cvalue);
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey+N, Bkey, Bkey+M, Avalue, Bvalue, Ckey, Cvalue, std::greater<int>());
+// CHECK-NEXT:  dpct::set_difference(oneapi::dpl::execution::seq, Akey, Akey+N, Bkey, Bkey+M, Avalue, Bvalue, Ckey, Cvalue, std::greater<int>());
+  thrust::set_difference_by_key(thrust::host, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+  thrust::set_difference_by_key(h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+  thrust::set_difference_by_key(thrust::host, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_difference_by_key(h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VBvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_difference_by_key(thrust::device, d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+  thrust::set_difference_by_key(d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+  thrust::set_difference_by_key(thrust::device, d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(),thrust::greater<int>());
+  thrust::set_difference_by_key(d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VBvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_difference_by_key(thrust::host,Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue);
+  thrust::set_difference_by_key(Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue);
+  thrust::set_difference_by_key(thrust::host,Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue, thrust::greater<int>());
+  thrust::set_difference_by_key(Akey,Akey+N,Bkey,Bkey+M,Avalue,Bvalue,Ckey,Cvalue, thrust::greater<int>());
+}
+
+void set_difference_test() {
+  const int N=7,M=5,P=3;
+  int A[N]={0, 1, 3, 4, 5, 6, 9};
+  int B[M]={1, 3, 5, 7, 9};
+  int C[P];
+  int ans[P]={0,4,6};
+  thrust::host_vector<int> h_VA(A,A+N);
+  thrust::host_vector<int> h_VB(B,B+M);
+  thrust::host_vector<int> h_VC(C,C+P);
+  thrust::device_vector<int> d_VA(A,A+N);
+  thrust::device_vector<int> d_VB(B,B+M);
+  thrust::device_vector<int> d_VC(C,C+P);
+
+// CHECK:  oneapi::dpl::set_difference(oneapi::dpl::execution::seq, h_VA.begin(), h_VA.end(), h_VB.begin(), h_VB.end(), h_VC.begin());
+// CHECK-NEXT:  oneapi::dpl::set_difference(oneapi::dpl::execution::seq, h_VA.begin(), h_VA.end(), h_VB.begin(), h_VB.end(), h_VC.begin());
+// CHECK-NEXT:  oneapi::dpl::set_difference(oneapi::dpl::execution::seq, h_VA.begin(), h_VA.end(), h_VB.begin(), h_VB.end(), h_VC.begin(), std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::set_difference(oneapi::dpl::execution::seq, h_VA.begin(), h_VA.end(), h_VB.begin(), h_VB.end(), h_VC.begin(), std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), d_VB.end(), d_VC.begin());
+// CHECK-NEXT:  oneapi::dpl::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), d_VB.end(), d_VC.begin());
+// CHECK-NEXT:  oneapi::dpl::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), d_VB.end(), d_VC.begin(), std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::set_difference(oneapi::dpl::execution::make_device_policy(q_ct1), d_VA.begin(), d_VA.end(), d_VB.begin(), d_VB.end(), d_VC.begin(), std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A+N, B, B+M, C);
+// CHECK-NEXT:  oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A+N, B, B+M, C);
+// CHECK-NEXT:  oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A+N, B, B+M, C, std::greater<int>());
+// CHECK-NEXT:  oneapi::dpl::set_difference(oneapi::dpl::execution::seq, A, A+N, B, B+M, C, std::greater<int>());
+  thrust::set_difference(thrust::host, h_VA.begin(), h_VA.end(), h_VB.begin(), h_VB.end(), h_VC.begin());
+  thrust::set_difference(h_VA.begin(), h_VA.end(), h_VB.begin(), h_VB.end(), h_VC.begin());
+  thrust::set_difference(thrust::host, h_VA.begin(), h_VA.end(), h_VB.begin(), h_VB.end(), h_VC.begin(), thrust::greater<int>());
+  thrust::set_difference(h_VA.begin(), h_VA.end(), h_VB.begin(), h_VB.end(), h_VC.begin(), thrust::greater<int>());
+  thrust::set_difference(thrust::device, d_VA.begin(), d_VA.end(), d_VB.begin(), d_VB.end(), d_VC.begin());
+  thrust::set_difference(d_VA.begin(), d_VA.end(), d_VB.begin(), d_VB.end(), d_VC.begin());
+  thrust::set_difference(thrust::device, d_VA.begin(), d_VA.end(), d_VB.begin(), d_VB.end(), d_VC.begin(), thrust::greater<int>());
+  thrust::set_difference( d_VA.begin(), d_VA.end(), d_VB.begin(), d_VB.end(), d_VC.begin(), thrust::greater<int>());
+  thrust::set_difference(thrust::host, A,A+N,B,B+M,C);
+  thrust::set_difference( A,A+N,B,B+M,C);
+  thrust::set_difference(thrust::host, A,A+N,B,B+M,C, thrust::greater<int>());
+  thrust::set_difference( A,A+N,B,B+M,C, thrust::greater<int>());
+}
+
+
+struct add_functor
+{
+  __host__ __device__
+  void operator()(int & x)
+  {
+    x++;
+  }
+};
+void for_each_n_test() {
+  const int N=3;
+  int A[N]={0,1,2};
+  int ans[N]={1,2,3};
+  thrust::host_vector<int> h_V(A,A+N);
+  thrust::device_vector<int> d_V(A,A+N);
+
+// CHECK:  oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, h_V.begin(), h_V.size(), add_functor());
+// CHECK-NEXT:  oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, h_V.begin(), h_V.size(), add_functor());
+// CHECK-NEXT:  oneapi::dpl::for_each_n(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.size(), add_functor());
+// CHECK-NEXT:  oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, d_V.begin(), d_V.size(), add_functor());
+// CHECK-NEXT:  oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, A, N, add_functor());
+// CHECK-NEXT:  oneapi::dpl::for_each_n(oneapi::dpl::execution::seq, A, N, add_functor());
+  thrust::for_each_n(thrust::host, h_V.begin(), h_V.size(), add_functor());
+  thrust::for_each_n(h_V.begin(), h_V.size(), add_functor());
+  thrust::for_each_n(thrust::deice, d_V.begin(), d_V.size(), add_functor());
+  thrust::for_each_n(d_V.begin(), d_V.size(), add_functor());
+  thrust::for_each_n(thrust::host, A, N, add_functor());
+  thrust::for_each_n(A, N, add_functor());
+}
+
+
+void tabulate_test() {
+  const int N=10;
+  int A[N];
+  int ans[N]={0, -1, -2, -3, -4, -5, -6, -7, -8, -9};
+  thrust::host_vector<int> h_V(A,A+N);
+  thrust::device_vector<int> d_V(A,A+N);
+
+// CHECK:  dpct::for_each_index(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), std::negate<int>());
+// CHECK-NEXT:  dpct::for_each_index(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), std::negate<int>());
+// CHECK-NEXT:  dpct::for_each_index(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), std::negate<int>());
+// CHECK-NEXT:  dpct::for_each_index(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), std::negate<int>());
+// CHECK-NEXT:  dpct::for_each_index(oneapi::dpl::execution::seq, A, A+N, std::negate<int>());
+// CHECK-NEXT:  dpct::for_each_index(oneapi::dpl::execution::seq, A, A+N, std::negate<int>());
+  thrust::tabulate(thrust::host, h_V.begin(), h_V.end(), thrust::negate<int>());
+  thrust::tabulate( h_V.begin(), h_V.end(), thrust::negate<int>());
+  thrust::tabulate(thrust::device, d_V.begin(), d_V.end(), thrust::negate<int>());
+  thrust::tabulate(d_V.begin(), d_V.end(), thrust::negate<int>());
+  thrust::tabulate(thrust::host, A,A+N, thrust::negate<int>());
+  thrust::tabulate(A,A+N, thrust::negate<int>());
+}
+
+void remove_copy_test() {
+  const int N = 6;
+  int A[N] = {-2, 0, -1, 0, 1, 2};
+  int B[N - 2];
+  int ans[N - 2] = {-2, -1, 1, 2};
+  int result[N - 2];
+  int V[N] = {-2, 0, -1, 0, 1, 2};
+
+  thrust::host_vector<int> h_V(A, A + N);
+  thrust::host_vector<int> h_result(B, B + N - 2);
+  thrust::device_vector<int> d_V(A, A + N);
+  thrust::device_vector<int> d_result(B, B + N - 2);
+
+// CHECK:  oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin(), 0);
+// CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_result.begin(), 0);
+// CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin(), 0);
+// CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_result.begin(), 0);
+// CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, V, V + N, result, 0);
+// CHECK-NEXT:  oneapi::dpl::remove_copy(oneapi::dpl::execution::seq, V, V + N, result, 0);
+  thrust::remove_copy(thrust::host, h_V.begin(), h_V.end(), h_result.begin(), 0);
+  thrust::remove_copy(h_V.begin(), h_V.end(), h_result.begin(), 0);
+  thrust::remove_copy(thrust::device, d_V.begin(), d_V.end(), d_result.begin(), 0);
+  thrust::remove_copy(d_V.begin(), d_V.end(), d_result.begin(), 0);
+  thrust::remove_copy(thrust::host, V, V + N, result, 0);
+  thrust::remove_copy(V, V + N, result, 0);
+}
+
+void transform_exclusive_scan_test() {
+  const int N=6;
+  int A[N]={1, 0, 2, 2, 1, 3};
+  int ans[N]={4, 3, 3, 1, -1, -2};
+  thrust::host_vector<int> h_V(A,A+N);
+  thrust::device_vector<int> d_V(A,A+N);
+  thrust::negate<int> unary_op;
+  thrust::plus<int> binary_op;
+
+// CHECK:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_V.begin(), 4, binary_op, unary_op)
+// CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, h_V.begin(), h_V.end(), h_V.begin(), 4, binary_op, unary_op);
+// CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_V.begin(), 4, binary_op, unary_op);
+// CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::make_device_policy(q_ct1), d_V.begin(), d_V.end(), d_V.begin(), 4, binary_op, unary_op);
+// CHECK-NEXT:  oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A+N, A, 4, binary_op, unary_op);
+// CHECK-NEXT: oneapi::dpl::transform_exclusive_scan(oneapi::dpl::execution::seq, A, A+N, A, 4, binary_op, unary_op);
+  thrust::transform_exclusive_scan(thrust::host, h_V.begin(), h_V.end(), h_V.begin(), unary_op, 4, binary_op)
+  thrust::transform_exclusive_scan(h_V.begin(), h_V.end(), h_V.begin(), unary_op, 4, binary_op);
+  thrust::transform_exclusive_scan(thrust::device, d_V.begin(), d_V.end(), d_V.begin(), unary_op, 4, binary_op);
+  thrust::transform_exclusive_scan(d_V.begin(), d_V.end(), d_V.begin(), unary_op, 4, binary_op);
+  thrust::transform_exclusive_scan(thrust::host, A, A+N, A, unary_op, 4, binary_op);
+  thrust::transform_exclusive_scan(A, A+N, A, unary_op, 4, binary_op);
+}
+
+
+void set_intersection_by_key_test() {
+  const int N = 6, M = 7, P = 3;
+  int Akey[N] = {1, 3, 5, 7, 9, 11};
+  int Avalue[N] = {0, 0, 0, 0, 0, 0};
+  int Bkey[M] = {1, 1, 2, 3, 5, 8, 13};
+
+  int Ckey[P];
+  int Cvalue[P];
+  int anskey[P] = {1, 3, 5};
+  int ansvalue[P] = {0, 0, 0};
+
+  thrust::host_vector<int> h_VAkey(Akey, Akey + N);
+  thrust::host_vector<int> h_VAvalue(Avalue, Avalue + N);
+
+  thrust::host_vector<int> h_VBkey(Bkey, Bkey + M);
+
+  thrust::host_vector<int> h_VCkey(Ckey, Ckey + P);
+  thrust::host_vector<int> h_VCvalue(Cvalue, Cvalue + P);
+  typedef thrust::pair<thrust::host_vector<int>::iterator,
+                       thrust::host_vector<int>::iterator> iter_pair;
+  thrust::device_vector<int> d_VAkey(Akey, Akey + N);
+  thrust::device_vector<int> d_VAvalue(Avalue, Avalue + N);
+  thrust::device_vector<int> d_VBkey(Bkey, Bkey + M);
+  thrust::device_vector<int> d_VCkey(Ckey, Ckey + P);
+  thrust::device_vector<int> d_VCvalue(Cvalue, Cvalue + P);
+
+
+// CHECK:  dpct::set_intersection(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::seq, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::make_device_policy(q_ct1), d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), std::greater<int>());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue);
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue);
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, std::greater<int>());
+// CHECK-NEXT:  dpct::set_intersection(oneapi::dpl::execution::seq, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, std::greater<int>());
+  thrust::set_intersection_by_key(thrust::host, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+  thrust::set_intersection_by_key(h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin());
+  thrust::set_intersection_by_key(thrust::host, h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_intersection_by_key(h_VAkey.begin(), h_VAkey.end(), h_VBkey.begin(), h_VBkey.end(), h_VAvalue.begin(), h_VCkey.begin(), h_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_intersection_by_key(thrust::device, d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+  thrust::set_intersection_by_key(d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin());
+  thrust::set_intersection_by_key(thrust::device, d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_intersection_by_key(d_VAkey.begin(), d_VAkey.end(), d_VBkey.begin(), d_VBkey.end(), d_VAvalue.begin(), d_VCkey.begin(), d_VCvalue.begin(), thrust::greater<int>());
+  thrust::set_intersection_by_key(thrust::host, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue);
+  thrust::set_intersection_by_key(Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue);
+  thrust::set_intersection_by_key(thrust::host, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, thrust::greater<int>());
+  thrust::set_intersection_by_key(Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, thrust::greater<int>());
 }

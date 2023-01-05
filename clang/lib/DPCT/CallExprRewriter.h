@@ -154,23 +154,8 @@ public:
   inline void report(IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
     TransformSetTy TS;
     auto SL = Call->getBeginLoc();
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
-      auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
-          getHashStrFromLoc(SM.getImmediateSpellingLoc(SL)));
-      if (ItMatch !=
-          dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
-        if (ItMatch->second->IsInAnalysisScope) {
-          DiagnosticsUtils::report<IDTy, Ts...>(
-              ItMatch->second->FilePath, ItMatch->second->Offset, MsgID, true,
-              UseTextBegin, std::forward<Ts>(Vals)...);
-          return;
-        }
-      }
-    }
     DiagnosticsUtils::report<IDTy, Ts...>(
-        SL, MsgID, DpctGlobalInfo::getSourceManager(), &TS, UseTextBegin,
-        std::forward<Ts>(Vals)...);
+        SL, MsgID, &TS, UseTextBegin, std::forward<Ts>(Vals)...);
     for (auto &T : TS)
       DpctGlobalInfo::getInstance().addReplacement(
           T->getReplacement(DpctGlobalInfo::getContext()));
@@ -802,7 +787,6 @@ public:
 template <class NameT, class... TemplateArgsT> class TemplatedNamePrinter {
   NameT Name;
   ArgsPrinter<false, TemplateArgsT...> TAs;
-
 public:
   TemplatedNamePrinter(NameT Name, TemplateArgsT &&...TAs)
       : Name(Name), TAs(std::forward<TemplateArgsT>(TAs)...) {}
@@ -811,6 +795,18 @@ public:
     Stream << "<";
     TAs.print(Stream);
     Stream << ">";
+  }
+};
+
+// Print a type with no template.
+template <class NameT> class TypeNamePrinter {
+  NameT Name;
+
+public:
+  TypeNamePrinter(NameT Name) : Name(Name) {}
+
+  template <typename StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Name);
   }
 };
 
@@ -835,7 +831,7 @@ template <class BaseT, class MemberT> class StaticMemberExprPrinter {
 public:
   StaticMemberExprPrinter(BaseT &&Base, MemberT &&Member)
     : Base(std::forward<BaseT>(Base)), Member(std::forward<MemberT>(Member)) {}
-  
+
   template <class StreamT> void print(StreamT &Stream) const {
     dpct::print(Stream, Base);
     Stream << "::";
@@ -1242,8 +1238,10 @@ class UserDefinedRewriter : public CallExprRewriter {
   std::string ResultStr;
 
 public:
-  UserDefinedRewriter(const CallExpr *CE, const OutputBuilder &OB)
+  UserDefinedRewriter(const CallExpr *CE, const OutputBuilder &OB,
+                      const MetaRuleObject::Attributes &RuleAttributes = {})
       : CallExprRewriter(CE, "") {
+    NoRewrite = RuleAttributes.ReplaceCalleeNameOnly;
     // build result string with call
     llvm::raw_string_ostream OS(ResultStr);
     buildRewriterStr(Call, OS, OB);
@@ -1323,7 +1321,7 @@ class UserDefinedRewriterFactory : public CallExprRewriterFactoryBase {
   OutputBuilder OB;
   std::string OutStr;
   std::vector<std::string> &Includes;
-  bool HasExplicitTemplateArgs = false;
+  MetaRuleObject::Attributes RuleAttributes;
 
   struct NullRewriter : public CallExprRewriter {
     NullRewriter(const CallExpr *C, StringRef Name)
@@ -1348,7 +1346,7 @@ public:
 public:
   UserDefinedRewriterFactory(MetaRuleObject &R)
       : OutStr(R.Out), Includes(R.Includes),
-        HasExplicitTemplateArgs(R.HasExplicitTemplateArgs) {
+        RuleAttributes(R.RuleAttributes) {
     Priority = R.Priority;
     OB.Kind = OutputBuilder::Kind::Top;
     OB.RuleName = R.RuleId;
@@ -1370,13 +1368,13 @@ public:
     if (!Call)
       return std::shared_ptr<UserDefinedRewriter>();
 
-    if (hasExplicitTemplateArgs(Call) && !HasExplicitTemplateArgs)
+    if (hasExplicitTemplateArgs(Call) && !RuleAttributes.HasExplicitTemplateArgs)
       return std::make_shared<NullRewriter>(Call, "");
 
     for (auto &Header : Includes)
       DpctGlobalInfo::getInstance().insertHeader(Call->getBeginLoc(), Header);
 
-    return std::make_shared<UserDefinedRewriter>(Call, OB);
+    return std::make_shared<UserDefinedRewriter>(Call, OB, RuleAttributes);
   }
 };
 

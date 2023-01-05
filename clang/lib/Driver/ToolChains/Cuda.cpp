@@ -139,6 +139,10 @@ bool CudaInstallationDetector::ParseCudaVersionFile(const std::string &FilePath,
     CV = CudaVersion::CUDA_118;
     IsVersionSupported = true;
     return true;
+  } else if (Major == 12 && Minor == 0) {
+    CV = CudaVersion::CUDA_120;
+    IsVersionSupported = true;
+    return true;
   }
   return false;
 }
@@ -182,6 +186,8 @@ CudaVersion getCudaVersion(uint32_t raw_version) {
     return CudaVersion::CUDA_117;
   if (raw_version < 11090)
     return CudaVersion::CUDA_118;
+  if (raw_version < 12010)
+    return CudaVersion::CUDA_120;
   return CudaVersion::NEW;
 }
 
@@ -245,9 +251,8 @@ CudaInstallationDetector::CudaInstallationDetector(
   // In decreasing order so we prefer newer versions to older versions.
 #ifdef SYCLomatic_CUSTOMIZATION
   std::initializer_list<const char *> Versions = {
-      "11.8", "11.7","11.6", "11.5", "11.4", "11.3", "11.2",
-      "11.1", "10.2", "10.1", "10.0", "9.2", "9.1", "9.0",
-      "8.0", "7.5", "7.0"};
+      "12.0", "11.8", "11.7", "11.6", "11.5", "11.4", "11.3", "11.2", "11.1",
+      "10.2", "10.1", "10.0", "9.2",  "9.1",  "9.0",  "8.0",  "7.5",  "7.0"};
 #else
   std::initializer_list<const char *> Versions = {
       "11.4", "11.3", "11.2", "11.1", "10.2", "10.1", "10.0",
@@ -1191,10 +1196,12 @@ void CudaToolChain::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
   }
   HostTC.AddClangSystemIncludeArgs(DriverArgs, CC1Args);
 
+#ifndef SYCLomatic_CUSTOMIZATION
   if (!DriverArgs.hasArg(options::OPT_nogpuinc) && CudaInstallation.isValid())
     CC1Args.append(
         {"-internal-isystem",
          DriverArgs.MakeArgString(CudaInstallation.getIncludePath())});
+#endif // SYCLomatic_CUSTOMIZATION
 }
 
 void CudaToolChain::AddClangCXXStdlibIncludeArgs(const ArgList &Args,

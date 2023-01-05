@@ -118,6 +118,7 @@ bool KeepOriginalCodeFlag = false;
 bool SuppressWarningsAllFlag = false;
 bool StopOnParseErr = false;
 bool CheckUnicodeSecurityFlag = false;
+bool EnablepProfilingFlag = false;
 bool SyclNamedLambdaFlag = false;
 bool ExplicitClNamespace = false;
 bool NoDRYPatternFlag = false;
@@ -158,6 +159,9 @@ static llvm::cl::opt<std::string> Passes(
          "Only the specified passes are applied."),
     llvm::cl::value_desc("IterationSpaceBuiltinRule,..."), llvm::cl::cat(DPCTCat),
                llvm::cl::Hidden);
+static llvm::cl::opt<std::string> QueryApiMapping ("query-api-mapping",
+        llvm::cl::desc("Outputs to stdout functionally compatible SYCL API mapping for CUDA API."),
+        llvm::cl::value_desc("api"), llvm::cl::cat(DPCTCat), llvm::cl::Optional, llvm::cl::ReallyHidden);
 #ifdef DPCT_DEBUG_BUILD
 static llvm::cl::opt<std::string>
     DiagsContent("report-diags-content",
@@ -242,7 +246,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   makeCanonical(Path);
 
   SmallString<512> CudaPathAbs;
-  std::error_code EC = llvm::sys::fs::real_path(Path, CudaPathAbs);
+  std::error_code EC = llvm::sys::fs::real_path(Path, CudaPathAbs, true);
   if ((bool)EC) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);
@@ -268,7 +272,8 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
   StringRef InstallPath = llvm::sys::path::parent_path(InstalledPathParent);
 
   SmallString<512> InstallPathAbs;
-  std::error_code EC = llvm::sys::fs::real_path(InstallPath, InstallPathAbs);
+  std::error_code EC = llvm::sys::fs::real_path(InstallPath,
+                                                InstallPathAbs, true);
   if ((bool)EC) {
     ShowStatus(MigrationErrorInvalidInstallPath);
     dpctExit(MigrationErrorInvalidInstallPath);
@@ -656,6 +661,26 @@ int runDPCT(int argc, const char **argv) {
     ApiMappingEntry::printMappingDesc(llvm::outs(), QueryApiMapping);
     dpctExit(MigrationSucceeded);
   }
+
+  auto ExtensionStr = ChangeExtension.getValue();
+  ExtensionStr.erase(std::remove(ExtensionStr.begin(), ExtensionStr.end(), ' '),
+                     ExtensionStr.end());
+  auto Extensions = split(ExtensionStr, ',');
+  for (auto &Extension : Extensions) {
+    const auto len = Extension.length();
+    if (len < 2 || len > 5 || Extension[0] != '.') {
+      ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
+      dpctExit(MigrationErrorInvalidChangeFilenameExtension, false);
+    }
+    for (size_t i = 1; i < len; ++i) {
+      if (!std::isalpha(Extension[i])) {
+        ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
+        dpctExit(MigrationErrorInvalidChangeFilenameExtension, false);
+      }
+    }
+    DpctGlobalInfo::addChangeExtensions(Extension);
+  }
+
   if (InRoot.empty() && ProcessAllFlag) {
     ShowStatus(MigrationErrorNoExplicitInRoot);
     dpctExit(MigrationErrorNoExplicitInRoot);
@@ -798,7 +823,8 @@ int runDPCT(int argc, const char **argv) {
       (SDKVersionMajor == 11 && SDKVersionMinor == 5) ||
       (SDKVersionMajor == 11 && SDKVersionMinor == 6) ||
       (SDKVersionMajor == 11 && SDKVersionMinor == 7) ||
-      (SDKVersionMajor == 11 && SDKVersionMinor == 8)) {
+      (SDKVersionMajor == 11 && SDKVersionMinor == 8) ||
+      (SDKVersionMajor == 12 && SDKVersionMinor == 0)) {
     Tool.appendArgumentsAdjuster(
         getInsertArgumentAdjuster("-fms-compatibility-version=19.21.27702.0",
                                   ArgumentInsertPosition::BEGIN));
@@ -828,6 +854,7 @@ int runDPCT(int argc, const char **argv) {
                           "may be removed in the future.\n");
   }
   DpctGlobalInfo::setCheckUnicodeSecurityFlag(CheckUnicodeSecurityFlag);
+  DpctGlobalInfo::setEnablepProfilingFlag(EnablepProfilingFlag);
   DpctGlobalInfo::setCustomHelperFileName(CustomHelperFileName);
   if (CustomHelperFileName.getNumOccurrences()) {
     clang::dpct::PrintMsg("Note: Option --custom-helper-name is deprecated and "
@@ -950,6 +977,8 @@ int runDPCT(int argc, const char **argv) {
     setValueToOptMap(clang::dpct::OPTION_OptimizeMigration,
                      OptimizeMigration.getValue(),
                      OptimizeMigration.getNumOccurrences());
+    setValueToOptMap(clang::dpct::OPTION_EnablepProfiling,
+                     EnablepProfilingFlag, EnablepProfilingFlag);
     setValueToOptMap(clang::dpct::OPTION_RuleFile, MetaRuleObject::RuleFiles,
                      RuleFile.getNumOccurrences());
     setValueToOptMap(clang::dpct::OPTION_AnalysisScopePath,

@@ -44,6 +44,7 @@ namespace dpct {
 std::string DpctGlobalInfo::InRoot = std::string();
 std::string DpctGlobalInfo::OutRoot = std::string();
 std::string DpctGlobalInfo::AnalysisScope = std::string();
+std::unordered_set<std::string> DpctGlobalInfo::ChangeExtensions = {};
 // TODO: implement one of this for each source language.
 std::string DpctGlobalInfo::CudaPath = std::string();
 std::string DpctGlobalInfo::RuleFile = std::string();
@@ -70,6 +71,7 @@ bool DpctGlobalInfo::KeepOriginCode = false;
 bool DpctGlobalInfo::SyclNamedLambda = false;
 bool DpctGlobalInfo::CheckUnicodeSecurityFlag = false;
 std::unordered_map<std::string, SourceRange> DpctGlobalInfo::ExpansionRangeBeginMap;
+bool DpctGlobalInfo::EnablepProfilingFlag = false;
 std::map<std::string, std::shared_ptr<DpctGlobalInfo::MacroExpansionRecord>>
     DpctGlobalInfo::ExpansionRangeToMacroRecord;
 std::tuple<unsigned int, std::string, SourceRange>
@@ -556,149 +558,122 @@ void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
     Repls->emplaceIntoReplSet(ReplSet[FilePath]);
 }
 
-void DpctFileInfo::insertHeader(HeaderType Type) {
-    switch (Type) {
-    case HT_SYCL:
-      return insertHeader(HeaderType::HT_SYCL, FirstIncludeOffset,
-                          "<sycl/sycl.hpp>",
-                          "<" + getCustomMainHelperFileName() + "/" +
-                              getCustomMainHelperFileName() + ".hpp>");
-    case HT_Math:
-      return insertHeader(HeaderType::HT_Math, LastIncludeOffset, "<cmath>");
-    case HT_Algorithm:
-      return insertHeader(HeaderType::HT_Algorithm, LastIncludeOffset,
-                          "<algorithm>");
-    case HT_Complex:
-      return insertHeader(HeaderType::HT_Complex, LastIncludeOffset,
-                          "<complex>");
-    case HT_Functional:
-      return insertHeader(HeaderType::HT_Functional, LastIncludeOffset,
-                          "<functional>");
-    case HT_Thread:
-      return insertHeader(HeaderType::HT_Thread, LastIncludeOffset, "<thread>");
-    case HT_Future:
-      return insertHeader(HeaderType::HT_Future, LastIncludeOffset, "<future>");
-    case HT_Time:
-      return insertHeader(HeaderType::HT_Time, LastIncludeOffset, "<time.h>");
-    case HT_Dnnl:
-      if (this != DpctGlobalInfo::getInstance().getMainFile().get())
-        return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-            HT_Dnnl);
-      return insertHeader(HeaderType::HT_Dnnl, FirstIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/dnnl_utils.hpp>");
-    case HT_MKL_Without_Util:
-      return insertHeader(
-          HeaderType::HT_MKL_Without_Util, LastIncludeOffset, "<oneapi/mkl.hpp>");
-    case HT_MKL_BLAS:
-      return insertHeader(
-          HeaderType::HT_MKL_BLAS, LastIncludeOffset, "<oneapi/mkl.hpp>",
-          "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>");
-    case HT_MKL_Solver:
-      return insertHeader(HeaderType::HT_MKL_Solver, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>",
-          "<" + getCustomMainHelperFileName() + "/lapack_utils.hpp>");
-    case HT_MKL_RNG:
-      return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>",
-                          "<" + getCustomMainHelperFileName() +
-                              "/rng_utils.hpp>");
-    case HT_MKL_RNG_Without_Util:
-      return insertHeader(HeaderType::HT_MKL_RNG, LastIncludeOffset,
-                          "<oneapi/mkl.hpp>", "<oneapi/mkl/rng/device.hpp>");
-    case HT_MKL_SPBLAS:
-      return insertHeader(
-          HeaderType::HT_MKL_BLAS, LastIncludeOffset, "<oneapi/mkl.hpp>",
-          "<" + getCustomMainHelperFileName() + "/blas_utils.hpp>",
-          "<" + getCustomMainHelperFileName() + "/sparse_utils.hpp>");
-    case HT_MKL_FFT:
-      return insertHeader(
-          HeaderType::HT_MKL_FFT, LastIncludeOffset, "<oneapi/mkl.hpp>",
-          "<" + getCustomMainHelperFileName() + "/fft_utils.hpp>");
-    case HT_Numeric:
-      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
-                          "<numeric>");
-    case HT_Chrono:
-      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
-                          "<chrono>");
-    case HT_DL:
-#ifdef _WIN32
-      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
-                          "<libloaderapi.h>");
-#else
-      return insertHeader(HeaderType::HT_Numeric, LastIncludeOffset,
-                          "<dlfcn.h>");
-#endif
-    case HT_STD_Numeric_Limits:
-      return insertHeader(HeaderType::HT_STD_Numeric_Limits, LastIncludeOffset,
-                          "<limits>");
-    case HT_DPL_Utils:
-      // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
-      // <oneapi/dpl/algorithm>, so we have to make sure that
-      // <oneapi/dpl/execution> and <oneapi/dpl/algorithm> are inserted before
-      // <CL/sycl.hpp>
-      // e.g.
-      // #include <CL/sycl.hpp>
-      // #include <dpct/dpct.hpp>
-      // #include <dpct/dpl_utils.hpp>
-      // ...
-      // This will cause compilation error due to onedpl header dependence
-      // The order we expect is:
-      // e.g.
-      // #include <oneapi/dpl/execution>
-      // #include <oneapi/dpl/algorithm>
-      // #include <CL/sycl.hpp>
-      // #include <dpct/dpct.hpp>
-      // #include <dpct/dpl_utils.hpp>
-      //
-      // We will insert <oneapi/dpl/execution> and <oneapi/dpl/algorithm> at the
-      // begining of the main file
+static const std::pair<HeaderType, StringRef> HeaderSpellings[] = {
+#define HEADER(Name, Spelling) {HT_##Name, Spelling},
+#include "HeaderTypes.inc"
+};
+
+StringRef DpctFileInfo::getHeaderSpelling(HeaderType Value) {
+  if (Value < NUM_HEADERS)
+    return HeaderSpellings[Value].second;
+
+  // Only assertion in debug
+  assert(false && "unknown HeaderType");
+  return "";
+}
+
+std::optional<HeaderType> DpctFileInfo::findHeaderType(StringRef Header) {
+  const auto *Pos = llvm::find_if(
+      HeaderSpellings, [=](const std::pair<HeaderType, StringRef> &p) -> bool {
+        return p.second == Header;
+      });
+  if (Pos == std::end(HeaderSpellings))
+    return std::nullopt;
+  return Pos->first;
+}
+
+void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
+  if (HeaderInsertedBitMap[Type])
+    return;
+  HeaderInsertedBitMap[Type] = true;
+  std::string ReplStr;
+  llvm::raw_string_ostream OS(ReplStr);
+
+  switch (Type) {
+  // The #include of <oneapi/dpl/execution> and <oneapi/dpl/algorithm> were
+  // previously added here.  However, due to some unfortunate include
+  // dependencies introduced with the PSTL/TBB headers from the gcc-9.3.0
+  // include files, those two headers must now be included before the
+  // <sycl/sycl.hpp> are included, so the FileInfo is set to hold a boolean
+  // that'll indicate whether to insert them when the #include <sycl/sycl.cpp>
+  // is added later
+  case HT_DPL_Algorithm:
+  case HT_DPL_Execution:
+  case HT_DPCT_DNNL_Utils:
+    if (this != DpctGlobalInfo::getInstance().getMainFile().get())
       DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-          HT_DPL_Execution);
-      DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-            HT_DPL_Algorithm);
-      return insertHeader(HeaderType::HT_DPL_Utils, LastIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/dpl_utils.hpp>");
-    case HT_BFloat16:
-      return insertHeader(HeaderType::HT_BFloat16, LastIncludeOffset,
-                          "<oneapi/mkl/bfloat16.hpp>");
-    case HT_Lib_Common_Utils:
-      return insertHeader(HeaderType::HT_Lib_Common_Utils, LastIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/lib_common_utils.hpp>");
-    case HT_CCL:
-      return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/ccl_utils.hpp>");
-    case HT_Atomic:
-      return insertHeader(HeaderType::HT_CCL, LastIncludeOffset,
-                          "<" + getCustomMainHelperFileName() +
-                              "/atomic.hpp>");
-    case HT_DPL_Algorithm:
-      // Make sure <oneapi/dpl/algorithm> int the front of <CL/sycl.hpp>, also
-      // when crossing files
-      if (this != DpctGlobalInfo::getInstance().getMainFile().get())
-        return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-            HT_DPL_Algorithm);
-      return insertHeader(HeaderType::HT_DPL_Algorithm, FirstIncludeOffset,
-                          "<oneapi/dpl/algorithm>");
-    case HT_DPL_Execution:
-      // Make sure <oneapi/dpl/execution> int the front of <CL/sycl.hpp>, also
-      // when crossing files
-      if (this != DpctGlobalInfo::getInstance().getMainFile().get())
-        return DpctGlobalInfo::getInstance().getMainFile()->insertHeader(
-            HT_DPL_Execution);
-      return insertHeader(HeaderType::HT_DPL_Execution, FirstIncludeOffset,
-                          "<oneapi/dpl/execution>");
-    case HT_DPL_Iterator:
-      return insertHeader(HeaderType::HT_DPL_Iterator, LastIncludeOffset,
-                          "<oneapi/dpl/iterator>");
-    case HT_STDLIB:
-      return insertHeader(HeaderType::HT_STDLIB, LastIncludeOffset,
-                          "<cstdlib>");
+          Type, FirstIncludeOffset);
+    concatHeader(OS, getHeaderSpelling(Type));
+    return insertHeader(OS.str(), FirstIncludeOffset,
+                        InsertPosition::IP_AlwaysLeft);
+  case HT_SYCL:
+    if(DpctGlobalInfo::getEnablepProfilingFlag())
+      OS << "#define DPCT_PROFILING_ENABLED" << getNL();
+    if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None)
+      OS << "#define DPCT_USM_LEVEL_NONE" << getNL();
+    concatHeader(OS, getHeaderSpelling(Type));
+    concatHeader(OS, getHeaderSpelling(HT_DPCT_Dpct));
+    HeaderInsertedBitMap[HT_DPCT_Dpct] = true;
+    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+            ExplicitNamespace::EN_DPCT) ||
+        DpctGlobalInfo::isDPCTNamespaceTempEnabled()) {
+      OS << "using namespace dpct;" << getNL();
     }
+    if (!DpctGlobalInfo::getExplicitNamespaceSet().count(
+            ExplicitNamespace::EN_SYCL) &&
+        !DpctGlobalInfo::getExplicitNamespaceSet().count(
+            ExplicitNamespace::EN_CL)) {
+      OS << "using namespace sycl;" << getNL();
+    }
+    return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Left);
+
+  // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
+  // <oneapi/dpl/algorithm>, so we have to make sure that
+  // <oneapi/dpl/execution> and <oneapi/dpl/algorithm> are inserted before
+  // <sycl/sycl.hpp>
+  // e.g.
+  // #include <sycl/sycl.hpp>
+  // #include <dpct/dpct.hpp>
+  // #include <dpct/dpl_utils.hpp>
+  // ...
+  // This will cause compilation error due to onedpl header dependence
+  // The order we expect is:
+  // e.g.
+  // #include <oneapi/dpl/execution>
+  // #include <oneapi/dpl/algorithm>
+  // #include <sycl/sycl.hpp>
+  // #include <dpct/dpct.hpp>
+  // #include <dpct/dpl_utils.hpp>
+  //
+  // We will insert <oneapi/dpl/execution> and <oneapi/dpl/algorithm> at the
+  // begining of the main file
+  case HT_DPCT_DPL_Utils:
+    insertHeader(HT_DPL_Execution);
+    insertHeader(HT_DPL_Algorithm);
+    break;
+  case HT_MKL_RNG:
+    insertHeader(HT_MKL_Mkl);
+    break;
+  default:
+    break;
   }
+
+  if (Offset != FirstIncludeOffset)
+    OS << getNL();
+  concatHeader(OS, getHeaderSpelling(Type));
+  return insertHeader(OS.str(), LastIncludeOffset, InsertPosition::IP_Right);
+}
+
+void DpctFileInfo::insertHeader(HeaderType Type) {
+  switch (Type) {
+#define HEADER(Name, Spelling)                                                           \
+  case HT_##Name:                                                                 \
+    return insertHeader(HT_##Name, LastIncludeOffset);
+#include "HeaderTypes.inc"
+  default:
+    return;
+  }
+}
 
 void DpctGlobalInfo::insertCudaMalloc(const CallExpr *CE) {
   if (auto MallocVar = CudaMallocInfo::getMallocVar(CE->getArg(0)))
@@ -1989,7 +1964,10 @@ void CallFunctionExpr::buildCalleeInfo(const Expr *Callee) {
       buildTemplateArguments(DRE->template_arguments(), Callee->getSourceRange());
     }
   } else if (auto Unresolved = dyn_cast<UnresolvedLookupExpr>(Callee)) {
-    Name = Unresolved->getName().getAsString();
+    Name = "";
+    if(Unresolved->getQualifier())
+      Name = getNestedNameSpecifierString(Unresolved->getQualifier());
+    Name += Unresolved->getName().getAsString();
     setFuncInfo(DeviceFunctionDecl::LinkUnresolved(Unresolved));
     buildTemplateArguments(Unresolved->template_arguments(), Callee->getSourceRange());
   } else if (auto DependentScope =
@@ -2166,7 +2144,6 @@ void CallFunctionExpr::mergeTextureObjectInfo() {
 }
 
 std::string CallFunctionExpr::getName(const NamedDecl *D) {
-
   if (auto ID = D->getIdentifier())
     return ID->getName().str();
   return "";
@@ -2366,45 +2343,39 @@ inline void DeviceFunctionDeclInModule::insertWrapper() {
   {
     auto FunctionBlock = Printer.block();
     Printer.indent();
-#ifdef _WIN32
-    Printer << "__declspec(dllexport) ";
-#endif
-    Printer << "void " << FuncName << "_wrapper(" << MapNames::getClNamespace()
+    requestFeature(HelperFeatureEnum::Util_kernel_wrapper, FilePath);
+    Printer << "DPCT_EXPORT void " << FuncName << "_wrapper(" << MapNames::getClNamespace()
             << "queue &queue, const " << MapNames::getClNamespace()
             << "nd_range<3> &nr, unsigned int localMemSize, void "
                "**kernelParams, void **extra)";
     if (HasBody) {
-      Printer << "{";
+      auto for_each_parameter = [&](auto F) {
+	auto it = getParametersInfo().begin();
+	for (int i = 0;
+	     it != getParametersInfo().end();
+	     ++it, ++i) {
+	  F(i, it->second);
+	}
+      };
+
+      Printer << " {";
       {
         auto BodyBlock = Printer.block();
         Printer.newLine();
-        for (auto It = getParametersInfo().begin();
-             It != getParametersInfo().end(); It++) {
-          Printer.line(It->first + " " + It->second + ";");
-        }
-        Printer.line("if(kernelParams){");
-        {
-          auto IfBlock = Printer.block();
-          auto Counter = 0;
-          for (auto It = getParametersInfo().begin();
-               It != getParametersInfo().end(); It++) {
-            Printer.line(It->second + " = (" + It->first + ")kernelParams[" +
-                         std::to_string(Counter) + "];");
-            Counter += 1;
-          }
-        }
-        Printer.line("} else {");
-        {
-          auto ElseBlock = Printer.block();
-          std::string ExtraOffsetStr = "sizeof(void*)";
-          for (auto It = getParametersInfo().begin();
-               It != getParametersInfo().end(); It++) {
-            Printer.line(It->second + " = (" + It->first + ")(extra + " +
-                         ExtraOffsetStr + ");");
-            ExtraOffsetStr += " + sizeof(" + It->first + ")";
-          }
-        }
-        Printer.line("}");
+	auto DefaultParamNum = ParamsNum-NonDefaultParamNum;
+	Printer.line(llvm::formatv(
+           "// {0} non-default parameters, {1} default parameters",
+           NonDefaultParamNum, DefaultParamNum));
+	Printer.line(llvm::formatv(
+           "{0}args_selector<{1}, {2}, decltype({3})> selector(kernelParams, extra);",
+           MapNames::getDpctNamespace(),
+           NonDefaultParamNum, DefaultParamNum, FuncName));
+	for_each_parameter([&](auto&& i, auto&& p) {
+	  Printer.line("auto& " + p
+		       + " = selector.get<"
+		       + std::to_string(i) + ">();");
+	});
+
         Kernel->buildInfo();
         Printer.line(Kernel->getReplacement());
       }

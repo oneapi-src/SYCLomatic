@@ -125,24 +125,10 @@ protected:
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
   template <typename IDTy, typename... Ts>
   bool report(SourceLocation SL, IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
-    auto &SM = DpctGlobalInfo::getSourceManager();
-    if (SL.isMacroID() && !SM.isMacroArgExpansion(SL)) {
-      auto ItMatch = dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().find(
-          getHashStrFromLoc(SM.getImmediateSpellingLoc(SL)));
-      if (ItMatch !=
-          dpct::DpctGlobalInfo::getMacroTokenToMacroDefineLoc().end()) {
-        if (ItMatch->second->IsInAnalysisScope) {
-          return DiagnosticsUtils::report<IDTy, Ts...>(
-              ItMatch->second->FilePath, ItMatch->second->Offset, MsgID, true,
-              UseTextBegin, std::forward<Ts>(Vals)...);
-        }
-      }
-    }
     return DiagnosticsUtils::report<IDTy, Ts...>(
-        SL, MsgID, SM, TransformSet, UseTextBegin,
+        SL, MsgID, TransformSet, UseTextBegin,
         std::forward<Ts>(Vals)...);
   }
-
   // Extend version of report()
   // Pass Stmt to process macro more precisely.
   // The location should be consistent with the result of
@@ -162,7 +148,7 @@ protected:
       Begin = SM.getExpansionLoc(Begin);
     }
 
-    DiagnosticsUtils::report<IDTy, Ts...>(Begin, MsgID, SM, TransformSet,
+    DiagnosticsUtils::report<IDTy, Ts...>(Begin, MsgID, TransformSet,
                                           UseTextBegin,
                                           std::forward<Ts>(Vals)...);
   }
@@ -438,7 +424,12 @@ private:
                          const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
-
+class ZeroLengthArrayRule
+    : public NamedMigrationRule<ZeroLengthArrayRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
 
 /// Migration rule for types replacements in var. declarations.
 class TypeInDeclRule : public NamedMigrationRule<TypeInDeclRule> {
@@ -1230,6 +1221,12 @@ public:
   static EventQueryTraversal getEventQueryTraversal();
 
 private:
+  void handleEventRecordWithProfilingEnabled(
+      const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
+      bool IsAssigned);
+  void handleEventRecordWithProfilingDisabled(
+      const CallExpr *CE, const ast_matchers::MatchFinder::MatchResult &Result,
+      bool IsAssigned);
   void findEventAPI(const Stmt *Node, const CallExpr *&Call,
                     const std::string EventAPIName);
   void processAsyncJob(const Stmt *Node);
