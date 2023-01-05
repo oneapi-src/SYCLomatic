@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-12.0
+// UNSUPPORTED: v12.0
 // RUN: dpct --format-range=none   --use-custom-helper=api -out-root %T/Memory/api_test45_out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: grep "IsCalled" %T/Memory/api_test45_out/MainSourceFiles.yaml | wc -l > %T/Memory/api_test45_out/count.txt
 // RUN: FileCheck --input-file %T/Memory/api_test45_out/count.txt --match-full-lines %s
