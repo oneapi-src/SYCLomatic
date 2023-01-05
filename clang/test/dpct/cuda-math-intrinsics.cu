@@ -3057,20 +3057,6 @@ __device__ __host__ void do_migration7() {
   std::asinh(f);
 }
 
-// crt wrapper API
-__device__ void foo1() {
-  int i;
-  float f;
-  unsigned int ui;
-  long long ll;
-  unsigned long long ull;
-
-  // CHECK: i = sycl::mul24(i, i);
-  i = mul24(i, i);
-  // CHECK: f = sycl::clamp<float>(f, 0.0f, 1.0f);
-  f = saturate(f);
-}
-
 __device__ void test_recursive_unary() {
   int i, j, k;
   // CHECK: sycl::max(-sycl::max(-sycl::abs(i), j), k);

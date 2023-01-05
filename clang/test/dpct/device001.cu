@@ -2,7 +2,7 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/device001/device001.dp.cpp
 
 #include <algorithm>
-
+#include <vector>
 int main(int argc, char **argv) {
 
   // CHECK: dpct::device_info deviceProp;
@@ -193,6 +193,10 @@ void test3() {
   int a6 = deviceProp.kernelExecTimeoutEnabled;
   //CHECK:int a7 = dpct::get_current_device().get_info<sycl::info::device::error_correction_support>();
   int a7 = deviceProp.ECCEnabled;
+
+  std::vector<cudaDeviceProp> devicePropVec;
+  //CHECK: a3 = devicePropVec[0].get_global_mem_size();
+  a3 = devicePropVec[0].totalConstMem;
 }
 
 //CHECK:dpct::device_info* getcudaDevicePropPtr() {
