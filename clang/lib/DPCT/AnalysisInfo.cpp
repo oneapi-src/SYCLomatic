@@ -452,6 +452,9 @@ public:
     return true;
   }
   void build() {
+    if(RBFuncInfo.empty()) {
+      return;
+    }
     for (auto &Info : RBFuncInfo) {
       if (Info.isDataGradient) {
         ValidBackwardDataFuncInfo.emplace_back(Info);
@@ -541,6 +544,7 @@ public:
           WeightFuncInfo.FilePath, WeightFuncInfo.Offset, WeightFuncInfo.Length,
           WeightRepl.str(), nullptr));
     }
+    return Repls;
   }
 };
 
