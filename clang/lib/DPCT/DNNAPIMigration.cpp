@@ -211,56 +211,96 @@ void CuDNNAPIRule::runRule(
     auto FileInfo = Global.insertFile(CELocInfo.first);
     auto &BackwardFuncInfo = FileInfo->getRnnBackwardFuncInfo();
     auto &RnnInputMap = DpctGlobalInfo::getRnnInputMap();
-    unsigned RnnDescIndex = 1, HXDataIndex = 9, YDataIndex = 4;
-    ExprAnalysis CEEA(CE);
-    CEEA.analyze();
+    // 1.RnnDescIndex, 2.HXDataIndex, 3.YDataIndex
+    unsigned RnnInputArgIndex[3] = {1, 9, 4};
+    auto CERange = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
+    unsigned BeginOffset = Global.getLocInfo(CERange.getBegin()).second;
+    unsigned EndOffset = Global.getLocInfo(CERange.getEnd()).second;
     FuncInfo.isAssigned = IsAssigned;
-    FuncInfo.Length = CEEA.getExprLength();
+    FuncInfo.Length = EndOffset - BeginOffset + 1;
     FuncInfo.FilePath = CELocInfo.first;
     FuncInfo.Offset = CELocInfo.second;
     FuncInfo.isDataGradient = true;
     unsigned int ArgsNum = CE->getNumArgs();
-    if (auto CS = DpctGlobalInfo::findAncestor<CompoundStmt>(CE)) {
+    auto Condition = [&](const clang::DynTypedNode &Node) -> bool {
+      if (Node.get<IfStmt>() || Node.get<WhileStmt>() || Node.get<ForStmt>() ||
+          Node.get<DoStmt>() || Node.get<CaseStmt>() ||
+          Node.get<SwitchStmt>() || Node.get<CompoundStmt>()) {
+        return true;
+      }
+      return false;
+    };
+    if (auto CS = DpctGlobalInfo::findAncestor<CompoundStmt>(CE, Condition)) {
       auto LocInfo = Global.getLocInfo(CS->getBeginLoc());
       FuncInfo.CompoundLoc = LocInfo.first + std::to_string(LocInfo.second);
+    } else {
+      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, FuncName);
+      return;
     }
     if (FuncName == "cudnnRNNBackwardWeights_v8") {
-      HXDataIndex = 7, YDataIndex = 9;
+      RnnInputArgIndex[1] = 7;
+      RnnInputArgIndex[2] = 9;
       FuncInfo.isDataGradient = false;
+      if (!IsAssigned) {
+        auto Tok =
+            Lexer::findNextToken(CERange.getEnd(), Global.getSourceManager(),
+                                 LangOptions())
+                .value();
+        if (Tok.is(tok::TokenKind::semi)) {
+          FuncInfo.Length +=
+              Global.getLocInfo(Tok.getLocation()).second - EndOffset;
+        }
+      }
     }
-    std::vector<unsigned> RnnInputArgIndex = {RnnDescIndex, HXDataIndex,
-                                              YDataIndex};
-    for (auto Index : RnnInputArgIndex) {
+    for(int i = 0; i < 3; i++) {
       if (auto RnnInputDRE = dyn_cast<DeclRefExpr>(
-              CE->getArg(Index)->IgnoreImplicitAsWritten())) {
-        ExprAnalysis RnnInputArgEA(RnnInputDRE);
-        RnnInputArgEA.analyze();
-        std::string ArgName = RnnInputArgEA.getReplacedString();
+              CE->getArg(RnnInputArgIndex[i])->IgnoreImplicitAsWritten())) {
         if (auto RnnInputDecl = RnnInputDRE->getDecl()) {
+          auto ArgName = RnnInputDecl->getName();
           auto DeclLocInfo = Global.getLocInfo(RnnInputDecl->getBeginLoc());
           std::string MapKey =
-              DeclLocInfo.first + std::to_string(DeclLocInfo.second) + ArgName;
-          if (!RnnInputMap.count(MapKey)) {
+              DeclLocInfo.first + std::to_string(DeclLocInfo.second) + ArgName.str();
+          auto &SubMap = RnnInputMap[MapKey];
+          if (SubMap.empty()) {
             std::vector<const clang::DeclRefExpr *> MatchResults;
             findAllVarRef(RnnInputDRE, MatchResults, true);
             for (auto Result : MatchResults) {
               auto DRELocInfo = Global.getLocInfo(Result->getBeginLoc());
-              RnnInputMap[MapKey][DRELocInfo.first].push_back(DRELocInfo.second);
+              SubMap[DRELocInfo.first].push_back(DRELocInfo.second);
             }
           }
           FuncInfo.RnnInputDeclLoc.push_back(MapKey);
         }
       }
     }
-    for (unsigned int ArgIndex = 0; ArgIndex < ArgsNum; ArgIndex++) {
-      if (auto Arg = CE->getArg(ArgIndex)->IgnoreImplicitAsWritten()) {
+    if (FuncName == "cudnnRNNBackwardData_v8") {
+      FuncInfo.FuncArgs.reserve(ArgsNum);
+      for (unsigned int ArgIndex = 0; ArgIndex < ArgsNum; ArgIndex++) {
+        auto Arg = CE->getArg(ArgIndex)->IgnoreImplicitAsWritten();
         ExprAnalysis ArgEA(Arg);
         ArgEA.analyze();
         std::string ArgString = ArgEA.getReplacedString();
         FuncInfo.FuncArgs.push_back(ArgString);
       }
+    } else {
+      FuncInfo.FuncArgs.reserve(2);
+      auto XDataArg = CE->getArg(5)->IgnoreImplicitAsWritten();
+      auto DiffWeightArg = CE->getArg(11)->IgnoreImplicitAsWritten();
+      ExprAnalysis XDataArgEA(XDataArg);
+      ExprAnalysis DiffWeightArgEA(DiffWeightArg);
+      XDataArgEA.analyze();
+      DiffWeightArgEA.analyze();
+      std::string XDataArgString = XDataArgEA.getReplacedString();
+      std::string DiffWeightArgString = DiffWeightArgEA.getReplacedString();
+      FuncInfo.FuncArgs.push_back(XDataArgString);
+      FuncInfo.FuncArgs.push_back(DiffWeightArgString);
     }
-    BackwardFuncInfo.push_back(FuncInfo);
+    if (FuncInfo.FuncArgs.empty() || FuncInfo.RnnInputDeclLoc.empty() ||
+        (FuncInfo.RnnInputDeclLoc.size() != 3)) {
+      report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false, FuncName);
+      return;
+    }
+    BackwardFuncInfo.push_back(std::move(FuncInfo));
   } else {
     ExprAnalysis EA(CE);
     emplaceTransformation(EA.getReplacement());

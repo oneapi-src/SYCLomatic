@@ -401,130 +401,155 @@ void DpctFileInfo::postProcess() {
     }
   }
 }
-void DpctFileInfo::buildRnnBackwardFuncInfo() {
+
+class RnnBackwardFuncInfoBuilder{
+  std::vector<RnnBackwardFuncInfo> &RBFuncInfo;
   std::vector<RnnBackwardFuncInfo> ValidBackwardDataFuncInfo;
   std::vector<RnnBackwardFuncInfo> ValidBackwardWeightFuncInfo;
   std::vector<std::pair<RnnBackwardFuncInfo, RnnBackwardFuncInfo>>
       RnnDataWeightGradientPair;
-  for (auto &Info : RBFuncInfo) {
-    if (!Info.CompoundLoc.empty() && !Info.FuncArgs.empty() &&
-        !Info.RnnInputDeclLoc.empty() && (Info.RnnInputDeclLoc.size() == 3)) {
+  using InfoIter = std::vector<RnnBackwardFuncInfo>::iterator;
+public:
+  RnnBackwardFuncInfoBuilder(std::vector<RnnBackwardFuncInfo> &Infos)
+      : RBFuncInfo(Infos){};
+  std::vector<RnnBackwardFuncInfo> &getDataFuncInfo(){
+    return ValidBackwardDataFuncInfo;
+  }
+  std::vector<RnnBackwardFuncInfo> &getWeightFuncInfo() {
+    return ValidBackwardWeightFuncInfo;
+  }
+  std::vector<std::pair<RnnBackwardFuncInfo, RnnBackwardFuncInfo>> &
+  getPairedFuncCall() {
+    return RnnDataWeightGradientPair;
+  }
+  bool isInputNotChanged(InfoIter Data, InfoIter Weight) {
+    for (auto RnnInput : Data->RnnInputDeclLoc) {
+      auto &RnnInputRefs =
+          DpctGlobalInfo::getRnnInputMap()[RnnInput][Data->FilePath];
+      for (auto &RnnInputRef : RnnInputRefs) {
+        if ((RnnInputRef > (Data->Offset + Data->Length - 1)) &&
+            RnnInputRef < Weight->Offset) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+  bool isInputSame(InfoIter Data, InfoIter Weight) {
+    for (unsigned InputIndex = 0; InputIndex < 3; InputIndex++) {
+      if (Data->RnnInputDeclLoc[InputIndex] !=
+          Weight->RnnInputDeclLoc[InputIndex]) {
+        return false;
+      }
+    }
+    return true;
+  }
+  bool isValidScopeAndOrder(InfoIter Data, InfoIter Weight) {
+    if ((Data->CompoundLoc != Weight->CompoundLoc) &&
+        (Data->Offset >= Weight->Offset)) {
+      return false;
+    }
+    return true;
+  }
+  void build() {
+    for (auto &Info : RBFuncInfo) {
       if (Info.isDataGradient) {
         ValidBackwardDataFuncInfo.emplace_back(Info);
       } else {
         ValidBackwardWeightFuncInfo.emplace_back(Info);
       }
-    } else {
-      DiagnosticsUtils::report(Info.FilePath, Info.Offset,
-                               Diagnostics::API_NOT_MIGRATED, true, false);
+    }
+    std::vector<int> WeightPairdFlag(ValidBackwardWeightFuncInfo.size(), 0);
+    auto DataBegin = ValidBackwardDataFuncInfo.begin();
+    auto DataEnd = ValidBackwardDataFuncInfo.end();
+    auto WeightBegin = ValidBackwardWeightFuncInfo.begin();
+    auto WeightEnd = ValidBackwardWeightFuncInfo.end();
+    for (auto DataIter = DataBegin; DataIter != DataEnd; DataIter++) {
+      bool DataPaired = false;
+      for (auto WeightIter = WeightBegin; WeightIter != WeightEnd;
+           WeightIter++) {
+        if (isInputNotChanged(DataIter, WeightIter) &&
+            isInputSame(DataIter, WeightIter) &&
+            isValidScopeAndOrder(DataIter, WeightIter)) {
+          DataPaired = true;
+          WeightPairdFlag[WeightIter - WeightBegin] = 1;
+          RnnDataWeightGradientPair.emplace_back(
+              std::make_pair(*DataIter, *WeightIter));
+          break;
+        }
+      }
+      if (!DataPaired) {
+        DiagnosticsUtils::report(DataIter->FilePath, DataIter->Offset,
+                                 Diagnostics::API_NOT_MIGRATED, true, false,
+                                 "cudnnRNNBackwardData_v8");
+      }
+    }
+    for (auto WeightIter = WeightBegin; WeightIter != WeightEnd; WeightIter++) {
+      if (!WeightPairdFlag[WeightIter - WeightBegin]) {
+        DiagnosticsUtils::report(WeightIter->FilePath, WeightIter->Offset,
+                                 Diagnostics::API_NOT_MIGRATED, true, false,
+                                 "cudnnRNNBackwardWeights_v8");
+      }
     }
   }
+  std::vector<std::shared_ptr<ExtReplacement>> getReplacement() {
+    std::vector<std::shared_ptr<ExtReplacement>> Repls;
+    for (auto &PairedFunc : RnnDataWeightGradientPair) {
+      std::ostringstream DataRepl, WeightRepl;
+      RnnBackwardFuncInfo DataFuncInfo = PairedFunc.first;
+      RnnBackwardFuncInfo WeightFuncInfo = PairedFunc.second;
+      requestFeature(HelperFeatureEnum::DnnlUtils_async_rnn_backward,
+                     DataFuncInfo.FilePath);
+      Diagnostics WarningType;
+      if (WeightFuncInfo.isAssigned) {
+        WarningType = Diagnostics::FUNC_CALL_REMOVED_0;
+        WeightRepl << "0";
+      } else {
+        WarningType = Diagnostics::FUNC_CALL_REMOVED;
+      }
+      DiagnosticsUtils::report(
+          WeightFuncInfo.FilePath, WeightFuncInfo.Offset, WarningType, true,
+          false, "cudnnRNNBackwardWeights_v8",
+          "this call and cudnnRNNBackwardData_v8 are migrated to a single "
+          "function call async_rnn_backward");
 
-  for (auto DataIter = ValidBackwardDataFuncInfo.begin();
-       DataIter != ValidBackwardDataFuncInfo.end();) {
-    bool DataPaired = false;
-    for (auto WeightIter = ValidBackwardWeightFuncInfo.begin();
-         WeightIter != ValidBackwardWeightFuncInfo.end(); WeightIter++) {
-      bool WeightPaired = true;
-      for (unsigned InputIndex = 0; InputIndex < 3; InputIndex++) {
-        if (DataIter->RnnInputDeclLoc[InputIndex] !=
-            WeightIter->RnnInputDeclLoc[InputIndex]) {
-          WeightPaired = false;
-          break;
+      if (DataFuncInfo.isAssigned) {
+        DataRepl << "(";
+        DiagnosticsUtils::report(DataFuncInfo.FilePath, DataFuncInfo.Offset,
+                                 Diagnostics::NOERROR_RETURN_COMMA_OP, true,
+                                 false);
+      }
+      DataRepl << DataFuncInfo.FuncArgs[0] << ".async_rnn_backward("
+               << DataFuncInfo.FuncArgs[1];
+      for (unsigned int index = 3; index <= 21; index++) {
+        DataRepl << ", " << DataFuncInfo.FuncArgs[index];
+        if (index == 6) {
+          DataRepl << ", " << WeightFuncInfo.FuncArgs[0];
+        } else if (index == 17) {
+          DataRepl << ", " << WeightFuncInfo.FuncArgs[1];
         }
       }
-      if (!WeightPaired || ((DataIter->CompoundLoc != WeightIter->CompoundLoc) &&
-                        (DataIter->FilePath != WeightIter->FilePath) &&
-                        (DataIter->Offset >= WeightIter->Offset))) {
-        continue;
+      if (DataFuncInfo.isAssigned) {
+        DataRepl << "), 0)";
+      } else {
+        DataRepl << ")";
       }
-      for (auto RnnInput : DataIter->RnnInputDeclLoc) {
-        auto &RnnInputRefs =
-            DpctGlobalInfo::getRnnInputMap()[RnnInput][DataIter->FilePath];
-        for (auto &RnnInputRef : RnnInputRefs) {
-          if ((RnnInputRef > (DataIter->Offset + DataIter->Length - 1)) &&
-              RnnInputRef < WeightIter->Offset) {
-            WeightPaired = false;
-            break;
-          }
-        }
-        if (!WeightPaired) {
-          break;
-        }
-      }
-      if (WeightPaired) {
-        DataPaired = true;
-        RnnDataWeightGradientPair.emplace_back(
-            std::make_pair(*DataIter, *WeightIter));
-        ValidBackwardDataFuncInfo.erase(DataIter);
-        ValidBackwardWeightFuncInfo.erase(WeightIter);
-        break;
-      }
-    }
-    if(!DataPaired) {
-      DataIter++;
+      Repls.emplace_back(std::make_shared<ExtReplacement>(
+          DataFuncInfo.FilePath, DataFuncInfo.Offset, DataFuncInfo.Length,
+          DataRepl.str(), nullptr));
+      Repls.emplace_back(std::make_shared<ExtReplacement>(
+          WeightFuncInfo.FilePath, WeightFuncInfo.Offset, WeightFuncInfo.Length,
+          WeightRepl.str(), nullptr));
     }
   }
-  for (auto &UnpairedDataFunc : ValidBackwardDataFuncInfo) {
-    DiagnosticsUtils::report(UnpairedDataFunc.FilePath, UnpairedDataFunc.Offset,
-                             Diagnostics::API_NOT_MIGRATED, true, false,
-                             "cudnnRNNBackwardData_v8");
-  }
-  for (auto &UnpairedWeightFunc : ValidBackwardWeightFuncInfo) {
-    DiagnosticsUtils::report(UnpairedWeightFunc.FilePath,
-                             UnpairedWeightFunc.Offset,
-                             Diagnostics::API_NOT_MIGRATED, true, false,
-                             "cudnnRNNBackwardWeights_v8");
-  }
-  for(auto &PairedFunc : RnnDataWeightGradientPair) {
-    std::string DataRepl, WeightRepl;
-    RnnBackwardFuncInfo DataFuncInfo = PairedFunc.first;
-    RnnBackwardFuncInfo WeightFuncInfo = PairedFunc.second;
-    requestFeature(HelperFeatureEnum::DnnlUtils_async_rnn_backward,
-                   DataFuncInfo.FilePath);
-    if (WeightFuncInfo.isAssigned) {
-      DiagnosticsUtils::report(
-          WeightFuncInfo.FilePath, WeightFuncInfo.Offset,
-          Diagnostics::FUNC_CALL_REMOVED_0, true, false,
-          "cudnnRNNBackwardWeights_v8",
-          "this call and cudnnRNNBackwardData_v8 are migrated to a single "
-          "function call async_rnn_backward");
-      WeightRepl = "0";
-    } else {
-      DiagnosticsUtils::report(
-          WeightFuncInfo.FilePath, WeightFuncInfo.Offset,
-          Diagnostics::FUNC_CALL_REMOVED, true, false,
-          "cudnnRNNBackwardWeights_v8",
-          "this call and cudnnRNNBackwardData_v8 are migrated to a single "
-          "function call async_rnn_backward");
-    }
-    if (DataFuncInfo.isAssigned) {
-      DataRepl = "(";
-      DiagnosticsUtils::report(DataFuncInfo.FilePath, DataFuncInfo.Offset,
-                               Diagnostics::NOERROR_RETURN_COMMA_OP, true,
-                               false);
-    }
-    DataRepl += DataFuncInfo.FuncArgs[0] + ".async_rnn_backward(" +
-                DataFuncInfo.FuncArgs[1];
-    for(unsigned int index = 3; index <= 21; index++) {
-      DataRepl += ", " + DataFuncInfo.FuncArgs[index];
-      if(index == 6) {
-        DataRepl += ", " + WeightFuncInfo.FuncArgs[5];
-      } else if(index == 17) {
-        DataRepl += ", " + WeightFuncInfo.FuncArgs[11];
-      }
-    }
-    if(DataFuncInfo.isAssigned) {
-      DataRepl += "), 0)";
-    } else {
-      DataRepl += ")";
-    }
-    addReplacement(std::make_shared<ExtReplacement>(
-        DataFuncInfo.FilePath, DataFuncInfo.Offset, DataFuncInfo.Length,
-        DataRepl, nullptr));
-    addReplacement(std::make_shared<ExtReplacement>(
-        WeightFuncInfo.FilePath, WeightFuncInfo.Offset, WeightFuncInfo.Length,
-        WeightRepl, nullptr));
+};
+
+void DpctFileInfo::buildRnnBackwardFuncInfo() {
+  RnnBackwardFuncInfoBuilder Builder(RBFuncInfo);
+  Builder.build();
+  auto Repls = Builder.getReplacement();
+  for(auto &Repl : Repls) {
+    addReplacement(Repl);
   }
 }
 
