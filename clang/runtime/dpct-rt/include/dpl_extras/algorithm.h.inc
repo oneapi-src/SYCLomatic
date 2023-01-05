@@ -1737,6 +1737,26 @@ inline void segmented_sort_pairs(
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|segmented_sort_pairs_io_iterator_pair|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|segmented_sort_pairs
+// DplExtrasIterators|io_iterator_pair
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename value_t,
+          typename OffsetIteratorT>
+inline void segmented_sort_pairs(
+    _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys, io_iterator_pair<value_t> &values,
+    int64_t n, int64_t nsegments,
+    OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
+    bool descending = false, int begin_bit = 0,
+    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
+                  8) {
+  segmented_sort_pairs(std::forward<_ExecutionPolicy>(policy), keys.input(), keys.output(),
+            values.input(), values.output(), n, nsegments, begin_offsets, end_offsets, descending, begin_bit, end_bit);
+}
+// DPCT_LABEL_END
+
 } // end namespace dpct
 
 #endif
