@@ -19,14 +19,12 @@ namespace dpct {
 namespace fft {
 /// A type to describe the FFT direction is forward or backward.
 struct fft_direction {
-  enum : int {
-    forward = -1,
-    backward = 1
-  };
+  enum : int { forward = -1, backward = 1 };
   fft_direction() {}
   fft_direction(int dir) : _dir(dir) {}
   operator int() const { return _dir; }
 
+private:
   int _dir = -1;
 };
 /// An enumeration type to describe the types of FFT input and output data.
