@@ -54,11 +54,17 @@ namespace fft {
 // DPCT_LABEL_BEGIN|fft_direction|dpct::fft
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
+/// [DEPRECATED] An enumeration type to describe the FFT direction is forward or backward.
+[[deprecated("Use transform_direction instead.")]]
+enum fft_direction : int {
+  forward = 0,
+  backward
+};
 /// A type to describe the FFT direction is forward or backward.
-struct fft_direction {
-  enum : int { forward = -1, backward = 1 };
-  fft_direction() {}
-  fft_direction(int dir) : _dir(dir) {}
+struct transform_direction {
+  enum : int { fwd = -1, bwd = 1 };
+  transform_direction() {}
+  transform_direction(int dir) : _dir(dir) {}
   operator int() const { return _dir; }
 
 private:
@@ -93,6 +99,50 @@ class fft_engine {
 public:
   /// Default constructor.
   fft_engine() {}
+  /// [DEPRECATED] Commit the configuration to calculate n-D FFT.
+  /// \param [in] exec_queue The queue where the calculation should be executed.
+  /// \param [in] dim Dimension number of the data.
+  /// \param [in] n Pointer to an array containing each dimension's size.
+  /// \param [in] inembed Pointer to an array containing each dimension's size
+  /// of the embedded input data.
+  /// \param [in] istride Stride size of the input data.
+  /// \param [in] idist Distance between the two batches of the input data.
+  /// \param [in] input_type Input data type.
+  /// \param [in] onembed Pointer to an array containing each dimension's size
+  /// of the embedded output data.
+  /// \param [in] ostride Stride size of the output data.
+  /// \param [in] odist Distance between the two batches of the output data.
+  /// \param [in] output_type Output data type.
+  /// \param [in] batch The number of FFT operations to perform.
+  /// \param [out] scratchpad_size The workspace size required for this FFT.
+  /// If this value is used to allocate memory, \p direction_and_placement need
+  /// to be specified explicitly to get correct result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT direction
+  /// and placement info. If this value is specified, the direction parameter
+  /// will be ignored in the fft_engine::compute function. If it is not set,
+  /// forward direction(if current FFT is complex-to-complex) and out-of-place
+  /// (false) are set by default.
+  [[deprecated("Use commit(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  void commit(sycl::queue *exec_queue, int dim, long long *n,
+              long long *inembed, long long istride, long long idist,
+              library_data_t input_type, long long *onembed, long long ostride,
+              long long odist, library_data_t output_type, long long batch,
+              size_t *scratchpad_size,
+              std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                  direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    commit(exec_queue, dim, n, inembed, istride, idist, input_type, onembed,
+           ostride, odist, output_type, batch, scratchpad_size,
+           new_direction_and_placement);
+  }
   /// Commit the configuration to calculate n-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
   /// \param [in] dim Dimension number of the data.
@@ -121,7 +171,7 @@ public:
               library_data_t input_type, long long *onembed, long long ostride,
               long long odist, library_data_t output_type, long long batch,
               size_t *scratchpad_size,
-              std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+              std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
                   direction_and_placement = std::nullopt) {
     _q = exec_queue;
     init<long long>(dim, n, inembed, istride, idist, input_type, onembed,
@@ -133,6 +183,49 @@ public:
       else
         *scratchpad_size = _workspace_bytes;
     }
+  }
+  /// [DEPRECATED] Commit the configuration to calculate n-D FFT.
+  /// \param [in] exec_queue The queue where the calculation should be executed.
+  /// \param [in] dim Dimension number of the data.
+  /// \param [in] n Pointer to an array containing each dimension's size.
+  /// \param [in] inembed Pointer to an array containing each dimension's size
+  /// of the embedded input data.
+  /// \param [in] istride Stride size of the input data.
+  /// \param [in] idist Distance between the two batches of the input data.
+  /// \param [in] input_type Input data type.
+  /// \param [in] onembed Pointer to an array containing each dimension's size
+  /// of the embedded output data.
+  /// \param [in] ostride Stride size of the output data.
+  /// \param [in] odist Distance between the two batches of the output data.
+  /// \param [in] output_type Output data type.
+  /// \param [in] batch The number of FFT operations to perform.
+  /// \param [out] scratchpad_size The workspace size required for this FFT.
+  /// If this value is used to allocate memory, \p direction_and_placement need
+  /// to be specified explicitly to get correct result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT direction
+  /// and placement info. If this value is specified, the direction parameter
+  /// will be ignored in the fft_engine::compute function. If it is not set,
+  /// forward direction(if current FFT is complex-to-complex) and out-of-place
+  /// (false) are set by default.
+  [[deprecated("Use commit(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  void commit(sycl::queue *exec_queue, int dim, int *n, int *inembed,
+              int istride, int idist, library_data_t input_type, int *onembed,
+              int ostride, int odist, library_data_t output_type, int batch,
+              size_t *scratchpad_size,
+              std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                  direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    commit(exec_queue, dim, n, inembed, istride, idist, input_type, onembed,
+           ostride, odist, output_type, batch, scratchpad_size,
+           new_direction_and_placement);
   }
   /// Commit the configuration to calculate n-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
@@ -161,7 +254,7 @@ public:
               int istride, int idist, library_data_t input_type, int *onembed,
               int ostride, int odist, library_data_t output_type, int batch,
               size_t *scratchpad_size,
-              std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+              std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
                   direction_and_placement = std::nullopt) {
     _q = exec_queue;
     init<int>(dim, n, inembed, istride, idist, input_type, onembed, ostride,
@@ -172,6 +265,47 @@ public:
       else
         *scratchpad_size = _workspace_bytes;
     }
+  }
+  /// [DEPRECATED] Commit the configuration to calculate n-D FFT.
+  /// \param [in] exec_queue The queue where the calculation should be executed.
+  /// \param [in] dim Dimension number of the data.
+  /// \param [in] n Pointer to an array containing each dimension's size.
+  /// \param [in] inembed Pointer to an array containing each dimension's size
+  /// of the embedded input data.
+  /// \param [in] istride Stride size of the input data.
+  /// \param [in] idist Distance between the two batches of the input data.
+  /// \param [in] onembed Pointer to an array containing each dimension's size
+  /// of the embedded output data.
+  /// \param [in] ostride Stride size of the output data.
+  /// \param [in] odist Distance between the two batches of the output data.
+  /// \param [in] type The FFT type.
+  /// \param [in] batch The number of FFT operations to perform.
+  /// \param [out] scratchpad_size The workspace size required for this FFT.
+  /// If this value is used to allocate memory, \p direction_and_placement need
+  /// to be specified explicitly to get correct result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT direction
+  /// and placement info. If this value is specified, the direction parameter
+  /// will be ignored in the fft_engine::compute function. If it is not set,
+  /// forward direction(if current FFT is complex-to-complex) and out-of-place
+  /// (false) are set by default.
+  [[deprecated("Use commit(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  void commit(sycl::queue *exec_queue, int dim, long long *n,
+              long long *inembed, long long istride, long long idist,
+              long long *onembed, long long ostride, long long odist,
+              fft_type type, long long batch, size_t *scratchpad_size,
+              std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                  direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    commit(exec_queue, dim, n, inembed, istride, idist, onembed, ostride, odist,
+           type, batch, scratchpad_size, new_direction_and_placement);
   }
   /// Commit the configuration to calculate n-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
@@ -199,12 +333,52 @@ public:
               long long *inembed, long long istride, long long idist,
               long long *onembed, long long ostride, long long odist,
               fft_type type, long long batch, size_t *scratchpad_size,
-              std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+              std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
                   direction_and_placement = std::nullopt) {
     commit(exec_queue, dim, n, inembed, istride, idist,
            fft_type_to_data_type(type).first, onembed, ostride, odist,
            fft_type_to_data_type(type).second, batch, scratchpad_size,
            direction_and_placement);
+  }
+  /// [DEPRECATED] Commit the configuration to calculate n-D FFT.
+  /// \param [in] exec_queue The queue where the calculation should be executed.
+  /// \param [in] dim Dimension number of the data.
+  /// \param [in] n Pointer to an array containing each dimension's size.
+  /// \param [in] inembed Pointer to an array containing each dimension's size
+  /// of the embedded input data.
+  /// \param [in] istride Stride size of the input data.
+  /// \param [in] idist Distance between the two batches of the input data.
+  /// \param [in] onembed Pointer to an array containing each dimension's size
+  /// of the embedded output data.
+  /// \param [in] ostride Stride size of the output data.
+  /// \param [in] odist Distance between the two batches of the output data.
+  /// \param [in] type The FFT type.
+  /// \param [in] batch The number of FFT operations to perform.
+  /// \param [out] scratchpad_size The workspace size required for this FFT.
+  /// If this value is used to allocate memory, \p direction_and_placement need
+  /// to be specified explicitly to get correct result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT direction
+  /// and placement info. If this value is specified, the direction parameter
+  /// will be ignored in the fft_engine::compute function. If it is not set,
+  /// forward direction(if current FFT is complex-to-complex) and out-of-place
+  /// (false) are set by default.
+  [[deprecated("Use commit(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  void commit(sycl::queue *exec_queue, int dim, int *n, int *inembed,
+              int istride, int idist, int *onembed, int ostride, int odist,
+              fft_type type, int batch, size_t *scratchpad_size,
+              std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                  direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    commit(exec_queue, dim, n, inembed, istride, idist, onembed, ostride, odist,
+           type, batch, scratchpad_size, new_direction_and_placement);
   }
   /// Commit the configuration to calculate n-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
@@ -231,12 +405,42 @@ public:
   void commit(sycl::queue *exec_queue, int dim, int *n, int *inembed,
               int istride, int idist, int *onembed, int ostride, int odist,
               fft_type type, int batch, size_t *scratchpad_size,
-              std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+              std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
                   direction_and_placement = std::nullopt) {
     commit(exec_queue, dim, n, inembed, istride, idist,
            fft_type_to_data_type(type).first, onembed, ostride, odist,
            fft_type_to_data_type(type).second, batch, scratchpad_size,
            direction_and_placement);
+  }
+  /// [DEPRECATED] Commit the configuration to calculate 1-D FFT.
+  /// \param [in] exec_queue The queue where the calculation should be executed.
+  /// \param [in] n1 The size of the dimension of the data.
+  /// \param [in] type The FFT type.
+  /// \param [in] batch The number of FFT operations to perform.
+  /// \param [out] scratchpad_size The workspace size required for this FFT.
+  /// If this value is used to allocate memory, \p direction_and_placement need
+  /// to be specified explicitly to get correct result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT direction
+  /// and placement info. If this value is specified, the direction parameter
+  /// will be ignored in the fft_engine::compute function. If it is not set,
+  /// forward direction(if current FFT is complex-to-complex) and out-of-place
+  /// (false) are set by default.
+  [[deprecated("Use commit(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  void commit(sycl::queue *exec_queue, int n1, fft_type type, int batch,
+              size_t *scratchpad_size,
+              std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                  direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    commit(exec_queue, n1, type, batch, scratchpad_size,
+           new_direction_and_placement);
   }
   /// Commit the configuration to calculate 1-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
@@ -253,7 +457,7 @@ public:
   /// (false) are set by default.
   void commit(sycl::queue *exec_queue, int n1, fft_type type, int batch,
               size_t *scratchpad_size,
-              std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+              std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
                   direction_and_placement = std::nullopt) {
     _q = exec_queue;
     _n.resize(1);
@@ -275,6 +479,36 @@ public:
         *scratchpad_size = _workspace_bytes;
     }
   }
+  /// [DEPRECATED] Commit the configuration to calculate 2-D FFT.
+  /// \param [in] exec_queue The queue where the calculation should be executed.
+  /// \param [in] n2 The size of the 2nd dimension (outermost) of the data.
+  /// \param [in] n1 The size of the 1st dimension (innermost) of the data.
+  /// \param [in] type The FFT type.
+  /// \param [out] scratchpad_size The workspace size required for this FFT.
+  /// If this value is used to allocate memory, \p direction_and_placement need
+  /// to be specified explicitly to get correct result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT direction
+  /// and placement info. If this value is specified, the direction parameter
+  /// will be ignored in the fft_engine::compute function. If it is not set,
+  /// forward direction(if current FFT is complex-to-complex) and out-of-place
+  /// (false) are set by default.
+  [[deprecated("Use commit(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  void commit(sycl::queue *exec_queue, int n2, int n1, fft_type type,
+              size_t *scratchpad_size,
+              std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                  direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    commit(exec_queue, n2, n1, type, scratchpad_size,
+           new_direction_and_placement);
+  }
   /// Commit the configuration to calculate 2-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
   /// \param [in] n2 The size of the 2nd dimension (outermost) of the data.
@@ -290,7 +524,7 @@ public:
   /// (false) are set by default.
   void commit(sycl::queue *exec_queue, int n2, int n1, fft_type type,
               size_t *scratchpad_size,
-              std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+              std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
                   direction_and_placement = std::nullopt) {
     _q = exec_queue;
     _n.resize(2);
@@ -312,6 +546,37 @@ public:
         *scratchpad_size = _workspace_bytes;
     }
   }
+  /// [DEPRECATED] Commit the configuration to calculate 3-D FFT.
+  /// \param [in] exec_queue The queue where the calculation should be executed.
+  /// \param [in] n3 The size of the 3rd dimension (outermost) of the data.
+  /// \param [in] n2 The size of the 2nd dimension of the data.
+  /// \param [in] n1 The size of the 1st dimension (innermost) of the data.
+  /// \param [in] type The FFT type.
+  /// \param [out] scratchpad_size The workspace size required for this FFT.
+  /// If this value is used to allocate memory, \p direction_and_placement need
+  /// to be specified explicitly to get correct result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT direction
+  /// and placement info. If this value is specified, the direction parameter
+  /// will be ignored in the fft_engine::compute function. If it is not set,
+  /// forward direction(if current FFT is complex-to-complex) and out-of-place
+  /// (false) are set by default.
+  [[deprecated("Use commit(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  void commit(sycl::queue *exec_queue, int n3, int n2, int n1, fft_type type,
+              size_t *scratchpad_size,
+              std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                  direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    commit(exec_queue, n3, n2, n1, type, scratchpad_size,
+           new_direction_and_placement);
+  }
   /// Commit the configuration to calculate 3-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
   /// \param [in] n3 The size of the 3rd dimension (outermost) of the data.
@@ -328,7 +593,7 @@ public:
   /// (false) are set by default.
   void commit(sycl::queue *exec_queue, int n3, int n2, int n1, fft_type type,
               size_t *scratchpad_size,
-              std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+              std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
                   direction_and_placement = std::nullopt) {
     _q = exec_queue;
     _n.resize(3);
@@ -352,6 +617,32 @@ public:
     }
   }
 
+  /// [DEPRECATED] Create the class for calculate 1-D FFT.
+  /// \param [in] exec_queue The queue where the calculation should be executed.
+  /// \param [in] n1 The size of the dimension of the data.
+  /// \param [in] type The FFT type.
+  /// \param [in] batch The number of FFT operations to perform.
+  /// \param [in] direction_and_placement Explicitly specify the FFT direction
+  /// and placement info. If this value is specified, the direction parameter
+  /// will be ignored in the fft_engine::compute function. If it is not set,
+  /// forward direction(if current FFT is complex-to-complex) and out-of-place
+  /// (false) are set by default.
+  [[deprecated("Use create(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  static fft_engine *
+  create(sycl::queue *exec_queue, int n1, fft_type type, int batch,
+         std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+             direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    return create(exec_queue, n1, type, batch, direction_and_placement);
+  }
   /// Create the class for calculate 1-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
   /// \param [in] n1 The size of the dimension of the data.
@@ -364,12 +655,38 @@ public:
   /// (false) are set by default.
   static fft_engine *
   create(sycl::queue *exec_queue, int n1, fft_type type, int batch,
-         std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+         std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
              direction_and_placement = std::nullopt) {
     fft_engine *engine = new fft_engine();
     engine->commit(exec_queue, n1, type, batch, nullptr,
                    direction_and_placement);
     return engine;
+  }
+  /// [DEPRECATED] Create the class for calculate 2-D FFT.
+  /// \param [in] exec_queue The queue where the calculation should be executed.
+  /// \param [in] n2 The size of the 2nd dimension (outermost) of the data.
+  /// \param [in] n1 The size of the 1st dimension (innermost) of the data.
+  /// \param [in] type The FFT type.
+  /// \param [in] direction_and_placement Explicitly specify the FFT direction
+  /// and placement info. If this value is specified, the direction parameter
+  /// will be ignored in the fft_engine::compute function. If it is not set,
+  /// forward direction(if current FFT is complex-to-complex) and out-of-place
+  /// (false) are set by default.
+  [[deprecated("Use create(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  static fft_engine *
+  create(sycl::queue *exec_queue, int n2, int n1, fft_type type,
+         std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+             direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    return create(exec_queue, n2, n1, type, new_direction_and_placement);
   }
   /// Create the class for calculate 2-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
@@ -383,11 +700,38 @@ public:
   /// (false) are set by default.
   static fft_engine *
   create(sycl::queue *exec_queue, int n2, int n1, fft_type type,
-         std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+         std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
              direction_and_placement = std::nullopt) {
     fft_engine *engine = new fft_engine();
     engine->commit(exec_queue, n2, n1, type, nullptr, direction_and_placement);
     return engine;
+  }
+  /// [DEPRECATED] Create the class for calculate 3-D FFT.
+  /// \param [in] exec_queue The queue where the calculation should be executed.
+  /// \param [in] n3 The size of the 3rd dimension (outermost) of the data.
+  /// \param [in] n2 The size of the 2nd dimension of the data.
+  /// \param [in] n1 The size of the 1st dimension (innermost) of the data.
+  /// \param [in] type The FFT type.
+  /// \param [in] direction_and_placement Explicitly specify the FFT direction
+  /// and placement info. If this value is specified, the direction parameter
+  /// will be ignored in the fft_engine::compute function. If it is not set,
+  /// forward direction(if current FFT is complex-to-complex) and out-of-place
+  /// (false) are set by default.
+  [[deprecated("Use create(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  static fft_engine *
+  create(sycl::queue *exec_queue, int n3, int n2, int n1, fft_type type,
+         std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+             direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    return create(exec_queue, n3, n2, n1, type, new_direction_and_placement);
   }
   /// Create the class for calculate 3-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
@@ -402,12 +746,50 @@ public:
   /// (false) are set by default.
   static fft_engine *
   create(sycl::queue *exec_queue, int n3, int n2, int n1, fft_type type,
-         std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+         std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
              direction_and_placement = std::nullopt) {
     fft_engine *engine = new fft_engine();
     engine->commit(exec_queue, n3, n2, n1, type, nullptr,
                    direction_and_placement);
     return engine;
+  }
+  /// [DEPRECATED] Create the class for calculate n-D FFT.
+  /// \param [in] exec_queue The queue where the calculation should be executed.
+  /// \param [in] dim Dimension number of the data.
+  /// \param [in] n Pointer to an array containing each dimension's size.
+  /// \param [in] inembed Pointer to an array containing each dimension's size
+  /// of the embedded input data.
+  /// \param [in] istride Stride size of the input data.
+  /// \param [in] idist Distance between the two batches of the input data.
+  /// \param [in] onembed Pointer to an array containing each dimension's size
+  /// of the embedded output data.
+  /// \param [in] ostride Stride size of the output data.
+  /// \param [in] odist Distance between the two batches of the output data.
+  /// \param [in] type The FFT type.
+  /// \param [in] batch The number of FFT operations to perform.
+  /// \param [in] direction_and_placement Explicitly specify the FFT direction
+  /// and placement info. If this value is specified, the direction parameter
+  /// will be ignored in the fft_engine::compute function. If it is not set,
+  /// forward direction(if current FFT is complex-to-complex) and out-of-place
+  /// (false) are set by default.
+  [[deprecated("Use create(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  static fft_engine *
+  create(sycl::queue *exec_queue, int dim, int *n, int *inembed, int istride,
+         int idist, int *onembed, int ostride, int odist, fft_type type,
+         int batch,
+         std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+             direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    return create(exec_queue, dim, n, inembed, istride, idist, onembed, ostride,
+                  odist, type, batch, new_direction_and_placement);
   }
   /// Create the class for calculate n-D FFT.
   /// \param [in] exec_queue The queue where the calculation should be executed.
@@ -432,7 +814,7 @@ public:
   create(sycl::queue *exec_queue, int dim, int *n, int *inembed, int istride,
          int idist, int *onembed, int ostride, int odist, fft_type type,
          int batch,
-         std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+         std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
              direction_and_placement = std::nullopt) {
     fft_engine *engine = new fft_engine();
     engine->commit(exec_queue, dim, n, inembed, istride, idist, onembed,
@@ -449,6 +831,47 @@ public:
   /// \param [in] engine Pointer returned from fft_engine::craete.
   static void destroy(fft_engine *engine) { delete engine; }
 
+  /// [DEPRECATED] Estimates the workspace size for calculating n-D FFT.
+  /// \param [in] dim Dimension number of the data.
+  /// \param [in] n Pointer to an array containing each dimension's size.
+  /// \param [in] inembed Pointer to an array containing each dimension's size
+  /// of the embedded input data.
+  /// \param [in] istride Stride size of the input data.
+  /// \param [in] idist Distance between the two batches of the input data.
+  /// \param [in] onembed Pointer to an array containing each dimension's size
+  /// of the embedded output data.
+  /// \param [in] ostride Stride size of the output data.
+  /// \param [in] odist Distance between the two batches of the output data.
+  /// \param [in] type The FFT type.
+  /// \param [in] batch The number of FFT operations to perform.
+  /// \param [out] estimated_scratchpad_size The estimated workspace size
+  /// required for this FFT. If this value is used to allocate memory,
+  /// \p direction_and_placement need to be specified explicitly to get correct
+  /// result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT
+  /// direction and placement info. If it is not set, forward direction(if
+  /// current FFT is complex-to-complex) and out-of-place (false) are set by default.
+  [[deprecated("Use estimate_size(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  static void
+  estimate_size(int dim, long long *n, long long *inembed, long long istride,
+                long long idist, long long *onembed, long long ostride,
+                long long odist, fft_type type, long long batch,
+                size_t *estimated_scratchpad_size,
+                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                    direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    estimate_size(dim, n, inembed, istride, idist, onembed, ostride, odist,
+                  type, batch, estimated_scratchpad_size,
+                  new_direction_and_placement);
+  }
   /// Estimates the workspace size for calculating n-D FFT.
   /// \param [in] dim Dimension number of the data.
   /// \param [in] n Pointer to an array containing each dimension's size.
@@ -474,7 +897,7 @@ public:
                 long long idist, long long *onembed, long long ostride,
                 long long odist, fft_type type, long long batch,
                 size_t *estimated_scratchpad_size,
-                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
                     direction_and_placement = std::nullopt) {
     fft_engine *engine = fft_engine::create();
     engine->_is_estimate_call = true;
@@ -483,6 +906,46 @@ public:
                    fft_type_to_data_type(type).second, batch,
                    estimated_scratchpad_size, direction_and_placement);
     fft_engine::destroy(engine);
+  }
+  /// [DEPRECATED] Estimates the workspace size for calculating n-D FFT.
+  /// \param [in] dim Dimension number of the data.
+  /// \param [in] n Pointer to an array containing each dimension's size.
+  /// \param [in] inembed Pointer to an array containing each dimension's size
+  /// of the embedded input data.
+  /// \param [in] istride Stride size of the input data.
+  /// \param [in] idist Distance between the two batches of the input data.
+  /// \param [in] onembed Pointer to an array containing each dimension's size
+  /// of the embedded output data.
+  /// \param [in] ostride Stride size of the output data.
+  /// \param [in] odist Distance between the two batches of the output data.
+  /// \param [in] type The FFT type.
+  /// \param [in] batch The number of FFT operations to perform.
+  /// \param [out] estimated_scratchpad_size The estimated workspace size
+  /// required for this FFT. If this value is used to allocate memory,
+  /// \p direction_and_placement need to be specified explicitly to get correct
+  /// result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT
+  /// direction and placement info. If it is not set, forward direction(if
+  /// current FFT is complex-to-complex) and out-of-place (false) are set by default.
+  [[deprecated("Use estimate_size(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  static void
+  estimate_size(int dim, int *n, int *inembed, int istride, int idist,
+                int *onembed, int ostride, int odist, fft_type type, int batch,
+                size_t *estimated_scratchpad_size,
+                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                    direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    estimate_size(dim, n, inembed, istride, idist, onembed, ostride, odist,
+                  type, batch, estimated_scratchpad_size,
+                  new_direction_and_placement);
   }
   /// Estimates the workspace size for calculating n-D FFT.
   /// \param [in] dim Dimension number of the data.
@@ -508,7 +971,7 @@ public:
   estimate_size(int dim, int *n, int *inembed, int istride, int idist,
                 int *onembed, int ostride, int odist, fft_type type, int batch,
                 size_t *estimated_scratchpad_size,
-                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
                     direction_and_placement = std::nullopt) {
     fft_engine *engine = fft_engine::create();
     engine->_is_estimate_call = true;
@@ -517,6 +980,35 @@ public:
                    fft_type_to_data_type(type).second, batch,
                    estimated_scratchpad_size, direction_and_placement);
     fft_engine::destroy(engine);
+  }
+  /// [DEPRECATED] Estimates the workspace size for calculating 1-D FFT.
+  /// \param [in] n1 The size of the dimension of the data.
+  /// \param [in] type The FFT type.
+  /// \param [in] batch The number of FFT operations to perform.
+  /// \param [out] estimated_scratchpad_size The estimated workspace size
+  /// required for this FFT. If this value is used to allocate memory,
+  /// \p direction_and_placement need to be specified explicitly to get correct
+  /// result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT direction
+  /// and placement info. If it is not set, forward direction(if current FFT is
+  /// complex-to-complex) and out-of-place (false) are set by default.
+  [[deprecated("Use estimate_size(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  static void
+  estimate_size(int n1, fft_type type, int batch,
+                size_t *estimated_scratchpad_size,
+                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                    direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    estimate_size(n1, type, batch, estimated_scratchpad_size,
+                  new_direction_and_placement);
   }
   /// Estimates the workspace size for calculating 1-D FFT.
   /// \param [in] n1 The size of the dimension of the data.
@@ -532,13 +1024,42 @@ public:
   static void
   estimate_size(int n1, fft_type type, int batch,
                 size_t *estimated_scratchpad_size,
-                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
                     direction_and_placement = std::nullopt) {
     fft_engine *engine = fft_engine::create();
     engine->_is_estimate_call = true;
     engine->commit(&dpct::get_default_queue(), n1, type, batch,
                    estimated_scratchpad_size, direction_and_placement);
     fft_engine::destroy(engine);
+  }
+  /// [DEPRECATED] Estimates the workspace size for calculating 2-D FFT.
+  /// \param [in] n2 The size of the 2nd dimension (outermost) of the data.
+  /// \param [in] n1 The size of the 1st dimension (innermost) of the data.
+  /// \param [in] type The FFT type.
+  /// \param [out] estimated_scratchpad_size The estimated workspace size
+  /// required for this FFT. If this value is used to allocate memory,
+  /// \p direction_and_placement need to be specified explicitly to get correct
+  /// result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT
+  /// direction and placement info. If it is not set, forward direction(if
+  /// current FFT is complex-to-complex) and out-of-place (false) are set by default.
+  [[deprecated("Use estimate_size(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  static void
+  estimate_size(int n2, int n1, fft_type type,
+                size_t *estimated_scratchpad_size,
+                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                    direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    estimate_size(n2, n1, type, estimated_scratchpad_size,
+                  new_direction_and_placement);
   }
   /// Estimates the workspace size for calculating 2-D FFT.
   /// \param [in] n2 The size of the 2nd dimension (outermost) of the data.
@@ -554,13 +1075,43 @@ public:
   static void
   estimate_size(int n2, int n1, fft_type type,
                 size_t *estimated_scratchpad_size,
-                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
                     direction_and_placement = std::nullopt) {
     fft_engine *engine = fft_engine::create();
     engine->_is_estimate_call = true;
     engine->commit(&dpct::get_default_queue(), n2, n1, type,
                    estimated_scratchpad_size, direction_and_placement);
     fft_engine::destroy(engine);
+  }
+  /// [DEPRECATED] Estimates the workspace size for calculating 3-D FFT.
+  /// \param [in] n3 The size of the 3rd dimension (outermost) of the data.
+  /// \param [in] n2 The size of the 2nd dimension of the data.
+  /// \param [in] n1 The size of the 1st dimension (innermost) of the data.
+  /// \param [in] type The FFT type.
+  /// \param [out] estimated_scratchpad_size The estimated workspace size
+  /// required for this FFT. If this value is used to allocate memory,
+  /// \p direction_and_placement need to be specified explicitly to get correct
+  /// result.
+  /// \param [in] direction_and_placement Explicitly specify the FFT
+  /// direction and placement info. If it is not set, forward direction(if
+  /// current FFT is complex-to-complex) and out-of-place (false) are set by default.
+  [[deprecated("Use estimate_size(..., std::optional<std::pair<transform_direction, bool>>) instead.")]]
+  static void
+  estimate_size(int n3, int n2, int n1, fft_type type,
+                size_t *estimated_scratchpad_size,
+                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                    direction_and_placement = std::nullopt) {
+    std::optional<std::pair<transform_direction, bool>>
+        new_direction_and_placement = std::nullopt;
+    if (direction_and_placement.has_value()) {
+      new_direction_and_placement = std::make_pair(
+          direction_and_placement.value().first == fft_direction::forward
+              ? transform_direction::fwd
+              : transform_direction::bwd,
+          direction_and_placement.value().second);
+    }
+    estimate_size(n3, n2, n1, type, estimated_scratchpad_size,
+                  new_direction_and_placement);
   }
   /// Estimates the workspace size for calculating 3-D FFT.
   /// \param [in] n3 The size of the 3rd dimension (outermost) of the data.
@@ -577,7 +1128,7 @@ public:
   static void
   estimate_size(int n3, int n2, int n1, fft_type type,
                 size_t *estimated_scratchpad_size,
-                std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+                std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
                     direction_and_placement = std::nullopt) {
     fft_engine *engine = fft_engine::create();
     engine->_is_estimate_call = true;
@@ -586,12 +1137,24 @@ public:
     fft_engine::destroy(engine);
   }
 
+  /// [DEPRECATED] Execute the FFT calculation.
+  /// \param [in] input Pointer to the input data.
+  /// \param [out] output Pointer to the output data.
+  /// \param [in] direction The FFT direction.
+  template <typename input_t, typename output_t>
+  [[deprecated("Use compute(..., transform_direction) instead.")]]
+  void compute(input_t *input, output_t *output, fft_direction direction) {
+    transform_direction new_direction = direction == fft_direction::forward
+                                            ? transform_direction::fwd
+                                            : transform_direction::bwd;
+    compute(input, output, new_direction);
+  }
   /// Execute the FFT calculation.
   /// \param [in] input Pointer to the input data.
   /// \param [out] output Pointer to the output data.
   /// \param [in] direction The FFT direction.
   template <typename input_t, typename output_t>
-  void compute(input_t *input, output_t *output, fft_direction direction) {
+  void compute(input_t *input, output_t *output, transform_direction direction) {
     if (_input_type == library_data_t::complex_float &&
         _output_type == library_data_t::complex_float) {
       compute_complex<float, oneapi::mkl::dft::precision::SINGLE>(
@@ -623,38 +1186,38 @@ public:
     }
   }
   template <>
-  void compute(float *input, sycl::float2 *output, fft_direction direction) {
+  void compute(float *input, sycl::float2 *output, transform_direction direction) {
     _direction = direction;
     compute_real<float, oneapi::mkl::dft::precision::SINGLE>((float *)input,
                                                              (float *)output);
   }
   template <>
-  void compute(sycl::float2 *input, float *output, fft_direction direction) {
+  void compute(sycl::float2 *input, float *output, transform_direction direction) {
     _direction = direction;
     compute_real<float, oneapi::mkl::dft::precision::SINGLE>((float *)input,
                                                              (float *)output);
   }
   template <>
-  void compute(double *input, sycl::double2 *output, fft_direction direction) {
+  void compute(double *input, sycl::double2 *output, transform_direction direction) {
     _direction = direction;
     compute_real<double, oneapi::mkl::dft::precision::DOUBLE>((double *)input,
                                                               (double *)output);
   }
   template <>
-  void compute(sycl::double2 *input, double *output, fft_direction direction) {
+  void compute(sycl::double2 *input, double *output, transform_direction direction) {
     _direction = direction;
     compute_real<double, oneapi::mkl::dft::precision::DOUBLE>((double *)input,
                                                               (double *)output);
   }
   template <>
   void compute(sycl::float2 *input, sycl::float2 *output,
-               fft_direction direction) {
+               transform_direction direction) {
     compute_complex<float, oneapi::mkl::dft::precision::SINGLE>(
         (float *)input, (float *)output, direction);
   }
   template <>
   void compute(sycl::double2 *input, sycl::double2 *output,
-               fft_direction direction) {
+               transform_direction direction) {
     compute_complex<double, oneapi::mkl::dft::precision::DOUBLE>(
         (double *)input, (double *)output, direction);
   }
@@ -831,9 +1394,9 @@ private:
           _n);
       if (_input_type == library_data_t::real_float &&
           _output_type == library_data_t::complex_float)
-        _direction = fft_direction::forward;
+        _direction = transform_direction::fwd;
       else
-        _direction = fft_direction::backward;
+        _direction = transform_direction::bwd;
       _desc_sr->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                           _batch);
       if (_is_user_specified_dir_and_placement && _is_inplace) {
@@ -871,9 +1434,9 @@ private:
           _n);
       if (_input_type == library_data_t::real_double &&
           _output_type == library_data_t::complex_double)
-        _direction = fft_direction::forward;
+        _direction = transform_direction::fwd;
       else
-        _direction = fft_direction::backward;
+        _direction = transform_direction::bwd;
       _desc_dr->set_value(oneapi::mkl::dft::config_param::NUMBER_OF_TRANSFORMS,
                           _batch);
       if (_is_user_specified_dir_and_placement && _is_inplace) {
@@ -970,7 +1533,7 @@ private:
   void init(int dim, T *n, T *inembed, T istride, T idist,
             library_data_t input_type, T *onembed, T ostride, T odist,
             library_data_t output_type, T batch,
-            std::optional<std::pair<fft_direction, bool /*is_inplace*/>>
+            std::optional<std::pair<transform_direction, bool /*is_inplace*/>>
                 direction_and_placement) {
     if (direction_and_placement.has_value()) {
       _is_user_specified_dir_and_placement = true;
@@ -1007,7 +1570,7 @@ private:
         _bwd_dist = idist;
       } else {
         if (_is_user_specified_dir_and_placement &&
-            (_direction == fft_direction::backward)) {
+            (_direction == transform_direction::bwd)) {
           _fwd_dist = odist;
           _bwd_dist = idist;
         } else {
@@ -1069,7 +1632,7 @@ private:
 
 #define SET_STRIDE                                                             \
   {                                                                            \
-    if (_direction == fft_direction::forward) {                                \
+    if (_direction == transform_direction::fwd) {                              \
       desc->set_value(oneapi::mkl::dft::config_param::INPUT_STRIDES,           \
                       real_stride);                                            \
       desc->set_value(oneapi::mkl::dft::config_param::OUTPUT_STRIDES,          \
@@ -1139,7 +1702,7 @@ private:
     if (_is_inplace) {                                                         \
       auto data_input =                                                        \
           dpct::detail::get_memory(reinterpret_cast<T *>(input));              \
-      if (_direction == fft_direction::forward) {                              \
+      if (_direction == transform_direction::fwd) {                            \
         oneapi::mkl::dft::compute_forward(*DESC, data_input);                  \
       } else {                                                                 \
         oneapi::mkl::dft::compute_backward(*DESC, data_input);                 \
@@ -1149,7 +1712,7 @@ private:
           dpct::detail::get_memory(reinterpret_cast<T *>(input));              \
       auto data_output =                                                       \
           dpct::detail::get_memory(reinterpret_cast<T *>(output));             \
-      if (_direction == fft_direction::forward) {                              \
+      if (_direction == transform_direction::fwd) {                            \
         oneapi::mkl::dft::compute_forward(*DESC, data_input, data_output);     \
       } else {                                                                 \
         oneapi::mkl::dft::compute_backward(*DESC, data_input, data_output);    \
@@ -1158,7 +1721,7 @@ private:
   }
 
   template <class T, oneapi::mkl::dft::precision Precision>
-  void compute_complex(T *input, T *output, fft_direction direction) {
+  void compute_complex(T *input, T *output, transform_direction direction) {
     bool is_this_compute_inplace = input == output;
 
     if (!_is_user_specified_dir_and_placement) {
@@ -1275,7 +1838,7 @@ private:
   std::int64_t _batch = 1;
   bool _is_basic = false;
   bool _is_inplace = false;
-  fft_direction _direction = fft_direction::forward;
+  transform_direction _direction = transform_direction::fwd;
   bool _is_user_specified_dir_and_placement = false;
   bool _use_external_workspace = false;
   void *_external_workspace_ptr = nullptr;

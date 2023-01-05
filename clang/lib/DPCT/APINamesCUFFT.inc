@@ -84,16 +84,16 @@ ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
 
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::FftUtils_fft_engine,
-    MEMBER_CALL_FACTORY_ENTRY("cufftExecR2C", ARG(0), true, "compute<float, " + MapNames::getClNamespace() + "float2>", ARG(1), ARG(2), ARG("dpct::fft::fft_direction::forward"))))
+    MEMBER_CALL_FACTORY_ENTRY("cufftExecR2C", ARG(0), true, "compute<float, " + MapNames::getClNamespace() + "float2>", ARG(1), ARG(2), ARG("dpct::fft::transform_direction::fwd"))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::FftUtils_fft_engine,
-    MEMBER_CALL_FACTORY_ENTRY("cufftExecC2R", ARG(0), true, "compute<" + MapNames::getClNamespace() + "float2, float>", ARG(1), ARG(2), ARG("dpct::fft::fft_direction::backward"))))
+    MEMBER_CALL_FACTORY_ENTRY("cufftExecC2R", ARG(0), true, "compute<" + MapNames::getClNamespace() + "float2, float>", ARG(1), ARG(2), ARG("dpct::fft::transform_direction::bwd"))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::FftUtils_fft_engine,
-    MEMBER_CALL_FACTORY_ENTRY("cufftExecD2Z", ARG(0), true, "compute<double, " + MapNames::getClNamespace() + "double2>", ARG(1), ARG(2), ARG("dpct::fft::fft_direction::forward"))))
+    MEMBER_CALL_FACTORY_ENTRY("cufftExecD2Z", ARG(0), true, "compute<double, " + MapNames::getClNamespace() + "double2>", ARG(1), ARG(2), ARG("dpct::fft::transform_direction::fwd"))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::FftUtils_fft_engine,
-    MEMBER_CALL_FACTORY_ENTRY("cufftExecZ2D", ARG(0), true, "compute<" + MapNames::getClNamespace() + "double2, double>", ARG(1), ARG(2), ARG("dpct::fft::fft_direction::backward"))))
+    MEMBER_CALL_FACTORY_ENTRY("cufftExecZ2D", ARG(0), true, "compute<" + MapNames::getClNamespace() + "double2, double>", ARG(1), ARG(2), ARG("dpct::fft::transform_direction::bwd"))))
 ASSIGNABLE_FACTORY(FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::FftUtils_fft_engine,
     MEMBER_CALL_FACTORY_ENTRY("cufftExecC2C", ARG(0), true, "compute<" + MapNames::getClNamespace() + "float2, " + MapNames::getClNamespace() + "float2>", ARG(1), ARG(2), ARG(3))))

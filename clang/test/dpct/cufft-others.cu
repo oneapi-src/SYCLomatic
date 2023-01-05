@@ -14,7 +14,7 @@ int main() {
   //CHECK:plan = dpct::fft::fft_engine::create(&dpct::get_default_queue(), 10 + 2, dpct::fft::fft_type::real_float_to_complex_float, 3);
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
 
-  //CHECK:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
+  //CHECK:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::transform_direction::fwd);
   cufftExecR2C(plan, (float*)iodata, iodata);
 
   return 0;
@@ -43,10 +43,10 @@ int foo2() {
   //CHECK-NEXT:plan_mmany64_Z2Z->commit(&dpct::get_default_queue(), 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, dpct::fft::fft_type::complex_double_to_complex_double, 12, work_size_mmany64_Z2Z);
   cufftMakePlanMany64(plan_mmany64_Z2Z, 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, CUFFT_Z2Z, 12, work_size_mmany64_Z2Z);
 
-  //CHECK:plan_mmany64_Z2Z->compute<sycl::double2, sycl::double2>(idata_mmany64_Z2Z, odata_mmany64_Z2Z, dpct::fft::fft_direction::forward);
+  //CHECK:plan_mmany64_Z2Z->compute<sycl::double2, sycl::double2>(idata_mmany64_Z2Z, odata_mmany64_Z2Z, dpct::fft::transform_direction::fwd);
   cufftExecZ2Z(plan_mmany64_Z2Z, idata_mmany64_Z2Z, odata_mmany64_Z2Z, CUFFT_FORWARD);
 
-  //CHECK:plan_mmany64_Z2Z->compute<sycl::double2, sycl::double2>(idata_mmany64_Z2Z, odata_mmany64_Z2Z, dpct::fft::fft_direction::backward);
+  //CHECK:plan_mmany64_Z2Z->compute<sycl::double2, sycl::double2>(idata_mmany64_Z2Z, odata_mmany64_Z2Z, dpct::fft::transform_direction::bwd);
   cufftExecZ2Z(plan_mmany64_Z2Z, idata_mmany64_Z2Z, odata_mmany64_Z2Z, CUFFT_INVERSE);
 
   return 0;
@@ -63,7 +63,7 @@ int foo3(cudaStream_t stream) {
   cufftPlan1d(&plan, 10 + 2, CUFFT_R2C, 3);
   cufftSetStream(plan, stream);
 
-  //CHECK:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::fft_direction::forward);
+  //CHECK:plan->compute<float, sycl::float2>((float*)iodata, iodata, dpct::fft::transform_direction::fwd);
   cufftExecR2C(plan, (float*)iodata, iodata);
 
   return 0;

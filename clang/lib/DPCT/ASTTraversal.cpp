@@ -394,13 +394,13 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
              MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_FORWARD") {
     TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13,
                                               MapNames::getDpctNamespace() +
-                                                  "fft::fft_direction::forward"));
+                                                  "fft::transform_direction::fwd"));
     requestFeature(HelperFeatureEnum::FftUtils_fft_direction, Range.getBegin());
   } else if (MacroNameTok.getIdentifierInfo() &&
              MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_INVERSE") {
     TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13,
                                               MapNames::getDpctNamespace() +
-                                                  "fft::fft_direction::backward"));
+                                                  "fft::transform_direction::bwd"));
     requestFeature(HelperFeatureEnum::FftUtils_fft_direction, Range.getBegin());
   }
 

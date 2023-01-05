@@ -30,7 +30,7 @@ TextModification* processFunctionPointer(const UnaryOperator *UO) {
     ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
                      "float2 *in, " + MapNames::getClNamespace() +
                      "float2 *out, " + MapNames::getDpctNamespace() +
-                     "fft::fft_direction dir";
+                     "fft::transform_direction dir";
     Dir = "dir";
     NewFuncName = "compute<" + MapNames::getClNamespace() + "float2, " +
                   MapNames::getClNamespace() + "float2>";
@@ -38,29 +38,29 @@ TextModification* processFunctionPointer(const UnaryOperator *UO) {
     ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
                      "double2 *in, " + MapNames::getClNamespace() +
                      "double2 *out, " + MapNames::getDpctNamespace() +
-                     "fft::fft_direction dir";
+                     "fft::transform_direction dir";
     Dir = "dir";
     NewFuncName = "compute<" + MapNames::getClNamespace() + "double2, " +
                   MapNames::getClNamespace() + "double2>";
   } else if (FuncNameRef == "cufftExecR2C") {
     ParameterTypes = ParameterTypes + ", float *in, " +
                      MapNames::getClNamespace() + "float2 *out";
-    Dir = MapNames::getDpctNamespace() + "fft::fft_direction::forward";
+    Dir = MapNames::getDpctNamespace() + "fft::transform_direction::fwd";
     NewFuncName = "compute<float, " + MapNames::getClNamespace() + "float2>";
   } else if (FuncNameRef == "cufftExecC2R") {
     ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
                      "float2 *in, float *out";
-    Dir = MapNames::getDpctNamespace() + "fft::fft_direction::backward";
+    Dir = MapNames::getDpctNamespace() + "fft::transform_direction::bwd";
     NewFuncName = "compute<" + MapNames::getClNamespace() + "float2, float>";
   } else if (FuncNameRef == "cufftExecD2Z") {
     ParameterTypes = ParameterTypes + ", double *in, " +
                      MapNames::getClNamespace() + "double2 *out";
-    Dir = MapNames::getDpctNamespace() + "fft::fft_direction::forward";
+    Dir = MapNames::getDpctNamespace() + "fft::transform_direction::fwd";
     NewFuncName = "compute<double, " + MapNames::getClNamespace() + "double2>";
   } else if (FuncNameRef == "cufftExecZ2D") {
     ParameterTypes = ParameterTypes + ", " + MapNames::getClNamespace() +
                      "double2 *in, double *out";
-    Dir = MapNames::getDpctNamespace() + "fft::fft_direction::backward";
+    Dir = MapNames::getDpctNamespace() + "fft::transform_direction::bwd";
     NewFuncName = "compute<" + MapNames::getClNamespace() + "double2, double>";
   } else {
     return nullptr;
