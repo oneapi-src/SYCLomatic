@@ -1409,6 +1409,9 @@ inline auto UseLogicalGroup = [](const CallExpr *C) -> bool {
 inline auto UseCAndCXXStandardLibrariesExt = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
 };
+inline auto UseIntelDeviceMath = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useIntelDeviceMath();
+};
 
 class CheckDerefedTypeBeforeCast {
   unsigned Idx;

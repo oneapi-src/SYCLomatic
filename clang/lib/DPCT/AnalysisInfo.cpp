@@ -757,7 +757,7 @@ void DpctFileInfo::insertHeader(HeaderType Type, unsigned Offset) {
       OS << "using namespace sycl;" << getNL();
     }
     return insertHeader(OS.str(), FirstIncludeOffset, InsertPosition::IP_Left);
-  
+
   // Because <dpct/dpl_utils.hpp> includes <oneapi/dpl/execution> and
   // <oneapi/dpl/algorithm>, so we have to make sure that
   // <oneapi/dpl/execution> and <oneapi/dpl/algorithm> are inserted before
