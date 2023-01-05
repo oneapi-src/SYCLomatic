@@ -296,5 +296,60 @@ int main() {
         reserveSpaceSize, 
         reserveSpaceData
     );
+
+    float *y4Data;
+    bool flag;
+// CHECK:     /*
+// CHECK:     DPCT1007:{{[0-9]+}}: Migration of cudnnRNNBackwardData_v8 is not supported.
+// CHECK:     */
+    if(flag)    
+      cudnnRNNBackwardData_v8(
+        handle,
+        rnnDesc,
+        seqlenarray,
+        yDesc,
+        y4Data,
+        dyData,
+        xDesc,
+        dxData,
+        hDesc,
+        hxData,
+        dhyData,
+        dhxData,
+        cDesc,
+        cxData,
+        dcyData,
+        dcxData,
+        weightsSpaceSize,
+        weightsData,
+        workSpaceSize, 
+        workSpaceData, 
+        reserveSpaceSize, 
+        reserveSpaceData
+    );
+
+// CHECK:     /*
+// CHECK:     DPCT1007:{{[0-9]+}}: Migration of cudnnRNNBackwardWeights_v8 is not supported.
+// CHECK:     */
+    e = cudnnRNNBackwardWeights_v8(
+        handle,
+        rnnDesc,
+        WGMode,
+        seqlenarray,
+        xDesc,
+        xData,
+        hDesc,
+        hxData,
+        yDesc,
+        y4Data,
+        weightsSpaceSize,
+        dweightsData,
+        workSpaceSize, 
+        workSpaceData, 
+        reserveSpaceSize, 
+        reserveSpaceData
+    );
+
+
     return 0;
 }
