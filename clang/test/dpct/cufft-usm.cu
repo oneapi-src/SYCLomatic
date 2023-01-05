@@ -7,7 +7,7 @@
 
 
 int main() {
-  //CHECK:dpct::fft::fft_engine* plan_1d_C2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_1d_C2C;
   //CHECK-NEXT:sycl::float2* odata_1d_C2C;
   //CHECK-NEXT:sycl::float2* idata_1d_C2C;
   //CHECK-NEXT:plan_1d_C2C = dpct::fft::fft_engine::create(&q_ct1, 10, dpct::fft::fft_type::complex_float_to_complex_float, 3);
@@ -18,7 +18,7 @@ int main() {
   cufftPlan1d(&plan_1d_C2C, 10, CUFFT_C2C, 3);
   cufftExecC2C(plan_1d_C2C, idata_1d_C2C, odata_1d_C2C, CUFFT_FORWARD);
 
-  //CHECK:dpct::fft::fft_engine* plan_1d_C2R;
+  //CHECK:dpct::fft::fft_engine_ptr plan_1d_C2R;
   //CHECK-NEXT:float* odata_1d_C2R;
   //CHECK-NEXT:sycl::float2* idata_1d_C2R;
   //CHECK-NEXT:plan_1d_C2R = dpct::fft::fft_engine::create(&q_ct1, 10, dpct::fft::fft_type::complex_float_to_real_float, 3);
@@ -29,7 +29,7 @@ int main() {
   cufftPlan1d(&plan_1d_C2R, 10, CUFFT_C2R, 3);
   cufftExecC2R(plan_1d_C2R, idata_1d_C2R, odata_1d_C2R);
 
-  //CHECK:dpct::fft::fft_engine* plan_1d_R2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_1d_R2C;
   //CHECK-NEXT:sycl::float2* odata_1d_R2C;
   //CHECK-NEXT:float* idata_1d_R2C;
   //CHECK-NEXT:plan_1d_R2C = dpct::fft::fft_engine::create(&q_ct1, 10, dpct::fft::fft_type::real_float_to_complex_float, 3);
@@ -40,7 +40,7 @@ int main() {
   cufftPlan1d(&plan_1d_R2C, 10, CUFFT_R2C, 3);
   cufftExecR2C(plan_1d_R2C, idata_1d_R2C, odata_1d_R2C);
 
-  //CHECK:dpct::fft::fft_engine* plan_1d_Z2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_1d_Z2Z;
   //CHECK-NEXT:sycl::double2* odata_1d_Z2Z;
   //CHECK-NEXT:sycl::double2* idata_1d_Z2Z;
   //CHECK-NEXT:plan_1d_Z2Z = dpct::fft::fft_engine::create(&q_ct1, 10, dpct::fft::fft_type::complex_double_to_complex_double, 3);
@@ -51,7 +51,7 @@ int main() {
   cufftPlan1d(&plan_1d_Z2Z, 10, CUFFT_Z2Z, 3);
   cufftExecZ2Z(plan_1d_Z2Z, idata_1d_Z2Z, odata_1d_Z2Z, CUFFT_INVERSE);
 
-  //CHECK:dpct::fft::fft_engine* plan_1d_Z2D;
+  //CHECK:dpct::fft::fft_engine_ptr plan_1d_Z2D;
   //CHECK-NEXT:double* odata_1d_Z2D;
   //CHECK-NEXT:sycl::double2* idata_1d_Z2D;
   //CHECK-NEXT:plan_1d_Z2D = dpct::fft::fft_engine::create(&q_ct1, 10, dpct::fft::fft_type::complex_double_to_real_double, 3);
@@ -62,7 +62,7 @@ int main() {
   cufftPlan1d(&plan_1d_Z2D, 10, CUFFT_Z2D, 3);
   cufftExecZ2D(plan_1d_Z2D, idata_1d_Z2D, odata_1d_Z2D);
 
-  //CHECK:dpct::fft::fft_engine* plan_1d_D2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_1d_D2Z;
   //CHECK-NEXT:sycl::double2* odata_1d_D2Z;
   //CHECK-NEXT:double* idata_1d_D2Z;
   //CHECK-NEXT:plan_1d_D2Z = dpct::fft::fft_engine::create(&q_ct1, 10, dpct::fft::fft_type::real_double_to_complex_double, 3);
@@ -73,7 +73,7 @@ int main() {
   cufftPlan1d(&plan_1d_D2Z, 10, CUFFT_D2Z, 3);
   cufftExecD2Z(plan_1d_D2Z, idata_1d_D2Z, odata_1d_D2Z);
 
-  //CHECK:dpct::fft::fft_engine* plan_2d_C2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_2d_C2C;
   //CHECK-NEXT:sycl::float2* odata_2d_C2C;
   //CHECK-NEXT:sycl::float2* idata_2d_C2C;
   //CHECK-NEXT:plan_2d_C2C = dpct::fft::fft_engine::create(&q_ct1, 10, 20, dpct::fft::fft_type::complex_float_to_complex_float);
@@ -84,7 +84,7 @@ int main() {
   cufftPlan2d(&plan_2d_C2C, 10, 20, CUFFT_C2C);
   cufftExecC2C(plan_2d_C2C, idata_2d_C2C, odata_2d_C2C, CUFFT_FORWARD);
 
-  //CHECK:dpct::fft::fft_engine* plan_2d_C2R;
+  //CHECK:dpct::fft::fft_engine_ptr plan_2d_C2R;
   //CHECK-NEXT:float* odata_2d_C2R;
   //CHECK-NEXT:sycl::float2* idata_2d_C2R;
   //CHECK-NEXT:plan_2d_C2R = dpct::fft::fft_engine::create(&q_ct1, 10, 20, dpct::fft::fft_type::complex_float_to_real_float);
@@ -95,7 +95,7 @@ int main() {
   cufftPlan2d(&plan_2d_C2R, 10, 20, CUFFT_C2R);
   cufftExecC2R(plan_2d_C2R, idata_2d_C2R, odata_2d_C2R);
 
-  //CHECK:dpct::fft::fft_engine* plan_2d_R2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_2d_R2C;
   //CHECK-NEXT:sycl::float2* odata_2d_R2C;
   //CHECK-NEXT:float* idata_2d_R2C;
   //CHECK-NEXT:plan_2d_R2C = dpct::fft::fft_engine::create(&q_ct1, 10, 20, dpct::fft::fft_type::real_float_to_complex_float);
@@ -106,7 +106,7 @@ int main() {
   cufftPlan2d(&plan_2d_R2C, 10, 20, CUFFT_R2C);
   cufftExecR2C(plan_2d_R2C, idata_2d_R2C, odata_2d_R2C);
 
-  //CHECK:dpct::fft::fft_engine* plan_2d_Z2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_2d_Z2Z;
   //CHECK-NEXT:sycl::double2* odata_2d_Z2Z;
   //CHECK-NEXT:sycl::double2* idata_2d_Z2Z;
   //CHECK-NEXT:plan_2d_Z2Z = dpct::fft::fft_engine::create(&q_ct1, 10, 20, dpct::fft::fft_type::complex_double_to_complex_double);
@@ -117,7 +117,7 @@ int main() {
   cufftPlan2d(&plan_2d_Z2Z, 10, 20, CUFFT_Z2Z);
   cufftExecZ2Z(plan_2d_Z2Z, idata_2d_Z2Z, odata_2d_Z2Z, CUFFT_INVERSE);
 
-  //CHECK:dpct::fft::fft_engine* plan_2d_Z2D;
+  //CHECK:dpct::fft::fft_engine_ptr plan_2d_Z2D;
   //CHECK-NEXT:double* odata_2d_Z2D;
   //CHECK-NEXT:sycl::double2* idata_2d_Z2D;
   //CHECK-NEXT:plan_2d_Z2D = dpct::fft::fft_engine::create(&q_ct1, 10, 20, dpct::fft::fft_type::complex_double_to_real_double);
@@ -128,7 +128,7 @@ int main() {
   cufftPlan2d(&plan_2d_Z2D, 10, 20, CUFFT_Z2D);
   cufftExecZ2D(plan_2d_Z2D, idata_2d_Z2D, odata_2d_Z2D);
 
-  //CHECK:dpct::fft::fft_engine* plan_2d_D2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_2d_D2Z;
   //CHECK-NEXT:sycl::double2* odata_2d_D2Z;
   //CHECK-NEXT:double* idata_2d_D2Z;
   //CHECK-NEXT:plan_2d_D2Z = dpct::fft::fft_engine::create(&q_ct1, 10, 20, dpct::fft::fft_type::real_double_to_complex_double);
@@ -139,7 +139,7 @@ int main() {
   cufftPlan2d(&plan_2d_D2Z, 10, 20, CUFFT_D2Z);
   cufftExecD2Z(plan_2d_D2Z, idata_2d_D2Z, odata_2d_D2Z);
 
-  //CHECK:dpct::fft::fft_engine* plan_3d_C2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_3d_C2C;
   //CHECK-NEXT:sycl::float2* odata_3d_C2C;
   //CHECK-NEXT:sycl::float2* idata_3d_C2C;
   //CHECK-NEXT:plan_3d_C2C = dpct::fft::fft_engine::create(&q_ct1, 10, 20, 30, dpct::fft::fft_type::complex_float_to_complex_float);
@@ -150,7 +150,7 @@ int main() {
   cufftPlan3d(&plan_3d_C2C, 10, 20, 30, CUFFT_C2C);
   cufftExecC2C(plan_3d_C2C, idata_3d_C2C, odata_3d_C2C, CUFFT_FORWARD);
 
-  //CHECK:dpct::fft::fft_engine* plan_3d_C2R;
+  //CHECK:dpct::fft::fft_engine_ptr plan_3d_C2R;
   //CHECK-NEXT:float* odata_3d_C2R;
   //CHECK-NEXT:sycl::float2* idata_3d_C2R;
   //CHECK-NEXT:plan_3d_C2R = dpct::fft::fft_engine::create(&q_ct1, 10, 20, 30, dpct::fft::fft_type::complex_float_to_real_float);
@@ -161,7 +161,7 @@ int main() {
   cufftPlan3d(&plan_3d_C2R, 10, 20, 30, CUFFT_C2R);
   cufftExecC2R(plan_3d_C2R, idata_3d_C2R, odata_3d_C2R);
 
-  //CHECK:dpct::fft::fft_engine* plan_3d_R2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_3d_R2C;
   //CHECK-NEXT:sycl::float2* odata_3d_R2C;
   //CHECK-NEXT:float* idata_3d_R2C;
   //CHECK-NEXT:plan_3d_R2C = dpct::fft::fft_engine::create(&q_ct1, 10, 20, 30, dpct::fft::fft_type::real_float_to_complex_float);
@@ -172,7 +172,7 @@ int main() {
   cufftPlan3d(&plan_3d_R2C, 10, 20, 30, CUFFT_R2C);
   cufftExecR2C(plan_3d_R2C, idata_3d_R2C, odata_3d_R2C);
 
-  //CHECK:dpct::fft::fft_engine* plan_3d_Z2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_3d_Z2Z;
   //CHECK-NEXT:sycl::double2* odata_3d_Z2Z;
   //CHECK-NEXT:sycl::double2* idata_3d_Z2Z;
   //CHECK-NEXT:plan_3d_Z2Z = dpct::fft::fft_engine::create(&q_ct1, 10, 20, 30, dpct::fft::fft_type::complex_double_to_complex_double);
@@ -183,7 +183,7 @@ int main() {
   cufftPlan3d(&plan_3d_Z2Z, 10, 20, 30, CUFFT_Z2Z);
   cufftExecZ2Z(plan_3d_Z2Z, idata_3d_Z2Z, odata_3d_Z2Z, CUFFT_INVERSE);
 
-  //CHECK:dpct::fft::fft_engine* plan_3d_Z2D;
+  //CHECK:dpct::fft::fft_engine_ptr plan_3d_Z2D;
   //CHECK-NEXT:double* odata_3d_Z2D;
   //CHECK-NEXT:sycl::double2* idata_3d_Z2D;
   //CHECK-NEXT:plan_3d_Z2D = dpct::fft::fft_engine::create(&q_ct1, 10, 20, 30, dpct::fft::fft_type::complex_double_to_real_double);
@@ -194,7 +194,7 @@ int main() {
   cufftPlan3d(&plan_3d_Z2D, 10, 20, 30, CUFFT_Z2D);
   cufftExecZ2D(plan_3d_Z2D, idata_3d_Z2D, odata_3d_Z2D);
 
-  //CHECK:dpct::fft::fft_engine* plan_3d_D2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_3d_D2Z;
   //CHECK-NEXT:sycl::double2* odata_3d_D2Z;
   //CHECK-NEXT:double* idata_3d_D2Z;
   //CHECK-NEXT:plan_3d_D2Z = dpct::fft::fft_engine::create(&q_ct1, 10, 20, 30, dpct::fft::fft_type::real_double_to_complex_double);
@@ -205,7 +205,7 @@ int main() {
   cufftPlan3d(&plan_3d_D2Z, 10, 20, 30, CUFFT_D2Z);
   cufftExecD2Z(plan_3d_D2Z, idata_3d_D2Z, odata_3d_D2Z);
 
-  //CHECK:dpct::fft::fft_engine* plan_many_C2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_many_C2C;
   //CHECK-NEXT:int odist_many_C2C;
   //CHECK-NEXT:int ostride_many_C2C;
   //CHECK-NEXT:int * onembed_many_C2C;
@@ -230,7 +230,7 @@ int main() {
   cufftPlanMany(&plan_many_C2C, 3, n_many_C2C, inembed_many_C2C, istride_many_C2C, idist_many_C2C, onembed_many_C2C, ostride_many_C2C, odist_many_C2C, CUFFT_C2C, 12);
   cufftExecC2C(plan_many_C2C, idata_many_C2C, odata_many_C2C, CUFFT_FORWARD);
 
-  //CHECK:dpct::fft::fft_engine* plan_many_C2R;
+  //CHECK:dpct::fft::fft_engine_ptr plan_many_C2R;
   //CHECK-NEXT:int odist_many_C2R;
   //CHECK-NEXT:int ostride_many_C2R;
   //CHECK-NEXT:int * onembed_many_C2R;
@@ -255,7 +255,7 @@ int main() {
   cufftPlanMany(&plan_many_C2R, 3, n_many_C2R, inembed_many_C2R, istride_many_C2R, idist_many_C2R, onembed_many_C2R, ostride_many_C2R, odist_many_C2R, CUFFT_C2R, 12);
   cufftExecC2R(plan_many_C2R, idata_many_C2R, odata_many_C2R);
 
-  //CHECK:dpct::fft::fft_engine* plan_many_R2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_many_R2C;
   //CHECK-NEXT:int odist_many_R2C;
   //CHECK-NEXT:int ostride_many_R2C;
   //CHECK-NEXT:int * onembed_many_R2C;
@@ -280,7 +280,7 @@ int main() {
   cufftPlanMany(&plan_many_R2C, 3, n_many_R2C, inembed_many_R2C, istride_many_R2C, idist_many_R2C, onembed_many_R2C, ostride_many_R2C, odist_many_R2C, CUFFT_R2C, 12);
   cufftExecR2C(plan_many_R2C, idata_many_R2C, odata_many_R2C);
 
-  //CHECK:dpct::fft::fft_engine* plan_many_Z2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_many_Z2Z;
   //CHECK-NEXT:int odist_many_Z2Z;
   //CHECK-NEXT:int ostride_many_Z2Z;
   //CHECK-NEXT:int * onembed_many_Z2Z;
@@ -305,7 +305,7 @@ int main() {
   cufftPlanMany(&plan_many_Z2Z, 3, n_many_Z2Z, inembed_many_Z2Z, istride_many_Z2Z, idist_many_Z2Z, onembed_many_Z2Z, ostride_many_Z2Z, odist_many_Z2Z, CUFFT_Z2Z, 12);
   cufftExecZ2Z(plan_many_Z2Z, idata_many_Z2Z, odata_many_Z2Z, CUFFT_INVERSE);
 
-  //CHECK:dpct::fft::fft_engine* plan_many_Z2D;
+  //CHECK:dpct::fft::fft_engine_ptr plan_many_Z2D;
   //CHECK-NEXT:int odist_many_Z2D;
   //CHECK-NEXT:int ostride_many_Z2D;
   //CHECK-NEXT:int * onembed_many_Z2D;
@@ -330,7 +330,7 @@ int main() {
   cufftPlanMany(&plan_many_Z2D, 3, n_many_Z2D, inembed_many_Z2D, istride_many_Z2D, idist_many_Z2D, onembed_many_Z2D, ostride_many_Z2D, odist_many_Z2D, CUFFT_Z2D, 12);
   cufftExecZ2D(plan_many_Z2D, idata_many_Z2D, odata_many_Z2D);
 
-  //CHECK:dpct::fft::fft_engine* plan_many_D2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_many_D2Z;
   //CHECK-NEXT:int odist_many_D2Z;
   //CHECK-NEXT:int ostride_many_D2Z;
   //CHECK-NEXT:int * onembed_many_D2Z;
@@ -356,7 +356,7 @@ int main() {
   cufftExecD2Z(plan_many_D2Z, idata_many_D2Z, odata_many_D2Z);
 
   size_t* work_size;
-  //CHECK:dpct::fft::fft_engine* plan_m1d_C2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m1d_C2C;
   //CHECK-NEXT:sycl::float2* odata_m1d_C2C;
   //CHECK-NEXT:sycl::float2* idata_m1d_C2C;
   //CHECK-NEXT:/*
@@ -373,7 +373,7 @@ int main() {
   cufftMakePlan1d(plan_m1d_C2C, 10, CUFFT_C2C, 3, work_size);
   cufftExecC2C(plan_m1d_C2C, idata_m1d_C2C, odata_m1d_C2C, CUFFT_FORWARD);
 
-  //CHECK:dpct::fft::fft_engine* plan_m1d_C2R;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m1d_C2R;
   //CHECK-NEXT:float* odata_m1d_C2R;
   //CHECK-NEXT:sycl::float2* idata_m1d_C2R;
   //CHECK-NEXT:/*
@@ -390,7 +390,7 @@ int main() {
   cufftMakePlan1d(plan_m1d_C2R, 10, CUFFT_C2R, 3, work_size);
   cufftExecC2R(plan_m1d_C2R, idata_m1d_C2R, odata_m1d_C2R);
 
-  //CHECK:dpct::fft::fft_engine* plan_m1d_R2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m1d_R2C;
   //CHECK-NEXT:sycl::float2* odata_m1d_R2C;
   //CHECK-NEXT:float* idata_m1d_R2C;
   //CHECK-NEXT:/*
@@ -407,7 +407,7 @@ int main() {
   cufftMakePlan1d(plan_m1d_R2C, 10, CUFFT_R2C, 3, work_size);
   cufftExecR2C(plan_m1d_R2C, idata_m1d_R2C, odata_m1d_R2C);
 
-  //CHECK:dpct::fft::fft_engine* plan_m1d_Z2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m1d_Z2Z;
   //CHECK-NEXT:sycl::double2* odata_m1d_Z2Z;
   //CHECK-NEXT:sycl::double2* idata_m1d_Z2Z;
   //CHECK-NEXT:/*
@@ -424,7 +424,7 @@ int main() {
   cufftMakePlan1d(plan_m1d_Z2Z, 10, CUFFT_Z2Z, 3, work_size);
   cufftExecZ2Z(plan_m1d_Z2Z, idata_m1d_Z2Z, odata_m1d_Z2Z, CUFFT_INVERSE);
 
-  //CHECK:dpct::fft::fft_engine* plan_m1d_Z2D;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m1d_Z2D;
   //CHECK-NEXT:double* odata_m1d_Z2D;
   //CHECK-NEXT:sycl::double2* idata_m1d_Z2D;
   //CHECK-NEXT:/*
@@ -441,7 +441,7 @@ int main() {
   cufftMakePlan1d(plan_m1d_Z2D, 10, CUFFT_Z2D, 3, work_size);
   cufftExecZ2D(plan_m1d_Z2D, idata_m1d_Z2D, odata_m1d_Z2D);
 
-  //CHECK:dpct::fft::fft_engine* plan_m1d_D2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m1d_D2Z;
   //CHECK-NEXT:sycl::double2* odata_m1d_D2Z;
   //CHECK-NEXT:double* idata_m1d_D2Z;
   //CHECK-NEXT:/*
@@ -458,7 +458,7 @@ int main() {
   cufftMakePlan1d(plan_m1d_D2Z, 10, CUFFT_D2Z, 3, work_size);
   cufftExecD2Z(plan_m1d_D2Z, idata_m1d_D2Z, odata_m1d_D2Z);
 
-  //CHECK:dpct::fft::fft_engine* plan_m2d_C2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m2d_C2C;
   //CHECK-NEXT:sycl::float2* odata_m2d_C2C;
   //CHECK-NEXT:sycl::float2* idata_m2d_C2C;
   //CHECK-NEXT:/*
@@ -475,7 +475,7 @@ int main() {
   cufftMakePlan2d(plan_m2d_C2C, 10, 20, CUFFT_C2C, work_size);
   cufftExecC2C(plan_m2d_C2C, idata_m2d_C2C, odata_m2d_C2C, CUFFT_FORWARD);
 
-  //CHECK:dpct::fft::fft_engine* plan_m2d_C2R;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m2d_C2R;
   //CHECK-NEXT:float* odata_m2d_C2R;
   //CHECK-NEXT:sycl::float2* idata_m2d_C2R;
   //CHECK-NEXT:/*
@@ -492,7 +492,7 @@ int main() {
   cufftMakePlan2d(plan_m2d_C2R, 10, 20, CUFFT_C2R, work_size);
   cufftExecC2R(plan_m2d_C2R, idata_m2d_C2R, odata_m2d_C2R);
 
-  //CHECK:dpct::fft::fft_engine* plan_m2d_R2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m2d_R2C;
   //CHECK-NEXT:sycl::float2* odata_m2d_R2C;
   //CHECK-NEXT:float* idata_m2d_R2C;
   //CHECK-NEXT:/*
@@ -509,7 +509,7 @@ int main() {
   cufftMakePlan2d(plan_m2d_R2C, 10, 20, CUFFT_R2C, work_size);
   cufftExecR2C(plan_m2d_R2C, idata_m2d_R2C, odata_m2d_R2C);
 
-  //CHECK:dpct::fft::fft_engine* plan_m2d_Z2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m2d_Z2Z;
   //CHECK-NEXT:sycl::double2* odata_m2d_Z2Z;
   //CHECK-NEXT:sycl::double2* idata_m2d_Z2Z;
   //CHECK-NEXT:/*
@@ -526,7 +526,7 @@ int main() {
   cufftMakePlan2d(plan_m2d_Z2Z, 10, 20, CUFFT_Z2Z, work_size);
   cufftExecZ2Z(plan_m2d_Z2Z, idata_m2d_Z2Z, odata_m2d_Z2Z, CUFFT_INVERSE);
 
-  //CHECK:dpct::fft::fft_engine* plan_m2d_Z2D;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m2d_Z2D;
   //CHECK-NEXT:double* odata_m2d_Z2D;
   //CHECK-NEXT:sycl::double2* idata_m2d_Z2D;
   //CHECK-NEXT:/*
@@ -543,7 +543,7 @@ int main() {
   cufftMakePlan2d(plan_m2d_Z2D, 10, 20, CUFFT_Z2D, work_size);
   cufftExecZ2D(plan_m2d_Z2D, idata_m2d_Z2D, odata_m2d_Z2D);
 
-  //CHECK:dpct::fft::fft_engine* plan_m2d_D2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m2d_D2Z;
   //CHECK-NEXT:sycl::double2* odata_m2d_D2Z;
   //CHECK-NEXT:double* idata_m2d_D2Z;
   //CHECK-NEXT:/*
@@ -560,7 +560,7 @@ int main() {
   cufftMakePlan2d(plan_m2d_D2Z, 10, 20, CUFFT_D2Z, work_size);
   cufftExecD2Z(plan_m2d_D2Z, idata_m2d_D2Z, odata_m2d_D2Z);
 
-  //CHECK:dpct::fft::fft_engine* plan_m3d_C2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m3d_C2C;
   //CHECK-NEXT:sycl::float2* odata_m3d_C2C;
   //CHECK-NEXT:sycl::float2* idata_m3d_C2C;
   //CHECK-NEXT:/*
@@ -577,7 +577,7 @@ int main() {
   cufftMakePlan3d(plan_m3d_C2C, 10, 20, 30, CUFFT_C2C, work_size);
   cufftExecC2C(plan_m3d_C2C, idata_m3d_C2C, odata_m3d_C2C, CUFFT_FORWARD);
 
-  //CHECK:dpct::fft::fft_engine* plan_m3d_C2R;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m3d_C2R;
   //CHECK-NEXT:float* odata_m3d_C2R;
   //CHECK-NEXT:sycl::float2* idata_m3d_C2R;
   //CHECK-NEXT:/*
@@ -594,7 +594,7 @@ int main() {
   cufftMakePlan3d(plan_m3d_C2R, 10, 20, 30, CUFFT_C2R, work_size);
   cufftExecC2R(plan_m3d_C2R, idata_m3d_C2R, odata_m3d_C2R);
 
-  //CHECK:dpct::fft::fft_engine* plan_m3d_R2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m3d_R2C;
   //CHECK-NEXT:sycl::float2* odata_m3d_R2C;
   //CHECK-NEXT:float* idata_m3d_R2C;
   //CHECK-NEXT:/*
@@ -611,7 +611,7 @@ int main() {
   cufftMakePlan3d(plan_m3d_R2C, 10, 20, 30, CUFFT_R2C, work_size);
   cufftExecR2C(plan_m3d_R2C, idata_m3d_R2C, odata_m3d_R2C);
 
-  //CHECK:dpct::fft::fft_engine* plan_m3d_Z2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m3d_Z2Z;
   //CHECK-NEXT:sycl::double2* odata_m3d_Z2Z;
   //CHECK-NEXT:sycl::double2* idata_m3d_Z2Z;
   //CHECK-NEXT:/*
@@ -628,7 +628,7 @@ int main() {
   cufftMakePlan3d(plan_m3d_Z2Z, 10, 20, 30, CUFFT_Z2Z, work_size);
   cufftExecZ2Z(plan_m3d_Z2Z, idata_m3d_Z2Z, odata_m3d_Z2Z, CUFFT_INVERSE);
 
-  //CHECK:dpct::fft::fft_engine* plan_m3d_Z2D;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m3d_Z2D;
   //CHECK-NEXT:double* odata_m3d_Z2D;
   //CHECK-NEXT:sycl::double2* idata_m3d_Z2D;
   //CHECK-NEXT:/*
@@ -645,7 +645,7 @@ int main() {
   cufftMakePlan3d(plan_m3d_Z2D, 10, 20, 30, CUFFT_Z2D, work_size);
   cufftExecZ2D(plan_m3d_Z2D, idata_m3d_Z2D, odata_m3d_Z2D);
 
-  //CHECK:dpct::fft::fft_engine* plan_m3d_D2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_m3d_D2Z;
   //CHECK-NEXT:sycl::double2* odata_m3d_D2Z;
   //CHECK-NEXT:double* idata_m3d_D2Z;
   //CHECK-NEXT:/*
@@ -662,7 +662,7 @@ int main() {
   cufftMakePlan3d(plan_m3d_D2Z, 10, 20, 30, CUFFT_D2Z, work_size);
   cufftExecD2Z(plan_m3d_D2Z, idata_m3d_D2Z, odata_m3d_D2Z);
 
-  //CHECK:dpct::fft::fft_engine* plan_mmany_C2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_mmany_C2C;
   //CHECK-NEXT:int odist_mmany_C2C;
   //CHECK-NEXT:int ostride_mmany_C2C;
   //CHECK-NEXT:int * onembed_mmany_C2C;
@@ -693,7 +693,7 @@ int main() {
   cufftMakePlanMany(plan_mmany_C2C, 3, n_mmany_C2C, inembed_mmany_C2C, istride_mmany_C2C, idist_mmany_C2C, onembed_mmany_C2C, ostride_mmany_C2C, odist_mmany_C2C, CUFFT_C2C, 12, work_size);
   cufftExecC2C(plan_mmany_C2C, idata_mmany_C2C, odata_mmany_C2C, CUFFT_FORWARD);
 
-  //CHECK:dpct::fft::fft_engine* plan_mmany_C2R;
+  //CHECK:dpct::fft::fft_engine_ptr plan_mmany_C2R;
   //CHECK-NEXT:int odist_mmany_C2R;
   //CHECK-NEXT:int ostride_mmany_C2R;
   //CHECK-NEXT:int * onembed_mmany_C2R;
@@ -724,7 +724,7 @@ int main() {
   cufftMakePlanMany(plan_mmany_C2R, 3, n_mmany_C2R, inembed_mmany_C2R, istride_mmany_C2R, idist_mmany_C2R, onembed_mmany_C2R, ostride_mmany_C2R, odist_mmany_C2R, CUFFT_C2R, 12, work_size);
   cufftExecC2R(plan_mmany_C2R, idata_mmany_C2R, odata_mmany_C2R);
 
-  //CHECK:dpct::fft::fft_engine* plan_mmany_R2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_mmany_R2C;
   //CHECK-NEXT:int odist_mmany_R2C;
   //CHECK-NEXT:int ostride_mmany_R2C;
   //CHECK-NEXT:int * onembed_mmany_R2C;
@@ -755,7 +755,7 @@ int main() {
   cufftMakePlanMany(plan_mmany_R2C, 3, n_mmany_R2C, inembed_mmany_R2C, istride_mmany_R2C, idist_mmany_R2C, onembed_mmany_R2C, ostride_mmany_R2C, odist_mmany_R2C, CUFFT_R2C, 12, work_size);
   cufftExecR2C(plan_mmany_R2C, idata_mmany_R2C, odata_mmany_R2C);
 
-  //CHECK:dpct::fft::fft_engine* plan_mmany_Z2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_mmany_Z2Z;
   //CHECK-NEXT:int odist_mmany_Z2Z;
   //CHECK-NEXT:int ostride_mmany_Z2Z;
   //CHECK-NEXT:int * onembed_mmany_Z2Z;
@@ -786,7 +786,7 @@ int main() {
   cufftMakePlanMany(plan_mmany_Z2Z, 3, n_mmany_Z2Z, inembed_mmany_Z2Z, istride_mmany_Z2Z, idist_mmany_Z2Z, onembed_mmany_Z2Z, ostride_mmany_Z2Z, odist_mmany_Z2Z, CUFFT_Z2Z, 12, work_size);
   cufftExecZ2Z(plan_mmany_Z2Z, idata_mmany_Z2Z, odata_mmany_Z2Z, CUFFT_INVERSE);
 
-  //CHECK:dpct::fft::fft_engine* plan_mmany_Z2D;
+  //CHECK:dpct::fft::fft_engine_ptr plan_mmany_Z2D;
   //CHECK-NEXT:int odist_mmany_Z2D;
   //CHECK-NEXT:int ostride_mmany_Z2D;
   //CHECK-NEXT:int * onembed_mmany_Z2D;
@@ -817,7 +817,7 @@ int main() {
   cufftMakePlanMany(plan_mmany_Z2D, 3, n_mmany_Z2D, inembed_mmany_Z2D, istride_mmany_Z2D, idist_mmany_Z2D, onembed_mmany_Z2D, ostride_mmany_Z2D, odist_mmany_Z2D, CUFFT_Z2D, 12, work_size);
   cufftExecZ2D(plan_mmany_Z2D, idata_mmany_Z2D, odata_mmany_Z2D);
 
-  //CHECK:dpct::fft::fft_engine* plan_mmany_D2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_mmany_D2Z;
   //CHECK-NEXT:int odist_mmany_D2Z;
   //CHECK-NEXT:int ostride_mmany_D2Z;
   //CHECK-NEXT:int * onembed_mmany_D2Z;
@@ -848,7 +848,7 @@ int main() {
   cufftMakePlanMany(plan_mmany_D2Z, 3, n_mmany_D2Z, inembed_mmany_D2Z, istride_mmany_D2Z, idist_mmany_D2Z, onembed_mmany_D2Z, ostride_mmany_D2Z, odist_mmany_D2Z, CUFFT_D2Z, 12, work_size);
   cufftExecD2Z(plan_mmany_D2Z, idata_mmany_D2Z, odata_mmany_D2Z);
 
-  //CHECK:dpct::fft::fft_engine* plan_mmany64_C2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_mmany64_C2C;
   //CHECK-NEXT:long long int odist_mmany64_C2C;
   //CHECK-NEXT:long long int ostride_mmany64_C2C;
   //CHECK-NEXT:long long int * onembed_mmany64_C2C;
@@ -879,7 +879,7 @@ int main() {
   cufftMakePlanMany64(plan_mmany64_C2C, 3, n_mmany64_C2C, inembed_mmany64_C2C, istride_mmany64_C2C, idist_mmany64_C2C, onembed_mmany64_C2C, ostride_mmany64_C2C, odist_mmany64_C2C, CUFFT_C2C, 12, work_size);
   cufftExecC2C(plan_mmany64_C2C, idata_mmany64_C2C, odata_mmany64_C2C, CUFFT_FORWARD);
 
-  //CHECK:dpct::fft::fft_engine* plan_mmany64_C2R;
+  //CHECK:dpct::fft::fft_engine_ptr plan_mmany64_C2R;
   //CHECK-NEXT:long long int odist_mmany64_C2R;
   //CHECK-NEXT:long long int ostride_mmany64_C2R;
   //CHECK-NEXT:long long int * onembed_mmany64_C2R;
@@ -910,7 +910,7 @@ int main() {
   cufftMakePlanMany64(plan_mmany64_C2R, 3, n_mmany64_C2R, inembed_mmany64_C2R, istride_mmany64_C2R, idist_mmany64_C2R, onembed_mmany64_C2R, ostride_mmany64_C2R, odist_mmany64_C2R, CUFFT_C2R, 12, work_size);
   cufftExecC2R(plan_mmany64_C2R, idata_mmany64_C2R, odata_mmany64_C2R);
 
-  //CHECK:dpct::fft::fft_engine* plan_mmany64_R2C;
+  //CHECK:dpct::fft::fft_engine_ptr plan_mmany64_R2C;
   //CHECK-NEXT:long long int odist_mmany64_R2C;
   //CHECK-NEXT:long long int ostride_mmany64_R2C;
   //CHECK-NEXT:long long int * onembed_mmany64_R2C;
@@ -941,7 +941,7 @@ int main() {
   cufftMakePlanMany64(plan_mmany64_R2C, 3, n_mmany64_R2C, inembed_mmany64_R2C, istride_mmany64_R2C, idist_mmany64_R2C, onembed_mmany64_R2C, ostride_mmany64_R2C, odist_mmany64_R2C, CUFFT_R2C, 12, work_size);
   cufftExecR2C(plan_mmany64_R2C, idata_mmany64_R2C, odata_mmany64_R2C);
 
-  //CHECK:dpct::fft::fft_engine* plan_mmany64_Z2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_mmany64_Z2Z;
   //CHECK-NEXT:long long int odist_mmany64_Z2Z;
   //CHECK-NEXT:long long int ostride_mmany64_Z2Z;
   //CHECK-NEXT:long long int * onembed_mmany64_Z2Z;
@@ -972,7 +972,7 @@ int main() {
   cufftMakePlanMany64(plan_mmany64_Z2Z, 3, n_mmany64_Z2Z, inembed_mmany64_Z2Z, istride_mmany64_Z2Z, idist_mmany64_Z2Z, onembed_mmany64_Z2Z, ostride_mmany64_Z2Z, odist_mmany64_Z2Z, CUFFT_Z2Z, 12, work_size);
   cufftExecZ2Z(plan_mmany64_Z2Z, idata_mmany64_Z2Z, odata_mmany64_Z2Z, CUFFT_INVERSE);
 
-  //CHECK:dpct::fft::fft_engine* plan_mmany64_Z2D;
+  //CHECK:dpct::fft::fft_engine_ptr plan_mmany64_Z2D;
   //CHECK-NEXT:long long int odist_mmany64_Z2D;
   //CHECK-NEXT:long long int ostride_mmany64_Z2D;
   //CHECK-NEXT:long long int * onembed_mmany64_Z2D;
@@ -1003,7 +1003,7 @@ int main() {
   cufftMakePlanMany64(plan_mmany64_Z2D, 3, n_mmany64_Z2D, inembed_mmany64_Z2D, istride_mmany64_Z2D, idist_mmany64_Z2D, onembed_mmany64_Z2D, ostride_mmany64_Z2D, odist_mmany64_Z2D, CUFFT_Z2D, 12, work_size);
   cufftExecZ2D(plan_mmany64_Z2D, idata_mmany64_Z2D, odata_mmany64_Z2D);
 
-  //CHECK:dpct::fft::fft_engine* plan_mmany64_D2Z;
+  //CHECK:dpct::fft::fft_engine_ptr plan_mmany64_D2Z;
   //CHECK-NEXT:long long int odist_mmany64_D2Z;
   //CHECK-NEXT:long long int ostride_mmany64_D2Z;
   //CHECK-NEXT:long long int * onembed_mmany64_D2Z;

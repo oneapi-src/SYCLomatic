@@ -17,10 +17,18 @@
 
 namespace dpct {
 namespace fft {
-/// An enumeration type to describe the FFT direction is forward or backward.
-enum fft_direction : int {
-  forward = 0,
-  backward
+/// A type to describe the FFT direction is forward or backward.
+struct fft_direction {
+  enum dir_t : int {
+    forward = -1,
+    backward = 1
+  };
+  fft_direction() {}
+  fft_direction(int dir) : _dir(static_cast<dir_t>(dir)) {}
+  operator int() const { return static_cast<int>(_dir); }
+
+private:
+  dir_t _dir = forward;
 };
 /// An enumeration type to describe the types of FFT input and output data.
 enum fft_type : int {
@@ -1239,6 +1247,8 @@ private:
       oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>
       _desc_dc;
 };
+
+using fft_engine_ptr = fft_engine *;
 } // namespace fft
 } // namespace dpct
 

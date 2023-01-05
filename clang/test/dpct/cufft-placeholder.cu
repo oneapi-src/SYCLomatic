@@ -15,7 +15,7 @@ int* inembed;
 int * n;
 int rank;
 
-//CHECK:void foo1(dpct::fft::fft_engine* plan) {
+//CHECK:void foo1(dpct::fft::fft_engine_ptr plan) {
 //CHECK-NEXT:  double* odata;
 //CHECK-NEXT:  sycl::double2* idata;
 //CHECK-NEXT:  plan->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward);
@@ -26,7 +26,7 @@ void foo1(cufftHandle plan) {
   cufftExecZ2D(plan, idata, odata);
 }
 
-//CHECK:void foo2(dpct::fft::fft_engine* plan) {
+//CHECK:void foo2(dpct::fft::fft_engine_ptr plan) {
 //CHECK-NEXT:  float* odata;
 //CHECK-NEXT:  sycl::float2* idata;
 //CHECK-NEXT:  plan->compute<sycl::float2, float>(idata, odata, dpct::fft::fft_direction::backward);
@@ -38,7 +38,7 @@ void foo2(cufftHandle plan) {
 }
 
 int main() {
-  //CHECK:dpct::fft::fft_engine* plan1;
+  //CHECK:dpct::fft::fft_engine_ptr plan1;
   //CHECK-NEXT:dpct::fft::fft_type type1 = dpct::fft::fft_type::complex_double_to_real_double;
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.
@@ -51,7 +51,7 @@ int main() {
   cufftType_t type1 = CUFFT_Z2D;
   cufftMakePlanMany(plan1, rank, n, inembed, istride, idist, onembed, ostride, odist, type1, 11, work_size);
 
-  //CHECK:dpct::fft::fft_engine* plan2;
+  //CHECK:dpct::fft::fft_engine_ptr plan2;
   //CHECK-NEXT:dpct::fft::fft_type type2 = dpct::fft::fft_type::complex_float_to_real_float;
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1100:{{[0-9]+}}: Currently the DFT external workspace feature in the Intel(R) oneAPI Math Kernel Library (oneMKL) is only supported for GPU devices. Use the internal workspace if your code should run on non-GPU devices.

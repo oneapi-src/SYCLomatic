@@ -54,10 +54,18 @@ namespace fft {
 // DPCT_LABEL_BEGIN|fft_direction|dpct::fft
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-/// An enumeration type to describe the FFT direction is forward or backward.
-enum fft_direction : int {
-  forward = 0,
-  backward
+/// A type to describe the FFT direction is forward or backward.
+struct fft_direction {
+  enum dir_t : int {
+    forward = -1,
+    backward = 1
+  };
+  fft_direction() {}
+  fft_direction(int dir) : _dir(static_cast<dir_t>(dir)) {}
+  operator int() const { return static_cast<int>(_dir); }
+
+private:
+  dir_t _dir = forward;
 };
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|fft_type|dpct::fft
@@ -1290,6 +1298,8 @@ private:
       oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>
       _desc_dc;
 };
+
+using fft_engine_ptr = fft_engine *;
 // DPCT_LABEL_END
 } // namespace fft
 } // namespace dpct
