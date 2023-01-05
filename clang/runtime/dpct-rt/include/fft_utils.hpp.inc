@@ -56,16 +56,15 @@ namespace fft {
 // DPCT_CODE
 /// A type to describe the FFT direction is forward or backward.
 struct fft_direction {
-  enum dir_t : int {
+  enum : int {
     forward = -1,
     backward = 1
   };
   fft_direction() {}
-  fft_direction(int dir) : _dir(static_cast<dir_t>(dir)) {}
-  operator int() const { return static_cast<int>(_dir); }
+  fft_direction(int dir) : _dir(dir) {}
+  operator int() const { return _dir; }
 
-private:
-  dir_t _dir = forward;
+  int _dir = -1;
 };
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|fft_type|dpct::fft
