@@ -12,6 +12,9 @@
 #include <thrust/host_vector.h>
 #include <thrust/functional.h>
 #include <thrust/iterator/discard_iterator.h>
+// for cuda 12.0
+#include <thrust/extrema.h>
+#include <thrust/unique.h>
 
 int main(){
     return 0;
