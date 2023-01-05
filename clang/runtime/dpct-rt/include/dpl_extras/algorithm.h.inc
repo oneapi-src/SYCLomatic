@@ -1669,6 +1669,23 @@ inline void sort_keys(_ExecutionPolicy &&policy, key_t keys_in,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|sort_keys_io_iterator_pair|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|sort_keys
+// DplExtrasIterators|io_iterator_pair
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t>
+inline void sort_keys(
+    _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys, int64_t n,
+    bool descending, int begin_bit = 0,
+    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
+                  8) {
+  sort_keys(std::forward<_ExecutionPolicy>(policy), keys.input(), keys.output(),
+            n, descending, begin_bit, end_bit);
+}
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|segmented_sort_pairs|dpct
 // DPCT_DEPENDENCY_BEGIN 
 // DplExtrasAlgorithm|segmented_sort_pairs_by_parallel_sorts
@@ -1717,23 +1734,6 @@ inline void segmented_sort_pairs(
         values_out, n, nsegments, begin_offsets, end_offsets, descending,
         begin_bit, end_bit);
   }
-}
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|sort_keys_io_iterator_pair|dpct
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasAlgorithm|sort_keys
-// DplExtrasIterators|io_iterator_pair
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-template <typename _ExecutionPolicy, typename key_t>
-inline void sort_keys(
-    _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys, int64_t n,
-    bool descending, int begin_bit = 0,
-    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
-                  8) {
-  sort_keys(std::forward<_ExecutionPolicy>(policy), keys.input(), keys.output(),
-            n, descending, begin_bit, end_bit);
 }
 // DPCT_LABEL_END
 
