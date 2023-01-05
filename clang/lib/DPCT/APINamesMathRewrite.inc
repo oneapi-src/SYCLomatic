@@ -506,6 +506,23 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("h2div",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "h2div")),
+    ENTRY_OPERATOR("h2div", BinaryOperatorKind::BO_Div))
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
+                          ENTRY_RENAMED("hdiv",
+                                        MapNames::getClNamespace(false, true) +
+                                            "ext::intel::math::" + "hdiv")),
+    ENTRY_OPERATOR("hdiv", BinaryOperatorKind::BO_Div))
+
+
+CONDITIONAL_FACTORY_ENTRY(
+    UseIntelDeviceMath,
+    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hmul",
                                         MapNames::getClNamespace(false, true) +
                                             "ext::intel::math::" + "hmul")),
