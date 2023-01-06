@@ -913,6 +913,7 @@ int runDPCT(int argc, const char **argv) {
   CallExprRewriterFactoryBase::initRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
+  clang::dpct::initHeaderSpellings();
   if (!RuleFile.empty()) {
     importRules(RuleFile);
   }

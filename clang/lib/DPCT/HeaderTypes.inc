@@ -53,7 +53,7 @@ MKL_HEADER(Mkl, "<oneapi/mkl.hpp>")
 MKL_HEADER(RNG, "<oneapi/mkl/rng/device.hpp>")
 MKL_HEADER(BFloat16, "<oneapi/mkl/bfloat16.hpp>")
 
-DPCT_HEADER(Dpct, "<dpct/dpct.hpp>")
+DPCT_HEADER(Dpct,  "<" + getCustomMainHelperFileName() + "/" + getCustomMainHelperFileName() + ".hpp>")
 DPCT_HEADER(DPL_Utils, "<dpct/dpl_utils.hpp>")
 DPCT_HEADER(FFT_Utils, "<dpct/fft_utils.hpp>")
 DPCT_HEADER(RNG_Utils, "<dpct/rng_utils.hpp>")
