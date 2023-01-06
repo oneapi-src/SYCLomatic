@@ -14600,30 +14600,6 @@ void RemoveBaseClassRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(RemoveBaseClassRule, PassKind::PK_Migration)
 
-void PreDefinedStreamHandleRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(integerLiteral(equals(0)).bind("stream"), this);
-  MF.addMatcher(parenExpr(has(cStyleCastExpr(has(
-                              integerLiteral(anyOf(equals(1), equals(2)))))))
-                    .bind("stream"),
-                this);
-}
-
-void PreDefinedStreamHandleRule::runRule(
-    const MatchFinder::MatchResult &Result) {
-  if (auto E = getNodeAsType<Expr>(Result, "stream")) {
-    std::string Str = getStmtSpelling(E);
-    if (Str == "cudaStreamDefault") {
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      auto Begin = getStmtExpansionSourceRange(E).getBegin();
-      unsigned int Length = Lexer::MeasureTokenLength(
-          Begin, SM, DpctGlobalInfo::getContext().getLangOpts());
-      emplaceTransformation(new ReplaceText(Begin, Length, "0"));
-    }
-  }
-}
-
-REGISTER_RULE(PreDefinedStreamHandleRule, PassKind::PK_Migration)
-
 void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       asmStmt(hasAncestor(functionDecl(
@@ -15403,10 +15379,11 @@ REGISTER_RULE(TemplateSpecializationTypeLocRule, PassKind::PK_Migration)
 
 void CudaStreamCastRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
-    castExpr(
-      hasType(typedefDecl(hasAnyName("CUstream", "cudaStream_t"))))
-    .bind("cast"),
-    this);
+     castExpr(hasType(qualType(hasCanonicalType(
+        qualType(pointsTo(namedDecl(hasName("CUstream_st"))))))))
+     .bind("cast"),
+     this);
+  MF.addMatcher(integerLiteral(equals(0)).bind("stream"), this);
 }
 
 void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
@@ -15431,6 +15408,16 @@ void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &R
 	  + "int_as_queue_ptr("
 	  + ExprAnalysis::ref(CE->getSubExpr())
 	  + ")"));
+    }
+  }
+  else if (auto E = getNodeAsType<Expr>(Result, "stream")) {
+    std::string Str = getStmtSpelling(E);
+    if (Str == "cudaStreamDefault") {
+      auto &SM = DpctGlobalInfo::getSourceManager();
+      auto Begin = getStmtExpansionSourceRange(E).getBegin();
+      unsigned int Length = Lexer::MeasureTokenLength(
+          Begin, SM, DpctGlobalInfo::getContext().getLangOpts());
+      emplaceTransformation(new ReplaceText(Begin, Length, "0"));
     }
   }
 }
