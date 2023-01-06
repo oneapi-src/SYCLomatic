@@ -946,7 +946,17 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
   auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
   PP.PrintCanonicalTypes = true;
   auto BaseType = CMCE->getObjectType().getUnqualifiedType().getAsString(PP);
-
+  if (StringRef(BaseType).startswith("cub::")) {
+    if (const auto *DRE = dyn_cast<DeclRefExpr>(CMCE->getImplicitObjectArgument())) {
+      if (const auto *RD = DRE->getDecl()->getType()->getAsCXXRecordDecl()) {
+        BaseType.clear();
+        llvm::raw_string_ostream OS(BaseType);
+        RD->printNestedNameSpecifier(OS, PP);
+        OS << RD->getNameAsString();
+        OS.flush();
+      }
+    }
+  }
   if (CMCE->getMethodDecl()->getIdentifier()) {
     auto MethodName = CMCE->getMethodDecl()->getNameAsString();
 
