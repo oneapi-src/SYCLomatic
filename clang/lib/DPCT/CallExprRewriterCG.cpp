@@ -24,9 +24,8 @@ void CallExprRewriterFactoryBase::initRewriterMapCooperativeGroups() {
       }));
 }
 
-void CallExprRewriterFactoryBase::initMethodRewriterMap() {
-  MethodRewriterMap = std::make_unique<std::unordered_map<
-      std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>(
+void CallExprRewriterFactoryBase::initMethodRewriterMapCooperativeGroups() {
+  MethodRewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
 #define CLASS_METHOD_CALL

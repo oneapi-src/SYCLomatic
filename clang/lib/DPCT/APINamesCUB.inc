@@ -972,3 +972,13 @@ CONDITIONAL_FACTORY_ENTRY(
                              ARG(2),
                              BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(5)),
                              ARG(3), ARG(4)))))))))
+#ifdef CLASS_METHOD_CALL
+// cub::ArgIndexInputIterator.normalize
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::DplExtrasIterators_arg_index_input_iterator,
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_DPCT_DPL_Utils,
+        ASSIGN_FACTORY_ENTRY(
+            "cub::ArgIndexInputIterator.normalize", MemberExprBase(),
+            MEMBER_CALL(MemberExprBase(), false, LITERAL("create_normalize")))))
+#endif

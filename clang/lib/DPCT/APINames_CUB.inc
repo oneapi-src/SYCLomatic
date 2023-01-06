@@ -232,7 +232,7 @@ ENTRY(cub::SmVersionUncached, cub::SmVersionUncached, false, NO_FLAG, P4, "Comme
 ENTRY(cub::SyncStream, cub::SyncStream, false, NO_FLAG, P4, "Comment")
 
 // Fancy iterators
-ENTRY_MEMBER_FUNCTION(cub::ArgIndexInputIterator, normalize, normalize, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::ArgIndexInputIterator, normalize, normalize, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cub::TexObjInputIterator, BindTexture, BindTexture, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::TexObjInputIterator, UnbindTexture, UnbindTexture, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::TexRefInputIterator, BindTexture, BindTexture, false, NO_FLAG, P4, "Comment")
