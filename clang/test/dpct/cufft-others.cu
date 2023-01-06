@@ -68,3 +68,25 @@ int foo3(cudaStream_t stream) {
 
   return 0;
 }
+
+void foo4() {
+  const int dir = CUFFT_FORWARD;
+  cufftHandle plan;
+  float2* iodata;
+  cufftPlan1d(&plan, 10, CUFFT_C2C, 3);
+  //CHECK:plan->compute<sycl::float2, sycl::float2>(iodata, iodata, dpct::fft::fft_direction::forward);
+  //CHECK-NEXT:plan->compute<sycl::float2, sycl::float2>(iodata, iodata, dpct::fft::fft_direction::backward);
+  cufftExecC2C(plan, iodata, iodata, dir);
+  cufftExecC2C(plan, iodata, iodata, -dir);
+}
+
+void foo5() {
+  int dir = CUFFT_FORWARD;
+  cufftHandle plan;
+  float2* iodata;
+  cufftPlan1d(&plan, 10, CUFFT_C2C, 3);
+  //CHECK:plan->compute<sycl::float2, sycl::float2>(iodata, iodata, dir == 1 ? dpct::fft::fft_direction::backward : dpct::fft::fft_direction::forward);
+  //CHECK-NEXT:plan->compute<sycl::float2, sycl::float2>(iodata, iodata, -dir == 1 ? dpct::fft::fft_direction::backward : dpct::fft::fft_direction::forward);
+  cufftExecC2C(plan, iodata, iodata, dir);
+  cufftExecC2C(plan, iodata, iodata, -dir);
+}
