@@ -342,6 +342,7 @@ insertObject(MapType &Map, const typename MapType::key_type &Key,
   return Obj;
 }
 
+void initHeaderSpellings();
 enum HeaderType {
 #define HEADER(Name, Spelling) HT_ ## Name,
 #include "HeaderTypes.inc"

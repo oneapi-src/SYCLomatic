@@ -46,7 +46,12 @@
 #include <dlfcn.h>
 #endif
 
+#if (__GNUC__ < 8) && !defined(__llvm__)
+#include <experimental/filesystem>
+#else
 #include <filesystem>
+#endif
+
 #include <random>
 
 // DPCT_LABEL_END
@@ -104,12 +109,18 @@ static kernel_function_info get_kernel_function_info(const void *function) {
 
 namespace detail {
 
+#if (__GNUC__ < 8) && !defined(__llvm__)
+namespace fs = std::experimental::filesystem;
+#else
+namespace fs = std::filesystem;
+#endif
+
  /// Write data to temporary file and return absolute path to temporary file.
  /// Temporary file is created in a temporary directory both of which have random names
  /// with only the user having access permissions.  Only one temporary file will be
  /// created in the temporary directory.
-static std::filesystem::path write_data_to_file(char const *const data,
-                                                size_t size) {
+static fs::path write_data_to_file(char const *const data,
+                                   size_t size) {
   std::error_code ec;
 
   // random number generator
@@ -118,20 +129,20 @@ static std::filesystem::path write_data_to_file(char const *const data,
   std::uniform_int_distribution<uint64_t> rand(0);
 
   // find temporary directory
-  auto tmp_dir = std::filesystem::temp_directory_path(ec);
+  auto tmp_dir = fs::temp_directory_path(ec);
   if (ec)
     throw std::runtime_error("could not find temporary directory");
 
   // create private directory
   std::stringstream directory;
-  std::filesystem::path directory_path;
+  fs::path directory_path;
   constexpr int max_attempts = 5;
   int i;
 
   for (i = 0; i < max_attempts; i++) {
     directory << std::hex << rand(prng);
     directory_path = tmp_dir / directory.str();
-    if (std::filesystem::create_directory(directory_path)) {
+    if (fs::create_directory(directory_path)) {
       break;
     }
   }
@@ -139,8 +150,8 @@ static std::filesystem::path write_data_to_file(char const *const data,
     throw std::runtime_error("could not create directory");
 
   // only allow owner permissions to private directory
-  std::filesystem::permissions(directory_path,
-                               std::filesystem::perms::owner_all, ec);
+  fs::permissions(directory_path,
+                  fs::perms::owner_all, ec);
   if (ec)
     throw std::runtime_error("could not set directory permissions");
 
@@ -157,9 +168,9 @@ static std::filesystem::path write_data_to_file(char const *const data,
   auto outfile = std::ofstream(filepath, std::ios::out | std::ios::binary);
   if (outfile) {
     // only allow program to write file
-    std::filesystem::permissions(filepath,
-                                 std::filesystem::perms::owner_write,
-                                 ec);
+    fs::permissions(filepath,
+                    fs::perms::owner_write,
+                    ec);
     if (ec)
       throw std::runtime_error("could not set permissions");
 
@@ -169,10 +180,10 @@ static std::filesystem::path write_data_to_file(char const *const data,
       throw std::runtime_error("could not write data");
 
     // only allow program to read/execute file
-    std::filesystem::permissions(filepath,
-                                 std::filesystem::perms::owner_read |
-                                 std::filesystem::perms::owner_exec,
-                                 ec);
+    fs::permissions(filepath,
+                    fs::perms::owner_read |
+                    fs::perms::owner_exec,
+                    ec);
     if (ec)
       throw std::runtime_error("could not set permissions");
   } else
@@ -322,11 +333,11 @@ public:
   ~path_lib_record() {
     for (auto entry : lib_to_path) {
       FreeLibrary(static_cast<HMODULE>(entry.first));
-      std::filesystem::permissions(entry.second, std::filesystem::perms::owner_all);
-      std::filesystem::remove_all(entry.second.remove_filename());
+      fs::permissions(entry.second, fs::perms::owner_all);
+      fs::remove_all(entry.second.remove_filename());
     }
   }
-  static void record_lib_path(std::filesystem::path path, void *library) {
+  static void record_lib_path(fs::path path, void *library) {
     lib_to_path[library] = path;
   }
   static void remove_lib(void *library) {
@@ -334,8 +345,8 @@ public:
     std::error_code ec;
 
     FreeLibrary(static_cast<HMODULE>(library));
-    std::filesystem::permissions(path, std::filesystem::perms::owner_all);
-    if (std::filesystem::remove_all(path.remove_filename(),ec) != 2 || ec)
+    fs::permissions(path, fs::perms::owner_all);
+    if (fs::remove_all(path.remove_filename(),ec) != 2 || ec)
       // one directory and one temporary file should have been deleted
       throw std::runtime_error("Directory delete failed");
 
@@ -343,7 +354,7 @@ public:
   }
 
 private:
-  inline static std::unordered_map<void *,std::filesystem::path> lib_to_path;
+  inline static std::unordered_map<void *,fs::path> lib_to_path;
 };
 #endif
 
@@ -366,7 +377,7 @@ private:
 namespace detail {
 
 static kernel_library load_dl_from_data(char const *const data, size_t size) {
-  std::filesystem::path filename = write_data_to_file(data, size);
+  fs::path filename = write_data_to_file(data, size);
 #ifdef _WIN32
   void *so = LoadLibraryA(filename.string().c_str());
 #else
@@ -381,7 +392,7 @@ static kernel_library load_dl_from_data(char const *const data, size_t size) {
   std::error_code ec;
 
   // Windows DLL cannot be deleted while in use
-  if (std::filesystem::remove_all(filename.remove_filename(),ec) != 2 || ec)
+  if (fs::remove_all(filename.remove_filename(),ec) != 2 || ec)
     // one directory and one temporary file should have been deleted
     throw std::runtime_error("Directory delete failed");
 #endif

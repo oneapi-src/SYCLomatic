@@ -707,10 +707,14 @@ void DpctFileInfo::emplaceReplacements(ReplTy &ReplSet) {
     Repls->emplaceIntoReplSet(ReplSet[FilePath]);
 }
 
-static const std::pair<HeaderType, StringRef> HeaderSpellings[] = {
+std::vector<std::pair<HeaderType, std::string>> HeaderSpellings;
+
+void initHeaderSpellings() {
+  HeaderSpellings = {
 #define HEADER(Name, Spelling) {HT_##Name, Spelling},
 #include "HeaderTypes.inc"
-};
+  };
+}
 
 StringRef DpctFileInfo::getHeaderSpelling(HeaderType Value) {
   if (Value < NUM_HEADERS)
@@ -722,7 +726,7 @@ StringRef DpctFileInfo::getHeaderSpelling(HeaderType Value) {
 }
 
 std::optional<HeaderType> DpctFileInfo::findHeaderType(StringRef Header) {
-  const auto *Pos = llvm::find_if(
+  auto Pos = llvm::find_if(
       HeaderSpellings, [=](const std::pair<HeaderType, StringRef> &p) -> bool {
         return p.second == Header;
       });
