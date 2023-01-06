@@ -331,6 +331,7 @@ insertObject(MapType &Map, const typename MapType::key_type &Key,
   return Obj;
 }
 
+void initHeaderSpellings();
 enum HeaderType {
 #define HEADER(Name, Spelling) HT_ ## Name,
 #include "HeaderTypes.inc"
@@ -1295,7 +1296,7 @@ public:
     return getLocInfo(TL.getBeginLoc(), IsInvalid);
   }
 
-  // Return the absolute path of \p ID 
+  // Return the absolute path of \p ID
   static llvm::Optional<std::string> getAbsolutePath(FileID ID);
 
   static inline std::pair<std::string, unsigned>
