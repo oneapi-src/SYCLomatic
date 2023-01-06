@@ -1414,11 +1414,11 @@ sort_pairs_impl(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
 // DplExtrasAlgorithm|sort_pairs
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-template <typename _ExecutionPolicy, typename key_t, typename value_t,
-          typename OffsetIteratorT>
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
+          typename value_t, typename value_out_t, typename OffsetIteratorT>
 inline void segmented_sort_pairs_by_parallel_sorts(
-    _ExecutionPolicy &&policy, key_t keys_in, key_t keys_out, value_t values_in,
-    value_t values_out, int64_t n, int64_t nsegments,
+    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+    value_out_t values_in, value_t values_out, int64_t n, int64_t nsegments,
     OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
     bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
@@ -1457,11 +1457,11 @@ inline void segmented_sort_pairs_by_parallel_sorts(
 // DplExtrasAlgorithm|sort_pairs
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-template <typename _ExecutionPolicy, typename key_t, typename value_t,
-          typename OffsetIteratorT>
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
+          typename value_t, typename value_out_t, typename OffsetIteratorT>
 inline void segmented_sort_pairs_by_parallel_for_of_sorts(
-    _ExecutionPolicy &&policy, key_t keys_in, key_t keys_out, value_t values_in,
-    value_t values_out, int64_t n, int64_t nsegments,
+    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+    value_t values_in, value_out_t values_out, int64_t n, int64_t nsegments,
     OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
     bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
@@ -1489,11 +1489,11 @@ inline void segmented_sort_pairs_by_parallel_for_of_sorts(
 // DplExtrasAlgorithm|sort_pairs
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-template <typename _ExecutionPolicy, typename key_t, typename value_t,
-          typename OffsetIteratorT>
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
+          typename value_t, typename value_out_t, typename OffsetIteratorT>
 inline void segmented_sort_pairs_by_two_pair_sorts(
-    _ExecutionPolicy &&policy, key_t keys_in, key_t keys_out, value_t values_in,
-    value_t values_out, int64_t n, int64_t nsegments,
+    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+    value_out_t values_in, value_t values_out, int64_t n, int64_t nsegments,
     OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
     bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
@@ -1718,11 +1718,11 @@ inline void sort_keys(
 // DplExtrasAlgorithm|segmented_sort_pairs_by_two_pair_sorts
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-template <typename _ExecutionPolicy, typename key_t, typename value_t,
-          typename OffsetIteratorT>
+template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
+          typename value_t, typename value_out_t, typename OffsetIteratorT>
 inline void segmented_sort_pairs(
-    _ExecutionPolicy &&policy, key_t keys_in, key_t keys_out, value_t values_in,
-    value_t values_out, int64_t n, int64_t nsegments,
+    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+    value_t values_in, value_out_t values_out, int64_t n, int64_t nsegments,
     OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
     bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
