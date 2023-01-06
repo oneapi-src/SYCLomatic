@@ -941,6 +941,7 @@ void IncludesCallbacks::InclusionDirective(
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_SPBLAS_Utils);
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
                                                  HT_MKL_Mkl);
