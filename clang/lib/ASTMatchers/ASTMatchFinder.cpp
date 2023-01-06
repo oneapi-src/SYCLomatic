@@ -507,8 +507,8 @@ public:
   bool TraverseAttr(Attr *AttrNode);
 
 #ifdef SYCLomatic_CUSTOMIZATION
-    bool TraverseCXXDefaultArgExpr(CXXDefaultArgExpr*,
-      DataRecursionQueue* Queue = nullptr) {
+  bool TraverseCXXDefaultArgExpr(CXXDefaultArgExpr *ExprNode,
+                                 DataRecursionQueue *Queue = nullptr) {
     return true;
   }
 #endif // SYCLomatic_CUSTOMIZATION

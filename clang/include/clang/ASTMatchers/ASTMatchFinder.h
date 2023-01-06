@@ -201,7 +201,7 @@ public:
 
 #ifdef SYCLomatic_CUSTOMIZATION
   /// Finds all matches in the given Decl;
-  void traverseDecl(Decl *, ASTContext &);
+  void traverseDecl(Decl *D, ASTContext &Context);
 #endif // SYCLomatic_CUSTOMIZATION
 
   /// Registers a callback to notify the end of parsing.
