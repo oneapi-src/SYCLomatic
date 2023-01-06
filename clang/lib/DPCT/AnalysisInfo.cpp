@@ -402,26 +402,16 @@ void DpctFileInfo::postProcess() {
   }
 }
 
-class RnnBackwardFuncInfoBuilder{
+class RnnBackwardFuncInfoBuilder {
   std::vector<RnnBackwardFuncInfo> &RBFuncInfo;
   std::vector<RnnBackwardFuncInfo> ValidBackwardDataFuncInfo;
   std::vector<RnnBackwardFuncInfo> ValidBackwardWeightFuncInfo;
-  std::vector<std::pair<RnnBackwardFuncInfo, RnnBackwardFuncInfo>>
-      RnnDataWeightGradientPair;
+  std::vector<std::shared_ptr<ExtReplacement>> Repls;
   using InfoIter = std::vector<RnnBackwardFuncInfo>::iterator;
+
 public:
   RnnBackwardFuncInfoBuilder(std::vector<RnnBackwardFuncInfo> &Infos)
       : RBFuncInfo(Infos){};
-  std::vector<RnnBackwardFuncInfo> &getDataFuncInfo(){
-    return ValidBackwardDataFuncInfo;
-  }
-  std::vector<RnnBackwardFuncInfo> &getWeightFuncInfo() {
-    return ValidBackwardWeightFuncInfo;
-  }
-  std::vector<std::pair<RnnBackwardFuncInfo, RnnBackwardFuncInfo>> &
-  getPairedFuncCall() {
-    return RnnDataWeightGradientPair;
-  }
   bool isInputNotChanged(InfoIter Data, InfoIter Weight) {
     for (auto RnnInput : Data->RnnInputDeclLoc) {
       auto &RnnInputRefs =
@@ -445,14 +435,11 @@ public:
     return true;
   }
   bool isValidScopeAndOrder(InfoIter Data, InfoIter Weight) {
-    if ((Data->CompoundLoc != Weight->CompoundLoc) &&
-        (Data->Offset >= Weight->Offset)) {
-      return false;
-    }
-    return true;
+    return !((Data->CompoundLoc != Weight->CompoundLoc) &&
+           (Data->Offset >= Weight->Offset));
   }
   void build() {
-    if(RBFuncInfo.empty()) {
+    if (RBFuncInfo.empty()) {
       return;
     }
     for (auto &Info : RBFuncInfo) {
@@ -476,8 +463,8 @@ public:
             isValidScopeAndOrder(DataIter, WeightIter)) {
           DataPaired = true;
           WeightPairdFlag[WeightIter - WeightBegin] = 1;
-          RnnDataWeightGradientPair.emplace_back(
-              std::make_pair(*DataIter, *WeightIter));
+          auto Repl = generateReplacement(DataIter, WeightIter);
+          Repls.insert(Repls.end(), Repl.begin(), Repl.end());
           break;
         }
       }
@@ -496,54 +483,57 @@ public:
     }
   }
   std::vector<std::shared_ptr<ExtReplacement>> getReplacement() {
+    return Repls;
+  }
+  std::vector<std::shared_ptr<ExtReplacement>>
+  generateReplacement(InfoIter Data, InfoIter Weight) {
     std::vector<std::shared_ptr<ExtReplacement>> Repls;
-    for (auto &PairedFunc : RnnDataWeightGradientPair) {
-      std::ostringstream DataRepl, WeightRepl;
-      RnnBackwardFuncInfo DataFuncInfo = PairedFunc.first;
-      RnnBackwardFuncInfo WeightFuncInfo = PairedFunc.second;
-      requestFeature(HelperFeatureEnum::DnnlUtils_async_rnn_backward,
-                     DataFuncInfo.FilePath);
-      Diagnostics WarningType;
-      if (WeightFuncInfo.isAssigned) {
-        WarningType = Diagnostics::FUNC_CALL_REMOVED_0;
-        WeightRepl << "0";
-      } else {
-        WarningType = Diagnostics::FUNC_CALL_REMOVED;
-      }
-      DiagnosticsUtils::report(
-          WeightFuncInfo.FilePath, WeightFuncInfo.Offset, WarningType, true,
-          false, "cudnnRNNBackwardWeights_v8",
-          "this call and cudnnRNNBackwardData_v8 are migrated to a single "
-          "function call async_rnn_backward");
-
-      if (DataFuncInfo.isAssigned) {
-        DataRepl << "(";
-        DiagnosticsUtils::report(DataFuncInfo.FilePath, DataFuncInfo.Offset,
-                                 Diagnostics::NOERROR_RETURN_COMMA_OP, true,
-                                 false);
-      }
-      DataRepl << DataFuncInfo.FuncArgs[0] << ".async_rnn_backward("
-               << DataFuncInfo.FuncArgs[1];
-      for (unsigned int index = 3; index <= 21; index++) {
-        DataRepl << ", " << DataFuncInfo.FuncArgs[index];
-        if (index == 6) {
-          DataRepl << ", " << WeightFuncInfo.FuncArgs[0];
-        } else if (index == 17) {
-          DataRepl << ", " << WeightFuncInfo.FuncArgs[1];
-        }
-      }
-      if (DataFuncInfo.isAssigned) {
-        DataRepl << "), 0)";
-      } else {
-        DataRepl << ")";
-      }
-      Repls.emplace_back(std::make_shared<ExtReplacement>(
-          DataFuncInfo.FilePath, DataFuncInfo.Offset, DataFuncInfo.Length,
-          DataRepl.str(), nullptr));
-      Repls.emplace_back(std::make_shared<ExtReplacement>(
-          WeightFuncInfo.FilePath, WeightFuncInfo.Offset, WeightFuncInfo.Length,
-          WeightRepl.str(), nullptr));
+    std::ostringstream DataRepl, WeightRepl;
+    RnnBackwardFuncInfo &DataFuncInfo = *Data;
+    RnnBackwardFuncInfo &WeightFuncInfo = *Weight;
+    requestFeature(HelperFeatureEnum::DnnlUtils_async_rnn_backward,
+                   DataFuncInfo.FilePath);
+    Diagnostics WarningType;
+    if (WeightFuncInfo.isAssigned) {
+      WarningType = Diagnostics::FUNC_CALL_REMOVED_0;
+      WeightRepl << "0";
+    } else {
+      WarningType = Diagnostics::FUNC_CALL_REMOVED;
     }
+    DiagnosticsUtils::report(
+        WeightFuncInfo.FilePath, WeightFuncInfo.Offset, WarningType, true,
+        false, "cudnnRNNBackwardWeights_v8",
+        "this call and cudnnRNNBackwardData_v8 are migrated to a single "
+        "function call async_rnn_backward");
+
+    if (DataFuncInfo.isAssigned) {
+      DataRepl << "(";
+      DiagnosticsUtils::report(DataFuncInfo.FilePath, DataFuncInfo.Offset,
+                               Diagnostics::NOERROR_RETURN_COMMA_OP, true,
+                               false);
+    }
+    DataRepl << DataFuncInfo.FuncArgs[0] << ".async_rnn_backward("
+             << DataFuncInfo.FuncArgs[1];
+    for (unsigned int index = 3; index <= 21; index++) {
+      DataRepl << ", " << DataFuncInfo.FuncArgs[index];
+      if (index == 6) {
+        DataRepl << ", " << WeightFuncInfo.FuncArgs[0];
+      } else if (index == 17) {
+        DataRepl << ", " << WeightFuncInfo.FuncArgs[1];
+      }
+    }
+    if (DataFuncInfo.isAssigned) {
+      DataRepl << "), 0)";
+    } else {
+      DataRepl << ")";
+    }
+    Repls.emplace_back(std::make_shared<ExtReplacement>(
+        DataFuncInfo.FilePath, DataFuncInfo.Offset, DataFuncInfo.Length,
+        DataRepl.str(), nullptr));
+    Repls.emplace_back(std::make_shared<ExtReplacement>(
+        WeightFuncInfo.FilePath, WeightFuncInfo.Offset, WeightFuncInfo.Length,
+        WeightRepl.str(), nullptr));
+
     return Repls;
   }
 };
@@ -551,8 +541,7 @@ public:
 void DpctFileInfo::buildRnnBackwardFuncInfo() {
   RnnBackwardFuncInfoBuilder Builder(RBFuncInfo);
   Builder.build();
-  auto Repls = Builder.getReplacement();
-  for(auto &Repl : Repls) {
+  for(auto &Repl : Builder.getReplacement()) {
     addReplacement(Repl);
   }
 }

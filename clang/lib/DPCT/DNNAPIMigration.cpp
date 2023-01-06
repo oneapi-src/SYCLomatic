@@ -199,21 +199,21 @@ void CuDNNAPIRule::runRule(
       return;
     IsAssigned = true;
   }
-  std::string FuncName;
+  llvm::StringRef FuncName;
   if (auto DC = CE->getDirectCallee()) {
-    FuncName = DC->getNameAsString();
+    FuncName = DC->getName();
   }
   if (FuncName == "cudnnRNNBackwardData_v8" ||
       FuncName == "cudnnRNNBackwardWeights_v8") {
     RnnBackwardFuncInfo FuncInfo;
     auto &Global = DpctGlobalInfo::getInstance();
-    auto CELocInfo = Global.getLocInfo(CE->getBeginLoc());
-    auto FileInfo = Global.insertFile(CELocInfo.first);
-    auto &BackwardFuncInfo = FileInfo->getRnnBackwardFuncInfo();
-    auto &RnnInputMap = DpctGlobalInfo::getRnnInputMap();
     // 1.RnnDescIndex, 2.HXDataIndex, 3.YDataIndex
     unsigned RnnInputArgIndex[3] = {1, 9, 4};
     auto CERange = getDefinitionRange(CE->getBeginLoc(), CE->getEndLoc());
+    auto CELocInfo = Global.getLocInfo(CERange.getBegin());
+    auto FileInfo = Global.insertFile(CELocInfo.first);
+    auto &BackwardFuncInfo = FileInfo->getRnnBackwardFuncInfo();
+    auto &RnnInputMap = DpctGlobalInfo::getRnnInputMap();
     unsigned BeginOffset = Global.getLocInfo(CERange.getBegin()).second;
     unsigned EndOffset = Global.getLocInfo(CERange.getEnd()).second;
     FuncInfo.isAssigned = IsAssigned;
@@ -223,13 +223,12 @@ void CuDNNAPIRule::runRule(
     FuncInfo.isDataGradient = true;
     unsigned int ArgsNum = CE->getNumArgs();
     auto Condition = [&](const clang::DynTypedNode &Node) -> bool {
-      if (Node.get<IfStmt>() || Node.get<WhileStmt>() || Node.get<ForStmt>() ||
-          Node.get<DoStmt>() || Node.get<CaseStmt>() ||
-          Node.get<SwitchStmt>() || Node.get<CompoundStmt>()) {
-        return true;
-      }
-      return false;
+      return Node.get<IfStmt>() || Node.get<WhileStmt>() ||
+             Node.get<ForStmt>() || Node.get<DoStmt>() ||
+             Node.get<CaseStmt>() || Node.get<SwitchStmt>() ||
+             Node.get<CompoundStmt>();
     };
+
     if (auto CS = DpctGlobalInfo::findAncestor<CompoundStmt>(CE, Condition)) {
       auto LocInfo = Global.getLocInfo(CS->getBeginLoc());
       FuncInfo.CompoundLoc = LocInfo.first + std::to_string(LocInfo.second);
@@ -269,7 +268,7 @@ void CuDNNAPIRule::runRule(
               SubMap[DRELocInfo.first].push_back(DRELocInfo.second);
             }
           }
-          FuncInfo.RnnInputDeclLoc.push_back(MapKey);
+          FuncInfo.RnnInputDeclLoc.push_back(std::move(MapKey));
         }
       }
     }
@@ -284,16 +283,11 @@ void CuDNNAPIRule::runRule(
       }
     } else {
       FuncInfo.FuncArgs.reserve(2);
-      auto XDataArg = CE->getArg(5)->IgnoreImplicitAsWritten();
-      auto DiffWeightArg = CE->getArg(11)->IgnoreImplicitAsWritten();
-      ExprAnalysis XDataArgEA(XDataArg);
-      ExprAnalysis DiffWeightArgEA(DiffWeightArg);
-      XDataArgEA.analyze();
-      DiffWeightArgEA.analyze();
-      std::string XDataArgString = XDataArgEA.getReplacedString();
-      std::string DiffWeightArgString = DiffWeightArgEA.getReplacedString();
-      FuncInfo.FuncArgs.push_back(XDataArgString);
-      FuncInfo.FuncArgs.push_back(DiffWeightArgString);
+      ExprAnalysis ArgEA;
+      ArgEA.analyze(CE->getArg(5));
+      FuncInfo.FuncArgs.push_back(ArgEA.getReplacedString());
+      ArgEA.analyze(CE->getArg(11));
+      FuncInfo.FuncArgs.push_back(ArgEA.getReplacedString());
     }
     if (FuncInfo.FuncArgs.empty() || FuncInfo.RnnInputDeclLoc.empty() ||
         (FuncInfo.RnnInputDeclLoc.size() != 3)) {
