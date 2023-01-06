@@ -1277,8 +1277,8 @@ createMathAPIRewriterDeviceImpl(
     const std::string &Name, std::function<bool(const CallExpr *)> PerfPred,
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         DevicePerf,
-    std::vector<
-        std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
+    std::array<
+        std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>, 4>
         DeviceNodes) {
   if (DeviceNodes[0].second) {
     // DEVICE_NORMAL: SYCL API or helper function (impl by SYCL API)
@@ -1302,6 +1302,10 @@ createMathAPIRewriterDeviceImpl(
                                       std::move(DeviceNodes[2]));
     }
   }
+  if (DeviceNodes[3].second) {
+    // DEVICE_EMU: emulation
+    return std::move(DeviceNodes[3]);
+  }
   // report unsupport
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
       {DeviceNodes[0].first,
@@ -1312,8 +1316,8 @@ createMathAPIRewriterDeviceImpl(
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createMathAPIRewriterDeviceImpl(
     const std::string &Name,
-    std::vector<
-        std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
+    std::array<
+        std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>, 4>
         DeviceNodes) {
   if (DeviceNodes[0].second) {
     // DEVICE_NORMAL: SYCL API or helper function (impl by SYCL API)
@@ -1331,6 +1335,10 @@ createMathAPIRewriterDeviceImpl(
       return std::move(DeviceNodes[2]);
     }
   }
+  if (DeviceNodes[3].second) {
+    // DEVICE_EMU: emulation
+    return std::move(DeviceNodes[3]);
+  }
   // report unsupport
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
       {DeviceNodes[0].first,
@@ -1345,8 +1353,8 @@ createMathAPIRewriterDevice(
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         &&DevicePerf,
     T,
-    const std::vector<
-        std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
+    const std::array<
+        std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>, 4>
         &DeviceNodes) {
   return createConditionalFactory(
       math::IsPureDevice,
@@ -1375,8 +1383,8 @@ createMathAPIRewriterDevice(
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createMathAPIRewriterDevice(
     const std::string &Name,
-    const std::vector<
-        std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>>
+    const std::array<
+        std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>, 4>
         &DeviceNodes) {
   return createConditionalFactory(
       math::IsPureDevice,
@@ -1430,7 +1438,7 @@ createMathAPIRewriterHost(
 }
 
 #define EMPTY_FACTORY_ENTRY(NAME)                                              \
-  std::make_pair(NAME, std::shared_ptr<CallExprRewriterFactoryBase>(nullptr))
+  std::make_pair(NAME, std::shared_ptr<CallExprRewriterFactoryBase>(nullptr)),
 
 #define MATH_API_REWRITER_DEVICE_WITH_PERF(NAME, PERF_PRED, DEVICE_PERF, ...)  \
   createMathAPIRewriterDevice(NAME, PERF_PRED, DEVICE_PERF 0, __VA_ARGS__),
@@ -1445,6 +1453,33 @@ createMathAPIRewriterHost(
 
 #define MATH_API_REWRITER_HOST_DEVICE(HOST_REWRITER, DEVICE_REWRITER)          \
   createConditionalFactory(math::IsPureHost, HOST_REWRITER DEVICE_REWRITER 0),
+
+template <typename T>
+std::array<std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>,
+           4>
+makeMathAPIDeviceNodes(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        DeviceNormal,
+    T,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        MathLibDevice,
+    T,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        DeviceStd,
+    T,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        DeviceEmu,
+    T) {
+  return std::array<
+      std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>, 4> {
+    { DeviceNormal, MathLibDevice, DeviceStd, DeviceEmu }
+  };
+}
+
+#define MATH_API_DEVICE_NODES(DEVICE_NORMAL, MATH_LIBDEVICE, DEVICE_STD,       \
+                              DEVICE_EMU)                                      \
+  makeMathAPIDeviceNodes(DEVICE_NORMAL 0, MATH_LIBDEVICE 0, DEVICE_STD 0,      \
+                         DEVICE_EMU 0)
 
 void CallExprRewriterFactoryBase::initRewriterMapMath() {
   RewriterMap->merge(

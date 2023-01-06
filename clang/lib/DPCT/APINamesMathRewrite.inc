@@ -14,13 +14,14 @@ MATH_API_REWRITER_HOST_DEVICE(
                           ARG(0)))),
     MATH_API_REWRITER_DEVICE(
         "rsqrt",
-        {
+        MATH_API_DEVICE_NODES(
             CALL_FACTORY_ENTRY(
                 "rsqrt", CALL(MapNames::getClNamespace(false, true) + "rsqrt",
-                              ARG(0)))
+                              ARG(0))),
+            EMPTY_FACTORY_ENTRY("rsqrt"),
             EMPTY_FACTORY_ENTRY("rsqrt"),
             EMPTY_FACTORY_ENTRY("rsqrt")
-        }
+        )
     )
 )
 
