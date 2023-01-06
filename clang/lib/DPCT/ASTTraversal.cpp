@@ -3674,12 +3674,13 @@ void DeviceInfoVarRule::runRule(const MatchFinder::MatchResult &Result) {
     return;
   auto MemberName = ME->getMemberNameInfo().getAsString();
 
-  auto TypeName = ME->getBase()->getType();
-  if (TypeName->isPointerType()) {
-    TypeName = TypeName->getPointeeType();
+  auto BaseType = ME->getBase()->getType();
+  if (BaseType->isPointerType()) {
+    BaseType = BaseType->getPointeeType();
   }
-  std::string MemberExprName = DpctGlobalInfo::getTypeName(TypeName)
-                               + "." + MemberName;
+  std::string MemberExprName =
+                      DpctGlobalInfo::getTypeName(BaseType.getCanonicalType())
+                        + "." + MemberName;
   if (MemberExprRewriterFactoryBase::MemberExprRewriterMap->find(MemberExprName)
         != MemberExprRewriterFactoryBase::MemberExprRewriterMap->end()) {
       ExprAnalysis EA;
@@ -7463,8 +7464,9 @@ REGISTER_RULE(SOLVERFunctionCallRule, PassKind::PK_Migration)
 void FunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName(
-        "cudaGetDeviceCount", "cudaGetDeviceProperties", "cudaDeviceReset",
-        "cudaSetDevice", "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
+        "cudaGetDeviceCount", "cudaGetDeviceProperties",
+        "cudaGetDeviceProperties_v2", "cudaDeviceReset", "cudaSetDevice",
+        "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
         "cudaDeviceGetPCIBusId", "cudaGetDevice", "cudaDeviceSetLimit",
         "cudaGetLastError", "cudaPeekAtLastError", "cudaDeviceSynchronize",
         "cudaThreadSynchronize", "cudaGetErrorString", "cudaGetErrorName",
@@ -7609,7 +7611,8 @@ void FunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
         new ReplaceStmt(CE, MapNames::getDpctNamespace() +
                                 "dev_mgr::instance().device_count()" + Suffix));
     requestFeature(HelperFeatureEnum::Device_dev_mgr_device_count, CE);
-  } else if (FuncName == "cudaGetDeviceProperties") {
+  } else if (FuncName == "cudaGetDeviceProperties" ||
+             FuncName == "cudaGetDeviceProperties_v2") {
     if (IsAssigned) {
       report(CE->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
     }
