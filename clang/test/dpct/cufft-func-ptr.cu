@@ -8,7 +8,7 @@
 //CHECK-NEXT:                               double *) = [](dpct::fft::fft_engine_ptr engine,
 //CHECK-NEXT:                                              sycl::double2 *in, double *out) {
 //CHECK-NEXT:      engine->compute<sycl::double2, double>(in, out,
-//CHECK-NEXT:                                             dpct::fft::transform_direction::bwd);
+//CHECK-NEXT:                                             dpct::fft::fft_direction::backward);
 //CHECK-NEXT:      return 0;
 //CHECK-NEXT:    };
 static cufftResult (*pt2CufftExec)(cufftHandle, cufftDoubleComplex *,
@@ -38,7 +38,7 @@ int foo1() {
 //     CHECK:  static Func_t FuncPtr = [](dpct::fft::fft_engine_ptr engine,
 //CHECK-NEXT:                             sycl::double2 *in, double *out) {
 //CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
-//CHECK-NEXT:                                           dpct::fft::transform_direction::bwd);
+//CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
 //CHECK-NEXT:  };
   static Func_t FuncPtr  = &cufftExecZ2D;
@@ -66,7 +66,7 @@ int foo2() {
 //     CHECK:  Func_t FuncPtr2 = [](dpct::fft::fft_engine_ptr engine, sycl::double2 *in,
 //CHECK-NEXT:                       double *out) {
 //CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
-//CHECK-NEXT:                                           dpct::fft::transform_direction::bwd);
+//CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
 //CHECK-NEXT:  };
   Func_t FuncPtr2  = &cufftExecZ2D;
@@ -95,7 +95,7 @@ int foo3() {
 //CHECK-NEXT:  FuncPtr3 = [](dpct::fft::fft_engine_ptr engine, sycl::double2 *in,
 //CHECK-NEXT:                double *out) {
 //CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
-//CHECK-NEXT:                                           dpct::fft::transform_direction::bwd);
+//CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
 //CHECK-NEXT:  };
   Func_t FuncPtr3;
@@ -124,7 +124,7 @@ int foo4() {
 //CHECK:  FuncPtr4 = [](dpct::fft::fft_engine_ptr engine, sycl::double2 *in,
 //CHECK-NEXT:                double *out) {
 //CHECK-NEXT:    engine->compute<sycl::double2, double>(in, out,
-//CHECK-NEXT:                                           dpct::fft::transform_direction::bwd);
+//CHECK-NEXT:                                           dpct::fft::fft_direction::backward);
 //CHECK-NEXT:    return 0;
 //CHECK-NEXT:  };
   FuncPtr4 = &cufftExecZ2D;

@@ -39,7 +39,7 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:int res2 = (plan1->compute<sycl::double2, double>(idata, odata, dpct::fft::transform_direction::bwd), 0);
+  //CHECK-NEXT:int res2 = (plan1->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward), 0);
   cufftResult res2 = cufftExecZ2D(plan1, idata, odata);
 
   cufftHandle plan2;
@@ -57,7 +57,7 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:res2 = (plan2->compute<sycl::double2, double>(idata, odata, dpct::fft::transform_direction::bwd), 0);
+  //CHECK-NEXT:res2 = (plan2->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward), 0);
   res2 = cufftExecZ2D(plan2, idata, odata);
 
   cufftHandle plan3;
@@ -75,7 +75,7 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:HANDLE_CUFFT_ERROR((plan3->compute<sycl::double2, double>(idata, odata, dpct::fft::transform_direction::bwd), 0));
+  //CHECK-NEXT:HANDLE_CUFFT_ERROR((plan3->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward), 0));
   HANDLE_CUFFT_ERROR(cufftExecZ2D(plan3, idata, odata));
 
   cufftHandle plan4;
@@ -107,11 +107,11 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:if ((plan4->compute<sycl::double2, double>(idata, odata, dpct::fft::transform_direction::bwd), 0)) {
+  //CHECK-NEXT:if ((plan4->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward), 0)) {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:} else if((plan5->compute<sycl::double2, double>(idata, odata, dpct::fft::transform_direction::bwd), 0)) {
+  //CHECK-NEXT:} else if((plan5->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward), 0)) {
   //CHECK-NEXT:}
   if (cufftExecZ2D(plan4, idata, odata)) {
   } else if(cufftExecZ2D(plan5, idata, odata)) {
@@ -134,7 +134,7 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:if(int res = (plan6->compute<sycl::double2, double>(idata, odata, dpct::fft::transform_direction::bwd), 0)) {
+  //CHECK-NEXT:if(int res = (plan6->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward), 0)) {
   //CHECK-NEXT:}
   if(cufftResult res = cufftExecZ2D(plan6, idata, odata)) {
   }
@@ -150,7 +150,7 @@ int main() {
   //CHECK-NEXT:}
   for (cufftMakePlanMany(plan7, 3, n, inembed, istride, idist, onembed, ostride, odist, CUFFT_Z2D, 12, work_size);;) {
   }
-  //CHECK:for (plan7->compute<sycl::double2, double>(idata, odata, dpct::fft::transform_direction::bwd);;) {
+  //CHECK:for (plan7->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward);;) {
   //CHECK-NEXT:}
   for (cufftExecZ2D(plan7, idata, odata);;) {
   }
@@ -173,7 +173,7 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:for (;(plan8->compute<sycl::double2, double>(idata, odata, dpct::fft::transform_direction::bwd), 0);) {
+  //CHECK-NEXT:for (;(plan8->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward), 0);) {
   //CHECK-NEXT:}
   for (;cufftExecZ2D(plan8, idata, odata);) {
   }
@@ -196,7 +196,7 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:while ((plan9->compute<sycl::double2, double>(idata, odata, dpct::fft::transform_direction::bwd), 0) != 0) {
+  //CHECK-NEXT:while ((plan9->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward), 0) != 0) {
   //CHECK-NEXT:}
   while (cufftExecZ2D(plan9, idata, odata) != 0) {
   }
@@ -219,7 +219,7 @@ int main() {
   //CHECK-NEXT:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:} while ((plan10->compute<sycl::double2, double>(idata, odata, dpct::fft::transform_direction::bwd), 0));
+  //CHECK-NEXT:} while ((plan10->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward), 0));
   do {
   } while (cufftExecZ2D(plan10, idata, odata));
 
@@ -241,7 +241,7 @@ int main() {
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:switch (int stat = (plan11->compute<sycl::double2, double>(idata, odata, dpct::fft::transform_direction::bwd), 0)){
+  //CHECK-NEXT:switch (int stat = (plan11->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward), 0)){
   //CHECK-NEXT:}
   switch (int stat = cufftExecZ2D(plan11, idata, odata)){
   }
@@ -266,7 +266,7 @@ cufftResult foo2(cufftHandle plan) {
   //CHECK:/*
   //CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:return (plan->compute<sycl::double2, double>(idata, odata, dpct::fft::transform_direction::bwd), 0);
+  //CHECK-NEXT:return (plan->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward), 0);
   return cufftExecZ2D(plan, idata, odata);
 }
 
@@ -282,7 +282,7 @@ cufftResult foo3(cufftHandle plan) {
 }
 
 cufftResult foo4(cufftHandle plan) {
-  //CHECK:plan->compute<sycl::double2, double>(idata, odata, dpct::fft::transform_direction::bwd);
+  //CHECK:plan->compute<sycl::double2, double>(idata, odata, dpct::fft::fft_direction::backward);
   cufftExecZ2D(plan, idata, odata);
 }
 
