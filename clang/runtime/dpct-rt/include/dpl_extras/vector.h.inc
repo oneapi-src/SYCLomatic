@@ -243,9 +243,8 @@ public:
   }
   device_vector &operator=(device_vector &&other) {
     // Move assignment operator:
-    // Swap resource with `other`, so that the old resource owned by `this` will
-    // be deallocated by destructor of `other`.
-    this->swap(other);
+    device_vector dummy(std::move(other));
+    this->swap(dummy);
     return *this;
   }
   size_type size() const { return _size; }
@@ -263,6 +262,7 @@ public:
     std::swap(_size, v._size);
     std::swap(_capacity, v._capacity);
     std::swap(_storage, v._storage);
+    std::swap(_alloc, v._alloc);
   }
   reference operator[](size_type n) { return _storage[n]; }
   const_reference operator[](size_type n) const { return _storage[n]; }
