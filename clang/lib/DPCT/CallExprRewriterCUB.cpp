@@ -65,5 +65,15 @@ void CallExprRewriterFactoryBase::initRewriterMapCUB() {
       }));
 }
 
+void CallExprRewriterFactoryBase::initMethodRewriterMapCUB() {
+  MethodRewriterMap->merge(
+      std::unordered_map<std::string,
+                         std::shared_ptr<CallExprRewriterFactoryBase>>({
+#define CLASS_METHOD_CALL
+#include "APINamesCUB.inc"
+#undef CLASS_METHOD_CALL
+      }));
+}
+
 } // namespace dpct
 } // namespace clang

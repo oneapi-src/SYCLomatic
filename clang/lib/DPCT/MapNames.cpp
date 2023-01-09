@@ -96,10 +96,11 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaError", std::make_shared<TypeNameRule>("int")},
       {"CUresult", std::make_shared<TypeNameRule>("int")},
       {"CUcontext", std::make_shared<TypeNameRule>("int")},
-      {"CUmodule", std::make_shared<TypeNameRule>(getDpctNamespace() + "kernel_library")},
+      {"CUmodule", std::make_shared<TypeNameRule>(getDpctNamespace() + "kernel_library",
+                         HelperFeatureEnum::Kernel_kernel_library)},
       {"CUfunction", std::make_shared<TypeNameRule>(
                          getDpctNamespace() + "kernel_function",
-                         HelperFeatureEnum::Kernel_kernel_functor)},
+                         HelperFeatureEnum::Kernel_kernel_library)},
       {"cudaPointerAttributes",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "pointer_attributes",
                                   HelperFeatureEnum::Memory_pointer_attributes)},
