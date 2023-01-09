@@ -122,7 +122,8 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   initRewriterMapEvent();
   initRewriterMapMath();
   initRewriterMapCooperativeGroups();
-  initMethodRewriterMap();
+  initMethodRewriterMapCUB();
+  initMethodRewriterMapCooperativeGroups();
 }
 
 } // namespace dpct
