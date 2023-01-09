@@ -267,6 +267,7 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
   }
 
   makeCanonical(InstalledPath);
+  llvm::sys::fs::real_path(InstalledPath, InstalledPath, true);
   StringRef InstalledPathParent(llvm::sys::path::parent_path(InstalledPath));
   // Move up to parent directory of bin directory
   StringRef InstallPath = llvm::sys::path::parent_path(InstalledPathParent);
