@@ -47,16 +47,17 @@ auto parentStmt = []() {
 
 auto isDeviceFuncCallExpr = []() {
   auto hasDeviceFuncName = []() {
-    return hasAnyName("Sum", "Min", "Max", "Reduce", "ReduceByKey",
-                      "ExclusiveSum", "InclusiveSum", "InclusiveScan",
-                      "ExclusiveScan", "Flagged", "Unique", "Encode",
-                      "SortKeys", "SortKeysDescending", "SortPairs",
-                      "SortPairsDescending");
+    return hasAnyName(
+        "Sum", "Min", "Max", "Reduce", "ReduceByKey", "ExclusiveSum",
+        "InclusiveSum", "InclusiveScan", "ExclusiveScan", "InclusiveScanByKey",
+        "InclusiveSumByKey", "ExclusiveScanByKey", "ExclusiveSumByKey",
+        "Flagged", "Unique", "Encode", "SortKeys", "SortKeysDescending",
+        "SortPairs", "SortPairsDescending");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
                       "DeviceSelect", "DeviceRunLengthEncode",
-                      "DeviceRadixSort");
+                      "DeviceRadixSort", "DeviceSegmentedRadixSort");
   };
   return callExpr(callee(functionDecl(
       allOf(hasDeviceFuncName(),
@@ -68,6 +69,7 @@ auto isDeviceFuncCallExpr = []() {
 } // namespace
 
 REGISTER_RULE(CubTypeRule, PassKind::PK_Analysis)
+REGISTER_RULE(CubMemberCallRule, PassKind::PK_Analysis)
 REGISTER_RULE(CubDeviceLevelRule, PassKind::PK_Analysis)
 
 void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -124,6 +126,27 @@ void CubDeviceLevelRule::runRule(
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
     return;
+  }
+}
+
+void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(
+      cxxMemberCallExpr(
+          allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(
+                    namedDecl(hasName("cub::ArgIndexInputIterator"))))))),
+                callee(cxxMethodDecl(hasName("normalize")))))
+          .bind("ArgIndexInputIterator.normalize"),
+      this);
+}
+
+void CubMemberCallRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  if (const auto *MC = getNodeAsType<CXXMemberCallExpr>(
+          Result, "ArgIndexInputIterator.normalize")) {
+    ExprAnalysis EA;
+    EA.analyze(MC);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }
 

@@ -9,6 +9,11 @@
 #include <thrust/adjacent_difference.h>
 #include <thrust/gather.h>
 #include <thrust/scatter.h>
+// for cuda 12.0
+#include <thrust/execution_policy.h>
+#include <thrust/remove.h>
+#include <thrust/sort.h>
+#include <thrust/unique.h>
 
 struct greater_than_zero
 {

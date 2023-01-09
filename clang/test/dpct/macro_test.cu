@@ -300,15 +300,6 @@ int b;
   cudaMemcpy( dev_buffer, buffer, SIZE3, cudaMemcpyHostToDevice);
 }
 
-#define MMM(x)
-texture<float4, 1, cudaReadModeElementType> table;
-__global__ void foo4(){
-  float r2 = 2.0;
-  MMM( float rsqrtfr2; );
-  // CHECK: sycl::float4 f4 = table.read(MMM(rsqrtfr2 =) sycl::rsqrt(r2) MMM(== 0));
-  float4 f4 = tex1D(table, MMM(rsqrtfr2 =) rsqrtf(r2) MMM(==0));
-}
-
 // CHECK: template <class T>
 // CHECK-NEXT: bool reallocate_host(T **pp, int *curlen, const int newlen,
 // CHECK-NEXT:                      /*
@@ -751,20 +742,6 @@ int foo14(){
   ALL2(const, ALL3(int2), *) lll;
 }
 
-//CHECK: void foo15(){
-//CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1059:{{[0-9]+}}: SYCL only supports 4-channel image format. Adjust the code.
-//CHECK-NEXT:   */
-//CHECK-NEXT:   dpct::image_wrapper<float, 1> aaa;
-//CHECK-NEXT:   float *f_a = NULL;
-//CHECK-NEXT:   CALL(aaa.attach(f_a, CUDA_NUM_THREADS * sizeof(int)))
-//CHECK-NEXT: }
-void foo15(){
-  texture<float, 1, cudaReadModeElementType> aaa;
-  float *f_a = NULL;
-  CALL(cudaBindTexture(0, aaa, f_a, CUDA_NUM_THREADS * sizeof(int)))
-}
-
 //CHECK: #define FABS(a) (sycl::fabs((float)((a).x())) + sycl::fabs((float)((a).y())))
 //CHECK-NEXT: static inline double foo16(const sycl::float2 &x) { return FABS(x); }
 #define FABS(a)       (fabs((a).x) + fabs((a).y))
@@ -869,33 +846,6 @@ static const int streamDefault2 = cudaStreamDefault;
 static const int streamDefault = CALL(CONCATE(StreamDefault));
 static const int streamNonBlocking = CONCATE(StreamNonBlocking);
 
-
-//     CHECK: #define CBTTA(aa, bb) do {                                                     \
-//CHECK-NEXT:     CALL(aa.attach(bb));                                                       \
-//CHECK-NEXT:   } while (0)
-#define CBTTA(aa,bb) do {                 \
-  CALL(cudaBindTextureToArray(aa, bb));   \
-} while(0)
-
-//     CHECK: #define CBTTA2(aa, bb, cc) do {                                                \
-//CHECK-NEXT:     CALL(aa.attach(bb, cc));                                                   \
-//CHECK-NEXT:   } while (0)
-#define CBTTA2(aa,bb,cc) do {                 \
-  CALL(cudaBindTextureToArray(aa, bb, cc));   \
-} while(0)
-
-//CHECK: void foo19(){
-//CHECK-NEXT:   dpct::image_wrapper<sycl::float4, 2> tex42;
-//CHECK-NEXT:   dpct::image_matrix_p a42;
-//CHECK-NEXT:   CBTTA(tex42,a42);
-//CHECK-NEXT:   CBTTA2(tex42, a42, tex42.get_channel());
-//CHECK-NEXT: }
-void foo19(){
-  static texture<float4, 2> tex42;
-  cudaArray_t a42;
-  CBTTA(tex42,a42);
-  CBTTA2(tex42,a42,tex42.channelDesc);
-}
 
 //     CHECK:#define CMC_PROFILING_BEGIN()                                                  \
 //CHECK-NEXT:  dpct::event_ptr start;                                                         \
