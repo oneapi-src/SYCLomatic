@@ -3336,7 +3336,8 @@ bool analyzeMemcpyOrder(
         // Record the first and second argument of memcpy
         SrcDstExprs.insert(CE->getArg(0));
         SrcDstExprs.insert(CE->getArg(1));
-        ExcludeExprs.insert(CE);
+        ExcludeExprs.insert(CE->getArg(0));
+        ExcludeExprs.insert(CE->getArg(1));
         MemcpyCallExprs.insert(CE);
         MemcpyOrderVec.emplace_back(CE,
                                     MemcpyOrderAnalysisNodeKind::MOANK_Memcpy);
@@ -3585,14 +3586,14 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
 
         unsigned int CurrentCallExprEndOffset =
             CurrentCallExprEndLoc.getRawEncoding();
-        unsigned int NextCallExprBeginOffset =
-            SM.getExpansionLoc(S.first->getBeginLoc()).getRawEncoding();
+        unsigned int NextCallExprEndOffset =
+            SM.getExpansionLoc(S.first->getEndLoc()).getRawEncoding();
 
         auto FirstDREAfterCurrentCallExprEndLoc = std::lower_bound(
             DREOffsetVec.begin(), DREOffsetVec.end(), CurrentCallExprEndOffset);
         if (FirstDREAfterCurrentCallExprEndLoc == DREOffsetVec.end())
           return true;
-        if (*FirstDREAfterCurrentCallExprEndLoc <= NextCallExprBeginOffset)
+        if (*FirstDREAfterCurrentCallExprEndLoc <= NextCallExprEndOffset)
           return false;
 
         return true;

@@ -15,6 +15,9 @@
 #include <thrust/set_operations.h>
 #include <thrust/tabulate.h>
 #include <thrust/functional.h>
+// for cuda 12.0
+#include <thrust/iterator/constant_iterator.h>
+#include <thrust/partition.h>
 
 struct key_value
 	{

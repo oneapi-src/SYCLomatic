@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-12.0
+// UNSUPPORTED: v12.0
 // RUN: dpct --format-range=none  --usm-level=none  --use-custom-helper=api -out-root %T/Image/api_test26_out %s --cuda-include-path="%cuda-path/include" -- -x cuda --cuda-host-only
 // RUN: grep "IsCalled" %T/Image/api_test26_out/MainSourceFiles.yaml | wc -l > %T/Image/api_test26_out/count.txt
 // RUN: FileCheck --input-file %T/Image/api_test26_out/count.txt --match-full-lines %s
