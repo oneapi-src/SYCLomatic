@@ -209,7 +209,6 @@ static void getCompileInfo(
 
       } else if (llvm::StringRef(Option).startswith("-isystem")) {
         ISISystem = true;
-        std::cout << "I have found an -isystem\n";
       } else if (llvm::StringRef(Option).startswith("-D")) {
         // Parse macros defined.
         std::size_t Len = Option.length() - strlen("-D");
