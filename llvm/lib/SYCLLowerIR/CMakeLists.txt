@@ -1,3 +1,20 @@
+# INTEL_CUSTOMIZATION
+#
+# INTEL CONFIDENTIAL
+#
+# Modifications, Copyright (C) 2021 Intel Corporation
+#
+# This software and the related documents are Intel copyrighted materials, and
+# your use of them is governed by the express license under which they were
+# provided to you ("License"). Unless the License provides otherwise, you may not
+# use, modify, copy, publish, distribute, disclose or transmit this software or
+# the related documents without Intel's prior written permission.
+#
+# This software and the related documents are provided as is, with no express
+# or implied warranties, other than those that are expressly stated in the
+# License.
+#
+# end INTEL_CUSTOMIZATION
 if(${CMAKE_VERSION} VERSION_LESS 3.14)
     macro(FetchContent_MakeAvailable NAME)
         FetchContent_GetProperties(${NAME})
@@ -14,9 +31,42 @@ if (NOT TARGET LLVMGenXIntrinsics)
   if (NOT DEFINED LLVMGenXIntrinsics_SOURCE_DIR)
     set(LLVMGenXIntrinsics_GIT_REPO https://github.com/intel/vc-intrinsics.git)
     # Author: Gorban, Igor <igor.gorban@intel.com>
-    # Date:   Thu Nov 24 17:13:40 2022 +0000
-    # Fix build after llvm commit 4b6b248731b81deb471838ff79392993aeb6c621
-    set(LLVMGenXIntrinsics_GIT_TAG 782fbf7301dc73acaa049a4324c976ad94f587f7)
+    # Date:   Sun Dec 11 20:40:12 2022 +0000
+    # Fix llvm_tot: legacy pass manager
+    set(LLVMGenXIntrinsics_GIT_TAG 7596a83751934c538d809f336ee18bea6e8d1b44)
+
+    if (INTEL_CUSTOMIZATION)
+      # for xmain builds the LLVMGenXIntrinsics_GIT_REPO is constructed from
+      # GIT_REPO_PATH and GIT_REPO_TAG set independently depending on build
+      # configuration (public/embargo) and condition (building from under ICS
+      # or not)
+
+      # default repo path for public xmain builds, not using ICS
+      set(LLVMGenXIntrinsics_GIT_REPO_PATH https://github.com/intel)
+      set(LLVMGenXIntrinsics_GIT_REPO_NAME vc-intrinsics.git)
+      # Author: Gorban, Igor <igor.gorban@intel.com>
+      # Date:   Tue Dec 13 18:21:41 2022 +0000
+      # VCWrappers does not installing, we can't use them in headers
+      set(LLVMGenXIntrinsics_GIT_TAG 88083f819d2391f0a15ecdb6f7efeefaf02364e8)
+
+      # Determine if the build is embargo and provide specific settings.
+      set(IS_INTERNAL_ESIMD_BUILD FALSE)
+
+      if (DEFINED ENV{ICS_GIT_MIRROR} AND NOT "$ENV{ICS_GIT_MIRROR}" STREQUAL "")
+        # ICS_GIT_MIRROR, if set, overrides GIT_REPO_PATH.
+        set(LLVMGenXIntrinsics_GIT_REPO_PATH $ENV{ICS_GIT_MIRROR})
+        STRING(REGEX REPLACE "\\\\" "/" LLVMGenXIntrinsics_GIT_REPO_PATH "${LLVMGenXIntrinsics_GIT_REPO_PATH}")
+# INTEL_FEATURE_ESIMD_EMBARGO
+      elseif (IS_INTERNAL_ESIMD_BUILD)
+        # ICS_GIT_MIRROR is obligatory for embargo builds.
+        message( FATAL_ERROR "xmain ESIMD_EMBARGO build requires ICS_GIT_MIRROR env var to be set" )
+# end INTEL_FEATURE_ESIMD_EMBARGO
+      endif ()
+
+      # Construct GIT_REPO from from GIT_REPO_PATH and GIT_REPO_NAME.
+      set( LLVMGenXIntrinsics_GIT_REPO
+        ${LLVMGenXIntrinsics_GIT_REPO_PATH}/${LLVMGenXIntrinsics_GIT_REPO_NAME} )
+    endif (INTEL_CUSTOMIZATION)
 
     message(STATUS "vc-intrinsics repo is missing. Will try to download it from ${LLVMGenXIntrinsics_GIT_REPO}")
     include(FetchContent)
@@ -45,6 +95,16 @@ endif (NOT TARGET LLVMGenXIntrinsics)
 
 set_property(GLOBAL PROPERTY LLVMGenXIntrinsics_SOURCE_PROP ${LLVMGenXIntrinsics_SOURCE_DIR})
 set_property(GLOBAL PROPERTY LLVMGenXIntrinsics_BINARY_PROP ${LLVMGenXIntrinsics_BINARY_DIR})
+
+# INTEL_CUSTOMIZATION
+# Disable deprecated-declarations warnings because they are coming from
+# external GenXIntrinsics headers.
+if (NOT WIN32)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
+else(NOT WIN32)
+  add_definitions(-wd4996)
+endif (NOT WIN32)
+#end INTEL_CUSTOMIZATION
 
 add_llvm_component_library(LLVMSYCLLowerIR
   ESIMD/LowerESIMD.cpp
@@ -81,7 +141,7 @@ add_llvm_component_library(LLVMSYCLLowerIR
   LLVMGenXIntrinsics
   LLVMDemangle
   LLVMTransformUtils
-  
+
   LINK_COMPONENTS
   Analysis
   Core
@@ -91,3 +151,10 @@ add_llvm_component_library(LLVMSYCLLowerIR
 target_include_directories(LLVMSYCLLowerIR
   PRIVATE ${LLVM_MAIN_SRC_DIR}/projects/vc-intrinsics/GenXIntrinsics/include
   PRIVATE ${LLVM_BINARY_DIR}/projects/vc-intrinsics/GenXIntrinsics/include)
+
+## Remove the Werror for external component GenXIntrinsics.
+if(MSVC)
+  target_compile_options(LLVMGenXIntrinsics  PRIVATE "-WX-")
+else()
+  target_compile_options(LLVMGenXIntrinsics  PRIVATE "-Wno-error")
+endif()
