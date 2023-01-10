@@ -138,7 +138,7 @@ ENTRY(thrust::remove_copy_if, thrust::remove_copy_if, true, NO_FLAG, P4, "Succes
 ENTRY(thrust::remove_if, thrust::remove_if, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::replace, thrust::replace, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::replace_copy, thrust::replace_copy, false, NO_FLAG, P4, "comment")
-ENTRY(thrust::replace_copy_if, thrust::replace_copy_if, false, NO_FLAG, P4, "comment")
+ENTRY(thrust::replace_copy_if, thrust::replace_copy_if, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::replace_if, thrust::replace_if, true, NO_FLAG, P4, "Successful")
 ENTRY(thrust::retag, thrust::retag, false, NO_FLAG, P4, "comment")
 ENTRY(thrust::return_temporary_buffer, thrust::return_temporary_buffer, false, NO_FLAG, P4, "comment")
