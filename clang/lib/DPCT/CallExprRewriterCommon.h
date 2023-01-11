@@ -1193,6 +1193,26 @@ createConditionalFactory(
                                   std::move(Second));
 }
 
+template <typename T>
+inline std::pair<std::string, CaseRewriterFactory::CaseT>
+createCase(
+    CaseRewriterFactory::PredT pred,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>&& entry, T) {
+  return {std::move(entry.first),
+          {std::move(pred), std::move(entry.second)}};
+}
+
+template <class... Ts>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createCaseRewriterFactory(
+    std::pair<std::string, CaseRewriterFactory::CaseT> first,
+    Ts... rest) {
+  return {std::move(first.first),
+          std::make_shared<CaseRewriterFactory>(
+               std::move(first.second),
+               std::move(rest.second)...)};
+}
+
 inline std::function<bool(const CallExpr *)> makePointerChecker(unsigned Idx) {
   return [=](const CallExpr *C) -> bool {
     return C->getArg(Idx)->getType()->isPointerType();
@@ -1716,6 +1736,11 @@ public:
   makeTemplatedCalleeCreator(FuncName, {__VA_ARGS__})
 #define TEMPLATED_CALLEE_WITH_ARGS(FuncName, ...)                              \
   makeTemplatedCalleeWithArgsCreator(FuncName, __VA_ARGS__)
+#define CASE(Pred, Entry) \
+  createCase(Pred, Entry 0)
+#define OTHERWISE(Entry) \
+  createCase(CaseRewriterFactory::true_pred, Entry 0)
+
 #define CONDITIONAL_FACTORY_ENTRY(Pred, First, Second)                         \
   createConditionalFactory(Pred, First Second 0),
 #define IFELSE_FACTORY_ENTRY(FuncName, Pred, IfBlock, ElseBlock)               \
@@ -1747,5 +1772,7 @@ public:
   {FuncName, createToStringExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define REMOVE_API_FACTORY_ENTRY(FuncName)                                     \
   {FuncName, createRemoveAPIRewriterFactory(FuncName)},
+#define CASE_FACTORY_ENTRY(...) \
+  createCaseRewriterFactory(__VA_ARGS__),
 
 #endif // DPCT_CALL_EXPR_REWRITER_COMMON_H

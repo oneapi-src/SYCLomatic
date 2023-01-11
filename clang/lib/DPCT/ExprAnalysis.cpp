@@ -657,12 +657,26 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
-  auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
-  PP.PrintCanonicalTypes = true;
-  auto QT = ME->getBase()->getType();
-  auto BaseType = (QT->isPointerType() ? QT->getPointeeType() : QT)
-                      .getUnqualifiedType()
-                      .getAsString(PP);
+  auto BaseType = [&]() {
+    auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
+    PP.PrintCanonicalTypes = true;
+
+    auto QT = ME->getBase()->getType();
+    if (QT->isPointerType())
+      QT = QT->getPointeeType();
+    QT = QT.getUnqualifiedType();
+    const auto *T = QT.getTypePtr();
+    if (const auto *ET = dyn_cast<ElaboratedType>(T))
+      T = ET->getNamedType().getTypePtr();
+    if (const auto *TST = dyn_cast<TemplateSpecializationType>(T)) {
+      std::string s;
+      llvm::raw_string_ostream OS(s);
+      TST->getTemplateName().print(OS, PP, TemplateName::Qualified::Fully);
+      return s;
+    } else {
+      return QT.getAsString(PP);
+    }
+  }();
 
   std::string FieldName = "";
   if (ME->getMemberDecl()->getIdentifier()) {

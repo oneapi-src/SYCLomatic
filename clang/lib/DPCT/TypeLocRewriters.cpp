@@ -32,6 +32,18 @@ makeTemplateArgCreator(unsigned Idx) {
   };
 }
 
+template <typename T>
+std::function<std::string(const TypeLoc)>
+makeAddPointerCreator(std::function<T(const TypeLoc)> f) {
+  return [=](const TypeLoc TL) {
+    std::string s;
+    llvm::raw_string_ostream OS(s);
+    dpct::print(OS, f(TL));
+    OS << "*";
+    return s;
+  };
+}
+
 class CheckTemplateArgCount {
   unsigned Count;
 
@@ -123,7 +135,10 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
   createFeatureRequestFactory(FEATURE, x 0),
 #define HEADER_INSERTION_FACTORY(HEADER, SUB)                                  \
   createHeaderInsertionFactory(HEADER, SUB)
+#define ADD_POINTER(CREATOR) \
+  makeAddPointerCreator(CREATOR)
 #include "APINamesTemplateType.inc"
+#undef ADD_POINTER
 #undef HEADER_INSERTION_FACTORY
 #undef FEATURE_REQUEST_FACTORY
 #undef TYPE_FACTORY

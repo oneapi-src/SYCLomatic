@@ -142,3 +142,8 @@ TYPE_REWRITE_ENTRY(
 TYPE_REWRITE_ENTRY(
     "thrust::modulus",
     TYPE_FACTORY(STR("std::modulus"), TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY(
+    "cub::DoubleBuffer",
+    TYPE_FACTORY(STR("dpct::io_iterator_pair"), ADD_POINTER(TEMPLATE_ARG(0))))
+

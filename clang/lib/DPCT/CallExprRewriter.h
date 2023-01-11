@@ -216,6 +216,29 @@ public:
   }
 };
 
+class CaseRewriterFactory : public CallExprRewriterFactoryBase {
+public:
+  using PredT = std::function<bool(const CallExpr *)>;
+  using CaseT = std::pair<PredT, std::shared_ptr<CallExprRewriterFactoryBase>>;
+
+  inline static const PredT true_pred = [](const CallExpr *) { return true; };
+  
+  std::vector<CaseT> Cases;
+
+  template <class... CaseTs>
+  CaseRewriterFactory(CaseTs&&... cases)
+    : Cases{std::forward<CaseTs>(cases)...} {}
+  
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    for (const auto& [Pred, Factory] : Cases) {
+      if (Pred(C)) {
+	return Factory->create(C);
+      }
+    }
+    throw std::runtime_error("Non-exhaustive CaseRewriterFactory");
+  }
+};
+
 template <class... MsgArgs>
 class ReportWarningRewriterFactory
     : public CallExprRewriterFactory<UnsupportFunctionRewriter<MsgArgs...>,
@@ -978,7 +1001,7 @@ public:
 };
 
 template <class FirstPrinter, class... RestPrinter>
-class MultiStmtsPrinter : MultiStmtsPrinter<RestPrinter...> {
+class MultiStmtsPrinter : public MultiStmtsPrinter<RestPrinter...> {
   using Base = MultiStmtsPrinter<RestPrinter...>;
   FirstPrinter First;
 

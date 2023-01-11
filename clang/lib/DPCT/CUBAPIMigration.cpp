@@ -79,7 +79,8 @@ void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "cub::TransformInputIterator",
                       "cub::ConstantInputIterator",
                       "cub::ArgIndexInputIterator",
-                      "cub::DiscardOutputIterator");
+                      "cub::DiscardOutputIterator",
+                      "cub::DoubleBuffer");
   };
 
   MF.addMatcher(
@@ -129,19 +130,29 @@ void CubDeviceLevelRule::runRule(
 void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       cxxMemberCallExpr(
-          allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(
-                    namedDecl(hasName("cub::ArgIndexInputIterator"))))))),
-                callee(cxxMethodDecl(hasName("normalize")))))
-          .bind("ArgIndexInputIterator.normalize"),
+          anyOf(
+              allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(
+                        namedDecl(hasName("cub::ArgIndexInputIterator"))))))),
+                    callee(cxxMethodDecl(hasName("normalize")))),
+              callee(cxxMethodDecl(hasAnyName(
+                  "Current", "Alternate")))))
+          .bind("memberCall"),
+      this);
+
+  MF.addMatcher(
+      memberExpr(member(hasAnyName("d_buffers")))
+      .bind("memberExpr"),
       this);
 }
 
 void CubMemberCallRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  if (const auto *MC = getNodeAsType<CXXMemberCallExpr>(
-          Result, "ArgIndexInputIterator.normalize")) {
+  auto or_ = [](const Expr *x, const Expr *y) { return x ? x : y; };
+  if (const Expr *E = or_(
+          getNodeAsType<CXXMemberCallExpr>(Result, "memberCall"),
+          getNodeAsType<MemberExpr>(Result, "memberExpr"))) {
     ExprAnalysis EA;
-    EA.analyze(MC);
+    EA.analyze(E);
     emplaceTransformation(EA.getReplacement());
     EA.applyAllSubExprRepl();
   }

@@ -436,7 +436,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   ARG(2),
                                   BO(BinaryOperatorKind::BO_Add, ARG(2),
                                      ARG(5)),
-                                  ARG(3))),
+                                  ARG(3))),     
                         LITERAL("1")),
                     false, "wait"))))))
 
@@ -836,192 +836,356 @@ CONDITIONAL_FACTORY_ENTRY(
                     Diagnostics::REDUCE_PERFORMANCE_TUNE))))))
 
 // cub::DeviceRadixSort::SortKeys
-CONDITIONAL_FACTORY_ENTRY(
-    CheckCubRedundantFunctionCall(),
-    REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortKeys"),
-    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_DPCT_DPL_Utils,
-            REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-                makeCheckAnd(CheckArgCount(8, std::greater_equal<>(),
-                                           /* IncludeDefaultArg */ false),
-                             makeCheckNot(CheckArgIsDefaultCudaStream(7))),
-                CALL_FACTORY_ENTRY(
-                    "cub::DeviceRadixSort::SortKeys",
-                    CALL(MapNames::getDpctNamespace() + "sort_keys",
-                         CALL("oneapi::dpl::execution::device_policy",
-                              STREAM(7)),
-                         ARG(2), ARG(3), ARG(4), LITERAL("false"), ARG(5),
-                         ARG(6))),
-                CONDITIONAL_FACTORY_ENTRY(
-                    CheckArgCount(7, std::greater_equal<>(),
-                                  /* IncludeDefaultArg */ false),
-                    CALL_FACTORY_ENTRY(
-                        "cub::DeviceRadixSort::SortKeys",
-                        CALL(MapNames::getDpctNamespace() + "sort_keys",
+CASE_FACTORY_ENTRY(
+  CASE(CheckCubRedundantFunctionCall(),
+       REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortKeys")),
+  OTHERWISE(
+       FEATURE_REQUEST_FACTORY(
+       HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
+       HEADER_INSERT_FACTORY(
+       HeaderType::HT_DPCT_DPL_Utils,
+       REMOVE_CUB_TEMP_STORAGE_FACTORY(
+       CASE_FACTORY_ENTRY(
+         CASE(CheckArgType(2, "cub::DoubleBuffer"),
+              CASE_FACTORY_ENTRY(
+                CASE(makeCheckAnd(
+                     CheckArgCount(7, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     makeCheckNot(CheckArgIsDefaultCudaStream(6))),
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeys",
+                       CALL("dpct::sort_keys",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(6)),
+                             ARG(2), ARG(3), LITERAL("false"), ARG(4), ARG(5)),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")))),
+                CASE(CheckArgCount(6, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeys",
+                       CALL("dpct::sort_keys",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                 QUEUESTR),
+                            ARG(2), ARG(3), LITERAL("false"), ARG(4), ARG(5)),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")))),
+                CASE(CheckArgCount(5, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeys",
+                       CALL("dpct::sort_keys",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                 QUEUESTR),
+                            ARG(2), ARG(3), LITERAL("false"), ARG(4)),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")))),
+                OTHERWISE(
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeys",
+                       CALL("dpct::sort_keys",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                 QUEUESTR),
+                            ARG(2), ARG(3), LITERAL("false")),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")))))),
+         OTHERWISE(
+              CASE_FACTORY_ENTRY(                   
+                CASE(makeCheckAnd(
+                              CheckArgCount(8, std::greater_equal<>(),
+                                            /* IncludeDefaultArg */ false),
+                              makeCheckNot(CheckArgIsDefaultCudaStream(7))),
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeys",
+                       CALL("dpct::sort_keys",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(7)),
+                            ARG(2), ARG(3), ARG(4), LITERAL("false"), ARG(5), ARG(6)))),
+                CASE(CheckArgCount(7, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeys",
+                       CALL("dpct::sort_keys",
                              CALL("oneapi::dpl::execution::device_policy",
                                   QUEUESTR),
-                             ARG(2), ARG(3), ARG(4), LITERAL("false"), ARG(5),
-                             ARG(6))),
-                    CONDITIONAL_FACTORY_ENTRY(
-                        CheckArgCount(6, std::greater_equal<>(),
-                                      /* IncludeDefaultArg */ false),
-                        CALL_FACTORY_ENTRY(
-                            "cub::DeviceRadixSort::SortKeys",
-                            CALL(MapNames::getDpctNamespace() + "sort_keys",
-                                 CALL("oneapi::dpl::execution::device_policy",
-                                      QUEUESTR),
-                                 ARG(2), ARG(3), ARG(4), LITERAL("false"),
-                                 ARG(5))),
-                        CALL_FACTORY_ENTRY(
-                            "cub::DeviceRadixSort::SortKeys",
-                            CALL(MapNames::getDpctNamespace() + "sort_keys",
-                                 CALL("oneapi::dpl::execution::device_policy",
-                                      QUEUESTR),
-                                 ARG(2), ARG(3), ARG(4),
-                                 LITERAL("false")))))))))))
+                             ARG(2), ARG(3), ARG(4), LITERAL("false"), ARG(5), ARG(6)))),
+                CASE(CheckArgCount(6, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeys",
+                       CALL("dpct::sort_keys",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), LITERAL("false"), ARG(5)))),
+                OTHERWISE(
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeys",
+                       CALL("dpct::sort_keys",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), LITERAL("false"))))))))))))
 
 // cub::DeviceRadixSort::SortKeysDescending
-CONDITIONAL_FACTORY_ENTRY(
-    CheckCubRedundantFunctionCall(),
-    REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortKeysDescending"),
-    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_DPCT_DPL_Utils,
-            REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-                makeCheckAnd(CheckArgCount(8, std::greater_equal<>(),
-                                           /* IncludeDefaultArg */ false),
-                             makeCheckNot(CheckArgIsDefaultCudaStream(7))),
-                CALL_FACTORY_ENTRY(
-                    "cub::DeviceRadixSort::SortKeysDescending",
-                    CALL(MapNames::getDpctNamespace() + "sort_keys",
-                         CALL("oneapi::dpl::execution::device_policy",
-                              STREAM(7)),
-                         ARG(2), ARG(3), ARG(4), LITERAL("true"), ARG(5),
-                         ARG(6))),
-                CONDITIONAL_FACTORY_ENTRY(
-                    CheckArgCount(7, std::greater_equal<>(),
-                                  /* IncludeDefaultArg */ false),
-                    CALL_FACTORY_ENTRY(
-                        "cub::DeviceRadixSort::SortKeysDescending",
-                        CALL(MapNames::getDpctNamespace() + "sort_keys",
+CASE_FACTORY_ENTRY(
+  CASE(CheckCubRedundantFunctionCall(),
+       REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortKeysDescending")),
+  OTHERWISE(
+       FEATURE_REQUEST_FACTORY(
+       HelperFeatureEnum::DplExtrasAlgorithm_sort_keys,
+       HEADER_INSERT_FACTORY(
+       HeaderType::HT_DPCT_DPL_Utils,
+       REMOVE_CUB_TEMP_STORAGE_FACTORY(
+       CASE_FACTORY_ENTRY(
+         CASE(CheckArgType(2, "cub::DoubleBuffer"),
+              CASE_FACTORY_ENTRY(
+                CASE(makeCheckAnd(
+                     CheckArgCount(7, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     makeCheckNot(CheckArgIsDefaultCudaStream(6))),
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeysDescending",
+                       CALL("dpct::sort_keys",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(6)),
+                             ARG(2), ARG(3), LITERAL("true"), ARG(4), ARG(5)),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")))),
+                CASE(CheckArgCount(6, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeysDescending",
+                       CALL("dpct::sort_keys",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                 QUEUESTR),
+                            ARG(2), ARG(3), LITERAL("true"), ARG(4), ARG(5)),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")))),
+                CASE(CheckArgCount(5, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeysDescending",
+                       CALL("dpct::sort_keys",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                 QUEUESTR),
+                            ARG(2), ARG(3), LITERAL("true"), ARG(4)),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")))),
+                OTHERWISE(
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeysDescending",
+                       CALL("dpct::sort_keys",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                 QUEUESTR),
+                            ARG(2), ARG(3), LITERAL("true")),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")))))),
+         OTHERWISE(
+              CASE_FACTORY_ENTRY(                   
+                CASE(makeCheckAnd(
+                              CheckArgCount(8, std::greater_equal<>(),
+                                            /* IncludeDefaultArg */ false),
+                              makeCheckNot(CheckArgIsDefaultCudaStream(7))),
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeysDescending",
+                       CALL("dpct::sort_keys",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(7)),
+                            ARG(2), ARG(3), ARG(4), LITERAL("true"), ARG(5), ARG(6)))),
+                CASE(CheckArgCount(7, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeysDescending",
+                       CALL("dpct::sort_keys",
                              CALL("oneapi::dpl::execution::device_policy",
                                   QUEUESTR),
-                             ARG(2), ARG(3), ARG(4), LITERAL("true"), ARG(5),
-                             ARG(6))),
-                    CONDITIONAL_FACTORY_ENTRY(
-                        CheckArgCount(6, std::greater_equal<>(),
-                                      /* IncludeDefaultArg */ false),
-                        CALL_FACTORY_ENTRY(
-                            "cub::DeviceRadixSort::SortKeysDescending",
-                            CALL(MapNames::getDpctNamespace() + "sort_keys",
-                                 CALL("oneapi::dpl::execution::device_policy",
-                                      QUEUESTR),
-                                 ARG(2), ARG(3), ARG(4), LITERAL("true"),
-                                 ARG(5))),
-                        CALL_FACTORY_ENTRY(
-                            "cub::DeviceRadixSort::SortKeysDescending",
-                            CALL(MapNames::getDpctNamespace() + "sort_keys",
-                                 CALL("oneapi::dpl::execution::device_policy",
-                                      QUEUESTR),
-                                 ARG(2), ARG(3), ARG(4),
-                                 LITERAL("true")))))))))))
+                             ARG(2), ARG(3), ARG(4), LITERAL("true"), ARG(5), ARG(6)))),
+                CASE(CheckArgCount(6, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeysDescending",
+                       CALL("dpct::sort_keys",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), LITERAL("true"), ARG(5)))),
+                OTHERWISE(
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortKeysDescending",
+                       CALL("dpct::sort_keys",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), LITERAL("true"))))))))))))
 
 // cub::DeviceRadixSort::SortPairs
-CONDITIONAL_FACTORY_ENTRY(
-    CheckCubRedundantFunctionCall(),
-    REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortPairs"),
-    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_sort_pairs,
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_DPCT_DPL_Utils,
-            REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-                makeCheckAnd(CheckArgCount(10, std::greater_equal<>(),
-                                           /* IncludeDefaultArg */ false),
-                             makeCheckNot(CheckArgIsDefaultCudaStream(9))),
-                CALL_FACTORY_ENTRY(
-                    "cub::DeviceRadixSort::SortPairs",
-                    CALL(MapNames::getDpctNamespace() + "sort_pairs",
-                         CALL("oneapi::dpl::execution::device_policy",
-                              STREAM(9)),
-                         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                         LITERAL("false"), ARG(7), ARG(8))),
-                CONDITIONAL_FACTORY_ENTRY(
-                    CheckArgCount(9, std::greater_equal<>(),
-                                  /* IncludeDefaultArg */ false),
-                    CALL_FACTORY_ENTRY(
-                        "cub::DeviceRadixSort::SortPairs",
-                        CALL(MapNames::getDpctNamespace() + "sort_pairs",
+CASE_FACTORY_ENTRY(
+  CASE(CheckCubRedundantFunctionCall(),
+       REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortPairs")),
+  OTHERWISE(
+       FEATURE_REQUEST_FACTORY(
+       HelperFeatureEnum::DplExtrasAlgorithm_sort_pairs,
+       HEADER_INSERT_FACTORY(
+       HeaderType::HT_DPCT_DPL_Utils,
+       REMOVE_CUB_TEMP_STORAGE_FACTORY(
+       CASE_FACTORY_ENTRY(
+         CASE(CheckArgType(2, "cub::DoubleBuffer"),
+              CASE_FACTORY_ENTRY(
+                CASE(makeCheckAnd(
+                     CheckArgCount(8, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     makeCheckNot(CheckArgIsDefaultCudaStream(7))),
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairs",
+                       CALL("dpct::sort_pairs",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(7)),
+                             ARG(2), ARG(3), ARG(4), LITERAL("false"), ARG(5), ARG(6)),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")),
+                       MEMBER_CALL(ARG(3), false, LITERAL("swap")))),
+                CASE(CheckArgCount(7, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairs",
+                       CALL("dpct::sort_pairs",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                 QUEUESTR),
+                            ARG(2), ARG(3), ARG(4), LITERAL("false"), ARG(5), ARG(6)),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")),
+                       MEMBER_CALL(ARG(3), false, LITERAL("swap")))),
+                CASE(CheckArgCount(6, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairs",
+                       CALL("dpct::sort_pairs",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                 QUEUESTR),
+                            ARG(2), ARG(3), ARG(4), LITERAL("false"), ARG(5)),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")),
+                       MEMBER_CALL(ARG(3), false, LITERAL("swap")))),
+                OTHERWISE(
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairs",
+                       CALL("dpct::sort_pairs",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                 QUEUESTR),
+                            ARG(2), ARG(3), ARG(4), LITERAL("false")),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")),
+                       MEMBER_CALL(ARG(3), false, LITERAL("swap")))))),
+         OTHERWISE(
+              CASE_FACTORY_ENTRY(                   
+                CASE(makeCheckAnd(
+                              CheckArgCount(10, std::greater_equal<>(),
+                                            /* IncludeDefaultArg */ false),
+                              makeCheckNot(CheckArgIsDefaultCudaStream(9))),
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairs",
+                       CALL("dpct::sort_pairs",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(9)),
+                            ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), LITERAL("false"), ARG(7), ARG(8)))),
+                CASE(CheckArgCount(9, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairs",
+                       CALL("dpct::sort_pairs",
                              CALL("oneapi::dpl::execution::device_policy",
                                   QUEUESTR),
-                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                             LITERAL("false"), ARG(7), ARG(8))),
-                    CONDITIONAL_FACTORY_ENTRY(
-                        CheckArgCount(8, std::greater_equal<>(),
-                                      /* IncludeDefaultArg */ false),
-                        CALL_FACTORY_ENTRY(
-                            "cub::DeviceRadixSort::SortPairs",
-                            CALL(MapNames::getDpctNamespace() + "sort_pairs",
-                                 CALL("oneapi::dpl::execution::device_policy",
-                                      QUEUESTR),
-                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                                 LITERAL("false"), ARG(7))),
-                        CALL_FACTORY_ENTRY(
-                            "cub::DeviceRadixSort::SortPairs",
-                            CALL(MapNames::getDpctNamespace() + "sort_pairs",
-                                 CALL("oneapi::dpl::execution::device_policy",
-                                      QUEUESTR),
-                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                                 LITERAL("false")))))))))))
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), LITERAL("false"), ARG(7), ARG(8)))),
+                CASE(CheckArgCount(8, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairs",
+                       CALL("dpct::sort_pairs",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), LITERAL("false"), ARG(7)))),
+                OTHERWISE(
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairs",
+                       CALL("dpct::sort_pairs",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), LITERAL("false"))))))))))))
 
 // cub::DeviceRadixSort::SortPairsDescending
-CONDITIONAL_FACTORY_ENTRY(
-    CheckCubRedundantFunctionCall(),
-    REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortPairsDescending"),
-    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasAlgorithm_sort_pairs,
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_DPCT_DPL_Utils,
-            REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
-                makeCheckAnd(CheckArgCount(10, std::greater_equal<>(),
-                                           /* IncludeDefaultArg */ false),
-                             makeCheckNot(CheckArgIsDefaultCudaStream(9))),
-                CALL_FACTORY_ENTRY(
-                    "cub::DeviceRadixSort::SortPairsDescending",
-                    CALL(MapNames::getDpctNamespace() + "sort_pairs",
-                         CALL("oneapi::dpl::execution::device_policy",
-                              STREAM(9)),
-                         ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                         LITERAL("true"), ARG(7), ARG(8))),
-                CONDITIONAL_FACTORY_ENTRY(
-                    CheckArgCount(9, std::greater_equal<>(),
-                                  /* IncludeDefaultArg */ false),
-                    CALL_FACTORY_ENTRY(
-                        "cub::DeviceRadixSort::SortPairsDescending",
-                        CALL(MapNames::getDpctNamespace() + "sort_pairs",
+CASE_FACTORY_ENTRY(
+  CASE(CheckCubRedundantFunctionCall(),
+       REMOVE_API_FACTORY_ENTRY("cub::DeviceRadixSort::SortPairsDescending")),
+  OTHERWISE(
+       FEATURE_REQUEST_FACTORY(
+       HelperFeatureEnum::DplExtrasAlgorithm_sort_pairs,
+       HEADER_INSERT_FACTORY(
+       HeaderType::HT_DPCT_DPL_Utils,
+       REMOVE_CUB_TEMP_STORAGE_FACTORY(
+       CASE_FACTORY_ENTRY(
+         CASE(CheckArgType(2, "cub::DoubleBuffer"),
+              CASE_FACTORY_ENTRY(
+                CASE(makeCheckAnd(
+                     CheckArgCount(8, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     makeCheckNot(CheckArgIsDefaultCudaStream(7))),
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairsDescending",
+                       CALL("dpct::sort_pairs",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(7)),
+                             ARG(2), ARG(3), ARG(4), LITERAL("true"), ARG(5), ARG(6)),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")),
+                       MEMBER_CALL(ARG(3), false, LITERAL("swap")))),
+                CASE(CheckArgCount(7, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairsDescending",
+                       CALL("dpct::sort_pairs",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                 QUEUESTR),
+                            ARG(2), ARG(3), ARG(4), LITERAL("true"), ARG(5), ARG(6)),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")),
+                       MEMBER_CALL(ARG(3), false, LITERAL("swap")))),
+                CASE(CheckArgCount(6, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairsDescending",
+                       CALL("dpct::sort_pairs",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                 QUEUESTR),
+                            ARG(2), ARG(3), ARG(4), LITERAL("true"), ARG(5)),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")),
+                       MEMBER_CALL(ARG(3), false, LITERAL("swap")))),
+                OTHERWISE(
+                     MULTI_STMTS_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairsDescending",
+                       CALL("dpct::sort_pairs",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                 QUEUESTR),
+                            ARG(2), ARG(3), ARG(4), LITERAL("true")),
+                       MEMBER_CALL(ARG(2), false, LITERAL("swap")),
+                       MEMBER_CALL(ARG(3), false, LITERAL("swap")))))),
+         OTHERWISE(
+              CASE_FACTORY_ENTRY(                   
+                CASE(makeCheckAnd(
+                              CheckArgCount(10, std::greater_equal<>(),
+                                            /* IncludeDefaultArg */ false),
+                              makeCheckNot(CheckArgIsDefaultCudaStream(9))),
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairsDescending",
+                       CALL("dpct::sort_pairs",
+                            CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(9)),
+                            ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), LITERAL("true"), ARG(7), ARG(8)))),
+                CASE(CheckArgCount(9, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairsDescending",
+                       CALL("dpct::sort_pairs",
                              CALL("oneapi::dpl::execution::device_policy",
                                   QUEUESTR),
-                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                             LITERAL("true"), ARG(7), ARG(8))),
-                    CONDITIONAL_FACTORY_ENTRY(
-                        CheckArgCount(8, std::greater_equal<>(),
-                                      /* IncludeDefaultArg */ false),
-                        CALL_FACTORY_ENTRY(
-                            "cub::DeviceRadixSort::SortPairsDescending",
-                            CALL(MapNames::getDpctNamespace() + "sort_pairs",
-                                 CALL("oneapi::dpl::execution::device_policy",
-                                      QUEUESTR),
-                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                                 LITERAL("true"), ARG(7))),
-                        CALL_FACTORY_ENTRY(
-                            "cub::DeviceRadixSort::SortPairsDescending",
-                            CALL(MapNames::getDpctNamespace() + "sort_pairs",
-                                 CALL("oneapi::dpl::execution::device_policy",
-                                      QUEUESTR),
-                                 ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                                 LITERAL("true")))))))))))
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), LITERAL("true"), ARG(7), ARG(8)))),
+                CASE(CheckArgCount(8, std::greater_equal<>(),
+                                   /* IncludeDefaultArg */ false),
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairsDescending",
+                       CALL("dpct::sort_pairs",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), LITERAL("true"), ARG(7)))),
+                OTHERWISE(
+                     CALL_FACTORY_ENTRY(
+                       "cub::DeviceRadixSort::SortPairsDescending",
+                       CALL("dpct::sort_pairs",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), LITERAL("true"))))))))))))
 
 // cub::DeviceSegmentedRadixSort::SortPairs
 CONDITIONAL_FACTORY_ENTRY(
