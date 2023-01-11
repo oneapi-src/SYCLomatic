@@ -464,7 +464,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hneu"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hneg",
                                         MapNames::getClNamespace(false, true) +
@@ -472,7 +472,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("__hneg", BinaryOperatorKind::BO_Sub))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hneg2",
                                         MapNames::getClNamespace(false, true) +
@@ -480,7 +480,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("__hneg2", BinaryOperatorKind::BO_Sub))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hadd2",
                                         MapNames::getClNamespace(false, true) +
@@ -488,7 +488,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("__hadd2", BinaryOperatorKind::BO_Add))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__h2div",
                                         MapNames::getClNamespace(false, true) +
@@ -496,7 +496,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("__h2div", BinaryOperatorKind::BO_Div))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hdiv",
                                         MapNames::getClNamespace(false, true) +
@@ -504,7 +504,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("__hdiv", BinaryOperatorKind::BO_Div))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("h2div",
                                         MapNames::getClNamespace(false, true) +
@@ -512,7 +512,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("h2div", BinaryOperatorKind::BO_Div))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("hdiv",
                                         MapNames::getClNamespace(false, true) +
@@ -521,7 +521,7 @@ CONDITIONAL_FACTORY_ENTRY(
 
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hmul",
                                         MapNames::getClNamespace(false, true) +
@@ -529,7 +529,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("__hmul", BinaryOperatorKind::BO_Mul))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hmul2",
                                         MapNames::getClNamespace(false, true) +
@@ -537,7 +537,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("__hmul2", BinaryOperatorKind::BO_Mul))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hsub",
                                         MapNames::getClNamespace(false, true) +
@@ -545,7 +545,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("__hsub", BinaryOperatorKind::BO_Sub))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hsub2",
                                         MapNames::getClNamespace(false, true) +
@@ -553,7 +553,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("__hsub2", BinaryOperatorKind::BO_Sub))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__heq",
                                         MapNames::getClNamespace(false, true) +
@@ -561,7 +561,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("__heq", BinaryOperatorKind::BO_EQ))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hne",
                                         MapNames::getClNamespace(false, true) +
@@ -569,7 +569,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("__hne", BinaryOperatorKind::BO_NE))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hge",
                                         MapNames::getClNamespace(false, true) +
@@ -577,7 +577,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("__hge", BinaryOperatorKind::BO_GE))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hgt",
                                         MapNames::getClNamespace(false, true) +
@@ -585,7 +585,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("__hgt", BinaryOperatorKind::BO_GT))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hle",
                                         MapNames::getClNamespace(false, true) +
@@ -593,7 +593,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_OPERATOR("__hle", BinaryOperatorKind::BO_LE))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hlt",
                                         MapNames::getClNamespace(false, true) +
