@@ -60,12 +60,12 @@ public:
   // sy: Symmetric matrix
   // he: Hermitian matrix
   // tr: Triangular matrix
-  enum class matrix_type { ge, sy, he, tr };
+  enum class matrix_type : int { ge = 0, sy, he, tr };
 
-  template <typename T> auto get() { return _mat_type; }
-  template <> auto get<oneapi::mkl::diag>() { return _unit_diag; }
-  template <> auto get<oneapi::mkl::uplo>() { return _upper_lower; }
-  template <> auto get<oneapi::mkl::index_base>() { return _index; }
+  template <typename T> auto get() const { return _mat_type; }
+  template <> auto get<oneapi::mkl::diag>() const { return _unit_diag; }
+  template <> auto get<oneapi::mkl::uplo>() const { return _upper_lower; }
+  template <> auto get<oneapi::mkl::index_base>() const { return _index; }
   void set(matrix_type mat_type) { _mat_type = mat_type; }
   void set(oneapi::mkl::diag unit_diag) { _unit_diag = unit_diag; }
   void set(oneapi::mkl::uplo upper_lower) { _upper_lower = upper_lower; }
