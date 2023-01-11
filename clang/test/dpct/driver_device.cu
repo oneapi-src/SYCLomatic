@@ -19,7 +19,7 @@ void test() {
 
   int result0, result1, result2, result3, result4, result5;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY, which value may need to be adjusted for specific device.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY. It was migrated to get_global_mem_size, which value may need to be adjusted for specific device.
   // CHECK-NEXT: */
   // CHECK: result0 = dpct::dev_mgr::instance().get_device(device).get_global_mem_size();
   cuDeviceGetAttribute(&result0, CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY, device);
@@ -31,13 +31,13 @@ void test() {
   cuDeviceGetAttribute(&result2,CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
   std::cout << " result2 " << result2 << std::endl;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT. It was migrated to get_mem_base_addr_align. You may need to rewrite the code.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT. It was migrated to get_mem_base_addr_align, which value may need to be adjusted for specific device.
   // CHECK-NEXT: */
   // CHECK: result3 = dpct::dev_mgr::instance().get_device(device).get_mem_base_addr_align();
   cuDeviceGetAttribute(&result3,CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT, device);
   std::cout << " result3 " << result3 << std::endl;
   // CHECK: /*
-  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK. It was migrated to get_max_register_size_per_work_group. You may need to rewrite the code.
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK. It was migrated to get_max_register_size_per_work_group, which value may need to be adjusted for specific device.
   // CHECK-NEXT: */
   // CHECK: result4 = dpct::dev_mgr::instance().get_device(device).get_max_register_size_per_work_group();
   cuDeviceGetAttribute(&result4,CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, device);
