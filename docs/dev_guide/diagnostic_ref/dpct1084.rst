@@ -1,0 +1,121 @@
+.. _id_DPCT1084:
+
+DPCT1084
+========
+
+Message
+-------
+
+.. _msg-1084-start:
+
+The function call has multiple migration results in different template
+instantiations that could not be unified. You may need to adjust the code.
+
+.. _msg-1084-end:
+
+Detailed Help
+-------------
+
+|tool_name| was unable to migrate the code correctly. Modify the
+code manually.
+
+The following example shows original code, migrated code, and the manual changes
+made to correct the migrated code.
+
+For example, this original code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // original code:
+
+   __constant__ int4 example_i[32];
+   __constant__ float4 example_f[32];
+
+   struct example_int {
+     __device__ int4 foo(int idx) const {
+       return example_i[idx];
+     }
+   };
+
+   struct example_float {
+     __device__ float4 foo(int idx) const {
+       return example_f[idx];
+     }
+   };
+
+   template <typename T>
+   _global_ void example_kernel() {
+     ...
+     T example_v;
+     float j = example_v.foo(idx).x;
+   }
+
+results in the following migrated DPC++ code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // migrated DPC++ code:
+
+   dpct::constant_memory<sycl::int4, 1> example_i(32);
+   dpct::constant_memory<sycl::float4, 1> example_f(32);
+
+   struct example_int {
+     sycl::int4 foo()(int idx, sycl::int4 *example_i) const {
+       return example_i[idx];
+     }
+   };
+
+   struct example_float {
+     sycl::float4 foo()(int idx, sycl::float4 *example_i) const {
+       return example_i[idx];
+     }
+   };
+
+   template <typename T>
+   void example_kernel(sycl::nd_item<3> item_ct1, sycl::float4 *example_f) {
+     ...
+     T example_v;
+     /* DPCT1083 */
+     float j = example_v.foo(idx, example_f).x();
+   }
+
+
+which is manually adjusted to:
+
+.. code-block:: cpp
+   :linenos:
+
+   // adjusted DPC++ code:
+
+   dpct::constant_memory<sycl::int4, 1> example_i(32);
+   dpct::constant_memory<sycl::float4, 1> example_f(32);
+
+   struct example_int {
+     typedef sycl::int4 data_type;
+     sycl::int4 foo()(int idx, sycl::int4 *example_i) const {
+       return example_i[idx];
+     }
+   };
+
+   struct example_float {
+     typedef sycl::float4 data_type;
+     sycl::float4 foo()(int idx, sycl::float4 *example_i) const {
+       return example_i[idx];
+     }
+   };
+
+   template <typename T>
+   void example_kernel(sycl::nd_item<3> item_ct1, typename T::data_type  *example_f) {
+     ...
+     T example_v;
+     /* DPCT1083 */
+     float j = example_v.foo(idx, example_f).x();
+   }
+
+Suggestions to Fix
+------------------
+
+Code requires manual adjustment.
+

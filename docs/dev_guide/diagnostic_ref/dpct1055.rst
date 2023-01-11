@@ -1,0 +1,48 @@
+.. _id_DPCT1055:
+
+DPCT1055
+========
+
+Message
+-------
+
+.. _msg-1055-start:
+
+Vector types with size 1 are migrated to the corresponding fundamental types,
+which cannot be inherited. You need to rewrite the code.
+
+.. _msg-1055-end:
+
+Detailed Help
+-------------
+
+The warning message is emitted when vector type with size 1 is inherited by a
+class or struct in the original code. Since the vector type with size 1 is
+migrated to the corresponding fundamental type in |dpcpp| and the fundamental type
+cannot be inherited, you need to rewrite the code.
+
+Suggestions to Fix
+------------------
+
+You can declare a new field with the corresponding fundamental type, for example
+int for int1, in the class/struct and override the required operators.
+
+For example, the following migrated DPC++ code:
+
+.. code-block:: cpp
+   :linenos:
+
+   class MyClass : int {
+     ...
+   }
+
+is manually adjusted to:
+
+.. code-block:: cpp
+   :linenos:
+
+   class MyClass {
+     int x;
+     MyClass operator+(const MyClass& y) { ... }
+     MyClass operator=(const MyClass& y){...}...
+   }

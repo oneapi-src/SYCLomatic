@@ -1,0 +1,89 @@
+.. _id_DPCT1086:
+
+DPCT1086
+========
+
+Message
+-------
+
+.. _msg-1086-start:
+
+``__activemask()`` is migrated to ``0xffffffff``. You may need to adjust the code.
+
+.. _msg-1086-end:
+
+Detailed Help
+-------------
+
+There is currently no functional equivalent of ``__activemask()`` in SYCL\*. If
+there is flow control in your code that will make the thread inactive, you need
+to rewrite the thread logic.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __device__ inline int SHFL_SYNC(unsigned mask, int val, unsigned offset, unsigned w = warpSize) {
+     return __shfl_down_sync(mask, val, offset, w);
+   }
+
+   __global__ void kernel(int *array) {
+     unsigned int tid = threadIdx.x;
+     if (tid >= 8)
+       return;
+       unsigned mask = __activemask();
+       array[tid] = SHFL_SYNC(mask, array[tid], 4);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   inline int SHFL_SYNC(unsigned mask, int val, unsigned offset,
+                     sycl::nd_item<3> item_ct1, unsigned w = 0) {
+     if (!w) w = item_ct1.get_sub_group().get_local_range().get(0);
+     // This call will wait for all work-items to arrive which will never happen since only work-items with tid < 8 will encounter this call.
+     return sycl::shift_group_left(item_ct1.get_sub_group(), val, offset);
+   }
+
+   void kernel(int *array, sycl::nd_item<3> item_ct1) {
+     unsigned int tid = item_ct1.get_local_id(2);
+     if (tid >= 8)
+       return;
+
+     /*
+     DPCT1086
+     */
+     unsigned mask = 0xffffffff;
+     array[tid] = SHFL_SYNC(mask, array[tid], 4, item_ct1);
+   }
+
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   // remove mask parameter, as it is not used
+   inline int SHFL_SYNC(int val, unsigned offset,
+                     sycl::nd_item<3> item_ct1, unsigned w = 0) {
+     if (!w) w = item_ct1.get_sub_group().get_local_range().get(0);
+     unsigned int tid = item_ct1.get_local_id(2);
+     // Use a temporary variable to save the result of sycl::shift_group_left() to make sure all work-items can encounter this call.
+     int v_tmp = sycl::shift_group_left(item_ct1.get_sub_group(), val, offset);
+     return (tid < 8) ? v_tmp : val;
+   }
+
+   void kernel(int *array, sycl::nd_item<3> item_ct1) {
+     unsigned int tid = item_ct1.get_local_id(2);
+     // remove mask parameter, as it is not used
+     array[tid] = SHFL_SYNC(array[tid], 4, item_ct1);
+   }
+
+Suggestions to Fix
+------------------
+
+Check if ``0xffffffff`` can be used instead of ``__activemask()``. If it cannot be
+used, redesign the thread logic.

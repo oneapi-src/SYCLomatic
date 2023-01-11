@@ -1,0 +1,24 @@
+.. _id_DPCT1053:
+
+DPCT1053
+========
+
+Message
+-------
+
+.. _msg-1053-start:
+
+Migration of device assembly code is not supported.
+
+.. _msg-1053-end:
+
+Detailed Help
+-------------
+
+The assembly code was not replaced because it is hardware-specific. Replace this
+hardware-specific feature with the one offered by your hardware vendor.
+
+Suggestions to Fix
+------------------
+
+Consult with your hardware vendor to find a replacement.

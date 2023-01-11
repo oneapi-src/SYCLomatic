@@ -1,0 +1,24 @@
+.. _id_DPCT1080:
+
+DPCT1080
+========
+
+Message
+-------
+
+.. _msg-1080-start:
+
+Variadic functions cannot be called in a SYCL kernel or by functions
+called by the kernel. You may need to adjust the code.
+
+.. _msg-1080-end:
+
+Detailed Help
+-------------
+
+SYCL\* device functions can’t call variadic functions.
+
+Suggestions to Fix
+------------------
+
+Rewrite code manually by using non-variadic functions.

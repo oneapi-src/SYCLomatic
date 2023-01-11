@@ -1,0 +1,29 @@
+.. _id_DPCT1057:
+
+DPCT1057
+========
+
+Message
+-------
+
+.. _msg-1057-start:
+
+Variable *<variable name>* was used in host code and device code.
+*<variable name>* type was updated to be used in SYCL device code and new
+*<host variable name>* was generated to be used in host code. You need to update
+the host code manually to use the new *<host variable name>*.
+
+.. _msg-1057-end:
+
+Detailed Help
+-------------
+
+If ``__constant__variable`` is used in both host code and device code (for example,
+the variable is included in two compilation units and they are compiled by different
+compilers), it will be migrated to a ``dpct::constant_memory`` object and a new
+host variable *<host variable name>*.
+
+Suggestions to Fix
+------------------
+
+You need to update the host code manually to use the new *<host variable name>*.

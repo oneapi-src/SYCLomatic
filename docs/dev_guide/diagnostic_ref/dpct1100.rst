@@ -1,0 +1,31 @@
+.. _id_DPCT1100:
+
+DPCT1100
+========
+
+Message
+-------
+
+.. _msg-1100-start:
+
+Currently the DFT external workspace feature in the |mkl_long| (|mkl|) is only
+supported on GPU devices. Use the internal workspace if your code should run on
+non-GPU devices.
+
+.. _msg-1100-end:
+
+Detailed Help
+-------------
+
+The FFT of |mkl| can use either an internal workspace or external workspace during
+computation. The internal workspace mode is supported on all devices, while the
+external workspace mode is currently only supported on GPU devices.
+
+Suggestions to Fix
+------------------
+
+If you are running code on a non-GPU device, you can:
+
+* Use ``dpct::select_device(<device_id>)`` to choose a GPU device.
+* Call ``dpct::fft::fft_engine::use_internal_workspace(true)`` before invoking
+  ``dpct::fft::fft_engine::commit()``.

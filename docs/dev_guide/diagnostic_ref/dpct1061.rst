@@ -1,0 +1,25 @@
+.. _id_DPCT1061:
+
+DPCT1061
+========
+
+Message
+-------
+
+.. _msg-1061-start:
+
+Call to *<macro name>* macro was removed because it only contains code, which
+is unnecessary in SYCL.
+
+.. _msg-1061-end:
+
+Detailed Help
+-------------
+
+When a macro definition contains only code, which will be removed during migration,
+|tool_name| removes the usage of the macro as well.
+
+Suggestions to Fix
+------------------
+
+Review the code and remove the macro definition if it is not needed.

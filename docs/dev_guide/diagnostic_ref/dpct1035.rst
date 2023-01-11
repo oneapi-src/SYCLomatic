@@ -1,0 +1,25 @@
+.. _id_DPCT1035:
+
+DPCT1035
+========
+
+Message
+-------
+
+.. _msg-1035-start:
+
+All SYCL devices can be used by the host to submit tasks. You may need to
+adjust this code.
+
+.. _msg-1035-end:
+
+Detailed Help
+-------------
+
+In SYCL, the host can freely submit tasks to all SYCL devices. There’s no
+need to check for device compute mode.
+
+Suggestions to Fix
+------------------
+
+Review the code and adjust accordingly.

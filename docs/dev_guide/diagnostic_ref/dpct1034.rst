@@ -1,0 +1,40 @@
+.. _id_DPCT1034:
+
+DPCT1034
+========
+
+Message
+-------
+
+.. _msg-1034-start:
+
+Migrated API does not return an error code. 0 is returned in the lambda. You
+may need to rewrite this code.
+
+.. _msg-1034-end:
+
+Detailed Help
+-------------
+
+Typically, this happens because the API call in the original application returns
+an error code and then it is consumed by the program logic.
+
+SYCL\* uses exceptions to report errors and does not return the error code.
+
+|tool_name| inserts a ``return 0;`` statement at the end of
+the lambda expression, if the return code is expected by the program logic and
+the new API does not return it. Review all such places in the code.
+
+Similar to :ref:`id_DPCT1003`.
+
+Suggestions to Fix
+------------------
+
+If in a |dpcpp| application you:
+
+* Do not need the code that consumes the error code, remove the code and the
+  ``return 0;`` statement.
+* Need the code that consumes the error code, try to replace it with an exception
+  handling code and use your logic in an exception handler.
+
+Similar to :ref:`id_DPCT1003`.

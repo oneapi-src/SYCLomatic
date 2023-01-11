@@ -1,0 +1,30 @@
+.. _id_DPCT1005:
+
+DPCT1005
+========
+
+Message
+-------
+
+.. _msg-1005-start:
+
+The SYCL device version is different from CUDA Compute Compatibility. You may
+need to rewrite this code.
+
+.. _msg-1005-end:
+
+Detailed Help
+-------------
+
+|tool_name| detected a usage of CUDA\* Compute Capability-dependent
+logic in the original program.
+
+|dpcpp| does not support CUDA Compute Capability. The logic in the generated code
+uses a version extracted from the ``cl::sycl::info::device::version``, which is
+different than CUDA Compute Capability.
+
+
+Suggestions to Fix
+------------------
+
+Review the logic and adjust it.

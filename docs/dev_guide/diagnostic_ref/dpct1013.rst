@@ -1,0 +1,27 @@
+.. _id_DPCT1013:
+
+DPCT1013
+========
+
+Message
+-------
+
+.. _msg-1013-start:
+
+The rounding mode could not be specified and the generated code may have different
+precision than the original code. Verify the correctness. SYCL math built-in
+rounding mode is aligned with OpenCL C 1.2 standard.
+
+.. _msg-1013-end:
+
+Detailed Help
+-------------
+
+The rounding mode could not be specified and the generated code may have different
+precision than the original code. Verify the correctness. The SYCL\* math built-in
+functions rounding mode is aligned with the OpenCL C 1.2 standard.
+
+Suggestions to Fix
+------------------
+
+Review the logic and adjust it.

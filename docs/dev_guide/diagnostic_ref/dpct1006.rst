@@ -1,0 +1,25 @@
+.. _id_DPCT1006:
+
+DPCT1006
+========
+
+Message
+-------
+
+.. _msg-1006-start:
+
+SYCL does not provide a standard API to differentiate between integrated and
+discrete GPU devices.
+
+
+.. _msg-1006-end:
+
+Detailed Help
+-------------
+
+The generated code uses a ``0`` (zero) as the value of this field.
+
+Suggestions to Fix
+------------------
+
+Consider re-implementing the code that depends on this field.

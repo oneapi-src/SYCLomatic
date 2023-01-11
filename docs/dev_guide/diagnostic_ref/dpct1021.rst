@@ -1,0 +1,27 @@
+.. _id_DPCT1021:
+
+DPCT1021
+========
+
+Message
+-------
+
+.. _msg-1021-start:
+
+Migration of ``cublasHandle_t`` in ``__global__`` or ``__device__`` function is
+not supported. You may need to redesign the code
+
+.. _msg-1021-end:
+
+Detailed Help
+-------------
+
+The ``cublasHandle_t`` is migrated to the ``cl::sycl::queue``. Because SYCL\* 1.2.1
+does not support device-side enqueue of the kernel, the usage of the ``cl::sycl::queue``
+is not possible in SYCL kernels.
+
+Suggestions to Fix
+------------------
+
+Redesign the code to submit all kernels by the host program instead of device-side
+enqueue.

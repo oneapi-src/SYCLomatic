@@ -1,0 +1,74 @@
+.. _id_DPCT1059:
+
+DPCT1059
+========
+
+Message
+-------
+
+.. _msg-1059-start:
+
+SYCL only supports 4-channel image format. Adjust the code.
+
+.. _msg-1059-end:
+
+Detailed Help
+-------------
+
+SYCL\* supports only 4-channel image format. The warning is emitted, when the tool
+generates code with unsupported image format, which corresponds to the original
+code. You can fix the resulting code by changing the image format. Note: suggested
+workaround may impact code performance.
+
+For example, the following migrated DPC++ code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // migrated DPC++ code, which is using unsupported image format:
+
+   dpct::image_wrapper<cl::sycl::uint2, 2> tex; // 2-channel image is not supported
+
+   void test_image(dpct::image_accessor_ext<cl::sycl::uint2, 2> acc) {
+     cl::sycl::uint2 tex_data;
+     tex_data = acc.read(0, 0);
+   }
+   int main() {
+     ... dpct::get_default_queue().submit([&](cl::sycl::handler &cgh) {
+       ... auto acc = tex.get_access(cgh);
+       auto smpl = tex.get_sampler();
+       ... cgh.single_task<class dpct_single_kernel>([=] {
+         test_image(dpct::image_accessor_ext<cl::sycl::uint2, 2>(smpl, acc));
+       });
+     });
+     ...
+   }
+
+is manually adjusted to:
+
+.. code-block:: cpp
+   :linenos:
+
+   // manually adjusted code:
+
+   dpct::image_wrapper<cl::sycl::uint4, 2> tex;
+
+   void test_image(dpct::image_accessor_ext<cl::sycl::uint4, 2> acc) {
+     cl::sycl::uint4 tex_data;
+     tex_data = acc.read(0, 0);
+   }
+   int main() {
+     ... dpct::get_default_queue().submit([&](cl::sycl::handler &cgh) {
+       ... auto acc = tex.get_access(cgh);
+       auto smpl = tex.get_sampler();
+       ... cgh.single_task<class dpct_single_kernel>([=] {
+         test_image(dpct::image_accessor_ext<cl::sycl::uint4, 2>(smpl, acc));
+       });
+     });
+     ...
+   }
+
+Suggestions to Fix
+------------------
+
+You may need to rewrite this code.

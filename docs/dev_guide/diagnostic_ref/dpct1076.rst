@@ -1,0 +1,27 @@
+.. _id_DPCT1076:
+
+DPCT1076
+========
+
+Message
+-------
+
+.. _msg-1076-start:
+
+The device attribute was not recognized. You may need to adjust the code.
+
+.. _msg-1076-end:
+
+Detailed Help
+-------------
+
+This warning appears if the device attribute parameter in the original code is
+enum variable instead of enum constant and could not be deduced.
+
+Suggestions to Fix
+------------------
+
+Review the code and adjust it.
+
+Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
+for help.

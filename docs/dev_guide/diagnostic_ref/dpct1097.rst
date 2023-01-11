@@ -1,0 +1,53 @@
+.. _id_DPCT1097:
+
+DPCT1097
+========
+
+Message
+-------
+
+.. _msg-1097-start:
+
+The function *<backward function name>* may require the workspace used to save intermediate results from function *<forward function name>*. By default, a workspace from ``engine_ext`` is selected according to the source data pointer, but this may be incorrect and cause a workspace data race. You may need to
+rewrite this code.
+
+.. _msg-1097-end:
+
+Detailed Help
+-------------
+
+You can manually pass a ``dnnl::memory`` object generated from the forward function to the backward function.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    cudnnLRNCrossChannelForward(handle, ...);
+    ...
+    cudnnLRNCrossChannelBackward(handle, ...);
+
+results in the following migrated SYCL\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+    handle.lrn_forward(...);
+    ...
+    handle.lrn_backward(...);
+
+which is manually adjusted to:
+
+.. code-block:: cpp
+   :linenos:
+
+    dnnl::memory workspace;
+    handle.lrn_forward(..., &workspace);
+    ...
+    handle.lrn_backward(..., &workspace);
+
+
+Suggestions to Fix
+------------------
+
+You may need to adjust the original code.

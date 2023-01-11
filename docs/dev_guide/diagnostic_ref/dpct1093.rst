@@ -1,0 +1,57 @@
+.. _id_DPCT1093:
+
+DPCT1093
+========
+
+Message
+-------
+
+.. _msg-1093-start:
+
+The *<Device ID>* device may be not the one intended for use. Adjust the selected
+device if needed.
+
+.. _msg-1093-end:
+
+Detailed Help
+-------------
+
+The ``cudaSetDevice`` function sets the device to run the code on. After
+migration to SYCL\*, the logic for device selection may need to be updated.
+
+For example, this original CUDA* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   int main( int argc, char** argv) {
+       cudaSetDevice(1); // Device 1 is the best choice in the original code.
+       foo(argc, argv);
+   }
+
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   int main( int argc, char** argv) {
+       /*   DPCT1093   */
+       dpct::dev_mgr::instance().select_device(1); // Device 1 maybe not the best choice in SYCL.
+       foo(argc, argv);
+   }
+
+which is manually adjusted to:
+
+.. code-block:: cpp
+   :linenos:
+
+   int main( int argc, char** argv) {
+       dpct::dev_mgr::instance().select_device(0);
+       foo(argc, argv);
+   }
+
+Suggestions to Fix
+------------------
+
+Review and adjust the device selection logic if needed.

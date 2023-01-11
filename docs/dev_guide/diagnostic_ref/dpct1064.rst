@@ -1,0 +1,37 @@
+.. _id_DPCT1064:
+
+DPCT1064
+========
+
+Message
+-------
+
+.. _msg-1064-start:
+
+Migrated *<function name>* call is used in a macro definition and is not valid
+for all macro uses. Adjust the code.
+
+.. _msg-1064-end:
+
+Detailed Help
+-------------
+
+The warning is generated when the function call is used in a macro definition and
+needs to be migrated differently, depending on how the macro is called. The
+|tool_name| generates code that is valid for one of the calls
+of the macro, but may not be valid for all calls of this macro in the code.
+
+For example: The function ``pow`` can be migrated to ``sycl::pow<double>`` or
+``sycl::pown``, depending on the types of parameters passed through macro arguments.
+
+.. code-block:: cpp
+   :linenos:
+
+   #define POW(B, E) pow(B, E)
+   POW(2.5, 3.1);  //should be migrated to sycl::pow<double>(2.5, 3.1)
+   POW(2.5, 3); //should be migrated to sycl::pown((float)2.5, 3)
+
+Suggestions to Fix
+------------------
+
+Declare new macros for different use cases of the macro call in the resulting code.

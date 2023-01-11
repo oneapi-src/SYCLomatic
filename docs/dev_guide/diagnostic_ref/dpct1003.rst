@@ -1,0 +1,37 @@
+.. _id_DPCT1003:
+
+DPCT1003
+========
+
+Message
+-------
+
+.. _msg-1003-start:
+
+Migrated API does not return error code. ``(*, 0)`` is inserted. You may need to
+rewrite this code.
+
+.. _msg-1003-end:
+
+Detailed Help
+-------------
+
+Typically, this happens because the CUDA\* API returns an error code and then it
+is consumed by the program logic.
+
+SYCL\* uses exceptions to report errors and does not return the error code.
+
+|tool_name| inserts a ``(*, 0)`` operator, so that the resulting
+application can be compiled. This operator returns 0 and is inserted if the return
+code is expected by the program logic and the new API does not return it. You
+should review all such places in the code.
+
+Suggestions to Fix
+------------------
+
+If in a |dpcpp| application you:
+
+* Do not need the code that consumes the error code, remove the code and the
+  ``(*, 0)`` operator.
+* Need the code that consumes the error code, try to replace it with an exception
+  handling code and use your logic in an exception handler.

@@ -1,0 +1,24 @@
+.. _id_DPCT1001:
+
+DPCT1001
+========
+
+Message
+-------
+
+.. _msg-1001-start:
+
+The statement could not be removed.
+
+.. _msg-1001-end:
+
+Detailed Help
+-------------
+
+|tool_name| was not able to remove the code in the ``then`` clause of
+``if-stmt``. See :ref:`id_DPCT1000`.
+
+Suggestions to Fix
+------------------
+
+See :ref:`id_DPCT1000`.

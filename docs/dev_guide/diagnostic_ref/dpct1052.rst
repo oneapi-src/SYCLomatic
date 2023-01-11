@@ -1,0 +1,28 @@
+.. _id_DPCT1052:
+
+DPCT1052
+========
+
+Message
+-------
+
+.. _msg-1052-start:
+
+SYCL does not support the member access for a volatile qualified vector type.
+The volatile qualifier was removed. You may need to rewrite the code.
+
+.. _msg-1052-end:
+
+Detailed Help
+-------------
+
+The SYCL\* specification does not provide a volatile qualified version of
+member access for vector type.
+
+Suggestions to Fix
+------------------
+
+Review the code and adjust it.
+
+Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
+for help.

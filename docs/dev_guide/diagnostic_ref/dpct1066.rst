@@ -1,0 +1,27 @@
+.. _id_DPCT1066:
+
+DPCT1066
+========
+
+Message
+-------
+
+.. _msg-1066-start:
+
+Input/Output distance are migrated to FWD/BWD_DISTANCE. You may need to update
+the code manually.
+
+.. _msg-1066-end:
+
+Detailed Help
+-------------
+
+When the tool cannot deduce the compute direction, the migration of Input/Output
+distance may need to be updated manually.
+
+Suggestions to Fix
+------------------
+
+Update the migrated Input/Output distance according to the computing direction.
+If the direction is forward computing, Input/Output distance should map to FWD/BWD_DISTANCE.
+If the direction is backward computing, Input/Output distance should map to BWD/FWD_DISTANCE.

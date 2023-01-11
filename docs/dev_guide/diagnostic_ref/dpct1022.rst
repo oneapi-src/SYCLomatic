@@ -1,0 +1,28 @@
+.. _id_DPCT1022:
+
+DPCT1022
+========
+
+Message
+-------
+
+.. _msg-1022-start:
+
+There is no exact match between the ``maxGridSize`` and the ``max_nd_range`` size.
+Verify the correctness of the code.
+
+.. _msg-1022-end:
+
+Detailed Help
+-------------
+
+There is no analogue of the ``maxGridSize`` in SYCL\*. SYCL ``nd_ranges`` can have
+up to three dimensions, just like grids in CUDA, but there is no maximum of
+``nd_range`` size beyond the data type width, which is ``size_t``. The
+|tool_name| replaces the ``maxGridSize`` with the ``max_nd_range_size``
+helper, which is initialized to the ``size_t`` width.
+
+Suggestions to Fix
+------------------
+
+Verify the code correctness.

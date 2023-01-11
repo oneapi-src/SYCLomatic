@@ -1,0 +1,26 @@
+.. _id_DPCT1014:
+
+DPCT1014
+========
+
+Message
+-------
+
+.. _msg-1014-start:
+
+The flag and priority options are not supported for SYCL queues. The output
+parameter(s) are set to 0.
+
+.. _msg-1014-end:
+
+Detailed Help
+-------------
+
+The flag and priority options are not supported in the SYCL\* queue. You may need
+to rewrite the generated code.
+
+
+Suggestions to Fix
+------------------
+
+Review the logic and adjust it.

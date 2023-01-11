@@ -1,0 +1,47 @@
+.. _id_DPCT1018:
+
+DPCT1018
+========
+
+Message
+-------
+
+.. _msg-1018-start:
+
+The *<API name>* was migrated, but due to *<reason>*, the generated code
+performance may be sub-optimal.
+
+.. _msg-1018-end:
+
+Detailed Help
+-------------
+
+This warning appears in the following cases:
+
+* Migration of the ``cublasSetMatrix`` function.
+  |tool_name| replaced the ``cublasSetMatrix`` with memory copying
+  from the host to the device. When the ``rows`` parameter of the
+  ``cublasSetMatrix`` is smaller than the ``lda`` parameter, the generated code
+  copies more data (``lda*cols``) than the actual data available in the matrix
+  (``rows*cols``).
+
+  To improve performance, consider changing the values of ``lda`` and ``ldb``.
+  If the rows parameter is greater than or equal to ``lda``, no action is
+  required for this code.
+* Migration of the ``cublasSetVector`` function.
+  |tool_name| replaced the ``cublasSetVector`` with memory copying from the host
+  to the device. When the ``incx`` parameter of the ``cublasSetVector`` equals
+  the ``incy`` parameter, but is greater than 1, the generated code copies more
+  data (``incx*n``) than the actual data available in the vector (``n``). To
+  improve performance, consider changing the values of ``incx`` and ``incy``.
+
+Suggestions to Fix
+------------------
+
+If the rows parameter of the ``cublasSetMatrix`` is smaller than the ``lda``
+parameter and you observe performance issues, consider changing the values of
+``lda`` and ``ldb``.
+
+If the ``incx`` parameter of the ``cublasSetVector`` equals the ``incy`` parameter,
+but is greater than 1 and you observe performance issues, consider changing the
+values of ``incx`` and ``incy``.

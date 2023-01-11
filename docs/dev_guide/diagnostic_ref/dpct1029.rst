@@ -1,0 +1,28 @@
+.. _id_DPCT1029:
+
+DPCT1029
+========
+
+Message
+-------
+
+.. _msg-1029-start:
+
+SYCL currently does not support getting device resource limits. The output
+parameter(s) are set to 0.
+
+.. _msg-1029-end:
+
+Detailed Help
+-------------
+
+SYCL currently does not support getting device resource limits. The output
+parameter(s) are set to 0.
+
+Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
+for help.
+
+Suggestions to Fix
+------------------
+
+Review the logic and adjust it manually.

@@ -1,0 +1,59 @@
+.. _id_DPCT1060:
+
+DPCT1060
+========
+
+Message
+-------
+
+.. _msg-1060-start:
+
+SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.
+
+.. _msg-1060-end:
+
+Detailed Help
+-------------
+
+This warning is emitted when the number of dimensions of memory in the original
+code exceeds 3. Since SYCL\* range supports only 1, 2 or 3 dimensions, the resulting
+code is not SYCL-compliant.
+
+To fix the resulting code you can use the low-dimensional arrays to simulate
+high-dimensional arrays.
+
+The following fix example demonstrates how to use a 3D array to simulate a 4D array.
+
+The following migrated DPC++ code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // migrated DPC++ code:
+
+   dpct::constant_memory<int, 4> array(dimX, dimY, dimZ, dimW);
+   void kernel(sycl::id<1> idx,
+               dpct::accessor<int, dpct::constant, 4> const_array) {
+     ...
+         ... = const_array[x][y][z][w];
+     ...
+   }
+
+is manually adjusted to:
+
+.. code-block:: cpp
+   :linenos:
+
+   // manually adjusted code:
+
+   dpct::constant_memory<int, 3> array(dimX, dimY, dimZ * dimW);
+   void kernel(sycl::id<1> idx,
+               dpct::accessor<int, dpct::constant, 3> const_array) {
+     ... = const_array[x][y][w * dimZ + z];
+     ...
+   }
+
+Suggestions to Fix
+------------------
+
+You may need to rewrite this code.

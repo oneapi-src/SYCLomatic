@@ -1,0 +1,24 @@
+.. _id_DPCT1090:
+
+DPCT1090
+========
+
+Message
+-------
+
+.. _msg-1090-start:
+
+SYCL does not support the device property that would be functionally compatible with *<property name>*. It was not migrated. You need to rewrite the code.
+
+.. _msg-1090-end:
+
+Detailed Help
+-------------
+
+Not all CUDA\* device properties have functionally compatible equivalents in
+SYCL. These device properties are not migrated.
+
+Suggestions to Fix
+------------------
+
+Review and rewrite the code manually.

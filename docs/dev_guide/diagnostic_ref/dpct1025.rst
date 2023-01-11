@@ -1,0 +1,24 @@
+.. _id_DPCT1025:
+
+DPCT1025
+========
+
+Message
+-------
+
+.. _msg-1025-start:
+
+The SYCL queue is created ignoring the flag and priority options.
+
+.. _msg-1025-end:
+
+Detailed Help
+-------------
+
+The flag and priority options are not supported when creating the SYCL\* queue.
+You may need to rewrite the generated code.
+
+Suggestions to Fix
+------------------
+
+Verify the code correctness.

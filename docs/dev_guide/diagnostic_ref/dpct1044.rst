@@ -1,0 +1,48 @@
+.. _id_DPCT1044:
+
+DPCT1044
+========
+
+Message
+-------
+
+.. _msg-1044-start:
+
+*<BaseClass1>* was removed because *<BaseClass2>* has been deprecated in
+C++11. You may need to remove references to typedefs from *<BaseClass1>* in the
+class definition.
+
+.. _msg-1044-end:
+
+Detailed Help
+-------------
+
+*<BaseClass#>* is either ``unary_function`` or ``binary_function``. The ``std::``
+equivalents for these classes are deprecated, and the use of these base classes
+is removed.
+
+Suggestions to Fix
+------------------
+
+If any of the typedef identifiers are referenced in the class definition, they
+should be replaced with the original template arguments.
+
+For example, the following code:
+
+.. code-block:: cpp
+   :linenos:
+
+   class C : thrust::unary_function<int, float> {
+     argument_type arg_data;
+     result_type result_data;
+   };
+
+is rewritten as:
+
+.. code-block:: cpp
+   :linenos:
+
+   class C {
+     int arg_data;
+     float result_data;
+   };

@@ -1,0 +1,31 @@
+.. _id_DPCT1049:
+
+DPCT1049
+========
+
+Message
+-------
+
+.. _msg-1049-start:
+
+The work-group size passed to the SYCL kernel may exceed the limit. To get the
+device limit, query ``info::device::max_work_group_size``. Adjust the work-group
+size if needed.
+
+.. _msg-1049-end:
+
+Detailed Help
+-------------
+
+The work-group size passed to the SYCL\* kernel for SYCL device has a limit (see
+SYCL 1.2.1 standard, 4.6.4.2 Device information descriptors).
+
+This warning appears if dimensions of the local range could not all be evaluated,
+or if the product of the dimensions of the local range is more than 256.
+
+Suggestions to Fix
+------------------
+
+Query ``info::device::max_work_group_size`` to define the work-group size limit
+for the device you use. If the work-group size used in the code is below the limit,
+you can ignore this warning. Otherwise, you need to decrease the work-group size.

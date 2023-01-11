@@ -1,0 +1,29 @@
+.. _id_DPCT1019:
+
+DPCT1019
+========
+
+Message
+-------
+
+.. _msg-1019-start:
+
+``local_mem_size`` in SYCL is not a complete equivalent of *<variable name>* in
+CUDA. You may need to adjust the code.
+
+.. _msg-1019-end:
+
+Detailed Help
+-------------
+
+In CUDA\*, the ``sharedMemPerBlock`` reports the size of the shared memory in bytes
+available per block. The SYCL\* equivalent of a CUDA block is a work-group. The SYCL
+equivalent of shared memory is local memory. There is no limitation on the size of
+the local memory per work-group in SYCL. There is a limit on the maximum size of
+the local memory in bytes available per compute unit, which is exposed by the
+``info::device::local_mem_size`` device descriptor in SYCL.
+
+Suggestions to Fix
+------------------
+
+Verify the code correctness.
