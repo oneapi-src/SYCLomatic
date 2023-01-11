@@ -1406,12 +1406,6 @@ inline auto UseNDRangeBarrier = [](const CallExpr *C) -> bool {
 inline auto UseLogicalGroup = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useLogicalGroup();
 };
-inline auto UseCAndCXXStandardLibrariesExt = [](const CallExpr *C) -> bool {
-  return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
-};
-inline auto UseIntelDeviceMath = [](const CallExpr *C) -> bool {
-  return DpctGlobalInfo::useIntelDeviceMath();
-};
 
 class CheckDerefedTypeBeforeCast {
   unsigned Idx;
@@ -1602,23 +1596,21 @@ public:
   bool operator()(const CallExpr *C) { return needExtraParens(C->getArg(Idx)); }
 };
 
-class IsIntegerType {
+class IsParameterIntegerType {
   unsigned Idx;
 public:
-  IsIntegerType(unsigned Idx) : Idx(Idx) {}
+  IsParameterIntegerType(unsigned Idx) : Idx(Idx) {}
   bool operator()(const CallExpr *C) {
     return C->getArg(Idx)->getType()->isIntegerType();
   }
 };
 
-class IsDefinedInCUDA {
+class IsArgumentIntegerType {
+  unsigned Idx;
 public:
-  IsDefinedInCUDA() {}
+  IsArgumentIntegerType(unsigned Idx) : Idx(Idx) {}
   bool operator()(const CallExpr *C) {
-    auto FD = C->getDirectCallee();
-    if (!FD)
-      return false;
-    return dpct::DpctGlobalInfo::isInCudaPath(FD->getLocation());
+    return C->getArg(Idx)->IgnoreImpCasts()->getType()->isIntegerType();
   }
 };
 

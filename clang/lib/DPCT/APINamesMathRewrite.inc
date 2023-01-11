@@ -6,28 +6,24 @@
 //
 //===----------------------------------------------------------------------===//
 
-// Policies to migrate math functions with new rewriter:
-// 1) Functions with __device__ attribute but without __host__
-//    attribute are treated as device functions;
-// 2) Functions whose calling functions are augmented with __device__
-//    or __global__ attributes are treated as device functions;
-// 3) Other functions are treated as host functions.
-//    eg. "__host__ __device__ fabs()" falls in 3) if fabs is not called in
-//    device or kernel
-
-CONDITIONAL_FACTORY_ENTRY(
-    makeCheckOr(
-        makeCheckAnd(
-            HasDirectCallee(),
-            makeCheckAnd(
-                IsDirectCalleeHasAttribute<CUDADeviceAttr>(),
-                makeCheckNot(IsDirectCalleeHasAttribute<CUDAHostAttr>()))),
-        makeCheckOr(IsContextCallHasAttribute<CUDADeviceAttr>(),
-                    IsContextCallHasAttribute<CUDAGlobalAttr>())),
-    CALL_FACTORY_ENTRY("rsqrt",
-                       CALL(MapNames::getClNamespace(false, true) + "rsqrt",
-                            CAST_IF_NEED(makeLiteral("double"), ARG(0)))),
-    NO_REWRITE_FUNCNAME_FACTORY_ENTRY("rsqrt", "rsqrt"))
+MATH_API_REWRITER_HOST_DEVICE(
+    MATH_API_REWRITER_HOST(
+        "rsqrt",
+        CALL_FACTORY_ENTRY(
+            "rsqrt", CALL(MapNames::getClNamespace(false, true) + "rsqrt",
+                          ARG(0)))),
+    MATH_API_REWRITER_DEVICE(
+        "rsqrt",
+        MATH_API_DEVICE_NODES(
+            CALL_FACTORY_ENTRY(
+                "rsqrt", CALL(MapNames::getClNamespace(false, true) + "rsqrt",
+                              ARG(0))),
+            EMPTY_FACTORY_ENTRY("rsqrt"),
+            EMPTY_FACTORY_ENTRY("rsqrt"),
+            EMPTY_FACTORY_ENTRY("rsqrt")
+        )
+    )
+)
 
 CONDITIONAL_FACTORY_ENTRY(
     makeCheckOr(
@@ -39,10 +35,10 @@ CONDITIONAL_FACTORY_ENTRY(
         makeCheckOr(IsContextCallHasAttribute<CUDADeviceAttr>(),
                     IsContextCallHasAttribute<CUDAGlobalAttr>())),
     CONDITIONAL_FACTORY_ENTRY(
-        UseCAndCXXStandardLibrariesExt,
+        math::UseStdLibdevice,
         HEADER_INSERT_FACTORY(HeaderType::HT_Stdlib, CALL_FACTORY_ENTRY("std::abs", CALL("std::abs", ARG(0)))),
         CONDITIONAL_FACTORY_ENTRY(
-            IsIntegerType(0),
+            IsParameterIntegerType(0),
             CALL_FACTORY_ENTRY(
                 "std::abs",
                 CALL(MapNames::getClNamespace(false, true) + "abs", ARG(0))),
@@ -50,7 +46,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 "std::abs",
                 CALL(MapNames::getClNamespace(false, true) + "fabs", ARG(0))))),
     CONDITIONAL_FACTORY_ENTRY(
-        IsDefinedInCUDA(),
+        math::IsDefinedInCUDA(),
         HEADER_INSERT_FACTORY(HeaderType::HT_Stdlib, NO_REWRITE_FUNCNAME_FACTORY_ENTRY("std::abs", "std::abs")),
         NO_REWRITE_FUNCNAME_FACTORY_ENTRY("std::abs", "std::abs")
     ))
@@ -65,10 +61,10 @@ CONDITIONAL_FACTORY_ENTRY(
         makeCheckOr(IsContextCallHasAttribute<CUDADeviceAttr>(),
                     IsContextCallHasAttribute<CUDAGlobalAttr>())),
     CONDITIONAL_FACTORY_ENTRY(
-        UseCAndCXXStandardLibrariesExt,
+        math::UseStdLibdevice,
         HEADER_INSERT_FACTORY(HeaderType::HT_Stdlib, CALL_FACTORY_ENTRY("abs", CALL("std::abs", ARG(0)))),
         CONDITIONAL_FACTORY_ENTRY(
-            IsIntegerType(0),
+            IsParameterIntegerType(0),
             CALL_FACTORY_ENTRY(
                 "abs",
                 CALL(MapNames::getClNamespace(false, true) + "abs", ARG(0))),
@@ -76,20 +72,20 @@ CONDITIONAL_FACTORY_ENTRY(
                 "abs",
                 CALL(MapNames::getClNamespace(false, true) + "fabs", ARG(0))))),
     CONDITIONAL_FACTORY_ENTRY(
-        IsDefinedInCUDA(),
+        math::IsDefinedInCUDA(),
         HEADER_INSERT_FACTORY(HeaderType::HT_Stdlib, NO_REWRITE_FUNCNAME_FACTORY_ENTRY("abs", "std::abs")),
         NO_REWRITE_FUNCNAME_FACTORY_ENTRY("abs", "abs")
     ))
 
 CONDITIONAL_FACTORY_ENTRY(
-    IsDefinedInCUDA(),
+    math::IsDefinedInCUDA(),
     CALL_FACTORY_ENTRY("saturate",
                        CALL(MapNames::getClNamespace(false, true) + "clamp<float>",
                             ARG(0), ARG("0.0f"), ARG("1.0f"))),
     NO_REWRITE_FUNCNAME_FACTORY_ENTRY("saturate", "saturate"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         CALL_FACTORY_ENTRY("erfcinv",
@@ -99,7 +95,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("erfcinv"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         CALL_FACTORY_ENTRY("erfinv",
@@ -109,7 +105,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("erfinv"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         CALL_FACTORY_ENTRY("normcdf",
@@ -119,7 +115,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("normcdf"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         CALL_FACTORY_ENTRY("normcdfinv",
@@ -129,7 +125,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("normcdfinv"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         CALL_FACTORY_ENTRY(
@@ -140,7 +136,7 @@ CONDITIONAL_FACTORY_ENTRY(
                    MapNames::getClNamespace(false, true) + "fast_length"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         CALL_FACTORY_ENTRY(
@@ -151,7 +147,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("rnorm"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         CALL_FACTORY_ENTRY("erfcinvf",
@@ -161,7 +157,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("erfcinvf"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         CALL_FACTORY_ENTRY("erfinvf",
@@ -171,7 +167,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("erfinvf"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         CALL_FACTORY_ENTRY("normcdff",
@@ -181,7 +177,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("normcdff"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         CALL_FACTORY_ENTRY("normcdfinvf",
@@ -191,7 +187,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("normcdfinvf"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         CALL_FACTORY_ENTRY(
@@ -201,7 +197,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("normf"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         CALL_FACTORY_ENTRY(
@@ -212,7 +208,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("rnormf"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         ENTRY_RENAMED("__hadd2_sat", MapNames::getClNamespace() +
@@ -220,7 +216,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hadd2_sat"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         ENTRY_RENAMED("__hfma2_sat", MapNames::getClNamespace() +
@@ -228,7 +224,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hfma2_sat"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         ENTRY_RENAMED("__hmul2_sat", MapNames::getClNamespace() +
@@ -236,7 +232,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hmul2_sat"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(
         HeaderType::HT_SYCL_Math,
         ENTRY_RENAMED("__hsub2_sat", MapNames::getClNamespace() +
@@ -244,7 +240,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hsub2_sat"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hbeq2",
                                         MapNames::getClNamespace() +
@@ -252,7 +248,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hbeq2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hbequ2",
                                         MapNames::getClNamespace() +
@@ -260,7 +256,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hbequ2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hbge2",
                                         MapNames::getClNamespace() +
@@ -268,7 +264,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hbge2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hbgeu2",
                                         MapNames::getClNamespace() +
@@ -276,7 +272,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hbgeu2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hbgt2",
                                         MapNames::getClNamespace() +
@@ -284,7 +280,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hbgt2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hbgtu2",
                                         MapNames::getClNamespace() +
@@ -292,7 +288,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hbgtu2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hble2",
                                         MapNames::getClNamespace() +
@@ -300,7 +296,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hble2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hbleu2",
                                         MapNames::getClNamespace() +
@@ -308,7 +304,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hbleu2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hblt2",
                                         MapNames::getClNamespace() +
@@ -316,7 +312,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hblt2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hbltu2",
                                         MapNames::getClNamespace() +
@@ -324,7 +320,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hbltu2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hbne2",
                                         MapNames::getClNamespace() +
@@ -332,7 +328,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hbne2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hbneu2",
                                         MapNames::getClNamespace() +
@@ -340,7 +336,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hbneu2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__heq2",
                                         MapNames::getClNamespace() +
@@ -348,7 +344,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__heq2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hequ2",
                                         MapNames::getClNamespace() +
@@ -356,7 +352,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hequ2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hge2",
                                         MapNames::getClNamespace() +
@@ -364,7 +360,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hge2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hgeu2",
                                         MapNames::getClNamespace() +
@@ -372,7 +368,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hgeu2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hgt2",
                                         MapNames::getClNamespace() +
@@ -380,7 +376,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hgt2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hgtu2",
                                         MapNames::getClNamespace() +
@@ -388,7 +384,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hgtu2"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hadd_sat",
                                         MapNames::getClNamespace() +
@@ -396,7 +392,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hadd_sat"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hfma_sat",
                                         MapNames::getClNamespace() +
@@ -404,7 +400,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hfma_sat"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hmul_sat",
                                         MapNames::getClNamespace() +
@@ -412,7 +408,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hmul_sat"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hsub_sat",
                                         MapNames::getClNamespace() +
@@ -420,7 +416,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hsub_sat"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hequ",
                                         MapNames::getClNamespace() +
@@ -428,7 +424,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hequ"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hgeu",
                                         MapNames::getClNamespace() +
@@ -436,7 +432,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hgeu"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hgtu",
                                         MapNames::getClNamespace() +
@@ -444,7 +440,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hgtu"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hleu",
                                         MapNames::getClNamespace() +
@@ -452,7 +448,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hleu"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hltu",
                                         MapNames::getClNamespace() +
@@ -460,7 +456,7 @@ CONDITIONAL_FACTORY_ENTRY(
     ENTRY_UNSUPPORTED("__hltu"))
 
 CONDITIONAL_FACTORY_ENTRY(
-    UseIntelDeviceMath,
+    math::UseIntelDeviceMath,
     HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
                           ENTRY_RENAMED("__hneu",
                                         MapNames::getClNamespace() +
