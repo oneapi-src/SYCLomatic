@@ -654,7 +654,7 @@ public:
 // Device|device_ext_get_global_mem_size
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  int get_global_mem_size() const {
+  size_t get_global_mem_size() const {
     return get_device_info().get_global_mem_size();
   }
 // DPCT_LABEL_END
@@ -789,14 +789,9 @@ public:
     int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
     prop.set_max_nd_range_size(max_nd_range_size);
 
-    // Simulate the max register size per work group = (max work group size /
-    // min sub group size) * (each hardware thread register num *
-    // each register size).
-    // The hardware thread register num 128 and the register size 32 bytes are
-    // based on the Xe architecture graphics EU. Feel free to update the value
+    // Estimates max register size per work group, feel free to update the value
     // according to device properties.
-    prop.set_max_register_size_per_work_group(
-      (get_info<sycl::info::device::max_work_group_size>() / 8) * (128 * 32));
+    prop.set_max_register_size_per_work_group(65536);
 
     out = prop;
   }
