@@ -214,7 +214,7 @@ void CuDNNAPIRule::runRule(
     auto FileInfo = Global.insertFile(CELocInfo.first);
     auto &BackwardFuncInfo = FileInfo->getRnnBackwardFuncInfo();
     auto &RnnInputMap = DpctGlobalInfo::getRnnInputMap();
-    unsigned BeginOffset = Global.getLocInfo(CERange.getBegin()).second;
+    unsigned BeginOffset = CELocInfo.second;
     unsigned EndOffset = Global.getLocInfo(CERange.getEnd()).second;
     FuncInfo.isAssigned = IsAssigned;
     FuncInfo.Length = EndOffset - BeginOffset + 1;

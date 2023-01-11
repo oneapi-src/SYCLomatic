@@ -412,6 +412,8 @@ class RnnBackwardFuncInfoBuilder {
 public:
   RnnBackwardFuncInfoBuilder(std::vector<RnnBackwardFuncInfo> &Infos)
       : RBFuncInfo(Infos){};
+  // This function check if the RNN function input referenced between
+  // backwarddata and backwardweight functiona call.
   bool isInputNotChanged(InfoIter Data, InfoIter Weight) {
     for (auto RnnInput : Data->RnnInputDeclLoc) {
       auto &RnnInputRefs =
@@ -425,6 +427,8 @@ public:
     }
     return true;
   }
+  // This function check if the backwarddata and backwardweight function
+  // call have same input.
   bool isInputSame(InfoIter Data, InfoIter Weight) {
     for (unsigned InputIndex = 0; InputIndex < 3; InputIndex++) {
       if (Data->RnnInputDeclLoc[InputIndex] !=
@@ -434,6 +438,15 @@ public:
     }
     return true;
   }
+  // This function check if the backwarddata and backwardweight function in
+  // the same scope and backwardweight called after backwarddata.
+  // For example, function will return ture for pattern in following pseudo
+  // code:
+  //   if(...) {
+  //     backwarddata(...);
+  //     ..
+  //     backwardweight(...);
+  //   }
   bool isValidScopeAndOrder(InfoIter Data, InfoIter Weight) {
     return !((Data->CompoundLoc != Weight->CompoundLoc) &&
            (Data->Offset >= Weight->Offset));
@@ -514,6 +527,8 @@ public:
     }
     DataRepl << DataFuncInfo.FuncArgs[0] << ".async_rnn_backward("
              << DataFuncInfo.FuncArgs[1];
+    // Combine 21 args from backwarddata and 2 args from backwardweight
+    // into args of async_rnn_backward.
     for (unsigned int index = 3; index <= 21; index++) {
       DataRepl << ", " << DataFuncInfo.FuncArgs[index];
       if (index == 6) {

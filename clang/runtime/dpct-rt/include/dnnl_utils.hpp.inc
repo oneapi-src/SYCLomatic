@@ -684,7 +684,7 @@ enum class rnn_direction {unidirectional, bidirectional};
 // DnnlUtils|rnn_direction
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-/// A class holding description for a convolution operation.
+/// A class holding description for a RNN operation.
 class rnn_desc {
   rnn_mode _mode;
   rnn_bias_mode _bias_mode;
@@ -2053,7 +2053,7 @@ public:
   /// \param [in] scratchpad Pointer to scratchpad data.
   /// \param [in] workspace_size Size of workspace memory.
   /// \param [in] workspace Pointer to workspace data.
-  /// \returns An event representing the rnn forward operations.
+  /// \returns An event representing the status of rnn forward operations.
   sycl::event async_rnn_forward(const rnn_desc &desc, ::dnnl::prop_kind kind,
                                const memory_desc_ext &src_desc, void *src,
                                const memory_desc_ext &dst_desc, void *dst,
@@ -2074,7 +2074,7 @@ public:
 // DnnlUtils|rnn_direction
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  /// Computing the bias gradient of a specified rnn function
+  /// Computing the data and weight gradient of a specified rnn function
   /// asynchronously.
   /// \param [in] desc RNN descriptor.
   /// \param [in] dst_desc Destination memory descriptor.
@@ -2098,7 +2098,7 @@ public:
   /// \param [in] scratchpad Pointer to scratchpad data.
   /// \param [in] workspace_size Size of workspace memory.
   /// \param [in] workspace Pointer to workspace data.
-  /// \returns An event representing the rnn backward operations.
+  /// \returns An event representing the status of rnn backward operations.
   sycl::event async_rnn_backward(
       const rnn_desc &desc, const memory_desc_ext &dst_desc, void *dst,
       void *diff_dst, const memory_desc_ext &src_desc, void *src,
@@ -2980,6 +2980,9 @@ sycl::event engine_ext::rnn_forward_internal(
                         &gate_num);
 
   if (direction == rnn_direction::bidirectional) {
+    // DPCT need to combine the oneDNN bidirectional_sum and 
+    // bidirectional_concat config, so call execute_rnn_forward_primitive
+    // twice.
     if (layer_size > 1) {
       if (!is_get_execution_args) {
         input_layer_cache = allocate(src_desc);
