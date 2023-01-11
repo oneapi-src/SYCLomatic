@@ -19,8 +19,10 @@
 
 #if defined(__has_include) && __has_include(<filesystem>)
 #include <filesystem>
-#else
+#elif defined(__has_include) && __has_include(<experimental/filesystem>)
 #include <experimental/filesystem>
+#else
+#error "SYCLomatic runtime requires C++ filesystem support"
 #endif
 
 #include <random>
