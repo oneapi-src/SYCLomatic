@@ -9,7 +9,7 @@
 #ifndef DPCT_BLAS_API_MIGRAION_H
 #define DPCT_BLAS_API_MIGRAION_H
 
-#include "CallExprRewriter.h"
+#include "Rewriters/CallExprRewriter.h"
 
 namespace clang {
 namespace dpct {

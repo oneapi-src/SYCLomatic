@@ -9,7 +9,7 @@
 #include "LIBCUAPIMigration.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "CallExprRewriter.h"
+#include "Rewriters/CallExprRewriter.h"
 #include "Diagnostics.h"
 #include "MapNames.h"
 #include "Statics.h"

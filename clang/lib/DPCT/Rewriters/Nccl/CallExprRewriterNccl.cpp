@@ -1,4 +1,4 @@
-//===--------------- CallExprRewriterCUBLAS.cpp ---------------------------===//
+//===--------------- CallExprRewriterNccl.cpp -----------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,17 +6,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "CallExprRewriter.h"
-#include "CallExprRewriterCommon.h"
+#include "../CallExprRewriter.h"
+#include "../CallExprRewriterCommon.h"
 
 namespace clang {
 namespace dpct {
-
-void CallExprRewriterFactoryBase::initRewriterMapCUBLAS() {
+void CallExprRewriterFactoryBase::initRewriterMapNccl() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "CallExprRewriterCUBLAS.inc"
+#include "CallExprRewriterNccl.inc"
       }));
 }
 

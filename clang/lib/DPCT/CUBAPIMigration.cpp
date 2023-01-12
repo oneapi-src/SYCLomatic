@@ -9,7 +9,7 @@
 #include "CUBAPIMigration.h"
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
-#include "CallExprRewriter.h"
+#include "Rewriters/CallExprRewriter.h"
 #include "MigrationRuleManager.h"
 
 #include "clang/AST/Decl.h"

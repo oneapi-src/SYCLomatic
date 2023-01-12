@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 #include "Rules.h"
 #include "ASTTraversal.h"
-#include "CallExprRewriter.h"
+#include "Rewriters/CallExprRewriter.h"
 #include "Error.h"
 #include "MapNames.h"
 #include "MigrationRuleManager.h"

@@ -9,7 +9,7 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "BarrierFenceSpaceAnalyzer.h"
-#include "CallExprRewriter.h"
+#include "Rewriters/CallExprRewriter.h"
 #include "CustomHelperFiles.h"
 #include "ExprAnalysis.h"
 #include "FFTAPIMigration.h"
@@ -12005,7 +12005,7 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 #define ENTRY_TYPECAST(APINAME) APINAME,
 #define ENTRY_UNSUPPORTED(APINAME) APINAME,
 #define ENTRY_REWRITE(APINAME) APINAME,
-#include "CallExprRewriterMath.inc"
+#include "Rewriters/Math/CallExprRewriterMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED_SINGLE
@@ -12027,7 +12027,7 @@ void MathFunctionsRule::registerMatcher(MatchFinder &MF) {
 #define ENTRY_TYPECAST(APINAME)
 #define ENTRY_UNSUPPORTED(APINAME)
 #define ENTRY_REWRITE(APINAME) APINAME,
-#include "CallExprRewriterMath.inc"
+#include "Rewriters/Math/CallExprRewriterMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED_SINGLE

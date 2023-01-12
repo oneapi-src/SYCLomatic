@@ -6,9 +6,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "CallExprRewriter.h"
-#include "CallExprRewriterCommon.h"
-#include "CUBAPIMigration.h"
+#include "../CallExprRewriter.h"
+#include "../CallExprRewriterCommon.h"
+#include "../../CUBAPIMigration.h"
 
 namespace clang {
 namespace dpct {
@@ -77,7 +77,7 @@ void CallExprRewriterFactoryBase::initMethodRewriterMapCUB() {
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
 #define CLASS_METHOD_CALL
-#include "APINamesCUB.inc"
+#include "Rewriters/CUB/CallExprRewriterCUB.inc"
 #undef CLASS_METHOD_CALL
       }));
 }

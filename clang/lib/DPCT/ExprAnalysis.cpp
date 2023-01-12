@@ -11,7 +11,7 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "CUBAPIMigration.h"
-#include "CallExprRewriter.h"
+#include "Rewriters/CallExprRewriter.h"
 #include "DNNAPIMigration.h"
 #include "TypeLocRewriters.h"
 #include "clang/AST/DeclTemplate.h"
@@ -414,7 +414,7 @@ bool isMathFunction(std::string Name) {
 #define ENTRY_TYPECAST(APINAME) APINAME,
 #define ENTRY_UNSUPPORTED(APINAME) APINAME,
 #define ENTRY_REWRITE(APINAME)
-#include "CallExprRewriterMath.inc"
+#include "Rewriters/Math/CallExprRewriterMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED_SINGLE

@@ -9,7 +9,7 @@
 #include "MapNames.h"
 #include "ASTTraversal.h"
 #include "DNNAPIMigration.h"
-#include "CallExprRewriter.h"
+#include "Rewriters/CallExprRewriter.h"
 #include "SaveNewFiles.h"
 #include <map>
 
@@ -1261,7 +1261,7 @@ void MapNames::setExplicitNamespaceMap() {
 #define ENTRY_HOST(from, to, policy) ENTRY(from, to, policy)
 #define ENTRY_DEVICE(from, to, policy) ENTRY(from, to, policy)
 #define ENTRY_BOTH(from, to, policy) ENTRY(from, to, policy)
-#include "CallExprRewriterMapThrust.inc"
+#include "Rewriters/Thrust/CallExprRewriterMapThrust.inc"
 #undef ENTRY
 #undef ENTRY_HOST
 #undef ENTRY_DEVICE
@@ -1294,17 +1294,17 @@ void MapNames::setExplicitNamespaceMap() {
 #define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT)                                 \
   {#OBJNAME "." #APINAME, #OBJNAME "." #INTERFACENAME},
-#include "APINames.inc"
-#include "APINames_CUB.inc"
-#include "APINames_NCCL.inc"
-#include "APINames_cuBLAS.inc"
-#include "APINames_cuFFT.inc"
-#include "APINames_cuGRAPH.inc"
-#include "APINames_cuRAND.inc"
-#include "APINames_cuSOLVER.inc"
-#include "APINames_cuSPARSE.inc"
-#include "APINames_nvJPEG.inc"
-#include "APINames_thrust.inc"
+#include "API/APINames.inc"
+#include "API/APINames_CUB.inc"
+#include "API/APINames_NCCL.inc"
+#include "API/APINames_cuBLAS.inc"
+#include "API/APINames_cuFFT.inc"
+#include "API/APINames_cuGRAPH.inc"
+#include "API/APINames_cuRAND.inc"
+#include "API/APINames_cuSOLVER.inc"
+#include "API/APINames_cuSPARSE.inc"
+#include "API/APINames_nvJPEG.inc"
+#include "API/APINames_thrust.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
   };
@@ -1791,7 +1791,7 @@ void MapNames::setExplicitNamespaceMap() {
 #define ENTRY_TYPECAST(SOURCEAPINAME)
 #define ENTRY_UNSUPPORTED(SOURCEAPINAME)
 #define ENTRY_REWRITE(APINAME)
-#include "CallExprRewriterMath.inc"
+#include "Rewriters/Math/CallExprRewriterMath.inc"
 #undef ENTRY_RENAMED
 #undef ENTRY_RENAMED_NO_REWRITE
 #undef ENTRY_RENAMED_SINGLE
@@ -1865,7 +1865,7 @@ int MapNames::getArrayTypeSize(const int Dim) {
 
 const MapNames::MapTy MapNames::RemovedAPIWarningMessage{
 #define ENTRY(APINAME, MSG) {#APINAME, MSG},
-#include "APINames_removed.inc"
+#include "API/APINames_removed.inc"
 #undef ENTRY
 };
 
@@ -4271,19 +4271,19 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 #define ENTRY_MEMBER_FUNCTION(OBJNAME, INTERFACENAME, APINAME, VALUE, FLAG,    \
                               TARGET, COMMENT)                                 \
   {#OBJNAME "." #APINAME, VALUE},
-#include "APINames.inc"
-#include "APINames_CUB.inc"
-#include "APINames_NCCL.inc"
-#include "APINames_NVML.inc"
-#include "APINames_cuBLAS.inc"
-#include "APINames_cuFFT.inc"
-#include "APINames_cuGRAPH.inc"
-#include "APINames_cuRAND.inc"
-#include "APINames_cuSOLVER.inc"
-#include "APINames_cuSPARSE.inc"
-#include "APINames_nvJPEG.inc"
-#include "APINames_thrust.inc"
-#include "APINames_cuDNN.inc"
+#include "API/APINames.inc"
+#include "API/APINames_CUB.inc"
+#include "API/APINames_NCCL.inc"
+#include "API/APINames_NVML.inc"
+#include "API/APINames_cuBLAS.inc"
+#include "API/APINames_cuFFT.inc"
+#include "API/APINames_cuGRAPH.inc"
+#include "API/APINames_cuRAND.inc"
+#include "API/APINames_cuSOLVER.inc"
+#include "API/APINames_cuSPARSE.inc"
+#include "API/APINames_nvJPEG.inc"
+#include "API/APINames_thrust.inc"
+#include "API/APINames_cuDNN.inc"
 #undef ENTRY_MEMBER_FUNCTION
 #undef ENTRY
 };

@@ -10,7 +10,7 @@
 #include "ASTTraversal.h"
 #include "AnalysisInfo.h"
 #include "AutoComplete.h"
-#include "CallExprRewriter.h"
+#include "Rewriters/CallExprRewriter.h"
 #include "MemberExprRewriter.h"
 #include "TypeLocRewriters.h"
 #include "Checkpoint.h"

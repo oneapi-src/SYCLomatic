@@ -1,4 +1,4 @@
-//===--------------- CallExprRewriterCURAND.cpp ---------------------------===//
+//===--------------- CallExprRewriterCUSOLVER.cpp -------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,16 +6,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "CallExprRewriter.h"
-#include "CallExprRewriterCommon.h"
+#include "../CallExprRewriter.h"
+#include "../CallExprRewriterCommon.h"
 
 namespace clang {
 namespace dpct {
-void CallExprRewriterFactoryBase::initRewriterMapCURAND() {
+void CallExprRewriterFactoryBase::initRewriterMapCUSOLVER() {
   RewriterMap->merge(
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
-#include "CallExprRewriterCURAND.inc"
+#include "CallExprRewriterCUSOLVER.inc"
       }));
 }
 

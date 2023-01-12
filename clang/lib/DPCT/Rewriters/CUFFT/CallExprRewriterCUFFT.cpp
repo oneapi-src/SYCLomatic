@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "CallExprRewriter.h"
-#include "CallExprRewriterCommon.h"
+#include "../CallExprRewriter.h"
+#include "../CallExprRewriterCommon.h"
 
 namespace clang {
 namespace dpct {

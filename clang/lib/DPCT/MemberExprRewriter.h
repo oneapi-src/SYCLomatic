@@ -8,7 +8,7 @@
 #ifndef DPCT_MEMBEREXPR_H
 #define DPCT_MEMBEREXPR_H
 
-#include "CallExprRewriter.h"
+#include "Rewriters/CallExprRewriter.h"
 
 namespace clang {
 namespace dpct {
