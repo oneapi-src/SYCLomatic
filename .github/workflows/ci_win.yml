@@ -143,6 +143,21 @@ jobs:
           cd c2s.src/build
           rm -r tools/clang/test/dpct
           ninja check-clang-c2s -j8
+
+      - name: Set_CUDA_Env11.8
+        if: |
+          steps.Echo-Build-Success.outputs.build_success == 'true'
+        run: |
+          echo "CUDA_PATH=$CUDAROOT/v11.8" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Lit_CUDA11.8
+        if: |
+          steps.Echo-Build-Success.outputs.build_success == 'true'
+        run: |
+          cd c2s.src/build
+          rm -r tools/clang/test/dpct
+          ninja check-clang-c2s -j8
      
   windows-test:
     name: windows-test-${{ matrix.test_suite }}-cpu
