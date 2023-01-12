@@ -4290,7 +4290,7 @@ std::map<std::string, bool> MigrationStatistics::MigrationTable{
 
 std::map<std::string, bool> MigrationStatistics::TypeMigrationTable{
 #define ENTRY_TYPE(TYPENAME, VALUE, FLAG, TARGET, COMMENT) {#TYPENAME, VALUE},
-#include "TypeNames.inc"
+#include "API/TypeNames.inc"
 #undef ENTRY_TYPE
 };
 

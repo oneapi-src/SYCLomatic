@@ -13,7 +13,7 @@
 #include "CUBAPIMigration.h"
 #include "Rewriters/CallExprRewriter.h"
 #include "DNNAPIMigration.h"
-#include "TypeLocRewriters.h"
+#include "Rewriters/TypeLocRewriters.h"
 #include "clang/AST/DeclTemplate.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprConcepts.h"
@@ -23,7 +23,7 @@
 #include "clang/AST/StmtGraphTraits.h"
 #include "clang/AST/StmtObjC.h"
 #include "clang/AST/StmtOpenMP.h"
-#include "MemberExprRewriter.h"
+#include "Rewriters/MemberExprRewriter.h"
 
 extern std::string DpctInstallPath;
 namespace clang {

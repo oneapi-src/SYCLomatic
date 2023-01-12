@@ -33,7 +33,7 @@
 #include "llvm/ADT/StringSet.h"
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/Path.h"
-#include "MemberExprRewriter.h"
+#include "Rewriters/MemberExprRewriter.h"
 
 #include <algorithm>
 #include <iostream>
