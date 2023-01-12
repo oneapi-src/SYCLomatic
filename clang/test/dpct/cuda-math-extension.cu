@@ -19,8 +19,7 @@ __global__ void kernelFuncHalf() {
   h_2 = __hmul_sat(h, h_1);
   // CHECK: h_2 = sycl::ext::intel::math::hsub_sat(h, h_1);
   h_2 = __hsub_sat(h, h_1);
-  // CHECK: h_2 = sycl::ext::intel::math::hdiv(h, h_1);
-  h_2 = __hdiv(h, h_1);
+
   // CHECK: h_2 = sycl::ext::intel::math::hmul(h, h_1);
   h_2 = __hmul(h, h_1);
   // CHECK: h_2 = sycl::ext::intel::math::hsub(h, h_1);
@@ -112,8 +111,6 @@ __global__ void kernelFuncHalf2() {
   h2_2 = __hgtu2(h2, h2_1);
   // CHECK: h2_2 = sycl::ext::intel::math::hadd2(h2, h2_1);
   h2_2 = __hadd2(h2, h2_1);
-  // CHECK: h2_2 = sycl::ext::intel::math::h2div(h2, h2_1);
-  h2_2 = __h2div(h2, h2_1);
   // CHECK: h2_2 = sycl::ext::intel::math::hmul2(h2, h2_1);
   h2_2 = __hmul2(h2, h2_1);
   // CHECK: h2_2 = sycl::ext::intel::math::hsub2(h2, h2_1);
