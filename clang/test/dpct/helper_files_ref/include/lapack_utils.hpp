@@ -11,6 +11,7 @@
 
 #include "memory.hpp"
 #include "util.hpp"
+#include "lib_common_utils.hpp"
 
 #include <oneapi/mkl.hpp>
 #include <sycl/sycl.hpp>
@@ -353,6 +354,292 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
   return 0;
 #endif
 }
+
+namespace detail {
+inline int getrfnp(sycl::queue &q, std::int64_t m, std::int64_t n,
+                   library_data_t a_type, void *a, std::int64_t lda,
+                   void *device_ws, size_t device_ws_size, int *info) {
+#define CASE(TYPE_NAME, TYPE)                                                  \
+  case TYPE_NAME: {                                                            \
+    std::int64_t a_stride = m * lda;                                           \
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(a));       \
+    auto device_ws_data =                                                      \
+        dpct::detail::get_memory(reinterpret_cast<TYPE *>(device_ws));         \
+    oneapi::mkl::lapack::getrfnp_batch(q, m, n, a_data, lda, a_stride, 1,      \
+                                       device_ws_data,                         \
+                                       device_ws_size / sizeof(TYPE));         \
+    break;                                                                     \
+  }
+
+  try {
+    switch (a_type) {
+      CASE(library_data_t::real_float, float)
+      CASE(library_data_t::real_double, double)
+      CASE(library_data_t::complex_float, std::complex<float>)
+      CASE(library_data_t::complex_double, std::complex<double>)
+    default:
+      throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                            "the data type is unsupported");
+    }
+  } catch (oneapi::mkl::lapack::batch_error const &be) {
+    try {
+      std::rethrow_exception(be.exceptions()[0]);
+    } catch (oneapi::mkl::lapack::exception &e) {
+      std::cerr << "Unexpected exception caught during call to LAPACK API: "
+                   "getrfnp_batch"
+                << std::endl
+                << "reason: " << e.what() << std::endl
+                << "number: " << e.info() << std::endl;
+      int info_val = static_cast<int>(e.info());
+      dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
+                                memcpy_direction::host_to_device)
+          .wait();
+      return 1;
+    }
+  } catch (sycl::exception const &e) {
+    std::cerr << "Caught synchronous SYCL exception:" << std::endl
+              << "reason: " << e.what() << std::endl;
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int)).wait();
+    return 1;
+  }
+
+#undef CASE
+  dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+  return 0;
+}
+} // namespace detail
+
+inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
+                                 library_data_t a_type, std::int64_t lda,
+                                 size_t *device_ws_size) {
+#define CASE(TYPE_NAME, TYPE)                                                  \
+    case TYPE_NAME: {                                                          \
+      *device_ws_size =                                                        \
+          oneapi::mkl::lapack::getrf_scratchpad_size<TYPE>(q, m, n, lda);      \
+      break;                                                                   \
+    }
+  try {
+    switch (a_type) {
+      CASE(library_data_t::real_float, float)
+      CASE(library_data_t::real_double, double)
+      CASE(library_data_t::complex_float, std::complex<float>)
+      CASE(library_data_t::complex_double, std::complex<double>)
+    default:
+      throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                            "the data type is unsupported");
+    }
+  } catch (oneapi::mkl::lapack::exception const &e) {
+    std::cerr << "Unexpected exception caught during call to LAPACK API: "
+                 "getrf_scratchpad_size"
+              << std::endl
+              << "reason: " << e.what() << std::endl
+              << "info: " << e.info() << std::endl;
+    return 1;
+  } catch (sycl::exception const &e) {
+    std::cerr << "Caught synchronous SYCL exception:" << std::endl
+              << "reason: " << e.what() << std::endl;
+    return 1;
+  }
+#undef CASE
+  return 0;
+}
+
+inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
+                 library_data_t a_type, void *a, std::int64_t lda,
+                 std::int64_t *ipiv, void *device_ws, size_t device_ws_size,
+                 int *info) {
+  if (ipiv == nullptr) {
+    return detail::getrfnp(q, m, n, a_type, a, lda, device_ws, device_ws_size,
+                           info);
+  }
+  auto ipiv_data = dpct::detail::get_memory(ipiv);
+
+#define CASE(TYPE_NAME, TYPE)                                                  \
+  case TYPE_NAME: {                                                            \
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(a));       \
+    auto device_ws_data =                                                      \
+        dpct::detail::get_memory(reinterpret_cast<TYPE *>(device_ws));         \
+    oneapi::mkl::lapack::getrf(q, m, n, a_data, lda, ipiv_data,                \
+                               device_ws_data, device_ws_size / sizeof(TYPE)); \
+    break;                                                                     \
+  }
+
+  try {
+    switch (a_type) {
+      CASE(library_data_t::real_float, float)
+      CASE(library_data_t::real_double, double)
+      CASE(library_data_t::complex_float, std::complex<float>)
+      CASE(library_data_t::complex_double, std::complex<double>)
+    default:
+      throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                            "the data type is unsupported");
+    }
+  } catch (oneapi::mkl::lapack::exception const &e) {
+    std::cerr << "Unexpected exception caught during call to LAPACK API: getrf"
+              << std::endl
+              << "reason: " << e.what() << std::endl
+              << "info: " << e.info() << std::endl
+              << "detail: " << e.detail() << std::endl;
+    int info_val = static_cast<int>(e.info());
+    dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
+                              memcpy_direction::host_to_device)
+        .wait();
+    return 1;
+  } catch (sycl::exception const &e) {
+    std::cerr << "Caught synchronous SYCL exception:" << std::endl
+              << "reason: " << e.what() << std::endl;
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int)).wait();
+    return 1;
+  }
+
+#undef CASE
+  dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+  return 0;
+}
+
+inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
+                 std::int64_t nrhs, library_data_t a_type, void *a,
+                 std::int64_t lda, std::int64_t *ipiv, library_data_t b_type,
+                 void *b, std::int64_t ldb, int *info) {
+  auto ipiv_data = dpct::detail::get_memory(ipiv);
+  void *device_ws = nullptr;
+
+#define CASE(TYPE_NAME, TYPE)                                                  \
+  case TYPE_NAME: {                                                            \
+    std::int64_t device_ws_size =                                              \
+        oneapi::mkl::lapack::getrs_scratchpad_size<TYPE>(q, trans, n, nrhs,    \
+                                                         lda, ldb);            \
+    device_ws = dpct::detail::dpct_malloc(device_ws_size * sizeof(TYPE), q);   \
+    auto device_ws_data =                                                      \
+        dpct::detail::get_memory(reinterpret_cast<TYPE *>(device_ws));         \
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(a));       \
+    auto b_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(b));       \
+    oneapi::mkl::lapack::getrs(q, trans, n, nrhs, a_data, lda, ipiv_data,      \
+                               b_data, ldb, device_ws_data, device_ws_size);   \
+    break;                                                                     \
+  }
+
+  try {
+    switch (a_type) {
+      CASE(library_data_t::real_float, float)
+      CASE(library_data_t::real_double, double)
+      CASE(library_data_t::complex_float, std::complex<float>)
+      CASE(library_data_t::complex_double, std::complex<double>)
+    default:
+      throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                            "the data type is unsupported");
+    }
+  } catch (oneapi::mkl::lapack::exception const &e) {
+    std::cerr << "Unexpected exception caught during call to LAPACK API: "
+                 "getrs/getrs_scratchpad_size"
+              << std::endl
+              << "reason: " << e.what() << std::endl
+              << "info: " << e.info() << std::endl
+              << "detail: " << e.detail() << std::endl;
+    int info_val = static_cast<int>(e.info());
+    dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
+                              memcpy_direction::host_to_device)
+        .wait();
+    if (device_ws)
+      dpct::dpct_free(device_ws, q);
+    return 1;
+  } catch (sycl::exception const &e) {
+    std::cerr << "Caught synchronous SYCL exception:" << std::endl
+              << "reason: " << e.what() << std::endl;
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int)).wait();
+    if (device_ws)
+      dpct::dpct_free(device_ws, q);
+    return 1;
+  }
+
+#undef CASE
+  dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+  return 0;
+}
+
+inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
+                                 library_data_t a_type, std::int64_t lda,
+                                 size_t *device_ws_size) {
+#define CASE(TYPE_NAME, TYPE)                                                  \
+    case TYPE_NAME: {                                                          \
+      *device_ws_size =                                                        \
+          oneapi::mkl::lapack::geqrf_scratchpad_size<TYPE>(q, m, n, lda);      \
+      break;                                                                   \
+    }
+  try {
+    switch (a_type) {
+      CASE(library_data_t::real_float, float)
+      CASE(library_data_t::real_double, double)
+      CASE(library_data_t::complex_float, std::complex<float>)
+      CASE(library_data_t::complex_double, std::complex<double>)
+    default:
+      throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                            "the data type is unsupported");
+    }
+  } catch (oneapi::mkl::lapack::exception const &e) {
+    std::cerr << "Unexpected exception caught during call to LAPACK API: "
+                 "geqrf_scratchpad_size"
+              << std::endl
+              << "reason: " << e.what() << std::endl
+              << "info: " << e.info() << std::endl;
+    return 1;
+  } catch (sycl::exception const &e) {
+    std::cerr << "Caught synchronous SYCL exception:" << std::endl
+              << "reason: " << e.what() << std::endl;
+    return 1;
+  }
+#undef CASE
+  return 0;
+}
+
+inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
+                 library_data_t a_type, void *a, std::int64_t lda,
+                 library_data_t tau_type, void *tau, void *device_ws,
+                 size_t device_ws_size, int *info) {
+#define CASE(TYPE_NAME, TYPE)                                                  \
+  case TYPE_NAME: {                                                            \
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(a));       \
+    auto tau_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(tau));   \
+    auto device_ws_data =                                                      \
+        dpct::detail::get_memory(reinterpret_cast<TYPE *>(device_ws));         \
+    oneapi::mkl::lapack::geqrf(q, m, n, a_data, lda, tau_data, device_ws_data, \
+                               device_ws_size / sizeof(TYPE));                 \
+    break;                                                                     \
+  }
+
+  try {
+    switch (a_type) {
+      CASE(library_data_t::real_float, float)
+      CASE(library_data_t::real_double, double)
+      CASE(library_data_t::complex_float, std::complex<float>)
+      CASE(library_data_t::complex_double, std::complex<double>)
+    default:
+      throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                            "the data type is unsupported");
+    }
+  } catch (oneapi::mkl::lapack::exception const &e) {
+    std::cerr << "Unexpected exception caught during call to LAPACK API: geqrf"
+              << std::endl
+              << "reason: " << e.what() << std::endl
+              << "info: " << e.info() << std::endl
+              << "detail: " << e.detail() << std::endl;
+    int info_val = static_cast<int>(e.info());
+    dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
+                              memcpy_direction::host_to_device)
+        .wait();
+    return 1;
+  } catch (sycl::exception const &e) {
+    std::cerr << "Caught synchronous SYCL exception:" << std::endl
+              << "reason: " << e.what() << std::endl;
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int)).wait();
+    return 1;
+  }
+
+#undef CASE
+  dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+  return 0;
+}
+
 } // namespace lapack
 } // namespace dpct
 
