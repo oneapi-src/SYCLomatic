@@ -482,6 +482,14 @@ inline int getrfnp(sycl::queue &q, std::int64_t m, std::int64_t n,
 // LibCommonUtils|library_data_t
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Computes the size of workspace memory of getrf function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [out] device_ws_size The workspace size in bytes.
 inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  library_data_t a_type, std::int64_t lda,
                                  size_t *device_ws_size) {
@@ -526,6 +534,20 @@ inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
 // Memory|dpct_memset_detail
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Computes the LU factorization of a general m-by-n matrix.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A. Overwritten by L and U. The unit
+/// diagonal elements of L are not stored.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [out] ipiv The pivot indices. If \p ipiv is nullptr, non-pivoting
+/// LU factorization is computed.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  std::int64_t *ipiv, void *device_ws, size_t device_ws_size,
@@ -590,6 +612,22 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
 // Memory|dpct_free
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Solves a system of linear equations with a LU-factored square coefficient
+/// matrix, with multiple right-hand sides.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] trans Indicates the form of the linear equation.
+/// \param [in] n The order of the matrix A and the number of rows in matrix B.
+/// \param [in] nrhs The number of right hand sides.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] a The input matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] ipiv The pivot indices.
+/// \param [in] b_type The data type of the matrix B.
+/// \param [in, out] b The matrix B, whose columns are the right-hand sides
+/// for the systems of equations.
+/// \param [in] ldb The leading dimension of the matrix B.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
                  std::int64_t nrhs, library_data_t a_type, void *a,
                  std::int64_t lda, std::int64_t *ipiv, library_data_t b_type,
@@ -656,6 +694,14 @@ inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
 // LibCommonUtils|library_data_t
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Computes the size of workspace memory of geqrf function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [out] device_ws_size The workspace size in bytes.
 inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  library_data_t a_type, std::int64_t lda,
                                  size_t *device_ws_size) {
@@ -700,6 +746,20 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
 // Memory|dpct_memset_detail
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Computes the QR factorization of a general m-by-n matrix.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A. Overwritten by the factorization data.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] tau_type The data type of the array tau.
+/// \param [in] tau The array contains scalars that define elementary reflectors
+/// for the matrix Q in its decomposition in a product of elementary reflectors.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  library_data_t tau_type, void *tau, void *device_ws,
