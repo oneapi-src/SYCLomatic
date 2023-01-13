@@ -2980,7 +2980,7 @@ sycl::event engine_ext::rnn_forward_internal(
                         &gate_num);
 
   if (direction == rnn_direction::bidirectional) {
-    // DPCT need to combine the oneDNN bidirectional_sum and 
+    // Here to combine the oneDNN bidirectional_sum and 
     // bidirectional_concat config, so call execute_rnn_forward_primitive
     // twice.
     if (layer_size > 1) {
