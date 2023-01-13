@@ -280,6 +280,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusolverEigType_t", std::make_shared<TypeNameRule>("int64_t")},
       {"cusolverEigMode_t", std::make_shared<TypeNameRule>("oneapi::mkl::job")},
       {"cusolverStatus_t", std::make_shared<TypeNameRule>("int")},
+      {"cusolverDnParams_t", std::make_shared<TypeNameRule>("int")},
       {"cudaChannelFormatDesc",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "image_channel",
                                       HelperFeatureEnum::Image_image_channel)},
@@ -1566,6 +1567,8 @@ void MapNames::setExplicitNamespaceMap() {
 
   SOLVERAPIWithRewriter = {"cusolverDnSetStream",
                            "cusolverDnGetStream",
+                           "cusolverDnCreateParams",
+                           "cusolverDnDestroyParams",
                            "cusolverDnSpotrfBatched",
                            "cusolverDnDpotrfBatched",
                            "cusolverDnCpotrfBatched",
@@ -1581,7 +1584,17 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusolverDnChegvd",
                            "cusolverDnZhegvd",
                            "cusolverDnChegvd_bufferSize",
-                           "cusolverDnZhegvd_bufferSize"};
+                           "cusolverDnZhegvd_bufferSize",
+                           "cusolverDnXgetrf",
+                           "cusolverDnXgetrf_bufferSize",
+                           "cusolverDnXgetrs",
+                           "cusolverDnXgeqrf",
+                           "cusolverDnXgeqrf_bufferSize",
+                           "cusolverDnGetrf",
+                           "cusolverDnGetrf_bufferSize",
+                           "cusolverDnGetrs",
+                           "cusolverDnGeqrf",
+                           "cusolverDnGeqrf_bufferSize"};
 
   // This map now is only used to migrate using declaration
   MathFuncNameMap = {

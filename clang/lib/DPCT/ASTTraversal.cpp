@@ -2129,6 +2129,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cudaPitchedPtr", "thrust::counting_iterator",
                   "thrust::transform_iterator", "thrust::permutation_iterator",
                   "thrust::iterator_difference", "cusolverDnHandle_t",
+                  "cusolverDnParams_t",
                   "thrust::device_malloc_allocator", "thrust::divides",
                   "thrust::tuple", "thrust::maximum", "thrust::multiplies",
                   "thrust::plus", "cudaDataType_t", "cudaError_t", "CUresult",
@@ -6927,6 +6928,7 @@ void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
   auto functionName = [&]() {
     return hasAnyName(
         "cusolverDnGetStream", "cusolverDnSetStream",
+        "cusolverDnCreateParams", "cusolverDnDestroyParams",
         "cusolverDnCreate", "cusolverDnDestroy", "cusolverDnSpotrf_bufferSize",
         "cusolverDnDpotrf_bufferSize", "cusolverDnCpotrf_bufferSize",
         "cusolverDnZpotrf_bufferSize", "cusolverDnSpotri_bufferSize",
@@ -6982,7 +6984,13 @@ void SOLVERFunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cusolverDnSsygvd", "cusolverDnDsygvd",
         "cusolverDnSsygvd_bufferSize", "cusolverDnDsygvd_bufferSize",
         "cusolverDnChegvd", "cusolverDnZhegvd",
-        "cusolverDnChegvd_bufferSize", "cusolverDnZhegvd_bufferSize");
+        "cusolverDnChegvd_bufferSize", "cusolverDnZhegvd_bufferSize",
+        "cusolverDnXgetrf", "cusolverDnXgetrf_bufferSize",
+        "cusolverDnXgetrs",
+        "cusolverDnXgeqrf", "cusolverDnXgeqrf_bufferSize",
+        "cusolverDnGetrf", "cusolverDnGetrf_bufferSize",
+        "cusolverDnGetrs",
+        "cusolverDnGeqrf", "cusolverDnGeqrf_bufferSize");
   };
 
   MF.addMatcher(callExpr(allOf(callee(functionDecl(functionName())),
