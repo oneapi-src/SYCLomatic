@@ -151,7 +151,11 @@ public:
   }
   device_vector(device_vector &&other)
       : _alloc(get_default_queue()), _size(other.size()),
-        _capacity(other.capacity()) {}
+        _capacity(other.capacity()), _storage(other._storage) {
+    other._size = 0;
+    other._capacity = _min_capacity();
+    other._storage = nullptr;
+  }
 
   template <typename InputIterator>
   device_vector(InputIterator first,
@@ -239,9 +243,8 @@ public:
   }
   device_vector &operator=(device_vector &&other) {
     // Move assignment operator:
-    this->_size = std::move(other._size);
-    this->_capacity = std::move(other._capacity);
-    this->_storage = std::move(other._storage);
+    device_vector dummy(std::move(other));
+    this->swap(dummy);
     return *this;
   }
   size_type size() const { return _size; }
@@ -256,11 +259,10 @@ public:
   T *real_begin() { return _storage; }
   const T *real_begin() const { return _storage; }
   void swap(device_vector &v) {
-    auto temp = std::move(v._storage);
-    v._storage = std::move(this->_storage);
-    this->_storage = std::move(temp);
     std::swap(_size, v._size);
     std::swap(_capacity, v._capacity);
+    std::swap(_storage, v._storage);
+    std::swap(_alloc, v._alloc);
   }
   reference operator[](size_type n) { return _storage[n]; }
   const_reference operator[](size_type n) const { return _storage[n]; }
