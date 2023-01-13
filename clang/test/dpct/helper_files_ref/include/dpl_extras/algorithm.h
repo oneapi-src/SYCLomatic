@@ -15,6 +15,7 @@
 
 #include "functional.h"
 #include "iterators.h"
+#include "vector.h"
 
 namespace dpct {
 
@@ -973,7 +974,11 @@ partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
 
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t>
-void sort_pairs(
+inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value && 
+                   dpct::internal::is_iterator<key_out_t>::value &&
+                   dpct::internal::is_iterator<value_t>::value &&
+                   dpct::internal::is_iterator<value_out_t>::value>
+sort_pairs(
     _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
     value_t values_in, value_out_t values_out, int64_t n,
     bool descending = false, int begin_bit = 0,
@@ -981,7 +986,9 @@ void sort_pairs(
                   8);
 
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
-inline void sort_keys(
+inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value && 
+                          dpct::internal::is_iterator<key_out_t>::value>
+sort_keys(
     _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, int64_t n,
     bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
@@ -1352,7 +1359,11 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
 
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t>
-void sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value && 
+                        dpct::internal::is_iterator<key_out_t>::value &&
+                        dpct::internal::is_iterator<value_t>::value &&
+                        dpct::internal::is_iterator<value_out_t>::value> 
+sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
                 value_t values_in, value_out_t values_out, int64_t n,
                 bool descending, int begin_bit, int end_bit) {
   internal::sort_pairs_impl(std::forward<_ExecutionPolicy>(policy), keys_in,
@@ -1373,7 +1384,9 @@ inline void sort_pairs(
 }
 
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
-inline void sort_keys(_ExecutionPolicy &&policy, key_t keys_in,
+inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value && 
+                        dpct::internal::is_iterator<key_out_t>::value>
+sort_keys(_ExecutionPolicy &&policy, key_t keys_in,
                       key_out_t keys_out, int64_t n, bool descending,
                       int begin_bit, int end_bit) {
   using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
