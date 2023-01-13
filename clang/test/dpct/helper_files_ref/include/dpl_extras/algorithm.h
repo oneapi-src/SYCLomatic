@@ -1294,29 +1294,26 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
     // coordinate to mark segments
     policy.queue()
         .submit([&](sycl::handler &h) {
-          h.parallel_for(sycl::nd_range<1>{work_group_size, work_group_size},
-                         ([=](sycl::nd_item<1> item) {
-                           auto sub_group = item.get_sub_group();
-                           ::std::size_t num_subgroups =
-                               sub_group.get_group_range().size();
-                           ::std::size_t local_size =
-                               sub_group.get_local_range().size();
+          h.parallel_for(
+              sycl::nd_range<1>{work_group_size, work_group_size},
+              ([=](sycl::nd_item<1> item) {
+                auto sub_group = item.get_sub_group();
+                ::std::size_t num_subgroups =
+                    sub_group.get_group_range().size();
+                ::std::size_t local_size = sub_group.get_local_range().size();
 
-                           ::std::size_t sub_group_id =
-                               sub_group.get_group_id();
-                           while (sub_group_id < nsegments) {
-                             ::std::size_t subgroup_local_id =
-                                 sub_group.get_local_id();
-                             std::size_t i = begin_offsets[sub_group_id];
-                             std::size_t end = end_offsets[sub_group_id];
-                             while (i + subgroup_local_id < end) {
-                               segments[i + subgroup_local_id] =
-                                   sub_group_id;
-                               i += local_size;
-                             }
-                             sub_group_id += num_subgroups;
-                           }
-                         }));
+                ::std::size_t sub_group_id = sub_group.get_group_id();
+                while (sub_group_id < nsegments) {
+                  ::std::size_t subgroup_local_id = sub_group.get_local_id();
+                  std::size_t i = begin_offsets[sub_group_id];
+                  std::size_t end = end_offsets[sub_group_id];
+                  while (i + subgroup_local_id < end) {
+                    segments[i + subgroup_local_id] = sub_group_id;
+                    i += local_size;
+                  }
+                  sub_group_id += num_subgroups;
+                }
+              }));
         })
         .wait();
   } else {
@@ -1436,7 +1433,11 @@ inline void sort_keys(
 
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t, typename OffsetIteratorT>
-inline void segmented_sort_pairs(
+inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
+                          dpct::internal::is_iterator<key_out_t>::value &&
+                          dpct::internal::is_iterator<value_t>::value &&
+                          dpct::internal::is_iterator<value_out_t>::value>
+segmented_sort_pairs(
     _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
     value_t values_in, value_out_t values_out, int64_t n, int64_t nsegments,
     OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
