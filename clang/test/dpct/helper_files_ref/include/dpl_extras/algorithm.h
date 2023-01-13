@@ -1408,7 +1408,7 @@ inline void sort_keys(_ExecutionPolicy &&policy, key_t keys_in,
 template <typename _ExecutionPolicy, typename key_t>
 inline void sort_keys(
     _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys, int64_t n,
-    bool descending, int begin_bit = 0,
+    bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
                   8) {
   sort_keys(std::forward<_ExecutionPolicy>(policy), keys.input(), keys.output(),
