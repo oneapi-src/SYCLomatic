@@ -329,23 +329,23 @@ public:
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <typename IterT> struct io_iterator_pair {
-  inline io_iterator_pair() : __selector(false) {}
+  inline io_iterator_pair() : selector(false) {}
 
   inline io_iterator_pair(const IterT &first_input, const IterT &first_output)
-      : __selector(false) {
-    __iter[0] = first_input;
-    __iter[1] = first_output;
+      : selector(false) {
+    iter[0] = first_input;
+    iter[1] = first_output;
   }
 
-  inline IterT input() const { return __selector ? __iter[1] : __iter[0]; }
+  inline IterT input() const { return selector ? iter[1] : iter[0]; }
 
-  inline IterT output() const { return __selector ? __iter[0] : __iter[1]; }
+  inline IterT output() const { return selector ? iter[0] : iter[1]; }
 
-  inline void swap() { __selector = !__selector; }
+  inline void swap() { selector = !selector; }
 
-  bool __selector;
+  bool selector;
 
-  IterT __iter[2];
+  IterT iter[2];
 };
 // DPCT_LABEL_END
 
