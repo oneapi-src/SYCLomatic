@@ -47,11 +47,7 @@ MATH_API_REWRITER_HOST_DEVICE(
                                             "fabs",
                                         ARG(0)))),
             EMPTY_FACTORY_ENTRY("std::abs"),
-            HEADER_INSERT_FACTORY(
-                HeaderType::HT_Stdlib,
-                HEADER_INSERT_FACTORY(
-                    HeaderType::HT_Math,
-                    CALL_FACTORY_ENTRY("std::abs", CALL("std::abs", ARG(0))))),
+            EMPTY_FACTORY_ENTRY("std::abs"),
             EMPTY_FACTORY_ENTRY("std::abs"))))
 
 MATH_API_REWRITER_HOST_DEVICE(
@@ -73,11 +69,7 @@ MATH_API_REWRITER_HOST_DEVICE(
                     "abs", CALL(MapNames::getClNamespace(false, true) + "fabs",
                                 ARG(0)))),
             EMPTY_FACTORY_ENTRY("abs"),
-            HEADER_INSERT_FACTORY(
-                HeaderType::HT_Stdlib,
-                HEADER_INSERT_FACTORY(HeaderType::HT_Math,
-                                      CALL_FACTORY_ENTRY("abs", CALL("std::abs",
-                                                                     ARG(0))))),
+            EMPTY_FACTORY_ENTRY("abs"),
             EMPTY_FACTORY_ENTRY("abs"))))
 
 MATH_API_REWRITER_DEVICE(

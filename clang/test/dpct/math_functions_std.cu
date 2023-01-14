@@ -1,7 +1,6 @@
 // RUN: dpct --format-range=none -out-root %T/math_functions_std %s --cuda-include-path="%cuda-path/include" --use-dpcpp-extensions=c_cxx_standard_library
 // RUN: FileCheck --input-file %T/math_functions_std/math_functions_std.dp.cpp --match-full-lines %s
 
-// CHECK: #include <cstdlib>
 #include <cuda_runtime.h>
 
 __device__ void d() {
@@ -11,16 +10,16 @@ __device__ void d() {
   long l, l2;
   long long ll, ll2;
 
-  //CHECK: f = std::abs(f2);
-  //CHECK-NEXT: d = std::abs(d2);
-  //CHECK-NEXT: i = std::abs(i2);
-  //CHECK-NEXT: l = std::abs(l2);
-  //CHECK-NEXT: ll = std::abs(ll2);
-  //CHECK-NEXT: f = std::abs(f2);
-  //CHECK-NEXT: d = std::abs(d2);
-  //CHECK-NEXT: i = std::abs(i2);
-  //CHECK-NEXT: l = std::abs(l2);
-  //CHECK-NEXT: ll = std::abs(ll2);
+  //CHECK: f = sycl::fabs(f2);
+  //CHECK-NEXT: d = sycl::fabs(d2);
+  //CHECK-NEXT: i = sycl::abs(i2);
+  //CHECK-NEXT: l = sycl::abs(l2);
+  //CHECK-NEXT: ll = sycl::abs(ll2);
+  //CHECK-NEXT: f = sycl::fabs(f2);
+  //CHECK-NEXT: d = sycl::fabs(d2);
+  //CHECK-NEXT: i = sycl::abs(i2);
+  //CHECK-NEXT: l = sycl::abs(l2);
+  //CHECK-NEXT: ll = sycl::abs(ll2);
   f = abs(f2);
   d = abs(d2);
   i = abs(i2);
