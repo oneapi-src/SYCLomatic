@@ -59,6 +59,12 @@ void processAllFiles(llvm::StringRef InRoot, llvm::StringRef OutRoot,
 bool rewriteDir(llvm::SmallString<512> &FilePath, const llvm::StringRef InRoot,
                 const llvm::StringRef OutRoot);
 
-// Replace file name \pFileName with new migrated name.
+// Replace file name \p FileName with new migrated name.
 void rewriteFileName(llvm::SmallString<512> &FileName);
+// Replace file name \p FileName with new migrated name.
+// This overloaded function is added because in some cases, the \p FileName is
+// relative path, and absolute path \p FullPathName is needed to determine
+// whether the file is in database.
+void rewriteFileName(llvm::SmallString<512> &FileName,
+                     llvm::StringRef FullPathName);
 #endif // DPCT_SAVE_NEW_FILES_H
