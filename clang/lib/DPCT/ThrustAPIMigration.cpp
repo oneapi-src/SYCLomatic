@@ -328,7 +328,7 @@ void ThrustTypeRule::runRule(
     // handle constructor expressions with placeholders (_1, _2, etc)
     replacePlaceHolderExpr(CE);
   } else if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr")) {
-    auto VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
+    auto VD = getAssistNodeAsType<VarDecl>(Result, "varDecl");
     if (DRE->hasQualifier()) {
 
       auto ND = DRE->getQualifierLoc()
