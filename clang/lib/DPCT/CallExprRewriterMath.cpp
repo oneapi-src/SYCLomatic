@@ -1209,26 +1209,6 @@ public:
   }
 };
 
-class IsConstexprSystemAPI {
-public:
-  IsConstexprSystemAPI() {}
-  bool operator()(const CallExpr *C) {
-    auto FD = C->getDirectCallee();
-    if (!FD)
-      return false;
-    if(!(FD->isConstexprSpecified()))
-      return false;
-    SourceLocation DeclLoc =
-        dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(FD->getLocation());
-    std::string DeclLocFilePath =
-        dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
-    makeCanonical(DeclLocFilePath);
-    return (!isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) &&
-            !isChildPath(DpctInstallPath, DeclLocFilePath) &&
-            !isChildPath(dpct::DpctGlobalInfo::getAnalysisScope(), DeclLocFilePath));
-  }
-};
-
 bool useStdLibdevice() {
   return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
 }
@@ -1249,25 +1229,9 @@ inline auto UseIntelDeviceMath = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useIntelDeviceMath();
 };
 
-auto GetContextFD  = [](const CallExpr *C) -> const FunctionDecl* {
-  auto ContextFD = getImmediateOuterFuncDecl(C);
-  while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
-    ContextFD = getImmediateOuterFuncDecl(LE);
-  }
-  return ContextFD;
-};
-
 auto IsPureHost = [](const CallExpr *C) -> bool {
   const FunctionDecl *FD = C->getDirectCallee();
   if (!FD)
-    return false;
-
-  auto ContextFD = GetContextFD(C);
-  if (!ContextFD)
-    return false;
-
-  if (ContextFD->getAttr<CUDADeviceAttr>() ||
-      ContextFD->getAttr<CUDAGlobalAttr>())
     return false;
 
   if (!(FD->hasAttr<CUDADeviceAttr>()))
@@ -1290,10 +1254,12 @@ auto IsPureDevice = makeCheckAnd(
     HasDirectCallee(),
     makeCheckAnd(IsDirectCalleeHasAttribute<CUDADeviceAttr>(),
                  makeCheckNot(IsDirectCalleeHasAttribute<CUDAHostAttr>())));
-auto IsCudaAPIOrConstexprSystemAPI =
-    makeCheckOr(IsDefinedInCUDA(), IsConstexprSystemAPI());
+
 auto IsDirectCallerPureDevice = [](const CallExpr *C) -> bool {
-  auto ContextFD = GetContextFD(C);
+  auto ContextFD = getImmediateOuterFuncDecl(C);
+  while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
+    ContextFD = getImmediateOuterFuncDecl(LE);
+  }
   if (!ContextFD)
     return false;
   if (ContextFD->getAttr<CUDADeviceAttr>() &&
@@ -1408,7 +1374,7 @@ createMathAPIRewriterDevice(
               {Name,
                std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)}),
           createConditionalFactory(
-              math::IsCudaAPIOrConstexprSystemAPI,
+              math::IsDefinedInCUDA(),
               std::move(createMathAPIRewriterDeviceImpl(
                   Name, PerfPred, DevicePerf, DeviceNodes)),
               {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(
@@ -1436,7 +1402,7 @@ createMathAPIRewriterDevice(
               {Name,
                std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)}),
           createConditionalFactory(
-              math::IsCudaAPIOrConstexprSystemAPI,
+              math::IsDefinedInCUDA(),
               std::move(
                   createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
               {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(
