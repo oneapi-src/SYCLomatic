@@ -1,0 +1,26 @@
+.. _id_DPCT1038:
+
+DPCT1038
+========
+
+Message
+-------
+
+.. _msg-1038-start:
+
+When the kernel function name is used as a macro argument, the migration result
+may be incorrect. You need to verify the definition of the macro.
+
+.. _msg-1038-end:
+
+Detailed Help
+-------------
+
+When a kernel function call is used in a macro definition and the function name
+is passed as a macro argument, the tool cannot determine the type of function
+parameters. This may lead to incorrectly generated |dpcpp| code.
+
+Suggestions to Fix
+------------------
+
+Review the kernel call inside the macro definition and adjust it manually, if needed.

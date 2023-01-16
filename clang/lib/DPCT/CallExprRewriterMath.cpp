@@ -1310,8 +1310,9 @@ createMathAPIRewriterDeviceImpl(
   // report unsupport
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
       {DeviceNodes[0].first,
-       std::make_shared<UnsupportFunctionRewriterFactory<>>(
-           DeviceNodes[0].first, Diagnostics::API_NOT_MIGRATED)});
+       std::make_shared<UnsupportFunctionRewriterFactory<std::string>>(
+           DeviceNodes[0].first, Diagnostics::API_NOT_MIGRATED,
+           DeviceNodes[0].first)});
 }
 
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -1343,8 +1344,9 @@ createMathAPIRewriterDeviceImpl(
   // report unsupport
   return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
       {DeviceNodes[0].first,
-       std::make_shared<UnsupportFunctionRewriterFactory<>>(
-           DeviceNodes[0].first, Diagnostics::API_NOT_MIGRATED)});
+       std::make_shared<UnsupportFunctionRewriterFactory<std::string>>(
+           DeviceNodes[0].first, Diagnostics::API_NOT_MIGRATED,
+           DeviceNodes[0].first)});
 }
 
 template <class T>
