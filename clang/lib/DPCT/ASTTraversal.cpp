@@ -1318,7 +1318,7 @@ void IterationSpaceBuiltinRule::runRule(
   }
 
   const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "memberExpr");
-  const VarDecl *VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
+  const VarDecl *VD = getAssistNodeAsType<VarDecl>(Result, "varDecl");
   const DeclRefExpr *DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr");
   std::shared_ptr<DeviceFunctionInfo> DFI = nullptr;
   if (!VD || !DRE) {
