@@ -1,0 +1,27 @@
+.. _id_DPCT1067:
+
+DPCT1067
+========
+
+Message
+-------
+
+.. _msg-1067-start:
+
+The *<parameter name>* parameter could not be migrated. You may need to update
+the code manually.
+
+.. _msg-1067-end:
+
+Detailed Help
+-------------
+
+|mkl_long| (|mkl|) DFT currently does not support reporting of the workspace size.
+
+Suggestions to Fix
+------------------
+
+If the code does not use workspace size, ignore this warning. Otherwise, try to
+rewrite the code to not rely on the non-migrated parameter. In |mkl| DFT,
+workspace memory is managed by oneMKL. In most cases, removing both the explicit
+allocation of a “work area” and the explicit setting of a “work area” is adequate.

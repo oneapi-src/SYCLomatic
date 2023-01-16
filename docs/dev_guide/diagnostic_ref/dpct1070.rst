@@ -1,0 +1,27 @@
+.. _id_DPCT1070:
+
+DPCT1070
+========
+
+Message
+-------
+
+.. _msg-1070-start:
+
+*<pointer variable name>* is allocated by ``dpct::dpct_malloc``. Use
+``dpct::get_host_ptr<type>(pointer variable name)`` to access the pointer from
+the host code.
+
+.. _msg-1070-end:
+
+Detailed Help
+-------------
+
+The memory referenced by this pointer is allocated by ``dpct::dpct_malloc`` and
+cannot be directly accessed from the host code. You can access the memory from
+the host code by transforming the pointer using the ``dpct::get_host_ptr`` function.
+
+Suggestions to Fix
+------------------
+
+Review the code and adjust it manually.

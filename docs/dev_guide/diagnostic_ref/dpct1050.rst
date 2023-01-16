@@ -1,0 +1,27 @@
+.. _id_DPCT1050:
+
+DPCT1050
+========
+
+Message
+-------
+
+.. _msg-1050-start:
+
+The template argument of the *<type>* could not be deduced. You need to update
+this code.
+
+.. _msg-1050-end:
+
+Detailed Help
+-------------
+
+This warning is generated when the template argument could not be deduced by the
+|tool_name| because the variable of this type was not used directly in
+the code. |tool_name| inserts "dpct_placeholder", instead of type,
+in such cases.
+
+Suggestions to Fix
+------------------
+
+Replace the "dpct_placeholder" with the real argument.

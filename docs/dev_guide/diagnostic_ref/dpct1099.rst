@@ -1,0 +1,48 @@
+.. _id_DPCT1099:
+
+DPCT1099
+========
+
+Message
+-------
+
+.. _msg-1099-start:
+
+Verify if the default value of the direction and placement used in the function
+*<function name>* is correct.
+
+
+.. _msg-1099-end:
+
+Detailed Help
+-------------
+
+By default, the parameter ``direction_and_placement`` is not passed for
+``dpct::fft::fft_engine::create()``, ``dpct::fft::fft_engine::commit()``, or
+``dpct::fft::fft_engine::estimate_size()``. In this case, a forward direction
+(if the current FFT is complex-to-complex) and out-of-place (false) are used as
+the default values in this API. The configuration of the direction and placement
+is reset when executing ``dpct::fft::fft_engine::compute()`` according to the
+argument passed with the ``compute()`` API. There might be performance issues
+caused by the reconfiguration.
+
+To avoid the potential performance issues, specify the parameter
+``direction_and_placement`` explicitly when calling
+``dpct::fft::fft_engine::create()`` or ``dpct::fft::fft_engine::commit()``, then
+the direction and placement information passed by the ``compute()`` API is
+ignored and no reconfiguration happens.
+
+
+Suggestions to Fix
+------------------
+
+If you received a warning for ``dpct::fft::fft_engine::create()`` or
+``dpct::fft::fft_engine::commit()``:
+
+* If you are using an internal workspace and do not care about performance, you
+  can ignore this warning.
+* If you do care about performance, specify the ``direction_and_placement``
+  parameter correctly.
+
+If you received this warning for ``dpct::fft::fft_engine::estimate_size()``, you
+need specify the ``direction_and_placement`` parameter correctly.

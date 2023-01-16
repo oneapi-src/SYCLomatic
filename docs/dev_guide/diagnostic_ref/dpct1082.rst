@@ -1,0 +1,25 @@
+.. _id_DPCT1082:
+
+DPCT1082
+========
+
+Message
+-------
+
+.. _msg-1082-start:
+
+Migration of *<type name>* type is not supported.
+
+.. _msg-1082-end:
+
+Detailed Help
+-------------
+
+|tool_name| was unable to analyze and migrate the type *<type name>*.
+
+Suggestions to Fix
+------------------
+
+This kind of code requires manual migration to |dpcpp|. Contact
+`Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
+for help.

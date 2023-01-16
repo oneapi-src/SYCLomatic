@@ -1,0 +1,29 @@
+.. _id_DPCT1036:
+
+DPCT1036
+========
+
+Message
+-------
+
+.. _msg-1036-start:
+
+The type *<type name>* was not migrated because *<reason>*.
+
+.. _msg-1036-end:
+
+Detailed Help
+-------------
+
+|tool_name| was unable to analyze and migrate the API call, so
+the *<type name>* type was not migrated.
+
+
+See :ref:`id_DPCT1028` for more details.
+
+Suggestions to Fix
+------------------
+
+Rewrite this code manually by using a supported random number generator.
+
+See the `Random Number Generators <https://software.intel.com/content/www/us/en/develop/documentation/oneapi-mkl-dpcpp-developer-reference/top/random-number-generators/manual-offload-rng-routines/engines-basic-random-number-generators.html>`_ topic for more information.

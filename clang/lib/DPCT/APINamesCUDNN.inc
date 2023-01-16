@@ -618,3 +618,72 @@ ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
     "cudnnGetConvolutionBackwardFilterWorkspaceSize", DEREF(ARG_WC(6)), ARG("0")))
 
+// RNN Layer
+REMOVE_API_FACTORY_ENTRY("cudnnCreateRNNDescriptor")
+
+REMOVE_API_FACTORY_ENTRY("cudnnCreateRNNDataDescriptor")
+
+REMOVE_API_FACTORY_ENTRY("cudnnDestroyRNNDescriptor")
+
+REMOVE_API_FACTORY_ENTRY("cudnnDestroyRNNDataDescriptor")
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+    WARNING_FACTORY_ENTRY("cudnnSetRNNDataDescriptor",
+                          ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                              "cudnnSetRNNDataDescriptor", ARG_WC(0), false,
+                              "set", ARG_WC(2), ARG_WC(1), ARG_WC(3), ARG_WC(4),
+                              ARG_WC(5))),
+                          Diagnostics::API_NOT_MIGRATED,
+                          ARG("unpacked data layout")))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::DnnlUtils_memory_desc_ext,
+    WARNING_FACTORY_ENTRY("cudnnGetRNNDataDescriptor",
+                          ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                              "cudnnGetRNNDataDescriptor", ARG_WC(0), false,
+                              "get", ARG_WC(1), ARG_WC(2), ARG_WC(3), ARG_WC(4),
+                              ARG_WC(5))),
+                          Diagnostics::API_NOT_MIGRATED,
+                          ARG("unpacked data layout")))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::DnnlUtils_rnn_desc,
+    WARNING_FACTORY_ENTRY("cudnnSetRNNDescriptor_v8",
+                          ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                              "cudnnSetRNNDescriptor_v8", ARG_WC(0), false,
+                              "set", ARG_WC(2), ARG_WC(3), ARG_WC(4), ARG_WC(6),
+                              ARG_WC(9), ARG_WC(10), ARG_WC(11), ARG_WC(12))),
+                          Diagnostics::API_NOT_MIGRATED,
+                          ARG("persist algorithm, input mode and dropout "
+                              "operation between physical layers")))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::DnnlUtils_rnn_desc,
+    WARNING_FACTORY_ENTRY("cudnnGetRNNDescriptor_v8",
+                          ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                              "cudnnGetRNNDescriptor_v8", ARG_WC(0), false,
+                              "get", ARG_WC(2), ARG_WC(3), ARG_WC(4), ARG_WC(6),
+                              ARG_WC(9), ARG_WC(10), ARG_WC(11), ARG_WC(12))),
+                          Diagnostics::API_NOT_MIGRATED,
+                          ARG("persist algorithm, input mode and dropout "
+                              "operation between physical layers")))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_rnn_get_weight_space_size,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cudnnGetRNNWeightSpaceSize", ARG_WC(0), false,
+                            "rnn_get_weight_space_size", ARG_WC(1), ARG_WC(2))))
+
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_rnn_get_weight_space_size,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cudnnGetRNNTempSpaceSizes", ARG_WC(0), false,
+                            "rnn_get_scratchpad_workspace_size", ARG_WC(1),
+                            ARG_WC(2), ARG_WC(3), ARG_WC(4), ARG_WC(5))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::DnnlUtils_async_rnn_forward,
+    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+        "cudnnRNNForward", ARG_WC(0), false, "async_rnn_forward", ARG_WC(1),
+        ARG_WC(2), ARG_WC(4), ARG_WC(5), ARG_WC(6), ARG_WC(7), ARG_WC(8),
+        ARG_WC(9), ARG_WC(10), ARG_WC(11), ARG_WC(12), ARG_WC(13), ARG_WC(14),
+        ARG_WC(15), ARG_WC(16), ARG_WC(17), ARG_WC(18), ARG_WC(19))))
