@@ -1,0 +1,50 @@
+.. _id_DPCT1062:
+
+DPCT1062
+========
+
+Message
+-------
+
+.. _msg-1062-start:
+
+SYCL Image doesn't support normalized read mode.
+
+.. _msg-1062-end:
+
+Detailed Help
+-------------
+
+This warning is emitted when ``cudaReadModeNormalizedFloat`` is used as the third
+argument of texture in the original code. Since SYCL\* Image doesn't support
+normalized read mode, ``cudaReadModeNormalizedFloat`` will be ignored during
+migration.
+
+It may cause errors in the resulting code, for example, redefinition of overloaded
+functions, if the overloaded functions are differentiated based on the texture
+type in the original code.
+
+For example, this original code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // original code:
+
+   __device__ void foo(const texture<char, 2, cudaReadModeNormalizedFloat> tex);
+   __device__ void foo (const texture<char, 2, cudaReadModeElementType> tex);
+
+results in the following migrated DPC++ code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // migrated DPC++ code:
+
+   void foo (dpct::image_accessor_ext<char, 2> tex);
+   void foo (dpct::image_accessor_ext<char, 2> tex);
+
+Suggestions to Fix
+------------------
+
+Review the code and update as needed.
