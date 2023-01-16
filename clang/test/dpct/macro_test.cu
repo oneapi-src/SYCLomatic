@@ -21,7 +21,7 @@
 
 #include "macro_test.h"
 
-
+#include <cublas_v2.h>
 #include <thrust/inner_product.h>
 #include <thrust/extrema.h>
 #include <thrust/host_vector.h>
@@ -1218,3 +1218,24 @@ void foo34() {
     }
   });
 }
+
+
+//CHECK: #define ReturnErrorFunction                                                    \
+//CHECK-NEXT:   int amax(dpct::queue_ptr handle, const int n, const float *X,                \
+//CHECK-NEXT:            const int incX, int &result) try {                                  \
+//CHECK-NEXT:     return cublasIsamax(handle, n, (const float *)X, incX, &result);           \
+//CHECK-NEXT:   }                                                                            \
+//CHECK-NEXT:   catch (sycl::exception const &exc) {                                         \
+//CHECK-NEXT:     std::cerr << exc.what() << "Exception caught at file:" << __FILE__         \
+//CHECK-NEXT:               << ", line:" << __LINE__ << std::endl;                           \
+//CHECK-NEXT:     std::exit(1);                                                              \
+//CHECK-NEXT:   }
+
+#define ReturnErrorFunction                                                         \
+  cublasStatus_t amax( cublasHandle_t handle,                                       \
+                       const int n, const float* X, const int incX, int& result )   \
+  {                                                                                 \
+    return cublasIsamax(handle, n, (const float*) X, incX, &result);                \
+  }
+
+ReturnErrorFunction

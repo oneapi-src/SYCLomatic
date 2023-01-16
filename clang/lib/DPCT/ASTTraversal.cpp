@@ -1756,14 +1756,27 @@ void ErrorHandlingHostAPIRule::runRule(const MatchFinder::MatchResult &Result) {
 void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl *FD) {
   SourceManager &SM = DpctGlobalInfo::getSourceManager();
   bool IsLambda = false;
+  bool IsInMacro = false;
   if (auto CMD = dyn_cast<CXXMethodDecl>(FD)) {
     if (CMD->getParent()->isLambda()) {
       IsLambda = true;
     }
   }
 
+  auto BodyRange = getDefinitionRange(FD->getBody()->getBeginLoc(),
+                                      FD->getBody()->getEndLoc());
+  auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      getCombinedStrFromLoc(BodyRange.getEnd()));
+  if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+    IsInMacro = true;
+  }
+
   std::string IndentStr = getIndent(FD->getBeginLoc(), SM).str();
   std::string InnerIndentStr = IndentStr + "  ";
+
+  std::string NewLine = getNL();
+  if(IsInMacro)
+    NewLine = "\\" + NewLine;
 
   if (IsLambda) {
     if (auto CSM = dyn_cast<CompoundStmt>(FD->getBody())) {
@@ -1779,17 +1792,17 @@ void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl *FD) {
   }
 
   std::string ReplaceStr =
-      getNL() + IndentStr +
+      NewLine + IndentStr +
       std::string("catch (" + MapNames::getClNamespace(true) +
                   "exception const &exc) {") +
-      getNL() + InnerIndentStr +
+      NewLine + InnerIndentStr +
       std::string("std::cerr << exc.what() << \"Exception caught at file:\" << "
                   "__FILE__ << "
                   "\", line:\" << __LINE__ << std::endl;") +
-      getNL() + InnerIndentStr + std::string("std::exit(1);") + getNL() +
+      NewLine + InnerIndentStr + std::string("std::exit(1);") + NewLine +
       IndentStr + "}";
   if (IsLambda) {
-    ReplaceStr += getNL() + IndentStr + "}";
+    ReplaceStr += NewLine + IndentStr + "}";
   }
   emplaceTransformation(
       new InsertAfterStmt(FD->getBody(), std::move(ReplaceStr)));
