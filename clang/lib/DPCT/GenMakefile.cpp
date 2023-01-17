@@ -159,11 +159,6 @@ static void getCompileInfo(
         ISISystem = false;
         std::string IncPath = Option;
 
-        if (!llvm::sys::fs::exists(IncPath)) {
-          // Skip including path that does not exist.
-          continue;
-        }
-
         SmallString<512> OutDirectory = llvm::StringRef(IncPath);
         llvm::sys::fs::make_absolute(OutDirectory);
         llvm::sys::path::remove_dots(OutDirectory, /*remove_dot_dot=*/true);
