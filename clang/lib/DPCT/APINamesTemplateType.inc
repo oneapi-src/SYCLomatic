@@ -143,3 +143,14 @@ TYPE_REWRITE_ENTRY(
     "thrust::modulus",
     TYPE_FACTORY(STR("std::modulus"), TEMPLATE_ARG(0)))
 
+// cuda::std::complex
+TYPE_REWRITE_ENTRY(
+    "cuda::std::complex",
+    TYPE_FACTORY(STR("std::complex"), TEMPLATE_ARG(0)))
+
+// cuda::std::array
+TYPE_REWRITE_ENTRY(
+    "cuda::std::array",
+    TYPE_FACTORY(STR("std::array"), TEMPLATE_ARG(0),TEMPLATE_ARG(1)))
+
+

@@ -57,7 +57,9 @@ void LIBCURule::registerMatcher(ast_matchers::MatchFinder &MF) {
   }
 
   {
-    auto LIBCUTypesNames = [&]() { return hasAnyName("atomic"); };
+    auto LIBCUTypesNames = [&]() {
+      return hasAnyName("atomic", "cuda::std::complex", "cuda::std::array");
+    };
     MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
                               hasDeclaration(namedDecl(LIBCUTypesNames()))))))
                       .bind("TypeLoc"),

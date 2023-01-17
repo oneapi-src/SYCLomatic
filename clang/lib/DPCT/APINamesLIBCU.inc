@@ -48,3 +48,6 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Atomic_atomic_class_fetch_add,
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Atomic_atomic_class_fetch_sub,
                         MEMBER_CALL_FACTORY_ENTRY("fetch_sub", ARG(0), false,
                                                   "fetch_sub", ARG(0), ARG(1)))
+
+MEMBER_CALL_FACTORY_ENTRY("cuda::std::array.at",
+                                MemberExprBase(), false, "operator[]", ARG(0))
