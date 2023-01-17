@@ -15100,9 +15100,16 @@ void DriverDeviceAPIRule::runRule(
       auto AttributeName = DRE->getNameInfo().getAsString();
       auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
       if (Search == EnumConstantRule::EnumNamesMap.end()) {
-        report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-            "cuDeviceGetAttribute");
+        report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETER, false,
+               APIName,
+               "parameter " + getStmtSpelling(SecArg) + " is unsupported");
         return;
+      }
+      if (AttributeName == "CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY" ||
+          AttributeName == "CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT" ||
+          AttributeName == "CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK") {
+        report(CE->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
+          AttributeName, Search->second->NewName);
       }
     } else {
       report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
