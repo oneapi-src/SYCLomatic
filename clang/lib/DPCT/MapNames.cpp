@@ -406,6 +406,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"ncclRedOp_t", std::make_shared<TypeNameRule>("oneapi::ccl::reduction")},
       {"ncclDataType_t", std::make_shared<TypeNameRule>("oneapi::ccl::datatype")},
       {"cuda::std::tuple", std::make_shared<TypeNameRule>("std::tuple")},
+      {"cuda::std::complex", std::make_shared<TypeNameRule>("std::complex")},
+      {"cuda::std::array", std::make_shared<TypeNameRule>("std::array")},
       // ...
   };
 
