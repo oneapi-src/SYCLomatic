@@ -773,3 +773,13 @@ void set_intersection_by_key_test() {
   thrust::set_intersection_by_key(thrust::host, Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, thrust::greater<int>());
   thrust::set_intersection_by_key(Akey, Akey + N, Bkey, Bkey + M, Avalue, Ckey, Cvalue, thrust::greater<int>());
 }
+
+void raw_reference_cast_test() {
+  thrust::host_vector<int> h_vec(1);
+  thrust::device_vector<int> d_vec = h_vec;
+  const thrust::device_reference<int> ref_const = d_vec[0];
+// CHECK:  int &ref1 = dpct::get_raw_reference(d_vec[0]);
+// CHECK-NEXT:  int &ref2 = dpct::get_raw_reference(ref_const);
+  int &ref1 = thrust::raw_reference_cast(d_vec[0]);
+  int &ref2 = thrust::raw_reference_cast(ref_const);
+}
