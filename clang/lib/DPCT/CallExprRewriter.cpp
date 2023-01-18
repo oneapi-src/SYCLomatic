@@ -123,6 +123,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   initRewriterMapCooperativeGroups();
   initMethodRewriterMapCUB();
   initMethodRewriterMapCooperativeGroups();
+  initMethodRewriterMapLIBCU();
 }
 
 } // namespace dpct

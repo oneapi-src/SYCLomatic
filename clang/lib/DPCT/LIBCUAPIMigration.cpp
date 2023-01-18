@@ -43,10 +43,12 @@ void LIBCURule::registerMatcher(ast_matchers::MatchFinder &MF) {
   {
     auto LIBCUMemberFuncHasNames = [&]() {
       return hasAnyName("load", "store", "exchange", "compare_exchange_weak",
-                        "compare_exchange_strong", "fetch_add", "fetch_sub");
+                        "compare_exchange_strong", "fetch_add", "fetch_sub",
+                        "at");
     };
     auto LIBCUTypesHasNames = [&]() {
-      return hasAnyName("cuda::atomic", "cuda::std::atomic");
+      return hasAnyName("cuda::atomic", "cuda::std::atomic",
+                        "cuda::std::array");
     };
     MF.addMatcher(cxxMemberCallExpr(
                       allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(
@@ -58,7 +60,8 @@ void LIBCURule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
   {
     auto LIBCUTypesNames = [&]() {
-      return hasAnyName("atomic", "cuda::std::complex", "cuda::std::array");
+      return hasAnyName("atomic", "cuda::std::complex", "cuda::std::array",
+                        "cuda::std::tuple");
     };
     MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
                               hasDeclaration(namedDecl(LIBCUTypesNames()))))))
@@ -69,7 +72,8 @@ void LIBCURule::registerMatcher(ast_matchers::MatchFinder &MF) {
   {
     auto LIBCUAPIHasNames = [&]() {
       return hasAnyName("cuda::atomic_thread_fence",
-                        "cuda::std::atomic_thread_fence");
+                        "cuda::std::atomic_thread_fence",
+                        "cuda::std::make_tuple", "cuda::std::get");
     };
     MF.addMatcher(
         callExpr(callee(functionDecl(LIBCUAPIHasNames()))).bind("FuncCall"),

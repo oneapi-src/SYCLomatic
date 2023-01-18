@@ -39,6 +39,7 @@ STD_HEADER(Limits, "<limits>")
 STD_HEADER(Numeric, "<numeric>")
 STD_HEADER(Functional, "<functional>")
 STD_HEADER(Array, "<array>")
+STD_HEADER(Tuple, "<tuple>")
 STD_HEADER(SYCL_Math, "<sycl/ext/intel/math.hpp>")
 #ifdef _WIN32
 STD_HEADER(DL, "<libloaderapi.h>")

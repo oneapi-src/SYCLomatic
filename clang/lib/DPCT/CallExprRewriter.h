@@ -68,6 +68,7 @@ private:
   static void initRewriterMapCooperativeGroups();
   static void initMethodRewriterMapCUB();
   static void initMethodRewriterMapCooperativeGroups();
+  static void initMethodRewriterMapLIBCU();
 };
 
 /// Abstract factory for all rewriter factories

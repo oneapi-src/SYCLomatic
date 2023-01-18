@@ -1031,6 +1031,9 @@ void IncludesCallbacks::InclusionDirective(
     if (FileName.compare(StringRef("cuda/std/array")) == 0) {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Array);
     }
+    if (FileName.compare(StringRef("cuda/std/tuple")) == 0) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Tuple);
+    }
     
   }
 
