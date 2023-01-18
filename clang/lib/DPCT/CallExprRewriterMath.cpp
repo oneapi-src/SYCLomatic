@@ -1233,7 +1233,6 @@ auto IsPureHost = [](const CallExpr *C) -> bool {
   const FunctionDecl *FD = C->getDirectCallee();
   if (!FD)
     return false;
-
   if (!(FD->hasAttr<CUDADeviceAttr>()))
     return true;
 
