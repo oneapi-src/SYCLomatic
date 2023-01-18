@@ -124,16 +124,10 @@ static void getCompileInfo(
         continue;
       }
 
-      // Make target file relative to out-root directory
-      SmallString<512> OutTargetName = llvm::StringRef(TargetName);
-      makeCanonical(OutTargetName);
-      rewriteDir(OutTargetName, InRoot, OutRoot);
-      llvm::sys::path::replace_path_prefix(OutTargetName, OutRoot, ".");
-
       for (auto &Obj : ObjsInLKOrARCmd) {
-        ObjsInLinkerCmdPerTarget[OutTargetName.c_str()].push_back(Obj);
+        ObjsInLinkerCmdPerTarget[TargetName].push_back(Obj);
       }
-      ToolPerTarget[OutTargetName.c_str()] = Tool;
+      ToolPerTarget[TargetName] = Tool;
 
     } else {
       continue;
@@ -232,8 +226,7 @@ static void getCompileInfo(
       } else if (llvm::StringRef(Option).startswith("-O")) {
         // Keep optimization level same as original compile command.
         NewOptions += Option + " ";
-      } else if (Option == "-msse4.1" ||
-                 Option == "-mavx512vl") {
+      } else if (Option == "-msse4.1" || Option == "-mavx512vl") {
         // Keep some options from original compile command.
         NewOptions += Option + " ";
       }
@@ -322,10 +315,9 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
     TargetName = Entry.first;
     SmallString<512> TargetFilePath =
         llvm::StringRef(OutRoot.str() + "/" + TargetName);
-
     auto Parent = path::parent_path(TargetFilePath);
-    if (!llvm::sys::fs::exists(Parent)) {
 
+    if (!llvm::sys::fs::exists(Parent)) {
       std::error_code EC;
       EC = llvm::sys::fs::create_directories(Parent);
       if ((bool)EC) {

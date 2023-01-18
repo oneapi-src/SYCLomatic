@@ -2,11 +2,51 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/driver_device/driver_device.dp.cpp
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+#include <iostream>
 
 #define NUM 1
 #define MY_SAFE_CALL(CALL) do {    \
   int Error = CALL;                \
 } while (0)
+
+void test() {
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1026:{{[0-9]+}}: The call to cuInit was removed because this call is redundant in SYCL.
+  // CHECK-NEXT: */
+  cuInit(0);
+  CUdevice device;
+  cuDeviceGet(&device, 0);
+
+  int result0, result1, result2, result3, result4, result5;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY. It was migrated to get_global_mem_size, which value may need to be adjusted for specific device.
+  // CHECK-NEXT: */
+  // CHECK: result0 = dpct::dev_mgr::instance().get_device(device).get_global_mem_size();
+  cuDeviceGetAttribute(&result0, CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY, device);
+  std::cout << " result0 " << result0 << std::endl;
+  // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_max_sub_group_size();
+  cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_WARP_SIZE, device);
+  std::cout << " result1 " << result1 << std::endl;
+  // CHECK: result2 = dpct::dev_mgr::instance().get_device(device).get_max_work_group_size();
+  cuDeviceGetAttribute(&result2,CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
+  std::cout << " result2 " << result2 << std::endl;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT. It was migrated to get_mem_base_addr_align, which value may need to be adjusted for specific device.
+  // CHECK-NEXT: */
+  // CHECK: result3 = dpct::dev_mgr::instance().get_device(device).get_mem_base_addr_align();
+  cuDeviceGetAttribute(&result3,CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT, device);
+  std::cout << " result3 " << result3 << std::endl;
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK. It was migrated to get_max_register_size_per_work_group, which value may need to be adjusted for specific device.
+  // CHECK-NEXT: */
+  // CHECK: result4 = dpct::dev_mgr::instance().get_device(device).get_max_register_size_per_work_group();
+  cuDeviceGetAttribute(&result4,CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK, device);
+  std::cout << " result4 " << result4 << std::endl;
+  // CHECK: result5 = dpct::dev_mgr::instance().get_device(device).has(sycl::aspect::usm_host_allocations)();
+  cuDeviceGetAttribute(&result5,CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY, device);
+  std::cout << " result5 " << result5 << std::endl;
+}
+
 int main(){
   int result1, result2;
 
@@ -62,6 +102,7 @@ int main(){
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X, device);
   // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_device_info().get_local_mem_size();
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK, device);
+
   // CHECK: int context;
   CUcontext context;
   // CHECK: unsigned int flags = 0;
@@ -91,9 +132,7 @@ int main(){
   cuCtxGetLimit(&printfsize, CU_LIMIT_PRINTF_FIFO_SIZE);
 
 
-  // CHECK: /*
-  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of cuDeviceGetAttribute is not supported.
-  // CHECK-NEXT: */
+  // CHECK: result1 = dpct::dev_mgr::instance().get_device(device).get_max_work_group_size();
   cuDeviceGetAttribute(&result1, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device);
 
   // CHECK: MY_SAFE_CALL((result1 = dpct::dev_mgr::instance().get_device(device).get_max_compute_units(), 0));

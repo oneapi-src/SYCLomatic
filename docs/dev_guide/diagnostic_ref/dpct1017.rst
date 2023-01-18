@@ -1,0 +1,28 @@
+.. _id_DPCT1017:
+
+DPCT1017
+========
+
+Message
+-------
+
+.. _msg-1017-start:
+
+The *<SYCL API name>* call is used instead of the *<CUDA API name>* call. These
+two calls do not provide exactly the same functionality. Check the potential
+precision and/or performance issues for the generated code.
+
+.. _msg-1017-end:
+
+Detailed Help
+-------------
+
+|tool_name| did not find an exact functional equivalent of the function
+in SYCL, so it used the closest alternative. The replacement may impact your
+code precision and/or performance. Verify the code correctness/performance.
+
+
+Suggestions to Fix
+------------------
+
+Verify the code correctness/performance.

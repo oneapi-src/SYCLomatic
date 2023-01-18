@@ -496,6 +496,27 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("dnnl::algorithm")},
       {"cudnnConvolutionBwdFilterAlgo_t",
        std::make_shared<TypeNameRule>("dnnl::algorithm")},
+      {"cudnnRNNMode_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::rnn_mode",
+                                      HelperFeatureEnum::DnnlUtils_rnn_mode)},
+      {"cudnnRNNBiasMode_t", std::make_shared<TypeNameRule>(
+                                 getDpctNamespace() + "dnnl::rnn_bias_mode",
+                                 HelperFeatureEnum::DnnlUtils_rnn_bias_mode)},
+      {"cudnnDirectionMode_t", std::make_shared<TypeNameRule>(
+                                   getDpctNamespace() + "dnnl::rnn_direction",
+                                   HelperFeatureEnum::DnnlUtils_rnn_direction)},
+      {"cudnnRNNDescriptor_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::rnn_desc",
+                                      HelperFeatureEnum::DnnlUtils_rnn_desc)},
+      {"cudnnForwardMode_t", std::make_shared<TypeNameRule>("dnnl::prop_kind")},
+      {"cudnnRNNDataDescriptor_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::memory_desc_ext",
+           HelperFeatureEnum::DnnlUtils_memory_desc_ext)},
+      {"cudnnRNNDataLayout_t",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "dnnl::rnn_memory_format_tag",
+           HelperFeatureEnum::DnnlUtils_rnn_memory_format_tag)},
   };
 
   // CuDNN Enum constants name mapping.
@@ -628,6 +649,23 @@ void MapNames::setExplicitNamespaceMap() {
        "dnnl::algorithm::convolution_winograd"},
       {"CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED",
        "dnnl::algorithm::convolution_winograd"},
+      {"CUDNN_RNN_RELU", getDpctNamespace() + "dnnl::rnn_mode::vanilla_relu"},
+      {"CUDNN_RNN_TANH", getDpctNamespace() + "dnnl::rnn_mode::vanilla_tanh"},
+      {"CUDNN_LSTM", getDpctNamespace() + "dnnl::rnn_mode::lstm"},
+      {"CUDNN_GRU", getDpctNamespace() + "dnnl::rnn_mode::gru"},
+      {"CUDNN_RNN_NO_BIAS", getDpctNamespace() + "dnnl::rnn_bias_mode::none"},
+      {"CUDNN_RNN_SINGLE_INP_BIAS",
+       getDpctNamespace() + "dnnl::rnn_bias_mode::single"},
+      {"CUDNN_UNIDIRECTIONAL",
+       getDpctNamespace() + "dnnl::rnn_direction::unidirectional"},
+      {"CUDNN_BIDIRECTIONAL",
+       getDpctNamespace() + "dnnl::rnn_direction::bidirectional"},
+      {"CUDNN_FWD_MODE_INFERENCE",
+       "dnnl::prop_kind::forward_inference"},
+      {"CUDNN_FWD_MODE_TRAINING",
+       "dnnl::prop_kind::forward_training"},
+      {"CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED",
+       getDpctNamespace() + "dnnl::rnn_memory_format_tag::tnc"},
   };
 
   // CuDNN Enum constants name to helper feature mapping.
@@ -690,6 +728,19 @@ void MapNames::setExplicitNamespaceMap() {
        HelperFeatureEnum::DnnlUtils_batch_normalization_mode},
       {"CUDNN_NORM_PER_CHANNEL",
        HelperFeatureEnum::DnnlUtils_batch_normalization_mode},
+      {"CUDNN_RNN_RELU", HelperFeatureEnum::DnnlUtils_rnn_mode},
+      {"CUDNN_RNN_TANH", HelperFeatureEnum::DnnlUtils_rnn_mode},
+      {"CUDNN_LSTM", HelperFeatureEnum::DnnlUtils_rnn_mode},
+      {"CUDNN_GRU", HelperFeatureEnum::DnnlUtils_rnn_mode},
+      {"CUDNN_RNN_NO_BIAS", HelperFeatureEnum::DnnlUtils_rnn_bias_mode},
+      {"CUDNN_RNN_SINGLE_INP_BIAS",
+       HelperFeatureEnum::DnnlUtils_rnn_bias_mode},
+      {"CUDNN_UNIDIRECTIONAL",
+       HelperFeatureEnum::DnnlUtils_rnn_direction},
+      {"CUDNN_BIDIRECTIONAL",
+       HelperFeatureEnum::DnnlUtils_rnn_direction},
+      {"CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED",
+       HelperFeatureEnum::DnnlUtils_rnn_memory_format_tag},
   };
 
   // Enum constants name mapping.
@@ -833,6 +884,29 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<EnumNameRule>(
            "get_minor_version",
            HelperFeatureEnum::Device_device_ext_get_minor_version)},
+      {"CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY",
+       std::make_shared<EnumNameRule>(
+           "has(sycl::aspect::usm_host_allocations)")},
+      {"CU_DEVICE_ATTRIBUTE_WARP_SIZE",
+       std::make_shared<EnumNameRule>(
+           "get_max_sub_group_size",
+           HelperFeatureEnum::Device_device_ext_get_max_sub_group_size)},
+      {"CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK",
+       std::make_shared<EnumNameRule>(
+        "get_max_register_size_per_work_group",
+        HelperFeatureEnum::Device_device_ext_get_max_register_size_per_work_group)},
+      {"CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK",
+       std::make_shared<EnumNameRule>(
+           "get_max_work_group_size",
+           HelperFeatureEnum::Device_device_ext_get_max_work_group_size)},
+      {"CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT",
+       std::make_shared<EnumNameRule>(
+           "get_mem_base_addr_align",
+           HelperFeatureEnum::Device_device_ext_get_mem_base_addr_align)},
+      {"CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY",
+       std::make_shared<EnumNameRule>(
+           "get_global_mem_size",
+           HelperFeatureEnum::Device_device_ext_get_global_mem_size)},
       {"CU_DEVICE_ATTRIBUTE_INTEGRATED",
        std::make_shared<EnumNameRule>(
            "get_integrated",

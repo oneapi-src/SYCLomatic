@@ -1,0 +1,25 @@
+.. _id_DPCT1048:
+
+DPCT1048
+========
+
+Message
+-------
+
+.. _msg-1048-start:
+
+The original value *<macro name>* is not meaningful in the migrated code and
+was removed or replaced with 0. You may need to check the migrated code.
+
+.. _msg-1048-end:
+
+Detailed Help
+-------------
+
+When API (calls, flags, etc.) are not meaningful in |dpcpp|, they may be removed
+or replaced with 0, depending on how they are used.
+
+Suggestions to Fix
+------------------
+
+Review the code and adjust it.

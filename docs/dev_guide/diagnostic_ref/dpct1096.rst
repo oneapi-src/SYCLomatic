@@ -1,0 +1,98 @@
+.. _id_DPCT1096:
+
+DPCT1096
+========
+
+Message
+-------
+
+.. _msg-1096-start:
+
+The right-most dimension of the work-group used in the SYCL kernel that calls
+this function may be less than *<value of kernel sub-group size attribute>*. The
+function *<help function name>* may return an unexpected result on the CPU device.
+Modify the size of the work-group to ensure that the value of the right-most
+dimension is a multiple of *<value of kernel sub-group size attribute>*.
+
+.. _msg-1096-end:
+
+Detailed Help
+-------------
+
+The ``dpct::select_from_sub_group``, ``dpct::shift_sub_group_left``,
+``dpct::shift_sub_group_right``, and ``dpct::permute_sub_group_by_xor`` functions
+may return unexpected results when run on a CPU device with an OpenCL™ backend,
+if the right-most dimension value of the work-group used in the SYCL\* kernel that
+calls these functions is less than the value of the kernel sub-group size attribute.
+The real sub-group size may not be the value specified by the kernel sub-group
+size attribute and could cause the helper function to return unexpected results
+on a CPU device.
+
+Adjust the code by modifying the size of the work-group to ensure that the value
+of the right-most dimension is a multiple of the kernel sub-group size attribute.
+
+For example, this original CUDA\* code:
+
+.. code-block:: cpp
+   :linenos:
+
+   __global__ void kernel() {
+       ...
+       value = __shfl_down(x, delta);
+       ...
+   }
+
+   int main() {
+       ...
+       auto GridSize = dim3(2);
+       auto BlockSize = dim3(8, 8, 1);
+       kernel<<<GridSize, BlockSize>>>();
+       ...
+   }
+
+results in the following migrated code:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(sycl::nd_item<3> item) {
+       ...
+       value = dpct::shift_sub_group_left(item.get_sub_group(), x, delta); // May return unexpected result on CPU
+       ...
+   }
+
+   int main() {
+       ...
+       auto GridSize = sycl::range<3>(1, 1, 2);
+       auto BlockSize = sycl::range<3>(1, 8, 8); // Problem: value of the right-most dimension 8 is less than the kernel sub group size attribute 32.
+       queue.parallel_for(sycl::nd_range<3>(GridSize * BlockSize, BlockSize), [=](sycl::nd_item<3> item)[[intel::reqd_sub_group_size(32)]] {
+           kernel(item);
+       });
+       ...
+   }
+
+
+which is rewritten to:
+
+.. code-block:: cpp
+   :linenos:
+
+   void kernel(sycl::nd_item<3> item) {
+       ...
+       value = dpct::shift_sub_group_left(item.get_sub_group(), x, delta);
+       ...
+   }
+
+   int main() {
+       auto GridSize = sycl::range<3>(1, 1, 2);
+       auto BlockSize = sycl::range<3>(1, 2, 32); // Fix: modified work group size to make the right-most dimension to be multiple of the kernel sub group size attribute value, which is 32.
+       queue.parallel_for(sycl::nd_range<3>(GridSize * BlockSize, BlockSize), [=](sycl::nd_item<3> item)[[intel::reqd_sub_group_size(32)]] {
+           kernel(item);
+       });
+       ...
+   }
+
+Suggestions to Fix
+------------------
+
+If the program needs to execute on a CPU device, you may need to adjust the code.
