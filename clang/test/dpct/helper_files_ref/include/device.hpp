@@ -92,6 +92,9 @@ public:
   int get_max_work_items_per_compute_unit() const {
     return _max_work_items_per_compute_unit;
   }
+  int get_max_register_size_per_work_group() const {
+    return _max_register_size_per_work_group;
+  }
   template <typename NDRangeSizeTy = size_t *,
             std::enable_if_t<std::is_same_v<NDRangeSizeTy, size_t *> ||
                                  std::is_same_v<NDRangeSizeTy, int *>,
@@ -169,7 +172,10 @@ public:
   void set_memory_bus_width(unsigned int memory_bus_width) {
     _memory_bus_width = memory_bus_width;
   }
-
+  void
+  set_max_register_size_per_work_group(int max_register_size_per_work_group) {
+    _max_register_size_per_work_group = max_register_size_per_work_group;
+  }
 private:
   char _name[256];
   sycl::id<3> _max_work_item_sizes;
@@ -185,6 +191,7 @@ private:
   int _max_work_group_size;
   int _max_sub_group_size;
   int _max_work_items_per_compute_unit;
+  int _max_register_size_per_work_group;
   size_t _global_mem_size;
   size_t _local_mem_size;
   size_t _max_nd_range_size[3];
@@ -231,6 +238,26 @@ public:
   }
 
   int get_integrated() const { return get_device_info().get_integrated(); }
+
+  int get_max_sub_group_size() const {
+    return get_device_info().get_max_sub_group_size();
+  }
+
+  int get_max_register_size_per_work_group() const {
+    return get_device_info().get_max_register_size_per_work_group();
+  }
+
+  int get_max_work_group_size() const {
+    return get_device_info().get_max_work_group_size();
+  }
+
+  int get_mem_base_addr_align() const {
+    return get_info<sycl::info::device::mem_base_addr_align>();
+  }
+
+  size_t get_global_mem_size() const {
+    return get_device_info().get_global_mem_size();
+  }
 
   /// Get the number of bytes of free and total memory on the SYCL device.
   /// \param [out] free_memory The number of bytes of free memory on the SYCL device.
@@ -331,6 +358,10 @@ public:
         get_info<sycl::info::device::max_work_group_size>());
     int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
     prop.set_max_nd_range_size(max_nd_range_size);
+
+    // Estimates max register size per work group, feel free to update the value
+    // according to device properties.
+    prop.set_max_register_size_per_work_group(65536);
 
     out = prop;
   }

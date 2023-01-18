@@ -879,6 +879,29 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<EnumNameRule>(
            "get_minor_version",
            HelperFeatureEnum::Device_device_ext_get_minor_version)},
+      {"CU_DEVICE_ATTRIBUTE_CAN_MAP_HOST_MEMORY",
+       std::make_shared<EnumNameRule>(
+           "has(sycl::aspect::usm_host_allocations)")},
+      {"CU_DEVICE_ATTRIBUTE_WARP_SIZE",
+       std::make_shared<EnumNameRule>(
+           "get_max_sub_group_size",
+           HelperFeatureEnum::Device_device_ext_get_max_sub_group_size)},
+      {"CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK",
+       std::make_shared<EnumNameRule>(
+        "get_max_register_size_per_work_group",
+        HelperFeatureEnum::Device_device_ext_get_max_register_size_per_work_group)},
+      {"CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK",
+       std::make_shared<EnumNameRule>(
+           "get_max_work_group_size",
+           HelperFeatureEnum::Device_device_ext_get_max_work_group_size)},
+      {"CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT",
+       std::make_shared<EnumNameRule>(
+           "get_mem_base_addr_align",
+           HelperFeatureEnum::Device_device_ext_get_mem_base_addr_align)},
+      {"CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY",
+       std::make_shared<EnumNameRule>(
+           "get_global_mem_size",
+           HelperFeatureEnum::Device_device_ext_get_global_mem_size)},
       {"CU_DEVICE_ATTRIBUTE_INTEGRATED",
        std::make_shared<EnumNameRule>(
            "get_integrated",
