@@ -469,7 +469,7 @@ private:
   int _minor;
   int _integrated = 0;
   int _frequency;
-  unsigned int _memory_clock_rate = 0;
+  unsigned int _memory_clock_rate = 3200000;
   unsigned int _memory_bus_width = 64;
   int _max_compute_units;
   int _max_work_group_size;
@@ -669,13 +669,20 @@ public:
 
 #if (defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 6)
     if (this->has(sycl::aspect::ext_intel_memory_clock_rate)) {
-      prop.set_memory_clock_rate(
-          1000 * this->get_info<sycl::ext::intel::info::device::memory_clock_rate>());
+      if (this->get_info<sycl::ext::intel::info::device::memory_clock_rate>() != 0) {
+        prop.set_memory_clock_rate(
+            1000 * this->get_info<
+                       sycl::ext::intel::info::device::memory_clock_rate>());
+      } else {
+        std::cerr << "memory_clock_rate default value is 3200000 kHz."
+                  << std::endl;
+      }
     } else {
       std::cerr << "Querying ext_intel_device_info_memory_clock_rate is not "
                    "supported by the device"
                 << std::endl;
-      std::cerr << "memory_clock_rate default value is 0 kHz." << std::endl;
+      std::cerr << "memory_clock_rate default value is 3200000 kHz."
+                << std::endl;
     }
     if (this->has(sycl::aspect::ext_intel_memory_bus_width)) {
       prop.set_memory_bus_width(
@@ -688,13 +695,17 @@ public:
     }
 #else
 #if defined(_MSC_VER) && !defined(__clang__)
-#pragma message("get_device_info: querying memory_clock_rate and memory_bus_width are"\
-                " not supported by the compiler used.")
-#pragma message("memory_clock_rate default value is 0 kHz.\nmemory_bus_width default value is 64 bits.")
+#pragma message(                                                               \
+    "get_device_info: querying memory_clock_rate and memory_bus_width are"     \
+    " not supported by the compiler used.")
+#pragma message(                                                               \
+    "memory_clock_rate default value is 3200000 kHz.\nmemory_bus_width default value is 64 bits.")
 #else
-#warning "get_device_info: querying memory_bus_width and memory_bus_width are not"\
+#warning                                                                       \
+    "get_device_info: querying memory_bus_width and memory_bus_width are not"\
          “supported by the compiler used."
-#warning "memory_clock_rate default value is 0 kHz.\nmemory_bus_width default value is 64 bits."
+#warning                                                                       \
+    "memory_clock_rate default value is 3200000 kHz.\nmemory_bus_width default value is 64 bits."
 #endif
 #endif
 
