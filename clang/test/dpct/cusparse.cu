@@ -45,10 +45,10 @@ int main(){
   //CHECK-NEXT: oneapi::mkl::uplo fill0 = oneapi::mkl::uplo::lower;
   //CHECK-NEXT: oneapi::mkl::index_base base0 = oneapi::mkl::index_base::zero;
   //CHECK-NEXT: dpct::sparse::sparse_matrix_info::matrix_type type0 = dpct::sparse::sparse_matrix_info::matrix_type::ge;
-  //CHECK-NEXT: descrA->set_diag((oneapi::mkl::diag)aaaaa);
-  //CHECK-NEXT: descrA->set_uplo((oneapi::mkl::uplo)aaaaa);
-  //CHECK-NEXT: descrA->set_index_base((oneapi::mkl::index_base)aaaaa);
-  //CHECK-NEXT: descrA->set_matrix_type((dpct::sparse::sparse_matrix_info::matrix_type)aaaaa);
+  //CHECK-NEXT: descrA->set_diag((oneapi::mkl::diag)zero);
+  //CHECK-NEXT: descrA->set_uplo((oneapi::mkl::uplo)zero);
+  //CHECK-NEXT: descrA->set_index_base((oneapi::mkl::index_base)zero);
+  //CHECK-NEXT: descrA->set_matrix_type((dpct::sparse::sparse_matrix_info::matrix_type)zero);
   //CHECK-NEXT: diag0 = descrA->get_diag();
   //CHECK-NEXT: fill0 = descrA->get_uplo();
   //CHECK-NEXT: base0 = descrA->get_index_base();
