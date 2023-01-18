@@ -284,10 +284,6 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
   if (IncludingFileSet.find(SourcePath.str()) != end(IncludingFileSet)) {
     return SPT_CppHeader;
   }
-  if (Extension == ".cpp" || Extension == ".cxx" || Extension == ".cc" ||
-      Extension == ".c" || Extension == ".C") {
-    return SPT_CppSource;
-  }
   if (Extension == ".hpp" || Extension == ".hxx" || Extension == ".h" ||
       Extension == ".hh" || Extension == ".inl" || Extension == ".inc" ||
       Extension == ".INL" || Extension == ".INC" || Extension == ".TPP" ||
