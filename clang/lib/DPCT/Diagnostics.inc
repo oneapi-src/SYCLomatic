@@ -225,3 +225,5 @@ DEF_WARNING(MODULE_LOAD_DATA, 1104, "'%0' should point to a dynamic library load
 DEF_COMMENT(MODULE_LOAD_DATA, 1104, "'{0}' should point to a dynamic library loaded in memory. The dynamic library should supply \"wrapped\" kernel functions.")
 DEF_WARNING(MODULE_LOAD_DATA_EX, 1105, "'%0' should point to a dynamic library loaded in memory. The dynamic library should supply \"wrapped\" kernel functions. Compilation options passed to cuModuleLoadDataEx are not migrated.")
 DEF_COMMENT(MODULE_LOAD_DATA_EX, 1105, "'{0}' should point to a dynamic library loaded in memory. The dynamic library should supply \"wrapped\" kernel functions. Compilation options passed to cuModuleLoadDataEx are not migrated.")
+DEF_WARNING(UNSUPPORTED_FUNCALL_PACKEXPANSIONEXPR_ARG, 1106, "Template parameter pack expansion in function argument list is not supported.")
+DEF_COMMENT(UNSUPPORTED_FUNCALL_PACKEXPANSIONEXPR_ARG, 1106, "Template parameter pack expansion in function argument list is not supported.")
