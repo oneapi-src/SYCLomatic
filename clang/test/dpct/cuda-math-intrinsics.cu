@@ -3055,13 +3055,6 @@ __device__ __host__ void do_migration7() {
   std::asinh(f);
 }
 
-__device__ __host__ void no_migration8() {
-  float f;
-
-  //CHECK: std::abs(f);
-  std::abs(f);
-}
-
 __device__ void test_recursive_unary() {
   int i, j, k;
   // CHECK: sycl::max(-sycl::max(-sycl::abs(i), j), k);
