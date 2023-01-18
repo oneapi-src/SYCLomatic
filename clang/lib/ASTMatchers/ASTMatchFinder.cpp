@@ -506,6 +506,13 @@ public:
   bool TraverseTemplateArgumentLoc(TemplateArgumentLoc TAL);
   bool TraverseAttr(Attr *AttrNode);
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  bool TraverseCXXDefaultArgExpr(CXXDefaultArgExpr *ExprNode,
+                                 DataRecursionQueue *Queue = nullptr) {
+    return true;
+  }
+#endif // SYCLomatic_CUSTOMIZATION
+
   bool dataTraverseNode(Stmt *S, DataRecursionQueue *Queue) {
     if (auto *RF = dyn_cast<CXXForRangeStmt>(S)) {
       {
@@ -1677,6 +1684,15 @@ void MatchFinder::matchAST(ASTContext &Context) {
   Visitor.TraverseAST(Context);
   Visitor.onEndOfTranslationUnit();
 }
+
+#ifdef SYCLomatic_CUSTOMIZATION
+void MatchFinder::traverseDecl(Decl *D, ASTContext &Context) {
+  internal::MatchASTVisitor Visitor(&Matchers, Options);
+  internal::MatchASTVisitor::TraceReporter StackTrace(Visitor);
+  Visitor.set_active_ast_context(&Context);
+  Visitor.TraverseDecl(D);
+}
+#endif // SYCLomatic_CUSTOMIZATION
 
 void MatchFinder::registerTestCallbackAfterParsing(
     MatchFinder::ParsingDoneTestCallback *NewParsingDone) {

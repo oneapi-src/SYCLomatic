@@ -1029,41 +1029,15 @@ void IncludesCallbacks::InclusionDirective(
   if (!isChildPath(CudaPath, IncludePath) &&
       IncludePath.compare(0, 15, "/usr/local/cuda", 15)) {
 
-    // Replace "#include "*.cuh"" with "include "*.dp.hpp""
-    if (NeedMigrate && FileName.endswith(".cuh")) {
+    // Replace "#include "*"" if needed
+    if (NeedMigrate) {
+      SmallString<512> NewFileName = FileName;
+      rewriteFileName(NewFileName, FilePath);
       CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                                   /* IsTokenRange */ false);
-      std::string NewFileName = "#include \"" +
-                                FileName.drop_back(strlen(".cuh")).str() +
-                                ".dp.hpp\"";
-      TransformSet.emplace_back(
-          new ReplaceInclude(InsertRange, std::move(NewFileName)));
+      TransformSet.emplace_back(new ReplaceInclude(
+          InsertRange, buildString("#include \"", NewFileName, "\"")));
       return;
-    }
-
-    // Replace "#include "*.cu"" with "include "*.dp.cpp""
-    if (FileName.endswith(".cu")) {
-      CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                                  /* IsTokenRange */ false);
-      std::string NewFileName =
-          "#include \"" + FileName.drop_back(strlen(".cu")).str() + ".dp.cpp\"";
-      TransformSet.emplace_back(
-          new ReplaceInclude(InsertRange, std::move(NewFileName)));
-      return;
-    }
-
-    // To generate replacement of replacing "#include "*.c"" with "include
-    // "*.c.dp.cpp"".
-    if (NeedMigrate && FileName.endswith(".c")) {
-      CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
-                                  /* IsTokenRange */ false);
-      std::string NewFileName = "#include \"" + FileName.str() + ".dp.cpp\"";
-
-      // For file path in preprocessing stage may be different with the one in
-      // syntax analysis stage, here only file name is used as the key.
-      const std::string Name = llvm::sys::path::filename(FileName).str();
-      IncludeMapSet[Name].push_back(std::make_unique<ReplaceInclude>(
-          InsertRange, std::move(NewFileName)));
     }
   }
 
@@ -1344,7 +1318,7 @@ void IterationSpaceBuiltinRule::runRule(
   }
 
   const MemberExpr *ME = getNodeAsType<MemberExpr>(Result, "memberExpr");
-  const VarDecl *VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
+  const VarDecl *VD = getAssistNodeAsType<VarDecl>(Result, "varDecl");
   const DeclRefExpr *DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr");
   std::shared_ptr<DeviceFunctionInfo> DFI = nullptr;
   if (!VD || !DRE) {
@@ -1782,14 +1756,27 @@ void ErrorHandlingHostAPIRule::runRule(const MatchFinder::MatchResult &Result) {
 void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl *FD) {
   SourceManager &SM = DpctGlobalInfo::getSourceManager();
   bool IsLambda = false;
+  bool IsInMacro = false;
   if (auto CMD = dyn_cast<CXXMethodDecl>(FD)) {
     if (CMD->getParent()->isLambda()) {
       IsLambda = true;
     }
   }
 
+  auto BodyRange = getDefinitionRange(FD->getBody()->getBeginLoc(),
+                                      FD->getBody()->getEndLoc());
+  auto It = dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().find(
+      getCombinedStrFromLoc(BodyRange.getEnd()));
+  if (It != dpct::DpctGlobalInfo::getExpansionRangeToMacroRecord().end()) {
+    IsInMacro = true;
+  }
+
   std::string IndentStr = getIndent(FD->getBeginLoc(), SM).str();
   std::string InnerIndentStr = IndentStr + "  ";
+
+  std::string NewLine = getNL();
+  if(IsInMacro)
+    NewLine = "\\" + NewLine;
 
   if (IsLambda) {
     if (auto CSM = dyn_cast<CompoundStmt>(FD->getBody())) {
@@ -1805,17 +1792,17 @@ void ErrorHandlingHostAPIRule::insertTryCatch(const FunctionDecl *FD) {
   }
 
   std::string ReplaceStr =
-      getNL() + IndentStr +
+      NewLine + IndentStr +
       std::string("catch (" + MapNames::getClNamespace(true) +
                   "exception const &exc) {") +
-      getNL() + InnerIndentStr +
+      NewLine + InnerIndentStr +
       std::string("std::cerr << exc.what() << \"Exception caught at file:\" << "
                   "__FILE__ << "
                   "\", line:\" << __LINE__ << std::endl;") +
-      getNL() + InnerIndentStr + std::string("std::exit(1);") + getNL() +
+      NewLine + InnerIndentStr + std::string("std::exit(1);") + NewLine +
       IndentStr + "}";
   if (IsLambda) {
-    ReplaceStr += getNL() + IndentStr + "}";
+    ReplaceStr += NewLine + IndentStr + "}";
   }
   emplaceTransformation(
       new InsertAfterStmt(FD->getBody(), std::move(ReplaceStr)));
@@ -15121,9 +15108,16 @@ void DriverDeviceAPIRule::runRule(
       auto AttributeName = DRE->getNameInfo().getAsString();
       auto Search = EnumConstantRule::EnumNamesMap.find(AttributeName);
       if (Search == EnumConstantRule::EnumNamesMap.end()) {
-        report(CE->getBeginLoc(), Diagnostics::API_NOT_MIGRATED, false,
-            "cuDeviceGetAttribute");
+        report(CE->getBeginLoc(), Diagnostics::NOT_SUPPORTED_PARAMETER, false,
+               APIName,
+               "parameter " + getStmtSpelling(SecArg) + " is unsupported");
         return;
+      }
+      if (AttributeName == "CU_DEVICE_ATTRIBUTE_TOTAL_CONSTANT_MEMORY" ||
+          AttributeName == "CU_DEVICE_ATTRIBUTE_TEXTURE_ALIGNMENT" ||
+          AttributeName == "CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK") {
+        report(CE->getBeginLoc(), Diagnostics::UNCOMPATIBLE_DEVICE_PROP, false,
+          AttributeName, Search->second->NewName);
       }
     } else {
       report(CE->getBeginLoc(), Diagnostics::UNPROCESSED_DEVICE_ATTRIBUTE,
