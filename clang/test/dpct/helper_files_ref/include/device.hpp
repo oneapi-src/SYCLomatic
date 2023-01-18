@@ -298,25 +298,11 @@ public:
         prop.set_memory_clock_rate(
             1000 * this->get_info<
                        sycl::ext::intel::info::device::memory_clock_rate>());
-      } else {
-        std::cerr << "memory_clock_rate default value is 3200000 kHz."
-                  << std::endl;
       }
-    } else {
-      std::cerr << "Querying ext_intel_device_info_memory_clock_rate is not "
-                   "supported by the device"
-                << std::endl;
-      std::cerr << "memory_clock_rate default value is 3200000 kHz."
-                << std::endl;
     }
     if (this->has(sycl::aspect::ext_intel_memory_bus_width)) {
       prop.set_memory_bus_width(
           this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
-    } else {
-      std::cerr << "Querying ext_intel_device_info_memory_bus_width is not "
-                   "supported by the device"
-                << std::endl;
-      std::cerr << "memory_bus_width default value is 64 bits." << std::endl;
     }
 #else
 #if defined(_MSC_VER) && !defined(__clang__)
