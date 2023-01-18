@@ -103,4 +103,84 @@ include_directories(
 
 add_subdirectory(ConfusableTable)
 
-build_lib_dpct()
+add_clang_library(DPCT
+  ASTTraversal.cpp
+  AnalysisInfo.cpp
+  CallExprRewriter.cpp
+  CallExprRewriterCUB.cpp
+  CallExprRewriterCUFFT.cpp
+  CallExprRewriterCUBLAS.cpp
+  CallExprRewriterCURAND.cpp
+  CallExprRewriterCUSOLVER.cpp
+  CallExprRewriterComplex.cpp
+  CallExprRewriterDriver.cpp
+  CallExprRewriterMemory.cpp
+  CallExprRewriterNccl.cpp
+  CallExprRewriterStream.cpp
+  CallExprRewriterTexture.cpp
+  CallExprRewriterThrust.cpp
+  CallExprRewriterWarp.cpp
+  CallExprRewriterCUDNN.cpp
+  CallExprRewriterErrorHandling.cpp
+  CallExprRewriterLIBCU.cpp
+  CallExprRewriterEvent.cpp
+  CallExprRewriterMath.cpp
+  CallExprRewriterCG.cpp
+  Diagnostics.cpp
+  Error.cpp
+  Statics.cpp
+  ExprAnalysis.cpp
+  ExtReplacements.cpp
+  MapNames.cpp
+  SaveNewFiles.cpp
+  DPCT.cpp
+  TextModification.cpp
+  Utility.cpp
+  ValidateArguments.cpp
+  ExternalReplacement.cpp
+  SignalProcess.cpp
+  VcxprojParser.cpp
+  LibraryAPIMigration.cpp
+  CustomHelperFiles.cpp
+  GenMakefile.cpp
+  IncrementalMigrationUtility.cpp
+  Rules.cpp
+  Homoglyph.cpp
+  MisleadingBidirectional.cpp
+  BarrierFenceSpaceAnalyzer.cpp
+  BLASAPIMigration.cpp
+  FFTAPIMigration.cpp
+  DNNAPIMigration.cpp
+  NCCLAPIMigration.cpp
+  TypeLocRewriters.cpp
+  QueryApiMapping.cpp
+  AutoComplete.cpp
+  LIBCUAPIMigration.cpp
+  CUBAPIMigration.cpp
+  MemberExprRewriter.cpp
+  MigrationRuleManager.cpp
+  MigrationAction.cpp
+  ThrustAPIMigration.cpp
+
+  DEPENDS
+  ClangDriverOptions
+  dpct_helper_headers_and_inc
+  genconfusable
+
+  LINK_LIBS
+  clangBasic
+  clangLex
+  clangAnalysis
+  clangAST
+  clangASTMatchers
+  clangDriver
+  clangEdit
+  clangFormat
+  clangFrontend
+  clangParse
+  clangRewrite
+  clangSema
+  clangSerialization
+  clangTooling
+  clangToolingCore
+)
