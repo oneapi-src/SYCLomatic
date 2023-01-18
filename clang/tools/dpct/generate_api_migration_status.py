@@ -50,7 +50,7 @@ def format_sing_line(API_list: list):
 
 def format_lib(lib_name: str, APIs_list: list):
     lib_str = '# '+lib_name+'\n'
-    lib_str += '| CUDA API | Migration support or not | Diagnostic message|\n'
+    lib_str += '| Function | Migration support | Diagnostic message|\n'
     lib_str += '| :---- | :----: | :----: |\n'
     for API_list in APIs_list:
         lib_str += format_sing_line(API_list)
@@ -130,6 +130,9 @@ def update_lib_csv(lib: str, file_lib: str, output_path: str):
     output_filename = lib+'_API_migration_status'
     APIs_list = get_API_status_list(file_lib)
     fout = open_output_file(output_path, output_filename)
+    heading = ['Function','Migration Support','Diagnostic Message']
+    headwriter = csv.DictWriter(fout, fieldnames = heading)
+    headwriter.writeheader()
     writer = csv.writer(fout)
     if(fout.writable()):
         writer.writerows(APIs_list)

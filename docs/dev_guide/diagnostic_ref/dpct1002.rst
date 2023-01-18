@@ -1,0 +1,24 @@
+.. _id_DPCT1002:
+
+DPCT1002
+========
+
+Message
+-------
+
+.. _msg-1002-start:
+
+Special case error handling ``if-stmt`` was detected. You may need to rewrite
+this code.
+
+.. _msg-1002-end:
+
+Detailed Help
+-------------
+
+See :ref:`id_DPCT1000`.
+
+Suggestions to Fix
+------------------
+
+See :ref:`id_DPCT1000`.
