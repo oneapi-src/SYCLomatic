@@ -62,20 +62,20 @@ public:
   // tr: Triangular matrix
   enum class matrix_type : int { ge = 0, sy, he, tr };
 
-  template <typename T> auto get() const { return _mat_type; }
-  template <> auto get<oneapi::mkl::diag>() const { return _unit_diag; }
-  template <> auto get<oneapi::mkl::uplo>() const { return _upper_lower; }
-  template <> auto get<oneapi::mkl::index_base>() const { return _index; }
-  void set(matrix_type mat_type) { _mat_type = mat_type; }
-  void set(oneapi::mkl::diag unit_diag) { _unit_diag = unit_diag; }
-  void set(oneapi::mkl::uplo upper_lower) { _upper_lower = upper_lower; }
-  void set(oneapi::mkl::index_base index) { _index = index; }
+  auto get_matrix_type() const { return _matrix_type; }
+  auto get_diag() const { return _diag; }
+  auto get_uplo() const { return _uplo; }
+  auto get_index_base() const { return _index_base; }
+  void set_matrix_type(matrix_type mt) { _matrix_type = mt; }
+  void set_diag(oneapi::mkl::diag d) { _diag = d; }
+  void set_uplo(oneapi::mkl::uplo u) { _uplo = u; }
+  void set_index_base(oneapi::mkl::index_base ib) { _index_base = ib; }
 
 private:
-  matrix_type _mat_type = matrix_type::ge;
-  oneapi::mkl::diag _unit_diag = oneapi::mkl::diag::nonunit;
-  oneapi::mkl::uplo _upper_lower = oneapi::mkl::uplo::upper;
-  oneapi::mkl::index_base _index = oneapi::mkl::index_base::zero;
+  matrix_type _matrix_type = matrix_type::ge;
+  oneapi::mkl::diag _diag = oneapi::mkl::diag::nonunit;
+  oneapi::mkl::uplo _uplo = oneapi::mkl::uplo::upper;
+  oneapi::mkl::index_base _index_base = oneapi::mkl::index_base::zero;
 };
 // DPCT_LABEL_END
 } // namespace sparse

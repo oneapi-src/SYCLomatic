@@ -8,34 +8,34 @@
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_sparse_matrix_info,
                         MEMBER_CALL_FACTORY_ENTRY("cusparseSetMatType", ARG(0),
-                                                  true, "set", ARG(1)))
+                                                  true, "set_matrix_type",
+                                                  ARG(1)))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_sparse_matrix_info,
                         MEMBER_CALL_FACTORY_ENTRY("cusparseSetMatIndexBase",
-                                                  ARG(0), true, "set", ARG(1)))
+                                                  ARG(0), true,
+                                                  "set_index_base", ARG(1)))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_sparse_matrix_info,
                         MEMBER_CALL_FACTORY_ENTRY("cusparseSetMatDiagType",
-                                                  ARG(0), true, "set", ARG(1)))
+                                                  ARG(0), true, "set_diag",
+                                                  ARG(1)))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_sparse_matrix_info,
                         MEMBER_CALL_FACTORY_ENTRY("cusparseSetMatFillMode",
-                                                  ARG(0), true, "set", ARG(1)))
+                                                  ARG(0), true, "set_uplo",
+                                                  ARG(1)))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::SparseUtils_sparse_matrix_info,
-    MEMBER_CALL_FACTORY_ENTRY("cusparseGetMatType", ARG(0), true,
-                              "get<" + MapNames::getDpctNamespace() +
-                                  "sparse::sparse_matrix_info::matrix_type>"))
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::SparseUtils_sparse_matrix_info,
-    MEMBER_CALL_FACTORY_ENTRY("cusparseGetMatIndexBase", ARG(0), true,
-                              "get<oneapi::mkl::index_base>"))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_sparse_matrix_info,
+                        MEMBER_CALL_FACTORY_ENTRY("cusparseGetMatType", ARG(0),
+                                                  true, "get_matrix_type"))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_sparse_matrix_info,
+                        MEMBER_CALL_FACTORY_ENTRY("cusparseGetMatIndexBase",
+                                                  ARG(0), true,
+                                                  "get_index_base"))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_sparse_matrix_info,
                         MEMBER_CALL_FACTORY_ENTRY("cusparseGetMatDiagType",
-                                                  ARG(0), true,
-                                                  "get<oneapi::mkl::diag>"))
+                                                  ARG(0), true, "get_diag"))
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::SparseUtils_sparse_matrix_info,
                         MEMBER_CALL_FACTORY_ENTRY("cusparseGetMatFillMode",
-                                                  ARG(0), true,
-                                                  "get<oneapi::mkl::uplo>"))
+                                                  ARG(0), true, "get_uplo"))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::SparseUtils_sparse_matrix_info,
