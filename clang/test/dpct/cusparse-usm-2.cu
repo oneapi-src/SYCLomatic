@@ -63,8 +63,8 @@ int foo(int aaaaa){
 
   //CHECK: handle = &dpct::get_default_queue();
   //CHECK-NEXT: descrA = std::make_shared<dpct::sparse::sparse_matrix_info>();
-  //CHECK-NEXT: descrA->set((dpct::sparse::sparse_matrix_info::matrix_type)aaaaa);
-  //CHECK-NEXT: descrA->set(oneapi::mkl::index_base::zero);
+  //CHECK-NEXT: descrA->set_matrix_type((dpct::sparse::sparse_matrix_info::matrix_type)aaaaa);
+  //CHECK-NEXT: descrA->set_index_base(oneapi::mkl::index_base::zero);
   cusparseCreate(&handle);
   cusparseCreateMatDescr(&descrA);
   cusparseSetMatType(descrA, (cusparseMatrixType_t)aaaaa);

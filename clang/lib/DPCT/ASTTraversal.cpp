@@ -4384,7 +4384,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
           MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
           CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
-          "->get<oneapi::mkl::index_base>(), " + CSRRowPtrA + ", " +
+          "->get_index_base(), " + CSRRowPtrA + ", " +
           CSRColIndA + ", " + CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
     } else {
       if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv")
@@ -4392,7 +4392,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
             ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
             MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
-            "->get<oneapi::mkl::index_base>(), const_cast<int*>(" + CSRRowPtrA +
+            "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
             "), const_cast<int*>(" + CSRColIndA + "), const_cast<" +
             BufferType + "*>(" + CSRValA + "));" + getNL() +
             ReplaceStrs.IndentStr;
@@ -4401,7 +4401,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
             ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
             MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
-            "->get<oneapi::mkl::index_base>(), const_cast<int*>(" + CSRRowPtrA +
+            "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
             "), const_cast<int*>(" + CSRColIndA + "), (" + BufferType + "*)" +
             CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
     }
@@ -4522,7 +4522,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
           ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
           MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
           CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] +
-          "->get<oneapi::mkl::index_base>(), " + CSRRowPtrA + ", " +
+          "->get_index_base(), " + CSRRowPtrA + ", " +
           CSRColIndA + ", " + CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
     } else {
       if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm")
@@ -4530,7 +4530,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
             ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
             MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] +
-            "->get<oneapi::mkl::index_base>(), const_cast<int*>(" + CSRRowPtrA +
+            "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
             "), const_cast<int*>(" + CSRColIndA + "), const_cast<" +
             BufferType + "*>(" + CSRValA + "));" + getNL() +
             ReplaceStrs.IndentStr;
@@ -4539,7 +4539,7 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
             ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
             MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] +
-            "->get<oneapi::mkl::index_base>(), const_cast<int*>(" + CSRRowPtrA +
+            "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
             "), const_cast<int*>(" + CSRColIndA + "), (" + BufferType + "*)" +
             CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
     }
