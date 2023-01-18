@@ -22,10 +22,6 @@ namespace dpct {
 
 #define ENTRY_RENAMED(SOURCEAPINAME, TARGETAPINAME)                            \
   FUNC_NAME_FACTORY_ENTRY(SOURCEAPINAME, TARGETAPINAME)
-#define ENTRY_BIND(SOURCEAPINAME, ...)                                         \
-  BIND_TEXTURE_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
-#define ENTRY_TEMPLATED(SOURCEAPINAME, ...)                                    \
-  TEMPLATED_CALL_FACTORY_ENTRY(SOURCEAPINAME, __VA_ARGS__)
 
 
 void CallExprRewriterFactoryBase::initRewriterMapLIBCU() {
@@ -45,8 +41,6 @@ void CallExprRewriterFactoryBase::initMethodRewriterMapLIBCU() {
 }
 
 #undef ENTRY_RENAMED
-#undef ENTRY_TEMPLATED
-#undef ENTRY_BIND
 
 } // namespace dpct
 } // namespace clang

@@ -3,46 +3,46 @@
 // RUN: dpct --format-range=none -in-root %S -out-root %T/Libcu %S/libcu_tuple.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/Libcu/libcu_tuple.dp.cpp --match-full-lines %s
 
+// CHECK: #include <tuple>
 #include <cuda/std/tuple>
-
 
 template <class T>
 __host__ __device__ void
-test(T *res)
-{
+test(T *res) {
+  // CHECK: std::tuple<T, T, T> t = std::make_tuple(2.0, 3.0, 4.0);
   cuda::std::tuple<T, T, T> t = cuda::std::make_tuple(2.0, 3.0, 4.0);
-  // *(res) = cuda::std::get<0>(t);
-  // *(res+1) = cuda::std::get<1>(t);
-  // *(res+2) = cuda::std::get<2>(t);
+  // CHECK: *(res) = std::get<0>(t);
+  *(res) = cuda::std::get<0>(t);
+  // CHECK: *(res + 1) = std::get<1>(t);
+  *(res + 1) = cuda::std::get<1>(t);
+  // CHECK: *(res + 2) = std::get<2>(t);
+  *(res + 2) = cuda::std::get<2>(t);
 }
 
-// __global__ void test_global(float * res)
-// {
-//   test<float>(res);
-// }
+__global__ void test_global(float *res) {
+  test<float>(res);
+}
 
-// int main(int, char **)
-// {
-  
-//   // float *floatRes = (float *)malloc(3 * sizeof(float));
-//   // test<float>(floatRes);
-//   // //test<double>(doubleRes);
-//   // float *hostRes = (float *)malloc(3 * sizeof(float));
-//   // float *deviceRes;
-//   // cudaMalloc((float **)&deviceRes, 3 * sizeof(float));
-//   // test_global<<<1, 1>>>(deviceRes);
-//   // cudaMemcpy(hostRes, deviceRes, sizeof(float) * 3, cudaMemcpyDeviceToHost);
-//   // cudaFree(deviceRes);
+int main(int, char **) {
 
-//   // for (int i = 0;i<3;++i){
-//   //   if(hostRes[i]!=floatRes[i]){
-//   //     free(hostRes);
-//   //     free(floatRes);
-//   //     return 1;
-//   //   }
-//   // }
-//   // free(hostRes);
-//   // free(floatRes);
-//   // return 0;
+  float *floatRes = (float *)malloc(3 * sizeof(float));
+  test<float>(floatRes);
+  // test<double>(doubleRes);
+  float *hostRes = (float *)malloc(3 * sizeof(float));
+  float *deviceRes;
+  cudaMalloc((float **)&deviceRes, 3 * sizeof(float));
+  test_global<<<1, 1>>>(deviceRes);
+  cudaMemcpy(hostRes, deviceRes, sizeof(float) * 3, cudaMemcpyDeviceToHost);
+  cudaFree(deviceRes);
 
-// }
+  for (int i = 0; i < 3; ++i) {
+    if (hostRes[i] != floatRes[i]) {
+      free(hostRes);
+      free(floatRes);
+      return 1;
+    }
+  }
+  free(hostRes);
+  free(floatRes);
+  return 0;
+}

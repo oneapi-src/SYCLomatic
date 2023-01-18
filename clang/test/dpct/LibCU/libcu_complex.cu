@@ -3,6 +3,7 @@
 // RUN: dpct --format-range=none -in-root %S -out-root %T/Libcu %S/libcu_complex.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/Libcu/libcu_complex.dp.cpp --match-full-lines %s
 
+// CHECK: #include <complex>
 #include <cuda/std/complex>
 
 template <class T>

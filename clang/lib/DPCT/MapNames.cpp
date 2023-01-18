@@ -405,6 +405,7 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::CclUtils_create_kvs)},
       {"ncclRedOp_t", std::make_shared<TypeNameRule>("oneapi::ccl::reduction")},
       {"ncclDataType_t", std::make_shared<TypeNameRule>("oneapi::ccl::datatype")},
+      {"cuda::std::tuple", std::make_shared<TypeNameRule>("std::tuple")},
       // ...
   };
 

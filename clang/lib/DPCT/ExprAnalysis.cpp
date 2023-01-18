@@ -1082,10 +1082,8 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
       return;
     }
   case TypeLoc::TemplateSpecialization: {
-    std::cout<<"asdas\n";
     llvm::raw_string_ostream OS(TyName);
     auto &TSTL = TYPELOC_CAST(TemplateSpecializationTypeLoc);
-    std::cout<<TSTL.getTypePtr()->getTemplateName().getAsDependentTemplateName();
     TSTL.getTypePtr()->getTemplateName().print(OS, Context.getPrintingPolicy());
     if (!TypeLocRewriterFactoryBase::TypeLocRewriterMap)
       return;

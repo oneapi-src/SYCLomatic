@@ -3,6 +3,7 @@
 // RUN: dpct --format-range=none -in-root %S -out-root %T/Libcu %S/libcu_array.cu --cuda-include-path="%cuda-path/include" -- -std=c++14 -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/Libcu/libcu_array.dp.cpp --match-full-lines %s
 
+// CHECK: #include <array>
 #include <cuda/std/array>
 
 template <class T>

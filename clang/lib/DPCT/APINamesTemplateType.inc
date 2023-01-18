@@ -153,9 +153,5 @@ TYPE_REWRITE_ENTRY(
     "cuda::std::array",
     TYPE_FACTORY(STR("std::array"), TEMPLATE_ARG(0),TEMPLATE_ARG(1)))
 
-// cuda::std::tuple
-TYPE_REWRITE_ENTRY(
-    "cuda::std::tuple",
-    TYPE_FACTORY(STR("std::tuple")))
 
 
