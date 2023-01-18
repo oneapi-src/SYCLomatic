@@ -3202,6 +3202,11 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
                          hasAnyName(SUPPORTEDVECTORTYPENAMES)))))))))))
           .bind("VecMemberExprArrow"),
       this);
+
+  // No inner filter is available for decltypeType(). Thus, this matcher will
+  // match all decltypeType. Detail control flow for different types is in
+  // runRule().
+  MF.addMatcher(typeLoc(loc(decltypeType())).bind("TypeLoc"), this);
 }
 
 void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
@@ -3294,6 +3299,13 @@ void VectorTypeMemberAccessRule::runRule(
 
   if (auto ME = getNodeAsType<MemberExpr>(Result, "VecMemberExprArrow")) {
     renameMemberField(ME);
+  }
+
+  if (auto *TL = getNodeAsType<DecltypeTypeLoc>(Result, "TypeLoc")) {
+    ExprAnalysis EA;
+    EA.analyze(*TL);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }
 
