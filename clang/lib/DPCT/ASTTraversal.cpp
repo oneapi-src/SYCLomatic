@@ -1035,8 +1035,20 @@ void IncludesCallbacks::InclusionDirective(
       rewriteFileName(NewFileName, FilePath);
       CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                                   /* IsTokenRange */ false);
-      TransformSet.emplace_back(new ReplaceInclude(
-          InsertRange, buildString("#include \"", NewFileName, "\"")));
+      if (NewFileName != FileName) {
+        const auto Extension = path::extension(FileName);
+        if (Extension == ".cu" || Extension == ".cuh") {
+          // For CUDA files, it will always change name.
+          TransformSet.emplace_back(new ReplaceInclude(
+              InsertRange, buildString("#include \"", NewFileName, "\"")));
+        } else {
+          // For other CppSource file type, it may change name or not, which
+          // determined by whether it has CUDA syntax, so just record the
+          // replacement in the IncludeMapSet.
+          IncludeMapSet[FilePath].emplace_back(new ReplaceInclude(
+              InsertRange, buildString("#include \"", NewFileName, "\"")));
+        }
+      }
       return;
     }
   }
