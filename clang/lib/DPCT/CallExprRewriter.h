@@ -852,6 +852,21 @@ public:
             std::forward<CallArgsT>(Args)...) {}
 };
 
+template <class BaseT, class ArgValueT> class ArraySubscriptExprPrinter {
+  BaseT Base;
+  ArgValueT ArgValue;
+
+public:
+  ArraySubscriptExprPrinter(BaseT base, ArgValueT &&Arg)
+      : Base(base), ArgValue(std::forward<ArgValueT>(Arg)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Base);
+    Stream << "[";
+    dpct::print(Stream, ArgValue);
+    Stream << "]";
+  }
+};
+
 template <class TypeInfoT, class SubExprT> class CastExprPrinter {
   TypeInfoT TypeInfo;
   SubExprT SubExpr;
@@ -1088,6 +1103,18 @@ public:
     Base::print(OS);
     return OS.str();
   }
+};
+
+template <class BaseT, class ArgValueT>
+class ArraySubscriptRewriter
+    : public PrinterRewriter<ArraySubscriptExprPrinter<BaseT, ArgValueT>> {
+public:
+  ArraySubscriptRewriter(
+      const CallExpr *C, const std::string &SourceName,
+      const std::function<BaseT(const CallExpr *)> &BaseCreator,
+      const std::function<ArgValueT(const CallExpr *)> &ArgCreator)
+      : PrinterRewriter<ArraySubscriptExprPrinter<BaseT, ArgValueT>>(
+            C, SourceName, BaseCreator(C), ArgCreator(C)) {}
 };
 
 template <class... ArgsT>

@@ -11,11 +11,11 @@ __host__ __device__ void
 test(T *res) {
   // CHECK: std::array<T, 3> arr = {1, 2, 3.5};
   cuda::std::array<T, 3> arr = {1, 2, 3.5};
-  // CHECK: *(res) = arr.operator[](0);
+  // CHECK: *(res) = arr[0];
   *(res) = arr.at(0);
-  // CHECK: *(res + 1) = arr.operator[](1);
+  // CHECK: *(res + 1) = arr[1];
   *(res + 1) = arr.at(1);
-  // CHECK: *(res + 2) = arr.operator[](2);
+  // CHECK: *(res + 2) = arr[2];
   *(res + 2) = arr.at(2);
   *(res + 3) = *(arr.begin());
   *(res + 4) = arr.size();
