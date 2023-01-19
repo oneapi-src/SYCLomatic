@@ -669,18 +669,16 @@ public:
 
 #if (defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 6)
     if (this->has(sycl::aspect::ext_intel_memory_clock_rate)) {
-      if (this->get_info<sycl::ext::intel::info::device::memory_clock_rate>() != 0) {
-        prop.set_memory_clock_rate(
-            1000 * this->get_info<
-                       sycl::ext::intel::info::device::memory_clock_rate>());
-      }
+      unsigned int tmp =
+          this->get_info<sycl::ext::intel::info::device::memory_clock_rate>();
+      if (tmp != 0)
+        prop.set_memory_clock_rate(1000 * tmp);
     }
     if (this->has(sycl::aspect::ext_intel_memory_bus_width)) {
       prop.set_memory_bus_width(
           this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
     }
-#else
-#if defined(_MSC_VER) && !defined(__clang__)
+#elif defined(_MSC_VER) && !defined(__clang__)
 #pragma message(                                                               \
     "get_device_info: querying memory_clock_rate and memory_bus_width are"     \
     " not supported by the compiler used.")
@@ -692,7 +690,6 @@ public:
          “supported by the compiler used."
 #warning                                                                       \
     "memory_clock_rate default value is 3200000 kHz.\nmemory_bus_width default value is 64 bits."
-#endif
 #endif
 
     size_t max_sub_group_size = 1;
