@@ -2570,38 +2570,6 @@ bool TypeInDeclRule::isCapturedByLambda(const TypeLoc *TL) {
   return false;
 }
 
-void TypeInDeclRule::processConstFFTHandleType(const DeclaratorDecl *DD,
-                                               SourceLocation BeginLoc,
-                                               SourceLocation EndLoc,
-                                               bool HasGlobalNSPrefix) {
-  std::string Repl = (HasGlobalNSPrefix ? "::" : "") +
-                     MapNames::getDpctNamespace() + "fft::fft_engine*";
-  requestFeature(HelperFeatureEnum::FftUtils_fft_engine, DD->getBeginLoc());
-  SrcAPIStaticsMap[Repl]++;
-
-  clang::SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
-  Token Tok;
-  Lexer::getRawToken(DD->getBeginLoc(), Tok, SM, LangOptions());
-  auto Tok2Ptr = Lexer::findNextToken(DD->getBeginLoc(), SM, LangOptions());
-  if (Tok2Ptr.has_value()) {
-    auto Tok2 = Tok2Ptr.value();
-    if (Tok.getKind() == tok::raw_identifier &&
-        Tok.getRawIdentifier().str() == "const") {
-      emplaceTransformation(
-          new ReplaceText(Tok.getLocation(),
-                          Tok2.getLocation().getRawEncoding() -
-                              Tok.getLocation().getRawEncoding(),
-                          ""));
-      Repl = Repl + " const";
-    }
-  }
-  auto Len =
-      Lexer::MeasureTokenLength(EndLoc, DpctGlobalInfo::getSourceManager(),
-                                DpctGlobalInfo::getContext().getLangOpts());
-  Len +=
-      SM.getDecomposedLoc(EndLoc).second - SM.getDecomposedLoc(BeginLoc).second;
-  emplaceTransformation(new ReplaceText(BeginLoc, Len, std::move(Repl)));
-}
 void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
   auto SD = getAllDecls(DD);
 
@@ -2930,17 +2898,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     if (DD) {
-      if (TypeStr == "cufftHandle" || TypeStr == "::cufftHandle") {
-        if (TL->getType().isConstQualified()) {
-          clang::SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
-          if (SM.getDecomposedLoc(EndLoc).second >= SM.getDecomposedLoc(BeginLoc).second) {
-            processConstFFTHandleType(DD, BeginLoc, EndLoc,
-                                      TypeStr == "::cufftHandle");
-            return;
-          }
-        }
-      }
-
       if (TL->getType().getCanonicalType()->isPointerType()) {
         const auto *PtrTy =
             TL->getType().getCanonicalType()->getAs<PointerType>();
