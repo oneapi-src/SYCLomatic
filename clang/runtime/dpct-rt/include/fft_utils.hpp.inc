@@ -1290,6 +1290,8 @@ private:
       oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>
       _desc_dc;
 };
+
+using fft_engine_ptr = fft_engine *;
 // DPCT_LABEL_END
 } // namespace fft
 } // namespace dpct
