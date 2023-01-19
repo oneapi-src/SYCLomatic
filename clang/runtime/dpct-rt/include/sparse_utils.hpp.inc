@@ -51,15 +51,15 @@ namespace sparse {
 // DPCT_LABEL_BEGIN|sparse_matrix_info|dpct::sparse
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-// Describes some properties of a sparse matrix.
-// The properties are matrix type, diag, uplo and index base.
+/// Describes properties of a sparse matrix.
+/// The properties are matrix type, diag, uplo and index base.
 class sparse_matrix_info {
 public:
-  // Matrix types are:
-  // ge: General matrix
-  // sy: Symmetric matrix
-  // he: Hermitian matrix
-  // tr: Triangular matrix
+  /// Matrix types are:
+  /// ge: General matrix
+  /// sy: Symmetric matrix
+  /// he: Hermitian matrix
+  /// tr: Triangular matrix
   enum class matrix_type : int { ge = 0, sy, he, tr };
 
   auto get_matrix_type() const { return _matrix_type; }
