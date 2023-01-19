@@ -207,395 +207,598 @@ CONDITIONAL_FACTORY_ENTRY(
                  CAST_IF_NEED(makeLiteral("const float *"), ARG(1))))),
     ENTRY_UNSUPPORTED("rnormf"))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(
-        HeaderType::HT_SYCL_Math,
-        ENTRY_RENAMED("__hadd2_sat", MapNames::getClNamespace() +
-                                         "ext::intel::math::" + "hadd2_sat")),
-    ENTRY_UNSUPPORTED("__hadd2_sat"))
+MATH_API_REWRITER_DEVICE(
+    "__hadd2_sat",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hadd2_sat"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hadd2_sat",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hadd2_sat",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hadd2_sat"), EMPTY_FACTORY_ENTRY("__hadd2_sat")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(
-        HeaderType::HT_SYCL_Math,
-        ENTRY_RENAMED("__hfma2_sat", MapNames::getClNamespace() +
-                                         "ext::intel::math::" + "hfma2_sat")),
-    ENTRY_UNSUPPORTED("__hfma2_sat"))
+MATH_API_REWRITER_DEVICE(
+    "__hfma2_sat",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hfma2_sat"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hfma2_sat",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hfma2_sat",
+                                    ARG(0), ARG(1), ARG(2)))),
+        EMPTY_FACTORY_ENTRY("__hfma2_sat"), EMPTY_FACTORY_ENTRY("__hfma2_sat")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(
-        HeaderType::HT_SYCL_Math,
-        ENTRY_RENAMED("__hmul2_sat", MapNames::getClNamespace() +
-                                         "ext::intel::math::" + "hmul2_sat")),
-    ENTRY_UNSUPPORTED("__hmul2_sat"))
+MATH_API_REWRITER_DEVICE(
+    "__hmul2_sat",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmul2_sat"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmul2_sat",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hmul2_sat",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmul2_sat"), EMPTY_FACTORY_ENTRY("__hmul2_sat")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(
-        HeaderType::HT_SYCL_Math,
-        ENTRY_RENAMED("__hsub2_sat", MapNames::getClNamespace() +
-                                         "ext::intel::math::" + "hsub2_sat")),
-    ENTRY_UNSUPPORTED("__hsub2_sat"))
+MATH_API_REWRITER_DEVICE(
+    "__hsub2_sat",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hsub2_sat"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hsub2_sat",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hsub2_sat",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hsub2_sat"), EMPTY_FACTORY_ENTRY("__hsub2_sat")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hbeq2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hbeq2")),
-    ENTRY_UNSUPPORTED("__hbeq2"))
+MATH_API_REWRITER_DEVICE(
+    "__hbeq2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hbeq2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hbeq2", CALL(MapNames::getClNamespace() +
+                                                   "ext::intel::math::hbeq2",
+                                               ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hbeq2"), EMPTY_FACTORY_ENTRY("__hbeq2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hbequ2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hbequ2")),
-    ENTRY_UNSUPPORTED("__hbequ2"))
+MATH_API_REWRITER_DEVICE(
+    "__hbequ2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hbequ2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hbequ2", CALL(MapNames::getClNamespace() +
+                                                    "ext::intel::math::hbequ2",
+                                                ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hbequ2"), EMPTY_FACTORY_ENTRY("__hbequ2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hbge2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hbge2")),
-    ENTRY_UNSUPPORTED("__hbge2"))
+MATH_API_REWRITER_DEVICE(
+    "__hbge2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hbge2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hbge2", CALL(MapNames::getClNamespace() +
+                                                   "ext::intel::math::hbge2",
+                                               ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hbge2"), EMPTY_FACTORY_ENTRY("__hbge2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hbgeu2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hbgeu2")),
-    ENTRY_UNSUPPORTED("__hbgeu2"))
+MATH_API_REWRITER_DEVICE(
+    "__hbgeu2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hbgeu2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hbgeu2", CALL(MapNames::getClNamespace() +
+                                                    "ext::intel::math::hbgeu2",
+                                                ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hbgeu2"), EMPTY_FACTORY_ENTRY("__hbgeu2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hbgt2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hbgt2")),
-    ENTRY_UNSUPPORTED("__hbgt2"))
+MATH_API_REWRITER_DEVICE(
+    "__hbgt2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hbgt2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hbgt2", CALL(MapNames::getClNamespace() +
+                                                   "ext::intel::math::hbgt2",
+                                               ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hbgt2"), EMPTY_FACTORY_ENTRY("__hbgt2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hbgtu2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hbgtu2")),
-    ENTRY_UNSUPPORTED("__hbgtu2"))
+MATH_API_REWRITER_DEVICE(
+    "__hbgtu2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hbgtu2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hbgtu2", CALL(MapNames::getClNamespace() +
+                                                    "ext::intel::math::hbgtu2",
+                                                ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hbgtu2"), EMPTY_FACTORY_ENTRY("__hbgtu2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hble2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hble2")),
-    ENTRY_UNSUPPORTED("__hble2"))
+MATH_API_REWRITER_DEVICE(
+    "__hble2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hble2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hble2", CALL(MapNames::getClNamespace() +
+                                                   "ext::intel::math::hble2",
+                                               ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hble2"), EMPTY_FACTORY_ENTRY("__hble2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hbleu2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hbleu2")),
-    ENTRY_UNSUPPORTED("__hbleu2"))
+MATH_API_REWRITER_DEVICE(
+    "__hbleu2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hbleu2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hbleu2", CALL(MapNames::getClNamespace() +
+                                                    "ext::intel::math::hbleu2",
+                                                ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hbleu2"), EMPTY_FACTORY_ENTRY("__hbleu2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hblt2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hblt2")),
-    ENTRY_UNSUPPORTED("__hblt2"))
+MATH_API_REWRITER_DEVICE(
+    "__hblt2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hblt2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hblt2", CALL(MapNames::getClNamespace() +
+                                                   "ext::intel::math::hblt2",
+                                               ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hblt2"), EMPTY_FACTORY_ENTRY("__hblt2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hbltu2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hbltu2")),
-    ENTRY_UNSUPPORTED("__hbltu2"))
+MATH_API_REWRITER_DEVICE(
+    "__hbltu2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hbltu2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hbltu2", CALL(MapNames::getClNamespace() +
+                                                    "ext::intel::math::hbltu2",
+                                                ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hbltu2"), EMPTY_FACTORY_ENTRY("__hbltu2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hbne2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hbne2")),
-    ENTRY_UNSUPPORTED("__hbne2"))
+MATH_API_REWRITER_DEVICE(
+    "__hbne2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hbne2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hbne2", CALL(MapNames::getClNamespace() +
+                                                   "ext::intel::math::hbne2",
+                                               ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hbne2"), EMPTY_FACTORY_ENTRY("__hbne2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hbneu2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hbneu2")),
-    ENTRY_UNSUPPORTED("__hbneu2"))
+MATH_API_REWRITER_DEVICE(
+    "__hbneu2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hbneu2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hbneu2", CALL(MapNames::getClNamespace() +
+                                                    "ext::intel::math::hbneu2",
+                                                ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hbneu2"), EMPTY_FACTORY_ENTRY("__hbneu2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__heq2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "heq2")),
-    ENTRY_UNSUPPORTED("__heq2"))
+MATH_API_REWRITER_DEVICE(
+    "__heq2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__heq2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__heq2", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::heq2",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__heq2"), EMPTY_FACTORY_ENTRY("__heq2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hequ2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hequ2")),
-    ENTRY_UNSUPPORTED("__hequ2"))
+MATH_API_REWRITER_DEVICE(
+    "__hequ2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hequ2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hequ2", CALL(MapNames::getClNamespace() +
+                                                   "ext::intel::math::hequ2",
+                                               ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hequ2"), EMPTY_FACTORY_ENTRY("__hequ2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hge2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hge2")),
-    ENTRY_UNSUPPORTED("__hge2"))
+MATH_API_REWRITER_DEVICE(
+    "__hge2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hge2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hge2", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hge2",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hge2"), EMPTY_FACTORY_ENTRY("__hge2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hgeu2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hgeu2")),
-    ENTRY_UNSUPPORTED("__hgeu2"))
+MATH_API_REWRITER_DEVICE(
+    "__hgeu2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hgeu2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hgeu2", CALL(MapNames::getClNamespace() +
+                                                   "ext::intel::math::hgeu2",
+                                               ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hgeu2"), EMPTY_FACTORY_ENTRY("__hgeu2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hgt2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hgt2")),
-    ENTRY_UNSUPPORTED("__hgt2"))
+MATH_API_REWRITER_DEVICE(
+    "__hgt2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hgt2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hgt2", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hgt2",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hgt2"), EMPTY_FACTORY_ENTRY("__hgt2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hgtu2",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hgtu2")),
-    ENTRY_UNSUPPORTED("__hgtu2"))
+MATH_API_REWRITER_DEVICE(
+    "__hgtu2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hgtu2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hgtu2", CALL(MapNames::getClNamespace() +
+                                                   "ext::intel::math::hgtu2",
+                                               ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hgtu2"), EMPTY_FACTORY_ENTRY("__hgtu2")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hadd_sat",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hadd_sat")),
-    ENTRY_UNSUPPORTED("__hadd_sat"))
+MATH_API_REWRITER_DEVICE(
+    "__hadd_sat",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hadd_sat"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hadd_sat",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hadd_sat",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hadd_sat"), EMPTY_FACTORY_ENTRY("__hadd_sat")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hfma_sat",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hfma_sat")),
-    ENTRY_UNSUPPORTED("__hfma_sat"))
+MATH_API_REWRITER_DEVICE(
+    "__hfma_sat",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hfma_sat"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hfma_sat",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hfma_sat",
+                                    ARG(0), ARG(1), ARG(2)))),
+        EMPTY_FACTORY_ENTRY("__hfma_sat"), EMPTY_FACTORY_ENTRY("__hfma_sat")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hmul_sat",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hmul_sat")),
-    ENTRY_UNSUPPORTED("__hmul_sat"))
+MATH_API_REWRITER_DEVICE(
+    "__hmul_sat",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmul_sat"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmul_sat",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hmul_sat",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmul_sat"), EMPTY_FACTORY_ENTRY("__hmul_sat")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hsub_sat",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hsub_sat")),
-    ENTRY_UNSUPPORTED("__hsub_sat"))
+MATH_API_REWRITER_DEVICE(
+    "__hsub_sat",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hsub_sat"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hsub_sat",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hsub_sat",
+                                    ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hsub_sat"), EMPTY_FACTORY_ENTRY("__hsub_sat")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hequ",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hequ")),
-    ENTRY_UNSUPPORTED("__hequ"))
+MATH_API_REWRITER_DEVICE(
+    "__hequ",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hequ"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hequ", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hequ",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hequ"), EMPTY_FACTORY_ENTRY("__hequ")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hgeu",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hgeu")),
-    ENTRY_UNSUPPORTED("__hgeu"))
+MATH_API_REWRITER_DEVICE(
+    "__hgeu",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hgeu"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hgeu", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hgeu",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hgeu"), EMPTY_FACTORY_ENTRY("__hgeu")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hgtu",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hgtu")),
-    ENTRY_UNSUPPORTED("__hgtu"))
+MATH_API_REWRITER_DEVICE(
+    "__hgtu",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hgtu"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hgtu", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hgtu",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hgtu"), EMPTY_FACTORY_ENTRY("__hgtu")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hleu",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hleu")),
-    ENTRY_UNSUPPORTED("__hleu"))
+MATH_API_REWRITER_DEVICE(
+    "__hleu",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hleu"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hleu", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hleu",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hleu"), EMPTY_FACTORY_ENTRY("__hleu")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hltu",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hltu")),
-    ENTRY_UNSUPPORTED("__hltu"))
+MATH_API_REWRITER_DEVICE(
+    "__hltu",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hltu"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hltu", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hltu",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hltu"), EMPTY_FACTORY_ENTRY("__hltu")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hneu",
-                                        MapNames::getClNamespace() +
-                                            "ext::intel::math::" + "hneu")),
-    ENTRY_UNSUPPORTED("__hneu"))
+MATH_API_REWRITER_DEVICE(
+    "__hneu",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hneu"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hneu", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hneu",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hneu"), EMPTY_FACTORY_ENTRY("__hneu")))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hneg",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "hneg")),
-    ENTRY_OPERATOR("__hneg", BinaryOperatorKind::BO_Sub))
+MATH_API_REWRITER_DEVICE(
+    "__hneg",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hneg"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hneg", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hneg",
+                                              ARG(0)))),
+        EMPTY_FACTORY_ENTRY("__hneg"), UNARY_OP_FACTORY_ENTRY("__hneg",
+                                        UnaryOperatorKind::UO_Minus,
+                                        makeCallArgCreatorWithCall(0))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hneg2",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "hneg2")),
-    ENTRY_OPERATOR("__hneg2", BinaryOperatorKind::BO_Sub))
+MATH_API_REWRITER_DEVICE(
+    "__hneg2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hneg2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hneg2", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hneg2",
+                                              ARG(0)))),
+        EMPTY_FACTORY_ENTRY("__hneg2"), UNARY_OP_FACTORY_ENTRY("__hneg2",
+                                        UnaryOperatorKind::UO_Minus,
+                                        makeCallArgCreatorWithCall(0))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hadd2",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "hadd2")),
-    ENTRY_OPERATOR("__hadd2", BinaryOperatorKind::BO_Add))
+MATH_API_REWRITER_DEVICE(
+    "__hadd2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hadd2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hadd2", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hadd2",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hadd2"), BINARY_OP_FACTORY_ENTRY("__hadd2",
+                                        BinaryOperatorKind::BO_Add,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__h2div",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "h2div")),
-    ENTRY_OPERATOR("__h2div", BinaryOperatorKind::BO_Div))
+MATH_API_REWRITER_DEVICE(
+    "__h2div",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__h2div"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__h2div", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::h2div",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__h2div"), BINARY_OP_FACTORY_ENTRY("__h2div",
+                                        BinaryOperatorKind::BO_Div,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hdiv",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "hdiv")),
-    ENTRY_OPERATOR("__hdiv", BinaryOperatorKind::BO_Div))
+MATH_API_REWRITER_DEVICE(
+    "__hdiv",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hdiv"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hdiv", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hdiv",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hdiv"), BINARY_OP_FACTORY_ENTRY("__hdiv",
+                                        BinaryOperatorKind::BO_Div,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("h2div",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "h2div")),
-    ENTRY_OPERATOR("h2div", BinaryOperatorKind::BO_Div))
+MATH_API_REWRITER_DEVICE(
+    "h2div",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("h2div"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("h2div", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::h2div",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("h2div"), BINARY_OP_FACTORY_ENTRY("h2div",
+                                        BinaryOperatorKind::BO_Div,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("hdiv",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "hdiv")),
-    ENTRY_OPERATOR("hdiv", BinaryOperatorKind::BO_Div))
+MATH_API_REWRITER_DEVICE(
+    "hdiv",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("hdiv"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("hdiv", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hdiv",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("hdiv"), BINARY_OP_FACTORY_ENTRY("hdiv",
+                                        BinaryOperatorKind::BO_Div,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
+MATH_API_REWRITER_DEVICE(
+    "__hmul",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmul"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmul", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hmul",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmul"), BINARY_OP_FACTORY_ENTRY("__hmul",
+                                        BinaryOperatorKind::BO_Mul,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hmul",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "hmul")),
-    ENTRY_OPERATOR("__hmul", BinaryOperatorKind::BO_Mul))
+MATH_API_REWRITER_DEVICE(
+    "__hmul2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmul2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmul2", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hmul2",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmul2"), BINARY_OP_FACTORY_ENTRY("__hmul2",
+                                        BinaryOperatorKind::BO_Mul,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hmul2",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "hmul2")),
-    ENTRY_OPERATOR("__hmul2", BinaryOperatorKind::BO_Mul))
+MATH_API_REWRITER_DEVICE(
+    "__hsub",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hsub"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hsub", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hsub",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hsub"), BINARY_OP_FACTORY_ENTRY("__hsub",
+                                        BinaryOperatorKind::BO_Sub,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hsub",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "hsub")),
-    ENTRY_OPERATOR("__hsub", BinaryOperatorKind::BO_Sub))
+MATH_API_REWRITER_DEVICE(
+    "__hsub2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hsub2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hsub2", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hsub2",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hsub2"), BINARY_OP_FACTORY_ENTRY("__hsub2",
+                                        BinaryOperatorKind::BO_Sub,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hsub2",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "hsub2")),
-    ENTRY_OPERATOR("__hsub2", BinaryOperatorKind::BO_Sub))
+MATH_API_REWRITER_DEVICE(
+    "__heq",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__heq"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__heq", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::heq",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__heq"), BINARY_OP_FACTORY_ENTRY("__heq",
+                                        BinaryOperatorKind::BO_EQ,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__heq",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "heq")),
-    ENTRY_OPERATOR("__heq", BinaryOperatorKind::BO_EQ))
+MATH_API_REWRITER_DEVICE(
+    "__hne",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hne"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hne", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hne",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hne"), BINARY_OP_FACTORY_ENTRY("__hne",
+                                        BinaryOperatorKind::BO_NE,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hne",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "hne")),
-    ENTRY_OPERATOR("__hne", BinaryOperatorKind::BO_NE))
+MATH_API_REWRITER_DEVICE(
+    "__hge",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hge"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hge", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hge",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hge"), BINARY_OP_FACTORY_ENTRY("__hge",
+                                        BinaryOperatorKind::BO_GE,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hge",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "hge")),
-    ENTRY_OPERATOR("__hge", BinaryOperatorKind::BO_GE))
+MATH_API_REWRITER_DEVICE(
+    "__hgt",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hgt"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hgt", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hgt",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hgt"), BINARY_OP_FACTORY_ENTRY("__hgt",
+                                        BinaryOperatorKind::BO_GT,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hgt",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "hgt")),
-    ENTRY_OPERATOR("__hgt", BinaryOperatorKind::BO_GT))
+MATH_API_REWRITER_DEVICE(
+    "__hle",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hle"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hle", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hle",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hle"), BINARY_OP_FACTORY_ENTRY("__hle",
+                                        BinaryOperatorKind::BO_LE,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hle",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "hle")),
-    ENTRY_OPERATOR("__hle", BinaryOperatorKind::BO_LE))
-
-CONDITIONAL_FACTORY_ENTRY(
-    math::UseIntelDeviceMath,
-    HEADER_INSERT_FACTORY(HeaderType::HT_SYCL_Math,
-                          ENTRY_RENAMED("__hlt",
-                                        MapNames::getClNamespace(false, true) +
-                                            "ext::intel::math::" + "hlt")),
-    ENTRY_OPERATOR("__hlt", BinaryOperatorKind::BO_LT))
+MATH_API_REWRITER_DEVICE(
+    "__hlt",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hlt"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hlt", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hlt",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hlt"), BINARY_OP_FACTORY_ENTRY("__hlt",
+                                        BinaryOperatorKind::BO_LT,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))

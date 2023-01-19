@@ -884,6 +884,24 @@ public:
   }
 };
 
+template <UnaryOperatorKind UO, class ArgValueT>
+class UnaryOperatorPrinter {
+  ArgValueT ArgValue;
+
+  static std::string UOStr;
+
+public:
+  UnaryOperatorPrinter(ArgValueT &&Arg)
+      : ArgValue(std::forward<ArgValueT>(Arg)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    Stream << UOStr;
+    dpct::print(Stream, ArgValue);
+  }
+};
+template <UnaryOperatorKind UO, class ArgValueT>
+std::string UnaryOperatorPrinter<UO, ArgValueT>::UOStr =
+    UnaryOperator::getOpcodeStr(UO).str();
+
 template <BinaryOperatorKind Op, class LValueT, class RValueT>
 std::string BinaryOperatorPrinter<Op, LValueT, RValueT>::OpStr =
     BinaryOperator::getOpcodeStr(Op).str();
@@ -1164,6 +1182,16 @@ public:
                    const std::function<RValueT(const CallExpr *)> &RCreator)
       : PrinterRewriter<BinaryOperatorPrinter<BO, LValueT, RValueT>>(
             C, Source, LCreator(C), RCreator(C)) {}
+};
+
+template <UnaryOperatorKind UO, class ArgValueT>
+class UnaryOpRewriter
+    : public PrinterRewriter<UnaryOperatorPrinter<UO, ArgValueT>> {
+public:
+  UnaryOpRewriter(const CallExpr *C, StringRef Source,
+                   const std::function<ArgValueT(const CallExpr *)> &ArgCreator)
+      : PrinterRewriter<UnaryOperatorPrinter<UO, ArgValueT>> (
+            C, Source, ArgCreator(C)) {}
 };
 
 class SubGroupPrinter {

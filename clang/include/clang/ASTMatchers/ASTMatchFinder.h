@@ -199,6 +199,11 @@ public:
   /// Finds all matches in the given AST.
   void matchAST(ASTContext &Context);
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  /// Finds all matches in the given Decl;
+  void traverseDecl(Decl *D, ASTContext &Context);
+#endif // SYCLomatic_CUSTOMIZATION
+
   /// Registers a callback to notify the end of parsing.
   ///
   /// The provided closure is called after parsing is done, before the AST is

@@ -158,14 +158,17 @@ protected:
   template <typename NodeType>
   inline const NodeType *
   getNodeAsType(const ast_matchers::MatchFinder::MatchResult &Result,
-                const char *Name, bool CheckNode = true) {
-    return getNode<NodeType>(Result, Name, CheckNode, CheckNode);
+                const char *Name) {
+    if (auto Node = Result.Nodes.getNodeAs<NodeType>(Name))
+      if (!isReplaced(Node->getSourceRange()))
+        return Node;
+    return nullptr;
   }
   template <typename NodeType>
   inline const NodeType *
   getAssistNodeAsType(const ast_matchers::MatchFinder::MatchResult &Result,
-                      const char *Name, bool CheckInAnalysisScope = true) {
-    return getNode<NodeType>(Result, Name, false, CheckInAnalysisScope);
+                      const char *Name) {
+    return Result.Nodes.getNodeAs<NodeType>(Name);
   }
 
   const VarDecl *getVarDecl(const Expr *E) {
@@ -177,30 +180,8 @@ protected:
   }
 
 private:
-  template <typename NodeType>
-  const NodeType *getNode(const ast_matchers::MatchFinder::MatchResult &Result,
-                          const char *Name, bool CheckReplaced,
-                          bool CheckInAnalysisScope) {
-    if (auto Node = Result.Nodes.getNodeAs<NodeType>(Name))
-      if (checkNode(Node->getSourceRange(), CheckReplaced, CheckInAnalysisScope))
-        return Node;
-    return nullptr;
-  }
-  bool checkNode(SourceRange &&SR, bool CheckReplaced, bool CheckInAnalysisScope) {
-    if (CheckInAnalysisScope && !isInAnalysisScope(SR.getBegin()))
-      return false;
-    if (CheckReplaced && isReplaced(SR))
-      return false;
-    return true;
-  }
-
-  // Check if the node's host file is in the InRoot path.
-  inline bool isInAnalysisScope(SourceLocation &&SL) {
-    return DpctGlobalInfo::isInAnalysisScope(SL);
-  }
-
   // Check if the location has been replaced by the same rule.
-  bool isReplaced(SourceRange &SR) {
+  bool isReplaced(SourceRange SR) {
     for (const auto &RR : Replaced) {
       if (SR == RR)
         return true;

@@ -1,0 +1,25 @@
+.. _id_DPCT1063:
+
+DPCT1063
+========
+
+Message
+-------
+
+.. _msg-1063-start:
+
+Advice parameter is device-defined. You may need to adjust it.
+
+.. _msg-1063-end:
+
+Detailed Help
+-------------
+
+The advice value is device-defined advice for the specified memory allocation. A
+value of 0 reverts the advice to the default behavior. Replace the value with
+the one required by your device.
+
+Suggestions to Fix
+------------------
+
+Consult with your hardware vendor to find a replacement.

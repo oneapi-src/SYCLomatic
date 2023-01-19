@@ -863,12 +863,26 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> createMultiStmtsRewriterFact
                                                              Creators...));
 }
 
-/// Create AssignExprRewriterFactory with given arguments.
+/// Create UnaryOpRewriterFactory with given arguments.
+/// \p SourceName the source callee name of original call expr.
+/// \p ArgValueCreator use to get argument value from original call expr.
+template <UnaryOperatorKind UO, class ArgValue>
+inline std::shared_ptr<CallExprRewriterFactoryBase> createUnaryOpRewriterFactory(
+    const std::string &SourceName,
+    std::function<ArgValue(const CallExpr *)> &&ArgValueCreator) {
+  return std::make_shared<
+      CallExprRewriterFactory<UnaryOpRewriter<UO, ArgValue>,
+                              std::function<ArgValue(const CallExpr *)>>>(
+      SourceName,
+      std::forward<std::function<ArgValue(const CallExpr *)>>(ArgValueCreator));
+}
+
+/// Create BinaryOpRewriterFactory with given arguments.
 /// \p SourceName the source callee name of original call expr.
 /// \p LValueCreator use to get lhs from original call expr.
 /// \p RValueCreator use to get rhs from original call expr.
 template <BinaryOperatorKind BO, class LValue, class RValue>
-inline std::shared_ptr<CallExprRewriterFactoryBase> creatBinaryOpRewriterFactory(
+inline std::shared_ptr<CallExprRewriterFactoryBase> createBinaryOpRewriterFactory(
     const std::string &SourceName,
     std::function<LValue(const CallExpr *)> &&LValueCreator,
     std::function<RValue(const CallExpr *)> &&RValueCreator) {
@@ -881,8 +895,9 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> creatBinaryOpRewriterFactory
       std::forward<std::function<RValue(const CallExpr *)>>(RValueCreator));
 }
 
+
 template <class BaseT, class MemberT>
-inline std::shared_ptr<CallExprRewriterFactoryBase> creatMemberExprRewriterFactory(
+inline std::shared_ptr<CallExprRewriterFactoryBase> createMemberExprRewriterFactory(
     const std::string &SourceName,
     std::function<BaseT(const CallExpr *)> &&BaseCreator, bool IsArrow,
     std::function<MemberT(const CallExpr *)> &&MemberCreator) {
@@ -896,7 +911,7 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> creatMemberExprRewriterFacto
       std::forward<std::function<MemberT(const CallExpr *)>>(MemberCreator));
 }
 
-inline std::shared_ptr<CallExprRewriterFactoryBase> creatIfElseRewriterFactory(
+inline std::shared_ptr<CallExprRewriterFactoryBase> createIfElseRewriterFactory(
     const std::string &SourceName,
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         PredCreator,
@@ -916,7 +931,7 @@ inline std::shared_ptr<CallExprRewriterFactoryBase> creatIfElseRewriterFactory(
 /// \p SourceName the source callee name of original call expr.
 /// \p ArgsCreator use to get call args from original call expr.
 template <class CalleeT, class... CallArgsT>
-inline std::shared_ptr<CallExprRewriterFactoryBase> creatCallExprRewriterFactory(
+inline std::shared_ptr<CallExprRewriterFactoryBase> createCallExprRewriterFactory(
     const std::string &SourceName,
     std::function<CallExprPrinter<CalleeT, CallArgsT...>(const CallExpr *)>
         Args) {
@@ -1668,18 +1683,20 @@ public:
 #define CONDITIONAL_FACTORY_ENTRY(Pred, First, Second)                         \
   createConditionalFactory(Pred, First Second 0),
 #define IFELSE_FACTORY_ENTRY(FuncName, Pred, IfBlock, ElseBlock)               \
-  {FuncName, creatIfElseRewriterFactory(FuncName, Pred IfBlock ElseBlock 0)},
+  {FuncName, createIfElseRewriterFactory(FuncName, Pred IfBlock ElseBlock 0)},
 #define TEMPLATED_CALL_FACTORY_ENTRY(FuncName, ...)                            \
   {FuncName, createTemplatedCallExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define ASSIGN_FACTORY_ENTRY(FuncName, L, R)                                   \
-  {FuncName, creatBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(      \
+  {FuncName, createBinaryOpRewriterFactory<BinaryOperatorKind::BO_Assign>(      \
                  FuncName, L, R)},
 #define BINARY_OP_FACTORY_ENTRY(FuncName, OP, L, R)                            \
-  {FuncName, creatBinaryOpRewriterFactory<OP>(FuncName, L, R)},
+  {FuncName, createBinaryOpRewriterFactory<OP>(FuncName, L, R)},
+#define UNARY_OP_FACTORY_ENTRY(FuncName, OP, Arg)                            \
+  {FuncName, createUnaryOpRewriterFactory<OP>(FuncName, Arg)},
 #define MEM_EXPR_ENTRY(FuncName, B, IsArrow, M)                                \
-  {FuncName, creatMemberExprRewriterFactory(FuncName, B, IsArrow, M)},
+  {FuncName, createMemberExprRewriterFactory(FuncName, B, IsArrow, M)},
 #define CALL_FACTORY_ENTRY(FuncName, C)                                        \
-  {FuncName, creatCallExprRewriterFactory(FuncName, C)},
+  {FuncName, createCallExprRewriterFactory(FuncName, C)},
 #define MEMBER_CALL_FACTORY_ENTRY(FuncName, ...)                               \
   {FuncName, createMemberCallExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define DELETER_FACTORY_ENTRY(FuncName, Arg)                                   \
