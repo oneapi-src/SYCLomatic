@@ -3014,7 +3014,6 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
-  //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -3046,7 +3045,6 @@ __device__ __host__ void do_migration7() {
   std::acoshf(f);
   std::asinf(f);
   std::asinhf(f);
-  std::abs(f);
   std::frexp(f, &i);
   std::modf(f, &f);
   std::nearbyint(f);

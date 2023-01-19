@@ -1239,6 +1239,8 @@ private:
       oneapi::mkl::dft::precision::DOUBLE, oneapi::mkl::dft::domain::COMPLEX>>
       _desc_dc;
 };
+
+using fft_engine_ptr = fft_engine *;
 } // namespace fft
 } // namespace dpct
 
