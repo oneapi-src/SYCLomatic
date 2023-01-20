@@ -85,6 +85,158 @@ MATH_API_REWRITER_DEVICE(
 )
 
 MATH_API_REWRITER_DEVICE(
+    "erfcinv",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("erfcinv"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "erfcinv",
+                CALL(MapNames::getClNamespace() + "ext::intel::math::erfcinv",
+                     CAST_IF_NEED(makeLiteral("double"), ARG(0))))),
+        EMPTY_FACTORY_ENTRY("erfcinv"), EMPTY_FACTORY_ENTRY("erfcinv")))
+
+MATH_API_REWRITER_DEVICE(
+    "erfinv",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("erfinv"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "erfinv",
+                CALL(MapNames::getClNamespace() + "ext::intel::math::erfinv",
+                     CAST_IF_NEED(makeLiteral("double"), ARG(0))))),
+        EMPTY_FACTORY_ENTRY("erfinv"), EMPTY_FACTORY_ENTRY("erfinv")))
+
+MATH_API_REWRITER_DEVICE(
+    "normcdf",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("normcdf"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "normcdf",
+                CALL(MapNames::getClNamespace() + "ext::intel::math::cdfnorm",
+                     CAST_IF_NEED(makeLiteral("double"), ARG(0))))),
+        EMPTY_FACTORY_ENTRY("normcdf"), EMPTY_FACTORY_ENTRY("normcdf")))
+
+MATH_API_REWRITER_DEVICE(
+    "normcdfinv",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("normcdfinv"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("normcdfinv",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::cdfnorminv",
+                                    CAST_IF_NEED(makeLiteral("double"),
+                                                 ARG(0))))),
+        EMPTY_FACTORY_ENTRY("normcdfinv"), EMPTY_FACTORY_ENTRY("normcdfinv")))
+
+MATH_API_REWRITER_DEVICE(
+    "norm",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("norm"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "norm",
+                CALL(MapNames::getClNamespace() + "ext::intel::math::norm",
+                     CAST_IF_NEED(makeLiteral("int"), ARG(0)),
+                     CAST_IF_NEED(makeLiteral("const double *"), ARG(1))))),
+        EMPTY_FACTORY_ENTRY("norm"),
+        ENTRY_EMULATED("norm",
+                       MapNames::getClNamespace(false, true) + "fast_length")))
+
+MATH_API_REWRITER_DEVICE(
+    "rnorm",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("rnorm"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "rnorm",
+                CALL(MapNames::getClNamespace() + "ext::intel::math::rnorm",
+                     CAST_IF_NEED(makeLiteral("int"), ARG(0)),
+                     CAST_IF_NEED(makeLiteral("const double *"), ARG(1))))),
+        EMPTY_FACTORY_ENTRY("rnorm"), EMPTY_FACTORY_ENTRY("rnorm")))
+
+MATH_API_REWRITER_DEVICE(
+    "erfcinvf",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("erfcinvf"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "erfcinvf",
+                CALL(MapNames::getClNamespace() + "ext::intel::math::erfcinv",
+                     CAST_IF_NEED(makeLiteral("float"), ARG(0))))),
+        EMPTY_FACTORY_ENTRY("erfcinvf"), EMPTY_FACTORY_ENTRY("erfcinvf")))
+
+MATH_API_REWRITER_DEVICE(
+    "erfinvf",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("erfinvf"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "erfinvf",
+                CALL(MapNames::getClNamespace() + "ext::intel::math::erfinv",
+                     CAST_IF_NEED(makeLiteral("float"), ARG(0))))),
+        EMPTY_FACTORY_ENTRY("erfinvf"), EMPTY_FACTORY_ENTRY("erfinvf")))
+
+MATH_API_REWRITER_DEVICE(
+    "normcdff",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("normcdff"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "normcdff",
+                CALL(MapNames::getClNamespace() + "ext::intel::math::cdfnorm",
+                     CAST_IF_NEED(makeLiteral("float"), ARG(0))))),
+        EMPTY_FACTORY_ENTRY("normcdff"), EMPTY_FACTORY_ENTRY("normcdff")))
+
+MATH_API_REWRITER_DEVICE(
+    "normcdfinvf",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("normcdfinvf"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("normcdfinvf",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::cdfnorminv",
+                                    CAST_IF_NEED(makeLiteral("float"),
+                                                 ARG(0))))),
+        EMPTY_FACTORY_ENTRY("normcdfinvf"), EMPTY_FACTORY_ENTRY("normcdfinvf")))
+
+MATH_API_REWRITER_DEVICE(
+    "normf",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("normf"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "normf",
+                CALL(MapNames::getClNamespace() + "ext::intel::math::norm",
+                     CAST_IF_NEED(makeLiteral("int"), ARG(0)),
+                     CAST_IF_NEED(makeLiteral("const float *"), ARG(1))))),
+        EMPTY_FACTORY_ENTRY("normf"), EMPTY_FACTORY_ENTRY("normf")))
+
+MATH_API_REWRITER_DEVICE(
+    "rnormf",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("rnormf"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY(
+                "rnormf",
+                CALL(MapNames::getClNamespace() + "ext::intel::math::rnorm",
+                     CAST_IF_NEED(makeLiteral("int"), ARG(0)),
+                     CAST_IF_NEED(makeLiteral("const float *"), ARG(1))))),
+        EMPTY_FACTORY_ENTRY("rnormf"), EMPTY_FACTORY_ENTRY("rnormf")))
+
+MATH_API_REWRITER_DEVICE(
     "__hadd2_sat",
     MATH_API_DEVICE_NODES(
         EMPTY_FACTORY_ENTRY("__hadd2_sat"),
