@@ -471,7 +471,8 @@ inline void getrf_scratchpad_size_impl(sycl::queue &q, std::int64_t m,
 #define CASE(TYPE_NAME, TYPE)                                                  \
   case TYPE_NAME: {                                                            \
     *device_ws_size =                                                          \
-        oneapi::mkl::lapack::getrf_scratchpad_size<TYPE>(q, m, n, lda);        \
+        oneapi::mkl::lapack::getrf_scratchpad_size<TYPE>(q, m, n, lda) *       \
+        sizeof(TYPE);                                                          \
     break;                                                                     \
   }
   switch (a_type) {
@@ -592,7 +593,8 @@ inline void geqrf_scratchpad_size_impl(sycl::queue &q, std::int64_t m,
 #define CASE(TYPE_NAME, TYPE)                                                  \
   case TYPE_NAME: {                                                            \
     *device_ws_size =                                                          \
-        oneapi::mkl::lapack::geqrf_scratchpad_size<TYPE>(q, m, n, lda);        \
+        oneapi::mkl::lapack::geqrf_scratchpad_size<TYPE>(q, m, n, lda) *       \
+        sizeof(TYPE);                                                          \
     break;                                                                     \
   }
   switch (a_type) {
