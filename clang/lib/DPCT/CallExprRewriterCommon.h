@@ -1042,6 +1042,26 @@ createAssignableFactory(
 }
 
 inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createCommaOpRewriterFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>> &&Arg1,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&Arg2) {
+  assert(Arg1.first == Arg2.first);
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      std::move(Arg1.first),
+      std::make_shared<CommaOpRewriterFactory>(Arg1.second, Arg2.second));
+}
+
+template <class T>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createCommaOpRewriterFactory(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>> &&Arg1,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>> &&Arg2,
+    T) {
+  return createCommaOpRewriterFactory(std::move(Arg1), std::move(Arg2));
+}
+
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
 createInsertAroundFactory(
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
         &&Input,
@@ -1617,6 +1637,8 @@ public:
 } // namespace dpct
 } // namespace clang
 
+#define COMMA_OP_FACTORY_ENTRY(Arg1, Arg2)                                     \
+  createCommaOpRewriterFactory(Arg1 Arg2 0),
 #define ASSIGNABLE_FACTORY(x) createAssignableFactory(x 0),
 #define INSERT_AROUND_FACTORY(x, PREFIX, SUFFIX)                               \
   createInsertAroundFactory(x PREFIX, SUFFIX),

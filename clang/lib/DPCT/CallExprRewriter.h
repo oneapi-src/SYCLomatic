@@ -257,6 +257,26 @@ public:
   }
 };
 
+class CommaOpRewriter : public CallExprRewriter {
+  std::shared_ptr<CallExprRewriter> Inner1;
+  std::shared_ptr<CallExprRewriter> Inner2;
+
+public:
+  CommaOpRewriter(const CallExpr *C,
+                  std::shared_ptr<CallExprRewriter> InnerRewriter1,
+                  std::shared_ptr<CallExprRewriter> InnerRewriter2)
+      : CallExprRewriter(C, ""), Inner1(InnerRewriter1),
+        Inner2(InnerRewriter2) {}
+
+  Optional<std::string> rewrite() override {
+    Optional<std::string> &&Result1 = Inner1->rewrite();
+    Optional<std::string> &&Result2 = Inner2->rewrite();
+    if (Result1.has_value() && Result2.has_value())
+      return "(" + Result1.value() + ", " + Result2.value() + ")";
+    return Optional<std::string>();
+  }
+};
+
 class InsertAroundRewriter : public CallExprRewriter {
   std::string Prefix;
   std::string Suffix;
@@ -338,6 +358,21 @@ public:
       : Inner(InnerFactory) {}
   std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
     return std::make_shared<AssignableRewriter>(C, Inner->create(C));
+  }
+};
+
+class CommaOpRewriterFactory : public CallExprRewriterFactoryBase {
+  std::shared_ptr<CallExprRewriterFactoryBase> Inner1;
+  std::shared_ptr<CallExprRewriterFactoryBase> Inner2;
+
+public:
+  CommaOpRewriterFactory(
+      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory1,
+      std::shared_ptr<CallExprRewriterFactoryBase> InnerFactory2)
+      : Inner1(InnerFactory1), Inner2(InnerFactory2) {}
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    return std::make_shared<CommaOpRewriter>(C, Inner1->create(C),
+                                             Inner2->create(C));
   }
 };
 

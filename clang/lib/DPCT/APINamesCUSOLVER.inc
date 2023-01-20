@@ -118,17 +118,26 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::LapackUtils_potrs_batch,
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LapackUtils_getrf_scratchpad_size,
-    CALL_FACTORY_ENTRY("cusolverDnXgetrf_bufferSize",
-                       CALL(MapNames::getDpctNamespace() +
-                                "lapack::getrf_scratchpad_size",
-                            DEREF(0), ARG(2), ARG(3), ARG(4), ARG(6), ARG(8))))
+    COMMA_OP_FACTORY_ENTRY(
+        BINARY_OP_FACTORY_ENTRY("cusolverDnXgetrf_bufferSize",
+                                BinaryOperatorKind::BO_Assign, DEREF(9),
+                                ARG("0")),
+        CALL_FACTORY_ENTRY(
+            "cusolverDnXgetrf_bufferSize",
+            CALL(MapNames::getDpctNamespace() + "lapack::getrf_scratchpad_size",
+                 DEREF(0), ARG(2), ARG(3), ARG(4), ARG(6), ARG(8)))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::LapackUtils_getrf,
-    CALL_FACTORY_ENTRY("cusolverDnXgetrf",
-                       CALL(MapNames::getDpctNamespace() + "lapack::getrf",
-                            DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                            ARG(7), ARG(9), ARG(10), ARG(13))))
+WARNING_FACTORY_ENTRY(
+    "cusolverDnXgetrf",
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::LapackUtils_getrf,
+        CALL_FACTORY_ENTRY("cusolverDnXgetrf",
+                           CALL(MapNames::getDpctNamespace() + "lapack::getrf",
+                                DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5),
+                                ARG(6), ARG(7), ARG(9), ARG(10), ARG(13)))),
+    Diagnostics::DIFFERENT_LU_FACTORIZATION, ARG(7),
+    ARG(MapNames::getDpctNamespace() + "lapack::getrf"),
+    ARG("cusolverDnXgetrf"))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LapackUtils_getrs,
@@ -139,10 +148,14 @@ FEATURE_REQUEST_FACTORY(
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LapackUtils_geqrf_scratchpad_size,
-    CALL_FACTORY_ENTRY("cusolverDnXgeqrf_bufferSize",
-                       CALL(MapNames::getDpctNamespace() +
-                                "lapack::geqrf_scratchpad_size",
-                            DEREF(0), ARG(2), ARG(3), ARG(4), ARG(6), ARG(10))))
+    COMMA_OP_FACTORY_ENTRY(
+        BINARY_OP_FACTORY_ENTRY("cusolverDnXgeqrf_bufferSize",
+                                BinaryOperatorKind::BO_Assign, DEREF(11),
+                                ARG("0")),
+        CALL_FACTORY_ENTRY(
+            "cusolverDnXgeqrf_bufferSize",
+            CALL(MapNames::getDpctNamespace() + "lapack::geqrf_scratchpad_size",
+                 DEREF(0), ARG(2), ARG(3), ARG(4), ARG(6), ARG(10)))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LapackUtils_geqrf,
@@ -158,12 +171,16 @@ FEATURE_REQUEST_FACTORY(
                                 "lapack::getrf_scratchpad_size",
                             DEREF(0), ARG(2), ARG(3), ARG(4), ARG(6), ARG(8))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::LapackUtils_getrf,
-    CALL_FACTORY_ENTRY("cusolverDnGetrf",
-                       CALL(MapNames::getDpctNamespace() + "lapack::getrf",
-                            DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
-                            ARG(7), ARG(9), ARG(10), ARG(11))))
+WARNING_FACTORY_ENTRY(
+    "cusolverDnGetrf",
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::LapackUtils_getrf,
+        CALL_FACTORY_ENTRY("cusolverDnGetrf",
+                           CALL(MapNames::getDpctNamespace() + "lapack::getrf",
+                                DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5),
+                                ARG(6), ARG(7), ARG(9), ARG(10), ARG(11)))),
+    Diagnostics::DIFFERENT_LU_FACTORIZATION, ARG(7),
+    ARG(MapNames::getDpctNamespace() + "lapack::getrf"), ARG("cusolverDnGetrf"))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LapackUtils_getrs,
