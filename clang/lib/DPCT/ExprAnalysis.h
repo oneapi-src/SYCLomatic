@@ -642,6 +642,7 @@ protected:
     analyzeType(TSI->getTypeLoc(), CSCE);
   }
   void analyzeType(TypeLoc TL, const Expr *E = nullptr);
+  void analyzeDecltypeType(DecltypeTypeLoc TL);
 
   // Doing nothing when it doesn't need analyze
   inline void analyzeExpr(const Stmt *S) {}

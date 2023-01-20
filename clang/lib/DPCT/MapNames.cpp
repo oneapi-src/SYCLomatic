@@ -344,7 +344,7 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::FftUtils_fft_type)},
       {"cufftHandle",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
-                                          "fft::fft_engine*",
+                                          "fft::fft_engine_ptr",
                                       HelperFeatureEnum::FftUtils_fft_engine)},
       {"CUdevice", std::make_shared<TypeNameRule>("int")},
       {"CUarray_st",
