@@ -1961,7 +1961,7 @@ CALL_FACTORY_ENTRY("thrust::conj", CALL("std::conj", ARG(0)))
 CALL_FACTORY_ENTRY("thrust::proj", CALL("std::proj", ARG(0)))
 
 // thrust::raw_reference_cast
-CALL_FACTORY_ENTRY("thrust::raw_reference_cast", CALL("dpct::get_raw_reference", ARG(0)))
+CALL_FACTORY_ENTRY("thrust::raw_reference_cast", CALL(MapNames::getDpctNamespace() + "get_raw_reference", ARG(0)))
 
 // thrust::minmax_element
 CONDITIONAL_FACTORY_ENTRY(
