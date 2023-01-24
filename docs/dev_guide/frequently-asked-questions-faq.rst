@@ -343,3 +343,14 @@ is adjusted to avoid a bit shift that is greater than the type length:
        val = in[tid] << 32 - bit;
      ...
    }
+
+**How do I resolve missing include errors that occur when migrating my
+ code?
+
+If an error occurs because a file that was included could not be
+found, then one can add the option ``--extra-arg=I<extra include
+path>`` when invoking |tool_name| to add an additional path the tool
+uses when searching for includes.  Additionally, by adding the option
+``--extra-arg=-v``, |tool_name| will use verbose output, which will
+contain information about which paths the tool searches for includes.
+
