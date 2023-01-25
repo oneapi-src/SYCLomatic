@@ -348,8 +348,8 @@ is adjusted to avoid a bit shift that is greater than the type length:
  code?
 
 If an error occurs because a file that was included could not be
-found, then one can add the option ``--extra-arg=I<extra include
-path>`` when invoking |tool_name| to add an additional path the tool
+found, then one can add the option ``--extra-arg="-I<extra include
+path>"`` when invoking |tool_name| to add an additional path the tool
 uses when searching for includes.  Additionally, by adding the option
 ``--extra-arg=-v``, |tool_name| will use verbose output, which will
 contain information about which paths the tool searches for includes.
