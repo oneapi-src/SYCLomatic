@@ -6,21 +6,45 @@
 #include <cuda.h>
 
 int main() {
-  // CHECK: cudaKernelNodeParams kernelNodeParam0 = {};
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam0 = {};
   cudaKernelNodeParams kernelNodeParam0 = {};
-  // CHECK: cudaKernelNodeParams kernelNodeParam1 = {0};
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam1 = {0};
   cudaKernelNodeParams kernelNodeParam1 = {0};
-  // CHECK: cudaKernelNodeParams kernelNodeParam2 = {0, sycl::range<3>(1, 1, 0)};
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam2 = {0, sycl::range<3>(1, 1, 0)};
   cudaKernelNodeParams kernelNodeParam2 = {0, 0};
-  // CHECK: cudaKernelNodeParams kernelNodeParam3 = {0, sycl::range<3>(1, 1, 0), sycl::range<3>(1, 1, 0)};
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam3 = {0, sycl::range<3>(1, 1, 0), sycl::range<3>(1, 1, 0)};
   cudaKernelNodeParams kernelNodeParam3 = {0, 0, 0};
 
-  // CHECK: cudaKernelNodeParams kernelNodeParam4{};
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam4{};
   cudaKernelNodeParams kernelNodeParam4{};
-  // CHECK: cudaKernelNodeParams kernelNodeParam5{0};
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam5{0};
   cudaKernelNodeParams kernelNodeParam5{0};
-  // CHECK: cudaKernelNodeParams kernelNodeParam6{0, sycl::range<3>(1, 1, 0)};
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam6{0, sycl::range<3>(1, 1, 0)};
   cudaKernelNodeParams kernelNodeParam6{0, 0};
-  // CHECK: cudaKernelNodeParams kernelNodeParam7{0, sycl::range<3>(1, 1, 0), sycl::range<3>(1, 1, 0)};
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1082:{{[0-9]+}}: Migration of cudaKernelNodeParams type is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: cudaKernelNodeParams kernelNodeParam7{0, sycl::range<3>(1, 1, 0), sycl::range<3>(1, 1, 0)};
   cudaKernelNodeParams kernelNodeParam7{0, 0, 0};
 }
