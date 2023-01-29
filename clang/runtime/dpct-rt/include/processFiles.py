@@ -452,8 +452,7 @@ def main():
         is_os_win = True
 
     features_enum_file_name = os.path.join(inc_files_dir, "HelperFeatureEnum.inc")
-    if (os.path.exists(features_enum_file_name)):
-        os.remove(features_enum_file_name)
+    
 
     for cont_file in content_files_list:
         process_a_file(cont_file, inc_files_dir,
@@ -465,7 +464,6 @@ def main():
     if (not check_dependency()):
         exit_script()
 
-    features_enum_file_handle = io.open(features_enum_file_name, "wb")
     features_enum_str = bytes("", 'utf-8')
     features_enum_str = features_enum_str + bytes("#ifdef DPCT_FEATURE_ENUM\n", 'utf-8')
     for element in features_enum_list:
@@ -476,7 +474,13 @@ def main():
         features_enum_str = features_enum_str + element + bytes(",\n", 'utf-8')
     features_enum_str = features_enum_str + bytes("#endif // DPCT_FEATURE_ENUM_FEATURE_PAIR_MAP\n", 'utf-8')
 
-    features_enum_file_handle.write(features_enum_str)
+    features_enum_file_handle = io.open(features_enum_file_name, "rb+")
+    if (os.path.exists(features_enum_file_name)):
+        content_str = features_enum_file_handle.read()
+        if(content_str != features_enum_str):
+            features_enum_file_handle.write(features_enum_str)
+    else:
+        features_enum_file_handle.write(features_enum_str)
     features_enum_file_handle.close()
 
     print("[Note] DPCT *.inc files are generated successfully!")
