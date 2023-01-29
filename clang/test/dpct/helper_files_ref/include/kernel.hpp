@@ -17,10 +17,12 @@
 #include <dlfcn.h>
 #endif
 
-#if (__GNUC__ < 8) && !defined(__llvm__)
+#if defined(__has_include) && __has_include(<filesystem>)
+#include <filesystem>
+#elif defined(__has_include) && __has_include(<experimental/filesystem>)
 #include <experimental/filesystem>
 #else
-#include <filesystem>
+#error "SYCLomatic runtime requires C++ filesystem support"
 #endif
 
 #include <random>
@@ -54,10 +56,10 @@ static kernel_function_info get_kernel_function_info(const void *function) {
 
 namespace detail {
 
-#if (__GNUC__ < 8) && !defined(__llvm__)
-namespace fs = std::experimental::filesystem;
-#else
+#if defined(__has_include) && __has_include(<filesystem>)
 namespace fs = std::filesystem;
+#else
+namespace fs = std::experimental::filesystem;
 #endif
 
  /// Write data to temporary file and return absolute path to temporary file.

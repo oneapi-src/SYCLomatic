@@ -504,9 +504,9 @@ int main() {
     DECLAREF
     DECLARED
 
-    // CHECK: f_a = rsqrt(f_a);
+    // CHECK: f_a = sycl::rsqrt(f_a);
     f_a = rsqrt(f_a);
-    // CHECK: d_a = rsqrt(d_a);
+    // CHECK: d_a = sycl::rsqrt(d_a);
     d_a = rsqrt(d_a);
 
     // TODO: Check more primitive type and vector types
@@ -630,7 +630,7 @@ __device__ void sincospi_1(double x, double* sptr, double* cptr) {
 
 template <typename T>
 __device__  T foo2(T a) {
-  // CHECK: return sycl::rsqrt((double)a);
+  // CHECK: return sycl::rsqrt(a);
   return ::rsqrt(a);
 }
 

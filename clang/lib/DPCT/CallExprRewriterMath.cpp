@@ -9,6 +9,8 @@
 #include "CallExprRewriter.h"
 #include "CallExprRewriterCommon.h"
 
+extern std::string DpctInstallPath; // Installation directory for this tool
+
 namespace clang {
 namespace dpct {
 
@@ -191,20 +193,6 @@ std::string MathFuncNameRewriter::getNewFuncName() {
     auto ContextFD = getImmediateOuterFuncDecl(Call);
     if (NamespaceStr == "std" &&
         (SourceCalleeName == "min" || SourceCalleeName == "max")) {
-      auto getImmediateOuterLambdaExpr =
-          [](const FunctionDecl *FuncDecl) -> const LambdaExpr * {
-        if (FuncDecl && FuncDecl->hasAttr<CUDADeviceAttr>() &&
-            FuncDecl->getAttr<CUDADeviceAttr>()->isImplicit() &&
-            FuncDecl->hasAttr<CUDAHostAttr>() &&
-            FuncDecl->getAttr<CUDAHostAttr>()->isImplicit()) {
-          auto *LE = DpctGlobalInfo::findAncestor<LambdaExpr>(FuncDecl);
-          if (LE && LE->getLambdaClass() && LE->getLambdaClass()->isLambda() &&
-              isLexicallyInLocalScope(LE->getLambdaClass())) {
-            return LE;
-          }
-        }
-        return nullptr;
-      };
       while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
         ContextFD = getImmediateOuterFuncDecl(LE);
       }
@@ -1202,6 +1190,298 @@ Optional<std::string> MathBinaryOperatorRewriter::rewrite() {
   REWRITER_FACTORY_ENTRY(FuncName, WarpFunctionRewriterFactory, RewriterName)
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
   REWRITER_FACTORY_ENTRY(FuncName, UnsupportFunctionRewriterFactory<>, MsgID)
+
+namespace math {
+class IsDefinedInCUDA {
+public:
+  IsDefinedInCUDA() {}
+  bool operator()(const CallExpr *C) {
+    auto FD = C->getDirectCallee();
+    if (!FD)
+      return false;
+    SourceLocation DeclLoc =
+        dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(FD->getLocation());
+    std::string DeclLocFilePath =
+        dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
+    makeCanonical(DeclLocFilePath);
+    return (isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath) ||
+            isChildPath(DpctInstallPath, DeclLocFilePath));
+  }
+};
+
+bool useStdLibdevice() {
+  return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
+}
+
+bool useMathLibdevice() {
+  return DpctGlobalInfo::useIntelDeviceMath();
+}
+
+auto IsPerf = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::isOptimizeMigration();
+};
+
+auto UseStdLibdevice = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useCAndCXXStandardLibrariesExt();
+};
+
+inline auto UseIntelDeviceMath = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::useIntelDeviceMath();
+};
+
+auto IsPureHost = [](const CallExpr *C) -> bool {
+  const FunctionDecl *FD = C->getDirectCallee();
+  if (!FD)
+    return false;
+  if (!(FD->hasAttr<CUDADeviceAttr>()))
+    return true;
+
+  SourceLocation DeclLoc =
+      dpct::DpctGlobalInfo::getSourceManager().getExpansionLoc(
+          FD->getLocation());
+  std::string DeclLocFilePath = dpct::DpctGlobalInfo::getLocInfo(DeclLoc).first;
+  makeCanonical(DeclLocFilePath);
+
+  if (FD->getAttr<CUDADeviceAttr>()->isImplicit() &&
+      FD->isConstexprSpecified() &&
+      !isChildPath(dpct::DpctGlobalInfo::getCudaPath(), DeclLocFilePath)) {
+    return true;
+  }
+  return false;
+};
+auto IsPureDevice = makeCheckAnd(
+    HasDirectCallee(),
+    makeCheckAnd(IsDirectCalleeHasAttribute<CUDADeviceAttr>(),
+                 makeCheckNot(IsDirectCalleeHasAttribute<CUDAHostAttr>())));
+
+auto IsDirectCallerPureDevice = [](const CallExpr *C) -> bool {
+  auto ContextFD = getImmediateOuterFuncDecl(C);
+  while (auto LE = getImmediateOuterLambdaExpr(ContextFD)) {
+    ContextFD = getImmediateOuterFuncDecl(LE);
+  }
+  if (!ContextFD)
+    return false;
+  if (ContextFD->getAttr<CUDADeviceAttr>() &&
+      !ContextFD->getAttr<CUDAHostAttr>()) {
+    return true;
+  }
+  return false;
+};
+auto IsUnresolvedLookupExpr = [](const CallExpr *C) -> bool {
+  return dyn_cast_or_null<UnresolvedLookupExpr>(C->getCallee());
+};
+}
+
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathAPIRewriterDeviceImpl(
+    const std::string &Name, std::function<bool(const CallExpr *)> PerfPred,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        DevicePerf,
+    std::array<
+        std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>, 4>
+        DeviceNodes) {
+  if (DeviceNodes[0].second) {
+    // DEVICE_NORMAL: SYCL API or helper function (impl by SYCL API)
+    return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
+                                    std::move(DevicePerf),
+                                    std::move(DeviceNodes[0]));
+  }
+  if (DeviceNodes[1].second) {
+    // MATH_LIBDEVICE: sycl::ext::intel::math API
+    if (math::useMathLibdevice()) {
+      return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
+                                      std::move(DevicePerf),
+                                      std::move(DeviceNodes[1]));
+    }
+  }
+  if (DeviceNodes[2].second) {
+    // DEVICE_STD: std API
+    if (math::useStdLibdevice()) {
+      return createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
+                                      std::move(DevicePerf),
+                                      std::move(DeviceNodes[2]));
+    }
+  }
+  if (DeviceNodes[3].second) {
+    // DEVICE_EMU: emulation
+    return std::move(DeviceNodes[3]);
+  }
+  // report unsupport
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      {DeviceNodes[0].first,
+       std::make_shared<UnsupportFunctionRewriterFactory<std::string>>(
+           DeviceNodes[0].first, Diagnostics::API_NOT_MIGRATED,
+           DeviceNodes[0].first)});
+}
+
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathAPIRewriterDeviceImpl(
+    const std::string &Name,
+    std::array<
+        std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>, 4>
+        DeviceNodes) {
+  if (DeviceNodes[0].second) {
+    // DEVICE_NORMAL: SYCL API or helper function (impl by SYCL API)
+    return std::move(DeviceNodes[0]);
+  }
+  if (DeviceNodes[1].second) {
+    // MATH_LIBDEVICE: sycl::ext::intel::math API
+    if (math::useMathLibdevice()) {
+      return std::move(DeviceNodes[1]);
+    }
+  }
+  if (DeviceNodes[2].second) {
+    // DEVICE_STD: std API
+    if (math::useStdLibdevice()) {
+      return std::move(DeviceNodes[2]);
+    }
+  }
+  if (DeviceNodes[3].second) {
+    // DEVICE_EMU: emulation
+    return std::move(DeviceNodes[3]);
+  }
+  // report unsupport
+  return std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>(
+      {DeviceNodes[0].first,
+       std::make_shared<UnsupportFunctionRewriterFactory<std::string>>(
+           DeviceNodes[0].first, Diagnostics::API_NOT_MIGRATED,
+           DeviceNodes[0].first)});
+}
+
+template <class T>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathAPIRewriterDevice(
+    const std::string &Name, std::function<bool(const CallExpr *)> PerfPred,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&DevicePerf,
+    T,
+    const std::array<
+        std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>, 4>
+        &DeviceNodes) {
+  return createConditionalFactory(
+      math::IsPureDevice,
+      createConditionalFactory(
+          math::IsDefinedInCUDA(),
+          std::move(createMathAPIRewriterDeviceImpl(Name, PerfPred, DevicePerf,
+                                                    DeviceNodes)),
+          {Name,
+           std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)}),
+      createConditionalFactory(
+          math::IsUnresolvedLookupExpr,
+          createConditionalFactory(
+              math::IsDirectCallerPureDevice,
+              std::move(createMathAPIRewriterDeviceImpl(
+                  Name, PerfPred, DevicePerf, DeviceNodes)),
+              {Name,
+               std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)}),
+          createConditionalFactory(
+              math::IsDefinedInCUDA(),
+              std::move(createMathAPIRewriterDeviceImpl(
+                  Name, PerfPred, DevicePerf, DeviceNodes)),
+              {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(
+                         Name, Name)})));
+}
+
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathAPIRewriterDevice(
+    const std::string &Name,
+    const std::array<
+        std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>, 4>
+        &DeviceNodes) {
+  return createConditionalFactory(
+      math::IsPureDevice,
+      createConditionalFactory(
+          math::IsDefinedInCUDA(),
+          std::move(createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
+          {Name,
+           std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)}),
+      createConditionalFactory(
+          math::IsUnresolvedLookupExpr,
+          createConditionalFactory(
+              math::IsDirectCallerPureDevice,
+              std::move(createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
+              {Name,
+               std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)}),
+          createConditionalFactory(
+              math::IsDefinedInCUDA(),
+              std::move(
+                  createMathAPIRewriterDeviceImpl(Name, DeviceNodes)),
+              {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(
+                         Name, Name)})));
+}
+
+template <class T>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathAPIRewriterHost(
+    const std::string &Name,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&HostNormal,
+    T) {
+  return createConditionalFactory(
+      math::IsDefinedInCUDA(), std::move(HostNormal),
+      {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+}
+
+template <class T>
+inline std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+createMathAPIRewriterHost(
+    const std::string &Name, std::function<bool(const CallExpr *)> PerfPred,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&HostPerf,
+    T,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        &&HostNormal,
+    T) {
+  return createConditionalFactory(
+      math::IsDefinedInCUDA(),
+      createConditionalFactory(makeCheckAnd(math::IsPerf, PerfPred),
+                               std::move(HostPerf), std::move(HostNormal)),
+      {Name, std::make_shared<NoRewriteFuncNameRewriterFactory>(Name, Name)});
+}
+
+#define EMPTY_FACTORY_ENTRY(NAME)                                              \
+  std::make_pair(NAME, std::shared_ptr<CallExprRewriterFactoryBase>(nullptr)),
+
+#define MATH_API_REWRITER_DEVICE_WITH_PERF(NAME, PERF_PRED, DEVICE_PERF, ...)  \
+  createMathAPIRewriterDevice(NAME, PERF_PRED, DEVICE_PERF 0, __VA_ARGS__),
+#define MATH_API_REWRITER_DEVICE(NAME, ...)                                    \
+  createMathAPIRewriterDevice(NAME, __VA_ARGS__),
+
+#define MATH_API_REWRITER_HOST_WITH_PERF(NAME, PERF_PRED, HOST_PERF,           \
+                                         HOST_NORMAL)                          \
+  createMathAPIRewriterHost(NAME, PERF_PRED, HOST_PERF 0, HOST_NORMAL 0),
+#define MATH_API_REWRITER_HOST(NAME, HOST_NORMAL)                              \
+  createMathAPIRewriterHost(NAME, HOST_NORMAL 0),
+
+#define MATH_API_REWRITER_HOST_DEVICE(HOST_REWRITER, DEVICE_REWRITER)          \
+  createConditionalFactory(math::IsPureHost, HOST_REWRITER DEVICE_REWRITER 0),
+
+template <typename T>
+std::array<std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>,
+           4>
+makeMathAPIDeviceNodes(
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        DeviceNormal,
+    T,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        MathLibDevice,
+    T,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        DeviceStd,
+    T,
+    std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
+        DeviceEmu,
+    T) {
+  return std::array<
+      std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>, 4> {
+    { DeviceNormal, MathLibDevice, DeviceStd, DeviceEmu }
+  };
+}
+
+#define MATH_API_DEVICE_NODES(DEVICE_NORMAL, MATH_LIBDEVICE, DEVICE_STD,       \
+                              DEVICE_EMU)                                      \
+  makeMathAPIDeviceNodes(DEVICE_NORMAL 0, MATH_LIBDEVICE 0, DEVICE_STD 0,      \
+                         DEVICE_EMU 0)
 
 void CallExprRewriterFactoryBase::initRewriterMapMath() {
   RewriterMap->merge(

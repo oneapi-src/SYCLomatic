@@ -1,0 +1,30 @@
+.. _id_DPCT1092:
+
+DPCT1092
+========
+
+Message
+-------
+
+.. _msg-1092-start:
+
+Consider replacing work-group size 128 with different value for specific hardware
+for better performance.
+
+.. _msg-1092-end:
+
+Detailed Help
+-------------
+
+Replace work-group size 128 with a value of 256 or greater, if the hardware
+supports it.
+
+Use function ``dpct::device_info:: get_max_work_group_size()`` to determine the
+maximum work-group size supported by the hardware.
+
+
+Suggestions to Fix
+------------------
+
+Replace work-group size with a greater value for better performance, as supported
+by the hardware.

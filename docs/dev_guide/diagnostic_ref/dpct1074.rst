@@ -1,0 +1,60 @@
+.. _id_DPCT1074:
+
+DPCT1074
+========
+
+Message
+-------
+
+.. _msg-1074-start:
+
+The SYCL Image class does not support some of the flags used in the original code.
+Unsupported flags were ignored. Data read from SYCL Image could not be normalized
+as specified in the original code.
+
+.. _msg-1074-end:
+
+Detailed Help
+-------------
+
+Data read from SYCL\* image cannot be normalized to a float in the range of (0, 1]
+using the standard SYCL API. All flags used in the original code are ignored,
+except coordinate normalization mode.
+
+Suggestions to Fix
+------------------
+
+Adjust the code manually.
+
+For example, this original code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // original code:
+
+   cuSetTexFlags(tex, CU_TRSF_NORMALIZED_COORDINATES); // Need manually fix the read code if the flag CU_TRSF_READ_AS_INTEGER is unset.
+   ...
+   result = tex2D(tex, 0.5f, 0.5f);
+
+results in the following migrated DPC++ code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // migrated DPC++ code:
+
+   tex.set(sycl::coordinate_normalization_mode::normalized);
+   ...
+   result = tex.read(0.5f, 0.5f); // data normalization does not match original code
+
+which is manually adjusted to:
+
+.. code-block:: cpp
+   :linenos:
+
+   // adjusted DPC++ code:
+
+   tex.set(sycl::coordinate_normalization_mode::normalized);
+   ...
+   result = normalization(tex.read(0.5f, 0.5f)); // Implement the function “normalization” to normalize the result data as required.

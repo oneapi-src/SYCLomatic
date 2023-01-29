@@ -243,7 +243,7 @@ float test_fmin(float a, float b) { return fmin(a, b); }
 // CHECK: float test_exp10(float a) { return exp10(a); }
 float test_exp10(float a) { return exp10(a); }
 
-// CHECK: float test_rsqrt(float a) { return rsqrt(a); }
+// CHECK: float test_rsqrt(float a) { return sycl::rsqrt(a); }
 float test_rsqrt(float a) { return rsqrt(a); }
 
 // CHECK: float test_rcbrt(float a) { return rcbrt(a); }

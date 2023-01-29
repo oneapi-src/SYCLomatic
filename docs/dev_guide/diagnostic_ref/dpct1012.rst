@@ -1,0 +1,29 @@
+.. _id_DPCT1012:
+
+DPCT1012
+========
+
+Message
+-------
+
+.. _msg-1012-start:
+
+Detected kernel execution time measurement pattern and generated an initial
+code for time measurements in SYCL. You can change the way time is measured
+depending on your goals.
+
+.. _msg-1012-end:
+
+Detailed Help
+-------------
+
+The generated code uses the CPU time to measure the kernel execution time. You
+can change the way time is measured depending on your requirements.
+
+Suggestions to Fix
+------------------
+
+Review the logic and adjust it as needed.
+
+
+

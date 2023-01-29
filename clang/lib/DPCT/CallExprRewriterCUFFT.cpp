@@ -12,6 +12,50 @@
 namespace clang {
 namespace dpct {
 
+class FFTDirExpr {
+  FFTDirExpr() = default;
+
+public:
+  const Expr *E = nullptr;
+
+  template <class StreamT> void print(StreamT &Stream) const {
+    requestFeature(HelperFeatureEnum::FftUtils_fft_engine, E);
+    Expr::EvalResult ER;
+    int64_t Value = 0;
+    if (!E->isValueDependent() &&
+        E->EvaluateAsInt(ER, DpctGlobalInfo::getContext())) {
+      Value = ER.Val.getInt().getExtValue();
+      if (Value == -1) {
+        Stream << MapNames::getDpctNamespace() << "fft::fft_direction::forward";
+        return;
+      } else if (Value == 1) {
+        Stream << MapNames::getDpctNamespace()
+               << "fft::fft_direction::backward";
+        return;
+      }
+    }
+    clang::dpct::print(Stream, E);
+    Stream << " == 1 ? " << MapNames::getDpctNamespace()
+           << "fft::fft_direction::backward : " << MapNames::getDpctNamespace()
+           << "fft::fft_direction::forward";
+  }
+
+  static FFTDirExpr create(const Expr *E);
+};
+
+FFTDirExpr FFTDirExpr::create(const Expr *E) {
+  FFTDirExpr FDE;
+  FDE.E = E;
+  return FDE;
+}
+
+inline std::function<FFTDirExpr(const CallExpr *)>
+makeFFTDirExprCallArgCreator(unsigned Idx) {
+  return [=](const CallExpr *C) -> FFTDirExpr {
+    return FFTDirExpr::create(C->getArg(Idx));
+  };
+}
+
 void CallExprRewriterFactoryBase::initRewriterMapCUFFT() {
   RewriterMap->merge(
       std::unordered_map<std::string,

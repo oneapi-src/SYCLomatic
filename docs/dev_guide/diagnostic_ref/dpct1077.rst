@@ -1,0 +1,24 @@
+.. _id_DPCT1077:
+
+DPCT1077
+========
+
+Message
+-------
+
+.. _msg-1077-start:
+
+*<macro name>* redefines a standard SYCL type, which may cause conflicts.
+
+.. _msg-1077-end:
+
+Detailed Help
+-------------
+
+|tool_name| detected that the code redefines a standard SYCL\*
+type, which may cause conflicts in the included SYCL header files.
+
+Suggestions to Fix
+------------------
+
+Rename the macro to avoid conflicts with standard SYCL types.
