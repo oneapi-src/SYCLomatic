@@ -190,6 +190,7 @@ protected:
   bool BlockLevelFormatFlag = false;
   std::vector<std::string> getMigratedArgs();
   std::string getMigratedArg(unsigned Index);
+  std::string getMigratedArgWithExtraParens(unsigned Index);
 
   StringRef getSourceCalleeName() { return SourceCalleeName; }
 };
