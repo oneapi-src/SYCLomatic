@@ -62,6 +62,17 @@
 // DPCT_CODE
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|compile_warning|
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+inline void compiler_warning(const std::string &warning_msg) {
+#if defined(_MSC_VER) && !defined(__clang__)
+#pragma message(warning_msg)
+#else
+#warning warning_msg
+#endif
+}
+// DPCT_LABEL_END
 
 namespace dpct {
 
@@ -275,9 +286,8 @@ public:
 // Device|device_info
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  /// Returns the maximum clock rate of device's global memory in kHz. If device
-  /// or compiler not support this API then returns 0. If there are several memories on the
-  /// device then the minimum of the clock rate values is returned.
+  /// Returns the maximum clock rate of device's global memory in kHz. If
+  /// compiler not support this API then returns 3200000 kHz.
   unsigned int get_memory_clock_rate() const { return _memory_clock_rate; }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_get_memory_bus_width|dpct
@@ -285,9 +295,8 @@ public:
 // Device|device_info
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-  /// Returns the maximum bus width between device and memory in bits. If device
-  /// or compiler not support this API then returns 64.  If there are several
-  /// memories on the device then the minimum of the bus width values is returned.
+  /// Returns the maximum bus width between device and memory in bits. If
+  /// compiler not support this API then returns 64 bits.
   unsigned int get_memory_bus_width() const { return _memory_bus_width; }
 // DPCT_LABEL_END
   // set interface
@@ -469,7 +478,9 @@ private:
   int _minor;
   int _integrated = 0;
   int _frequency;
+  // Setting estimated value 3200000 kHz as memory_clock_rate default value.
   unsigned int _memory_clock_rate = 3200000;
+  // Setting estimated value 64 bits as memory_bus_width default value.
   unsigned int _memory_bus_width = 64;
   int _max_compute_units;
   int _max_work_group_size;
@@ -634,6 +645,7 @@ public:
 // Device|device_info_set_max_nd_range_size
 // Device|device_info_set_memory_clock_rate
 // Device|device_info_set_memory_bus_width
+// Device|compile_warning
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void get_device_info(device_info &out) const {
@@ -678,18 +690,12 @@ public:
       prop.set_memory_bus_width(
           this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
     }
-#elif defined(_MSC_VER) && !defined(__clang__)
-#pragma message(                                                               \
-    "get_device_info: querying memory_clock_rate and memory_bus_width are"     \
-    " not supported by the compiler used.")
-#pragma message(                                                               \
-    "memory_clock_rate default value is 3200000 kHz.\nmemory_bus_width default value is 64 bits.")
 #else
-#warning                                                                       \
-    "get_device_info: querying memory_bus_width and memory_bus_width are not"\
-         “supported by the compiler used."
-#warning                                                                       \
-    "memory_clock_rate default value is 3200000 kHz.\nmemory_bus_width default value is 64 bits."
+    compiler_warning(
+        "get_device_info: querying memory_clock_rate and memory_bus_width are "
+        "not supported by the compiler used. \nSetting 3200000 kHz as "
+        "memory_clock_rate default value.\nSetting 64 bits as memory_bus_width "
+        "default value.")
 #endif
 
     size_t max_sub_group_size = 1;
