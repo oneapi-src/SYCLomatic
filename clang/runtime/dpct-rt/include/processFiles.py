@@ -476,7 +476,7 @@ def main():
     if (os.path.exists(features_enum_file_name)):
         features_enum_file_handle = io.open(features_enum_file_name, "rb+")
         content_str = features_enum_file_handle.read()
-        if(content_str != features_enum_str):
+        if (content_str != features_enum_str):
             features_enum_file_handle.write(features_enum_str)
     else:
         features_enum_file_handle = io.open(features_enum_file_name, "wb")
