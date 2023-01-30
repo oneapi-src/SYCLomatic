@@ -3031,7 +3031,8 @@ MemVarInfo::MemVarInfo(unsigned Offset, const std::string &FilePath,
   }
   if (Var->hasInit())
     setInitList(Var->getInit(), Var);
-  if (Var->getStorageClass() == SC_Static) {
+  if (Var->getStorageClass() == SC_Static ||
+      getAddressAttr(Var)==Constant) {
     IsStatic = true;
   }
 

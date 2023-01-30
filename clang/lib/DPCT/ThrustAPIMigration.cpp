@@ -29,7 +29,13 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                          hasDeclContext(namespaceDecl(hasName("thrust")))))))))
           .bind("thrustFuncCall"),
       this);
-
+  // THRUST_STATIC_ASSERT macro register
+  MF.addMatcher(staticAssertDecl(isExpandedFromMacro("THRUST_STATIC_ASSERT"))
+                    .bind("THRUST_STATIC_ASSERT"),
+                this);
+  MF.addMatcher(typedefDecl(isExpandedFromMacro("THRUST_STATIC_ASSERT"))
+                    .bind("THRUST_STATIC_ASSERT"),
+                this);
 }
 
 void ThrustAPIRule::runRule(
@@ -39,7 +45,13 @@ void ThrustAPIRule::runRule(
       thrustFuncMigration(Result, CE, ULE);
     else
       thrustFuncMigration(Result, CE);
-  } 
+  } else if (const Decl *D =
+                 getNodeAsType<Decl>(Result, "THRUST_STATIC_ASSERT")) {
+    const SourceManager &SM = DpctGlobalInfo::getSourceManager();
+    const SourceLocation BeginLoc = SM.getExpansionLoc(D->getBeginLoc());
+    emplaceTransformation(new ReplaceText(
+        BeginLoc, std::string("THRUST_STATIC_ASSERT").size(), "static_assert"));
+  }
 }
 
 void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
