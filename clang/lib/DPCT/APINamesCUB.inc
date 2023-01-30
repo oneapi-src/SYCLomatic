@@ -374,7 +374,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 MEMBER_CALL(
                     ARG(7), true, "fill", ARG(5),
                     CALL("std::distance", ARG(4),
-                         CALL("dpct::copy_if",
+                         CALL(MapNames::getDpctNamespace() + "copy_if",
                               CALL("oneapi::dpl::execution::device_policy",
                                    STREAM(7)),
                               ARG(2),
@@ -389,7 +389,7 @@ CONDITIONAL_FACTORY_ENTRY(
                 MEMBER_CALL(
                     QUEUESTR, false, "fill", ARG(5),
                     CALL("std::distance", ARG(4),
-                         CALL("dpct::copy_if",
+                         CALL(MapNames::getDpctNamespace() + "copy_if",
                               CALL("oneapi::dpl::execution::device_policy",
                                    QUEUESTR),
                               ARG(2),
@@ -467,7 +467,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                           BO(BinaryOperatorKind::BO_Add, ARG(2),
                                              ARG(6)),
                                           CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                                                   "dpct::constant_iterator",
+                                                   MapNames::getDpctNamespace() + "constant_iterator",
                                                    LITERAL("size_t")),
                                                LITERAL("1")),
                                           ARG(3), ARG(4)),
@@ -488,7 +488,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                           BO(BinaryOperatorKind::BO_Add, ARG(2),
                                              ARG(6)),
                                           CALL(TEMPLATED_CALLEE_WITH_ARGS(
-                                                   "dpct::constant_iterator",
+                                                   MapNames::getDpctNamespace() + "constant_iterator",
                                                    LITERAL("size_t")),
                                                LITERAL("1")),
                                           ARG(3), ARG(4)),
@@ -728,7 +728,7 @@ CONDITIONAL_FACTORY_ENTRY(
                              makeCheckNot(CheckArgIsDefaultCudaStream(7))),
                 CALL_FACTORY_ENTRY(
                     "cub::DeviceRadixSort::SortKeys",
-                    CALL("dpct::sort_keys",
+                    CALL(MapNames::getDpctNamespace() + "sort_keys",
                          CALL("oneapi::dpl::execution::device_policy",
                               STREAM(7)),
                          ARG(2), ARG(3), ARG(4), LITERAL("false"), ARG(5),
@@ -738,7 +738,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   /* IncludeDefaultArg */ false),
                     CALL_FACTORY_ENTRY(
                         "cub::DeviceRadixSort::SortKeys",
-                        CALL("dpct::sort_keys",
+                        CALL(MapNames::getDpctNamespace() + "sort_keys",
                              CALL("oneapi::dpl::execution::device_policy",
                                   QUEUESTR),
                              ARG(2), ARG(3), ARG(4), LITERAL("false"), ARG(5),
@@ -748,14 +748,14 @@ CONDITIONAL_FACTORY_ENTRY(
                                       /* IncludeDefaultArg */ false),
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceRadixSort::SortKeys",
-                            CALL("dpct::sort_keys",
+                            CALL(MapNames::getDpctNamespace() + "sort_keys",
                                  CALL("oneapi::dpl::execution::device_policy",
                                       QUEUESTR),
                                  ARG(2), ARG(3), ARG(4), LITERAL("false"),
                                  ARG(5))),
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceRadixSort::SortKeys",
-                            CALL("dpct::sort_keys",
+                            CALL(MapNames::getDpctNamespace() + "sort_keys",
                                  CALL("oneapi::dpl::execution::device_policy",
                                       QUEUESTR),
                                  ARG(2), ARG(3), ARG(4),
@@ -775,7 +775,7 @@ CONDITIONAL_FACTORY_ENTRY(
                              makeCheckNot(CheckArgIsDefaultCudaStream(7))),
                 CALL_FACTORY_ENTRY(
                     "cub::DeviceRadixSort::SortKeysDescending",
-                    CALL("dpct::sort_keys",
+                    CALL(MapNames::getDpctNamespace() + "sort_keys",
                          CALL("oneapi::dpl::execution::device_policy",
                               STREAM(7)),
                          ARG(2), ARG(3), ARG(4), LITERAL("true"), ARG(5),
@@ -785,7 +785,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   /* IncludeDefaultArg */ false),
                     CALL_FACTORY_ENTRY(
                         "cub::DeviceRadixSort::SortKeysDescending",
-                        CALL("dpct::sort_keys",
+                        CALL(MapNames::getDpctNamespace() + "sort_keys",
                              CALL("oneapi::dpl::execution::device_policy",
                                   QUEUESTR),
                              ARG(2), ARG(3), ARG(4), LITERAL("true"), ARG(5),
@@ -795,14 +795,14 @@ CONDITIONAL_FACTORY_ENTRY(
                                       /* IncludeDefaultArg */ false),
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceRadixSort::SortKeysDescending",
-                            CALL("dpct::sort_keys",
+                            CALL(MapNames::getDpctNamespace() + "sort_keys",
                                  CALL("oneapi::dpl::execution::device_policy",
                                       QUEUESTR),
                                  ARG(2), ARG(3), ARG(4), LITERAL("true"),
                                  ARG(5))),
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceRadixSort::SortKeysDescending",
-                            CALL("dpct::sort_keys",
+                            CALL(MapNames::getDpctNamespace() + "sort_keys",
                                  CALL("oneapi::dpl::execution::device_policy",
                                       QUEUESTR),
                                  ARG(2), ARG(3), ARG(4),
@@ -822,7 +822,7 @@ CONDITIONAL_FACTORY_ENTRY(
                              makeCheckNot(CheckArgIsDefaultCudaStream(9))),
                 CALL_FACTORY_ENTRY(
                     "cub::DeviceRadixSort::SortPairs",
-                    CALL("dpct::sort_pairs",
+                    CALL(MapNames::getDpctNamespace() + "sort_pairs",
                          CALL("oneapi::dpl::execution::device_policy",
                               STREAM(9)),
                          ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
@@ -832,7 +832,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   /* IncludeDefaultArg */ false),
                     CALL_FACTORY_ENTRY(
                         "cub::DeviceRadixSort::SortPairs",
-                        CALL("dpct::sort_pairs",
+                        CALL(MapNames::getDpctNamespace() + "sort_pairs",
                              CALL("oneapi::dpl::execution::device_policy",
                                   QUEUESTR),
                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
@@ -842,14 +842,14 @@ CONDITIONAL_FACTORY_ENTRY(
                                       /* IncludeDefaultArg */ false),
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceRadixSort::SortPairs",
-                            CALL("dpct::sort_pairs",
+                            CALL(MapNames::getDpctNamespace() + "sort_pairs",
                                  CALL("oneapi::dpl::execution::device_policy",
                                       QUEUESTR),
                                  ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
                                  LITERAL("false"), ARG(7))),
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceRadixSort::SortPairs",
-                            CALL("dpct::sort_pairs",
+                            CALL(MapNames::getDpctNamespace() + "sort_pairs",
                                  CALL("oneapi::dpl::execution::device_policy",
                                       QUEUESTR),
                                  ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
@@ -869,7 +869,7 @@ CONDITIONAL_FACTORY_ENTRY(
                              makeCheckNot(CheckArgIsDefaultCudaStream(9))),
                 CALL_FACTORY_ENTRY(
                     "cub::DeviceRadixSort::SortPairsDescending",
-                    CALL("dpct::sort_pairs",
+                    CALL(MapNames::getDpctNamespace() + "sort_pairs",
                          CALL("oneapi::dpl::execution::device_policy",
                               STREAM(9)),
                          ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
@@ -879,7 +879,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   /* IncludeDefaultArg */ false),
                     CALL_FACTORY_ENTRY(
                         "cub::DeviceRadixSort::SortPairsDescending",
-                        CALL("dpct::sort_pairs",
+                        CALL(MapNames::getDpctNamespace() + "sort_pairs",
                              CALL("oneapi::dpl::execution::device_policy",
                                   QUEUESTR),
                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
@@ -889,14 +889,14 @@ CONDITIONAL_FACTORY_ENTRY(
                                       /* IncludeDefaultArg */ false),
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceRadixSort::SortPairsDescending",
-                            CALL("dpct::sort_pairs",
+                            CALL(MapNames::getDpctNamespace() + "sort_pairs",
                                  CALL("oneapi::dpl::execution::device_policy",
                                       QUEUESTR),
                                  ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
                                  LITERAL("true"), ARG(7))),
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceRadixSort::SortPairsDescending",
-                            CALL("dpct::sort_pairs",
+                            CALL(MapNames::getDpctNamespace() + "sort_pairs",
                                  CALL("oneapi::dpl::execution::device_policy",
                                       QUEUESTR),
                                  ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
@@ -916,7 +916,7 @@ CONDITIONAL_FACTORY_ENTRY(
                              makeCheckNot(CheckArgIsDefaultCudaStream(9))),
                 CALL_FACTORY_ENTRY(
                     "cub::DeviceSegmentedRadixSort::SortPairs",
-                    CALL("dpct::segmented_sort_pairs",
+                    CALL(MapNames::getDpctNamespace() + "segmented_sort_pairs",
                          CALL("oneapi::dpl::execution::device_policy",
                               STREAM(12)),
                          ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
@@ -926,7 +926,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   /* IncludeDefaultArg */ false),
                     CALL_FACTORY_ENTRY(
                         "cub::DeviceSegmentedRadixSort::SortPairs",
-                        CALL("dpct::segmented_sort_pairs",
+                        CALL(MapNames::getDpctNamespace() + "segmented_sort_pairs",
                              CALL("oneapi::dpl::execution::device_policy",
                                   QUEUESTR),
                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
@@ -936,14 +936,14 @@ CONDITIONAL_FACTORY_ENTRY(
                                       /* IncludeDefaultArg */ false),
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceSegmentedRadixSort::SortPairs",
-                            CALL("dpct::segmented_sort_pairs",
+                            CALL(MapNames::getDpctNamespace() + "segmented_sort_pairs",
                                  CALL("oneapi::dpl::execution::device_policy",
                                       QUEUESTR),
                                  ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
                                  LITERAL("false"), ARG(10))),
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceSegmentedRadixSort::SortPairs",
-                            CALL("dpct::segmented_sort_pairs",
+                            CALL(MapNames::getDpctNamespace() + "segmented_sort_pairs",
                                  CALL("oneapi::dpl::execution::device_policy",
                                       QUEUESTR),
                                  ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
@@ -963,7 +963,7 @@ CONDITIONAL_FACTORY_ENTRY(
                              makeCheckNot(CheckArgIsDefaultCudaStream(9))),
                 CALL_FACTORY_ENTRY(
                     "cub::DeviceSegmentedRadixSort::SortPairsDescending",
-                    CALL("dpct::segmented_sort_pairs",
+                    CALL(MapNames::getDpctNamespace() + "segmented_sort_pairs",
                          CALL("oneapi::dpl::execution::device_policy",
                               STREAM(12)),
                          ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
@@ -973,7 +973,7 @@ CONDITIONAL_FACTORY_ENTRY(
                                   /* IncludeDefaultArg */ false),
                     CALL_FACTORY_ENTRY(
                         "cub::DeviceSegmentedRadixSort::SortPairsDescending",
-                        CALL("dpct::segmented_sort_pairs",
+                        CALL(MapNames::getDpctNamespace() + "segmented_sort_pairs",
                              CALL("oneapi::dpl::execution::device_policy",
                                   QUEUESTR),
                              ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
@@ -983,14 +983,14 @@ CONDITIONAL_FACTORY_ENTRY(
                                       /* IncludeDefaultArg */ false),
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceSegmentedRadixSort::SortPairsDescending",
-                            CALL("dpct::segmented_sort_pairs",
+                            CALL(MapNames::getDpctNamespace() + "segmented_sort_pairs",
                                  CALL("oneapi::dpl::execution::device_policy",
                                       QUEUESTR),
                                  ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
                                  LITERAL("true"), ARG(10))),
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceSegmentedRadixSort::SortPairsDescending",
-                            CALL("dpct::segmented_sort_pairs",
+                            CALL(MapNames::getDpctNamespace() + "segmented_sort_pairs",
                                  CALL("oneapi::dpl::execution::device_policy",
                                       QUEUESTR),
                                  ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9),
