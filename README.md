@@ -102,7 +102,7 @@ cmake -G Ninja -DCMAKE_INSTALL_PREFIX=%PATH_TO_C2S_INSTALL_FOLDER%  -DCMAKE_BUIL
 ninja install-c2s
 ```
 
-Note: For computers with 16G and below memory, we recommend using 4-6 threads for compilation. Using too many threads may cause out of memory.
+Note: For computers with 16G or less memory, we recommend using 4-6 threads for compilation. Compiling SYCLomatic with too many threads may cause out of memory.
 ```
 ninja -j4 install-c2s
 ```
@@ -110,7 +110,7 @@ ninja -j4 install-c2s
 
 **build success message**:
 
-After the compilation is successful, the following information will be outputted in terminal.
+After a successful build, you should be able to see following message in the terminal output.
 ```
 -- Install configuration: "Release"
 -- Installing: $PATH_TO_C2S_INSTALL_FOLDER/bin/dpct
@@ -134,13 +134,13 @@ SET CPATH=%PATH_TO_C2S_INSTALL_FOLDER%\include;%CPATH%
 ```
 
 ### Verify the Installation
-Before running SYCLomatic, it is important to verify that dpct/c2s(SYCLomatic binary) can be found in terminal.
+Before running SYCLomatic, it is important to verify that dpct/c2s(SYCLomatic binary) is installed correctly and PATH is set properly.
 
-To do this, you need run the following command and get correct output.
+To do this, try running the following command and checking if dpct is available after the installation.
 ```
-dpct --version
+c2s --version
 ```
-Note: Ensure the PATH and CPATH are set correctly.
+Note: If c2s cannot be found, please check the setup of PATH.
 
 ## Run SYCLomatic
 ### Run c2s command
@@ -148,7 +148,7 @@ Get c2s help information by running "c2s --help".
 dpct is an alias command for c2s.
 
 
-## Test SYCLomatic (Recommended to Contributors)
+## Test SYCLomatic 
 ### Run in-tree LIT tests
 
 Note: Certain CUDA header files may need to be accessible to the tool.
@@ -157,7 +157,7 @@ After build the SYCLomatic, you can run the list test by:
 ninja check-clang-c2s
 
 
-### Run E2E test suite
+### Run E2E test suite (Recommended to Contributors)
 
 Follow instructions from the link below to build and run tests:
 [README](https://github.com/oneapi-src/SYCLomatic-test)
