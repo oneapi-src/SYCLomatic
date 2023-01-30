@@ -1759,6 +1759,7 @@ public:
 
 };
 
+inline
 ::dnnl::memory::data_type
 memory_desc_ext::to_dnnl_data_type(dpct::library_data_t dt) {
   using dnnl_dt = ::dnnl::memory::data_type;
@@ -1786,6 +1787,7 @@ memory_desc_ext::to_dnnl_data_type(dpct::library_data_t dt) {
   }
 }
 
+inline
 dpct::library_data_t
 memory_desc_ext::to_dpct_library_data_t(::dnnl::memory::data_type dt,
                                         unsigned block_size) {
@@ -1820,6 +1822,7 @@ memory_desc_ext::to_dpct_library_data_t(::dnnl::memory::data_type dt,
   }
 }
 
+inline
 ::dnnl::memory::format_tag
 memory_desc_ext::to_dnnl_format_tag(dpct::library_data_t dt,
                                     memory_format_tag tag) {
@@ -1840,12 +1843,14 @@ memory_desc_ext::to_dnnl_format_tag(dpct::library_data_t dt,
   }
 }
 
+inline
 void memory_desc_ext::set(memory_format_tag tag, dpct::library_data_t dt, int n,
                           int c, int h, int w) {
   _desc = ::dnnl::memory::desc({n, c, h, w}, to_dnnl_data_type(dt),
                                to_dnnl_format_tag(dt, tag));
 }
 
+inline
 void memory_desc_ext::set(dpct::library_data_t dt, int n, int c, int h, int w,
                           int n_stride, int c_stride, int h_stride,
                           int w_stride) {
@@ -1853,18 +1858,21 @@ void memory_desc_ext::set(dpct::library_data_t dt, int n, int c, int h, int w,
                                {n_stride, c_stride, h_stride, w_stride});
 }
 
+inline
 void memory_desc_ext::set(dpct::library_data_t dt, int ndims, const int dims[],
                           const int strides[]) {
   _desc = ::dnnl::memory::desc({dims, dims + ndims}, to_dnnl_data_type(dt),
                                {strides, strides + ndims});
 }
 
+inline
 void memory_desc_ext::set(memory_format_tag tag, dpct::library_data_t dt,
                           int ndims, const int dims[]) {
   _desc = ::dnnl::memory::desc({dims, dims + ndims}, to_dnnl_data_type(dt),
                                to_dnnl_format_tag(dt, tag));
 }
 
+inline
 void memory_desc_ext::set(rnn_memory_format_tag tag, dpct::library_data_t dt,
                           int t, int n, int c) {
   if (tag == rnn_memory_format_tag::tnc) {
@@ -1878,6 +1886,7 @@ void memory_desc_ext::set(rnn_memory_format_tag tag, dpct::library_data_t dt,
   }
 }
 
+inline
 void memory_desc_ext::get(dpct::library_data_t *dt, int *n, int *c, int *h,
                           int *w, int *n_stride, int *c_stride, int *h_stride,
                           int *w_stride) const {
@@ -1900,6 +1909,7 @@ void memory_desc_ext::get(dpct::library_data_t *dt, int *n, int *c, int *h,
   *w_stride = strides[3] / block_size;
 }
 
+inline
 void memory_desc_ext::get(dpct::library_data_t *dt, memory_format_tag *tag,
                           int *n, int *c, int *h, int *w) const {
   unsigned block_size = 1;
@@ -1921,6 +1931,7 @@ void memory_desc_ext::get(dpct::library_data_t *dt, memory_format_tag *tag,
   *w = dims[3];
 }
 
+inline
 void memory_desc_ext::get(dpct::library_data_t *dt, rnn_memory_format_tag *tag,
                           int *t, int *n, int *c) const {
   auto dims = _desc.get_dims();
@@ -1938,6 +1949,7 @@ void memory_desc_ext::get(dpct::library_data_t *dt, rnn_memory_format_tag *tag,
   *c = dims[2];
 }
 
+inline
 void memory_desc_ext::get(int requested_ndims, dpct::library_data_t *dt,
                           int *ndims, int dims[], int strides[]) const {
   unsigned block_size = 1;
@@ -1956,6 +1968,7 @@ void memory_desc_ext::get(int requested_ndims, dpct::library_data_t *dt,
   }
 }
 
+inline
 void memory_desc_ext::get(int requested_ndims, dpct::library_data_t *dt,
                           memory_format_tag *tag, int *ndims,
                           int dims[]) const {
@@ -1979,6 +1992,7 @@ void memory_desc_ext::get(int requested_ndims, dpct::library_data_t *dt,
   }
 }
 
+inline
 void engine_ext::get_rnn_configuration(const ::dnnl::memory::desc &desc,
                                        rnn_direction direction, rnn_mode mode,
                                        dpct::library_data_t dt, int hidden_size,
@@ -2021,12 +2035,14 @@ void engine_ext::get_rnn_configuration(const ::dnnl::memory::desc &desc,
   *dnnl_dt = memory_desc_ext::to_dnnl_data_type(dt);
 }
 
+inline
 void *engine_ext::allocate(const memory_desc_ext &data_desc, int count) const {
   size_t mem_size = data_desc.get_size();
   void *mem = sycl::malloc_device(mem_size * count, *_q);
   return mem;
 }
 
+inline
 void engine_ext::transform_no_zero(const memory_desc_ext &desc, void *src, void *dst) {
   ::dnnl::memory::data_type dt = desc.get_desc().get_data_type();
   size_t element_num = desc.get_element_num();
@@ -2051,6 +2067,7 @@ void engine_ext::transform_no_zero(const memory_desc_ext &desc, void *src, void 
   }
 }
 
+inline
 ::dnnl::memory::desc
 engine_ext::get_group_weight_desc(int group_count,
                                   const memory_desc_ext &weight_desc) {
@@ -2093,6 +2110,7 @@ engine_ext::get_group_weight_desc(int group_count,
   return help_weight_desc;
 }
 
+inline
 ::dnnl::memory::desc engine_ext::compress_spatial_dimensions_to_channel(
     const ::dnnl::memory::desc &desc) {
   int ndims = desc.get_ndims();
@@ -2119,6 +2137,7 @@ engine_ext::get_group_weight_desc(int group_count,
   return ::dnnl::memory::desc(compressed_dims, desc.get_data_type(), strides);
 }
 
+inline
 ::dnnl::memory::desc
 engine_ext::get_bn_scale_bias_mean_var_desc(const ::dnnl::memory::desc &desc,
                                             batch_normalization_mode mode) {
@@ -2137,6 +2156,7 @@ engine_ext::get_bn_scale_bias_mean_var_desc(const ::dnnl::memory::desc &desc,
                               ::dnnl::memory::format_tag::a);
 }
 
+inline
 ::dnnl::memory::desc engine_ext::transfer_memory_desc_to_channel_major_format(
     const ::dnnl::memory::desc &desc) {
   if (!desc.get_inner_blks().empty()) {
@@ -2155,6 +2175,7 @@ engine_ext::get_bn_scale_bias_mean_var_desc(const ::dnnl::memory::desc &desc,
 /// If the alpha = 0 and beta = 1, then the destination (dst = alpha * out +
 /// beta * prior_dst) have no change. In this case this function returns true
 /// means the operation can exit directly.
+inline
 bool engine_ext::scale_parameter_preprocess(
     const std::vector<output_argument_info> &args) {
   bool direct_exit = true;
@@ -2170,6 +2191,7 @@ bool engine_ext::scale_parameter_preprocess(
   return direct_exit;
 }
 
+inline
 void engine_ext::derive_batch_normalization_memory_desc(
     memory_desc_ext &scale_bias_desc, memory_desc_ext &mean_var_desc,
     const memory_desc_ext &src_desc, batch_normalization_mode mode) {
@@ -2177,6 +2199,7 @@ void engine_ext::derive_batch_normalization_memory_desc(
     derive_batch_normalization_memory_desc(mean_var_desc, src_desc, mode);
 }
 
+inline
 void engine_ext::derive_batch_normalization_memory_desc(
     memory_desc_ext &desc, const memory_desc_ext &src_desc,
     batch_normalization_mode mode) {
@@ -2270,6 +2293,7 @@ sycl::event engine_ext::execute_primitive(primitive_type *primitive, args_type *
   return e;
 }
 
+inline
 ::dnnl::memory::desc engine_ext::bn_reorder_memory_to_channel_major_format(
     bool is_input, ::dnnl::memory::desc &desc, void *src, void **cache,
     std::vector<void *> &caches) {
@@ -2285,6 +2309,7 @@ sycl::event engine_ext::execute_primitive(primitive_type *primitive, args_type *
   return result;
 }
 
+inline
 sycl::event engine_ext::batch_normalization_backward_internal(
     batch_normalization_mode mode, float epsilon, float alpha_data,
     const memory_desc_ext &src_desc, void *src,
@@ -2449,6 +2474,7 @@ sycl::event engine_ext::batch_normalization_backward_internal(
   return e;
 }
 
+inline
 sycl::event engine_ext::batch_normalization_forward_internal(
     bool is_infer, batch_normalization_mode mode, float epsilon, float factor,
     float alpha, const memory_desc_ext &src_desc, void *src, float beta,
@@ -2580,6 +2606,7 @@ sycl::event engine_ext::batch_normalization_forward_internal(
   return e;
 }
 
+inline
 sycl::event engine_ext::rnn_forward_internal(
     const rnn_desc &desc, ::dnnl::prop_kind kind,
     const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
@@ -2666,6 +2693,7 @@ sycl::event engine_ext::rnn_forward_internal(
   return e;
 }
 
+inline
 sycl::event engine_ext::execute_rnn_forward_primitive(
     rnn_mode mode, ::dnnl::prop_kind kind, ::dnnl::rnn_direction direction,
     rnn_bias_mode bias_mode, ::dnnl::memory::data_type dt,
@@ -2840,6 +2868,7 @@ sycl::event engine_ext::execute_rnn_forward_primitive(
   return e;
 }
 
+inline
 sycl::event engine_ext::execute_rnn_backward_primitive(
     rnn_mode mode, ::dnnl::rnn_direction direction, rnn_bias_mode bias_mode,
     ::dnnl::memory::data_type dt, ::dnnl::memory::format_tag tag,
@@ -3019,25 +3048,30 @@ engine_ext::create_backward_primitive(args_type &&...args) {
       _eng, std::forward<args_type>(args)...));
 }
 
+inline
 void engine_ext::fill(const memory_desc_ext &src_desc, void *src,
                       const void *valuePtr) {
   async_fill(src_desc, src, valuePtr).wait();
 }
 
+inline
 void engine_ext::reorder(float alpha, const memory_desc_ext &src_desc,
                          void *src, float beta, const memory_desc_ext &dst_desc,
                          void *dst) {
   async_reorder(alpha, src_desc, src, beta, dst_desc, dst).wait();
 }
 
+inline
 void engine_ext::scale(float alpha, const memory_desc_ext &src_desc,
                        void *src) {
   async_scale(alpha, src_desc, src).wait();
 }
+inline
 void engine_ext::sum(float alpha, const memory_desc_ext &src_desc, void *src,
                      float beta, const memory_desc_ext &dst_desc, void *dst) {
   async_sum(alpha, src_desc, src, beta, dst_desc, dst).wait();
 }
+inline
 void engine_ext::activation_forward(activation_desc &desc, float alpha,
                                     const memory_desc_ext &src_desc, void *src,
                                     float beta, const memory_desc_ext &dst_desc,
@@ -3045,6 +3079,7 @@ void engine_ext::activation_forward(activation_desc &desc, float alpha,
   async_activation_forward(desc, alpha, src_desc, src, beta, dst_desc, dst)
       .wait();
 }
+inline
 void engine_ext::activation_backward(
     activation_desc &desc, float alpha, const memory_desc_ext &dst_desc,
     void *dst, const memory_desc_ext &diff_dst_desc, void *diff_dst,
@@ -3054,6 +3089,7 @@ void engine_ext::activation_backward(
                             src_desc, src, beta, diff_src_desc, diff_src)
       .wait();
 }
+inline
 void engine_ext::pooling_forward(pooling_desc &desc, float alpha,
                                  const memory_desc_ext &src_desc, void *src,
                                  float beta, const memory_desc_ext &dst_desc,
@@ -3063,6 +3099,7 @@ void engine_ext::pooling_forward(pooling_desc &desc, float alpha,
                         workspace).wait();
 }
 
+inline
 void engine_ext::pooling_backward(
     pooling_desc &desc, float alpha, const memory_desc_ext &dst_desc, void *dst,
     const memory_desc_ext &diff_dst_desc, void *diff_dst,
@@ -3075,6 +3112,7 @@ void engine_ext::pooling_backward(
       .wait();
 }
 
+inline
 void engine_ext::softmax_forward(softmax_algorithm alg, softmax_mode mode,
                                  float alpha, const memory_desc_ext &src_desc,
                                  void *src, float beta,
@@ -3083,6 +3121,7 @@ void engine_ext::softmax_forward(softmax_algorithm alg, softmax_mode mode,
       .wait();
 }
 
+inline
 void engine_ext::softmax_backward(softmax_algorithm alg, softmax_mode mode,
                                   float alpha, const memory_desc_ext &dst_desc,
                                   void *dst,
@@ -3095,6 +3134,7 @@ void engine_ext::softmax_backward(softmax_algorithm alg, softmax_mode mode,
       .wait();
 }
 
+inline
 void engine_ext::lrn_forward(lrn_desc &desc, float alpha,
                              const memory_desc_ext &src_desc, void *src,
                              float beta, const memory_desc_ext &dst_desc,
@@ -3103,6 +3143,7 @@ void engine_ext::lrn_forward(lrn_desc &desc, float alpha,
       .wait();
 }
 
+inline
 void engine_ext::lrn_backward(lrn_desc &desc, float alpha,
                               const memory_desc_ext &dst_desc, void *dst,
                               const memory_desc_ext &diff_dst_desc,
@@ -3116,6 +3157,7 @@ void engine_ext::lrn_backward(lrn_desc &desc, float alpha,
       .wait();
 }
 
+inline
 sycl::event engine_ext::async_fill(const memory_desc_ext &src_desc, void *src,
                              const void *valuePtr) {
   ::dnnl::memory::data_type dt = src_desc.get_desc().get_data_type();
@@ -3136,6 +3178,7 @@ sycl::event engine_ext::async_fill(const memory_desc_ext &src_desc, void *src,
   }
 }
 
+inline
 sycl::event engine_ext::async_reorder(float alpha, const memory_desc_ext &src_desc,
                                 void *src, float beta,
                                 const memory_desc_ext &dst_desc, void *dst) {
@@ -3152,6 +3195,7 @@ sycl::event engine_ext::async_reorder(float alpha, const memory_desc_ext &src_de
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
 
+inline
 sycl::event engine_ext::async_scale(float alpha, const memory_desc_ext &src_desc,
                               void *src) {
   if (alpha == 1.f) {
@@ -3172,6 +3216,7 @@ sycl::event engine_ext::async_scale(float alpha, const memory_desc_ext &src_desc
   return e;
 }
 
+inline
 sycl::event engine_ext::async_sum(float alpha, const memory_desc_ext &src_desc,
                             void *src, float beta,
                             const memory_desc_ext &dst_desc, void *dst) {
@@ -3196,6 +3241,7 @@ sycl::event engine_ext::async_sum(float alpha, const memory_desc_ext &src_desc,
   return e;
 }
 
+inline
 sycl::event engine_ext::async_binary(binary_op op, float alpha_0,
                                const memory_desc_ext &src_desc_0, void *src_0,
                                float alpha_1, const memory_desc_ext &src_desc_1,
@@ -3298,6 +3344,7 @@ sycl::event engine_ext::async_binary(binary_op op, float alpha_0,
   return e;
 }
 
+inline
 sycl::event engine_ext::async_reduction(reduction_op op, float alpha,
                                   const memory_desc_ext &src_desc, void *src,
                                   float beta, const memory_desc_ext &dst_desc,
@@ -3361,6 +3408,7 @@ sycl::event engine_ext::async_reduction(reduction_op op, float alpha,
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
 
+inline
 sycl::event engine_ext::async_activation_forward(activation_desc &desc, float alpha,
                                            const memory_desc_ext &src_desc,
                                            void *src, float beta,
@@ -3380,6 +3428,7 @@ sycl::event engine_ext::async_activation_forward(activation_desc &desc, float al
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
 
+inline
 sycl::event engine_ext::async_activation_backward(
     activation_desc &desc, float alpha, const memory_desc_ext &dst_desc,
     void *dst, const memory_desc_ext &diff_dst_desc, void *diff_dst,
@@ -3414,6 +3463,7 @@ sycl::event engine_ext::async_activation_backward(
       {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_src_desc, diff_src}});
 }
 
+inline
 sycl::event engine_ext::async_pooling_forward(pooling_desc &desc, float alpha,
                                         const memory_desc_ext &src_desc,
                                         void *src, float beta,
@@ -3445,6 +3495,7 @@ sycl::event engine_ext::async_pooling_forward(pooling_desc &desc, float alpha,
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
 
+inline
 sycl::event engine_ext::async_pooling_backward(
     pooling_desc &desc, float alpha, const memory_desc_ext &dst_desc, void *dst,
     const memory_desc_ext &diff_dst_desc, void *diff_dst,
@@ -3482,6 +3533,7 @@ sycl::event engine_ext::async_pooling_backward(
       {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_src_desc, diff_src}});
 }
 
+inline
 sycl::event engine_ext::async_softmax_forward(softmax_algorithm alg,
                                         softmax_mode mode, float alpha,
                                         const memory_desc_ext &src_desc,
@@ -3514,6 +3566,7 @@ sycl::event engine_ext::async_softmax_forward(softmax_algorithm alg,
       {{alpha, beta, DNNL_ARG_DST, memory_desc_ext(help_dst_desc), dst}});
 }
 
+inline
 sycl::event engine_ext::async_softmax_backward(
     softmax_algorithm alg, softmax_mode mode, float alpha,
     const memory_desc_ext &dst_desc, void *dst,
@@ -3553,6 +3606,7 @@ sycl::event engine_ext::async_softmax_backward(
                              memory_desc_ext(help_diff_src_desc), diff_src}});
 }
 
+inline
 sycl::event engine_ext::async_lrn_forward(lrn_desc &desc, float alpha,
                                     const memory_desc_ext &src_desc, void *src,
                                     float beta, const memory_desc_ext &dst_desc,
@@ -3582,6 +3636,7 @@ sycl::event engine_ext::async_lrn_forward(lrn_desc &desc, float alpha,
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
 
+inline
 sycl::event
 engine_ext::async_lrn_backward(lrn_desc &desc, float alpha,
                          const memory_desc_ext &dst_desc, void *dst,
@@ -3620,6 +3675,7 @@ engine_ext::async_lrn_backward(lrn_desc &desc, float alpha,
       {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_src_desc, diff_src}});
 }
 
+inline
 size_t engine_ext::get_batch_normalization_workspace_size(
     batch_normalization_ops ops, const memory_desc_ext &src_desc) {
   if(ops == batch_normalization_ops::none) {
@@ -3628,6 +3684,7 @@ size_t engine_ext::get_batch_normalization_workspace_size(
   return src_desc.get_size();
 }
 
+inline
 sycl::event engine_ext::async_batch_normalization_forward_inference(
     batch_normalization_mode mode, float epsilon, float alpha,
     const memory_desc_ext &src_desc, void *src, float beta,
@@ -3641,6 +3698,7 @@ sycl::event engine_ext::async_batch_normalization_forward_inference(
       var, nullptr, nullptr);
 }
 
+inline
 sycl::event engine_ext::async_batch_normalization_forward_inference(
     batch_normalization_mode mode, batch_normalization_ops ops,
     activation_desc &adesc, float epsilon, float alpha,
@@ -3682,6 +3740,7 @@ sycl::event engine_ext::async_batch_normalization_forward_inference(
       scale_bias_desc, scale, bias, mean_var_desc, mean, var, nullptr, nullptr);
 }
 
+inline
 sycl::event engine_ext::async_batch_normalization_forward_training(
     batch_normalization_mode mode, float epsilon, float factor, float alpha,
     const memory_desc_ext &src_desc, void *src, float beta,
@@ -3694,6 +3753,7 @@ sycl::event engine_ext::async_batch_normalization_forward_training(
       saved_mean, saved_var, running_mean, running_var);
 }
 
+inline
 sycl::event engine_ext::async_batch_normalization_forward_training(
     batch_normalization_mode mode, batch_normalization_ops ops,
     activation_desc &adesc, float epsilon, float factor, float alpha,
@@ -3728,6 +3788,7 @@ sycl::event engine_ext::async_batch_normalization_forward_training(
       running_mean, running_var);
 }
 
+inline
 sycl::event engine_ext::async_batch_normalization_forward_training(
     batch_normalization_mode mode, batch_normalization_ops ops,
     activation_desc &adesc, float epsilon, float factor, float alpha,
@@ -3744,6 +3805,7 @@ sycl::event engine_ext::async_batch_normalization_forward_training(
       saved_var, workspace_size, workspace);
 }
 
+inline
 sycl::event engine_ext::async_batch_normalization_backward(
     batch_normalization_mode mode, float epsilon, float alpha_data,
     const memory_desc_ext &src_desc, void *src,
@@ -3760,6 +3822,7 @@ sycl::event engine_ext::async_batch_normalization_backward(
       diff_bias, diff_scale_bias_mean_var_desc, saved_mean, saved_var);
 }
 
+inline
 sycl::event engine_ext::async_batch_normalization_backward(
     batch_normalization_mode mode, batch_normalization_ops ops,
     activation_desc &adesc, float epsilon, float alpha_data,
@@ -3815,6 +3878,7 @@ sycl::event engine_ext::async_batch_normalization_backward(
   return e;
 }
 
+inline
 sycl::event engine_ext::async_batch_normalization_backward(
     batch_normalization_mode mode, batch_normalization_ops ops,
     activation_desc &adesc, float epsilon, float alpha_data,
@@ -3836,6 +3900,7 @@ sycl::event engine_ext::async_batch_normalization_backward(
       workspace_size, workspace);
 }
 
+inline
 sycl::event
 engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm alg,
                                 float alpha, const memory_desc_ext &src_desc,
@@ -3861,6 +3926,7 @@ engine_ext::async_convolution_forward(convolution_desc &desc, ::dnnl::algorithm 
                            {{alpha, beta, DNNL_ARG_DST, dst_desc, dst}});
 }
 
+inline
 sycl::event engine_ext::async_convolution_forward(
     convolution_desc &desc, ::dnnl::algorithm alg, activation_desc &adesc,
     float alpha_0, const memory_desc_ext &src_desc, void *src,
@@ -3903,6 +3969,7 @@ sycl::event engine_ext::async_convolution_forward(
   return async_activation_forward(adesc, 1.f, dst_desc, dst, 0.f, dst_desc, dst);
 }
 
+inline
 sycl::event engine_ext::async_convolution_backward_data(
     convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
     const memory_desc_ext &weight_desc, void *weight,
@@ -3937,6 +4004,7 @@ sycl::event engine_ext::async_convolution_backward_data(
       {{alpha, beta, DNNL_ARG_DIFF_SRC, diff_src_desc, diff_src}});
 }
 
+inline
 sycl::event engine_ext::async_convolution_backward_weight(
     convolution_desc &desc, ::dnnl::algorithm alg, float alpha,
     const memory_desc_ext &src_desc, void *src,
@@ -3973,6 +4041,7 @@ sycl::event engine_ext::async_convolution_backward_weight(
                              help_diff_weight_desc, diff_weight}});
 }
 
+inline
 sycl::event engine_ext::async_convolution_backward_bias(
     float alpha, const memory_desc_ext &diff_dst_desc, void *diff_dst,
     float beta, const memory_desc_ext &diff_bias_desc, void *diff_bias) {
@@ -3980,6 +4049,7 @@ sycl::event engine_ext::async_convolution_backward_bias(
                    diff_bias_desc, diff_bias);
 }
 
+inline
 void engine_ext::rnn_get_weight_space_size(const rnn_desc &desc,
                                            size_t *weight_space_size) {
   *weight_space_size = 0;
@@ -3991,6 +4061,7 @@ void engine_ext::rnn_get_weight_space_size(const rnn_desc &desc,
   return;
 }
 
+inline
 void engine_ext::rnn_get_scratchpad_workspace_size(
     const rnn_desc &desc, ::dnnl::prop_kind kind,
     const memory_desc_ext &src_desc, size_t *scratchpad_size,
@@ -4005,6 +4076,7 @@ void engine_ext::rnn_get_scratchpad_workspace_size(
   return;
 }
 
+inline
 sycl::event engine_ext::async_rnn_forward(
     const rnn_desc &desc, ::dnnl::prop_kind kind,
     const memory_desc_ext &src_desc, void *src, const memory_desc_ext &dst_desc,
@@ -4020,6 +4092,7 @@ sycl::event engine_ext::async_rnn_forward(
       nullptr);
 }
 
+inline
 sycl::event engine_ext::async_rnn_backward(
     const rnn_desc &desc, const memory_desc_ext &dst_desc, void *dst,
     void *diff_dst, const memory_desc_ext &src_desc, void *src, void *diff_src,

@@ -1035,8 +1035,20 @@ void IncludesCallbacks::InclusionDirective(
       rewriteFileName(NewFileName, FilePath);
       CharSourceRange InsertRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                                   /* IsTokenRange */ false);
-      TransformSet.emplace_back(new ReplaceInclude(
-          InsertRange, buildString("#include \"", NewFileName, "\"")));
+      if (NewFileName != FileName) {
+        const auto Extension = path::extension(FileName);
+        if (Extension == ".cu" || Extension == ".cuh") {
+          // For CUDA files, it will always change name.
+          TransformSet.emplace_back(new ReplaceInclude(
+              InsertRange, buildString("#include \"", NewFileName, "\"")));
+        } else {
+          // For other CppSource file type, it may change name or not, which
+          // determined by whether it has CUDA syntax, so just record the
+          // replacement in the IncludeMapSet.
+          IncludeMapSet[FilePath].emplace_back(new ReplaceInclude(
+              InsertRange, buildString("#include \"", NewFileName, "\"")));
+        }
+      }
       return;
     }
   }
@@ -2558,38 +2570,6 @@ bool TypeInDeclRule::isCapturedByLambda(const TypeLoc *TL) {
   return false;
 }
 
-void TypeInDeclRule::processConstFFTHandleType(const DeclaratorDecl *DD,
-                                               SourceLocation BeginLoc,
-                                               SourceLocation EndLoc,
-                                               bool HasGlobalNSPrefix) {
-  std::string Repl = (HasGlobalNSPrefix ? "::" : "") +
-                     MapNames::getDpctNamespace() + "fft::fft_engine*";
-  requestFeature(HelperFeatureEnum::FftUtils_fft_engine, DD->getBeginLoc());
-  SrcAPIStaticsMap[Repl]++;
-
-  clang::SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
-  Token Tok;
-  Lexer::getRawToken(DD->getBeginLoc(), Tok, SM, LangOptions());
-  auto Tok2Ptr = Lexer::findNextToken(DD->getBeginLoc(), SM, LangOptions());
-  if (Tok2Ptr.has_value()) {
-    auto Tok2 = Tok2Ptr.value();
-    if (Tok.getKind() == tok::raw_identifier &&
-        Tok.getRawIdentifier().str() == "const") {
-      emplaceTransformation(
-          new ReplaceText(Tok.getLocation(),
-                          Tok2.getLocation().getRawEncoding() -
-                              Tok.getLocation().getRawEncoding(),
-                          ""));
-      Repl = Repl + " const";
-    }
-  }
-  auto Len =
-      Lexer::MeasureTokenLength(EndLoc, DpctGlobalInfo::getSourceManager(),
-                                DpctGlobalInfo::getContext().getLangOpts());
-  Len +=
-      SM.getDecomposedLoc(EndLoc).second - SM.getDecomposedLoc(BeginLoc).second;
-  emplaceTransformation(new ReplaceText(BeginLoc, Len, std::move(Repl)));
-}
 void TypeInDeclRule::processCudaStreamType(const DeclaratorDecl *DD) {
   auto SD = getAllDecls(DD);
 
@@ -2918,17 +2898,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     if (DD) {
-      if (TypeStr == "cufftHandle" || TypeStr == "::cufftHandle") {
-        if (TL->getType().isConstQualified()) {
-          clang::SourceManager &SM = dpct::DpctGlobalInfo::getSourceManager();
-          if (SM.getDecomposedLoc(EndLoc).second >= SM.getDecomposedLoc(BeginLoc).second) {
-            processConstFFTHandleType(DD, BeginLoc, EndLoc,
-                                      TypeStr == "::cufftHandle");
-            return;
-          }
-        }
-      }
-
       if (TL->getType().getCanonicalType()->isPointerType()) {
         const auto *PtrTy =
             TL->getType().getCanonicalType()->getAs<PointerType>();
@@ -3202,6 +3171,11 @@ void VectorTypeMemberAccessRule::registerMatcher(MatchFinder &MF) {
                          hasAnyName(SUPPORTEDVECTORTYPENAMES)))))))))))
           .bind("VecMemberExprArrow"),
       this);
+
+  // No inner filter is available for decltypeType(). Thus, this matcher will
+  // match all decltypeType. Detail control flow for different types is in
+  // runRule().
+  MF.addMatcher(typeLoc(loc(decltypeType())).bind("TypeLoc"), this);
 }
 
 void VectorTypeMemberAccessRule::renameMemberField(const MemberExpr *ME) {
@@ -3294,6 +3268,13 @@ void VectorTypeMemberAccessRule::runRule(
 
   if (auto ME = getNodeAsType<MemberExpr>(Result, "VecMemberExprArrow")) {
     renameMemberField(ME);
+  }
+
+  if (auto *TL = getNodeAsType<DecltypeTypeLoc>(Result, "TypeLoc")) {
+    ExprAnalysis EA;
+    EA.analyze(*TL);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
   }
 }
 
@@ -3495,6 +3476,7 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(cxxConstructExpr(
                     hasType(namedDecl(hasName("dim3"))), argumentCountIs(3),
                     anyOf(hasParent(varDecl()), hasParent(exprWithCleanups())),
+                    unless(hasParent(initListExpr())),
                     unless(hasAncestor(
                         cxxConstructExpr(hasType(namedDecl(hasName("dim3")))))))
                     .bind("dim3CtorDecl"),
@@ -3504,6 +3486,7 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
       cxxConstructExpr(hasType(namedDecl(hasName("dim3"))), argumentCountIs(3),
                        // skip fields in a struct.  The source loc is
                        // messed up (points to the start of the struct)
+                       unless(hasParent(initListExpr())),
                        unless(hasAncestor(cxxRecordDecl())),
                        unless(hasParent(varDecl())),
                        unless(hasParent(exprWithCleanups())),
@@ -3523,18 +3506,18 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
 ReplaceDim3Ctor *ReplaceDim3CtorRule::getReplaceDim3Modification(
     const MatchFinder::MatchResult &Result) {
   if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3CtorDecl")) {
-    if(auto Kernel = getParentKernelCall(Ctor))
+    if(getParentKernelCall(Ctor))
       return nullptr;
     // dim3 a; or dim3 a(1);
     return new ReplaceDim3Ctor(Ctor, true /*isDecl*/);
   } else if (auto Ctor =
                  getNodeAsType<CXXConstructExpr>(Result, "dim3CtorNoDecl")) {
-    if(auto Kernel = getParentKernelCall(Ctor))
+    if(getParentKernelCall(Ctor))
       return nullptr;
     // deflt = dim3(3);
     return new ReplaceDim3Ctor(Ctor, false /*isDecl*/);
   } else if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3Top")) {
-    if(auto Kernel = getParentKernelCall(Ctor))
+    if(getParentKernelCall(Ctor))
       return nullptr;
     // dim3 d3_6_3 = dim3(ceil(test.x + NUM), NUM + test.y, NUM + test.z + NUM);
     if (auto A = ReplaceDim3Ctor::getConstructExpr(Ctor->getArg(0))) {
