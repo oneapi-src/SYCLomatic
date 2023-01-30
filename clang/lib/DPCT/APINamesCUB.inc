@@ -48,6 +48,104 @@ CONDITIONAL_FACTORY_ENTRY(
                         LITERAL("1")),
                     false, "wait"))))))
 
+// cub::DeviceReduce::Min
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceReduce::Min"),
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_DPL_Execution,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Algorithm,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+                makeCheckAnd(CheckArgCount(6, std::greater_equal<>(),
+                                           /* IncludeDefaultArg */ false),
+                             makeCheckNot(CheckArgIsDefaultCudaStream(5))),
+                MEMBER_CALL_FACTORY_ENTRY(
+                    "cub::DeviceReduce::Min",
+                    MEMBER_CALL(
+                        ARG(5), true, "fill", ARG(3),
+                        CALL("oneapi::dpl::reduce",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(5)),
+                             ARG(2),
+                             BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
+                             ZERO_INITIALIZER(TYPENAME(STATIC_MEMBER_EXPR(
+                                 TEMPLATED_NAME("std::iterator_traits",
+                                                CALL("decltype", ARG(3))),
+                                 LITERAL("value_type")))),
+                             CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                 MapNames::getClNamespace() + "minimum",
+                                 LITERAL("")))),
+                        LITERAL("1")),
+                    false, "wait"),
+                MEMBER_CALL_FACTORY_ENTRY(
+                    "cub::DeviceReduce::Min",
+                    MEMBER_CALL(
+                        QUEUESTR, false, "fill", ARG(3),
+                        CALL("oneapi::dpl::reduce",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2),
+                             BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
+                             ZERO_INITIALIZER(TYPENAME(STATIC_MEMBER_EXPR(
+                                 TEMPLATED_NAME("std::iterator_traits",
+                                                CALL("decltype", ARG(3))),
+                                 LITERAL("value_type")))),
+                             CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                 MapNames::getClNamespace() + "minimum",
+                                 LITERAL("")))),
+                        LITERAL("1")),
+                    false, "wait"))))))
+
+// cub::DeviceReduce::Max
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceReduce::Max"),
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_DPL_Execution,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Algorithm,
+            REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+                makeCheckAnd(CheckArgCount(6, std::greater_equal<>(),
+                                           /* IncludeDefaultArg */ false),
+                             makeCheckNot(CheckArgIsDefaultCudaStream(5))),
+                MEMBER_CALL_FACTORY_ENTRY(
+                    "cub::DeviceReduce::Max",
+                    MEMBER_CALL(
+                        ARG(5), true, "fill", ARG(3),
+                        CALL("oneapi::dpl::reduce",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  STREAM(5)),
+                             ARG(2),
+                             BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
+                             ZERO_INITIALIZER(TYPENAME(STATIC_MEMBER_EXPR(
+                                 TEMPLATED_NAME("std::iterator_traits",
+                                                CALL("decltype", ARG(3))),
+                                 LITERAL("value_type")))),
+                             CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                 MapNames::getClNamespace() + "maximum",
+                                 LITERAL("")))),
+                        LITERAL("1")),
+                    false, "wait"),
+                MEMBER_CALL_FACTORY_ENTRY(
+                    "cub::DeviceReduce::Max",
+                    MEMBER_CALL(
+                        QUEUESTR, false, "fill", ARG(3),
+                        CALL("oneapi::dpl::reduce",
+                             CALL("oneapi::dpl::execution::device_policy",
+                                  QUEUESTR),
+                             ARG(2),
+                             BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(4)),
+                             ZERO_INITIALIZER(TYPENAME(STATIC_MEMBER_EXPR(
+                                 TEMPLATED_NAME("std::iterator_traits",
+                                                CALL("decltype", ARG(3))),
+                                 LITERAL("value_type")))),
+                             CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                 MapNames::getClNamespace() + "maximum",
+                                 LITERAL("")))),
+                        LITERAL("1")),
+                    false, "wait"))))))
+
 // cub::DeviceReduce::Reduce
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),

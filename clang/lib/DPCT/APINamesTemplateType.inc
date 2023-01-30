@@ -86,7 +86,7 @@ FEATURE_REQUEST_FACTORY(
     TYPE_REWRITE_ENTRY("cub::KeyValuePair",
                        HEADER_INSERTION_FACTORY(
                            HeaderType::HT_DPCT_DPL_Utils,
-                           TYPE_FACTORY(STR("dpct:key_value_pair"),
+                           TYPE_FACTORY(STR("dpct::key_value_pair"),
                                         TEMPLATE_ARG(0), TEMPLATE_ARG(1)))))
 
 FEATURE_REQUEST_FACTORY(
