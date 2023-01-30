@@ -22,7 +22,7 @@ __managed__ int man_mem[10][10][10][10];
 
 // CHECK-NOT: DPCT1060:{{[0-9]+}}: SYCL range can only be a 1D, 2D or 3D vector. Adjust the code.
 
-// CHECK: dpct::constant_memory<int, 4> con_mem(10, 10, 10, 10);
+// CHECK: static dpct::constant_memory<int, 4> con_mem(10, 10, 10, 10);
 __constant__ int con_mem[10][10][10][10];
 
 __global__ void staticReverse()

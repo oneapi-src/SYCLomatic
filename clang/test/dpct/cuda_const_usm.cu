@@ -11,7 +11,7 @@ public:
   __device__ void test() {}
 };
 
-// CHECK: dpct::constant_memory<TestStruct, 0> t1;
+// CHECK: static dpct::constant_memory<TestStruct, 0> t1;
 __constant__ TestStruct t1;
 
 // CHECK: void member_acc(TestStruct t1) {
@@ -20,18 +20,18 @@ __constant__ TestStruct t1;
 __global__ void member_acc() {
   t1.test();
 }
-// CHECK: dpct::constant_memory<float, 1> const_angle(360);
-// CHECK: dpct::constant_memory<float, 2> const_float(NUM_ELEMENTS, num_elements * 2);
+// CHECK: static dpct::constant_memory<float, 1> const_angle(360);
+// CHECK: static dpct::constant_memory<float, 2> const_float(NUM_ELEMENTS, num_elements * 2);
 __constant__ float const_angle[360], const_float[NUM_ELEMENTS][num_elements * 2];
-// CHECK: dpct::constant_memory<sycl::double2, 0> vec_d;
+// CHECK: static dpct::constant_memory<sycl::double2, 0> vec_d;
 __constant__ double2 vec_d;
 
-// CHECK: dpct::constant_memory<int *, 0> const_ptr;
+// CHECK: static dpct::constant_memory<int *, 0> const_ptr;
 __constant__ int *const_ptr;
 
-// CHECK: dpct::constant_memory<int, 1> const_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
+// CHECK: static dpct::constant_memory<int, 1> const_init(sycl::range<1>(5), {1, 2, 3, 7, 8});
 __constant__ int const_init[5] = {1, 2, 3, 7, 8};
-// CHECK: dpct::constant_memory<int, 2> const_init_2d(sycl::range<2>(5, 5), {{[{][{]}}1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}});
+// CHECK: static dpct::constant_memory<int, 2> const_init_2d(sycl::range<2>(5, 5), {{[{][{]}}1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}});
 __constant__ int const_init_2d[5][5] = {{1, 2, 3, 7, 8}, {2, 4, 5, 8, 2}, {4, 7, 8, 0}, {1, 3}, {4, 0, 56}};
 
 
@@ -68,7 +68,7 @@ __global__ void simple_kernel(float *d_array) {
   return;
 }
 
-// CHECK: dpct::constant_memory<float, 0> const_one;
+// CHECK: static dpct::constant_memory<float, 0> const_one;
 __device__ __constant__ float const_one;
 
 // CHECK:void simple_kernel_one(float *d_array, sycl::nd_item<3> [[ITEM:item_ct1]],

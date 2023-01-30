@@ -3477,6 +3477,7 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(cxxConstructExpr(
                     hasType(namedDecl(hasName("dim3"))), argumentCountIs(3),
                     anyOf(hasParent(varDecl()), hasParent(exprWithCleanups())),
+                    unless(hasParent(initListExpr())),
                     unless(hasAncestor(
                         cxxConstructExpr(hasType(namedDecl(hasName("dim3")))))))
                     .bind("dim3CtorDecl"),
@@ -3486,6 +3487,7 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
       cxxConstructExpr(hasType(namedDecl(hasName("dim3"))), argumentCountIs(3),
                        // skip fields in a struct.  The source loc is
                        // messed up (points to the start of the struct)
+                       unless(hasParent(initListExpr())),
                        unless(hasAncestor(cxxRecordDecl())),
                        unless(hasParent(varDecl())),
                        unless(hasParent(exprWithCleanups())),
@@ -3505,18 +3507,18 @@ void ReplaceDim3CtorRule::registerMatcher(MatchFinder &MF) {
 ReplaceDim3Ctor *ReplaceDim3CtorRule::getReplaceDim3Modification(
     const MatchFinder::MatchResult &Result) {
   if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3CtorDecl")) {
-    if(auto Kernel = getParentKernelCall(Ctor))
+    if(getParentKernelCall(Ctor))
       return nullptr;
     // dim3 a; or dim3 a(1);
     return new ReplaceDim3Ctor(Ctor, true /*isDecl*/);
   } else if (auto Ctor =
                  getNodeAsType<CXXConstructExpr>(Result, "dim3CtorNoDecl")) {
-    if(auto Kernel = getParentKernelCall(Ctor))
+    if(getParentKernelCall(Ctor))
       return nullptr;
     // deflt = dim3(3);
     return new ReplaceDim3Ctor(Ctor, false /*isDecl*/);
   } else if (auto Ctor = getNodeAsType<CXXConstructExpr>(Result, "dim3Top")) {
-    if(auto Kernel = getParentKernelCall(Ctor))
+    if(getParentKernelCall(Ctor))
       return nullptr;
     // dim3 d3_6_3 = dim3(ceil(test.x + NUM), NUM + test.y, NUM + test.z + NUM);
     if (auto A = ReplaceDim3Ctor::getConstructExpr(Ctor->getArg(0))) {
