@@ -134,7 +134,7 @@ SET CPATH=%PATH_TO_C2S_INSTALL_FOLDER%\include;%CPATH%
 ```
 
 ### Verify the Installation
-Before run SYCLomatic, it is important to verify that dpct/c2s(SYCLomatic binary) can be find in terminal.
+Before running SYCLomatic, it is important to verify that dpct/c2s(SYCLomatic binary) can be found in terminal.
 
 To do this, you need run the following command and get correct output.
 ```
