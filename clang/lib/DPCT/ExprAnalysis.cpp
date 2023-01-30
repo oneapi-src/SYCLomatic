@@ -946,7 +946,8 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
   auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
   PP.PrintCanonicalTypes = true;
   auto BaseType = CMCE->getObjectType().getUnqualifiedType().getAsString(PP);
-  if (StringRef(BaseType).startswith("cub::")) {
+  if (StringRef(BaseType).startswith("cub::") ||
+      StringRef(BaseType).startswith("cuda::std::")) {
     if (const auto *DRE = dyn_cast<DeclRefExpr>(CMCE->getImplicitObjectArgument())) {
       if (const auto *RD = DRE->getDecl()->getType()->getAsCXXRecordDecl()) {
         BaseType.clear();

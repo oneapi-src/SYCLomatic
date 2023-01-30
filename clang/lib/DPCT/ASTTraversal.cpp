@@ -1015,15 +1015,26 @@ void IncludesCallbacks::InclusionDirective(
         ""));
     Updater.update(false);
   }
-
-  if (FileName.compare(StringRef("cuda/atomic")) == 0||
-      FileName.compare(StringRef("cuda/std/atomic")) == 0) {
-    DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_Atomic);
-    TransformSet.emplace_back(new ReplaceInclude(
+  if (FileName.find("cuda/") != std::string::npos) {
+    if (FileName.compare(StringRef("cuda/atomic")) == 0 ||
+        FileName.compare(StringRef("cuda/std/atomic")) == 0) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_Atomic);
+      TransformSet.emplace_back(new ReplaceInclude(
         CharSourceRange(SourceRange(HashLoc, FilenameRange.getEnd()),
                         /*IsTokenRange=*/false),
         ""));
     Updater.update(false);
+    }
+    if (FileName.compare(StringRef("cuda/std/complex")) == 0) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Complex);
+    }
+    if (FileName.compare(StringRef("cuda/std/array")) == 0) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Array);
+    }
+    if (FileName.compare(StringRef("cuda/std/tuple")) == 0) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_Tuple);
+    }
+    
   }
 
   if (!isChildPath(CudaPath, IncludePath) &&
