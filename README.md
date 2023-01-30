@@ -102,7 +102,7 @@ cmake -G Ninja -DCMAKE_INSTALL_PREFIX=%PATH_TO_C2S_INSTALL_FOLDER%  -DCMAKE_BUIL
 ninja install-c2s
 ```
 
-Note:For computers with 16G memory, we recommend using 4-6 threads for compilation. Using too many threads may cause out of memory.
+Note: For computers with 16G memory, we recommend using 4-6 threads for compilation. Using too many threads may cause out of memory.
 ```
 ninja -j4 install-c2s
 ```
@@ -110,7 +110,7 @@ ninja -j4 install-c2s
 
 **build success message**:
 
-After the compilation is successful, the following information will be output in terminal.
+After the compilation is successful, the following information will be outputted in terminal.
 ```
 -- Install configuration: "Release"
 -- Installing: $PATH_TO_C2S_INSTALL_FOLDER/bin/dpct
@@ -134,9 +134,9 @@ SET CPATH=%PATH_TO_C2S_INSTALL_FOLDER%\include;%CPATH%
 ```
 
 ### Verify the Installation
-Before run SYCLomatic， it is important to verify that dpct/c2s(SYCLomatic binary) can be find in terminal.
+Before run SYCLomatic, it is important to verify that dpct/c2s(SYCLomatic binary) can be find in terminal.
 
-To do this, you need run the following command and get correctly output.
+To do this, you need run the following command and get correct output.
 ```
 dpct --version
 ```
