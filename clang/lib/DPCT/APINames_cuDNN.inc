@@ -75,7 +75,7 @@ ENTRY(cudnnGetAlgorithmSpaceSize, cudnnGetAlgorithmSpaceSize, false, NO_FLAG, P4
 ENTRY(cudnnGetCallback, cudnnGetCallback, false, NO_FLAG, P4, "comment")
 ENTRY(cudnnGetCudartVersion, cudnnGetCudartVersion, false, NO_FLAG, P4, "comment")
 ENTRY(cudnnGetDropoutDescriptor, cudnnGetDropoutDescriptor, false, NO_FLAG, P4, "comment")
-ENTRY(cudnnGetErrorString, cudnnGetErrorString, false, NO_FLAG, P4, "comment")
+ENTRY(cudnnGetErrorString, cudnnGetErrorString, true, NO_FLAG, P4, "Successful")
 ENTRY(cudnnGetFilter4dDescriptor, cudnnGetFilter4dDescriptor, true, NO_FLAG, P4, "comment")
 ENTRY(cudnnGetFilterNdDescriptor, cudnnGetFilterNdDescriptor, true, NO_FLAG, P4, "comment")
 ENTRY(cudnnGetFilterSizeInBytes, cudnnGetFilterSizeInBytes, true, NO_FLAG, P4, "comment")
