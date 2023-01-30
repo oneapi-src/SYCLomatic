@@ -222,8 +222,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseIndexBase_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::index_base")},
       {"cusparseMatrixType_t", std::make_shared<TypeNameRule>(
-           getDpctNamespace() + "sparse::sparse_matrix_info::matrix_type",
-           HelperFeatureEnum::SparseUtils_sparse_matrix_info)},
+           getDpctNamespace() + "sparse::matrix_info::matrix_type",
+           HelperFeatureEnum::SparseUtils_matrix_info)},
       {"cusparseOperation_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
       {"cusparseSolveAnalysisInfo_t", std::make_shared<TypeNameRule>("int")},
@@ -315,8 +315,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cusparseStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseMatDescr_t",
        std::make_shared<TypeNameRule>(
-        "std::shared_ptr<" + getDpctNamespace() + "sparse::sparse_matrix_info>",
-        HelperFeatureEnum::SparseUtils_sparse_matrix_info)},
+        "std::shared_ptr<" + getDpctNamespace() + "sparse::matrix_info>",
+        HelperFeatureEnum::SparseUtils_matrix_info)},
       {"cusparseHandle_t",
        std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
       {"cudaMemoryAdvise", std::make_shared<TypeNameRule>("int")},
@@ -1785,10 +1785,10 @@ const MapNames::MapTy MapNames::SPBLASEnumsMap{
     {"CUSPARSE_DIAG_TYPE_UNIT", "oneapi::mkl::diag::unit"},
     {"CUSPARSE_INDEX_BASE_ZERO", "oneapi::mkl::index_base::zero"},
     {"CUSPARSE_INDEX_BASE_ONE", "oneapi::mkl::index_base::one"},
-    {"CUSPARSE_MATRIX_TYPE_GENERAL", "dpct::sparse::sparse_matrix_info::matrix_type::ge"},
-    {"CUSPARSE_MATRIX_TYPE_SYMMETRIC", "dpct::sparse::sparse_matrix_info::matrix_type::sy"},
-    {"CUSPARSE_MATRIX_TYPE_HERMITIAN", "dpct::sparse::sparse_matrix_info::matrix_type::he"},
-    {"CUSPARSE_MATRIX_TYPE_TRIANGULAR", "dpct::sparse::sparse_matrix_info::matrix_type::tr"},
+    {"CUSPARSE_MATRIX_TYPE_GENERAL", "dpct::sparse::matrix_info::matrix_type::ge"},
+    {"CUSPARSE_MATRIX_TYPE_SYMMETRIC", "dpct::sparse::matrix_info::matrix_type::sy"},
+    {"CUSPARSE_MATRIX_TYPE_HERMITIAN", "dpct::sparse::matrix_info::matrix_type::he"},
+    {"CUSPARSE_MATRIX_TYPE_TRIANGULAR", "dpct::sparse::matrix_info::matrix_type::tr"},
 };
 
 // SOLVER enums mapping

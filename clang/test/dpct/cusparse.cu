@@ -16,14 +16,14 @@ float beta;
 float* y;
 //CHECK: sycl::queue* handle;
 //CHECK-NEXT: oneapi::mkl::transpose transA = oneapi::mkl::transpose::nontrans;
-//CHECK-NEXT: std::shared_ptr<dpct::sparse::sparse_matrix_info> descrA;
+//CHECK-NEXT: std::shared_ptr<dpct::sparse::matrix_info> descrA;
 cusparseHandle_t handle;
 cusparseOperation_t transA = CUSPARSE_OPERATION_NON_TRANSPOSE;
 cusparseMatDescr_t descrA;
 
 int main(){
-  //CHECK: std::shared_ptr<dpct::sparse::sparse_matrix_info> descr1 = 0, descr2 = 0;
-  //CHECK-NEXT:std::shared_ptr<dpct::sparse::sparse_matrix_info> descr3 = 0;
+  //CHECK: std::shared_ptr<dpct::sparse::matrix_info> descr1 = 0, descr2 = 0;
+  //CHECK-NEXT:std::shared_ptr<dpct::sparse::matrix_info> descr3 = 0;
   //CHECK-NEXT: dpct::queue_ptr s;
   cusparseMatDescr_t descr1 = 0, descr2 = 0;
   cusparseMatDescr_t descr3 = 0;
@@ -44,11 +44,11 @@ int main(){
   //CHECK: oneapi::mkl::diag diag0 = oneapi::mkl::diag::nonunit;
   //CHECK-NEXT: oneapi::mkl::uplo fill0 = oneapi::mkl::uplo::lower;
   //CHECK-NEXT: oneapi::mkl::index_base base0 = oneapi::mkl::index_base::zero;
-  //CHECK-NEXT: dpct::sparse::sparse_matrix_info::matrix_type type0 = dpct::sparse::sparse_matrix_info::matrix_type::ge;
+  //CHECK-NEXT: dpct::sparse::matrix_info::matrix_type type0 = dpct::sparse::matrix_info::matrix_type::ge;
   //CHECK-NEXT: descrA->set_diag((oneapi::mkl::diag)zero);
   //CHECK-NEXT: descrA->set_uplo((oneapi::mkl::uplo)zero);
   //CHECK-NEXT: descrA->set_index_base((oneapi::mkl::index_base)zero);
-  //CHECK-NEXT: descrA->set_matrix_type((dpct::sparse::sparse_matrix_info::matrix_type)zero);
+  //CHECK-NEXT: descrA->set_matrix_type((dpct::sparse::matrix_info::matrix_type)zero);
   //CHECK-NEXT: diag0 = descrA->get_diag();
   //CHECK-NEXT: fill0 = descrA->get_uplo();
   //CHECK-NEXT: base0 = descrA->get_index_base();
@@ -73,8 +73,8 @@ int main(){
   cusparseSetStream(handle,s);
   cusparseGetStream(handle,&s);
 
-  //CHECK: descrA = std::make_shared<dpct::sparse::sparse_matrix_info>();
-  //CHECK-NEXT: descrA->set_matrix_type(dpct::sparse::sparse_matrix_info::matrix_type::ge);
+  //CHECK: descrA = std::make_shared<dpct::sparse::matrix_info>();
+  //CHECK-NEXT: descrA->set_matrix_type(dpct::sparse::matrix_info::matrix_type::ge);
   //CHECK-NEXT: descrA->set_index_base(oneapi::mkl::index_base::zero);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
@@ -225,7 +225,7 @@ int main(){
   cusparseDestroy(handle);
 }
 
-//CHECK: int foo(std::shared_ptr<dpct::sparse::sparse_matrix_info> descrB) try {
+//CHECK: int foo(std::shared_ptr<dpct::sparse::matrix_info> descrB) try {
 //CHECK-NEXT: /*
 //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
 //CHECK-NEXT: */
@@ -248,7 +248,7 @@ int foo(cusparseMatDescr_t descrB){
   return cusparseScsrmv(handle, transA, m, n, nnz, &alpha, descrB, csrValA, csrRowPtrA, csrColIndA, x, &beta, y);
 }
 
-//CHECK: void foo2(std::shared_ptr<dpct::sparse::sparse_matrix_info> descrB){
+//CHECK: void foo2(std::shared_ptr<dpct::sparse::matrix_info> descrB){
 //CHECK-NEXT: /*
 //CHECK-NEXT: DPCT1045:{{[0-9]+}}: Migration is only supported for this API for the general sparse matrix type. You may need to adjust the code.
 //CHECK-NEXT: */

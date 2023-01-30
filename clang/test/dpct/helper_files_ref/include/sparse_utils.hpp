@@ -16,7 +16,7 @@ namespace dpct {
 namespace sparse {
 /// Describes properties of a sparse matrix.
 /// The properties are matrix type, diag, uplo and index base.
-class sparse_matrix_info {
+class matrix_info {
 public:
   /// Matrix types are:
   /// ge: General matrix

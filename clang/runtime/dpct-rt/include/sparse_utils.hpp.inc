@@ -48,12 +48,12 @@
 
 namespace dpct {
 namespace sparse {
-// DPCT_LABEL_BEGIN|sparse_matrix_info|dpct::sparse
+// DPCT_LABEL_BEGIN|matrix_info|dpct::sparse
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 /// Describes properties of a sparse matrix.
 /// The properties are matrix type, diag, uplo and index base.
-class sparse_matrix_info {
+class matrix_info {
 public:
   /// Matrix types are:
   /// ge: General matrix

@@ -4,7 +4,7 @@
 // RUN: rm -rf %T/SparseUtils/api_test1_out
 
 // CHECK: 2
-// TEST_FEATURE: SparseUtils_sparse_matrix_info
+// TEST_FEATURE: SparseUtils_matrix_info
 
 #include "cusparse.h"
 
