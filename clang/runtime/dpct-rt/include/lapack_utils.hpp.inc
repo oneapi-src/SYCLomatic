@@ -706,6 +706,9 @@ inline int getrfnp_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|char2jobsvd|dpct::lapack::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
 oneapi::mkl::jobsvd char2jobsvd(char job) {
   switch (job) {
   case 'A':
@@ -721,7 +724,13 @@ oneapi::mkl::jobsvd char2jobsvd(char job) {
                           "the job type is unsupported");
   }
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|gesvd_scratchpad_size_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 inline void gesvd_scratchpad_size_impl(sycl::queue &q, signed char jobu,
                                        signed char jobvt, std::int64_t m,
                                        std::int64_t n, library_data_t a_type,
@@ -748,7 +757,13 @@ inline void gesvd_scratchpad_size_impl(sycl::queue &q, signed char jobu,
   }
 #undef CASE
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|gesvd_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 inline void gesvd_impl(sycl::queue &q, signed char jobu, signed char jobvt,
                        std::int64_t m, std::int64_t n, library_data_t a_type,
                        void *a, std::int64_t lda, library_data_t s_type,
@@ -782,7 +797,13 @@ inline void gesvd_impl(sycl::queue &q, signed char jobu, signed char jobvt,
 #undef CASE
   dpct::detail::dpct_memset(q, info, 0, sizeof(int));
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|potrf_scratchpad_size_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 inline void potrf_scratchpad_size_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
                                        std::int64_t n, library_data_t a_type,
                                        std::int64_t lda,
@@ -805,7 +826,13 @@ inline void potrf_scratchpad_size_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
   }
 #undef CASE
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|potrf_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 inline void potrf_impl(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                        library_data_t a_type, void *a, std::int64_t lda,
                        void *device_ws, size_t device_ws_size, int *info) {
@@ -830,7 +857,13 @@ inline void potrf_impl(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 #undef CASE
   dpct::detail::dpct_memset(q, info, 0, sizeof(int));
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|potrs_impl|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 inline void potrs_impl(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                        std::int64_t nrhs, library_data_t a_type, void *a,
                        std::int64_t lda, library_data_t b_type, void *b,
@@ -870,7 +903,7 @@ inline void potrs_impl(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 #endif
   }
 }
-
+// DPCT_LABEL_END
 } // namespace detail
 
 // DPCT_LABEL_BEGIN|getrf_scratchpad_size|dpct::lapack
@@ -1022,6 +1055,13 @@ inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|gesvd_scratchpad_size|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|handle_sync_exception
+// LapackUtils|gesvd_scratchpad_size_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 inline int gesvd_scratchpad_size(sycl::queue &q, signed char jobu,
                                  signed char jobvt, std::int64_t m,
                                  std::int64_t n, library_data_t a_type,
@@ -1033,7 +1073,15 @@ inline int gesvd_scratchpad_size(sycl::queue &q, signed char jobu,
       detail::gesvd_scratchpad_size_impl, q, jobu, jobvt, m, n, a_type, lda,
       u_type, ldu, vt_type, ldvt, device_ws_size);
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|gesvd|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|handle_sync_exception
+// LapackUtils|gesvd_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 inline int gesvd(sycl::queue &q, signed char jobu, signed char jobvt,
                  std::int64_t m, std::int64_t n, library_data_t a_type, void *a,
                  std::int64_t lda, library_data_t s_type, void *s,
@@ -1045,7 +1093,15 @@ inline int gesvd(sycl::queue &q, signed char jobu, signed char jobvt,
       a_type, a, lda, s_type, s, u_type, u, ldu, vt_type, vt, ldvt, device_ws,
       device_ws_size, info);
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|potrf_scratchpad_size|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|handle_sync_exception
+// LapackUtils|potrf_scratchpad_size_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
                                  std::int64_t n, library_data_t a_type,
                                  std::int64_t lda, size_t *device_ws_size) {
@@ -1054,7 +1110,15 @@ inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
       detail::potrf_scratchpad_size_impl, q, uplo, n, a_type, lda,
       device_ws_size);
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|potrf|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|handle_sync_exception
+// LapackUtils|potrf_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 inline int potrf(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  void *device_ws, size_t device_ws_size, int *info) {
@@ -1062,7 +1126,15 @@ inline int potrf(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
       q, nullptr, info, "potrf", detail::potrf_impl, q, uplo, n, a_type, a, lda,
       device_ws, device_ws_size, info);
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|potrs|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|handle_sync_exception
+// LapackUtils|potrs_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                  std::int64_t nrhs, library_data_t a_type, void *a,
                  std::int64_t lda, library_data_t b_type, void *b,
@@ -1072,7 +1144,7 @@ inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
       q, device_ws, info, "potrs_scratchpad_size/potrs", detail::potrs_impl, q,
       uplo, n, nrhs, a_type, a, lda, b_type, b, ldb, device_ws, info);
 }
-
+// DPCT_LABEL_END
 } // namespace lapack
 } // namespace dpct
 
