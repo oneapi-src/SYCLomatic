@@ -149,14 +149,14 @@ static void getCompileInfo(
     bool IsObjSpecified = false;
 
     // -isystem
-    bool ISISystem = false;
+    bool IsSystemInclude = false;
 
     const std::string Directory = Entry.second[0];
     std::unordered_set<std::string> DuplicateDuplicateFilter;
     for (const auto &Option : Entry.second) {
 
-      if (ISISystem) {
-        ISISystem = false;
+      if (IsSystemInclude) {
+        IsSystemInclude = false;
         std::string IncPath = Option;
 
         SmallString<512> OutDirectory = llvm::StringRef(IncPath);
@@ -203,7 +203,7 @@ static void getCompileInfo(
         NewOptions += " ";
 
       } else if (llvm::StringRef(Option).startswith("-isystem")) {
-        ISISystem = true;
+        IsSystemInclude = true;
       } else if (llvm::StringRef(Option).startswith("-D")) {
         // Parse macros defined.
         std::size_t Len = Option.length() - strlen("-D");
