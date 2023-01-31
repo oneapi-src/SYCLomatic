@@ -7082,7 +7082,7 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       insertHeaderForTypeRule(VarType, VD->getBeginLoc());
       auto Itr = MapNames::TypeNamesMap.find(VarType);
       if (Itr == MapNames::TypeNamesMap.end())
-        return
+        return;
       VarType = Itr->second->NewName;
       PrefixBeforeScope = VarType + " " + VarName + ";" + getNL() + IndentStr +
                           PrefixBeforeScope;
