@@ -1,8 +1,9 @@
-// CHECK:template <typename T1, typename T2,
+// CHECK:template <typename T1,
 //CHECK-NEXT:          sycl::access::address_space addressSpace =
 //CHECK-NEXT:              sycl::access::address_space::global_space,
 //CHECK-NEXT:          sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
-//CHECK-NEXT:          sycl::memory_scope memoryScope = sycl::memory_scope::device>
+//CHECK-NEXT:          sycl::memory_scope memoryScope = sycl::memory_scope::device,
+//CHECK-NEXT:          typename T2 = T1>
 //CHECK-NEXT:inline T1 atomic_fetch_add(T1 *addr, T2 operand) {
 //CHECK-NEXT:  auto atm =
 //CHECK-NEXT:      sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(addr[0]);

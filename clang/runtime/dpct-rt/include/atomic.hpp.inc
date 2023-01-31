@@ -56,11 +56,12 @@ namespace dpct {
 /// \param operand The value to add to the value at \p addr.
 /// \param memoryOrder The memory ordering used.
 /// \returns The value at the \p addr before the call.
-template <typename T1, typename T2,
+template <typename T1,
           sycl::access::address_space addressSpace =
               sycl::access::address_space::global_space,
           sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
-          sycl::memory_scope memoryScope = sycl::memory_scope::device>
+          sycl::memory_scope memoryScope = sycl::memory_scope::device,
+          typename T2 = T1>
 inline T1 atomic_fetch_add(T1 *addr, T2 operand) {
   auto atm =
       sycl::atomic_ref<T1, memoryOrder, memoryScope, addressSpace>(addr[0]);
@@ -73,8 +74,9 @@ inline T1 atomic_fetch_add(T1 *addr, T2 operand) {
 /// \param operand The value to add to the value at \p addr.
 /// \param memoryOrder The memory ordering used.
 /// \returns The value at the \p addr before the call.
-template <typename T1, typename T2, sycl::access::address_space addressSpace =
-                          sycl::access::address_space::global_space>
+template <typename T1, sycl::access::address_space addressSpace =
+                          sycl::access::address_space::global_space,
+                           typename T2 = T1>
 inline T1 atomic_fetch_add(T1 *addr, T2 operand,
                           sycl::memory_order memoryOrder) {
   switch (memoryOrder) {
