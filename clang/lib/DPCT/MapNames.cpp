@@ -4305,8 +4305,7 @@ const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
     "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType"};
 
 const MapNames::SetTy MapNames::PredefinedStreamName{
-    "cudaStreamDefault", "cudaStreamNonBlocking", "cudaStreamLegacy",
-    "cudaStreamPerThread"};
+    "cudaStreamDefault", "cudaStreamNonBlocking"};
 
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "this_thread_block", "sync", "tiled_partition",
