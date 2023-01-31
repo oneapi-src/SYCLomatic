@@ -781,10 +781,12 @@ MATH_API_REWRITER_DEVICE_OVERLOAD(
 
 CONDITIONAL_FACTORY_ENTRY(
     GetUsingGenericSpace,
-    CALL_FACTORY_ENTRY(
+    CALL_FACTORY_ENTRY("atomicAdd",
+                       CALL(MapNames::getDpctNamespace() + "atomic_fetch_add",
+                            ARG(0), ARG(1))),
+    MEMBER_CALL_FACTORY_ENTRY(
         "atomicAdd",
-        CALL(MapNames::getDpctNamespace() + "atomic_fetch_add", ARG(0), ARG(1))),
-    /* TODO: Handle case where (GetUsingGenericSpace == false) */
-    CALL_FACTORY_ENTRY(
-        "atomicAdd",
-        CALL(MapNames::getDpctNamespace() + "atomic_fetch_add", ARG(0), ARG(1))))
+        CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getClNamespace() + "atomic",
+                                        getDerefedType(0)),
+             ARG(0)),
+        false, "fetch_add", ARG(1)))

@@ -1495,6 +1495,10 @@ inline auto UseLogicalGroup = [](const CallExpr *C) -> bool {
   return DpctGlobalInfo::useLogicalGroup();
 };
 
+inline auto GetUsingGenericSpace = [](const CallExpr *C) -> bool {
+  return DpctGlobalInfo::getUsingGenericSpace();
+};
+
 class CheckDerefedTypeBeforeCast {
   unsigned Idx;
   std::string TypeName;
