@@ -788,18 +788,18 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
   return nullptr;
 }
 
-static image_wrapper_base_p
-get_image_wrapper_base_from_module(dpct::kernel_library &library) {
+static image_wrapper_base_p get_image_from_module(dpct::kernel_library &library,
+                                                  const std::string &name) {
 #ifdef _WIN32
   image_wrapper_base_p fn =
       reinterpret_cast<image_wrapper_base_p>(GetProcAddress(
-          static_cast<HMODULE>(static_cast<void *>(library)), "tex"));
+          static_cast<HMODULE>(static_cast<void *>(library)), name.c_str()));
 #else
   image_wrapper_base_p fn =
-      reinterpret_cast<image_wrapper_base_p>(dlsym(library, "tex"));
+      reinterpret_cast<image_wrapper_base_p>(dlsym(library, name.c_str()));
 #endif
   if (fn == nullptr)
-    throw std::runtime_error("Failed to get function");
+    throw std::runtime_error("Failed to get image");
   return fn;
 }
 

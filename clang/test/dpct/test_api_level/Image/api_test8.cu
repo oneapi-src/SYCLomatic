@@ -5,7 +5,7 @@
 
 // CHECK: 29
 // TEST_FEATURE: Image_image_wrapper_base_p_alias
-// TEST_FEATURE: Image_get_image_wrapper_base_from_module
+// TEST_FEATURE: Image_get_image_from_module
 
 int main() {
   cudaTextureObject_t a;

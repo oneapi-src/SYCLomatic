@@ -34,11 +34,11 @@ FEATURE_REQUEST_FACTORY(
                                                  ARG(1), ARG(2)))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::Image_get_image_wrapper_base_from_module,
+    HelperFeatureEnum::Image_get_image_from_module,
     ASSIGNABLE_FACTORY(
         ASSIGN_FACTORY_ENTRY("cuModuleGetTexRef", DEREF(0),
                              CALL(MapNames::getDpctNamespace() +
-                                      "get_image_wrapper_base_from_module",
+                                      "get_image_from_module",
                                   ARG(1), ARG(2)))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
