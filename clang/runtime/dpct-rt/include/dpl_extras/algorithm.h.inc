@@ -1713,6 +1713,7 @@ inline void sort_keys(
 // DplExtrasAlgorithm|segmented_sort_pairs_by_parallel_sorts
 // DplExtrasAlgorithm|segmented_sort_pairs_by_parallel_for_of_sorts
 // DplExtrasAlgorithm|segmented_sort_pairs_by_two_pair_sorts
+// DplExtrasVector|is_iterator
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
