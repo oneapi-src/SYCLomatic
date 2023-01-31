@@ -1300,12 +1300,10 @@ inline void segmented_sort_keys_by_parallel_for_of_sorts(
 }
 
 template <typename _ExecutionPolicy, typename OffsetIteratorT>
-inline void 
-mark_segments(_ExecutionPolicy &&policy, OffsetIteratorT begin_offsets,
-              OffsetIteratorT end_offsets, int64_t n, int64_t nsegments,
-              ::std::size_t* segments)
-{
-
+inline void mark_segments(_ExecutionPolicy &&policy,
+                          OffsetIteratorT begin_offsets,
+                          OffsetIteratorT end_offsets, int64_t n,
+                          int64_t nsegments, ::std::size_t *segments) {
 
   ::std::size_t work_group_size =
       policy.queue()
@@ -1529,8 +1527,7 @@ inline void sort_keys(
     keys.swap();
 }
 
-template <typename _ExecutionPolicy, typename key_t,
-          typename OffsetIteratorT>
+template <typename _ExecutionPolicy, typename key_t, typename OffsetIteratorT>
 inline void segmented_sort_keys(
     _ExecutionPolicy &&policy, key_t keys_in, key_t keys_out, int64_t n,
     int64_t nsegments, OffsetIteratorT begin_offsets,
