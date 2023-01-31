@@ -6,30 +6,40 @@
 //
 //===----------------------------------------------------------------------===//
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
-    ASSIGN_FACTORY_ENTRY("cuModuleLoad", DEREF(0),
-                         CALL(MapNames::getDpctNamespace() + "load_kernel_library", ARG(1)))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Kernel_kernel_library,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+        "cuModuleLoad", DEREF(0),
+        CALL(MapNames::getDpctNamespace() + "load_kernel_library", ARG(1)))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
-    ASSIGN_FACTORY_ENTRY("cuModuleLoadData", DEREF(0),
-                         CALL(MapNames::getDpctNamespace() + "load_kernel_library_mem",
-                              ARG(1)))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Kernel_kernel_library,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuModuleLoadData", DEREF(0),
+                                            CALL(MapNames::getDpctNamespace() +
+                                                     "load_kernel_library_mem",
+                                                 ARG(1)))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
-    ASSIGN_FACTORY_ENTRY("cuModuleLoadDataEx", DEREF(0),
-                         CALL(MapNames::getDpctNamespace() + "load_kernel_library_mem",
-                              ARG(1)))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Kernel_kernel_library,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuModuleLoadDataEx", DEREF(0),
+                                            CALL(MapNames::getDpctNamespace() +
+                                                     "load_kernel_library_mem",
+                                                 ARG(1)))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
-    ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
-                         CALL(MapNames::getDpctNamespace() + "get_kernel_function", ARG(1),
-                              ARG(2)))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Kernel_kernel_library,
+    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("cuModuleGetFunction", DEREF(0),
+                                            CALL(MapNames::getDpctNamespace() +
+                                                     "get_kernel_function",
+                                                 ARG(1), ARG(2)))))
 
-FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Image_image_wrapper_base_p_alias,
-                        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                            "cuModuleGetTexRef", DEREF(0),
-                            CALL(MapNames::getDpctNamespace() + "get_image_wrapper_base_from_module", ARG(1),
-                                 ARG(2)))))
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::Image_get_image_wrapper_base_from_module,
+    ASSIGNABLE_FACTORY(
+        ASSIGN_FACTORY_ENTRY("cuModuleGetTexRef", DEREF(0),
+                             CALL(MapNames::getDpctNamespace() +
+                                      "get_image_wrapper_base_from_module",
+                                  ARG(1), ARG(2)))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Kernel_kernel_library, ASSIGNABLE_FACTORY(
     CALL_FACTORY_ENTRY("cuModuleUnload",

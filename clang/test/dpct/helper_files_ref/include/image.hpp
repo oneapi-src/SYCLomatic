@@ -13,6 +13,7 @@
 
 #include "memory.hpp"
 #include "util.hpp"
+#include "kernel.hpp"
 
 namespace dpct {
 
@@ -785,6 +786,21 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
     return ret;
   }
   return nullptr;
+}
+
+static image_wrapper_base_p
+get_image_wrapper_base_from_module(dpct::kernel_library &library) {
+#ifdef _WIN32
+  image_wrapper_base_p fn =
+      reinterpret_cast<image_wrapper_base_p>(GetProcAddress(
+          static_cast<HMODULE>(static_cast<void *>(library)), "tex"));
+#else
+  image_wrapper_base_p fn =
+      reinterpret_cast<image_wrapper_base_p>(dlsym(library, "tex"));
+#endif
+  if (fn == nullptr)
+    throw std::runtime_error("Failed to get function");
+  return fn;
 }
 
 namespace detail {

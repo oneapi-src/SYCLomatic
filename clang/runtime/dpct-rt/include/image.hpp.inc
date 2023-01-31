@@ -1647,17 +1647,18 @@ static inline image_wrapper_base *create_image_wrapper(image_data data,
 // DPCT_LABEL_BEGIN|get_image_wrapper_base_from_module|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Kernel|kernel_library
-// Image|image_wrapper_base_p
+// Image|image_wrapper_base_p_alias
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-static image_wrapper_base_p get_image_wrapper_base_from_module(dpct::kernel_library &library) {
+static image_wrapper_base_p
+get_image_wrapper_base_from_module(dpct::kernel_library &library) {
 #ifdef _WIN32
-  image_wrapper_base_p fn = reinterpret_cast<image_wrapper_base_p>(
-      GetProcAddress(static_cast<HMODULE>(static_cast<void *>(library)),
-                     "tex"));
+  image_wrapper_base_p fn =
+      reinterpret_cast<image_wrapper_base_p>(GetProcAddress(
+          static_cast<HMODULE>(static_cast<void *>(library)), "tex"));
 #else
-  image_wrapper_base_p fn = reinterpret_cast<image_wrapper_base_p>(
-      dlsym(library, "tex"));
+  image_wrapper_base_p fn =
+      reinterpret_cast<image_wrapper_base_p>(dlsym(library, "tex"));
 #endif
   if (fn == nullptr)
     throw std::runtime_error("Failed to get function");
