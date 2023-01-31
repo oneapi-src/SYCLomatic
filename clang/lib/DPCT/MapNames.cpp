@@ -1668,7 +1668,25 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusolverDnGetrf_bufferSize",
                            "cusolverDnGetrs",
                            "cusolverDnGeqrf",
-                           "cusolverDnGeqrf_bufferSize"};
+                           "cusolverDnGeqrf_bufferSize",
+                           "cusolverDnSgesvdj_bufferSize",
+                           "cusolverDnDgesvdj_bufferSize",
+                           "cusolverDnCgesvdj_bufferSize",
+                           "cusolverDnZgesvdj_bufferSize",
+                           "cusolverDnXgesvd_bufferSize",
+                           "cusolverDnGesvd_bufferSize",
+                           "cusolverDnSgesvdj",
+                           "cusolverDnDgesvdj",
+                           "cusolverDnCgesvdj",
+                           "cusolverDnZgesvdj",
+                           "cusolverDnXgesvd",
+                           "cusolverDnGesvd",
+                           "cusolverDnXpotrf_bufferSize",
+                           "cusolverDnPotrf_bufferSize",
+                           "cusolverDnXpotrf",
+                           "cusolverDnPotrf",
+                           "cusolverDnXpotrs",
+                           "cusolverDnPotrs"};
 
   // This map now is only used to migrate using declaration
   MathFuncNameMap = {
