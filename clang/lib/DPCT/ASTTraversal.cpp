@@ -7081,8 +7081,9 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       requestHelperFeatureForTypeNames(VarType, VD);
       insertHeaderForTypeRule(VarType, VD->getBeginLoc());
       auto Itr = MapNames::TypeNamesMap.find(VarType);
-      if (Itr != MapNames::TypeNamesMap.end())
-        VarType = Itr->second->NewName;
+      if (Itr == MapNames::TypeNamesMap.end())
+        return
+      VarType = Itr->second->NewName;
       PrefixBeforeScope = VarType + " " + VarName + ";" + getNL() + IndentStr +
                           PrefixBeforeScope;
       SourceLocation typeBegin =
