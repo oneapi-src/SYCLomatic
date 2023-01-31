@@ -443,3 +443,27 @@ MATH_API_REWRITER_DEVICE(
                                                   "ext::intel::math::hneu",
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hneu"), EMPTY_FACTORY_ENTRY("__hneu")))
+
+// Exceptional case
+MATH_API_REWRITER_DEVICE(
+    "__hadd",
+    MATH_API_DEVICE_NODES(
+        CONDITIONAL_FACTORY_ENTRY(
+            CheckArgType(0, "int"),
+            CALL_FACTORY_ENTRY("__hadd",
+                               CALL(MapNames::getClNamespace(false, true) +
+                                        "hadd<int>",
+                                    ARG(0), ARG(1))),
+            CONDITIONAL_FACTORY_ENTRY(
+                math::UseIntelDeviceMath,
+                HEADER_INSERT_FACTORY(
+                    HeaderType::HT_SYCL_Math,
+                    CALL_FACTORY_ENTRY("__hadd",
+                                       CALL(MapNames::getClNamespace() +
+                                                "ext::intel::math::hadd",
+                                            ARG(0), ARG(1)))),
+                REWRITER_FACTORY_ENTRY(
+                    "__hadd", UnsupportFunctionRewriterFactory<std::string>,
+                    Diagnostics::API_NOT_MIGRATED, "__hadd"))),
+        EMPTY_FACTORY_ENTRY("__hadd"), EMPTY_FACTORY_ENTRY("__hadd"),
+        EMPTY_FACTORY_ENTRY("__hadd")))

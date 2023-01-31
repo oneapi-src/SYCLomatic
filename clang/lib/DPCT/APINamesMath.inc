@@ -222,7 +222,7 @@ ENTRY_RENAMED("min", MapNames::getClNamespace(false, true) + "min")
 // Integer Intrinsics
 ENTRY_RENAMED("__clz", MapNames::getClNamespace(false, true) + "clz")
 ENTRY_RENAMED("__clzll", MapNames::getClNamespace(false, true) + "clz")
-ENTRY_RENAMED("__hadd", MapNames::getClNamespace(false, true) + "hadd")
+ENTRY_REWRITE("__hadd")
 ENTRY_RENAMED("__mul24", MapNames::getClNamespace(false, true) + "mul24")
 ENTRY_RENAMED("__mulhi", MapNames::getClNamespace(false, true) + "mul_hi")
 ENTRY_RENAMED("__popc", MapNames::getClNamespace(false, true) + "popcount")

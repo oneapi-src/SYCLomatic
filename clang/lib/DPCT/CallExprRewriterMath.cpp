@@ -261,8 +261,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       } else if (SourceCalleeName == "__mul24" || SourceCalleeName == "mul24" ||
                  SourceCalleeName == "__umul24" ||
                  SourceCalleeName == "umul24" ||
-                 SourceCalleeName == "__mulhi" ||
-                 SourceCalleeName == "__hadd") {
+                 SourceCalleeName == "__mulhi") {
         std::string ParamType = "int";
         if (SourceCalleeName == "__umul24" || SourceCalleeName == "umul24")
           ParamType = "unsigned int";

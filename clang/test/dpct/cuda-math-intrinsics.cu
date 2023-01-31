@@ -2405,6 +2405,11 @@ __global__ void testUnsupported() {
   u = __urhadd(u, u);
   // CHECK: u = sycl::abs_diff(u, u)+u;
   u = __usad(u, u, u);
+  // CHECK: /*
+  // CHECK-NEXT: DPCT1007:{{[0-9]+}}: Migration of __hadd is not supported.
+  // CHECK-NEXT: */
+  // CHECK-NEXT: h = __hadd(h, h);
+  h = __hadd(h, h);
 }
 
 __global__ void testSimulation() {
@@ -2451,7 +2456,7 @@ __global__ void testIntegerFunctions() {
 
   // CHECK: i = sycl::clz(i);
   // CHECK-NEXT: i = sycl::clz(ll);
-  // CHECK-NEXT: i = sycl::hadd(i, i);
+  // CHECK-NEXT: i = sycl::hadd<int>(i, i);
   // CHECK-NEXT: i = sycl::mul24(i, i);
   // CHECK-NEXT: i = sycl::mul_hi(i, i);
   // CHECK-NEXT: i = sycl::popcount(u);
@@ -2466,7 +2471,7 @@ __global__ void testIntegerFunctions() {
 
   // CHECK: sycl::clz((int)u);
   // CHECK-NEXT: sycl::clz((long long)ull);
-  // CHECK-NEXT: sycl::hadd((int)u, (int)u);
+  // CHECK-NEXT: sycl::hadd<int>(u, u);
   // CHECK-NEXT: sycl::mul24((int)u, (int)u);
   // CHECK-NEXT: sycl::mul_hi((int)u, (int)u);
   __clz(u);
