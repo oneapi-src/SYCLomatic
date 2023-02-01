@@ -1073,35 +1073,7 @@ inline int gesvd_scratchpad_size(sycl::queue &q, signed char jobu,
       detail::gesvd_scratchpad_size_impl, q, jobu, jobvt, m, n, a_type, lda,
       u_type, ldu, vt_type, ldvt, device_ws_size);
 }
-// DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|gesvd|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LapackUtils|handle_sync_exception
-// LapackUtils|gesvd_impl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-inline int gesvd(sycl::queue &q, signed char jobu, signed char jobvt,
-                 std::int64_t m, std::int64_t n, library_data_t a_type, void *a,
-                 std::int64_t lda, library_data_t s_type, void *s,
-                 library_data_t u_type, void *u, std::int64_t ldu,
-                 library_data_t vt_type, void *vt, std::int64_t ldvt,
-                 void *device_ws, size_t device_ws_size, int *info) {
-  return detail::handle_sync_exception<false>(
-      q, nullptr, info, "gesvd", detail::gesvd_impl, q, jobu, jobvt, m, n,
-      a_type, a, lda, s_type, s, u_type, u, ldu, vt_type, vt, ldvt, device_ws,
-      device_ws_size, info);
-}
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|gesvd_scratchpad_size_2|dpct::lapack
-// DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|library_data_t
-// LapackUtils|handle_sync_exception
-// LapackUtils|gesvd_scratchpad_size_impl
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
 inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                  std::int64_t econ, std::int64_t m,
                                  std::int64_t n, library_data_t a_type,
@@ -1150,13 +1122,25 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|gesvd_2|dpct::lapack
+// DPCT_LABEL_BEGIN|gesvd|dpct::lapack
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
 // LapackUtils|handle_sync_exception
 // LapackUtils|gesvd_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+inline int gesvd(sycl::queue &q, signed char jobu, signed char jobvt,
+                 std::int64_t m, std::int64_t n, library_data_t a_type, void *a,
+                 std::int64_t lda, library_data_t s_type, void *s,
+                 library_data_t u_type, void *u, std::int64_t ldu,
+                 library_data_t vt_type, void *vt, std::int64_t ldvt,
+                 void *device_ws, size_t device_ws_size, int *info) {
+  return detail::handle_sync_exception<false>(
+      q, nullptr, info, "gesvd", detail::gesvd_impl, q, jobu, jobvt, m, n,
+      a_type, a, lda, s_type, s, u_type, u, ldu, vt_type, vt, ldvt, device_ws,
+      device_ws_size, info);
+}
+
 inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t econ,
                  std::int64_t m, std::int64_t n, library_data_t a_type, void *a,
                  std::int64_t lda, library_data_t s_type, void *s,

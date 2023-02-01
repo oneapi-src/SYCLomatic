@@ -294,7 +294,7 @@ REMOVE_API_FACTORY_ENTRY("cusolverDnCreateGesvdjInfo")
 REMOVE_API_FACTORY_ENTRY("cusolverDnDestroyGesvdjInfo")
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size_2,
+    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size,
     CALL_FACTORY_ENTRY(
         "cusolverDnSgesvdj_bufferSize",
         CALL(MapNames::getDpctNamespace() + "lapack::gesvd_scratchpad_size",
@@ -307,7 +307,7 @@ FEATURE_REQUEST_FACTORY(
              ARG(11), ARG(12))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::LapackUtils_gesvd_2,
+    HelperFeatureEnum::LapackUtils_gesvd,
     CALL_FACTORY_ENTRY(
         "cusolverDnSgesvdj",
         CALL(MapNames::getDpctNamespace() + "lapack::gesvd", DEREF(0), ARG(1),
@@ -322,7 +322,7 @@ FEATURE_REQUEST_FACTORY(
              ARG(10), ARG(11), ARG(12), ARG(13), ARG(14))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size_2,
+    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size,
     CALL_FACTORY_ENTRY(
         "cusolverDnDgesvdj_bufferSize",
         CALL(MapNames::getDpctNamespace() + "lapack::gesvd_scratchpad_size",
@@ -335,7 +335,7 @@ FEATURE_REQUEST_FACTORY(
              ARG(11), ARG(12))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::LapackUtils_gesvd_2,
+    HelperFeatureEnum::LapackUtils_gesvd,
     CALL_FACTORY_ENTRY(
         "cusolverDnDgesvdj",
         CALL(MapNames::getDpctNamespace() + "lapack::gesvd", DEREF(0), ARG(1),
@@ -350,7 +350,7 @@ FEATURE_REQUEST_FACTORY(
              ARG(10), ARG(11), ARG(12), ARG(13), ARG(14))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size_2,
+    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size,
     CALL_FACTORY_ENTRY(
         "cusolverDnCgesvdj_bufferSize",
         CALL(
@@ -364,7 +364,7 @@ FEATURE_REQUEST_FACTORY(
             ARG(11), ARG(12))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::LapackUtils_gesvd_2,
+    HelperFeatureEnum::LapackUtils_gesvd,
     CALL_FACTORY_ENTRY(
         "cusolverDnCgesvdj",
         CALL(
@@ -380,7 +380,7 @@ FEATURE_REQUEST_FACTORY(
             ARG(10), ARG(11), ARG(12), ARG(13), ARG(14))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size_2,
+    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size,
     CALL_FACTORY_ENTRY("cusolverDnZgesvdj_bufferSize",
                        CALL(MapNames::getDpctNamespace() +
                                 "lapack::gesvd_scratchpad_size",
@@ -396,7 +396,7 @@ FEATURE_REQUEST_FACTORY(
                             ARG(11), ARG(12))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::LapackUtils_gesvd_2,
+    HelperFeatureEnum::LapackUtils_gesvd,
     CALL_FACTORY_ENTRY("cusolverDnZgesvdj",
                        CALL(MapNames::getDpctNamespace() + "lapack::gesvd",
                             DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
