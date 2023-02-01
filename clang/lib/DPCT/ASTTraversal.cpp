@@ -2158,7 +2158,7 @@ bool TypeInDeclRule::replaceTemplateSpecialization(
   if (DpctGlobalInfo::getUsmLevel() == UsmLevel::UL_None &&
       RealTypeNameStr.find("device_malloc_allocator") != std::string::npos) {
     report(BeginLoc, Diagnostics::UNMIGRATED_TYPE, false,
-            RealTypeNameStr, "there is no type mapping available in noneUSM mode");
+            RealTypeNameStr, "there is no type mapping available in non-USM mode");
     return true;
   }
 

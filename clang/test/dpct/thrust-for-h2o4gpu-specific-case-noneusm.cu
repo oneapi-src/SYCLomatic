@@ -16,7 +16,7 @@
 #include <thrust/iterator/iterator_traits.h>
 
 // CHECK: /*
-// CHECK-NEXT:DPCT1036:{{[0-9]+}}: The type thrust::device_malloc_allocator was not migrated because there is no type mapping available in noneUSM mode.
+// CHECK-NEXT:DPCT1036:{{[0-9]+}}: The type thrust::device_malloc_allocator was not migrated because there is no type mapping available in non-USM mode.
 // CHECK-NEXT:*/
 // CHECK-NEXT:template <typename T> void foo_cpy(dpct::device_vector<T, thrust::device_malloc_allocator<T>> &Do, dpct::device_vector<T, thrust::device_malloc_allocator<T>> &Di) {
 // CHECK-NEXT: return;
@@ -28,11 +28,11 @@ template <typename T> void foo_cpy(thrust::device_vector<T, thrust::device_mallo
 
 void foo_1() {
 // CHECK:  /*
-// CHECK-NEXT:  DPCT1036:{{[0-9]+}}: The type thrust::device_malloc_allocator was not migrated because there is no type mapping available in noneUSM mode.
+// CHECK-NEXT:  DPCT1036:{{[0-9]+}}: The type thrust::device_malloc_allocator was not migrated because there is no type mapping available in non-USM mode.
 // CHECK-NEXT:  */
 // CHECK-NEXT:  dpct::device_vector<int, thrust::device_malloc_allocator<int>> **tt=NULL;
 // CHECK-NEXT:  /*
-// CHECK-NEXT:  DPCT1036:{{[0-9]+}}: The type thrust::device_malloc_allocator was not migrated because there is no type mapping available in noneUSM mode.
+// CHECK-NEXT:  DPCT1036:{{[0-9]+}}: The type thrust::device_malloc_allocator was not migrated because there is no type mapping available in non-USM mode.
 // CHECK-NEXT:  */
 // CHECK-NEXT:  dpct::device_vector<int, thrust::device_malloc_allocator<int>> *dd[10];
 // CHECK-NEXT:  foo_cpy(*tt[0], *dd[0]);
@@ -42,7 +42,6 @@ void foo_1() {
 }
 
 // CHECK:/*
-// CHECK-NEXT:DPCT1036:{{[0-9]+}}: The type thrust::device_malloc_allocator was not migrated because there is no type mapping available in noneUSM mode.
+// CHECK-NEXT:DPCT1036:{{[0-9]+}}: The type thrust::device_malloc_allocator was not migrated because there is no type mapping available in non-USM mode.
 // CHECK-NEXT:*/
-namespace foo_struct { template <typename T, typename MemorySpace> struct default_memory_allocator : thrust::device_malloc_allocator<T>{};}
 namespace foo_struct { template <typename T, typename MemorySpace> struct default_memory_allocator : thrust::device_malloc_allocator<T>{};}
