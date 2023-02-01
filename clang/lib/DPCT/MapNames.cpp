@@ -4304,9 +4304,6 @@ const MapNames::MapTy MemoryDataTypeRule::SizeOrPosToMember{
 const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
     "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType"};
 
-const MapNames::SetTy MapNames::PredefinedStreamName{
-    "cudaStreamDefault", "cudaStreamNonBlocking"};
-
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "this_thread_block", "sync", "tiled_partition",
     "thread_rank",       "size", "shfl_down"};

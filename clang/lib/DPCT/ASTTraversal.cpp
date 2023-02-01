@@ -289,8 +289,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     std::string MacroNameStr;
     if (auto Identifier = MacroNameTok.getIdentifierInfo())
       MacroNameStr = Identifier->getName().str();
-    if (MapNames::PredefinedStreamName.find(MacroNameStr) !=
-        MapNames::PredefinedStreamName.end()) {
+    if (MacroNameStr == "cudaStreamDefault"
+        || MacroNameStr == "cudaStreamNonBlocking") {
       // Currently, only support examples like,
       // #define CONCATE(name) cuda##name
       // which contains 3 tokens, and the 2nd token is ##.
