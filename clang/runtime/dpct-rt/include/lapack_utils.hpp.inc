@@ -712,13 +712,13 @@ inline int getrfnp_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
 oneapi::mkl::jobsvd char2jobsvd(char job) {
   switch (job) {
   case 'A':
-    return jobsvd::vectors;
+    return oneapi::mkl::jobsvd::vectors;
   case 'S':
-    return jobsvd::somevec;
+    return oneapi::mkl::jobsvd::somevec;
   case 'O':
-    return jobsvd::vectorsina;
+    return oneapi::mkl::jobsvd::vectorsina;
   case 'N':
-    return jobsvd::novec;
+    return oneapi::mkl::jobsvd::novec;
   default:
     throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                           "the job type is unsupported");
@@ -842,7 +842,7 @@ inline void potrf_impl(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
     auto device_ws_data =                                                      \
         dpct::detail::get_memory(reinterpret_cast<TYPE *>(device_ws));         \
     oneapi::mkl::lapack::potrf(q, uplo, n, a_data, lda, device_ws_data,        \
-                               device_ws_size / sizeof(TYPE1));                \
+                               device_ws_size / sizeof(TYPE));                 \
     break;                                                                     \
   }
   switch (a_type) {
@@ -867,11 +867,11 @@ inline void potrf_impl(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 inline void potrs_impl(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                        std::int64_t nrhs, library_data_t a_type, void *a,
                        std::int64_t lda, library_data_t b_type, void *b,
-                       std::int64_t ldb, int *info) {
+                       std::int64_t ldb, void *&device_ws, int *info) {
 #define CASE(TYPE_NAME, TYPE)                                                  \
   case TYPE_NAME: {                                                            \
     std::int64_t device_ws_size =                                              \
-        oneapi::mkl::lapack::getrs_scratchpad_size<TYPE>(q, trans, n, nrhs,    \
+        oneapi::mkl::lapack::potrs_scratchpad_size<TYPE>(q, uplo, n, nrhs,     \
                                                          lda, ldb);            \
     device_ws = dpct::detail::dpct_malloc(device_ws_size * sizeof(TYPE), q);   \
     auto device_ws_data =                                                      \

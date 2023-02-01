@@ -205,3 +205,87 @@ FEATURE_REQUEST_FACTORY(
 
 REMOVE_API_FACTORY_ENTRY("cusolverDnCreateParams")
 REMOVE_API_FACTORY_ENTRY("cusolverDnDestroyParams")
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size,
+    COMMA_OP_FACTORY_ENTRY(
+        BINARY_OP_FACTORY_ENTRY("cusolverDnXgesvd_bufferSize",
+                                BinaryOperatorKind::BO_Assign, DEREF(19),
+                                ARG("0")),
+        CALL_FACTORY_ENTRY(
+            "cusolverDnXgesvd_bufferSize",
+            CALL(MapNames::getDpctNamespace() + "lapack::gesvd_scratchpad_size",
+                 DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(8),
+                 ARG(11), ARG(13), ARG(14), ARG(16), ARG(18)))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_gesvd,
+    CALL_FACTORY_ENTRY("cusolverDnXgesvd",
+                       CALL(MapNames::getDpctNamespace() + "lapack::gesvd",
+                            DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                            ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
+                            ARG(13), ARG(14), ARG(15), ARG(16), ARG(18),
+                            ARG(19), ARG(22))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size,
+    CALL_FACTORY_ENTRY(
+        "cusolverDnGesvd_bufferSize",
+        CALL(MapNames::getDpctNamespace() + "lapack::gesvd_scratchpad_size",
+             DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(8), ARG(11),
+             ARG(13), ARG(14), ARG(16), ARG(18))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_gesvd,
+    CALL_FACTORY_ENTRY("cusolverDnGesvd",
+                       CALL(MapNames::getDpctNamespace() + "lapack::gesvd",
+                            DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                            ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
+                            ARG(13), ARG(14), ARG(15), ARG(16), ARG(18),
+                            ARG(19), ARG(20))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_potrf_scratchpad_size,
+    COMMA_OP_FACTORY_ENTRY(
+        BINARY_OP_FACTORY_ENTRY("cusolverDnXpotrf_bufferSize",
+                                BinaryOperatorKind::BO_Assign, DEREF(9),
+                                ARG("0")),
+        CALL_FACTORY_ENTRY(
+            "cusolverDnXpotrf_bufferSize",
+            CALL(MapNames::getDpctNamespace() + "lapack::potrf_scratchpad_size",
+                 DEREF(0), ARG(2), ARG(3), ARG(4), ARG(6), ARG(8)))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_potrf,
+    CALL_FACTORY_ENTRY("cusolverDnXpotrf",
+                       CALL(MapNames::getDpctNamespace() + "lapack::potrf",
+                            DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                            ARG(8), ARG(9), ARG(12))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_potrf_scratchpad_size,
+    CALL_FACTORY_ENTRY("cusolverDnPotrf_bufferSize",
+                       CALL(MapNames::getDpctNamespace() +
+                                "lapack::potrf_scratchpad_size",
+                            DEREF(0), ARG(2), ARG(3), ARG(4), ARG(6), ARG(8))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_potrf,
+    CALL_FACTORY_ENTRY("cusolverDnPotrf",
+                       CALL(MapNames::getDpctNamespace() + "lapack::potrf",
+                            DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                            ARG(8), ARG(9), ARG(10))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_potrs,
+    CALL_FACTORY_ENTRY("cusolverDnXpotrs",
+                       CALL(MapNames::getDpctNamespace() + "lapack::potrs",
+                            DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                            ARG(7), ARG(8), ARG(9), ARG(10), ARG(11))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_potrs,
+    CALL_FACTORY_ENTRY("cusolverDnPotrs",
+                       CALL(MapNames::getDpctNamespace() + "lapack::potrs",
+                            DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                            ARG(7), ARG(8), ARG(9), ARG(10), ARG(11))))
