@@ -1003,7 +1003,7 @@ static std::pair<buffer_t, size_t> get_buffer_and_offset(const void *ptr) {
 /// Get the data pointed from \p ptr as a 1D buffer reinterpreted as type T.
 template <typename T> static sycl::buffer<T> get_buffer(const void *ptr) {
   if (!ptr)
-    ptr =  detail::mem_mgr::instance().mem_alloc(sizeof(T));
+    return sycl::buffer<T>(sycl::range<1>(0));
   auto alloc = detail::mem_mgr::instance().translate_ptr(ptr);
   return alloc.buffer.reinterpret<T>(
       sycl::range<1>(alloc.size / sizeof(T)));
