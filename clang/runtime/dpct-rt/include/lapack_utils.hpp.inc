@@ -1095,6 +1095,137 @@ inline int gesvd(sycl::queue &q, signed char jobu, signed char jobvt,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|gesvd_scratchpad_size_2|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|handle_sync_exception
+// LapackUtils|gesvd_scratchpad_size_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
+                                 std::int64_t econ, std::int64_t m,
+                                 std::int64_t n, library_data_t a_type,
+                                 std::int64_t lda, library_data_t u_type,
+                                 std::int64_t ldu, library_data_t vt_type,
+                                 std::int64_t ldvt, int *device_ws_size) {
+  signed char jobu;
+  signed char jobvt;
+  if (jobz == oneapi::mkl::job::vec) {
+    if (econ) {
+      jobu = 'S';
+      jobvt = 'S';
+    } else {
+      jobu = 'A';
+      jobvt = 'A';
+    }
+  } else if (jobz == oneapi::mkl::job::novec) {
+    jobu = 'N';
+    jobvt = 'N';
+  } else {
+    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                          "the job type is unsupported");
+  }
+  std::size_t device_ws_size_64;
+  int ret = detail::handle_sync_exception<false>(
+      q, nullptr, nullptr, "gesvd_scratchpad_size",
+      detail::gesvd_scratchpad_size_impl, q, jobu, jobvt, m, n, a_type, lda,
+      u_type, ldu, vt_type, ldvt, &device_ws_size_64);
+
+#define CASE(TYPE_NAME, TYPE)                                                  \
+  case TYPE_NAME: {                                                            \
+    *device_ws_size = device_ws_size_64 / sizeof(TYPE);                        \
+    break;                                                                     \
+  }
+  switch (a_type) {
+    CASE(library_data_t::real_float, float)
+    CASE(library_data_t::real_double, double)
+    CASE(library_data_t::complex_float, std::complex<float>)
+    CASE(library_data_t::complex_double, std::complex<double>)
+  default:
+    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                          "the data type is unsupported");
+  }
+#undef CASE
+  return ret;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|gesvd_2|dpct::lapack
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// LapackUtils|handle_sync_exception
+// LapackUtils|gesvd_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t econ,
+                 std::int64_t m, std::int64_t n, library_data_t a_type, void *a,
+                 std::int64_t lda, library_data_t s_type, void *s,
+                 library_data_t u_type, void *u, std::int64_t ldu,
+                 library_data_t vt_type, void *vt, std::int64_t ldvt,
+                 void *device_ws, size_t device_ws_size, int *info) {
+  signed char jobu;
+  signed char jobvt;
+  if (jobz == oneapi::mkl::job::vec) {
+    if (econ) {
+      jobu = 'S';
+      jobvt = 'S';
+    } else {
+      jobu = 'A';
+      jobvt = 'A';
+    }
+  } else if (jobz == oneapi::mkl::job::novec) {
+    jobu = 'N';
+    jobvt = 'N';
+  } else {
+    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                          "the job type is unsupported");
+  }
+
+#define CASE(TYPE_NAME, TYPE)                                                  \
+  case TYPE_NAME: {                                                            \
+    device_ws_size = device_ws_size * sizeof(TYPE);                            \
+    break;                                                                     \
+  }
+  switch (a_type) {
+    CASE(library_data_t::real_float, float)
+    CASE(library_data_t::real_double, double)
+    CASE(library_data_t::complex_float, std::complex<float>)
+    CASE(library_data_t::complex_double, std::complex<double>)
+  default:
+    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                          "the data type is unsupported");
+  }
+#undef CASE
+
+  int ret = detail::handle_sync_exception<false>(
+      q, nullptr, info, "gesvd", detail::gesvd_impl, q, jobu, jobvt, m, n,
+      a_type, a, lda, s_type, s, u_type, u, ldu, vt_type, vt, ldvt, device_ws,
+      device_ws_size, info);
+  if (ret)
+    return ret;
+
+#define CASE(TYPE_NAME, TYPE)                                                  \
+  case TYPE_NAME: {                                                            \
+    auto vt_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(vt));     \
+    oneapi::mkl::blas::row_major::imatcopy(                                    \
+        q, oneapi::mkl::transpose::conjtrans, n, n, TYPE(1.0f), vt_data, ldvt, \
+        ldvt);                                                                 \
+    break;                                                                     \
+  }
+  switch (a_type) {
+    CASE(library_data_t::real_float, float)
+    CASE(library_data_t::real_double, double)
+    CASE(library_data_t::complex_float, std::complex<float>)
+    CASE(library_data_t::complex_double, std::complex<double>)
+  default:
+    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                          "the data type is unsupported");
+  }
+#undef CASE
+  return 0;
+}
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|potrf_scratchpad_size|dpct::lapack
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t

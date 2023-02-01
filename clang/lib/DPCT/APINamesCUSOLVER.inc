@@ -289,3 +289,126 @@ FEATURE_REQUEST_FACTORY(
                        CALL(MapNames::getDpctNamespace() + "lapack::potrs",
                             DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
                             ARG(7), ARG(8), ARG(9), ARG(10), ARG(11))))
+
+REMOVE_API_FACTORY_ENTRY("cusolverDnCreateGesvdjInfo")
+REMOVE_API_FACTORY_ENTRY("cusolverDnDestroyGesvdjInfo")
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size_2,
+    CALL_FACTORY_ENTRY(
+        "cusolverDnSgesvdj_bufferSize",
+        CALL(MapNames::getDpctNamespace() + "lapack::gesvd_scratchpad_size",
+             DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
+             ARG(6),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
+             ARG(9),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
+             ARG(11), ARG(12))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_gesvd_2,
+    CALL_FACTORY_ENTRY(
+        "cusolverDnSgesvdj",
+        CALL(MapNames::getDpctNamespace() + "lapack::gesvd", DEREF(0), ARG(1),
+             ARG(2), ARG(3), ARG(4),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
+             ARG(5), ARG(6),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
+             ARG(7),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
+             ARG(8), ARG(9),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
+             ARG(10), ARG(11), ARG(12), ARG(13), ARG(14))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size_2,
+    CALL_FACTORY_ENTRY(
+        "cusolverDnDgesvdj_bufferSize",
+        CALL(MapNames::getDpctNamespace() + "lapack::gesvd_scratchpad_size",
+             DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
+             ARG(6),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
+             ARG(9),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
+             ARG(11), ARG(12))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_gesvd_2,
+    CALL_FACTORY_ENTRY(
+        "cusolverDnDgesvdj",
+        CALL(MapNames::getDpctNamespace() + "lapack::gesvd", DEREF(0), ARG(1),
+             ARG(2), ARG(3), ARG(4),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
+             ARG(5), ARG(6),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
+             ARG(7),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
+             ARG(8), ARG(9),
+             ARG(MapNames::getDpctNamespace() + "library_data_t::real_double"),
+             ARG(10), ARG(11), ARG(12), ARG(13), ARG(14))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size_2,
+    CALL_FACTORY_ENTRY(
+        "cusolverDnCgesvdj_bufferSize",
+        CALL(
+            MapNames::getDpctNamespace() + "lapack::gesvd_scratchpad_size",
+            DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
+            ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
+            ARG(6),
+            ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
+            ARG(9),
+            ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
+            ARG(11), ARG(12))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_gesvd_2,
+    CALL_FACTORY_ENTRY(
+        "cusolverDnCgesvdj",
+        CALL(
+            MapNames::getDpctNamespace() + "lapack::gesvd", DEREF(0), ARG(1),
+            ARG(2), ARG(3), ARG(4),
+            ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
+            ARG(5), ARG(6),
+            ARG(MapNames::getDpctNamespace() + "library_data_t::real_float"),
+            ARG(7),
+            ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
+            ARG(8), ARG(9),
+            ARG(MapNames::getDpctNamespace() + "library_data_t::complex_float"),
+            ARG(10), ARG(11), ARG(12), ARG(13), ARG(14))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size_2,
+    CALL_FACTORY_ENTRY("cusolverDnZgesvdj_bufferSize",
+                       CALL(MapNames::getDpctNamespace() +
+                                "lapack::gesvd_scratchpad_size",
+                            DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
+                            ARG(MapNames::getDpctNamespace() +
+                                "library_data_t::complex_double"),
+                            ARG(6),
+                            ARG(MapNames::getDpctNamespace() +
+                                "library_data_t::complex_double"),
+                            ARG(9),
+                            ARG(MapNames::getDpctNamespace() +
+                                "library_data_t::complex_double"),
+                            ARG(11), ARG(12))))
+
+FEATURE_REQUEST_FACTORY(
+    HelperFeatureEnum::LapackUtils_gesvd_2,
+    CALL_FACTORY_ENTRY("cusolverDnZgesvdj",
+                       CALL(MapNames::getDpctNamespace() + "lapack::gesvd",
+                            DEREF(0), ARG(1), ARG(2), ARG(3), ARG(4),
+                            ARG(MapNames::getDpctNamespace() +
+                                "library_data_t::complex_double"),
+                            ARG(5), ARG(6),
+                            ARG(MapNames::getDpctNamespace() +
+                                "library_data_t::real_double"),
+                            ARG(7),
+                            ARG(MapNames::getDpctNamespace() +
+                                "library_data_t::complex_double"),
+                            ARG(8), ARG(9),
+                            ARG(MapNames::getDpctNamespace() +
+                                "library_data_t::complex_double"),
+                            ARG(10), ARG(11), ARG(12), ARG(13), ARG(14))))
