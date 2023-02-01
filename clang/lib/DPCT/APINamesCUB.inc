@@ -342,6 +342,57 @@ CONDITIONAL_FACTORY_ENTRY(
                         LITERAL("1")),
                     false, "wait"))))))
 
+// cub::DeviceSelect::UniqueByKey
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceSelect::UniqueByKey"),
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::DplExtrasAlgorithm_unique_copy,
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_DPL_Execution,
+            HEADER_INSERT_FACTORY(
+                HeaderType::HT_DPCT_DPL_Utils,
+                REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+                    makeCheckAnd(CheckArgCount(9, std::greater_equal<>(),
+                                               /* IncludeDefaultArg */ false),
+                                 makeCheckNot(CheckArgIsDefaultCudaStream(8))),
+                    MEMBER_CALL_FACTORY_ENTRY(
+                        "cub::DeviceSelect::UniqueByKey",
+                        MEMBER_CALL(
+                            ARG(8), true, "fill", ARG(6),
+                            CALL("std::distance", ARG(4),
+                                 CALL(TEMPLATED_CALLEE_WITH_ARGS("std::get",
+                                                                 LITERAL("0")),
+                                      CALL(MapNames::getDpctNamespace() +
+                                               "unique_copy",
+                                           CALL("oneapi::dpl::execution::"
+                                                "device_policy",
+                                                STREAM(8)),
+                                           ARG(2),
+                                           BO(BinaryOperatorKind::BO_Add,
+                                              ARG(2), ARG(7)),
+                                           ARG(3), ARG(4), ARG(5)))),
+                            LITERAL("1")),
+                        false, "wait"),
+                    MEMBER_CALL_FACTORY_ENTRY(
+                        "cub::DeviceSelect::UniqueByKey",
+                        MEMBER_CALL(
+                            QUEUESTR, false, "fill", ARG(6),
+                            CALL("std::distance", ARG(4),
+                                 CALL(TEMPLATED_CALLEE_WITH_ARGS("std::get",
+                                                                 LITERAL("0")),
+                                      CALL(MapNames::getDpctNamespace() +
+                                               "unique_copy",
+                                           CALL("oneapi::dpl::execution::"
+                                                "device_policy",
+                                                QUEUESTR),
+                                           ARG(2),
+                                           BO(BinaryOperatorKind::BO_Add,
+                                              ARG(2), ARG(7)),
+                                           ARG(3), ARG(4), ARG(5)))),
+                            LITERAL("1")),
+                        false, "wait")))))))
+
 // cub::DeviceRunLengthEncode::Encode
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),

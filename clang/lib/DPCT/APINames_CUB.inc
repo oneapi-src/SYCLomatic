@@ -164,7 +164,7 @@ ENTRY_MEMBER_FUNCTION(cub::DeviceScan, ExclusiveScanByKey, ExclusiveScanByKey, t
 ENTRY_MEMBER_FUNCTION(cub::DeviceSelect, Flagged, Flagged, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSelect, If, If, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSelect, Unique, Unique, true, NO_FLAG, P4, "Successful")
-ENTRY_MEMBER_FUNCTION(cub::DeviceSelect, UniqueByKey, UniqueByKey, false, NO_FLAG, P4, "Comment")
+ENTRY_MEMBER_FUNCTION(cub::DeviceSelect, UniqueByKey, UniqueByKey, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSpmv, CsrMV, CsrMV, false, NO_FLAG, P4, "Comment")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedRadixSort, SortPairs, SortPairs, true, NO_FLAG, P4, "Successful")
 ENTRY_MEMBER_FUNCTION(cub::DeviceSegmentedRadixSort, SortPairsDescending, SortPairsDescending, true, NO_FLAG, P4, "Successful")
