@@ -44,14 +44,14 @@ inline T1 atomic_fetch_add(T1 *addr, T2 operand,
                           sycl::memory_order memoryOrder) {
   switch (memoryOrder) {
   case sycl::memory_order::relaxed:
-    return atomic_fetch_add<T1, T2, addressSpace, sycl::memory_order::relaxed,
-                            sycl::memory_scope::device>(addr, operand);
+    return atomic_fetch_add<T1, addressSpace, sycl::memory_order::relaxed,
+                            sycl::memory_scope::device, T2>(addr, operand);
   case sycl::memory_order::acq_rel:
-    return atomic_fetch_add<T1, T2, addressSpace, sycl::memory_order::acq_rel,
-                            sycl::memory_scope::device>(addr, operand);
+    return atomic_fetch_add<T1, addressSpace, sycl::memory_order::acq_rel,
+                            sycl::memory_scope::device, T2>(addr, operand);
   case sycl::memory_order::seq_cst:
-    return atomic_fetch_add<T1, T2, addressSpace, sycl::memory_order::seq_cst,
-                            sycl::memory_scope::device>(addr, operand);
+    return atomic_fetch_add<T1, addressSpace, sycl::memory_order::seq_cst,
+                            sycl::memory_scope::device, T2>(addr, operand);
   default:
     assert(false && "Invalid memory_order for atomics. Valid memory_order for "
                     "atomics are: sycl::memory_order::relaxed, "
