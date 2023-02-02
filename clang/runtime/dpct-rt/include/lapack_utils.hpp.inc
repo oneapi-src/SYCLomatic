@@ -422,9 +422,9 @@ namespace detail {
 // Memory|dpct_free
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-template <bool free_ws_in_catch, typename func_t, typename... args_t>
-inline int handle_sync_exception(sycl::queue &q, void *const &device_ws,
-                                 int *info, const std::string &lapack_api_name,
+template <typename func_t, typename... args_t>
+inline int handle_sync_exception(sycl::queue &q, int *info,
+                                 const std::string &lapack_api_name,
                                  func_t func, args_t... args) {
   try {
     func(args...);
@@ -439,20 +439,12 @@ inline int handle_sync_exception(sycl::queue &q, void *const &device_ws,
       dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
                                 memcpy_direction::host_to_device)
           .wait();
-    if constexpr (free_ws_in_catch) {
-      if (device_ws)
-        dpct::dpct_free(device_ws, q);
-    }
     return 1;
   } catch (sycl::exception const &e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
     if (info)
       dpct::detail::dpct_memset(q, info, 0, sizeof(int)).wait();
-    if constexpr (free_ws_in_catch) {
-      if (device_ws)
-        dpct::dpct_free(device_ws, q);
-    }
     return 1;
   }
   return 0;
@@ -540,17 +532,41 @@ inline void getrs_impl(sycl::queue &q, oneapi::mkl::transpose trans,
                        std::int64_t n, std::int64_t nrhs, library_data_t a_type,
                        void *a, std::int64_t lda, std::int64_t *ipiv,
                        library_data_t b_type, void *b, std::int64_t ldb,
-                       void *&device_ws, int *info) {
-  auto ipiv_data = dpct::detail::get_memory(ipiv);
+                       int *info) {
+  class working_memory {
+  public:
+    working_memory() {}
+    void malloc_memory(size_t size, sycl::queue q) {
+      _q = q;
+      _ptr = dpct::detail::dpct_malloc(size, _q);
+    }
+    void *get_ptr() { return _ptr; }
+    void set_event(sycl::event e) { _e = e; }
+    ~working_memory() {
+      if (_ptr) {
+#ifdef DPCT_USM_LEVEL_NONE
+        dpct::detail::mem_mgr::instance().mem_free(_ptr);
+#else
+        dpct::async_dpct_free({_ptr}, {_e}, _q);
+#endif
+      }
+    }
+  private:
+    void *_ptr = nullptr;
+    sycl::event _e;
+    sycl::queue _q;
+  };
 
+  auto ipiv_data = dpct::detail::get_memory(ipiv);
+  working_memory device_ws;
 #define CASE(TYPE_NAME, TYPE)                                                  \
   case TYPE_NAME: {                                                            \
     std::int64_t device_ws_size =                                              \
         oneapi::mkl::lapack::getrs_scratchpad_size<TYPE>(q, trans, n, nrhs,    \
                                                          lda, ldb);            \
-    device_ws = dpct::detail::dpct_malloc(device_ws_size * sizeof(TYPE), q);   \
-    auto device_ws_data =                                                      \
-        dpct::detail::get_memory(reinterpret_cast<TYPE *>(device_ws));         \
+    device_ws.malloc_memory(device_ws_size * sizeof(TYPE), q);                 \
+    auto device_ws_data = dpct::detail::get_memory(                            \
+        reinterpret_cast<TYPE *>(device_ws.get_ptr()));                        \
     auto a_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(a));       \
     auto b_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(b));       \
     oneapi::mkl::lapack::getrs(q, trans, n, nrhs, a_data, lda, ipiv_data,      \
@@ -570,13 +586,7 @@ inline void getrs_impl(sycl::queue &q, oneapi::mkl::transpose trans,
 
 #undef CASE
   sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));
-  if (device_ws) {
-#ifdef DPCT_USM_LEVEL_NONE
-    dpct::detail::mem_mgr::instance().mem_free(device_ws);
-#else
-    dpct::async_dpct_free({device_ws}, {e}, q);
-#endif
-  }
+  device_ws.set_event(e);
 }
 // DPCT_LABEL_END
 
@@ -729,9 +739,9 @@ inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  return detail::handle_sync_exception<false>(
-      q, nullptr, nullptr, "getrf_scratchpad_size",
-      detail::getrf_scratchpad_size_impl, q, m, n, a_type, lda, device_ws_size);
+  return detail::handle_sync_exception(q, nullptr, "getrf_scratchpad_size",
+                                       detail::getrf_scratchpad_size_impl, q, m,
+                                       n, a_type, lda, device_ws_size);
 }
 // DPCT_LABEL_END
 
@@ -765,9 +775,9 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
     return detail::getrfnp_impl(q, m, n, a_type, a, lda, device_ws,
                                 device_ws_size, info);
   }
-  return detail::handle_sync_exception<false>(
-      q, nullptr, info, "getrf", detail::getrf_impl, q, m, n, a_type, a, lda,
-      ipiv, device_ws, device_ws_size, info);
+  return detail::handle_sync_exception(q, info, "getrf", detail::getrf_impl, q,
+                                       m, n, a_type, a, lda, ipiv, device_ws,
+                                       device_ws_size, info);
 }
 // DPCT_LABEL_END
 
@@ -798,10 +808,9 @@ inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
                  std::int64_t nrhs, library_data_t a_type, void *a,
                  std::int64_t lda, std::int64_t *ipiv, library_data_t b_type,
                  void *b, std::int64_t ldb, int *info) {
-  void *device_ws = nullptr;
-  return detail::handle_sync_exception<true>(
-      q, device_ws, info, "getrs_scratchpad_size/getrs", detail::getrs_impl, q,
-      trans, n, nrhs, a_type, a, lda, ipiv, b_type, b, ldb, device_ws, info);
+  return detail::handle_sync_exception(
+      q, info, "getrs_scratchpad_size/getrs", detail::getrs_impl, q, trans, n,
+      nrhs, a_type, a, lda, ipiv, b_type, b, ldb, info);
 }
 // DPCT_LABEL_END
 
@@ -828,9 +837,9 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  return detail::handle_sync_exception<false>(
-      q, nullptr, nullptr, "geqrf_scratchpad_size",
-      detail::geqrf_scratchpad_size_impl, q, m, n, a_type, lda, device_ws_size);
+  return detail::handle_sync_exception(q, nullptr, "geqrf_scratchpad_size",
+                                       detail::geqrf_scratchpad_size_impl, q, m,
+                                       n, a_type, lda, device_ws_size);
 }
 // DPCT_LABEL_END
 
@@ -859,9 +868,9 @@ inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  library_data_t tau_type, void *tau, void *device_ws,
                  size_t device_ws_size, int *info) {
-  return detail::handle_sync_exception<false>(
-      q, nullptr, info, "geqrf", detail::geqrf_impl, q, m, n, a_type, a, lda,
-      tau_type, tau, device_ws, device_ws_size, info);
+  return detail::handle_sync_exception(q, info, "geqrf", detail::geqrf_impl, q,
+                                       m, n, a_type, a, lda, tau_type, tau,
+                                       device_ws, device_ws_size, info);
 }
 // DPCT_LABEL_END
 
