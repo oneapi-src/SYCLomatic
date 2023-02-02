@@ -531,7 +531,7 @@ static void collectSYCLAttributes(Sema &S, FunctionDecl *FD,
     llvm::copy_if(FD->getAttrs(), std::back_inserter(Attrs), [](Attr *A) {
       // FIXME: Make this list self-adapt as new SYCL attributes are added.
       return isa<IntelReqdSubGroupSizeAttr, IntelNamedSubGroupSizeAttr,
-                 ReqdWorkGroupSizeAttr, WorkGroupSizeHintAttr,
+                 SYCLReqdWorkGroupSizeAttr, SYCLWorkGroupSizeHintAttr,
                  SYCLIntelKernelArgsRestrictAttr, SYCLIntelNumSimdWorkItemsAttr,
                  SYCLIntelSchedulerTargetFmaxMhzAttr,
                  SYCLIntelMaxWorkGroupSizeAttr, SYCLIntelMaxGlobalWorkDimAttr,
@@ -989,28 +989,6 @@ static QualType GetSYCLKernelObjectType(const FunctionDecl *KernelCaller) {
 
   // SYCL 1.2.1
   return KernelParamTy.getUnqualifiedType();
-}
-
-static CXXMethodDecl *getOperatorParens(const CXXRecordDecl *Rec) {
-  for (auto *MD : Rec->methods()) {
-    if (MD->getOverloadedOperator() == OO_Call)
-      return MD;
-  }
-  return nullptr;
-}
-
-// Fetch the associated call operator of the kernel object
-// (of either the lambda or the function object).
-static CXXMethodDecl *
-GetCallOperatorOfKernelObject(const CXXRecordDecl *KernelObjType) {
-  CXXMethodDecl *CallOperator = nullptr;
-  if (!KernelObjType)
-    return CallOperator;
-  if (KernelObjType->isLambda())
-    CallOperator = KernelObjType->getLambdaCallOperator();
-  else
-    CallOperator = getOperatorParens(KernelObjType);
-  return CallOperator;
 }
 
 /// Creates a kernel parameter descriptor
@@ -2801,6 +2779,14 @@ public:
   }
 };
 
+static CXXMethodDecl *getOperatorParens(const CXXRecordDecl *Rec) {
+  for (auto *MD : Rec->methods()) {
+    if (MD->getOverloadedOperator() == OO_Call)
+      return MD;
+  }
+  return nullptr;
+}
+
 static bool isESIMDKernelType(const CXXRecordDecl *KernelObjType) {
   const CXXMethodDecl *OpParens = getOperatorParens(KernelObjType);
   return (OpParens != nullptr) && OpParens->hasAttr<SYCLSimdAttr>();
@@ -2889,10 +2875,13 @@ class SyclKernelBodyCreator : public SyclKernelFieldHandler {
 
     // Fetch the kernel object and the associated call operator
     // (of either the lambda or the function object).
-    const CXXRecordDecl *KernelObj =
+    CXXRecordDecl *KernelObj =
         GetSYCLKernelObjectType(KernelCallerFunc)->getAsCXXRecordDecl();
-    CXXMethodDecl *WGLambdaFn = GetCallOperatorOfKernelObject(KernelObj);
-
+    CXXMethodDecl *WGLambdaFn = nullptr;
+    if (KernelObj->isLambda())
+      WGLambdaFn = KernelObj->getLambdaCallOperator();
+    else
+      WGLambdaFn = getOperatorParens(KernelObj);
     assert(WGLambdaFn && "non callable object is passed as kernel obj");
     // Mark the function that it "works" in a work group scope:
     // NOTE: In case of parallel_for_work_item the marker call itself is
@@ -3009,8 +2998,8 @@ class SyclKernelBodyCreator : public SyclKernelFieldHandler {
                    InitializationKind InitKind) {
     InitializedEntity Entity = InitializedEntity::InitializeBase(
         SemaRef.Context, &BS, /*IsInheritedVirtualBase*/ false, &VarEntity);
-    InitializationSequence InitSeq(SemaRef, Entity, InitKind, None);
-    ExprResult Init = InitSeq.Perform(SemaRef, Entity, InitKind, None);
+    InitializationSequence InitSeq(SemaRef, Entity, InitKind, std::nullopt);
+    ExprResult Init = InitSeq.Perform(SemaRef, Entity, InitKind, std::nullopt);
 
     InitListExpr *ParentILE = CollectionInitExprs.back();
     ParentILE->updateInit(SemaRef.getASTContext(), ParentILE->getNumInits(),
@@ -3211,7 +3200,7 @@ class SyclKernelBodyCreator : public SyclKernelFieldHandler {
 
   // Default inits the type, then calls the init-method in the body.
   bool handleSpecialType(FieldDecl *FD, QualType Ty) {
-    addFieldInit(FD, Ty, None,
+    addFieldInit(FD, Ty, std::nullopt,
                  InitializationKind::CreateDefault(KernelCallerSrcLoc));
 
     addFieldMemberExpr(FD, Ty);
@@ -3262,8 +3251,8 @@ class SyclKernelBodyCreator : public SyclKernelFieldHandler {
         InitializedEntity::InitializeVariable(KernelHandlerClone);
     InitializationKind InitKind =
         InitializationKind::CreateDefault(KernelCallerSrcLoc);
-    InitializationSequence InitSeq(SemaRef, VarEntity, InitKind, None);
-    ExprResult Init = InitSeq.Perform(SemaRef, VarEntity, InitKind, None);
+    InitializationSequence InitSeq(SemaRef, VarEntity, InitKind, std::nullopt);
+    ExprResult Init = InitSeq.Perform(SemaRef, VarEntity, InitKind, std::nullopt);
     KernelHandlerClone->setInit(
         SemaRef.MaybeCreateExprWithCleanups(Init.get()));
     KernelHandlerClone->setInitStyle(VarDecl::CallInit);
@@ -3549,7 +3538,7 @@ public:
 static bool IsSYCLUnnamedKernel(Sema &SemaRef, const FunctionDecl *FD) {
   if (!SemaRef.getLangOpts().SYCLUnnamedLambda)
     return false;
-  const QualType FunctorTy = GetSYCLKernelObjectType(FD);
+  QualType FunctorTy = GetSYCLKernelObjectType(FD);
   QualType TmplArgTy = calculateKernelNameType(SemaRef.Context, FD);
   return SemaRef.Context.hasSameType(FunctorTy, TmplArgTy);
 }
@@ -3975,7 +3964,7 @@ void Sema::CheckSYCLKernelCall(FunctionDecl *KernelFunc,
   const CXXRecordDecl *KernelObj =
       GetSYCLKernelObjectType(KernelFunc)->getAsCXXRecordDecl();
 
-  if (!GetCallOperatorOfKernelObject(KernelObj)) {
+  if (!KernelObj) {
     Diag(Args[0]->getExprLoc(), diag::err_sycl_kernel_not_function_object);
     KernelFunc->setInvalidDecl();
     return;
@@ -4353,12 +4342,12 @@ static void PropagateAndDiagnoseDeviceAttr(
     }
     break;
   }
-  case attr::Kind::ReqdWorkGroupSize: {
-    auto *RWGSA = cast<ReqdWorkGroupSizeAttr>(A);
-    if (auto *Existing = SYCLKernel->getAttr<ReqdWorkGroupSizeAttr>()) {
-      if (*Existing->getXDimVal() != *RWGSA->getXDimVal() ||
-          *Existing->getYDimVal() != *RWGSA->getYDimVal() ||
-          *Existing->getZDimVal() != *RWGSA->getZDimVal()) {
+  case attr::Kind::SYCLReqdWorkGroupSize: {
+    auto *RWGSA = cast<SYCLReqdWorkGroupSizeAttr>(A);
+    if (auto *Existing = SYCLKernel->getAttr<SYCLReqdWorkGroupSizeAttr>()) {
+      if (S.AnyWorkGroupSizesDiffer(Existing->getXDim(), Existing->getYDim(),
+                                    Existing->getZDim(), RWGSA->getXDim(),
+                                    RWGSA->getYDim(), RWGSA->getZDim())) {
         S.Diag(SYCLKernel->getLocation(),
                diag::err_conflicting_sycl_kernel_attributes);
         S.Diag(Existing->getLocation(), diag::note_conflicting_attribute);
@@ -4367,9 +4356,9 @@ static void PropagateAndDiagnoseDeviceAttr(
       }
     } else if (auto *Existing =
                    SYCLKernel->getAttr<SYCLIntelMaxWorkGroupSizeAttr>()) {
-      if (*Existing->getXDimVal() < *RWGSA->getXDimVal() ||
-          *Existing->getYDimVal() < *RWGSA->getYDimVal() ||
-          *Existing->getZDimVal() < *RWGSA->getZDimVal()) {
+      if (S.CheckMaxAllowedWorkGroupSize(
+              RWGSA->getXDim(), RWGSA->getYDim(), RWGSA->getZDim(),
+              Existing->getXDim(), Existing->getYDim(), Existing->getZDim())) {
         S.Diag(SYCLKernel->getLocation(),
                diag::err_conflicting_sycl_kernel_attributes);
         S.Diag(Existing->getLocation(), diag::note_conflicting_attribute);
@@ -4383,12 +4372,12 @@ static void PropagateAndDiagnoseDeviceAttr(
     }
     break;
   }
-  case attr::Kind::WorkGroupSizeHint: {
-    auto *WGSH = cast<WorkGroupSizeHintAttr>(A);
-    if (auto *Existing = SYCLKernel->getAttr<WorkGroupSizeHintAttr>()) {
-      if (Existing->getXDimVal() != WGSH->getXDimVal() ||
-          Existing->getYDimVal() != WGSH->getYDimVal() ||
-          Existing->getZDimVal() != WGSH->getZDimVal()) {
+  case attr::Kind::SYCLWorkGroupSizeHint: {
+    auto *WGSH = cast<SYCLWorkGroupSizeHintAttr>(A);
+    if (auto *Existing = SYCLKernel->getAttr<SYCLWorkGroupSizeHintAttr>()) {
+      if (S.AnyWorkGroupSizesDiffer(Existing->getXDim(), Existing->getYDim(),
+                                    Existing->getZDim(), WGSH->getXDim(),
+                                    WGSH->getYDim(), WGSH->getZDim())) {
         S.Diag(SYCLKernel->getLocation(),
                diag::err_conflicting_sycl_kernel_attributes);
         S.Diag(Existing->getLocation(), diag::note_conflicting_attribute);
@@ -4401,10 +4390,10 @@ static void PropagateAndDiagnoseDeviceAttr(
   }
   case attr::Kind::SYCLIntelMaxWorkGroupSize: {
     auto *SIMWGSA = cast<SYCLIntelMaxWorkGroupSizeAttr>(A);
-    if (auto *Existing = SYCLKernel->getAttr<ReqdWorkGroupSizeAttr>()) {
-      if (*Existing->getXDimVal() > *SIMWGSA->getXDimVal() ||
-          *Existing->getYDimVal() > *SIMWGSA->getYDimVal() ||
-          *Existing->getZDimVal() > *SIMWGSA->getZDimVal()) {
+    if (auto *Existing = SYCLKernel->getAttr<SYCLReqdWorkGroupSizeAttr>()) {
+      if (S.CheckMaxAllowedWorkGroupSize(
+              Existing->getXDim(), Existing->getYDim(), Existing->getZDim(),
+              SIMWGSA->getXDim(), SIMWGSA->getYDim(), SIMWGSA->getZDim())) {
         S.Diag(SYCLKernel->getLocation(),
                diag::err_conflicting_sycl_kernel_attributes);
         S.Diag(Existing->getLocation(), diag::note_conflicting_attribute);
@@ -4643,6 +4632,10 @@ void Sema::finalizeSYCLDelayedAnalysis(const FunctionDecl *Caller,
 
   // If Callee has a SYCL attribute, no diagnostic needed.
   if (Callee->hasAttr<SYCLDeviceAttr>() || Callee->hasAttr<SYCLKernelAttr>())
+    return;
+
+  // If Callee has a CUDA device attribute, no diagnostic needed.
+  if (getLangOpts().CUDA && Callee->hasAttr<CUDADeviceAttr>())
     return;
 
   // Diagnose if this is an undefined function and it is not a builtin.
