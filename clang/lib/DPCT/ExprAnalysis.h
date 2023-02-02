@@ -632,7 +632,6 @@ protected:
   void analyzeExpr(const IfStmt *IS);
   void analyzeExpr(const DeclStmt *DS);
   void analyzeExpr(const ConstantExpr *CE);
-  void analyzeExpr(const IntegerLiteral *IL);
   void analyzeExpr(const InitListExpr *ILE);
 
   void removeCUDADeviceAttr(const LambdaExpr *LE);
