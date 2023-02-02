@@ -491,15 +491,15 @@ inline void getrf_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
                        library_data_t a_type, void *a, std::int64_t lda,
                        std::int64_t *ipiv, void *device_ws,
                        size_t device_ws_size, int *info) {
-  auto ipiv_data = dpct::detail::get_memory(ipiv);
-
 #define CASE(TYPE_NAME, TYPE)                                                  \
   case TYPE_NAME: {                                                            \
+    auto ipiv_data = dpct::detail::get_memory(ipiv);                           \
     auto a_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(a));       \
     auto device_ws_data =                                                      \
         dpct::detail::get_memory(reinterpret_cast<TYPE *>(device_ws));         \
     oneapi::mkl::lapack::getrf(q, m, n, a_data, lda, ipiv_data,                \
                                device_ws_data, device_ws_size / sizeof(TYPE)); \
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));                        \
     break;                                                                     \
   }
 
@@ -514,7 +514,6 @@ inline void getrf_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
   }
 
 #undef CASE
-  dpct::detail::dpct_memset(q, info, 0, sizeof(int));
 }
 // DPCT_LABEL_END
 
@@ -535,9 +534,7 @@ inline void getrs_impl(sycl::queue &q, oneapi::mkl::transpose trans,
                        int *info) {
   class working_memory {
   public:
-    working_memory() {}
-    void malloc_memory(size_t size, sycl::queue q) {
-      _q = q;
+    working_memory(size_t size, sycl::queue q) : _q(q) {
       _ptr = dpct::detail::dpct_malloc(size, _q);
     }
     void *get_ptr() { return _ptr; }
@@ -557,20 +554,21 @@ inline void getrs_impl(sycl::queue &q, oneapi::mkl::transpose trans,
     sycl::queue _q;
   };
 
-  auto ipiv_data = dpct::detail::get_memory(ipiv);
-  working_memory device_ws;
 #define CASE(TYPE_NAME, TYPE)                                                  \
   case TYPE_NAME: {                                                            \
+    auto ipiv_data = dpct::detail::get_memory(ipiv);                           \
     std::int64_t device_ws_size =                                              \
         oneapi::mkl::lapack::getrs_scratchpad_size<TYPE>(q, trans, n, nrhs,    \
                                                          lda, ldb);            \
-    device_ws.malloc_memory(device_ws_size * sizeof(TYPE), q);                 \
+    working_memory device_ws(device_ws_size * sizeof(TYPE), q);                \
     auto device_ws_data = dpct::detail::get_memory(                            \
         reinterpret_cast<TYPE *>(device_ws.get_ptr()));                        \
     auto a_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(a));       \
     auto b_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(b));       \
     oneapi::mkl::lapack::getrs(q, trans, n, nrhs, a_data, lda, ipiv_data,      \
                                b_data, ldb, device_ws_data, device_ws_size);   \
+    sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));        \
+    device_ws.set_event(e);                                                    \
     break;                                                                     \
   }
 
@@ -585,8 +583,6 @@ inline void getrs_impl(sycl::queue &q, oneapi::mkl::transpose trans,
   }
 
 #undef CASE
-  sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));
-  device_ws.set_event(e);
 }
 // DPCT_LABEL_END
 
@@ -638,6 +634,7 @@ inline void geqrf_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
         dpct::detail::get_memory(reinterpret_cast<TYPE *>(device_ws));         \
     oneapi::mkl::lapack::geqrf(q, m, n, a_data, lda, tau_data, device_ws_data, \
                                device_ws_size / sizeof(TYPE));                 \
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));                        \
     break;                                                                     \
   }
   switch (a_type) {
@@ -650,7 +647,6 @@ inline void geqrf_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
                           "the data type is unsupported");
   }
 #undef CASE
-  dpct::detail::dpct_memset(q, info, 0, sizeof(int));
 }
 // DPCT_LABEL_END
 
