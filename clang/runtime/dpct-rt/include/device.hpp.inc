@@ -62,6 +62,7 @@
 // DPCT_CODE
 // DPCT_LABEL_END
 
+
 namespace dpct {
 
 // DPCT_LABEL_BEGIN|compile_warning|dpct
