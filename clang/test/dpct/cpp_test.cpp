@@ -129,7 +129,7 @@ int main()
 
 int printf(const char *format, ...);
 
-// CHECK: void test_00(int err) {
+// CHECK: void test_00(dpct::err_tmp0 err) {
 // CHECK-NEXT:   {{ +}}
 // CHECK-NEXT: }
 void test_00(cudaError_t err) {
@@ -140,7 +140,7 @@ void test_00(cudaError_t err) {
 }
 
 // CHECK:void test_simple_ifs() {
-// CHECK-NEXT:  int err;
+// CHECK-NEXT:  dpct::err_tmp0 err;
 // checking for empty lines (with one or more spaces)
 // CHECK-NEXT:{{ +}}
 // CHECK-NEXT:{{ +}}
@@ -165,7 +165,7 @@ void test_simple_ifs() {
   }
 }
 
-// CHECK:const char *switch_test(int error)
+// CHECK:const char *switch_test(dpct::err_tmp0 error)
 // CHECK-NEXT:{
 // CHECK-NEXT:    switch (error)
 // CHECK-NEXT:    {

@@ -17,6 +17,22 @@
 
 namespace dpct {
 
+namespace detail {
+
+template <typename tag, typename T> class new_type {
+public:
+  new_type(T value) : value{value} {}
+  operator T() { return value; }
+
+private:
+  T value;
+};
+
+} // namespace detail
+
+using err_tmp0 = detail::new_type<struct err_tmp0_tag, int>;
+using err_tmp1 = detail::new_type<struct err_tmp1_tag, int>;
+
 template <int... Ints> struct integer_sequence {};
 template <int Size, int... Ints>
 struct make_index_sequence

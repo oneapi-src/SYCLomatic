@@ -22,10 +22,10 @@ dim3 &&var4 = std::move(var1);
 }
 
 {
-// CHECK: int var1;
-// CHECK-NEXT: int *var2;
-// CHECK-NEXT: int &var3 = var1;
-// CHECK-NEXT: int &&var4 = std::move(var1);
+// CHECK: dpct::err_tmp0 var1;
+// CHECK-NEXT: dpct::err_tmp0 *var2;
+// CHECK-NEXT: dpct::err_tmp0 &var3 = var1;
+// CHECK-NEXT: dpct::err_tmp0 &&var4 = std::move(var1);
 cudaError_t var1;
 cudaError_t *var2;
 cudaError_t &var3 = var1;
@@ -33,10 +33,10 @@ cudaError_t &&var4 = std::move(var1);
 }
 
 {
-// CHECK: int var1;
-// CHECK-NEXT: int *var2;
-// CHECK-NEXT: int &var3 = var1;
-// CHECK-NEXT: int &&var4 = std::move(var1);
+// CHECK: dpct::err_tmp0 var1;
+// CHECK-NEXT: dpct::err_tmp0 *var2;
+// CHECK-NEXT: dpct::err_tmp0 &var3 = var1;
+// CHECK-NEXT: dpct::err_tmp0 &&var4 = std::move(var1);
 cudaError var1;
 cudaError *var2;
 cudaError &var3 = var1;
@@ -246,15 +246,15 @@ void case_2(void) {
 }
 
 {
-// CHECK:  new int();
-// CHECK-NEXT:  new int *();
+// CHECK:  new dpct::err_tmp0();
+// CHECK-NEXT:  new dpct::err_tmp0 *();
   new cudaError_t();
   new cudaError_t *();
 }
 
 {
-// CHECK:  new int();
-// CHECK-NEXT:  new int *();
+// CHECK:  new dpct::err_tmp0();
+// CHECK-NEXT:  new dpct::err_tmp0 *();
   new cudaError();
   new cudaError *();
 }
@@ -392,16 +392,16 @@ dim3 foo0();
 dim3 *foo1();
 dim3 &foo2();
 
-// CHECK: int foo3();
-// CHECK-NEXT: int *foo4();
-// CHECK-NEXT: int &foo5();
+// CHECK: dpct::err_tmp0 foo3();
+// CHECK-NEXT: dpct::err_tmp0 *foo4();
+// CHECK-NEXT: dpct::err_tmp0 &foo5();
 cudaError_t foo3();
 cudaError_t *foo4();
 cudaError_t &foo5();
 
-// CHECK: int foo6();
-// CHECK-NEXT: int *foo7();
-// CHECK-NEXT: int &foo8();
+// CHECK: dpct::err_tmp0 foo6();
+// CHECK-NEXT: dpct::err_tmp0 *foo7();
+// CHECK-NEXT: dpct::err_tmp0 &foo8();
 cudaError foo6();
 cudaError *foo7();
 cudaError &foo8();
@@ -543,10 +543,10 @@ template <> struct S<dim3 *> {};
 template <> struct S<dim3 &> {};
 template <> struct S<dim3 &&> {};
 
-// CHECK: template <> struct S<int> {};
-// CHECK-NEXT: template <> struct S<int *> {};
-// CHECK-NEXT: template <> struct S<int &> {};
-// CHECK-NEXT: template <> struct S<int &&> {};
+// CHECK: template <> struct S<dpct::err_tmp0> {};
+// CHECK-NEXT: template <> struct S<dpct::err_tmp0 *> {};
+// CHECK-NEXT: template <> struct S<dpct::err_tmp0 &> {};
+// CHECK-NEXT: template <> struct S<dpct::err_tmp0 &&> {};
 template <> struct S<cudaError> {};
 template <> struct S<cudaError *> {};
 template <> struct S<cudaError &> {};
@@ -711,19 +711,19 @@ template_foo<dim3 *>();
 template_foo<dim3 &>();
 template_foo<dim3 &&>();
 
-// CHECK: template_foo<int>();
-// CHECK-NEXT: template_foo<int *>();
-// CHECK-NEXT: template_foo<int &>();
-// CHECK-NEXT: template_foo<int &&>();
+// CHECK: template_foo<dpct::err_tmp0>();
+// CHECK-NEXT: template_foo<dpct::err_tmp0 *>();
+// CHECK-NEXT: template_foo<dpct::err_tmp0 &>();
+// CHECK-NEXT: template_foo<dpct::err_tmp0 &&>();
 template_foo<cudaError_t>();
 template_foo<cudaError_t *>();
 template_foo<cudaError_t &>();
 template_foo<cudaError_t &&>();
 
-// CHECK: template_foo<int>();
-// CHECK-NEXT: template_foo<int *>();
-// CHECK-NEXT: template_foo<int &>();
-// CHECK-NEXT: template_foo<int &&>();
+// CHECK: template_foo<dpct::err_tmp0>();
+// CHECK-NEXT: template_foo<dpct::err_tmp0 *>();
+// CHECK-NEXT: template_foo<dpct::err_tmp0 &>();
+// CHECK-NEXT: template_foo<dpct::err_tmp0 &&>();
 template_foo<cudaError>();
 template_foo<cudaError *>();
 template_foo<cudaError &>();
@@ -904,19 +904,19 @@ using UT1 = dim3 *;
 using UT2 = dim3 &;
 using UT3 = dim3 &&;
 
-// CHECK: using UT4 = int;
-// CHECK-NEXT: using UT5 = int *;
-// CHECK-NEXT: using UT6 = int &;
-// CHECK-NEXT: using UT7 = int &&;
+// CHECK: using UT4 = dpct::err_tmp0;
+// CHECK-NEXT: using UT5 = dpct::err_tmp0 *;
+// CHECK-NEXT: using UT6 = dpct::err_tmp0 &;
+// CHECK-NEXT: using UT7 = dpct::err_tmp0 &&;
 using UT4 = cudaError_t;
 using UT5 = cudaError_t *;
 using UT6 = cudaError_t &;
 using UT7 = cudaError_t &&;
 
-// CHECK: using UT8 = int;
-// CHECK-NEXT: using UT9 = int *;
-// CHECK-NEXT: using UT10 = int &;
-// CHECK-NEXT: using UT11 = int &&;
+// CHECK: using UT8 = dpct::err_tmp0;
+// CHECK-NEXT: using UT9 = dpct::err_tmp0 *;
+// CHECK-NEXT: using UT10 = dpct::err_tmp0 &;
+// CHECK-NEXT: using UT11 = dpct::err_tmp0 &&;
 using UT8 = cudaError;
 using UT9 = cudaError *;
 using UT10 = cudaError &;
@@ -1096,19 +1096,19 @@ typedef dim3* T1;
 typedef dim3& T2;
 typedef dim3&& T3;
 
-// CHECK: typedef int T4;
-// CHECK-NEXT: typedef int* T5;
-// CHECK-NEXT: typedef int& T6;
-// CHECK-NEXT: typedef int&& T7;
+// CHECK: typedef dpct::err_tmp0 T4;
+// CHECK-NEXT: typedef dpct::err_tmp0* T5;
+// CHECK-NEXT: typedef dpct::err_tmp0& T6;
+// CHECK-NEXT: typedef dpct::err_tmp0&& T7;
 typedef cudaError_t T4;
 typedef cudaError_t* T5;
 typedef cudaError_t& T6;
 typedef cudaError_t&& T7;
 
-// CHECK: typedef int T8;
-// CHECK-NEXT: typedef int* T9;
-// CHECK-NEXT: typedef int& T10;
-// CHECK-NEXT: typedef int&& T11;
+// CHECK: typedef dpct::err_tmp0 T8;
+// CHECK-NEXT: typedef dpct::err_tmp0* T9;
+// CHECK-NEXT: typedef dpct::err_tmp0& T10;
+// CHECK-NEXT: typedef dpct::err_tmp0&& T11;
 typedef cudaError T8;
 typedef cudaError* T9;
 typedef cudaError& T10;
@@ -1301,10 +1301,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_4 int
-// CHECK-NEXT: #define T8_5 int *
-// CHECK-NEXT: #define T8_6 int &
-// CHECK-NEXT: #define T8_7 int &&
+// CHECK: #define T8_4 dpct::err_tmp0
+// CHECK-NEXT: #define T8_5 dpct::err_tmp0 *
+// CHECK-NEXT: #define T8_6 dpct::err_tmp0 &
+// CHECK-NEXT: #define T8_7 dpct::err_tmp0 &&
 // CHECK-NEXT:     T8_4 a1;
 // CHECK-NEXT:     T8_5 a2;
 // CHECK-NEXT:     T8_6 a3=a1;
@@ -1321,10 +1321,10 @@ __device__ void foo_t(){
 }
 
 {
-// CHECK: #define T8_8 int
-// CHECK-NEXT: #define T8_9 int *
-// CHECK-NEXT: #define T8_10 int &
-// CHECK-NEXT: #define T8_11 int &&
+// CHECK: #define T8_8 dpct::err_tmp0
+// CHECK-NEXT: #define T8_9 dpct::err_tmp0 *
+// CHECK-NEXT: #define T8_10 dpct::err_tmp0 &
+// CHECK-NEXT: #define T8_11 dpct::err_tmp0 &&
 // CHECK-NEXT:     T8_8 a1;
 // CHECK-NEXT:     T8_9 a2;
 // CHECK-NEXT:     T8_10 a3=a1;
@@ -1717,10 +1717,10 @@ template <> void foo2(dim3){}
 template <> void foo3(dim3){}
 template <> void foo4(dim3){}
 
-// CHECK: template <> void foo1(int){}
-// CHECK-NEXT: template <> void foo2(int){}
-// CHECK-NEXT: template <> void foo3(int){}
-// CHECK-NEXT: template <> void foo4(int){}
+// CHECK: template <> void foo1(dpct::err_tmp0){}
+// CHECK-NEXT: template <> void foo2(dpct::err_tmp0){}
+// CHECK-NEXT: template <> void foo3(dpct::err_tmp0){}
+// CHECK-NEXT: template <> void foo4(dpct::err_tmp0){}
 template <> void foo1(cudaError){}
 template <> void foo2(cudaError){}
 template <> void foo3(cudaError){}

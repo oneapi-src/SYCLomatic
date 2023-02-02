@@ -57,7 +57,7 @@ __global__ void kernel2(float *out) {
 }
 
 // CHECK:void test_assignment() try {
-// CHECK-NEXT:  int err;
+// CHECK-NEXT:  err_tmp0 err;
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/

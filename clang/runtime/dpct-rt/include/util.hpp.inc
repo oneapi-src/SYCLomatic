@@ -51,6 +51,26 @@
 
 namespace dpct {
 
+// DPCT_LABEL_BEGIN|err_tmp_types|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+namespace detail {
+
+template <typename tag, typename T> class new_type {
+public:
+  new_type(T value) : value{value} {}
+  operator T() { return value; }
+
+private:
+  T value;
+};
+
+} // namespace detail
+
+using err_tmp0 = detail::new_type<struct err_tmp0_tag, int>;
+using err_tmp1 = detail::new_type<struct err_tmp1_tag, int>;
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|make_index_sequence|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE

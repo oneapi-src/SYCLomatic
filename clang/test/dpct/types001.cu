@@ -27,18 +27,18 @@ const cudaEvent_t *pevents[23];
 // CHECK: const dpct::event_ptr **ppevents[23];
 const cudaEvent_t **ppevents[23];
 
-// CHECK: int errors[23];
+// CHECK: dpct::err_tmp0 errors[23];
 cudaError_t errors[23];
-// CHECK: const int *perrors[23];
+// CHECK: const dpct::err_tmp0 *perrors[23];
 const cudaError_t *perrors[23];
-// CHECK: const int **pperrors[23];
+// CHECK: const dpct::err_tmp0 **pperrors[23];
 const cudaError_t **pperrors[23];
 
-// CHECK: int errors1[23];
+// CHECK: dpct::err_tmp0 errors1[23];
 cudaError errors1[23];
-// CHECK: const int *perrors1[23];
+// CHECK: const dpct::err_tmp0 *perrors1[23];
 const cudaError *perrors1[23];
-// CHECK: const int **pperrors1[23];
+// CHECK: const dpct::err_tmp0 **pperrors1[23];
 const cudaError **pperrors1[23];
 
 // CHECK: sycl::range<3> dims[23];
@@ -56,18 +56,18 @@ struct s {
   // CHECK: const dpct::event_ptr **ppevents[23];
   const cudaEvent_t **ppevents[23];
 
-  // CHECK: int errors[23];
+  // CHECK: dpct::err_tmp0 errors[23];
   cudaError_t errors[23];
-  // CHECK: const int *perrors[23];
+  // CHECK: const dpct::err_tmp0 *perrors[23];
   const cudaError_t *perrors[23];
-  // CHECK: const int **pperrors[23];
+  // CHECK: const dpct::err_tmp0 **pperrors[23];
   const cudaError_t **pperrors[23];
 
-  // CHECK: int errors1[23];
+  // CHECK: dpct::err_tmp0 errors1[23];
   cudaError errors1[23];
-  // CHECK: const int *perrors1[23];
+  // CHECK: const dpct::err_tmp0 *perrors1[23];
   const cudaError *perrors1[23];
-  // CHECK: const int **pperrors1[23];
+  // CHECK: const dpct::err_tmp0 **pperrors1[23];
   const cudaError **pperrors1[23];
 
   // CHECK: sycl::range<3> dims[23];
@@ -83,24 +83,24 @@ void foo(cudaDeviceProp p) {
   return;
 }
 
-// CHECK: int e;
+// CHECK: dpct::err_tmp0 e;
 cudaError e;
 
-// CHECK: int ee;
+// CHECK: dpct::err_tmp0 ee;
 cudaError_t ee;
 
-// CHECK: int foo_0(int);
+// CHECK: dpct::err_tmp0 foo_0(dpct::err_tmp0);
 cudaError_t foo_0(cudaError_t);
 
-// CHECK: int foo_1(int);
+// CHECK: dpct::err_tmp0 foo_1(dpct::err_tmp0);
 cudaError foo_1(cudaError_t);
 
-// CHECK: int apicall(int i) {
+// CHECK: dpct::err_tmp0 apicall(int i) {
 cudaError_t apicall(int i) {
   return cudaSuccess;
 };
 
-// CHECK: int err = apicall(0);
+// CHECK: dpct::err_tmp0 err = apicall(0);
 cudaError_t err = apicall(0);
 
 template <typename T>
@@ -120,8 +120,8 @@ int main(int argc, char **argv) {
   a = sizeof(d3);
   a = sizeof d3;
 
-  //CHECK:int cudaErr_t;
-  //CHECK-NEXT:a = sizeof(int);
+  //CHECK:dpct::err_tmp0 cudaErr_t;
+  //CHECK-NEXT:a = sizeof(dpct::err_tmp0);
   //CHECK-NEXT:a = sizeof(cudaErr_t);
   //CHECK-NEXT:a = sizeof cudaErr_t;
   cudaError_t cudaErr_t;
@@ -165,8 +165,8 @@ int main(int argc, char **argv) {
   a = sizeof(stream);
   a = sizeof stream;
 
-  //CHECK:int cudaErr;
-  //CHECK-NEXT:a = sizeof(int);
+  //CHECK:dpct::err_tmp0 cudaErr;
+  //CHECK-NEXT:a = sizeof(dpct::err_tmp0);
   //CHECK-NEXT:a = sizeof(cudaErr);
   //CHECK-NEXT:a = sizeof cudaErr;
   cudaError_t cudaErr;
@@ -300,8 +300,8 @@ int main(int argc, char **argv) {
   a = sizeof(randstatus_t);
   a = sizeof randstatus_t;
 
-  //CHECK:int cudaerror;
-  //CHECK-NEXT:a = sizeof(int);
+  //CHECK:dpct::err_tmp0 cudaerror;
+  //CHECK-NEXT:a = sizeof(dpct::err_tmp0);
   //CHECK-NEXT:a = sizeof(cudaerror);
   //CHECK-NEXT:a = sizeof cudaerror;
   cudaError cudaerror;
@@ -407,10 +407,10 @@ __global__ void foo() {
   malloc(sizeof(cudaStream_t &));
 
   int i;
-  // CHECK: (int)i;
-  // CHECK-NEXT: (int *)p;
-  // CHECK-NEXT: (int **)p;
-  // CHECK-NEXT: (int ***)p;
+  // CHECK: (dpct::err_tmp0) i;
+  // CHECK-NEXT: (dpct::err_tmp0 *)p;
+  // CHECK-NEXT: (dpct::err_tmp0 **)p;
+  // CHECK-NEXT: (dpct::err_tmp0 ***)p;
   (cudaError)i;
   (cudaError *)p;
   (cudaError **)p;
@@ -514,10 +514,10 @@ void fun2() {
 
 // CHECK:template <>
 // CHECK-NEXT:struct S<int &&> {};
-// CHECK-NEXT:template <> struct S<int> {};
-// CHECK-NEXT:template <> struct S<int *> {};
-// CHECK-NEXT:template <> struct S<int &> {};
-// CHECK-NEXT:template <> struct S<int &&> {};
+// CHECK-NEXT:template <> struct S<dpct::err_tmp0> {};
+// CHECK-NEXT:template <> struct S<dpct::err_tmp0 *> {};
+// CHECK-NEXT:template <> struct S<dpct::err_tmp0 &> {};
+// CHECK-NEXT:template <> struct S<dpct::err_tmp0 &&> {};
 template <>
 struct S<int &&> {};
 template <> struct S<cudaError_t> {};

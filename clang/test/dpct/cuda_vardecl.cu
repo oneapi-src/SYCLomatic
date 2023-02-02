@@ -75,7 +75,7 @@ struct S {
   // CHECK-NEXT: C<dpct::queue_ptr, dpct::event_ptr> se, se2;
   // CHECK-NEXT: std::list<dpct::queue_ptr> streamlist;
   // CHECK-NEXT: std::list<dpct::event_ptr> eventlist;
-  // CHECK-NEXT: std::list<int> errors;
+  // CHECK-NEXT: std::list<dpct::err_tmp0> errors;
   // CHECK-NEXT: std::list<dpct::device_info> props;
   cudaStream_t stream, stream0;
   cudaStream_t streams[23], streams0[45];
@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT: C<dpct::queue_ptr, dpct::event_ptr> se, se2;
   // CHECK-NEXT: std::list<dpct::queue_ptr> streamlist;
   // CHECK-NEXT: std::list<dpct::event_ptr> eventlist;
-  // CHECK-NEXT: std::list<int> errors;
+  // CHECK-NEXT: std::list<dpct::err_tmp0> errors;
   // CHECK-NEXT: std::list<dpct::device_info> props;
   cudaStream_t stream, stream0;
   cudaStream_t streams[23], streams0[45];

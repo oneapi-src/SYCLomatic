@@ -19,7 +19,7 @@ void foo() {
   // CHECK: dpct::queue_ptr s;
   // CHECK-NEXT: dpct::image_matrix_p a1;
   // CHECK-NEXT: dpct::image_matrix* a2;
-  // CHECK-NEXT: int err;
+  // CHECK-NEXT: dpct::err_tmp0 err;
   // CHECK-NEXT: sycl::range<3> extent;
   // CHECK-NEXT: dpct::image_channel channel;
   cudaStream_t s;
