@@ -424,7 +424,7 @@ namespace detail {
 // DPCT_CODE
 template <bool free_ws_in_catch, typename func_t, typename... args_t>
 inline int handle_sync_exception(sycl::queue &q, void *const &device_ws,
-                                 int *info, std::string lapack_api_name,
+                                 int *info, const std::string &lapack_api_name,
                                  func_t func, args_t... args) {
   try {
     func(args...);
@@ -530,7 +530,6 @@ inline void getrf_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
 // LibCommonUtils|get_memory
-// Memory|dpct_memcpy_detail
 // Memory|dpct_malloc_detail
 // Memory|dpct_memset_detail
 // Memory|mem_mgr_mem_free|UsmNone
@@ -722,9 +721,14 @@ inline int getrfnp_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
 /// \param [in] a_type The data type of the matrix A.
 /// \param [in] lda The leading dimension of the matrix A.
 /// \param [out] device_ws_size The workspace size in bytes.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
 inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  library_data_t a_type, std::int64_t lda,
-                                 size_t *device_ws_size) {
+                                 size_t *device_ws_size,
+                                 size_t *host_ws_size = nullptr) {
+  if (host_ws_size)
+    *host_ws_size = 0;
   return detail::handle_sync_exception<false>(
       q, nullptr, nullptr, "getrf_scratchpad_size",
       detail::getrf_scratchpad_size_impl, q, m, n, a_type, lda, device_ws_size);
@@ -815,10 +819,15 @@ inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
 /// \param [in] n The number of columns in the matrix A.
 /// \param [in] a_type The data type of the matrix A.
 /// \param [in] lda The leading dimension of the matrix A.
-/// \param [out] device_ws_size The workspace size in bytes.
+/// \param [out] device_ws_size The device workspace size in bytes.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
 inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  library_data_t a_type, std::int64_t lda,
-                                 size_t *device_ws_size) {
+                                 size_t *device_ws_size,
+                                 size_t *host_ws_size = nullptr) {
+  if (host_ws_size)
+    *host_ws_size = 0;
   return detail::handle_sync_exception<false>(
       q, nullptr, nullptr, "geqrf_scratchpad_size",
       detail::geqrf_scratchpad_size_impl, q, m, n, a_type, lda, device_ws_size);
