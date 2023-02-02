@@ -5,11 +5,24 @@ import warnings
 import time
 import string
 import csv
+import re
 
 output_file_suffix = 'md'
 keep_only_ask_once = False
 keep_file = True
 
+pattern_re = re.compile("DPCT\d{4}")
+
+def diag_DPCT_link(DPCT_diag:str):
+    return "https://www.intel.com/content/www/us/en/develop/documentation/intel-dpcpp-compatibility-tool-user-guide/top/diagnostics-reference/"+DPCT_diag.lower()+".html"
+
+def format_diagnostic_info_md(DPCT_diag_number:list):
+    return " / ".join(("["+diag_number+"]("+diag_DPCT_link(diag_number)+")" for diag_number in DPCT_diag_number))
+
+def format_diagnostic_info_csv(DPCT_diag_number:list):
+    return " / ".join((":ref:`"+diag_number+"`" for diag_number in DPCT_diag_number))
+
+format_diagnostic_info = {"md":format_diagnostic_info_md, "csv":format_diagnostic_info_csv}
 
 def get_user_answer(msg: str):
     msg += ' [y/n]'
@@ -51,7 +64,7 @@ def format_sing_line(API_list: list):
 def format_lib(lib_name: str, APIs_list: list):
     lib_str = '# '+lib_name+'\n'
     lib_str += '| Function | Migration support | Diagnostic message|\n'
-    lib_str += '| :---- | :----: | :----: |\n'
+    lib_str += '| :---- | :----: | :--- |\n'
     for API_list in APIs_list:
         lib_str += format_sing_line(API_list)
     lib_str += '\n'
@@ -69,8 +82,9 @@ def parse_macro_entry(line: str):
         warnings.warn(
             "internal error: can not tell whether API is supported or not.")
         API_list.append("UNKNOW")
-    if(line_list[-1][0:4] == 'DPCT'):
-        API_list.append(line_list[-1])
+    res_match = pattern_re.findall(line_list[-1])
+    if(res_match):
+        API_list.append(format_diagnostic_info[output_file_suffix](res_match))
     else:
         API_list.append('')
     return API_list
@@ -87,8 +101,9 @@ def parse_macro_entry_member_function(line: str):
         warnings.warn(
             "internal error: can not tell whether API is supported or not.")
         API_list.append("UNKNOW")
-    if(line_list[-1][0:4] == 'DPCT'):
-        API_list.append(line_list[-1])
+    res_match = pattern_re.findall(line_list[-1])
+    if(res_match):
+        API_list.append(format_diagnostic_info[output_file_suffix](res_match))
     else:
         API_list.append('')
     return API_list
