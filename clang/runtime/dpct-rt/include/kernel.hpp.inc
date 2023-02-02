@@ -126,6 +126,10 @@ static inline fs::path write_data_to_file(char const *const data,
                                    size_t size) {
   std::error_code ec;
 
+  if (sizeof(size_t)>=sizeof(std::streamsize) &&
+      size>std::numeric_limits<std::streamsize>::max())
+    throw std::runtime_error("data file too large");
+
   // random number generator
   std::random_device dev;
   std::mt19937 prng(dev());
@@ -178,9 +182,9 @@ static inline fs::path write_data_to_file(char const *const data,
       throw std::runtime_error("could not set permissions");
 
     outfile.write(data, size);
-    outfile.close();
-    if (outfile.bad())
+    if (!outfile.good())
       throw std::runtime_error("could not write data");
+    outfile.close();
 
     // only allow program to read/execute file
     fs::permissions(filepath,
@@ -196,7 +200,7 @@ static inline fs::path write_data_to_file(char const *const data,
   auto infile = std::ifstream(filepath, std::ios::in | std::ios::binary);
   if (infile) {
     bool mismatch = false;
-    int  cnt=0;
+    size_t cnt=0;
 
     while (1) {
       char c;
@@ -382,7 +386,7 @@ namespace detail {
 static inline kernel_library load_dl_from_data(char const *const data, size_t size) {
   fs::path filename = write_data_to_file(data, size);
 #ifdef _WIN32
-  void *so = LoadLibraryA(filename.string().c_str());
+  void *so = LoadLibraryW(filename.wstring().c_str());
 #else
   void *so = dlopen(filename.c_str(), RTLD_LAZY);
 #endif
