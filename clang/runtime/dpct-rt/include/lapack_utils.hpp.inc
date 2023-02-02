@@ -1030,8 +1030,8 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  library_data_t a_type, std::int64_t lda,
                                  size_t *device_ws_size) {
   return detail::handle_sync_exception<false>(
-      q, nullptr, nullptr, "geqrf", detail::geqrf_scratchpad_size_impl, q, m, n,
-      a_type, lda, device_ws_size);
+      q, nullptr, nullptr, "geqrf_scratchpad_size",
+      detail::geqrf_scratchpad_size_impl, q, m, n, a_type, lda, device_ws_size);
 }
 // DPCT_LABEL_END
 
