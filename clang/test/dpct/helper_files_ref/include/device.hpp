@@ -28,6 +28,7 @@
 #include <windows.h>
 #endif
 
+
 namespace dpct {
 
 inline void compiler_warning(const std::string &warning_msg) {
