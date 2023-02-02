@@ -2053,31 +2053,6 @@ void AtomicFunctionRule::MigrateAtomicFunc(
     emplaceTransformation(
         new ReplaceCalleeName(CE, std::move(ReplacedAtomicFuncName)));
   }
-
-  const unsigned NumArgs = CE->getNumArgs();
-  for (unsigned i = 0; i < NumArgs; ++i) {
-    const Expr *Arg = CE->getArg(i);
-    if (auto *ImpCast = dyn_cast<ImplicitCastExpr>(Arg)) {
-      if (ImpCast->getCastKind() != clang::CK_LValueToRValue) {
-        if (i == 0) {
-          if (dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
-            emplaceTransformation(
-                new InsertBeforeStmt(Arg, "(" + TypeName + "*)"));
-          } else {
-            insertAroundStmt(Arg, "(" + TypeName + "*)(", ")");
-          }
-        } else {
-          if (dyn_cast<IntegerLiteral>(Arg->IgnoreImpCasts()) ||
-              dyn_cast<DeclRefExpr>(Arg->IgnoreImpCasts())) {
-            emplaceTransformation(
-                new InsertBeforeStmt(Arg, "(" + TypeName + ")"));
-          } else {
-            insertAroundStmt(Arg, "(" + TypeName + ")(", ")");
-          }
-        }
-      }
-    }
-  }
 }
 
 void AtomicFunctionRule::runRule(const MatchFinder::MatchResult &Result) {

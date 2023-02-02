@@ -122,10 +122,10 @@ static __device__ uint32_t d_error[1];
 __device__ void fun(){
   double *a;
   float b;
-  // CHECK: dpct::atomic_fetch_add(a, (double)1);
+  // CHECK: dpct::atomic_fetch_add(a, 1);
   atomicAdd(a, 1);
 
-  // CHECK: dpct::atomic_fetch_add(a, (double)b);
+  // CHECK: dpct::atomic_fetch_add(a, b);
   atomicAdd(a, b);
 
   // CHECK: sycl::atomic<uint32_t>(sycl::global_ptr<uint32_t>(d_error)).fetch_add(1);
