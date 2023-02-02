@@ -14565,6 +14565,62 @@ void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {
       this);
 }
 
+bool canAsmLop3ExprFast(std::ostringstream &OS, const std::string &a,
+                        const std::string &b, const std::string &c,
+                        const std::uint8_t imm) {
+#define EMPTY4 "", "", "", ""
+#define EMPTY16 EMPTY4, EMPTY4, EMPTY4, EMPTY4
+  static const std::string FastMap[256] = {
+      /*0x00*/ "0",
+      // clang-format off
+      EMPTY16, EMPTY4, EMPTY4, "",
+      /*0x1a*/ "(@a & @b | @c) ^ @a",
+      "", "", "",
+      /*0x1e*/ "@a ^ (@b | @c)",
+      EMPTY4, EMPTY4, EMPTY4, "", "",
+      /*0x2d*/ "~@a ^ (~@b & @c)",
+      EMPTY16, "", "",
+      /*0x40*/ "@a & @b & ~@c",
+      EMPTY16, EMPTY16, EMPTY16, EMPTY4, "", "", "",
+      /*0x78*/ "@a ^ (@b & @c)",
+      EMPTY4, "", "", "",
+      /*0x80*/ "@a & @b & @c",
+      EMPTY16, EMPTY4, "",
+      /*0x96*/ "@a ^ @b ^ @c",
+      EMPTY16, EMPTY4, EMPTY4, EMPTY4, "",
+      /*0xb4*/ "@a ^ (@b & ~@c)",
+      "", "", "",
+      /*0xb8*/ "(@a ^ (@b & (@c ^ @a)))",
+      EMPTY16, EMPTY4, EMPTY4, "",
+      /*0xd2*/ "@a ^ (~@b & @c)",
+      EMPTY16, EMPTY4, "",
+      /*0xe8*/ "((@a & (@b | @c)) | (@b & @c))",
+      "",
+      /*0xea*/ "(@a & @b) | @c",
+      EMPTY16, "", "", "",
+      // clang-format on
+      /*0xfe*/ "@a | @b | @c",
+      /*0xff*/ "1"};
+#undef EMPTY16
+#undef EMPTY4
+  const StringRef Expr = FastMap[imm];
+  if (Expr.empty()) {
+    return false;
+  }
+  OS << " ";
+  const StringRef ReplaceMap[3] = {a, b, c};
+  std::string::size_type Pre = 0;
+  auto Pos = Expr.find('@');
+  while (Pos != std::string::npos) {
+    OS << Expr.substr(Pre, Pos - Pre).str();
+    OS << ReplaceMap[Expr[Pos + 1] - 'a'].str();
+    Pre = Pos + 2;
+    Pos = Expr.find('@', Pre);
+  }
+  OS << Expr.substr(Pre).str();
+  return true;
+}
+
 std::string getAsmLop3Expr(const llvm::SmallVector<std::string, 5> &Operands) {
   if (Operands.size() != 5) {
     return "";
@@ -14574,11 +14630,12 @@ std::string getAsmLop3Expr(const llvm::SmallVector<std::string, 5> &Operands) {
   const auto &b = Operands[2];
   const auto &c = Operands[3];
   auto imm = std::stoi(Operands[4], 0, 16);
-  if (imm == 0x00) {
-    return buildString(d, " = 0");
-  }
+  assert(imm >= 0 && imm <= UINT8_MAX);
   std::ostringstream OS;
   OS << d << " =";
+  if (canAsmLop3ExprFast(OS, a, b, c, imm)) {
+    return OS.str();
+  }
   if (imm & 0x01)
     OS << " (~" << a << " & ~" << b << " & ~" << c << ") |";
   if (imm & 0x02)
