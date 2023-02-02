@@ -682,6 +682,11 @@ int runDPCT(int argc, const char **argv) {
     DpctGlobalInfo::addChangeExtensions(Extension);
   }
 
+  if (LimitChangeExtension) {
+    DpctGlobalInfo::addChangeExtensions(".cu");
+    DpctGlobalInfo::addChangeExtensions(".cuh");
+  }
+
   if (InRoot.empty() && ProcessAllFlag) {
     ShowStatus(MigrationErrorNoExplicitInRoot);
     dpctExit(MigrationErrorNoExplicitInRoot);
