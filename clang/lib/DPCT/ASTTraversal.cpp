@@ -2942,6 +2942,17 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
       cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(SUPPORTEDVECTORTYPENAMES)))
           .bind("inheritanceType"),
       this);
+
+  auto Vec3Types = [&]() {
+    return hasAnyName("char3", "uchar3", "short3", "ushort3", "int3", "uint3",
+                      "long3", "ulong3", "float3", "double3", "longlong3",
+                      "ulonglong3");
+  };
+
+  MF.addMatcher(stmt(sizeOfExpr(hasArgumentOfType(hasCanonicalType(
+                         hasDeclaration(namedDecl(Vec3Types()))))))
+                    .bind("SizeofVector3Warn"),
+                this);
 }
 
 void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -3110,6 +3121,18 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
     }
     return emplaceTransformation(
         new InsertText(Begin, MapNames::getClNamespace()));
+  }
+
+  if (const auto *UETT =
+          getNodeAsType<UnaryExprOrTypeTraitExpr>(Result, "SizeofVector3Warn")) {
+
+    // Ignore shared variables.
+    // .e.g: __shared__ int a[sizeof(float3)], b[sizeof(float3)], ...;
+    if (const auto *V = DpctGlobalInfo::findAncestor<VarDecl>(UETT)) {
+      if (V->hasAttr<CUDASharedAttr>())
+        return;
+    }
+    report(UETT, Diagnostics::SIZEOF_WARNING, true);
   }
 }
 
