@@ -12,6 +12,10 @@
 #include <sycl/sycl.hpp>
 #include <stdexcept>
 
+#ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS 
+#include <sycl/ext/oneapi/experimental/user_defined_reductions.hpp>
+#endif
+
 namespace dpct {
 namespace group {
 
@@ -591,7 +595,11 @@ namespace device {
 namespace detail {
 
 template <typename... _Args> constexpr auto __joint_reduce(_Args... __args) {
+#ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS 
+  return sycl::ext::oneapi::experimental::joint_reduce(__args...);
+#else
   return sycl::joint_reduce(__args...);
+#endif
 }
 
 } // namespace detail
@@ -617,6 +625,10 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
   sycl::range<1> local_size(GROUP_SIZE);
 
   queue.submit([&](sycl::handler &cgh) {
+#ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
+    size_t temp_memory_size = GROUP_SIZE * sizeof(T);
+    auto scratch = sycl::local_accessor<std::byte, 1>(temp_memory_size, cgh);
+#endif
     cgh.parallel_for(
         sycl::nd_range<1>(global_size, local_size), [=](sycl::nd_item<1> item) {
           OffsetT segment_begin = begin_offsets[item.get_group_linear_id()];
@@ -627,13 +639,21 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
             }
             return;
           }
-
+#ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
+          // Create a handle that associates the group with an allocation it
+          // can use
+          auto handle = sycl::ext::oneapi::experimental::group_with_scratchpad(
+              item.get_group(), sycl::span(&scratch[0], temp_memory_size));
+          T group_aggregate = detail::__joint_reduce(
+              handle, inputs + segment_begin, inputs + segment_end, init,
+              binary_op);
+#else
           sycl::multi_ptr<T, sycl::access::address_space::global_space>
               input_ptr = inputs;
           T group_aggregate = detail::__joint_reduce(
               item.get_group(), input_ptr + segment_begin,
               input_ptr + segment_end, init, binary_op);
-
+#endif
           if (item.get_local_linear_id() == 0) {
             outputs[item.get_group_linear_id()] = group_aggregate;
           }

@@ -99,8 +99,6 @@ void CubTypeRule::runRule(
   }
 }
 
-/// Remove this function when the support for user-define operator in
-/// reduce_over_group() is available
 bool CubTypeRule::CanMappingToSyclNativeBinaryOp(StringRef OpTypeName) {
   return OpTypeName == "cub::Sum" || OpTypeName == "cub::Max" ||
          OpTypeName == "cub::Min";

@@ -1862,6 +1862,9 @@ public:
   static bool useLogicalGroup() {
     return getUsingExperimental<ExperimentalFeatures::Exp_LogicalGroup>();
   }
+  static bool useUserDefineReductions() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_UserDefineReductions>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
