@@ -62,7 +62,9 @@
 // DPCT_CODE
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|compile_warning|
+namespace dpct {
+
+// DPCT_LABEL_BEGIN|compile_warning|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 inline void compiler_warning(const std::string &warning_msg) {
@@ -73,8 +75,6 @@ inline void compiler_warning(const std::string &warning_msg) {
 #endif
 }
 // DPCT_LABEL_END
-
-namespace dpct {
 
 // DPCT_LABEL_BEGIN|exception_handler|dpct
 // DPCT_DEPENDENCY_EMPTY

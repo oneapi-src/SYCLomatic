@@ -28,6 +28,8 @@
 #include <windows.h>
 #endif
 
+namespace dpct {
+
 inline void compiler_warning(const std::string &warning_msg) {
 #if defined(_MSC_VER) && !defined(__clang__)
 #pragma message(warning_msg)
@@ -35,8 +37,6 @@ inline void compiler_warning(const std::string &warning_msg) {
 #warning warning_msg
 #endif
 }
-
-namespace dpct {
 
 /// SYCL default exception handler
 auto exception_handler = [](sycl::exception_list exceptions) {
