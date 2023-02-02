@@ -946,7 +946,8 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
   auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
   PP.PrintCanonicalTypes = true;
   auto BaseType = CMCE->getObjectType().getUnqualifiedType().getAsString(PP);
-  if (StringRef(BaseType).startswith("cub::")) {
+  if (StringRef(BaseType).startswith("cub::") ||
+      StringRef(BaseType).startswith("cuda::std::")) {
     if (const auto *DRE = dyn_cast<DeclRefExpr>(CMCE->getImplicitObjectArgument())) {
       if (const auto *RD = DRE->getDecl()->getType()->getAsCXXRecordDecl()) {
         BaseType.clear();
@@ -1111,6 +1112,9 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
     analyzeTemplateSpecializationType(
         TYPELOC_CAST(DependentTemplateSpecializationTypeLoc));
     break;
+  case TypeLoc::Decltype:
+    analyzeDecltypeType(TYPELOC_CAST(DecltypeTypeLoc));
+    break;
   default:
     return;
   }
@@ -1135,6 +1139,29 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   } else if (getFinalCastTypeNameStr(TyName) != TyName) {
     addReplacement(Range.getBegin(), Range.getEnd(), CSCE,
                    getFinalCastTypeNameStr(TyName));
+  }
+}
+
+void ExprAnalysis::analyzeDecltypeType(DecltypeTypeLoc TL) {
+  SourceRange SR = TL.getSourceRange();
+  auto *UE = TL.getUnderlyingExpr();
+  if (auto *DRE = dyn_cast<DeclRefExpr>(UE)) {
+    auto *Qualifier = DRE->getQualifier();
+    auto Name = getNestedNameSpecifierString(Qualifier);
+    auto Range = getDefinitionRange(SR.getBegin(), SR.getEnd());
+    // Types like 'dim3::x' should be migrated to 'size_t'.
+    if (Name == "dim3::") {
+      addReplacement(Range.getBegin(), Range.getEnd(), "size_t");
+    }
+    Name.resize(Name.length() - 2); // Remove the "::".
+    if (MapNames::SupportedVectorTypes.count(Name)) {
+      auto ReplacedStr =
+          MapNames::findReplacedName(MapNames::TypeNamesMap, Name);
+      if (Name.back() != '1') {
+        ReplacedStr += "::element_type";
+      }
+      addReplacement(Range.getBegin(), Range.getEnd(), ReplacedStr);
+    }
   }
 }
 

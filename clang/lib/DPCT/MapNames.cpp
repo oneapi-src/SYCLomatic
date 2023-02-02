@@ -343,7 +343,7 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::FftUtils_fft_type)},
       {"cufftHandle",
        std::make_shared<TypeNameRule>(getDpctNamespace() +
-                                          "fft::fft_engine*",
+                                          "fft::fft_engine_ptr",
                                       HelperFeatureEnum::FftUtils_fft_engine)},
       {"CUdevice", std::make_shared<TypeNameRule>("int")},
       {"CUarray_st",
@@ -405,6 +405,9 @@ void MapNames::setExplicitNamespaceMap() {
                                       HelperFeatureEnum::CclUtils_create_kvs)},
       {"ncclRedOp_t", std::make_shared<TypeNameRule>("oneapi::ccl::reduction")},
       {"ncclDataType_t", std::make_shared<TypeNameRule>("oneapi::ccl::datatype")},
+      {"cuda::std::tuple", std::make_shared<TypeNameRule>("std::tuple")},
+      {"cuda::std::complex", std::make_shared<TypeNameRule>("std::complex")},
+      {"cuda::std::array", std::make_shared<TypeNameRule>("std::array")},
       // ...
   };
 

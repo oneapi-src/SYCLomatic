@@ -19,8 +19,8 @@ using namespace std;
 // CHECK: using sycl::max;
 using ::max;
 
-// CHECK: dpct::constant_memory<double, 0> d;
-// CHECK-NEXT: dpct::constant_memory<double, 0> d2;
+// CHECK: static dpct::constant_memory<double, 0> d;
+// CHECK-NEXT: static dpct::constant_memory<double, 0> d2;
 __constant__ double d;
 __constant__ double d2;
 
@@ -45,7 +45,7 @@ __device__ double test3(double d4, double d5) {
   return max(d4, d5);
 }
 
-// CHECK: dpct::constant_memory<float, 0> C;
+// CHECK: static dpct::constant_memory<float, 0> C;
 // CHECK-NEXT:  int foo(int n, float C) {
 // CHECK-NEXT:   return n == 1 ? C : 0;
 // CHECK-NEXT: }
@@ -1730,6 +1730,8 @@ __global__ void kernelFuncTypecasts() {
 
   // CHECK: f = h2[1];
   f = __low2float(h2);
+  // CHECK: f = (*(&h2))[1];
+  f = __low2float(*(&h2));
 
   // CHECK: h = h2[1];
   h = __low2half(h2);
@@ -3014,7 +3016,6 @@ __device__ __host__ void do_migration7() {
   //CHECK-NEXT: sycl::acosh(f);
   //CHECK-NEXT: sycl::asin(f);
   //CHECK-NEXT: sycl::asinh(f);
-  //CHECK-NEXT: sycl::fabs(f);
   //CHECK-NEXT: /*
   //CHECK-NEXT: DPCT1017:{{[0-9]+}}: The sycl::frexp call is used instead of the frexp call. These two calls do not provide exactly the same functionality. Check the potential precision and/or performance issues for the generated code.
   //CHECK-NEXT: */
@@ -3046,7 +3047,6 @@ __device__ __host__ void do_migration7() {
   std::acoshf(f);
   std::asinf(f);
   std::asinhf(f);
-  std::abs(f);
   std::frexp(f, &i);
   std::modf(f, &f);
   std::nearbyint(f);

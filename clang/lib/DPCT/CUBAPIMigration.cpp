@@ -328,7 +328,7 @@ void removeVarDecl(const VarDecl *VD) {
       const auto Range = DS->getSourceRange();
       const CharSourceRange CRange(Range, true);
       auto Replacement = std::make_shared<ExtReplacement>(
-          Mgr, CRange, "", new ReplaceStmt(DS, ""));
+          Mgr, CRange, "", nullptr);
       DpctGlobalInfo::getInstance().addReplacement(Replacement);
       return;
     }
