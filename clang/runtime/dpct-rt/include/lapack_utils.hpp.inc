@@ -729,6 +729,7 @@ oneapi::mkl::jobsvd char2jobsvd(char job) {
 // DPCT_LABEL_BEGIN|gesvd_scratchpad_size_impl|dpct::lapack::detail
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
+// LapackUtils|char2jobsvd
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 inline void gesvd_scratchpad_size_impl(sycl::queue &q, signed char jobu,
@@ -762,6 +763,9 @@ inline void gesvd_scratchpad_size_impl(sycl::queue &q, signed char jobu,
 // DPCT_LABEL_BEGIN|gesvd_impl|dpct::lapack::detail
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
+// LapackUtils|char2jobsvd
+// LibCommonUtils|get_memory
+// Memory|dpct_memset_detail
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 inline void gesvd_impl(sycl::queue &q, signed char jobu, signed char jobvt,
@@ -831,6 +835,8 @@ inline void potrf_scratchpad_size_impl(sycl::queue &q, oneapi::mkl::uplo uplo,
 // DPCT_LABEL_BEGIN|potrf_impl|dpct::lapack::detail
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
+// LibCommonUtils|get_memory
+// Memory|dpct_memset_detail
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 inline void potrf_impl(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
@@ -862,6 +868,11 @@ inline void potrf_impl(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 // DPCT_LABEL_BEGIN|potrs_impl|dpct::lapack::detail
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
+// LibCommonUtils|get_memory
+// Memory|dpct_malloc_detail
+// Memory|dpct_memset_detail
+// Memory|mem_mgr_mem_free|UsmNone
+// Memory|async_dpct_free|UsmRestricted
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 inline void potrs_impl(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
@@ -1127,6 +1138,7 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 // LibCommonUtils|library_data_t
 // LapackUtils|handle_sync_exception
 // LapackUtils|gesvd_impl
+// LibCommonUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 inline int gesvd(sycl::queue &q, signed char jobu, signed char jobvt,
