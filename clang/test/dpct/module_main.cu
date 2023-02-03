@@ -39,7 +39,7 @@ int main(){
     cuLaunchKernel(F, 1, 16, 32, 4, 32, 64, sharedSize, CU_STREAM_LEGACY, param, extra);
 
     //CHECK: dpct::image_wrapper_base_p tex;
-    //CHECK: tex = dpct::get_image_from_module(M, "tex");
+    //CHECK: tex = dpct::get_image_wrapper(M, "tex");
     CUtexref tex;
     cuModuleGetTexRef(&tex, M, "tex");
 

@@ -3,14 +3,10 @@
 // RUN: FileCheck --input-file %T/Image/api_test8_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Image/api_test8_out
 
-// CHECK: 29
+// CHECK: 26
 // TEST_FEATURE: Image_image_wrapper_base_p_alias
-// TEST_FEATURE: Image_get_image_from_module
 
 int main() {
   cudaTextureObject_t a;
-  CUmodule M;
-  CUtexref tex;
-  cuModuleGetTexRef(&tex, M, "tex");
   return 0;
 }
