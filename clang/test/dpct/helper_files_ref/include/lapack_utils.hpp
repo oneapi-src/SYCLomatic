@@ -357,9 +357,9 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 
 namespace detail {
 template <typename functor_t, typename... args_t>
-inline int handle_sync_exception(sycl::queue &q, library_data_t a_type,
-                                 int *info, const std::string &lapack_api_name,
-                                 functor_t functor, args_t... args) {
+inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
+                       const std::string &lapack_api_name, functor_t functor,
+                       args_t... args) {
   try {
     switch (a_type) {
     case library_data_t::real_float: {
@@ -569,10 +569,9 @@ inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  return detail::handle_sync_exception(q, a_type, nullptr,
-                                       "getrf_scratchpad_size",
-                                       detail::getrf_scratchpad_size_impl(), q,
-                                       m, n, a_type, lda, device_ws_size);
+  return detail::lapack_shim(q, a_type, nullptr, "getrf_scratchpad_size",
+                             detail::getrf_scratchpad_size_impl(), q, m, n,
+                             a_type, lda, device_ws_size);
 }
 
 /// Computes the LU factorization of a general m-by-n matrix.
@@ -597,9 +596,9 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
     return detail::getrfnp_impl(q, m, n, a_type, a, lda, device_ws,
                                 device_ws_size, info);
   }
-  return detail::handle_sync_exception(
-      q, a_type, info, "getrf", detail::getrf_impl(), q, m, n, a_type, a, lda,
-      ipiv, device_ws, device_ws_size, info);
+  return detail::lapack_shim(q, a_type, info, "getrf", detail::getrf_impl(), q,
+                             m, n, a_type, a, lda, ipiv, device_ws,
+                             device_ws_size, info);
 }
 
 /// Solves a system of linear equations with a LU-factored square coefficient
@@ -622,9 +621,9 @@ inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
                  std::int64_t nrhs, library_data_t a_type, void *a,
                  std::int64_t lda, std::int64_t *ipiv, library_data_t b_type,
                  void *b, std::int64_t ldb, int *info) {
-  return detail::handle_sync_exception(
-      q, a_type, info, "getrs_scratchpad_size/getrs", detail::getrs_impl(), q,
-      trans, n, nrhs, a_type, a, lda, ipiv, b_type, b, ldb, info);
+  return detail::lapack_shim(q, a_type, info, "getrs_scratchpad_size/getrs",
+                             detail::getrs_impl(), q, trans, n, nrhs, a_type, a,
+                             lda, ipiv, b_type, b, ldb, info);
 }
 
 /// Computes the size of workspace memory of geqrf function.
@@ -643,10 +642,9 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  return detail::handle_sync_exception(q, a_type, nullptr,
-                                       "geqrf_scratchpad_size",
-                                       detail::geqrf_scratchpad_size_impl(), q,
-                                       m, n, a_type, lda, device_ws_size);
+  return detail::lapack_shim(q, a_type, nullptr, "geqrf_scratchpad_size",
+                             detail::geqrf_scratchpad_size_impl(), q, m, n,
+                             a_type, lda, device_ws_size);
 }
 
 /// Computes the QR factorization of a general m-by-n matrix.
@@ -667,9 +665,9 @@ inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  library_data_t tau_type, void *tau, void *device_ws,
                  size_t device_ws_size, int *info) {
-  return detail::handle_sync_exception(
-      q, a_type, info, "geqrf", detail::geqrf_impl(), q, m, n, a_type, a, lda,
-      tau_type, tau, device_ws, device_ws_size, info);
+  return detail::lapack_shim(q, a_type, info, "geqrf", detail::geqrf_impl(), q,
+                             m, n, a_type, a, lda, tau_type, tau, device_ws,
+                             device_ws_size, info);
 }
 
 } // namespace lapack

@@ -415,7 +415,7 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 // DPCT_LABEL_END
 
 namespace detail {
-// DPCT_LABEL_BEGIN|handle_sync_exception|dpct::lapack::detail
+// DPCT_LABEL_BEGIN|lapack_shim|dpct::lapack::detail
 // DPCT_DEPENDENCY_BEGIN
 // Memory|dpct_memcpy_detail
 // Memory|dpct_memset_detail
@@ -424,9 +424,9 @@ namespace detail {
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename functor_t, typename... args_t>
-inline int handle_sync_exception(sycl::queue &q, library_data_t a_type,
-                                 int *info, const std::string &lapack_api_name,
-                                 functor_t functor, args_t... args) {
+inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
+                       const std::string &lapack_api_name, functor_t functor,
+                       args_t... args) {
   try {
     switch (a_type) {
     case library_data_t::real_float: {
@@ -672,7 +672,7 @@ inline int getrfnp_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
 // DPCT_LABEL_BEGIN|getrf_scratchpad_size|dpct::lapack
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// LapackUtils|handle_sync_exception
+// LapackUtils|lapack_shim
 // LapackUtils|getrf_scratchpad_size_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -692,17 +692,16 @@ inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  return detail::handle_sync_exception(q, a_type, nullptr,
-                                       "getrf_scratchpad_size",
-                                       detail::getrf_scratchpad_size_impl(), q,
-                                       m, n, a_type, lda, device_ws_size);
+  return detail::lapack_shim(q, a_type, nullptr, "getrf_scratchpad_size",
+                             detail::getrf_scratchpad_size_impl(), q, m, n,
+                             a_type, lda, device_ws_size);
 }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|getrf|dpct::lapack
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// LapackUtils|handle_sync_exception
+// LapackUtils|lapack_shim
 // LapackUtils|getrf_impl
 // LapackUtils|getrfnp_impl
 // DPCT_DEPENDENCY_END
@@ -729,16 +728,16 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
     return detail::getrfnp_impl(q, m, n, a_type, a, lda, device_ws,
                                 device_ws_size, info);
   }
-  return detail::handle_sync_exception(
-      q, a_type, info, "getrf", detail::getrf_impl(), q, m, n, a_type, a, lda,
-      ipiv, device_ws, device_ws_size, info);
+  return detail::lapack_shim(q, a_type, info, "getrf", detail::getrf_impl(), q,
+                             m, n, a_type, a, lda, ipiv, device_ws,
+                             device_ws_size, info);
 }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|getrs|dpct::lapack
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// LapackUtils|handle_sync_exception
+// LapackUtils|lapack_shim
 // LapackUtils|getrs_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -762,16 +761,16 @@ inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
                  std::int64_t nrhs, library_data_t a_type, void *a,
                  std::int64_t lda, std::int64_t *ipiv, library_data_t b_type,
                  void *b, std::int64_t ldb, int *info) {
-  return detail::handle_sync_exception(
-      q, a_type, info, "getrs_scratchpad_size/getrs", detail::getrs_impl(), q,
-      trans, n, nrhs, a_type, a, lda, ipiv, b_type, b, ldb, info);
+  return detail::lapack_shim(q, a_type, info, "getrs_scratchpad_size/getrs",
+                             detail::getrs_impl(), q, trans, n, nrhs, a_type, a,
+                             lda, ipiv, b_type, b, ldb, info);
 }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|geqrf_scratchpad_size|dpct::lapack
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// LapackUtils|handle_sync_exception
+// LapackUtils|lapack_shim
 // LapackUtils|geqrf_scratchpad_size_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -791,17 +790,16 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  return detail::handle_sync_exception(q, a_type, nullptr,
-                                       "geqrf_scratchpad_size",
-                                       detail::geqrf_scratchpad_size_impl(), q,
-                                       m, n, a_type, lda, device_ws_size);
+  return detail::lapack_shim(q, a_type, nullptr, "geqrf_scratchpad_size",
+                             detail::geqrf_scratchpad_size_impl(), q, m, n,
+                             a_type, lda, device_ws_size);
 }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|geqrf|dpct::lapack
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// LapackUtils|handle_sync_exception
+// LapackUtils|lapack_shim
 // LapackUtils|geqrf_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -823,9 +821,9 @@ inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  library_data_t tau_type, void *tau, void *device_ws,
                  size_t device_ws_size, int *info) {
-  return detail::handle_sync_exception(
-      q, a_type, info, "geqrf", detail::geqrf_impl(), q, m, n, a_type, a, lda,
-      tau_type, tau, device_ws, device_ws_size, info);
+  return detail::lapack_shim(q, a_type, info, "geqrf", detail::geqrf_impl(), q,
+                             m, n, a_type, a, lda, tau_type, tau, device_ws,
+                             device_ws_size, info);
 }
 // DPCT_LABEL_END
 
