@@ -1809,7 +1809,11 @@ inline void reduce_argmax(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
       typename ::std::iterator_traits<decltype(input)>::value_type;
   using TupleT = ::std::tuple<uint64_t, Iter1ValueT>;
   auto maximum_func = [](const TupleT &a, const TupleT &b) {
-    return (::std::get<1>(a) > ::std::get<1>(b)) ? a : b;
+    return ((::std::get<1>(a) > ::std::get<1>(b)) ||
+            (::std::get<1>(a) == ::std::get<1>(b) &&
+             ::std::get<0>(a) < ::std::get<0>(b)))
+               ? a
+               : b;
   };
   Iter1ValueT init = ::std::numeric_limits<Iter1ValueT>::min();
   dpct::internal::reduce_arg_impl(::std::forward<_ExecutionPolicy>(policy),
@@ -1830,7 +1834,11 @@ inline void reduce_argmin(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
   using TupleT = ::std::tuple<uint64_t, Iter1ValueT>;
   Iter1ValueT init = ::std::numeric_limits<Iter1ValueT>::max();
   auto minimum_func = [](const TupleT &a, const TupleT &b) {
-    return (::std::get<1>(a) < ::std::get<1>(b)) ? a : b;
+    return ((::std::get<1>(a) < ::std::get<1>(b)) ||
+            (::std::get<1>(a) == ::std::get<1>(b) &&
+             ::std::get<0>(a) < ::std::get<0>(b)))
+               ? a
+               : b;
   };
   dpct::internal::reduce_arg_impl(::std::forward<_ExecutionPolicy>(policy),
                                   input, output, n, init, minimum_func);
