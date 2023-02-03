@@ -20,6 +20,7 @@
 #include "FormatInternal.h"
 #include "FormatToken.h"
 #include "FormatTokenLexer.h"
+#include "IntegerLiteralSeparatorFixer.h"
 #include "NamespaceEndCommentsFixer.h"
 #include "QualifierAlignmentFixer.h"
 #include "SortJavaScriptImports.h"
@@ -121,6 +122,15 @@ template <> struct MappingTraits<FormatStyle::AlignConsecutiveStyle> {
     IO.mapOptional("AcrossComments", Value.AcrossComments);
     IO.mapOptional("AlignCompound", Value.AlignCompound);
     IO.mapOptional("PadOperators", Value.PadOperators);
+  }
+};
+
+template <>
+struct ScalarEnumerationTraits<FormatStyle::AttributeBreakingStyle> {
+  static void enumeration(IO &IO, FormatStyle::AttributeBreakingStyle &Value) {
+    IO.enumCase(Value, "Always", FormatStyle::ABS_Always);
+    IO.enumCase(Value, "Leave", FormatStyle::ABS_Leave);
+    IO.enumCase(Value, "Never", FormatStyle::ABS_Never);
   }
 };
 
@@ -349,6 +359,14 @@ struct ScalarEnumerationTraits<FormatStyle::IndentExternBlockStyle> {
   }
 };
 
+template <> struct MappingTraits<FormatStyle::IntegerLiteralSeparatorStyle> {
+  static void mapping(IO &IO, FormatStyle::IntegerLiteralSeparatorStyle &Base) {
+    IO.mapOptional("Binary", Base.Binary);
+    IO.mapOptional("Decimal", Base.Decimal);
+    IO.mapOptional("Hex", Base.Hex);
+  }
+};
+
 template <> struct ScalarEnumerationTraits<FormatStyle::JavaScriptQuoteStyle> {
   static void enumeration(IO &IO, FormatStyle::JavaScriptQuoteStyle &Value) {
     IO.enumCase(Value, "Leave", FormatStyle::JSQS_Leave);
@@ -396,6 +414,15 @@ struct ScalarEnumerationTraits<FormatStyle::LambdaBodyIndentationKind> {
                           FormatStyle::LambdaBodyIndentationKind &Value) {
     IO.enumCase(Value, "Signature", FormatStyle::LBI_Signature);
     IO.enumCase(Value, "OuterScope", FormatStyle::LBI_OuterScope);
+  }
+};
+
+template <> struct ScalarEnumerationTraits<FormatStyle::LineEndingStyle> {
+  static void enumeration(IO &IO, FormatStyle::LineEndingStyle &Value) {
+    IO.enumCase(Value, "LF", FormatStyle::LE_LF);
+    IO.enumCase(Value, "CRLF", FormatStyle::LE_CRLF);
+    IO.enumCase(Value, "DeriveLF", FormatStyle::LE_DeriveLF);
+    IO.enumCase(Value, "DeriveCRLF", FormatStyle::LE_DeriveCRLF);
   }
 };
 
@@ -780,6 +807,9 @@ template <> struct MappingTraits<FormatStyle> {
     bool BreakBeforeInheritanceComma = false;
     bool BreakConstructorInitializersBeforeComma = false;
 
+    bool DeriveLineEnding = true;
+    bool UseCRLF = false;
+
     // For backward compatibility.
     if (!IO.outputting()) {
       IO.mapOptional("AlignEscapedNewlinesLeft", Style.AlignEscapedNewlines);
@@ -790,6 +820,7 @@ template <> struct MappingTraits<FormatStyle> {
                      BreakConstructorInitializersBeforeComma);
       IO.mapOptional("ConstructorInitializerAllOnOneLineOrOnePerLine",
                      OnCurrentLine);
+      IO.mapOptional("DeriveLineEnding", DeriveLineEnding);
       IO.mapOptional("DerivePointerBinding", Style.DerivePointerAlignment);
       IO.mapOptional("IndentFunctionDeclarationAfterType",
                      Style.IndentWrappedFunctionNames);
@@ -797,6 +828,7 @@ template <> struct MappingTraits<FormatStyle> {
       IO.mapOptional("PointerBindsToType", Style.PointerAlignment);
       IO.mapOptional("SpaceAfterControlStatementKeyword",
                      Style.SpaceBeforeParens);
+      IO.mapOptional("UseCRLF", UseCRLF);
     }
 
     IO.mapOptional("AccessModifierOffset", Style.AccessModifierOffset);
@@ -843,6 +875,7 @@ template <> struct MappingTraits<FormatStyle> {
     IO.mapOptional("BinPackParameters", Style.BinPackParameters);
     IO.mapOptional("BitFieldColonSpacing", Style.BitFieldColonSpacing);
     IO.mapOptional("BraceWrapping", Style.BraceWrapping);
+    IO.mapOptional("BreakAfterAttributes", Style.BreakAfterAttributes);
     IO.mapOptional("BreakAfterJavaFieldAnnotations",
                    Style.BreakAfterJavaFieldAnnotations);
     IO.mapOptional("BreakArrays", Style.BreakArrays);
@@ -866,7 +899,6 @@ template <> struct MappingTraits<FormatStyle> {
                    Style.ConstructorInitializerIndentWidth);
     IO.mapOptional("ContinuationIndentWidth", Style.ContinuationIndentWidth);
     IO.mapOptional("Cpp11BracedListStyle", Style.Cpp11BracedListStyle);
-    IO.mapOptional("DeriveLineEnding", Style.DeriveLineEnding);
     IO.mapOptional("DerivePointerAlignment", Style.DerivePointerAlignment);
     IO.mapOptional("DisableFormat", Style.DisableFormat);
     IO.mapOptional("EmptyLineAfterAccessModifier",
@@ -894,13 +926,16 @@ template <> struct MappingTraits<FormatStyle> {
     IO.mapOptional("IndentWrappedFunctionNames",
                    Style.IndentWrappedFunctionNames);
     IO.mapOptional("InsertBraces", Style.InsertBraces);
+    IO.mapOptional("InsertNewlineAtEOF", Style.InsertNewlineAtEOF);
     IO.mapOptional("InsertTrailingCommas", Style.InsertTrailingCommas);
+    IO.mapOptional("IntegerLiteralSeparator", Style.IntegerLiteralSeparator);
     IO.mapOptional("JavaImportGroups", Style.JavaImportGroups);
     IO.mapOptional("JavaScriptQuotes", Style.JavaScriptQuotes);
     IO.mapOptional("JavaScriptWrapImports", Style.JavaScriptWrapImports);
     IO.mapOptional("KeepEmptyLinesAtTheStartOfBlocks",
                    Style.KeepEmptyLinesAtTheStartOfBlocks);
     IO.mapOptional("LambdaBodyIndentation", Style.LambdaBodyIndentation);
+    IO.mapOptional("LineEnding", Style.LineEnding);
     IO.mapOptional("MacroBlockBegin", Style.MacroBlockBegin);
     IO.mapOptional("MacroBlockEnd", Style.MacroBlockEnd);
     IO.mapOptional("MaxEmptyLinesToKeep", Style.MaxEmptyLinesToKeep);
@@ -996,7 +1031,6 @@ template <> struct MappingTraits<FormatStyle> {
     IO.mapOptional("StatementMacros", Style.StatementMacros);
     IO.mapOptional("TabWidth", Style.TabWidth);
     IO.mapOptional("TypenameMacros", Style.TypenameMacros);
-    IO.mapOptional("UseCRLF", Style.UseCRLF);
     IO.mapOptional("UseTab", Style.UseTab);
     IO.mapOptional("WhitespaceSensitiveMacros",
                    Style.WhitespaceSensitiveMacros);
@@ -1044,6 +1078,13 @@ template <> struct MappingTraits<FormatStyle> {
         Style.PackConstructorInitializers = FormatStyle::PCIS_BinPack;
       else if (!OnNextLine)
         Style.PackConstructorInitializers = FormatStyle::PCIS_CurrentLine;
+    }
+
+    if (Style.LineEnding == FormatStyle::LE_DeriveLF) {
+      if (!DeriveLineEnding)
+        Style.LineEnding = UseCRLF ? FormatStyle::LE_CRLF : FormatStyle::LE_LF;
+      else if (UseCRLF)
+        Style.LineEnding = FormatStyle::LE_DeriveCRLF;
     }
   }
 };
@@ -1305,6 +1346,7 @@ FormatStyle getLLVMStyle(FormatStyle::LanguageKind Language) {
                              /*SplitEmptyFunction=*/true,
                              /*SplitEmptyRecord=*/true,
                              /*SplitEmptyNamespace=*/true};
+  LLVMStyle.BreakAfterAttributes = FormatStyle::ABS_Never;
   LLVMStyle.BreakAfterJavaFieldAnnotations = false;
   LLVMStyle.BreakArrays = true;
   LLVMStyle.BreakBeforeBinaryOperators = FormatStyle::BOS_None;
@@ -1321,7 +1363,6 @@ FormatStyle getLLVMStyle(FormatStyle::LanguageKind Language) {
   LLVMStyle.ConstructorInitializerIndentWidth = 4;
   LLVMStyle.ContinuationIndentWidth = 4;
   LLVMStyle.Cpp11BracedListStyle = true;
-  LLVMStyle.DeriveLineEnding = true;
   LLVMStyle.DerivePointerAlignment = false;
   LLVMStyle.DisableFormat = false;
   LLVMStyle.EmptyLineAfterAccessModifier = FormatStyle::ELAAMS_Never;
@@ -1348,11 +1389,14 @@ FormatStyle getLLVMStyle(FormatStyle::LanguageKind Language) {
   LLVMStyle.IndentWidth = 2;
   LLVMStyle.IndentWrappedFunctionNames = false;
   LLVMStyle.InsertBraces = false;
+  LLVMStyle.InsertNewlineAtEOF = false;
   LLVMStyle.InsertTrailingCommas = FormatStyle::TCS_None;
+  LLVMStyle.IntegerLiteralSeparator = {/*Binary=*/0, /*Decimal=*/0, /*Hex=*/0};
   LLVMStyle.JavaScriptQuotes = FormatStyle::JSQS_Leave;
   LLVMStyle.JavaScriptWrapImports = true;
   LLVMStyle.KeepEmptyLinesAtTheStartOfBlocks = true;
   LLVMStyle.LambdaBodyIndentation = FormatStyle::LBI_Signature;
+  LLVMStyle.LineEnding = FormatStyle::LE_DeriveLF;
   LLVMStyle.MaxEmptyLinesToKeep = 1;
   LLVMStyle.NamespaceIndentation = FormatStyle::NI_None;
   LLVMStyle.ObjCBinPackProtocolList = FormatStyle::BPS_Auto;
@@ -1406,7 +1450,6 @@ FormatStyle getLLVMStyle(FormatStyle::LanguageKind Language) {
   LLVMStyle.StatementMacros.push_back("Q_UNUSED");
   LLVMStyle.StatementMacros.push_back("QT_REQUIRE_VERSION");
   LLVMStyle.TabWidth = 8;
-  LLVMStyle.UseCRLF = false;
   LLVMStyle.UseTab = FormatStyle::UT_Never;
   LLVMStyle.WhitespaceSensitiveMacros.push_back("BOOST_PP_STRINGIZE");
   LLVMStyle.WhitespaceSensitiveMacros.push_back("CF_SWIFT_NAME");
@@ -1886,7 +1929,7 @@ std::string configurationAsText(const FormatStyle &Style) {
   return Stream.str();
 }
 
-llvm::Optional<FormatStyle>
+std::optional<FormatStyle>
 FormatStyle::FormatStyleSet::Get(FormatStyle::LanguageKind Language) const {
   if (!Styles)
     return std::nullopt;
@@ -1911,7 +1954,7 @@ void FormatStyle::FormatStyleSet::Add(FormatStyle Style) {
 
 void FormatStyle::FormatStyleSet::Clear() { Styles.reset(); }
 
-llvm::Optional<FormatStyle>
+std::optional<FormatStyle>
 FormatStyle::GetLanguageStyle(FormatStyle::LanguageKind Language) const {
   return StyleSet.Get(Language);
 }
@@ -2180,11 +2223,11 @@ public:
 
     WhitespaceManager Whitespaces(
         Env.getSourceManager(), Style,
-        Style.DeriveLineEnding
+        Style.LineEnding > FormatStyle::LE_CRLF
             ? WhitespaceManager::inputUsesCRLF(
                   Env.getSourceManager().getBufferData(Env.getFileID()),
-                  Style.UseCRLF)
-            : Style.UseCRLF);
+                  Style.LineEnding == FormatStyle::LE_DeriveCRLF)
+            : Style.LineEnding == FormatStyle::LE_CRLF);
     ContinuationIndenter Indenter(Style, Tokens.getKeywords(),
                                   Env.getSourceManager(), Whitespaces, Encoding,
                                   BinPackInconclusiveFunctions);
@@ -2272,9 +2315,11 @@ private:
       }
     }
     if (Style.DerivePointerAlignment) {
-      Style.PointerAlignment = countVariableAlignments(AnnotatedLines) <= 0
-                                   ? FormatStyle::PAS_Left
-                                   : FormatStyle::PAS_Right;
+      const auto NetRightCount = countVariableAlignments(AnnotatedLines);
+      if (NetRightCount > 0)
+        Style.PointerAlignment = FormatStyle::PAS_Right;
+      else if (NetRightCount < 0)
+        Style.PointerAlignment = FormatStyle::PAS_Left;
       Style.ReferenceAlignment = FormatStyle::RAS_Pointer;
     }
     if (Style.Standard == FormatStyle::LS_Auto) {
@@ -3408,6 +3453,11 @@ reformat(const FormatStyle &Style, StringRef Code,
 #ifdef SYCLomatic_CUSTOMIZATION
   if (formatRangeGetter() == FormatRange::all) {
 #endif // SYCLomatic_CUSTOMIZATION
+
+    Passes.emplace_back([&](const Environment &Env) {
+    return IntegerLiteralSeparatorFixer().process(Env, Expanded);
+  });
+
   if (Style.isCpp()) {
     if (Style.QualifierAlignment != FormatStyle::QAS_Leave) {
       Passes.emplace_back([&](const Environment &Env) {
