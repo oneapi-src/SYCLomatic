@@ -51,8 +51,8 @@ auto isDeviceFuncCallExpr = []() {
         "Sum", "Min", "Max", "Reduce", "ReduceByKey", "ExclusiveSum",
         "InclusiveSum", "InclusiveScan", "ExclusiveScan", "InclusiveScanByKey",
         "InclusiveSumByKey", "ExclusiveScanByKey", "ExclusiveSumByKey",
-        "Flagged", "Unique", "Encode", "SortKeys", "SortKeysDescending",
-        "SortPairs", "SortPairsDescending");
+        "Flagged", "Unique", "UniqueByKey", "Encode", "SortKeys",
+        "SortKeysDescending", "SortPairs", "SortPairsDescending");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
