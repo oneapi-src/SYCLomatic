@@ -356,12 +356,32 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 }
 
 namespace detail {
-template <bool free_ws_in_catch, typename func_t, typename... args_t>
-inline int handle_sync_exception(sycl::queue &q, void *const &device_ws,
-                                 int *info, std::string lapack_api_name,
-                                 func_t func, args_t... args) {
+template <typename functor_t, typename... args_t>
+inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
+                       const std::string &lapack_api_name, functor_t functor,
+                       args_t... args) {
   try {
-    func(args...);
+    switch (a_type) {
+    case library_data_t::real_float: {
+      functor.template operator()<float>(args...);
+      break;
+    }
+    case library_data_t::real_double: {
+      functor.template operator()<double>(args...);
+      break;
+    }
+    case library_data_t::complex_float: {
+      functor.template operator()<std::complex<float>>(args...);
+      break;
+    }
+    case library_data_t::complex_double: {
+      functor.template operator()<std::complex<double>>(args...);
+      break;
+    }
+    default:
+      throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                            "the data type is unsupported");
+    }
   } catch (oneapi::mkl::lapack::exception const &e) {
     std::cerr << "Unexpected exception caught during call to LAPACK API: "
               << lapack_api_name << std::endl
@@ -373,170 +393,112 @@ inline int handle_sync_exception(sycl::queue &q, void *const &device_ws,
       dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
                                 memcpy_direction::host_to_device)
           .wait();
-    if constexpr (free_ws_in_catch) {
-      if (device_ws)
-        dpct::dpct_free(device_ws, q);
-    }
     return 1;
   } catch (sycl::exception const &e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
     if (info)
       dpct::detail::dpct_memset(q, info, 0, sizeof(int)).wait();
-    if constexpr (free_ws_in_catch) {
-      if (device_ws)
-        dpct::dpct_free(device_ws, q);
-    }
     return 1;
   }
   return 0;
 }
 
-inline void getrf_scratchpad_size_impl(sycl::queue &q, std::int64_t m,
-                                       std::int64_t n, library_data_t a_type,
-                                       std::int64_t lda,
-                                       size_t *device_ws_size) {
-#define CASE(TYPE_NAME, TYPE)                                                  \
-  case TYPE_NAME: {                                                            \
-    *device_ws_size =                                                          \
-        oneapi::mkl::lapack::getrf_scratchpad_size<TYPE>(q, m, n, lda) *       \
-        sizeof(TYPE);                                                          \
-    break;                                                                     \
+struct getrf_scratchpad_size_impl {
+  template <typename T> 
+  void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, std::int64_t lda,
+                  size_t *device_ws_size) {
+    *device_ws_size =
+        oneapi::mkl::lapack::getrf_scratchpad_size<T>(q, m, n, lda) * sizeof(T);
   }
-  switch (a_type) {
-    CASE(library_data_t::real_float, float)
-    CASE(library_data_t::real_double, double)
-    CASE(library_data_t::complex_float, std::complex<float>)
-    CASE(library_data_t::complex_double, std::complex<double>)
-  default:
-    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                          "the data type is unsupported");
+};
+
+struct getrf_impl {
+  template <typename T> 
+  void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, void *a, std::int64_t lda,
+                  std::int64_t *ipiv, void *device_ws, size_t device_ws_size,
+                  int *info) {
+    auto ipiv_data = dpct::detail::get_memory(ipiv);
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    oneapi::mkl::lapack::getrf(q, m, n, a_data, lda, ipiv_data, device_ws_data,
+                               device_ws_size / sizeof(T));
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
-#undef CASE
-}
+};
 
-inline void getrf_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
-                       library_data_t a_type, void *a, std::int64_t lda,
-                       std::int64_t *ipiv, void *device_ws,
-                       size_t device_ws_size, int *info) {
-  auto ipiv_data = dpct::detail::get_memory(ipiv);
-
-#define CASE(TYPE_NAME, TYPE)                                                  \
-  case TYPE_NAME: {                                                            \
-    auto a_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(a));       \
-    auto device_ws_data =                                                      \
-        dpct::detail::get_memory(reinterpret_cast<TYPE *>(device_ws));         \
-    oneapi::mkl::lapack::getrf(q, m, n, a_data, lda, ipiv_data,                \
-                               device_ws_data, device_ws_size / sizeof(TYPE)); \
-    break;                                                                     \
-  }
-
-  switch (a_type) {
-    CASE(library_data_t::real_float, float)
-    CASE(library_data_t::real_double, double)
-    CASE(library_data_t::complex_float, std::complex<float>)
-    CASE(library_data_t::complex_double, std::complex<double>)
-  default:
-    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                          "the data type is unsupported");
-  }
-
-#undef CASE
-  dpct::detail::dpct_memset(q, info, 0, sizeof(int));
-}
-
-inline void getrs_impl(sycl::queue &q, oneapi::mkl::transpose trans,
-                       std::int64_t n, std::int64_t nrhs, library_data_t a_type,
-                       void *a, std::int64_t lda, std::int64_t *ipiv,
-                       library_data_t b_type, void *b, std::int64_t ldb,
-                       void *&device_ws, int *info) {
-  auto ipiv_data = dpct::detail::get_memory(ipiv);
-
-#define CASE(TYPE_NAME, TYPE)                                                  \
-  case TYPE_NAME: {                                                            \
-    std::int64_t device_ws_size =                                              \
-        oneapi::mkl::lapack::getrs_scratchpad_size<TYPE>(q, trans, n, nrhs,    \
-                                                         lda, ldb);            \
-    device_ws = dpct::detail::dpct_malloc(device_ws_size * sizeof(TYPE), q);   \
-    auto device_ws_data =                                                      \
-        dpct::detail::get_memory(reinterpret_cast<TYPE *>(device_ws));         \
-    auto a_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(a));       \
-    auto b_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(b));       \
-    oneapi::mkl::lapack::getrs(q, trans, n, nrhs, a_data, lda, ipiv_data,      \
-                               b_data, ldb, device_ws_data, device_ws_size);   \
-    break;                                                                     \
-  }
-
-  switch (a_type) {
-    CASE(library_data_t::real_float, float)
-    CASE(library_data_t::real_double, double)
-    CASE(library_data_t::complex_float, std::complex<float>)
-    CASE(library_data_t::complex_double, std::complex<double>)
-  default:
-    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                          "the data type is unsupported");
-  }
-
-#undef CASE
-  sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));
-  if (device_ws) {
+struct getrs_impl {
+  template <typename T> 
+  void operator()(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
+                  std::int64_t nrhs, library_data_t a_type, void *a,
+                  std::int64_t lda, std::int64_t *ipiv, library_data_t b_type,
+                  void *b, std::int64_t ldb, int *info) {
+    class working_memory {
+    public:
+      working_memory(size_t size, sycl::queue q) : _q(q) {
+        _ptr = dpct::detail::dpct_malloc(size, _q);
+      }
+      void *get_ptr() { return _ptr; }
+      void set_event(sycl::event e) { _e = e; }
+      ~working_memory() {
+        if (_ptr) {
 #ifdef DPCT_USM_LEVEL_NONE
-    dpct::detail::mem_mgr::instance().mem_free(device_ws);
+          dpct::detail::mem_mgr::instance().mem_free(_ptr);
 #else
-    dpct::async_dpct_free({device_ws}, {e}, q);
+          dpct::async_dpct_free({_ptr}, {_e}, _q);
 #endif
-  }
-}
+        }
+      }
 
-inline void geqrf_scratchpad_size_impl(sycl::queue &q, std::int64_t m,
-                                       std::int64_t n, library_data_t a_type,
-                                       std::int64_t lda,
-                                       size_t *device_ws_size) {
-#define CASE(TYPE_NAME, TYPE)                                                  \
-  case TYPE_NAME: {                                                            \
-    *device_ws_size =                                                          \
-        oneapi::mkl::lapack::geqrf_scratchpad_size<TYPE>(q, m, n, lda) *       \
-        sizeof(TYPE);                                                          \
-    break;                                                                     \
-  }
-  switch (a_type) {
-    CASE(library_data_t::real_float, float)
-    CASE(library_data_t::real_double, double)
-    CASE(library_data_t::complex_float, std::complex<float>)
-    CASE(library_data_t::complex_double, std::complex<double>)
-  default:
-    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                          "the data type is unsupported");
-  }
-#undef CASE
-}
+    private:
+      void *_ptr = nullptr;
+      sycl::event _e;
+      sycl::queue _q;
+    };
 
-inline void geqrf_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
-                       library_data_t a_type, void *a, std::int64_t lda,
-                       library_data_t tau_type, void *tau, void *device_ws,
-                       size_t device_ws_size, int *info) {
-#define CASE(TYPE_NAME, TYPE)                                                  \
-  case TYPE_NAME: {                                                            \
-    auto a_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(a));       \
-    auto tau_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(tau));   \
-    auto device_ws_data =                                                      \
-        dpct::detail::get_memory(reinterpret_cast<TYPE *>(device_ws));         \
-    oneapi::mkl::lapack::geqrf(q, m, n, a_data, lda, tau_data, device_ws_data, \
-                               device_ws_size / sizeof(TYPE));                 \
-    break;                                                                     \
+    auto ipiv_data = dpct::detail::get_memory(ipiv);
+    std::int64_t device_ws_size = oneapi::mkl::lapack::getrs_scratchpad_size<T>(
+        q, trans, n, nrhs, lda, ldb);
+    working_memory device_ws(device_ws_size * sizeof(T), q);
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws.get_ptr()));
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
+    oneapi::mkl::lapack::getrs(q, trans, n, nrhs, a_data, lda, ipiv_data,
+                               b_data, ldb, device_ws_data, device_ws_size);
+    sycl::event e = dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+    device_ws.set_event(e);
   }
-  switch (a_type) {
-    CASE(library_data_t::real_float, float)
-    CASE(library_data_t::real_double, double)
-    CASE(library_data_t::complex_float, std::complex<float>)
-    CASE(library_data_t::complex_double, std::complex<double>)
-  default:
-    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                          "the data type is unsupported");
+};
+
+struct geqrf_scratchpad_size_impl {
+  template <typename T> 
+  void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, std::int64_t lda,
+                  size_t *device_ws_size) {
+    *device_ws_size =
+        oneapi::mkl::lapack::geqrf_scratchpad_size<T>(q, m, n, lda) * sizeof(T);
   }
-#undef CASE
-  dpct::detail::dpct_memset(q, info, 0, sizeof(int));
-}
+};
+
+struct geqrf_impl {
+  template <typename T> 
+  void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, void *a, std::int64_t lda,
+                  library_data_t tau_type, void *tau, void *device_ws,
+                  size_t device_ws_size, int *info) {
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto tau_data = dpct::detail::get_memory(reinterpret_cast<T *>(tau));
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    oneapi::mkl::lapack::geqrf(q, m, n, a_data, lda, tau_data, device_ws_data,
+                               device_ws_size / sizeof(T));
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+  }
+};
 
 inline int getrfnp_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
                         library_data_t a_type, void *a, std::int64_t lda,
@@ -764,12 +726,17 @@ inline void potrs_impl(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 /// \param [in] a_type The data type of the matrix A.
 /// \param [in] lda The leading dimension of the matrix A.
 /// \param [out] device_ws_size The workspace size in bytes.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
 inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  library_data_t a_type, std::int64_t lda,
-                                 size_t *device_ws_size) {
-  return detail::handle_sync_exception<false>(
-      q, nullptr, nullptr, "getrf_scratchpad_size",
-      detail::getrf_scratchpad_size_impl, q, m, n, a_type, lda, device_ws_size);
+                                 size_t *device_ws_size,
+                                 size_t *host_ws_size = nullptr) {
+  if (host_ws_size)
+    *host_ws_size = 0;
+  return detail::lapack_shim(q, a_type, nullptr, "getrf_scratchpad_size",
+                             detail::getrf_scratchpad_size_impl(), q, m, n,
+                             a_type, lda, device_ws_size);
 }
 
 /// Computes the LU factorization of a general m-by-n matrix.
@@ -794,9 +761,9 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
     return detail::getrfnp_impl(q, m, n, a_type, a, lda, device_ws,
                                 device_ws_size, info);
   }
-  return detail::handle_sync_exception<false>(
-      q, nullptr, info, "getrf", detail::getrf_impl, q, m, n, a_type, a, lda,
-      ipiv, device_ws, device_ws_size, info);
+  return detail::lapack_shim(q, a_type, info, "getrf", detail::getrf_impl(), q,
+                             m, n, a_type, a, lda, ipiv, device_ws,
+                             device_ws_size, info);
 }
 
 /// Solves a system of linear equations with a LU-factored square coefficient
@@ -819,10 +786,9 @@ inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
                  std::int64_t nrhs, library_data_t a_type, void *a,
                  std::int64_t lda, std::int64_t *ipiv, library_data_t b_type,
                  void *b, std::int64_t ldb, int *info) {
-  void *device_ws = nullptr;
-  return detail::handle_sync_exception<true>(
-      q, device_ws, info, "getrs_scratchpad_size/getrs", detail::getrs_impl, q,
-      trans, n, nrhs, a_type, a, lda, ipiv, b_type, b, ldb, device_ws, info);
+  return detail::lapack_shim(q, a_type, info, "getrs_scratchpad_size/getrs",
+                             detail::getrs_impl(), q, trans, n, nrhs, a_type, a,
+                             lda, ipiv, b_type, b, ldb, info);
 }
 
 /// Computes the size of workspace memory of geqrf function.
@@ -832,13 +798,18 @@ inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
 /// \param [in] n The number of columns in the matrix A.
 /// \param [in] a_type The data type of the matrix A.
 /// \param [in] lda The leading dimension of the matrix A.
-/// \param [out] device_ws_size The workspace size in bytes.
+/// \param [out] device_ws_size The device workspace size in bytes.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
 inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  library_data_t a_type, std::int64_t lda,
-                                 size_t *device_ws_size) {
-  return detail::handle_sync_exception<false>(
-      q, nullptr, nullptr, "geqrf_scratchpad_size",
-      detail::geqrf_scratchpad_size_impl, q, m, n, a_type, lda, device_ws_size);
+                                 size_t *device_ws_size,
+                                 size_t *host_ws_size = nullptr) {
+  if (host_ws_size)
+    *host_ws_size = 0;
+  return detail::lapack_shim(q, a_type, nullptr, "geqrf_scratchpad_size",
+                             detail::geqrf_scratchpad_size_impl(), q, m, n,
+                             a_type, lda, device_ws_size);
 }
 
 /// Computes the QR factorization of a general m-by-n matrix.
@@ -859,9 +830,9 @@ inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  library_data_t tau_type, void *tau, void *device_ws,
                  size_t device_ws_size, int *info) {
-  return detail::handle_sync_exception<false>(
-      q, nullptr, info, "geqrf", detail::geqrf_impl, q, m, n, a_type, a, lda,
-      tau_type, tau, device_ws, device_ws_size, info);
+  return detail::lapack_shim(q, a_type, info, "geqrf", detail::geqrf_impl(), q,
+                             m, n, a_type, a, lda, tau_type, tau, device_ws,
+                             device_ws_size, info);
 }
 
 inline int gesvd_scratchpad_size(sycl::queue &q, signed char jobu,

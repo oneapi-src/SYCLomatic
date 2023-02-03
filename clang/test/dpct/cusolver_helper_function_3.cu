@@ -45,10 +45,10 @@ void foo1() {
   cusolverDnParams_t params;
   status = cusolverDnCreateParams(&params);
 
-  //CHECK:status = (host_ws_size_s = 0, dpct::lapack::geqrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::real_float, 2, &device_ws_size_s));
-  //CHECK-NEXT:status = (host_ws_size_d = 0, dpct::lapack::geqrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::real_double, 2, &device_ws_size_d));
-  //CHECK-NEXT:status = (host_ws_size_c = 0, dpct::lapack::geqrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::complex_float, 2, &device_ws_size_c));
-  //CHECK-NEXT:status = (host_ws_size_z = 0, dpct::lapack::geqrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::complex_double, 2, &device_ws_size_z));
+  //CHECK:status = dpct::lapack::geqrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::real_float, 2, &device_ws_size_s, &host_ws_size_s);
+  //CHECK-NEXT:status = dpct::lapack::geqrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::real_double, 2, &device_ws_size_d, &host_ws_size_d);
+  //CHECK-NEXT:status = dpct::lapack::geqrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::complex_float, 2, &device_ws_size_c, &host_ws_size_c);
+  //CHECK-NEXT:status = dpct::lapack::geqrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::complex_double, 2, &device_ws_size_z, &host_ws_size_z);
   status = cusolverDnXgeqrf_bufferSize(handle, params, 2, 2, CUDA_R_32F, a_s, 2, CUDA_R_32F, tau_s, CUDA_R_32F, &device_ws_size_s, &host_ws_size_s);
   status = cusolverDnXgeqrf_bufferSize(handle, params, 2, 2, CUDA_R_64F, a_d, 2, CUDA_R_64F, tau_d, CUDA_R_64F, &device_ws_size_d, &host_ws_size_d);
   status = cusolverDnXgeqrf_bufferSize(handle, params, 2, 2, CUDA_C_32F, a_c, 2, CUDA_C_32F, tau_c, CUDA_C_32F, &device_ws_size_c, &host_ws_size_c);
@@ -201,10 +201,10 @@ void foo3() {
   cusolverDnParams_t params;
   status = cusolverDnCreateParams(&params);
 
-  //CHECK:status = (host_ws_size_s = 0, dpct::lapack::getrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::real_float, 2, &device_ws_size_s));
-  //CHECK-NEXT:status = (host_ws_size_d = 0, dpct::lapack::getrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::real_double, 2, &device_ws_size_d));
-  //CHECK-NEXT:status = (host_ws_size_c = 0, dpct::lapack::getrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::complex_float, 2, &device_ws_size_c));
-  //CHECK-NEXT:status = (host_ws_size_z = 0, dpct::lapack::getrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::complex_double, 2, &device_ws_size_z));
+  //CHECK:status = dpct::lapack::getrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::real_float, 2, &device_ws_size_s, &host_ws_size_s);
+  //CHECK-NEXT:status = dpct::lapack::getrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::real_double, 2, &device_ws_size_d, &host_ws_size_d);
+  //CHECK-NEXT:status = dpct::lapack::getrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::complex_float, 2, &device_ws_size_c, &host_ws_size_c);
+  //CHECK-NEXT:status = dpct::lapack::getrf_scratchpad_size(*handle, 2, 2, dpct::library_data_t::complex_double, 2, &device_ws_size_z, &host_ws_size_z);
   status = cusolverDnXgetrf_bufferSize(handle, params, 2, 2, CUDA_R_32F, a_s, 2, CUDA_R_32F, &device_ws_size_s, &host_ws_size_s);
   status = cusolverDnXgetrf_bufferSize(handle, params, 2, 2, CUDA_R_64F, a_d, 2, CUDA_R_64F, &device_ws_size_d, &host_ws_size_d);
   status = cusolverDnXgetrf_bufferSize(handle, params, 2, 2, CUDA_C_32F, a_c, 2, CUDA_C_32F, &device_ws_size_c, &host_ws_size_c);
