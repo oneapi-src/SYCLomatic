@@ -547,33 +547,6 @@ void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
   dispatch(CE->getSubExpr());
 }
 
-void ExprAnalysis::analyzeExpr(const IntegerLiteral *IL) {
-  auto DefinitionRange = getDefinitionRange(IL->getBeginLoc(), IL->getEndLoc());
-  auto TokBeginLoc = DefinitionRange.getBegin();
-  auto TokenLength = Lexer::MeasureTokenLength(
-      TokBeginLoc, SM, Context.getLangOpts());
-  std::string TokStr(SM.getCharacterData(TokBeginLoc), TokenLength);
-
-  // TODO: cannot handle case like:
-  // #define CHECK(ARG) ARG
-  // #define MACRO CHECK(cufftExecC2C(plan, idata, odata, CUFFT_FORWARD))
-  // void foo(cufftHandle plan, cufftComplex *idata, cufftComplex *odata) {
-  //   MACRO;
-  // }
-  const Expr *ParentExpr = DpctGlobalInfo::findParent<Expr>(IL);
-  bool IsInCudaPath = DpctGlobalInfo::isInCudaPath(
-      DpctGlobalInfo::getLocInfo(SM.getSpellingLoc(IL->getBeginLoc())).first);
-  if (TokStr == "CUFFT_FORWARD" && ParentExpr && IsInCudaPath) {
-    addReplacement(DefinitionRange, ParentExpr,
-                   MapNames::getDpctNamespace() + "fft::fft_direction::forward");
-    requestFeature(HelperFeatureEnum::FftUtils_fft_direction, TokBeginLoc);
-  } else if ((TokStr == "CUFFT_INVERSE") && ParentExpr && IsInCudaPath) {
-    addReplacement(DefinitionRange, ParentExpr,
-                   MapNames::getDpctNamespace() + "fft::fft_direction::backward");
-    requestFeature(HelperFeatureEnum::FftUtils_fft_direction, TokBeginLoc);
-  }
-}
-
 void ExprAnalysis::analyzeExpr(const InitListExpr *ILE) {
   if (const CXXFunctionalCastExpr *CFCE =
           DpctGlobalInfo::findParent<CXXFunctionalCastExpr>(ILE)) {
