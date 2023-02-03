@@ -200,3 +200,8 @@ int foo3() {
   foo2<<<1,1>>>();
   return 0;
 }
+
+// CHECK:      void foo4(const sycl::group<3> &crtb,
+// CHECK-NEXT:           const sycl::group<3> *cptb);
+__device__ void foo4(const cg::thread_block &crtb,
+                     const cg::thread_block *cptb);
