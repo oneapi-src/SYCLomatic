@@ -1,4 +1,3 @@
-
 # SYCLomatic
 
   - [Introduction](#Introduction)
