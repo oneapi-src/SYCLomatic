@@ -930,10 +930,10 @@ MipsInstrInfo::getSerializableDirectMachineOperandTargetFlags() const {
     {MO_CALL_LO16,    "mips-call-lo16"},
     {MO_JALR,         "mips-jalr"}
   };
-  return makeArrayRef(Flags);
+ return ArrayRef(Flags);
 }
 
-Optional<ParamLoadedValue>
+std::optional<ParamLoadedValue>
 MipsInstrInfo::describeLoadedValue(const MachineInstr &MI, Register Reg) const {
   DIExpression *Expr =
       DIExpression::get(MI.getMF()->getFunction().getContext(), {});
@@ -962,8 +962,8 @@ MipsInstrInfo::describeLoadedValue(const MachineInstr &MI, Register Reg) const {
   return TargetInstrInfo::describeLoadedValue(MI, Reg);
 }
 
-Optional<RegImmPair> MipsInstrInfo::isAddImmediate(const MachineInstr &MI,
-                                                   Register Reg) const {
+std::optional<RegImmPair> MipsInstrInfo::isAddImmediate(const MachineInstr &MI,
+                                                        Register Reg) const {
   // TODO: Handle cases where Reg is a super- or sub-register of the
   // destination register.
   const MachineOperand &Op0 = MI.getOperand(0);

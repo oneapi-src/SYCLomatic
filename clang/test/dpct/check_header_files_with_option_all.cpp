@@ -66,6 +66,11 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files_with_option_all/diff_res.txt
 
 // RUN: echo "begin" > %T/check_header_files_with_option_all/diff_res.txt
+// RUN: diff %S/helper_files_ref/include/sparse_utils.hpp  %T/check_header_files_with_option_all/include/dpct/sparse_utils.hpp >> %T/check_header_files_with_option_all/diff_res.txt
+// RUN: echo "end" >> %T/check_header_files_with_option_all/diff_res.txt
+// RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files_with_option_all/diff_res.txt
+
+// RUN: echo "begin" > %T/check_header_files_with_option_all/diff_res.txt
 // RUN: diff %S/helper_files_ref/include/fft_utils.hpp  %T/check_header_files_with_option_all/include/dpct/fft_utils.hpp >> %T/check_header_files_with_option_all/diff_res.txt
 // RUN: echo "end" >> %T/check_header_files_with_option_all/diff_res.txt
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files_with_option_all/diff_res.txt

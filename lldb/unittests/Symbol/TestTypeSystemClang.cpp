@@ -517,8 +517,8 @@ TEST_F(TestTypeSystemClang, TemplateArguments) {
     EXPECT_EQ(
         m_ast->GetTypeTemplateArgument(t.GetOpaqueQualType(), 0, expand_pack),
         int_type);
-    EXPECT_EQ(llvm::None, m_ast->GetIntegralTemplateArgument(
-                              t.GetOpaqueQualType(), 0, expand_pack));
+    EXPECT_EQ(std::nullopt, m_ast->GetIntegralTemplateArgument(
+                                t.GetOpaqueQualType(), 0, expand_pack));
 
     EXPECT_EQ(
         m_ast->GetTemplateArgumentKind(t.GetOpaqueQualType(), 1, expand_pack),
@@ -528,7 +528,7 @@ TEST_F(TestTypeSystemClang, TemplateArguments) {
         CompilerType());
     auto result = m_ast->GetIntegralTemplateArgument(t.GetOpaqueQualType(), 1,
                                                      expand_pack);
-    ASSERT_NE(llvm::None, result);
+    ASSERT_NE(std::nullopt, result);
     EXPECT_EQ(arg, result->value);
     EXPECT_EQ(int_type, result->type);
   }
@@ -969,13 +969,10 @@ TEST(TestScratchTypeSystemClang, InferSubASTFromLangOpts) {
       ScratchTypeSystemClang::InferIsolatedASTKindFromLangOpts(lang_opts));
 }
 
-TEST_F(TestTypeSystemClang, GetExeModuleWhenMissingSymbolFile) {
-  CompilerType compiler_type = m_ast->GetBasicTypeFromAST(lldb::eBasicTypeInt);
-  lldb_private::Type t(0, nullptr, ConstString("MyType"), llvm::None, nullptr,
-                       0, {}, {}, compiler_type,
-                       lldb_private::Type::ResolveState::Full);
-  // Test that getting the execution module when no type system is present
-  // is handled gracefully.
-  ModuleSP module = t.GetExeModule();
-  EXPECT_EQ(module.get(), nullptr);
+TEST_F(TestTypeSystemClang, GetDeclContextByNameWhenMissingSymbolFile) {
+  // Test that a type system without a symbol file is handled gracefully.
+  std::vector<CompilerDecl> decls =
+      m_ast->DeclContextFindDeclByName(nullptr, ConstString("SomeName"), true);
+
+  EXPECT_TRUE(decls.empty());
 }

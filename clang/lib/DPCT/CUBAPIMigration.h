@@ -109,7 +109,6 @@ private:
   void processCubMemberCall(const CXXMemberCallExpr *MC);
   void processTypeLoc(const TypeLoc *TL);
 
-  void processDeviceLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
   void processThreadLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
   void processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
   void processBlockLevelMemberCall(const CXXMemberCallExpr *MC);
