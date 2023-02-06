@@ -2673,8 +2673,8 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       EndLoc = SM->getExpansionRange(TL->getBeginLoc()).getEnd();
     }
 
-    std::string CanonicalTypeStr =
-        DpctGlobalInfo::getTypeName(TL->getType().getCanonicalType());
+    std::string CanonicalTypeStr = DpctGlobalInfo::getTypeName(
+        TL->getUnqualifiedLoc().getType().getCanonicalType());
     StringRef CanonicalTypeStrRef(CanonicalTypeStr);
     if (CanonicalTypeStrRef.startswith(
             "cooperative_groups::__v1::thread_block_tile<")) {
@@ -2702,8 +2702,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    if (CanonicalTypeStr.find("cooperative_groups::__v1::thread_block")
-        != std::string::npos) {
+    if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
       // Skip migrate the type in function body.
       if (DpctGlobalInfo::findAncestor<clang::CompoundStmt>(TL) &&
           DpctGlobalInfo::findAncestor<clang::FunctionDecl>(TL))
