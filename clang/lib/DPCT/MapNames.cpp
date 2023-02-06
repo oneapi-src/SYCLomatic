@@ -1698,6 +1698,7 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusolverDnPotrf",
                            "cusolverDnXpotrs",
                            "cusolverDnPotrs"};
+
   SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",  "cusparseDestroyMatDescr",
                            "cusparseSetMatType",      "cusparseGetMatType",
                            "cusparseSetMatIndexBase", "cusparseGetMatIndexBase",
