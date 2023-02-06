@@ -1,0 +1,88 @@
+.. _id_DPCT1054:
+
+DPCT1054
+========
+
+Message
+-------
+
+.. _msg-1054-start:
+
+The type of variable *<variable name>* is declared in device function with the
+name *<type>*. Adjust the code to make the *<type>* declaration visible at the
+accessor declaration point.
+
+.. _msg-1054-end:
+
+Detailed Help
+-------------
+
+This warning will be emitted when the type of a ``__shared__`` variable is declared
+in a device function.
+
+In the migrated code:
+
+* in the device function, the tool adds:
+
+  # ``uint8_t*`` input parameter
+  # name to the type, if unnamed, for example ``type_ct1``
+  # a type cast from ``uint8_t*`` to the original type, after the original type declaration.
+* in the call side, when defining local accessor, the first template argument will
+  be set to ``uint8_t[sizeof(<original type, for example "type_ct1">)]``.
+
+For example, this original code:
+
+.. code-block:: cpp
+   :linenos:
+
+    // original code:
+
+    // header file
+    template <typename T> __global__ void k() {
+      __shared__ union {
+        T t;
+        ...
+      } a;
+      ...
+    }
+
+    // source file
+    void foo() { k<int><<<1, 1>>>(); }
+
+results in the following migrated DPC++ code:
+
+.. code-block:: cpp
+   :linenos:
+
+    // migrated DPC++ code:
+
+    // header file
+    template <typename T> void k(uint8_t *a_ct1) {
+      union type_ct1 {
+        T t;
+        ...
+      };
+      type_ct1 *a = (type_ct1 *)a_ct1;
+      ...
+    }
+
+    // source file
+    void foo() {
+      dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+        /*
+        DPCT1053:0: The type of variable a is declared in device function with the
+        name type_ct1. Adjust the code to make the type_ct1 declaration visible at
+        the accessor declaration point.
+        */
+        sycl::accessor<uint8_t[sizeof(type_ct1)], 0, sycl::access::mode::read_write,
+                       sycl::access::target::local> a_ct1_acc_ct1(cgh);
+        ...
+      });
+    }
+
+Suggestions to Fix
+------------------
+
+Move the type declaration so that it will be visible at the accessor declaration
+point or replace the ``sizeof(<original type>`` with size in bytes needed for the
+original type.

@@ -1,0 +1,80 @@
+.. _id_DPCT1088:
+
+DPCT1088
+========
+
+Message
+-------
+
+.. _msg-1088-start:
+
+The macro definition has multiple migration results in the dimension of free
+queries function that could not be unified. You may need to modify the code.
+
+.. _msg-1088-end:
+
+Detailed Help
+-------------
+
+|tool_name| was unable to migrate the code correctly. You need to
+modify the code manually.
+
+For example, this original code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // original code:
+
+   #define TB(x) cg::thread_block x = cg::this_thread_block()
+
+   __global__ void kernel1() {
+     int id = threadIdx.x;
+     TB(a);
+   }
+   __global__ void kernel3() {
+     int id = threadIdx.z;
+     TB(b);
+   }
+
+migrated with options ``--assume-nd-range-dim=1`` and
+``--use-experimental-features=free-function-queries``, results in the following
+migrated DPC++ code:
+
+.. code-block:: cpp
+   :linenos:
+
+   #define TB(x) auto x = sycl::this_group< Placeholder /* Fix the dimension manually */>()
+   // It should be this_group<1>() when used in kernel1 and this_group<3>() when used in kernel3
+
+   void kernel1() {
+     int id = sycl::this_nd_item<1>().get_local_id(0);
+     TB(a);
+   }
+   void kernel3() {
+     int id = sycl::this_nd_item<3>().get_local_id(0);
+     TB(b);
+   }
+
+which is manually adjusted to:
+
+.. code-block:: cpp
+   :linenos:
+
+   // fixed DPC++ code:
+
+   #define TB(x, dimensions) auto x = sycl::this_group< dimensions >()
+
+   void kernel1() {
+     int id = sycl::this_nd_item<1>().get_local_id(0);
+     TB(a, 1);
+   }
+   void kernel3() {
+     int id = sycl::this_nd_item<3>().get_local_id(0);
+     TB(b, 3);
+   }
+
+Suggestions to Fix
+------------------
+
+Rewrite the code manually.

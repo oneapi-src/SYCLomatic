@@ -1,0 +1,80 @@
+.. _id_DPCT1075:
+
+DPCT1075
+========
+
+.. include:: deprecated-msg.txt
+
+Message
+-------
+
+.. _msg-1075-start:
+
+Migration of cuFFT calls may be incorrect and require review.
+
+.. _msg-1075-end:
+
+Detailed Help
+-------------
+
+The warning is generated in the following cases:
+
+#. In the original code one cuFFT handle may be associated with different streams,
+   but |tool_name| could not detect which stream was used by cuFFT
+   calls.
+#. In the migrated code one or more commit calls need to be used, but the
+   |tool_name| could not deduce how to generate the correct set of commit
+   calls.
+
+For example, this original code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // original code:
+
+   cufftPlan1d(plan, ...);
+   cufftExecR2C(plan, ...); // this call is using default stream
+   cufftSetStream(plan, s2);
+   cufftExecR2C(plan, ...); // this call is using s2 stream
+
+results in the following migrated DPC++ code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // migrated DPC++ code:
+
+   /*
+   DPCT1075: Migration of cuFFT calls may be incorrect and requires review.
+   */
+   plan->commit(*s2); // wrong queue is used
+   ...
+   dft::compute_forward (...);
+   ...                                  // missing commit call
+   dft::compute_forward(...);
+
+which is manually adjusted to:
+
+.. code-block:: cpp
+   :linenos:
+
+   // adjusted DPC++ code:
+
+   plan->commit(dpct::get_default_queue()); // using default queue
+   ...
+   dft::compute_forward (...);
+   ...
+   plan->commit(*s2); // added new commit call with *s2 queue
+   dft::compute_forward(...);
+
+
+Suggestions to Fix
+------------------
+
+Check that ``oneapi::mkl::dft::descriptor::commit()`` calls were generated
+correctly and are using the correct queue parameter. Fix the code if needed by
+adding missing commit calls and adjusting queue parameters.
+
+See the
+`descriptor<precision, domain>::commit function <https://software.intel.com/content/www/us/en/develop/documentation/oneapi-mkl-dpcpp-developer-reference/top/fourier-transform-functions/descriptorprecision-domain-commit.html>`_ for more information.

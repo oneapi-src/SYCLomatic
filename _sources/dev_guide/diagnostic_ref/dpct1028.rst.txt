@@ -1,0 +1,25 @@
+.. _id_DPCT1028:
+
+DPCT1028
+========
+
+Message
+-------
+
+.. _msg-1028-start:
+
+The *<API name>* was not migrated because *<reason>*.
+
+.. _msg-1028-end:
+
+Detailed Help
+-------------
+
+|tool_name|  was not able to recognize the parameter value used
+as an engine type.
+
+Suggestions to Fix
+------------------
+
+Rewrite this code manually by using a supported random number generator. See the
+`Random Number Generators <https://software.intel.com/content/www/us/en/develop/documentation/oneapi-mkl-dpcpp-developer-reference/top/random-number-generators/manual-offload-rng-routines/engines-basic-random-number-generators.html>`_ topic for more information.

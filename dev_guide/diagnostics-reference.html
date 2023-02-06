@@ -1,0 +1,1453 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Diagnostics Reference &#8212; SYCLomatic Documentation</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" href="../_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <link rel="shortcut icon" href="../_static/favicons.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="DPCT1000" href="diagnostic_ref/dpct1000.html" />
+    <link rel="prev" title="Command Line Options Reference" href="command-line-options-reference.html" />
+<!-- all your analytics scripts go here -->
+
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../index.html">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="../_static/oneAPI-rgb-rev-100.png" class="logo" alt="logo">
+      
+      
+      <h1 class="site-logo" id="site-title">SYCLomatic Documentation</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Get Started
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../get_started/index.html">
+   Get Started with SYCLomatic
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Developer Guide and Reference
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="index.html">
+   Overview
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="migrate-a-project.html">
+   Migrate a Project
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/before-you-begin.html">
+     Before You Begin
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/migrate-a-project-on-linux.html">
+     Migrate a Project on Linux*
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/migrate-a-project-on-windows.html">
+     Migrate a Project on Windows*
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/incremental-migration.html">
+     Incremental Migration
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/user-defined-migration-rules.html">
+     User-defined Migration Rules
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="dpct-namespace-usage-guide.html">
+   DPCT Namespace Usage Guide
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="command-line-options-reference.html">
+   Command Line Options Reference
+  </a>
+ </li>
+ <li class="toctree-l1 current active has-children">
+  <a class="current reference internal" href="#">
+   Diagnostics Reference
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+  <label for="toctree-checkbox-2">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1000.html">
+     DPCT1000
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1001.html">
+     DPCT1001
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1002.html">
+     DPCT1002
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1003.html">
+     DPCT1003
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1004.html">
+     DPCT1004
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1005.html">
+     DPCT1005
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1006.html">
+     DPCT1006
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1007.html">
+     DPCT1007
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1008.html">
+     DPCT1008
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1009.html">
+     DPCT1009
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1010.html">
+     DPCT1010
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1011.html">
+     DPCT1011
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1012.html">
+     DPCT1012
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1013.html">
+     DPCT1013
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1014.html">
+     DPCT1014
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1015.html">
+     DPCT1015
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1016.html">
+     DPCT1016
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1017.html">
+     DPCT1017
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1018.html">
+     DPCT1018
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1019.html">
+     DPCT1019
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1020.html">
+     DPCT1020
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1021.html">
+     DPCT1021
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1022.html">
+     DPCT1022
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1023.html">
+     DPCT1023
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1024.html">
+     DPCT1024
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1025.html">
+     DPCT1025
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1026.html">
+     DPCT1026
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1027.html">
+     DPCT1027
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1028.html">
+     DPCT1028
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1029.html">
+     DPCT1029
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1030.html">
+     DPCT1030
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1031.html">
+     DPCT1031
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1032.html">
+     DPCT1032
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1033.html">
+     DPCT1033
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1034.html">
+     DPCT1034
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1035.html">
+     DPCT1035
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1036.html">
+     DPCT1036
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1037.html">
+     DPCT1037
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1038.html">
+     DPCT1038
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1039.html">
+     DPCT1039
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1040.html">
+     DPCT1040
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1041.html">
+     DPCT1041
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1042.html">
+     DPCT1042
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1043.html">
+     DPCT1043
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1044.html">
+     DPCT1044
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1045.html">
+     DPCT1045
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1046.html">
+     DPCT1046
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1047.html">
+     DPCT1047
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1048.html">
+     DPCT1048
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1049.html">
+     DPCT1049
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1050.html">
+     DPCT1050
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1051.html">
+     DPCT1051
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1052.html">
+     DPCT1052
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1053.html">
+     DPCT1053
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1054.html">
+     DPCT1054
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1055.html">
+     DPCT1055
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1056.html">
+     DPCT1056
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1057.html">
+     DPCT1057
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1058.html">
+     DPCT1058
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1059.html">
+     DPCT1059
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1060.html">
+     DPCT1060
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1061.html">
+     DPCT1061
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1062.html">
+     DPCT1062
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1063.html">
+     DPCT1063
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1064.html">
+     DPCT1064
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1065.html">
+     DPCT1065
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1066.html">
+     DPCT1066
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1067.html">
+     DPCT1067
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1068.html">
+     DPCT1068
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1069.html">
+     DPCT1069
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1070.html">
+     DPCT1070
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1071.html">
+     DPCT1071
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1072.html">
+     DPCT1072
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1073.html">
+     DPCT1073
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1074.html">
+     DPCT1074
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1075.html">
+     DPCT1075
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1076.html">
+     DPCT1076
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1077.html">
+     DPCT1077
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1078.html">
+     DPCT1078
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1079.html">
+     DPCT1079
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1080.html">
+     DPCT1080
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1081.html">
+     DPCT1081
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1082.html">
+     DPCT1082
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1083.html">
+     DPCT1083
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1084.html">
+     DPCT1084
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1085.html">
+     DPCT1085
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1086.html">
+     DPCT1086
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1087.html">
+     DPCT1087
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1088.html">
+     DPCT1088
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1089.html">
+     DPCT1089
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1090.html">
+     DPCT1090
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1091.html">
+     DPCT1091
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1092.html">
+     DPCT1092
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1093.html">
+     DPCT1093
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1094.html">
+     DPCT1094
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1095.html">
+     DPCT1095
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1096.html">
+     DPCT1096
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1097.html">
+     DPCT1097
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1098.html">
+     DPCT1098
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1099.html">
+     DPCT1099
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1100.html">
+     DPCT1100
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="frequently-asked-questions-faq.html">
+   Frequently Asked Questions
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Notices and Disclaimers
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../notices-and-disclaimers.html">
+   Notices and Disclaimers
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+<div class="menu-dropdown menu-dropdown-repository-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Source repositories">
+      <i class="fab fa-github"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="https://github.com/oneapi-src/SYCLomatic/issues/new?title=Issue%20on%20page%20%2Fdev_guide/diagnostics-reference.html&body=Your%20issue%20content%20here."
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Open an issue"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="headerbtn__text-container">open issue</span>
+</a>
+
+      </li>
+      
+      <li>
+        <a href="https://github.com/oneapi-src/SYCLomatic/edit/SYCLomatic/docs/dev_guide/diagnostics-reference.rst"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Edit this page"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="headerbtn__text-container">suggest edit</span>
+</a>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="../_sources/dev_guide/diagnostics-reference.rst.txt"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.rst</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Diagnostics Reference</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <div class="section" id="diagnostics-reference">
+<span id="diag-ref"></span><h1>Diagnostics Reference<a class="headerlink" href="#diagnostics-reference" title="Permalink to this headline">#</a></h1>
+<p>This topic gives you all of the diagnostic reference numbers,
+messages, detailed help, and suggestion to fix your errors.</p>
+<div class="toctree-wrapper compound">
+</div>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 85%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>ID</p></th>
+<th class="head"><p>Message</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1000.html#id-dpct1000"><span class="std std-ref">DPCT1000</span></a></p></td>
+<td><p>Error handling <code class="docutils literal notranslate"><span class="pre">if-stmt</span></code> was detected but could not be rewritten.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1001.html#id-dpct1001"><span class="std std-ref">DPCT1001</span></a></p></td>
+<td><p>The statement could not be removed.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1002.html#id-dpct1002"><span class="std std-ref">DPCT1002</span></a></p></td>
+<td><p>Special case error handling <code class="docutils literal notranslate"><span class="pre">if-stmt</span></code> was detected. You may need to rewrite
+this code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1003.html#id-dpct1003"><span class="std std-ref">DPCT1003</span></a></p></td>
+<td><p>Migrated API does not return error code. <code class="docutils literal notranslate"><span class="pre">(*,</span> <span class="pre">0)</span></code> is inserted. You may need to
+rewrite this code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1004.html#id-dpct1004"><span class="std std-ref">DPCT1004</span></a></p></td>
+<td><p>DEPRECATED.</p>
+<p>Compatible SYCL code could not be generated.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1005.html#id-dpct1005"><span class="std std-ref">DPCT1005</span></a></p></td>
+<td><p>The SYCL device version is different from CUDA Compute Compatibility. You may
+need to rewrite this code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1006.html#id-dpct1006"><span class="std std-ref">DPCT1006</span></a></p></td>
+<td><p>SYCL does not provide a standard API to differentiate between integrated and
+discrete GPU devices.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1007.html#id-dpct1007"><span class="std std-ref">DPCT1007</span></a></p></td>
+<td><p>Migration of <em>&lt;API name&gt;</em> is not supported.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1008.html#id-dpct1008"><span class="std std-ref">DPCT1008</span></a></p></td>
+<td><p>The clock function is not defined in SYCL. This is a hardware-specific feature.
+Consult with your hardware vendor to find a replacement.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1009.html#id-dpct1009"><span class="std std-ref">DPCT1009</span></a></p></td>
+<td><p>SYCL uses exceptions to report errors and does not use the error codes. The
+original code was commented out and a warning string was inserted. You need to
+rewrite this code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1010.html#id-dpct1010"><span class="std std-ref">DPCT1010</span></a></p></td>
+<td><p>SYCL uses exceptions to report errors and does not use the error codes. The call
+was replaced with 0. You need to rewrite this code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1011.html#id-dpct1011"><span class="std std-ref">DPCT1011</span></a></p></td>
+<td><p>The tool detected overloaded operators for built-in vector types, which may
+conflict with the SYCL 1.2.1 standard operators (see 4.10.2.1 Vec interface).
+The tool inserted a namespace to avoid the conflict. Use SYCL 1.2.1 standard
+operators instead.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1012.html#id-dpct1012"><span class="std std-ref">DPCT1012</span></a></p></td>
+<td><p>Detected kernel execution time measurement pattern and generated an initial
+code for time measurements in SYCL. You can change the way time is measured
+depending on your goals.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1013.html#id-dpct1013"><span class="std std-ref">DPCT1013</span></a></p></td>
+<td><p>The rounding mode could not be specified and the generated code may have different
+precision than the original code. Verify the correctness. SYCL math built-in
+rounding mode is aligned with OpenCL C 1.2 standard.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1014.html#id-dpct1014"><span class="std std-ref">DPCT1014</span></a></p></td>
+<td><p>The flag and priority options are not supported for SYCL queues. The output
+parameter(s) are set to 0.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1015.html#id-dpct1015"><span class="std std-ref">DPCT1015</span></a></p></td>
+<td><p>Output needs adjustment.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1016.html#id-dpct1016"><span class="std std-ref">DPCT1016</span></a></p></td>
+<td><p>DEPRECATED.</p>
+<p>The <em>&lt;API name&gt;</em> was not migrated, because parameter(s) <em>&lt;parameter name a&gt;</em> and/or
+<em>&lt;parameter name b&gt;</em> could not be evaluated, or because <em>&lt;parameter name a&gt;</em> is not
+equal to <em>&lt;parameter name b&gt;</em>. Rewrite this code manually.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1017.html#id-dpct1017"><span class="std std-ref">DPCT1017</span></a></p></td>
+<td><p>The <em>&lt;SYCL API name&gt;</em> call is used instead of the <em>&lt;CUDA API name&gt;</em> call. These
+two calls do not provide exactly the same functionality. Check the potential
+precision and/or performance issues for the generated code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1018.html#id-dpct1018"><span class="std std-ref">DPCT1018</span></a></p></td>
+<td><p>The <em>&lt;API name&gt;</em> was migrated, but due to <em>&lt;reason&gt;</em>, the generated code
+performance may be sub-optimal.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1019.html#id-dpct1019"><span class="std std-ref">DPCT1019</span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">local_mem_size</span></code> in SYCL is not a complete equivalent of <em>&lt;variable name&gt;</em> in
+CUDA. You may need to adjust the code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1020.html#id-dpct1020"><span class="std std-ref">DPCT1020</span></a></p></td>
+<td><p>Migration of <em>&lt;api name&gt;</em>, if it is called from <code class="docutils literal notranslate"><span class="pre">__global__</span></code> or <code class="docutils literal notranslate"><span class="pre">__device__</span></code>
+function, is not supported. You may need to redesign the code to use the host-side
+<em>&lt;api name&gt;</em> instead, which submits this call to the SYCL queue automatically.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1021.html#id-dpct1021"><span class="std std-ref">DPCT1021</span></a></p></td>
+<td><p>Migration of <code class="docutils literal notranslate"><span class="pre">cublasHandle_t</span></code> in <code class="docutils literal notranslate"><span class="pre">__global__</span></code> or <code class="docutils literal notranslate"><span class="pre">__device__</span></code> function is
+not supported. You may need to redesign the code</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1022.html#id-dpct1022"><span class="std std-ref">DPCT1022</span></a></p></td>
+<td><p>There is no exact match between the <code class="docutils literal notranslate"><span class="pre">maxGridSize</span></code> and the <code class="docutils literal notranslate"><span class="pre">max_nd_range</span></code> size.
+Verify the correctness of the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1023.html#id-dpct1023"><span class="std std-ref">DPCT1023</span></a></p></td>
+<td><p>The SYCL sub-group does not support mask options for <em>&lt;api name&gt;</em>.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1024.html#id-dpct1024"><span class="std std-ref">DPCT1024</span></a></p></td>
+<td><p>The original code returned the error code that was further consumed by the program
+logic. This original code was replaced with 0. You may need to rewrite the program
+logic consuming the error code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1025.html#id-dpct1025"><span class="std std-ref">DPCT1025</span></a></p></td>
+<td><p>The SYCL queue is created ignoring the flag and priority options.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1026.html#id-dpct1026"><span class="std std-ref">DPCT1026</span></a></p></td>
+<td><p>The call to <em>&lt;API name&gt;</em> was removed because <em>&lt;reason&gt;</em>.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1027.html#id-dpct1027"><span class="std std-ref">DPCT1027</span></a></p></td>
+<td><p>The call to <em>&lt;API name&gt;</em> was replaced with 0 because <em>&lt;reason&gt;</em>.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1028.html#id-dpct1028"><span class="std std-ref">DPCT1028</span></a></p></td>
+<td><p>The <em>&lt;API name&gt;</em> was not migrated because <em>&lt;reason&gt;</em>.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1029.html#id-dpct1029"><span class="std std-ref">DPCT1029</span></a></p></td>
+<td><p>SYCL currently does not support getting device resource limits. The output
+parameter(s) are set to 0.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1030.html#id-dpct1030"><span class="std std-ref">DPCT1030</span></a></p></td>
+<td><p>SYCL currently does not support inter-process communication (IPC) operations.
+You may need to rewrite the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1031.html#id-dpct1031"><span class="std std-ref">DPCT1031</span></a></p></td>
+<td><p>SYCL currently does not support memory access across peer devices. The output
+parameter(s) are set to 0.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1032.html#id-dpct1032"><span class="std std-ref">DPCT1032</span></a></p></td>
+<td><p>A different random number generator is used. You may need to adjust the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1033.html#id-dpct1033"><span class="std std-ref">DPCT1033</span></a></p></td>
+<td><p>Migrated code uses a basic Sobol generator. Initialize <code class="docutils literal notranslate"><span class="pre">oneapi:mkl::rng::sobol</span></code>
+generator with user-defined direction numbers to use it as Scrambled Sobol generator.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1034.html#id-dpct1034"><span class="std std-ref">DPCT1034</span></a></p></td>
+<td><p>Migrated API does not return an error code. 0 is returned in the lambda. You
+may need to rewrite this code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1035.html#id-dpct1035"><span class="std std-ref">DPCT1035</span></a></p></td>
+<td><p>All SYCL devices can be used by the host to submit tasks. You may need to
+adjust this code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1036.html#id-dpct1036"><span class="std std-ref">DPCT1036</span></a></p></td>
+<td><p>The type <em>&lt;type name&gt;</em> was not migrated because <em>&lt;reason&gt;</em>.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1037.html#id-dpct1037"><span class="std std-ref">DPCT1037</span></a></p></td>
+<td><p>Rewrite this code using <em>&lt;library name&gt;</em> with SYCL.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1038.html#id-dpct1038"><span class="std std-ref">DPCT1038</span></a></p></td>
+<td><p>When the kernel function name is used as a macro argument, the migration result
+may be incorrect. You need to verify the definition of the macro.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1039.html#id-dpct1039"><span class="std std-ref">DPCT1039</span></a></p></td>
+<td><p>The generated code assumes that <em>&lt;parameter name&gt;</em> points to the global memory
+address space. If it points to a local memory address space, replace
+<em>&lt;function name&gt;</em> with <em>&lt;function name&gt;</em>.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1040.html#id-dpct1040"><span class="std std-ref">DPCT1040</span></a></p></td>
+<td><p>Use <code class="docutils literal notranslate"><span class="pre">sycl::stream</span></code> instead of <code class="docutils literal notranslate"><span class="pre">printf</span></code> if your code is used on the device.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1041.html#id-dpct1041"><span class="std std-ref">DPCT1041</span></a></p></td>
+<td><dl class="simple">
+<dt>SYCL uses exceptions to report errors, it does not use error codes. 0 is used</dt><dd><p>instead of an error code in <em>&lt;statement&gt;</em>. You may need to rewrite this code.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1042.html#id-dpct1042"><span class="std std-ref">DPCT1042</span></a></p></td>
+<td><p>The size of the arguments passed to the SYCL kernel exceeds the minimum size
+limit (1024) for a non-custom SYCL device. You can get the hardware argument size
+limit by querying <code class="docutils literal notranslate"><span class="pre">info::device::max_parameter_size</span></code>. You may need to rewrite
+this code if the size of the arguments exceeds the hardware limit.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1043.html#id-dpct1043"><span class="std std-ref">DPCT1043</span></a></p></td>
+<td><p>The version-related API is different in SYCL. An initial code was generated, but
+you need to adjust it.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1044.html#id-dpct1044"><span class="std std-ref">DPCT1044</span></a></p></td>
+<td><p><em>&lt;BaseClass1&gt;</em> was removed because <em>&lt;BaseClass2&gt;</em> has been deprecated in
+C++11. You may need to remove references to typedefs from <em>&lt;BaseClass1&gt;</em> in the
+class definition.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1045.html#id-dpct1045"><span class="std std-ref">DPCT1045</span></a></p></td>
+<td><p>Migration is only supported for this API for the general sparse matrix type. You
+may need to adjust the code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1046.html#id-dpct1046"><span class="std std-ref">DPCT1046</span></a></p></td>
+<td><p>The <em>&lt;original API name&gt;</em> was not migrated because <em>&lt;reason&gt;</em>. You need to
+adjust the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1047.html#id-dpct1047"><span class="std std-ref">DPCT1047</span></a></p></td>
+<td><p>The meaning of <em>&lt;parameter name&gt;</em> in the <em>&lt;API name&gt;</em> is different from the
+<em>&lt;API name&gt;</em>. You may need to check the migrated code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1048.html#id-dpct1048"><span class="std std-ref">DPCT1048</span></a></p></td>
+<td><p>The original value <em>&lt;macro name&gt;</em> is not meaningful in the migrated code and
+was removed or replaced with 0. You may need to check the migrated code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1049.html#id-dpct1049"><span class="std std-ref">DPCT1049</span></a></p></td>
+<td><p>The work-group size passed to the SYCL kernel may exceed the limit. To get the
+device limit, query <code class="docutils literal notranslate"><span class="pre">info::device::max_work_group_size</span></code>. Adjust the work-group
+size if needed.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1050.html#id-dpct1050"><span class="std std-ref">DPCT1050</span></a></p></td>
+<td><p>The template argument of the <em>&lt;type&gt;</em> could not be deduced. You need to update
+this code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1051.html#id-dpct1051"><span class="std std-ref">DPCT1051</span></a></p></td>
+<td><p>SYCL does not support the device property that would be functionally compatible
+with <em>&lt;property name&gt;</em>. It was migrated to <em>&lt;migrated token&gt;</em>. You may need
+to rewrite the code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1052.html#id-dpct1052"><span class="std std-ref">DPCT1052</span></a></p></td>
+<td><p>SYCL does not support the member access for a volatile qualified vector type.
+The volatile qualifier was removed. You may need to rewrite the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1053.html#id-dpct1053"><span class="std std-ref">DPCT1053</span></a></p></td>
+<td><p>Migration of device assembly code is not supported.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1054.html#id-dpct1054"><span class="std std-ref">DPCT1054</span></a></p></td>
+<td><p>The type of variable <em>&lt;variable name&gt;</em> is declared in device function with the
+name <em>&lt;type&gt;</em>. Adjust the code to make the <em>&lt;type&gt;</em> declaration visible at the
+accessor declaration point.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1055.html#id-dpct1055"><span class="std std-ref">DPCT1055</span></a></p></td>
+<td><p>Vector types with size 1 are migrated to the corresponding fundamental types,
+which cannot be inherited. You need to rewrite the code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1056.html#id-dpct1056"><span class="std std-ref">DPCT1056</span></a></p></td>
+<td><p>The use of <em>&lt;variable name&gt;</em> in device code was not detected. If this variable
+is also used in device code, you need to rewrite the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1057.html#id-dpct1057"><span class="std std-ref">DPCT1057</span></a></p></td>
+<td><p>Variable <em>&lt;variable name&gt;</em> was used in host code and device code.
+<em>&lt;variable name&gt;</em> type was updated to be used in SYCL device code and new
+<em>&lt;host variable name&gt;</em> was generated to be used in host code. You need to update
+the host code manually to use the new <em>&lt;host variable name&gt;</em>.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1058.html#id-dpct1058"><span class="std std-ref">DPCT1058</span></a></p></td>
+<td><p><em>&lt;API Name&gt;</em> is not migrated because it is not called in the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1059.html#id-dpct1059"><span class="std std-ref">DPCT1059</span></a></p></td>
+<td><p>SYCL only supports 4-channel image format. Adjust the code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1060.html#id-dpct1060"><span class="std std-ref">DPCT1060</span></a></p></td>
+<td><p>SYCL range can only be a 1D, 2D, or 3D vector. Adjust the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1061.html#id-dpct1061"><span class="std std-ref">DPCT1061</span></a></p></td>
+<td><p>Call to <em>&lt;macro name&gt;</em> macro was removed because it only contains code, which
+is unnecessary in SYCL.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1062.html#id-dpct1062"><span class="std std-ref">DPCT1062</span></a></p></td>
+<td><p>SYCL Image doesn’t support normalized read mode.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1063.html#id-dpct1063"><span class="std std-ref">DPCT1063</span></a></p></td>
+<td><p>Advice parameter is device-defined. You may need to adjust it.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1064.html#id-dpct1064"><span class="std std-ref">DPCT1064</span></a></p></td>
+<td><p>Migrated <em>&lt;function name&gt;</em> call is used in a macro definition and is not valid
+for all macro uses. Adjust the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1065.html#id-dpct1065"><span class="std std-ref">DPCT1065</span></a></p></td>
+<td><dl class="simple">
+<dt>Consider replacing <code class="docutils literal notranslate"><span class="pre">sycl::&lt;...&gt;::barrier()</span></code> with <code class="docutils literal notranslate"><span class="pre">sycl::&lt;...&gt;::barrier(sycl::access::fence_space::local_space)</span></code> for better performance if there is no</dt><dd><p>access to global memory.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1066.html#id-dpct1066"><span class="std std-ref">DPCT1066</span></a></p></td>
+<td><p>Input/Output distance are migrated to FWD/BWD_DISTANCE. You may need to update
+the code manually.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1067.html#id-dpct1067"><span class="std std-ref">DPCT1067</span></a></p></td>
+<td><p>The <em>&lt;parameter name&gt;</em> parameter could not be migrated. You may need to update
+the code manually.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1068.html#id-dpct1068"><span class="std std-ref">DPCT1068</span></a></p></td>
+<td><p>The value of <em>&lt;argument type&gt;</em> could not be deduced. You need to update
+<em>&lt;placeholder&gt;</em> manually.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1069.html#id-dpct1069"><span class="std std-ref">DPCT1069</span></a></p></td>
+<td><p>The argument <em>&lt;argument name&gt;</em> of the kernel function contains virtual
+pointer(s), which cannot be dereferenced. Try to migrate the code with
+<code class="docutils literal notranslate"><span class="pre">\&quot;usm-level=restricted\&quot;</span></code>.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1070.html#id-dpct1070"><span class="std std-ref">DPCT1070</span></a></p></td>
+<td><p><em>&lt;pointer variable name&gt;</em> is allocated by <code class="docutils literal notranslate"><span class="pre">dpct::dpct_malloc</span></code>. Use
+<code class="docutils literal notranslate"><span class="pre">dpct::get_host_ptr&lt;type&gt;(pointer</span> <span class="pre">variable</span> <span class="pre">name)</span></code> to access the pointer from
+the host code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1071.html#id-dpct1071"><span class="std std-ref">DPCT1071</span></a></p></td>
+<td><p>DEPRECATED.</p>
+<p>The placement of the FFT computational function could not be deduced, so it is
+assumed out-of-place. You may need to adjust the code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1072.html#id-dpct1072"><span class="std std-ref">DPCT1072</span></a></p></td>
+<td><p>SYCL currently does not support getting the available memory on the current
+device. You may need to adjust the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1073.html#id-dpct1073"><span class="std std-ref">DPCT1073</span></a></p></td>
+<td><p>The field values of parameter <code class="docutils literal notranslate"><span class="pre">{0}</span></code> could not be deduced, so the call was not
+migrated. You need to update this code manually.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1074.html#id-dpct1074"><span class="std std-ref">DPCT1074</span></a></p></td>
+<td><p>The SYCL Image class does not support some of the flags used in the original code.
+Unsupported flags were ignored. Data read from SYCL Image could not be normalized
+as specified in the original code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1075.html#id-dpct1075"><span class="std std-ref">DPCT1075</span></a></p></td>
+<td><p>DEPRECATED.</p>
+<p>Migration of cuFFT calls may be incorrect and require review.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1076.html#id-dpct1076"><span class="std std-ref">DPCT1076</span></a></p></td>
+<td><p>The device attribute was not recognized. You may need to adjust the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1077.html#id-dpct1077"><span class="std std-ref">DPCT1077</span></a></p></td>
+<td><p><em>&lt;macro name&gt;</em> redefines a standard SYCL type, which may cause conflicts.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1078.html#id-dpct1078"><span class="std std-ref">DPCT1078</span></a></p></td>
+<td><p>Consider replacing <code class="docutils literal notranslate"><span class="pre">memory_order::acq_rel</span></code> with <code class="docutils literal notranslate"><span class="pre">memory_order::seq_cst</span></code> for
+correctness if strong memory order restrictions are needed.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1079.html#id-dpct1079"><span class="std std-ref">DPCT1079</span></a></p></td>
+<td><p>Replace “dpct_placeholder” with the file path of the dynamic library.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1080.html#id-dpct1080"><span class="std std-ref">DPCT1080</span></a></p></td>
+<td><p>Variadic functions cannot be called in a SYCL kernel or by functions
+called by the kernel. You may need to adjust the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1081.html#id-dpct1081"><span class="std std-ref">DPCT1081</span></a></p></td>
+<td><p>The generated code assumes that <em>&lt;pointer variable&gt;</em> points to the global memory
+address space. If it points to a local or private memory address space, replace
+<code class="docutils literal notranslate"><span class="pre">address_space::global</span></code> with <code class="docutils literal notranslate"><span class="pre">address_space::local</span></code> or
+<code class="docutils literal notranslate"><span class="pre">address_space::private</span></code>.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1082.html#id-dpct1082"><span class="std std-ref">DPCT1082</span></a></p></td>
+<td><p>Migration of <em>&lt;type name&gt;</em> type is not supported.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1083.html#id-dpct1083"><span class="std std-ref">DPCT1083</span></a></p></td>
+<td><p>The size of local memory in the migrated code may be different from the original
+code. Check that the allocated memory size in the migrated code is correct.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1084.html#id-dpct1084"><span class="std std-ref">DPCT1084</span></a></p></td>
+<td><p>The function call has multiple migration results in different template
+instantiations that could not be unified. You may need to adjust the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1085.html#id-dpct1085"><span class="std std-ref">DPCT1085</span></a></p></td>
+<td><p>The function <em>&lt;function name&gt;</em> requires sub-group size to be <em>&lt;size&gt;</em>, while
+other sub-group functions in the same SYCL kernel require a different sub-group
+size. You may need to adjust the code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1086.html#id-dpct1086"><span class="std std-ref">DPCT1086</span></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">__activemask()</span></code> is migrated to <code class="docutils literal notranslate"><span class="pre">0xffffffff</span></code>. You may need to adjust the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1087.html#id-dpct1087"><span class="std std-ref">DPCT1087</span></a></p></td>
+<td><p>SYCL currently does not support cross group synchronization. You can specify
+<code class="docutils literal notranslate"><span class="pre">--use-experimental-features=nd_range_barrier</span></code> to use the dpct helper function
+<code class="docutils literal notranslate"><span class="pre">nd_range_barrier</span></code> to migrate <code class="docutils literal notranslate"><span class="pre">&lt;grid</span> <span class="pre">type</span> <span class="pre">variable</span> <span class="pre">name&gt;.sync()</span></code>.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1088.html#id-dpct1088"><span class="std std-ref">DPCT1088</span></a></p></td>
+<td><p>The macro definition has multiple migration results in the dimension of free
+queries function that could not be unified. You may need to modify the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1089.html#id-dpct1089"><span class="std std-ref">DPCT1089</span></a></p></td>
+<td><p>The value of the sub-group size attribute argument <em>&lt;argument name&gt;</em> cannot beevaluated. Replace &quot;dpct_placeholder&quot; with an integral constant expression.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1090.html#id-dpct1090"><span class="std std-ref">DPCT1090</span></a></p></td>
+<td><p>SYCL does not support the device property that would be functionally compatible with <em>&lt;property name&gt;</em>. It was not migrated. You need to rewrite the code.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1091.html#id-dpct1091"><span class="std std-ref">DPCT1091</span></a></p></td>
+<td><p>The function <code class="docutils literal notranslate"><span class="pre">dpct::segmented_reduce</span></code> only supports DPC++ native binary operation. Replace “dpct_placeholder” with a DPC++ native binary operation.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1092.html#id-dpct1092"><span class="std std-ref">DPCT1092</span></a></p></td>
+<td><p>Consider replacing work-group size 128 with different value for specific hardware
+for better performance.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1093.html#id-dpct1093"><span class="std std-ref">DPCT1093</span></a></p></td>
+<td><p>The <em>&lt;Device ID&gt;</em> device may be not the one intended for use. Adjust the selected
+device if needed.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1094.html#id-dpct1094"><span class="std std-ref">DPCT1094</span></a></p></td>
+<td><p>Content contains misleading bidirectional Unicode characters.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1095.html#id-dpct1095"><span class="std std-ref">DPCT1095</span></a></p></td>
+<td><p>The identifier <em>&lt;Identifier A&gt;</em> is confusable with another identifier
+<em>&lt;Identifier B&gt;</em>.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1096.html#id-dpct1096"><span class="std std-ref">DPCT1096</span></a></p></td>
+<td><p>The right-most dimension of the work-group used in the SYCL kernel that calls
+this function may be less than <em>&lt;value of kernel sub-group size attribute&gt;</em>. The
+function <em>&lt;help function name&gt;</em> may return an unexpected result on the CPU device.
+Modify the size of the work-group to ensure that the value of the right-most
+dimension is a multiple of <em>&lt;value of kernel sub-group size attribute&gt;</em>.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1097.html#id-dpct1097"><span class="std std-ref">DPCT1097</span></a></p></td>
+<td><p>The function <em>&lt;backward function name&gt;</em> may require the workspace used to save intermediate results from function <em>&lt;forward function name&gt;</em>. By default, a workspace from <code class="docutils literal notranslate"><span class="pre">engine_ext</span></code> is selected according to the source data pointer, but this may be incorrect and cause a workspace data race. You may need to
+rewrite this code.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1098.html#id-dpct1098"><span class="std std-ref">DPCT1098</span></a></p></td>
+<td><p>The <em>&lt;expression text&gt;</em> expression is used instead of the <em>&lt;function name&gt;</em> call.
+These two expressions do not provide the exact same functionality. Check the
+generated code for potential precision and/or performance issues.</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="diagnostic_ref/dpct1099.html#id-dpct1099"><span class="std std-ref">DPCT1099</span></a></p></td>
+<td><p>Verify if the default value of the direction and placement used in the function
+<em>&lt;function name&gt;</em> is correct.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="diagnostic_ref/dpct1100.html#id-dpct1100"><span class="std std-ref">DPCT1100</span></a></p></td>
+<td><p>Currently the DFT external workspace feature in the Intel® oneAPI Math Kernel Library (oneMKL) is only
+supported on GPU devices. Use the internal workspace if your code should run on
+non-GPU devices.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="command-line-options-reference.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Command Line Options Reference</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="diagnostic_ref/dpct1000.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">DPCT1000</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Intel<br/>
+  
+      &copy; Copyright Intel Corporation.<br/>
+    <div class="extra_footer">
+      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
+    </div>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>
