@@ -115,6 +115,7 @@ add_clang_library(DPCT
   CallExprRewriterCUBLAS.cpp
   CallExprRewriterCURAND.cpp
   CallExprRewriterCUSOLVER.cpp
+  CallExprRewriterCUSPARSE.cpp
   CallExprRewriterComplex.cpp
   CallExprRewriterDriver.cpp
   CallExprRewriterMemory.cpp
