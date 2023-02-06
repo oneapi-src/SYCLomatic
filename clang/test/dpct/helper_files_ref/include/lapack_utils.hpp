@@ -840,11 +840,14 @@ inline int gesvd_scratchpad_size(sycl::queue &q, signed char jobu,
                                  std::int64_t n, library_data_t a_type,
                                  std::int64_t lda, library_data_t u_type,
                                  std::int64_t ldu, library_data_t vt_type,
-                                 std::int64_t ldvt, size_t *device_ws_size) {
-  return detail::handle_sync_exception<false>(
-      q, nullptr, nullptr, "gesvd_scratchpad_size",
-      detail::gesvd_scratchpad_size_impl, q, jobu, jobvt, m, n, a_type, lda,
-      u_type, ldu, vt_type, ldvt, device_ws_size);
+                                 std::int64_t ldvt, size_t *device_ws_size,
+                                 size_t *host_ws_size = nullptr) {
+  if (host_ws_size)
+    *host_ws_size = 0;
+  return detail::lapack_shim(q, a_type, nullptr, "gesvd_scratchpad_size",
+                             detail::gesvd_scratchpad_size_impl, q, jobu, jobvt,
+                             m, n, a_type, lda, u_type, ldu, vt_type, ldvt,
+                             device_ws_size);
 }
 
 inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
@@ -852,7 +855,10 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                  std::int64_t n, library_data_t a_type,
                                  std::int64_t lda, library_data_t u_type,
                                  std::int64_t ldu, library_data_t vt_type,
-                                 std::int64_t ldvt, int *device_ws_size) {
+                                 std::int64_t ldvt, int *device_ws_size,
+                                 size_t *host_ws_size = nullptr) {
+  if (host_ws_size)
+    *host_ws_size = 0;
   signed char jobu;
   signed char jobvt;
   if (jobz == oneapi::mkl::job::vec) {
@@ -871,10 +877,10 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                           "the job type is unsupported");
   }
   std::size_t device_ws_size_64;
-  int ret = detail::handle_sync_exception<false>(
-      q, nullptr, nullptr, "gesvd_scratchpad_size",
-      detail::gesvd_scratchpad_size_impl, q, jobu, jobvt, m, n, a_type, lda,
-      u_type, ldu, vt_type, ldvt, &device_ws_size_64);
+  int ret = detail::lapack_shim(q, a_type, nullptr, "gesvd_scratchpad_size",
+                                detail::gesvd_scratchpad_size_impl, q, jobu,
+                                jobvt, m, n, a_type, lda, u_type, ldu, vt_type,
+                                ldvt, &device_ws_size_64);
 
 #define CASE(TYPE_NAME, TYPE)                                                  \
   case TYPE_NAME: {                                                            \
@@ -900,10 +906,10 @@ inline int gesvd(sycl::queue &q, signed char jobu, signed char jobvt,
                  library_data_t u_type, void *u, std::int64_t ldu,
                  library_data_t vt_type, void *vt, std::int64_t ldvt,
                  void *device_ws, size_t device_ws_size, int *info) {
-  return detail::handle_sync_exception<false>(
-      q, nullptr, info, "gesvd", detail::gesvd_impl, q, jobu, jobvt, m, n,
-      a_type, a, lda, s_type, s, u_type, u, ldu, vt_type, vt, ldvt, device_ws,
-      device_ws_size, info);
+  return detail::lapack_shim(q, a_type, info, "gesvd", detail::gesvd_impl, q,
+                             jobu, jobvt, m, n, a_type, a, lda, s_type, s,
+                             u_type, u, ldu, vt_type, vt, ldvt, device_ws,
+                             device_ws_size, info);
 }
 
 inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t econ,
@@ -946,8 +952,8 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t econ,
   }
 #undef CASE
 
-  int ret = detail::handle_sync_exception<false>(
-      q, nullptr, info, "gesvd", detail::gesvd_impl, q, jobu, jobvt, m, n,
+  int ret = detail::lapack_shim<false>(
+      q, a_type, info, "gesvd", detail::gesvd_impl, q, jobu, jobvt, m, n,
       a_type, a, lda, s_type, s, u_type, u, ldu, vt_type, vt, ldvt, device_ws,
       device_ws_size, info);
   if (ret)
@@ -976,19 +982,21 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t econ,
 
 inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
                                  std::int64_t n, library_data_t a_type,
-                                 std::int64_t lda, size_t *device_ws_size) {
-  return detail::handle_sync_exception<false>(
-      q, nullptr, nullptr, "potrf_scratchpad_size",
-      detail::potrf_scratchpad_size_impl, q, uplo, n, a_type, lda,
-      device_ws_size);
+                                 std::int64_t lda, size_t *device_ws_size,
+                                 size_t *host_ws_size = nullptr) {
+  if (host_ws_size)
+    *host_ws_size = 0;
+  return detail::lapack_shim(q, a_type, nullptr, "potrf_scratchpad_size",
+                             detail::potrf_scratchpad_size_impl, q, uplo, n,
+                             a_type, lda, device_ws_size);
 }
 
 inline int potrf(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  void *device_ws, size_t device_ws_size, int *info) {
-  return detail::handle_sync_exception<false>(
-      q, nullptr, info, "potrf", detail::potrf_impl, q, uplo, n, a_type, a, lda,
-      device_ws, device_ws_size, info);
+  return detail::lapack_shim(q, a_type, info, "potrf", detail::potrf_impl, q,
+                             uplo, n, a_type, a, lda, device_ws, device_ws_size,
+                             info);
 }
 
 inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
@@ -996,9 +1004,9 @@ inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                  std::int64_t lda, library_data_t b_type, void *b,
                  std::int64_t ldb, int *info) {
   void *device_ws = nullptr;
-  return detail::handle_sync_exception<true>(
-      q, device_ws, info, "potrs_scratchpad_size/potrs", detail::potrs_impl, q,
-      uplo, n, nrhs, a_type, a, lda, b_type, b, ldb, device_ws, info);
+  return detail::lapack_shim(q, a_type, info, "potrs_scratchpad_size/potrs",
+                             detail::potrs_impl, q, uplo, n, nrhs, a_type, a,
+                             lda, b_type, b, ldb, device_ws, info);
 }
 } // namespace lapack
 } // namespace dpct

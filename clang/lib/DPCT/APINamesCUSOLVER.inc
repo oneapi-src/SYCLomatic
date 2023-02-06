@@ -200,15 +200,11 @@ REMOVE_API_FACTORY_ENTRY("cusolverDnDestroyParams")
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size,
-    COMMA_OP_FACTORY_ENTRY(
-        BINARY_OP_FACTORY_ENTRY("cusolverDnXgesvd_bufferSize",
-                                BinaryOperatorKind::BO_Assign, DEREF(19),
-                                ARG("0")),
-        CALL_FACTORY_ENTRY(
-            "cusolverDnXgesvd_bufferSize",
-            CALL(MapNames::getDpctNamespace() + "lapack::gesvd_scratchpad_size",
-                 DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(8),
-                 ARG(11), ARG(13), ARG(14), ARG(16), ARG(18)))))
+    CALL_FACTORY_ENTRY(
+        "cusolverDnXgesvd_bufferSize",
+        CALL(MapNames::getDpctNamespace() + "lapack::gesvd_scratchpad_size",
+             DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(8), ARG(11),
+             ARG(13), ARG(14), ARG(16), ARG(18), ARG(19))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LapackUtils_gesvd,
@@ -238,14 +234,10 @@ FEATURE_REQUEST_FACTORY(
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LapackUtils_potrf_scratchpad_size,
-    COMMA_OP_FACTORY_ENTRY(
-        BINARY_OP_FACTORY_ENTRY("cusolverDnXpotrf_bufferSize",
-                                BinaryOperatorKind::BO_Assign, DEREF(9),
-                                ARG("0")),
-        CALL_FACTORY_ENTRY(
-            "cusolverDnXpotrf_bufferSize",
-            CALL(MapNames::getDpctNamespace() + "lapack::potrf_scratchpad_size",
-                 DEREF(0), ARG(2), ARG(3), ARG(4), ARG(6), ARG(8)))))
+    CALL_FACTORY_ENTRY(
+        "cusolverDnXpotrf_bufferSize",
+        CALL(MapNames::getDpctNamespace() + "lapack::potrf_scratchpad_size",
+             DEREF(0), ARG(2), ARG(3), ARG(4), ARG(6), ARG(8), ARG(9))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LapackUtils_potrf,
