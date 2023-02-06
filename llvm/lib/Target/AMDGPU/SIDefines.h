@@ -130,6 +130,9 @@ enum : uint64_t {
 
   // Is a WMMA instruction.
   IsWMMA = UINT64_C(1) << 59,
+
+  // Whether tied sources will be read.
+  TiedSourceNotRead = UINT64_C(1) << 60,
 };
 
 // v_cmp_class_* etc. use a 10-bit mask for what operation is checked.
@@ -202,6 +205,9 @@ enum OperandType : unsigned {
 
   OPERAND_SRC_FIRST = OPERAND_REG_IMM_INT32,
   OPERAND_SRC_LAST = OPERAND_REG_INLINE_C_LAST,
+
+  OPERAND_KIMM_FIRST = OPERAND_KIMM32,
+  OPERAND_KIMM_LAST = OPERAND_KIMM16,
 
   // Operand for source modifiers for VOP instructions
   OPERAND_INPUT_MODS,
@@ -893,6 +899,10 @@ enum Offset_COV5 : unsigned {
   HOSTCALL_PTR_OFFSET = 80,
   MULTIGRID_SYNC_ARG_OFFSET = 88,
   HEAP_PTR_OFFSET = 96,
+
+  DEFAULT_QUEUE_OFFSET = 104,
+  COMPLETION_ACTION_OFFSET = 112,
+
   PRIVATE_BASE_OFFSET = 192,
   SHARED_BASE_OFFSET = 196,
   QUEUE_PTR_OFFSET = 200,

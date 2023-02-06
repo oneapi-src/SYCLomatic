@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "mlir/IR/PatternMatch.h"
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/IR/IRMapping.h"
 
 using namespace mlir;
 
@@ -317,6 +317,18 @@ void RewriterBase::replaceAllUsesWith(Value from, Value to) {
   }
 }
 
+/// Find uses of `from` and replace them with `to` if the `functor` returns
+/// true. It also marks every modified uses and notifies the rewriter that an
+/// in-place operation modification is about to happen.
+void RewriterBase::replaceUseIf(
+    Value from, Value to,
+    llvm::unique_function<bool(OpOperand &) const> functor) {
+  for (OpOperand &operand : llvm::make_early_inc_range(from.getUses())) {
+    if (functor(operand))
+      updateRootInPlace(operand.getOwner(), [&]() { operand.set(to); });
+  }
+}
+
 // Merge the operations of block 'source' before the operation 'op'. Source
 // block should not have existing predecessors or successors.
 void RewriterBase::mergeBlockBefore(Block *source, Operation *op,
@@ -374,12 +386,12 @@ void RewriterBase::inlineRegionBefore(Region &region, Block *before) {
 /// control to the region and passing it the correct block arguments.
 void RewriterBase::cloneRegionBefore(Region &region, Region &parent,
                                      Region::iterator before,
-                                     BlockAndValueMapping &mapping) {
+                                     IRMapping &mapping) {
   region.cloneInto(&parent, before, mapping);
 }
 void RewriterBase::cloneRegionBefore(Region &region, Region &parent,
                                      Region::iterator before) {
-  BlockAndValueMapping mapping;
+  IRMapping mapping;
   cloneRegionBefore(region, parent, before, mapping);
 }
 void RewriterBase::cloneRegionBefore(Region &region, Block *before) {

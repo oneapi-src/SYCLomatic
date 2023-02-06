@@ -48,6 +48,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -527,7 +528,7 @@ void Preprocessor::HandlePragmaDependency(Token &DependencyTok) {
     return;
 
   // Search include directories for this file.
-  Optional<FileEntryRef> File =
+  OptionalFileEntryRef File =
       LookupFile(FilenameTok.getLocation(), Filename, isAngled, nullptr,
                  nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
   if (!File) {
@@ -1184,7 +1185,7 @@ struct PragmaDebugHandler : public PragmaHandler {
     } else if (II->isStr("sloc_usage")) {
       // An optional integer literal argument specifies the number of files to
       // specifically report information about.
-      Optional<unsigned> MaxNotes;
+      std::optional<unsigned> MaxNotes;
       Token ArgToken;
       PP.Lex(ArgToken);
       uint64_t Value;
@@ -1957,6 +1958,15 @@ struct PragmaRegionHandler : public PragmaHandler {
   }
 };
 
+/// "\#pragma managed"
+/// "\#pragma managed(...)"
+/// "\#pragma unmanaged"
+/// MSVC ignores this pragma when not compiling using /clr, which clang doesn't
+/// support. We parse it and ignore it to avoid -Wunknown-pragma warnings.
+struct PragmaManagedHandler : public EmptyPragmaHandler {
+  PragmaManagedHandler(const char *pragma) : EmptyPragmaHandler(pragma) {}
+};
+
 /// This handles parsing pragmas that take a macro name and optional message
 static IdentifierInfo *HandleMacroAnnotationPragma(Preprocessor &PP, Token &Tok,
                                                    const char *Pragma,
@@ -2129,6 +2139,8 @@ void Preprocessor::RegisterBuiltinPragmas() {
     AddPragmaHandler(new PragmaIncludeAliasHandler());
     AddPragmaHandler(new PragmaHdrstopHandler());
     AddPragmaHandler(new PragmaSystemHeaderHandler());
+    AddPragmaHandler(new PragmaManagedHandler("managed"));
+    AddPragmaHandler(new PragmaManagedHandler("unmanaged"));
   }
 
   // Pragmas added by plugins

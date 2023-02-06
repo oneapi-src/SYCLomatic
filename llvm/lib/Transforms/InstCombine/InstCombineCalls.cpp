@@ -15,8 +15,6 @@
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/APSInt.h"
 #include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/None.h"
-#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLFunctionalExtras.h"
 #include "llvm/ADT/SmallBitVector.h"
 #include "llvm/ADT/SmallVector.h"
@@ -729,7 +727,7 @@ static Value *simplifyNeonTbl1(const IntrinsicInst &II,
 
   auto *V1 = II.getArgOperand(0);
   auto *V2 = Constant::getNullValue(V1->getType());
-  return Builder.CreateShuffleVector(V1, V2, makeArrayRef(Indexes));
+  return Builder.CreateShuffleVector(V1, V2, ArrayRef(Indexes));
 }
 
 // Returns true iff the 2 intrinsics have the same operands, limiting the
@@ -821,9 +819,10 @@ InstCombinerImpl::foldIntrinsicWithOverflowCommon(IntrinsicInst *II) {
   return nullptr;
 }
 
-static Optional<bool> getKnownSign(Value *Op, Instruction *CxtI,
-                                   const DataLayout &DL, AssumptionCache *AC,
-                                   DominatorTree *DT) {
+static std::optional<bool> getKnownSign(Value *Op, Instruction *CxtI,
+                                        const DataLayout &DL,
+                                        AssumptionCache *AC,
+                                        DominatorTree *DT) {
   KnownBits Known = computeKnownBits(Op, DL, 0, AC, CxtI, DT);
   if (Known.isNonNegative())
     return false;
@@ -1275,7 +1274,7 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
     if (match(IIOperand, m_Select(m_Value(), m_Neg(m_Value(X)), m_Deferred(X))))
       return replaceOperand(*II, 0, X);
 
-    if (Optional<bool> Sign = getKnownSign(IIOperand, II, DL, &AC, &DT)) {
+    if (std::optional<bool> Sign = getKnownSign(IIOperand, II, DL, &AC, &DT)) {
       // abs(x) -> x if x >= 0
       if (!*Sign)
         return replaceInstUsesWith(*II, IIOperand);
@@ -1440,6 +1439,18 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
     if (Instruction *NewMinMax = factorizeMinMaxTree(II))
        return NewMinMax;
 
+    break;
+  }
+  case Intrinsic::bitreverse: {
+    // bitrev (zext i1 X to ?) --> X ? SignBitC : 0
+    Value *X;
+    if (match(II->getArgOperand(0), m_ZExt(m_Value(X))) &&
+        X->getType()->isIntOrIntVectorTy(1)) {
+      Type *Ty = II->getType();
+      APInt SignBit = APInt::getSignMask(Ty->getScalarSizeInBits());
+      return SelectInst::Create(X, ConstantInt::get(Ty, SignBit),
+                                ConstantInt::getNullValue(Ty));
+    }
     break;
   }
   case Intrinsic::bswap: {
@@ -2006,6 +2017,16 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
       // fabs (select Cond, TVal, -TVal) --> fabs TVal
       if (match(FVal, m_FNeg(m_Specific(TVal))))
         return replaceOperand(*II, 0, TVal);
+    }
+
+    Value *Magnitude, *Sign;
+    if (match(II->getArgOperand(0),
+              m_CopySign(m_Value(Magnitude), m_Value(Sign)))) {
+      // fabs (copysign x, y) -> (fabs x)
+      CallInst *AbsSign =
+          Builder.CreateCall(II->getCalledFunction(), {Magnitude});
+      AbsSign->copyFastMathFlags(II);
+      return replaceInstUsesWith(*II, AbsSign);
     }
 
     [[fallthrough]];
@@ -2588,11 +2609,9 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
     Value *Vec = II->getArgOperand(0);
     if (match(Vec, m_OneUse(m_BinOp(m_Value(BO0), m_Value(BO1))))) {
       auto *OldBinOp = cast<BinaryOperator>(Vec);
-      if (match(BO0, m_Intrinsic<Intrinsic::experimental_vector_reverse>(
-                         m_Value(X)))) {
+      if (match(BO0, m_VecReverse(m_Value(X)))) {
         // rev(binop rev(X), rev(Y)) --> binop X, Y
-        if (match(BO1, m_Intrinsic<Intrinsic::experimental_vector_reverse>(
-                           m_Value(Y))))
+        if (match(BO1, m_VecReverse(m_Value(Y))))
           return replaceInstUsesWith(CI,
                                      BinaryOperator::CreateWithCopiedFlags(
                                          OldBinOp->getOpcode(), X, Y, OldBinOp,
@@ -2605,17 +2624,13 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
                                          OldBinOp, OldBinOp->getName(), II));
       }
       // rev(binop BO0Splat, rev(Y)) --> binop BO0Splat, Y
-      if (match(BO1, m_Intrinsic<Intrinsic::experimental_vector_reverse>(
-                         m_Value(Y))) &&
-          isSplatValue(BO0))
+      if (match(BO1, m_VecReverse(m_Value(Y))) && isSplatValue(BO0))
         return replaceInstUsesWith(CI, BinaryOperator::CreateWithCopiedFlags(
                                            OldBinOp->getOpcode(), BO0, Y,
                                            OldBinOp, OldBinOp->getName(), II));
     }
     // rev(unop rev(X)) --> unop X
-    if (match(Vec, m_OneUse(m_UnOp(
-                       m_Intrinsic<Intrinsic::experimental_vector_reverse>(
-                           m_Value(X)))))) {
+    if (match(Vec, m_OneUse(m_UnOp(m_VecReverse(m_Value(X)))))) {
       auto *OldUnOp = cast<UnaryOperator>(Vec);
       auto *NewUnOp = UnaryOperator::CreateWithCopiedFlags(
           OldUnOp->getOpcode(), X, OldUnOp, OldUnOp->getName(), II);
@@ -2830,7 +2845,7 @@ Instruction *InstCombinerImpl::visitCallInst(CallInst &CI) {
     // Handle target specific intrinsics
     std::optional<Instruction *> V = targetInstCombineIntrinsic(*II);
     if (V)
-      return V.value();
+      return *V;
     break;
   }
   }
@@ -3036,7 +3051,7 @@ bool InstCombinerImpl::annotateAnyAllocSite(CallBase &Call,
   if (!Call.getType()->isPointerTy())
     return Changed;
 
-  Optional<APInt> Size = getAllocSize(&Call, TLI);
+  std::optional<APInt> Size = getAllocSize(&Call, TLI);
   if (Size && *Size != 0) {
     // TODO: We really should just emit deref_or_null here and then
     // let the generic inference code combine that with nonnull.
@@ -3313,7 +3328,7 @@ Instruction *InstCombinerImpl::visitCallBase(CallBase &Call) {
       LiveGcValues.insert(BasePtr);
       LiveGcValues.insert(DerivedPtr);
     }
-    Optional<OperandBundleUse> Bundle =
+    std::optional<OperandBundleUse> Bundle =
         GCSP.getOperandBundle(LLVMContext::OB_gc_live);
     unsigned NumOfGCLives = LiveGcValues.size();
     if (!Bundle || NumOfGCLives == Bundle->Inputs.size())

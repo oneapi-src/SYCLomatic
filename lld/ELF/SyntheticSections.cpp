@@ -1420,6 +1420,14 @@ DynamicSection<ELFT>::computeContents() {
                   r.sym->stOther & STO_AARCH64_VARIANT_PCS;
           }) != in.relaPlt->relocs.end())
         addInt(DT_AARCH64_VARIANT_PCS, 0);
+      addInSec(DT_PLTGOT, *in.gotPlt);
+      break;
+    case EM_RISCV:
+      if (llvm::any_of(in.relaPlt->relocs, [](const DynamicReloc &r) {
+            return r.type == target->pltRel &&
+                   (r.sym->stOther & STO_RISCV_VARIANT_CC);
+          }))
+        addInt(DT_RISCV_VARIANT_CC, 0);
       [[fallthrough]];
     default:
       addInSec(DT_PLTGOT, *in.gotPlt);
@@ -2802,7 +2810,7 @@ createSymbols(
   });
 
   size_t numSymbols = 0;
-  for (ArrayRef<GdbSymbol> v : makeArrayRef(symbols.get(), numShards))
+  for (ArrayRef<GdbSymbol> v : ArrayRef(symbols.get(), numShards))
     numSymbols += v.size();
 
   // The return type is a flattened vector, so we'll copy each vector
@@ -2810,7 +2818,7 @@ createSymbols(
   SmallVector<GdbSymbol, 0> ret;
   ret.reserve(numSymbols);
   for (SmallVector<GdbSymbol, 0> &vec :
-       makeMutableArrayRef(symbols.get(), numShards))
+       MutableArrayRef(symbols.get(), numShards))
     for (GdbSymbol &sym : vec)
       ret.push_back(std::move(sym));
 
@@ -3690,7 +3698,7 @@ static uint8_t getAbiVersion() {
 
   if (config->emachine == EM_AMDGPU && !ctx.objectFiles.empty()) {
     uint8_t ver = ctx.objectFiles[0]->abiVersion;
-    for (InputFile *file : makeArrayRef(ctx.objectFiles).slice(1))
+    for (InputFile *file : ArrayRef(ctx.objectFiles).slice(1))
       if (file->abiVersion != ver)
         error("incompatible ABI version: " + toString(file));
     return ver;
@@ -3799,6 +3807,7 @@ void PartitionIndexSection::writeTo(uint8_t *buf) {
 
 void InStruct::reset() {
   attributes.reset();
+  riscvAttributes.reset();
   bss.reset();
   bssRelRo.reset();
   got.reset();

@@ -4,7 +4,7 @@
 // RUN: FileCheck --input-file %T/FftUtils/api_test1_out/api_test1.dp.cpp --match-full-lines %s -check-prefix=CODE
 // RUN: rm -rf %T/FftUtils/api_test1_out
 
-// FEATURE_NUMBER: 2
+// FEATURE_NUMBER: 23
 // TEST_FEATURE: FftUtils_fft_direction
 // TEST_FEATURE: FftUtils_non_local_include_dependency
 
@@ -19,6 +19,10 @@
 // BBB
 
 int main() {
-  int a = CUFFT_FORWARD;
+  cufftHandle plan;
+  float2* odata;
+  float2* idata;
+  cufftPlan1d(&plan, 10, CUFFT_C2C, 3);
+  cufftExecC2C(plan, idata, odata, CUFFT_FORWARD);
   return 0;
 }
