@@ -1600,28 +1600,6 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|reduce_arg_impl|dpct::internal
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-template <typename _ExecutionPolicy, typename Iter1, typename Iter2,
-          typename InitT, typename FuncT>
-inline void reduce_arg_impl(_ExecutionPolicy &&policy, Iter1 input,
-                            Iter2 output, ::std::size_t n, InitT init,
-                            FuncT functor) {
-  using Iter1ValueT = typename ::std::iterator_traits<Iter1>::value_type;
-  auto zip_input = oneapi::dpl::make_zip_iterator(
-      oneapi::dpl::counting_iterator(0UL), input);
-  auto init_tup = ::std::make_tuple(1UL, init);
-  auto output_tmp =
-      oneapi::dpl::reduce(::std::forward<_ExecutionPolicy>(policy), zip_input,
-                          zip_input + n, init_tup, functor);
-  dpct::key_value_pair<uint64_t, Iter1ValueT> output_host(
-      ::std::get<0>(output_tmp), ::std::get<1>(output_tmp));
-  ::std::fill(::std::forward<_ExecutionPolicy>(policy), output, output + 1,
-              output_host);
-}
-// DPCT_LABEL_END
-
 } // end namespace internal
 
 // DPCT_LABEL_BEGIN|sort_pairs|dpct
@@ -1798,50 +1776,30 @@ inline void segmented_sort_pairs(
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|reduce_argmax|dpct
-// DPCT_DEPENDENCY_BEGIN 
-// DplExtrasAlgorithm|reduce_arg_impl
-// DPCT_DEPENDENCY_END
+// DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename Iter1, typename Iter2>
 inline void reduce_argmax(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
                           ::std::size_t n) {
-  using Iter1ValueT =
-      typename ::std::iterator_traits<decltype(input)>::value_type;
-  using TupleT = ::std::tuple<uint64_t, Iter1ValueT>;
-  auto maximum_func = [](const TupleT &a, const TupleT &b) {
-    return ((::std::get<1>(a) > ::std::get<1>(b)) ||
-            (::std::get<1>(a) == ::std::get<1>(b) &&
-             ::std::get<0>(a) < ::std::get<0>(b)))
-               ? a
-               : b;
-  };
-  Iter1ValueT init = ::std::numeric_limits<Iter1ValueT>::min();
-  dpct::internal::reduce_arg_impl(::std::forward<_ExecutionPolicy>(policy),
-                                  input, output, n, init, maximum_func);
+  dpct::arg_index_input_iterator<decltype(input)> input_arg_idx(input);
+  *output = *::std::max_element(
+      ::std::forward<_ExecutionPolicy>(policy), input_arg_idx,
+      input_arg_idx + n,
+      [](const auto &a, const auto &b) { return (a.value < b.value); });
 }
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|reduce_argmin|dpct
-// DPCT_DEPENDENCY_BEGIN 
-// DplExtrasAlgorithm|reduce_arg_impl
-// DPCT_DEPENDENCY_END
+// DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename Iter1, typename Iter2>
 inline void reduce_argmin(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
                           ::std::size_t n) {
-  using Iter1ValueT =
-      typename ::std::iterator_traits<decltype(input)>::value_type;
-  using TupleT = ::std::tuple<uint64_t, Iter1ValueT>;
-  Iter1ValueT init = ::std::numeric_limits<Iter1ValueT>::max();
-  auto minimum_func = [](const TupleT &a, const TupleT &b) {
-    return ((::std::get<1>(a) < ::std::get<1>(b)) ||
-            (::std::get<1>(a) == ::std::get<1>(b) &&
-             ::std::get<0>(a) < ::std::get<0>(b)))
-               ? a
-               : b;
-  };
-  dpct::internal::reduce_arg_impl(::std::forward<_ExecutionPolicy>(policy),
-                                  input, output, n, init, minimum_func);
+  dpct::arg_index_input_iterator<decltype(input)> input_arg_idx(input);
+  *output = *::std::min_element(
+      ::std::forward<_ExecutionPolicy>(policy), input_arg_idx,
+      input_arg_idx + n,
+      [](const auto &a, const auto &b) { return (a.value < b.value); });
 }
 // DPCT_LABEL_END
 
