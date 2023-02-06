@@ -16,14 +16,12 @@ std::unordered_map<std::string, std::shared_ptr<ApiMappingEntry>>
 
 void ApiMappingEntry::registerEntry(std::shared_ptr<ApiMappingEntry> Entry) {
   EntryMap[Entry->Source] = Entry;
-  EntryMap[Entry->Dest] = Entry;
+  // TODO: Now the SYCL API and cannot be used to query.
 }
 
 void ApiMappingEntry::initEntryMap() {
-#define REGISTER_ENTRY(SOURCE, DEST, DESC)                                       \
-  registerEntry(std::make_shared<ApiMappingEntry>(SOURCE, DEST, DESC));
-
-#include "ApiMapping/ApiMapping.inc"
+#define REGISTER_ENTRY(SOURCE, DESC)                                           \
+  registerEntry(std::make_shared<ApiMappingEntry>(SOURCE, "", DESC));
 
 #undef REGISTER_ENTRY
 }
