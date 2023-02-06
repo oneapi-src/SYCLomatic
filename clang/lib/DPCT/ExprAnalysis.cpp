@@ -1120,6 +1120,8 @@ void ExprAnalysis::analyzeDecltypeType(DecltypeTypeLoc TL) {
   auto *UE = TL.getUnderlyingExpr();
   if (auto *DRE = dyn_cast<DeclRefExpr>(UE)) {
     auto *Qualifier = DRE->getQualifier();
+    if (!Qualifier)
+      return;
     auto Name = getNestedNameSpecifierString(Qualifier);
     auto Range = getDefinitionRange(SR.getBegin(), SR.getEnd());
     // Types like 'dim3::x' should be migrated to 'size_t'.
