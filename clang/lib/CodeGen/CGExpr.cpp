@@ -43,6 +43,7 @@
 #include "llvm/Support/SaveAndRestore.h"
 #include "llvm/Transforms/Utils/SanitizerStats.h"
 
+#include <optional>
 #include <string>
 
 using namespace clang;
@@ -124,7 +125,7 @@ llvm::AllocaInst *CodeGenFunction::CreateTempAlloca(llvm::Type *Ty,
 Address CodeGenFunction::CreateDefaultAlignTempAlloca(llvm::Type *Ty,
                                                       const Twine &Name) {
   CharUnits Align =
-      CharUnits::fromQuantity(CGM.getDataLayout().getPrefTypeAlignment(Ty));
+      CharUnits::fromQuantity(CGM.getDataLayout().getPrefTypeAlign(Ty));
   return CreateTempAlloca(Ty, Align, Name);
 }
 
@@ -1751,12 +1752,12 @@ llvm::Value *CodeGenFunction::EmitLoadOfScalar(Address Addr, bool Volatile,
   if (EmitScalarRangeCheck(Load, Ty, Loc)) {
     // In order to prevent the optimizer from throwing away the check, don't
     // attach range metadata to the load.
-    // TODO: Enable range metadata for AMDGCN after issue
-    // https://github.com/llvm/llvm-project/issues/58176 is fixed.
-  } else if (CGM.getCodeGenOpts().OptimizationLevel > 0 &&
-             !CGM.getTriple().isAMDGCN())
-    if (llvm::MDNode *RangeInfo = getRangeForLoadFromType(Ty))
+  } else if (CGM.getCodeGenOpts().OptimizationLevel > 0)
+    if (llvm::MDNode *RangeInfo = getRangeForLoadFromType(Ty)) {
       Load->setMetadata(llvm::LLVMContext::MD_range, RangeInfo);
+      Load->setMetadata(llvm::LLVMContext::MD_noundef,
+                        llvm::MDNode::get(getLLVMContext(), std::nullopt));
+    }
 
   return EmitFromMemory(Load, Ty);
 }
@@ -2494,7 +2495,7 @@ static LValue EmitThreadPrivateVarDeclLValue(
 
 static Address emitDeclTargetVarDeclLValue(CodeGenFunction &CGF,
                                            const VarDecl *VD, QualType T) {
-  llvm::Optional<OMPDeclareTargetDeclAttr::MapTypeTy> Res =
+  std::optional<OMPDeclareTargetDeclAttr::MapTypeTy> Res =
       OMPDeclareTargetDeclAttr::isDeclareTargetDeclaration(VD);
   // Return an invalid address if variable is MT_To (or MT_Enter starting with
   // OpenMP 5.2) and unified memory is not enabled. For all other cases: MT_Link
@@ -3101,7 +3102,7 @@ llvm::Value *CodeGenFunction::EmitCheckValue(llvm::Value *V) {
   // Floating-point types which fit into intptr_t are bitcast to integers
   // and then passed directly (after zero-extension, if necessary).
   if (V->getType()->isFloatingPointTy()) {
-    unsigned Bits = V->getType()->getPrimitiveSizeInBits().getFixedSize();
+    unsigned Bits = V->getType()->getPrimitiveSizeInBits().getFixedValue();
     if (Bits <= TargetTy->getIntegerBitWidth())
       V = Builder.CreateBitCast(V, llvm::Type::getIntNTy(getLLVMContext(),
                                                          Bits));
@@ -3224,7 +3225,7 @@ static void emitCheckHandlerCall(CodeGenFunction &CGF,
                                  CheckRecoverableKind RecoverKind, bool IsFatal,
                                  llvm::BasicBlock *ContBB) {
   assert(IsFatal || RecoverKind != CheckRecoverableKind::Unrecoverable);
-  Optional<ApplyDebugLocation> DL;
+  std::optional<ApplyDebugLocation> DL;
   if (!CGF.Builder.getCurrentDebugLocation()) {
     // Ensure that the call has at least an artificial debug location.
     DL.emplace(CGF, SourceLocation());
@@ -4048,14 +4049,15 @@ LValue CodeGenFunction::EmitOMPArraySectionExpr(const OMPArraySectionExpr *E,
     llvm::APSInt ConstLength;
     if (Length) {
       // Idx = LowerBound + Length - 1;
-      if (Optional<llvm::APSInt> CL = Length->getIntegerConstantExpr(C)) {
+      if (std::optional<llvm::APSInt> CL = Length->getIntegerConstantExpr(C)) {
         ConstLength = CL->zextOrTrunc(PointerWidthInBits);
         Length = nullptr;
       }
       auto *LowerBound = E->getLowerBound();
       llvm::APSInt ConstLowerBound(PointerWidthInBits, /*isUnsigned=*/false);
       if (LowerBound) {
-        if (Optional<llvm::APSInt> LB = LowerBound->getIntegerConstantExpr(C)) {
+        if (std::optional<llvm::APSInt> LB =
+                LowerBound->getIntegerConstantExpr(C)) {
           ConstLowerBound = LB->zextOrTrunc(PointerWidthInBits);
           LowerBound = nullptr;
         }
@@ -4095,7 +4097,7 @@ LValue CodeGenFunction::EmitOMPArraySectionExpr(const OMPArraySectionExpr *E,
                              : BaseTy;
       if (auto *VAT = C.getAsVariableArrayType(ArrayTy)) {
         Length = VAT->getSizeExpr();
-        if (Optional<llvm::APSInt> L = Length->getIntegerConstantExpr(C)) {
+        if (std::optional<llvm::APSInt> L = Length->getIntegerConstantExpr(C)) {
           ConstLength = *L;
           Length = nullptr;
         }
@@ -4617,8 +4619,8 @@ LValue CodeGenFunction::EmitInitListLValue(const InitListExpr *E) {
 /// Emit the operand of a glvalue conditional operator. This is either a glvalue
 /// or a (possibly-parenthesized) throw-expression. If this is a throw, no
 /// LValue is returned and the current block has been terminated.
-static Optional<LValue> EmitLValueOrThrowExpression(CodeGenFunction &CGF,
-                                                    const Expr *Operand) {
+static std::optional<LValue> EmitLValueOrThrowExpression(CodeGenFunction &CGF,
+                                                         const Expr *Operand) {
   if (auto *ThrowExpr = dyn_cast<CXXThrowExpr>(Operand->IgnoreParens())) {
     CGF.EmitCXXThrowExpr(ThrowExpr, /*KeepInsertionPoint*/false);
     return std::nullopt;
@@ -4630,7 +4632,7 @@ static Optional<LValue> EmitLValueOrThrowExpression(CodeGenFunction &CGF,
 namespace {
 // Handle the case where the condition is a constant evaluatable simple integer,
 // which means we don't have to separately handle the true/false blocks.
-llvm::Optional<LValue> HandleConditionalOperatorLValueSimpleCase(
+std::optional<LValue> HandleConditionalOperatorLValueSimpleCase(
     CodeGenFunction &CGF, const AbstractConditionalOperator *E) {
   const Expr *condExpr = E->getCond();
   bool CondExprBool;
@@ -4660,7 +4662,7 @@ llvm::Optional<LValue> HandleConditionalOperatorLValueSimpleCase(
 }
 struct ConditionalInfo {
   llvm::BasicBlock *lhsBlock, *rhsBlock;
-  Optional<LValue> LHS, RHS;
+  std::optional<LValue> LHS, RHS;
 };
 
 // Create and generate the 3 blocks for a conditional operator.
@@ -4729,7 +4731,7 @@ LValue CodeGenFunction::EmitConditionalOperatorLValue(
   }
 
   OpaqueValueMapping binding(*this, expr);
-  if (llvm::Optional<LValue> Res =
+  if (std::optional<LValue> Res =
           HandleConditionalOperatorLValueSimpleCase(*this, expr))
     return *Res;
 

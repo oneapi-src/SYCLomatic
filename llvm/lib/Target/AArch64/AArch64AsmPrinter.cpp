@@ -255,7 +255,7 @@ void AArch64AsmPrinter::emitStartOfAsmFile(Module &M) {
 
 void AArch64AsmPrinter::emitFunctionHeaderComment() {
   const AArch64FunctionInfo *FI = MF->getInfo<AArch64FunctionInfo>();
-  Optional<std::string> OutlinerString = FI->getOutliningStyle();
+  std::optional<std::string> OutlinerString = FI->getOutliningStyle();
   if (OutlinerString != std::nullopt)
     OutStreamer->getCommentOS() << ' ' << OutlinerString;
 }
@@ -733,7 +733,7 @@ void AArch64AsmPrinter::printOperand(const MachineInstr *MI, unsigned OpNum,
     llvm_unreachable("<unknown operand type>");
   case MachineOperand::MO_Register: {
     Register Reg = MO.getReg();
-    assert(Register::isPhysicalRegister(Reg));
+    assert(Reg.isPhysical());
     assert(!MO.getSubReg() && "Subregs should be eliminated!");
     O << AArch64InstPrinter::getRegisterName(Reg);
     break;

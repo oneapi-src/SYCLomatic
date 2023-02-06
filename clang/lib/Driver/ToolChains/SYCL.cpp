@@ -119,12 +119,17 @@ void SYCL::constructLLVMForeachCommand(Compilation &C, const JobAction &JA,
   const char *Foreach = C.getArgs().MakeArgString(ForeachPath);
 
   auto Cmd = std::make_unique<Command>(JA, *T, ResponseFileSupport::None(),
-                                       Foreach, ForeachArgs, None);
+                                       Foreach, ForeachArgs, std::nullopt);
   // FIXME: Add the FPGA specific timing diagnostic to the foreach call.
   // The foreach call obscures the return codes from the tool it is calling
   // to the compiler itself.
   addFPGATimingDiagnostic(Cmd, C);
   C.addCommand(std::move(Cmd));
+}
+
+bool SYCL::shouldDoPerObjectFileLinking(const Compilation &C) {
+  return !C.getArgs().hasFlag(options::OPT_fgpu_rdc, options::OPT_fno_gpu_rdc,
+                              /*default=*/true);
 }
 
 // The list should match pre-built SYCL device library files located in
@@ -163,12 +168,25 @@ const char *SYCL::Linker::constructLLVMLinkCommand(
   // an actual object/archive.  Take that list and pass those to the linker
   // instead of the original object.
   if (JA.isDeviceOffloading(Action::OFK_SYCL)) {
-    auto isSYCLDeviceLib = [&C, this](const InputInfo &II) {
+    bool IsRDC = !shouldDoPerObjectFileLinking(C);
+    auto isNoRDCDeviceCodeLink = [&](const InputInfo &II) {
+      if (IsRDC)
+        return false;
+      if (II.getType() != clang::driver::types::TY_LLVM_BC)
+        return false;
+      if (InputFiles.size() != 2)
+        return false;
+      return &II == &InputFiles[1];
+    };
+    auto isSYCLDeviceLib = [&](const InputInfo &II) {
       const ToolChain *HostTC = C.getSingleOffloadToolChain<Action::OFK_Host>();
       StringRef LibPostfix = ".o";
       if (HostTC->getTriple().isWindowsMSVCEnvironment() &&
           C.getDriver().IsCLMode())
         LibPostfix = ".obj";
+      else if (isNoRDCDeviceCodeLink(II))
+        LibPostfix = ".bc";
+
       std::string FileName = this->getToolChain().getInputFilename(II);
       StringRef InputFilename = llvm::sys::path::filename(FileName);
       if (this->getToolChain().getTriple().isNVPTX()) {
@@ -183,9 +201,21 @@ const char *SYCL::Linker::constructLLVMLinkCommand(
           !InputFilename.endswith(LibPostfix) || (InputFilename.count('-') < 2))
         return false;
       // Skip the prefix "libsycl-"
-      StringRef PureLibName = InputFilename.substr(LibSyclPrefix.size());
+      std::string PureLibName =
+          InputFilename.substr(LibSyclPrefix.size()).str();
+      if (isNoRDCDeviceCodeLink(II)) {
+        // Skip the final - until the . because we linked all device libs into a
+        // single BC in a previous action so we have a temp file name.
+        auto FinalDashPos = PureLibName.find_last_of('-');
+        auto DotPos = PureLibName.find_last_of('.');
+        assert((FinalDashPos != std::string::npos &&
+                DotPos != std::string::npos) &&
+               "Unexpected filename");
+        PureLibName =
+            PureLibName.substr(0, FinalDashPos) + PureLibName.substr(DotPos);
+      }
       for (const auto &L : SYCLDeviceLibList) {
-        if (PureLibName.startswith(L))
+        if (StringRef(PureLibName).startswith(L))
           return true;
       }
       return false;
@@ -203,8 +233,17 @@ const char *SYCL::Linker::constructLLVMLinkCommand(
     for (const auto &II : InputFiles) {
       std::string FileName = getToolChain().getInputFilename(II);
       if (II.getType() == types::TY_Tempfilelist) {
-        // Pass the unbundled list with '@' to be processed.
-        Libs.push_back(C.getArgs().MakeArgString("@" + FileName));
+        if (IsRDC) {
+          // Pass the unbundled list with '@' to be processed.
+          Libs.push_back(C.getArgs().MakeArgString("@" + FileName));
+        } else {
+          assert(InputFiles.size() == 2 &&
+                 "Unexpected inputs for no-RDC with temp file list");
+          // If we're in no-RDC mode and the input is a temp file list,
+          // we want to link multiple object files each against device libs,
+          // so we should consider this input as an object and not pass '@'.
+          Objs.push_back(C.getArgs().MakeArgString(FileName));
+        }
       } else if (II.getType() == types::TY_Archive && !LinkSYCLDeviceLibs) {
         Libs.push_back(C.getArgs().MakeArgString(FileName));
       } else
@@ -232,7 +271,7 @@ const char *SYCL::Linker::constructLLVMLinkCommand(
     // llvm-link when driver links LLVM modules with empty modules
     CmdArgs.push_back("--suppress-warnings");
     C.addCommand(std::make_unique<Command>(
-        JA, *this, ResponseFileSupport::AtFileUTF8(), Exec, CmdArgs, None));
+        JA, *this, ResponseFileSupport::AtFileUTF8(), Exec, CmdArgs, std::nullopt));
   };
 
   // Add an intermediate output file.
@@ -274,7 +313,7 @@ void SYCL::Linker::constructLlcCommand(Compilation &C, const JobAction &JA,
   llvm::sys::path::append(LlcPath, "llc");
   const char *Llc = C.getArgs().MakeArgString(LlcPath);
   C.addCommand(std::make_unique<Command>(
-      JA, *this, ResponseFileSupport::AtFileUTF8(), Llc, LlcArgs, None));
+      JA, *this, ResponseFileSupport::AtFileUTF8(), Llc, LlcArgs, std::nullopt));
 }
 
 // For SYCL the inputs of the linker job are SPIR-V binaries and output is
@@ -373,7 +412,7 @@ void SYCL::fpga::BackendCompiler::constructOpenCLAOTCommand(
       getToolChain().GetProgramPath(makeExeName(C, "opencl-aot")));
   const char *Exec = C.getArgs().MakeArgString(ExecPath);
   auto Cmd = std::make_unique<Command>(JA, *this, ResponseFileSupport::None(),
-                                       Exec, CmdArgs, None);
+                                       Exec, CmdArgs, std::nullopt);
   if (!ForeachInputs.empty()) {
     StringRef ParallelJobs =
         Args.getLastArgValue(options::OPT_fsycl_max_parallel_jobs_EQ);
@@ -539,7 +578,7 @@ void SYCL::fpga::BackendCompiler::ConstructJob(
       getToolChain().GetProgramPath(makeExeName(C, "aoc")));
   const char *Exec = C.getArgs().MakeArgString(ExecPath);
   auto Cmd = std::make_unique<Command>(JA, *this, ResponseFileSupport::None(),
-                                       Exec, CmdArgs, None);
+                                       Exec, CmdArgs, std::nullopt);
   addFPGATimingDiagnostic(Cmd, C);
   if (!ForeachInputs.empty()) {
     StringRef ParallelJobs =
@@ -584,7 +623,7 @@ void SYCL::gen::BackendCompiler::ConstructJob(Compilation &C,
       getToolChain().GetProgramPath(makeExeName(C, "ocloc")));
   const char *Exec = C.getArgs().MakeArgString(ExecPath);
   auto Cmd = std::make_unique<Command>(JA, *this, ResponseFileSupport::None(),
-                                       Exec, CmdArgs, None);
+                                       Exec, CmdArgs, std::nullopt);
   if (!ForeachInputs.empty()) {
     StringRef ParallelJobs =
         Args.getLastArgValue(options::OPT_fsycl_max_parallel_jobs_EQ);
@@ -752,7 +791,7 @@ void SYCL::x86_64::BackendCompiler::ConstructJob(
       getToolChain().GetProgramPath(makeExeName(C, "opencl-aot")));
   const char *Exec = C.getArgs().MakeArgString(ExecPath);
   auto Cmd = std::make_unique<Command>(JA, *this, ResponseFileSupport::None(),
-                                       Exec, CmdArgs, None);
+                                       Exec, CmdArgs, std::nullopt);
   if (!ForeachInputs.empty()) {
     StringRef ParallelJobs =
         Args.getLastArgValue(options::OPT_fsycl_max_parallel_jobs_EQ);

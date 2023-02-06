@@ -985,6 +985,20 @@ createMemberCallExprRewriterFactory(
       std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator)...);
 }
 
+template <class BaseT, class ArgsT>
+inline std::shared_ptr<CallExprRewriterFactoryBase>
+createArraySubscriptExprRewriterFactory(
+    const std::string &SourceName,
+    std::function<BaseT(const CallExpr *)> BaseCreator,
+    std::function<ArgsT(const CallExpr *)> ArgsCreator) {
+  return std::make_shared<
+      CallExprRewriterFactory<ArraySubscriptRewriter<BaseT, ArgsT>,
+                              std::function<BaseT(const CallExpr *)>,
+                              std::function<ArgsT(const CallExpr *)>>>(
+      SourceName, BaseCreator,
+      std::forward<std::function<ArgsT(const CallExpr *)>>(ArgsCreator));
+}
+
 template <class... ArgsT>
 inline std::shared_ptr<CallExprRewriterFactoryBase> createReportWarningRewriterFactory(
     std::pair<std::string, std::shared_ptr<CallExprRewriterFactoryBase>>
@@ -1682,6 +1696,8 @@ public:
   {FuncName, creatCallExprRewriterFactory(FuncName, C)},
 #define MEMBER_CALL_FACTORY_ENTRY(FuncName, ...)                               \
   {FuncName, createMemberCallExprRewriterFactory(FuncName, __VA_ARGS__)},
+#define ARRAYSUBSCRIPT_EXPR_FACTORY_ENTRY(FuncName, ...)                       \
+  {FuncName, createArraySubscriptExprRewriterFactory(FuncName, __VA_ARGS__)},
 #define DELETER_FACTORY_ENTRY(FuncName, Arg)                                   \
   {FuncName, createDeleterCallExprRewriterFactory(FuncName, Arg)},
 #define UNSUPPORT_FACTORY_ENTRY(FuncName, MsgID, ...)                          \

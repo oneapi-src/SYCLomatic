@@ -8,6 +8,7 @@ macro(build_lib_dpct)
     CallExprRewriterCUBLAS.cpp
     CallExprRewriterCURAND.cpp
     CallExprRewriterCUSOLVER.cpp
+    CallExprRewriterCUSPARSE.cpp
     CallExprRewriterComplex.cpp
     CallExprRewriterDriver.cpp
     CallExprRewriterMemory.cpp

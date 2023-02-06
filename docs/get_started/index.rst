@@ -97,7 +97,9 @@ Migrate a Simple Test Project
 -----------------------------
 
 |tool_name| comes with several sample projects so you can explore
-the tool and familiarize yourself with how it functions:
+the tool and familiarize yourself with how it functions.
+
+.. include:: /_include_files/wip.rst
 
 .. list-table::
    :widths: 30 70

@@ -331,6 +331,84 @@ MATH_API_REWRITER_DEVICE(
         EMPTY_FACTORY_ENTRY("__hgtu2"), EMPTY_FACTORY_ENTRY("__hgtu2")))
 
 MATH_API_REWRITER_DEVICE(
+    "__hisnan2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hisnan2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hisnan2",
+                               CALL(MapNames::getClNamespace() +
+                                        "ext::intel::math::hisnan2",
+                                    ARG(0)))),
+        EMPTY_FACTORY_ENTRY("__hisnan2"), EMPTY_FACTORY_ENTRY("__hisnan2")))
+
+MATH_API_REWRITER_DEVICE(
+    "__hle2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hle2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hle2", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hle2",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hle2"), EMPTY_FACTORY_ENTRY("__hle2")))
+
+MATH_API_REWRITER_DEVICE(
+    "__hleu2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hleu2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hleu2", CALL(MapNames::getClNamespace() +
+                                                   "ext::intel::math::hleu2",
+                                               ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hleu2"), EMPTY_FACTORY_ENTRY("__hleu2")))
+
+MATH_API_REWRITER_DEVICE(
+    "__hlt2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hlt2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hlt2", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hlt2",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hlt2"), EMPTY_FACTORY_ENTRY("__hlt2")))
+
+MATH_API_REWRITER_DEVICE(
+    "__hltu2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hltu2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hltu2", CALL(MapNames::getClNamespace() +
+                                                   "ext::intel::math::hltu2",
+                                               ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hltu2"), EMPTY_FACTORY_ENTRY("__hltu2")))
+
+MATH_API_REWRITER_DEVICE(
+    "__hne2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hne2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hne2", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hne2",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hne2"), EMPTY_FACTORY_ENTRY("__hne2")))
+
+MATH_API_REWRITER_DEVICE(
+    "__hneu2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hneu2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hneu2", CALL(MapNames::getClNamespace() +
+                                                   "ext::intel::math::hneu2",
+                                               ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hneu2"), EMPTY_FACTORY_ENTRY("__hneu2")))
+
+MATH_API_REWRITER_DEVICE(
     "__hadd_sat",
     MATH_API_DEVICE_NODES(
         EMPTY_FACTORY_ENTRY("__hadd_sat"),

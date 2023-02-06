@@ -1730,6 +1730,8 @@ __global__ void kernelFuncTypecasts() {
 
   // CHECK: f = h2[1];
   f = __low2float(h2);
+  // CHECK: f = (*(&h2))[1];
+  f = __low2float(*(&h2));
 
   // CHECK: h = h2[1];
   h = __low2half(h2);

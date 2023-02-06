@@ -59,13 +59,17 @@ bool AArch64InstPrinter::applyTargetSpecificCLOption(StringRef Opt) {
   return false;
 }
 
-void AArch64InstPrinter::printRegName(raw_ostream &OS, unsigned RegNo) const {
-  OS << markup("<reg:") << getRegisterName(RegNo) << markup(">");
+void AArch64InstPrinter::printRegName(raw_ostream &OS, MCRegister Reg) const {
+  OS << markup("<reg:") << getRegisterName(Reg) << markup(">");
 }
 
-void AArch64InstPrinter::printRegName(raw_ostream &OS, unsigned RegNo,
+void AArch64InstPrinter::printRegName(raw_ostream &OS, MCRegister Reg,
                                       unsigned AltIdx) const {
-  OS << markup("<reg:") << getRegisterName(RegNo, AltIdx) << markup(">");
+  OS << markup("<reg:") << getRegisterName(Reg, AltIdx) << markup(">");
+}
+
+StringRef AArch64InstPrinter::getRegName(MCRegister Reg) const {
+  return getRegisterName(Reg);
 }
 
 void AArch64InstPrinter::printInst(const MCInst *MI, uint64_t Address,
@@ -820,6 +824,10 @@ void AArch64AppleInstPrinter::printInst(const MCInst *MI, uint64_t Address,
   AArch64InstPrinter::printInst(MI, Address, Annot, STI, O);
 }
 
+StringRef AArch64AppleInstPrinter::getRegName(MCRegister Reg) const {
+  return getRegisterName(Reg);
+}
+
 bool AArch64InstPrinter::printRangePrefetchAlias(const MCInst *MI,
                                                  const MCSubtargetInfo &STI,
                                                  raw_ostream &O,
@@ -910,18 +918,23 @@ bool AArch64InstPrinter::printSysAlias(const MCInst *MI,
     // Prediction Restriction aliases
     case 3: {
       Search_PRCTX:
-      const AArch64PRCTX::PRCTX *PRCTX = AArch64PRCTX::lookupPRCTXByEncoding(Encoding >> 3);
-      if (!PRCTX || !PRCTX->haveFeatures(STI.getFeatureBits()))
+      if (Op1Val != 3 || CnVal != 7 || CmVal != 3)
         return false;
 
-      NeedsReg = PRCTX->NeedsReg;
+      const auto Requires =
+          Op2Val == 6 ? AArch64::FeatureSPECRES2 : AArch64::FeaturePredRes;
+      if (!(STI.hasFeature(AArch64::FeatureAll) || STI.hasFeature(Requires)))
+        return false;
+
+      NeedsReg = true;
       switch (Op2Val) {
       default: return false;
       case 4: Ins = "cfp\t"; break;
       case 5: Ins = "dvp\t"; break;
+      case 6: Ins = "cosp\t"; break;
       case 7: Ins = "cpp\t"; break;
       }
-      Name = std::string(PRCTX->Name);
+      Name = "RCTX";
     }
     break;
     // IC aliases
@@ -1283,7 +1296,7 @@ static void printMemExtendImpl(bool SignExtend, bool DoShift, unsigned Width,
     O << " ";
     if (UseMarkup)
       O << "<imm:";
-    O << " #" << Log2_32(Width / 8);
+    O << "#" << Log2_32(Width / 8);
     if (UseMarkup)
       O << ">";
   }
@@ -1433,9 +1446,12 @@ void AArch64InstPrinter::printPrefetchOp(const MCInst *MI, unsigned OpNum,
       O << PRFM->Name;
       return;
     }
-  } else if (auto PRFM = AArch64PRFM::lookupPRFMByEncoding(prfop)) {
-    O << PRFM->Name;
-    return;
+  } else {
+    auto PRFM = AArch64PRFM::lookupPRFMByEncoding(prfop);
+    if (PRFM && PRFM->haveFeatures(STI.getFeatureBits())) {
+      O << PRFM->Name;
+      return;
+    }
   }
 
   O << markup("<imm:") << '#' << formatImm(prfop) << markup(">");
@@ -1906,9 +1922,12 @@ void AArch64InstPrinter::printSystemPStateField(const MCInst *MI, unsigned OpNo,
                                                 raw_ostream &O) {
   unsigned Val = MI->getOperand(OpNo).getImm();
 
-  auto PState = AArch64PState::lookupPStateByEncoding(Val);
-  if (PState && PState->haveFeatures(STI.getFeatureBits()))
-    O << PState->Name;
+  auto PStateImm15 = AArch64PState::lookupPStateImm0_15ByEncoding(Val);
+  auto PStateImm1 = AArch64PState::lookupPStateImm0_1ByEncoding(Val);
+  if (PStateImm15 && PStateImm15->haveFeatures(STI.getFeatureBits()))
+    O << PStateImm15->Name;
+  else if (PStateImm1 && PStateImm1->haveFeatures(STI.getFeatureBits()))
+    O << PStateImm1->Name;
   else
     O << "#" << formatImm(Val);
 }
