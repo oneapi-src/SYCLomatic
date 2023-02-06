@@ -5,5 +5,7 @@ add_sycl_unittest(ExtensionsTests OBJECT
   FPGADeviceSelectors.cpp
   DeviceArchitecture.cpp
   WeakObject.cpp
+  USMMemcpy2D.cpp
+  DeviceGlobal.cpp
 )
 

@@ -602,7 +602,7 @@ Optional<std::string> MathTypeCastRewriter::rewrite() {
   std::string ReplStr;
   llvm::raw_string_ostream OS(ReplStr);
 
-  auto MigratedArg0 = getMigratedArg(0);
+  auto MigratedArg0 = getMigratedArgWithExtraParens(0);
   if (FuncName == "__float22half2_rn") {
     OS << MigratedArg0
        << ".convert<" + MapNames::getClNamespace() + "half, " +
@@ -637,7 +637,7 @@ Optional<std::string> MathTypeCastRewriter::rewrite() {
     OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[0], "
        << MigratedArg0 << "[0]}";
   } else if (FuncName == "__highs2half2") {
-    auto MigratedArg1 = getMigratedArg(1);
+    auto MigratedArg1 = getMigratedArgWithExtraParens(1);
     OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[0], "
        << MigratedArg1 << "[0]}";
   } else if (FuncName == "__low2float") {
@@ -651,7 +651,7 @@ Optional<std::string> MathTypeCastRewriter::rewrite() {
     OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[1], "
        << MigratedArg0 << "[0]}";
   } else if (FuncName == "__lows2half2") {
-    auto MigratedArg1 = getMigratedArg(1);
+    auto MigratedArg1 = getMigratedArgWithExtraParens(1);
     OS << MapNames::getClNamespace() + "half2{" << MigratedArg0 << "[1], "
        << MigratedArg1 << "[1]}";
   } else if (FuncName == "__float2bfloat16") {
@@ -1152,19 +1152,10 @@ Optional<std::string> MathBinaryOperatorRewriter::rewrite() {
   reportUnsupportedRoundingMode();
   if (SourceCalleeName == "__hneg" || SourceCalleeName == "__hneg2") {
     setLHS("");
-    if (needExtraParens(Call->getArg(0)))
-      setRHS("(" + getMigratedArg(0) + ")");
-    else
-      setRHS(getMigratedArg(0));
+    setRHS(getMigratedArgWithExtraParens(0));
   } else {
-    if (needExtraParens(Call->getArg(0)))
-      setLHS("(" + getMigratedArg(0) + ")");
-    else
-      setLHS(getMigratedArg(0));
-    if (needExtraParens(Call->getArg(1)))
-      setRHS("(" + getMigratedArg(1) + ")");
-    else
-      setRHS(getMigratedArg(1));
+    setLHS(getMigratedArgWithExtraParens(0));
+    setRHS(getMigratedArgWithExtraParens(1));
   }
   return buildRewriteString();
 }

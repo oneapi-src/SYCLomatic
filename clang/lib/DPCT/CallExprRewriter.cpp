@@ -67,6 +67,12 @@ std::string CallExprRewriter::getMigratedArg(unsigned Idx) {
          Analyzer.getRewritePostfix();
 }
 
+std::string CallExprRewriter::getMigratedArgWithExtraParens(unsigned Idx) {
+  if (needExtraParens(Call->getArg(Idx)))
+    return "(" + getMigratedArg(Idx) + ")";
+  return getMigratedArg(Idx);
+}
+
 std::vector<std::string> CallExprRewriter::getMigratedArgs() {
   std::vector<std::string> ArgList;
   Analyzer.setCallSpelling(Call);
@@ -107,6 +113,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   initRewriterMapCUBLAS();
   initRewriterMapCURAND();
   initRewriterMapCUSOLVER();
+  initRewriterMapCUSPARSE();
   initRewriterMapComplex();
   initRewriterMapDriver();
   initRewriterMapMemory();
@@ -123,6 +130,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   initRewriterMapCooperativeGroups();
   initMethodRewriterMapCUB();
   initMethodRewriterMapCooperativeGroups();
+  initMethodRewriterMapLIBCU();
 }
 
 } // namespace dpct

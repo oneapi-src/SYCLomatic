@@ -250,13 +250,17 @@ OffloadAction::OffloadAction(const HostDependence &HDep,
 
   // Add device inputs and propagate info to the device actions. Do work only if
   // we have dependencies.
-  for (unsigned i = 0, e = DDeps.getActions().size(); i != e; ++i)
+  for (unsigned i = 0, e = DDeps.getActions().size(); i != e; ++i) {
     if (auto *A = DDeps.getActions()[i]) {
       getInputs().push_back(A);
       A->propagateDeviceOffloadInfo(DDeps.getOffloadKinds()[i],
                                     DDeps.getBoundArchs()[i],
                                     DDeps.getToolChains()[i]);
+      // If this action is used to forward single dependency, set the toolchain.
+      if (DDeps.getActions().size() == 1)
+        OffloadingToolChain = DDeps.getToolChains()[i];
     }
+  }
 }
 
 void OffloadAction::doOnHostDependence(const OffloadActionWorkTy &Work) const {
@@ -565,6 +569,10 @@ void FileTableTformJobAction::addCopySingleFileTform(StringRef ColumnName,
                                                      int Row) {
   Tforms.emplace_back(
       Tform(Tform::COPY_SINGLE_FILE, {ColumnName, std::to_string(Row)}));
+}
+
+void FileTableTformJobAction::addMergeTform(StringRef ColumnName) {
+  Tforms.emplace_back(Tform(Tform::MERGE, {ColumnName}));
 }
 
 void AppendFooterJobAction::anchor() {}

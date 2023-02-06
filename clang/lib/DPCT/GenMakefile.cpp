@@ -147,9 +147,32 @@ static void getCompileInfo(
     std::string NewOptions;
     bool IsObjName = false;
     bool IsObjSpecified = false;
+
+    // -isystem
+    bool IsSystemInclude = false;
+
     const std::string Directory = Entry.second[0];
     std::unordered_set<std::string> DuplicateDuplicateFilter;
     for (const auto &Option : Entry.second) {
+
+      if (IsSystemInclude) {
+        IsSystemInclude = false;
+        std::string IncPath = Option;
+
+        SmallString<512> OutDirectory = llvm::StringRef(IncPath);
+        llvm::sys::fs::make_absolute(OutDirectory);
+        llvm::sys::path::remove_dots(OutDirectory, /*remove_dot_dot=*/true);
+        makeCanonical(OutDirectory);
+
+        rewriteDir(OutDirectory, InRoot, OutRoot);
+
+        NewOptions += "-isystem ";
+        llvm::sys::path::replace_path_prefix(OutDirectory, OutRoot, ".");
+        NewOptions += OutDirectory.c_str();
+        NewOptions += " ";
+        continue;
+      }
+
       if (llvm::StringRef(Option).startswith("-I")) {
         // Parse include path specified by "-I"
         std::string IncPath = Option.substr(strlen("-I"));
@@ -179,6 +202,8 @@ static void getCompileInfo(
         NewOptions += OutDirectory.c_str();
         NewOptions += " ";
 
+      } else if (llvm::StringRef(Option).startswith("-isystem")) {
+        IsSystemInclude = true;
       } else if (llvm::StringRef(Option).startswith("-D")) {
         // Parse macros defined.
         std::size_t Len = Option.length() - strlen("-D");
