@@ -732,20 +732,16 @@ struct gesvd_impl {
                   library_data_t u_type, void *u, std::int64_t ldu,
                   library_data_t vt_type, void *vt, std::int64_t ldvt,
                   void *device_ws, size_t device_ws_size, int *info) {
-    auto a_data = dpct::detail::get_memory(
-        reinterpret_cast<typename ElementType<T>::T2 *>(a));
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto s_data = dpct::detail::get_memory(
         reinterpret_cast<typename ElementType<T>::T2 *>(s));
-    auto u_data = dpct::detail::get_memory(
-        reinterpret_cast<typename ElementType<T>::T2 *>(u));
-    auto vt_data = dpct::detail::get_memory(
-        reinterpret_cast<typename ElementType<T>::T2 *>(vt));
-    auto device_ws_data = dpct::detail::get_memory(
-        reinterpret_cast<typename ElementType<T>::T2 *>(device_ws));
-    oneapi::mkl::lapack::gesvd(
-        q, char2jobsvd(jobu), char2jobsvd(jobvt), m, n, a_data, lda, s_data,
-        u_data, ldu, vt_data, ldvt, device_ws_data,
-        device_ws_size / sizeof(typename ElementType<T>::T2));
+    auto u_data = dpct::detail::get_memory(reinterpret_cast<T *>(u));
+    auto vt_data = dpct::detail::get_memory(reinterpret_cast<T *>(vt));
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    oneapi::mkl::lapack::gesvd(q, char2jobsvd(jobu), char2jobsvd(jobvt), m, n,
+                               a_data, lda, s_data, u_data, ldu, vt_data, ldvt,
+                               device_ws_data, device_ws_size / sizeof(T));
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
