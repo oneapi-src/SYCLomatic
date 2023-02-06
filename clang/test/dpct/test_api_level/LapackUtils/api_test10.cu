@@ -7,6 +7,7 @@
 
 // CHECK: 30
 // TEST_FEATURE: LapackUtils_gesvd_scratchpad_size
+// TEST_FEATURE: LapackUtils_char2jobsvd
 
 #include "cusolverDn.h"
 

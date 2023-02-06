@@ -669,43 +669,22 @@ inline int getrfnp_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|char2jobsvd|dpct::lapack::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-inline oneapi::mkl::jobsvd char2jobsvd(char job) {
-  switch (job) {
-  case 'A':
-    return oneapi::mkl::jobsvd::vectors;
-  case 'S':
-    return oneapi::mkl::jobsvd::somevec;
-  case 'O':
-    return oneapi::mkl::jobsvd::vectorsina;
-  case 'N':
-    return oneapi::mkl::jobsvd::novec;
-  default:
-    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                          "the job type is unsupported");
-  }
-}
-// DPCT_LABEL_END
-
 // DPCT_LABEL_BEGIN|gesvd_scratchpad_size_impl|dpct::lapack::detail
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// LapackUtils|char2jobsvd
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 struct gesvd_scratchpad_size_impl {
   template <typename T>
-  void operator()(sycl::queue &q, signed char jobu, signed char jobvt,
-                  std::int64_t m, std::int64_t n, library_data_t a_type,
-                  std::int64_t lda, library_data_t u_type, std::int64_t ldu,
+  void operator()(sycl::queue &q, oneapi::mkl::jobsvd jobu,
+                  oneapi::mkl::jobsvd jobvt, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, std::int64_t lda,
+                  library_data_t u_type, std::int64_t ldu,
                   library_data_t vt_type, std::int64_t ldvt,
                   size_t *device_ws_size) {
-    *device_ws_size =
-        oneapi::mkl::lapack::gesvd_scratchpad_size<T>(
-            q, char2jobsvd(jobu), char2jobsvd(jobvt), m, n, lda, ldu, ldvt) *
-        sizeof(T);
+    *device_ws_size = oneapi::mkl::lapack::gesvd_scratchpad_size<T>(
+                          q, jobu, jobvt, m, n, lda, ldu, ldvt) *
+                      sizeof(T);
   }
 };
 // DPCT_LABEL_END
@@ -713,7 +692,6 @@ struct gesvd_scratchpad_size_impl {
 // DPCT_LABEL_BEGIN|gesvd_impl|dpct::lapack::detail
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// LapackUtils|char2jobsvd
 // LibCommonUtils|get_memory
 // Memory|dpct_memset_detail
 // DPCT_DEPENDENCY_END
@@ -726,12 +704,13 @@ struct gesvd_impl {
     using T2 = T;
   };
   template <typename T>
-  void operator()(sycl::queue &q, signed char jobu, signed char jobvt,
-                  std::int64_t m, std::int64_t n, library_data_t a_type,
-                  void *a, std::int64_t lda, library_data_t s_type, void *s,
-                  library_data_t u_type, void *u, std::int64_t ldu,
-                  library_data_t vt_type, void *vt, std::int64_t ldvt,
-                  void *device_ws, size_t device_ws_size, int *info) {
+  void operator()(sycl::queue &q, oneapi::mkl::jobsvd jobu,
+                  oneapi::mkl::jobsvd jobvt, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, void *a, std::int64_t lda,
+                  library_data_t s_type, void *s, library_data_t u_type,
+                  void *u, std::int64_t ldu, library_data_t vt_type, void *vt,
+                  std::int64_t ldvt, void *device_ws, size_t device_ws_size,
+                  int *info) {
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto s_data = dpct::detail::get_memory(
         reinterpret_cast<typename ElementType<T>::T2 *>(s));
@@ -739,9 +718,9 @@ struct gesvd_impl {
     auto vt_data = dpct::detail::get_memory(reinterpret_cast<T *>(vt));
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
-    oneapi::mkl::lapack::gesvd(q, char2jobsvd(jobu), char2jobsvd(jobvt), m, n,
-                               a_data, lda, s_data, u_data, ldu, vt_data, ldvt,
-                               device_ws_data, device_ws_size / sizeof(T));
+    oneapi::mkl::lapack::gesvd(q, jobu, jobvt, m, n, a_data, lda, s_data,
+                               u_data, ldu, vt_data, ldvt, device_ws_data,
+                               device_ws_size / sizeof(T));
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
@@ -999,6 +978,26 @@ inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|char2jobsvd|dpct::lapack
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+inline oneapi::mkl::jobsvd char2jobsvd(char job) {
+  switch (job) {
+  case 'A':
+    return oneapi::mkl::jobsvd::vectors;
+  case 'S':
+    return oneapi::mkl::jobsvd::somevec;
+  case 'O':
+    return oneapi::mkl::jobsvd::vectorsina;
+  case 'N':
+    return oneapi::mkl::jobsvd::novec;
+  default:
+    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
+                          "the job type is unsupported");
+  }
+}
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|gesvd_scratchpad_size|dpct::lapack
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
@@ -1006,8 +1005,26 @@ inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
 // LapackUtils|gesvd_scratchpad_size_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-inline int gesvd_scratchpad_size(sycl::queue &q, signed char jobu,
-                                 signed char jobvt, std::int64_t m,
+/// Computes the size of workspace memory of gesvd function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobu Must be jobsvd::vectors, jobsvd::somevec,
+/// jobsvd::vectorsina, or jobsvd::novec.
+/// \param [in] jobvt Must be jobsvd::vectors, jobsvd::somevec,
+/// jobsvd::vectorsina, or jobsvd::novec.
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] u_type The data type of the matrix U.
+/// \param [in] ldu The leading dimension of the matrix U.
+/// \param [in] vt_type The data type of the matrix VT.
+/// \param [in] ldvt The leading dimension of the matrix VT.
+/// \param [out] device_ws_size The device workspace size in bytes.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
+inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::jobsvd jobu,
+                                 oneapi::mkl::jobsvd jobvt, std::int64_t m,
                                  std::int64_t n, library_data_t a_type,
                                  std::int64_t lda, library_data_t u_type,
                                  std::int64_t ldu, library_data_t vt_type,
@@ -1021,8 +1038,28 @@ inline int gesvd_scratchpad_size(sycl::queue &q, signed char jobu,
                              ldvt, device_ws_size);
 }
 
+/// Computes the size of workspace memory of gesvd function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobz Must be job::vec or job::novec
+/// \param [in] all_vec Only have effects when \param jobz is job::vec.If the
+/// value is zero, all m columns of U are returned in the matrix U, otherwise
+/// the first min( \param m, \param n ) columns of U (the left singular vectors)
+/// are returned in the matrix U.
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] u_type The data type of the matrix U.
+/// \param [in] ldu The leading dimension of the matrix U.
+/// \param [in] vt_type The data type of the matrix VT.
+/// \param [in] ldvt The leading dimension of the matrix VT.
+/// \param [out] device_ws_size The device workspace size as a number of
+/// elements of type \param a_type.
+/// \param [out] host_ws_size The host workspace size as a number of elements
+/// of type \param a_type. Currently the value is always zero.
 inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
-                                 std::int64_t econ, std::int64_t m,
+                                 std::int64_t all_vec, std::int64_t m,
                                  std::int64_t n, library_data_t a_type,
                                  std::int64_t lda, library_data_t u_type,
                                  std::int64_t ldu, library_data_t vt_type,
@@ -1030,19 +1067,19 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  signed char jobu;
-  signed char jobvt;
+  oneapi::mkl::jobsvd jobu;
+  oneapi::mkl::jobsvd jobvt;
   if (jobz == oneapi::mkl::job::vec) {
-    if (econ) {
-      jobu = 'S';
-      jobvt = 'S';
+    if (all_vec) {
+      jobu = oneapi::mkl::jobsvd::somevec;
+      jobvt = oneapi::mkl::jobsvd::somevec;
     } else {
-      jobu = 'A';
-      jobvt = 'A';
+      jobu = oneapi::mkl::jobsvd::vectors;
+      jobvt = oneapi::mkl::jobsvd::vectors;
     }
   } else if (jobz == oneapi::mkl::job::novec) {
-    jobu = 'N';
-    jobvt = 'N';
+    jobu = oneapi::mkl::jobsvd::novec;
+    jobvt = oneapi::mkl::jobsvd::novec;
   } else {
     throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                           "the job type is unsupported");
@@ -1080,37 +1117,89 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
 // LibCommonUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-inline int gesvd(sycl::queue &q, signed char jobu, signed char jobvt,
-                 std::int64_t m, std::int64_t n, library_data_t a_type, void *a,
-                 std::int64_t lda, library_data_t s_type, void *s,
-                 library_data_t u_type, void *u, std::int64_t ldu,
-                 library_data_t vt_type, void *vt, std::int64_t ldvt,
-                 void *device_ws, size_t device_ws_size, int *info) {
+/// Computes the size of workspace memory of gesvd function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobu Must be jobsvd::vectors, jobsvd::somevec,
+/// jobsvd::vectorsina, or jobsvd::novec.
+/// \param [in] jobvt Must be jobsvd::vectors, jobsvd::somevec,
+/// jobsvd::vectorsina, or jobsvd::novec.
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A and it will be overwritten according
+/// to \p jobu and \p jobvt.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] s_type The data type of the matrix S.
+/// \param [out] s The output matrix S.
+/// \param [in] u_type The data type of the matrix U.
+/// \param [out] u The output matrix U.
+/// \param [in] ldu The leading dimension of the matrix U.
+/// \param [in] vt_type The data type of the matrix VT.
+/// \param [out] vt The output matrix VT.
+/// \param [in] ldvt The leading dimension of the matrix VT.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
+inline int gesvd(sycl::queue &q, oneapi::mkl::jobsvd jobu,
+                 oneapi::mkl::jobsvd jobvt, std::int64_t m, std::int64_t n,
+                 library_data_t a_type, void *a, std::int64_t lda,
+                 library_data_t s_type, void *s, library_data_t u_type, void *u,
+                 std::int64_t ldu, library_data_t vt_type, void *vt,
+                 std::int64_t ldvt, void *device_ws, size_t device_ws_size,
+                 int *info) {
   return detail::lapack_shim(q, a_type, info, "gesvd", detail::gesvd_impl(), q,
                              jobu, jobvt, m, n, a_type, a, lda, s_type, s,
                              u_type, u, ldu, vt_type, vt, ldvt, device_ws,
                              device_ws_size, info);
 }
 
-inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t econ,
+/// Computes the size of workspace memory of gesvd function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] jobz Must be job::vec or job::novec.
+/// \param [in] all_vec Only have effects when \param jobz is job::vec.If the
+/// value is zero, all m columns of U are returned in the matrix U, otherwise
+/// the first min( \param m, \param n ) columns of U (the left singular vectors)
+/// are returned in the matrix U.
+/// \param [in] m The number of rows in the matrix A.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A and it will be overwritten according
+/// to \p jobu and \p jobvt.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] s_type The data type of the matrix S.
+/// \param [out] s The output matrix S.
+/// \param [in] u_type The data type of the matrix U.
+/// \param [out] u The output matrix U.
+/// \param [in] ldu The leading dimension of the matrix U.
+/// \param [in] vt_type The data type of the matrix VT.
+/// \param [out] vt The output matrix VT.
+/// \param [in] ldvt The leading dimension of the matrix VT.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
+inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t all_vec,
                  std::int64_t m, std::int64_t n, library_data_t a_type, void *a,
                  std::int64_t lda, library_data_t s_type, void *s,
                  library_data_t u_type, void *u, std::int64_t ldu,
                  library_data_t vt_type, void *vt, std::int64_t ldvt,
                  void *device_ws, size_t device_ws_size, int *info) {
-  signed char jobu;
-  signed char jobvt;
+  oneapi::mkl::jobsvd jobu;
+  oneapi::mkl::jobsvd jobvt;
   if (jobz == oneapi::mkl::job::vec) {
-    if (econ) {
-      jobu = 'S';
-      jobvt = 'S';
+    if (all_vec) {
+      jobu = oneapi::mkl::jobsvd::somevec;
+      jobvt = oneapi::mkl::jobsvd::somevec;
     } else {
-      jobu = 'A';
-      jobvt = 'A';
+      jobu = oneapi::mkl::jobsvd::vectors;
+      jobvt = oneapi::mkl::jobsvd::vectors;
     }
   } else if (jobz == oneapi::mkl::job::novec) {
-    jobu = 'N';
-    jobvt = 'N';
+    jobu = oneapi::mkl::jobsvd::novec;
+    jobvt = oneapi::mkl::jobsvd::novec;
   } else {
     throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                           "the job type is unsupported");
@@ -1168,6 +1257,16 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t econ,
 // LapackUtils|potrf_scratchpad_size_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Computes the size of workspace memory of potrf function.
+/// \return Returns 0 if no synchronous exception, otherwise returns 1.
+/// \param [in] q Device queue where computation will be performed.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [out] device_ws_size The device workspace size in bytes.
+/// \param [out] host_ws_size The host workspace size in bytes. Currently the
+/// value is always zero.
 inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
                                  std::int64_t n, library_data_t a_type,
                                  std::int64_t lda, size_t *device_ws_size,
@@ -1187,6 +1286,19 @@ inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
 // LapackUtils|potrf_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Computes the Cholesky factorization of a symmetric (Hermitian)
+/// positive-definite matrix.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The number of columns in the matrix A.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A. Overwritten by the Cholesky factor U
+/// or L, as specified by \p uplo.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 inline int potrf(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  void *device_ws, size_t device_ws_size, int *info) {
@@ -1203,6 +1315,24 @@ inline int potrf(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
 // LapackUtils|potrs_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+/// Solves a system of linear equations with a Cholesky-factored symmetric
+/// (Hermitian) positive-definite coefficient matrix.
+/// \param [in] q The queue where the routine should be executed.
+/// \param [in] uplo Must be uplo::upper or uplo::lower.
+/// \param [in] n The order of the matrix A and the number of rows in matrix B.
+/// \param [in] nrhs The number of right hand sides.
+/// \param [in] a_type The data type of the matrix A.
+/// \param [in, out] a The input matrix A. Overwritten by the Cholesky factor U
+/// or L, as specified by \p uplo.
+/// \param [in] lda The leading dimension of the matrix A.
+/// \param [in] b_type The data type of the matrix B.
+/// \param [in, out] b The matrix B, whose columns are the right-hand sides
+/// for the systems of equations.
+/// \param [in] ldb The leading dimension of the matrix B.
+/// \param [in] device_ws The workspace.
+/// \param [in] device_ws_size The workspace size in bytes.
+/// \param [out] info If lapack synchronous exception is caught, the value
+/// returned from info() method of the exception is set to \p info.
 inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                  std::int64_t nrhs, library_data_t a_type, void *a,
                  std::int64_t lda, library_data_t b_type, void *b,
