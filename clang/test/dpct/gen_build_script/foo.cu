@@ -15,7 +15,7 @@
 // RUN: echo "    }" >> compile_commands.json
 // RUN: echo "]" >> compile_commands.json
 // RUN: cd %T
-// RUN: dpct -in-root ./ -out-root out -p build/ -gen-build-script
+// RUN: dpct -in-root ./ -out-root out -p build/ -gen-build-script --cuda-include-path="%cuda-path/include"
 // RUN: cat %S/Makefile.dpct.ref  >%T/Makefile.dpct.check
 // RUN: cat %T/out/Makefile.dpct >> %T/Makefile.dpct.check
 // RUN: FileCheck --match-full-lines --input-file %T/Makefile.dpct.check %T/Makefile.dpct.check
