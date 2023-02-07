@@ -666,11 +666,34 @@ template <typename... _Args> constexpr auto __joint_reduce(_Args... __args) {
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|is_native_op|dpct::device::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+template <typename _Tp, typename... _Ts>
+struct __is_any
+    : std::integral_constant<
+          bool, (std::is_same_v<std::remove_cv_t<_Tp>, std::remove_cv_t<_Ts>> ||
+                 ...)> {};
+
+template <typename _Tp, typename _Bp> struct __in_native_op_list {
+  constexpr static bool value =
+      __is_any<_Bp, sycl::plus<_Tp>, sycl::bit_or<_Tp>, sycl::bit_xor<_Tp>,
+               sycl::bit_and<_Tp>, sycl::maximum<_Tp>, sycl::minimum<_Tp>,
+               sycl::multiplies<_Tp>>::value;
+};
+
+template <typename _Tp, typename _Bp> struct __is_native_op {
+  constexpr static bool value = __in_native_op_list<T, _Bp>::value ||
+                                __in_native_op_list<void, _Bp>::value;
+};
+// DPCT_LABEL_END
+
 } // namespace detail
 
 // DPCT_LABEL_BEGIN|segmented_reduce|dpct::device
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasDpcppExtensions|joint_reduce
+// DplExtrasDpcppExtensions|is_native_op
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Perform a reduce on each of the segments specified within data stored on
@@ -693,11 +716,40 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
   sycl::range<1> global_size(segment_count * GROUP_SIZE);
   sycl::range<1> local_size(GROUP_SIZE);
 
-  queue.submit([&](sycl::handler &cgh) {
 #ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
-    size_t temp_memory_size = GROUP_SIZE * sizeof(T);
-    auto scratch = sycl::local_accessor<std::byte, 1>(temp_memory_size, cgh);
+  if constexpr (!detail::__is_native_op<T, BinaryOperation>::value) {
+    queue.submit([&](sycl::handler &cgh) {
+      size_t temp_memory_size = GROUP_SIZE * sizeof(T);
+      auto scratch = sycl::local_accessor<std::byte, 1>(temp_memory_size, cgh);
+      cgh.parallel_for(
+          sycl::nd_range<1>(global_size, local_size),
+          [=](sycl::nd_item<1> item) {
+            OffsetT segment_begin = begin_offsets[item.get_group_linear_id()];
+            OffsetT segment_end = end_offsets[item.get_group_linear_id()];
+            if (segment_begin == segment_end) {
+              if (item.get_local_linear_id() == 0) {
+                outputs[item.get_group_linear_id()] = init;
+              }
+              return;
+            }
+            // Create a handle that associates the group with an allocation it
+            // can use
+            auto handle =
+                sycl::ext::oneapi::experimental::group_with_scratchpad(
+                    item.get_group(),
+                    sycl::span(&scratch[0], temp_memory_size));
+            T group_aggregate =
+                detail::__joint_reduce(handle, inputs + segment_begin,
+                                       inputs + segment_end, init, binary_op);
+            if (item.get_local_linear_id() == 0) {
+              outputs[item.get_group_linear_id()] = group_aggregate;
+            }
+          });
+    });
+    return;
+  }
 #endif
+  queue.submit([&](sycl::handler &cgh) {
     cgh.parallel_for(
         sycl::nd_range<1>(global_size, local_size), [=](sycl::nd_item<1> item) {
           OffsetT segment_begin = begin_offsets[item.get_group_linear_id()];
@@ -708,21 +760,11 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
             }
             return;
           }
-#ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
-          // Create a handle that associates the group with an allocation it
-          // can use
-          auto handle = sycl::ext::oneapi::experimental::group_with_scratchpad(
-              item.get_group(), sycl::span(&scratch[0], temp_memory_size));
-          T group_aggregate = detail::__joint_reduce(
-              handle, inputs + segment_begin, inputs + segment_end, init,
-              binary_op);
-#else
           sycl::multi_ptr<T, sycl::access::address_space::global_space>
               input_ptr = inputs;
           T group_aggregate = detail::__joint_reduce(
               item.get_group(), input_ptr + segment_begin,
               input_ptr + segment_end, init, binary_op);
-#endif
           if (item.get_local_linear_id() == 0) {
             outputs[item.get_group_linear_id()] = group_aggregate;
           }
