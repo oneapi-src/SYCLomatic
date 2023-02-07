@@ -35,58 +35,6 @@ if (NOT TARGET LLVMGenXIntrinsics)
     # Fix build against llvm tot
     set(LLVMGenXIntrinsics_GIT_TAG dd72efa3b4aafdbbf599e6f3c6f8c55450e348de)
 
-    if (INTEL_CUSTOMIZATION)
-      # for xmain builds the LLVMGenXIntrinsics_GIT_REPO is constructed from
-      # GIT_REPO_PATH and GIT_REPO_TAG set independently depending on build
-      # configuration (public/embargo) and condition (building from under ICS
-      # or not)
-
-      # default repo path for public xmain builds, not using ICS
-      set(LLVMGenXIntrinsics_GIT_REPO_PATH https://github.com/intel)
-      set(LLVMGenXIntrinsics_GIT_REPO_NAME vc-intrinsics.git)
-      # Author: Gorban, Igor <igor.gorban@intel.com>
-      # Date:   Tue Dec 13 18:21:41 2022 +0000
-      # VCWrappers does not installing, we can't use them in headers
-      set(LLVMGenXIntrinsics_GIT_TAG 88083f819d2391f0a15ecdb6f7efeefaf02364e8)
-
-      # Determine if the build is embargo and provide specific settings.
-      set(IS_INTERNAL_ESIMD_BUILD FALSE)
-# INTEL_FEATURE_ESIMD_EMBARGO
-      is_intel_feature_enabled(IS_INTERNAL_ESIMD_BUILD ${LLVM_INTELFEATURE_PREFIX}_ESIMD_EMBARGO)
-
-      if (IS_INTERNAL_ESIMD_BUILD)
-        # override git repo name and tag for the internal ESIMD EMBARGO build
-        set(LLVMGenXIntrinsics_GIT_REPO_NAME drivers.gpu.compute.vc-intrinsics.git)
-        # Author: Igor Gorban <igor.gorban@intel.com>
-        # Date:   Tue Dec 13 23:10:52 2022 +0100
-        # [BugFix] VCWrappers does not installing, we can't use them in headers (#241)
-        set(LLVMGenXIntrinsics_GIT_TAG 73019eb10802e9dcf1715fd5c210f9d7ab7cc864)
-
-        add_compile_definitions(__INTEL_EMBARGO__)
-        # LLVM_CMAKE_DIR is required by the internal vc-intrinsics repo, but is
-        # not set for non-standalone builds. Use LLVM_CMAKE_PATH instead.
-        if (NOT LLVM_CMAKE_DIR)
-          set(LLVM_CMAKE_DIR ${LLVM_CMAKE_PATH})
-        endif (NOT LLVM_CMAKE_DIR)
-      endif (IS_INTERNAL_ESIMD_BUILD)
-# end INTEL_FEATURE_ESIMD_EMBARGO
-
-      if (DEFINED ENV{ICS_GIT_MIRROR} AND NOT "$ENV{ICS_GIT_MIRROR}" STREQUAL "")
-        # ICS_GIT_MIRROR, if set, overrides GIT_REPO_PATH.
-        set(LLVMGenXIntrinsics_GIT_REPO_PATH $ENV{ICS_GIT_MIRROR})
-        STRING(REGEX REPLACE "\\\\" "/" LLVMGenXIntrinsics_GIT_REPO_PATH "${LLVMGenXIntrinsics_GIT_REPO_PATH}")
-# INTEL_FEATURE_ESIMD_EMBARGO
-      elseif (IS_INTERNAL_ESIMD_BUILD)
-        # ICS_GIT_MIRROR is obligatory for embargo builds.
-        message( FATAL_ERROR "xmain ESIMD_EMBARGO build requires ICS_GIT_MIRROR env var to be set" )
-# end INTEL_FEATURE_ESIMD_EMBARGO
-      endif ()
-
-      # Construct GIT_REPO from from GIT_REPO_PATH and GIT_REPO_NAME.
-      set( LLVMGenXIntrinsics_GIT_REPO
-        ${LLVMGenXIntrinsics_GIT_REPO_PATH}/${LLVMGenXIntrinsics_GIT_REPO_NAME} )
-    endif (INTEL_CUSTOMIZATION)
-
     message(STATUS "vc-intrinsics repo is missing. Will try to download it from ${LLVMGenXIntrinsics_GIT_REPO}")
     include(FetchContent)
     FetchContent_Declare(vc-intrinsics
