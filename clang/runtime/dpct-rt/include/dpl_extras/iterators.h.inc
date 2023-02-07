@@ -212,7 +212,41 @@ template <typename KeyTp, typename _ValueTp> struct make_key_value_pair {
 };
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|is_tuple|dpct::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+template <typename T>
+struct is_tuple : std::false_type {};
+template <typename... Ts>
+struct is_tuple<std::tuple<Ts...>> : std::true_type {};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|zip_iterator_impl|dpct::detail
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasIterators|is_tuple
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename... Ts> struct zip_iterator_impl {
+  using type = oneapi::dpl::zip_iterator<Ts...>;
+};
+template <template <typename...> typename T, typename... Ts>
+struct zip_iterator_impl<T<Ts...>> {
+  static_assert(is_tuple<std::remove_cv_t<T<Ts...>>>::value,
+                "the template parameter must be std::tuple");
+  using type = oneapi::dpl::zip_iterator<Ts...>;
+};
+// DPCT_LABEL_END
+
 } // end namespace detail
+
+// DPCT_LABEL_BEGIN|zip_iterator|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasIterators|zip_iterator_impl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename... Ts>
+using zip_iterator = typename detail::zip_iterator_impl<Ts...>::type;
+// DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|arg_index_input_iterator|dpct
 // DPCT_DEPENDENCY_BEGIN
