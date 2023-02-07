@@ -493,6 +493,9 @@ static inline void invoke_kernel_function(dpct::kernel_function &function,
 // Image|image_wrapper_base_p_alias
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
+ /// Find image wrapper in a kernel library and return its address.
+ /// \param [in] library Handle to the kernel library.
+ /// \param [in] name Name of the target image wrapper.
 static inline dpct::image_wrapper_base_p
 get_image_wrapper(dpct::kernel_library &library, const std::string &name) {
 #ifdef _WIN32
