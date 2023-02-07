@@ -1,0 +1,34 @@
+.. _id_DPCT1041:
+
+DPCT1041
+========
+
+Message
+-------
+
+.. _msg-1041-start:
+
+SYCL uses exceptions to report errors, it does not use error codes. 0 is used
+ instead of an error code in *<statement>*. You may need to rewrite this code.
+
+.. _msg-1041-end:
+
+Detailed Help
+-------------
+
+SYCL\* uses exceptions to report errors, it does not use error codes. The original
+code tries to get an error code, but SYCL does not require this functionality.
+Therefore, 0 is used instead of an error code in the following statements:
+
+* if
+* while
+* do
+* for
+* switch
+* return
+* function-like macro
+
+Suggestions to Fix
+------------------
+
+You may need to rewrite this code.

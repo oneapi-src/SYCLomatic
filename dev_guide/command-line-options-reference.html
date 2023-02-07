@@ -1,0 +1,1359 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Command Line Options Reference &#8212; SYCLomatic Documentation</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" href="../_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <link rel="shortcut icon" href="../_static/favicons.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Diagnostics Reference" href="diagnostics-reference.html" />
+    <link rel="prev" title="DPCT Namespace Usage Guide" href="dpct-namespace-usage-guide.html" />
+<!-- all your analytics scripts go here -->
+
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../index.html">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="../_static/oneAPI-rgb-rev-100.png" class="logo" alt="logo">
+      
+      
+      <h1 class="site-logo" id="site-title">SYCLomatic Documentation</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Get Started
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../get_started/index.html">
+   Get Started with SYCLomatic
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Developer Guide and Reference
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="index.html">
+   Overview
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="migrate-a-project.html">
+   Migrate a Project
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/before-you-begin.html">
+     Before You Begin
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/migrate-a-project-on-linux.html">
+     Migrate a Project on Linux*
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/migrate-a-project-on-windows.html">
+     Migrate a Project on Windows*
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/incremental-migration.html">
+     Incremental Migration
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/user-defined-migration-rules.html">
+     User-defined Migration Rules
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="dpct-namespace-usage-guide.html">
+   DPCT Namespace Usage Guide
+  </a>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Command Line Options Reference
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="diagnostics-reference.html">
+   Diagnostics Reference
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+  <label for="toctree-checkbox-2">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1000.html">
+     DPCT1000
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1001.html">
+     DPCT1001
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1002.html">
+     DPCT1002
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1003.html">
+     DPCT1003
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1004.html">
+     DPCT1004
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1005.html">
+     DPCT1005
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1006.html">
+     DPCT1006
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1007.html">
+     DPCT1007
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1008.html">
+     DPCT1008
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1009.html">
+     DPCT1009
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1010.html">
+     DPCT1010
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1011.html">
+     DPCT1011
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1012.html">
+     DPCT1012
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1013.html">
+     DPCT1013
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1014.html">
+     DPCT1014
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1015.html">
+     DPCT1015
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1016.html">
+     DPCT1016
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1017.html">
+     DPCT1017
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1018.html">
+     DPCT1018
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1019.html">
+     DPCT1019
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1020.html">
+     DPCT1020
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1021.html">
+     DPCT1021
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1022.html">
+     DPCT1022
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1023.html">
+     DPCT1023
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1024.html">
+     DPCT1024
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1025.html">
+     DPCT1025
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1026.html">
+     DPCT1026
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1027.html">
+     DPCT1027
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1028.html">
+     DPCT1028
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1029.html">
+     DPCT1029
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1030.html">
+     DPCT1030
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1031.html">
+     DPCT1031
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1032.html">
+     DPCT1032
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1033.html">
+     DPCT1033
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1034.html">
+     DPCT1034
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1035.html">
+     DPCT1035
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1036.html">
+     DPCT1036
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1037.html">
+     DPCT1037
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1038.html">
+     DPCT1038
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1039.html">
+     DPCT1039
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1040.html">
+     DPCT1040
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1041.html">
+     DPCT1041
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1042.html">
+     DPCT1042
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1043.html">
+     DPCT1043
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1044.html">
+     DPCT1044
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1045.html">
+     DPCT1045
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1046.html">
+     DPCT1046
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1047.html">
+     DPCT1047
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1048.html">
+     DPCT1048
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1049.html">
+     DPCT1049
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1050.html">
+     DPCT1050
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1051.html">
+     DPCT1051
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1052.html">
+     DPCT1052
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1053.html">
+     DPCT1053
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1054.html">
+     DPCT1054
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1055.html">
+     DPCT1055
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1056.html">
+     DPCT1056
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1057.html">
+     DPCT1057
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1058.html">
+     DPCT1058
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1059.html">
+     DPCT1059
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1060.html">
+     DPCT1060
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1061.html">
+     DPCT1061
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1062.html">
+     DPCT1062
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1063.html">
+     DPCT1063
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1064.html">
+     DPCT1064
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1065.html">
+     DPCT1065
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1066.html">
+     DPCT1066
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1067.html">
+     DPCT1067
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1068.html">
+     DPCT1068
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1069.html">
+     DPCT1069
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1070.html">
+     DPCT1070
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1071.html">
+     DPCT1071
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1072.html">
+     DPCT1072
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1073.html">
+     DPCT1073
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1074.html">
+     DPCT1074
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1075.html">
+     DPCT1075
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1076.html">
+     DPCT1076
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1077.html">
+     DPCT1077
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1078.html">
+     DPCT1078
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1079.html">
+     DPCT1079
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1080.html">
+     DPCT1080
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1081.html">
+     DPCT1081
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1082.html">
+     DPCT1082
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1083.html">
+     DPCT1083
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1084.html">
+     DPCT1084
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1085.html">
+     DPCT1085
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1086.html">
+     DPCT1086
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1087.html">
+     DPCT1087
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1088.html">
+     DPCT1088
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1089.html">
+     DPCT1089
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1090.html">
+     DPCT1090
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1091.html">
+     DPCT1091
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1092.html">
+     DPCT1092
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1093.html">
+     DPCT1093
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1094.html">
+     DPCT1094
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1095.html">
+     DPCT1095
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1096.html">
+     DPCT1096
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1097.html">
+     DPCT1097
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1098.html">
+     DPCT1098
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1099.html">
+     DPCT1099
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1100.html">
+     DPCT1100
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="frequently-asked-questions-faq.html">
+   Frequently Asked Questions
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Notices and Disclaimers
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../notices-and-disclaimers.html">
+   Notices and Disclaimers
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+<div class="menu-dropdown menu-dropdown-repository-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Source repositories">
+      <i class="fab fa-github"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="https://github.com/oneapi-src/SYCLomatic/issues/new?title=Issue%20on%20page%20%2Fdev_guide/command-line-options-reference.html&body=Your%20issue%20content%20here."
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Open an issue"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="headerbtn__text-container">open issue</span>
+</a>
+
+      </li>
+      
+      <li>
+        <a href="https://github.com/oneapi-src/SYCLomatic/edit/SYCLomatic/docs/dev_guide/command-line-options-reference.rst"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Edit this page"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="headerbtn__text-container">suggest edit</span>
+</a>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="../_sources/dev_guide/command-line-options-reference.rst.txt"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.rst</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#command-line-options">
+   Command Line Options
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#deprecated-command-line-options">
+   Deprecated Command Line Options
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#source-files">
+   Source Files
+  </a>
+ </li>
+</ul>
+
+    </nav>
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Command Line Options Reference</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#command-line-options">
+   Command Line Options
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#deprecated-command-line-options">
+   Deprecated Command Line Options
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#source-files">
+   Source Files
+  </a>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <div class="section" id="command-line-options-reference">
+<span id="cmd-opt-ref"></span><h1>Command Line Options Reference<a class="headerlink" href="#command-line-options-reference" title="Permalink to this headline">#</a></h1>
+<p>This topic shows the command line options with a short description, current
+deprecated options, and information for working with source files.</p>
+<div class="section" id="command-line-options">
+<h2>Command Line Options<a class="headerlink" href="#command-line-options" title="Permalink to this headline">#</a></h2>
+<p>The following table lists all current SYCLomatic command line options
+in alphabetical order.</p>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 70%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--always-use-async-handler</span></code></p></td>
+<td><p>Use async exception handler when creating new <code class="docutils literal notranslate"><span class="pre">sycl::queue</span></code>
+with <code class="docutils literal notranslate"><span class="pre">dpct::create_queue</span></code> in addition to default
+<code class="docutils literal notranslate"><span class="pre">dpct::get_default_queue</span></code>. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--analysis-scope-path=&lt;dir&gt;</span></code></p></td>
+<td><p>The directory path for the analysis scope of the source tree that needs
+to be migrated. Default: the value of <code class="docutils literal notranslate"><span class="pre">--in-root</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--assume-nd-range-dim=&lt;value&gt;</span></code></p></td>
+<td><p>Provides a hint to the tool on the dimensionality of nd_range to use in
+generated code. The values are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">=1</span></code>: Generate kernel code assuming 1D <code class="docutils literal notranslate"><span class="pre">nd_range</span></code> where possible,
+and 3D in other cases.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=3</span></code>: Generate kernel code assuming 3D <code class="docutils literal notranslate"><span class="pre">nd_range</span></code> (default).</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--build-script-file=&lt;file&gt;</span></code></p></td>
+<td><p>Specifies the name of generated makefile for migrated file(s). Default
+name: <code class="docutils literal notranslate"><span class="pre">Makefile.dpct</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">=c_cxx_standard_library</span></code></p></td>
+<td><p>A set of functions from the C and C++ standard libraries that are allowed
+to be used in SYCL device code.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--check-unicode-security</span></code></p></td>
+<td><p>Enable detection and warnings about Unicode constructs that can be
+exploited by using bi-directional formatting codes and homoglyphs in
+identifiers. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--comments</span></code></p></td>
+<td><p>Insert comments explaining the generated code. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--cuda-include-path=&lt;dir&gt;</span></code></p></td>
+<td><p>The directory path of the CUDA* header files.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--custom-helper-name=&lt;name&gt;</span></code></p></td>
+<td><p>DEPRECATED: Specifies the helper headers folder name and main helper
+header file name. Default: <code class="docutils literal notranslate"><span class="pre">dpct</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--enable-ctad</span></code></p></td>
+<td><p>Use a C++17 class template argument deduction (CTAD) in your generated code.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--extra-arg=&lt;string&gt;</span></code></p></td>
+<td><p>Additional argument to append to the migration command line, example:
+<code class="docutils literal notranslate"><span class="pre">--extra-arg=&quot;-I</span> <span class="pre">/path/to/header&quot;</span></code>. The options that can be passed this
+way can be found with the <code class="docutils literal notranslate"><span class="pre">dpct</span> <span class="pre">--</span> <span class="pre">-help</span></code> command.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--format-range=&lt;value&gt;</span></code></p></td>
+<td><p>Sets the range of formatting.</p>
+<p>The values are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">=migrated</span></code>: Only formats the migrated code (default).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=all</span></code>: Formats all code.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=none</span></code>: Do not format any code.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--format-style=&lt;value&gt;</span></code></p></td>
+<td><p>Sets the formatting style.</p>
+<p>The values are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">=llvm</span></code>: Use the LLVM coding style.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=google</span></code>: Use the Google* coding style.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=custom</span></code>: Use the coding style defined in the <code class="docutils literal notranslate"><span class="pre">.clang-format</span></code> file (default).</p></li>
+</ul>
+<p>Example for the .clang-format file content:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">BasedOnStyle</span><span class="p">:</span>
+<span class="n">LLVM</span> <span class="n">IndentWidth</span><span class="p">:</span> <span class="mi">4</span>
+<span class="n">TabWidth</span><span class="p">:</span> <span class="mi">4</span>
+<span class="n">UseTab</span><span class="p">:</span> <span class="n">ForIndentation</span>
+</pre></div>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--gen-build-script</span></code></p></td>
+<td><p>Generates makefile for migrated file(s) in <code class="docutils literal notranslate"><span class="pre">-out-root</span></code> directory.
+Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--help</span></code></p></td>
+<td><p>Provides a list of <code class="docutils literal notranslate"><span class="pre">dpct</span></code> specific options.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--in-root=&lt;dir&gt;</span></code></p></td>
+<td><p>The directory path for the root of the source tree that needs to be migrated.
+Only files under this root are migrated. Default:</p>
+<ul class="simple">
+<li><p>The current directory, if the input source files are not provided.</p></li>
+<li><p>The directory of the first input source file, if the input source files are provided.</p></li>
+</ul>
+<p>Details:</p>
+<p>Any source within the directory specified by <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> (at any nesting
+level) may be migrated. Any header file within the directory specified by
+<code class="docutils literal notranslate"><span class="pre">--in-root</span></code> (at any nesting level) included by the source or header file,
+which is being migrated, is also migrated. Files from outside the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code>
+directory are considered system files and they will not be migrated even
+if they are included by any of the program source files.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--in-root-exclude=&lt;dir|file&gt;</span></code></p></td>
+<td><p>Excludes the specified directory or file from processing.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--keep-original-code</span></code></p></td>
+<td><p>Keeps the original code in the comments of generated SYCL files. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--no-cl-namespace-inline</span></code></p></td>
+<td><p>DEPRECATED: Do not use <code class="docutils literal notranslate"><span class="pre">cl::</span></code> namespace inline. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>. This
+option will be ignored if the replacement option <code class="docutils literal notranslate"><span class="pre">--use-explicit-namespace</span></code>
+is used.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--no-dpcpp-extensions=&lt;value&gt;</span></code></p></td>
+<td><p>A comma-separated list of extensions not to be used in migrated code.
+By default, these extensions will be used in migrated code.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">=enqueued_barriers</span></code>: Enqueued barriers extension.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--no-dry-pattern</span></code></p></td>
+<td><p>Do not use a Don’t Repeat Yourself (DRY) pattern when functions from the
+<code class="docutils literal notranslate"><span class="pre">dpct</span></code> namespace are inserted. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--no-incremental-migration</span></code></p></td>
+<td><p>Tells the tool to not perform an incremental migration. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>
+(incremental migration happens).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--optimize-migration</span></code></p></td>
+<td><p>Generates SYCL code applying more aggressive assumptions that
+potentially may alter the semantics of your program. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--out-root=&lt;dir&gt;</span></code></p></td>
+<td><p>The directory path for root of generated files. A directory is created if
+it does not exist. Default: <code class="docutils literal notranslate"><span class="pre">dpct_output</span></code>.</p>
+<p>The relative paths for the generated files are maintained, and the
+extension is changed as follows:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">*.cu</span> <span class="pre">→</span> <span class="pre">*.dp.cpp</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">*.cpp</span> <span class="pre">→</span> <span class="pre">*.cpp.dp.cpp</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">*.cc</span> <span class="pre">→</span> <span class="pre">*.cc.dp.cpp</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">*.cxx</span> <span class="pre">→</span> <span class="pre">*.cxx.dp.cpp</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">*.C</span> <span class="pre">→</span> <span class="pre">*.C.dp.cpp</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">*.cuh</span> <span class="pre">→</span> <span class="pre">*.dp.hpp</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">*.h</span> <span class="pre">*.hpp</span> <span class="pre">*.hxx</span></code> → extensions are kept the same</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--output-file=&lt;file&gt;</span></code></p></td>
+<td><p>Redirects the <code class="docutils literal notranslate"><span class="pre">stdout</span></code>/<code class="docutils literal notranslate"><span class="pre">stderr</span></code> output to <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;</span></code> in the
+output directory specified by the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--output-verbosity=&lt;value&gt;</span></code></p></td>
+<td><p>Sets the output verbosity level:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">=silent</span></code>: Only messages from clang.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=normal</span></code>: ‘silent’ and warnings, errors, and notes from SYCLomatic.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=detailed</span></code>: ‘normal’ and messages about which file is being processed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=diagnostics</span></code>: ‘detailed’ and information about the detected conflicts
+and crashes (default).</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-p=&lt;dir&gt;</span></code></p></td>
+<td><p>The directory path for the compilation database (<code class="docutils literal notranslate"><span class="pre">compile_commands.json</span></code>).
+When no path is specified, a search for <code class="docutils literal notranslate"><span class="pre">compile_commands.json</span></code> is
+attempted through all parent directories of the first input source file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--process-all</span></code></p></td>
+<td><p>Migrates or copies all files, except hidden, from the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code>
+directory to the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> directory. The <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option should
+be explicitly specified. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p>
+<p>Details:</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">--process-all</span></code> and <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> options are specified, but no
+input files are provided, the tool migrates or copies all files, except
+hidden, from the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> directory to the output directory.</p>
+<ul class="simple">
+<li><p>If there is a compilation database:</p>
+<ul>
+<li><p>Files from the compilation database are migrated with the options
+specified in the compilation database</p></li>
+<li><p>Files with the <code class="docutils literal notranslate"><span class="pre">.cu</span></code> extension that are not listed in the compilation
+database are migrated as standalone</p></li>
+<li><p>Remaining files are copied to the <code class="docutils literal notranslate"><span class="pre">–out-root</span></code> directory</p></li>
+</ul>
+</li>
+<li><p>If there is no compilation database:</p>
+<ul>
+<li><p>Files with the <code class="docutils literal notranslate"><span class="pre">.cu</span></code> extension are migrated as standalone</p></li>
+<li><p>Remaining files are copied to the <code class="docutils literal notranslate"><span class="pre">-out-root</span></code> directory</p></li>
+</ul>
+</li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">--process-all</span></code> is ignored if input files are provided on the command line.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--report-file-prefix=&lt;prefix&gt;</span></code></p></td>
+<td><p>Prefix for the report file names. The full file name will have a suffix
+derived from the <code class="docutils literal notranslate"><span class="pre">report-type</span></code> and an extension derived from the
+<code class="docutils literal notranslate"><span class="pre">report-format</span></code>. For example: <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;.apis.csv</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;.stats.log</span></code>.
+If this option is not specified, the report goes to <code class="docutils literal notranslate"><span class="pre">stdout</span></code>. The report
+files are created in the directory, specified by <code class="docutils literal notranslate"><span class="pre">-out-root</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--report-format=&lt;value&gt;</span></code></p></td>
+<td><p>Format of the reports:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">=csv</span></code>: The output is lines of comma-separated values. The report name
+extension will be <code class="docutils literal notranslate"><span class="pre">.csv</span></code> (default).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=formatted</span></code>: The output is formatted for easier human readability.
+The report file name extension is <code class="docutils literal notranslate"><span class="pre">log</span></code>.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--report-only</span></code></p></td>
+<td><p>Only reports are generated. No SYCL code is generated. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--report-type=&lt;value&gt;</span></code></p></td>
+<td><p>Specifies the type of report. Values are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">=apis</span></code>: Information about API signatures that need migration and the
+number of times they were encountered. The report file name has the
+<code class="docutils literal notranslate"><span class="pre">.apis</span></code> suffix added.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=stats</span></code>: High level migration statistics: Lines Of Code (LOC) that
+are migrated to SYCL, LOC migrated to SYCL with helper functions,
+LOC not needing migration, LOC needing migration but are not migrated.
+The report file name has the <code class="docutils literal notranslate"><span class="pre">.stats</span></code> suffix added (default).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=all</span></code>: All reports.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--rule-file=&lt;file&gt;</span></code></p></td>
+<td><p>Specifies the rule file path that contains rules used for migration.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--stop-on-parse-err</span></code></p></td>
+<td><p>Stop migration and generation of reports if parsing errors happened. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--suppress-warnings=&lt;value&gt;</span></code></p></td>
+<td><p>A comma-separated list of migration warnings to suppress. Valid warning IDs
+range from 1000 to 1100. Hyphen-separated ranges are also allowed. For
+example: <code class="docutils literal notranslate"><span class="pre">-suppress-warnings=1000-1010,1011</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--suppress-warnings-all</span></code></p></td>
+<td><p>Suppresses all migration warnings. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--sycl-named-lambda</span></code></p></td>
+<td><p>Generates kernels with the kernel name. Default: <code class="docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--use-custom-helper=&lt;value&gt;</span></code></p></td>
+<td><p>DEPRECATED: Customize the helper header files for migrated code. The values are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">=none</span></code>: No customization (default).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=file</span></code>: Limit helper header files to only the necessary files for the
+migrated code and place them in the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> directory.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=api</span></code>: Limit helper header files to only the necessary APIs for the
+migrated code and place them in the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> directory.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=all</span></code>: Generate a complete set of helper header files and place them
+in the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> directory.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--use-dpcpp-extensions=&lt;value&gt;</span></code></p></td>
+<td><p>A comma-separated list of extensions to be used in migrated code. By
+default, these extensions are not used in migrated code.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--use-experimental-features=&lt;value&gt;</span></code></p></td>
+<td><p>A comma-separated list of experimental features to be used in migrated code.
+By default, experimental features will not be used in migrated code.</p>
+<p>The values are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">=free-function-queries</span></code>: Experimental extension that allows getting
+<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">item</span></code>, <code class="docutils literal notranslate"><span class="pre">nd_item</span></code>, <code class="docutils literal notranslate"><span class="pre">group</span></code>, and <code class="docutils literal notranslate"><span class="pre">sub_group</span></code> instances
+globally.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=local-memory-kernel-scope-allocation</span></code>: Experimental extension that
+allows allocation of local memory objects at the kernel functor scope.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=logical-group</span></code>: Experimental helper function used to logically
+group work-items.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=nd_range_barrier</span></code>: Experimental helper function used to help cross
+group synchronization during migration.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--use-explicit-namespace=&lt;value&gt;</span></code></p></td>
+<td><p>Defines the namespaces to use explicitly in generated code. The value is
+a comma-separated list. Default: <code class="docutils literal notranslate"><span class="pre">dpct,</span> <span class="pre">sycl</span></code>.</p>
+<p>Possible values are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">=none</span></code>: Generate code without namespaces. Cannot be used with other
+values.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=cl</span></code>: DEPRECATED. Generate code with <code class="docutils literal notranslate"><span class="pre">cl::sycl::</span></code> namespace. Cannot
+be used with <code class="docutils literal notranslate"><span class="pre">sycl</span></code> or <code class="docutils literal notranslate"><span class="pre">sycl-math</span></code> values.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=dpct</span></code>: Generate code with <code class="docutils literal notranslate"><span class="pre">dpct::</span></code> namespace.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=sycl</span></code>: Generate code with <code class="docutils literal notranslate"><span class="pre">sycl::</span></code> namespace. Cannot be
+used with <code class="docutils literal notranslate"><span class="pre">cl</span></code> or <code class="docutils literal notranslate"><span class="pre">sycl-math</span></code> values.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=sycl-math</span></code>: Generate code with <code class="docutils literal notranslate"><span class="pre">sycl::</span></code> namespace, applied only
+for SYCL math functions. Cannot be used with <code class="docutils literal notranslate"><span class="pre">cl</span></code> or <code class="docutils literal notranslate"><span class="pre">sycl</span></code> values.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--usm-level=&lt;value&gt;</span></code></p></td>
+<td><p>Sets the Unified Shared Memory (USM) level to use in source code generation:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">=restricted</span></code>: Uses USM API for memory management migration. (default).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">=none</span></code>: Uses helper functions from SYCLomatic header files
+for memory management migration.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--vcxprojfile=&lt;file&gt;</span></code></p></td>
+<td><p>The file path of <code class="docutils literal notranslate"><span class="pre">vcxproj</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--version</span></code></p></td>
+<td><p>Shows the version of the tool.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Specifying any of these options will trigger report generation.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--report-file-prefix</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--report-type</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--report-format</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--report-only</span></code></p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="deprecated-command-line-options">
+<h2>Deprecated Command Line Options<a class="headerlink" href="#deprecated-command-line-options" title="Permalink to this headline">#</a></h2>
+<p>The following table lists SYCLomatic command line options that are
+currently deprecated.</p>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Deprecated Options</p></th>
+<th class="head"><p>Suggested Replacement</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--no-cl-namespace-inline</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--use-explicit-namespace</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="source-files">
+<h2>Source Files<a class="headerlink" href="#source-files" title="Permalink to this headline">#</a></h2>
+<p>To work with source files use <code class="docutils literal notranslate"><span class="pre">&lt;source0&gt;</span> <span class="pre">...</span></code> to create paths
+for your input source files. These paths can be found in the
+compilation database.</p>
+<p>Examples:</p>
+<ul class="simple">
+<li><p>Migrate single source file: <code class="docutils literal notranslate"><span class="pre">dpct</span> <span class="pre">source.cpp</span></code></p></li>
+<li><p>Migrate single source file with C++11 features:
+<code class="docutils literal notranslate"><span class="pre">dpct</span> <span class="pre">--extra-arg=&quot;-std=c++11&quot;</span> <span class="pre">source.cpp</span></code></p></li>
+<li><p>Migrate all files available in compilation database:
+<code class="docutils literal notranslate"><span class="pre">dpct</span> <span class="pre">-p=&lt;path</span> <span class="pre">to</span> <span class="pre">location</span> <span class="pre">of</span> <span class="pre">compilation</span> <span class="pre">database</span> <span class="pre">file&gt;</span></code></p></li>
+<li><p>Migrate one file in compilation database:
+<code class="docutils literal notranslate"><span class="pre">dpct</span> <span class="pre">-p=&lt;path</span> <span class="pre">to</span> <span class="pre">location</span> <span class="pre">of</span> <span class="pre">compilation</span> <span class="pre">database</span> <span class="pre">file&gt;</span> <span class="pre">source.cpp</span></code></p></li>
+</ul>
+</div>
+</div>
+
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="dpct-namespace-usage-guide.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">DPCT Namespace Usage Guide</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="diagnostics-reference.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Diagnostics Reference</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Intel<br/>
+  
+      &copy; Copyright Intel Corporation.<br/>
+    <div class="extra_footer">
+      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
+    </div>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>

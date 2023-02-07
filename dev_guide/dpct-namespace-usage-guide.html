@@ -1,0 +1,1587 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DPCT Namespace Usage Guide &#8212; SYCLomatic Documentation</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" href="../_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <link rel="shortcut icon" href="../_static/favicons.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Command Line Options Reference" href="command-line-options-reference.html" />
+    <link rel="prev" title="User-defined Migration Rules" href="migrate-a-project/user-defined-migration-rules.html" />
+<!-- all your analytics scripts go here -->
+
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="../index.html">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="../_static/oneAPI-rgb-rev-100.png" class="logo" alt="logo">
+      
+      
+      <h1 class="site-logo" id="site-title">SYCLomatic Documentation</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Get Started
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../get_started/index.html">
+   Get Started with SYCLomatic
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Developer Guide and Reference
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="index.html">
+   Overview
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="migrate-a-project.html">
+   Migrate a Project
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/before-you-begin.html">
+     Before You Begin
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/migrate-a-project-on-linux.html">
+     Migrate a Project on Linux*
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/migrate-a-project-on-windows.html">
+     Migrate a Project on Windows*
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/incremental-migration.html">
+     Incremental Migration
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="migrate-a-project/user-defined-migration-rules.html">
+     User-defined Migration Rules
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   DPCT Namespace Usage Guide
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="command-line-options-reference.html">
+   Command Line Options Reference
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="diagnostics-reference.html">
+   Diagnostics Reference
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+  <label for="toctree-checkbox-2">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1000.html">
+     DPCT1000
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1001.html">
+     DPCT1001
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1002.html">
+     DPCT1002
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1003.html">
+     DPCT1003
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1004.html">
+     DPCT1004
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1005.html">
+     DPCT1005
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1006.html">
+     DPCT1006
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1007.html">
+     DPCT1007
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1008.html">
+     DPCT1008
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1009.html">
+     DPCT1009
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1010.html">
+     DPCT1010
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1011.html">
+     DPCT1011
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1012.html">
+     DPCT1012
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1013.html">
+     DPCT1013
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1014.html">
+     DPCT1014
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1015.html">
+     DPCT1015
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1016.html">
+     DPCT1016
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1017.html">
+     DPCT1017
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1018.html">
+     DPCT1018
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1019.html">
+     DPCT1019
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1020.html">
+     DPCT1020
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1021.html">
+     DPCT1021
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1022.html">
+     DPCT1022
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1023.html">
+     DPCT1023
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1024.html">
+     DPCT1024
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1025.html">
+     DPCT1025
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1026.html">
+     DPCT1026
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1027.html">
+     DPCT1027
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1028.html">
+     DPCT1028
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1029.html">
+     DPCT1029
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1030.html">
+     DPCT1030
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1031.html">
+     DPCT1031
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1032.html">
+     DPCT1032
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1033.html">
+     DPCT1033
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1034.html">
+     DPCT1034
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1035.html">
+     DPCT1035
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1036.html">
+     DPCT1036
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1037.html">
+     DPCT1037
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1038.html">
+     DPCT1038
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1039.html">
+     DPCT1039
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1040.html">
+     DPCT1040
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1041.html">
+     DPCT1041
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1042.html">
+     DPCT1042
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1043.html">
+     DPCT1043
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1044.html">
+     DPCT1044
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1045.html">
+     DPCT1045
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1046.html">
+     DPCT1046
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1047.html">
+     DPCT1047
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1048.html">
+     DPCT1048
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1049.html">
+     DPCT1049
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1050.html">
+     DPCT1050
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1051.html">
+     DPCT1051
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1052.html">
+     DPCT1052
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1053.html">
+     DPCT1053
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1054.html">
+     DPCT1054
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1055.html">
+     DPCT1055
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1056.html">
+     DPCT1056
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1057.html">
+     DPCT1057
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1058.html">
+     DPCT1058
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1059.html">
+     DPCT1059
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1060.html">
+     DPCT1060
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1061.html">
+     DPCT1061
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1062.html">
+     DPCT1062
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1063.html">
+     DPCT1063
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1064.html">
+     DPCT1064
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1065.html">
+     DPCT1065
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1066.html">
+     DPCT1066
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1067.html">
+     DPCT1067
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1068.html">
+     DPCT1068
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1069.html">
+     DPCT1069
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1070.html">
+     DPCT1070
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1071.html">
+     DPCT1071
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1072.html">
+     DPCT1072
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1073.html">
+     DPCT1073
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1074.html">
+     DPCT1074
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1075.html">
+     DPCT1075
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1076.html">
+     DPCT1076
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1077.html">
+     DPCT1077
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1078.html">
+     DPCT1078
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1079.html">
+     DPCT1079
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1080.html">
+     DPCT1080
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1081.html">
+     DPCT1081
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1082.html">
+     DPCT1082
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1083.html">
+     DPCT1083
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1084.html">
+     DPCT1084
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1085.html">
+     DPCT1085
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1086.html">
+     DPCT1086
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1087.html">
+     DPCT1087
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1088.html">
+     DPCT1088
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1089.html">
+     DPCT1089
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1090.html">
+     DPCT1090
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1091.html">
+     DPCT1091
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1092.html">
+     DPCT1092
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1093.html">
+     DPCT1093
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1094.html">
+     DPCT1094
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1095.html">
+     DPCT1095
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1096.html">
+     DPCT1096
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1097.html">
+     DPCT1097
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1098.html">
+     DPCT1098
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1099.html">
+     DPCT1099
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="diagnostic_ref/dpct1100.html">
+     DPCT1100
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="frequently-asked-questions-faq.html">
+   Frequently Asked Questions
+  </a>
+ </li>
+</ul>
+<p aria-level="2" class="caption" role="heading">
+ <span class="caption-text">
+  Notices and Disclaimers
+ </span>
+</p>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../notices-and-disclaimers.html">
+   Notices and Disclaimers
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+<div class="menu-dropdown menu-dropdown-repository-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Source repositories">
+      <i class="fab fa-github"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="https://github.com/oneapi-src/SYCLomatic/issues/new?title=Issue%20on%20page%20%2Fdev_guide/dpct-namespace-usage-guide.html&body=Your%20issue%20content%20here."
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Open an issue"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="headerbtn__text-container">open issue</span>
+</a>
+
+      </li>
+      
+      <li>
+        <a href="https://github.com/oneapi-src/SYCLomatic/edit/SYCLomatic/docs/dev_guide/dpct-namespace-usage-guide.rst"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Edit this page"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="headerbtn__text-container">suggest edit</span>
+</a>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="../_sources/dev_guide/dpct-namespace-usage-guide.rst.txt"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.rst</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#macros">
+   Macros
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#atomic-helper-functions">
+   Atomic Helper Functions
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#device-helper-functions">
+   Device Helper Functions
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#memory-helper-functions">
+   Memory Helper Functions
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#kernel-helper-functions">
+   Kernel Helper Functions
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#image-helper-functions">
+   Image Helper Functions
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#intel-oneapi-dpc-library-specific-utility-helper-functions">
+   Intel® oneAPI DPC++ Library Specific Utility Helper functions
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#algorithm-helper-functions">
+     Algorithm Helper Functions
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id1">
+     Memory Helper Functions
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#additional-oneapi-dpc-library-specific-utility-header-files">
+     Additional oneAPI DPC++ Library Specific Utility Header Files
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#utility-helper-functions">
+   Utility Helper Functions
+  </a>
+ </li>
+</ul>
+
+    </nav>
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>DPCT Namespace Usage Guide</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#macros">
+   Macros
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#atomic-helper-functions">
+   Atomic Helper Functions
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#device-helper-functions">
+   Device Helper Functions
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#memory-helper-functions">
+   Memory Helper Functions
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#kernel-helper-functions">
+   Kernel Helper Functions
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#image-helper-functions">
+   Image Helper Functions
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#intel-oneapi-dpc-library-specific-utility-helper-functions">
+   Intel® oneAPI DPC++ Library Specific Utility Helper functions
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#algorithm-helper-functions">
+     Algorithm Helper Functions
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id1">
+     Memory Helper Functions
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#additional-oneapi-dpc-library-specific-utility-header-files">
+     Additional oneAPI DPC++ Library Specific Utility Header Files
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#utility-helper-functions">
+   Utility Helper Functions
+  </a>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <div class="section" id="dpct-namespace-usage-guide">
+<h1>DPCT Namespace Usage Guide<a class="headerlink" href="#dpct-namespace-usage-guide" title="Permalink to this headline">#</a></h1>
+<p>The DPCT namespace provides helper functions and macros to assist the migration
+of input source code. DPCT namespace helper functions are implemented in header
+files and are available in the include folder (include/dpct) of the
+SYCLomatic install path. These header files are intended to become part
+of your new SYCL code generated by SYCLomatic. You can copy these
+header files if needed and include them with the generated code.</p>
+<p>There are three namespaces defined:</p>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 70%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Namespace</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dpct::</span></code></p></td>
+<td><p>This namespace is used in the code generated by SYCLomatic.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dpct::detail::</span></code></p></td>
+<td><p>This namespace is an internal implementation and should not be used in
+SYCL source files directly, as the API and implementations inside the
+<code class="docutils literal notranslate"><span class="pre">dpct::detail::</span></code> namespace can be changed at any time without notice.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dpct::deprecated::</span></code></p></td>
+<td><p>This namespace is for functionality that has been introduced for
+compatibility purposes, but relies on deprecated C++ features, that have
+been removed or will be removed in the future standards. Use of deprecated
+functionality in the <code class="docutils literal notranslate"><span class="pre">dpct::deprecated::</span></code> namespace should be avoided.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>After migration, it is recommended that you continue
+development using SYCL and C++ standard APIs, rather
+than continue development based on DPCT namespace helper
+functions and macros.</p>
+</div>
+<p>The following sections describe different domains of helper
+functions and macros in more detail.</p>
+<div class="section" id="macros">
+<h2>Macros<a class="headerlink" href="#macros" title="Permalink to this headline">#</a></h2>
+<p>There are three macros used to control the behavior of the helper
+functions: <code class="docutils literal notranslate"><span class="pre">DPCT_USM_LEVEL_NONE</span></code>, <code class="docutils literal notranslate"><span class="pre">DPCT_NAMED_LAMBDA</span></code> and
+<code class="docutils literal notranslate"><span class="pre">DPCT_COMPATIBILITY_TEMP</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Do not manually define these macros. They are automatically defined by
+SYCLomatic according to the  options specified in the
+<code class="docutils literal notranslate"><span class="pre">dpct</span></code> command line.</p>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DPCT_USM_LEVEL_NONE</span></code></p></td>
+<td><p>If the <code class="docutils literal notranslate"><span class="pre">--usm-level=none</span></code> option of SYCLomatic is used, then
+<code class="docutils literal notranslate"><span class="pre">DPCT_USM_LEVEL_NONE</span></code> is defined before DPCT namespace helper header
+files are included into migrated code. By default, this macro is not
+defined. If <code class="docutils literal notranslate"><span class="pre">DPCT_USM_LEVEL_NONE</span></code> is defined, corresponding helper
+functions guarded by this macro are active, and the resulting migrated
+code will use buffer-based memory functions instead of USM-based memory
+functions.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DPCT_NAMED_LAMBDA</span></code></p></td>
+<td><p>If the <code class="docutils literal notranslate"><span class="pre">--sycl-named-lambda</span></code> option of SYCLomatic is used,
+then <code class="docutils literal notranslate"><span class="pre">DPCT_NAMED_LAMBDA</span></code> is defined before DPCT namespace helper header
+files are included in migrated code. By default, this macro is not defined.
+If <code class="docutils literal notranslate"><span class="pre">DPCT_NAMED_LAMBDA</span></code> is defined, corresponding helper code guarded by
+this macro is active and the resulting migrated code is using it.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DPCT_COMPATIBILITY_TEMP</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">DPCT_COMPATIBILITY_TEMP</span></code> is defined as an integer number in helper header
+files, and is inserted into migrated code by SYCLomatic.
+You can replace this macro in the generated code or change the value of
+<code class="docutils literal notranslate"><span class="pre">DPCT_COMPATIBILITY_TEMP</span></code> according to your needs.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="atomic-helper-functions">
+<h2>Atomic Helper Functions<a class="headerlink" href="#atomic-helper-functions" title="Permalink to this headline">#</a></h2>
+<p>The atomic helper functions are available in the <code class="docutils literal notranslate"><span class="pre">atomic.hpp</span></code>
+header file. Atomic helper functions are wrappers around standard
+SYCL atomic operations.</p>
+</div>
+<div class="section" id="device-helper-functions">
+<h2>Device Helper Functions<a class="headerlink" href="#device-helper-functions" title="Permalink to this headline">#</a></h2>
+<p>The device helper functions are available in the <code class="docutils literal notranslate"><span class="pre">device.hpp</span></code> header file. There
+are three classes defined: <code class="docutils literal notranslate"><span class="pre">device_info</span></code>, <code class="docutils literal notranslate"><span class="pre">device_ext</span></code> and <code class="docutils literal notranslate"><span class="pre">dev_mgr</span></code>. Find
+more details in the <code class="docutils literal notranslate"><span class="pre">device.hpp</span></code> file.</p>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Device Helper Function Classes</p></th>
+<th class="head"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">device_info</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">device_info</span></code> is used to present information enumerated by SYCL device
+information descriptors.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">device_ext</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">device_ext</span></code> is a subclass of SYCL device class <code class="docutils literal notranslate"><span class="pre">cl::sycl::device</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">device_ext</span></code> adds a default SYCL queue associated with the device on
+top of SYCL device, along with interface to query device information, and
+initializes <code class="docutils literal notranslate"><span class="pre">device_info</span></code> class.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dev_mgr</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">dev_mgr</span></code> is a singleton, intended to manage all SYCL-capable devices
+available on the system (for example CPU or GPU). <code class="docutils literal notranslate"><span class="pre">dev_mgr</span></code> selects one of
+the available devices as current device, according to the behavior of SYCL
+default device selector. Display the current device using <code class="docutils literal notranslate"><span class="pre">current_device()</span></code>,
+and change the current device using <code class="docutils literal notranslate"><span class="pre">select_device()</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Helper Functions</p></th>
+<th class="head"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">get_current_device()</span></code></p></td>
+<td><p>Returns the current device in the device manager.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">get_default_queue()</span></code></p></td>
+<td><p>Returns the default queue associated with the current device in the
+device manager.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">get_device(unsigned</span> <span class="pre">int</span> <span class="pre">id)</span></code></p></td>
+<td><p>Returns the <code class="docutils literal notranslate"><span class="pre">device_ext</span></code>object by integer id.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cpu_device</span></code></p></td>
+<td><p>Returns the <code class="docutils literal notranslate"><span class="pre">device_ext</span></code> object associated with the SYCL CPU device.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">get_default_context()</span></code></p></td>
+<td><p>Returns the SYCL context of the default queue associated with the current
+device in device manager.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="memory-helper-functions">
+<h2>Memory Helper Functions<a class="headerlink" href="#memory-helper-functions" title="Permalink to this headline">#</a></h2>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>SYCL Buffer-Based Memory Model Helper Functions</p></th>
+<th class="head"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Device Memory Manager (<code class="docutils literal notranslate"><span class="pre">mem_mgr</span></code> )</p></td>
+<td><p>Device memory manager is a singleton, intended to assist with migration
+of memory API calls if a SYCL buffer-based memory model is used. It provides
+API to allocate and free host virtual address space bound to
+<code class="docutils literal notranslate"><span class="pre">cl::sycl::buffer</span></code>, and transform between the host virtual address and
+<code class="docutils literal notranslate"><span class="pre">cl::sycl::buffer</span></code>. By default, the <code class="docutils literal notranslate"><span class="pre">mem_mgr</span></code> maintains 128GB of
+virtual memory space. You can change virtual memory space as required by
+changing the value of <code class="docutils literal notranslate"><span class="pre">mapped_region_size</span></code> in the <code class="docutils literal notranslate"><span class="pre">memory.hpp</span></code> file.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Helper Functions to Get SYCL Buffer From the Host Virtual Address</p></th>
+<th class="head"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">get_buffer_and_offset(const</span> <span class="pre">void</span> <span class="pre">*ptr)</span></code></p></td>
+<td><p>Where <code class="docutils literal notranslate"><span class="pre">ptr</span></code>is the host virtual address. This function returns the
+<code class="docutils literal notranslate"><span class="pre">cl::sycl::buffer</span></code> bound to the host virtual address, and the offset of
+the host virtual address in the <code class="docutils literal notranslate"><span class="pre">cl::sycl::buffer</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">get_buffer(const</span> <span class="pre">void</span> <span class="pre">*ptr)</span></code></p></td>
+<td><p>Where <code class="docutils literal notranslate"><span class="pre">ptr</span></code>is the host virtual address. Returns the <code class="docutils literal notranslate"><span class="pre">sycl::buffer</span></code>
+bound to the host virtual address.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>General Helper Functions</strong></p>
+<p>General memory helper functions are used to assist the migration
+of memory API calls, like memory allocation, memory copy, and
+memory set, for both USM and buffer-based memory model. The helper
+functions are listed below. Find more details in the
+<code class="docutils literal notranslate"><span class="pre">memory.hpp</span></code> file.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dpct_malloc()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dpct_free()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dpct_memcpy()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">async_dpct_memcpy()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dpct_memset()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">async_dpct_memset()</span></code></p></li>
+</ul>
+<p><strong>Helper Functions Assisting Migration of Device Memory
+Variables</strong></p>
+<p>To assist with migration of variables declared with global and
+constant device memory attributes, the helper functions provide
+the following template classes:</p>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">global_memory</span></code></p></td>
+<td><p>Represents a SYCL global memory variable.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">constant_memory</span></code></p></td>
+<td><p>Represents a SYCL constant memory variable.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">shared_memory</span></code></p></td>
+<td><p>Represents memory that can be accessed by host and device, in the same
+way as SYCL USM shared memory.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Main Member Functions of Memory Classes</p></th>
+<th class="head"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">get_prt()</span></code></p></td>
+<td><p>Returns memory pointer of the memory object. It is a virtual pointer when
+buffer-based memory model is used, and it is a device pointer when a USM
+memory model is used.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">get_size()</span></code></p></td>
+<td><p>Returns the size of a memory object.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">get_access()</span></code></p></td>
+<td><p>Returns the accessor to the memory object. If a USM memory model is used,
+this function returns a <code class="docutils literal notranslate"><span class="pre">dpct_accessor_t</span></code> object for the device memory
+object. <code class="docutils literal notranslate"><span class="pre">dpct_accessor_t</span></code> is a helper type, which contains the data
+pointer, data dimension information, and provides a method to access the
+memory. If a buffer-based memory model is used, this function returns
+<code class="docutils literal notranslate"><span class="pre">cl::sycl::accessor</span></code> for the device memory object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">init()</span></code></p></td>
+<td><p>Allocates memory after a SYCL device is selected, and initializes device
+memory if it has initial value. This API should be called after the SYCL
+device is selected.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="kernel-helper-functions">
+<h2>Kernel Helper Functions<a class="headerlink" href="#kernel-helper-functions" title="Permalink to this headline">#</a></h2>
+<p>Kernel helper functions provide a structure <code class="docutils literal notranslate"><span class="pre">kernel_function_info</span></code> to keep
+SYCL kernel information, and provide a utility function <code class="docutils literal notranslate"><span class="pre">get_kernel_function_info()</span></code>
+to get the kernel information.</p>
+</div>
+<div class="section" id="image-helper-functions">
+<h2>Image Helper Functions<a class="headerlink" href="#image-helper-functions" title="Permalink to this headline">#</a></h2>
+<p>The image helper functions provide class wrappers to assist the migration of
+texture API. Find more details on image helper functions in the <code class="docutils literal notranslate"><span class="pre">image.hpp</span></code> file.</p>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>template class <code class="docutils literal notranslate"><span class="pre">image_wrapper</span></code></p></td>
+<td><p>The wrapper of <code class="docutils literal notranslate"><span class="pre">cl::sycl::image</span></code>. It provides methods to attach/detach
+1D/2D/3D data to/from <code class="docutils literal notranslate"><span class="pre">cl::sycl::image</span></code> and method <code class="docutils literal notranslate"><span class="pre">get_access()</span></code> to
+return the SYCL image accessor.</p></td>
+</tr>
+<tr class="row-even"><td><p>class <code class="docutils literal notranslate"><span class="pre">image_accessor_ext</span></code></p></td>
+<td><p>Wraps SYCL sampler and SYCL image accessor together. Provides the <code class="docutils literal notranslate"><span class="pre">read()</span></code>
+method to read data from the accessor.</p></td>
+</tr>
+<tr class="row-odd"><td><p>class <code class="docutils literal notranslate"><span class="pre">image_data</span></code></p></td>
+<td><p>Represents the data used to create a <code class="docutils literal notranslate"><span class="pre">cl::sycl::image</span></code> object. Supports
+the following data types:</p>
+<ul class="simple">
+<li><p>matrix for 2D or 3D matrix data (see <code class="docutils literal notranslate"><span class="pre">image_matrix</span></code> class)</p></li>
+<li><p>linear for 1D linear array</p></li>
+<li><p>pitch for pitched 2D or 3D memory data (<code class="docutils literal notranslate"><span class="pre">pitched_data</span></code> class)</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p>class <code class="docutils literal notranslate"><span class="pre">image_matrix</span></code></p></td>
+<td><p>Represents 2D/3D matrix data for an image. It contains the image channel
+information, dimensions, size of each dimension, and the raw data pointer.</p></td>
+</tr>
+<tr class="row-odd"><td><p>class <code class="docutils literal notranslate"><span class="pre">pitched_data</span></code></p></td>
+<td><p>Represents the 2D/3D pitched data for an image.</p></td>
+</tr>
+<tr class="row-even"><td><p>struct<code class="docutils literal notranslate"><span class="pre">image_channel</span></code></p></td>
+<td><p>Keeps image channel information; including order, data width, and type
+information.</p></td>
+</tr>
+<tr class="row-odd"><td><p>class <code class="docutils literal notranslate"><span class="pre">image_info</span></code></p></td>
+<td><p>Image sampling information; including addressing mode, filtering mode, and
+normalization mode.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">image_wrapper</span></code> operations API: <code class="docutils literal notranslate"><span class="pre">create_image_wrapper()</span></code></p></td>
+<td><p>Creates an object of the helper image class according to the parameters
+provided.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="intel-oneapi-dpc-library-specific-utility-helper-functions">
+<h2>Intel® oneAPI DPC++ Library Specific Utility Helper functions<a class="headerlink" href="#intel-oneapi-dpc-library-specific-utility-helper-functions" title="Permalink to this headline">#</a></h2>
+<p>The helper functions provided by the header files included in <code class="docutils literal notranslate"><span class="pre">dpl_utils.hpp</span></code>
+include algorithm functions, memory functions, iterators, and a container for
+managing data on a device.</p>
+<div class="section" id="algorithm-helper-functions">
+<h3>Algorithm Helper Functions<a class="headerlink" href="#algorithm-helper-functions" title="Permalink to this headline">#</a></h3>
+<p>The algorithm helper functions are available in the <code class="docutils literal notranslate"><span class="pre">dpl_extras/algorithm.h</span></code>
+header file. Algorithm helper functions are wrappers around Intel® oneAPI DPC++ Library (oneDPL) algorithm
+functions.</p>
+<p><strong>Mask-predicated Algorithm Functions</strong></p>
+<p>Mask-predicated algorithm functions have parameter lists like the algorithms with
+the same name in the C++ standard library. These functions accept an additional
+iterator pointing to a set of values that indicate whether the corresponding
+elements of the other inputs to the function should be processed by the algorithm.
+The predicate provided to these functions is applied to a value in the mask,
+rather than the element of the input data, and if the predicate returns true the
+corresponding element of the input data is manipulated by the algorithm.</p>
+<p>The mask-predicated algorithm functions in the <code class="docutils literal notranslate"><span class="pre">dpl_extras/algorithm.h</span></code> header
+file are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">copy_if</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">partition</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">partition_copy</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">remove_if</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">remove_copy_if</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">replace_if</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">replace_copy_if</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stable_partition_copy</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stable_partition</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">transform_if</span></code></p></li>
+</ul>
+<p><strong>Key-value Pair Algorithm Functions</strong></p>
+<p>Key-value pair algorithm functions have parameter lists like the algorithms with
+the same name in the C++ standard library. The functions accept two sets of
+input data instead of one: the first representing a set of keys and the second
+representing the set of values associated with each key. These algorithm functions
+create <code class="docutils literal notranslate"><span class="pre">zip_iterators</span></code> and invoke the standard algorithm provided in oneDPL so
+that the key-value pairs are processed as single data elements.</p>
+<p>The key-value pair algorithm functions in the <code class="docutils literal notranslate"><span class="pre">dpl_extras/algorithm.h</span></code> header
+file are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">unique</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">unique_copy</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">merge</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sort</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stable_sort</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">set_difference</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">set_intersection</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">set_symmetric_difference</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">set_union</span></code></p></li>
+</ul>
+<p><strong>Additional Algorithm Functions</strong></p>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">partition_point</span></code></p></td>
+<td><p>Implementation of the C++ standard library algorithm that accepts an
+execution policy, enabling parallel execution.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">transform_if</span></code></p></td>
+<td><p>Applies a unary operation to every element in the input for which the
+predicate provided returns true. A mask-predicated version of the
+function is also provided.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">iota</span></code></p></td>
+<td><p>Extends the C++ standard library algorithm by accepting a step in addition
+to the input iterators and initial value. The step is used to compute the
+next value in the sequence generated.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">inner_product</span></code></p></td>
+<td><p>Implementation of the C++ standard library algorithm that accepts an
+execution policy, enabling parallel execution. The binary operation
+provided for reduction must be associative and commutative.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">for_each_index</span></code></p></td>
+<td><p>Assigns each element in the input range provided the result of the
+unary operator invoked with the element’s index in the input range.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="id1">
+<h3>Memory Helper Functions<a class="headerlink" href="#id1" title="Permalink to this headline">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">dpl_extras/memory.h</span></code> header file provides classes and functions for working
+with device memory.</p>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Memory Helper Function Classes</p></th>
+<th class="head"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">device_pointer</span></code></p></td>
+<td><p>Pointer type that points to memory stored on a device.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">device_iterator</span></code></p></td>
+<td><p>Iterator type returned by <code class="docutils literal notranslate"><span class="pre">device_vector</span></code> begin and end methods.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">device_reference</span></code></p></td>
+<td><p>Reference type returned by <code class="docutils literal notranslate"><span class="pre">device_vector</span></code> element access operator.</p></td>
+</tr>
+</tbody>
+</table>
+<p>The <code class="docutils literal notranslate"><span class="pre">device_vector</span></code> implementation that uses the <code class="docutils literal notranslate"><span class="pre">device_iterator</span></code> and
+<code class="docutils literal notranslate"><span class="pre">device_reference</span></code> classes is defined in <code class="docutils literal notranslate"><span class="pre">dpl_extras/vector.h</span></code>.</p>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Memory Helper Functions</p></th>
+<th class="head"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">malloc_device</span></code></p></td>
+<td><p>Allocates memory for use on a device.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">free_device</span></code></p></td>
+<td><p>Deallocates memory allocated with <code class="docutils literal notranslate"><span class="pre">malloc_device</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">device_new</span></code></p></td>
+<td><p>Allocates memory for use on a device large enough to hold the requested
+number of elements of the type specified.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">device_delete</span></code></p></td>
+<td><p>Deallocates memory allocated using <code class="docutils literal notranslate"><span class="pre">device_new</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">get_device_pointer</span></code></p></td>
+<td><p>Constructs a <code class="docutils literal notranslate"><span class="pre">device_pointer</span></code> from a raw pointer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">get_raw_pointer</span></code></p></td>
+<td><p>Returns a raw pointer from a <code class="docutils literal notranslate"><span class="pre">device_pointer</span></code> instance.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="additional-oneapi-dpc-library-specific-utility-header-files">
+<h3>Additional oneAPI DPC++ Library Specific Utility Header Files<a class="headerlink" href="#additional-oneapi-dpc-library-specific-utility-header-files" title="Permalink to this headline">#</a></h3>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">functional.h</span></code></p></td>
+<td><p>Contains the implementation of the function objects used in the definitions
+of the algorithm functions described above.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">iterator.h</span></code></p></td>
+<td><p>Provides an implementation of <code class="docutils literal notranslate"><span class="pre">constant_iterator</span></code>, an iterator that is
+constructed with a value and when dereferenced will only return that value.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">vector.h</span></code></p></td>
+<td><p>Provides an implementation of <code class="docutils literal notranslate"><span class="pre">device_vector</span></code>, a container for managing data
+elements stored in device memory.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="utility-helper-functions">
+<h2>Utility Helper Functions<a class="headerlink" href="#utility-helper-functions" title="Permalink to this headline">#</a></h2>
+<table class="colwidths-given table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">util.hpp</span></code></p></td>
+<td><p>Common utility helper functions.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">blas_utils.hpp</span></code></p></td>
+<td><p>BLAS-specific utility helper functions.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="migrate-a-project/user-defined-migration-rules.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">User-defined Migration Rules</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="command-line-options-reference.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Command Line Options Reference</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Intel<br/>
+  
+      &copy; Copyright Intel Corporation.<br/>
+    <div class="extra_footer">
+      <p align="right"><a href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">Cookies</a></p>
+    </div>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>

@@ -1,0 +1,25 @@
+.. _id_DPCT1079:
+
+DPCT1079
+========
+
+Message
+-------
+
+.. _msg-1079-start:
+
+Replace "dpct_placeholder" with the file path of the dynamic library.
+
+.. _msg-1079-end:
+
+Detailed Help
+-------------
+
+The first argument of ``dlopen()`` or ``LoadLibraryA()`` should be the path to the
+dynamic library (for example ``.so`` on Linux\* or ``.dll`` on Windows\*).
+
+Suggestions to Fix
+------------------
+
+Build the dynamic library from the migrated module file and replace
+“dpct_placeholder” with the file path.

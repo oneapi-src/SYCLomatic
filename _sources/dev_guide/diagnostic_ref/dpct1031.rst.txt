@@ -1,0 +1,28 @@
+.. _id_DPCT1031:
+
+DPCT1031
+========
+
+Message
+-------
+
+.. _msg-1031-start:
+
+SYCL currently does not support memory access across peer devices. The output
+parameter(s) are set to 0.
+
+.. _msg-1031-end:
+
+Detailed Help
+-------------
+
+SYCL currently does not support memory access across peer devices. The output
+parameter(s) are set to 0.
+
+Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
+for help.
+
+Suggestions to Fix
+------------------
+
+Review the logic and adjust it manually.
