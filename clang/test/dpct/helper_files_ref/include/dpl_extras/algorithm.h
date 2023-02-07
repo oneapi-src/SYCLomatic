@@ -1487,20 +1487,22 @@ template <typename _ExecutionPolicy, typename Iter1, typename Iter2>
 inline void reduce_argmax(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
                           ::std::size_t n) {
   dpct::arg_index_input_iterator<decltype(input)> input_arg_idx(input);
-  *output = *::std::max_element(
-      ::std::forward<_ExecutionPolicy>(policy), input_arg_idx,
-      input_arg_idx + n,
-      [](const auto &a, const auto &b) { return (a.value < b.value); });
+  auto ret = ::std::max_element(
+       ::std::forward<_ExecutionPolicy>(policy), input_arg_idx,
+       input_arg_idx + n,
+       [](const auto &a, const auto &b) { return (a.value < b.value); });
+  ::std::copy(::std::forward<_ExecutionPolicy>(policy), ret, ret + 1, output);
 }
 
 template <typename _ExecutionPolicy, typename Iter1, typename Iter2>
 inline void reduce_argmin(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
                           ::std::size_t n) {
   dpct::arg_index_input_iterator<decltype(input)> input_arg_idx(input);
-  *output = *::std::min_element(
-      ::std::forward<_ExecutionPolicy>(policy), input_arg_idx,
-      input_arg_idx + n,
-      [](const auto &a, const auto &b) { return (a.value < b.value); });
+  auto ret = ::std::min_element(
+       ::std::forward<_ExecutionPolicy>(policy), input_arg_idx,
+       input_arg_idx + n,
+       [](const auto &a, const auto &b) { return (a.value < b.value); });
+  ::std::copy(::std::forward<_ExecutionPolicy>(policy), ret, ret + 1, output);
 }
 
 } // end namespace dpct
