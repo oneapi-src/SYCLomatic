@@ -4140,6 +4140,9 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
      MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                         "__noinline__", "__dpct_noinline__",
                         HelperFeatureEnum::Dpct_dpct_noinline)},
+    {"cudaMemAttachGlobal",
+     MacroMigrationRule("flag_macro_rule", RulePriority::Fallback,
+                        "cudaMemAttachGlobal", "0")},
     //...
 };
 
