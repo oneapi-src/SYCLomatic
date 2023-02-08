@@ -1480,33 +1480,38 @@ public:
     for (auto &File : FileMap) {
       File.second->postProcess();
     }
-    if (DpctGlobalInfo::getRunRound() == 0) {
-      for (auto &Info : HostDeviceFDefIMap) {
-        if (HostDeviceFCallIMap.count(Info.first)) {
-          DpctGlobalInfo::setNeedRunAgain(true);
-          break;
-        }
-      }
-      // record file that needs to be parsed again
-      if (DpctGlobalInfo::isNeedRunAgain()) {
-        for (auto &Info : HostDeviceFDefIMap) {
-          if (HostDeviceFCallIMap.count(Info.first) &&
-              ProcessedFile.count(Info.second.first))
-            ReProcessFile.emplace(Info.second.first);
-        }
-        for (auto &Info : HostDeviceFCallIMap) {
-          if (HostDeviceFDefIMap.count(Info.first) &&
-              ProcessedFile.count(Info.second.first))
-            ReProcessFile.emplace(Info.second.first);
-        }
-        for (auto &Info : HostDeviceFDeclIMap) {
-          if (HostDeviceFDefIMap.count(Info.first) &&
-              HostDeviceFCallIMap.count(Info.first) &&
-              ProcessedFile.count(Info.second.first))
-            ReProcessFile.emplace(Info.second.first);
-        }
-      }
+    if (DpctGlobalInfo::getRunRound()) {
+      return;
     }
+    for (auto &Info : HostDeviceFDefIMap)
+      if (HostDeviceFCallIMap.count(Info.first)) {
+        DpctGlobalInfo::setNeedRunAgain(true);
+        auto &MSMap = DpctGlobalInfo::getMainSourceFileMap();
+        // record file that needs to be parsed again
+        for (auto &Info : HostDeviceFDefIMap)
+          if (HostDeviceFCallIMap.count(Info.first)) {
+            auto &MSFiles = MSMap[Info.second.first];
+            for (auto &File : MSFiles)
+              if (ProcessedFile.count(File))
+                ReProcessFile.emplace(File);
+          }
+        for (auto &Info : HostDeviceFCallIMap)
+          if (HostDeviceFDefIMap.count(Info.first)) {
+            auto &MSFiles = MSMap[Info.second.first];
+            for (auto &File : MSFiles)
+              if (ProcessedFile.count(File))
+                ReProcessFile.emplace(File);
+          }
+        for (auto &Info : HostDeviceFDeclIMap)
+          if (HostDeviceFDefIMap.count(Info.first) &&
+              HostDeviceFCallIMap.count(Info.first)) {
+            auto &MSFiles = MSMap[Info.second.first];
+            for (auto &File : MSFiles)
+              if (ProcessedFile.count(File))
+                ReProcessFile.emplace(File);
+          }
+        break;
+      }
   }
   void cacheFileRepl(std::string FilePath,
                      std::shared_ptr<ExtReplacements> Repl) {
@@ -1558,7 +1563,8 @@ public:
   HDCallMap &getHostDeviceFuncCallInfoMap() { return HostDeviceFCallIMap; }
   HDDefMap &getHostDeviceFuncDefInfoMap() { return HostDeviceFDefIMap; }
   HDDeclMap &getHostDeviceFuncDeclInfoMap() { return HostDeviceFDeclIMap; }
-  std::set<std::shared_ptr<ExtReplacement>> &getCudaArchMacroReplSet() {
+  std::unordered_map<std::string, std::shared_ptr<ExtReplacement>> &
+  getCudaArchMacroReplMap() {
     return CudaArchMacroRepl;
   }
   CudaArchDefMap &getCudaArchDefinedMap() { return CudaArchDefinedMap; }
@@ -2028,6 +2034,11 @@ public:
   getRnnInputMap() {
     return RnnInputMap;
   }
+  static inline std::unordered_map<std::string, std::vector<std::string>> &
+  getMainSourceFileMap(){
+    return MainSourceFileMap;
+  };
+
 
 private:
   DpctGlobalInfo();
@@ -2184,7 +2195,8 @@ private:
   static HDDefMap HostDeviceFDefIMap;
   static HDDeclMap HostDeviceFDeclIMap;
   static CudaArchDefMap CudaArchDefinedMap;
-  static std::set<std::shared_ptr<ExtReplacement>> CudaArchMacroRepl;
+  static std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
+      CudaArchMacroRepl;
   static std::unordered_map<std::string, std::shared_ptr<ExtReplacements>>
       FileReplCache;
   static std::set<std::string> ReProcessFile;
@@ -2212,6 +2224,8 @@ private:
   static std::unordered_map<
       std::string, std::unordered_map<std::string, std::vector<unsigned>>>
       RnnInputMap;
+  static std::unordered_map<std::string, std::vector<std::string>>
+      MainSourceFileMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

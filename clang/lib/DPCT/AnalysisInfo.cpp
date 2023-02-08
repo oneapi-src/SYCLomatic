@@ -131,7 +131,8 @@ HDDefMap DpctGlobalInfo::HostDeviceFDefIMap;
 HDDeclMap DpctGlobalInfo::HostDeviceFDeclIMap;
 // __CUDA_ARCH__ Offset -> defined(...) Offset
 CudaArchDefMap DpctGlobalInfo::CudaArchDefinedMap;
-std::set<std::shared_ptr<ExtReplacement>> DpctGlobalInfo::CudaArchMacroRepl;
+std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
+    DpctGlobalInfo::CudaArchMacroRepl;
 std::unordered_map<std::string, std::shared_ptr<ExtReplacements>>
     DpctGlobalInfo::FileReplCache;
 std::set<std::string> DpctGlobalInfo::ReProcessFile;
@@ -155,6 +156,8 @@ std::map<std::string, clang::tooling::OptionInfo> DpctGlobalInfo::CurrentOptMap;
 std::unordered_map<std::string,
                    std::unordered_map<std::string, std::vector<unsigned>>>
     DpctGlobalInfo::RnnInputMap;
+std::unordered_map<std::string, std::vector<std::string>>
+    DpctGlobalInfo::MainSourceFileMap;
 
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
@@ -394,11 +397,9 @@ void DpctFileInfo::postProcess() {
     return;
   for (auto &D : FuncMap)
     D.second->emplaceReplacement();
-  if (!Repls->empty()) {
-    Repls->postProcess();
-    if (DpctGlobalInfo::getRunRound() == 0) {
-      DpctGlobalInfo::getInstance().cacheFileRepl(FilePath, Repls);
-    }
+  Repls->postProcess();
+  if (DpctGlobalInfo::getRunRound() == 0) {
+    DpctGlobalInfo::getInstance().cacheFileRepl(FilePath, Repls);
   }
 }
 

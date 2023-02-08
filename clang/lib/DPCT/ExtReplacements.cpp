@@ -351,7 +351,7 @@ void ExtReplacements::processCudaArchMacro() {
       DpctGlobalInfo::getInstance().getCudaArchPPInfoMap()[FilePath];
   auto &CudaArchDefinedMap =
       DpctGlobalInfo::getInstance().getCudaArchDefinedMap()[FilePath];
-  auto &ReplSet = DpctGlobalInfo::getInstance().getCudaArchMacroReplSet();
+  auto &ReplMap = DpctGlobalInfo::getInstance().getCudaArchMacroReplMap();
   // process __CUDA_ARCH__ macro of directive condition in generated host code:
   // if __CUDA_ARCH__ > 800      -->  if !DPCT_COMPATIBILITY_TEMP
   // if defined(__CUDA_ARCH__)   -->  if !defined(DPCT_COMPATIBILITY_TEMP)
@@ -375,12 +375,27 @@ void ExtReplacements::processCudaArchMacro() {
       (*Repl).setReplacementText("!DPCT_COMPATIBILITY_TEMP");
     }
   };
-  for (auto Repl = ReplSet.begin(); Repl != ReplSet.end();) {
-    if ((*Repl)->getFilePath() != FilePath) {
-      Repl++;
+  /*
+  static int i = 0;
+  if(i == 0) {
+    for(auto &Repl : ReplMap) {
+      std::cout << Repl.second->getFilePath().str() << std::endl;
+      std::cout << Repl.second->getOffset() << std::endl;
+    }
+    auto p1 = DpctGlobalInfo::getInstance().getCudaArchPPInfoMap();
+    auto p2 = DpctGlobalInfo::getInstance().getCudaArchDefinedMap();
+    //std::cout << p1.size() << std::endl;
+    //std::cout << p2.size() << std::endl;
+    i++;
+  }
+  */
+  for (auto Iter = ReplMap.begin(); Iter != ReplMap.end();) {
+    auto Repl = Iter->second;
+    if (Repl->getFilePath() != FilePath) {
+      Iter++;
       continue;
     }
-    unsigned CudaArchOffset = (*Repl)->getOffset();
+    unsigned CudaArchOffset = Repl->getOffset();
     bool DirectiveReserved = true;
     for (auto Iterator = CudaArchPPInfosMap.begin();
          Iterator != CudaArchPPInfosMap.end(); Iterator++) {
@@ -530,7 +545,7 @@ void ExtReplacements::processCudaArchMacro() {
             addReplacement(std::make_shared<ExtReplacement>(
                 FilePath, Pos_a, Len_a, "ifdef", nullptr));
           } else if (Info.DT == IfType::IT_If) {
-            processIfMacro(*Repl, Info.IfInfo);
+            processIfMacro(Repl, Info.IfInfo);
           }
         }
         break;
@@ -543,17 +558,17 @@ void ExtReplacements::processCudaArchMacro() {
           if (CudaArchOffset >= ElifInfo.ConditionLoc &&
               CudaArchOffset <=
                   ElifInfo.ConditionLoc + ElifInfo.Condition.length()) {
-            processIfMacro(*Repl, ElifInfo);
+            processIfMacro(Repl, ElifInfo);
             break;
           }
         }
       }
     }
     if (DirectiveReserved) {
-      addReplacement(*Repl);
-      Repl = ReplSet.erase(Repl);
+      addReplacement(Repl);
+      Iter = ReplMap.erase(Iter);
     } else {
-      Repl++;
+      Iter++;
     }
   }
 }
@@ -681,6 +696,8 @@ void ExtReplacements::postProcess() {
   processCudaArchMacro();
 
   if (DpctGlobalInfo::getRunRound() == 1) {
+    //std::cout << "buildCudaArchHostFunc" << std::endl;
+    //std::cout << FilePath << std::endl;
     buildCudaArchHostFunc(FileInfo);
   }
   getLOCStaticFromCodeRepls(FileInfo);
