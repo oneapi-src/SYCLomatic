@@ -683,7 +683,7 @@ template <typename _Tp, typename _Bp> struct __in_native_op_list {
 };
 
 template <typename _Tp, typename _Bp> struct __is_native_op {
-  constexpr static bool value = __in_native_op_list<T, _Bp>::value ||
+  constexpr static bool value = __in_native_op_list<_Tp, _Bp>::value ||
                                 __in_native_op_list<void, _Bp>::value;
 };
 // DPCT_LABEL_END
