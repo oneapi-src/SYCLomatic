@@ -18,10 +18,6 @@
 // DPCT_CODE
 #include <sycl/sycl.hpp>
 #include <stdexcept>
-
-#ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS 
-#include <sycl/ext/oneapi/experimental/user_defined_reductions.hpp>
-#endif
 // DPCT_LABEL_END
 
 namespace dpct {
@@ -658,34 +654,8 @@ namespace detail {
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 template <typename... _Args> constexpr auto __joint_reduce(_Args... __args) {
-#ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS 
-  return sycl::ext::oneapi::experimental::joint_reduce(__args...);
-#else
   return sycl::joint_reduce(__args...);
-#endif
 }
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|is_native_op|dpct::device::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-template <typename _Tp, typename... _Ts>
-struct __is_any
-    : std::integral_constant<
-          bool, (std::is_same_v<std::remove_cv_t<_Tp>, std::remove_cv_t<_Ts>> ||
-                 ...)> {};
-
-template <typename _Tp, typename _Bp> struct __in_native_op_list {
-  constexpr static bool value =
-      __is_any<_Bp, sycl::plus<_Tp>, sycl::bit_or<_Tp>, sycl::bit_xor<_Tp>,
-               sycl::bit_and<_Tp>, sycl::maximum<_Tp>, sycl::minimum<_Tp>,
-               sycl::multiplies<_Tp>>::value;
-};
-
-template <typename _Tp, typename _Bp> struct __is_native_op {
-  constexpr static bool value = __in_native_op_list<_Tp, _Bp>::value ||
-                                __in_native_op_list<void, _Bp>::value;
-};
 // DPCT_LABEL_END
 
 } // namespace detail
@@ -693,7 +663,6 @@ template <typename _Tp, typename _Bp> struct __is_native_op {
 // DPCT_LABEL_BEGIN|segmented_reduce|dpct::device
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasDpcppExtensions|joint_reduce
-// DplExtrasDpcppExtensions|is_native_op
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Perform a reduce on each of the segments specified within data stored on
@@ -716,39 +685,6 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
   sycl::range<1> global_size(segment_count * GROUP_SIZE);
   sycl::range<1> local_size(GROUP_SIZE);
 
-#ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
-  if constexpr (!detail::__is_native_op<T, BinaryOperation>::value) {
-    queue.submit([&](sycl::handler &cgh) {
-      size_t temp_memory_size = GROUP_SIZE * sizeof(T);
-      auto scratch = sycl::local_accessor<std::byte, 1>(temp_memory_size, cgh);
-      cgh.parallel_for(
-          sycl::nd_range<1>(global_size, local_size),
-          [=](sycl::nd_item<1> item) {
-            OffsetT segment_begin = begin_offsets[item.get_group_linear_id()];
-            OffsetT segment_end = end_offsets[item.get_group_linear_id()];
-            if (segment_begin == segment_end) {
-              if (item.get_local_linear_id() == 0) {
-                outputs[item.get_group_linear_id()] = init;
-              }
-              return;
-            }
-            // Create a handle that associates the group with an allocation it
-            // can use
-            auto handle =
-                sycl::ext::oneapi::experimental::group_with_scratchpad(
-                    item.get_group(),
-                    sycl::span(&scratch[0], temp_memory_size));
-            T group_aggregate =
-                detail::__joint_reduce(handle, inputs + segment_begin,
-                                       inputs + segment_end, init, binary_op);
-            if (item.get_local_linear_id() == 0) {
-              outputs[item.get_group_linear_id()] = group_aggregate;
-            }
-          });
-    });
-    return;
-  }
-#endif
   queue.submit([&](sycl::handler &cgh) {
     cgh.parallel_for(
         sycl::nd_range<1>(global_size, local_size), [=](sycl::nd_item<1> item) {
@@ -771,6 +707,100 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
         });
   });
 }
+
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|segmented_reduce_ext|dpct::device
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasDpcppExtensions|segmented_reduce
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+#ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
+#include <sycl/ext/oneapi/experimental/user_defined_reductions.hpp>
+
+namespace experimental {
+namespace detail {
+template <typename _Tp, typename... _Ts>
+struct __is_any
+    : std::integral_constant<
+          bool, (std::is_same_v<std::remove_cv_t<_Tp>, std::remove_cv_t<_Ts>> ||
+                 ...)> {};
+
+template <typename _Tp, typename _Bp> struct __in_native_op_list {
+  constexpr static bool value =
+      __is_any<_Bp, sycl::plus<_Tp>, sycl::bit_or<_Tp>, sycl::bit_xor<_Tp>,
+               sycl::bit_and<_Tp>, sycl::maximum<_Tp>, sycl::minimum<_Tp>,
+               sycl::multiplies<_Tp>>::value;
+};
+
+template <typename _Tp, typename _Bp> struct __is_native_op {
+  constexpr static bool value = __in_native_op_list<_Tp, _Bp>::value ||
+                                __in_native_op_list<void, _Bp>::value;
+};
+
+} // namespace detail
+
+/// Perform a reduce on each of the segments specified within data stored on
+/// the device. Compared with dpct::device::segmented_reduce, this experimental
+/// feature support user define reductions
+///
+/// \param queue Command queue used to access device used for reduction
+/// \param inputs Pointer to the data elements on the device to be reduced
+/// \param outputs Pointer to the storage where the reduced value for each
+/// segment will be stored \param segment_count number of segments to be reduced
+/// \param begin_offsets Pointer to the set of indices that are the first
+/// element in each segment \param end_offsets Pointer to the set of indices
+/// that are one past the last element in each segment \param binary_op functor
+/// that implements the binary operation used to perform the scan. \param init
+/// initial value of the reduction for each segment.
+template <int GROUP_SIZE, typename T, typename OffsetT, class BinaryOperation>
+void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
+                      size_t segment_count, OffsetT *begin_offsets,
+                      OffsetT *end_offsets, BinaryOperation binary_op, T init) {
+
+  sycl::range<1> global_size(segment_count * GROUP_SIZE);
+  sycl::range<1> local_size(GROUP_SIZE);
+
+  if constexpr (!detail::__is_native_op<T, BinaryOperation>::value) {
+    queue.submit([&](sycl::handler &cgh) {
+      size_t temp_memory_size = GROUP_SIZE * sizeof(T);
+      auto scratch = sycl::local_accessor<std::byte, 1>(temp_memory_size, cgh);
+      cgh.parallel_for(
+          sycl::nd_range<1>(global_size, local_size),
+          [=](sycl::nd_item<1> item) {
+            OffsetT segment_begin = begin_offsets[item.get_group_linear_id()];
+            OffsetT segment_end = end_offsets[item.get_group_linear_id()];
+            if (segment_begin == segment_end) {
+              if (item.get_local_linear_id() == 0) {
+                outputs[item.get_group_linear_id()] = init;
+              }
+              return;
+            }
+            // Create a handle that associates the group with an allocation it
+            // can use
+            auto handle =
+                sycl::ext::oneapi::experimental::group_with_scratchpad(
+                    item.get_group(),
+                    sycl::span(&scratch[0], temp_memory_size));
+            T group_aggregate = sycl::ext::oneapi::experimental::joint_reduce(
+                handle, inputs + segment_begin, inputs + segment_end, init,
+                binary_op);
+            if (item.get_local_linear_id() == 0) {
+              outputs[item.get_group_linear_id()] = group_aggregate;
+            }
+          });
+    });
+    return;
+  }
+
+  ::dpct::device::segmented_reduce<GROUP_SIZE>(queue, inputs, outputs,
+                                               segment_count, begin_offsets,
+                                               end_offsets, binary_op, init);
+}
+} // namespace experimental
+
+#endif // SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
+
 // DPCT_LABEL_END
 
 } // namespace device
