@@ -145,6 +145,20 @@ __global__ void kernelFuncHalf2() {
   h2_2 = __hgt2(h2, h2_1);
   // CHECK: h2_2 = sycl::ext::intel::math::hgtu2(h2, h2_1);
   h2_2 = __hgtu2(h2, h2_1);
+  // CHECK: h2_2 = sycl::ext::intel::math::hisnan2(h2);
+  h2_2 = __hisnan2(h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::hle2(h2, h2_1);
+  h2_2 = __hle2(h2, h2_1);
+  // CHECK: sycl::ext::intel::math::hleu2(h2, h2);
+  __hleu2(h2, h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::hlt2(h2, h2_1);
+  h2_2 = __hlt2(h2, h2_1);
+  // CHECK: sycl::ext::intel::math::hltu2(h2, h2);
+  __hltu2(h2, h2);
+  // CHECK: h2_2 = sycl::ext::intel::math::hne2(h2, h2_1);
+  h2_2 = __hne2(h2, h2_1);
+  // CHECK: sycl::ext::intel::math::hneu2(h2, h2);
+  __hneu2(h2, h2);
 }
 
 int main() { return 0; }

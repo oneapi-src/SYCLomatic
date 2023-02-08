@@ -38,6 +38,8 @@ STD_HEADER(Chrono, "<chrono>")
 STD_HEADER(Limits, "<limits>")
 STD_HEADER(Numeric, "<numeric>")
 STD_HEADER(Functional, "<functional>")
+STD_HEADER(Array, "<array>")
+STD_HEADER(Tuple, "<tuple>")
 STD_HEADER(SYCL_Math, "<sycl/ext/intel/math.hpp>")
 #ifdef _WIN32
 STD_HEADER(DL, "<libloaderapi.h>")
@@ -63,6 +65,7 @@ DPCT_HEADER(DNNL_Utils, "<dpct/dnnl_utils.hpp>")
 DPCT_HEADER(LAPACK_Utils, "<dpct/lapack_utils.hpp>")
 DPCT_HEADER(COMMON_Utils, "<dpct/lib_common_utils.hpp>")
 DPCT_HEADER(Atomic, "<dpct/atomic.hpp>")
+DPCT_HEADER(SPBLAS_Utils, "<dpct/sparse_utils.hpp>")
 
 #undef MKL_HEADER
 #undef ONEDPL_HEADER

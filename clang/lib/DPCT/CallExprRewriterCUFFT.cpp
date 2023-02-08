@@ -18,6 +18,9 @@ class FFTDirExpr {
 public:
   const Expr *E = nullptr;
 
+  // For CUFFT_FORWARD and CUFFT_INVERSE in cufftExec call, they will be
+  // migrated to dpct::fft::fft_direction::forward/backward
+  // In other locations, they will be migrated to integer literal.
   template <class StreamT> void print(StreamT &Stream) const {
     requestFeature(HelperFeatureEnum::FftUtils_fft_engine, E);
     Expr::EvalResult ER;

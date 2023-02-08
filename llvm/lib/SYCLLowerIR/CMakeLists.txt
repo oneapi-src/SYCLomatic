@@ -30,10 +30,10 @@ endif()
 if (NOT TARGET LLVMGenXIntrinsics)
   if (NOT DEFINED LLVMGenXIntrinsics_SOURCE_DIR)
     set(LLVMGenXIntrinsics_GIT_REPO https://github.com/intel/vc-intrinsics.git)
-    # Author: Gorban, Igor <igor.gorban@intel.com>
-    # Date:   Sun Dec 11 20:40:12 2022 +0000
-    # Fix llvm_tot: legacy pass manager
-    set(LLVMGenXIntrinsics_GIT_TAG 7596a83751934c538d809f336ee18bea6e8d1b44)
+    # Author: "Gorban, Igor" <igor.gorban@intel.com>
+    # Date: Wed, 21 Dec 2022 23:00:51 +0000
+    # Fix build against llvm tot
+    set(LLVMGenXIntrinsics_GIT_TAG dd72efa3b4aafdbbf599e6f3c6f8c55450e348de)
 
     if (INTEL_CUSTOMIZATION)
       # for xmain builds the LLVMGenXIntrinsics_GIT_REPO is constructed from
@@ -44,10 +44,10 @@ if (NOT TARGET LLVMGenXIntrinsics)
       # default repo path for public xmain builds, not using ICS
       set(LLVMGenXIntrinsics_GIT_REPO_PATH https://github.com/intel)
       set(LLVMGenXIntrinsics_GIT_REPO_NAME vc-intrinsics.git)
-      # Author: Gorban, Igor <igor.gorban@intel.com>
-      # Date:   Tue Dec 13 18:21:41 2022 +0000
-      # VCWrappers does not installing, we can't use them in headers
-      set(LLVMGenXIntrinsics_GIT_TAG 88083f819d2391f0a15ecdb6f7efeefaf02364e8)
+      # Author: "Gorban, Igor" <igor.gorban@intel.com>
+      # Date: Wed, 21 Dec 2022 23:00:51 +0000
+      # Fix build against llvm tot
+      set(LLVMGenXIntrinsics_GIT_TAG dd72efa3b4aafdbbf599e6f3c6f8c55450e348de)
 
       # Determine if the build is embargo and provide specific settings.
       set(IS_INTERNAL_ESIMD_BUILD FALSE)
@@ -107,17 +107,18 @@ endif (NOT WIN32)
 #end INTEL_CUSTOMIZATION
 
 add_llvm_component_library(LLVMSYCLLowerIR
-  ESIMD/LowerESIMD.cpp
-  ESIMD/LowerESIMDVLoadVStore.cpp
-  ESIMD/LowerESIMDVecArg.cpp
+  ESIMD/ESIMDOptimizeVecArgCallConv.cpp
   ESIMD/ESIMDUtils.cpp
   ESIMD/ESIMDVerifier.cpp
+  ESIMD/LowerESIMD.cpp
   ESIMD/LowerESIMDKernelAttrs.cpp
-  ESIMD/ESIMDOptimizeVecArgCallConv.cpp
+  ESIMD/LowerESIMDVecArg.cpp
+  ESIMD/LowerESIMDVLoadVStore.cpp
+  ESIMD/LowerESIMDSlmReservation.cpp
   LowerInvokeSimd.cpp
   LowerKernelProps.cpp
-  LowerWGScope.cpp
   LowerWGLocalMemory.cpp
+  LowerWGScope.cpp
   MutatePrintfAddrspace.cpp
   SYCLPropagateAspectsUsage.cpp
   SYCLUtils.cpp
@@ -140,6 +141,7 @@ add_llvm_component_library(LLVMSYCLLowerIR
   LINK_LIBS
   LLVMGenXIntrinsics
   LLVMDemangle
+  LLVMTargetParser
   LLVMTransformUtils
 
   LINK_COMPONENTS
