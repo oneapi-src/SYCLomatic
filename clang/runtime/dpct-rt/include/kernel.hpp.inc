@@ -60,6 +60,7 @@
 // DPCT_LABEL_BEGIN|local_include_dependency|
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
+#include <image.hpp>
 // DPCT_LABEL_END
 
 namespace dpct {
@@ -86,14 +87,14 @@ struct kernel_function_info {
 // Device|dev_mgr_current_device
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-static void get_kernel_function_info(kernel_function_info *kernel_info,
+static inline void get_kernel_function_info(kernel_function_info *kernel_info,
                                      const void *function) {
   kernel_info->max_work_group_size =
       dpct::dev_mgr::instance()
           .current_device()
           .get_info<sycl::info::device::max_work_group_size>();
 }
-static kernel_function_info get_kernel_function_info(const void *function) {
+static inline kernel_function_info get_kernel_function_info(const void *function) {
   kernel_function_info kernel_info;
   kernel_info.max_work_group_size =
       dpct::dev_mgr::instance()
@@ -121,7 +122,7 @@ namespace fs = std::experimental::filesystem;
  /// Temporary file is created in a temporary directory both of which have random names
  /// with only the user having access permissions.  Only one temporary file will be
  /// created in the temporary directory.
-static fs::path write_data_to_file(char const *const data,
+static inline fs::path write_data_to_file(char const *const data,
                                    size_t size) {
   std::error_code ec;
 
@@ -214,7 +215,7 @@ static fs::path write_data_to_file(char const *const data,
   return filepath;
 }
 
-static uint16_t extract16(unsigned char const *const ptr) {
+static inline uint16_t extract16(unsigned char const *const ptr) {
   uint16_t ret = 0;
 
   ret |= static_cast<uint16_t>(ptr[0]) << 0;
@@ -223,7 +224,7 @@ static uint16_t extract16(unsigned char const *const ptr) {
   return (ret);
 }
 
-static uint32_t extract32(unsigned char const *const ptr) {
+static inline uint32_t extract32(unsigned char const *const ptr) {
   uint32_t ret = 0;
 
   ret |= static_cast<uint32_t>(ptr[0]) << 0;
@@ -234,7 +235,7 @@ static uint32_t extract32(unsigned char const *const ptr) {
   return (ret);
 }
 
-static uint64_t extract64(unsigned char const *const ptr) {
+static inline uint64_t extract64(unsigned char const *const ptr) {
   uint64_t ret = 0;
 
   ret |= static_cast<uint64_t>(ptr[0]) << 0;
@@ -249,7 +250,7 @@ static uint64_t extract64(unsigned char const *const ptr) {
   return (ret);
 }
 
-static uint64_t get_lib_size(char const *const blob) {
+static inline uint64_t get_lib_size(char const *const blob) {
 #ifdef _WIN32
   ///////////////////////////////////////////////////////////////////////
   // Analyze DOS stub
@@ -356,7 +357,7 @@ public:
   }
 
 private:
-  inline static std::unordered_map<void *,fs::path> lib_to_path;
+  static inline std::unordered_map<void *,fs::path> lib_to_path;
 };
 #endif
 
@@ -372,13 +373,13 @@ public:
 private:
   void *ptr;
 #ifdef _WIN32
-  inline static detail::path_lib_record single_instance_to_trigger_destructor;
+  static inline detail::path_lib_record single_instance_to_trigger_destructor;
 #endif
 };
 
 namespace detail {
 
-static kernel_library load_dl_from_data(char const *const data, size_t size) {
+static inline kernel_library load_dl_from_data(char const *const data, size_t size) {
   fs::path filename = write_data_to_file(data, size);
 #ifdef _WIN32
   void *so = LoadLibraryA(filename.string().c_str());
@@ -406,7 +407,7 @@ static kernel_library load_dl_from_data(char const *const data, size_t size) {
 
  /// Load kernel library and return a handle to use the library.
  /// \param [in] name The name of the library.
-static kernel_library load_kernel_library(const std::string &name) {
+static inline kernel_library load_kernel_library(const std::string &name) {
   std::ifstream ifs;
   ifs.open(name, std::ios::in | std::ios::binary);
 
@@ -415,25 +416,25 @@ static kernel_library load_kernel_library(const std::string &name) {
 
   const std::string buffer_string = buffer.str();
   return detail::load_dl_from_data(buffer_string.c_str(), buffer_string.size());
-};
+}
 
  /// Load kernel library whose image is alreay in memory and return a handle to use the library.
  /// \param [in] image A pointer to the image in memory.
-static kernel_library load_kernel_library_mem(char const *const image) {
+static inline kernel_library load_kernel_library_mem(char const *const image) {
   const size_t size = detail::get_lib_size(image);
 
   return detail::load_dl_from_data(image, size);
-};
+}
 
  /// Unload kernel library.
  /// \param [in,out] library Handle to the library to be closed.
-static void unload_kernel_library(const kernel_library &library) {
+static inline void unload_kernel_library(const kernel_library &library) {
 #ifdef _WIN32
   detail::path_lib_record::remove_lib(library);
 #else
   dlclose(library);
 #endif
-};
+}
 
 class kernel_function {
 public:
@@ -454,7 +455,7 @@ private:
  /// Find kernel function in a kernel library and return its address.
  /// \param [in] library Handle to the kernel library.
  /// \param [in] name Name of the kernel function.
-static dpct::kernel_function get_kernel_function(kernel_library &library,
+static inline dpct::kernel_function get_kernel_function(kernel_library &library,
                                                  const std::string &name) {
 #ifdef _WIN32
   dpct::kernel_functor fn = reinterpret_cast<dpct::kernel_functor>(
@@ -477,12 +478,37 @@ static dpct::kernel_function get_kernel_function(kernel_library &library,
  /// \param [in] localMemSize The size of local memory required by the kernel function.
  /// \param [in] kernelParams Array of pointers to kernel arguments.
  /// \param [in] extra Extra arguments.
-static void invoke_kernel_function(dpct::kernel_function &function,
+static inline void invoke_kernel_function(dpct::kernel_function &function,
                                    sycl::queue &queue, sycl::range<3> groupRange,
                                    sycl::range<3> localRange, unsigned int localMemSize,
                                    void **kernelParams, void **extra) {
   function(queue, sycl::nd_range<3>(groupRange * localRange, localRange), localMemSize, kernelParams,
            extra);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|get_image_wrapper|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Kernel|kernel_library
+// Image|image_wrapper_base_p_alias
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+ /// Find image wrapper in a kernel library and return its address.
+ /// \param [in] library Handle to the kernel library.
+ /// \param [in] name Name of the target image wrapper.
+static inline dpct::image_wrapper_base_p
+get_image_wrapper(dpct::kernel_library &library, const std::string &name) {
+#ifdef _WIN32
+  dpct::image_wrapper_base_p fn =
+      reinterpret_cast<dpct::image_wrapper_base_p>(GetProcAddress(
+          static_cast<HMODULE>(static_cast<void *>(library)), name.c_str()));
+#else
+  dpct::image_wrapper_base_p fn = reinterpret_cast<dpct::image_wrapper_base_p>(
+      dlsym(library, name.c_str()));
+#endif
+  if (fn == nullptr)
+    throw std::runtime_error("Failed to get image");
+  return fn;
 }
 // DPCT_LABEL_END
 
