@@ -415,7 +415,7 @@ public:
   // This function check if the RNN function input referenced between
   // backwarddata and backwardweight functiona call.
   bool isInputNotChanged(InfoIter Data, InfoIter Weight) {
-    for (auto RnnInput : Data->RnnInputDeclLoc) {
+    for (auto &RnnInput : Data->RnnInputDeclLoc) {
       auto &RnnInputRefs =
           DpctGlobalInfo::getRnnInputMap()[RnnInput][Data->FilePath];
       for (auto &RnnInputRef : RnnInputRefs) {
