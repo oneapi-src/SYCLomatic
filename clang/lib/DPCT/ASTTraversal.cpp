@@ -15383,7 +15383,6 @@ void CudaStreamCastRule::registerMatcher(ast_matchers::MatchFinder &MF) {
         qualType(pointsTo(namedDecl(hasName("CUstream_st"))))))))
      .bind("cast"),
      this);
-  MF.addMatcher(integerLiteral(equals(0)).bind("stream"), this);
 }
 
 void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
@@ -15408,16 +15407,6 @@ void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &R
 	  + "int_as_queue_ptr("
 	  + ExprAnalysis::ref(CE->getSubExpr())
 	  + ")"));
-    }
-  }
-  else if (auto E = getNodeAsType<Expr>(Result, "stream")) {
-    std::string Str = getStmtSpelling(E);
-    if (Str == "cudaStreamDefault") {
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      auto Begin = getStmtExpansionSourceRange(E).getBegin();
-      unsigned int Length = Lexer::MeasureTokenLength(
-          Begin, SM, DpctGlobalInfo::getContext().getLangOpts());
-      emplaceTransformation(new ReplaceText(Begin, Length, "0"));
     }
   }
 }

@@ -4108,6 +4108,9 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
     {"cudaMemAttachGlobal",
      MacroMigrationRule("flag_macro_rule", RulePriority::Fallback,
                         "cudaMemAttachGlobal", "0")},
+    {"cudaStreamDefault",
+     MacroMigrationRule("cudaStreamDefault_rule", RulePriority::Fallback,
+                        "cudaStreamDefault", "0")},
     //...
 };
 
