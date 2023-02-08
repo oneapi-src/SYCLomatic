@@ -1805,8 +1805,6 @@ inline void reduce_argmin(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
 }
 // DPCT_LABEL_END
 
-
-
 } // end namespace dpct
 
 #endif
