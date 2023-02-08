@@ -1995,6 +1995,8 @@ SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
 
 std::string
 getNestedNameSpecifierString(const clang::NestedNameSpecifier *NNS) {
+  if (!NNS)
+    return std::string();
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   NNS->print(OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());

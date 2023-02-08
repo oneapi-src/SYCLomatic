@@ -49,6 +49,7 @@
 // DPCT_LABEL_END
 #include "functional.h"
 #include "iterators.h"
+#include "vector.h"
 
 namespace dpct {
 
@@ -1162,27 +1163,35 @@ partition(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p) {
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|sort_pairs_forward_decl|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasVector|is_iterator
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t>
-void sort_pairs(
-    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value && 
+                   dpct::internal::is_iterator<key_out_t>::value &&
+                   dpct::internal::is_iterator<value_t>::value &&
+                   dpct::internal::is_iterator<value_out_t>::value>
+sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
     value_t values_in, value_out_t values_out, int64_t n,
     bool descending = false, int begin_bit = 0,
-    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
-                  8);
+           int end_bit =
+               sizeof(typename ::std::iterator_traits<key_t>::value_type) * 8);
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|sort_keys_forward_decl|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasVector|is_iterator
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
-inline void sort_keys(
-    _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, int64_t n,
-    bool descending = false, int begin_bit = 0,
-    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
-                  8);
+inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value && 
+                          dpct::internal::is_iterator<key_out_t>::value>
+sort_keys(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+          int64_t n, bool descending = false, int begin_bit = 0,
+          int end_bit =
+              sizeof(typename ::std::iterator_traits<key_t>::value_type) * 8);
 // DPCT_LABEL_END
 
 namespace internal {
@@ -1597,11 +1606,16 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasAlgorithm|sort_pairs_impl
 // DplExtrasAlgorithm|sort_pairs_forward_decl
+// DplExtrasVector|is_iterator
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t>
-void sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value && 
+                        dpct::internal::is_iterator<key_out_t>::value &&
+                        dpct::internal::is_iterator<value_t>::value &&
+                        dpct::internal::is_iterator<value_out_t>::value> 
+sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
                 value_t values_in, value_out_t values_out, int64_t n,
                 bool descending, int begin_bit, int end_bit) {
   internal::sort_pairs_impl(std::forward<_ExecutionPolicy>(policy), keys_in,
@@ -1610,16 +1624,37 @@ void sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|sort_pairs_io_iterator_pair|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|sort_pairs
+// DplExtrasIterators|io_iterator_pair
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename value_t>
+inline void sort_pairs(
+    _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys,
+    io_iterator_pair<value_t> &values, int64_t n, bool descending,
+    int begin_bit = 0,
+    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
+                  8) {
+  sort_pairs(::std::forward<_ExecutionPolicy>(policy), keys.input(),
+             keys.output(), values.input(), values.output(), n, descending,
+             begin_bit, end_bit);
+}
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|sort_keys|dpct
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasAlgorithm|transform_and_sort
 // DplExtrasAlgorithm|sort_keys_forward_decl
+// DplExtrasVector|is_iterator
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
-inline void sort_keys(_ExecutionPolicy &&policy, key_t keys_in,
-                      key_out_t keys_out, int64_t n, bool descending,
-                      int begin_bit, int end_bit) {
+inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value && 
+                        dpct::internal::is_iterator<key_out_t>::value>
+sort_keys(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
+          int64_t n, bool descending, int begin_bit, int end_bit) {
   using key_t_value_t = typename ::std::iterator_traits<key_t>::value_type;
 
   int clipped_begin_bit = ::std::max(begin_bit, 0);
@@ -1647,6 +1682,23 @@ inline void sort_keys(_ExecutionPolicy &&policy, key_t keys_in,
   {
     transform_and_sort_f.template operator()<uint64_t>(0);
   }
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|sort_keys_io_iterator_pair|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|sort_keys
+// DplExtrasIterators|io_iterator_pair
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t>
+inline void sort_keys(
+    _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys, int64_t n,
+    bool descending = false, int begin_bit = 0,
+    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
+                  8) {
+  sort_keys(std::forward<_ExecutionPolicy>(policy), keys.input(), keys.output(),
+            n, descending, begin_bit, end_bit);
 }
 // DPCT_LABEL_END
 
@@ -1698,6 +1750,28 @@ inline void segmented_sort_pairs(
         values_out, n, nsegments, begin_offsets, end_offsets, descending,
         begin_bit, end_bit);
   }
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|segmented_sort_pairs_io_iterator_pair|dpct
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasAlgorithm|segmented_sort_pairs
+// DplExtrasIterators|io_iterator_pair
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+template <typename _ExecutionPolicy, typename key_t, typename value_t,
+          typename OffsetIteratorT>
+inline void segmented_sort_pairs(
+    _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys,
+    io_iterator_pair<value_t> &values, int64_t n, int64_t nsegments,
+    OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
+    bool descending = false, int begin_bit = 0,
+    int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
+                  8) {
+  segmented_sort_pairs(std::forward<_ExecutionPolicy>(policy), keys.input(),
+                       keys.output(), values.input(), values.output(), n,
+                       nsegments, begin_offsets, end_offsets, descending,
+                       begin_bit, end_bit);
 }
 // DPCT_LABEL_END
 
