@@ -459,7 +459,6 @@ struct getrs_impl {
       sycl::queue _q;
     };
 
-
     auto ipiv_data = dpct::detail::get_memory(ipiv);
     std::int64_t device_ws_size = oneapi::mkl::lapack::getrs_scratchpad_size<T>(
         q, trans, n, nrhs, lda, ldb);
