@@ -52,7 +52,7 @@ auto isDeviceFuncCallExpr = []() {
         "InclusiveSum", "InclusiveScan", "ExclusiveScan", "InclusiveScanByKey",
         "InclusiveSumByKey", "ExclusiveScanByKey", "ExclusiveSumByKey",
         "Flagged", "Unique", "UniqueByKey", "Encode", "SortKeys",
-        "SortKeysDescending", "SortPairs", "SortPairsDescending");
+        "SortKeysDescending", "SortPairs", "SortPairsDescending", "If");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
