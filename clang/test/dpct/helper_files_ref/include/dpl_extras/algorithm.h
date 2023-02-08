@@ -1486,7 +1486,7 @@ inline void segmented_sort_pairs(
 template <typename _ExecutionPolicy, typename Iter1, typename Iter2>
 inline void reduce_argmax(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
                           ::std::size_t n) {
-  dpct::arg_index_input_iterator<decltype(input)> input_arg_idx(input);
+  dpct::arg_index_input_iterator<decltype(input), int> input_arg_idx(input);
   auto ret = ::std::max_element(
        ::std::forward<_ExecutionPolicy>(policy), input_arg_idx,
        input_arg_idx + n,
@@ -1497,7 +1497,7 @@ inline void reduce_argmax(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
 template <typename _ExecutionPolicy, typename Iter1, typename Iter2>
 inline void reduce_argmin(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
                           ::std::size_t n) {
-  dpct::arg_index_input_iterator<decltype(input)> input_arg_idx(input);
+  dpct::arg_index_input_iterator<decltype(input), int> input_arg_idx(input);
   auto ret = ::std::min_element(
        ::std::forward<_ExecutionPolicy>(policy), input_arg_idx,
        input_arg_idx + n,
