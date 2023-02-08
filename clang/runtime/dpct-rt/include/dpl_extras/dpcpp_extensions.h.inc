@@ -710,7 +710,7 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
 
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|segmented_reduce_ext|dpct::device
+// DPCT_LABEL_BEGIN|segmented_reduce_ext|dpct::device::experimental
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasDpcppExtensions|segmented_reduce
 // DPCT_DEPENDENCY_END
@@ -742,7 +742,7 @@ template <typename _Tp, typename _Bp> struct __is_native_op {
 
 /// Perform a reduce on each of the segments specified within data stored on
 /// the device. Compared with dpct::device::segmented_reduce, this experimental
-/// feature support user define reductions
+/// feature support user define reductions.
 ///
 /// \param queue Command queue used to access device used for reduction
 /// \param inputs Pointer to the data elements on the device to be reduced
@@ -790,12 +790,11 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
             }
           });
     });
-    return;
-  }
-
-  ::dpct::device::segmented_reduce<GROUP_SIZE>(queue, inputs, outputs,
+  } else {
+    dpct::device::segmented_reduce<GROUP_SIZE>(queue, inputs, outputs,
                                                segment_count, begin_offsets,
                                                end_offsets, binary_op, init);
+  }
 }
 } // namespace experimental
 
