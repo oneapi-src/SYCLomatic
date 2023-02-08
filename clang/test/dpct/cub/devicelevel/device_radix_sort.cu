@@ -6,12 +6,12 @@
 #include <cub/cub.cuh>
 
 int n, *d_keys_in, *d_keys_out, *d_values_in, *d_values_out;
-// CHECK: dpct::io_iterator_pair<int*> key_buffers(d_keys_in, d_keys_out);
+// CHECK: dpct::io_iterator_pair<int *> key_buffers(d_keys_in, d_keys_out);
 cub::DoubleBuffer<int> key_buffers(d_keys_in, d_keys_out);
-// CHECK: dpct::io_iterator_pair<int*> value_buffers(d_values_in, d_values_out);
+// CHECK: dpct::io_iterator_pair<int *> value_buffers(d_values_in, d_values_out);
 cub::DoubleBuffer<int> value_buffers(d_values_in, d_values_out);
 
-// CHECK: auto double_buffer(dpct::io_iterator_pair<int*> &buffers) {
+// CHECK: auto double_buffer(dpct::io_iterator_pair<int *> &buffers) {
 auto double_buffer(cub::DoubleBuffer<int> &buffers) {
   // CHECK: buffers.selector = !buffers.selector;
   buffers.selector = !buffers.selector;
@@ -19,9 +19,9 @@ auto double_buffer(cub::DoubleBuffer<int> &buffers) {
   buffers.d_buffers[0] += 1;
   // CHECK: *buffers.iter[1] = 5;
   *buffers.d_buffers[1] = 5;
-  // CHECK: buffers = dpct::io_iterator_pair<int*>(buffers.output(), buffers.input());
+  // CHECK: buffers = dpct::io_iterator_pair<int *>(buffers.output(), buffers.input());
   buffers = cub::DoubleBuffer<int>(buffers.Alternate(), buffers.Current());
-  // CHECK: buffers = dpct::io_iterator_pair<int*>();
+  // CHECK: buffers = dpct::io_iterator_pair<int *>();
   buffers = cub::DoubleBuffer<int>();
 }
 

@@ -657,7 +657,7 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
-  auto BaseType = [&]() {
+  const auto BaseType = [&]() {
     auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
     PP.PrintCanonicalTypes = true;
 

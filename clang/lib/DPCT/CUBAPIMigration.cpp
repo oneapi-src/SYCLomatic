@@ -147,15 +147,14 @@ void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
 
 void CubMemberCallRule::runRule(
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  auto or_ = [](const Expr *x, const Expr *y) { return x ? x : y; };
-  if (const Expr *E = or_(
-          getNodeAsType<CXXMemberCallExpr>(Result, "memberCall"),
-          getNodeAsType<MemberExpr>(Result, "memberExpr"))) {
-    ExprAnalysis EA;
-    EA.analyze(E);
-    emplaceTransformation(EA.getReplacement());
-    EA.applyAllSubExprRepl();
+  ExprAnalysis EA;
+  if (const auto E1 = getNodeAsType<CXXMemberCallExpr>(Result, "memberCall")) {
+    EA.analyze(E1);
+  } else if (const auto E2 = getNodeAsType<MemberExpr>(Result, "memberExpr")) {
+    EA.analyze(E2);
   }
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 
 static bool isNullPointerConstant(const clang::Expr *E) {

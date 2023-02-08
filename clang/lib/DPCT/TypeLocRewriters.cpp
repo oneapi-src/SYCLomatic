@@ -39,7 +39,7 @@ makeAddPointerCreator(std::function<T(const TypeLoc)> f) {
     std::string s;
     llvm::raw_string_ostream OS(s);
     dpct::print(OS, f(TL));
-    OS << "*";
+    OS << " *";
     return s;
   };
 }
