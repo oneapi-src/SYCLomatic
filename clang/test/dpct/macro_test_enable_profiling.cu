@@ -68,7 +68,7 @@
 //CHECK-NEXT:    dpct::destroy_event(start);                                                                                                                                           \
 //CHECK-NEXT:    dpct::destroy_event(stop);                                                                                                                                            \
 //CHECK-NEXT:  }                                                                                                                                                                       \
-//CHECK-NEXT:  dpct::err_tmp0 error = 0;
+//CHECK-NEXT:  dpct::err0 error = 0;
 #define CMC_PROFILING_END(lineno)                                                                          \
   if (CMC_profile)                                                                                         \
   {                                                                                                        \

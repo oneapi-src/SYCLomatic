@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
 
 
 // CHECK: MY_ERROR_CHECKER((start = new sycl::event(), 0));
-// CHECK: dpct::err_tmp0 et = (stop = new sycl::event(), 0);
+// CHECK: dpct::err0 et = (stop = new sycl::event(), 0);
   MY_ERROR_CHECKER(cudaEventCreate(&start));
   cudaError_t et = cudaEventCreate(&stop);
 
@@ -204,7 +204,7 @@ void foo() {
   cudaEventDestroy(stop);
 
   {
-  // CHECK: dpct::err_tmp0 err = (*start = q_ct1.ext_oneapi_submit_barrier(), 0);
+  // CHECK: dpct::err0 err = (*start = q_ct1.ext_oneapi_submit_barrier(), 0);
     cudaError_t err = cudaEventRecord(start, 0);
   // CHECK: err = (*stop = q_ct1.ext_oneapi_submit_barrier(), 0);
     err = cudaEventRecord(stop, 0);

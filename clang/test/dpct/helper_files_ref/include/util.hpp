@@ -19,9 +19,9 @@ namespace dpct {
 
 namespace detail {
 
-template <typename tag, typename T> class new_type {
+template <typename tag, typename T> class generic_error_type {
 public:
-  new_type(T value) : value{value} {}
+  generic_error_type(T value) : value{value} {}
   operator T() { return value; }
 
 private:
@@ -30,8 +30,8 @@ private:
 
 } // namespace detail
 
-using err_tmp0 = detail::new_type<struct err_tmp0_tag, int>;
-using err_tmp1 = detail::new_type<struct err_tmp1_tag, int>;
+using err0 = detail::generic_error_type<struct err0_tag, int>;
+using err1 = detail::generic_error_type<struct err1_tag, int>;
 
 template <int... Ints> struct integer_sequence {};
 template <int Size, int... Ints>

@@ -51,14 +51,14 @@
 
 namespace dpct {
 
-// DPCT_LABEL_BEGIN|err_tmp_types|dpct
+// DPCT_LABEL_BEGIN|err_types|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
 namespace detail {
 
-template <typename tag, typename T> class new_type {
+template <typename tag, typename T> class generic_error_type {
 public:
-  new_type(T value) : value{value} {}
+  generic_error_type(T value) : value{value} {}
   operator T() { return value; }
 
 private:
@@ -67,8 +67,8 @@ private:
 
 } // namespace detail
 
-using err_tmp0 = detail::new_type<struct err_tmp0_tag, int>;
-using err_tmp1 = detail::new_type<struct err_tmp1_tag, int>;
+using err0 = detail::generic_error_type<struct err0_tag, int>;
+using err1 = detail::generic_error_type<struct err1_tag, int>;
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|make_index_sequence|dpct

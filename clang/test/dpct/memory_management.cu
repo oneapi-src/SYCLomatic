@@ -209,7 +209,7 @@ void testCommas() {
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT:  dpct::err_tmp0 err = (d_A = (float *)dpct::dpct_malloc(size), 0);
+  // CHECK-NEXT:  dpct::err0 err = (d_A = (float *)dpct::dpct_malloc(size), 0);
   cudaError_t err = cudaMalloc((void **)&d_A, size);
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -968,7 +968,7 @@ void uninstantiated_template_call(const T * d_data, size_t width, size_t height)
   // CHECK:/*
   // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:*/
-  // CHECK-NEXT: dpct::err_tmp0 err = (dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host), 0);
+  // CHECK-NEXT: dpct::err0 err = (dpct::dpct_memcpy(data, d_data, datasize * sizeof(T), dpct::device_to_host), 0);
   cudaError_t err = cudaMemcpy(data, d_data, datasize * sizeof(T), cudaMemcpyDeviceToHost);
 
   // CHECK:/*

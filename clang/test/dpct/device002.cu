@@ -16,7 +16,7 @@ cudaDeviceProp cdp;
 // CHECK:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT: dpct::err_tmp0 error_code = (dpct::dev_mgr::instance().get_device(devID).get_device_info(cdp), 0);
+// CHECK-NEXT: dpct::err0 error_code = (dpct::dev_mgr::instance().get_device(devID).get_device_info(cdp), 0);
 cudaError_t error_code = cudaGetDeviceProperties(&cdp, devID);
 
 if (error_code == cudaSuccess) {
@@ -199,7 +199,7 @@ cudaSetDevice(device2);
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
-// CHECK-NEXT:dpct::err_tmp0 err = (dpct::get_current_device().queues_wait_and_throw(), 0);
+// CHECK-NEXT:dpct::err0 err = (dpct::get_current_device().queues_wait_and_throw(), 0);
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
 // CHECK-NEXT:*/
