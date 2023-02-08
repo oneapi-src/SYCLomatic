@@ -5,7 +5,7 @@
 
 #include <nccl.h>
 
-// CHECK: 17
+// CHECK: 16
 // TEST_FEATURE: Device_get_device_id
 int main() {
   int  device;

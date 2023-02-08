@@ -10,7 +10,7 @@ int main() {
     int version, nranks, rank, device;
     // CHECK: oneapi::ccl::kvs::address_type id;
     ncclUniqueId id;
-    // CHECK: oneapi::ccl::communicator * comm;
+    // CHECK: dpct::ccl::communicator_ext * comm;
     ncclComm_t comm;
 
     // CHECK: version = dpct::ccl::get_version();
@@ -25,10 +25,10 @@ int main() {
     // CHECK: check((id = dpct::ccl::create_kvs_address(), 0));
     check(ncclGetUniqueId(&id));
 
-    // CHECK: comm = new oneapi::ccl::communicator(oneapi::ccl::create_communicator(nranks, rank, dpct::ccl::create_kvs(id)));
+    // CHECK: comm = new dpct::ccl::communicator_ext(dpct::ccl::create_communicator_ext(nranks, rank, dpct::get_current_device(), dpct::get_default_context(), dpct::ccl::create_kvs(id)));
     ncclCommInitRank(&comm, nranks, id, rank);
 
-    // CHECK: check((comm = new oneapi::ccl::communicator(oneapi::ccl::create_communicator(nranks, rank, dpct::ccl::create_kvs(id))), 0));    
+    // CHECK: check((comm = new dpct::ccl::communicator_ext(dpct::ccl::create_communicator_ext(nranks, rank, dpct::get_current_device(), dpct::get_default_context(), dpct::ccl::create_kvs(id))), 0));    
     check(ncclCommInitRank(&comm, nranks, id, rank));
 
     // CHECK: device = comm->size();
@@ -105,7 +105,7 @@ int main() {
     // CHECK-NEXT: */
     ncclGroupEnd();
 
-    // CHECK: oneapi::ccl::allreduce(buff, recvbuff, count, oneapi::ccl::datatype::int8, oneapi::ccl::reduction::sum, *comm, oneapi::ccl::create_stream(*stream));
+    // CHECK: oneapi::ccl::allreduce(buff, recvbuff, count, oneapi::ccl::datatype::int8, oneapi::ccl::reduction::sum, comm->get_ccl_communicator(), oneapi::ccl::create_stream(*stream));
     ncclAllReduce(buff, recvbuff, count, ncclChar, ncclSum, comm, stream);
 
     // CHECK:     /*

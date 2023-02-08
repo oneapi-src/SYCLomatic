@@ -20,12 +20,28 @@ FEATURE_REQUEST_FACTORY(
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::CclUtils_create_kvs,
-    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-        "ncclCommInitRank", DEREF(0),
-        NEW("oneapi::ccl::communicator",
-            CALL("oneapi::ccl::create_communicator", ARG(1), ARG(3),
-                 CALL(MapNames::getDpctNamespace() + "ccl::create_kvs",
-                      ARG(2)))))))
+    FEATURE_REQUEST_FACTORY(
+        HelperFeatureEnum::CclUtils_communicator_ext,
+        FEATURE_REQUEST_FACTORY(
+            HelperFeatureEnum::CclUtils_create_communicator_ext,
+            FEATURE_REQUEST_FACTORY(
+                HelperFeatureEnum::Device_get_default_context,
+                FEATURE_REQUEST_FACTORY(
+                    HelperFeatureEnum::Device_get_current_device,
+                    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+                        "ncclCommInitRank", DEREF(0),
+                        NEW(MapNames::getDpctNamespace() +
+                                "ccl::communicator_ext",
+                            CALL(MapNames::getDpctNamespace() +
+                                     "ccl::create_communicator_ext",
+                                 ARG(1), ARG(3),
+                                 CALL(MapNames::getDpctNamespace() +
+                                      "get_current_device"),
+                                 CALL(MapNames::getDpctNamespace() +
+                                      "get_default_context"),
+                                 CALL(MapNames::getDpctNamespace() +
+                                          "ccl::create_kvs",
+                                      ARG(2)))))))))))
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("ncclCommCount", DEREF(1),
                                         MEMBER_CALL(ARG(0), true,
@@ -39,11 +55,13 @@ FEATURE_REQUEST_FACTORY(
              MEMBER_CALL(MEMBER_CALL(ARG(0), true, LITERAL("get_device")),
                          false, LITERAL("get_native"))))))
 
+FEATURE_REQUEST_FACTORY(
+HelperFeatureEnum::CclUtils_communicator_ext_get_ccl_communicator,
 CONDITIONAL_FACTORY_ENTRY(
     CheckEnumArgStr(4, "ncclAvg"),
     UNSUPPORT_FACTORY_ENTRY("ncclAllReduce", Diagnostics::UNSUPPORTED_PARAM,
                             ARG(4)),
     CALL_FACTORY_ENTRY("ncclAllReduce",
                        CALL("oneapi::ccl::allreduce", ARG(0), ARG(1), ARG(2),
-                            ARG(3), ARG(4), DEREF(5),
-                            CALL("oneapi::ccl::create_stream", STREAM(6)))))
+                            ARG(3), ARG(4), MEMBER_CALL(ARG(5),true,"get_ccl_communicator"),
+                            CALL("oneapi::ccl::create_stream", STREAM(6))))))
