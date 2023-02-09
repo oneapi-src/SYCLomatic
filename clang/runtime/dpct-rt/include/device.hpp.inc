@@ -302,7 +302,7 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   /// Returns the maximum clock rate of device's global memory in kHz. If
-  /// compiler  does not support this API then returns default value 3200000 kHz.
+  /// compiler does not support this API then returns default value 3200000 kHz.
   unsigned int get_memory_clock_rate() const { return _memory_clock_rate; }
 // DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_get_memory_bus_width|dpct

@@ -130,7 +130,7 @@ public:
   size_t get_global_mem_size() const { return _global_mem_size; }
   size_t get_local_mem_size() const { return _local_mem_size; }
   /// Returns the maximum clock rate of device's global memory in kHz. If
-  /// compiler  does not support this API then returns default value 3200000 kHz.
+  /// compiler does not support this API then returns default value 3200000 kHz.
   unsigned int get_memory_clock_rate() const { return _memory_clock_rate; }
   /// Returns the maximum bus width between device and memory in bits. If
   /// compiler does not support this API then returns default value 64 bits.
