@@ -64,6 +64,39 @@ struct TypeNameTypeLocRewriter
                                                         TypeNameCreator(TL)) {}
 };
 
+class ReportWarningTypeLocRewriter : public TypeLocRewriter {
+public:
+  template <class F>
+  static std::string getMsgArg(F&& f, const TypeLoc TL) {
+    std::string Result;
+    llvm::raw_string_ostream OS(Result);
+    print(OS, f(TL));
+    return OS.str();
+  }
+
+  template <typename IDTy, typename... Ts>
+  inline void report(IDTy MsgID, bool UseTextBegin, Ts &&...Vals) {
+    TransformSetTy TS;
+    auto SL = TL.getBeginLoc();
+    DiagnosticsUtils::report(
+        SL, MsgID, &TS, UseTextBegin, std::forward<Ts>(Vals)...);
+    for (auto &T : TS)
+      DpctGlobalInfo::getInstance().addReplacement(
+          T->getReplacement(DpctGlobalInfo::getContext()));
+  }
+
+  template <class... MsgArgs>
+  ReportWarningTypeLocRewriter(const TypeLoc TL,
+                               Diagnostics MsgID, MsgArgs&&...Args)
+    : TypeLocRewriter(TL) {
+    report(MsgID, false, getMsgArg(std::forward<MsgArgs>(Args), TL)...);
+  }
+
+  Optional<std::string> rewrite() override {
+    return {};
+  }
+};
+
 class TypeLocRewriterFactoryBase {
 public:
   virtual std::shared_ptr<TypeLocRewriter> create(const TypeLoc) const = 0;
