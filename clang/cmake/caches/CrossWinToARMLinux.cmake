@@ -99,7 +99,6 @@ if(WIN32)
 endif()
 
 # See some details here: https://reviews.llvm.org/D91099
-# SYCLomatic_CUSTOMIZATION begin
 if (NOT DEFINED RUNTIMES_INSTALL_RPATH)
   set(RUNTIMES_INSTALL_RPATH                "\$ORIGIN/../lib;${CMAKE_INSTALL_PREFIX}/lib")
 endif()
