@@ -22,26 +22,12 @@ FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::CclUtils_create_kvs,
     FEATURE_REQUEST_FACTORY(
         HelperFeatureEnum::CclUtils_communicator_ext,
-        FEATURE_REQUEST_FACTORY(
-            HelperFeatureEnum::CclUtils_create_communicator_ext,
-            FEATURE_REQUEST_FACTORY(
-                HelperFeatureEnum::Device_get_default_context,
-                FEATURE_REQUEST_FACTORY(
-                    HelperFeatureEnum::Device_get_current_device,
-                    ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
-                        "ncclCommInitRank", DEREF(0),
-                        NEW(MapNames::getDpctNamespace() +
-                                "ccl::communicator_ext",
-                            CALL(MapNames::getDpctNamespace() +
-                                     "ccl::create_communicator_ext",
-                                 ARG(1), ARG(3),
-                                 CALL(MapNames::getDpctNamespace() +
-                                      "get_current_device"),
-                                 CALL(MapNames::getDpctNamespace() +
-                                      "get_default_context"),
-                                 CALL(MapNames::getDpctNamespace() +
-                                          "ccl::create_kvs",
-                                      ARG(2)))))))))))
+        ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY(
+            "ncclCommInitRank", DEREF(0),
+            NEW(MapNames::getDpctNamespace() + "ccl::communicator_ext", ARG(1),
+                ARG(3),
+                CALL(MapNames::getDpctNamespace() + "ccl::create_kvs",
+                     ARG(2)))))))
 
 ASSIGNABLE_FACTORY(ASSIGN_FACTORY_ENTRY("ncclCommCount", DEREF(1),
                                         MEMBER_CALL(ARG(0), true,
