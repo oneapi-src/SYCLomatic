@@ -1776,7 +1776,9 @@ inline void segmented_sort_pairs(
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|reduce_argmax|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasIterators|arg_index_input_iterator
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename Iter1, typename Iter2>
 inline void reduce_argmax(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
@@ -1791,7 +1793,9 @@ inline void reduce_argmax(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|reduce_argmin|dpct
-// DPCT_DEPENDENCY_EMPTY
+// DPCT_DEPENDENCY_BEGIN
+// DplExtrasIterators|arg_index_input_iterator
+// DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename _ExecutionPolicy, typename Iter1, typename Iter2>
 inline void reduce_argmin(_ExecutionPolicy &&policy, Iter1 input, Iter2 output,
