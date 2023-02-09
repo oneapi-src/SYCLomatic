@@ -9,8 +9,8 @@
 // RUN: cp %s gen-build-script.cpp
 //
 // ------ create makefile
-// RUN: echo "gen-build-script.o      :       gen-build-script.cpp                 "      >  Makefile
-// RUN: echo "	%clangxx -c gen-build-script.cpp -DFOOBAR -msse4.1 -mavx512vl -O2  "      >> Makefile
+// RUN: echo "gen-build-script.o      :       gen-build-script.cpp                                           "      >  Makefile
+// RUN: echo "	%clangxx -c gen-build-script.cpp -DFOOBAR -msse4.1 -mavx512vl -O2 -isystem %cuda-path/include"      >> Makefile
 //
 // ------ create compilation database
 // RUN: intercept-build make -f Makefile
@@ -28,7 +28,7 @@
 // RUN: cd ..
 // RUN: rm -rf ./gen-build-script
 
-// CHECK: -DFOOBAR -msse4.1 -mavx512vl -O2
+// CHECK: -DFOOBAR -msse4.1 -mavx512vl -O2 -isystem {{.*}}/include
 
 void foo() {
 }

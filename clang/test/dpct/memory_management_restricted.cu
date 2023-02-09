@@ -418,3 +418,13 @@ void foo2() {
   cudaFree(a1);
   cudaFree(a2);
 }
+
+void foo3() {
+  float *a, *b;
+  // CHECK: auto flag = 0;
+  // CHECK-NEXT: a = (float *)sycl::malloc_shared(100, q_ct1);
+  // CHECK-NEXT: b = (float *)sycl::malloc_shared(100, q_ct1);
+  auto flag = cudaMemAttachGlobal;
+  cudaMallocManaged(&a, 100, flag);
+  cudaMallocManaged(&b, 100, cudaMemAttachGlobal);
+}

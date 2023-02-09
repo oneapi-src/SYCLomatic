@@ -2022,7 +2022,7 @@ static Constant *foldGEPOfGEP(GEPOperator *GEP, Type *PointeeTy, bool InBounds,
   // The combined GEP normally inherits its index inrange attribute from
   // the inner GEP, but if the inner GEP's last index was adjusted by the
   // outer GEP, any inbounds attribute on that index is invalidated.
-  Optional<unsigned> IRIndex = GEP->getInRangeIndex();
+  std::optional<unsigned> IRIndex = GEP->getInRangeIndex();
   if (IRIndex && *IRIndex == GEP->getNumIndices() - 1)
     IRIndex = std::nullopt;
 
@@ -2033,12 +2033,12 @@ static Constant *foldGEPOfGEP(GEPOperator *GEP, Type *PointeeTy, bool InBounds,
 
 Constant *llvm::ConstantFoldGetElementPtr(Type *PointeeTy, Constant *C,
                                           bool InBounds,
-                                          Optional<unsigned> InRangeIndex,
+                                          std::optional<unsigned> InRangeIndex,
                                           ArrayRef<Value *> Idxs) {
   if (Idxs.empty()) return C;
 
   Type *GEPTy = GetElementPtrInst::getGEPReturnType(
-      PointeeTy, C, makeArrayRef((Value *const *)Idxs.data(), Idxs.size()));
+      PointeeTy, C, ArrayRef((Value *const *)Idxs.data(), Idxs.size()));
 
   if (isa<PoisonValue>(C))
     return PoisonValue::get(GEPTy);
@@ -2051,6 +2051,10 @@ Constant *llvm::ConstantFoldGetElementPtr(Type *PointeeTy, Constant *C,
     // For non-opaque pointers having multiple indices will change the result
     // type of the GEP.
     if (!C->getType()->getScalarType()->isOpaquePointerTy() && Idxs.size() != 1)
+      return false;
+
+    // Avoid losing inrange information.
+    if (InRangeIndex)
       return false;
 
     return all_of(Idxs, [](Value *Idx) {

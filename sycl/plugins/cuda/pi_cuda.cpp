@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cuda.h>
 #include <cuda_device_runtime_api.h>
 #include <limits>
@@ -187,7 +188,7 @@ pi_result check_error(CUresult result, const char *function, int line,
 /// contexts to be restored by SYCL.
 class ScopedContext {
 public:
-  ScopedContext(pi_context ctxt) {
+  ScopedContext(pi_context ctxt) : device(nullptr) {
     if (!ctxt) {
       throw PI_ERROR_INVALID_CONTEXT;
     }
@@ -195,9 +196,22 @@ public:
     set_context(ctxt->get());
   }
 
-  ScopedContext(CUcontext ctxt) { set_context(ctxt); }
+  ScopedContext(CUcontext ctxt) : device(nullptr) { set_context(ctxt); }
 
-  ~ScopedContext() {}
+  // Creating a scoped context from a device will simply use the primary
+  // context, this should be used when there is no other appropriate context,
+  // such as for the device infos.
+  ScopedContext(pi_device device) : device(device) {
+    CUcontext ctxt;
+    cuDevicePrimaryCtxRetain(&ctxt, device->get());
+
+    set_context(ctxt);
+  }
+
+  ~ScopedContext() {
+    if (device)
+      cuDevicePrimaryCtxRelease(device->get());
+  }
 
 private:
   void set_context(CUcontext desired) {
@@ -211,6 +225,8 @@ private:
       PI_CHECK_ERROR(cuCtxSetCurrent(desired));
     }
   }
+
+  pi_device device;
 };
 
 /// \cond NODOXY
@@ -277,23 +293,32 @@ int getAttribute(pi_device device, CUdevice_attribute attribute) {
 // Determine local work sizes that result in uniform work groups.
 // The default threadsPerBlock only require handling the first work_dim
 // dimension.
-void guessLocalWorkSize(size_t *threadsPerBlock, const size_t *global_work_size,
+void guessLocalWorkSize(_pi_device *device, size_t *threadsPerBlock,
+                        const size_t *global_work_size,
                         const size_t maxThreadsPerBlock[3], pi_kernel kernel,
                         pi_uint32 local_size) {
   assert(threadsPerBlock != nullptr);
   assert(global_work_size != nullptr);
   assert(kernel != nullptr);
-  int recommendedBlockSize, minGrid;
+  int minGrid, maxBlockSize, gridDim[3];
+
+  cuDeviceGetAttribute(&gridDim[1], CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Y,
+                       device->get());
+  cuDeviceGetAttribute(&gridDim[2], CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z,
+                       device->get());
+
+  threadsPerBlock[1] = ((global_work_size[1] - 1) / gridDim[1]) + 1;
+  threadsPerBlock[2] = ((global_work_size[2] - 1) / gridDim[2]) + 1;
 
   PI_CHECK_ERROR(cuOccupancyMaxPotentialBlockSize(
-      &minGrid, &recommendedBlockSize, kernel->get(), NULL, local_size,
+      &minGrid, &maxBlockSize, kernel->get(), NULL, local_size,
       maxThreadsPerBlock[0]));
 
-  (void)minGrid; // Not used, avoid warnings
+  gridDim[0] = maxBlockSize / (threadsPerBlock[1] * threadsPerBlock[2]);
 
-  threadsPerBlock[0] = std::min(
-      maxThreadsPerBlock[0],
-      std::min(global_work_size[0], static_cast<size_t>(recommendedBlockSize)));
+  threadsPerBlock[0] =
+      std::min(maxThreadsPerBlock[0],
+               std::min(global_work_size[0], static_cast<size_t>(gridDim[0])));
 
   // Find a local work group size that is a divisor of the global
   // work group size to produce uniform work groups.
@@ -489,7 +514,7 @@ _pi_event::_pi_event(pi_command_type type, pi_context context, pi_queue queue,
       streamToken_{stream_token}, evEnd_{nullptr}, evStart_{nullptr},
       evQueued_{nullptr}, queue_{queue}, stream_{stream}, context_{context} {
 
-  bool profilingEnabled = queue_->properties_ & PI_QUEUE_PROFILING_ENABLE;
+  bool profilingEnabled = queue_->properties_ & PI_QUEUE_FLAG_PROFILING_ENABLE;
 
   PI_CHECK_ERROR(cuEventCreate(
       &evEnd_, profilingEnabled ? CU_EVENT_DEFAULT : CU_EVENT_DISABLE_TIMING));
@@ -526,7 +551,7 @@ pi_result _pi_event::start() {
   pi_result result = PI_SUCCESS;
 
   try {
-    if (queue_->properties_ & PI_QUEUE_PROFILING_ENABLE) {
+    if (queue_->properties_ & PI_QUEUE_FLAG_PROFILING_ENABLE) {
       // NOTE: This relies on the default stream to be unused.
       result = PI_CHECK_ERROR(cuEventRecord(evQueued_, 0));
       result = PI_CHECK_ERROR(cuEventRecord(evStart_, stream_));
@@ -633,7 +658,7 @@ pi_result _pi_event::release() {
 
   PI_CHECK_ERROR(cuEventDestroy(evEnd_));
 
-  if (queue_->properties_ & PI_QUEUE_PROFILING_ENABLE) {
+  if (queue_->properties_ & PI_QUEUE_FLAG_PROFILING_ENABLE) {
     PI_CHECK_ERROR(cuEventDestroy(evQueued_));
     PI_CHECK_ERROR(cuEventDestroy(evStart_));
   }
@@ -660,17 +685,13 @@ _pi_program::_pi_program(pi_context ctxt)
 
 _pi_program::~_pi_program() { cuda_piContextRelease(context_); }
 
-bool get_kernel_metadata(std::string metadataName, const char *tag,
-                         std::string &kernelName) {
-  const size_t tagLength = strlen(tag);
-  const size_t metadataNameLength = metadataName.length();
-  if (metadataNameLength >= tagLength &&
-      metadataName.compare(metadataNameLength - tagLength, tagLength, tag) ==
-          0) {
-    kernelName = metadataName.substr(0, metadataNameLength - tagLength);
-    return true;
-  }
-  return false;
+std::pair<std::string, std::string>
+splitMetadataName(const std::string &metadataName) {
+  size_t splitPos = metadataName.rfind('@');
+  if (splitPos == std::string::npos)
+    return std::make_pair(metadataName, std::string{});
+  return std::make_pair(metadataName.substr(0, splitPos),
+                        metadataName.substr(splitPos, metadataName.length()));
 }
 
 pi_result _pi_program::set_metadata(const pi_device_binary_property *metadata,
@@ -678,23 +699,36 @@ pi_result _pi_program::set_metadata(const pi_device_binary_property *metadata,
   for (size_t i = 0; i < length; ++i) {
     const pi_device_binary_property metadataElement = metadata[i];
     std::string metadataElementName{metadataElement->Name};
-    std::string kernelName;
 
-    // If metadata is reqd_work_group_size record it for the corresponding
-    // kernel name.
-    if (get_kernel_metadata(metadataElementName,
-                            __SYCL_PI_PROGRAM_METADATA_TAG_REQD_WORK_GROUP_SIZE,
-                            kernelName)) {
-      assert(metadataElement->ValSize ==
-                 sizeof(std::uint64_t) + sizeof(std::uint32_t) * 3 &&
+    auto [prefix, tag] = splitMetadataName(metadataElementName);
+
+    if (tag == __SYCL_PI_PROGRAM_METADATA_TAG_REQD_WORK_GROUP_SIZE) {
+      // If metadata is reqd_work_group_size, record it for the corresponding
+      // kernel name.
+      size_t MDElemsSize = metadataElement->ValSize - sizeof(std::uint64_t);
+
+      // Expect between 1 and 3 32-bit integer values.
+      assert(MDElemsSize >= sizeof(std::uint32_t) &&
+             MDElemsSize <= sizeof(std::uint32_t) * 3 &&
              "Unexpected size for reqd_work_group_size metadata");
 
       // Get pointer to data, skipping 64-bit size at the start of the data.
-      const auto *reqdWorkGroupElements =
-          reinterpret_cast<const std::uint32_t *>(metadataElement->ValAddr) + 2;
-      kernelReqdWorkGroupSizeMD_[kernelName] =
+      const char *ValuePtr =
+          reinterpret_cast<const char *>(metadataElement->ValAddr) +
+          sizeof(std::uint64_t);
+      // Read values and pad with 1's for values not present.
+      std::uint32_t reqdWorkGroupElements[] = {1, 1, 1};
+      std::memcpy(reqdWorkGroupElements, ValuePtr, MDElemsSize);
+      kernelReqdWorkGroupSizeMD_[prefix] =
           std::make_tuple(reqdWorkGroupElements[0], reqdWorkGroupElements[1],
                           reqdWorkGroupElements[2]);
+    } else if (tag == __SYCL_PI_PROGRAM_METADATA_GLOBAL_ID_MAPPING) {
+      const char *metadataValPtr =
+          reinterpret_cast<const char *>(metadataElement->ValAddr) +
+          sizeof(std::uint64_t);
+      const char *metadataValPtrEnd =
+          metadataValPtr + metadataElement->ValSize - sizeof(std::uint64_t);
+      globalIDMD_[prefix] = std::string{metadataValPtr, metadataValPtrEnd};
     }
   }
   return PI_SUCCESS;
@@ -1047,6 +1081,15 @@ pi_result cuda_piContextGetInfo(pi_context context, pi_context_info param_name,
     return getInfo(param_value_size, param_value, param_value_size_ret,
                    capabilities);
   }
+  case PI_EXT_ONEAPI_CONTEXT_INFO_USM_MEMCPY2D_SUPPORT:
+    // 2D USM memcpy is supported.
+    return getInfo<pi_bool>(param_value_size, param_value, param_value_size_ret,
+                            true);
+  case PI_EXT_ONEAPI_CONTEXT_INFO_USM_FILL2D_SUPPORT:
+  case PI_EXT_ONEAPI_CONTEXT_INFO_USM_MEMSET2D_SUPPORT:
+    // 2D USM operations currently not supported.
+    return getInfo<pi_bool>(param_value_size, param_value, param_value_size_ret,
+                            false);
   default:
     __SYCL_PI_HANDLE_UNKNOWN_PARAM_NAME(param_name);
   }
@@ -1681,14 +1724,14 @@ pi_result cuda_piDeviceGetInfo(pi_device device, pi_device_info param_name,
   }
   case PI_DEVICE_INFO_QUEUE_ON_DEVICE_PROPERTIES: {
     // The mandated minimum capability:
-    auto capability =
-        PI_QUEUE_PROFILING_ENABLE | PI_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
+    auto capability = PI_QUEUE_FLAG_PROFILING_ENABLE |
+                      PI_QUEUE_FLAG_OUT_OF_ORDER_EXEC_MODE_ENABLE;
     return getInfo(param_value_size, param_value, param_value_size_ret,
                    capability);
   }
   case PI_DEVICE_INFO_QUEUE_ON_HOST_PROPERTIES: {
     // The mandated minimum capability:
-    auto capability = PI_QUEUE_PROFILING_ENABLE;
+    auto capability = PI_QUEUE_FLAG_PROFILING_ENABLE;
     return getInfo(param_value_size, param_value, param_value_size_ret,
                    capability);
   }
@@ -1918,6 +1961,7 @@ pi_result cuda_piDeviceGetInfo(pi_device device, pi_device_info param_name,
   }
 
   case PI_EXT_INTEL_DEVICE_INFO_FREE_MEMORY: {
+    ScopedContext active(device);
     size_t FreeMemory = 0;
     size_t TotalMemory = 0;
     sycl::detail::pi::assertion(cuMemGetInfo(&FreeMemory, &TotalMemory) ==
@@ -1944,6 +1988,10 @@ pi_result cuda_piDeviceGetInfo(pi_device device, pi_device_info param_name,
                              device->get()) == CUDA_SUCCESS);
     sycl::detail::pi::assertion(value >= 0);
     return getInfo(param_value_size, param_value, param_value_size_ret, value);
+  }
+  case PI_EXT_INTEL_DEVICE_INFO_MAX_COMPUTE_QUEUE_INDICES: {
+    return getInfo(param_value_size, param_value, param_value_size_ret,
+                   pi_int32{1});
   }
 
     // TODO: Investigate if this information is available on CUDA.
@@ -2117,7 +2165,6 @@ pi_result cuda_piContextCreate(const pi_context_properties *properties,
       piContextPtr = std::unique_ptr<_pi_context>(new _pi_context{
           _pi_context::kind::user_defined, newContext, *devices});
     }
-
     static std::once_flag initFlag;
     std::call_once(
         initFlag,
@@ -2501,7 +2548,7 @@ pi_result cuda_piQueueCreate(pi_context context, pi_device device,
     }
 
     const bool is_out_of_order =
-        properties & PI_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
+        properties & PI_QUEUE_FLAG_OUT_OF_ORDER_EXEC_MODE_ENABLE;
 
     std::vector<CUstream> computeCuStreams(
         is_out_of_order ? _pi_queue::default_num_compute_streams : 1);
@@ -2523,6 +2570,21 @@ pi_result cuda_piQueueCreate(pi_context context, pi_device device,
 
     return PI_ERROR_OUT_OF_RESOURCES;
   }
+}
+pi_result cuda_piextQueueCreate(pi_context Context, pi_device Device,
+                                pi_queue_properties *Properties,
+                                pi_queue *Queue) {
+  assert(Properties);
+  // Expect flags mask to be passed first.
+  assert(Properties[0] == PI_QUEUE_FLAGS);
+  if (Properties[0] != PI_QUEUE_FLAGS)
+    return PI_ERROR_INVALID_VALUE;
+  pi_queue_properties Flags = Properties[1];
+  // Extra data isn't supported yet.
+  assert(Properties[2] == 0);
+  if (Properties[2] != 0)
+    return PI_ERROR_INVALID_VALUE;
+  return cuda_piQueueCreate(Context, Device, Flags, Queue);
 }
 
 pi_result cuda_piQueueGetInfo(pi_queue command_queue, pi_queue_info param_name,
@@ -3076,8 +3138,9 @@ pi_result cuda_piEnqueueKernelLaunch(
             return err;
         }
       } else {
-        guessLocalWorkSize(threadsPerBlock, global_work_size,
-                           maxThreadsPerBlock, kernel, local_size);
+        guessLocalWorkSize(command_queue->device_, threadsPerBlock,
+                           global_work_size, maxThreadsPerBlock, kernel,
+                           local_size);
       }
     }
 
@@ -3849,13 +3912,15 @@ pi_result cuda_piEventGetProfilingInfo(pi_event event,
   assert(event != nullptr);
 
   pi_queue queue = event->get_queue();
-  if (queue == nullptr || !(queue->properties_ & PI_QUEUE_PROFILING_ENABLE)) {
+  if (queue == nullptr ||
+      !(queue->properties_ & PI_QUEUE_FLAG_PROFILING_ENABLE)) {
     return PI_ERROR_PROFILING_INFO_NOT_AVAILABLE;
   }
 
   switch (param_name) {
   case PI_PROFILING_INFO_COMMAND_QUEUED:
   case PI_PROFILING_INFO_COMMAND_SUBMIT:
+    // Note: No user for this case
     return getInfo<pi_uint64>(param_value_size, param_value,
                               param_value_size_ret, event->get_queued_time());
   case PI_PROFILING_INFO_COMMAND_START:
@@ -5303,6 +5368,111 @@ pi_result cuda_piextUSMEnqueueMemAdvise(pi_queue queue, const void *ptr,
   return result;
 }
 
+// TODO: Implement this. Remember to return true for
+//       PI_EXT_ONEAPI_CONTEXT_INFO_USM_FILL2D_SUPPORT when it is implemented.
+pi_result cuda_piextUSMEnqueueFill2D(pi_queue, void *, size_t, size_t,
+                                     const void *, size_t, size_t, pi_uint32,
+                                     const pi_event *, pi_event *) {
+  sycl::detail::pi::die("piextUSMEnqueueFill2D: not implemented");
+  return {};
+}
+
+// TODO: Implement this. Remember to return true for
+//       PI_EXT_ONEAPI_CONTEXT_INFO_USM_MEMSET2D_SUPPORT when it is implemented.
+pi_result cuda_piextUSMEnqueueMemset2D(pi_queue, void *, size_t, int, size_t,
+                                       size_t, pi_uint32, const pi_event *,
+                                       pi_event *) {
+  sycl::detail::pi::die("cuda_piextUSMEnqueueMemset2D: not implemented");
+  return {};
+}
+
+/// 2D Memcpy API
+///
+/// \param queue is the queue to submit to
+/// \param blocking is whether this operation should block the host
+/// \param dst_ptr is the location the data will be copied
+/// \param dst_pitch is the total width of the destination memory including
+/// padding
+/// \param src_ptr is the data to be copied
+/// \param dst_pitch is the total width of the source memory including padding
+/// \param width is width in bytes of each row to be copied
+/// \param height is height the columns to be copied
+/// \param num_events_in_waitlist is the number of events to wait on
+/// \param events_waitlist is an array of events to wait on
+/// \param event is the event that represents this operation
+pi_result cuda_piextUSMEnqueueMemcpy2D(pi_queue queue, pi_bool blocking,
+                                       void *dst_ptr, size_t dst_pitch,
+                                       const void *src_ptr, size_t src_pitch,
+                                       size_t width, size_t height,
+                                       pi_uint32 num_events_in_wait_list,
+                                       const pi_event *event_wait_list,
+                                       pi_event *event) {
+
+  assert(queue != nullptr);
+
+  pi_result result = PI_SUCCESS;
+
+  try {
+    ScopedContext active(queue->get_context());
+    CUstream cuStream = queue->get_next_transfer_stream();
+    result = enqueueEventsWait(queue, cuStream, num_events_in_wait_list,
+                               event_wait_list);
+    if (event) {
+      (*event) = _pi_event::make_native(PI_COMMAND_TYPE_MEM_BUFFER_COPY_RECT,
+                                        queue, cuStream);
+      (*event)->start();
+    }
+
+    // Determine the direction of Copy using cuPointerGetAttributes
+    // for both the src_ptr and dst_ptr
+    // TODO: Doesn't yet support CU_MEMORYTYPE_UNIFIED
+    CUpointer_attribute attributes = {CU_POINTER_ATTRIBUTE_MEMORY_TYPE};
+
+    CUmemorytype src_type = static_cast<CUmemorytype>(0);
+    void *src_attribute_values[] = {(void *)(&src_type)};
+    result = PI_CHECK_ERROR(cuPointerGetAttributes(
+        1, &attributes, src_attribute_values, (CUdeviceptr)src_ptr));
+    assert(src_type == CU_MEMORYTYPE_DEVICE || src_type == CU_MEMORYTYPE_HOST);
+
+    CUmemorytype dst_type = static_cast<CUmemorytype>(0);
+    void *dst_attribute_values[] = {(void *)(&dst_type)};
+    result = PI_CHECK_ERROR(cuPointerGetAttributes(
+        1, &attributes, dst_attribute_values, (CUdeviceptr)dst_ptr));
+    assert(dst_type == CU_MEMORYTYPE_DEVICE || dst_type == CU_MEMORYTYPE_HOST);
+
+    CUDA_MEMCPY2D cpyDesc = {0};
+
+    cpyDesc.srcMemoryType = src_type;
+    cpyDesc.srcDevice = (src_type == CU_MEMORYTYPE_DEVICE)
+                            ? reinterpret_cast<CUdeviceptr>(src_ptr)
+                            : 0;
+    cpyDesc.srcHost = (src_type == CU_MEMORYTYPE_HOST) ? src_ptr : nullptr;
+    cpyDesc.srcPitch = src_pitch;
+
+    cpyDesc.dstMemoryType = dst_type;
+    cpyDesc.dstDevice = (dst_type == CU_MEMORYTYPE_DEVICE)
+                            ? reinterpret_cast<CUdeviceptr>(dst_ptr)
+                            : 0;
+    cpyDesc.dstHost = (dst_type == CU_MEMORYTYPE_HOST) ? dst_ptr : nullptr;
+    cpyDesc.dstPitch = dst_pitch;
+
+    cpyDesc.WidthInBytes = width;
+    cpyDesc.Height = height;
+
+    result = PI_CHECK_ERROR(cuMemcpy2DAsync(&cpyDesc, cuStream));
+
+    if (event) {
+      (*event)->record();
+    }
+    if (blocking) {
+      result = PI_CHECK_ERROR(cuStreamSynchronize(cuStream));
+    }
+  } catch (pi_result err) {
+    result = err;
+  }
+  return result;
+}
+
 /// API to query information about USM allocated pointers
 /// Valid Queries:
 ///   PI_MEM_ALLOC_TYPE returns host/device/shared pi_host_usm value
@@ -5417,11 +5587,116 @@ pi_result cuda_piextUSMGetMemAllocInfo(pi_context context, const void *ptr,
   return result;
 }
 
+pi_result cuda_piextEnqueueDeviceGlobalVariableWrite(
+    pi_queue queue, pi_program program, const char *name,
+    pi_bool blocking_write, size_t count, size_t offset, const void *src,
+    pi_uint32 num_events_in_wait_list, const pi_event *event_wait_list,
+    pi_event *event) {
+  assert(queue != nullptr);
+  assert(program != nullptr);
+
+  if (name == nullptr || src == nullptr)
+    return PI_ERROR_INVALID_VALUE;
+
+  // Since CUDA requires a the global variable to be referenced by name, we use
+  // metadata to find the correct name to access it by.
+  auto device_global_name_it = program->globalIDMD_.find(name);
+  if (device_global_name_it == program->globalIDMD_.end())
+    return PI_ERROR_INVALID_VALUE;
+  std::string device_global_name = device_global_name_it->second;
+
+  pi_result result = PI_SUCCESS;
+  try {
+    CUdeviceptr device_global = 0;
+    size_t device_global_size = 0;
+    result = PI_CHECK_ERROR(
+        cuModuleGetGlobal(&device_global, &device_global_size, program->get(),
+                          device_global_name.c_str()));
+
+    if (offset + count > device_global_size)
+      return PI_ERROR_INVALID_VALUE;
+
+    return cuda_piextUSMEnqueueMemcpy(
+        queue, blocking_write, reinterpret_cast<void *>(device_global + offset),
+        src, count, num_events_in_wait_list, event_wait_list, event);
+  } catch (pi_result error) {
+    result = error;
+  }
+  return result;
+}
+
+pi_result cuda_piextEnqueueDeviceGlobalVariableRead(
+    pi_queue queue, pi_program program, const char *name, pi_bool blocking_read,
+    size_t count, size_t offset, void *dst, pi_uint32 num_events_in_wait_list,
+    const pi_event *event_wait_list, pi_event *event) {
+  assert(queue != nullptr);
+  assert(program != nullptr);
+
+  if (name == nullptr || dst == nullptr)
+    return PI_ERROR_INVALID_VALUE;
+
+  // Since CUDA requires a the global variable to be referenced by name, we use
+  // metadata to find the correct name to access it by.
+  auto device_global_name_it = program->globalIDMD_.find(name);
+  if (device_global_name_it == program->globalIDMD_.end())
+    return PI_ERROR_INVALID_VALUE;
+  std::string device_global_name = device_global_name_it->second;
+
+  pi_result result = PI_SUCCESS;
+  try {
+    CUdeviceptr device_global = 0;
+    size_t device_global_size = 0;
+    result = PI_CHECK_ERROR(
+        cuModuleGetGlobal(&device_global, &device_global_size, program->get(),
+                          device_global_name.c_str()));
+
+    if (offset + count > device_global_size)
+      return PI_ERROR_INVALID_VALUE;
+
+    return cuda_piextUSMEnqueueMemcpy(
+        queue, blocking_read, dst,
+        reinterpret_cast<const void *>(device_global + offset), count,
+        num_events_in_wait_list, event_wait_list, event);
+  } catch (pi_result error) {
+    result = error;
+  }
+  return result;
+}
+
 // This API is called by Sycl RT to notify the end of the plugin lifetime.
 // TODO: add a global variable lifetime management code here (see
 // pi_level_zero.cpp for reference) Currently this is just a NOOP.
 pi_result cuda_piTearDown(void *) {
   disableCUDATracing();
+  return PI_SUCCESS;
+}
+
+pi_result cuda_piGetDeviceAndHostTimer(pi_device Device, uint64_t *DeviceTime,
+                                       uint64_t *HostTime) {
+  _pi_event::native_type event;
+  ScopedContext active(Device->get_context());
+
+  if (DeviceTime) {
+    PI_CHECK_ERROR(cuEventCreate(&event, CU_EVENT_DEFAULT));
+    PI_CHECK_ERROR(cuEventRecord(event, 0));
+  }
+  if (HostTime) {
+
+    using namespace std::chrono;
+    *HostTime =
+        duration_cast<nanoseconds>(steady_clock::now().time_since_epoch())
+            .count();
+  }
+
+  if (DeviceTime) {
+    PI_CHECK_ERROR(cuEventSynchronize(event));
+
+    float elapsedTime = 0.0f;
+    PI_CHECK_ERROR(
+        cuEventElapsedTime(&elapsedTime, _pi_platform::evBase_, event));
+    *DeviceTime = (uint64_t)(elapsedTime * (double)1e6);
+  }
+
   return PI_SUCCESS;
 }
 
@@ -5473,6 +5748,7 @@ pi_result piPluginInit(pi_plugin *PluginInit) {
          cuda_piextContextCreateWithNativeHandle)
   // Queue
   _PI_CL(piQueueCreate, cuda_piQueueCreate)
+  _PI_CL(piextQueueCreate, cuda_piextQueueCreate)
   _PI_CL(piQueueGetInfo, cuda_piQueueGetInfo)
   _PI_CL(piQueueFinish, cuda_piQueueFinish)
   _PI_CL(piQueueFlush, cuda_piQueueFlush)
@@ -5563,12 +5839,21 @@ pi_result piPluginInit(pi_plugin *PluginInit) {
   _PI_CL(piextUSMEnqueueMemcpy, cuda_piextUSMEnqueueMemcpy)
   _PI_CL(piextUSMEnqueuePrefetch, cuda_piextUSMEnqueuePrefetch)
   _PI_CL(piextUSMEnqueueMemAdvise, cuda_piextUSMEnqueueMemAdvise)
+  _PI_CL(piextUSMEnqueueFill2D, cuda_piextUSMEnqueueFill2D)
+  _PI_CL(piextUSMEnqueueMemset2D, cuda_piextUSMEnqueueMemset2D)
+  _PI_CL(piextUSMEnqueueMemcpy2D, cuda_piextUSMEnqueueMemcpy2D)
   _PI_CL(piextUSMGetMemAllocInfo, cuda_piextUSMGetMemAllocInfo)
+  // Device global variable
+  _PI_CL(piextEnqueueDeviceGlobalVariableWrite,
+         cuda_piextEnqueueDeviceGlobalVariableWrite)
+  _PI_CL(piextEnqueueDeviceGlobalVariableRead,
+         cuda_piextEnqueueDeviceGlobalVariableRead)
 
   _PI_CL(piextKernelSetArgMemObj, cuda_piextKernelSetArgMemObj)
   _PI_CL(piextKernelSetArgSampler, cuda_piextKernelSetArgSampler)
   _PI_CL(piPluginGetLastError, cuda_piPluginGetLastError)
   _PI_CL(piTearDown, cuda_piTearDown)
+  _PI_CL(piGetDeviceAndHostTimer, cuda_piGetDeviceAndHostTimer)
 
 #undef _PI_CL
 

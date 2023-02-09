@@ -734,6 +734,7 @@ public:
 // Device|device_info_set_max_nd_range_size
 // Device|device_info_set_memory_clock_rate
 // Device|device_info_set_memory_bus_width
+// Device|device_info_set_max_register_size_per_work_group
 // Device|detail_warning
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
