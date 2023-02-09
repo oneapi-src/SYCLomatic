@@ -15331,7 +15331,8 @@ void CudaArchMacroRule::runRule(
     if (CE->getBeginLoc().isMacroID())
       return;
     if (auto *PF = DpctGlobalInfo::getParentFunction(CE)) {
-      if (PF->hasAttr<CUDADeviceAttr>() || PF->hasAttr<CUDAGlobalAttr>())
+      if ((PF->hasAttr<CUDADeviceAttr>() && !PF->hasAttr<CUDAHostAttr>()) ||
+          PF->hasAttr<CUDAGlobalAttr>())
         return;
     }
     const FunctionDecl *DC = CE->getDirectCallee();

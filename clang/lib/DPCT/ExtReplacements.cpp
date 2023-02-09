@@ -696,8 +696,6 @@ void ExtReplacements::postProcess() {
   processCudaArchMacro();
 
   if (DpctGlobalInfo::getRunRound() == 1) {
-    //std::cout << "buildCudaArchHostFunc" << std::endl;
-    //std::cout << FilePath << std::endl;
     buildCudaArchHostFunc(FileInfo);
   }
   getLOCStaticFromCodeRepls(FileInfo);
