@@ -53,7 +53,7 @@ public:
 
 //CHECK:#define MACRO_DDD(ARG)                                                         \
 //CHECK-NEXT:  do {                                                                         \
-//CHECK-NEXT:    int e = ARG;                                                       \
+//CHECK-NEXT:    dpct::err0 e = ARG;                                                       \
 //CHECK-NEXT:    if (e != 0) {                                                    \
 //CHECK-NEXT:      throw MY_EXCEPTION(uint32_t(__LINE__), "cudaGetErrorString is not supported"/*cudaGetErrorString(e)*/);           \
 //CHECK-NEXT:    }                                                                          \
