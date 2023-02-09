@@ -11,7 +11,7 @@ set(LLVM_LINK_COMPONENTS
   )
 
 add_clang_tool(dpct-binary
-  DPCT.cpp
+  DPCT.cpp NO_INSTALL_RPATH
   )
 set_target_properties(dpct-binary PROPERTIES OUTPUT_NAME "dpct")
 include_directories(
