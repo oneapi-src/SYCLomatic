@@ -98,13 +98,11 @@ if(WIN32)
   set(LLVM_USE_CRT_RELEASE                  "MT" CACHE STRING "")
 endif()
 
-# Set up RPATH for the target runtime/builtin libraries.
 # See some details here: https://reviews.llvm.org/D91099
 # SYCLomatic_CUSTOMIZATION begin
-# if (NOT DEFINED RUNTIMES_INSTALL_RPATH)
-#   set(RUNTIMES_INSTALL_RPATH                "\$ORIGIN/../lib;${CMAKE_INSTALL_PREFIX}/lib")
-# endif()
-# SYCLomatic_CUSTOMIZATION end
+if (NOT DEFINED RUNTIMES_INSTALL_RPATH)
+  set(RUNTIMES_INSTALL_RPATH                "\$ORIGIN/../lib;${CMAKE_INSTALL_PREFIX}/lib")
+endif()
 
 set(LLVM_BUILTIN_TARGETS                    "${TOOLCHAIN_TARGET_TRIPLE}" CACHE STRING "")
 
