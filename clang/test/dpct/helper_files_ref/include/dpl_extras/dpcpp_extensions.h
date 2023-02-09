@@ -12,6 +12,10 @@
 #include <sycl/sycl.hpp>
 #include <stdexcept>
 
+#ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
+#include <sycl/ext/oneapi/experimental/user_defined_reductions.hpp>
+#endif
+
 namespace dpct {
 namespace group {
 
@@ -641,15 +645,13 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
 
 
 #ifdef SYCL_EXT_ONEAPI_USER_DEFINED_REDUCTIONS
-#include <sycl/ext/oneapi/experimental/user_defined_reductions.hpp>
 
 namespace experimental {
 namespace detail {
-template <typename _Tp, typename... _Ts>
-struct __is_any
-    : std::integral_constant<
-          bool, (std::is_same_v<std::remove_cv_t<_Tp>, std::remove_cv_t<_Ts>> ||
-                 ...)> {};
+template <typename _Tp, typename... _Ts> struct __is_any {
+  constexpr static bool value = std::disjunction_v<
+      std::is_same<std::remove_cv_t<_Tp>, std::remove_cv_t<_Ts>>...>;
+};
 
 template <typename _Tp, typename _Bp> struct __in_native_op_list {
   constexpr static bool value =
