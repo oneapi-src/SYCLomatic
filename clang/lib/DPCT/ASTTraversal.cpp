@@ -10781,8 +10781,6 @@ void MemoryMigrationRule::memcpyMigration(
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
   for (unsigned I = 0, E = C->getNumArgs(); I != E; ++I) {
     if (isa<PackExpansionExpr>(C->getArg(I))) {
-      report(C->getBeginLoc(),
-             Diagnostics::UNSUPPORTED_FUNCALL_PACKEXPANSIONEXPR_ARG, false);
       return;
     }
   }

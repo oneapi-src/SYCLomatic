@@ -847,11 +847,6 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
     for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {
       if (isa<PackExpansionExpr>(CE->getArg(I))) {
-        auto LocInfo = DpctGlobalInfo::getLocInfo(CE);
-        DiagnosticsUtils::report(
-            LocInfo.first, LocInfo.second,
-            Diagnostics::UNSUPPORTED_FUNCALL_PACKEXPANSIONEXPR_ARG, true,
-            false);
         return;
       }
     }
