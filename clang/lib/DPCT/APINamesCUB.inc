@@ -491,6 +491,43 @@ CONDITIONAL_FACTORY_ENTRY(
                             LITERAL("1")),
                         false, "wait")))))))
 
+// cub::DeviceSelect::If
+CONDITIONAL_FACTORY_ENTRY(
+    CheckCubRedundantFunctionCall(),
+    REMOVE_API_FACTORY_ENTRY("cub::DeviceSelect::If"),
+    HEADER_INSERT_FACTORY(
+        HeaderType::HT_DPCT_DPL_Utils,
+        REMOVE_CUB_TEMP_STORAGE_FACTORY(CONDITIONAL_FACTORY_ENTRY(
+            makeCheckAnd(CheckArgCount(8, std::greater_equal<>(),
+                                       /* IncludeDefaultArg */ false),
+                         makeCheckNot(CheckArgIsDefaultCudaStream(7))),
+            MEMBER_CALL_FACTORY_ENTRY(
+                "cub::DeviceSelect::If",
+                MEMBER_CALL(
+                    ARG(7), true, "fill", ARG(4),
+                    CALL("std::distance", ARG(3),
+                         CALL("oneapi::dpl::copy_if",
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   STREAM(7)),
+                              ARG(2),
+                              BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(5)),
+                              ARG(3), ARG(6))),
+                    LITERAL("1")),
+                false, "wait"),
+            MEMBER_CALL_FACTORY_ENTRY(
+                "cub::DeviceSelect::If",
+                MEMBER_CALL(
+                    QUEUESTR, false, "fill", ARG(4),
+                    CALL("std::distance", ARG(3),
+                         CALL("oneapi::dpl::copy_if",
+                              CALL("oneapi::dpl::execution::device_policy",
+                                   QUEUESTR),
+                              ARG(2),
+                              BO(BinaryOperatorKind::BO_Add, ARG(2), ARG(5)),
+                              ARG(3), ARG(6))),
+                    LITERAL("1")),
+                false, "wait")))))
+
 // cub::DeviceRunLengthEncode::Encode
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
