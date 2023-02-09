@@ -114,8 +114,8 @@ create_kvs(const oneapi::ccl::kvs::address_type &addr) {
 // DPCT_LABEL_BEGIN|communicator_ext|dpct::ccl
 // DPCT_DEPENDENCY_BEGIN
 // CclUtils|communicator_ext_2
-// Device|Device_get_default_context
-// Device|Device_get_current_device
+// Device|get_default_context
+// Device|get_current_device
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// dpct communicator extension
