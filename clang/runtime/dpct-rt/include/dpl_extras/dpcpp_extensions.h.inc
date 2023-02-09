@@ -700,11 +700,13 @@ void segmented_reduce(sycl::queue queue, T *inputs, T *outputs,
             }
             return;
           }
+
           sycl::multi_ptr<T, sycl::access::address_space::global_space>
               input_ptr = inputs;
           T group_aggregate = detail::__joint_reduce(
               item.get_group(), input_ptr + segment_begin,
               input_ptr + segment_end, init, binary_op);
+
           if (item.get_local_linear_id() == 0) {
             outputs[item.get_group_linear_id()] = group_aggregate;
           }
