@@ -375,20 +375,7 @@ void ExtReplacements::processCudaArchMacro() {
       (*Repl).setReplacementText("!DPCT_COMPATIBILITY_TEMP");
     }
   };
-  /*
-  static int i = 0;
-  if(i == 0) {
-    for(auto &Repl : ReplMap) {
-      std::cout << Repl.second->getFilePath().str() << std::endl;
-      std::cout << Repl.second->getOffset() << std::endl;
-    }
-    auto p1 = DpctGlobalInfo::getInstance().getCudaArchPPInfoMap();
-    auto p2 = DpctGlobalInfo::getInstance().getCudaArchDefinedMap();
-    //std::cout << p1.size() << std::endl;
-    //std::cout << p2.size() << std::endl;
-    i++;
-  }
-  */
+
   for (auto Iter = ReplMap.begin(); Iter != ReplMap.end();) {
     auto Repl = Iter->second;
     if (Repl->getFilePath() != FilePath) {
@@ -571,6 +558,23 @@ void ExtReplacements::processCudaArchMacro() {
       Iter++;
     }
   }
+  // process call
+  auto &HDFDIMap = DpctGlobalInfo::getInstance().getHostDeviceFuncDefInfoMap();
+  auto &HDFCIMap = DpctGlobalInfo::getInstance().getHostDeviceFuncCallInfoMap();
+  auto &PostfixMap =
+      DpctGlobalInfo::getInstance().getGeneratedHostFunctionPostfixMap();
+  for (auto &Call : HDFCIMap) {
+    if (!PostfixMap.count(Call.first)) {
+      PostfixMap[Call.first] = "_host_ct" + std::to_string(PostfixMap.size());
+    }
+    if (Call.second.first != FilePath || !HDFDIMap.count(Call.first)) {
+      continue;
+    }
+    unsigned Offset = Call.second.second;
+    auto R = std::make_shared<ExtReplacement>(FilePath, Offset, 0,
+                                              PostfixMap[Call.first], nullptr);
+    addReplacement(R);
+  }
 }
 void ExtReplacements::buildCudaArchHostFunc(
     std::shared_ptr<DpctFileInfo> FileInfo) {
@@ -583,57 +587,44 @@ void ExtReplacements::buildCudaArchHostFunc(
       ProcessedReplList.emplace_back(Repl);
     }
   }
-  static int id = 0;
-  using PostfixMapTy = std::unordered_map<std::string, std::string>;
-  static PostfixMapTy PostfixMap;
+  auto &PostfixMap =
+      DpctGlobalInfo::getInstance().getGeneratedHostFunctionPostfixMap();
   std::vector<std::shared_ptr<ExtReplacement>> ExtraRepl;
   auto &HDFDIMap = DpctGlobalInfo::getInstance().getHostDeviceFuncDefInfoMap();
   auto &HDFDeclIMap =
       DpctGlobalInfo::getInstance().getHostDeviceFuncDeclInfoMap();
   auto &HDFCIMap = DpctGlobalInfo::getInstance().getHostDeviceFuncCallInfoMap();
-  // process call
-  for (auto &Call : HDFCIMap) {
-    if (!PostfixMap.count(Call.first)) {
-      PostfixMap[Call.first] = "_host_ct" + std::to_string(id);
-    }
-    if (Call.second.first != FilePath || !HDFDIMap.count(Call.first)) {
-      continue;
-    }
-    id++;
-    unsigned Offset = Call.second.second;
-    auto R = std::make_shared<ExtReplacement>(FilePath, Offset, 0,
-                                              PostfixMap[Call.first], nullptr);
-    ExtraRepl.emplace_back(R);
-  }
-  auto GenerateHostCode = [&ProcessedReplList, &ExtraRepl, &FileInfo](
-                              HostDeviceFuncInfo &Info, PostfixMapTy &PMap,
-                              std::string FuncName) {
-    unsigned int Pos, Len;
-    std::string OriginText = Info.FuncContentCache;
-    StringRef SR(OriginText);
-    RewriteBuffer RB;
-    RB.Initialize(SR.begin(), SR.end());
-
-    for (auto &R : ProcessedReplList) {
-      unsigned ROffset = R->getOffset();
-      if (ROffset >= Info.FuncStartOffset && ROffset <= Info.FuncEndOffset) {
-        Pos = ROffset - Info.FuncStartOffset;
-        Len = R->getLength();
-        RB.ReplaceText(Pos, Len, R->getReplacementText());
-      }
-    }
-    Pos = Info.FuncNameOffset - Info.FuncStartOffset;
-    Len = 0;
-    RB.ReplaceText(Pos, Len, PostfixMap[FuncName]);
-    std::string DefResult;
-    llvm::raw_string_ostream DefStream(DefResult);
-    RB.write(DefStream);
-    std::string NewFuncBody = DefStream.str();
-    auto R = std::make_shared<ExtReplacement>(FileInfo->getFilePath(),
-                                              Info.FuncEndOffset + 1, 0,
-                                              getNL() + NewFuncBody, nullptr);
-    ExtraRepl.emplace_back(R);
-  };
+  auto GenerateHostCode =
+      [&ProcessedReplList, &ExtraRepl, &FileInfo,
+       &PostfixMap](HostDeviceFuncInfo &Info,
+                    std::unordered_map<std::string, std::string> &PMap,
+                    std::string FuncName) {
+        unsigned int Pos, Len;
+        std::string OriginText = Info.FuncContentCache;
+        StringRef SR(OriginText);
+        RewriteBuffer RB;
+        RB.Initialize(SR.begin(), SR.end());
+        for (auto &R : ProcessedReplList) {
+          unsigned ROffset = R->getOffset();
+          if (ROffset >= Info.FuncStartOffset &&
+              ROffset <= Info.FuncEndOffset) {
+            Pos = ROffset - Info.FuncStartOffset;
+            Len = R->getLength();
+            RB.ReplaceText(Pos, Len, R->getReplacementText());
+          }
+        }
+        Pos = Info.FuncNameOffset - Info.FuncStartOffset;
+        Len = 0;
+        RB.ReplaceText(Pos, Len, PostfixMap[FuncName]);
+        std::string DefResult;
+        llvm::raw_string_ostream DefStream(DefResult);
+        RB.write(DefStream);
+        std::string NewFuncBody = DefStream.str();
+        auto R = std::make_shared<ExtReplacement>(
+            FileInfo->getFilePath(), Info.FuncEndOffset + 1, 0,
+            getNL() + NewFuncBody, nullptr);
+        ExtraRepl.emplace_back(R);
+      };
   // process def
   for (auto &HDFDInfo : HDFDIMap) {
     if (!HDFCIMap.count(HDFDInfo.first) || HDFDInfo.second.first != FilePath)

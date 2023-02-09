@@ -2038,7 +2038,10 @@ public:
   getMainSourceFileMap(){
     return MainSourceFileMap;
   };
-
+  static inline std::unordered_map<std::string, std::string> &
+  getGeneratedHostFunctionPostfixMap(){
+    return GeneratedHostFunctionPostfixMap;
+  }
 
 private:
   DpctGlobalInfo();
@@ -2226,6 +2229,8 @@ private:
       RnnInputMap;
   static std::unordered_map<std::string, std::vector<std::string>>
       MainSourceFileMap;
+  static std::unordered_map<std::string, std::string>
+      GeneratedHostFunctionPostfixMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

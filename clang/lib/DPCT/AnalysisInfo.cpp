@@ -158,6 +158,8 @@ std::unordered_map<std::string,
     DpctGlobalInfo::RnnInputMap;
 std::unordered_map<std::string, std::vector<std::string>>
     DpctGlobalInfo::MainSourceFileMap;
+std::unordered_map<std::string, std::string>
+    DpctGlobalInfo::GeneratedHostFunctionPostfixMap;
 
 /// This variable saved the info of previous migration from the
 /// MainSourceFiles.yaml file. This variable is valid after
@@ -398,7 +400,7 @@ void DpctFileInfo::postProcess() {
   for (auto &D : FuncMap)
     D.second->emplaceReplacement();
   Repls->postProcess();
-  if (DpctGlobalInfo::getRunRound() == 0) {
+  if ((DpctGlobalInfo::getRunRound() == 0) && !Repls->empty()) {
     DpctGlobalInfo::getInstance().cacheFileRepl(FilePath, Repls);
   }
 }
