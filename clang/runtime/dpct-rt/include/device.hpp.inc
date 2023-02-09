@@ -710,6 +710,9 @@ public:
 // Device|device_info_set_max_sub_group_size
 // Device|device_info_set_max_work_items_per_compute_unit
 // Device|device_info_set_max_nd_range_size
+// Device|device_info_set_memory_clock_rate
+// Device|device_info_set_memory_bus_width
+// Device|device_info_set_max_register_size_per_work_group
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void get_device_info(device_info &out) const {
