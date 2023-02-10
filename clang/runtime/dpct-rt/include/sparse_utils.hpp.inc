@@ -79,18 +79,51 @@ private:
 };
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|dense_vector_handle_t|dpct::sparse
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 using dense_vector_handle_t =
     std::shared_ptr<std::tuple<std::int64_t, void *, library_data_t>>;
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|create_dense_vector_handle|dpct::sparse
+// DPCT_DEPENDENCY_BEGIN
+// SparseUtils|dense_vector_handle_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 dense_vector_handle_t create_dense_vector_handle(std::int64_t n, void *ptr,
                                                  library_data_t type) {
   return std::make_shared<
       std::tuple<std::int64_t, void *, dpct::library_data_t>>(n, ptr, type);
 }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|destroy_dense_vector_handle|dpct::sparse
+// DPCT_DEPENDENCY_BEGIN
+// SparseUtils|dense_vector_handle_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 void destroy_dense_vector_handle(dense_vector_handle_t handle) {
   handle = nullptr;
 }
-using sparse_matrix_handle_t = oneapi::mkl::sparse::matrix_handle_t;
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|sparse_matrix_handle_t|dpct::sparse
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+using sparse_matrix_handle_t = oneapi::mkl::sparse::matrix_handle_t;
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|destroy_dense_vector_handle|dpct::sparse
+// DPCT_DEPENDENCY_BEGIN
+// SparseUtils|sparse_matrix_handle_t
+// LibCommonUtils|library_data_t
+// LibCommonUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_memory
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 void create_csr_matrix_handle(sycl::queue &queue,
                               sparse_matrix_handle_t &mat_handle,
                               std::int64_t num_rows, std::int64_t num_cols,
@@ -144,13 +177,26 @@ void create_csr_matrix_handle(sycl::queue &queue,
   queue.wait();
 #endif
 }
+// DPCT_LABEL_END
 
 namespace detail {
+// DPCT_LABEL_BEGIN|destroy_csr_matrix_handle_async|dpct::sparse::detail
+// DPCT_DEPENDENCY_BEGIN
+// SparseUtils|sparse_matrix_handle_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 sycl::event
 destroy_csr_matrix_handle_async(sycl::queue &queue,
                                 sparse_matrix_handle_t &mat_handle) {
   return oneapi::mkl::sparse::release_matrix_handle(queue, &mat_handle);
 }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|get_type_as_library_data|dpct::sparse::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 template <typename T>
 inline constexpr library_data_t get_type_as_library_data(
     typename std::enable_if<std::is_same<T, float>::value>::type * = 0) {
@@ -194,13 +240,31 @@ inline constexpr library_data_t get_type_as_library_data(
     typename std::enable_if<std::is_same<T, std::int64_t>::value>::type * = 0) {
   return library_data_t::real_int64;
 }
+// DPCT_LABEL_END
 } // namespace detail
 
+// DPCT_LABEL_BEGIN|destroy_csr_matrix_handle|dpct::sparse
+// DPCT_DEPENDENCY_BEGIN
+// SparseUtils|sparse_matrix_handle_t
+// SparseUtils|destroy_csr_matrix_handle_async
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 void destroy_csr_matrix_handle(sycl::queue &queue,
                                sparse_matrix_handle_t &mat_handle) {
   detail::destroy_csr_matrix_handle_async(queue, mat_handle).wait();
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|spmv|dpct::sparse
+// DPCT_DEPENDENCY_BEGIN
+// SparseUtils|sparse_matrix_handle_t
+// SparseUtils|dense_vector_handle_t
+// LibCommonUtils|library_data_t
+// SparseUtils|matrix_info
+// LibCommonUtils|get_value
+// LibCommonUtils|get_memory
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 void spmv(sycl::queue &queue, oneapi::mkl::transpose trans, const void *alpha,
           sparse_matrix_handle_t mat_handle, dense_vector_handle_t x,
           const void *beta, dense_vector_handle_t y,
@@ -235,7 +299,20 @@ void spmv(sycl::queue &queue, oneapi::mkl::transpose trans, const void *alpha,
   }
 #undef CASE
 }
+// DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|spmv|dpct::sparse
+// DPCT_DEPENDENCY_BEGIN
+// SparseUtils|sparse_matrix_handle_t
+// SparseUtils|create_csr_matrix_handle
+// SparseUtils|matrix_info
+// LibCommonUtils|get_value
+// LibCommonUtils|get_memory
+// SparseUtils|get_type_as_library_data
+// SparseUtils|destroy_csr_matrix_handle_async
+// Util|DataType
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
 template <typename T>
 void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
            int num_cols, const T *alpha, const matrix_info info, const T *val,
@@ -290,6 +367,7 @@ void csrmv(sycl::queue &queue, oneapi::mkl::transpose trans, int num_rows,
     cgh.host_task([=] { delete sparse_matrix_handle; });
   });
 }
+// DPCT_LABEL_END
 
 } // namespace sparse
 } // namespace dpct

@@ -56,8 +56,7 @@ namespace dpct {
 
 // DPCT_LABEL_BEGIN|get_value|dpct
 // DPCT_DEPENDENCY_BEGIN
-// Memory|dpct_memcpy_detail
-// Util|DataType
+// LibCommonUtils|get_value
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// Get the value of \p s.
@@ -65,11 +64,8 @@ namespace dpct {
 /// \param [in] p The pointer points the data.
 /// \param [in] q The queue where the memory copy should be executed.
 template <typename T>
-inline typename DataType<T>::T2 get_value(const T *s, sycl::queue &q) {
-  using Ty = typename DataType<T>::T2;
-  Ty s_h;
-  detail::dpct_memcpy(q, (void *)&s_h, (void *)s, sizeof(T), automatic).wait();
-  return s_h;
+inline auto get_value(const T *s, sycl::queue &q) {
+  return detail::get_value(s, q);
 }
 // DPCT_LABEL_END
 
@@ -90,36 +86,6 @@ inline void mem_free(sycl::queue *exec_queue,
 // DPCT_CODE
 inline int stride_for(int num_elems, int mem_align_in_elems) {
   return ((num_elems - 1) / mem_align_in_elems + 1) * mem_align_in_elems;
-}
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|get_type_combination_id_T|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|get_type_combination_id_Ts
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-template <typename ArgT> inline constexpr std::uint64_t get_type_combination_id(ArgT Val) {
-  static_assert((unsigned char)library_data_t::library_data_t_size <=
-                    std::numeric_limits<unsigned char>::max() &&
-                "library_data_t size exceeds limit.");
-  static_assert(std::is_same_v<ArgT, library_data_t>, "Unsupported ArgT");
-  return (std::uint64_t)Val;
-}
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|get_type_combination_id_Ts|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// BlasUtils|get_type_combination_id_T
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-template <typename FirstT, typename... RestT>
-inline constexpr std::uint64_t get_type_combination_id(FirstT FirstVal, RestT... RestVal) {
-  static_assert((std::uint8_t)library_data_t::library_data_t_size <=
-                    std::numeric_limits<unsigned char>::max() &&
-                "library_data_t size exceeds limit.");
-  static_assert(sizeof...(RestT) <= 8 && "Too many parameters");
-  static_assert(std::is_same_v<FirstT, library_data_t>, "Unsupported FirstT");
-  return get_type_combination_id(RestVal...) << 8 | ((std::uint64_t)FirstVal);
 }
 // DPCT_LABEL_END
 
@@ -240,7 +206,7 @@ inline void dotuc_impl(sycl::queue &q, int n, const Txy *x, int incx,
 // DPCT_LABEL_BEGIN|dotuc|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // BlasUtils|dotuc_impl
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <bool is_conjugate>
@@ -1164,7 +1130,7 @@ inline void geqrf_batch_wrapper(sycl::queue exec_queue, int m, int n,
 // DPCT_LABEL_BEGIN|nrm2|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|nrm2_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -1267,7 +1233,7 @@ inline void dotc(sycl::queue &q, int n, const void *x, library_data_t x_type,
 // DPCT_LABEL_BEGIN|scal|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|scal_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -1318,7 +1284,7 @@ inline void scal(sycl::queue &q, int n, const void *alpha,
 // DPCT_LABEL_BEGIN|axpy|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|axpy_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -1377,7 +1343,7 @@ inline void axpy(sycl::queue &q, int n, const void *alpha,
 // DPCT_LABEL_BEGIN|rot|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|rot_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -1449,7 +1415,7 @@ inline void rot(sycl::queue &q, int n, void *x, library_data_t x_type,
 // DPCT_LABEL_BEGIN|gemm|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|gemm_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -1592,7 +1558,7 @@ inline void gemm(sycl::queue &q, oneapi::mkl::transpose a_trans,
 // DPCT_LABEL_BEGIN|gemm_batch|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|gemm_batch_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -1751,7 +1717,7 @@ inline void gemm_batch(sycl::queue &q, oneapi::mkl::transpose a_trans,
 // DPCT_LABEL_BEGIN|gemm_batch_stride|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|gemm_batch_impl_stride
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -1967,7 +1933,7 @@ inline void herk(sycl::queue &q, oneapi::mkl::uplo uplo,
 // DPCT_LABEL_BEGIN|trsm_batch|dpct
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
-// BlasUtils|get_type_combination_id_Ts
+// LibCommonUtils|get_type_combination_id_Ts
 // BlasUtils|trsm_batch_impl
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
