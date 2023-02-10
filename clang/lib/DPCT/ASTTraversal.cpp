@@ -414,7 +414,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   // FFTDirExpr and longer replacement will overlap shorter replacement, so the
   // migration is expected.
   else if (MacroNameTok.getIdentifierInfo() &&
-           MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_FORWARD") {
+             MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_FORWARD") {
     TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "-1"));
   } else if (MacroNameTok.getIdentifierInfo() &&
              MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_INVERSE") {
