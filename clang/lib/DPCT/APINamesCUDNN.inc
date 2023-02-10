@@ -570,12 +570,14 @@ FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_pooling_desc,
                             false, "get_forward_output_dim", ARG_WC(1),
                             ARG_WC(2), ARG_WC(3), ARG_WC(4))))
 
-FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::DnnlUtils_convolution_forward,
-    ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
-        "cudnnConvolutionForward", ARG_WC(0), false, "async_convolution_forward",
-        ARG_WC(6), ARG_WC(7), DEREF(ARG_WC(1)), ARG_WC(2), ARG_WC(3), ARG_WC(4),
-        ARG_WC(5), DEREF(ARG_WC(10)), ARG_WC(11), ARG_WC(12))))
+FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_forward,
+                        ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
+                            "cudnnConvolutionForward", ARG_WC(0), false,
+                            "async_convolution_forward", ARG_WC(6), ARG_WC(7),
+                            DEREF_CAST_IF_NEED(LITERAL("float *"), ARG(1)),
+                            ARG_WC(2), ARG_WC(3), ARG_WC(4), ARG_WC(5),
+                            DEREF_CAST_IF_NEED(LITERAL("float *"), ARG(10)),
+                            ARG_WC(11), ARG_WC(12))))
 
 FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DnnlUtils_convolution_forward_ex,
                         ASSIGNABLE_FACTORY(MEMBER_CALL_FACTORY_ENTRY(
