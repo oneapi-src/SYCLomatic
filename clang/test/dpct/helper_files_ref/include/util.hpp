@@ -17,6 +17,22 @@
 
 namespace dpct {
 
+namespace detail {
+
+template <typename tag, typename T> class generic_error_type {
+public:
+  generic_error_type(T value) : value{value} {}
+  operator T() { return value; }
+
+private:
+  T value;
+};
+
+} // namespace detail
+
+using err0 = detail::generic_error_type<struct err0_tag, int>;
+using err1 = detail::generic_error_type<struct err1_tag, int>;
+
 template <int... Ints> struct integer_sequence {};
 template <int Size, int... Ints>
 struct make_index_sequence
