@@ -527,10 +527,10 @@ MATH_API_REWRITER_DEVICE_OVERLOAD(
     MATH_API_REWRITER_DEVICE(
         "__hadd",
         MATH_API_DEVICE_NODES(
-            CALL_FACTORY_ENTRY("__hadd",
-                               CALL(MapNames::getClNamespace(false, true) +
-                                        "hadd<int>",
-                                    ARG(0), ARG(1))),
+            CALL_FACTORY_ENTRY(
+                "__hadd", CALL(MapNames::getClNamespace(false, true) + "hadd",
+                               CAST_IF_NEED(LITERAL("int"), ARG(0)),
+                               CAST_IF_NEED(LITERAL("int"), ARG(1)))),
             EMPTY_FACTORY_ENTRY("__hadd"), EMPTY_FACTORY_ENTRY("__hadd"),
             EMPTY_FACTORY_ENTRY("__hadd"))),
     MATH_API_REWRITER_DEVICE(
