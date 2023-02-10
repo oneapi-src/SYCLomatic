@@ -1483,13 +1483,17 @@ inline void segmented_sort_pairs(
     _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys,
     io_iterator_pair<value_t> &values, int64_t n, int64_t nsegments,
     OffsetIteratorT begin_offsets, OffsetIteratorT end_offsets,
-    bool descending = false, int begin_bit = 0,
+    bool descending = false, bool do_swap_iters = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
                   8) {
   segmented_sort_pairs(std::forward<_ExecutionPolicy>(policy), keys.first(),
                        keys.second(), values.first(), values.second(), n,
                        nsegments, begin_offsets, end_offsets, descending,
                        begin_bit, end_bit);
+  if (do_swap_iters) {
+    keys.swap();
+    values.swap();
+  }
 }
 
 } // end namespace dpct
