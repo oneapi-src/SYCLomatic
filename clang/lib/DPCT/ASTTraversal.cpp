@@ -171,9 +171,11 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
     auto Repl = std::make_shared<ReplaceToken>(MacroNameTok.getLocation(),
                                                std::move(ReplacedMacroName));
     if (MacroName == "__CUDA_ARCH__") {
+      if(DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
       requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp,
                      MacroNameTok.getLocation());
       insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
+      }
       return;
     }
     if (MacroName == "__CUDACC__" &&
@@ -397,11 +399,14 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
 
   if (MacroNameTok.getIdentifierInfo() &&
       MacroNameTok.getIdentifierInfo()->getName() == "__CUDA_ARCH__") {
+    if(DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
     requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp,
                    Range.getBegin());
     auto Repl = std::make_shared<ReplaceText>(Range.getBegin(), 13,
                                               "DPCT_COMPATIBILITY_TEMP");
     insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
+    }
+    return;
   }
   // CUFFT_FORWARD and CUFFT_INVERSE are migrated to integer literal in all
   // places except in cufftExec call.
@@ -409,7 +414,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
   // FFTDirExpr and longer replacement will overlap shorter replacement, so the
   // migration is expected.
   else if (MacroNameTok.getIdentifierInfo() &&
-             MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_FORWARD") {
+           MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_FORWARD") {
     TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "-1"));
   } else if (MacroNameTok.getIdentifierInfo() &&
              MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_INVERSE") {
@@ -733,11 +738,13 @@ void IncludesCallbacks::ReplaceCuMacro(SourceRange ConditionRange, IfType IT,
       CharSourceRange InsertRange(SourceRange(IB, IE), false);
       auto Repl = std::make_shared<ReplaceInclude>(
           InsertRange, std::move(ReplacedMacroName));
-      if (MacroName == "__CUDA_ARCH__") {
+      if (MacroName == "__CUDA_ARCH__" &&
+          DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
         insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
         requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp, Begin);
-      } else if (MacroName != "__CUDACC__" ||
-                 DpctGlobalInfo::getMacroDefines().count(MacroName)) {
+      } else if ((MacroName != "__CUDACC__" ||
+                  DpctGlobalInfo::getMacroDefines().count(MacroName)) &&
+                 MacroName != "__CUDA_ARCH__") {
         TransformSet.emplace_back(Repl);
       }
       // check next
