@@ -1486,8 +1486,8 @@ inline void segmented_sort_pairs(
     bool descending = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
                   8) {
-  segmented_sort_pairs(std::forward<_ExecutionPolicy>(policy), keys.input(),
-                       keys.output(), values.input(), values.output(), n,
+  segmented_sort_pairs(std::forward<_ExecutionPolicy>(policy), keys.first(),
+                       keys.second(), values.first(), values.second(), n,
                        nsegments, begin_offsets, end_offsets, descending,
                        begin_bit, end_bit);
 }
