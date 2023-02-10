@@ -102,7 +102,7 @@ cmake -G Ninja -DCMAKE_INSTALL_PREFIX=%PATH_TO_C2S_INSTALL_FOLDER%  -DCMAKE_BUIL
 ninja install-c2s
 ```
 
-Note: For computers with 16G or less memory, we recommend using 4-6 threads for compilation. Compiling SYCLomatic with too many threads may cause out of memory.
+Note: For build system with 16G or less memory, recommend to use less than 5 threads for compilation,  you may meet out of memory issue when more than 4 threads used for compilation.
 ```
 ninja -j4 install-c2s
 ```
@@ -113,7 +113,7 @@ ninja -j4 install-c2s
 After a successful build, you should be able to see following message in the terminal output.
 ```
 -- Install configuration: "Release"
--- Installing: $PATH_TO_C2S_INSTALL_FOLDER/bin/dpct
+-- Installing: ... bin/dpct
 -- Creating c2s
 ```
 
@@ -157,7 +157,7 @@ After build the SYCLomatic, you can run the list test by:
 ninja check-clang-c2s
 
 
-### Run E2E test suite (Recommended to Contributors)
+### Run E2E test suite (Recommend for contributors)
 
 Follow instructions from the link below to build and run tests:
 [README](https://github.com/oneapi-src/SYCLomatic-test)
