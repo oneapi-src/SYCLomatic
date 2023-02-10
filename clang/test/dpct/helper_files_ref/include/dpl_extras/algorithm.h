@@ -1372,13 +1372,18 @@ sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
 template <typename _ExecutionPolicy, typename key_t, typename value_t>
 inline void sort_pairs(
     _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys,
-    io_iterator_pair<value_t> &values, int64_t n, bool descending,
+    io_iterator_pair<value_t> &values, int64_t n, bool descending = false,
+    bool do_swap_iters = false,
     int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
                   8) {
-  sort_pairs(::std::forward<_ExecutionPolicy>(policy), keys.input(),
-             keys.output(), values.input(), values.output(), n, descending,
+  sort_pairs(::std::forward<_ExecutionPolicy>(policy), keys.first(),
+             keys.second(), values.first(), values.second(), n, descending,
              begin_bit, end_bit);
+  if (do_swap_iters) {
+    keys.swap();
+    values.swap();
+  }
 }
 
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
@@ -1418,11 +1423,15 @@ sort_keys(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
 template <typename _ExecutionPolicy, typename key_t>
 inline void sort_keys(
     _ExecutionPolicy &&policy, io_iterator_pair<key_t> &keys, int64_t n,
-    bool descending = false, int begin_bit = 0,
+    bool descending = false,
+    bool do_swap_iters = false,
+    int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
                   8) {
-  sort_keys(std::forward<_ExecutionPolicy>(policy), keys.input(), keys.output(),
+  sort_keys(std::forward<_ExecutionPolicy>(policy), keys.first(), keys.second(),
             n, descending, begin_bit, end_bit);
+  if (do_swap_iters)
+    keys.swap();
 }
 
 template <typename _ExecutionPolicy, typename key_t, typename value_t,
