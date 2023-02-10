@@ -30,7 +30,7 @@ void replace_if(Policy &&policy, Iter1 first, Iter1 last, Iter2 mask, Pred p,
                        std::random_access_iterator_tag>::value,
       "Iterators passed to algorithms must be random-access iterators.");
   std::transform(std::forward<Policy>(policy), first, last, mask, first,
-                 internal::replace_if_fun<T, Pred>(p, new_value));
+                 internal::replace_if_fun<typename std::iterator_traits<Iter1>::value_type, Pred>(p, new_value));
 }
 
 template <typename Policy, typename Iter1, typename Iter2, typename Iter3,
