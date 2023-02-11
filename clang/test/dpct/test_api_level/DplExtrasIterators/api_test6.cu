@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasIterators/api_test6_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasIterators/api_test6_out
 
-// CHECK: 5
+// CHECK: 4
 // TEST_FEATURE: DplExtrasIterators_zip_iterator
 
 #include <thrust/iterator/zip_iterator.h>

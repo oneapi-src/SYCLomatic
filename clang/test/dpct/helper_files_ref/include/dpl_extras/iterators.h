@@ -146,17 +146,8 @@ template <typename KeyTp, typename _ValueTp> struct make_key_value_pair {
   }
 };
 
-template <typename T> struct __is_std_tuple : std::false_type {};
-template <typename... Ts>
-struct __is_std_tuple<std::tuple<Ts...>> : std::true_type {};
-
-template <typename... Ts> struct __zip_iterator_impl {
-  using type = oneapi::dpl::zip_iterator<Ts...>;
-};
-template <template <typename...> typename T, typename... Ts>
-struct __zip_iterator_impl<T<Ts...>> {
-  static_assert(__is_std_tuple<std::remove_cv_t<T<Ts...>>>::value,
-                "the template parameter must be std::tuple");
+template <class T> struct __zip_iterator_impl;
+template <class... Ts> struct __zip_iterator_impl<std::tuple<Ts...>> {
   using type = oneapi::dpl::zip_iterator<Ts...>;
 };
 

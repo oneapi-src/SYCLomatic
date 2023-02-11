@@ -212,26 +212,11 @@ template <typename KeyTp, typename _ValueTp> struct make_key_value_pair {
 };
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|is_tuple|dpct::detail
+// DPCT_LABEL_BEGIN|zip_iterator_impl|dpct::detail
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-template <typename T> struct __is_std_tuple : std::false_type {};
-template <typename... Ts>
-struct __is_std_tuple<std::tuple<Ts...>> : std::true_type {};
-// DPCT_LABEL_END
-
-// DPCT_LABEL_BEGIN|zip_iterator_impl|dpct::detail
-// DPCT_DEPENDENCY_BEGIN
-// DplExtrasIterators|is_tuple
-// DPCT_DEPENDENCY_END
-// DPCT_CODE
-template <typename... Ts> struct __zip_iterator_impl {
-  using type = oneapi::dpl::zip_iterator<Ts...>;
-};
-template <template <typename...> typename T, typename... Ts>
-struct __zip_iterator_impl<T<Ts...>> {
-  static_assert(__is_std_tuple<std::remove_cv_t<T<Ts...>>>::value,
-                "the template parameter must be std::tuple");
+template <class T> struct __zip_iterator_impl;
+template <class... Ts> struct __zip_iterator_impl<std::tuple<Ts...>> {
   using type = oneapi::dpl::zip_iterator<Ts...>;
 };
 // DPCT_LABEL_END
