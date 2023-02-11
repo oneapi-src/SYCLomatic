@@ -301,7 +301,7 @@ void spmv(sycl::queue &queue, oneapi::mkl::transpose trans, const void *alpha,
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|spmv|dpct::sparse
+// DPCT_LABEL_BEGIN|csrmv|dpct::sparse
 // DPCT_DEPENDENCY_BEGIN
 // SparseUtils|sparse_matrix_handle_t
 // SparseUtils|create_csr_matrix_handle
