@@ -16,11 +16,11 @@ void my_error_checker(T ReturnValue, char const *const FuncName) {
 __global__ void kernelFunc() {
 }
 
-// CHECK: void process(dpct::queue_ptr st, char *data, int status) {}
+// CHECK: void process(dpct::queue_ptr st, char *data, dpct::err0 status) {}
 void process(cudaStream_t st, char *data, cudaError_t status) {}
 
 template<typename T>
-// CHECK: void callback(dpct::queue_ptr st, int status, void *vp) {
+// CHECK: void callback(dpct::queue_ptr st, dpct::err0 status, void *vp) {
 void callback(cudaStream_t st, cudaError_t status, void *vp) {
   T *data = static_cast<T *>( vp);
   process(st, data, status);
@@ -207,7 +207,7 @@ static void func()
   // CHECK: /*
   // CHECK-NEXT: DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT: */
-  // CHECK-NEXT: int status = (std::async([&]() { s0->wait(); callback<char *>(s0, 0, str); }), 0);
+  // CHECK-NEXT: dpct::err0 status = (std::async([&]() { s0->wait(); callback<char *>(s0, 0, str); }), 0);
   // CHECK-NEXT: std::async([&]() { s1->wait(); callback<char*>(s1, 0, str); });
   cudaError_t status = cudaStreamAddCallback(s0, callback<char *>, str, flags);
   cudaStreamAddCallback(s1, callback<char*>, str, flags);
@@ -307,35 +307,35 @@ void foo(int size) {
   cudaStream_t streams[size];
 }
 
-// CHECK: void gFunc0(int e, dpct::queue_ptr s) {}
+// CHECK: void gFunc0(dpct::err0 e, dpct::queue_ptr s) {}
 void gFunc0(cudaError_t e, cudaStream_t s) {}
-// CHECK: void gFunc1(dpct::queue_ptr s, int e) {}
+// CHECK: void gFunc1(dpct::queue_ptr s, dpct::err0 e) {}
 void gFunc1(cudaStream_t s ,cudaError_t e) {}
 
-// CHECK: void gFunc2(int e, dpct::queue_ptr const s) {}
+// CHECK: void gFunc2(dpct::err0 e, dpct::queue_ptr const s) {}
 void gFunc2(cudaError_t e, cudaStream_t const s) {}
-// CHECK: void gFunc3(dpct::queue_ptr const s, int e) {}
+// CHECK: void gFunc3(dpct::queue_ptr const s, dpct::err0 e) {}
 void gFunc3(cudaStream_t const s, cudaError_t e) {}
 
-// CHECK: void gFunc4(int e, const dpct::queue_ptr s) {}
+// CHECK: void gFunc4(dpct::err0 e, const dpct::queue_ptr s) {}
 void gFunc4(cudaError_t e, const cudaStream_t s) {}
-// CHECK: void gFunc5(const dpct::queue_ptr s, int e) {}
+// CHECK: void gFunc5(const dpct::queue_ptr s, dpct::err0 e) {}
 void gFunc5(const cudaStream_t s ,cudaError_t e) {}
 
 void bar() {
-   // CHECK: std::function<void(int, dpct::queue_ptr)> f0 = gFunc0;
+   // CHECK: std::function<void(dpct::err0, dpct::queue_ptr)> f0 = gFunc0;
    std::function<void(cudaError_t, cudaStream_t)> f0 = gFunc0;
-   // CHECK: std::function<void(dpct::queue_ptr, int)> f1 = gFunc1;
+   // CHECK: std::function<void(dpct::queue_ptr, dpct::err0)> f1 = gFunc1;
    std::function<void(cudaStream_t, cudaError_t)> f1 = gFunc1;
 
-   // CHECK: std::function<void(int, dpct::queue_ptr const)> f2 = gFunc2;
+   // CHECK: std::function<void(dpct::err0, dpct::queue_ptr const)> f2 = gFunc2;
    std::function<void(cudaError_t, cudaStream_t const)> f2 = gFunc2;
-   // CHECK: std::function<void(dpct::queue_ptr const, int)> f3 = gFunc3;
+   // CHECK: std::function<void(dpct::queue_ptr const, dpct::err0)> f3 = gFunc3;
    std::function<void(cudaStream_t const, cudaError_t)> f3 = gFunc3;
 
-   // CHECK: std::function<void(int, const dpct::queue_ptr)> f4 = gFunc4;
+   // CHECK: std::function<void(dpct::err0, const dpct::queue_ptr)> f4 = gFunc4;
    std::function<void(cudaError_t, const cudaStream_t)> f4 = gFunc4;
-   // CHECK: std::function<void(const dpct::queue_ptr, int)> f5 = gFunc5;
+   // CHECK: std::function<void(const dpct::queue_ptr, dpct::err0)> f5 = gFunc5;
    std::function<void(const cudaStream_t, cudaError_t)> f5 = gFunc5;
 
    // CHECK: sizeof(dpct::queue_ptr);

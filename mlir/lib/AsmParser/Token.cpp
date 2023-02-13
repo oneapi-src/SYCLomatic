@@ -12,6 +12,7 @@
 
 #include "Token.h"
 #include "llvm/ADT/StringExtras.h"
+#include <optional>
 
 using namespace mlir;
 
@@ -24,8 +25,8 @@ SMLoc Token::getEndLoc() const {
 SMRange Token::getLocRange() const { return SMRange(getLoc(), getEndLoc()); }
 
 /// For an integer token, return its value as an unsigned.  If it doesn't fit,
-/// return None.
-Optional<unsigned> Token::getUnsignedIntegerValue() const {
+/// return std::nullopt.
+std::optional<unsigned> Token::getUnsignedIntegerValue() const {
   bool isHex = spelling.size() > 1 && spelling[1] == 'x';
 
   unsigned result = 0;
@@ -35,8 +36,8 @@ Optional<unsigned> Token::getUnsignedIntegerValue() const {
 }
 
 /// For an integer token, return its value as a uint64_t.  If it doesn't fit,
-/// return None.
-Optional<uint64_t> Token::getUInt64IntegerValue(StringRef spelling) {
+/// return std::nullopt.
+std::optional<uint64_t> Token::getUInt64IntegerValue(StringRef spelling) {
   bool isHex = spelling.size() > 1 && spelling[1] == 'x';
 
   uint64_t result = 0;
@@ -45,9 +46,9 @@ Optional<uint64_t> Token::getUInt64IntegerValue(StringRef spelling) {
   return result;
 }
 
-/// For a floatliteral, return its value as a double. Return None if the value
-/// underflows or overflows.
-Optional<double> Token::getFloatingPointValue() const {
+/// For a floatliteral, return its value as a double. Return std::nullopt if the
+/// value underflows or overflows.
+std::optional<double> Token::getFloatingPointValue() const {
   double result = 0;
   if (spelling.getAsDouble(result))
     return std::nullopt;
@@ -55,7 +56,7 @@ Optional<double> Token::getFloatingPointValue() const {
 }
 
 /// For an inttype token, return its bitwidth.
-Optional<unsigned> Token::getIntTypeBitwidth() const {
+std::optional<unsigned> Token::getIntTypeBitwidth() const {
   assert(getKind() == inttype);
   unsigned bitwidthStart = (spelling[0] == 'i' ? 1 : 2);
   unsigned result = 0;
@@ -64,7 +65,7 @@ Optional<unsigned> Token::getIntTypeBitwidth() const {
   return result;
 }
 
-Optional<bool> Token::getIntTypeSignedness() const {
+std::optional<bool> Token::getIntTypeSignedness() const {
   assert(getKind() == inttype);
   if (spelling[0] == 'i')
     return std::nullopt;
@@ -124,9 +125,9 @@ std::string Token::getStringValue() const {
   return result;
 }
 
-/// Given a token containing a hex string literal, return its value or None if
-/// the token does not contain a valid hex string.
-Optional<std::string> Token::getHexStringValue() const {
+/// Given a token containing a hex string literal, return its value or
+/// std::nullopt if the token does not contain a valid hex string.
+std::optional<std::string> Token::getHexStringValue() const {
   assert(getKind() == string);
 
   // Get the internal string data, without the quotes.
@@ -155,9 +156,9 @@ std::string Token::getSymbolReference() const {
 }
 
 /// Given a hash_identifier token like #123, try to parse the number out of
-/// the identifier, returning None if it is a named identifier like #x or
-/// if the integer doesn't fit.
-Optional<unsigned> Token::getHashIdentifierNumber() const {
+/// the identifier, returning std::nullopt if it is a named identifier like #x
+/// or if the integer doesn't fit.
+std::optional<unsigned> Token::getHashIdentifierNumber() const {
   assert(getKind() == hash_identifier);
   unsigned result = 0;
   if (spelling.drop_front().getAsInteger(10, result))

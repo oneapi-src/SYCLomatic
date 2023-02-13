@@ -52,6 +52,7 @@ std::unordered_map<std::string, std::pair<std::string, std::string>>
     MapNames::MathTypeCastingMap;
 MapNames::MapTy MapNames::BLASComputingAPIWithRewriter;
 std::unordered_set<std::string> MapNames::SOLVERAPIWithRewriter;
+std::unordered_set<std::string> MapNames::SPARSEAPIWithRewriter;
 
 void MapNames::setExplicitNamespaceMap() {
 
@@ -92,8 +93,8 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaDeviceProp",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "device_info",
                                       HelperFeatureEnum::Device_device_info)},
-      {"cudaError_t", std::make_shared<TypeNameRule>("int")},
-      {"cudaError", std::make_shared<TypeNameRule>("int")},
+      {"cudaError_t", std::make_shared<TypeNameRule>(getDpctNamespace() + "err0")},
+      {"cudaError", std::make_shared<TypeNameRule>(getDpctNamespace() + "err0")},
       {"CUresult", std::make_shared<TypeNameRule>("int")},
       {"CUcontext", std::make_shared<TypeNameRule>("int")},
       {"CUmodule", std::make_shared<TypeNameRule>(getDpctNamespace() + "kernel_library",
@@ -220,7 +221,9 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("oneapi::mkl::diag")},
       {"cusparseIndexBase_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::index_base")},
-      {"cusparseMatrixType_t", std::make_shared<TypeNameRule>("int")},
+      {"cusparseMatrixType_t", std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "sparse::matrix_info::matrix_type",
+           HelperFeatureEnum::SparseUtils_matrix_info)},
       {"cusparseOperation_t",
        std::make_shared<TypeNameRule>("oneapi::mkl::transpose")},
       {"cusparseSolveAnalysisInfo_t", std::make_shared<TypeNameRule>("int")},
@@ -311,7 +314,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"curandStatus", std::make_shared<TypeNameRule>("int")},
       {"cusparseStatus_t", std::make_shared<TypeNameRule>("int")},
       {"cusparseMatDescr_t",
-       std::make_shared<TypeNameRule>("oneapi::mkl::index_base")},
+       std::make_shared<TypeNameRule>(
+        "std::shared_ptr<" + getDpctNamespace() + "sparse::matrix_info>",
+        HelperFeatureEnum::SparseUtils_matrix_info)},
       {"cusparseHandle_t",
        std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
       {"cudaMemoryAdvise", std::make_shared<TypeNameRule>("int")},
@@ -416,7 +421,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudnnHandle_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::engine_ext",
                                       HelperFeatureEnum::DnnlUtils_engine_ext)},
-      {"cudnnStatus_t", std::make_shared<TypeNameRule>("int")},
+      {"cudnnStatus_t", std::make_shared<TypeNameRule>(getDpctNamespace() + "err1")},
       {"cudnnTensorDescriptor_t",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "dnnl::memory_desc_ext",
@@ -1659,6 +1664,11 @@ void MapNames::setExplicitNamespaceMap() {
                            "cusolverDnZhegvd",
                            "cusolverDnChegvd_bufferSize",
                            "cusolverDnZhegvd_bufferSize"};
+  SPARSEAPIWithRewriter = {"cusparseCreateMatDescr",  "cusparseDestroyMatDescr",
+                           "cusparseSetMatType",      "cusparseGetMatType",
+                           "cusparseSetMatIndexBase", "cusparseGetMatIndexBase",
+                           "cusparseSetMatDiagType",  "cusparseGetMatDiagType",
+                           "cusparseSetMatFillMode",  "cusparseGetMatFillMode"};
 
   // This map now is only used to migrate using declaration
   MathFuncNameMap = {
@@ -1778,6 +1788,10 @@ const MapNames::MapTy MapNames::SPBLASEnumsMap{
     {"CUSPARSE_DIAG_TYPE_UNIT", "oneapi::mkl::diag::unit"},
     {"CUSPARSE_INDEX_BASE_ZERO", "oneapi::mkl::index_base::zero"},
     {"CUSPARSE_INDEX_BASE_ONE", "oneapi::mkl::index_base::one"},
+    {"CUSPARSE_MATRIX_TYPE_GENERAL", "dpct::sparse::matrix_info::matrix_type::ge"},
+    {"CUSPARSE_MATRIX_TYPE_SYMMETRIC", "dpct::sparse::matrix_info::matrix_type::sy"},
+    {"CUSPARSE_MATRIX_TYPE_HERMITIAN", "dpct::sparse::matrix_info::matrix_type::he"},
+    {"CUSPARSE_MATRIX_TYPE_TRIANGULAR", "dpct::sparse::matrix_info::matrix_type::tr"},
 };
 
 // SOLVER enums mapping
@@ -4091,6 +4105,9 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
      MacroMigrationRule("dpct_build_in_macro_rule", RulePriority::Fallback,
                         "__noinline__", "__dpct_noinline__",
                         HelperFeatureEnum::Dpct_dpct_noinline)},
+    {"cudaMemAttachGlobal",
+     MacroMigrationRule("flag_macro_rule", RulePriority::Fallback,
+                        "cudaMemAttachGlobal", "0")},
     //...
 };
 
