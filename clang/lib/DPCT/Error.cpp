@@ -38,12 +38,6 @@ void ShowStatus(int Status, std::string Message) {
     StatusString = "Error: Path for CUDA header files specified by "
                    "--cuda-include-path is invalid.";
     break;
-  case MigrationErrorInvalidChangeFilenameExtension:
-    StatusString =
-        "Error: Extension specified by --change-filename-extension is "
-        "invalid.\n"
-        "Only a '.' followed by alphabetical characters are allowed.";
-    break;
   case MigrationErrorCudaVersionUnsupported:
     StatusString = "Error: The version of CUDA header files specified by "
                    "--cuda-include-path is not supported. See Release Notes "
