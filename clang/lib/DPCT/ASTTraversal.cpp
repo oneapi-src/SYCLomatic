@@ -150,8 +150,7 @@ void IncludesCallbacks::insertCudaArchRepl(
   auto &Map = DpctGlobalInfo::getInstance().getCudaArchMacroReplMap();
   std::string Key = FilePath + std::to_string(Offset);
   if (!Map[Key]) {
-        Map[Key] = Repl;
-    return;
+    Map[Key] = Repl;
   }
   return;
 }
@@ -171,10 +170,10 @@ void IncludesCallbacks::ReplaceCuMacro(const Token &MacroNameTok) {
     auto Repl = std::make_shared<ReplaceToken>(MacroNameTok.getLocation(),
                                                std::move(ReplacedMacroName));
     if (MacroName == "__CUDA_ARCH__") {
-      if(DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
-      requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp,
-                     MacroNameTok.getLocation());
-      insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
+      if (DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
+        requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp,
+                       MacroNameTok.getLocation());
+        insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
       }
       return;
     }
@@ -399,12 +398,12 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
 
   if (MacroNameTok.getIdentifierInfo() &&
       MacroNameTok.getIdentifierInfo()->getName() == "__CUDA_ARCH__") {
-    if(DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
-    requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp,
-                   Range.getBegin());
-    auto Repl = std::make_shared<ReplaceText>(Range.getBegin(), 13,
-                                              "DPCT_COMPATIBILITY_TEMP");
-    insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
+    if (DpctGlobalInfo::getInstance().getContext().getLangOpts().CUDA) {
+      requestFeature(HelperFeatureEnum::Dpct_dpct_compatibility_temp,
+                     Range.getBegin());
+      auto Repl = std::make_shared<ReplaceText>(Range.getBegin(), 13,
+                                                "DPCT_COMPATIBILITY_TEMP");
+      insertCudaArchRepl(Repl->getReplacement(DpctGlobalInfo::getContext()));
     }
     return;
   }
