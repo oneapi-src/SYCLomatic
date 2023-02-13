@@ -130,17 +130,15 @@ void CubDeviceLevelRule::runRule(
 void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       cxxMemberCallExpr(
-          anyOf(
               allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(
                         namedDecl(hasName("cub::ArgIndexInputIterator"))))))),
-                    callee(cxxMethodDecl(hasName("normalize")))),
-              callee(cxxMethodDecl(hasAnyName(
-                  "Current", "Alternate")))))
+                    callee(cxxMethodDecl(hasName("normalize")))))
           .bind("memberCall"),
       this);
 
   MF.addMatcher(
-      memberExpr(member(hasAnyName("d_buffers")))
+      memberExpr(hasObjectExpression(hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(hasName("cub::DoubleBuffer"))))))),
+                    member(hasAnyName("Current", "Alternate", "d_buffers")))
       .bind("memberExpr"),
       this);
 }
