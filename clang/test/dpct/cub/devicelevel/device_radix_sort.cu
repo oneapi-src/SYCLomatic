@@ -53,8 +53,7 @@ void test1(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, n, false);
-  // CHECK-NEXT: key_buffers.swap();
+  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, n, false, true);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortKeys(nullptr, temp_storage_size, key_buffers, n);
@@ -87,8 +86,7 @@ void test2(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, n, false, 1);
-  // CHECK-NEXT: key_buffers.swap();
+  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, n, false, true, 1);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortKeys(nullptr, temp_storage_size, key_buffers, n, 1);
@@ -121,8 +119,7 @@ void test3(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, n, false, 1, 4);
-  // CHECK-NEXT: key_buffers.swap();
+  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, n, false, true, 1, 4);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortKeys(nullptr, temp_storage_size, key_buffers, n, 1, 4);
@@ -157,8 +154,7 @@ void test4(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(*s), key_buffers, n, false, 1, 4);
-  // CHECK-NEXT: key_buffers.swap();
+  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(*s), key_buffers, n, false, true, 1, 4);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortKeys(nullptr, temp_storage_size, key_buffers, n, 1, 4, s);
@@ -191,8 +187,7 @@ void test5(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, n, true);
-  // CHECK-NEXT: key_buffers.swap();
+  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, n, true, true);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortKeysDescending(nullptr, temp_storage_size, key_buffers, n);
@@ -225,8 +220,7 @@ void test6(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, n, true, 1);
-  // CHECK-NEXT: key_buffers.swap();
+  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, n, true, true, 1);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortKeysDescending(nullptr, temp_storage_size, key_buffers, n, 1);
@@ -259,8 +253,7 @@ void test7(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, n, true, 1, 4);
-  // CHECK-NEXT: key_buffers.swap();
+  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, n, true, true, 1, 4);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortKeysDescending(nullptr, temp_storage_size, key_buffers, n, 1, 4);
@@ -295,8 +288,7 @@ void test8(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(*s), key_buffers, n, true, 1, 4);
-  // CHECK-NEXT: key_buffers.swap();
+  // CHECK: dpct::sort_keys(oneapi::dpl::execution::device_policy(*s), key_buffers, n, true, true, 1, 4);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortKeysDescending(nullptr, temp_storage_size, key_buffers, n, 1, 4, s);
@@ -329,9 +321,7 @@ void test9(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, value_buffers, n, false);
-  // CHECK-NEXT: key_buffers.swap();
-  // CHECK-NEXT: value_buffers.swap();
+  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, value_buffers, n, false, true);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortPairs(nullptr, temp_storage_size, key_buffers, value_buffers, n);
@@ -364,9 +354,7 @@ void test10(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, value_buffers, n, false, 1);
-  // CHECK-NEXT: key_buffers.swap();
-  // CHECK-NEXT: value_buffers.swap();
+  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, value_buffers, n, false, true, 1);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortPairs(nullptr, temp_storage_size, key_buffers, value_buffers, n, 1);
@@ -399,9 +387,7 @@ void test11(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, value_buffers, n, false, 1, 4);
-  // CHECK-NEXT: key_buffers.swap();
-  // CHECK-NEXT: value_buffers.swap();
+  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, value_buffers, n, false, true, 1, 4);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortPairs(nullptr, temp_storage_size, key_buffers, value_buffers, n, 1, 4);
@@ -436,9 +422,7 @@ void test12(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(*s), key_buffers, value_buffers, n, false, 1, 4);
-  // CHECK-NEXT: key_buffers.swap();
-  // CHECK-NEXT: value_buffers.swap();
+  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(*s), key_buffers, value_buffers, n, false, true, 1, 4);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortPairs(nullptr, temp_storage_size, key_buffers, value_buffers, n, 1, 4, s);
@@ -471,9 +455,7 @@ void test13(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, value_buffers, n, true);
-  // CHECK-NEXT: key_buffers.swap();
-  // CHECK-NEXT: value_buffers.swap();
+  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, value_buffers, n, true, true);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortPairsDescending(nullptr, temp_storage_size, key_buffers, value_buffers, n);
@@ -506,9 +488,7 @@ void test14(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, value_buffers, n, true, 1);
-  // CHECK-NEXT: key_buffers.swap();
-  // CHECK-NEXT: value_buffers.swap();
+  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, value_buffers, n, true, true, 1);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortPairsDescending(nullptr, temp_storage_size, key_buffers, value_buffers, n, 1);
@@ -541,9 +521,7 @@ void test15(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, value_buffers, n, true, 1, 4);
-  // CHECK-NEXT: key_buffers.swap();
-  // CHECK-NEXT: value_buffers.swap();
+  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(q_ct1), key_buffers, value_buffers, n, true, true, 1, 4);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortPairsDescending(nullptr, temp_storage_size, key_buffers, value_buffers, n, 1, 4);
@@ -578,9 +556,7 @@ void test16(void) {
   // CHECK: // begin
   // CHECK: DPCT1026:{{.*}}
   // CHECK-NOT: cudaMalloc(&temp_storage, temp_storage_size);
-  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(*s), key_buffers, value_buffers, n, true, 1, 4);
-  // CHECK-NEXT: key_buffers.swap();
-  // CHECK-NEXT: value_buffers.swap();
+  // CHECK: dpct::sort_pairs(oneapi::dpl::execution::device_policy(*s), key_buffers, value_buffers, n, true, true, 1, 4);
   // CHECK: // end
   // begin
   cub::DeviceRadixSort::SortPairsDescending(nullptr, temp_storage_size, key_buffers, value_buffers, n, 1, 4, s);
