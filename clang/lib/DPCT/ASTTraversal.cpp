@@ -289,8 +289,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     std::string MacroNameStr;
     if (auto Identifier = MacroNameTok.getIdentifierInfo())
       MacroNameStr = Identifier->getName().str();
-    if (MapNames::PredefinedStreamName.find(MacroNameStr) !=
-        MapNames::PredefinedStreamName.end()) {
+    if (MacroNameStr == "cudaStreamDefault"
+        || MacroNameStr == "cudaStreamNonBlocking") {
       // Currently, only support examples like,
       // #define CONCATE(name) cuda##name
       // which contains 3 tokens, and the 2nd token is ##.
@@ -312,7 +312,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                        DefRange.getBegin());
         TransformSet.emplace_back(new ReplaceText(
             DefRange.getBegin(), Length,
-            "&" + MapNames::getDpctNamespace() + "get_default_queue()"));
+            "0"));
       }
     }
 
@@ -14600,36 +14600,6 @@ void RemoveBaseClassRule::runRule(const MatchFinder::MatchResult &Result) {
 
 REGISTER_RULE(RemoveBaseClassRule, PassKind::PK_Migration)
 
-void PreDefinedStreamHandleRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(integerLiteral(equals(0)).bind("stream"), this);
-  MF.addMatcher(parenExpr(has(cStyleCastExpr(has(
-                              integerLiteral(anyOf(equals(1), equals(2)))))))
-                    .bind("stream"),
-                this);
-}
-
-void PreDefinedStreamHandleRule::runRule(
-    const MatchFinder::MatchResult &Result) {
-  if (auto E = getNodeAsType<Expr>(Result, "stream")) {
-    std::string Str = getStmtSpelling(E);
-    if (Str == "cudaStreamDefault" || Str == "cudaStreamLegacy" ||
-        Str == "cudaStreamPerThread") {
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      auto Begin = getStmtExpansionSourceRange(E).getBegin();
-      unsigned int Length = Lexer::MeasureTokenLength(
-          Begin, SM, DpctGlobalInfo::getContext().getLangOpts());
-      if (isPlaceholderIdxDuplicated(E))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, E, HelperFuncType::HFT_DefaultQueue);
-      emplaceTransformation(new ReplaceText(
-          Begin, Length, "&{{NEEDREPLACEQ" + std::to_string(Index) + "}}"));
-    }
-  }
-}
-
-REGISTER_RULE(PreDefinedStreamHandleRule, PassKind::PK_Migration)
-
 void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
       asmStmt(hasAncestor(functionDecl(
@@ -15409,10 +15379,10 @@ REGISTER_RULE(TemplateSpecializationTypeLocRule, PassKind::PK_Migration)
 
 void CudaStreamCastRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
-    castExpr(
-      hasType(typedefDecl(hasAnyName("CUstream", "cudaStream_t"))))
-    .bind("cast"),
-    this);
+     castExpr(hasType(qualType(hasCanonicalType(
+        qualType(pointsTo(namedDecl(hasName("CUstream_st"))))))))
+     .bind("cast"),
+     this);
 }
 
 void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {
