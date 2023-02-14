@@ -34,11 +34,9 @@
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 
-#include "llvm/ADT/Optional.h"
-
-llvm::Optional<std::string> getReplacedName(const clang::NamedDecl *D);
+std::optional<std::string> getReplacedName(const clang::NamedDecl *D);
 void setGetReplacedNamePtr(
-    llvm::Optional<std::string> (*Ptr)(const clang::NamedDecl *D));
+    std::optional<std::string> (*Ptr)(const clang::NamedDecl *D));
 
 namespace clang {
 namespace dpct {
@@ -1313,7 +1311,7 @@ public:
   }
 
   // Return the absolute path of \p ID
-  static llvm::Optional<std::string> getAbsolutePath(FileID ID);
+  static std::optional<std::string> getAbsolutePath(FileID ID);
 
   static inline std::pair<std::string, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
