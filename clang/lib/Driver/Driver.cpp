@@ -189,7 +189,7 @@ std::string Driver::GetResourcesPath(StringRef BinaryPath,
     P = llvm::sys::path::parent_path(Dir);
 #ifdef SYCLomatic_CUSTOMIZATION
     SmallString<128> P1(P);
-    llvm::sys::path::append(P, Twine("share/dpct") + CLANG_INSTALL_LIBDIR_BASENAME,
+    llvm::sys::path::append(P, Twine("share/dpct/") + CLANG_INSTALL_LIBDIR_BASENAME,
                             "clang", CLANG_VERSION_MAJOR_STRING);
     if (llvm::sys::fs::exists(P)) {
       return std::string(P.str());
