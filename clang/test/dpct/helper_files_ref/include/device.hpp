@@ -343,11 +343,11 @@ public:
           this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
     }
 #else
-    deatil::warning(
+    detail::warning(
         "get_device_info: querying memory_clock_rate and memory_bus_width are "
         "not supported by the compiler used. \nUse 3200000 kHz as "
         "memory_clock_rate default value.\nUse 64 bits as memory_bus_width "
-        "default value.")
+        "default value.\n");
 #endif
 
     size_t max_sub_group_size = 1;
