@@ -149,9 +149,7 @@ void IncludesCallbacks::insertCudaArchRepl(
   auto Offset = Repl->getOffset();
   auto &Map = DpctGlobalInfo::getInstance().getCudaArchMacroReplMap();
   std::string Key = FilePath + std::to_string(Offset);
-  if (!Map[Key]) {
-    Map[Key] = Repl;
-  }
+  Map.insert({Key, Repl});
   return;
 }
 
@@ -15279,6 +15277,8 @@ void CudaArchMacroRule::runRule(
   DpctNameGenerator DNG;
   const FunctionDecl *FD =
       getAssistNodeAsType<FunctionDecl>(Result, "funcDecl");
+  auto &HDFIMap = Global.getHostDeviceFuncInfoMap();
+  HostDeviceFuncLocInfo HDFLI;
   // process __host__ __device__ function definition except overloaded operator
   if (FD && !FD->isOverloadedOperator() &&
       FD->getTemplateSpecializationKind() ==
@@ -15288,7 +15288,6 @@ void CudaArchMacroRule::runRule(
     if (NameInfo.getBeginLoc().isMacroID())
       return;
     auto BeginLoc = SM.getExpansionLoc(FD->getBeginLoc());
-    HostDeviceFuncInfo HDFI;
     if (FD->isTemplated()) {
       auto P = CT.getParents(*FD);
       if (!P.size())
@@ -15307,18 +15306,21 @@ void CudaArchMacroRule::runRule(
     auto FileInfo = DpctGlobalInfo::getInstance().insertFile(Beg.first);
     std::string &FileContent = FileInfo->getFileContent();
     auto NameLocInfo = Global.getLocInfo(NameInfo.getBeginLoc());
+    std::string ManglingName = DNG.getName(FD);
     Global.getMainSourceFileMap()[NameLocInfo.first].push_back(
         Global.getMainFile()->getFilePath());
-    HDFI.FuncStartOffset = Beg.second;
-    HDFI.FuncEndOffset = End.second;
-    HDFI.FuncNameOffset = NameLocInfo.second + NameInfo.getAsString().length();
-    HDFI.FuncContentCache =
+    HDFLI.FuncStartOffset = Beg.second;
+    HDFLI.FuncEndOffset = End.second;
+    HDFLI.FuncNameOffset = NameLocInfo.second + NameInfo.getAsString().length();
+    HDFLI.FuncContentCache =
         FileContent.substr(Beg.second, End.second - Beg.second + 1);
+    HDFLI.FilePath = NameLocInfo.first;
     if (!FD->isThisDeclarationADefinition()) {
-      Global.insertHostDeviceFuncDeclInfo(
-          DNG.getName(FD), std::make_pair(NameLocInfo.first, HDFI));
+      HDFLI.Type = HDFuncInfoType::HDFI_Decl;
+      HDFIMap[ManglingName].LocInfos.push_back(HDFLI);
       return;
     }
+    HDFLI.Type = HDFuncInfoType::HDFI_Def;
     bool NeedInsert = false;
     for (auto &Info : Global.getCudaArchPPInfoMap()[FileInfo->getFilePath()]) {
       if ((Info.first > Beg.second) && (Info.first < End.second) &&
@@ -15329,9 +15331,10 @@ void CudaArchMacroRule::runRule(
         NeedInsert = true;
       }
     }
-    if (NeedInsert)
-      Global.insertHostDeviceFuncDefInfo(
-          DNG.getName(FD), std::make_pair(NameLocInfo.first, HDFI));
+    if (NeedInsert){
+      HDFIMap[ManglingName].isDefInserted = true;
+      HDFIMap[ManglingName].LocInfos.push_back(HDFLI);
+    }
   } // address __host__ __device__ function call
   else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "callExpr")) {
     // TODO: add support for macro
@@ -15345,20 +15348,22 @@ void CudaArchMacroRule::runRule(
     const FunctionDecl *DC = CE->getDirectCallee();
     if (DC) {
       unsigned int Offset = DC->getNameAsString().length();
-      std::string Name(DNG.getName(DC));
+      std::string ManglingName(DNG.getName(DC));
       if (DC->isTemplateInstantiation()) {
         if (auto DFT = DC->getPrimaryTemplate()) {
           const FunctionDecl *TFD = DFT->getTemplatedDecl();
           if (TFD)
-            Name = DNG.getName(TFD);
+            ManglingName = DNG.getName(TFD);
         }
       }
       auto LocInfo = Global.getLocInfo(CE->getBeginLoc());
       Global.getMainSourceFileMap()[LocInfo.first].push_back(
         Global.getMainFile()->getFilePath());
-      Global.insertHostDeviceFuncCallInfo(
-          std::move(Name),
-          std::make_pair(LocInfo.first, LocInfo.second + Offset));
+      HDFLI.Type = HDFuncInfoType::HDFI_Call;
+      HDFLI.FilePath = LocInfo.first;
+      HDFLI.FuncEndOffset = LocInfo.second + Offset;
+      HDFIMap[ManglingName].LocInfos.push_back(HDFLI);
+      HDFIMap[ManglingName].isCalledInHost = true;
     }
   }
 }

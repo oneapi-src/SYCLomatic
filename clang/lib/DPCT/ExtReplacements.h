@@ -156,9 +156,6 @@ private:
     return false;
   }
 
-  void buildCudaArchHostFunc(std::shared_ptr<DpctFileInfo> FileInfo);
-  void processCudaArchMacro();
-
   std::string FilePath;
   ///< Offset, ExtReplacement>
   std::multimap<unsigned, std::shared_ptr<ExtReplacement>> ReplMap;

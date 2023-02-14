@@ -165,11 +165,24 @@ struct FormatInfo {
   bool IsFirstArg = false;
 };
 
-struct HostDeviceFuncInfo {
+enum HDFuncInfoType{HDFI_Def, HDFI_Decl, HDFI_Call};
+
+struct HostDeviceFuncLocInfo {
+  std::string FilePath;
+  std::string FuncContentCache;
   unsigned FuncStartOffset;
   unsigned FuncEndOffset;
   unsigned FuncNameOffset;
-  std::string FuncContentCache;
+  HDFuncInfoType Type;
+};
+
+struct HostDeviceFuncInfo {
+  std::vector<HostDeviceFuncLocInfo>
+  LocInfos;
+  bool isCalledInHost = false;
+  bool isDefInserted = false;
+  bool needGenerateHostCode = false;
+  unsigned int PostFixId = 0;
 };
 
 enum IfType { IT_Unknow, IT_If, IT_Ifdef, IT_Ifndef, IT_Elif };
@@ -214,16 +227,10 @@ struct RnnBackwardFuncInfo {
   std::vector<std::string> FuncArgs;
 };
 
-// function name, <file path, Info>
-using HDDefMap =
-    std::unordered_multimap<std::string,
-                            std::pair<std::string, HostDeviceFuncInfo>>;
-using HDDeclMap =
-    std::unordered_multimap<std::string,
-                            std::pair<std::string, HostDeviceFuncInfo>>;
-using HDCallMap =
-    std::unordered_multimap<std::string, std::pair<std::string, unsigned int>>;
-// file path, <Offset, Info>
+// <function name, Info>
+using HDFuncInfoMap =
+    std::unordered_map<std::string, HostDeviceFuncInfo>;
+// <file path, <Offset, Info>>
 using CudaArchPPMap =
     std::unordered_map<std::string,
                        std::unordered_map<unsigned int, CudaArchPPInfo>>;
@@ -1476,42 +1483,68 @@ public:
   std::set<std::string> &getProcessedFile() {
     return ProcessedFile;
   }
+  void processCudaArchMacro();
+  void generateHostCode(
+      std::multimap<unsigned int, std::shared_ptr<clang::dpct::ExtReplacement>>
+          &ProcessedReplList,
+      HostDeviceFuncLocInfo Info, unsigned ID);
   void postProcess() {
+    if (DpctGlobalInfo::getRunRound() == 0) {
+    }
+    auto &MSMap = DpctGlobalInfo::getMainSourceFileMap();
+    bool isFirstPass = !DpctGlobalInfo::getRunRound();
+    int id = 0;
+
+    processCudaArchMacro();
+
+    for (auto &Element : HostDeviceFuncInfoMap) {
+      auto &Info = Element.second;
+      if (Info.isCalledInHost && Info.isDefInserted) {
+        Info.needGenerateHostCode = true;
+        if (isFirstPass) {
+          Info.PostFixId = id++;
+        }
+        for (auto &LocInfo : Info.LocInfos) {
+          if (LocInfo.Type == HDFuncInfoType::HDFI_Call) {
+            auto R = std::make_shared<ExtReplacement>(
+                LocInfo.FilePath, LocInfo.FuncEndOffset, 0,
+                "_host_ct" + std::to_string(Info.PostFixId), nullptr);
+            addReplacement(R);
+          }
+          if (!isFirstPass) {
+            continue;
+          }
+          auto &MSFiles = MSMap[LocInfo.FilePath];
+          for (auto &File : MSFiles) {
+            if (ProcessedFile.count(File))
+              ReProcessFile.emplace(File);
+          }
+        }
+      }
+    }
+
+    if (!ReProcessFile.empty() && isFirstPass) {
+      DpctGlobalInfo::setNeedRunAgain(true);
+    }
+
     for (auto &File : FileMap) {
       File.second->postProcess();
     }
-    if (DpctGlobalInfo::getRunRound()) {
-      return;
-    }
-    for (auto &Info : HostDeviceFDefIMap)
-      if (HostDeviceFCallIMap.count(Info.first)) {
-        DpctGlobalInfo::setNeedRunAgain(true);
-        auto &MSMap = DpctGlobalInfo::getMainSourceFileMap();
-        // record file that needs to be parsed again
-        for (auto &Info : HostDeviceFDefIMap)
-          if (HostDeviceFCallIMap.count(Info.first)) {
-            auto &MSFiles = MSMap[Info.second.first];
-            for (auto &File : MSFiles)
-              if (ProcessedFile.count(File))
-                ReProcessFile.emplace(File);
+    if (!isFirstPass) {
+      for (auto &Element : HostDeviceFuncInfoMap) {
+        auto &Info = Element.second;
+        if (Info.needGenerateHostCode) {
+          for (auto &LocInfo : Info.LocInfos) {
+            if (LocInfo.Type == HDFuncInfoType::HDFI_Call) {
+              continue;
+            }
+            auto &ReplLists =
+                FileMap[LocInfo.FilePath]->getRepls()->getReplMap();
+            generateHostCode(ReplLists, LocInfo, Info.PostFixId);
           }
-        for (auto &Info : HostDeviceFCallIMap)
-          if (HostDeviceFDefIMap.count(Info.first)) {
-            auto &MSFiles = MSMap[Info.second.first];
-            for (auto &File : MSFiles)
-              if (ProcessedFile.count(File))
-                ReProcessFile.emplace(File);
-          }
-        for (auto &Info : HostDeviceFDeclIMap)
-          if (HostDeviceFDefIMap.count(Info.first) &&
-              HostDeviceFCallIMap.count(Info.first)) {
-            auto &MSFiles = MSMap[Info.second.first];
-            for (auto &File : MSFiles)
-              if (ProcessedFile.count(File))
-                ReProcessFile.emplace(File);
-          }
-        break;
+        }
       }
+    }
   }
   void cacheFileRepl(std::string FilePath,
                      std::shared_ptr<ExtReplacements> Repl) {
@@ -1544,25 +1577,8 @@ public:
     }
   }
 
-  void
-  insertHostDeviceFuncCallInfo(std::string &&FuncName,
-                               std::pair<std::string, unsigned int> &&Info) {
-    HostDeviceFCallIMap.emplace(std::move(FuncName), std::move(Info));
-  }
-  void insertHostDeviceFuncDefInfo(
-      std::string &&FuncName,
-      std::pair<std::string, HostDeviceFuncInfo> &&Info) {
-    HostDeviceFDefIMap.emplace(std::move(FuncName), std::move(Info));
-  }
-  void insertHostDeviceFuncDeclInfo(
-      std::string &&FuncName,
-      std::pair<std::string, HostDeviceFuncInfo> &&Info) {
-    HostDeviceFDeclIMap.emplace(std::move(FuncName), std::move(Info));
-  }
   CudaArchPPMap &getCudaArchPPInfoMap() { return CAPPInfoMap; }
-  HDCallMap &getHostDeviceFuncCallInfoMap() { return HostDeviceFCallIMap; }
-  HDDefMap &getHostDeviceFuncDefInfoMap() { return HostDeviceFDefIMap; }
-  HDDeclMap &getHostDeviceFuncDeclInfoMap() { return HostDeviceFDeclIMap; }
+  HDFuncInfoMap &getHostDeviceFuncInfoMap() { return HostDeviceFuncInfoMap; }
   std::unordered_map<std::string, std::shared_ptr<ExtReplacement>> &
   getCudaArchMacroReplMap() {
     return CudaArchMacroRepl;
@@ -2038,10 +2054,6 @@ public:
   getMainSourceFileMap(){
     return MainSourceFileMap;
   };
-  static inline std::unordered_map<std::string, std::string> &
-  getGeneratedHostFunctionPostfixMap(){
-    return GeneratedHostFunctionPostfixMap;
-  }
 
 private:
   DpctGlobalInfo();
@@ -2194,9 +2206,7 @@ private:
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
       CudaKernelDimDFIMap;
   static CudaArchPPMap CAPPInfoMap;
-  static HDCallMap HostDeviceFCallIMap;
-  static HDDefMap HostDeviceFDefIMap;
-  static HDDeclMap HostDeviceFDeclIMap;
+  static HDFuncInfoMap HostDeviceFuncInfoMap;
   static CudaArchDefMap CudaArchDefinedMap;
   static std::unordered_map<std::string, std::shared_ptr<ExtReplacement>>
       CudaArchMacroRepl;
@@ -2229,8 +2239,6 @@ private:
       RnnInputMap;
   static std::unordered_map<std::string, std::vector<std::string>>
       MainSourceFileMap;
-  static std::unordered_map<std::string, std::string>
-      GeneratedHostFunctionPostfixMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.
