@@ -764,13 +764,15 @@ public:
           this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
     }
 #elif defined(_MSC_VER) && !defined(__clang__)
-#pragma message("get_device_info: querying memory_clock_rate and memory_bus_width are not supported by the compiler used. \
- Use 3200000 kHz as memory_clock_rate default value. \
- Use 64 bits as memory_bus_width default value.")
+#pragma message("get_device_info: querying memory_clock_rate and \
+memory_bus_width are not supported by the compiler used. \
+Use 3200000 kHz as memory_clock_rate default value. \
+Use 64 bits as memory_bus_width default value.")
 #else
-#warning "get_device_info: querying memory_clock_rate and memory_bus_width are not supported by the compiler used. \
- Use 3200000 kHz as memory_clock_rate default value. \
- Use 64 bits as memory_bus_width default value."
+#warning "get_device_info: querying memory_clock_rate and \
+memory_bus_width are not supported by the compiler used. \
+Use 3200000 kHz as memory_clock_rate default value. \
+Use 64 bits as memory_bus_width default value."
 #endif
 
     size_t max_sub_group_size = 1;
