@@ -574,4 +574,5 @@ std::string getFunctionName(const clang::FunctionTemplateDecl *Node);
 bool isLambda(const clang::FunctionDecl *FD);
 const clang::LambdaExpr *
 getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl);
+bool typeIsPostfix(clang::QualType QT);
 #endif // DPCT_UTILITY_H
