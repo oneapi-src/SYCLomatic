@@ -448,6 +448,21 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
       throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                             "the data type is unsupported");
     }
+  } catch (oneapi::mkl::lapack::batch_error const &be) {
+    try {
+      std::rethrow_exception(be.exceptions()[0]);
+    } catch (oneapi::mkl::lapack::exception &e) {
+      std::cerr << "Unexpected exception caught during call to LAPACK API: "
+                   "getrfnp_batch"
+                << std::endl
+                << "reason: " << e.what() << std::endl
+                << "number: " << e.info() << std::endl;
+      int info_val = static_cast<int>(e.info());
+      dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
+                                memcpy_direction::host_to_device)
+          .wait();
+      return 1;
+    }
   } catch (oneapi::mkl::lapack::exception const &e) {
     std::cerr << "Unexpected exception caught during call to LAPACK API: "
               << lapack_api_name << std::endl
@@ -624,63 +639,25 @@ template <typename T> struct geqrf_impl {
 
 // DPCT_LABEL_BEGIN|getrfnp_impl|dpct::lapack::detail
 // DPCT_DEPENDENCY_BEGIN
-// LibCommonUtils|get_memory
 // LibCommonUtils|library_data_t
-// Memory|dpct_memcpy_detail
+// LibCommonUtils|get_memory
 // Memory|dpct_memset_detail
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-inline int getrfnp_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
-                        library_data_t a_type, void *a, std::int64_t lda,
-                        void *device_ws, size_t device_ws_size, int *info) {
-#define CASE(TYPE_NAME, TYPE)                                                  \
-  case TYPE_NAME: {                                                            \
-    std::int64_t a_stride = m * lda;                                           \
-    auto a_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(a));       \
-    auto device_ws_data =                                                      \
-        dpct::detail::get_memory(reinterpret_cast<TYPE *>(device_ws));         \
-    oneapi::mkl::lapack::getrfnp_batch(q, m, n, a_data, lda, a_stride, 1,      \
-                                       device_ws_data,                         \
-                                       device_ws_size / sizeof(TYPE));         \
-    break;                                                                     \
-  }
-
-  try {
-    switch (a_type) {
-      CASE(library_data_t::real_float, float)
-      CASE(library_data_t::real_double, double)
-      CASE(library_data_t::complex_float, std::complex<float>)
-      CASE(library_data_t::complex_double, std::complex<double>)
-    default:
-      throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                            "the data type is unsupported");
-    }
+template <typename T> struct getrfnp_impl {
+  void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, void *a, std::int64_t lda,
+                  std::int64_t *ipiv, void *device_ws, size_t device_ws_size,
+                  int *info) {
+    std::int64_t a_stride = m * lda;
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    oneapi::mkl::lapack::getrfnp_batch(q, m, n, a_data, lda, a_stride, 1,
+                                       device_ws_data, device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
-  } catch (oneapi::mkl::lapack::batch_error const &be) {
-    try {
-      std::rethrow_exception(be.exceptions()[0]);
-    } catch (oneapi::mkl::lapack::exception &e) {
-      std::cerr << "Unexpected exception caught during call to LAPACK API: "
-                   "getrfnp_batch"
-                << std::endl
-                << "reason: " << e.what() << std::endl
-                << "number: " << e.info() << std::endl;
-      int info_val = static_cast<int>(e.info());
-      dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
-                                memcpy_direction::host_to_device)
-          .wait();
-      return 1;
-    }
-  } catch (sycl::exception const &e) {
-    std::cerr << "Caught synchronous SYCL exception:" << std::endl
-              << "reason: " << e.what() << std::endl;
-    dpct::detail::dpct_memset(q, info, 0, sizeof(int)).wait();
-    return 1;
   }
-
-#undef CASE
-  return 0;
-}
+};
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|gesvd_scratchpad_size_impl|dpct::lapack::detail
@@ -862,8 +839,9 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
   std::size_t device_ws_size_in_element_number =
       detail::byte_to_element_number(device_ws_size, a_type);
   if (ipiv == nullptr) {
-    return detail::getrfnp_impl(q, m, n, a_type, a, lda, device_ws,
-                                device_ws_size_in_element_number, info);
+    return detail::lapack_shim<detail::getrfnp_impl>(
+        q, a_type, info, "getrfnp_batch", q, m, n, a_type, a, lda, ipiv,
+        device_ws, device_ws_size_in_element_number, info);
   }
   return detail::lapack_shim<detail::getrf_impl>(
       q, a_type, info, "getrf", q, m, n, a_type, a, lda, ipiv, device_ws,

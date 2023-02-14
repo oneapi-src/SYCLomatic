@@ -83,6 +83,19 @@ enum class library_data_t : unsigned char {
   real_uint8_4,
   library_data_t_size
 };
+
+namespace detail {
+constexpr std::size_t library_data_size[] = {
+    sizeof(float),
+    sizeof(std::complex<float>),
+    sizeof(double),
+    sizeof(std::complex<double>),
+    sizeof(sycl::half),
+    sizeof(std::complex<sycl::half>),
+    sizeof(oneapi::mkl::bfloat16),
+    sizeof(std::complex<oneapi::mkl::bfloat16>),
+};
+}
 } // namespace dpct
 
 #endif // __DPCT_LIB_COMMON_UTILS_HPP__

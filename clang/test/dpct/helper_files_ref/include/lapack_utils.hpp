@@ -356,31 +356,45 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 }
 
 namespace detail {
-template <typename functor_t, typename... args_t>
+template <template <typename> typename functor_t, typename... args_t>
 inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
-                       const std::string &lapack_api_name, functor_t functor,
-                       args_t... args) {
+                       const std::string &lapack_api_name, args_t... args) {
   try {
     switch (a_type) {
     case library_data_t::real_float: {
-      functor.template operator()<float>(args...);
+      functor_t<float>()(args...);
       break;
     }
     case library_data_t::real_double: {
-      functor.template operator()<double>(args...);
+      functor_t<double>()(args...);
       break;
     }
     case library_data_t::complex_float: {
-      functor.template operator()<std::complex<float>>(args...);
+      functor_t<std::complex<float>>()(args...);
       break;
     }
     case library_data_t::complex_double: {
-      functor.template operator()<std::complex<double>>(args...);
+      functor_t<std::complex<double>>()(args...);
       break;
     }
     default:
       throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                             "the data type is unsupported");
+    }
+  } catch (oneapi::mkl::lapack::batch_error const &be) {
+    try {
+      std::rethrow_exception(be.exceptions()[0]);
+    } catch (oneapi::mkl::lapack::exception &e) {
+      std::cerr << "Unexpected exception caught during call to LAPACK API: "
+                   "getrfnp_batch"
+                << std::endl
+                << "reason: " << e.what() << std::endl
+                << "number: " << e.info() << std::endl;
+      int info_val = static_cast<int>(e.info());
+      dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
+                                memcpy_direction::host_to_device)
+          .wait();
+      return 1;
     }
   } catch (oneapi::mkl::lapack::exception const &e) {
     std::cerr << "Unexpected exception caught during call to LAPACK API: "
@@ -404,18 +418,48 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
   return 0;
 }
 
-struct getrf_scratchpad_size_impl {
-  template <typename T> 
+class working_memory {
+public:
+  working_memory(size_t size, sycl::queue q) : _q(q) {
+    _ptr = dpct::detail::dpct_malloc(size, _q);
+  }
+  template <typename T> auto get_memory() {
+    return dpct::detail::get_memory(reinterpret_cast<T>(_ptr));
+  }
+  void set_event(sycl::event e) { _e = e; }
+  ~working_memory() {
+    if (_ptr) {
+      dpct::async_dpct_free({_ptr}, {_e}, _q);
+    }
+  }
+
+private:
+  void *_ptr = nullptr;
+  sycl::event _e;
+  sycl::queue _q;
+};
+
+std::size_t byte_to_element_number(std::size_t size_in_byte,
+                                   dpct::library_data_t element_type) {
+  return size_in_byte /
+         dpct::detail::library_data_size[(unsigned int)element_type];
+}
+std::size_t element_number_to_byte(std::size_t size_in_element,
+                                   dpct::library_data_t element_type) {
+  return size_in_element *
+         dpct::detail::library_data_size[(unsigned int)element_type];
+}
+
+template <typename T> struct getrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
                   size_t *device_ws_size) {
     *device_ws_size =
-        oneapi::mkl::lapack::getrf_scratchpad_size<T>(q, m, n, lda) * sizeof(T);
+        oneapi::mkl::lapack::getrf_scratchpad_size<T>(q, m, n, lda);
   }
 };
 
-struct getrf_impl {
-  template <typename T> 
+template <typename T> struct getrf_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, void *a, std::int64_t lda,
                   std::int64_t *ipiv, void *device_ws, size_t device_ws_size,
@@ -425,46 +469,21 @@ struct getrf_impl {
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     oneapi::mkl::lapack::getrf(q, m, n, a_data, lda, ipiv_data, device_ws_data,
-                               device_ws_size / sizeof(T));
+                               device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
 
-struct getrs_impl {
-  template <typename T> 
+template <typename T> struct getrs_impl {
   void operator()(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
                   std::int64_t nrhs, library_data_t a_type, void *a,
                   std::int64_t lda, std::int64_t *ipiv, library_data_t b_type,
                   void *b, std::int64_t ldb, int *info) {
-    class working_memory {
-    public:
-      working_memory(size_t size, sycl::queue q) : _q(q) {
-        _ptr = dpct::detail::dpct_malloc(size, _q);
-      }
-      void *get_ptr() { return _ptr; }
-      void set_event(sycl::event e) { _e = e; }
-      ~working_memory() {
-        if (_ptr) {
-#ifdef DPCT_USM_LEVEL_NONE
-          dpct::detail::mem_mgr::instance().mem_free(_ptr);
-#else
-          dpct::async_dpct_free({_ptr}, {_e}, _q);
-#endif
-        }
-      }
-
-    private:
-      void *_ptr = nullptr;
-      sycl::event _e;
-      sycl::queue _q;
-    };
-
     auto ipiv_data = dpct::detail::get_memory(ipiv);
     std::int64_t device_ws_size = oneapi::mkl::lapack::getrs_scratchpad_size<T>(
         q, trans, n, nrhs, lda, ldb);
     working_memory device_ws(device_ws_size * sizeof(T), q);
-    auto device_ws_data =
-        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws.get_ptr()));
+    auto device_ws_data = device_ws.get_memory<T *>();
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
     oneapi::mkl::lapack::getrs(q, trans, n, nrhs, a_data, lda, ipiv_data,
@@ -474,18 +493,16 @@ struct getrs_impl {
   }
 };
 
-struct geqrf_scratchpad_size_impl {
-  template <typename T> 
+template <typename T> struct geqrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
                   size_t *device_ws_size) {
     *device_ws_size =
-        oneapi::mkl::lapack::geqrf_scratchpad_size<T>(q, m, n, lda) * sizeof(T);
+        oneapi::mkl::lapack::geqrf_scratchpad_size<T>(q, m, n, lda);
   }
 };
 
-struct geqrf_impl {
-  template <typename T> 
+template <typename T> struct geqrf_impl {
   void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
                   library_data_t a_type, void *a, std::int64_t lda,
                   library_data_t tau_type, void *tau, void *device_ws,
@@ -495,65 +512,27 @@ struct geqrf_impl {
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     oneapi::mkl::lapack::geqrf(q, m, n, a_data, lda, tau_data, device_ws_data,
-                               device_ws_size / sizeof(T));
+                               device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
 
-inline int getrfnp_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
-                        library_data_t a_type, void *a, std::int64_t lda,
-                        void *device_ws, size_t device_ws_size, int *info) {
-#define CASE(TYPE_NAME, TYPE)                                                  \
-  case TYPE_NAME: {                                                            \
-    std::int64_t a_stride = m * lda;                                           \
-    auto a_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(a));       \
-    auto device_ws_data =                                                      \
-        dpct::detail::get_memory(reinterpret_cast<TYPE *>(device_ws));         \
-    oneapi::mkl::lapack::getrfnp_batch(q, m, n, a_data, lda, a_stride, 1,      \
-                                       device_ws_data,                         \
-                                       device_ws_size / sizeof(TYPE));         \
-    break;                                                                     \
+template <typename T> struct getrfnp_impl {
+  void operator()(sycl::queue &q, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, void *a, std::int64_t lda,
+                  std::int64_t *ipiv, void *device_ws, size_t device_ws_size,
+                  int *info) {
+    std::int64_t a_stride = m * lda;
+    auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
+    auto device_ws_data =
+        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
+    oneapi::mkl::lapack::getrfnp_batch(q, m, n, a_data, lda, a_stride, 1,
+                                       device_ws_data, device_ws_size);
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
+};
 
-  try {
-    switch (a_type) {
-      CASE(library_data_t::real_float, float)
-      CASE(library_data_t::real_double, double)
-      CASE(library_data_t::complex_float, std::complex<float>)
-      CASE(library_data_t::complex_double, std::complex<double>)
-    default:
-      throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                            "the data type is unsupported");
-    }
-  } catch (oneapi::mkl::lapack::batch_error const &be) {
-    try {
-      std::rethrow_exception(be.exceptions()[0]);
-    } catch (oneapi::mkl::lapack::exception &e) {
-      std::cerr << "Unexpected exception caught during call to LAPACK API: "
-                   "getrfnp_batch"
-                << std::endl
-                << "reason: " << e.what() << std::endl
-                << "number: " << e.info() << std::endl;
-      int info_val = static_cast<int>(e.info());
-      dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
-                                memcpy_direction::host_to_device)
-          .wait();
-      return 1;
-    }
-  } catch (sycl::exception const &e) {
-    std::cerr << "Caught synchronous SYCL exception:" << std::endl
-              << "reason: " << e.what() << std::endl;
-    dpct::detail::dpct_memset(q, info, 0, sizeof(int)).wait();
-    return 1;
-  }
-
-#undef CASE
-  dpct::detail::dpct_memset(q, info, 0, sizeof(int));
-  return 0;
-}
-
-struct gesvd_scratchpad_size_impl {
-  template <typename T>
+template <typename T> struct gesvd_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::jobsvd jobu,
                   oneapi::mkl::jobsvd jobvt, std::int64_t m, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
@@ -561,19 +540,17 @@ struct gesvd_scratchpad_size_impl {
                   library_data_t vt_type, std::int64_t ldvt,
                   size_t *device_ws_size) {
     *device_ws_size = oneapi::mkl::lapack::gesvd_scratchpad_size<T>(
-                          q, jobu, jobvt, m, n, lda, ldu, ldvt) *
-                      sizeof(T);
+        q, jobu, jobvt, m, n, lda, ldu, ldvt);
   }
 };
 
-struct gesvd_impl {
-  template <typename T> struct ElementType {
-    using T2 = T;
-  };
-  template <typename T> struct ElementType<std::complex<T>> {
-    using T2 = T;
-  };
-  template <typename T>
+template <typename T> struct ElementType {
+  using T2 = T;
+};
+template <typename T> struct ElementType<std::complex<T>> {
+  using T2 = T;
+};
+template <typename T> struct gesvd_impl {
   void operator()(sycl::queue &q, oneapi::mkl::jobsvd jobu,
                   oneapi::mkl::jobsvd jobvt, std::int64_t m, std::int64_t n,
                   library_data_t a_type, void *a, std::int64_t lda,
@@ -590,24 +567,21 @@ struct gesvd_impl {
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     oneapi::mkl::lapack::gesvd(q, jobu, jobvt, m, n, a_data, lda, s_data,
                                u_data, ldu, vt_data, ldvt, device_ws_data,
-                               device_ws_size / sizeof(T));
+                               device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
 
-struct potrf_scratchpad_size_impl {
-  template <typename T>
+template <typename T> struct potrf_scratchpad_size_impl {
   void operator()(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                   library_data_t a_type, std::int64_t lda,
                   size_t *device_ws_size) {
     *device_ws_size =
-        oneapi::mkl::lapack::potrf_scratchpad_size<T>(q, uplo, n, lda) *
-        sizeof(T);
+        oneapi::mkl::lapack::potrf_scratchpad_size<T>(q, uplo, n, lda);
   }
 };
 
-struct potrf_impl {
-  template <typename T>
+template <typename T> struct potrf_impl {
   void operator()(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                   library_data_t a_type, void *a, std::int64_t lda,
                   void *device_ws, size_t device_ws_size, int *info) {
@@ -615,45 +589,20 @@ struct potrf_impl {
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     oneapi::mkl::lapack::potrf(q, uplo, n, a_data, lda, device_ws_data,
-                               device_ws_size / sizeof(T));
+                               device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
 
-struct potrs_impl {
-  template <typename T>
+template <typename T> struct potrs_impl {
   void operator()(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                   std::int64_t nrhs, library_data_t a_type, void *a,
                   std::int64_t lda, library_data_t b_type, void *b,
                   std::int64_t ldb, int *info) {
-    class working_memory {
-    public:
-      working_memory(size_t size, sycl::queue q) : _q(q) {
-        _ptr = dpct::detail::dpct_malloc(size, _q);
-      }
-      void *get_ptr() { return _ptr; }
-      void set_event(sycl::event e) { _e = e; }
-      ~working_memory() {
-        if (_ptr) {
-#ifdef DPCT_USM_LEVEL_NONE
-          dpct::detail::mem_mgr::instance().mem_free(_ptr);
-#else
-          dpct::async_dpct_free({_ptr}, {_e}, _q);
-#endif
-        }
-      }
-
-    private:
-      void *_ptr = nullptr;
-      sycl::event _e;
-      sycl::queue _q;
-    };
-
     std::int64_t device_ws_size = oneapi::mkl::lapack::potrs_scratchpad_size<T>(
         q, uplo, n, nrhs, lda, ldb);
     working_memory device_ws(device_ws_size * sizeof(T), q);
-    auto device_ws_data =
-        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws.get_ptr()));
+    auto device_ws_data = device_ws.get_memory<T *>();
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
     oneapi::mkl::lapack::potrs(q, uplo, n, nrhs, a_data, lda, b_data, ldb,
@@ -680,9 +629,12 @@ inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  return detail::lapack_shim(q, a_type, nullptr, "getrf_scratchpad_size",
-                             detail::getrf_scratchpad_size_impl(), q, m, n,
-                             a_type, lda, device_ws_size);
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::getrf_scratchpad_size_impl>(
+      q, a_type, nullptr, "getrf_scratchpad_size", q, m, n, a_type, lda,
+      &device_ws_size_tmp);
+  *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
+  return ret;
 }
 
 /// Computes the LU factorization of a general m-by-n matrix.
@@ -703,13 +655,16 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  std::int64_t *ipiv, void *device_ws, size_t device_ws_size,
                  int *info) {
+  std::size_t device_ws_size_in_element_number =
+      detail::byte_to_element_number(device_ws_size, a_type);
   if (ipiv == nullptr) {
-    return detail::getrfnp_impl(q, m, n, a_type, a, lda, device_ws,
-                                device_ws_size, info);
+    return detail::lapack_shim<detail::getrfnp_impl>(
+        q, a_type, info, "getrfnp_batch", q, m, n, a_type, a, lda, ipiv,
+        device_ws, device_ws_size_in_element_number, info);
   }
-  return detail::lapack_shim(q, a_type, info, "getrf", detail::getrf_impl(), q,
-                             m, n, a_type, a, lda, ipiv, device_ws,
-                             device_ws_size, info);
+  return detail::lapack_shim<detail::getrf_impl>(
+      q, a_type, info, "getrf", q, m, n, a_type, a, lda, ipiv, device_ws,
+      device_ws_size_in_element_number, info);
 }
 
 /// Solves a system of linear equations with a LU-factored square coefficient
@@ -732,9 +687,9 @@ inline int getrs(sycl::queue &q, oneapi::mkl::transpose trans, std::int64_t n,
                  std::int64_t nrhs, library_data_t a_type, void *a,
                  std::int64_t lda, std::int64_t *ipiv, library_data_t b_type,
                  void *b, std::int64_t ldb, int *info) {
-  return detail::lapack_shim(q, a_type, info, "getrs_scratchpad_size/getrs",
-                             detail::getrs_impl(), q, trans, n, nrhs, a_type, a,
-                             lda, ipiv, b_type, b, ldb, info);
+  return detail::lapack_shim<detail::getrs_impl>(
+      q, a_type, info, "getrs_scratchpad_size/getrs", q, trans, n, nrhs, a_type,
+      a, lda, ipiv, b_type, b, ldb, info);
 }
 
 /// Computes the size of workspace memory of geqrf function.
@@ -753,9 +708,12 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  return detail::lapack_shim(q, a_type, nullptr, "geqrf_scratchpad_size",
-                             detail::geqrf_scratchpad_size_impl(), q, m, n,
-                             a_type, lda, device_ws_size);
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::geqrf_scratchpad_size_impl>(
+      q, a_type, nullptr, "geqrf_scratchpad_size", q, m, n, a_type, lda,
+      &device_ws_size_tmp);
+  *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
+  return ret;
 }
 
 /// Computes the QR factorization of a general m-by-n matrix.
@@ -776,9 +734,11 @@ inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  library_data_t tau_type, void *tau, void *device_ws,
                  size_t device_ws_size, int *info) {
-  return detail::lapack_shim(q, a_type, info, "geqrf", detail::geqrf_impl(), q,
-                             m, n, a_type, a, lda, tau_type, tau, device_ws,
-                             device_ws_size, info);
+  std::size_t device_ws_size_in_element_number =
+      detail::byte_to_element_number(device_ws_size, a_type);
+  return detail::lapack_shim<detail::geqrf_impl>(
+      q, a_type, info, "geqrf", q, m, n, a_type, a, lda, tau_type, tau,
+      device_ws, device_ws_size_in_element_number, info);
 }
 
 inline oneapi::mkl::jobsvd char2jobsvd(char job) {
@@ -824,10 +784,12 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::jobsvd jobu,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  return detail::lapack_shim(q, a_type, nullptr, "gesvd_scratchpad_size",
-                             detail::gesvd_scratchpad_size_impl(), q, jobu,
-                             jobvt, m, n, a_type, lda, u_type, ldu, vt_type,
-                             ldvt, device_ws_size);
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::gesvd_scratchpad_size_impl>(
+      q, a_type, nullptr, "gesvd_scratchpad_size", q, jobu, jobvt, m, n, a_type,
+      lda, u_type, ldu, vt_type, ldvt, &device_ws_size_tmp);
+  *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
+  return ret;
 }
 
 /// Computes the size of workspace memory of gesvd function.
@@ -863,40 +825,21 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   oneapi::mkl::jobsvd jobvt;
   if (jobz == oneapi::mkl::job::vec) {
     if (all_vec) {
-      jobu = oneapi::mkl::jobsvd::somevec;
-      jobvt = oneapi::mkl::jobsvd::somevec;
+      jobu = jobvt = oneapi::mkl::jobsvd::somevec;
     } else {
-      jobu = oneapi::mkl::jobsvd::vectors;
-      jobvt = oneapi::mkl::jobsvd::vectors;
+      jobu = jobvt = oneapi::mkl::jobsvd::vectors;
     }
   } else if (jobz == oneapi::mkl::job::novec) {
-    jobu = oneapi::mkl::jobsvd::novec;
-    jobvt = oneapi::mkl::jobsvd::novec;
+    jobu = jobvt = oneapi::mkl::jobsvd::novec;
   } else {
     throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                           "the job type is unsupported");
   }
   std::size_t device_ws_size_64;
-  int ret = detail::lapack_shim(q, a_type, nullptr, "gesvd_scratchpad_size",
-                                detail::gesvd_scratchpad_size_impl(), q, jobu,
-                                jobvt, m, n, a_type, lda, u_type, ldu, vt_type,
-                                ldvt, &device_ws_size_64);
-
-#define CASE(TYPE_NAME, TYPE)                                                  \
-  case TYPE_NAME: {                                                            \
-    *device_ws_size = device_ws_size_64 / sizeof(TYPE);                        \
-    break;                                                                     \
-  }
-  switch (a_type) {
-    CASE(library_data_t::real_float, float)
-    CASE(library_data_t::real_double, double)
-    CASE(library_data_t::complex_float, std::complex<float>)
-    CASE(library_data_t::complex_double, std::complex<double>)
-  default:
-    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                          "the data type is unsupported");
-  }
-#undef CASE
+  int ret = detail::lapack_shim<detail::gesvd_scratchpad_size_impl>(
+      q, a_type, nullptr, "gesvd_scratchpad_size", q, jobu, jobvt, m, n, a_type,
+      lda, u_type, ldu, vt_type, ldvt, &device_ws_size_64);
+  *device_ws_size = device_ws_size_64;
   return ret;
 }
 
@@ -932,10 +875,12 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::jobsvd jobu,
                  std::int64_t ldu, library_data_t vt_type, void *vt,
                  std::int64_t ldvt, void *device_ws, size_t device_ws_size,
                  int *info) {
-  return detail::lapack_shim(q, a_type, info, "gesvd", detail::gesvd_impl(), q,
-                             jobu, jobvt, m, n, a_type, a, lda, s_type, s,
-                             u_type, u, ldu, vt_type, vt, ldvt, device_ws,
-                             device_ws_size, info);
+  std::size_t device_ws_size_in_element_number =
+      detail::byte_to_element_number(device_ws_size, a_type);
+  return detail::lapack_shim<detail::gesvd_impl>(
+      q, a_type, info, "gesvd", q, jobu, jobvt, m, n, a_type, a, lda, s_type, s,
+      u_type, u, ldu, vt_type, vt, ldvt, device_ws,
+      device_ws_size_in_element_number, info);
 }
 
 /// Computes the size of workspace memory of gesvd function.
@@ -974,40 +919,20 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t all_vec,
   oneapi::mkl::jobsvd jobvt;
   if (jobz == oneapi::mkl::job::vec) {
     if (all_vec) {
-      jobu = oneapi::mkl::jobsvd::somevec;
-      jobvt = oneapi::mkl::jobsvd::somevec;
+      jobu = jobvt = oneapi::mkl::jobsvd::somevec;
     } else {
-      jobu = oneapi::mkl::jobsvd::vectors;
-      jobvt = oneapi::mkl::jobsvd::vectors;
+      jobu = jobvt = oneapi::mkl::jobsvd::vectors;
     }
   } else if (jobz == oneapi::mkl::job::novec) {
-    jobu = oneapi::mkl::jobsvd::novec;
-    jobvt = oneapi::mkl::jobsvd::novec;
+    jobu = jobvt = oneapi::mkl::jobsvd::novec;
   } else {
     throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                           "the job type is unsupported");
   }
 
-#define CASE(TYPE_NAME, TYPE)                                                  \
-  case TYPE_NAME: {                                                            \
-    device_ws_size = device_ws_size * sizeof(TYPE);                            \
-    break;                                                                     \
-  }
-  switch (a_type) {
-    CASE(library_data_t::real_float, float)
-    CASE(library_data_t::real_double, double)
-    CASE(library_data_t::complex_float, std::complex<float>)
-    CASE(library_data_t::complex_double, std::complex<double>)
-  default:
-    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                          "the data type is unsupported");
-  }
-#undef CASE
-
-  int ret = detail::lapack_shim(q, a_type, info, "gesvd", detail::gesvd_impl(),
-                                q, jobu, jobvt, m, n, a_type, a, lda, s_type, s,
-                                u_type, u, ldu, vt_type, vt, ldvt, device_ws,
-                                device_ws_size, info);
+  int ret = detail::lapack_shim<detail::gesvd_impl>(
+      q, a_type, info, "gesvd", q, jobu, jobvt, m, n, a_type, a, lda, s_type, s,
+      u_type, u, ldu, vt_type, vt, ldvt, device_ws, device_ws_size, info);
   if (ret)
     return ret;
 
@@ -1048,9 +973,12 @@ inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  return detail::lapack_shim(q, a_type, nullptr, "potrf_scratchpad_size",
-                             detail::potrf_scratchpad_size_impl(), q, uplo, n,
-                             a_type, lda, device_ws_size);
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::potrf_scratchpad_size_impl>(
+      q, a_type, nullptr, "potrf_scratchpad_size", q, uplo, n, a_type, lda,
+      &device_ws_size_tmp);
+  *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
+  return ret;
 }
 
 /// Computes the Cholesky factorization of a symmetric (Hermitian)
@@ -1069,9 +997,11 @@ inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
 inline int potrf(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  void *device_ws, size_t device_ws_size, int *info) {
-  return detail::lapack_shim(q, a_type, info, "potrf", detail::potrf_impl(), q,
-                             uplo, n, a_type, a, lda, device_ws, device_ws_size,
-                             info);
+  std::size_t device_ws_size_in_element_number =
+      detail::byte_to_element_number(device_ws_size, a_type);
+  return detail::lapack_shim<detail::potrf_impl>(
+      q, a_type, info, "potrf", q, uplo, n, a_type, a, lda, device_ws,
+      device_ws_size_in_element_number, info);
 }
 
 /// Solves a system of linear equations with a Cholesky-factored symmetric
@@ -1096,9 +1026,9 @@ inline int potrs(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                  std::int64_t nrhs, library_data_t a_type, void *a,
                  std::int64_t lda, library_data_t b_type, void *b,
                  std::int64_t ldb, int *info) {
-  return detail::lapack_shim(q, a_type, info, "potrs_scratchpad_size/potrs",
-                             detail::potrs_impl(), q, uplo, n, nrhs, a_type, a,
-                             lda, b_type, b, ldb, info);
+  return detail::lapack_shim<detail::potrs_impl>(
+      q, a_type, info, "potrs_scratchpad_size/potrs", q, uplo, n, nrhs, a_type,
+      a, lda, b_type, b, ldb, info);
 }
 } // namespace lapack
 } // namespace dpct
