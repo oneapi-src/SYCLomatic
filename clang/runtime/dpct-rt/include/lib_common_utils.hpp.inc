@@ -137,6 +137,23 @@ enum class library_data_t : unsigned char {
   library_data_t_size
 };
 // DPCT_LABEL_END
+
+namespace detail {
+// DPCT_LABEL_BEGIN|library_data_size|dpct::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+constexpr std::size_t library_data_size[] = {
+    sizeof(float),
+    sizeof(std::complex<float>),
+    sizeof(double),
+    sizeof(std::complex<double>),
+    sizeof(sycl::half),
+    sizeof(std::complex<sycl::half>),
+    sizeof(oneapi::mkl::bfloat16),
+    sizeof(std::complex<oneapi::mkl::bfloat16>),
+};
+// DPCT_LABEL_END
+}
 } // namespace dpct
 
 #endif // __DPCT_LIB_COMMON_UTILS_HPP__

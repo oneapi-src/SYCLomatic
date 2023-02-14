@@ -1185,9 +1185,9 @@ static inline void dpct_free(void *ptr,
 // Device|get_current_device
 // Device|device_ext_add_task
 // Device|device_ext_async_dpct_free_friend_decl
+// Memory|mem_mgr_mem_free|UsmNone
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-#ifndef DPCT_USM_LEVEL_NONE
 /// Free the device memory pointed by a batch of pointers in \p pointers which
 /// are related to \p q after \p events completed.
 ///
@@ -1202,12 +1202,17 @@ inline void async_dpct_free(std::vector<void *> pointers,
          sycl::context ctxt) {
         sycl::event::wait(events);
         for (auto p : pointers)
-          sycl::free(p, ctxt);
+          if (p) {
+#ifdef DPCT_USM_LEVEL_NONE
+            detail::mem_mgr::instance().mem_free(p);
+#else
+            sycl::free(p, ctxt);
+#endif // DPCT_USM_LEVEL_NONE
+          }
       },
       std::move(pointers), std::move(events), q.get_context());
   get_current_device().add_task(std::move(t));
 }
-#endif
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|dpct_memcpy|dpct

@@ -471,6 +471,53 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|working_memory|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// Memory|dpct_malloc_detail
+// Memory|async_dpct_free
+// LibCommonUtils|get_memory
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+class working_memory {
+public:
+  working_memory(size_t size, sycl::queue q) : _q(q) {
+    _ptr = dpct::detail::dpct_malloc(size, _q);
+  }
+  template <typename T> auto get_memory() {
+    return dpct::detail::get_memory(reinterpret_cast<T>(_ptr));
+  }
+  void set_event(sycl::event e) { _e = e; }
+  ~working_memory() {
+    if (_ptr) {
+      dpct::async_dpct_free({_ptr}, {_e}, _q);
+    }
+  }
+
+private:
+  void *_ptr = nullptr;
+  sycl::event _e;
+  sycl::queue _q;
+};
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|byte_to_from_element_number|dpct::lapack::detail
+// DPCT_DEPENDENCY_BEGIN
+// LibCommonUtils|library_data_size
+// LibCommonUtils|library_data_t
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+std::size_t byte_to_element_number(std::size_t size_in_byte,
+                                   dpct::library_data_t element_type) {
+  return size_in_byte /
+         dpct::detail::library_data_size[(unsigned int)element_type];
+}
+std::size_t element_number_to_byte(std::size_t size_in_element,
+                                   dpct::library_data_t element_type) {
+  return size_in_element *
+         dpct::detail::library_data_size[(unsigned int)element_type];
+}
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|getrf_scratchpad_size_impl|dpct::lapack::detail
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
@@ -481,7 +528,7 @@ template <typename T> struct getrf_scratchpad_size_impl {
                   library_data_t a_type, std::int64_t lda,
                   size_t *device_ws_size) {
     *device_ws_size =
-        oneapi::mkl::lapack::getrf_scratchpad_size<T>(q, m, n, lda) * sizeof(T);
+        oneapi::mkl::lapack::getrf_scratchpad_size<T>(q, m, n, lda);
   }
 };
 // DPCT_LABEL_END
@@ -513,10 +560,8 @@ template <typename T> struct getrf_impl {
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
 // LibCommonUtils|get_memory
-// Memory|dpct_malloc_detail
+// LapackUtils|working_memory
 // Memory|dpct_memset_detail
-// Memory|mem_mgr_mem_free|UsmNone
-// Memory|async_dpct_free|UsmRestricted
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T> struct getrs_impl {
@@ -524,35 +569,11 @@ template <typename T> struct getrs_impl {
                   std::int64_t nrhs, library_data_t a_type, void *a,
                   std::int64_t lda, std::int64_t *ipiv, library_data_t b_type,
                   void *b, std::int64_t ldb, int *info) {
-    class working_memory {
-    public:
-      working_memory(size_t size, sycl::queue q) : _q(q) {
-        _ptr = dpct::detail::dpct_malloc(size, _q);
-      }
-      void *get_ptr() { return _ptr; }
-      void set_event(sycl::event e) { _e = e; }
-      ~working_memory() {
-        if (_ptr) {
-#ifdef DPCT_USM_LEVEL_NONE
-          dpct::detail::mem_mgr::instance().mem_free(_ptr);
-#else
-          dpct::async_dpct_free({_ptr}, {_e}, _q);
-#endif
-        }
-      }
-
-    private:
-      void *_ptr = nullptr;
-      sycl::event _e;
-      sycl::queue _q;
-    };
-
     auto ipiv_data = dpct::detail::get_memory(ipiv);
     std::int64_t device_ws_size = oneapi::mkl::lapack::getrs_scratchpad_size<T>(
         q, trans, n, nrhs, lda, ldb);
     working_memory device_ws(device_ws_size * sizeof(T), q);
-    auto device_ws_data =
-        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws.get_ptr()));
+    auto device_ws_data = device_ws.get_memory<T *>();
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
     oneapi::mkl::lapack::getrs(q, trans, n, nrhs, a_data, lda, ipiv_data,
@@ -573,7 +594,7 @@ template <typename T> struct geqrf_scratchpad_size_impl {
                   library_data_t a_type, std::int64_t lda,
                   size_t *device_ws_size) {
     *device_ws_size =
-        oneapi::mkl::lapack::geqrf_scratchpad_size<T>(q, m, n, lda) * sizeof(T);
+        oneapi::mkl::lapack::geqrf_scratchpad_size<T>(q, m, n, lda);
   }
 };
 // DPCT_LABEL_END
@@ -634,6 +655,7 @@ inline int getrfnp_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
       throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                             "the data type is unsupported");
     }
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   } catch (oneapi::mkl::lapack::batch_error const &be) {
     try {
       std::rethrow_exception(be.exceptions()[0]);
@@ -657,7 +679,6 @@ inline int getrfnp_impl(sycl::queue &q, std::int64_t m, std::int64_t n,
   }
 
 #undef CASE
-  dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   return 0;
 }
 // DPCT_LABEL_END
@@ -675,8 +696,7 @@ template <typename T> struct gesvd_scratchpad_size_impl {
                   library_data_t vt_type, std::int64_t ldvt,
                   size_t *device_ws_size) {
     *device_ws_size = oneapi::mkl::lapack::gesvd_scratchpad_size<T>(
-                          q, jobu, jobvt, m, n, lda, ldu, ldvt) *
-                      sizeof(T);
+        q, jobu, jobvt, m, n, lda, ldu, ldvt);
   }
 };
 // DPCT_LABEL_END
@@ -727,8 +747,7 @@ template <typename T> struct potrf_scratchpad_size_impl {
                   library_data_t a_type, std::int64_t lda,
                   size_t *device_ws_size) {
     *device_ws_size =
-        oneapi::mkl::lapack::potrf_scratchpad_size<T>(q, uplo, n, lda) *
-        sizeof(T);
+        oneapi::mkl::lapack::potrf_scratchpad_size<T>(q, uplo, n, lda);
   }
 };
 // DPCT_LABEL_END
@@ -758,10 +777,8 @@ template <typename T> struct potrf_impl {
 // DPCT_DEPENDENCY_BEGIN
 // LibCommonUtils|library_data_t
 // LibCommonUtils|get_memory
-// Memory|dpct_malloc_detail
+// LapackUtils|working_memory
 // Memory|dpct_memset_detail
-// Memory|mem_mgr_mem_free|UsmNone
-// Memory|async_dpct_free|UsmRestricted
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T> struct potrs_impl {
@@ -769,34 +786,10 @@ template <typename T> struct potrs_impl {
                   std::int64_t nrhs, library_data_t a_type, void *a,
                   std::int64_t lda, library_data_t b_type, void *b,
                   std::int64_t ldb, int *info) {
-    class working_memory {
-    public:
-      working_memory(size_t size, sycl::queue q) : _q(q) {
-        _ptr = dpct::detail::dpct_malloc(size, _q);
-      }
-      void *get_ptr() { return _ptr; }
-      void set_event(sycl::event e) { _e = e; }
-      ~working_memory() {
-        if (_ptr) {
-#ifdef DPCT_USM_LEVEL_NONE
-          dpct::detail::mem_mgr::instance().mem_free(_ptr);
-#else
-          dpct::async_dpct_free({_ptr}, {_e}, _q);
-#endif
-        }
-      }
-
-    private:
-      void *_ptr = nullptr;
-      sycl::event _e;
-      sycl::queue _q;
-    };
-
     std::int64_t device_ws_size = oneapi::mkl::lapack::potrs_scratchpad_size<T>(
         q, uplo, n, nrhs, lda, ldb);
     working_memory device_ws(device_ws_size * sizeof(T), q);
-    auto device_ws_data =
-        dpct::detail::get_memory(reinterpret_cast<T *>(device_ws.get_ptr()));
+    auto device_ws_data = device_ws.get_memory<T *>();
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
     oneapi::mkl::lapack::potrs(q, uplo, n, nrhs, a_data, lda, b_data, ldb,
@@ -831,9 +824,12 @@ inline int getrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  return detail::lapack_shim<detail::getrf_scratchpad_size_impl>(
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::getrf_scratchpad_size_impl>(
       q, a_type, nullptr, "getrf_scratchpad_size", q, m, n, a_type, lda,
-      device_ws_size);
+      &device_ws_size_tmp);
+  *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
+  return ret;
 }
 // DPCT_LABEL_END
 
@@ -863,13 +859,15 @@ inline int getrf(sycl::queue &q, std::int64_t m, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  std::int64_t *ipiv, void *device_ws, size_t device_ws_size,
                  int *info) {
+  std::size_t device_ws_size_in_element_number =
+      detail::byte_to_element_number(device_ws_size, a_type);
   if (ipiv == nullptr) {
     return detail::getrfnp_impl(q, m, n, a_type, a, lda, device_ws,
-                                device_ws_size, info);
+                                device_ws_size_in_element_number, info);
   }
   return detail::lapack_shim<detail::getrf_impl>(
       q, a_type, info, "getrf", q, m, n, a_type, a, lda, ipiv, device_ws,
-      device_ws_size, info);
+      device_ws_size_in_element_number, info);
 }
 // DPCT_LABEL_END
 
@@ -929,9 +927,12 @@ inline int geqrf_scratchpad_size(sycl::queue &q, std::int64_t m, std::int64_t n,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  return detail::lapack_shim<detail::geqrf_scratchpad_size_impl>(
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::geqrf_scratchpad_size_impl>(
       q, a_type, nullptr, "geqrf_scratchpad_size", q, m, n, a_type, lda,
-      device_ws_size);
+      &device_ws_size_tmp);
+  *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
+  return ret;
 }
 // DPCT_LABEL_END
 
@@ -960,9 +961,11 @@ inline int geqrf(sycl::queue &q, std::int64_t m, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  library_data_t tau_type, void *tau, void *device_ws,
                  size_t device_ws_size, int *info) {
+  std::size_t device_ws_size_in_element_number =
+      detail::byte_to_element_number(device_ws_size, a_type);
   return detail::lapack_shim<detail::geqrf_impl>(
       q, a_type, info, "geqrf", q, m, n, a_type, a, lda, tau_type, tau,
-      device_ws, device_ws_size, info);
+      device_ws, device_ws_size_in_element_number, info);
 }
 // DPCT_LABEL_END
 
@@ -1020,9 +1023,12 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::jobsvd jobu,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  return detail::lapack_shim<detail::gesvd_scratchpad_size_impl>(
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::gesvd_scratchpad_size_impl>(
       q, a_type, nullptr, "gesvd_scratchpad_size", q, jobu, jobvt, m, n, a_type,
-      lda, u_type, ldu, vt_type, ldvt, device_ws_size);
+      lda, u_type, ldu, vt_type, ldvt, &device_ws_size_tmp);
+  *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
+  return ret;
 }
 
 /// Computes the size of workspace memory of gesvd function.
@@ -1058,15 +1064,12 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   oneapi::mkl::jobsvd jobvt;
   if (jobz == oneapi::mkl::job::vec) {
     if (all_vec) {
-      jobu = oneapi::mkl::jobsvd::somevec;
-      jobvt = oneapi::mkl::jobsvd::somevec;
+      jobu = jobvt = oneapi::mkl::jobsvd::somevec;
     } else {
-      jobu = oneapi::mkl::jobsvd::vectors;
-      jobvt = oneapi::mkl::jobsvd::vectors;
+      jobu = jobvt = oneapi::mkl::jobsvd::vectors;
     }
   } else if (jobz == oneapi::mkl::job::novec) {
-    jobu = oneapi::mkl::jobsvd::novec;
-    jobvt = oneapi::mkl::jobsvd::novec;
+    jobu = jobvt = oneapi::mkl::jobsvd::novec;
   } else {
     throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                           "the job type is unsupported");
@@ -1075,22 +1078,7 @@ inline int gesvd_scratchpad_size(sycl::queue &q, oneapi::mkl::job jobz,
   int ret = detail::lapack_shim<detail::gesvd_scratchpad_size_impl>(
       q, a_type, nullptr, "gesvd_scratchpad_size", q, jobu, jobvt, m, n, a_type,
       lda, u_type, ldu, vt_type, ldvt, &device_ws_size_64);
-
-#define CASE(TYPE_NAME, TYPE)                                                  \
-  case TYPE_NAME: {                                                            \
-    *device_ws_size = device_ws_size_64 / sizeof(TYPE);                        \
-    break;                                                                     \
-  }
-  switch (a_type) {
-    CASE(library_data_t::real_float, float)
-    CASE(library_data_t::real_double, double)
-    CASE(library_data_t::complex_float, std::complex<float>)
-    CASE(library_data_t::complex_double, std::complex<double>)
-  default:
-    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                          "the data type is unsupported");
-  }
-#undef CASE
+  *device_ws_size = device_ws_size_64;
   return ret;
 }
 // DPCT_LABEL_END
@@ -1135,9 +1123,12 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::jobsvd jobu,
                  std::int64_t ldu, library_data_t vt_type, void *vt,
                  std::int64_t ldvt, void *device_ws, size_t device_ws_size,
                  int *info) {
+  std::size_t device_ws_size_in_element_number =
+      detail::byte_to_element_number(device_ws_size, a_type);
   return detail::lapack_shim<detail::gesvd_impl>(
       q, a_type, info, "gesvd", q, jobu, jobvt, m, n, a_type, a, lda, s_type, s,
-      u_type, u, ldu, vt_type, vt, ldvt, device_ws, device_ws_size, info);
+      u_type, u, ldu, vt_type, vt, ldvt, device_ws,
+      device_ws_size_in_element_number, info);
 }
 
 /// Computes the size of workspace memory of gesvd function.
@@ -1176,35 +1167,16 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t all_vec,
   oneapi::mkl::jobsvd jobvt;
   if (jobz == oneapi::mkl::job::vec) {
     if (all_vec) {
-      jobu = oneapi::mkl::jobsvd::somevec;
-      jobvt = oneapi::mkl::jobsvd::somevec;
+      jobu = jobvt = oneapi::mkl::jobsvd::somevec;
     } else {
-      jobu = oneapi::mkl::jobsvd::vectors;
-      jobvt = oneapi::mkl::jobsvd::vectors;
+      jobu = jobvt = oneapi::mkl::jobsvd::vectors;
     }
   } else if (jobz == oneapi::mkl::job::novec) {
-    jobu = oneapi::mkl::jobsvd::novec;
-    jobvt = oneapi::mkl::jobsvd::novec;
+    jobu = jobvt = oneapi::mkl::jobsvd::novec;
   } else {
     throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
                           "the job type is unsupported");
   }
-
-#define CASE(TYPE_NAME, TYPE)                                                  \
-  case TYPE_NAME: {                                                            \
-    device_ws_size = device_ws_size * sizeof(TYPE);                            \
-    break;                                                                     \
-  }
-  switch (a_type) {
-    CASE(library_data_t::real_float, float)
-    CASE(library_data_t::real_double, double)
-    CASE(library_data_t::complex_float, std::complex<float>)
-    CASE(library_data_t::complex_double, std::complex<double>)
-  default:
-    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                          "the data type is unsupported");
-  }
-#undef CASE
 
   int ret = detail::lapack_shim<detail::gesvd_impl>(
       q, a_type, info, "gesvd", q, jobu, jobvt, m, n, a_type, a, lda, s_type, s,
@@ -1257,9 +1229,12 @@ inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
                                  size_t *host_ws_size = nullptr) {
   if (host_ws_size)
     *host_ws_size = 0;
-  return detail::lapack_shim<detail::potrf_scratchpad_size_impl>(
+  std::size_t device_ws_size_tmp;
+  int ret = detail::lapack_shim<detail::potrf_scratchpad_size_impl>(
       q, a_type, nullptr, "potrf_scratchpad_size", q, uplo, n, a_type, lda,
-      device_ws_size);
+      &device_ws_size_tmp);
+  *device_ws_size = detail::element_number_to_byte(device_ws_size_tmp, a_type);
+  return ret;
 }
 // DPCT_LABEL_END
 
@@ -1286,9 +1261,11 @@ inline int potrf_scratchpad_size(sycl::queue &q, oneapi::mkl::uplo uplo,
 inline int potrf(sycl::queue &q, oneapi::mkl::uplo uplo, std::int64_t n,
                  library_data_t a_type, void *a, std::int64_t lda,
                  void *device_ws, size_t device_ws_size, int *info) {
+  std::size_t device_ws_size_in_element_number =
+      detail::byte_to_element_number(device_ws_size, a_type);
   return detail::lapack_shim<detail::potrf_impl>(
       q, a_type, info, "potrf", q, uplo, n, a_type, a, lda, device_ws,
-      device_ws_size, info);
+      device_ws_size_in_element_number, info);
 }
 // DPCT_LABEL_END
 
