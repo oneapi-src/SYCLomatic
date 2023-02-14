@@ -32,12 +32,10 @@ int *foo(size_t N, int Low, int High) {
   std::vector<int> Vec;
 
   // 1. Crash in `clang::dpct::getSizeForMalloc`
-  // CHECK: DPCT1106:{{.*}}: Template parameter pack expansion in function argument list is not supported.
   // CHECK: CHECK_CUDA_RET(cudaMalloc<int>, &Buffer, sizeof(int) * N);
   CHECK_CUDA_RET(cudaMalloc<int>, &Buffer, sizeof(int) * N);
 
   // 2. Crash in `clang::dpct::MemoryMigrationRule::memcpyMigration`
-  // CHECK: DPCT1106:{{.*}}: Template parameter pack expansion in function argument list is not supported.
   // CHECK: CHECK_CUDA_RET(cudaMemcpy, Buffer, Vec.data(), Vec.size() * sizeof(int), dpct::host_to_device);
   CHECK_CUDA_RET(cudaMemcpy, Buffer, Vec.data(), Vec.size() * sizeof(int), cudaMemcpyHostToDevice);
   return Buffer;
