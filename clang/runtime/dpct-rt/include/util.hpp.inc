@@ -58,8 +58,9 @@ namespace detail {
 
 template <typename tag, typename T> class generic_error_type {
 public:
+  generic_error_type() = default;
   generic_error_type(T value) : value{value} {}
-  operator T() { return value; }
+  operator T() const { return value; }
 
 private:
   T value;
