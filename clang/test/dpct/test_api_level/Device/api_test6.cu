@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Device/api_test6_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test6_out
 
-// CHECK: 32
+// CHECK: 36
 // TEST_FEATURE: Device_device_ext_get_device_info_return_info
 
 int main() {

@@ -12,6 +12,7 @@
 #include <sycl/sycl.hpp>
 #include <iostream>
 #include <limits.h>
+#include <math.h>
 
 template <class... Args> class dpct_kernel_name;
 template <int Arg> class dpct_kernel_scalar;
