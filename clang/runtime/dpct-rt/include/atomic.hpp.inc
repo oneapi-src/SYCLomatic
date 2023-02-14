@@ -383,6 +383,37 @@ inline T atomic_fetch_max(T *addr, T operand,
 }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|atomic_fetch_compare_dec|dpct
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// Atomically decrease the value stored in \p addr if old value stored in \p addr
+/// is equal to zero or greater than \p operand, else set 0 to the value stored in \p addr.
+/// \param [in, out] addr The pointer to the data.
+/// \param operand The threshold value.
+/// \param memoryOrder The memory ordering used.
+/// \returns The old value stored in \p addr.
+template <sycl::access::address_space addressSpace = sycl::access::address_space::global_space,
+          sycl::memory_order memoryOrder = sycl::memory_order::relaxed,
+          sycl::memory_scope memoryScope = sycl::memory_scope::device>
+inline unsigned int atomic_fetch_compare_dec(unsigned int *addr,
+                                             unsigned int operand) {
+  auto atm = sycl::atomic_ref<unsigned int, memoryOrder, memoryScope,
+                                  addressSpace>(addr[0]);
+  unsigned int old;
+
+	while (true) {
+	  old = atm.load();
+	  if (old == 0 || old > operand) {
+		  if (atm.compare_exchange_strong(old, operand))
+        break;
+	  } else if (atm.compare_exchange_strong(old, old - 1))
+      break;
+	}
+
+  return old;
+}
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|atomic_fetch_compare_inc|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE

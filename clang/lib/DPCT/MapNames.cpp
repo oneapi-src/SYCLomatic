@@ -1601,6 +1601,7 @@ void MapNames::setExplicitNamespaceMap() {
       {"atomicExch", getDpctNamespace() + "atomic_exchange"},
       {"atomicCAS", getDpctNamespace() + "atomic_compare_exchange_strong"},
       {"atomicInc", getDpctNamespace() + "atomic_fetch_compare_inc"},
+      {"atomicDec", getDpctNamespace() + "atomic_fetch_compare_dec"},
   };
 
   BLASComputingAPIWithRewriter = {

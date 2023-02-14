@@ -31,9 +31,7 @@ __global__ void test(T *data) {
   // CHECK:  dpct::atomic_fetch_compare_inc((unsigned int *)&data[5], (unsigned int)tid);
   atomicInc((unsigned int *)&data[5], (unsigned int)tid);
 
-  // CHECK: /*
-  // CHECK: DPCT1007:0: Migration of atomicDec is not supported.
-  // CHECK: */
+  // CHECK: dpct::atomic_fetch_compare_dec((unsigned int *)&data[6], (unsigned int)tid);
   atomicDec((unsigned int *)&data[6], (unsigned int)tid);
 
   // CHECK: dpct::atomic_compare_exchange_strong(&data[7], tid - 1, tid);

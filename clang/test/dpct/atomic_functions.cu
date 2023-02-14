@@ -31,9 +31,7 @@ __global__ void test(T *data) {
   // CHECK: dpct::atomic_fetch_compare_inc<sycl::access::address_space::generic_space>((unsigned int *)&data[5], (unsigned int)tid);
   atomicInc((unsigned int *)&data[5], (unsigned int)tid);
 
-  // CHECK: /*
-  // CHECK: DPCT1007:0: Migration of atomicDec is not supported.
-  // CHECK: */
+  // CHECK: dpct::atomic_fetch_compare_dec<sycl::access::address_space::generic_space>((unsigned int *)&data[6], (unsigned int)tid);
   atomicDec((unsigned int *)&data[6], (unsigned int)tid);
 
   // CHECK: dpct::atomic_compare_exchange_strong<T, sycl::access::address_space::generic_space>(&data[7], tid - 1, tid);
