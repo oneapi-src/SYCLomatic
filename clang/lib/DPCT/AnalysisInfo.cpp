@@ -3314,10 +3314,10 @@ void MemVarInfo::appendAccessorOrPointerDecl(const std::string &ExternMemSize,
     }
     if ((isExtern() && ExternEmitWarning) || getType()->containSizeofType()) {
       DiagnosticsUtils::report(getFilePath(), getOffset(),
-                               Diagnostics::SIZEOF_WARNING, false, false);
+                               Diagnostics::SIZEOF_WARNING, false, false, "local memory");
       AccDecl.Warnings.push_back(
           DiagnosticsUtils::getWarningTextAndUpdateUniqueID(
-              Diagnostics::SIZEOF_WARNING));
+              Diagnostics::SIZEOF_WARNING, "local memory"));
     }
     if (getType()->getDimension() > 3) {
       if (DiagnosticsUtils::report(getFilePath(), getOffset(),

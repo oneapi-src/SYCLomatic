@@ -3132,7 +3132,12 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       if (V->hasAttr<CUDASharedAttr>())
         return;
     }
-    report(UETT, Diagnostics::SIZEOF_WARNING, true);
+    std::string argTypeName = DpctGlobalInfo::getTypeName(UETT->getTypeOfArgument());
+    std::string argCanTypeName = DpctGlobalInfo::getTypeName(UETT->getTypeOfArgument().getCanonicalType());
+    if (argTypeName != argCanTypeName)
+      argTypeName += " (aka " + argCanTypeName + ")";
+
+    report(UETT, Diagnostics::SIZEOF_WARNING, true, argTypeName);
   }
 }
 
@@ -9560,7 +9565,7 @@ void KernelCallRule::runRule(
                                                   ExprContainSizeofType)) {
             if (ExprContainSizeofType) {
               report(ExprContainSizeofType->getBeginLoc(),
-                     Diagnostics::SIZEOF_WARNING, false);
+                     Diagnostics::SIZEOF_WARNING, false, "local memory");
             }
           }
         }

@@ -5,7 +5,7 @@
 class C {};
 
 // CHECK: void f{{.*}}
-// CHECK-NOT: DPCT1083:{{[0-9]+}}: The result of sizeof operator in the migrated code may be different from the original code. Check that the size in the migrated code is correct.
+// CHECK-NOT: DPCT1083:{{[0-9]+}}: The size of char3 in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
 // CHECK: }
 __global__ void f() {
   const int x = 2;
@@ -36,7 +36,7 @@ int main() {
   // CHECK-NEXT: DPCT1101:{{[0-9]+}}: 'sizeof(C) * 3' expression was replaced with a value. Modify the code to use original expression, provided in comments, if it is correct.
   // CHECK-NEXT: */
   // CHECK: /*
-  // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The result of sizeof operator in the migrated code may be different from the original code. Check that the size in the migrated code is correct.
+  // CHECK-NEXT: DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
   // CHECK-NEXT: */
   // CHECK-NEXT: sycl::local_accessor<int, 1> fold3_acc_ct1(sycl::range<1>(3/*sizeof(C) * 3*/), cgh);
   // CHECK: /*
@@ -56,7 +56,7 @@ int main() {
   // CHECK-NEXT: sycl::local_accessor<int, 2> fold6_acc_ct1(sycl::range<2>(3/*S*/, 7/*S+1+S*/), cgh);
   // CHECK-NEXT: sycl::local_accessor<int, 1> unfold1_acc_ct1(sycl::range<1>(1 + 1), cgh);
   // CHECK: /*
-  // CHECK-NEXT: DPCT1083:{{.*}}: The result of sizeof operator in the migrated code may be different from the original code. Check that the size in the migrated code is correct.
+  // CHECK-NEXT: DPCT1083:{{.*}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
   // CHECK-NEXT: */
   // CHECK-NEXT: sycl::local_accessor<int, 1> unfold2_acc_ct1(sycl::range<1>(sizeof(sycl::float3) * 3), cgh);
   // CHECK: });

@@ -79,7 +79,7 @@ int main(void) {
   // CHECK: q_ct1.submit(
   // CHECK-NEXT:   [&](sycl::handler &cgh) {
   // CHECK-NEXT:     /*
-  // CHECK-NEXT:     DPCT1083:{{[0-9]+}}: The result of sizeof operator in the migrated code may be different from the original code. Check that the size in the migrated code is correct.
+  // CHECK-NEXT:     DPCT1083:{{[0-9]+}}: The size of local memory in the migrated code may be different from the original code. Check that the allocated memory size in the migrated code is correct.
   // CHECK-NEXT:     */
   // CHECK-NEXT:     sycl::local_accessor<uint8_t, 1> dpct_local_acc_ct1(sycl::range<1>(sizeof(int)), cgh);
   // CHECK-NEXT:     auto d_d_acc_ct0 = dpct::get_access(d_d, cgh);
