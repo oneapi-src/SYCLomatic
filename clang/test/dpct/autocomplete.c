@@ -12,7 +12,6 @@
 // DASH-NEXT: --assume-nd-range-dim=
 // DASH-NEXT: --build-script-file
 // DASH-NEXT: --change-cuda-files-extension-only
-// DASH-NEXT: --change-filename-extension
 // DASH-NEXT: --check-unicode-security
 // DASH-NEXT: --comments
 // DASH-NEXT: --cuda-include-path
