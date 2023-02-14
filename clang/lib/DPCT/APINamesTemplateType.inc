@@ -147,7 +147,7 @@ TYPE_REWRITE_ENTRY(
     "cub::DoubleBuffer",
     TYPE_CONDITIONAL_FACTORY(
         CheckForPostfixDeclaratorType(0),
-        WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE,
-                        TYPESTR),
-        TYPE_FACTORY(STR("dpct::io_iterator_pair"), ADD_POINTER(TEMPLATE_ARG(0)))))
+        WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR),
+        HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_DPL_Utils,
+        TYPE_FACTORY(STR("dpct::io_iterator_pair"), ADD_POINTER(TEMPLATE_ARG(0))))))
 
