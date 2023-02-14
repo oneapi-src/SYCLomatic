@@ -24,7 +24,6 @@
 #include "clang/Basic/LLVM.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/None.h"
-#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/StringSet.h"

@@ -126,7 +126,7 @@ int IncludesCallbacks::findPoundSign(SourceLocation DirectiveStart) {
   if (CharDataInvalid || !Entry.isFile()) {
     return -1;
   }
-  llvm::Optional<llvm::MemoryBufferRef> Buffer =
+  std::optional<llvm::MemoryBufferRef> Buffer =
       Entry.getFile().getContentCache().getBufferOrNone(
           SM.getDiagnostics(), SM.getFileManager(), SourceLocation());
   if (!Buffer.has_value())
@@ -7350,7 +7350,7 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 void SOLVERFunctionCallRule::getParameterEnd(
     const SourceLocation &ParameterEnd, SourceLocation &ParameterEndAfterComma,
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  Optional<Token> TokSharedPtr;
+  std::optional<Token> TokSharedPtr;
   TokSharedPtr = Lexer::findNextToken(ParameterEnd, *(Result.SourceManager),
                                       LangOptions());
   Token TokComma = TokSharedPtr.value();
@@ -13994,7 +13994,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
                       const Expr *, RenameWithSuffix, StringRef>>>(
                       CE, Name, CE->getArg(0), true,
                       RenameWithSuffix("set", MethodName), Value));
-      Optional<std::string> Result = Rewriter->rewrite();
+      std::optional<std::string> Result = Rewriter->rewrite();
       if (Result.has_value())
         emplaceTransformation(
             new ReplaceStmt(CE, true, std::move(Result).value()));

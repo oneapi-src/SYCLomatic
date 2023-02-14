@@ -20,7 +20,7 @@ protected:
 
 public:
   virtual ~TypeLocRewriter() {}
-  virtual Optional<std::string> rewrite() = 0;
+  virtual std::optional<std::string> rewrite() = 0;
 };
 
 template <class Printer>
@@ -34,7 +34,7 @@ public:
       const TypeLoc TL,
       const std::function<ArgsT(const CallExpr *)> &...ArgCreators)
       : TypePrinterRewriter(TL, ArgCreators(TL)...) {}
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Printer::print(OS);
