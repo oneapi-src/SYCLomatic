@@ -88,11 +88,11 @@ struct make_allocatable<void>
 // DPCT_CODE
 template <typename _DataT>
 using __buffer_allocator =
- #if _DPCT_LIBSYCL_VERSION >= 60000
-     sycl::buffer_allocator<typename make_allocatable<_DataT>::type>;
- #else
+#if _DPCT_LIBSYCL_VERSION >= 60000
+    sycl::buffer_allocator<typename make_allocatable<_DataT>::type>;
+#else
     sycl::buffer_allocator;
- #endif
+#endif
 // DPCT_LABEL_END
 } // namespace detail
 
