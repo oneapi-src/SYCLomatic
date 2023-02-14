@@ -102,7 +102,7 @@ cmake -G Ninja -DCMAKE_INSTALL_PREFIX=%PATH_TO_C2S_INSTALL_FOLDER%  -DCMAKE_BUIL
 ninja install-c2s
 ```
 
-Note: For build system with 16G or less memory, recommend to use less than 5 threads for compilation,  you may meet out of memory issue when more than 4 threads used for compilation.
+Note: For build system with 16G or less memory, recommend to use less than 5 threads for compilation, you may meet out of memory issue when more than 4 threads used for compilation.
 ```
 ninja -j4 install-c2s
 ```
