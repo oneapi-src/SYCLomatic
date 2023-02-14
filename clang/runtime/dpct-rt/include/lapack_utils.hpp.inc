@@ -550,7 +550,7 @@ template <typename T> struct getrf_impl {
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     oneapi::mkl::lapack::getrf(q, m, n, a_data, lda, ipiv_data, device_ws_data,
-                               device_ws_size / sizeof(T));
+                               device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
@@ -616,7 +616,7 @@ template <typename T> struct geqrf_impl {
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     oneapi::mkl::lapack::geqrf(q, m, n, a_data, lda, tau_data, device_ws_data,
-                               device_ws_size / sizeof(T));
+                               device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
@@ -731,7 +731,7 @@ template <typename T> struct gesvd_impl {
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     oneapi::mkl::lapack::gesvd(q, jobu, jobvt, m, n, a_data, lda, s_data,
                                u_data, ldu, vt_data, ldvt, device_ws_data,
-                               device_ws_size / sizeof(T));
+                               device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
@@ -767,7 +767,7 @@ template <typename T> struct potrf_impl {
     auto device_ws_data =
         dpct::detail::get_memory(reinterpret_cast<T *>(device_ws));
     oneapi::mkl::lapack::potrf(q, uplo, n, a_data, lda, device_ws_data,
-                               device_ws_size / sizeof(T));
+                               device_ws_size);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
