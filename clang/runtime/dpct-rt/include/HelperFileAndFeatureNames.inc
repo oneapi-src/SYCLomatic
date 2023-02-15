@@ -268,8 +268,6 @@ HELPER_FEATURE_MAP_TO_APINAME(Device, "device_ext_get_saved_queue", "device_ext:
 HELPER_FEATURE_MAP_TO_APINAME(Device, "device_ext_get_context", "device_ext::get_context")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "device_ext_1", "device_ext")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "device_ext_get_version", "device_ext::get_version")
-HELPER_FEATURE_MAP_TO_APINAME(Device, "device_ext_add_task", "device_ext::add_task")
-HELPER_FEATURE_MAP_TO_APINAME(Device, "device_ext_async_dpct_free_friend_decl", "async_dpct_free")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "device_ext_2", "device_ext")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "dev_mgr_1", "dev_mgr")
 HELPER_FEATURE_MAP_TO_APINAME(Device, "dev_mgr_current_device", "dev_mgr::current_device")

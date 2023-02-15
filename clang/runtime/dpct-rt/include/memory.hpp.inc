@@ -1180,12 +1180,9 @@ static inline void dpct_free(void *ptr,
 // DPCT_LABEL_BEGIN|async_dpct_free|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|get_default_queue
-// Device|get_current_device
-// Device|device_ext_add_task
-// Device|device_ext_async_dpct_free_friend_decl
+// Memory|dpct_free
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-#ifndef DPCT_USM_LEVEL_NONE
 /// Free the device memory pointed by a batch of pointers in \p pointers which
 /// are related to \p q after \p events completed.
 ///
@@ -1195,17 +1192,16 @@ static inline void dpct_free(void *ptr,
 inline void async_dpct_free(std::vector<void *> pointers,
                             std::vector<sycl::event> events,
                             sycl::queue &q = get_default_queue()) {
-  std::thread t(
-      [](std::vector<void *> pointers, std::vector<sycl::event> events,
-         sycl::context ctxt) {
-        sycl::event::wait(events);
-        for (auto p : pointers)
-          sycl::free(p, ctxt);
-      },
-      std::move(pointers), std::move(events), q.get_context());
-  get_current_device().add_task(std::move(t));
+  q.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(events);
+    cgh.host_task([=] {
+      for (auto p : pointers)
+        if (p) {
+          dpct_free(p, q);
+        }
+    });
+  });
 }
-#endif
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|dpct_memcpy|dpct
