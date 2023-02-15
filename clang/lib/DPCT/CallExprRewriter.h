@@ -149,7 +149,7 @@ public:
 
   /// This function should be overwritten to implement call expression
   /// rewriting.
-  virtual Optional<std::string> rewrite() = 0;
+  virtual std::optional<std::string> rewrite() = 0;
   // Emits a warning/error/note and/or comment depending on MsgID. For details
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
   template <typename IDTy, typename... Ts>
@@ -252,8 +252,8 @@ public:
           .create(C);
   }
 
-  Optional<std::string> rewrite() override {
-    Optional<std::string> &&Result = Inner->rewrite();
+  std::optional<std::string> rewrite() override {
+    std::optional<std::string> &&Result = Inner->rewrite();
     if (Result.has_value() && IsAssigned)
       return "(" + Result.value() + ", 0)";
     return Result;
@@ -272,8 +272,8 @@ public:
       : CallExprRewriter(C, ""), Prefix(Prefix), Suffix(Suffix),
         Inner(InnerRewriter) {}
 
-  Optional<std::string> rewrite() override {
-    Optional<std::string> &&Result = Inner->rewrite();
+  std::optional<std::string> rewrite() override {
+    std::optional<std::string> &&Result = Inner->rewrite();
     if (Result.has_value())
       return Prefix + Result.value() + Suffix;
     return Result;
@@ -288,16 +288,16 @@ public:
   RemoveAPIRewriter(const CallExpr *C, std::string CalleeName)
       : CallExprRewriter(C, CalleeName), IsAssigned(isAssigned(C)), CalleeName(CalleeName) {}
 
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     std::string Msg = "this call is redundant in SYCL.";
     if (IsAssigned) {
       report(Diagnostics::FUNC_CALL_REMOVED_0, false,
              CalleeName, Msg);
-      return Optional<std::string>("0");
+      return std::optional<std::string>("0");
     }
     report(Diagnostics::FUNC_CALL_REMOVED, false,
            CalleeName, Msg);
-    return Optional<std::string>("");
+    return std::optional<std::string>("");
   }
 };
 
@@ -321,10 +321,10 @@ public:
     Indent = getIndent(getStmtExpansionSourceRange(C).getBegin(), SM);
   }
 
-  Optional<std::string> rewrite() override {
-    Optional<std::string> &&PredStr = Pred->rewrite();
-    Optional<std::string> &&IfBlockStr = IfBlock->rewrite();
-    Optional<std::string> &&ElseBlockStr = ElseBlock->rewrite();
+  std::optional<std::string> rewrite() override {
+    std::optional<std::string> &&PredStr = Pred->rewrite();
+    std::optional<std::string> &&IfBlockStr = IfBlock->rewrite();
+    std::optional<std::string> &&ElseBlockStr = ElseBlock->rewrite();
     return "if(" + PredStr.value() + "){" + NL.str() + Indent.str() +
            Indent.str() + IfBlockStr.value() + ";" + NL.str() +
            Indent.str() + "} else {" + NL.str() + Indent.str() + Indent.str() +
@@ -442,7 +442,7 @@ protected:
 public:
   virtual ~FuncCallExprRewriter() {}
 
-  virtual Optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite() override;
 
   friend FuncCallExprRewriterFactory;
 
@@ -452,7 +452,7 @@ protected:
   }
 
   // Build string which is used to replace original expression.
-  Optional<std::string> buildRewriteString();
+  std::optional<std::string> buildRewriteString();
 
   void setTargetCalleeName(const std::string &Str) { TargetCalleeName = Str; }
 };
@@ -468,7 +468,7 @@ public:
     NoRewrite = true;
   }
 
-  Optional<std::string> rewrite() override { return NewFuncName; }
+  std::optional<std::string> rewrite() override { return NewFuncName; }
 };
 
 struct ThrustFunctor {
@@ -917,7 +917,7 @@ public:
   DeleterCallExprRewriter(const CallExpr *C, StringRef Source,
                           std::function<ArgT(const CallExpr *)> ArgCreator)
       : CallExprRewriter(C, Source), Arg(ArgCreator(C)) {}
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     OS << "delete ";
@@ -933,7 +933,7 @@ public:
   ToStringExprRewriter(const CallExpr *C, StringRef Source,
                        std::function<ArgT(const CallExpr *)> ArgCreator)
       : CallExprRewriter(C, Source), Arg(ArgCreator(C)) {}
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     print(OS, Arg);
@@ -1076,7 +1076,7 @@ public:
   PrinterRewriter(const CallExpr *C, StringRef Source,
                   const std::function<ArgsT(const CallExpr *)> &...ArgCreators)
       : PrinterRewriter(C, Source, ArgCreators(C)...) {}
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Printer::print(OS);
@@ -1099,7 +1099,7 @@ public:
       const CallExpr *C, StringRef Source,
       const std::function<StmtPrinters(const CallExpr *)> &...PrinterCreators)
       : PrinterRewriter(C, Source, PrinterCreators(C)...) {}
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Base::print(OS);
@@ -1177,7 +1177,7 @@ public:
       const std::function<CallExprPrinter<CalleeT, ArgsT...>(const CallExpr *)>
           &PrinterFunctor)
       : CallExprRewriter(C, Source), Printer(PrinterFunctor(C)) {}
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Printer.print(OS);
@@ -1251,7 +1251,7 @@ public:
     report(MsgID, false, getMsgArg(Args, CE)...);
   }
 
-  Optional<std::string> rewrite() override { return Optional<std::string>(); }
+  std::optional<std::string> rewrite() override { return std::nullopt; }
 
   friend UnsupportFunctionRewriterFactory<MsgArgs...>;
 };
@@ -1277,8 +1277,8 @@ public:
     buildRewriterStr(Call, OS, OB);
     OS.flush();
   }
-  Optional<std::string> rewrite() override {
-    return Optional<std::string>(ResultStr);
+  std::optional<std::string> rewrite() override {
+    return ResultStr;
   }
 
   void buildRewriterStr(const CallExpr *Call, llvm::raw_string_ostream &OS,
@@ -1357,7 +1357,7 @@ class UserDefinedRewriterFactory : public CallExprRewriterFactoryBase {
     NullRewriter(const CallExpr *C, StringRef Name)
         : CallExprRewriter(C, Name) {}
 
-    Optional<std::string> rewrite() override { return {}; }
+    std::optional<std::string> rewrite() override { return std::nullopt; }
   };
 
 public:
