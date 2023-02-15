@@ -142,7 +142,7 @@ namespace detail {
 // DPCT_LABEL_BEGIN|library_data_size|dpct::detail
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-constexpr std::size_t library_data_size[] = {
+inline constexpr std::size_t library_data_size[] = {
     sizeof(float),
     sizeof(std::complex<float>),
     sizeof(double),

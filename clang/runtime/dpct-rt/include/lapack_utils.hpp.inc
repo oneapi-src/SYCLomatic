@@ -426,6 +426,21 @@ namespace detail {
 template <template <typename> typename functor_t, typename... args_t>
 inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
                        const std::string &lapack_api_name, args_t... args) {
+  auto handle_lapack_exception = [](const std::string &lapack_api_name,
+                                    oneapi::mkl::lapack::exception &e,
+                                    int *info) {
+    std::cerr << "Unexpected exception caught during call to LAPACK API: "
+              << lapack_api_name << std::endl
+              << "reason: " << e.what() << std::endl
+              << "info: " << e.info() << std::endl
+              << "detail: " << e.detail() << std::endl;
+    int info_val = static_cast<int>(e.info());
+    if (info)
+      dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
+                                memcpy_direction::host_to_device)
+          .wait();
+    return 1;
+  };
   try {
     switch (a_type) {
     case library_data_t::real_float: {
@@ -452,29 +467,10 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
     try {
       std::rethrow_exception(be.exceptions()[0]);
     } catch (oneapi::mkl::lapack::exception &e) {
-      std::cerr << "Unexpected exception caught during call to LAPACK API: "
-                   "getrfnp_batch"
-                << std::endl
-                << "reason: " << e.what() << std::endl
-                << "number: " << e.info() << std::endl;
-      int info_val = static_cast<int>(e.info());
-      dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
-                                memcpy_direction::host_to_device)
-          .wait();
-      return 1;
+      return handle_lapack_exception(lapack_api_name, e, info);
     }
   } catch (oneapi::mkl::lapack::exception const &e) {
-    std::cerr << "Unexpected exception caught during call to LAPACK API: "
-              << lapack_api_name << std::endl
-              << "reason: " << e.what() << std::endl
-              << "info: " << e.info() << std::endl
-              << "detail: " << e.detail() << std::endl;
-    int info_val = static_cast<int>(e.info());
-    if (info)
-      dpct::detail::dpct_memcpy(q, info, &info_val, sizeof(int),
-                                memcpy_direction::host_to_device)
-          .wait();
-    return 1;
+    return handle_lapack_exception(lapack_api_name, e, info);
   } catch (sycl::exception const &e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
@@ -493,13 +489,13 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
 // LibCommonUtils|get_memory
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-class working_memory {
+template <typename T> class working_memory {
 public:
-  working_memory(size_t size, sycl::queue q) : _q(q) {
-    _ptr = dpct::detail::dpct_malloc(size, _q);
+  working_memory(size_t element_number, sycl::queue q) : _q(q) {
+    _ptr = dpct::detail::dpct_malloc(element_number * sizeof(T), _q);
   }
-  template <typename T> auto get_memory() {
-    return dpct::detail::get_memory(reinterpret_cast<T>(_ptr));
+  auto get_memory() {
+    return dpct::detail::get_memory(reinterpret_cast<T *>(_ptr));
   }
   void set_event(sycl::event e) { _e = e; }
   ~working_memory() {
@@ -524,12 +520,14 @@ private:
 std::size_t byte_to_element_number(std::size_t size_in_byte,
                                    dpct::library_data_t element_type) {
   return size_in_byte /
-         dpct::detail::library_data_size[(unsigned int)element_type];
+         dpct::detail::library_data_size[static_cast<unsigned int>(
+             element_type)];
 }
 std::size_t element_number_to_byte(std::size_t size_in_element,
                                    dpct::library_data_t element_type) {
   return size_in_element *
-         dpct::detail::library_data_size[(unsigned int)element_type];
+         dpct::detail::library_data_size[static_cast<unsigned int>(
+             element_type)];
 }
 // DPCT_LABEL_END
 
@@ -587,8 +585,8 @@ template <typename T> struct getrs_impl {
     auto ipiv_data = dpct::detail::get_memory(ipiv);
     std::int64_t device_ws_size = oneapi::mkl::lapack::getrs_scratchpad_size<T>(
         q, trans, n, nrhs, lda, ldb);
-    working_memory device_ws(device_ws_size * sizeof(T), q);
-    auto device_ws_data = device_ws.get_memory<T *>();
+    working_memory<T> device_ws(device_ws_size, q);
+    auto device_ws_data = device_ws.get_memory();
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
     oneapi::mkl::lapack::getrs(q, trans, n, nrhs, a_data, lda, ipiv_data,
@@ -686,10 +684,10 @@ template <typename T> struct gesvd_scratchpad_size_impl {
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 template <typename T> struct ElementType {
-  using T2 = T;
+  using value_tpye = T;
 };
 template <typename T> struct ElementType<std::complex<T>> {
-  using T2 = T;
+  using value_tpye = T;
 };
 template <typename T> struct gesvd_impl {
   void operator()(sycl::queue &q, oneapi::mkl::jobsvd jobu,
@@ -701,7 +699,7 @@ template <typename T> struct gesvd_impl {
                   int *info) {
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto s_data = dpct::detail::get_memory(
-        reinterpret_cast<typename ElementType<T>::T2 *>(s));
+        reinterpret_cast<typename ElementType<T>::value_tpye *>(s));
     auto u_data = dpct::detail::get_memory(reinterpret_cast<T *>(u));
     auto vt_data = dpct::detail::get_memory(reinterpret_cast<T *>(vt));
     auto device_ws_data =
@@ -709,6 +707,22 @@ template <typename T> struct gesvd_impl {
     oneapi::mkl::lapack::gesvd(q, jobu, jobvt, m, n, a_data, lda, s_data,
                                u_data, ldu, vt_data, ldvt, device_ws_data,
                                device_ws_size);
+    dpct::detail::dpct_memset(q, info, 0, sizeof(int));
+  }
+};
+template <typename T> struct gesvd_conj_impl : public gesvd_impl {
+  void operator()(sycl::queue &q, oneapi::mkl::jobsvd jobu,
+                  oneapi::mkl::jobsvd jobvt, std::int64_t m, std::int64_t n,
+                  library_data_t a_type, void *a, std::int64_t lda,
+                  library_data_t s_type, void *s, library_data_t u_type,
+                  void *u, std::int64_t ldu, library_data_t vt_type, void *vt,
+                  std::int64_t ldvt, void *device_ws, size_t device_ws_size,
+                  int *info) {
+    Base::operator()(q, jobu, jobvt, m, n, a_type, a, lda, s_type, s, u_type, u,
+                     ldu, vt_type, vt, ldvt, device_ws, device_ws_size, info);
+    auto vt_data = dpct::detail::get_memory(reinterpret_cast<T *>(vt));
+    oneapi::mkl::blas::row_major::imatcopy(q, oneapi::mkl::transpose::conjtrans,
+                                           n, n, T(1.0f), vt_data, ldvt, ldvt);
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
@@ -765,8 +779,8 @@ template <typename T> struct potrs_impl {
                   std::int64_t ldb, int *info) {
     std::int64_t device_ws_size = oneapi::mkl::lapack::potrs_scratchpad_size<T>(
         q, uplo, n, nrhs, lda, ldb);
-    working_memory device_ws(device_ws_size * sizeof(T), q);
-    auto device_ws_data = device_ws.get_memory<T *>();
+    working_memory<T> device_ws(device_ws_size, q);
+    auto device_ws_data = device_ws.get_memory<T>();
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
     oneapi::mkl::lapack::potrs(q, uplo, n, nrhs, a_data, lda, b_data, ldb,
@@ -1156,30 +1170,9 @@ inline int gesvd(sycl::queue &q, oneapi::mkl::job jobz, std::int64_t all_vec,
                           "the job type is unsupported");
   }
 
-  int ret = detail::lapack_shim<detail::gesvd_impl>(
+  detail::lapack_shim<detail::gesvd_conj_impl>(
       q, a_type, info, "gesvd", q, jobu, jobvt, m, n, a_type, a, lda, s_type, s,
       u_type, u, ldu, vt_type, vt, ldvt, device_ws, device_ws_size, info);
-  if (ret)
-    return ret;
-
-#define CASE(TYPE_NAME, TYPE)                                                  \
-  case TYPE_NAME: {                                                            \
-    auto vt_data = dpct::detail::get_memory(reinterpret_cast<TYPE *>(vt));     \
-    oneapi::mkl::blas::row_major::imatcopy(                                    \
-        q, oneapi::mkl::transpose::conjtrans, n, n, TYPE(1.0f), vt_data, ldvt, \
-        ldvt);                                                                 \
-    break;                                                                     \
-  }
-  switch (a_type) {
-    CASE(library_data_t::real_float, float)
-    CASE(library_data_t::real_double, double)
-    CASE(library_data_t::complex_float, std::complex<float>)
-    CASE(library_data_t::complex_double, std::complex<double>)
-  default:
-    throw sycl::exception(sycl::make_error_code(sycl::errc::invalid),
-                          "the data type is unsupported");
-  }
-#undef CASE
   return 0;
 }
 // DPCT_LABEL_END

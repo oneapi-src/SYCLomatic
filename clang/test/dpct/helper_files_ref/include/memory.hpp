@@ -822,18 +822,14 @@ inline void async_dpct_free(std::vector<void *> pointers,
                             sycl::queue &q = get_default_queue()) {
   std::thread t(
       [](std::vector<void *> pointers, std::vector<sycl::event> events,
-         sycl::context ctxt) {
+         sycl::queue queue) {
         sycl::event::wait(events);
         for (auto p : pointers)
           if (p) {
-#ifdef DPCT_USM_LEVEL_NONE
-            detail::mem_mgr::instance().mem_free(p);
-#else
-            sycl::free(p, ctxt);
-#endif // DPCT_USM_LEVEL_NONE
+            dpct_free(p, queue);
           }
       },
-      std::move(pointers), std::move(events), q.get_context());
+      std::move(pointers), std::move(events), q);
   get_current_device().add_task(std::move(t));
 }
 
