@@ -1006,6 +1006,8 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-headers
       install-clang-resource-headers
       install-dpct-binary
+      install-dpct-vars
+      install-dpct-syscheck
       install-dpct-opt-rules
       )
   else()
@@ -1015,6 +1017,9 @@ if (NOT CLANG_BUILT_STANDALONE)
       install-dpct-headers
       install-clang-resource-headers
       install-dpct-binary
+      install-dpct-vars
+      install-dpct-syscheck
+      install-dpct-modulefiles
       install-dpct-autocomplete
       install-dpct-opt-rules
       )

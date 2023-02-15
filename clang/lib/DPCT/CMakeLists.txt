@@ -188,3 +188,4 @@ add_clang_library(DPCT
   clangTooling
   clangToolingCore
 )
+add_subdirectory(docs)
