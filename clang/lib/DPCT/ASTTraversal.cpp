@@ -10731,6 +10731,12 @@ void MemoryMigrationRule::mallocMigration(
 void MemoryMigrationRule::memcpyMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
+  for (unsigned I = 0, E = C->getNumArgs(); I != E; ++I) {
+    if (isa<PackExpansionExpr>(C->getArg(I))) {
+      return;
+    }
+  }
+
   std::string Name;
   if (ULExpr) {
     Name = ULExpr->getName().getAsString();
