@@ -1355,8 +1355,8 @@ inline void mark_segments(_ExecutionPolicy &&policy,
                 ::std::size_t sub_group_id = sub_group.get_group_id();
                 while (sub_group_id < nsegments) {
                   ::std::size_t subgroup_local_id = sub_group.get_local_id();
-                  std::size_t i = begin_offsets[sub_group_id];
-                  std::size_t end = end_offsets[sub_group_id];
+                  ::std::size_t i = begin_offsets[sub_group_id];
+                  ::std::size_t end = end_offsets[sub_group_id];
                   while (i + subgroup_local_id < end) {
                     segments[i + subgroup_local_id] = sub_group_id;
                     i += local_size;
@@ -1372,7 +1372,7 @@ inline void mark_segments(_ExecutionPolicy &&policy,
     policy.queue()
         .submit([&](sycl::handler &h) {
           h.parallel_for(nsegments, ([=](sycl::id<1> seg) {
-                           for (std::size_t i = begin_offsets[seg];
+                           for (::std::size_t i = begin_offsets[seg];
                                 i < end_offsets[seg]; i++) {
                              segments[i] = seg;
                            }
@@ -1585,7 +1585,7 @@ inline void segmented_sort_keys(
     bool do_swap_iters = false, int begin_bit = 0,
     int end_bit = sizeof(typename ::std::iterator_traits<key_t>::value_type) *
                   8) {
-  segmented_sort_keys(std::forward<_ExecutionPolicy>(policy), keys.first(),
+  segmented_sort_keys(::std::forward<_ExecutionPolicy>(policy), keys.first(),
                       keys.second(), n, nsegments, begin_offsets, end_offsets,
                       descending, begin_bit, end_bit);
   if (do_swap_iters) {
