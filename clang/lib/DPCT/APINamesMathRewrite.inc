@@ -750,8 +750,8 @@ MATH_API_REWRITER_DEVICE(
     "saturate",
     MATH_API_DEVICE_NODES(
         CALL_FACTORY_ENTRY("saturate",
-                        CALL(MapNames::getClNamespace(false, true) +
-                                "clamp<float>",
-                            ARG(0), ARG("0.0f"), ARG("1.0f"))),
+                            CALL(MapNames::getClNamespace(false, true) +
+                                    "clamp<float>",
+                                ARG(0), ARG("0.0f"), ARG("1.0f"))),
         EMPTY_FACTORY_ENTRY("saturate"), EMPTY_FACTORY_ENTRY("saturate"),
         EMPTY_FACTORY_ENTRY("saturate")))
