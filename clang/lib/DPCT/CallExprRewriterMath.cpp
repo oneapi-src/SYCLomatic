@@ -261,8 +261,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       } else if (SourceCalleeName == "__mul24" || SourceCalleeName == "mul24" ||
                  SourceCalleeName == "__umul24" ||
                  SourceCalleeName == "umul24" ||
-                 SourceCalleeName == "__mulhi" ||
-                 SourceCalleeName == "__hadd") {
+                 SourceCalleeName == "__mulhi") {
         std::string ParamType = "int";
         if (SourceCalleeName == "__umul24" || SourceCalleeName == "umul24")
           ParamType = "unsigned int";
@@ -1437,6 +1436,9 @@ createMathAPIRewriterHost(
   createMathAPIRewriterDevice(NAME, PERF_PRED, DEVICE_PERF 0, __VA_ARGS__),
 #define MATH_API_REWRITER_DEVICE(NAME, ...)                                    \
   createMathAPIRewriterDevice(NAME, __VA_ARGS__),
+#define MATH_API_REWRITER_DEVICE_OVERLOAD(CONDITION, DEVICE_REWRITER_1,        \
+                                          DEVICE_REWRITER_2)                   \
+  createConditionalFactory(CONDITION, DEVICE_REWRITER_1 DEVICE_REWRITER_2 0),
 
 #define MATH_API_REWRITER_HOST_WITH_PERF(NAME, PERF_PRED, HOST_PERF,           \
                                          HOST_NORMAL)                          \
