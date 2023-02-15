@@ -769,11 +769,10 @@ memory_bus_width are not supported by the compiler used. \
 Use 3200000 kHz as memory_clock_rate default value. \
 Use 64 bits as memory_bus_width default value.")
 #else
-    detail::warning(
-        "get_device_info: querying memory_clock_rate and memory_bus_width are "
-        "not supported by the compiler used. \nUse 3200000 kHz as "
-        "memory_clock_rate default value.\nUse 64 bits as memory_bus_width "
-        "default value.");
+#warning "get_device_info: querying memory_clock_rate and \
+memory_bus_width are not supported by the compiler used. \
+Use 3200000 kHz as memory_clock_rate default value. \
+Use 64 bits as memory_bus_width default value."
 #endif
 
     size_t max_sub_group_size = 1;
