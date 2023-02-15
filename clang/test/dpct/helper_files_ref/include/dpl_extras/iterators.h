@@ -153,6 +153,9 @@ template <class... Ts> struct __zip_iterator_impl<std::tuple<Ts...>> {
 
 } // end namespace detail
 
+// dpct::zip_iterator can only accept std::tuple type as template argument for
+// compatibility purpose. Please use oneapi::dpl::zip_iterator if you want to
+// pass iterator's types directly.
 template <typename... Ts>
 using zip_iterator = typename detail::__zip_iterator_impl<Ts...>::type;
 
