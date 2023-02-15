@@ -85,7 +85,7 @@ enum class library_data_t : unsigned char {
 };
 
 namespace detail {
-constexpr std::size_t library_data_size[] = {
+inline constexpr std::size_t library_data_size[] = {
     sizeof(float),
     sizeof(std::complex<float>),
     sizeof(double),

@@ -358,10 +358,10 @@ inline int potrs_batch(sycl::queue &queue, oneapi::mkl::uplo uplo, int n,
 namespace detail {
 template <template <typename> typename functor_t, typename... args_t>
 inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
-                       const std::string &lapack_api_name, args_t... args) {
+                       std::string const &lapack_api_name, args_t... args) {
   auto handle_lapack_exception = [](const std::string &lapack_api_name,
-                                    oneapi::mkl::lapack::exception &e,
-                                    int *info) {
+                                    const oneapi::mkl::lapack::exception &e,
+                                    int *info, sycl::queue &q) {
     std::cerr << "Unexpected exception caught during call to LAPACK API: "
               << lapack_api_name << std::endl
               << "reason: " << e.what() << std::endl
@@ -400,10 +400,10 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
     try {
       std::rethrow_exception(be.exceptions()[0]);
     } catch (oneapi::mkl::lapack::exception &e) {
-      return handle_lapack_exception(lapack_api_name, e, info);
+      return handle_lapack_exception(lapack_api_name, e, info, q);
     }
   } catch (oneapi::mkl::lapack::exception const &e) {
-    return handle_lapack_exception(lapack_api_name, e, info);
+    return handle_lapack_exception(lapack_api_name, e, info, q);
   } catch (sycl::exception const &e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
@@ -569,7 +569,7 @@ template <typename T> struct gesvd_impl {
     dpct::detail::dpct_memset(q, info, 0, sizeof(int));
   }
 };
-template <typename T> struct gesvd_conj_impl : public gesvd_impl {
+template <typename T> struct gesvd_conj_impl : public gesvd_impl<T> {
   void operator()(sycl::queue &q, oneapi::mkl::jobsvd jobu,
                   oneapi::mkl::jobsvd jobvt, std::int64_t m, std::int64_t n,
                   library_data_t a_type, void *a, std::int64_t lda,
@@ -577,7 +577,8 @@ template <typename T> struct gesvd_conj_impl : public gesvd_impl {
                   void *u, std::int64_t ldu, library_data_t vt_type, void *vt,
                   std::int64_t ldvt, void *device_ws, size_t device_ws_size,
                   int *info) {
-    Base::operator()(q, jobu, jobvt, m, n, a_type, a, lda, s_type, s, u_type, u,
+    using base = gesvd_impl<T>;
+    base::operator()(q, jobu, jobvt, m, n, a_type, a, lda, s_type, s, u_type, u,
                      ldu, vt_type, vt, ldvt, device_ws, device_ws_size, info);
     auto vt_data = dpct::detail::get_memory(reinterpret_cast<T *>(vt));
     oneapi::mkl::blas::row_major::imatcopy(q, oneapi::mkl::transpose::conjtrans,
@@ -616,7 +617,7 @@ template <typename T> struct potrs_impl {
     std::int64_t device_ws_size = oneapi::mkl::lapack::potrs_scratchpad_size<T>(
         q, uplo, n, nrhs, lda, ldb);
     working_memory<T> device_ws(device_ws_size, q);
-    auto device_ws_data = device_ws.get_memory<T>();
+    auto device_ws_data = device_ws.get_memory();
     auto a_data = dpct::detail::get_memory(reinterpret_cast<T *>(a));
     auto b_data = dpct::detail::get_memory(reinterpret_cast<T *>(b));
     oneapi::mkl::lapack::potrs(q, uplo, n, nrhs, a_data, lda, b_data, ldb,
