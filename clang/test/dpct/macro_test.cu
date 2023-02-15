@@ -839,12 +839,16 @@ void foo18(){
   CONCATE(StreamDestroy)(stream2);
 }
 
-// CHECK: static const int streamDefault2 = &dpct::get_default_queue();
-// CHECK-NEXT: static const int streamDefault = CALL(&dpct::get_default_queue());
-// CHECK-NEXT: static const int streamNonBlocking = &dpct::get_default_queue();
+// CHECK: static const int streamDefault2 = 0;
+// CHECK-NEXT: static const int streamDefault = CALL(0);
+// CHECK-NEXT: static const int streamNonBlocking = 0;
+// CHECK-NEXT: static const dpct::queue_ptr streamDefault3 = &dpct::get_default_queue();
+// CHECK-NEXT: static const dpct::queue_ptr streamDefault4 = CALL(&dpct::get_default_queue());
 static const int streamDefault2 = cudaStreamDefault;
 static const int streamDefault = CALL(CONCATE(StreamDefault));
 static const int streamNonBlocking = CONCATE(StreamNonBlocking);
+static const cudaStream_t streamDefault3 = cudaStreamDefault;
+static const cudaStream_t streamDefault4 = CALL(cudaStreamDefault);
 
 
 //     CHECK:#define CMC_PROFILING_BEGIN()                                                  \

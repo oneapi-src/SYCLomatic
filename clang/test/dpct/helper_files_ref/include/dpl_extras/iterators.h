@@ -266,15 +266,15 @@ public:
 template <typename IterT> struct io_iterator_pair {
   inline io_iterator_pair() : selector(false) {}
 
-  inline io_iterator_pair(const IterT &first_input, const IterT &first_output)
+  inline io_iterator_pair(const IterT &first, const IterT &second)
       : selector(false) {
-    iter[0] = first_input;
-    iter[1] = first_output;
+    iter[0] = first;
+    iter[1] = second;
   }
 
-  inline IterT input() const { return selector ? iter[1] : iter[0]; }
+  inline IterT first() const { return selector ? iter[1] : iter[0]; }
 
-  inline IterT output() const { return selector ? iter[0] : iter[1]; }
+  inline IterT second() const { return selector ? iter[0] : iter[1]; }
 
   inline void swap() { selector = !selector; }
 

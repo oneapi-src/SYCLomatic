@@ -169,7 +169,7 @@ ReplaceStmt::removeStmtWithCleanups(const SourceManager &SM) const {
 
   // Get the length of spaces and the semicolon after the TheStmt
   SourceLocation PostStmtLoc;
-  Optional<Token> TokSharedPtr;
+  std::optional<Token> TokSharedPtr;
   if (IsProcessMacro) {
     PostStmtLoc = End;
     if (End.getRawEncoding() == 0) {
