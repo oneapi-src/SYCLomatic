@@ -828,26 +828,6 @@ void updateHelperNameContentMap(
 
 // Update TUR from HelperNameContentMap
 void updateTUR(clang::tooling::TranslationUnitReplacements &TUR) {
-  auto updateAPIName = [](HelperFeatureIDTy Feature,
-                          clang::tooling::HelperFuncForYaml &HFFY) {
-    if (Feature.second == "License" ||
-        Feature.second == "non_local_include_dependency" ||
-        Feature.second == "local_include_dependency") {
-      HFFY.APIName = "";
-      return;
-    }
-
-    // If this feature can be found in the map, then save the API name (from
-    // the map) into yaml file; otherwise save the feature name into yaml
-    // file
-    auto Iter = FeatureNameToAPINameMap.find(Feature);
-    if (Iter != FeatureNameToAPINameMap.end()) {
-      HFFY.APIName = Iter->second;
-    } else {
-      HFFY.APIName = Feature.second;
-    }
-  };
-
   for (const auto &Entry : HelperNameContentMap) {
     if (Entry.second.IsCalled) {
       std::string FileName = HelperFileNameMap[Entry.first.first];
@@ -862,9 +842,6 @@ void updateTUR(clang::tooling::TranslationUnitReplacements &TUR) {
           TUR.FeatureMap[FileName][Entry.first.second].CallerSrcFiles.push_back(
               CallerFileName);
         }
-
-        updateAPIName(Entry.first,
-                      TUR.FeatureMap[FileName][Entry.first.second]);
       } else {
         // This is a sub-feature
         std::string ParentFeatureName = Entry.second.ParentFeature.second;
@@ -880,9 +857,6 @@ void updateTUR(clang::tooling::TranslationUnitReplacements &TUR) {
               .SubFeatureMap[Entry.first.second]
               .CallerSrcFiles.push_back(CallerFileName);
         }
-
-        updateAPIName(Entry.first, TUR.FeatureMap[FileName][ParentFeatureName]
-                                       .SubFeatureMap[Entry.first.second]);
       }
     }
   }
@@ -1113,16 +1087,6 @@ const std::string DplExtrasVectorAllContentStr =
 const std::string DplExtrasDpcppExtensionsAllContentStr =
 #include "clang/DPCT/dpl_extras/dpcpp_extensions.all.inc"
     ;
-
-const std::map<std::pair<clang::dpct::HelperFileEnum, std::string>, std::string>
-    FeatureNameToAPINameMap = {
-#define HELPERFILE(PATH, UNIQUE_ENUM)
-#define HELPER_FEATURE_MAP_TO_APINAME(File, FeatureName, APIName)              \
-  {{clang::dpct::HelperFileEnum::File, FeatureName}, APIName},
-#include "../../runtime/dpct-rt/include/HelperFileAndFeatureNames.inc"
-#undef HELPER_FEATURE_MAP_TO_APINAME
-#undef HELPERFILE
-    };
 
 const std::unordered_map<std::string, HelperFeatureEnum> PropToGetFeatureMap = {
     {"clockRate",

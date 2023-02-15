@@ -354,7 +354,7 @@ def process_a_file(cont_file, inc_files_dir, runtime_files_dir, is_dpl_extras, f
 
 def check_files():
     file_handle = io.open(os.path.join(
-        input_files_dir, "HelperFileAndFeatureNames.inc"), "rb")
+        input_files_dir, "HelperFileNames.inc"), "rb")
     files_in_inc = []
     for line in file_handle:
         if (line.startswith(bytes("HELPERFILE(", 'utf-8'))):
@@ -379,17 +379,17 @@ def check_files():
     if (set_of_files_in_inc == set_of_files_in_current_dir):
         return True
 
-    print("Error: Files defined in HelperFileAndFeatureNames.inc and files in current folder are not same.")
-    print("Please update the HelperFileAndFeatureNames.inc file.\n")
+    print("Error: Files defined in HelperFileNames.inc and files in current folder are not same.")
+    print("Please update the HelperFileNames.inc file.\n")
 
     files_in_inc_but_not_in_dir = set_of_files_in_inc - set_of_files_in_current_dir
     if (len(files_in_inc_but_not_in_dir) != 0):
-        print("File(s) defined in HelperFileAndFeatureNames.inc but does not occur in the current folder:")
+        print("File(s) defined in HelperFileNames.inc but does not occur in the current folder:")
         print(files_in_inc_but_not_in_dir)
 
     files_in_dir_but_not_in_inc = set_of_files_in_current_dir - set_of_files_in_inc
     if (len(files_in_dir_but_not_in_inc) != 0):
-        print("File(s) occurs in the current folder but not defined in HelperFileAndFeatureNames.inc:")
+        print("File(s) occurs in the current folder but not defined in HelperFileNames.inc:")
         print(files_in_dir_but_not_in_inc)
 
     return False
