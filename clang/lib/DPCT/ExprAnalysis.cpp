@@ -845,6 +845,12 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
     return;
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(RefString);
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {
+      if (isa<PackExpansionExpr>(CE->getArg(I))) {
+        return;
+      }
+    }
+
     auto Rewriter = Itr->second->create(CE);
     auto Result = Rewriter->rewrite();
     BlockLevelFormatFlag = Rewriter->getBlockLevelFormatFlag();

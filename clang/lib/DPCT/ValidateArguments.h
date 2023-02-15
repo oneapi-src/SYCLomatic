@@ -72,7 +72,8 @@ enum class ExperimentalFeatures : unsigned int {
                           // this_group, this_subgroup.
   Exp_GroupSharedMemory,
   Exp_LogicalGroup,
-  Exp_ExperimentalFeaturesEnumSize
+  Exp_ExperimentalFeaturesEnumSize,
+  Exp_UserDefineReductions
 };
 
 bool makeInRootCanonicalOrSetDefaults(

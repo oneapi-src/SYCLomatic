@@ -6,7 +6,7 @@ Use the Command Line
 
 You can invoke |tool_name| at the command line.
 
-Use the ``dpct`` tool's ``--in-root`` option to specify the location of the
+Use the tool's ``--in-root`` option to specify the location of the
 source that should be migrated:
 
 * Any source within the ``--in-root`` directory (at any nesting
@@ -20,19 +20,16 @@ source that should be migrated:
 * If the ``--in-root`` option is not specified, the directory of the first input
   source file is implied.
 
-Use the ``dpct`` tool's ``--out-root`` option to specify the directory where the
+Use the tool's ``--out-root`` option to specify the directory where the
 SYCL code produced by |tool_name| is written:
 
 * Relative paths of the migrated files are maintained.
 * Extensions are changed to ``.dp.cpp``.
 * If the ``--out-root`` option is not specified, ``./dpct_output`` is implied.
 
-The following steps show migration of the Folder Options sample using the
-``dpct`` tool:
+The following steps show how to migrate the Folder Options sample using |tool_name|:
 
-.. include:: /_include_files/wip.rst
-
-#. Open the Folder Options sample:
+#. Get the Folder Options sample:
 
    .. include:: /_include_files/open_sample_dgr.rst
 
@@ -40,22 +37,34 @@ The following steps show migration of the Folder Options sample using the
 
    The Folder Options sample project contains a simple CUDA\* program with three
    files (``main.cu``, ``util.cu``, and ``util.h``) located in two folders
-   (``foo`` and ``bar``).
+   (``foo`` and ``bar``):
 
-#. From the parent folder of the unzipped foo folder, run |tool_name|:
+   .. code-block:: none
+
+      foo
+      ├── bar
+      │   ├── util.cu
+      │   └── util.h
+      └── main.cu
+
+#. From the root folder of the sample project, run |tool_name|:
 
    .. code-block:: none
 
       dpct --in-root=foo --out-root=result/foo foo/main.cu foo/bar/util.cu --extra-arg="-Ifoo/bar/"
 
-   Use the ``--in-root`` option to specify the location of the CUDA
-   files that need migration. Use the ``--out-root`` option to specify the
-   location for the migrated files.
-#. As a result, you should see the following files:
+   The ``--in-root`` option specifies the location of the CUDA
+   files that need migration. The ``--out-root`` option specifies the location for the migrated files.
+#. As a result of the migration command, you should see the following files:
 
-   * ``./result/foo/main.dp.cpp``
-   * ``./result/foo/bar/util.dp.cpp``
-   * ``./result/foo/bar/util.h``
+   .. code-block:: none
+
+      result/foo
+           ├── bar
+           │   ├── util.dp.cpp
+           │   └── util.h
+           └── main.dp.cpp
+
 #. Inspect the migrated source code, address any generated DPCT warnings, and
    verify correctness of the new program.
 
@@ -88,12 +97,12 @@ command lines for files with the following extensions: ``.c``, ``.C``, ``.cc``,
 |tool_name| parses the compilation database and applies the necessary
 options when migrating the input sources.
 
-This example uses the Rodinia NW DPCT sample to demonstrate the use of a
+This example uses the Rodinia needleman-wunsch sample to demonstrate the use of a
 compilation database.
 
 **Step 1: Create the Compilation Database**
 
-#. Open the Rodinia NW DPCT sample:
+#. Get the Rodinia needleman-wunsch sample:
 
    .. include:: /_include_files/open_sample_dgr.rst
 
@@ -101,21 +110,18 @@ compilation database.
    your Makefile out of ``CMakeLists.txt``. An example of a typical command is
    ``cmake ...``.
 
-#. Clean the application:
+#. Invoke the build command, prepending it with ``intercept-build``.
 
    .. code-block:: none
 
-      make clean
+      $ make clean
+      $ intercept-build make
 
-#. Invoke the build command, prepending it with ``intercept-build``:
-
-   .. code-block:: none
-
-      intercept-build make
+   This creates the file ``compile_commands.json`` in the working directory.
 
    The ``intercept-build`` script runs your project's build command without building
    the original program. It records all the compiler invocations and stores the
-   names of the input files and the compiler options in the compilation database file:
+   names of the input files and the compiler options in the compilation database file
    ``compile_commands.json``.
 
    .. note::
@@ -141,32 +147,33 @@ compilation database.
 
 By default, |tool_name| looks for the ``compile_commands.json`` file
 in the current directory and uses the compiler options from it for each input file.
-The location of the compilation database file can be changed using the ``-p``
-option.
 
-For example, the following command  will migrate ``some_file.cu`` if the
-information about it can be found in ``compiler_commands.json``,  located at
-``<some_path>``.
+Use the following command to migrate the CUDA code in the Rodinia needleman-wunsch
+sample, using the compilation database generated in the previous step:
 
 .. code-block:: none
 
-   dpct -p=some_path --in-root=../.. --out-root=dpct_output some_file.cu
+   dpct -p=compile_commands.json --in-root=. --out-root=migration
 
+The ``--in-root`` option sets the root location of the CUDA files that need
+migration. Only files and folders located within the ``--in-root`` directory will
+be considered for migration by the tool.
 
-To migrate all relevant files recorded inside the compilation database, use
-a command similar to:
+The ``--out-root`` option specifies the location for the migrated files.
+The new project will be created in the migration directory.
+
+The ``-p`` option specifies the path for the compilation database.
+
+After running the migration command, you should see the following files in the
+``migration`` output folder:
 
 .. code-block:: none
 
-   dpct -p compile_commands.json --in-root=. --out-root=migration
-
-If you run the command above with the Rodinia NW DPCT sample, you
-should see the following files in the ``migration`` out folder:
-
--  ``needle.h``
--  ``needle_kernel.dp.cpp``
--  ``needle.dp.cpp``
-
+   migration
+   └── src
+       ├── needle.h
+       ├── needle_kernel.dp.cpp
+       └── needle.dp.cpp
 
 **Step 3: Verify the Source for Correctness and Fix Anything the Tool was Unable
 to Migrate**
