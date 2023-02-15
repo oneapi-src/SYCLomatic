@@ -2673,8 +2673,9 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       EndLoc = SM->getExpansionRange(TL->getBeginLoc()).getEnd();
     }
 
-    std::string CanonicalTypeStr = DpctGlobalInfo::getTypeName(
-        TL->getUnqualifiedLoc().getType().getCanonicalType());
+    std::string CanonicalTypeStr =
+      DpctGlobalInfo::getUnqualifiedTypeName(
+        TL->getType().getCanonicalType());
     StringRef CanonicalTypeStrRef(CanonicalTypeStr);
     if (CanonicalTypeStrRef.startswith(
             "cooperative_groups::__v1::thread_block_tile<")) {
