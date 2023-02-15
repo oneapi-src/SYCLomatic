@@ -1890,7 +1890,7 @@ segmented_sort_keys(
 }
 // DPCT_LABEL_END
 
-// DPCT_LABEL_BEGIN|segmented_sort_pairs_io_iterator_pair|dpct
+// DPCT_LABEL_BEGIN|segmented_sort_keys_io_iterator_pair|dpct
 // DPCT_DEPENDENCY_BEGIN 
 // DplExtrasAlgorithm|segmented_sort_keys
 // DplExtrasIterators|io_iterator_pair
