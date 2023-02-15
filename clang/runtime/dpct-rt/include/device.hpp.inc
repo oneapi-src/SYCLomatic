@@ -65,22 +65,6 @@
 
 namespace dpct {
 
-namespace detail{
-
-// DPCT_LABEL_BEGIN|detail_warning|dpct::detail
-// DPCT_DEPENDENCY_EMPTY
-// DPCT_CODE
-inline void warning(const std::string &warning_msg) {
-#if defined(_MSC_VER) && !defined(__clang__)
-#pragma message(warning_msg)
-#else
-#warning warning_msg
-#endif
-}
-// DPCT_LABEL_END
-
-}
-
 // DPCT_LABEL_BEGIN|exception_handler|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
@@ -735,7 +719,6 @@ public:
 // Device|device_info_set_memory_clock_rate
 // Device|device_info_set_memory_bus_width
 // Device|device_info_set_max_register_size_per_work_group
-// Device|detail_warning
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void get_device_info(device_info &out) const {
@@ -780,12 +763,16 @@ public:
       prop.set_memory_bus_width(
           this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
     }
+#elif defined(_MSC_VER) && !defined(__clang__)
+#pragma message("get_device_info: querying memory_clock_rate and \
+memory_bus_width are not supported by the compiler used. \
+Use 3200000 kHz as memory_clock_rate default value. \
+Use 64 bits as memory_bus_width default value.")
 #else
-    deatil::warning(
-        "get_device_info: querying memory_clock_rate and memory_bus_width are "
-        "not supported by the compiler used. \nUse 3200000 kHz as "
-        "memory_clock_rate default value.\nUse 64 bits as memory_bus_width "
-        "default value.")
+#warning "get_device_info: querying memory_clock_rate and \
+memory_bus_width are not supported by the compiler used. \
+Use 3200000 kHz as memory_clock_rate default value. \
+Use 64 bits as memory_bus_width default value."
 #endif
 
     size_t max_sub_group_size = 1;

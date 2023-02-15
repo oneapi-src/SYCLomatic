@@ -93,8 +93,12 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudaDeviceProp",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "device_info",
                                       HelperFeatureEnum::Device_device_info)},
-      {"cudaError_t", std::make_shared<TypeNameRule>(getDpctNamespace() + "err0")},
-      {"cudaError", std::make_shared<TypeNameRule>(getDpctNamespace() + "err0")},
+      {"cudaError_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "err0",
+                                      HelperFeatureEnum::Util_err_types)},
+      {"cudaError",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "err0",
+                                      HelperFeatureEnum::Util_err_types)},
       {"CUresult", std::make_shared<TypeNameRule>("int")},
       {"CUcontext", std::make_shared<TypeNameRule>("int")},
       {"CUmodule", std::make_shared<TypeNameRule>(getDpctNamespace() + "kernel_library",
@@ -423,7 +427,9 @@ void MapNames::setExplicitNamespaceMap() {
       {"cudnnHandle_t",
        std::make_shared<TypeNameRule>(getDpctNamespace() + "dnnl::engine_ext",
                                       HelperFeatureEnum::DnnlUtils_engine_ext)},
-      {"cudnnStatus_t", std::make_shared<TypeNameRule>(getDpctNamespace() + "err1")},
+      {"cudnnStatus_t",
+       std::make_shared<TypeNameRule>(getDpctNamespace() + "err1",
+                                      HelperFeatureEnum::Util_err_types)},
       {"cudnnTensorDescriptor_t",
        std::make_shared<TypeNameRule>(
            getDpctNamespace() + "dnnl::memory_desc_ext",
@@ -4143,6 +4149,9 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
     {"cudaMemAttachGlobal",
      MacroMigrationRule("flag_macro_rule", RulePriority::Fallback,
                         "cudaMemAttachGlobal", "0")},
+    {"cudaStreamDefault",
+     MacroMigrationRule("cudaStreamDefault_rule", RulePriority::Fallback,
+                        "cudaStreamDefault", "0")},
     //...
 };
 
@@ -4338,10 +4347,6 @@ const MapNames::MapTy MemoryDataTypeRule::SizeOrPosToMember{
 
 const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
     "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType"};
-
-const MapNames::SetTy MapNames::PredefinedStreamName{
-    "cudaStreamDefault", "cudaStreamNonBlocking", "cudaStreamLegacy",
-    "cudaStreamPerThread"};
 
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "this_thread_block", "sync", "tiled_partition",
