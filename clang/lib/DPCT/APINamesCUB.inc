@@ -588,27 +588,33 @@ CONDITIONAL_FACTORY_ENTRY(
 CONDITIONAL_FACTORY_ENTRY(
     CheckCubRedundantFunctionCall(),
     REMOVE_API_FACTORY_ENTRY("cub::DeviceSegmentedReduce::Reduce"),
-    REMOVE_CUB_TEMP_STORAGE_FACTORY(FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::DplExtrasDpcppExtensions_segmented_reduce,
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_DPCT_DPL_Utils,
-            WARNING_FACTORY_ENTRY(
-                "cub::DeviceSegmentedReduce::Reduce",
+    REMOVE_CUB_TEMP_STORAGE_FACTORY(HEADER_INSERT_FACTORY(
+        HeaderType::HT_DPCT_DPL_Utils,
+        WARNING_FACTORY_ENTRY(
+            "cub::DeviceSegmentedReduce::Reduce",
+            CONDITIONAL_FACTORY_ENTRY(
+                makeCheckAnd(CheckArgCount(10, std::greater_equal<>(),
+                                           /* IncludeDefaultArg */ false),
+                             makeCheckNot(CheckArgIsDefaultCudaStream(9))),
                 CONDITIONAL_FACTORY_ENTRY(
-                    makeCheckAnd(CheckArgCount(10, std::greater_equal<>(), /* IncludeDefaultArg */false),
-                                 makeCheckNot(CheckArgIsDefaultCudaStream(9))),
-                    CONDITIONAL_FACTORY_ENTRY(
-                        checkArgCanMappingToSyclNativeBinaryOp(7),
+                    checkEnableUserDefineReductions(),
+                    FEATURE_REQUEST_FACTORY(
+                        HelperFeatureEnum::
+                            DplExtrasDpcppExtensions_segmented_reduce_ext,
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceSegmentedReduce::Reduce",
                             CALL(TEMPLATED_CALLEE_WITH_ARGS(
                                      MapNames::getDpctNamespace() +
-                                         "device::segmented_reduce",
+                                         "device::experimental::segmented_"
+                                         "reduce",
                                      LITERAL("128")),
                                  STREAM(9), ARG(2), ARG(3), ARG(4), ARG(5),
-                                 ARG(6), ARG(7), ARG(8))),
-                        WARNING_FACTORY_ENTRY(
-                            "cub::DeviceSegmentedReduce::Reduce",
+                                 ARG(6), ARG(7), ARG(8)))),
+                    FEATURE_REQUEST_FACTORY(
+                        HelperFeatureEnum::
+                            DplExtrasDpcppExtensions_segmented_reduce,
+                        CONDITIONAL_FACTORY_ENTRY(
+                            checkArgCanMappingToSyclNativeBinaryOp(7),
                             CALL_FACTORY_ENTRY(
                                 "cub::DeviceSegmentedReduce::Reduce",
                                 CALL(TEMPLATED_CALLEE_WITH_ARGS(
@@ -616,21 +622,38 @@ CONDITIONAL_FACTORY_ENTRY(
                                              "device::segmented_reduce",
                                          LITERAL("128")),
                                      STREAM(9), ARG(2), ARG(3), ARG(4), ARG(5),
-                                     ARG(6), LITERAL("dpct_placeholder"),
-                                     ARG(8))),
-                            Diagnostics::UNSUPPORTED_BINARY_OPERATION)),
-                    CONDITIONAL_FACTORY_ENTRY(
-                        checkArgCanMappingToSyclNativeBinaryOp(7),
+                                     ARG(6), ARG(7), ARG(8))),
+                            WARNING_FACTORY_ENTRY(
+                                "cub::DeviceSegmentedReduce::Reduce",
+                                CALL_FACTORY_ENTRY(
+                                    "cub::DeviceSegmentedReduce::Reduce",
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                             MapNames::getDpctNamespace() +
+                                                 "device::segmented_reduce",
+                                             LITERAL("128")),
+                                         STREAM(9), ARG(2), ARG(3), ARG(4),
+                                         ARG(5), ARG(6),
+                                         LITERAL("dpct_placeholder"), ARG(8))),
+                                Diagnostics::UNSUPPORTED_BINARY_OPERATION)))),
+                CONDITIONAL_FACTORY_ENTRY(
+                    checkEnableUserDefineReductions(),
+                    FEATURE_REQUEST_FACTORY(
+                        HelperFeatureEnum::
+                            DplExtrasDpcppExtensions_segmented_reduce_ext,
                         CALL_FACTORY_ENTRY(
                             "cub::DeviceSegmentedReduce::Reduce",
                             CALL(TEMPLATED_CALLEE_WITH_ARGS(
                                      MapNames::getDpctNamespace() +
-                                         "device::segmented_reduce",
+                                         "device::experimental::segmented_"
+                                         "reduce",
                                      LITERAL("128")),
                                  QUEUESTR, ARG(2), ARG(3), ARG(4), ARG(5),
-                                 ARG(6), ARG(7), ARG(8))),
-                        WARNING_FACTORY_ENTRY(
-                            "cub::DeviceSegmentedReduce::Reduce",
+                                 ARG(6), ARG(7), ARG(8)))),
+                    FEATURE_REQUEST_FACTORY(
+                        HelperFeatureEnum::
+                            DplExtrasDpcppExtensions_segmented_reduce,
+                        CONDITIONAL_FACTORY_ENTRY(
+                            checkArgCanMappingToSyclNativeBinaryOp(7),
                             CALL_FACTORY_ENTRY(
                                 "cub::DeviceSegmentedReduce::Reduce",
                                 CALL(TEMPLATED_CALLEE_WITH_ARGS(
@@ -638,10 +661,20 @@ CONDITIONAL_FACTORY_ENTRY(
                                              "device::segmented_reduce",
                                          LITERAL("128")),
                                      QUEUESTR, ARG(2), ARG(3), ARG(4), ARG(5),
-                                     ARG(6), LITERAL("dpct_placeholder"),
-                                     ARG(8))),
-                            Diagnostics::UNSUPPORTED_BINARY_OPERATION))),
-                Diagnostics::REDUCE_PERFORMANCE_TUNE)))))
+                                     ARG(6), ARG(7), ARG(8))),
+                            WARNING_FACTORY_ENTRY(
+                                "cub::DeviceSegmentedReduce::Reduce",
+                                CALL_FACTORY_ENTRY(
+                                    "cub::DeviceSegmentedReduce::Reduce",
+                                    CALL(TEMPLATED_CALLEE_WITH_ARGS(
+                                             MapNames::getDpctNamespace() +
+                                                 "device::segmented_reduce",
+                                             LITERAL("128")),
+                                         QUEUESTR, ARG(2), ARG(3), ARG(4),
+                                         ARG(5), ARG(6),
+                                         LITERAL("dpct_placeholder"), ARG(8))),
+                                Diagnostics::UNSUPPORTED_BINARY_OPERATION))))),
+            Diagnostics::REDUCE_PERFORMANCE_TUNE))))
 
 // cub::DeviceSegmentedReduce::Sum
 CONDITIONAL_FACTORY_ENTRY(
