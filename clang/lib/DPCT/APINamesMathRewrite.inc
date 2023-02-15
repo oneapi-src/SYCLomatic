@@ -80,6 +80,75 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hsub_sat"), EMPTY_FACTORY_ENTRY("__hsub_sat")))
 
+MATH_API_REWRITER_DEVICE(
+    "__hneg",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hneg"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hneg", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hneg",
+                                              ARG(0)))),
+        EMPTY_FACTORY_ENTRY("__hneg"), UNARY_OP_FACTORY_ENTRY("__hneg",
+                                        UnaryOperatorKind::UO_Minus,
+                                        makeCallArgCreatorWithCall(0))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hsub",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hsub"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hsub", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hsub",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hsub"), BINARY_OP_FACTORY_ENTRY("__hsub",
+                                        BinaryOperatorKind::BO_Sub,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "hdiv",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("hdiv"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("hdiv", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hdiv",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("hdiv"), BINARY_OP_FACTORY_ENTRY("hdiv",
+                                        BinaryOperatorKind::BO_Div,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hmul",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmul"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmul", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hmul",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmul"), BINARY_OP_FACTORY_ENTRY("__hmul",
+                                        BinaryOperatorKind::BO_Mul,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hdiv",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hdiv"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hdiv", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hdiv",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hdiv"), BINARY_OP_FACTORY_ENTRY("__hdiv",
+                                        BinaryOperatorKind::BO_Div,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
+
 // Half2 Arithmetic Functions
 MATH_API_REWRITER_DEVICE(
     "__hadd2_sat",
@@ -129,6 +198,87 @@ MATH_API_REWRITER_DEVICE(
                                     ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hsub2_sat"), EMPTY_FACTORY_ENTRY("__hsub2_sat")))
 
+MATH_API_REWRITER_DEVICE(
+    "__hsub2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hsub2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hsub2", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hsub2",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hsub2"), BINARY_OP_FACTORY_ENTRY("__hsub2",
+                                        BinaryOperatorKind::BO_Sub,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hmul2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hmul2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hmul2", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hmul2",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hmul2"), BINARY_OP_FACTORY_ENTRY("__hmul2",
+                                        BinaryOperatorKind::BO_Mul,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "h2div",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("h2div"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("h2div", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::h2div",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("h2div"), BINARY_OP_FACTORY_ENTRY("h2div",
+                                        BinaryOperatorKind::BO_Div,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
+MATH_API_REWRITER_DEVICE(
+    "__hneg2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hneg2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hneg2", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hneg2",
+                                              ARG(0)))),
+        EMPTY_FACTORY_ENTRY("__hneg2"), UNARY_OP_FACTORY_ENTRY("__hneg2",
+                                        UnaryOperatorKind::UO_Minus,
+                                        makeCallArgCreatorWithCall(0))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hadd2",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hadd2"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hadd2", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hadd2",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hadd2"), BINARY_OP_FACTORY_ENTRY("__hadd2",
+                                        BinaryOperatorKind::BO_Add,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "__h2div",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__h2div"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__h2div", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::h2div",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__h2div"), BINARY_OP_FACTORY_ENTRY("__h2div",
+                                        BinaryOperatorKind::BO_Div,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 // Half Comparison Functions
 MATH_API_REWRITER_DEVICE(
     "__hequ",
@@ -195,6 +345,90 @@ MATH_API_REWRITER_DEVICE(
                                                   "ext::intel::math::hneu",
                                               ARG(0), ARG(1)))),
         EMPTY_FACTORY_ENTRY("__hneu"), EMPTY_FACTORY_ENTRY("__hneu")))
+
+MATH_API_REWRITER_DEVICE(
+    "__heq",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__heq"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__heq", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::heq",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__heq"), BINARY_OP_FACTORY_ENTRY("__heq",
+                                        BinaryOperatorKind::BO_EQ,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hne",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hne"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hne", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hne",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hne"), BINARY_OP_FACTORY_ENTRY("__hne",
+                                        BinaryOperatorKind::BO_NE,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hge",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hge"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hge", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hge",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hge"), BINARY_OP_FACTORY_ENTRY("__hge",
+                                        BinaryOperatorKind::BO_GE,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hgt",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hgt"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hgt", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hgt",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hgt"), BINARY_OP_FACTORY_ENTRY("__hgt",
+                                        BinaryOperatorKind::BO_GT,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hle",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hle"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hle", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hle",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hle"), BINARY_OP_FACTORY_ENTRY("__hle",
+                                        BinaryOperatorKind::BO_LE,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
+
+MATH_API_REWRITER_DEVICE(
+    "__hlt",
+    MATH_API_DEVICE_NODES(
+        EMPTY_FACTORY_ENTRY("__hlt"),
+        HEADER_INSERT_FACTORY(
+            HeaderType::HT_SYCL_Math,
+            CALL_FACTORY_ENTRY("__hlt", CALL(MapNames::getClNamespace() +
+                                                  "ext::intel::math::hlt",
+                                              ARG(0), ARG(1)))),
+        EMPTY_FACTORY_ENTRY("__hlt"), BINARY_OP_FACTORY_ENTRY("__hlt",
+                                        BinaryOperatorKind::BO_LT,
+                                        makeCallArgCreatorWithCall(0),
+                                        makeCallArgCreatorWithCall(1))))
 
 // Half2 Comparison Functions
 MATH_API_REWRITER_DEVICE(
@@ -515,245 +749,23 @@ MATH_API_REWRITER_HOST_DEVICE(
 MATH_API_REWRITER_DEVICE(
     "saturate",
     MATH_API_DEVICE_NODES(
-    CALL_FACTORY_ENTRY("saturate",
-                CALL(MapNames::getClNamespace(false, true) +
-                        "clamp<float>",
-                    ARG(0), ARG("0.0f"), ARG("1.0f"))),
-    EMPTY_FACTORY_ENTRY("saturate"), EMPTY_FACTORY_ENTRY("saturate"),
-    EMPTY_FACTORY_ENTRY("saturate")))
+        CALL_FACTORY_ENTRY("saturate",
+                    CALL(MapNames::getClNamespace(false, true) +
+                            "clamp<float>",
+                        ARG(0), ARG("0.0f"), ARG("1.0f"))),
+        EMPTY_FACTORY_ENTRY("saturate"), EMPTY_FACTORY_ENTRY("saturate"),
+        EMPTY_FACTORY_ENTRY("saturate")))
 
-MATH_API_REWRITER_DEVICE(
-    "__hneg",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__hneg"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__hneg", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hneg",
-                                              ARG(0)))),
-        EMPTY_FACTORY_ENTRY("__hneg"), UNARY_OP_FACTORY_ENTRY("__hneg",
-                                        UnaryOperatorKind::UO_Minus,
-                                        makeCallArgCreatorWithCall(0))))
 
-MATH_API_REWRITER_DEVICE(
-    "__hneg2",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__hneg2"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__hneg2", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hneg2",
-                                              ARG(0)))),
-        EMPTY_FACTORY_ENTRY("__hneg2"), UNARY_OP_FACTORY_ENTRY("__hneg2",
-                                        UnaryOperatorKind::UO_Minus,
-                                        makeCallArgCreatorWithCall(0))))
 
-MATH_API_REWRITER_DEVICE(
-    "__hadd2",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__hadd2"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__hadd2", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hadd2",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("__hadd2"), BINARY_OP_FACTORY_ENTRY("__hadd2",
-                                        BinaryOperatorKind::BO_Add,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
 
-MATH_API_REWRITER_DEVICE(
-    "__h2div",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__h2div"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__h2div", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::h2div",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("__h2div"), BINARY_OP_FACTORY_ENTRY("__h2div",
-                                        BinaryOperatorKind::BO_Div,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
 
-MATH_API_REWRITER_DEVICE(
-    "__hdiv",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__hdiv"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__hdiv", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hdiv",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("__hdiv"), BINARY_OP_FACTORY_ENTRY("__hdiv",
-                                        BinaryOperatorKind::BO_Div,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
 
-MATH_API_REWRITER_DEVICE(
-    "h2div",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("h2div"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("h2div", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::h2div",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("h2div"), BINARY_OP_FACTORY_ENTRY("h2div",
-                                        BinaryOperatorKind::BO_Div,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
 
-MATH_API_REWRITER_DEVICE(
-    "hdiv",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("hdiv"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("hdiv", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hdiv",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("hdiv"), BINARY_OP_FACTORY_ENTRY("hdiv",
-                                        BinaryOperatorKind::BO_Div,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
 
-MATH_API_REWRITER_DEVICE(
-    "__hmul",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__hmul"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__hmul", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hmul",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("__hmul"), BINARY_OP_FACTORY_ENTRY("__hmul",
-                                        BinaryOperatorKind::BO_Mul,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
 
-MATH_API_REWRITER_DEVICE(
-    "__hmul2",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__hmul2"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__hmul2", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hmul2",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("__hmul2"), BINARY_OP_FACTORY_ENTRY("__hmul2",
-                                        BinaryOperatorKind::BO_Mul,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
 
-MATH_API_REWRITER_DEVICE(
-    "__hsub",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__hsub"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__hsub", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hsub",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("__hsub"), BINARY_OP_FACTORY_ENTRY("__hsub",
-                                        BinaryOperatorKind::BO_Sub,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
 
-MATH_API_REWRITER_DEVICE(
-    "__hsub2",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__hsub2"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__hsub2", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hsub2",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("__hsub2"), BINARY_OP_FACTORY_ENTRY("__hsub2",
-                                        BinaryOperatorKind::BO_Sub,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
 
-MATH_API_REWRITER_DEVICE(
-    "__heq",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__heq"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__heq", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::heq",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("__heq"), BINARY_OP_FACTORY_ENTRY("__heq",
-                                        BinaryOperatorKind::BO_EQ,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
 
-MATH_API_REWRITER_DEVICE(
-    "__hne",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__hne"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__hne", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hne",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("__hne"), BINARY_OP_FACTORY_ENTRY("__hne",
-                                        BinaryOperatorKind::BO_NE,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
 
-MATH_API_REWRITER_DEVICE(
-    "__hge",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__hge"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__hge", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hge",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("__hge"), BINARY_OP_FACTORY_ENTRY("__hge",
-                                        BinaryOperatorKind::BO_GE,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
-
-MATH_API_REWRITER_DEVICE(
-    "__hgt",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__hgt"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__hgt", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hgt",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("__hgt"), BINARY_OP_FACTORY_ENTRY("__hgt",
-                                        BinaryOperatorKind::BO_GT,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
-
-MATH_API_REWRITER_DEVICE(
-    "__hle",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__hle"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__hle", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hle",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("__hle"), BINARY_OP_FACTORY_ENTRY("__hle",
-                                        BinaryOperatorKind::BO_LE,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
-
-MATH_API_REWRITER_DEVICE(
-    "__hlt",
-    MATH_API_DEVICE_NODES(
-        EMPTY_FACTORY_ENTRY("__hlt"),
-        HEADER_INSERT_FACTORY(
-            HeaderType::HT_SYCL_Math,
-            CALL_FACTORY_ENTRY("__hlt", CALL(MapNames::getClNamespace() +
-                                                  "ext::intel::math::hlt",
-                                              ARG(0), ARG(1)))),
-        EMPTY_FACTORY_ENTRY("__hlt"), BINARY_OP_FACTORY_ENTRY("__hlt",
-                                        BinaryOperatorKind::BO_LT,
-                                        makeCallArgCreatorWithCall(0),
-                                        makeCallArgCreatorWithCall(1))))
