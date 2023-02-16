@@ -820,7 +820,7 @@ inline void async_dpct_free(std::vector<void *> pointers,
                             sycl::queue &q = get_default_queue()) {
   q.submit([&](sycl::handler &cgh) {
     cgh.depends_on(events);
-    cgh.host_task([=] {
+    cgh.host_task([=, &q] {
       for (auto p : pointers)
         if (p) {
           dpct_free(p, q);
