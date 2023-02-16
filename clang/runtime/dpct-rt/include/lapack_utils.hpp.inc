@@ -465,10 +465,10 @@ inline int lapack_shim(sycl::queue &q, library_data_t a_type, int *info,
     try {
       std::rethrow_exception(be.exceptions()[0]);
     } catch (oneapi::mkl::lapack::exception &e) {
-      return handle_lapack_exception(lapack_api_name, e, info, q);
+      return handle_lapack_exception(e);
     }
   } catch (oneapi::mkl::lapack::exception const &e) {
-    return handle_lapack_exception(lapack_api_name, e, info, q);
+    return handle_lapack_exception(e);
   } catch (sycl::exception const &e) {
     std::cerr << "Caught synchronous SYCL exception:" << std::endl
               << "reason: " << e.what() << std::endl;
