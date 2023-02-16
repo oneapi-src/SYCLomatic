@@ -466,10 +466,10 @@ void foo7() {
   size_t host_ws_size_z;
   cusolverDnParams_t params;
 
-  //CHECK:dpct::lapack::gesvd_scratchpad_size(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::real_float, 2, dpct::library_data_t::real_float, 2, dpct::library_data_t::real_float, 2, &device_ws_size_s, &host_ws_size_s);
-  //CHECK-NEXT:dpct::lapack::gesvd_scratchpad_size(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::real_double, 2, dpct::library_data_t::real_double, 2, dpct::library_data_t::real_double, 2, &device_ws_size_d, &host_ws_size_d);
-  //CHECK-NEXT:dpct::lapack::gesvd_scratchpad_size(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::complex_float, 2, dpct::library_data_t::complex_float, 2, dpct::library_data_t::complex_float, 2, &device_ws_size_c, &host_ws_size_c);
-  //CHECK-NEXT:dpct::lapack::gesvd_scratchpad_size(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::complex_double, 2, dpct::library_data_t::complex_double, 2, dpct::library_data_t::complex_double, 2, &device_ws_size_z, &host_ws_size_z);
+  //CHECK:dpct::lapack::gesvd_scratchpad_size(*handle, 'A', 'A', 2, 2, dpct::library_data_t::real_float, 2, dpct::library_data_t::real_float, 2, dpct::library_data_t::real_float, 2, &device_ws_size_s, &host_ws_size_s);
+  //CHECK-NEXT:dpct::lapack::gesvd_scratchpad_size(*handle, 'A', 'A', 2, 2, dpct::library_data_t::real_double, 2, dpct::library_data_t::real_double, 2, dpct::library_data_t::real_double, 2, &device_ws_size_d, &host_ws_size_d);
+  //CHECK-NEXT:dpct::lapack::gesvd_scratchpad_size(*handle, 'A', 'A', 2, 2, dpct::library_data_t::complex_float, 2, dpct::library_data_t::complex_float, 2, dpct::library_data_t::complex_float, 2, &device_ws_size_c, &host_ws_size_c);
+  //CHECK-NEXT:dpct::lapack::gesvd_scratchpad_size(*handle, 'A', 'A', 2, 2, dpct::library_data_t::complex_double, 2, dpct::library_data_t::complex_double, 2, dpct::library_data_t::complex_double, 2, &device_ws_size_z, &host_ws_size_z);
   cusolverDnXgesvd_bufferSize(handle, params, 'A', 'A', 2, 2, CUDA_R_32F, a_s, 2, CUDA_R_32F, s_s, CUDA_R_32F, u_s, 2, CUDA_R_32F, vt_s, 2, CUDA_R_32F, &device_ws_size_s, &host_ws_size_s);
   cusolverDnXgesvd_bufferSize(handle, params, 'A', 'A', 2, 2, CUDA_R_64F, a_d, 2, CUDA_R_64F, s_d, CUDA_R_64F, u_d, 2, CUDA_R_64F, vt_d, 2, CUDA_R_64F, &device_ws_size_d, &host_ws_size_d);
   cusolverDnXgesvd_bufferSize(handle, params, 'A', 'A', 2, 2, CUDA_C_32F, a_c, 2, CUDA_R_32F, s_c, CUDA_C_32F, u_c, 2, CUDA_C_32F, vt_c, 2, CUDA_C_32F, &device_ws_size_c, &host_ws_size_c);
@@ -485,10 +485,10 @@ void foo7() {
   void* host_ws_z;
   int *info;
 
-  //CHECK:dpct::lapack::gesvd(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::real_float, a_s, 2, dpct::library_data_t::real_float, s_s, dpct::library_data_t::real_float, u_s, 2, dpct::library_data_t::real_float, vt_s, 2, device_ws_s, device_ws_size_s, info);
-  //CHECK-NEXT:dpct::lapack::gesvd(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::real_double, a_d, 2, dpct::library_data_t::real_double, s_d, dpct::library_data_t::real_double, u_d, 2, dpct::library_data_t::real_double, vt_d, 2, device_ws_d, device_ws_size_d, info);
-  //CHECK-NEXT:dpct::lapack::gesvd(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::complex_float, a_c, 2, dpct::library_data_t::real_float, s_c, dpct::library_data_t::complex_float, u_c, 2, dpct::library_data_t::complex_float, vt_c, 2, device_ws_c, device_ws_size_c, info);
-  //CHECK-NEXT:dpct::lapack::gesvd(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::complex_double, a_z, 2, dpct::library_data_t::real_double, s_z, dpct::library_data_t::complex_double, u_z, 2, dpct::library_data_t::complex_double, vt_z, 2, device_ws_z, device_ws_size_z, info);
+  //CHECK:dpct::lapack::gesvd(*handle, 'A', 'A', 2, 2, dpct::library_data_t::real_float, a_s, 2, dpct::library_data_t::real_float, s_s, dpct::library_data_t::real_float, u_s, 2, dpct::library_data_t::real_float, vt_s, 2, device_ws_s, device_ws_size_s, info);
+  //CHECK-NEXT:dpct::lapack::gesvd(*handle, 'A', 'A', 2, 2, dpct::library_data_t::real_double, a_d, 2, dpct::library_data_t::real_double, s_d, dpct::library_data_t::real_double, u_d, 2, dpct::library_data_t::real_double, vt_d, 2, device_ws_d, device_ws_size_d, info);
+  //CHECK-NEXT:dpct::lapack::gesvd(*handle, 'A', 'A', 2, 2, dpct::library_data_t::complex_float, a_c, 2, dpct::library_data_t::real_float, s_c, dpct::library_data_t::complex_float, u_c, 2, dpct::library_data_t::complex_float, vt_c, 2, device_ws_c, device_ws_size_c, info);
+  //CHECK-NEXT:dpct::lapack::gesvd(*handle, 'A', 'A', 2, 2, dpct::library_data_t::complex_double, a_z, 2, dpct::library_data_t::real_double, s_z, dpct::library_data_t::complex_double, u_z, 2, dpct::library_data_t::complex_double, vt_z, 2, device_ws_z, device_ws_size_z, info);
   cusolverDnXgesvd(handle, params, 'A', 'A', 2, 2, CUDA_R_32F, a_s, 2, CUDA_R_32F, s_s, CUDA_R_32F, u_s, 2, CUDA_R_32F, vt_s, 2, CUDA_R_32F, device_ws_s, device_ws_size_s, host_ws_s, host_ws_size_s, info);
   cusolverDnXgesvd(handle, params, 'A', 'A', 2, 2, CUDA_R_64F, a_d, 2, CUDA_R_64F, s_d, CUDA_R_64F, u_d, 2, CUDA_R_64F, vt_d, 2, CUDA_R_64F, device_ws_d, device_ws_size_d, host_ws_d, host_ws_size_d, info);
   cusolverDnXgesvd(handle, params, 'A', 'A', 2, 2, CUDA_C_32F, a_c, 2, CUDA_R_32F, s_c, CUDA_C_32F, u_c, 2, CUDA_C_32F, vt_c, 2, CUDA_C_32F, device_ws_c, device_ws_size_c, host_ws_c, host_ws_size_c, info);
@@ -507,10 +507,10 @@ void foo8() {
   cusolverDnHandle_t handle;
   cusolverDnParams_t params;
 
-  //CHECK:dpct::lapack::gesvd_scratchpad_size(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::real_float, 2, dpct::library_data_t::real_float, 2, dpct::library_data_t::real_float, 2, &device_ws_size_s);
-  //CHECK-NEXT:dpct::lapack::gesvd_scratchpad_size(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::real_double, 2, dpct::library_data_t::real_double, 2, dpct::library_data_t::real_double, 2, &device_ws_size_d);
-  //CHECK-NEXT:dpct::lapack::gesvd_scratchpad_size(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::complex_float, 2, dpct::library_data_t::complex_float, 2, dpct::library_data_t::complex_float, 2, &device_ws_size_c);
-  //CHECK-NEXT:dpct::lapack::gesvd_scratchpad_size(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::complex_double, 2, dpct::library_data_t::complex_double, 2, dpct::library_data_t::complex_double, 2, &device_ws_size_z);
+  //CHECK:dpct::lapack::gesvd_scratchpad_size(*handle, 'A', 'A', 2, 2, dpct::library_data_t::real_float, 2, dpct::library_data_t::real_float, 2, dpct::library_data_t::real_float, 2, &device_ws_size_s);
+  //CHECK-NEXT:dpct::lapack::gesvd_scratchpad_size(*handle, 'A', 'A', 2, 2, dpct::library_data_t::real_double, 2, dpct::library_data_t::real_double, 2, dpct::library_data_t::real_double, 2, &device_ws_size_d);
+  //CHECK-NEXT:dpct::lapack::gesvd_scratchpad_size(*handle, 'A', 'A', 2, 2, dpct::library_data_t::complex_float, 2, dpct::library_data_t::complex_float, 2, dpct::library_data_t::complex_float, 2, &device_ws_size_c);
+  //CHECK-NEXT:dpct::lapack::gesvd_scratchpad_size(*handle, 'A', 'A', 2, 2, dpct::library_data_t::complex_double, 2, dpct::library_data_t::complex_double, 2, dpct::library_data_t::complex_double, 2, &device_ws_size_z);
   cusolverDnGesvd_bufferSize(handle, params, 'A', 'A', 2, 2, CUDA_R_32F, a_s, 2, CUDA_R_32F, s_s, CUDA_R_32F, u_s, 2, CUDA_R_32F, vt_s, 2, CUDA_R_32F, &device_ws_size_s);
   cusolverDnGesvd_bufferSize(handle, params, 'A', 'A', 2, 2, CUDA_R_64F, a_d, 2, CUDA_R_64F, s_d, CUDA_R_64F, u_d, 2, CUDA_R_64F, vt_d, 2, CUDA_R_64F, &device_ws_size_d);
   cusolverDnGesvd_bufferSize(handle, params, 'A', 'A', 2, 2, CUDA_C_32F, a_c, 2, CUDA_R_32F, s_c, CUDA_C_32F, u_c, 2, CUDA_C_32F, vt_c, 2, CUDA_C_32F, &device_ws_size_c);
@@ -522,10 +522,10 @@ void foo8() {
   void* device_ws_z;
   int *info;
 
-  //CHECK:dpct::lapack::gesvd(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::real_float, a_s, 2, dpct::library_data_t::real_float, s_s, dpct::library_data_t::real_float, u_s, 2, dpct::library_data_t::real_float, vt_s, 2, device_ws_s, device_ws_size_s, info);
-  //CHECK-NEXT:dpct::lapack::gesvd(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::real_double, a_d, 2, dpct::library_data_t::real_double, s_d, dpct::library_data_t::real_double, u_d, 2, dpct::library_data_t::real_double, vt_d, 2, device_ws_d, device_ws_size_d, info);
-  //CHECK-NEXT:dpct::lapack::gesvd(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::complex_float, a_c, 2, dpct::library_data_t::real_float, s_c, dpct::library_data_t::complex_float, u_c, 2, dpct::library_data_t::complex_float, vt_c, 2, device_ws_c, device_ws_size_c, info);
-  //CHECK-NEXT:dpct::lapack::gesvd(*handle, dpct::lapack::char2jobsvd('A'), dpct::lapack::char2jobsvd('A'), 2, 2, dpct::library_data_t::complex_double, a_z, 2, dpct::library_data_t::real_double, s_z, dpct::library_data_t::complex_double, u_z, 2, dpct::library_data_t::complex_double, vt_z, 2, device_ws_z, device_ws_size_z, info);
+  //CHECK:dpct::lapack::gesvd(*handle, 'A', 'A', 2, 2, dpct::library_data_t::real_float, a_s, 2, dpct::library_data_t::real_float, s_s, dpct::library_data_t::real_float, u_s, 2, dpct::library_data_t::real_float, vt_s, 2, device_ws_s, device_ws_size_s, info);
+  //CHECK-NEXT:dpct::lapack::gesvd(*handle, 'A', 'A', 2, 2, dpct::library_data_t::real_double, a_d, 2, dpct::library_data_t::real_double, s_d, dpct::library_data_t::real_double, u_d, 2, dpct::library_data_t::real_double, vt_d, 2, device_ws_d, device_ws_size_d, info);
+  //CHECK-NEXT:dpct::lapack::gesvd(*handle, 'A', 'A', 2, 2, dpct::library_data_t::complex_float, a_c, 2, dpct::library_data_t::real_float, s_c, dpct::library_data_t::complex_float, u_c, 2, dpct::library_data_t::complex_float, vt_c, 2, device_ws_c, device_ws_size_c, info);
+  //CHECK-NEXT:dpct::lapack::gesvd(*handle, 'A', 'A', 2, 2, dpct::library_data_t::complex_double, a_z, 2, dpct::library_data_t::real_double, s_z, dpct::library_data_t::complex_double, u_z, 2, dpct::library_data_t::complex_double, vt_z, 2, device_ws_z, device_ws_size_z, info);
   cusolverDnGesvd(handle, params, 'A', 'A', 2, 2, CUDA_R_32F, a_s, 2, CUDA_R_32F, s_s, CUDA_R_32F, u_s, 2, CUDA_R_32F, vt_s, 2, CUDA_R_32F, device_ws_s, device_ws_size_s, info);
   cusolverDnGesvd(handle, params, 'A', 'A', 2, 2, CUDA_R_64F, a_d, 2, CUDA_R_64F, s_d, CUDA_R_64F, u_d, 2, CUDA_R_64F, vt_d, 2, CUDA_R_64F, device_ws_d, device_ws_size_d, info);
   cusolverDnGesvd(handle, params, 'A', 'A', 2, 2, CUDA_C_32F, a_c, 2, CUDA_R_32F, s_c, CUDA_C_32F, u_c, 2, CUDA_C_32F, vt_c, 2, CUDA_C_32F, device_ws_c, device_ws_size_c, info);
