@@ -1219,9 +1219,7 @@ inline void segmented_sort_pairs_by_parallel_sorts(
 
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename OffsetIteratorT>
-inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
-                          dpct::internal::is_iterator<key_out_t>::value>
-segmented_sort_keys_by_parallel_sorts(
+inline void segmented_sort_keys_by_parallel_sorts(
     _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, int64_t n,
     int64_t nsegments, OffsetIteratorT begin_offsets,
      OffsetIteratorT end_offsets, bool descending = false, int begin_bit = 0,
@@ -1282,9 +1280,7 @@ inline void segmented_sort_pairs_by_parallel_for_of_sorts(
 
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename OffsetIteratorT>
-inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
-                          dpct::internal::is_iterator<key_out_t>::value>
-segmented_sort_keys_by_parallel_for_of_sorts(
+inline void segmented_sort_keys_by_parallel_for_of_sorts(
     _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, int64_t n,
     int64_t nsegments, OffsetIteratorT begin_offsets,
     OffsetIteratorT end_offsets, bool descending = false, int begin_bit = 0,
@@ -1384,9 +1380,7 @@ inline void mark_segments(_ExecutionPolicy &&policy,
 
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename OffsetIteratorT>
-inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
-                          dpct::internal::is_iterator<key_out_t>::value>
-segmented_sort_keys_by_two_pair_sorts(
+inline void segmented_sort_keys_by_two_pair_sorts(
     _ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out, int64_t n,
     int64_t nsegments, OffsetIteratorT begin_offsets,
     OffsetIteratorT end_offsets, bool descending = false, int begin_bit = 0,
@@ -1459,10 +1453,10 @@ inline void segmented_sort_pairs_by_two_pair_sorts(
 
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t,
           typename value_t, typename value_out_t>
-inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value && 
+inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
                         dpct::internal::is_iterator<key_out_t>::value &&
                         dpct::internal::is_iterator<value_t>::value &&
-                        dpct::internal::is_iterator<value_out_t>::value> 
+                        dpct::internal::is_iterator<value_out_t>::value>
 sort_pairs(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
                 value_t values_in, value_out_t values_out, int64_t n,
                 bool descending, int begin_bit, int end_bit) {
@@ -1489,7 +1483,7 @@ inline void sort_pairs(
 }
 
 template <typename _ExecutionPolicy, typename key_t, typename key_out_t>
-inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value && 
+inline ::std::enable_if_t<dpct::internal::is_iterator<key_t>::value &&
                         dpct::internal::is_iterator<key_out_t>::value>
 sort_keys(_ExecutionPolicy &&policy, key_t keys_in, key_out_t keys_out,
           int64_t n, bool descending, int begin_bit, int end_bit) {
