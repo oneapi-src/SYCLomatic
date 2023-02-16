@@ -1574,7 +1574,7 @@ inline void mark_segments(_ExecutionPolicy &&policy,
   ::std::size_t sub_group_size = sg_sizes.empty() ? 0 : sg_sizes.back();
 
   float avg_seg_size = (float)n / (float)nsegments;
- if (avg_seg_size > work_group_size) {
+  if (avg_seg_size > work_group_size) {
     // If average segment size is larger than workgroup, use workgroup to
     // coordinate to mark segments
     policy.queue()
