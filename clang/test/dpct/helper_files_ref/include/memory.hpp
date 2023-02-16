@@ -809,7 +809,6 @@ static inline void dpct_free(void *ptr,
   }
 }
 
-#ifndef DPCT_USM_LEVEL_NONE
 /// Free the device memory pointed by a batch of pointers in \p pointers which
 /// are related to \p q after \p events completed.
 ///
@@ -819,17 +818,16 @@ static inline void dpct_free(void *ptr,
 inline void async_dpct_free(std::vector<void *> pointers,
                             std::vector<sycl::event> events,
                             sycl::queue &q = get_default_queue()) {
-  std::thread t(
-      [](std::vector<void *> pointers, std::vector<sycl::event> events,
-         sycl::context ctxt) {
-        sycl::event::wait(events);
-        for (auto p : pointers)
-          sycl::free(p, ctxt);
-      },
-      std::move(pointers), std::move(events), q.get_context());
-  get_current_device().add_task(std::move(t));
+  q.submit([&](sycl::handler &cgh) {
+    cgh.depends_on(events);
+    cgh.host_task([=] {
+      for (auto p : pointers)
+        if (p) {
+          dpct_free(p, q);
+        }
+    });
+  });
 }
-#endif
 
 /// Synchronously copies \p size bytes from the address specified by \p from_ptr
 /// to the address specified by \p to_ptr. The value of \p direction is used to

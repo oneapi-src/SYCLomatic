@@ -465,13 +465,6 @@ private:
     i++;
     minor = std::stoi(&(ver[i]));
   }
-  void add_task(std::thread &&task) {
-    std::lock_guard<std::recursive_mutex> lock(m_mutex);
-    _tasks.push_back(std::move(task));
-  }
-  friend void async_dpct_free(std::vector<void *>,
-                              std::vector<sycl::event>,
-                              sycl::queue &);
   sycl::queue *_default_queue;
   sycl::queue *_saved_queue;
   sycl::context _ctx;
