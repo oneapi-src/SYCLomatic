@@ -198,6 +198,15 @@ public:
     }
     return result;
   }
+
+  operator bool() {
+    return bool(_desc);
+  }
+
+  memory_desc_ext &operator=(std::nullptr_t) {
+    _desc.reset(nullptr);
+    return *this;
+  }
 };
 // DPCT_LABEL_END
 
@@ -652,6 +661,16 @@ public:
                          (1 + (_dilates[i - 2] * (weight_dims[i] - 1)))) /
                             _strides[i - 2];
     }
+  }
+
+  convolution_desc &operator=(std::nullptr_t) {
+    return *this = convolution_desc();
+  }
+
+  operator bool() {
+    return _strides.size() == 0
+      && _dilates.size() == 0
+      && _paddings.size() == 0;
   }
 };
 // DPCT_LABEL_END
@@ -2110,6 +2129,16 @@ public:
       size_t workspace_size, void *workspace);
 // DPCT_LABEL_END
 
+  operator bool() {
+    return bool(_eng) && bool(_s) && bool(_q);
+  }
+
+  engine_ext &operator=(std::nullptr_t) {
+    _eng.reset(nullptr);
+    _s.reset(nullptr);
+    _q = nullptr;
+    return *this;
+  }
 // DPCT_LABEL_BEGIN|engine_ext_1|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
