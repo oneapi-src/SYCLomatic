@@ -1,3 +1,7 @@
 ##SYCLomatic
+<<<<<<< HEAD
 clang/  @zhimingwang36 @tomflinda @AndyCHHuang @intwanghao @zhiweij1 @ziranzha
 clang/  @oneapi-src/syclomatic-reviewers 
+=======
+clang/  @oneapi-src/syclomatic-reviewers
+>>>>>>> SYCLomatic/SYCLomatic
