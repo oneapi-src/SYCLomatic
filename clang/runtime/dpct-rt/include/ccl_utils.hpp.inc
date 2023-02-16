@@ -75,6 +75,7 @@ get_kvs(const oneapi::ccl::kvs::address_type &addr) {
 // DPCT_CODE
 /// Get concatenated library version as an integer.
 static inline int get_version() {
+  oneapi::ccl::init();
   auto ver = oneapi::ccl::get_library_version();
   return ver.major * 10000 + ver.minor * 100 + ver.update;
 }
@@ -87,6 +88,7 @@ static inline int get_version() {
 // DPCT_CODE
 /// Create main kvs and return its address.
 static inline oneapi::ccl::kvs::address_type create_kvs_address() {
+  oneapi::ccl::init();
   auto ptr = oneapi::ccl::create_main_kvs();
   auto addr = ptr->get_address();
   detail::get_kvs(addr) = ptr;
@@ -103,6 +105,7 @@ static inline oneapi::ccl::kvs::address_type create_kvs_address() {
 /// Get stored kvs with /p addr if exist. Otherwise, create kvs with /p addr.
 static inline std::shared_ptr<oneapi::ccl::kvs>
 create_kvs(const oneapi::ccl::kvs::address_type &addr) {
+  oneapi::ccl::init();
   auto &ptr = detail::get_kvs(addr);
   if (!ptr)
     ptr = oneapi::ccl::create_kvs(addr);
@@ -119,17 +122,19 @@ create_kvs(const oneapi::ccl::kvs::address_type &addr) {
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
 /// dpct communicator extension
-class communicator_ext
-{
+class communicator_ext {
 public:
-  communicator_ext(int size,
-                    int rank,
-                    oneapi::ccl::shared_ptr_class<oneapi::ccl::kvs_interface> kvs,
-                    const oneapi::ccl::comm_attr &attr = oneapi::ccl::default_comm_attr) 
-                  :_device_comm(oneapi::ccl::create_device(static_cast<sycl::device>(
-                      dpct::get_current_device()))), 
-                  _context_comm(oneapi::ccl::create_context(dpct::get_default_context())),
-                  _comm(oneapi::ccl::create_communicator(size, rank, _device_comm, _context_comm, kvs)){}
+  communicator_ext(
+      int size, int rank,
+      oneapi::ccl::shared_ptr_class<oneapi::ccl::kvs_interface> kvs,
+      const oneapi::ccl::comm_attr &attr = oneapi::ccl::default_comm_attr)
+      : _device_comm(oneapi::ccl::create_device(
+            static_cast<sycl::device>(dpct::get_current_device()))),
+        _context_comm(oneapi::ccl::create_context(dpct::get_default_context())),
+        _comm(oneapi::ccl::create_communicator(size, rank, _device_comm,
+                                               _context_comm, kvs)) {
+    oneapi::ccl::init();
+  }
 
   ~communicator_ext(){};
 // DPCT_LABEL_END
