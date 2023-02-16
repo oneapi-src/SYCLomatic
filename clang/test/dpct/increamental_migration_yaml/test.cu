@@ -9,19 +9,16 @@
 //CHECK-NEXT:      IsCalled:        true
 //CHECK-NEXT:      CallerSrcFiles:
 //CHECK-NEXT:        - '{{(.+)}}'
-//CHECK-NEXT:      FeatureName:     '__dpct_align__(n) and __dpct_inline__'
 //CHECK-NEXT:      SubFeatureMap:   {}
 //CHECK-NEXT:    dpct_compatibility_temp:
 //CHECK-NEXT:      IsCalled:        true
 //CHECK-NEXT:      CallerSrcFiles:
 //CHECK-NEXT:        - '{{(.+)}}'
-//CHECK-NEXT:      FeatureName:     DPCT_COMPATIBILITY_TEMP
 //CHECK-NEXT:      SubFeatureMap:   {}
 //CHECK-NEXT:    non_local_include_dependency:
 //CHECK-NEXT:      IsCalled:        true
 //CHECK-NEXT:      CallerSrcFiles:
 //CHECK-NEXT:        - ''
-//CHECK-NEXT:      FeatureName:     ''
 //CHECK-NEXT:      SubFeatureMap:   {}
 
 #ifdef AAA
