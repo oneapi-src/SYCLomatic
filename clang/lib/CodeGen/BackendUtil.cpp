@@ -46,6 +46,7 @@
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Passes/StandardInstrumentations.h"
+#include "llvm/SYCLLowerIR/CompileTimePropertiesPass.h"
 #include "llvm/SYCLLowerIR/ESIMD/ESIMDVerifier.h"
 #include "llvm/SYCLLowerIR/LowerWGLocalMemory.h"
 #include "llvm/SYCLLowerIR/MutatePrintfAddrspace.h"
@@ -850,6 +851,9 @@ void EmitAssemblyHelper::RunOptimizationPipeline(
   // Only enable CGProfilePass when using integrated assembler, since
   // non-integrated assemblers don't recognize .cgprofile section.
   PTO.CallGraphProfile = !CodeGenOpts.DisableIntegratedAS;
+  // Enable a custom optimization pipeline for non-user SYCL code.
+  PTO.OptimizeSYCLFramework =
+      CodeGenOpts.OptimizeSYCLFramework && !CodeGenOpts.DisableLLVMPasses;
 
   LoopAnalysisManager LAM;
   FunctionAnalysisManager FAM;
@@ -1053,6 +1057,9 @@ void EmitAssemblyHelper::RunOptimizationPipeline(
       // Allocate static local memory in SYCL kernel scope for each allocation
       // call.
       MPM.addPass(SYCLLowerWGLocalMemoryPass());
+
+      // Process properties and annotations
+      MPM.addPass(CompileTimePropertiesPass());
     }
   }
 

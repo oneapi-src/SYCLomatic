@@ -2173,7 +2173,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
                   "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
                   "thrust::tuple_element", "thrust::tuple_size", "cublasMath_t",
-                  "cudaPointerAttributes")
+                  "cudaPointerAttributes", "thrust::zip_iterator")
               )))))
           .bind("cudaTypeDef"),
       this);
@@ -2939,10 +2939,12 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                     .bind("vectorTypeTL"),
                 this);
 
-  MF.addMatcher(
-      cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(SUPPORTEDVECTORTYPENAMES)))
-          .bind("inheritanceType"),
-      this);
+  MF.addMatcher(cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(
+                                  "char1", "uchar1", "short1", "ushort1",
+                                  "int1", "uint1", "long1", "ulong1", "float1",
+                                  "longlong1", "ulonglong1", "double1")))
+                    .bind("inherit"),
+                this);
 }
 
 void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -3057,60 +3059,9 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
   }
-  if (auto CRD = getNodeAsType<CXXRecordDecl>(Result, "inheritanceType")) {
-    const auto *Base = CRD->bases_begin();
-    std::string TypeName = Base->getBaseTypeInfo()->getType().getAsString();
-    if (MapNames::SupportedVectorTypes.find(TypeName) ==
-        MapNames::SupportedVectorTypes.end())
-      return;
-    auto Begin = Base->getSourceRange().getBegin();
-    auto End = Base->getSourceRange().getEnd();
-    if (Begin.isInvalid()) {
-      return;
-    }
-    if (*(TypeName.end() - 1) == '1') {
-      if (Begin.isMacroID() &&
-          (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin)) ||
-            SM->isWrittenInScratchSpace(SM->getSpellingLoc(End)))) {
-        // Macro concatenate --> use immediateExpansion
-        // Make (Begin, End) be the range of "##1"
-        Begin = SM->getImmediateExpansionRange(Begin).getBegin();
-        End = SM->getImmediateExpansionRange(End).getEnd();
-        Begin = SM->getSpellingLoc(Begin);
-        End = SM->getSpellingLoc(End);
-        Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
-            Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-            End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-        report(Begin, Comments::VECTYPE_INHERITATED, false);
-      } else {
-        // Make (Begin, End) be the range of "1"
-        Begin = SM->getSpellingLoc(Begin);
-        End = SM->getSpellingLoc(End);
-        Begin = Begin.getLocWithOffset(
-            Lexer::MeasureTokenLength(
-                Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()) -
-            1);
-        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-            End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-      }
-      auto Length = SM->getFileOffset(End) - SM->getFileOffset(Begin);
-      return emplaceTransformation(new ReplaceText(Begin, Length, ""));
-    }
 
-    if (Begin.isInvalid())
-      return;
-
-    if (Begin.isMacroID()) {
-      // Macro concatenate --> use immediateExpansion
-      // Make Begin being the begin of "MACROARG##1"
-      if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin))) {
-        Begin = SM->getImmediateExpansionRange(Begin).getBegin();
-      }
-      Begin = SM->getSpellingLoc(Begin);
-    }
-    return emplaceTransformation(
-        new InsertText(Begin, MapNames::getClNamespace()));
+  if (auto RD = getNodeAsType<CXXRecordDecl>(Result, "inherit")) {
+    report(RD->getBeginLoc(), Diagnostics::VECTYPE_INHERITATED, false);
   }
 }
 
@@ -10792,6 +10743,12 @@ void MemoryMigrationRule::mallocMigration(
 void MemoryMigrationRule::memcpyMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
+  for (unsigned I = 0, E = C->getNumArgs(); I != E; ++I) {
+    if (isa<PackExpansionExpr>(C->getArg(I))) {
+      return;
+    }
+  }
+
   std::string Name;
   if (ULExpr) {
     Name = ULExpr->getName().getAsString();
