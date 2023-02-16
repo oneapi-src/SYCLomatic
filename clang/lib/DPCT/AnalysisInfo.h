@@ -799,7 +799,7 @@ public:
   static bool isInRoot(const std::string &FilePath,
                        bool IsChildRelative = true) {
     if (IsChildRelative) {
-      std::string Path = removeSymlinks(getFileManager(), FilePath);
+      std::string Path(FilePath);
       makeCanonical(Path);
       if (isChildPath(InRoot, Path)) {
         return !isExcluded(Path);

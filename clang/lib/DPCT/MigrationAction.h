@@ -19,6 +19,7 @@ namespace clang {
 namespace dpct {
 
 class DpctFileInfo;
+
 struct TranslationUnitInfo {
   std::unique_ptr<ASTUnit> AST;
   TransformSetTy Transforms;
@@ -46,6 +47,8 @@ public:
   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                  StringRef InFile) override;
 
+  void EndSourceFileAction() override;
+
 private:
   TranslationUnitInfo *Info;
 };
@@ -64,12 +67,26 @@ public:
 
 private:
   void runPass(PassKind Pass);
+  void traversTranslationUnit(PassKind Pass, TranslationUnitInfo &Info);
 
+  std::shared_ptr<TranslationUnitInfo>
+  createTranslationUnitInfo(std::shared_ptr<CompilerInvocation> Invocation,
+                            bool &Success);
+
+  struct InvocationOrTranslationUnit {
+    std::shared_ptr<CompilerInvocation>CI;
+    std::shared_ptr<TranslationUnitInfo>TU;
+
+    InvocationOrTranslationUnit(std::shared_ptr<CompilerInvocation> C)
+        : CI(C) {}
+    InvocationOrTranslationUnit(std::shared_ptr<TranslationUnitInfo> T)
+        : TU(T) {}
+  };
   DpctGlobalInfo &Global;
   ReplTy &Repls;
   std::vector<std::string> MigrationRuleNames;
   std::vector<PassKind> Passes;
-  std::vector<std::unique_ptr<TranslationUnitInfo>> ASTs;
+  std::vector<InvocationOrTranslationUnit> IOTUs;
   llvm::raw_ostream &DiagnosticStream;
 };
 
