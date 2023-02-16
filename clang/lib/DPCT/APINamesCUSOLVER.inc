@@ -199,64 +199,38 @@ REMOVE_API_FACTORY_ENTRY("cusolverDnCreateParams")
 REMOVE_API_FACTORY_ENTRY("cusolverDnDestroyParams")
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::LapackUtils_char2jobsvd,
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size,
-        CALL_FACTORY_ENTRY(
-            "cusolverDnXgesvd_bufferSize",
-            CALL(MapNames::getDpctNamespace() + "lapack::gesvd_scratchpad_size",
-                 DEREF(0),
-                 CALL(MapNames::getDpctNamespace() + "lapack::char2jobsvd",
-                      ARG(2)),
-                 CALL(MapNames::getDpctNamespace() + "lapack::char2jobsvd",
-                      ARG(3)),
-                 ARG(4), ARG(5), ARG(6), ARG(8), ARG(11), ARG(13), ARG(14),
-                 ARG(16), ARG(18), ARG(19)))))
+    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size,
+    CALL_FACTORY_ENTRY(
+        "cusolverDnXgesvd_bufferSize",
+        CALL(MapNames::getDpctNamespace() + "lapack::gesvd_scratchpad_size",
+             DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(8), ARG(11),
+             ARG(13), ARG(14), ARG(16), ARG(18), ARG(19))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::LapackUtils_char2jobsvd,
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::LapackUtils_gesvd,
-        CALL_FACTORY_ENTRY(
-            "cusolverDnXgesvd",
-            CALL(MapNames::getDpctNamespace() + "lapack::gesvd", DEREF(0),
-                 CALL(MapNames::getDpctNamespace() + "lapack::char2jobsvd",
-                      ARG(2)),
-                 CALL(MapNames::getDpctNamespace() + "lapack::char2jobsvd",
-                      ARG(3)),
-                 ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
-                 ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(18),
-                 ARG(19), ARG(22)))))
+    HelperFeatureEnum::LapackUtils_gesvd,
+    CALL_FACTORY_ENTRY("cusolverDnXgesvd",
+                       CALL(MapNames::getDpctNamespace() + "lapack::gesvd",
+                            DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                            ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
+                            ARG(13), ARG(14), ARG(15), ARG(16), ARG(18),
+                            ARG(19), ARG(22))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::LapackUtils_char2jobsvd,
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size,
-        CALL_FACTORY_ENTRY(
-            "cusolverDnGesvd_bufferSize",
-            CALL(MapNames::getDpctNamespace() + "lapack::gesvd_scratchpad_size",
-                 DEREF(0),
-                 CALL(MapNames::getDpctNamespace() + "lapack::char2jobsvd",
-                      ARG(2)),
-                 CALL(MapNames::getDpctNamespace() + "lapack::char2jobsvd",
-                      ARG(3)),
-                 ARG(4), ARG(5), ARG(6), ARG(8), ARG(11), ARG(13), ARG(14),
-                 ARG(16), ARG(18)))))
+    HelperFeatureEnum::LapackUtils_gesvd_scratchpad_size,
+    CALL_FACTORY_ENTRY(
+        "cusolverDnGesvd_bufferSize",
+        CALL(MapNames::getDpctNamespace() + "lapack::gesvd_scratchpad_size",
+             DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6), ARG(8), ARG(11),
+             ARG(13), ARG(14), ARG(16), ARG(18))))
 
 FEATURE_REQUEST_FACTORY(
-    HelperFeatureEnum::LapackUtils_char2jobsvd,
-    FEATURE_REQUEST_FACTORY(
-        HelperFeatureEnum::LapackUtils_gesvd,
-        CALL_FACTORY_ENTRY(
-            "cusolverDnGesvd",
-            CALL(MapNames::getDpctNamespace() + "lapack::gesvd", DEREF(0),
-                 CALL(MapNames::getDpctNamespace() + "lapack::char2jobsvd",
-                      ARG(2)),
-                 CALL(MapNames::getDpctNamespace() + "lapack::char2jobsvd",
-                      ARG(3)),
-                 ARG(4), ARG(5), ARG(6), ARG(7), ARG(8), ARG(9), ARG(10),
-                 ARG(11), ARG(12), ARG(13), ARG(14), ARG(15), ARG(16), ARG(18),
-                 ARG(19), ARG(20)))))
+    HelperFeatureEnum::LapackUtils_gesvd,
+    CALL_FACTORY_ENTRY("cusolverDnGesvd",
+                       CALL(MapNames::getDpctNamespace() + "lapack::gesvd",
+                            DEREF(0), ARG(2), ARG(3), ARG(4), ARG(5), ARG(6),
+                            ARG(7), ARG(8), ARG(9), ARG(10), ARG(11), ARG(12),
+                            ARG(13), ARG(14), ARG(15), ARG(16), ARG(18),
+                            ARG(19), ARG(20))))
 
 FEATURE_REQUEST_FACTORY(
     HelperFeatureEnum::LapackUtils_potrf_scratchpad_size,
