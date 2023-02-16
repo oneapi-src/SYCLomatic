@@ -673,3 +673,26 @@ MATH_API_REWRITER_DEVICE(
                                 ARG(0), ARG("0.0f"), ARG("1.0f"))),
         EMPTY_FACTORY_ENTRY("saturate"), EMPTY_FACTORY_ENTRY("saturate"),
         EMPTY_FACTORY_ENTRY("saturate")))
+
+// Overload (Half Arithmetic Functions and Integer Intrinsics)
+MATH_API_REWRITER_DEVICE_OVERLOAD(
+    CheckArgType(0, "int"),
+    MATH_API_REWRITER_DEVICE(
+        "__hadd",
+        MATH_API_DEVICE_NODES(
+            CALL_FACTORY_ENTRY(
+                "__hadd", CALL(MapNames::getClNamespace(false, true) + "hadd",
+                               CAST_IF_NEED(LITERAL("int"), ARG(0)),
+                               CAST_IF_NEED(LITERAL("int"), ARG(1)))),
+            EMPTY_FACTORY_ENTRY("__hadd"), EMPTY_FACTORY_ENTRY("__hadd"),
+            EMPTY_FACTORY_ENTRY("__hadd"))),
+    MATH_API_REWRITER_DEVICE(
+        "__hadd",
+        MATH_API_DEVICE_NODES(
+            EMPTY_FACTORY_ENTRY("__hadd"),
+            HEADER_INSERT_FACTORY(
+                HeaderType::HT_SYCL_Math,
+                CALL_FACTORY_ENTRY("__hadd", CALL(MapNames::getClNamespace() +
+                                                      "ext::intel::math::hadd",
+                                                  ARG(0), ARG(1)))),
+            EMPTY_FACTORY_ENTRY("__hadd"), EMPTY_FACTORY_ENTRY("__hadd"))))

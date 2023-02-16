@@ -75,6 +75,8 @@ __global__ void kernelFuncHalf() {
   h_2 = __hmul_sat(h, h_1);
   // CHECK: h_2 = sycl::ext::intel::math::hsub_sat(h, h_1);
   h_2 = __hsub_sat(h, h_1);
+  // CHECK: h_2 = sycl::ext::intel::math::hadd(h, h_1);
+  h_2 = __hadd(h, h_1);
 
   // Half Comparison Functions
 

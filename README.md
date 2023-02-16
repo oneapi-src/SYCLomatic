@@ -101,7 +101,23 @@ cmake -G Ninja -DCMAKE_INSTALL_PREFIX=%PATH_TO_C2S_INSTALL_FOLDER%  -DCMAKE_BUIL
 ninja install-c2s
 ```
 
-### Deployment
+Note: For build system with 16G or less memory, recommend to use less than 5 threads for compilation, you may meet out of memory issue when more than 4 threads used for compilation.
+```
+ninja -j4 install-c2s
+```
+
+
+**build success message**:
+
+After a successful build, you should be able to see following message in the terminal output.
+```
+-- Install configuration: "Release"
+-- Installing: ... bin/dpct
+-- Creating c2s
+```
+
+
+### Environment Setup
 
 **Linux**:
 ```bash
@@ -116,8 +132,23 @@ SET INCLUDE=%PATH_TO_C2S_INSTALL_FOLDER%\include;%INCLUDE%
 SET CPATH=%PATH_TO_C2S_INSTALL_FOLDER%\include;%CPATH%
 ```
 
-### Test SYCLomatic
-#### Run in-tree LIT tests
+### Verify the Installation
+Before running SYCLomatic, it is important to verify that dpct/c2s(SYCLomatic binary) is installed correctly and PATH is set properly.
+
+To do this, try running the following command and checking if dpct is available after the installation.
+```
+c2s --version
+```
+Note: If c2s cannot be found, please check the setup of PATH.
+
+## Run SYCLomatic
+### Run c2s command
+Get c2s help information by running "c2s --help".
+dpct is an alias command for c2s.
+
+
+## Test SYCLomatic 
+### Run in-tree LIT tests
 
 Note: Certain CUDA header files may need to be accessible to the tool.
 After build the SYCLomatic, you can run the list test by: 
@@ -125,16 +156,10 @@ After build the SYCLomatic, you can run the list test by:
 ninja check-clang-c2s
 
 
-#### Run E2E test suite
+### Run E2E test suite (Recommend for contributors)
 
 Follow instructions from the link below to build and run tests:
 [README](https://github.com/oneapi-src/SYCLomatic-test)
-
-
-## Run SYCLomatic
-### Run c2s command
-Get c2s help information by running "c2s --help".
-dpct is an alias command for c2s.
 
 ## Known Issues and Limitations
 

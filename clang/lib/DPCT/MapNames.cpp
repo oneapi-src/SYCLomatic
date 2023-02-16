@@ -4114,6 +4114,9 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
     {"cudaMemAttachGlobal",
      MacroMigrationRule("flag_macro_rule", RulePriority::Fallback,
                         "cudaMemAttachGlobal", "0")},
+    {"cudaStreamDefault",
+     MacroMigrationRule("cudaStreamDefault_rule", RulePriority::Fallback,
+                        "cudaStreamDefault", "0")},
     //...
 };
 
@@ -4309,10 +4312,6 @@ const MapNames::MapTy MemoryDataTypeRule::SizeOrPosToMember{
 
 const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
     "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType"};
-
-const MapNames::SetTy MapNames::PredefinedStreamName{
-    "cudaStreamDefault", "cudaStreamNonBlocking", "cudaStreamLegacy",
-    "cudaStreamPerThread"};
 
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "this_thread_block", "sync", "tiled_partition",
