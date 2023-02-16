@@ -671,6 +671,11 @@
   </ul>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="../api-mapping-status.html">
+   CUDA API Migration Support Status
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="../frequently-asked-questions-faq.html">
    Frequently Asked Questions
   </a>
@@ -912,23 +917,17 @@ title="Print to PDF"
 <code class="docutils literal notranslate"><span class="pre">--vcxprojfile</span></code> option to point to the project that requires
 migration. SYCLomatic will migrate the files you
 provided as input files.</p>
-<p>For example, the following steps show migration of the Vector Add sample using
-the <code class="docutils literal notranslate"><span class="pre">dpct</span></code> tool:</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The SYCLomatic project is the open source release of the Intel® DPC++
-Compatibility Tool and includes the same CUDA to SYCL functionality.</p>
-<p>Samples referenced in the open source documentation may not work as
-described, as they have not yet been tested with SYCLomatic. Testing and updating
-samples for SYCLomatic is a work in progress.</p>
-</div>
+<p>The following steps show how to migrate the Vector Add sample using SYCLomatic:</p>
 <ol class="arabic">
-<li><p>Open the Vector Add sample:</p>
+<li><p>Get the Vector Add sample:</p>
 <ul class="simple">
 <li><p>Download the sample from <a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration">GitHub*</a></p></li>
 </ul>
 </li>
-<li><p>Navigate to the root of the Vector Add sample project.</p></li>
+<li><p>Navigate to the root of the Vector Add sample.</p>
+<p>The sample contains a single
+CUDA file, <code class="docutils literal notranslate"><span class="pre">vector_add.cu</span></code>, located in the <code class="docutils literal notranslate"><span class="pre">src</span></code> folder.</p>
+</li>
 <li><p>From the root folder of the sample project, run SYCLomatic.</p>
 <p>To migrate the single file <code class="docutils literal notranslate"><span class="pre">src\vector_add.cu</span></code>, which is part of
 <code class="docutils literal notranslate"><span class="pre">vector-add.vcxproj</span></code>, run:</p>

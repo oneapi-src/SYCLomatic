@@ -1,4 +1,4 @@
-.. _id_DPCT1001:
+.. _DPCT1001:
 
 DPCT1001
 ========
@@ -16,9 +16,9 @@ Detailed Help
 -------------
 
 |tool_name| was not able to remove the code in the ``then`` clause of
-``if-stmt``. See :ref:`id_DPCT1000`.
+``if-stmt``. See :ref:`DPCT1000`.
 
 Suggestions to Fix
 ------------------
 
-See :ref:`id_DPCT1000`.
+See :ref:`DPCT1000`.

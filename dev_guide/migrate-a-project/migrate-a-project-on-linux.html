@@ -671,6 +671,11 @@
   </ul>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="../api-mapping-status.html">
+   CUDA API Migration Support Status
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="../frequently-asked-questions-faq.html">
    Frequently Asked Questions
   </a>
@@ -918,7 +923,7 @@ title="Print to PDF"
 <div class="section" id="use-the-command-line">
 <h2>Use the Command Line<a class="headerlink" href="#use-the-command-line" title="Permalink to this headline">#</a></h2>
 <p>You can invoke SYCLomatic at the command line.</p>
-<p>Use the <code class="docutils literal notranslate"><span class="pre">dpct</span></code> tool’s <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option to specify the location of the
+<p>Use the tool’s <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option to specify the location of the
 source that should be migrated:</p>
 <ul class="simple">
 <li><p>Any source within the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> directory (at any nesting
@@ -932,25 +937,16 @@ files.</p></li>
 <li><p>If the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option is not specified, the directory of the first input
 source file is implied.</p></li>
 </ul>
-<p>Use the <code class="docutils literal notranslate"><span class="pre">dpct</span></code> tool’s <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option to specify the directory where the
+<p>Use the tool’s <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option to specify the directory where the
 SYCL code produced by SYCLomatic is written:</p>
 <ul class="simple">
 <li><p>Relative paths of the migrated files are maintained.</p></li>
 <li><p>Extensions are changed to <code class="docutils literal notranslate"><span class="pre">.dp.cpp</span></code>.</p></li>
 <li><p>If the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option is not specified, <code class="docutils literal notranslate"><span class="pre">./dpct_output</span></code> is implied.</p></li>
 </ul>
-<p>The following steps show migration of the Folder Options sample using the
-<code class="docutils literal notranslate"><span class="pre">dpct</span></code> tool:</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The SYCLomatic project is the open source release of the Intel® DPC++
-Compatibility Tool and includes the same CUDA to SYCL functionality.</p>
-<p>Samples referenced in the open source documentation may not work as
-described, as they have not yet been tested with SYCLomatic. Testing and updating
-samples for SYCLomatic is a work in progress.</p>
-</div>
+<p>The following steps show how to migrate the Folder Options sample using SYCLomatic:</p>
 <ol class="arabic">
-<li><p>Open the Folder Options sample:</p>
+<li><p>Get the Folder Options sample:</p>
 <ul class="simple">
 <li><p>Download the sample from <a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration">GitHub*</a></p></li>
 </ul>
@@ -958,22 +954,30 @@ samples for SYCLomatic is a work in progress.</p>
 <li><p>Navigate to the root of the sample project.</p>
 <p>The Folder Options sample project contains a simple CUDA* program with three
 files (<code class="docutils literal notranslate"><span class="pre">main.cu</span></code>, <code class="docutils literal notranslate"><span class="pre">util.cu</span></code>, and <code class="docutils literal notranslate"><span class="pre">util.h</span></code>) located in two folders
-(<code class="docutils literal notranslate"><span class="pre">foo</span></code> and <code class="docutils literal notranslate"><span class="pre">bar</span></code>).</p>
+(<code class="docutils literal notranslate"><span class="pre">foo</span></code> and <code class="docutils literal notranslate"><span class="pre">bar</span></code>):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>foo
+├── bar
+│   ├── util.cu
+│   └── util.h
+└── main.cu
+</pre></div>
+</div>
 </li>
-<li><p>From the parent folder of the unzipped foo folder, run SYCLomatic:</p>
+<li><p>From the root folder of the sample project, run SYCLomatic:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dpct --in-root=foo --out-root=result/foo foo/main.cu foo/bar/util.cu --extra-arg=&quot;-Ifoo/bar/&quot;
 </pre></div>
 </div>
-<p>Use the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option to specify the location of the CUDA
-files that need migration. Use the <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option to specify the
-location for the migrated files.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option specifies the location of the CUDA
+files that need migration. The <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option specifies the location for the migrated files.</p>
 </li>
-<li><p>As a result, you should see the following files:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">./result/foo/main.dp.cpp</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">./result/foo/bar/util.dp.cpp</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">./result/foo/bar/util.h</span></code></p></li>
-</ul>
+<li><p>As a result of the migration command, you should see the following files:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>result/foo
+     ├── bar
+     │   ├── util.dp.cpp
+     │   └── util.h
+     └── main.dp.cpp
+</pre></div>
+</div>
 </li>
 <li><p>Inspect the migrated source code, address any generated DPCT warnings, and
 verify correctness of the new program.</p></li>
@@ -998,11 +1002,11 @@ command lines for files with the following extensions: <code class="docutils lit
 <code class="docutils literal notranslate"><span class="pre">.CC</span></code>, <code class="docutils literal notranslate"><span class="pre">.cp</span></code>, <code class="docutils literal notranslate"><span class="pre">.cpp</span></code>, <code class="docutils literal notranslate"><span class="pre">.cxx</span></code>, <code class="docutils literal notranslate"><span class="pre">.c++</span></code>, <code class="docutils literal notranslate"><span class="pre">.C++</span></code>, <code class="docutils literal notranslate"><span class="pre">.txx</span></code>, and <code class="docutils literal notranslate"><span class="pre">.cu</span></code>.</p>
 <p>SYCLomatic parses the compilation database and applies the necessary
 options when migrating the input sources.</p>
-<p>This example uses the Rodinia NW DPCT sample to demonstrate the use of a
+<p>This example uses the Rodinia needleman-wunsch sample to demonstrate the use of a
 compilation database.</p>
 <p><strong>Step 1: Create the Compilation Database</strong></p>
 <ol class="arabic">
-<li><p>Open the Rodinia NW DPCT sample:</p>
+<li><p>Get the Rodinia needleman-wunsch sample:</p>
 <ul class="simple">
 <li><p>Download the sample from <a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration">GitHub*</a></p></li>
 </ul>
@@ -1010,18 +1014,15 @@ compilation database.</p>
 <li><p>When using CMake: Before running <code class="docutils literal notranslate"><span class="pre">intercept-build</span></code>, configure and generate
 your Makefile out of <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>. An example of a typical command is
 <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">...</span></code>.</p></li>
-<li><p>Clean the application:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>make clean
+<li><p>Invoke the build command, prepending it with <code class="docutils literal notranslate"><span class="pre">intercept-build</span></code>.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ make clean
+$ intercept-build make
 </pre></div>
 </div>
-</li>
-<li><p>Invoke the build command, prepending it with <code class="docutils literal notranslate"><span class="pre">intercept-build</span></code>:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>intercept-build make
-</pre></div>
-</div>
+<p>This creates the file <code class="docutils literal notranslate"><span class="pre">compile_commands.json</span></code> in the working directory.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">intercept-build</span></code> script runs your project’s build command without building
 the original program. It records all the compiler invocations and stores the
-names of the input files and the compiler options in the compilation database file:
+names of the input files and the compiler options in the compilation database file
 <code class="docutils literal notranslate"><span class="pre">compile_commands.json</span></code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -1044,27 +1045,27 @@ this example:</p>
 </ol>
 <p><strong>Step 2: Use the Compilation Database with the Migration Tool</strong></p>
 <p>By default, SYCLomatic looks for the <code class="docutils literal notranslate"><span class="pre">compile_commands.json</span></code> file
-in the current directory and uses the compiler options from it for each input file.
-The location of the compilation database file can be changed using the <code class="docutils literal notranslate"><span class="pre">-p</span></code>
-option.</p>
-<p>For example, the following command  will migrate <code class="docutils literal notranslate"><span class="pre">some_file.cu</span></code> if the
-information about it can be found in <code class="docutils literal notranslate"><span class="pre">compiler_commands.json</span></code>,  located at
-<code class="docutils literal notranslate"><span class="pre">&lt;some_path&gt;</span></code>.</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dpct -p=some_path --in-root=../.. --out-root=dpct_output some_file.cu
+in the current directory and uses the compiler options from it for each input file.</p>
+<p>Use the following command to migrate the CUDA code in the Rodinia needleman-wunsch
+sample, using the compilation database generated in the previous step:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dpct -p=compile_commands.json --in-root=. --out-root=migration
 </pre></div>
 </div>
-<p>To migrate all relevant files recorded inside the compilation database, use
-a command similar to:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dpct -p compile_commands.json --in-root=. --out-root=migration
+<p>The <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option sets the root location of the CUDA files that need
+migration. Only files and folders located within the <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> directory will
+be considered for migration by the tool.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--out-root</span></code> option specifies the location for the migrated files.
+The new project will be created in the migration directory.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">-p</span></code> option specifies the path for the compilation database.</p>
+<p>After running the migration command, you should see the following files in the
+<code class="docutils literal notranslate"><span class="pre">migration</span></code> output folder:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>migration
+└── src
+    ├── needle.h
+    ├── needle_kernel.dp.cpp
+    └── needle.dp.cpp
 </pre></div>
 </div>
-<p>If you run the command above with the Rodinia NW DPCT sample, you
-should see the following files in the <code class="docutils literal notranslate"><span class="pre">migration</span></code> out folder:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">needle.h</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">needle_kernel.dp.cpp</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">needle.dp.cpp</span></code></p></li>
-</ul>
 <p><strong>Step 3: Verify the Source for Correctness and Fix Anything the Tool was Unable
 to Migrate</strong></p>
 <p>Verify the migration of the source code that uses variables declared

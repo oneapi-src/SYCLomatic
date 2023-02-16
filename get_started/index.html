@@ -671,6 +671,11 @@
   </ul>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="../dev_guide/api-mapping-status.html">
+   CUDA API Migration Support Status
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="../dev_guide/frequently-asked-questions-faq.html">
    Frequently Asked Questions
   </a>
@@ -1036,16 +1041,9 @@ in the output. For example:</p>
 </div>
 <div class="section" id="migrate-a-simple-test-project">
 <h2>Migrate a Simple Test Project<a class="headerlink" href="#migrate-a-simple-test-project" title="Permalink to this headline">#</a></h2>
-<p>SYCLomatic comes with several sample projects so you can explore
-the tool and familiarize yourself with how it functions.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The SYCLomatic project is the open source release of the Intel® DPC++
-Compatibility Tool and includes the same CUDA to SYCL functionality.</p>
-<p>Samples referenced in the open source documentation may not work as
-described, as they have not yet been tested with SYCLomatic. Testing and updating
-samples for SYCLomatic is a work in progress.</p>
-</div>
+<p>Several sample projects for SYCLomatic are available to explore the tool and
+familiarize yourself with how it functions.</p>
+<p>All samples are available on <a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration">GitHub*</a>.</p>
 <table class="colwidths-given table">
 <colgroup>
 <col style="width: 30%" />
@@ -1057,63 +1055,73 @@ samples for SYCLomatic is a work in progress.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Vector Add DPCT</p>
+<tr class="row-even"><td><p>Vector Add</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">vector_add.cu</span></code></p></li>
 </ul>
 </td>
-<td><p>The Vector Add DPCT sample demonstrates how to migrate a simple program
-from CUDA to SYCL. Vector Add provides an easy way to verify that your
+<td><p>The Vector Add sample demonstrates how to migrate a simple program
+from CUDA* to SYCL. Vector Add provides an easy way to verify that your
 development environment is setup correctly to use SYCLomatic.</p></td>
 </tr>
-<tr class="row-odd"><td><p>Folder Options DPCT</p>
+<tr class="row-odd"><td><p>Folder Options</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">main.cu</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">bar/util.cu</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">bar/util.h</span></code></p></li>
 </ul>
 </td>
-<td><p>The Folder Options DPCT sample shows how to migrate more complex projects
+<td><p>The Folder Options sample shows how to migrate more complex projects
 and to use options.</p></td>
 </tr>
-<tr class="row-even"><td><p>Rodinia NW DPCT</p>
+<tr class="row-even"><td><p>Rodinia needleman-wunsch</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">needle.cu</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">needle.h</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">needle_kernel.cu</span></code></p></li>
 </ul>
 </td>
-<td><p>The Rodinia NW DPCT sample demonstrates how to migrate a Make/CMake
-project from CUDA to SYCL using SYCLomatic.</p></td>
+<td><p>The Rodinia needleman-wunsch sample demonstrates how to migrate a Make/CMake*
+project from CUDA to SYCL.</p></td>
 </tr>
 </tbody>
 </table>
 <p>Review the README file provided with each sample for more detailed information
 about the purpose and usage of the sample project.</p>
-<p>All samples are available on <a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration">GitHub*</a>.</p>
 <div class="section" id="try-a-sample-project">
 <h3>Try a Sample Project<a class="headerlink" href="#try-a-sample-project" title="Permalink to this headline">#</a></h3>
-<p>Follow these steps to migrate the Vector Add DPCT sample project using
-SYCLomatic:</p>
+<p>The following steps show how to migrate the Vector Add sample using SYCLomatic:</p>
 <ol class="arabic">
-<li><p>Download the <code class="docutils literal notranslate"><span class="pre">vector_add.cu</span></code> sample.</p></li>
-<li><p>Run SYCLomatic from the sample root directory:</p>
+<li><p>Download the <a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration/vector-add-dpct">Vector Add sample</a>.</p></li>
+<li><p>Navigate to the root of the Vector Add sample. The sample contains a single
+CUDA file, <code class="docutils literal notranslate"><span class="pre">vector_add.cu</span></code>, located in the <code class="docutils literal notranslate"><span class="pre">src</span></code> folder.</p></li>
+<li><p>From the root folder of the sample project, run SYCLomatic:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dpct</span> <span class="o">--</span><span class="ow">in</span><span class="o">-</span><span class="n">root</span><span class="o">=.</span> <span class="n">src</span><span class="o">/</span><span class="n">vector_add</span><span class="o">.</span><span class="n">cu</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">vector_add.dp.cpp</span></code> file should appear in the <code class="docutils literal notranslate"><span class="pre">dpct_output</span></code>
-directory. The file is now a SYCL source file.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--in-root</span></code> option specifies the location of the CUDA file that needs
+migration. By default, the migrated files are created in a new folder named
+<code class="docutils literal notranslate"><span class="pre">dpct_output</span></code>.</p>
 </li>
-<li><p>Navigate to the new SYCL source file:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">dpct_output</span>
+<li><p>As a result of the migration command, you should see the new SYCL source file
+in the output folder:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>dpct_output
+└── src
+    └── vector_add.dp.cpp
 </pre></div>
 </div>
-<p>Verify the generated source code and fix any code that SYCLomatic
+<p>The relative paths of the migrated files are maintained.</p>
+</li>
+<li><p>Navigate to the new SYCL source file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">dpct_output</span><span class="o">/</span><span class="n">src</span>
+</pre></div>
+</div>
+<p>Verify the migrated source code and fix any code that SYCLomatic
 was unable to migrate. (The code used in this example is simple, so manual
-changes may not be needed). For the most accurate and detailed instructions
-on addressing warnings emitted from SYCLomatic, see the
-<strong>Addressing Warnings in Migrated Code</strong> section of the
-<a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration">README files</a>.</p>
+changes may not be needed).</p>
+<p>For the most accurate and detailed instructions on addressing warnings emitted
+from SYCLomatic, see the <strong>Addressing Warnings in Migrated Code</strong> section of
+the <a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration">README files</a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>To compile the migrated sample, add <code class="docutils literal notranslate"><span class="pre">-I&lt;dpct_root_folder&gt;/include</span></code> to

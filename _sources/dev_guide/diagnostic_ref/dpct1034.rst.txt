@@ -1,4 +1,4 @@
-.. _id_DPCT1034:
+.. _DPCT1034:
 
 DPCT1034
 ========
@@ -25,7 +25,7 @@ SYCL\* uses exceptions to report errors and does not return the error code.
 the lambda expression, if the return code is expected by the program logic and
 the new API does not return it. Review all such places in the code.
 
-Similar to :ref:`id_DPCT1003`.
+Similar to :ref:`DPCT1003`.
 
 Suggestions to Fix
 ------------------
@@ -37,4 +37,4 @@ If in a |dpcpp| application you:
 * Need the code that consumes the error code, try to replace it with an exception
   handling code and use your logic in an exception handler.
 
-Similar to :ref:`id_DPCT1003`.
+Similar to :ref:`DPCT1003`.

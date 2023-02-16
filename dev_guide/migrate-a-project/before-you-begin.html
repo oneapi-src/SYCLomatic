@@ -671,6 +671,11 @@
   </ul>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="../api-mapping-status.html">
+   CUDA API Migration Support Status
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="../frequently-asked-questions-faq.html">
    Frequently Asked Questions
   </a>
@@ -918,16 +923,9 @@ title="Print to PDF"
 <p>Refer to <a class="reference internal" href="../../get_started/index.html#get-started"><span class="std std-ref">Get Started with SYCLomatic</span></a> for installation and setup information.</p>
 <div class="section" id="samples">
 <h2>Samples<a class="headerlink" href="#samples" title="Permalink to this headline">#</a></h2>
-<p>SYCLomatic comes with several sample projects so you can explore
-the tool and familiarize yourself with how it functions.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The SYCLomatic project is the open source release of the Intel® DPC++
-Compatibility Tool and includes the same CUDA to SYCL functionality.</p>
-<p>Samples referenced in the open source documentation may not work as
-described, as they have not yet been tested with SYCLomatic. Testing and updating
-samples for SYCLomatic is a work in progress.</p>
-</div>
+<p>Several sample projects for SYCLomatic are available to explore the tool and
+familiarize yourself with how it functions.</p>
+<p>All samples are available on <a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration">GitHub*</a>.</p>
 <table class="colwidths-given table">
 <colgroup>
 <col style="width: 30%" />
@@ -939,40 +937,39 @@ samples for SYCLomatic is a work in progress.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>Vector Add DPCT</p>
+<tr class="row-even"><td><p>Vector Add</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">vector_add.cu</span></code></p></li>
 </ul>
 </td>
-<td><p>The Vector Add DPCT sample demonstrates how to migrate a simple program
-from CUDA* to Data Parallel C++ (DPC++). Vector Add provides an easy way to verify
-that your development environment is setup correctly to use SYCLomatic.</p></td>
+<td><p>The Vector Add sample demonstrates how to migrate a simple program
+from CUDA* to SYCL. Vector Add provides an easy way to verify that your
+development environment is setup correctly to use SYCLomatic.</p></td>
 </tr>
-<tr class="row-odd"><td><p>Folder Options DPCT</p>
+<tr class="row-odd"><td><p>Folder Options</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">main.cu</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">bar/util.cu</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">bar/util.h</span></code></p></li>
 </ul>
 </td>
-<td><p>The Folder Options DPCT sample provides an example of how to migrate more
-complex projects and use <code class="docutils literal notranslate"><span class="pre">dpct</span></code> options.</p></td>
+<td><p>The Folder Options sample shows how to migrate more complex projects
+and to use options.</p></td>
 </tr>
-<tr class="row-even"><td><p>Rodinia NW DPCT</p>
+<tr class="row-even"><td><p>Rodinia needleman-wunsch</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">needle.cu</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">needle.h</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">needle_kernel.cu</span></code></p></li>
 </ul>
 </td>
-<td><p>The Rodinia NW DPCT project demonstrates how to migrate a Make/CMake*
-project from CUDA to Data Parallel C++ (DPC++) using SYCLomatic.</p></td>
+<td><p>The Rodinia needleman-wunsch sample demonstrates how to migrate a Make/CMake*
+project from CUDA to SYCL.</p></td>
 </tr>
 </tbody>
 </table>
 <p>Review the README file provided with each sample for more detailed information
-on the purpose and usage of the sample project.</p>
-<p>All samples are available on <a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/Tools/Migration">GitHub*</a>.</p>
+about the purpose and usage of the sample project.</p>
 </div>
 <div class="section" id="emitted-warnings">
 <span id="id1"></span><h2>Emitted Warnings<a class="headerlink" href="#emitted-warnings" title="Permalink to this headline">#</a></h2>

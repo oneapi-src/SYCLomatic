@@ -671,6 +671,11 @@
   </ul>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="../api-mapping-status.html">
+   CUDA API Migration Support Status
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="../frequently-asked-questions-faq.html">
    Frequently Asked Questions
   </a>
@@ -948,10 +953,10 @@ contains conditional compilation code. Content of <code class="docutils literal 
 <span class="linenos">7</span>      #endif
 </pre></div>
 </div>
-<p>Incrementally migrate <code class="docutils literal notranslate"><span class="pre">sample1.cu</span></code> by executing the <code class="docutils literal notranslate"><span class="pre">dpct</span></code> command
-in the same working directory as the file:</p>
+<p>Use the following steps to incrementally migrate <code class="docutils literal notranslate"><span class="pre">sample1.cu</span></code>.</p>
 <ol class="arabic">
-<li><p>Generate <code class="docutils literal notranslate"><span class="pre">sample1.dp.cpp</span></code>, which contains migrated code for code path 1:</p>
+<li><p>Generate <code class="docutils literal notranslate"><span class="pre">sample1.dp.cpp</span></code>, which contains migrated code for code path 1.
+From the same working directory as the file, run:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>dpct sample1.cu --out-root=out
 </pre></div>
 </div>
@@ -993,11 +998,11 @@ included in several source files, each with a different macro definition.</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span>     #include “sample_inc.h”
 </pre></div>
 </div>
-<p>Incrementally migrate the files by executing the <code class="docutils literal notranslate"><span class="pre">dpct</span></code> command in the same
-working directory as the files:</p>
+<p>Use the following steps to incrementally migrate the files.</p>
 <ol class="arabic">
 <li><p>Generate <code class="docutils literal notranslate"><span class="pre">sample2.dp.cpp</span></code> and <code class="docutils literal notranslate"><span class="pre">sample_inc.h</span></code>, which contains migrated
-code for code path 1:</p>
+code for code path 1.</p>
+<p>From the same working directory as the file, run:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span>dpct sample2.cu --out-root=out
 </pre></div>
 </div>

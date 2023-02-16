@@ -671,6 +671,11 @@
   </ul>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="../api-mapping-status.html">
+   CUDA API Migration Support Status
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="../frequently-asked-questions-faq.html">
    Frequently Asked Questions
   </a>
@@ -924,7 +929,7 @@ title="Print to PDF"
               <div>
                 
   <div class="section" id="dpct1034">
-<span id="id-dpct1034"></span><h1>DPCT1034<a class="headerlink" href="#dpct1034" title="Permalink to this headline">#</a></h1>
+<span id="id1"></span><h1>DPCT1034<a class="headerlink" href="#dpct1034" title="Permalink to this headline">#</a></h1>
 <div class="section" id="message">
 <h2>Message<a class="headerlink" href="#message" title="Permalink to this headline">#</a></h2>
 <p id="msg-1034-start">Migrated API does not return an error code. 0 is returned in the lambda. You
@@ -938,7 +943,7 @@ an error code and then it is consumed by the program logic.</p>
 <p>SYCLomatic inserts a <code class="docutils literal notranslate"><span class="pre">return</span> <span class="pre">0;</span></code> statement at the end of
 the lambda expression, if the return code is expected by the program logic and
 the new API does not return it. Review all such places in the code.</p>
-<p>Similar to <a class="reference internal" href="dpct1003.html#id-dpct1003"><span class="std std-ref">DPCT1003</span></a>.</p>
+<p>Similar to <a class="reference internal" href="dpct1003.html#dpct1003"><span class="std std-ref">DPCT1003</span></a>.</p>
 </div>
 <div class="section" id="suggestions-to-fix">
 <h2>Suggestions to Fix<a class="headerlink" href="#suggestions-to-fix" title="Permalink to this headline">#</a></h2>
@@ -949,7 +954,7 @@ the new API does not return it. Review all such places in the code.</p>
 <li><p>Need the code that consumes the error code, try to replace it with an exception
 handling code and use your logic in an exception handler.</p></li>
 </ul>
-<p>Similar to <a class="reference internal" href="dpct1003.html#id-dpct1003"><span class="std std-ref">DPCT1003</span></a>.</p>
+<p>Similar to <a class="reference internal" href="dpct1003.html#dpct1003"><span class="std std-ref">DPCT1003</span></a>.</p>
 </div>
 </div>
 

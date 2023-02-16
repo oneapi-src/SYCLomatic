@@ -1,4 +1,4 @@
-.. _id_DPCT1002:
+.. _DPCT1002:
 
 DPCT1002
 ========
@@ -16,9 +16,9 @@ this code.
 Detailed Help
 -------------
 
-See :ref:`id_DPCT1000`.
+See :ref:`DPCT1000`.
 
 Suggestions to Fix
 ------------------
 
-See :ref:`id_DPCT1000`.
+See :ref:`DPCT1000`.
