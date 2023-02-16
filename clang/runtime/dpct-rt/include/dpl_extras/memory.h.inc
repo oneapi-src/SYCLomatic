@@ -68,6 +68,19 @@ struct make_allocatable<void>
 };
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|_DPCT_LIBSYCL_VERSION|dpct::detail
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+#if defined(__LIBSYCL_MAJOR_VERSION) && defined(__LIBSYCL_MINOR_VERSION) &&    \
+    defined(__LIBSYCL_PATCH_VERSION)
+#define _DPCT_LIBSYCL_VERSION                                                  \
+  (__LIBSYCL_MAJOR_VERSION * 10000 + __LIBSYCL_MINOR_VERSION * 100 +           \
+   __LIBSYCL_PATCH_VERSION)
+#else
+#define _DPCT_LIBSYCL_VERSION 0
+#endif
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|__buffer_allocator|dpct::detail
 // DPCT_DEPENDENCY_BEGIN
 // DplExtrasMemory|make_allocatable
@@ -75,7 +88,7 @@ struct make_allocatable<void>
 // DPCT_CODE
 template <typename _DataT>
 using __buffer_allocator =
-#if _ONEDPL_LIBSYCL_VERSION >= 50707
+#if _DPCT_LIBSYCL_VERSION >= 60000
     sycl::buffer_allocator<typename make_allocatable<_DataT>::type>;
 #else
     sycl::buffer_allocator;
