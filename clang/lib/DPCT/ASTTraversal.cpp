@@ -2952,6 +2952,7 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(stmt(sizeOfExpr(hasArgumentOfType(hasCanonicalType(
                          hasDeclaration(namedDecl(Vec3Types()))))))
                     .bind("SizeofVector3Warn"),
+                this);
   MF.addMatcher(cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(
                                   "char1", "uchar1", "short1", "ushort1",
                                   "int1", "uint1", "long1", "ulong1", "float1",
