@@ -171,7 +171,7 @@ public:
     return result;
   }
 
-  operator bool() {
+  operator bool() const {
     return bool(_desc);
   }
 
@@ -599,7 +599,7 @@ public:
     return *this = convolution_desc();
   }
 
-  operator bool() {
+  operator bool() const {
     return _strides.size() == 0
       && _dilates.size() == 0
       && _paddings.size() == 0;
@@ -1776,7 +1776,7 @@ public:
       void *weight, void *diff_weight, size_t scratchpad_size, void *scratchpad,
       size_t workspace_size, void *workspace);
 
-  operator bool() {
+  operator bool() const {
     return bool(_eng) && bool(_s) && bool(_q);
   }
 

@@ -199,7 +199,7 @@ public:
     return result;
   }
 
-  operator bool() {
+  operator bool() const {
     return bool(_desc);
   }
 
@@ -667,7 +667,7 @@ public:
     return *this = convolution_desc();
   }
 
-  operator bool() {
+  operator bool() const {
     return _strides.size() == 0
       && _dilates.size() == 0
       && _paddings.size() == 0;
@@ -2129,7 +2129,7 @@ public:
       size_t workspace_size, void *workspace);
 // DPCT_LABEL_END
 
-  operator bool() {
+  operator bool() const {
     return bool(_eng) && bool(_s) && bool(_q);
   }
 
