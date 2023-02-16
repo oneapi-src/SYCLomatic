@@ -1,28 +1,28 @@
 // RUN: dpct -out-root %T/insert_extra_args %s --cuda-include-path="%cuda-path/include" --format-range=none -- -x cuda --cuda-host-only
 // RUN: FileCheck --input-file %T/insert_extra_args/insert_extra_args.dp.cpp --match-full-lines %s
 
-//CHECK: void deviceFoo(int i, int j, sycl::nd_item<3> item_ct1){
+//CHECK: void deviceFoo(int i, int j, const sycl::nd_item<3> &item_ct1){
 //CHECK-NEXT: int a = item_ct1.get_group(2);
 //CHECK-NEXT: }
 __device__ void deviceFoo(int i, int j){
   int a = blockIdx.x;
 }
 
-//CHECK: void deviceFoo1(int i, sycl::nd_item<3> item_ct1, int j = 0){
+//CHECK: void deviceFoo1(int i, const sycl::nd_item<3> &item_ct1, int j = 0){
 //CHECK-NEXT:   int a = item_ct1.get_group(2);
 //CHECK-NEXT: }
 __device__ void deviceFoo1(int i, int j = 0){
   int a = blockIdx.x;
 }
 
-//CHECK: void deviceFoo2(sycl::nd_item<3> item_ct1, int i = 0, int j = 0){
+//CHECK: void deviceFoo2(const sycl::nd_item<3> &item_ct1, int i = 0, int j = 0){
 //CHECK-NEXT:   int a = item_ct1.get_group(2);
 //CHECK-NEXT: }
 __device__ void deviceFoo2(int i = 0, int j = 0){
   int a = blockIdx.x;
 }
 
-//CHECK: void callDeviceFoo(sycl::nd_item<3> item_ct1){
+//CHECK: void callDeviceFoo(const sycl::nd_item<3> &item_ct1){
 //CHECK-NEXT:   deviceFoo(1, 2, item_ct1);
 //CHECK-NEXT:   deviceFoo1(1, item_ct1, 2);
 //CHECK-NEXT:   deviceFoo2(item_ct1, 1, 2);
@@ -33,21 +33,21 @@ __global__ void callDeviceFoo(){
   deviceFoo2(1, 2);
 }
 
-//CHECK: void kernelFoo(int i, int j, sycl::nd_item<3> item_ct1){
+//CHECK: void kernelFoo(int i, int j, const sycl::nd_item<3> &item_ct1){
 //CHECK-NEXT: int a = item_ct1.get_group(2);
 //CHECK-NEXT: }
 __global__ void kernelFoo(int i, int j){
   int a = blockIdx.x;
 }
 
-//CHECK: void kernelFoo1(int i, sycl::nd_item<3> item_ct1, int j = 0){
+//CHECK: void kernelFoo1(int i, const sycl::nd_item<3> &item_ct1, int j = 0){
 //CHECK-NEXT:   int a = item_ct1.get_group(2);
 //CHECK-NEXT: }
 __global__ void kernelFoo1(int i, int j = 0){
   int a = blockIdx.x;
 }
 
-//CHECK: void kernelFoo2(sycl::nd_item<3> item_ct1, int i = 0, int j = 0){
+//CHECK: void kernelFoo2(const sycl::nd_item<3> &item_ct1, int i = 0, int j = 0){
 //CHECK-NEXT:   int a = item_ct1.get_group(2);
 //CHECK-NEXT: }
 __global__ void kernelFoo2(int i = 0, int j = 0){
@@ -82,7 +82,7 @@ int main(){
 typedef float Real_t;
 #define VOLUDER(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,dvdc)	(a0,a1,a2,a3,a4,a5,b0,b1,b2,b3,b4,b5,dvdc)
 
-//CHECK: float foo(float a, float b, int c, sycl::nd_item<3> item_ct1) {
+//CHECK: float foo(float a, float b, int c, const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:  int i = item_ct1.get_group(2);
 //CHECK-NEXT:  return 1.0f;
 //CHECK-NEXT:}

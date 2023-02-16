@@ -9,7 +9,7 @@ __global__ void Reset_kernel_parameters(void)
     g_mutex=0;
 }
 
-// CHECK: SYCL_EXTERNAL void kernel_extern(sycl::nd_item<3> item_ct1, int *a) {
+// CHECK: SYCL_EXTERNAL void kernel_extern(const sycl::nd_item<3> &item_ct1, int *a) {
 __global__ void kernel_extern() {
   __shared__ int a[360];
   a[0] = blockIdx.x;
@@ -45,7 +45,7 @@ __constant__ float A4, A5;
 __constant__ float A[3 * 3] = {0.0625f, 0.125f,  0.0625f, 0.1250f, 0.250f,
                                0.1250f, 0.0625f, 0.125f,  0.0625f}, A3;
 
-// CHECK: void constAdd(float *C, sycl::nd_item<3> item_ct1, float *A) {
+// CHECK: void constAdd(float *C, const sycl::nd_item<3> &item_ct1, float *A) {
 // CHECK-NEXT:  int i = item_ct1.get_group(2);
 // CHECK-NEXT:  int j = item_ct1.get_local_id(2);
 // CHECK-NEXT:  int k = 3 * i + j;
@@ -72,7 +72,7 @@ __global__ void constAdd(float *C) {
 // CHECK-NEXT:      dpct::access_wrapper<float *> d_C_acc_ct0(d_C, cgh);
 // CHECK-EMPTY:
 // CHECK-NEXT:      cgh.parallel_for<dpct_kernel_name<class constAdd_{{[a-f0-9]+}}>>(
-// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 3) * sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 3)), 
+// CHECK-NEXT:        sycl::nd_range<3>(sycl::range<3>(1, 1, 3) * sycl::range<3>(1, 1, 3), sycl::range<3>(1, 1, 3)),
 // CHECK-NEXT:        [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:          constAdd(d_C_acc_ct0.get_raw_pointer(), item_ct1, A_acc_ct1.get_pointer());
 // CHECK-NEXT:        });

@@ -6,7 +6,7 @@
 
 __device__ float out[NUM_ELEMENTS];
 
-// CHECK: __dpct_noinline__ void kernel1(sycl::nd_item<3> [[ITEM:item_ct1]], float *out) {
+// CHECK: __dpct_noinline__ void kernel1(const sycl::nd_item<3> &[[ITEM:item_ct1]], float *out) {
 // CHECK:   out[{{.*}}[[ITEM]].get_local_id(2)] = [[ITEM]].get_local_id(2);
 // CHECK: }
 __noinline__ __global__ void kernel1() {

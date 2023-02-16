@@ -48,14 +48,15 @@ public:
 template<class T> void runTest();
 
 template <class TName, unsigned N, class TData>
-// CHECK: void testKernelPtr(const TData *L, const TData *M, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+// CHECK: void testKernelPtr(const TData *L, const TData *M,
+// CHECK-NEXT: const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const TData *L, const TData *M) {
   // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
 }
 
 template<class TData>
-// CHECK: void testKernel(TData L, TData M, int N, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+// CHECK: void testKernel(TData L, TData M, int N, const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
 __global__ void testKernel(TData L, TData M, int N) {
   // CHECK: int gtid = [[ITEMNAME]].get_group(2) * [[ITEMNAME]].get_local_range(2) + [[ITEMNAME]].get_local_id(2);
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -230,7 +231,7 @@ int main() {
 
 
 // CHECK:template<typename T>
-// CHECK-NEXT:void convert_kernel(T b, sycl::nd_item<3> item_ct1, int *aaa,
+// CHECK-NEXT:void convert_kernel(T b, const sycl::nd_item<3> &item_ct1, int *aaa,
 // CHECK-NEXT:                    sycl::local_accessor<double, 2> bbb){
 // CHECK:  T a = item_ct1.get_local_range(2) * item_ct1.get_group(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT:}
@@ -410,7 +411,7 @@ template <class V> struct spmv_driver : public ::spmv_driver<V> {
 
 class IndexType {};
 
-// CHECK: void thread_id(sycl::nd_item<3> item_ct1) {
+// CHECK: void thread_id(const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:  auto tidx = item_ct1.get_local_id(2);
 // CHECK-NEXT:  auto tidx_int = static_cast<int>(item_ct1.get_local_id(2));
 // CHECK-NEXT: }
@@ -419,7 +420,7 @@ __device__ void thread_id() {
   auto tidx_int = static_cast<int>(threadIdx.x);
 }
 
-// CHECK: template <typename IndexType = int> void thread_id(sycl::nd_item<3> item_ct1) {
+// CHECK: template <typename IndexType = int> void thread_id(const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:   auto tidx = item_ct1.get_local_id(2);
 // CHECK-NEXT:   auto tidx_template = static_cast<IndexType>(item_ct1.get_local_id(2));
 // CHECK-NEXT:   auto tidx_int = static_cast<int>(item_ct1.get_local_id(2));
@@ -430,7 +431,7 @@ template <typename IndexType = int> __device__ void thread_id() {
   auto tidx_int = static_cast<int>(threadIdx.x);
 }
 
-// CHECK: template <typename IndexType = int> void kernel(sycl::nd_item<3> item_ct1) {
+// CHECK: template <typename IndexType = int> void kernel(const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:   auto tidx = item_ct1.get_local_id(2);
 // CHECK-NEXT:   auto tidx_template = static_cast<IndexType>(item_ct1.get_local_id(2));
 // CHECK-NEXT:   auto tidx_int = static_cast<int>(item_ct1.get_local_id(2));
@@ -483,7 +484,7 @@ void foo() {
 template<class T, int N>
 class foo_class1{
 public:
-// CHECK: void foo(sycl::nd_item<3> item_ct1) {
+// CHECK: void foo(const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT: int a = item_ct1.get_local_id(2);
   __device__ void foo() {
     int a = threadIdx.x;
@@ -492,7 +493,7 @@ public:
 template<int N>
 class foo_class1<int, N>{
 public:
-// CHECK: void foo(sycl::nd_item<3> item_ct1) {
+// CHECK: void foo(const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT: int a = item_ct1.get_local_id(2);
   __device__ void foo() {
     int a = threadIdx.x;

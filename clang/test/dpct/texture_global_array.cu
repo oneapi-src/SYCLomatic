@@ -95,7 +95,8 @@ void createTestTextureAlternative(int instance, unsigned char *d_In, int rSize,
 }
 
 // CHECK: void test_Kernel(dpct::image_accessor_ext<float, 2> tex_inArg, float *d_out,
-// CHECK-NEXT: int yPitchOutInFloat, sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT: int yPitchOutInFloat,
+// CHECK-NEXT: const sycl::nd_item<3> &item_ct1) {
 __global__ void test_Kernel(cudaTextureObject_t tex_inArg, float *d_out,
                             int yPitchOutInFloat) {
   // x and y are coordinates of the output 2D array

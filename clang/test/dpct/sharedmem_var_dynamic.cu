@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 #define SIZE 100
-// CHECK: void staticReverse(int *d, int n, sycl::nd_item<3> item_ct1,
+// CHECK: void staticReverse(int *d, int n, const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT:               uint8_t *dpct_local) {
 // CHECK-NEXT:  auto s = (int *)dpct_local; // the size of s is dynamic
 __global__ void staticReverse(int *d, int n) {
@@ -17,7 +17,7 @@ __global__ void staticReverse(int *d, int n) {
 }
 
 // CHECK: template<typename TData>
-// CHECK-NEXT: void templateReverse(TData *d, TData n, sycl::nd_item<3> item_ct1,
+// CHECK-NEXT: void templateReverse(TData *d, TData n, const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT:                      uint8_t *dpct_local) {
 template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
@@ -132,21 +132,21 @@ __global__ void foo_3() {
 }
 
 // CHECK: #ifdef DPCT_COMPATIBILITY_TEMP
-// CHECK-EMPTY: 
+// CHECK-EMPTY:
 // CHECK: #endif
 #ifdef __CUDA_ARCH__
 __shared__ extern char cuda_shared_memory[];
 #endif
 
 // CHECK: static char *Env_cuda_shared_memory(char *cuda_shared_memory) {
-// CHECK-EMPTY: 
+// CHECK-EMPTY:
 // CHECK: return cuda_shared_memory;
-// CHECK-EMPTY: 
+// CHECK-EMPTY:
 // CHECK: }
 // CHECK: static char *Env_cuda_shared_memory_host_ct{{[0-9]+}}() {
-// CHECK-EMPTY: 
+// CHECK-EMPTY:
 // CHECK: return (char *)0;
-// CHECK-EMPTY: 
+// CHECK-EMPTY:
 // CHECK: }
 __host__ __device__ static char *Env_cuda_shared_memory() {
 #ifdef __CUDA_ARCH__
@@ -165,9 +165,9 @@ __host__ void foo_4_h() { char *p = Env_cuda_shared_memory(); }
 // CHECK: void call_foo4() { dpct::get_default_queue().submit(
 // CHECK-NEXT:  [&](sycl::handler &cgh) {
 // CHECK-NEXT:    sycl::local_accessor<char, 1> cuda_shared_memory_acc_ct1(sycl::range<1>(10), cgh);
-// CHECK-EMPTY: 
+// CHECK-EMPTY:
 // CHECK-NEXT:    cgh.parallel_for<dpct_kernel_name<class foo_4_g_{{[a-f0-9]+}}>>(
-// CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)), 
+// CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(1, 1, 16) * sycl::range<3>(1, 1, 64), sycl::range<3>(1, 1, 64)),
 // CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
 // CHECK-NEXT:        foo_4_g(cuda_shared_memory_acc_ct1.get_pointer());
 // CHECK-NEXT:      });

@@ -37,7 +37,7 @@ __device__ void Scan1(ScanTy &s) {
 }
 
 //CHECK: void TemplateKernel1(int* data,
-//CHECK-NEXT:  sycl::nd_item<1> item_ct1) {
+//CHECK-NEXT:  const sycl::nd_item<1> &item_ct1) {
 //CHECK-NEXT:  typedef sycl::ext::oneapi::sub_group WarpScan;
 //CHECK-NEXT:  typedef sycl::group<1> BlockScan;
 //CHECK-EMPTY:

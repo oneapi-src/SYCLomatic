@@ -26,7 +26,7 @@ void print_data(int* data, int num) {
 }
 
 //CHECK: void ExclusiveScanKernel1(int* data,
-//CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT: int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -49,7 +49,7 @@ __global__ void ExclusiveScanKernel1(int* data) {
 }
 
 //CHECK: void ExclusiveScanKernel2(int* data,
-//CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT: int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -72,7 +72,7 @@ __global__ void ExclusiveScanKernel2(int* data) {
 }
 
 //CHECK: void InclusiveScanKernel(int* data,
-//CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT: int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -95,7 +95,7 @@ __global__ void InclusiveScanKernel(int* data) {
 }
 
 //CHECK: void ExclusiveSumKernel(int* data,
-//CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT: int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -118,7 +118,7 @@ __global__ void ExclusiveSumKernel(int* data) {
 }
 
 //CHECK: void InclusiveSumKernel(int* data,
-//CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT: int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -141,7 +141,7 @@ __global__ void InclusiveSumKernel(int* data) {
 }
 
 //CHECK: void BroadcastKernel(int* data,
-//CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT: int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -164,7 +164,7 @@ __global__ void BroadcastKernel(int* data) {
 }
 
 //CHECK: void WarningTestKernel1(int* data,
-//CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -198,7 +198,7 @@ __global__ void WarningTestKernel1(int* data) {
   data[threadid] = output + data[threadid];
 }
 
-//CHECK: void WarpScanTest(sycl::nd_item<3> item_ct1){
+//CHECK: void WarpScanTest(const sycl::nd_item<3> &item_ct1){
 //CHECK-EMPTY:
 //CHECK-NEXT:  int data;
 //CHECK-NEXT:  /*
@@ -213,7 +213,7 @@ __device__ void WarpScanTest(){
   WarpScan(temp1).InclusiveSum(data, data);
 }
 
-//CHECK: void WarpReduceTest(sycl::nd_item<3> item_ct1){
+//CHECK: void WarpReduceTest(const sycl::nd_item<3> &item_ct1){
 //CHECK-EMPTY:
 //CHECK-NEXT:  int data;
 //CHECK-NEXT:  /*
@@ -229,7 +229,7 @@ __device__ void WarpReduceTest(){
 }
 
 //CHECK: void WarningTestKernel2(int* data,
-//CHECK-NEXT:  sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:  const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT: int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -271,7 +271,7 @@ __device__ void Scan1(ScanTy &s) {
 }
 
 //CHECK: void TemplateKernel1(int* data,
-//CHECK-NEXT:   sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:   const sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:  typedef sycl::ext::oneapi::sub_group WarpScan;
 //CHECK-NEXT:  typedef sycl::group<3> BlockScan;
 //CHECK-EMPTY:
@@ -317,7 +317,7 @@ int main() {
   int TotalThread = GridSize.x * BlockSize.x * BlockSize.y * BlockSize.z;
 
   cudaMallocManaged(&dev_data, TotalThread * sizeof(int));
-  
+
   init_data(dev_data, TotalThread);
 //CHECK:   q_ct1.parallel_for(
 //CHECK-NEXT:         sycl::nd_range<3>(GridSize * BlockSize, BlockSize),

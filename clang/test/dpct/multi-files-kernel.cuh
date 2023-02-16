@@ -4,11 +4,11 @@
 // CHECK: #define ATOMIC_UPDATE( x ) dpct::atomic_fetch_add( &x, (unsigned int)1 );
 #define ATOMIC_UPDATE( x ) atomicAdd( &x, 1 );
 
-// CHECK: int global_id(sycl::nd_item<3> item_ct1);
+// CHECK: int global_id(const sycl::nd_item<3> &item_ct1);
 __device__ int global_id();
 
 
-// CHECK: void simple_kernel(unsigned *i_array, sycl::nd_item<3> item_ct1) {
+// CHECK: void simple_kernel(unsigned *i_array, const sycl::nd_item<3> &item_ct1) {
 __global__ void simple_kernel(unsigned *i_array) {
   int index;
   index = global_id();

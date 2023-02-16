@@ -13,7 +13,8 @@ __device__ void testDevice(const int *K) {
   int t = K[0];
 }
 
-// CHECK: void testKernelPtr(const int *L, const int *M, int N, sycl::nd_item<3> item_ct1) {
+// CHECK: void testKernelPtr(const int *L, const int *M, int N,
+// CHECK-NEXT: const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT: testDevice(L);
 // CHECK-NEXT: int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) + item_ct1.get_local_id(2);
 // CHECK-NEXT: }
@@ -43,7 +44,8 @@ int main() {
 }
 
 // CHECK:dpct::shared_memory<float, 1> result(32);
-// CHECK-NEXT:void my_kernel(float* result, sycl::nd_item<3> item_ct1, float *resultInGroup) {
+// CHECK-NEXT:void my_kernel(float* result, const sycl::nd_item<3> &item_ct1,
+// CHECK-NEXT: float *resultInGroup) {
 // CHECK-NEXT:  // __shared__ variable
 // CHECK-NEXT:  resultInGroup[item_ct1.get_local_id(2)] = item_ct1.get_group(2);
 // CHECK-NEXT:  memcpy(&result[item_ct1.get_group(2)*8], resultInGroup, sizeof(float)*8);
@@ -120,7 +122,7 @@ int run_foo7 () {
 
 // CHECK:dpct::shared_memory<float, 0> in;
 // CHECK-NEXT:dpct::shared_memory<float, 0> out;
-// CHECK-NEXT:void my_kernel2(float in, float *out, sycl::nd_item<3> item_ct1) {
+// CHECK-NEXT:void my_kernel2(float in, float *out, const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT:  if (item_ct1.get_local_id(2) == 0) {
 // CHECK-NEXT:    memcpy(out, &in, sizeof(float));
 // CHECK-NEXT:  }

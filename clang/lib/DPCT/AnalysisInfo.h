@@ -3369,7 +3369,7 @@ MemVarMap::getItem<MemVarMap::DeclParameter>(ParameterStream &PS) const {
   }
 
   std::string ItemParamDecl =
-      MapNames::getClNamespace() + NDItem + " " + getItemName();
+      "const " + MapNames::getClNamespace() + NDItem + " &" + getItemName();
   return PS << ItemParamDecl;
 }
 

@@ -7,7 +7,8 @@
 #include <cuda_runtime.h>
 
 // CHECK:   /* DPCT_ORIG __global__ void testKernelPtr(const int *L, const int *M, int N) {*/
-// CHECK-NEXT:void testKernelPtr(const int *L, const int *M, int N, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+// CHECK-NEXT:void testKernelPtr(const int *L, const int *M, int N,
+// CHECK-NEXT: const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
 __global__ void testKernelPtr(const int *L, const int *M, int N) {
   // CHECK: /* DPCT_ORIG   int gtid = blockIdx.x  * blockDim.x */
   // CHECK-NEXT:   int gtid = item_ct1.get_group(2) /*comments*/ * item_ct1.get_local_range(2) /*comments
@@ -20,7 +21,7 @@ __global__ void testKernelPtr(const int *L, const int *M, int N) {
 }
 
 // CHECK:     /* DPCT_ORIG __global__ void testKernel(int L, int M, int N) {*/
-// CHECK-NEXT: void testKernel(int L, int M, int N, sycl::nd_item<3> [[ITEMNAME:item_ct1]]) {
+// CHECK-NEXT: void testKernel(int L, int M, int N, const sycl::nd_item<3> &[[ITEMNAME:item_ct1]]) {
 __global__ void testKernel(int L, int M, int N) {
   // CHECK:      /* DPCT_ORIG   int gtid = blockIdx.x*/
   // CHECK-NEXT:  int gtid = item_ct1.get_group(2)
@@ -187,7 +188,7 @@ int main() {
 // CHECK-NEXT:                            int n,
 // CHECK-NEXT:                            int blockIndex,
 // CHECK-NEXT:                            int baseIndex,
-// CHECK-NEXT:                            sycl::nd_item<3> item_ct1,
+// CHECK-NEXT:                            const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT:                            uint8_t *dpct_local);
 template <bool storeSum, bool isNP2>
 __global__ static void foo_2(unsigned int *g_odata,
@@ -211,7 +212,7 @@ __global__ static void foo_2(unsigned int *g_odata,
 // CHECK-NEXT:                          int ai, int bi,
 // CHECK-NEXT:                          int mem_ai, int mem_bi,
 // CHECK-NEXT:                          int bankOffsetA, int bankOffsetB,
-// CHECK-NEXT:                          sycl::nd_item<3> item_ct1);
+// CHECK-NEXT:                          const sycl::nd_item<3> &item_ct1);
 template <bool isNP2>
 __device__ static void foo_1(unsigned int* g_odata,
                           const unsigned int* s_data,
@@ -234,7 +235,7 @@ __device__ static void foo_1(unsigned int* g_odata,
 // CHECK-NEXT:                              int ai, int bi,
 // CHECK-NEXT:                              int mem_ai, int mem_bi,
 // CHECK-NEXT:                              int bankOffsetA, int bankOffsetB,
-// CHECK-NEXT:                              sycl::nd_item<3> item_ct1)
+// CHECK-NEXT:                              const sycl::nd_item<3> &item_ct1)
 template <bool isNP2>
 __device__ static void foo_1(unsigned int* g_odata,
                               const unsigned int* s_data,
@@ -266,7 +267,7 @@ __device__ static void foo_1(unsigned int* g_odata,
 // CHECK-NEXT:                        int n,
 // CHECK-NEXT:                        int blockIndex,
 // CHECK-NEXT:                        int baseIndex,
-// CHECK-NEXT:                        sycl::nd_item<3> item_ct1,
+// CHECK-NEXT:                        const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT:                        uint8_t *dpct_local)
 template <bool storeSum, bool isNP2>
 __global__ static void foo_2(unsigned int *g_odata,

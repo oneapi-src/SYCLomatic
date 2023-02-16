@@ -14,7 +14,8 @@
 // This test case is used to verify that
 // the issue of loop copy out-root file
 
-// CHECK: void addKernel(int *c, const int *a, const int *b, sycl::nd_item<3> item_ct1)
+// CHECK: void addKernel(int *c, const int *a, const int *b,
+// CHECK:  const sycl::nd_item<3> &item_ct1)
 __global__ void addKernel(int *c, const int *a, const int *b)
 {
     // CHECK: int i = item_ct1.get_local_id(2);

@@ -9,7 +9,8 @@ __device__ void template_device(T *d) {
   __shared__ T s[16];
 }
 
-// CHECK: void template_kernel(T *d, sycl::nd_item<3> item_ct1, uint8_t *dpct_local, T *s) {
+// CHECK: void template_kernel(T *d, const sycl::nd_item<3> &item_ct1,
+// CHECK-NEXT: uint8_t *dpct_local, T *s) {
 template<class T>
 __global__ void template_kernel(T *d) {
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -17,7 +18,7 @@ __global__ void template_kernel(T *d) {
   template_device(d);
 }
 
-// CHECK: void kernel(int *d, dpct::image_accessor_ext<int, 1> tex, sycl::nd_item<3> item_ct1) {
+// CHECK: void kernel(int *d, dpct::image_accessor_ext<int, 1> tex, const sycl::nd_item<3> &item_ct1) {
 __global__ void kernel(int *d, cudaTextureObject_t tex) {
   int gtid = blockIdx.x * blockDim.x + threadIdx.x;
   tex1D(d + gtid, tex, gtid);

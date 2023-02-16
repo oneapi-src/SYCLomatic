@@ -7,7 +7,7 @@
 
 class TestObject{
 public:
-  // CHECK: static void run(int *in, int *out, sycl::nd_item<3> item_ct1) {
+  // CHECK: static void run(int *in, int *out, const sycl::nd_item<3> &item_ct1) {
   // CHECK-NEXT:  auto &a0 = *sycl::ext::oneapi::group_local_memory<int>(item_ct1.get_group()); // the size of s is static
   // CHECK-NEXT:  a0 = item_ct1.get_local_id(2);
   __device__ static void run(int *in, int *out) {
@@ -17,7 +17,7 @@ public:
   __device__ void test() {}
 };
 
-// CHECK: void memberAcc(sycl::nd_item<3> item_ct1) {
+// CHECK: void memberAcc(const sycl::nd_item<3> &item_ct1) {
 // CHECK-NEXT: auto &s = *sycl::ext::oneapi::group_local_memory<TestObject>(item_ct1.get_group()); // the size of s is static
 // CHECK-NEXT: s.test();
 // CHECK-NEXT: }
@@ -26,7 +26,7 @@ __global__ void memberAcc() {
   s.test();
 }
 
-// CHECK: void nonTypeTemplateReverse(int *d, int n, sycl::nd_item<3> [[ITEM:item_ct1]]) {
+// CHECK: void nonTypeTemplateReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
 // CHECK-NEXT:  auto &s = *sycl::ext::oneapi::group_local_memory<std::complex<int>[2*ArraySize*ArraySize]>(item_ct1.get_group()); // the size of s is dependent on parameter
 template <int ArraySize>
 __global__ void nonTypeTemplateReverse(int *d, int n) {
@@ -37,7 +37,7 @@ __global__ void nonTypeTemplateReverse(int *d, int n) {
   }
 }
 
-// CHECK: void staticReverse(int *d, int n, sycl::nd_item<3> [[ITEM:item_ct1]]) {
+// CHECK: void staticReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
 __global__ void staticReverse(int *d, int n) {
   const int size = 64;
   // CHECK:  auto &s = *sycl::ext::oneapi::group_local_memory<int[size]>(item_ct1.get_group()); // the size of s is static
@@ -51,7 +51,7 @@ __global__ void staticReverse(int *d, int n) {
 }
 
 // CHECK: template<typename TData>
-// CHECK-NEXT: void templateReverse(TData *d, TData n, sycl::nd_item<3> [[ITEM:item_ct1]]) {
+// CHECK-NEXT: void templateReverse(TData *d, TData n, const sycl::nd_item<3> &[[ITEM:item_ct1]]) {
 template<typename TData>
 __global__ void templateReverse(TData *d, TData n) {
   const int size = 32;

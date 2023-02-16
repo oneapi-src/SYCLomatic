@@ -17,7 +17,7 @@ __device__ void testDevice(const int *K) {
 __device__ void testDevice1(const int *K) { int t = K[0]; }
 
      //CHECK:void testKernelPtr(const int *L, const int *M, int N,
-//CHECK-NEXT:                   cl::sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT:                   const cl::sycl::nd_item<3> &item_ct1) {
 //CHECK-NEXT:  testDevice(L);
 //CHECK-NEXT:  int gtid = item_ct1.get_group(2) * item_ct1.get_local_range(2) +
 //CHECK-NEXT:             item_ct1.get_local_id(2);
@@ -59,7 +59,7 @@ int main() {
 }
 
      //CHECK:#define DEVICE 
-#define DEVICE __device__
+#define DEVICE __device__ 
 
      //CHECK:struct SharedMemory
 //CHECK-NEXT:{
@@ -105,8 +105,8 @@ typedef struct
 //CHECK-NEXT:                                 const float g_ewald, const float qqrd2e,
 //CHECK-NEXT:                                 const float denom_lj_inv,
 //CHECK-NEXT:                                 const int loop_trip,
-//CHECK-NEXT:                                 cl::sycl::nd_item<3> item_ct1, float *sp_lj,
-//CHECK-NEXT:                                 float *sp_coul, int *ljd,
+//CHECK-NEXT:                                 const cl::sycl::nd_item<3> &item_ct1,
+//CHECK-NEXT:                                 float *sp_lj, float *sp_coul, int *ljd,
 //CHECK-NEXT:                                 cl::sycl::local_accessor<double, 2> la) {
 template <int EFLAG>
 __global__ void k_mdppp_outer_nn(const int * __restrict__ pos,

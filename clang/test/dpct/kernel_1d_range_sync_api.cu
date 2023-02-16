@@ -8,7 +8,7 @@
 namespace cg = cooperative_groups;
 using namespace cooperative_groups;
 
-// CHECK: void global1(sycl::nd_item<1> item_ct1) {
+// CHECK: void global1(const sycl::nd_item<1> &item_ct1) {
 __global__ void global1() {
   // CHECK: auto cta = item_ct1.get_group();
   cg::thread_block cta = cg::this_thread_block();
@@ -18,7 +18,7 @@ __global__ void global1() {
 
   // CHECK: auto b0 = item_ct1.get_group(), b1 = item_ct1.get_group();
   cg::thread_block b0 = cg::this_thread_block(), b1 = cg::this_thread_block();
-  
+
   // CHECK: int GroupSize = item_ct1.get_group().get_local_linear_range();
   int GroupSize = block.size();
 }
@@ -26,19 +26,19 @@ __global__ void global1() {
 // CHECK: #define TB(b) auto b = item_ct1.get_group();
 #define TB(b) cg::thread_block b = cg::this_thread_block();
 
-// CHECK: void global2(sycl::nd_item<1> item_ct1) {
+// CHECK: void global2(const sycl::nd_item<1> &item_ct1) {
 __global__ void global2() {
   TB(blk);
 }
 
-// CHECK: void global3(sycl::nd_item<3> item_ct1) {
+// CHECK: void global3(const sycl::nd_item<3> &item_ct1) {
 __global__ void global3() {
   TB(blk);
 }
 
 int foo5() {
   //CHECK:q_ct1.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(1), sycl::range<1>(1)), 
+  //CHECK-NEXT:      sycl::nd_range<1>(sycl::range<1>(1), sycl::range<1>(1)),
   //CHECK-NEXT:      [=](sycl::nd_item<1> item_ct1) {
   //CHECK-NEXT:        global1(item_ct1);
   //CHECK-NEXT:      });
@@ -52,7 +52,7 @@ int foo5() {
   global2<<<1,1>>>();
 
   //CHECK:q_ct1.parallel_for(
-  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(3, 2, 1), sycl::range<3>(1, 1, 1)), 
+  //CHECK-NEXT:      sycl::nd_range<3>(sycl::range<3>(3, 2, 1), sycl::range<3>(1, 1, 1)),
   //CHECK-NEXT:      [=](sycl::nd_item<3> item_ct1) {
   //CHECK-NEXT:        global3(item_ct1);
   //CHECK-NEXT:      });

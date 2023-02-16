@@ -26,7 +26,7 @@ void print_data(int* data, int num) {
 }
 
 //CHECK: void SumKernel(int* data,
-//CHECK-NEXT: sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT: const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:
@@ -49,7 +49,7 @@ __global__ void SumKernel(int* data) {
 }
 
 //CHECK: void ReduceKernel(int* data,
-//CHECK-NEXT: sycl::nd_item<3> item_ct1) {
+//CHECK-NEXT: const sycl::nd_item<3> &item_ct1) {
 //CHECK-EMPTY:
 //CHECK-NEXT:  int threadid = item_ct1.get_local_id(2);
 //CHECK-EMPTY:

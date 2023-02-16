@@ -140,7 +140,8 @@ int main() {
   InvokeKernel<double>();
 }
 
-// CHECK: void foo(sycl::nd_item<3> item_ct1, uint8_t *dpct_local, uint32_t &share_v) {
+// CHECK:void foo(const sycl::nd_item<3> &item_ct1, uint8_t *dpct_local,
+// CHECK-NEXT:         uint32_t &share_v) {
 // CHECK-NEXT:  auto share_array = (uint32_t *)dpct_local;
 // CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range(2)) {
 // CHECK-NEXT:    sycl::atomic<uint32_t, sycl::access::address_space::local_space>(sycl::local_ptr<uint32_t>(&share_array[b])).fetch_add(1);
@@ -159,7 +160,8 @@ __shared__ uint32_t share_v;
   atomicAdd(&share_v, 1);
 }
 
-// CHECK:void foo_2(sycl::nd_item<3> item_ct1, uint8_t *dpct_local, uint32_t &share_v) {
+// CHECK: void foo_2(const sycl::nd_item<3> &item_ct1, uint8_t *dpct_local,
+// CHECK-NEXT:            uint32_t &share_v) {
 // CHECK-NEXT:  auto share_array = (uint32_t *)dpct_local;
 // CHECK-NEXT:  for (int b = item_ct1.get_local_id(2); b < 64; b += item_ct1.get_local_range(2)) {
 // CHECK-NEXT:    uint32_t *p_1 = &share_array[b];
@@ -459,7 +461,8 @@ __global__ void k() {
   atomicAdd(&f, f);
 }
 
-// CHECK: void mykernel(unsigned int *dev, sycl::nd_item<3> item_ct1, uint8_t *dpct_local) {
+// CHECK: void mykernel(unsigned int *dev, const sycl::nd_item<3> &item_ct1,
+// CHECK-NEXT: uint8_t *dpct_local) {
 // CHECK-NEXT:  auto sm = (unsigned int *)dpct_local;
 // CHECK-NEXT:  unsigned int* as= (unsigned int*)sm;
 // CHECK-NEXT:  const int kc=item_ct1.get_local_id(2);
@@ -477,7 +480,8 @@ __global__ void mykernel(unsigned int *dev) {
 }
 
 // CHECK: void mykernel_1(unsigned char *buffer, long size,
-// CHECK-NEXT:                             unsigned int *histo, sycl::nd_item<3> item_ct1,
+// CHECK-NEXT:                             unsigned int *histo, 
+// CHECK-NEXT:                             const sycl::nd_item<3> &item_ct1,
 // CHECK-NEXT:                             unsigned int *temp) {
 // CHECK-EMPTY:
 // CHECK-NEXT:  temp[item_ct1.get_local_id(2)] = 0;

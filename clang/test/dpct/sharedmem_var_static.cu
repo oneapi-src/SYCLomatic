@@ -10,7 +10,7 @@
 
 class TestObject{
 public:
-  // CHECK: static void run(int *in, int *out, sycl::nd_item<3> item_ct1, int &a0) {
+  // CHECK: static void run(int *in, int *out, const sycl::nd_item<3> &item_ct1, int &a0) {
   // CHECK-NEXT:  // the size of s is static
   // CHECK-NEXT:  a0 = item_ct1.get_local_id(2);
   __device__ static void run(int *in, int *out) {
@@ -29,7 +29,7 @@ __global__ void memberAcc() {
   s.test();
 }
 
-// CHECK: void nonTypeTemplateReverse(int *d, int n, sycl::nd_item<3> [[ITEM:item_ct1]],
+// CHECK: void nonTypeTemplateReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]],
 // CHECK-NEXT: std::complex<int> *s) {
 // CHECK-NEXT:  // the size of s is dependent on parameter
 template <int ArraySize>
@@ -41,7 +41,8 @@ __global__ void nonTypeTemplateReverse(int *d, int n) {
   }
 }
 
-// CHECK: void staticReverse(int *d, int n, sycl::nd_item<3> [[ITEM:item_ct1]], int &a0, int *s) {
+// CHECK: void staticReverse(int *d, int n, const sycl::nd_item<3> &[[ITEM:item_ct1]], int &a0,
+// CHECK-NEXT: int *s) {
 __global__ void staticReverse(int *d, int n) {
   const int size = 64;
   // CHECK:  // the size of s is static
@@ -55,7 +56,7 @@ __global__ void staticReverse(int *d, int n) {
 }
 
 // CHECK: template<typename TData>
-// CHECK-NEXT: void templateReverse(TData *d, TData n, sycl::nd_item<3> [[ITEM:item_ct1]],
+// CHECK-NEXT: void templateReverse(TData *d, TData n, const sycl::nd_item<3> &[[ITEM:item_ct1]],
 // CHECK-NEXT:                      sycl::local_accessor<TData, 2> s,
 // CHECK-NEXT:                      sycl::local_accessor<TData, 3> s3) {
 template<typename TData>

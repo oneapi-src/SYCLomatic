@@ -36,7 +36,7 @@ void print_data(T* data, int num) {
   }
   std::cout << std::endl;
 }
-//CHECK:  void SumKernel(int* data, sycl::nd_item<3> item_ct1) {
+//CHECK:  void SumKernel(int* data, const sycl::nd_item<3> &item_ct1) {
 
 //CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
 //CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
@@ -76,10 +76,10 @@ __global__ void SumKernel(int* data) {
   data[4 * threadid + 1] = 0;
   data[4 * threadid + 2] = 0;
   data[4 * threadid + 3] = 0;
-  
+
 }
 
-//CHECK:  void ReduceKernel(int* data, sycl::nd_item<3> item_ct1) {
+//CHECK:  void ReduceKernel(int* data, const sycl::nd_item<3> &item_ct1) {
 
 //CHECK:    int threadid = item_ct1.get_group(2) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1) * item_ct1.get_local_range(0))
 //CHECK:                        + item_ct1.get_local_id(0) * (item_ct1.get_local_range(2) * item_ct1.get_local_range(1))
@@ -145,7 +145,7 @@ int main() {
   };
   init_data(dev_data, DATA_NUM);
   //CHECK:  q_ct1.parallel_for(
-  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
   //CHECK:      SumKernel(dev_data, item_ct1);
   //CHECK:    });
@@ -175,7 +175,7 @@ int main() {
   };
   init_data(dev_data, DATA_NUM);
   //CHECK:  q_ct1.parallel_for(
-  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize), 
+  //CHECK:    sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
   //CHECK:    [=](sycl::nd_item<3> item_ct1) {
   //CHECK:      ReduceKernel(dev_data, item_ct1);
   //CHECK:    });
