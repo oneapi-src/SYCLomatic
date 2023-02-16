@@ -16,6 +16,16 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/YAMLTraits.h"
 
+static constexpr auto HelpMessage = R"--(
+DESCRIPTION:
+
+SYCLomatic provides the pattern-rewrite tool to automate the manual adjustment that is sometimes needed in the code before or after migration. The pattern-rewrite tool uses user-defined patterns and can be applied to any code.
+
+The pattern-rewrite tool can be used to
+- Automate the manual adjustments after migration to SYCL, enabling you to rerun migration multiple times and reapply your adjustments
+- Automate manual adjustments to CUDA files before running the migration, enabling you to run migration without altering your original CUDA code
+)--";
+
 template <>
 struct llvm::yaml::CustomMappingTraits<std::map<std::string, pattern::Rule>> {
   static void inputOne(IO &IO, StringRef Key,
@@ -82,6 +92,8 @@ int main(int argc, char *argv[]) {
       "r", llvm::cl::desc("Specify rules filename"),
       llvm::cl::value_desc("filename"), llvm::cl::Required);
 
+  llvm::cl::extrahelp MoreHelp(HelpMessage);
+
   llvm::cl::ParseCommandLineOptions(argc, argv);
 
   const auto RulesFile = fixLineEndings(readFile(RulesFilename.getValue()));
@@ -89,7 +101,7 @@ int main(int argc, char *argv[]) {
   std::vector<pattern::Rule> Rules;
   RulesParser >> Rules;
 
-  std::string Output = fixLineEndings(readFile(InputFilename.getValue()));;
+  std::string Output = fixLineEndings(readFile(InputFilename.getValue()));
   for (const auto &Rule : Rules) {
     Output = pattern::applyRule(Rule, Output);
   }
