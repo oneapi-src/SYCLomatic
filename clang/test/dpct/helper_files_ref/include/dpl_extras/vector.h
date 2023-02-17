@@ -64,8 +64,7 @@ private:
 
   size_type _min_capacity() const { return size_type(1); }
 
-  void _set_capacity_and_alloc()
-  {
+  void _set_capacity_and_alloc() {
     _capacity = ::std::max(_size * 2, _min_capacity());
     _storage = _alloc.allocate(_capacity);
   }
@@ -136,14 +135,16 @@ public:
       auto ptr_type = sycl::get_pointer_type(first, get_default_context());
       if (ptr_type != sycl::usm::alloc::host &&
           ptr_type != sycl::usm::alloc::unknown) {
-        std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                  first, last, begin());
+        std::copy(
+            oneapi::dpl::execution::make_device_policy(get_default_queue()),
+            first, last, begin());
       } else {
         sycl::buffer<T, 1> buf(first, last);
         auto buf_first = oneapi::dpl::begin(buf);
         auto buf_last = oneapi::dpl::end(buf);
-        std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                  buf_first, buf_last, begin());
+        std::copy(
+            oneapi::dpl::execution::make_device_policy(get_default_queue()),
+            buf_first, buf_last, begin());
       }
     }
   }
@@ -260,8 +261,9 @@ public:
       size_type tmp_capacity = ::std::max(_size, _min_capacity());
       auto tmp = _alloc.allocate(tmp_capacity);
       if (_size > 0) {
-        std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
-                  begin(), end(), tmp);
+        std::copy(
+            oneapi::dpl::execution::make_device_policy(get_default_queue()),
+            begin(), end(), tmp);
       }
       _alloc.deallocate(_storage, _capacity);
       _storage = tmp;
@@ -301,7 +303,7 @@ public:
       return end();
     }
     auto m = std::distance(last, end());
-    if (m <= 0){
+    if (m <= 0) {
       return end();
     }
     auto tmp = _alloc.allocate(m);
@@ -330,7 +332,7 @@ public:
       auto i_n = std::distance(begin(), position);
       // allocate temporary storage
       auto m = std::distance(position, end());
-      //will throw if position is not inside active vector
+      // will throw if position is not inside active vector
       auto tmp = _alloc.allocate(m);
       // copy remainder
       std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
@@ -360,7 +362,7 @@ public:
                 first, last, end());
     } else {
       auto m = std::distance(position, end());
-      //will throw if position is not inside active vector
+      // will throw if position is not inside active vector
       auto tmp = _alloc.allocate(m);
 
       std::copy(oneapi::dpl::execution::make_device_policy(get_default_queue()),
@@ -605,7 +607,8 @@ public:
     if (_size < new_size) {
       auto src_buf = get_buffer();
       std::fill(oneapi::dpl::execution::dpcpp_default,
-                oneapi::dpl::begin(src_buf) + _size, oneapi::dpl::begin(src_buf) + new_size, x);
+                oneapi::dpl::begin(src_buf) + _size,
+                oneapi::dpl::begin(src_buf) + new_size, x);
     }
     _size = new_size;
   }
@@ -623,9 +626,7 @@ public:
   reference front() { return *begin(); }
   const_reference back(void) const { return *(end() - 1); }
   reference back(void) { return *(end() - 1); }
-  pointer data(void) {
-    return reinterpret_cast<pointer>(_storage);
-  }
+  pointer data(void) { return reinterpret_cast<pointer>(_storage); }
   const_pointer data(void) const {
     return reinterpret_cast<const_pointer>(_storage);
   }
