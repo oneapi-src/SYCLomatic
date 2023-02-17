@@ -1201,7 +1201,7 @@ inline void segmented_sort_pairs_by_parallel_sorts(
   ::std::copy(::std::forward<_ExecutionPolicy>(policy), end_offsets,
               end_offsets + nsegments, host_accessible_offset_ends);
 
-  for (int i = 0; i < nsegments; i++) {
+  for (::std::uint64_t i = 0; i < nsegments; i++) {
     uint64_t segment_begin = host_accessible_offset_starts[i];
     uint64_t segment_end =
         ::std::min(n, (int64_t)host_accessible_offset_ends[i]);
@@ -1237,7 +1237,7 @@ inline void segmented_sort_keys_by_parallel_sorts(
   ::std::copy(::std::forward<_ExecutionPolicy>(policy), end_offsets,
               end_offsets + nsegments, host_accessible_offset_ends);
 
-  for (int i = 0; i < nsegments; i++) {
+  for (::std::uint64_t i = 0; i < nsegments; i++) {
     uint64_t segment_begin = host_accessible_offset_starts[i];
     uint64_t segment_end =
         ::std::min(n, (int64_t)host_accessible_offset_ends[i]);
@@ -1263,8 +1263,8 @@ inline void segmented_sort_pairs_by_parallel_for_of_sorts(
                   8) {
   policy.queue().submit([&](sycl::handler &cgh) {
     cgh.parallel_for(nsegments, [=](sycl::id<1> i) {
-      uint64_t segment_begin = begin_offsets[(int)i];
-      uint64_t segment_end = ::std::min(n, (int64_t)end_offsets[(int)i]);
+      uint64_t segment_begin = begin_offsets[i];
+      uint64_t segment_end = ::std::min(n, (int64_t)end_offsets[i]);
       if (segment_begin == segment_end) {
         return;
       }
@@ -1288,8 +1288,8 @@ inline void segmented_sort_keys_by_parallel_for_of_sorts(
                   8) {
   policy.queue().submit([&](sycl::handler &cgh) {
     cgh.parallel_for(nsegments, [=](sycl::id<1> i) {
-      uint64_t segment_begin = begin_offsets[(int)i];
-      uint64_t segment_end = ::std::min(n, (int64_t)end_offsets[(int)i]);
+      uint64_t segment_begin = begin_offsets[i];
+      uint64_t segment_end = ::std::min(n, (int64_t)end_offsets[i]);
       if (segment_begin == segment_end) {
         return;
       }
