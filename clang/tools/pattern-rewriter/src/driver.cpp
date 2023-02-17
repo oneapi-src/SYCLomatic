@@ -19,11 +19,8 @@
 static constexpr auto HelpMessage = R"--(
 DESCRIPTION:
 
-SYCLomatic provides the pattern-rewrite tool to automate the manual adjustment that is sometimes needed in the code before or after migration. The pattern-rewrite tool uses user-defined patterns and can be applied to any code.
-
-The pattern-rewrite tool can be used to
-- Automate the manual adjustments after migration to SYCL, enabling you to rerun migration multiple times and reapply your adjustments
-- Automate manual adjustments to CUDA files before running the migration, enabling you to run migration without altering your original CUDA code
+SYCLomatic provides the pattern-rewriter tool to apply code updates and adjustments automatically based on user-defined patterns in YAML format. It can process any code before or after migration.
+For example, you can use it to automate the manual adjustments after migration to SYCL, enabling you to re-run migration multiple times and re-apply your adjustments.
 )--";
 
 template <>
