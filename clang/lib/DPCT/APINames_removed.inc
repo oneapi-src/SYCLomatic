@@ -5,27 +5,9 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-ENTRY(cublasCreate_v2,                 "this call is redundant in SYCL.")
-ENTRY(cublasDestroy_v2,                "this call is redundant in SYCL.")
-
 ENTRY(cublasInit,                      "this call is redundant in SYCL.")
 ENTRY(cublasShutdown,                  "this call is redundant in SYCL.")
 ENTRY(cublasGetError,                  "this call is redundant in SYCL.")
-
-ENTRY(cusolverDnCreate,                "this call is redundant in SYCL.")
-ENTRY(cusolverDnDestroy,               "this call is redundant in SYCL.")
-ENTRY(cusolverDnSpotrf_bufferSize,     "this call is redundant in SYCL.")
-ENTRY(cusolverDnDpotrf_bufferSize,     "this call is redundant in SYCL.")
-ENTRY(cusolverDnCpotrf_bufferSize,     "this call is redundant in SYCL.")
-ENTRY(cusolverDnZpotrf_bufferSize,     "this call is redundant in SYCL.")
-ENTRY(cusolverDnSpotri_bufferSize,     "this call is redundant in SYCL.")
-ENTRY(cusolverDnDpotri_bufferSize,     "this call is redundant in SYCL.")
-ENTRY(cusolverDnCpotri_bufferSize,     "this call is redundant in SYCL.")
-ENTRY(cusolverDnZpotri_bufferSize,     "this call is redundant in SYCL.")
-ENTRY(cusolverDnSgetrf_bufferSize,     "this call is redundant in SYCL.")
-ENTRY(cusolverDnDgetrf_bufferSize,     "this call is redundant in SYCL.")
-ENTRY(cusolverDnCgetrf_bufferSize,     "this call is redundant in SYCL.")
-ENTRY(cusolverDnZgetrf_bufferSize,     "this call is redundant in SYCL.")
 
 ENTRY(cudaDeviceSetLimit,              "SYCL currently does not support setting resource limits on devices.")
 ENTRY(cudaThreadSetLimit,              "SYCL currently does not support setting resource limits on devices.")
