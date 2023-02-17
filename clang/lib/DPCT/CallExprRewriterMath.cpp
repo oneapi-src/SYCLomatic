@@ -32,7 +32,7 @@ using NoRewriteFuncNameRewriterFactory =
 /// Base class for rewriting math function calls
 class MathCallExprRewriter : public FuncCallExprRewriter {
 public:
-  virtual Optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite() override;
 
 protected:
   MathCallExprRewriter(const CallExpr *Call, StringRef SourceCalleeName,
@@ -50,7 +50,7 @@ protected:
                           StringRef TargetCalleeName)
       : Base(Call, SourceCalleeName, TargetCalleeName) {}
 
-  virtual Optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite() override;
 
   friend MathUnsupportedRewriterFactory;
 };
@@ -63,7 +63,7 @@ protected:
                        StringRef TargetCalleeName)
       : Base(Call, SourceCalleeName, TargetCalleeName) {}
 
-  virtual Optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite() override;
 
   friend MathTypeCastRewriterFactory;
 };
@@ -76,7 +76,7 @@ protected:
                         StringRef TargetCalleeName)
       : Base(Call, SourceCalleeName, TargetCalleeName) {}
 
-  virtual Optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite() override;
 
   friend MathSimulatedRewriterFactory;
 };
@@ -95,14 +95,14 @@ protected:
 public:
   virtual ~MathBinaryOperatorRewriter() {}
 
-  virtual Optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite() override;
 
 protected:
   void setLHS(std::string L) { LHS = L; }
   void setRHS(std::string R) { RHS = R; }
 
   // Build string which is used to replace original expression.
-  inline Optional<std::string> buildRewriteString() {
+  inline std::optional<std::string> buildRewriteString() {
     if (LHS == "")
       return buildString(BinaryOperator::getOpcodeStr(Op), RHS);
     return buildString(LHS, " ", BinaryOperator::getOpcodeStr(Op), " ", RHS);
@@ -119,7 +119,7 @@ protected:
       : MathCallExprRewriter(Call, SourceCalleeName, TargetCalleeName) {}
 
 public:
-  virtual Optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite() override;
 
 protected:
   std::string getNewFuncName();
@@ -138,7 +138,7 @@ static inline bool isTargetMathFunction(const FunctionDecl *FD) {
   return true;
 }
 
-Optional<std::string> MathFuncNameRewriter::rewrite() {
+std::optional<std::string> MathFuncNameRewriter::rewrite() {
   // If the function is not a target math function, do not migrate it
   if (!isTargetMathFunction(Call->getDirectCallee())) {
     // No actions needed here, just return an empty string
@@ -261,8 +261,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
       } else if (SourceCalleeName == "__mul24" || SourceCalleeName == "mul24" ||
                  SourceCalleeName == "__umul24" ||
                  SourceCalleeName == "umul24" ||
-                 SourceCalleeName == "__mulhi" ||
-                 SourceCalleeName == "__hadd") {
+                 SourceCalleeName == "__mulhi") {
         std::string ParamType = "int";
         if (SourceCalleeName == "__umul24" || SourceCalleeName == "umul24")
           ParamType = "unsigned int";
@@ -568,7 +567,7 @@ std::string MathFuncNameRewriter::getNewFuncName() {
   return NewFuncName;
 }
 
-Optional<std::string> MathCallExprRewriter::rewrite() {
+std::optional<std::string> MathCallExprRewriter::rewrite() {
   RewriteArgList = getMigratedArgs();
   setTargetCalleeName(SourceCalleeName.str());
   return buildRewriteString();
@@ -581,13 +580,13 @@ void MathCallExprRewriter::reportUnsupportedRoundingMode() {
   }
 }
 
-Optional<std::string> MathUnsupportedRewriter::rewrite() {
+std::optional<std::string> MathUnsupportedRewriter::rewrite() {
   report(Diagnostics::API_NOT_MIGRATED, false,
          MapNames::ITFName.at(SourceCalleeName.str()));
   return Base::rewrite();
 }
 
-Optional<std::string> MathTypeCastRewriter::rewrite() {
+std::optional<std::string> MathTypeCastRewriter::rewrite() {
   auto FD = Call->getDirectCallee();
   if (!FD || !FD->hasAttr<CUDADeviceAttr>())
     return Base::rewrite();
@@ -684,7 +683,7 @@ Optional<std::string> MathTypeCastRewriter::rewrite() {
   return ReplStr;
 }
 
-Optional<std::string> MathSimulatedRewriter::rewrite() {
+std::optional<std::string> MathSimulatedRewriter::rewrite() {
   std::string NamespaceStr;
   auto DRE = dyn_cast<DeclRefExpr>(Call->getCallee()->IgnoreImpCasts());
   if (DRE) {
@@ -1148,7 +1147,7 @@ Optional<std::string> MathSimulatedRewriter::rewrite() {
   return ReplStr;
 }
 
-Optional<std::string> MathBinaryOperatorRewriter::rewrite() {
+std::optional<std::string> MathBinaryOperatorRewriter::rewrite() {
   reportUnsupportedRoundingMode();
   if (SourceCalleeName == "__hneg" || SourceCalleeName == "__hneg2") {
     setLHS("");
@@ -1437,6 +1436,9 @@ createMathAPIRewriterHost(
   createMathAPIRewriterDevice(NAME, PERF_PRED, DEVICE_PERF 0, __VA_ARGS__),
 #define MATH_API_REWRITER_DEVICE(NAME, ...)                                    \
   createMathAPIRewriterDevice(NAME, __VA_ARGS__),
+#define MATH_API_REWRITER_DEVICE_OVERLOAD(CONDITION, DEVICE_REWRITER_1,        \
+                                          DEVICE_REWRITER_2)                   \
+  createConditionalFactory(CONDITION, DEVICE_REWRITER_1 DEVICE_REWRITER_2 0),
 
 #define MATH_API_REWRITER_HOST_WITH_PERF(NAME, PERF_PRED, HOST_PERF,           \
                                          HOST_NORMAL)                          \

@@ -24,7 +24,6 @@
 #include "clang/Basic/LLVM.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/None.h"
-#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/StringSet.h"
@@ -99,8 +98,6 @@ void CubTypeRule::runRule(
   }
 }
 
-/// Remove this function when the support for user-define operator in
-/// reduce_over_group() is available
 bool CubTypeRule::CanMappingToSyclNativeBinaryOp(StringRef OpTypeName) {
   return OpTypeName == "cub::Sum" || OpTypeName == "cub::Max" ||
          OpTypeName == "cub::Min";

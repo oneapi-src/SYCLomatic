@@ -421,7 +421,6 @@ public:
   static MapNames::MapTy MathFuncNameMap;
 
   static std::unordered_map<std::string, std::string> AtomicFuncNamesMap;
-  static const MapNames::SetTy PredefinedStreamName;
 
   /// {Original API, {ToType, FromType}}
   static std::unordered_map<std::string, std::pair<std::string, std::string>>

@@ -19,10 +19,11 @@
 #include <algorithm>
 #include <deque>
 #include <fstream>
+#include <optional>
 
 #define TYPELOC_CAST(Target) static_cast<const Target &>(TL)
 
-llvm::Optional<std::string> getReplacedName(const clang::NamedDecl *D) {
+std::optional<std::string> getReplacedName(const clang::NamedDecl *D) {
   auto Iter = MapNames::TypeNamesMap.find(D->getQualifiedNameAsString(false));
   if (Iter != MapNames::TypeNamesMap.end()) {
     auto Range = getDefinitionRange(D->getBeginLoc(), D->getEndLoc());
@@ -33,7 +34,7 @@ llvm::Optional<std::string> getReplacedName(const clang::NamedDecl *D) {
     }
     return Iter->second->NewName;
   }
-  return llvm::Optional<std::string>();
+  return std::nullopt;
 }
 
 namespace clang {
@@ -1138,7 +1139,7 @@ void DpctGlobalInfo::insertBuiltinVarInfo(
   }
 }
 
-llvm::Optional<std::string> DpctGlobalInfo::getAbsolutePath(FileID ID) {
+std::optional<std::string> DpctGlobalInfo::getAbsolutePath(FileID ID) {
   assert(SM && "SourceManager must be initialized");
   if (const auto *FileEntry = SM->getFileEntryForID(ID)) {
     // To avoid potential path inconsistent issue,
@@ -1155,7 +1156,7 @@ llvm::Optional<std::string> DpctGlobalInfo::getAbsolutePath(FileID ID) {
     llvm::sys::path::remove_dots(FilePathAbs, true);
     return (std::string)FilePathAbs;
   }
-  return llvm::None;
+  return std::nullopt;
 }
 
 int KernelCallExpr::calculateOriginArgsSize() const {

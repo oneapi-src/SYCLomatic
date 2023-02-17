@@ -282,6 +282,10 @@ void MapNames::setExplicitNamespaceMap() {
        std::make_shared<TypeNameRule>("std::tuple_size")},
        {"thrust::swap",
        std::make_shared<TypeNameRule>("std::swap")},
+       {"thrust::zip_iterator",
+       std::make_shared<TypeNameRule>(
+           getDpctNamespace() + "zip_iterator",
+           HelperFeatureEnum::DplExtrasIterators_zip_iterator)},
       {"cusolverDnHandle_t",
        std::make_shared<TypeNameRule>(getClNamespace() + "queue*")},
       {"cusolverEigType_t", std::make_shared<TypeNameRule>("int64_t")},
@@ -4114,6 +4118,9 @@ std::unordered_map<std::string, MacroMigrationRule> MapNames::MacroRuleMap{
     {"cudaMemAttachGlobal",
      MacroMigrationRule("flag_macro_rule", RulePriority::Fallback,
                         "cudaMemAttachGlobal", "0")},
+    {"cudaStreamDefault",
+     MacroMigrationRule("cudaStreamDefault_rule", RulePriority::Fallback,
+                        "cudaStreamDefault", "0")},
     //...
 };
 
@@ -4309,10 +4316,6 @@ const MapNames::MapTy MemoryDataTypeRule::SizeOrPosToMember{
 
 const std::vector<std::string> MemoryDataTypeRule::RemoveMember{
     "dstLOD", "srcLOD", "dstMemoryType", "srcMemoryType"};
-
-const MapNames::SetTy MapNames::PredefinedStreamName{
-    "cudaStreamDefault", "cudaStreamNonBlocking", "cudaStreamLegacy",
-    "cudaStreamPerThread"};
 
 const std::unordered_set<std::string> MapNames::CooperativeGroupsAPISet{
     "this_thread_block", "sync", "tiled_partition",
