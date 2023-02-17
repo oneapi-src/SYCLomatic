@@ -103,7 +103,8 @@ public:
       : _alloc(get_default_queue()), _size(other.size()),
         _capacity(other.capacity()), _storage(other._storage) {
     other._size = 0;
-    other._set_capacity_and_alloc();
+    other._capacity = 0; 
+    other._storage = nullptr;
   }
 
   template <typename InputIterator>
