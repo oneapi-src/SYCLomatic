@@ -660,7 +660,7 @@ static void injectResourceDir(CommandLineArguments &Args, const char *Argv0,
 // if return value is -1, means current input file \p File is not processed,
 // if return value < -1, report return value to upper caller,
 // other values are ignored.
-int ClangTool::proccessFiles(llvm::StringRef File,bool &ProcessingFailed,
+int ClangTool::processFiles(llvm::StringRef File,bool &ProcessingFailed,
                      bool &FileSkipped, int &StaticSymbol, ToolAction *Action) {
     //enter point for the file processing.
     CheckPointStage = 1 /*CHECKPOINT_PROCESSING_FILE*/;
@@ -1044,7 +1044,7 @@ int ClangTool::run(ToolAction *Action) {
     if(isExcludePath(File.str(), true)) {
       continue;
     }
-    int Ret = proccessFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
+    int Ret = processFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
                             Action);
     if (Ret == -1)
       continue;
@@ -1062,12 +1062,12 @@ int ClangTool::run(ToolAction *Action) {
 
     // To traverse all the files in the directory specified by
     // -in-root, collecting *.cu files not processed by the first loop of
-    // calling proccessFiles() into FilesNotProcessed, and copies the rest
+    // calling processFiles() into FilesNotProcessed, and copies the rest
     // files to the output directory.
     DoFileProcessHandle(FilesNotProcessed);
     for (auto &Entry : FilesNotProcessed) {
       auto File = llvm::StringRef(Entry);
-      int Ret = proccessFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
+      int Ret = processFiles(File, ProcessingFailed, FileSkipped, StaticSymbol,
                               Action);
       if (Ret == -1)
         continue;
