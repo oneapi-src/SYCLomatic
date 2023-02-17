@@ -15280,7 +15280,7 @@ void CudaArchMacroRule::runRule(
   auto &HDFIMap = Global.getHostDeviceFuncInfoMap();
   HostDeviceFuncLocInfo HDFLI;
   // process __host__ __device__ function definition except overloaded operator
-  if (FD && !FD->isOverloadedOperator() &&
+  if (FD && (Global.getRunRound() == 0) && !FD->isOverloadedOperator() &&
       FD->getTemplateSpecializationKind() ==
           TemplateSpecializationKind::TSK_Undeclared) {
     auto NameInfo = FD->getNameInfo();
@@ -15317,7 +15317,9 @@ void CudaArchMacroRule::runRule(
     HDFLI.FilePath = NameLocInfo.first;
     if (!FD->isThisDeclarationADefinition()) {
       HDFLI.Type = HDFuncInfoType::HDFI_Decl;
-      HDFIMap[ManglingName].LocInfos.push_back(HDFLI);
+      HDFIMap[ManglingName].LocInfos.insert(
+          {HDFLI.FilePath + "Decl" + std::to_string(HDFLI.FuncEndOffset),
+           HDFLI});
       return;
     }
     HDFLI.Type = HDFuncInfoType::HDFI_Def;
@@ -15331,9 +15333,11 @@ void CudaArchMacroRule::runRule(
         NeedInsert = true;
       }
     }
-    if (NeedInsert){
+    if (NeedInsert) {
       HDFIMap[ManglingName].isDefInserted = true;
-      HDFIMap[ManglingName].LocInfos.push_back(HDFLI);
+      HDFIMap[ManglingName].LocInfos.insert(
+          {HDFLI.FilePath + "Def" + std::to_string(HDFLI.FuncEndOffset),
+           HDFLI});
     }
   } // address __host__ __device__ function call
   else if (const CallExpr *CE = getNodeAsType<CallExpr>(Result, "callExpr")) {
@@ -15362,7 +15366,9 @@ void CudaArchMacroRule::runRule(
       HDFLI.Type = HDFuncInfoType::HDFI_Call;
       HDFLI.FilePath = LocInfo.first;
       HDFLI.FuncEndOffset = LocInfo.second + Offset;
-      HDFIMap[ManglingName].LocInfos.push_back(HDFLI);
+      HDFIMap[ManglingName].LocInfos.insert(
+          {HDFLI.FilePath + "Call" + std::to_string(HDFLI.FuncEndOffset),
+           HDFLI});
       HDFIMap[ManglingName].isCalledInHost = true;
     }
   }

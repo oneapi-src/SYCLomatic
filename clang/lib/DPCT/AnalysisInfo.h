@@ -170,19 +170,21 @@ enum HDFuncInfoType{HDFI_Def, HDFI_Decl, HDFI_Call};
 struct HostDeviceFuncLocInfo {
   std::string FilePath;
   std::string FuncContentCache;
-  unsigned FuncStartOffset;
-  unsigned FuncEndOffset;
-  unsigned FuncNameOffset;
+  unsigned FuncStartOffset = 0;
+  unsigned FuncEndOffset = 0;
+  unsigned FuncNameOffset = 0;
+  bool Processed = false;
   HDFuncInfoType Type;
 };
 
 struct HostDeviceFuncInfo {
-  std::vector<HostDeviceFuncLocInfo>
+  std::unordered_map<std::string, HostDeviceFuncLocInfo>
   LocInfos;
   bool isCalledInHost = false;
   bool isDefInserted = false;
   bool needGenerateHostCode = false;
-  unsigned int PostFixId = 0;
+  int PostFixId = -1;
+  static int MaxId;
 };
 
 enum IfType { IT_Unknow, IT_If, IT_Ifdef, IT_Ifndef, IT_Elif };
@@ -1493,7 +1495,6 @@ public:
     }
     auto &MSMap = DpctGlobalInfo::getMainSourceFileMap();
     bool isFirstPass = !DpctGlobalInfo::getRunRound();
-    int id = 0;
 
     processCudaArchMacro();
 
@@ -1501,23 +1502,25 @@ public:
       auto &Info = Element.second;
       if (Info.isCalledInHost && Info.isDefInserted) {
         Info.needGenerateHostCode = true;
-        if (isFirstPass) {
-          Info.PostFixId = id++;
+        if (Info.PostFixId == -1) {
+          Info.PostFixId = HostDeviceFuncInfo::MaxId++;
         }
-        for (auto &LocInfo : Info.LocInfos) {
-          if (LocInfo.Type == HDFuncInfoType::HDFI_Call) {
+        for (auto &E : Info.LocInfos) {
+          auto &LocInfo = E.second;
+          if (isFirstPass) {
+            auto &MSFiles = MSMap[LocInfo.FilePath];
+            for (auto &File : MSFiles) {
+              if (ProcessedFile.count(File))
+                ReProcessFile.emplace(File);
+            }
+          }
+          if (LocInfo.Type == HDFuncInfoType::HDFI_Call &&
+            !LocInfo.Processed) {
+            LocInfo.Processed = true;
             auto R = std::make_shared<ExtReplacement>(
                 LocInfo.FilePath, LocInfo.FuncEndOffset, 0,
                 "_host_ct" + std::to_string(Info.PostFixId), nullptr);
             addReplacement(R);
-          }
-          if (!isFirstPass) {
-            continue;
-          }
-          auto &MSFiles = MSMap[LocInfo.FilePath];
-          for (auto &File : MSFiles) {
-            if (ProcessedFile.count(File))
-              ReProcessFile.emplace(File);
           }
         }
       }
@@ -1534,7 +1537,8 @@ public:
       for (auto &Element : HostDeviceFuncInfoMap) {
         auto &Info = Element.second;
         if (Info.needGenerateHostCode) {
-          for (auto &LocInfo : Info.LocInfos) {
+          for (auto &E : Info.LocInfos) {
+            auto &LocInfo = E.second;
             if (LocInfo.Type == HDFuncInfoType::HDFI_Call) {
               continue;
             }

@@ -41,6 +41,7 @@ extern std::function<bool(SourceLocation)> IsInAnalysisScopeFunc;
 extern std::function<unsigned int()> GetRunRound;
 extern std::function<void(SourceLocation, unsigned)> RecordTokenSplit;
 namespace dpct {
+int HostDeviceFuncInfo::MaxId = 0;
 std::string DpctGlobalInfo::InRoot = std::string();
 std::string DpctGlobalInfo::OutRoot = std::string();
 std::string DpctGlobalInfo::AnalysisScope = std::string();
