@@ -386,8 +386,9 @@ inline T atomic_fetch_max(T *addr, T operand,
 // DPCT_LABEL_BEGIN|atomic_fetch_compare_dec|dpct
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-/// Atomically decrease the value stored in \p addr if old value stored in \p addr
-/// is equal to zero or greater than \p operand, else set 0 to the value stored in \p addr.
+/// Atomically set \p operand to the value stored in \p addr, if old value stored in
+/// \p addr is equal to zero or greater than \p operand, else decrease the value stored
+/// in \p addr.
 /// \param [in, out] addr The pointer to the data.
 /// \param operand The threshold value.
 /// \param memoryOrder The memory ordering used.
