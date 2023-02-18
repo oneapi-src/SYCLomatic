@@ -1688,6 +1688,24 @@ public:
   }
 };
 
+class IsPolicyArgType {
+  unsigned Idx;
+
+public:
+  IsPolicyArgType(unsigned I) : Idx(I) {}
+  bool operator()(const CallExpr *C) {
+    if (C->getNumArgs() > Idx) {
+      std::string ArgType = C->getArg(Idx)->getType().getCanonicalType().getUnqualifiedType().getAsString();
+      if (ArgType.find("cuda_cub::par_t")!=std::string::npos ||
+          ArgType.find("detail::par_t"  )!=std::string::npos ||
+          ArgType.find("detail::seq_t"  )!=std::string::npos)
+        return true;
+      return false;
+    }
+    return false;
+  }
+};
+
 class HasDirectCallee {
 public:
   HasDirectCallee() {}
@@ -1848,5 +1866,105 @@ public:
   {FuncName, createRemoveAPIRewriterFactory(FuncName)},
 #define CASE_FACTORY_ENTRY(...) \
   createCaseRewriterFactory(__VA_ARGS__),
+
+#define ARGS1(INDEX) ARG(INDEX)
+#define ARGS2(INDEX) ARGS1(INDEX), ARGS1(INDEX+1)
+#define ARGS3(INDEX) ARGS1(INDEX), ARGS2(INDEX+1)
+#define ARGS4(INDEX) ARGS1(INDEX), ARGS3(INDEX+1)
+#define ARGS5(INDEX) ARGS1(INDEX), ARGS4(INDEX+1)
+#define ARGS6(INDEX) ARGS1(INDEX), ARGS5(INDEX+1)
+#define ARGS7(INDEX) ARGS1(INDEX), ARGS6(INDEX+1)
+
+#define TEMPLATED_ARGS1(INDEX) CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(INDEX)), ARG(INDEX))
+#define TEMPLATED_ARGS2(INDEX) TEMPLATED_ARGS1(INDEX), TEMPLATED_ARGS1(INDEX+1)
+#define TEMPLATED_ARGS3(INDEX) TEMPLATED_ARGS1(INDEX), TEMPLATED_ARGS2(INDEX+1)
+#define TEMPLATED_ARGS4(INDEX) TEMPLATED_ARGS1(INDEX), TEMPLATED_ARGS3(INDEX+1)
+#define TEMPLATED_ARGS5(INDEX) TEMPLATED_ARGS1(INDEX), TEMPLATED_ARGS4(INDEX+1)
+
+#define HAS_POLICY  IsPolicyArgType(0)
+#define NO_POLICY   makeCheckNot(IsPolicyArgType(0))
+
+#define MINUS7_5 2
+#define MINUS6_4 2
+#define MINUS5_3 2
+#define MINUS4_2 2
+#define MINUS3_1 2
+
+#define MINUS7_6 1
+#define MINUS6_5 1
+#define MINUS5_4 1
+#define MINUS4_3 1
+#define MINUS3_2 1
+
+#define THRUST_FACTORY_WITH_POLICY_HELPER2(THRUST_FUNC_NAME,SYCL_FUNC_NAME,FEATURE,NUM_ARGS,NUM_PTRS,NUM_NON_PTRS)                                                                                   \
+CONDITIONAL_FACTORY_ENTRY(makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),                                                                                                                   \
+                          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_ ## FEATURE,                                                                                                 \
+                                                  IFELSE_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                                                            \
+                                                                       FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,                                                              \
+                                                                                               CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME, CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))), \
+                                                                       FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,                                       \
+                                                                                               CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                 \
+                                                                                                                  CALL(SYCL_FUNC_NAME,                                                               \
+                                                                                                                       CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),                 \
+                                                                                                                       TEMPLATED_ARGS ## NUM_PTRS(1),                                                \
+                                                                                                                       ARGS ## NUM_NON_PTRS(NUM_PTRS+1)))),                                          \
+                                                                       CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                                         \
+                                                                                          CALL(SYCL_FUNC_NAME,                                                                                       \
+                                                                                               ARG("oneapi::dpl::execution::seq"),                                                                   \
+                                                                                               ARGS ## NUM_ARGS(1))))),                                                                              \
+                          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_ ## FEATURE,                                                                                                 \
+                                                  CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                                                              \
+                                                                     CALL(SYCL_FUNC_NAME,                                                                                                            \
+                                                                          makeMappedThrustPolicyEnum(0),                                                                                             \
+                                                                          ARGS ## NUM_ARGS(1)))))
+
+#define THRUST_FACTORY_WITH_POLICY_HELPER(THRUST_FUNC_NAME,SYCL_FUNC_NAME,FEATURE,NUM_ARGS,NUM_PTRS,NUM_NON_PTRS) \
+THRUST_FACTORY_WITH_POLICY_HELPER2(THRUST_FUNC_NAME,SYCL_FUNC_NAME,FEATURE,NUM_ARGS,NUM_PTRS,NUM_NON_PTRS)
+
+#define THRUST_FACTORY_WITH_POLICY(THRUST_FUNC_NAME,SYCL_FUNC_NAME,FEATURE,NUM_ARGS,NUM_PTRS) \
+THRUST_FACTORY_WITH_POLICY_HELPER(THRUST_FUNC_NAME,SYCL_FUNC_NAME,FEATURE,NUM_ARGS,NUM_PTRS,MINUS ## NUM_ARGS ## _ ## NUM_PTRS)
+
+#define THRUST_FACTORY_WITHOUT_POLICY_HELPER2(THRUST_FUNC_NAME,SYCL_FUNC_NAME,FEATURE,NUM_ARGS,NUM_PTRS,NUM_NON_PTRS)                                                         \
+CONDITIONAL_FACTORY_ENTRY(makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),                                                                                            \
+                          IFELSE_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                                                             \
+                                               FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,                                                               \
+                                                                       CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME, CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),  \
+                                               FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,                                        \
+                                                                       CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                  \
+                                                                                          CALL(SYCL_FUNC_NAME,                                                                \
+                                                                                               CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),                  \
+                                                                                               TEMPLATED_ARGS ## NUM_PTRS(0),                                                 \
+                                                                                               ARGS ## NUM_NON_PTRS(NUM_PTRS)))),                                             \
+                                               CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                                          \
+                                                                  CALL(SYCL_FUNC_NAME,                                                                                        \
+                                                                       ARG("oneapi::dpl::execution::seq"),                                                                    \
+                                                                       ARGS ## NUM_ARGS(0)))),                                                                                \
+                          CONDITIONAL_FACTORY_ENTRY(CheckArgType(1, "thrust::device_ptr"),                                                                                    \
+                                                    CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                                     \
+                                                                       CALL(SYCL_FUNC_NAME,                                                                                   \
+                                                                            CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),                                     \
+                                                                            ARGS ## NUM_ARGS(0))),                                                                            \
+                                                    CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                                     \
+                                                                       CALL(SYCL_FUNC_NAME,                                                                                   \
+                                                                            ARG("oneapi::dpl::execution::seq"),                                                               \
+                                                                            ARGS ## NUM_ARGS(0)))))
+
+#define THRUST_FACTORY_WITHOUT_POLICY_HELPER(THRUST_FUNC_NAME,SYCL_FUNC_NAME,FEATURE,NUM_ARGS,NUM_PTRS,NUM_NON_PTRS) \
+THRUST_FACTORY_WITHOUT_POLICY_HELPER2(THRUST_FUNC_NAME,SYCL_FUNC_NAME,FEATURE,NUM_ARGS,NUM_PTRS,NUM_NON_PTRS)
+
+#define THRUST_FACTORY_WITHOUT_POLICY(THRUST_FUNC_NAME,SYCL_FUNC_NAME,FEATURE,NUM_ARGS,NUM_PTRS) \
+THRUST_FACTORY_WITHOUT_POLICY_HELPER(THRUST_FUNC_NAME,SYCL_FUNC_NAME,FEATURE,NUM_ARGS,NUM_PTRS,MINUS ## NUM_ARGS ## _ ## NUM_PTRS)
+
+#define OVERLOAD_UNSUPPORTED_WARNING_FACTORY(FUNC_NAME)                                                                           \
+WARNING_FACTORY_ENTRY(FUNC_NAME,                                                                                                  \
+                      CONDITIONAL_FACTORY_ENTRY(CheckArgCount(7), CALL_FACTORY_ENTRY(FUNC_NAME, CALL(FUNC_NAME, ARGS7(0))),       \
+                      CONDITIONAL_FACTORY_ENTRY(CheckArgCount(6), CALL_FACTORY_ENTRY(FUNC_NAME, CALL(FUNC_NAME, ARGS6(0))),       \
+                      CONDITIONAL_FACTORY_ENTRY(CheckArgCount(5), CALL_FACTORY_ENTRY(FUNC_NAME, CALL(FUNC_NAME, ARGS5(0))),       \
+                      CONDITIONAL_FACTORY_ENTRY(CheckArgCount(4), CALL_FACTORY_ENTRY(FUNC_NAME, CALL(FUNC_NAME, ARGS4(0))),       \
+                      CONDITIONAL_FACTORY_ENTRY(CheckArgCount(3), CALL_FACTORY_ENTRY(FUNC_NAME, CALL(FUNC_NAME, ARGS3(0))),       \
+                      CONDITIONAL_FACTORY_ENTRY(CheckArgCount(2), CALL_FACTORY_ENTRY(FUNC_NAME, CALL(FUNC_NAME, ARGS2(0))),       \
+                                                                  CALL_FACTORY_ENTRY(FUNC_NAME, CALL(FUNC_NAME, ARGS1(0))))))))), \
+                      Diagnostics::OVERLOAD_UNSUPPORTED,                                                                          \
+                      ARG(FUNC_NAME))
 
 #endif // DPCT_CALL_EXPR_REWRITER_COMMON_H
