@@ -4008,3 +4008,41 @@ getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl) {
   }
   return nullptr;
 }
+
+// Implementation copied from clang/lib/AST/Decl.cpp
+// Helper function: returns true if QT is or contains a type
+// having a postfix component.
+bool typeIsPostfix(clang::QualType QT) {
+  using namespace clang;
+  while (true) {
+    const Type* T = QT.getTypePtr();
+    switch (T->getTypeClass()) {
+    default:
+      return false;
+    case Type::Pointer:
+      QT = cast<PointerType>(T)->getPointeeType();
+      break;
+    case Type::BlockPointer:
+      QT = cast<BlockPointerType>(T)->getPointeeType();
+      break;
+    case Type::MemberPointer:
+      QT = cast<MemberPointerType>(T)->getPointeeType();
+      break;
+    case Type::LValueReference:
+    case Type::RValueReference:
+      QT = cast<ReferenceType>(T)->getPointeeType();
+      break;
+    case Type::PackExpansion:
+      QT = cast<PackExpansionType>(T)->getPattern();
+      break;
+    case Type::Paren:
+    case Type::ConstantArray:
+    case Type::DependentSizedArray:
+    case Type::IncompleteArray:
+    case Type::VariableArray:
+    case Type::FunctionProto:
+    case Type::FunctionNoProto:
+      return true;
+    }
+  }
+}
