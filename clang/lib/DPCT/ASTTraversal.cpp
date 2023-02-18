@@ -1924,6 +1924,7 @@ void AtomicFunctionRule::MigrateAtomicFunc(
           {"atomicCAS",
            HelperFeatureEnum::Atomic_atomic_compare_exchange_strong},
           {"atomicInc", HelperFeatureEnum::Atomic_atomic_fetch_compare_inc},
+          {"atomicDec", HelperFeatureEnum::Atomic_atomic_fetch_compare_dec},
       };
   requestFeature(FunctionNameToFeatureMap.at(AtomicFuncName), CE);
 
@@ -1965,9 +1966,11 @@ void AtomicFunctionRule::MigrateAtomicFunc(
         MapNames::getClNamespace() + "access::address_space::generic_space";
 
     std::string ReplAtomicFuncNameWithSpace;
-    if (ReplacedAtomicFuncName == "dpct::atomic_fetch_compare_inc") {
-      // dpct::atomic_fetch_compare_inc only supports unsigned int type and it
-      // has no type info for template parameter.
+    if (ReplacedAtomicFuncName == "dpct::atomic_fetch_compare_inc" ||
+        ReplacedAtomicFuncName == "dpct::atomic_fetch_compare_dec") {
+      // dpct::atomic_fetch_compare_inc and dpct::atomic_fetch_compare_dec only
+      // support unsigned int type and it has no type info for template
+      // parameter.
       ReplAtomicFuncNameWithSpace =
           ReplacedAtomicFuncName + "<" + SpaceName + ">";
     } else {
