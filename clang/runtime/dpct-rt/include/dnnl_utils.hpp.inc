@@ -19,6 +19,8 @@
 #include <oneapi/dpl/algorithm>
 #include <oneapi/dpl/execution>
 #include <oneapi/dpl/numeric>
+#include <oneapi/mkl.hpp>
+#include <oneapi/mkl/rng/device.hpp>
 #include <sycl/sycl.hpp>
 #include <oneapi/dnnl/dnnl.hpp>
 #include <oneapi/dnnl/dnnl_sycl.hpp>
@@ -506,7 +508,7 @@ enum class batch_normalization_mode { per_activation, spatial };
 // DPCT_LABEL_BEGIN|batch_normalization_ops|dpct::dnnl
 // DPCT_DEPENDENCY_EMPTY
 // DPCT_CODE
-// An enum class representing batch normalization operations.
+/// An enum class representing batch normalization operations.
 enum class batch_normalization_ops { none, activation, add_activation };
 // DPCT_LABEL_END
 
@@ -721,6 +723,101 @@ public:
     *dt = _dt;
   }
 };
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|dropout_desc|dpct::dnnl
+// DPCT_DEPENDENCY_EMPTY
+// DPCT_CODE
+/// A class holding description for a Dropout operation.
+class dropout_desc {
+  float _p;
+  unsigned long long _seed;
+  oneapi::mkl::rng::philox4x32x10 *_rng_engine;
+  oneapi::mkl::rng::bernoulli *_distr;
+  void *_state;
+
+public:
+  dropout_desc() {
+    _p = 0.5;
+    _seed = 0;
+    _rng_engine = nullptr;
+    _distr = nullptr;
+  }
+  ~dropout_desc() {
+    if (_rng_engine) {
+      delete _rng_engine;
+    }
+    if (_distr) {
+      delete _distr;
+    }
+  }
+  /// Getting the random generate engine from a dropout descriptor.
+  /// \returns Random generate engine.
+  oneapi::mkl::rng::philox4x32x10 *get_rng_engine() { return _rng_engine; }
+  /// Getting the distribution from a dropout descriptor.
+  /// \returns Distribution.
+  oneapi::mkl::rng::bernoulli *get_distr() { return _distr; }
+  /// Setting a dropout descriptor with given parameters.
+  /// \param [in] engine Engine of the dropout operation.
+  /// \param [in] p Success probability p of a trial.
+  /// \param [in] state Memory that store random generator state.
+  /// \param [in] state_size Required size to store random generator state.
+  /// \param [in] seed Seed to initialize conditions of the generator state.
+  void set(engine_ext &engine, float p, void *state, size_t state_size,
+           unsigned long long seed) {
+    _p = p;
+    _seed = seed;
+    if (state) {
+      _state = state;
+      sycl::queue *q = engine.get_queue();
+      _rng_engine = new oneapi::mkl::rng::philox4x32x10(*q, seed);
+      _distr = new oneapi::mkl::rng::bernoulli(p);
+      if (state_size < oneapi::mkl::rng::get_state_size(*_rng_engine)) {
+        throw std::runtime_error("set: no sufficient memory to save states.");
+      }
+      oneapi::mkl::rng::save_state(*_rng_engine, state);
+    }
+  }
+  /// Getting parameters from a dropout descriptor.
+  /// \param [in] engine Engine of the dropout operation.
+  /// \param [in] p Success probability p of a trial.
+  /// \param [in] state Memory that store random generator state.
+  /// \param [in] seed Seed to initialize conditions of the generator state.
+  void get(float *p, void **states, unsigned long long *seed) {
+    *seed = _seed;
+    *states = _state;
+    *p = _p;
+  }
+  /// Getting the random generator state.
+  /// \returns State.
+  void *get_state(){
+    return _state;
+  }
+  /// Getting the success probability.
+  /// \returns Probability.
+  float get_probability(){
+    return _p;
+  }
+  /// Restoreing a dropout descriptor from stored state.
+  /// \param [in] engine Engine of the dropout operation.
+  /// \param [in] p Success probability p of a trial.
+  /// \param [in] state Memory that store random generator state.
+  /// \param [in] state_size Required size to store random generator state.
+  /// \param [in] seed Seed to initialize conditions of the generator state.
+  void restore(engine_ext &engine, float p, void *state, size_t state_size,
+               unsigned long long seed) {
+    _p = p;
+    _seed = seed;
+    if (state) {
+      _state = state;
+      sycl::queue *q = engine.get_queue();
+      _rng_engine = new oneapi::mkl::rng::philox4x32x10(
+          oneapi::mkl::rng::load_state<oneapi::mkl::rng::philox4x32x10>(*q,
+                                                                        state));
+      _distr = new oneapi::mkl::rng::bernoulli(p);
+    }
+  }
+}
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|engine_ext|dpct::dnnl
@@ -2110,6 +2207,61 @@ public:
       size_t workspace_size, void *workspace);
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|dropout_get_state_size_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|dropout_desc
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Getting the required state size for specified dropout operation.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \returns Required size of state.
+  size_t dropout_get_state_size();
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|async_dropout_forward_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|dropout_desc
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Computing a specified dropout function value asynchronously.
+  /// \param [in] desc Dropout descriptor.
+  /// \param [in] src_desc Source memory descriptor.
+  /// \param [in] src Pointer to source data.
+  /// \param [in] dst_desc Destination memory descriptor.
+  /// \param [out] dst Pointer to destination data.
+  /// \param [in] workspace Pointer to workspace data.
+  /// \param [in] workspace_size Size of workspace memory.
+  /// \returns An event representing the dropout forward operations.
+  sycl::event async_dropout_forward(const dropout_desc &desc,
+                                    const memory_desc_ext &src_desc, void *src,
+                                    const memory_desc_ext &dst_desc, void *dst,
+                                    void *workspace, size_t workspace_size);
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|async_dropout_backward_decl|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|engine_ext
+// DnnlUtils|dropout_desc
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Computing the gradient of a specified dropout function asynchronously.
+  /// \param [in] desc Dropout descriptor.
+  /// \param [in] diff_dst_desc Differential destination memory descriptor.
+  /// \param [in] diff_dst Pointer to differential destination data.
+  /// \param [in] diff_src_desc Differential source memory descriptor.
+  /// \param [out] diff_src Pointer to differential source data.
+  /// \param [in] workspace Pointer to workspace data.
+  /// \param [in] workspace_size Size of workspace memory.
+  /// \returns An event representing the dropout backward operations.
+  sycl::event async_dropout_backward(const dropout_desc &desc,
+                                     const memory_desc_ext &diff_dst_desc,
+                                     void *diff_dst,
+                                     const memory_desc_ext &diff_src_desc,
+                                     void *diff_src, void *workspace,
+                                     size_t workspace_size);
+// DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|engine_ext_1|dpct::dnnl
 // DPCT_DEPENDENCY_BEGIN
 // DnnlUtils|engine_ext
@@ -4740,6 +4892,79 @@ sycl::event engine_ext::async_rnn_backward(
     });
   }
   return e;
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|dropout_get_state_size|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|dropout_get_state_size_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+size_t engine_ext::dropout_get_state_size(){
+  auto rng_engine = oneapi::mkl::rng::philox4x32x10(*_q, 0ull);
+  return oneapi::mkl::rng::get_state_size(rng_engine);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|async_dropout_forward|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|async_dropout_forward_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+sycl::event engine_ext::async_dropout_forward(const dropout_desc &desc,
+                                              const memory_desc_ext &src_desc,
+                                              void *src,
+                                              const memory_desc_ext &dst_desc,
+                                              void *dst, void *workspace,
+                                              size_t workspace_size) {
+  if (workspace_size < src_desc.get_size()) {
+    throw std::runtime_error("async_dropout_forward: no sufficient workspace.");
+  }
+  float p = desc.get_probability();
+  if (p == 1.f) {
+    return _q->memset(dst, 0, dst_desc.get_size());
+  } else if (p == 0.f) {
+    return async_reorder(1.f, src_desc, src, 0.f, dst_desc, dst);
+  }
+
+  float scale_factor = 1.f / (1.f - p);
+  void *cache = workspace;
+
+  memory_desc_ext rng_data_desc(
+      ::dnnl::memory::desc(src_desc.get_dims(), ::dnnl::memory::data_type::s32,
+                           src_desc.get_strides()));
+  if (src_desc.get_desc().get_data_type() != ::dnnl::memory::data_type::s32) {
+    cache = allocate(workspace_desc);
+  }
+  oneapi::mkl::rng::generate(*desc.get_distr(), *desc.get_rng_engine(),
+                             rng.get_element_num(), cache);
+  oneapi::mkl::rng::save_state(*desc.get_rng_engine(), desc.get_state());
+
+  async_reorder(scale_factor, rng_data_desc, cache, 0.f, src_desc, workspace);
+
+  return async_binary(binary_op::mul, 1.f, src_desc, src, 1.f, src_desc,
+                      workspace, 0.f, dst_desc, dst);
+}
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|async_dropout_backward|dpct::dnnl
+// DPCT_DEPENDENCY_BEGIN
+// DnnlUtils|async_dropout_backward_decl
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+sycl::event engine_ext::async_dropout_backward(
+    const dropout_desc &desc, const memory_desc_ext &diff_dst_desc,
+    void *diff_dst, const memory_desc_ext &diff_src_desc, void *diff_src,
+    void *workspace, size_t workspace_size) {
+  float p = desc.get_probability();
+  if (p == 1.f) {
+    return _q->memset(diff_src, 0, dst_desc.get_size());
+  } else if (p == 0.f) {
+    return async_reorder(1.f, diff_dst_desc, diff_dst, 0.f, diff_src_desc,
+                         diff_src);
+  }
+  return async_binary(binary_op::mul, 1.f, diff_dst_desc, diff_dst, 1.f,
+                      diff_dst_desc, workspace, 0.f, diff_src_desc, diff_src);
 }
 // DPCT_LABEL_END
 } // namespace dnnl
