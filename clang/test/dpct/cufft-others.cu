@@ -69,7 +69,8 @@ int foo3(cudaStream_t stream) {
   return 0;
 }
 
-void foo4() {
+void foo4(double x) {
+  //CHECK:const int dir = -1;
   const int dir = CUFFT_FORWARD;
   cufftHandle plan;
   float2* iodata;
@@ -78,9 +79,11 @@ void foo4() {
   //CHECK-NEXT:plan->compute<sycl::float2, sycl::float2>(iodata, iodata, dpct::fft::fft_direction::backward);
   cufftExecC2C(plan, iodata, iodata, dir);
   cufftExecC2C(plan, iodata, iodata, -dir);
+  const double base = dir * 3.1415926 / x;
 }
 
-void foo5() {
+void foo5(double x) {
+  //CHECK:int dir = -1;
   int dir = CUFFT_FORWARD;
   cufftHandle plan;
   float2* iodata;
@@ -89,4 +92,5 @@ void foo5() {
   //CHECK-NEXT:plan->compute<sycl::float2, sycl::float2>(iodata, iodata, -dir == 1 ? dpct::fft::fft_direction::backward : dpct::fft::fft_direction::forward);
   cufftExecC2C(plan, iodata, iodata, dir);
   cufftExecC2C(plan, iodata, iodata, -dir);
+  const double base = dir * 3.1415926 / x;
 }

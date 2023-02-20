@@ -27,6 +27,15 @@
 // NONE: test.cuh
 // NONE: test.h
 
+// RUN: rm %T/*
+// RUN: dpct -p=%S --out-root=%T --cuda-include-path="%cuda-path/include" --change-cuda-files-extension-only
+// RUN: ls Output > set.log
+// RUN: FileCheck --input-file set.log --match-full-lines %T/main.dp.cpp -check-prefix=SET
+// SET: main.dp.cpp
+// SET: test.cpp
+// SET: test.dp.hpp
+// SET: test.h
+
 #include "test.cuh"
 #include "test.h"
 

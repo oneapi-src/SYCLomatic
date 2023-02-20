@@ -41,6 +41,7 @@
 #include <sycl/sycl.hpp>
 #include <iostream>
 #include <limits.h>
+#include <math.h>
 // DPCT_LABEL_END
 
 // DPCT_LABEL_BEGIN|dpct_named_lambda|

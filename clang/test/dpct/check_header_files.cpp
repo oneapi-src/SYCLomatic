@@ -65,6 +65,11 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
 
 // RUN: echo "begin" > %T/check_header_files/diff_res.txt
+// RUN: diff %S/helper_files_ref/include/sparse_utils.hpp  %T/../../../runtime/dpct-rt/include/sparse_utils.hpp >> %T/check_header_files/diff_res.txt
+// RUN: echo "end" >> %T/check_header_files/diff_res.txt
+// RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt
+
+// RUN: echo "begin" > %T/check_header_files/diff_res.txt
 // RUN: diff %S/helper_files_ref/include/fft_utils.hpp  %T/../../../runtime/dpct-rt/include/fft_utils.hpp >> %T/check_header_files/diff_res.txt
 // RUN: echo "end" >> %T/check_header_files/diff_res.txt
 // RUN: FileCheck %s --match-full-lines --input-file %T/check_header_files/diff_res.txt

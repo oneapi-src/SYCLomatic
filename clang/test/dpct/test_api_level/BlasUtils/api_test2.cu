@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/BlasUtils/api_test2_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/BlasUtils/api_test2_out
 
-// CHECK: 9
+// CHECK: 10
 
 // TEST_FEATURE: BlasUtils_get_transpose
 

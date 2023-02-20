@@ -72,7 +72,7 @@ bool Context::evaluateAsInitializer(State &Parent, const VarDecl *VD,
 
 const LangOptions &Context::getLangOpts() const { return Ctx.getLangOpts(); }
 
-llvm::Optional<PrimType> Context::classify(QualType T) const {
+std::optional<PrimType> Context::classify(QualType T) const {
   if (T->isReferenceType() || T->isPointerType()) {
     return PT_Ptr;
   }
@@ -125,7 +125,7 @@ unsigned Context::getCharBit() const {
 
 bool Context::Run(State &Parent, Function *Func, APValue &Result) {
   InterpState State(Parent, *P, Stk, *this);
-  State.Current = new InterpFrame(State, Func, nullptr, {}, {});
+  State.Current = new InterpFrame(State, Func, /*Caller=*/nullptr, {});
   if (Interpret(State, Result))
     return true;
   Stk.clear();

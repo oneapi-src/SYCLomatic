@@ -65,6 +65,7 @@ DPCT_HEADER(DNNL_Utils, "<dpct/dnnl_utils.hpp>")
 DPCT_HEADER(LAPACK_Utils, "<dpct/lapack_utils.hpp>")
 DPCT_HEADER(COMMON_Utils, "<dpct/lib_common_utils.hpp>")
 DPCT_HEADER(Atomic, "<dpct/atomic.hpp>")
+DPCT_HEADER(SPBLAS_Utils, "<dpct/sparse_utils.hpp>")
 
 #undef MKL_HEADER
 #undef ONEDPL_HEADER

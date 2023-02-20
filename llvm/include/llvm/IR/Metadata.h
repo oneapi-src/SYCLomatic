@@ -18,7 +18,6 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DenseMapInfo.h"
-#include "llvm/ADT/None.h"
 #include "llvm/ADT/PointerUnion.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
@@ -1028,15 +1027,15 @@ class MDNode : public Metadata {
     MutableArrayRef<MDOperand> operands() {
       if (IsLarge)
         return getLarge();
-      return makeMutableArrayRef(
+      return MutableArrayRef(
           reinterpret_cast<MDOperand *>(this) - SmallSize, SmallNumOps);
     }
 
     ArrayRef<MDOperand> operands() const {
       if (IsLarge)
         return getLarge();
-      return makeArrayRef(reinterpret_cast<const MDOperand *>(this) - SmallSize,
-                          SmallNumOps);
+      return ArrayRef(reinterpret_cast<const MDOperand *>(this) - SmallSize,
+                      SmallNumOps);
     }
 
     unsigned getNumOperands() const {

@@ -46,6 +46,7 @@
 #include "llvm/Support/Threading.h"
 
 #include <tuple>
+#include <optional>
 
 using namespace mlir;
 using namespace mlir::detail;
@@ -251,7 +252,7 @@ bool OpPrintingFlags::shouldElideElementsAttr(ElementsAttr attr) const {
 }
 
 /// Return the size limit for printing large ElementsAttr.
-Optional<int64_t> OpPrintingFlags::getLargeElementsAttrLimit() const {
+std::optional<int64_t> OpPrintingFlags::getLargeElementsAttrLimit() const {
   return elementsAttrElementLimit;
 }
 
@@ -529,8 +530,9 @@ private:
       return alias < rhs.alias;
     }
 
-    /// The alias for the attribute or type, or None if the value has no alias.
-    Optional<StringRef> alias;
+    /// The alias for the attribute or type, or std::nullopt if the value has no
+    /// alias.
+    std::optional<StringRef> alias;
     /// The alias depth of this attribute or type, i.e. an indication of the
     /// relative ordering of when to print this alias.
     unsigned aliasDepth : 30;
@@ -601,12 +603,8 @@ public:
 
     // If requested, always print the generic form.
     if (!printerFlags.shouldPrintGenericOpForm()) {
-      // Check to see if this is a known operation.  If so, use the registered
-      // custom printer hook.
-      if (auto opInfo = op->getRegisteredInfo()) {
-        opInfo->printAssembly(op, *this, /*defaultDialect=*/"");
-        return;
-      }
+      op->getName().printAssembly(op, *this, /*defaultDialect=*/"");
+      return;
     }
 
     // Otherwise print with the generic assembly form.
@@ -617,11 +615,9 @@ private:
   /// Print the given operation in the generic form.
   void printGenericOp(Operation *op, bool printOpName = true) override {
     // Consider nested operations for aliases.
-    if (op->getNumRegions() != 0) {
-      for (Region &region : op->getRegions())
-        printRegion(region, /*printEntryBlockArgs=*/true,
-                    /*printBlockTerminators=*/true);
-    }
+    for (Region &region : op->getRegions())
+      printRegion(region, /*printEntryBlockArgs=*/true,
+                  /*printBlockTerminators=*/true);
 
     // Visit all the types used in the operation.
     for (Type type : op->getOperandTypes())
@@ -788,14 +784,14 @@ private:
   /// Print the given attribute/type, visiting any nested aliases that would be
   /// generated as part of printing.
   void printAndVisitNestedAliasesImpl(Attribute attr, bool elideType) {
-    if (!isa<BuiltinDialect>(attr.getDialect()))
-      return attr.getDialect().printAttribute(attr, *this);
+    if (!isa<BuiltinDialect>(attr.getDialect())) {
+      attr.getDialect().printAttribute(attr, *this);
 
-    // Process the builtin attributes.
-    if (attr.isa<AffineMapAttr, DenseArrayAttr, FloatAttr, IntegerAttr,
-                 IntegerSetAttr, UnitAttr>())
+      // Process the builtin attributes.
+    } else if (attr.isa<AffineMapAttr, DenseArrayAttr, FloatAttr, IntegerAttr,
+                        IntegerSetAttr, UnitAttr>()) {
       return;
-    if (auto dictAttr = dyn_cast<DictionaryAttr>(attr)) {
+    } else if (auto dictAttr = dyn_cast<DictionaryAttr>(attr)) {
       for (const NamedAttribute &nestedAttr : dictAttr.getValue()) {
         printAttribute(nestedAttr.getName());
         printAttribute(nestedAttr.getValue());
@@ -1218,7 +1214,7 @@ private:
   /// 'lookupResultNo'. 'lookupResultNo' is only filled in if the result group
   /// has more than 1 result.
   void getResultIDAndNumber(OpResult result, Value &lookupValue,
-                            Optional<int> &lookupResultNo) const;
+                            std::optional<int> &lookupResultNo) const;
 
   /// Set a special value name for the given value.
   void setValueName(Value value, StringRef name);
@@ -1330,7 +1326,7 @@ void SSANameState::printValueID(Value value, bool printResultNo,
     return;
   }
 
-  Optional<int> resultNo;
+  std::optional<int> resultNo;
   auto lookupValue = value;
 
   // If this is an operation result, collect the head lookup value of the result
@@ -1354,7 +1350,7 @@ void SSANameState::printValueID(Value value, bool printResultNo,
   }
 
   if (resultNo && printResultNo)
-    stream << '#' << resultNo;
+    stream << '#' << *resultNo;
 }
 
 void SSANameState::printOperationID(Operation *op, raw_ostream &stream) const {
@@ -1518,8 +1514,9 @@ void SSANameState::numberValuesInOp(Operation &op) {
   }
 }
 
-void SSANameState::getResultIDAndNumber(OpResult result, Value &lookupValue,
-                                        Optional<int> &lookupResultNo) const {
+void SSANameState::getResultIDAndNumber(
+    OpResult result, Value &lookupValue,
+    std::optional<int> &lookupResultNo) const {
   Operation *owner = result.getOwner();
   if (owner->getNumResults() == 1)
     return;
@@ -2198,11 +2195,9 @@ void AsmPrinter::Impl::printAttributeImpl(Attribute attr,
     stridedLayoutAttr.print(os);
   } else if (auto denseArrayAttr = attr.dyn_cast<DenseArrayAttr>()) {
     os << "array<";
-    if (typeElision != AttrTypeElision::Must)
-      printType(denseArrayAttr.getType().getElementType());
+    printType(denseArrayAttr.getElementType());
     if (!denseArrayAttr.empty()) {
-      if (typeElision != AttrTypeElision::Must)
-        os << ": ";
+      os << ": ";
       printDenseArrayAttr(denseArrayAttr);
     }
     os << ">";
@@ -3559,7 +3554,10 @@ void Type::print(raw_ostream &os, AsmState &state) const {
   AsmPrinter::Impl(os, state.getImpl()).printType(*this);
 }
 
-void Type::dump() const { print(llvm::errs()); }
+void Type::dump() const {
+  print(llvm::errs());
+  llvm::errs() << "\n";
+}
 
 void AffineMap::dump() const {
   print(llvm::errs());

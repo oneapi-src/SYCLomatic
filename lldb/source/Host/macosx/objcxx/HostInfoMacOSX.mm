@@ -24,6 +24,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 // C++ Includes
+#include <optional>
 #include <string>
 
 // C inclues
@@ -61,14 +62,14 @@
 
 using namespace lldb_private;
 
-llvm::Optional<std::string> HostInfoMacOSX::GetOSBuildString() {
+std::optional<std::string> HostInfoMacOSX::GetOSBuildString() {
   int mib[2] = {CTL_KERN, KERN_OSVERSION};
   char cstr[PATH_MAX];
   size_t cstr_len = sizeof(cstr);
   if (::sysctl(mib, 2, cstr, &cstr_len, NULL, 0) == 0)
     return std::string(cstr, cstr_len - 1);
 
-  return llvm::None;
+  return std::nullopt;
 }
 
 static void ParseOSVersion(llvm::VersionTuple &version, NSString *Key) {

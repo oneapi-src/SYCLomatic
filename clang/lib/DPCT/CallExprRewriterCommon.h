@@ -145,6 +145,31 @@ public:
   }
 };
 
+template <class SubExprT> class DerefCastIfNeedExprPrinter {
+  std::string TypeInfo;
+  SubExprT SubExpr;
+
+public:
+  DerefCastIfNeedExprPrinter(std::string &&T, SubExprT &&S)
+      : TypeInfo(std::forward<std::string>(T)),
+        SubExpr(std::forward<SubExprT>(S)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    const Expr *InputArg = SubExpr->IgnoreImpCasts();
+    const Expr *DerefInputArg = getDereferencedExpr(InputArg);
+    if (DerefInputArg) {
+      dpct::print(Stream, DerefInputArg);
+    } else {
+      clang::QualType ArgType = InputArg->getType().getCanonicalType();
+      ArgType.removeLocalCVRQualifiers(clang::Qualifiers::CVRMask);
+      Stream << "*";
+      if (ArgType.getAsString() != TypeInfo) {
+        Stream << "(" << TypeInfo << ")";
+      }
+      dpct::print(Stream, SubExpr);
+    }
+  }
+};
+
 template <class SubExprT> class DoublePointerConstCastExprPrinter {
   std::string TypeInfo;
   SubExprT SubExpr;
@@ -544,6 +569,17 @@ inline std::function<CastIfNeedExprPrinter<SubExprT>(const CallExpr *)>
 makeCastIfNeedExprCreator(std::function<std::string(const CallExpr *)> TypeInfo,
                           std::function<SubExprT(const CallExpr *)> Sub) {
   return PrinterCreator<CastIfNeedExprPrinter<SubExprT>,
+                        std::function<std::string(const CallExpr *)>,
+                        std::function<SubExprT(const CallExpr *)>>(TypeInfo,
+                                                                   Sub);
+}
+
+template <class SubExprT>
+inline std::function<DerefCastIfNeedExprPrinter<SubExprT>(const CallExpr *)>
+makeDerefCastIfNeedExprCreator(
+    std::function<std::string(const CallExpr *)> TypeInfo,
+    std::function<SubExprT(const CallExpr *)> Sub) {
+  return PrinterCreator<DerefCastIfNeedExprPrinter<SubExprT>,
                         std::function<std::string(const CallExpr *)>,
                         std::function<SubExprT(const CallExpr *)>>(TypeInfo,
                                                                    Sub);
@@ -1641,6 +1677,7 @@ public:
   createFactoryWithSubGroupSizeRequest<IDX>(NEWFUNCNAME, x 0),
 #define STREAM(x) makeDerefStreamExprCreator(x)
 #define DEREF(x) makeDerefExprCreator(x)
+#define DEREF_CAST_IF_NEED(T, S) makeDerefCastIfNeedExprCreator(T, S)
 #define STRUCT_DISMANTLE(idx, ...) makeStructDismantler(idx, {__VA_ARGS__})
 #define ARG(x) makeCallArgCreator(x)
 #define ARG_WC(x) makeDerefArgCreatorWithCall(x)

@@ -7,6 +7,14 @@
 //===----------------------------------------------------------------------===//
 
 WARNING_FACTORY_ENTRY(
+    "cudnnGetErrorString",
+    INSERT_AROUND_FACTORY(CALL_FACTORY_ENTRY("cudnnGetErrorString",
+                                             CALL("cudnnGetErrorString",
+                                                  ARG_WC(0))),
+                          "\"cudnnGetErrorString is not supported\"/*", "*/"),
+    Diagnostics::TRNA_WARNING_ERROR_HANDLING_API_COMMENTED)
+
+WARNING_FACTORY_ENTRY(
     "cudaGetErrorString",
     INSERT_AROUND_FACTORY(CALL_FACTORY_ENTRY("cudaGetErrorString",
                                              CALL("cudaGetErrorString",

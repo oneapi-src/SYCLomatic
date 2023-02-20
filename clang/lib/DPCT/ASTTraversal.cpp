@@ -126,7 +126,7 @@ int IncludesCallbacks::findPoundSign(SourceLocation DirectiveStart) {
   if (CharDataInvalid || !Entry.isFile()) {
     return -1;
   }
-  llvm::Optional<llvm::MemoryBufferRef> Buffer =
+  std::optional<llvm::MemoryBufferRef> Buffer =
       Entry.getFile().getContentCache().getBufferOrNone(
           SM.getDiagnostics(), SM.getFileManager(), SourceLocation());
   if (!Buffer.has_value())
@@ -289,8 +289,8 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     std::string MacroNameStr;
     if (auto Identifier = MacroNameTok.getIdentifierInfo())
       MacroNameStr = Identifier->getName().str();
-    if (MapNames::PredefinedStreamName.find(MacroNameStr) !=
-        MapNames::PredefinedStreamName.end()) {
+    if (MacroNameStr == "cudaStreamDefault"
+        || MacroNameStr == "cudaStreamNonBlocking") {
       // Currently, only support examples like,
       // #define CONCATE(name) cuda##name
       // which contains 3 tokens, and the 2nd token is ##.
@@ -312,7 +312,7 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
                        DefRange.getBegin());
         TransformSet.emplace_back(new ReplaceText(
             DefRange.getBegin(), Length,
-            "&" + MapNames::getDpctNamespace() + "get_default_queue()"));
+            "0"));
       }
     }
 
@@ -390,18 +390,18 @@ void IncludesCallbacks::MacroExpands(const Token &MacroNameTok,
     auto Repl = std::make_shared<ReplaceText>(Range.getBegin(), 13,
                                               "DPCT_COMPATIBILITY_TEMP");
     ReplMap.insert(Repl->getReplacement(DpctGlobalInfo::getContext()));
-  } else if (MacroNameTok.getIdentifierInfo() &&
+  }
+  // CUFFT_FORWARD and CUFFT_INVERSE are migrated to integer literal in all
+  // places except in cufftExec call.
+  // CUFFT_FORWARD and CUFFT_INVERSE in cufftExec call are migrated with
+  // FFTDirExpr and longer replacement will overlap shorter replacement, so the
+  // migration is expected.
+  else if (MacroNameTok.getIdentifierInfo() &&
              MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_FORWARD") {
-    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13,
-                                              MapNames::getDpctNamespace() +
-                                                  "fft::fft_direction::forward"));
-    requestFeature(HelperFeatureEnum::FftUtils_fft_direction, Range.getBegin());
+    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "-1"));
   } else if (MacroNameTok.getIdentifierInfo() &&
              MacroNameTok.getIdentifierInfo()->getName() == "CUFFT_INVERSE") {
-    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13,
-                                              MapNames::getDpctNamespace() +
-                                                  "fft::fft_direction::backward"));
-    requestFeature(HelperFeatureEnum::FftUtils_fft_direction, Range.getBegin());
+    TransformSet.emplace_back(new ReplaceText(Range.getBegin(), 13, "1"));
   }
 
   // For the un-specialized struct, there is no AST for the extern function
@@ -786,7 +786,7 @@ private:
 
 void IncludesCallbacks::InclusionDirective(
     SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
-    bool IsAngled, CharSourceRange FilenameRange, Optional<FileEntryRef> File,
+    bool IsAngled, CharSourceRange FilenameRange, OptionalFileEntryRef File,
     StringRef SearchPath, StringRef RelativePath, const Module *Imported,
     SrcMgr::CharacteristicKind FileType) {
   // Record the locations of the first and last inclusion directives in a file
@@ -940,6 +940,7 @@ void IncludesCallbacks::InclusionDirective(
             HelperFilesCustomizationLevel::HFCL_None ||
         DpctGlobalInfo::getHelperFilesCustomizationLevel() ==
             HelperFilesCustomizationLevel::HFCL_All) {
+      DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_SPBLAS_Utils);
       DpctGlobalInfo::getInstance().insertHeader(HashLoc, HT_DPCT_BLAS_Utils);
     } else {
       DpctGlobalInfo::getInstance().insertHeader(HashLoc,
@@ -2171,7 +2172,7 @@ void TypeInDeclRule::registerMatcher(MatchFinder &MF) {
                   "cudaDataType_t", "cudaDataType", "cublasComputeType_t",
                   "cublasAtomicsMode_t", "CUmem_advise_enum", "CUmem_advise",
                   "thrust::tuple_element", "thrust::tuple_size", "cublasMath_t",
-                  "cudaPointerAttributes")
+                  "cudaPointerAttributes", "thrust::zip_iterator")
               )))))
           .bind("cudaTypeDef"),
       this);
@@ -2673,7 +2674,8 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
     }
 
     std::string CanonicalTypeStr =
-        DpctGlobalInfo::getTypeName(TL->getType().getCanonicalType());
+      DpctGlobalInfo::getUnqualifiedTypeName(
+        TL->getType().getCanonicalType());
     StringRef CanonicalTypeStrRef(CanonicalTypeStr);
     if (CanonicalTypeStrRef.startswith(
             "cooperative_groups::__v1::thread_block_tile<")) {
@@ -2701,8 +2703,7 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
 
-    if (DpctGlobalInfo::getTypeName(TL->getType().getCanonicalType()) ==
-        "cooperative_groups::__v1::thread_block") {
+    if (CanonicalTypeStr == "cooperative_groups::__v1::thread_block") {
       // Skip migrate the type in function body.
       if (DpctGlobalInfo::findAncestor<clang::CompoundStmt>(TL) &&
           DpctGlobalInfo::findAncestor<clang::FunctionDecl>(TL))
@@ -2856,39 +2857,6 @@ void TypeInDeclRule::runRule(const MatchFinder::MatchResult &Result) {
           TL->getEndLoc(), ""));
     }
 
-    const DeclStmt *DS = DpctGlobalInfo::findAncestor<DeclStmt>(TL);
-    if (TypeStr == "cusparseMatDescr_t" && DS) {
-      for (auto I : DS->decls()) {
-        const VarDecl *VDI = dyn_cast<VarDecl>(I);
-        if (VDI && VDI->hasInit()) {
-          if (VDI->getInitStyle() == VarDecl::InitializationStyle::CInit) {
-            const Expr *IE = VDI->getInit();
-            // cusparseMatDescr_t descr = InitExpr ;
-            //                         |          |
-            //                       Begin       End
-            auto End = SM->getExpansionRange(IE->getEndLoc()).getEnd();
-            End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-                End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-            SourceLocation Begin =
-                SM->getExpansionRange(IE->getBeginLoc()).getBegin();
-
-            auto C = SM->getCharacterData(Begin);
-            int Offset = 0;
-            while (*C != '=') {
-              C--;
-              Offset--;
-            }
-            Begin = Begin.getLocWithOffset(Offset);
-
-            int Len = SM->getDecomposedLoc(End).second -
-                      SM->getDecomposedLoc(Begin).second;
-            assert(Len > 0);
-            emplaceTransformation(new ReplaceText(Begin, Len, ""));
-          }
-        }
-      }
-    }
-
     const DeclaratorDecl *DD = nullptr;
     const VarDecl *VarD = DpctGlobalInfo::findAncestor<VarDecl>(TL);
     const FieldDecl *FieldD = DpctGlobalInfo::findAncestor<FieldDecl>(TL);
@@ -2970,10 +2938,12 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                     .bind("vectorTypeTL"),
                 this);
 
-  MF.addMatcher(
-      cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(SUPPORTEDVECTORTYPENAMES)))
-          .bind("inheritanceType"),
-      this);
+  MF.addMatcher(cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(
+                                  "char1", "uchar1", "short1", "ushort1",
+                                  "int1", "uint1", "long1", "ulong1", "float1",
+                                  "longlong1", "ulonglong1", "double1")))
+                    .bind("inherit"),
+                this);
 }
 
 void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
@@ -3088,60 +3058,9 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
       }
     }
   }
-  if (auto CRD = getNodeAsType<CXXRecordDecl>(Result, "inheritanceType")) {
-    const auto *Base = CRD->bases_begin();
-    std::string TypeName = Base->getBaseTypeInfo()->getType().getAsString();
-    if (MapNames::SupportedVectorTypes.find(TypeName) ==
-        MapNames::SupportedVectorTypes.end())
-      return;
-    auto Begin = Base->getSourceRange().getBegin();
-    auto End = Base->getSourceRange().getEnd();
-    if (Begin.isInvalid()) {
-      return;
-    }
-    if (*(TypeName.end() - 1) == '1') {
-      if (Begin.isMacroID() &&
-          (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin)) ||
-            SM->isWrittenInScratchSpace(SM->getSpellingLoc(End)))) {
-        // Macro concatenate --> use immediateExpansion
-        // Make (Begin, End) be the range of "##1"
-        Begin = SM->getImmediateExpansionRange(Begin).getBegin();
-        End = SM->getImmediateExpansionRange(End).getEnd();
-        Begin = SM->getSpellingLoc(Begin);
-        End = SM->getSpellingLoc(End);
-        Begin = Begin.getLocWithOffset(Lexer::MeasureTokenLength(
-            Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-            End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-        report(Begin, Comments::VECTYPE_INHERITATED, false);
-      } else {
-        // Make (Begin, End) be the range of "1"
-        Begin = SM->getSpellingLoc(Begin);
-        End = SM->getSpellingLoc(End);
-        Begin = Begin.getLocWithOffset(
-            Lexer::MeasureTokenLength(
-                Begin, *SM, DpctGlobalInfo::getContext().getLangOpts()) -
-            1);
-        End = End.getLocWithOffset(Lexer::MeasureTokenLength(
-            End, *SM, DpctGlobalInfo::getContext().getLangOpts()));
-      }
-      auto Length = SM->getFileOffset(End) - SM->getFileOffset(Begin);
-      return emplaceTransformation(new ReplaceText(Begin, Length, ""));
-    }
 
-    if (Begin.isInvalid())
-      return;
-
-    if (Begin.isMacroID()) {
-      // Macro concatenate --> use immediateExpansion
-      // Make Begin being the begin of "MACROARG##1"
-      if (SM->isWrittenInScratchSpace(SM->getSpellingLoc(Begin))) {
-        Begin = SM->getImmediateExpansionRange(Begin).getBegin();
-      }
-      Begin = SM->getSpellingLoc(Begin);
-    }
-    return emplaceTransformation(
-        new InsertText(Begin, MapNames::getClNamespace()));
+  if (auto RD = getNodeAsType<CXXRecordDecl>(Result, "inherit")) {
+    report(RD->getBeginLoc(), Diagnostics::VECTYPE_INHERITATED, false);
   }
 }
 
@@ -4164,13 +4083,13 @@ void SPBLASEnumsRule::registerMatcher(MatchFinder &MF) {
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName(
                       "(CUSPARSE_STATUS.*)|("
-                      "CUSPARSE_POINTER_MODE.*)|(CUSPARSE_MATRIX_TYPE.*)"))))
+                      "CUSPARSE_POINTER_MODE.*)"))))
           .bind("SPBLASStatusConstants"),
       this);
   MF.addMatcher(
       declRefExpr(to(enumConstantDecl(matchesName(
                       "(CUSPARSE_OPERATION.*)|(CUSPARSE_FILL_MODE.*)|(CUSPARSE_"
-                      "DIAG_TYPE.*)|(CUSPARSE_INDEX_BASE.*)"))))
+                      "DIAG_TYPE.*)|(CUSPARSE_INDEX_BASE.*)|(CUSPARSE_MATRIX_TYPE.*)"))))
           .bind("SPBLASNamedValueConstants"),
       this);
 }
@@ -4300,9 +4219,14 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
   initVars(CE, nullptr, nullptr, Flags, ReplaceStrs, Locations);
   Flags.IsAssigned = IsAssigned;
 
-  std::string Msg = "this call is redundant in SYCL.";
-  if (FuncName == "cusparseCreate" || FuncName == "cusparseDestroy" ||
-      FuncName == "cusparseSetStream" || FuncName == "cusparseGetStream") {
+  if (MapNames::SPARSEAPIWithRewriter.find(FuncName) !=
+      MapNames::SPARSEAPIWithRewriter.end()) {
+    ExprAnalysis EA(CE);
+    emplaceTransformation(EA.getReplacement());
+    EA.applyAllSubExprRepl();
+    return;
+  } else if (FuncName == "cusparseCreate" || FuncName == "cusparseDestroy" ||
+             FuncName == "cusparseSetStream" || FuncName == "cusparseGetStream") {
     Flags.NeedUseLambda = false;
     if (FuncName == "cusparseCreate") {
       std::string LHS = getDrefName(CE->getArg(0));
@@ -4329,80 +4253,24 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
     Flags.NeedUseLambda = false;
     std::string LHS = getDrefName(CE->getArg(0));
     ReplaceStrs.Repl = LHS + " = oneapi::mkl::index_base::zero";
-  } else if (FuncName == "cusparseDestroyMatDescr" ||
-             FuncName == "cusparseGetPointerMode" ||
+  } else if (FuncName == "cusparseGetPointerMode" ||
              FuncName == "cusparseSetPointerMode" ||
              FuncName == "cusparseScsrsv_analysis" ||
              FuncName == "cusparseDcsrsv_analysis" ||
              FuncName == "cusparseCcsrsv_analysis" ||
              FuncName == "cusparseZcsrsv_analysis" ||
              FuncName == "cusparseCreateSolveAnalysisInfo" ||
-             FuncName == "cusparseDestroySolveAnalysisInfo" ||
-             FuncName == "cusparseSetMatType" ||
-             FuncName == "cusparseGetMatType" ||
-             FuncName == "cusparseSetMatDiagType" ||
-             FuncName == "cusparseGetMatDiagType" ||
-             FuncName == "cusparseSetMatFillMode" ||
-             FuncName == "cusparseGetMatFillMode") {
-    if (FuncName == "cusparseSetMatType") {
-      Expr::EvalResult ER;
-      if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
-        int64_t Value = ER.Val.getInt().getExtValue();
-        if (Value != 0) {
-          DpctGlobalInfo::setSpBLASUnsupportedMatrixTypeFlag(true);
-        }
-      } else {
-        DpctGlobalInfo::setSpBLASUnsupportedMatrixTypeFlag(true);
-      }
-    }
-
+             FuncName == "cusparseDestroySolveAnalysisInfo") {
+    std::string Msg = "this call is redundant in SYCL.";
     if (IsAssigned) {
       report(Locations.PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED_0, false,
              FuncName, Msg);
-      if (FuncName == "cusparseGetMatDiagType")
-        emplaceTransformation(
-            new ReplaceStmt(CE, false, "(oneapi::mkl::diag)0"));
-      else if (FuncName == "cusparseGetMatFillMode")
-        emplaceTransformation(
-            new ReplaceStmt(CE, false, "(oneapi::mkl::uplo)0"));
-      else
-        emplaceTransformation(new ReplaceStmt(CE, false, "0"));
+      emplaceTransformation(new ReplaceStmt(CE, false, "0"));
     } else {
       report(Locations.PrefixInsertLoc, Diagnostics::FUNC_CALL_REMOVED, false,
              FuncName, Msg);
       emplaceTransformation(new ReplaceStmt(CE, false, ""));
     }
-    return;
-  } else if (FuncName == "cusparseSetMatIndexBase" ||
-             FuncName == "cusparseGetMatIndexBase") {
-    Flags.NeedUseLambda = false;
-    ExprAnalysis EA0(CE->getArg(0));
-    bool IsSet = FuncNameRef.startswith("cusparseSet");
-    ExprAnalysis EA1;
-    if (IsSet) {
-      ReplaceStrs.Repl = EA0.getReplacedString() + " = ";
-      EA1.analyze(CE->getArg(1));
-      Expr::EvalResult ER;
-      if (CE->getArg(1)->EvaluateAsInt(ER, *Result.Context)) {
-        int64_t Value = ER.Val.getInt().getExtValue();
-        if (Value == 0)
-          ReplaceStrs.Repl = ReplaceStrs.Repl + "oneapi::mkl::index_base::zero";
-        else
-          ReplaceStrs.Repl = ReplaceStrs.Repl + "oneapi::mkl::index_base::one";
-      } else {
-        ReplaceStrs.Repl = ReplaceStrs.Repl + EA1.getReplacedString();
-      }
-    } else {
-      ReplaceStrs.Repl = EA0.getReplacedString();
-    }
-
-    // Get API do not return status, so return directly.
-    if (IsAssigned && IsSet) {
-      insertAroundStmt(CE, "(", ", 0)");
-      report(Locations.PrefixInsertLoc, Diagnostics::NOERROR_RETURN_COMMA_OP,
-             true);
-    }
-    emplaceTransformation(new ReplaceStmt(CE, true, ReplaceStrs.Repl));
     return;
   } else if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv" ||
              FuncName == "cusparseCcsrmv" || FuncName == "cusparseZcsrmv") {
@@ -4460,26 +4328,27 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       ReplaceStrs.PrefixInsertStr =
           ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
           MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
-          CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] + ", " +
-          CSRRowPtrA + ", " + CSRColIndA + ", " + CSRValA + ");" + getNL() +
-          ReplaceStrs.IndentStr;
+          CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
+          "->get_index_base(), " + CSRRowPtrA + ", " +
+          CSRColIndA + ", " + CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
     } else {
       if (FuncName == "cusparseScsrmv" || FuncName == "cusparseDcsrmv")
         ReplaceStrs.PrefixInsertStr =
             ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
             MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
-            ", const_cast<int*>(" + CSRRowPtrA + "), const_cast<int*>(" +
-            CSRColIndA + "), const_cast<" + BufferType + "*>(" + CSRValA +
-            "));" + getNL() + ReplaceStrs.IndentStr;
+            "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
+            "), const_cast<int*>(" + CSRColIndA + "), const_cast<" +
+            BufferType + "*>(" + CSRValA + "));" + getNL() +
+            ReplaceStrs.IndentStr;
       else
         ReplaceStrs.PrefixInsertStr =
             ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
             MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[3] + ", " + CallExprArguReplVec[6] +
-            ", const_cast<int*>(" + CSRRowPtrA + "), const_cast<int*>(" +
-            CSRColIndA + "), (" + BufferType + "*)" + CSRValA + ");" + getNL() +
-            ReplaceStrs.IndentStr;
+            "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
+            "), const_cast<int*>(" + CSRColIndA + "), (" + BufferType + "*)" +
+            CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
     }
     ReplaceStrs.SuffixInsertStr =
         ReplaceStrs.SuffixInsertStr + getNL() + ReplaceStrs.IndentStr +
@@ -4597,26 +4466,27 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       ReplaceStrs.PrefixInsertStr =
           ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
           MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
-          CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] + ", " +
-          CSRRowPtrA + ", " + CSRColIndA + ", " + CSRValA + ");" + getNL() +
-          ReplaceStrs.IndentStr;
+          CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] +
+          "->get_index_base(), " + CSRRowPtrA + ", " +
+          CSRColIndA + ", " + CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
     } else {
       if (FuncName == "cusparseScsrmm" || FuncName == "cusparseDcsrmm")
         ReplaceStrs.PrefixInsertStr =
             ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
             MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] +
-            ", const_cast<int*>(" + CSRRowPtrA + "), const_cast<int*>(" +
-            CSRColIndA + "), const_cast<" + BufferType + "*>(" + CSRValA +
-            "));" + getNL() + ReplaceStrs.IndentStr;
+            "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
+            "), const_cast<int*>(" + CSRColIndA + "), const_cast<" +
+            BufferType + "*>(" + CSRValA + "));" + getNL() +
+            ReplaceStrs.IndentStr;
       else
         ReplaceStrs.PrefixInsertStr =
             ReplaceStrs.PrefixInsertStr + "oneapi::mkl::sparse::set_csr_data(" +
             MatrixHandleName + ", " + CallExprArguReplVec[2] + ", " +
             CallExprArguReplVec[4] + ", " + CallExprArguReplVec[7] +
-            ", const_cast<int*>(" + CSRRowPtrA + "), const_cast<int*>(" +
-            CSRColIndA + "), (" + BufferType + "*)" + CSRValA + ");" + getNL() +
-            ReplaceStrs.IndentStr;
+            "->get_index_base(), const_cast<int*>(" + CSRRowPtrA +
+            "), const_cast<int*>(" + CSRColIndA + "), (" + BufferType + "*)" +
+            CSRValA + ");" + getNL() + ReplaceStrs.IndentStr;
     }
     ReplaceStrs.SuffixInsertStr =
         ReplaceStrs.SuffixInsertStr + getNL() + ReplaceStrs.IndentStr +
@@ -4687,11 +4557,11 @@ void SPBLASFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 
   if (FuncNameRef.endswith("csrmv") || FuncNameRef.endswith("csrmm")) {
     if (Flags.NeedUseLambda && Flags.CanAvoidUsingLambda && !Flags.IsMacroArg) {
-      DpctGlobalInfo::getInstance().insertSpBLASWarningLocOffset(
-          Locations.OuterInsertLoc);
+      report(Locations.OuterInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE, true,
+             false);
     } else {
-      DpctGlobalInfo::getInstance().insertSpBLASWarningLocOffset(
-          Locations.PrefixInsertLoc);
+      report(Locations.PrefixInsertLoc, Diagnostics::UNSUPPORT_MATRIX_TYPE,
+             true, false);
     }
   }
 
@@ -7081,8 +6951,9 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
       requestHelperFeatureForTypeNames(VarType, VD);
       insertHeaderForTypeRule(VarType, VD->getBeginLoc());
       auto Itr = MapNames::TypeNamesMap.find(VarType);
-      if (Itr != MapNames::TypeNamesMap.end())
-        VarType = Itr->second->NewName;
+      if (Itr == MapNames::TypeNamesMap.end())
+        return;
+      VarType = Itr->second->NewName;
       PrefixBeforeScope = VarType + " " + VarName + ";" + getNL() + IndentStr +
                           PrefixBeforeScope;
       SourceLocation typeBegin =
@@ -7430,7 +7301,7 @@ void SOLVERFunctionCallRule::runRule(const MatchFinder::MatchResult &Result) {
 void SOLVERFunctionCallRule::getParameterEnd(
     const SourceLocation &ParameterEnd, SourceLocation &ParameterEndAfterComma,
     const ast_matchers::MatchFinder::MatchResult &Result) {
-  Optional<Token> TokSharedPtr;
+  std::optional<Token> TokSharedPtr;
   TokSharedPtr = Lexer::findNextToken(ParameterEnd, *(Result.SourceManager),
                                       LangOptions());
   Token TokComma = TokSharedPtr.value();
@@ -7493,7 +7364,7 @@ void FunctionCallRule::registerMatcher(MatchFinder &MF) {
         "cudaDeviceGetAttribute", "cudaDeviceGetP2PAttribute",
         "cudaDeviceGetPCIBusId", "cudaGetDevice", "cudaDeviceSetLimit",
         "cudaGetLastError", "cudaPeekAtLastError", "cudaDeviceSynchronize",
-        "cudaThreadSynchronize", "cudaGetErrorString", "cudaGetErrorName",
+        "cudaThreadSynchronize", "cudnnGetErrorString", "cudaGetErrorString", "cudaGetErrorName",
         "cudaDeviceSetCacheConfig", "cudaDeviceGetCacheConfig", "clock",
         "cudaOccupancyMaxPotentialBlockSize", "cudaThreadSetLimit",
         "cudaFuncSetCacheConfig", "cudaThreadExit", "cudaDeviceGetLimit",
@@ -10860,6 +10731,12 @@ void MemoryMigrationRule::mallocMigration(
 void MemoryMigrationRule::memcpyMigration(
     const MatchFinder::MatchResult &Result, const CallExpr *C,
     const UnresolvedLookupExpr *ULExpr, bool IsAssigned) {
+  for (unsigned I = 0, E = C->getNumArgs(); I != E; ++I) {
+    if (isa<PackExpansionExpr>(C->getArg(I))) {
+      return;
+    }
+  }
+
   std::string Name;
   if (ULExpr) {
     Name = ULExpr->getName().getAsString();
@@ -14074,7 +13951,7 @@ void TextureRule::runRule(const MatchFinder::MatchResult &Result) {
                       const Expr *, RenameWithSuffix, StringRef>>>(
                       CE, Name, CE->getArg(0), true,
                       RenameWithSuffix("set", MethodName), Value));
-      Optional<std::string> Result = Rewriter->rewrite();
+      std::optional<std::string> Result = Rewriter->rewrite();
       if (Result.has_value())
         emplaceTransformation(
             new ReplaceStmt(CE, true, std::move(Result).value()));
@@ -14679,36 +14556,6 @@ void RemoveBaseClassRule::runRule(const MatchFinder::MatchResult &Result) {
 }
 
 REGISTER_RULE(RemoveBaseClassRule, PassKind::PK_Migration)
-
-void PreDefinedStreamHandleRule::registerMatcher(MatchFinder &MF) {
-  MF.addMatcher(integerLiteral(equals(0)).bind("stream"), this);
-  MF.addMatcher(parenExpr(has(cStyleCastExpr(has(
-                              integerLiteral(anyOf(equals(1), equals(2)))))))
-                    .bind("stream"),
-                this);
-}
-
-void PreDefinedStreamHandleRule::runRule(
-    const MatchFinder::MatchResult &Result) {
-  if (auto E = getNodeAsType<Expr>(Result, "stream")) {
-    std::string Str = getStmtSpelling(E);
-    if (Str == "cudaStreamDefault" || Str == "cudaStreamLegacy" ||
-        Str == "cudaStreamPerThread") {
-      auto &SM = DpctGlobalInfo::getSourceManager();
-      auto Begin = getStmtExpansionSourceRange(E).getBegin();
-      unsigned int Length = Lexer::MeasureTokenLength(
-          Begin, SM, DpctGlobalInfo::getContext().getLangOpts());
-      if (isPlaceholderIdxDuplicated(E))
-        return;
-      int Index = DpctGlobalInfo::getHelperFuncReplInfoIndexThenInc();
-      buildTempVariableMap(Index, E, HelperFuncType::HFT_DefaultQueue);
-      emplaceTransformation(new ReplaceText(
-          Begin, Length, "&{{NEEDREPLACEQ" + std::to_string(Index) + "}}"));
-    }
-  }
-}
-
-REGISTER_RULE(PreDefinedStreamHandleRule, PassKind::PK_Migration)
 
 void AsmRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
@@ -15489,10 +15336,10 @@ REGISTER_RULE(TemplateSpecializationTypeLocRule, PassKind::PK_Migration)
 
 void CudaStreamCastRule::registerMatcher(ast_matchers::MatchFinder &MF) {
   MF.addMatcher(
-    castExpr(
-      hasType(typedefDecl(hasAnyName("CUstream", "cudaStream_t"))))
-    .bind("cast"),
-    this);
+     castExpr(hasType(qualType(hasCanonicalType(
+        qualType(pointsTo(namedDecl(hasName("CUstream_st"))))))))
+     .bind("cast"),
+     this);
 }
 
 void CudaStreamCastRule::runRule(const ast_matchers::MatchFinder::MatchResult &Result) {

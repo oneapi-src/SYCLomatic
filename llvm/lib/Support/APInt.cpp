@@ -15,7 +15,6 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/FoldingSet.h"
 #include "llvm/ADT/Hashing.h"
-#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/bit.h"
@@ -25,6 +24,7 @@
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/raw_ostream.h"
 #include <cmath>
+#include <optional>
 
 using namespace llvm;
 
@@ -108,7 +108,7 @@ APInt::APInt(unsigned numBits, ArrayRef<uint64_t> bigVal) : BitWidth(numBits) {
 
 APInt::APInt(unsigned numBits, unsigned numWords, const uint64_t bigVal[])
     : BitWidth(numBits) {
-  initFromArray(makeArrayRef(bigVal, numWords));
+  initFromArray(ArrayRef(bigVal, numWords));
 }
 
 APInt::APInt(unsigned numbits, StringRef Str, uint8_t radix)
@@ -459,7 +459,7 @@ APInt APInt::extractBits(unsigned numBits, unsigned bitPosition) const {
   // Extracting bits that start on a source word boundary can be done
   // as a fast memory copy.
   if (loBit == 0)
-    return APInt(numBits, makeArrayRef(U.pVal + loWord, 1 + hiWord - loWord));
+    return APInt(numBits, ArrayRef(U.pVal + loWord, 1 + hiWord - loWord));
 
   // General case - shift + copy source words directly into place.
   APInt Result(numBits, 0);
@@ -2292,15 +2292,11 @@ static inline APInt::WordType highHalf(APInt::WordType part) {
 
 /// Returns the bit number of the most significant set bit of a part.
 /// If the input number has no bits set -1U is returned.
-static unsigned partMSB(APInt::WordType value) {
-  return findLastSet(value, ZB_Max);
-}
+static unsigned partMSB(APInt::WordType value) { return findLastSet(value); }
 
 /// Returns the bit number of the least significant set bit of a part.  If the
 /// input number has no bits set -1U is returned.
-static unsigned partLSB(APInt::WordType value) {
-  return findFirstSet(value, ZB_Max);
-}
+static unsigned partLSB(APInt::WordType value) { return findFirstSet(value); }
 
 /// Sets the least significant part of a bignum to the input value, and zeroes
 /// out higher parts.
@@ -2770,7 +2766,7 @@ APInt llvm::APIntOps::RoundingSDiv(const APInt &A, const APInt &B,
   llvm_unreachable("Unknown APInt::Rounding enum");
 }
 
-Optional<APInt>
+std::optional<APInt>
 llvm::APIntOps::SolveQuadraticEquationWrap(APInt A, APInt B, APInt C,
                                            unsigned RangeWidth) {
   unsigned CoeffWidth = A.getBitWidth();
@@ -2960,7 +2956,7 @@ llvm::APIntOps::SolveQuadraticEquationWrap(APInt A, APInt B, APInt C,
   return X;
 }
 
-Optional<unsigned>
+std::optional<unsigned>
 llvm::APIntOps::GetMostSignificantDifferentBit(const APInt &A, const APInt &B) {
   assert(A.getBitWidth() == B.getBitWidth() && "Must have the same bitwidth");
   if (A == B)

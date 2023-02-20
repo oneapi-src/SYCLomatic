@@ -17,6 +17,7 @@ set(CONT_FILES
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/rng_utils.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/lib_common_utils.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/ccl_utils.hpp.inc
+  ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/sparse_utils.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/fft_utils.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/lapack_utils.hpp.inc
   ${CMAKE_SOURCE_DIR}/../clang/runtime/dpct-rt/include/dpl_extras/algorithm.h.inc
@@ -56,6 +57,7 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/rng_utils.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/lib_common_utils.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/ccl_utils.all.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/sparse_utils.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/fft_utils.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/lapack_utils.all.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/atomic.inc
@@ -71,6 +73,7 @@ set(PROCESS_FILES_OUTPUT
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/rng_utils.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/lib_common_utils.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/ccl_utils.inc
+  ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/sparse_utils.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/fft_utils.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/lapack_utils.inc
   ${CMAKE_BINARY_DIR}/tools/clang/include/clang/DPCT/HelperFeatureEnum.inc
@@ -103,4 +106,85 @@ include_directories(
 
 add_subdirectory(ConfusableTable)
 
-build_lib_dpct()
+add_clang_library(DPCT
+  ASTTraversal.cpp
+  AnalysisInfo.cpp
+  CallExprRewriter.cpp
+  CallExprRewriterCUB.cpp
+  CallExprRewriterCUFFT.cpp
+  CallExprRewriterCUBLAS.cpp
+  CallExprRewriterCURAND.cpp
+  CallExprRewriterCUSOLVER.cpp
+  CallExprRewriterCUSPARSE.cpp
+  CallExprRewriterComplex.cpp
+  CallExprRewriterDriver.cpp
+  CallExprRewriterMemory.cpp
+  CallExprRewriterNccl.cpp
+  CallExprRewriterStream.cpp
+  CallExprRewriterTexture.cpp
+  CallExprRewriterThrust.cpp
+  CallExprRewriterWarp.cpp
+  CallExprRewriterCUDNN.cpp
+  CallExprRewriterErrorHandling.cpp
+  CallExprRewriterLIBCU.cpp
+  CallExprRewriterEvent.cpp
+  CallExprRewriterMath.cpp
+  CallExprRewriterCG.cpp
+  Diagnostics.cpp
+  Error.cpp
+  Statics.cpp
+  ExprAnalysis.cpp
+  ExtReplacements.cpp
+  MapNames.cpp
+  SaveNewFiles.cpp
+  DPCT.cpp
+  TextModification.cpp
+  Utility.cpp
+  ValidateArguments.cpp
+  ExternalReplacement.cpp
+  SignalProcess.cpp
+  VcxprojParser.cpp
+  LibraryAPIMigration.cpp
+  CustomHelperFiles.cpp
+  GenMakefile.cpp
+  IncrementalMigrationUtility.cpp
+  Rules.cpp
+  Homoglyph.cpp
+  MisleadingBidirectional.cpp
+  BarrierFenceSpaceAnalyzer.cpp
+  BLASAPIMigration.cpp
+  FFTAPIMigration.cpp
+  DNNAPIMigration.cpp
+  NCCLAPIMigration.cpp
+  TypeLocRewriters.cpp
+  QueryApiMapping.cpp
+  AutoComplete.cpp
+  LIBCUAPIMigration.cpp
+  CUBAPIMigration.cpp
+  MemberExprRewriter.cpp
+  MigrationRuleManager.cpp
+  MigrationAction.cpp
+  ThrustAPIMigration.cpp
+
+  DEPENDS
+  ClangDriverOptions
+  dpct_helper_headers_and_inc
+  genconfusable
+
+  LINK_LIBS
+  clangBasic
+  clangLex
+  clangAnalysis
+  clangAST
+  clangASTMatchers
+  clangDriver
+  clangEdit
+  clangFormat
+  clangFrontend
+  clangParse
+  clangRewrite
+  clangSema
+  clangSerialization
+  clangTooling
+  clangToolingCore
+)

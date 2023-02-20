@@ -32,8 +32,8 @@ int main() {
   size = sizeof(cuComplex);
   size = sizeof(cuDoubleComplex);
 
-  //CHECK:int forward = dpct::fft::fft_direction::forward;
-  //CHECK-NEXT:int inverse = dpct::fft::fft_direction::backward;
+  //CHECK:int forward = -1;
+  //CHECK-NEXT:int inverse = 1;
   int forward = CUFFT_FORWARD;
   int inverse = CUFFT_INVERSE;
 

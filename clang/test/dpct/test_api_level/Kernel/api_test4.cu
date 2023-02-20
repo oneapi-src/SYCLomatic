@@ -3,10 +3,14 @@
 // RUN: FileCheck --input-file %T/Kernel/api_test4_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Kernel/api_test4_out
 
-// CHECK: 3
+// CHECK: 29
 // TEST_FEATURE: Kernel_kernel_library
+// TEST_FEATURE: Kernel_get_image_wrapper
 
 int main() {
   CUmodule module;
   cuModuleLoad(&module,"kernel_library.ptx");
+  CUmodule M;
+  CUtexref tex;
+  cuModuleGetTexRef(&tex, M, "tex");
 }

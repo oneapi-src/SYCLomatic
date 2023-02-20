@@ -17,7 +17,6 @@
 
 #include "llvm/Bitcode/BitcodeReader.h"
 #include "llvm/CodeGen/CommandFlags.h"
-#include "llvm/Config/llvm-config.h"
 #include "llvm/IR/DiagnosticPrinter.h"
 #include "llvm/LTO/LTO.h"
 #include "llvm/Passes/PassPlugin.h"
@@ -131,7 +130,7 @@ static cl::opt<bool> RemarksWithHotness(
     cl::desc("With PGO, include profile count in optimization remarks"),
     cl::Hidden);
 
-cl::opt<Optional<uint64_t>, false, remarks::HotnessThresholdParser>
+cl::opt<std::optional<uint64_t>, false, remarks::HotnessThresholdParser>
     RemarksHotnessThreshold(
         "pass-remarks-hotness-threshold",
         cl::desc("Minimum profile count required for an "

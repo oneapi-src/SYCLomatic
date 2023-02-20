@@ -547,33 +547,6 @@ void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
   dispatch(CE->getSubExpr());
 }
 
-void ExprAnalysis::analyzeExpr(const IntegerLiteral *IL) {
-  auto DefinitionRange = getDefinitionRange(IL->getBeginLoc(), IL->getEndLoc());
-  auto TokBeginLoc = DefinitionRange.getBegin();
-  auto TokenLength = Lexer::MeasureTokenLength(
-      TokBeginLoc, SM, Context.getLangOpts());
-  std::string TokStr(SM.getCharacterData(TokBeginLoc), TokenLength);
-
-  // TODO: cannot handle case like:
-  // #define CHECK(ARG) ARG
-  // #define MACRO CHECK(cufftExecC2C(plan, idata, odata, CUFFT_FORWARD))
-  // void foo(cufftHandle plan, cufftComplex *idata, cufftComplex *odata) {
-  //   MACRO;
-  // }
-  const Expr *ParentExpr = DpctGlobalInfo::findParent<Expr>(IL);
-  bool IsInCudaPath = DpctGlobalInfo::isInCudaPath(
-      DpctGlobalInfo::getLocInfo(SM.getSpellingLoc(IL->getBeginLoc())).first);
-  if (TokStr == "CUFFT_FORWARD" && ParentExpr && IsInCudaPath) {
-    addReplacement(DefinitionRange, ParentExpr,
-                   MapNames::getDpctNamespace() + "fft::fft_direction::forward");
-    requestFeature(HelperFeatureEnum::FftUtils_fft_direction, TokBeginLoc);
-  } else if ((TokStr == "CUFFT_INVERSE") && ParentExpr && IsInCudaPath) {
-    addReplacement(DefinitionRange, ParentExpr,
-                   MapNames::getDpctNamespace() + "fft::fft_direction::backward");
-    requestFeature(HelperFeatureEnum::FftUtils_fft_direction, TokBeginLoc);
-  }
-}
-
 void ExprAnalysis::analyzeExpr(const InitListExpr *ILE) {
   if (const CXXFunctionalCastExpr *CFCE =
           DpctGlobalInfo::findParent<CXXFunctionalCastExpr>(ILE)) {
@@ -872,6 +845,12 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
     return;
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(RefString);
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {
+      if (isa<PackExpansionExpr>(CE->getArg(I))) {
+        return;
+      }
+    }
+
     auto Rewriter = Itr->second->create(CE);
     auto Result = Rewriter->rewrite();
     BlockLevelFormatFlag = Rewriter->getBlockLevelFormatFlag();
@@ -1147,6 +1126,8 @@ void ExprAnalysis::analyzeDecltypeType(DecltypeTypeLoc TL) {
   auto *UE = TL.getUnderlyingExpr();
   if (auto *DRE = dyn_cast<DeclRefExpr>(UE)) {
     auto *Qualifier = DRE->getQualifier();
+    if (!Qualifier)
+      return;
     auto Name = getNestedNameSpecifierString(Qualifier);
     auto Range = getDefinitionRange(SR.getBegin(), SR.getEnd());
     // Types like 'dim3::x' should be migrated to 'size_t'.

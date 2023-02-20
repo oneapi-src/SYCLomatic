@@ -140,8 +140,8 @@ protected:
 /// \ingroup sycl_api
 template <typename T, int dimensions = 1,
           typename AllocatorT = buffer_allocator<std::remove_const_t<T>>,
-          typename __Enabled =
-              typename std::enable_if_t<(dimensions > 0) && (dimensions <= 3)>>
+          typename __Enabled = typename detail::enable_if_t<(dimensions > 0) &&
+                                                            (dimensions <= 3)>>
 class buffer : public detail::buffer_plain,
                public detail::OwnerLessBase<buffer<T, dimensions, AllocatorT>> {
   // TODO check is_device_copyable<T>::value after converting sycl::vec into a
@@ -155,21 +155,21 @@ public:
   using const_reference = const value_type &;
   using allocator_type = AllocatorT;
   template <int dims>
-  using EnableIfOneDimension = typename std::enable_if_t<1 == dims>;
+  using EnableIfOneDimension = typename detail::enable_if_t<1 == dims>;
   // using same requirement for contiguous container as std::span
   template <class Container>
   using EnableIfContiguous =
-      std::void_t<std::enable_if_t<std::is_convertible<
-                      detail::remove_pointer_t<
-                          decltype(std::declval<Container>().data())> (*)[],
-                      const T (*)[]>::value>,
-                  decltype(std::declval<Container>().size())>;
+      detail::void_t<detail::enable_if_t<std::is_convertible<
+                         detail::remove_pointer_t<
+                             decltype(std::declval<Container>().data())> (*)[],
+                         const T (*)[]>::value>,
+                     decltype(std::declval<Container>().size())>;
   template <class It>
-  using EnableIfItInputIterator = std::enable_if_t<
+  using EnableIfItInputIterator = detail::enable_if_t<
       std::is_convertible<typename std::iterator_traits<It>::iterator_category,
                           std::input_iterator_tag>::value>;
   template <typename ItA, typename ItB>
-  using EnableIfSameNonConstIterators = typename std::enable_if_t<
+  using EnableIfSameNonConstIterators = typename detail::enable_if_t<
       std::is_same<ItA, ItB>::value && !std::is_const<ItA>::value, ItA>;
 
   std::array<size_t, 3> rangeToArray(range<3> &r) { return {r[0], r[1], r[2]}; }
@@ -253,7 +253,7 @@ public:
          const property_list &propList = {},
          const detail::code_location CodeLoc = detail::code_location::current())
       : buffer_plain(
-            bufferRange.size() * sizeof(T),
+            hostData, bufferRange.size() * sizeof(T),
             detail::getNextPowerOfTwo(sizeof(T)), propList,
             make_unique_ptr<detail::SYCLMemObjAllocatorHolder<AllocatorT, T>>(
                 allocator)),
@@ -344,9 +344,9 @@ public:
               using IteratorValueType =
                   detail::iterator_value_type_t<InputIterator>;
               using IteratorNonConstValueType =
-                  std::remove_const_t<IteratorValueType>;
+                  detail::remove_const_t<IteratorValueType>;
               using IteratorPointerToNonConstValueType =
-                  std::add_pointer_t<IteratorNonConstValueType>;
+                  detail::add_pointer_t<IteratorNonConstValueType>;
               std::copy(first, last,
                         static_cast<IteratorPointerToNonConstValueType>(ToPtr));
             },
@@ -377,9 +377,9 @@ public:
               using IteratorValueType =
                   detail::iterator_value_type_t<InputIterator>;
               using IteratorNonConstValueType =
-                  std::remove_const_t<IteratorValueType>;
+                  detail::remove_const_t<IteratorValueType>;
               using IteratorPointerToNonConstValueType =
-                  std::add_pointer_t<IteratorNonConstValueType>;
+                  detail::add_pointer_t<IteratorNonConstValueType>;
               std::copy(first, last,
                         static_cast<IteratorPointerToNonConstValueType>(ToPtr));
             },
@@ -504,10 +504,16 @@ public:
   }
 
   template <access::mode mode>
-  accessor<T, dimensions, mode, access::target::host_buffer,
-           access::placeholder::false_t, ext::oneapi::accessor_property_list<>>
-  get_access(
-      const detail::code_location CodeLoc = detail::code_location::current()) {
+  __SYCL2020_DEPRECATED("get_access for host_accessor is deprecated, please "
+                        "use get_host_access instead")
+  accessor<
+      T, dimensions, mode, access::target::host_buffer,
+      access::placeholder::false_t,
+      ext::oneapi::
+          accessor_property_list<>> get_access(const detail::code_location
+                                                   CodeLoc =
+                                                       detail::code_location::
+                                                           current()) {
     return accessor<T, dimensions, mode, access::target::host_buffer,
                     access::placeholder::false_t,
                     ext::oneapi::accessor_property_list<>>(*this, {}, CodeLoc);
@@ -531,11 +537,18 @@ public:
   }
 
   template <access::mode mode>
-  accessor<T, dimensions, mode, access::target::host_buffer,
-           access::placeholder::false_t, ext::oneapi::accessor_property_list<>>
-  get_access(
-      range<dimensions> accessRange, id<dimensions> accessOffset = {},
-      const detail::code_location CodeLoc = detail::code_location::current()) {
+  __SYCL2020_DEPRECATED("get_access for host_accessor is deprecated, please "
+                        "use get_host_access instead")
+  accessor<
+      T, dimensions, mode, access::target::host_buffer,
+      access::placeholder::false_t,
+      ext::oneapi::
+          accessor_property_list<>> get_access(range<dimensions> accessRange,
+                                               id<dimensions> accessOffset = {},
+                                               const detail::code_location
+                                                   CodeLoc =
+                                                       detail::code_location::
+                                                           current()) {
     if (isOutOfBounds(accessOffset, accessRange, this->Range))
       throw sycl::invalid_object_error(
           "Requested accessor would exceed the bounds of the buffer",
@@ -575,7 +588,7 @@ public:
   }
 
   template <template <typename WeakT> class WeakPtrT, typename WeakT>
-  std::enable_if_t<
+  detail::enable_if_t<
       std::is_convertible<WeakPtrT<WeakT>, std::weak_ptr<WeakT>>::value>
   set_final_data_internal(WeakPtrT<WeakT> FinalData) {
     std::weak_ptr<WeakT> TempFinalData(FinalData);

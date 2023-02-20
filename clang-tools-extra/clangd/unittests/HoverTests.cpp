@@ -15,7 +15,6 @@
 #include "index/MemIndex.h"
 #include "clang/AST/Attr.h"
 #include "clang/Index/IndexSymbol.h"
-#include "llvm/ADT/None.h"
 #include "llvm/ADT/StringRef.h"
 
 #include "gmock/gmock.h"
@@ -240,11 +239,11 @@ class Foo final {})cpp";
          HI.TemplateParameters = {
              {{"template <typename, bool...> class"},
               std::string("C"),
-              llvm::None},
-             {{"typename"}, llvm::None, std::string("char")},
-             {{"int"}, llvm::None, std::string("0")},
+              std::nullopt},
+             {{"typename"}, std::nullopt, std::string("char")},
+             {{"int"}, std::nullopt, std::string("0")},
              {{"bool"}, std::string("Q"), std::string("false")},
-             {{"class..."}, std::string("Ts"), llvm::None},
+             {{"class..."}, std::string("Ts"), std::nullopt},
          };
        }},
       // Function template
@@ -286,7 +285,7 @@ class Foo final {})cpp";
          HI.ReturnType = "Foo<bool, true, false>";
          HI.Type = "Foo<bool, true, false> (int, bool)";
          HI.Parameters = {
-             {{"int"}, llvm::None, llvm::None},
+             {{"int"}, std::nullopt, std::nullopt},
              {{"bool"}, std::string("T"), std::string("false")},
          };
        }},
@@ -307,8 +306,8 @@ class Foo final {})cpp";
          HI.Type = "(lambda) **";
          HI.ReturnType = "bool";
          HI.Parameters = {
-             {{"int"}, std::string("T"), llvm::None},
-             {{"bool"}, std::string("B"), llvm::None},
+             {{"int"}, std::string("T"), std::nullopt},
+             {{"bool"}, std::string("B"), std::nullopt},
          };
          return HI;
        }},
@@ -328,8 +327,8 @@ class Foo final {})cpp";
          HI.Type = {"decltype(lamb) &", "(lambda) &"};
          HI.ReturnType = "bool";
          HI.Parameters = {
-             {{"int"}, std::string("T"), llvm::None},
-             {{"bool"}, std::string("B"), llvm::None},
+             {{"int"}, std::string("T"), std::nullopt},
+             {{"bool"}, std::string("B"), std::nullopt},
          };
          return HI;
        }},
@@ -349,8 +348,8 @@ class Foo final {})cpp";
          HI.Type = "class (lambda)";
          HI.ReturnType = "bool";
          HI.Parameters = {
-             {{"int"}, std::string("T"), llvm::None},
-             {{"bool"}, std::string("B"), llvm::None},
+             {{"int"}, std::string("T"), std::nullopt},
+             {{"bool"}, std::string("B"), std::nullopt},
          };
          HI.Value = "false";
          return HI;
@@ -372,8 +371,8 @@ class Foo final {})cpp";
          HI.Type = "class (lambda)";
          HI.ReturnType = "bool";
          HI.Parameters = {
-             {{"int"}, std::string("T"), llvm::None},
-             {{"bool"}, std::string("B"), llvm::None},
+             {{"int"}, std::string("T"), std::nullopt},
+             {{"bool"}, std::string("B"), std::nullopt},
          };
          return HI;
        }},
@@ -899,9 +898,41 @@ class Foo final {})cpp";
          HI.CalleeArgInfo.emplace();
          HI.CalleeArgInfo->Name = "arg_b";
          HI.CalleeArgInfo->Type = "int &";
-         HI.CallPassType.emplace();
-         HI.CallPassType->PassBy = PassMode::Ref;
-         HI.CallPassType->Converted = false;
+         HI.CallPassType = HoverInfo::PassType{PassMode::Ref, false};
+       }},
+      {// Literal passed to function call
+       R"cpp(
+          void fun(int arg_a, const int &arg_b) {};
+          void code() {
+            int a = 1;
+            fun(a, [[^2]]);
+          }
+          )cpp",
+       [](HoverInfo &HI) {
+         HI.Name = "literal";
+         HI.Kind = index::SymbolKind::Unknown;
+         HI.CalleeArgInfo.emplace();
+         HI.CalleeArgInfo->Name = "arg_b";
+         HI.CalleeArgInfo->Type = "const int &";
+         HI.CallPassType = HoverInfo::PassType{PassMode::ConstRef, false};
+       }},
+      {// Expression passed to function call
+       R"cpp(
+          void fun(int arg_a, const int &arg_b) {};
+          void code() {
+            int a = 1;
+            fun(a, 1 [[^+]] 2);
+          }
+          )cpp",
+       [](HoverInfo &HI) {
+         HI.Name = "expression";
+         HI.Kind = index::SymbolKind::Unknown;
+         HI.Type = "int";
+         HI.Value = "3";
+         HI.CalleeArgInfo.emplace();
+         HI.CalleeArgInfo->Name = "arg_b";
+         HI.CalleeArgInfo->Type = "const int &";
+         HI.CallPassType = HoverInfo::PassType{PassMode::ConstRef, false};
        }},
       {// Extra info for method call.
        R"cpp(
@@ -927,9 +958,7 @@ class Foo final {})cpp";
          HI.CalleeArgInfo->Name = "arg_a";
          HI.CalleeArgInfo->Type = "int";
          HI.CalleeArgInfo->Default = "3";
-         HI.CallPassType.emplace();
-         HI.CallPassType->PassBy = PassMode::Value;
-         HI.CallPassType->Converted = false;
+         HI.CallPassType = HoverInfo::PassType{PassMode::Value, false};
        }},
       {// Dont crash on invalid decl
        R"cpp(
@@ -988,7 +1017,7 @@ class Foo final {})cpp";
          HI.Type = {"m_int[Size]", "int[Size]"};
          HI.NamespaceScope = "";
          HI.Definition = "template <int Size> m_int arr[Size]";
-         HI.TemplateParameters = {{{"int"}, {"Size"}, llvm::None}};
+         HI.TemplateParameters = {{{"int"}, {"Size"}, std::nullopt}};
        }},
       {// Var template decl specialization
        R"cpp(
@@ -1036,8 +1065,9 @@ class Foo final {})cpp";
          HI.Definition = "template <typename T> void foo(T arg)";
          HI.Type = "void (T)";
          HI.ReturnType = "void";
-         HI.Parameters = {{{"T"}, std::string("arg"), llvm::None}};
-         HI.TemplateParameters = {{{"typename"}, std::string("T"), llvm::None}};
+         HI.Parameters = {{{"T"}, std::string("arg"), std::nullopt}};
+         HI.TemplateParameters = {
+             {{"typename"}, std::string("T"), std::nullopt}};
        }},
       {// TypeAlias Template
        R"cpp(
@@ -1051,7 +1081,8 @@ class Foo final {})cpp";
          HI.Kind = index::SymbolKind::TypeAlias;
          HI.Definition = "template <typename T> using alias = T";
          HI.Type = "T";
-         HI.TemplateParameters = {{{"typename"}, std::string("T"), llvm::None}};
+         HI.TemplateParameters = {
+             {{"typename"}, std::string("T"), std::nullopt}};
        }},
       {// TypeAlias Template
        R"cpp(
@@ -1068,7 +1099,8 @@ class Foo final {})cpp";
          HI.Kind = index::SymbolKind::TypeAlias;
          HI.Definition = "template <typename T> using AA = A<T>";
          HI.Type = {"A<T>", "type-parameter-0-0"}; // FIXME: should be 'T'
-         HI.TemplateParameters = {{{"typename"}, std::string("T"), llvm::None}};
+         HI.TemplateParameters = {
+             {{"typename"}, std::string("T"), std::nullopt}};
        }},
       {// Constant array
        R"cpp(
@@ -1228,8 +1260,10 @@ void fun() {
   } Tests[] = {
       // Integer tests
       {"int_by_value([[^int_x]]);", PassMode::Value, false},
+      {"int_by_value([[^123]]);", PassMode::Value, false},
       {"int_by_ref([[^int_x]]);", PassMode::Ref, false},
       {"int_by_const_ref([[^int_x]]);", PassMode::ConstRef, false},
+      {"int_by_const_ref([[^123]]);", PassMode::ConstRef, false},
       {"int_by_value([[^int_ref]]);", PassMode::Value, false},
       {"int_by_const_ref([[^int_ref]]);", PassMode::ConstRef, false},
       {"int_by_const_ref([[^int_ref]]);", PassMode::ConstRef, false},
@@ -1247,6 +1281,8 @@ void fun() {
       {"float_by_value([[^int_x]]);", PassMode::Value, true},
       {"float_by_value([[^int_ref]]);", PassMode::Value, true},
       {"float_by_value([[^int_const_ref]]);", PassMode::Value, true},
+      {"float_by_value([[^123.0f]]);", PassMode::Value, false},
+      {"float_by_value([[^123]]);", PassMode::Value, true},
       {"custom_by_value([[^int_x]]);", PassMode::Ref, true},
       {"custom_by_value([[^float_x]]);", PassMode::Value, true},
       {"custom_by_value([[^base]]);", PassMode::ConstRef, true},
@@ -1425,7 +1461,7 @@ TEST(Hover, All) {
             HI.Documentation = "Function definition via pointer";
             HI.ReturnType = "void";
             HI.Parameters = {
-                {{"int"}, llvm::None, llvm::None},
+                {{"int"}, std::nullopt, std::nullopt},
             };
           }},
       {
@@ -1444,7 +1480,7 @@ TEST(Hover, All) {
             HI.Documentation = "Function declaration via call";
             HI.ReturnType = "int";
             HI.Parameters = {
-                {{"int"}, llvm::None, llvm::None},
+                {{"int"}, std::nullopt, std::nullopt},
             };
           }},
       {
@@ -2475,7 +2511,7 @@ TEST(Hover, All) {
             HI.Type = {"auto (decltype(a)) -> decltype(a)",
                        "auto (int) -> int"};
             HI.ReturnType = "int";
-            HI.Parameters = {{{"int"}, std::string("x"), llvm::None}};
+            HI.Parameters = {{{"int"}, std::string("x"), std::nullopt}};
           }},
       {
           R"cpp(// sizeof expr
@@ -2508,7 +2544,8 @@ TEST(Hover, All) {
             HI.Kind = index::SymbolKind::Function;
             HI.Type = "void (const int &)";
             HI.ReturnType = "void";
-            HI.Parameters = {{{"const int &"}, llvm::None, std::string("T()")}};
+            HI.Parameters = {
+                {{"const int &"}, std::nullopt, std::string("T()")}};
             HI.Definition = "template <> void foo<int>(const int &)";
             HI.NamespaceScope = "";
           }},
@@ -2883,7 +2920,7 @@ TEST(Hover, Present) {
             HI.Kind = index::SymbolKind::Class;
             HI.Size = 10;
             HI.TemplateParameters = {
-                {{"typename"}, std::string("T"), llvm::None},
+                {{"typename"}, std::string("T"), std::nullopt},
                 {{"typename"}, std::string("C"), std::string("bool")},
             };
             HI.Documentation = "documentation";
@@ -3034,9 +3071,7 @@ private: union foo {})",
             HI.CalleeArgInfo->Name = "arg_a";
             HI.CalleeArgInfo->Type = "int";
             HI.CalleeArgInfo->Default = "7";
-            HI.CallPassType.emplace();
-            HI.CallPassType->PassBy = PassMode::Value;
-            HI.CallPassType->Converted = false;
+            HI.CallPassType = HoverInfo::PassType{PassMode::Value, false};
           },
           R"(variable foo
 
@@ -3051,6 +3086,18 @@ int foo = 3)",
           [](HoverInfo &HI) {
             HI.Kind = index::SymbolKind::Variable;
             HI.Name = "foo";
+            HI.CalleeArgInfo.emplace();
+            HI.CalleeArgInfo->Type = "int";
+            HI.CallPassType = HoverInfo::PassType{PassMode::Value, false};
+          },
+          R"(variable foo
+
+Passed by value)",
+      },
+      {
+          [](HoverInfo &HI) {
+            HI.Kind = index::SymbolKind::Variable;
+            HI.Name = "foo";
             HI.Definition = "int foo = 3";
             HI.LocalScope = "test::Bar::";
             HI.Value = "3";
@@ -3059,9 +3106,7 @@ int foo = 3)",
             HI.CalleeArgInfo->Name = "arg_a";
             HI.CalleeArgInfo->Type = "int";
             HI.CalleeArgInfo->Default = "7";
-            HI.CallPassType.emplace();
-            HI.CallPassType->PassBy = PassMode::Ref;
-            HI.CallPassType->Converted = false;
+            HI.CallPassType = HoverInfo::PassType{PassMode::Ref, false};
           },
           R"(variable foo
 
@@ -3084,9 +3129,7 @@ int foo = 3)",
             HI.CalleeArgInfo->Name = "arg_a";
             HI.CalleeArgInfo->Type = {"alias_int", "int"};
             HI.CalleeArgInfo->Default = "7";
-            HI.CallPassType.emplace();
-            HI.CallPassType->PassBy = PassMode::Value;
-            HI.CallPassType->Converted = true;
+            HI.CallPassType = HoverInfo::PassType{PassMode::Value, true};
           },
           R"(variable foo
 
@@ -3124,9 +3167,7 @@ int foo = 3)",
             HI.CalleeArgInfo->Name = "arg_a";
             HI.CalleeArgInfo->Type = "int";
             HI.CalleeArgInfo->Default = "7";
-            HI.CallPassType.emplace();
-            HI.CallPassType->PassBy = PassMode::ConstRef;
-            HI.CallPassType->Converted = true;
+            HI.CallPassType = HoverInfo::PassType{PassMode::ConstRef, true};
           },
           R"(variable foo
 

@@ -49,6 +49,7 @@
 #include "SizeofContainerCheck.h"
 #include "SizeofExpressionCheck.h"
 #include "SpuriouslyWakeUpFunctionsCheck.h"
+#include "StandaloneEmptyCheck.h"
 #include "StringConstructorCheck.h"
 #include "StringIntegerAssignmentCheck.h"
 #include "StringLiteralWithEmbeddedNulCheck.h"
@@ -75,8 +76,7 @@
 #include "UseAfterMoveCheck.h"
 #include "VirtualNearMissCheck.h"
 
-namespace clang {
-namespace tidy {
+namespace clang::tidy {
 namespace bugprone {
 
 class BugproneModule : public ClangTidyModule {
@@ -156,6 +156,8 @@ public:
         "bugprone-sizeof-expression");
     CheckFactories.registerCheck<SpuriouslyWakeUpFunctionsCheck>(
         "bugprone-spuriously-wake-up-functions");
+    CheckFactories.registerCheck<StandaloneEmptyCheck>(
+        "bugprone-standalone-empty");
     CheckFactories.registerCheck<StringConstructorCheck>(
         "bugprone-string-constructor");
     CheckFactories.registerCheck<StringIntegerAssignmentCheck>(
@@ -217,5 +219,4 @@ static ClangTidyModuleRegistry::Add<bugprone::BugproneModule>
 // and thus register the BugproneModule.
 volatile int BugproneModuleAnchorSource = 0;
 
-} // namespace tidy
-} // namespace clang
+} // namespace clang::tidy
