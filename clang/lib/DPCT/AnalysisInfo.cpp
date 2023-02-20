@@ -115,7 +115,6 @@ std::unordered_map<std::string, DpctGlobalInfo::TempVariableDeclCounter>
 std::unordered_map<std::string, int> DpctGlobalInfo::TempVariableHandledMap;
 bool DpctGlobalInfo::UsingDRYPattern = true;
 bool DpctGlobalInfo::UsingGenericSpace = true;
-bool DpctGlobalInfo::SpBLASUnsupportedMatrixTypeFlag = false;
 unsigned int DpctGlobalInfo::CudaKernelDimDFIIndex = 1;
 std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
     DpctGlobalInfo::CudaKernelDimDFIMap;
@@ -294,7 +293,6 @@ void DpctGlobalInfo::resetInfo() {
   TempVariableDeclCounterMap.clear();
   TempVariableHandledMap.clear();
   UsingDRYPattern = true;
-  SpBLASUnsupportedMatrixTypeFlag = false;
   NeedRunAgain = false;
   SpellingLocToDFIsMapForAssumeNDRange.clear();
   DFIToSpellingLocsMapForAssumeNDRange.clear();
@@ -627,13 +625,6 @@ void DpctFileInfo::buildReplacements() {
     DistrInfo.second.buildInfo(
         FilePath, std::get<0>(DistrInfo.first), std::get<1>(DistrInfo.first),
         std::get<2>(DistrInfo.first), std::get<3>(DistrInfo.first));
-  }
-
-  if (DpctGlobalInfo::getSpBLASUnsupportedMatrixTypeFlag()) {
-    for (auto &SpBLASWarningLocOffset : SpBLASSet) {
-      DiagnosticsUtils::report(getFilePath(), SpBLASWarningLocOffset,
-                               Diagnostics::UNSUPPORT_MATRIX_TYPE, true, false);
-    }
   }
 
   for (auto &AtomicInfo : AtomicMap) {
