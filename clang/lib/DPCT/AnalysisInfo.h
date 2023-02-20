@@ -1489,8 +1489,6 @@ public:
           &ProcessedReplList,
       HostDeviceFuncLocInfo Info, unsigned ID);
   void postProcess() {
-    if (DpctGlobalInfo::getRunRound() == 0) {
-    }
     auto &MSMap = DpctGlobalInfo::getMainSourceFileMap();
     bool isFirstPass = !DpctGlobalInfo::getRunRound();
 
