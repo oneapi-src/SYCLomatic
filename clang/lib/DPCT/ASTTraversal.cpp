@@ -2941,6 +2941,21 @@ void VectorTypeNamespaceRule::registerMatcher(MatchFinder &MF) {
                     .bind("vectorTypeTL"),
                 this);
 
+  MF.addMatcher(
+      cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(SUPPORTEDVECTORTYPENAMES)))
+          .bind("inheritanceType"),
+      this);
+
+  auto Vec3Types = [&]() {
+    return hasAnyName("char3", "uchar3", "short3", "ushort3", "int3", "uint3",
+                      "long3", "ulong3", "float3", "double3", "longlong3",
+                      "ulonglong3");
+  };
+
+  MF.addMatcher(stmt(sizeOfExpr(hasArgumentOfType(hasCanonicalType(
+                         hasDeclaration(namedDecl(Vec3Types()))))))
+                    .bind("SizeofVector3Warn"),
+                this);
   MF.addMatcher(cxxRecordDecl(isDirectlyDerivedFrom(hasAnyName(
                                   "char1", "uchar1", "short1", "ushort1",
                                   "int1", "uint1", "long1", "ulong1", "float1",
@@ -3064,6 +3079,23 @@ void VectorTypeNamespaceRule::runRule(const MatchFinder::MatchResult &Result) {
 
   if (auto RD = getNodeAsType<CXXRecordDecl>(Result, "inherit")) {
     report(RD->getBeginLoc(), Diagnostics::VECTYPE_INHERITATED, false);
+  }
+
+  if (const auto *UETT =
+          getNodeAsType<UnaryExprOrTypeTraitExpr>(Result, "SizeofVector3Warn")) {
+
+    // Ignore shared variables.
+    // .e.g: __shared__ int a[sizeof(float3)], b[sizeof(float3)], ...;
+    if (const auto *V = DpctGlobalInfo::findAncestor<VarDecl>(UETT)) {
+      if (V->hasAttr<CUDASharedAttr>())
+        return;
+    }
+    std::string argTypeName = DpctGlobalInfo::getTypeName(UETT->getTypeOfArgument());
+    std::string argCanTypeName = DpctGlobalInfo::getTypeName(UETT->getTypeOfArgument().getCanonicalType());
+    if (argTypeName != argCanTypeName)
+      argTypeName += " (aka " + argCanTypeName + ")";
+
+    report(UETT, Diagnostics::SIZEOF_WARNING, true, argTypeName);
   }
 }
 
@@ -9491,7 +9523,7 @@ void KernelCallRule::runRule(
                                                   ExprContainSizeofType)) {
             if (ExprContainSizeofType) {
               report(ExprContainSizeofType->getBeginLoc(),
-                     Diagnostics::SIZEOF_WARNING, false);
+                     Diagnostics::SIZEOF_WARNING, false, "local memory");
             }
           }
         }

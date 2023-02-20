@@ -94,6 +94,8 @@ def parse_macro_entry(line: str):
     DPCT_dia_msg = []
     for i in line_list[4 + isMemberAPI::] :
         DPCT_dia_msg += pattern_re.findall(i)
+    if("DPCT1030" in DPCT_dia_msg):
+        API_list[-1] = "NO"
     if(DPCT_dia_msg):
         API_list.append(format_diagnostic_info[output_file_suffix](DPCT_dia_msg, is_supported))
     else:
