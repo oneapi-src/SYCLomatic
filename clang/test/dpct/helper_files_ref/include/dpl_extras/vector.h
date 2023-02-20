@@ -639,7 +639,8 @@ public:
                      .buffer.template reinterpret<T, 1>(sycl::range<1>(_size));
       std::copy(oneapi::dpl::execution::dpcpp_default,
                 oneapi::dpl::begin(get_buffer()),
-                oneapi::dpl::end(get_buffer()), oneapi::dpl::begin(tmp));
+                oneapi::dpl::begin(get_buffer()) + _size,
+                oneapi::dpl::begin(tmp));
       detail::mem_mgr::instance().mem_free(_storage);
       _storage = a;
     }
