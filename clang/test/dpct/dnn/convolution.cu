@@ -52,6 +52,14 @@ int main() {
     cudnnCreateConvolutionDescriptor(&covdes);
     cudnnSetConvolution2dDescriptor(covdes, 0, 0, 1, 1, 1, 1, CUDNN_CONVOLUTION, CUDNN_DATA_FLOAT);
     cudnnSetConvolutionGroupCount(covdes, 2);
+
+    // CHECK: covdes.get_forward_output_dim(dataTensor, filterTensor, &on, &oc, &oh, &ow);
+    cudnnGetConvolution2dForwardOutputDim(covdes, dataTensor, filterTensor, &on, &oc, &oh, &ow);
+
+    int out_dim[5];
+    // CHECK: covdes.get_forward_output_dim(dataTensor, filterTensor, 5, out_dim);
+    cudnnGetConvolutionNdForwardOutputDim(covdes, dataTensor, filterTensor, 5, out_dim);
+
     // CHECK: /*
     // CHECK: DPCT1007:{{[0-9]+}}: Migration of CUDNN_CONVOLUTION is not supported.
     // CHECK: */
