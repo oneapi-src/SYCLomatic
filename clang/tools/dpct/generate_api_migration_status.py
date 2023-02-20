@@ -91,9 +91,11 @@ def parse_macro_entry(line: str):
         warnings.warn(
             "internal error: can not tell whether API is supported or not.")
         API_list.append("UNKNOW")
-    res_match = pattern_re.findall(line_list[-1])
-    if(res_match):
-        API_list.append(format_diagnostic_info[output_file_suffix](res_match, is_supported))
+    DPCT_dia_msg = []
+    for i in line_list[4 + isMemberAPI::] :
+        DPCT_dia_msg += pattern_re.findall(i)
+    if(DPCT_dia_msg):
+        API_list.append(format_diagnostic_info[output_file_suffix](DPCT_dia_msg, is_supported))
     else:
         API_list.append('')
     return API_list
