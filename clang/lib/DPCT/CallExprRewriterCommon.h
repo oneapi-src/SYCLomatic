@@ -1866,6 +1866,7 @@ public:
 #define CASE_FACTORY_ENTRY(...) \
   createCaseRewriterFactory(__VA_ARGS__),
 
+#define ARGS0(INDEX)
 #define ARGS1(INDEX) ARG(INDEX)
 #define ARGS2(INDEX) ARGS1(INDEX), ARGS1(INDEX+1)
 #define ARGS3(INDEX) ARGS1(INDEX), ARGS2(INDEX+1)
@@ -1874,6 +1875,16 @@ public:
 #define ARGS6(INDEX) ARGS1(INDEX), ARGS5(INDEX+1)
 #define ARGS7(INDEX) ARGS1(INDEX), ARGS6(INDEX+1)
 
+#define COMMA_IF_NEEDED0
+#define COMMA_IF_NEEDED1 ,
+#define COMMA_IF_NEEDED2 ,
+#define COMMA_IF_NEEDED3 ,
+#define COMMA_IF_NEEDED4 ,
+#define COMMA_IF_NEEDED5 ,
+#define COMMA_IF_NEEDED6 ,
+#define COMMA_IF_NEEDED7 ,
+
+#define TEMPLATED_ARGS0(INDEX)
 #define TEMPLATED_ARGS1(INDEX) CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(INDEX)), ARG(INDEX))
 #define TEMPLATED_ARGS2(INDEX) TEMPLATED_ARGS1(INDEX), TEMPLATED_ARGS1(INDEX+1)
 #define TEMPLATED_ARGS3(INDEX) TEMPLATED_ARGS1(INDEX), TEMPLATED_ARGS2(INDEX+1)
@@ -1895,6 +1906,12 @@ public:
 #define MINUS4_3 1
 #define MINUS3_2 1
 
+#define MINUS7_7 0
+#define MINUS6_6 0
+#define MINUS5_5 0
+#define MINUS4_4 0
+#define MINUS3_3 0
+
 #define THRUST_FACTORY_WITH_POLICY_HELPER2(THRUST_FUNC_NAME,SYCL_FUNC_NAME,FEATURE,NUM_ARGS,NUM_PTRS,NUM_NON_PTRS)                                                                                   \
 CONDITIONAL_FACTORY_ENTRY(makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),                                                                                                                   \
                           FEATURE_REQUEST_FACTORY(FEATURE,                                                                                                 \
@@ -1905,7 +1922,8 @@ CONDITIONAL_FACTORY_ENTRY(makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())
                                                                                                CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                 \
                                                                                                                   CALL(SYCL_FUNC_NAME,                                                               \
                                                                                                                        CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),                 \
-                                                                                                                       TEMPLATED_ARGS ## NUM_PTRS(1),                                                \
+                                                                                                                       TEMPLATED_ARGS ## NUM_PTRS(1)                                                 \
+                                                                                                                       COMMA_IF_NEEDED ## NUM_NON_PTRS                                               \
                                                                                                                        ARGS ## NUM_NON_PTRS(NUM_PTRS+1)))),                                          \
                                                                        CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                                         \
                                                                                           CALL(SYCL_FUNC_NAME,                                                                                       \
@@ -1932,7 +1950,8 @@ CONDITIONAL_FACTORY_ENTRY(makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())
                                                                        CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                  \
                                                                                           CALL(SYCL_FUNC_NAME,                                                                \
                                                                                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),                  \
-                                                                                               TEMPLATED_ARGS ## NUM_PTRS(0),                                                 \
+                                                                                               TEMPLATED_ARGS ## NUM_PTRS(0)                                                  \
+                                                                                               COMMA_IF_NEEDED ## NUM_NON_PTRS                                                \
                                                                                                ARGS ## NUM_NON_PTRS(NUM_PTRS)))),                                             \
                                                CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                                          \
                                                                   CALL(SYCL_FUNC_NAME,                                                                                        \
