@@ -89,6 +89,13 @@ std::function<std::string(const MemberExpr *)>
   };
 }
 
+std::function<std::string(const MemberExpr *)>
+makeLiteral(std::string literal) {
+  return [=](const MemberExpr *ME) {
+    return literal;
+  };
+}
+
 std::unique_ptr<std::unordered_map<
     std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>>
     MemberExprRewriterFactoryBase::MemberExprRewriterMap;
@@ -137,12 +144,14 @@ void MemberExprRewriterFactoryBase::initMemberExprRewriterMap() {
 #define MEMBER_FACTORY(...) createMemberRewriterFactory(__VA_ARGS__)
 #define MEM_BASE makeMemberBase()
 #define MEM_CALL(x) makeMemberGetCall(x)
+#define LITERAL(x) makeLiteral(x)
 #define IS_ARROW isArrow()
 #define FEATURE_REQUEST_FACTORY(FEATURE, x)                                    \
   createMemberExprFeatureRequestFactory(FEATURE, x 0),
 #include "APINamesMemberExpr.inc"
 #undef FEATURE_REQUEST_FACTORY
 #undef IS_ARROW
+#undef LITERAL
 #undef MEM_CALL
 #undef MEM_BASE
 #undef MEMBER_FACTORY
