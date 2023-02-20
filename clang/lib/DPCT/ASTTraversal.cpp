@@ -11428,7 +11428,8 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
       }
       emplaceTransformation(new ReplaceStmt(C, OS.str()));
       requestFeature(HelperFeatureEnum::Device_device_ext_get_memory_info, C);
-      report(C->getBeginLoc(), Diagnostics::EXTENSION_DEVICE_INFO, false, Name);
+      report(C->getBeginLoc(), Diagnostics::EXTENSION_DEVICE_INFO, false,
+             Name == "cuMemGetInfo_v2" ? "cuMemGetInfo" : Name);
     } else {
       auto &SM = DpctGlobalInfo::getSourceManager();
       std::ostringstream OS;
