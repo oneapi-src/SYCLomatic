@@ -11392,6 +11392,7 @@ void MemoryMigrationRule::miscMigration(const MatchFinder::MatchResult &Result,
         report(C->getBeginLoc(), Diagnostics::NOERROR_RETURN_COMMA_OP, false);
       }
       emplaceTransformation(new ReplaceStmt(C, OS.str()));
+      requestFeature(HelperFeatureEnum::Device_get_current_device, C);
       requestFeature(HelperFeatureEnum::Device_device_ext_get_memory_info, C);
     } else {
       auto &SM = DpctGlobalInfo::getSourceManager();
