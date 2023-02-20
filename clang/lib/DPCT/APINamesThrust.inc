@@ -7,87 +7,40 @@
 //===----------------------------------------------------------------------===//
 
 // thrust::replace_copy_if
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(7), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::replace_copy_if, MapNames::getDpctNamespace()+"replace_copy_if", replace_copy_if, 6,4),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(6), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::replace_copy_if, "oneapi::dpl::replace_copy_if",                 replace_copy_if, 5,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(6), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::replace_copy_if, MapNames::getDpctNamespace()+"replace_copy_if", replace_copy_if, 6,4),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::replace_copy_if, "oneapi::dpl::replace_copy_if",                 replace_copy_if, 5,3),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(7), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::replace_copy_if, MapNames::getDpctNamespace()+"replace_copy_if", HelperFeatureEnum::DplExtrasAlgorithm_replace_copy_if, 6,4),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(6), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::replace_copy_if, "oneapi::dpl::replace_copy_if",                 NO_FEATURE,                                            5,3),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(6), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::replace_copy_if, MapNames::getDpctNamespace()+"replace_copy_if", HelperFeatureEnum::DplExtrasAlgorithm_replace_copy_if, 6,4),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::replace_copy_if, "oneapi::dpl::replace_copy_if",                 NO_FEATURE,                                            5,3),
                                                                        OVERLOAD_UNSUPPORTED_WARNING_FACTORY("thrust::replace_copy_if")))))
 
 // thrust::replace_if
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(6), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::replace_if, MapNames::getDpctNamespace()+"replace_if", replace_if, 5,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::replace_if, "oneapi::dpl::replace_if",                 replace_if, 4,2),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::replace_if, MapNames::getDpctNamespace()+"replace_if", replace_if, 5,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::replace_if, "oneapi::dpl::replace_if",                 replace_if, 4,2),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(6), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::replace_if, MapNames::getDpctNamespace()+"replace_if", HelperFeatureEnum::DplExtrasAlgorithm_replace_if, 5,3),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::replace_if, "oneapi::dpl::replace_if",                 NO_FEATURE,                                       4,2),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::replace_if, MapNames::getDpctNamespace()+"replace_if", HelperFeatureEnum::DplExtrasAlgorithm_replace_if, 5,3),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::replace_if, "oneapi::dpl::replace_if",                 NO_FEATURE,                                       4,2),
                                                                        OVERLOAD_UNSUPPORTED_WARNING_FACTORY("thrust::replace_if")))))
 
 // thrust::remove_copy_if
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(6), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::remove_copy_if, MapNames::getDpctNamespace()+"remove_copy_if", remove_copy_if, 5,4),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::remove_copy_if, "oneapi::dpl::remove_copy_if",                 remove_copy_if, 4,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::remove_copy_if, MapNames::getDpctNamespace()+"remove_copy_if", remove_copy_if, 5,4),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::remove_copy_if, "oneapi::dpl::remove_copy_if",                 remove_copy_if, 4,3),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(6), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::remove_copy_if, MapNames::getDpctNamespace()+"remove_copy_if", HelperFeatureEnum::DplExtrasAlgorithm_remove_copy_if, 5,4),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::remove_copy_if, "oneapi::dpl::remove_copy_if",                 NO_FEATURE,                                           4,3),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::remove_copy_if, MapNames::getDpctNamespace()+"remove_copy_if", HelperFeatureEnum::DplExtrasAlgorithm_remove_copy_if, 5,4),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::remove_copy_if, "oneapi::dpl::remove_copy_if",                 NO_FEATURE,                                           4,3),
                                                                        OVERLOAD_UNSUPPORTED_WARNING_FACTORY("thrust::remove_copy_if")))))
 
 // thrust::remove_if
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::remove_if, MapNames::getDpctNamespace()+"remove_if", remove_if, 4,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::remove_if, "oneapi::dpl::remove_if",                 remove_if, 3,2),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::remove_if, MapNames::getDpctNamespace()+"remove_if", remove_if, 4,3),
-CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(3), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::remove_if, "oneapi::dpl::remove_if",                 remove_if, 3,2),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(5), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::remove_if, MapNames::getDpctNamespace()+"remove_if", HelperFeatureEnum::DplExtrasAlgorithm_remove_if, 4,3),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::remove_if, "oneapi::dpl::remove_if",                 NO_FEATURE,                                      3,2),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::remove_if, MapNames::getDpctNamespace()+"remove_if", HelperFeatureEnum::DplExtrasAlgorithm_remove_if, 4,3),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(3), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::remove_if, "oneapi::dpl::remove_if",                 NO_FEATURE,                                      3,2),
                                                                        OVERLOAD_UNSUPPORTED_WARNING_FACTORY("thrust::remove_if")))))
 
 // thrust::not1
 CALL_FACTORY_ENTRY("thrust::not1", CALL("oneapi::dpl::not1", ARG(0)))
 
 // thrust::any_of
-CONDITIONAL_FACTORY_ENTRY(
-  CheckArgCount(4),
-  CONDITIONAL_FACTORY_ENTRY(
-    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-    IFELSE_FACTORY_ENTRY(
-      "thrust::any_of",
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-        CALL_FACTORY_ENTRY("thrust::any_of", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-        CALL_FACTORY_ENTRY("thrust::any_of",
-                            CALL("oneapi::dpl::any_of",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(2)), ARG(2)),
-                                ARG(3)))),
-      CALL_FACTORY_ENTRY("thrust::any_of",
-                          CALL("oneapi::dpl::any_of",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(1), ARG(2), ARG(3), ARG(4)))),
-    CALL_FACTORY_ENTRY("thrust::any_of",
-                      CALL("oneapi::dpl::any_of",
-                            makeMappedThrustPolicyEnum(0),
-                            ARG(1), ARG(2), ARG(3)))
-  ),
-  CONDITIONAL_FACTORY_ENTRY(
-    makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),
-    IFELSE_FACTORY_ENTRY(
-      "thrust::any_of",
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,
-        CALL_FACTORY_ENTRY("thrust::any_of", CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))),
-      FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasMemory_device_pointer_forward_decl,
-        CALL_FACTORY_ENTRY("thrust::any_of",
-                            CALL("oneapi::dpl::any_of",
-                                CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(0)), ARG(0)),
-                                CALL(TEMPLATED_CALLEE_WITH_ARGS(MapNames::getDpctNamespace() + "device_pointer", getDerefedType(1)), ARG(1)),
-                                ARG(2)))),
-      CALL_FACTORY_ENTRY("thrust::any_of",
-                          CALL("oneapi::dpl::any_of",
-                              ARG("oneapi::dpl::execution::seq"),
-                              ARG(0), ARG(1), ARG(2)))),
-    CONDITIONAL_FACTORY_ENTRY(
-      CheckThrustArgType(1, "thrust::device_ptr"),
-      CALL_FACTORY_ENTRY("thrust::any_of", CALL("oneapi::dpl::any_of",
-                         CALL("oneapi::dpl::execution::make_device_policy", QUEUESTR),
-                         ARG(0), ARG(1), ARG(2))),
-      CALL_FACTORY_ENTRY("thrust::any_of", CALL("oneapi::dpl::any_of", ARG("oneapi::dpl::execution::seq"),
-                         ARG(0), ARG(1), ARG(2))))
-  )
-)
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(4), HAS_POLICY), THRUST_FACTORY_WITH_POLICY   (thrust::any_of, "oneapi::dpl::any_of", NO_FEATURE, 3,2),
+CONDITIONAL_FACTORY_ENTRY( makeCheckAnd(CheckArgCount(3), NO_POLICY),  THRUST_FACTORY_WITHOUT_POLICY(thrust::any_of, "oneapi::dpl::any_of", NO_FEATURE, 3,2),
+                                                                       OVERLOAD_UNSUPPORTED_WARNING_FACTORY("thrust::any_of")))
 
 // thrust::replace
 CONDITIONAL_FACTORY_ENTRY(

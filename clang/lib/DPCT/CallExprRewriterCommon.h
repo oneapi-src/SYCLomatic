@@ -1700,7 +1700,6 @@ public:
           ArgType.find("detail::par_t"  )!=std::string::npos ||
           ArgType.find("detail::seq_t"  )!=std::string::npos)
         return true;
-      return false;
     }
     return false;
   }
@@ -1898,7 +1897,7 @@ public:
 
 #define THRUST_FACTORY_WITH_POLICY_HELPER2(THRUST_FUNC_NAME,SYCL_FUNC_NAME,FEATURE,NUM_ARGS,NUM_PTRS,NUM_NON_PTRS)                                                                                   \
 CONDITIONAL_FACTORY_ENTRY(makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())),                                                                                                                   \
-                          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_ ## FEATURE,                                                                                                 \
+                          FEATURE_REQUEST_FACTORY(FEATURE,                                                                                                 \
                                                   IFELSE_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                                                            \
                                                                        FEATURE_REQUEST_FACTORY(HelperFeatureEnum::Memory_is_device_ptr,                                                              \
                                                                                                CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME, CALL(MapNames::getDpctNamespace() + "is_device_ptr", ARG(1)))), \
@@ -1912,7 +1911,7 @@ CONDITIONAL_FACTORY_ENTRY(makeCheckAnd(CheckIsPtr(1), makeCheckNot(checkIsUSM())
                                                                                           CALL(SYCL_FUNC_NAME,                                                                                       \
                                                                                                ARG("oneapi::dpl::execution::seq"),                                                                   \
                                                                                                ARGS ## NUM_ARGS(1))))),                                                                              \
-                          FEATURE_REQUEST_FACTORY(HelperFeatureEnum::DplExtrasAlgorithm_ ## FEATURE,                                                                                                 \
+                          FEATURE_REQUEST_FACTORY(FEATURE,                                                                                                 \
                                                   CALL_FACTORY_ENTRY(#THRUST_FUNC_NAME,                                                                                                              \
                                                                      CALL(SYCL_FUNC_NAME,                                                                                                            \
                                                                           makeMappedThrustPolicyEnum(0),                                                                                             \
@@ -1966,5 +1965,7 @@ WARNING_FACTORY_ENTRY(FUNC_NAME,                                                
                                                                   CALL_FACTORY_ENTRY(FUNC_NAME, CALL(FUNC_NAME, ARGS1(0))))))))), \
                       Diagnostics::OVERLOAD_UNSUPPORTED,                                                                          \
                       ARG(FUNC_NAME))
+
+#define NO_FEATURE HelperFeatureEnum::Dpct_no_feature
 
 #endif // DPCT_CALL_EXPR_REWRITER_COMMON_H
