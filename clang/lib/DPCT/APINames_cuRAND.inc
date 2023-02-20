@@ -31,8 +31,8 @@
 *    Comment:      extra comment on the migration.
 *
 ****************************************************************************/
-ENTRY(curandCreateGenerator, curandCreateGenerator, true, NO_FLAG, P4, "Successful")
-ENTRY(curandCreateGeneratorHost, curandCreateGeneratorHost, true, NO_FLAG, P4, "Successful")
+ENTRY(curandCreateGenerator, curandCreateGenerator, true, NO_FLAG, P4, "DPCT1028/DPCT1032/DPCT1033")
+ENTRY(curandCreateGeneratorHost, curandCreateGeneratorHost, true, NO_FLAG, P4, "DPCT1028/DPCT1032/DPCT1033")
 ENTRY(curandCreatePoissonDistribution, curandCreatePoissonDistribution, false, NO_FLAG, P4, "comment")
 ENTRY(curandDestroyDistribution, curandDestroyDistribution, false, NO_FLAG, P4, "comment")
 ENTRY(curandDestroyGenerator, curandDestroyGenerator, true, NO_FLAG, P4, "Successful")
@@ -60,7 +60,7 @@ ENTRY(curandSetStream, curandSetStream, true, NO_FLAG, P4, "Successful")
 ENTRY(curandMakeMTGP32KernelState, curandMakeMTGP32KernelState, false, NO_FLAG, P4, "comment")
 ENTRY(curand, curand, true, NO_FLAG, P4, "Successful")
 ENTRY(curand4, curand4, true, NO_FLAG, P4, "Successful")
-ENTRY(curand_init, curand_init, true, NO_FLAG, P4, "Successful")
+ENTRY(curand_init, curand_init, true, NO_FLAG, P4, "DPCT1028")
 ENTRY(curand_log_normal, curand_log_normal, true, NO_FLAG, P4, "Successful")
 ENTRY(curand_log_normal2, curand_log_normal2, true, NO_FLAG, P4, "Successful")
 ENTRY(curand_log_normal2_double, curand_log_normal2_double, true, NO_FLAG, P4, "Successful")

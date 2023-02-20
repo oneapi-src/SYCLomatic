@@ -13,9 +13,15 @@
 void checkError(cudaError_t err) {
 }
 
+class C {
+public:
+  int *data{nullptr};
+};
+
 void foo() {
   int *data;
   size_t width, height, depth, pitch, woffset, hoffset;
+  C c;
   // CHECK: dpct::queue_ptr s;
   // CHECK-NEXT: dpct::image_matrix_p a1;
   // CHECK-NEXT: dpct::image_matrix* a2;
@@ -85,6 +91,9 @@ void foo() {
 
   // CHECK: dpct::dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1));
   cudaMemcpyToArray(a1, woffset, hoffset, data, width, cudaMemcpyDeviceToHost);
+
+  // CHECK: dpct::dpct_memcpy(((dpct::image_matrix *)c.data)->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1));
+  cudaMemcpyToArray((cudaArray *)c.data, woffset, hoffset, data, width, cudaMemcpyDeviceToHost);
 
   // CHECK: dpct::async_dpct_memcpy(a1->to_pitched_data(), sycl::id<3>(woffset, hoffset, 0), dpct::pitched_data(data, width, width, 1), sycl::id<3>(0, 0, 0), sycl::range<3>(width, 1, 1));
   cudaMemcpyToArrayAsync(a1, woffset, hoffset, data, width, cudaMemcpyDeviceToHost);
