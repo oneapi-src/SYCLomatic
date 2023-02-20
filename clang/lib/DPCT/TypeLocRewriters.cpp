@@ -32,6 +32,28 @@ makeTemplateArgCreator(unsigned Idx) {
   };
 }
 
+template <typename T>
+std::function<std::string(const TypeLoc)>
+makeAddPointerCreator(std::function<T(const TypeLoc)> f) {
+  return [=](const TypeLoc TL) {
+    std::string s;
+    llvm::raw_string_ostream OS(s);
+    dpct::print(OS, f(TL));
+    OS << " *";
+    return s;
+  };
+}
+
+std::function<std::string(const TypeLoc)>
+makeTypeStrCreator() {
+  return [=](const TypeLoc TL) {
+    auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
+    PP.SuppressTagKeyword = true;
+    PP.FullyQualifiedName = true;
+    return TL.getType().getAsString(PP);
+  };
+}
+
 class CheckTemplateArgCount {
   unsigned Count;
 
@@ -44,6 +66,17 @@ public:
     return false;
   }
 };
+
+inline auto CheckForPostfixDeclaratorType(unsigned Idx) {
+  return [=](const TypeLoc TL){
+    if (const auto TSTL = TL.getAs<TemplateSpecializationTypeLoc>()) {
+      const auto TAT = TSTL.getArgLoc(Idx).getArgument().getAsType();
+      const auto CT = TAT.getCanonicalType();
+      return typeIsPostfix(CT);
+    }
+    return false;
+  };
+}
 
 // Print a templated type. Pass a STR("") as a template argument for types with
 // no template argument e.g. MyType<>
@@ -75,6 +108,15 @@ std::shared_ptr<TypeLocRewriterFactoryBase> createTypeLocConditionalFactory(
     std::shared_ptr<TypeLocRewriterFactoryBase> &&Second) {
   return std::make_shared<TypeLocConditionalRewriterFactory>(Pred, First,
                                                              Second);
+}
+
+template <typename... Args> 
+std::shared_ptr<TypeLocRewriterFactoryBase>
+createReportWarningTypeLocRewriterFactory(Diagnostics MsgId,
+                                          Args&&... args) {
+  return std::make_shared<
+    TypeLocRewriterFactory<ReportWarningTypeLocRewriter, Diagnostics, Args...>>
+    (MsgId, std::forward<Args>(args)...);
 }
 
 std::pair<std::string, std::shared_ptr<TypeLocRewriterFactoryBase>>
@@ -123,7 +165,14 @@ void TypeLocRewriterFactoryBase::initTypeLocRewriterMap() {
   createFeatureRequestFactory(FEATURE, x 0),
 #define HEADER_INSERTION_FACTORY(HEADER, SUB)                                  \
   createHeaderInsertionFactory(HEADER, SUB)
+#define TYPESTR makeTypeStrCreator()
+#define WARNING_FACTORY(MSGID, ARGS) \
+  createReportWarningTypeLocRewriterFactory(MSGID, ARGS)
+#define ADD_POINTER(CREATOR) \
+  makeAddPointerCreator(CREATOR)
 #include "APINamesTemplateType.inc"
+#undef WARNING_FACTORY
+#undef ADD_POINTER
 #undef HEADER_INSERTION_FACTORY
 #undef FEATURE_REQUEST_FACTORY
 #undef TYPE_FACTORY

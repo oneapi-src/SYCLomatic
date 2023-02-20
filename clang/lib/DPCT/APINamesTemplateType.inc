@@ -142,3 +142,12 @@ TYPE_REWRITE_ENTRY(
 TYPE_REWRITE_ENTRY(
     "thrust::modulus",
     TYPE_FACTORY(STR("std::modulus"), TEMPLATE_ARG(0)))
+
+TYPE_REWRITE_ENTRY(
+    "cub::DoubleBuffer",
+    TYPE_CONDITIONAL_FACTORY(
+        CheckForPostfixDeclaratorType(0),
+        WARNING_FACTORY(Diagnostics::KNOWN_UNSUPPORTED_TYPE, TYPESTR),
+        HEADER_INSERTION_FACTORY(HeaderType::HT_DPCT_DPL_Utils,
+        TYPE_FACTORY(STR("dpct::io_iterator_pair"), ADD_POINTER(TEMPLATE_ARG(0))))))
+

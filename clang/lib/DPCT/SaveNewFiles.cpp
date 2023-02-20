@@ -273,7 +273,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
       }
       if (IncludeFileMap.find(FilePath) != IncludeFileMap.end()) {
         // Skip the files processed by the first loop of
-        // calling proccessFiles() in Tooling.cpp::ClangTool::run().
+        // calling processFiles() in Tooling.cpp::ClangTool::run().
         continue;
       } else {
         if (DpctGlobalInfo::isExcluded(FilePath, false)) {

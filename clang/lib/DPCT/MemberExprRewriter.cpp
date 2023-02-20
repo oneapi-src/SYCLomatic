@@ -72,6 +72,13 @@ std::function<std::string(const MemberExpr *)>
   };
 }
 
+std::function<std::string(const MemberExpr *)>
+makeLiteral(std::string literal) {
+  return [=](const MemberExpr *ME) {
+    return literal;
+  };
+}
+
 std::unique_ptr<std::unordered_map<
         std::string, std::shared_ptr<MemberExprRewriterFactoryBase>>>
         MemberExprRewriterFactoryBase::MemberExprRewriterMap;
@@ -98,6 +105,7 @@ void MemberExprRewriterFactoryBase::initMemberExprRewriterMap() {
 #define MEMBER_FACTORY(...) createMemberRewriterFactory(__VA_ARGS__)
 #define MEM_BASE makeMemberBase()
 #define MEM_CALL(x) makeMemberGetCall(x)
+#define LITERAL(x) makeLiteral(x)
 #define IS_ARROW isArrow()
 #include "APINamesMemberExpr.inc"
 #undef MEMBER_REWRITE_ENTRY
@@ -105,6 +113,7 @@ void MemberExprRewriterFactoryBase::initMemberExprRewriterMap() {
 #undef MEMBER_FACTORY
 #undef MEM_BASE
 #undef MEM_ATTR
+#undef LITERAL
       }));
 }
 } // namespace dpct
