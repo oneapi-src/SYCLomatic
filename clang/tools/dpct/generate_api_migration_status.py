@@ -16,11 +16,11 @@ pattern_re = re.compile("DPCT\d{4}")
 def diag_DPCT_link(DPCT_diag:str):
     return "https://www.intel.com/content/www/us/en/develop/documentation/intel-dpcpp-compatibility-tool-user-guide/top/diagnostics-reference/"+DPCT_diag.lower()+".html"
 
-def format_diagnostic_info_md(DPCT_diag_number:list):
-    return " / ".join(("["+diag_number+"]("+diag_DPCT_link(diag_number)+")" for diag_number in DPCT_diag_number))
+def format_diagnostic_info_md(DPCT_diag_number:list, is_supported:bool):
+    return " / ".join(("["+diag_number+"]("+diag_DPCT_link(diag_number)+")" for diag_number in DPCT_diag_number if not is_supported or diag_number != "DPCT1007"))
 
-def format_diagnostic_info_csv(DPCT_diag_number:list):
-    return " / ".join((":ref:`"+diag_number+"`" for diag_number in DPCT_diag_number))
+def format_diagnostic_info_csv(DPCT_diag_number:list, is_supported:bool):
+    return " / ".join((":ref:`"+diag_number+"`" for diag_number in DPCT_diag_number if not is_supported or diag_number != "DPCT1007"))
 
 format_diagnostic_info = {"md":format_diagnostic_info_md, "csv":format_diagnostic_info_csv}
 
@@ -73,10 +73,19 @@ def format_lib(lib_name: str, APIs_list: list):
 
 def parse_macro_entry(line: str):
     line_list = line.split()
-    API_list = [line_list[1]]
-    if(line_list[3] == "true"):
+    isMemberAPI = 0
+    if(line_list[0]=="ENTRY"):
+        API_list = [line_list[1]]
+        isMemberAPI = 0
+    else:
+        API_list = [line_list[1]+'::'+line_list[2]]
+        isMemberAPI = 1
+    is_supported = False
+    if(line_list[3 + isMemberAPI] == "true"):
         API_list.append("YES")
-    elif (line_list[3] == "false"):
+        is_supported = True
+    elif (line_list[3 + isMemberAPI] == "false"):
+        is_supported = False
         API_list.append("NO")
     else:
         warnings.warn(
@@ -84,26 +93,7 @@ def parse_macro_entry(line: str):
         API_list.append("UNKNOW")
     res_match = pattern_re.findall(line_list[-1])
     if(res_match):
-        API_list.append(format_diagnostic_info[output_file_suffix](res_match))
-    else:
-        API_list.append('')
-    return API_list
-
-
-def parse_macro_entry_member_function(line: str):
-    line_list = line.split()
-    API_list = [line_list[1]+'::'+line_list[2]]
-    if(line_list[4] == "true"):
-        API_list.append("YES")
-    elif (line_list[4] == "false"):
-        API_list.append("NO")
-    else:
-        warnings.warn(
-            "internal error: can not tell whether API is supported or not.")
-        API_list.append("UNKNOW")
-    res_match = pattern_re.findall(line_list[-1])
-    if(res_match):
-        API_list.append(format_diagnostic_info[output_file_suffix](res_match))
+        API_list.append(format_diagnostic_info[output_file_suffix](res_match, is_supported))
     else:
         API_list.append('')
     return API_list
@@ -117,10 +107,7 @@ def get_API_status_list(file_lib: str):
             if(img_file == "" or img_file[0:5] != "ENTRY"):
                 continue
             img_file = img_file.translate(str.maketrans('"(),', '    '))
-            if img_file[0:21] == 'ENTRY_MEMBER_FUNCTION':
-                API_list = parse_macro_entry_member_function(img_file)
-            elif img_file[0:5] == "ENTRY":
-                API_list = parse_macro_entry(img_file)
+            API_list = parse_macro_entry(img_file)
             APIs_list.append(API_list)
     return APIs_list
 
