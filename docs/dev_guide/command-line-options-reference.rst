@@ -38,6 +38,9 @@ in alphabetical order.
    * - ``=c_cxx_standard_library``
      - A set of functions from the C and C++ standard libraries that are allowed
        to be used in SYCL device code.
+   * - ``--change-filename-extension=<file>``
+     - DEPRECATED: Specifies which extensions of migrated fileswill be changed,
+       split by comma. Default: .cu, .cuh, .cpp, .cxx, .cc, .c, .C
    * - ``--check-unicode-security``
      - Enable detection and warnings about Unicode constructs that can be
        exploited by using bi-directional formatting codes and homoglyphs in
