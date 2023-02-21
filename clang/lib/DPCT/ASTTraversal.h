@@ -219,7 +219,7 @@ public:
     CHECKPOINT_ASTMATCHER_RUN_ENTRY();
     try {
       static_cast<T *>(this)->runRule(Result);
-    } catch (std::exception &e) {
+    } catch (std::exception &) {
       std::string FaultMsg =
           "Error: dpct internal error. Migration rule causing the error "
           "skipped. Migration continues.\n";

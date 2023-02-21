@@ -4558,10 +4558,8 @@ generateHelperFuncReplInfo(const T *S) {
   }
 
   Info.IsLocationValid = true;
-  Info.DeclLocFile =
-      DpctGlobalInfo::getSourceManager().getFilename(EndOfLBrace).str();
-  Info.DeclLocOffset =
-      DpctGlobalInfo::getSourceManager().getDecomposedLoc(EndOfLBrace).second;
+  std::tie(Info.DeclLocFile, Info.DeclLocOffset) =
+      DpctGlobalInfo::getLocInfo(EndOfLBrace);
   return Info;
 }
 

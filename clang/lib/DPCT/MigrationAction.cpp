@@ -40,7 +40,7 @@ bool checkMemoryStatus() {
   MStatus.dwLength = sizeof(MStatus);
   GlobalMemoryStatusEx(&MStatus);
 
-  return MinAvailableMemoryPercent > 100 - MStatus.dwMemoryLoad &&
+  return MinAvailableMemoryPercent < 100 - MStatus.dwMemoryLoad &&
          MStatus.ullAvailPhys > MinAvailableMemorySize;
 }
 #else  // _WIN32
@@ -149,7 +149,7 @@ std::shared_ptr<TranslationUnitInfo> DpctToolAction::createTranslationUnitInfo(
   auto Ret = ASTUnit::LoadFromCompilerInvocationAction(
       Invocation, std::make_shared<PCHContainerOperations>(), Diags, &FEAction,
       Info->AST.get());
-  Success = !Info->AST->getDiagnostics().getClient()->getNumErrors();
+  Success = !DiagConsumer->getNumErrors();
   if (Ret && (bool)&Info->AST->getASTContext())
     return Info;
   return std::shared_ptr<TranslationUnitInfo>();
