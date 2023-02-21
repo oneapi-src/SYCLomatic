@@ -656,6 +656,13 @@ public:
   void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
 };
 
+/// Migration rule for CU_JIT enums.
+class CU_JITEnumsRule : public NamedMigrationRule<CU_JITEnumsRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 /// Migration rule for BLAS enums.
 class BLASEnumsRule : public NamedMigrationRule<BLASEnumsRule> {
 public:
