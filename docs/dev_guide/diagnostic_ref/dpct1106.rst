@@ -20,9 +20,6 @@ The CUDA ``<function name>`` for example ``cudaMemGetInfo`` or ``cuMemGetInfo`` 
 migrated with Intel's Extensions for Device Information, which may be not supported
 by all compilers or runtimes.
 
-Suggestions to Fix
-------------------
-
 Original code:
 
 .. code-block:: cpp
@@ -60,3 +57,8 @@ Fixed code:
      // free_mem should be adjusted
      free_mem = /*implementation defined*/;
    }
+
+Suggestions to Fix
+------------------
+
+You may need to adjust the code.

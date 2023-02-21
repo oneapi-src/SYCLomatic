@@ -9,17 +9,18 @@ Message
 .. _msg-1101-start:
 
 ``<expression text>`` expression was replaced with a value. Modify the code to
-use original expression, provided in comments, if it is correct.
+use the original expression, provided in comments, if it is correct.
 
 .. _msg-1101-end:
 
 Detailed Help
 -------------
 
-Identities including constant variable name and macro used in the migrated SYCL
-code are replaced with their value since they may not be available in the scope.
-User can replace the value with the original expression listed in the comment
-manually after confirming that the identities are available in the scope.
+Identities including constant variable name(s), type(s) and macro(s) used in the
+migrated SYCL code are replaced with their value since they may not be available
+in the code scope. User can replace the value with the original expression listed
+in the comment manually after confirming that the identities are available in the
+code scope.
 
 Suggestions to Fix
 ------------------

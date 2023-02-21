@@ -31,7 +31,7 @@ compatibility tool to generate wrapped kernel functions:
 .. code-block:: bash
    :linenos:
 
-   dpct <module source file(s)> --extra-arg=--ptx  
+   dpct <module source file(s)> --extra-arg=--ptx
 
 The migrated module source file(s) should be compiled to build a kernel library.
 On Linux:
@@ -48,7 +48,7 @@ On Windows:
 
    icpx -fsycl <migrated module source file(s)> -shared -o <kernel library filename>
 
-The user should ensure that the application will load  the kernel library image into
+The user should ensure that the application will load the kernel library image into
 memory at runtime. For the following example this can be ensured by setting
 ``<kernel library filename>`` to "module.ptx".
 

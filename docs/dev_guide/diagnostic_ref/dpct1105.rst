@@ -19,9 +19,9 @@ Detailed Help
 
 The CUDA application expects ``<expression text>`` to point to a CUDA module whose
 file image has been copied to memory.  The user should ensure that the CUDA code
-that generated the CUDA module is migrated to SYCL code,  compiled to generate a
-kernel library, and then   copied to memory by the migrated SYCL application.
-The CUDA compilation options passed to cuModuleLoadDataEx are  removed from the migrated
+that generated the CUDA module is migrated to SYCL code, compiled to generate a
+kernel library, and then copied to memory by the migrated SYCL application.
+The CUDA compilation options passed to cuModuleLoadDataEx are removed from the migrated
 code.
 
 Suggestions to Fix
@@ -93,5 +93,5 @@ Fixed code:
 .. code-block:: cpp
    :linenos:
 
-   const void *image = copyFileToMemory(“module.ptx”);
+   const void *image = copyFileToMemory("module.ptx");
    module = dpct::load_kernel_library(image);

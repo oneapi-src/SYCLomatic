@@ -236,8 +236,9 @@ in alphabetical order.
 
        - ``=c_cxx_standard_library``: Use std functions from libdevice (provided by
          Intel(R) oneAPI DPC++/C++ Compiler) and C/C++ standard library to migrate
-         functions which has no mapping in SYCL standard. If this value is used together
-         with intel_device_math, intel_device_math functions take precedence.
+         functions which has no mapping in SYCL standard.
+         If this value is used together with intel_device_math, intel_device_math
+         functions take precedence.
        - ``=intel_device_math``: Use sycl::ext::intel::math functions from libdevice
          (provided by Intel(R) oneAPI DPC++/C++ Compiler) to migrate functions which
          have no mapping in SYCL standard.

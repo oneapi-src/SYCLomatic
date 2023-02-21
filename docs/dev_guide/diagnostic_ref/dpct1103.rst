@@ -25,7 +25,7 @@ Suggestions to Fix
 
 The user should find the module source file(s) that are used to make the CUDA module
 and migrate them to SYCL with the --extra-arg=-ptx option of the compatibility tool
-to generate “wrapped”  kernel functions:
+to generate "wrapped" kernel functions:
 
 .. code-block:: bash
    :linenos:
