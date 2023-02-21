@@ -9,7 +9,7 @@ deprecated options, and information for working with source files.
 Command Line Options
 --------------------
 
-The following table lists all current |compatibility_tool| command line options
+The following table lists all current |tool_name| command line options
 in alphabetical order.
 
 .. list-table::
@@ -149,7 +149,7 @@ in alphabetical order.
      - Sets the output verbosity level:
 
        - ``=silent``: Only messages from clang.
-       - ``=normal``: 'silent' and warnings, errors, and notes from the |compatibility_tool|.
+       - ``=normal``: 'silent' and warnings, errors, and notes from the |tool_name|.
        - ``=detailed``: 'normal' and messages about which file is being processed.
        - ``=diagnostics``: 'detailed' and information about the detected conflicts
          and crashes (default).
@@ -276,7 +276,7 @@ in alphabetical order.
      - Sets the Unified Shared Memory (USM) level to use in source code generation:
 
        - ``=restricted``: Uses USM API for memory management migration. (default).
-       - ``=none``: Uses helper functions from |compatibility_tool| header files
+       - ``=none``: Uses helper functions from |tool_name| header files
          for memory management migration.
    * - ``--vcxprojfile=<file>``
      - The file path of ``vcxproj``.
@@ -296,7 +296,7 @@ in alphabetical order.
 Deprecated Command Line Options
 -------------------------------
 
-The following table lists |compatibility_tool| command line options that are 
+The following table lists |tool_name| command line options that are 
 currently deprecated.
 
 .. list-table::
