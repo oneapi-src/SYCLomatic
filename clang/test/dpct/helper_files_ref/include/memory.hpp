@@ -815,12 +815,12 @@ static inline void dpct_free(void *ptr,
 /// \param pointers The pointers point to the device memory requested to be freed.
 /// \param events The events to be waited.
 /// \param q The sycl::queue the memory relates to.
-inline void async_dpct_free(std::vector<void *> pointers,
-                            std::vector<sycl::event> events,
+inline void async_dpct_free(const std::vector<void *> &pointers,
+                            const std::vector<sycl::event> &events,
                             sycl::queue &q = get_default_queue()) {
   q.submit([&](sycl::handler &cgh) {
     cgh.depends_on(events);
-    cgh.host_task([=, &q] {
+    cgh.host_task([=] {
       for (auto p : pointers)
         if (p) {
           dpct_free(p, q);
