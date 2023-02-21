@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 
 
   // CHECK: MY_ERROR_CHECKER((start = new sycl::event(), 0));
-  // CHECK: int et = (stop = new sycl::event(), 0);
+  // CHECK: dpct::err0 et = (stop = new sycl::event(), 0);
   MY_ERROR_CHECKER(cudaEventCreate(&start));
   cudaError_t et = cudaEventCreate(&stop);
 
@@ -228,7 +228,7 @@ int main(int argc, char* argv[]) {
 
   cudaEventCreate(&stop);
 
-  // CHECK: int e = (int)stop->get_info<sycl::info::event::command_execution_status>();
+  // CHECK: dpct::err0 e = (int)stop->get_info<sycl::info::event::command_execution_status>();
   // CHECK-NEXT: MY_ERROR_CHECKER(e);
   // CHECK-NEXT: MY_ERROR_CHECKER((int)stop->get_info<sycl::info::event::command_execution_status>());
   // CHECK-NEXT: if (0 == (int)stop->get_info<sycl::info::event::command_execution_status>()){}
@@ -248,14 +248,14 @@ int main(int argc, char* argv[]) {
   // CHECK-NEXT:     e1 = stop->get_info<sycl::info::event::command_execution_status>();
   // CHECK-NEXT:   }
   // CHECK-NEXT:   {
-  // CHECK-NEXT:     int e;
+  // CHECK-NEXT:     dpct::err0 e;
   // CHECK-NEXT:     e = (int)stop->get_info<sycl::info::event::command_execution_status>();
   // CHECK-NEXT:     /*
   // CHECK-NEXT:     DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   // CHECK-NEXT:     */
   // CHECK-NEXT:     e = (a = (int *)dpct::dpct_malloc(sizeof(int)), 0);
   // CHECK-NEXT:   }
-  // CHECK-NEXT:   int et1, et2;
+  // CHECK-NEXT:   dpct::err0 et1, et2;
   // CHECK-NEXT:   et1 = (int)stop->get_info<sycl::info::event::command_execution_status>();
   // CHECK-NEXT:   /*
   // CHECK-NEXT:   DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
@@ -334,7 +334,7 @@ void foo() {
 
   {
     // CHECK: start_ct1 = std::chrono::steady_clock::now();
-    // CHECK-NEXT: int err = (*start = q_ct1.ext_oneapi_submit_barrier(), 0);
+    // CHECK-NEXT: dpct::err0 err = (*start = q_ct1.ext_oneapi_submit_barrier(), 0);
     cudaError_t err = cudaEventRecord(start, 0);
     // CHECK: stop_ct1 = std::chrono::steady_clock::now();
     // CHECK-NEXT: err = (*stop = q_ct1.ext_oneapi_submit_barrier(), 0);

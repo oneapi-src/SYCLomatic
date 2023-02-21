@@ -47,7 +47,7 @@ extern std::map<std::string, bool> IncludeFileMap;
 // This function is registered by SetFileProcessHandle() called by runDPCT() in
 // DPCT.cpp, and called in Tooling.cpp::DoFileProcessHandle(). It traverses all
 // the files in directory \pInRoot, collecting *.cu files not
-// processed by the the first loop of calling proccessFiles() in
+// processed by the the first loop of calling processFiles() in
 // Tooling.cpp::ClangTool::run()) into \pFilesNotProcessed, and copies the rest
 // files to the output directory.
 void processAllFiles(llvm::StringRef InRoot, llvm::StringRef OutRoot,

@@ -4,7 +4,7 @@
 int printf(const char *s, ...);
 int fprintf(int, const char *s, ...);
 
-// CHECK:void test_side_effects(int err, int arg, int x, int y, int z) {
+// CHECK:void test_side_effects(dpct::err0 err, int arg, int x, int y, int z) {
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1000:{{[0-9]+}}: Error handling if-stmt was detected but could not be rewritten.
 // CHECK-NEXT:*/
@@ -36,7 +36,7 @@ void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
     x = printf("fmt string");
 }
 // CHECK:void specialize_ifs_negative() {
-// CHECK-NEXT:  int err;
+// CHECK-NEXT:  dpct::err0 err;
 // CHECK-NEXT:  if (err == 0) {
 // CHECK-NEXT:    printf("efef");
 // CHECK-NEXT:  }

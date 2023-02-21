@@ -22,6 +22,8 @@
 
 namespace dpct {
 
+struct null_type {};
+
 namespace internal {
 
 template <class _ExecPolicy, class _T>

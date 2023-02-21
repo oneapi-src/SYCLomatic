@@ -75,6 +75,10 @@ static void getCompileInfo(
 
   for (const auto &Entry : CompileTargetsMap) {
     std::string FileName = Entry.first;
+
+    // Get value of key "directory" from compilation database
+    const std::string Directory = Entry.second[0];
+
     if (llvm::StringRef(FileName).startswith("LinkerEntry")) {
       // Parse linker cmd to get target name and objfile names
       std::vector<std::string> ObjsInLKOrARCmd;
@@ -100,6 +104,10 @@ static void getCompileInfo(
                              // generated Makefile.
         } else if (llvm::StringRef(Obj).endswith(".o")) {
           llvm::SmallString<512> FilePathAbs(Obj);
+
+          if (!llvm::sys::path::is_absolute(Obj))
+            FilePathAbs = Directory + "/" + Obj;
+
           llvm::sys::path::native(FilePathAbs);
           llvm::sys::fs::make_absolute(FilePathAbs);
           llvm::sys::path::remove_dots(FilePathAbs, true);
@@ -243,6 +251,10 @@ static void getCompileInfo(
         IsObjSpecified = true;
       } else if (IsObjName) {
         llvm::SmallString<512> FilePathAbs(Option);
+
+        if (!llvm::sys::path::is_absolute(Option))
+          FilePathAbs = Directory + "/" + Option;
+
         llvm::sys::path::native(FilePathAbs);
         llvm::sys::fs::make_absolute(FilePathAbs);
         llvm::sys::path::remove_dots(FilePathAbs, true);

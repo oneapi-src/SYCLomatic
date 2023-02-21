@@ -30,10 +30,10 @@ contains conditional compilation code. Content of ``sample1.cu``:
 	... code path 3 ...
 	#endif
 
-Incrementally migrate ``sample1.cu`` by executing the ``dpct`` command
-in the same working directory as the file:
+Use the following steps to incrementally migrate ``sample1.cu``.
 
-#. Generate ``sample1.dp.cpp``, which contains migrated code for code path 1:
+#. Generate ``sample1.dp.cpp``, which contains migrated code for code path 1.
+   From the same working directory as the file, run:
 
    .. code-block:: none
 
@@ -89,11 +89,12 @@ Content of source file ``sample3.cu``:
 
 	#include “sample_inc.h”
 
-Incrementally migrate the files by executing the ``dpct`` command in the same
-working directory as the files:
+Use the following steps to incrementally migrate the files.
 
 #. Generate ``sample2.dp.cpp`` and ``sample_inc.h``, which contains migrated
-   code for code path 1:
+   code for code path 1.
+
+   From the same working directory as the file, run:
 
    .. code-block:: none
       :linenos:

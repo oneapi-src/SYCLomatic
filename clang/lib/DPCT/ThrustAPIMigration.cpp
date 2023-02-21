@@ -350,6 +350,9 @@ void ThrustTypeRule::runRule(
       if (!ND||ND->getName() != "thrust")
         return;
 
+      if(!VD)
+        return;
+
       const std::string ThrustVarName = ND->getNameAsString() + "::" + VD->getName().str();
 
       std::string Replacement =

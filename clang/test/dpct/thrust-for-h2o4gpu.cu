@@ -225,14 +225,20 @@ void foo() {
  {
   //CHECK: dpct::device_vector<int> int_in(3);
   //CHECK-NEXT: dpct::device_vector<float> float_in(3);
-  //CHECK-NEXT: auto ret = oneapi::dpl::make_zip_iterator(std::make_tuple(int_in.begin(), float_in.begin()));
+  //CHECK-NEXT: typedef dpct::device_vector<int>::iterator int_iterator;
+  //CHECK-NEXT: typedef dpct::device_vector<float>::iterator float_iterator;
+  //CHECK-NEXT: typedef std::tuple<int_iterator, float_iterator> iterator_tuple;
+  //CHECK-NEXT: dpct::zip_iterator<iterator_tuple> ret = oneapi::dpl::make_zip_iterator(std::make_tuple(int_in.begin(), float_in.begin()));
   //CHECK-NEXT: auto arg = std::make_tuple(int_in.begin(), float_in.begin());
-  //CHECK-NEXT: auto ret_1 = oneapi::dpl::make_zip_iterator(arg);
+  //CHECK-NEXT: dpct::zip_iterator<iterator_tuple> ret_1 = oneapi::dpl::make_zip_iterator(arg);
   thrust::device_vector<int> int_in(3);
   thrust::device_vector<float> float_in(3);
-  auto ret = thrust::make_zip_iterator(thrust::make_tuple(int_in.begin(), float_in.begin()));
+  typedef thrust::device_vector<int>::iterator int_iterator;
+  typedef thrust::device_vector<float>::iterator float_iterator;
+  typedef thrust::tuple<int_iterator, float_iterator> iterator_tuple;
+  thrust::zip_iterator<iterator_tuple> ret = thrust::make_zip_iterator(thrust::make_tuple(int_in.begin(), float_in.begin()));
   auto arg = thrust::make_tuple(int_in.begin(), float_in.begin());
-  auto ret_1 = thrust::make_zip_iterator(arg);
+  thrust::zip_iterator<iterator_tuple> ret_1 = thrust::make_zip_iterator(arg);
  }
 
  {

@@ -5,7 +5,7 @@
 // RUN: FileCheck --input-file %T/DplExtrasAlgorithm/api_test15/count.txt --match-full-lines %s
 // RUN: rm -rf %T/DplExtrasAlgorithm/api_test15
 
-// CHECK: 30
+// CHECK: 31
 // TEST_FEATURE: DplExtrasAlgorithm_segmented_sort_pairs
 
 #include <cub/cub.cuh>
