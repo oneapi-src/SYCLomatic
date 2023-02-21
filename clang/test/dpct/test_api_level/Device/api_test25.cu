@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Device/api_test25_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test25_out
 
-// CHECK: 15
+// CHECK: 17
 // TEST_FEATURE: Device_device_info_get_global_mem_size
 // TEST_FEATURE: Device_device_info_get_integrated
 // TEST_FEATURE: Device_device_info_get_local_mem_size
@@ -16,6 +16,8 @@
 // TEST_FEATURE: Device_device_info_get_max_work_items_per_compute_unit
 // TEST_FEATURE: Device_device_info_get_name
 // TEST_FEATURE: Device_device_info_get_max_work_item_sizes
+// TEST_FEATURE: Device_device_info_get_memory_clock_rate
+// TEST_FEATURE: Device_device_info_get_memory_bus_width
 
 int main() {
   cudaDeviceProp deviceProp;
@@ -32,5 +34,7 @@ int main() {
   a = deviceProp.maxThreadsPerMultiProcessor;
   char *c = deviceProp.name;
   a = deviceProp.maxThreadsDim[2];
+  a = deviceProp.memoryClockRate;
+  a = deviceProp.memoryBusWidth;
   return 0;
 }

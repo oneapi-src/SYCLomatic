@@ -29,7 +29,13 @@ void ThrustAPIRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                          hasDeclContext(namespaceDecl(hasName("thrust")))))))))
           .bind("thrustFuncCall"),
       this);
-
+  // THRUST_STATIC_ASSERT macro register
+  MF.addMatcher(staticAssertDecl(isExpandedFromMacro("THRUST_STATIC_ASSERT"))
+                    .bind("THRUST_STATIC_ASSERT"),
+                this);
+  MF.addMatcher(typedefDecl(isExpandedFromMacro("THRUST_STATIC_ASSERT"))
+                    .bind("THRUST_STATIC_ASSERT"),
+                this);
 }
 
 void ThrustAPIRule::runRule(
@@ -39,7 +45,13 @@ void ThrustAPIRule::runRule(
       thrustFuncMigration(Result, CE, ULE);
     else
       thrustFuncMigration(Result, CE);
-  } 
+  } else if (const Decl *D =
+                 getNodeAsType<Decl>(Result, "THRUST_STATIC_ASSERT")) {
+    const SourceManager &SM = DpctGlobalInfo::getSourceManager();
+    const SourceLocation BeginLoc = SM.getExpansionLoc(D->getBeginLoc());
+    emplaceTransformation(new ReplaceText(
+        BeginLoc, std::string("THRUST_STATIC_ASSERT").size(), "static_assert"));
+  }
 }
 
 void ThrustAPIRule::thrustFuncMigration(const MatchFinder::MatchResult &Result,
@@ -276,7 +288,7 @@ void ThrustTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
     return hasAnyName("thrust::greater_equal", "thrust::less_equal",
                       "thrust::logical_and", "thrust::bit_and",
                       "thrust::bit_or", "thrust::minimum", "thrust::bit_xor",
-                      "thrust::modulus");
+                      "thrust::modulus", "thrust::greater");
   };
   MF.addMatcher(typeLoc(loc(hasCanonicalType(qualType(
                             hasDeclaration(namedDecl(ThrustTypeHasNames()))))))
@@ -328,7 +340,7 @@ void ThrustTypeRule::runRule(
     // handle constructor expressions with placeholders (_1, _2, etc)
     replacePlaceHolderExpr(CE);
   } else if (auto DRE = getNodeAsType<DeclRefExpr>(Result, "declRefExpr")) {
-    auto VD = getAssistNodeAsType<VarDecl>(Result, "varDecl", false);
+    auto VD = getAssistNodeAsType<VarDecl>(Result, "varDecl");
     if (DRE->hasQualifier()) {
 
       auto ND = DRE->getQualifierLoc()
@@ -336,6 +348,9 @@ void ThrustTypeRule::runRule(
                            ->getAsNamespace();
 
       if (!ND||ND->getName() != "thrust")
+        return;
+
+      if(!VD)
         return;
 
       const std::string ThrustVarName = ND->getNameAsString() + "::" + VD->getName().str();

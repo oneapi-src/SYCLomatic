@@ -9,6 +9,7 @@
 __device__ void foo() {
   unsigned u, u2;
   u = __vminu2(u, u2);
+  u = __vminu4(u, u2);
 }
 
 int main() {

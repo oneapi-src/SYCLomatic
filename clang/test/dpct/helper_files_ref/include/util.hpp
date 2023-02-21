@@ -17,6 +17,23 @@
 
 namespace dpct {
 
+namespace detail {
+
+template <typename tag, typename T> class generic_error_type {
+public:
+  generic_error_type() = default;
+  generic_error_type(T value) : value{value} {}
+  operator T() const { return value; }
+
+private:
+  T value;
+};
+
+} // namespace detail
+
+using err0 = detail::generic_error_type<struct err0_tag, int>;
+using err1 = detail::generic_error_type<struct err1_tag, int>;
+
 template <int... Ints> struct integer_sequence {};
 template <int Size, int... Ints>
 struct make_index_sequence
@@ -189,8 +206,28 @@ vectorized_isgreater<sycl::ushort2, unsigned>(unsigned a, unsigned b) {
   auto v2 = v0.template as<sycl::ushort2>();
   auto v3 = v1.template as<sycl::ushort2>();
   sycl::ushort2 v4;
-  v4[0] = v2[0] > v3[0];
-  v4[1] = v2[1] > v3[1];
+  v4[0] = v2[0] > v3[0] ? 0xffff : 0;
+  v4[1] = v2[1] > v3[1] ? 0xffff : 0;
+  v0 = v4.template as<sycl::vec<unsigned, 1>>();
+  return v0;
+}
+
+/// Compute vectorized isgreater for two unsigned int values, with each value
+/// treated as a vector of four unsigned char.
+/// \param [in] a The first value
+/// \param [in] b The second value
+/// \returns The vectorized greater than of the two values
+template<>
+inline unsigned
+vectorized_isgreater<sycl::uchar4, unsigned>(unsigned a, unsigned b) {
+  sycl::vec<unsigned, 1> v0{a}, v1{b};
+  auto v2 = v0.template as<sycl::uchar4>();
+  auto v3 = v1.template as<sycl::uchar4>();
+  sycl::uchar4 v4;
+  v4[0] = v2[0] > v3[0] ? 0xff : 0;
+  v4[1] = v2[1] > v3[1] ? 0xff : 0;
+  v4[2] = v2[2] > v3[2] ? 0xff : 0;
+  v4[3] = v2[3] > v3[3] ? 0xff : 0;
   v0 = v4.template as<sycl::vec<unsigned, 1>>();
   return v0;
 }

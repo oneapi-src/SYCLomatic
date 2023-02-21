@@ -12,6 +12,7 @@ set(dpct_rt_files
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/rng_utils.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/lib_common_utils.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/ccl_utils.hpp
+  ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/sparse_utils.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/fft_utils.hpp
   ${CMAKE_BINARY_DIR}/tools/clang/runtime/dpct-rt/include/lapack_utils.hpp
 )

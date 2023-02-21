@@ -38,6 +38,9 @@ STD_HEADER(Chrono, "<chrono>")
 STD_HEADER(Limits, "<limits>")
 STD_HEADER(Numeric, "<numeric>")
 STD_HEADER(Functional, "<functional>")
+STD_HEADER(Array, "<array>")
+STD_HEADER(Tuple, "<tuple>")
+STD_HEADER(SYCL_Math, "<sycl/ext/intel/math.hpp>")
 #ifdef _WIN32
 STD_HEADER(DL, "<libloaderapi.h>")
 #else
@@ -52,7 +55,7 @@ MKL_HEADER(Mkl, "<oneapi/mkl.hpp>")
 MKL_HEADER(RNG, "<oneapi/mkl/rng/device.hpp>")
 MKL_HEADER(BFloat16, "<oneapi/mkl/bfloat16.hpp>")
 
-DPCT_HEADER(Dpct, "<dpct/dpct.hpp>")
+DPCT_HEADER(Dpct,  "<" + getCustomMainHelperFileName() + "/" + getCustomMainHelperFileName() + ".hpp>")
 DPCT_HEADER(DPL_Utils, "<dpct/dpl_utils.hpp>")
 DPCT_HEADER(FFT_Utils, "<dpct/fft_utils.hpp>")
 DPCT_HEADER(RNG_Utils, "<dpct/rng_utils.hpp>")
@@ -62,6 +65,7 @@ DPCT_HEADER(DNNL_Utils, "<dpct/dnnl_utils.hpp>")
 DPCT_HEADER(LAPACK_Utils, "<dpct/lapack_utils.hpp>")
 DPCT_HEADER(COMMON_Utils, "<dpct/lib_common_utils.hpp>")
 DPCT_HEADER(Atomic, "<dpct/atomic.hpp>")
+DPCT_HEADER(SPBLAS_Utils, "<dpct/sparse_utils.hpp>")
 
 #undef MKL_HEADER
 #undef ONEDPL_HEADER

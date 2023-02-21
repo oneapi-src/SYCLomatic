@@ -74,6 +74,12 @@ public:
   static void removeRedundantTempVar(const CallExpr *CE);
 };
 
+class CubMemberCallRule : public NamedMigrationRule<CubMemberCallRule> {
+public:
+  void registerMatcher(ast_matchers::MatchFinder &MF) override;
+  void runRule(const ast_matchers::MatchFinder::MatchResult &Result);
+};
+
 class CubRule : public NamedMigrationRule<CubRule> {
 public:
   void registerMatcher(ast_matchers::MatchFinder &MF) override;
@@ -103,7 +109,6 @@ private:
   void processCubMemberCall(const CXXMemberCallExpr *MC);
   void processTypeLoc(const TypeLoc *TL);
 
-  void processDeviceLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
   void processThreadLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
   void processWarpLevelFuncCall(const CallExpr *CE, bool FuncCallUsed);
   void processBlockLevelMemberCall(const CXXMemberCallExpr *MC);

@@ -1,0 +1,33 @@
+.. _id_DPCT1046:
+
+DPCT1046
+========
+
+Message
+-------
+
+.. _msg-1046-start:
+
+The *<original API name>* was not migrated because *<reason>*. You need to
+adjust the code.
+
+.. _msg-1046-end:
+
+Detailed Help
+-------------
+
+Not all data type combinations are supported by ``mkl::blas::gem()``.
+
+This may be due to one of the following reasons:
+
+* Not all values of parameters could be evaluated in migration.
+* The combination of matrix data type and scalar type is unsupported.
+
+Use a supported data type to rewrite the code.
+
+Suggestions to Fix
+------------------
+
+Please refer to the `gemm topic <https://software.intel.com/content/www/us/en/develop/documentation/oneapi-mkl-dpcpp-developer-reference/top/blas-and-sparse-blas-routines/blas-level-3-routines/gemm.html>`_
+of the Intel® oneAPI Math Kernel Library (oneMKL) - Data Parallel C++ Developer
+Reference for supported data types to fix the code manually.

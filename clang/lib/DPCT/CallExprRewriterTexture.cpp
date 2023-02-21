@@ -23,7 +23,8 @@ namespace dpct {
 #define FUNC_NAME_FACTORY_ENTRY(FuncName, RewriterName)                        \
   REWRITER_FACTORY_ENTRY(FuncName, FuncCallExprRewriterFactory, RewriterName)
 #define UNSUPPORTED_FACTORY_ENTRY(FuncName, MsgID)                             \
-  REWRITER_FACTORY_ENTRY(FuncName, UnsupportFunctionRewriterFactory<>, MsgID)
+  REWRITER_FACTORY_ENTRY(FuncName,                                             \
+      UnsupportFunctionRewriterFactory<std::string>, MsgID, FuncName)
 
 void CallExprRewriterFactoryBase::initRewriterMapTexture() {
   RewriterMap->merge(

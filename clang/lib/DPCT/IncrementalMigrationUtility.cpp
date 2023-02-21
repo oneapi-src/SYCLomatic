@@ -223,6 +223,9 @@ bool printOptions(
       if (UValue &
           (1 << static_cast<unsigned>(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary)))
         Str = Str + "c_cxx_standard_library,";
+      if (UValue &
+          (1 << static_cast<unsigned>(DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath)))
+        Str = Str + "intel_device_math,";
       if (!Str.empty()) {
         Str = "--use-dpcpp-extensions=" + Str;
         Opts.emplace_back(Str.substr(0, Str.size() - 1));

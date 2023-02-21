@@ -1,0 +1,93 @@
+.. _id_DPCT1016:
+
+DPCT1016
+========
+
+.. include:: deprecated-msg.txt
+
+Message
+-------
+
+.. _msg-1016-start:
+
+The *<API name>* was not migrated, because parameter(s) *<parameter name a>* and/or
+*<parameter name b>* could not be evaluated, or because *<parameter name a>* is not
+equal to *<parameter name b>*. Rewrite this code manually.
+
+.. _msg-1016-end:
+
+Detailed Help
+-------------
+The ``cublasSetMatrix`` can be migrated by |tool_name| only when
+``lda`` and ``ldb`` have the same constant value. In cases where the migration
+did not occur, rewrite the code manually.
+
+* If the values of ``lda`` and ``ldb`` are the same, you can use the following
+  code:
+
+  .. code-block:: cpp
+     :linenos:
+
+     dpct::dpct_memcpy((void*)(B), (void*)(A), lda*cols*elemSize, dpct::host_to_device); // For cublasGetMatrix, use dpct::device_to_host
+* Otherwise, you can copy the columns of the matrix or elements of the vector
+  one by one.
+
+  * The equivalent of ``cublasSetMatrix(rows, cols, elemSize, A, lda, B, ldb)`` is:
+
+    .. code-block:: cpp
+       :linenos:
+
+        auto A_backup = A;
+        auto B_backup = B;
+        A = A - lda;
+        B = B - ldb;
+        for (int c = 0; c < cols; ++c) {
+          A = A + lda;
+          B = B + ldb;
+          dpct::dpct_memcpy(
+              (void *)(B), (void *)(A), rows * elemSize,
+              dpct::host_to_device); // For cublasGetMatrix, use dpct::device_to_host
+        }
+        A = A_backup;
+        B = B_backup;
+
+
+|tool_name| can migrate the ``cublasSetVector`` only when ``incx``
+and ``incy`` have the same constant value. In cases where the migration does not
+occur, rewrite the code manually.
+
+* If the values of ``incx`` and ``incy`` are the same, you can use the
+  following code:
+
+  .. code-block:: cpp
+     :linenos:
+
+     dpct::dpct_memcpy((void*)(B), (void*)(A), n*incx*elemSize, dpct::host_to_device); // For cublasGetVector, use dpct::device_to_host
+
+* Otherwise, you can copy the elements of the vector one by one:
+
+  * To replace ``cublasGetVector(n, elemSize, x, incx, y, incy)``, use the
+    following snippet:
+
+    .. code-block:: cpp
+       :linenos:
+
+        auto x_backup = x;
+        auto y_backup = y;
+        x = x - incx;
+        y = y - incy;
+        for (int c = 0; c < n; ++c) {
+          x = x + incx;
+          y = y + incy;
+          dpct::dpct_memcpy(
+              (void *)(y), (void *)(x), elemSize,
+              dpct::device_to_host); // for cublasSetVector, use dpct::host_to_device
+        }
+        x = x_backup;
+        y = y_backup;
+
+
+Suggestions to Fix
+------------------
+
+Review the logic and adjust it.

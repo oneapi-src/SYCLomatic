@@ -46,6 +46,7 @@ ENTRY_TYPE(CUgraphicsResource, false, NO_FLAG, P4, "comment")
 // CUDA Runtime Library
 ENTRY_TYPE(cudaMemcpy3DParms*, false, NO_FLAG, P4, "comment")
 ENTRY_TYPE(CUDA_ARRAY_DESCRIPTOR*, false, NO_FLAG, P4, "comment")
+ENTRY_TYPE(cudaKernelNodeParams, false, NO_FLAG, P4, "comment")
 
 // cuDNN Library
 ENTRY_TYPE(cudnnNanPropagation_t, false, NO_FLAG, P4, "comment")

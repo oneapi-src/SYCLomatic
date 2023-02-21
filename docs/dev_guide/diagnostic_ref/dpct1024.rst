@@ -1,0 +1,45 @@
+.. _id_DPCT1024:
+
+DPCT1024
+========
+
+Message
+-------
+
+.. _msg-1024-start:
+
+The original code returned the error code that was further consumed by the program
+logic. This original code was replaced with 0. You may need to rewrite the program
+logic consuming the error code.
+
+.. _msg-1024-end:
+
+Detailed Help
+-------------
+
+This warning is generated in cases where in the original code, the CUDA\* API call
+returns the error code, which is consumed by the program logic:
+
+.. code-block:: cpp
+   :linenos:
+
+   handleError(cudaEventRecord(e));
+
+
+If in the resulting code the CUDA API call is replaced by the code, which does
+not return the error code, 0 is used as an input to the program logic, consuming
+the error code:
+
+.. code-block:: cpp
+   :linenos:
+
+   e_ct1 = clock(), handleError(0);
+
+
+The error handling code in that case must be verified and may require replacing
+it with exception handling code or removed completely.
+
+Suggestions to Fix
+------------------
+
+Verify the code correctness.

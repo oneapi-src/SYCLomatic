@@ -1,0 +1,26 @@
+.. _id_DPCT1004:
+
+DPCT1004
+========
+
+.. include:: deprecated-msg.txt
+
+Message
+-------
+
+.. _msg-1004-start:
+
+Compatible SYCL code could not be generated.
+
+.. _msg-1004-end:
+
+Detailed Help
+-------------
+
+Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
+for help.
+
+Suggestions to Fix
+------------------
+
+Report the issue to `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_.

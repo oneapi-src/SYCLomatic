@@ -12,6 +12,7 @@
 #include <thrust/device_malloc.h>
 #include <thrust/device_ptr.h>
 #include <thrust/complex.h>
+#include <thrust/iterator/permutation_iterator.h>
 
 struct greater_than_zero
 {

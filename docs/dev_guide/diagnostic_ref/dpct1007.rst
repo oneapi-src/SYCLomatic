@@ -1,0 +1,24 @@
+.. _id_DPCT1007:
+
+DPCT1007
+========
+
+Message
+-------
+
+.. _msg-1007-start:
+
+Migration of *<API name>* is not supported.
+
+.. _msg-1007-end:
+
+Detailed Help
+-------------
+
+Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
+for help.
+
+Suggestions to Fix
+------------------
+
+This kind of code requires manual migration to SYCL.

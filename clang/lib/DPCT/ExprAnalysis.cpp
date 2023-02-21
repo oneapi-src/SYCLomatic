@@ -547,33 +547,6 @@ void ExprAnalysis::analyzeExpr(const ConstantExpr *CE) {
   dispatch(CE->getSubExpr());
 }
 
-void ExprAnalysis::analyzeExpr(const IntegerLiteral *IL) {
-  auto DefinitionRange = getDefinitionRange(IL->getBeginLoc(), IL->getEndLoc());
-  auto TokBeginLoc = DefinitionRange.getBegin();
-  auto TokenLength = Lexer::MeasureTokenLength(
-      TokBeginLoc, SM, Context.getLangOpts());
-  std::string TokStr(SM.getCharacterData(TokBeginLoc), TokenLength);
-
-  // TODO: cannot handle case like:
-  // #define CHECK(ARG) ARG
-  // #define MACRO CHECK(cufftExecC2C(plan, idata, odata, CUFFT_FORWARD))
-  // void foo(cufftHandle plan, cufftComplex *idata, cufftComplex *odata) {
-  //   MACRO;
-  // }
-  const Expr *ParentExpr = DpctGlobalInfo::findParent<Expr>(IL);
-  bool IsInCudaPath = DpctGlobalInfo::isInCudaPath(
-      DpctGlobalInfo::getLocInfo(SM.getSpellingLoc(IL->getBeginLoc())).first);
-  if (TokStr == "CUFFT_FORWARD" && ParentExpr && IsInCudaPath) {
-    addReplacement(DefinitionRange, ParentExpr,
-                   MapNames::getDpctNamespace() + "fft::fft_direction::forward");
-    requestFeature(HelperFeatureEnum::FftUtils_fft_direction, TokBeginLoc);
-  } else if ((TokStr == "CUFFT_INVERSE") && ParentExpr && IsInCudaPath) {
-    addReplacement(DefinitionRange, ParentExpr,
-                   MapNames::getDpctNamespace() + "fft::fft_direction::backward");
-    requestFeature(HelperFeatureEnum::FftUtils_fft_direction, TokBeginLoc);
-  }
-}
-
 void ExprAnalysis::analyzeExpr(const InitListExpr *ILE) {
   if (const CXXFunctionalCastExpr *CFCE =
           DpctGlobalInfo::findParent<CXXFunctionalCastExpr>(ILE)) {
@@ -684,12 +657,26 @@ void ExprAnalysis::analyzeExpr(const CXXConstructExpr *Ctor) {
 }
 
 void ExprAnalysis::analyzeExpr(const MemberExpr *ME) {
-  auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
-  PP.PrintCanonicalTypes = true;
-  auto QT = ME->getBase()->getType();
-  auto BaseType = (QT->isPointerType() ? QT->getPointeeType() : QT)
-                      .getUnqualifiedType()
-                      .getAsString(PP);
+  const auto BaseType = [&]() {
+    auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
+    PP.PrintCanonicalTypes = true;
+
+    auto QT = ME->getBase()->getType();
+    if (QT->isPointerType())
+      QT = QT->getPointeeType();
+    QT = QT.getUnqualifiedType();
+    const auto *T = QT.getTypePtr();
+    if (const auto *ET = dyn_cast<ElaboratedType>(T))
+      T = ET->getNamedType().getTypePtr();
+    if (const auto *TST = dyn_cast<TemplateSpecializationType>(T)) {
+      std::string s;
+      llvm::raw_string_ostream OS(s);
+      TST->getTemplateName().print(OS, PP, TemplateName::Qualified::Fully);
+      return s;
+    } else {
+      return QT.getAsString(PP);
+    }
+  }();
 
   std::string FieldName = "";
   if (ME->getMemberDecl()->getIdentifier()) {
@@ -872,6 +859,12 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
     return;
   auto Itr = CallExprRewriterFactoryBase::RewriterMap->find(RefString);
   if (Itr != CallExprRewriterFactoryBase::RewriterMap->end()) {
+    for (unsigned I = 0, E = CE->getNumArgs(); I != E; ++I) {
+      if (isa<PackExpansionExpr>(CE->getArg(I))) {
+        return;
+      }
+    }
+
     auto Rewriter = Itr->second->create(CE);
     auto Result = Rewriter->rewrite();
     BlockLevelFormatFlag = Rewriter->getBlockLevelFormatFlag();
@@ -920,7 +913,6 @@ void ExprAnalysis::analyzeExpr(const CallExpr *CE) {
                 std::make_shared<ExtReplacement>(SM, EndLoc, 1, "", nullptr));
           }
         }
-
         addReplacement(CE, ResultStr);
         Rewriter->Analyzer.applyAllSubExprRepl();
         return;
@@ -947,7 +939,18 @@ void ExprAnalysis::analyzeExpr(const CXXMemberCallExpr *CMCE) {
   auto PP = DpctGlobalInfo::getContext().getPrintingPolicy();
   PP.PrintCanonicalTypes = true;
   auto BaseType = CMCE->getObjectType().getUnqualifiedType().getAsString(PP);
-
+  if (StringRef(BaseType).startswith("cub::") ||
+      StringRef(BaseType).startswith("cuda::std::")) {
+    if (const auto *DRE = dyn_cast<DeclRefExpr>(CMCE->getImplicitObjectArgument())) {
+      if (const auto *RD = DRE->getDecl()->getType()->getAsCXXRecordDecl()) {
+        BaseType.clear();
+        llvm::raw_string_ostream OS(BaseType);
+        RD->printNestedNameSpecifier(OS, PP);
+        OS << RD->getNameAsString();
+        OS.flush();
+      }
+    }
+  }
   if (CMCE->getMethodDecl()->getIdentifier()) {
     auto MethodName = CMCE->getMethodDecl()->getNameAsString();
 
@@ -1102,6 +1105,9 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
     analyzeTemplateSpecializationType(
         TYPELOC_CAST(DependentTemplateSpecializationTypeLoc));
     break;
+  case TypeLoc::Decltype:
+    analyzeDecltypeType(TYPELOC_CAST(DecltypeTypeLoc));
+    break;
   default:
     return;
   }
@@ -1126,6 +1132,31 @@ void ExprAnalysis::analyzeType(TypeLoc TL, const Expr *CSCE) {
   } else if (getFinalCastTypeNameStr(TyName) != TyName) {
     addReplacement(Range.getBegin(), Range.getEnd(), CSCE,
                    getFinalCastTypeNameStr(TyName));
+  }
+}
+
+void ExprAnalysis::analyzeDecltypeType(DecltypeTypeLoc TL) {
+  SourceRange SR = TL.getSourceRange();
+  auto *UE = TL.getUnderlyingExpr();
+  if (auto *DRE = dyn_cast<DeclRefExpr>(UE)) {
+    auto *Qualifier = DRE->getQualifier();
+    if (!Qualifier)
+      return;
+    auto Name = getNestedNameSpecifierString(Qualifier);
+    auto Range = getDefinitionRange(SR.getBegin(), SR.getEnd());
+    // Types like 'dim3::x' should be migrated to 'size_t'.
+    if (Name == "dim3::") {
+      addReplacement(Range.getBegin(), Range.getEnd(), "size_t");
+    }
+    Name.resize(Name.length() - 2); // Remove the "::".
+    if (MapNames::SupportedVectorTypes.count(Name)) {
+      auto ReplacedStr =
+          MapNames::findReplacedName(MapNames::TypeNamesMap, Name);
+      if (Name.back() != '1') {
+        ReplacedStr += "::element_type";
+      }
+      addReplacement(Range.getBegin(), Range.getEnd(), ReplacedStr);
+    }
   }
 }
 

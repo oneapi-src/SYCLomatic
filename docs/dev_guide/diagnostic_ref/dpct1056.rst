@@ -1,0 +1,28 @@
+.. _id_DPCT1056:
+
+DPCT1056
+========
+
+Message
+-------
+
+.. _msg-1056-start:
+
+The use of *<variable name>* in device code was not detected. If this variable
+is also used in device code, you need to rewrite the code.
+
+.. _msg-1056-end:
+
+Detailed Help
+-------------
+
+If ``__constant__`` variable is only used in host code, "__constant__" attribute
+will be removed.
+
+Suggestions to Fix
+------------------
+
+If this variable is only used in host code, ignore this warning.
+
+If the variable is also used in device code, you need to migrate this code again
+with ``--extra-arg="-xcuda"`` passed to dpct to explicitly specify the code language.

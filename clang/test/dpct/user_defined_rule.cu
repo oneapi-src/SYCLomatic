@@ -153,3 +153,9 @@ void foo4(){
 template<typename T>struct OldType{};
 // CHECK: void foo5() { NewType<int> *cu_st; }
 __device__ void foo5(){ OldType<int> *cu_st;}
+
+
+__global__ foo5(){
+//CHECK: std::ceil(2.5);
+  std::ceil(2.5);
+}

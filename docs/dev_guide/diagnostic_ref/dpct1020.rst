@@ -1,0 +1,30 @@
+.. _id_DPCT1020:
+
+DPCT1020
+========
+
+Message
+-------
+
+.. _msg-1020-start:
+
+Migration of *<api name>*, if it is called from ``__global__`` or ``__device__``
+function, is not supported. You may need to redesign the code to use the host-side
+*<api name>* instead, which submits this call to the SYCL queue automatically.
+
+.. _msg-1020-end:
+
+Detailed Help
+-------------
+
+The warning message is generated in cases where the *<api name>* itself submits
+the SYCL\* kernel to the command queue, and the caller of *<api-name>* is the
+SYCL kernel that is submitted to the command queue itself. It results in device-side
+enqueue of the kernel, which is not supported by SYCL 1.2.1.
+
+Suggestions to Fix
+------------------
+
+Redesign the code to use the host-side API, which submits this call to the SYCL
+queue automatically.
+

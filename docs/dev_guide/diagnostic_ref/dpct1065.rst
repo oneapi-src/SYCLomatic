@@ -1,0 +1,28 @@
+.. _id_DPCT1065:
+
+DPCT1065
+========
+
+Message
+-------
+
+.. _msg-1065-start:
+
+Consider replacing ``sycl::<...>::barrier()`` with ``sycl::<...>::barrier(sycl::access::fence_space::local_space)`` for better performance if there is no
+ access to global memory.
+
+.. _msg-1065-end:
+
+Detailed Help
+-------------
+
+The function ``sycl::<...>::barrier()`` ensures correct memory access ordering
+in the global and local address space. If the kernel function has no memory
+accesses in the global memory, it is safe to replace ``sycl::<...>::barrier()``
+with ``sycl::<...>::barrier(sycl::access::fence_space::local_space)`` for better
+performance.
+
+Suggestions to Fix
+------------------
+
+Replace ``sycl::<...>::barrier()`` with ``sycl::<...>::barrier(sycl::access::fence_space::local_space)``.

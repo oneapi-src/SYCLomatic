@@ -1,0 +1,78 @@
+.. _id_DPCT1085:
+
+DPCT1085
+========
+
+Message
+-------
+
+.. _msg-1085-start:
+
+The function *<function name>* requires sub-group size to be *<size>*, while
+other sub-group functions in the same SYCL kernel require a different sub-group
+size. You may need to adjust the code.
+
+.. _msg-1085-end:
+
+Detailed Help
+-------------
+
+Each kernel can only be decorated with one sub-group size. This warning is emitted
+when a kernel requires different sub-group sizes. Check if the sub-group size can
+be unified into one value, and if it cannot be unified, redesign the code logic.
+
+For example, this original code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // original code:
+
+   _global_ void kernel() {
+     int Input, Output1, Output2, Lane;
+     ...
+
+     // original code logic
+     Output1 = __shfl(Input, Lane, 32);
+     Output2 = __shfl_xor(Input, Lane, 16);
+   }
+
+results in the following migrated SYCL code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // migrated SYCL code:
+
+   void kernel(int WarpSize, sycl::nd_item<3> item_ct1) {
+     int Input, Output1, Output2, Lane;
+     ...
+
+     // original code logic
+     Output1 = Item_ct1.get_sub_group().shuffle(Input, Lane, 32);
+     /* DPCT1085 */
+     Output2 = Item_ct1.get_sub_group().shuffle_xor(Input, Lane, 16);
+   }
+
+which is manually adjusted to:
+
+.. code-block:: cpp
+   :linenos:
+
+   // adjusted SYCL code:
+
+   void kernel(int WarpSize, sycl::nd_item<3> item_ct1) {
+     int Input, Output, SrcLane;
+     ...
+
+     // redesigned code logic
+     Output1 = Item_ct1.get_sub_group().shuffle(Input, Lane, 32);
+     /* DPCT1085 */
+     // redesign the code logic to unify sub-group size in the same kernel
+     Output2 = Item_ct1.get_sub_group().shuffle_xor(Input, Lane, 32);
+   }
+
+Suggestions to Fix
+------------------
+
+Code requires manual fix. Rewrite the code manually.

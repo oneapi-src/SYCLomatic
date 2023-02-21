@@ -1,0 +1,29 @@
+.. _id_DPCT1009:
+
+DPCT1009
+========
+
+Message
+-------
+
+.. _msg-1009-start:
+
+SYCL uses exceptions to report errors and does not use the error codes. The
+original code was commented out and a warning string was inserted. You need to
+rewrite this code.
+
+.. _msg-1009-end:
+
+Detailed Help
+-------------
+
+SYCL\* uses exceptions to report errors and does not use error codes. The original
+code tries to get a string message through the error code, while SYCL does not
+require such functionality.
+
+To indicate that the code needs to be updated, a warning string is inserted.
+
+Suggestions to Fix
+------------------
+
+You may need to rewrite this code.

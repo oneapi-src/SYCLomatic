@@ -96,7 +96,6 @@ bool DpctToolAction::runInvocation(
 
 void DpctToolAction::runPass(PassKind Pass) {
   for (auto &Info : ASTs) {
-    std::unordered_set<std::string> DuplicateFilter;
     auto &Context = Info->AST->getASTContext();
     auto &Transforms = Info->Transforms;
     auto &IncludeMap = Info->IncludeMapSet;
@@ -120,19 +119,15 @@ void DpctToolAction::runPass(PassKind Pass) {
       if (Repl == nullptr)
         continue;
 
-      // For file path got in AST may be different with the one in
-      // preprocessing stage, here only the file name is used to retrieve
-      // IncludeMapSet.
-      const std::string FileName =
-          llvm::sys::path::filename(Repl->getFilePath()).str();
-      if (DuplicateFilter.find(FileName) == end(DuplicateFilter)) {
-        DuplicateFilter.insert(FileName);
-        auto Find = IncludeMap.find(FileName);
-        if (Find != IncludeMap.end()) {
-          for (const auto &Entry : Find->second) {
-            Global.addReplacement(Entry->getReplacement(Context));
-          }
+      // If a file has replacement, all include statement need change, so we add
+      // them to global replacement here.
+      const auto FilePath = Repl->getFilePath().str();
+      auto Find = IncludeMap.find(FilePath);
+      if (Find != IncludeMap.end()) {
+        for (const auto &Entry : Find->second) {
+          Global.addReplacement(Entry->getReplacement(Context));
         }
+        IncludeMap.erase(FilePath);
       }
       Global.addReplacement(Repl);
 

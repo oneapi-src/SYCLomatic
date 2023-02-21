@@ -119,7 +119,7 @@
 // RUN:   FileCheck %s --check-prefixes=DEVICE_NVIDIA,MACRO_NVIDIA -DDEV_STR=sm_90 -DMAC_STR=SM_90
 // MACRO_NVIDIA: clang{{.*}} "-triple" "nvptx64-nvidia-cuda"
 // DEVICE_NVIDIA: llvm-foreach{{.*}} "--gpu-name" "[[DEV_STR]]"
-// MACRO_NVIDIA: clang{{.*}} "-triple" "x86_64-unknown-linux-gnu"
+// MACRO_NVIDIA: clang{{.*}}  "-fsycl-is-host"
 // MACRO_NVIDIA: "-D__SYCL_TARGET_NVIDIA_GPU_[[MAC_STR]]__"
 
 /// Tests the behaviors of using -fsycl-targets=amd_gpu*
@@ -166,12 +166,13 @@
 // RUN:   FileCheck %s --check-prefixes=DEVICE_AMD,MACRO_AMD -DDEV_STR=gfx1031 -DMAC_STR=GFX1031
 // RUN: %clangxx -fsycl -fsycl-targets=amd_gpu_gfx1032 -### %s 2>&1 | \
 // RUN:   FileCheck %s --check-prefixes=DEVICE_AMD,MACRO_AMD -DDEV_STR=gfx1032 -DMAC_STR=GFX1032
+// RUN: %clangxx -fsycl -fsycl-targets=amd_gpu_gfx1034 -### %s 2>&1 | \
+// RUN:   FileCheck %s --check-prefixes=DEVICE_AMD,MACRO_AMD -DDEV_STR=gfx1034 -DMAC_STR=GFX1034
 // MACRO_AMD: clang{{.*}} "-triple" "amdgcn-amd-amdhsa"
 // MACRO_AMD: "-D__SYCL_TARGET_AMD_GPU_[[MAC_STR]]__"
-// DEVICE_AMD: clang-offload-wrapper{{.*}} "-compile-opts=--offload-arch=[[DEV_STR]]"
+// DEVICE_AMD: clang-offload-wrapper{{.*}} "-compile-opts=--offload-arch=[[DEV_STR]]{{.*}}"
 // MACRO_AMD: clang{{.*}} "-fsycl-is-host"
 // MACRO_AMD: "-D__SYCL_TARGET_AMD_GPU_[[MAC_STR]]__"
-
 /// -fsycl-targets=spir64_x86_64 should set a specific macro
 // RUN: %clangxx -c -fsycl -fsycl-targets=spir64_x86_64 -### %s 2>&1 | \
 // RUN:   FileCheck %s --check-prefix=MACRO_X86_64
@@ -381,4 +382,3 @@
 // CHECK_PHASES_MIX: 26: file-table-tform, {22, 25}, tempfiletable, (device-sycl)
 // CHECK_PHASES_MIX: 27: clang-offload-wrapper, {26}, object, (device-sycl)
 // CHECK_PHASES_MIX: 28: offload, "host-sycl (x86_64-unknown-linux-gnu)" {10}, "device-sycl (spir64_gen-unknown-unknown:skl)" {20}, "device-sycl (spir64_gen-unknown-unknown)" {27}, image
-

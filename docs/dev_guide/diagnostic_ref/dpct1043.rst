@@ -1,0 +1,25 @@
+.. _id_DPCT1043:
+
+DPCT1043
+========
+
+Message
+-------
+
+.. _msg-1043-start:
+
+The version-related API is different in SYCL. An initial code was generated, but
+you need to adjust it.
+
+.. _msg-1043-end:
+
+Detailed Help
+-------------
+
+The generated code uses ``sycl::info::device::version``, which provides different
+information and uses a different type than the original code.
+
+Suggestions to Fix
+------------------
+
+Adjust the generated code.

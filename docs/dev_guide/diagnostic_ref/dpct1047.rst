@@ -1,0 +1,27 @@
+.. _id_DPCT1047:
+
+DPCT1047
+========
+
+Message
+-------
+
+.. _msg-1047-start:
+
+The meaning of *<parameter name>* in the *<API name>* is different from the
+*<API name>*. You may need to check the migrated code.
+
+.. _msg-1047-end:
+
+Detailed Help
+-------------
+
+In cuBLAS\* and cuSolver\* getrf API, the LU factorization is done as ``P*A=L*U``;
+in |mkl_long| API, it is done as
+``A=P*L*U``. The result of the matrix P may be different.
+
+Suggestions to Fix
+------------------
+
+If the matrix P is only used in library API, ignore this warning. If P is used
+other ways, you may need to adjust the value of P.

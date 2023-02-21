@@ -62,3 +62,12 @@ int test9(void) {
   auto Ptr = cub::ArgIndexInputIterator<Foo *>(nullptr);
   return Ptr->value.field;
 }
+
+void test10(void) {
+  int arr[100] = {0};
+  // CHECK: dpct::arg_index_input_iterator<int *> Iter(arr);
+  cub::ArgIndexInputIterator<int *> Iter(arr);
+
+  // CHECK: Iter = Iter.create_normalize();
+  Iter.normalize();
+} 

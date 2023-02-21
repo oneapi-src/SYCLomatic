@@ -27,6 +27,13 @@ RemoveCubTempStorageFactory::create(const CallExpr *C) const {
 }
 
 std::function<bool(const CallExpr *)>
+checkEnableUserDefineReductions() {
+  return [=](const CallExpr *) -> bool {
+    return DpctGlobalInfo::useUserDefineReductions();
+  };
+}
+
+std::function<bool(const CallExpr *)>
 checkArgCanMappingToSyclNativeBinaryOp(size_t ArgIdx) {
   return [=](const CallExpr *C) -> bool {
     const Expr *Arg = C->getArg(ArgIdx);
@@ -62,6 +69,16 @@ void CallExprRewriterFactoryBase::initRewriterMapCUB() {
       std::unordered_map<std::string,
                          std::shared_ptr<CallExprRewriterFactoryBase>>({
 #include "APINamesCUB.inc"
+      }));
+}
+
+void CallExprRewriterFactoryBase::initMethodRewriterMapCUB() {
+  MethodRewriterMap->merge(
+      std::unordered_map<std::string,
+                         std::shared_ptr<CallExprRewriterFactoryBase>>({
+#define CLASS_METHOD_CALL
+#include "APINamesCUB.inc"
+#undef CLASS_METHOD_CALL
       }));
 }
 

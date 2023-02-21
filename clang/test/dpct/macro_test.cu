@@ -21,7 +21,7 @@
 
 #include "macro_test.h"
 
-
+#include <cublas_v2.h>
 #include <thrust/inner_product.h>
 #include <thrust/extrema.h>
 #include <thrust/host_vector.h>
@@ -298,15 +298,6 @@ int b;
   unsigned char *buffer = (unsigned char*)malloc(500);
   //CHECK: q_ct1.memcpy(dev_buffer, buffer, SIZE3).wait();
   cudaMemcpy( dev_buffer, buffer, SIZE3, cudaMemcpyHostToDevice);
-}
-
-#define MMM(x)
-texture<float4, 1, cudaReadModeElementType> table;
-__global__ void foo4(){
-  float r2 = 2.0;
-  MMM( float rsqrtfr2; );
-  // CHECK: sycl::float4 f4 = table.read(MMM(rsqrtfr2 =) sycl::rsqrt(r2) MMM(== 0));
-  float4 f4 = tex1D(table, MMM(rsqrtfr2 =) rsqrtf(r2) MMM(==0));
 }
 
 // CHECK: template <class T>
@@ -751,20 +742,6 @@ int foo14(){
   ALL2(const, ALL3(int2), *) lll;
 }
 
-//CHECK: void foo15(){
-//CHECK-NEXT:   /*
-//CHECK-NEXT:   DPCT1059:{{[0-9]+}}: SYCL only supports 4-channel image format. Adjust the code.
-//CHECK-NEXT:   */
-//CHECK-NEXT:   dpct::image_wrapper<float, 1> aaa;
-//CHECK-NEXT:   float *f_a = NULL;
-//CHECK-NEXT:   CALL(aaa.attach(f_a, CUDA_NUM_THREADS * sizeof(int)))
-//CHECK-NEXT: }
-void foo15(){
-  texture<float, 1, cudaReadModeElementType> aaa;
-  float *f_a = NULL;
-  CALL(cudaBindTexture(0, aaa, f_a, CUDA_NUM_THREADS * sizeof(int)))
-}
-
 //CHECK: #define FABS(a) (sycl::fabs((float)((a).x())) + sycl::fabs((float)((a).y())))
 //CHECK-NEXT: static inline double foo16(const sycl::float2 &x) { return FABS(x); }
 #define FABS(a)       (fabs((a).x) + fabs((a).y))
@@ -862,40 +839,17 @@ void foo18(){
   CONCATE(StreamDestroy)(stream2);
 }
 
-// CHECK: static const int streamDefault2 = &dpct::get_default_queue();
-// CHECK-NEXT: static const int streamDefault = CALL(&dpct::get_default_queue());
-// CHECK-NEXT: static const int streamNonBlocking = &dpct::get_default_queue();
+// CHECK: static const int streamDefault2 = 0;
+// CHECK-NEXT: static const int streamDefault = CALL(0);
+// CHECK-NEXT: static const int streamNonBlocking = 0;
+// CHECK-NEXT: static const dpct::queue_ptr streamDefault3 = &dpct::get_default_queue();
+// CHECK-NEXT: static const dpct::queue_ptr streamDefault4 = CALL(&dpct::get_default_queue());
 static const int streamDefault2 = cudaStreamDefault;
 static const int streamDefault = CALL(CONCATE(StreamDefault));
 static const int streamNonBlocking = CONCATE(StreamNonBlocking);
+static const cudaStream_t streamDefault3 = cudaStreamDefault;
+static const cudaStream_t streamDefault4 = CALL(cudaStreamDefault);
 
-
-//     CHECK: #define CBTTA(aa, bb) do {                                                     \
-//CHECK-NEXT:     CALL(aa.attach(bb));                                                       \
-//CHECK-NEXT:   } while (0)
-#define CBTTA(aa,bb) do {                 \
-  CALL(cudaBindTextureToArray(aa, bb));   \
-} while(0)
-
-//     CHECK: #define CBTTA2(aa, bb, cc) do {                                                \
-//CHECK-NEXT:     CALL(aa.attach(bb, cc));                                                   \
-//CHECK-NEXT:   } while (0)
-#define CBTTA2(aa,bb,cc) do {                 \
-  CALL(cudaBindTextureToArray(aa, bb, cc));   \
-} while(0)
-
-//CHECK: void foo19(){
-//CHECK-NEXT:   dpct::image_wrapper<sycl::float4, 2> tex42;
-//CHECK-NEXT:   dpct::image_matrix_p a42;
-//CHECK-NEXT:   CBTTA(tex42,a42);
-//CHECK-NEXT:   CBTTA2(tex42, a42, tex42.get_channel());
-//CHECK-NEXT: }
-void foo19(){
-  static texture<float4, 2> tex42;
-  cudaArray_t a42;
-  CBTTA(tex42,a42);
-  CBTTA2(tex42,a42,tex42.channelDesc);
-}
 
 //     CHECK:#define CMC_PROFILING_BEGIN()                                                  \
 //CHECK-NEXT:  dpct::event_ptr start;                                                         \
@@ -933,7 +887,7 @@ void foo19(){
 //CHECK-NEXT:    dpct::destroy_event(start);                                                \
 //CHECK-NEXT:    dpct::destroy_event(stop);                                                 \
 //CHECK-NEXT:  }                                                                            \
-//CHECK-NEXT:  int error = 0;
+//CHECK-NEXT:  dpct::err0 error = 0;
 #define CMC_PROFILING_END(lineno)                                                                          \
   if (CMC_profile)                                                                                         \
   {                                                                                                        \
@@ -1268,3 +1222,24 @@ void foo34() {
     }
   });
 }
+
+
+//CHECK: #define ReturnErrorFunction                                                    \
+//CHECK-NEXT:   int amax(dpct::queue_ptr handle, const int n, const float *X,                \
+//CHECK-NEXT:            const int incX, int &result) try {                                  \
+//CHECK-NEXT:     return cublasIsamax(handle, n, (const float *)X, incX, &result);           \
+//CHECK-NEXT:   }                                                                            \
+//CHECK-NEXT:   catch (sycl::exception const &exc) {                                         \
+//CHECK-NEXT:     std::cerr << exc.what() << "Exception caught at file:" << __FILE__         \
+//CHECK-NEXT:               << ", line:" << __LINE__ << std::endl;                           \
+//CHECK-NEXT:     std::exit(1);                                                              \
+//CHECK-NEXT:   }
+
+#define ReturnErrorFunction                                                         \
+  cublasStatus_t amax( cublasHandle_t handle,                                       \
+                       const int n, const float* X, const int incX, int& result )   \
+  {                                                                                 \
+    return cublasIsamax(handle, n, (const float*) X, incX, &result);                \
+  }
+
+ReturnErrorFunction

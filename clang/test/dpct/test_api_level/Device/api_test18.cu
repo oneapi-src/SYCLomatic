@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Device/api_test18_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Device/api_test18_out
 
-// CHECK: 16
+// CHECK: 18
 // TEST_FEATURE: Device_get_default_queue
 
 __global__ void foo() {}

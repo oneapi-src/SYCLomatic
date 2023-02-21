@@ -24,7 +24,6 @@
 #include "clang/Basic/LLVM.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/ADT/None.h"
-#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/StringSet.h"
@@ -47,16 +46,17 @@ auto parentStmt = []() {
 
 auto isDeviceFuncCallExpr = []() {
   auto hasDeviceFuncName = []() {
-    return hasAnyName("Sum", "Min", "Max", "Reduce", "ReduceByKey",
-                      "ExclusiveSum", "InclusiveSum", "InclusiveScan",
-                      "ExclusiveScan", "Flagged", "Unique", "Encode",
-                      "SortKeys", "SortKeysDescending", "SortPairs",
-                      "SortPairsDescending");
+    return hasAnyName(
+        "Sum", "Min", "Max", "Reduce", "ReduceByKey", "ExclusiveSum",
+        "InclusiveSum", "InclusiveScan", "ExclusiveScan", "InclusiveScanByKey",
+        "InclusiveSumByKey", "ExclusiveScanByKey", "ExclusiveSumByKey",
+        "Flagged", "Unique", "UniqueByKey", "Encode", "SortKeys",
+        "SortKeysDescending", "SortPairs", "SortPairsDescending", "If");
   };
   auto hasDeviceRecordName = []() {
     return hasAnyName("DeviceSegmentedReduce", "DeviceReduce", "DeviceScan",
                       "DeviceSelect", "DeviceRunLengthEncode",
-                      "DeviceRadixSort");
+                      "DeviceRadixSort", "DeviceSegmentedRadixSort");
   };
   return callExpr(callee(functionDecl(
       allOf(hasDeviceFuncName(),
@@ -68,6 +68,7 @@ auto isDeviceFuncCallExpr = []() {
 } // namespace
 
 REGISTER_RULE(CubTypeRule, PassKind::PK_Analysis)
+REGISTER_RULE(CubMemberCallRule, PassKind::PK_Analysis)
 REGISTER_RULE(CubDeviceLevelRule, PassKind::PK_Analysis)
 
 void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
@@ -77,7 +78,9 @@ void CubTypeRule::registerMatcher(ast_matchers::MatchFinder &MF) {
                       "cub::CountingInputIterator",
                       "cub::TransformInputIterator",
                       "cub::ConstantInputIterator",
-                      "cub::ArgIndexInputIterator");
+                      "cub::ArgIndexInputIterator",
+                      "cub::DiscardOutputIterator",
+                      "cub::DoubleBuffer");
   };
 
   MF.addMatcher(
@@ -96,8 +99,6 @@ void CubTypeRule::runRule(
   }
 }
 
-/// Remove this function when the support for user-define operator in
-/// reduce_over_group() is available
 bool CubTypeRule::CanMappingToSyclNativeBinaryOp(StringRef OpTypeName) {
   return OpTypeName == "cub::Sum" || OpTypeName == "cub::Max" ||
          OpTypeName == "cub::Min";
@@ -124,6 +125,34 @@ void CubDeviceLevelRule::runRule(
     EA.applyAllSubExprRepl();
     return;
   }
+}
+
+void CubMemberCallRule::registerMatcher(ast_matchers::MatchFinder &MF) {
+  MF.addMatcher(
+      cxxMemberCallExpr(
+              allOf(on(hasType(hasCanonicalType(qualType(hasDeclaration(
+                        namedDecl(hasName("cub::ArgIndexInputIterator"))))))),
+                    callee(cxxMethodDecl(hasName("normalize")))))
+          .bind("memberCall"),
+      this);
+
+  MF.addMatcher(
+      memberExpr(hasObjectExpression(hasType(hasCanonicalType(qualType(hasDeclaration(namedDecl(hasName("cub::DoubleBuffer"))))))),
+                    member(hasAnyName("Current", "Alternate", "d_buffers")))
+      .bind("memberExpr"),
+      this);
+}
+
+void CubMemberCallRule::runRule(
+    const ast_matchers::MatchFinder::MatchResult &Result) {
+  ExprAnalysis EA;
+  if (const auto E1 = getNodeAsType<CXXMemberCallExpr>(Result, "memberCall")) {
+    EA.analyze(E1);
+  } else if (const auto E2 = getNodeAsType<MemberExpr>(Result, "memberExpr")) {
+    EA.analyze(E2);
+  }
+  emplaceTransformation(EA.getReplacement());
+  EA.applyAllSubExprRepl();
 }
 
 static bool isNullPointerConstant(const clang::Expr *E) {
@@ -304,7 +333,7 @@ void removeVarDecl(const VarDecl *VD) {
       const auto Range = DS->getSourceRange();
       const CharSourceRange CRange(Range, true);
       auto Replacement = std::make_shared<ExtReplacement>(
-          Mgr, CRange, "", new ReplaceStmt(DS, ""));
+          Mgr, CRange, "", nullptr);
       DpctGlobalInfo::getInstance().addReplacement(Replacement);
       return;
     }

@@ -227,6 +227,16 @@ public:
     return _max_work_items_per_compute_unit;
   }
 // DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_max_register_size_per_work_group|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  int get_max_register_size_per_work_group() const {
+    return _max_register_size_per_work_group;
+  }
+// DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_get_max_nd_range_size|dpct
 // DPCT_PARENT_FEATURE|device_info
 // DPCT_DEPENDENCY_BEGIN
@@ -269,6 +279,24 @@ public:
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   size_t get_local_mem_size() const { return _local_mem_size; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_memory_clock_rate|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Returns the maximum clock rate of device's global memory in kHz. If
+  /// compiler does not support this API then returns default value 3200000 kHz.
+  unsigned int get_memory_clock_rate() const { return _memory_clock_rate; }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_get_memory_bus_width|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  /// Returns the maximum bus width between device and memory in bits. If
+  /// compiler does not support this API then returns default value 64 bits.
+  unsigned int get_memory_bus_width() const { return _memory_bus_width; }
 // DPCT_LABEL_END
   // set interface
 // DPCT_LABEL_BEGIN|device_info_set_name|dpct
@@ -415,7 +443,35 @@ public:
     }
   }
 // DPCT_LABEL_END
-
+// DPCT_LABEL_BEGIN|device_info_set_memory_clock_rate|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  void set_memory_clock_rate(unsigned int memory_clock_rate) {
+    _memory_clock_rate = memory_clock_rate;
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_memory_bus_width|dpct
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  void set_memory_bus_width(unsigned int memory_bus_width) {
+    _memory_bus_width = memory_bus_width;
+  }
+// DPCT_LABEL_END
+// DPCT_LABEL_BEGIN|device_info_set_max_register_size_per_work_group|dpct
+// DPCT_PARENT_FEATURE|device_info
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_info
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  void
+  set_max_register_size_per_work_group(int max_register_size_per_work_group) {
+    _max_register_size_per_work_group = max_register_size_per_work_group;
+  }
+// DPCT_LABEL_END
 // DPCT_LABEL_BEGIN|device_info_1|dpct
 // DPCT_PARENT_FEATURE|device_info
 // DPCT_DEPENDENCY_BEGIN
@@ -431,10 +487,15 @@ private:
   int _minor;
   int _integrated = 0;
   int _frequency;
+  // Set estimated value 3200000 kHz as default value.
+  unsigned int _memory_clock_rate = 3200000;
+  // Set estimated value 64 bits as default value.
+  unsigned int _memory_bus_width = 64;
   int _max_compute_units;
   int _max_work_group_size;
   int _max_sub_group_size;
   int _max_work_items_per_compute_unit;
+  int _max_register_size_per_work_group;
   size_t _global_mem_size;
   size_t _local_mem_size;
   size_t _max_nd_range_size[3];
@@ -445,6 +506,7 @@ private:
 // DPCT_LABEL_BEGIN|device_ext|dpct
 // DPCT_DEPENDENCY_BEGIN
 // Device|exception_handler
+// Device|device_ext_create_queue
 // Device|device_ext_2
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
@@ -540,6 +602,69 @@ public:
   int get_integrated() const { return get_device_info().get_integrated(); }
 // DPCT_LABEL_END
 
+// DPCT_LABEL_BEGIN|device_ext_get_max_sub_group_size|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_max_sub_group_size
+// Device|device_info_get_max_sub_group_size
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  int get_max_sub_group_size() const {
+    return get_device_info().get_max_sub_group_size();
+  }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_get_max_register_size_per_work_group|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_max_register_size_per_work_group
+// Device|device_info_get_max_register_size_per_work_group
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  int get_max_register_size_per_work_group() const {
+    return get_device_info().get_max_register_size_per_work_group();
+  }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_get_max_work_group_size|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_max_work_group_size
+// Device|device_info_get_max_work_group_size
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  int get_max_work_group_size() const {
+    return get_device_info().get_max_work_group_size();
+  }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_get_mem_base_addr_align|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_mem_base_addr_align
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  int get_mem_base_addr_align() const {
+    return get_info<sycl::info::device::mem_base_addr_align>();
+  }
+// DPCT_LABEL_END
+
+// DPCT_LABEL_BEGIN|device_ext_get_global_mem_size|dpct
+// DPCT_PARENT_FEATURE|device_ext
+// DPCT_DEPENDENCY_BEGIN
+// Device|device_ext
+// Device|device_ext_get_global_mem_size
+// DPCT_DEPENDENCY_END
+// DPCT_CODE
+  size_t get_global_mem_size() const {
+    return get_device_info().get_global_mem_size();
+  }
+// DPCT_LABEL_END
+
 // DPCT_LABEL_BEGIN|device_ext_get_memory_info|dpct
 // DPCT_PARENT_FEATURE|device_ext
 // DPCT_DEPENDENCY_BEGIN
@@ -591,6 +716,9 @@ public:
 // Device|device_info_set_max_sub_group_size
 // Device|device_info_set_max_work_items_per_compute_unit
 // Device|device_info_set_max_nd_range_size
+// Device|device_info_set_memory_clock_rate
+// Device|device_info_set_memory_bus_width
+// Device|device_info_set_max_register_size_per_work_group
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
   void get_device_info(device_info &out) const {
@@ -624,6 +752,29 @@ public:
         get_info<sycl::info::device::global_mem_size>());
     prop.set_local_mem_size(get_info<sycl::info::device::local_mem_size>());
 
+#if (defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 6)
+    if (this->has(sycl::aspect::ext_intel_memory_clock_rate)) {
+      unsigned int tmp =
+          this->get_info<sycl::ext::intel::info::device::memory_clock_rate>();
+      if (tmp != 0)
+        prop.set_memory_clock_rate(1000 * tmp);
+    }
+    if (this->has(sycl::aspect::ext_intel_memory_bus_width)) {
+      prop.set_memory_bus_width(
+          this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
+    }
+#elif defined(_MSC_VER) && !defined(__clang__)
+#pragma message("get_device_info: querying memory_clock_rate and \
+memory_bus_width are not supported by the compiler used. \
+Use 3200000 kHz as memory_clock_rate default value. \
+Use 64 bits as memory_bus_width default value.")
+#else
+#warning "get_device_info: querying memory_clock_rate and \
+memory_bus_width are not supported by the compiler used. \
+Use 3200000 kHz as memory_clock_rate default value. \
+Use 64 bits as memory_bus_width default value."
+#endif
+
     size_t max_sub_group_size = 1;
     std::vector<size_t> sub_group_sizes =
         get_info<sycl::info::device::sub_group_sizes>();
@@ -639,6 +790,10 @@ public:
         get_info<sycl::info::device::max_work_group_size>());
     int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
     prop.set_max_nd_range_size(max_nd_range_size);
+
+    // Estimates max register size per work group, feel free to update the value
+    // according to device properties.
+    prop.set_max_register_size_per_work_group(65536);
 
     out = prop;
   }
@@ -1153,7 +1308,7 @@ static inline device_ext &cpu_device() {
 // Device|dev_mgr_select_device
 // DPCT_DEPENDENCY_END
 // DPCT_CODE
-static inline unsigned int select_device(unsigned int id){
+static inline unsigned int select_device(unsigned int id) {
   dev_mgr::instance().select_device(id);
   return id;
 }

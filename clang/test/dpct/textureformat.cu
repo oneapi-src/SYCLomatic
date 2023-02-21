@@ -1,3 +1,5 @@
+// UNSUPPORTED: cuda-12.0
+// UNSUPPORTED: v12.0
 // RUN: dpct --format-range=none --usm-level=none -out-root %T/textureformat %s --cuda-include-path="%cuda-path/include" --sycl-named-lambda -- -x cuda --cuda-host-only -std=c++14
 // RUN: FileCheck --input-file %T/textureformat/textureformat.dp.cpp --match-full-lines %s
 #include "cuda_runtime.h"

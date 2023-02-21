@@ -1,0 +1,27 @@
+.. _id_DPCT1030:
+
+DPCT1030
+========
+
+Message
+-------
+
+.. _msg-1030-start:
+
+SYCL currently does not support inter-process communication (IPC) operations.
+You may need to rewrite the code.
+
+.. _msg-1030-end:
+
+Detailed Help
+-------------
+
+IPC operations are currently not supported by SYCL.
+
+Contact `Support <https://software.intel.com/content/www/us/en/develop/support.html>`_
+for help.
+
+Suggestions to Fix
+------------------
+
+Rewrite the code manually.

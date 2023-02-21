@@ -1,0 +1,33 @@
+.. _id_DPCT1091:
+
+DPCT1091
+========
+
+Message
+-------
+
+.. _msg-1091-start:
+
+The function ``dpct::segmented_reduce`` only supports DPC++ native binary operation. Replace "dpct_placeholder" with a DPC++ native binary operation.
+
+.. _msg-1091-end:
+
+Detailed Help
+-------------
+
+``dpct::segmented_reduce`` supports the following native binary operations:
+
+* ``sycl::plus``
+* ``sycl::bit_or``
+* ``sycl::bit_xor``
+* ``sycl::bit_and``
+* ``sycl::maximum``
+* ``sycl::minimum``
+* ``sycl::multiplies``
+
+Suggestions to Fix
+------------------
+
+Review and rewrite the code manually.
+
+

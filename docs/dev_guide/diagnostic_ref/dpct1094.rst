@@ -1,0 +1,24 @@
+.. _id_DPCT1094:
+
+DPCT1094
+========
+
+Message
+-------
+
+.. _msg-1094-start:
+
+Content contains misleading bidirectional Unicode characters.
+
+.. _msg-1094-end:
+
+Detailed Help
+-------------
+
+Content contains bidirectional Unicode characters that may cause the code or
+text to be interpreted differently than it appears.
+
+Suggestions to Fix
+------------------
+
+You may need to remove bidirectional Unicode characters.

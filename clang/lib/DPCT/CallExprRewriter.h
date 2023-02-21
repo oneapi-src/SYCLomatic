@@ -52,6 +52,7 @@ private:
   static void initRewriterMapCUBLAS();
   static void initRewriterMapCURAND();
   static void initRewriterMapCUSOLVER();
+  static void initRewriterMapCUSPARSE();
   static void initRewriterMapComplex();
   static void initRewriterMapDriver();
   static void initRewriterMapMemory();
@@ -66,7 +67,9 @@ private:
   static void initRewriterMapEvent();
   static void initRewriterMapMath();
   static void initRewriterMapCooperativeGroups();
-  static void initMethodRewriterMap();
+  static void initMethodRewriterMapCUB();
+  static void initMethodRewriterMapCooperativeGroups();
+  static void initMethodRewriterMapLIBCU();
 };
 
 /// Abstract factory for all rewriter factories
@@ -146,7 +149,7 @@ public:
 
   /// This function should be overwritten to implement call expression
   /// rewriting.
-  virtual Optional<std::string> rewrite() = 0;
+  virtual std::optional<std::string> rewrite() = 0;
   // Emits a warning/error/note and/or comment depending on MsgID. For details
   // see Diagnostics.inc, Diagnostics.h and Diagnostics.cpp
   template <typename IDTy, typename... Ts>
@@ -189,6 +192,7 @@ protected:
   bool BlockLevelFormatFlag = false;
   std::vector<std::string> getMigratedArgs();
   std::string getMigratedArg(unsigned Index);
+  std::string getMigratedArgWithExtraParens(unsigned Index);
 
   StringRef getSourceCalleeName() { return SourceCalleeName; }
 };
@@ -209,6 +213,29 @@ public:
       return First->create(C);
     else
       return Second->create(C);
+  }
+};
+
+class CaseRewriterFactory : public CallExprRewriterFactoryBase {
+public:
+  using PredT = std::function<bool(const CallExpr *)>;
+  using CaseT = std::pair<PredT, std::shared_ptr<CallExprRewriterFactoryBase>>;
+
+  inline static const PredT true_pred = [](const CallExpr *) { return true; };
+  
+  std::vector<CaseT> Cases;
+
+  template <class... CaseTs>
+  CaseRewriterFactory(CaseTs&&... cases)
+    : Cases{std::forward<CaseTs>(cases)...} {}
+  
+  std::shared_ptr<CallExprRewriter> create(const CallExpr *C) const override {
+    for (const auto& [Pred, Factory] : Cases) {
+      if (Pred(C)) {
+	return Factory->create(C);
+      }
+    }
+    throw std::runtime_error("Non-exhaustive CaseRewriterFactory");
   }
 };
 
@@ -248,8 +275,8 @@ public:
           .create(C);
   }
 
-  Optional<std::string> rewrite() override {
-    Optional<std::string> &&Result = Inner->rewrite();
+  std::optional<std::string> rewrite() override {
+    std::optional<std::string> &&Result = Inner->rewrite();
     if (Result.has_value() && IsAssigned)
       return "(" + Result.value() + ", 0)";
     return Result;
@@ -268,8 +295,8 @@ public:
       : CallExprRewriter(C, ""), Prefix(Prefix), Suffix(Suffix),
         Inner(InnerRewriter) {}
 
-  Optional<std::string> rewrite() override {
-    Optional<std::string> &&Result = Inner->rewrite();
+  std::optional<std::string> rewrite() override {
+    std::optional<std::string> &&Result = Inner->rewrite();
     if (Result.has_value())
       return Prefix + Result.value() + Suffix;
     return Result;
@@ -284,16 +311,16 @@ public:
   RemoveAPIRewriter(const CallExpr *C, std::string CalleeName)
       : CallExprRewriter(C, CalleeName), IsAssigned(isAssigned(C)), CalleeName(CalleeName) {}
 
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     std::string Msg = "this call is redundant in SYCL.";
     if (IsAssigned) {
       report(Diagnostics::FUNC_CALL_REMOVED_0, false,
              CalleeName, Msg);
-      return Optional<std::string>("0");
+      return std::optional<std::string>("0");
     }
     report(Diagnostics::FUNC_CALL_REMOVED, false,
            CalleeName, Msg);
-    return Optional<std::string>("");
+    return std::optional<std::string>("");
   }
 };
 
@@ -317,10 +344,10 @@ public:
     Indent = getIndent(getStmtExpansionSourceRange(C).getBegin(), SM);
   }
 
-  Optional<std::string> rewrite() override {
-    Optional<std::string> &&PredStr = Pred->rewrite();
-    Optional<std::string> &&IfBlockStr = IfBlock->rewrite();
-    Optional<std::string> &&ElseBlockStr = ElseBlock->rewrite();
+  std::optional<std::string> rewrite() override {
+    std::optional<std::string> &&PredStr = Pred->rewrite();
+    std::optional<std::string> &&IfBlockStr = IfBlock->rewrite();
+    std::optional<std::string> &&ElseBlockStr = ElseBlock->rewrite();
     return "if(" + PredStr.value() + "){" + NL.str() + Indent.str() +
            Indent.str() + IfBlockStr.value() + ";" + NL.str() +
            Indent.str() + "} else {" + NL.str() + Indent.str() + Indent.str() +
@@ -438,7 +465,7 @@ protected:
 public:
   virtual ~FuncCallExprRewriter() {}
 
-  virtual Optional<std::string> rewrite() override;
+  virtual std::optional<std::string> rewrite() override;
 
   friend FuncCallExprRewriterFactory;
 
@@ -448,7 +475,7 @@ protected:
   }
 
   // Build string which is used to replace original expression.
-  Optional<std::string> buildRewriteString();
+  std::optional<std::string> buildRewriteString();
 
   void setTargetCalleeName(const std::string &Str) { TargetCalleeName = Str; }
 };
@@ -464,7 +491,7 @@ public:
     NoRewrite = true;
   }
 
-  Optional<std::string> rewrite() override { return NewFuncName; }
+  std::optional<std::string> rewrite() override { return NewFuncName; }
 };
 
 struct ThrustFunctor {
@@ -786,7 +813,6 @@ public:
 template <class NameT, class... TemplateArgsT> class TemplatedNamePrinter {
   NameT Name;
   ArgsPrinter<false, TemplateArgsT...> TAs;
-
 public:
   TemplatedNamePrinter(NameT Name, TemplateArgsT &&...TAs)
       : Name(Name), TAs(std::forward<TemplateArgsT>(TAs)...) {}
@@ -795,6 +821,18 @@ public:
     Stream << "<";
     TAs.print(Stream);
     Stream << ">";
+  }
+};
+
+// Print a type with no template.
+template <class NameT> class TypeNamePrinter {
+  NameT Name;
+
+public:
+  TypeNamePrinter(NameT Name) : Name(Name) {}
+
+  template <typename StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Name);
   }
 };
 
@@ -839,6 +877,21 @@ public:
             std::forward<CallArgsT>(Args)...) {}
 };
 
+template <class BaseT, class ArgValueT> class ArraySubscriptExprPrinter {
+  BaseT Base;
+  ArgValueT ArgValue;
+
+public:
+  ArraySubscriptExprPrinter(BaseT base, ArgValueT &&Arg)
+      : Base(base), ArgValue(std::forward<ArgValueT>(Arg)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    dpct::print(Stream, Base);
+    Stream << "[";
+    dpct::print(Stream, ArgValue);
+    Stream << "]";
+  }
+};
+
 template <class TypeInfoT, class SubExprT> class CastExprPrinter {
   TypeInfoT TypeInfo;
   SubExprT SubExpr;
@@ -872,6 +925,24 @@ public:
   }
 };
 
+template <UnaryOperatorKind UO, class ArgValueT>
+class UnaryOperatorPrinter {
+  ArgValueT ArgValue;
+
+  static std::string UOStr;
+
+public:
+  UnaryOperatorPrinter(ArgValueT &&Arg)
+      : ArgValue(std::forward<ArgValueT>(Arg)) {}
+  template <class StreamT> void print(StreamT &Stream) const {
+    Stream << UOStr;
+    dpct::print(Stream, ArgValue);
+  }
+};
+template <UnaryOperatorKind UO, class ArgValueT>
+std::string UnaryOperatorPrinter<UO, ArgValueT>::UOStr =
+    UnaryOperator::getOpcodeStr(UO).str();
+
 template <BinaryOperatorKind Op, class LValueT, class RValueT>
 std::string BinaryOperatorPrinter<Op, LValueT, RValueT>::OpStr =
     BinaryOperator::getOpcodeStr(Op).str();
@@ -887,7 +958,7 @@ public:
   DeleterCallExprRewriter(const CallExpr *C, StringRef Source,
                           std::function<ArgT(const CallExpr *)> ArgCreator)
       : CallExprRewriter(C, Source), Arg(ArgCreator(C)) {}
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     OS << "delete ";
@@ -903,7 +974,7 @@ public:
   ToStringExprRewriter(const CallExpr *C, StringRef Source,
                        std::function<ArgT(const CallExpr *)> ArgCreator)
       : CallExprRewriter(C, Source), Arg(ArgCreator(C)) {}
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     print(OS, Arg);
@@ -948,7 +1019,7 @@ public:
 };
 
 template <class FirstPrinter, class... RestPrinter>
-class MultiStmtsPrinter : MultiStmtsPrinter<RestPrinter...> {
+class MultiStmtsPrinter : public MultiStmtsPrinter<RestPrinter...> {
   using Base = MultiStmtsPrinter<RestPrinter...>;
   FirstPrinter First;
 
@@ -1046,7 +1117,7 @@ public:
   PrinterRewriter(const CallExpr *C, StringRef Source,
                   const std::function<ArgsT(const CallExpr *)> &...ArgCreators)
       : PrinterRewriter(C, Source, ArgCreators(C)...) {}
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Printer::print(OS);
@@ -1069,12 +1140,24 @@ public:
       const CallExpr *C, StringRef Source,
       const std::function<StmtPrinters(const CallExpr *)> &...PrinterCreators)
       : PrinterRewriter(C, Source, PrinterCreators(C)...) {}
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Base::print(OS);
     return OS.str();
   }
+};
+
+template <class BaseT, class ArgValueT>
+class ArraySubscriptRewriter
+    : public PrinterRewriter<ArraySubscriptExprPrinter<BaseT, ArgValueT>> {
+public:
+  ArraySubscriptRewriter(
+      const CallExpr *C, const std::string &SourceName,
+      const std::function<BaseT(const CallExpr *)> &BaseCreator,
+      const std::function<ArgValueT(const CallExpr *)> &ArgCreator)
+      : PrinterRewriter<ArraySubscriptExprPrinter<BaseT, ArgValueT>>(
+            C, SourceName, BaseCreator(C), ArgCreator(C)) {}
 };
 
 template <class... ArgsT>
@@ -1135,7 +1218,7 @@ public:
       const std::function<CallExprPrinter<CalleeT, ArgsT...>(const CallExpr *)>
           &PrinterFunctor)
       : CallExprRewriter(C, Source), Printer(PrinterFunctor(C)) {}
-  Optional<std::string> rewrite() override {
+  std::optional<std::string> rewrite() override {
     std::string Result;
     llvm::raw_string_ostream OS(Result);
     Printer.print(OS);
@@ -1152,6 +1235,16 @@ public:
                    const std::function<RValueT(const CallExpr *)> &RCreator)
       : PrinterRewriter<BinaryOperatorPrinter<BO, LValueT, RValueT>>(
             C, Source, LCreator(C), RCreator(C)) {}
+};
+
+template <UnaryOperatorKind UO, class ArgValueT>
+class UnaryOpRewriter
+    : public PrinterRewriter<UnaryOperatorPrinter<UO, ArgValueT>> {
+public:
+  UnaryOpRewriter(const CallExpr *C, StringRef Source,
+                   const std::function<ArgValueT(const CallExpr *)> &ArgCreator)
+      : PrinterRewriter<UnaryOperatorPrinter<UO, ArgValueT>> (
+            C, Source, ArgCreator(C)) {}
 };
 
 class SubGroupPrinter {
@@ -1209,7 +1302,7 @@ public:
     report(MsgID, false, getMsgArg(Args, CE)...);
   }
 
-  Optional<std::string> rewrite() override { return Optional<std::string>(); }
+  std::optional<std::string> rewrite() override { return std::nullopt; }
 
   friend UnsupportFunctionRewriterFactory<MsgArgs...>;
 };
@@ -1235,8 +1328,8 @@ public:
     buildRewriterStr(Call, OS, OB);
     OS.flush();
   }
-  Optional<std::string> rewrite() override {
-    return Optional<std::string>(ResultStr);
+  std::optional<std::string> rewrite() override {
+    return ResultStr;
   }
 
   void buildRewriterStr(const CallExpr *Call, llvm::raw_string_ostream &OS,
@@ -1315,7 +1408,7 @@ class UserDefinedRewriterFactory : public CallExprRewriterFactoryBase {
     NullRewriter(const CallExpr *C, StringRef Name)
         : CallExprRewriter(C, Name) {}
 
-    Optional<std::string> rewrite() override { return {}; }
+    std::optional<std::string> rewrite() override { return std::nullopt; }
   };
 
 public:

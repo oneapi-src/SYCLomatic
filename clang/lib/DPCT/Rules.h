@@ -15,7 +15,7 @@
 #include <vector>
 
 
-enum RuleKind { API, DataType, Macro, Header, TypeRule, Class, Enum };
+enum RuleKind { API, DataType, Macro, Header, TypeRule, Class, Enum, DisableAPIMigration };
 
 enum RulePriority { Takeover, Default, Fallback };
 
@@ -124,6 +124,7 @@ template <> struct llvm::yaml::ScalarEnumerationTraits<RuleKind> {
     Io.enumCase(Value, "Type", RuleKind::TypeRule);
     Io.enumCase(Value, "Class", RuleKind::Class);
     Io.enumCase(Value, "Enum", RuleKind::Enum);
+    Io.enumCase(Value, "DisableAPIMigration", RuleKind::DisableAPIMigration);
   }
 };
 

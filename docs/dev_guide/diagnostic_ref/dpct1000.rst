@@ -1,0 +1,35 @@
+.. _id_DPCT1000:
+
+DPCT1000
+========
+
+Message
+-------
+
+.. _msg-1000-start:
+
+Error handling ``if-stmt`` was detected but could not be rewritten.
+
+.. _msg-1000-end:
+
+Detailed Help
+-------------
+
+This warning is generated when |tool_name| detects more complex
+error handling than it considers safe to remove.
+
+The CUDA\* API returns error codes that are consumed by the program logic. SYCL\*
+uses exceptions to report errors and does not return the error code.
+
+When the error handling logic in the original code is simple (for example, a
+print error message and exit), the code is removed in the resulting |dpcpp_long|
+application. The expectation is that SYCL throws an exception, which is handled
+with the printing of an exception message and exiting (the exception handler is
+generated automatically by |tool_name|).
+
+
+Suggestions to Fix
+------------------
+
+Review the error handling ``if-`` statement and try to rewrite it to use an
+exception handler instead.

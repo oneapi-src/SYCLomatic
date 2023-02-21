@@ -1,0 +1,86 @@
+.. _id_DPCT1089:
+
+DPCT1089
+========
+
+Message
+-------
+
+.. _msg-1089-start:
+
+The value of the sub-group size attribute argument *<argument name>* cannot be\evaluated. Replace \"dpct_placeholder\" with an integral constant expression.
+
+.. _msg-1089-end:
+
+Detailed Help
+-------------
+
+The argument to the attribute must be an integral constant expression. This
+warning is emitted when |tool_name| cannot evaluate the value of the
+sub-group size argument as an integral constant expression. Check if the sub-group
+size attribute argument can be replaced by an integral constant expression, and
+if not, redesign the code logic.
+
+For example, this original code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // original code
+
+   _global_ void kernel(int WarpSize) {   int Input, Output, Lane;   ...   Output = __shfl(Input, Lane, WarpSize); }
+   ...
+   if(condition)
+   {   kernel<<<GirdSize, BlockSize>>>(16); }
+   else
+   {   kernel<<<GirdSize, BlockSize>>>(32); }
+
+results in the following migrated DPC++ code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // migrated DPC++ code
+
+   void kernel(int WarpSize, sycl::nd_item<3> item_ct1)
+   {   int Input, Output, Lane;   ...   Output = Item_ct1.get_sub_group().shuffle(Input, Lane); }
+   ...
+   if(condition) {
+   /* DPCT1089 */
+   q_ct1.parallel_for(
+       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+       [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(dpct_placeholder)]] {       kernel(16, item_ct1); });
+   } else {
+   /* DPCT1089 */
+   q_ct1.parallel_for(
+       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+       [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(dpct_placeholder)]] {       kernel(32, item_ct1); }
+
+which is manually adjusted to:
+
+.. code-block:: cpp
+   :linenos:
+
+   // fixed DPC++ code
+
+   void kernel(int WarpSize, sycl::nd_item<3> item_ct1) {   int Input, Output, Lane;   ...   Output = Item_ct1.get_sub_group().shuffle(Input, Lane); }
+   ...
+   if(condition) {
+   /* DPCT1089 */
+   q_ct1.parallel_for(
+       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+       [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(16)]]
+   {       kernel(16, item_ct1); }
+   );
+   } else {
+   /* DPCT1089 */
+   q_ct1.parallel_for(
+       sycl::nd_range<3>(GridSize * BlockSize, BlockSize),
+       [=](sycl::nd_item<3> item_ct1) [[intel::reqd_sub_group_size(32)]]
+   {       kernel(32, item_ct1); }
+
+Suggestions to Fix
+------------------
+
+Code requires manual fix. Replace "dpct_placeholder" with an integral constant
+expression.

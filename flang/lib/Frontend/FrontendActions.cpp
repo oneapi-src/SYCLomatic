@@ -171,7 +171,8 @@ bool CodeGenAction::beginSourceFileAction() {
       ci.getInvocation().getSemanticsContext().targetCharacteristics(),
       ci.getParsing().allCooked(), ci.getInvocation().getTargetOpts().triple,
       kindMap, ci.getInvocation().getLoweringOpts(),
-      ci.getInvocation().getFrontendOpts().envDefaults);
+      ci.getInvocation().getFrontendOpts().envDefaults,
+      getCurrentFileOrBufferName());
 
   // Fetch module from lb, so we can set
   mlirModule = std::make_unique<mlir::ModuleOp>(lb.getModule());
@@ -552,7 +553,7 @@ void CodeGenAction::generateLLVMIR() {
   }
 
   // Translate to LLVM IR
-  llvm::Optional<llvm::StringRef> moduleName = mlirModule->getName();
+  std::optional<llvm::StringRef> moduleName = mlirModule->getName();
   llvmModule = mlir::translateModuleToLLVMIR(
       *mlirModule, *llvmCtx, moduleName ? *moduleName : "FIRModule");
 
@@ -696,7 +697,7 @@ void CodeGenAction::runOptimizationPipeline(llvm::raw_pwrite_stream &os) {
   // Create the pass manager builder.
   llvm::PassInstrumentationCallbacks pic;
   llvm::PipelineTuningOptions pto;
-  llvm::Optional<llvm::PGOOptions> pgoOpt;
+  std::optional<llvm::PGOOptions> pgoOpt;
   llvm::StandardInstrumentations si(
       llvmModule->getContext(), opts.DebugPassManager);
   si.registerCallbacks(pic, &fam);

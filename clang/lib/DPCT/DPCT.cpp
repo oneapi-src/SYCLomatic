@@ -246,7 +246,7 @@ std::string getCudaInstallPath(int argc, const char **argv) {
   makeCanonical(Path);
 
   SmallString<512> CudaPathAbs;
-  std::error_code EC = llvm::sys::fs::real_path(Path, CudaPathAbs);
+  std::error_code EC = llvm::sys::fs::real_path(Path, CudaPathAbs, true);
   if ((bool)EC) {
     ShowStatus(MigrationErrorInvalidCudaIncludePath);
     dpctExit(MigrationErrorInvalidCudaIncludePath);
@@ -267,12 +267,14 @@ std::string getInstallPath(clang::tooling::ClangTool &Tool,
   }
 
   makeCanonical(InstalledPath);
+  llvm::sys::fs::real_path(InstalledPath, InstalledPath, true);
   StringRef InstalledPathParent(llvm::sys::path::parent_path(InstalledPath));
   // Move up to parent directory of bin directory
   StringRef InstallPath = llvm::sys::path::parent_path(InstalledPathParent);
 
   SmallString<512> InstallPathAbs;
-  std::error_code EC = llvm::sys::fs::real_path(InstallPath, InstallPathAbs);
+  std::error_code EC = llvm::sys::fs::real_path(InstallPath,
+                                                InstallPathAbs, true);
   if ((bool)EC) {
     ShowStatus(MigrationErrorInvalidInstallPath);
     dpctExit(MigrationErrorInvalidInstallPath);
@@ -666,7 +668,6 @@ int runDPCT(int argc, const char **argv) {
                      ExtensionStr.end());
   auto Extensions = split(ExtensionStr, ',');
   for (auto &Extension : Extensions) {
-    bool Legal = true;
     const auto len = Extension.length();
     if (len < 2 || len > 5 || Extension[0] != '.') {
       ShowStatus(MigrationErrorInvalidChangeFilenameExtension);
@@ -679,6 +680,11 @@ int runDPCT(int argc, const char **argv) {
       }
     }
     DpctGlobalInfo::addChangeExtensions(Extension);
+  }
+
+  if (LimitChangeExtension) {
+    DpctGlobalInfo::addChangeExtensions(".cu");
+    DpctGlobalInfo::addChangeExtensions(".cuh");
   }
 
   if (InRoot.empty() && ProcessAllFlag) {
@@ -913,6 +919,7 @@ int runDPCT(int argc, const char **argv) {
   CallExprRewriterFactoryBase::initRewriterMap();
   TypeLocRewriterFactoryBase::initTypeLocRewriterMap();
   MemberExprRewriterFactoryBase::initMemberExprRewriterMap();
+  clang::dpct::initHeaderSpellings();
   if (!RuleFile.empty()) {
     importRules(RuleFile);
   }

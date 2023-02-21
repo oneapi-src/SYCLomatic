@@ -1,0 +1,30 @@
+.. _id_DPCT1081:
+
+DPCT1081
+========
+
+Message
+-------
+
+.. _msg-1081-start:
+
+The generated code assumes that *<pointer variable>* points to the global memory
+address space. If it points to a local or private memory address space, replace
+``address_space::global`` with ``address_space::local`` or
+``address_space::private``.
+
+.. _msg-1081-end:
+
+Detailed Help
+-------------
+
+|tool_name| tries to deduce the address space of the memory that
+*<pointer variable>* points to. If the tool cannot deduce the address space
+(for example, the pointer variable is used by multiple functions), the tool will
+use ``address_space::global``  and the warning will be emitted.
+
+Suggestions to Fix
+------------------
+
+Check the address space of the memory that <pointer variable> points to
+and replace ``address_space::global`` with the correct address space.

@@ -75,6 +75,10 @@ static void getCompileInfo(
 
   for (const auto &Entry : CompileTargetsMap) {
     std::string FileName = Entry.first;
+
+    // Get value of key "directory" from compilation database
+    const std::string Directory = Entry.second[0];
+
     if (llvm::StringRef(FileName).startswith("LinkerEntry")) {
       // Parse linker cmd to get target name and objfile names
       std::vector<std::string> ObjsInLKOrARCmd;
@@ -100,6 +104,10 @@ static void getCompileInfo(
                              // generated Makefile.
         } else if (llvm::StringRef(Obj).endswith(".o")) {
           llvm::SmallString<512> FilePathAbs(Obj);
+
+          if (!llvm::sys::path::is_absolute(Obj))
+            FilePathAbs = Directory + "/" + Obj;
+
           llvm::sys::path::native(FilePathAbs);
           llvm::sys::fs::make_absolute(FilePathAbs);
           llvm::sys::path::remove_dots(FilePathAbs, true);
@@ -124,16 +132,10 @@ static void getCompileInfo(
         continue;
       }
 
-      // Make target file relative to out-root directory
-      SmallString<512> OutTargetName = llvm::StringRef(TargetName);
-      makeCanonical(OutTargetName);
-      rewriteDir(OutTargetName, InRoot, OutRoot);
-      llvm::sys::path::replace_path_prefix(OutTargetName, OutRoot, ".");
-
       for (auto &Obj : ObjsInLKOrARCmd) {
-        ObjsInLinkerCmdPerTarget[OutTargetName.c_str()].push_back(Obj);
+        ObjsInLinkerCmdPerTarget[TargetName].push_back(Obj);
       }
-      ToolPerTarget[OutTargetName.c_str()] = Tool;
+      ToolPerTarget[TargetName] = Tool;
 
     } else {
       continue;
@@ -153,9 +155,32 @@ static void getCompileInfo(
     std::string NewOptions;
     bool IsObjName = false;
     bool IsObjSpecified = false;
+
+    // -isystem
+    bool IsSystemInclude = false;
+
     const std::string Directory = Entry.second[0];
     std::unordered_set<std::string> DuplicateDuplicateFilter;
     for (const auto &Option : Entry.second) {
+
+      if (IsSystemInclude) {
+        IsSystemInclude = false;
+        std::string IncPath = Option;
+
+        SmallString<512> OutDirectory = llvm::StringRef(IncPath);
+        llvm::sys::fs::make_absolute(OutDirectory);
+        llvm::sys::path::remove_dots(OutDirectory, /*remove_dot_dot=*/true);
+        makeCanonical(OutDirectory);
+
+        rewriteDir(OutDirectory, InRoot, OutRoot);
+
+        NewOptions += "-isystem ";
+        llvm::sys::path::replace_path_prefix(OutDirectory, OutRoot, ".");
+        NewOptions += OutDirectory.c_str();
+        NewOptions += " ";
+        continue;
+      }
+
       if (llvm::StringRef(Option).startswith("-I")) {
         // Parse include path specified by "-I"
         std::string IncPath = Option.substr(strlen("-I"));
@@ -185,6 +210,8 @@ static void getCompileInfo(
         NewOptions += OutDirectory.c_str();
         NewOptions += " ";
 
+      } else if (llvm::StringRef(Option).startswith("-isystem")) {
+        IsSystemInclude = true;
       } else if (llvm::StringRef(Option).startswith("-D")) {
         // Parse macros defined.
         std::size_t Len = Option.length() - strlen("-D");
@@ -224,6 +251,10 @@ static void getCompileInfo(
         IsObjSpecified = true;
       } else if (IsObjName) {
         llvm::SmallString<512> FilePathAbs(Option);
+
+        if (!llvm::sys::path::is_absolute(Option))
+          FilePathAbs = Directory + "/" + Option;
+
         llvm::sys::path::native(FilePathAbs);
         llvm::sys::fs::make_absolute(FilePathAbs);
         llvm::sys::path::remove_dots(FilePathAbs, true);
@@ -232,8 +263,7 @@ static void getCompileInfo(
       } else if (llvm::StringRef(Option).startswith("-O")) {
         // Keep optimization level same as original compile command.
         NewOptions += Option + " ";
-      } else if (Option == "-msse4.1" ||
-                 Option == "-mavx512vl") {
+      } else if (Option == "-msse4.1" || Option == "-mavx512vl") {
         // Keep some options from original compile command.
         NewOptions += Option + " ";
       }
@@ -322,10 +352,9 @@ genMakefile(clang::tooling::RefactoringTool &Tool, StringRef OutRoot,
     TargetName = Entry.first;
     SmallString<512> TargetFilePath =
         llvm::StringRef(OutRoot.str() + "/" + TargetName);
-
     auto Parent = path::parent_path(TargetFilePath);
-    if (!llvm::sys::fs::exists(Parent)) {
 
+    if (!llvm::sys::fs::exists(Parent)) {
       std::error_code EC;
       EC = llvm::sys::fs::create_directories(Parent);
       if ((bool)EC) {

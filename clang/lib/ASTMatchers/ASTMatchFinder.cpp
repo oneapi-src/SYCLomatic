@@ -506,6 +506,13 @@ public:
   bool TraverseTemplateArgumentLoc(TemplateArgumentLoc TAL);
   bool TraverseAttr(Attr *AttrNode);
 
+#ifdef SYCLomatic_CUSTOMIZATION
+  bool TraverseCXXDefaultArgExpr(CXXDefaultArgExpr *ExprNode,
+                                 DataRecursionQueue *Queue = nullptr) {
+    return true;
+  }
+#endif // SYCLomatic_CUSTOMIZATION
+
   bool dataTraverseNode(Stmt *S, DataRecursionQueue *Queue) {
     if (auto *RF = dyn_cast<CXXForRangeStmt>(S)) {
       {
@@ -1562,7 +1569,7 @@ MatchFinder::~MatchFinder() {}
 
 void MatchFinder::addMatcher(const DeclarationMatcher &NodeMatch,
                              MatchCallback *Action) {
-  llvm::Optional<TraversalKind> TK;
+  std::optional<TraversalKind> TK;
   if (Action)
     TK = Action->getCheckTraversalKind();
   if (TK)
@@ -1580,7 +1587,7 @@ void MatchFinder::addMatcher(const TypeMatcher &NodeMatch,
 
 void MatchFinder::addMatcher(const StatementMatcher &NodeMatch,
                              MatchCallback *Action) {
-  llvm::Optional<TraversalKind> TK;
+  std::optional<TraversalKind> TK;
   if (Action)
     TK = Action->getCheckTraversalKind();
   if (TK)
@@ -1678,6 +1685,15 @@ void MatchFinder::matchAST(ASTContext &Context) {
   Visitor.onEndOfTranslationUnit();
 }
 
+#ifdef SYCLomatic_CUSTOMIZATION
+void MatchFinder::traverseDecl(Decl *D, ASTContext &Context) {
+  internal::MatchASTVisitor Visitor(&Matchers, Options);
+  internal::MatchASTVisitor::TraceReporter StackTrace(Visitor);
+  Visitor.set_active_ast_context(&Context);
+  Visitor.TraverseDecl(D);
+}
+#endif // SYCLomatic_CUSTOMIZATION
+
 void MatchFinder::registerTestCallbackAfterParsing(
     MatchFinder::ParsingDoneTestCallback *NewParsingDone) {
   ParsingDone = NewParsingDone;
@@ -1685,7 +1701,7 @@ void MatchFinder::registerTestCallbackAfterParsing(
 
 StringRef MatchFinder::MatchCallback::getID() const { return "<unknown>"; }
 
-llvm::Optional<TraversalKind>
+std::optional<TraversalKind>
 MatchFinder::MatchCallback::getCheckTraversalKind() const {
   return std::nullopt;
 }

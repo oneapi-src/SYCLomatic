@@ -1,0 +1,26 @@
+.. _id_DPCT1058:
+
+DPCT1058
+========
+
+Message
+-------
+
+.. _msg-1058-start:
+
+*<API Name>* is not migrated because it is not called in the code.
+
+.. _msg-1058-end:
+
+Detailed Help
+-------------
+
+This warning is emitted when atomic API calls are used in macro definition and
+this macro is not called in the code.
+
+Suggestions to Fix
+------------------
+
+If you want this macro to be migrated by |tool_name|, please
+use the macro that needs migration in your code and pass the code to the tool
+again. Otherwise you can update the code manually or ignore the warning.

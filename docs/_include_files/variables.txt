@@ -1,0 +1,26 @@
+
+.. |tool_name| replace:: SYCLomatic
+
+.. |dpcpp| replace:: DPC++
+
+.. |dpcpp_long| replace:: Data Parallel C++ (DPC++)
+
+.. |cuda_versions| replace:: 8.0, 9.x, 10.x, and 11.0–11.6
+
+.. |oneDPL_long| replace:: Intel® oneAPI DPC++ Library (oneDPL)
+
+.. |oneDPL| replace:: oneDPL
+
+.. |mkl_long| replace:: Intel® oneAPI Math Kernel Library
+
+.. |mkl| replace:: oneMKL
+
+.. |dnnl_long| replace:: Intel® oneAPI Deep Neural Network Library
+
+.. |dnnl| replace:: oneDNN
+
+.. |ccl_long| replace:: Intel® oneAPI Collective Communications Library
+
+.. |ccl| replace:: oneCCL
+
+.. |dpcpp_compiler| replace:: Intel® oneAPI DPC++/C++ Compiler

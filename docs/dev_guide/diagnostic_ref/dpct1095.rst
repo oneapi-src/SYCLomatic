@@ -1,0 +1,31 @@
+.. _id_DPCT1095:
+
+DPCT1095
+========
+
+Message
+-------
+
+.. _msg-1095-start:
+
+The identifier *<Identifier A>* is confusable with another identifier
+*<Identifier B>*.
+
+.. _msg-1095-end:
+
+Detailed Help
+-------------
+
+The identifier is confusable with another identifier in the same declaration
+scope and could lead to unexpected variable or function references.
+
+A list of confusable identifiers can be found at
+https://www.unicode.org/Public/security/latest/confusables.txt.
+
+
+Suggestions to Fix
+------------------
+
+You may need to check the original code.
+
+

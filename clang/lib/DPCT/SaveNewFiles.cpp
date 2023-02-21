@@ -123,17 +123,17 @@ bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
   SmallString<512> FilePathAbs;
   std::error_code EC;
   bool InRootAbsValid = true;
-  EC = llvm::sys::fs::real_path(InRoot, InRootAbs);
+  EC = llvm::sys::fs::real_path(InRoot, InRootAbs, true);
   if ((bool)EC) {
     InRootAbsValid = false;
   }
   bool OutRootAbsValid = true;
-  EC = llvm::sys::fs::real_path(OutRoot, OutRootAbs);
+  EC = llvm::sys::fs::real_path(OutRoot, OutRootAbs, true);
   if ((bool)EC) {
     OutRootAbsValid = false;
   }
   bool FilePathAbsValid = true;
-  EC = llvm::sys::fs::real_path(FilePath, FilePathAbs);
+  EC = llvm::sys::fs::real_path(FilePath, FilePathAbs, true);
   if ((bool)EC) {
     FilePathAbsValid = false;
   }
@@ -174,8 +174,13 @@ bool rewriteDir(SmallString<512> &FilePath, const StringRef InRoot,
 }
 
 void rewriteFileName(SmallString<512> &FileName) {
+  rewriteFileName(FileName, FileName);
+}
+
+void rewriteFileName(llvm::SmallString<512> &FileName,
+                     llvm::StringRef FullPathName) {
   const auto Extension = path::extension(FileName);
-  SourceProcessType FileType = GetSourceFileType(FileName.str());
+  SourceProcessType FileType = GetSourceFileType(FullPathName);
   // If user does not specify which extension need be changed, we change all the
   // SPT_CudaSource, SPT_CppSource and SPT_CudaHeader files.
   if (DpctGlobalInfo::getChangeExtensions().empty() ||
@@ -268,7 +273,7 @@ void processAllFiles(StringRef InRoot, StringRef OutRoot,
       }
       if (IncludeFileMap.find(FilePath) != IncludeFileMap.end()) {
         // Skip the files processed by the first loop of
-        // calling proccessFiles() in Tooling.cpp::ClangTool::run().
+        // calling processFiles() in Tooling.cpp::ClangTool::run().
         continue;
       } else {
         if (DpctGlobalInfo::isExcluded(FilePath, false)) {

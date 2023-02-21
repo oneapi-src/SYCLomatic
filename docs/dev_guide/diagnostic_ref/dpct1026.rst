@@ -1,0 +1,39 @@
+.. _id_DPCT1026:
+
+DPCT1026
+========
+
+Message
+-------
+
+.. _msg-1026-start:
+
+The call to *<API name>* was removed because *<reason>*.
+
+.. _msg-1026-end:
+
+Detailed Help
+-------------
+
+API calls from the original application, which do not have functionally
+compatible SYCL API calls are removed if |tool_name| determines that it should
+not affect the program logic.
+
+Possible reasons for removal:
+
+* SYCL currently does not support setting resource limits on devices.
+* SYCL currently does not support associating USM with a specific queue.
+* SYCL currently does not support query operations on queues.
+* SYCL currently does not support capture operations on queues.
+* SYCL currently does not support configuring shared memory on devices.
+* SYCL currently does not support setting cache config on devices.
+* SYCL currently does not support registering of existing host memory for use by device. Use USM to allocate memory for use by host and device.
+* SYCL currently does not support setting flags for devices.
+* SYCL currently does not support memory access across peer devices.
+* There is no corresponding API in SYCL.
+* The call is redundant in SYCL.
+
+Suggestions to Fix
+------------------
+
+Verify the code correctness.

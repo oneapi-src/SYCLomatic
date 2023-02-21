@@ -95,6 +95,7 @@
 
 #include <cctype>
 #include <memory>
+#include <optional>
 
 using namespace clang;
 using namespace llvm;
@@ -874,9 +875,9 @@ private:
   /// non-deterministic order, so this function should have no side effects.
   /// To make this easier to enforce, this function and all its parameters
   /// should always be const-qualified.
-  /// \return Returns llvm::None if no completion should be provided for the
+  /// \return Returns std::nullopt if no completion should be provided for the
   ///         given CodeCompletionResult.
-  llvm::Optional<CompletionWithPriority>
+  std::optional<CompletionWithPriority>
   getCompletionForResult(const CodeCompletionResult &R) const {
     std::string ToInsert;
     std::string Description;
@@ -921,9 +922,9 @@ private:
     // We also filter some internal lldb identifiers here. The user
     // shouldn't see these.
     if (llvm::StringRef(ToInsert).startswith("$__lldb_"))
-      return llvm::None;
+      return std::nullopt;
     if (ToInsert.empty())
-      return llvm::None;
+      return std::nullopt;
     // Merge the suggested Token into the existing command line to comply
     // with the kind of result the lldb API expects.
     std::string CompletionSuggestion =
@@ -965,7 +966,7 @@ public:
         continue;
 
       CodeCompletionResult &R = Results[I];
-      llvm::Optional<CompletionWithPriority> CompletionAndPriority =
+      std::optional<CompletionWithPriority> CompletionAndPriority =
           getCompletionForResult(R);
       if (!CompletionAndPriority)
         continue;

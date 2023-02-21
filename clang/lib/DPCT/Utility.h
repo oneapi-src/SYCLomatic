@@ -152,7 +152,7 @@ inline bool isChildPath(const std::string &RootAbs, const std::string &Child,
     if (!RealPath.empty()) {
       ChildAbs = RealPath;
     } else {
-      EC = llvm::sys::fs::real_path(Child, ChildAbs);
+      EC = llvm::sys::fs::real_path(Child, ChildAbs, true);
       if ((bool)EC) {
         InChildAbsValid = false;
       } else {
@@ -214,7 +214,7 @@ inline bool isChildOrSamePath(const std::string &RootAbs,
   if (!RealPath.empty()) {
     ChildAbs = RealPath;
   } else {
-    EC = llvm::sys::fs::real_path(Child, ChildAbs);
+    EC = llvm::sys::fs::real_path(Child, ChildAbs, true);
     if ((bool)EC) {
       InChildAbsValid = false;
     } else {
@@ -331,7 +331,7 @@ const clang::CUDAKernelCallExpr *getParentKernelCall(const clang::Expr *E);
 bool isInSameScope(const clang::Stmt *S, const clang::ValueDecl *D);
 const clang::DeclRefExpr *getInnerValueDecl(const clang::Expr *Arg);
 const clang::Stmt *getParentStmt(clang::DynTypedNode Node);
-const clang::Stmt *getParentStmt(const clang::Stmt *S);
+const clang::Stmt *getParentStmt(const clang::Stmt *S, bool SkipNonWritten = false);
 const clang::Stmt *getParentStmt(const clang::Decl *D);
 const clang::Decl *getParentDecl(const clang::Decl *D);
 const clang::Stmt *getNonImplicitCastParentStmt(const clang::Stmt *S);
@@ -572,4 +572,7 @@ std::string getFunctionName(const clang::FunctionDecl *Node);
 std::string getFunctionName(const clang::UnresolvedLookupExpr *Node);
 std::string getFunctionName(const clang::FunctionTemplateDecl *Node);
 bool isLambda(const clang::FunctionDecl *FD);
+const clang::LambdaExpr *
+getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl);
+bool typeIsPostfix(clang::QualType QT);
 #endif // DPCT_UTILITY_H

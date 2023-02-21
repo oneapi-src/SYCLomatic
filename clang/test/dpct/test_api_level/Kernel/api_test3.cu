@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Kernel/api_test3_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Kernel/api_test3_out
 
-// CHECK: 2
+// CHECK: 3
 // TEST_FEATURE: Kernel_kernel_functor
 
 int main() {

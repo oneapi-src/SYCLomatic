@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test33_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test33_out
 
-// CHECK: 27
+// CHECK: 29
 // TEST_FEATURE: Memory_get_access
 
 __global__ void foo(float* f) {

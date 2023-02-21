@@ -1,0 +1,25 @@
+.. _id_DPCT1023:
+
+DPCT1023
+========
+
+Message
+-------
+
+.. _msg-1023-start:
+
+The SYCL sub-group does not support mask options for *<api name>*.
+
+.. _msg-1023-end:
+
+Detailed Help
+-------------
+
+This warning is generated when the SYCL sub-group function used for migration
+does not have a mask parameter. This warning can be ignored if the original mask
+parameter was not used.
+
+Suggestions to Fix
+------------------
+
+Verify the code correctness.

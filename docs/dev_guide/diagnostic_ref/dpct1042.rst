@@ -1,0 +1,103 @@
+.. _id_DPCT1042:
+
+DPCT1042
+========
+
+Message
+-------
+
+.. _msg-1042-start:
+
+The size of the arguments passed to the SYCL kernel exceeds the minimum size
+limit (1024) for a non-custom SYCL device. You can get the hardware argument size
+limit by querying ``info::device::max_parameter_size``. You may need to rewrite
+this code if the size of the arguments exceeds the hardware limit.
+
+.. _msg-1042-end:
+
+Detailed Help
+-------------
+
+The size of the arguments passed to the SYCL\* kernel for non-custom SYCL device
+has a limit (see SYCL 1.2.1 standard, 4.6.4.2 Device information descriptors).
+
+In cases where this warning occurs, you need to adjust the code manually to
+decrease the number of accessors or other arguments that are captured by the SYCL
+kernel lambda.
+
+The following example shows how you can remove one accessor by merging two buffers
+with the same type.
+
+For example, the following problem example code shows where the arguments
+captured by the SYCL kernel lambda exceed the size limit:
+
+.. code-block:: cpp
+   :linenos:
+
+    ... // declarations for device0 to device30
+    dpct::constant_memory<int, 1> device31(ARRAY_SIZE);
+    dpct::constant_memory<int, 1> device32(ARRAY_SIZE);
+
+    // kernel function declaration
+    void kernel(sycl::nd_item<3> item_ct1, int *device0, ..., int *device32);
+
+    void test_function() {
+      ... // memcpy operations for device0 to device30
+      dpct::dpct_memcpy(device31.get_ptr(), host, ARRAY_SIZE * sizeof(int));
+      dpct::dpct_memcpy(device32.get_ptr(), host, ARRAY_SIZE * sizeof(int));
+      {
+        dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+          ... // accessors for device0 to device30, captured by SYCL kernel lambda
+              auto device31_acc_ct1 = device31.get_access(cgh);
+          auto device32_acc_ct1 = device32.get_access(cgh);
+          cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1), sycl::range<3>(1)),
+                           [=](sycl::nd_item<3> item_ct1) {
+                             kernel(item_ct1, ... /*arguments device0 to device30*/
+                                              device31_acc_ct1.get_pointer(),
+                                    device32_acc_ct1.get_pointer());
+                           });
+        });
+      }
+    }
+
+The code is updated so that the two buffers (device31 and device32) of the same
+type are merged into one (device31), and the number of accessors is reduced by
+one:
+
+.. code-block:: cpp
+   :linenos:
+
+    ... // declarations for device0 to device30
+    dpct::constant_memory<int, 1> device32(ARRAY_SIZE + ARRAY_SIZE); // one buffer instead of two
+
+    // kernel function declaration
+    void kernel(sycl::nd_item<3> item_ct1, int *device0, ..., int *device32);
+
+    void test_function() {
+      ... // memcpy operations for device0 to device30
+      dpct::dpct_memcpy(device31.get_ptr(), host, ARRAY_SIZE * sizeof(int));
+      // memory copy with offset:
+      dpct::dpct_memcpy(device31.get_ptr() + ARRAY_SIZE, host,
+                        ARRAY_SIZE * sizeof(int));
+      {
+        dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+          ... // accessors for device0 to device30, captured by SYCL kernel lambda
+              auto device31_acc_ct1 =
+                  device31.get_access(cgh); // only one accessor instead of 2
+          cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1), sycl::range<3>(1)),
+                           [=](sycl::nd_item<3> item_ct1) {
+                             // last parameter is modified to use offset and the
+                             // same accessor as previous parameter
+                             kernel(item_ct1, ... /*arguments device0 to device30*/
+                                              device31_acc_ct1.get_pointer(),
+                                    device31_acc_ct1.get_pointer() + ARRAY_SIZE);
+                           });
+        });
+      }
+    }
+
+
+Suggestions to Fix
+------------------
+
+Review the code and adjust it.

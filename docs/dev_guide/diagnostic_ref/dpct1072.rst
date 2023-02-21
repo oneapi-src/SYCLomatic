@@ -1,0 +1,26 @@
+.. _id_DPCT1072:
+
+DPCT1072
+========
+
+Message
+-------
+
+.. _msg-1072-start:
+
+SYCL currently does not support getting the available memory on the current
+device. You may need to adjust the code.
+
+
+.. _msg-1072-end:
+
+Detailed Help
+-------------
+
+SYCL currently does not support getting the available memory on the current
+device.
+
+Suggestions to Fix
+------------------
+
+Try to rewrite the code to not rely on unsupported functionality.

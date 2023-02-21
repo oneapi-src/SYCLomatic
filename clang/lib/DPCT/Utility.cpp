@@ -260,35 +260,37 @@ SourceProcessType GetSourceFileType(llvm::StringRef SourcePath) {
 
   if (Extension == ".cu") {
     return SPT_CudaSource;
-  } else if (Extension == ".cuh") {
+  }
+  if (Extension == ".cuh") {
     return SPT_CudaHeader;
-  } else if (Extension == ".cpp" || Extension == ".cxx" || Extension == ".cc" ||
-             Extension == ".c" || Extension == ".C") {
-    return SPT_CppSource;
-  } else if (Extension == ".hpp" || Extension == ".hxx" || Extension == ".h" ||
-             Extension == ".hh" || Extension == ".inl" || Extension == ".inc" ||
-             Extension == ".INL" || Extension == ".INC" ||
-             Extension == ".TPP" || Extension == ".tpp") {
-    return SPT_CppHeader;
-  } else {
-    // clang-format off
-    // For unknown file extensions, determine the file type according to:
-    // A. If it shows up in the compilation database as single migration
-    //    file, then treat it as a main source file.
-    // B. If it is included by another source file, then treat it as a header
-    //    file.
-    // C. If both A and B hold, then default to A.
-    // clang-format on
-    auto &FileSetInDB = dpct::DpctGlobalInfo::getFileSetInCompiationDB();
-    if (FileSetInDB.find(SourcePath.str()) != end(FileSetInDB)) {
-      return SPT_CppSource;
-    }
-    auto &IncludingFileSet = dpct::DpctGlobalInfo::getIncludingFileSet();
-    if (IncludingFileSet.find(SourcePath.str()) != end(IncludingFileSet)) {
-      return SPT_CppHeader;
-    }
+  }
+  // the database check and including check need before the extension check.
+  // Because the header file "xxx.cc" without CUDA syntax will not change file
+  // name, but the "include" statement will change file name when this check is
+  // after the extension check.
+  // clang-format off
+  // For unknown file extensions, determine the file type according to:
+  // A. If it shows up in the compilation database as single migration
+  //    file, then treat it as a main source file.
+  // B. If it is included by another source file, then treat it as a header
+  //    file.
+  // C. If both A and B hold, then default to A.
+  // clang-format on
+  auto &FileSetInDB = dpct::DpctGlobalInfo::getFileSetInCompiationDB();
+  if (FileSetInDB.find(SourcePath.str()) != end(FileSetInDB)) {
     return SPT_CppSource;
   }
+  auto &IncludingFileSet = dpct::DpctGlobalInfo::getIncludingFileSet();
+  if (IncludingFileSet.find(SourcePath.str()) != end(IncludingFileSet)) {
+    return SPT_CppHeader;
+  }
+  if (Extension == ".hpp" || Extension == ".hxx" || Extension == ".h" ||
+      Extension == ".hh" || Extension == ".inl" || Extension == ".inc" ||
+      Extension == ".INL" || Extension == ".INC" || Extension == ".TPP" ||
+      Extension == ".tpp") {
+    return SPT_CppHeader;
+  }
+  return SPT_CppSource;
 }
 
 const std::string SpacesForStatement = "        "; // Eight spaces
@@ -527,15 +529,21 @@ getNonImplicitCastNonParenExprParentStmt(const clang::Stmt *S) {
   return nullptr;
 }
 
-const clang::Stmt *getParentStmt(const clang::Stmt *S) {
+const clang::Stmt *getParentStmt(const clang::Stmt *S, bool SkipNonWritten) {
   if (!S)
     return nullptr;
 
   auto &Context = dpct::DpctGlobalInfo::getContext();
   auto Parents = Context.getParents(*S);
   assert(Parents.size() >= 1);
-  if (Parents.size() >= 1)
-    return Parents[0].get<Stmt>();
+  if (Parents.size() >= 1) {
+    const auto *P = Parents[0].get<Stmt>();
+    if (SkipNonWritten && P) {
+      if (const auto *CleanUp = dyn_cast<ExprWithCleanups>(P))
+        return getParentStmt(CleanUp, SkipNonWritten);
+    }
+    return P;
+  }
 
   return nullptr;
 }
@@ -1432,7 +1440,7 @@ calculateUpdatedRanges(const clang::tooling::Replacements &Repls,
 /// \param S A Stmt node
 /// \return True if S is assigned and false if S is not assigned
 bool isAssigned(const Stmt *S) {
-  auto P = getParentStmt(S);
+  const auto *P = getParentStmt(S, true);
   return !P || (!dyn_cast<CompoundStmt>(P) && !dyn_cast<ForStmt>(P) &&
                 !dyn_cast<WhileStmt>(P) && !dyn_cast<DoStmt>(P) &&
                 !dyn_cast<IfStmt>(P));
@@ -1987,6 +1995,8 @@ SourceLocation getEndLocOfFollowingEmptyMacro(SourceLocation Loc) {
 
 std::string
 getNestedNameSpecifierString(const clang::NestedNameSpecifier *NNS) {
+  if (!NNS)
+    return std::string();
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   NNS->print(OS, dpct::DpctGlobalInfo::getContext().getPrintingPolicy());
@@ -3330,7 +3340,8 @@ bool analyzeMemcpyOrder(
         // Record the first and second argument of memcpy
         SrcDstExprs.insert(CE->getArg(0));
         SrcDstExprs.insert(CE->getArg(1));
-        ExcludeExprs.insert(CE);
+        ExcludeExprs.insert(CE->getArg(0));
+        ExcludeExprs.insert(CE->getArg(1));
         MemcpyCallExprs.insert(CE);
         MemcpyOrderVec.emplace_back(CE,
                                     MemcpyOrderAnalysisNodeKind::MOANK_Memcpy);
@@ -3579,14 +3590,14 @@ bool canOmitMemcpyWait(const clang::CallExpr *CE) {
 
         unsigned int CurrentCallExprEndOffset =
             CurrentCallExprEndLoc.getRawEncoding();
-        unsigned int NextCallExprBeginOffset =
-            SM.getExpansionLoc(S.first->getBeginLoc()).getRawEncoding();
+        unsigned int NextCallExprEndOffset =
+            SM.getExpansionLoc(S.first->getEndLoc()).getRawEncoding();
 
         auto FirstDREAfterCurrentCallExprEndLoc = std::lower_bound(
             DREOffsetVec.begin(), DREOffsetVec.end(), CurrentCallExprEndOffset);
         if (FirstDREAfterCurrentCallExprEndLoc == DREOffsetVec.end())
           return true;
-        if (*FirstDREAfterCurrentCallExprEndLoc <= NextCallExprBeginOffset)
+        if (*FirstDREAfterCurrentCallExprEndLoc <= NextCallExprEndOffset)
           return false;
 
         return true;
@@ -3981,4 +3992,57 @@ bool isLambda(const clang::FunctionDecl *FD) {
     return CRD->isLambda();
   }
   return false;
+}
+
+const clang::LambdaExpr *
+getImmediateOuterLambdaExpr(const clang::FunctionDecl *FuncDecl) {
+  if (FuncDecl && FuncDecl->hasAttr<clang::CUDADeviceAttr>() &&
+      FuncDecl->getAttr<clang::CUDADeviceAttr>()->isImplicit() &&
+      FuncDecl->hasAttr<clang::CUDAHostAttr>() &&
+      FuncDecl->getAttr<clang::CUDAHostAttr>()->isImplicit()) {
+    auto *LE = dpct::DpctGlobalInfo::findAncestor<clang::LambdaExpr>(FuncDecl);
+    if (LE && LE->getLambdaClass() && LE->getLambdaClass()->isLambda() &&
+        isLexicallyInLocalScope(LE->getLambdaClass())) {
+      return LE;
+    }
+  }
+  return nullptr;
+}
+
+// Implementation copied from clang/lib/AST/Decl.cpp
+// Helper function: returns true if QT is or contains a type
+// having a postfix component.
+bool typeIsPostfix(clang::QualType QT) {
+  using namespace clang;
+  while (true) {
+    const Type* T = QT.getTypePtr();
+    switch (T->getTypeClass()) {
+    default:
+      return false;
+    case Type::Pointer:
+      QT = cast<PointerType>(T)->getPointeeType();
+      break;
+    case Type::BlockPointer:
+      QT = cast<BlockPointerType>(T)->getPointeeType();
+      break;
+    case Type::MemberPointer:
+      QT = cast<MemberPointerType>(T)->getPointeeType();
+      break;
+    case Type::LValueReference:
+    case Type::RValueReference:
+      QT = cast<ReferenceType>(T)->getPointeeType();
+      break;
+    case Type::PackExpansion:
+      QT = cast<PackExpansionType>(T)->getPattern();
+      break;
+    case Type::Paren:
+    case Type::ConstantArray:
+    case Type::DependentSizedArray:
+    case Type::IncompleteArray:
+    case Type::VariableArray:
+    case Type::FunctionProto:
+    case Type::FunctionNoProto:
+      return true;
+    }
+  }
 }

@@ -632,7 +632,6 @@ protected:
   void analyzeExpr(const IfStmt *IS);
   void analyzeExpr(const DeclStmt *DS);
   void analyzeExpr(const ConstantExpr *CE);
-  void analyzeExpr(const IntegerLiteral *IL);
   void analyzeExpr(const InitListExpr *ILE);
 
   void removeCUDADeviceAttr(const LambdaExpr *LE);
@@ -642,6 +641,7 @@ protected:
     analyzeType(TSI->getTypeLoc(), CSCE);
   }
   void analyzeType(TypeLoc TL, const Expr *E = nullptr);
+  void analyzeDecltypeType(DecltypeTypeLoc TL);
 
   // Doing nothing when it doesn't need analyze
   inline void analyzeExpr(const Stmt *S) {}

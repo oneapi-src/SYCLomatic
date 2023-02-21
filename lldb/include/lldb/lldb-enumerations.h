@@ -375,6 +375,9 @@ FLAGS_ENUM(SymbolContextItem){
     /// from being used during frame PC lookups and many other
     /// potential address to symbol context lookups.
     eSymbolContextVariable = (1u << 7),
+
+    // Keep this last and up-to-date for what the last enum value is.
+    eSymbolContextLastItem = eSymbolContextVariable,
 };
 LLDB_MARK_AS_BITMASK_ENUM(SymbolContextItem)
 
@@ -434,7 +437,10 @@ FLAGS_ENUM(WatchpointEventType){
 /// specification for ease of use and consistency.
 /// The enum -> string code is in Language.cpp, don't change this
 /// table without updating that code as well.
-enum LanguageType : uint16_t {
+///
+/// This datatype is used in SBExpressionOptions::SetLanguage() which
+/// makes this type API. Do not change its underlying storage type!
+enum LanguageType {
   eLanguageTypeUnknown = 0x0000,        ///< Unknown or invalid language value.
   eLanguageTypeC89 = 0x0001,            ///< ISO C:1989.
   eLanguageTypeC = 0x0002,              ///< Non-standardized C, such as K&R.

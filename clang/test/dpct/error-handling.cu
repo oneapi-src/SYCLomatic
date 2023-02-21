@@ -10,7 +10,7 @@ int printf(const char *s, ...);
 int fprintf(int, const char *s, ...);
 
 // CHECK:void test_simple_ifs() {
-// CHECK-NEXT:  int err;
+// CHECK-NEXT:  dpct::err0 err;
 // CHECK-NEXT:}
 void test_simple_ifs() {
   cudaError_t err;
@@ -29,7 +29,7 @@ void test_simple_ifs() {
 }
 
 // CHECK:void test_simple_ifs_const() {
-// CHECK-NEXT:  const int err = 0;
+// CHECK-NEXT:  const dpct::err0 err = 0;
 // CHECK-NEXT:}
 void test_simple_ifs_const() {
   const cudaError_t err = cudaSuccess;
@@ -48,7 +48,7 @@ void test_simple_ifs_const() {
 }
 
 // CHECK:void test_typedef() {
-// CHECK-NEXT:  typedef int someError_t;
+// CHECK-NEXT:  typedef dpct::err0 someError_t;
 // CHECK-NEXT:  someError_t err;
 // CHECK-NEXT:}
 void test_typedef()  {
@@ -61,7 +61,7 @@ void test_typedef()  {
 }
 
 // CHECK:void test_no_braces() {
-// CHECK-NEXT:  int err;
+// CHECK-NEXT:  dpct::err0 err;
 // CHECK-NEXT:}
 void test_no_braces() {
   cudaError_t err;
@@ -70,7 +70,7 @@ void test_no_braces() {
 }
 
 // CHECK:void test_unrelated_then() {
-// CHECK-NEXT:  int err;
+// CHECK-NEXT:  dpct::err0 err;
 // CHECK-NEXT:  int i = 0;
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1000:{{[0-9]+}}: Error handling if-stmt was detected but could not be rewritten.
@@ -92,7 +92,7 @@ void test_unrelated_then() {
 }
 
 // CHECK:void test_CUDA_SUCCESS() {
-// CHECK-NEXT:  int err;
+// CHECK-NEXT:  dpct::err0 err;
 // CHECK-NEXT:}
 void test_CUDA_SUCCESS() {
   cudaError_t err;
@@ -102,7 +102,7 @@ void test_CUDA_SUCCESS() {
 }
 
 // CHECK:void test_CUDA_SUCCESS_empty() {
-// CHECK-NEXT:  int err;
+// CHECK-NEXT:  dpct::err0 err;
 // CHECK-NEXT:}
 void test_CUDA_SUCCESS_empty() {
   cudaError_t err;
@@ -130,7 +130,7 @@ void test_CUDA_SUCCESS_empty_CUresult() {
 }
 
 // CHECK:void test_other_enum() {
-// CHECK-NEXT:  int err;
+// CHECK-NEXT:  dpct::err0 err;
 // CHECK-NEXT:  if (err != {{[0-9]+}}) {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  }
@@ -143,7 +143,7 @@ void test_other_enum() {
 }
 
 // CHECK:void test_assignment() try {
-// CHECK-NEXT:  int err;
+// CHECK-NEXT:  dpct::err0 err;
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 // CHECK-NEXT:may need to rewrite this code.
@@ -164,7 +164,7 @@ void test_assignment() {
   }
 }
 
-// CHECK:void test_1(int err, int arg) {
+// CHECK:void test_1(dpct::err0 err, int arg) {
 // CHECK-NEXT:  if (err == 0 && arg) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
@@ -173,7 +173,7 @@ void test_1(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_12(int err, int arg) {
+// CHECK:void test_12(dpct::err0 err, int arg) {
 // CHECK-NEXT:  if (err) {
 // CHECK-NEXT:  } else {
 // CHECK-NEXT:  {{ +}}
@@ -186,7 +186,7 @@ void test_12(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_13(int err, int arg) {
+// CHECK:void test_13(dpct::err0 err, int arg) {
 // CHECK-NEXT:}
 void test_13(cudaError_t err, int arg) {
   if (err) {
@@ -194,7 +194,7 @@ void test_13(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_14(int err, int arg) {
+// CHECK:void test_14(dpct::err0 err, int arg) {
 // CHECK-NEXT:  if (arg == 1) {
 // CHECK-NEXT:    return;
 // CHECK-NEXT:  }
@@ -217,7 +217,7 @@ void test_14(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_15(int err, int arg) try {
+// CHECK:void test_15(dpct::err0 err, int arg) try {
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 // CHECK-NEXT:may need to rewrite this code.
@@ -235,7 +235,7 @@ void test_15(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_16(int err, int arg) {
+// CHECK:void test_16(dpct::err0 err, int arg) {
 // CHECK-NEXT:  if (err) {
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:    exit(1);
@@ -252,7 +252,7 @@ void test_16(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_17(int err, int arg)  try {
+// CHECK:void test_17(dpct::err0 err, int arg)  try {
 // CHECK-NEXT:/*
 // CHECK-NEXT:DPCT1003:{{[0-9]+}}: Migrated API does not return error code. (*, 0) is inserted. You
 // CHECK-NEXT:may need to rewrite this code.
@@ -276,7 +276,7 @@ void test_17(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_18(int err, int arg) {
+// CHECK:void test_18(dpct::err0 err, int arg) {
 // CHECK-NEXT:  if (err)
 // CHECK-NEXT:    printf("error!\n");
 // CHECK-NEXT:  else
@@ -289,7 +289,7 @@ void test_18(cudaError_t err, int arg) {
     printf("success!\n");
 }
 
-// CHECK:void test_19(int err, int arg) {
+// CHECK:void test_19(dpct::err0 err, int arg) {
 // CHECK-NEXT:  if (err && arg) {
 // CHECK-NEXT:  } else {
 // CHECK-NEXT:  }
@@ -300,7 +300,7 @@ void test_19(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_compare_to_3(int err, int arg) {
+// CHECK:void test_compare_to_3(dpct::err0 err, int arg) {
 // CHECK-NEXT:  if (err != 3) {
 // CHECK-NEXT:  }
 // CHECK-NEXT:}
@@ -309,14 +309,14 @@ void test_compare_to_3(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_21(const int &err, int arg) {
+// CHECK:void test_21(const dpct::err0 &err, int arg) {
 // CHECK-NEXT:}
 void test_21(const cudaError_t& err, int arg) {
   if (err != 0) {
   }
 }
 
-// CHECK:void test_no_side_effects(int err, int arg) {
+// CHECK:void test_no_side_effects(dpct::err0 err, int arg) {
 // CHECK-NEXT:}
 void test_no_side_effects(cudaError_t err, int arg) {
   if (err)
@@ -331,7 +331,7 @@ void test_no_side_effects(cudaError_t err, int arg) {
   }
 }
 
-// CHECK:void test_side_effects(int err, int arg, int x, int y, int z) {
+// CHECK:void test_side_effects(dpct::err0 err, int arg, int x, int y, int z) {
 // CHECK:/*
 // CHECK-NEXT:DPCT1000:{{[0-9]+}}: Error handling if-stmt was detected but could not be rewritten.
 // CHECK-NEXT:*/
@@ -378,7 +378,7 @@ void test_side_effects(cudaError_t err, int arg, int x, int y, int z) {
 }
 
 // CHECK:void specialize_ifs() {
-// CHECK-NEXT:  int err;
+// CHECK-NEXT:  dpct::err0 err;
 // CHECK-NEXT:}
 void specialize_ifs() {
   cudaError_t err;
@@ -396,7 +396,7 @@ void specialize_ifs() {
 }
 
 // CHECK:void specialize_ifs_negative() {
-// CHECK-NEXT:  int err;
+// CHECK-NEXT:  dpct::err0 err;
 // CHECK-NEXT:  if (err == 0) {
 // CHECK-NEXT:    printf("efef");
 // CHECK-NEXT:  }
@@ -736,8 +736,9 @@ class ClassA
   }
 };
 
-// CHECK: __dpct_inline__ int foo13(int error, const char *filename, int line) {
-// CHECK-NEXT:  int error_1 = 0;
+// CHECK: __dpct_inline__ dpct::err0 foo13(dpct::err0 error, const char *filename,
+// CHECK-NEXT:                                 int line) {
+// CHECK-NEXT:  dpct::err0 error_1 = 0;
 // CHECK-NEXT:  return error_1;
 // CHECK-NEXT: }
 __host__ __device__ __forceinline__ cudaError_t foo13(cudaError_t error,
@@ -747,7 +748,8 @@ __host__ __device__ __forceinline__ cudaError_t foo13(cudaError_t error,
   return error_1;
 }
 
-// CHECK: __dpct_inline__ int *foo14(int error, const char *filename, int line) {
+// CHECK: __dpct_inline__ dpct::err0 *foo14(dpct::err0 error, const char *filename,
+// CHECK-NEXT:                              int line) {
 // CHECK-NEXT:  return &error;
 // CHECK-NEXT: }
 __host__ __device__ __forceinline__ cudaError_t *foo14(cudaError_t error,

@@ -92,6 +92,9 @@ public:
   int get_max_work_items_per_compute_unit() const {
     return _max_work_items_per_compute_unit;
   }
+  int get_max_register_size_per_work_group() const {
+    return _max_register_size_per_work_group;
+  }
   template <typename NDRangeSizeTy = size_t *,
             std::enable_if_t<std::is_same_v<NDRangeSizeTy, size_t *> ||
                                  std::is_same_v<NDRangeSizeTy, int *>,
@@ -114,6 +117,12 @@ public:
   }
   size_t get_global_mem_size() const { return _global_mem_size; }
   size_t get_local_mem_size() const { return _local_mem_size; }
+  /// Returns the maximum clock rate of device's global memory in kHz. If
+  /// compiler does not support this API then returns default value 3200000 kHz.
+  unsigned int get_memory_clock_rate() const { return _memory_clock_rate; }
+  /// Returns the maximum bus width between device and memory in bits. If
+  /// compiler does not support this API then returns default value 64 bits.
+  unsigned int get_memory_bus_width() const { return _memory_bus_width; }
   // set interface
   void set_name(const char* name) {
     size_t length = strlen(name);
@@ -161,7 +170,16 @@ public:
       _max_nd_range_size_i[i] = max_nd_range_size[i];
     }
   }
-
+  void set_memory_clock_rate(unsigned int memory_clock_rate) {
+    _memory_clock_rate = memory_clock_rate;
+  }
+  void set_memory_bus_width(unsigned int memory_bus_width) {
+    _memory_bus_width = memory_bus_width;
+  }
+  void
+  set_max_register_size_per_work_group(int max_register_size_per_work_group) {
+    _max_register_size_per_work_group = max_register_size_per_work_group;
+  }
 private:
   char _name[256];
   sycl::id<3> _max_work_item_sizes;
@@ -171,10 +189,15 @@ private:
   int _minor;
   int _integrated = 0;
   int _frequency;
+  // Set estimated value 3200000 kHz as default value.
+  unsigned int _memory_clock_rate = 3200000;
+  // Set estimated value 64 bits as default value.
+  unsigned int _memory_bus_width = 64;
   int _max_compute_units;
   int _max_work_group_size;
   int _max_sub_group_size;
   int _max_work_items_per_compute_unit;
+  int _max_register_size_per_work_group;
   size_t _global_mem_size;
   size_t _local_mem_size;
   size_t _max_nd_range_size[3];
@@ -221,6 +244,26 @@ public:
   }
 
   int get_integrated() const { return get_device_info().get_integrated(); }
+
+  int get_max_sub_group_size() const {
+    return get_device_info().get_max_sub_group_size();
+  }
+
+  int get_max_register_size_per_work_group() const {
+    return get_device_info().get_max_register_size_per_work_group();
+  }
+
+  int get_max_work_group_size() const {
+    return get_device_info().get_max_work_group_size();
+  }
+
+  int get_mem_base_addr_align() const {
+    return get_info<sycl::info::device::mem_base_addr_align>();
+  }
+
+  size_t get_global_mem_size() const {
+    return get_device_info().get_global_mem_size();
+  }
 
   /// Get the number of bytes of free and total memory on the SYCL device.
   /// \param [out] free_memory The number of bytes of free memory on the SYCL device.
@@ -276,6 +319,29 @@ public:
         get_info<sycl::info::device::global_mem_size>());
     prop.set_local_mem_size(get_info<sycl::info::device::local_mem_size>());
 
+#if (defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 6)
+    if (this->has(sycl::aspect::ext_intel_memory_clock_rate)) {
+      unsigned int tmp =
+          this->get_info<sycl::ext::intel::info::device::memory_clock_rate>();
+      if (tmp != 0)
+        prop.set_memory_clock_rate(1000 * tmp);
+    }
+    if (this->has(sycl::aspect::ext_intel_memory_bus_width)) {
+      prop.set_memory_bus_width(
+          this->get_info<sycl::ext::intel::info::device::memory_bus_width>());
+    }
+#elif defined(_MSC_VER) && !defined(__clang__)
+#pragma message("get_device_info: querying memory_clock_rate and \
+memory_bus_width are not supported by the compiler used. \
+Use 3200000 kHz as memory_clock_rate default value. \
+Use 64 bits as memory_bus_width default value.")
+#else
+#warning "get_device_info: querying memory_clock_rate and \
+memory_bus_width are not supported by the compiler used. \
+Use 3200000 kHz as memory_clock_rate default value. \
+Use 64 bits as memory_bus_width default value."
+#endif
+
     size_t max_sub_group_size = 1;
     std::vector<size_t> sub_group_sizes =
         get_info<sycl::info::device::sub_group_sizes>();
@@ -291,6 +357,10 @@ public:
         get_info<sycl::info::device::max_work_group_size>());
     int max_nd_range_size[] = {0x7FFFFFFF, 0x7FFFFFFF, 0x7FFFFFFF};
     prop.set_max_nd_range_size(max_nd_range_size);
+
+    // Estimates max register size per work group, feel free to update the value
+    // according to device properties.
+    prop.set_max_register_size_per_work_group(65536);
 
     out = prop;
   }
@@ -546,7 +616,7 @@ static inline device_ext &cpu_device() {
   return dev_mgr::instance().cpu_device();
 }
 
-static inline unsigned int select_device(unsigned int id){
+static inline unsigned int select_device(unsigned int id) {
   dev_mgr::instance().select_device(id);
   return id;
 }

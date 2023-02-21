@@ -413,6 +413,10 @@ namespace llvm {
   /// the intrinsic for later emission to the StackMap.
   extern char &StackMapLivenessID;
 
+  // MachineSanitizerBinaryMetadata - appends/finalizes sanitizer binary
+  // metadata after llvm SanitizerBinaryMetadata pass.
+  extern char &MachineSanitizerBinaryMetadataID;
+
   /// RemoveRedundantDebugValues pass.
   extern char &RemoveRedundantDebugValuesID;
 
@@ -445,6 +449,10 @@ namespace llvm {
   /// constant initializer into the load, which may result in an overflowing
   /// evaluation.
   ModulePass *createPreISelIntrinsicLoweringPass();
+
+  /// This pass lowers the \@llvm.fpbuiltin.{operation} intrinsics to
+  /// matching library function calls based on call site attributes.
+  FunctionPass *createFPBuiltinFnSelectionPass();
 
   /// GlobalMerge - This pass merges internal (by default) globals into structs
   /// to enable reuse of a base pointer by indexed addressing modes.
@@ -531,7 +539,7 @@ namespace llvm {
   FunctionPass *createPseudoProbeInserter();
 
   /// Create IR Type Promotion pass. \see TypePromotion.cpp
-  FunctionPass *createTypePromotionPass();
+  FunctionPass *createTypePromotionLegacyPass();
 
   /// Add Flow Sensitive Discriminators. PassNum specifies the
   /// sequence number of this pass (starting from 1).

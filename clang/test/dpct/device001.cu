@@ -2,7 +2,7 @@
 // RUN: FileCheck %s --match-full-lines --input-file %T/device001/device001.dp.cpp
 
 #include <algorithm>
-
+#include <vector>
 int main(int argc, char **argv) {
 
   // CHECK: dpct::device_info deviceProp;
@@ -67,6 +67,12 @@ int main(int argc, char **argv) {
 
   // CHECK: count = deviceProp.get_max_work_group_size();
   count = deviceProp.maxThreadsPerBlock;
+
+  // CHECK: int freq = deviceProp.get_memory_clock_rate();
+  int freq = deviceProp.memoryClockRate;
+
+  // CHECK: int buswidth = deviceProp.get_memory_bus_width();
+  int buswidth = deviceProp.memoryBusWidth;
 
   // CHECK:  /*
   // CHECK-NEXT:  DPCT1022:{{[0-9]+}}: There is no exact match between the maxGridSize and the max_nd_range size. Verify the correctness of the code.
@@ -161,32 +167,36 @@ void test3() {
   //CHECK:int *a1_ptr = deviceProp.get_max_work_item_sizes<int *>();
   int *a1_ptr = deviceProp.maxThreadsDim;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with memPitch. It was migrated to INT_MAX. You may need to rewrite the code.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with memPitch. It was migrated to INT_MAX, which value may need to be adjusted for specific device.
   //CHECK-NEXT:*/
   //CHECK-NEXT:int a2 = INT_MAX;
   int a2 = deviceProp.memPitch;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with totalConstMem. It was migrated to get_global_mem_size. You may need to rewrite the code.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with totalConstMem. It was migrated to get_global_mem_size, which value may need to be adjusted for specific device.
   //CHECK-NEXT:*/
-  //CHECK-NEXT:int a3 = deviceProp.get_global_mem_size();
-  int a3 = deviceProp.totalConstMem;
+  //CHECK-NEXT:size_t a3 = deviceProp.get_global_mem_size();
+  size_t a3 = deviceProp.totalConstMem;
   //CHECK:/*
   //CHECK-NEXT:DPCT1090:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with regsPerBlock. It was not migrated. You need to rewrite the code.
   //CHECK-NEXT:*/
   //CHECK-NEXT:int a4 = deviceProp.regsPerBlock;
   int a4 = deviceProp.regsPerBlock;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with textureAlignment. It was migrated to dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>(). You may need to rewrite the code.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with textureAlignment. It was migrated to dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>(), which value may need to be adjusted for specific device.
   //CHECK-NEXT:*/
   //CHECK-NEXT:int a5 = dpct::get_current_device().get_info<sycl::info::device::mem_base_addr_align>();
   int a5 = deviceProp.textureAlignment;
   //CHECK:/*
-  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property that would be functionally compatible with kernelExecTimeoutEnabled. It was migrated to false. You may need to rewrite the code.
+  //CHECK-NEXT:DPCT1051:{{[0-9]+}}: SYCL does not support the device property functionally compatible with kernelExecTimeoutEnabled. It was migrated to false, which value may need to be adjusted for specific device.
   //CHECK-NEXT:*/
   //CHECK-NEXT:int a6 = false;
   int a6 = deviceProp.kernelExecTimeoutEnabled;
   //CHECK:int a7 = dpct::get_current_device().get_info<sycl::info::device::error_correction_support>();
   int a7 = deviceProp.ECCEnabled;
+
+  std::vector<cudaDeviceProp> devicePropVec;
+  //CHECK: a3 = devicePropVec[0].get_global_mem_size();
+  a3 = devicePropVec[0].totalConstMem;
 }
 
 //CHECK:dpct::device_info* getcudaDevicePropPtr() {
@@ -199,6 +209,12 @@ cudaDeviceProp* getcudaDevicePropPtr() {
 void test4() {
   //CHECK:int a1 = getcudaDevicePropPtr()->get_max_compute_units();
   int a1 = getcudaDevicePropPtr()->multiProcessorCount;
+
+  //CHECK: a1 = getcudaDevicePropPtr()->get_memory_clock_rate();
+  a1 = getcudaDevicePropPtr()->memoryClockRate;
+
+  //CHECK: a1 = getcudaDevicePropPtr()->get_memory_bus_width();
+  a1 = getcudaDevicePropPtr()->memoryBusWidth;
 }
 
 __device__ void test5() {
@@ -227,6 +243,10 @@ __device__ void test5() {
     a = std::min(pDeviceProp->clockRate, 1000);
     //CHECK:a = sycl::min(pDeviceProp->get_max_compute_units(), 1000);
     a = std::min(pDeviceProp->multiProcessorCount, 1000);
+    //CHECK:a = sycl::min(pDeviceProp->get_memory_clock_rate(), 1000);
+    a = std::min(pDeviceProp->memoryClockRate, 1000);
+    //CHECK:a = sycl::min(pDeviceProp->get_memory_bus_width(), 1000);
+    a = std::min(pDeviceProp->memoryBusWidth, 1000);
     //CHECK:a = sycl::min(pDeviceProp->get_max_sub_group_size(), 1000);
     a = std::min(pDeviceProp->warpSize, 1000);
     //CHECK:a = sycl::min(pDeviceProp->get_max_work_group_size(), 1000);

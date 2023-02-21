@@ -1,0 +1,27 @@
+.. _id_DPCT1078:
+
+DPCT1078
+========
+
+Message
+-------
+
+.. _msg-1078-start:
+
+Consider replacing ``memory_order::acq_rel`` with ``memory_order::seq_cst`` for
+correctness if strong memory order restrictions are needed.
+
+.. _msg-1078-end:
+
+Detailed Help
+-------------
+
+``memory_order::acq_rel`` is a light-weight fence that is sufficient for memory synchronization in most programs. If a program needs total sequentially consistent
+memory order to ensure correctness, replace ``memory_order::acq_rel`` with
+``memory_order::seq_cst``.
+
+Suggestions to Fix
+------------------
+
+Replace ``memory_order::acq_rel`` with ``memory_order::seq_cst`` if stricter
+memory order is needed.

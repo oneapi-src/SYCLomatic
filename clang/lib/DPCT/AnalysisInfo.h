@@ -34,11 +34,9 @@
 #include "clang/Format/Format.h"
 #include "clang/Frontend/CompilerInstance.h"
 
-#include "llvm/ADT/Optional.h"
-
-llvm::Optional<std::string> getReplacedName(const clang::NamedDecl *D);
+std::optional<std::string> getReplacedName(const clang::NamedDecl *D);
 void setGetReplacedNamePtr(
-    llvm::Optional<std::string> (*Ptr)(const clang::NamedDecl *D));
+    std::optional<std::string> (*Ptr)(const clang::NamedDecl *D));
 
 namespace clang {
 namespace dpct {
@@ -203,6 +201,17 @@ struct MemcpyOrderAnalysisInfo {
   std::vector<unsigned int> DREOffsetVec;
 };
 
+struct RnnBackwardFuncInfo {
+  std::string FilePath;
+  unsigned int Offset;
+  unsigned int Length;
+  bool isAssigned;
+  bool isDataGradient;
+  std::string CompoundLoc;
+  std::vector<std::string> RnnInputDeclLoc;
+  std::vector<std::string> FuncArgs;
+};
+
 // function name, <file path, Info>
 using HDDefMap =
     std::unordered_multimap<std::string,
@@ -331,6 +340,7 @@ insertObject(MapType &Map, const typename MapType::key_type &Key,
   return Obj;
 }
 
+void initHeaderSpellings();
 enum HeaderType {
 #define HEADER(Name, Spelling) HT_ ## Name,
 #include "HeaderTypes.inc"
@@ -395,6 +405,7 @@ public:
   void buildUnionFindSet();
   void buildUnionFindSetForUncalledFunc();
   void buildKernelInfo();
+  void buildRnnBackwardFuncInfo();
   void postProcess();
 
   // Emplace stored replacements into replacement set.
@@ -609,6 +620,9 @@ public:
   std::vector<std::pair<unsigned int, unsigned int>> &getExternCRanges() {
     return ExternCRanges;
   }
+  std::vector<RnnBackwardFuncInfo> &getRnnBackwardFuncInfo() {
+    return RBFuncInfo;
+  }
 
 private:
   std::vector<std::pair<unsigned int, unsigned int>> TimeStubBounds;
@@ -677,6 +691,7 @@ private:
   bool AddOneDplHeaders = false;
   std::vector<std::shared_ptr<ExtReplacement>> IncludeDirectiveInsertions;
   std::vector<std::pair<unsigned int, unsigned int>> ExternCRanges;
+  std::vector<RnnBackwardFuncInfo> RBFuncInfo;
 };
 template <> inline GlobalMap<MemVarInfo> &DpctFileInfo::getMap() {
   return MemVarMap;
@@ -1295,8 +1310,8 @@ public:
     return getLocInfo(TL.getBeginLoc(), IsInvalid);
   }
 
-  // Return the absolute path of \p ID 
-  static llvm::Optional<std::string> getAbsolutePath(FileID ID);
+  // Return the absolute path of \p ID
+  static std::optional<std::string> getAbsolutePath(FileID ID);
 
   static inline std::pair<std::string, unsigned>
   getLocInfo(SourceLocation Loc, bool *IsInvalid = nullptr /* out */) {
@@ -1845,22 +1860,21 @@ public:
   static bool useLogicalGroup() {
     return getUsingExperimental<ExperimentalFeatures::Exp_LogicalGroup>();
   }
+  static bool useUserDefineReductions() {
+    return getUsingExperimental<ExperimentalFeatures::Exp_UserDefineReductions>();
+  }
   static bool useEnqueueBarrier() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_EnqueueBarrier);
   }
   static bool useCAndCXXStandardLibrariesExt() {
     return getUsingExtensionDD(DPCPPExtensionsDefaultDisabled::ExtDD_CCXXStandardLibrary);
   }
+  static bool useIntelDeviceMath() {
+    return getUsingExtensionDD(DPCPPExtensionsDefaultDisabled::ExtDD_IntelDeviceMath);
+  }
 
   static bool useDeviceInfo() {
     return getUsingExtensionDE(DPCPPExtensionsDefaultEnabled::ExtDE_DeviceInfo);
-  }
-
-  static bool getSpBLASUnsupportedMatrixTypeFlag() {
-    return SpBLASUnsupportedMatrixTypeFlag;
-  }
-  static void setSpBLASUnsupportedMatrixTypeFlag(bool Flag) {
-    SpBLASUnsupportedMatrixTypeFlag = Flag;
   }
 
   inline std::shared_ptr<DpctFileInfo> insertFile(const std::string &FilePath) {
@@ -2002,6 +2016,11 @@ public:
   static inline std::shared_ptr<clang::tooling::TranslationUnitReplacements>
   getMainSourceYamlTUR() {
     return MainSourceYamlTUR;
+  }
+  static inline std::unordered_map<
+      std::string, std::unordered_map<std::string, std::vector<unsigned>>> &
+  getRnnInputMap() {
+    return RnnInputMap;
   }
 
 private:
@@ -2150,7 +2169,6 @@ private:
   static bool UsingDRYPattern;
   static bool UsingGenericSpace;
   static bool UsingThisItem;
-  static bool SpBLASUnsupportedMatrixTypeFlag;
   static unsigned int CudaKernelDimDFIIndex;
   static std::unordered_map<unsigned int, std::shared_ptr<DeviceFunctionInfo>>
       CudaKernelDimDFIMap;
@@ -2184,6 +2202,9 @@ private:
       PriorityReplInfoMap;
   static std::unordered_map<std::string, bool> ExcludePath;
   static std::map<std::string, clang::tooling::OptionInfo> CurrentOptMap;
+  static std::unordered_map<
+      std::string, std::unordered_map<std::string, std::vector<unsigned>>>
+      RnnInputMap;
 };
 
 /// Generate mangle name of FunctionDecl as key of DeviceFunctionInfo.

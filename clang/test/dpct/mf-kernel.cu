@@ -31,17 +31,17 @@ __global__ void local_foo_2() { }
 
 
 
-// CHECK: dpct::constant_memory<float, 0> A1_ct;
-// CHECK-NEXT: dpct::constant_memory<float, 0> A2;
+// CHECK: static dpct::constant_memory<float, 0> A1_ct;
+// CHECK-NEXT: static dpct::constant_memory<float, 0> A2;
 __constant__ float A1, A2;
 
-// CHECK: dpct::constant_memory<float, 0> A4_ct;
-// CHECK-NEXT: dpct::constant_memory<float, 0> A5_ct;
+// CHECK: static dpct::constant_memory<float, 0> A4_ct;
+// CHECK-NEXT: static dpct::constant_memory<float, 0> A5_ct;
 __constant__ float A4, A5;
 
-// CHECK: dpct::constant_memory<float, 1> A_ct(sycl::range<1>(3 * 3), {0.0625f, 0.125f,  0.0625f, 0.1250f, 0.250f,
+// CHECK: static dpct::constant_memory<float, 1> A_ct(sycl::range<1>(3 * 3), {0.0625f, 0.125f,  0.0625f, 0.1250f, 0.250f,
 // CHECK-NEXT:                                0.1250f, 0.0625f, 0.125f,  0.0625f});
-// CHECK-NEXT: dpct::constant_memory<float, 0> A3;
+// CHECK-NEXT: static dpct::constant_memory<float, 0> A3;
 __constant__ float A[3 * 3] = {0.0625f, 0.125f,  0.0625f, 0.1250f, 0.250f,
                                0.1250f, 0.0625f, 0.125f,  0.0625f}, A3;
 

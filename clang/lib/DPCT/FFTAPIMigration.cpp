@@ -22,7 +22,7 @@ TextModification* processFunctionPointer(const UnaryOperator *UO) {
     return nullptr;
   StringRef FuncNameRef = FD->getName();
   std::string ParameterTypes = MapNames::getDpctNamespace() +
-                               "fft::fft_engine *engine";
+                               "fft::fft_engine_ptr engine";
   requestFeature(HelperFeatureEnum::FftUtils_fft_engine, UO->getBeginLoc());
   std::string Dir;
   std::string NewFuncName;

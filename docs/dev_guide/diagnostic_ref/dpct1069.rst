@@ -1,0 +1,26 @@
+.. _id_DPCT1069:
+
+DPCT1069
+========
+
+Message
+-------
+
+.. _msg-1069-start:
+
+The argument *<argument name>* of the kernel function contains virtual
+pointer(s), which cannot be dereferenced. Try to migrate the code with
+``\"usm-level=restricted\"``.
+
+.. _msg-1069-end:
+
+Detailed Help
+-------------
+
+|tool_name| cannot process inner virtual pointer(s) when using option
+``--usm-level=none``.
+
+Suggestions to Fix
+------------------
+
+Use option ``--usm-level=restricted`` to migrate the code.

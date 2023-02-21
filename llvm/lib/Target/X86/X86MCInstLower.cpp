@@ -20,7 +20,6 @@
 #include "X86RegisterInfo.h"
 #include "X86ShuffleDecodeConstantPool.h"
 #include "X86Subtarget.h"
-#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/iterator_range.h"
 #include "llvm/CodeGen/MachineConstantPool.h"
@@ -65,8 +64,8 @@ class X86MCInstLower {
 public:
   X86MCInstLower(const MachineFunction &MF, X86AsmPrinter &asmprinter);
 
-  Optional<MCOperand> LowerMachineOperand(const MachineInstr *MI,
-                                          const MachineOperand &MO) const;
+  std::optional<MCOperand> LowerMachineOperand(const MachineInstr *MI,
+                                               const MachineOperand &MO) const;
   void Lower(const MachineInstr *MI, MCInst &OutMI) const;
 
   MCSymbol *GetSymbolFromOperand(const MachineOperand &MO) const;
@@ -428,7 +427,7 @@ static unsigned getRetOpcode(const X86Subtarget &Subtarget) {
   return Subtarget.is64Bit() ? X86::RET64 : X86::RET32;
 }
 
-Optional<MCOperand>
+std::optional<MCOperand>
 X86MCInstLower::LowerMachineOperand(const MachineInstr *MI,
                                     const MachineOperand &MO) const {
   switch (MO.getType()) {
@@ -1904,8 +1903,8 @@ static std::string getShuffleComment(const MachineInstr *MI, unsigned SrcOp1Idx,
   // names. Fortunately most people use the ATT style (outside of Windows)
   // and they actually agree on register naming here. Ultimately, this is
   // a comment, and so its OK if it isn't perfect.
-  auto GetRegisterName = [](unsigned RegNum) -> StringRef {
-    return X86ATTInstPrinter::getRegisterName(RegNum);
+  auto GetRegisterName = [](MCRegister Reg) -> StringRef {
+    return X86ATTInstPrinter::getRegisterName(Reg);
   };
 
   const MachineOperand &DstOp = MI->getOperand(0);
@@ -2506,11 +2505,6 @@ void X86AsmPrinter::emitInstruction(const MachineInstr *MI) {
   switch (MI->getOpcode()) {
   case TargetOpcode::DBG_VALUE:
     llvm_unreachable("Should be handled target independently");
-
-  // Emit nothing here but a comment if we can.
-  case X86::Int_MemBarrier:
-    OutStreamer->emitRawComment("MEMBARRIER");
-    return;
 
   case X86::EH_RETURN:
   case X86::EH_RETURN64: {

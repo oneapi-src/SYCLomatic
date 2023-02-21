@@ -218,6 +218,11 @@ void registerEnumRule(MetaRuleObject &R) {
   }
 }
 
+void deregisterAPIRule(MetaRuleObject &R) {
+  using namespace clang::dpct;
+  CallExprRewriterFactoryBase::RewriterMap->erase(R.In);
+}
+
 void importRules(llvm::cl::list<std::string> &RuleFiles) {
   for (auto &RuleFile : RuleFiles) {
     makeCanonical(RuleFile);
@@ -267,6 +272,9 @@ void importRules(llvm::cl::list<std::string> &RuleFiles) {
         break;
       case (RuleKind::Enum):
         registerEnumRule(*r);
+        break;
+      case (RuleKind::DisableAPIMigration):
+        deregisterAPIRule(*r);
         break;
       default:
         break;
@@ -485,8 +493,12 @@ class RefMatcherInterface
                  clang::ASTContext &Context) const {
     if (!HasQualifier) {
       if (auto FD = clang::dyn_cast<clang::FunctionDecl>(Node.getDecl())) {
+        std::string NS = "";
+        if (Node.getQualifier()) {
+          NS = getNestedNameSpecifierString(Node.getQualifier());
+        }
         if (auto ID = FD->getIdentifier()) {
-          return ID->getName() == Name;
+          return NS + ID->getName().str() == Name;
         }
       }
     } else if (auto Qualifier = Node.getQualifier()) {

@@ -63,6 +63,7 @@ enum class DPCPPExtensionsDefaultEnabled : unsigned int {
 };
 enum class DPCPPExtensionsDefaultDisabled : unsigned int {
   ExtDD_CCXXStandardLibrary = 0,
+  ExtDD_IntelDeviceMath,
   ExtDD_DPCPPExtensionsDefaultDisabledEnumSize
 };
 enum class ExperimentalFeatures : unsigned int {
@@ -71,7 +72,8 @@ enum class ExperimentalFeatures : unsigned int {
                           // this_group, this_subgroup.
   Exp_GroupSharedMemory,
   Exp_LogicalGroup,
-  Exp_ExperimentalFeaturesEnumSize
+  Exp_ExperimentalFeaturesEnumSize,
+  Exp_UserDefineReductions
 };
 
 bool makeInRootCanonicalOrSetDefaults(

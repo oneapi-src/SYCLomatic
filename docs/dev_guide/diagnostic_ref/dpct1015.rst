@@ -1,0 +1,24 @@
+.. _id_DPCT1015:
+
+DPCT1015
+========
+
+Message
+-------
+
+.. _msg-1015-start:
+
+Output needs adjustment.
+
+.. _msg-1015-end:
+
+Detailed Help
+-------------
+
+SYCL\* device code uses SYCL output stream instead of ``printf``-like formatted
+strings. Adjustments may be needed to achieve the desired output.
+
+Suggestions to Fix
+------------------
+
+Use a SYCL output stream instead of a ``printf``-like formatted string.

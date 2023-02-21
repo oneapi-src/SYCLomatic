@@ -1,0 +1,71 @@
+.. _id_DPCT1073:
+
+DPCT1073
+========
+
+Message
+-------
+
+.. _msg-1073-start:
+
+The field values of parameter ``{0}`` could not be deduced, so the call was not
+migrated. You need to update this code manually.
+
+.. _msg-1073-end:
+
+Detailed Help
+-------------
+
+|tool_name| could not deduce the field values of the call parameter,
+which is used in the migrated code.
+
+Suggestions to Fix
+------------------
+
+Manually replace the non-migrated call with a |dpcpp| expression using the actual
+field values of the parameters. 
+
+For example, this original code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // original code:
+
+   CUDA_ARRAY_DESCRIPTOR *desc_ptr;
+   CUDA_ARRAY_DESCRIPTOR desc;
+   desc_ptr = &desc;
+
+   Cuarray arr;
+   cuArrayCreate(&arr, desc_ptr)
+
+results in the following migrated DPC++ code:
+
+.. code-block:: cpp
+   :linenos:
+
+   // migrated DPC++ code:
+
+   CUDA_ARRAY_DESCRIPTOR *desc_ptr; // line was not migrated and can be removed
+   size_t desc_x_ct1, desc_y_ct1;
+   unsigned desc_channel_num_ct1;
+   sycl::image_channel_type desc_channel_type_ct1;
+   desc_ptr = &desc; // line can be removed
+
+   dpct::image_matrix_p arr;
+   /* DPCT1073 warning */
+   cuArrayCreate(&arr, desc_ptr) // line was not migrated and needs to be replaced
+
+which is manually adjusted to:
+
+.. code-block:: cpp
+   :linenos:
+
+   // adjusted DPC++ code:
+
+   size_t desc_x_ct1, desc_y_ct1;
+   unsigned desc_channel_num_ct1;
+   sycl::image_channel_type desc_channel_type_ct1;
+
+   dpct::image_matrix_p arr;
+   arr = new dpct::image_matrix(desc_channel_typ_ct1, desc_channel_num_ct1, desc_x_ct1, desc_y_ct1);

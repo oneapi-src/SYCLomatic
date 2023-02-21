@@ -3,7 +3,7 @@
 // RUN: FileCheck --input-file %T/Memory/api_test44_out/count.txt --match-full-lines %s
 // RUN: rm -rf %T/Memory/api_test44_out
 
-// CHECK: 17
+// CHECK: 19
 
 // TEST_FEATURE: Memory_pointer_attributes
 

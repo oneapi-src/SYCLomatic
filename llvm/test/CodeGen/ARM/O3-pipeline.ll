@@ -50,6 +50,7 @@
 ; CHECK-NEXT:      Transform functions to use DSP intrinsics
 ; CHECK-NEXT:      Complex Deinterleaving Pass
 ; CHECK-NEXT:      Interleaved Access Pass
+; CHECK-NEXT:      FPBuiltin Function Selection
 ; CHECK-NEXT:      Type Promotion
 ; CHECK-NEXT:      CodeGen Prepare
 ; CHECK-NEXT:      Dominator Tree Construction
@@ -191,6 +192,7 @@
 ; CHECK-NEXT:      Contiguously Lay Out Funclets
 ; CHECK-NEXT:      StackMap Liveness Analysis
 ; CHECK-NEXT:      Live DEBUG_VALUE analysis
+; CHECK-NEXT:      Machine Sanitizer Binary Metadata
 ; CHECK-NEXT:    Machine Outliner
 ; CHECK-NEXT:    FunctionPass Manager
 ; CHECK-NEXT:      ReachingDefAnalysis

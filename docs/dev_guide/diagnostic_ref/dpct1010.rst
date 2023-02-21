@@ -1,0 +1,28 @@
+.. _id_DPCT1010:
+
+DPCT1010
+========
+
+Message
+-------
+
+.. _msg-1010-start:
+
+SYCL uses exceptions to report errors and does not use the error codes. The call
+was replaced with 0. You need to rewrite this code.
+
+.. _msg-1010-end:
+
+Detailed Help
+-------------
+
+SYCL\* uses exceptions to report errors and does not use error codes. The original
+code tries to get an error code, while SYCL does not require such functionality.
+The call was replaced with 0.
+
+Suggestions to Fix
+------------------
+
+You may need to rewrite this code.
+
+

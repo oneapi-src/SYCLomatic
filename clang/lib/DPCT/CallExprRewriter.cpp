@@ -67,6 +67,12 @@ std::string CallExprRewriter::getMigratedArg(unsigned Idx) {
          Analyzer.getRewritePostfix();
 }
 
+std::string CallExprRewriter::getMigratedArgWithExtraParens(unsigned Idx) {
+  if (needExtraParens(Call->getArg(Idx)))
+    return "(" + getMigratedArg(Idx) + ")";
+  return getMigratedArg(Idx);
+}
+
 std::vector<std::string> CallExprRewriter::getMigratedArgs() {
   std::vector<std::string> ArgList;
   Analyzer.setCallSpelling(Call);
@@ -75,12 +81,12 @@ std::vector<std::string> CallExprRewriter::getMigratedArgs() {
   return ArgList;
 }
 
-Optional<std::string> FuncCallExprRewriter::rewrite() {
+std::optional<std::string> FuncCallExprRewriter::rewrite() {
   RewriteArgList = getMigratedArgs();
   return buildRewriteString();
 }
 
-Optional<std::string> FuncCallExprRewriter::buildRewriteString() {
+std::optional<std::string> FuncCallExprRewriter::buildRewriteString() {
   std::string Result;
   llvm::raw_string_ostream OS(Result);
   OS << TargetCalleeName << "(";
@@ -107,6 +113,7 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   initRewriterMapCUBLAS();
   initRewriterMapCURAND();
   initRewriterMapCUSOLVER();
+  initRewriterMapCUSPARSE();
   initRewriterMapComplex();
   initRewriterMapDriver();
   initRewriterMapMemory();
@@ -121,7 +128,9 @@ void CallExprRewriterFactoryBase::initRewriterMap() {
   initRewriterMapEvent();
   initRewriterMapMath();
   initRewriterMapCooperativeGroups();
-  initMethodRewriterMap();
+  initMethodRewriterMapCUB();
+  initMethodRewriterMapCooperativeGroups();
+  initMethodRewriterMapLIBCU();
 }
 
 } // namespace dpct
